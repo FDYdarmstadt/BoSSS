@@ -1,0 +1,105 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BoSSSControl>
+    <Base>
+        <dboptions path="c:\bosss_db\GridOfTomorrow" />
+        <grid guid="da3bae5e-ae6c-44d1-aeaa-28ca95f1f646" GridPartitioningType="ParMETIS" />
+        <description name="Bump coarse gmsh">
+            Flow over Gaussian bump at Mach 0.2
+        </description>
+        <tags>
+        </tags>
+        <run mode="solver"/>
+        <fields_degree>
+            <field identification="rho" degree="0"/>
+            <field identification="m" degree="0"/>
+            <field identification="rhoE" degree="0"/>
+            <field identification="p" degree="0"/>
+            <field identification="u" degree="0"/>
+            <field identification="S" degree="0"/>
+        </fields_degree>
+    </Base>
+
+    <initial mode="values">
+        <values>
+            <formula>
+                rho(x,y) = 1.0
+            </formula>
+            <formula>
+                m0(x,y) = sqrt(1.4) * 0.2
+            </formula>
+            <formula>
+                m1(x,y) = 0.0
+            </formula>
+            <formula>
+                rhoE(x,y) = 1.0 / (1.4 - 1.0) + 0.5 * 0.04 * 1.4
+            </formula>
+        </values>
+    </initial>
+
+    <Solver>
+        <logging savetodb="true" saveperiod="100" tracing=""/>
+        <termcond NoOfTimesteps="1000000" Endtime="100000" />
+        <timestepping dtMin="0.0" dtMax="0.05" CFLFrac="0.2"/>
+
+        <boundary>
+            <bc edgetagname="subsonicInlet">
+                <formula>
+                    rho(x,y) = 1.0
+                </formula>
+                <formula>
+                    u0(x,y) = sqrt(1.4) * 0.2
+                </formula>
+                <formula>
+                    u1(x,y) = 0.0
+                </formula>
+            </bc>
+            <bc edgetagname="subsonicOutlet">
+                <formula>
+                    p(x,y) = 1.0
+                </formula>
+            </bc>
+            <bc edgetagname="adiabaticSlipWall"></bc>
+        </boundary>
+        <properties>
+            <string key="equationSystem">Euler</string>
+            <string key="convectiveFluxType">HLLC</string>
+            <string key="timeStepping">explicit</string>
+            <string key="explicitScheme">rungeKutta</string>
+            <int key="explicitOrder">1</int>
+            <float key="kappa">1.4</float>
+            <string key="equationOfState">IdealGas</string>
+            <string key="residualType">changeRate,query</string>
+            <int key="residualInterval">20</int>
+            <int key="printInterval">5</int>
+        </properties>
+
+        <Queries>
+            <L2Error id="entropyError">
+                <computedSolution>
+                    <field identification="S" />
+                </computedSolution>
+                <exactSolution>
+                    <formula degree="1">
+                        S(x,y) = 1.0
+                    </formula>
+                </exactSolution>
+            </L2Error>
+        </Queries>
+    </Solver>
+
+    <ParameterStudy logFileDirectory=".">
+        <parameterSet>
+            <parameter id="grid" xpath="Base/grid/@guid">
+                00000000-0000-0000-0000-000000000000
+                00000000-0000-0000-0000-000000000001
+                00000000-0000-0000-0000-000000000002
+                00000000-0000-0000-0000-000000000003
+            </parameter>
+        </parameterSet>
+        <parameterSet>
+            <parameter id="rho-degree" xpath="Base/fields_degree/field[@identification='rho']/@degree">0 1 2</parameter>
+            <parameter id="m-degree" xpath="Base/fields_degree/field[@identification='m']/@degree">0 1 2</parameter>
+            <parameter id="rhoE-degree" xpath="Base/fields_degree/field[@identification='rhoE']/@degree">0 1 2</parameter>
+        </parameterSet>
+    </ParameterStudy>
+</BoSSSControl>

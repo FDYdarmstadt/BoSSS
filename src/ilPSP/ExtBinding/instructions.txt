@@ -1,0 +1,41 @@
+﻿Installation von mono (http://www.mono-project.com/Compiling_Mono_From_Tarball ):
+# ./configure --prefix=/home/***/mono-bin
+# make
+# make install
+
+Einstellungen in ~/.bashrc:
+PATH=/home/***/mono-bin/bin:$PATH
+export PATH
+PKG_CONFIG_PATH=/home/kummer/mono-bin/lib/pkgconfig/
+export PKG_CONFIG_PATH
+export LD_LIBRARY_PATH=/home/kummer/mono-bin/lib/:$LD_LIBRARY_PATH
+
+Installation von ilPSP:
+Durch beiliegenden Installer ‘ilPSP-bootstrap.run’;
+Dieser erzeugt ein Verzeichnis `ilPSP‘ im aktuellen Verzeichnis. 3rd-party libraries sind im Paket enthalten, der Quellcode wird direkt von Sourceforge.org ausgecheckt. Benötigt `git‘, getestet auf zwei Rechnern;
+
+Empfohlene Pakete für OpenSUSE (Version 11.4):
+•	libmono-2_0-devel (damit arbeitet der Befehl pkg-config --cflags mono-2, der heute nicht funktioniert hat)
+•	monodevelop (komfortable Entwicklungsumgebung -> build per GUI)
+•	mono-devel (enthält xbuild -> build per command line)
+•	git (Versionskontroll-system)
+•	funktionsfähiges MPI
+
+Wichtigste Arbeitsschritte:
+(ich beziehe mich mit $ROOT im folgenden immer das Installationsverzeichnis von ilPSP)
+•	Code-Update: in $ROOT/src/ilPSP: `git pull’
+•	Kompilieren, Kommandozeile: in $ROOT/src/ilPSP: ‘xbuild’
+•	Kompilieren, IDE: die Datei $ROOT/src/ilPSP/ilPSP.sln in monodevelop öffnen; Klicke Menü Build->Build All 
+•	Codegenerator für C-Binding: in $ROOT :`mono ./src/ilPSP/ExtBinding/ilPSP.ExternalBinding.CodeGenC/bin/Debug/ilPSP.ExternalBinding.CodeGenC.exe‘; erzeugt die Dateien binding.c und binding.h
+
+Sonstiges:
+•	Demo-Programme in `$ROOT/src/ilPSP/ExtBinding/cBinding’; kompilierung durch ‘compile.sh’
+•	Das vollständige C/FORTRAN-Interface besteht aus den Dateien: monkey.h,  monkey.c, sowie binding.h und binding.c aus dem Code-Generator.
+•	Include-Flags: für Mono-Versionen bis inklusive 2.6.* (mono --version)  `pkg-config --cflags mono`; für höhere Versionen `pkg-config --cflags mono-2`; Include-Flags werden nur für monkey.c und binding.c benötigt;
+•	Linker-Flags: `pkg-config --libs mono` bzw. `pkg-config --libs mono-2`
+•	Weitere Infos zur Technik: http://www.mono-project.com/Embedding_Mono 
+•	Include- und Linker-Flags müssen evtl. – abhängig von der mono-Version – in compile.sh manuell angepasst werden (mono oder mono-2)
+•	Für die Ausführung müssen die Managed DLL’s (Kompilate des C# - Codes) in das jeweilige Verzeichnis kopiert werden; Dies sind ilPSP.dll, ilPSP.LinSolvers.monkey.dll, ilPSP.ExternalBinding.dll, ilPSP.LinSolvers.PARDISO.dll, ilPSP.LinSolvers.Aztec.dll, ilPSP.LinSolvers.SolverFactory.dll, ilPSP.LinSolvers.GenPrecond.dll, log4net.dll, ilPSP.LinSolvers.HYPRE.dll, MPI.Wrappers.dll
+•	Die Managed DLL’s sind in den Verzeichnissen: /src/ilPSP/ExtBinding/ilPSP.ExternalBinding/bin/Debug bzw. /src/ilPSP/ExtBinding/ilPSP.ExternalBinding/bin/Release zu finden;
+•	Für Performance-Messungen sollten natürlich immer die Release-Versionen genutzt werden
+•	Beispiele für Solver-Konfigurationen: $ROOT/src/ilPSP/ExtBinding/slvcfgex.xml

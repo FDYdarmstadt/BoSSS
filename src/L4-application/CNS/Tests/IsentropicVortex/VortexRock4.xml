@@ -1,0 +1,125 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+Copyright 2017 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
+<!-- BoSSS control file, specialized for the compressible Navier-Stokes solver -->
+<BoSSSControl>
+    <Base>
+      <dboptions path="d:\BoSSS-db\" />
+        <grid guid="00000000-0000-0000-0000-000000000000" />
+        <description name="Vortex">
+          Isentropic Vortex, RK2-Test
+        </description>
+        <tags>
+          Demo
+        </tags>
+        <run mode="solver"/>
+        <fields_degree>
+            <!-- Specify DG polynmoial degree; If degree for "u", "e", "p",
+                "T", "Ma", "K" or "S" are given, these fields will also be
+                calculated and included in IO operations -->
+            <field identification="rho" degree="1"/>
+            <field identification="m" degree="1"/>
+            <field identification="rhoE" degree="1"/>
+            <field identification="p" degree="1"/>
+            <field identification="u" degree="1"/>            
+        </fields_degree>
+    </Base>
+
+    <!-- Specify "values" or "restart" -->
+    <initial mode="values">
+
+      <restart>
+        <session guid="00000000-0000-0000-0000-000000000000" timestepno="" />
+      </restart>
+
+      <values>
+        <formula>
+          rho(x,y) = (1 - (1/2) * (1.4 - 1) * exp(1 - ((x+2)^2 + y^2)))^(1/(1.4-1))
+        </formula>
+        <formula>
+          u0(x,y) =  20.0 - ( ((x+2)^2+y^2)^(1/2) * exp(1/2 * (1 - ((x+2)^2+y^2))) * sin(2 * atan(y / (((x+2)^2+y^2)^(1/2) + (x+2)))))
+        </formula>
+        <formula>
+          u1(x,y) =  0.0 + ( ((x+2)^2+y^2)^(1/2) * exp(1/2 * (1 - ((x+2)^2+y^2))) * cos(2 * atan(y / (((x+2)^2+y^2)^(1/2) + (x+2)))))
+        </formula>
+         <formula>
+           p(x,y) = (1/1.4)*(1 - (1/2) * (1.4 - 1) * exp(1 - (((x+2)^2 + y^2))))^(1.4/(1.4-1))
+         </formula>
+      </values>
+    </initial>
+
+    <Solver>
+      <logging savetodb="false" saveperiod="20" tracing=""/>
+      <termcond NoOfTimesteps="10000" Endtime="0.2" />
+      <timestepping dtMin="0.0" dtMax="1.0" CFLFrac="0.5"/>
+
+      <boundary> 
+      </boundary>
+      
+      <properties>
+        <string key="equationSystem">Euler</string>
+        <string key="convectiveFluxType">Rusanov</string>
+        <string key="timeStepping">explicit</string>
+        <string key="explicitScheme">Rock4</string>
+        <int key="explicitOrder">2</int>
+        <float key="Mach">0.1</float>
+        <float key="Prandtl">0.71</float>
+        <float key="kappa">1.4</float>
+        <string key="equationOfState">IdealGas</string>
+        ><float key="referencePressure">.714285714</float>
+        <string key="residualType">none</string>
+        <int key="residualInterval">0</int>
+      </properties>
+
+      <Queries>
+        <L2Error id="SolL2Err_rho">
+          <computedSolution>
+            <field identification="rho" />
+          </computedSolution>
+          <exactSolution>
+            <formula degree="13">
+              rho(x,y) = (1 - (1/2) * (1.4 - 1) * exp(1 - ((x-2)^2 + y^2)))^(1/(1.4-1))
+            </formula>
+          </exactSolution>
+        </L2Error>
+        <L2Error id="SolL2Err_u0">
+          <computedSolution>
+            <field identification="u0" />
+          </computedSolution>
+          <exactSolution>
+            <formula degree="13">
+              u0(x,y) =  20.0 - ( ((x-2)^2+y^2)^(1/2) * exp(1/2 * (1 - ((x-2)^2+y^2))) * sin(2 * atan(y / (((x-2)^2+y^2)^(1/2) + (x-2)))))
+            </formula>
+          </exactSolution>
+        </L2Error>
+        <L2Error id="SolL2Err_u1">
+          <computedSolution>
+            <field identification="u1" />
+          </computedSolution>
+          <exactSolution>
+            <formula degree="13">
+              u1(x,y) =  0.0 + ( ((x-2)^2+y^2)^(1/2) * exp(1/2 * (1 - ((x-2)^2+y^2))) * cos(2 * atan(y / (((x-2)^2+y^2)^(1/2) + (x-2)))))
+            </formula>
+          </exactSolution>
+        </L2Error>
+        <!--rho(x,y) = (1 - (1/2) * (1.4 - 1) * 0.25^2 * exp(1 - (((x-0.125)^2 + y^2)/ 0.05^2)))^(1/(1.4-1))-->
+      </Queries>
+
+     
+    </Solver>
+
+</BoSSSControl>

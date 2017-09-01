@@ -1,0 +1,18 @@
+function [] = SaveVoronoi(C, filename)
+fileID = fopen(filename, 'w');
+[NoOfRows,NoOfCols] = size(C);
+
+for iRow = 1:NoOfRows
+	R = C{iRow,1};
+	len = length(R);
+	for j = 1:len
+	    fprintf(fileID, '%d ', R(j));
+	end
+	
+	if(iRow < NoOfRows)
+		fprintf(fileID, '\n');
+	end
+end
+
+fclose(fileID);
+end

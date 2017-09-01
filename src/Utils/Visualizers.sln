@@ -1,0 +1,52 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.26430.12
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MatrixVisualizer", "MatrixVisualizer\MatrixVisualizer\MatrixVisualizer.csproj", "{D3236075-D21F-4D3A-AE49-A6C485933BB5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Platform", "..\public\L1-platform\BoSSS.Platform\BoSSS.Platform.csproj", "{B7D5F7C7-EA9F-4506-AB69-C3CD2AA8C938}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MPI.Wrappers", "..\ilPSP\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj", "{DD9BF776-38CA-4FC9-8F42-5ED700BDE7AD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ilPSP", "..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj", "{8E6D8F23-623F-4204-B4AB-A088C0CD83AA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MatrixVisualizerVS15", "MatrixVisualizer\MatrixVisualizerVS15\MatrixVisualizerVS15.csproj", "{B91D8AA7-B8A0-4872-91B2-BDCCC9AE8456}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MatrixVisualizerVS17", "MatrixVisualizer\MatrixVisualizerVS17\MatrixVisualizerVS17.csproj", "{3E6A42FC-60E6-4062-BDE3-4437C5F714DD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D3236075-D21F-4D3A-AE49-A6C485933BB5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D3236075-D21F-4D3A-AE49-A6C485933BB5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D3236075-D21F-4D3A-AE49-A6C485933BB5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D3236075-D21F-4D3A-AE49-A6C485933BB5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B7D5F7C7-EA9F-4506-AB69-C3CD2AA8C938}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B7D5F7C7-EA9F-4506-AB69-C3CD2AA8C938}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B7D5F7C7-EA9F-4506-AB69-C3CD2AA8C938}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B7D5F7C7-EA9F-4506-AB69-C3CD2AA8C938}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DD9BF776-38CA-4FC9-8F42-5ED700BDE7AD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DD9BF776-38CA-4FC9-8F42-5ED700BDE7AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DD9BF776-38CA-4FC9-8F42-5ED700BDE7AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DD9BF776-38CA-4FC9-8F42-5ED700BDE7AD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8E6D8F23-623F-4204-B4AB-A088C0CD83AA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8E6D8F23-623F-4204-B4AB-A088C0CD83AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8E6D8F23-623F-4204-B4AB-A088C0CD83AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8E6D8F23-623F-4204-B4AB-A088C0CD83AA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B91D8AA7-B8A0-4872-91B2-BDCCC9AE8456}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B91D8AA7-B8A0-4872-91B2-BDCCC9AE8456}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B91D8AA7-B8A0-4872-91B2-BDCCC9AE8456}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B91D8AA7-B8A0-4872-91B2-BDCCC9AE8456}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3E6A42FC-60E6-4062-BDE3-4437C5F714DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3E6A42FC-60E6-4062-BDE3-4437C5F714DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3E6A42FC-60E6-4062-BDE3-4437C5F714DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3E6A42FC-60E6-4062-BDE3-4437C5F714DD}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

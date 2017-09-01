@@ -1,0 +1,95 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BoSSSControl>
+    <Base>
+        <dboptions path="" />
+        <grid guid="00000000-0000-0000-0000-000000000002" />
+        <description name="Vortex, ideal, Rusanov, 2nd order, IBM">
+            Isolated, compressible vortex in an ideal gas
+        </description>
+        <tags>
+        </tags>
+        <run mode="solver"/>
+        <fields_degree>
+            <field identification="rho" degree="2"/>
+            <field identification="m" degree="2"/>
+            <field identification="rhoE" degree="2"/>
+            <field identification="p" degree="2"/>
+            <field identification="S" degree="2"/>
+            <field identification="levelSet" degree="2"/>
+        </fields_degree>
+    </Base>
+
+    <initial mode="values">
+        <values>
+            <formula>
+                rho(x,y) = (1 - 0.5 * 0.4/1.4 * exp(1-x^2-y^2))^(1/0.4)
+            </formula>
+            <formula>
+                u0(x,y) = -sin(atan(y/x) + jump(-x)*sign(y)*PI) * sqrt(x^2+y^2) * exp(0.5*(1-x^2-y^2))
+            </formula>
+            <formula>
+                u1(x,y) = cos(atan(y/x) + jump(-x)*sign(y)*PI) * sqrt(x^2+y^2) * exp(0.5*(1-x^2-y^2))
+            </formula>
+            <formula>
+                p(x,y) = (1 - 0.5 * 0.4/1.4 * exp(1-x^2-y^2))^(1.4/0.4)
+            </formula>
+            <formula>
+                levelSet(x,y) = 1.25*1.25 - x * x - y * y
+            </formula>
+        </values>
+    </initial>
+
+    <Solver>
+        <logging savetodb="false" saveperiod="1" tracing=""/>
+        <termcond NoOfTimesteps="20" Endtime="0.2" />
+        <timestepping dtMin="0.01" dtMax="0.01" CFLFrac="0.01"/>
+        <boundary>
+            <bc edgetagname="adiabaticSlipWall" />
+        </boundary>
+        <properties>
+            <string key="equationSystem">IBMEuler</string>
+            <string key="convectiveFluxType">Rusanov</string>
+            <string key="timeStepping">explicit</string>
+            <string key="explicitScheme">rungeKutta</string>
+            <int key="explicitOrder">1</int>
+            <float key="Mach">0.1</float>
+            <float key="kappa">1.4</float>
+            <string key="equationOfState">IdealGas</string>
+            <string key="residualType">none</string>
+            <int key="residualInterval">0</int>
+            <string key="levelSetBoundaryTag">adiabaticSlipWall</string>
+            <int key="levelSetQuadratureOrder">4</int>
+        </properties>
+
+        <Queries>
+            <L2Error id="L2ErrorEntropy">
+                <computedSolution>
+                    <field identification="S" />
+                </computedSolution>
+                <exactSolution>
+                    <formula degree="0">S(x,y) = 1</formula>
+                </exactSolution>
+            </L2Error>
+            <L2Error id="L2ErrorDensity">
+                <computedSolution>
+                    <field identification="rho" />
+                </computedSolution>
+                <exactSolution>
+                    <formula degree="10">
+                        rho(x, y) = (1 - 0.5*0.4/1.4 * exp(1-x^2-y^2))^(1/0.4)
+                    </formula>
+                </exactSolution>
+            </L2Error>
+            <L2Error id="L2ErrorPressure">
+                <computedSolution>
+                    <field identification="p" />
+                </computedSolution>
+                <exactSolution>
+                    <formula degree="10">
+                        p(x, y) = (1 - 0.5*0.4/1.4 * exp(1-x^2-y^2))^(1.4/0.4)
+                    </formula>
+                </exactSolution>
+            </L2Error>
+        </Queries>
+    </Solver>
+</BoSSSControl>

@@ -1,0 +1,151 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{9A8CDC1F-64F7-441E-849D-66F2C56600F2}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>BoSSS.Foundation.XDG</RootNamespace>
+    <AssemblyName>BoSSS.Foundation.XDG</AssemblyName>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <UseVSHostingProcess>true</UseVSHostingProcess>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DocumentationFile>bin\Release\BoSSS.Foundation.XDG.XML</DocumentationFile>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <UseVSHostingProcess>true</UseVSHostingProcess>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="log4net">
+      <HintPath>..\..\..\..\libs\log4net-1.2.10\bin\cli\1.0\release\log4net.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.Serialization" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="CellAgglomerator.cs" />
+    <Compile Include="CutCellMetrics.cs" />
+    <Compile Include="IEquationComponentExtensionXDG.cs" />
+    <Compile Include="Quadrature\AdaptiveSubdivisionStrategy.cs" />
+    <Compile Include="BilinearForm.cs" />
+    <Compile Include="Quadrature\BruteForceSubdivisionStrategy.cs" />
+    <Compile Include="Quadrature\CellEdgeBoundaryQuadratureScheme.cs" />
+    <Compile Include="Quadrature\CutCellQuadRuleFactory.cs" />
+    <Compile Include="Quadrature\CutLineOnEdgeQuadRuleFactory.cs" />
+    <Compile Include="Quadrature\DivergenceFreeBasis3D.cs" />
+    <Compile Include="Quadrature\DivergenceFreeBasis2D.cs" />
+    <Compile Include="Quadrature\DivergenceFreeFaceBasis.cs" />
+    <Compile Include="Quadrature\ISubdivisionStrategy.cs" />
+    <Compile Include="Quadrature\LevelSetEdgeSurfaceQuadRuleFactory.cs" />
+    <Compile Include="Quadrature\LevelSetEdgeVolumeQuadRuleFactory.cs" />
+    <Compile Include="Quadrature\LevelSetIntegrator.cs" />
+    <Compile Include="Quadrature\LevelSetQuadRuleFactory2.cs" />
+    <Compile Include="Quadrature\LevelSetVolumeQuadRuleFactory.cs" />
+    <Compile Include="Quadrature\LineAndPointQuadratureFactory.cs" />
+    <Compile Include="Quadrature\CutLineQuadRuleFactory.cs" />
+    <Compile Include="Quadrature\DivergenceFreeBasis.cs" />
+    <Compile Include="Quadrature\ExactCircleLevelSetIntegration.cs" />
+    <Compile Include="Quadrature\IAnalyticLevelSet.cs" />
+    <Compile Include="FieldExtensions.cs" />
+    <Compile Include="LevelsetSign.cs" />
+    <Compile Include="LevelsetCellSignCode.cs" />
+    <Compile Include="LevelSetData.cs" />
+    <Compile Include="LevelSetSignCode.cs" />
+    <Compile Include="LevelSetTracker_IO.cs" />
+    <Compile Include="LevelSet_IO.cs" />
+    <Compile Include="MassMatrixFactory.cs" />
+    <Compile Include="MultiphaseAgglomerator.cs" />
+    <Compile Include="Quadrature\NestedVertexSet.cs" />
+    <Compile Include="Quadrature\SurfaceStokes_2D.cs" />
+    <Compile Include="ReducedRegionCode.cs" />
+    <Compile Include="Quadrature\ScalarFieldLevelSetIntegrator.cs" />
+    <Compile Include="Quadrature\SimplexSubdivisionTree.cs" />
+    <Compile Include="SpeciesId.cs" />
+    <Compile Include="XDGBasis.cs" />
+    <Compile Include="XDGField.cs" />
+    <Compile Include="FieldStorage.cs" />
+    <Compile Include="IBilinearForm.cs" />
+    <Compile Include="IReinitialisationAlgorithm.cs" />
+    <Compile Include="LECQuadratureLevelSet.cs" />
+    <Compile Include="LevelSet.cs" />
+    <Compile Include="LevelSetCFLException.cs" />
+    <Compile Include="Quadrature\LevelSetComboRuleFactory2.cs" />
+    <Compile Include="Quadrature\LevelSetSurfaceQuadRuleFactory.cs" />
+    <Compile Include="LevelSetTracker.cs" />
+    <Compile Include="LevelSetTracker_b.cs" />
+    <Compile Include="Quadrature\LevelSetVolumeQuadRuleFactory2.cs" />
+    <Compile Include="Quadrature\LineSegment.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SpeciesFrame.cs" />
+    <Compile Include="SpeciesShadowField.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="XDGBasis_IO.cs" />
+    <Compile Include="XDGField_GenericEval.cs" />
+    <Compile Include="XDGField_IO.cs" />
+    <Compile Include="XdgOperatorQuadratureSet.cs" />
+    <Compile Include="XDGUtils.cs" />
+    <Compile Include="Quadrature\XQuadFactoryHelper.cs" />
+    <Compile Include="Quadrature\XQuadSchemeHelper.cs" />
+    <Compile Include="XSpatialOperator.cs">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.monkey\ilPSP.LinSolvers.monkey.csproj">
+      <Project>{b18aedc3-c7a5-4da6-abd3-e981b002adde}</Project>
+      <Name>ilPSP.LinSolvers.monkey</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L1-platform\BoSSS.Platform\BoSSS.Platform.csproj">
+      <Project>{B7D5F7C7-EA9F-4506-AB69-C3CD2AA8C938}</Project>
+      <Name>BoSSS.Platform</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\ilPSP\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj">
+      <Project>{DD9BF776-38CA-4FC9-8F42-5ED700BDE7AD}</Project>
+      <Name>MPI.Wrappers</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj">
+      <Project>{8E6D8F23-623F-4204-B4AB-A088C0CD83AA}</Project>
+      <Name>ilPSP</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\BoSSS.Foundation\BoSSS.Foundation.csproj">
+      <Project>{17A60FBA-20B4-451D-98E1-8D742F368569}</Project>
+      <Name>BoSSS.Foundation</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\BoSSS.Foundation.Grid\BoSSS.Foundation.Grid.csproj">
+      <Project>{13585226-5046-494D-947C-B97479566081}</Project>
+      <Name>BoSSS.Foundation.Grid</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

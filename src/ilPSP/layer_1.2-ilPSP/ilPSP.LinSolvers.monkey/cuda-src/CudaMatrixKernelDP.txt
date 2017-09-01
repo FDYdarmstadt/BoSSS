@@ -1,0 +1,840 @@
+	.version 1.4
+	.target sm_13
+	// compiled with C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v4.1\\bin/../open64/lib//be.exe
+	// nvopencc 4.1 built on 2012-01-13
+
+	//-----------------------------------------------------------
+	// Compiling C:/Users/kummer/AppData/Local/Temp/tmpxft_00001bb0_00000000-11_CudaMatrixKernelDP.cpp3.i (C:/Users/kummer/AppData/Local/Temp/ccBI#.a05632)
+	//-----------------------------------------------------------
+
+	//-----------------------------------------------------------
+	// Options:
+	//-----------------------------------------------------------
+	//  Target:ptx, ISA:sm_13, Endian:little, Pointer Size:64
+	//  -O3	(Optimization level)
+	//  -g0	(Debug level)
+	//  -m2	(Report advisories)
+	//-----------------------------------------------------------
+
+	.file	1	"C:/Users/kummer/AppData/Local/Temp/tmpxft_00001bb0_00000000-10_CudaMatrixKernelDP.cudafe2.gpu"
+	.file	2	"c:\program files (x86)\microsoft visual studio 10.0\vc\include\codeanalysis\sourceannotations.h"
+	.file	3	"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v4.1\bin/../include\crt/device_runtime.h"
+	.file	4	"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v4.1\bin/../include\host_defines.h"
+	.file	5	"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v4.1\bin/../include\builtin_types.h"
+	.file	6	"c:\program files\nvidia gpu computing toolkit\cuda\v4.1\include\device_types.h"
+	.file	7	"c:\program files\nvidia gpu computing toolkit\cuda\v4.1\include\host_defines.h"
+	.file	8	"c:\program files\nvidia gpu computing toolkit\cuda\v4.1\include\driver_types.h"
+	.file	9	"c:\program files\nvidia gpu computing toolkit\cuda\v4.1\include\surface_types.h"
+	.file	10	"c:\program files\nvidia gpu computing toolkit\cuda\v4.1\include\texture_types.h"
+	.file	11	"c:\program files\nvidia gpu computing toolkit\cuda\v4.1\include\vector_types.h"
+	.file	12	"c:\program files\nvidia gpu computing toolkit\cuda\v4.1\include\builtin_types.h"
+	.file	13	"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v4.1\bin/../include\device_launch_parameters.h"
+	.file	14	"c:\program files\nvidia gpu computing toolkit\cuda\v4.1\include\crt\storage_class.h"
+	.file	15	"CudaMatrixKernelDP.cu"
+	.file	16	"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v4.1\bin/../include\common_functions.h"
+	.file	17	"c:\program files\nvidia gpu computing toolkit\cuda\v4.1\include\math_functions.h"
+	.file	18	"c:\program files\nvidia gpu computing toolkit\cuda\v4.1\include\math_constants.h"
+	.file	19	"c:\program files\nvidia gpu computing toolkit\cuda\v4.1\include\device_functions.h"
+	.file	20	"c:\program files\nvidia gpu computing toolkit\cuda\v4.1\include\sm_11_atomic_functions.h"
+	.file	21	"c:\program files\nvidia gpu computing toolkit\cuda\v4.1\include\sm_12_atomic_functions.h"
+	.file	22	"c:\program files\nvidia gpu computing toolkit\cuda\v4.1\include\sm_13_double_functions.h"
+	.file	23	"c:\program files\nvidia gpu computing toolkit\cuda\v4.1\include\sm_20_atomic_functions.h"
+	.file	24	"c:\program files\nvidia gpu computing toolkit\cuda\v4.1\include\sm_20_intrinsics.h"
+	.file	25	"c:\program files\nvidia gpu computing toolkit\cuda\v4.1\include\surface_functions.h"
+	.file	26	"c:\program files\nvidia gpu computing toolkit\cuda\v4.1\include\texture_fetch_functions.h"
+	.file	27	"c:\program files\nvidia gpu computing toolkit\cuda\v4.1\include\math_functions_dbl_ptx3.h"
+
+	.extern	.shared .align 1 .b8 smem[];
+
+	.entry sparseMultiply (
+		.param .u64 __cudaparm_sparseMultiply_values,
+		.param .u64 __cudaparm_sparseMultiply_colIdx,
+		.param .u64 __cudaparm_sparseMultiply_rowStart,
+		.param .u64 __cudaparm_sparseMultiply_result,
+		.param .u64 __cudaparm_sparseMultiply_x,
+		.param .f64 __cudaparm_sparseMultiply_alpha,
+		.param .f64 __cudaparm_sparseMultiply_beta,
+		.param .s32 __cudaparm_sparseMultiply_size)
+	{
+	.reg .u32 %r<24>;
+	.reg .u64 %rd<35>;
+	.reg .f64 %fd<10>;
+	.reg .pred %p<8>;
+	.loc	15	14	0
+$LDWbegin_sparseMultiply:
+	cvt.u32.u16 	%r1, %ntid.x;
+	cvt.u32.u16 	%r2, %ctaid.x;
+	mul.lo.u32 	%r3, %r1, %r2;
+	cvt.u32.u16 	%r4, %tid.x;
+	add.u32 	%r5, %r4, %r3;
+	ld.param.s32 	%r6, [__cudaparm_sparseMultiply_size];
+	setp.gt.s32 	%p1, %r6, %r5;
+	cvt.s32.u16 	%r7, %tid.x;
+	@!%p1 bra 	$Lt_0_5378;
+	.loc	15	26	0
+	mov.u64 	%rd1, smem;
+	ld.param.u64 	%rd2, [__cudaparm_sparseMultiply_rowStart];
+	cvt.s64.s32 	%rd3, %r5;
+	mul.wide.s32 	%rd4, %r5, 4;
+	add.u64 	%rd5, %rd2, %rd4;
+	ld.global.s32 	%r8, [%rd5+0];
+	cvt.s64.s32 	%rd6, %r7;
+	mul.wide.s32 	%rd7, %r7, 4;
+	add.u64 	%rd8, %rd1, %rd7;
+	st.shared.s32 	[%rd8+0], %r8;
+$Lt_0_5378:
+	mov.u64 	%rd1, smem;
+	mov.u32 	%r9, 0;
+	setp.ne.s32 	%p2, %r7, %r9;
+	@%p2 bra 	$Lt_0_5890;
+	.loc	15	14	0
+	ld.param.s32 	%r6, [__cudaparm_sparseMultiply_size];
+	.loc	15	30	0
+	rem.u32 	%r10, %r6, %r1;
+	mov.u32 	%r11, 0;
+	setp.eq.u32 	%p3, %r10, %r11;
+	@%p3 bra 	$Lt_0_7938;
+	add.u32 	%r12, %r5, %r1;
+	.loc	15	14	0
+	ld.param.s32 	%r6, [__cudaparm_sparseMultiply_size];
+	.loc	15	30	0
+	setp.gt.u32 	%p4, %r6, %r12;
+	@%p4 bra 	$Lt_0_7938;
+	.loc	15	31	0
+	mov.s32 	%r13, %r10;
+	bra.uni 	$L_0_4610;
+$Lt_0_7938:
+$L_0_4866:
+	cvt.s32.u16 	%r13, %ntid.x;
+$L_0_4610:
+	.loc	15	32	0
+	ld.param.u64 	%rd9, [__cudaparm_sparseMultiply_rowStart];
+	add.u32 	%r14, %r2, 1;
+	mul.lo.u32 	%r15, %r1, %r14;
+	.loc	15	14	0
+	ld.param.s32 	%r6, [__cudaparm_sparseMultiply_size];
+	.loc	15	32	0
+	min.u32 	%r16, %r6, %r15;
+	cvt.s64.s32 	%rd10, %r16;
+	mul.wide.s32 	%rd11, %r16, 4;
+	add.u64 	%rd12, %rd9, %rd11;
+	ld.global.s32 	%r17, [%rd12+0];
+	cvt.s64.s32 	%rd13, %r13;
+	mul.wide.s32 	%rd14, %r13, 4;
+	add.u64 	%rd15, %rd1, %rd14;
+	st.shared.s32 	[%rd15+0], %r17;
+$Lt_0_5890:
+	.loc	15	34	0
+	bar.sync 	0;
+	@!%p1 bra 	$Lt_0_6402;
+	.loc	15	38	0
+	cvt.s64.s32 	%rd16, %r7;
+	mul.wide.s32 	%rd17, %r7, 4;
+	add.u64 	%rd18, %rd1, %rd17;
+	ld.shared.s32 	%r18, [%rd18+0];
+	ld.shared.s32 	%r19, [%rd18+4];
+	setp.le.s32 	%p5, %r19, %r18;
+	@%p5 bra 	$Lt_0_8450;
+	ld.shared.s32 	%r19, [%rd18+4];
+	ld.shared.s32 	%r18, [%rd18+0];
+	sub.s32 	%r20, %r19, %r18;
+	cvt.s64.s32 	%rd19, %r18;
+	ld.param.u64 	%rd20, [__cudaparm_sparseMultiply_values];
+	mul.wide.s32 	%rd21, %r18, 8;
+	add.u64 	%rd22, %rd20, %rd21;
+	ld.param.u64 	%rd23, [__cudaparm_sparseMultiply_colIdx];
+	mul.wide.s32 	%rd24, %r18, 4;
+	add.u64 	%rd25, %rd23, %rd24;
+	ld.param.u64 	%rd26, [__cudaparm_sparseMultiply_x];
+	mov.f64 	%fd1, 0d0000000000000000;	// 0
+	mov.s32 	%r21, %r20;
+$Lt_0_7426:
+ //<loop> Loop body line 38, nesting depth: 1, estimated iterations: unknown
+	.loc	15	39	0
+	ld.global.f64 	%fd2, [%rd22+0];
+	ld.global.s32 	%r22, [%rd25+0];
+	cvt.s64.s32 	%rd27, %r22;
+	mul.wide.s32 	%rd28, %r22, 8;
+	.loc	15	38	0
+	ld.param.u64 	%rd26, [__cudaparm_sparseMultiply_x];
+	.loc	15	39	0
+	add.u64 	%rd29, %rd26, %rd28;
+	ld.global.f64 	%fd3, [%rd29+0];
+	mad.rn.f64 	%fd1, %fd2, %fd3, %fd1;
+	add.s32 	%r18, %r18, 1;
+	add.u64 	%rd25, %rd25, 4;
+	add.u64 	%rd22, %rd22, 8;
+	.loc	15	38	0
+	ld.shared.s32 	%r19, [%rd18+4];
+	.loc	15	39	0
+	setp.ne.s32 	%p6, %r19, %r18;
+	@%p6 bra 	$Lt_0_7426;
+	bra.uni 	$Lt_0_6914;
+$Lt_0_8450:
+	mov.f64 	%fd1, 0d0000000000000000;	// 0
+$Lt_0_6914:
+	.loc	15	42	0
+	ld.param.u64 	%rd30, [__cudaparm_sparseMultiply_result];
+	cvt.s64.s32 	%rd31, %r5;
+	mul.wide.s32 	%rd32, %r5, 8;
+	add.u64 	%rd33, %rd30, %rd32;
+	ld.param.f64 	%fd4, [__cudaparm_sparseMultiply_alpha];
+	mul.f64 	%fd5, %fd4, %fd1;
+	ld.global.f64 	%fd6, [%rd33+0];
+	ld.param.f64 	%fd7, [__cudaparm_sparseMultiply_beta];
+	mad.rn.f64 	%fd8, %fd6, %fd7, %fd5;
+	st.global.f64 	[%rd33+0], %fd8;
+$Lt_0_6402:
+	.loc	15	44	0
+	exit;
+$LDWend_sparseMultiply:
+	} // sparseMultiply
+
+	.entry accumulateExternal (
+		.param .u64 __cudaparm_accumulateExternal_data,
+		.param .u64 __cudaparm_accumulateExternal_indices,
+		.param .u64 __cudaparm_accumulateExternal_rcvBuffer,
+		.param .f64 __cudaparm_accumulateExternal_alpha,
+		.param .s32 __cudaparm_accumulateExternal_size)
+	{
+	.reg .u16 %rh<4>;
+	.reg .u32 %r<7>;
+	.reg .u64 %rd<13>;
+	.reg .f64 %fd<6>;
+	.reg .pred %p<3>;
+	.loc	15	46	0
+$LDWbegin_accumulateExternal:
+	mov.u16 	%rh1, %ctaid.x;
+	mov.u16 	%rh2, %ntid.x;
+	mul.wide.u16 	%r1, %rh1, %rh2;
+	cvt.u32.u16 	%r2, %tid.x;
+	add.u32 	%r3, %r2, %r1;
+	ld.param.s32 	%r4, [__cudaparm_accumulateExternal_size];
+	setp.le.s32 	%p1, %r4, %r3;
+	@%p1 bra 	$Lt_1_1026;
+	.loc	15	50	0
+	cvt.s64.s32 	%rd1, %r3;
+	ld.param.u64 	%rd2, [__cudaparm_accumulateExternal_indices];
+	mul.wide.s32 	%rd3, %r3, 4;
+	add.u64 	%rd4, %rd2, %rd3;
+	ld.global.s32 	%r5, [%rd4+0];
+	cvt.s64.s32 	%rd5, %r5;
+	ld.param.u64 	%rd6, [__cudaparm_accumulateExternal_data];
+	mul.wide.s32 	%rd7, %r5, 8;
+	add.u64 	%rd8, %rd6, %rd7;
+	ld.global.f64 	%fd1, [%rd8+0];
+	ld.param.u64 	%rd9, [__cudaparm_accumulateExternal_rcvBuffer];
+	mul.wide.s32 	%rd10, %r3, 8;
+	add.u64 	%rd11, %rd9, %rd10;
+	ld.global.f64 	%fd2, [%rd11+0];
+	ld.param.f64 	%fd3, [__cudaparm_accumulateExternal_alpha];
+	mad.rn.f64 	%fd4, %fd2, %fd3, %fd1;
+	st.global.f64 	[%rd8+0], %fd4;
+$Lt_1_1026:
+	.loc	15	52	0
+	exit;
+$LDWend_accumulateExternal:
+	} // accumulateExternal
+
+	.entry blockMultiply2 (
+		.param .u64 __cudaparm_blockMultiply2_cellData,
+		.param .u64 __cudaparm_blockMultiply2_xData,
+		.param .u64 __cudaparm_blockMultiply2_cellColIdx,
+		.param .u64 __cudaparm_blockMultiply2_result,
+		.param .f64 __cudaparm_blockMultiply2_alpha,
+		.param .f64 __cudaparm_blockMultiply2_beta,
+		.param .s32 __cudaparm_blockMultiply2_cellsize,
+		.param .s32 __cudaparm_blockMultiply2_cellrowsperblock,
+		.param .s32 __cudaparm_blockMultiply2_cellsperrow,
+		.param .s32 __cudaparm_blockMultiply2_stride,
+		.param .s32 __cudaparm_blockMultiply2_size)
+	{
+	.reg .u32 %r<41>;
+	.reg .u64 %rd<48>;
+	.reg .f64 %fd<11>;
+	.reg .pred %p<8>;
+	.loc	15	57	0
+$LDWbegin_blockMultiply2:
+	ld.param.s32 	%r1, [__cudaparm_blockMultiply2_cellrowsperblock];
+	cvt.s64.s32 	%rd1, %r1;
+	cvt.s32.s64 	%r2, %rd1;
+	cvt.s32.u16 	%r3, %tid.x;
+	setp.gt.s32 	%p1, %r2, %r3;
+	cvt.u32.u16 	%r4, %ctaid.x;
+	cvt.u64.u16 	%rd2, %ntid.x;
+	ld.param.s32 	%r5, [__cudaparm_blockMultiply2_cellsperrow];
+	@!%p1 bra 	$Lt_2_6146;
+	.loc	15	78	0
+	mov.u64 	%rd3, smem;
+	mul.lo.u32 	%r6, %r2, %r4;
+	add.u32 	%r7, %r3, %r6;
+	.loc	15	57	0
+	ld.param.s32 	%r5, [__cudaparm_blockMultiply2_cellsperrow];
+	.loc	15	78	0
+	mul.lo.u32 	%r8, %r5, %r7;
+	mul.lo.u64 	%rd4, %rd2, 8;
+	add.u64 	%rd5, %rd3, %rd4;
+	cvt.s64.s32 	%rd6, %r3;
+	mul.wide.s32 	%rd7, %r3, 4;
+	add.u64 	%rd8, %rd5, %rd7;
+	st.shared.s32 	[%rd8+0], %r8;
+$Lt_2_6146:
+	mov.u64 	%rd3, smem;
+	.loc	15	80	0
+	bar.sync 	0;
+	ld.param.s32 	%r9, [__cudaparm_blockMultiply2_size];
+	cvt.u32.u16 	%r10, %tid.x;
+	mov.u32 	%r11, 0;
+	setp.le.s32 	%p2, %r5, %r11;
+	@%p2 bra 	$Lt_2_10754;
+	ld.param.s32 	%r12, [__cudaparm_blockMultiply2_cellsize];
+	rem.s32 	%r13, %r3, %r12;
+	mul.lo.u64 	%rd9, %rd2, 8;
+	add.u64 	%rd10, %rd3, %rd9;
+	div.s32 	%r14, %r3, %r12;
+	mul.lo.u64 	%rd11, %rd1, 4;
+	add.u64 	%rd12, %rd10, %rd11;
+	mov.s32 	%r15, %r5;
+	cvt.u32.u64 	%r16, %rd2;
+	mul.lo.u32 	%r17, %r16, %r4;
+	add.u32 	%r18, %r17, %r10;
+	ld.param.s32 	%r9, [__cudaparm_blockMultiply2_size];
+	setp.gt.s32 	%p3, %r9, %r18;
+	mov.s32 	%r19, 0;
+	mov.f64 	%fd1, 0d0000000000000000;	// 0
+	mov.s32 	%r20, %r15;
+$Lt_2_7170:
+ //<loop> Loop body line 80, nesting depth: 1, estimated iterations: unknown
+	@!%p1 bra 	$Lt_2_7426;
+	.loc	15	86	0
+	cvt.s64.s32 	%rd13, %r3;
+	mul.wide.s32 	%rd14, %r3, 4;
+	ld.param.u64 	%rd15, [__cudaparm_blockMultiply2_cellColIdx];
+	add.u64 	%rd16, %rd14, %rd10;
+	ld.shared.s32 	%r21, [%rd16+0];
+	add.s32 	%r22, %r21, %r19;
+	cvt.s64.s32 	%rd17, %r22;
+	mul.wide.s32 	%rd18, %r22, 4;
+	add.u64 	%rd19, %rd15, %rd18;
+	ld.global.s32 	%r23, [%rd19+0];
+	add.u64 	%rd20, %rd12, %rd14;
+	st.shared.s32 	[%rd20+0], %r23;
+$Lt_2_7426:
+	.loc	15	88	0
+	bar.sync 	0;
+	@!%p3 bra 	$Lt_2_7938;
+	.loc	15	95	0
+	ld.param.u64 	%rd21, [__cudaparm_blockMultiply2_xData];
+	cvt.s64.s32 	%rd22, %r14;
+	mul.wide.s32 	%rd23, %r14, 4;
+	add.u64 	%rd24, %rd12, %rd23;
+	ld.shared.s32 	%r24, [%rd24+0];
+	mul.lo.s32 	%r25, %r24, %r12;
+	add.s32 	%r26, %r13, %r25;
+	cvt.s64.s32 	%rd25, %r26;
+	mul.wide.s32 	%rd26, %r26, 8;
+	add.u64 	%rd27, %rd21, %rd26;
+	ld.global.f64 	%fd2, [%rd27+0];
+	cvt.s64.s32 	%rd28, %r3;
+	mul.wide.s32 	%rd29, %r3, 8;
+	add.u64 	%rd30, %rd3, %rd29;
+	st.shared.f64 	[%rd30+0], %fd2;
+$Lt_2_7938:
+	.loc	15	97	0
+	bar.sync 	0;
+	@!%p3 bra 	$Lt_2_8962;
+	mov.u32 	%r27, 0;
+	setp.le.s32 	%p4, %r12, %r27;
+	@%p4 bra 	$Lt_2_8962;
+	mov.s32 	%r28, %r12;
+	mul.lo.s32 	%r29, %r14, %r12;
+	cvt.s64.s32 	%rd31, %r14;
+	mov.s32 	%r30, %r29;
+	add.s32 	%r31, %r29, %r12;
+	mul.wide.s32 	%rd32, %r14, 4;
+	add.u64 	%rd33, %rd32, %rd10;
+	ld.shared.s32 	%r32, [%rd33+0];
+	cvt.s64.s32 	%rd34, %r29;
+	mul.wide.s32 	%rd35, %r29, 8;
+	add.u64 	%rd36, %rd3, %rd35;
+	add.s32 	%r33, %r32, %r19;
+	cvt.s64.s32 	%rd37, %r12;
+	mul.wide.s32 	%rd38, %r12, 8;
+	ld.param.u64 	%rd39, [__cudaparm_blockMultiply2_cellData];
+	ld.param.s32 	%r34, [__cudaparm_blockMultiply2_stride];
+	mul.lo.s32 	%r35, %r34, %r33;
+	add.s32 	%r36, %r13, %r35;
+	cvt.s64.s32 	%rd40, %r36;
+	mul.wide.s32 	%rd41, %r36, 8;
+	add.u64 	%rd42, %rd39, %rd41;
+	mov.s32 	%r37, %r28;
+$Lt_2_9474:
+ //<loop> Loop body line 97, nesting depth: 2, estimated iterations: unknown
+	.loc	15	111	0
+	ld.shared.f64 	%fd3, [%rd36+0];
+	ld.global.f64 	%fd4, [%rd42+0];
+	mad.rn.f64 	%fd1, %fd3, %fd4, %fd1;
+	add.s32 	%r30, %r30, 1;
+	add.u64 	%rd36, %rd36, 8;
+	add.u64 	%rd42, %rd38, %rd42;
+	setp.ne.s32 	%p5, %r30, %r31;
+	@%p5 bra 	$Lt_2_9474;
+$Lt_2_8962:
+$Lt_2_8450:
+	.loc	15	115	0
+	bar.sync 	0;
+	add.s32 	%r19, %r19, 1;
+	setp.ne.s32 	%p6, %r5, %r19;
+	@%p6 bra 	$Lt_2_7170;
+	bra.uni 	$Lt_2_6658;
+$Lt_2_10754:
+	cvt.u32.u64 	%r38, %rd2;
+	mul.lo.u32 	%r39, %r38, %r4;
+	add.u32 	%r18, %r39, %r10;
+	.loc	15	80	0
+	ld.param.s32 	%r9, [__cudaparm_blockMultiply2_size];
+	.loc	15	115	0
+	setp.gt.s32 	%p3, %r9, %r18;
+	mov.f64 	%fd1, 0d0000000000000000;	// 0
+$Lt_2_6658:
+	@!%p3 bra 	$Lt_2_10242;
+	.loc	15	121	0
+	ld.param.u64 	%rd43, [__cudaparm_blockMultiply2_result];
+	cvt.s64.s32 	%rd44, %r18;
+	mul.wide.s32 	%rd45, %r18, 8;
+	add.u64 	%rd46, %rd43, %rd45;
+	ld.param.f64 	%fd5, [__cudaparm_blockMultiply2_alpha];
+	mul.f64 	%fd6, %fd5, %fd1;
+	ld.global.f64 	%fd7, [%rd46+0];
+	ld.param.f64 	%fd8, [__cudaparm_blockMultiply2_beta];
+	mad.rn.f64 	%fd9, %fd7, %fd8, %fd6;
+	st.global.f64 	[%rd46+0], %fd9;
+$Lt_2_10242:
+	.loc	15	123	0
+	exit;
+$LDWend_blockMultiply2:
+	} // blockMultiply2
+
+	.entry blockMultiply (
+		.param .u64 __cudaparm_blockMultiply_cellData,
+		.param .u64 __cudaparm_blockMultiply_xData,
+		.param .u64 __cudaparm_blockMultiply_cellColIdx,
+		.param .u64 __cudaparm_blockMultiply_cellRowStart,
+		.param .u64 __cudaparm_blockMultiply_result,
+		.param .f64 __cudaparm_blockMultiply_dia,
+		.param .s32 __cudaparm_blockMultiply_cellsize,
+		.param .s32 __cudaparm_blockMultiply_size)
+	{
+	.reg .u32 %r<30>;
+	.reg .u64 %rd<31>;
+	.reg .f64 %fd<10>;
+	.reg .pred %p<8>;
+	.shared .s32 __cuda_local_var_107071_29_non_const_start;
+	.shared .s32 __cuda_local_var_107072_29_non_const_end;
+	.shared .s32 __cuda_local_var_107070_29_non_const_colIdx;
+	.loc	15	126	0
+$LDWbegin_blockMultiply:
+	cvt.s32.u16 	%r1, %tid.x;
+	mov.s32 	%r2, 0;
+	setp.eq.s32 	%p1, %r1, %r2;
+	cvt.u32.u16 	%r3, %ctaid.x;
+	@!%p1 bra 	$Lt_3_6146;
+	.loc	15	139	0
+	ld.param.u64 	%rd1, [__cudaparm_blockMultiply_cellRowStart];
+	cvt.u64.u32 	%rd2, %r3;
+	mul.wide.u32 	%rd3, %r3, 4;
+	add.u64 	%rd4, %rd1, %rd3;
+	ld.global.s32 	%r4, [%rd4+0];
+	st.shared.s32 	[__cuda_local_var_107071_29_non_const_start], %r4;
+	.loc	15	140	0
+	ld.global.s32 	%r5, [%rd4+4];
+	st.shared.s32 	[__cuda_local_var_107072_29_non_const_end], %r5;
+$Lt_3_6146:
+	.loc	15	142	0
+	bar.sync 	0;
+	.loc	15	144	0
+	ld.shared.s32 	%r6, [__cuda_local_var_107071_29_non_const_start];
+	mov.s32 	%r7, %r6;
+	ld.param.s32 	%r8, [__cudaparm_blockMultiply_size];
+	cvt.u32.u16 	%r9, %tid.x;
+	cvt.u32.u16 	%r10, %ntid.x;
+	ld.shared.s32 	%r11, [__cuda_local_var_107072_29_non_const_end];
+	setp.le.s32 	%p2, %r11, %r6;
+	@%p2 bra 	$Lt_3_10754;
+	mul.lo.u32 	%r12, %r10, %r3;
+	add.u32 	%r13, %r12, %r9;
+	ld.param.s32 	%r8, [__cudaparm_blockMultiply_size];
+	setp.gt.s32 	%p3, %r8, %r13;
+	mov.f64 	%fd1, 0d0000000000000000;	// 0
+	mov.u64 	%rd5, smem;
+$Lt_3_7170:
+ //<loop> Loop body line 144, nesting depth: 1, estimated iterations: unknown
+	@!%p1 bra 	$Lt_3_7426;
+	.loc	15	146	0
+	ld.param.u64 	%rd6, [__cudaparm_blockMultiply_cellColIdx];
+	cvt.s64.s32 	%rd7, %r7;
+	mul.wide.s32 	%rd8, %r7, 4;
+	add.u64 	%rd9, %rd6, %rd8;
+	ld.global.s32 	%r14, [%rd9+0];
+	st.shared.s32 	[__cuda_local_var_107070_29_non_const_colIdx], %r14;
+$Lt_3_7426:
+	.loc	15	148	0
+	bar.sync 	0;
+	@!%p3 bra 	$Lt_3_7938;
+	.loc	15	151	0
+	ld.param.u64 	%rd10, [__cudaparm_blockMultiply_xData];
+	ld.param.s32 	%r15, [__cudaparm_blockMultiply_cellsize];
+	ld.shared.s32 	%r16, [__cuda_local_var_107070_29_non_const_colIdx];
+	mul.lo.s32 	%r17, %r15, %r16;
+	add.s32 	%r18, %r1, %r17;
+	cvt.s64.s32 	%rd11, %r18;
+	mul.wide.s32 	%rd12, %r18, 8;
+	add.u64 	%rd13, %rd10, %rd12;
+	ld.global.f64 	%fd2, [%rd13+0];
+	cvt.s64.s32 	%rd14, %r1;
+	mul.wide.s32 	%rd15, %r1, 8;
+	add.u64 	%rd16, %rd5, %rd15;
+	st.shared.f64 	[%rd16+0], %fd2;
+$Lt_3_7938:
+	.loc	15	153	0
+	bar.sync 	0;
+	@!%p3 bra 	$Lt_3_8962;
+	ld.param.s32 	%r19, [__cudaparm_blockMultiply_cellsize];
+	mov.u32 	%r20, 0;
+	setp.le.s32 	%p4, %r19, %r20;
+	@%p4 bra 	$Lt_3_8962;
+	ld.param.s32 	%r19, [__cudaparm_blockMultiply_cellsize];
+	mov.s32 	%r21, %r19;
+	mul.lo.s32 	%r22, %r7, %r19;
+	mov.s64 	%rd17, %rd5;
+	cvt.s64.s32 	%rd18, %r19;
+	mul.wide.s32 	%rd19, %r19, 8;
+	ld.param.u64 	%rd20, [__cudaparm_blockMultiply_cellData];
+	mul.lo.s32 	%r23, %r22, %r19;
+	add.s32 	%r24, %r1, %r23;
+	cvt.s64.s32 	%rd21, %r24;
+	mul.wide.s32 	%rd22, %r24, 8;
+	add.u64 	%rd23, %rd20, %rd22;
+	mov.s32 	%r25, 0;
+	mov.s32 	%r26, %r21;
+$Lt_3_9474:
+ //<loop> Loop body line 153, nesting depth: 1, estimated iterations: unknown
+	.loc	15	158	0
+	ld.shared.f64 	%fd3, [%rd17+0];
+	ld.global.f64 	%fd4, [%rd23+0];
+	mad.rn.f64 	%fd1, %fd3, %fd4, %fd1;
+	add.s32 	%r25, %r25, 1;
+	add.u64 	%rd23, %rd19, %rd23;
+	add.u64 	%rd17, %rd17, 8;
+	.loc	15	153	0
+	ld.param.s32 	%r19, [__cudaparm_blockMultiply_cellsize];
+	.loc	15	158	0
+	setp.ne.s32 	%p5, %r19, %r25;
+	@%p5 bra 	$Lt_3_9474;
+$Lt_3_8962:
+$Lt_3_8450:
+	.loc	15	144	0
+	add.s32 	%r7, %r7, 1;
+	ld.shared.s32 	%r27, [__cuda_local_var_107072_29_non_const_end];
+	setp.gt.s32 	%p6, %r27, %r7;
+	@%p6 bra 	$Lt_3_7170;
+	bra.uni 	$Lt_3_6658;
+$Lt_3_10754:
+	mul.lo.u32 	%r28, %r10, %r3;
+	add.u32 	%r13, %r28, %r9;
+	ld.param.s32 	%r8, [__cudaparm_blockMultiply_size];
+	setp.gt.s32 	%p3, %r8, %r13;
+	mov.f64 	%fd1, 0d0000000000000000;	// 0
+$Lt_3_6658:
+	@!%p3 bra 	$Lt_3_10242;
+	.loc	15	164	0
+	cvt.s64.s32 	%rd24, %r13;
+	mul.wide.s32 	%rd25, %r13, 8;
+	ld.param.u64 	%rd26, [__cudaparm_blockMultiply_xData];
+	add.u64 	%rd27, %rd26, %rd25;
+	ld.global.f64 	%fd5, [%rd27+0];
+	ld.param.f64 	%fd6, [__cudaparm_blockMultiply_dia];
+	mad.rn.f64 	%fd1, %fd5, %fd6, %fd1;
+	.loc	15	165	0
+	ld.param.u64 	%rd28, [__cudaparm_blockMultiply_result];
+	add.u64 	%rd29, %rd28, %rd25;
+	ld.global.f64 	%fd7, [%rd29+0];
+	add.f64 	%fd8, %fd7, %fd1;
+	st.global.f64 	[%rd29+0], %fd8;
+$Lt_3_10242:
+	.loc	15	167	0
+	exit;
+$LDWend_blockMultiply:
+	} // blockMultiply
+
+	.entry ellMultiply (
+		.param .u64 __cudaparm_ellMultiply___val_paramvalData,
+		.param .u64 __cudaparm_ellMultiply___val_paramcolIdxData,
+		.param .u64 __cudaparm_ellMultiply_xData,
+		.param .u64 __cudaparm_ellMultiply_result,
+		.param .f64 __cudaparm_ellMultiply_alpha,
+		.param .f64 __cudaparm_ellMultiply_beta,
+		.param .s32 __cudaparm_ellMultiply_size,
+		.param .s32 __cudaparm_ellMultiply_colCount,
+		.param .s32 __cudaparm_ellMultiply_valStride,
+		.param .s32 __cudaparm_ellMultiply_colStride)
+	{
+	.reg .u32 %r<19>;
+	.reg .u64 %rd<27>;
+	.reg .f64 %fd<10>;
+	.reg .pred %p<5>;
+	.loc	15	170	0
+$LDWbegin_ellMultiply:
+	cvt.u32.u16 	%r1, %ctaid.x;
+	cvt.u32.u16 	%r2, %ntid.x;
+	mul.lo.u32 	%r3, %r2, %r1;
+	cvt.u32.u16 	%r4, %tid.x;
+	add.u32 	%r5, %r3, %r4;
+	ld.param.s32 	%r6, [__cudaparm_ellMultiply_size];
+	setp.le.s32 	%p1, %r6, %r5;
+	@%p1 bra 	$Lt_4_2050;
+	ld.param.s32 	%r7, [__cudaparm_ellMultiply_colCount];
+	mov.u32 	%r8, 0;
+	setp.le.s32 	%p2, %r7, %r8;
+	@%p2 bra 	$Lt_4_3586;
+	ld.param.s32 	%r7, [__cudaparm_ellMultiply_colCount];
+	mov.s32 	%r9, %r7;
+	mul.lo.u32 	%r10, %r7, %r1;
+	ld.param.s32 	%r11, [__cudaparm_ellMultiply_colStride];
+	ld.param.s32 	%r12, [__cudaparm_ellMultiply_valStride];
+	cvt.s64.s32 	%rd1, %r4;
+	cvt.s64.s32 	%rd2, %r11;
+	mul.wide.s32 	%rd3, %r11, 4;
+	cvt.s64.s32 	%rd4, %r12;
+	mul.wide.s32 	%rd5, %r12, 8;
+	ld.param.u64 	%rd6, [__cudaparm_ellMultiply___val_paramcolIdxData];
+	mul.lo.u32 	%r13, %r11, %r10;
+	cvt.u64.u32 	%rd7, %r13;
+	mul.wide.u32 	%rd8, %r13, 4;
+	add.s64 	%rd9, %rd6, %rd8;
+	mul.wide.s32 	%rd10, %r4, 4;
+	add.s64 	%rd11, %rd9, %rd10;
+	ld.param.u64 	%rd12, [__cudaparm_ellMultiply___val_paramvalData];
+	mul.lo.u32 	%r14, %r12, %r10;
+	cvt.u64.u32 	%rd13, %r14;
+	mul.wide.u32 	%rd14, %r14, 8;
+	add.s64 	%rd15, %rd12, %rd14;
+	mul.wide.s32 	%rd16, %r4, 8;
+	add.s64 	%rd17, %rd15, %rd16;
+	ld.param.u64 	%rd18, [__cudaparm_ellMultiply_xData];
+	mov.s32 	%r15, 0;
+	mov.f64 	%fd1, 0d0000000000000000;	// 0
+	mov.s32 	%r16, %r9;
+$Lt_4_3074:
+ //<loop> Loop body line 170, nesting depth: 1, estimated iterations: unknown
+	.loc	15	189	0
+	ld.global.s32 	%r17, [%rd11+0];
+	cvt.s64.s32 	%rd19, %r17;
+	mul.wide.s32 	%rd20, %r17, 8;
+	.loc	15	170	0
+	ld.param.u64 	%rd18, [__cudaparm_ellMultiply_xData];
+	.loc	15	189	0
+	add.u64 	%rd21, %rd18, %rd20;
+	ld.global.f64 	%fd2, [%rd21+0];
+	ld.global.f64 	%fd3, [%rd17+0];
+	mad.rn.f64 	%fd1, %fd2, %fd3, %fd1;
+	add.s32 	%r15, %r15, 1;
+	add.s64 	%rd17, %rd17, %rd5;
+	add.s64 	%rd11, %rd11, %rd3;
+	.loc	15	170	0
+	ld.param.s32 	%r7, [__cudaparm_ellMultiply_colCount];
+	.loc	15	189	0
+	setp.ne.s32 	%p3, %r7, %r15;
+	@%p3 bra 	$Lt_4_3074;
+	bra.uni 	$Lt_4_2562;
+$Lt_4_3586:
+	mov.f64 	%fd1, 0d0000000000000000;	// 0
+$Lt_4_2562:
+	.loc	15	193	0
+	ld.param.u64 	%rd22, [__cudaparm_ellMultiply_result];
+	cvt.s64.s32 	%rd23, %r5;
+	mul.wide.s32 	%rd24, %r5, 8;
+	add.u64 	%rd25, %rd22, %rd24;
+	ld.param.f64 	%fd4, [__cudaparm_ellMultiply_alpha];
+	mul.f64 	%fd5, %fd4, %fd1;
+	ld.global.f64 	%fd6, [%rd25+0];
+	ld.param.f64 	%fd7, [__cudaparm_ellMultiply_beta];
+	mad.rn.f64 	%fd8, %fd6, %fd7, %fd5;
+	st.global.f64 	[%rd25+0], %fd8;
+$Lt_4_2050:
+	.loc	15	195	0
+	exit;
+$LDWend_ellMultiply:
+	} // ellMultiply
+
+	.entry mcellMultiply (
+		.param .u64 __cudaparm_mcellMultiply___val_paramvalData,
+		.param .u64 __cudaparm_mcellMultiply___val_paramcolIdxData,
+		.param .u64 __cudaparm_mcellMultiply_xSubStart,
+		.param .u64 __cudaparm_mcellMultiply___val_paramblockSubVector,
+		.param .u64 __cudaparm_mcellMultiply_xData,
+		.param .u64 __cudaparm_mcellMultiply_result,
+		.param .f64 __cudaparm_mcellMultiply_alpha,
+		.param .f64 __cudaparm_mcellMultiply_beta,
+		.param .s32 __cudaparm_mcellMultiply_size,
+		.param .s32 __cudaparm_mcellMultiply_colCount,
+		.param .s32 __cudaparm_mcellMultiply_valStride,
+		.param .s32 __cudaparm_mcellMultiply_colStride)
+	{
+	.reg .u32 %r<33>;
+	.reg .u64 %rd<48>;
+	.reg .f64 %fd<11>;
+	.reg .pred %p<8>;
+	.shared .s32 __cuda_local_var_107148_29_non_const_xStart;
+	.shared .s32 __cuda_local_var_107149_29_non_const_xLength;
+	.loc	15	198	0
+$LDWbegin_mcellMultiply:
+	cvt.s32.u16 	%r1, %tid.x;
+	cvt.u32.u16 	%r2, %ctaid.x;
+	mov.u32 	%r3, 0;
+	setp.ne.s32 	%p1, %r1, %r3;
+	@%p1 bra 	$Lt_5_3842;
+	.loc	15	213	0
+	ld.param.u64 	%rd1, [__cudaparm_mcellMultiply_xSubStart];
+	cvt.u64.u32 	%rd2, %r2;
+	mul.wide.u32 	%rd3, %r2, 4;
+	add.u64 	%rd4, %rd1, %rd3;
+	ld.global.s32 	%r4, [%rd4+0];
+	cvt.s64.s32 	%rd5, %r4;
+	cvt.s32.s64 	%r5, %rd5;
+	st.shared.s32 	[__cuda_local_var_107148_29_non_const_xStart], %r5;
+	.loc	15	214	0
+	ld.global.s32 	%r6, [%rd4+4];
+	cvt.u32.u64 	%r7, %rd5;
+	cvt.u64.u32 	%rd6, %r7;
+	cvt.u32.u64 	%r8, %rd6;
+	sub.s32 	%r9, %r6, %r8;
+	st.shared.s32 	[__cuda_local_var_107149_29_non_const_xLength], %r9;
+$Lt_5_3842:
+	.loc	15	217	0
+	bar.sync 	0;
+	.loc	15	220	0
+	mov.s32 	%r10, %r1;
+	cvt.u32.u16 	%r11, %ntid.x;
+	ld.shared.s32 	%r12, [__cuda_local_var_107149_29_non_const_xLength];
+	setp.ge.s32 	%p2, %r1, %r12;
+	@%p2 bra 	$Lt_5_4354;
+	mov.u64 	%rd7, smem;
+	cvt.s64.s32 	%rd8, %r1;
+	cvt.s64.u32 	%rd9, %r11;
+	mul.wide.u32 	%rd10, %r11, 4;
+	mul.wide.s32 	%rd11, %r1, 8;
+	mul.wide.u32 	%rd12, %r11, 8;
+	ld.param.u64 	%rd13, [__cudaparm_mcellMultiply___val_paramblockSubVector];
+	ld.shared.s32 	%r13, [__cuda_local_var_107148_29_non_const_xStart];
+	cvt.s64.s32 	%rd14, %r13;
+	mul.wide.s32 	%rd15, %r13, 4;
+	add.s64 	%rd16, %rd13, %rd15;
+	mul.wide.s32 	%rd17, %r1, 4;
+	add.s64 	%rd18, %rd16, %rd17;
+	add.u64 	%rd19, %rd11, %rd7;
+	ld.param.u64 	%rd20, [__cudaparm_mcellMultiply_xData];
+$Lt_5_4866:
+ //<loop> Loop body line 220, nesting depth: 1, estimated iterations: unknown
+	.loc	15	223	0
+	ld.global.s32 	%r14, [%rd18+0];
+	cvt.s64.s32 	%rd21, %r14;
+	mul.wide.s32 	%rd22, %r14, 8;
+	.loc	15	220	0
+	ld.param.u64 	%rd20, [__cudaparm_mcellMultiply_xData];
+	.loc	15	223	0
+	add.u64 	%rd23, %rd20, %rd22;
+	ld.global.f64 	%fd1, [%rd23+0];
+	st.shared.f64 	[%rd19+0], %fd1;
+	add.u32 	%r10, %r10, %r11;
+	add.u64 	%rd19, %rd12, %rd19;
+	add.s64 	%rd18, %rd18, %rd10;
+	.loc	15	220	0
+	ld.shared.s32 	%r12, [__cuda_local_var_107149_29_non_const_xLength];
+	.loc	15	223	0
+	setp.lt.s32 	%p3, %r10, %r12;
+	@%p3 bra 	$Lt_5_4866;
+$Lt_5_4354:
+	mov.u64 	%rd7, smem;
+	.loc	15	227	0
+	bar.sync 	0;
+	mul.lo.u32 	%r15, %r11, %r2;
+	cvt.u32.u16 	%r16, %tid.x;
+	add.u32 	%r17, %r16, %r15;
+	ld.param.s32 	%r18, [__cudaparm_mcellMultiply_size];
+	setp.le.s32 	%p4, %r18, %r17;
+	@%p4 bra 	$Lt_5_5378;
+	ld.param.s32 	%r19, [__cudaparm_mcellMultiply_colCount];
+	mov.u32 	%r20, 0;
+	setp.le.s32 	%p5, %r19, %r20;
+	@%p5 bra 	$Lt_5_7170;
+	ld.param.s32 	%r19, [__cudaparm_mcellMultiply_colCount];
+	mov.s32 	%r21, %r19;
+	mul.lo.u32 	%r22, %r19, %r2;
+	ld.param.s32 	%r23, [__cudaparm_mcellMultiply_valStride];
+	ld.param.s32 	%r24, [__cudaparm_mcellMultiply_colStride];
+	mov.s32 	%r25, %r1;
+	cvt.s64.s32 	%rd24, %r1;
+	mul.wide.s32 	%rd25, %r1, 8;
+	cvt.s64.s32 	%rd26, %r23;
+	mul.wide.s32 	%rd27, %r23, 8;
+	ld.param.u64 	%rd28, [__cudaparm_mcellMultiply___val_paramcolIdxData];
+	mul.lo.u32 	%r26, %r24, %r22;
+	cvt.u64.u32 	%rd29, %r26;
+	mul.wide.u32 	%rd30, %r26, 2;
+	add.u64 	%rd31, %rd28, %rd30;
+	ld.param.u64 	%rd32, [__cudaparm_mcellMultiply___val_paramvalData];
+	mul.lo.u32 	%r27, %r23, %r22;
+	cvt.u64.u32 	%rd33, %r27;
+	mul.wide.u32 	%rd34, %r27, 8;
+	add.s64 	%rd35, %rd32, %rd34;
+	add.s64 	%rd36, %rd25, %rd35;
+	mov.s32 	%r28, 0;
+	mov.f64 	%fd2, 0d0000000000000000;	// 0
+	mov.s32 	%r29, %r21;
+$Lt_5_6402:
+ //<loop> Loop body line 227, nesting depth: 1, estimated iterations: unknown
+	.loc	15	239	0
+	ld.global.f64 	%fd3, [%rd36+0];
+	cvt.u16.u32 	%r30, %r25;
+	cvt.u64.u32 	%rd37, %r30;
+	mul.wide.u32 	%rd38, %r30, 2;
+	add.u64 	%rd39, %rd31, %rd38;
+	ld.global.u16 	%r31, [%rd39+0];
+	cvt.u64.u32 	%rd40, %r31;
+	mul.wide.u32 	%rd41, %r31, 8;
+	add.u64 	%rd42, %rd7, %rd41;
+	ld.shared.f64 	%fd4, [%rd42+0];
+	mad.rn.f64 	%fd2, %fd3, %fd4, %fd2;
+	add.s32 	%r28, %r28, 1;
+	.loc	15	227	0
+	ld.param.s32 	%r24, [__cudaparm_mcellMultiply_colStride];
+	.loc	15	239	0
+	add.s32 	%r25, %r25, %r24;
+	add.s64 	%rd36, %rd36, %rd27;
+	.loc	15	227	0
+	ld.param.s32 	%r19, [__cudaparm_mcellMultiply_colCount];
+	.loc	15	239	0
+	setp.ne.s32 	%p6, %r19, %r28;
+	@%p6 bra 	$Lt_5_6402;
+	bra.uni 	$Lt_5_5890;
+$Lt_5_7170:
+	mov.f64 	%fd2, 0d0000000000000000;	// 0
+$Lt_5_5890:
+	.loc	15	243	0
+	ld.param.u64 	%rd43, [__cudaparm_mcellMultiply_result];
+	cvt.s64.s32 	%rd44, %r17;
+	mul.wide.s32 	%rd45, %r17, 8;
+	add.u64 	%rd46, %rd43, %rd45;
+	ld.param.f64 	%fd5, [__cudaparm_mcellMultiply_alpha];
+	mul.f64 	%fd6, %fd5, %fd2;
+	ld.global.f64 	%fd7, [%rd46+0];
+	ld.param.f64 	%fd8, [__cudaparm_mcellMultiply_beta];
+	mad.rn.f64 	%fd9, %fd7, %fd8, %fd6;
+	st.global.f64 	[%rd46+0], %fd9;
+$Lt_5_5378:
+	.loc	15	245	0
+	exit;
+$LDWend_mcellMultiply:
+	} // mcellMultiply
+

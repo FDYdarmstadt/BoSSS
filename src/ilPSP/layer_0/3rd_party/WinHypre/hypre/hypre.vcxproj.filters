@@ -1,0 +1,1200 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Source Files\utilities">
+      <UniqueIdentifier>{8bdbc044-b5e8-47f3-918d-ede21baecea2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\krylov">
+      <UniqueIdentifier>{385556ea-d172-4c67-8fe5-de22bdfc06f7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\multivector">
+      <UniqueIdentifier>{e6bb6466-f9c5-420e-828b-9c4a19930122}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\IJ_mv">
+      <UniqueIdentifier>{7dd632c6-0f68-4a4b-b27e-c853ba068acb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\distributed_ls">
+      <UniqueIdentifier>{0653a2bc-bc53-4de8-bd16-0ccb2d600d1d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\distributed_ls\pilut">
+      <UniqueIdentifier>{4d576b03-a535-4cb5-b91f-f8d022d42238}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\distributed_ls\ParaSails">
+      <UniqueIdentifier>{6611f926-7660-4d96-901f-1d28906dfae6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\distributed_ls\Euclid">
+      <UniqueIdentifier>{590e2a05-90d3-436d-82ec-86c903029cf4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\distributed_matrix">
+      <UniqueIdentifier>{1c5cacde-bf91-4b47-81fc-aab5c9750a19}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\matrix_matrix">
+      <UniqueIdentifier>{c43b7dfd-b232-4346-b883-54b4c79cbe50}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\parcsr_block_mv">
+      <UniqueIdentifier>{82538c79-1fcb-45e3-a2dd-248544df175a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\parcsr_ls">
+      <UniqueIdentifier>{4d807f6b-3e54-47ab-be0a-1092d9400e9e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\parcsr_mv">
+      <UniqueIdentifier>{a41e59b5-47e0-49da-8c0e-8f9998ffc4c3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\seq_mv">
+      <UniqueIdentifier>{a56ca888-8c2c-472e-a774-6ae71a6e102d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\seq_ls">
+      <UniqueIdentifier>{9f4edce5-6707-4983-890d-9d376ae79ad8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\seq_ls\pamg">
+      <UniqueIdentifier>{ccde7ae1-679b-48ed-a68b-d76bb699bba7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Header Files\utilities">
+      <UniqueIdentifier>{1ad3f4af-86a7-41fe-b76b-f7256aace0ae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\krylov">
+      <UniqueIdentifier>{ef69da50-6035-4334-bfbf-700425831b9d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\multivector">
+      <UniqueIdentifier>{510da2b4-c2fd-4815-a9ab-0b944598bf89}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\IJ_mv">
+      <UniqueIdentifier>{d0567e9f-2ae7-40d7-8144-4f6b90b6134d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\distributed_ls">
+      <UniqueIdentifier>{9d367f60-8cf9-426d-88fa-5396612f47ca}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\distributed_ls\pilut">
+      <UniqueIdentifier>{a38781c1-a326-4d54-8c60-ae31b528244e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\distributed_ls\ParaSails">
+      <UniqueIdentifier>{10f509dd-cf00-4be0-8c88-d7eb250044ed}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\distributed_ls\Euclid">
+      <UniqueIdentifier>{8110fb42-b847-4f7e-b165-fdb953dd299e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\distributed_matrix">
+      <UniqueIdentifier>{ec6c250c-7860-4ff0-b47a-1094938ecbf1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\matrix_matrix">
+      <UniqueIdentifier>{7df7ff50-0fc1-4c33-9650-d29708833615}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\parcsr_block_mv">
+      <UniqueIdentifier>{4ab9d077-8fce-4d39-87f9-18713e0f83c2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\parcsr_ls">
+      <UniqueIdentifier>{e5afcb6e-1e72-4ca5-8d65-3b9bad7ad924}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\parcsr_mv">
+      <UniqueIdentifier>{234ca731-3ef7-4dc3-80c3-dfdf27371e2f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\seq_mv">
+      <UniqueIdentifier>{f6481d57-f84f-456f-a2b4-242096feabdb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\seq_ls">
+      <UniqueIdentifier>{d963ee2b-e5f5-45c7-8dd3-cdeb60eccdc2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\seq_ls\pamg">
+      <UniqueIdentifier>{aa274f28-e4c8-408c-9033-d9ea1c79806e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="utilities\amg_linklist.c">
+      <Filter>Source Files\utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="utilities\binsearch.c">
+      <Filter>Source Files\utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="utilities\exchange_data.c">
+      <Filter>Source Files\utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="utilities\fortran_matrix.c">
+      <Filter>Source Files\utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="utilities\hypre_error.c">
+      <Filter>Source Files\utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="utilities\hypre_memory.c">
+      <Filter>Source Files\utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="utilities\hypre_mpi_comm_f2c.c">
+      <Filter>Source Files\utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="utilities\hypre_qsort.c">
+      <Filter>Source Files\utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="utilities\memory_dmalloc.c">
+      <Filter>Source Files\utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="utilities\mpistubs.c">
+      <Filter>Source Files\utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="utilities\qsplit.c">
+      <Filter>Source Files\utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="utilities\random.c">
+      <Filter>Source Files\utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="utilities\thread_mpistubs.c">
+      <Filter>Source Files\utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="utilities\threading.c">
+      <Filter>Source Files\utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="utilities\timer.c">
+      <Filter>Source Files\utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="utilities\umalloc_local.c">
+      <Filter>Source Files\utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="krylov\bicgstab.c">
+      <Filter>Source Files\krylov</Filter>
+    </ClCompile>
+    <ClCompile Include="krylov\cgnr.c">
+      <Filter>Source Files\krylov</Filter>
+    </ClCompile>
+    <ClCompile Include="krylov\flexgmres.c">
+      <Filter>Source Files\krylov</Filter>
+    </ClCompile>
+    <ClCompile Include="krylov\gmres.c">
+      <Filter>Source Files\krylov</Filter>
+    </ClCompile>
+    <ClCompile Include="krylov\HYPRE_bicgstab.c">
+      <Filter>Source Files\krylov</Filter>
+    </ClCompile>
+    <ClCompile Include="krylov\HYPRE_cgnr.c">
+      <Filter>Source Files\krylov</Filter>
+    </ClCompile>
+    <ClCompile Include="krylov\HYPRE_flexgmres.c">
+      <Filter>Source Files\krylov</Filter>
+    </ClCompile>
+    <ClCompile Include="krylov\HYPRE_gmres.c">
+      <Filter>Source Files\krylov</Filter>
+    </ClCompile>
+    <ClCompile Include="krylov\HYPRE_lgmres.c">
+      <Filter>Source Files\krylov</Filter>
+    </ClCompile>
+    <ClCompile Include="krylov\HYPRE_lobpcg.c">
+      <Filter>Source Files\krylov</Filter>
+    </ClCompile>
+    <ClCompile Include="krylov\HYPRE_pcg.c">
+      <Filter>Source Files\krylov</Filter>
+    </ClCompile>
+    <ClCompile Include="krylov\lgmres.c">
+      <Filter>Source Files\krylov</Filter>
+    </ClCompile>
+    <ClCompile Include="krylov\lobpcg.c">
+      <Filter>Source Files\krylov</Filter>
+    </ClCompile>
+    <ClCompile Include="krylov\pcg.c">
+      <Filter>Source Files\krylov</Filter>
+    </ClCompile>
+    <ClCompile Include="multivector\multivector.c">
+      <Filter>Source Files\multivector</Filter>
+    </ClCompile>
+    <ClCompile Include="multivector\temp_multivector.c">
+      <Filter>Source Files\multivector</Filter>
+    </ClCompile>
+    <ClCompile Include="IJ_mv\aux_par_vector.c">
+      <Filter>Source Files\IJ_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="IJ_mv\aux_parcsr_matrix.c">
+      <Filter>Source Files\IJ_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="IJ_mv\HYPRE_IJMatrix.c">
+      <Filter>Source Files\IJ_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="IJ_mv\HYPRE_IJVector.c">
+      <Filter>Source Files\IJ_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="IJ_mv\IJMatrix.c">
+      <Filter>Source Files\IJ_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="IJ_mv\IJMatrix_parcsr.c">
+      <Filter>Source Files\IJ_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="IJ_mv\IJVector.c">
+      <Filter>Source Files\IJ_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="IJ_mv\IJVector_parcsr.c">
+      <Filter>Source Files\IJ_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\pilut\comm.c">
+      <Filter>Source Files\distributed_ls\pilut</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\pilut\debug.c">
+      <Filter>Source Files\distributed_ls\pilut</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\pilut\distributed_qsort.c">
+      <Filter>Source Files\distributed_ls\pilut</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\pilut\distributed_qsort_si.c">
+      <Filter>Source Files\distributed_ls\pilut</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\pilut\HYPRE_DistributedMatrixPilutSolver.c">
+      <Filter>Source Files\distributed_ls\pilut</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\pilut\ilut.c">
+      <Filter>Source Files\distributed_ls\pilut</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\pilut\parilut.c">
+      <Filter>Source Files\distributed_ls\pilut</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\pilut\parutil.c">
+      <Filter>Source Files\distributed_ls\pilut</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\pilut\pblas1.c">
+      <Filter>Source Files\distributed_ls\pilut</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\pilut\serilut.c">
+      <Filter>Source Files\distributed_ls\pilut</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\pilut\trifactor.c">
+      <Filter>Source Files\distributed_ls\pilut</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\pilut\util.c">
+      <Filter>Source Files\distributed_ls\pilut</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\ParaSails\ConjGrad.c">
+      <Filter>Source Files\distributed_ls\ParaSails</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\ParaSails\DiagScale.c">
+      <Filter>Source Files\distributed_ls\ParaSails</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\ParaSails\FGmres.c">
+      <Filter>Source Files\distributed_ls\ParaSails</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\ParaSails\Hash.c">
+      <Filter>Source Files\distributed_ls\ParaSails</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\ParaSails\hypre_ParaSails.c">
+      <Filter>Source Files\distributed_ls\ParaSails</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\ParaSails\LoadBal.c">
+      <Filter>Source Files\distributed_ls\ParaSails</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\ParaSails\Matrix.c">
+      <Filter>Source Files\distributed_ls\ParaSails</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\ParaSails\Mem.c">
+      <Filter>Source Files\distributed_ls\ParaSails</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\ParaSails\Numbering.c">
+      <Filter>Source Files\distributed_ls\ParaSails</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\ParaSails\OrderStat.c">
+      <Filter>Source Files\distributed_ls\ParaSails</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\ParaSails\ParaSails.c">
+      <Filter>Source Files\distributed_ls\ParaSails</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\ParaSails\PrunedRows.c">
+      <Filter>Source Files\distributed_ls\ParaSails</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\ParaSails\RowPatt.c">
+      <Filter>Source Files\distributed_ls\ParaSails</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\ParaSails\StoredRows.c">
+      <Filter>Source Files\distributed_ls\ParaSails</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\Euclid\blas_dh.c">
+      <Filter>Source Files\distributed_ls\Euclid</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\Euclid\Euclid_apply.c">
+      <Filter>Source Files\distributed_ls\Euclid</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\Euclid\Euclid_dh.c">
+      <Filter>Source Files\distributed_ls\Euclid</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\Euclid\ExternalRows_dh.c">
+      <Filter>Source Files\distributed_ls\Euclid</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\Euclid\Factor_dh.c">
+      <Filter>Source Files\distributed_ls\Euclid</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\Euclid\getRow_dh.c">
+      <Filter>Source Files\distributed_ls\Euclid</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\Euclid\globalObjects.c">
+      <Filter>Source Files\distributed_ls\Euclid</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\Euclid\Hash_dh.c">
+      <Filter>Source Files\distributed_ls\Euclid</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\Euclid\Hash_i_dh.c">
+      <Filter>Source Files\distributed_ls\Euclid</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\Euclid\ilu_mpi_bj.c">
+      <Filter>Source Files\distributed_ls\Euclid</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\Euclid\ilu_mpi_pilu.c">
+      <Filter>Source Files\distributed_ls\Euclid</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\Euclid\ilu_seq.c">
+      <Filter>Source Files\distributed_ls\Euclid</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\Euclid\io_dh.c">
+      <Filter>Source Files\distributed_ls\Euclid</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\Euclid\krylov_dh.c">
+      <Filter>Source Files\distributed_ls\Euclid</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\Euclid\Mat_dh.c">
+      <Filter>Source Files\distributed_ls\Euclid</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\Euclid\mat_dh_private.c">
+      <Filter>Source Files\distributed_ls\Euclid</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\Euclid\MatGenFD.c">
+      <Filter>Source Files\distributed_ls\Euclid</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\Euclid\Mem_dh.c">
+      <Filter>Source Files\distributed_ls\Euclid</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\Euclid\Numbering_dh.c">
+      <Filter>Source Files\distributed_ls\Euclid</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\Euclid\Parser_dh.c">
+      <Filter>Source Files\distributed_ls\Euclid</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\Euclid\shellSort_dh.c">
+      <Filter>Source Files\distributed_ls\Euclid</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\Euclid\sig_dh.c">
+      <Filter>Source Files\distributed_ls\Euclid</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\Euclid\SortedList_dh.c">
+      <Filter>Source Files\distributed_ls\Euclid</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\Euclid\SortedSet_dh.c">
+      <Filter>Source Files\distributed_ls\Euclid</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\Euclid\SubdomainGraph_dh.c">
+      <Filter>Source Files\distributed_ls\Euclid</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\Euclid\TimeLog_dh.c">
+      <Filter>Source Files\distributed_ls\Euclid</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\Euclid\Timer_dh.c">
+      <Filter>Source Files\distributed_ls\Euclid</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_ls\Euclid\Vec_dh.c">
+      <Filter>Source Files\distributed_ls\Euclid</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_matrix\distributed_matrix.c">
+      <Filter>Source Files\distributed_matrix</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_matrix\distributed_matrix_parcsr.c">
+      <Filter>Source Files\distributed_matrix</Filter>
+    </ClCompile>
+    <ClCompile Include="distributed_matrix\HYPRE_distributed_matrix.c">
+      <Filter>Source Files\distributed_matrix</Filter>
+    </ClCompile>
+    <ClCompile Include="matrix_matrix\HYPRE_ConvertParCSRMatrixToDistributedMatrix.c">
+      <Filter>Source Files\matrix_matrix</Filter>
+    </ClCompile>
+    <ClCompile Include="matrix_matrix\HYPRE_ConvertPETScMatrixToDistributedMatrix.c">
+      <Filter>Source Files\matrix_matrix</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_block_mv\csr_block_matrix.c">
+      <Filter>Source Files\parcsr_block_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_block_mv\csr_block_matvec.c">
+      <Filter>Source Files\parcsr_block_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_block_mv\par_block_nodal_systems.c">
+      <Filter>Source Files\parcsr_block_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_block_mv\par_csr_block_comm.c">
+      <Filter>Source Files\parcsr_block_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_block_mv\par_csr_block_interp.c">
+      <Filter>Source Files\parcsr_block_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_block_mv\par_csr_block_matrix.c">
+      <Filter>Source Files\parcsr_block_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_block_mv\par_csr_block_matvec.c">
+      <Filter>Source Files\parcsr_block_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_block_mv\par_csr_block_rap.c">
+      <Filter>Source Files\parcsr_block_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_block_mv\par_csr_block_rap_communication.c">
+      <Filter>Source Files\parcsr_block_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_block_mv\par_csr_block_relax.c">
+      <Filter>Source Files\parcsr_block_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\ame.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\amg_hybrid.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\ams.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\aux_interp.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\block_tridiag.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\HYPRE_ame.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\HYPRE_ams.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\HYPRE_parcsr_amg.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\HYPRE_parcsr_bicgstab.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\HYPRE_parcsr_block.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\HYPRE_parcsr_cgnr.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\HYPRE_parcsr_Euclid.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\HYPRE_parcsr_flexgmres.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\HYPRE_parcsr_gmres.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\HYPRE_parcsr_hybrid.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\HYPRE_parcsr_int.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\HYPRE_parcsr_lgmres.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\HYPRE_parcsr_ParaSails.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\HYPRE_parcsr_pcg.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\HYPRE_parcsr_pilut.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\HYPRE_parcsr_schwarz.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\par_amg.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\par_amg_setup.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\par_amg_solve.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\par_amg_solveT.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\par_cg_relax_wt.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\par_cgc_coarsen.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\par_coarse_parms.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\par_coarsen.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\par_coordinates.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\par_cr.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\par_cycle.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\par_difconv.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\par_gsmg.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\par_indepset.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\par_interp.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\par_jacobi_interp.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\par_laplace.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\par_laplace_27pt.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\par_laplace_9pt.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\par_lr_interp.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\par_multi_interp.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\par_nodal_systems.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\par_rap.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\par_rap_communication.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\par_relax.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\par_relax_interface.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\par_rotate_7pt.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\par_scaled_matnorm.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\par_schwarz.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\par_stats.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\par_strength.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\par_vardifconv.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\pcg_par.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_ls\schwarz.c">
+      <Filter>Source Files\parcsr_ls</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_mv\communicationT.c">
+      <Filter>Source Files\parcsr_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_mv\HYPRE_parcsr_matrix.c">
+      <Filter>Source Files\parcsr_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_mv\HYPRE_parcsr_vector.c">
+      <Filter>Source Files\parcsr_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_mv\new_commpkg.c">
+      <Filter>Source Files\parcsr_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_mv\numbers.c">
+      <Filter>Source Files\parcsr_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_mv\par_csr_aat.c">
+      <Filter>Source Files\parcsr_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_mv\par_csr_assumed_part.c">
+      <Filter>Source Files\parcsr_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_mv\par_csr_bool_matop.c">
+      <Filter>Source Files\parcsr_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_mv\par_csr_bool_matrix.c">
+      <Filter>Source Files\parcsr_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_mv\par_csr_communication.c">
+      <Filter>Source Files\parcsr_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_mv\par_csr_matop.c">
+      <Filter>Source Files\parcsr_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_mv\par_csr_matop_marked.c">
+      <Filter>Source Files\parcsr_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_mv\par_csr_matrix.c">
+      <Filter>Source Files\parcsr_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_mv\par_csr_matvec.c">
+      <Filter>Source Files\parcsr_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="parcsr_mv\par_vector.c">
+      <Filter>Source Files\parcsr_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_mv\csr_matop.c">
+      <Filter>Source Files\seq_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_mv\csr_matrix.c">
+      <Filter>Source Files\seq_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_mv\csr_matvec.c">
+      <Filter>Source Files\seq_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_mv\genpart.c">
+      <Filter>Source Files\seq_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_mv\HYPRE_csr_matrix.c">
+      <Filter>Source Files\seq_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_mv\HYPRE_mapped_matrix.c">
+      <Filter>Source Files\seq_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_mv\HYPRE_multiblock_matrix.c">
+      <Filter>Source Files\seq_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_mv\HYPRE_vector.c">
+      <Filter>Source Files\seq_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_mv\mapped_matrix.c">
+      <Filter>Source Files\seq_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_mv\multiblock_matrix.c">
+      <Filter>Source Files\seq_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_mv\vector.c">
+      <Filter>Source Files\seq_mv</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_ls\pamg\amg.c">
+      <Filter>Source Files\seq_ls\pamg</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_ls\pamg\amg_setup.c">
+      <Filter>Source Files\seq_ls\pamg</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_ls\pamg\amg_solve.c">
+      <Filter>Source Files\seq_ls\pamg</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_ls\pamg\amgstats.c">
+      <Filter>Source Files\seq_ls\pamg</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_ls\pamg\Atrunc.c">
+      <Filter>Source Files\seq_ls\pamg</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_ls\pamg\bcsr_interp.c">
+      <Filter>Source Files\seq_ls\pamg</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_ls\pamg\bcsr_matrix.c">
+      <Filter>Source Files\seq_ls\pamg</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_ls\pamg\bcsr_matrix_dense_block.c">
+      <Filter>Source Files\seq_ls\pamg</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_ls\pamg\bcsr_relax.c">
+      <Filter>Source Files\seq_ls\pamg</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_ls\pamg\cg_fun.c">
+      <Filter>Source Files\seq_ls\pamg</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_ls\pamg\coarsen.c">
+      <Filter>Source Files\seq_ls\pamg</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_ls\pamg\coarsenCR.c">
+      <Filter>Source Files\seq_ls\pamg</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_ls\pamg\cycle.c">
+      <Filter>Source Files\seq_ls\pamg</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_ls\pamg\difconv.c">
+      <Filter>Source Files\seq_ls\pamg</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_ls\pamg\HYPRE_amg.c">
+      <Filter>Source Files\seq_ls\pamg</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_ls\pamg\HYPRE_csr_gmres.c">
+      <Filter>Source Files\seq_ls\pamg</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_ls\pamg\HYPRE_csr_pcg.c">
+      <Filter>Source Files\seq_ls\pamg</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_ls\pamg\indepset.c">
+      <Filter>Source Files\seq_ls\pamg</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_ls\pamg\interp.c">
+      <Filter>Source Files\seq_ls\pamg</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_ls\pamg\interpCR.c">
+      <Filter>Source Files\seq_ls\pamg</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_ls\pamg\interpRBM.c">
+      <Filter>Source Files\seq_ls\pamg</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_ls\pamg\inx_part_of_u_interp.c">
+      <Filter>Source Files\seq_ls\pamg</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_ls\pamg\laplace.c">
+      <Filter>Source Files\seq_ls\pamg</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_ls\pamg\laplace_27pt.c">
+      <Filter>Source Files\seq_ls\pamg</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_ls\pamg\laplace_9pt.c">
+      <Filter>Source Files\seq_ls\pamg</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_ls\pamg\pcg.c">
+      <Filter>Source Files\seq_ls\pamg</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_ls\pamg\random.c">
+      <Filter>Source Files\seq_ls\pamg</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_ls\pamg\rap.c">
+      <Filter>Source Files\seq_ls\pamg</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_ls\pamg\relax.c">
+      <Filter>Source Files\seq_ls\pamg</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_ls\pamg\scaled_matnorm.c">
+      <Filter>Source Files\seq_ls\pamg</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_ls\pamg\schwarz.c">
+      <Filter>Source Files\seq_ls\pamg</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_ls\pamg\SPamg-pcg.c">
+      <Filter>Source Files\seq_ls\pamg</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_ls\pamg\stencil_matrix.c">
+      <Filter>Source Files\seq_ls\pamg</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_ls\pamg\strength.c">
+      <Filter>Source Files\seq_ls\pamg</Filter>
+    </ClCompile>
+    <ClCompile Include="seq_ls\pamg\trunc.c">
+      <Filter>Source Files\seq_ls\pamg</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="HYPRE.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="HYPRE_config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="utilities\_hypre_utilities.h">
+      <Filter>Header Files\utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="utilities\amg_linklist.h">
+      <Filter>Header Files\utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="utilities\exchange_data.h">
+      <Filter>Header Files\utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="utilities\fortran.h">
+      <Filter>Header Files\utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="utilities\fortran_matrix.h">
+      <Filter>Header Files\utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="utilities\general.h">
+      <Filter>Header Files\utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="utilities\hypre_error.h">
+      <Filter>Header Files\utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="utilities\HYPRE_error_f.h">
+      <Filter>Header Files\utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="utilities\hypre_memory.h">
+      <Filter>Header Files\utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="utilities\hypre_smp_forloop.h">
+      <Filter>Header Files\utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="utilities\HYPRE_utilities.h">
+      <Filter>Header Files\utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="utilities\mpistubs.h">
+      <Filter>Header Files\utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="utilities\thread_mpistubs.h">
+      <Filter>Header Files\utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="utilities\threading.h">
+      <Filter>Header Files\utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="utilities\timing.h">
+      <Filter>Header Files\utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="utilities\umalloc_local.h">
+      <Filter>Header Files\utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="krylov\bicgstab.h">
+      <Filter>Header Files\krylov</Filter>
+    </ClInclude>
+    <ClInclude Include="krylov\cgnr.h">
+      <Filter>Header Files\krylov</Filter>
+    </ClInclude>
+    <ClInclude Include="krylov\flexgmres.h">
+      <Filter>Header Files\krylov</Filter>
+    </ClInclude>
+    <ClInclude Include="krylov\gmres.h">
+      <Filter>Header Files\krylov</Filter>
+    </ClInclude>
+    <ClInclude Include="krylov\HYPRE_krylov.h">
+      <Filter>Header Files\krylov</Filter>
+    </ClInclude>
+    <ClInclude Include="krylov\HYPRE_lobpcg.h">
+      <Filter>Header Files\krylov</Filter>
+    </ClInclude>
+    <ClInclude Include="krylov\HYPRE_MatvecFunctions.h">
+      <Filter>Header Files\krylov</Filter>
+    </ClInclude>
+    <ClInclude Include="krylov\krylov.h">
+      <Filter>Header Files\krylov</Filter>
+    </ClInclude>
+    <ClInclude Include="krylov\lgmres.h">
+      <Filter>Header Files\krylov</Filter>
+    </ClInclude>
+    <ClInclude Include="krylov\lobpcg.h">
+      <Filter>Header Files\krylov</Filter>
+    </ClInclude>
+    <ClInclude Include="krylov\pcg.h">
+      <Filter>Header Files\krylov</Filter>
+    </ClInclude>
+    <ClInclude Include="multivector\csr_matmultivec.h">
+      <Filter>Header Files\multivector</Filter>
+    </ClInclude>
+    <ClInclude Include="multivector\interpreter.h">
+      <Filter>Header Files\multivector</Filter>
+    </ClInclude>
+    <ClInclude Include="multivector\multivector.h">
+      <Filter>Header Files\multivector</Filter>
+    </ClInclude>
+    <ClInclude Include="multivector\par_csr_matmultivec.h">
+      <Filter>Header Files\multivector</Filter>
+    </ClInclude>
+    <ClInclude Include="multivector\par_csr_pmvcomm.h">
+      <Filter>Header Files\multivector</Filter>
+    </ClInclude>
+    <ClInclude Include="multivector\par_multivector.h">
+      <Filter>Header Files\multivector</Filter>
+    </ClInclude>
+    <ClInclude Include="multivector\seq_multivector.h">
+      <Filter>Header Files\multivector</Filter>
+    </ClInclude>
+    <ClInclude Include="multivector\temp_multivector.h">
+      <Filter>Header Files\multivector</Filter>
+    </ClInclude>
+    <ClInclude Include="IJ_mv\_hypre_IJ_mv.h">
+      <Filter>Header Files\IJ_mv</Filter>
+    </ClInclude>
+    <ClInclude Include="IJ_mv\aux_par_vector.h">
+      <Filter>Header Files\IJ_mv</Filter>
+    </ClInclude>
+    <ClInclude Include="IJ_mv\aux_parcsr_matrix.h">
+      <Filter>Header Files\IJ_mv</Filter>
+    </ClInclude>
+    <ClInclude Include="IJ_mv\headers.h">
+      <Filter>Header Files\IJ_mv</Filter>
+    </ClInclude>
+    <ClInclude Include="IJ_mv\HYPRE_IJ_mv.h">
+      <Filter>Header Files\IJ_mv</Filter>
+    </ClInclude>
+    <ClInclude Include="IJ_mv\IJ_matrix.h">
+      <Filter>Header Files\IJ_mv</Filter>
+    </ClInclude>
+    <ClInclude Include="IJ_mv\IJ_vector.h">
+      <Filter>Header Files\IJ_mv</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\pilut\const.h">
+      <Filter>Header Files\distributed_ls\pilut</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\pilut\DistributedMatrixPilutSolver.h">
+      <Filter>Header Files\distributed_ls\pilut</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\pilut\HYPRE_DistributedMatrixPilutSolver_protos.h">
+      <Filter>Header Files\distributed_ls\pilut</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\pilut\HYPRE_DistributedMatrixPilutSolver_types.h">
+      <Filter>Header Files\distributed_ls\pilut</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\pilut\ilu.h">
+      <Filter>Header Files\distributed_ls\pilut</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\pilut\internal_protos.h">
+      <Filter>Header Files\distributed_ls\pilut</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\pilut\macros.h">
+      <Filter>Header Files\distributed_ls\pilut</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\pilut\struct.h">
+      <Filter>Header Files\distributed_ls\pilut</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\ParaSails\Common.h">
+      <Filter>Header Files\distributed_ls\ParaSails</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\ParaSails\ConjGrad.h">
+      <Filter>Header Files\distributed_ls\ParaSails</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\ParaSails\DiagScale.h">
+      <Filter>Header Files\distributed_ls\ParaSails</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\ParaSails\Hash.h">
+      <Filter>Header Files\distributed_ls\ParaSails</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\ParaSails\hypre_ParaSails.h">
+      <Filter>Header Files\distributed_ls\ParaSails</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\ParaSails\LoadBal.h">
+      <Filter>Header Files\distributed_ls\ParaSails</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\ParaSails\Matrix.h">
+      <Filter>Header Files\distributed_ls\ParaSails</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\ParaSails\Mem.h">
+      <Filter>Header Files\distributed_ls\ParaSails</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\ParaSails\Numbering.h">
+      <Filter>Header Files\distributed_ls\ParaSails</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\ParaSails\OrderStat.h">
+      <Filter>Header Files\distributed_ls\ParaSails</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\ParaSails\ParaSails.h">
+      <Filter>Header Files\distributed_ls\ParaSails</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\ParaSails\PrunedRows.h">
+      <Filter>Header Files\distributed_ls\ParaSails</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\ParaSails\RowPatt.h">
+      <Filter>Header Files\distributed_ls\ParaSails</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\ParaSails\StoredRows.h">
+      <Filter>Header Files\distributed_ls\ParaSails</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\Euclid\blas_dh.h">
+      <Filter>Header Files\distributed_ls\Euclid</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\Euclid\euclid.h">
+      <Filter>Header Files\distributed_ls\Euclid</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\Euclid\euclid_common.h">
+      <Filter>Header Files\distributed_ls\Euclid</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\Euclid\euclid_config.h">
+      <Filter>Header Files\distributed_ls\Euclid</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\Euclid\Euclid_dh.h">
+      <Filter>Header Files\distributed_ls\Euclid</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\Euclid\ExternalRows_dh.h">
+      <Filter>Header Files\distributed_ls\Euclid</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\Euclid\Factor_dh.h">
+      <Filter>Header Files\distributed_ls\Euclid</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\Euclid\getRow_dh.h">
+      <Filter>Header Files\distributed_ls\Euclid</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\Euclid\guards_dh.h">
+      <Filter>Header Files\distributed_ls\Euclid</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\Euclid\Hash_dh.h">
+      <Filter>Header Files\distributed_ls\Euclid</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\Euclid\Hash_i_dh.h">
+      <Filter>Header Files\distributed_ls\Euclid</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\Euclid\ilu_dh.h">
+      <Filter>Header Files\distributed_ls\Euclid</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\Euclid\io_dh.h">
+      <Filter>Header Files\distributed_ls\Euclid</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\Euclid\krylov_dh.h">
+      <Filter>Header Files\distributed_ls\Euclid</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\Euclid\macros_dh.h">
+      <Filter>Header Files\distributed_ls\Euclid</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\Euclid\Mat_dh.h">
+      <Filter>Header Files\distributed_ls\Euclid</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\Euclid\mat_dh_private.h">
+      <Filter>Header Files\distributed_ls\Euclid</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\Euclid\MatGenFD.h">
+      <Filter>Header Files\distributed_ls\Euclid</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\Euclid\Mem_dh.h">
+      <Filter>Header Files\distributed_ls\Euclid</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\Euclid\Numbering_dh.h">
+      <Filter>Header Files\distributed_ls\Euclid</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\Euclid\Parser_dh.h">
+      <Filter>Header Files\distributed_ls\Euclid</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\Euclid\shellSort_dh.h">
+      <Filter>Header Files\distributed_ls\Euclid</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\Euclid\sig_dh.h">
+      <Filter>Header Files\distributed_ls\Euclid</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\Euclid\SortedList_dh.h">
+      <Filter>Header Files\distributed_ls\Euclid</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\Euclid\SortedSet_dh.h">
+      <Filter>Header Files\distributed_ls\Euclid</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\Euclid\SubdomainGraph_dh.h">
+      <Filter>Header Files\distributed_ls\Euclid</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\Euclid\TimeLog_dh.h">
+      <Filter>Header Files\distributed_ls\Euclid</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\Euclid\Timer_dh.h">
+      <Filter>Header Files\distributed_ls\Euclid</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_ls\Euclid\Vec_dh.h">
+      <Filter>Header Files\distributed_ls\Euclid</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_matrix\distributed_matrix.h">
+      <Filter>Header Files\distributed_matrix</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_matrix\HYPRE_distributed_matrix_mv.h">
+      <Filter>Header Files\distributed_matrix</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_matrix\HYPRE_distributed_matrix_protos.h">
+      <Filter>Header Files\distributed_matrix</Filter>
+    </ClInclude>
+    <ClInclude Include="distributed_matrix\HYPRE_distributed_matrix_types.h">
+      <Filter>Header Files\distributed_matrix</Filter>
+    </ClInclude>
+    <ClInclude Include="matrix_matrix\HYPRE_matrix_matrix_protos.h">
+      <Filter>Header Files\matrix_matrix</Filter>
+    </ClInclude>
+    <ClInclude Include="parcsr_block_mv\csr_block_matrix.h">
+      <Filter>Header Files\parcsr_block_mv</Filter>
+    </ClInclude>
+    <ClInclude Include="parcsr_block_mv\par_csr_block_matrix.h">
+      <Filter>Header Files\parcsr_block_mv</Filter>
+    </ClInclude>
+    <ClInclude Include="parcsr_ls\_hypre_parcsr_ls.h">
+      <Filter>Header Files\parcsr_ls</Filter>
+    </ClInclude>
+    <ClInclude Include="parcsr_ls\aux_interp.h">
+      <Filter>Header Files\parcsr_ls</Filter>
+    </ClInclude>
+    <ClInclude Include="parcsr_ls\block_tridiag.h">
+      <Filter>Header Files\parcsr_ls</Filter>
+    </ClInclude>
+    <ClInclude Include="parcsr_ls\Common.h">
+      <Filter>Header Files\parcsr_ls</Filter>
+    </ClInclude>
+    <ClInclude Include="parcsr_ls\headers.h">
+      <Filter>Header Files\parcsr_ls</Filter>
+    </ClInclude>
+    <ClInclude Include="parcsr_ls\HYPRE_parcsr_int.h">
+      <Filter>Header Files\parcsr_ls</Filter>
+    </ClInclude>
+    <ClInclude Include="parcsr_ls\HYPRE_parcsr_ls.h">
+      <Filter>Header Files\parcsr_ls</Filter>
+    </ClInclude>
+    <ClInclude Include="parcsr_ls\par_amg.h">
+      <Filter>Header Files\parcsr_ls</Filter>
+    </ClInclude>
+    <ClInclude Include="parcsr_ls\schwarz.h">
+      <Filter>Header Files\parcsr_ls</Filter>
+    </ClInclude>
+    <ClInclude Include="parcsr_mv\_hypre_parcsr_mv.h">
+      <Filter>Header Files\parcsr_mv</Filter>
+    </ClInclude>
+    <ClInclude Include="parcsr_mv\headers.h">
+      <Filter>Header Files\parcsr_mv</Filter>
+    </ClInclude>
+    <ClInclude Include="parcsr_mv\HYPRE_parcsr_mv.h">
+      <Filter>Header Files\parcsr_mv</Filter>
+    </ClInclude>
+    <ClInclude Include="parcsr_mv\new_commpkg.h">
+      <Filter>Header Files\parcsr_mv</Filter>
+    </ClInclude>
+    <ClInclude Include="parcsr_mv\numbers.h">
+      <Filter>Header Files\parcsr_mv</Filter>
+    </ClInclude>
+    <ClInclude Include="parcsr_mv\par_chord_matrix.h">
+      <Filter>Header Files\parcsr_mv</Filter>
+    </ClInclude>
+    <ClInclude Include="parcsr_mv\par_csr_assumed_part.h">
+      <Filter>Header Files\parcsr_mv</Filter>
+    </ClInclude>
+    <ClInclude Include="parcsr_mv\par_csr_communication.h">
+      <Filter>Header Files\parcsr_mv</Filter>
+    </ClInclude>
+    <ClInclude Include="parcsr_mv\par_csr_matrix.h">
+      <Filter>Header Files\parcsr_mv</Filter>
+    </ClInclude>
+    <ClInclude Include="parcsr_mv\par_vector.h">
+      <Filter>Header Files\parcsr_mv</Filter>
+    </ClInclude>
+    <ClInclude Include="seq_mv\csr_matrix.h">
+      <Filter>Header Files\seq_mv</Filter>
+    </ClInclude>
+    <ClInclude Include="seq_mv\headers.h">
+      <Filter>Header Files\seq_mv</Filter>
+    </ClInclude>
+    <ClInclude Include="seq_mv\HYPRE_seq_mv.h">
+      <Filter>Header Files\seq_mv</Filter>
+    </ClInclude>
+    <ClInclude Include="seq_mv\mapped_matrix.h">
+      <Filter>Header Files\seq_mv</Filter>
+    </ClInclude>
+    <ClInclude Include="seq_mv\multiblock_matrix.h">
+      <Filter>Header Files\seq_mv</Filter>
+    </ClInclude>
+    <ClInclude Include="seq_mv\seq_mv.h">
+      <Filter>Header Files\seq_mv</Filter>
+    </ClInclude>
+    <ClInclude Include="seq_mv\vector.h">
+      <Filter>Header Files\seq_mv</Filter>
+    </ClInclude>
+    <ClInclude Include="seq_ls\pamg\amg.h">
+      <Filter>Header Files\seq_ls\pamg</Filter>
+    </ClInclude>
+    <ClInclude Include="seq_ls\pamg\bcsr_matrix.h">
+      <Filter>Header Files\seq_ls\pamg</Filter>
+    </ClInclude>
+    <ClInclude Include="seq_ls\pamg\bcsr_matrix_dense_block.h">
+      <Filter>Header Files\seq_ls\pamg</Filter>
+    </ClInclude>
+    <ClInclude Include="seq_ls\pamg\headers.h">
+      <Filter>Header Files\seq_ls\pamg</Filter>
+    </ClInclude>
+    <ClInclude Include="seq_ls\pamg\HYPRE_ls.h">
+      <Filter>Header Files\seq_ls\pamg</Filter>
+    </ClInclude>
+    <ClInclude Include="seq_ls\pamg\pamg.h">
+      <Filter>Header Files\seq_ls\pamg</Filter>
+    </ClInclude>
+    <ClInclude Include="seq_ls\pamg\pcg.h">
+      <Filter>Header Files\seq_ls\pamg</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ReadMe.txt" />
+  </ItemGroup>
+</Project>

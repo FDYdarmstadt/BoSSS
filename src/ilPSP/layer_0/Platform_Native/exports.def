@@ -1,0 +1,81 @@
+LIBRARY	"Platform_Native"
+EXPORTS
+    
+    
+    ; ######################################################################
+    ; ######################################################################
+    ; MPI Routines
+    ; ######################################################################
+    ; ######################################################################
+
+    ; MPI-Functions    
+    BoSSS_MPI_INIT 
+    BoSSS_MPI_INITIALIZED
+    BoSSS_MPI_Finalize 
+    BoSSS_MPI_COMM_RANK 
+    BoSSS_MPI_COMM_SIZE
+    BoSSS_MPI_WAITALL
+    BoSSS_MPI_IRECV 
+    BoSSS_MPI_ISSEND 
+    BoSSS_MPI_WAITANY
+    BoSSS_MPI_ALLGATHER 
+    BoSSS_MPI_BARRIER
+    BoSSS_MPI_BCAST
+    BoSSS_MPI_REDUCE
+    BoSSS_MPI_ALLREDUCE
+    BoSSS_MPI_SEND
+    BoSSS_MPI_RECV
+    ;MPI_COMM_SIZE
+        
+    ; MPI-Constants
+    BoSSS_Get_MPI_COMM_WORLD
+    BoSSS_Get_MPI_COMM_SELF
+    BoSSS_Get_MPI_REQUEST_NULL
+    BoSSS_Get_MPI_UNDEFINED
+    
+    BoSSS_Get_MPI_Datatype_CHAR
+    BoSSS_Get_MPI_Datatype_UNSIGNED_CHAR
+    BoSSS_Get_MPI_Datatype_BYTE
+    BoSSS_Get_MPI_Datatype_SHORT
+    BoSSS_Get_MPI_Datatype_UNSIGNED_SHORT
+    BoSSS_Get_MPI_Datatype_INT
+    BoSSS_Get_MPI_Datatype_UNSIGNED
+    BoSSS_Get_MPI_Datatype_LONG
+    BoSSS_Get_MPI_Datatype_UNSIGNED_LONG
+    BoSSS_Get_MPI_Datatype_FLOAT
+    BoSSS_Get_MPI_Datatype_DOUBLE
+    BoSSS_Get_MPI_Datatype_LONG_DOUBLE
+    BoSSS_Get_MPI_Datatype_LONG_LONG_INT
+    
+    
+    BoSSS_Get_MPI_MAX
+    BoSSS_Get_MPI_MIN
+    BoSSS_Get_MPI_SUM
+    BoSSS_Get_MPI_PROD
+    BoSSS_Get_MPI_LAND
+    BoSSS_Get_MPI_BAND
+    BoSSS_Get_MPI_LOR
+    BoSSS_Get_MPI_BOR
+    BoSSS_Get_MPI_LXOR
+    BoSSS_Get_MPI_BXOR
+    BoSSS_Get_MPI_MINLOC
+    BoSSS_Get_MPI_MAXLOC
+
+    BoSSS_Get_MPI_ANY_SOURCE
+    BoSSS_Get_MPI_PROC_NULL
+    BoSSS_Get_MPI_ROOT
+    BoSSS_Get_MPI_ANY_TAG
+    BoSSS_Get_MPI_MAX_PROCESSOR_NAME
+    BoSSS_Get_MPI_MAX_ERROR_STRING
+    BoSSS_Get_MPI_MAX_OBJECT_NAME
+    BoSSS_Get_MPI_UNDEFINED
+    BoSSS_Get_MPI_CART
+    BoSSS_Get_MPI_GRAPH
+    BoSSS_Get_MPI_KEYVAL_INVALID 
+
+	BoSSS_Get_MPI_Status_Size
+	BoSSS_MPI_Status_C2f
+	BoSSS_MPI_Status_f2c
+	BoSSS_MPI_Request_C2f
+	BoSSS_MPI_Request_f2c
+    

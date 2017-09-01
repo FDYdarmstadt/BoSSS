@@ -1,0 +1,130 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{B18AEDC3-C7A5-4DA6-ABD3-E981B002ADDE}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>ilPSP.LinSolvers.monkey</RootNamespace>
+    <AssemblyName>ilPSP.LinSolvers.monkey</AssemblyName>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>True</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>False</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;OPENCL_1_0</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <UseVSHostingProcess>true</UseVSHostingProcess>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <Optimize>True</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <UseVSHostingProcess>true</UseVSHostingProcess>
+    <DocumentationFile>bin\Release\ilPSP.LinSolvers.monkey.XML</DocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="clCCBCSRMatrix.cs" />
+    <Compile Include="clELLPACKcacheMatrix.cs" />
+    <Compile Include="clELLPACKmodMatrix.cs" />
+    <Compile Include="clEnvironment.cs" />
+    <Compile Include="CudaCCBCSRMatrix.cs" />
+    <Compile Include="CG.cs" />
+    <Compile Include="clCSRMatrix.cs" />
+    <Compile Include="clDriverInterface.cs" />
+    <Compile Include="clMatrix.cs" />
+    <Compile Include="clMatrixSource.cs" />
+    <Compile Include="clVector.cs" />
+    <Compile Include="clDevice.cs" />
+    <Compile Include="clVectorSource.cs" />
+    <Compile Include="CudaELLPACKcacheMatrix.cs" />
+    <Compile Include="CommVector.cs" />
+    <Compile Include="CudaCSRMatrix.cs" />
+    <Compile Include="CudaDevice.cs" />
+    <Compile Include="CudaDriverInterface.cs" />
+    <Compile Include="CudaEnviroment.cs" />
+    <Compile Include="CudaMatrix.cs" />
+    <Compile Include="CudaVector.cs" />
+    <Compile Include="CudaELLPACKmodMatrix.cs" />
+    <Compile Include="IMonkeyImplicitPrecond.cs" />
+    <Compile Include="Ext_ISparseMatrix.cs" />
+    <Compile Include="Jacobi.cs" />
+    <Compile Include="JacobiPrecond.cs" />
+    <Compile Include="LockAbleObject.cs" />
+    <Compile Include="MatrixBase.cs" />
+    <Compile Include="MatrixBase_SparseStructures.cs" />
+    <Compile Include="monkeySolver.cs" />
+    <Compile Include="monkeyDevice.cs" />
+    <Compile Include="NeumannSeries.cs" />
+    <Compile Include="PCG.cs" />
+    <Compile Include="Precond.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="mtDevice.cs" />
+    <Compile Include="mtMatrix.cs" />
+    <Compile Include="mtVector.cs" />
+    <Compile Include="RefDevice.cs" />
+    <Compile Include="RefMatrix.cs" />
+    <Compile Include="RefVector.cs" />
+    <Compile Include="VectorBase.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj">
+      <Project>{DD9BF776-38CA-4FC9-8F42-5ED700BDE7AD}</Project>
+      <Name>MPI.Wrappers</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ilPSP\ilPSP.csproj">
+      <Project>{8E6D8F23-623F-4204-B4AB-A088C0CD83AA}</Project>
+      <Name>ilPSP</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="log4net">
+      <HintPath>..\..\..\..\libs\log4net-1.2.10\bin\cli\1.0\release\log4net.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="cuda-src\CudaMatrixKernelDP.ptx" />
+    <None Include="cuda-src\CudaVectorKernelDP.ptx" />
+    <None Include="cuda-src\kernel.bat" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="cuda-src\CudaMatrixKernelDP.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="cuda-src\CudaVectorKernelDP.txt" />
+  </ItemGroup>
+  <!--Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" /-->
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

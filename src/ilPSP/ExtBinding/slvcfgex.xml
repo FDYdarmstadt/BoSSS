@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SolverConfig>
+
+    <sparsesolver name="hypre-pcg">
+        <!-- conjugated gradients from hypre -->
+        <type>PCG</type>
+        <library>HYPRE</library>
+        <specific>
+            <MaxIterations>1000000</MaxIterations>
+            <ConvergenceType>Absolute</ConvergenceType>
+            <Tolerance>1.0e-9</Tolerance>
+        </specific>
+    </sparsesolver>
+
+    <explicitprecond name="lbe-monkey-cg">
+        <!-- local block elimination, with conjugated gradients from monkey -->
+        <type>LocalBlockElimination</type>
+        <library>GenPrecond</library>
+        <specific>
+            <UseGuess>true</UseGuess>
+        </specific>
+        <NestedSolver>
+            <sparsesolver name="pressure-solver">
+                <!-- conjugated gradients from monkey -->
+                <type>PCG</type>
+                <library>monkey</library>
+                <specific>
+                    <MaxIterations>2900</MaxIterations>
+                    <MinIterations>3</MinIterations>
+                    <ConvergenceType>Relative</ConvergenceType>
+                    <Tolerance>1.0e-9</Tolerance>
+                    <DevType>Auto</DevType>
+                    <MatrixType>ELLPACKcache</MatrixType>
+                </specific>
+                <!--NestedPrecond>
+                    <implicitprecond name="obi wan jakobi">
+                        <type>jacobiprecond</type>
+                        <library>monkey</library>
+                        <specific>
+                            <UnderRelaxationFactor>0.9</UnderRelaxationFactor>
+                            <NoOfIter>2</NoOfIter>
+                        </specific>
+                    </implicitprecond>
+                </NestedPrecond-->
+            </sparsesolver>
+        </NestedSolver>
+    </explicitprecond>
+    
+    <explicitprecond name="se-monkey-cg">
+        <!-- symmetric eqibrillation, with conjugated gradients from monkey -->
+        <type>SymmEquilibration</type>
+        <library>GenPrecond</library>
+        <NestedSolver>
+            <sparsesolver name="pressure-solver">
+                <!-- conjugated gradients from monkey -->
+                <type>PCG</type>
+                <library>monkey</library>
+                <specific>
+                    <MaxIterations>20000</MaxIterations>
+                    <ConvergenceType>Relative</ConvergenceType>
+                    <Tolerance>1.0e-9</Tolerance>
+                    <DevType>CPU</DevType>
+                    <MatrixType>ELLPACKcache</MatrixType>
+                </specific>
+            </sparsesolver>
+        </NestedSolver>
+    </explicitprecond>
+    
+    <explicitprecond name="lbe-aztec-cg">
+        <!-- local block elemniation, with conjugated gradients from monkey -->
+        <type>LocalBlockElimination</type>
+        <library>GenPrecond</library>
+        <NestedSolver>
+            <sparsesolver name="pressure-solver">
+                <!-- conjugated gradients from monkey -->
+                <type>pcg</type>
+                <library>aztec</library>
+                <specific>
+                    <Tolerance>1.0e-9</Tolerance>
+                    <Preconditioner>AZ_dom_decomp</Preconditioner>
+                    <SubdomainSolve>AZ_ilu</SubdomainSolve>
+                    <Output>50</Output>
+                </specific>
+            </sparsesolver>
+        </NestedSolver>
+    </explicitprecond>
+
+
+    <sparsesolver name="monkey-cg"> 
+	    <!--  conjugated gradients from monkey -->
+        <type>CG</type>
+        <library>monkey</library>
+        <specific>
+            <MaxIterations>4000</MaxIterations>
+            <MinIterations>1</MinIterations>
+            <ConvergenceType>Absolute</ConvergenceType>
+            <Tolerance>1.0e-9</Tolerance>
+            <DevType>
+                CPU
+            </DevType>
+        </specific>
+    </sparsesolver>
+
+    <sparsesolver name="pardiso-sol">  
+	<!-- PARDISO direct solver -->
+        <type>direct</type>
+        <library>pardiso</library>
+    </sparsesolver>
+
+    <sparsesolver name="hypre-pcg+boomeramg">
+        <!-- conjugated gradient from hypre preconditioned by BoomerAMG -->
+        <type>CG</type>
+        <library>monkey</library>
+        <specific>
+            <MaxIterations>8000</MaxIterations>
+            <TwoNorm>true</TwoNorm>
+        </specific>
+        <NestedPrecond>
+            <implicitprecond name="boomeramg">
+                <type>BoomerAMG</type>
+                <library>HYPRE</library>
+                <specific>
+                    <MaxIterations>10000</MaxIterations>
+                    <ConvergenceType>Absolute</ConvergenceType>
+                    <Tolerance>1.0e-9</Tolerance>
+                    <RelaxType>hybSymmGaussSeidel_or_SSOR</RelaxType>
+                    <RelaxWt>1</RelaxWt>
+                    <CycleType>W_Cycle</CycleType>
+                    <MaxLevels>5</MaxLevels>
+                    <CycleNumSweeps index="coarsest">4</CycleNumSweeps>
+                    <CycleNumSweeps index="finest">3</CycleNumSweeps>
+                    <CycleNumSweeps index="up_cycle">3</CycleNumSweeps>
+                    <CycleNumSweeps index="down_cycle">4</CycleNumSweeps>
+                </specific>
+            </implicitprecond>
+        </NestedPrecond>
+    </sparsesolver>
+
+    <explicitprecond name="lbe-hypre-pcg+euclid">
+        <!-- local block elimination, conjugated gradient from hypre preconditioned with Euclid -->
+        <type>LocalBlockElimination</type>
+        <library>GenPrecond</library>
+        <NestedSolver>
+            <sparsesolver name="hypre-pcg+euclid">
+                <!-- conjugated gradient from hypre preconditioned by Euclid -->
+                <type>PCG</type>
+                <library>hypre</library>
+                <specific>
+                    <MaxIterations>8000</MaxIterations>
+                    <TwoNorm>true</TwoNorm>
+                </specific>
+                <NestedPrecond>
+                    <implicitprecond name="eucl">
+                        <type>Euclid</type>
+                        <library>HYPRE</library>
+                        <specific>
+                            <Level>6</Level>
+                        </specific>
+                    </implicitprecond>
+                </NestedPrecond>
+        </sparsesolver>
+        </NestedSolver>
+    </explicitprecond>
+
+    <explicitprecond name="lbe-hypre-pcg+parasails">
+        <!-- local block elimination, conjugated gradient from hypre preconditioned with Euclid -->
+        <type>LocalBlockElimination</type>
+        <library>GenPrecond</library>
+        <NestedSolver>
+            <sparsesolver name="hypre-pcg+parasails">
+                <!-- conjugated gradient from hypre preconditioned by Euclid -->
+                <type>pcg</type>
+                <library>hypre</library>
+                <specific>
+                    <MaxIterations>8000</MaxIterations>
+                    <TwoNorm>true</TwoNorm>
+                </specific>
+                <NestedPrecond>
+                    <implicitprecond name="eucl">
+                        <type>parasails</type>
+                        <library>HYPRE</library>
+                        <specific>
+                            <Logging>2</Logging>
+                            <Reuse>true</Reuse>
+                            <Sym>SPD</Sym>
+                            <Filter>0.1</Filter>
+                            <Thresh>0.1</Thresh>
+                            <NLevels>1</NLevels>
+                        </specific>
+                    </implicitprecond>
+                </NestedPrecond>
+            </sparsesolver>
+        </NestedSolver>
+    </explicitprecond>
+    
+    <explicitprecond name="lbe-hypre-pcg">
+        <!-- local block elimination, conjugated gradient from hypre preconditioned with Euclid -->
+        <type>LocalBlockElimination</type>
+        <library>GenPrecond</library>
+        <specific>
+            <UseGuess>true</UseGuess>
+        </specific>
+        <NestedSolver>
+            <sparsesolver name="hypre-pcg+parasails">
+                <!-- conjugated gradient from hypre preconditioned by Euclid -->
+                <type>pcg</type>
+                <library>hypre</library>
+                <specific>
+                    <MaxIterations>2900</MaxIterations>
+                    <TwoNorm>true</TwoNorm>
+                    <ConvergenceType>Relative</ConvergenceType>
+                    <Tolerance>1.0e-9</Tolerance>
+                </specific>
+            </sparsesolver>
+        </NestedSolver>
+    </explicitprecond>
+
+    <sparsesolver name="hypre-pcg+parasails">
+        <!-- conjugated gradient from hypre preconditioned by Euclid -->
+        <type>pcg</type>
+        <library>hypre</library>
+        <specific>
+            <MaxIterations>500</MaxIterations>
+            <TwoNorm>true</TwoNorm>
+        </specific>
+        <NestedPrecond>
+            <implicitprecond name="eucl">
+                <type>parasails</type>
+                <library>HYPRE</library>
+                <specific>
+                    <Logging>2</Logging>
+                    <Reuse>true</Reuse>
+                    <Sym>UnsymIndef</Sym>
+                    <Thresh>0.3</Thresh>
+                </specific>
+            </implicitprecond>
+        </NestedPrecond>
+    </sparsesolver>
+
+</SolverConfig>

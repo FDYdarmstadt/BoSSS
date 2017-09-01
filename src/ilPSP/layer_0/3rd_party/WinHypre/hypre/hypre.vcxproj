@@ -1,0 +1,543 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{C9B50E47-9B29-436B-A80C-A2132A3DEA22}</ProjectGuid>
+    <RootNamespace>hypre</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Platform)\$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Platform)\$(Configuration)\</IntDir>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)\..\hypre.distributed_ls.Euclid;$(ProjectDir)\krylov;$(ProjectDir)\IJ_mv;$(ProjectDir)\parcsr_ls;$(ProjectDir)\parcsr_mv;$(ProjectDir)\seq_mv;$(ProjectDir)\multivector;$(ProjectDir)\parcsr_block_mv;$(ProjectDir)\matrix_matrix;$(ProjectDir)\distributed_matrix;$(ProjectDir)\utilities;c:\libs\Microsoft_HPC_Pack_2008_SDK\Include;c:\libs\AMD\acml4.4.0\ifort32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;MPI_MODE;MPI_TIMING;USING_MPI;HYPRE_GET_ROW;HYPRE_MODE;OPTIMIZED_DH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <CompileAs>CompileAsC</CompileAs>
+      <DisableSpecificWarnings>4996;4091;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <ShowIncludes>false</ShowIncludes>
+    </ClCompile>
+    <Lib>
+      <OutputFile>$(OutDir)HYPRE-static.lib</OutputFile>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)\..\hypre.distributed_ls.Euclid;$(ProjectDir)\krylov;$(ProjectDir)\IJ_mv;$(ProjectDir)\parcsr_ls;$(ProjectDir)\parcsr_mv;$(ProjectDir)\seq_mv;$(ProjectDir)\multivector;$(ProjectDir)\parcsr_block_mv;$(ProjectDir)\matrix_matrix;$(ProjectDir)\distributed_matrix;$(ProjectDir)\utilities;c:\libs\Microsoft_HPC_Pack_2008_SDK\Include;c:\libs\AMD\acml4.4.0\ifort64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;MPI_MODE;MPI_TIMING;USING_MPI;HYPRE_GET_ROW;HYPRE_MODE;OPTIMIZED_DH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <CompileAs>CompileAsC</CompileAs>
+      <DisableSpecificWarnings>4996;4091;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <ShowIncludes>false</ShowIncludes>
+    </ClCompile>
+    <Lib>
+      <OutputFile>$(OutDir)HYPRE-static.lib</OutputFile>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <Optimization>Full</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)\..\hypre.distributed_ls.Euclid;$(ProjectDir)\krylov;$(ProjectDir)\IJ_mv;$(ProjectDir)\parcsr_ls;$(ProjectDir)\parcsr_mv;$(ProjectDir)\seq_mv;$(ProjectDir)\multivector;$(ProjectDir)\parcsr_block_mv;$(ProjectDir)\matrix_matrix;$(ProjectDir)\distributed_matrix;$(ProjectDir)\utilities;c:\libs\Microsoft_HPC_Pack_2008_SDK\Include;c:\libs\AMD\acml4.4.0\ifort32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;MPI_MODE;MPI_TIMING;USING_MPI;HYPRE_GET_ROW;HYPRE_MODE;OPTIMIZED_DH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <CompileAs>CompileAsC</CompileAs>
+      <DisableSpecificWarnings>4996;4091;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+    <Lib>
+      <OutputFile>$(OutDir)HYPRE-static.lib</OutputFile>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+    <ClCompile>
+      <Optimization>Full</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)\..\hypre.distributed_ls.Euclid;$(ProjectDir)\krylov;$(ProjectDir)\IJ_mv;$(ProjectDir)\parcsr_ls;$(ProjectDir)\parcsr_mv;$(ProjectDir)\seq_mv;$(ProjectDir)\multivector;$(ProjectDir)\parcsr_block_mv;$(ProjectDir)\matrix_matrix;$(ProjectDir)\distributed_matrix;$(ProjectDir)\utilities;c:\libs\Microsoft_HPC_Pack_2008_SDK\Include;c:\libs\AMD\acml4.4.0\ifort64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;MPI_MODE;MPI_TIMING;USING_MPI;HYPRE_GET_ROW;HYPRE_MODE;OPTIMIZED_DH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>false</MinimalRebuild>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level1</WarningLevel>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+      <CompileAs>CompileAsC</CompileAs>
+      <DisableSpecificWarnings>4996;4391;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <ShowIncludes>false</ShowIncludes>
+    </ClCompile>
+    <Lib>
+      <OutputFile>$(OutDir)HYPRE-static.lib</OutputFile>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="utilities\amg_linklist.c" />
+    <ClCompile Include="utilities\binsearch.c" />
+    <ClCompile Include="utilities\exchange_data.c" />
+    <ClCompile Include="utilities\fortran_matrix.c" />
+    <ClCompile Include="utilities\hypre_error.c" />
+    <ClCompile Include="utilities\hypre_memory.c" />
+    <ClCompile Include="utilities\hypre_mpi_comm_f2c.c" />
+    <ClCompile Include="utilities\hypre_qsort.c" />
+    <ClCompile Include="utilities\memory_dmalloc.c" />
+    <ClCompile Include="utilities\mpistubs.c" />
+    <ClCompile Include="utilities\qsplit.c" />
+    <ClCompile Include="utilities\random.c" />
+    <ClCompile Include="utilities\thread_mpistubs.c" />
+    <ClCompile Include="utilities\threading.c" />
+    <ClCompile Include="utilities\timer.c" />
+    <ClCompile Include="utilities\umalloc_local.c" />
+    <ClCompile Include="krylov\bicgstab.c" />
+    <ClCompile Include="krylov\cgnr.c" />
+    <ClCompile Include="krylov\flexgmres.c" />
+    <ClCompile Include="krylov\gmres.c" />
+    <ClCompile Include="krylov\HYPRE_bicgstab.c" />
+    <ClCompile Include="krylov\HYPRE_cgnr.c" />
+    <ClCompile Include="krylov\HYPRE_flexgmres.c" />
+    <ClCompile Include="krylov\HYPRE_gmres.c" />
+    <ClCompile Include="krylov\HYPRE_lgmres.c" />
+    <ClCompile Include="krylov\HYPRE_lobpcg.c" />
+    <ClCompile Include="krylov\HYPRE_pcg.c" />
+    <ClCompile Include="krylov\lgmres.c" />
+    <ClCompile Include="krylov\lobpcg.c" />
+    <ClCompile Include="krylov\pcg.c" />
+    <ClCompile Include="multivector\multivector.c" />
+    <ClCompile Include="multivector\temp_multivector.c" />
+    <ClCompile Include="IJ_mv\aux_par_vector.c" />
+    <ClCompile Include="IJ_mv\aux_parcsr_matrix.c" />
+    <ClCompile Include="IJ_mv\HYPRE_IJMatrix.c" />
+    <ClCompile Include="IJ_mv\HYPRE_IJVector.c" />
+    <ClCompile Include="IJ_mv\IJMatrix.c" />
+    <ClCompile Include="IJ_mv\IJMatrix_parcsr.c" />
+    <ClCompile Include="IJ_mv\IJVector.c" />
+    <ClCompile Include="IJ_mv\IJVector_parcsr.c" />
+    <ClCompile Include="distributed_ls\pilut\comm.c" />
+    <ClCompile Include="distributed_ls\pilut\debug.c" />
+    <ClCompile Include="distributed_ls\pilut\distributed_qsort.c" />
+    <ClCompile Include="distributed_ls\pilut\distributed_qsort_si.c" />
+    <ClCompile Include="distributed_ls\pilut\HYPRE_DistributedMatrixPilutSolver.c" />
+    <ClCompile Include="distributed_ls\pilut\ilut.c" />
+    <ClCompile Include="distributed_ls\pilut\parilut.c" />
+    <ClCompile Include="distributed_ls\pilut\parutil.c" />
+    <ClCompile Include="distributed_ls\pilut\pblas1.c" />
+    <ClCompile Include="distributed_ls\pilut\serilut.c" />
+    <ClCompile Include="distributed_ls\pilut\trifactor.c" />
+    <ClCompile Include="distributed_ls\pilut\util.c" />
+    <ClCompile Include="distributed_ls\ParaSails\ConjGrad.c" />
+    <ClCompile Include="distributed_ls\ParaSails\DiagScale.c" />
+    <ClCompile Include="distributed_ls\ParaSails\FGmres.c" />
+    <ClCompile Include="distributed_ls\ParaSails\Hash.c" />
+    <ClCompile Include="distributed_ls\ParaSails\hypre_ParaSails.c" />
+    <ClCompile Include="distributed_ls\ParaSails\LoadBal.c" />
+    <ClCompile Include="distributed_ls\ParaSails\Matrix.c" />
+    <ClCompile Include="distributed_ls\ParaSails\Mem.c" />
+    <ClCompile Include="distributed_ls\ParaSails\Numbering.c" />
+    <ClCompile Include="distributed_ls\ParaSails\OrderStat.c" />
+    <ClCompile Include="distributed_ls\ParaSails\ParaSails.c" />
+    <ClCompile Include="distributed_ls\ParaSails\PrunedRows.c" />
+    <ClCompile Include="distributed_ls\ParaSails\RowPatt.c" />
+    <ClCompile Include="distributed_ls\ParaSails\StoredRows.c" />
+    <ClCompile Include="distributed_ls\Euclid\blas_dh.c" />
+    <ClCompile Include="distributed_ls\Euclid\Euclid_apply.c" />
+    <ClCompile Include="distributed_ls\Euclid\Euclid_dh.c" />
+    <ClCompile Include="distributed_ls\Euclid\ExternalRows_dh.c" />
+    <ClCompile Include="distributed_ls\Euclid\Factor_dh.c" />
+    <ClCompile Include="distributed_ls\Euclid\getRow_dh.c" />
+    <ClCompile Include="distributed_ls\Euclid\globalObjects.c" />
+    <ClCompile Include="distributed_ls\Euclid\Hash_dh.c" />
+    <ClCompile Include="distributed_ls\Euclid\Hash_i_dh.c" />
+    <ClCompile Include="distributed_ls\Euclid\ilu_mpi_bj.c" />
+    <ClCompile Include="distributed_ls\Euclid\ilu_mpi_pilu.c" />
+    <ClCompile Include="distributed_ls\Euclid\ilu_seq.c" />
+    <ClCompile Include="distributed_ls\Euclid\io_dh.c" />
+    <ClCompile Include="distributed_ls\Euclid\krylov_dh.c" />
+    <ClCompile Include="distributed_ls\Euclid\Mat_dh.c" />
+    <ClCompile Include="distributed_ls\Euclid\mat_dh_private.c" />
+    <ClCompile Include="distributed_ls\Euclid\MatGenFD.c" />
+    <ClCompile Include="distributed_ls\Euclid\Mem_dh.c" />
+    <ClCompile Include="distributed_ls\Euclid\Numbering_dh.c" />
+    <ClCompile Include="distributed_ls\Euclid\Parser_dh.c" />
+    <ClCompile Include="distributed_ls\Euclid\shellSort_dh.c" />
+    <ClCompile Include="distributed_ls\Euclid\sig_dh.c" />
+    <ClCompile Include="distributed_ls\Euclid\SortedList_dh.c" />
+    <ClCompile Include="distributed_ls\Euclid\SortedSet_dh.c" />
+    <ClCompile Include="distributed_ls\Euclid\SubdomainGraph_dh.c" />
+    <ClCompile Include="distributed_ls\Euclid\TimeLog_dh.c" />
+    <ClCompile Include="distributed_ls\Euclid\Timer_dh.c" />
+    <ClCompile Include="distributed_ls\Euclid\Vec_dh.c" />
+    <ClCompile Include="distributed_matrix\distributed_matrix.c" />
+    <ClCompile Include="distributed_matrix\distributed_matrix_parcsr.c" />
+    <ClCompile Include="distributed_matrix\HYPRE_distributed_matrix.c" />
+    <ClCompile Include="matrix_matrix\HYPRE_ConvertParCSRMatrixToDistributedMatrix.c" />
+    <ClCompile Include="matrix_matrix\HYPRE_ConvertPETScMatrixToDistributedMatrix.c" />
+    <ClCompile Include="parcsr_block_mv\csr_block_matrix.c" />
+    <ClCompile Include="parcsr_block_mv\csr_block_matvec.c" />
+    <ClCompile Include="parcsr_block_mv\par_block_nodal_systems.c" />
+    <ClCompile Include="parcsr_block_mv\par_csr_block_comm.c" />
+    <ClCompile Include="parcsr_block_mv\par_csr_block_interp.c" />
+    <ClCompile Include="parcsr_block_mv\par_csr_block_matrix.c" />
+    <ClCompile Include="parcsr_block_mv\par_csr_block_matvec.c" />
+    <ClCompile Include="parcsr_block_mv\par_csr_block_rap.c" />
+    <ClCompile Include="parcsr_block_mv\par_csr_block_rap_communication.c" />
+    <ClCompile Include="parcsr_block_mv\par_csr_block_relax.c" />
+    <ClCompile Include="parcsr_ls\ame.c" />
+    <ClCompile Include="parcsr_ls\amg_hybrid.c" />
+    <ClCompile Include="parcsr_ls\ams.c" />
+    <ClCompile Include="parcsr_ls\aux_interp.c" />
+    <ClCompile Include="parcsr_ls\block_tridiag.c" />
+    <ClCompile Include="parcsr_ls\HYPRE_ame.c" />
+    <ClCompile Include="parcsr_ls\HYPRE_ams.c" />
+    <ClCompile Include="parcsr_ls\HYPRE_parcsr_amg.c" />
+    <ClCompile Include="parcsr_ls\HYPRE_parcsr_bicgstab.c" />
+    <ClCompile Include="parcsr_ls\HYPRE_parcsr_block.c" />
+    <ClCompile Include="parcsr_ls\HYPRE_parcsr_cgnr.c" />
+    <ClCompile Include="parcsr_ls\HYPRE_parcsr_Euclid.c" />
+    <ClCompile Include="parcsr_ls\HYPRE_parcsr_flexgmres.c" />
+    <ClCompile Include="parcsr_ls\HYPRE_parcsr_gmres.c" />
+    <ClCompile Include="parcsr_ls\HYPRE_parcsr_hybrid.c" />
+    <ClCompile Include="parcsr_ls\HYPRE_parcsr_int.c" />
+    <ClCompile Include="parcsr_ls\HYPRE_parcsr_lgmres.c" />
+    <ClCompile Include="parcsr_ls\HYPRE_parcsr_ParaSails.c" />
+    <ClCompile Include="parcsr_ls\HYPRE_parcsr_pcg.c" />
+    <ClCompile Include="parcsr_ls\HYPRE_parcsr_pilut.c" />
+    <ClCompile Include="parcsr_ls\HYPRE_parcsr_schwarz.c" />
+    <ClCompile Include="parcsr_ls\par_amg.c" />
+    <ClCompile Include="parcsr_ls\par_amg_setup.c" />
+    <ClCompile Include="parcsr_ls\par_amg_solve.c" />
+    <ClCompile Include="parcsr_ls\par_amg_solveT.c" />
+    <ClCompile Include="parcsr_ls\par_cg_relax_wt.c" />
+    <ClCompile Include="parcsr_ls\par_cgc_coarsen.c" />
+    <ClCompile Include="parcsr_ls\par_coarse_parms.c" />
+    <ClCompile Include="parcsr_ls\par_coarsen.c" />
+    <ClCompile Include="parcsr_ls\par_coordinates.c" />
+    <ClCompile Include="parcsr_ls\par_cr.c" />
+    <ClCompile Include="parcsr_ls\par_cycle.c" />
+    <ClCompile Include="parcsr_ls\par_difconv.c" />
+    <ClCompile Include="parcsr_ls\par_gsmg.c" />
+    <ClCompile Include="parcsr_ls\par_indepset.c" />
+    <ClCompile Include="parcsr_ls\par_interp.c" />
+    <ClCompile Include="parcsr_ls\par_jacobi_interp.c" />
+    <ClCompile Include="parcsr_ls\par_laplace.c" />
+    <ClCompile Include="parcsr_ls\par_laplace_27pt.c" />
+    <ClCompile Include="parcsr_ls\par_laplace_9pt.c" />
+    <ClCompile Include="parcsr_ls\par_lr_interp.c" />
+    <ClCompile Include="parcsr_ls\par_multi_interp.c" />
+    <ClCompile Include="parcsr_ls\par_nodal_systems.c" />
+    <ClCompile Include="parcsr_ls\par_rap.c" />
+    <ClCompile Include="parcsr_ls\par_rap_communication.c" />
+    <ClCompile Include="parcsr_ls\par_relax.c" />
+    <ClCompile Include="parcsr_ls\par_relax_interface.c" />
+    <ClCompile Include="parcsr_ls\par_rotate_7pt.c" />
+    <ClCompile Include="parcsr_ls\par_scaled_matnorm.c" />
+    <ClCompile Include="parcsr_ls\par_schwarz.c" />
+    <ClCompile Include="parcsr_ls\par_stats.c" />
+    <ClCompile Include="parcsr_ls\par_strength.c" />
+    <ClCompile Include="parcsr_ls\par_vardifconv.c" />
+    <ClCompile Include="parcsr_ls\pcg_par.c" />
+    <ClCompile Include="parcsr_ls\schwarz.c" />
+    <ClCompile Include="parcsr_mv\communicationT.c" />
+    <ClCompile Include="parcsr_mv\HYPRE_parcsr_matrix.c" />
+    <ClCompile Include="parcsr_mv\HYPRE_parcsr_vector.c" />
+    <ClCompile Include="parcsr_mv\new_commpkg.c" />
+    <ClCompile Include="parcsr_mv\numbers.c" />
+    <ClCompile Include="parcsr_mv\par_csr_aat.c" />
+    <ClCompile Include="parcsr_mv\par_csr_assumed_part.c" />
+    <ClCompile Include="parcsr_mv\par_csr_bool_matop.c" />
+    <ClCompile Include="parcsr_mv\par_csr_bool_matrix.c" />
+    <ClCompile Include="parcsr_mv\par_csr_communication.c" />
+    <ClCompile Include="parcsr_mv\par_csr_matop.c" />
+    <ClCompile Include="parcsr_mv\par_csr_matop_marked.c" />
+    <ClCompile Include="parcsr_mv\par_csr_matrix.c" />
+    <ClCompile Include="parcsr_mv\par_csr_matvec.c" />
+    <ClCompile Include="parcsr_mv\par_vector.c" />
+    <ClCompile Include="seq_mv\csr_matop.c" />
+    <ClCompile Include="seq_mv\csr_matrix.c" />
+    <ClCompile Include="seq_mv\csr_matvec.c" />
+    <ClCompile Include="seq_mv\genpart.c" />
+    <ClCompile Include="seq_mv\HYPRE_csr_matrix.c" />
+    <ClCompile Include="seq_mv\HYPRE_mapped_matrix.c" />
+    <ClCompile Include="seq_mv\HYPRE_multiblock_matrix.c" />
+    <ClCompile Include="seq_mv\HYPRE_vector.c" />
+    <ClCompile Include="seq_mv\mapped_matrix.c" />
+    <ClCompile Include="seq_mv\multiblock_matrix.c" />
+    <ClCompile Include="seq_mv\vector.c" />
+    <ClCompile Include="seq_ls\pamg\amg.c" />
+    <ClCompile Include="seq_ls\pamg\amg_setup.c" />
+    <ClCompile Include="seq_ls\pamg\amg_solve.c" />
+    <ClCompile Include="seq_ls\pamg\amgstats.c" />
+    <ClCompile Include="seq_ls\pamg\Atrunc.c" />
+    <ClCompile Include="seq_ls\pamg\bcsr_interp.c" />
+    <ClCompile Include="seq_ls\pamg\bcsr_matrix.c" />
+    <ClCompile Include="seq_ls\pamg\bcsr_matrix_dense_block.c" />
+    <ClCompile Include="seq_ls\pamg\bcsr_relax.c" />
+    <ClCompile Include="seq_ls\pamg\cg_fun.c" />
+    <ClCompile Include="seq_ls\pamg\coarsen.c" />
+    <ClCompile Include="seq_ls\pamg\coarsenCR.c" />
+    <ClCompile Include="seq_ls\pamg\cycle.c" />
+    <ClCompile Include="seq_ls\pamg\difconv.c" />
+    <ClCompile Include="seq_ls\pamg\HYPRE_amg.c" />
+    <ClCompile Include="seq_ls\pamg\HYPRE_csr_gmres.c" />
+    <ClCompile Include="seq_ls\pamg\HYPRE_csr_pcg.c" />
+    <ClCompile Include="seq_ls\pamg\indepset.c" />
+    <ClCompile Include="seq_ls\pamg\interp.c" />
+    <ClCompile Include="seq_ls\pamg\interpCR.c" />
+    <ClCompile Include="seq_ls\pamg\interpRBM.c" />
+    <ClCompile Include="seq_ls\pamg\inx_part_of_u_interp.c" />
+    <ClCompile Include="seq_ls\pamg\laplace.c" />
+    <ClCompile Include="seq_ls\pamg\laplace_27pt.c" />
+    <ClCompile Include="seq_ls\pamg\laplace_9pt.c" />
+    <ClCompile Include="seq_ls\pamg\pcg.c" />
+    <ClCompile Include="seq_ls\pamg\random.c" />
+    <ClCompile Include="seq_ls\pamg\rap.c" />
+    <ClCompile Include="seq_ls\pamg\relax.c" />
+    <ClCompile Include="seq_ls\pamg\scaled_matnorm.c" />
+    <ClCompile Include="seq_ls\pamg\schwarz.c" />
+    <ClCompile Include="seq_ls\pamg\SPamg-pcg.c" />
+    <ClCompile Include="seq_ls\pamg\stencil_matrix.c">
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+    <ClCompile Include="seq_ls\pamg\strength.c" />
+    <ClCompile Include="seq_ls\pamg\trunc.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="HYPRE.h" />
+    <ClInclude Include="HYPRE_config.h" />
+    <ClInclude Include="utilities\_hypre_utilities.h" />
+    <ClInclude Include="utilities\amg_linklist.h" />
+    <ClInclude Include="utilities\exchange_data.h" />
+    <ClInclude Include="utilities\fortran.h" />
+    <ClInclude Include="utilities\fortran_matrix.h" />
+    <ClInclude Include="utilities\general.h" />
+    <ClInclude Include="utilities\hypre_error.h" />
+    <ClInclude Include="utilities\HYPRE_error_f.h" />
+    <ClInclude Include="utilities\hypre_memory.h" />
+    <ClInclude Include="utilities\hypre_smp_forloop.h" />
+    <ClInclude Include="utilities\HYPRE_utilities.h" />
+    <ClInclude Include="utilities\mpistubs.h" />
+    <ClInclude Include="utilities\thread_mpistubs.h" />
+    <ClInclude Include="utilities\threading.h" />
+    <ClInclude Include="utilities\timing.h" />
+    <ClInclude Include="utilities\umalloc_local.h" />
+    <ClInclude Include="krylov\bicgstab.h" />
+    <ClInclude Include="krylov\cgnr.h" />
+    <ClInclude Include="krylov\flexgmres.h" />
+    <ClInclude Include="krylov\gmres.h" />
+    <ClInclude Include="krylov\HYPRE_krylov.h" />
+    <ClInclude Include="krylov\HYPRE_lobpcg.h" />
+    <ClInclude Include="krylov\HYPRE_MatvecFunctions.h" />
+    <ClInclude Include="krylov\krylov.h" />
+    <ClInclude Include="krylov\lgmres.h" />
+    <ClInclude Include="krylov\lobpcg.h" />
+    <ClInclude Include="krylov\pcg.h" />
+    <ClInclude Include="multivector\csr_matmultivec.h" />
+    <ClInclude Include="multivector\interpreter.h" />
+    <ClInclude Include="multivector\multivector.h" />
+    <ClInclude Include="multivector\par_csr_matmultivec.h" />
+    <ClInclude Include="multivector\par_csr_pmvcomm.h" />
+    <ClInclude Include="multivector\par_multivector.h" />
+    <ClInclude Include="multivector\seq_multivector.h" />
+    <ClInclude Include="multivector\temp_multivector.h" />
+    <ClInclude Include="IJ_mv\_hypre_IJ_mv.h" />
+    <ClInclude Include="IJ_mv\aux_par_vector.h" />
+    <ClInclude Include="IJ_mv\aux_parcsr_matrix.h" />
+    <ClInclude Include="IJ_mv\headers.h" />
+    <ClInclude Include="IJ_mv\HYPRE_IJ_mv.h" />
+    <ClInclude Include="IJ_mv\IJ_matrix.h" />
+    <ClInclude Include="IJ_mv\IJ_vector.h" />
+    <ClInclude Include="distributed_ls\pilut\const.h" />
+    <ClInclude Include="distributed_ls\pilut\DistributedMatrixPilutSolver.h" />
+    <ClInclude Include="distributed_ls\pilut\HYPRE_DistributedMatrixPilutSolver_protos.h" />
+    <ClInclude Include="distributed_ls\pilut\HYPRE_DistributedMatrixPilutSolver_types.h" />
+    <ClInclude Include="distributed_ls\pilut\ilu.h" />
+    <ClInclude Include="distributed_ls\pilut\internal_protos.h" />
+    <ClInclude Include="distributed_ls\pilut\macros.h" />
+    <ClInclude Include="distributed_ls\pilut\struct.h" />
+    <ClInclude Include="distributed_ls\ParaSails\Common.h" />
+    <ClInclude Include="distributed_ls\ParaSails\ConjGrad.h" />
+    <ClInclude Include="distributed_ls\ParaSails\DiagScale.h" />
+    <ClInclude Include="distributed_ls\ParaSails\Hash.h" />
+    <ClInclude Include="distributed_ls\ParaSails\hypre_ParaSails.h" />
+    <ClInclude Include="distributed_ls\ParaSails\LoadBal.h" />
+    <ClInclude Include="distributed_ls\ParaSails\Matrix.h" />
+    <ClInclude Include="distributed_ls\ParaSails\Mem.h" />
+    <ClInclude Include="distributed_ls\ParaSails\Numbering.h" />
+    <ClInclude Include="distributed_ls\ParaSails\OrderStat.h" />
+    <ClInclude Include="distributed_ls\ParaSails\ParaSails.h" />
+    <ClInclude Include="distributed_ls\ParaSails\PrunedRows.h" />
+    <ClInclude Include="distributed_ls\ParaSails\RowPatt.h" />
+    <ClInclude Include="distributed_ls\ParaSails\StoredRows.h" />
+    <ClInclude Include="distributed_ls\Euclid\blas_dh.h" />
+    <ClInclude Include="distributed_ls\Euclid\euclid.h" />
+    <ClInclude Include="distributed_ls\Euclid\euclid_common.h" />
+    <ClInclude Include="distributed_ls\Euclid\euclid_config.h" />
+    <ClInclude Include="distributed_ls\Euclid\Euclid_dh.h" />
+    <ClInclude Include="distributed_ls\Euclid\ExternalRows_dh.h" />
+    <ClInclude Include="distributed_ls\Euclid\Factor_dh.h" />
+    <ClInclude Include="distributed_ls\Euclid\getRow_dh.h" />
+    <ClInclude Include="distributed_ls\Euclid\guards_dh.h" />
+    <ClInclude Include="distributed_ls\Euclid\Hash_dh.h" />
+    <ClInclude Include="distributed_ls\Euclid\Hash_i_dh.h" />
+    <ClInclude Include="distributed_ls\Euclid\ilu_dh.h" />
+    <ClInclude Include="distributed_ls\Euclid\io_dh.h" />
+    <ClInclude Include="distributed_ls\Euclid\krylov_dh.h" />
+    <ClInclude Include="distributed_ls\Euclid\macros_dh.h" />
+    <ClInclude Include="distributed_ls\Euclid\Mat_dh.h" />
+    <ClInclude Include="distributed_ls\Euclid\mat_dh_private.h" />
+    <ClInclude Include="distributed_ls\Euclid\MatGenFD.h" />
+    <ClInclude Include="distributed_ls\Euclid\Mem_dh.h" />
+    <ClInclude Include="distributed_ls\Euclid\Numbering_dh.h" />
+    <ClInclude Include="distributed_ls\Euclid\Parser_dh.h" />
+    <ClInclude Include="distributed_ls\Euclid\shellSort_dh.h" />
+    <ClInclude Include="distributed_ls\Euclid\sig_dh.h" />
+    <ClInclude Include="distributed_ls\Euclid\SortedList_dh.h" />
+    <ClInclude Include="distributed_ls\Euclid\SortedSet_dh.h" />
+    <ClInclude Include="distributed_ls\Euclid\SubdomainGraph_dh.h" />
+    <ClInclude Include="distributed_ls\Euclid\TimeLog_dh.h" />
+    <ClInclude Include="distributed_ls\Euclid\Timer_dh.h" />
+    <ClInclude Include="distributed_ls\Euclid\Vec_dh.h" />
+    <ClInclude Include="distributed_matrix\distributed_matrix.h" />
+    <ClInclude Include="distributed_matrix\HYPRE_distributed_matrix_mv.h" />
+    <ClInclude Include="distributed_matrix\HYPRE_distributed_matrix_protos.h" />
+    <ClInclude Include="distributed_matrix\HYPRE_distributed_matrix_types.h" />
+    <ClInclude Include="matrix_matrix\HYPRE_matrix_matrix_protos.h" />
+    <ClInclude Include="parcsr_block_mv\csr_block_matrix.h" />
+    <ClInclude Include="parcsr_block_mv\par_csr_block_matrix.h" />
+    <ClInclude Include="parcsr_ls\_hypre_parcsr_ls.h" />
+    <ClInclude Include="parcsr_ls\aux_interp.h" />
+    <ClInclude Include="parcsr_ls\block_tridiag.h" />
+    <ClInclude Include="parcsr_ls\Common.h" />
+    <ClInclude Include="parcsr_ls\headers.h" />
+    <ClInclude Include="parcsr_ls\HYPRE_parcsr_int.h" />
+    <ClInclude Include="parcsr_ls\HYPRE_parcsr_ls.h" />
+    <ClInclude Include="parcsr_ls\par_amg.h" />
+    <ClInclude Include="parcsr_ls\schwarz.h" />
+    <ClInclude Include="parcsr_mv\_hypre_parcsr_mv.h" />
+    <ClInclude Include="parcsr_mv\headers.h" />
+    <ClInclude Include="parcsr_mv\HYPRE_parcsr_mv.h" />
+    <ClInclude Include="parcsr_mv\new_commpkg.h" />
+    <ClInclude Include="parcsr_mv\numbers.h" />
+    <ClInclude Include="parcsr_mv\par_chord_matrix.h" />
+    <ClInclude Include="parcsr_mv\par_csr_assumed_part.h" />
+    <ClInclude Include="parcsr_mv\par_csr_communication.h" />
+    <ClInclude Include="parcsr_mv\par_csr_matrix.h" />
+    <ClInclude Include="parcsr_mv\par_vector.h" />
+    <ClInclude Include="seq_mv\csr_matrix.h" />
+    <ClInclude Include="seq_mv\headers.h" />
+    <ClInclude Include="seq_mv\HYPRE_seq_mv.h" />
+    <ClInclude Include="seq_mv\mapped_matrix.h" />
+    <ClInclude Include="seq_mv\multiblock_matrix.h" />
+    <ClInclude Include="seq_mv\seq_mv.h" />
+    <ClInclude Include="seq_mv\vector.h" />
+    <ClInclude Include="seq_ls\pamg\amg.h" />
+    <ClInclude Include="seq_ls\pamg\bcsr_matrix.h" />
+    <ClInclude Include="seq_ls\pamg\bcsr_matrix_dense_block.h" />
+    <ClInclude Include="seq_ls\pamg\headers.h" />
+    <ClInclude Include="seq_ls\pamg\HYPRE_ls.h" />
+    <ClInclude Include="seq_ls\pamg\pamg.h" />
+    <ClInclude Include="seq_ls\pamg\pcg.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ReadMe.txt" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -1,0 +1,216 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--  BoSSS control file, specialized for the compressible Navier-Stokes solver: 
+      Source Terms for a manufactured solution based on: "Gassner, Gregor, 
+      Frieder Lörcher, and C-D. Munz. "A discontinuous Galerkin scheme 
+      based on a space-time expansion II. Viscous flow equations in multi 
+      dimensions." Journal of Scientific Computing 34.3 (2008): 260-286."-->
+<BoSSSControl>
+	<Base>
+    <dboptions path="c:\bosss_dbv2\exp\" />
+    <!--<dboptions path="/home/kraemer/MMS_unsteady/Gassner2d_unsteady" />-->
+		<!-- no grid-->
+    <grid guid="00000000-0000-0000-0000-000000000016" />
+
+    <description name="Gassner2d_CNS_unsteady_h=1/16_p=1_BC=Dirichlet">
+			viscous NSE Test -> MMS 2D
+		</description>
+		
+		<tags>
+			viscous, NSE, MMS
+		</tags>
+    <!-- Specify "solver" or "query" or "parameterStudy" -->
+		<run mode="parameterStudy"/>
+    
+		<fields_degree>
+			<!-- Specify DG polynomial degree; If degree for "u", "e", "p",
+								"T", "Ma", "K" or "S" are given, these fields will also be
+								calculated and included in IO operations -->
+			<field	identification="rho"	degree="1" />
+			<field	identification="m"		degree="1" />
+			<field	identification="rhoE"	degree="1" />
+      <field  identification="u" degree="1"/>
+      <field  identification="p" degree="1"/>
+		</fields_degree>
+	</Base>
+
+	<!-- Specify "values" or "restart" -->
+	<initial mode="values">
+
+		<restart>
+			<session guid="3a468073-0728-4cc3-8b97-7e06b08e202a" timestepno="" />
+		</restart>
+
+		<values>
+			<formula>
+        rho(x,y) = (2.0 + 0.5*sin(2*PI*(x+y)))
+      </formula>
+			<formula>
+        m0(x,y) = (2.0 + 0.5*sin(2*PI*(x+y)))
+      </formula>
+      <formula>
+        m1(x,y) = (2.0 + 0.5*sin(2*PI*(x+y)))
+      </formula>
+			<formula>
+        rhoE(x,y) = (2.0 + 0.5*sin(2*PI*(x+y)))*(2.0 + 0.5*sin(2*PI*(x+y)))
+      </formula>
+		</values>
+	</initial>
+
+	<Solver>
+		<logging savetodb="true" saveperiod="1000" tracing="false"/>
+		<termcond Endtime="0.1" NoOfTimesteps="200000000"/>
+		<timestepping dtMin="0.0e-3" dtMax="5.0e-2" CFLFrac="0.25"/>
+		<!--<timestepping dtMin="4.82e-6" dtMax="4.82e-6" CFLFrac="0.01"/>-->
+
+		<boundary>
+			<bc edgetagname="supersonicinlet">
+				<formula>
+          rho(t,x,y) = (2.0 + 0.5*sin(2*PI*(x+y)-20*PI*t))
+        </formula>
+				<formula>
+          u0(x,y) = 1.0
+        </formula>
+        <formula>
+          u1(x,y) = 1.0
+        </formula>
+				<formula>
+          p(t,x,y) = (1.4-1)*((2.0 + 0.5*sin(2*PI*(x+y)-20*PI*t))*(2.0 + 0.5*sin(2*PI*(x+y)-20*PI*t))-(2.0 + 0.5*sin(2*PI*(x+y)-20*PI*t)))
+        </formula>
+			</bc>
+      <bc edgetagname="subsonicinlet">
+        <formula>
+          rho(t,x,y) = (2.0 + 0.5*sin(2*PI*(x+y)-20*PI*t))
+        </formula>
+        <formula>
+          u0(x,y) = 1.0
+        </formula>
+        <formula>
+          u1(x,y) = 1.0
+        </formula>
+      </bc>
+			<bc edgetagname="subsonicoutlet">
+        <formula>
+          p(x,y) = (1.4-1)*((2.0 + 0.5*sin(2*PI*(x+y)))*(2.0 + 0.5*sin(2*PI*(x+y)))-(2.0 + 0.5*sin(2*PI*(x+y))))
+        </formula>
+			</bc>
+
+		</boundary>
+		<properties>
+		
+			<string key="equationSystem">NavierStokes</string>
+			<string key="convectiveFluxType">OptimizedHLLC</string>
+			
+			<string key="diffusiveFluxType">OptimizedSIPG</string>			
+			<float key="SIPGPenaltyConstant">1.3</float> 
+
+			<string key="timeStepping">explicit</string>
+			<string key="explicitScheme">RungeKutta</string>
+        <int key="explicitOrder">4</int>
+
+      <float key="Reynolds">1000.0</float>
+			<float key="Mach">1.0</float>
+			<float key="Prandtl">0.72</float>
+			<float key="kappa">1.4</float>
+			<!-- Choose "IdealGas", "Tait" or "StiffenedGas". Omitting this
+								 option will make CNS default to "IdealGas".-->
+			<string key="equationOfState">IdealGas</string>
+			<!-- "None": No residual calculation;
+								 "SteadyState": Residuals for a steady state problem;
+								 "Unsteady": Residuals for an unsteady problem -->
+			<string key="residualType">ChangeRate,query</string>
+			<int key="residualInterval">100</int>
+      <!-- Interval for 'Starting time step' statements (they can affect
+                 serial and parallel performance of individual time-steps are
+                 fast!). -->
+      <int key="printInterval">10</int>
+			<!-- The following properties represent optional formulas defining 
+								 source terms of the selected equation system. Each formula may
+								 depend on independent variables as well as primal fields -->
+			<string key="rhoSource">
+        f(t,x,y)  = -0.5*((4*PI-20*PI)*cos(2*PI*(x+y)-20*PI*t))
+      </string>
+			<string key="m0Source">
+        f(t,x,y)  = -0.5*(cos(2*PI*(x+y)-20*PI*t)*(-20*PI+2*PI*(-1+3*1.4))
+                          + sin(2*(2*PI*(x+y)-20*PI*t))*0.5*2*PI*(1.4-1))
+      </string>
+      <string key="m1Source">
+        f(t,x,y)  = -0.5*(cos(2*PI*(x+y)-20*PI*t)*(-20*PI+2*PI*(-1+3*1.4))
+                          + sin(2*(2*PI*(x+y)-20*PI*t))*0.5*2*PI*(1.4-1))
+      </string>
+			<string key="rhoESource">
+        f(t,x,y) =  -cos(2*PI*(x+y)-20*PI*t)*(12*1.4+4-4*20)*0.5*PI
+        -0.5*0.5*(4*1.4-20)*PI*sin(2*(2*PI*(x+y)-20*PI*t))
+        -0.5*8*PI*PI*1.4/(0.72*1000)*sin(2*PI*(x+y)-20*PI*t)
+      </string>
+			<!-- Choose "Symbolic" or "byFlux" for the calculation of the
+								 derivatives of the primal variables -->
+			<string key="derivativeOption">None</string>
+		</properties>
+
+   
+    <Queries>
+			<L2Error id="SolL2Err_rho">
+				<computedSolution>
+					<field identification="rho" />
+				</computedSolution>
+				<exactSolution>
+          <formula degree="10">
+            rho(t,x,y) = (2.0 + 0.5*sin(2*PI*(x+y)-20*PI*t))
+          </formula>
+				</exactSolution>
+			</L2Error>
+      <L2Error id="SolL2Err_m0">
+        <computedSolution>
+          <field identification="m0" />
+        </computedSolution>
+        <exactSolution>
+          <formula degree="10">
+            m0(t,x,y) = (2.0 + 0.5*sin(2*PI*(x+y)-20*PI*t))
+          </formula>
+        </exactSolution>
+      </L2Error>
+      <L2Error id="SolL2Err_rhoE">
+        <computedSolution>
+          <field identification="rhoE" />
+        </computedSolution>
+        <exactSolution>
+          <formula degree="10">
+            rhoE(t,x,y) = (2.0 + 0.5*sin(2*PI*(x+y)-20*PI*t))*(2.0 + 0.5*sin(2*PI*(x+y)-20*PI*t))
+          </formula>
+        </exactSolution>
+      </L2Error>
+      <L2Error id="SolL2Err_U0">
+        <computedSolution>
+          <field identification="u0" />
+        </computedSolution>
+        <exactSolution>
+          <formula degree="10">
+            u0(x) = 1.0
+          </formula>
+        </exactSolution>
+      </L2Error>
+		</Queries>
+	</Solver>
+  <ParameterStudy logFileDirectory=".">
+    <parameterSet>
+      <parameter id="grid" xpath="Base/grid/@guid">
+        00000000-0000-0000-0000-000000000016
+        00000000-0000-0000-0000-000000000032
+        00000000-0000-0000-0000-000000000064
+      </parameter>
+      <parameter id="description" xpath="Base/description/@name">
+        Gassner2d_CNS_Re=1000_RK4_h=1/16_p=x_tracing
+        Gassner2d_CNS_Re=1000_RK4_h=1/32_p=x_tracing
+        Gassner2d_CNS_Re=1000_RK4_h=1/64_p=x_tracing
+      </parameter>
+    </parameterSet>
+    <parameterSet>
+      <parameter id="rho-degree" xpath="Base/fields_degree/field[@identification='rho']/@degree">1 2 3</parameter>
+      <parameter id="m-degree" xpath="Base/fields_degree/field[@identification='m']/@degree">1 2 3</parameter>
+      <parameter id="rhoE-degree" xpath="Base/fields_degree/field[@identification='rhoE']/@degree">1 2 3</parameter>
+      <parameter id="u-degree" xpath="Base/fields_degree/field[@identification='u']/@degree">1 2 3</parameter>
+      <parameter id="p-degree" xpath="Base/fields_degree/field[@identification='p']/@degree">1 2 3</parameter>
+    </parameterSet>
+  </ParameterStudy>
+
+</BoSSSControl>

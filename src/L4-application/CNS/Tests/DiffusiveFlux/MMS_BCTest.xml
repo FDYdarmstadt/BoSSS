@@ -1,0 +1,228 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--  BoSSS control file, specialized for the compressible Navier-Stokes solver: 
+      Source Terms for a manufactured solution with exp(-x*x)"-->
+<BoSSSControl>
+	<Base>
+		<dboptions path="c:\bosss_dbv2\BCexpo\subsonicInlet" />
+		<!-- no grid-->
+    <grid guid="00000000-0000-0000-0000-000000000008" />
+    
+    <!-- h = 1/16
+    <grid guid="b8ed032c-3fb4-427a-9bdd-ed35ede16a48" />-->
+
+
+    <description name="BCTest_Re=1_mu=1_h=1/16_p=3">
+			viscous NSE Test -> MMS
+		</description>
+		
+		<tags>
+			viscous, NSE, MMS
+		</tags>
+    <!-- Specify "solver" or "query" or "parameterStudy" -->
+		<run mode="parameterStudy"/>
+    
+		<fields_degree>
+			<!-- Specify DG polynomial degree; If degree for "u", "e", "p",
+								"T", "Ma", "K" or "S" are given, these fields will also be
+								calculated and included in IO operations -->
+			<field	identification="rho"	degree="3" />
+			<field	identification="m"		degree="3" />
+			<field	identification="rhoE"	degree="3" />
+      <field  identification="u" degree="3"/>
+      <field  identification="p" degree="3"/>
+      <field  identification="Ma" degree="3"/>
+		</fields_degree>
+	</Base>
+
+	<!-- Specify "values" or "restart" -->
+	<initial mode="values">
+
+		<restart>
+			<session guid="969eb288-1c19-4cbc-bdf7-f8edc8d8da3b" timestepno="" />
+		</restart>
+
+		<values>
+			<formula>
+        rho(x) = 4.0+0.25*exp(-x*x*4.0)
+      </formula>
+			<formula>
+        m0(x) = 4.0+0.25*exp(-x*x*4.0)
+      </formula>
+			<formula>
+        rhoE(x) = (4.0+0.25*exp(-x*x*4.0))*(4.0+0.25*exp(-x*x*4.0))
+      </formula>
+		</values>
+	</initial>
+
+	<Solver>
+		<logging savetodb="true" saveperiod="1000" tracing="false"/>
+		<termcond Endtime="100.0" NoOfTimesteps="100000"/>
+		<timestepping dtMin="0.0e-3" dtMax="5.0e-2" CFLFrac="0.005"/>
+		<!--<timestepping dtMin="4.82e-6" dtMax="4.82e-6" CFLFrac="0.01"/>-->
+
+		<boundary>
+			<bc edgetagname="supersonicinlet">
+				<formula>
+          rho(x) = 4.0000000
+        </formula>
+				<formula>
+          u0(x) = 1.0
+        </formula>
+				<formula>
+          p(x) = 5.6000000
+        </formula>
+			</bc>
+      <bc edgetagname="subsonicinlet">
+        <formula>
+          rho(x) = 4.0
+        </formula>
+        <formula>
+          u0(x) = 1.0
+        </formula>
+      </bc>
+			<bc edgetagname="subsonicoutlet">
+        <formula>
+          p(x) = 5.6
+        </formula>
+			</bc>
+      <bc edgetagname="supersonicoutlet">
+      </bc>
+
+		</boundary>
+		<properties>
+		
+			<string key="equationSystem">NavierStokes</string>
+			<string key="convectiveFluxType">HLLC</string>
+			
+			<string key="diffusiveFluxType">SIPG</string>			
+			<float key="SIPGPenaltyConstant">1.3</float> 
+
+			<string key="timeStepping">explicit</string>
+			<string key="explicitScheme">RungeKutta</string>
+        <int key="explicitOrder">1</int>
+
+      <!--<float key="Reynolds">5.5613479</float>-->
+      <float key="Reynolds">1.0</float>
+			<float key="Mach">1.0</float>
+			<float key="Prandtl">0.72</float>
+			<float key="kappa">1.4</float>
+			<!-- Choose "IdealGas", "Tait" or "StiffenedGas". Omitting this
+								 option will make CNS default to "IdealGas".-->
+			<string key="equationOfState">IdealGas</string>
+      <!-- Choose "constant", "Sutherland" or "PowerLaw". Default is
+            "constant". Obviously, only applies to viscous flows. -->
+      <string key="viscosityLaw">constant</string>
+      <!-- Only required if "viscosityLaw" is "Sutherland". Denotes the
+                 ratio of the temperature constants included in Sutherland's
+                 law. Default is 110.4 / 273.15 (which is valid for air) -->
+      <!--<float key="sutherlandConstant"></float>-->
+      <!-- Only required if "viscosityLaw" is "PowerLaw". Denotes the
+                 ratio exponent of the power law. Default is 0.666 (which is
+                 valid for air) -->
+      <!--<float key="powerLawConstant"></float>-->
+			<!-- "None": No residual calculation;
+								 "SteadyState": Residuals for a steady state problem;
+								 "Unsteady": Residuals for an unsteady problem -->
+			<string key="residualType">ChangeRate,query</string>
+      <!-- An optional list of termination criteria and the corresponding
+                 thresholds. The criteria are based in the residual calculation
+                 and have the following format: $residualType_$entityName
+                 Here, the $entityName is either the name of a query or the
+                 description of a particular residual for a particular field,
+                 for example 'L2_abs_m0'. The individual criteria are combined
+                 with a boolean AND combination i.e. CNS only terminates when
+                 ALL criteria are fulfilled. -->
+      <string key="terminationCriteria">changeRate_L2_abs_rhoE, changeRate_L2_abs_m0</string>
+      <fvector key="terminationThresholds">1e-13, 1e-13</fvector>
+			<int key="residualInterval">1000</int>
+      <!-- Interval for 'Starting time step' statements (they can affect
+                 serial and parallel performance of individual time-steps are
+                 fast!). -->
+      <int key="printInterval">1000</int>
+			<!-- The following properties represent optional formulas defining 
+								 source terms of the selected equation system. Each formula may
+								 depend on independent variables as well as primal fields -->
+			<string key="rhoSource">
+        f(x)  =  2*x*exp(-4*x*x)
+      </string>
+			<string key="m0Source">
+        f(x)  = 8.0*x*exp(-4*x*x)+0.4*x*exp(-8*x*x)
+      </string>
+			<string key="rhoESource">
+        f(x) = 22*x*exp(-4*x*x)
+        +1.4*x*exp(-8*x*x)
+        -2.8/(0.72*1)*exp(-4*x*x)
+        +22.4/(0.72*1)*x*x*exp(-4*x*x)
+      </string>
+			<!-- Choose "Symbolic" or "byFlux" for the calculation of the
+								 derivatives of the primal variables -->
+			<string key="derivativeOption">None</string>
+		</properties>
+
+   
+    <Queries>
+			<L2Error id="SolL2Err_rho">
+				<computedSolution>
+					<field identification="rho" />
+				</computedSolution>
+				<exactSolution>
+          <formula degree="10">
+            rho(x) = (4.0+0.25*exp(-x*x*4.0))
+          </formula>
+				</exactSolution>
+			</L2Error>
+      <L2Error id="SolL2Err_m0">
+        <computedSolution>
+          <field identification="m0" />
+        </computedSolution>
+        <exactSolution>
+          <formula degree="10">
+            m0(x) = (4.0+0.25*exp(-x*x*4.0))
+          </formula>
+        </exactSolution>
+      </L2Error>
+      <L2Error id="SolL2Err_rhoE">
+        <computedSolution>
+          <field identification="rhoE" />
+        </computedSolution>
+        <exactSolution>
+          <formula degree="10">
+            rhoE(x) = (4.0+0.25*exp(-x*x*4.0))*(4.0+0.25*exp(-x*x*4.0))
+          </formula>
+        </exactSolution>
+      </L2Error>
+      <L2Error id="SolL2Err_U0">
+        <computedSolution>
+          <field identification="u0" />
+        </computedSolution>
+        <exactSolution>
+          <formula degree="10">
+            u0(x) = 1.0
+          </formula>
+        </exactSolution>
+      </L2Error>
+		</Queries>
+	</Solver>
+
+  <ParameterStudy logFileDirectory=".">
+    <parameterSet>
+      <parameter id="grid" xpath="Base/grid/@guid">
+        00000000-0000-0000-0000-000000000004
+        00000000-0000-0000-0000-000000000008
+        00000000-0000-0000-0000-000000000016
+      </parameter>
+      <parameter id="description" xpath="Base/description/@name">
+        BCTest_[-3,3]_subInOut_h=1/4_p=x
+        BCTest_[-3,3]_subInOut_h=1/8_p=x
+        BCTest_[-3,3]_subInOut_h=1/16_p=x
+      </parameter>
+    </parameterSet>
+    <parameterSet>
+      <parameter id="rho-degree" xpath="Base/fields_degree/field[@identification='rho']/@degree">1 2 3</parameter>
+      <parameter id="m-degree" xpath="Base/fields_degree/field[@identification='m']/@degree">1 2 3</parameter>
+      <parameter id="rhoE-degree" xpath="Base/fields_degree/field[@identification='rhoE']/@degree">1 2 3</parameter>
+      <parameter id="u-degree" xpath="Base/fields_degree/field[@identification='u']/@degree">1 2 3</parameter>
+    </parameterSet>
+  </ParameterStudy>
+
+</BoSSSControl>

@@ -1,0 +1,50 @@
+function Mtx = ReadMsr(filename)
+ 
+fid = fopen(filename);
+
+% matrix dimensions
+% -----------------
+NoOfRows = fscanf(fid,'%d',1);
+NoOfCols = fscanf(fid,'%d',1);
+NonZeros = fscanf(fid,'%d',1);
+cnt = 1;
+
+% read row and column array
+% -------------------------
+iCol = zeros(NonZeros,1);
+iRow = zeros(NonZeros,1);
+entries = zeros(NonZeros,1);
+l0 = 0;
+str = char(zeros(1,6));
+for i = 1:NoOfRows
+    NonZerosInRow = fscanf(fid,'%d',1);
+    if(l0 ~= NonZerosInRow)
+        str = char(zeros(1,NonZerosInRow*6));
+        for j = 1:NonZerosInRow
+            i0 = 1+(j-1)*6;
+            str(i0:i0+1) = '%f';
+            str(i0+3:i0+4) = '%f';
+        end
+    end
+    R = fscanf(fid,str,2*NonZerosInRow);
+    R2 = reshape(R',2,NonZerosInRow);
+    ind = cnt:(cnt+NonZerosInRow-1);
+    iCol(ind) = R2(1,:);
+    iRow(ind) = i;
+    entries(ind) = R2(2,:);
+
+    cnt = cnt + NonZerosInRow;
+end
+fclose(fid);
+
+
+if (cnt-1) < NonZeros
+    iCol = iCol(1:(cnt-1),1);
+    iRow = iRow(1:(cnt-1),1);
+    entries = entries(1:(cnt-1),1);
+end
+
+
+% create sparse matrix
+% --------------------
+Mtx = sparse(iRow,iCol+1,entries,NoOfRows,NoOfCols,NonZeros);

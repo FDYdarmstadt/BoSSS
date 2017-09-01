@@ -1,0 +1,263 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+Copyright 2017 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
+<!-- BoSSS control file, specialized for the compressible Navier-Stokes solver -->
+<BoSSSControl>
+	<Base>
+		<dboptions path="c:\bosss_dbv2\VSP_M4_Constant\" />
+		<!-- no grid
+    <grid guid="00000000-0000-0000-0000-000000000000" />-->
+
+    <!-- grid guids Dirichlet values
+    h = 1/16  => 96a5f054-27de-403e-af47-1473e0b3f302
+    h = 1/32  => e666620c-a9a6-4518-b6a1-9a1a8efb84be
+    h = 1/64  => a6939ad6-33d8-4c05-b23c-4086900ef282
+    -->
+
+    <grid guid="ac496184-ecd0-4e5c-aa97-08bd2dee0932"/>
+
+    <description name="M4_h=1/64_p=15">
+			viscous NSE Test -> ViscousShockProfile
+		</description>
+		
+		<tags>
+			viscous, NSE, VSP
+		</tags>
+    <!-- Specify "solver" or "query" or "parameterStudy" -->
+		<run mode="parameterStudy"/>
+    
+		<fields_degree>
+			<!-- Specify DG polynomial degree; If degree for "u", "e", "p",
+								"T", "Ma", "K" or "S" are given, these fields will also be
+								calculated and included in IO operations -->
+			<field	identification="rho"	degree="1" />
+			<field	identification="m"		degree="1" />
+			<field	identification="rhoE"	degree="1" />
+      <field  identification="u" degree="1"/>
+      <field  identification="p" degree="1"/>
+      <field  identification="T" degree="1"/>
+      <field  identification="Ma" degree="1"/>
+		</fields_degree>
+	</Base>
+
+	<!-- Specify "values" or "restart" -->
+	<initial mode="restart">
+  
+		<restart>
+			<session guid="d4bd33f7-025e-44d7-8d2f-e36bfb595386" timestepno="" />
+		</restart>
+
+		<values>
+			<formula>
+        rho(x) = 0.0
+      </formula>
+			<formula>
+        m0(x) = 0.0
+      </formula>
+			<formula>
+        rhoE(x) = 0.0
+      </formula>
+    </values>
+	</initial>
+
+	<Solver>
+		<logging savetodb="true" saveperiod="10000" tracing="false"/>
+		<termcond Endtime="2000.0" NoOfTimesteps="265000" />
+		<timestepping dtMin="0" dtMax="0.01" CFLFrac="0.2"/>
+		<!--<timestepping dtMin="4.82e-6" dtMax="4.82e-6" CFLFrac="0.01"/>-->
+
+		<boundary>
+			<bc edgetagname="supersonicinlet">
+        <formula>
+          rho(x) =  1.001001001001001 + jump(x-0.5)*3.565860708717854
+        </formula>
+        <formula>
+          u0(x) = 4.728130962653213- jump(x-0.5)*3.691781686648739
+        </formula>
+        <formula>
+          p(x) = 1.007404204204203+ jump(x-0.5)*17.472714976614981
+        </formula>
+      </bc>
+
+
+			<bc edgetagname="subsonicoutlet">
+        <value field="p">18.480119180819184</value>
+        <!--<value field="p">4.5</value>-->
+			</bc>
+
+		</boundary>
+		<properties>
+		
+			<string key="equationSystem">NavierStokes</string>
+			<string key="convectiveFluxType">HLLC</string>
+			
+			<string key="diffusiveFluxType">SIPG</string>			
+			<float key="SIPGPenaltyConstant">1.5</float> 
+
+			<string key="timeStepping">explicit</string>
+			<string key="explicitScheme">RungeKutta</string>
+			<int key="explicitOrder">3</int>
+
+      <!--<float key="Reynolds">5.5613479</float>-->
+      <float key="Reynolds">3.554850945327831</float>
+			<float key="Mach">4.0</float>
+			<float key="Prandtl">0.75</float>
+			<float key="kappa">1.4</float>
+			<!-- Choose "IdealGas", "Tait" or "StiffenedGas". Omitting this
+								 option will make CNS default to "IdealGas".-->
+			<string key="equationOfState">IdealGas</string>
+      <string key="viscosityLaw">constant</string>
+      <!-- Only required if "viscosityLaw" is "Sutherland". Denotes the
+                 ratio of the temperature constants included in Sutherland's
+                 law. Default is 110.4 / 273.15 (which is valid for air) -->
+      <!--<float key="sutherlandConstant"></float>-->
+      <!-- Only required if "viscosityLaw" is "PowerLaw". Denotes the
+                 ratio exponent of the power law. Default is 0.666 (which is
+                 valid for air) -->
+      <!--<float key="powerLawConstant"></float>-->
+      <!-- Interval between residual calculations. -->
+			<!-- "None": No residual calculation;
+								 "SteadyState": Residuals for a steady state problem;
+								 "Unsteady": Residuals for an unsteady problem -->
+			<string key="residualType">ChangeRate,query</string>
+			<int key="residualInterval">1000</int>
+      <!-- An optional list of termination criteria and the corresponding
+                 thresholds. The criteria are based in the residual calculation
+                 and have the following format: $residualType_$entityName
+                 Here, the $entityName is either the name of a query or the
+                 description of a particular residual for a particular field,
+                 for example 'L2_abs_m0'. The individual criteria are combined
+                 with a boolean AND combination i.e. CNS only terminates when
+                 ALL criteria are fulfilled. -->
+      <string key="terminationCriteria">changeRate_L2_abs_rhoE, changeRate_L2_abs_m0</string>
+      <fvector key="terminationThresholds">1e-10, 1e-10</fvector>
+      <!-- Interval for 'Starting time step' statements (they can affect
+                 serial and parallel performance of individual time-steps are
+                 fast!). -->
+      <int key="printInterval">1000</int>
+			<!-- The following properties represent optional formulas defining 
+								 source terms of the selected equation system. Each formula may
+								 depend on independent variables as well as primal fields -->
+			<!--<string key="rhoSource">f(x,rho) = rho*(x*x)</string>
+						<string key="m0Source">f(x,m0) = m0*(x*x)</string>
+						<string key="rhoESource">f(x,rho,m0,rhoE) = rho*m0*rhoE</string>-->
+			<!-- Choose "Symbolic" or "byFlux" for the calculation of the
+								 derivatives of the primal variables -->
+			<string key="derivativeOption">None</string>
+		</properties>
+
+		
+    
+    <!--  RefSol-TimestepGuid's for different Grids
+          DIRICHLET
+          h=1/16  => e8097d13-e704-426b-9565-76ecb260f03d
+          h=1/32  => 019546fb-4c95-4fc7-a7df-514b1911fbd6
+          h=1/64  => 69593ec0-fc48-406b-a763-bd9442177879
+     -->
+    
+    <Queries>
+			<L2Error id="SolL2Err_rho">
+				<computedSolution>
+					<field identification="rho" />
+				</computedSolution>
+				<exactSolution>
+          <storedField TimestepGuid="65b41402-f87f-4970-99b0-7beffdee05ff" FieldName="rho"/> 
+				</exactSolution>
+			</L2Error>
+      <L2Error id="SolL2Err_m0">
+        <computedSolution>
+          <field identification="m0" />
+        </computedSolution>
+        <exactSolution>
+          <storedField TimestepGuid="65b41402-f87f-4970-99b0-7beffdee05ff" FieldName="m0"/>
+        </exactSolution>
+      </L2Error>
+      <L2Error id="SolL2Err_rhoE">
+        <computedSolution>
+          <field identification="rhoE" />
+        </computedSolution>
+        <exactSolution>
+          <storedField TimestepGuid="65b41402-f87f-4970-99b0-7beffdee05ff" FieldName="rhoE"/>
+        </exactSolution>
+      </L2Error>
+      <L2Error id="SolL2Err_U0">
+        <computedSolution>
+          <field identification="u0" />
+        </computedSolution>
+        <exactSolution>
+          <storedField TimestepGuid="65b41402-f87f-4970-99b0-7beffdee05ff" FieldName="u0"/>
+        </exactSolution>
+      </L2Error>
+		</Queries>
+    </Solver>
+  <ParameterStudy logFileDirectory=".">
+    <parameterSet>
+      <parameter id="grid" xpath="Base/grid/@guid">
+        f449625e-b381-43e0-a436-94201166f9a7
+        a688dc60-b5c1-4271-bdbf-2af317457f0c
+        f9a78b01-a0c8-4aa9-bb7b-3ad5e7312fc5
+      </parameter>
+      <parameter id="description" xpath="Base/description/@name">
+        M4_SIPG=5.0_h=1/16_p=3
+        M4_SIPG=5.0_h=1/32_p=3
+        M4_SIPG=5.0_h=1/64_p=3
+      </parameter>
+      <!--<parameter id="dtMin" xpath="Solver/timestepping/@dtMin">
+        1e-4
+        3e-5
+        7.5e-6
+      </parameter>
+      <parameter id="dtMax" xpath="Solver/timestepping/@dtMax">
+        1e-4
+        3e-5
+        7.5e-6
+      </parameter>-->
+      <parameter id="restart" xpath="initial/restart/session/@guid">
+        08e5e85b-420b-4758-a47d-acc420d5455d
+        f51f74aa-b87d-4686-a24e-a1117023a22f
+        a460f54b-38e0-4eb1-8161-619e20bd774f
+      </parameter>
+      <parameter id="rho-query" xpath="Solver/Queries/L2Error[@id='SolL2Err_rho']/exactSolution/storedField/@TimestepGuid">
+        b99b8c64-699c-44f7-97c3-64e085721404
+        dcc15925-36e9-4665-bbc7-8d2551c864a5
+        1b087057-50e6-4564-8fbb-f395db31722f
+      </parameter>
+      <parameter id="m0-query" xpath="Solver/Queries/L2Error[@id='SolL2Err_m0']/exactSolution/storedField/@TimestepGuid">
+        b99b8c64-699c-44f7-97c3-64e085721404
+        dcc15925-36e9-4665-bbc7-8d2551c864a5
+        1b087057-50e6-4564-8fbb-f395db31722f
+      </parameter>
+      <parameter id="rhoE-query" xpath="Solver/Queries/L2Error[@id='SolL2Err_rhoE']/exactSolution/storedField/@TimestepGuid">
+        b99b8c64-699c-44f7-97c3-64e085721404
+        dcc15925-36e9-4665-bbc7-8d2551c864a5
+        1b087057-50e6-4564-8fbb-f395db31722f
+      </parameter>
+      <parameter id="U0-query" xpath="Solver/Queries/L2Error[@id='SolL2Err_U0']/exactSolution/storedField/@TimestepGuid">
+        b99b8c64-699c-44f7-97c3-64e085721404
+        dcc15925-36e9-4665-bbc7-8d2551c864a5
+        1b087057-50e6-4564-8fbb-f395db31722f
+      </parameter>
+    </parameterSet>
+    <parameterSet>
+      <parameter id="rho-degree" xpath="Base/fields_degree/field[@identification='rho']/@degree">2 3</parameter>
+      <parameter id="m-degree" xpath="Base/fields_degree/field[@identification='m']/@degree">2 3</parameter>
+      <parameter id="rhoE-degree" xpath="Base/fields_degree/field[@identification='rhoE']/@degree">2 3</parameter>
+      <parameter id="u-degree" xpath="Base/fields_degree/field[@identification='u']/@degree">2 3</parameter>
+      <parameter id="p-degree" xpath="Base/fields_degree/field[@identification='p']/@degree">2 3</parameter>
+    </parameterSet>
+  </ParameterStudy>
+</BoSSSControl>

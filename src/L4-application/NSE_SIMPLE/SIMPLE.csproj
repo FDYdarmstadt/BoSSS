@@ -1,0 +1,237 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{CD6004B7-F359-4EE4-AF0D-123A0C2B5BDD}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>NSE_SIMPLE</RootNamespace>
+    <AssemblyName>NSE_SIMPLE</AssemblyName>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <OldToolsVersion>3.5</OldToolsVersion>
+    <UpgradeBackupLocation />
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>false</Prefer32Bit>
+    <UseVSHostingProcess>true</UseVSHostingProcess>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <DocumentationFile>bin\Release\NSE_SIMPLE.XML</DocumentationFile>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>
+    </StartupObject>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="BaseVariableDensity\VariableDensitySIMPLEControl.cs" />
+    <Compile Include="Base\01_VariableSet\BaseVariableSet.cs" />
+    <Compile Include="Incompressible\00_ControlFiles\ControlExamples.cs" />
+    <Compile Include="LowMach\00_ControlFiles\ControlExamples.cs" />
+    <Compile Include="LowMach\LowMachSIMPLEControl.cs" />
+    <Compile Include="LowMach\NusseltNumber.cs" />
+    <Compile Include="Incompressible\02_Operators\Operators_IncompressibleMomentumEq.cs" />
+    <Compile Include="LowMach\02_Operators\OperatorFactoryFlowFieldLowMach.cs" />
+    <Compile Include="LowMach\02_Operators\OperatorFactoryTemperature.cs" />
+    <Compile Include="LowMach\02_Operators\Operators_ContiLowMach.cs" />
+    <Compile Include="LowMach\02_Operators\Operators_TemperatureEquation.cs" />
+    <Compile Include="BaseVariableDensity\01_VariableSet\QuadratureMatrixDensity.cs" />
+    <Compile Include="Base\01_VariableSet\VariableSet.cs" />
+    <Compile Include="Incompressible\02_Operators\Operators_PressureCorrection.cs" />
+    <Compile Include="Incompressible\03_MatrixAssembly\MatrixAssemblyIncompressibleCorrector.cs" />
+    <Compile Include="Incompressible\03_MatrixAssembly\MatrixAssemblyCorrectorIP1.cs" />
+    <Compile Include="BaseVariableDensity\02_Operators\Operators_VariableDensityMomentumEq.cs" />
+    <Compile Include="BaseVariableDensity\03_MatrixAssembly\MatrixAssemblyVariableDensityCorrector.cs" />
+    <Compile Include="Base\03_MatrixAssembly\MatrixAssemblyApprox.cs" />
+    <Compile Include="Base\03_MatrixAssembly\MatrixAssemblyApproxInv.cs" />
+    <Compile Include="BaseVariableDensity\03_MatrixAssembly\MatrixAssemblyVariableDensityPredictor.cs" />
+    <Compile Include="BaseVariableDensity\03_MatrixAssembly\MatrixAssemblyViscSplit.cs" />
+    <Compile Include="Incompressible\03_MatrixAssembly\MatrixFactoryIncompressibleFlows.cs" />
+    <Compile Include="BaseVariableDensity\03_MatrixAssembly\MatrixFactoryVariableDensityFlowField.cs" />
+    <Compile Include="Base\02_Operators\BDFScheme.cs" />
+    <Compile Include="Incompressible\04_Solvers\IncompressibleSolverCorrector.cs" />
+    <Compile Include="LowMach\04_Solvers\LowMachSolverCorrector.cs" />
+    <Compile Include="LowMach\04_Solvers\LowMachSolverTemperature.cs" />
+    <Compile Include="LowMach\05_SIMPLEStep\SIMPLEStepLowMach.cs" />
+    <Compile Include="LowMach\ThermodynamicPressureMode.cs" />
+    <Compile Include="Multiphase\00_ControlFiles\ControlExamples.cs" />
+    <Compile Include="Multiphase\02_Operators\OperatorFactoryFlowFieldMultiphase.cs" />
+    <Compile Include="Multiphase\04_Solvers\MultiphaseSolverCorrector.cs" />
+    <Compile Include="Multiphase\04_Solvers\MultiphaseSolverLevelSet.cs" />
+    <Compile Include="Base\04_Solvers\SolverUtils.cs" />
+    <Compile Include="BaseVariableDensity\05_SIMPLEStep\BaseSIMPLEStepVariableDensity.cs" />
+    <Compile Include="Base\05_SIMPLEStep\SIMPLEStepUtils.cs" />
+    <Compile Include="Base\Force.cs" />
+    <Compile Include="Base\03_MatrixAssembly\BaseMatrixAssembly.cs" />
+    <Compile Include="Incompressible\03_MatrixAssembly\MatrixAssemblyIncompressiblePredictor.cs" />
+    <Compile Include="LowMach\03_MatrixAssembly\MatrixAssemblyTemperature.cs" />
+    <Compile Include="LowMach\03_MatrixAssembly\MatrixFactoryTemperature.cs" />
+    <Compile Include="Multiphase\03_MatrixAssembly\MatrixAssemblyLevelSet.cs" />
+    <Compile Include="Base\SolverConfiguration.cs" />
+    <Compile Include="Base\NUnitTest.cs" />
+    <Compile Include="BaseVariableDensity\02_Operators\OperatorFactoryFlowFieldVariableDensity.cs" />
+    <Compile Include="Multiphase\02_Operators\OperatorFactoryLevelSet.cs" />
+    <Compile Include="Base\02_Operators\Operators_Common.cs" />
+    <Compile Include="Incompressible\02_Operators\OperatorFactoryFlowFieldIncompressible.cs" />
+    <Compile Include="Multiphase\02_Operators\Operators_LevelSetEquation.cs" />
+    <Compile Include="Base\05_SIMPLEStep\ISIMPLEStep.cs" />
+    <Compile Include="Incompressible\05_SIMPLEStep\SIMPLEStepIncompressible.cs" />
+    <Compile Include="Base\04_Solvers\BaseSIMPLESolver.cs" />
+    <Compile Include="Incompressible\04_Solvers\IncompressibleSolverPredictor.cs" />
+    <Compile Include="BaseVariableDensity\04_Solvers\VariableDensitySolverPredictor.cs" />
+    <Compile Include="BaseVariableDensity\01_VariableSet\QuadratureMatrix.cs" />
+    <Compile Include="Base\02_Operators\BaseSIMPLEOperator.cs" />
+    <Compile Include="Base\SIMPLEMainUtils.cs" />
+    <Compile Include="Base\SIMPLEMain.cs" />
+    <Compile Include="Multiphase\03_MatrixAssembly\MatrixFactoryLevelSet.cs" />
+    <Compile Include="Multiphase\05_SIMPLEStep\SIMPLEStepMultiphase.cs" />
+    <Compile Include="Multiphase\MultiphaseSIMPLEControl.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Base\SIMPLEControl.cs" />
+    <Compile Include="BaseVariableDensity\01_VariableSet\QuadratureMatrixFactory.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="log4net">
+      <HintPath>..\..\..\..\libs\log4net-1.2.10\bin\cli\1.0\release\log4net.dll</HintPath>
+    </Reference>
+    <Reference Include="nunit.framework">
+      <HintPath>..\..\..\..\libs\NUnit-2.6.0.12051\bin\framework\nunit.framework.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 2.0 %28x86%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.0">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.0 %28x86%29</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\ilPSP\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj">
+      <Project>{DD9BF776-38CA-4FC9-8F42-5ED700BDE7AD}</Project>
+      <Name>MPI.Wrappers</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.monkey\ilPSP.LinSolvers.monkey.csproj">
+      <Project>{B18AEDC3-C7A5-4DA6-ABD3-E981B002ADDE}</Project>
+      <Name>ilPSP.LinSolvers.monkey</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.PARDISO\ilPSP.LinSolvers.PARDISO.csproj">
+      <Project>{DB9CA35D-9980-462A-85CC-CB33DCFD5A28}</Project>
+      <Name>ilPSP.LinSolvers.PARDISO</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj">
+      <Project>{8E6D8F23-623F-4204-B4AB-A088C0CD83AA}</Project>
+      <Name>ilPSP</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L1-platform\BoSSS.Platform\BoSSS.Platform.csproj">
+      <Project>{B7D5F7C7-EA9F-4506-AB69-C3CD2AA8C938}</Project>
+      <Name>BoSSS.Platform</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.Grid\BoSSS.Foundation.Grid.csproj">
+      <Project>{13585226-5046-494D-947C-B97479566081}</Project>
+      <Name>BoSSS.Foundation.Grid</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.XDG\BoSSS.Foundation.XDG.csproj">
+      <Project>{9A8CDC1F-64F7-441E-849D-66F2C56600F2}</Project>
+      <Name>BoSSS.Foundation.XDG</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj">
+      <Project>{17A60FBA-20B4-451D-98E1-8D742F368569}</Project>
+      <Name>BoSSS.Foundation</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Multigrid\BoSSS.Solution.Multigrid.csproj">
+      <Project>{EFE8C307-09BC-4F58-B991-6EF8FD6D5EFF}</Project>
+      <Name>BoSSS.Solution.Multigrid</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.NSECommon\BoSSS.Solution.NSECommon.csproj">
+      <Project>{E56B9CE4-14DC-4256-A337-46E5D298B722}</Project>
+      <Name>BoSSS.Solution.NSECommon</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Tecplot\BoSSS.Solution.Tecplot.csproj">
+      <Project>{D0546422-EC92-4964-82E9-8EE819A2F786}</Project>
+      <Name>BoSSS.Solution.Tecplot</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution\BoSSS.Solution.csproj">
+      <Project>{DF7F5ABD-E606-41CD-BEEF-31A95D136DEA}</Project>
+      <Name>BoSSS.Solution</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Incompressible\01_VariableSet\" />
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Service References\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
