@@ -70,7 +70,7 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
     <Reference Include="nunit.framework">
-      <HintPath>..\..\..\..\libs\NUnit-2.6.0.12051\bin\framework\nunit.framework.dll</HintPath>
+      <HintPath>..\..\..\libs\NUnit-2.6.0.12051\bin\framework\nunit.framework.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

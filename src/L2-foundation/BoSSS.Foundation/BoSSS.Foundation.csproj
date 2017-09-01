@@ -210,9 +210,12 @@
     <Compile Include="ZipStorer.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="log4net">
+      <HintPath>..\..\..\libs\log4net-1.2.10\bin\cli\1.0\release\log4net.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="Renci.SshNet">
-      <HintPath>..\..\..\..\libs\Renci.SshNet-2016.1.0-beta1\Renci.SshNet.dll</HintPath>
+      <HintPath>..\..\..\libs\Renci.SshNet-2016.1.0-beta1\Renci.SshNet.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -220,11 +223,8 @@
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Core" />
-    <Reference Include="log4net">
-      <HintPath>..\..\..\..\libs\log4net-1.2.10\bin\cli\1.0\release\log4net.dll</HintPath>
-    </Reference>
     <Reference Include="Newtonsoft.Json">
-      <HintPath>..\..\..\..\libs\Newtonsoft.Json60r4\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\..\..\libs\Newtonsoft.Json60r4\Newtonsoft.Json.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

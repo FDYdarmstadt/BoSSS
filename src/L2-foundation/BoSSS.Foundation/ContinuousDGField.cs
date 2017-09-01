@@ -76,8 +76,6 @@ namespace BoSSS.Foundation {
         int[] mask2OpCoord;
 
 
-        ilPSP.LinSolvers.ISparseSolver m_OpSolver;
-
         /// <summary>
         /// linear solver for the quadratic optimization problem, Opmatrix has to be defined! 
         /// </summary>

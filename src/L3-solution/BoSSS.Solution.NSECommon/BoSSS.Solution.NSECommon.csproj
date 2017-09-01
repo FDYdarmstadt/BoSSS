@@ -43,10 +43,10 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="log4net">
-      <HintPath>..\..\..\..\libs\log4net-1.2.10\bin\cli\1.0\release\log4net.dll</HintPath>
+      <HintPath>..\..\..\libs\log4net-1.2.10\bin\cli\1.0\release\log4net.dll</HintPath>
     </Reference>
     <Reference Include="nunit.framework">
-      <HintPath>..\..\..\..\libs\NUnit-2.6.0.12051\bin\framework\nunit.framework.dll</HintPath>
+      <HintPath>..\..\..\libs\NUnit-2.6.0.12051\bin\framework\nunit.framework.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

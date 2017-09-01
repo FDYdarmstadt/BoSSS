@@ -122,11 +122,11 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Mono.CSharp">
-      <HintPath>..\..\..\..\libs\mono\4.5\Mono.CSharp.dll</HintPath>
+      <HintPath>..\..\..\libs\mono\4.5\Mono.CSharp.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=4.5.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\libs\Newtonsoft.Json60r4\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\..\..\libs\Newtonsoft.Json60r4\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -134,14 +134,14 @@
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xml" />
     <Reference Include="CommandLine, Version=1.8.0.0, Culture=neutral, PublicKeyToken=null">
-      <HintPath>..\..\..\..\libs\libcmdline-1.8-stable-bin\libcmdline\bin\Release\CommandLine.dll</HintPath>
+      <HintPath>..\..\..\libs\libcmdline-1.8-stable-bin\libcmdline\bin\Release\CommandLine.dll</HintPath>
     </Reference>
     <Reference Include="System.Core" />
     <Reference Include="log4net, Version=1.2.10.0, Culture=neutral, PublicKeyToken=1b44e1d426115821">
-      <HintPath>..\..\..\..\libs\log4net-1.2.10\bin\cli\1.0\release\log4net.dll</HintPath>
+      <HintPath>..\..\..\libs\log4net-1.2.10\bin\cli\1.0\release\log4net.dll</HintPath>
     </Reference>
     <Reference Include="MathNet.Numerics">
-      <HintPath>..\..\..\..\libs\MathNet.Numerics-2.6.0.29\MathNet.Numerics.dll</HintPath>
+      <HintPath>..\..\..\libs\MathNet.Numerics-2.6.0.29\MathNet.Numerics.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

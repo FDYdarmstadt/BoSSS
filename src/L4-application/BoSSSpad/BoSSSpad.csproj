@@ -58,41 +58,41 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="FastColoredTextBox">
-      <HintPath>..\..\..\..\libs\FCTB.2.16.11.0\lib\FastColoredTextBox.dll</HintPath>
+      <HintPath>..\..\..\libs\FCTB.2.16.11.0\lib\FastColoredTextBox.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Hpc.Azure.FileStaging.Client, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\libs\Microsoft HPC Pack 2012 SDK\Bin\Microsoft.Hpc.Azure.FileStaging.Client.dll</HintPath>
+      <HintPath>..\..\..\libs\Microsoft HPC Pack 2012 SDK\Bin\Microsoft.Hpc.Azure.FileStaging.Client.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Hpc.Scheduler, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\libs\Microsoft HPC Pack 2012 SDK\Bin\Microsoft.Hpc.Scheduler.dll</HintPath>
+      <HintPath>..\..\..\libs\Microsoft HPC Pack 2012 SDK\Bin\Microsoft.Hpc.Scheduler.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Hpc.Scheduler.NodeManagement, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\libs\Microsoft HPC Pack 2012 SDK\Bin\Microsoft.Hpc.Scheduler.NodeManagement.dll</HintPath>
+      <HintPath>..\..\..\libs\Microsoft HPC Pack 2012 SDK\Bin\Microsoft.Hpc.Scheduler.NodeManagement.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Hpc.Scheduler.Properties, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\libs\Microsoft HPC Pack 2012 SDK\Bin\Microsoft.Hpc.Scheduler.Properties.dll</HintPath>
+      <HintPath>..\..\..\libs\Microsoft HPC Pack 2012 SDK\Bin\Microsoft.Hpc.Scheduler.Properties.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Hpc.Scheduler.Store, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\libs\Microsoft HPC Pack 2012 SDK\Bin\Microsoft.Hpc.Scheduler.Store.dll</HintPath>
+      <HintPath>..\..\..\libs\Microsoft HPC Pack 2012 SDK\Bin\Microsoft.Hpc.Scheduler.Store.dll</HintPath>
     </Reference>
     <Reference Include="Mono.CSharp">
-      <HintPath>..\..\..\..\libs\mono\4.5\Mono.CSharp.dll</HintPath>
+      <HintPath>..\..\..\libs\mono\4.5\Mono.CSharp.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=4.5.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\libs\Newtonsoft.Json60r4\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\..\..\libs\Newtonsoft.Json60r4\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="nunit.framework, Version=2.6.4.14350, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\libs\NUnit-2.6.0.12051\bin\framework\nunit.framework.dll</HintPath>
+      <HintPath>..\..\..\libs\NUnit-2.6.0.12051\bin\framework\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="Renci.SshNet">
-      <HintPath>..\..\..\..\libs\Renci.SshNet-2016.1.0-beta1\Renci.SshNet.dll</HintPath>
+      <HintPath>..\..\..\libs\Renci.SshNet-2016.1.0-beta1\Renci.SshNet.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -103,13 +103,13 @@
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="log4net">
-      <HintPath>..\..\..\..\libs\log4net-1.2.10\bin\cli\1.0\release\log4net.dll</HintPath>
+      <HintPath>..\..\..\libs\log4net-1.2.10\bin\cli\1.0\release\log4net.dll</HintPath>
     </Reference>
     <Reference Include="XmlDiffPatch">
-      <HintPath>..\..\..\..\libs\XMLDiffPatch.1.0.8.28\xmldiffpatch.dll</HintPath>
+      <HintPath>..\..\..\libs\XMLDiffPatch.1.0.8.28\xmldiffpatch.dll</HintPath>
     </Reference>
     <Reference Include="XmlDiffPatch.View">
-      <HintPath>..\..\..\..\libs\XMLDiffPatch.1.0.8.28\XmlDiffPatch.View.dll</HintPath>
+      <HintPath>..\..\..\libs\XMLDiffPatch.1.0.8.28\XmlDiffPatch.View.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
