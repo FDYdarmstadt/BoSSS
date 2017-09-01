@@ -790,41 +790,41 @@ WARN_LOGFILE           =
 # spaces. See also FILE_PATTERNS and EXTENSION_MAPPING
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = ../../src/public/L1-platform/BoSSS.Platform \
-                         ../../src/public/L2-foundation/BoSSS.Foundation \
-                         ../../src/public/L2-foundation/BoSSS.Foundation.Grid \
-                         ../../src/public/L2-foundation/BoSSS.Foundation.SpecFEM \
-                         ../../src/public/L2-foundation/BoSSS.Foundation.XDG \
-                         ../../src/public/L3-solution/BoSSS.Solution \
-                         ../../src/public/L3-solution/BoSSS.Solution.ASCIIExport \
-                         ../../src/public/L3-solution/BoSSS.Solution.Gnuplot \
-                         ../../src/public/L3-solution/BoSSS.Solution.GridImport \
-                         ../../src/public/L3-solution/BoSSS.Solution.LevelSetTools \
-                         ../../src/public/L3-solution/BoSSS.Solution.Multigrid \
-                         ../../src/public/L3-solution/BoSSS.Solution.NSECommon \
-                         ../../src/public/L3-solution/BoSSS.Solution.Statistic \
-                         ../../src/public/L3-solution/BoSSS.Solution.Tecplot \
-                         ../../src/public/L4-application/BoSSSpad \
-						 ../../src/public/L4-application/CNS \
-                         ../../src/public/L4-application/ipPoisson \
-						 ../../src/public/L4-application/ScalarTransport \
-						 ../../src/public/L4-application/NSE_SIMPLE \
-						 ../../src/public/L4-application/CutCellQuadrature \
-						 ../../src/public/L4-application/DatabaseTests \
-						 ../../src/public/L4-application/DerivativeTest \
-						 ../../src/public/L4-application/ElementTests \
-						 ../../src/public/L4-application/ipViscosity \
-						 ../../src/public/L4-application/LTS_NUnit \
-						 ../../src/public/L4-application/MPITest \
-						 ../../src/public/L4-application/MultigridTest \
-						 ../../src/public/L4-application/ProjectionTest \
-						 ../../src/public/L4-application/QuadratureTest \
-						 ../../src/public/L4-application/SpecFEM \
-						 ../../src/public/L4-application/TutorialTests \
-						 ../../src/public/L4-application/XdgNastyLevsetLocationTest \
-						 ../../src/public/L4-application/XDGTest \
-						 ../../src/public/L4-application/ZwoLsTest \
-						 ../../src/public/L4-application/PlotGenerator
+INPUT                  = ../../src/L1-platform/BoSSS.Platform \
+                         ../../src/L2-foundation/BoSSS.Foundation \
+                         ../../src/L2-foundation/BoSSS.Foundation.Grid \
+                         ../../src/L2-foundation/BoSSS.Foundation.SpecFEM \
+                         ../../src/L2-foundation/BoSSS.Foundation.XDG \
+                         ../../src/L3-solution/BoSSS.Solution \
+                         ../../src/L3-solution/BoSSS.Solution.ASCIIExport \
+                         ../../src/L3-solution/BoSSS.Solution.Gnuplot \
+                         ../../src/L3-solution/BoSSS.Solution.GridImport \
+                         ../../src/L3-solution/BoSSS.Solution.LevelSetTools \
+                         ../../src/L3-solution/BoSSS.Solution.Multigrid \
+                         ../../src/L3-solution/BoSSS.Solution.NSECommon \
+                         ../../src/L3-solution/BoSSS.Solution.Statistic \
+                         ../../src/L3-solution/BoSSS.Solution.Tecplot \
+                         ../../src/L4-application/BoSSSpad \
+						 ../../src/L4-application/CNS \
+                         ../../src/L4-application/ipPoisson \
+						 ../../src/L4-application/ScalarTransport \
+						 ../../src/L4-application/NSE_SIMPLE \
+						 ../../src/L4-application/CutCellQuadrature \
+						 ../../src/L4-application/DatabaseTests \
+						 ../../src/L4-application/DerivativeTest \
+						 ../../src/L4-application/ElementTests \
+						 ../../src/L4-application/ipViscosity \
+						 ../../src/L4-application/LTS_NUnit \
+						 ../../src/L4-application/MPITest \
+						 ../../src/L4-application/MultigridTest \
+						 ../../src/L4-application/ProjectionTest \
+						 ../../src/L4-application/QuadratureTest \
+						 ../../src/L4-application/SpecFEM \
+						 ../../src/L4-application/TutorialTests \
+						 ../../src/L4-application/XdgNastyLevsetLocationTest \
+						 ../../src/L4-application/XDGTest \
+						 ../../src/L4-application/ZwoLsTest \
+						 ../../src/L4-application/PlotGenerator
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
@@ -864,23 +864,9 @@ RECURSIVE              = YES
 # Note that relative paths are relative to the directory from which doxygen is
 # run.
 
-EXCLUDE                = ../../src/private-kmmr \
-                         ../../src/private-emy \
-                         ../../src/private-kar \
-                         ../../src/private-kln \
-                         ../../src/private-krs \
-                         ../../src/private-mag \
-                         ../../src/private-mue \
-                         ../../src/private-schr \
-                         ../../src/private-ske \
-                         ../../src/private-smd \
-                         ../../src/private-utz \
-                         ../../src/private-kldrf \
-                         ../../src/Utils \
+EXCLUDE                = ../../src/Utils \
                          ../../src/ilPSP/layer_0 \
-                         ../../src/ilPSP/layer_1.2-ilPSP/ilPSP.LinSolvers.ALMOND \
-                         ../../src/ilPSP \
-                         ../../src/DBEv2
+                         ../../src/ilPSP/layer_1.2-ilPSP/ilPSP.LinSolvers.ALMOND 
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded
