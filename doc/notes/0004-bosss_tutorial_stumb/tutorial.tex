@@ -1,0 +1,150 @@
+%
+% FDY TEMPLATE for ANUAL REPORT
+% ===================================================================
+\NeedsTeXFormat{LaTeX2e}
+\documentclass[11pt,twoside,a4paper]{fdyartcl}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[ngerman,english]{babel} % selectlanguage wird nur dann gebraucht, wenn
+                                    % mehrere Sprachen-packages verwendet werden,
+                                    % das zuletzt angegebene package ist die aktive
+                                    % Sprache, mit \selectlanguage kann umgeschaltet
+                                    % werden
+\usepackage[intoc]{nomencl} % zur Erstellung einer Nomenklatur
+                                   % Die Option [intoc] sorgt dafuer,
+                                   % dass die Nomenklatur im
+                                   % Inhaltsverzeichnis eingetragen
+                                   % wird. Aufruf mit:
+                                   % makeindex Diss.nlo -s nomencl.ist -o Diss.nls
+\usepackage{longtable}  % fuer tabellen, die evtl ueber Seiten
+                        % umgebrochen werden muessen
+\usepackage{graphicx}   % Stellt \includegraphics zur Verfuegung
+\usepackage{parskip}    % Setzt parindent auf null und parskip auf
+                        % einen angemessenen Wert
+\usepackage{calc}       % Erlaubt, verschiedene Masse zu addieren
+                        % z.B 1cm+2pt
+\usepackage[a4paper,twoside,outer=2.2cm,inner=3cm,top=1.5cm,bottom=2.7cm,includehead]{geometry}
+                                        % erheblich verbesserte
+                                        % Papieranassung
+\usepackage{setspace}   % Stellt \singlespacing, \onehalfspacing und
+                        % \doublespacig zur Verfuegung
+                        % erlaubt ausserdem die Verwendung der
+                        % Umgebung \begin{spacing}{2.3}
+\setstretch{1.05}       % minimal vergroesserter Zeilenabstand
+\usepackage{amsmath}    % Stellt verschiedene Mathematik Operatoren
+                        % und Befehle bereit und verbessert die
+                        % Darstellung von Gleichungen ermoeglicht
+                        % ausserdem die Verwendung von \boldsymbol
+                        % fuer z.B. griechische Buchstaben
+\usepackage{amsfonts}
+\usepackage{amsthm}
+\usepackage{harvard}    % neue citation Befehle und anderes Layout der
+                        % Bibliographie
+\usepackage{mathpazo}   % Aenderung der Standardschrift auf Palatino
+\usepackage{showkeys}   % Spaeter auskommentieren
+\usepackage{upgreek}    % nicht-kursive grichische Buchstaben
+\usepackage{fancyhdr}
+
+\graphicspath{{./Figures/}}%
+% \input hyphen_dt.tex  % Spezielle Trennregeln fuer deutsche
+                        % Woerter - gehoert in den Vorspann
+\clubpenalty = 10000%
+\widowpenalty = 10000%
+\displaywidowpenalty =10000
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TITLE AND AUTHOR
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\title{BoSSS tutorial}
+\author{TU Darmstadt - Chair of Fluid Dynamic (FDY)}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Kopfzeile
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[EL]{\sffamily \small  \thepage\ }
+\fancyhead[OR]{\sffamily \small  \thepage\ }
+\fancyhead[OC]{\sffamily \small TU Darmstadt - FDY}
+\fancyhead[EC]{\sffamily \small BoSSS tutorial}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\renewcommand{\vec}[1]{\textrm{\textbf{#1}}}
+\renewcommand{\vec}[1]{\mathbf{#1}}
+\newcommand{\grvec}[1]{\boldsymbol{#1}}
+\renewcommand{\div}[1]{\textrm{div}\left( #1 \right)}
+
+\newcommand{\real}{\mathbb{R}}
+\newcommand{\complex}{\mathbb{C}}
+\newcommand{\realpos}{\mathbb{R}_{\geq0}}
+\newcommand{\natWoZero}{\mathbb{N}_{>0}}
+\newcommand{\natInclZero}{\mathbb{N}_{\geq0}}
+\newcommand{\nat}{\mathbb{N}}
+\newcommand{\integers}{\mathbb{Z}}
+\newcommand{\code}[1]{\sffamily{#1}}
+\newcommand{\coderm}[1]{\footnote{\code{#1}}}
+
+
+\newcounter{cnt}
+
+\newtheoremstyle{myPlain} % namei
+ {15pt}% Space above
+ {3pt}% Space below
+ {\itshape}% Body font
+ {}% Indent amount
+ {\bfseries}% Theorem head font %\scshape
+ {:}% Punctuation after theorem head
+ {.5em}% hSpace after theorem headi2
+ {\thmname{#1} \thmnumber{#2} \thmnote{ -- #3}}% Theorem head spec (can be left empty, meaning `normal')
+
+
+\theoremstyle{myPlain}
+%\theoremstyle{plain}
+\newtheorem{myTheorem}[cnt]{Theorem}
+%\newtheorem{satzDef}[cnt]{Satz und Definition}
+
+\newtheoremstyle{myDefinition} % namei
+ {15pt}% Space above
+ {3pt}% Space below
+ {}% Body font
+ {}% Indent amount
+ {\bfseries}% Theorem head font
+ {:}% Punctuation after theorem head
+ {.5em}% hSpace after theorem headi2
+ {\thmname{#1} \thmnumber{#2} \thmnote{ -- #3}}% Theorem head spec (can be left empty, meaning `normal')
+
+\theoremstyle{myDefinition}
+%\theoremstyle{definition}
+%\newtheorem{bsp}[cnt]{Beispiel}
+\newtheorem{myDef}[cnt]{Definition}
+\newtheorem{myRem}[cnt]{Remark}
+\newtheorem{myNot}[cnt]{Notation}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%       DOKUMENT
+\begin{document}
+
+\pagenumbering{arabic} % Zurueckschalten auf arabische Ziffern, dabei wird der Zaehler auf 1 gesetzt
+
+
+% Titelseite
+% -------------------
+\maketitle
+
+
+\begin{abstract}
+This document is an introductional tutorial for BoSSS;
+It will be later integrated into the full BoSSS documentation.
+\end{abstract}
+
+\input{layer_4_scalartransp}
+\end{document} 

@@ -1,0 +1,438 @@
+% !TeX spellcheck = en_GB
+%\documentclass[12pt,a4paper]{article}
+%\usepackage{import}
+%\subimport{../}{uebung.tex}
+
+%\toggletrue{showSolution}
+
+
+%\title{\thetitle{}\\Tutorial 2}
+%\date{\WeeksAfter{8}}
+
+%\begin{document}
+
+% \maketitle
+
+\BoSSSopen{tutorial2/uebung2tutorial}
+\graphicspath{{tutorial2/uebung2tutorial.texbatch/}}
+
+\BoSSScmd{
+/// \section*{What's new}
+///
+/// \begin{itemize}
+/// \item Creating numerical grids
+/// \item Projecting functions onto the DG space and further evaluation
+/// \item Performing a hp-convergence study
+/// \end{itemize}
+///
+/// \section*{Prerequisites}
+/// No \BoSSS{} specific prerequisites are needed to complete this tutorial.
+///
+/// \section{Problem statement}
+/// First, we define two functions: $g_1$ is continuous, $g_2$ has a one discontinuity at $\vec{X} = \pi$ in the first derivative
+/// \begin{align*}
+/// g_1 =& \sin(\vec{X}), \\
+/// g_2 =& \vert(\sin(\vec{X})\vert\, .
+/// \end{align*}
+/// The function argument is a vector $\vec{X}$, consisting only of one entry since we are working in a dimensional space. \BoSSS{} however supports 1D, 2D and 3D, so the spatial coordinate is a general vector.
+///
+/// \section{Solution within the BoSSS framework}
+///
+/// To initialize, we have to call \code{restart}:\textsl{}
+ }
+\BoSSSexe
+\BoSSScmd{
+restart;
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+using NUnit.Framework;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \subsection{Plotting the functions} First, we plot the functions that are defined above over the interval $(0 ,2 \pi)$ with 
+/// 1000 sampling points using a Gnuplot-object.
+/// %=======================================================================================
+ }
+\BoSSSexe
+\BoSSScmd{
+Func<double[],double> g1 = (X => Math.Sin(X[0]));          \newline 
+// continuous, smooth         \newline 
+Func<double[],double> g2 = (X => Math.Abs(Math.Sin(X[0])));          \newline 
+// continuous, non-smooth
+}
+\BoSSSexe
+\BoSSScmd{
+double[] x = GenericBlas.Linspace(0, 2.0*Math.PI, 1000);
+ }
+\BoSSSexe
+\BoSSScmd{
+var gp0 = new Gnuplot();
+ }
+\BoSSSexe
+\BoSSScmd{
+gp0.PlotXY(x, g1, "g1", new PlotFormat(lineColor: (LineColors)(1)));          \newline 
+\btab // plot is deferred until 'PlotNow()' is called
+ }
+\BoSSSexe
+\BoSSScmd{
+gp0.PlotXY(x, g2, "g2", new PlotFormat(lineColor: (LineColors)(2)));
+ }
+\BoSSSexe
+\BoSSScmd{
+gp0.PlotNow();  // executes all gnuplot-commands
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Next, we create a grid which has a cell boundary exactly at the position of
+/// the discontinuity of \code{g2}.
+/// %=========================================================================================
+ }
+\BoSSSexe
+\BoSSScmd{
+var Nodes1 = new double[] \{0, 2, Math.PI, 4.5, 2*Math.PI \};         \newline 
+var Grid1 = Grid1D.LineGrid(Nodes1);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We can get the total number of cells by using the following command:
+ }
+\BoSSSexe
+\BoSSScmd{
+Grid1.NumberOfCells;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// The recently created grid-object is not directly usable because it contains only the nodes of the grid. 
+/// We have to create a \code{GridData}-object which provides all necessary transformation metrics, etc. .
+/// %=======================================================================================
+ }
+\BoSSSexe
+\BoSSScmd{
+var gdata1 = new GridData(Grid1);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \subsection{Projection onto the DG space}
+/// At this point, we are able to create the so-called \emph{DG fields} to approximate \code{g1}
+/// on \code{grid1}. Therefore, we project \code{g1} onto \code{grid1} using polynomial orders
+/// of $p=2$ and $p=8$.
+/// % =======================================================================================
+ }
+\BoSSSexe
+\BoSSScmd{
+var g1\_grid1\_p2 = new SinglePhaseField(new Basis(gdata1, 2), "g1 with p2 at Grid 1");      \newline 
+g1\_grid1\_p2.ProjectField(g1);
+ }
+\BoSSSexe
+\BoSSScmd{
+var g1\_grid1\_p8 = new SinglePhaseField(new Basis(gdata1, 8), "g1 with p8 at Grid 1");         \newline 
+g1\_grid1\_p8.ProjectField(g1);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Now, let us plot the projected solution for $p=2$. 
+/// By using the upsampling parameter, we can determine 
+/// the amount of sampling points per cell.
+/// %=======================================================================================
+ }
+\BoSSSexe
+\BoSSScmd{
+var upsampling = 20;
+ }
+\BoSSSexe
+\BoSSScmd{
+var gp1 = new Gnuplot();
+ }
+\BoSSSexe
+\BoSSScmd{
+gp1.PlotField(g1\_grid1\_p2,          \newline 
+\btab new PlotFormat(lineColor: (LineColors)(1)),\newline 
+\btab upsampling);
+ }
+\BoSSSexe
+\BoSSScmd{
+gp1.PlotNow(); // shows the plot
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \subsection{Computing the $L^2$-error}
+/// Next, we learn how to compute the $L^2$-error for both 
+/// approximations of \code{g1} with different polynomial degrees:
+/// %=======================================================================================
+ }
+\BoSSSexe
+\BoSSScmd{
+g1\_grid1\_p2.L2Error(g1);
+ }
+\BoSSSexe
+\BoSSScmd{
+g1\_grid1\_p8.L2Error(g1);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \subsection{Plotting the point-wise error}
+/// Now, we plot the point-wise error for the approximation of \code{g1}
+/// on \code{grid1} with a polynomial degree of 8.
+/// %=======================================================================================
+ }
+\BoSSSexe
+\BoSSScmd{
+int K = 20; // number of points per cell         \newline 
+var gp2 = new Gnuplot();         \newline 
+gp2.PlotLogError(g1\_grid1\_p8, g1, "g1 with p8 at Grid 1", 20,          \newline 
+\btab new PlotFormat(lineColor: (LineColors)(1)));         \newline 
+gp2.PlotNow();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \subsection{Decay behavior of the DG modes for smooth and non-smooth functions}
+/// We investigate the decay behavior of the DG modes for smooth and non-smooth 
+/// functions. For this purpose, we create a second grid which has the
+/// discontinuity of \code{g2} within a cell and project \code{g2} onto this grid
+/// like mentioned above.
+/// %=======================================================================================
+ }
+\BoSSSexe
+\BoSSScmd{
+var Nodes2      = new double[] \{0, 2, 4.5, 2*Math.PI \};         \newline 
+var Grid2       = Grid1D.LineGrid(Nodes2);         \newline 
+var gdata2      = new GridData(Grid2);         \newline 
+var g2\_grid2\_p8 = new SinglePhaseField(new Basis(gdata2, 8), "g2\_p8 at Grid2");         \newline 
+g2\_grid2\_p8.ProjectField(g2);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// The cell coordinates can be extracted by using the \code{Coordinates} parameter.
+ }
+\BoSSSexe
+\BoSSScmd{
+double[] cell1 = g2\_grid2\_p8.Coordinates.GetRow(1);          \newline 
+\btab // coord. in cell 1 (with kink)
+ }
+\BoSSSexe
+\BoSSScmd{
+double[] cell0 = g2\_grid2\_p8.Coordinates.GetRow(0);          \newline 
+\btab // coord. in cell 0 (smooth)
+ }
+\BoSSSexe
+\BoSSScmd{
+double[] cell2 = g2\_grid2\_p8.Coordinates.GetRow(2);          \newline 
+\btab // coord. in cell 2 (smooth)
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Only the absolute value shall be plotted. We use a for-loop to replace the data in 
+/// \code{cell0}, \code{cell1} and \code{cell2} by their absolute values.
+/// %=======================================================================================
+ }
+\BoSSSexe
+\BoSSScmd{
+for(int i = 0; i < cell0.Length; i++) \{         \newline 
+\btab cell0[i] = Math.Abs(cell0[i]);         \newline 
+\btab cell1[i] = Math.Abs(cell1[i]);         \newline 
+\btab cell2[i] = Math.Abs(cell2[i]);         \newline 
+ \}
+ }
+\BoSSSexe
+\BoSSScmd{
+var gp3 = new Gnuplot();
+ }
+\BoSSSexe
+\BoSSScmd{
+gp3.PlotY(cell1, "disc. cell", new PlotFormat(lineColor: (LineColors)(1),          \newline 
+\btab  Style:Styles.LinesPoints, pointType: (PointTypes)(1)));
+ }
+\BoSSSexe
+\BoSSScmd{
+gp3.PlotY(cell0, "cell 0", new PlotFormat(lineColor: (LineColors)(2),          \newline 
+\btab  Style:Styles.LinesPoints, pointType: (PointTypes)(2)));
+ }
+\BoSSSexe
+\BoSSScmd{
+gp3.PlotY(cell2, "cell 2", new PlotFormat(lineColor: (LineColors)(3),          \newline 
+\btab  Style:Styles.LinesPoints, pointType: (PointTypes)(3)));
+ }
+\BoSSSexe
+\BoSSScmd{
+gp3.PlotNow();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Note: Using a shortcut for the for-loop above, the absolute values in cell 0
+/// can also be stored using the following command:
+ }
+\BoSSSexe
+\BoSSScmd{
+double[] cell0 = g2\_grid2\_p8.Coordinates.GetRow(0)         \newline 
+\btab .Select(d => Math.Abs(d)).ToArray();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Now, we would like to plot the logarithm (use \code{Math.Log10(...)}) of the absolute
+/// values of the DG coordinates.
+ }
+\BoSSSexe
+\BoSSScmd{
+double[] cell0 = g2\_grid2\_p8.Coordinates.GetRow(0)          \newline 
+\btab .Select(d => Math.Log10(Math.Abs(d))).ToArray();
+ }
+\BoSSSexe
+\BoSSScmd{
+double[] cell1 = g2\_grid2\_p8.Coordinates.GetRow(1)         \newline 
+\btab .Select(d => Math.Log10(Math.Abs(d))).ToArray();
+ }
+\BoSSSexe
+\BoSSScmd{
+double[] cell2 = g2\_grid2\_p8.Coordinates.GetRow(2)         \newline 
+\btab .Select(d => Math.Log10(Math.Abs(d))).ToArray();
+ }
+\BoSSSexe
+\BoSSScmd{
+var gp4 = new Gnuplot();
+ }
+\BoSSSexe
+\BoSSScmd{
+gp4.PlotY(cell1, "g2, disc. cell", new PlotFormat(lineColor: (LineColors) (1),         \newline 
+\btab Style:Styles.LinesPoints, pointType: (PointTypes)(1)));
+ }
+\BoSSSexe
+\BoSSScmd{
+gp4.PlotY(cell0, "g2, cell 0", new PlotFormat(lineColor: (LineColors) (2),         \newline 
+\btab Style:Styles.LinesPoints, pointType: (PointTypes)(2)));
+ }
+\BoSSSexe
+\BoSSScmd{
+gp4.PlotY(cell2, "g2, cell 2", new PlotFormat(lineColor: (LineColors) (3),         \newline 
+\btab Style:Styles.LinesPoints, pointType: (PointTypes)(3)));
+ }
+\BoSSSexe
+\BoSSScmd{
+gp4.PlotNow();
+ }
+\BoSSSexe
+\BoSSScmd{
+///\subsection{Convergence study}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// In this section, we learn how to perform a convergence study for \code{g2} 
+/// for two different sequences of grid resolutions and different polynomial
+/// orders. Therefore, we define two different sequences of grid resolutions:
+/// %=======================================================================================
+ }
+\BoSSSexe
+\BoSSScmd{
+int[][] ResSeq = new int[2][];
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Grid resolutions so that the kink in \code{g2} is located at a cell boundary:
+ResSeq[0] = new int[] \{ 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048 \};
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Grid resolutions so that the kink in \code{g2} is located within a cell:
+ResSeq[1] = new int[] \{ 3, 7, 15, 31, 63, 127, 255, 511, 1023, 2047 \};
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We save our errors into a multidimensional array by looping over 
+/// \begin{enumerate}
+/// \item the resolution sequence
+/// \item the polynomial order
+/// \item the resolution
+/// \end{enumerate}
+var Errors = MultidimensionalArray.Create(2, 5, ResSeq[0].Length);
+ }
+\BoSSSexe
+\BoSSScmd{
+for(int i = 0; i < 2; i++) \{ // loop over the resolution sequence         \newline 
+\btab for(int p = 0; p <= 4; p++) \{ // loop over polynomial orders         \newline 
+\btab \btab for(int k = 0; k < ResSeq[i].Length; k++) \{ // loop over different resolutions        \newline 
+ \newline 
+\btab \btab \btab Console.WriteLine("Performing Resolution \{0\}"+         \newline 
+\btab \btab \btab ", polynomial order \{1\} ... ", ResSeq[i][k], p);         \newline 
+ \newline 
+\btab \btab \btab var grid  = Grid1D.LineGrid(GenericBlas.Linspace(0,         \newline 
+\btab \btab \btab 2.0*Math.PI, ResSeq[i][k] + 1));           \newline 
+\btab \btab \btab \btab  // number of nodes == number of cells + 1         \newline 
+ \newline 
+\btab \btab \btab var gData = new GridData(grid);         \newline 
+ \newline 
+\btab \btab \btab var g2\_h  = new SinglePhaseField(new Basis(gData, p));         \newline 
+ \newline 
+\btab \btab \btab g2\_h.ProjectField(g2);         \newline 
+ \newline 
+\btab \btab \btab Errors[i,p,k] = g2\_h.L2Error(g2);         \newline 
+ \newline 
+\btab \btab \btab Console.WriteLine("done: L2 error is \{0\}.", Errors[i,p,k]);         \newline 
+\btab \btab \}         \newline 
+\btab \}         \newline 
+ \}
+ }
+\BoSSSexeSilent
+\BoSSScmdSilent{
+/// NUnit test (few random tests) BoSSScmdSilent
+Assert.LessOrEqual(Errors[1,4,9],8E-06);       \newline 
+Assert.LessOrEqual(Errors[1,3,9],7.5E-06);       \newline 
+Assert.LessOrEqual(Errors[1,2,9],2E-05);       \newline 
+Assert.LessOrEqual(Errors[1,1,9],2E-05);       \newline 
+Assert.LessOrEqual(Errors[0,3,9],1E-12);       \newline 
+Assert.LessOrEqual(Errors[0,3,9],1E-12);       \newline 
+Assert.LessOrEqual(Errors[1,4,0],0.25);       \newline 
+Assert.LessOrEqual(Errors[0,0,0],0.2);       \newline 
+Assert.LessOrEqual(Errors[0,3,0],1E-03);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We set up the plot for the grids which have the kink at the cell boundary:
+ }
+\BoSSSexe
+\BoSSScmd{
+var gp6 = new Gnuplot();         \newline 
+gp6.Cmd("set logscale x");         \newline 
+gp6.Cmd("set logscale y");         \newline 
+int cnt = 1;         \newline 
+for(int p = 0; p <=4; p++) \{         \newline 
+\btab  gp6.PlotXY(ResSeq[0].Select(J => Math.PI*2.0/J),         \newline 
+\btab \btab \btab \btab Errors.ExtractSubArrayShallow(0,p,-1).To1DArray(),         \newline 
+\btab \btab \btab \btab "grid" + 1 + ",p" + p,         \newline 
+\btab \btab \btab \btab new PlotFormat(lineColor: (LineColors)(cnt),          \newline 
+\btab \btab \btab \btab Style:Styles.LinesPoints, pointType: (PointTypes)(cnt)));         \newline 
+\btab cnt = cnt + 1;         \newline 
+ \}
+ }
+\BoSSSexe
+\BoSSScmd{
+gp6.PlotNow();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We set up the plot for the grids which have the kink within a cell:
+ }
+\BoSSSexe
+\BoSSScmd{
+var gp7 = new Gnuplot();         \newline 
+gp7.Cmd("set logscale x");         \newline 
+gp7.Cmd("set logscale y");         \newline 
+int cnt = 1;         \newline 
+cnt     = 1;         \newline 
+for(int p = 0; p <=4; p++) \{         \newline 
+\btab gp7.PlotXY( ResSeq[1].Select(J => Math.PI*2.0/J),         \newline 
+\btab \btab \btab \btab Errors.ExtractSubArrayShallow(1,p,-1).To1DArray(),         \newline 
+\btab \btab \btab \btab "grid" + 2 + ",p" + p,          \newline 
+\btab \btab \btab \btab new PlotFormat(lineColor: (LineColors)(cnt),          \newline 
+\btab \btab \btab \btab Style:Styles.LinesPoints, pointType: (PointTypes)(cnt)));         \newline 
+\btab cnt = cnt + 1;         \newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+gp7.PlotNow();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \section{Advanced topics} This tutorial addressed the very basics of setting up a \BoSSS{}~application, namely grid instantiation, the $L^2$-projection of functions onto the DG space and performing a spatial convergence study. Where do you go from here? We recommend that you continue with other relevant basics as provided in the tutorials dealing with the creation of a spatial operator, explicit time integration and the implementation of numerical fluxes.
+ }
+\BoSSSexe

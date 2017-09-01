@@ -1,0 +1,26 @@
+BoSSS greatfully relies on multiple Third-Party Software packages.
+Those pieces of Free and Open Source have helped to bring BoSSS to where it is today.
+
+In Alphabetical Order, the FOSS used within BoSSS is:
+CGNS				LibPNG-Licence
+FastColored TextBox	LGPLv3
+Gnuplot				GnuPlot-Licence
+HDF5.Net			HDF5-Licence
+HYPRE				LGPL-V2.1
+LibCMDLine			MIT-licence
+Log4Net				ApacheV2-Licence
+Math.Net Numerics	MIT/X11-Licence
+JSON.Net			MIT-Licence
+Metis				Apache V2
+Mono				MIT/X11-licence
+NUNIT				MIT-Licence
+SSH.Net				BSD-licence
+SharpSSH			BSD-Licence (3-clause)
+SLN-Tools			MIT-licence
+Zlib		LibPNG-Licence
+
+
+Commercial Licences:
+ACML
+Intel MKL
+TecIO

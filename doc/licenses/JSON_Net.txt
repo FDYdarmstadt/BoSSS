@@ -1,0 +1,3 @@
+MIT-Licence#
+see
+../../libs/Newtonsoft.Json60r4/licence.txt

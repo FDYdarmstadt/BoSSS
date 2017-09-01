@@ -1,0 +1,169 @@
+%
+% FDY TEMPLATE for ANUAL REPORT
+% ===================================================================
+% Status: Ready for print
+% Reviewer 1: C. Kallendeorf
+% Reviewer 2: R. Mousavi Belfeh Teymouri
+\NeedsTeXFormat{LaTeX2e}
+\documentclass[11pt,twoside,a4paper]{fdyartcl}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[ngerman,english]{babel} % selectlanguage wird nur dann gebraucht, wenn
+                                    % mehrere Sprachen-packages verwendet werden,
+                                    % das zuletzt angegebene package ist die aktive
+                                    % Sprache, mit \selectlanguage kann umgeschaltet
+                                    % werden
+\usepackage[intoc]{nomencl} % zur Erstellung einer Nomenklatur
+                                   % Die Option [intoc] sorgt dafuer,
+                                   % dass die Nomenklatur im
+                                   % Inhaltsverzeichnis eingetragen
+                                   % wird. Aufruf mit:
+                                   % makeindex Diss.nlo -s nomencl.ist -o Diss.nls
+\usepackage{longtable}  % fuer tabellen, die evtl ueber Seiten
+                        % umgebrochen werden muessen
+\usepackage{graphicx}   % Stellt \includegraphics zur Verfuegung
+\usepackage{parskip}    % Setzt parindent auf null und parskip auf
+                        % einen angemessenen Wert
+\usepackage{calc}       % Erlaubt, verschiedene Masse zu addieren
+                        % z.B 1cm+2pt
+\usepackage[a4paper,twoside,outer=2.2cm,inner=3cm,top=1.5cm,bottom=2.7cm,
+includehead]{geometry}
+                                        % erheblich verbesserte
+                                        % Papieranassung
+\usepackage{setspace}   % Stellt \singlespacing, \onehalfspacing und
+                        % \doublespacig zur Verfuegung
+                        % erlaubt ausserdem die Verwendung der
+                        % Umgebung \begin{spacing}{2.3}
+\setstretch{1.05}       % minimal vergroesserter Zeilenabstand
+\usepackage{amsmath}    % Stellt verschiedene Mathematik Operatoren
+                        % und Befehle bereit und verbessert die
+                        % Darstellung von Gleichungen ermoeglicht
+                        % ausserdem die Verwendung von \boldsymbol
+                        % fuer z.B. griechische Buchstaben
+\usepackage{amsfonts}
+\usepackage{amsthm}
+\usepackage{harvard}    % neue citation Befehle und anderes Layout der
+                        % Bibliographie
+\usepackage{mathpazo}   % Aenderung der Standardschrift auf Palatino
+\bibliographystyle{diss_harv_babel}
+\input{englbst.tex}    % sonst funktioniert das zweite \cite Kommando
+                        % nicht, weil im harvardstyle \bbletal{}
+                        % herausgeschrieben wird
+%\usepackage{showkeys}   % Spaeter auskommentieren
+\usepackage{upgreek}    % nicht-kursive grichische Buchstaben
+\usepackage{fancyhdr}
+\usepackage{ngerman}    % ä,ö,ü und ß.(Gleiches gilt für Großbuchstaben)
+\usepackage{setspace}
+\usepackage{stmaryrd}
+\usepackage{listings}
+\usepackage[hang,tight,raggedright]{subfigure}
+
+\lstset{language=XML,tabsize=4,numbers=left,numberstyle=\tiny,stepnumber=5,
+numbersep=10pt,frame=single,captionpos=b,basicstyle={\small \ttfamily},
+aboveskip=\bigskipamount}
+\graphicspath{{./Figures/}}%
+% \input hyphen_dt.tex  % Spezielle Trennregeln fuer deutsche
+                        % Woerter - gehoert in den Vorspann
+\clubpenalty = 10000%
+\widowpenalty = 10000%
+\displaywidowpenalty =10000
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TITLE AND AUTHOR
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\title{Development of a solver for compressible single-phase flows in BoSSS}
+\author{Bj"orn M"uller}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Kopfzeile
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+
+\fancyhead[CE]{\sffamily \small \thepage \quad \hrulefill \quad \sffamily
+\small Annual report 2010 } \fancyhead[CO]{\sffamily \small B. Müller \quad
+\hrulefill \quad \sffamily \small \thepage }
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Angaben fuer die Nomenklatur
+%\makenomenclature
+%\renewcommand{\nomname}{Nomenklatur}
+%\setlength{\nomitemsep}{-0.2\parsep}% Der Abstand zweier Eintraege in
+                                    % der Nomeklatur betraegt
+
+% Dieser Befehl stellt sicher, dass neue Kapitel auf rechten (ungeraden) Seiten beginnen
+\newcommand{\clearemptydoublepage}%
+{\newpage{\pagestyle{empty}\cleardoublepage}}
+\newfont{\myrm}{cmr12 at 12 pt}
+% FigureXYLabel - urspruenglich in defin.tex, von Prof.~Dr.-Ing.~M. Oberlack
+% Urspruengliche Version umfasste 5 Parameter -  geaenderte 7 Parameter - Bauerbach
+% 1 Figurename: \includegraphics[......
+% 2 Beschriftung der x Achse
+% 3 x-Beschriftung - Verruecken horizontal positiv nach links
+% 4 x Beschriftung - Verruecken vertikal positiv nach unten
+% 5 Beschriftung der y Achse
+% 6 y-Beschriftung - Verruecken horizontal positiv nach links
+% 7 y Beschriftung - Verruecken vertikal positiv nach oben
+\newlength{\FigureHeight}
+\newlength{\FigureHeightHalf}
+\newcommand{\FigureXYLabel}[7]{%
+\settoheight{\FigureHeight}{#1}%
+\setlength{\FigureHeightHalf}{0.5\FigureHeight}%
+\addtolength{\FigureHeightHalf}{#7}%
+\raisebox{\FigureHeightHalf}{\makebox[0cm][r]{#5\makebox[#6]{}}}%
+#1\\%
+\vspace{#4}%
+{\makebox{#2\makebox[#3]{}}}}
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%       DOKUMENT
+\begin{document}
+
+% Zurueckschalten auf arabische Ziffern, dabei wird der Zaehler auf 1 gesetzt
+\pagenumbering{arabic}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Seitennummer der ersten Seite
+\setcounter{page}{1} % must be an odd number
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Titelseite
+% -------------------
+\maketitle
+\doublespace
+
+\begin{abstract}
+This report reviews the current state of the implementation of a compressible
+Navier-Stokes solver (\emph{CNS}) in the Discontinuous Galerkin framework 
+\emph{BoSSS}. At this point, the implementation of the inviscid part (i.e. the Euler 
+equations) has been completed and this report summarizes the numerical formulations 
+used in the solver. Additionally, the usage of \emph{CNS} is described and some
+numerical examples are given.
+\end{abstract}
+
+\input{1-introduction}
+\input{2-numerics}
+\input{3-usage}
+\input{4-examples}
+\input{5-outlook}
+
+\bibliography{BibDatabase}
+
+%\appendix
+
+
+\clearemptydoublepage
+
+\end{document}

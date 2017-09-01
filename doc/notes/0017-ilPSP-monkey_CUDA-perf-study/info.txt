@@ -1,0 +1,24 @@
+durchgeführt im herbst 2010 auf CSC SCOUT system (Uni Frankfurt)
+
+Hardware:
+2 water-cooled racks,
+108 GPU's, 432 GB GPU RAM,
+27 NVIDIA Tesla S1070,
+1 x Head Node: 8 CPU cores, 32 GB RAM,
+18 x Compute Nodes: 8 CPU cores and 16 GB RAM per Node,
+4 or 6 Tesla C1060 GPUs per node, 4 GB memory each,
+7 TB disk capacity.
+Installed in 2008 on Campus Bockenheim.
+
+
+General Information
+===================
+
+ * Hostname: gpu-scout.csc.uni-frankfurt.de
+ * Operating System: Ubuntu 10.04
+ * Hardware:
+      1 x Head Node: 8 CPU cores; 32 GB memory.
+     18 x Compute Nodes: 8 CPU cores; 16 GB memory; 
+        4 or 6 Tesla C1060 GPUs per node; 4 GB memory each.
+ * Intel Xeon-CPUs X5460 mit 3,16 GHz (Vierkerne-Prozessoren, 2 Prozessoren pro Computenode).
+

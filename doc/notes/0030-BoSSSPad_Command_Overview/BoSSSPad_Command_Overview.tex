@@ -1,0 +1,79 @@
+\NeedsTeXFormat{LaTeX2e}
+\documentclass[11pt]{fdyartcl}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{parskip}    % Setzt parindent auf null und parskip auf
+                        % einen angemessenen Wert
+\usepackage[a4paper,outer=2.2cm,inner=2.5cm,top=1.5cm,bottom=2.7cm,includehead]{geometry}
+                                        % erheblich verbesserte
+                                        % Papieranassung
+\usepackage{setspace}   % Stellt \singlespacing, \onehalfspacing und
+                        % \doublespacig zur Verfuegung
+                        % erlaubt ausserdem die Verwendung der
+                        % Umgebung \begin{spacing}{2.3}
+\setstretch{1.05}       % minimal vergroesserter Zeilenabstand
+\usepackage{amsmath}    % Stellt verschiedene Mathematik Operatoren
+                        % und Befehle bereit und verbessert die
+                        % Darstellung von Gleichungen ermoeglicht
+                        % ausserdem die Verwendung von \boldsymbol
+                        % fuer z.B. griechische Buchstaben
+\usepackage{amsfonts}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{mathpazo}   % Aenderung der Standardschrift auf Palatino
+\usepackage{fancyhdr}
+
+% Using Courier, so we can have bold typewriter font
+\renewcommand{\ttdefault}{pcr}
+
+% color definitions for syntax highlighting
+\usepackage{xcolor}
+%\definecolor{bluekeywords}{rgb}{0,0,1}
+\definecolor{greencomments}{rgb}{0,0.5,0}
+%\definecolor{redstrings}{rgb}{0.64,0.08,0.08}
+%\definecolor{xmlcomments}{rgb}{0.5,0.5,0.5}
+%\definecolor{types}{rgb}{0.17,0.57,0.68}
+
+\usepackage{listings} % source code formatting
+\lstset{
+	language=[Sharp]C,
+	basicstyle=\ttfamily\small\bfseries,
+%	keywordstyle=\color{bluekeywords},
+%	stringstyle=\color{redstrings},
+	commentstyle=\normalfont\slshape, %\color{greencomments},
+%	morekeywords={IList, IEnumerable, IDatabaseInfo},
+	breaklines=true,
+	frame=lines
+	}
+
+\usepackage{todonotes} % highlighted to-do notes
+\usepackage{hyperref} % hyperlinks
+
+\usepackage{enumitem} % Control layout of itemize, enumerate, description
+\setdescription{
+	font=\ttfamily\small\bfseries,
+	labelindent=0em,
+	leftmargin=.05\textwidth,
+	style=nextline}
+
+
+\newcommand{\BoSSSpad}{BoSSSpad}
+\title{\bfseries \BoSSSpad{} \\ Command reference}
+\author{\bfseries Markus Keil, Björn Müller, Florian Kummer}
+
+
+
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+
+\vspace{2em}
+
+
+\input{content.tex}
+
+\end{document}

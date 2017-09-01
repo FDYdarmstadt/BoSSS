@@ -1,0 +1,194 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BoSSSControl>
+    <Base>
+        <dboptions path="C:\BoSSS\bosss_db"/>
+        <grid guid="12345678-9012-3456-7890-123456789012"/>
+        
+        <description name="control file example">
+            control file example
+        </description>
+        <tags>
+            control example
+        </tags>
+        
+        <!-- Queries are currently supported in "solver"-, "query"- (see
+			 06-query-mode) and "parameterStudy"-mode (see
+			 04-parameter-studies.xml). The definition of the queries starts
+			 in line 79. -->
+        <run mode="solver"/>
+        
+        <fields_degree>
+            <field identification="VelocityX" degree="2"/>
+            <field identification="VelocityY" degree="2"/>
+            <field identification="Phi" degree="2"/>
+        </fields_degree>
+    </Base>
+    
+    <initial mode="values">
+        <values>
+            <formula>
+                u(x,y) = 0.0
+            </formula>
+            <formula field="v">
+                v(x,y) = 0.0
+            </formula>
+            <formula>
+                Phi(x,y) = 0
+            </formula>
+        </values>    
+    </initial>
+    
+    <Solver>
+        <logging savetodb="true" saveperiod="5" tracing="false"/>
+        <termcond NoOfTimesteps="5" Endtime="50"/>
+        <timestepping dtMin="0.0" dtMax="0.2" CFLFrac = "0.3"/>
+  
+        <boundary>
+            <bc edgetagname="velocity_inlet">
+                <formula>
+                    u(x,y)=1-y*y
+                </formula>
+            </bc>
+            <bc edgetagname="wall">
+            </bc>
+            <bc edgetagname="pressure_outlet">
+                <value field="pressure">0.0</value>
+            </bc>
+        </boundary>
+        <properties>
+            <float key="Reynolds">10.0</float>
+            <float key="penalty_poisson">2.5</float>
+            <float key="penalty_viscous">1.5</float>
+            <string key="pressure_solver">iterative-pressure-solver</string>
+            <string key="viscous_solver">iterative-viscous-solver</string>
+            <fvector key="PoissonRefPt">5.0 0.0</fvector>
+            <string key="method:major-opt">projection</string>
+            <string key="method:minor-opt">lie</string>
+            <string key="bc-and-fluxes">kummers-method</string>
+            <float key="CrankNic:theta">1.0</float>
+            <string key="IOFields">pri_Velocity IntVelocity pri_Phi DivB4 DivAfter </string>
+            <string key="ResFields">pri_Velocity pri_Phi DivB4 DivAfter </string>
+        </properties>
+		
+		<!-- All query definitions go into this node. Every query will be
+			 evaluated after the last timestep of the run. The syntax is
+			 identical for all supported modes ("solver", "query" and
+			 "parameterStudy"). In the following the syntax of all supported
+			 queries will be outlined. For details about the respective query,
+			 have a look at the BoSSS help file. -->
+		<Queries>
+			<!-- The tag name of a query name defines the type of query. The
+				 'id' attribute is mandatory for all queries. It has to be
+				 unique and will appear in the file "queryResults.txt".
+				 Wherever the argument of a query is a field, four different
+				 ways of supplying this argument are supported: -->
+			<L2Norm id="dummy1">
+				<!-- Variant 1: Any field contained in the IO fields of the
+					 specific solver can be referenced by its id. -->
+                <field identification="VelocityX" />
+            </L2Norm>
+            <L2Norm id="dummy2">
+				<!-- Variant 2: Any formula depending on the independent
+					 variables can be supplied. The attribute 'degree' defines
+					 the order of the DG projection that will be used to
+					 evaluate the formula. This is useful, for example, if an
+					 exact solution is known. -->
+                <formula degree="2">
+                     VelocityX(x, y, z) = x * x
+                </formula>
+            </L2Norm>
+            <L2Norm id="dummy3">
+				<!-- Variant 3: Any formula depending on fields contained in
+					 the IO fields of the specific solver can be defined. The
+					 attribute 'degree' defines the order of the DG projection
+					 that will be used to evaluate the formula. Thie is useful,
+					 for example, if derived quantities (like the kinetic
+					 energy) should be evaluated. -->
+                <fieldFormula degree="2">
+                    K(VelocityX, VelocityY) = 0.5 * (VelocityX * VelocityX + VelocityY * VelocityY)
+                </fieldFormula>
+            </L2Norm>
+            <L2Norm id="dummy4">
+				<!-- Variant 4: A field that has been computed in advance
+					 during a separate run can be referenced by its _field_
+					 guid (_not_ by the session guid) if it is stored in the
+					 same database as the current run. This is useful, for
+					 example, if a reference run is used instead of an exact
+					 solution -->
+                <storedField fieldGuid="12345678-9012-3456-7890-123456789012" />
+            </L2Norm>
+			
+			<!-- The following queries are currently supported (in addiation
+				 to the L2 norm shown above). Pleas keep in mind that _any_
+				 shown 'field'-node may be replaced by a 'formula'-, a
+				 'fieldFormula'- or a 'storedField'-node if desired. -->
+			
+			<!-- The L-infinity norm over the whole domain. -->
+            <LInfNorm id="dummy5">
+                <field identification="VelocityX" />
+            </LInfNorm>
+			
+			<!-- The integral over the whole domain. -->
+            <Integral id="dummy6">
+                <field identification="VelocityX" />
+            </Integral>
+			
+			<!-- The difference between the 'computedSolution' and the
+				 'exactSolution' in the L2 norm. -->
+            <L2Error id="dummy7">
+                <computedSolution>
+                    <field identification="VelocityX" />
+                </computedSolution>
+                <exactSolution>
+                    <formula degree="2">
+                        VelocityX(x, y, z) = x * x
+                    </formula>
+                </exactSolution>
+            </L2Error>
+			
+			<!-- The difference between the 'computedSolution' and the
+				 'exactSolution' in the L-infinity norm. -->
+            <LInfError id="dummy8">
+                <computedSolution>
+                    <field identification="VelocityX" />
+                </computedSolution>
+                <exactSolution>
+                    <storedField fieldGuid="12345678-9012-3456-7890-123456789012" />
+                </exactSolution>
+            </LInfError>
+			
+			<!-- The value of the defined field in the point defined by the 
+				 'x'-, 'y'- (if applicable) and 'z'-coordinates (if
+				 applicable) -->
+            <ProbeAt id="dummy9" x="1.0" y="2.0" z="3.0">
+                <field identification="VelocityX" />
+            </ProbeAt>
+			
+			<!-- The L2 norm over the edge defined by 'edgetagname'. -->
+            <EdgeL2Norm id="dummy10" edgetagname="pressure_outlet">
+                <field identification="VelocityX" />
+            </EdgeL2Norm>
+		</Queries>
+    </Solver>
+    
+    <sparsesolver name="iterative-pressure-solver">
+        <type>pCG</type>
+        <library>hypre</library>
+        <specific>
+            <MaxIterations>1000000</MaxIterations>
+            <ConvergenceType>Relative</ConvergenceType>
+            <Tolerance>1.0e-9</Tolerance>
+        </specific>
+    </sparsesolver>
+
+    <sparsesolver name="iterative-viscous-solver">
+        <type>PCG</type>
+        <library>hypre</library>
+        <specific>
+            <MaxIterations>8000</MaxIterations>
+            <ConvergenceType>Relative</ConvergenceType>
+            <Tolerance>1.0e-12</Tolerance>
+            <TwoNorm>true</TwoNorm>
+        </specific>
+    </sparsesolver>
+</BoSSSControl>

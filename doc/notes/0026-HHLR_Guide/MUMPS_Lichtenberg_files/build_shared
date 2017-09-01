@@ -1,0 +1,6 @@
+ar -x libdmumps.a
+ar -x libmumps_common.a
+ar -x libpord.a
+mpifort -shared -qopenmp *.o -o libdmumps.so -lmkl_scalapack_lp64 -lmkl_blacs_openmpi_lp64 -lmkl_intel_thread -lmkl_core -lmkl_intel_lp64
+cp libdmumps.so* /home/oe11okuz/IBM_Solver/
+rm *.o

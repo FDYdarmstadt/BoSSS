@@ -1,0 +1,90 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BoSSSControl>
+    <Base>
+        <dboptions path="C:\BoSSS\bosss_db"/>
+        <grid guid="fb1d767f-d056-4249-939a-3b67016a94fd"/>
+        
+        <description name="control file example">
+            control file example
+        </description>
+        <tags>
+            control example
+        </tags>
+        <run mode="solver"/> 
+        <fields_degree>
+            <field identification="u" degree="2"/>
+            <field identification="v" degree="2"/>
+            <field identification="Phi" degree="2"/>
+        </fields_degree>
+    </Base>
+    
+    <initial mode="restart">
+        <restart>
+            <fieldlist>
+                <!-- the id-override - attribute is optional and identifies the
+                DG field into which the state with the given GUID is loaded.
+                Specifying a name will override the name in the field state. -->
+                <field guid="8137f96f-60df-4021-b285-86f665af14b6" id-override="u"/>
+                <field guid="4d962b64-cd58-48d5-bc89-41331baf9c6e" id-override="v"/>
+                <field guid="d57b4cb0-f304-4515-bca9-d133f5e66bb6" />
+            </fieldlist>
+        </restart>
+    </initial>
+    
+    <Solver>
+        <logging savetodb="true" saveperiod="5" tracing="true"/>
+        <termcond NoOfTimesteps="5" Endtime="50"/>
+        <timestepping dtMin="0.0" dtMax="0.2" CFLFrac = "0.3"/>
+  
+        <boundary>
+            <bc edgetagname="velocity_inlet">
+                <formula>
+                    u(x,y)=1-y*y
+                </formula>
+            </bc>
+            <bc edgetagname="wall">
+            </bc>
+            <bc edgetagname="pressure_outlet">
+                <value field="pressure">0.0</value>
+            </bc>
+        </boundary>
+        <properties>
+            <float key="Reynolds">10.0</float>
+            <float key="penalty_poisson">2.5</float>
+            <float key="penalty_viscous">1.5</float>
+            <string key="pressure_solver">iterative-pressure-solver</string>
+            <string key="viscous_solver">iterative-viscous-solver</string>
+            <fvector key="PoissonRefPt">5.0 0.0</fvector>
+            <string key="method:major-opt">projection</string>
+            <string key="method:minor-opt">lie</string>
+            <string key="bc-and-fluxes">kummers-method</string>
+            <float key="CrankNic:theta">1.0</float>
+            <string key="IOFields">pri_Velocity IntVelocity pri_Phi DivB4 DivAfter </string>
+            <string key="ResFields">pri_Velocity pri_Phi DivB4 DivAfter </string>
+        </properties>
+    </Solver>
+
+    <sparsesolver name="iterative-pressure-solver">   <!-- conjugated gradients from hypre -->
+        <type>PCG</type>
+        <library>HYPRE</library>
+        <MaxIterations>1000000</MaxIterations>
+        <ConvergenceType>Relative</ConvergenceType>
+        <Tolerance>1.0e-9</Tolerance>
+        <specific>
+            <RelChange>5</RelChange>
+            <TwoNorm>true</TwoNorm>
+        </specific>
+    </sparsesolver>
+
+    <sparsesolver name="iterative-viscous-solver">
+        <type>PCG</type>
+        <library>HYPRE</library>
+        <MaxIterations>8000</MaxIterations>
+        <ConvergenceType>Relative</ConvergenceType>
+        <Tolerance>1.0e-12</Tolerance>
+        <specific>
+            <RelChange>5</RelChange>
+            <TwoNorm>true</TwoNorm>
+        </specific>
+    </sparsesolver>
+</BoSSSControl>

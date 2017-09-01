@@ -1,0 +1,4 @@
+Copyright © 2004-2015 Apache Software Foundation. Licensed under the Apache Software License, Version 2.0.
+Apache log4net, Apache, log4net, the Apache feather logo, the Apache Logging Services project logo and the Built by Maven logo are trademarks of The Apache Software Foundation.
+
+http://www.apache.org/licenses/LICENSE-2.0

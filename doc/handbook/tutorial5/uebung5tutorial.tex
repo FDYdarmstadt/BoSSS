@@ -1,0 +1,501 @@
+% !TeX spellcheck = de_DE
+%\documentclass[12pt,a4paper]{article}
+%\usepackage{import}
+%\subimport{../}{uebung.tex}
+%
+%\toggletrue{showSolution}
+%
+%
+%\title{\thetitle{}\\Übung 5 - BoSSS}
+%\date{\WeeksAfter{6}}
+%
+%
+%\begin{document}
+%
+%\maketitle
+
+\BoSSSopen{tutorial5/uebung5tutorial}
+\graphicspath{{tutorial5/uebung5tutorial.texbatch/}}
+
+
+\BoSSScmd{
+///\label{chap:flux_and_convergence}
+///\section*{What's new}
+///\label{sec:flux_and_convergence_new}
+///\begin{itemize}
+/// \item Lax-Friedrichs flux
+/// \item Computation of "experimental order of convergence" (EOC)
+///\end{itemize}
+///
+///\section*{Prerequisites}
+///\label{sec:flux_and_convergence_prereq}
+///\begin{itemize}
+/// \item Definition of the Upwind flux (Tutorial 4)
+/// \item Grid generation (Tutorial 2)
+/// \item Basics of convergence studies (Tutorial 2)
+///\end{itemize}
+///Within this tutorial the Lax-Friedrichs flux will be implemented as an alternative to the Upwind flux (see tutorial 4). 
+/// For both fluxes a convergence study will be performed and the "experimental order of convergence" (EOC) will be computed. 
+///For the implementation of the Lax-Friedrichs flux and the Upwind flux it is recommended to work through tutorial 4 first 
+/// as the definition of fluxes is explained there in more detail. For the second part of the tutorial, 
+/// tutorial 2 has already taught the basics of doing a convergence study.
+///
+///\section{Problem statement}
+///\label{sec:flux_and_convergence_problem}
+///As an examplary problem, we consider the scalar transport equation
+///\begin{equation}
+///\frac{\partial c}{\partial t} + \nabla \cdot (\vec{u} c) = 0
+///\end{equation}
+///in the domain $\domain = [-1, 1] \times [-1, 1]$, where the concentration $c = c(x,y,t) \in \mathbb{R}$ is unknown and the velocity field is given by
+///\begin{equation*}
+///\vec{u} = \begin{pmatrix}
+///y\\-x
+///\end{pmatrix}
+///\end{equation*}
+///The analytical solution for the problem above is given by 
+///\begin{align*}
+///c_\text{Exact}(x,y,t) &= \cos(\cos(t) x - \sin(t) y) \quad \text{ for } (x,y) \in \domain,
+///\end{align*}
+///which can be used to describe the initial and boundary conditions. 
+///
+///\section{Solution within the BoSSS Framework}
+///\label{sec:flux_and_convergence_tutorial}
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+restart;
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// First, we define functions for the given velocity field and the exact solution
+ }
+\BoSSSexe
+\BoSSScmd{
+Func<double[], double> u = X => X[1];
+ }
+\BoSSSexe
+\BoSSScmd{
+Func<double[], double> v = X => -X[0];
+ }
+\BoSSSexe
+\BoSSScmd{
+Func<double[], double, double> cExact =      \newline 
+\btab  (X, t) => Math.Cos(Math.Cos(t)*X[0] - Math.Sin(t)*X[1]);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// %=============================================
+/// \subsection{Definition of the numerical fluxes} \label{sec:flux_and_convergence_fluxes}
+/// %=============================================
+ }
+\BoSSSexe
+\BoSSScmd{
+using BoSSS.Platform.LinAlg;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Before implementing the \code{ScalarTransportFlux} as done in Tutorial 4, we define both fluxes 
+/// as functions in terms of the parameters \code{Uin}, \code{Uout}, the normal vector \code{n} and the
+/// \code{velocityVector}. Recalling the Upwind flux, the corresponding flux function is defined as
+ }
+\BoSSSexe
+\BoSSScmd{
+Func<double, double, Vector2D, Vector2D, double> upwindFlux =     \newline 
+\btab delegate(double Uin, double Uout, Vector2D n, Vector2D velocityVector) \{     \newline 
+ \newline 
+\btab \btab if (velocityVector * n > 0) \{     \newline 
+\btab \btab \btab return (velocityVector * Uin) * n;     \newline 
+\btab \btab \} else \{     \newline 
+\btab \btab    return (velocityVector * Uout) * n;     \newline 
+\btab \btab \}     \newline 
+\btab \};
+ }
+\BoSSSexe
+\BoSSScmd{
+/// The second flux we are considering now, is the Lax-Friedrichs flux
+/// \begin{equation*}
+/// \hat{f}(c_h^-, c_h^+, \vec{u} \cdot \vec{n}) = \mean{\vec{u} \, c_h} \cdot \vec{n} + \frac{C}{2} \jump{c_h}.
+/// \end{equation*}
+/// The constant $C \in \mathbb{R}^+$ has to be sufficiently large in order to guarantee the stability of the 
+/// numerical scheme. We choose 
+/// \begin{equation*}
+/// C = \max \abs{\vec{u} \cdot \vec{n}} = 1
+/// \end{equation*}
+/// for the given problem.
+ }
+\BoSSSexe
+\BoSSScmd{
+double C = 0.3;     \newline 
+ \newline 
+Func<double, double, Vector2D, Vector2D, double> laxFriedrichsFlux =     \newline 
+\btab delegate(double Uin, double Uout, Vector2D n, Vector2D velocityVector) \{     \newline 
+ \newline 
+\btab \btab return 0.5 * (Uin + Uout) * velocityVector * n - C * (Uout - Uin);     \newline 
+\btab \};
+ }
+\BoSSSexe
+\BoSSScmd{
+/// For the implementation of the \code{ScalarTransportFlux} we want to generate 
+/// instances by the definition of the \code{numericalFlux}. Therefore a new constructor is implemented 
+/// and the implementation of \code{InnerEdgeFlux} is rewritten in terms of the \code{numericalFlux}.
+class ScalarTransportFlux : NonlinearFlux \{     \newline 
+ \newline 
+\btab private Func<double, double, Vector2D, Vector2D, double> numericalFlux;     \newline 
+ \newline 
+\btab // Provides instances of this class with a specific flux implementation     \newline 
+\btab public ScalarTransportFlux(     \newline 
+\btab \btab Func<double, double, Vector2D, Vector2D, double> numericalFlux) \{     \newline 
+ \newline 
+\btab \btab this.numericalFlux = numericalFlux;     \newline 
+\btab \}     \newline 
+ \newline 
+\btab public override IList<string> ArgumentOrdering \{     \newline 
+\btab \btab get \{ return new string[] \{ "ch" \}; \}     \newline 
+\btab \}     \newline 
+ \newline 
+\btab protected override void Flux(     \newline 
+\btab \btab double time, double[] x, double[] U, double[] output) \{     \newline 
+ \newline 
+\btab \btab output[0] = u(x) * U[0];     \newline 
+\btab \btab output[1] = v(x) * U[0];     \newline 
+\btab \}     \newline 
+ \newline 
+\btab // Makes use of the flux implementation supplied in the constructor     \newline 
+\btab protected override double InnerEdgeFlux(     \newline 
+\btab \btab double time, double[] x, double[] normal,      \newline 
+\btab \btab double[] Uin, double[] Uout, int jEdge) \{     \newline 
+ \newline 
+\btab \btab Vector2D n              = new Vector2D(normal);     \newline 
+\btab \btab Vector2D velocityVector = new Vector2D(u(x), v(x));     \newline 
+ \newline 
+\btab \btab return numericalFlux(Uin[0], Uout[0], n, velocityVector);     \newline 
+\btab \}     \newline 
+ \newline 
+\btab protected override double BorderEdgeFlux(     \newline 
+\btab \btab double time, double[] x, double[] normal, byte EdgeTag,     \newline 
+\btab \btab double[] Uin, int jEdge) \{     \newline 
+ \newline 
+\btab \btab double[] Uout = new double[] \{ cExact(x, time) \};     \newline 
+ \newline 
+\btab \btab return InnerEdgeFlux(time, x, normal, Uin, Uout, jEdge);     \newline 
+\btab \}     \newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// For both numerical fluxes we define a \code{SpatialOperator} that uses the corresponding flux to compute div(...)
+ }
+\BoSSSexe
+\BoSSScmd{
+var upwindOperator = new SpatialOperator(     \newline 
+\btab new string[] \{ "ch" \},     \newline 
+\btab new string[] \{ "div" \},     \newline 
+\btab QuadOrderFunc.NonLinear(2));
+ }
+\BoSSSexe
+\BoSSScmd{
+upwindOperator.EquationComponents["div"].Add(     \newline 
+\btab new ScalarTransportFlux(upwindFlux));
+ }
+\BoSSSexe
+\BoSSScmd{
+upwindOperator.Commit();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// %
+ }
+\BoSSSexe
+\BoSSScmd{
+var laxFriedrichsOperator = new SpatialOperator(     \newline 
+\btab new string[] \{ "ch" \},     \newline 
+\btab new string[] \{ "div" \},     \newline 
+\btab QuadOrderFunc.NonLinear(2));
+ }
+\BoSSSexe
+\BoSSScmd{
+laxFriedrichsOperator.EquationComponents["div"].Add(     \newline 
+\btab new ScalarTransportFlux(laxFriedrichsFlux));
+ }
+\BoSSSexe
+\BoSSScmd{
+laxFriedrichsOperator.Commit();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// %
+ }
+\BoSSSexe
+\BoSSScmd{
+/// %=============================================
+/// \subsection{Convergence study}\label{sec:flux_and_convergence_convergence}
+/// %=============================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// In the following a convergence study for the discretization error will be performed on grids 
+/// with $2\times2$, $4\times4$, $8\times8$ and $16\times16$ cells. The error at $t = \pi /4$
+/// will be investigated for the polynomial degrees $\degree = 0, \ldots, 3$ of the ansatzfunctions. 
+/// The study will be done for both numerical fluxes.
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We start by defining a series of nested grids for the convergence study
+ }
+\BoSSSexe
+\BoSSScmd{
+int[] numbersOfCells = new int[] \{ 2, 4, 8, 16 \};
+ }
+\BoSSSexe
+\BoSSScmd{
+GridData[] grids = new GridData[numbersOfCells.Length];
+ }
+\BoSSSexe
+\BoSSScmd{
+for (int i = 0; i < numbersOfCells.Length; i++) \{     \newline 
+ \newline 
+\btab double[] nodes = GenericBlas.Linspace(-1.0, 1.0, numbersOfCells[i] + 1);     \newline 
+ \newline 
+\btab GridCommons grid = Grid2D.Cartesian2DGrid(nodes, nodes);     \newline 
+ \newline 
+\btab grids[i] = new GridData(grid);     \newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Then, a \code{SinglePhaseField} is defined for each polynomial degree on each grid.
+/// The initial value is projected on each field.
+ }
+\BoSSSexe
+\BoSSScmd{
+int[] dgDegrees = new int[] \{ 0, 1, 2, 3 \};
+ }
+\BoSSSexe
+\BoSSScmd{
+SinglePhaseField[,] fields =      \newline 
+\btab new SinglePhaseField[dgDegrees.Length, numbersOfCells.Length];
+ }
+\BoSSSexe
+\BoSSScmd{
+for (int i = 0; i < dgDegrees.Length; i++) \{     \newline 
+\btab for (int j = 0; j < numbersOfCells.Length; j++) \{     \newline 
+ \newline 
+\btab \btab Basis basis = new Basis(grids[j], dgDegrees[i]);     \newline 
+\btab \btab fields[i, j] = new SinglePhaseField(     \newline 
+\btab \btab \btab \btab \btab \btab \btab   basis, "ch\_" + dgDegrees[i] + "\_" + grids[j]);     \newline 
+\btab \btab fields[i, j].ProjectField(X => cExact(X, 0.0));     \newline 
+\btab \}     \newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Since the error at a fourth revolution is considered, the initial concentration has to be simulated until 
+/// $\code{endTime} = \pi / 4$. For the timestepping we are using the classical fourth order Runge-Kutta scheme. 
+/// The timestep size should be chosen small enough in order to reduce the \emph{temporal} error,
+/// so that the \emph{spatial} error dominates for the convergence study.
+ }
+\BoSSSexe
+\BoSSScmd{
+using BoSSS.Solution.Timestepping;
+ }
+\BoSSSexe
+\BoSSScmd{
+double endTime        = Math.PI / 4.0;     \newline 
+int numberOfTimesteps = 100;     \newline 
+double dt             = endTime / numberOfTimesteps;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// A \code{MultidimensionalArray} is a special double array that enables \emph{shallow} resizing and data
+/// extraction. For example, sub-arrays can be extracted without needing to copy the entries of
+/// the \code{MultidimensionalArray}. BoSSS makes extensive use of this class because this is crucial
+/// for the performance.
+/// Here, we create a three-dimensional array, where the first index corresponds to the flux
+/// function, the second to the DG degree and the third to the number of cells.
+MultidimensionalArray errors =      \newline 
+\btab MultidimensionalArray.Create(2, dgDegrees.Length, grids.Length);
+ }
+\BoSSSexe
+\BoSSScmd{
+for (int i = 0; i < dgDegrees.Length; i++) \{     \newline 
+\btab for (int j = 0; j < numbersOfCells.Length; j++) \{     \newline 
+ \newline 
+\btab \btab // Clones an object and casts it to the type of the original object  \newline 
+\btab \btab // at the same time.  \newline 
+\btab \btab SinglePhaseField c = fields[i, j].CloneAs();     \newline 
+ \newline 
+\btab \btab // Instantiate the timestepper (classical Runge-Kutta scheme)     \newline 
+\btab \btab // for the evolution of the concentration c with Upwind flux     \newline 
+\btab \btab RungeKutta timeStepper = new RungeKutta(     \newline 
+\btab \btab \btab RungeKutta.RungeKuttaSchemes.RungeKutta1901,     \newline 
+\btab \btab \btab upwindOperator, c);     \newline 
+ \newline 
+\btab \btab // Integrate in time for each timestep     \newline 
+\btab \btab for (int k = 0; k < numberOfTimesteps; k++) \{     \newline 
+\btab \btab \btab timeStepper.Perform(dt);     \newline 
+\btab \btab \}     \newline 
+ \newline 
+\btab \btab // Compute the error w.r.t. analytical solution     \newline 
+\btab \btab errors[0, i, j] = c.L2Error(X => cExact(X, endTime));     \newline 
+ \newline 
+\btab \btab // Simulate with the Lax-Friedrichs flux     \newline 
+\btab \btab c = fields[i, j].CloneAs();     \newline 
+\btab \btab timeStepper = new RungeKutta(     \newline 
+\btab \btab \btab \btab \btab \btab \btab  RungeKutta.RungeKuttaSchemes.RungeKutta1901,      \newline 
+\btab \btab \btab \btab \btab \btab \btab  laxFriedrichsOperator, c);     \newline 
+\btab \btab for (int k = 0; k < numberOfTimesteps; k++) \{     \newline 
+\btab \btab \btab timeStepper.Perform(dt);     \newline 
+\btab \btab \}     \newline 
+\btab \btab errors[1, i, j] = c.L2Error(X => cExact(X, endTime));     \newline 
+\btab \}     \newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// %=============================================
+/// \subsection{Plotting results}\label{sec:flux_and_convergence_plots}
+/// %=============================================
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+/// For the convergence plots the error is plotted over the mesh size, 
+/// where the coarsest grid size is defined as size = 1.
+ }
+\BoSSSexe
+\BoSSScmd{
+var sizes = numbersOfCells.Select(s => 2.0 / s).ToArray();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// First, we are looking at the convergence plot of the Upwind flux. 
+/// Therefore, an instance of Gnuplot has to be generated.
+var gpUpwind = new Gnuplot();     \newline 
+gpUpwind.SetYRange(Math.Pow(10,-7), Math.Pow(10,0));
+ }
+\BoSSSexe
+\BoSSScmd{
+for (int i = 0; i < dgDegrees.Length; i++) \{     \newline 
+ \newline 
+    /// Here, we use the shallow extraction features of    
+    /// \code{MultidimensionalArray} mentioned above.   
+    /// The command \code{ExtractSubArrayShallow(0, i, -1)}    
+    /// is roughly equivalent to writing "errors[0, i, :]" in Matlab   
+\btab var errorsForDegree = errors.ExtractSubArrayShallow(0, i, -1).To1DArray();     \newline 
+ \newline 
+\btab // some formatting of the plot data for the convergence study      \newline 
+\btab PlotFormat format = new PlotFormat(lineColor: (LineColors)(i+1),     \newline 
+\btab \btab \btab \btab \btab \btab \btab \btab \btab    Style: Styles.LinesPoints,       \newline 
+\btab \btab \btab \btab \btab \btab \btab \btab \btab    pointType: PointTypes.Diamond,       \newline 
+\btab \btab \btab \btab \btab \btab \btab \btab \btab    pointSize: 2.0);     \newline 
+ \newline 
+\btab // Create log-log plot mesh size vs. error for dgDegrees[i]    \newline 
+\btab gpUpwind.PlotLogXLogY(sizes, errorsForDegree,      \newline 
+\btab \btab \btab \btab \btab \btab   "Upwind, order " + dgDegrees[i], format);     \newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+gpUpwind.PlotNow(); // perform the plotting
+ }
+\BoSSSexe
+\BoSSScmd{
+/// The convergence plot is also done for the Lax-Friedrichs flux.
+ }
+\BoSSSexe
+\BoSSScmd{
+var gpLaxFriedrichs = new Gnuplot();     \newline 
+gpLaxFriedrichs.SetYRange(Math.Pow(10,-7), Math.Pow(10,0));
+ }
+\BoSSSexe
+\BoSSScmd{
+for (int i = 0; i < dgDegrees.Length; i++) \{     \newline 
+ \newline 
+\btab var errorsForDegree = errors.ExtractSubArrayShallow(1, i, -1).To1DArray();     \newline 
+ \newline 
+\btab PlotFormat format = new PlotFormat(lineColor: (LineColors)(i+1),     \newline 
+\btab \btab \btab \btab \btab \btab \btab \btab \btab    Style: Styles.LinesPoints,       \newline 
+\btab \btab \btab \btab \btab \btab \btab \btab \btab    pointType: PointTypes.Diamond,       \newline 
+\btab \btab \btab \btab \btab \btab \btab \btab \btab    pointSize: 2.0);     \newline 
+ \newline 
+\btab gpLaxFriedrichs.PlotLogXLogY(sizes, errorsForDegree,      \newline 
+\btab \btab \btab \btab \btab \btab \btab \btab  "LaxFriedrichs, order " + dgDegrees[i],      \newline 
+\btab \btab \btab \btab \btab \btab \btab \btab  format);     \newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+gpLaxFriedrichs.PlotNow();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// %
+ }
+\BoSSSexe
+\BoSSScmd{
+/// %==========================================
+/// \subsection{Linear regression by ordinary least squares}\label{sec:flux_and_convergence_slopes}
+/// %===========================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// For the determination of the experimental order of convergence (EOC) the linear regression is used 
+/// to compute the slope of the line in the log-log plot. In the following, the ordinary least squares method 
+/// is implemented to estimate the regression coefficient of the slope for given sets of x- and y-values.
+ }
+\BoSSSexe
+\BoSSScmd{
+Func<double[], double[], double> slope =      \newline 
+\btab delegate(double[] xValues, double[] yValues) \{     \newline 
+ \newline 
+\btab if (xValues.Length != yValues.Length) \{     \newline 
+\btab \btab throw new ArgumentException();     \newline 
+\btab \}     \newline 
+ \newline 
+\btab xValues = xValues.Select(s => Math.Log10(s)).ToArray();     \newline 
+\btab yValues = yValues.Select(s => Math.Log10(s)).ToArray();     \newline 
+ \newline 
+\btab double xAverage = xValues.Sum() / xValues.Length;     \newline 
+\btab double yAverage = yValues.Sum() / yValues.Length;     \newline 
+ \newline 
+\btab double v1 = 0.0;     \newline 
+\btab double v2 = 0.0;     \newline 
+ \newline 
+\btab // Computation of the regression coefficient for the slope     \newline 
+\btab for (int i = 0; i < yValues.Length; i++) \{     \newline 
+\btab \btab v1 += (xValues[i] - xAverage) * (yValues[i] - yAverage);     \newline 
+\btab \btab v2 += Math.Pow(xValues[i] - xAverage, 2);     \newline 
+\btab \}     \newline 
+\btab return v1 / v2;     \newline 
+\};
+ }
+\BoSSSexe
+\BoSSScmd{
+// Verification that the slope is computed correctly     \newline 
+Math.Abs(slope(sizes, new double[] \{ 64.0, 16.0, 4.0, 1.0 \}) - 2.0) < 1e-14;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// The experimental orders of convergence (EOC) are computed for both fluxes 
+/// for each polynomial degree of the ansatzfunctions
+for (int i = 0; i < dgDegrees.Length; i++) \{     \newline 
+ \newline 
+\btab Console.WriteLine();     \newline 
+ \newline 
+\btab var errorsForDegree = errors.ExtractSubArrayShallow(0, i, -1).To1DArray();     \newline 
+ \newline 
+\btab Console.WriteLine(     \newline 
+\btab \btab "Upwind flux, order \{0\}:\textbackslash t\textbackslash t \{1:F2\}", i,      \newline 
+\btab \btab slope(sizes, errorsForDegree));     \newline 
+ \newline 
+\btab errorsForDegree = errors.ExtractSubArrayShallow(1, i, -1).To1DArray();     \newline 
+ \newline 
+\btab Console.WriteLine(     \newline 
+\btab \btab "Lax-Friedrichs flux, order \{0\}:\textbackslash t \{1:F2\}", i,     \newline 
+\btab \btab slope(sizes, errorsForDegree));     \newline 
+\}
+ }
+\BoSSSexe

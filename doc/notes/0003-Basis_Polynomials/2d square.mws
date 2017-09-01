@@ -1,0 +1,1206 @@
+{VERSION 6 0 "Windows 2003" "6.0" }
+{USTYLETAB {PSTYLE "Ordered List 1" -1 200 1 {CSTYLE "" -1 -1 "Times"
+ 1 12 0 0 0 1 2 2 2 2 2 2 1 0 0 1 }1 1 0 0 3 3 2 0 2 0 2 2 -1 1 }
+{PSTYLE "Ordered List 2" -1 201 1 {CSTYLE "" -1 -1 "Times" 1 12 0 0 0 
+1 2 2 2 2 2 2 1 0 0 1 }1 1 0 0 3 3 2 36 2 0 2 2 -1 1 }{PSTYLE "Ordered
+ List 3" -1 202 1 {CSTYLE "" -1 -1 "Times" 1 12 0 0 0 1 2 2 2 2 2 2 1 
+0 0 1 }1 1 0 0 3 3 2 72 2 0 2 2 -1 1 }{PSTYLE "Ordered List 4" -1 203 
+1 {CSTYLE "" -1 -1 "Times" 1 12 0 0 0 1 2 2 2 2 2 2 1 0 0 1 }1 1 0 0 3
+ 3 2 108 2 0 2 2 -1 1 }{PSTYLE "Ordered List 5" -1 204 1 {CSTYLE "" -1
+ -1 "Times" 1 12 0 0 0 1 2 2 2 2 2 2 1 0 0 1 }1 1 0 0 3 3 2 144 2 0 2 
+2 -1 1 }{PSTYLE "Author" -1 19 1 {CSTYLE "" -1 -1 "Times" 1 12 0 0 0 1
+ 2 2 2 2 2 2 1 0 0 1 }3 1 0 0 8 8 2 0 2 0 2 2 -1 1 }{PSTYLE "Annotatio
+n Title" -1 205 1 {CSTYLE "" -1 -1 "Times" 1 18 0 0 0 1 2 1 2 2 2 2 1 
+0 0 1 }3 1 0 0 12 12 2 0 2 0 2 2 -1 1 }{PSTYLE "Warning" -1 7 1 
+{CSTYLE "" -1 -1 "Courier" 1 10 0 0 255 1 2 2 2 2 2 1 1 0 0 1 }1 1 0 0
+ 0 0 2 0 2 0 2 2 -1 1 }{PSTYLE "Fixed Width" -1 17 1 {CSTYLE "" -1 -1 
+"Courier" 1 10 0 0 0 1 2 2 2 2 2 2 1 0 0 1 }3 1 0 0 0 0 2 0 2 0 2 2 -1
+ 1 }{PSTYLE "Maple Plot" -1 13 1 {CSTYLE "" -1 -1 "Times" 1 12 0 0 0 1
+ 2 2 2 2 2 2 1 0 0 1 }3 1 0 0 0 0 2 0 2 0 2 2 -1 1 }{PSTYLE "Line Prin
+ted Output" -1 6 1 {CSTYLE "" -1 -1 "Courier" 1 10 0 0 255 1 2 2 2 2 2
+ 1 1 0 0 1 }1 1 0 0 0 0 2 0 2 0 2 2 -1 1 }{PSTYLE "Text Output6" -1 
+206 1 {CSTYLE "" -1 -1 "Courier" 1 10 0 0 255 1 2 2 2 2 2 1 1 0 0 1 }1
+ 1 0 0 0 0 2 0 2 0 2 2 -1 1 }{PSTYLE "Text Output" -1 2 1 {CSTYLE "" 
+-1 -1 "Courier" 1 10 0 0 255 1 2 2 2 2 2 1 1 0 0 1 }1 1 0 0 0 0 2 0 2 
+0 2 2 -1 1 }{PSTYLE "Diagnostic" -1 9 1 {CSTYLE "" -1 -1 "Courier" 1 
+10 64 128 64 1 2 2 2 2 2 1 1 0 0 1 }1 1 0 0 0 0 2 0 2 0 2 2 -1 1 }
+{PSTYLE "Help" -1 10 1 {CSTYLE "" -1 -1 "Courier" 1 9 0 0 255 1 2 2 2 
+2 2 1 1 0 0 1 }1 1 0 0 0 0 2 0 2 0 2 2 -1 1 }{PSTYLE "Normal" -1 0 1 
+{CSTYLE "" -1 -1 "Times" 1 12 0 0 0 1 2 2 2 2 2 2 1 0 0 1 }1 1 0 0 0 0
+ 2 0 2 0 2 2 -1 1 }{PSTYLE "Maple Output" -1 11 1 {CSTYLE "" -1 -1 "Ti
+mes" 1 12 0 0 0 1 2 2 2 2 2 2 1 0 0 1 }3 1 0 0 0 0 2 0 2 0 2 2 -1 1 }
+{PSTYLE "Dash Item" -1 16 1 {CSTYLE "" -1 -1 "Times" 1 12 0 0 0 1 2 2 
+2 2 2 2 1 0 0 1 }1 1 0 0 3 3 2 0 2 0 2 2 -1 1 }{PSTYLE "Maple Output12
+" -1 207 1 {CSTYLE "" -1 -1 "Times" 1 12 0 0 0 1 2 2 2 2 2 2 1 0 0 1 }
+1 1 0 0 0 0 2 0 2 0 2 2 -1 1 }{PSTYLE "Title" -1 18 1 {CSTYLE "" -1 -1
+ "Times" 1 18 0 0 0 1 2 1 1 2 2 2 1 0 0 1 }3 1 0 0 12 12 2 0 2 0 2 2 
+-1 1 }{PSTYLE "Error" -1 8 1 {CSTYLE "" -1 -1 "Courier" 1 10 255 0 255
+ 1 2 2 2 2 2 1 1 0 0 1 }1 1 0 0 0 0 2 0 2 0 2 2 -1 1 }{PSTYLE "Heading
+ 1" -1 3 1 {CSTYLE "" -1 -1 "Times" 1 18 0 0 0 1 2 1 2 2 2 2 1 0 0 1 }
+1 1 0 0 8 4 2 0 2 0 2 2 -1 1 }{PSTYLE "Bullet Item" -1 15 1 {CSTYLE ""
+ -1 -1 "Times" 1 12 0 0 0 1 2 2 2 2 2 2 1 0 0 1 }1 1 0 0 3 3 2 0 2 0 2
+ 2 -1 1 }{PSTYLE "Heading 4" -1 20 1 {CSTYLE "" -1 -1 "Times" 1 10 0 0
+ 0 1 1 1 2 2 2 2 1 0 0 1 }1 1 0 0 0 0 2 0 2 0 2 2 -1 1 }{PSTYLE "Headi
+ng 3" -1 5 1 {CSTYLE "" -1 -1 "Times" 1 12 0 0 0 1 1 1 2 2 2 2 1 0 0 1
+ }1 1 0 0 0 0 2 0 2 0 2 2 -1 1 }{PSTYLE "Heading 2" -1 4 1 {CSTYLE "" 
+-1 -1 "Times" 1 14 0 0 0 1 2 1 2 2 2 2 1 0 0 1 }1 1 0 0 8 2 2 0 2 0 2 
+2 -1 1 }{PSTYLE "Left Justified Maple Output" -1 12 1 {CSTYLE "" -1 -1
+ "Times" 1 12 0 0 0 1 2 2 2 2 2 2 1 0 0 1 }1 1 0 0 0 0 2 0 2 0 2 2 -1 
+1 }{PSTYLE "List Item" -1 14 1 {CSTYLE "" -1 -1 "Times" 1 12 0 0 0 1 2
+ 2 2 2 2 2 1 0 0 1 }1 1 0 0 3 3 2 0 2 0 2 2 -1 1 }{CSTYLE "Annotation \+
+Text" -1 200 "Times" 1 12 0 0 0 1 2 2 2 2 2 2 0 0 0 1 }{CSTYLE "Help M
+aple Name" -1 35 "Times" 1 12 104 64 92 1 2 1 2 2 2 2 0 0 0 1 }{CSTYLE
+ "2D Math Bold" -1 5 "Times" 1 12 0 0 0 1 2 1 2 2 2 2 0 0 0 1 }{CSTYLE
+ "Help Menus" -1 36 "Times" 1 12 0 0 0 1 2 1 2 2 2 2 0 0 0 1 }{CSTYLE 
+"2D Math Italic" -1 3 "Times" 1 12 0 0 0 1 1 2 2 2 2 2 0 0 0 1 }
+{CSTYLE "Help Normal" -1 30 "Times" 1 12 0 0 0 1 2 2 2 2 2 2 0 0 0 1 }
+{CSTYLE "Plot Text" -1 28 "Times" 1 8 0 0 0 1 2 2 2 2 2 2 0 0 0 1 }
+{CSTYLE "Help Nonterminal" -1 24 "Courier" 1 12 0 0 0 1 2 1 2 2 2 2 0 
+0 0 1 }{CSTYLE "Help Heading" -1 26 "Times" 1 14 0 0 0 1 2 1 2 2 2 2 0
+ 0 0 1 }{CSTYLE "Help Italic" -1 42 "Times" 1 12 0 0 0 1 1 2 2 2 2 2 0
+ 0 0 1 }{CSTYLE "Help Variable" -1 25 "Courier" 1 12 0 0 0 1 2 2 2 2 2
+ 2 0 0 0 1 }{CSTYLE "Help Italic Bold" -1 40 "Times" 1 12 0 0 0 1 1 2 
+2 2 2 2 0 0 0 1 }{CSTYLE "Default" -1 38 "Times" 1 12 0 0 0 1 2 2 2 2 
+2 2 0 0 0 1 }{CSTYLE "Help Underlined Italic" -1 43 "Times" 1 12 0 0 0
+ 1 1 2 1 2 2 2 0 0 0 1 }{CSTYLE "Maple Input" -1 0 "Courier" 1 12 255 
+0 0 1 2 1 2 2 1 2 0 0 0 1 }{CSTYLE "2D Output" -1 20 "Times" 1 12 0 0 
+255 1 2 2 2 2 2 2 0 0 0 1 }{CSTYLE "2D Math Bold Small" -1 10 "Times" 
+1 1 0 0 0 1 2 1 2 2 2 2 0 0 0 1 }{CSTYLE "2D Math Small" -1 7 "Times" 
+1 1 0 0 0 1 2 2 2 2 2 2 0 0 0 1 }{CSTYLE "Page Number" -1 33 "Times" 1
+ 12 0 0 0 1 2 2 2 2 2 2 0 0 0 1 }{CSTYLE "Output Labels" -1 29 "Times"
+ 1 8 0 0 0 1 2 2 2 2 2 2 0 0 0 1 }{CSTYLE "Plot Title" -1 27 "Times" 1
+ 10 0 0 0 1 2 1 2 2 2 2 0 0 0 1 }{CSTYLE "Help Emphasized" -1 22 "Time
+s" 1 12 0 0 0 1 1 2 2 2 2 2 0 0 0 1 }{CSTYLE "2D Math Symbol 2" -1 16 
+"Times" 1 12 0 0 0 1 2 2 2 2 2 2 0 0 0 1 }{CSTYLE "Maple Comment" -1 
+21 "Courier" 1 12 0 0 0 1 2 1 2 2 2 2 0 0 0 1 }{CSTYLE "2D Math Italic
+ Small204" -1 201 "Times" 1 1 0 0 0 1 1 2 2 2 2 2 0 0 0 1 }{CSTYLE "Ma
+ple Input Placeholder" -1 202 "Courier" 1 12 200 0 200 1 2 1 2 2 1 2 0
+ 0 0 1 }{CSTYLE "Code" -1 203 "Courier" 1 12 255 0 0 1 2 2 2 2 2 2 0 0
+ 0 1 }{CSTYLE "2D Inert Output" -1 204 "Times" 1 12 144 144 144 1 2 2 
+2 2 1 2 0 0 0 1 }{CSTYLE "2D Math Italic Small" -1 205 "Times" 1 1 0 0
+ 0 1 1 2 2 2 2 2 0 0 0 1 }{CSTYLE "2D Comment" -1 18 "Times" 1 12 0 0 
+0 1 2 2 2 2 2 2 0 0 0 1 }{CSTYLE "Help Underlined Bold" -1 41 "Times" 
+1 12 0 0 0 1 1 1 2 2 2 2 0 0 0 1 }{CSTYLE "Copyright" -1 34 "Times" 1 
+10 0 0 0 1 2 2 2 2 2 2 0 0 0 1 }{CSTYLE "Hyperlink" -1 17 "Times" 1 12
+ 0 128 128 1 2 2 1 2 2 2 0 0 0 1 }{CSTYLE "Help Underlined" -1 44 "Tim
+es" 1 12 0 0 0 1 2 2 1 2 2 2 0 0 0 1 }{CSTYLE "Prompt" -1 1 "Courier" 
+1 12 0 0 0 1 2 1 2 2 2 2 0 0 0 1 }{CSTYLE "2D Math" -1 2 "Times" 1 12 
+0 0 0 1 2 2 2 2 2 2 0 0 0 1 }{CSTYLE "2D Input" -1 19 "Times" 1 12 255
+ 0 0 1 2 2 2 2 1 2 0 0 0 1 }{CSTYLE "Header and Footer" -1 206 "Times"
+ 1 10 0 0 0 1 2 2 2 2 2 2 0 0 0 1 }{CSTYLE "Text" -1 207 "Times" 1 12 
+0 0 0 1 2 2 2 2 2 2 0 0 0 1 }{CSTYLE "Help Notes" -1 37 "Times" 1 12 0
+ 0 0 1 2 1 2 2 2 2 0 0 0 1 }{CSTYLE "Help Bold" -1 39 "Times" 1 12 0 0
+ 0 1 2 1 2 2 2 2 0 0 0 1 }{CSTYLE "Equation Label" -1 208 "Times" 1 12
+ 0 0 0 1 2 1 2 2 2 2 0 0 0 1 }{CSTYLE "LaTeX" -1 32 "Times" 1 12 0 0 0
+ 1 2 2 2 2 2 2 0 0 0 1 }{CSTYLE "Popup" -1 31 "Times" 1 12 0 128 128 1
+ 1 2 1 2 2 2 0 0 0 1 }{CSTYLE "Dictionary Hyperlink" -1 45 "Times" 1 
+12 147 0 15 1 2 2 1 2 2 2 0 0 0 1 }{CSTYLE "Help Fixed" -1 23 "Courier
+" 1 10 0 0 0 1 2 2 2 2 2 2 0 0 0 1 }}
+{SECT 0 {EXCHG {PARA 0 "" 0 "" {TEXT 209 34 "Simplex: Ein Quadrat (-1
+,1)x(-1,1)" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 8 "restart;" }}}
+{EXCHG {PARA 0 "" 0 "" {TEXT 209 38 "Definition von Skalarprodukt und \+
+Norm:" }{MPLTEXT 1 0 0 "" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 0 "
+" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 0 "" }}}{EXCHG {PARA 0 "> "
+ 0 "" {MPLTEXT 1 0 52 "scp := (a,b) -> int(int(a*b,x[1]=-1..1),x[2]=-1
+..1);" }}{PARA 11 "" 1 "" {XPPMATH 20 "f*6$I\"aG6\"I\"bGF%F%6$I)operat
+orGF%I&arrowGF%F%-I$intGF%6$-F+6$*&9$\"\"\"9%F1/&I\"xGF%6#F1;!\"\"F1/&
+F56#\"\"#F7F%F%F%" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 27 "nrm :=
+ a -> sqrt(scp(a,a));" }}{PARA 11 "" 1 "" {XPPMATH 20 "f*6#I\"aG6\"F%6
+$I)operatorGF%I&arrowGF%F%-I%sqrtGF%6#-I$scpGF%6$9$F/F%F%F%" }}}
+{EXCHG {PARA 0 "" 0 "" {TEXT 209 32 "Probe: Fl\344che muss gleich 4 se
+in" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 9 "scp(1,1);" }}{PARA 11 
+"" 1 "" {XPPMATH 20 "\"\"%" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 
+9 "evalf(%);" }}{PARA 11 "" 1 "" {XPPMATH 20 "$\"\"%\"\"!" }}}{EXCHG 
+{PARA 0 "> " 0 "" {MPLTEXT 1 0 0 "" }}}{EXCHG {PARA 0 "> " 0 "" 
+{MPLTEXT 1 0 0 "" }}}{EXCHG {PARA 0 "" 0 "" {TEXT 209 29 "H\366chster \+
+Grad eines Polynoms:" }{MPLTEXT 1 0 0 "" }}}{EXCHG {PARA 0 "> " 0 "" 
+{MPLTEXT 1 0 13 "degmax := 10;" }}{PARA 11 "" 1 "" {XPPMATH 20 "\"#5" 
+}}}{EXCHG {PARA 0 "" 0 "" {TEXT 209 49 "Konstruktion der nicht-ortonor
+malen Polynombasis:" }{MPLTEXT 1 0 0 "" }}}{EXCHG {PARA 0 "> " 0 "" 
+{MPLTEXT 1 0 8 "i := 0:\n" }{MPLTEXT 1 0 28 "for deg from 0 to degmax \+
+do\n" }{MPLTEXT 1 0 32 "    for alpha1 from 0 to deg do\n" }{MPLTEXT 
+1 0 20 "        i := i + 1;\n" }{MPLTEXT 1 0 32 "        alpha2 := deg
+ - alpha1;\n" }{MPLTEXT 1 0 41 "        p[i] := x[1]^alpha1*x[2]^alpha
+2;\n" }{MPLTEXT 1 0 21 "        print(p[i]);\n" }{MPLTEXT 1 0 12 "    \+
+end do:\n" }{MPLTEXT 1 0 33 "    print(\"------------------\");\n" }
+{MPLTEXT 1 0 7 "end do:" }}{PARA 11 "" 1 "" {XPPMATH 20 "\"\"\"" }}
+{PARA 11 "" 1 "" {XPPMATH 20 "Q3------------------6\"" }}{PARA 11 "" 1
+ "" {XPPMATH 20 "&I\"xG6\"6#\"\"#" }}{PARA 11 "" 1 "" {XPPMATH 20 "&I
+\"xG6\"6#\"\"\"" }}{PARA 11 "" 1 "" {XPPMATH 20 "Q3------------------6
+\"" }}{PARA 11 "" 1 "" {XPPMATH 20 "*$&I\"xG6\"6#\"\"#F'" }}{PARA 11 "
+" 1 "" {XPPMATH 20 "*&&I\"xG6\"6#\"\"\"F'&F$6#\"\"#F'" }}{PARA 11 "" 1
+ "" {XPPMATH 20 "*$&I\"xG6\"6#\"\"\"\"\"#" }}{PARA 11 "" 1 "" 
+{XPPMATH 20 "Q3------------------6\"" }}{PARA 11 "" 1 "" {XPPMATH 20 "
+*$&I\"xG6\"6#\"\"#\"\"$" }}{PARA 11 "" 1 "" {XPPMATH 20 "*&&I\"xG6\"6#
+\"\"\"F'&F$6#\"\"#F*" }}{PARA 11 "" 1 "" {XPPMATH 20 "*&&I\"xG6\"6#\"
+\"\"\"\"#&F$6#F(F'" }}{PARA 11 "" 1 "" {XPPMATH 20 "*$&I\"xG6\"6#\"\"
+\"\"\"$" }}{PARA 11 "" 1 "" {XPPMATH 20 "Q3------------------6\"" }}
+{PARA 11 "" 1 "" {XPPMATH 20 "*$&I\"xG6\"6#\"\"#\"\"%" }}{PARA 11 "" 1
+ "" {XPPMATH 20 "*&&I\"xG6\"6#\"\"\"F'&F$6#\"\"#\"\"$" }}{PARA 11 "" 1
+ "" {XPPMATH 20 "*&&I\"xG6\"6#\"\"\"\"\"#&F$6#F(F(" }}{PARA 11 "" 1 ""
+ {XPPMATH 20 "*&&I\"xG6\"6#\"\"\"\"\"$&F$6#\"\"#F'" }}{PARA 11 "" 1 ""
+ {XPPMATH 20 "*$&I\"xG6\"6#\"\"\"\"\"%" }}{PARA 11 "" 1 "" {XPPMATH 20
+ "Q3------------------6\"" }}{PARA 11 "" 1 "" {XPPMATH 20 "*$&I\"xG6\"
+6#\"\"#\"\"&" }}{PARA 11 "" 1 "" {XPPMATH 20 "*&&I\"xG6\"6#\"\"\"F'&F$
+6#\"\"#\"\"%" }}{PARA 11 "" 1 "" {XPPMATH 20 "*&&I\"xG6\"6#\"\"\"\"\"#
+&F$6#F(\"\"$" }}{PARA 11 "" 1 "" {XPPMATH 20 "*&&I\"xG6\"6#\"\"\"\"\"$
+&F$6#\"\"#F+" }}{PARA 11 "" 1 "" {XPPMATH 20 "*&&I\"xG6\"6#\"\"\"\"\"%
+&F$6#\"\"#F'" }}{PARA 11 "" 1 "" {XPPMATH 20 "*$&I\"xG6\"6#\"\"\"\"\"&
+" }}{PARA 11 "" 1 "" {XPPMATH 20 "Q3------------------6\"" }}{PARA 11 
+"" 1 "" {XPPMATH 20 "*$&I\"xG6\"6#\"\"#\"\"'" }}{PARA 11 "" 1 "" 
+{XPPMATH 20 "*&&I\"xG6\"6#\"\"\"F'&F$6#\"\"#\"\"&" }}{PARA 11 "" 1 "" 
+{XPPMATH 20 "*&&I\"xG6\"6#\"\"\"\"\"#&F$6#F(\"\"%" }}{PARA 11 "" 1 "" 
+{XPPMATH 20 "*&&I\"xG6\"6#\"\"\"\"\"$&F$6#\"\"#F(" }}{PARA 11 "" 1 "" 
+{XPPMATH 20 "*&&I\"xG6\"6#\"\"\"\"\"%&F$6#\"\"#F+" }}{PARA 11 "" 1 "" 
+{XPPMATH 20 "*&&I\"xG6\"6#\"\"\"\"\"&&F$6#\"\"#F'" }}{PARA 11 "" 1 "" 
+{XPPMATH 20 "*$&I\"xG6\"6#\"\"\"\"\"'" }}{PARA 11 "" 1 "" {XPPMATH 20 
+"Q3------------------6\"" }}{PARA 11 "" 1 "" {XPPMATH 20 "*$&I\"xG6\"6
+#\"\"#\"\"(" }}{PARA 11 "" 1 "" {XPPMATH 20 "*&&I\"xG6\"6#\"\"\"F'&F$6
+#\"\"#\"\"'" }}{PARA 11 "" 1 "" {XPPMATH 20 "*&&I\"xG6\"6#\"\"\"\"\"#&
+F$6#F(\"\"&" }}{PARA 11 "" 1 "" {XPPMATH 20 "*&&I\"xG6\"6#\"\"\"\"\"$&
+F$6#\"\"#\"\"%" }}{PARA 11 "" 1 "" {XPPMATH 20 "*&&I\"xG6\"6#\"\"\"\"
+\"%&F$6#\"\"#\"\"$" }}{PARA 11 "" 1 "" {XPPMATH 20 "*&&I\"xG6\"6#\"\"
+\"\"\"&&F$6#\"\"#F+" }}{PARA 11 "" 1 "" {XPPMATH 20 "*&&I\"xG6\"6#\"\"
+\"\"\"'&F$6#\"\"#F'" }}{PARA 11 "" 1 "" {XPPMATH 20 "*$&I\"xG6\"6#\"\"
+\"\"\"(" }}{PARA 11 "" 1 "" {XPPMATH 20 "Q3------------------6\"" }}
+{PARA 11 "" 1 "" {XPPMATH 20 "*$&I\"xG6\"6#\"\"#\"\")" }}{PARA 11 "" 1
+ "" {XPPMATH 20 "*&&I\"xG6\"6#\"\"\"F'&F$6#\"\"#\"\"(" }}{PARA 11 "" 1
+ "" {XPPMATH 20 "*&&I\"xG6\"6#\"\"\"\"\"#&F$6#F(\"\"'" }}{PARA 11 "" 1
+ "" {XPPMATH 20 "*&&I\"xG6\"6#\"\"\"\"\"$&F$6#\"\"#\"\"&" }}{PARA 11 "
+" 1 "" {XPPMATH 20 "*&&I\"xG6\"6#\"\"\"\"\"%&F$6#\"\"#F(" }}{PARA 11 "
+" 1 "" {XPPMATH 20 "*&&I\"xG6\"6#\"\"\"\"\"&&F$6#\"\"#\"\"$" }}{PARA 
+11 "" 1 "" {XPPMATH 20 "*&&I\"xG6\"6#\"\"\"\"\"'&F$6#\"\"#F+" }}{PARA 
+11 "" 1 "" {XPPMATH 20 "*&&I\"xG6\"6#\"\"\"\"\"(&F$6#\"\"#F'" }}{PARA 
+11 "" 1 "" {XPPMATH 20 "*$&I\"xG6\"6#\"\"\"\"\")" }}{PARA 11 "" 1 "" 
+{XPPMATH 20 "Q3------------------6\"" }}{PARA 11 "" 1 "" {XPPMATH 20 "
+*$&I\"xG6\"6#\"\"#\"\"*" }}{PARA 11 "" 1 "" {XPPMATH 20 "*&&I\"xG6\"6#
+\"\"\"F'&F$6#\"\"#\"\")" }}{PARA 11 "" 1 "" {XPPMATH 20 "*&&I\"xG6\"6#
+\"\"\"\"\"#&F$6#F(\"\"(" }}{PARA 11 "" 1 "" {XPPMATH 20 "*&&I\"xG6\"6#
+\"\"\"\"\"$&F$6#\"\"#\"\"'" }}{PARA 11 "" 1 "" {XPPMATH 20 "*&&I\"xG6
+\"6#\"\"\"\"\"%&F$6#\"\"#\"\"&" }}{PARA 11 "" 1 "" {XPPMATH 20 "*&&I\"
+xG6\"6#\"\"\"\"\"&&F$6#\"\"#\"\"%" }}{PARA 11 "" 1 "" {XPPMATH 20 "*&&
+I\"xG6\"6#\"\"\"\"\"'&F$6#\"\"#\"\"$" }}{PARA 11 "" 1 "" {XPPMATH 20 "
+*&&I\"xG6\"6#\"\"\"\"\"(&F$6#\"\"#F+" }}{PARA 11 "" 1 "" {XPPMATH 20 "
+*&&I\"xG6\"6#\"\"\"\"\")&F$6#\"\"#F'" }}{PARA 11 "" 1 "" {XPPMATH 20 "
+*$&I\"xG6\"6#\"\"\"\"\"*" }}{PARA 11 "" 1 "" {XPPMATH 20 "Q3----------
+--------6\"" }}{PARA 11 "" 1 "" {XPPMATH 20 "*$&I\"xG6\"6#\"\"#\"#5" }
+}{PARA 11 "" 1 "" {XPPMATH 20 "*&&I\"xG6\"6#\"\"\"F'&F$6#\"\"#\"\"*" }
+}{PARA 11 "" 1 "" {XPPMATH 20 "*&&I\"xG6\"6#\"\"\"\"\"#&F$6#F(\"\")" }
+}{PARA 11 "" 1 "" {XPPMATH 20 "*&&I\"xG6\"6#\"\"\"\"\"$&F$6#\"\"#\"\"(
+" }}{PARA 11 "" 1 "" {XPPMATH 20 "*&&I\"xG6\"6#\"\"\"\"\"%&F$6#\"\"#\"
+\"'" }}{PARA 11 "" 1 "" {XPPMATH 20 "*&&I\"xG6\"6#\"\"\"\"\"&&F$6#\"\"
+#F(" }}{PARA 11 "" 1 "" {XPPMATH 20 "*&&I\"xG6\"6#\"\"\"\"\"'&F$6#\"\"
+#\"\"%" }}{PARA 11 "" 1 "" {XPPMATH 20 "*&&I\"xG6\"6#\"\"\"\"\"(&F$6#
+\"\"#\"\"$" }}{PARA 11 "" 1 "" {XPPMATH 20 "*&&I\"xG6\"6#\"\"\"\"\")&F
+$6#\"\"#F+" }}{PARA 11 "" 1 "" {XPPMATH 20 "*&&I\"xG6\"6#\"\"\"\"\"*&F
+$6#\"\"#F'" }}{PARA 11 "" 1 "" {XPPMATH 20 "*$&I\"xG6\"6#\"\"\"\"#5" }
+}{PARA 11 "" 1 "" {XPPMATH 20 "Q3------------------6\"" }}}{EXCHG 
+{PARA 0 "" 0 "" {TEXT 209 69 "Konstruktion der orthonormalen Polynomba
+sis: Gram-Schmidt - Verfahren" }{MPLTEXT 1 0 0 "" }}}{EXCHG {PARA 0 ">
+ " 0 "" {MPLTEXT 1 0 0 "" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 23 
+"g[1] := p[1]/nrm(p[1]);" }}{PARA 11 "" 1 "" {XPPMATH 20 "#\"\"\"\"\"#
+" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 26 "for j from 2 to i by 1 \+
+do\n" }{MPLTEXT 1 0 16 "    gx := p[j]:\n" }{MPLTEXT 1 0 32 "    for k
+ from 1 to j-1 by 1 do\n" }{MPLTEXT 1 0 40 "        gx := gx - scp(p[j
+],g[k])*g[k];\n" }{MPLTEXT 1 0 8 "    od:\n" }{MPLTEXT 1 0 34 "    g[j
+] := simplify(gx/nrm(gx));\n" }{MPLTEXT 1 0 4 "od:\n" }{MPLTEXT 1 0 
+21 "for j from 1 to i do\n" }{MPLTEXT 1 0 37 "    printf(\"g[%d]=\",j)
+; print(g[j]);\n" }{MPLTEXT 1 0 25 "    onb[j] := x -> g[j];\n" }
+{MPLTEXT 1 0 3 "od:" }}{PARA 6 "" 1 "" {TEXT 210 5 "g[1]=" }}{PARA 11 
+"" 1 "" {XPPMATH 20 "#\"\"\"\"\"#" }}{PARA 6 "" 1 "" {TEXT 210 5 "g[2]
+=" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$*&&I\"xG6\"6#\"\"#\"\"\"\"\"$#F)F
+(F+" }}{PARA 6 "" 1 "" {TEXT 210 5 "g[3]=" }}{PARA 11 "" 1 "" 
+{XPPMATH 20 ",$*&&I\"xG6\"6#\"\"\"F(\"\"$#F(\"\"#F*" }}{PARA 6 "" 1 ""
+ {TEXT 210 5 "g[4]=" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$*&,&*$&I\"xG6\"
+6#\"\"#F*\"\"$!\"\"\"\"\"F-\"\"&#F-F*#F-\"\"%" }}{PARA 6 "" 1 "" {TEXT
+ 210 5 "g[5]=" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$*&&I\"xG6\"6#\"\"\"F(
+&F%6#\"\"#F(#\"\"$F+" }}{PARA 6 "" 1 "" {TEXT 210 5 "g[6]=" }}{PARA 11
+ "" 1 "" {XPPMATH 20 ",$*&,&*$&I\"xG6\"6#\"\"\"\"\"#\"\"$!\"\"F*F*\"\"
+&#F*F+#F*\"\"%" }}{PARA 6 "" 1 "" {TEXT 210 5 "g[7]=" }}{PARA 11 "" 1 
+"" {XPPMATH 20 ",$*(&I\"xG6\"6#\"\"#\"\"\",&*$F$F(\"\"&!\"$F)F)\"\"(#F
+)F(#F)\"\"%" }}{PARA 6 "" 1 "" {TEXT 210 5 "g[8]=" }}{PARA 11 "" 1 "" 
+{XPPMATH 20 ",$*(&I\"xG6\"6#\"\"\"F(,&*$&F%6#\"\"#F-\"\"$!\"\"F(F(\"#:
+#F(F-#F(\"\"%" }}{PARA 6 "" 1 "" {TEXT 210 5 "g[9]=" }}{PARA 11 "" 1 "
+" {XPPMATH 20 ",$*(&I\"xG6\"6#\"\"#\"\"\",&*$&F%6#F)F(\"\"$!\"\"F)F)\"
+#:#F)F(#F)\"\"%" }}{PARA 6 "" 1 "" {TEXT 210 6 "g[10]=" }}{PARA 11 "" 
+1 "" {XPPMATH 20 ",$*(&I\"xG6\"6#\"\"\"F(,&*$F$\"\"#\"\"&!\"$F(F(\"\"(
+#F(F+#F(\"\"%" }}{PARA 6 "" 1 "" {TEXT 210 6 "g[11]=" }}{PARA 11 "" 1 
+"" {XPPMATH 20 ",(*$&I\"xG6\"6#\"\"#\"\"%#\"$0\"\"#;#\"\"*F,\"\"\"*$F$
+F(#!#X\"\")" }}{PARA 6 "" 1 "" {TEXT 210 6 "g[12]=" }}{PARA 11 "" 1 ""
+ {XPPMATH 20 ",$**&I\"xG6\"6#\"\"\"F(&F%6#\"\"#F(,&*$F)F+\"\"&!\"$F(F(
+\"#@#F(F+#F(\"\"%" }}{PARA 6 "" 1 "" {TEXT 210 6 "g[13]=" }}{PARA 11 "
+" 1 "" {XPPMATH 20 ",**&&I\"xG6\"6#\"\"\"\"\"#&F%6#F)F)#\"#X\"\")*$F*F
+)#!#:F.*$F$F)F0#\"\"&F.F(" }}{PARA 6 "" 1 "" {TEXT 210 6 "g[14]=" }}
+{PARA 11 "" 1 "" {XPPMATH 20 ",$**&I\"xG6\"6#\"\"\"F(&F%6#\"\"#F(,&*$F
+$F+\"\"&!\"$F(F(\"#@#F(F+#F(\"\"%" }}{PARA 6 "" 1 "" {TEXT 210 6 "g[15
+]=" }}{PARA 11 "" 1 "" {XPPMATH 20 ",(*$&I\"xG6\"6#\"\"\"\"\"%#\"$0\"
+\"#;#\"\"*F,F(*$F$\"\"##!#X\"\")" }}{PARA 6 "" 1 "" {TEXT 210 6 "g[16]
+=" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$*(&I\"xG6\"6#\"\"#\"\"\",(*$F$\"
+\"%\"#j\"#:F)*$F$F(!#qF)\"#6#F)F(#F)\"#;" }}{PARA 6 "" 1 "" {TEXT 210 
+6 "g[17]=" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$*(&I\"xG6\"6#\"\"\"F(,(*$
+&F%6#\"\"#\"\"%\"#N\"\"$F(*$F+F-!#IF(F0#F(F-#F0\"#;" }}{PARA 6 "" 1 ""
+ {TEXT 210 6 "g[18]=" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$*(&I\"xG6\"6#
+\"\"#\"\"\",**&&F%6#F)F(F$F(\"#:\"\"$F)*$F$F(!\"&*$F,F(!\"*F)\"#N#F)F(
+#F)\"\")" }}{PARA 6 "" 1 "" {TEXT 210 6 "g[19]=" }}{PARA 11 "" 1 "" 
+{XPPMATH 20 ",$*(&I\"xG6\"6#\"\"\"F(,**&F$\"\"#&F%6#F+F+\"#:\"\"$F(*$F
+,F+!\"**$F$F+!\"&F(\"#N#F(F+#F(\"\")" }}{PARA 6 "" 1 "" {TEXT 210 6 "g
+[20]=" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$*(&I\"xG6\"6#\"\"#\"\"\",(*$&
+F%6#F)\"\"%\"#N\"\"$F)*$F,F(!#IF)F0#F)F(#F0\"#;" }}{PARA 6 "" 1 "" 
+{TEXT 210 6 "g[21]=" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$*(&I\"xG6\"6#\"
+\"\"F(,(*$F$\"\"%\"#j\"#:F(*$F$\"\"#!#qF(\"#6#F(F/#F(\"#;" }}{PARA 6 "
+" 1 "" {TEXT 210 6 "g[22]=" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$*&,**$&I
+\"xG6\"6#\"\"#\"\"'\"$J#!\"&\"\"\"*$F&F*\"$0\"*$F&\"\"%!$:$F.\"#8#F.F*
+#F.\"#K" }}{PARA 6 "" 1 "" {TEXT 210 6 "g[23]=" }}{PARA 11 "" 1 "" 
+{XPPMATH 20 ",$**&I\"xG6\"6#\"\"\"F(&F%6#\"\"#F(,(*$F)\"\"%\"#j\"#:F(*
+$F)F+!#qF(\"#L#F(F+#F(\"#;" }}{PARA 6 "" 1 "" {TEXT 210 6 "g[24]=" }}
+{PARA 11 "" 1 "" {XPPMATH 20 ",$*&,.*&&I\"xG6\"6#\"\"\"\"\"#&F'6#F+\"
+\"%\"$0\"!\"$F**$F&F+\"\"**$F,F.!#N*&F&F+F,F+!#!**$F,F+\"#IF*\"\"&#F*F
++#\"\"$\"#K" }}{PARA 6 "" 1 "" {TEXT 210 6 "g[25]=" }}{PARA 11 "" 1 ""
+ {XPPMATH 20 ",**&&I\"xG6\"6#\"\"\"\"\"$&F%6#\"\"#F)#\"$v\"\"\")*&F$F(
+F*F(#\"#jF/*&F$F(F*F)#!$0\"F/*&F$F)F*F(F4" }}{PARA 6 "" 1 "" {TEXT 
+210 6 "g[26]=" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$*&,.*&&I\"xG6\"6#\"\"
+\"\"\"%&F'6#\"\"#F.\"$0\"*$F,F.\"\"**&F&F.F,F.!#!**$F&F+!#N!\"$F**$F&F
+.\"#IF*\"\"&#F*F.#\"\"$\"#K" }}{PARA 6 "" 1 "" {TEXT 210 6 "g[27]=" }}
+{PARA 11 "" 1 "" {XPPMATH 20 ",$**&I\"xG6\"6#\"\"\"F(&F%6#\"\"#F(,(*$F
+$\"\"%\"#j\"#:F(*$F$F+!#qF(\"#L#F(F+#F(\"#;" }}{PARA 6 "" 1 "" {TEXT 
+210 6 "g[28]=" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$*&,**$&I\"xG6\"6#\"\"
+\"\"\"'\"$J#!\"&F**$F&\"\"#\"$0\"*$F&\"\"%!$:$F*\"#8#F*F/#F*\"#K" }}
+{PARA 6 "" 1 "" {TEXT 210 6 "g[29]=" }}{PARA 11 "" 1 "" {XPPMATH 20 ",
+$*(&I\"xG6\"6#\"\"#\"\"\",**$F$\"\"'\"$H%!#NF)*$F$F(\"$:$*$F$\"\"%!$$p
+F)\"#:#F)F(#F)\"#K" }}{PARA 6 "" 1 "" {TEXT 210 6 "g[30]=" }}{PARA 11 
+"" 1 "" {XPPMATH 20 ",$*(&I\"xG6\"6#\"\"\"F(,**$&F%6#\"\"#\"\"'\"$J#!
+\"&F(*$F+F-\"$0\"*$F+\"\"%!$:$F(\"#R#F(F-#F(\"#K" }}{PARA 6 "" 1 "" 
+{TEXT 210 6 "g[31]=" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$*(&I\"xG6\"6#\"
+\"#\"\"\",.*&&F%6#F)F(F$\"\"%\"$*=!#:F)*$F$F(\"#q*$F,F(\"#X*$F$F.!#j*&
+F,F(F$F(!$5#F)\"#b#F)F(#F)\"#K" }}{PARA 6 "" 1 "" {TEXT 210 6 "g[32]="
+ }}{PARA 11 "" 1 "" {XPPMATH 20 ",$*(&I\"xG6\"6#\"\"\"F(,.*&F$\"\"#&F%
+6#F+\"\"%\"$v\"!\"*F(*$F,F+\"#!**$F$F+\"#:*$F,F.!$0\"*&F$F+F,F+!$]\"F(
+\"\"(#F(F+#\"\"$\"#K" }}{PARA 6 "" 1 "" {TEXT 210 6 "g[33]=" }}{PARA 
+11 "" 1 "" {XPPMATH 20 ",$*(&I\"xG6\"6#\"\"#\"\"\",.*&&F%6#F)\"\"%F$F(
+\"$v\"!\"*F)*$F$F(\"#:*$F,F(\"#!**&F,F(F$F(!$]\"*$F,F.!$0\"F)\"\"(#F)F
+(#\"\"$\"#K" }}{PARA 6 "" 1 "" {TEXT 210 6 "g[34]=" }}{PARA 11 "" 1 ""
+ {XPPMATH 20 ",$*(&I\"xG6\"6#\"\"\"F(,.*&F$\"\"%&F%6#\"\"#F.\"$*=!#:F(
+*$F,F.\"#X*$F$F.\"#q*&F$F.F,F.!$5#*$F$F+!#jF(\"#b#F(F.#F(\"#K" }}
+{PARA 6 "" 1 "" {TEXT 210 6 "g[35]=" }}{PARA 11 "" 1 "" {XPPMATH 20 ",
+$*(&I\"xG6\"6#\"\"#\"\"\",**$&F%6#F)\"\"'\"$J#!\"&F)*$F,F(\"$0\"*$F,\"
+\"%!$:$F)\"#R#F)F(#F)\"#K" }}{PARA 6 "" 1 "" {TEXT 210 6 "g[36]=" }}
+{PARA 11 "" 1 "" {XPPMATH 20 ",$*(&I\"xG6\"6#\"\"\"F(,**$F$\"\"'\"$H%!
+#NF(*$F$\"\"#\"$:$*$F$\"\"%!$$pF(\"#:#F(F/#F(\"#K" }}{PARA 6 "" 1 "" 
+{TEXT 210 6 "g[37]=" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$*&,,*$&I\"xG6\"
+6#\"\"#\"\")\"%Nk\"#N\"\"\"*$F&F*!%g7*$F&\"\"%\"%Ip*$F&\"\"'!&7?\"F.\"
+#<#F.F*#F.\"$c#" }}{PARA 6 "" 1 "" {TEXT 210 6 "g[38]=" }}{PARA 11 "" 
+1 "" {XPPMATH 20 ",$**&I\"xG6\"6#\"\"\"F(&F%6#\"\"#F(,**$F)\"\"'\"$H%!
+#NF(*$F)F+\"$:$*$F)\"\"%!$$pF(\"\"&#F(F+#\"\"$\"#K" }}{PARA 6 "" 1 "" 
+{TEXT 210 6 "g[39]=" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$*&,2*&&I\"xG6\"
+6#\"\"\"\"\"#&F'6#F+\"\"'\"$$p\"\"&F**$F,F+!$0\"*$F&F+!#:*&F&F+F,F+\"$
+:$*$F,F.!$J#*&F&F+F,\"\"%!$X**$F,F:F6F*\"#l#F*F+#F*\"#k" }}{PARA 6 "" 
+1 "" {TEXT 210 6 "g[40]=" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$**&I\"xG6
+\"6#\"\"\"F(&F%6#\"\"#F(,.*&F$F+F)\"\"%\"$:$!#XF(*$F)F+\"$5#*$F$F+\"#v
+*$F)F.!$*=*&F$F+F)F+!$]$F(\"#x#F(F+#F(\"#K" }}{PARA 6 "" 1 "" {TEXT 
+210 6 "g[41]=" }}{PARA 11 "" 1 "" {XPPMATH 20 ",4*&&I\"xG6\"6#\"\"\"\"
+\"%&F%6#\"\"#F)#\"&D5\"\"$G\"#\"#\")F/F(*$F$F,#!$0%\"#k*$F*F)#\"$X*F/*
+$F$F)F7*&F$F,F*F)#!%DZF5*&F$F)F*F,F;*$F*F,F3*&F$F,F*F,#\"%D?\"#K" }}
+{PARA 6 "" 1 "" {TEXT 210 6 "g[42]=" }}{PARA 11 "" 1 "" {XPPMATH 20 ",
+$**&I\"xG6\"6#\"\"\"F(&F%6#\"\"#F(,.*&F$\"\"%F)F+\"$:$!#XF(*$F)F+\"#v*
+$F$F+\"$5#*&F$F+F)F+!$]$*$F$F.!$*=F(\"#x#F(F+#F(\"#K" }}{PARA 6 "" 1 "
+" {TEXT 210 6 "g[43]=" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$*&,2*&&I\"xG6
+\"6#\"\"\"\"\"'&F'6#\"\"#F.\"$$p*$F,F.!#:*&F&F.F,F.\"$:$*&F&\"\"%F,F.!
+$X**$F&F+!$J#\"\"&F**$F&F.!$0\"*$F&F5F3F*\"#l#F*F.#F*\"#k" }}{PARA 6 "
+" 1 "" {TEXT 210 6 "g[44]=" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$**&I\"xG
+6\"6#\"\"\"F(&F%6#\"\"#F(,**$F$\"\"'\"$H%!#NF(*$F$F+\"$:$*$F$\"\"%!$$p
+F(\"\"&#F(F+#\"\"$\"#K" }}{PARA 6 "" 1 "" {TEXT 210 6 "g[45]=" }}
+{PARA 11 "" 1 "" {XPPMATH 20 ",$*&,,*$&I\"xG6\"6#\"\"\"\"\")\"%Nk\"#NF
+**$F&\"\"#!%g7*$F&\"\"%\"%Ip*$F&\"\"'!&7?\"F*\"#<#F*F/#F*\"$c#" }}
+{PARA 6 "" 1 "" {TEXT 210 6 "g[46]=" }}{PARA 11 "" 1 "" {XPPMATH 20 ",
+$*(&I\"xG6\"6#\"\"#\"\"\",,*$F$\"\")\"&b@\"\"$:$F)*$F$F(!%?Y*$F$\"\"%
+\"&=!=*$F$\"\"'!&Sd#F)\"#>#F)F(#F)\"$c#" }}{PARA 6 "" 1 "" {TEXT 210 
+6 "g[47]=" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$*(&I\"xG6\"6#\"\"\"F(,,*$
+&F%6#\"\"#\"\")\"%Nk\"#NF(*$F+F-!%g7*$F+\"\"%\"%Ip*$F+\"\"'!&7?\"F(\"#
+^#F(F-#F(\"$c#" }}{PARA 6 "" 1 "" {TEXT 210 6 "g[48]=" }}{PARA 11 "" 1
+ "" {XPPMATH 20 ",$*(&I\"xG6\"6#\"\"#\"\"\",2*&&F%6#F)F(F$\"\"'\"%(G\"
+\"#NF)*$F$F(!$:$*$F,F(!$0\"*$F$\"\"%\"$$p*&F,F(F$F(\"$X**$F$F.!$H%*&F,
+F(F$F6!%z?F)\"\"$#F)F(#\"\"&\"#k" }}{PARA 6 "" 1 "" {TEXT 210 6 "g[49]
+=" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$*(&I\"xG6\"6#\"\"\"F(,2*&F$\"\"#&
+F%6#F+\"\"'\"%b6\"#:F(*$F,F+!$:$*$F$F+!#D*$F,\"\"%\"$X**&F$F+F,F+\"$D&
+*$F,F.!$$p*&F$F+F,F6!%v:F(\"#\"*#F(F+#F(\"#k" }}{PARA 6 "" 1 "" {TEXT 
+210 6 "g[50]=" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$*(&I\"xG6\"6#\"\"#\"
+\"\",4\"#XF)*&&F%6#F)F(F$\"\"%!%!*=*$F-F/\"$D&*&F-F(F$F(\"%+@*$F-F(!$]
+%*$F$F(!$5#*$F$F/\"$*=*&F-F/F$F(!%]C*&F-F/F$F/\"%0AF)\"#6#F)F(#\"\"$\"
+$G\"" }}{PARA 6 "" 1 "" {TEXT 210 6 "g[51]=" }}{PARA 11 "" 1 "" 
+{XPPMATH 20 ",$*(&I\"xG6\"6#\"\"\"F(,4\"#XF(*&F$\"\"#&F%6#F,\"\"%!%]C*
+&F$F,F-F,\"%+@*$F-F/\"$D&*$F-F,!$]%*$F$F,!$5#*$F$F/\"$*=*&F$F/F-F,!%!*
+=*&F$F/F-F/\"%0AF(\"#6#F(F,#\"\"$\"$G\"" }}{PARA 6 "" 1 "" {TEXT 210 
+6 "g[52]=" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$*(&I\"xG6\"6#\"\"#\"\"\",
+2*&&F%6#F)\"\"'F$F(\"%b6\"#:F)*$F$F(!#D*$F,F(!$:$*&F,F(F$F(\"$D&*$F,\"
+\"%\"$X**&F,F8F$F(!%v:*$F,F.!$$pF)\"#\"*#F)F(#F)\"#k" }}{PARA 6 "" 1 "
+" {TEXT 210 6 "g[53]=" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$*(&I\"xG6\"6#
+\"\"\"F(,2*&F$\"\"'&F%6#\"\"#F.\"%(G\"\"#NF(*$F,F.!$0\"*$F$F.!$:$*&F$F
+.F,F.\"$X**$F$\"\"%\"$$p*&F$F8F,F.!%z?*$F$F+!$H%F(\"\"$#F(F.#\"\"&\"#k
+" }}{PARA 6 "" 1 "" {TEXT 210 6 "g[54]=" }}{PARA 11 "" 1 "" {XPPMATH 
+20 ",$*(&I\"xG6\"6#\"\"#\"\"\",,*$&F%6#F)\"\")\"%Nk\"#NF)*$F,F(!%g7*$F
+,\"\"%\"%Ip*$F,\"\"'!&7?\"F)\"#^#F)F(#F)\"$c#" }}{PARA 6 "" 1 "" {TEXT
+ 210 6 "g[55]=" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$*(&I\"xG6\"6#\"\"\"F
+(,,*$F$\"\")\"&b@\"\"$:$F(*$F$\"\"#!%?Y*$F$\"\"%\"&=!=*$F$\"\"'!&Sd#F(
+\"#>#F(F/#F(\"$c#" }}{PARA 6 "" 1 "" {TEXT 210 6 "g[56]=" }}{PARA 11 "
+" 1 "" {XPPMATH 20 ",$*&,.*$&I\"xG6\"6#\"\"#\"#5\"&*=Y!#j\"\"\"*$F&F*
+\"%lM*$F&\"\"%!&I+$*$F&\"\"'\"&!4!**$F&\"\")!'&R4\"F.\"#@#F.F*#F.\"$7&
+" }}{PARA 6 "" 1 "" {TEXT 210 6 "g[57]=" }}{PARA 11 "" 1 "" {XPPMATH 
+20 ",$**&I\"xG6\"6#\"\"\"F(&F%6#\"\"#F(,,*$F)\"\")\"&b@\"\"$:$F(*$F)F+
+!%?Y*$F)\"\"%\"&=!=*$F)\"\"'!&Sd#F(\"#d#F(F+#F(\"$c#" }}{PARA 6 "" 1 "
+" {TEXT 210 6 "g[58]=" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$*&,6*&&I\"xG6
+\"6#\"\"\"\"\"#&F'6#F+\"\")\"&0$>!#NF**$F,F+\"%g7*$F&F+\"$0\"*$F,\"\"%
+!%Ip*&F&F+F,F+!%!y$*&F&F+F,F6\"&!z?*$F,F.!%Nk*&F&F+F,\"\"'!&Og$*$F,F?
+\"&7?\"F*\"#&)#F*F+#F*\"$7&" }}{PARA 6 "" 1 "" {TEXT 210 6 "g[59]=" }}
+{PARA 11 "" 1 "" {XPPMATH 20 ",$**&I\"xG6\"6#\"\"\"F(&F%6#\"\"#F(,2*&F
+$F+F)\"\"'\"%X@\"$0\"F(*$F)F+!$X**$F$F+!$v\"*$F)\"\"%\"%z?*&F$F+F)F+\"
+%v:*$F)F.!%(G\"*&F$F+F)F6!%lMF(F0#F(F+#F(\"#k" }}{PARA 6 "" 1 "" {TEXT
+ 210 6 "g[60]=" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$*&,:*&&I\"xG6\"6#\"
+\"\"\"\"%&F'6#\"\"#\"\"'\"%&3)!#:F**$F,F.\"$:$*$F&F.\"$]\"*&F&F.F,F.!%
+]J*$F&F+!$v\"*$F,F/\"$$p*&F&F+F,F.\"%vO*&F&F.F,F/!%Ip*&F&F+F,F+!&D5\"*
+$F,F+!$X**&F&F.F,F+\"%]%*F*\"#8#F*F.#\"\"$\"$c#" }}{PARA 6 "" 1 "" 
+{TEXT 210 6 "g[61]=" }}{PARA 11 "" 1 "" {XPPMATH 20 ",4*&&I\"xG6\"6#\"
+\"\"\"\"&&F%6#\"\"#F(#\"&&R5\"$G\"*&F$\"\"$F*F1#\"&vM\"\"#K*&F$F(F*F)F
+-*&F$F1F*F(#!%vd\"#k*&F$F(F*F1F7*&F$F(F*F(#\"%vCF/*&F$F1F*F)#!&bU#F9*&
+F$F)F*F1F?*&F$F)F*F)#\"&fO%F/" }}{PARA 6 "" 1 "" {TEXT 210 6 "g[62]=" 
+}}{PARA 11 "" 1 "" {XPPMATH 20 ",$*&,:*&&I\"xG6\"6#\"\"\"\"\"'&F'6#\"
+\"#\"\"%\"%&3)!#:F**$F&F.\"$:$*$F,F/!$v\"*$F&F/!$X**&F&F.F,F/\"%vO*$F&
+F+\"$$p*&F&F/F,F/!&D5\"*&F&F+F,F.!%Ip*$F,F.\"$]\"*&F&F.F,F.!%]J*&F&F/F
+,F.\"%]%*F*\"#8#F*F.#\"\"$\"$c#" }}{PARA 6 "" 1 "" {TEXT 210 6 "g[63]=
+" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$**&I\"xG6\"6#\"\"\"F(&F%6#\"\"#F(,
+2*&F$\"\"'F)F+\"%X@\"$0\"F(*$F)F+!$v\"*$F$F+!$X**&F$F+F)F+\"%v:*$F$\"
+\"%\"%z?*&F$F8F)F+!%lM*$F$F.!%(G\"F(F0#F(F+#F(\"#k" }}{PARA 6 "" 1 "" 
+{TEXT 210 6 "g[64]=" }}{PARA 11 "" 1 "" {XPPMATH 20 ",$*&,6*&&I\"xG6\"
+6#\"\"\"\"\")&F'6#\"\"#F.\"&0$>*$F,F.\"$0\"*&F&F.F,F.!%!y$*&F&\"\"%F,F
+.\"&!z?*&F&\"\"'F,F.!&Og$*$F&F+!%Nk!#NF**$F&F.\"%g7*$F&F5!%Ip*$F&F8\"&
+7?\"F*\"#&)#F*F.#F*\"$7&" }}{PARA 6 "" 1 "" {TEXT 210 6 "g[65]=" }}
+{PARA 11 "" 1 "" {XPPMATH 20 ",$**&I\"xG6\"6#\"\"\"F(&F%6#\"\"#F(,,*$F
+$\"\")\"&b@\"\"$:$F(*$F$F+!%?Y*$F$\"\"%\"&=!=*$F$\"\"'!&Sd#F(\"#d#F(F+
+#F(\"$c#" }}{PARA 6 "" 1 "" {TEXT 210 6 "g[66]=" }}{PARA 11 "" 1 "" 
+{XPPMATH 20 ",$*&,.*$&I\"xG6\"6#\"\"\"\"#5\"&*=Y!#jF**$F&\"\"#\"%lM*$F
+&\"\"%!&I+$*$F&\"\"'\"&!4!**$F&\"\")!'&R4\"F*\"#@#F*F/#F*\"$7&" }}}
+{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 47 "for p from 1 to i do\n    sc
+p(g[p],1);\nend do;\n\n" }{MPLTEXT 1 0 0 "" }}{PARA 11 "" 1 "" 
+{XPPMATH 20 "\"\"#" }}{PARA 11 "" 1 "" {XPPMATH 20 "\"\"!" }}{PARA 11 
+"" 1 "" {XPPMATH 20 "\"\"!" }}{PARA 11 "" 1 "" {XPPMATH 20 "\"\"!" }}
+{PARA 11 "" 1 "" {XPPMATH 20 "\"\"!" }}{PARA 11 "" 1 "" {XPPMATH 20 "
+\"\"!" }}{PARA 11 "" 1 "" {XPPMATH 20 "\"\"!" }}{PARA 11 "" 1 "" 
+{XPPMATH 20 "\"\"!" }}{PARA 11 "" 1 "" {XPPMATH 20 "\"\"!" }}{PARA 11 
+"" 1 "" {XPPMATH 20 "\"\"!" }}{PARA 11 "" 1 "" {XPPMATH 20 "\"\"!" }}
+{PARA 11 "" 1 "" {XPPMATH 20 "\"\"!" }}{PARA 11 "" 1 "" {XPPMATH 20 "
+\"\"!" }}{PARA 11 "" 1 "" {XPPMATH 20 "\"\"!" }}{PARA 11 "" 1 "" 
+{XPPMATH 20 "\"\"!" }}{PARA 11 "" 1 "" {XPPMATH 20 "\"\"!" }}{PARA 11 
+"" 1 "" {XPPMATH 20 "\"\"!" }}{PARA 11 "" 1 "" {XPPMATH 20 "\"\"!" }}
+{PARA 11 "" 1 "" {XPPMATH 20 "\"\"!" }}{PARA 11 "" 1 "" {XPPMATH 20 "
+\"\"!" }}{PARA 11 "" 1 "" {XPPMATH 20 "\"\"!" }}{PARA 11 "" 1 "" 
+{XPPMATH 20 "\"\"!" }}{PARA 11 "" 1 "" {XPPMATH 20 "\"\"!" }}{PARA 11 
+"" 1 "" {XPPMATH 20 "\"\"!" }}{PARA 11 "" 1 "" {XPPMATH 20 "\"\"!" }}
+{PARA 11 "" 1 "" {XPPMATH 20 "\"\"!" }}{PARA 11 "" 1 "" {XPPMATH 20 "
+\"\"!" }}{PARA 11 "" 1 "" {XPPMATH 20 "\"\"!" }}{PARA 11 "" 1 "" 
+{XPPMATH 20 "\"\"!" }}{PARA 11 "" 1 "" {XPPMATH 20 "\"\"!" }}{PARA 11 
+"" 1 "" {XPPMATH 20 "\"\"!" }}{PARA 11 "" 1 "" {XPPMATH 20 "\"\"!" }}
+{PARA 11 "" 1 "" {XPPMATH 20 "\"\"!" }}{PARA 11 "" 1 "" {XPPMATH 20 "
+\"\"!" }}{PARA 11 "" 1 "" {XPPMATH 20 "\"\"!" }}{PARA 11 "" 1 "" 
+{XPPMATH 20 "\"\"!" }}{PARA 11 "" 1 "" {XPPMATH 20 "\"\"!" }}{PARA 11 
+"" 1 "" {XPPMATH 20 "\"\"!" }}{PARA 11 "" 1 "" {XPPMATH 20 "\"\"!" }}
+{PARA 11 "" 1 "" {XPPMATH 20 "\"\"!" }}{PARA 11 "" 1 "" {XPPMATH 20 "
+\"\"!" }}{PARA 11 "" 1 "" {XPPMATH 20 "\"\"!" }}{PARA 11 "" 1 "" 
+{XPPMATH 20 "\"\"!" }}{PARA 11 "" 1 "" {XPPMATH 20 "\"\"!" }}{PARA 11 
+"" 1 "" {XPPMATH 20 "\"\"!" }}{PARA 11 "" 1 "" {XPPMATH 20 "\"\"!" }}
+{PARA 11 "" 1 "" {XPPMATH 20 "\"\"!" }}{PARA 11 "" 1 "" {XPPMATH 20 "
+\"\"!" }}{PARA 11 "" 1 "" {XPPMATH 20 "\"\"!" }}{PARA 11 "" 1 "" 
+{XPPMATH 20 "\"\"!" }}{PARA 11 "" 1 "" {XPPMATH 20 "\"\"!" }}{PARA 11 
+"" 1 "" {XPPMATH 20 "\"\"!" }}{PARA 11 "" 1 "" {XPPMATH 20 "\"\"!" }}
+{PARA 11 "" 1 "" {XPPMATH 20 "\"\"!" }}{PARA 11 "" 1 "" {XPPMATH 20 "
+\"\"!" }}{PARA 11 "" 1 "" {XPPMATH 20 "\"\"!" }}{PARA 11 "" 1 "" 
+{XPPMATH 20 "\"\"!" }}{PARA 11 "" 1 "" {XPPMATH 20 "\"\"!" }}{PARA 11 
+"" 1 "" {XPPMATH 20 "\"\"!" }}{PARA 11 "" 1 "" {XPPMATH 20 "\"\"!" }}
+{PARA 11 "" 1 "" {XPPMATH 20 "\"\"!" }}{PARA 11 "" 1 "" {XPPMATH 20 "
+\"\"!" }}{PARA 11 "" 1 "" {XPPMATH 20 "\"\"!" }}{PARA 11 "" 1 "" 
+{XPPMATH 20 "\"\"!" }}{PARA 11 "" 1 "" {XPPMATH 20 "\"\"!" }}{PARA 11 
+"" 1 "" {XPPMATH 20 "\"\"!" }}}{EXCHG {PARA 0 "> " 0 "" {XPPEDIT 19 1 
+"" "%#%?G" }}}{EXCHG {PARA 0 "> " 0 "" {XPPEDIT 19 1 "" "%#%?G" }}}
+{EXCHG {PARA 0 "> " 0 "" {XPPEDIT 19 1 "" "%#%?G" }}}{EXCHG {PARA 0 ">
+ " 0 "" {XPPEDIT 19 1 "" "%#%?G" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 
+1 0 13 "Digits := 20;" }}{PARA 11 "" 1 "" {XPPMATH 20 "\"#?" }}}
+{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 21 "for p from 1 to i do\n" }
+{MPLTEXT 1 0 64 "    printf(\"Polynomial p = new Polynomial(new Guid(
+\\\"\\\"));\\n\");\n" }{MPLTEXT 1 0 53 "    printf(\"OrthonormalPolyno
+mials[%d] = p;\\n\",p-1);\n" }{MPLTEXT 1 0 32 "    for deg from 0 to d
+egmax do\n" }{MPLTEXT 1 0 38 "        for alpha[1] from 0 to deg do\n"
+ }{MPLTEXT 1 0 38 "            alpha[2] := deg-alpha[1];\n" }{MPLTEXT 
+1 0 92 "            c[p, alpha[1], alpha[2]] := coeff(coeff(g[p], x[1]
+, alpha[1]), x[2], alpha[2]);\n" }{MPLTEXT 1 0 50 "            if( c[p
+,alpha[1],alpha[2]] <> 0) then\n" }{MPLTEXT 1 0 39 "                pr
+intf(\"p.AddCoeff(\");\n" }{MPLTEXT 1 0 68 "                printf(\"%
+1.16e,\", evalf(c[p, alpha[1], alpha[2]]));\n" }{MPLTEXT 1 0 71 "     \+
+           printf(\" new int[] \{ %d, %d \});\\n\",alpha[1],alpha[2]);
+\n" }{MPLTEXT 1 0 20 "            end if:\n" }{MPLTEXT 1 0 16 "       \+
+ end do:\n" }{MPLTEXT 1 0 13 "    end do; \n" }{MPLTEXT 1 0 110 "    p
+rintf(\"\\n//---------------------------------------------------------
+-------------------------------\\n\");\n" }{MPLTEXT 1 0 7 "end do;" }}
+{PARA 6 "" 1 "" {TEXT 210 44 "Polynomial p = new Polynomial(new Guid(
+\"\"));" }}{PARA 6 "" 1 "" {TEXT 210 30 "OrthonormalPolynomials[0] = p
+;" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "5.0000000000000000e-01
+," }{TEXT 210 21 " new int[] \{ 0, 0 \});" }{TEXT 210 1 "\n" }{TEXT 
+210 91 "\n//----------------------------------------------------------
+------------------------------" }{TEXT 210 45 "\nPolynomial p = new Po
+lynomial(new Guid(\"\"));" }{TEXT 210 31 "\nOrthonormalPolynomials[1] \+
+= p;" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "8.6602540378443865e
+-01," }{TEXT 210 21 " new int[] \{ 0, 1 \});" }{TEXT 210 1 "\n" }{TEXT
+ 210 91 "\n//---------------------------------------------------------
+-------------------------------" }{TEXT 210 45 "\nPolynomial p = new P
+olynomial(new Guid(\"\"));" }{TEXT 210 31 "\nOrthonormalPolynomials[2]
+ = p;" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "8.6602540378443865
+e-01," }{TEXT 210 21 " new int[] \{ 1, 0 \});" }{TEXT 210 1 "\n" }
+{TEXT 210 91 "\n//----------------------------------------------------
+------------------------------------" }{TEXT 210 45 "\nPolynomial p = \+
+new Polynomial(new Guid(\"\"));" }{TEXT 210 31 "\nOrthonormalPolynomia
+ls[3] = p;" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-5.5901699437
+494742e-01," }{TEXT 210 21 " new int[] \{ 0, 0 \});" }{TEXT 210 12 "\n
+p.AddCoeff(" }{TEXT 210 23 "1.6770509831248423e+00," }{TEXT 210 21 " n
+ew int[] \{ 0, 2 \});" }{TEXT 210 1 "\n" }{TEXT 210 91 "\n//----------
+----------------------------------------------------------------------
+--------" }{TEXT 210 45 "\nPolynomial p = new Polynomial(new Guid(\"\"
+));" }{TEXT 210 31 "\nOrthonormalPolynomials[4] = p;" }{TEXT 210 12 "
+\np.AddCoeff(" }{TEXT 210 23 "1.5000000000000000e+00," }{TEXT 210 21 "
+ new int[] \{ 1, 1 \});" }{TEXT 210 1 "\n" }{TEXT 210 91 "\n//--------
+----------------------------------------------------------------------
+----------" }{TEXT 210 45 "\nPolynomial p = new Polynomial(new Guid(\"
+\"));" }{TEXT 210 31 "\nOrthonormalPolynomials[5] = p;" }{TEXT 210 12 
+"\np.AddCoeff(" }{TEXT 210 24 "-5.5901699437494742e-01," }{TEXT 210 
+21 " new int[] \{ 0, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 
+23 "1.6770509831248423e+00," }{TEXT 210 21 " new int[] \{ 2, 0 \});" }
+{TEXT 210 1 "\n" }{TEXT 210 91 "\n//----------------------------------
+------------------------------------------------------" }{TEXT 210 45 
+"\nPolynomial p = new Polynomial(new Guid(\"\"));" }{TEXT 210 31 "\nOr
+thonormalPolynomials[6] = p;" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 
+210 24 "-1.9843134832984429e+00," }{TEXT 210 21 " new int[] \{ 0, 1 \}
+);" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "3.3071891388307382e+0
+0," }{TEXT 210 21 " new int[] \{ 0, 3 \});" }{TEXT 210 1 "\n" }{TEXT 
+210 91 "\n//----------------------------------------------------------
+------------------------------" }{TEXT 210 45 "\nPolynomial p = new Po
+lynomial(new Guid(\"\"));" }{TEXT 210 31 "\nOrthonormalPolynomials[7] \+
+= p;" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-9.6824583655185422
+e-01," }{TEXT 210 21 " new int[] \{ 1, 0 \});" }{TEXT 210 12 "\np.AddC
+oeff(" }{TEXT 210 23 "2.9047375096555627e+00," }{TEXT 210 21 " new int
+[] \{ 1, 2 \});" }{TEXT 210 1 "\n" }{TEXT 210 91 "\n//----------------
+----------------------------------------------------------------------
+--" }{TEXT 210 45 "\nPolynomial p = new Polynomial(new Guid(\"\"));" }
+{TEXT 210 31 "\nOrthonormalPolynomials[8] = p;" }{TEXT 210 12 "\np.Add
+Coeff(" }{TEXT 210 24 "-9.6824583655185422e-01," }{TEXT 210 21 " new i
+nt[] \{ 0, 1 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "2.9047
+375096555627e+00," }{TEXT 210 21 " new int[] \{ 2, 1 \});" }{TEXT 210 
+1 "\n" }{TEXT 210 91 "\n//--------------------------------------------
+--------------------------------------------" }{TEXT 210 45 "\nPolynom
+ial p = new Polynomial(new Guid(\"\"));" }{TEXT 210 31 "\nOrthonormalP
+olynomials[9] = p;" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-1.98
+43134832984429e+00," }{TEXT 210 21 " new int[] \{ 1, 0 \});" }{TEXT 
+210 12 "\np.AddCoeff(" }{TEXT 210 23 "3.3071891388307382e+00," }{TEXT 
+210 21 " new int[] \{ 3, 0 \});" }{TEXT 210 1 "\n" }{TEXT 210 91 "\n//
+----------------------------------------------------------------------
+------------------" }{TEXT 210 45 "\nPolynomial p = new Polynomial(new
+ Guid(\"\"));" }{TEXT 210 32 "\nOrthonormalPolynomials[10] = p;" }
+{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "5.6250000000000000e-01," }
+{TEXT 210 21 " new int[] \{ 0, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }
+{TEXT 210 24 "-5.6250000000000000e+00," }{TEXT 210 21 " new int[] \{ 0
+, 2 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "6.5625000000000
+000e+00," }{TEXT 210 21 " new int[] \{ 0, 4 \});" }{TEXT 210 1 "\n" }
+{TEXT 210 91 "\n//----------------------------------------------------
+------------------------------------" }{TEXT 210 45 "\nPolynomial p = \+
+new Polynomial(new Guid(\"\"));" }{TEXT 210 32 "\nOrthonormalPolynomia
+ls[11] = p;" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-3.436931771
+2168800e+00," }{TEXT 210 21 " new int[] \{ 1, 1 \});" }{TEXT 210 12 "
+\np.AddCoeff(" }{TEXT 210 23 "5.7282196186948000e+00," }{TEXT 210 21 "
+ new int[] \{ 1, 3 \});" }{TEXT 210 1 "\n" }{TEXT 210 91 "\n//--------
+----------------------------------------------------------------------
+----------" }{TEXT 210 45 "\nPolynomial p = new Polynomial(new Guid(\"
+\"));" }{TEXT 210 32 "\nOrthonormalPolynomials[12] = p;" }{TEXT 210 
+12 "\np.AddCoeff(" }{TEXT 210 23 "6.2500000000000000e-01," }{TEXT 210 
+21 " new int[] \{ 0, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 
+24 "-1.8750000000000000e+00," }{TEXT 210 21 " new int[] \{ 0, 2 \});" 
+}{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-1.8750000000000000e+00,"
+ }{TEXT 210 21 " new int[] \{ 2, 0 \});" }{TEXT 210 12 "\np.AddCoeff("
+ }{TEXT 210 23 "5.6250000000000000e+00," }{TEXT 210 21 " new int[] \{ \+
+2, 2 \});" }{TEXT 210 1 "\n" }{TEXT 210 91 "\n//----------------------
+------------------------------------------------------------------" }
+{TEXT 210 45 "\nPolynomial p = new Polynomial(new Guid(\"\"));" }{TEXT
+ 210 32 "\nOrthonormalPolynomials[13] = p;" }{TEXT 210 12 "\np.AddCoef
+f(" }{TEXT 210 24 "-3.4369317712168800e+00," }{TEXT 210 21 " new int[]
+ \{ 1, 1 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "5.72821961
+86948000e+00," }{TEXT 210 21 " new int[] \{ 3, 1 \});" }{TEXT 210 1 "
+\n" }{TEXT 210 91 "\n//-----------------------------------------------
+-----------------------------------------" }{TEXT 210 45 "\nPolynomial
+ p = new Polynomial(new Guid(\"\"));" }{TEXT 210 32 "\nOrthonormalPoly
+nomials[14] = p;" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "5.62500
+00000000000e-01," }{TEXT 210 21 " new int[] \{ 0, 0 \});" }{TEXT 210 
+12 "\np.AddCoeff(" }{TEXT 210 24 "-5.6250000000000000e+00," }{TEXT 
+210 21 " new int[] \{ 2, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 
+210 23 "6.5625000000000000e+00," }{TEXT 210 21 " new int[] \{ 4, 0 \})
+;" }{TEXT 210 1 "\n" }{TEXT 210 91 "\n//------------------------------
+----------------------------------------------------------" }{TEXT 
+210 45 "\nPolynomial p = new Polynomial(new Guid(\"\"));" }{TEXT 210 
+32 "\nOrthonormalPolynomials[15] = p;" }{TEXT 210 12 "\np.AddCoeff(" }
+{TEXT 210 23 "3.1093357409581874e+00," }{TEXT 210 21 " new int[] \{ 0,
+ 1 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-1.4510233457804
+874e+01," }{TEXT 210 21 " new int[] \{ 0, 3 \});" }{TEXT 210 12 "\np.A
+ddCoeff(" }{TEXT 210 23 "1.3059210112024387e+01," }{TEXT 210 21 " new \+
+int[] \{ 0, 5 \});" }{TEXT 210 1 "\n" }{TEXT 210 91 "\n//-------------
+----------------------------------------------------------------------
+-----" }{TEXT 210 45 "\nPolynomial p = new Polynomial(new Guid(\"\"));
+" }{TEXT 210 32 "\nOrthonormalPolynomials[16] = p;" }{TEXT 210 12 "\np
+.AddCoeff(" }{TEXT 210 23 "9.7427857925749348e-01," }{TEXT 210 21 " ne
+w int[] \{ 1, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-9.
+7427857925749348e+00," }{TEXT 210 21 " new int[] \{ 1, 2 \});" }{TEXT 
+210 12 "\np.AddCoeff(" }{TEXT 210 23 "1.1366583424670757e+01," }{TEXT 
+210 21 " new int[] \{ 1, 4 \});" }{TEXT 210 1 "\n" }{TEXT 210 91 "\n//
+----------------------------------------------------------------------
+------------------" }{TEXT 210 45 "\nPolynomial p = new Polynomial(new
+ Guid(\"\"));" }{TEXT 210 32 "\nOrthonormalPolynomials[17] = p;" }
+{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "2.2185299186623560e+00," }
+{TEXT 210 21 " new int[] \{ 0, 1 \});" }{TEXT 210 12 "\np.AddCoeff(" }
+{TEXT 210 24 "-3.6975498644372600e+00," }{TEXT 210 21 " new int[] \{ 0
+, 3 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-6.655589755987
+0680e+00," }{TEXT 210 21 " new int[] \{ 2, 1 \});" }{TEXT 210 12 "\np.
+AddCoeff(" }{TEXT 210 23 "1.1092649593311780e+01," }{TEXT 210 21 " new
+ int[] \{ 2, 3 \});" }{TEXT 210 1 "\n" }{TEXT 210 91 "\n//------------
+----------------------------------------------------------------------
+------" }{TEXT 210 45 "\nPolynomial p = new Polynomial(new Guid(\"\"))
+;" }{TEXT 210 32 "\nOrthonormalPolynomials[18] = p;" }{TEXT 210 12 "\n
+p.AddCoeff(" }{TEXT 210 23 "2.2185299186623560e+00," }{TEXT 210 21 " n
+ew int[] \{ 1, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-6
+.6555897559870680e+00," }{TEXT 210 21 " new int[] \{ 1, 2 \});" }{TEXT
+ 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-3.6975498644372600e+00," }
+{TEXT 210 21 " new int[] \{ 3, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }
+{TEXT 210 23 "1.1092649593311780e+01," }{TEXT 210 21 " new int[] \{ 3,
+ 2 \});" }{TEXT 210 1 "\n" }{TEXT 210 91 "\n//------------------------
+----------------------------------------------------------------" }
+{TEXT 210 45 "\nPolynomial p = new Polynomial(new Guid(\"\"));" }{TEXT
+ 210 32 "\nOrthonormalPolynomials[19] = p;" }{TEXT 210 12 "\np.AddCoef
+f(" }{TEXT 210 23 "9.7427857925749348e-01," }{TEXT 210 21 " new int[] \+
+\{ 0, 1 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-9.74278579
+25749348e+00," }{TEXT 210 21 " new int[] \{ 2, 1 \});" }{TEXT 210 12 "
+\np.AddCoeff(" }{TEXT 210 23 "1.1366583424670757e+01," }{TEXT 210 21 "
+ new int[] \{ 4, 1 \});" }{TEXT 210 1 "\n" }{TEXT 210 91 "\n//--------
+----------------------------------------------------------------------
+----------" }{TEXT 210 45 "\nPolynomial p = new Polynomial(new Guid(\"
+\"));" }{TEXT 210 32 "\nOrthonormalPolynomials[20] = p;" }{TEXT 210 
+12 "\np.AddCoeff(" }{TEXT 210 23 "3.1093357409581874e+00," }{TEXT 210 
+21 " new int[] \{ 1, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 
+24 "-1.4510233457804874e+01," }{TEXT 210 21 " new int[] \{ 3, 0 \});" 
+}{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "1.3059210112024387e+01," 
+}{TEXT 210 21 " new int[] \{ 5, 0 \});" }{TEXT 210 1 "\n" }{TEXT 210 
+91 "\n//--------------------------------------------------------------
+--------------------------" }{TEXT 210 45 "\nPolynomial p = new Polyno
+mial(new Guid(\"\"));" }{TEXT 210 32 "\nOrthonormalPolynomials[21] = p
+;" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-5.6336738679124833e-0
+1," }{TEXT 210 21 " new int[] \{ 0, 0 \});" }{TEXT 210 12 "\np.AddCoef
+f(" }{TEXT 210 23 "1.1830715122616215e+01," }{TEXT 210 21 " new int[] \+
+\{ 0, 2 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-3.54921453
+67848645e+01," }{TEXT 210 21 " new int[] \{ 0, 4 \});" }{TEXT 210 12 "
+\np.AddCoeff(" }{TEXT 210 23 "2.6027573269755673e+01," }{TEXT 210 21 "
+ new int[] \{ 0, 6 \});" }{TEXT 210 1 "\n" }{TEXT 210 91 "\n//--------
+----------------------------------------------------------------------
+----------" }{TEXT 210 45 "\nPolynomial p = new Polynomial(new Guid(\"
+\"));" }{TEXT 210 32 "\nOrthonormalPolynomials[22] = p;" }{TEXT 210 
+12 "\np.AddCoeff(" }{TEXT 210 23 "5.3855274811294019e+00," }{TEXT 210 
+21 " new int[] \{ 1, 1 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 
+24 "-2.5132461578603875e+01," }{TEXT 210 21 " new int[] \{ 1, 3 \});" 
+}{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "2.2619215420743488e+01," 
+}{TEXT 210 21 " new int[] \{ 1, 5 \});" }{TEXT 210 1 "\n" }{TEXT 210 
+91 "\n//--------------------------------------------------------------
+--------------------------" }{TEXT 210 45 "\nPolynomial p = new Polyno
+mial(new Guid(\"\"));" }{TEXT 210 32 "\nOrthonormalPolynomials[23] = p
+;" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-6.2889411867181585e-0
+1," }{TEXT 210 21 " new int[] \{ 0, 0 \});" }{TEXT 210 12 "\np.AddCoef
+f(" }{TEXT 210 23 "6.2889411867181585e+00," }{TEXT 210 21 " new int[] \+
+\{ 0, 2 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "1.886682356
+0154476e+00," }{TEXT 210 21 " new int[] \{ 2, 0 \});" }{TEXT 210 12 "
+\np.AddCoeff(" }{TEXT 210 24 "-7.3370980511711849e+00," }{TEXT 210 21 
+" new int[] \{ 0, 4 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 
+"-1.8866823560154476e+01," }{TEXT 210 21 " new int[] \{ 2, 2 \});" }
+{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "2.2011294153513555e+01," }
+{TEXT 210 21 " new int[] \{ 2, 4 \});" }{TEXT 210 1 "\n" }{TEXT 210 
+91 "\n//--------------------------------------------------------------
+--------------------------" }{TEXT 210 45 "\nPolynomial p = new Polyno
+mial(new Guid(\"\"));" }{TEXT 210 32 "\nOrthonormalPolynomials[24] = p
+;" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "7.8750000000000000e+00
+," }{TEXT 210 21 " new int[] \{ 1, 1 \});" }{TEXT 210 12 "\np.AddCoeff
+(" }{TEXT 210 24 "-1.3125000000000000e+01," }{TEXT 210 21 " new int[] \+
+\{ 1, 3 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-1.31250000
+00000000e+01," }{TEXT 210 21 " new int[] \{ 3, 1 \});" }{TEXT 210 12 "
+\np.AddCoeff(" }{TEXT 210 23 "2.1875000000000000e+01," }{TEXT 210 21 "
+ new int[] \{ 3, 3 \});" }{TEXT 210 1 "\n" }{TEXT 210 91 "\n//--------
+----------------------------------------------------------------------
+----------" }{TEXT 210 45 "\nPolynomial p = new Polynomial(new Guid(\"
+\"));" }{TEXT 210 32 "\nOrthonormalPolynomials[25] = p;" }{TEXT 210 
+12 "\np.AddCoeff(" }{TEXT 210 24 "-6.2889411867181585e-01," }{TEXT 
+210 21 " new int[] \{ 0, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 
+210 23 "1.8866823560154476e+00," }{TEXT 210 21 " new int[] \{ 0, 2 \})
+;" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "6.2889411867181585e+00
+," }{TEXT 210 21 " new int[] \{ 2, 0 \});" }{TEXT 210 12 "\np.AddCoeff
+(" }{TEXT 210 24 "-1.8866823560154476e+01," }{TEXT 210 21 " new int[] \+
+\{ 2, 2 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-7.33709805
+11711849e+00," }{TEXT 210 21 " new int[] \{ 4, 0 \});" }{TEXT 210 12 "
+\np.AddCoeff(" }{TEXT 210 23 "2.2011294153513555e+01," }{TEXT 210 21 "
+ new int[] \{ 4, 2 \});" }{TEXT 210 1 "\n" }{TEXT 210 91 "\n//--------
+----------------------------------------------------------------------
+----------" }{TEXT 210 45 "\nPolynomial p = new Polynomial(new Guid(\"
+\"));" }{TEXT 210 32 "\nOrthonormalPolynomials[26] = p;" }{TEXT 210 
+12 "\np.AddCoeff(" }{TEXT 210 23 "5.3855274811294019e+00," }{TEXT 210 
+21 " new int[] \{ 1, 1 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 
+24 "-2.5132461578603875e+01," }{TEXT 210 21 " new int[] \{ 3, 1 \});" 
+}{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "2.2619215420743488e+01," 
+}{TEXT 210 21 " new int[] \{ 5, 1 \});" }{TEXT 210 1 "\n" }{TEXT 210 
+91 "\n//--------------------------------------------------------------
+--------------------------" }{TEXT 210 45 "\nPolynomial p = new Polyno
+mial(new Guid(\"\"));" }{TEXT 210 32 "\nOrthonormalPolynomials[27] = p
+;" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-5.6336738679124833e-0
+1," }{TEXT 210 21 " new int[] \{ 0, 0 \});" }{TEXT 210 12 "\np.AddCoef
+f(" }{TEXT 210 23 "1.1830715122616215e+01," }{TEXT 210 21 " new int[] \+
+\{ 2, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-3.54921453
+67848645e+01," }{TEXT 210 21 " new int[] \{ 4, 0 \});" }{TEXT 210 12 "
+\np.AddCoeff(" }{TEXT 210 23 "2.6027573269755673e+01," }{TEXT 210 21 "
+ new int[] \{ 6, 0 \});" }{TEXT 210 1 "\n" }{TEXT 210 91 "\n//--------
+----------------------------------------------------------------------
+----------" }{TEXT 210 45 "\nPolynomial p = new Polynomial(new Guid(\"
+\"));" }{TEXT 210 32 "\nOrthonormalPolynomials[28] = p;" }{TEXT 210 
+12 "\np.AddCoeff(" }{TEXT 210 24 "-4.2360755349143622e+00," }{TEXT 
+210 21 " new int[] \{ 0, 1 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 
+210 23 "3.8124679814229260e+01," }{TEXT 210 21 " new int[] \{ 0, 3 \})
+;" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-8.3874295591304372e+0
+1," }{TEXT 210 21 " new int[] \{ 0, 5 \});" }{TEXT 210 12 "\np.AddCoef
+f(" }{TEXT 210 23 "5.1922182985093183e+01," }{TEXT 210 21 " new int[] \+
+\{ 0, 7 \});" }{TEXT 210 1 "\n" }{TEXT 210 91 "\n//-------------------
+---------------------------------------------------------------------"
+ }{TEXT 210 45 "\nPolynomial p = new Polynomial(new Guid(\"\"));" }
+{TEXT 210 32 "\nOrthonormalPolynomials[29] = p;" }{TEXT 210 12 "\np.Ad
+dCoeff(" }{TEXT 210 24 "-9.7578093724974972e-01," }{TEXT 210 21 " new \+
+int[] \{ 1, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "2.049
+1399682244744e+01," }{TEXT 210 21 " new int[] \{ 1, 2 \});" }{TEXT 
+210 12 "\np.AddCoeff(" }{TEXT 210 24 "-6.1474199046734232e+01," }{TEXT
+ 210 21 " new int[] \{ 1, 4 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT
+ 210 23 "4.5081079300938437e+01," }{TEXT 210 21 " new int[] \{ 1, 6 \}
+);" }{TEXT 210 1 "\n" }{TEXT 210 91 "\n//-----------------------------
+-----------------------------------------------------------" }{TEXT 
+210 45 "\nPolynomial p = new Polynomial(new Guid(\"\"));" }{TEXT 210 
+32 "\nOrthonormalPolynomials[30] = p;" }{TEXT 210 12 "\np.AddCoeff(" }
+{TEXT 210 24 "-3.4763430408260920e+00," }{TEXT 210 21 " new int[] \{ 0
+, 1 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "1.6222934190521
+763e+01," }{TEXT 210 21 " new int[] \{ 0, 3 \});" }{TEXT 210 12 "\np.A
+ddCoeff(" }{TEXT 210 23 "1.0429029122478276e+01," }{TEXT 210 21 " new \+
+int[] \{ 2, 1 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-1.46
+00640771469586e+01," }{TEXT 210 21 " new int[] \{ 0, 5 \});" }{TEXT 
+210 12 "\np.AddCoeff(" }{TEXT 210 24 "-4.8668802571565288e+01," }{TEXT
+ 210 21 " new int[] \{ 2, 3 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT
+ 210 23 "4.3801922314408759e+01," }{TEXT 210 21 " new int[] \{ 2, 5 \}
+);" }{TEXT 210 1 "\n" }{TEXT 210 91 "\n//-----------------------------
+-----------------------------------------------------------" }{TEXT 
+210 45 "\nPolynomial p = new Polynomial(new Guid(\"\"));" }{TEXT 210 
+32 "\nOrthonormalPolynomials[31] = p;" }{TEXT 210 12 "\np.AddCoeff(" }
+{TEXT 210 24 "-2.2323526687107483e+00," }{TEXT 210 21 " new int[] \{ 1
+, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "2.2323526687107
+483e+01," }{TEXT 210 21 " new int[] \{ 1, 2 \});" }{TEXT 210 12 "\np.A
+ddCoeff(" }{TEXT 210 23 "3.7205877811845805e+00," }{TEXT 210 21 " new \+
+int[] \{ 3, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-2.60
+44114468292064e+01," }{TEXT 210 21 " new int[] \{ 1, 4 \});" }{TEXT 
+210 12 "\np.AddCoeff(" }{TEXT 210 24 "-3.7205877811845805e+01," }{TEXT
+ 210 21 " new int[] \{ 3, 2 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT
+ 210 23 "4.3406857447153439e+01," }{TEXT 210 21 " new int[] \{ 3, 4 \}
+);" }{TEXT 210 1 "\n" }{TEXT 210 91 "\n//-----------------------------
+-----------------------------------------------------------" }{TEXT 
+210 45 "\nPolynomial p = new Polynomial(new Guid(\"\"));" }{TEXT 210 
+32 "\nOrthonormalPolynomials[32] = p;" }{TEXT 210 12 "\np.AddCoeff(" }
+{TEXT 210 24 "-2.2323526687107483e+00," }{TEXT 210 21 " new int[] \{ 0
+, 1 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "3.7205877811845
+805e+00," }{TEXT 210 21 " new int[] \{ 0, 3 \});" }{TEXT 210 12 "\np.A
+ddCoeff(" }{TEXT 210 23 "2.2323526687107483e+01," }{TEXT 210 21 " new \+
+int[] \{ 2, 1 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-3.72
+05877811845805e+01," }{TEXT 210 21 " new int[] \{ 2, 3 \});" }{TEXT 
+210 12 "\np.AddCoeff(" }{TEXT 210 24 "-2.6044114468292064e+01," }{TEXT
+ 210 21 " new int[] \{ 4, 1 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT
+ 210 23 "4.3406857447153439e+01," }{TEXT 210 21 " new int[] \{ 4, 3 \}
+);" }{TEXT 210 1 "\n" }{TEXT 210 91 "\n//-----------------------------
+-----------------------------------------------------------" }{TEXT 
+210 45 "\nPolynomial p = new Polynomial(new Guid(\"\"));" }{TEXT 210 
+32 "\nOrthonormalPolynomials[33] = p;" }{TEXT 210 12 "\np.AddCoeff(" }
+{TEXT 210 24 "-3.4763430408260920e+00," }{TEXT 210 21 " new int[] \{ 1
+, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "1.0429029122478
+276e+01," }{TEXT 210 21 " new int[] \{ 1, 2 \});" }{TEXT 210 12 "\np.A
+ddCoeff(" }{TEXT 210 23 "1.6222934190521763e+01," }{TEXT 210 21 " new \+
+int[] \{ 3, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-4.86
+68802571565288e+01," }{TEXT 210 21 " new int[] \{ 3, 2 \});" }{TEXT 
+210 12 "\np.AddCoeff(" }{TEXT 210 24 "-1.4600640771469586e+01," }{TEXT
+ 210 21 " new int[] \{ 5, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT
+ 210 23 "4.3801922314408759e+01," }{TEXT 210 21 " new int[] \{ 5, 2 \}
+);" }{TEXT 210 1 "\n" }{TEXT 210 91 "\n//-----------------------------
+-----------------------------------------------------------" }{TEXT 
+210 45 "\nPolynomial p = new Polynomial(new Guid(\"\"));" }{TEXT 210 
+32 "\nOrthonormalPolynomials[34] = p;" }{TEXT 210 12 "\np.AddCoeff(" }
+{TEXT 210 24 "-9.7578093724974972e-01," }{TEXT 210 21 " new int[] \{ 0
+, 1 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "2.0491399682244
+744e+01," }{TEXT 210 21 " new int[] \{ 2, 1 \});" }{TEXT 210 12 "\np.A
+ddCoeff(" }{TEXT 210 24 "-6.1474199046734232e+01," }{TEXT 210 21 " new
+ int[] \{ 4, 1 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "4.50
+81079300938437e+01," }{TEXT 210 21 " new int[] \{ 6, 1 \});" }{TEXT 
+210 1 "\n" }{TEXT 210 91 "\n//----------------------------------------
+------------------------------------------------" }{TEXT 210 45 "\nPol
+ynomial p = new Polynomial(new Guid(\"\"));" }{TEXT 210 32 "\nOrthonor
+malPolynomials[35] = p;" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "
+-4.2360755349143622e+00," }{TEXT 210 21 " new int[] \{ 1, 0 \});" }
+{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "3.8124679814229260e+01," }
+{TEXT 210 21 " new int[] \{ 3, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }
+{TEXT 210 24 "-8.3874295591304372e+01," }{TEXT 210 21 " new int[] \{ 5
+, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "5.1922182985093
+183e+01," }{TEXT 210 21 " new int[] \{ 7, 0 \});" }{TEXT 210 1 "\n" }
+{TEXT 210 91 "\n//----------------------------------------------------
+------------------------------------" }{TEXT 210 45 "\nPolynomial p = \+
+new Polynomial(new Guid(\"\"));" }{TEXT 210 32 "\nOrthonormalPolynomia
+ls[36] = p;" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "5.6370584725
+241453e-01," }{TEXT 210 21 " new int[] \{ 0, 0 \});" }{TEXT 210 12 "\n
+p.AddCoeff(" }{TEXT 210 24 "-2.0293410501086923e+01," }{TEXT 210 21 " \+
+new int[] \{ 0, 2 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "1
+.1161375775597808e+02," }{TEXT 210 21 " new int[] \{ 0, 4 \});" }{TEXT
+ 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-1.9346384677702867e+02," }
+{TEXT 210 21 " new int[] \{ 0, 6 \});" }{TEXT 210 12 "\np.AddCoeff(" }
+{TEXT 210 23 "1.0364134648769393e+02," }{TEXT 210 21 " new int[] \{ 0,
+ 8 \});" }{TEXT 210 1 "\n" }{TEXT 210 91 "\n//------------------------
+----------------------------------------------------------------" }
+{TEXT 210 45 "\nPolynomial p = new Polynomial(new Guid(\"\"));" }{TEXT
+ 210 32 "\nOrthonormalPolynomials[37] = p;" }{TEXT 210 12 "\np.AddCoef
+f(" }{TEXT 210 24 "-7.3370980511711849e+00," }{TEXT 210 21 " new int[]
+ \{ 1, 1 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "6.60338824
+60540664e+01," }{TEXT 210 21 " new int[] \{ 1, 3 \});" }{TEXT 210 12 "
+\np.AddCoeff(" }{TEXT 210 24 "-1.4527454141318946e+02," }{TEXT 210 21 
+" new int[] \{ 1, 5 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 
+"8.9931858970069667e+01," }{TEXT 210 21 " new int[] \{ 1, 7 \});" }
+{TEXT 210 1 "\n" }{TEXT 210 91 "\n//----------------------------------
+------------------------------------------------------" }{TEXT 210 45 
+"\nPolynomial p = new Polynomial(new Guid(\"\"));" }{TEXT 210 32 "\nOr
+thonormalPolynomials[38] = p;" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 
+210 23 "6.2986388658582419e-01," }{TEXT 210 21 " new int[] \{ 0, 0 \})
+;" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-1.3227141618302308e+0
+1," }{TEXT 210 21 " new int[] \{ 0, 2 \});" }{TEXT 210 12 "\np.AddCoef
+f(" }{TEXT 210 24 "-1.8895916597574726e+00," }{TEXT 210 21 " new int[]
+ \{ 2, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "3.96814248
+54906924e+01," }{TEXT 210 21 " new int[] \{ 0, 4 \});" }{TEXT 210 12 "
+\np.AddCoeff(" }{TEXT 210 23 "3.9681424854906924e+01," }{TEXT 210 21 "
+ new int[] \{ 2, 2 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "
+-2.9099711560265078e+01," }{TEXT 210 21 " new int[] \{ 0, 6 \});" }
+{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-1.1904427456472077e+02," 
+}{TEXT 210 21 " new int[] \{ 2, 4 \});" }{TEXT 210 12 "\np.AddCoeff(" 
+}{TEXT 210 23 "8.7299134680795233e+01," }{TEXT 210 21 " new int[] \{ 2
+, 6 \});" }{TEXT 210 1 "\n" }{TEXT 210 91 "\n//-----------------------
+-----------------------------------------------------------------" }
+{TEXT 210 45 "\nPolynomial p = new Polynomial(new Guid(\"\"));" }{TEXT
+ 210 32 "\nOrthonormalPolynomials[39] = p;" }{TEXT 210 12 "\np.AddCoef
+f(" }{TEXT 210 24 "-1.2339793669770172e+01," }{TEXT 210 21 " new int[]
+ \{ 1, 1 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "5.75857037
+92260801e+01," }{TEXT 210 21 " new int[] \{ 1, 3 \});" }{TEXT 210 12 "
+\np.AddCoeff(" }{TEXT 210 23 "2.0566322782950286e+01," }{TEXT 210 21 "
+ new int[] \{ 3, 1 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "
+-5.1827133413034721e+01," }{TEXT 210 21 " new int[] \{ 1, 5 \});" }
+{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-9.5976172987101335e+01," 
+}{TEXT 210 21 " new int[] \{ 3, 3 \});" }{TEXT 210 12 "\np.AddCoeff(" 
+}{TEXT 210 23 "8.6378555688391202e+01," }{TEXT 210 21 " new int[] \{ 3
+, 5 \});" }{TEXT 210 1 "\n" }{TEXT 210 91 "\n//-----------------------
+-----------------------------------------------------------------" }
+{TEXT 210 45 "\nPolynomial p = new Polynomial(new Guid(\"\"));" }{TEXT
+ 210 32 "\nOrthonormalPolynomials[40] = p;" }{TEXT 210 12 "\np.AddCoef
+f(" }{TEXT 210 23 "6.3281250000000000e-01," }{TEXT 210 21 " new int[] \+
+\{ 0, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-6.32812500
+00000000e+00," }{TEXT 210 21 " new int[] \{ 0, 2 \});" }{TEXT 210 12 "
+\np.AddCoeff(" }{TEXT 210 24 "-6.3281250000000000e+00," }{TEXT 210 21 
+" new int[] \{ 2, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 
+"7.3828125000000000e+00," }{TEXT 210 21 " new int[] \{ 0, 4 \});" }
+{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "6.3281250000000000e+01," }
+{TEXT 210 21 " new int[] \{ 2, 2 \});" }{TEXT 210 12 "\np.AddCoeff(" }
+{TEXT 210 23 "7.3828125000000000e+00," }{TEXT 210 21 " new int[] \{ 4,
+ 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-7.3828125000000
+000e+01," }{TEXT 210 21 " new int[] \{ 2, 4 \});" }{TEXT 210 12 "\np.A
+ddCoeff(" }{TEXT 210 24 "-7.3828125000000000e+01," }{TEXT 210 21 " new
+ int[] \{ 4, 2 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "8.61
+32812500000000e+01," }{TEXT 210 21 " new int[] \{ 4, 4 \});" }{TEXT 
+210 1 "\n" }{TEXT 210 91 "\n//----------------------------------------
+------------------------------------------------" }{TEXT 210 45 "\nPol
+ynomial p = new Polynomial(new Guid(\"\"));" }{TEXT 210 32 "\nOrthonor
+malPolynomials[41] = p;" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "
+-1.2339793669770172e+01," }{TEXT 210 21 " new int[] \{ 1, 1 \});" }
+{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "2.0566322782950286e+01," }
+{TEXT 210 21 " new int[] \{ 1, 3 \});" }{TEXT 210 12 "\np.AddCoeff(" }
+{TEXT 210 23 "5.7585703792260801e+01," }{TEXT 210 21 " new int[] \{ 3,
+ 1 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-9.5976172987101
+335e+01," }{TEXT 210 21 " new int[] \{ 3, 3 \});" }{TEXT 210 12 "\np.A
+ddCoeff(" }{TEXT 210 24 "-5.1827133413034721e+01," }{TEXT 210 21 " new
+ int[] \{ 5, 1 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "8.63
+78555688391202e+01," }{TEXT 210 21 " new int[] \{ 5, 3 \});" }{TEXT 
+210 1 "\n" }{TEXT 210 91 "\n//----------------------------------------
+------------------------------------------------" }{TEXT 210 45 "\nPol
+ynomial p = new Polynomial(new Guid(\"\"));" }{TEXT 210 32 "\nOrthonor
+malPolynomials[42] = p;" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "
+6.2986388658582419e-01," }{TEXT 210 21 " new int[] \{ 0, 0 \});" }
+{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-1.8895916597574726e+00," 
+}{TEXT 210 21 " new int[] \{ 0, 2 \});" }{TEXT 210 12 "\np.AddCoeff(" 
+}{TEXT 210 24 "-1.3227141618302308e+01," }{TEXT 210 21 " new int[] \{ \+
+2, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "3.968142485490
+6924e+01," }{TEXT 210 21 " new int[] \{ 2, 2 \});" }{TEXT 210 12 "\np.
+AddCoeff(" }{TEXT 210 23 "3.9681424854906924e+01," }{TEXT 210 21 " new
+ int[] \{ 4, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-1.1
+904427456472077e+02," }{TEXT 210 21 " new int[] \{ 4, 2 \});" }{TEXT 
+210 12 "\np.AddCoeff(" }{TEXT 210 24 "-2.9099711560265078e+01," }{TEXT
+ 210 21 " new int[] \{ 6, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT
+ 210 23 "8.7299134680795233e+01," }{TEXT 210 21 " new int[] \{ 6, 2 \}
+);" }{TEXT 210 1 "\n" }{TEXT 210 91 "\n//-----------------------------
+-----------------------------------------------------------" }{TEXT 
+210 45 "\nPolynomial p = new Polynomial(new Guid(\"\"));" }{TEXT 210 
+32 "\nOrthonormalPolynomials[43] = p;" }{TEXT 210 12 "\np.AddCoeff(" }
+{TEXT 210 24 "-7.3370980511711849e+00," }{TEXT 210 21 " new int[] \{ 1
+, 1 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "6.6033882460540
+664e+01," }{TEXT 210 21 " new int[] \{ 3, 1 \});" }{TEXT 210 12 "\np.A
+ddCoeff(" }{TEXT 210 24 "-1.4527454141318946e+02," }{TEXT 210 21 " new
+ int[] \{ 5, 1 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "8.99
+31858970069667e+01," }{TEXT 210 21 " new int[] \{ 7, 1 \});" }{TEXT 
+210 1 "\n" }{TEXT 210 91 "\n//----------------------------------------
+------------------------------------------------" }{TEXT 210 45 "\nPol
+ynomial p = new Polynomial(new Guid(\"\"));" }{TEXT 210 32 "\nOrthonor
+malPolynomials[44] = p;" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "
+5.6370584725241453e-01," }{TEXT 210 21 " new int[] \{ 0, 0 \});" }
+{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-2.0293410501086923e+01," 
+}{TEXT 210 21 " new int[] \{ 2, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" 
+}{TEXT 210 23 "1.1161375775597808e+02," }{TEXT 210 21 " new int[] \{ 4
+, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-1.934638467770
+2867e+02," }{TEXT 210 21 " new int[] \{ 6, 0 \});" }{TEXT 210 12 "\np.
+AddCoeff(" }{TEXT 210 23 "1.0364134648769393e+02," }{TEXT 210 21 " new
+ int[] \{ 8, 0 \});" }{TEXT 210 1 "\n" }{TEXT 210 91 "\n//------------
+----------------------------------------------------------------------
+------" }{TEXT 210 45 "\nPolynomial p = new Polynomial(new Guid(\"\"))
+;" }{TEXT 210 32 "\nOrthonormalPolynomials[45] = p;" }{TEXT 210 12 "\n
+p.AddCoeff(" }{TEXT 210 23 "5.3634889344348132e+00," }{TEXT 210 21 " n
+ew int[] \{ 0, 1 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-7
+.8664504371710593e+01," }{TEXT 210 21 " new int[] \{ 0, 3 \});" }{TEXT
+ 210 12 "\np.AddCoeff(" }{TEXT 210 23 "3.0679156704967131e+02," }{TEXT
+ 210 21 " new int[] \{ 0, 5 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT
+ 210 24 "-4.3827366721381616e+02," }{TEXT 210 21 " new int[] \{ 0, 7 \+
+\});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "2.0696256507319096e
++02," }{TEXT 210 21 " new int[] \{ 0, 9 \});" }{TEXT 210 1 "\n" }{TEXT
+ 210 91 "\n//---------------------------------------------------------
+-------------------------------" }{TEXT 210 45 "\nPolynomial p = new P
+olynomial(new Guid(\"\"));" }{TEXT 210 32 "\nOrthonormalPolynomials[46
+] = p;" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "9.763671679648427
+7e-01," }{TEXT 210 21 " new int[] \{ 1, 0 \});" }{TEXT 210 12 "\np.Add
+Coeff(" }{TEXT 210 24 "-3.5149218046734340e+01," }{TEXT 210 21 " new i
+nt[] \{ 1, 2 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "1.9332
+069925703887e+02," }{TEXT 210 21 " new int[] \{ 1, 4 \});" }{TEXT 210 
+12 "\np.AddCoeff(" }{TEXT 210 24 "-3.3508921204553404e+02," }{TEXT 
+210 21 " new int[] \{ 1, 6 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 
+210 23 "1.7951207788153609e+02," }{TEXT 210 21 " new int[] \{ 1, 8 \})
+;" }{TEXT 210 1 "\n" }{TEXT 210 91 "\n//------------------------------
+----------------------------------------------------------" }{TEXT 
+210 45 "\nPolynomial p = new Polynomial(new Guid(\"\"));" }{TEXT 210 
+32 "\nOrthonormalPolynomials[47] = p;" }{TEXT 210 12 "\np.AddCoeff(" }
+{TEXT 210 23 "4.7360764269461488e+00," }{TEXT 210 21 " new int[] \{ 0,
+ 1 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-4.2624687842515
+340e+01," }{TEXT 210 21 " new int[] \{ 0, 3 \});" }{TEXT 210 12 "\np.A
+ddCoeff(" }{TEXT 210 24 "-1.4208229280838447e+01," }{TEXT 210 21 " new
+ int[] \{ 2, 1 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "9.37
+74313253533747e+01," }{TEXT 210 21 " new int[] \{ 0, 5 \});" }{TEXT 
+210 12 "\np.AddCoeff(" }{TEXT 210 23 "1.2787406352754602e+02," }{TEXT 
+210 21 " new int[] \{ 2, 3 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 
+210 24 "-5.8050765347425653e+01," }{TEXT 210 21 " new int[] \{ 0, 7 \}
+);" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-2.8132293976060124e+
+02," }{TEXT 210 21 " new int[] \{ 2, 5 \});" }{TEXT 210 12 "\np.AddCoe
+ff(" }{TEXT 210 23 "1.7415229604227696e+02," }{TEXT 210 21 " new int[]
+ \{ 2, 7 \});" }{TEXT 210 1 "\n" }{TEXT 210 91 "\n//------------------
+----------------------------------------------------------------------
+" }{TEXT 210 45 "\nPolynomial p = new Polynomial(new Guid(\"\"));" }
+{TEXT 210 32 "\nOrthonormalPolynomials[48] = p;" }{TEXT 210 12 "\np.Ad
+dCoeff(" }{TEXT 210 23 "2.2357950033209664e+00," }{TEXT 210 21 " new i
+nt[] \{ 1, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-4.695
+1695069740294e+01," }{TEXT 210 21 " new int[] \{ 1, 2 \});" }{TEXT 
+210 12 "\np.AddCoeff(" }{TEXT 210 24 "-3.7263250055349439e+00," }{TEXT
+ 210 21 " new int[] \{ 3, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT
+ 210 23 "1.4085508520922088e+02," }{TEXT 210 21 " new int[] \{ 1, 4 \}
+);" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "7.8252825116233823e+0
+1," }{TEXT 210 21 " new int[] \{ 3, 2 \});" }{TEXT 210 12 "\np.AddCoef
+f(" }{TEXT 210 24 "-1.0329372915342865e+02," }{TEXT 210 21 " new int[]
+ \{ 1, 6 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-2.3475847
+534870147e+02," }{TEXT 210 21 " new int[] \{ 3, 4 \});" }{TEXT 210 12 
+"\np.AddCoeff(" }{TEXT 210 23 "1.7215621525571441e+02," }{TEXT 210 21 
+" new int[] \{ 3, 6 \});" }{TEXT 210 1 "\n" }{TEXT 210 91 "\n//-------
+----------------------------------------------------------------------
+-----------" }{TEXT 210 45 "\nPolynomial p = new Polynomial(new Guid(
+\"\"));" }{TEXT 210 32 "\nOrthonormalPolynomials[49] = p;" }{TEXT 210 
+12 "\np.AddCoeff(" }{TEXT 210 23 "3.4980027085779608e+00," }{TEXT 210 
+21 " new int[] \{ 0, 1 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 
+24 "-1.6324012640030484e+01," }{TEXT 210 21 " new int[] \{ 0, 3 \});" 
+}{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-3.4980027085779608e+01,"
+ }{TEXT 210 21 " new int[] \{ 2, 1 \});" }{TEXT 210 12 "\np.AddCoeff("
+ }{TEXT 210 23 "1.4691611376027435e+01," }{TEXT 210 21 " new int[] \{ \+
+0, 5 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "1.632401264003
+0484e+02," }{TEXT 210 21 " new int[] \{ 2, 3 \});" }{TEXT 210 12 "\np.
+AddCoeff(" }{TEXT 210 23 "4.0810031600076209e+01," }{TEXT 210 21 " new
+ int[] \{ 4, 1 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-1.4
+691611376027435e+02," }{TEXT 210 21 " new int[] \{ 2, 5 \});" }{TEXT 
+210 12 "\np.AddCoeff(" }{TEXT 210 24 "-1.9044681413368898e+02," }{TEXT
+ 210 21 " new int[] \{ 4, 3 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT
+ 210 23 "1.7140213272032008e+02," }{TEXT 210 21 " new int[] \{ 4, 5 \}
+);" }{TEXT 210 1 "\n" }{TEXT 210 91 "\n//-----------------------------
+-----------------------------------------------------------" }{TEXT 
+210 45 "\nPolynomial p = new Polynomial(new Guid(\"\"));" }{TEXT 210 
+32 "\nOrthonormalPolynomials[50] = p;" }{TEXT 210 12 "\np.AddCoeff(" }
+{TEXT 210 23 "3.4980027085779608e+00," }{TEXT 210 21 " new int[] \{ 1,
+ 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-3.4980027085779
+608e+01," }{TEXT 210 21 " new int[] \{ 1, 2 \});" }{TEXT 210 12 "\np.A
+ddCoeff(" }{TEXT 210 24 "-1.6324012640030484e+01," }{TEXT 210 21 " new
+ int[] \{ 3, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "4.08
+10031600076209e+01," }{TEXT 210 21 " new int[] \{ 1, 4 \});" }{TEXT 
+210 12 "\np.AddCoeff(" }{TEXT 210 23 "1.6324012640030484e+02," }{TEXT 
+210 21 " new int[] \{ 3, 2 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 
+210 23 "1.4691611376027435e+01," }{TEXT 210 21 " new int[] \{ 5, 0 \})
+;" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-1.9044681413368898e+0
+2," }{TEXT 210 21 " new int[] \{ 3, 4 \});" }{TEXT 210 12 "\np.AddCoef
+f(" }{TEXT 210 24 "-1.4691611376027435e+02," }{TEXT 210 21 " new int[]
+ \{ 5, 2 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "1.71402132
+72032008e+02," }{TEXT 210 21 " new int[] \{ 5, 4 \});" }{TEXT 210 1 "
+\n" }{TEXT 210 91 "\n//-----------------------------------------------
+-----------------------------------------" }{TEXT 210 45 "\nPolynomial
+ p = new Polynomial(new Guid(\"\"));" }{TEXT 210 32 "\nOrthonormalPoly
+nomials[51] = p;" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "2.23579
+50033209664e+00," }{TEXT 210 21 " new int[] \{ 0, 1 \});" }{TEXT 210 
+12 "\np.AddCoeff(" }{TEXT 210 24 "-3.7263250055349439e+00," }{TEXT 
+210 21 " new int[] \{ 0, 3 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 
+210 24 "-4.6951695069740294e+01," }{TEXT 210 21 " new int[] \{ 2, 1 \}
+);" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "7.8252825116233823e+0
+1," }{TEXT 210 21 " new int[] \{ 2, 3 \});" }{TEXT 210 12 "\np.AddCoef
+f(" }{TEXT 210 23 "1.4085508520922088e+02," }{TEXT 210 21 " new int[] \+
+\{ 4, 1 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-2.34758475
+34870147e+02," }{TEXT 210 21 " new int[] \{ 4, 3 \});" }{TEXT 210 12 "
+\np.AddCoeff(" }{TEXT 210 24 "-1.0329372915342865e+02," }{TEXT 210 21 
+" new int[] \{ 6, 1 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 
+"1.7215621525571441e+02," }{TEXT 210 21 " new int[] \{ 6, 3 \});" }
+{TEXT 210 1 "\n" }{TEXT 210 91 "\n//----------------------------------
+------------------------------------------------------" }{TEXT 210 45 
+"\nPolynomial p = new Polynomial(new Guid(\"\"));" }{TEXT 210 32 "\nOr
+thonormalPolynomials[52] = p;" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 
+210 23 "4.7360764269461488e+00," }{TEXT 210 21 " new int[] \{ 1, 0 \})
+;" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-1.4208229280838447e+0
+1," }{TEXT 210 21 " new int[] \{ 1, 2 \});" }{TEXT 210 12 "\np.AddCoef
+f(" }{TEXT 210 24 "-4.2624687842515340e+01," }{TEXT 210 21 " new int[]
+ \{ 3, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "1.27874063
+52754602e+02," }{TEXT 210 21 " new int[] \{ 3, 2 \});" }{TEXT 210 12 "
+\np.AddCoeff(" }{TEXT 210 23 "9.3774313253533747e+01," }{TEXT 210 21 "
+ new int[] \{ 5, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "
+-2.8132293976060124e+02," }{TEXT 210 21 " new int[] \{ 5, 2 \});" }
+{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-5.8050765347425653e+01," 
+}{TEXT 210 21 " new int[] \{ 7, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" 
+}{TEXT 210 23 "1.7415229604227696e+02," }{TEXT 210 21 " new int[] \{ 7
+, 2 \});" }{TEXT 210 1 "\n" }{TEXT 210 91 "\n//-----------------------
+-----------------------------------------------------------------" }
+{TEXT 210 45 "\nPolynomial p = new Polynomial(new Guid(\"\"));" }{TEXT
+ 210 32 "\nOrthonormalPolynomials[53] = p;" }{TEXT 210 12 "\np.AddCoef
+f(" }{TEXT 210 23 "9.7636716796484277e-01," }{TEXT 210 21 " new int[] \+
+\{ 0, 1 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-3.51492180
+46734340e+01," }{TEXT 210 21 " new int[] \{ 2, 1 \});" }{TEXT 210 12 "
+\np.AddCoeff(" }{TEXT 210 23 "1.9332069925703887e+02," }{TEXT 210 21 "
+ new int[] \{ 4, 1 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "
+-3.3508921204553404e+02," }{TEXT 210 21 " new int[] \{ 6, 1 \});" }
+{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "1.7951207788153609e+02," }
+{TEXT 210 21 " new int[] \{ 8, 1 \});" }{TEXT 210 1 "\n" }{TEXT 210 
+91 "\n//--------------------------------------------------------------
+--------------------------" }{TEXT 210 45 "\nPolynomial p = new Polyno
+mial(new Guid(\"\"));" }{TEXT 210 32 "\nOrthonormalPolynomials[54] = p
+;" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "5.3634889344348132e+00
+," }{TEXT 210 21 " new int[] \{ 1, 0 \});" }{TEXT 210 12 "\np.AddCoeff
+(" }{TEXT 210 24 "-7.8664504371710593e+01," }{TEXT 210 21 " new int[] \+
+\{ 3, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "3.067915670
+4967131e+02," }{TEXT 210 21 " new int[] \{ 5, 0 \});" }{TEXT 210 12 "
+\np.AddCoeff(" }{TEXT 210 24 "-4.3827366721381616e+02," }{TEXT 210 21 
+" new int[] \{ 7, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 
+"2.0696256507319096e+02," }{TEXT 210 21 " new int[] \{ 9, 0 \});" }
+{TEXT 210 1 "\n" }{TEXT 210 91 "\n//----------------------------------
+------------------------------------------------------" }{TEXT 210 45 
+"\nPolynomial p = new Polynomial(new Guid(\"\"));" }{TEXT 210 32 "\nOr
+thonormalPolynomials[55] = p;" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 
+210 24 "-5.6387161871526938e-01," }{TEXT 210 21 " new int[] \{ 0, 0 \}
+);" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "3.1012939029339816e+0
+1," }{TEXT 210 21 " new int[] \{ 0, 2 \});" }{TEXT 210 12 "\np.AddCoef
+f(" }{TEXT 210 24 "-2.6877880492094507e+02," }{TEXT 210 21 " new int[]
+ \{ 0, 4 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "8.06336414
+76283521e+02," }{TEXT 210 21 " new int[] \{ 0, 6 \});" }{TEXT 210 12 "
+\np.AddCoeff(" }{TEXT 210 24 "-9.7912278935487132e+02," }{TEXT 210 21 
+" new int[] \{ 0, 8 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 
+"4.1340739994983456e+02," }{TEXT 210 22 " new int[] \{ 0, 10 \});" }
+{TEXT 210 1 "\n" }{TEXT 210 91 "\n//----------------------------------
+------------------------------------------------------" }{TEXT 210 45 
+"\nPolynomial p = new Polynomial(new Guid(\"\"));" }{TEXT 210 32 "\nOr
+thonormalPolynomials[56] = p;" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 
+210 23 "9.2898353402745553e+00," }{TEXT 210 21 " new int[] \{ 1, 1 \})
+;" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-1.3625091832402681e+0
+2," }{TEXT 210 21 " new int[] \{ 1, 3 \});" }{TEXT 210 12 "\np.AddCoef
+f(" }{TEXT 210 23 "5.3137858146370456e+02," }{TEXT 210 21 " new int[] \+
+\{ 1, 5 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-7.59112259
+23386366e+02," }{TEXT 210 21 " new int[] \{ 1, 7 \});" }{TEXT 210 12 "
+\np.AddCoeff(" }{TEXT 210 23 "3.5846967797154673e+02," }{TEXT 210 21 "
+ new int[] \{ 1, 9 \});" }{TEXT 210 1 "\n" }{TEXT 210 91 "\n//--------
+----------------------------------------------------------------------
+----------" }{TEXT 210 45 "\nPolynomial p = new Polynomial(new Guid(\"
+\"));" }{TEXT 210 32 "\nOrthonormalPolynomials[57] = p;" }{TEXT 210 
+12 "\np.AddCoeff(" }{TEXT 210 24 "-6.3024229688525597e-01," }{TEXT 
+210 21 " new int[] \{ 0, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 
+210 23 "2.2688722687869215e+01," }{TEXT 210 21 " new int[] \{ 0, 2 \})
+;" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "1.8907268906557679e+00
+," }{TEXT 210 21 " new int[] \{ 2, 0 \});" }{TEXT 210 12 "\np.AddCoeff
+(" }{TEXT 210 24 "-1.2478797478328068e+02," }{TEXT 210 21 " new int[] \+
+\{ 0, 4 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-6.80661680
+63607645e+01," }{TEXT 210 21 " new int[] \{ 2, 2 \});" }{TEXT 210 12 "
+\np.AddCoeff(" }{TEXT 210 23 "2.1629915629101985e+02," }{TEXT 210 21 "
+ new int[] \{ 0, 6 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "
+3.7436392434984205e+02," }{TEXT 210 21 " new int[] \{ 2, 4 \});" }
+{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-1.1587454801304635e+02," 
+}{TEXT 210 21 " new int[] \{ 0, 8 \});" }{TEXT 210 12 "\np.AddCoeff(" 
+}{TEXT 210 24 "-6.4889746887305955e+02," }{TEXT 210 21 " new int[] \{ \+
+2, 6 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "3.476236440391
+3904e+02," }{TEXT 210 21 " new int[] \{ 2, 8 \});" }{TEXT 210 1 "\n" }
+{TEXT 210 91 "\n//----------------------------------------------------
+------------------------------------" }{TEXT 210 45 "\nPolynomial p = \+
+new Polynomial(new Guid(\"\"));" }{TEXT 210 32 "\nOrthonormalPolynomia
+ls[58] = p;" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "1.6811403600
+402466e+01," }{TEXT 210 21 " new int[] \{ 1, 1 \});" }{TEXT 210 12 "\n
+p.AddCoeff(" }{TEXT 210 24 "-1.5130263240362219e+02," }{TEXT 210 21 " \+
+new int[] \{ 1, 3 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-
+2.8019006000670777e+01," }{TEXT 210 21 " new int[] \{ 3, 1 \});" }
+{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "3.3286579128796883e+02," }
+{TEXT 210 21 " new int[] \{ 1, 5 \});" }{TEXT 210 12 "\np.AddCoeff(" }
+{TEXT 210 23 "2.5217105400603699e+02," }{TEXT 210 21 " new int[] \{ 3,
+ 3 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-2.0605977555921
+880e+02," }{TEXT 210 21 " new int[] \{ 1, 7 \});" }{TEXT 210 12 "\np.A
+ddCoeff(" }{TEXT 210 24 "-5.5477631881328138e+02," }{TEXT 210 21 " new
+ int[] \{ 3, 5 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "3.43
+43295926536466e+02," }{TEXT 210 21 " new int[] \{ 3, 7 \});" }{TEXT 
+210 1 "\n" }{TEXT 210 91 "\n//----------------------------------------
+------------------------------------------------" }{TEXT 210 45 "\nPol
+ynomial p = new Polynomial(new Guid(\"\"));" }{TEXT 210 32 "\nOrthonor
+malPolynomials[59] = p;" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "
+-6.3378831014015437e-01," }{TEXT 210 21 " new int[] \{ 0, 0 \});" }
+{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "1.3309554512943242e+01," }
+{TEXT 210 21 " new int[] \{ 0, 2 \});" }{TEXT 210 12 "\np.AddCoeff(" }
+{TEXT 210 23 "6.3378831014015437e+00," }{TEXT 210 21 " new int[] \{ 2,
+ 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-3.9928663538829
+725e+01," }{TEXT 210 21 " new int[] \{ 0, 4 \});" }{TEXT 210 12 "\np.A
+ddCoeff(" }{TEXT 210 24 "-1.3309554512943242e+02," }{TEXT 210 21 " new
+ int[] \{ 2, 2 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-7.3
+941969516351343e+00," }{TEXT 210 21 " new int[] \{ 4, 0 \});" }{TEXT 
+210 12 "\np.AddCoeff(" }{TEXT 210 23 "2.9281019928475132e+01," }{TEXT 
+210 21 " new int[] \{ 0, 6 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 
+210 23 "3.9928663538829725e+02," }{TEXT 210 21 " new int[] \{ 2, 4 \})
+;" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "1.5527813598433782e+02
+," }{TEXT 210 21 " new int[] \{ 4, 2 \});" }{TEXT 210 12 "\np.AddCoeff
+(" }{TEXT 210 24 "-2.9281019928475132e+02," }{TEXT 210 21 " new int[] \+
+\{ 2, 6 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-4.65834407
+95301346e+02," }{TEXT 210 21 " new int[] \{ 4, 4 \});" }{TEXT 210 12 "
+\np.AddCoeff(" }{TEXT 210 23 "3.4161189916554320e+02," }{TEXT 210 21 "
+ new int[] \{ 4, 6 \});" }{TEXT 210 1 "\n" }{TEXT 210 91 "\n//--------
+----------------------------------------------------------------------
+----------" }{TEXT 210 45 "\nPolynomial p = new Polynomial(new Guid(\"
+\"));" }{TEXT 210 32 "\nOrthonormalPolynomials[60] = p;" }{TEXT 210 
+12 "\np.AddCoeff(" }{TEXT 210 23 "1.9335937500000000e+01," }{TEXT 210 
+21 " new int[] \{ 1, 1 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 
+24 "-9.0234375000000000e+01," }{TEXT 210 21 " new int[] \{ 1, 3 \});" 
+}{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-9.0234375000000000e+01,"
+ }{TEXT 210 21 " new int[] \{ 3, 1 \});" }{TEXT 210 12 "\np.AddCoeff("
+ }{TEXT 210 23 "8.1210937500000000e+01," }{TEXT 210 21 " new int[] \{ \+
+1, 5 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "4.210937500000
+0000e+02," }{TEXT 210 21 " new int[] \{ 3, 3 \});" }{TEXT 210 12 "\np.
+AddCoeff(" }{TEXT 210 23 "8.1210937500000000e+01," }{TEXT 210 21 " new
+ int[] \{ 5, 1 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-3.7
+898437500000000e+02," }{TEXT 210 21 " new int[] \{ 3, 5 \});" }{TEXT 
+210 12 "\np.AddCoeff(" }{TEXT 210 24 "-3.7898437500000000e+02," }{TEXT
+ 210 21 " new int[] \{ 5, 3 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT
+ 210 23 "3.4108593750000000e+02," }{TEXT 210 21 " new int[] \{ 5, 5 \}
+);" }{TEXT 210 1 "\n" }{TEXT 210 91 "\n//-----------------------------
+-----------------------------------------------------------" }{TEXT 
+210 45 "\nPolynomial p = new Polynomial(new Guid(\"\"));" }{TEXT 210 
+32 "\nOrthonormalPolynomials[61] = p;" }{TEXT 210 12 "\np.AddCoeff(" }
+{TEXT 210 24 "-6.3378831014015437e-01," }{TEXT 210 21 " new int[] \{ 0
+, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "6.3378831014015
+437e+00," }{TEXT 210 21 " new int[] \{ 0, 2 \});" }{TEXT 210 12 "\np.A
+ddCoeff(" }{TEXT 210 23 "1.3309554512943242e+01," }{TEXT 210 21 " new \+
+int[] \{ 2, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-7.39
+41969516351343e+00," }{TEXT 210 21 " new int[] \{ 0, 4 \});" }{TEXT 
+210 12 "\np.AddCoeff(" }{TEXT 210 24 "-1.3309554512943242e+02," }{TEXT
+ 210 21 " new int[] \{ 2, 2 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT
+ 210 24 "-3.9928663538829725e+01," }{TEXT 210 21 " new int[] \{ 4, 0 \+
+\});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "1.5527813598433782e
++02," }{TEXT 210 21 " new int[] \{ 2, 4 \});" }{TEXT 210 12 "\np.AddCo
+eff(" }{TEXT 210 23 "3.9928663538829725e+02," }{TEXT 210 21 " new int[
+] \{ 4, 2 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "2.9281019
+928475132e+01," }{TEXT 210 21 " new int[] \{ 6, 0 \});" }{TEXT 210 12 
+"\np.AddCoeff(" }{TEXT 210 24 "-4.6583440795301346e+02," }{TEXT 210 
+21 " new int[] \{ 4, 4 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 
+24 "-2.9281019928475132e+02," }{TEXT 210 21 " new int[] \{ 6, 2 \});" 
+}{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "3.4161189916554320e+02," 
+}{TEXT 210 21 " new int[] \{ 6, 4 \});" }{TEXT 210 1 "\n" }{TEXT 210 
+91 "\n//--------------------------------------------------------------
+--------------------------" }{TEXT 210 45 "\nPolynomial p = new Polyno
+mial(new Guid(\"\"));" }{TEXT 210 32 "\nOrthonormalPolynomials[62] = p
+;" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "1.6811403600402466e+01
+," }{TEXT 210 21 " new int[] \{ 1, 1 \});" }{TEXT 210 12 "\np.AddCoeff
+(" }{TEXT 210 24 "-2.8019006000670777e+01," }{TEXT 210 21 " new int[] \+
+\{ 1, 3 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-1.51302632
+40362219e+02," }{TEXT 210 21 " new int[] \{ 3, 1 \});" }{TEXT 210 12 "
+\np.AddCoeff(" }{TEXT 210 23 "2.5217105400603699e+02," }{TEXT 210 21 "
+ new int[] \{ 3, 3 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "
+3.3286579128796883e+02," }{TEXT 210 21 " new int[] \{ 5, 1 \});" }
+{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-5.5477631881328138e+02," 
+}{TEXT 210 21 " new int[] \{ 5, 3 \});" }{TEXT 210 12 "\np.AddCoeff(" 
+}{TEXT 210 24 "-2.0605977555921880e+02," }{TEXT 210 21 " new int[] \{ \+
+7, 1 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "3.434329592653
+6466e+02," }{TEXT 210 21 " new int[] \{ 7, 3 \});" }{TEXT 210 1 "\n" }
+{TEXT 210 91 "\n//----------------------------------------------------
+------------------------------------" }{TEXT 210 45 "\nPolynomial p = \+
+new Polynomial(new Guid(\"\"));" }{TEXT 210 32 "\nOrthonormalPolynomia
+ls[63] = p;" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-6.302422968
+8525597e-01," }{TEXT 210 21 " new int[] \{ 0, 0 \});" }{TEXT 210 12 "
+\np.AddCoeff(" }{TEXT 210 23 "1.8907268906557679e+00," }{TEXT 210 21 "
+ new int[] \{ 0, 2 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "
+2.2688722687869215e+01," }{TEXT 210 21 " new int[] \{ 2, 0 \});" }
+{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-6.8066168063607645e+01," 
+}{TEXT 210 21 " new int[] \{ 2, 2 \});" }{TEXT 210 12 "\np.AddCoeff(" 
+}{TEXT 210 24 "-1.2478797478328068e+02," }{TEXT 210 21 " new int[] \{ \+
+4, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 23 "3.743639243498
+4205e+02," }{TEXT 210 21 " new int[] \{ 4, 2 \});" }{TEXT 210 12 "\np.
+AddCoeff(" }{TEXT 210 23 "2.1629915629101985e+02," }{TEXT 210 21 " new
+ int[] \{ 6, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-6.4
+889746887305955e+02," }{TEXT 210 21 " new int[] \{ 6, 2 \});" }{TEXT 
+210 12 "\np.AddCoeff(" }{TEXT 210 24 "-1.1587454801304635e+02," }{TEXT
+ 210 21 " new int[] \{ 8, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT
+ 210 23 "3.4762364403913904e+02," }{TEXT 210 21 " new int[] \{ 8, 2 \}
+);" }{TEXT 210 1 "\n" }{TEXT 210 91 "\n//-----------------------------
+-----------------------------------------------------------" }{TEXT 
+210 45 "\nPolynomial p = new Polynomial(new Guid(\"\"));" }{TEXT 210 
+32 "\nOrthonormalPolynomials[64] = p;" }{TEXT 210 12 "\np.AddCoeff(" }
+{TEXT 210 23 "9.2898353402745553e+00," }{TEXT 210 21 " new int[] \{ 1,
+ 1 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-1.3625091832402
+681e+02," }{TEXT 210 21 " new int[] \{ 3, 1 \});" }{TEXT 210 12 "\np.A
+ddCoeff(" }{TEXT 210 23 "5.3137858146370456e+02," }{TEXT 210 21 " new \+
+int[] \{ 5, 1 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-7.59
+11225923386366e+02," }{TEXT 210 21 " new int[] \{ 7, 1 \});" }{TEXT 
+210 12 "\np.AddCoeff(" }{TEXT 210 23 "3.5846967797154673e+02," }{TEXT 
+210 21 " new int[] \{ 9, 1 \});" }{TEXT 210 1 "\n" }{TEXT 210 91 "\n//
+----------------------------------------------------------------------
+------------------" }{TEXT 210 45 "\nPolynomial p = new Polynomial(new
+ Guid(\"\"));" }{TEXT 210 32 "\nOrthonormalPolynomials[65] = p;" }
+{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-5.6387161871526938e-01," 
+}{TEXT 210 21 " new int[] \{ 0, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" 
+}{TEXT 210 23 "3.1012939029339816e+01," }{TEXT 210 21 " new int[] \{ 2
+, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-2.687788049209
+4507e+02," }{TEXT 210 21 " new int[] \{ 4, 0 \});" }{TEXT 210 12 "\np.
+AddCoeff(" }{TEXT 210 23 "8.0633641476283521e+02," }{TEXT 210 21 " new
+ int[] \{ 6, 0 \});" }{TEXT 210 12 "\np.AddCoeff(" }{TEXT 210 24 "-9.7
+912278935487132e+02," }{TEXT 210 21 " new int[] \{ 8, 0 \});" }{TEXT 
+210 12 "\np.AddCoeff(" }{TEXT 210 23 "4.1340739994983456e+02," }{TEXT 
+210 22 " new int[] \{ 10, 0 \});" }{TEXT 210 1 "\n" }{TEXT 210 91 "\n/
+/---------------------------------------------------------------------
+-------------------" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 0 "" }}}
+{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 0 "" }}}}
+{MARK "0 0 0" 0 }{VIEWOPTS 1 1 0 1 1 1803 1 1 1 1 }{PAGENUMBERS 0 1 2
+ 33 1 1 }

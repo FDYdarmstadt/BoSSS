@@ -1,0 +1,184 @@
+\section{Controlling \emph{CNS}}
+\label{sec:usage}
+
+All \emph{BoSSS} applications are controlled by means of an XML control file.
+In the following, it will be assumed that the reader is familiar with the basic
+structure of this file. As a result, only the most important points specific to
+\emph{CNS} will be discussed in detail.
+
+First of all, the polynomial degrees for the density (denoted by \texttt{rho}),
+the momentum field (denoted by \texttt{m}) and the energy (denoted by
+\texttt{rhoE}) have to be specified (see listing \ref{lst:degrees}, lines 3 to 5).
+Since the momentum is a vector-valued quantity, it will consist of
+one, two or three components depending on the spatial dimension of the considered
+problem domain (i.e. of the grid). The components of this vector have the same
+polynomial degree and can be addressed via \texttt{m0} to \texttt{m2} in other
+parts of the control file.
+
+\begin{lstlisting}[caption={Specification of the polynomial degrees}, 
+label={lst:degrees}]
+<fields_degree>
+	<field identification="rho" degree="1"/>
+	<field identification="m" degree="2"/>
+	<field identification="rhoE" degree="3"/>
+	
+	<!-- Optional auxiliary variables -->
+	<field identification="p" degree="1"/>
+	<field identification="u" degree="1"/>
+	<field identification="e" degree="1"/>
+	<field identification="T" degree="1"/>
+</fields_degree>
+\end{lstlisting}
+
+In addition to these required specifications, \emph{CNS} supports the
+automatic calculation of auxiliary variables (see listing \ref{lst:degrees},
+lines 8 to 11). The values of auxiliary variables specified in the
+\texttt{fields\_degree} section of the control file are calculated in every
+time-step (using a basis of the specified degree) and are included in all IO
+operations (i.e. they will be included in plots and/or stored in the database).
+Currently supported variables are the pressure (denoted by \texttt{p}), the
+velocity field (denoted by \texttt{u}), the specific inner energy (denoted by
+\texttt{e}) and the absolute temperature (denoted by \texttt{T}). Please note
+that, just as in the case of the momentum field, the velocity field is a
+vector-valued quantity. That is, it consists of one, two or theree components
+which can be addressed via \texttt{u0} to \texttt{u2} in other parts of the
+control file.
+
+Auxiliary variables are also supported when specifying initial conditions. In
+listing \ref{lst:initial_conditions}, for example, initial values have been
+specified for the density, the components of the momentum field and the pressure
+\texttt{p}. \emph{CNS} will use this information to calculate the initial energy
+automatically. Using an auxiliary variable in the initial conditions is,
+however, independent of using an auxiliary variable in the list of polynomial
+degrees. In the given example, this means that the pressure will not be an IO
+variable by default. It is important to note that this calculation may have
+influences on the quality of the projection onto the Discontinuous Galerkin
+space if the projected function cannot be represented exactly by the chosen
+polynomial space.
+
+
+\begin{lstlisting}[caption={Specification of initial conditions}, 
+label={lst:initial_conditions},float]
+<initial mode="values">
+	<values>
+		<formula>rho(x,y,z) = 1</formula>
+		<formula>m0(x,y,z) = y</formula>
+		<formula>m1(x,y,z) = z</formula>
+		<formula>m2(x,y,z) = x</formula>
+		<formula>p(x,y,z) = x^2 + y^2 + z^2</formula>
+	</values>
+</initial>
+\end{lstlisting}
+
+In general, all auxiliary variables mentioned above are also supported in the initial
+conditions sections. It should be obvious, however, that not all combinations of
+initial values lead to a well-defined problem. This fact can be illustrated by
+considering a case where initial values for the components of the momentum field,
+the inner energy and the temperature are specified in the control file. Since the inner
+energy and the temperature of an ideal gas are equivalent, \emph{CNS} will report
+an error in such a situation.
+
+Finally, \emph{CNS} defines some additional parameters in the \texttt{properties}
+section of the control file (see listing \ref{lst:properties}). Table
+\ref{fig:properties} summarizes the available options and the respective admissible 
+settings.
+
+\begin{lstlisting}[caption={Specification of \emph{CNS}-specific properties}, 
+label={lst:properties},float]
+<properties>
+	<string key="equationSystem">Euler</string>
+	<string key="convectiveFluxType">HLLC</string>
+	<string key="diffusiveFluxType">dGRP</string>
+	<float key="kappa">1.4</float>
+	<float key="Reynolds">10.0</float>
+	<float key="Mach">0.1</float>
+	<float key="Prandtl">0.71</float>
+	<string key="timeStepping">explicit</string>
+	<string key="explicitScheme">explicitEuler</string>
+	<string key="implicitScheme">implicitEuler</string>
+	<string key="implicitSolver">monkey</string>
+</properties>
+\end{lstlisting}
+
+\begin{table}
+	\centering
+
+	\begin{tabular}{l | p{8cm} | p{3cm}}
+		\hline
+		Option & Description & Admissible \hspace{3cm} values\\
+		
+		\hline\hline
+		Equation system
+		& Defines the system of partial differential equations to be solved
+		& \texttt{Euler} \hspace{3cm} \texttt{Stokes}* \hspace{3cm} 
+		\texttt{Navier-Stokes}* \\
+		
+		\hline
+		Convective flux type
+		& Chooses the flux function for the convective part of the equation system.
+		Irrelevant if the equation system is set to \texttt{Stokes}
+		& \texttt{HLL} \hspace{3cm} \texttt{HLLC}\\
+		
+		\hline
+		Diffusive flux type
+		& Chooses the flux function for the diffusive part of the equation system.
+		Irrelevant if the equation system is set to \texttt{Euler}
+		& \texttt{dGRP}*\\
+		
+		\hline
+		Kappa
+		& The heat capacity ratio $\kappa$
+		& Positive floats\\
+		
+		\hline
+		Reynolds
+		& The reference Reynolds number. Irrelevant if the equation system is set to 
+		\texttt{Euler}
+		& Positive floats\\
+		
+		\hline
+		Mach
+		& The reference Mach number
+		& Positive floats\\
+		
+		\hline
+		Prandtl
+		& The reference Prandtl number. Irrelevant if the equation system is set to 
+		\texttt{Euler}
+		& Positive floats\\
+		
+		\hline
+		Time stepping
+		& Defines the general structure of the time-stepping scheme for the
+		convective and the diffusive part of the configured equation system. The
+		option \texttt{mixed} treats the convective part explicitly and the
+		diffusive part implicitly and is thus illegal if the equation system is
+		set to \texttt{Euler}
+		& \texttt{explicit} \hspace{3cm} \texttt{mixed}\\
+		
+		\hline
+		Explicit scheme
+		& The explicit time-stepping scheme to be used
+		& \texttt{explicitEuler} \hspace{3cm} \texttt{rungeKutta} \hspace{3cm}
+		\texttt{heun}\\
+		
+		\hline
+		Implicit scheme
+		& The implicit scheme to be used. Only relevant if the time stepping is set
+		to \texttt{mixed}
+		& \texttt{implicitEuler} \hspace{3cm} \texttt{crankNicolson}\\
+		
+		\hline
+		Implicit solver
+		& The solver used for the solution of the system of equations emerging
+		from the implicit treatment of the diffusive part. Irrelevant if the
+		time stepping is set to \texttt{explicit}
+		& Any defined linear solver\\
+		
+		\hline
+	\end{tabular}
+	
+	\caption{Summary of \emph{CNS}-specific control options. Admissible values marked
+	with an asterisk are still under development}
+	\label{fig:properties}
+\end{table}

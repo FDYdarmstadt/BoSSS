@@ -1,0 +1,179 @@
+\section{The discretization of spatial differential operators}
+
+\begin{myDef}[Conservative Operator]
+For...
+\begin{packed_itemize}
+  \item a list of \emph{domain variables}, $U := (u_0,\cdots,u_{\Lambda-1}) \in \ceins(\Omega)^\Lambda$ and
+  \item a list of \emph{codomain variables}, $W := (w_0,\cdots,w_{\Gamma-1}) \in L^2(\Omega)^\Gamma$
+\end{packed_itemize}
+a mapping
+\[
+Op:\ceins(\Omega)^\Lambda \rightarrow L^2(\Omega)^\Gamma, \ U \mapsto W = Op(U)
+\]
+is called \emph{conservative operator} if
+every codomain variable $w_\gamma$ can be written as
+\[
+  w_\gamma = \divergence{ \vec{f}_\gamma(\vec{x},U) } + q_\gamma(\vec{x},U).
+\]
+The functions
+\begin{packed_itemize}
+ \item $ \vec{f}_\gamma(\vec{x},U) \in \left( \ceins (\real^D \times \real^\Lambda) \right)^D$
+      are called the flux and
+ \item $  q_\gamma(\vec{x},U) \in L^2(\real^D \times \real^\Lambda)$
+      are called the source
+\end{packed_itemize}
+of codomain variable $w_\gamma$.
+\label{ConservativeOp}
+\end{myDef}
+
+\begin{myNot}[Outer normal]
+For $\vec{x} \in \partial K_j$, $\vec{n}_\vec{x} \in \partial \mathcal{S}_D$ denotes an outer normal
+field for $K_{\tau(j)}$, for
+those points of $\partial K$ where an outer normal is defined, which may not be the case
+for a null-subset of $\partial K$
+i.e. ``edges'' and ``corners''.
+\end{myNot}
+
+\begin{myDef}[Conservative operators on product spaces of $DG_p$]
+Again, like in (\ref{ConservativeOp}), there is
+a list of domain variables,
+$U := (u_0,\cdots,u_{\Lambda-1}) \in DG_{(p_0, \cdots, p_{\Lambda-1})} =: Dom$
+and a list of codomain variables
+$W := (w_0,\cdots,w_{\Gamma-1}) \in DG_{(l_0, \cdots, l_{\Gamma-1})} =: Cod$.
+A mapping
+\[
+ OP_h :
+ DG_{p_0} \times \cdots \times DG_{p_{\Lambda-1}}
+ \rightarrow
+ DG_{l_0} \times \cdots \times DG_{l_{\Gamma-1}},
+ \
+ U \mapsto W = Op_h(U)
+\]
+is called a DG-discretization of the conservative operator $Op$
+if the $n$-th DG coordinate of variable $w_\gamma$ in cell $K_{\tau(j)}$, $\tilde{w}_{\gamma,j,n}$
+can be written as
+\[
+  \tilde{w}_{\gamma,j,n} =
+  \int_{\partial K_{\tau(j)}}
+       F_\delta \ \phi_{j,n}
+  \ \textrm{dS}
+  -
+  \int_{K_{\tau(j)}} \left(
+       \vec{f}_\gamma \cdot \nabla \phi_{j,n}
+       -
+       q_i \ \Phi_{j,n}
+  \right) \ \textrm{d}\vec{x}
+  .
+\]
+The function $F_\delta(\vec{x},U^\textrm{in},U^\textrm{out},\vec{n}_\vec{x})$ is called the \emph{Riemannian}
+for the flux $\vec{f}_\gamma(\vec{x},U)$. Their properties are described in below, see (\ref{riemannians}).
+Here, for $\vec{x} \in \partial K_{\tau(j)}$
+\[
+  U^\textrm{in} := \lim_{\stackrel{\vec{y} \rightarrow \vec{x}}{\vec{y} \in K_{\tau(j)}}}(U(\vec{y}))
+  \textrm{ and }
+  U^\textrm{out} := \lim_{\stackrel{\vec{y} \rightarrow \vec{x}}{\vec{y} \notin K_{\tau(j)}}}(U(\vec{y}))
+  .
+\]
+By coordinate mappings, the conservative operator can be written as a mapping
+\[
+  Op_h: \real^{dim(Dom)} \rightarrow \real^{dim(Cod)}, \quad \tilde{U} \mapsto \tilde{W}.
+\]
+\label{ConservativeOp_h}
+\end{myDef}
+
+\begin{myRem}[On Riemannians]
+The following properties are essential for proper defined Riemannians:
+\begin{packed_itemize}
+  \item $F_\gamma(\vec{x},U,U,\vec{n}_{\vec{x}}) = \vec{n}_{\vec{x}} \cdot \vec{f}_\gamma(\vec{x},U)$,
+  i.e ``$F_\gamma$ is an approximation to $\vec{n}_{\vec{x}} \cdot \vec{f}_\gamma$''
+  \item $F_\gamma(\vec{x},U,V,\vec{n}_{\vec{x}}) = -F_\gamma(\vec{x},V,U,-\vec{n}_{\vec{x}})$
+  \item $\left| F_\gamma(\vec{x},U,V,\vec{n}_{\vec{x}}) - \vec{n}_{\vec{x}} \cdot \vec{f}_\gamma(\vec{x},U) \right| \leq L | U-V |$
+  for some Lipschitz constant $L \in \realpos$
+\end{packed_itemize}
+\label{riemannians}
+\end{myRem}
+
+\begin{myDef}[Consistency of operators]
+An operator $Op_h$ like in (\ref{ConservativeOp_h}) is called consistent
+with an operator $Op$ like in (\ref{ConservativeOp}) with convergence
+order $k$ if
+\[
+ \left\| Op_h(Proj_p(U)) - Proj_p( Op(U) ) \right\|_2 \leq h_\textrm{max}^k \cdot c(U)
+\]
+for any $U \in \ceins(\Omega)^\Lambda$ and a constant $c(U) \in \realpos$ which depends on $U$.
+\label{consistency_of_operators}
+\end{myDef}
+
+\begin{myRem}
+The motivation for (\ref{consistency_of_operators}) is the
+following ``approximately'' commutative diagram:
+%\begin{center}
+\[
+\begin{xy}
+  \xymatrix{
+      H^1(\Omega)^\Lambda \ar[r]^{Op} \ar[d]_{Proj}  &   (L^2(\Omega))^\Gamma  \ar[d]^{Proj}  \\
+      \prod_\delta DG_{p_\delta} \ar[r]_{Op_h}       &  \prod_\gamma DG_{l_\gamma}
+  }
+\end{xy}
+% ----------------------------------------#
+\quad
+\begin{xy}
+  \xymatrix{
+      U \ar@{|->}[rrrr]^{Op} \ar@{|->}[d]_{Proj} & &             &          &  W  \ar@{|->}[d]^{Proj}  \\
+      U_h \ar@{|->}[rr]_{Op_h}                   & &  Op_h(U_h)  &  \approx &  W_h
+  }
+\end{xy}
+\]
+(Here, $Proj$ is an abbreviation for
+$( Proj_{p_0}, \cdots, Proj_{p_{\Lambda-1}} )$
+and
+$( Proj_{l_0}, \cdots, Proj_{l_{\Gamma-1}} )$.
+\end{myRem}
+
+\begin{myRem}[Additive component decomposition of conservative operators in BoSSS]
+In BoSSS, a conservative operator is called
+\emph{spatial difference operator}\coderm{BoSSS.Foundation.SpatialDifferenceOperator}
+and is specified as an additive composition of operators, which are called
+\emph{equation components}\coderm{BoSSS.Foundation.IEquationComponent}.
+The domain and codomain variables for the  spatial difference operator, are specified as lists
+of symbolic names\coderm{BoSSS.Foundation.SpatialDifferentialOperator.DomainVar} \coderm{BoSSS.Foundation.SpatialDifferentialOperator.CodomainVar}.
+Each equation component itself is a conservative operator with exactly one codomain variable,
+i.e. it maps $\prod_\delta DG_{p_\gamma} \rightarrow DG_l$.
+The domain variables of the equation components are specified as some
+sub-list\coderm{BoSSS.Foundation.IEquationComponent.ArgumentOrdering}
+of the domain variables list of the spatial difference operator.
+The equation components may be classified into \emph{fluxes} and \emph{sources},
+and wether they are either \emph{linear} or \emph{nonlinear}:
+\begin{packed_itemize}
+  \item nonlinear fluxes\coderm{BoSSS.Foundation.INonlinearFlux},\coderm{BoSSS.Foundation.INonlinearFluxEx};
+  \item nonlinear sources\coderm{BoSSS.Foundation.INonlinearSource};
+  \item linear fluxes\coderm{BoSSS.Foundation.ILinearFlux};
+  \item linear sources\coderm{BoSSS.Foundation.ILinearSource};
+\end{packed_itemize}
+If more than one equation component is specified for one codomain variable, they are
+added\coderm{BoSSS.Foundation.SpatialDifferentialOperator.EquationComponents}.
+\end{myRem}
+
+\begin{myRem}[Evaluation of conservative operators in BoSSS]
+A conservative operator, or spatial differential operator $Op_h$ can be evaluated
+in BoSSS
+by\coderm{BoSSS.Foundation.SpatialDifferentialOperator.Evaluate(...)}
+or\coderm{BoSSS.Foundation.SpatialDifferentialOperator.Evaluator.Evaluate(...)}.
+If $Op_h$ is affine-linear, i.e.
+\[
+  Op_h(\tilde{U}) = \mathcal{M} \cdot \tilde{U} + b,
+\]
+the (sparse) matrix $\mathcal{M}$ and the affine vector $b$ can
+be computed
+by\coderm{BoSSS.Foundation.SpatialDifferentialOperator.ComputeMatrix(...)}.
+\end{myRem}
+
+
+%\subsection{Nonlinear fluxes}
+
+%\subsection{Nonlinear sources}
+
+
+%\subsection{Linear sources}
+
+%\subsection{Fluxes for Interior Penalty Methods}

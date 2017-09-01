@@ -1,0 +1,55 @@
+Copyright (c) 2017, Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsmechanik
+
+This will install the BoSSS software.
+By accepting the agreement, you accept the license of BoSSS,
+the licenses of the Third party Software listed below, which BoSSS gratefully relies on and
+the EULA of ACML.
+
+# BoSSS- License:
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+
+# ACML END USER LICENSE AGREEMENT:
+http://developer.amd.com/wordpress/media/2012/10/ACML-EULA.pdf
+
+# Intel MKL
+https://software.intel.com/en-us/license/intel-simplified-software-license
+
+# Open Source Licenses
+
+CGNS:					LibPNG-Licence
+FastColored TextBox:	LGPLv3
+Gnuplot:				GnuPlot-Licence
+HDF5.Net:				HDF5-Licence
+HYPRE:					LGPL-V2.1
+LibCMDLine:				MIT-licence
+Log4Net:				ApacheV2-Licence
+Math.Net Numerics:		MIT/X11-Licence
+MUMPS:					CeCILL-C license
+JSON.Net:				MIT-Licence
+Metis:					Apache V2
+Mono:					MIT/X11-licence
+NUNIT:					MIT-Licence
+SSH.Net:				BSD-licence
+SharpSSH:				BSD-Licence (3-clause)
+SLN-Tools:				MIT-licence
+Zlib:					LibPNG-Licence
+
+http://www.libpng.org/pub/png/src/libpng-LICENSE.txt
+https://www.gnu.org/licenses/lgpl-3.0.de.html
+https://www.gnu.org/licenses/old-licenses/lgpl-2.1
+https://opensource.org/licenses/MIT
+https://opensource.org/licenses/BSD-3-Clause
+
+
+

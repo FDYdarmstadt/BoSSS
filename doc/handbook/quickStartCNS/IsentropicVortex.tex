@@ -1,0 +1,256 @@
+% !TeX spellcheck = en_EN
+%\documentclass[12pt,a4paper]{article}
+%\usepackage{import}
+%\subimport{../}{uebung.tex}
+%
+%%\toggletrue{showSolution}
+%
+%
+%\title{\thetitle{}\\Exercise 4}
+%\date{\WeeksAfter{3}}
+%
+%
+%\begin{document}
+
+
+\BoSSSopen{quickStartCNS/IsentropicVortex}
+\graphicspath{{quickStartCNS/IsentropicVortex.texbatch/}}
+%\BoSSSopen{IsentropicVortex}
+%\graphicspath{{IsentropicVortex.texbatch/}}
+
+\BoSSScmd{
+///\section*{What´s new}
+///\begin{itemize}
+/// \item running a simple simulation with the CNS solver
+/// \item the important input data to solve the Euler equations
+/// \item generating a simple mesh by using the \BoSSS{} internal mesher
+/// \item the post-processing of the data, i.e. visualization in Paraview or VisIt
+///\end{itemize}
+///
+///\subsection*{Prerequisites}
+///\begin{itemize}
+/// \item the \BoSSS{} framework
+/// \item a visualization tool, e.g Paraview or VisIt
+/// \item the knowledge how to setup a database for \BoSSS{}
+///\end{itemize}
+///
+///\section*{Problem statement}
+///We only briefly describe the non dimensional Euler equations in 2D
+/// \begin{equation*}
+///\del{\vec{U}}{t}+\del{\vec{F}^c_j(\vec{U})}{x_j}= 0,
+///\label{eq:euler_sys}
+///\end{equation*}
+///where $\vec{U}$ are the conserved flow variables and $\vec{F}^c_x$  are the convective fluxes, i.e.
+///\begin{align*}
+///\vec{U} = \begin{pmatrix}
+///  \density{}\\
+///  \momentum_i\\
+///  \energy{}
+///\end{pmatrix}, \quad \textrm{and} \quad
+///\vec{F}^c_i = \begin{pmatrix}
+///  \momentum_i\\
+///  \momentum_i \velocity_j + \frac{1}{\heatCapacityRatio \reference{\Mach}^2}\pressure \delta_{ij}\\
+///  \velocity_j \left(\energy{}+\pressure{}\right)
+///\end{pmatrix}.
+///\end{align*}
+///Note: In our non dimensional equations, we introduce $\reference{\Mach}$. 
+///
+///These Quick Start tutorials are aimed to show some of the main features of the compressible flow 
+///solver (Compressible Navier-Stokes (CNS)) in the \BoSSS{} framework. As already mentioned 
+///in the introduction, \BoSSS{} uses a C\# code based input data and interprets these in 
+///the \emph{REPL} fashion. This gives us more flexibility in the way how we can start a 
+///simulation. We can have the traditional way of defining an input file, where we define all 
+///important parameters in C\# code, or we can also use some predefined functions in the framework 
+///to generate our input data and manipulate them interactively in the \BoSSSpad{}.\\ 
+///
+///As an example, we will simulate the well known isentropic vortex for the euler equations. 
+///\section{Isentropic vortex}
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+restart;
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// \subsection{Interactive mode}
+/// We start with the interactive mode and load the namespace.
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We create, resp. open a \BoSSS database:
+var myDatabase = OpenOrCreateDatabase("C:\textbackslash \textbackslash tmp\textbackslash \textbackslash CNS\_db");
+ }
+\BoSSSexe
+\BoSSScmd{
+using CNS;
+ }
+\BoSSSexe
+\BoSSScmd{
+typeof(CNS.Program).Assembly.Location;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We load the input data from some function within the Framework. 
+/// The class \verb|ControlExamples| provides some predefined control sets for 
+/// different typical test cases, i.a. the isentropic vortex.
+/// For the isentropic vortex, you have to specify 
+/// \begin{itemize}
+/// \item path to a database (here: EMPTY path)
+/// \item number of cells in each direction (here: 20)
+/// \item DG order (here: 2)
+/// \item advection velcoity of the vortex (here: 1.0)
+/// \end{itemize}
+int noOfCellsPerDirection = 20;       \newline 
+var c = ControlExamples.IsentropicVortex(myDatabase.Path,      \newline 
+\btab \btab \btab \btab \btab \btab \btab \btab \btab \btab  noOfCellsPerDirection,2,1.0);\newline 
+c.savetodb = true;       \newline 
+/// Now, we have a set of input data stored in our variable \verb|c| and we 
+/// can have a look at different parameters directly via \code{BoSSSpad}.
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \subsection{How to define/change input data}
+/// In this section we will walk you through the most important parameters for 
+/// running the test case. We start with the grid and use the ability of \BoSSS\
+/// to generate simple grids with its own mesh generator. Once we start the simulation,
+/// the control object \verb|c| is parsed and the grid defined by the \verb|GridFunc|
+/// is generated on the fly and stored in the database. Here, we defined a 
+/// \verb|delegate| function which returns a uniform cartesian grid. First, we have to
+/// define a 1-D array, which spans from -10 to 10 and is divided into the number 
+/// of cells, which we previously set to \verb|int noOfCellsPerDirection = 20|. 
+/// The function \verb|Grid2D.Cartesian2DGrid| generates a
+/// uniform 2-D grid out of this array by using it for x and y direction
+/// Additionally we specify periodic boundary conditions in x and y direction
+/// by setting \verb|periodicX: true| and \verb|periodicY: true|. \\
+c.GridFunc = delegate \{       \newline 
+   double[] nodes = GenericBlas.Linspace(-10, 10, noOfCellsPerDirection + 1);       \newline 
+   var grid = Grid2D.Cartesian2DGrid(nodes, nodes,       \newline 
+\btab \btab \btab \btab \btab \btab \btab \btab \btab  periodicX: true, periodicY: true);       \newline 
+   return grid;       \newline 
+\};
+ }
+\BoSSSexe
+\BoSSScmd{
+/// The \code{CNS} solver is able to solve the Euler and the compressible Navier-Stokes equations. By setting
+c.ActiveOperators;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// we only use the convective fluxes, i.e the Euler equations, and set it to
+c.ConvectiveFluxType;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Note: Optimized means in this case, that this is the classical HLLC flux, but implemented in an optimized version. \\
+/// As initial conditions, we choose the analytical solution, which can be found in various publications, e.g. Hu (2006).
+/// The Mach number is set in the following:
+c.MachNumber
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Further, we have to define a simulation time, i.e
+c.Endtime;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Finally, we need a time stepping scheme to run the simulation:
+c.ExplicitScheme;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// with order
+c.ExplicitOrder;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// These are all predefined input values, which were set by calling \verb|ControlExamples.IsentropicVortex(...)|.
+/// Since we are in the interactiv mode, we can change them directly in the \code{BoSSSPad}.
+/// For example, we can reduce the order of our timestepping scheme to 3, 
+/// because we only use DG order 2:
+c.ExplicitOrder = 3;      \newline 
+c.ExplicitOrder;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Or we change the Mach number to
+c.MachNumber = 0.7;    \newline 
+c.MachNumber
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \subsection{Run a simulation}
+/// We adjusted our input values and now we can run a simulation.
+/// In the interactive mode, we now have to create an instance of our solver
+var solver = new Program();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// initialize the solver with our control object \verb|c|
+solver.Init(c);
+ }
+\BoSSSexe
+\BoSSScmdSilent{
+/// BoSSScmdSilent BoSSSexeSilent
+c.PrintInterval = 5;
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// and finally start the simulation by calling
+solver.RunSolverMode();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We can see that we needed 30 timesteps to advect the vortex.
+/// The output can be specified by 
+c.PrintInterval
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We release memory occupied by the solver:
+solver.Dispose();
+ }
+\BoSSSexe
+\BoSSScmd{
+solver.CurrentSessionInfo
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We suggest to use larger intervalls, when you run simulations which
+/// require lots of timesteps.
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \subsection{Console mode}
+/// We can also run this simulation in the ``traditional'' way, which most
+/// of you are familiar with from other academical codes. We define an input file,
+/// which is nothing else than the above C\# code. We can run it by calling
+/// \verb|CNS.exe -c IsentropicVortex.cs|. You can find the input file in 
+/// ControlExamples folder in the doc directory.
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \subsection{Postprocessing}
+/// We saved our data in the database and last we want to postprocess it, 
+/// i.e visualize the individual fields like density, momentum or pressure.
+/// Note: If you have run the simulation in the console mode, you now have to start 
+/// the \BoSSSpad{}.
+/// In our example, we find the corresponding session in our first database as first session
+myDatabase.Sessions.First();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// To export data in the Tecplot format, we just need to export it:
+//databases.First().Sessions.First().Export().Do()
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We can open the folder directly by using
+//databases.First().Sessions.First().OpenExportDirectory()
+ }
+\BoSSSexe
+\BoSSScmd{
+/// and here we find \verb|*plt| files with our data.
+/// For more information about our databases and useful commands for postprocessing,
+/// we refer to our tutorials about the database and the database command overview.
+ }
+\BoSSSexe

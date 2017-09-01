@@ -1,0 +1,43 @@
+http://www.cs.sandia.gov/CRF/Aztec_download.html
+=> Nr. 5: Müssen wir da was machen?
+=> Nr. 7: Distribution to US Government Contractors
+=> Nr. 9: No Distribution
+
+Aztec LICENSE AGREEMENT
+
+NOTICE: The United States Government is granted for itself and others acting on its behalf a paid-up, nonexclusive, irrevocable worldwide license in this data to reproduce, prepare derivative works, and perform publicly and display publicly. Beginning five (5) years after December 5, 1995, the United States Government is granted for itself and others acting on its behalf a paid-up, nonexclusive , irrevocable worldwide license in this data to reproduce, prepare derivative works, distribute copies to the public, perform publicly and display publicly, and to permit others to do so.
+
+NEITHER THE UNITED STATES GOVERNMENT, NOR THE UNITED STATES DEPARTMENT OF ENERGY, NOR SANDIA CORPORATION, NOR ANY OF THEIR EMPLOYEES, MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS.
+
+tex2html_wrap67 (hereinafter referred to as ``LICENSEE'') and Sandia Corporation (hereinafter referred to as ``SANDIA''), operator of Sandia National Laboratories, agree as follows:
+
+SANDIA grants to LICENSEE a fully-paid, nonexclusive, non-transferable and noncommercial license to use, for research, development and demonstration purposes only, the Copyrighted software described in Appendix A, and associated documentation furnished hereinafter called the ``Technology''.
+LICENSEE acknowledges that the Technology is a research tool still in the development stage; that it is being supplied AS IS, without any accompanying services or improvements from SANDIA; and that this license is entered into in order to encourage scientific collaboration or demonstration and testing aimed at further development and application of the Technology.
+Because of the collaborative and/or demonstration nature of this arrangement, this license is royalty-free.
+A copy or description of the Technology and supporting documentation, if any, will be loaned to LICENSEE upon execution of this agreement. The agreement shall remain in force as long as LICENSEE retains possession of the Technology.
+LICENSEE agrees to provide SANDIA with any enhancements, including complete translations or modifications made by LICENSEE to Technology. Such enhancements shall be usable royalty-free by SANDIA at Sandia National Laboratories, and may be transferred by SANDIA to other users of the Technology.
+LICENSEE shall observe all applicable United States and foreign laws, regulations, rules and decrees with respect to the transfer of Technology and related technical data to foreign countries, including, without limitation, the U.S. Foreign Corrupt Practices Act, Export Administration Act, U.S. Anti-Boycott Laws, Arms Export Control Act and any regulations promulgated thereunder, including, but not limited to, the U.S. Export Administration Regulations and International Traffic in Arms Regulations (ITAR). FAILURE TO CONFORM TO SUCH LAWS, REGULATIONS, RULES AND DECREES MAY RESULT IN CRIMINAL LIABILITY UNDER U.S. LAW.
+The U.S. Government retains in this Technology, a paid-up, non-exclusive, irrevocable worldwide license to reproduce or practice the Technology, including the right to use or distribute to Government contractors.
+Neither SANDIA, the U.S. Government, the U.S. Department of Energy, nor any of their employees, makes any warranty, expressed or implied, or assumes any legal liability or responsibility for the accuracy, completeness, or usefulness of any information, apparatus, product, or process disclosed, or represents that its use would not infringe privately owned rights, on account of or arising from this Agreement or use of the Technology.
+LICENSEE agrees that it will use Technology solely for internal purposes, and that it shall not distribute or transfer Technology to any person without prior written permission from SANDIA.
+LICENSEE agrees to use Technology at a single Site. A separate License is required for each Site at which Technology will be used. Knowing the location of the Technology is required should updates to the Technology be required.
+LICENSEE agrees not to copy Technology, in whole or in part, except as required for use by LICENSEE at the designated Site, for modifications, for backup purposes, or for archive purposes. LICENSEE agrees to maintain appropriate records of the number and location of any such copies of Technology. LICENSEE may modify Technology for its own use; provided however, that any and all updated versions remain the property of SANDIA and all conditions of this Agreement continue to apply. Further, LICENSEE agrees to maintain records of such modifications and supply SANDIA with copies of the updates and all related information.
+All liaison between LICENSEE and SANDIA shall be between the following:
+Michael A. Heroux
+Department 9214
+Mail Stop 1110
+Sandia National Laboratories
+P.O. Box 5800
+Albuquerque, NM 87185-1110
+
+tex2html_wrap67
+
+Title to the Technology and any material associated therewith shall at all times remain with SANDIA, and LICENSEE agrees to preserve same.
+LICENSEE agrees that a suitable protection plan will be in place before technology is installed at the agreed upon Site.
+Nothing in this Agreement shall be construed as conferring rights to use in advertising, publicity, or otherwise, any trademark or the name of ``SANDIA''.
+This Agreement shall be construed, interpreted, and applied in accordance with the law of the state of New Mexico. Any legal action arising out of this Agreement or use of Technology under this Agreement shall be filed in a court in the state of New Mexico.
+APPENDIX A
+
+Aztec is an iterative library that greatly simplifies the parallelization process when solving the linear system of equations, Ax = b, where, A, is a user supplied n by n sparse matrix, b is a user supplied vector of length n and x is a vector of length n to be computed. Aztec is intended as a software tool for users who want to avoid cumbersome parallel programming details but who have large sparse linear systems which require an efficiently utilized parallel processing system. A collection of data transformation tools are provided that allow for easy creation of distributed sparse unstructured matrices for parallel solution. Once the distributed matrix is created, computation can be performed on any of the parallel machines running Aztec: nCUBE 2, IBM SP2 and Intel Paragon, MPI platforms as well as standard serial and vector platforms.
+
+Aztec includes a number of Krylov iterative methods such as conjugate gradient (CG), generalized minimum residual (GMRES) and stabilized biconjugate gradient (BiCGSTAB) to solve systems of equations. These Krylov methods are used in conjunction with various preconditioners such as polynomial or domain decomposition methods using LU or incomplete LU factorizations within subdomains. Although the matrix, A, can be general, the package has been designed for matrices arising from the approximation of partial differential equations (PDEs). The software and associated documentation and literature are distributed electronically via the Internet.

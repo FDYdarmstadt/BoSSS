@@ -1,0 +1,3 @@
+SLN Tools is licenced under the MIT-licence
+see
+"../../libs/Tools for SLN File/licence.txt"

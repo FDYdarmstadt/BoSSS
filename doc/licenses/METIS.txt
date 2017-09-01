@@ -1,0 +1,4 @@
+http://glaros.dtc.umn.edu/gkhome/metis/metis/overview
+
+Apache License V2
+“A Fast and Highly Quality Multilevel Scheme for Partitioning Irregular Graphs”. George Karypis and Vipin Kumar. SIAM Journal on Scientific Computing, Vol. 20, No. 1, pp. 359—392, 1999.

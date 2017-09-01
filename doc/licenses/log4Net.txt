@@ -1,0 +1,1 @@
+Apache V2 licence, see ../../libs/log4net-1.2.10/licence.txt

@@ -1,0 +1,153 @@
+\section{Numerical examples}
+\label{sec:examples}
+
+This section briefly outlines two numerical experiments and the respective
+results that have been used to validate \emph{CNS}. It should however be noted
+that the given examples only cover a subset of all possible applications and
+that a more thorough validation has to be a subject of further studies.
+Nevertheless, the obtained results are encouraging and suggest that the overall
+implementation produces reasonable results. Further studies will focus on
+the role of the boundary conditions in different flow configurations and the
+convergence properties of the implemented scheme.
+
+
+\subsection{Shock tube problems}
+
+Shock tube problems have been studied extensively in the context of approximate
+Riemann solvers (e.g., see \cite{Toro2009}) because they are realizations of the
+Riemann problem \ref{eqn:Riemann_problem}. Hence, they are an adequate measure
+for the validation of the implementation of the numerical flux function
+introduced in section \ref{sec:numerics}.
+
+Figure \ref{fig:shock_tube_initial}
+shows the initial configuration of such a shock tube problem. The diaphragm in
+the middle separates two regions (denoted by 1 and 4) with different densities
+and pressures. At $t=0$, the diaphragm breaks and a set of waves starts to
+spread from the plane of discontinuity. A qualitative outline of this pattern is
+given in figure \ref{fig:shock_tube_final}. In regions 1 and 4, the fluid is
+still unaffected by the disturbances due to the finite speed of wave
+propagation. On the other hand, two new regions (denoted by 2 and 3) have
+formed. While the transition between region 1 and region 2 is given by a
+right-travelling shock wave, regions 2 and 3 are separated by a 
+contact wave (i.e. the pressure is continuous as discussed in section
+\ref{sec:introduction}) following the shock. On the other side of the tube,
+regions 3 and 4 are separated by smooth, left-travelling expansion wave.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.8\textwidth]{shockTubeDescriptionInitial}
+	\caption{Initial configuration of a shock tube problem. Regions 1 and
+	4 are separated by a diaphragm that breaks at $t=0$}
+	\label{fig:shock_tube_initial}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.8\textwidth]{shockTubeDescriptionFinal}
+	\caption{Configuration in the shock tube after the diaphragm has broken
+	($t>0$)}
+	\label{fig:shock_tube_final}
+\end{figure}
+
+The classical configuration often referred to as \emph{Sod shock tube} with
+initial conditions $\vec{u} = \vec{0}$, $\rho_1 = 0.125$, $p_1 = 0.1$,
+$\rho_4 = 1.0$ and $p_4 = 1.0$ has been simulated in one, two and three space
+dimensions. The rectilinear grid invariably consisted of 100 cells in x
+direction, while the y and the z direction were, where applicable, discretized
+each with 10 cells. Please note that this test case could only be conducted
+using zeroth order polynomials because the discontinuous nature of the exact
+solution requires the application of limiting techniques in order to avoid
+non-physical oscillations (also known as \emph{Gibbs phenomenon}) if higher
+order polynomials are employed.
+
+\begin{figure}
+	\centering
+	\subfigure[Pressure]{
+		\includegraphics[width=.45\textwidth]{shockTube2d2dsPressure}
+		\label{fig:shockTubePressure}}
+	\quad
+	\subfigure[Mach number]{
+		\includegraphics[width=.45\textwidth]{shockTube2d2dsMach}
+		\label{fig:shockTube1dMach}}
+	\caption{State inside the shock tube at $t=0.2$}
+	\label{fig:shockTubeResults}
+\end{figure}
+
+As expected, the numerical results were virtually identical in all three cases
+which is why only the one-dimensional results will be discussed in the
+following. In figure \ref{fig:shockTubeResults}, the numerical solution obtained
+is compared to the exact solution which can e.g. be found in
+\cite{Anderson2002}. The numerical solution obviously is in good agreement
+with the analytical results which implies a correct implementation of the HLLC
+flux presented in section \ref{sec:numerics}. However, the given test case is
+hardly influenced by boundary conditions which is why this aspect will be the
+focus of the following test cases.
+
+
+\subsection{Subsonic flow through a converging-diverging nozzle}
+
+As a second example, we investigate the subsonic flow through a symmetric
+converging-diverging nozzle. The upper half of the problem geometry (which goes
+back to \cite{Liou1987}) is displayed in figure \ref{fig:nozzle_grid}. Its cross
+sectional area $A$ is parametrized according to
+\begin{equation}
+	\label{eqn:parametrizationNozzle}
+	A = \begin{cases}
+		1.75 - 0.75 \cos((0.2 x - 1.0) \pi)
+			& \mathrm{if~~} x < 5.0\\
+		1.25 - 0.25 \cos((0.2 x - 1.0) \pi)
+			& \mathrm{if~~} 5.0 \leq x \leq 10.0
+	\end{cases}
+\end{equation}
+which leads to a throat area of $1.0$. Due to the symmetry of the problem, only
+the upper part of the geometry is meshed while the centreline is treated as a
+symmetry plane. For the following considerations, a coarse, a medium and a fine
+grid consisting of 1520, 6376 and 10015 cells respectively have been used.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=\textwidth]{nozzle81CoarseGrid}
+	\caption{Computational domain and coarse grid for the flow through a
+	converging-diverging nozzle}
+	\label{fig:nozzle_grid}
+\end{figure}
+
+\cite{Anderson2002} gives an analytical solution for the flow conditions at the
+centreline for a quasi one-dimensional flow starting from reservoir conditions
+(i.e. the total pressure $p_t$ and the total temperature $T_t$ of the fluid at
+rest are given at the inlet) with a prescribed pressure $p_\mathrm{exit}$ at the
+outlet. In this particular case, the settings $p_t = 1.0$, $T_t = 1.0$ and
+$p_\mathrm{exit} = 0.81$ have been used. This leads to subsonic flow conditions
+throughout the whole nozzle and a Mach number of
+$\mathrm{Ma}_\mathrm{throat} \approx 0.87$ in centre of the throat. Moreover,
+the throat area exhibits strong gradients of the flow parameters in this
+configuration which renders it an ideal candidate for the evaluation of the
+quality of numerical solutions.
+
+\begin{figure}
+	\centering
+	\subfigure[Pressure]{
+		\includegraphics[width=.45\textwidth]{nozzle81comparisonPressure}
+		\label{fig:nozzle81comparisonPressure}}
+	\quad
+	\subfigure[Mach number]{
+		\includegraphics[width=.45\textwidth]{nozzle81comparisonMach}
+		\label{fig:nozzle81comparisonMach}}
+	\caption{Comparison of the results at the centreline of
+		the converging-diverging}
+	\label{fig:nozzle81comparison}
+\end{figure}
+
+An illustration of the results obtained using \emph{CNS} can be found in figure
+\ref{fig:nozzle81comparison} where the computed pressures and Mach numbers
+are compared to the respective theoretical values. The zeroth order solution on
+the coarse grid significantly underestimates the Mach number and overestimates
+the pressure in the throat. As expected, the agreement with the exact solution
+can be improved significantly by either increasing the number cells or the
+polynomial degree.
+
+It should however be pointed out that the use of first order Ansatz functions
+leads to a considerably better agreement with the analytical solution compared
+to the zeroth order solution on grids with a higher overall number of degrees
+of freedom. This result is encouraging and demonstrates the potential advantage
+over classical Finite Volume schemes.

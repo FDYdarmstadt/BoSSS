@@ -1,0 +1,867 @@
+\documentclass[a4paper,10pt]{report} % book, amsbook, amsproc ?
+\input{common.tex}
+
+
+
+% Title Page
+\title{The \BoSSS{} Handbook}
+\author{
+Florian Kummer \and
+Björn Müller \and
+Markus Geisenhofer \and
+Judith Kahle \and % hat an den original-Übungen gearbeitet
+Dennis Krause \and
+Martin Smuda \and
+Thomas Utz  \and
+Stephan Krämer-Eis \and
+Dominik Dierkes \and
+Anne Kikker \and
+Markus Keil % hat das ursprüngliche DBEv2 Manual erstellt
+}
+
+
+\begin{document}
+\nobibliography*
+\maketitle
+
+\clearpage
+
+
+\vfill
+
+%Please cite this document as: \\
+
+
+
+\includegraphics[width=4cm]{by-nc-sa}\\
+
+This work is licensed under a Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
+\url{https://creativecommons.org/licenses/by-nc-sa/4.0/}
+
+\clearpage
+
+\tableofcontents
+
+
+% ################################################################################
+% ################################################################################
+% ################################################################################
+\part{Introduction}
+\label{sec:introduction}
+% ################################################################################
+% ################################################################################
+% ################################################################################
+
+
+% ********************************************************************************
+% ********************************************************************************
+\chapter{Aim and focus of the \BoSSS{} code}
+% ********************************************************************************
+% ********************************************************************************
+
+\BoSSS{} (Bounded Support Spectral Solver) is a flexible framework for the 
+development, evaluation and application of numerical discretization schemes based on the 
+\ac{dg}  method (see also section \ref{sec:coreConcepts_dgMethods}). 
+Its development has been initiated at the Chair of Fluid Dynamics in 2008 in
+order to establish a general foundation for the development of higher order discretizations for 
+challenging physical problems.
+Over the years,
+\BoSSS{} developed into fully-featured library for discontinuous Galerkin methods, including facilities for
+workflow management and the rapid prototyping discretization of partial differential equations.
+
+\paragraph{Research codes:}
+One aim for \BoSSS{} is to serve as a research code: 
+Obviously, it is not the main goal of e.g. a PhD study in mechanical engineering to become a 
+master-class C++ or FORTRAN hacker. The reality, however, is that PhD students with a research topic in
+the domain of applied numerical methods spend a significant amount of their PhD time on the solution
+of software issues for which they never got trained. Similar problems persist – in a milder form – on
+advanced researcher level.
+
+Especially the complexity of \ac{dg} methods is:
+\begin{itemize}
+\item[(i)] a barrier for \emph{new researchers} in the field,
+
+\item[(ii)] a hindrance for experienced researchers \emph{exploring new ideas}, and
+
+\item[(iii)] a formidable obstacle for reviewers trying to \emph{reproduce results}.
+\end{itemize}
+The development of \BoSSS{} has thus been initiated to overcome these issues and to bridge the gap
+between MATLAB prototypes with very limited performance and generality on the one hand, and highly-
+optimized single-purpose research codes on the other hand.
+
+Therefore, we consider \BoSSS{} a \emph{rapid prototyping} framework:
+it allows users to create
+fully parallel, flexible prototypes for new discretization schemes within hours, which can gradually be
+scaled up to mature high-performance solvers,
+see also figures \ref{fig:BoSSS-Philosophy-2} and \ref{fig:BoSSS-Philosophy-1}.
+
+\begin{figure}[!h]
+\begin{center}
+\includegraphics[width=0.8\textwidth]{figures/BoSSS-philosophy-2}
+\end{center}
+\caption{
+While MATLAB prototypes are usually implemented quickly (at least for simple numerical methods)
+they usually offer limited performance.
+On the other side of the spectrum, there are application-specific high-performance codes,
+tuned towards a specific physical problem.
+The intention of \BoSSS{} is to bridge this gap: although it is slightly more difficult
+than MATLAB,
+%(general orientation of a new user in a new framework, C\# language is more complex than MATLAB scripts)
+it offers higher performance and complete MPI parallelism.
+Application-specific HPC codes will still have the edge on performance, however one purpose of this
+proposal is also to close that gap as much as possible.
+}
+\label{fig:BoSSS-Philosophy-2}
+\end{figure}
+
+\begin{figure}[!h]
+\begin{center}
+\includegraphics[width=0.85\textwidth]{figures/BoSSS-philosophy-1}
+\end{center}
+\caption{
+BoSSS allows users to develop sophisticated solvers,
+using e.g. eXtended discontinuous Galerkin (XDG)
+or immersed boundary methods (IBM),
+at a very low coding effort;
+their benefit is three-fold: firstly, users can take advantage of the MPI-parallel,
+performance-optimized operations for the evaluation of the DG operator, etc.;
+secondly, users get access to highly customizable, yet proven workflow-management tools,
+i.e. to \BoSSSpad{}; thirdly, users also profit from the existing utility codebase
+for file I/O, data import and export (meshing and visualization) and a huge collection
+of post-processing routines.
+In addition to that, the user can rely that the operations he employs work correctly, due to the
+sophisticated testing and verification environment.
+}
+\label{fig:BoSSS-Philosophy-1}
+\end{figure}
+
+
+\paragraph{Why C\#?}
+While comparable software packages usually employ languages like
+FORTRAN, C or C++, which are either very limited in terms of programming paradigms
+or very hard to master for PhD students outside of computer science
+(e.g. mechanical engineering),
+BoSSS uses the C\#-language, which combines the
+ease-of-use of Python with the execution speed of C or C++.
+For a University-based research code, this is a quite unique feature.
+The reason for the usage of 
+FORTRAN, C or C++, sometimes in combination with Python scripts
+in comparable software packages are, 
+in our humble option, most of the time purely traditional.
+
+The choice of C\#, on the other hand, is a key enabler for a series of interesting features:
+For instance, a C\# program can be compiled once and executed everywhere. this means that a user can
+develop and compile a code on her or his Mac or Windows laptop, and then execute
+the code on a Linux-based supercomputer. This is obviously a great improvement
+in comparison to a traditional HPC workflow, where the code has to be compiled and configured
+for every computer separately. In addition, the compilation of C\# is also much faster than
+C++ compilation - on a recent machine, the whole \BoSSS{} code
+(more than 1000 files, 300'000 lines of code and 100'000 lines of comment)
+can be compiled in less than half a minute.
+
+
+
+
+\paragraph{Dynamic Interfaces:} 
+A special feature of the \BoSSS{} code is its ability to treat dynamic (fluid) interfaces.
+This is mainly used for two kinds of applications:
+\begin{itemize}
+\item
+Immersed boundary methods: instead of creating a specialized mesh for a particular geometry,
+the geometry is embedded in an simple background mesh.
+An advantage of \ac{ibm} is that it is easy to implement moving geometries
+(e.g. particle flows, fluid-structure interaction) since no mesh has to be moved.
+See Figure \ref{fig:FlowOverBump} for a simple example.
+
+\item
+Multiphase flows: these are mixtures of at least two immiscible fluids, 
+e.g. oil in water or water in air.
+An example is the rising bubble simulation, shown in Figure \ref{fig:Bubbles}.
+
+\end{itemize}
+
+
+\begin{figure}[!h]
+\begin{center}
+\includegraphics[width=0.65\textwidth]{figures/FlowOverBump2}
+\includegraphics[width=0.09\textwidth]{figures/FlowOverBump2-legend}
+\end{center}
+\caption{
+Compressible flow simulation over a Gaussian bump,
+computed with \ac{ibm}. A Cartesian background mesh is used, 
+and for the bum a so-called level-set representation is used.
+}
+\label{fig:FlowOverBump}
+\end{figure}
+
+
+\begin{figure}[!h]
+\begin{center}
+\includegraphics[width=0.2\textwidth]{figures/Bubble_t0}
+\includegraphics[width=0.2\textwidth]{figures/Bubble_t1}
+\includegraphics[width=0.2\textwidth]{figures/Bubble_t2}
+\includegraphics[width=0.2\textwidth]{figures/Bubble_t3}
+\end{center}
+\caption{
+The second important application in \BoSSS{} using dynamic interfaces:
+Incompressible multiphase simulation of a rising bubble.
+}
+\label{fig:Bubbles}
+\end{figure}
+
+
+
+% ********************************************************************************
+% ********************************************************************************
+\chapter{Core concepts}
+\label{sec:coreConcepts}
+% ********************************************************************************
+% ********************************************************************************
+
+This chapter covers certain issues in the design philosophy of the code, that are essential for its use. 
+These are important to understand for both, users as well as developers.
+
+% --------------------------------------------------------------------------------
+\section{Discontinuous Galerkin methods}
+\label{sec:coreConcepts_dgMethods}
+% --------------------------------------------------------------------------------
+Obviously, in order to work with \BoSSS{} -- especially for the tutorial in part \ref{sec:Tutorial}
+of this book -- one should have a basic understanding of \ac{dg} methods.
+The purpose of this document is not to be (yet another) textbook on the \ac{dg} method.
+As a reference, we recommend the textbook of \cite{DiPietroErn2011},
+as well as the lecture notes of Cockburn\footnote{
+\url{http://www-users.math.umn.edu/~bcockbur//LectureNotes.html}}
+and Hartmann\footnote{
+\url{http://numerik.iwr.uni-heidelberg.de/~hartmann/publications/publications.html\#lectures}}.
+
+(Remark: at some point, this document might be extended with a mathematical
+reference on the specific version of the \ac{dg} method in \BoSSS; this may cover e.g.
+details on the specific, modal \ac{dg} basis, indexing conventions, etc.)
+
+
+% --------------------------------------------------------------------------------
+\section{C\#, .NET and Mono}
+\label{sec:coreConcepts_CsharpAndDotnet}
+% --------------------------------------------------------------------------------
+\BoSSS{} is written in the \emph{programming language} C\#, which is compiled into the so-called 
+\emph{Common Intermediate Language} (CIL). CIL-code is platform independent and can be executed (without recompilation) 
+on any platform where an implementation of the standardized \emph{Common Language Infrastructure} (CLI) is available. 
+Examples include Windows (using the .NET framework), Linux and Mac OS X (both using the mono framework). 
+Almost all parts of \BoSSS{} are thus platform-independent and directly be used after obtaining the \BoSSS{} binaries 
+and a platform-specific CLI implementation (cf. Section \ref{sec:gettingStarted_installation}).
+
+Like for any other language, a C\# program needs to be compiled. Any C\# compiler produces executable 
+files (ending with \texttt{.exe}) that typically rely on library files (ending with \texttt{.dll}). 
+In contrast to languages like C, the executables cannot be executed directly -- they need to be executed
+ through the CLI which compiles the CIL to machine code \emph{at runtime}. Due to this \emph{just in time} (JIT) 
+compilation, C\# are able to compete with compiled languages in terms of performance.
+
+This two-step compile approach makes C\# a fast language -- cooperatively fast to 
+languages like C or FORTRAN. C\# is significantly faster than an interpreted language like 
+Matlab or Phython. 
+
+The .NET framework is very tightly integrated with Windows, so that it is almost transparent to the user. 
+While a .NET-executable is internally fundamentally different from a standard executable, it behaves very similar 
+and can be executed by the user via a simple double-click. Windows detects which kind of \texttt{.exe} file is 
+at hand and uses .NET if necessary. .NET is also omnipresent on Windows -- it is almost impossible to find a 
+Windows computer without,
+since it is used for many applications.
+
+On Linux or MacOS, however, there is no such shortcut, which is why the user has to execute \texttt{.exe} 
+files via mono by hand. For example, the \BoSSSpad{} application \texttt{BoSSSpad.exe} 
+(see Section \ref{sec:coreConcepts_BoSSSpad}) is started
+
+\code{mono BoSSSpad.exe \$commandLineArgumentsForBoSSSpad}
+
+This command makes Mono load the \texttt{.exe} file, translate it into machine code for the respective 
+operating system, and finally execute this machine code.
+Note also C\# programs are always compiled into {\tt .exe} files, even on Linux or MacOS,
+which seems unusual for these operating systems. 
+
+Finally, we note that traditional languages like C differentiate between compiling and linking, whereas 
+C\# always performs both steps are done at once.
+(Although one could philosophize on this, since 
+modern compilers like {\tt gcc} can do both, compiling and linking
+in one step or separately.)
+
+
+% --------------------------------------------------------------------------------
+\section{Compile once -- Run everywhere: using High Performance Computing systems}
+\label{sec:HPCuse}
+% --------------------------------------------------------------------------------
+The use of \BoSSS{} on \ac{hpc} systems is a bit \emph{more convenient} than other 
+research codes.
+Unusually, such codes have to be compiled for each system individually. 
+The advantage of C\#, resp. .NET is that \emph{the executable is platform-independent}.
+
+That means e.g. that an executable which was compiled on a Windows or Mac laptop can be copied 
+to a \ac{hpc} system, which usually runs some breed of Linux, and be executed there without re-compilation.
+This, of course requires some middleware (the Mono framework, see section \ref{sec:coreConcepts_CsharpAndDotnet})
+and libraries to be present on the target computer.
+
+In addition to C\# code,  \BoSSS{} relies on platform-specific ('\emph{native}') third party libraries for specific tasks, 
+such MPI for parallelization and BLAS/LAPACK for high-performance linear algebra. In 
+section \ref{sec:gettingStarted_installation}, we will thus 
+summarize some best practices for the installation of \BoSSS{} on different operating systems.
+
+Once the required libraries and middleware for \BoSSS{} have been installed on an 
+\ac{hpc} system, all simulation set-up and development can be done 
+on a users local machine.
+This is advantageous, since the development tools on \ac{hpc} systems are usually limited
+(users have to live with what administrators provide)
+and have to be used through an ssh-connection.
+(This can be especially annoying when working with laptops in unreliable WiFi-environments,
+where ssh-sessions crash on a regular basis, or have a noticeable lag.)
+
+% --------------------------------------------------------------------------------
+\section{Workflow management: database and the \BoSSSpad}
+\label{sec:coreConcepts_BoSSSpad}
+% --------------------------------------------------------------------------------
+Since the \BoSSS{} code is essentially a research-project, therefore 
+tools with a \ac{gui}  are limited.
+
+However, also for research codes  one faces the challenge of performing 
+e.g. parameter studies with which involve thousands of individual 
+solver runs.
+Therefore, some management tools are inevitable, since manual or semi-automated
+organization of simulation result using usual operating system tools (e.g. 
+directory structures, shell scripts, etc.) have proven to be error-prone.
+
+In \BoSSS{}, these issues are manged using two components:
+\begin{itemize}
+\item
+A database for \emph{data management}:
+all simulation data, together with configuration files, etc., are stored automatically.
+Technically, the database is set of files and directories, following 
+certain internal conventions.
+
+\item
+A sophisticated scripting solution for \emph{workflow management}, the \BoSSSpad{} application:
+C\# is not only used as a programming language, but also as a scripting language
+for setting up simulations and examine results.
+
+In \BoSSSpad{}, users can enter C\# statements and execute them on the fly.
+Since C\# is used for both, the code development as well as scripting,
+the user can seamlessly access every subroutine of the code.
+
+\begin{itemize}
+\item
+Access and manage the database
+
+\item
+Workflow management: launch solvers, summit jobs to hpc systems, ...
+
+\item
+Data import and export: load data from third-party pre-processing tools (mesh generators),
+export to post-processing tools (visualization software).
+
+\item
+Rapid prototyping of (new) \ac{dg} solvers: the tutorials in part \ref{sec:Tutorial} demonstrate this.
+
+\item
+Analysis and post-processing: some analysis tasks, e.g. lift and drag computation,
+can be done directly in \BoSSSpad{}.
+
+\item
+Documentation and tutorials: 
+since \BoSSSpad{} can also produce \LaTeX output, it can also be used to 
+build nicely formatted tutorials, as e.g. found in  part \ref{sec:Tutorial} of this book.
+
+\end{itemize}
+\end{itemize}
+A typical workflow using these two components is shown in Figure \ref{fig:BoSSS-workflow}.
+
+\begin{figure}
+  \begin{center}
+  \begin{overpic}[width=0.9\textwidth%,grid,tics=10
+  ]{figures/BoSSS-workflow}
+  \put(-2.5,23) {\parbox{2.8cm}{\centering Mesh file \\ e.g. {\tt gmsh }}}
+  \put(84.2,21.5) {\parbox{2.8cm}{\centering Output files \\ e.g. Tecplot}}
+  \put(38,9.0) {\parbox{3.3cm}{\centering\Large \BoSSS{} database}}
+  \put(43,60) {\Large \BoSSSpad}
+  \put(38,40) {\parbox{3.2cm}{\centering some solver, e.g. {\tt CNS.exe} (compressible, see chapter \ref{CNS})}}
+  \put(76.5,40) {\parbox{3.2cm}{\centering plot generator tool (or other post-processing)}}
+  \put(78,10.5) {data reading}
+  \put(78,5.5)  {data writing}
+  \put(78,0)    {program launch}
+  \put(36,1.5)  {HPC system (optional)}
+  \put(0,55)    {\parbox{3cm}{\centering (1) import mesh file      }}
+  \put(7.7,40)   {\parbox{2.8cm}{\centering (2) save mesh \\ in database }}
+  \put(48,53)   {(3) launch solver}
+  \put(37,27)   {\parbox{3.3cm}{\centering (4) solver reads mesh, writes results}}
+  \put(73,56.2) {(5) launch post-processing}
+  \put(66.5,20)   {\parbox{3cm}{\centering (6) plot generator reads results \& exports files for visualization}}
+  \end{overpic}
+ \end{center}
+\caption{
+An exemplary workflow in \BoSSS{} where everything is controlled by \BoSSSpad{}.
+All relevant data is stored in the database.
+From \BoSSSpad{}, one could import a computational mesh, which has been created 
+using a third-party tool, e.g. {\tt gmsh};
+This data is imported into \BoSSS{} 
+(via the function \code{GridImporter.Import})
+and saved in the \BoSSS{} database (using \code{IDatabaseDriver.SaveGridIfUnique}).
+The workflow management tools (see chapter \ref{sec:WorkflowMgm}) of \BoSSSpad
+can then be used to launch one of the provided solvers, which also save their results to the database.
+Finally, \BoSSSpad{} can also be used to launch post-processing or data export tools.
+The solver as well as the database can optionally be located/run on some other 
+computer, e.g. some sort of High Performance Compute (HPC) system.
+}
+\label{fig:BoSSS-workflow}
+\end{figure}
+
+
+\emph{Warning: do not try to manipulate the files in the database manually!} 
+One should always use \BoSSSpad{} to work with the database -- the essential commands can be found
+e.g. in part \ref{sec:BoSSSpadReference}.
+
+
+
+% --------------------------------------------------------------------------------
+\section{Pre-compiled or source: end-user vs. developer}
+% --------------------------------------------------------------------------------
+\label{sec:coreConcepts_using}
+The \BoSSS{} can be used in two ways: As a binary distribution and in the form of source code.
+One can start in one of the following ways:
+\begin{itemize}
+\item
+\emph{Pre-compiled version:}
+One may start using existing solvers
+(e.g. \code{CNS} for compressible or \code{INS} for incompressible Navier-Stokes).
+This is the classical \emph{end-user scenario} and requires only the binary distribution.
+As a workflow management tool, the \BoSSSpad{} application 
+(see section \ref{sec:coreConcepts_BoSSSpad})
+is recommended; 
+alternatively, one may launch a solver from command line.
+
+\item
+\emph{Scripting:}
+Also if one wants to obtain deeper insights into the methodology of \ac{dg},
+the \code{BoSSSpad} may be a good starting point.
+Since it can be utilized to access almost every subroutine of the \BoSSS{} software libraries,
+it is not only usable as a workflow management tool, 
+but can also be used to develop new solvers.
+This requires basic knowlege of C\#-programming.
+The tutorials in this handbook, for instance, were exclusively
+created using the \BoSSSpad{}.
+
+\item
+\emph{Working with source code:}
+The most advanced way of working with the \BoSSS{} code is obviously
+working with source code itself.
+For instance, if one wants to implement a turbulence model or a completely new solver 
+for an equation that is not covered by the existing solvers.
+This is a \emph{developer scenario}. 
+This requires profound knowledge of C\#-programming and the 
+associated development environments (e.g. Visual Studio or equivalents).
+
+\end{itemize}
+
+
+% ********************************************************************************
+% ********************************************************************************
+\chapter{Getting started}
+\label{sec:gettingStarted}
+% ********************************************************************************
+% ********************************************************************************
+
+Within this chapter, we will briefly outline the steps required to get started with using and/or developing \BoSSS{} applications. In any case, the installation of the pre-compiled version of \BoSSS{} (cf. section \ref{sec:gettingStarted_installation}) should be the first step. Upon finishing this step, you will be able to use the pre-compiled \BoSSS{} applications (cf. section \ref{sec:gettingStarted_using}), but also to start the exploring the code using the scripting API. Finally, working with the source code will be discussed in section \ref{sec:gettingStarted_developing}.
+
+% --------------------------------------------------------------------------------
+\section{Installation}
+\label{sec:gettingStarted_installation}
+% --------------------------------------------------------------------------------
+The advantage of C\#, resp. .NET is that \emph{the executable is platform-independent}. This implies that an executable compiled on a Windows/Mac laptop can be copied to a Linux/Unix \ac{hpc} system and executed there without re-compilation. As discussed in section \ref{sec:coreConcepts_CsharpAndDotnet}, this obviously requires some \emph{middleware} and some libraries to be present on the target computer. In the following, we will thus summarize some best practices for the installation of the pre-compiled \BoSSS{} binaries\footnote{\label{note:relases} \url{https://github.com/FDYdarmstadt/BoSSS/releases}} on different operating systems.
+
+\subsection{Windows}
+Installation on Windows is quite straightforward because the \BoSSS{} installer already includes all required native libraries:
+\begin{enumerate}
+	\item Ensure that the .NET framework\footnote{\url{https://www.microsoft.com/net/download/framework}} (version .NET 4.5.2 or higher) is installed 
+	\item Download an install Microsoft MPI \footnote{\url{https://msdn.microsoft.com/en-us/library/bb524831(v=vs.85).aspx})}. Check the MPI installation by executing the command \texttt{mpiexec} in a console window
+	\item Obtain and execute the \BoSSS{} Windows installer
+	\item Test your installation (cf. section \ref{sec:installation_testing})
+\end{enumerate}
+
+\paragraph{Known issues:}
+The .NET framework is shipped with two JIT compilers that compile the CIL to machine code at runtime (cf. section \ref{sec:coreConcepts_CsharpAndDotnet}). One of these, \emph{RyuJIT}, contains a bug that causes \BoSSS{} applications to crash with misleading error messages, typically related to grid handling. RyuJIT should thus be deactivated\footnote{\url{https://github.com/Microsoft/dotnet/blob/master/Documentation/testing-with-ryujit.md}} when using \BoSSS{} on Windows.
+
+
+\subsection{Linux}
+In the following, we thus focus on the installation of \BoSSS{} itself. 
+The \BoSSS{} group does not maintain packages of the native libraries listed in section \ref{sec:installation_libraries} for Linux because high-performance computers typically provide specifically optimized versions of these libraries that should be used in order to obtain optimal performance. 
+
+\begin{itemize}
+	\item Obtain Mono\footnote{\url{www.mono-project.com}} (version 3.0 or higher), either by installing a pre-built package\footnote{\url{www.mono-project.com/download/}} or by compiling\footnote{\url{www.mono-project.com/docs/compiling-mono/linux/}} it from a tarball\footnote{\url{https://download.mono-project.com/sources/mono/}}
+	\item Obtain/install/load OpenMPI (tested with version 1.6.5 and higher)
+	\item Obtain/install/load BLAS and LAPACK (tested with AMD Core Math Library 5.3.1)
+	\item Test your basic installation (cf. section \ref{sec:installation_testing})
+	\item Obtain/install/load additional libraries if required by the particular \BoSSS{} application
+\end{itemize}
+
+
+\paragraph{Known issues:}
+One some system (tested with CentOS 7), current versions of Mono (versions 5 and higher), the error message
+\begin{verbatim}
+Got a bad hardware address length for an AF_PACKET 20 8
+\end{verbatim}
+may appear. This seems to be an inconsequential bug in Mono that can safely be ignored.
+
+
+\subsection{Mac OS X}
+Support for Mac OS X will follow soon.
+
+
+\section{Testing the installation}
+\label{sec:installation_testing}
+
+\code{BoSSSpad.exe --check}
+
+
+\subsection{Third-party libraries}
+\label{sec:installation_libraries}
+
+\BoSSS{} tries to load these libraries dynamically
+\begin{itemize}
+	\item MPI: Parallelization
+	\item BLAS
+	\item LAPACK
+	\item Optional: ParMETIS
+	\item Optional: Tecplot
+	\item Optional: CGNS
+	\item Optional: MUMPS
+\end{itemize}
+
+
+% --------------------------------------------------------------------------------
+\section{Using \BoSSS{}}
+\label{sec:gettingStarted_using}
+% --------------------------------------------------------------------------------
+
+Having familiarized with the core concepts of \BoSSS{} (cf. chapter \ref{sec:coreConcepts}) and verified that the installation was succesfull (cf. section \ref{sec:installation_testing}), the pre-compiled solvers shipped with \BoSSS{} can be used to solve compressible as well as incompressible flow problems. The most simple way to get a feeling for the usage of the different solvers is to follow the corresponding quick start guides given in section \ref{sec:quickStartGuides}. These tutorials have been structured such that they allow new users to get first results immediately, which is why details about certain concepts are left out. These will then discussed in depth in the tutorials given in part \ref{sec:Tutorial}.
+
+
+\subsection{\BoSSSpad{}}
+
+\code{}
+
+\subsection{\BoSSS{} applications}
+
+
+
+
+% --------------------------------------------------------------------------------
+\section{As a developer}
+\label{sec:gettingStarted_developing}
+% --------------------------------------------------------------------------------
+
+Even if you want to compile \BoSSS{} yourself, we \emph{strictly recommend} that
+you \emph{install the Binary distribution first}.
+
+
+\subsection{Development Tools}
+As every software developer knows, programming either done by using a 
+command line tool-chain or with an \ac{ide}. We strongly recommend the latter 
+approach.
+
+\paragraph{Development Environments}
+The major \ac{ide}'s available for C\# are 
+Microsoft Visual Studio\footnote{
+\url{https://www.visualstudio.com/downloads/}},
+Xamarin Studio (also known under its former name `Monodevelop' or as `Visual Studio for Mac')\footnote{
+\url{http://www.monodevelop.com}}
+and SharpDevelop\footnote{
+\url{http://www.icsharpcode.net/OpenSource/SD/Default.aspx}}.
+Note: `Visual Studio' should not be confused with `Visual Studio Code'. The latter is more an editor
+than an \ac{ide}.
+
+On Windows, we strongly recommend to use the latest version of Visual Studio.
+The Community Edition can be downloaded for free.
+Alternatively, one could also use either Xamarin Studio or SharpDevelop.
+Those environments, the integrated debugger cannot be used for \BoSSS{}:
+The native libraries for BoSSS on Windows are only provided for  
+64 bit (AMD64 resp. X86\_64 architecture), therefore \BoSSS{} has to be debugged in 64 bit mode.
+Xamarin Studio and SharpDevelop do not support 64 bit debugging, so they cannot be used to
+debug \BoSSS{}.
+This issue renders them significantly inferior to Visual Studio.
+
+On Linux, however, Xamarin Studio supports 64 bit and can therefore be used without any restriction.
+If possible, we recommend to use the latest version of Xamarin Studio from
+the official and not the version from the Linux distributions package management system,
+since these are very often out-dated (still called Monodevelop).
+
+On Mac OS, one certainly should use Xamarin Studio, resp. Visual Studio for Mac.
+
+\paragraph{Command line toolchain}
+Of course, \BoSSS{} can also be developed in the traditional way, 
+by using a text editor of choice and a command-line build tool.
+
+If .NET is used, the build tool is {\tt msbuild}.
+The main solution file of \BoSSS{} could be compiled e.g. by
+\[
+ \mathtt{msbuild} \ \text{\tt Public.sln} \ \text{\tt /p:Configuration=Debug /p:Platform="Any CPU"}
+\]
+in Debug mode (runs slower, more tests, for development and debugging) and by
+\[
+ \mathtt{msbuild} \ \text{\tt Public.sln} \  \text{\tt /p:Configuration=Release /p:Platform="Any CPU"}
+\]
+in Release mode (runs faster, less tests, designated for production runs).
+
+When Mono is used, the equivalent to {\tt msbuild} is {\tt xbuild}. Both tools have the same syntax.
+
+
+
+% ################################################################################
+% ################################################################################
+% ################################################################################
+\part{End-user tutorials}
+\label{sec:quickStartGuides}
+% ################################################################################
+% ################################################################################
+% ################################################################################
+
+% ********************************************************************************
+\chapter{Compressible Navier-Stokes (CNS) Solver }
+
+
+% ********************************************************************************
+% ################################################################################
+\label{CNS}
+\import{./quickStartCNS/}{IsentropicVortex.tex}
+
+% ********************************************************************************
+\chapter{Workflow management and meta job scheduler}
+\label{sec:WorkflowMgm}
+\import{./MetaJobManager/}{MetaJobManager.tex}
+
+
+\chapter{Incompressible Navier-Stokes Solver}
+% ################################################################################
+
+\import{./quickStartIBM/}{channel.tex}
+
+% ################################################################################
+% ################################################################################
+% ################################################################################
+\part{Developer tutorials}
+\label{sec:Tutorial}
+% ################################################################################
+% ################################################################################
+% ################################################################################
+
+% ********************************************************************************
+% ********************************************************************************
+\chapter{Grid instantiation, $L^2$-projection and convergence}
+% ********************************************************************************
+% ********************************************************************************
+\label{GridInstantiation}
+\import{./tutorial2/}{uebung2tutorial.tex}
+
+
+% ################################################################################
+\chapter{Defining a Spatial Operator and using explicit time integration}
+% ################################################################################
+\label{SpatialOperator}
+\import{./tutorial4/}{tutorial4.tex}
+
+
+% ********************************************************************************
+\chapter{Numerical flux and convergence study}
+% ********************************************************************************
+\label{NumFlux}
+\import{./tutorial5/}{uebung5tutorial.tex}
+
+
+% ********************************************************************************
+\chapter{Scalar convection and stability of explicit timesteppers}
+% ********************************************************************************
+\label{ScalarAdvection}
+\import{./tutorial6/}{tutorial6.tex}
+
+%\chapter{Exporting data}
+%\chapter{Working with masks and subgrids}
+%\chapter{Hyperbolic systems}
+%\chapter{Second order operators, implicit}
+
+
+
+
+% ********************************************************************************
+\chapter{Poisson equation using the Symmetric Interior Penalty method}
+% ********************************************************************************
+% ********************************************************************************
+% ################################################################################
+\label{sec:SIP}
+\import{./tutorial9-SIP/}{sip.tex}
+
+% ********************************************************************************
+\chapter{Poisson equation as a System}
+% ********************************************************************************
+\label{sec:PoissonAsASystem}
+\import{./tutorial10-PoissonSystem/}{Poisson.tex}
+
+% ********************************************************************************
+\chapter{Stokes equation}
+% ********************************************************************************
+\label{sec:Stokes}
+\import{./tutorial11-Stokes/}{StokesEq.tex}
+
+
+
+
+\begin{appendices}
+
+% ********************************************************************************
+% ********************************************************************************
+\chapter{BoSSSpad command reference}
+\label{sec:BoSSSpadReference}
+% ********************************************************************************
+% ********************************************************************************
+
+% Change some settings so reference looks nice
+\renewcommand{\ttdefault}{pcr} % Using Courier, so we can have bold typewriter font
+\setdescription{
+	font=\ttfamily\small\bfseries,
+	labelindent=1em,
+	leftmargin=.2\textwidth,
+	style=nextline}
+
+\input{../notes/0030-BoSSSPad_Command_Overview/content.tex}
+
+
+% ********************************************************************************
+% ********************************************************************************
+\chapter{Further reading}
+% ********************************************************************************
+% ********************************************************************************
+
+This manual is not intended to be an introduction into the \ac{dg} method.
+
+% --------------------------------------------------------------------------------
+\section{\BoSSS{} -related scientific publications}
+% --------------------------------------------------------------------------------
+
+\subsection{Peer-reviewed publications}
+Articles which have been published or officially accepted by publication outlets with scientific
+quality assurance and book publications.
+
+\begin{itemize}
+\item
+\bibentry{UtzKummerExtVel17}
+
+\item
+\bibentry{KummerEtAlXDGTimestepping2017}
+
+\item
+\bibentry{UtzEtAlXDG2017}
+
+\item
+\bibentry{krauseKummer_IBM_2017}
+
+\item
+\bibentry{UtzKummerReinit16}
+
+\item
+\bibentry{Niroobakhsh2016}
+
+\item
+\bibentry{MuellerEtAl_ibm_2016}
+
+\item
+\bibentry{kummerXNSE2015}
+
+\item
+\bibentry{klein_high-order_2015}
+
+\item
+\bibentry{KummerPatchRecovery2015}
+
+\item
+\bibentry{KleinEtAlSimple2015}
+
+\item
+\bibentry{muller_hmf_2013}
+
+\item
+\bibentry{kummer_extension_2013}
+
+\item
+\bibentry{klein_simple_2013}
+
+\item
+\bibentry{SFB_finalReport}
+
+\item
+\bibentry{mueller_2012}
+
+\end{itemize}
+
+\subsection{PhD thesis}
+
+\begin{itemize}
+
+\item
+\bibentry{KallendorfThesis2016}
+
+\item
+\bibentry{HauThesis2017}
+
+\item
+\bibentry{kummer_bosss_2012_thesis}
+
+\item
+\bibentry{mullerPhdThesis2014}
+
+\item
+\bibentry{kleinPhdThesis2015}
+
+\item
+\bibentry{MousaviPhdThesis2014}
+
+\item
+\bibentry{EmamyPhdThesis2014}
+
+\end{itemize}
+
+
+
+
+\subsection{Master and Bachelor thesis}
+
+\begin{itemize}
+\item
+\bibentry{Lindig2017}
+
+\item
+\bibentry{Karcher2014}
+
+\item
+\bibentry{utz2014}
+
+\item
+\bibentry{Mrosek2014}
+
+\item
+\bibentry{Fischer2014}
+
+\item
+\bibentry{keil2012}
+
+\item
+\bibentry{klein2011}
+
+\item
+\bibentry{ashoori2009}
+
+\item
+\bibentry{mullerBscThesis2012}
+
+\end{itemize}
+
+
+
+\end{appendices}
+
+
+
+\bibliography{BoSSShandbook}
+\end{document}

@@ -1,0 +1,577 @@
+\BoSSSopen{tutorial9-SIP/sip}
+\graphicspath{{tutorial9-SIP/sip.texbatch/}}
+
+\BoSSScmd{
+/// \section*{What's new}
+/// \begin{itemize}
+/// \item Symmetric Interior Penalty method (SIP)
+/// \item investigating matrix properties
+/// \end{itemize}
+/// \section*{Prerequisites}
+/// \begin{itemize}
+/// \item basics SIP method
+/// \item spatial operator, chapter \ref{SpatialOperator}
+/// \item implementing numerical fluxes and convergence study, chapter \ref{NumFlux}
+/// \end{itemize}
+///
+///%_______________________________________________________
+/// \section{Problem statement}
+/// We consider the 2D Poisson problem:
+/// \begin{equation*}
+/// \Delta u = f(x,y)
+/// \end{equation*}
+/// with $f(x,y)\neq 0$ is an arbitrary function of $x$ and/or $y$ or constant.
+/// Within this exercise, we are going to investigate the Symmetric Interior Penalty discretization method (SIP) for the Laplace operator:
+/// \begin{equation*}
+/// a_{\text{sip}}(u,v)
+/// = \int_{\domain} \underbrace{\nabla u \cdot \nabla v}_{\text{Volume\ term}}\dV
+///   - \oint_{\Gamma \setminus \Gamma_{N }} \underbrace{
+///         \mean {\nabla u} \cdot n_{\Gamma}\jump{v}
+///      }_{\text{consistency\ term}} + \underbrace{
+///         \mean{\nabla v} \cdot \vec{n}_{\Gamma} \jump{u}
+///      }_{\text{symmetry\ term}} \dA
+///   + \oint_{\Gamma \setminus \Gamma_{N}} \underbrace{
+///        \eta \jump{u}\jump{v}
+///     }_{\text{penalty\ term}} \dA
+/// \end{equation*}
+/// The use of these fluxes including a penalty term stabilizes the DG-discretization for the Laplace operator.
+///
+///%____________________________________________
+/// \section{Solution within the \BoSSS{} framework}
+/// First, we initialize the new worksheet:
+ }
+\BoSSSexe
+\BoSSScmd{
+restart;
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// We need the following packages:
+using ilPSP.LinSolvers;\newline 
+using ilPSP.Connectors.Matlab;
+ }
+\BoSSSexe
+\BoSSScmdSilent{
+/// BoSSScmdSilent BoSSSexeSilent
+using NUnit.Framework;
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// \subsection{Implementation of the SIP fluxes}
+/// we are going to implement the SIP-form
+/// \begin{equation*}
+/// a_{\text{sip}}(u,v)
+/// = \int_{\domain} \underbrace{\nabla u \cdot \nabla v}_{\text{volume\ term}}\dV
+///   - \oint_{\Gamma \setminus \Gamma_{N }} \underbrace{
+///         \mean {\nabla u} \cdot n_{\Gamma}\jump{v}
+///      }_{\text{consistency\ term}} + \underbrace{
+///         \mean{\nabla v} \cdot \vec{n}_{\Gamma} \jump{u}
+///      }_{\text{symmetry\ term}} \dA
+///   + \oint_{\Gamma \setminus \Gamma_{N}} \underbrace{
+///        \eta \jump{u}\jump{v}
+///     }_{\text{penalty\ term}} \dA
+/// \end{equation*}
+/// First, we need a class in which the integrands are defined.
+/// This also includes some technical aspects like the \code{TermActivationFlags}.
+public class SipLaplace :\newline 
+\btab \btab BoSSS.Foundation.IEdgeForm,   // edge integrals\newline 
+\btab \btab BoSSS.Foundation.IVolumeForm  // volume integrals\newline 
+\{\newline 
+    /// We do not use parameters (e.g. variable viscosity, ...)
+    /// at this point: so this can be null
+\btab public IList<string> ParameterOrdering \{ \newline 
+\btab \btab get \{ return new string[0]; \} \newline 
+\btab \} \newline 
+    /// but we have one argument variable, $u$ (our trial function)
+\btab public IList<String> ArgumentOrdering \{ \newline 
+\btab \btab get \{ return new string[] \{ "u" \}; \} \newline 
+\btab \}\newline 
+    /// The \code{TermActivationFlags} tell \BoSSS\ which kind of terms, 
+    /// i.e. products of $u$, $v$, $\nabla u$, and $\nabla v$
+    /// the \code{VolumeForm(...)} actually contains.
+    /// This additional information helps to improve the performance.
+\btab public TermActivationFlags VolTerms \{\newline 
+\btab \btab get \{\newline 
+\btab \btab \btab return TermActivationFlags.GradUxGradV;\newline 
+\btab \btab \}\newline 
+\btab \}\newline 
+    /// activation flags for the 'InnerEdgeForm(...)'
+\btab public TermActivationFlags InnerEdgeTerms \{\newline 
+\btab \btab get \{\newline 
+\btab \btab \btab return (TermActivationFlags.AllOn);\newline 
+\btab \btab \btab // if we do not care about performance, we can activate all terms.\newline 
+\btab \btab \}\newline 
+\btab \}\newline 
+\btab public TermActivationFlags BoundaryEdgeTerms \{\newline 
+\btab    get \{\newline 
+\btab \btab    return TermActivationFlags.AllOn;\newline 
+\btab \btab \}\newline 
+\btab \}\newline 
+    /// For the computation of the penalty factor $\eta$,
+    /// we require
+    /// some length scale for each cell and 
+    /// the polynomial degree of the DG approximation.
+\btab public MultidimensionalArray cj;\newline 
+\btab public int PolynomialDegree;\newline 
+    /// The safety factor for the penalty factor should be in the order of 1.
+    /// A very large penalty factor increases the condition number of the 
+    /// system, but without affecting stability.
+    /// A very small penalty factor yields to an unstable discretization.
+\btab public double PenaltySafety = 2.2; \newline 
+    /// The actual computation of the penalty factor, which should be 
+    /// used in the \code{InnerEdgeForm} and \code{BoundaryEdgeForm} functions.
+    /// Hint: for the parameters \code{jCellIn}, \code{jCellOut} and \code{g},
+    /// take a look at
+    /// \code{CommonParams} and \code{CommonParamsBnd}.
+\btab double PenaltyFactor(int jCellIn, int jCellOut) \{\newline 
+\btab \btab double cj\_in        = cj[jCellIn];\newline 
+\btab \btab double penalty\_base = PenaltySafety*PolynomialDegree*PolynomialDegree;\newline 
+\btab \btab double eta          = penalty\_base * cj\_in;\newline 
+\btab \btab if(jCellOut >= 0) \{\newline 
+\btab \btab \btab double cj\_out = cj[jCellOut];\newline 
+\btab \btab \btab eta           = Math.Max(eta, penalty\_base * cj\_out);\newline 
+\btab \btab \}\newline 
+\btab \btab return eta;\newline 
+\btab \}\newline 
+    /// The following functions cover the actual math.
+    /// For any discretization of the Laplace operator, we have to specify:
+    /// \begin{itemize}
+    /// \item a volume integrand,
+    /// \item an edge integrand for inner edges, i.e. on $\Gamma_i$,
+    /// \item an edge integrand for boundary edges, i.e. on $\partial \Omega$.
+    /// \end{itemize}
+    /// The integrand for the volume integral:
+\btab public double VolumeForm(ref CommonParamsVol cpv, \newline 
+\btab \btab    double[] U, double[,] GradU, // the trial-function u \newline 
+\btab \btab    //            (i.e. the function we search for) and its gradient\newline 
+\btab \btab    double V, double[] GradV     // the test function; \newline 
+\btab \btab    ) \{\newline 
+ \newline 
+\btab \btab double acc = 0;\newline 
+\btab \btab for(int d = 0; d < cpv.D; d++)\newline 
+\btab \btab \btab acc += GradU[0, d] * GradV[d];\newline 
+\btab \btab return acc;\newline 
+\btab \}\newline 
+    /// The integrand for the integral on the inner edges,
+    /// \[
+    ///   -( \mean{ \nabla u } \jump{ v }) \cdot \vec{n}_{\Gamma} 
+    ///   -( \mean{ \nabla v } \jump{ u }) \cdot \vec{n}_{\Gamma} 
+    ///   + \eta \jump{ u }  \jump{v} :
+    /// \]
+\btab public double InnerEdgeForm(ref CommonParams inp, \newline 
+\btab \btab double[] U\_IN, double[] U\_OT, double[,] GradU\_IN, double[,] GradU\_OT, \newline 
+\btab \btab double V\_IN, double V\_OT, double[] GradV\_IN, double[] GradV\_OT) \{\newline 
+ \newline 
+\btab \btab double eta = PenaltyFactor(inp.jCellIn, inp.jCellOut);\newline 
+ \newline 
+\btab \btab double Acc = 0.0;\newline 
+\btab \btab for(int d = 0; d < inp.D; d++) \{ // loop over vector components \newline 
+\btab \btab \btab // consistency term: -(\{\{ \textbackslash /u \}\} [[ v ]])*Normale\newline 
+\btab \btab \btab // index d: spatial direction\newline 
+\btab \btab \btab Acc -= 0.5 * (GradU\_IN[0, d] + GradU\_OT[0, d])*(V\_IN - V\_OT)\newline 
+\btab \btab \btab \btab \btab    * inp.Normale[d];\newline 
+ \newline 
+\btab \btab \btab // symmetry term: -(\{\{ \textbackslash /v \}\} [[ u ]])*Normale\newline 
+\btab \btab \btab Acc -= 0.5 * (GradV\_IN[d] + GradV\_OT[d])*(U\_IN[0] - U\_OT[0])\newline 
+\btab \btab \btab \btab \btab    * inp.Normale[d];;\newline 
+\btab \btab \}\newline 
+ \newline 
+\btab \btab // penalty term: eta*[[u]]*[[v]]\newline 
+\btab \btab Acc += eta*(U\_IN[0] - U\_OT[0])*(V\_IN - V\_OT);\newline 
+\btab \btab return Acc;\newline 
+\btab \} \newline 
+    /// The integrand on boundary edges, i.e. on $\partial \Omega$, is
+    /// \[ 
+    ///   -( \mean{ \nabla u } \jump{ v }) \cdot \vec{n}_{\Gamma} 
+    ///   -( \mean{ \nabla v } \jump{ u }) \cdot \vec{n}_{\Gamma} 
+    ///   +  \eta \jump{ u }  \jump{v} .
+    /// \]
+    /// For the boundary we have to consider the special definition for 
+    /// the mean-value operator $\mean{-}$ and the jump operator 
+    /// $\jump{-}$ on the boundary.
+\btab public double BoundaryEdgeForm(ref CommonParamsBnd inp, \newline 
+\btab \btab double[] U\_IN, double[,] GradU\_IN, double V\_IN, double[] GradV\_IN) \{\newline 
+ \newline 
+\btab \btab double eta = PenaltyFactor(inp.jCellIn, -1);\newline 
+\btab \btab double Acc = 0.0;\newline 
+\btab \btab for(int d = 0; d < inp.D; d++) \{ // loop over vector components \newline 
+\btab \btab \btab // consistency term: -(\{\{ \textbackslash /u \}\} [[ v ]])*Normale\newline 
+\btab \btab \btab // index d: spatial direction\newline 
+\btab \btab \btab Acc -= (GradU\_IN[0, d])*(V\_IN) * inp.Normale[d];\newline 
+ \newline 
+\btab \btab \btab // symmetry term: -(\{\{ \textbackslash /v \}\} [[ u ]])*Normale\newline 
+\btab \btab \btab Acc -= (GradV\_IN[d])*(U\_IN[0]) * inp.Normale[d];;\newline 
+\btab \btab \}\newline 
+ \newline 
+\btab \btab // penalty term: eta*[[u]]*[[v]]\newline 
+\btab \btab Acc += eta*(U\_IN[0])*(V\_IN);\newline 
+ \newline 
+ \newline 
+\btab \btab return Acc;\newline 
+\btab \}\newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \subsection{Evaluation of the poisson operator in 1D}
+/// We consider the following problem:
+/// \begin{equation*}
+/// \Delta u = 2,\quad -1<x<1,\quad u(-1)=u(1)=0.
+/// \end{equation*}
+/// The solution is $u_{ex}(x) = 1 - x^2$. Since this is quadratic, we can represent it \emph{exactly} in a DG space of order 2.
+/// As usual, we have to setup a grid and a basis:
+var grd1D                     = Grid1D.LineGrid(GenericBlas.Linspace(-1,1,10));\newline 
+var gdata1D                   = new GridData(grd1D);\newline 
+var DGBasisOn1D               = new Basis(gdata1D,2);\newline 
+/// and a right-hand-side:
+var RHS                       = new SinglePhaseField(DGBasisOn1D, "RHS");\newline 
+RHS.ProjectField((double x) => 2);\newline 
+/// We have to ensure to set the \code{PolynomialDegree} in the \emph{SipLaplace}-object.
+var i\_SipLaplace              = new SipLaplace();\newline 
+i\_SipLaplace.PolynomialDegree = DGBasisOn1D.Degree;\newline 
+i\_SipLaplace.cj               = gdata1D.Cells.cj;\newline 
+var Operator\_SipLaplace       = i\_SipLaplace.Operator();\newline 
+/// We now want to calculate the residual after inserting the exact solution as well as a wrong solution. 
+/// The implementation of the exact solution:
+var u\_ex         = new SinglePhaseField(DGBasisOn1D, "$u\_\{ex\}$");\newline 
+u\_ex.ProjectField((double x) => 1.0 - x*x);\newline 
+/// The implementation of a spurious, i.e. a wrong solution; we take the exact solution and add random values in each cell:
+var u\_wrong      = new SinglePhaseField(DGBasisOn1D, "$u\_\{wrong\}$");\newline 
+u\_wrong.ProjectField((double x) => 1.0 - x*x);\newline 
+Random R         = new Random();\newline 
+for(int j = 0; j < gdata1D.Cells.NoOfLocalUpdatedCells; j++)\{\newline 
+\btab double ujMean = u\_wrong.GetMeanValue(j);\newline 
+\btab ujMean += R.NextDouble();\newline 
+\btab u\_wrong.SetMeanValue(j, ujMean);\newline 
+\btab \}\newline 
+/// Evaluating the Laplace operator using the different solutions:
+var Residual     = new SinglePhaseField(DGBasisOn1D,"Resi1");\newline 
+var ResidualNorm = new List<double>();\newline 
+foreach(var u in new DGField[] \{u\_ex, u\_wrong\}) \{\newline 
+\btab Residual.Clear();\newline 
+\btab Operator\_SipLaplace.Evaluate(u, Residual);  // evaluate\newline 
+\btab Residual.Acc(-1.0, RHS);    \newline 
+\btab double ResiNorm = Residual.L2Norm();\newline 
+\btab ResidualNorm.Add(ResiNorm);\newline 
+\btab Console.WriteLine("Residual for " + u.Identification + " = " + ResiNorm);  \newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmdSilent{
+/// tests BoSSScmdSilent
+Assert.LessOrEqual(ResidualNorm[0], 1e-10);\newline 
+Assert.GreaterOrEqual(ResidualNorm[1], 1e-1);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \subsection{The matrix of the Poisson Operator}
+/// If we do not know the exact solution, we have to solve a linear system.
+/// Therefore, we not only need to evaluate the operator,
+/// but we need its matrix.
+/// The \emph{Mapping} controls which degree-of-freedom of the DG approximation
+/// is mapped to which row, resp. column of the matrix.
+var Mapping           = new UnsetteledCoordinateMapping(DGBasisOn1D);\newline 
+var Matrix\_SipLaplace = Operator\_SipLaplace.ComputeMatrix(Mapping,null,Mapping);
+ }
+\BoSSSexe
+\BoSSScmd{
+Matrix\_SipLaplace.NoOfCols;
+ }
+\BoSSSexe
+\BoSSScmd{
+Matrix\_SipLaplace.NoOfRows;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We see that the matrix has 27 rows and columns.
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \paragraph{Matrix rank and determinant of the matrix 
+///  \code{Matrix\_SipLaplace}}:
+/// Use the functions \emph{rank} and \emph{det} to analyze the matrix (warning: this can get costly 
+/// for larger matrices!).\\
+///Interpret the results:
+/// \begin{itemize}
+/// \item What does it mean, when a matrix has full rank?
+/// \item How many solutions can a linear system have?
+/// \end{itemize}
+double rank = Matrix\_SipLaplace.rank(); \newline 
+Console.WriteLine("Matrix rank = " + rank);\newline 
+ \newline 
+double det = Matrix\_SipLaplace.det();   \newline 
+Console.WriteLine("Determinante = " + det);\newline 
+/// So the matrix of the SIP discretization has a unique solution.
+ }
+\BoSSSexe
+\BoSSScmdSilent{
+/// tests BoSSScmdSilent
+Assert.AreEqual(rank, Matrix\_SipLaplace.NoOfCols);\newline 
+Assert.Greater(det, 1.0);
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \section{Advanced topics}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// %========================================================
+/// %========================================================
+/// \subsection{The penalty parameter of the SIP and stability in 2D}
+/// %========================================================
+/// %========================================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We define a two-dimensional grid:
+var grd2D       = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-1,1,21), \newline 
+\btab \btab \btab \btab \btab \btab \btab \btab \btab \btab  GenericBlas.Linspace(-1,1,16));\newline 
+var gdata2D     = new GridData(grd2D);\newline 
+var DGBasisOn2D = new Basis(gdata2D, 5);\newline 
+var Mapping2D   = new UnsetteledCoordinateMapping(DGBasisOn2D);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We are going to choose the \code{PenaltySafety} for the \code{SipLaplace}
+/// from the following list
+double[] SFs = new double[] \newline 
+\btab   \{0.001, 0.002, 0.01, 0.02, 0.1, 0.2, 1, 2, 10, 20, 100\};\newline 
+/// and compute the condition number as well as the determinate.
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We consider the example 
+/// \[
+///     -\Delta u = \pi^2 0.5 \cos(x/2) \cos(y/2) 
+///       \text{ with } 
+///       (x,y) \in (-1,1)^2
+/// \]
+/// and $u = 0$ on the boundary.
+/// The exact solution is $u_{Ex}(x,y) = \cos(x/2) \cos(y/2)$.
+Func<double[], double> exSol = \newline 
+\btab \btab (X => Math.Cos(X[0]*Math.PI*0.5)*Math.Cos(X[1]*Math.PI*0.5));\newline 
+Func<double[], double> exRhs = \newline 
+\btab \btab (X => (Math.PI*Math.PI*0.5*Math.Cos(X[0]*Math.PI*0.5)\newline 
+\btab \btab \btab \btab \btab   *Math.Cos(X[1]*Math.PI*0.5))); // == - /\textbackslash  exSol\newline 
+SinglePhaseField RHS = new SinglePhaseField(DGBasisOn2D, "RHS");\newline 
+RHS.ProjectField(exRhs);\newline 
+double[] RHSvec = RHS.CoordinateVector.ToArray();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We check our discretization once more in 2D; the residual should be low,
+/// but not exactly (resp. up to $10^{-12}$) since the solution is not 
+/// polynomial and cannot be fulfilled exactly.
+SinglePhaseField u = new SinglePhaseField(DGBasisOn2D,"u");\newline 
+u.ProjectField(exSol);\newline 
+i\_SipLaplace.PolynomialDegree = DGBasisOn2D.Degree;\newline 
+i\_SipLaplace.cj               = gdata2D.Cells.cj;\newline 
+var Matrix\_SIP\_sf     = Operator\_SipLaplace.ComputeMatrix(Mapping2D,\newline 
+\btab \btab \btab \btab \btab \btab \btab \btab \btab \btab \btab \btab \btab \btab   null,\newline 
+\btab \btab \btab \btab \btab \btab \btab \btab \btab \btab \btab \btab \btab \btab   Mapping2D);\newline 
+SinglePhaseField Residual = new SinglePhaseField(DGBasisOn2D,"Residual");\newline 
+Residual.Acc(1.0, RHS);\newline 
+Matrix\_SIP\_sf.SpMV(-1.0, u.CoordinateVector, 1.0, Residual.CoordinateVector);\newline 
+Console.WriteLine("Residual L2 norm: " + Residual.L2Norm());
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We also check that the matrix is symmetric:
+var checkMatrix = Matrix\_SIP\_sf - Matrix\_SIP\_sf.Transpose();\newline 
+checkMatrix.InfNorm();
+ }
+\BoSSSexe
+\BoSSScmdSilent{
+/// tests BoSSScmdSilent
+Assert.LessOrEqual(checkMatrix.InfNorm(), 1e-8);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \paragraph{Matrix properties for different penalty factors.}
+/// Now, we assemble the matrix of the SIP for different 
+/// \code{PenaltySafety}-factors. We also try to solve the linear system
+/// using an iterative method.
+int cnt     = 0;\newline 
+var Results = new List<Tuple<double,double,int,double,bool>>();\newline 
+foreach(double sf in SFs) \{\newline 
+\btab cnt++;\newline 
+\btab i\_SipLaplace.PenaltySafety    = sf;\newline 
+\btab i\_SipLaplace.PolynomialDegree = DGBasisOn2D.Degree;\newline 
+\btab var Matrix\_SIP\_sf             = Operator\_SipLaplace.ComputeMatrix(\newline 
+\btab \btab \btab \btab \btab \btab \btab \btab \btab Mapping2D,null,Mapping2D);\newline 
+\btab double condNo1                = Matrix\_SIP\_sf.condest();  \newline 
+\btab bool definite                 = Matrix\_SIP\_sf.IsDefinite();\newline 
+ \newline 
+    /// We solve the system 
+    /// \[
+    ///    \text{\tt Matrix\_SIP\_sf} \cdot u = \text{\tt RHS}
+    /// \]
+    /// using a an iterative solver, the so-called 
+    /// conjugate gradient (CG) method.
+    /// CG requires a positive definite matrix. 
+    /// The function \code{Solve\_CG} returns the number of iterations.
+\btab SinglePhaseField u = new SinglePhaseField(DGBasisOn2D,"u");\newline 
+\btab u.InitRandom();\newline 
+\btab int NoOfIter = Matrix\_SIP\_sf.Solve\_CG(u.CoordinateVector, RHSvec);\newline 
+ \newline 
+\btab SinglePhaseField Error = new SinglePhaseField(DGBasisOn2D,"Error");\newline 
+\btab Error.ProjectField(exSol);\newline 
+\btab Error.Acc(-1.0, u);\newline 
+ \newline 
+\btab double L2err = u.L2Error(exSol);\newline 
+ \newline 
+\btab Console.WriteLine(sf + "\textbackslash t" + condNo1.ToString("0.#E-00") \newline 
+\btab \btab \btab \btab \btab \btab  + "\textbackslash t" + NoOfIter \newline 
+\btab \btab \btab \btab \btab \btab  + "\textbackslash t" + L2err.ToString("0.#E-00") \newline 
+\btab \btab \btab \btab \btab \btab  + "\textbackslash t" + definite);\newline 
+\btab Results.Add(new Tuple<double,double,int,double,bool>(sf, condNo1, NoOfIter,\newline 
+\btab \btab \btab \btab \btab \btab \btab \btab  L2err, definite));\newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmdSilent{
+/// tests BoSSScmdSilent
+foreach(var r in Results) \{\newline 
+\btab if(r.Item1 >= 1 && r.Item1 <= 20) \{\newline 
+\btab \btab Assert.LessOrEqual(r.Item2, 1e7); // cond No.\newline 
+\btab \btab Assert.LessOrEqual(r.Item3, 6000); // iter\newline 
+\btab \btab Assert.LessOrEqual(r.Item4, 1e-4); // L2 err\newline 
+\btab \btab Assert.IsTrue(r.Item5); // definite   \newline 
+\btab \}\newline 
+\btab if(r.Item1 <= 0.1) \{\newline 
+\btab \btab Assert.IsFalse(r.Item5); // indefinite   \newline 
+\btab \}\newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \paragraph{Plotting:}
+/// Plot the number of conjugate gradient iterations versus the 
+/// \code{PenaltySafety}.
+/// A logarithmic scale is used for the horizontal axis.
+var format = new PlotFormat(lineColor: LineColors.Blue, \newline 
+\btab \btab \btab \btab \btab \btab \btab pointSize: 2, \newline 
+\btab \btab \btab \btab \btab \btab \btab dashType: DashTypes.DotDashed, \newline 
+\btab \btab \btab \btab \btab \btab \btab Style: Styles.LinesPoints, \newline 
+\btab \btab \btab \btab \btab \btab \btab pointType:PointTypes.OpenCircle);\newline 
+Gnuplot gp = new Gnuplot(baseLineFormat:format);\newline 
+gp.PlotLogXY(Results.Select(r => r.Item1), \newline 
+\btab \btab \btab  Results.Select(r => ((double)(r.Item3))));\newline 
+gp.PlotNow();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \paragraph{convergence study, indefinite vs. definite.}
+/// We are going to solve the SIP-system for different grid resolutions,
+/// comparing an insufficient penalty to a penalty which is large enough.
+double[] Resolution = new double[] \{ 8, 16, 32, 64, 128, 256 \};\newline 
+List<double> L2Error\_indef  = new List<double>();\newline 
+List<double> L2Error\_posdef = new List<double>();\newline 
+foreach(int Res in Resolution) \{\newline 
+\btab var grd2D = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-1,1,(int)Res + 1), \newline 
+\btab \btab \btab \btab \btab \btab \btab \btab \btab    GenericBlas.Linspace(-1,1,(int)Res + 1));\newline 
+\btab var gdata2D = new GridData(grd2D);\newline 
+\btab var DGBasisOn2D = new Basis(gdata2D, 2);\newline 
+\btab var Mapping2D  = new UnsetteledCoordinateMapping(DGBasisOn2D);\newline 
+ \newline 
+\btab SinglePhaseField RHS = new SinglePhaseField(DGBasisOn2D, "RHS");\newline 
+\btab RHS.ProjectField(exRhs);\newline 
+\btab SinglePhaseField uEx = new SinglePhaseField(\newline 
+\btab \btab    new Basis(gdata2D, DGBasisOn2D.Degree*2),\newline 
+\btab \btab    "Error");\newline 
+\btab uEx.ProjectField(exSol);\newline 
+ \newline 
+\btab i\_SipLaplace.PolynomialDegree = DGBasisOn2D.Degree;\newline 
+\btab i\_SipLaplace.cj               = gdata2D.Cells.cj;\newline 
+ \newline 
+\btab i\_SipLaplace.PenaltySafety    = 0.01;\newline 
+\btab var Matrix\_SIP\_indef          = Operator\_SipLaplace.ComputeMatrix(\newline 
+\btab \btab \btab \btab \btab \btab \btab \btab \btab Mapping2D,null,Mapping2D);\newline 
+ \newline 
+\btab SinglePhaseField u\_indef = new SinglePhaseField(DGBasisOn2D,"u");\newline 
+\btab Matrix\_SIP\_indef.Solve\_Direct(u\_indef.CoordinateVector, \newline 
+\btab \btab \btab \btab \btab \btab \btab \btab   RHS.CoordinateVector);\newline 
+\btab var Error\_indef = uEx.CloneAs();\newline 
+\btab Error\_indef.AccLaidBack(-1.0, u\_indef);\newline 
+\btab L2Error\_indef.Add(Error\_indef.L2Norm());\newline 
+ \newline 
+    /// In order to have a positive definite system, we are
+    /// using $\text{\tt PenaltySafety} = 2$!
+\btab i\_SipLaplace.PenaltySafety = 2.0;\newline 
+\btab var Matrix\_SIP\_posdef         = Operator\_SipLaplace.ComputeMatrix(\newline 
+\btab \btab \btab \btab \btab \btab \btab \btab \btab Mapping2D,null,Mapping2D);\newline 
+ \newline 
+\btab SinglePhaseField u\_posdef = new SinglePhaseField(DGBasisOn2D,"u");\newline 
+\btab Matrix\_SIP\_posdef.Solve\_Direct(u\_posdef.CoordinateVector, \newline 
+\btab \btab \btab \btab \btab \btab \btab \btab    RHS.CoordinateVector);\newline 
+\btab var Error\_posdef = uEx.CloneAs();\newline 
+\btab Error\_posdef.AccLaidBack(-1.0, u\_posdef);\newline 
+\btab L2Error\_posdef.Add(Error\_posdef.L2Norm());\newline 
+ \newline 
+\btab Console.WriteLine(L2Error\_indef.Last().ToString("0.#E-00") \newline 
+\btab \btab \btab \btab \btab   + "\textbackslash t" + L2Error\_posdef.Last().ToString("0.#E-00"));\newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \paragraph{Convergence plot:}
+/// The convergence plot unveils that there is something wrong if the
+/// penalty factor is set too low.
+/// While the solution of the indefinite system may look right at the first
+/// glance, we see that we do not obtain grid convergence for 
+/// \code{Error\_indef}.
+/// The error of the positive definite system, \code{Error\_posdef}, where the 
+/// penalty is chosen sufficiently large converges with the expected 
+/// rate.
+var format = new PlotFormat(lineColor: LineColors.Blue, \newline 
+\btab \btab \btab \btab \btab \btab \btab pointSize: 2, \newline 
+\btab \btab \btab \btab \btab \btab \btab dashType: DashTypes.DotDashed, \newline 
+\btab \btab \btab \btab \btab \btab \btab Style: Styles.LinesPoints, \newline 
+\btab \btab \btab \btab \btab \btab \btab pointType:PointTypes.OpenCircle);\newline 
+Gnuplot gp = new Gnuplot(baseLineFormat:format);\newline 
+gp.PlotLogXLogY(Resolution, L2Error\_indef);\newline 
+gp.PlotLogXLogY(Resolution, L2Error\_posdef);\newline 
+gp.PlotNow();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Finally, we are going to compute the convergence rate of the SIP
+/// discretization: we take the logarithm of the resolution and the error:
+ }
+\BoSSSexe
+\BoSSScmd{
+var log\_h   = Resolution.Select(h => Math.Log10(h)).ToArray();\newline 
+var log\_Err = L2Error\_posdef.Select(h => Math.Log10(h)).ToArray();
+ }
+\BoSSSexe
+\BoSSScmd{
+var LeastSquaresSys = MultidimensionalArray.Create(log\_h.Length,2);\newline 
+LeastSquaresSys.SetColumn(0, log\_h.Length.ForLoop(i => 1.0));\newline 
+LeastSquaresSys.SetColumn(1, log\_h);\newline 
+double[] dk = new double[2]; // intercept and slope of best-fit line\newline 
+LeastSquaresSys.LeastSquareSolve(dk, log\_Err);
+ }
+\BoSSSexe
+\BoSSScmd{
+dk;
+ }
+\BoSSSexe
+\BoSSScmdSilent{
+/// tests BoSSScmdSilent
+Assert.LessOrEqual(dk[1], -2.9);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \section{Further reading}
+/// \begin{itemize}
+/// \item
+/// \bibentry{DiPietroErn2011}
+/// \item
+/// \bibentry{Arnold_1982} 
+/// \end{itemize}
+ }
+\BoSSSexe

@@ -1,0 +1,141 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BoSSSControl>
+    <Base>
+        <dboptions path="C:\BoSSS\bosss_db"/>
+        <grid guid="12345678-9012-3456-7890-123456789012"/>
+        
+        <description name="control file example">
+            control file example
+        </description>
+        <tags>
+            control example
+        </tags>
+        
+        <!-- Here, you specify the run mode "ParameterStudy". Additional
+             settings follow at the bottom of this file -->
+        <run mode="ParameterStudy"/>
+        
+        <fields_degree>
+            <field identification="VelocityX" degree="2"/>
+            <field identification="VelocityY" degree="2"/>
+            <field identification="Phi" degree="2"/>
+        </fields_degree>
+    </Base>
+    
+    <initial mode="values">
+        <values>
+            <formula>
+                u(x,y) = 0.0
+            </formula>
+            <formula field="v">
+                v(x,y) = 0.0
+            </formula>
+            <formula>
+                Phi(x,y) = 0
+            </formula>
+        </values>    
+    </initial>
+    
+    <Solver>
+        <logging savetodb="true" saveperiod="5" tracing="false"/>
+        <termcond NoOfTimesteps="5" Endtime="50"/>
+        <timestepping dtMin="0.0" dtMax="0.2" CFLFrac = "0.3"/>
+  
+        <boundary>
+            <bc edgetagname="velocity_inlet">
+                <formula>
+                    u(x,y)=1-y*y
+                </formula>
+            </bc>
+            <bc edgetagname="wall">
+            </bc>
+            <bc edgetagname="pressure_outlet">
+                <value field="pressure">0.0</value>
+            </bc>
+        </boundary>
+        <properties>
+            <float key="Reynolds">10.0</float>
+            <float key="penalty_poisson">2.5</float>
+            <float key="penalty_viscous">1.5</float>
+            <string key="pressure_solver">iterative-pressure-solver</string>
+            <string key="viscous_solver">iterative-viscous-solver</string>
+            <fvector key="PoissonRefPt">5.0 0.0</fvector>
+            <string key="method:major-opt">projection</string>
+            <string key="method:minor-opt">lie</string>
+            <string key="bc-and-fluxes">kummers-method</string>
+            <float key="CrankNic:theta">1.0</float>
+            <string key="IOFields">pri_Velocity IntVelocity pri_Phi DivB4 DivAfter </string>
+            <string key="ResFields">pri_Velocity pri_Phi DivB4 DivAfter </string>
+        </properties>
+		
+		<!-- The queries that will be evaluated during the different runs. For
+			 more informaion about supported queries, see 05-queries.xml -->
+		<Queries>
+			<L2Norm id="dummy1">
+                <field identification="VelocityX" />
+            </L2Norm>
+		</Queries>
+    </Solver>
+    
+    <!-- Configuration options for the new run mode. The attribute
+         "logFileDirectory" is mandatory and tells BoSSS where to put the log
+         file containing the summary of the results of the parameter study. The
+         log file will contain the following pieces of information per session:
+         - The session id
+         - Timing information (setup time and execution time in seconds)
+         - The ids of all affected parameters and their values
+         - The ids of all queries and their values
+         -->
+    <ParameterStudy logFileDirectory="C:\BoSSS\">
+        
+        <!-- A parameter study consists of several parameter sets which are
+             varied independently. In this example, we have two sets-->
+             
+        <!-- The first set contains only one parameter (the poisson-penalty which
+             will take four different values: 2.5, 5.0, 7.5 and 10.0-->
+        <parameterSet>
+            <!-- Each parameter has a unique id to identify it. The settings
+                 themselves are referenced via so called xpathes. That way, they
+                 can be used to change any parameter within this control file.
+                 The syntax looks a bit complicated but it is the standard
+                 syntax for the navigation within XML files. More information
+                 on this topic can be found at
+                 http://www.w3schools.com/XPath/xpath_syntax.asp. The values
+                 this parameter should take are supplied as a list of comma
+                 separated values. -->
+            <parameter id="penalty" xpath="Solver/properties/float[@key='penalty_poisson']">2.5 5.0 7.5 10.0</parameter>
+        </parameterSet>
+        
+        <!-- The second set contains two parameters (the polynomial degree of
+             u and v). Parameters within a single set will always be varied
+             SIMULTANEOUSLY. In this case, this means that either u and v have
+             degree 1 xor u and v have degree 2. 
+             Note: Obviously, each parameter within a single set must have the
+             same number of possible values -->
+        <parameterSet>
+            <parameter id="VelocityX-degree" xpath="Base/fields_degree/field[@identification='VelocityX']/@degree">1 2</parameter>
+            <parameter id="VelocityY-degree" xpath="Base/fields_degree/field[@identification='VelocityY']/@degree">1 2</parameter>
+        </parameterSet>
+    </ParameterStudy>
+    
+    <sparsesolver name="iterative-pressure-solver">
+        <type>pCG</type>
+        <library>hypre</library>
+        <specific>
+            <MaxIterations>1000000</MaxIterations>
+            <ConvergenceType>Relative</ConvergenceType>
+            <Tolerance>1.0e-9</Tolerance>
+        </specific>
+    </sparsesolver>
+
+    <sparsesolver name="iterative-viscous-solver">
+        <type>PCG</type>
+        <library>hypre</library>
+        <specific>
+            <MaxIterations>8000</MaxIterations>
+            <ConvergenceType>Relative</ConvergenceType>
+            <Tolerance>1.0e-12</Tolerance>
+            <TwoNorm>true</TwoNorm>
+        </specific>
+    </sparsesolver>
+</BoSSSControl>

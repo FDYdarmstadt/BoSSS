@@ -1,0 +1,163 @@
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{calc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage[final]{graphicx} % Option "final" makes sure graphics also appear in draft mode
+\usepackage[hang]{caption}
+\usepackage[format=hang,justification=raggedright]{subfig}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage{algorithmicx}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{pgfplots}
+\usepackage{pstricks}
+\usepackage{varwidth} % Minipage width variable size
+\usepackage[centercolon=true]{mathtools} % \coloneqq
+\usepackage{bm} % Bold greek smybols
+\usepackage{eucal} % Nicer calligraphic symbols
+\usepackage{upgreek}
+\usepackage[nolist]{acronym}
+\usepackage[left=2.00cm, right=2.00cm, top=2.00cm, bottom=2.00cm]{geometry}
+\usepackage{url}
+\usepackage{ifdraft}
+\usepackage{import}
+\usepackage{wsDBEtex}
+\usepackage[round]{natbib}
+%\bibliographystyle{plainnat}
+\bibliographystyle{apalike}
+\usepackage{color}
+\usepackage{bibentry}
+\usepackage{overpic}
+\usepackage{tabularx}
+\usepackage{float} % Make option [H] for figures work properly
+\usepackage{varwidth}
+\usepackage[toc,page]{appendix}
+\usepackage[hidelinks]{hyperref}
+% \ifdraft to deactivate draft/debug output
+\usepackage[\ifdraft{}{disable}]{todonotes}
+%\usepackage[inline,\ifdraft{draft}{final}]{showlabels}
+\usepackage[inline]{showlabels}
+\renewcommand{\showlabelfont}{\small\ttfamily\color{magenta}}
+\usepackage{enumitem}
+\usepackage{textcomp}
+
+\usepackage{listings} % source code formatting, mainly for BoSSSPad reference
+\lstset{
+	language=[Sharp]C,
+	basicstyle=\ttfamily\small\bfseries,
+	commentstyle=\normalfont\slshape, %\color{greencomments},
+	breaklines=true,
+	frame=lines,
+	showstringspaces=false
+}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+
+\pgfplotsset{
+	compat=1.12,
+	cycle list name=exotic
+}
+
+% General notation
+\newcommand{\jump}[1]{\left[\!\left[{#1}\right]\!\right]}
+\newcommand{\mean}[1]{\left\{{#1}\right\}}
+\newcommand{\abs}[1]{\left\lvert{#1}\right\rvert}
+\newcommand{\norm}[1]{\left\lVert{#1}\right\rVert}
+\newcommand{\set}[1]{\mathcal{#1}}
+%\renewcommand{\vec}[1]{\mathbf{#1}} % geht NICHT bei griechischen Buchstaben!
+\renewcommand{\vec}[1]{\underline{#1}}
+\renewcommand{\matrix}[1]{\underline{\underline{#1}}}
+\newcommand{\diff}[1]{\,d\mkern-2mu#1}
+\newcommand{\dV}{\diff{V}}
+\newcommand{\dA}{\diff{A}}
+\newcommand{\dt}{\diff{t}}
+\newcommand{\Dt}{\Delta t}
+\newcommand{\measure}[1]{\text{meas}({#1})}
+\newcommand{\sign}[1]{\text{sgn}({#1})}
+\newcommand{\del}[2]{\frac{\partial #1}{\partial #2}}
+\newcommand{\restr}[2]{\left.#1\right|_{#2}}
+\newcommand{\support}[1]{\text{supp}\left(#1\right)}
+\newcommand{\LTwoNorm}[2]{\left\lVert#1\right\rVert_{L^2(#2)}}
+\newcommand{\scp}[3][]{\left\langle #2 \middle| #3 \right\rangle_{#1}}
+
+% Discretization
+\newcommand{\domain}{\Omega}
+\newcommand{\meshSize}{h}
+\newcommand{\discrete}[1]{\tilde{#1}}
+\newcommand{\discreteDomain}{\Omega{}_{\meshSize{}}}
+\newcommand{\cell}{\set{K}}
+\newcommand{\NumericalGrid}[1][h]{\mathfrak{K}_{#1}} 
+\newcommand{\edge}{\set{E}}
+\newcommand{\edges}{\mathfrak{E}_{h}} 
+\newcommand{\normal}{\vec{n}}
+\newcommand{\basis}{\Phi}
+\newcommand{\degree}{P}
+\newcommand{\flux}{f}
+\newcommand{\fluxVec}{\vec{\flux}}
+\newcommand{\diameter}[1]{\text{diam}({#1})}
+\newcommand{\massMatrix}{\matrix{M}}
+\newcommand{\real}{\mathbb{R}}
+\newcommand{\poly}{\mathbb{P}}
+\newcommand{\one}{\mathbf{1}}
+\newcommand{\normm}{\vert\Vert}
+\newcommand{\innen}{-}
+\newcommand{\aussn}{+}
+\newcommand{\sip}{\textrm{sip}}
+\newcommand{\naive}{\textrm{naive}}
+\newcommand{\basisRef}{\basis^{\text{ref}}}
+\newcommand{\cellRef}{\cell^{\text{ref}}}
+\newcommand{\Ns}{\text{Ns}}
+
+% common abbreveations
+\acrodef{dg}[DG]{Discontinuous Galerkin}
+\acrodef{gui}[GUI]{graphical user interface}
+\acrodef{ibm}[IBM]{immersed boundary method}
+\acrodef{hpc}[HPC]{high performance computing}
+\acrodef{ide}[IDE]{integrated development environment}
+\acrodef{cns}[CNS]{compressible Navier-Stokes}
+
+
+% Physical quantities (non dimensional)
+\newcommand{\heatCapacityRatio}{\gamma}
+\newcommand{\density}{\rho}
+\newcommand{\velvec}{\vec{u}}
+\newcommand{\momentum}{\density{}\mkern-1mu \velocity}
+\newcommand{\momvec}{\vec{m}}
+\newcommand{\energy}{\density{}\mkern-2mu E}
+\newcommand{\pressure}{p}
+\newcommand{\innerEnergy}{e}
+\newcommand{\enthalpy}{\bar{h}}
+\newcommand{\speedOfSound}{a}
+\newcommand{\temperature}{T}
+\newcommand{\velocity}{u}
+\newcommand{\Reynolds}{\ensuremath{\mathrm{Re}}}
+\newcommand{\reynolds}{\mathrm{Re}}
+\newcommand{\Prandtl}{\ensuremath{\mathrm{Pr}}}
+\newcommand{\Mach}{\ensuremath{\mathrm{Ma}}}
+\newcommand{\Froude}{\ensuremath{\mathrm{Fr}}}
+\newcommand{\stressTensor}{\tau}
+\newcommand{\stress}{\matrix{\tau}}
+\newcommand{\heatFlux}{q}
+\newcommand{\heatSource}{Q}
+\newcommand{\externalForces}{F}
+\newcommand{\viscosity}{\mu}
+\newcommand{\thermalConductivity}{k}
+\newcommand{\gravitationalConstant}{g}
+\newcommand{\signalVelocity}{S}
+\newcommand{\aoa}{\alpha}
+\newcommand{\lift}{c_L}
+\newcommand{\liftForce}{F_L}
+\newcommand{\drag}{c_D}
+\newcommand{\dragForce}{F_D}
+\newcommand{\entropy}{\bar{s}}
+
+% Physical quantities (dimensional)
+\newcommand{\dimensional}[1]{\tilde{#1}}
+\newcommand{\reference}[1]{{#1}_{\infty}}
+

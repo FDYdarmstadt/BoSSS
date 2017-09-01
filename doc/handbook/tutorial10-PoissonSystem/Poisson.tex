@@ -1,0 +1,621 @@
+\BoSSSopen{tutorial10-PoissonSystem/Poisson}
+\graphicspath{{tutorial10-PoissonSystem/Poisson.texbatch/}}
+
+\BoSSScmd{
+/// \section*{What's new?}
+/// \label{sec:poissonSystem_new}
+/// \begin{itemize}
+///     \item {Implementation of a saddle point problem into \BoSSS{} (e.g. the Poisson equation as a              system)}
+///     \item {Central-difference-form and strong form}
+///     \item {comparison of both formulations}
+///     \item Advanced: {algebraic reduction of the poisson problem}
+/// \end{itemize}
+    /// %==========================================
+    /// \section*{Prerequisites}
+    /// %==========================================
+/// \begin{itemize}
+///    \item {Implementation of numerical fluxes, chapter \ref{NumFlux}} 
+///    \item {Spatial operator, chapter \ref{SpatialOperator}} 
+/// \end{itemize}
+    /// %==========================================
+    /// \section{Problem statement}
+    /// %==========================================
+/// Within this exercise, we are going to investigate 
+/// the discretization of a Poisson equation as a system.
+/// Obviously, it is possible to discretize the Poisson equation as a system of
+/// first-order-PDE's, introducing a vector field $\vec{\sigma}$:
+/// \begin{alignat}{3}
+    ///  \vec{\sigma}  + \nabla u & = 0, & & \text{ in } \domain
+    ///    \label{eq:PoissonSys1} \\
+    ///  \operatorname{div}(\vec{\sigma}) &  = g_{\domain}, & & \text{ in } \domain
+    ///    \label{eq:PoissonSys2} \\
+    ///   u                                               & = g_D, & & \text{ on } \Gamma_D \\
+    ///   - \vec{\sigma} \cdot \vec{n}_{\partial \domain} & = g_N, & & \text{ on } \Gamma_N
+    /// \end{alignat}
+/// resp. in matrix-notation:
+/// \begin{align*}
+    /// \begin{bmatrix}
+        /// \one & \nabla \\
+        ///  \operatorname{div} & 0 \\
+        /// \end{bmatrix}\cdot
+    /// \begin{bmatrix}
+        /// \vec{\sigma}\\
+        /// u
+        /// \end{bmatrix}=
+    /// \begin{bmatrix}
+        /// 0 \\
+        /// g_{\domain}
+        /// \end{bmatrix}
+    /// \end{align*}
+/// This exercise, together with the previous one,
+/// will form the foundation for an incompressible Stokes- resp. Navier-Stokes solver.    
+/// \section{Solution within the BoSSS framework}
+ }
+%
+\BoSSScmd{
+restart
+ }
+\BoSSSexeSilent
+%
+\BoSSScmd{
+using ilPSP.LinSolvers; \newline 
+using BoSSS.Solution.Tecplot; \newline 
+using ilPSP.Connectors.Matlab;
+ }
+%
+\BoSSScmd{
+ % 
+ }
+\BoSSScmd{
+/// % ===================================
+/// \subsection{Tests on the divergence}
+/// % ===================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \paragraph{Common base-class for $\text{div}$-implementations}
+/// We are going to implement two different formulations of the 
+/// divergence-operator for which going to show equivalence. 
+/// We implement a common base-class for both formulations:
+abstract public class BaseDivergence :  \newline 
+\btab \btab BoSSS.Foundation.IEdgeForm, // edge integrals \newline 
+\btab \btab BoSSS.Foundation.IVolumeForm     // volume integrals \newline 
+\{ \newline 
+    /// We don't use parameters (e.g. variable viscosity, ...)
+    /// at this point: so the parameter list can be null, resp. empty:
+\btab public IList<string> ParameterOrdering \{  \newline 
+\btab \btab get \{ return null; \}  \newline 
+\btab \} \newline 
+ \newline 
+    /// But we have a vector argument variable, 
+    /// $ [ \sigma_1, \sigma_2 ] = \vec{\sigma} $
+    /// (our trial function):
+\btab public IList<String> ArgumentOrdering \{  \newline 
+\btab \btab get \{ return new string[] \{ "sigma1", "sigma2" \}; \}  \newline 
+\btab \} \newline 
+ \newline 
+\btab public TermActivationFlags VolTerms \{ \newline 
+\btab \btab get \{ \newline 
+\btab \btab \btab return TermActivationFlags.AllOn; \newline 
+\btab \btab \} \newline 
+\btab \} \newline 
+ \newline 
+\btab public TermActivationFlags InnerEdgeTerms \{ \newline 
+\btab \btab get \{ \newline 
+\btab \btab \btab return (TermActivationFlags.AllOn);  \newline 
+\btab \btab \} \newline 
+\btab \} \newline 
+ \newline 
+\btab public TermActivationFlags BoundaryEdgeTerms \{ \newline 
+\btab    get \{ \newline 
+\btab \btab    return TermActivationFlags.AllOn; \newline 
+\btab \btab \} \newline 
+\btab \} \newline 
+ \newline 
+    /// The following functions cover the actual math.
+    /// For any discretization of the divergence-operator, we have to specify:
+    /// \begin{itemize}
+    ///    \item a volume integrand,
+    ///    \item an edge integrand for inner edges, i.e. on $ \Gamma_i$,
+    ///    \item an edge integrand for boundary edges, 
+    ///          i.e. on $\partial \Omega$.
+    /// \end{itemize}
+    /// These functions are declared as \code{abstract}, meaning that one has 
+    /// to specify them in classes derived from \code{BaseLaplace}.
+ \newline 
+\btab abstract public double VolumeForm(ref CommonParamsVol cpv,  \newline 
+\btab \btab    double[] U, double[,] GradU,  \newline 
+\btab \btab    double V, double[] GradV);         \newline 
+ \newline 
+\btab abstract public double InnerEdgeForm(ref CommonParams inp,  \newline 
+\btab \btab double[] U\_IN, double[] U\_OT, double[,] GradU\_IN, double[,] GradU\_OT,  \newline 
+\btab \btab double V\_IN, double V\_OT, double[] GradV\_IN, double[] GradV\_OT); \newline 
+ \newline 
+\btab abstract public double BoundaryEdgeForm(ref CommonParamsBnd inp,  \newline 
+\btab \btab double[] U\_IN, double[,] GradU\_IN, double V\_IN, double[] GradV\_OT); \newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We are going to use both, Dirichlet- and Neumann-boundary conditions
+/// in this exercise; the function \code{IsDirichletBndy} is used to
+/// specify the type of boundary condition at point \code{X}:
+Func<double[],bool> IsDirichletBndy = delegate(double[] X) \{ \newline 
+\btab double x = X[0]; \newline 
+\btab double y = X[1]; \newline 
+\btab if(Math.Abs(x - (-1.0)) < 1.0e-8) \newline 
+\btab \btab return true;     \newline 
+\btab if(Math.Abs(y - (-1.0)) < 1.0e-8) \newline 
+\btab \btab return true;     \newline 
+\btab return false; \newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \paragraph{Formulation (i): Central-difference-form of $\text{div}$}
+/// The implementation of the central-difference form is as follows:
+ }
+\BoSSSexe
+\BoSSScmd{
+class Divergence\_cendiff : BaseDivergence \{ \newline 
+ \newline 
+ \newline 
+    /// The volume form is equal to 
+    /// $ -\vec{\sigma} \cdot \nabla v$:
+\btab override public double VolumeForm(ref CommonParamsVol cpv,  \newline 
+\btab \btab double[] Sigma, double[,] GradSigma,  \newline 
+\btab \btab double V, double[] GradV) \{ \newline 
+\btab \btab double Acc = 0; \newline 
+\btab \btab for(int d = 0; d < cpv.D; d++) \{ \newline 
+\btab \btab \btab Acc -= Sigma[d]*GradV[d]; \newline 
+\btab \btab \} \newline 
+\btab \btab return Acc; \newline 
+\btab \} \newline 
+ \newline 
+    /// At the cell boundaries, we use a central-difference-flux,
+    /// i.e. $\mean{\vec{\sigma}} \cdot \vec{n}_{\Gamma} \jump{v}$:
+\btab override public double InnerEdgeForm(ref CommonParams inp,  \newline 
+\btab \btab double[] Sigma\_IN, double[] Sigma\_OT, double[,] GradSigma\_IN, double[,] GradSigma\_OT,  \newline 
+\btab \btab double V\_IN, double V\_OT, double[] GradV\_IN, double[] GradV\_OT) \{ \newline 
+ \newline 
+\btab \btab double Acc = 0; \newline 
+\btab \btab for(int d = 0; d < inp.D; d++) \{ \newline 
+\btab \btab \btab Acc += 0.5*(Sigma\_IN[d] + Sigma\_OT[d])*inp.Normale[d]*(V\_IN - V\_OT); \newline 
+\btab \btab \} \newline 
+\btab \btab return Acc; \newline 
+\btab \} \newline 
+ \newline 
+\btab override public double BoundaryEdgeForm(ref CommonParamsBnd inp,  \newline 
+\btab \btab double[] Sigma\_IN, double[,] GradSigma\_IN, double V\_IN, double[] GradV\_OT) \{ \newline 
+ \newline 
+\btab \btab double Acc = 0; \newline 
+ \newline 
+\btab \btab if(IsDirichletBndy(inp.X)) \{ \newline 
+            /// Dirichlet-boundary: by taking the inner value of $\vec{\sigma}$, 
+            /// this is a free boundary with respect to $\vec{\sigma}$.
+\btab \btab \btab for(int d = 0; d < inp.D; d++) \{ \newline 
+\btab \btab \btab \btab Acc += Sigma\_IN[d]*inp.Normale[d]*V\_IN; \newline 
+\btab \btab \btab \} \newline 
+\btab \btab \} else \{ \newline 
+            /// Neumann-boundary
+\btab \btab \btab double gNeu = 0.0; \newline 
+\btab \btab \btab Acc += gNeu*V\_IN; \newline 
+\btab \btab \} \newline 
+\btab \btab return Acc; \newline 
+\btab \} \newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \paragraph{Formulation (ii): 'Strong' form of $\text{div}$:}
+/// Here, we use the form 
+/// \[
+///    b(\vec{\sigma},v) = 
+///    \oint_{\Gamma \backslash \Gamma_D} 
+///           \mean{v} \jump{\vec{\sigma}} \cdot \vec{n}_\Gamma 
+///    \dA 
+///    -
+///    \int_{\domain} \operatorname{div}(\vec{\sigma}) \cdot v \dV
+/// \]
+/// This is actually the negative divergence, which will be more useful
+/// later on.
+class Divergence\_strong : BaseDivergence \{ \newline 
+ \newline 
+    /// We have to implement \code{VolumeForm},
+    /// \emph{InnerEdgeForm} and \code{BoundaryEdgeForm}:
+\btab override public double VolumeForm(ref CommonParamsVol cpv,  \newline 
+\btab \btab double[] Sigma, double[,] GradSigma,  \newline 
+\btab \btab double V, double[] GradV) \{ \newline 
+\btab \btab double Acc = 0; \newline 
+\btab \btab for(int d = 0; d < cpv.D; d++) \{ \newline 
+\btab \btab \btab Acc -= GradSigma[d,d]*V; \newline 
+\btab \btab \} \newline 
+\btab \btab return Acc; \newline 
+\btab \} \newline 
+ \newline 
+\btab override public double InnerEdgeForm(ref CommonParams inp,  \newline 
+\btab \btab double[] Sigma\_IN, double[] Sigma\_OT, double[,] GradSigma\_IN, double[,] GradSigma\_OT,  \newline 
+\btab \btab double V\_IN, double V\_OT, double[] GradV\_IN, double[] GradV\_OT) \{ \newline 
+ \newline 
+\btab \btab double Acc = 0; \newline 
+\btab \btab for(int d = 0; d < inp.D; d++) \{ \newline 
+\btab \btab \btab Acc += 0.5*(V\_IN + V\_OT)*(Sigma\_IN[d] - Sigma\_OT[d])*inp.Normale[d]; \newline 
+\btab \btab \} \newline 
+\btab \btab return Acc; \newline 
+\btab \} \newline 
+ \newline 
+\btab override public double BoundaryEdgeForm(ref CommonParamsBnd inp,  \newline 
+\btab \btab double[] Sigma\_IN, double[,] GradSigma\_IN, double V\_IN, double[] GradV\_OT) \{ \newline 
+ \newline 
+\btab \btab double Acc = 0; \newline 
+ \newline 
+\btab \btab if(IsDirichletBndy(inp.X)) \{ \newline 
+\btab \btab \btab Acc = 0;\newline 
+\btab \btab \} else \{ \newline 
+\btab \btab \btab double gNeu = 0.0; \newline 
+\btab \btab \btab for(int d = 0; d < inp.D; d++) \{ \newline 
+\btab \btab \btab \btab Acc += Sigma\_IN[d]*inp.Normale[d]*V\_IN; \newline 
+\btab \btab \btab \} \newline 
+\btab \btab \btab Acc -= gNeu*V\_IN; \newline 
+\btab \btab \} \newline 
+\btab \btab return Acc; \newline 
+\btab \} \newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+    /// %==========================================
+    /// \subsection{Equality test}
+    /// %==========================================
+ }
+\BoSSSexe
+\BoSSScmd{
+    /// We are going to test the equivalence of both formulations
+    /// on a 2D grid, using a DG basis of degree 1:
+ var grd2D               = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-1,1,6),                                                    GenericBlas.Linspace(-1,1,7)); \newline 
+ var gdata2D             = new GridData(grd2D); \newline 
+ var b                   = new Basis(gdata2D, 1); \newline 
+ SinglePhaseField sigma1 = new SinglePhaseField(b,"sigma1"); \newline 
+ SinglePhaseField sigma2 = new SinglePhaseField(b,"sigma2"); \newline 
+ CoordinateVector sigma  = new CoordinateVector(sigma1,sigma2); \newline 
+ var TrialMapping        = sigma.Mapping; \newline 
+ var TestMapping         = new UnsetteledCoordinateMapping(b);
+ }
+\BoSSSexe
+\BoSSScmd{
+    /// We create the matrix of the central-difference formulation:
+ var OpDiv\_cendiff = (new Divergence\_cendiff()).Operator(); \newline 
+ var MtxDiv\_cendiff = OpDiv\_cendiff.ComputeMatrix(TrialMapping,  \newline 
+\btab \btab \btab \btab \btab \btab \btab \btab \btab \btab \btab \btab   null,  \newline 
+\btab \btab \btab \btab \btab \btab \btab \btab \btab \btab \btab \btab   TestMapping);
+ }
+\BoSSSexe
+\BoSSScmd{
+    /// We create the matrix of the strong formulation 
+    /// and show that the matrices of both formulations are equal.
+    /// We use the \code{InfNorm(...)}-method to identify whether a 
+    /// matrix is (approximately) zero or not.
+ var OpDiv\_strong  = (new Divergence\_strong()).Operator(); \newline 
+ var MtxDiv\_strong = OpDiv\_strong.ComputeMatrix(TrialMapping, null, TestMapping); \newline 
+ var TestP         = MtxDiv\_cendiff + MtxDiv\_strong; \newline 
+ TestP.InfNorm();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// %==================================
+/// \subsection{The gradient-operator}
+/// \label{subsec:poissonSystem_gradientOp}
+/// %==================================
+/// For the variational formulation of the gradient operator, a vector-valued
+/// test-function is required. Unfourtunately, this is not supported by 
+/// \BoSSS. Therefore we have to discretize the gradent component-wise,
+/// i.e. as $\partial_{x}$ and $\partial_y$. A single derivative 
+/// can obviously be expressed as a divergence by the
+/// identity $ \partial_{x_d} = \text{div}( \vec{e}_d u ) $.
+class Gradient\_d : \newline 
+\btab \btab BoSSS.Foundation.IEdgeForm, // edge integrals \newline 
+\btab \btab BoSSS.Foundation.IVolumeForm     // volume integrals \newline 
+\{ \newline 
+\btab public Gradient\_d(int \_d) \{ \newline 
+\btab \btab this.d = \_d; \newline 
+\btab \} \newline 
+ \newline 
+    /// The component index of the gradient:
+\btab int d; \newline 
+ \newline 
+    /// As ususal, we do not use parameters:
+\btab public IList<string> ParameterOrdering \{  \newline 
+\btab \btab get \{ return null; \}  \newline 
+\btab \} \newline 
+ \newline 
+    /// We have one argument $u$:
+\btab public IList<String> ArgumentOrdering \{  \newline 
+\btab \btab get \{ return new string[] \{ "u" \}; \}  \newline 
+\btab \} \newline 
+ \newline 
+\btab public TermActivationFlags VolTerms \{ \newline 
+\btab \btab get \{ return TermActivationFlags.AllOn; \} \newline 
+\btab \} \newline 
+ \newline 
+\btab public TermActivationFlags InnerEdgeTerms \{ \newline 
+\btab \btab get \{ return (TermActivationFlags.AllOn); \} \newline 
+\btab \} \newline 
+ \newline 
+\btab public TermActivationFlags BoundaryEdgeTerms \{ \newline 
+\btab    get \{ return TermActivationFlags.AllOn; \} \newline 
+\btab \} \newline 
+ \newline 
+    /// Now, we implement 
+    /// \begin{itemize}
+    ///    \item the volume form $u \vec{e}_d \cdot \nabla v$
+    ///    \item the boundary form 
+    ///       $\mean{u \ \vec{e}_d} \cdot \vec{n}_\Gamma \jump{v}$
+    /// \end{itemize}
+\btab public double VolumeForm(ref CommonParamsVol cpv,  \newline 
+\btab \btab    double[] U, double[,] GradU,  \newline 
+\btab \btab    double V, double[] GradV) \{ \newline 
+ \newline 
+\btab \btab double Acc = 0; \newline 
+\btab \btab Acc -= U[0]*GradV[this.d]; \newline 
+\btab \btab return Acc; \newline 
+\btab \}         \newline 
+ \newline 
+\btab public double InnerEdgeForm(ref CommonParams inp,  \newline 
+\btab \btab double[] U\_IN, double[] U\_OT, double[,] GradU\_IN, double[,] GradU\_OT,  \newline 
+\btab \btab double V\_IN, double V\_OT, double[] GradV\_IN, double[] GradV\_OT) \{ \newline 
+ \newline 
+\btab \btab double Acc = 0; \newline 
+\btab \btab Acc += 0.5*(U\_IN[0] + U\_OT[0])*inp.Normale[this.d]*(V\_IN - V\_OT); \newline 
+\btab \btab return Acc;   \newline 
+\btab  \} \newline 
+ \newline 
+\btab public double BoundaryEdgeForm(ref CommonParamsBnd inp,  \newline 
+\btab \btab double[] U\_IN, double[,] GradU\_IN, double V\_IN, double[] GradV\_OT) \{ \newline 
+ \newline 
+\btab \btab double Acc = 0; \newline 
+\btab \btab if(IsDirichletBndy(inp.X)) \{ \newline 
+\btab \btab \btab double u\_Diri = 0.0; \newline 
+\btab \btab \btab Acc += u\_Diri*inp.Normale[this.d]*V\_IN; \newline 
+\btab \btab \} else \{ \newline 
+\btab \btab \btab Acc += U\_IN[0]*inp.Normale[this.d]*V\_IN; \newline 
+\btab \btab \} \newline 
+\btab \btab return Acc;               \newline 
+\btab \} \newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Now, we are ready to assemble the full $\nabla$ operator
+/// as $\left[ \begin{array}{c} \partial_x \\ \partial_y \end{array} \right]$.
+var OpGrad = new SpatialOperator(1,2,QuadOrderFunc.Linear(),"u","c1","c2"); \newline 
+OpGrad.EquationComponents["c1"].Add(new Gradient\_d(0)); \newline 
+OpGrad.EquationComponents["c2"].Add(new Gradient\_d(1)); \newline 
+OpGrad.Commit();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// As an additional test, we create the gradient-matrix and verify that 
+/// its transpose 
+/// is equal to the negative \code{MtxDiv}-matrix:
+var MtxGrad = OpGrad.ComputeMatrix(TestMapping, null, TrialMapping); \newline 
+var Test2   = MtxGrad.Transpose() - MtxDiv\_strong; \newline 
+Test2.InfNorm();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// %====================================
+/// \subsection{The complete Poisson-system}
+/// %====================================
+ }
+\BoSSSexe
+\BoSSScmd{
+///\paragraph{Assembly of the system}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We also need the identity-matrix in the top-left corner 
+/// of the Poisson-system:
+public class Identity :  \newline 
+\btab \btab BoSSS.Foundation.IVolumeForm  \newline 
+\{ \newline 
+\btab public IList<string> ParameterOrdering \{  \newline 
+\btab \btab get \{ return new string[0]; \}  \newline 
+\btab \} \newline 
+ \newline 
+\btab public string component;  \newline 
+ \newline 
+\btab public IList<String> ArgumentOrdering \{  \newline 
+\btab \btab get \{ return new string[] \{ component \}; \}  \newline 
+\btab \} \newline 
+ \newline 
+\btab public TermActivationFlags VolTerms \{ \newline 
+\btab \btab get \{ \newline 
+\btab \btab \btab return TermActivationFlags.AllOn; \newline 
+\btab \btab \} \newline 
+\btab \} \newline 
+ \newline 
+\btab public double VolumeForm(ref CommonParamsVol cpv,  \newline 
+\btab \btab    double[] U, double[,] GradU,  \newline 
+\btab \btab    double V, double[] GradV) \{ \newline 
+\btab \btab return U[0]*V;            \newline 
+\btab \} \newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We are going to implement the linear Poisson-operator
+/// \[
+/// \left[ \begin{array}{ccc}
+///      1           &  0         & \partial_x \\
+///      0           &  1         & \partial_y \\
+///      -\partial_x & -\partial_y & 0 
+/// \end{array} \right]
+/// \cdot 
+/// \left[ \begin{array}{c} \sigma_0 \\ \sigma_1 \\ u \end{array} \right]
+/// = 
+/// \left[ \begin{array}{c} c_0 \\ c_1 \\ c_2 \end{array} \right]
+/// \]
+/// The variables $c_0$, $c_1$ and $c_2$, which correspond to the 
+/// test functions are also called co-domain variables of the operator.
+/// We are using the negative divergence, since this will lead to a 
+/// symmetric matrix, instead of a anti-symmetric one.
+/// By doing so, we can e.g. use a Cholesky-factorization to determine 
+/// whether the system is definite or not.
+var OpPoisson = new SpatialOperator(3, 3,  \newline 
+\btab \btab \btab \btab \btab   QuadOrderFunc.Linear(), \newline 
+\btab \btab \btab \btab \btab   "sigma1", "sigma2", "u", // the domain-variables \newline 
+\btab \btab \btab \btab \btab   "c1", "c2", "c3"); //       the co-domain variables  \newline 
+/// Now we add all required components to \code{OpPoisson}:
+OpPoisson.EquationComponents["c1"].Add(new Gradient\_d(0)); \newline 
+OpPoisson.EquationComponents["c1"].Add(new Identity() \{ component = "sigma1" \}); \newline 
+OpPoisson.EquationComponents["c2"].Add(new Gradient\_d(1)); \newline 
+OpPoisson.EquationComponents["c2"].Add(new Identity() \{ component = "sigma2" \}); \newline 
+OpPoisson.EquationComponents["c3"].Add(new Divergence\_strong()); \newline 
+OpPoisson.Commit();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We create mappings $[\sigma_1, \sigma_2, u ]$:
+/// three different combinations of DG orders will be investigated:
+/// \begin{itemize}
+/// \item equal order: the same polynomial degree for $u$ and $\vec{\sigma}$
+/// \item mixed order: the degree of $u$ is lower than the degree 
+///       of $\vec{\sigma}$.
+/// \item `strange' order: the degree of $u$ is higher than the degree of 
+///       $\vec{\sigma}$.
+/// \end{itemize}
+var b3         = new Basis(gdata2D, 3); \newline 
+var b2         = new Basis(gdata2D, 2); \newline 
+var b4         = new Basis(gdata2D, 4); \newline 
+var EqualOrder = new UnsetteledCoordinateMapping(b3,b3,b3); \newline 
+var MixedOrder = new UnsetteledCoordinateMapping(b4,b4,b3); \newline 
+var StrngOrder = new UnsetteledCoordinateMapping(b2,b2,b3);
+ }
+\BoSSSexe
+\BoSSScmd{
+var MtxPoisson\_Equal = OpPoisson.ComputeMatrix(EqualOrder, null, EqualOrder); \newline 
+var MtxPoisson\_Mixed = OpPoisson.ComputeMatrix(MixedOrder, null, MixedOrder); \newline 
+var MtxPoisson\_Strng = OpPoisson.ComputeMatrix(StrngOrder, null, StrngOrder);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We show that the matrices are symmetric 
+/// (use e.g. \code{SymmetryDeviation(...)}), but indefinite
+/// (use e.g. \code{IsDefinite(...)}).
+ }
+\BoSSSexe
+\BoSSScmd{
+MtxPoisson\_Equal.SymmetryDeviation();
+ }
+\BoSSSexe
+\BoSSScmd{
+MtxPoisson\_Mixed.SymmetryDeviation();
+ }
+\BoSSSexe
+\BoSSScmd{
+MtxPoisson\_Strng.SymmetryDeviation();
+ }
+\BoSSSexe
+\BoSSScmd{
+MtxPoisson\_Equal.IsDefinite();
+ }
+\BoSSSexe
+\BoSSScmd{
+MtxPoisson\_Mixed.IsDefinite();
+ }
+\BoSSSexe
+\BoSSScmd{
+MtxPoisson\_Strng.IsDefinite();
+ }
+\BoSSSexe
+\BoSSScmd{
+    /// %==========================================
+    /// \section{Advanced topics}
+    /// %==========================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// %====================================
+/// \subsection{Algebraic reduction}
+/// %====================================
+/// Since the top-left corner of our matrix 
+/// \[ 
+/// \left[ \begin{array}{cc}
+/// 1   & B \\
+/// B^T & 0 
+/// \end{array} \right]
+/// \]
+/// is actually very easy to eliminate the variable $\vec{\sigma}$
+/// from our system algebraically. 
+/// The matrix of the reduces system is obviously $B^T \cdot B$.
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \paragraph{Extraction of sub-matrices and elimination}
+/// From the mapping, we can actually obtain index-lists for each variable,
+/// which can then be used to extract sub-matrices from 
+/// \code{MtxPoisson\_Equal}, \code{MtxPoisson\_Mixed}, resp. 
+/// \code{MtxPoisson\_Strng}.
+int[] SigmaIdx\_Equal = EqualOrder.GetSubvectorIndices(true, 0,1); \newline 
+int[] uIdx\_Equal     = EqualOrder.GetSubvectorIndices(true, 2); \newline 
+int[] SigmaIdx\_Mixed = MixedOrder.GetSubvectorIndices(true, 0,1); \newline 
+int[] uIdx\_Mixed     = MixedOrder.GetSubvectorIndices(true, 2); \newline 
+int[] SigmaIdx\_Strng = StrngOrder.GetSubvectorIndices(true, 0,1); \newline 
+int[] uIdx\_Strng     = StrngOrder.GetSubvectorIndices(true, 2);
+ }
+\BoSSSexe
+\BoSSScmd{
+// The extraction of the sub-matrix and the elimination, for the equal order: \newline 
+var MtxPoissonRed\_Equal =  \newline 
+\btab   MtxPoisson\_Equal.GetSubMatrix(uIdx\_Equal, SigmaIdx\_Equal)  // -Divergence \newline 
+\btab * MtxPoisson\_Equal.GetSubMatrix(SigmaIdx\_Equal, uIdx\_Equal); // Gradient
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Finally, we also
+/// create the reduced system for the mixed and the strange 
+/// order, test for the definiteness of the reduced system.
+/// Equal and mixed order are positive definite, while the strange order
+/// is indefinite - a clear indication that something ist wrong:
+ }
+\BoSSSexe
+\BoSSScmd{
+var MtxPoissonRed\_Mixed =  \newline 
+\btab   MtxPoisson\_Mixed.GetSubMatrix(uIdx\_Mixed, SigmaIdx\_Mixed)  // -Divergence \newline 
+\btab * MtxPoisson\_Mixed.GetSubMatrix(SigmaIdx\_Mixed, uIdx\_Mixed); // Gradient   \newline 
+var MtxPoissonRed\_Strng =  \newline 
+\btab   MtxPoisson\_Strng.GetSubMatrix(uIdx\_Strng, SigmaIdx\_Strng)  // -Divergence \newline 
+\btab * MtxPoisson\_Strng.GetSubMatrix(SigmaIdx\_Strng, uIdx\_Strng); // Gradient
+ }
+\BoSSSexe
+\BoSSScmd{
+MtxPoissonRed\_Equal.IsDefinite();
+ }
+\BoSSSexe
+\BoSSScmd{
+MtxPoissonRed\_Mixed.IsDefinite();
+ }
+\BoSSSexe
+\BoSSScmd{
+MtxPoissonRed\_Strng.IsDefinite();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We compute the condition number of all three matrices; we observe that
+/// the mixed as well as the equal-order discretization result give rather 
+/// moderate condition numbers. For the strange orders, the condition number
+/// of the system is far to high:
+ }
+\BoSSSexe
+\BoSSScmd{
+MtxPoissonRed\_Mixed.condest();
+ }
+\BoSSSexe
+\BoSSScmd{
+MtxPoissonRed\_Equal.condest();
+ }
+\BoSSSexe
+\BoSSScmd{
+MtxPoissonRed\_Strng.condest();
+ }
+\BoSSSexe

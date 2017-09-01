@@ -1,0 +1,470 @@
+% !TeX spellcheck = en_GB
+
+\BoSSSopen{MetaJobManager/MetaJobManager}
+\graphicspath{{MetaJobManager/MetaJobManager.texbatch/}}
+
+\paragraph{What's new:} 
+\begin{itemize}
+	\item running multiple simulations in batch mode
+	\item deploying and running simulations on a remote machine, e.g. a Microsoft HPC Cluster
+	\item access statistics for multiple simulations
+\end{itemize}
+
+\paragraph{Prerequisites:} 
+\begin{itemize}
+	\item basic knowledge of \BoSSSpad{}
+	\item executing runs on your local machine, e.g. the quickstart guide of the \ac{cns}
+\end{itemize}
+
+\BoSSS  includes several tools which aid the advanced user in running simulations and organizing simulation results among multiple computers and/or compute clusters.
+
+%In this tutorial, the following tasks will be illustrated:
+%\begin{itemize}
+%	\item The use of the meta job manager to run simulations, 
+%	on the local machine as well as on a Microsoft HPC cluster
+%	\item The evaluation of a simulation using the session table.
+%\end{itemize}
+
+The purpose of the meta job manager (a.k.a. the meta job scheduler)
+is to provide a universal interface to multiple \emph{job managers} (aka. \emph{batch systems}).
+By this interface, the user can run computations on remote and local systems directly from the \BoSSSpad{}.
+
+Furthermore, \BoSSSpad{}  provides a \emph{session table},
+which presents various statistics form all \emph{sessions} in the project
+(each time a simulation is run, a session is stored in the \BoSSS database).
+
+Before you dive into advanced features of \BoSSSpad{}, you should familiarise yourself with the basics of \BoSSS and \BoSSSpad{} and run some first simulations on your local machine, e.g. the tutorials on scalar advection \ref{ScalarAdvection} or Poisson equation \ref{sec:SIP}.
+
+The examples presented in this chapter use the \ac{cns}, which has been introduced in the previous chapter \ref{CNS}.
+
+
+
+ \section{Initialization}
+\BoSSScmd{
+restart;
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// The very first thing we have to to is to initialize the workflow
+/// management tools and to define a project name. The meta job manager, like  
+/// all other workflow management tools strictly enforces the use of a 
+/// project name:
+WorkflowMgm.Init("MetaJobManager\_Tutorial");
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We verify that we have no jobs defined so far
+WorkflowMgm.AllJobs;
+ }
+\BoSSSexe
+\BoSSScmdSilent{
+/// BoSSScmdSilent BoSSSexeSilent
+// first, do some cleanup\newline 
+if(System.IO.Directory.Exists(@"C:\textbackslash tmp\textbackslash TutorialLocal\_db")) \{\newline 
+\btab System.IO.Directory.Delete(@"C:\textbackslash tmp\textbackslash TutorialLocal\_db",true);\newline 
+\} else \{\newline 
+\btab //\newline 
+\}
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// and create, resp. open a \BoSSS database on a local drive.
+var myLocalDb = OpenOrCreateDatabase(@"C:\textbackslash tmp\textbackslash TutorialLocal\_db");
+ }
+\BoSSSexe
+\BoSSScmdSilent{
+/// BoSSScmdSilent BoSSSexeSilent
+databases;
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// % ==================================================================
+/// \section{Loading a BoSSS-Solver and Setting up a Simulation}
+/// % ==================================================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We have to initialize all batch systems that we want to use.
+/// Normally, one would put these statements into the 
+/// {\tt $\sim$/.BoSSS/etc/DBErc.cs}-file
+if(System.IO.Directory.Exists(@"C:\textbackslash tmp\textbackslash deploy"))\{\newline 
+\btab System.IO.Directory.Delete(@"C:\textbackslash tmp\textbackslash deploy",true);\newline 
+\}\newline 
+System.IO.Directory.CreateDirectory(@"C:\textbackslash tmp\textbackslash deploy");\newline 
+var myBatch = new MiniBatchProcessorClient(@"C:\textbackslash tmp\textbackslash deploy");
+ }
+\BoSSSexe
+\BoSSScmd{
+/// The batch processor for local jobs can be started separately (by launching
+/// {\tt MiniBatchProcessor.exe}), or from the worksheet as follows.
+/// In the latter case, it depends on the operating system, whether the 
+/// {\tt MiniBatchProcessor.exe} is terminated with the worksheet, or not.
+MiniBatchProcessor.Server.StartIfNotRunning(false);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// In this tutorial, we use the workflow management tools to simulate compressible flows, thud we first have to load the namespaces of the CNS solver
+using CNS;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// and obtain its type and location
+Type solver1 = typeof(CNS.Program);\newline 
+solver1.Assembly.Location;\newline 
+/// For other solvers, we might have to load the assemblies too, e.g. by 
+// LoadAssembly("CNS.exe");
+ }
+\BoSSSexe
+\BoSSScmd{
+/// In this example, we start the computation from a hard-coded
+/// control object that is already compiled into the code. If we would start the 
+/// {\tt CNS.exe} directly from the command line, therefore the command line 
+/// call would look like
+/// {\tt ./CNS.exe -control cs:CNS.ControlExamples.IsentropicVortex(...) }.
+/// On the command line, the arguments could be problematic, e.g. quotation 
+/// marks would need some kind of escape string, spaces are problematic, etc..
+/// The meta job manager passes the arguments via environment variables, so
+/// the before-mentioned issues do not occur. 
+string StartupString\_Local = \newline 
+  string.Format("cs:CNS.ControlExamples.IsentropicVortex(@\textbackslash "\{0\}\textbackslash ", 20, 2, 1.0)", \newline 
+\btab \btab \btab \btab myLocalDb.Path);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % ==================================================================
+/// \section{Deploying the jobs}
+/// % ==================================================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Finally, we define two jobs: one for the local machine, one for the 
+/// HPC cluster.
+/// In a usual work flow scenario, we \emph{do not} want to (re-) submitt the 
+/// job every time we run the worksheet -- usually, one wants to run a job once.
+/// 
+/// The concept to overcome this problem is job activation. If a job is 
+/// activated, the meta job manger first checks the databases and the batch 
+/// system, if a job with the respective name and project name is already 
+/// submitted. Only if there is no information that the job was ever submitted
+/// or started anywhere, the job is submitted to the respective batch system.
+ }
+\BoSSSexe
+\BoSSScmd{
+var oneJob\_Local = new Job("byCmdLine\_Local", solver1);
+ }
+\BoSSSexe
+\BoSSScmd{
+oneJob\_Local.SetCommandLineArguments(StartupString\_Local);
+ }
+\BoSSSexe
+\BoSSScmd{
+oneJob\_Local.Activate(myBatch);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// And we can list all jobs in the workflow management:
+ }
+\BoSSSexe
+\BoSSScmd{
+WorkflowMgm.AllJobs
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Here, we block until both of our jobs have finished:
+WorkflowMgm.BlockUntilAllJobsTerminate(360);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We examine the output and error stream of the job on the HPC cluster:
+/// This directly accesses the {\tt stdout}-redirection of the respective job
+/// manager, which may contain a bit more information than the 
+/// {\tt stdout} - copy in the session directory.
+oneJob\_Local.Stdout;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// And hope that the error stream is empty:
+oneJob\_Local.Stderr;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We can also obtain the session which was stored during the execution of the 
+/// job:
+ }
+\BoSSSexe
+\BoSSScmd{
+var Sloc = oneJob\_Local.LatestSession;\newline 
+Sloc;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Finally, we check the status of our jobs:
+ }
+\BoSSSexe
+\BoSSScmd{
+oneJob\_Local.Status;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % ==================================================================
+/// \section{Accessing the session table}
+/// % ==================================================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We can access all sessions related to the project via the session table:
+ }
+\BoSSSexe
+\BoSSScmd{
+var Table = WorkflowMgm.SessionTable;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// The size of the table, resp. the number of comuns is usually 
+/// quite extensive, ...
+ }
+\BoSSSexe
+\BoSSScmd{
+Table.GetColumnNames().Length;
+ }
+\BoSSSexe
+\BoSSScmd{
+Table.GetColumnNames().Take(12);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// ... therefore we use some utility function to extract a sub set of columns:
+ }
+\BoSSSexe
+\BoSSScmd{
+Table.ExtractColumns("SessionName", "DGdegree:rho", "L2ErrorDensity").Print();
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % ==================================================================
+/// \section{Further Reading: Setting up a simulation on a remote machine via Control Objects}
+/// % ==================================================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Here, we use the workflow management tools to simulate compressible flows \emph{with} immersed boundaries, thud we first have to load the namespaces of the CNS and IBM solver
+using BoSSS.Application.IBM\_Solver;
+ }
+\BoSSSexe
+\BoSSScmd{
+Type solver2 = typeof(IBM\_SolverMain);\newline 
+solver2.Assembly.Location;
+ }
+\BoSSSexe
+\BoSSScmdSilent{
+/// BoSSScmdSilent BoSSSexeSilent
+// first, do some cleanup\newline 
+if(System.IO.Directory.Exists(@"C:\textbackslash tmp\textbackslash TutorialNetworkDb\_db"))\newline 
+\btab System.IO.Directory.Delete(@"C:\textbackslash tmp\textbackslash TutorialNetworkDb\_db",true);
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// For this to tutorial, we use a local drive to simulate the network database:\newline 
+var myNetworkDb = OpenOrCreateDatabase(@"C:\textbackslash tmp\textbackslash TutorialNetworkDb\_db");\newline 
+/// when using a real network drive, the path to the drive would be given as: 
+//var myNetworkDb = OpenOrCreateDatabase(@"\textbackslash \textbackslash \textbackslash $server\textbackslash $ \textbackslash \textbackslash $path\_to\_database\textbackslash $");
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Again, we fake the network capabilies:
+var myHPC = myBatch;  \newline 
+/// For a Microsoft HPC-Server this would read:
+//var myHPC   = new MsHPC2012Client(@"\textbackslash \textbackslash dc1\textbackslash scratch\textbackslash hpcdeploy", \newline 
+//                          "hpccluster",\newline 
+//                          ComputeNodes: new[] \{"hpccluster", "pcmit30"\});  \newline 
+///   Remark: the Ms HPC client is deactivated  
+///   because it does not work on the build server which creates this  
+///   documentation.
+ }
+\BoSSSexe
+\BoSSScmd{
+/// For the second job, we use a control object. The advantage of the control  
+/// object is that it can be completly constructed (or modified) within
+/// \BoSSSpad, without the need of an external file.
+/// In order to shorten things, we start with a predefined control object
+/// and modify it.
+var StartupObject\_Network = HardcodedControl.ChannelFlow();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// E.g., we can mofify individual members:
+StartupObject\_Network.DbPath              = myNetworkDb.Path;\newline 
+StartupObject\_Network.NoOfTimesteps       = 2;\newline 
+StartupObject\_Network.MaxSolverIterations = 35;\newline 
+StartupObject\_Network.savetodb            = true;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// The only technical problem are formulas and expressions used e.g. to set
+/// initial values or queries; those objects cannot be serialized, i.e.
+/// stored in a file since they are live code. (If we work with
+/// control objects, \BoSSSpad tries to save them as a file, so they can later
+/// be loaded by the solver.)
+ }
+\BoSSSexe
+\BoSSScmd{
+/// E.g. the following would not work:
+StartupObject\_Network.InitialValues\_Evaluators["VelocityX"] = X => 0.5;\newline 
+/// The reason is, that the expression {\tt X => 0.5} is only valid within
+/// this \BoSSSpad document, and cannot be saved in a file and loaded again, 
+/// due to technical restrictions of .NET resp. C\#.
+///
+/// In order to make this work, we have to use a \emph{text} representation of
+/// our initial values.
+ }
+\BoSSSexe
+\BoSSScmd{
+/// But first, we clear the entries from the predefined object:
+StartupObject\_Network.InitialValues\_Evaluators.Clear();\newline 
+StartupObject\_Network.Queries.Clear();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Especially for more complex flows, the mathematical form of the solution,
+/// resp. the initial value is rater complicated. 
+/// Therefore, one could use a couple of auxilliary definitions:
+ }
+\BoSSSexe
+\BoSSScmd{
+string CommonCode = @"\newline 
+\btab Random r = new Random();\newline 
+\btab Func<double[],double> Noise = delegate(double[] X) \{\newline 
+\btab \btab double y          = X[1];\newline 
+\btab \btab double NoiseScale = (1 - y*y);\newline 
+\btab \btab return r.NextDouble()*NoiseScale;\newline 
+\btab \};\newline 
+";
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Using the additional code defined above, we are able to set 
+/// the initial values...
+StartupObject\_Network.InitialValues.Clear();\newline 
+StartupObject\_Network.InitialValues.Add("VelocityX", \newline 
+\btab new Formula("X => Noise(X)*(1 - X[1]*X[1])", false, CommonCode));\newline 
+StartupObject\_Network.InitialValues.Add("VelocityY", \newline 
+\btab new Formula("X => 0.0", false));
+ }
+\BoSSSexe
+\BoSSScmd{
+/// ... as well as the boundary conditions for the control object:
+StartupObject\_Network.BoundaryValues.Clear();\newline 
+StartupObject\_Network.AddBoundaryCondition("Velocity\_inlet");\newline 
+StartupObject\_Network.AddBoundaryCondition("Pressure\_Outlet");\newline 
+StartupObject\_Network.AddBoundaryCondition("Wall\_bottom");\newline 
+StartupObject\_Network.AddBoundaryCondition("Wall\_top");\newline 
+StartupObject\_Network.BoundaryValues["Velocity\_inlet"].Values.Add(\newline 
+\btab \btab "VelocityX",\newline 
+\btab \btab new Formula("X => (1 - X[1]*X[1])", false));
+ }
+\BoSSSexe
+\BoSSScmd{
+/// The same holds for the grid: we cannot use a delegate to construct the 
+/// grid. Instead, we have to store the grid (including boundary
+/// conditions) in the database.
+ }
+\BoSSSexe
+\BoSSScmd{
+StartupObject\_Network.GridFunc = null;
+ }
+\BoSSSexe
+\BoSSScmd{
+var xNodes = GenericBlas.Linspace(0, 10, 101);\newline 
+var yNodes = GenericBlas.Linspace(-1, 1, 21);\newline 
+var Grid   = Grid2D.Cartesian2DGrid(xNodes, yNodes);
+ }
+\BoSSSexe
+\BoSSScmd{
+Grid.EdgeTagNames.Add(1, "Velocity\_inlet");\newline 
+Grid.EdgeTagNames.Add(4, "Pressure\_Outlet");\newline 
+Grid.EdgeTagNames.Add(2, "Wall\_bottom");\newline 
+Grid.EdgeTagNames.Add(3, "Wall\_top");
+ }
+\BoSSSexe
+\BoSSScmd{
+Grid.DefineEdgeTags(delegate (double[] \_X) \{\newline 
+\btab var X    = \_X;\newline 
+\btab double x = X[0];\newline 
+\btab double y = X[1];\newline 
+ \newline 
+\btab if (Math.Abs(y - (-1)) < 1.0e-6)\newline 
+\btab    // bottom\newline 
+\btab    return 2;\newline 
+ \newline 
+\btab if (Math.Abs(y - (+1)) < 1.0e-6)\newline 
+\btab    // top\newline 
+\btab    return 3;\newline 
+ \newline 
+\btab if (Math.Abs(x - (0)) < 1.0e-6)\newline 
+\btab    // left\newline 
+\btab    return 1;\newline 
+ \newline 
+\btab if (Math.Abs(x - (10)) < 1.0e-6)\newline 
+\btab    // right\newline 
+\btab    return 4;\newline 
+\btab throw new Exception();\newline 
+\});
+ }
+\BoSSSexe
+\BoSSScmd{
+Grid;
+ }
+\BoSSSexe
+\BoSSScmd{
+bool found;\newline 
+Guid GridGuid = myNetworkDb.SaveGrid(Grid);
+ }
+\BoSSSexe
+\BoSSScmd{
+StartupObject\_Network.GridGuid = GridGuid;
+ }
+\BoSSSexe
+\BoSSScmd{
+var oneJob\_Network = new Job("byCmdLine\_HPC", solver2);
+ }
+\BoSSSexe
+\BoSSScmd{
+oneJob\_Network.SetControlObject(StartupObject\_Network);\newline 
+oneJob\_Network.Activate(myHPC);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We can e.g. obtain the status of the job:
+oneJob\_Network.Status;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Again, we block until both of our jobs have finished:
+WorkflowMgm.BlockUntilAllJobsTerminate(360);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We can also obtain the session which was stored during the execution of the 
+/// job:
+var Snet = oneJob\_Network.LatestSession;\newline 
+Snet;
+ }
+\BoSSSexe
+\BoSSScmdSilent{
+/// BoSSScmdSilent BoSSSexeSilent
+if(System.IO.Directory.Exists(myNetworkDb.Path))\{\newline 
+\btab DatabaseUtils.DeleteDatabase(myNetworkDb.Path);\newline 
+\}\newline 
+if(System.IO.Directory.Exists(myLocalDb.Path))\newline 
+\btab DatabaseUtils.DeleteDatabase(myLocalDb.Path);\newline 
+MiniBatchProcessor.Server.SendTerminationSignal();
+ }
+\BoSSSexeSilent

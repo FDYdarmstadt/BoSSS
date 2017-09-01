@@ -1,0 +1,4 @@
+SharpSSH is licenced under the BSD-style licence
+
+see
+../../libs/SharpSSH-1.1.1.13.bin/licence.txt

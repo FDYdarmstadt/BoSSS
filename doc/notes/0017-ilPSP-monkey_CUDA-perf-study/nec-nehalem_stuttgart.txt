@@ -1,0 +1,14 @@
+NEC Nehamlem Cluster - Stuttgart
+
+System is in production mode,This Cluster builds together with the NEC SX-9 a heterogenous computing platform.
+
+Technical description
+---------------------
+Peak Performance				62 TFlops
+Number of Nodes					700 Dual Sockel Quad Core
+Processor					Intel Xeon (X5560) Nehalem @ 2.8 GHz, 8MB Cache
+Memory/node					12 GB
+Disk						80 TB shared scratch (lustre)
+Node-node interconnect				infiniband, GigE
+accelerators	 				32 nodes provide Nvidia Tesla S1070 GPGPU
+graphical pre- and post processing nodes	6 nodes provide Nvidia Quadro 5800FX graphics card

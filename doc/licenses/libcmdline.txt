@@ -1,0 +1,2 @@
+MIT-Licence,see
+../../libs/libcmdline-1.8-stable-bin/LICENCE

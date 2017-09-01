@@ -1,0 +1,64 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\renewcommand{\vec}[1]{\textrm{\textbf{#1}}}
+\renewcommand{\vec}[1]{\mathbf{#1}}
+\newcommand{\grvec}[1]{\boldsymbol{#1}}
+
+\newcommand{\real}{\mathbb{R}}
+\newcommand{\complex}{\mathbb{C}}
+\newcommand{\realpos}{\mathbb{R}_{\geq0}}
+\newcommand{\natWoZero}{\mathbb{N}_{>0}}
+\newcommand{\natInclZero}{\mathbb{N}_{\geq0}}
+\newcommand{\nat}{\mathbb{N}}
+\newcommand{\ceins}{\mathcal{C}^1}
+\newcommand{\integers}{\mathbb{Z}}
+\newcommand{\code}[1]{\sffamily{#1}}
+\newcommand{\coderm}[1]{\footnote{\code{#1}}}
+\newcommand{\divergence}[1]{\textrm{div}\left({#1}\right)}
+
+\newcommand\xlongleftrightarrow[2][]{%
+\ext@arrow 0055{\longleftrightarrowfill@}{#1}{#2}}
+\def\longleftrightarrowfill@{%
+\arrowfill@\leftarrow\relbar\rightarrow}
+
+\newenvironment{packed_itemize}{
+\begin{itemize}
+  \setlength{\itemsep}{0pt}
+  \setlength{\parskip}{0pt}
+  \setlength{\parsep}{0pt}
+}{\end{itemize}}
+
+\newcounter{cnt}
+
+\newtheoremstyle{myPlain} % namei
+ {15pt}% Space above
+ {3pt}% Space below
+ {\itshape}% Body font
+ {}% Indent amount
+ {\bfseries}% Theorem head font %\scshape
+ {:}% Punctuation after theorem head
+ {.5em}% hSpace after theorem headi2
+ {(\thmnumber{#2}) \thmname{#1} \thmnote{ -- #3}}% Theorem head spec (can be left empty, meaning `normal')
+
+
+\theoremstyle{myPlain}
+%\theoremstyle{plain}
+\newtheorem{myTheorem}[cnt]{Theorem}
+%\newtheorem{satzDef}[cnt]{Satz und Definition}
+
+\newtheoremstyle{myDefinition} % namei
+ {15pt}% Space above
+ {3pt}% Space below
+ {}% Body font
+ {}% Indent amount
+ {\bfseries}% Theorem head font
+ {:}% Punctuation after theorem head
+ {.5em}% hSpace after theorem headi2
+ {(\thmnumber{#2}) \thmname{#1} \thmnote{ -- #3}}% Theorem head spec (can be left empty, meaning `normal')
+
+\theoremstyle{myDefinition}
+%\theoremstyle{definition}
+%\newtheorem{bsp}[cnt]{Beispiel}
+\newtheorem{myDef}[cnt]{Definition}
+\newtheorem{myRem}[cnt]{Remark}
+\newtheorem{myNot}[cnt]{Notation}
+\newtheorem{myDefRem}[cnt]{Definition and Remark} 

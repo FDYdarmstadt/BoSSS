@@ -1,0 +1,211 @@
+\section{Numerical formulation}
+\label{sec:numerics}
+
+This section deals with the numerical formulation of equation
+(\ref{eqn:Euler_DG}) which is implemented in \emph{CNS}. Generally, \emph{BoSSS}
+only requires the implementation of the flux function, boundary conditions and a
+time integration scheme by an application programmer. In \emph{CNS}, the
+employed time-integration scheme is not a predefined setting but rather a
+configuration option (see section \ref{sec:usage}). As a result, only the
+numerical flux function and the available boundary conditions will be discussed
+in the following.
+
+
+\subsection{Flux function}
+\label{sec:numerics_flux_function}
+
+The quality of any solution of the Euler system calculated via
+(\ref{eqn:Euler_DG}) highly depends in the particular choice of $\tilde{f}$.
+A reasonable flux function should approximate the solution of the Riemann
+problem
+\begin{equation}
+	\label{eqn:Riemann_problem}
+	\frac{\partial U}{\partial t} + \frac{\partial F_1}{\partial x_1} = 0
+\end{equation}
+with initial conditions
+\begin{equation}
+	\label{eqn:Riemann_initial}
+	U(x_1, x_2, x_3, 0) =
+	\begin{cases}
+		U_L & \mathrm{if~} x_1 \leq 0\\
+		U_R & \mathrm{if~} x_1 > 0
+	\end{cases}
+\end{equation}
+where we have assumed (without loss of generality) that the $x_1$ axis is
+perpendicular to the cell boundary which is located at $x_1=0$. For given
+constants $U_L$ and $U_R$ it is generally possible to solve this initial
+value problem exactly (e.g. see \cite{Toro2009}).
+
+The basic structure of this exact solution as described by \cite{Batten1997} is
+outlined in figure \ref{fig:riemann_fan}. It consists of a contact wave with
+speed $S_M$ and two acoustic waves with speeds $S_L$ and $S_R$ satisfying
+$S_L < S_M < S_R$. An acoustic wave may either be an expansion wave or a shock
+wave. In the case of an expansion wave with speed $S_L$, region 2 represents a
+continuous transition from region 1 to region 3. On the other hand, in case of
+a shock wave with speed $S_L$, region 2 vanishes and an abrupt transition from
+region 1 to region 3 occurs. Analogously, the same holds true for
+expansion/shock waves with speed $S_R$ for the regions 4, 5 and 6 in figure
+\ref{fig:riemann_fan}. Finally, the transition between regions 3 and 4 may in
+general be discontinuous but is always continuous in the pressure.
+
+\begin{figure}
+	\centering
+	\includegraphics[height=5cm]{wavespeeds}
+	\caption[dummy]{Riemann fan for the Euler equations. Source: \protect\cite{Batten1997}}
+	\label{fig:riemann_fan}
+\end{figure}
+
+Exact solutions for this Riemann problem exist. It is, however, very costly to
+compute this exact solution. As a result, a lot of effort has been put on the
+development of approximate Riemann solvers which provide a solution with
+reasonable computational effort. The \emph{HLLC} solver presented in
+\cite{Toro2009} achieves very accurate results with tolerable computational
+effort and has thus been implemented in \emph{CNS}.
+
+The corresponding simplified Riemann fan is depicted in figure
+\ref{fig:riemann_fan_hllc}. Here, a three wave-speed model is used to
+differentiate between four states. The states $U_L$ and $U_R$ correspond to
+the undisturbed initial values while $U_L^*$ and $U_R^*$ correspond to
+suitably averaged states.
+
+\begin{figure}
+	\centering
+	\includegraphics[height=5cm]{wavespeeds_HLLC}
+	\caption{Simplified Riemann fan used in the HLLC flux. Source: \protect\cite{Batten1997}}
+	\label{fig:riemann_fan_hllc}
+\end{figure}
+
+Given estimates for the required wave-speeds, the approximate value of $U$ at 
+$x_1=0$ may be calculated depending on the wave-speed configuration:
+If $S_L > 0$ (i.e. if no information propagates from the right to the left
+cell), the flow is supersonic from the left and upwinding of $U_L$ is
+appropriate. Analogously, if $S_R < 0$, the flow is supersonic from the right
+and $U_R$ will be used to calculate the flux at the edge.
+
+In the remaining situations $S_L \leq 0 < S_M$ (which is displayed in figure
+\ref{fig:riemann_fan_hllc}) and $S_M \leq 0 \leq S_R$, we need a suitable method
+to calculate the average state vectors $U_L^*$ and $U_R^*$. \cite{Toro2009}
+gives several formulas based on the Rankine-Hugoniot jump conditions for
+each of the waves. The variant implemented in \emph{CNS}
+\begin{equation}
+	\label{eqn:hllc_intermediate_states}
+	U_K^* = \rho_K \left(\frac{S_K - u_{1,K}}{S_K - S_M} \right)
+		\begin{pmatrix}
+			1\\
+			S_M\\
+			u_2\\
+			u_3\\
+			\frac{E_K}{\rho_K} + (S_M - u_{1,K})
+				\left(S_M + \frac{p_K}{\rho_K(S_K - u_{1,K})} \right)
+		\end{pmatrix}
+\end{equation}
+(for $K \in \{R, L\}$) is characterized by the exact enforcement of the
+aforementioned condition $p_L^*=p_R^*$.
+
+Having determined $U_K^*$, we can easily compute the fluxes at cell boundaries. 
+However, we still have to specify estimations for the wave-speeds required in the 
+flux formulation. Pressure-based estimates have been proven to very reliable in this
+context and thus we follow \cite{ToroSpruceSpeares1994} in setting \cite{ToroSpruceSpeares1994}
+\begin{align}
+	S_L &= u_{1,L} - a_L q_L\\
+	S_R &= u_{1,R} + a_R q_R\\
+	S_M &= \frac{p_R - p_L + u_{1,L} c_L - u_{1,R} c_R}{c_L - c_R}
+\end{align}
+where
+\begin{align}
+	c_K &= \rho_K (S_K - u_{1,K})\\
+	q_K &= \begin{cases}
+		1
+			& \mathrm{if~} p^* \leq p_K\\
+		\sqrt{1 + \frac{1 + \kappa}{2 \kappa} (\frac{p^*}{p_K} - 1)}
+			& \mathrm{if~} p^* > p_K
+	\end{cases}\\
+	p^* &= \frac{1}{2} \max \{0, (p_L + p_R) - \frac{1}{4} (u_{1,R} - u_{1,L}) (\rho_L + \rho_R) (a_L + a_R)\}
+\end{align}
+and $a_K$ denotes the respective local speed of sound.
+
+
+\subsection{Boundary conditions}
+\label{sec:numerics_bcs}
+
+In general, \emph{CNS} uses standard boundary conditions recommended for Finite 
+Volume methods and similar approaches. This is why we do not explicitly give their 
+formulation here but rather refer to some well-known literature on the subject.
+
+An overview of the boundary conditions currently supported in \emph{CNS} is given
+in table \ref{fig:boundary_conditions}. In particular, the right-most column depicts
+quantities that have to be prescribed on the given boundary by the user. Please note
+that the boundary conditions imposing a no-slip condition for the velocity lead to
+an ill-posed problem in case of the Euler equation.
+
+\begin{table}
+	\centering
+	\begin{tabular}{l | p{8cm} | c}
+		\hline
+		Type & Description & Parameters\\
+		
+		\hline\hline
+		Adiabatic slip wall
+		& Isolating wall with a slip condition for the velocity
+		& -\\
+		
+		\hline
+		Adiabatic wall
+		& Isolating wall with a no-slip condition for the velocity
+		& -\\
+		
+		\hline
+		Isothermal wall
+		& Wall with a fixed temperature and a no-slip condition for the velocity
+		& $T_\mathrm{wall}$\\
+		
+		\hline
+		Symmetry plane
+		& Mimics a symmetric flow on the other side of the plane. Equivalent
+		to an adiabatic slip wall in case of inviscid flows
+		& -\\
+		
+		\hline
+		Subsonic inlet
+		& Standard inlet for Mach numbers smaller than one
+		& $\rho_\mathrm{inlet}$, $\vec{m}_\mathrm{inlet}$\\
+		
+		\hline
+		Subsonic pressure inlet
+		& Inlet based on reservoir (i.e. \emph{stagnation} or \emph{total})
+		conditions for pressure and temperature
+		& $p_{t,\mathrm{inlet}}$, $T_{t,\mathrm{inlet}}$\\
+		
+		\hline
+		Supersonic inlet
+		& Standard inlet for Mach numbers greater than one
+		& $\rho_{inlet}$, $\vec{m}_\mathrm{inlet}$, $p_\mathrm{inlet}$\\
+		
+		\hline
+		Subsonic outlet
+		& Standard outlet for Mach numbers smaller than one
+		& $p_\mathrm{outlet}$\\
+		
+		\hline
+		Supersonic outlet
+		& Standard outlet for Mach numbers greater than one
+		& -\\
+		
+		\hline
+	\end{tabular}
+	
+	\caption{Currently supported boundary conditions in \emph{CNS}}
+	\label{fig:boundary_conditions}
+\end{table}
+
+The basic requirements for specifying boundary conditions for both, viscid and 
+inviscid flows, can be found in \cite{PoinsotLelef1992}. All boundary conditions 
+except the adiabatic slip wall and the subsonic pressure inlet have been
+implemented according to the principles stated there.
+
+For adiabatic slip wall boundaries, a classical mirror method has been applied.
+For information on that topic e.g. see \cite{VegtVen2002} and the references
+therein.
+
+Concerning the subsonic pressure inlet, the formulation proposed 
+in \cite{FerzigerPeric2001} has been applied without mass flux correction.

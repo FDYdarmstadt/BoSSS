@@ -1,0 +1,119 @@
+\section{A introductional example: 2D scalar transport}
+
+\subsection{Theoretical introduction}
+
+\subsubsection{Problem Definition}
+
+Solve the equation
+\[
+    \frac{\partial}{\partial t } c + \vec{u} \cdot \nabla c = 0.
+\]
+We assume $\div{u} = 0$, so it can be put into BoSSS framework:
+\[
+    \frac{\partial}{\partial t } c + \div{ \vec{u} \ c } = 0.
+\]
+We choose $\vec{u}(x,y) = (-y,x)^T$ (a curl field);
+\begin{itemize}
+  \item characterisic curves of the problem?
+  \item consistent boundary conditions (defined by characteristics)?
+\end{itemize}
+
+\subsubsection{Numerical treatment}
+
+Describe the upwind fluxes that should can be used in DG or Finite volume methods to 
+simulate this problem;
+
+\subsection{First Implementation in BoSSS}
+
+
+
+\subsubsection{Visual Studio: creating ``Project'' and ``Solution''}
+
+We assume that the user is able to checkout the code and binaries
+by using Git and pull-lib-win32.bat;
+We assume to work in c:$\backslash$BoSSS
+
+\begin{itemize}
+ \item In which directory should we create the Solution? 
+ \item What type of c\# - project should we create, in which directory?
+ \item Which binary libs do we bind as references to our project?
+\end{itemize}
+
+\subsubsection{Implementing the flux}
+
+Create a class which implements BoSSS.Foundation.INonlinearFlux
+
+- or --
+
+derive a class from BoSSS.Solution.Utils.NonlinearFlux
+
+Describe the difference between those two methods.
+
+\subsubsection{Implementing the program}
+
+\begin{itemize}
+  \item Derive a  class from BoSSS.Solution.Application
+        (Hint: use visual Studio feature: ``implement abstract baseclass'');
+  \item Implement the Main -- method (entry point)
+  \item Create a cartesian grid (implement CreateOrLoadGrid(...))
+  \item Create fields (implement CreateFields(...))
+  \item Defining an initial value: override BoSSS.Solution.Application.SetInitial(...) 
+        and define a algebraic function;
+  \item Create a Runge-Kutta Timestepper (implementing CreateEquationsAndSolvers(...));
+  \item usinge the Timestepper: implement RunSolverOneStep(...)
+        Howto set the timestep size and the number of timesteps?
+\end{itemize}
+
+\subsection{Using IO}
+
+\subsubsection{Working with a grid in the database}
+
+\begin{itemize}
+  \item Saving a (Gambit-) grid to the database
+  \item Loading the grid by hard-coding it's GUID;
+  \item Loading the grid by instructions in the control file.
+\end{itemize}
+
+\subsubsection{Working with sessions}
+
+\begin{itemize}
+  \item what is a session?
+  \item saving the state of DG fields to the database;
+        Hint: BoSSS.Solution.Application.m\_IOFields;
+  \item plotting files from the database using the DBE
+\end{itemize}
+
+\subsection{Preview: Working with systems of equations}
+
+\subsubsection{Problem Definition}
+
+Solve the system
+\begin{eqnarray*}
+    \frac{\partial}{\partial t } c_1  +  \div{ \vec{u} \ c_1 }  +  \sin (c_2) & = 0. \\
+    \frac{\partial}{\partial t } c_2  +  \div{ \vec{u} \ c_2 }  +  \cos (c_1) & = 0.
+\end{eqnarray*}
+%\[
+%    \frac{\partial}{\partial t } c_1  +  \div{ \vec{u} \ c_1 }  +  \sin (c_2)  = 0. 
+%    \frac{\partial}{\partial t } c_2  +  \div{ \vec{u} \ c_2 }  +  \cos (c_1)  = 0.
+%\]
+We choose $\vec{u}(x,y) = (-y,x)^T$ (a curl field);
+\begin{itemize}
+  \item characterisic curves of the problem?
+  \item consistent boundary conditions (defined by characteristics)?
+\end{itemize}
+
+\subsubsection{Implementing sources}
+
+Create a class which implements BoSSS.Foundation.INonlinearSource
+
+- or --
+
+derive a class from BoSSS.Solution.Utils.NonlinearSource
+
+\subsubsection{Modify the code}
+
+\begin{itemize}
+  \item Create an additional field (implement CreateFields(...))
+  \item Define the system of equations and add the source terms
+\end{itemize}
+

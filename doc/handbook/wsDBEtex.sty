@@ -1,0 +1,133 @@
+\NeedsTeXFormat{LaTeX2e}[1994/06/01]
+\ProvidesPackage{wsDBEtex}
+
+\RequirePackage{listings}
+\RequirePackage{color}
+\RequirePackage{graphicx}
+
+% deal with UTF8 in listings
+\lstset{literate=%
+    {á}{{\'a}}1
+    {é}{{\'e}}1
+    {è}{{\`e}}1
+    {í}{{\'i}}1
+    {ó}{{\'o}}1
+    {ú}{{\'u}}1
+    {ß}{{\ss}}1
+    {ü}{{\"u}}1
+    {ö}{{\"o}}1
+    {ä}{{\"a}}1
+}
+
+
+\definecolor{darkgrey}{rgb}{0.2,0.2,0.2}
+\definecolor{lightergray}{rgb}{0.3,0.3,0.3}
+\definecolor{darkgreen}{rgb}{0,0.5,0}
+\definecolor{darkblue}{rgb}{0,0,0.3}
+\definecolor{lightblue}{rgb}{0,0,0.6}
+
+%% syntax highlighting for input file
+%\lstset{language=C,
+%                keywordstyle=\color{darkgreen},
+%                stringstyle=\color{darkgrey},
+%                commentstyle=\color{lightergray},
+%                morecomment=[l][\color{magenta}]{\#}
+%}
+
+% init variables
+\newcounter{BoSSSblkCounter}
+\setcounter{BoSSSblkCounter}{-1}
+\newcounter{BoSSSinblkCounter}
+\setcounter{BoSSSinblkCounter}{-1}
+\newcommand{\BoSSSbwsName}{nix}
+%\newcommand{\BoSSSoutName}{nix}
+\newcommand{\BoSSSoutName}{./\BoSSSbwsName.texbatch/out\arabic{BoSSSblkCounter}.txt}
+\newcommand{\BoSSStexoutName}{./\BoSSSbwsName.texbatch/out\arabic{BoSSSblkCounter}.tex}
+\newcommand{\BoSSStexinName}{./\BoSSSbwsName.texbatch/in\arabic{BoSSSinblkCounter}.tex}
+\newcommand{\BoSSSemptyName}{./\BoSSSbwsName.texbatch/empty\arabic{BoSSSblkCounter}.txt}
+
+\newcommand{\btab}{\qquad}
+
+% write BoSSS command
+\newcommand{\BoSSScmd}[1]{
+%\addtostream{BoSSS}{#1}
+\stepcounter{BoSSSinblkCounter}
+%{\tt \textcolor{green}{begin \BoSSStexinName} \newline}
+\IfFileExists{\BoSSStexinName} {
+\input{\BoSSStexinName}
+} {
+{ \tt \textcolor{red}{
+Unable to find: \BoSSStexinName
+Run BoSSS to obtain output!
+} }
+%\begin{alltt} Macht nur probleme!
+%#1
+%\end{alltt}
+}
+%{\tt \textcolor{green}{end of \BoSSStexinName} \newline}
+}
+
+% execute BoSSS commands (no output listing)
+\newcommand{\BoSSSexeSilent}{
+\stepcounter{BoSSSblkCounter}
+}
+
+% BoSSS command without output
+\newcommand{\BoSSScmdSilent}{
+\stepcounter{BoSSSinblkCounter}
+\IfFileExists{\BoSSStexinName} {}
+}
+
+\newcommand{\myNoOp}[1]{
+%
+}
+
+% execute BoSSS commands (with output listing)
+\newcommand{\BoSSSexe}{
+\BoSSSexeSilent
+%{ \textcolor{blue}{begin output no. \arabic{BoSSSblkCounter} } \newline }
+\IfFileExists{\BoSSSemptyName} {
+    %{\tt \textcolor{blue}{Found empty file: \BoSSSemptyName \newline }} % debug info
+    % no operation: no relevant output from command.
+} {
+    \IfFileExists{\BoSSSoutName} {
+        \lstinputlisting[basicstyle=\footnotesize\ttfamily\color{magenta}, 
+                         breaklines=true, 
+                         breakatwhitespace=true]         % sets if automatic breaks should only happen at whitespace
+  {\BoSSSoutName}
+    } {
+        { \tt \textcolor{red}{
+        Missing output file `\BoSSSoutName'.
+        } } 
+    }
+}
+\IfFileExists{\BoSSStexoutName} {
+    \begin{center}
+    {
+    \input{\BoSSStexoutName} \\
+    }
+    \end{center}
+}
+%{ \textcolor{blue}{end output no. \arabic{BoSSSblkCounter} } \newline }
+ 
+%NoOp{\arabic{BoSSSblkCounter}} % no idea why this is necessary, but otherwise the counter is messed up
+}
+
+\newcommand{\BoSSSopen}[1]{
+\renewcommand{\BoSSSbwsName}{#1}
+%\graphicspath{{./\BoSSSbwsName.texbatch}}
+\setcounter{BoSSSinblkCounter}{-1}
+\setcounter{BoSSSblkCounter}{-1}
+}
+
+\newcommand{\BoSSSclose}{
+}
+
+%\newcommand{\BoSSS}{${\textrm{BoS}^S}^S$}
+\newcommand{\BoSSS}{BoSSS}
+\newcommand{\BoSSSpad}{BoSSSpad}
+\newcommand{\code}[1]{{\tt #1}}
+
+
+
+\endinput

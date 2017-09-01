@@ -1,0 +1,19 @@
+\subimport{../}{common.tex}
+\usepackage{ifthen}
+\usepackage{etoolbox} % Support für Toggles
+\usepackage{advdate} % Automatic date handling
+\usepackage{wsDBEtex}
+
+\newcommand{\thetitle}{Applied Discontinuous Galerkin methods}
+
+% Lösung wird nur angezeigt, wenn toggle 'solution' auf 'true' steht
+\newtoggle{showSolution}
+\newcommand{\solution}[1]{\iftoggle{showSolution}{\noindent\ignorespaces\section*{Lösung}{#1}}{}}
+
+\ThisYear{2016}
+\ThisMonth{4}
+\ThisDay{20}
+\newcommand{\WeeksAfter}[1]{\DayAfter[\the\numexpr 7*#1\relax]}
+
+
+\author{J. Kahle, F. Kummer \& B. Müller}

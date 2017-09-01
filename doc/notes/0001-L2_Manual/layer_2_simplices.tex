@@ -1,0 +1,101 @@
+\section{Building blocks of grids: simplices}
+
+%\subsection{outline}
+
+\begin{myDef}[Simplex]
+A simplex \coderm{BoSSS.Foundation.Grid.Simplex} (of dimension $D$) contains
+\begin{packed_itemize}
+  \item A subset $K_\textrm{REF} \subset \real^D$, that is the convex hull of the
+        simplex vertices\coderm{BoSSS.Foundation.Grid.Simplex.Vertices}
+         $\left( \vec{w}_0,\ldots,\vec{w}_{L-1} \right) \in \real^{D \times L}$,
+         which is called the reference domain, or domain of the simplex.
+         The center of gravity of $K_\textrm{ref}$ is $0$. It is further required that
+         for $D > 0$
+         $\left(\vec{w}_1 - \vec{w}_0,\ldots,\vec{w}_D - \vec{w}_0\right)$
+         is a Basis of $\real^D$.
+  \item A list of polynomials
+        \coderm{BoSSS.Foundation.Basis.Polynomials},
+        $\left( \phi_0(\vec{x}),\phi_1(\vec{x}),\vdots \right)$,
+        which are pair-wise orthonormal 
+        (i.e. $\langle \phi_n, \phi_m \rangle_{K_\textrm{ref}} = \delta_{n,m}$).
+        For some $p \in \nat$ there should be some $N$ so that
+        $(\phi_0,\cdots,\phi_{N-1})$ form a complete (orthonormal) basis of the space of all
+        polynomials of degree smaller or equal to $p$.
+        Furthermore, this list is
+        sorted according with respect to the polynomial degree, i.e.
+        $\deg (\phi_0) = 0$ and for $m>n$ the relation $\deg(\phi_m) \geq \deg(\phi_n)$ holds.
+  \item A set of quadrature rules\coderm{BoSSS.Foundation.Grid.Simplex.GetQuadratureRule(...)}
+  \item An $(D-1)$ dimensional edge simplex\coderm{BoSSS.Foundation.Grid.Simplex.EdgeSimplex}
+\end{packed_itemize}
+The edges-spaces $ \left( F_e \right)_{e=0,\ldots,E-1}$ of $K_\textrm{REF}$ are a sorted list of all
+different $(D-1)$  dimensional affine-linear spaces that can be found on $\partial K_\textrm{ref}$;
+the edge $\epsilon_e := F_e \cap \partial K_\textrm{ref}$ is itself a $(D-1)$ dimensional convex hull.
+Furthermore, a simplex contains
+\begin{packed_itemize}
+  \item an (ordered) list of edge transformations\coderm{BoSSS.Foundation.Grid.Simplex.TransformEdgeCoordinates(...)},
+        $Te_e : \real^{D-1} \rightarrow \real^D$ for $e \in \{0,\ldots,E-1\}$ which are affine-linear,
+        for which $Te_e(K_{\textrm{ref,edg}}) = \epsilon_e$ holds.
+        $K_{\textrm{ref,edg}}$ is the domain of the edge simplex.
+\end{packed_itemize}
+\label{simplex}
+\end{myDef}
+
+\begin{myNot}[Reference coordinates] Coordinates within the domain of a simplex
+are called reference coordinates and will be denoted by $\grvec{\upxi}:=(\xi,\eta) \in \real^2$
+or $\grvec{\upxi}:=(\xi,\eta,\nu) \in \real^3$ in below.
+\end{myNot}
+
+%\begin{myRem}[on quadrature rules]
+%The usage of product quadrature rules has shown to be inexact for the tetrahedron simplex.
+%\end{myRem}
+
+%\subsection{Simplices available in BoSSS}
+
+\begin{myRem}
+BoSSS offers the following simplices:
+Point\coderm{BoSSS.Foundation.Grid.Point},
+Line\coderm{BoSSS.Foundation.Grid.Line},
+Square\coderm{BoSSS.Foundation.Grid.Square},
+Triangle\coderm{BoSSS.Foundation.Grid.Triangle},
+Cube\coderm{BoSSS.Foundation.Grid.Cube},
+and
+Tetrahedron\coderm{BoSSS.Foundation.Grid.Tetra};
+The individual properties of these simplices can be found in the source code or read out from the
+binaries.
+\end{myRem}
+
+
+
+%\subsubsection{Point}
+%\subsubsection{Line}
+%\subsubsection{Square}
+%\subsubsection{Triangle}
+%\subsubsection{Cube}
+%\begin{myDef}[Cube simplex\coderm{BoSSS.Foundation.Grids.Cube}]
+%Refer to figure \ref{figcube}; The vertices are: \\
+%\begin{tabular}{cc}
+%  $\vec{w}_0 = (-1,-1,-1)$ & $\vec{w}_4 = (-1,-1,1)$  \\
+%  $\vec{w}_1 = (1,-1,-1)$  & $\vec{w}_5 = (1,-1,1)$  \\
+%  $\vec{w}_2 = (-1,1,-1)$  & $\vec{w}_6 = (-1,1,1)$  \\
+%  $\vec{w}_3 = (1,1,-1)$   & $\vec{w}_7 = (1,1,1)$  \\
+%\end{tabular}
+%\\
+%The Edges are: \\
+%\begin{tabular}{cc}
+%  $\epsilon_0 = CH(\vec{w}_0,\vec{w}_2,\vec{w}_3,\vec{w}_7)$  & $\epsilon_3 = CH(\vec{w}_0,\vec{w}_1,\vec{w}_3,\vec{w}_6)$  \\
+%  $\epsilon_1 = CH(\vec{w}_1,\vec{w}_4,\vec{w}_5,\vec{w}_6)$  & $\epsilon_4 = CH(\vec{w}_3,\vec{w}_5,\vec{w}_6,\vec{w}_7)$  \\
+%  $\epsilon_2 = CH(\vec{w}_0,\vec{w}_1,\vec{w}_3,\vec{w}_6)$  & $\epsilon_5 = CH(\vec{w}_0,\vec{w}_1,\vec{w}_2,\vec{w}_4)$  \\
+%\end{tabular}
+%\end{myDef}
+%
+%\begin{figure}
+%  % Requires \usepackage{graphicx}
+%  \begin{center}
+%      \includegraphics[width=0.6\textwidth]{figures/cube.eps} \\
+%  \end{center}
+%  \caption{The cube simplex}\label{figcube}
+%\end{figure}
+%\subsubsection{Tetra}
+
+
+

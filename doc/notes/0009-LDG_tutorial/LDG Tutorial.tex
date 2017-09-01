@@ -1,0 +1,92 @@
+\NeedsTeXFormat{LaTeX2e}
+\documentclass[11pt,twoside,a4paper]{fdyartcl}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[ngerman,english]{babel}
+\usepackage{longtable}
+\usepackage{graphicx}
+\usepackage{parskip}
+\usepackage{calc}
+\usepackage[a4paper,twoside,outer=2.2cm,inner=3cm,top=1.5cm,bottom=2.7cm,includehead]{geometry}
+\usepackage{setspace}
+\setstretch{1.05}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amsthm}
+\usepackage{mathpazo}
+\usepackage{upgreek}
+\usepackage{fancyhdr}
+\usepackage{ngerman}
+\usepackage{todo}
+\usepackage{hyperref}
+\usepackage{listings}
+
+\graphicspath{{./Figures/}}
+\clubpenalty = 10000%
+\widowpenalty = 10000%
+\displaywidowpenalty =10000
+\bibliographystyle{plain}
+
+\lstset{language=[Sharp]C, basicstyle=\footnotesize, captionpos=b,%
+  frame=single, numbers=left, numberstyle=\footnotesize, numbersep=5pt,%
+  breaklines=true, float}
+
+\title{LDG Tutorial}
+\author{Bj"orn M"uller}
+
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+
+\fancyhead[CE]{\sffamily \small \thepage \quad \hrulefill \quad \sffamily
+\small BoSSS documentation } \fancyhead[CO]{\sffamily \small B. M"uller \quad
+\hrulefill \quad \sffamily \small \thepage }
+
+% Dieser Befehl stellt sicher, dass neue Kapitel auf rechten (ungeraden)
+% Seiten beginnen
+\newcommand{\clearemptydoublepage}%
+{\newpage{\pagestyle{empty}\cleardoublepage}}
+\newfont{\myrm}{cmr12 at 12 pt}
+
+% FigureXYLabel - urspruenglich in defin.tex, von Prof.~Dr.-Ing.~M. Oberlack
+% Urspruengliche Version umfasste 5 Parameter - geaenderte 7 Parameter -
+% Bauerbach
+% 1 Figurename: \includegraphics[......
+% 2 Beschriftung der x Achse
+% 3 x-Beschriftung - Verruecken horizontal positiv nach links
+% 4 x Beschriftung - Verruecken vertikal positiv nach unten
+% 5 Beschriftung der y Achse
+% 6 y-Beschriftung - Verruecken horizontal positiv nach links
+% 7 y Beschriftung - Verruecken vertikal positiv nach oben
+\newlength{\FigureHeight}
+\newlength{\FigureHeightHalf}
+\newcommand{\FigureXYLabel}[7]{%
+\settoheight{\FigureHeight}{#1}%
+\setlength{\FigureHeightHalf}{0.5\FigureHeight}%
+\addtolength{\FigureHeightHalf}{#7}%
+\raisebox{\FigureHeightHalf}{\makebox[0cm][r]{#5\makebox[#6]{}}}%
+#1\\%
+\vspace{#4}%
+{\makebox{#2\makebox[#3]{}}}}
+
+% Scientific notation for numbers
+\providecommand{\e}[1]{\ensuremath{\times 10^{#1}}}
+
+
+\begin{document}
+\pagenumbering{arabic}
+\maketitle
+
+\begin{abstract}
+The present article illustrates the implementation of LDG schemes in BoSSS. It
+does so by introducing three simple examples and explaining a possible 
+realization in BoSSS.
+\end{abstract}
+
+\input{01-Introduction}
+\input{02-Poisson}
+\input{03-Heat}
+
+\bibliography{BibDatabase}
+
+\end{document}

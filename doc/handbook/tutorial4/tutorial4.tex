@@ -1,0 +1,319 @@
+% !TeX spellcheck = en_EN
+%\documentclass[12pt,a4paper]{article}
+%\usepackage{import}
+%\subimport{../}{uebung.tex}
+
+%\toggletrue{showSolution}
+
+
+%\title{\thetitle{}\\Tutorial 4}
+%\date{\WeeksAfter{3}}
+
+
+%\begin{document}
+
+%\maketitle
+
+\BoSSSopen{tutorial4/tutorial4}
+\graphicspath{{tutorial4/tutorial4.texbatch/}}
+
+\BoSSScmd{
+///\section*{What's new:} 
+///\begin{itemize}
+///    \item{generating .plt-files for visualization}
+///    \item{implementing a numerical flux}
+///    \item{definition and evaluation of the spatial operator}
+///    \item{explicit time integration}
+///\end{itemize}
+///\section*{Prerequisites:} 
+///\begin{itemize}
+///    \item{projection onto a DG-field}
+///\end{itemize} 
+///Within this tutorial, we are going to implement the scalar transport equation via the definition of a spatial operator and an explicit time integrator. The implementation of the numerical flux is described on the basis of a upwinding scheme. For the visualization of the results, we are generating .plt-files, which can be opened by a viewer of your choice
+///\section{Problem statement}
+///We are considering the following definition of the scalar transport equation with
+///\begin{equation}
+///   \label{eq:divergenceTerm}
+///   \frac{\partial c}{\partial t} + \nabla \cdot (\vec{u} c) = 0,
+///\end{equation}
+///where $c = c(x,y,t) \in \mathbb{R}$ is the unknown concentration and
+///\begin{equation*}
+///     \vec{u} = \begin{pmatrix}
+///         y\\-x
+///     \end{pmatrix}
+///\end{equation*}
+///is a given velocity field in $\domain = [-1, 1] \times [-1, 1]$. Furthermore, the exact solution is given by
+///\begin{equation*}
+///    c_\text{Exact}(x,y,t) = \cos(\cos(t) x - \sin(t) y) \quad \text{ for } (x,y) \in \domain
+///\end{equation*}
+///In this tutorial we will simulate the evolution of the concentration $c(x,y,t)$.
+///\section{Solution within the \BoSSS{} framework}
+///We start a new project
+ }
+\BoSSSexe
+\BoSSScmd{
+restart
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+using System.IO;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Delete old plots in the current directory if any
+Directory.GetFiles(".", "*.plt").ForEach(file => File.Delete(file));
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \subsection{Projection and visualization}
+/// In this first section we get to know the plotting tool \code{Tecplot}, which generates .plt-files of our \code{DGFields}. 
+/// Previously, we define the exact solution $c_{Excat}(x,y,t)$ and the scalar components of the velocity field $\vec{u}$ as functions, 
+Func<double[], double, double> cExact =  \newline 
+\btab (X, t) => Math.Cos(Math.Cos(t)*X[0] - Math.Sin(t)*X[1]);
+ }
+\BoSSSexe
+\BoSSScmd{
+Func<double[], double> u = X => X[1];
+ }
+\BoSSSexe
+\BoSSScmd{
+Func<double[], double> v = X => -X[0];
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Next, we need to construct the computational domain, i.e a unit square with one cell.
+double[] nodes = GenericBlas.Linspace(-1.0, 1.0, 2); \newline 
+GridCommons grid = Grid2D.Cartesian2DGrid(nodes, nodes); \newline 
+GridData gridData = new GridData(grid);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We instantiate the \code{SinglePhaseField} \emph{ch} with a \code{Basis} of DG-degreee of 2. Then we can project the initial value $c(x,y,0.0)$ onto \emph{ch}.
+int dgDegree = 2;  \newline 
+Basis basis = new Basis(gridData, dgDegree);  \newline 
+SinglePhaseField ch = new SinglePhaseField(basis, "ch");  \newline 
+ch.ProjectField(X => cExact(X, 0.0));
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Now, we can export the initial projection in our \code{Tecplot} format.
+using BoSSS.Solution.Tecplot;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// One important parameter for visualization is \textit{superSampling}. It is essential for higher order methods since almost all
+/// plotting tools work with piecewise linear interpolations of the data in the vertices. For our
+/// case, the plot with \code{superSampling=0} would just show a constant value! By increasing the
+/// rate of the \emph{superSampling}, we provide more sampling points for the plot tool.
+/// \begin{itemize}
+/// \item This has nothing to do with the computation! Only required for visualization!
+/// \item The number of sampling points grows exponentially with the value of
+///  \code{superSampling}. Never use a value above 5 or 6!
+/// \end{itemize}
+ }
+\BoSSSexe
+\BoSSScmd{
+uint superSampling = 0;  \newline 
+Tecplot tecplot    = new Tecplot(gridData, superSampling);\newline 
+tecplot.PlotFields( \newline 
+\btab "plot\_tutorial4\_superSampling0", \newline 
+\btab 0.0, \newline 
+\btab ch);
+ }
+\BoSSSexe
+\BoSSScmd{
+superSampling = 3;  \newline 
+tecplot    = new Tecplot(gridData, superSampling); \newline 
+tecplot.PlotFields( \newline 
+\btab "plot\_tutorial4\_superSampling3", \newline 
+\btab 0.0, \newline 
+\btab ch);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// There should be now two plot-files in your current directory. Those can be opened by any standard viewer for .plt-files.
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \subsection{Implementation of the (numerical) flux}
+/// Before we can define the spatial operator for the scalar transport equation, we need to implement 
+/// the flux for the given problem, i.e. the flux of the divergence operator. A flux defines the volume term 
+/// (the \emph{flux}) as well as the boundary terms (via the \emph{numerical flux}).
+/// We derive such a flux from the class \code{NonlinearFlux} which simplifies the implementation of fluxes in
+/// flux-based formulations. 
+using BoSSS.Platform.LinAlg;  \newline 
+class ScalarTransportFlux : NonlinearFlux \{  \newline 
+ \newline 
+    /// \leftskip=1cm \code{ArgumentOrdering} defines on which arguments this flux depends, and in which order. 
+    /// Here, we have just one argument (the concentration $c$). The name is arbitrary at this point, but has to be 
+    /// referenced when defining the spatial operator (see next section). Since this flux only depends on one
+    /// argument, the parameters \code{U}, \code{Uin} and \code{Uout} will have a length of 1 and will contain the
+    /// local values of $c$ in the first entry, i.e. \code{U[0]} in the method \code{Flux(...)}
+\btab public override IList<string> ArgumentOrdering \{  \newline 
+\btab \btab get \{ return new string[] \{ "c" \}; \}  \newline 
+\btab \}  \newline 
+ \newline 
+    /// \code{Flux(...)} defines the volume term. The array \code{output} (whose length is determined by the
+    /// spatial dimension of the problem) has to contain the evaluated \emph{flux} on exit.
+\btab protected override void Flux(double time, double[] x, double[] U, double[] output) \{  \newline 
+\btab \btab output[0] = u(x) * U[0];  \newline 
+\btab \btab output[1] = v(x) * U[0];  \newline 
+\btab \}  \newline 
+ \newline 
+    /// \code{InnerEdgeFlux(...)} defines the \emph{numerical flux} between inner edges. The parameters 
+    /// \code{Uin} and \code{Uout} contain the value from the \emph{in} and \emph{out} side, respectively, 
+    /// where the normal vector \code{normal} points from \emph{in} to \emph{out}
+\btab protected override double InnerEdgeFlux(double time, double[] x, double[] normal, \newline 
+\btab double[] Uin, double[] Uout, int jEdge) \{  \newline 
+\btab \btab Vector2D n = new Vector2D(normal);  \newline 
+\btab \btab Vector2D velocityVector = new Vector2D(u(x), v(x));  \newline 
+ \newline 
+\btab \btab if (velocityVector * n > 0) \{  \newline 
+\btab \btab \btab return (velocityVector * Uin[0]) * n;  \newline 
+\btab \btab \} else \{  \newline 
+\btab \btab \btab return (velocityVector * Uout[0]) * n;  \newline 
+\btab \btab \}  \newline 
+\btab \}  \newline 
+ \newline 
+    /// \code{BorderEdgeFlux(...)} defines the \emph{numerical flux} at boundary edges, where only inner values 
+    /// (\code{Uin}) are given. Here, we reuse \code{InnerEdgeFlux(...)} and the exact solution \code{cExact} 
+    /// to define a suitable boundary condition.
+\btab protected override double BorderEdgeFlux(double time, double[] x, double[] normal, \newline 
+\btab byte EdgeTag, double[] Uin, int jEdge) \{  \newline 
+\btab \btab double[] Uout = new double[] \{ cExact(x, time) \};  \newline 
+\btab \btab return InnerEdgeFlux(time, x, normal, Uin, Uout, jEdge);  \newline 
+\btab \}  \newline 
+\} \newline 
+/// \leftskip=0cm
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \subsection{Definition of a spatial operator}
+/// The next step is the definition of the spatial operator.
+var spatialTerm = new SpatialOperator( \newline 
+\btab new string[] \{ "c" \},        // Domain variable \newline 
+\btab new string[] \{ "div" \},      // Co-domain variable\newline 
+\btab QuadOrderFunc.NonLinear(2)); // Order of integration\newline 
+/// The name of the \emph{domain variable} must be the same used in \code{ArgumentOrdering}
+/// in the definition of the flux, i.e \code{ScalarTransportFlux}.
+/// The name of the \emph{co-domain variable} is arbitrary and is used when the 
+/// fluxes are added. In our case, we only have one type of flux.
+/// \code{QuadOrderFunc.NonLinear(int x)} computes the required integration order 
+/// for a non-linear flux. Here, the flux is given by $\vec{u} c$, where $\vec{u}$ is linear. 
+/// So, we have second order terms (flux times the ansatz functions), i.e the required
+/// order is \code{2*dgDegree+1} \newline
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We add the flux of the divergence operator to the corresponding equation component, identified by the 
+/// \emph{co-domain variable},
+spatialTerm.EquationComponents["div"].Add(new ScalarTransportFlux());
+ }
+\BoSSSexe
+\BoSSScmd{
+/// and finalize the definition of the operator
+spatialTerm.Commit();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \subsection{Time integration}
+/// Finally, we have to specify a time stepping scheme to solve the time dependent
+/// scalar transport equation \eqref{eq:divergenceTerm}. For simplification, we use 
+/// the \code{ExplicitEuler} scheme, which just needs the \code{SpatialOperator} and 
+/// the \code{DGField} as arguments.
+using BoSSS.Solution.Timestepping;
+ }
+\BoSSSexe
+\BoSSScmd{
+ExplicitEuler timeStepper = new ExplicitEuler(spatialTerm, ch);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We want to perform a full revolution ($t \in [0, 2\pi]$) with 24 timesteps.
+ }
+\BoSSSexe
+\BoSSScmd{
+double endTime = 2.0 * Math.PI; \newline 
+int numberOfTimesteps = 24;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Plot the initial data
+tecplot.PlotFields( \newline 
+\btab "plot\_tutorial4\_0", \newline 
+\btab 0.0, \newline 
+\btab ch); \newline 
+/// Now, we can start the simulation, where the \code{timestepper} performs in each iteration one
+/// explicit euler timestep with the timestep size \code{dt}
+double dt = endTime / numberOfTimesteps; \newline 
+for (int i = 1; i <= numberOfTimesteps; i++) \{ \newline 
+\btab timeStepper.Perform(dt); \newline 
+\btab tecplot.PlotFields(          // plot each timestep\newline 
+\btab \btab "plot\_tutorial4\_" + i, \newline 
+\btab \btab timeStepper.Time, \newline 
+\btab \btab ch); \newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Furthermore, we can postprocess our simulation data in various ways: For example, 
+/// we can compute the L2 Error at the end of the simulation
+double error = ch.L2Error(X => cExact(X, timeStepper.Time)); \newline 
+error;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \section{Advanced topics}
+/// So far we used the \code{timestepper} to evaluate the \code{SpatialOperator} in order to get 
+/// the current changerate for the explicit Euler scheme. In the next section we will evaluate the operator 
+/// in each iteration manually. But first we set the \code{DGField} back to the initial values and plot
+ch.ProjectField(X => cExact(X, 0.0));\newline 
+tecplot.PlotFields( \newline 
+\btab "plot\_tutorial4\_advanced\_0", \newline 
+\btab 0.0, \newline 
+\btab ch);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \subsection{Evaluation of the spatial operator}
+/// To evaluate the \code{SpatialOperator}, we have to provide a mapping of the DG-coordinates of \emph{ch}.
+/// This describes a bijective mapping between \emph{local unique indices} and \emph{global unique indices}
+var mapping = new CoordinateMapping(ch);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// In other words, it maps the DG-coordinates into one long, one-dimensional \code{CoordinateVector}
+var DGCoordinates = new CoordinateVector(mapping);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Now, we can create an evaluator of the \code{SpatialOperator} for the \code{DGField} \emph{ch} 
+var evaluator = spatialTerm.GetEvaluator(mapping.Fields, mapping);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// In our case this evaluator computes the fluxes of the divergence operator evaluated for the \code{DGField} \emph{ch}
+double[] flux = new double[ch.CoordinateVector.Count]; \newline 
+evaluator.Evaluate(1.0, 0.0, flux, time: 0.0);\newline 
+/// After the evaluation the output \code{flux} is $\code{flux} = 0.0 \cdot \code{flux} + 1.0 \cdot \code{spatialTerm(time: 0.0)}$
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Finally, we can use this kind of \code{spatial operator} evaluation to implement the explicit Euler scheme manually.   
+double physTime                = 0.0;\newline 
+for (int i = 1; i <= numberOfTimesteps; i++) \{ \newline 
+\btab evaluator.Evaluate(1.0, 0.0, flux, time: physTime);\newline 
+\btab DGCoordinates.axpy<double[]>(flux, -dt);\newline 
+\btab physTime += dt;\newline 
+\btab tecplot.PlotFields(        \newline 
+\btab \btab "plot\_tutorial4\_advanced" + i, \newline 
+\btab \btab physTime, \newline 
+\btab \btab ch); \newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+double error = ch.L2Error(X => cExact(X, physTime)); \newline 
+error;
+ }
+\BoSSSexe

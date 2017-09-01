@@ -1,0 +1,74 @@
+\documentclass[BoSSSForSolvingConservationLaws.tex]{subfiles}
+
+\begin{document}
+In previous sections we have shown the spatial discretization of equation \eqref{WeakFormulation-BoSSSStyle} of a scalar conservation law and now we want to perform the time discretization of the term $\int_{K_j} \partial_t u_j^h \phi_{jm} d\vec{x}$. As an example we choose the first order backward Euler time discretization scheme and we assume that the test functions and basis polynomials don't change with time.
+\begin{align*}
+\int_{K_j} \partial_t u_j^h \phi_{jm} d\vec{x}& \approx
+\int_{K_j} \frac{u_j^{h,(n+1)}-u_j^{h,(n)}}{\Delta t} \phi_{jm} d\vec{x}
+, \qquad 0\leq m \leq N_p-1\\
+&=\frac{1}{\Delta t}\int_{K_j} u_j^{h,(n+1)} \phi_{jm} d\vec{x}-\frac{1}{\Delta t}\int_{K_j}u_j^{h,(n)} \phi_{jm} d\vec{x}\\
+&=\frac{1}{\Delta t}\int_{K_j} \hat{u}_{jn}^{h,(n+1)} \phi_{jn} \phi_{jm} d\vec{x}-\frac{1}{\Delta t}\int_{K_j} \hat{u}_{jn}^{h,(n)} \phi_{jn} \phi_{jm} d\vec{x}\\
+\end{align*}
+Considering a general case and demonstrating the result of spatial discretization with $\textbf{W}=A\textbf{U}+B+\textbf{W}_{nonlinear}$ and matrix of DG coordinates with \textbf{U}, we can show the discretized equation as
+\begin{equation}
+\label{BackwardEuler}
+\begin{bmatrix}
+\frac{1}{\Delta t} &0                     &0      &\dots   &0\\
+0                  &\frac{1}{\Delta t}    &0      &\dots   &0\\
+0                  &0                     &\ddots &\ddots  &\vdots\\
+\vdots             &\vdots                &\ddots &\ddots  &0\\
+0                  &0                     &\dots  &0       &\frac{1}{\Delta t}
+\end{bmatrix}\textbf{U}^{(n+1)}+\textbf{W}=
+\begin{bmatrix}
+\frac{1}{\Delta t} &0                     &0      &\dots   &0\\
+0                  &\frac{1}{\Delta t}    &0      &\dots   &0\\
+0                  &0                     &\ddots &\ddots  &\vdots\\
+\vdots             &\vdots                &\ddots &\ddots  &0\\
+0                  &0                     &\dots  &0       &\frac{1}{\Delta t}
+\end{bmatrix}\textbf{U}^n\\
+\end{equation}
+\begin{equation*}
+\textbf{U}^{(n)}=
+\begin{bmatrix}
+\vdots\\
+\hat{u}_{(f,j,n)}^{(n)}\\
+\vdots
+\end{bmatrix}_{Ncol},\qquad
+\textbf{U}^{(n+1)}=
+\begin{bmatrix}
+\vdots\\
+\hat{u}_{(f,j,n)}^{(n+1)}\\
+\vdots
+\end{bmatrix}_{Ncol}
+\end{equation*}
+If a domain field $f$ is not time dependent its corresponding entries in diagonal matrices are set to zero. $\textbf{W}$ would be different in case of an explicit or implicit scheme. For an explicit scheme
+\begin{equation*}
+\textbf{W}^{(n)}=A\textbf{U}^{(n)}+B+\textbf{W}^{(n)}_{nonlinear}=
+\begin{bmatrix}
+\vdots\\
+\tilde{w}_{(\gamma,j,m)}^{(n)}\\
+\vdots
+\end{bmatrix}_{Mrow}
+\end{equation*}
+We could also use nonlinear quadrature for spatial discretization of linear terms with explicit schemes. Nonlinear quadrature takes less memory than creation of matrix in linear quadrature but the matrix multiplication is much faster.\\
+Using the explicit Euler scheme and multiplying equation \eqref{BackwardEuler} by $\Delta t$ we can find the DG coordinates for the next time step.
+\begin{equation}
+\textbf{U}^{(n+1)}=\textbf{U}^n-\textbf{W}^{(n)} \Delta t
+\end{equation}
+For an implicit scheme, nonlinear terms of equation must be first linearized for spatial discretization.
+\[
+\textbf{W}^{(n+1)}=A\textbf{U}^{(n+1)}+B
+\]
+Therefore using the implicit Euler scheme
+\begin{equation}
+\label{ImplicitEuler}
+\Big(diag(\frac{1}{\Delta t},...,\frac{1}{\Delta t})+A \Big)\textbf{U}^{(n+1)}=
+diag(\frac{1}{\Delta t},...,\frac{1}{\Delta t})\textbf{U}^n-B
+\end{equation}
+
+\subsection*{Implementation in BoSSS}
+For time integration we need a \emph{time stepper}\coderm{BoSSS.Solution.ITimeStepper}. A time stepper contains $Mapping$, the coordinate mapping of domain fields and $DGCoordinates$, the coordinate vector of the $Mapping$ (see section \ref{sec:CoordinateMapping}, \nameref{sec:CoordinateMapping}). A time stepper has a method $perform()$ that performs a time step. This method should be called by method $RunSolverOneStep()$\coderm{BoSSS.Solution.Application.RunSolverOneStep(...)} of each desired application\coderm{BoSSS.Solution.Application}. The perform method is differently implemented for different time discretization schemes. As examples of time steppers for explicit schemes, there are already explicit Euler\coderm{BoSSS.Solution.Timestepping.ExplicitEuler} and Runge-Kutta\coderm{BoSSS.Solution.Timestepping.RungeKutta} schemes implemented. For using an explicit scheme we need $\textbf{W}^{(n)}$, the result of evaluation of our spatial differential operator (which is defined by creating\coderm{BoSSS.Solution.Application.CreateEquationsAndSolvers(...)} equations and solvers for the application). Before we can evaluate  the spatial differential operator in the perform method, we must have defined an evaluator  for it when creating the time stepper for the explicit scheme. For both explicit or implicit schemes we need matrix $A$ and affine offset $B$ which are computed using the method $ComputeMatrixEx()$ of the spatial differential operator (see section \ref{sec:SpatialDifferentialOperator}, \nameref{sec:SpatialDifferentialOperator}).\\
+Implicit Euler\coderm{BoSSS.Solution.Timestepping.ImplicitEuler} and Crank-Nicolson\coderm{BoSSS.Solution.Timestepping.CrankNicolson} schemes are implemented as examples of \emph{implicit time steppers}. An implicit time stepper needs a \emph{setup} method\coderm{BoSSS.Solution.Timestepping.ImplicitTimeStepper.Setup1(...)}. The setup method is performed by creation\coderm{BoSSS.Solution.Timestepping.ImplicitTimeStepper.ImplicitTimeStepper(...)} of an implicit time stepper. It takes the linear solver (also defined when creating equations and solvers), the spatial operator matrix $A$ and the spatial operator affine offset $B$. The setup method creates the $DGCoordinates$ from the $Mapping$, defines\coderm{ilPSP.LinSolvers.ISparseSolver.DefineMatrix(...)} spatial operator matrix for the linear solver, creates array of doubles $m\_AffineOffset1$ from the spatial operator affine offset (which is a list of doubles) and constructs the diagonal matrix vector $m\_diagVecOneSec$\coderm{BoSSS.Solution.Timestepping.ImplicitTimeStepper.m\_diagVecOneSec}. The diagonal matrix vector is an array which is used for creating diagonal entries of the diagonal matrix in equation \eqref{ImplicitEuler}. Entries of this array have values one corresponding to time dependent fields $f$ and zero otherwise. The length of this array is equal to the maximum total number of coordinates per cell (see section \ref{sec:CoordinateMapping}, \nameref{sec:CoordinateMapping}).\\
+If for implementing new implicit schemes the above procedure using this setup method is not desired there is a possibility of using method $SetMapping()$\coderm{BoSSS.Solution.Timestepping.ImplicitTimeStepper.SetMapping(...)} which takes the coordinate mapping of domain fields and creates the $DGCoordinates$.\\
+The perform method of an implicit time stepper\coderm{BoSSS.Solution.Timestepping.ImplicitTimeStepper} is expected to prepare diagonal components of the diagonal matrix and the right hand side of equation \eqref{ImplicitEuler}, and call method $solve()$\coderm{ilPSP.LinSolvers.ISparseSolverExt.Solve(...)} of the linear solver\coderm{ilPSP.LinSolvers.ISparseSolverExt} (see section \ref{sec:LinSolvers}, \nameref{sec:LinSolvers}).
+\end{document}

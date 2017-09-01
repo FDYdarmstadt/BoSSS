@@ -1,0 +1,103 @@
+Hi,
+
+I've recently introduced some changes in the directory tree and the project structure of BoSSS. 
+These were mainly implied by the introduction of the new test-server (jenkins). 
+If anything goes wrong, don’t hesitate to complain.
+
+Motivation/why ????
+===================
+I hope that this will improve the quality of the development process,
+i.e. I hope that bugs in the root/origin repository will be drastically reduced.
+Basically, the idea works like this:
+* you (git) clone BoSSS from the `root'-repository
+* whenever the main developers (Björn and myself) have some changes, we push to 
+  an `experimental'-repository and not directly to `root', like we did in the past.
+* whenever the test server detects changes in the `experimental' repository
+  - it builds all projects
+  - executes some tests
+  - if everything went ok., it publishes the new version in `root'
+By such a workflow, it should be ensured that any update which you fetch and merge from `root'
+is verified up to some degree.
+
+Changes
+=======
+1) Binary installer:
+At first, we feature a classical Windows installer.
+You'll find this in 
+\\fdyprime\bosss\install\BoSSS-setup-#.exe ,
+where # represents the build number that is increased by every build.
+This will install mainly the Database explorer, native library and the bcl.exe tool.
+
+Background: 
+* native libraries (x86 and amd64 directories):
+  it further defines the environment variable BOSSS_INSTALL, which is the directory of the
+  installation. 
+  Per default, every BoSSS application will look in '$BOSSS_INSTALL/bin/native/win'
+  for the native binaries. 
+  - so, it is not necessary anymore to have 'x86' and 'amd64' in the 'bin/Debug' and 'bin/release'
+    subdirectories of each BoSSS project.
+  - if BOSSS_INSTALL is not defined, like on the cluster, BoSSS searches for the 
+    native libraries in the directory of the application executable.
+    by using 'bcl deploy-at', copies of 'x86'/'amd64' are still created.
+* the installer can be run as administrator and as normal user.
+  In the latter case, BoSSS is only installed for the specific user.
+* 'bcl.exe' is added to the PATH variable; in future, this step may become selectable.
+
+2) source code:
+* The source code is now completely under git control.
+  A git feature  called 'submodules' is used to replace the 'bcl update-all' command.
+* Initial cloning:
+$ git clone /r/root.git ./BoSSS-new
+$ cd BoSSS-new
+$ git submodule init
+$ git submodule update
+* Updating:
+$ git fetch origin
+$ git merge origin/master
+$ git submodule update
+* On git submodules: 
+  The repository binds the public, ilPSP and DBE repository togheter
+  and ensures that e.g. the checked-out versions of ilPSP and public are compatible. 
+* A lot of information on git submodules is available on Google.
+
+3) user configuration files.
+All configuration files are now within '$PROFILEPATH/.BoSSS', e.g. in my case 'C:\Users\kummer\.BoSSS'.
+This directory structure is created at the first time that bcl is executed.
+Actually, you'll need to copy the old DBE configuration file (DBE.xml)
+from its old location to '~/.BoSSS/etc/DBE.xml'.
+
+4) project structure.
+* The new guideline is:
+  every executable has its own Visual Studio solution.
+  (MySolution.sln is dead.)
+  In future, i'll suggest that you always use 'bcl create-proj' to create new projects;
+  Within the next weeks, I will upgrade this routine in order to create solution files too.
+* There is a master solution: src/Master.sln
+  This is mainly for the test sever; you can use it, but since it contains almost everything in BoSSS (DBE, ...)
+  one build consumes quite some time.
+  Furthermore, if a lot of people would modify this file at one time, a lot of merge conflicts would occur.
+  (the thing you're all are most afraid of).    
+* tests:
+  - based on NUnit.
+  - example: ipPoisson
+  - to be executed by the test server, the name of the binary which contains the test must be entered to
+    'src/run-nunit.sh'.
+    furthermore, the project which contains the test must be a member of src/Master.sln,
+    otherwise the test will not be build, neither executed.
+  - actually, tests cannot use BoSSS databases. I'll provide information on this within the next weeks.
+  
+ 5) build server "Jenkins"
+* Web interface: http://jenkins.fdy.maschinenbau.tu-darmstadt.de:8080
+* Login: jour windows username and password (without FDY-prefix, e.g. just 'kummer')
+* To just watch build results, no login is required 
+ 
+Migration/Sum Up
+================
+I recommend the following steps in order to migrate to the new structure.
+1. Install the binary: \\fdyprime\bosss\install\BoSSS-setup-23.exe , 
+2. Maybe rename your current BoSSS installation to BoSSS.old or whatever
+3. From the git bash, call bcl.exe once. This will create the ~/.BoSSS - directory, e.g. c:\users\kummer\.BoSSS.
+   Copy the DBE configuration file DBE.xml from the old installation (etc-floder) to .BoSSS/etc
+4. Check out the new source code
+5. Merge any local changes from your old BoSSS installation
+

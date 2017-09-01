@@ -1,0 +1,727 @@
+% !TeX spellcheck = en_US
+		
+\BoSSSopen{tutorial6/tutorial6}
+\graphicspath{{tutorial6/tutorial6.texbatch/}}
+
+\BoSSScmd{
+///\label{chap:scalarConvection}
+///\section*{What's new}
+///\label{sec:scalarConvection_new}
+///\begin{itemize}
+/// \item Structure of stiffness matrix
+/// \item Stability regions of explicit time integration schemes
+/// \item Determination and significance of most critical Eigenvalue
+/// \item Calculation of stable time step $dt_0$
+/// \item Influence of grid resolution and polynomial degree on time step size
+///\end{itemize}
+///
+///\section*{Prerequisites}
+///\label{sec:scalarConvection_prereq}
+///\begin{itemize}
+/// \item Implementation of fluxes (Tutorials 4 and 5)
+/// \item Explicit time integration (Tutorial 4)
+/// \item Basics of convergence studies (Tutorial 2 and 5)
+/// \item Grid generation (Tutorial 2)
+///\end{itemize}
+///
+///In this tutorial, you will learn the basics of time discretization. Using the Upwind, 
+///Central and two Lax-Friedrichs fluxes the tutorial first visualizes the structure of the stiffness matrix and its Eigenvalues.
+///Then the stability regions of explicit time integration schemes, e.g. the Explicit Euler method, are considered. 
+///Using the fourth order Runge-Kutta scheme the Eigenvalues are studied for different polynomial orders 
+///and grid resolutions in order to find the most critical Eigenvalue. Finally, the influence of grid resolution 
+///and polynomial degree on the time step size is examined and the stable time step $dt_0$ determined in order to obtain a stable and converging solution.
+///
+///\section{Problem statement}
+///\label{sec:scalarConvection_problem}
+///To keep it simple, the one-dimensional scalar transport equation
+///\begin{align} \label{eq:scalarTransport}
+///\frac{\partial g}{\partial t} + \nabla \cdot \left(uc\right) = 0
+///\end{align}
+///will be used, where $g=g(x,t) \in \mathbb{R}$ is the unknown concentration and $u=1$ the velocity field in a \emph{periodic} domain~$\Omega = \left[-\pi,\pi\right]$.
+///
+///The linear PDE~\eqref{eq:scalarTransport} can be written in its semi-discrete form
+///\begin{align} \label{eq:semiDiscreteForm}
+///\frac{\partial \vec g}{\partial t} + \matrix{M} \, \vec g + \vec b = 0
+///\end{align}
+///with the unknown DG coefficients~$\vec g$, the system or stiffness matrix~$\matrix{M}$ and the affine part~$\vec b$. 
+///The affine part is given by source terms and boundary conditions. In this case, $\vec b = 0$.
+///
+///\section{Solution within the BoSSS Framework}
+///\label{sec:scalarConvection_tutorial}
+ }
+\BoSSSexe
+\BoSSScmd{
+restart;
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// \subsection{Definition of the operator matrix} \label{sec:scalarConvection_matrix}
+ }
+\BoSSSexe
+\BoSSScmd{
+using BoSSS.Platform.LinAlg;
+ }
+\BoSSSexe
+\BoSSScmd{
+using ilPSP.LinSolvers;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// The function~\code{u} is defined for later usage.
+Func<double[], double> u = (X => 1.0);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// The function~\code{GetOperatorMatrix} constructs the operator matrix~$\matrix{M}$ corresponding to the semi-discrete ODE system~\eqref{eq:semiDiscreteForm}.
+Func<int, int, LinearFlux, MsrMatrix> GetOperatorMatrix =       \newline 
+\btab delegate(int numberOfCells, int dgDegree, LinearFlux flux) \{       \newline 
+\btab \btab double[] nodes = GenericBlas.Linspace(-Math.PI, Math.PI,       \newline 
+\btab \btab \btab numberOfCells + 1);       \newline 
+\btab \btab GridData gridData = new GridData(Grid1D.LineGrid(       \newline 
+\btab \btab \btab nodes, periodic: true));       \newline 
+ \newline 
+\btab \btab Basis basis = new Basis(gridData, dgDegree);       \newline 
+\btab \btab SinglePhaseField g = new SinglePhaseField(basis);       \newline 
+ \newline 
+\btab \btab var op = new SpatialOperator(       \newline 
+\btab \btab \btab new string[] \{ "g" \},         // domain variable       \newline 
+\btab \btab \btab new string[] \{ "div" \},     // co-domain variable      \newline 
+\btab \btab \btab QuadOrderFunc.Linear());       \newline 
+\btab \btab op.EquationComponents["div"].Add(flux);       \newline 
+ \newline 
+\btab \btab op.Commit();       \newline 
+ \newline 
+        /// The \code{MsrMatrix} is a sparse matrix, where \emph{MSR} stands for \emph{Mutable Sparse Row}. That is, the
+        /// matrix can be changed, and the entries are stored in a compressed format where we only have
+        /// a small number of column entries per row. This is crucial to be able to handle larger
+        /// systems and is required by most linear solvers.
+\btab \btab MsrMatrix operatorMatrix = new MsrMatrix(g.Mapping);       \newline 
+\btab \btab double[] affineOffset = new double[g.Mapping.LocalLength];       \newline 
+        /// Compute the matrix~\code{operatorMatrix} and the affine part~\code{affineOffset} such that an operator
+        /// evaluation~$op(g)$ can be expressed as \code{operatorMatrix} $\times$ \code{g} + \code{affineOffset}.
+\btab \btab op.ComputeMatrix(g.Mapping, null, g.Mapping, operatorMatrix,       \newline 
+\btab \btab \btab affineOffset, false);       \newline 
+ \newline 
+        /// Since we do not enforce any boundary conditions, \code{affineOffset} should be zero.
+\btab \btab if (affineOffset.Any(d => d != 0.0)) \{       \newline 
+\btab \btab \btab throw new Exception(       \newline 
+\btab \btab \btab \btab "We have only periodic boundary conditions."       \newline 
+\btab \btab \btab \btab + " Affine part should be zero!");       \newline 
+\btab \btab \}       \newline 
+ \newline 
+\btab \btab return operatorMatrix;       \newline 
+\btab \}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \subsection{Definition of numerical fluxes}\label{sec:scalarConvection_fluxes}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// As in the previous tutorials, the Upwind flux is used.
+Func<double, double, double, double, double> upwindFlux =       \newline 
+\btab delegate (double Uin, double Uout, double n, double velocity) \{       \newline 
+\btab \btab if (velocity * n > 0) \{       \newline 
+\btab \btab \btab return (velocity * Uin) * n;       \newline 
+\btab \btab \} else \{       \newline 
+\btab \btab \btab return (velocity * Uout) * n;       \newline 
+\btab \btab \}       \newline 
+\btab \};
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Moreover, the Lax-Friedrichs flux with a constant \code{C} (here, different values are used) is implemented. If \code{C} equals zero, the Lax-Friedrichs flux is equivalent to
+/// the central flux.
+Func<double, Func<double, double, double, double, double>>       \newline 
+  laxFriedrichsFlux =       \newline 
+\btab C => delegate (double Uin, double Uout, double n, double velocity) \{       \newline 
+\btab \btab \btab  return 0.5 * (Uin + Uout) * velocity * n - C * (Uout - Uin);       \newline 
+\btab \btab  \};
+ }
+\BoSSSexe
+\BoSSScmd{
+/// In general, the flux implementation is similar to the one in the previous tutorials, but in this case, it is one-dimensional and uses \code{LinearFlux}
+/// as a base class. This class helps to create the entries of the operator matrix discussed above.
+class LinearTransportFlux : LinearFlux \{       \newline 
+ \newline 
+\btab private Func<double, double, double, double, double> numericalFlux;       \newline 
+ \newline 
+\btab public LinearTransportFlux(Func<double, double, double, double,       \newline 
+\btab \btab double> numericalFlux) \{       \newline 
+\btab \btab \btab this.numericalFlux = numericalFlux;       \newline 
+\btab \}       \newline 
+ \newline 
+\btab public override IList<string> ArgumentOrdering \{       \newline 
+\btab \btab get \{       \newline 
+\btab \btab \btab return new string[] \{ "g" \};       \newline 
+\btab \btab \}       \newline 
+\btab \}       \newline 
+ \newline 
+    /// The volume term is very similar to what we have done before.
+\btab protected override void Flux(ref CommonParamsVol inp, double[] U,       \newline 
+\btab \btab double[] output) \{       \newline 
+\btab \btab output[0] = u(inp.Xglobal) * U[0];       \newline 
+\btab \}       \newline 
+ \newline 
+    /// The \code{InnerEdgeFlux} implementation is the same as in the last tutorials, with a slightly different signature.
+\btab protected override double InnerEdgeFlux(ref CommonParams inp,       \newline 
+\btab \btab double[] Uin, double[] Uout) \{       \newline 
+\btab \btab \btab return numericalFlux(Uin[0], Uout[0], inp.Normale[0], u(inp.X));       \newline 
+\btab \}       \newline 
+ \newline 
+    /// We are working on periodic grids only, so the \code{BorderEdgeFlux} is irrelevant.
+\btab protected override double BorderEdgeFlux(ref CommonParamsBnd inp,       \newline 
+\btab \btab double[] Uin) \{       \newline 
+\btab \btab \btab throw new NotImplementedException("Should never be called!");       \newline 
+\btab \}       \newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \subsection{Definition of operators and construction of system matrices}\label{sec:scalarConvection_systemMatrices}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// A dictionary is created to access the different fluxes easily.
+var fluxes = new Dictionary<string, Func<double, double, double, double,       \newline 
+\btab double>>() \{       \newline 
+\btab \btab \{ "Upwind",                   upwindFlux \},       \newline 
+\btab \btab \{ "Central",                  laxFriedrichsFlux(0.0) \},       \newline 
+\btab \btab \{ "Lax-Friedrichs (C = 0.1)", laxFriedrichsFlux(0.1) \},       \newline 
+\btab \btab \{ "Lax-Friedrichs (C = 0.3)", laxFriedrichsFlux(0.3) \}       \newline 
+\};
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Some initial configurations (polynomial \code{degree} and \code{numberOfCells}) are done, as well as defining the system matrices for the above-defined fluxes.
+int degree = 2;       \newline 
+int numberOfCells = 10;       \newline 
+MsrMatrix[] matrices = new MsrMatrix[fluxes.Count];       \newline 
+for (int i = 0; i < fluxes.Count; i++) \{       \newline 
+\btab LinearFlux flux = new LinearTransportFlux(fluxes.ElementAt(i).Value);       \newline 
+\btab matrices[i] = GetOperatorMatrix(numberOfCells, degree, flux);       \newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \subsection{Investigation of operator matrices}\label{sec:scalarConvection_matrixInvestigation}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// The style of the plots is defined.
+PlotFormat format = new PlotFormat(       \newline 
+\btab Style: Styles.Points,       \newline 
+\btab pointType: PointTypes.Asterisk,       \newline 
+\btab pointSize: 0.1);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \code{SetMultiplot} enables multiple plots per graphic.
+Gnuplot gp1 = new Gnuplot(baseLineFormat: format);       \newline 
+gp1.SetMultiplot(2, fluxes.Count / 2);       \newline 
+gp1.SetXLabel("Matrix column");       \newline 
+gp1.SetYLabel("Matrix row");       \newline 
+// Invert y-axis       \newline 
+gp1.SetYRange(numberOfCells * (degree + 1), 0);
+ }
+\BoSSSexe
+\BoSSScmd{
+for (int i = 0; i < fluxes.Count; i++) \{       \newline 
+\btab // Select the active sub-plot       \newline 
+\btab gp1.SetSubPlot(i / 2, i \% 2, title: fluxes.ElementAt(i).Key);       \newline 
+    /// \code{SetSubPlot} visualizes the non-zero entries of the system matrix. The block size defines the number
+    /// of entries per cell. In our case, we have \code{degree} + 1 polynomials per cell such that the
+    /// matrix-block associated with a single cell is a (\code{degree} + 1) $\times$ (\code{degree} + 1) sub-matrix.
+\btab gp1.PlotMatrixStructure(matrices[i].ToFullMatrixOnProc0(),       \newline 
+\btab blockSize: degree + 1);       \newline 
+\btab // Finalize the sub-plot       \newline 
+\btab gp1.WriteDeferredPlotCommands();       \newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+gp1.PlotNow();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Now, we can see purple and green blocks in the matrix plots.
+/// The purple blocks are the diagonal blocks that couple the DOF \emph{inside} in a cell.
+/// The off-diagonal green blocks define the coupling between neighboring cells.
+/// Moreover, the differences in the matrix structure for the different fluxes,
+/// especially when comparing the upwind and the central flux to the Lax-Friedrichs variants, is investigated:
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \begin{itemize}
+/// \item \emph{Upwind flux:} Using the upwind flux, the coupling between cells is asymmetric because the flow
+///          direction is taken into account. As a result, the DOF for a given cell depend on
+///          the DOF of its left neighbor (green blocks above the diagonal), but not on the DOF of
+///          its right neighbor (no green blocks below the diagonal in case of Upwind flux).
+/// \item \emph{Central flux}: It can be shown (not proven in this tutorial) that the first entry of each
+///          diagonal block vanishes. That is because of the symmetry of the basis functions, since
+///          the corresponding term equals zero as well. Please note, that this is a special case for the
+///          basis function used here.
+/// \end{itemize}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \subsection{Analysis of the spectrum of common explicit ODE integrators}\label{sec:scalarConvection_stabilityRegions}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// The discrete spectrum of a linear operator in a periodic domain is given by the eigenvalues of
+/// the corresponding system matrix. Here, we will use Matlab to analyze the spectrum
+/// for the different fluxes. For the stability analysis, we have to use the standard form:
+/// \begin{align} \frac{\partial \vec u}{\partial t} = -\matrix{M} \, \vec u \end{align}
+ }
+\BoSSSexe
+\BoSSScmd{
+using ilPSP.Connectors.Matlab;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// The \code{BatchmodeConnector} initializes an interface to Matlab:
+BatchmodeConnector connector = new BatchmodeConnector();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We will use the array~\code{eigenValues} to store the eigenvalues of the matrix for each flux. The first index
+/// corresponds to the flux, the second index to the eigenvalue and the third index to the part of
+/// the eigenvalue (0: real part; 1: imaginary part).
+MultidimensionalArray eigenvalues = MultidimensionalArray.Create(       \newline 
+\btab fluxes.Count, matrices[0].NoOfCols, 2);
+ }
+\BoSSSexe
+\BoSSScmd{
+for (int i = 0; i < fluxes.Count; i++) \{       \newline 
+\btab // Transfer sparse matrix to Matlab and name the Matlab       \newline 
+\btab // variables "M0", "M1", ...       \newline 
+\btab connector.PutSparseMatrix(matrices[i], "M" + i);       \newline 
+\btab // Compute \textbackslash emph\{all\} eigenvalues of the individual matrices       \newline 
+\btab // and sort them by magnitude       \newline 
+\btab connector.Cmd("eigenvalues\{0\} = sort(eig(full(M\{0\})))", i);       \newline 
+ \newline 
+\btab // Separate real and imaginary part; negating the real part       \newline 
+\btab // accounts for the minus sign in the standard form discussed above       \newline 
+\btab connector.Cmd("result\{0\} = [-real(eigenvalues\{0\}) " +       \newline 
+\btab \btab "imag(eigenvalues\{0\})]", i);       \newline 
+ \newline 
+\btab // Retrieve results       \newline 
+\btab connector.GetMatrix(eigenvalues.ExtractSubArrayShallow(i, -1, -1),       \newline 
+\btab \btab "result" + i);       \newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Calling Matlab takes some time on most machines, even though the individual calculations are
+/// quite fast (suppressing the output). This is due to the slow startup of Matlab...
+connector.Execute(PrintOutput: false);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Now, the eigenvalues are plotted in the complex plane.
+Gnuplot gp2 = new Gnuplot(baseLineFormat: format);       \newline 
+gp2.SetMultiplot(2, fluxes.Count / 2);       \newline 
+gp2.SetXRange(-15, 1);       \newline 
+gp2.SetYRange(-15.0, 15.0);       \newline 
+gp2.SetXLabel("Real");       \newline 
+gp2.SetYLabel("Imaginary");
+ }
+\BoSSSexe
+\BoSSScmd{
+for (int i = 0; i < fluxes.Count; i++) \{       \newline 
+\btab string key = fluxes.ElementAt(i).Key;       \newline 
+\btab gp2.SetSubPlot(i / 2, i \% 2, title: key);       \newline 
+\btab gp2.PlotXY(       \newline 
+\btab \btab eigenvalues.ExtractSubArrayShallow(i, -1, 0).To1DArray(),       \newline 
+\btab \btab eigenvalues.ExtractSubArrayShallow(i, -1, 1).To1DArray());       \newline 
+\btab gp2.WriteDeferredPlotCommands();       \newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+gp2.PlotNow();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We will compare the spectra of the different operator matrices.
+/// The spectrum for the central flux case does not contain any negative real parts.
+/// Consequently, the solution of the ODE system is unstable in a sense that
+/// disturbances (e.g. due to round-off or projection errors) will never be damped.
+/// Next, let us have a closer look at the influence of the spectrum of the system matrix
+/// on the maximum admissible time step size. The stability can be analyzed by using the so-called stability function~$f(z)$ of an ODE solver.
+/// That is, the system is stable if all eigenvalues of $dt \, \matrix{M}$ are
+/// located within the stability region $|f(z)| < 1$ of the solver. In the following, we will
+/// investigate the stability for the case of the Upwind flux.
+ }
+\BoSSSexe
+\BoSSScmd{
+using System.Numerics;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// The stability function of Runge-Kutta schemes for the orders 1 to 4 are stored in a \code{Dictionary}.
+var stabilityFunctions = new Dictionary<string, Func<Complex, Complex>>() \{       \newline 
+\btab \{ "Euler (order 1)",       z => 1 + z \},       \newline 
+\btab \{ "Heun (order 2)",        z => 1.0 + z + 0.5*z*z \},       \newline 
+\btab \{ "Kutta (order 3)",       z => 1.0 + z + 0.5*z*z + 1.0/6.0*z*z*z \},       \newline 
+\btab \{ "Runge-Kutta (order 4)", z => 1.0 + z + 0.5*z*z + 1.0/6.0*z*z*z +        \newline 
+\btab \btab 1.0/24.0*z*z*z*z \}       \newline 
+\};
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We create some sampling nodes for the following plots.
+double[] xNodes = GenericBlas.Linspace(-4.0, 1.0, 50).ToArray();       \newline 
+double[] yNodes = GenericBlas.Linspace(-4.0, 4.0, 100).ToArray();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We plot the boundary of the stability regions for the different schemes and orders, respectively.
+Gnuplot gp3 = new Gnuplot(baseLineFormat: format);       \newline 
+gp3.SetMultiplot(2, stabilityFunctions.Count / 2);       \newline 
+gp3.SetXLabel("Real");       \newline 
+gp3.SetYLabel("Imaginary");       \newline 
+gp3.Cmd("set grid");       \newline 
+gp3.Cmd("set size square");       \newline 
+gp3.SetXRange(-4.0, 4.0);       \newline 
+gp3.SetYRange(-4.0, 4.0);
+ }
+\BoSSSexe
+\BoSSScmd{
+for (int i = 0; i < stabilityFunctions.Count; i++) \{       \newline 
+\btab string key = stabilityFunctions.ElementAt(i).Key;       \newline 
+\btab gp3.SetSubPlot(i / 2, i \% 2, title: key);       \newline 
+ \newline 
+    /// We plot the iso-contour where $|\code{stabilityFunction}| = 1.0$.
+\btab gp3.PlotContour(       \newline 
+\btab \btab xNodes,       \newline 
+\btab \btab yNodes,       \newline 
+\btab \btab (x, y) => stabilityFunctions[key](new Complex(x, y)).Magnitude,       \newline 
+\btab \btab new double[] \{ 1.0 \},       \newline 
+\btab \btab title: key);       \newline 
+ \newline 
+\btab gp3.WriteDeferredPlotCommands();       \newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+gp3.PlotNow();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \subsubsection{Stability region of the fourth order Runge-Kutta scheme}\label{sec:scalarConvection_RK4}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We will now focus on the fourth order Runge-Kutta scheme.
+///
+/// For some obscure reasons,
+/// \emph{gnuplot} forces us to write the contour plot data from above into a file in order to
+/// be able to use it in normal plots. The syntax is completely irrelevant for our
+/// purposes, so please do not waste time on trying to understand it.
+ }
+\BoSSSexe
+\BoSSScmd{
+string dataFile = "rk4.dat";       \newline 
+Gnuplot gp4 = new Gnuplot();       \newline 
+gp4.Cmd("set table '\{0\}'", dataFile);       \newline 
+gp4.PlotContour(       \newline 
+\btab xNodes,       \newline 
+\btab yNodes,       \newline 
+\btab (x, y) => stabilityFunctions["Runge-Kutta (order 4)"](       \newline 
+\btab \btab new Complex(x, y)).Magnitude, new double[] \{ 1.0 \});       \newline 
+gp4.Cmd("unset table");       \newline 
+gp4.Execute();
+ }
+\BoSSSexe
+\BoSSScmd{
+// Give gnuplot some time to write the file before using it in the next plot.      \newline 
+System.Threading.Thread.Sleep(2000);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// The maximum stable time step, such that the solution is stable for the fourth
+/// order Runge-Kutta method is \code{dtMax=0.14}, see next plot.
+ }
+\BoSSSexe
+\BoSSScmd{
+double dtMax = 0.14;
+ }
+\BoSSSexe
+\BoSSScmd{
+Gnuplot gp5 = new Gnuplot(baseLineFormat: format);       \newline 
+gp5.SetXLabel("Real");       \newline 
+gp5.SetYLabel("Imaginary");       \newline 
+var realPart = eigenvalues.ExtractSubArrayShallow(0, -1, 0).To1DArray()       \newline 
+\btab .Select(x => dtMax * x);       \newline 
+var imaginaryPart = eigenvalues.ExtractSubArrayShallow(0, -1, 1).To1DArray()       \newline 
+\btab .Select(y => dtMax * y);       \newline 
+gp5.PlotXY(       \newline 
+\btab realPart,       \newline 
+\btab imaginaryPart,       \newline 
+\btab title: "dt = " + dtMax);       \newline 
+gp5.PlotDataFile(dataFile, title: "Runge-Kutta", format: new PlotFormat(       \newline 
+\btab Style: Styles.Lines));       \newline 
+gp5.PlotNow();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \section{Advanced topics}
+/// \subsubsection{Scaling of the step-size w.r.t. grid size and polynomial degree}
+/// Having found a stable step size for some configuration, we will now study the question how
+/// the maximum admissible time step size changes when we increase the number of cells and/or increase
+/// the ansatz order. We will study the following combinations of grid size and polynomial degree.
+ }
+\BoSSSexe
+\BoSSScmd{
+int[] numbersOfCells = new int[] \{ 4, 8, 16, 32 \};       \newline 
+int[] orders = new int[] \{ 0, 1, 2, 3, 4 \};
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Therefore, we have again to set up a \code{BatchmodeConnector} to Matlab for calculating
+/// the eigenvalues.
+BatchmodeConnector connector = new BatchmodeConnector();       \newline 
+MultidimensionalArray[,] eigenvalueStudy = new MultidimensionalArray[       \newline 
+\btab orders.Length, numbersOfCells.Length];       \newline 
+for (int j = 0; j < orders.Length; j++) \{       \newline 
+\btab for (int i = 0; i < numbersOfCells.Length; i++) \{       \newline 
+\btab \btab var matrix = GetOperatorMatrix(       \newline 
+\btab \btab \btab numbersOfCells[i],       \newline 
+\btab \btab \btab orders[j],       \newline 
+\btab \btab \btab new LinearTransportFlux(upwindFlux));       \newline 
+ \newline 
+\btab \btab connector.PutSparseMatrix(matrix, "M" + i + j);       \newline 
+\btab \btab connector.Cmd("eigenvalues\{0\}\{1\} = eig(full(M\{0\}\{1\}))", i, j);       \newline 
+\btab \btab connector.Cmd("result\{0\}\{1\} = [-real(eigenvalues\{0\}\{1\}) " +       \newline 
+\btab \btab    "imag(eigenvalues\{0\}\{1\})]", i, j);       \newline 
+ \newline 
+\btab \btab eigenvalueStudy[j, i] = MultidimensionalArray.Create(       \newline 
+\btab \btab    matrix.NoOfCols, 2);       \newline 
+\btab \btab connector.GetMatrix(eigenvalueStudy[j, i], "result" + i + j);       \newline 
+\btab \}       \newline 
+\}       \newline 
+connector.Execute(false);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// The time step size~\code{dt} is selected arbitrarily to get instructive figures.
+double dt = 0.3;       \newline 
+int numberOfPlotRowsAndCols = 3;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Now, the spectrum of the system matrices is plotted for 4, 8 and 16 cells for the
+/// orders 0, 1 and 2. You can clearly see that for an increasing order all of the spectra
+/// mostly grow in the negative direction. That is why the most negative eigenvalue is
+/// considered as the most critical one in terms of the time step restriction.
+Gnuplot gp6 = new Gnuplot(baseLineFormat: format);       \newline 
+gp6.SetMultiplot(numberOfPlotRowsAndCols, numberOfPlotRowsAndCols);       \newline 
+gp6.SetXRange(-10.0, 1.0);       \newline 
+gp6.SetYRange(-5.0, 5.0);
+ }
+\BoSSSexe
+\BoSSScmd{
+for (int i = 0; i < numberOfPlotRowsAndCols; i++) \{       \newline 
+\btab for (int j = 0; j < numberOfPlotRowsAndCols; j++) \{       \newline 
+\btab \btab gp6.SetSubPlot(j, i);       \newline 
+\btab \btab gp6.SetTitle(String.Format("\{0\} cells, order \{1\}", numbersOfCells[i],       \newline 
+\btab \btab    orders[j]));       \newline 
+\btab \btab gp6.PlotXY(       \newline 
+\btab \btab \btab eigenvalueStudy[j, i].ExtractSubArrayShallow(-1, 0).To1DArray()       \newline 
+\btab \btab \btab    .Select(re => dt * re),       \newline 
+\btab \btab \btab eigenvalueStudy[j, i].ExtractSubArrayShallow(-1, 1).To1DArray()       \newline 
+\btab \btab \btab    .Select(im => dt * im));       \newline 
+\btab \btab gp6.PlotDataFile(dataFile, format: new PlotFormat(       \newline 
+\btab \btab    Style: Styles.Lines));       \newline 
+\btab \btab gp6.WriteDeferredPlotCommands();       \newline 
+\btab \}       \newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+gp6.PlotNow();
+ }
+\BoSSSexe
+\BoSSScmd{
+MultidimensionalArray criticalValues = MultidimensionalArray.Create(       \newline 
+   orders.Length, numbersOfCells.Length);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// For each combination of cells and polynomial order, the magnitude of the
+/// critical eigenvalue identified above is stored in the respective entry of \code{criticalValues}.
+ }
+\BoSSSexe
+\BoSSScmd{
+for (int j = 0; j < orders.Length; j++) \{       \newline 
+\btab for (int i = 0; i < numbersOfCells.Length; i++) \{       \newline 
+\btab \btab criticalValues[j, i] = -eigenvalueStudy[j, i].       \newline 
+\btab \btab    ExtractSubArrayShallow(-1, 0).To1DArray().Min();       \newline 
+\btab \}       \newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// The mesh size is stored in the array~\code{oneOverMeshSize}.
+double[] oneOverMeshSize = numbersOfCells.Select<int, double>(       \newline 
+ \newline 
+   delegate (int n)\{return n / 2.0 * Math.PI;\}).ToArray();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// The polynomial order is stored in the array~\code{numberOfBasisPolynomials}. 
+double[] numberOfBasisPolynomials = orders.Select(o => o + 1.0).ToArray();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// A reference value is set for normalization purposes. It defines the maximum stable step-size on the coarsest
+/// grid using a zeroth order approximation.
+double minCriticalValue = criticalValues[0, 0];
+ }
+\BoSSSexe
+\BoSSScmd{
+/// In the following, the decrease of the stable step-size is plotted when varying the grid resolution for a
+/// given ansatz order (assuming that the step-size scales with $1/\code{[criticalValues[j, i]}$).
+ }
+\BoSSSexe
+\BoSSScmd{
+PlotFormat format2 = new PlotFormat(       \newline 
+\btab Style: Styles.LinesPoints,       \newline 
+\btab pointType: PointTypes.Asterisk,       \newline 
+\btab pointSize: 1.0);
+ }
+\BoSSSexe
+\BoSSScmd{
+Gnuplot gp7 = new Gnuplot(baseLineFormat: format2);       \newline 
+gp7.SetTitle("Relative maximum time-step size for various orders");       \newline 
+gp7.SetXLabel("Log(1/h)");       \newline 
+gp7.SetYLabel("Log(Relative step-size)");
+ }
+\BoSSSexe
+\BoSSScmd{
+for (int j = 0; j < orders.Length; j++) \{       \newline 
+\btab var stepSize = criticalValues.ExtractSubArrayShallow(j, -1).To1DArray()       \newline 
+\btab    .Select(d => minCriticalValue / d);       \newline 
+\btab gp7.PlotLogXLogY(       \newline 
+\btab \btab oneOverMeshSize,       \newline 
+\btab \btab stepSize,       \newline 
+\btab \btab title: "Order " + orders[j],       \newline 
+\btab \btab format: new PlotFormat(Style: Styles.LinesPoints,       \newline 
+\btab \btab \btab \btab \btab \btab \btab    pointType: PointTypes.Asterisk,       \newline 
+\btab \btab \btab \btab \btab \btab \btab    pointSize: 1.0,       \newline 
+\btab \btab \btab \btab \btab \btab \btab    lineColor: (LineColors)(j+1))       \newline 
+\btab \btab );       \newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+gp7.PlotNow();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// In contrast to what we have done before, the decrease of the stable step-size is 
+/// plotted when varying the ansatz order on a given 
+/// grid (assuming that the step-size scales with $1/\code{[criticalValues[j, i]}$).
+ }
+\BoSSSexe
+\BoSSScmd{
+Gnuplot gp8 = new Gnuplot(baseLineFormat: format2);       \newline 
+gp8.SetTitle("Relative maximum time-step size for various grid sizes");       \newline 
+gp8.SetXLabel("Log(Number of basis polynomials)");       \newline 
+gp8.SetYLabel("Log(Relative step-size)");
+ }
+\BoSSSexe
+\BoSSScmd{
+for (int i = 0; i < numbersOfCells.Length; i++) \{       \newline 
+\btab var stepSize = criticalValues.ExtractSubArrayShallow(-1, i).To1DArray()       \newline 
+\btab    .Select(d => minCriticalValue / d);       \newline 
+\btab gp8.PlotLogXLogY(       \newline 
+\btab \btab numberOfBasisPolynomials,       \newline 
+\btab \btab stepSize,       \newline 
+\btab \btab title: numbersOfCells[i] + " cells per direction",       \newline 
+\btab \btab format: new PlotFormat(Style: Styles.LinesPoints,       \newline 
+\btab \btab \btab \btab \btab \btab \btab    pointType: PointTypes.Asterisk,       \newline 
+\btab \btab \btab \btab \btab \btab \btab    pointSize: 1.0,       \newline 
+\btab \btab \btab \btab \btab \btab \btab    lineColor: (LineColors)(i+1))       \newline 
+\btab );       \newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+gp8.PlotNow();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Having a look at the two previously created plots suggests to define
+/// a scaling law for the estimation of stable time step sizes depending on h and n.
+/// The stable time step size~$dt_0$ for a zeroth order DG approximation ($p=0\Rightarrow n=1$)
+/// is given on a mesh with the grid size~$h$. To do so, we want to use this ansatz for the scaling law
+/// \begin{align}
+/// dt = dt_0 \frac{h^a}{n^b}
+/// \end{align}
+/// by reusing the method~\code{slope} from tutorial 5 to find a and b.
+ }
+\BoSSSexe
+\BoSSScmd{
+Func<double[], double[], double> slope = delegate(double[] xValues,       \newline 
+   double[] yValues) \{       \newline 
+\btab if (xValues.Length != yValues.Length) \{       \newline 
+\btab \btab throw new ArgumentException();       \newline 
+\btab \}       \newline 
+ \newline 
+\btab xValues = xValues.Select(s => Math.Log10(s)).ToArray();       \newline 
+\btab yValues = yValues.Select(s => Math.Log10(s)).ToArray();       \newline 
+ \newline 
+\btab double xAverage = xValues.Sum() / xValues.Length;       \newline 
+\btab double yAverage = yValues.Sum() / yValues.Length;       \newline 
+ \newline 
+\btab double v1 = 0.0;       \newline 
+\btab double v2 = 0.0;       \newline 
+ \newline 
+\btab for (int i = 0; i < yValues.Length; i++) \{       \newline 
+\btab \btab v1 += (xValues[i] - xAverage) * (yValues[i] - yAverage);       \newline 
+\btab \btab v2 += Math.Pow(xValues[i] - xAverage, 2);       \newline 
+\btab \}       \newline 
+ \newline 
+\btab return v1 / v2;       \newline 
+\};
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmdSilent{
+/// BoSSScmdSilent BoSSSexeSilent
+using NUnit.Framework;
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+var stepSize = criticalValues.ExtractSubArrayShallow(0, -1).To1DArray();       \newline 
+slope(oneOverMeshSize, stepSize);
+ }
+\BoSSSexe
+\BoSSScmdSilent{
+/// BoSSScmdSilent
+Assert.LessOrEqual(Math.Abs(slope(oneOverMeshSize, stepSize)-1),1E-01);
+ }
+\BoSSSexe
+\BoSSScmd{
+var stepSize = criticalValues.ExtractSubArrayShallow(-1, 0).To1DArray();       \newline 
+slope(numberOfBasisPolynomials, stepSize);
+ }
+\BoSSSexe
+\BoSSScmdSilent{
+/// BoSSScmdSilent
+Assert.LessOrEqual(Math.Abs(slope(numberOfBasisPolynomials, stepSize)-1.6),1E-01);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// The resulting scaling law yields:
+/// \begin{align}
+/// dt \propto \frac{h^1}{n^{1.63}}
+/// \end{align}
+ }
+\BoSSSexe

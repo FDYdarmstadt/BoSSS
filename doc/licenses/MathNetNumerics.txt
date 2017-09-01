@@ -1,0 +1,3 @@
+MIT/X11 - licence
+see
+../../libs/MathNet.Numerics-2.6.0.29/licence.txt

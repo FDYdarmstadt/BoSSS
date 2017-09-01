@@ -1,0 +1,149 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage[left=2.00cm, right=2.00cm, top=2.00cm, bottom=2.00cm]{geometry}
+
+\author{Björn Müller}
+
+\renewcommand{\vec}[1]{\boldsymbol{#1}}
+\renewcommand{\matrix}[1]{\boldsymbol{#1}}
+\newcommand{\T}[1]{#1^\text{T}}
+\newcommand{\dif}[1]{d\mkern-1mu#1}
+\newcommand{\diff}[1]{\,\dif{#1}}
+
+\newcommand{\coupling}{\matrix{A}}
+
+\newcommand{\cellTar}{K_1}
+\newcommand{\cellSrc}{K_2}
+\newcommand{\cellAgg}{K_\text{agg}}
+
+\newcommand{\basisSrc}{\vec{\Phi}_2}
+\newcommand{\basisTar}{\vec{\Phi}_1}
+\newcommand{\basisAgg}{\vec{\Phi}_\text{agg}}
+
+\newcommand{\solTar}{u_1}
+\newcommand{\solSrc}{u_2}
+\newcommand{\solAgg}{u_\text{agg}}
+
+\newcommand{\solvecTar}{\vec{u}_1}
+\newcommand{\solvecSrc}{\vec{u}_2}
+\newcommand{\solvecAgg}{\vec{u}_\text{agg}}
+
+\newcommand{\massTar}{\matrix{M}_1}
+\newcommand{\massSrc}{\matrix{M}_2}
+\newcommand{\massAgg}{\matrix{M}_\text{agg}}
+
+\begin{document}
+
+\section{Coupling matrix}
+
+Assume that cell $\cellSrc{}$ (source cell) shall be agglomerated to cell $\cellTar{}$ (target cell) to form the agglomerated cell $\cellAgg$. Let $\basisTar$ and $\basisSrc$ be the row vectors of the orthonormal basis functions of $\cellTar$ and $\cellSrc$, respectively. Note that these functions are non-zero in the corresponding cells only. Then the coupling matrix $\matrix{A}$ is chosen such that $\basisSrc \coupling$ is the smooth extension of $\basisTar$ into $\cellSrc$. The basis of the agglomerated cell is then defined as
+\begin{equation}
+	\basisAgg = \basisTar + \basisSrc \matrix{A}.
+\end{equation}
+
+
+\section{Agglomeration of uncut cell ('ManipulateRHS')}
+
+Let $\solTar = \basisTar \solvecTar$ and $\solSrc = \basisSrc \solvecSrc$ be the current approximations in cell $\cellTar$ and $\cellSrc$, respectively, where $\solvecTar$ and $\solvecSrc$ are column vectors. The agglomerated DOF $\solAgg = \basisAgg \solvecAgg$ can then be computed from
+\begin{align}
+	(\solvecAgg)_i
+	&= \int \limits_{\cellTar} \solTar (\basisTar)_i \diff{V} + \int \limits_{\cellSrc} \solSrc (\basisSrc \coupling))_i \diff{V}\\
+	&= (\solvecTar)_j \int \limits_{\cellTar} (\basisTar{})_j (\basisTar)_i \diff{V} + (\solvecSrc)_j \int \limits_{\cellSrc} (\basisSrc{})_j (\basisSrc \coupling)_i \diff{V}\\
+	&= (\solvecTar)_j \matrix{I}_{j i} + (\solvecSrc)_j \int \limits_{\cellSrc} (\basisSrc{})_j (\basisSrc)_k (\coupling)_{k i} \diff{V}\\
+	&= (\solvecTar)_i + (\solvecSrc)_j (\matrix{I})_{j k} (\coupling)_{k i}\\
+	&= (\solvecTar)_i + (\solvecSrc)_j (\coupling)_{j i}\\
+	&= (\solvecTar)_i + (\T{\coupling})_{i j} (\solvecSrc)_j 
+\end{align}
+which can also be expressed as
+\begin{equation}
+	\label{eqn:manipulate_plain}
+	\solvecAgg = \solvecTar + \T{\coupling} \solvecSrc.
+\end{equation}
+
+
+\section{Agglomeration of cut cell}
+
+If the source cell is cut by the interface, the integration domain has to be restricted to the sub-domain $A$ where the level set function is positive. The basis $\basisSrc$ is obviously not orthonormal on $\cellSrc \cap A$, which is why we introduce the mass matrix $\massSrc$ which is defined by
+\begin{equation}
+	(\massSrc)_{i j} = \int \limits_{\cellSrc \cap A} (\basisSrc)_i (\basisSrc)_j \diff{V}.
+\end{equation}
+Following the same steps as in the previous section, this leads to
+\begin{align}
+	(\solvecAgg)_i
+	&= \int \limits_{\cellTar} \solTar (\basisTar)_i \diff{V} + \int \limits_{\cellSrc} \solSrc (\basisSrc \coupling))_i \diff{V}\\
+	&= (\solvecTar)_j \int \limits_{\cellTar} (\basisTar{})_j (\basisTar)_i \diff{V} + (\solvecSrc)_j \int \limits_{\cellSrc} (\basisSrc{})_j (\basisSrc \coupling)_i \diff{V}\\
+	&= (\solvecTar)_j \matrix{I}_{j i} + (\solvecSrc)_j \int \limits_{\cellSrc} (\basisSrc{})_j (\basisSrc)_k (\coupling)_{k i} \diff{V}\\
+	&= (\solvecTar)_i + (\solvecSrc)_j (\massSrc)_{j k} (\coupling)_{k i}\\
+	&= (\solvecTar)_i + (\T{\coupling})_{i k} (\T{\massSrc})_{k j}  (\solvecSrc)_j
+\end{align}
+and Equation \eqref{eqn:manipulate_plain} is generalized to
+\begin{equation}
+	\boxed{\solvecAgg = \solvecTar + \T{\coupling} \massSrc \solvecSrc}
+\end{equation}
+because $\massSrc$ is symmetric
+
+
+\section{Extrapolation into uncut cell ('Extrapolate')}
+
+In the extrapolation, the solution coefficients $\solvecSrc$ have to be computed from the agglomerated solution coefficients $\solvecAgg$. The coefficients in the target cell, however, simply follow from $\solvecSrc = \solvecAgg$.
+
+In order to compute the coefficients $\solvecSrc$, we simply perform the projection onto the original DG space, i.e.
+\begin{align}
+	(\solvecSrc)_i
+	&= \int \limits_{\cellSrc} \solAgg (\basisSrc)_i \diff{V}\\
+	&= \int \limits_{\cellSrc} (\basisAgg)_j (\solvecAgg)_j (\basisSrc)_i \diff{V}\\
+	&= \int \limits_{\cellSrc} (\basisSrc \coupling)_j (\solvecAgg)_j (\basisSrc)_i \diff{V}\\
+	&= \int \limits_{\cellSrc} (\basisSrc)_k (\coupling)_{k j} (\solvecAgg)_j  (\basisSrc)_i \diff{V}\\
+	&= \left(\int \limits_{\cellSrc} (\basisSrc)_i (\basisSrc)_k \diff{V} \right) (\coupling)_{k j} (\solvecAgg)_j\\
+	&= (\matrix{I})_{i k} (\coupling)_{k j} (\solvecAgg)_j\\
+	&= (\coupling)_{i j} (\solvecAgg)_j,
+\end{align}
+which is equivalent to
+\begin{equation}
+	\label{eqn:extrapolate_plain}
+	\solvecSrc = \coupling \solvecAgg
+\end{equation}
+
+
+\section{Extrapolation into cut cell}
+
+Again, Equation \eqref{eqn:extrapolate_plain} does not hold if $\cellSrc$ is cut be the interface. Instead, we have to use
+\begin{align}
+	(\massSrc \solvecSrc)_i
+	&= \int \limits_{\cellSrc \cap A} \solAgg (\basisSrc)_i \diff{V}\\
+	&= \int \limits_{\cellSrc \cap A} (\basisAgg)_j (\solvecAgg)_j (\basisSrc)_i \diff{V}\\
+	&= \int \limits_{\cellSrc \cap A} (\basisSrc \coupling)_j (\solvecAgg)_j (\basisSrc)_i \diff{V}\\
+	&= \int \limits_{\cellSrc \cap A} (\basisSrc)_k (\coupling)_{k j} (\solvecAgg)_j  (\basisSrc)_i \diff{V}\\
+	&= \left(\int \limits_{\cellSrc \cap A} (\basisSrc)_i (\basisSrc)_k \diff{V} \right) (\coupling)_{k j} (\solvecAgg)_j\\
+	&= (\massSrc)_{i k} (\coupling)_{k j} (\solvecAgg)_j
+\end{align}
+which is equivalent to
+\begin{equation}
+	\boxed{\solvecSrc = \coupling \solvecAgg.}
+\end{equation}
+
+
+\section{Mass matrix of the agglomerated cell ('ManipulateMassMatrixBlocks')}
+
+Finally, we need the mass matrix of the agglomerated cell. This time, we immediately consider the cut case, i.e.
+\begin{align}
+	(\massAgg)_{i j}
+	&= \int \limits_{\cellAgg} (\basisAgg)_i (\basisAgg)_j \diff{V}\\
+	&= \int \limits_{\cellTar} (\basisAgg)_i (\basisAgg)_j \diff{V} + \int \limits_{\cellSrc} (\basisAgg)_i (\basisAgg)_j \diff{V}\\
+	&= \int \limits_{\cellTar} (\basisTar)_i (\basisTar)_j \diff{V} + \int \limits_{\cellSrc} (\basisSrc \coupling)_i (\basisSrc \coupling)_j \diff{V}\\
+	&= (\matrix{I})_{i j} + \int \limits_{\cellSrc} (\basisSrc)_k (\coupling)_{k i} (\basisSrc)_l (\coupling)_{l j} \diff{V}\\
+	&= (\matrix{I})_{i j} + (\coupling)_{k i} \left(\int \limits_{\cellSrc} (\basisSrc)_k (\basisSrc)_l \diff{V}\right) (\coupling)_{l j}\\
+	&= (\matrix{I})_{i j} + (\T{\coupling})_{i k} (\massSrc)_{k l} (\coupling)_{l j}
+\end{align}
+which can also be expressed as
+\begin{equation}
+	\label{eqn:massmatrix_plain}
+	\boxed{\massAgg = \matrix{I} + \T{\coupling} \massSrc \coupling.}
+\end{equation}
+
+
+\end{document}

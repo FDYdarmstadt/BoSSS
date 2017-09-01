@@ -1,0 +1,147 @@
+Below is the E-Mail correspondence with the TecPlot-Team.
+Wa are allowed to redistribute TECIO as binaries.
+
+
+#################################################################
+Hi Thomas,
+
+ 
+
+As the EULA is currently: "Utilities/Other Executables. Licensee is permitted to redistribute the included TECIO libraries and the PREPLOT executable for the sole purpose of generating binary files compatible with the Software." So, if you're using the included TECIO library, then you already have the ability to redistribute the binary. If you were wanting to redistribute the library included as your source, then you would need the updated EULA but ,for the binaries, you're fine.
+
+Please let me know if you have any further questions.
+
+Thanks,
+
+Matthew
+
+If you have any questions, please reply to this email.
+
+Matthew Hjelm
+Technical Support Specialist
+Phone: 425.653.9393
+Email: support@tecplot.com
+
+
+
+Tecplot, Inc. | Master the View
+3535 Factoria Blvd. S.E., Ste. 550
+Bellevue, Washington USA 98006
+Main: 425.653.1200
+Fax: 425.653.9200
+Web: www.tecplot.com
+
+Follow us on:
+Twitter | Facebook | YouTube | LinkedIn
+
+------------------- Original Message -------------------
+From: Thomas Utz
+Received: 7/15/2016 5:49 AM
+To: Tecplot Support
+Cc: Genias Support; kummer@fdy.tu-darmstadt.de; Martin Roessler
+Subject: Re: TecIO License
+
+ 
+
+ 
+Hi Matthew,
+
+Thank you for your reply.
+
+We are planing on releasing our software in the next few weeks.
+Do you already have a timeframe for the update of your EULA?
+
+Basically we do not need the right to redistribute the source code of
+TecIO - redistributing the binary would completely suffice.
+
+Thanks in advance,
+
+Thomas
+
+
+Am 13.07.2016 um 20:00 schrieb Tecplot Support:
+> Hi Thomas,
+>
+>
+>
+> We currently don't have any licensing information for the TecIO library.
+> We have gotten this request more frequently recently and we are in the
+> process of updating our EULA to handle using TecIO with open sourced
+> published code. When are you wanting to publish the code by?
+>
+> Also, I notice that you're using a German email. In your response please
+> CC our European support contact Genias Graphics at support@tecplot.de
+> <mailto:support@tecplot.de> so they can assist in this process as well,
+> I cannot CC them for privacy reasons. In the future, please contact them
+> for more convenient support.
+>
+>
+>
+> Please let me know if you have any further questions.
+>
+> Thanks,
+>
+> Matthew
+>
+> If you have any questions, please reply to this email.
+> *
+> ****Matthew Hjelm
+> *Technical Support Specialist
+> Phone: 425.653.9393
+> Email:support@tecplot.com
+>
+> <mailto:support@tecplot.com>*
+>
+> Tecplot, Inc. | Master the View**
+> *3535 Factoria Blvd. S.E., Ste. 550
+> Bellevue, Washington USA 98006
+> Main: 425.653.1200
+> Fax: 425.653.9200
+> Web:www.tecplot.com
+> <http://www.tecplot.com/>*
+> Follow us on:*
+> Twitter <http://twitter.com/tecplot>|Facebook
+> <http://facebook.com/tecplot>|YouTube
+> <http://youtube.com/tecplotinc>|LinkedIn
+> <http://linkedin.com/company/tecplot-inc.>
+> ------------------- Original Message -------------------
+> *From:* Thomas Utz
+> *Received:* 7/13/2016 1:19 AM
+> *To:* Tecplot Support
+> *Subject:* TecIO License
+>
+>
+>
+>
+>
+> Dear TecPlot Team,
+>
+> We are currently using TecPlot as the standard output format for our
+> Discontinuous-Galerkin based CFD-Code and we are very happy with it.
+>
+> We would like to publish our code under an open source license and
+> redistribute TecIO with it.
+> Is this possible? Under which conditions?
+>
+> Unfortunately, the download files for the TecIO source codes do not
+> contain any license information.
+>
+> Best regards.
+>
+> Thomas Utz
+> --
+> Thomas Utz, M.Sc.
+>
+> Fachgebiet für Strömungsdynamik
+> Otto-Berndt-Straße 2
+> 64287 Darmstadt, Germany
+> Phone: ++49 (0) 6151-16-26198
+
+
+-- 
+Thomas Utz, M.Sc.
+
+Fachgebiet für Strömungsdynamik
+Otto-Berndt-Straße 2
+64287 Darmstadt, Germany
+Phone: ++49 (0) 6151-16-26198

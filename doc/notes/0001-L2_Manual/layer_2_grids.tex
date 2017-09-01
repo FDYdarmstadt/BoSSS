@@ -1,0 +1,475 @@
+\section{Grids, DG fields and parallel data structures}
+
+\subsection{Grid definition}
+
+\begin{myDef}[Grid]A grid
+with $J$ cells
+for DG methods for the open, simply connected domain $\Omega \in \real^D$,
+and a simplex $K_{\textrm{REF}} \subset \real^D$
+is defined by a ordered list of affine-linear mappings
+\[
+ T_{id} :  K_\textrm{REF} \rightarrow \real^D, \quad \textrm{for } 0 \leq id < J
+\]
+and sets $K_{id} := T_{id}(K_\textrm{REF} \backslash \partial K_\textrm{REF})$,
+which are called the \emph{cells} of the grid,
+that must fulfill the following properties:
+\begin{packed_itemize}
+ \item $\overline{\Omega} = \bigcup_{id} \overline{K_{id}}$,
+ \item for $j \neq k$, the cells $K_j$ and $K_k$ must be disjoint
+\end{packed_itemize}
+\label{def-grid}
+\end{myDef}
+
+\begin{myNot}
+The set of all cells of the grid is substituted by $\mathfrak{K} := \{K_0,\cdots,K_{J-1} \}$.
+\end{myNot}
+
+\begin{myRem}[Global Identification]
+By the ordered list of Transformations, a bijective mapping
+\[
+  id : \{ 0, \cdots , J-1 \} \rightarrow \mathfrak{K}, \quad id \mapsto K_{id},
+\]
+which assigns the number $id$ to cell $K_{id}$,
+is induced. In BoSSS, the number $id$ is called the global identification,
+or \emph{Global Id} of cell $K_{id}$.
+\label{def-globalid}
+\end{myRem}
+
+\begin{myDefRem}[Grid ordering]
+%Within a computation, some ordering of the grid needs to be chosen, i.e.
+%some $\tau \in S^J$, which defines how the grid is arranged in memory.
+%This means, that for some data vector which ``lives'' on the grid,
+Let $v$ be some data vector, which ``lives'' on the grid,
+i.e.
+\[
+  v:  \mathfrak{K}          \rightarrow M , \quad
+           K_{id}  \mapsto v_{id},
+\]
+where
+$M$ denotes an arbitrary set of data objects that are not further defined here
+(e.g. some data values assigned to each cell).
+Usually, BoSSS (like most other CFD applications)
+ does not store $v$ in the order that would be induced by the index $id$.
+Hence, some permutation $\tau \in S^J$ is chosen, and $v$
+is stored on a computer
+in the sequence
+\[
+  \left( v_{\tau(0)}, \cdots, v_{\tau(J-1)} \right) .
+\]
+In BoSSS, $\tau$ is is called
+\emph{GlobalId - permutation}\coderm{BoSSS.Foundation.GridCommons.GlobalID}.
+While $\tau$ can be chosen independently by the application,
+with respect to criterions like memory locality,
+which may also change during runtime,
+the number $id = \tau(j)$ is used to identify a cell and its associated values.
+The number $j$ is refered to as the global index.
+%and it's choice usually depends on considerations about memory locality
+%and the number of MPI processes $s$ (see (\ref{MPI_comm})).
+%The Number $\tau^{-1}(j)$ is referred to as the \emph{global index}
+%(i.e. unique over all MPI-processes, see below)
+%of cell $K_j$.
+\end{myDefRem}
+
+\begin{myRem}
+The affine-linear transformation from (\ref{def-grid}) can be written as
+\[
+ T_{\tau(j)}(\xi) = M_j \cdot \grvec{\upxi} + \vec{a}_j,
+\]
+with the matrix $M_j \in \real^{D \times D}$ and the vector $\vec{a}_j \in \real^D$.
+This very trivial fact is mentioned here because,
+in BoSSS,
+$M_j$ is found at\coderm{BoSSS.Foundation.Grid.GridData.Transformation},
+$\vec{a}_j$ is found at\coderm{BoSSS.Foundation.Grid.GridData.AffineOffset},
+$M_j^{-1}$ is found at\coderm{BoSSS.Foundation.Grid.GridData.InverseTransformation},
+and the transformation $T_j$ can be computed with\coderm{BoSSS.Foundation.Grid.GridData.TransformLocal2Global(...)}.
+The total number of cells in a grid, $J$, is found at\coderm{BoSSS.Foundation.Grid.GridData.GlobalNoOfCells}.
+\end{myRem}
+
+\begin{myRem}Note that, while the reference domain $K_\textrm{REF}$ is defined as a closed
+set, the cells $K_{id}$ are defined as open sets.
+\end{myRem}
+
+\begin{myNot}To distinct between points/vectors in $K_\textrm{REF}$ and $\Omega$,
+elements of $K_\textrm{REF}$ are denoted as $\grvec{\upxi} = (\xi,\eta) = (\xi_0,\xi_1)$
+or $\grvec{\upxi} = (\xi,\eta,\nu) = (\xi_0,\xi_1,\xi_2)$, while elements of $\Omega$ are
+written as $\vec{x} = (x,y) = (x_0,x_1)$ or $\vec{x} = (x,y,z) = (x_0,x_1,x_2)$.
+For $\vec{x} \in K_{id}$, they transform like
+\[
+ \begin{array}{rcl}
+ K_\textrm{REF}
+ &
+  \begin{array}{c}
+  \scriptstyle{T_{id}} \\
+  \rightleftharpoons \\
+  \scriptstyle{T_{id}^{-1}}
+ \end{array}
+ &
+%  [T_j]{T_j^{-1}}
+   K_{id}
+ \\
+ T_{id}^{-1}(\vec{x}) = \grvec{\upxi} & \leftrightarrow & \vec{x} = T_{id}(\grvec{\upxi}).
+ \end{array}
+% \begin{xy}
+%  \xymatrix{
+%    K_\textrm{REF}  \ar[r]^{T_j}             & K_j  \ar[l]^{T_j^{-1}}          \\
+%    T_j^{-1}(\vec{x}) = \grvec{\upxi} \ar[r] &  \vec{x} = T_j(\grvec{\upxi}) \ar[l]
+%  }
+%\end{xy}
+\]
+Coordinates $\grvec{\upxi}$ in the reference domain are called reference coordinates or local coordinates or cell coordinates,
+while coordinates $\vec{x}$ are called global or physical coordinates.
+\end{myNot}
+
+\begin{myRem}
+In BoSSS,
+for reasons of simplicity and software optimizations,
+ a grid consists only of one type of cells, e.g. it is not possible
+to mix triangle elements with square elements.
+\end{myRem}
+
+\begin{myDef}[Vertices of a cell]
+The elements of the set $\{ \vec{v}_1,\cdots,\vec{v}_L \}$, for which
+$CH(\vec{v}_1,\cdots,\vec{v}_L) = \overline{K_{id}}$ holds, are called the vertices of
+the cell $K_{id}$ if and only if the set is minimal.
+\end{myDef}
+
+\begin{myRem} For (modal) DG methods,
+the author recommends to specify the transformation between the simplex and the cells explicitly.
+By knowing the set of simplex vertices and cell vertices, this transformation is uniquely defined
+up to the symmetries of the simplex.
+In a finite volume method, where values are constant within a cell, this choice may not matter.
+Hence in a DG method, properties depend on the choice of $T_{id}$. Therefore, in BoSSS,
+the cell vertices are given as an ordered list in the specification of the grid
+\coderm{BoSSS.Foundation.Grid.GridCommons.Vertices}.
+\end{myRem}
+
+%Additionally to the general requirements on grids, which are a necessity of the DG method,
+%BoSSS has, for technical reasons, additional requirements on the grid, which are given in below.
+%One of these, which comes from the requirement of partitioning the grid among
+%different (MPI-) processes, is the definition of a
+
+
+\begin{myDef}[Edges of the grid]
+The set of all edges is defined by
+\[
+  \mathfrak{E} := \{ \varepsilon \subset \real^D; \ \exists T_{id}, \epsilon_e: \varepsilon = T_{id}(\epsilon_e) \},
+\]
+where $\epsilon_e$ denotes the edges of the simplex from (\ref{simplex}).
+$\mathfrak{E}$ can be decomposed into two disjoint subsets,
+$\mathfrak{E}_{int}$ and $\mathfrak{E}_{bnd}$
+of \emph{internal} and \emph{boundary} edges.
+Internal edges lay on the border of exactly two cells, while
+boundary edges lay on the border of only one cell and are subsets of $\partial K$.
+\end{myDef}
+
+\begin{myRem}[Graph of the grid]
+Each edge $\varepsilon \in \mathfrak{E}_{int}$ can be identified
+by its neighboring cells, i.e.
+by a set $\{ K, L \} \subset \mathfrak{K}$.
+The tuple $(\mathfrak{K},\mathfrak{E}_{int})$ forms an nondirectional graph
+in the common sense, where $\mathfrak{C}$ are the nodes and $\mathfrak{E}_{int}$
+are the edges of the graph.
+\end{myRem}
+
+\subsection{Parallel partitioning of the grid}
+
+\begin{myNot}[MPI - communicator]
+The set of $s$ MPI-processes, i.e. the MPI-communicator of size $s$,
+ is identified with the set
+$\{0 =: proc_0,\cdots,s-1 =: proc_{s-1}\} =: MPI_{comm}$.
+In BoSSS, $s$ is found at\coderm{BoSSS.Foundation.CommMaster.Size}.
+\label{MPI_comm}
+\end{myNot}
+
+\begin{myDef}[Grid partition]
+A partitioning of the grid is a surjective mapping
+\[
+  Part : \mathfrak{K} \rightarrow MPI_{comm}.
+\]
+Further, the number
+\[
+  Sz_p := \# \{ K_{id} \in \mathfrak{K}; \ Part(K_{id}) = proc_p \}
+\]
+is called the \emph{size of the partition on process} $p$. Further, let be
+\[
+  aSz_p := \sum_{q=0}^{p} Sz_q.
+\]
+\end{myDef}
+
+\begin{myRem}
+The grid partition defines which cells are assigned to which MPI-process, but it
+does not give information about how the cells are arranged in memory.
+\end{myRem}
+
+\begin{myRem}[Distributed storage of vectors on $\mathfrak{K}$]
+With objects and notation defined above,
+a data distribution over the set of processes, $MPI_{comm}$, is given as:
+\begin{eqnarray*}
+  \textrm{Process } proc_0:     & \left( \tau(0), \cdots, \tau(Sz_1 - 1) \right)                          & =: \tau_\textrm{part}(0,P)         \\
+                                & \left(v_{\tau(0)},\cdots,v_{\tau(Sz_1-1)} \right)                         & =: v_\textrm{part}(0,P,\tau) \\
+  \textrm{Process } proc_1:     & \left( \tau(aSz_0), \cdots, \tau(aSz_1 - 1) \right)              & =: \tau_\textrm{part}(1,P)         \\
+                                & \left(v_{\tau(aSz_0)},\cdots,v_{\tau(aSz_1 -1)} \right)         & =: v_\textrm{part}(1,P,\tau) \\
+  \vdots  &  &\\
+  \textrm{Process } proc_{s-1}: & \left( \tau(aSz_{s-2}), \cdots, \tau(aSz_{s-1}-1) \right)      & =: \tau_\textrm{part}(s-1,P)         \\
+                                & \left(v_{\tau(aSz_{s-2})},\cdots,v_{\tau(aSz_{s-1}-1)} \right) & =: v_\textrm{part}(s-1,P,\tau).
+\end{eqnarray*}
+%$M$ denotes an arbitrary set of data objects that are not further defined,
+%e.g. sparse matrices stored in the popular MSR (modified sparse row, see \cite{msr}) format, where
+%each entry of $\vec{v}$ represents one row of a matrix.
+Note that the GlobalId - permutation $\tau$ itself is stored distributed.
+\end{myRem}
+
+\begin{myRem}[Motivation for external cells]
+Usually, in DG methods it is required to compute integrals over edges, and these integrals
+involve values from both neighboring cells.
+But, if a partition with $s > 1$ is given, the
+neighboring cells $K$ and $L$ for
+some internal edge $\varepsilon = \{K,L\} \in \mathfrak{E}_{int}$
+may be assigned to different processors, i.e. $Part(K) \neq Part(L)$.
+One possible solution to this issue is to store a layer of external cells on each processor.
+This will be described more precisely in below.
+\end{myRem}
+
+\begin{myDef}[Process boundary]
+The process boundary between process $proc_p$ and $proc_h$ is defined as
+the set
+\[
+  \left\{
+      \{K,L\} \in \mathfrak{E}_{int};
+      \
+      Part(K) = proc_p \textrm{ and } Part(L) = proc_h
+  \right\}
+  =: PBnd(proc_p,proc_h).
+\]
+\end{myDef}
+
+\begin{myDef}[Locally updated cells, external cells]
+For process $proc_p$, the set of \emph{locally updated cells}
+is defined as
+\[
+  \left\{ K \in \mathfrak{K}; \ Part(K) = proc_p \right\} =: \mathfrak{K}_{loc,proc_p}.
+\]
+These cells are called ``locally updated'', because values that are associated with those
+cells are usually computed in process $proc_p$.
+The \emph{external cells} are defined as the set
+\[
+  \left\{
+     K \in \mathfrak{K};
+     \
+     \exists \{M,L\} \in \mathfrak{E}: \ Part(M) = proc_p \textrm{ and } Part(L) \neq proc_p
+  \right\}
+  =: \mathfrak{K}_{ext,proc_p}.
+\]
+\end{myDef}
+
+\begin{myNot}
+Subsequently, the abbreviations
+\[
+ N_{updt,proc_p} := \# \mathfrak{K}_{loc,proc_p}
+\]
+for the number of locally updated cells on process $proc_p$, $\# \mathfrak{K}_{loc,proc_p}$
+(in BoSSS, found at \coderm{BoSSS.Foundation.Grid.GridData.NoOfLocalUpdatedCells}),
+\[
+ N_{ext,proc_p} := \# \mathfrak{K}_{ext,proc_p}
+\]
+for the number of external cells,
+(found at\coderm{BoSSS.Foundation.Grid.GridData.NoOfExternalCells})
+and
+\[
+  N_{tot,proc_p} := N_{updt,proc_p} + N_{ext,proc_p}
+\]
+for the total number of cells\coderm{BoSSS.Foundation.Grid.GridData.NoOfCells},
+may hold.
+\end{myNot}
+
+\begin{myDef}[Local cell index]
+On processor $proc_p$, the local cell index is a mapping
+\[
+ j_{loc}:
+ \{0,\cdots,N_{tot,proc_p} \}
+ \rightarrow
+ \mathfrak{K}_{loc,proc_p} \cup \mathfrak{K}_{ext,proc_p},
+ \quad
+ i \mapsto j_{loc}(i) =: K_i
+\]
+which is bijective and,
+for a global index $j$ with $aSz_{proc_{p-1}} \leq j < aSz_{proc_{p}}$
+fulfills the
+property
+\[
+    j_{loc}(i) = K_{\tau \left( i+aSz_{proc_{p-1}} \right)}.
+\]
+In other words, for locally updated cells, the local index is just
+the global index minus the ``size'' of all ``previous'' processes, $aSz_{proc_{p-1}}$.
+For external cells, a local index needs to be chosen by the application.
+\end{myDef}
+
+\begin{myRem}
+The relation between local and global indices, between GobalId and cell
+can be illustrated by the following table:
+
+\begin{center}
+\begin{tabular}{r|c|c}
+  % after \\: \hline or \cline{col1-col2} \cline{col3-col4} ...
+                    & local updated range             & external range                            \\
+  local index $i$:  & $0,\cdots, N_{updt,proc_p}-1$   & $N_{updt,proc_p},\cdots,N_{tot,proc_p}-1$ \\
+  global index $j$: & $i + aSz_{proc_{p-1}}$          & $\tau^{-1}(id)$                           \\
+  GlobalId $id$:    & $\tau(j)$                       & $id^{-1}(K)$ \\
+  cell $K$:         & $K_{\tau(j)}$                   & $j_{joc}^{-1}(i)$ \\
+\end{tabular}
+\end{center}
+
+So, at runtime, BoSSS takes two choices which determine the ordering of cells
+in memory: the GlobalId - permutation which is chosen globally over all processors,
+determines the ordering of locally updated cells. Additionally, on each process,
+an local index for external cells is chosen.
+\end{myRem}
+
+\subsection{Definition of single-phase DG fields}
+
+\begin{myDef}[The discontinuous Galerkin space $DG_p$]
+The \emph{discontinuous Galerkin space}, or \emph{DG-space} of degree $p$
+is defined as
+\[
+  DG_p := \left\{
+    f \in L^2(\Omega); \
+    \forall 0 \leq j < J:
+    f|_{K_j} \textrm{ is polynomial and } \textrm{deg}\left(f|_{K_\tau{j}}\right) \leq p
+  \right\}.
+\]
+\end{myDef}
+
+\begin{myDefRem}[An orthonormal basis for $DG_p$]
+The polynomials
+\[
+  \phi_{j,n}(\vec{x}) := \left\{
+     \begin{array}{cl}
+        \frac{1}{\sqrt{|\det{M_j}|}} \cdot \phi_n (T_{\tau(j)}^{-1}(\vec{x})) & \textrm{ if } \vec{x} \in \overline{K_{\tau(j)}} \\
+        0                                                                     & \textrm{ elsewhere} \\
+     \end{array}
+  \right.
+\]
+are an orthonormal basis of $DG_p$, for all $n$ with $\deg(\phi_n) \leq p$.
+Here, $\phi_n$ denotes the orthonormal basis within the simplex, see (\ref{simplex}).
+Note that the members of the orthonormal basis in the reference domain $K_\textrm{REF}$ is notated as $\phi_n$,
+while those of the orthonormal basis in cell $K_{\tau(j)}$ is notated as $\phi_{j,n}$.
+The motivation for the factor $\frac{1}{\sqrt{|\det{M_j}|}}$ is:
+$
+\delta_{n,m}
+\stackrel{!}{=}
+\langle \phi_{j,n},\phi_{j,m} \rangle_{K_{\tau(j)}}
+=
+ | \det(M_j) | \int_{K_\textrm{REF}} \phi_{j,n}(T_{\tau(j)}(\grvec{\upxi})) \phi_{j,m}(T_{\tau(j)}(\grvec{\upxi})) \ d \grvec{\upxi}
+=
+\int_{K_\textrm{REF}} \phi_{n}(\grvec{\upxi}) \phi_{m}(\grvec{\upxi}) \ d \grvec{\upxi}
+=
+\delta_{n,m}
+$.
+
+Furthermore, let be the number of basis polynomials in one cell,
+$N(DG_p) = \max\{n;\ \deg(\phi_n) \leq p\}$.
+In BoSSS, all single-phase DG-fields\coderm{BoSSS.Foundation.Field}
+are defined with respect to that basis, i.e. some field $f \in DG_p$
+can be written as
+\[
+  f(\vec{x}) = \sum_{n = 0}^{N(DG_p)-1} \phi_{j,n}(\vec{x}) \ \tilde{f}_{j,n}
+  \ \
+  \textrm{ for } \vec{x} \in K_{\tau(j)}.
+\]
+The coefficients $\tilde{f}_{j,n} \in \real$ are called the DG-coordinates
+of $f$ and are found at\coderm{BoSSS.Foundation.Field.Coordinates}.
+The gradient $\nabla_{\vec{x}} \phi_{j,n}$ is given/defined as
+\[
+ \nabla_{\vec{x}} \phi_{j,n} :=
+ \left\{
+    \begin{array}{cl}
+ \frac{1}{\sqrt{|\det{M_j}|}} \cdot \left( M_j^{-1} \right)^T \cdot \nabla_{\grvec{\upxi}} \phi_n(\grvec{\upxi}) &  \textrm{ if } \vec{x} \in K_{\tau(j)} \\
+ 0                                                                                                         & \textrm{ elsewhere}
+    \end{array}
+ \right. .
+\]
+Note that, while the support of $\phi_{j,n}$ is $\overline{K_{\tau(j)}}$ for the gradient $\nabla_{\vec{x}} \phi_{j,n}$
+the boundary $\partial K_{\tau(j)}$ is omitted by definition, for technical reasons.
+(It is necessary to define $\nabla_{\vec{x}} \phi_{j,n}$ on the edge
+$\partial K_{\tau(j)}$ of some cell, because $\phi_{j,n}$ is discontinuous there.
+In the , the usage of distributions and distributive derivatives would not really make sense.
+Of courses, in the interior of $K_{\tau(j)}$ the derivative of $\phi_{j,n}$ is clearly defined in the
+sense of derivations of $\ceins$ functions.)
+Here
+$\nabla_{\vec{x}} := \left( \frac{\partial}{\partial x_0}, \cdots , \frac{\partial}{\partial x_{D-1}} \right)$,
+$\grvec{\upxi} := T_{\tau(j)}^{-1}(\vec{x})$
+and
+$\nabla_{\grvec{\upxi}} := \left( \frac{\partial}{\partial \xi_0}, \cdots , \frac{\partial}{\partial \xi_{D-1}} \right)$.
+\label{DGp-basis}
+\end{myDefRem}
+
+\begin{myRem}[Dimension of $DG_p$]
+\[
+  dim(DG_p) = N(DG_p) \cdot J,
+\]
+where $J$ denotes the number of cells.
+\end{myRem}
+
+\begin{myDefRem}[Projection onto $DG_p$]
+The projector
+\[
+ Proj_p : L^2(\Omega) \rightarrow DG_p,
+ \quad
+ f \mapsto f_h := \sum_{j,n} \phi_{j,n} \ \tilde{f_h}_{j,n}
+\]
+is given by the property
+\[
+ (f-f_h) \bot DG_p.
+\]
+For the \emph{orthonormal} basis functions $\left(\phi_{j,n}\right)$, the DG-coordinates of $f_h$ are given by
+\[
+ \tilde{f_h}_{j,n} = \left< \phi_{j,n}, f \right>_\Omega.
+\]
+\end{myDefRem}
+
+\begin{myRem}
+BoSSS only supports scalar DG - fields; Vector fields must be composed
+from scalar fields.
+\end{myRem}
+
+\begin{myDefRem}[Coordinate mapping\coderm{BoSSS.Foundation.CoordinateMapping}]
+Let be
+\[
+  U := (u_0,\cdots,u_{\Lambda-1})
+  \in
+  \underbrace{
+  DG_{p_0} \times \cdots \times DG_{p_{\Lambda-1}}
+  }_{
+  =: DG_{( p_0, \cdots, p_{\Lambda-1})}
+  }
+\]
+some list of DG-fields and $\tilde{u}_{\delta,j,n} \in \real$
+the DG-coordinates of the DG-field $u_\delta$ in cell $j$ for the $n$-th basis polynomial,
+i.e.
+\[
+  u_\delta(\vec{x}) = \sum_{j,n} \phi_{j,n}(\vec{x}) \ \tilde{u}_{\delta,j,n}.
+\]
+By the choice of an ordering,
+all DG-coordinates can be arranged in a vector $\tilde{U} \in \real^E$,
+with $E=dim(DG_{( p_0, \cdots, p_{\Lambda-1})}) = J \cdot \left( \sum_\delta N(DG_{p_\delta}) \right)$.
+In BoSSS, this choice is
+\[
+ \tilde{U}_{map(\delta,j,n)} = \tilde{u}_{\delta,j,n}
+\]
+with
+\[
+ map(\delta,j,n) :=
+   j \cdot \underbrace{
+             \left( \sum_{\gamma = 0}^{\Lambda-1} N(DG_{p_\gamma})  \right)
+             }_{ \textrm{``degrees-of-freedom per cell''}}
+   + \sum_{\gamma = 0}^{\delta-1} N(DG_{p_\gamma})
+   + n.
+\]
+In other words, the cell index $j$ is rotating slowest, while the index for the basis polynomial, $n$,
+is rotating fastest.
+By this choice, a vector-space isomorphism between $\real^E$ and $DG_{( p_0, \cdots, p_{\Lambda-1})}$,
+in BoSSS referred to as \emph{coordinate mapping}, is defined.
+Subsequently, the coordinate mapping for a list $U$ will be denoted by $\tilde{U}$.
+\end{myDefRem}
+
+

@@ -1,0 +1,49 @@
+\section{General definitions and notation}
+
+\begin{myNot}[Spatial dimension\coderm{BoSSS.Foundation.Grid.Simplex.SpatialDimension}]
+Will be denoted as $D \in \natWoZero$ in below;
+\end{myNot}
+
+\begin{myNot}[standard symbols]
+Within this text, the following symbols are used:
+\begin{packed_itemize}
+  \item the unit sphere $\mathcal{S}_D = \{ \vec{x} \in \real^D; \ |\vec{x}|_2 < 1 \}$
+  \item the symmetric group $S^n = \{ \tau:\{0,\cdots,n-1\}\rightarrow\{0,\cdots,n-1\}; \tau \textrm{ is bijective} \}$, i.e. the group of all permutations of length $n$;
+  \item the Sobolev space
+        $H^l(\Omega) = \left\{ f \in L^2(\Omega); \ \sum_{|\alpha | \leq l} \left\| \partial^\alpha f \right\|_2^2 < \infty \right\}$,
+        where $\alpha$ denotes a multindex.
+\end{packed_itemize}
+\end{myNot}
+
+\begin{myNot}[inner product] The inner product in a domain $K \subset \real^D$,
+for $f,g \in L^2(K)$ will be denoted and is defined (in BoSSS) by
+\[
+  \langle f,g \rangle_K := \int_K f(\vec{x}) \cdot g(\vec{x}) \ d\vec{x}.
+\]
+\end{myNot}
+
+\begin{myDef}[Convex Hull]
+For a given list of vertices,
+$\left( \vec{v}_1,\ldots,\vec{v}_n \right) \in \real^{D \times n}$
+the ($D$-dimensional) convex hull is defined as the set
+\[
+  \left\{ \sum_{i=1}^n \alpha_i \cdot \vec{v}_i \in \real^D, \ \textrm{where} \ \sum_{i=1}^n \alpha_i \leq 1 \right\}
+  =:
+  CH \left( \vec{v}_1,\ldots,\vec{v}_n \right) \subset \real^D
+\]
+\end{myDef}
+
+\begin{myDef}[Quadrature rule]
+A quadrature rule with $k$ Nodes within a bounded domain $K \subset \real^D$ is a Tuple
+\[
+ \left[ \left( \vec{y}_i\right)_{i=0,\ldots,k-1}, \left( \beta_i \right)_{i=0,\ldots,k-1}, p_\textrm{ord} \right]
+ \in \real^{D\times k} \times \real^k \times \nat
+\]
+for which the equation
+\[
+  \int_{\vec{x} \in K} p( \vec{x} ) \ d\vec{x} = \sum_{i=0}^{k-1} p(\vec{y}_i) \cdot \beta_i
+\]
+holds for all polynomials $p$ with $\deg(p) \leq p_\textrm{ord}$. The rule is called to
+be of order $p_\textrm{ord}$, $\vec{y}_i$ are called the nodes and $\beta_i$ are called the weights of the
+quadrature rule.
+\end{myDef}

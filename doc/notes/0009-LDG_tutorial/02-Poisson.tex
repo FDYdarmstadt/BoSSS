@@ -1,0 +1,203 @@
+\section{One-dimensional Poisson equation}
+\label{sec:poission1d}
+Throughout this section we will consider the one-dimensional Poisson equation
+\begin{equation}
+	\Delta u(x) = 1 ~~~ x \in [0;1]
+\label{eq:poisson}
+\end{equation}
+with the boundary conditions
+\begin{equation}
+	u(0) = u(1) = 0
+\label{eq:poissonBoundaryCondition}
+\end{equation}
+and the exact solution
+\begin{equation}
+	u(x) = \frac{1}{2} (x^2 - x).
+\label{eq:poissonExactSolution}
+\end{equation}
+In terms of the notation introduced in section \ref{sec:theoreticalBackground},
+this leads to the following settings:
+\begin{align}
+  \frac{\partial u}{\partial t} &= 0\\
+  d &= 1\\
+  f(u) = f_1(u) &= 0\\
+  \hat{f} &= -c_0 [u]\\
+  a_{11}(u) = b_{11}(u) &= 1\\
+  q = q_1 &= \frac{\partial u}{\partial x}\\
+  Q &= -1\\
+  g = g_{11} &= u.
+\end{align}
+Note that, even though the function $f$ itself is zero, $\hat{f}$ is not zero
+but penalizes jumps of $u$ (with an additional, non-negative penalty parameter 
+$c_0$) As a result, equations (\ref{eq:generalWeakFormulation_u}), 
+(\ref{eq:generalWeakFormulation_q}), (\ref{eq:generalFlux_u}) and 
+(\ref{eq:generalFlux_q}) can be reduced to
+\begin{align}
+  \label{equ:poisson_u_equation}
+	- \int_K {(-q^h) \frac{\partial \varphi_u}{\partial x} dx}
+	+ \int_{\partial K} {h_u(u^h, q^h, n, x, t) \varphi_u dS}
+	&= \int_K {(-1) \varphi_u(x) dx}
+	\\
+  \label{equ:poisson_q_equation}
+	- \int_K {u^h \frac{\partial \varphi_q}{\partial x} dx}
+	+ \int_{\partial K} {h_{q}(u^h, q^h, n, x, t) \varphi_q dS}
+	&= \int_K {q^h \varphi_{q} dx}
+	\\
+  \label{equ:poisson_u_flux}
+	h_u(u^h, q^h, n, x, t)
+	&= -c_0 [u]
+	- \{q\}n_1
+	- c_{1} [q]
+	\\
+  \label{equ:poisson_q_flux}
+  h_{q}(u^h, q^h, n, x, t)
+  &= \{u\}n_1
+  - c_{1}[u].
+\end{align}
+
+\begin{lstlisting}[caption=BoSSS implementation of the left hand side of 
+equation \ref{equ:poisson_u_equation} and of equation 
+\ref{equ:poisson_u_flux}, label=lst:poisson_flux_u]
+class uFlux : LinearFlux {
+    
+  [...]
+    
+  protected override double BorderEdgeFlux(ref InParams inp, double[] Uin) {
+    return InnerEdgeFlux(ref inp, Uin, new double[] { 0.0, Uin[1] });
+  }
+      
+  protected override double InnerEdgeFlux(ref InParams inp, double[] Uin, double[] Uout) {
+    return c0 * (Uout[0] - Uin[0])
+      - 0.5 * (Uin[1] + Uout[1]) * inp.normal[0]
+      - c1 * (Uout[1] - Uin[1]);
+  }
+
+  protected override void Flux(double[] x, double[] parameters, double[] U, double[] output) {
+    output[0] = -U[1];
+  }
+  
+  public override IList<string> ArgumentOrdering {
+    get { return new string[] { "u", "q" }; }
+  }
+}
+\end{lstlisting}
+
+This formulation can easily be transferred to the BoSSS syntax. The complete
+program can be found in the sub-directory
+\verb|src\public\L4-application\LDGPoisson1d| of any BoSSS developer
+installation.
+
+The implementation of equations \ref{equ:poisson_u_equation} and 
+\ref{equ:poisson_u_flux} is shown in listing \ref{lst:poisson_flux_u}. The 
+method \emph{InnerEdgeFlux} is a direct representation of equation
+\ref{equ:poisson_u_flux} and needs no further explanation. The
+\emph{BorderEdegeFlux} also corresponds to equation \ref{equ:poisson_u_flux},
+but is only executed for interfaces which coincide with the boundary. Thus,
+this method simply calls \emph{InnerEdgeFlux} while inserting the predefined
+boundary value for $u^+$ (which is zero) in this case. Finally, the method
+\emph{Flux} corresponds to the factor of the derivative of the test function
+in the first integral of equation \ref{equ:poisson_u_equation}. In this simple
+case, this factor is equal to $q^h$ which also is the return value of the
+\emph{Flux} method in listing \ref{lst:poisson_flux_u}.
+
+\begin{lstlisting}[caption=BoSSS implementation of the right hand side of
+equation \ref{equ:poisson_u_equation},label=lst:poisson_source_u]
+class uSource : LinearSource {
+  
+  [...]
+  
+  protected override double Source(double[] x, double[] parameters, double[] U) {
+    return 1;
+  }
+  
+  public override IList<string> ArgumentOrdering {
+    get { return new string[0]; }
+  }
+}
+\end{lstlisting}
+
+The source term on the right hand side of equation \ref{equ:poisson_u_equation}
+has not yet been considered. It is implemented as a separate class (see
+\ref{lst:poisson_source_u}) and their coupling takes place later in the code. 
+The syntax for the creation of such a source is straighforward but it should be
+noticed that BoSSS expects an equation of the form $F = 0$ which is why the
+method $Source$ returns $-Q$ (which is equal to $-1$ in our case).
+
+\begin{lstlisting}[caption=BoSSS implementation of the left hand side of 
+equation \ref{equ:poisson_q_equation} and of equation 
+\ref{equ:poisson_q_flux}, label=lst:poisson_flux_q]
+class qFlux : LinearFlux {
+    
+  [...]
+    
+  protected override double BorderEdgeFlux(ref InParams inp, double[] Uin) {
+    return 0.0;
+  }
+      
+  protected override double InnerEdgeFlux(ref InParams inp, double[] Uin, double[] Uout) {
+    return 0.5 * (Uin[0] + Uout[0]) * inp.normal[0]
+      - c1 * (Uout[0] - Uin[0]);
+  }
+
+  protected override void Flux(double[] x, double[] parameters, double[] U, double[] output) {
+    output[0] = U[0];
+  }
+  
+  public override IList<string> ArgumentOrdering {
+    get { return new string[] { "u" }; }
+  }
+}
+\end{lstlisting}
+
+\begin{lstlisting}[caption=BoSSS implementation of the right hand side of
+equation \ref{equ:poisson_q_equation}, label=lst:poisson_source_q]
+class uSource : LinearSource {
+  
+  [...]
+  
+  protected override double Source(double[] x, double[] parameters, double[] U) {
+    return -U[0];
+  }
+  
+  public override IList<string> ArgumentOrdering {
+    get { return new string[] { "q" }; }
+  }
+}
+\end{lstlisting}
+
+The listings \ref{lst:poisson_flux_q} and  \ref{lst:poisson_source_q} show an
+analogous implementation of the equations \ref{equ:poisson_q_equation} and
+\ref{equ:poisson_q_flux} with one major difference: Since $q$ is an auxiliary
+variable there is no flux across boundary edges. Instead, the correct behaviour
+of $q$ is solely enforced by the source $u$ which is why the method 
+\emph{Flux} in listing \ref{lst:poisson_flux_q} return zero.
+
+\begin{lstlisting}[caption=Assembly of the DG operator for the poisson 
+equation, label=lst:poisson_operator]
+class Program : BoSSS.Solution.Application {
+
+  [...]
+  
+  protected override void CreateEquationsAndSolvers() {
+    double c0 = 1.0;
+    double c1 = 10.0;
+
+    operator = new BoSSS.Foundation.SpatialDifferentialOperator(
+    	new string[] { "u", "q" }, new string[] { "u", "q" });
+    operator.EquationComponents["u"].Add(new uFlux(c0, c1));
+    operator.EquationComponents["u"].Add(new uSource());
+    operator.EquationComponents["q"].Add(new qFlux(c0));
+    operator.EquationComponents["q"].Add(new qSource());
+    operator.Commit();
+
+    [...]
+  }
+}
+\end{lstlisting}
+
+In a last step, the created equations components have to be incorporated into
+a system matrix. In BoSSS, this matrix can be calculated from a so called
+\emph{SpatialDifferentialOperator} if it is configured with the components we
+just created. Listing \ref{lst:poisson_operator} illustrates this procedure 
+for our case. As one can see, this step finally connects the separately defined
+source terms to the rest of the equation.

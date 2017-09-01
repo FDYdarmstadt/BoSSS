@@ -1,0 +1,3 @@
+SSHNET is licenced under the MIT licence
+see 
+../../libs/Renci.SshNet-2014-4-6-beta1/licence.txt

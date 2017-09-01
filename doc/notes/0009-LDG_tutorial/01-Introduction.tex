@@ -1,0 +1,107 @@
+\section{Theoretical background}
+\label{sec:theoreticalBackground}
+
+The LDG method as introduced by \cite{Cockburn1998} can be used in order to 
+solve scalar second order conservation laws of the form
+\begin{equation}
+	\frac{\partial u}{\partial t}
+	+ \frac{\partial}{\partial x_i} \left(
+	  	f_i(u)
+	  	- a_{ij}(u) \frac{\partial u}{\partial x_j}
+	\right)
+	= Q ~~~ i,j = 1,\ldots,d
+\label{eq:generalForm}
+\end{equation}
+where $u$ is the unknown scalar quantity,
+$f = (f_1, \ldots, f_d): \mathbb{R} \rightarrow \mathbb{R}^d$
+is a vector of arbitrary functions,
+$a_{ij}: \mathbb{R} \rightarrow \mathbb{R}^{d,d}$ is a positive semidefinite
+matrix, $Q$ is a source term and $d$ is the number of spatial dimensions. Since
+$a_{ij}$ is positive semidefinite, there exists a symmetric matrix $b_{ij}$
+such that the relation
+\begin{equation}
+	a_{ij} = b_{ik} b_{kj} ~~~ k = 1,\ldots,d
+\label{eq:decomposition}
+\end{equation}
+holds.
+
+When introducing \ref{eq:generalForm} into the Discontinuous Galerkin
+framework, one has to find a way of dealing with the second order spatial
+derivatives. One method in this context is the so called LDG method which
+simply rewrites the considered equation as a system of first order equations
+by introducing auxiliary variables $q = (q_1, \ldots, q_d)^T$. That way,
+(\ref{eq:generalForm}) corresponds to
+\begin{align}
+\label{eq:generalFirstOrderSystem_u}
+	\frac{\partial u}{\partial t}
+	+ \frac{\partial}{\partial x_i} \left(
+		f_i(u)
+		- b_{ij}(u) q_j
+  \right)
+  &= Q\\
+\label{eq:generalFirstOrderSystem_q}
+  \frac{\partial g_{jk}(u)}{\partial x_j}
+  &= q_k ~~~ k = 1,\ldots,d
+\end{align}
+where
+\begin{equation}
+	g_{jk} := \int^u{b_{jk}(s) ds}.
+\label{eq:definition_g}
+\end{equation}
+
+Equations (\ref{eq:generalFirstOrderSystem_u}) and
+(\ref{eq:generalFirstOrderSystem_q}) can now be treated by means of a standard
+Discontinuous Galerkin scheme. The corresponding weak formulation for cell $K$ 
+can be written as
+\begin{align}
+\label{eq:generalWeakFormulation_u}
+	\int_K {\frac{\partial u^h}{\partial t} \varphi_u dx}
+	- \int_K {(f_i(u^h) - b_{ij}q_j^h) \frac{\partial \varphi_u}{\partial x_i} dx}
+	+ \int_{\partial K} {h_u(u^h, q^h, n, x, t) \varphi_u dS}
+	&= \int_K {Q^h \varphi_u dx}\\
+\label{eq:generalWeakFormulation_q}
+	- \int_K {g_{ik} \frac{\partial \varphi_{q_k}}{\partial x_i} dx}
+	+ \int_{\partial K} {h_{q_k}(u^h, q^h, n, x, t) \varphi_q dS}
+	&= \int_K {q_k^h \varphi_{q_k} dx}
+\end{align}
+for $k = 1,\ldots,d$ (no summation over $k$!). Here, $u^h$, $q_k^h$ and $Q^h$
+denote the Discontinuous Galerkin approximations of $u$, $q_k$ and $Q$,
+$\varphi_u$ and $\varphi_{q_k}$ denote the test functions, $h_u$, $h_{q_k}$
+denote the numerical fluxes and $n$ denotes the outward unit normal of cell
+$K$.
+
+For the formulation of the numerical fluxes, we use the definition of the 
+average
+\begin{equation}
+	{p} = \frac{1}{2} (p^- + p^+)
+\label{eq:averageOperator}
+\end{equation}
+and the jump
+\begin{equation}
+  [p] = p^+ - p^-
+\label{eq:jumpOperator}
+\end{equation}
+of a scalar quantity $p$ at a border (where $p^-$ is the value inside the cell
+and $p^+$ is the value on the other side of the interface). Now, the fluxes can
+be formulated as
+\begin{equation}
+	h_u(u^h, q^h, n, x, t)
+	= \hat{f}(u^{h-}, u^{h+}, n)
+	- \frac{[g_{ij}]}{[u]} \{q_j\}n_i
+	- c_i [q_i]
+\label{eq:generalFlux_u}
+\end{equation}
+and
+\begin{equation}
+  h_{q_k}(u^h, q^h, n, x, t)
+  = \{g_{ik}\}n_i
+  - c_k[u]
+\label{eq:generalFlux_q}
+\end{equation}
+where $c_i, \ldots, c_d$ are non-negative penalty coefficients and 
+$\hat{f}$ is an arbitrary E-flux (see \cite{Osher1984}) consistent with the
+nonlinearity
+\begin{equation}
+  f = f_i(u) n_i
+\label{eq:nonlinearity}
+\end{equation}

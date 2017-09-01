@@ -1,0 +1,328 @@
+% !TeX spellcheck = en_EN
+%\documentclass[12pt,a4paper]{article}
+%\usepackage{import}
+%\subimport{../}{uebung.tex}
+%
+%%\toggletrue{showSolution}
+%
+%
+%\title{\thetitle{}\\Exercise 4}
+%\date{\WeeksAfter{3}}
+%
+%
+%\begin{document}
+
+
+\BoSSSopen{quickStartIBM/channel}
+\graphicspath{{quickStartIBM/channel.texbatch/}}
+
+
+\BoSSScmd{
+/// \section*{What´s new}
+///
+///\begin{itemize}
+/// \item running a simulation with the incompressible Navier-Stokes solver
+/// \item how to use the immersed boundary method
+/// \item post-processing, i.e. plotting and checking physical values
+///\end{itemize}
+///
+///\section*{Prerequisites}
+///
+///\begin{itemize}
+///\item the \BoSSS\ framework
+///\item a visualization tool, e.g Paraview or VisIt
+///\item the knowledge how to setup a database for \BoSSS{}
+///\end{itemize}
+/// This tutorial will explain the basic features of the incompressible Navier-Stokes solver in the \BoSSS{} framework. 
+/// First, the simple testcase of a 2D channel flow will be explained. After that, there will be a short part about the immersed boundary feature of our incompressible flow solver. 
+/// Therefore the flow around a cylinder will be investigated using the immersed boundary method.
+///
+///\section*{Problem statement}
+///
+///The flow is described by the unsteady Navier-Stokes equations in the fluid region
+///\begin{subequations}
+/// \label{NavierStokes}
+/// \begin{equation}
+/// \label{NavierStokes_mom}
+/// \rho_f\Big(\frac{\partial \vec{u}}{\partial t}+ \vec{u} \cdot \nabla \vec{u}\Big) +\nabla p - \mu_f \Delta \vec{u} = \vec{f} \nonumber
+/// \end{equation}  
+/// and the continuity equation
+/// \begin{equation}
+/// \label{NavierStokes_conti}
+/// \nabla \cdot \vec{u} = 0 \quad \forall\ t \in (0,T)\quad \textrm{in}\ \Omega \nonumber
+/// \end{equation}  
+/// \end{subequations}
+/// \newline
+/// In the equations above $\vec{u}$ is the velocity vector and $p$ the pressure. The fluid density is denoted by $\rho_f$, while $\mu_f=\rho_f \cdot \nu_f$ is the dynamic viscosity of the fluid.
+///
+///\section{Channel}
+/// \label{sec:Channel}
+///\subsection{Interactive mode}
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+restart;
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// For the interactive mode of the solver in \BoSSSpad{} we have to load several dependencies first:
+using System;\newline 
+using System.Collections.Generic;\newline 
+using BoSSS.Platform;\newline 
+using BoSSS.Solution.Control;\newline 
+using BoSSS.Foundation;\newline 
+using BoSSS.Foundation.Grid;\newline 
+using System.Diagnostics;\newline 
+using BoSSS.Solution.Multigrid;\newline 
+using ilPSP.Utils;\newline 
+using BoSSS.Foundation.Grid.Classic;\newline 
+using BoSSS.Foundation.Grid.RefElements;\newline 
+using BoSSS.Application.IBM\_Solver;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Now, a new database has to be created or opened by the following command
+var myDb = OpenOrCreateDatabase("C:\textbackslash \textbackslash tmp\textbackslash \textbackslash IBM\_db");
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Initialize the solver
+Type solver = typeof(IBM\_SolverMain);\newline 
+solver.Assembly.Location;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Create a new control object for setting up the simulation
+var c = new IBM\_Control();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \subsection {How to define/change input data}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Polynomial degress
+int k              = 2;\newline 
+/// Domain and Grid variables
+double xMin        = -2; \newline 
+double xMax        = 20;\newline 
+double yMin        = -2; \newline 
+double yMax        = 2.1;\newline 
+int numberOfCellsX = 44; \newline 
+int numberOfCellsY = 8;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Basic database options 
+c.DbPath     = myDb.Path;\newline 
+c.savetodb   = true;\newline 
+c.saveperiod = 1;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Setting some variables for database saving. Here it is also possible to define tags which can be helpful for finding a particular simulation in the \BoSSS{} database
+string sessionName   = "dt = 1E20\_" + numberOfCellsX + "x" + numberOfCellsY + "\_k" + k;\newline 
+c.SessionName        = sessionName;\newline 
+c.ProjectName        = sessionName;\newline 
+c.ProjectDescription = sessionName;\newline 
+c.Tags.Add("numberOfCellsX\_" + numberOfCellsX);\newline 
+c.Tags.Add("numberOfCellsY\_" + numberOfCellsY);\newline 
+c.Tags.Add("k"+k);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Here, the degree for each field is set (degree k for velocity, k-1 for pressure). First, Phi is not going to be used in this simulation but it has to be specified anyways.
+c.FieldOptions.Add("VelocityX", new FieldOpts() \{\newline 
+Degree = k,\newline 
+SaveToDB = FieldOpts.SaveToDBOpt.TRUE\newline 
+\});\newline 
+c.FieldOptions.Add("VelocityY", new FieldOpts() \{\newline 
+Degree = k,\newline 
+SaveToDB = FieldOpts.SaveToDBOpt.TRUE\newline 
+\});\newline 
+c.FieldOptions.Add("Pressure", new FieldOpts() \{\newline 
+Degree = k - 1,\newline 
+SaveToDB = FieldOpts.SaveToDBOpt.TRUE \newline 
+\});\newline 
+c.FieldOptions.Add("PhiDG", new FieldOpts() \{\newline 
+Degree = 2,\newline 
+SaveToDB = FieldOpts.SaveToDBOpt.TRUE\newline 
+\});\newline 
+c.FieldOptions.Add("Phi", new FieldOpts() \{\newline 
+Degree = 2,\newline 
+SaveToDB = FieldOpts.SaveToDBOpt.TRUE\newline 
+\});
+ }
+\BoSSSexe
+\BoSSScmd{
+/// The grid is generated using the previously defined parameters.
+c.GridFunc       = null; \newline 
+var xNodes       = GenericBlas.Linspace(xMin, xMax , numberOfCellsX);\newline 
+var yNodes       = GenericBlas.Linspace(yMin, yMax, numberOfCellsY);\newline 
+GridCommons grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, CellType.Square\_Linear, false);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Specify boundary names
+grid.EdgeTagNames.Add(1, "wall"); \newline 
+grid.EdgeTagNames.Add(2, "Velocity\_Inlet"); \newline 
+grid.EdgeTagNames.Add(3, "Pressure\_Outlet");
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Assign boundary to each cell face. Faces that get assigned "0" are "inner edges".
+grid.DefineEdgeTags(delegate (double[] X) \{\newline 
+byte et = 0;\newline 
+if (Math.Abs(X[1] - (-2)) <= 1.0e-8)\newline 
+et = 1;\newline 
+if (Math.Abs(X[1] - (+2.1 )) <= 1.0e-8)\newline 
+et = 1;\newline 
+if (Math.Abs(X[0] - (-2)) <= 1.0e-8)\newline 
+et = 2;\newline 
+if (Math.Abs(X[0] - (+20.0)) <= 1.0e-8)\newline 
+et = 3;\newline 
+return et;\newline 
+\});
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Return grid info ans save
+grid;\newline 
+Guid GridGuid = myDb.SaveGrid(grid);\newline 
+c.GridGuid    = GridGuid;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Specification of boundary conditions with a parabolic velocity profile for the inlet
+c.BoundaryValues.Clear();\newline 
+c.AddBoundaryCondition("wall");\newline 
+c.AddBoundaryCondition("Velocity\_Inlet", "VelocityX", X => (4.1 * 1.5 * (X[1] + 2) * (4.1 - (X[1] + 2)) / (4.1 * 4.1))); \newline 
+c.AddBoundaryCondition("Pressure\_Outlet");
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Fluid Properties
+/// Note: As characteristic length and fluid density are choosen to one. The viscosity can be defined by $1/reynolds$.
+double reynolds            = 20;\newline 
+c.PhysicalParameters.rho\_A = 1;\newline 
+c.PhysicalParameters.mu\_A  = 1.0/reynolds;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Bool parameter wheather the Navier-Stokes or Stokes equations should be solved
+c.PhysicalParameters.IncludeConvection = true;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Initial Values are set to 0
+c.InitialValues.Clear();\newline 
+c.InitialValues.Add("VelocityX",new Formula("X => 0.0", false));\newline 
+c.InitialValues.Add("VelocityY",new Formula("X => 0.0", false));\newline 
+c.InitialValues.Add("Pressure",new Formula("X => 0.0", false));
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Phi is a level set variable which is not used in this simulation. Therefore it has to be set to -1.
+c.InitialValues.Add("Phi", new Formula("X => -1.0", false));
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Properties for the Picard Iterations
+c.MaxSolverIterations = 50;\newline 
+c.MinSolverIterations = 1;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Timestepping properties:
+/// We will simulate the steady state solution by using just one timestep of 1E20 seconds of physical time for this instationary simulation.
+c.Timestepper\_Scheme = IBM\_Control.TimesteppingScheme.ImplicitEuler;\newline 
+double dt            = 1E20;\newline 
+c.dtMax              = dt;\newline 
+c.dtMin              = dt;\newline 
+c.Endtime            = 64;\newline 
+c.NoOfTimesteps      = 1;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \subsection{Run a simulation}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Create a new job 
+var solver = new IBM\_SolverMain();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Initialize the solver with the current control object, run the simulation and dispose it.
+solver.Init(c);\newline 
+solver.RunSolverMode();\newline 
+solver.Dispose();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \subsection{Postprocessing}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Plot the current session
+//myDb.Sessions.First().Export().Do();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Open the ExportDirectory to view the *.plt files
+//myDb.Sessions.First().OpenExportDirectory();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Some information like the console output or a log containing various physical values can be found in the SessionDirectory
+//myDb.Sessions.First().OpenSessionDirectory();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Delete database
+//DatabaseUtils.DeleteDatabase(myDb.Path);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \subsection{Immersed boundary method}
+/// It is also possible to use the immersed boundary feature of our incompressible Navier-Stokes Solver.
+/// For this example we have to change two parts of the code: First, for a good result, we have to refine 
+/// the grid at the position of the cylinder.
+ }
+\BoSSSexe
+\BoSSScmd{
+/// x-Direction (using also hyperbolic tangential distribution)
+//var \_xNodes1 = Grid1D.TanhSpacing(-2, -1, 10, 0.5, false); \newline 
+//\_xNodes1     = \_xNodes1.GetSubVector(0, (\_xNodes1.Length - 1));\newline 
+//var \_xNodes2 = GenericBlas.Linspace(-1, 2, 35); \newline 
+//\_xNodes2     = \_xNodes2.GetSubVector(0, (\_xNodes2.Length - 1));\newline 
+//var \_xNodes3 = Grid1D.TanhSpacing(2, 20, 60 , 1.5, true);  \newline 
+//var xNodes   = ArrayTools.Cat(\_xNodes1, \_xNodes2, \_xNodes3);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// y-Direction
+//var \_yNodes1 = Grid1D.TanhSpacing(-2, -1, 7, 0.9, false); \newline 
+//\_yNodes1     = \_yNodes1.GetSubVector(0, (\_yNodes1.Length - 1));\newline 
+//var \_yNodes2 = GenericBlas.Linspace(-1, 1, 25); \newline 
+//\_yNodes2     = \_yNodes2.GetSubVector(0, (\_yNodes2.Length - 1));\newline 
+//var \_yNodes3 = Grid1D.TanhSpacing(1, 2.1, 7, 1.1, true);  \newline 
+//var yNodes   = ArrayTools.Cat(\_yNodes1, \_yNodes2, \_yNodes3);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Furthermore, the cylinder immmersed the fluid should be described
+/// by using the zero contour of a level set function. The radius of the cylinder is set to 0.5.
+ }
+\BoSSSexe
+\BoSSScmd{
+//c.InitialValues.Add("Phi", new Formula("X => -(X[0]).Pow2() + -(X[1]).Pow2() + 0.25", false));
+ }
+\BoSSSexe
+\BoSSScmd{
+/// As soon as we have exchanged the grids and the definition of phi. Example Control files for both,
+/// the Channel and the flow around a cylinder can be found in the ControlExample directory. As soon as we ran 
+/// the simulation again we can take a look at the plots and the PhysicalData file in the SessionDirectory. 
+/// There we can find for example lift and drag forces acting on the cylinder.
+ }
+\BoSSSexe

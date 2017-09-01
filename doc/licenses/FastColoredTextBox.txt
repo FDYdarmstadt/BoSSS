@@ -1,0 +1,2 @@
+Fast Colored Text Box is licenced under the LGPLv3.
+See ../../libs/FCTB.2.16.11.0/licence.txt

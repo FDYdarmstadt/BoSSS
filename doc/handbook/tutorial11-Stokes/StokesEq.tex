@@ -1,0 +1,652 @@
+
+\BoSSSopen{tutorial11-Stokes/StokesEq}
+\graphicspath{{tutorial11-Stokes/StokesEq.texbatch/}}
+
+
+\BoSSScmd{
+/// \label{chap:stokesEquation}
+/// \section*{What's new?}
+/// \label{sec:stokesEquation_new}
+/// \begin{itemize}
+///     \item {Implementation of the incompressible, steady Stokes equation}
+///     \item Advanced: {Implementation of the Stokes flow behind a grid as an application}
+/// \end{itemize}
+///
+///\section*{Prerequisites}
+///\label{sec:stokesEquation_prereq}
+///\begin{itemize}
+/// \item Implementation of numerical fluxes, chapter \ref{NumFlux} 
+/// \item Spatial operator, chapter \ref{SpatialOperator}
+/// \item Implementation of the gradient operator, chapter \ref{sec:poissonSystem_new} 
+/// \item Implementation of the SIP operator, chapter \ref{sec:SIP}
+///\end{itemize}
+    /// %==========================================
+    /// \section{Problem statement}
+    /// %==========================================
+/// The Stokes-equation is given as
+/// \begin{alignat*}{3}
+/// -\frac{1}{\reynolds} \Delta \vec{u}
+///     & + \nabla \psi
+///        & \ & = \vec{g}_\domain
+/// \\ 
+/// \operatorname{div} (\vec{u})
+///     &
+///        & \ & = 0
+/// \end{alignat*}
+/// We consider two types of boundary conditions for the Stokes equation,
+/// Dirichlet (on $\Gamma_D$) and Neumman (on $\Gamma_N$). Those are defined as
+/// \begin{alignat*}{3}
+///         \vec{u} & =\vec{u}_D 
+///         & \ & \text{ on } \Gamma_D\ \text{ (Dirichlet)}, \\
+///         %
+///         \left( -\frac{1}{\reynolds}\ \nabla  \vec{u} +  \one_p \psi \right) 
+///                \vec{n}_{\partial \domain}        & = 0 
+///         & \ & \text{ on } \Gamma_N\ \text{ (Neumann) } .
+/// \end{alignat*}
+/// %==========================================
+/// \section{Solution within the BoSSS framework}
+/// %==========================================
+ }
+\BoSSSexeSilent
+\BoSSSclose
+\BoSSScmd{
+restart
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+using ilPSP.LinSolvers;\newline 
+using BoSSS.Solution.Tecplot;\newline 
+using ilPSP.Connectors.Matlab;
+ }
+\BoSSSexe
+\BoSSScmdSilent{
+/// BoSSScmdSilent BoSSSexeSilent
+using NUnit.Framework;
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// To implement at which point of the boundary which condition is valid, we
+/// define a global function 
+Func<double[],bool> IsDirichletBndy = null;\newline 
+/// which defines a mapping 
+/// \[
+///    \vec{x} \mapsto \{ \code{true}, \code{false} \},
+/// \]
+/// where \code{true} actually indicates a Dirichlet boundary.
+/// Since this function is defined as a global delegate, it can be altered 
+/// later on. In the same manner, the function
+Func<double[],double[]> UDiri = null;\newline 
+/// defines the Dirichlet-value for the velocity at the boundary.
+ }
+\BoSSSexe
+\BoSSScmd{
+/// %==========================================
+/// \subsection{Velocity divergence and pressure gradient}
+/// %==========================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// At first, we implement the velocity divergence, i.e. 
+/// the continuity equation. We use the strong form, i.e.
+/// \[
+///    b(\vec{u},v) = 
+///    \oint_{\Gamma \backslash \Gamma_D} 
+///           \mean{v} \jump{\vec{u}} \cdot \vec{n}_\Gamma 
+///    \dA 
+///    -
+///    \int_{\domain} \operatorname{div}(\vec{u}) v \dV.
+/// \]
+public class Divergence : \newline 
+\btab \btab BoSSS.Foundation.IEdgeForm, // edge integrals\newline 
+\btab \btab BoSSS.Foundation.IVolumeForm     // volume integrals\newline 
+\{\newline 
+    /// The parameter list for the divergence is empty:
+\btab public IList<string> ParameterOrdering \{ \newline 
+\btab \btab get \{ return null; \} \newline 
+\btab \}\newline 
+ \newline 
+    /// We have a vector argument variable, 
+    /// the velocity $ [ u, v ] = \vec{u} $
+    /// (our trial function):
+\btab public IList<String> ArgumentOrdering \{ \newline 
+\btab \btab get \{ return new string[] \{ "u", "v" \}; \} \newline 
+\btab \}\newline 
+ \newline 
+\btab public TermActivationFlags VolTerms \{\newline 
+\btab \btab get \{\newline 
+\btab \btab \btab return TermActivationFlags.AllOn;\newline 
+\btab \btab \}\newline 
+\btab \}\newline 
+ \newline 
+\btab public TermActivationFlags InnerEdgeTerms \{\newline 
+\btab \btab get \{\newline 
+\btab \btab \btab return TermActivationFlags.AllOn; \newline 
+\btab \btab \}\newline 
+\btab \}\newline 
+ \newline 
+\btab public TermActivationFlags BoundaryEdgeTerms \{\newline 
+\btab    get \{\newline 
+\btab \btab    return TermActivationFlags.AllOn;\newline 
+\btab \btab \}\newline 
+\btab \}\newline 
+ \newline 
+    /// In the volume part, the integrand is $\operatorname{div}(\vec{u}) v$:
+\btab public double VolumeForm(ref CommonParamsVol cpv, \newline 
+\btab \btab double[] U, double[,] GradU, \newline 
+\btab \btab double V, double[] GradV) \{\newline 
+\btab \btab double Acc = 0;\newline 
+\btab \btab for(int d = 0; d < cpv.D; d++) \{\newline 
+\btab \btab \btab Acc -= GradU[d,d]*V;\newline 
+\btab \btab \}\newline 
+\btab \btab return Acc;\newline 
+\btab \}\newline 
+ \newline 
+    /// On interior cell boundaries, we use a \emph{velocity penalty},
+    /// $\mean{v} \jump{\vec{u}} \cdot \vec{n}_\Gamma$:
+\btab public double InnerEdgeForm(ref CommonParams inp, \newline 
+\btab \btab double[] U\_IN, double[] U\_OT, double[,] GradU\_IN, double[,] GradU\_OT, \newline 
+\btab \btab double V\_IN, double V\_OT, double[] GradV\_IN, double[] GradV\_OT) \{\newline 
+ \newline 
+\btab \btab double Acc = 0;\newline 
+\btab \btab for(int d = 0; d < inp.D; d++) \{\newline 
+\btab \btab \btab Acc += 0.5*(V\_IN + V\_OT)*(U\_IN[d] - U\_OT[d])*inp.Normale[d];\newline 
+\btab \btab \}\newline 
+\btab \btab return Acc;\newline 
+\btab \}\newline 
+ \newline 
+    /// On the domain boundary, we have to distinguish between 
+    /// Dirichlet- and Neumann-bounary conditions; the function
+    /// \code{uDiri} defines which of the two actually applies:
+\btab public double BoundaryEdgeForm(ref CommonParamsBnd inp, \newline 
+\btab \btab double[] U\_IN, double[,] GradU\_IN, double V\_IN, double[] GradV\_OT) \{\newline 
+ \newline 
+\btab \btab double Acc = 0;\newline 
+ \newline 
+\btab \btab if(!IsDirichletBndy(inp.X)) \{\newline 
+\btab \btab \btab // On the Neumann boundary, we do not know an outer value for the\newline 
+\btab \btab \btab // velocity, so there is no penalization at all:\newline 
+\btab \btab \btab Acc = 0;    \newline 
+\btab \btab \} else \{\newline 
+\btab \btab \btab // On the Dirichlet boundary, the outer value for the velocity\newline 
+\btab \btab \btab // is given by the function/delegate 'UDiri':\newline 
+\btab \btab \btab double[] UD = UDiri(inp.X);\newline 
+\btab \btab \btab for(int d = 0; d < inp.D; d++) \{\newline 
+\btab \btab \btab \btab Acc += (U\_IN[d] - UD[d])*inp.Normale[d]*V\_IN;\newline 
+\btab \btab \btab \}\newline 
+\btab \btab \}\newline 
+\btab \btab return Acc;\newline 
+\btab \}\newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// %==================================
+/// \subsection{The gradient-operator}
+/// %==================================
+/// We use the variational formulation of the gradient operator, as it is explained in section \ref{subsec:poissonSystem_gradientOp}.
+class Gradient\_d :\newline 
+\btab \btab BoSSS.Foundation.IEdgeForm, // edge integrals\newline 
+\btab \btab BoSSS.Foundation.IVolumeForm     // volume integrals\newline 
+\{\newline 
+\btab public Gradient\_d(int \_d) \{\newline 
+\btab \btab this.d = \_d;\newline 
+\btab \}\newline 
+ \newline 
+    /// The component index of the gradient:
+\btab int d;\newline 
+ \newline 
+    /// As usual, we do not use parameters:
+\btab public IList<string> ParameterOrdering \{ \newline 
+\btab \btab get \{ return null; \} \newline 
+\btab \}\newline 
+ \newline 
+    /// We have one argument, the pressure $\psi$:
+\btab public IList<String> ArgumentOrdering \{ \newline 
+\btab \btab get \{ return new string[] \{ "psi" \}; \} \newline 
+\btab \}\newline 
+ \newline 
+\btab public TermActivationFlags VolTerms \{\newline 
+\btab \btab get \{ return TermActivationFlags.AllOn; \}\newline 
+\btab \}\newline 
+ \newline 
+\btab public TermActivationFlags InnerEdgeTerms \{\newline 
+\btab \btab get \{ return (TermActivationFlags.AllOn); \}\newline 
+\btab \}\newline 
+ \newline 
+\btab public TermActivationFlags BoundaryEdgeTerms \{\newline 
+\btab    get \{ return TermActivationFlags.AllOn; \}\newline 
+\btab \}\newline 
+ \newline 
+    /// The volume integrand, for a vector-valued test-function $\vec{v}$
+    /// would be $-\operatorname{div}{\vec{v}} \psi$. Our test function $v$
+    /// is scalar-valued, so e.g. for $\code{d} = 0$ we have
+    /// $\vec{v} = (v,0)$. In this case, our volume integrand reduces as 
+    /// $-\operatorname{div}{\vec{v}} \psi = -\partial_x v \psi$:
+\btab public double VolumeForm(ref CommonParamsVol cpv, \newline 
+\btab \btab    double[] Psi, double[,] GradPsi, \newline 
+\btab \btab    double V, double[] GradV) \{\newline 
+ \newline 
+\btab \btab double Acc = 0;\newline 
+\btab \btab Acc -= Psi[0]*GradV[d];\newline 
+\btab \btab return Acc;\newline 
+\btab \}        \newline 
+ \newline 
+    /// On interior cell edges, we simply use a central-difference flux.
+    /// Again, we consider a scalar test function, so we have
+    /// $ \jump{\psi} \vec{v} \cdot \vec{n} = \jump{\psi} v n_d $,
+    /// where $n_d$ is the $d$--th component of $\vec{n}$:
+\btab public double InnerEdgeForm(ref CommonParams inp, \newline 
+\btab \btab double[] Psi\_IN, double[] Psi\_OT, \newline 
+\btab \btab double[,] GradPsi\_IN, double[,] GradPsi\_OT, \newline 
+\btab \btab double V\_IN, double V\_OT, double[] GradV\_IN, double[] GradV\_OT) \{\newline 
+ \newline 
+\btab \btab double Acc = 0;\newline 
+\btab \btab Acc += 0.5*(Psi\_IN[0] + Psi\_OT[0])*inp.Normale[this.d]*(V\_IN - V\_OT);\newline 
+\btab \btab return Acc;  \newline 
+\btab  \}\newline 
+ \newline 
+\btab public double BoundaryEdgeForm(ref CommonParamsBnd inp, \newline 
+\btab \btab double[] Psi\_IN, double[,] GradPsi\_IN, double V\_IN, double[] GradV\_OT) \{\newline 
+ \newline 
+\btab \btab double Acc = 0;\newline 
+\btab \btab if(!IsDirichletBndy(inp.X)) \{\newline 
+\btab \btab \btab // On the Neumann boundary, we want the total stress to be zero,\newline 
+\btab \btab \btab // so there is no contribution from the pressure:\newline 
+\btab \btab \btab Acc = 0;\newline 
+\btab \btab \} else \{\newline 
+\btab \btab \btab // On the Dirichlet boundary, we do not know an outer value for \newline 
+\btab \btab \btab // the pressure, so we have to take the inner value:\newline 
+\btab \btab \btab Acc += Psi\_IN[0]*inp.Normale[this.d]*V\_IN;\newline 
+\btab \btab \}\newline 
+\btab \btab return Acc;              \newline 
+\btab \}\newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// %==============================================================
+/// \subsection{Tests on pressure gradient and velocity divergence}
+/// %==============================================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// If our implementation is correct, we created a discretization of 
+/// \[
+///  \left[ \begin{array}{cc}
+///     0                 & \nabla \\
+///   -\operatorname{div} & 0      \\
+///  \end{array} \right]
+/// \]
+/// so the matrix should have the form 
+/// \[
+///  \left[ \begin{array}{cc}
+///     0     & B      \\
+///     B^T   & 0      \\
+///  \end{array} \right]
+///  =: M,
+/// \]
+/// i.e. $M$ should be symmetric.
+/// We are testing this using a channel flow configuration:
+/// \begin{align*}
+///     \Omega    := & (0,10) \times (-1,1) , \\
+///     \Gamma_N  := & \{ (x,y) | \ x = 10 \} , \\
+///     \Gamma_D  := & \partial \Omega \setminus \Gamma_D , \\
+///     \vec{u}_D := & (1 - y^2, 0), 
+/// \end{align*}
+/// using an equidistant grid.
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We create a grid, a DG basis for velocity and pressure 
+/// and a variable mapping:
+var xNodesChannel = GenericBlas.Linspace(0,10,31);// 30 cells in x-direction\newline 
+var yNodesChannel = GenericBlas.Linspace(-1,1,7); // 6 cells in y-direction\newline 
+var grdChannel    = Grid2D.Cartesian2DGrid(xNodesChannel,yNodesChannel);\newline 
+var grdDatChannel = new GridData(grdChannel);\newline 
+var VelBChannel   = new Basis(grdDatChannel, 2);  // velocity basis\newline 
+var PsiBChannel   = new Basis(grdDatChannel, 1);  // pressure basis \newline 
+var varMapChannel = new UnsetteledCoordinateMapping(\newline 
+\btab \btab \btab \btab \btab    VelBChannel,VelBChannel,PsiBChannel); // variable mapping
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We specify the boundary conditions as delegates:
+Func<double[],bool> IsDirichletBndy\_Channel \newline 
+\btab \btab = (X => Math.Abs(X[0] - 10) > 1.0e-10); // its Dirichlet, if x != 10\newline 
+Func<double[],double[]> UDiri\_Channel \newline 
+\btab \btab = (X => new double[2] \{ 1.0 - X[1]*X[1], 0\});
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Lets create the operator which contains only the pressure gradient
+/// and velocity divergence:
+SpatialOperator GradDiv = new SpatialOperator(3,3, // 3 vars. in dom. & codom.\newline 
+\btab \btab \btab \btab \btab \btab    QuadOrderFunc.Linear(), // linear operator\newline 
+\btab \btab \btab \btab \btab \btab    "u", "v", "psi",  // names of domain variables\newline 
+\btab \btab \btab \btab \btab \btab    "mom\_x", "mom\_y", "conti"); // names of codom. vars\newline 
+GradDiv.EquationComponents["mom\_x"].Add(new Gradient\_d(0)); \newline 
+GradDiv.EquationComponents["mom\_y"].Add(new Gradient\_d(1)); \newline 
+GradDiv.EquationComponents["conti"].Add(new Divergence());\newline 
+GradDiv.Commit();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We create the matrix of the \code{GradDiv}-operator for 
+/// the channel configuration. Before that, we have to set values for the 
+/// global \code{IsDirichletBndy} and \code{UDiri} - variables.
+IsDirichletBndy           = IsDirichletBndy\_Channel;\newline 
+UDiri                     = UDiri\_Channel;\newline 
+var GradDivMatrix\_Channel = GradDiv.ComputeMatrix(varMapChannel,\newline 
+\btab \btab \btab \btab \btab \btab \btab \btab \btab \btab \btab \btab   null,\newline 
+\btab \btab \btab \btab \btab \btab \btab \btab \btab \btab \btab \btab   varMapChannel);
+ }
+\BoSSSexe
+\BoSSScmd{
+///Finally, we can test the symmetry of the matrix:
+var ErrMtx = GradDivMatrix\_Channel - GradDivMatrix\_Channel.Transpose();\newline 
+ErrMtx.InfNorm();
+ }
+\BoSSSexe
+\BoSSScmdSilent{
+/// NUnit test (few random tests) BoSSScmdSilent
+Assert.LessOrEqual(ErrMtx.InfNorm(), 1e-12);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// %====================================================================
+/// \subsection{Adding the viscous operator, forming the Stokes operator}
+/// %====================================================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We use the SIP-operator from chapter \ref{sec:SIP} to model the viscous terms:
+public class Viscous : \newline 
+\btab \btab IEdgeForm, // edge integrals\newline 
+\btab \btab IVolumeForm     // volume integrals\newline 
+\{\newline 
+    /// The velocity component:
+\btab int d;\newline 
+ \newline 
+\btab public Viscous(int \_d) \{\newline 
+\btab \btab this.d = \_d;    \newline 
+\btab \}\newline 
+ \newline 
+    /// We implement Reynolds number and the polynomial degree, 
+    /// as well as the cell-wise length scales (required for 
+    /// the computation of the penalty factor) as global, static variables.
+\btab public static double Re;\newline 
+\btab public static int PolynomialDegree;\newline 
+\btab public static MultidimensionalArray cj;\newline 
+ \newline 
+    /// We do not use parameters:
+\btab public IList<string> ParameterOrdering \{ \newline 
+\btab \btab get \{ return new string[0]; \} \newline 
+\btab \}\newline 
+ \newline 
+    /// Depending on \code{d}, the argument variable
+    /// should be either $u$ or $v$:
+\btab public IList<String> ArgumentOrdering \{ \newline 
+\btab \btab get \{ \newline 
+\btab \btab \btab switch(d) \{\newline 
+\btab \btab \btab \btab case 0  : return new string[] \{ "u" \}; \newline 
+\btab \btab \btab \btab case 1  : return new string[] \{ "v" \}; \newline 
+\btab \btab \btab \btab default : throw new Exception();\newline 
+\btab \btab \btab \}\newline 
+\btab \btab \} \newline 
+\btab \}\newline 
+ \newline 
+    /// The \code{TermActivationFlags}, as usual:
+\btab public TermActivationFlags VolTerms \{\newline 
+\btab \btab get \{\newline 
+\btab \btab \btab return TermActivationFlags.GradUxGradV;\newline 
+\btab \btab \}\newline 
+\btab \}\newline 
+ \newline 
+\btab public TermActivationFlags InnerEdgeTerms \{\newline 
+\btab \btab get \{\newline 
+\btab \btab \btab return (TermActivationFlags.AllOn);\newline 
+\btab \btab \}\newline 
+\btab \}\newline 
+ \newline 
+\btab public TermActivationFlags BoundaryEdgeTerms \{\newline 
+\btab    get \{\newline 
+\btab \btab    return TermActivationFlags.AllOn;\newline 
+\btab \btab \}\newline 
+\btab \}\newline 
+ \newline 
+    /// The integrand for the volume integral:
+\btab public double VolumeForm(ref CommonParamsVol cpv, \newline 
+\btab \btab    double[] U, double[,] GradU,\newline 
+\btab \btab    double V, double[] GradV) \{               \newline 
+\btab \btab double acc = 0;\newline 
+\btab \btab for(int d = 0; d < cpv.D; d++)\newline 
+\btab \btab \btab acc += GradU[0, d] * GradV[d];\newline 
+\btab \btab return (1/Re)*acc;\newline 
+\btab \}\newline 
+ \newline 
+ \newline 
+    /// The integrand for the integral on the inner edges:
+\btab public double InnerEdgeForm(ref CommonParams inp, \newline 
+\btab \btab double[] U\_IN, double[] U\_OT, double[,] GradU\_IN, double[,] GradU\_OT, \newline 
+\btab \btab double V\_IN, double V\_OT, double[] GradV\_IN, double[] GradV\_OT) \{\newline 
+ \newline 
+\btab \btab double eta = PenaltyFactor(inp.jCellIn, inp.jCellOut);\newline 
+ \newline 
+\btab \btab double Acc = 0.0;\newline 
+\btab \btab for(int d = 0; d < inp.D; d++) \{ // loop over vector components \newline 
+\btab \btab \btab // consistency term: -(\{\{ \textbackslash /u \}\} [[ v ]])*Normale\newline 
+\btab \btab \btab // index d: spatial direction\newline 
+\btab \btab \btab Acc -= 0.5 * (GradU\_IN[0, d] + GradU\_OT[0, d])*(V\_IN - V\_OT)\newline 
+\btab \btab \btab \btab \btab    * inp.Normale[d];\newline 
+ \newline 
+\btab \btab \btab // the symmetry term -(\{\{ \textbackslash /v \}\} [[ u ]])*Normale\newline 
+\btab \btab \btab Acc -= 0.5 * (GradV\_IN[d] + GradV\_OT[d])*(U\_IN[0] - U\_OT[0])\newline 
+\btab \btab \btab \btab \btab    * inp.Normale[d];;\newline 
+\btab \btab \}\newline 
+ \newline 
+\btab \btab // the penalty term eta*[[u]]*[[v]]\newline 
+\btab \btab Acc += eta*(U\_IN[0] - U\_OT[0])*(V\_IN - V\_OT);\newline 
+\btab \btab return (1/Re)*Acc;\newline 
+ \newline 
+\btab \}\newline 
+ \newline 
+    /// The integrand on boundary edges, i.e. on $\partial \Omega$:
+\btab public double BoundaryEdgeForm(ref CommonParamsBnd inp, \newline 
+\btab \btab double[] U\_IN, double[,] GradU\_IN, double V\_IN, double[] GradV\_IN) \{\newline 
+ \newline 
+ \newline 
+\btab \btab double Acc = 0.0;\newline 
+ \newline 
+\btab \btab if(!IsDirichletBndy(inp.X)) \{\newline 
+\btab \btab \btab // Neumann boundary conditions, i.e. zero-stress:\newline 
+\btab \btab \btab Acc = 0;\newline 
+\btab \btab \} else \{\newline 
+\btab \btab \btab // Dirichlet boundary conditions\newline 
+\btab \btab \btab double uBnd = UDiri(inp.X)[d];\newline 
+ \newline 
+\btab \btab \btab for(int d = 0; d < inp.D; d++) \{ // loop over vector components \newline 
+\btab \btab \btab \btab // consistency term:\newline 
+\btab \btab \btab \btab Acc -= (GradU\_IN[0, d])*(V\_IN) * inp.Normale[d];\newline 
+\btab \btab \btab \btab // symmetry term:\newline 
+\btab \btab \btab \btab Acc -= (GradV\_IN[d])*(U\_IN[0]- uBnd) * inp.Normale[d];\newline 
+\btab \btab \btab \}\newline 
+ \newline 
+\btab \btab \btab // penalty term\newline 
+\btab \btab \btab double eta = PenaltyFactor(inp.jCellIn, -1);\newline 
+\btab \btab \btab Acc += eta*(U\_IN[0] - uBnd)*(V\_IN);\newline 
+\btab \btab \}\newline 
+ \newline 
+\btab \btab return (1/Re)*Acc;\newline 
+\btab \}\newline 
+ \newline 
+\btab double PenaltyFactor(int jCellIn, int jCellOut) \{\newline 
+\btab \btab double PenaltySafety = 2;\newline 
+\btab \btab double cj\_in         = cj[jCellIn];\newline 
+\btab \btab double penalty\_base  = PenaltySafety*PolynomialDegree*PolynomialDegree;\newline 
+\btab \btab double eta           = penalty\_base * cj\_in;\newline 
+\btab \btab if(jCellOut >= 0) \{\newline 
+\btab \btab \btab double cj\_out = cj[jCellOut];\newline 
+\btab \btab \btab eta           = Math.Max(eta, penalty\_base * cj\_out);\newline 
+\btab \btab \}\newline 
+\btab \btab return eta;\newline 
+\btab \}\newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Finally, we are ready to implement the Stokes operator:
+SpatialOperator Stokes = new SpatialOperator(3,3, // 3 vars. in dom. & codom.\newline 
+\btab \btab \btab \btab \btab \btab  QuadOrderFunc.Linear(), // linear operator\newline 
+\btab \btab \btab \btab \btab \btab  "u", "v", "psi",  // names of domain variables\newline 
+\btab \btab \btab \btab \btab \btab  "mom\_x", "mom\_y", "conti"); // names of codom. vars\newline 
+Stokes.EquationComponents["mom\_x"].Add(new Gradient\_d(0)); \newline 
+Stokes.EquationComponents["mom\_x"].Add(new Viscous(0)); \newline 
+Stokes.EquationComponents["mom\_y"].Add(new Gradient\_d(1)); \newline 
+Stokes.EquationComponents["mom\_y"].Add(new Viscous(1));\newline 
+Stokes.EquationComponents["conti"].Add(new Divergence());\newline 
+Stokes.Commit();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Again, we create the matrix (now, for the Stokes operator) and check its
+/// symmetry; we also have to set the Reynolds number and the polynomial
+/// degree \emph{before} calling \code{ComputeMatrix} (since we are doing a
+/// rather dirty trick by using global variables).
+IsDirichletBndy          = IsDirichletBndy\_Channel;\newline 
+UDiri                    = UDiri\_Channel;\newline 
+Viscous.Re               = 20.0;\newline 
+Viscous.PolynomialDegree = VelBChannel.Degree;\newline 
+Viscous.cj               = grdDatChannel.Cells.cj;\newline 
+var StokesMatrix\_Channel = Stokes.ComputeMatrix(varMapChannel,\newline 
+\btab \btab \btab \btab \btab \btab \btab \btab \btab \btab \btab \btab null,\newline 
+\btab \btab \btab \btab \btab \btab \btab \btab \btab \btab \btab \btab varMapChannel);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Testing the symmetry:
+var ErrMtx1 = StokesMatrix\_Channel - StokesMatrix\_Channel.Transpose();\newline 
+ErrMtx1.InfNorm();
+ }
+\BoSSSexe
+\BoSSScmdSilent{
+/// NUnit test (few random tests) BoSSScmdSilent
+Assert.LessOrEqual(ErrMtx1.InfNorm(), 1e-12);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We also verify that our Stokes-matrix has full rank, i.e. we show that 
+/// matrix size and rank are equal:
+ }
+\BoSSSexe
+\BoSSScmd{
+StokesMatrix\_Channel.NoOfRows;
+ }
+\BoSSSexe
+\BoSSScmd{
+StokesMatrix\_Channel.rank();
+ }
+\BoSSSexe
+\BoSSScmdSilent{
+/// NUnit test (few random tests) BoSSScmdSilent
+Assert.AreEqual(StokesMatrix\_Channel.rank(), StokesMatrix\_Channel.NoOfRows);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// %======================================================
+/// \subsection{Solving the Stokes equation in the channel}
+/// %======================================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We set the parameters and see whether we actually obtain the correct 
+/// solution; the exact solution of our problem is obviously
+/// \begin{align*}
+///     \vec{u}_{\text{ex}} = & (1 - y^2, 0 ), \\
+///     \psi_{\text{ex}}    = & \frac{200}{\text{Re}} - x \frac{2}{\text{Re}} \\
+/// \end{align*}
+/// and since it is polynomial we should be able to obtain it 
+/// \emph{exactly} in our velocity-pressure-space of degrees $(2,1)$.
+IsDirichletBndy          = IsDirichletBndy\_Channel;\newline 
+UDiri                    = UDiri\_Channel;\newline 
+Viscous.Re               = 20.0;\newline 
+Viscous.PolynomialDegree = VelBChannel.Degree;\newline 
+var StokesMatrix\_Channel = Stokes.ComputeMatrix(varMapChannel,\newline 
+\btab \btab \btab \btab \btab \btab \btab \btab \btab \btab \btab \btab null,\newline 
+\btab \btab \btab \btab \btab \btab \btab \btab \btab \btab \btab \btab varMapChannel);\newline 
+var StokesAffine\_Channel = Stokes.ComputeAffine(varMapChannel,\newline 
+\btab \btab \btab \btab \btab \btab \btab \btab \btab \btab \btab \btab null,\newline 
+\btab \btab \btab \btab \btab \btab \btab \btab \btab \btab \btab \btab varMapChannel);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Now, we are ready to solve the stokes equation. \BoSSS\ provides us with
+/// a system 
+/// \[
+///   \code{StokesMatrix\_Channel} \cdot (u,v,\psi) 
+///   + \code{StokesAffine\_Channel} = 0,
+/// \]
+/// so we have to multiply \code{StokesAffine\_Channel} with $-1$ to get a 
+/// right-hand-side.
+double[] RHS = StokesAffine\_Channel.CloneAs();\newline 
+RHS.ScaleV(-1.0);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// In order to store our solution, we have to create DG fields:
+SinglePhaseField u               = new SinglePhaseField(VelBChannel,"u");\newline 
+SinglePhaseField v               = new SinglePhaseField(VelBChannel,"v");\newline 
+SinglePhaseField psi             = new SinglePhaseField(PsiBChannel,"psi");\newline 
+CoordinateVector SolutionChannel = new CoordinateVector(u,v,psi);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Solve the linear system using a direct method:
+StokesMatrix\_Channel.Solve\_Direct(SolutionChannel, RHS);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We export the solution to a Tecplot file:
+//Tecplot.PlotFields(new DGField[] \{u,v,psi\}, "C:\textbackslash \textbackslash tmp\textbackslash \textbackslash Channel", 0.0, 4);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \emph{TODO}: Use Visit (or any other visualization software)
+/// to inspect the solution!
+ }
+\BoSSSexe
+\BoSSScmd{
+/// %=====================================
+/// \section{Advanced topics}
+/// %=====================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// %=====================================
+/// \subsection{Stokes flow behind a grid}
+/// %=====================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We use the following setting:
+/// \begin{align*}
+///     \Omega    := & (0,5) \times (-2,2) \\
+///     \Gamma_N  := & \{ (x,y) | \ x = 5 \} , \\
+///     \Gamma_D  := & \partial \Omega \setminus \Gamma_D , \\
+///     \vec{u}_D := & (1 - (2 (y - \operatorname{floor}(y)) - 1)^2, 0), \\
+/// \end{align*}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// So, the boundary functions are:
+Func<double[],bool> IsDirichletBndy\_GridFlow \newline 
+\btab \btab = (X => Math.Abs(X[0] - 5) > 1.0e-10); \newline 
+Func<double[],double[]> UDiri\_GridFlow \newline 
+\btab \btab = (X => new double[2] \{ 1.0 - (2*(X[1] - Math.Floor(X[1])) - 1).Pow2(),\newline 
+\btab \btab \btab \btab \btab \btab \btab \btab 0\});
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \emph{TODO}: the rest is for you! One hint: in $y$-direction, use some 
+/// spacing so that you have cell boundaries at (least at) $y = -1, 0, 1$.
+ }
+\BoSSSexe

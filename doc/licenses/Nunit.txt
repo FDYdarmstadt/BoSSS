@@ -1,0 +1,6 @@
+Nunit 2.6 is licenced under the NUNIT-licence (similar to zlib-licence)
+see
+../../libs/NUnit-2.6.0.12051/licence.txt
+
+
+Releases of NUNIT from version 3 on are licenced under the MIT licence
