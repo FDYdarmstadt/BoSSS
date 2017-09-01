@@ -1,11 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26430.12
+VisualStudioVersion = 15.0.26730.12
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MatrixVisualizer", "MatrixVisualizer\MatrixVisualizer\MatrixVisualizer.csproj", "{D3236075-D21F-4D3A-AE49-A6C485933BB5}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Platform", "..\public\L1-platform\BoSSS.Platform\BoSSS.Platform.csproj", "{B7D5F7C7-EA9F-4506-AB69-C3CD2AA8C938}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MPI.Wrappers", "..\ilPSP\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj", "{DD9BF776-38CA-4FC9-8F42-5ED700BDE7AD}"
 EndProject
@@ -25,10 +23,6 @@ Global
 		{D3236075-D21F-4D3A-AE49-A6C485933BB5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D3236075-D21F-4D3A-AE49-A6C485933BB5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D3236075-D21F-4D3A-AE49-A6C485933BB5}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B7D5F7C7-EA9F-4506-AB69-C3CD2AA8C938}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B7D5F7C7-EA9F-4506-AB69-C3CD2AA8C938}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B7D5F7C7-EA9F-4506-AB69-C3CD2AA8C938}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B7D5F7C7-EA9F-4506-AB69-C3CD2AA8C938}.Release|Any CPU.Build.0 = Release|Any CPU
 		{DD9BF776-38CA-4FC9-8F42-5ED700BDE7AD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{DD9BF776-38CA-4FC9-8F42-5ED700BDE7AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DD9BF776-38CA-4FC9-8F42-5ED700BDE7AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -48,5 +42,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A380931C-AEE5-4542-9659-BB657ACAFB55}
 	EndGlobalSection
 EndGlobal
