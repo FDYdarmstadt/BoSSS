@@ -48,11 +48,6 @@ namespace BoSSS.Application.ZwoLsTest {
 
         static void Main(string[] args) {
             XQuadFactoryHelper.CheckQuadRules = true;
-
-            AllUpTest.SetUp();
-            AllUpTest.AllUp(0.0d, 1, false);
-            return;
-
             BoSSS.Solution.Application._Main(
                 args,
                 true,

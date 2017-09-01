@@ -36,12 +36,6 @@ namespace NSE_SIMPLE {
     public partial class NSE_SIMPLEMain : BoSSS.Solution.Application<SIMPLEControl> {
 
         static void Main(string[] args) {
-
-            NSE_SIMPLE.NUnitTest.Init();
-            NSE_SIMPLE.NUnitTest.LowMachSteadyCouetteWithTemperatureGradientTest();
-            NSE_SIMPLE.NUnitTest.Cleanup();
-            return;
-
             _Main(args, false, null, delegate () {
                 NSE_SIMPLEMain p = new NSE_SIMPLEMain();
                 return p;
