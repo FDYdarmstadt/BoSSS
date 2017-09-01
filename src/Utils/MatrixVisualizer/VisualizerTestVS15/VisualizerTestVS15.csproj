@@ -54,15 +54,15 @@
       <Project>{8e6d8f23-623f-4204-b4ab-a088c0cd83aa}</Project>
       <Name>ilPSP</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\public\L1-platform\BoSSS.Platform\BoSSS.Platform.csproj">
+    <ProjectReference Include="..\..\..\L1-platform\BoSSS.Platform\BoSSS.Platform.csproj">
       <Project>{b7d5f7c7-ea9f-4506-ab69-c3cd2aa8c938}</Project>
       <Name>BoSSS.Platform</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\public\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj">
+    <ProjectReference Include="..\..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj">
       <Project>{17a60fba-20b4-451d-98e1-8d742f368569}</Project>
       <Name>BoSSS.Foundation</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\public\L3-solution\BoSSS.Solution\BoSSS.Solution.csproj">
+    <ProjectReference Include="..\..\..\L3-solution\BoSSS.Solution\BoSSS.Solution.csproj">
       <Project>{df7f5abd-e606-41cd-beef-31a95d136dea}</Project>
       <Name>BoSSS.Solution</Name>
     </ProjectReference>
