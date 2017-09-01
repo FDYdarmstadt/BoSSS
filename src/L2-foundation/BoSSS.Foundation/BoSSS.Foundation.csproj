@@ -255,23 +255,23 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\ilPSP\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj">
+    <ProjectReference Include="..\..\ilPSP\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj">
       <Project>{DD9BF776-38CA-4FC9-8F42-5ED700BDE7AD}</Project>
       <Name>MPI.Wrappers</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\ilPSP\layer_1.2-ilPSP\ilPSP.Connectors.Matlab\ilPSP.Connectors.Matlab.csproj">
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.Connectors.Matlab\ilPSP.Connectors.Matlab.csproj">
       <Project>{6886abb3-ce89-4537-9f2a-25f926d1840b}</Project>
       <Name>ilPSP.Connectors.Matlab</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.MUMPS\ilPSP.LinSolvers.MUMPS.csproj">
-      <Project>{e8431e63-0c43-4457-829f-c8a435c0c2ba}</Project>
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.MUMPS\ilPSP.LinSolvers.MUMPS.csproj">
+      <Project>{757e59f0-53bf-4c0d-87b3-3329161cb148}</Project>
       <Name>ilPSP.LinSolvers.MUMPS</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.PARDISO\ilPSP.LinSolvers.PARDISO.csproj">
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.PARDISO\ilPSP.LinSolvers.PARDISO.csproj">
       <Project>{db9ca35d-9980-462a-85cc-cb33dcfd5a28}</Project>
       <Name>ilPSP.LinSolvers.PARDISO</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj">
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj">
       <Project>{8E6D8F23-623F-4204-B4AB-A088C0CD83AA}</Project>
       <Name>ilPSP</Name>
     </ProjectReference>
@@ -279,7 +279,7 @@
       <Project>{B7D5F7C7-EA9F-4506-AB69-C3CD2AA8C938}</Project>
       <Name>BoSSS.Platform</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.monkey\ilPSP.LinSolvers.monkey.csproj">
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.monkey\ilPSP.LinSolvers.monkey.csproj">
       <Project>{B18AEDC3-C7A5-4DA6-ABD3-E981B002ADDE}</Project>
       <Name>ilPSP.LinSolvers.monkey</Name>
     </ProjectReference>

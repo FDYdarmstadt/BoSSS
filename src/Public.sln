@@ -1,91 +1,91 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26430.16
+VisualStudioVersion = 15.0.26730.12
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "L0", "L0", "{1EF7CF54-6462-4601-8335-13F5B16BFD2C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "L1", "L1", "{1F14C418-7A55-4C88-985E-4219C75C5488}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Platform", "public\L1-platform\BoSSS.Platform\BoSSS.Platform.csproj", "{B7D5F7C7-EA9F-4506-AB69-C3CD2AA8C938}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Platform", "L1-platform\BoSSS.Platform\BoSSS.Platform.csproj", "{B7D5F7C7-EA9F-4506-AB69-C3CD2AA8C938}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "L2", "L2", "{C032D6A5-9425-4C4E-A559-43067FD792C0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Foundation", "public\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj", "{17A60FBA-20B4-451D-98E1-8D742F368569}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Foundation", "L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj", "{17A60FBA-20B4-451D-98E1-8D742F368569}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Foundation.Grid", "public\L2-foundation\BoSSS.Foundation.Grid\BoSSS.Foundation.Grid.csproj", "{13585226-5046-494D-947C-B97479566081}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Foundation.Grid", "L2-foundation\BoSSS.Foundation.Grid\BoSSS.Foundation.Grid.csproj", "{13585226-5046-494D-947C-B97479566081}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Foundation.XDG", "public\L2-foundation\BoSSS.Foundation.XDG\BoSSS.Foundation.XDG.csproj", "{9A8CDC1F-64F7-441E-849D-66F2C56600F2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Foundation.XDG", "L2-foundation\BoSSS.Foundation.XDG\BoSSS.Foundation.XDG.csproj", "{9A8CDC1F-64F7-441E-849D-66F2C56600F2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Foundation.SpecFEM", "public\L2-foundation\BoSSS.Foundation.SpecFEM\BoSSS.Foundation.SpecFEM.csproj", "{9D01688E-9372-4185-ADCF-D64D47F3A44A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Foundation.SpecFEM", "L2-foundation\BoSSS.Foundation.SpecFEM\BoSSS.Foundation.SpecFEM.csproj", "{9D01688E-9372-4185-ADCF-D64D47F3A44A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "L3", "L3", "{3303F7B6-36AF-43F0-AD12-217ADDE38B43}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Solution", "public\L3-solution\BoSSS.Solution\BoSSS.Solution.csproj", "{DF7F5ABD-E606-41CD-BEEF-31A95D136DEA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Solution", "L3-solution\BoSSS.Solution\BoSSS.Solution.csproj", "{DF7F5ABD-E606-41CD-BEEF-31A95D136DEA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Solution.Tecplot", "public\L3-solution\BoSSS.Solution.Tecplot\BoSSS.Solution.Tecplot.csproj", "{D0546422-EC92-4964-82E9-8EE819A2F786}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Solution.Tecplot", "L3-solution\BoSSS.Solution.Tecplot\BoSSS.Solution.Tecplot.csproj", "{D0546422-EC92-4964-82E9-8EE819A2F786}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Solution.GridImport", "public\L3-solution\BoSSS.Solution.GridImport\BoSSS.Solution.GridImport.csproj", "{28E4A331-ECA2-43A6-A11F-6D6A5E410434}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Solution.GridImport", "L3-solution\BoSSS.Solution.GridImport\BoSSS.Solution.GridImport.csproj", "{28E4A331-ECA2-43A6-A11F-6D6A5E410434}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Solution.Statistic", "public\L3-solution\BoSSS.Solution.Statistic\BoSSS.Solution.Statistic.csproj", "{45BCA5F9-27E7-43C0-B021-4312BF442C7D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Solution.Statistic", "L3-solution\BoSSS.Solution.Statistic\BoSSS.Solution.Statistic.csproj", "{45BCA5F9-27E7-43C0-B021-4312BF442C7D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Solution.Gnuplot", "public\L3-solution\BoSSS.Solution.Gnuplot\BoSSS.Solution.Gnuplot.csproj", "{D4FADB7C-0B11-4F41-A97A-146DC1F7034E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Solution.Gnuplot", "L3-solution\BoSSS.Solution.Gnuplot\BoSSS.Solution.Gnuplot.csproj", "{D4FADB7C-0B11-4F41-A97A-146DC1F7034E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Solution.NSECommon", "public\L3-solution\BoSSS.Solution.NSECommon\BoSSS.Solution.NSECommon.csproj", "{E56B9CE4-14DC-4256-A337-46E5D298B722}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Solution.NSECommon", "L3-solution\BoSSS.Solution.NSECommon\BoSSS.Solution.NSECommon.csproj", "{E56B9CE4-14DC-4256-A337-46E5D298B722}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Solution.ASCIIExport", "public\L3-solution\BoSSS.Solution.ASCIIExport\BoSSS.Solution.ASCIIExport.csproj", "{ED2E6C6E-1517-4AAD-B3C6-1B56C5CD9828}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Solution.ASCIIExport", "L3-solution\BoSSS.Solution.ASCIIExport\BoSSS.Solution.ASCIIExport.csproj", "{ED2E6C6E-1517-4AAD-B3C6-1B56C5CD9828}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Solution.Multigrid", "public\L3-solution\BoSSS.Solution.Multigrid\BoSSS.Solution.Multigrid.csproj", "{EFE8C307-09BC-4F58-B991-6EF8FD6D5EFF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Solution.Multigrid", "L3-solution\BoSSS.Solution.Multigrid\BoSSS.Solution.Multigrid.csproj", "{EFE8C307-09BC-4F58-B991-6EF8FD6D5EFF}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "L4", "L4", "{05BAB864-D412-476C-A592-C69E399CB15A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{0AF02196-DCBF-4066-AC5A-CC14525B390C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DerivativeTest", "public\L4-application\DerivativeTest\DerivativeTest.csproj", "{614675F8-757D-4CFF-AE3F-75C4519DA17C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DerivativeTest", "L4-application\DerivativeTest\DerivativeTest.csproj", "{614675F8-757D-4CFF-AE3F-75C4519DA17C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuadratureAndProjectionTest", "public\L4-application\QuadratureTest\QuadratureAndProjectionTest.csproj", "{689A4771-E030-4C77-BA63-D9148F61A616}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuadratureAndProjectionTest", "L4-application\QuadratureTest\QuadratureAndProjectionTest.csproj", "{689A4771-E030-4C77-BA63-D9148F61A616}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElementTests", "public\L4-application\ElementTests\ElementTests.csproj", "{614675F8-757D-4CFF-AE3F-ABC1519DA17C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElementTests", "L4-application\ElementTests\ElementTests.csproj", "{614675F8-757D-4CFF-AE3F-ABC1519DA17C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XDGTest", "public\L4-application\XDGTest\XDGTest.csproj", "{3813BB68-2237-4CC0-B911-F8113F00A4AE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XDGTest", "L4-application\XDGTest\XDGTest.csproj", "{3813BB68-2237-4CC0-B911-F8113F00A4AE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZwoLsTest", "public\L4-application\ZwoLsTest\ZwoLsTest.csproj", "{CF28BB64-130D-4C5A-9031-0604F0AB01C6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZwoLsTest", "L4-application\ZwoLsTest\ZwoLsTest.csproj", "{CF28BB64-130D-4C5A-9031-0604F0AB01C6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XdgNastyLevsetLocationTest", "public\L4-application\XdgNastyLevsetLocationTest\XdgNastyLevsetLocationTest.csproj", "{1ABCC828-56E1-4388-9EF0-02F0C512AD75}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XdgNastyLevsetLocationTest", "L4-application\XdgNastyLevsetLocationTest\XdgNastyLevsetLocationTest.csproj", "{1ABCC828-56E1-4388-9EF0-02F0C512AD75}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpecFEM", "public\L4-application\SpecFEM\SpecFEM.csproj", "{FEF0E358-58E8-41A9-98FD-0E1DE0F77E12}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpecFEM", "L4-application\SpecFEM\SpecFEM.csproj", "{FEF0E358-58E8-41A9-98FD-0E1DE0F77E12}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MPITest", "public\L4-application\MPITest\MPITest.csproj", "{519A47EC-F7C6-4C94-B013-305145F2E81E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MPITest", "L4-application\MPITest\MPITest.csproj", "{519A47EC-F7C6-4C94-B013-305145F2E81E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CutCellQuadrature", "public\L4-application\CutCellQuadrature\CutCellQuadrature.csproj", "{6E696838-EE09-459F-B5B0-7EE0D709C3D6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CutCellQuadrature", "L4-application\CutCellQuadrature\CutCellQuadrature.csproj", "{6E696838-EE09-459F-B5B0-7EE0D709C3D6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LTS-NUnit", "public\L4-application\LTS-NUnit\LTS-NUnit.csproj", "{FE748C89-3989-4742-811B-80F8B924FD35}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LTS-NUnit", "L4-application\LTS-NUnit\LTS-NUnit.csproj", "{FE748C89-3989-4742-811B-80F8B924FD35}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ipViscosity", "public\L4-application\ipViscosity\ipViscosity.csproj", "{09CCE864-9BAE-4660-A123-F3F3414B6173}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ipViscosity", "L4-application\ipViscosity\ipViscosity.csproj", "{09CCE864-9BAE-4660-A123-F3F3414B6173}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MultigridTest", "public\L4-application\MultigridTest\MultigridTest.csproj", "{09CCE864-12A3-4660-AFF9-F3F3434B1173}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MultigridTest", "L4-application\MultigridTest\MultigridTest.csproj", "{09CCE864-12A3-4660-AFF9-F3F3434B1173}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjectionTest", "public\L4-application\ProjectionTest\ProjectionTest.csproj", "{9127EC1E-239E-463E-9BDD-5B0103ABEA0F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjectionTest", "L4-application\ProjectionTest\ProjectionTest.csproj", "{9127EC1E-239E-463E-9BDD-5B0103ABEA0F}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "utils", "utils", "{04599CA7-506E-42E8-A041-45AD6D3B64D1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.PlotGenerator", "public\L4-application\PlotGenerator\BoSSS.PlotGenerator.csproj", "{383DE201-6871-437E-93C6-DDD41694BBAF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.PlotGenerator", "L4-application\PlotGenerator\BoSSS.PlotGenerator.csproj", "{383DE201-6871-437E-93C6-DDD41694BBAF}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "incompressible", "incompressible", "{92405EB8-3356-435E-9969-26756C41A843}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIMPLE", "public\L4-application\NSE_SIMPLE\SIMPLE.csproj", "{CD6004B7-F359-4EE4-AF0D-123A0C2B5BDD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SIMPLE", "L4-application\NSE_SIMPLE\SIMPLE.csproj", "{CD6004B7-F359-4EE4-AF0D-123A0C2B5BDD}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "compressible", "compressible", "{BBE501CE-3A65-4E10-B70A-CA18FC81EEF4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CNS", "public\L4-application\CNS\CNS.csproj", "{8BD7843E-8191-40B3-B208-75EC766A99FD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CNS", "L4-application\CNS\CNS.csproj", "{8BD7843E-8191-40B3-B208-75EC766A99FD}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "multiphase", "multiphase", "{D9C6B595-1F33-48F4-A87F-13C7D35F5199}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{4AA85AB7-71B5-4BBE-8E39-FF45B33CC328}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ipPoisson", "public\L4-application\ipPoisson\ipPoisson.csproj", "{09CCE864-9BAE-4660-AFF9-F3F3414B6173}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ipPoisson", "L4-application\ipPoisson\ipPoisson.csproj", "{09CCE864-9BAE-4660-AFF9-F3F3414B6173}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScalarTransport", "public\L4-application\ScalarTransport\ScalarTransport.csproj", "{3CF905A3-B13B-43E2-99A2-7692C534CAD5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScalarTransport", "L4-application\ScalarTransport\ScalarTransport.csproj", "{3CF905A3-B13B-43E2-99A2-7692C534CAD5}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ilPSP-main", "ilPSP-main", "{B1F58882-A2A7-428C-A42B-EBDC55AB4C7F}"
 EndProject
@@ -103,13 +103,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ilPSP.Connectors.Matlab", "
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ilPSP-tests", "ilPSP-tests", "{4ACD8F02-9AEF-4011-BA0D-49AED5EBEB88}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TutorialTests", "public\L4-application\TutorialTests\TutorialTests.csproj", "{FE981AC8-58E8-41A9-98FD-0E1DE0F77E12}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TutorialTests", "L4-application\TutorialTests\TutorialTests.csproj", "{FE981AC8-58E8-41A9-98FD-0E1DE0F77E12}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "BoSSSpad", "BoSSSpad", "{D8CE9C4A-43B5-44F0-B6B7-23A4E1EE8AF7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSSpad", "public\L4-application\BoSSSpad\BoSSSpad.csproj", "{E1351588-3BC0-418A-BFA2-7CE3391AA167}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSSpad", "L4-application\BoSSSpad\BoSSSpad.csproj", "{E1351588-3BC0-418A-BFA2-7CE3391AA167}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DatabaseTests", "public\L4-application\DatabaseTests\DatabaseTests.csproj", "{19EF28E0-A4F1-40C7-AFFC-9AC1968295A2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DatabaseTests", "L4-application\DatabaseTests\DatabaseTests.csproj", "{19EF28E0-A4F1-40C7-AFFC-9AC1968295A2}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ilPSP.LinSolvers", "ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers\ilPSP.LinSolvers.csproj", "{45EFF2BD-0BCC-4AEA-9E87-7D86D6423B0C}"
 EndProject
@@ -117,13 +117,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Utils", "Utils", "{3A4009EF
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MiniBatchProcessor", "Utils\MiniBatchProcessor\MiniBatchProcessor.csproj", "{DB8A3A70-DBF2-48E7-824C-0829DB2F8E1B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IBM_Solver", "public\L4-application\IBM_Solver\IBM_Solver.csproj", "{12970F63-547F-4BE6-9AF9-2F3EEB00A877}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IBM_Solver", "L4-application\IBM_Solver\IBM_Solver.csproj", "{12970F63-547F-4BE6-9AF9-2F3EEB00A877}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ilPSP.LinSolvers.MUMPS", "ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.MUMPS\ilPSP.LinSolvers.MUMPS.csproj", "{E8431E63-0C43-4457-829F-C8A435C0C2BA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ilPSP.LinSolvers.MUMPS", "ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.MUMPS\ilPSP.LinSolvers.MUMPS.csproj", "{757E59F0-53BF-4C0D-87B3-3329161CB148}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Solution.XdgTimestepping", "public\L3-solution\BoSSS.Solution.XdgTimestepping\BoSSS.Solution.XdgTimestepping.csproj", "{D8A961C8-75A9-4ECD-8627-C598697E7318}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Solution.XdgTimestepping", "L3-solution\BoSSS.Solution.XdgTimestepping\BoSSS.Solution.XdgTimestepping.csproj", "{D8A961C8-75A9-4ECD-8627-C598697E7318}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ALTSTests", "public\L4-application\ALTSTests\ALTSTests.csproj", "{76EF162B-6F5F-48B7-8C24-40FB80D9C8C1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ALTSTests", "L4-application\ALTSTests\ALTSTests.csproj", "{76EF162B-6F5F-48B7-8C24-40FB80D9C8C1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -303,10 +303,10 @@ Global
 		{12970F63-547F-4BE6-9AF9-2F3EEB00A877}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{12970F63-547F-4BE6-9AF9-2F3EEB00A877}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{12970F63-547F-4BE6-9AF9-2F3EEB00A877}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E8431E63-0C43-4457-829F-C8A435C0C2BA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E8431E63-0C43-4457-829F-C8A435C0C2BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E8431E63-0C43-4457-829F-C8A435C0C2BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E8431E63-0C43-4457-829F-C8A435C0C2BA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{757E59F0-53BF-4C0D-87B3-3329161CB148}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{757E59F0-53BF-4C0D-87B3-3329161CB148}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{757E59F0-53BF-4C0D-87B3-3329161CB148}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{757E59F0-53BF-4C0D-87B3-3329161CB148}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D8A961C8-75A9-4ECD-8627-C598697E7318}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D8A961C8-75A9-4ECD-8627-C598697E7318}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D8A961C8-75A9-4ECD-8627-C598697E7318}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -370,8 +370,11 @@ Global
 		{45EFF2BD-0BCC-4AEA-9E87-7D86D6423B0C} = {B1F58882-A2A7-428C-A42B-EBDC55AB4C7F}
 		{DB8A3A70-DBF2-48E7-824C-0829DB2F8E1B} = {3A4009EF-FAE4-4514-BC3A-2161437194CE}
 		{12970F63-547F-4BE6-9AF9-2F3EEB00A877} = {92405EB8-3356-435E-9969-26756C41A843}
-		{E8431E63-0C43-4457-829F-C8A435C0C2BA} = {B1F58882-A2A7-428C-A42B-EBDC55AB4C7F}
+		{757E59F0-53BF-4C0D-87B3-3329161CB148} = {B1F58882-A2A7-428C-A42B-EBDC55AB4C7F}
 		{D8A961C8-75A9-4ECD-8627-C598697E7318} = {3303F7B6-36AF-43F0-AD12-217ADDE38B43}
 		{76EF162B-6F5F-48B7-8C24-40FB80D9C8C1} = {0AF02196-DCBF-4066-AC5A-CC14525B390C}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B302C86E-A207-460C-8E9F-13EA258F7D8B}
 	EndGlobalSection
 EndGlobal

@@ -170,11 +170,11 @@
       <Project>{13585226-5046-494D-947C-B97479566081}</Project>
       <Name>BoSSS.Foundation.Grid</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\ilPSP\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj">
+    <ProjectReference Include="..\..\ilPSP\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj">
       <Project>{DD9BF776-38CA-4FC9-8F42-5ED700BDE7AD}</Project>
       <Name>MPI.Wrappers</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj">
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj">
       <Project>{8E6D8F23-623F-4204-B4AB-A088C0CD83AA}</Project>
       <Name>ilPSP</Name>
     </ProjectReference>
@@ -186,7 +186,7 @@
       <Project>{17A60FBA-20B4-451D-98E1-8D742F368569}</Project>
       <Name>BoSSS.Foundation</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.monkey\ilPSP.LinSolvers.monkey.csproj">
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.monkey\ilPSP.LinSolvers.monkey.csproj">
       <Project>{B18AEDC3-C7A5-4DA6-ABD3-E981B002ADDE}</Project>
       <Name>ilPSP.LinSolvers.monkey</Name>
     </ProjectReference>

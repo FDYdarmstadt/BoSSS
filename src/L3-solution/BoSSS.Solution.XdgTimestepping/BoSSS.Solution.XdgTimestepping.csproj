@@ -44,15 +44,15 @@
     <Compile Include="XdgTimesteppingBase.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\ilPSP\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj">
+    <ProjectReference Include="..\..\ilPSP\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj">
       <Project>{dd9bf776-38ca-4fc9-8f42-5ed700bde7ad}</Project>
       <Name>MPI.Wrappers</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.monkey\ilPSP.LinSolvers.monkey.csproj">
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.monkey\ilPSP.LinSolvers.monkey.csproj">
       <Project>{b18aedc3-c7a5-4da6-abd3-e981b002adde}</Project>
       <Name>ilPSP.LinSolvers.monkey</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj">
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj">
       <Project>{8e6d8f23-623f-4204-b4ab-a088c0cd83aa}</Project>
       <Name>ilPSP</Name>
     </ProjectReference>
