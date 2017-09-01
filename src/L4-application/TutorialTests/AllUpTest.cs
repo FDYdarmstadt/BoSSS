@@ -45,7 +45,7 @@ namespace BoSSS.Application.TutorialTests {
             BoSSS.Solution.Application.InitMPI(new string[0]);
         }
 
-        static string DirectoryOffset = Path.Combine("..", "..", "..", "..", "..", "..", "doc", "handbook");
+        static string DirectoryOffset = Path.Combine("..", "..", "..", "..", "..", "doc", "handbook");
 
         /// <summary>
         /// Runs all the worksheets contained in the BoSSS handbook.

@@ -33,6 +33,13 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="BoSSS.Foundation">
+      <HintPath>..\..\..\L2-foundation\BoSSS.Foundation\bin\Debug\BoSSS.Foundation.dll</HintPath>
+    </Reference>
+    <Reference Include="BoSSS.Platform, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\L1-platform\BoSSS.Platform\bin\Debug\BoSSS.Platform.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
@@ -62,14 +69,6 @@
     <ProjectReference Include="..\..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj">
       <Project>{8e6d8f23-623f-4204-b4ab-a088c0cd83aa}</Project>
       <Name>ilPSP</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\public\L1-platform\BoSSS.Platform\BoSSS.Platform.csproj">
-      <Project>{b7d5f7c7-ea9f-4506-ab69-c3cd2aa8c938}</Project>
-      <Name>BoSSS.Platform</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\public\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj">
-      <Project>{17a60fba-20b4-451d-98e1-8d742f368569}</Project>
-      <Name>BoSSS.Foundation</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
