@@ -28,17 +28,37 @@ namespace MiniBatchProcessor {
     /// </summary>
     public static class ClientAndServer {
 
+        static Random rnd;
+
+
         /// <summary>
         /// ctor.
         /// </summary>
         static ClientAndServer() {
             config = new Configuration();
+            rnd = new Random();
+
         }
         
         /// <summary>
         /// %.
         /// </summary>
         public static Configuration config;
+
+        /// <summary>
+        /// If an IO operation fails, a randomized time, in milliseconds, within a certain range, before the operation should be tried again.
+        /// </summary>
+        static public int IOwaitTime {
+            get {
+                return 500 + (int)(Math.Round(rnd.NextDouble() * 500));
+            }
+        }
+       
+
+        /// <summary>
+        /// Maximum number of times an IO Operation is re-tryed.
+        /// </summary>
+        public const int IO_OPS_MAX_RETRY_COUNT = 5;
 
         /// <summary>
         /// Directory for jobs that are waiting.

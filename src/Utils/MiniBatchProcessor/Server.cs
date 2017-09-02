@@ -26,9 +26,6 @@ using System.Threading.Tasks;
 
 namespace MiniBatchProcessor {
 
-
-
-
     /// <summary>
     /// Server functionality.
     /// </summary>
@@ -192,10 +189,20 @@ namespace MiniBatchProcessor {
                 var Dst = Path.Combine(BaseDir, ClientAndServer.FINISHED_DIR, nmn);
 
                 if (File.Exists(Src)) {
-                    try {
-                        File.Move(Src, Dst);
-                    } catch (Exception e) {
-                        Console.Error.WriteLine("{0} while trying to move file '{1}' to '{2}', message: {3}.", e.GetType().Name, Src, Dst, e.Message);
+                    int ReTryCount = 0;
+                    while (true) {
+                        try {
+                            File.Move(Src, Dst);
+                            return;
+                        } catch (Exception e) {
+                            if (ReTryCount < ClientAndServer.IO_OPS_MAX_RETRY_COUNT) {
+                                ReTryCount++;
+                                Thread.Sleep(ClientAndServer.IOwaitTime);
+                            } else {
+                                Console.Error.WriteLine("{0} while trying to move file '{1}' to '{2}', message: {3}.", e.GetType().Name, Src, Dst, e.Message);
+                                return;
+                            }
+                        }
                     }
                 }
             }
@@ -208,10 +215,19 @@ namespace MiniBatchProcessor {
                 var Dst = Path.Combine(BaseDir, ClientAndServer.WORK_DIR, nmn);
 
                 if (File.Exists(Src)) {
-                    try {
-                        File.Move(Src, Dst);
-                    } catch (Exception e) {
-                        Console.Error.WriteLine("{0} while trying to move file '{1}' to '{2}', message: {3}.", e.GetType().Name, Src, Dst, e.Message);
+                    int ReTryCount = 0;
+                    while (true) {
+                        try {
+                            File.Move(Src, Dst);
+                            return;
+                        } catch (Exception e) {
+                            if (ReTryCount < ClientAndServer.IO_OPS_MAX_RETRY_COUNT) {
+                                ReTryCount++;
+                                Thread.Sleep(ClientAndServer.IOwaitTime);
+                            } else {
+                                Console.Error.WriteLine("{0} while trying to move file '{1}' to '{2}', message: {3}.", e.GetType().Name, Src, Dst, e.Message);
+                                return;
+                            }                        }
                     }
                 }
             }
@@ -432,14 +448,24 @@ namespace MiniBatchProcessor {
                             p.StartInfo = psi;
 
                             p.OutputDataReceived += delegate (object sender, DataReceivedEventArgs e) {
-                                stdout.WriteLine(e.Data);
-                                stdout.Flush();
-                                return;
+                                try {
+                                    stdout.WriteLine(e.Data);
+                                    stdout.Flush();
+                                    return;
+                                } catch (Exception ex) {
+                                    Server.LogMessage(string.Format("STDOUT file exception, unable to write " + e.Data + "; (job " + this.data.Name + ", " + ex.Message + ", " + ex.GetType().FullName + ")"));
+                                    return;
+                                }
                             };
                             p.ErrorDataReceived += delegate (object sender, DataReceivedEventArgs e) {
-                                stdout.WriteLine(e.Data);
-                                stdout.Flush();
-                                return;
+                                try {
+                                    stdout.WriteLine(e.Data);
+                                    stdout.Flush();
+                                    return;
+                                } catch (Exception ex) {
+                                    Server.LogMessage(string.Format("STDERR file exception, unable to write " + e.Data + "; (job " + this.data.Name + ", " + ex.Message + ", " + ex.GetType().FullName + ")"));
+                                    return;
+                                }
                             };
 
                             p.Start();
@@ -458,7 +484,9 @@ namespace MiniBatchProcessor {
                                 exit.Flush();
                             }
 
-
+                            // wait a little bit longer before streams get closed - sometimes it seems
+                            // stdout and stderr send data after process has exited.
+                            Thread.Sleep(5000);
 
                         } catch (Exception e) {
                             Server.LogMessage(string.Format("FAILED " + psi.FileName + " " + psi.Arguments + ": " + e.Message + " (" + e.GetType().FullName + ")"));

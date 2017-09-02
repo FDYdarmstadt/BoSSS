@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace MiniBatchProcessor {
@@ -85,43 +86,53 @@ namespace MiniBatchProcessor {
         /// Loads the job from some text file
         /// </summary>
         internal static JobData FromFile(string f) {
-            try {
-                int id = int.Parse(Path.GetFileNameWithoutExtension(f));
+            int ReTryCount = 0;
+            while (true) {
+                try {
+                    int id = int.Parse(Path.GetFileNameWithoutExtension(f));
 
-                using (var fStr = new StreamReader(new FileStream(f, FileMode.Open, FileAccess.Read, FileShare.None))) {
-                    JobData J = new JobData();
+                    using (var fStr = new StreamReader(new FileStream(f, FileMode.Open, FileAccess.Read, FileShare.None))) {
+                        JobData J = new JobData();
 
-                    J.m_ID = id;
-                    
-                    J.Name = fStr.ReadLine();
-                    J.ExeDir = fStr.ReadLine();
-                    if(string.IsNullOrWhiteSpace(J.ExeDir)) {
-                        J.ExeDir = null;
+                        J.m_ID = id;
+
+                        J.Name = fStr.ReadLine();
+                        J.ExeDir = fStr.ReadLine();
+                        if (string.IsNullOrWhiteSpace(J.ExeDir)) {
+                            J.ExeDir = null;
+                        }
+                        J.NoOfProcs = Convert.ToInt32(fStr.ReadLine());
+                        J.exefile = fStr.ReadLine();
+
+                        int NoOfArgs = int.Parse(fStr.ReadLine());
+                        J.Arguments = new string[NoOfArgs];
+                        for (int j = 0; j < NoOfArgs; j++) {
+                            J.Arguments[j] = fStr.ReadLine();
+                        }
+
+                        int NoOfEnvVars = int.Parse(fStr.ReadLine());
+                        J.EnvVars = new Tuple<string, string>[NoOfEnvVars];
+                        for (int j = 0; j < NoOfEnvVars; j++) {
+                            J.EnvVars[j] = new Tuple<string, string>(fStr.ReadLine(), fStr.ReadLine());
+                        }
+
+                        J.SubmitTime = File.GetCreationTime(f);
+
+                        return J;
                     }
-                    J.NoOfProcs = Convert.ToInt32(fStr.ReadLine());
-                    J.exefile = fStr.ReadLine();
-
-                    int NoOfArgs = int.Parse(fStr.ReadLine());
-                    J.Arguments = new string[NoOfArgs];
-                    for(int j = 0; j < NoOfArgs; j++) {
-                        J.Arguments[j] = fStr.ReadLine();
+                } catch (Exception E) {
+                    if (ReTryCount < ClientAndServer.IO_OPS_MAX_RETRY_COUNT) {
+                        ReTryCount++;
+                        Thread.Sleep(ClientAndServer.IOwaitTime);
+                    } else {
+                        Console.Error.WriteLine("Exception {0} reading job file '{1}': {2}", E.GetType().Name, f, E.Message);
+                        return null;
                     }
-
-                    int NoOfEnvVars = int.Parse(fStr.ReadLine());
-                    J.EnvVars = new Tuple<string, string>[NoOfEnvVars];
-                    for (int j = 0; j < NoOfEnvVars; j++) {
-                        J.EnvVars[j] = new Tuple<string, string>(fStr.ReadLine(), fStr.ReadLine());
-                    }
-
-                    J.SubmitTime = File.GetCreationTime(f);
-
-                    return J;
                 }
-            } catch (Exception E) {
-                Console.Error.WriteLine("Exception {0} reading job file '{1}': {2}", E.GetType().Name, f, E.Message);
-                return null;
             }
         }
+
+        
 
 
         /// <summary>
@@ -132,31 +143,46 @@ namespace MiniBatchProcessor {
             string RelDir = ClientAndServer.QUEUE_DIR;
             string f = Path.Combine(ClientAndServer.config.BatchInstructionDir, RelDir, this.ID.ToString());
 
-            try {
-                using (var fStr = new StreamWriter(new FileStream(f, FileMode.CreateNew, FileAccess.Write, FileShare.None))) {
+            int ReTryCount = 0;
+            while (true) {
 
-                    fStr.WriteLine(Name);
-                    fStr.WriteLine(ExeDir != null ? ExeDir : "");
-                    fStr.WriteLine(NoOfProcs);
-                    fStr.WriteLine(exefile);
+                try {
+                    using (var fStr = new StreamWriter(new FileStream(f, FileMode.CreateNew, FileAccess.Write, FileShare.None))) {
 
-                    fStr.WriteLine(this.Arguments.Length);
-                    for (int i = 0; i < this.Arguments.Length; i++) {
-                        fStr.WriteLine(Arguments[i]);
+                        fStr.WriteLine(Name);
+                        fStr.WriteLine(ExeDir != null ? ExeDir : "");
+                        fStr.WriteLine(NoOfProcs);
+                        fStr.WriteLine(exefile);
+
+                        fStr.WriteLine(this.Arguments.Length);
+                        for (int i = 0; i < this.Arguments.Length; i++) {
+                            fStr.WriteLine(Arguments[i]);
+                        }
+
+                        fStr.WriteLine(this.EnvVars.Length);
+                        for (int i = 0; i < this.EnvVars.Length; i++) {
+                            fStr.WriteLine(this.EnvVars[i].Item1);
+                            fStr.WriteLine(this.EnvVars[i].Item2);
+                        }
+
+                        return;
                     }
+                } catch (Exception e) {
+                    try {
+                        if (File.Exists(f))
+                            // try to avoid invalid files
+                            File.Delete(f);
+                    } catch (Exception) {
 
-                    fStr.WriteLine(this.EnvVars.Length);
-                    for (int i = 0; i < this.EnvVars.Length; i++) {
-                        fStr.WriteLine(this.EnvVars[i].Item1);
-                        fStr.WriteLine(this.EnvVars[i].Item2);
                     }
-
+                    
+                    if (ReTryCount < ClientAndServer.IO_OPS_MAX_RETRY_COUNT) {
+                        ReTryCount++;
+                        Thread.Sleep(ClientAndServer.IOwaitTime);
+                    } else {
+                        throw e;
+                    }
                 }
-            } catch (Exception e) {
-                if (File.Exists(f))
-                    // try to avoid invalid files
-                    File.Delete(f);
-                throw e;
             }
         }
     }
