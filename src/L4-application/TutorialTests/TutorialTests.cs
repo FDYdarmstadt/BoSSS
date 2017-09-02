@@ -24,7 +24,7 @@ namespace BoSSS.Application.TutorialTests {
         
         static void Main(string[] args) {
             AllUpTest.TestFixtureSetUp();
-            //AllUpTest.RunWorksheets("quickStartCNS/IsentropicVortex.tex");
+            AllUpTest.RunWorksheets("quickStartCNS/IsentropicVortex.tex");
             AllUpTest.RunWorksheets("MetaJobManager/MetaJobManager.tex");
             //AllUpTest.RunWorksheets("quickStartIBM/channel.tex");
             //AllUpTest.RunWorksheets("tutorial2/uebung2tutorial.tex");
