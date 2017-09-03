@@ -1,0 +1,9 @@
+Create repo with one dummy commit
+
+First time:
+git remote add experimental git@github.com:FDYdarmstadt/BoSSS-experimental.git
+git fetch
+git subtree add --prefix=public experimental master
+
+Later:
+git subtree pull --prefix=public experimental master
