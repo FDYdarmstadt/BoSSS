@@ -7,3 +7,4 @@ git subtree add --prefix=public experimental master
 
 Later:
 git subtree pull --prefix=public experimental master
+subtree pull --prefix=public \\\dc1\bosss\root.git master
