@@ -1,0 +1,94 @@
+#ignore thumbnails created by windows
+Thumbs.db
+#Ignore files build by Visual Studio
+*.obj
+*.exe
+*.pdb
+*.user
+*.aps
+*.pch
+*.vspscc
+*_i.c
+*_p.c
+*.ncb
+*.suo
+*.tlb
+*.tlh
+*.bak
+*.cache
+*.ilk
+*.log
+*.sdf
+*.exp
+[Bb]in
+[Dd]ebug*/
+ipch/
+*.opensdf
+*.lib
+*.sbr
+obj/
+[Rr]elease*/
+_ReSharper*/
+[Tt]est[Rr]esult*
+*.sln.ide
+.vscode
+*~
+.vs
+# Ignore files gnereated by latex
+*.dvi
+*.pdf
+*.log
+*.lot
+*.lof
+*.nlo
+*.toc
+*.bak
+*.out
+*.sav
+*.prj
+*.aux
+*.bbl
+*.blg
+*.ps
+*.ilg
+*.nls
+*.synctex.gz
+# Ignore Tecplot - files
+*.plt
+*.lay
+# Ignore MacOS-systemfiles
+.DS_Store
+*.DS_Store
+*MAXOSX*/
+# Ignore Windows-Files
+desktop.ini
+# Some Backup files
+*.tex~
+# Mono files:
+*.pidb
+*.userprefs
+# monodevelop:
+*.resources
+#Help files
+*.chm
+#git mergetool, kdiff3
+*.orig
+#christina files
+*.jpg
+*.png
+_UpgradeReport_*/
+UpgradeLog.XML
+UpgradeLog.xml
+*.shfbproj_*
+# wsDBEv2 files
+*.bws.oldbin
+*.bws~.oldbin
+*.texbatch
+#doxygen
+doxygen_objdb_*.tmp
+html/
+latex/
+doxyerr.txt
+doxyout.txt
+# emacs-stuff
+auto/
