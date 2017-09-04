@@ -1,6 +1,6 @@
 #!/bin/sh
 
-OAuth="eddeaecbba99af7adff10e812cc1c7258cc16f8e"
+OAuth=$2
 tag="BoSSS-version$1"
 url="https://api.github.com/repos/FDYdarmstadt/BoSSS/releases"
 
