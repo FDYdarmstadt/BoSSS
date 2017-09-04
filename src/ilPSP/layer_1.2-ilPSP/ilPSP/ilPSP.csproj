@@ -97,6 +97,7 @@
     <Compile Include="MultidimensionalArray_Operators.cs" />
     <Compile Include="MultidimensionalArray_Tests.cs" />
     <Compile Include="NullLog.cs" />
+    <Compile Include="METIS.cs" />
     <Compile Include="Partitioning_Extensions.cs" />
     <Compile Include="SerialisationMessenger.cs" />
     <Compile Include="ISparseSolver.cs" />
