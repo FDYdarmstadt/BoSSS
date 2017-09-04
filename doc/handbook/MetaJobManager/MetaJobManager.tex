@@ -16,7 +16,7 @@
 	\item executing runs on your local machine, e.g. the quickstart guide of the \ac{cns}
 \end{itemize}
 
-\BoSSS  includes several tools which aid the advanced user in running simulations and organizing simulation results among multiple computers and/or compute clusters.
+\BoSSS ~includes several tools which aid the advanced user in running simulations and organizing simulation results among multiple computers and/or compute clusters.
 
 %In this tutorial, the following tasks will be illustrated:
 %\begin{itemize}
@@ -30,8 +30,8 @@ is to provide a universal interface to multiple \emph{job managers} (aka. \emph{
 By this interface, the user can run computations on remote and local systems directly from the \BoSSSpad{}.
 
 Furthermore, \BoSSSpad{}  provides a \emph{session table},
-which presents various statistics form all \emph{sessions} in the project
-(each time a simulation is run, a session is stored in the \BoSSS database).
+which presents various statistics from all \emph{sessions} in the project
+(each time a simulation is run, a session is stored in the \BoSSS ~database).
 
 Before you dive into advanced features of \BoSSSpad{}, you should familiarise yourself with the basics of \BoSSS and \BoSSSpad{} and run some first simulations on your local machine, e.g. the tutorials on scalar advection \ref{ScalarAdvection} or Poisson equation \ref{sec:SIP}.
 
@@ -45,7 +45,7 @@ restart;
  }
 \BoSSSexeSilent
 \BoSSScmd{
-/// The very first thing we have to to is to initialize the workflow
+/// The very first thing we have to do is to initialize the workflow
 /// management tools and to define a project name. The meta job manager, like  
 /// all other workflow management tools strictly enforces the use of a 
 /// project name:
@@ -103,7 +103,7 @@ MiniBatchProcessor.Server.StartIfNotRunning(false);
  }
 \BoSSSexe
 \BoSSScmd{
-/// In this tutorial, we use the workflow management tools to simulate compressible flows, thud we first have to load the namespaces of the CNS solver
+/// In this tutorial, we use the workflow management tools to simulate compressible flows, thus we first have to load the namespaces of the CNS solver
 using CNS;
  }
 \BoSSSexe
@@ -117,12 +117,12 @@ solver1.Assembly.Location;\newline
 \BoSSSexe
 \BoSSScmd{
 /// In this example, we start the computation from a hard-coded
-/// control object that is already compiled into the code. If we would start the 
-/// {\tt CNS.exe} directly from the command line, therefore the command line 
-/// call would look like
+/// control object that is already compiled into the code. If we started the 
+/// {\tt CNS.exe} directly from the command line, the command line 
+/// call would be
 /// {\tt ./CNS.exe -control cs:CNS.ControlExamples.IsentropicVortex(...) }.
 /// On the command line, the arguments could be problematic, e.g. quotation 
-/// marks would need some kind of escape string, spaces are problematic, etc..
+/// marks would need some kind of escape string, spaces are problematic, etc.
 /// The meta job manager passes the arguments via environment variables, so
 /// the before-mentioned issues do not occur. 
 string StartupString\_Local = \newline 
@@ -139,11 +139,11 @@ string StartupString\_Local = \newline
 \BoSSScmd{
 /// Finally, we define two jobs: one for the local machine, one for the 
 /// HPC cluster.
-/// In a usual work flow scenario, we \emph{do not} want to (re-) submitt the 
+/// In a usual work flow scenario, we \emph{do not} want to (re-) submit the 
 /// job every time we run the worksheet -- usually, one wants to run a job once.
 /// 
 /// The concept to overcome this problem is job activation. If a job is 
-/// activated, the meta job manger first checks the databases and the batch 
+/// activated, the meta job manager first checks the databases and the batch 
 /// system, if a job with the respective name and project name is already 
 /// submitted. Only if there is no information that the job was ever submitted
 /// or started anywhere, the job is submitted to the respective batch system.
@@ -178,7 +178,7 @@ WorkflowMgm.BlockUntilAllJobsTerminate(360);
 /// We examine the output and error stream of the job on the HPC cluster:
 /// This directly accesses the {\tt stdout}-redirection of the respective job
 /// manager, which may contain a bit more information than the 
-/// {\tt stdout} - copy in the session directory.
+/// {\tt stdout}-copy in the session directory.
 oneJob\_Local.Stdout;
  }
 \BoSSSexe
@@ -220,7 +220,7 @@ var Table = WorkflowMgm.SessionTable;
  }
 \BoSSSexe
 \BoSSScmd{
-/// The size of the table, resp. the number of comuns is usually 
+/// The size of the table, resp. the number of columns is usually 
 /// quite extensive, ...
  }
 \BoSSSexe
@@ -255,7 +255,7 @@ Table.ExtractColumns("SessionName", "DGdegree:rho", "L2ErrorDensity").Print();
  }
 \BoSSSexe
 \BoSSScmd{
-/// Here, we use the workflow management tools to simulate compressible flows \emph{with} immersed boundaries, thud we first have to load the namespaces of the CNS and IBM solver
+/// Here, we use the workflow management tools to simulate compressible flows \emph{with} immersed boundaries, thus we first have to load the namespaces of the CNS and IBM solver:
 using BoSSS.Application.IBM\_Solver;
  }
 \BoSSSexe
@@ -272,7 +272,7 @@ if(System.IO.Directory.Exists(@"C:\textbackslash tmp\textbackslash TutorialNetwo
  }
 \BoSSSexeSilent
 \BoSSScmd{
-/// For this to tutorial, we use a local drive to simulate the network database:\newline 
+/// For this tutorial, we use a local drive to simulate the network database:\newline 
 var myNetworkDb = OpenOrCreateDatabase(@"C:\textbackslash tmp\textbackslash TutorialNetworkDb\_db");\newline 
 /// when using a real network drive, the path to the drive would be given as: 
 //var myNetworkDb = OpenOrCreateDatabase(@"\textbackslash \textbackslash \textbackslash $server\textbackslash $ \textbackslash \textbackslash $path\_to\_database\textbackslash $");
@@ -292,7 +292,7 @@ var myHPC = myBatch;  \newline
 \BoSSSexe
 \BoSSScmd{
 /// For the second job, we use a control object. The advantage of the control  
-/// object is that it can be completly constructed (or modified) within
+/// object is that it can be completely constructed (or modified) within
 /// \BoSSSpad, without the need of an external file.
 /// In order to shorten things, we start with a predefined control object
 /// and modify it.
@@ -308,10 +308,10 @@ StartupObject\_Network.savetodb            = true;
  }
 \BoSSSexe
 \BoSSScmd{
-/// The only technical problem are formulas and expressions used e.g. to set
+/// The only technical problems are formulas and expressions used e.g. to set
 /// initial values or queries; those objects cannot be serialized, i.e.
 /// stored in a file since they are live code. (If we work with
-/// control objects, \BoSSSpad tries to save them as a file, so they can later
+/// control objects, \BoSSSpad ~tries to save them as a file, so they can later
 /// be loaded by the solver.)
  }
 \BoSSSexe
@@ -319,7 +319,7 @@ StartupObject\_Network.savetodb            = true;
 /// E.g. the following would not work:
 StartupObject\_Network.InitialValues\_Evaluators["VelocityX"] = X => 0.5;\newline 
 /// The reason is, that the expression {\tt X => 0.5} is only valid within
-/// this \BoSSSpad document, and cannot be saved in a file and loaded again, 
+/// this \BoSSSpad ~document, and cannot be saved in a file and loaded again, 
 /// due to technical restrictions of .NET resp. C\#.
 ///
 /// In order to make this work, we have to use a \emph{text} representation of
@@ -334,7 +334,7 @@ StartupObject\_Network.Queries.Clear();
 \BoSSSexe
 \BoSSScmd{
 /// Especially for more complex flows, the mathematical form of the solution,
-/// resp. the initial value is rater complicated. 
+/// resp. the initial value is rather complicated. 
 /// Therefore, one could use a couple of auxilliary definitions:
  }
 \BoSSSexe

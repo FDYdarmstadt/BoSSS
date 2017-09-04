@@ -40,7 +40,6 @@
 /// \section{Solution within the \BoSSS{} framework}
 /// First, we initialize the new worksheet:
  }
-\BoSSSexe
 \BoSSScmd{
 restart;
  }
@@ -58,7 +57,7 @@ using NUnit.Framework;
 \BoSSSexeSilent
 \BoSSScmd{
 /// \subsection{Implementation of the SIP fluxes}
-/// we are going to implement the SIP-form
+/// We are going to implement the SIP-form
 /// \begin{equation*}
 /// a_{\text{sip}}(u,v)
 /// = \int_{\domain} \underbrace{\nabla u \cdot \nabla v}_{\text{volume\ term}}\dV
@@ -288,7 +287,7 @@ Matrix\_SipLaplace.NoOfRows;
 \BoSSSexe
 \BoSSScmd{
 /// \paragraph{Matrix rank and determinant of the matrix 
-///  \code{Matrix\_SipLaplace}}:
+///  \code{Matrix\_SipLaplace}:}
 /// Use the functions \emph{rank} and \emph{det} to analyze the matrix (warning: this can get costly 
 /// for larger matrices!).\\
 ///Interpret the results:
@@ -465,7 +464,7 @@ gp.PlotNow();
  }
 \BoSSSexe
 \BoSSScmd{
-/// \paragraph{convergence study, indefinite vs. definite.}
+/// \paragraph{Convergence study, indefinite vs. definite.}
 /// We are going to solve the SIP-system for different grid resolutions,
 /// comparing an insufficient penalty to a penalty which is large enough.
 double[] Resolution = new double[] \{ 8, 16, 32, 64, 128, 256 \};\newline 
