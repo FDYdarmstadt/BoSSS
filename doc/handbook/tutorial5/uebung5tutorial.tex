@@ -19,29 +19,26 @@
 
 
 \BoSSScmd{
-///\label{chap:flux_and_convergence}
 ///\section*{What's new}
-///\label{sec:flux_and_convergence_new}
 ///\begin{itemize}
-/// \item Lax-Friedrichs flux
-/// \item Computation of "experimental order of convergence" (EOC)
+/// \item implementing the Lax-Friedrichs flux
+/// \item computation of "experimental order of convergence" (EOC)
 ///\end{itemize}
 ///
 ///\section*{Prerequisites}
-///\label{sec:flux_and_convergence_prereq}
 ///\begin{itemize}
-/// \item Definition of the Upwind flux (Tutorial 4)
-/// \item Grid generation (Tutorial 2)
-/// \item Basics of convergence studies (Tutorial 2)
+/// \item definition of fluxes, chapter 8
+/// \item grid generation, chapter 7
+/// \item basics of convergence studies, chapter 7
 ///\end{itemize}
-///Within this tutorial the Lax-Friedrichs flux will be implemented as an alternative to the Upwind flux (see tutorial 4). 
+///Within this tutorial the Lax-Friedrichs flux will be implemented as an alternative to the Upwind flux (see chapter 8). 
 /// For both fluxes a convergence study will be performed and the "experimental order of convergence" (EOC) will be computed. 
-///For the implementation of the Lax-Friedrichs flux and the Upwind flux it is recommended to work through tutorial 4 first 
+///For the implementation of the Lax-Friedrichs flux and the Upwind flux it is recommended to work through chapter 8 first 
 /// as the definition of fluxes is explained there in more detail. For the second part of the tutorial, 
-/// tutorial 2 has already taught the basics of doing a convergence study.
+/// chapter 7 has already taught the basics of doing a convergence study.
 ///
 ///\section{Problem statement}
-///\label{sec:flux_and_convergence_problem}
+///\label{sec:NumFlux_problem}
 ///As an examplary problem, we consider the scalar transport equation
 ///\begin{equation}
 ///\frac{\partial c}{\partial t} + \nabla \cdot (\vec{u} c) = 0
@@ -59,7 +56,7 @@
 ///which can be used to describe the initial and boundary conditions. 
 ///
 ///\section{Solution within the BoSSS Framework}
-///\label{sec:flux_and_convergence_tutorial}
+///\label{sec:NumFlux_tutorial}
  }
 \BoSSSexeSilent
 \BoSSScmd{
@@ -85,6 +82,7 @@ Func<double[], double, double> cExact =      \newline
 \BoSSSexe
 \BoSSScmd{
 /// %=============================================
+/// \subsection{Definition of the numerical fluxes} \label{sec:NumFlux_fluxes}
 /// \subsection{Definition of the numerical fluxes} \label{sec:flux_and_convergence_fluxes}
 /// %=============================================
  }
@@ -353,6 +351,7 @@ for (int i = 0; i < dgDegrees.Length; i++) \{     \newline
 \BoSSSexe
 \BoSSScmd{
 /// %=============================================
+/// \subsection{Plotting results}\label{sec:NumFlux_plots}
 /// \subsection{Plotting results}\label{sec:flux_and_convergence_plots}
 /// %=============================================
  }
@@ -437,6 +436,7 @@ gpLaxFriedrichs.PlotNow();
 \BoSSSexe
 \BoSSScmd{
 /// %==========================================
+/// \subsection{Linear regression by ordinary least squares}\label{sec:NumFlux_slopes}
 /// \subsection{Linear regression by ordinary least squares}\label{sec:flux_and_convergence_slopes}
 /// %===========================================
  }

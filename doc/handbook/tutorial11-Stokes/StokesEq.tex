@@ -8,17 +8,17 @@
 /// \section*{What's new?}
 /// \label{sec:stokesEquation_new}
 /// \begin{itemize}
-///     \item {Implementation of the incompressible, steady Stokes equation}
-///     \item Advanced: {Implementation of the Stokes flow behind a grid as an application}
+///     \item {implementation of the incompressible, steady Stokes equation}
+///     \item advanced: {implementation of the Stokes flow behind a grid as an application}
 /// \end{itemize}
 ///
 ///\section*{Prerequisites}
 ///\label{sec:stokesEquation_prereq}
 ///\begin{itemize}
-/// \item Implementation of numerical fluxes, chapter \ref{NumFlux} 
-/// \item Spatial operator, chapter \ref{SpatialOperator}
-/// \item Implementation of the gradient operator, chapter \ref{sec:poissonSystem_new} 
-/// \item Implementation of the SIP operator, chapter \ref{sec:SIP}
+/// \item implementation of numerical fluxes, chapter \ref{NumFlux} 
+/// \item spatial operator, chapter \ref{SpatialOperator}
+/// \item implementation of the gradient operator, chapter \ref{PoissonSys}
+/// \item implementation of the SIP operator, chapter \ref{SIP}
 ///\end{itemize}
     /// %==========================================
     /// \section{Problem statement}
@@ -155,7 +155,7 @@ public class Divergence : \newline
 \btab \}\newline 
  \newline 
     /// On the domain boundary, we have to distinguish between 
-    /// Dirichlet- and Neumann-bounary conditions; the function
+    /// Dirichlet- and Neumann-boundary conditions; the function
     /// \code{uDiri} defines which of the two actually applies:
 \btab public double BoundaryEdgeForm(ref CommonParamsBnd inp, \newline 
 \btab \btab double[] U\_IN, double[,] GradU\_IN, double V\_IN, double[] GradV\_OT) \{\newline 
@@ -318,7 +318,7 @@ Func<double[],double[]> UDiri\_Channel \newline
  }
 \BoSSSexe
 \BoSSScmd{
-/// Lets create the operator which contains only the pressure gradient
+/// Let's create the operator which contains only the pressure gradient
 /// and velocity divergence:
 SpatialOperator GradDiv = new SpatialOperator(3,3, // 3 vars. in dom. & codom.\newline 
 \btab \btab \btab \btab \btab \btab    QuadOrderFunc.Linear(), // linear operator\newline 
@@ -333,7 +333,7 @@ GradDiv.Commit();
 \BoSSScmd{
 /// We create the matrix of the \code{GradDiv}-operator for 
 /// the channel configuration. Before that, we have to set values for the 
-/// global \code{IsDirichletBndy} and \code{UDiri} - variables.
+/// global \code{IsDirichletBndy} and \code{UDiri}-variables.
 IsDirichletBndy           = IsDirichletBndy\_Channel;\newline 
 UDiri                     = UDiri\_Channel;\newline 
 var GradDivMatrix\_Channel = GradDiv.ComputeMatrix(varMapChannel,\newline 
@@ -606,7 +606,7 @@ StokesMatrix\_Channel.Solve\_Direct(SolutionChannel, RHS);
 \BoSSSexe
 \BoSSScmd{
 /// We export the solution to a Tecplot file:
-//Tecplot.PlotFields(new DGField[] \{u,v,psi\}, "C:\textbackslash \textbackslash tmp\textbackslash \textbackslash Channel", 0.0, 4);
+Tecplot.PlotFields(new DGField[] \{u,v,psi\}, "C:\textbackslash \textbackslash tmp\textbackslash \textbackslash Channel", 0.0, 4);
  }
 \BoSSSexe
 \BoSSScmd{
