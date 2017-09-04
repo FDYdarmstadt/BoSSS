@@ -18,82 +18,13 @@ using System.Runtime.InteropServices;
 using MPI.Wrappers;
 
 namespace ilPSP.Kraypis {
-
-    /// <summary>
-    /// wrappers to METIS functions
-    /// </summary>
-    /// <remarks>
-    /// <b>IMPORTANT: Licencing issues:</b><br/>
-    /// METIS and ParMETIS <see cref="ParMETIS_V3"/> do not ship with free
-    /// license, neither their source nor  binaries compiled from it can be
-    /// shipped with this software;<br/>
-    /// On some Linux distributions, like Debian (and derived distributions
-    /// like Ubuntu) and Gentoo, this software can be installed from the local
-    /// package repository (because they own a special permission from the
-    /// METIS/ParMETIS developers).<br/>
-    /// For Windows systems, the sources of the METIS software can be
-    /// downloaded from http://glaros.dtc.umn.edu/gkhome/metis/metis/overview,
-    /// they must be compiled individually. Visual Studio Project files are provided.
-    /// </remarks>
-    public class METIS {
-
-        /// <summary>
-        /// see METIS manual;
-        /// </summary>
-        [DllImport("metis", EntryPoint = "METIS_PartGraphKway")]
-        public static extern void PartGraphKway(ref int nvtxs,
-                                                int[] xadj, int[] adjncy,
-                                                int[] vwgt, int[] adjwgt,
-                                                ref int wgtflag, ref int numflag, ref int nparts,
-                                                int[] options, ref int edgecut, int[] part);
-        /// <summary>
-        /// see METIS manual;
-        /// </summary>
-        [DllImport("metis", EntryPoint = "METIS_PartGraphRecursive")]
-        public static extern void PartGraphRecursive(ref int nvtxs,
-                                                     int[] xadj, int[] adjncy,
-                                                     int[] vwgt, int[] adjwgt,
-                                                     ref int wgtflag, ref int numflag, ref int nparts,
-                                                     int[] options, ref int edgecut, int[] part);
-
-        /// <summary>
-        /// see METIS manual;
-        /// </summary>
-        [DllImport("metis", EntryPoint = "METIS_WPartGraphRecursive")]
-        public static extern void WPartGraphRecursive(ref int n,
-                                                      int[] xadj, int[] adjncy,
-                                                      int[] vwgt, int[] adjwgt,
-                                                      ref int wgtflag, ref int numflag, ref int nparts,
-                                                      float[] tpwgts,
-                                                      int[] options, ref int edgecut, int[] part);
-        /// <summary>
-        /// see METIS manual;
-        /// </summary>
-        [DllImport("metis", EntryPoint = "METIS_WPartGraphKway")]
-        public static extern void WPartGraphKway(ref int n,
-                                                 int[] xadj, int[] adjncy,
-                                                 int[] vwgt, int[] adjwgt,
-                                                 ref int wgtflag, ref int numflag, ref int nparts,
-                                                 float[] tpwgts,
-                                                 int[] options, ref int edgecut, int[] part);
-        /// <summary>
-        /// see METIS manual;
-        /// </summary>
-        [DllImport("metis", EntryPoint = "METIS_WPartGraphVKway")]
-        public static extern void WPartGraphVKway(ref int n,
-                                                  int[] xadj, int[] adjncy,
-                                                  int[] vwgt, int[] adjwgt,
-                                                  ref int wgtflag, ref int numflag, ref int nparts,
-                                                  float[] tpwgts,
-                                                  int[] options, ref int edgecut, int[] part);
-    }
-
+    
     /// <summary>
     /// Wrappers to ParMETIS functions
     /// </summary>
     /// <remarks>
     /// <b>IMPORTANT: Licensing issues:</b><br/>
-    /// METIS <see cref="METIS"/> and ParMETIS do not ship with free license,
+    /// ParMETIS does not ship with a free license,
     /// neither their source nor  binaries compiled from it can be shipped with
     /// this software;<br/>
     /// On some Linux distributions, like Debian (and derived distributions
