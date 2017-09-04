@@ -2,7 +2,6 @@
 \input{common.tex}
 
 
-
 % Title Page
 \title{The \BoSSS{} Handbook}
 \author{
@@ -21,17 +20,11 @@ Markus Keil % hat das ursprüngliche DBEv2 Manual erstellt
 
 
 \begin{document}
-\nobibliography*
 \maketitle
-
 \clearpage
-
-
 \vfill
 
 %Please cite this document as: \\
-
-
 
 \includegraphics[width=4cm]{by-nc-sa}\\
 
@@ -227,7 +220,7 @@ These are important to understand for both users as well as developers.
 Obviously, in order to work with \BoSSS{} -- especially for the tutorial in part \ref{sec:Tutorial}
 of this book -- one should have a basic understanding of \ac{dg} methods.
 The purpose of this document is not to be (yet another) textbook on the \ac{dg} method.
-As a reference, we recommend the textbook of \cite{DiPietroErn2011},
+As a reference, we recommend the textbook of \textcite{DiPietroErn2011},
 as well as the lecture notes of Cockburn\footnote{
 \url{http://www-users.math.umn.edu/~bcockbur//LectureNotes.html}}
 and Hartmann\footnote{
@@ -718,8 +711,8 @@ When Mono is used, the equivalent to {\tt msbuild} is {\tt xbuild}. Both tools h
 
 
 
-
-\begin{appendices}
+\part{Appendix}
+\appendix
 
 % ********************************************************************************
 % ********************************************************************************
@@ -745,134 +738,22 @@ When Mono is used, the equivalent to {\tt msbuild} is {\tt xbuild}. Both tools h
 % ********************************************************************************
 % ********************************************************************************
 
-This manual is not intended to be an introduction into the \ac{dg} method.
+\printbibliography[heading=subbibliography,title={Bibliography}]
 
-% --------------------------------------------------------------------------------
-\section{\BoSSS{} -related scientific publications}
-% --------------------------------------------------------------------------------
+\begin{refsection}[BoSSSArticles]
+\nocite{*}
+\printbibliography[heading=subbibliography,title={Peer-reviewed journal publications related to \BoSSS{}}]
+\end{refsection}
 
-\subsection{Peer-reviewed publications}
-Articles which have been published or officially accepted by publication outlets with scientific
-quality assurance and book publications.
+\begin{refsection}[BoSSSPhDTheses]
+\nocite{*}
+\printbibliography[heading=subbibliography,title={PhD theses related to \BoSSS{}}]
+\end{refsection}
 
-\begin{itemize}
-\item
-\bibentry{UtzKummerExtVel17}
-
-\item
-\bibentry{KummerEtAlXDGTimestepping2017}
-
-\item
-\bibentry{UtzEtAlXDG2017}
-
-\item
-\bibentry{krauseKummer_IBM_2017}
-
-\item
-\bibentry{UtzKummerReinit16}
-
-\item
-\bibentry{Niroobakhsh2016}
-
-\item
-\bibentry{MuellerEtAl_ibm_2016}
-
-\item
-\bibentry{kummerXNSE2015}
-
-\item
-\bibentry{klein_high-order_2015}
-
-\item
-\bibentry{KummerPatchRecovery2015}
-
-\item
-\bibentry{KleinEtAlSimple2015}
-
-\item
-\bibentry{muller_hmf_2013}
-
-\item
-\bibentry{kummer_extension_2013}
-
-\item
-\bibentry{klein_simple_2013}
-
-\item
-\bibentry{SFB_finalReport}
-
-\item
-\bibentry{mueller_2012}
-
-\end{itemize}
-
-\subsection{PhD thesis}
-
-\begin{itemize}
-
-\item
-\bibentry{KallendorfThesis2016}
-
-\item
-\bibentry{HauThesis2017}
-
-\item
-\bibentry{kummer_bosss_2012_thesis}
-
-\item
-\bibentry{mullerPhdThesis2014}
-
-\item
-\bibentry{kleinPhdThesis2015}
-
-\item
-\bibentry{MousaviPhdThesis2014}
-
-\item
-\bibentry{EmamyPhdThesis2014}
-
-\end{itemize}
+\begin{refsection}[BoSSSStudentTheses]
+\nocite{*}
+\printbibliography[heading=subbibliography,title={Master and Bachelor theses related to \BoSSS{}}]
+\end{refsection}
 
 
-
-
-\subsection{Master and Bachelor thesis}
-
-\begin{itemize}
-\item
-\bibentry{Lindig2017}
-
-\item
-\bibentry{Karcher2014}
-
-\item
-\bibentry{utz2014}
-
-\item
-\bibentry{Mrosek2014}
-
-\item
-\bibentry{Fischer2014}
-
-\item
-\bibentry{keil2012}
-
-\item
-\bibentry{klein2011}
-
-\item
-\bibentry{ashoori2009}
-
-\item
-\bibentry{mullerBscThesis2012}
-
-\end{itemize}
-
-
-
-\end{appendices}
-
-
-
-\bibliography{BoSSShandbook}
 \end{document}
