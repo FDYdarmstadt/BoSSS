@@ -1,10 +1,9 @@
-Create repo with one dummy commit
-
-First time:
-git remote add experimental git@github.com:FDYdarmstadt/BoSSS-experimental.git
-git fetch
-git subtree add --prefix=public experimental master
-
-Later:
-git subtree pull --prefix=public experimental master
-subtree pull --prefix=public \\\dc1\bosss\root.git master
+git remote add root \\dc1\bosss\root.git 
+git fetch root
+git checkout -b staging-branch root/master
+git subtree split -P public -b root-public
+git checkout master
+git merge root-public
+git branch -d root-public staging-branch
+git remote remove root
+git branch

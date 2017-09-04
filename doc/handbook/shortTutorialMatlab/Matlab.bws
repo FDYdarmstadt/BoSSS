@@ -1,0 +1,26 @@
+/// \chapter{Interface for Matlab using the BatchmodeConnector}
+/// In this short tutorial we want to use common Matlab commands within the \BoSSS{} framework.
+/// \section{Problem statement}
+/// For our matrix analysis we use the following random matrix:
+/// \begin{equation*}
+/// A = \begin{matrix}
+///      1 & 2 & 3\\
+///      4 & 5 & 6\\
+///      7 & 8 & 9
+/// \end{equation*}
+/// and the symmetric matrix:
+/// S = \begin{matrix}
+///      1 & 2 & 3\\
+///      2 & 1 & 2\\
+///      3 & 2 & 1
+/// \end{equation*}
+
+**************
+C# evaluator not initialized: use 'restart'.
+
+==============
+restart
+**************
+==============
+**************
+==============
