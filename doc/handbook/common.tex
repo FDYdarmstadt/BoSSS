@@ -27,9 +27,6 @@
 \usepackage{ifdraft}
 \usepackage{import}
 \usepackage{wsDBEtex}
-\usepackage[round]{natbib}
-%\bibliographystyle{plainnat}
-\bibliographystyle{apalike}
 \usepackage{color}
 \usepackage{bibentry}
 \usepackage{overpic}
@@ -38,13 +35,26 @@
 \usepackage{varwidth}
 \usepackage[toc,page]{appendix}
 \usepackage[hidelinks]{hyperref}
-% \ifdraft to deactivate draft/debug output
-\usepackage[\ifdraft{}{disable}]{todonotes}
-%\usepackage[inline,\ifdraft{draft}{final}]{showlabels}
-\usepackage[inline]{showlabels}
-\renewcommand{\showlabelfont}{\small\ttfamily\color{magenta}}
+%\usepackage[inline]{showlabels}
+%\renewcommand{\showlabelfont}{\small\ttfamily\color{magenta}}
 \usepackage{enumitem}
 \usepackage{textcomp}
+
+%\usepackage[sorting=none]{biblatex}
+\usepackage[bibstyle=numeric]{biblatex}
+
+% For external references
+\addbibresource{BoSSShandbook.bib}
+
+% Papers with the BoSSS tag on tubiblio
+\addbibresource[label=BoSSSArticles,location=remote]{http://tubiblio.ulb.tu-darmstadt.de/cgi/search/archive/advanced/export_tubiblio_BibTeX.bib?screen=Search&dataset=archive&_action_export=1&output=BibTeX&exp=0|1|-date%2Fcreators_name%2Ftitle|archive|-|divisions%3Adivisions%3AANY%3AEQ%3Afb16_fdy|keywords%2Fkeywordsalternative_name%2Fkeywordsswd%3Akeywords%2Fkeywordsalternative_name%2Fkeywordsswd%3AALL%3AIN%3ABoSSS|type%3Atype%3AANY%3AEQ%3Aarticle|-|eprint_status%3Aeprint_status%3AANY%3AEQ%3Aarchive|metadata_visibility%3Ametadata_visibility%3AANY%3AEQ%3Ashow&n=&cache=1084536}
+
+% PhD theses with the BoSSS tag on tubiblio
+\addbibresource[label=BoSSSPhDTheses]{http://tubiblio.ulb.tu-darmstadt.de/cgi/search/archive/advanced/export_tubiblio_BibTeX.bib?dataset=archive&screen=Search&_action_export=1&output=BibTeX&exp=0|1|-date%2Fcreators_name%2Ftitle|archive|-|divisions%3Adivisions%3AANY%3AEQ%3Afb16_fdy|keywords%2Fkeywordsalternative_name%2Fkeywordsswd%3Akeywords%2Fkeywordsalternative_name%2Fkeywordsswd%3AALL%3AIN%3ABoSSS|type%3Atype%3AANY%3AEQ%3Athesis|-|eprint_status%3Aeprint_status%3AANY%3AEQ%3Aarchive|metadata_visibility%3Ametadata_visibility%3AANY%3AEQ%3Ashow&n=&cache=1084538}
+
+% Master/Bachelor theses with the BoSSS tag on tubiblio
+\addbibresource[label=BoSSSStudentTheses]{http://tubiblio.ulb.tu-darmstadt.de/cgi/search/archive/advanced/export_tubiblio_BibTeX.bib?screen=Search&dataset=archive&_action_export=1&output=BibTeX&exp=0|1|-date%2Fcreators_name%2Ftitle|archive|-|divisions%3Adivisions%3AANY%3AEQ%3Afb16_fdy|keywords%2Fkeywordsalternative_name%2Fkeywordsswd%3Akeywords%2Fkeywordsalternative_name%2Fkeywordsswd%3AALL%3AIN%3ABoSSS|type%3Atype%3AANY%3AEQ%3Amaster_thesis+bachelor_thesis+diplom_thesis|-|eprint_status%3Aeprint_status%3AANY%3AEQ%3Aarchive|metadata_visibility%3Ametadata_visibility%3AANY%3AEQ%3Ashow&n=&cache=1084540}
+
 
 \usepackage{listings} % source code formatting, mainly for BoSSSPad reference
 \lstset{
