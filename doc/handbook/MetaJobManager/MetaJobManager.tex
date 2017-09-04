@@ -13,7 +13,7 @@
 \paragraph{Prerequisites:} 
 \begin{itemize}
 	\item basic knowledge of \BoSSSpad{}
-	\item executing runs on your local machine, e.g. the quickstart guide of the \ac{cns}
+	\item executing runs on your local machine, e.g. the quickstart guide of the \ac{cns}, see chapter 5
 \end{itemize}
 
 \BoSSS ~includes several tools which aid the advanced user in running simulations and organizing simulation results among multiple computers and/or compute clusters.
@@ -98,7 +98,7 @@ var myBatch = new MiniBatchProcessorClient(@"C:\textbackslash tmp\textbackslash 
 /// The batch processor for local jobs can be started separately (by launching
 /// {\tt MiniBatchProcessor.exe}), or from the worksheet as follows.
 /// In the latter case, it depends on the operating system, whether the 
-/// {\tt MiniBatchProcessor.exe} is terminated with the worksheet, or not.
+/// \newline {\tt MiniBatchProcessor.exe} is terminated with the worksheet, or not.
 MiniBatchProcessor.Server.StartIfNotRunning(false);
  }
 \BoSSSexe
@@ -162,7 +162,7 @@ oneJob\_Local.Activate(myBatch);
  }
 \BoSSSexe
 \BoSSScmd{
-/// And we can list all jobs in the workflow management:
+/// All jobs can be listed using the workflow management:
  }
 \BoSSSexe
 \BoSSScmd{
@@ -183,7 +183,7 @@ oneJob\_Local.Stdout;
  }
 \BoSSSexe
 \BoSSScmd{
-/// And hope that the error stream is empty:
+/// Additionally we display the error stream and hope that it is empty:
 oneJob\_Local.Stderr;
  }
 \BoSSSexe
@@ -274,12 +274,12 @@ if(System.IO.Directory.Exists(@"C:\textbackslash tmp\textbackslash TutorialNetwo
 \BoSSScmd{
 /// For this tutorial, we use a local drive to simulate the network database:\newline 
 var myNetworkDb = OpenOrCreateDatabase(@"C:\textbackslash tmp\textbackslash TutorialNetworkDb\_db");\newline 
-/// when using a real network drive, the path to the drive would be given as: 
+/// When using a real network drive, the path to the drive would be given as: 
 //var myNetworkDb = OpenOrCreateDatabase(@"\textbackslash \textbackslash \textbackslash $server\textbackslash $ \textbackslash \textbackslash $path\_to\_database\textbackslash $");
  }
 \BoSSSexe
 \BoSSScmd{
-/// Again, we fake the network capabilies:
+/// Again, we fake the network capabilities:
 var myHPC = myBatch;  \newline 
 /// For a Microsoft HPC-Server this would read:
 //var myHPC   = new MsHPC2012Client(@"\textbackslash \textbackslash dc1\textbackslash scratch\textbackslash hpcdeploy", \newline 
@@ -318,8 +318,8 @@ StartupObject\_Network.savetodb            = true;
 \BoSSScmd{
 /// E.g. the following would not work:
 StartupObject\_Network.InitialValues\_Evaluators["VelocityX"] = X => 0.5;\newline 
-/// The reason is, that the expression {\tt X => 0.5} is only valid within
-/// this \BoSSSpad ~document, and cannot be saved in a file and loaded again, 
+/// The reason is that the expression {\tt X => 0.5} is only valid within
+/// this \BoSSSpad ~document and cannot be saved in a file and loaded again
 /// due to technical restrictions of .NET resp. C\#.
 ///
 /// In order to make this work, we have to use a \emph{text} representation of

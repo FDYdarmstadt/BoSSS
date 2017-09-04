@@ -27,15 +27,15 @@
 ///
 ///\section*{Prerequisites}
 ///\begin{itemize}
-/// \item definition of fluxes, chapter 8
-/// \item grid generation, chapter 7
-/// \item basics of convergence studies, chapter 7
+/// \item definition of fluxes, chapter \ref{SpatialOperator}
+/// \item grid generation, chapter \ref{GridInstantiation}
+/// \item basics of convergence studies, chapter \ref{GridInstantiation}
 ///\end{itemize}
-///Within this tutorial the Lax-Friedrichs flux will be implemented as an alternative to the Upwind flux (see chapter 8). 
+///Within this tutorial the Lax-Friedrichs flux will be implemented as an alternative to the Upwind flux (see chapter \ref{SpatialOperator}). 
 /// For both fluxes a convergence study will be performed and the "experimental order of convergence" (EOC) will be computed. 
-///For the implementation of the Lax-Friedrichs flux and the Upwind flux it is recommended to work through chapter 8 first 
+///For the implementation of the Lax-Friedrichs flux and the Upwind flux it is recommended to work through chapter \ref{SpatialOperator} first 
 /// as the definition of fluxes is explained there in more detail. For the second part of the tutorial, 
-/// chapter 7 has already taught the basics of doing a convergence study.
+/// chapter \ref{GridInstantiation} has already taught the basics of doing a convergence study.
 ///
 ///\section{Problem statement}
 ///\label{sec:NumFlux_problem}
@@ -58,7 +58,6 @@
 ///\section{Solution within the BoSSS Framework}
 ///\label{sec:NumFlux_tutorial}
  }
-\BoSSSexeSilent
 \BoSSScmd{
 restart;
  }

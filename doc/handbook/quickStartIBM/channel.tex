@@ -130,7 +130,7 @@ c.Tags.Add("k"+k);
  }
 \BoSSSexe
 \BoSSScmd{
-/// Here, the degree for each field is set (degree k for velocity, k-1 for pressure). First, Phi is not going to be used in this simulation but it has to be specified anyways.
+/// Here, the degree for each field is set (degree \code{k} for velocity, \code{k-1} for pressure). First, \code{Phi} is not going to be used in this simulation but it has to be specified anyways.
 c.FieldOptions.Add("VelocityX", new FieldOpts() \{\newline 
 Degree = k,\newline 
 SaveToDB = FieldOpts.SaveToDBOpt.TRUE\newline 
@@ -201,7 +201,7 @@ c.AddBoundaryCondition("Pressure\_Outlet");
 \BoSSSexe
 \BoSSScmd{
 /// Fluid Properties
-/// Note: The characteristic length and fluid density are choosen to one. Therefore, the viscosity can be defined by $1/reynolds$.
+/// Note: The characteristic length and fluid density are choosen to one. Therefore, the viscosity can be defined by \code{1.0/reynolds}.
 double reynolds            = 20;\newline 
 c.PhysicalParameters.rho\_A = 1;\newline 
 c.PhysicalParameters.mu\_A  = 1.0/reynolds;
@@ -273,7 +273,7 @@ myDb.Sessions.First().OpenExportDirectory();
  }
 \BoSSSexe
 \BoSSScmd{
-/// Some information like the console output or a log containing various physical values can be found in the SessionDirectory
+/// Some information like the console output or a log containing various physical values can be found in the session directory
 myDb.Sessions.First().OpenSessionDirectory();
  }
 \BoSSSexe
@@ -319,9 +319,9 @@ c.InitialValues.Add("Phi", new Formula("X => -(X[0]).Pow2() + -(X[1]).Pow2() + 0
  }
 \BoSSSexe
 \BoSSScmd{
-/// As soon as we have exchanged the grids and the definition of phi. Example Control files for both,
+/// Example control files for both,
 /// the channel and the flow around a cylinder can be found in the ControlExample directory. As soon as we run 
-/// the simulation again we can take a look at the plots and the PhysicalData file in the SessionDirectory. 
+/// the simulation again we can take a look at the plots and the PhysicalData file in the session directory. 
 /// There we can find for example lift and drag forces acting on the cylinder.
  }
 \BoSSSexe

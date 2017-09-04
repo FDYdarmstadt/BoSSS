@@ -152,13 +152,14 @@ c.Endtime;
  }
 \BoSSSexe
 \BoSSScmd{
-/// Finally, we need a time stepping scheme to run the simulation:
+/// Finally, we need a time stepping scheme
 c.ExplicitScheme;
  }
 \BoSSSexe
 \BoSSScmd{
-/// with order
-c.ExplicitOrder;
+/// of order
+c.ExplicitOrder;\newline 
+/// to run the simulation.
  }
 \BoSSSexe
 \BoSSScmd{
@@ -171,7 +172,7 @@ c.ExplicitOrder;
  }
 \BoSSSexe
 \BoSSScmd{
-/// Or we change the Mach number to
+/// Or we can change the Mach number to
 c.MachNumber = 0.7;    \newline 
 c.MachNumber
  }
@@ -205,7 +206,7 @@ c.PrintInterval
  }
 \BoSSSexe
 \BoSSScmd{
-/// We release memory occupied by the solver:
+/// Finally, we release the memory occupied by the solver:
 solver.Dispose();
  }
 \BoSSSexe
@@ -229,7 +230,7 @@ solver.CurrentSessionInfo
 \BoSSSexe
 \BoSSScmd{
 /// \subsection{Postprocessing}
-/// We saved our data in the database and last we want to postprocess it, 
+/// We saved our data in the database and lastly we want to postprocess it, 
 /// i.e visualize the individual fields like density, momentum or pressure.
 /// Note: If you have run the simulation in the console mode, you now have to start 
 /// the \BoSSSpad{}.
@@ -238,13 +239,13 @@ myDatabase.Sessions.First();
  }
 \BoSSSexe
 \BoSSScmd{
-/// To export data in the Tecplot format, we just need to export it:
-//databases.First().Sessions.First().Export().Do()
+/// To convert data to the Tecplot format, we just need to export it:
+databases.First().Sessions.First().Export().Do()
  }
 \BoSSSexe
 \BoSSScmd{
 /// We can open the folder directly by using
-//databases.First().Sessions.First().OpenExportDirectory()
+databases.First().Sessions.First().OpenExportDirectory()
  }
 \BoSSSexe
 \BoSSScmd{

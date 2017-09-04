@@ -62,11 +62,11 @@ This work is licensed under a Creative Commons Attribution-NonCommercial-ShareAl
 \BoSSS{} (Bounded Support Spectral Solver) is a flexible framework for the 
 development, evaluation and application of numerical discretization schemes based on the 
 \ac{dg}  method (see also section \ref{sec:coreConcepts_dgMethods}). 
-Its development has been initiated at the Chair of Fluid Dynamics in 2008 in
+Its development has been initiated in 2008 at the Chair of Fluid Dynamics, TU Darmstadt, in
 order to establish a general foundation for the development of higher order discretizations for 
 challenging physical problems.
 Over the years,
-\BoSSS{} developed into fully-featured library for discontinuous Galerkin methods, including facilities for
+\BoSSS{} developed into a fully-featured library for discontinuous Galerkin methods, including facilities for
 workflow management and the rapid prototyping discretization of partial differential equations.
 
 \paragraph{Research codes:}
@@ -253,7 +253,7 @@ Like for any other language, a C\# program needs to be compiled. Any C\# compile
 files (ending with \texttt{.exe}) that typically rely on library files (ending with \texttt{.dll}). 
 In contrast to languages like C, the executables cannot be executed directly -- they need to be executed
  through the CLI which compiles the CIL to machine code \emph{at runtime}. Due to this \emph{just in time} (JIT) 
-compilation, C\# are able to compete with compiled languages in terms of performance.
+compilation, C\# is able to compete with compiled languages in terms of performance.
 
 This two-step compile approach makes C\# a fast language -- cooperatively fast to 
 languages like C or FORTRAN. C\# is significantly faster than an interpreted language like 
@@ -300,7 +300,7 @@ and libraries to be present on the target computer.
 
 In addition to C\# code,  \BoSSS{} relies on platform-specific ('\emph{native}') third party libraries for specific tasks, 
 such as MPI for parallelization and BLAS/LAPACK for high-performance linear algebra. In 
-section \ref{sec:Installation}, we will thus 
+section \ref{sec:gettingStarted_installation}, we will thus 
 =========
 such MPI for parallelization and BLAS/LAPACK for high-performance linear algebra. In 
 section \ref{sec:gettingStarted_installation}, we will thus 
@@ -557,7 +557,7 @@ Having familiarized with the core concepts of \BoSSS{} (cf. chapter \ref{sec:cor
 % --------------------------------------------------------------------------------
 
 Even if you want to compile \BoSSS{} yourself, we \emph{strictly recommend} that
-you \emph{install the Binary distribution first}.
+you \emph{install the binary distribution first}.
 
 
 \subsection{Development Tools}
@@ -579,7 +579,7 @@ than an \ac{ide}.
 On Windows, we strongly recommend to use the latest version of Visual Studio.
 The Community Edition can be downloaded for free.
 Alternatively, one could also use either Xamarin Studio or SharpDevelop.
-Those environments, the integrated debugger cannot be used for \BoSSS{}:
+In those environments, the integrated debugger cannot be used for \BoSSS{}:
 The native libraries for BoSSS on Windows are only provided for  
 64 bit (AMD64 resp. X86\_64 architecture), therefore \BoSSS{} has to be debugged in 64 bit mode.
 Xamarin Studio and SharpDevelop do not support 64 bit debugging, so they cannot be used to
@@ -637,6 +637,7 @@ When Mono is used, the equivalent to {\tt msbuild} is {\tt xbuild}. Both tools h
 
 
 \chapter{Incompressible Navier-Stokes Solver}
+\label{IBM}
 % ################################################################################
 
 \import{./quickStartIBM/}{channel.tex}

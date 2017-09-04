@@ -218,7 +218,7 @@ public class SipLaplace :\newline
 /// \Delta u = 2,\quad -1<x<1,\quad u(-1)=u(1)=0.
 /// \end{equation*}
 /// The solution is $u_{ex}(x) = 1 - x^2$. Since this is quadratic, we can represent it \emph{exactly} in a DG space of order 2.
-/// As usual, we have to setup a grid and a basis:
+/// As usual, we have to set up a grid and a basis:
 var grd1D                     = Grid1D.LineGrid(GenericBlas.Linspace(-1,1,10));\newline 
 var gdata1D                   = new GridData(grd1D);\newline 
 var DGBasisOn1D               = new Basis(gdata1D,2);\newline 
@@ -393,7 +393,8 @@ Assert.LessOrEqual(checkMatrix.InfNorm(), 1e-8);
 /// \paragraph{Matrix properties for different penalty factors.}
 /// Now, we assemble the matrix of the SIP for different 
 /// \code{PenaltySafety}-factors. We also try to solve the linear system
-/// using an iterative method.
+/// using an iterative method. As Matlab is called multiple times during this 
+/// command, it can take some minutes until it is done.
 int cnt     = 0;\newline 
 var Results = new List<Tuple<double,double,int,double,bool>>();\newline 
 foreach(double sf in SFs) \{\newline 
