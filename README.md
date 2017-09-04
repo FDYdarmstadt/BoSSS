@@ -3,6 +3,7 @@
 BoSSS (Bounded Support Spectral Solver) is a flexible framework for the development, evaluation and applica-
 tion of numerical discretization schemes based on the Discontinuous Galerkin (DG) method.
 
+
 ## Aim and focus of the BoSSS code
 
 Its development has been initiated at the Chair of Fluid Dynamics in 2008 in order to establish a general foundation for the
@@ -13,14 +14,18 @@ the rapid prototyping discretization of partial differential equations.
 
 ## Getting Started
 
-See our installation instructions in the [BoSSS Handbook](doc/handbook/BoSSShandbook.pdf) 
+See our installation instructions for Windows, Linux and Mac in the [BoSSS handbook](https://github.com/FDYdarmstadt/BoSSS/releases/latest)  
+
 
 ## Quickstart guides and Tutorials
 
-See in our [BoSSS Handbook](doc/handbook/BoSSShandbook.pdf) 
+See in our [BoSSS handbook](https://github.com/FDYdarmstadt/BoSSS/releases/latest) 
 
-## Help
 
+## Note for publication
+
+If you are using BoSSS for one of your publications, we kindly ask you to cite one of our own publications, which corresponds most to your work. 
+See in the appendix of the [BoSSS handbook](https://github.com/FDYdarmstadt/BoSSS/releases/latest) a list of our publications.  
 
 
 ## License
