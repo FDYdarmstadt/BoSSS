@@ -55,12 +55,8 @@ namespace BoSSS.Application.TutorialTests {
             "quickStartCNS/IsentropicVortex.tex",
             "MetaJobManager/MetaJobManager.tex",
             "quickStartIBM/channel.tex",
-<<<<<<< HEAD
-            "tutorial2/uebung2tutorial.tex"/*,
-=======
             "shortTutorialMatlab/tutorialMatlab.tex",
             "tutorial2/uebung2tutorial.tex",
->>>>>>> kikker/master
             "tutorial4/tutorial4.tex",
             "tutorial5/uebung5tutorial.tex",
             "tutorial6/tutorial6.tex",
