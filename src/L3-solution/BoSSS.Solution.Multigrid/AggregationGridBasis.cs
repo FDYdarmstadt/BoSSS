@@ -121,7 +121,7 @@ namespace BoSSS.Solution.Multigrid {
                         }
 
                         MassMatrix.AccEye(-1.0);
-                        Debug.Assert(MassMatrix.InfNorm() < 1.0e-9);
+                        Debug.Assert(MassMatrix.InfNorm() < 1.0e-8);
 #endif
                     }
                 }
