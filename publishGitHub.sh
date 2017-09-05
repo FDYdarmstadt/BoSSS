@@ -2,7 +2,7 @@
 
 OAuth=$2
 tag="BoSSS-version$1"
-url="https://api.github.com/repos/FDYdarmstadt/BoSSS-public/releases"
+url="https://api.github.com/repos/FDYdarmstadt/BoSSS/releases"
 
 # set release
 release_json=$(curl -H "Authorization: token $OAuth" -d '{"tag_name":"'$tag'","body":"This is an automatic release. All NUnit tests were successful."}' $url)
