@@ -128,7 +128,7 @@ namespace BoSSS.Solution {
         /// So, for overriding the control file, it must be set after 
         /// calling <see cref="InitMPI"/>;
         /// </summary>
-        protected GridPartType m_GridPartitioningType = Foundation.Grid.GridPartType.ParMETIS;
+        protected GridPartType m_GridPartitioningType = Foundation.Grid.GridPartType.METIS;
 
         /// <summary>
         /// Additional options for Grid Partitioning, see <see cref="m_GridPartitioningType"/>;
