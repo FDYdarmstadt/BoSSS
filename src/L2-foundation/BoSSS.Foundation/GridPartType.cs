@@ -26,7 +26,7 @@ namespace BoSSS.Foundation.Grid {
     public enum GridPartType {
 
         /// <summary>
-        /// use ParMETIS
+        /// use <see cref="ParMETIS"/> (parallel partitioning)
         /// </summary>
         ParMETIS,
 
@@ -43,6 +43,11 @@ namespace BoSSS.Foundation.Grid {
         /// <summary>
         /// leave grid as it is; The first J/P cells will be on first processor, ...
         /// </summary>
-        none
+        none,
+
+        /// <summary>
+        /// Use <see cref="METIS"/> (serial partitioning)
+        /// </summary>
+        METIS
     }
 }

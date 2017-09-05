@@ -465,8 +465,33 @@ namespace MPI.Wrappers {
             MPIException.CheckReturnCode(ierr);
         }
 
+#pragma warning disable 649
+        delegate void _MPI_GATHERV(IntPtr sendbuf, ref int sendcount, ref MPI_Datatype sendtype,
+                                   IntPtr recvbuf, IntPtr recvcounts, IntPtr displs, ref MPI_Datatype recvtype,
+                                   ref int root, ref MPI_Comm comm, out int ierr);
+        _MPI_GATHERV MPI_GATHERV;
+#pragma warning restore 649
+        
+        public void Gatherv(IntPtr sendbuf, int sendcount, MPI_Datatype sendtype,
+                            IntPtr recvbuf, IntPtr recvcounts, IntPtr displs, MPI_Datatype recvtype,
+                            int root, MPI_Comm comm) {
+            MPI_GATHERV(sendbuf, ref sendcount, ref sendtype, recvbuf, recvcounts, displs, ref recvtype, ref root, ref comm, out int ierr);
+            MPIException.CheckReturnCode(ierr);
+        }
 
+#pragma warning disable 649
+        delegate void _MPI_SCATTERV(IntPtr sendbuf, IntPtr sendcounts, IntPtr displs, ref MPI_Datatype sendtype,
+                                    IntPtr recvbuf, ref int recvcounts, ref MPI_Datatype recvtype,
+                                    ref int root, ref MPI_Comm comm, out int ierr);
+        _MPI_SCATTERV MPI_SCATTERV;
+#pragma warning restore 649
 
+        public void Scatterv(IntPtr sendbuf, IntPtr sendcounts, IntPtr displs, MPI_Datatype sendtype,
+                             IntPtr recvbuf, int recvcount, MPI_Datatype recvtype,
+                             int root, MPI_Comm comm) {
+            MPI_SCATTERV(sendbuf, sendcounts, displs, ref sendtype, recvbuf, ref recvcount, ref recvtype, ref root, ref comm, out int ierr);
+            MPIException.CheckReturnCode(ierr);
+        }
 
 
 #pragma warning disable 649
