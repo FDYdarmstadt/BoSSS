@@ -97,6 +97,11 @@ namespace BoSSS.Solution {
 
             int[] result;
             switch (gridPartType) {
+                case GridPartType.METIS:
+                    result = Grid.ComputePartitionMETIS(cellCosts);
+                    isFirstRepartitioning = false;
+                    break;
+
                 case GridPartType.ParMETIS:
                     // Do full ParMETIS run on first repartitioning since
                     // initial partitioning may be _really_ bad

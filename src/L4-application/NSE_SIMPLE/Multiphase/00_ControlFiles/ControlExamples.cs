@@ -33,7 +33,7 @@ namespace NSE_SIMPLE.Multiphase {
             c.savetodb = false;
 
             c.GridGuid = new Guid("a5135fbb-4243-4677-97f6-562860e4f95c");
-            c.GridPartType = GridPartType.ParMETIS;
+            c.GridPartType = GridPartType.METIS;
 
             c.ProjectName = "MultiphaseWave";
             c.ProjectDescription = "Convected density wave";

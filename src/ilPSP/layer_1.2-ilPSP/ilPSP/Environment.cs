@@ -50,7 +50,7 @@ namespace ilPSP {
         /// <param name="ilPSP_Directory">
         /// optional directory to search for native libraries. On windows, it
         /// must contain the 'x86' and the 'amd64' sub-directories, which
-        /// themselves contain the native libs (HYPRE.dll, Aztec.dll, ...).
+        /// themselves contain the native libs (e.g. HYPRE.dll, ...).
         /// </param>
         public static void Bootstrap(string[] CommandLineArgs, string ilPSP_Directory, out bool mpiInitialized) {
             //be forgiving on multiple calls

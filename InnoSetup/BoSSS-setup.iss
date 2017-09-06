@@ -49,11 +49,11 @@ Source: ".\doc\ControlExamples\CNS\*"; DestDir: "{app}\doc\ControlExamples\CNS";
 [Icons]
 Name: "{group}\{cm:ProgramOnTheWeb,{#MyAppName}}"; Filename: "{#MyAppURL}"         
 Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
+Name: "{group}\Install Visualizers for Visual Studio"; Filename: "{app}\bin\Release\bcl.exe"; Parameters: "--visualizers-inst"
 Name: "{group}\BoSSSpad (console)"; Filename: "{app}\bin\Release\BoSSSpad.exe"; Parameters: "--console"        
 Name: "{group}\BoSSSpad (worksheet)"; Filename: "{app}\bin\Release\BoSSSpad.exe"         
 Name: "{group}\BoSSS Handbook"; Filename: "{app}\doc\BoSSShandbook.pdf" 
 Name: "{group}\BoSSS API Reference"; Filename: "{app}\doc\APIreference\index.html" 
-
 
 [Registry]
 ; as elevated user (Admin): set BOSSS_INSTALL system-wide
@@ -89,12 +89,6 @@ Root: HKCU; \
  Filename: bcl.exe; \
  Flags: waituntilterminated runhidden; \
  Description: "Initialization run of bcl";
-
-[Run]
- Filename: bcl.exe; \
- Flags: postinstall nowait runhidden; \
- Description: "Install BoSSS Visualizer Plugins for Visual Studio"; \
- Parameters: "visualizers-inst"
 
 [Code]
 function NeedsAddPath(Param: string): boolean;

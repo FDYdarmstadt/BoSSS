@@ -1,0 +1,193 @@
+\BoSSSopen{shortTutorialMatlab/tutorialMatlab}
+\graphicspath{{shortTutorialMatlab/tutorialMatlab.texbatch/}}
+
+\BoSSScmd{
+/// In this short tutorial we want to use common Matlab commands within the \BoSSS{} framework.
+/// \section{Problem statement}
+/// For our matrix analysis we use the following random matrix:
+/// \begin{equation*}
+/// A = \begin{bmatrix}
+///      1 & 2 & 3\\
+///      4 & 5 & 6\\
+///      7 & 8 & 9
+///     \end{bmatrix}
+/// \end{equation*}
+/// and the symmetric matrix:
+/// \begin{equation*}
+/// S = \begin{bmatrix}
+///      1 & 2 & 3\\
+///      2 & 3 & 2\\
+///      3 & 2 & 1
+///      \end{bmatrix}
+/// \end{equation*}
+/// We are going to evaluate some exemplary properties of the matrices and check if the matrices are symmetric, both in the \BoSSS{} framework and in Matlab.
+/// \section{Solution within the \BoSSS{} framework}
+/// First, we have to initialize the new project:
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+restart;
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+using ilPSP.LinSolvers;\newline 
+using ilPSP.Connectors.Matlab;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We want to implement the two 3x3 matrices in \BoSSSpad{}:
+int Dim     = 3;\newline 
+MsrMatrix A = new MsrMatrix(Dim,Dim);\newline 
+MsrMatrix S = new MsrMatrix(Dim,Dim);\newline 
+double[] A\_firstRow = new double[]\{1,2,3\};\newline 
+double[] A\_secondRow = new double[]\{4,5,6\};\newline 
+double[] A\_thirdRow = new double[]\{7,8,9\};\newline 
+ \newline 
+double[] S\_firstRow = new double[]\{1,2,3\};\newline 
+double[] S\_secondRow = new double[]\{2,3,2\};\newline 
+double[] S\_thirdRow = new double[]\{3,2,1\};\newline 
+ \newline 
+for(int i=0; i<Dim; i++)\{\newline 
+\btab A[0, i] = A\_firstRow[i];\newline 
+\btab S[0, i] = S\_firstRow[i];\newline 
+\}\newline 
+ \newline 
+for(int i=0; i<Dim; i++)\{\newline 
+\btab A[1, i] = A\_secondRow[i];\newline 
+\btab S[1, i] = S\_secondRow[i];\newline 
+\}\newline 
+ \newline 
+for(int i=0; i<Dim; i++)\{\newline 
+\btab A[2, i] = A\_thirdRow[i];\newline 
+\btab S[2, i] = S\_thirdRow[i];\newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \paragraph{Test for symmetry in \BoSSS{}:}$~~$\\
+/// To analyze if the matrices are symmetric, we need to compare the original matrix with the transpose:
+MsrMatrix AT    = A.Transpose();\newline 
+MsrMatrix ST    = S.Transpose();\newline 
+bool SymmTest\_A;\newline 
+bool SymmTest\_S;\newline 
+for(int i = 0; i<Dim; i++)\{\newline 
+\btab for(int j = 0; j<Dim; j++)\{\newline 
+\btab \btab if(A[i,j] == AT[i,j])\{\newline 
+\btab \btab \btab SymmTest\_A = true;\newline 
+\btab \btab \btab \}\newline 
+\btab \btab else\{\newline 
+\btab \btab \btab SymmTest\_A = false;\newline 
+\btab \btab \btab break;\newline 
+\btab \btab \btab \}\newline 
+\btab \btab \}\newline 
+\btab \}\newline 
+for(int i = 0; i<Dim; i++)\{\newline 
+\btab for(int j = 0; j<Dim; j++)\{\newline 
+\btab \btab if(S[i,j] == ST[i,j])\{\newline 
+\btab \btab \btab SymmTest\_S = true;\newline 
+\btab \btab \btab \}\newline 
+\btab \btab else\{\newline 
+\btab \btab \btab SymmTest\_S = false;\newline 
+\btab \btab \btab break;\newline 
+\btab \btab \btab \}\newline 
+\btab \btab \}\newline 
+\btab \}\newline 
+if(SymmTest\_A == true)\{\newline 
+Console.WriteLine("Matrix A seems to be symmetric.");\newline 
+\}\newline 
+else\{\newline 
+Console.WriteLine("Matrix A seems NOT to be symmetric.");\newline 
+\}\newline 
+if(SymmTest\_S == true)\{\newline 
+Console.WriteLine("Matrix S seems to be symmetric.");\newline 
+\}\newline 
+else\{\newline 
+Console.WriteLine("Matrix S seems NOT to be symmetric.");\newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \paragraph{The inteface to Matlab:}$~~$\\
+/// The \code{BatchmodeConnector} initializes an interface to Matlab:
+Console.WriteLine("Calling MATLAB/Octave...");\newline 
+BatchmodeConnector bmc = new BatchmodeConnector();\newline 
+/// We have to transfer out matrices to Matlab:
+bmc.PutSparseMatrix(A, "Matrix\_A");\newline 
+bmc.PutSparseMatrix(S, "Matrix\_S");\newline 
+/// Now we can do calculations in Matlab within the \BoSSSpad{} using the \code{Cmd} command. It commits the Matlab commands as a string. We can calculate e.g. the rank of the matrix or the eigenvalues:
+bmc.Cmd("Full\_A = full(Matrix\_A)");\newline 
+bmc.Cmd("Full\_S = full(Matrix\_S)");\newline 
+bmc.Cmd("Rank\_A = rank(Full\_A)");\newline 
+bmc.Cmd("Rank\_S = rank(Full\_S)");\newline 
+bmc.Cmd("EV\_A = eig(Full\_A)");\newline 
+bmc.Cmd("EV\_S = eig(Full\_S)");\newline 
+bmc.Cmd("Det\_A = det(Full\_A)");\newline 
+bmc.Cmd("Det\_S = det(Full\_S)");\newline 
+bmc.Cmd("Trace\_A = trace(Full\_A)");\newline 
+bmc.Cmd("Trace\_S = trace(Full\_S)");\newline 
+/// We can transfer matrices or arrays from Matlab to \BoSSSpad{} as well, here we want to have the results:
+MultidimensionalArray Results = MultidimensionalArray.Create(2, 3);\newline 
+bmc.Cmd("Results = [Rank\_A, Det\_A, Trace\_A; Rank\_S,  Det\_S,  Trace\_S]");\newline 
+bmc.GetMatrix(Results, "Results");\newline 
+/// and the eigenvalues:
+MultidimensionalArray EV\_A = MultidimensionalArray.Create(3, 1);\newline 
+bmc.GetMatrix(EV\_A, "EV\_A");\newline 
+MultidimensionalArray EV\_S = MultidimensionalArray.Create(3, 1);\newline 
+bmc.GetMatrix(EV\_S, "EV\_S");\newline 
+/// After finishing using Matlab we need to close the interface to Matlab:
+bmc.Execute(false);\newline 
+Console.WriteLine("MATLAB/Octave closed, return to BoSSSPad");
+ }
+\BoSSSexe
+\BoSSScmd{
+/// And here are our results back in the \BoSSSpad{}:
+double Rank\_A  = Results[0,0];\newline 
+double Rank\_S  = Results[1,0];\newline 
+double Det\_A   = Results[0,1];\newline 
+double Det\_S   = Results[1,1];\newline 
+double Trace\_A = Results[0,2];\newline 
+double Trace\_S = Results[1,2];\newline 
+Console.WriteLine("The results of matrix A are: rank: " + Rank\_A + ", trace: " + Trace\_A + ", dterminant: " + Det\_A);\newline 
+Console.WriteLine("The results of matrix S are: rank: " + Rank\_S + ", trace: " + Trace\_S + ", determinant: " + Det\_S);\newline 
+Console.WriteLine();\newline 
+Console.WriteLine("The eigenvalues of matrix A are: " + EV\_A[0,0] + ", " + EV\_A[1,0] + " and " + EV\_A[2,0]);\newline 
+Console.WriteLine("The eigenvalues of matrix S are: " + EV\_S[0,0] + ", " + EV\_S[1,0] + " and " + EV\_S[2,0]);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \paragraph{Test for symmetry within Matlab using the \code{BatchmodeConnector}:}$~~$\\
+/// We do the same test for symmetry for both matrices. In Matlab we can use the convenient command \code{isequal}:
+Console.WriteLine("Calling MATLAB/Octave...");\newline 
+BatchmodeConnector bmc = new BatchmodeConnector();\newline 
+bmc.PutSparseMatrix(A, "Matrix\_A");\newline 
+bmc.PutSparseMatrix(S, "Matrix\_S");\newline 
+bmc.Cmd("Full\_A = full(Matrix\_A)");\newline 
+bmc.Cmd("Full\_S = full(Matrix\_S)");\newline 
+bmc.Cmd("A\_Transpose = transpose(Full\_A)");\newline 
+bmc.Cmd("S\_Transpose = transpose(Full\_S)");\newline 
+bmc.Cmd("SymmTest\_A = isequal(Full\_A, A\_Transpose)");\newline 
+bmc.Cmd("SymmTest\_S = isequal(Full\_S, S\_Transpose)");\newline 
+ \newline 
+MultidimensionalArray SymmTest\_A = MultidimensionalArray.Create(1, 1);\newline 
+bmc.GetMatrix(SymmTest\_A, "SymmTest\_A");\newline 
+MultidimensionalArray SymmTest\_S = MultidimensionalArray.Create(1, 1);\newline 
+bmc.GetMatrix(SymmTest\_S, "SymmTest\_S");\newline 
+bmc.Execute(false);\newline 
+Console.WriteLine("MATLAB/Octave closed, return to BoSSSPad");
+ }
+\BoSSSexe
+\BoSSScmd{
+if(SymmTest\_A[0,0] == 1)\{\newline 
+Console.WriteLine("Matrix A seems to be symmetric.");\newline 
+\}\newline 
+else\{\newline 
+Console.WriteLine("Matrix A seems NOT to be symmetric.");\newline 
+\}    \newline 
+if(SymmTest\_S[0,0] == 1)\{\newline 
+Console.WriteLine("Matrix S seems to be symmetric.");\newline 
+\}\newline 
+else\{\newline 
+Console.WriteLine("Matrix S seems NOT to be symmetric.");\newline 
+\}    
+ }
+\BoSSSexe

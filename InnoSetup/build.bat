@@ -7,19 +7,19 @@ bcl deploy-at ..\src\Utils\AllSpark\bin\Debug\AllSpark.exe                      
 bcl deploy-at ..\src\Utils\AllSpark\bin\Release\AllSpark.exe                                           .\bin\Release  1
 bcl deploy-at ..\src\Utils\MatrixVisualizer\MatrixVisualizerVS15\bin\Debug\MatrixVisualizerVS15.dll    .\bin\Debug    1
 bcl deploy-at ..\src\Utils\MatrixVisualizer\MatrixVisualizerVS15\bin\Release\MatrixVisualizerVS15.dll  .\bin\Release  1
-bcl deploy-at ..\src\public\L4-application\BoSSSpad\bin\Debug\BoSSSpad.exe                   .\bin\Debug    1
-bcl deploy-at ..\src\public\L4-application\BoSSSpad\bin\Release\BoSSSpad.exe                 .\bin\Release  1
+bcl deploy-at ..\src\L4-application\BoSSSpad\bin\Debug\BoSSSpad.exe                   .\bin\Debug    1
+bcl deploy-at ..\src\L4-application\BoSSSpad\bin\Release\BoSSSpad.exe                 .\bin\Release  1
 ::Include xml files for 'Describe' feature in BoSSSpad
-xcopy ..\src\public\L4-application\BoSSSpad\bin\Debug\*.xml           .\bin\Debug /Y
-xcopy ..\src\public\L4-application\BoSSSpad\bin\Release\*.xml         .\bin\Release /Y
-bcl deploy-at ..\src\public\L4-application\PlotGenerator\bin\Debug\BoSSS.PlotGenerator.exe   .\bin\Debug    1
-bcl deploy-at ..\src\public\L4-application\PlotGenerator\bin\Release\BoSSS.PlotGenerator.exe .\bin\Release  1
-bcl deploy-at ..\src\public\L4-application\NSE_SIMPLE\bin\Debug\NSE_SIMPLE.exe               .\bin\Debug    1
-bcl deploy-at ..\src\public\L4-application\NSE_SIMPLE\bin\Release\NSE_SIMPLE.exe             .\bin\Release  1
-bcl deploy-at ..\src\public\L4-application\CNS\bin\Debug\CNS.exe                             .\bin\Debug    1
-bcl deploy-at ..\src\public\L4-application\CNS\bin\Release\CNS.exe                           .\bin\Release  1
-bcl deploy-at ..\src\public\L4-application\IBM_Solver\bin\Debug\IBM_Solver.exe               .\bin\Debug    1
-bcl deploy-at ..\src\public\L4-application\IBM_Solver\bin\Release\IBM_Solver.exe             .\bin\Release  1
+xcopy ..\src\L4-application\BoSSSpad\bin\Debug\*.xml           .\bin\Debug /Y
+xcopy ..\src\L4-application\BoSSSpad\bin\Release\*.xml         .\bin\Release /Y
+bcl deploy-at ..\src\L4-application\PlotGenerator\bin\Debug\BoSSS.PlotGenerator.exe   .\bin\Debug    1
+bcl deploy-at ..\src\L4-application\PlotGenerator\bin\Release\BoSSS.PlotGenerator.exe .\bin\Release  1
+bcl deploy-at ..\src\L4-application\NSE_SIMPLE\bin\Debug\NSE_SIMPLE.exe               .\bin\Debug    1
+bcl deploy-at ..\src\L4-application\NSE_SIMPLE\bin\Release\NSE_SIMPLE.exe             .\bin\Release  1
+bcl deploy-at ..\src\L4-application\CNS\bin\Debug\CNS.exe                             .\bin\Debug    1
+bcl deploy-at ..\src\L4-application\CNS\bin\Release\CNS.exe                           .\bin\Release  1
+bcl deploy-at ..\src\L4-application\IBM_Solver\bin\Debug\IBM_Solver.exe               .\bin\Debug    1
+bcl deploy-at ..\src\L4-application\IBM_Solver\bin\Release\IBM_Solver.exe             .\bin\Release  1
 mkdir bin\native
 xcopy "%BOSSS_INSTALL%\bin\native" .\bin\native /E /Y
 mkdir doc
