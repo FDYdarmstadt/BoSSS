@@ -72,6 +72,8 @@ namespace BoSSS.Solution.Multigrid {
             double errstep;
             double[] step;
 
+            EvaluateOperator(1, SolutionVec.Mapping.Fields, 1, ft);
+
             OnIterationCallback(itc, x.CloneAs(), f0.CloneAs(), this.CurrentLin);
 
             while (fnorm > ConvCrit && itc < MaxIter) {
@@ -84,7 +86,7 @@ namespace BoSSS.Solution.Multigrid {
 
                 // Start line search
                 xOld = x;
-                double lambda = 1.0;
+                double lambda = 1;
                 double lamm = 1;
                 double lamc = lambda;
                 double iarm = 0;
@@ -93,7 +95,11 @@ namespace BoSSS.Solution.Multigrid {
                 EvaluateOperator(1, SolutionVec.Mapping.Fields, 1, ft);
                 var nft = ft.L2NormPow2().MPISum().Sqrt(); var nf0 = f0.L2NormPow2().MPISum().Sqrt(); var ff0 = nf0 * nf0; var ffc = nft * nft; var ffm = nft * nft;
 
-                while (nft >= 1 - alpha * lambda * nf0) {
+                Console.WriteLine("Start residuum for nonlinear iteration:  " + nft);
+
+
+                // Control of the the step size
+                while (nft >= (1 - alpha * lambda) * nf0) {
 
                     // Line search starts here
 
@@ -107,14 +113,15 @@ namespace BoSSS.Solution.Multigrid {
                     lamm = lamc;
                     lamc = lambda;
 
-                    this.CurrentLin.TransformSolFrom(SolutionVec, xt);
+                   this.CurrentLin.TransformSolFrom(SolutionVec, xt);
+
                     EvaluateOperator(1, SolutionVec.Mapping.Fields, 1, ft);
                     nft = ft.L2NormPow2().MPISum().Sqrt();
                     ffm = ffc;
                     ffc = nft * nft;
                     iarm++;
 
-
+                    Console.WriteLine("Step size:  " + lambda + "with Residuum:"+nft);
                 }
                 // transform solution back to 'original domain'
                 // to perform the linearization at the new point...
