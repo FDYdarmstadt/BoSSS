@@ -72,7 +72,8 @@ namespace BoSSS.Solution.Multigrid {
             double errstep;
             double[] step;
 
-            EvaluateOperator(1, SolutionVec.Mapping.Fields, 1, ft);
+
+            Console.WriteLine("Start residuum for nonlinear iteration:  " + fnorm);
 
             OnIterationCallback(itc, x.CloneAs(), f0.CloneAs(), this.CurrentLin);
 
@@ -200,7 +201,7 @@ namespace BoSSS.Solution.Multigrid {
             if (rho < GMRESConvCrit)
                 return SolutionVec.ToArray();
 
-            V[0].SetV(r, (1.0 / rho));
+            V[0].SetV(r,alpha: (1.0 / rho));
             double beta = rho;
             int k = 1;
 
@@ -289,14 +290,14 @@ namespace BoSSS.Solution.Multigrid {
             // update approximation and exit
 
             //y = H(1:i,1:i) \ s(1:i);    
-            y = new double[k];
-            H.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { k - 1, k - 1 })
-                .Solve(y, g.GetSubVector(0, k));
+            y = new double[m];
+            H.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { m - 1, m- 1 })
+                .Solve(y, g.GetSubVector(0, m));
 
             int totalIter = k;
 
             // x = x + V(:,1:i)*y;
-            for (int ii = 0; ii < k; ii++) {
+            for (int ii = 0; ii < m; ii++) {
                 x.AccV(y[ii], V[ii]);
             }
 
