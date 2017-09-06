@@ -208,25 +208,6 @@ namespace BoSSS.Solution.Multigrid {
         }
 
 
-        protected void EvaluateOperator(double alpha, IEnumerable<DGField> CurrentState, double beta, double[] Output) {
-            BlockMsrMatrix OpMtxRaw, MassMtxRaw;
-            double[] OpAffineRaw;
-            this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, CurrentState.ToArray());
-
-            OpMtxRaw.SpMV(alpha, new CoordinateVector(CurrentState.ToArray()), 1.0, OpAffineRaw);
-
-            double[] OutputClone = null;
-            if(beta != 0.0) {
-                OutputClone = Output.CloneAs();
-            }
-
-            CurrentLin.TransformRhsInto(OpAffineRaw, Output);
-
-            if (beta != 0.0)
-                Output.AccV(beta, OutputClone);
-        }
-
-
         /// <summary>
         /// Updating the <see cref="CurrentLin"/> -- operator;
         /// </summary>
@@ -271,6 +252,7 @@ namespace BoSSS.Solution.Multigrid {
             out_Resi.SetV(this.LinearizationRHS, 1.0);
             CurrentLin.OperatorMatrix.SpMV(-1.0, in_U, 1.0, out_Resi);
         }
+
 
         
     }
