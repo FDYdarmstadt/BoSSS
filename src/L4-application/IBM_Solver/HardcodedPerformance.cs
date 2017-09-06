@@ -25,22 +25,26 @@ using ilPSP.Utils;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
+using BoSSS.Foundation.IO;
 
 namespace BoSSS.Application.IBM_Solver {
     public class HardcodedPerformance {
 
-        static public IBM_Control SphereFlow(int k, int cells_x, int cells_yz,  bool only_channel = true, bool pardiso = true, int no_p = 1, int no_it = 1, bool load_Grid = false, string _GridGuid = null) {
+        static public IBM_Control SphereFlow(int k, int cells_x, int cells_yz, bool only_channel = true, bool pardiso = true, int no_p = 1, int no_it = 1, bool restart = false, bool load_Grid = false, string _GridGuid = null) {
             IBM_Control C = new IBM_Control();
 
             // basic database options
             // ======================
             string _DbPath = @"/work/scratch/ws35kire/work_db/"; 
-            C.DbPath = _DbPath;
+            C.DbPath = null;
+            C.savetodb = false;
 
-            if (_DbPath == null)
-                C.savetodb = false;
-            else
-                C.savetodb = true;
+            C.DbPath = @"\\dc1\userspace\stange\HiWi_database\PerformanceTests";
+
+            string restartSession = "727da287-1b6a-463e-b7c9-7cc19093b5b3";
+            string restartGrid = "3f8f3445-46f1-47ed-ac0e-8f0260f64d8f";
+
+            
 
             // Assign correct names
 
@@ -79,6 +83,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.Tags.Add("run " + no_it);
             C.Tags.Add("cells_x " + cells_x);
             C.Tags.Add("cells_yz " + cells_yz);
+            C.Tags.Add("restart " + restart);
 
             // Create Fields
             C.FieldOptions.Add("VelocityX", new FieldOpts() {
@@ -106,8 +111,14 @@ namespace BoSSS.Application.IBM_Solver {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
 
-
+            if (restart)
+            {
+                C.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid(restartSession), -1);
+                C.GridGuid = new Guid(restartGrid);
+            }
             // Load Grid
+            if (!restart)
+            {
 
             if (load_Grid == true) {
                 Console.WriteLine("...loading grid");
@@ -170,169 +181,185 @@ namespace BoSSS.Application.IBM_Solver {
                     return grd;
                 };
             }
-            #endregion
+                #endregion
 
-            //// Create Grid with HANGING NODES
-            //Console.WriteLine("...generating grid");
-            //C.GridFunc = delegate {
+                //// Create Grid with HANGING NODES
+                //Console.WriteLine("...generating grid");
+                //C.GridFunc = delegate {
 
-            //    // Box1
-            //    var box1_p1 = new double[3] { -10, -10, -10 };
-            //    var box1_p2 = new double[3] { 30, 10, 10 };
-            //    var box1 = new GridCommons.GridBox(box1_p1, box1_p2,10,5,5);
+                //    // Box1
+                //    var box1_p1 = new double[3] { -10, -10, -10 };
+                //    var box1_p2 = new double[3] { 30, 10, 10 };
+                //    var box1 = new GridCommons.GridBox(box1_p1, box1_p2,10,5,5);
 
-            //    // Box2
-            //    var box2_p1 = new double[3] { 0, -5, -5 };
-            //    var box2_p2 = new double[3] { 20, 5, 5 };
-            //    var box2 = new GridCommons.GridBox(box2_p1, box2_p2, 10, 6, 6);
+                //    // Box2
+                //    var box2_p1 = new double[3] { 0, -5, -5 };
+                //    var box2_p2 = new double[3] { 20, 5, 5 };
+                //    var box2 = new GridCommons.GridBox(box2_p1, box2_p2, 10, 6, 6);
 
-            //    // Cut Out
-            //    var grd = Grid3D.HangingNodes3D(false, true, true, box1, box2);
+                //    // Cut Out
+                //    var grd = Grid3D.HangingNodes3D(false, true, true, box1, box2);
 
-            //    grd.EdgeTagNames.Add(1, "Velocity_inlet");
-            //    grd.EdgeTagNames.Add(2, "Pressure_Outlet");
-            //    grd.EdgeTagNames.Add(3, "Wall");
+                //    grd.EdgeTagNames.Add(1, "Velocity_inlet");
+                //    grd.EdgeTagNames.Add(2, "Pressure_Outlet");
+                //    grd.EdgeTagNames.Add(3, "Wall");
 
-            //    grd.DefineEdgeTags(delegate (double[] _X) {
-            //        var X = _X;
-            //        double x = X[0];
-            //        double y = X[1];
-            //        double z = X[2];
+                //    grd.DefineEdgeTags(delegate (double[] _X) {
+                //        var X = _X;
+                //        double x = X[0];
+                //        double y = X[1];
+                //        double z = X[2];
 
-            //        if (Math.Abs(x - (-10)) < 1.0e-6)
-            //            // inlet
-            //            return 1;
+                //        if (Math.Abs(x - (-10)) < 1.0e-6)
+                //            // inlet
+                //            return 1;
 
-            //        if (Math.Abs(x - (30)) < 1.0e-6)
-            //            // outlet
-            //            return 2;
+                //        if (Math.Abs(x - (30)) < 1.0e-6)
+                //            // outlet
+                //            return 2;
 
-            //        if (Math.Abs(y - (-10)) < 1.0e-6)
-            //            // left
-            //            return 1;
+                //        if (Math.Abs(y - (-10)) < 1.0e-6)
+                //            // left
+                //            return 1;
 
-            //        if (Math.Abs(y - (10)) < 1.0e-6)
-            //            // right
-            //            return 1;
+                //        if (Math.Abs(y - (10)) < 1.0e-6)
+                //            // right
+                //            return 1;
 
-            //        if (Math.Abs(z - (-10)) < 1.0e-6)
-            //            // top left
-            //            return 1;
+                //        if (Math.Abs(z - (-10)) < 1.0e-6)
+                //            // top left
+                //            return 1;
 
-            //        if (Math.Abs(z - (10)) < 1.0e-6)
-            //            // top right
-            //            return 1;
+                //        if (Math.Abs(z - (10)) < 1.0e-6)
+                //            // top right
+                //            return 1;
 
-            //        throw new ArgumentOutOfRangeException();
-            //    });
+                //        throw new ArgumentOutOfRangeException();
+                //    });
 
-            //    Console.WriteLine("Cells:    {0}", grd.NumberOfCells);
+                //    Console.WriteLine("Cells:    {0}", grd.NumberOfCells);
 
-            //    return grd;
-            //};
+                //    return grd;
+                //};
 
-            #region Creates grid (17710 Cells) and sets BC
-            //// Create Grid
-            //Console.WriteLine("...generating grid");
-            //C.GridFunc = delegate {
+                #region Creates grid (17710 Cells) and sets BC
+                //// Create Grid
+                //Console.WriteLine("...generating grid");
+                //C.GridFunc = delegate {
 
-            //    // x-direction
-            //    var _xNodes1 = Grid1D.ExponentialSpaceing(-9.5, -3, 11, 0.98);
-            //    _xNodes1 = _xNodes1.GetSubVector(0, (_xNodes1.Length - 1));
-            //    var _xNodes2 = Grid1D.ExponentialSpaceing(-3, -1, 9, 0.95);
-            //    _xNodes2 = _xNodes2.GetSubVector(0, (_xNodes2.Length - 1));
-            //    var _xNodes3 = Grid1D.ExponentialSpaceing(-1, 0, 8, 1);
-            //    _xNodes3 = _xNodes3.GetSubVector(0, (_xNodes3.Length - 1));
-            //    var _xNodes4 = Grid1D.ExponentialSpaceing(0, 2, 9, 1.05);
-            //    _xNodes4 = _xNodes4.GetSubVector(0, (_xNodes4.Length - 1));
-            //    var _xNodes5 = Grid1D.ExponentialSpaceing(2, 8.5, 16, 1.02);
-            //    _xNodes5 = _xNodes5.GetSubVector(0, (_xNodes5.Length - 1));
-            //    var _xNodes6 = Grid1D.ExponentialSpaceing(8.5, 12.5, 5, 1);
+                //    // x-direction
+                //    var _xNodes1 = Grid1D.ExponentialSpaceing(-9.5, -3, 11, 0.98);
+                //    _xNodes1 = _xNodes1.GetSubVector(0, (_xNodes1.Length - 1));
+                //    var _xNodes2 = Grid1D.ExponentialSpaceing(-3, -1, 9, 0.95);
+                //    _xNodes2 = _xNodes2.GetSubVector(0, (_xNodes2.Length - 1));
+                //    var _xNodes3 = Grid1D.ExponentialSpaceing(-1, 0, 8, 1);
+                //    _xNodes3 = _xNodes3.GetSubVector(0, (_xNodes3.Length - 1));
+                //    var _xNodes4 = Grid1D.ExponentialSpaceing(0, 2, 9, 1.05);
+                //    _xNodes4 = _xNodes4.GetSubVector(0, (_xNodes4.Length - 1));
+                //    var _xNodes5 = Grid1D.ExponentialSpaceing(2, 8.5, 16, 1.02);
+                //    _xNodes5 = _xNodes5.GetSubVector(0, (_xNodes5.Length - 1));
+                //    var _xNodes6 = Grid1D.ExponentialSpaceing(8.5, 12.5, 5, 1);
 
-            //    var _xNodes = ArrayTools.Cat(_xNodes1, _xNodes2, _xNodes3, _xNodes4, _xNodes5, _xNodes6);
+                //    var _xNodes = ArrayTools.Cat(_xNodes1, _xNodes2, _xNodes3, _xNodes4, _xNodes5, _xNodes6);
 
-            //    // y-direction
-            //    var _yNodes1 = Grid1D.ExponentialSpaceing(-9, -2.5, 8, 0.91);
-            //    _yNodes1 = _yNodes1.GetSubVector(0, (_yNodes1.Length - 1));
-            //    var _yNodes2 = Grid1D.ExponentialSpaceing(-2.5, -0.5, 8, 0.95);
-            //    _yNodes2 = _yNodes2.GetSubVector(0, (_yNodes2.Length - 1));
-            //    var _yNodes3 = Grid1D.ExponentialSpaceing(-0.5, 0.5, 8, 1.0);
-            //    _yNodes3 = _yNodes3.GetSubVector(0, (_yNodes3.Length - 1));
-            //    var _yNodes4 = Grid1D.ExponentialSpaceing(0.5, 2.5, 8, 1.05);
-            //    _yNodes4 = _yNodes4.GetSubVector(0, (_yNodes4.Length - 1));
-            //    var _yNodes5 = Grid1D.ExponentialSpaceing(2.5, 9, 8, 1.1);
+                //    // y-direction
+                //    var _yNodes1 = Grid1D.ExponentialSpaceing(-9, -2.5, 8, 0.91);
+                //    _yNodes1 = _yNodes1.GetSubVector(0, (_yNodes1.Length - 1));
+                //    var _yNodes2 = Grid1D.ExponentialSpaceing(-2.5, -0.5, 8, 0.95);
+                //    _yNodes2 = _yNodes2.GetSubVector(0, (_yNodes2.Length - 1));
+                //    var _yNodes3 = Grid1D.ExponentialSpaceing(-0.5, 0.5, 8, 1.0);
+                //    _yNodes3 = _yNodes3.GetSubVector(0, (_yNodes3.Length - 1));
+                //    var _yNodes4 = Grid1D.ExponentialSpaceing(0.5, 2.5, 8, 1.05);
+                //    _yNodes4 = _yNodes4.GetSubVector(0, (_yNodes4.Length - 1));
+                //    var _yNodes5 = Grid1D.ExponentialSpaceing(2.5, 9, 8, 1.1);
 
-            //    var _yNodes = ArrayTools.Cat(_yNodes1, _yNodes2, _yNodes3, _yNodes4, _yNodes5);
+                //    var _yNodes = ArrayTools.Cat(_yNodes1, _yNodes2, _yNodes3, _yNodes4, _yNodes5);
 
-            //    // z-direction
-            //    var _zNodes = GenericBlas.Linspace(-3, 3, 11);
+                //    // z-direction
+                //    var _zNodes = GenericBlas.Linspace(-3, 3, 11);
 
-            //    // Cut Out
-            //    double[] CutOutPoint1 = new double[3];
-            //    CutOutPoint1[0] = -1;
-            //    CutOutPoint1[1] = -0.5;
-            //    CutOutPoint1[2] = -3;
+                //    // Cut Out
+                //    double[] CutOutPoint1 = new double[3];
+                //    CutOutPoint1[0] = -1;
+                //    CutOutPoint1[1] = -0.5;
+                //    CutOutPoint1[2] = -3;
 
-            //    double[] CutOutPoint2 = new double[3];
-            //    CutOutPoint2[0] = 0;
-            //    CutOutPoint2[1] = 0.5;
-            //    CutOutPoint2[2] = 3;
+                //    double[] CutOutPoint2 = new double[3];
+                //    CutOutPoint2[0] = 0;
+                //    CutOutPoint2[1] = 0.5;
+                //    CutOutPoint2[2] = 3;
 
-            //    var CutOut = new BoundingBox(3);
-            //    CutOut.AddPoint(CutOutPoint1);
-            //    CutOut.AddPoint(CutOutPoint2);
+                //    var CutOut = new BoundingBox(3);
+                //    CutOut.AddPoint(CutOutPoint1);
+                //    CutOut.AddPoint(CutOutPoint2);
 
-            //    var grd = Grid3D.Cartesian3DGrid(_xNodes, _yNodes, _zNodes, false, false, true, CellType.Cube_Linear, CutOut);
+                //    var grd = Grid3D.Cartesian3DGrid(_xNodes, _yNodes, _zNodes, false, false, true, CellType.Cube_Linear, CutOut);
 
-            //    grd.EdgeTagNames.Add(1, "Velocity_inlet");
-            //    grd.EdgeTagNames.Add(2, "Pressure_Outlet");
-            //    grd.EdgeTagNames.Add(3, "Wall");
+                //    grd.EdgeTagNames.Add(1, "Velocity_inlet");
+                //    grd.EdgeTagNames.Add(2, "Pressure_Outlet");
+                //    grd.EdgeTagNames.Add(3, "Wall");
 
-            //    grd.DefineEdgeTags(delegate(double[] _X) {
-            //        var X = _X;
-            //        double x = X[0];
-            //        double y = X[1];
-            //        double z = X[2];
+                //    grd.DefineEdgeTags(delegate(double[] _X) {
+                //        var X = _X;
+                //        double x = X[0];
+                //        double y = X[1];
+                //        double z = X[2];
 
-            //        if (Math.Abs(x - (-9.5)) < 1.0e-6)
-            //            // inlet
-            //            return 1;
+                //        if (Math.Abs(x - (-9.5)) < 1.0e-6)
+                //            // inlet
+                //            return 1;
 
-            //        if (Math.Abs(x - (12.5)) < 1.0e-6)
-            //            // outlet
-            //            return 2;
+                //        if (Math.Abs(x - (12.5)) < 1.0e-6)
+                //            // outlet
+                //            return 2;
 
-            //        if (Math.Abs(z - (-3)) < 1.0e-6)
-            //            // left
-            //            return 2;
+                //        if (Math.Abs(z - (-3)) < 1.0e-6)
+                //            // left
+                //            return 2;
 
-            //        if (Math.Abs(z - (3)) < 1.0e-6)
-            //            // right
-            //            return 2;
+                //        if (Math.Abs(z - (3)) < 1.0e-6)
+                //            // right
+                //            return 2;
 
-            //        if (Math.Abs(x - (-1)) < 1.0e-6)
-            //            // Cube front
-            //            return 3;
+                //        if (Math.Abs(x - (-1)) < 1.0e-6)
+                //            // Cube front
+                //            return 3;
 
-            //        if (Math.Abs(x - (0)) < 1.0e-6)
-            //            // cube back
-            //            return 3;
+                //        if (Math.Abs(x - (0)) < 1.0e-6)
+                //            // cube back
+                //            return 3;
 
-            //        if (Math.Abs(y - (-0.5)) < 1.0e-6)
-            //            // cube left
-            //            return 3;
+                //        if (Math.Abs(y - (-0.5)) < 1.0e-6)
+                //            // cube left
+                //            return 3;
 
-            //        if (Math.Abs(y - (0.5)) < 1.0e-6)
-            //            // cube right
-            //            return 3;
+                //        if (Math.Abs(y - (0.5)) < 1.0e-6)
+                //            // cube right
+                //            return 3;
 
-            //        throw new ArgumentOutOfRangeException();
-            //    });
+                //        throw new ArgumentOutOfRangeException();
+                //    });
 
-            //    return grd;
-            //};
-            #endregion
+                //    return grd;
+                //};
+                #endregion
 
+                // Set Initial Conditions
+                C.InitialValues_Evaluators.Add("VelocityX", X => 0);
+                C.InitialValues_Evaluators.Add("VelocityY", X => 0);
+                C.InitialValues_Evaluators.Add("VelocityZ", X => 0.5);
+                C.InitialValues_Evaluators.Add("Pressure", X => 0);
+
+                if (only_channel)
+                {
+                    C.InitialValues_Evaluators.Add("Phi", X => -1);
+                }
+                else
+                {
+                    C.InitialValues_Evaluators.Add("Phi", X => -(X[0]).Pow2() + -(X[1]).Pow2() + -(X[2]).Pow2() + C.particleRadius.Pow2());
+                }
+
+            }
             Console.WriteLine("...starting calculation of Sphere3D");
 
             // Initial Solution
@@ -349,23 +376,7 @@ namespace BoSSS.Application.IBM_Solver {
            // C.AddBoundaryCondition("Wall");
             C.AddBoundaryCondition("Pressure_Outlet");
 
-            // Set Initial Conditions
-            C.InitialValues_Evaluators.Add("VelocityX", X => 0);
-            C.InitialValues_Evaluators.Add("VelocityY", X => 0);
-            C.InitialValues_Evaluators.Add("VelocityZ", X => 0.5);
-            C.InitialValues_Evaluators.Add("Pressure", X => 0);
-
-            if (only_channel)
-            {
-                C.InitialValues_Evaluators.Add("Phi", X => -1);
-            }
-            else
-            {
-                C.InitialValues_Evaluators.Add("Phi", X => -(X[0]).Pow2() + -(X[1]).Pow2() + -(X[2]).Pow2() + C.particleRadius.Pow2());
-            }
-
             
-
             // misc. solver options
             // ====================
             C.PhysicalParameters.IncludeConvection = true;

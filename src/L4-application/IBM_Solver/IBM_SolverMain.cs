@@ -210,7 +210,7 @@ namespace BoSSS.Application.IBM_Solver {
 
         protected bool U0MeanRequired = false;
 
-        protected XQuadFactoryHelper.MomentFittingVariants momentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Classic;
+        protected XQuadFactoryHelper.MomentFittingVariants momentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
 
         protected XSpatialOperator IBM_Op;
 
@@ -1000,6 +1000,59 @@ namespace BoSSS.Application.IBM_Solver {
                 CellPerfomanceClasses[j] = 1;
             foreach (int j in LsTrk._Regions.GetCutCellMask().ItemEnum)
                 CellPerfomanceClasses[j] = 2;
+        }
+
+        public override void PostRestart(double time)
+        {
+            // Find path to PhysicalData.txt
+            var fsDriver = this.DatabaseDriver.FsDriver;
+            string pathToOldSessionDir = System.IO.Path.Combine(
+                fsDriver.BasePath, "sessions", this.CurrentSessionInfo.RestartedFrom.ToString());
+            string pathToPhysicalData = System.IO.Path.Combine(pathToOldSessionDir, "PhysicalData.txt");
+            string[] records = File.ReadAllLines(pathToPhysicalData);
+
+            string restartLine = "";
+            // Calculcation of dt 
+            var physicalData = File.ReadLines(pathToPhysicalData);
+            int count = 0;
+            foreach (string line in physicalData)
+            {
+                string[] fields = line.Split('\t');
+                restartLine = line;
+                if (count != 0) { 
+                if (Convert.ToDouble(fields[1]) > time)
+                {
+                    break;
+                }
+            }
+            count++;
+            }
+
+                        
+           // double dt = Convert.ToDouble(fields_line2[1]) - Convert.ToDouble(fields_line1[1]);
+            
+            // Using dt to find line of restart time
+           // int idx_restartLine = Convert.ToInt32(time / dt + 1.0);
+            //string restartLine = File.ReadLines(pathToPhysicalData).Skip(idx_restartLine - 1).Take(1).First();
+            double[] values = Array.ConvertAll<string, double>(restartLine.Split('\t'), double.Parse);
+
+            // Adding PhysicalData.txt
+            if ((base.MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty))
+            {
+                Log_DragAndLift = base.DatabaseDriver.FsDriver.GetNewLog("PhysicalData", CurrentSessionInfo.ID);
+                string firstline;
+                if (this.GridData.SpatialDimension == 3)
+                {
+                    firstline = String.Format("{0}\t{1}\t{2}\t{3}\t{4}", "#Timestep", "#Time", "x-Force", "y-Force", "z-Force");
+                }
+                else
+                {
+                    firstline = String.Format("{0}\t{1}\t{2}\t{3}", "#Timestep", "#Time", "x-Force", "y-Force");
+                }
+                Log_DragAndLift.WriteLine(firstline);
+                Log_DragAndLift.WriteLine(restartLine);
+            }
+
         }
 
     }

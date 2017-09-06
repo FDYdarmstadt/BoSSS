@@ -18,7 +18,7 @@
 
 
 \BoSSScmd{
-/// \section*{What´s new}
+/// \section*{What's new}
 ///
 ///\begin{itemize}
 /// \item running a simulation with the incompressible Navier-Stokes solver
@@ -31,7 +31,7 @@
 ///\begin{itemize}
 ///\item the \BoSSS\ framework
 ///\item a visualization tool, e.g Paraview or VisIt
-///\item the knowledge how to setup a database for \BoSSS{}
+///\item the knowledge of how to setup a database for \BoSSS{}
 ///\end{itemize}
 /// This tutorial will explain the basic features of the incompressible Navier-Stokes solver in the \BoSSS{} framework. 
 /// First, the simple testcase of a 2D channel flow will be explained. After that, there will be a short part about the immersed boundary feature of our incompressible flow solver. 
@@ -59,7 +59,6 @@
 /// \label{sec:Channel}
 ///\subsection{Interactive mode}
  }
-\BoSSSexeSilent
 \BoSSScmd{
 restart;
  }
@@ -131,7 +130,7 @@ c.Tags.Add("k"+k);
  }
 \BoSSSexe
 \BoSSScmd{
-/// Here, the degree for each field is set (degree k for velocity, k-1 for pressure). First, Phi is not going to be used in this simulation but it has to be specified anyways.
+/// Here, the degree for each field is set (degree \code{k} for velocity, \code{k-1} for pressure). First, \code{Phi} is not going to be used in this simulation but it has to be specified anyways.
 c.FieldOptions.Add("VelocityX", new FieldOpts() \{\newline 
 Degree = k,\newline 
 SaveToDB = FieldOpts.SaveToDBOpt.TRUE\newline 
@@ -186,7 +185,7 @@ return et;\newline
  }
 \BoSSSexe
 \BoSSScmd{
-/// Return grid info ans save
+/// Return grid info and save
 grid;\newline 
 Guid GridGuid = myDb.SaveGrid(grid);\newline 
 c.GridGuid    = GridGuid;
@@ -202,14 +201,14 @@ c.AddBoundaryCondition("Pressure\_Outlet");
 \BoSSSexe
 \BoSSScmd{
 /// Fluid Properties
-/// Note: As characteristic length and fluid density are choosen to one. The viscosity can be defined by $1/reynolds$.
+/// Note: The characteristic length and fluid density are choosen to one. Therefore, the viscosity can be defined by \code{1.0/reynolds}.
 double reynolds            = 20;\newline 
 c.PhysicalParameters.rho\_A = 1;\newline 
 c.PhysicalParameters.mu\_A  = 1.0/reynolds;
  }
 \BoSSSexe
 \BoSSScmd{
-/// Bool parameter wheather the Navier-Stokes or Stokes equations should be solved
+/// Bool parameter whether the Navier-Stokes or Stokes equations should be solved
 c.PhysicalParameters.IncludeConvection = true;
  }
 \BoSSSexe
@@ -265,22 +264,22 @@ solver.Dispose();
 \BoSSSexe
 \BoSSScmd{
 /// Plot the current session
-//myDb.Sessions.First().Export().Do();
+myDb.Sessions.First().Export().Do();
  }
 \BoSSSexe
 \BoSSScmd{
 /// Open the ExportDirectory to view the *.plt files
-//myDb.Sessions.First().OpenExportDirectory();
+myDb.Sessions.First().OpenExportDirectory();
  }
 \BoSSSexe
 \BoSSScmd{
-/// Some information like the console output or a log containing various physical values can be found in the SessionDirectory
-//myDb.Sessions.First().OpenSessionDirectory();
+/// Some information like the console output or a log containing various physical values can be found in the session directory
+myDb.Sessions.First().OpenSessionDirectory();
  }
 \BoSSSexe
 \BoSSScmd{
 /// Delete database
-//DatabaseUtils.DeleteDatabase(myDb.Path);
+DatabaseUtils.DeleteDatabase(myDb.Path);
  }
 \BoSSSexe
 \BoSSScmd{
@@ -292,37 +291,37 @@ solver.Dispose();
 \BoSSSexe
 \BoSSScmd{
 /// x-Direction (using also hyperbolic tangential distribution)
-//var \_xNodes1 = Grid1D.TanhSpacing(-2, -1, 10, 0.5, false); \newline 
-//\_xNodes1     = \_xNodes1.GetSubVector(0, (\_xNodes1.Length - 1));\newline 
-//var \_xNodes2 = GenericBlas.Linspace(-1, 2, 35); \newline 
-//\_xNodes2     = \_xNodes2.GetSubVector(0, (\_xNodes2.Length - 1));\newline 
-//var \_xNodes3 = Grid1D.TanhSpacing(2, 20, 60 , 1.5, true);  \newline 
-//var xNodes   = ArrayTools.Cat(\_xNodes1, \_xNodes2, \_xNodes3);
+var \_xNodes1 = Grid1D.TanhSpacing(-2, -1, 10, 0.5, false); \newline 
+\_xNodes1     = \_xNodes1.GetSubVector(0, (\_xNodes1.Length - 1));\newline 
+var \_xNodes2 = GenericBlas.Linspace(-1, 2, 35); \newline 
+\_xNodes2     = \_xNodes2.GetSubVector(0, (\_xNodes2.Length - 1));\newline 
+var \_xNodes3 = Grid1D.TanhSpacing(2, 20, 60 , 1.5, true);  \newline 
+var xNodes   = ArrayTools.Cat(\_xNodes1, \_xNodes2, \_xNodes3);
  }
 \BoSSSexe
 \BoSSScmd{
 /// y-Direction
-//var \_yNodes1 = Grid1D.TanhSpacing(-2, -1, 7, 0.9, false); \newline 
-//\_yNodes1     = \_yNodes1.GetSubVector(0, (\_yNodes1.Length - 1));\newline 
-//var \_yNodes2 = GenericBlas.Linspace(-1, 1, 25); \newline 
-//\_yNodes2     = \_yNodes2.GetSubVector(0, (\_yNodes2.Length - 1));\newline 
-//var \_yNodes3 = Grid1D.TanhSpacing(1, 2.1, 7, 1.1, true);  \newline 
-//var yNodes   = ArrayTools.Cat(\_yNodes1, \_yNodes2, \_yNodes3);
+var \_yNodes1 = Grid1D.TanhSpacing(-2, -1, 7, 0.9, false); \newline 
+\_yNodes1     = \_yNodes1.GetSubVector(0, (\_yNodes1.Length - 1));\newline 
+var \_yNodes2 = GenericBlas.Linspace(-1, 1, 25); \newline 
+\_yNodes2     = \_yNodes2.GetSubVector(0, (\_yNodes2.Length - 1));\newline 
+var \_yNodes3 = Grid1D.TanhSpacing(1, 2.1, 7, 1.1, true);  \newline 
+var yNodes   = ArrayTools.Cat(\_yNodes1, \_yNodes2, \_yNodes3);
  }
 \BoSSSexe
 \BoSSScmd{
-/// Furthermore, the cylinder immmersed the fluid should be described
+/// Furthermore, the cylinder immersing the fluid should be described
 /// by using the zero contour of a level set function. The radius of the cylinder is set to 0.5.
  }
 \BoSSSexe
 \BoSSScmd{
-//c.InitialValues.Add("Phi", new Formula("X => -(X[0]).Pow2() + -(X[1]).Pow2() + 0.25", false));
+c.InitialValues.Add("Phi", new Formula("X => -(X[0]).Pow2() + -(X[1]).Pow2() + 0.25", false));
  }
 \BoSSSexe
 \BoSSScmd{
-/// As soon as we have exchanged the grids and the definition of phi. Example Control files for both,
-/// the Channel and the flow around a cylinder can be found in the ControlExample directory. As soon as we ran 
-/// the simulation again we can take a look at the plots and the PhysicalData file in the SessionDirectory. 
+/// Example control files for both,
+/// the channel and the flow around a cylinder can be found in the ControlExample directory. As soon as we run 
+/// the simulation again we can take a look at the plots and the PhysicalData file in the session directory. 
 /// There we can find for example lift and drag forces acting on the cylinder.
  }
 \BoSSSexe
