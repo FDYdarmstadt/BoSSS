@@ -22,6 +22,7 @@ using ilPSP.Utils;
 using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
@@ -136,7 +137,23 @@ namespace BoSSS.Foundation.Grid.Classic {
 
             }
         }
-
+        /// <summary>
+        /// Computes a grid partitioning (which cell should be on which processor)
+        /// using the serial METIS library -- work is only done on MPi rank 0.
+        /// </summary>
+        /// <param name="cellWeights">
+        /// If not null, defines the weight associted with each cell on this process
+        /// </param>
+        /// <param name="refineCurrentPartitioning">
+        /// Refines the current partitioning instead of starting from scratch
+        /// </param>
+        /// <returns>
+        /// Index: local cell index, content: MPI Processor rank;<br/>
+        /// This is the suggestion
+        /// of ParMETIS for the grid partitioning:
+        /// For each local cell index, the returned array contains the MPI
+        /// process rank where the cell should be placed.
+        /// </returns>
         public int[] ComputePartitionMETIS(int[] cellWeightsLocal = null, int noOfRefinements = 0) {
             using (new FuncTrace()) {
                 int size = this.Size;
@@ -151,7 +168,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         "Grid contains more than {0} cells and can thus not be partitioned using METIS. Use ParMETIS instead.",
                         int.MaxValue));
                 }
-                int J = (rank == 0) ? NumberOfCells : 0;
+                int J = (rank == 0) ? this.NumberOfCells : 0;
 
                 // Setup communication; all send to rank 0
                 SerialisationMessenger sms = new SerialisationMessenger(csMPI.Raw._COMM.WORLD);
@@ -190,8 +207,9 @@ namespace BoSSS.Foundation.Grid.Classic {
                 }
 
                 // Gather global weights on rank 0
-                int[] cellWeightsGlobal = new int[J];
+                int[] cellWeightsGlobal = null;
                 if (cellWeightsLocal != null) {
+                    cellWeightsGlobal = new int[J];
                     if (rank == 0) {
                         int localOffset = m_CellPartitioning.GetI0Offest(rank);
                         int localLength = m_CellPartitioning.GetLocalLength(rank);
@@ -240,8 +258,11 @@ namespace BoSSS.Foundation.Grid.Classic {
                     int nparts = size;
                     int edgecut = -1;
                     int numflag = 0; // 0 -> use C-style ordering
+                    Debug.Assert((cellWeightsGlobal == null) == (cellWeightsLocal == null));
                     int ncon = (cellWeightsGlobal == null) ? 0 : 1;  // Use 0 or 1 weight per vertex/cell
                     int wgtflag = cellWeightsGlobal == null ? 0 : 2; // Just use vertex/cell weights
+                    int[] Options = new int[5]; // 0-th entry is 0, therefore all others should be ignored; however, we reserve the mem in case of any access
+
                     METIS.PartGraphKway(
                         ref J,
                         xadj: xadj,
@@ -251,9 +272,20 @@ namespace BoSSS.Foundation.Grid.Classic {
                         wgtflag: ref wgtflag,
                         numflag: ref numflag,
                         nparts: ref nparts,
-                        options: new int[] { 0 }, // use default
+                        options: Options, 
                         edgecut: ref edgecut,
                         part: globalResult);
+
+                    int[] CountCheck = new int[size];
+                    int J2 = this.NumberOfCells;
+                    for (int i = 0; i < J2; i++) {
+                        CountCheck[globalResult[i]]++;
+                    }
+                    for(int rnk = 0; rnk < size; rnk++) {
+                        if (CountCheck[rnk] <= 0) {
+                            throw new ApplicationException("METIS produced illegal partitioning - 0 cells on process " + rnk + ".");
+                        }
+                    }
                 }
 
                 //System.Diagnostics.Debugger.Launch();
@@ -264,6 +296,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 }
                 int[] localResult = globalResult.MPIScatterv(localLengths);
 
+                
                 return localResult;
             }
         }
