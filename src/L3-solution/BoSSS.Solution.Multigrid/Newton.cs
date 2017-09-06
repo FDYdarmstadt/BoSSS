@@ -17,7 +17,7 @@ namespace BoSSS.Solution.Multigrid {
         /// <summary>
         /// Maximum number of Newton iterations
         /// </summary>
-        public int MaxIter = 10;
+        public int MaxIter = 3;
 
         /// <summary>
         /// Minimum number of Newton iterations
@@ -91,7 +91,8 @@ namespace BoSSS.Solution.Multigrid {
                 double lamm = 1;
                 double lamc = lambda;
                 double iarm = 0;
-                xt.AccV(lambda, step);
+                xt = x.CloneAs(); 
+                xt.SetV(step ,lambda);
                 this.CurrentLin.TransformSolFrom(SolutionVec, xt);
                 EvaluateOperator(1, SolutionVec.Mapping.Fields, 1, ft);
                 var nft = ft.L2NormPow2().MPISum().Sqrt(); var nf0 = f0.L2NormPow2().MPISum().Sqrt(); var ff0 = nf0 * nf0; var ffc = nft * nft; var ffm = nft * nft;
@@ -110,7 +111,8 @@ namespace BoSSS.Solution.Multigrid {
                         lambda = parab3p(lamc, lamm, ff0, ffc, ffm);
 
                     // Update x;
-                    xt.AccV(lambda, step);
+                    xt = x.CloneAs();
+                    xt.SetV(step, lambda);
                     lamm = lamc;
                     lamc = lambda;
 
@@ -140,7 +142,7 @@ namespace BoSSS.Solution.Multigrid {
                 fnorm = ft.L2NormPow2().MPISum().Sqrt();
 
                 x = xt;
-                f0 = ft;
+                f0 = ft.CloneAs();
 
                 OnIterationCallback(itc, x.CloneAs(), f0.CloneAs(), this.CurrentLin);
 
@@ -185,17 +187,17 @@ namespace BoSSS.Solution.Multigrid {
             }
 
             int m = maxKrylovDim;
-            double[][] V = (m + 1).ForLoop(i => new double[Nloc]); //   V(1:n,1:m+1) = zeros(n,m);
-            MultidimensionalArray H = MultidimensionalArray.Create(m + 1, m); //   H(1:m,1:m) = zeros(m,m);
-            double[] c = new double[m];
-            double[] s = new double[m];
+            double[][] V = (m+1).ForLoop(i => new double[Nloc]); //   V(1:n,1:m+1) = zeros(n,m);
+            MultidimensionalArray H = MultidimensionalArray.Create(m+1 , m+1); //   H(1:m,1:m) = zeros(m,m);
+            double[] c = new double[m+1];
+            double[] s = new double[m+1];
             double[] y;
             double rho = r.L2NormPow2().MPISum().Sqrt();
             errstep = rho;
-            double[] g = new double[Nloc];
+            double[] g = new double[m+1];
             g[0] = rho;
 
-            Console.WriteLine("Error NewtonGMRES:   " + rho);
+            //Console.WriteLine("Error NewtonGMRES:   " + rho);
 
             // Termination of entry
             if (rho < GMRESConvCrit)
@@ -210,6 +212,7 @@ namespace BoSSS.Solution.Multigrid {
 
                 // Call directional derivative
                 V[k].SetV(dirder(SolutionVec, currentX, V[k - 1], f0));
+                V[k].ScaleV(-1);
                 double normav = V[k].L2NormPow2().MPISum().Sqrt();
 
                 // Modified Gram-Schmidt
@@ -218,7 +221,6 @@ namespace BoSSS.Solution.Multigrid {
                     V[k].AccV(-H[j - 1, k - 1], V[j - 1]);
                 }
                 H[k, k - 1] = V[k].L2NormPow2().MPISum().Sqrt();
-                V[k].ScaleV(V[k].L2NormPow2().MPISum().Sqrt());
                 double normav2 = H[k, k - 1];
 
                 // Reorthogonalize ?
@@ -280,7 +282,7 @@ namespace BoSSS.Solution.Multigrid {
 
                 rho = g[k].Abs();
 
-                Console.WriteLine("Error NewtonGMRES:   " + rho);
+                //Console.WriteLine("Error NewtonGMRES:   " + rho);
 
                 k++;
 
@@ -290,14 +292,14 @@ namespace BoSSS.Solution.Multigrid {
             // update approximation and exit
 
             //y = H(1:i,1:i) \ s(1:i);    
-            y = new double[m];
-            H.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { m - 1, m- 1 })
-                .Solve(y, g.GetSubVector(0, m));
+            y = new double[k];
+            H.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { k-1 , k-1 })
+                .Solve(y, g.GetSubVector(0, k));
 
             int totalIter = k;
 
             // x = x + V(:,1:i)*y;
-            for (int ii = 0; ii < m; ii++) {
+            for (int ii = 0; ii < k; ii++) {
                 x.AccV(y[ii], V[ii]);
             }
 
