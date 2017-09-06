@@ -16,6 +16,7 @@ limitations under the License.
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 
@@ -431,6 +432,80 @@ namespace MPI.Wrappers {
                         (IntPtr)pResult,
                         1,
                         csMPI.Raw._DATATYPE.DOUBLE,
+                        comm);
+                }
+            }
+
+            return result;
+        }
+
+        static public int[] MPIGatherv(this int[] send, int[] recvcounts) {
+            return send.MPIGatherv(
+                recvcounts,
+                root: 0,
+                comm: csMPI.Raw._COMM.WORLD);
+        }
+
+        static public int[] MPIGatherv(this int[] send, int[] recvcounts, int root, MPI_Comm comm) {
+            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int size);
+            int[] result = new int[recvcounts.Sum()];
+
+            unsafe {
+                int* displs = stackalloc int[size];
+                for (int i = 1; i < size; i++) {
+                    displs[i] = displs[i - 1] + recvcounts[i - 1];
+                }
+
+                fixed (int* pSend = &send[0], pRcvcounts = &recvcounts[0], pResult = &result[0]) {
+                    csMPI.Raw.Gatherv(
+                        (IntPtr)pSend,
+                        send.Length,
+                        csMPI.Raw._DATATYPE.INT,
+                        (IntPtr)pResult,
+                        (IntPtr)pRcvcounts,
+                        (IntPtr)displs,
+                        csMPI.Raw._DATATYPE.INT,
+                        root,
+                        comm);
+                }
+            }
+
+            return result;
+        }
+
+        static public int[] MPIScatterv(this int[] send, int[] sendcounts) {
+            return send.MPIScatterv(
+                sendcounts,
+                root: 0,
+                comm: csMPI.Raw._COMM.WORLD);
+        }
+
+        static public int[] MPIScatterv(this int[] send, int[] sendcounts, int root, MPI_Comm comm) {
+            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int size);
+            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rank);
+            int[] result = new int[sendcounts[rank]];
+
+            unsafe {
+                int* displs = stackalloc int[size];
+                for (int i = 1; i < size; i++) {
+                    displs[i] = displs[i - 1] + sendcounts[i - 1];
+                }
+
+                if (send == null || send.Length == 0) {
+                    // Dummy to avoid null pointer exception
+                    send = new int[1];
+                }
+
+                fixed (int* pSend = &send[0], pSendcounts = &sendcounts[0], pResult = &result[0]) {
+                    csMPI.Raw.Scatterv(
+                        (IntPtr)pSend,
+                        (IntPtr)pSendcounts,
+                        (IntPtr)displs,
+                        csMPI.Raw._DATATYPE.INT,
+                        (IntPtr)pResult,
+                        sendcounts[rank],
+                        csMPI.Raw._DATATYPE.INT,
+                        root,
                         comm);
                 }
             }

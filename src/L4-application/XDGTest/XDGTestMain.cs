@@ -42,7 +42,7 @@ namespace BoSSS.Application.XDGTest {
             BoSSS.Solution.Application._Main(args, true, "", delegate() {
                 var p = new XDGTestMain();
                 //p.passiveIo = true;
-                p.m_GridPartitioningType = GridPartType.ParMETIS;
+                p.m_GridPartitioningType = GridPartType.METIS;
                 return p;
             });
         }

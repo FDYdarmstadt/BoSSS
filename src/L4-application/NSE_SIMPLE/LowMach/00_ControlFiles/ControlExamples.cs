@@ -36,7 +36,7 @@ namespace NSE_SIMPLE.LowMach {
             c.savetodb = false;
 
             c.GridGuid = new Guid("b3eb0eac-d1a1-440c-9f08-5dae1284607d");
-            c.GridPartType = GridPartType.ParMETIS;
+            c.GridPartType = GridPartType.METIS;
 
             c.ProjectName = "Couette with temperature gradient";
             c.ProjectDescription = "Steady Low Mach SIMPLE";

@@ -65,7 +65,7 @@ namespace BoSSS.Application.Matrix_MPItest {
             var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-3, 3, 13), GenericBlas.Linspace(-3, 3, 13));
             //var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-3, 3, 8), GenericBlas.Linspace(-3, 3, 2));
             //Console.WriteLine("testcode");
-            base.m_GridPartitioningType = GridPartType.ParMETIS;
+            base.m_GridPartitioningType = GridPartType.METIS;
 
             return grd;
         }
