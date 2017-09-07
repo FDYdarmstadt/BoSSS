@@ -42,6 +42,11 @@ namespace BoSSS.Solution.Multigrid {
         public double ConvCrit = 1e-9;
 
         /// <summary>
+        /// Maximum number of steplength iterations
+        /// </summary>
+        public double maxStep = 5;
+
+        /// <summary>
         /// Convergence for Krylov and GMRES iterations
         /// </summary>
         public double GMRESConvCrit = 1e-9;
@@ -50,7 +55,7 @@ namespace BoSSS.Solution.Multigrid {
 
         public CoordinateVector m_SolutionVec;
 
-        public enum ApproxJacobianOptions { GMRES = 1, exact = 2}
+        public enum ApproxJacobianOptions { GMRES = 1, exact = 2 }
 
         public ApproxJacobianOptions ApprocJac = ApproxJacobianOptions.exact;
 
@@ -68,14 +73,14 @@ namespace BoSSS.Solution.Multigrid {
             base.Init(SolutionVec, RHS, out x, out f0);
 
             Console.WriteLine("Residual base.init:   " + f0.L2NormPow2().MPISum().Sqrt());
-            
+
 
             deltaX = new double[x.Length];
             xt = new double[x.Length];
             ft = new double[x.Length];
 
             this.CurrentLin.TransformSolFrom(SolutionVec, x);
-            EvaluateOperator(1, SolutionVec.Mapping.Fields, 1, ft);
+            EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);
             Console.WriteLine("Residual Evluate Operator:   " + ft.L2NormPow2().MPISum().Sqrt());
 
             // fnorm
@@ -117,17 +122,17 @@ namespace BoSSS.Solution.Multigrid {
                 double lamm = 1;
                 double lamc = lambda;
                 double iarm = 0;
-                xt = x.CloneAs(); 
+                xt = x.CloneAs();
                 xt.AccV(lambda, step);
                 this.CurrentLin.TransformSolFrom(SolutionVec, xt);
-                EvaluateOperator(1, SolutionVec.Mapping.Fields, 1, ft);
+                EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);
                 var nft = ft.L2NormPow2().MPISum().Sqrt(); var nf0 = f0.L2NormPow2().MPISum().Sqrt(); var ff0 = nf0 * nf0; var ffc = nft * nft; var ffm = nft * nft;
 
                 Console.WriteLine("Start residuum for nonlinear iteration:  " + nft);
 
 
                 // Control of the the step size
-                while (nft >= (1 - alpha * lambda) * nf0) {
+                while (nft >= (1 - alpha * lambda) * nf0 && iarm < maxStep) {
 
                     // Line search starts here
 
@@ -138,20 +143,20 @@ namespace BoSSS.Solution.Multigrid {
 
                     // Update x;
                     xt = x.CloneAs();
-                    xt.AccV(lambda,step);
+                    xt.AccV(lambda, step);
                     lamm = lamc;
                     lamc = lambda;
 
                     this.CurrentLin.TransformSolFrom(SolutionVec, xt);
 
-                    EvaluateOperator(1, SolutionVec.Mapping.Fields, 1, ft);
+                    EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);
 
                     nft = ft.L2NormPow2().MPISum().Sqrt();
                     ffm = ffc;
                     ffc = nft * nft;
                     iarm++;
 
-                    Console.WriteLine("Step size:  " + lambda + "with Residuum:"+nft);
+                    Console.WriteLine("Step size:  " + lambda + "with Residuum:" + nft);
                 }
                 // transform solution back to 'original domain'
                 // to perform the linearization at the new point...
@@ -208,28 +213,28 @@ namespace BoSSS.Solution.Multigrid {
             //Initial solution
             if (xinit.L2Norm() != 0) {
                 x = xinit.CloneAs();
-                r.SetV(dirder(SolutionVec, currentX, x, f0),-1);
+                r.SetV(dirder(SolutionVec, currentX, x, f0), -1);
                 r.AccV(-1, f0);
             }
 
             int m = maxKrylovDim;
-            double[][] V = (m+1).ForLoop(i => new double[Nloc]); //   V(1:n,1:m+1) = zeros(n,m);
-            MultidimensionalArray H = MultidimensionalArray.Create(m+1 , m+1); //   H(1:m,1:m) = zeros(m,m);
-            double[] c = new double[m+1];
-            double[] s = new double[m+1];
+            double[][] V = (m + 1).ForLoop(i => new double[Nloc]); //   V(1:n,1:m+1) = zeros(n,m);
+            MultidimensionalArray H = MultidimensionalArray.Create(m + 1, m + 1); //   H(1:m,1:m) = zeros(m,m);
+            double[] c = new double[m + 1];
+            double[] s = new double[m + 1];
             double[] y;
             double rho = r.L2NormPow2().MPISum().Sqrt();
             errstep = rho;
-            double[] g = new double[m+1];
+            double[] g = new double[m + 1];
             g[0] = rho;
 
-            //Console.WriteLine("Error NewtonGMRES:   " + rho);
+            Console.WriteLine("Error NewtonGMRES:   " + rho);
 
             // Termination of entry
             if (rho < GMRESConvCrit)
                 return SolutionVec.ToArray();
 
-            V[0].SetV(r,alpha: (1.0 / rho));
+            V[0].SetV(r, alpha: (1.0 / rho));
             double beta = rho;
             int k = 1;
 
@@ -307,7 +312,7 @@ namespace BoSSS.Solution.Multigrid {
 
                 rho = g[k].Abs();
 
-                //Console.WriteLine("Error NewtonGMRES:   " + rho);
+                Console.WriteLine("Error NewtonGMRES:   " + rho);
 
                 k++;
 
@@ -318,7 +323,7 @@ namespace BoSSS.Solution.Multigrid {
 
             //y = H(1:i,1:i) \ s(1:i);    
             y = new double[k];
-            H.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { k-1 , k-1 })
+            H.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { k - 1, k - 1 })
                 .Solve(y, g.GetSubVector(0, k));
 
             int totalIter = k;
@@ -373,11 +378,6 @@ namespace BoSSS.Solution.Multigrid {
                 return fx;
             }
 
-            // Scale the difference increment
-            //double[] xs = new double[n];
-            //for (int i = 0; i < n; i++) {
-            //    xs[i] = currentX[i] * w[i];
-            //}
             double xs = GenericBlas.InnerProd(currentX, w).MPISum() / w.L2NormPow2().MPISum().Sqrt();
 
             if (xs != 0) {
@@ -396,7 +396,7 @@ namespace BoSSS.Solution.Multigrid {
             this.CurrentLin.TransformSolFrom(SolutionVec, del);
 
 
-            EvaluateOperator(1.0, SolutionVec.Mapping.Fields, 1.0, fx);
+            EvaluateOperator(1.0, SolutionVec.Mapping.Fields, fx);
 
             SolutionVec.CopyEntries(temp);
 
@@ -506,7 +506,7 @@ namespace BoSSS.Solution.Multigrid {
 
             for (int i = 0; i < n; i++) {
                 zz[i] = 1;
-                temp = dirder(SolutionVec,currentX,zz,f0);
+                temp = dirder(SolutionVec, currentX, zz, f0);
                 for (int j = 0; j < n; j++) {
                     jac[j, i] = temp[j];
                 }
