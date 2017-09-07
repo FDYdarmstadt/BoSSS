@@ -170,6 +170,15 @@ namespace BoSSS.Solution.Timestepping {
 
             //if (this.NumOfSgrd < 2)
             //    throw new ArgumentException("Local Time Stepping is only possible with 2 or more subgrids, but is used with " + this.NumOfSgrd);
+
+
+            //RungeKuttaScheme = new RungeKutta(
+            //    RungeKutta.RungeKuttaSchemes.ExplicitEuler,
+            //    spatialOp,
+            //    Fieldsmap,
+            //    Parameters,
+            //    timeStepConstraints,
+            //    sgrd);
         }
 
         /// <summary>
