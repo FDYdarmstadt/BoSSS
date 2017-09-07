@@ -88,6 +88,7 @@ namespace BoSSS.Solution.Multigrid {
             double fNormo = 1;
             double errstep;
             double[] step = new double[x.Length];
+            double[] stepOld = new double[x.Length];
             MsrMatrix CurrentJac;
 
 
@@ -102,19 +103,27 @@ namespace BoSSS.Solution.Multigrid {
 
                 // dKrylov
                 if (ApprocJac == ApproxJacobianOptions.GMRES) {
-                    Console.WriteLine("Solving Jacobian with GMRES....");
+                    //Console.WriteLine("Solving Jacobian with GMRES....");
                     step = Krylov(SolutionVec, x, f0, out errstep);
                 } else {
 
-                    Console.WriteLine("Solving Jacobian exact....");
+                    //Console.WriteLine("Solving Jacobian exact....");
                     CurrentJac = diffjac(SolutionVec, x, f0);
 
                     var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
 
                     solver.DefineMatrix(CurrentJac);
-                    step.Clear();
+                    step.ClearEntries();
                     solver.Solve(step, f0);
                 }
+
+                var temp2 = step.CloneAs();
+                temp2.AccV(-1, stepOld);
+                stepOld = step.CloneAs();
+
+                #if DEBUG
+                Console.WriteLine("Difference of step:   " + temp2.L2Norm());
+                #endif
 
                 // Start line search
                 xOld = x;
@@ -128,8 +137,9 @@ namespace BoSSS.Solution.Multigrid {
                 EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);
                 var nft = ft.L2NormPow2().MPISum().Sqrt(); var nf0 = f0.L2NormPow2().MPISum().Sqrt(); var ff0 = nf0 * nf0; var ffc = nft * nft; var ffm = nft * nft;
 
+                #if DEBUG
                 Console.WriteLine("Start residuum for nonlinear iteration:  " + nft);
-
+                #endif  
 
                 // Control of the the step size
                 while (nft >= (1 - alpha * lambda) * nf0 && iarm < maxStep) {
@@ -156,7 +166,9 @@ namespace BoSSS.Solution.Multigrid {
                     ffc = nft * nft;
                     iarm++;
 
-                    Console.WriteLine("Step size:  " + lambda + "with Residuum:" + nft);
+                    #if DEBUG
+                    Console.WriteLine("Step size:  " + lambda + "with Residuum:  " + nft);
+                    #endif
                 }
                 // transform solution back to 'original domain'
                 // to perform the linearization at the new point...
@@ -402,7 +414,7 @@ namespace BoSSS.Solution.Multigrid {
 
 
             // (f1 - f0) / epsnew
-            fx.AccV(-1, f0);
+            fx.AccV(1, f0);
             fx.ScaleV(1 / epsnew);
 
             return fx;
@@ -500,11 +512,12 @@ namespace BoSSS.Solution.Multigrid {
             int n = currentX.Length;
             MsrMatrix jac = new MsrMatrix(n);
 
-            var zz = new double[n];
+
 
             var temp = new double[n];
 
             for (int i = 0; i < n; i++) {
+                var zz = new double[n];
                 zz[i] = 1;
                 temp = dirder(SolutionVec, currentX, zz, f0);
                 for (int j = 0; j < n; j++) {
