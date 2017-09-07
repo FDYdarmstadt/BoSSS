@@ -7,6 +7,7 @@ using BoSSS.Foundation;
 using ilPSP.Utils;
 using MPI.Wrappers;
 using ilPSP;
+using ilPSP.LinSolvers;
 using ilPSP.Connectors.Matlab;
 
 namespace BoSSS.Solution.Multigrid {
@@ -49,6 +50,10 @@ namespace BoSSS.Solution.Multigrid {
 
         public CoordinateVector m_SolutionVec;
 
+        public enum ApproxJacobianOptions { GMRES = 1, exact = 2}
+
+        public ApproxJacobianOptions ApprocJac = ApproxJacobianOptions.exact;
+
 
         public override void SolverDriver<S>(CoordinateVector SolutionVec, S RHS) {
             m_SolutionVec = SolutionVec;
@@ -62,15 +67,23 @@ namespace BoSSS.Solution.Multigrid {
             // Eval_F0 
             base.Init(SolutionVec, RHS, out x, out f0);
 
+            Console.WriteLine("Residual base.init:   " + f0.L2NormPow2().MPISum().Sqrt());
+            
+
             deltaX = new double[x.Length];
             xt = new double[x.Length];
             ft = new double[x.Length];
+
+            this.CurrentLin.TransformSolFrom(SolutionVec, x);
+            EvaluateOperator(1, SolutionVec.Mapping.Fields, 1, ft);
+            Console.WriteLine("Residual Evluate Operator:   " + ft.L2NormPow2().MPISum().Sqrt());
 
             // fnorm
             double fnorm = f0.L2NormPow2().MPISum().Sqrt();
             double fNormo = 1;
             double errstep;
-            double[] step;
+            double[] step = new double[x.Length];
+            MsrMatrix CurrentJac;
 
 
             Console.WriteLine("Start residuum for nonlinear iteration:  " + fnorm);
@@ -83,7 +96,20 @@ namespace BoSSS.Solution.Multigrid {
                 itc++;
 
                 // dKrylov
-                step = Krylov(SolutionVec, x, f0, out errstep);
+                if (ApprocJac == ApproxJacobianOptions.GMRES) {
+                    Console.WriteLine("Solving Jacobian with GMRES....");
+                    step = Krylov(SolutionVec, x, f0, out errstep);
+                } else {
+
+                    Console.WriteLine("Solving Jacobian exact....");
+                    CurrentJac = diffjac(SolutionVec, x, f0);
+
+                    var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
+
+                    solver.DefineMatrix(CurrentJac);
+                    step.Clear();
+                    solver.Solve(step, f0);
+                }
 
                 // Start line search
                 xOld = x;
@@ -92,7 +118,7 @@ namespace BoSSS.Solution.Multigrid {
                 double lamc = lambda;
                 double iarm = 0;
                 xt = x.CloneAs(); 
-                xt.SetV(step ,lambda);
+                xt.AccV(lambda, step);
                 this.CurrentLin.TransformSolFrom(SolutionVec, xt);
                 EvaluateOperator(1, SolutionVec.Mapping.Fields, 1, ft);
                 var nft = ft.L2NormPow2().MPISum().Sqrt(); var nf0 = f0.L2NormPow2().MPISum().Sqrt(); var ff0 = nf0 * nf0; var ffc = nft * nft; var ffm = nft * nft;
@@ -112,13 +138,14 @@ namespace BoSSS.Solution.Multigrid {
 
                     // Update x;
                     xt = x.CloneAs();
-                    xt.SetV(step, lambda);
+                    xt.AccV(lambda,step);
                     lamm = lamc;
                     lamc = lambda;
 
-                   this.CurrentLin.TransformSolFrom(SolutionVec, xt);
+                    this.CurrentLin.TransformSolFrom(SolutionVec, xt);
 
                     EvaluateOperator(1, SolutionVec.Mapping.Fields, 1, ft);
+
                     nft = ft.L2NormPow2().MPISum().Sqrt();
                     ffm = ffc;
                     ffc = nft * nft;
@@ -181,8 +208,7 @@ namespace BoSSS.Solution.Multigrid {
             //Initial solution
             if (xinit.L2Norm() != 0) {
                 x = xinit.CloneAs();
-                r = dirder(SolutionVec, currentX, x, f0);
-                r.ScaleV(-1);
+                r.SetV(dirder(SolutionVec, currentX, x, f0),-1);
                 r.AccV(-1, f0);
             }
 
@@ -212,7 +238,6 @@ namespace BoSSS.Solution.Multigrid {
 
                 // Call directional derivative
                 V[k].SetV(dirder(SolutionVec, currentX, V[k - 1], f0));
-                V[k].ScaleV(-1);
                 double normav = V[k].L2NormPow2().MPISum().Sqrt();
 
                 // Modified Gram-Schmidt
@@ -340,11 +365,12 @@ namespace BoSSS.Solution.Multigrid {
         public double[] dirder(CoordinateVector SolutionVec, double[] currentX, double[] w, double[] f0) {
             double epsnew = 1E-7;
             int n = SolutionVec.Length;
+            double[] fx = new double[f0.Length];
 
             // Scale the step
             if (w.L2Norm() == 0) {
-                SolutionVec.Clear();
-                return SolutionVec.ToArray();
+                fx.Clear();
+                return fx;
             }
 
             // Scale the difference increment
@@ -369,7 +395,6 @@ namespace BoSSS.Solution.Multigrid {
 
             this.CurrentLin.TransformSolFrom(SolutionVec, del);
 
-            double[] fx = new double[f0.Length];
 
             EvaluateOperator(1.0, SolutionVec.Mapping.Fields, 1.0, fx);
 
@@ -377,7 +402,7 @@ namespace BoSSS.Solution.Multigrid {
 
 
             // (f1 - f0) / epsnew
-            fx.AccV(1, f0);
+            fx.AccV(-1, f0);
             fx.ScaleV(1 / epsnew);
 
             return fx;
@@ -462,6 +487,32 @@ namespace BoSSS.Solution.Multigrid {
             if (lambdap > sigma1 * lambdac) lambdap = sigma1 * lambdac;
 
             return lambdap;
+        }
+
+        /// <summary>
+        /// Computes a forward difference jacobian and returns the dense jacobian
+        /// </summary>
+        /// <param name="SolutionVec"></param>
+        /// <param name="currentX"></param>
+        /// <param name="f0"></param>
+        /// <returns></returns>
+        public MsrMatrix diffjac(CoordinateVector SolutionVec, double[] currentX, double[] f0) {
+            int n = currentX.Length;
+            MsrMatrix jac = new MsrMatrix(n);
+
+            var zz = new double[n];
+
+            var temp = new double[n];
+
+            for (int i = 0; i < n; i++) {
+                zz[i] = 1;
+                temp = dirder(SolutionVec,currentX,zz,f0);
+                for (int j = 0; j < n; j++) {
+                    jac[j, i] = temp[j];
+                }
+            }
+
+            return jac;
         }
 
 
