@@ -55,9 +55,9 @@ namespace BoSSS.Solution.Multigrid {
 
         public CoordinateVector m_SolutionVec;
 
-        public enum ApproxJacobianOptions { GMRES = 1, exact = 2 }
+        public enum ApproxInvJacobianOptions { GMRES = 1, Direct = 2 }
 
-        public ApproxJacobianOptions ApprocJac = ApproxJacobianOptions.exact;
+        public ApproxInvJacobianOptions ApprocJac = ApproxInvJacobianOptions.Direct;
 
 
         public override void SolverDriver<S>(CoordinateVector SolutionVec, S RHS) {
@@ -101,11 +101,11 @@ namespace BoSSS.Solution.Multigrid {
                 fNormo = fnorm;
                 itc++;
 
-                // dKrylov
-                if (ApprocJac == ApproxJacobianOptions.GMRES) {
+                // How should the inverse of the Jacobian be approximated?
+                if (ApprocJac == ApproxInvJacobianOptions.GMRES) {
                     //Console.WriteLine("Solving Jacobian with GMRES....");
                     step = Krylov(SolutionVec, x, f0, out errstep);
-                } else {
+                } else if (ApprocJac == ApproxInvJacobianOptions.Direct) {
 
                     //Console.WriteLine("Solving Jacobian exact....");
                     CurrentJac = diffjac(SolutionVec, x, f0);
@@ -115,6 +115,8 @@ namespace BoSSS.Solution.Multigrid {
                     solver.DefineMatrix(CurrentJac);
                     step.ClearEntries();
                     solver.Solve(step, f0);
+                } else {
+                    throw new NotImplementedException("Your approximation option for the jacobian seems not to be existent.");
                 }
 
                 var temp2 = step.CloneAs();
@@ -212,7 +214,7 @@ namespace BoSSS.Solution.Multigrid {
 
             // RHS of the linear equation system 
             double[] b = new double[n];
-            b.AccV(-1, f0);
+            b.AccV(1, f0);
 
             double[] x = new double[n];
             double[] r = new double[n];
@@ -240,7 +242,7 @@ namespace BoSSS.Solution.Multigrid {
             double[] g = new double[m + 1];
             g[0] = rho;
 
-            Console.WriteLine("Error NewtonGMRES:   " + rho);
+           // Console.WriteLine("Error NewtonGMRES:   " + rho);
 
             // Termination of entry
             if (rho < GMRESConvCrit)
@@ -324,11 +326,13 @@ namespace BoSSS.Solution.Multigrid {
 
                 rho = g[k].Abs();
 
-                Console.WriteLine("Error NewtonGMRES:   " + rho);
+               // Console.WriteLine("Error NewtonGMRES:   " + rho);
 
                 k++;
 
             }
+
+            Console.WriteLine("GMRES completed after:   " + k + "steps");
 
             k--;
             // update approximation and exit
@@ -356,14 +360,14 @@ namespace BoSSS.Solution.Multigrid {
             double[] step = NewtonGMRES(SolutionVec, currentX, f0, new double[currentX.Length], out errstep);
             int kinn = 0;
 
-            Console.WriteLine("Error Krylov:   " + errstep);
+            //Console.WriteLine("Error Krylov:   " + errstep);
 
             while (kinn < restart_limit && errstep > ConvCrit) {
                 kinn++;
 
                 step = NewtonGMRES(SolutionVec, currentX, f0, step, out errstep);
 
-                Console.WriteLine("Error Krylov:   " + errstep);
+              //  Console.WriteLine("Error Krylov:   " + errstep);
             }
 
             return step;
