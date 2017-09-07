@@ -531,6 +531,20 @@ namespace MPI.Wrappers.Utils {
         }
 
         /// <summary>
+        /// DLL function name mangling: mkl
+        /// </summary>
+        public static string mkl_blas(string Name) {
+            return "mkl_blas_"+Name.ToLowerInvariant();
+        }
+
+        /// <summary>
+        /// DLL function name mangling: mkl
+        /// </summary>
+        public static string mkl_lapack(string Name) {
+            return "mkl_lapack_" + Name.ToLowerInvariant();
+        }
+
+        /// <summary>
         /// DLL function name mangling: lower case names, with trailing underscore
         /// </summary>
         public static string LeadingUnderscore_SmallLetters(string Name) {
