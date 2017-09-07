@@ -977,18 +977,19 @@ namespace CNS {
 
             CNSControl c = new CNSControl();
 
-            dbPath = @"e:\bosss_db";
+            //dbPath = @"e:\bosss_db";
             //dbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db";
             c.DbPath = dbPath;
             c.savetodb = dbPath != null && saveToDb;
             c.saveperiod = 10;
-            c.PrintInterval = 100;
+            c.PrintInterval = 1;
 
             double xMin = 0;
             double xMax = 1;
             double yMin = 0;
             double yMax = 1;
 
+            //c.ActiveOperators = Operators.Convection;
             c.ActiveOperators = Operators.Convection | Operators.ArtificialViscosity;
             c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
 
@@ -1016,12 +1017,13 @@ namespace CNS {
 
             // Runge-Kutta schemes
             //c.ExplicitScheme = ExplicitSchemes.RungeKutta;
-            //c.ExplicitOrder = 1;
+            //c.ExplicitOrder = 4;
 
             // Adaptive local time stepping scheme (order=1, subgrid=1 --> explicit Euler)
             //c.ExplicitScheme = ExplicitSchemes.AdamsBashforth;
-            c.ExplicitOrder = 3;
+            //c.ExplicitOrder = 2;
             c.ExplicitScheme = ExplicitSchemes.AdaptiveLTS;
+            c.ExplicitOrder = 2;
             c.NumberOfSubGrids = 3;
 
             c.EquationOfState = IdealGas.Air;
@@ -1115,9 +1117,8 @@ namespace CNS {
             //c.dtFixed = 1.0e-5;
             c.CFLFraction = 0.3;
             c.Endtime = 0.25;
-            c.NoOfTimesteps = int.MaxValue;
-            //c.NoOfTimesteps = 5;
-
+            //c.NoOfTimesteps = int.MaxValue;
+            c.NoOfTimesteps = 5;
 
             return c;
         }
@@ -1132,6 +1133,8 @@ namespace CNS {
             c.savetodb = dbPath != null;
             c.saveperiod = 1;
             c.PrintInterval = 1;
+
+            bool AV = true;
 
             //c.GridPartType = GridPartType.ParMETIS;
             //c.GridPartOptions = "5";
@@ -1149,7 +1152,10 @@ namespace CNS {
 
             double cellSize = Math.Min((xMax - xMin) / numOfCellsX, (yMax - yMin) / numOfCellsY);
 
-            c.ActiveOperators = Operators.Convection | Operators.ArtificialViscosity;
+            if (AV)
+                c.ActiveOperators = Operators.Convection | Operators.ArtificialViscosity;
+            else
+                c.ActiveOperators = Operators.Convection;
             c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
 
             // Shock-capturing
@@ -1158,14 +1164,14 @@ namespace CNS {
             double kappa = 1.0;
             Variable sensorVariable = Variables.Density;
             c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
-            c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(
-                c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
+            if (AV)
+                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
 
             c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             //c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitScheme = ExplicitSchemes.AdaptiveLTS;
-            c.ExplicitOrder = 1;
-            c.NumberOfSubGrids = 1;
+            c.ExplicitOrder = 2;
+            c.NumberOfSubGrids = 3;
 
             c.EquationOfState = IdealGas.Air;
             c.MachNumber = 1.0 / Math.Sqrt(c.EquationOfState.HeatCapacityRatio);
@@ -1183,13 +1189,15 @@ namespace CNS {
             c.AddVariable(Variables.Viscosity, dgDegree);
             c.AddVariable(Variables.LocalMachNumber, dgDegree);
             c.AddVariable(Variables.Sensor, dgDegree);
-            c.AddVariable(Variables.ArtificalViscosity, 2);
+            if (AV)
+                c.AddVariable(Variables.ArtificalViscosity, 2);
             c.AddVariable(Variables.Rank, 0);
 
             // A-LTS variables
             c.AddVariable(Variables.CFL, 0);
             c.AddVariable(Variables.CFLConvective, 0);
-            c.AddVariable(Variables.CFLArtificialViscosity, 0);
+            if (AV)
+                c.AddVariable(Variables.CFLArtificialViscosity, 0);
             if (c.ExplicitScheme.Equals(ExplicitSchemes.AdaptiveLTS))
                 c.AddVariable(Variables.AdaptiveLTSSubGrids, 0);
 
@@ -1313,18 +1321,18 @@ namespace CNS {
             // Time config
             c.dtMin = 0.0;
             c.dtMax = 1.0;
-            c.Endtime = 0.25;
             //c.Endtime = 0.012;
+            c.Endtime = 0.25;
             //c.dtFixed = 1.0e-6;
             //c.CFLFraction = 0.5; // altes Setting fuer Rechnungen auf Lichtenberg
-            //c.CFLFraction = 0.5;
-            c.dtFixed = 1.31e-5;
-            c.NoOfTimesteps = 1;
-            //c.NoOfTimesteps = int.MaxValue;
+            c.CFLFraction = 0.5;
+            //c.dtFixed = 1.31e-5;
+            //c.NoOfTimesteps = 5;
+            c.NoOfTimesteps = int.MaxValue;
 
             c.ProjectName = "Double Mach reflection";
             //c.SessionName = String.Format("DMR, dgDegree = {0}, numOfCellsX = {1}, numOfCellsY = {2}, sensorLimit = {3:0.00E-00}, CFLFraction = {4:0.00E-00}, A-LTS 2/3", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction);
-            c.SessionName = String.Format("DMR, dgDegree = {0}, numOfCellsX = {1}, numOfCellsY = {2}, sensorLimit = {3:0.00E-00}, CFLFraction = {4:0.00E-00}, A-LTS 2/3, lamdaMax fix = 20", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction);
+            c.SessionName = String.Format("TEST (10 ts): DMR, dgDegree = {0}, numOfCellsX = {1}, numOfCellsY = {2}, sensorLimit = {3:0.00E-00}, CFLFraction = {4:0.00E-00}, A-LTS 2/3, lamdaMax fix = 20", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction);
             c.Tags.Add("Double Mach reflection");
             c.Tags.Add("Artificial viscosity");
 

@@ -87,11 +87,30 @@ namespace BoSSS.Solution {
             numOfSubgridsInit = numOfSubgrids;
             UpdateSensorAndAV = test;
 
+            RungeKuttaScheme = new RungeKutta(
+                RungeKutta.RungeKuttaSchemes.ExplicitEuler,
+                spatialOp,
+                Fieldsmap,
+                Parameters,
+                timeStepConstraints,
+                sgrd);
+
+
+            // ########################################### CNS
+            //RungeKuttaScheme.OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforComputechangeRate(t1, t2);
+
+            //for (int i = 0; i < subgridList.Count; i++) {
+            //    localABevolve[i].OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforComputechangeRate(t1, t2);
+            //}
+            // ########################################### CNS
+
+
             // Hack for scalar transport
             if (test != null) {
                 for (int i = 0; i < subgridList.Count; i++) {
                     localABevolve[i].OnBeforeComputeChangeRate += UpdateSensorAndAV;
                 }
+                RungeKuttaScheme.OnBeforeComputeChangeRate += UpdateSensorAndAV;
             }
         }
 
@@ -294,10 +313,6 @@ namespace BoSSS.Solution {
                         }
 
                         CopyHistoriesOfABevolver();
-
-                        for (int i = 0; i < this.numOfSubgrids; i++) {
-                            Console.WriteLine("LTS: id=" + i + " -> sub-steps=" + NumOfLocalTimeSteps[i] + " and elements=" + subgridList[i].GlobalNoOfCells);
-                        }
                     } else
                         Console.WriteLine("#####Clustering has NOT changed#####");
 
@@ -306,6 +321,10 @@ namespace BoSSS.Solution {
 
                     if (timeStepConstraints != null) {
                         dt = CalculateTimeStep();
+                    }
+
+                    for (int i = 0; i < this.numOfSubgrids; i++) {
+                        Console.WriteLine("LTS: id=" + i + " -> sub-steps=" + NumOfLocalTimeSteps[i] + " and elements=" + subgridList[i].GlobalNoOfCells);
                     }
 
                     // Saves the results at t_n
@@ -550,8 +569,7 @@ namespace BoSSS.Solution {
             }
 
             bool globalResult;
-            unsafe
-            {
+            unsafe {
                 int localResultAsInt = localResult ? 1 : 0;
                 int globalResultAsInt;
                 csMPI.Raw.Allreduce((IntPtr)(&localResultAsInt), (IntPtr)(&globalResultAsInt), numOfSubgrids, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.LOR, csMPI.Raw._COMM.WORLD);
