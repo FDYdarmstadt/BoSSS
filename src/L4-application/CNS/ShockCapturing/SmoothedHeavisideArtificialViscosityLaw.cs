@@ -50,8 +50,10 @@ namespace CNS.ShockCapturing {
             } else {
                 epsilonE = 0.5 * epsilon0 * (1.0 + Math.Sin(0.5 * Math.PI * (se - s0) / kappa));
             }
-            
+
             double lambdaMax = state.SpeedOfSound + state.Velocity.Abs();
+            //double lambdaMax = 20; //DMR
+            //double lambdaMax = 2; //Shock Tube
             double fudgeFactor = 0.5;   // Kloeckner (2011)
             epsilonE = fudgeFactor * epsilonE * lambdaMax * cellSize / dgDegree;
             return epsilonE;
