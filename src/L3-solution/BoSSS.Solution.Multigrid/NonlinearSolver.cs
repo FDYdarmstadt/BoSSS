@@ -153,7 +153,7 @@ namespace BoSSS.Solution.Multigrid {
         /// Pre-scaling of <paramref name="Output"/>.
         /// </param>
         /// <param name="Output"></param>
-        protected void EvaluateOperator(double alpha, IEnumerable<DGField> CurrentState, double beta, double[] Output) {
+        protected void EvaluateOperator(double alpha, IEnumerable<DGField> CurrentState, double[] Output) {
             BlockMsrMatrix OpMtxRaw, MassMtxRaw;
             double[] OpAffineRaw;
             this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, CurrentState.ToArray());
@@ -161,14 +161,9 @@ namespace BoSSS.Solution.Multigrid {
             OpMtxRaw.SpMV(alpha, new CoordinateVector(CurrentState.ToArray()), 1.0, OpAffineRaw);
 
             double[] OutputClone = null;
-            if (beta != 0.0) {
-                OutputClone = Output.CloneAs();
-            }
 
             CurrentLin.TransformRhsInto(OpAffineRaw, Output);
 
-            if (beta != 0.0)
-                Output.AccV(beta, OutputClone);
         }
 
 
