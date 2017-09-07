@@ -166,7 +166,7 @@ namespace BoSSS.Solution.Timestepping {
 
                 CellMask cm = (sgrd == null) ? null : sgrd.VolumeMask;
                 EdgeMask em = (sgrd == null) ? null : sgrd.AllEdgesMask;
-                
+
                 Operator = spatialOp;
                 m_Evaluator = new Lazy<SpatialOperator.Evaluator>(() => spatialOp.GetEvaluatorEx(
                     Fieldsmap, ParameterFields, Fieldsmap,
@@ -226,6 +226,12 @@ namespace BoSSS.Solution.Timestepping {
 
             // k += F(u0)
             Evaluator.Evaluate<double[]>(1.0, 1.0, k, AbsTime, outputBndEdge: edgeFluxes);
+        }
+
+        protected void RaiseOnBeforComputechangeRate(double AbsTime, double RelTime) {
+            if (OnBeforeComputeChangeRate != null) {
+                OnBeforeComputeChangeRate(AbsTime, RelTime);
+            }
         }
 
         /// <summary>
