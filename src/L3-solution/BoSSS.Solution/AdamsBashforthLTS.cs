@@ -354,6 +354,7 @@ namespace BoSSS.Solution.Timestepping {
         protected virtual MultidimensionalArray GetCellMetric() {
             return GetSmallestDistanceInCells();
             //return GetTestMetric();
+            //return GetTimeStepsConstraintsInCells();
         }
 
         /// <summary>

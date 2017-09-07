@@ -87,13 +87,14 @@ namespace BoSSS.Solution {
             numOfSubgridsInit = numOfSubgrids;
             UpdateSensorAndAV = test;
 
-            RungeKuttaScheme = new RungeKutta(
-                RungeKutta.RungeKuttaSchemes.ExplicitEuler,
-                spatialOp,
-                Fieldsmap,
-                Parameters,
-                timeStepConstraints,
-                sgrd);
+            // Choose Explicit Euler als time stepping scheme for start-up phase
+            //RungeKuttaScheme = new RungeKutta(
+            //    RungeKutta.RungeKuttaSchemes.ExplicitEuler,
+            //    spatialOp,
+            //    Fieldsmap,
+            //    Parameters,
+            //    timeStepConstraints,
+            //    sgrd);
 
 
             // ########################################### CNS
@@ -308,6 +309,7 @@ namespace BoSSS.Solution {
                         for (int i = 0; i < subgridList.Count; i++) {
                             localABevolve[i] = new ABevolve(Operator, Mapping, ParameterMapping, order, adaptive: true, sgrd: subgridList[i]);
                             localABevolve[i].ResetTime(m_Time);
+                            //localABevolve[i].OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforComputechangeRate(t1, t2);
                             if (UpdateSensorAndAV != null)
                                 localABevolve[i].OnBeforeComputeChangeRate += UpdateSensorAndAV;     // Scalar transport
                         }

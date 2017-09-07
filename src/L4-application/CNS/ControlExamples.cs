@@ -1169,9 +1169,10 @@ namespace CNS {
 
             c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             //c.ExplicitScheme = ExplicitSchemes.RungeKutta;
-            c.ExplicitScheme = ExplicitSchemes.AdaptiveLTS;
+            //c.ExplicitScheme = ExplicitSchemes.AdaptiveLTS;
+            c.ExplicitScheme = ExplicitSchemes.LTS;
             c.ExplicitOrder = 2;
-            c.NumberOfSubGrids = 3;
+            c.NumberOfSubGrids = 2;
 
             c.EquationOfState = IdealGas.Air;
             c.MachNumber = 1.0 / Math.Sqrt(c.EquationOfState.HeatCapacityRatio);
