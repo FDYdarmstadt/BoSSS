@@ -66,6 +66,7 @@
 ///As an example, we will simulate the well known isentropic vortex for the Euler equations. 
 ///\section{Isentropic vortex}
  }
+\BoSSSexe
 \BoSSScmd{
 restart;
  }
@@ -235,17 +236,17 @@ solver.CurrentSessionInfo
 /// Note: If you have run the simulation in the console mode, you now have to start 
 /// the \BoSSSpad{}.
 /// In our example, we find the corresponding session in our first database as first session
-myDatabase.Sessions.First();
+//myDatabase.Sessions.First();
  }
 \BoSSSexe
 \BoSSScmd{
 /// To convert data to the Tecplot format, we just need to export it:
-databases.First().Sessions.First().Export().Do()
+//databases.First().Sessions.First().Export().Do()
  }
 \BoSSSexe
 \BoSSScmd{
 /// We can open the folder directly by using
-databases.First().Sessions.First().OpenExportDirectory()
+//databases.First().Sessions.First().OpenExportDirectory()
  }
 \BoSSSexe
 \BoSSScmd{

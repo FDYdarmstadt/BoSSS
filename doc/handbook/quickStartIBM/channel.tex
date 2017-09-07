@@ -59,6 +59,7 @@
 /// \label{sec:Channel}
 ///\subsection{Interactive mode}
  }
+\BoSSSexe
 \BoSSScmd{
 restart;
  }
@@ -279,7 +280,7 @@ myDb.Sessions.First().OpenSessionDirectory();
 \BoSSSexe
 \BoSSScmd{
 /// Delete database
-DatabaseUtils.DeleteDatabase(myDb.Path);
+//DatabaseUtils.DeleteDatabase(myDb.Path);
  }
 \BoSSSexe
 \BoSSScmd{
@@ -291,22 +292,22 @@ DatabaseUtils.DeleteDatabase(myDb.Path);
 \BoSSSexe
 \BoSSScmd{
 /// x-Direction (using also hyperbolic tangential distribution)
-var \_xNodes1 = Grid1D.TanhSpacing(-2, -1, 10, 0.5, false); \newline 
-\_xNodes1     = \_xNodes1.GetSubVector(0, (\_xNodes1.Length - 1));\newline 
-var \_xNodes2 = GenericBlas.Linspace(-1, 2, 35); \newline 
-\_xNodes2     = \_xNodes2.GetSubVector(0, (\_xNodes2.Length - 1));\newline 
-var \_xNodes3 = Grid1D.TanhSpacing(2, 20, 60 , 1.5, true);  \newline 
-var xNodes   = ArrayTools.Cat(\_xNodes1, \_xNodes2, \_xNodes3);
+//var \_xNodes1 = Grid1D.TanhSpacing(-2, -1, 10, 0.5, false); \newline 
+//\_xNodes1     = \_xNodes1.GetSubVector(0, (\_xNodes1.Length - 1));\newline 
+//var \_xNodes2 = GenericBlas.Linspace(-1, 2, 35); \newline 
+//\_xNodes2     = \_xNodes2.GetSubVector(0, (\_xNodes2.Length - 1));\newline 
+//var \_xNodes3 = Grid1D.TanhSpacing(2, 20, 60 , 1.5, true);  \newline 
+//var xNodes   = ArrayTools.Cat(\_xNodes1, \_xNodes2, \_xNodes3);
  }
 \BoSSSexe
 \BoSSScmd{
 /// y-Direction
-var \_yNodes1 = Grid1D.TanhSpacing(-2, -1, 7, 0.9, false); \newline 
-\_yNodes1     = \_yNodes1.GetSubVector(0, (\_yNodes1.Length - 1));\newline 
-var \_yNodes2 = GenericBlas.Linspace(-1, 1, 25); \newline 
-\_yNodes2     = \_yNodes2.GetSubVector(0, (\_yNodes2.Length - 1));\newline 
-var \_yNodes3 = Grid1D.TanhSpacing(1, 2.1, 7, 1.1, true);  \newline 
-var yNodes   = ArrayTools.Cat(\_yNodes1, \_yNodes2, \_yNodes3);
+//var \_yNodes1 = Grid1D.TanhSpacing(-2, -1, 7, 0.9, false); \newline 
+//\_yNodes1     = \_yNodes1.GetSubVector(0, (\_yNodes1.Length - 1));\newline 
+//var \_yNodes2 = GenericBlas.Linspace(-1, 1, 25); \newline 
+//\_yNodes2     = \_yNodes2.GetSubVector(0, (\_yNodes2.Length - 1));\newline 
+//var \_yNodes3 = Grid1D.TanhSpacing(1, 2.1, 7, 1.1, true);  \newline 
+//var yNodes   = ArrayTools.Cat(\_yNodes1, \_yNodes2, \_yNodes3);
  }
 \BoSSSexe
 \BoSSScmd{
@@ -315,7 +316,7 @@ var yNodes   = ArrayTools.Cat(\_yNodes1, \_yNodes2, \_yNodes3);
  }
 \BoSSSexe
 \BoSSScmd{
-c.InitialValues.Add("Phi", new Formula("X => -(X[0]).Pow2() + -(X[1]).Pow2() + 0.25", false));
+//c.InitialValues.Add("Phi", new Formula("X => -(X[0]).Pow2() + -(X[1]).Pow2() + 0.25", false));
  }
 \BoSSSexe
 \BoSSScmd{
