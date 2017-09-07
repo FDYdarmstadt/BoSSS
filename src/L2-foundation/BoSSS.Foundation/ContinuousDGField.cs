@@ -71,10 +71,16 @@ namespace BoSSS.Foundation {
         }
 
 
+        //MultidimensionalArray CondAtVert;    // 1. index: local vertice index / 2. index: 0 = actual cond, 1 = potential own cond, 2 = potential cond
+
+        //int maxVCond;
+
+
         int[] Cell2Coord;
 
         int[] mask2OpCoord;
 
+   
 
         /// <summary>
         /// linear solver for the quadratic optimization problem, Opmatrix has to be defined! 
@@ -94,6 +100,7 @@ namespace BoSSS.Foundation {
         //        return m_OpSolver;
         //    }
         //}
+
 
 
         public void ProjectDGField(double alpha, ConventionalDGField DGField, CellMask mask = null) {
@@ -139,6 +146,10 @@ namespace BoSSS.Foundation {
             List<int> InterprocEdges = new List<int>();
             List<List<int>> VertAtInterprocEdges = new List<List<int>>();
             bool isInterprocEdge;
+            bool nonConformEdge;
+            BitArray CellsAtNonConform = new BitArray(m_grd.Cells.NoOfLocalUpdatedCells);
+            List<int> nonConformEdges = new List<int>();
+            //List<List<int>> VertAtNonConformEdges = new List<List<int>>();
 
             // local edges per process
             foreach (var chunk in innerEM) {
@@ -146,12 +157,13 @@ namespace BoSSS.Foundation {
                 int jE = chunk.JE;
                 for (int j = j0; j < jE; j++) {
 
+                    var edgeInfo = m_grd.Edges.Info[j];
 
                     // check for interprocess edges to be processed in a second step
                     isInterprocEdge = false;
-                    if (m_grd.Edges.Info[j].HasFlag(EdgeInfo.Interprocess)) {
+                    if (edgeInfo.HasFlag(EdgeInfo.Interprocess)) {
                         isInterprocEdge = true;
-                        Console.WriteLine("interproc edge");
+                        //Console.WriteLine("interproc edge");
                         InterprocEdges.Add(j);
                         foreach (int[] list in externalEdges) {
                             if (list != null && list.Contains(j)) {
@@ -161,9 +173,22 @@ namespace BoSSS.Foundation {
                     }
 
 
-
                     int cell1 = m_grd.Edges.CellIndices[j, 0];
                     int cell2 = m_grd.Edges.CellIndices[j, 1];
+
+
+                    // check for cells which are located at a non-conformal cell (hanging nodes)
+                    nonConformEdge = false;
+                    if (edgeInfo.HasFlag(EdgeInfo.Cell1_Nonconformal)) {
+                        CellsAtNonConform[cell2] = true;
+                        nonConformEdges.Add(j);
+                        nonConformEdge = true;
+                    } else if (edgeInfo.HasFlag(EdgeInfo.Cell2_Nonconformal)) {
+                        CellsAtNonConform[cell1] = true;
+                        nonConformEdges.Add(j);
+                        nonConformEdge = true;
+                    };
+
 
                     // check the conditions at vertices (actual, own, potential)
                     int[] vertAtCell1 = m_grd.Cells.CellVertices[cell1];
@@ -175,7 +200,7 @@ namespace BoSSS.Foundation {
                         if (vertAtCell2.Contains(vert)) {
                             VertAtEdge.Add(vert);
                             CondAtVert[vert, 2] += 1;   // potential condition at vert
-                            if (!isInterprocEdge) {
+                            if (!isInterprocEdge && !nonConformEdge) {
                                 CondAtVert[vert, 0] += 1;   // actual condition at vert 
                                 CondAtVert[vert, 1] += 1;   // potential own cond at vert (local edge)
                             } else {
@@ -188,6 +213,9 @@ namespace BoSSS.Foundation {
                             }
                         }
                     }
+                    //if (nonConformEdge) {
+                    //    VertAtNonConformEdges.Add(VertAtEdge);
+                    //}
                     if (isInterprocEdge && InterprocEdges.Contains(j)) {
                         VertAtInterprocEdges.Add(VertAtEdge);
                     }
@@ -229,7 +257,7 @@ namespace BoSSS.Foundation {
                     }
 
 
-                    if (!isInterprocEdge) {
+                    if (!isInterprocEdge && !nonConformEdge) {
 
                         qNodes = getEdgeInterpolationNodes(numVCond, numECond);
 
@@ -254,6 +282,316 @@ namespace BoSSS.Foundation {
 
                 }
             }
+
+
+            BitArray ishangingNode = new BitArray(m_grd.Vertices.NoOfNodes4LocallyUpdatedCells);
+
+            // get edges at hanging nodes
+            CellMask CaNCmsk = new CellMask(m_grd, CellsAtNonConform);
+            SubGrid CaNCsgrd = new SubGrid(CaNCmsk);
+            EdgeMask hangingEdges = CaNCsgrd.InnerEdgesMask;
+
+            // find corresponding hanging nodes
+            int[] hangVert2NonConformCell = new int[m_grd.Vertices.NoOfNodes4LocallyUpdatedCells];
+            hangVert2NonConformCell.SetAll(-1);
+            foreach (var chunk in hangingEdges) {
+                int j0 = chunk.i0;
+                int jE = chunk.JE;
+                for (int j = j0; j < jE; j++) {
+
+                    int cell1 = m_grd.Edges.CellIndices[j, 0];
+                    int cell2 = m_grd.Edges.CellIndices[j, 1];
+                    int[] cell1_neighbours = m_grd.Cells.CellNeighbours[cell1];
+                    int[] cell2_neighbours = m_grd.Cells.CellNeighbours[cell2];
+                    int NonConformCell = -1;
+                    for (int i = 0; i < cell1_neighbours.Length; i++) {
+                        int cell = cell1_neighbours[i];
+                        if (cell2_neighbours.Contains(cell)) {
+                            NonConformCell = cell;
+                            break;
+                        }
+                    }
+                    if (NonConformCell > -1) {
+
+                        int[] vertAtCell1 = m_grd.Cells.CellVertices[cell1];
+                        int[] vertAtCell2 = m_grd.Cells.CellVertices[cell2];
+                        for (int i = 0; i < vertAtCell1.Length; i++) {
+                            int vert = vertAtCell1[i];
+                            if (vertAtCell2.Contains(vert) && m_grd.Vertices.VerticeToCell[vert].Length == 2) {
+                                ishangingNode[vert] = true;
+                                hangVert2NonConformCell[vert] = NonConformCell;
+                                break;
+                            }
+                        }
+
+                    }
+                }
+            }
+
+
+            // non-confrom edges (only for single core in 2D so far!)
+            foreach (int j in nonConformEdges) {
+
+                int cell1 = m_grd.Edges.CellIndices[j, 0];
+                int cell2 = m_grd.Edges.CellIndices[j, 1];
+                int hangCell;
+                int NonConformCell;
+                if (CellsAtNonConform[cell1]) {
+                    hangCell = cell1;
+                    NonConformCell = cell2;
+                } else {
+                    hangCell = cell2;
+                    NonConformCell = cell1;
+                }
+
+                int[] vertAtHCell = m_grd.Cells.CellVertices[hangCell];
+                int[] vertAtNcCell = m_grd.Cells.CellVertices[NonConformCell];
+                int numVCond = 0;
+                foreach (int vert in vertAtHCell) {
+                    if (vertAtNcCell.Contains(vert)) {
+                        CondAtVert[vert, 0] += 1;
+                        CondAtVert[vert, 1] += 1;
+                        CondAtVert[vert, 2] += 1;
+                        if (CondAtVert[vert, 0] > maxVCond) {
+                            numVCond++;
+                        }
+                    }
+                    if (ishangingNode[vert] && hangVert2NonConformCell[vert] == NonConformCell) {
+                        CondAtVert[vert, 0] += 1;
+                        CondAtVert[vert, 1] += 1;
+                        CondAtVert[vert, 2] += 1;
+                        if (CondAtVert[vert, 0] == maxVCond) {
+                            numVCond++;
+                        }
+                    }
+                }
+
+
+                qNodes = getEdgeInterpolationNodes(numVCond, 0);
+
+                if (qNodes != null) {
+
+                    // set continuity constraints
+                    var results = m_Basis.EdgeEval(qNodes, j, 1);
+
+                    for (int qN = 0; qN < qNodes.NoOfNodes; qN++) {
+                        // Cell1
+                        for (int p = 0; p < this.m_Basis.GetLength(cell1); p++) {
+                            B[nodeCount + qN, m_Mapping.GlobalUniqueCoordinateIndex(0, cell1, p)] = results.Item1[0, qN, p];
+                        }
+                        // Cell2
+                        for (int p = 0; p < this.m_Basis.GetLength(cell2); p++) {
+                            B[nodeCount + qN, m_Mapping.GlobalUniqueCoordinateIndex(0, cell2, p)] = -results.Item2[0, qN, p];
+                        }
+                    }
+                    nodeCount += qNodes.NoOfNodes;
+                }
+
+
+            }
+
+
+
+            // additional conditions for hanging nodes
+            //ishangingNode = new BitArray(m_grd.Vertices.NoOfNodes4LocallyUpdatedCells);
+
+            // get edges at hanging nodes
+            //CellMask CaNCmsk = new CellMask(m_grd, CellsAtNonConform);
+            //SubGrid CaNCsgrd = new SubGrid(CaNCmsk);
+            //EdgeMask hangingEdges = CaNCsgrd.InnerEdgesMask;
+
+            //// find corresponding hanging nodes
+            //hangVert2hangEdge = new int[m_grd.Vertices.NoOfNodes4LocallyUpdatedCells];
+            //hangVert2hangEdge.SetAll(-1);         
+            //hangVert2NonConformCell = new int[m_grd.Vertices.NoOfNodes4LocallyUpdatedCells];
+            //hangVert2NonConformCell.SetAll(-1);
+            //int[] hangEdge2hangVert = new int[hangingEdges.NoOfItemsLocally];
+            //int Eind = 0;
+            //int HNcount = 0;
+            //foreach (var chunk in hangingEdges) {
+            //    int j0 = chunk.i0;
+            //    int jE = chunk.JE;
+            //    for (int j = j0; j < jE; j++) {
+
+            //        int cell1 = m_grd.Edges.CellIndices[j, 0];
+            //        int cell2 = m_grd.Edges.CellIndices[j, 1];
+            //        int[] cell1_neighbours = m_grd.Cells.CellNeighbours[cell1];
+            //        int[] cell2_neighbours = m_grd.Cells.CellNeighbours[cell2];
+            //        int NonConformCell = -1;
+            //        for (int i = 0; i < cell1_neighbours.Length; i++) {
+            //            int cell = cell1_neighbours[i];
+            //            if (cell2_neighbours.Contains(cell)) {
+            //                NonConformCell = cell;
+            //                break;
+            //            }
+            //        }
+            //        if (NonConformCell > -1) {
+
+            //            int[] vertAtCell1 = m_grd.Cells.CellVertices[cell1];
+            //            int[] vertAtCell2 = m_grd.Cells.CellVertices[cell2];
+            //            for (int i = 0; i < vertAtCell1.Length; i++) {
+            //                int vert = vertAtCell1[i];
+            //                if (vertAtCell2.Contains(vert) && m_grd.Vertices.VerticeToCell[vert].Length == 2) {
+            //                    ishangingNode[vert] = true;
+            //                    hangVert2hangEdge[vert] = j;
+            //                    hangVert2NonConformCell[vert] = NonConformCell;
+            //                    hangEdge2hangVert[Eind] = vert;
+            //                    HNcount++;
+            //                    break;
+            //                }
+            //            }
+
+            //        } else {
+            //            hangEdge2hangVert[Eind] = -1;
+            //        }
+            //        Eind++;
+            //    }
+            //}
+
+            // compute derivatives of the basis polynomials along on spatial direction
+            //PolynomialList[,] edgeDeriv = ComputePartialDerivatives(m_Basis);
+
+            // compute additional constraints at hanging edges
+            //var Trafo = m_grd.ChefBasis.Scaling;
+            //MultidimensionalArray B2 = MultidimensionalArray.Create(HNcount * m_Basis.Degree, (int)m_Mapping.GlobalCount);
+            //Eind = 0;
+            //HNcount = 0;
+            //foreach (var chunk in hangingEdges) {
+            //    int j0 = chunk.i0;
+            //    int jE = chunk.JE;
+            //    for (int j = j0; j < jE; j++) {
+
+            //        if (hangEdge2hangVert[Eind] != -1) {
+
+            //            int cell1 = m_grd.Edges.CellIndices[j, 0];
+            //            int cell2 = m_grd.Edges.CellIndices[j, 1];
+
+            //            int trf1 = m_grd.Edges.Edge2CellTrafoIndex[j, 0];
+            //            int trf2 = m_grd.Edges.Edge2CellTrafoIndex[j, 1];
+
+            //            MultidimensionalArray hNd_global = m_grd.Vertices.Coordinates.ExtractSubArrayShallow(new int[] { hangEdge2hangVert[Eind], 0 },
+            //                                                                        new int[] { hangEdge2hangVert[Eind], m_grd.SpatialDimension - 1 });
+
+            //            MultidimensionalArray hND_local1 = MultidimensionalArray.Create(1, 1, m_grd.SpatialDimension);
+            //            MultidimensionalArray hND_local2 = MultidimensionalArray.Create(1, 1, m_grd.SpatialDimension);
+
+            //            m_grd.TransformGlobal2Local(hNd_global, hND_local1, cell1, 1, 0);
+            //            m_grd.TransformGlobal2Local(hNd_global, hND_local2, cell2, 1, 0);
+
+            //            NodeSet hangNode1 = new NodeSet(m_grd.Grid.GetRefElement(0), hND_local1.ExtractSubArrayShallow(0, -1, -1));
+            //            NodeSet hangNode2 = new NodeSet(m_grd.Grid.GetRefElement(0), hND_local2.ExtractSubArrayShallow(0, -1, -1));
+
+            //            int derivInd = -1;
+            //            for (int d = 0; d < m_grd.SpatialDimension; d++) {
+            //                if (m_grd.Edges.NormalsForAffine[j, d] != 0)
+            //                    derivInd = d;
+            //            }
+
+            //            for (int drv = 0; drv < m_Basis.Degree; drv++) {
+            //                MultidimensionalArray Res = MultidimensionalArray.Create(1, m_Basis.Polynomials[0].Count);
+            //                edgeDeriv[drv, derivInd].Evaluate(hangNode1, Res);
+            //                for (int p = 0; p < m_Basis.Polynomials[0].Count; p++) {
+            //                    B2[HNcount * m_Basis.Degree + drv, m_Mapping.GlobalUniqueCoordinateIndex(0, cell1, p)] = Res[0, p] * Trafo[cell1];
+            //                }
+            //                Res.Clear();
+            //                edgeDeriv[drv, derivInd].Evaluate(hangNode2, Res);
+            //                for (int p = 0; p < m_Basis.Polynomials[0].Count; p++) {
+            //                    B2[HNcount * m_Basis.Degree + drv, m_Mapping.GlobalUniqueCoordinateIndex(0, cell2, p)] = -Res[0, p] * Trafo[cell2];
+            //                }
+            //            }
+            //            HNcount++;
+            //        }
+            //        Eind++;
+            //    }
+            //}
+
+
+            //// non-confrom edges (only for single core in 2D so far!)
+            //int edge = 0;
+            //foreach (int j in nonConformEdges) {
+
+            //    List<int> vertAtEdge = VertAtNonConformEdges.ElementAt(edge);
+            //    bool internalNonConformEdge = true;
+            //    if (vertAtEdge.Count > 0) {
+            //        internalNonConformEdge = false;
+            //    }
+
+            //    if (!internalNonConformEdge) {
+
+            //        int cell1 = m_grd.Edges.CellIndices[j, 0];
+            //        int cell2 = m_grd.Edges.CellIndices[j, 1];
+            //        int hangCell;
+            //        int NonConformCell;
+            //        if (CellsAtNonConform[cell1]) {
+            //            hangCell = cell1;
+            //            NonConformCell = cell2;
+            //        } else {
+            //            hangCell = cell2;
+            //            NonConformCell = cell1;
+            //        }
+
+            //        int hangNode = -1;
+            //        foreach (var vert in m_grd.Cells.CellVertices[hangCell]) {
+            //            if (ishangingNode[vert] && hangVert2NonConformCell[vert] == NonConformCell) {
+            //                hangNode = vert;
+            //            }
+            //        }
+
+            //        if (hangNode == -1) {
+            //            throw new ArgumentOutOfRangeException("should not happen");
+            //        }
+
+            //        bool NonConfromEdgeIsProcessed = false;
+            //        if (CondAtVert[hangNode, 0] == maxVCond) {
+            //            NonConfromEdgeIsProcessed = true;
+            //        }
+
+
+            //        if (!NonConfromEdgeIsProcessed) {
+
+            //            int numVCond = 0;
+            //            foreach (int vert in vertAtEdge) {
+            //                CondAtVert[vert, 0] += 1;
+            //                CondAtVert[vert, 1] += 1;
+            //                CondAtVert[vert, 2] += 1;
+            //                if (CondAtVert[vert, 0] > maxVCond) {
+            //                    numVCond++;
+            //                }
+            //            }
+
+            //            CondAtVert[hangNode, 0] += 1;
+            //            CondAtVert[hangNode, 1] += 1;
+            //            CondAtVert[hangNode, 2] += 1;
+
+            //            ProcessNonConformEdge(hangNode, hangCell, NonConformCell,  ref numVCond);
+
+
+            //            qNodes = getEdgeInterpolationNodes(numVCond, 0);
+
+            //            if (qNodes != null) {
+
+            //                // set continuity constraints
+            //                var results = m_Basis.EdgeEval(qNodes, j, 1);
+
+            //                for (int qN = 0; qN < qNodes.NoOfNodes; qN++) {
+            //                    // Cell1
+            //                    for (int p = 0; p < this.m_Basis.GetLength(cell1); p++) {
+            //                        B[nodeCount + qN, m_Mapping.GlobalUniqueCoordinateIndex(0, cell1, p)] = results.Item1[0, qN, p];
+            //                    }
+            //                    // Cell2
+            //                    for (int p = 0; p < this.m_Basis.GetLength(cell2); p++) {
+            //                        B[nodeCount + qN, m_Mapping.GlobalUniqueCoordinateIndex(0, cell2, p)] = -results.Item2[0, qN, p];
+            //                    }
+            //                }
+            //                nodeCount += qNodes.NoOfNodes;
+            //            }
+
+            //        }
+            //    }
+            //    edge++;
+            //}
+
+
 
 
             // interprocess edges 
@@ -320,9 +658,12 @@ namespace BoSSS.Foundation {
             }
 
 
+
+
             Partitioning rowPart = new Partitioning(nodeCount);
             MsrMatrix A = new MsrMatrix(rowPart, m_Mapping);
             A.AccBlock(rowPart.i0, 0, 1.0, B.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { nodeCount - 1, (int)m_Mapping.GlobalCount - 1 }));
+            //A.AccBlock(rowPart.i0 + nodeCount, 0, 1.0, B2);
 
 
             // test with matlab
@@ -330,7 +671,6 @@ namespace BoSSS.Foundation {
             Console.WriteLine("Calling MATLAB/Octave...");
             using (BatchmodeConnector bmc = new BatchmodeConnector()) {
                 bmc.PutSparseMatrix(A, "A");
-                bmc.Cmd("[m,n] = size(full(A))");
                 bmc.Cmd("rank_A = rank(full(A))");
                 bmc.Cmd("rank_AT = rank(full(A'))");
                 bmc.GetMatrix(output, "[rank_A, rank_AT]");
@@ -413,6 +753,93 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// 
         /// </summary>
+        /// <param name="basis"></param>
+        /// <returns></returns>
+        private PolynomialList[,] ComputePartialDerivatives(Basis basis) {
+
+            int deg = basis.Degree;
+            int D = basis.GridDat.SpatialDimension;
+
+            PolynomialList[,] edgeDeriv = new PolynomialList[deg, D];
+
+            for (int drv = 0; drv < deg; drv++) {
+                for (int d = 0; d < D; d++) {
+                    List<Polynomial> polyList = new List<Polynomial>();
+                    int[] deriv = new int[D];
+                    deriv[d] = drv + 1;
+                    foreach (Polynomial poly in basis.Polynomials[0]) {
+                        Polynomial polyDeriv = poly.Derive(deriv);
+                        polyList.Add(polyDeriv);
+                    }
+                    edgeDeriv[drv, d] = new PolynomialList(polyList);
+                }
+            }
+
+            return edgeDeriv;
+
+        }
+
+
+        //BitArray ishangingNode;
+
+        //int[] hangVert2hangEdge;
+
+        //int[] hangVert2NonConformCell;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="hangNode"></param>
+        /// <param name="hangCell"></param>
+        /// <param name="numVCond"></param>
+        //private void ProcessNonConformEdge(int currentHNode, int currentHCell, int NonConformCell, ref int numVCond) {
+
+        //    // set conditions at current hanging node
+        //    CondAtVert[currentHNode, 0] += 1;
+        //    CondAtVert[currentHNode, 1] += 1;
+        //    CondAtVert[currentHNode, 2] += 1;
+
+        //    // search for the next hanging node and cell / or terminate
+        //    int currentHEdge = hangVert2hangEdge[currentHNode];
+
+        //    int cell1 = m_grd.Edges.CellIndices[currentHEdge, 0];
+        //    int cell2 = m_grd.Edges.CellIndices[currentHEdge, 1];
+
+        //    int nextHCell;
+        //    if (cell1 == currentHCell) {
+        //        nextHCell = cell2;
+        //    } else {
+        //        nextHCell = cell1;
+        //    }
+
+        //    int[] vertAtHCell = m_grd.Cells.CellVertices[nextHCell];
+        //    int[] vertAtNcCell = m_grd.Cells.CellVertices[NonConformCell];
+        //    foreach (int vert in vertAtHCell) {
+        //        if (ishangingNode[vert] && vert != currentHNode && hangVert2NonConformCell[vert] == NonConformCell) {   // next recursion
+        //            // set conditions at next hanging node
+        //            CondAtVert[vert, 0] += 1;
+        //            CondAtVert[vert, 1] += 1;
+        //            CondAtVert[vert, 2] += 1;
+        //            ProcessNonConformEdge(vert, nextHCell, NonConformCell, ref numVCond);
+        //        }
+        //        if (vertAtNcCell.Contains(vert)) {      // terminate
+        //            // set conditions at non conform edge
+        //            CondAtVert[vert, 0] += 1;
+        //            CondAtVert[vert, 1] += 1;
+        //            CondAtVert[vert, 2] += 1;
+        //            if (CondAtVert[vert, 0] > maxVCond) {
+        //                numVCond++;
+        //            }
+        //        }
+        //    }
+
+
+        //}
+
+
+        /// <summary>
+        /// 
+        /// </summary>
         /// <param name="vertAtEdge"></param>
         /// <param name="CondAtVert"></param>
         /// <returns></returns>
@@ -421,6 +848,17 @@ namespace BoSSS.Foundation {
             int numVCond = 0;
 
             foreach (int vert in VertAtEdge) {
+                if (CondAtVert[vert, 2] == 2) {
+                    if (CondAtVert[vert, 1] == 2) {
+                        if (CondAtVert[vert, 0] == 1) {
+                            numVCond++;
+                        }
+                    } else if (CondAtVert[vert, 1] == 1) {
+                        if (vert < m_grd.Vertices.NodePartitioning.LocalLength) {   // proc owns vert
+                            numVCond++;
+                        }
+                    }
+                }
                 if (CondAtVert[vert, 2] == 3) {
                     if (CondAtVert[vert, 1] == 3) {
                         if (CondAtVert[vert, 0] == 2) {
@@ -431,7 +869,18 @@ namespace BoSSS.Foundation {
                             numVCond++;
                         }
                     }
-                } 
+                }
+                if (CondAtVert[vert, 2] == 4) {
+                    if (CondAtVert[vert, 1] == 4) {
+                        if (CondAtVert[vert, 0] == 3) {
+                            numVCond++;
+                        }
+                    } else if (CondAtVert[vert, 1] == 3) {
+                        if (vert < m_grd.Vertices.NodePartitioning.LocalLength) {   // proc owns vert
+                            numVCond++;
+                        }
+                    }
+                }
             }
 
             return numVCond;
