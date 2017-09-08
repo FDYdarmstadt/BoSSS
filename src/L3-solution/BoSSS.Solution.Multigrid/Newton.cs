@@ -55,9 +55,9 @@ namespace BoSSS.Solution.Multigrid {
 
         public CoordinateVector m_SolutionVec;
 
-        public enum ApproxInvJacobianOptions { GMRES = 1, Direct = 2 }
+        public enum ApproxInvJacobianOptions { GMRES = 1, DirectSolver = 2 }
 
-        public ApproxInvJacobianOptions ApprocJac = ApproxInvJacobianOptions.Direct;
+        public ApproxInvJacobianOptions ApprocJac = ApproxInvJacobianOptions.DirectSolver;
 
 
         public override void SolverDriver<S>(CoordinateVector SolutionVec, S RHS) {
@@ -105,7 +105,7 @@ namespace BoSSS.Solution.Multigrid {
                 if (ApprocJac == ApproxInvJacobianOptions.GMRES) {
                     //Console.WriteLine("Solving Jacobian with GMRES....");
                     step = Krylov(SolutionVec, x, f0, out errstep);
-                } else if (ApprocJac == ApproxInvJacobianOptions.Direct) {
+                } else if (ApprocJac == ApproxInvJacobianOptions.DirectSolver) {
 
                     //Console.WriteLine("Solving Jacobian exact....");
                     CurrentJac = diffjac(SolutionVec, x, f0);
@@ -228,7 +228,6 @@ namespace BoSSS.Solution.Multigrid {
             if (xinit.L2Norm() != 0) {
                 x = xinit.CloneAs();
                 r.SetV(dirder(SolutionVec, currentX, x, f0), -1);
-                r.AccV(-1, f0);
             }
 
             int m = maxKrylovDim;
@@ -242,7 +241,7 @@ namespace BoSSS.Solution.Multigrid {
             double[] g = new double[m + 1];
             g[0] = rho;
 
-           // Console.WriteLine("Error NewtonGMRES:   " + rho);
+            //Console.WriteLine("Error NewtonGMRES:   " + rho);
 
             // Termination of entry
             if (rho < GMRESConvCrit)
@@ -326,17 +325,18 @@ namespace BoSSS.Solution.Multigrid {
 
                 rho = g[k].Abs();
 
-               // Console.WriteLine("Error NewtonGMRES:   " + rho);
+               Console.WriteLine("Error NewtonGMRES:   " + rho);
 
                 k++;
 
             }
 
-            Console.WriteLine("GMRES completed after:   " + k + "steps");
 
             k--;
-            // update approximation and exit
 
+            Console.WriteLine("GMRES completed after:   " + k + "steps");
+
+            // update approximation and exit
             //y = H(1:i,1:i) \ s(1:i);    
             y = new double[k];
             H.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { k - 1, k - 1 })
