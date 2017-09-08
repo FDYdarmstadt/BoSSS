@@ -44,7 +44,7 @@ namespace BoSSS.Solution.Multigrid {
         /// <summary>
         /// Maximum number of steplength iterations
         /// </summary>
-        public double maxStep = 5;
+        public double maxStep = 10;
 
         /// <summary>
         /// Convergence for Krylov and GMRES iterations
@@ -103,15 +103,10 @@ namespace BoSSS.Solution.Multigrid {
 
                 // How should the inverse of the Jacobian be approximated?
                 if (ApprocJac == ApproxInvJacobianOptions.GMRES) {
-                    //Console.WriteLine("Solving Jacobian with GMRES....");
                     step = Krylov(SolutionVec, x, f0, out errstep);
                 } else if (ApprocJac == ApproxInvJacobianOptions.DirectSolver) {
-
-                    //Console.WriteLine("Solving Jacobian exact....");
                     CurrentJac = diffjac(SolutionVec, x, f0);
-
                     var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
-
                     solver.DefineMatrix(CurrentJac);
                     step.ClearEntries();
                     solver.Solve(step, f0);
@@ -208,9 +203,9 @@ namespace BoSSS.Solution.Multigrid {
         /// <param name="xinit">initial iterate</param>
         /// <param name="errstep">error of step</param>
         /// <returns></returns>
-        public double[] NewtonGMRES(CoordinateVector SolutionVec, double[] currentX, double[] f0, double[] xinit, out double errstep) {
+        public double[] GMRES(CoordinateVector SolutionVec, double[] currentX, double[] f0, double[] xinit, out double errstep) {
             int n = f0.Length;
-            int reorth = 3;
+            int reorth = 1; // Orthogonalization method -> 1: Brown/Hindmarsh condition, 3: Always reorthogonalize
 
             // RHS of the linear equation system 
             double[] b = new double[n];
@@ -267,7 +262,7 @@ namespace BoSSS.Solution.Multigrid {
                 double normav2 = H[k, k - 1];
 
                 // Reorthogonalize ?
-                if ((reorth == 1 && normav + 0.001 * normav2 == normav) || reorth == 3) {
+                if ((reorth == 1 && Math.Round(normav + 0.001 * normav2,3) == Math.Round(normav,3) || reorth == 3)) {
                     for (int j = 1; j <= k; j++) {
                         double hr = GenericBlas.InnerProd(V[k], V[j - 1]).MPISum();
                         H[j - 1, k - 1] = H[j - 1, k - 1] + hr;
@@ -357,7 +352,7 @@ namespace BoSSS.Solution.Multigrid {
 
         public double[] Krylov(CoordinateVector SolutionVec, double[] currentX, double[] f0, out double errstep) {
 
-            double[] step = NewtonGMRES(SolutionVec, currentX, f0, new double[currentX.Length], out errstep);
+            double[] step = GMRES(SolutionVec, currentX, f0, new double[currentX.Length], out errstep);
             int kinn = 0;
 
             //Console.WriteLine("Error Krylov:   " + errstep);
@@ -365,7 +360,7 @@ namespace BoSSS.Solution.Multigrid {
             while (kinn < restart_limit && errstep > ConvCrit) {
                 kinn++;
 
-                step = NewtonGMRES(SolutionVec, currentX, f0, step, out errstep);
+                step = GMRES(SolutionVec, currentX, f0, step, out errstep);
 
               //  Console.WriteLine("Error Krylov:   " + errstep);
             }
