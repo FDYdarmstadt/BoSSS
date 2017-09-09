@@ -195,7 +195,7 @@ namespace ilPSP {
             } else {
                 Debug.Assert(m_SubblkLen.Length == m_SubblkLen_Backup.Length);
                 for (int i = 0; i < m_SubblkLen.Length; i++) {
-                    Debug.Assert(ArrayTools.Equals(m_SubblkLen[i], m_SubblkLen_Backup[i]), "Some moron messed with blocking indices.");
+                    Debug.Assert(ArrayTools.ListEquals(m_SubblkLen[i], m_SubblkLen_Backup[i]), "Some moron messed with blocking indices.");
                 }
             }
 #endif
@@ -220,7 +220,7 @@ namespace ilPSP {
             } else {
                 Debug.Assert(m_Subblk_i0.Length == m_Subblki0_Backup.Length);
                 for (int i = 0; i < m_SubblkLen.Length; i++) {
-                    Debug.Assert(ArrayTools.Equals(m_Subblk_i0[i], m_Subblki0_Backup[i]), "Some moron messed with blocking indices.");
+                    Debug.Assert(ArrayTools.ListEquals(m_Subblk_i0[i], m_Subblki0_Backup[i]), "Some moron messed with blocking indices.");
                 }
             }
 #endif

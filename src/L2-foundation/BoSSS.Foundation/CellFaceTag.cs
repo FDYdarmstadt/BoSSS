@@ -102,13 +102,15 @@ namespace BoSSS.Foundation.Grid.Classic {
         int m_SignedEdgeTag;
 
         /// <summary>
-        /// Face index of the Cell
+        /// Face index of the cell.
         /// </summary>
         [DataMember]
         public int FaceIndex;
 
         /// <summary>
-        /// global identification of the neighbor cell
+        /// Two options, depending on  <see cref="EdgeTag"/>:
+        /// - internal edges or periodic boundaries: the global identification of the neighbor cell, i.e. this entry is non-negative.
+        /// - not used for cell face tags that represent boundary conditions: then, this entry should be negative.
         /// </summary>
         [DataMember]
         public long NeighCell_GlobalID;

@@ -290,6 +290,16 @@ namespace BoSSS.Solution.Control {
             }
         }
 
+
+        ///// <summary>
+        ///// Adds a time-dependent initial value (e.g. some external force field which may change over time).
+        ///// </summary>
+        ///// <param name="fieldname">Name of the DG field which should hold the initial value.</param>
+        ///// <param name="value">Function of the boundary condition</param>
+        //public void AddInitialValue(string fieldname, Func<double[], double> value) {
+        //    this.InitialValues_Evaluators.Add(fieldname, value);
+        //}
+
         /// <summary>
         /// Contains a list of queries that shall be evaluated at the end of
         /// the simulation

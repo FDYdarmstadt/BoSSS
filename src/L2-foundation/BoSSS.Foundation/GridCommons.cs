@@ -47,7 +47,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         static ILog Logger = LogManager.GetLogger(typeof(GridCommons));
 
         /// <summary>
-        /// cells of the grid
+        /// Cells of the grid.
         /// </summary>
         /// <remarks>
         /// Cannot be implemented as property since NonSerialized only works
@@ -57,7 +57,8 @@ namespace BoSSS.Foundation.Grid.Classic {
         public Cell[] Cells;
 
         /// <summary>
-        /// Optional elements that mark boundary conditions;
+        /// Optional elements that mark boundary conditions. Their global indices resp. global Id's 
+        /// start after those of the <see cref="Cells"/>.
         /// </summary>
         [NonSerialized]
         public BCElement[] BcCells;

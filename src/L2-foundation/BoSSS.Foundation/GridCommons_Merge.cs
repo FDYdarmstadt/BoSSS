@@ -499,8 +499,6 @@ namespace BoSSS.Foundation.Grid.Classic {
                 cnt2 += K;
             }
 
-
-
             // add the newly found pairings to the grid
             for (int j = 0; j < J; j++) {
                 var fp = FoundPairings[j];

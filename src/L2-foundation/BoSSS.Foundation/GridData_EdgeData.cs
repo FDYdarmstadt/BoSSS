@@ -130,7 +130,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
 
             /// <summary>
-            /// Ell reference elements for edges.
+            /// Reference elements for edges.
             /// </summary>
             public RefElement[] EdgeRefElements {
                 get {
@@ -700,7 +700,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 m_owner.TransformLocal2Global(Kref2.Vertices, Vtx2, j2);
 
                                 throw new ApplicationException("Fatal error in grid: Cell " + K_j1.GlobalID + " and Cell "
-                                + K_j2.GlobalID + " are specified to be neighbours, but the do not seem "
+                                + K_j2.GlobalID + " are specified to be neighbors, but the do not seem "
                                 + "to have a matching edge geometrically.");
                             }
                         }

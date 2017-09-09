@@ -75,11 +75,18 @@ namespace BoSSS.Foundation.Grid.Classic {
         }
 
         /// <summary>
-        /// computes the neighbor cells for each local cell
+        /// Computes the neighbor cells globally (i.e. over all MPI processors) for each local cell.
         /// </summary>
         /// <returns>
-        /// cell-wise neighborship information<br/>
-        /// index: local cell index<br/>
+        /// <param name="IncludeBcCells">
+        /// If true, also the boundary condition cells (<see cref="BcCells"/>) will be included in the output array.
+        /// </param>
+        /// Cell-wise neighborship information:
+        /// - index: local cell index <em>j</em>, i.e. correlates with <see cref="Cells"/>; if <paramref name="IncludeBcCells"/> is true,
+        ///   the information for boundary cells is added after the information for cells.
+        /// - content: for the index <em>j</em> the set of neighbor cells. If the global index (<see cref="Neighbour.Neighbour_GlobalIndex"/>)
+        ///   is greater or equal than the global number of cells (<see cref="NumberOfCells"/>) the neighbor is a boundary condition cell,
+        ///   (<see cref="BcCells"/>).
         /// </returns>
         public IEnumerable<Neighbour>[] GetCellNeighbourship(bool IncludeBcCells) {
             ilPSP.MPICollectiveWatchDog.Watch();
