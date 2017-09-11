@@ -76,15 +76,15 @@ namespace BoSSS.Solution.Multigrid {
 
             Console.WriteLine("Residual base.init:   " + f0.L2NormPow2().MPISum().Sqrt());
 
-            currentPrecMatrix = CurrentLin.OperatorMatrix.CloneAs().ToMsrMatrix();
-            currentPrecMatrix.Clear();
-            currentPrecMatrix.AccEyeSp(1);
 
             deltaX = new double[x.Length];
             xt = new double[x.Length];
             ft = new double[x.Length];
 
-            EvaluateOperator(1, SolutionVec.Mapping.Fields, f0);
+
+            this.CurrentLin.TransformSolFrom(SolutionVec, x);
+            base.EvalResidual(x, ref f0);
+
 
             // fnorm
             double fnorm = f0.L2NormPow2().MPISum().Sqrt();
@@ -93,9 +93,6 @@ namespace BoSSS.Solution.Multigrid {
             double[] step = new double[x.Length];
             double[] stepOld = new double[x.Length];
             MsrMatrix CurrentJac;
-
-            // Redefining PrecMatrix
-            currentPrecMatrix = diffjac(SolutionVec, x, f0);
 
             Console.WriteLine("Start residuum for nonlinear iteration:  " + fnorm);
 
@@ -186,7 +183,7 @@ namespace BoSSS.Solution.Multigrid {
                 // residual evaluation & callback
                 base.EvalResidual(xt, ref ft);
 
-                EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);
+               // EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);
 
                 //base.Init(SolutionVec, RHS, out x, out f0);
 
@@ -547,25 +544,25 @@ namespace BoSSS.Solution.Multigrid {
         /// Pre-scaling of <paramref name="Output"/>.
         /// </param>
         /// <param name="Output"></param>
-        public override void EvaluateOperator(double alpha, IEnumerable<DGField> CurrentState, double[] Output) {
-            BlockMsrMatrix OpMtxRaw, MassMtxRaw;
-            double[] OpAffineRaw;
-            this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, CurrentState.ToArray());
+        //public override void EvaluateOperator(double alpha, IEnumerable<DGField> CurrentState, double[] Output) {
+        //    BlockMsrMatrix OpMtxRaw, MassMtxRaw;
+        //    double[] OpAffineRaw;
+        //    this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, CurrentState.ToArray());
 
-            OpMtxRaw.SpMV(alpha, new CoordinateVector(CurrentState.ToArray()), 1.0, OpAffineRaw);
+        //    OpMtxRaw.SpMV(alpha, new CoordinateVector(CurrentState.ToArray()), 1.0, OpAffineRaw);
 
-            CurrentLin.TransformRhsInto(OpAffineRaw, Output);
+        //    CurrentLin.TransformRhsInto(OpAffineRaw, Output);
 
-            // Inverse of current PrexMatrix
-            if (currentPrecMatrix != null) {
-                var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
-                solver.DefineMatrix(currentPrecMatrix);
-                var temp = Output.CloneAs();
-                Output.ClearEntries();
-                solver.Solve(Output, temp);
-            }
+        //    // Inverse of current PrexMatrix
+        //    if (currentPrecMatrix != null) {
+        //        var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
+        //        solver.DefineMatrix(currentPrecMatrix);
+        //        var temp = Output.CloneAs();
+        //        Output.ClearEntries();
+        //        solver.Solve(Output, temp);
+        //    }
 
-        }
+        //}
 
     }
 }
