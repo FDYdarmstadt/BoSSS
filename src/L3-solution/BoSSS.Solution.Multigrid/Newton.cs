@@ -61,6 +61,8 @@ namespace BoSSS.Solution.Multigrid {
 
         public MsrMatrix currentPrecMatrix = null;
 
+        public ISparseSolver PrecSolver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
+
 
         public override void SolverDriver<S>(CoordinateVector SolutionVec, S RHS) {
             m_SolutionVec = SolutionVec;
@@ -104,7 +106,8 @@ namespace BoSSS.Solution.Multigrid {
                 itc++;
 
                 // Redefining PrecMatrix
-                // currentPrecMatrix = diffjac(SolutionVec, x, f0);
+                currentPrecMatrix = diffjac(SolutionVec, x, f0);
+                PrecSolver.DefineMatrix(currentPrecMatrix);
 
                 // How should the inverse of the Jacobian be approximated?
                 if (ApproxJac == ApproxInvJacobianOptions.GMRES) {
@@ -232,6 +235,10 @@ namespace BoSSS.Solution.Multigrid {
                 r.AccV(-1, dirder(SolutionVec, currentX, x, f0));
             }
 
+            var temp2 = r.CloneAs();
+            r.ClearEntries();
+            PrecSolver.Solve(r, temp2);
+
             int m = maxKrylovDim;
             double[][] V = (m + 1).ForLoop(i => new double[Nloc]); //   V(1:n,1:m+1) = zeros(n,m);
             MultidimensionalArray H = MultidimensionalArray.Create(m + 1, m + 1); //   H(1:m,1:m) = zeros(m,m);
@@ -255,9 +262,13 @@ namespace BoSSS.Solution.Multigrid {
 
             while ((rho > GMRESConvCrit) && k <= m) {
 
-
                 // Call directional derivative
                 V[k].SetV(dirder(SolutionVec, currentX, V[k - 1], f0));
+
+                var temp3 = V[k].CloneAs();
+                V[k].ClearEntries();
+                PrecSolver.Solve(V[k], temp3);
+
                 double normav = V[k].L2NormPow2().MPISum().Sqrt();
 
                 // Modified Gram-Schmidt
@@ -357,7 +368,7 @@ namespace BoSSS.Solution.Multigrid {
 
         }
 
-        public double[] Krylov(CoordinateVector SolutionVec, double[] currentX, double[] f0, out double errstep) {
+        public double[]  Krylov(CoordinateVector SolutionVec, double[] currentX, double[] f0, out double errstep) {
 
             double[] step = GMRES(SolutionVec, currentX, f0, new double[currentX.Length], out errstep);
             int kinn = 0;
@@ -366,14 +377,6 @@ namespace BoSSS.Solution.Multigrid {
 
             while (kinn < restart_limit && errstep > ConvCrit) {
                 kinn++;
-
-                //if (currentPrecMatrix != null) {
-                //    var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
-                //    solver.DefineMatrix(currentPrecMatrix);
-                //    var temp = step.CloneAs();
-                //    step.ClearEntries();
-                //    solver.Solve(step, temp);
-                //}
 
                 step = GMRES(SolutionVec, currentX, f0, step, out errstep);
 
