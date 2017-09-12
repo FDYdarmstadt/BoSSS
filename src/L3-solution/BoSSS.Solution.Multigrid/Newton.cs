@@ -1,4 +1,20 @@
-﻿using System;
+﻿/* =======================================================================
+Copyright 2017 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -108,7 +124,9 @@ namespace BoSSS.Solution.Multigrid {
                 //currentPrecMatrix = diffjac(SolutionVec, x, f0);
                 //PrecSolver.DefineMatrix(currentPrecMatrix);
 
-                Precond.Init(CurrentLin);
+                if (Precond != null) {
+                    Precond.Init(CurrentLin);
+                }
 
                 // How should the inverse of the Jacobian be approximated?
                 if (ApproxJac == ApproxInvJacobianOptions.GMRES) {
@@ -228,9 +246,11 @@ namespace BoSSS.Solution.Multigrid {
                 r.AccV(-1, dirder(SolutionVec, currentX, x, f0));
             }
 
-            var temp2 = r.CloneAs();
-            r.ClearEntries();
-            Precond.Solve(r, temp2);
+            if (Precond != null) {
+                var temp2 = r.CloneAs();
+                r.ClearEntries();
+                Precond.Solve(r, temp2);
+            }
 
             int m = maxKrylovDim;
             double[][] V = (m + 1).ForLoop(i => new double[Nloc]); //   V(1:n,1:m+1) = zeros(n,m);
@@ -258,9 +278,11 @@ namespace BoSSS.Solution.Multigrid {
                 // Call directional derivative
                 V[k].SetV(dirder(SolutionVec, currentX, V[k - 1], f0));
 
-                var temp3 = V[k].CloneAs();
-                V[k].ClearEntries();
-                Precond.Solve(V[k], temp3);
+                if (Precond != null) {
+                    var temp3 = V[k].CloneAs();
+                    V[k].ClearEntries();
+                    Precond.Solve(V[k], temp3);
+                }
 
                 double normav = V[k].L2NormPow2().MPISum().Sqrt();
 

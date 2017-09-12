@@ -467,18 +467,6 @@ namespace CNS {
             delegate (DGField subGridField, CellMask cellMask, IProgram<CNSControl> program) {
                 Program<CNSControl> p = (Program<CNSControl>)program;
                 AdamsBashforthLTS lts = (AdamsBashforthLTS)p.TimeStepper;
-                subGridField.CopyFrom(lts.SgrdField);
-            });
-
-        /// <summary>
-        /// The sub-grid ids of individual local time-stepping sub-grids
-        /// </summary>
-        public static readonly DerivedVariable AdaptiveLTSSubGrids = new DerivedVariable(
-            "adaptiveLTSSubGrids",
-            VariableTypes.Other,
-            delegate (DGField subGridField, CellMask cellMask, IProgram<CNSControl> program) {
-                Program<CNSControl> p = (Program<CNSControl>)program;
-                AdamsBashforthAdaptiveLTS lts = (AdamsBashforthAdaptiveLTS)p.TimeStepper;
                 if (lts != null)
                     subGridField.CopyFrom(lts.SgrdField);
             });

@@ -1022,7 +1022,7 @@ namespace CNS {
             // Adaptive local time stepping scheme (order=1, subgrid=1 --> explicit Euler)
             //c.ExplicitScheme = ExplicitSchemes.AdamsBashforth;
             //c.ExplicitOrder = 2;
-            c.ExplicitScheme = ExplicitSchemes.AdaptiveLTS;
+            c.ExplicitScheme = ExplicitSchemes.LTS;
             c.ExplicitOrder = 2;
             c.NumberOfSubGrids = 3;
 
@@ -1051,8 +1051,8 @@ namespace CNS {
             c.AddVariable(Variables.CFL, 0);
             c.AddVariable(Variables.CFLConvective, 0);
             c.AddVariable(Variables.CFLArtificialViscosity, 0);
-            if (c.ExplicitScheme.Equals(ExplicitSchemes.AdaptiveLTS))
-                c.AddVariable(Variables.AdaptiveLTSSubGrids, 0);
+            if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS))
+                c.AddVariable(Variables.LTSSubGrids, 0);
 
             c.GridFunc = delegate {
                 double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
@@ -1199,8 +1199,8 @@ namespace CNS {
             c.AddVariable(Variables.CFLConvective, 0);
             if (AV)
                 c.AddVariable(Variables.CFLArtificialViscosity, 0);
-            if (c.ExplicitScheme.Equals(ExplicitSchemes.AdaptiveLTS))
-                c.AddVariable(Variables.AdaptiveLTSSubGrids, 0);
+            if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS))
+                c.AddVariable(Variables.LTSSubGrids, 0);
 
             DerivedVariable Schlieren = new DerivedVariable(
                 "schlieren",
