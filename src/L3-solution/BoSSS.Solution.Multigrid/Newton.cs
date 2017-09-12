@@ -51,8 +51,6 @@ namespace BoSSS.Solution.Multigrid {
         /// </summary>
         public double GMRESConvCrit = 1e-9;
 
-        public ISolverSmootherTemplate m_LinearSolver;
-
         public CoordinateVector m_SolutionVec;
 
         public enum ApproxInvJacobianOptions { GMRES = 1, DirectSolver = 2 }
@@ -61,7 +59,8 @@ namespace BoSSS.Solution.Multigrid {
 
         public MsrMatrix currentPrecMatrix = null;
 
-        public ISparseSolver PrecSolver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
+        public ISolverSmootherTemplate Precond;
+
 
 
         public override void SolverDriver<S>(CoordinateVector SolutionVec, S RHS) {
@@ -105,9 +104,11 @@ namespace BoSSS.Solution.Multigrid {
                 fNormo = fnorm;
                 itc++;
 
-                // Redefining PrecMatrix
-                currentPrecMatrix = diffjac(SolutionVec, x, f0);
-                PrecSolver.DefineMatrix(currentPrecMatrix);
+                // Brute force PrecMatrix
+                //currentPrecMatrix = diffjac(SolutionVec, x, f0);
+                //PrecSolver.DefineMatrix(currentPrecMatrix);
+
+                Precond.Init(CurrentLin);
 
                 // How should the inverse of the Jacobian be approximated?
                 if (ApproxJac == ApproxInvJacobianOptions.GMRES) {
@@ -121,14 +122,6 @@ namespace BoSSS.Solution.Multigrid {
                 } else {
                     throw new NotImplementedException("Your approximation option for the jacobian seems not to be existent.");
                 }
-
-                var temp2 = step.CloneAs();
-                temp2.AccV(-1, stepOld);
-                stepOld = step.CloneAs();
-
-#if DEBUG
-                Console.WriteLine("Difference of step:   " + temp2.L2Norm());
-#endif
 
                 // Start line search
                 xOld = x;
@@ -237,7 +230,7 @@ namespace BoSSS.Solution.Multigrid {
 
             var temp2 = r.CloneAs();
             r.ClearEntries();
-            PrecSolver.Solve(r, temp2);
+            Precond.Solve(r, temp2);
 
             int m = maxKrylovDim;
             double[][] V = (m + 1).ForLoop(i => new double[Nloc]); //   V(1:n,1:m+1) = zeros(n,m);
@@ -267,7 +260,7 @@ namespace BoSSS.Solution.Multigrid {
 
                 var temp3 = V[k].CloneAs();
                 V[k].ClearEntries();
-                PrecSolver.Solve(V[k], temp3);
+                Precond.Solve(V[k], temp3);
 
                 double normav = V[k].L2NormPow2().MPISum().Sqrt();
 
