@@ -142,6 +142,31 @@ namespace BoSSS.Solution.Multigrid {
         /// </summary>
         protected double[] LinearizationRHS;
 
+        /// <summary>
+        /// Evaluation of the nonlinear operator.
+        /// </summary>
+        /// <param name="alpha"></param>
+        /// <param name="CurrentState">
+        /// Current state of DG fields
+        /// </param>
+        /// <param name="beta">
+        /// Pre-scaling of <paramref name="Output"/>.
+        /// </param>
+        /// <param name="Output"></param>
+        protected void EvaluateOperator(double alpha, IEnumerable<DGField> CurrentState, double[] Output) {
+            BlockMsrMatrix OpMtxRaw, MassMtxRaw;
+            double[] OpAffineRaw;
+            this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, CurrentState.ToArray());
+
+            OpMtxRaw.SpMV(alpha, new CoordinateVector(CurrentState.ToArray()), 1.0, OpAffineRaw);
+
+            double[] OutputClone = null;
+
+            CurrentLin.TransformRhsInto(OpAffineRaw, Output);
+
+        }
+
+
 
         /// <summary>
         /// Updating the <see cref="CurrentLin"/> -- operator;
@@ -175,25 +200,6 @@ namespace BoSSS.Solution.Multigrid {
             if (U0.Length != Ltrf)
                 U0 = new double[Ltrf];
             CurrentLin.TransformSolInto(u0Raw, U0);
-        }
-
-
-        protected void EvaluateOperator(double alpha, IEnumerable<DGField> CurrentState, double beta, double[] Output) {
-            BlockMsrMatrix OpMtxRaw, MassMtxRaw;
-            double[] OpAffineRaw;
-            this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, CurrentState.ToArray());
-
-            OpMtxRaw.SpMV(alpha, new CoordinateVector(CurrentState.ToArray()), 1.0, OpAffineRaw);
-
-            double[] OutputClone = null;
-            if(beta != 0.0) {
-                OutputClone = Output.CloneAs();
-            }
-
-            CurrentLin.TransformRhsInto(OpAffineRaw, Output);
-
-            if (beta != 0.0)
-                Output.AccV(beta, OutputClone);
         }
 
 
@@ -241,6 +247,7 @@ namespace BoSSS.Solution.Multigrid {
             out_Resi.SetV(this.LinearizationRHS, 1.0);
             CurrentLin.OperatorMatrix.SpMV(-1.0, in_U, 1.0, out_Resi);
         }
+
 
         
     }

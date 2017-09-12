@@ -105,9 +105,9 @@ namespace ALTSTests {
             metricTwo[1] = 0.5;
             metricTwo[2] = 2;
 
-            timeStepper = new AdamsBashforthAdaptiveLTS(diffOp, new CoordinateMapping(c), coordMap, order: ABOrder, numOfSubgrids: this.numOfSubgrids);
+            timeStepper = new AdamsBashforthLTS(diffOp, new CoordinateMapping(c), coordMap, order: ABOrder, numOfSubgrids: this.numOfSubgrids, conservative: false, adaptive: true);
 
-            AdamsBashforthAdaptiveLTS timeStepper2 = timeStepper as AdamsBashforthAdaptiveLTS;
+            AdamsBashforthLTS timeStepper2 = timeStepper as AdamsBashforthLTS;
             timeStepper = timeStepper2;
 
             // Set cell metrics for dynamic clustering

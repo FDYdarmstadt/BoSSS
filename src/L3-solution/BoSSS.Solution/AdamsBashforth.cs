@@ -116,6 +116,7 @@ namespace BoSSS.Solution.Timestepping {
                 Parameters,
                 timeStepConstraints,
                 sgrd);
+            //RungeKuttaScheme.OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforComputechangeRate(t1, t2);
 
             CurrentChangeRate = new double[Mapping.LocalLength];
             CompleteChangeRate = new double[Mapping.LocalLength];

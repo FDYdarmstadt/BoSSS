@@ -18,7 +18,7 @@
 
 
 \BoSSScmd{
-/// \section*{What´s new}
+/// \section*{What's new}
 ///
 ///\begin{itemize}
 /// \item running a simulation with the incompressible Navier-Stokes solver
@@ -31,7 +31,7 @@
 ///\begin{itemize}
 ///\item the \BoSSS\ framework
 ///\item a visualization tool, e.g Paraview or VisIt
-///\item the knowledge how to setup a database for \BoSSS{}
+///\item the knowledge of how to setup a database for \BoSSS{}
 ///\end{itemize}
 /// This tutorial will explain the basic features of the incompressible Navier-Stokes solver in the \BoSSS{} framework. 
 /// First, the simple testcase of a 2D channel flow will be explained. After that, there will be a short part about the immersed boundary feature of our incompressible flow solver. 
@@ -59,7 +59,7 @@
 /// \label{sec:Channel}
 ///\subsection{Interactive mode}
  }
-\BoSSSexeSilent
+\BoSSSexe
 \BoSSScmd{
 restart;
  }
@@ -131,7 +131,7 @@ c.Tags.Add("k"+k);
  }
 \BoSSSexe
 \BoSSScmd{
-/// Here, the degree for each field is set (degree k for velocity, k-1 for pressure). First, Phi is not going to be used in this simulation but it has to be specified anyways.
+/// Here, the degree for each field is set (degree \code{k} for velocity, \code{k-1} for pressure). First, \code{Phi} is not going to be used in this simulation but it has to be specified anyways.
 c.FieldOptions.Add("VelocityX", new FieldOpts() \{\newline 
 Degree = k,\newline 
 SaveToDB = FieldOpts.SaveToDBOpt.TRUE\newline 
@@ -186,7 +186,7 @@ return et;\newline
  }
 \BoSSSexe
 \BoSSScmd{
-/// Return grid info ans save
+/// Return grid info and save
 grid;\newline 
 Guid GridGuid = myDb.SaveGrid(grid);\newline 
 c.GridGuid    = GridGuid;
@@ -202,14 +202,14 @@ c.AddBoundaryCondition("Pressure\_Outlet");
 \BoSSSexe
 \BoSSScmd{
 /// Fluid Properties
-/// Note: As characteristic length and fluid density are choosen to one. The viscosity can be defined by $1/reynolds$.
+/// Note: The characteristic length and fluid density are choosen to one. Therefore, the viscosity can be defined by \code{1.0/reynolds}.
 double reynolds            = 20;\newline 
 c.PhysicalParameters.rho\_A = 1;\newline 
 c.PhysicalParameters.mu\_A  = 1.0/reynolds;
  }
 \BoSSSexe
 \BoSSScmd{
-/// Bool parameter wheather the Navier-Stokes or Stokes equations should be solved
+/// Bool parameter whether the Navier-Stokes or Stokes equations should be solved
 c.PhysicalParameters.IncludeConvection = true;
  }
 \BoSSSexe
@@ -274,7 +274,7 @@ solver.Dispose();
  }
 \BoSSSexe
 \BoSSScmd{
-/// Some information like the console output or a log containing various physical values can be found in the SessionDirectory
+/// Some information like the console output or a log containing various physical values can be found in the session directory
 //myDb.Sessions.First().OpenSessionDirectory();
  }
 \BoSSSexe
@@ -311,7 +311,7 @@ solver.Dispose();
  }
 \BoSSSexe
 \BoSSScmd{
-/// Furthermore, the cylinder immmersed the fluid should be described
+/// Furthermore, the cylinder immersing the fluid should be described
 /// by using the zero contour of a level set function. The radius of the cylinder is set to 0.5.
  }
 \BoSSSexe
@@ -320,9 +320,9 @@ solver.Dispose();
  }
 \BoSSSexe
 \BoSSScmd{
-/// As soon as we have exchanged the grids and the definition of phi. Example Control files for both,
-/// the Channel and the flow around a cylinder can be found in the ControlExample directory. As soon as we ran 
-/// the simulation again we can take a look at the plots and the PhysicalData file in the SessionDirectory. 
+/// Example control files for both,
+/// the channel and the flow around a cylinder can be found in the ControlExample directory. As soon as we run 
+/// the simulation again we can take a look at the plots and the PhysicalData file in the session directory. 
 /// There we can find for example lift and drag forces acting on the cylinder.
  }
 \BoSSSexe

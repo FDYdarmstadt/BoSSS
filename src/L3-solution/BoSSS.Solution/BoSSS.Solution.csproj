@@ -59,7 +59,6 @@
     <Compile Include="ABevolve.cs" />
     <Compile Include="AdamsBashforth.cs" />
     <Compile Include="AdamsBashforthLTS.cs" />
-    <Compile Include="AdamsBashforthAdaptiveLTS.cs" />
     <Compile Include="LoadBalancing\CellCostEstimatorLibrary.cs" />
     <Compile Include="LoadBalancing\ICellCostEstimator.cs" />
     <Compile Include="LoadBalancing\RuntimeCellCostEstimator.cs" />

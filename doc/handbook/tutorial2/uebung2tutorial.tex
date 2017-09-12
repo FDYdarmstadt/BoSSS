@@ -29,18 +29,18 @@
 /// No \BoSSS{} specific prerequisites are needed to complete this tutorial.
 ///
 /// \section{Problem statement}
-/// First, we define two functions: $g_1$ is continuous, $g_2$ has a one discontinuity at $\vec{X} = \pi$ in the first derivative
+/// First, we define two functions: $g_1$ is continuous, $g_2$ has a discontinuity at $\vec{X} = \pi$ in the first derivative
 /// \begin{align*}
 /// g_1 =& \sin(\vec{X}), \\
 /// g_2 =& \vert(\sin(\vec{X})\vert\, .
 /// \end{align*}
-/// The function argument is a vector $\vec{X}$, consisting only of one entry since we are working in a dimensional space. \BoSSS{} however supports 1D, 2D and 3D, so the spatial coordinate is a general vector.
+/// The function argument is a vector $\vec{X}$, consisting only of one entry since we are working in a one dimensional space. \BoSSS{} however supports 1D, 2D and 3D, so the spatial coordinate is a general vector.
 ///
 /// \section{Solution within the BoSSS framework}
 ///
 /// To initialize, we have to call \code{restart}:\textsl{}
  }
-\BoSSSexe
+\BoSSSexeSilent
 \BoSSScmd{
 restart;
  }
@@ -60,7 +60,7 @@ Func<double[],double> g1 = (X => Math.Sin(X[0]));          \newline
 // continuous, smooth         \newline 
 Func<double[],double> g2 = (X => Math.Abs(Math.Sin(X[0])));          \newline 
 // continuous, non-smooth
-}
+ }
 \BoSSSexe
 \BoSSScmd{
 double[] x = GenericBlas.Linspace(0, 2.0*Math.PI, 1000);
@@ -371,7 +371,7 @@ for(int i = 0; i < 2; i++) \{ // loop over the resolution sequence         \newl
 \btab \}         \newline 
  \}
  }
-\BoSSSexeSilent
+\BoSSSexe
 \BoSSScmdSilent{
 /// NUnit test (few random tests) BoSSScmdSilent
 Assert.LessOrEqual(Errors[1,4,9],8E-06);       \newline 

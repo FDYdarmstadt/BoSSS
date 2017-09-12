@@ -55,11 +55,11 @@ This work is licensed under a Creative Commons Attribution-NonCommercial-ShareAl
 \BoSSS{} (Bounded Support Spectral Solver) is a flexible framework for the 
 development, evaluation and application of numerical discretization schemes based on the 
 \ac{dg}  method (see also section \ref{sec:coreConcepts_dgMethods}). 
-Its development has been initiated at the Chair of Fluid Dynamics in 2008 in
+Its development has been initiated in 2008 at the Chair of Fluid Dynamics, TU Darmstadt, in
 order to establish a general foundation for the development of higher order discretizations for 
 challenging physical problems.
 Over the years,
-\BoSSS{} developed into fully-featured library for discontinuous Galerkin methods, including facilities for
+\BoSSS{} developed into a fully-featured library for discontinuous Galerkin methods, including facilities for
 workflow management and the rapid prototyping discretization of partial differential equations.
 
 \paragraph{Research codes:}
@@ -79,8 +79,7 @@ Especially the complexity of \ac{dg} methods is:
 \item[(iii)] a formidable obstacle for reviewers trying to \emph{reproduce results}.
 \end{itemize}
 The development of \BoSSS{} has thus been initiated to overcome these issues and to bridge the gap
-between MATLAB prototypes with very limited performance and generality on the one hand, and highly-
-optimized single-purpose research codes on the other hand.
+between MATLAB prototypes with very limited performance and generality on the one hand, and highly-optimized single-purpose research codes on the other hand.
 
 Therefore, we consider \BoSSS{} a \emph{rapid prototyping} framework:
 it allows users to create
@@ -161,7 +160,7 @@ This is mainly used for two kinds of applications:
 \begin{itemize}
 \item
 Immersed boundary methods: instead of creating a specialized mesh for a particular geometry,
-the geometry is embedded in an simple background mesh.
+the geometry is embedded in a simple background mesh.
 An advantage of \ac{ibm} is that it is easy to implement moving geometries
 (e.g. particle flows, fluid-structure interaction) since no mesh has to be moved.
 See Figure \ref{fig:FlowOverBump} for a simple example.
@@ -212,7 +211,7 @@ Incompressible multiphase simulation of a rising bubble.
 % ********************************************************************************
 
 This chapter covers certain issues in the design philosophy of the code, that are essential for its use. 
-These are important to understand for both, users as well as developers.
+These are important to understand for both users as well as developers.
 
 % --------------------------------------------------------------------------------
 \section{Discontinuous Galerkin methods}
@@ -247,7 +246,7 @@ Like for any other language, a C\# program needs to be compiled. Any C\# compile
 files (ending with \texttt{.exe}) that typically rely on library files (ending with \texttt{.dll}). 
 In contrast to languages like C, the executables cannot be executed directly -- they need to be executed
  through the CLI which compiles the CIL to machine code \emph{at runtime}. Due to this \emph{just in time} (JIT) 
-compilation, C\# are able to compete with compiled languages in terms of performance.
+compilation, C\# is able to compete with compiled languages in terms of performance.
 
 This two-step compile approach makes C\# a fast language -- cooperatively fast to 
 languages like C or FORTRAN. C\# is significantly faster than an interpreted language like 
@@ -293,13 +292,16 @@ This, of course requires some middleware (the Mono framework, see section \ref{s
 and libraries to be present on the target computer.
 
 In addition to C\# code,  \BoSSS{} relies on platform-specific ('\emph{native}') third party libraries for specific tasks, 
+such as MPI for parallelization and BLAS/LAPACK for high-performance linear algebra. In 
+section \ref{sec:gettingStarted_installation}, we will thus 
+=========
 such MPI for parallelization and BLAS/LAPACK for high-performance linear algebra. In 
 section \ref{sec:gettingStarted_installation}, we will thus 
 summarize some best practices for the installation of \BoSSS{} on different operating systems.
 
 Once the required libraries and middleware for \BoSSS{} have been installed on an 
 \ac{hpc} system, all simulation set-up and development can be done 
-on a users local machine.
+on a user's local machine.
 This is advantageous, since the development tools on \ac{hpc} systems are usually limited
 (users have to live with what administrators provide)
 and have to be used through an ssh-connection.
@@ -320,7 +322,7 @@ Therefore, some management tools are inevitable, since manual or semi-automated
 organization of simulation result using usual operating system tools (e.g. 
 directory structures, shell scripts, etc.) have proven to be error-prone.
 
-In \BoSSS{}, these issues are manged using two components:
+In \BoSSS{}, these issues are managed using two components:
 \begin{itemize}
 \item
 A database for \emph{data management}:
@@ -331,7 +333,7 @@ certain internal conventions.
 \item
 A sophisticated scripting solution for \emph{workflow management}, the \BoSSSpad{} application:
 C\# is not only used as a programming language, but also as a scripting language
-for setting up simulations and examine results.
+for setting up simulations and examining results.
 
 In \BoSSSpad{}, users can enter C\# statements and execute them on the fly.
 Since C\# is used for both, the code development as well as scripting,
@@ -342,7 +344,7 @@ the user can seamlessly access every subroutine of the code.
 Access and manage the database
 
 \item
-Workflow management: launch solvers, summit jobs to hpc systems, ...
+Workflow management: launch solvers, submit jobs to hpc systems, ...
 
 \item
 Data import and export: load data from third-party pre-processing tools (mesh generators),
@@ -396,7 +398,7 @@ This data is imported into \BoSSS{}
 and saved in the \BoSSS{} database (using \code{IDatabaseDriver.SaveGridIfUnique}).
 The workflow management tools (see chapter \ref{sec:WorkflowMgm}) of \BoSSSpad
 can then be used to launch one of the provided solvers, which also save their results to the database.
-Finally, \BoSSSpad{} can also be used to launch post-processing or data export tools.
+Finally, \BoSSSpad{} ~can also be used to launch post-processing or data export tools.
 The solver as well as the database can optionally be located/run on some other 
 computer, e.g. some sort of High Performance Compute (HPC) system.
 }
@@ -458,7 +460,7 @@ associated development environments (e.g. Visual Studio or equivalents).
 % ********************************************************************************
 % ********************************************************************************
 
-Within this chapter, we will briefly outline the steps required to get started with using and/or developing \BoSSS{} applications. In any case, the installation of the pre-compiled version of \BoSSS{} (cf. section \ref{sec:gettingStarted_installation}) should be the first step. Upon finishing this step, you will be able to use the pre-compiled \BoSSS{} applications (cf. section \ref{sec:gettingStarted_using}), but also to start the exploring the code using the scripting API. Finally, working with the source code will be discussed in section \ref{sec:gettingStarted_developing}.
+Within this chapter, we will briefly outline the steps required to get started with using and/or developing \BoSSS{} applications. In any case, the installation of the pre-compiled version of \BoSSS{} (cf. section \ref{sec:gettingStarted_installation}) should be the first step. Upon finishing this step, you will be able to use the pre-compiled \BoSSS{} applications (cf. section \ref{sec:gettingStarted_using}), but also to start  exploring the code using the scripting API. Finally, working with the source code will be discussed in section \ref{sec:gettingStarted_developing}.
 
 % --------------------------------------------------------------------------------
 \section{Installation}
@@ -470,7 +472,7 @@ The advantage of C\#, resp. .NET is that \emph{the executable is platform-indepe
 Installation on Windows is quite straightforward because the \BoSSS{} installer already includes all required native libraries:
 \begin{enumerate}
 	\item Ensure that the .NET framework\footnote{\url{https://www.microsoft.com/net/download/framework}} (version .NET 4.5.2 or higher) is installed 
-	\item Download an install Microsoft MPI \footnote{\url{https://msdn.microsoft.com/en-us/library/bb524831(v=vs.85).aspx})}. Check the MPI installation by executing the command \texttt{mpiexec} in a console window
+	\item Download and install Microsoft MPI\footnote{\url{https://msdn.microsoft.com/en-us/library/bb524831(v=vs.85).aspx})}. Check the MPI installation by executing the command \texttt{mpiexec} in a console window
 	\item Obtain and execute the \BoSSS{} Windows installer
 	\item Test your installation (cf. section \ref{sec:installation_testing})
 \end{enumerate}
@@ -530,7 +532,7 @@ Support for Mac OS X will follow soon.
 \label{sec:gettingStarted_using}
 % --------------------------------------------------------------------------------
 
-Having familiarized with the core concepts of \BoSSS{} (cf. chapter \ref{sec:coreConcepts}) and verified that the installation was succesfull (cf. section \ref{sec:installation_testing}), the pre-compiled solvers shipped with \BoSSS{} can be used to solve compressible as well as incompressible flow problems. The most simple way to get a feeling for the usage of the different solvers is to follow the corresponding quick start guides given in section \ref{sec:quickStartGuides}. These tutorials have been structured such that they allow new users to get first results immediately, which is why details about certain concepts are left out. These will then discussed in depth in the tutorials given in part \ref{sec:Tutorial}.
+Having familiarized with the core concepts of \BoSSS{} (cf. chapter \ref{sec:coreConcepts}) and verified that the installation was succesfull (cf. section \ref{sec:installation_testing}), the pre-compiled solvers shipped with \BoSSS{} can be used to solve compressible as well as incompressible flow problems. The most simple way to get a feeling for the usage of the different solvers is to follow the corresponding quick start guides given in section \ref{sec:quickStartGuides}. These guides have been structured such that they allow new users to get first results immediately, which is why details about certain concepts are left out. These will then be discussed in depth in the tutorials given in part \ref{sec:Tutorial}.
 
 
 \subsection{\BoSSSpad{}}
@@ -548,16 +550,16 @@ Having familiarized with the core concepts of \BoSSS{} (cf. chapter \ref{sec:cor
 % --------------------------------------------------------------------------------
 
 Even if you want to compile \BoSSS{} yourself, we \emph{strictly recommend} that
-you \emph{install the Binary distribution first}.
+you \emph{install the binary distribution first}.
 
 
 \subsection{Development Tools}
-As every software developer knows, programming either done by using a 
+As every software developer knows, programming is either done by using a 
 command line tool-chain or with an \ac{ide}. We strongly recommend the latter 
 approach.
 
 \paragraph{Development Environments}
-The major \ac{ide}'s available for C\# are 
+The major \ac{ide}s available for C\# are 
 Microsoft Visual Studio\footnote{
 \url{https://www.visualstudio.com/downloads/}},
 Xamarin Studio (also known under its former name `Monodevelop' or as `Visual Studio for Mac')\footnote{
@@ -570,7 +572,7 @@ than an \ac{ide}.
 On Windows, we strongly recommend to use the latest version of Visual Studio.
 The Community Edition can be downloaded for free.
 Alternatively, one could also use either Xamarin Studio or SharpDevelop.
-Those environments, the integrated debugger cannot be used for \BoSSS{}:
+In those environments, the integrated debugger cannot be used for \BoSSS{}:
 The native libraries for BoSSS on Windows are only provided for  
 64 bit (AMD64 resp. X86\_64 architecture), therefore \BoSSS{} has to be debugged in 64 bit mode.
 Xamarin Studio and SharpDevelop do not support 64 bit debugging, so they cannot be used to
@@ -619,18 +621,19 @@ When Mono is used, the equivalent to {\tt msbuild} is {\tt xbuild}. Both tools h
 % ********************************************************************************
 % ################################################################################
 \label{CNS}
-%\import{./quickStartCNS/}{IsentropicVortex.tex}
+\import{./quickStartCNS/}{IsentropicVortex.tex}
 
 % ********************************************************************************
 \chapter{Workflow management and meta job scheduler}
 \label{sec:WorkflowMgm}
-%\import{./MetaJobManager/}{MetaJobManager.tex}
+\import{./MetaJobManager/}{MetaJobManager.tex}
 
 
 \chapter{Incompressible Navier-Stokes Solver}
+\label{IBM}
 % ################################################################################
 
-%\import{./quickStartIBM/}{channel.tex}
+\import{./quickStartIBM/}{channel.tex}
 
 % ################################################################################
 % ################################################################################

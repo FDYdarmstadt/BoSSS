@@ -58,6 +58,7 @@
     <Compile Include="ExtensionMethods.cs" />
     <Compile Include="Fixpoint.cs" />
     <Compile Include="ILU.cs" />
+    <Compile Include="Newton.cs" />
     <Compile Include="OrthonormalizationScheme.cs" />
     <Compile Include="FlexGMRES.cs" />
     <Compile Include="GenericRestriction.cs" />
