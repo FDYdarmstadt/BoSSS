@@ -98,12 +98,12 @@ namespace LTS_NUnit {
             diffOp.Commit();
 
             if (LTS) {
-                AdamsBashforthLTS ltsTimeStepper = new AdamsBashforthLTS(diffOp, new CoordinateMapping(u), null, ABorder, numOfSubgrids, conservative: true);
+                AdamsBashforthLTS ltsTimeStepper = new AdamsBashforthLTS(diffOp, new CoordinateMapping(u), null, ABorder, numOfSubgrids, fluxCorrection: true);
                 ltsTimeStepper.SgrdField.Identification = "cluster";
                 m_IOFields.Add(ltsTimeStepper.SgrdField);
                 timeStepper = ltsTimeStepper;
             } else if (ALTS) {
-                AdamsBashforthLTS ltsTimeStepper = new AdamsBashforthLTS(diffOp, new CoordinateMapping(u), null, ABorder, numOfSubgrids, conservative: false, adaptive: true);
+                AdamsBashforthLTS ltsTimeStepper = new AdamsBashforthLTS(diffOp, new CoordinateMapping(u), null, ABorder, numOfSubgrids, fluxCorrection: false, reclusteringInterval: 1);
                 ltsTimeStepper.SgrdField.Identification = "cluster";
                 m_IOFields.Add(ltsTimeStepper.SgrdField);
                 timeStepper = ltsTimeStepper;

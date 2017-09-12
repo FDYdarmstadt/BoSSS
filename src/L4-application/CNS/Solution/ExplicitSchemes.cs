@@ -53,7 +53,7 @@ namespace CNS.Solution {
 
         /// <summary>
         /// Family of Adams-Bashforth multi-step schemes with Local Time Stepping
-        /// <see cref="AdamsBashforth"/>
+        /// <see cref="AdamsBashforthLTS"/>
         /// </summary>
         LTS,
 
@@ -183,13 +183,19 @@ namespace CNS.Solution {
                             (IBMControl)control,
                             equationSystem.GetJoinedOperator().CFLConstraints);
                     } else {
+                        //AdamsBashforthLTS timeStepperBla = new AdamsBashforthLTS(
                         timeStepper = new AdamsBashforthLTS(
                             equationSystem.GetJoinedOperator().ToSpatialOperator(),
                             fieldsMap,
                             parameterMap,
                             control.ExplicitOrder,
-                        control.NumberOfSubGrids,
-                        equationSystem.GetJoinedOperator().CFLConstraints);
+                            control.NumberOfSubGrids,
+                            equationSystem.GetJoinedOperator().CFLConstraints,
+                            reclusteringInterval: control.ReclusteringInterval,
+                            fluxCorrection: control.FluxCorrection);
+
+                        //timeStepperBla.OnBeforeComputeChangeRate += (t1, t2) => program.WorkingSet.UpdateDerivedVariables(program, program.SpeciesMap.SubGrid.VolumeMask);
+                        //timeStepper = timeStepperBla;
                     }
                     break;
 

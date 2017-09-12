@@ -144,7 +144,7 @@ namespace CNS.Tests.ArtificialViscosity {
             c.AddVariable(Variables.Entropy, dgDegree);
             c.AddVariable(Variables.Viscosity, dgDegree);
             c.AddVariable(Variables.Sensor, dgDegree);
-            c.AddVariable(Variables.ArtificalViscosity, 1);
+            c.AddVariable(Variables.ArtificialViscosity, 1);
             c.AddVariable(Variables.LocalMachNumber, dgDegree);
 
             c.GridFunc = delegate {

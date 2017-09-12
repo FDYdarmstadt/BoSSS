@@ -105,7 +105,7 @@ namespace ALTSTests {
             metricTwo[1] = 0.5;
             metricTwo[2] = 2;
 
-            timeStepper = new AdamsBashforthLTS(diffOp, new CoordinateMapping(c), coordMap, order: ABOrder, numOfSubgrids: this.numOfSubgrids, conservative: false, adaptive: true);
+            timeStepper = new AdamsBashforthLTS(diffOp, new CoordinateMapping(c), coordMap, order: ABOrder, numOfSubgrids: this.numOfSubgrids, fluxCorrection: false, reclusteringInterval: 1);
 
             AdamsBashforthLTS timeStepper2 = timeStepper as AdamsBashforthLTS;
             timeStepper = timeStepper2;
