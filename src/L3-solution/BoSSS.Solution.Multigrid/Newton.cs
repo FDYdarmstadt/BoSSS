@@ -59,7 +59,7 @@ namespace BoSSS.Solution.Multigrid {
 
         public ApproxInvJacobianOptions ApproxJac = ApproxInvJacobianOptions.DirectSolver;
 
-        public MsrMatrix currentPrecMatrix;
+        public MsrMatrix currentPrecMatrix = null;
 
 
         public override void SolverDriver<S>(CoordinateVector SolutionVec, S RHS) {
@@ -104,7 +104,7 @@ namespace BoSSS.Solution.Multigrid {
                 itc++;
 
                 // Redefining PrecMatrix
-                //currentPrecMatrix = diffjac(SolutionVec, x, f0);
+                // currentPrecMatrix = diffjac(SolutionVec, x, f0);
 
                 // How should the inverse of the Jacobian be approximated?
                 if (ApproxJac == ApproxInvJacobianOptions.GMRES) {
@@ -229,7 +229,7 @@ namespace BoSSS.Solution.Multigrid {
             //Initial solution
             if (xinit.L2Norm() != 0) {
                 x = xinit.CloneAs();
-                r.SetV(dirder(SolutionVec, currentX, x, f0), -1);
+                r.AccV(-1, dirder(SolutionVec, currentX, x, f0));
             }
 
             int m = maxKrylovDim;
@@ -327,7 +327,7 @@ namespace BoSSS.Solution.Multigrid {
 
                 rho = g[k].Abs();
 
-                Console.WriteLine("Error NewtonGMRES:   " + rho);
+                //Console.WriteLine("Error NewtonGMRES:   " + rho);
 
                 k++;
 
@@ -362,14 +362,22 @@ namespace BoSSS.Solution.Multigrid {
             double[] step = GMRES(SolutionVec, currentX, f0, new double[currentX.Length], out errstep);
             int kinn = 0;
 
-            //Console.WriteLine("Error Krylov:   " + errstep);
+            Console.WriteLine("Error Krylov:   " + errstep);
 
             while (kinn < restart_limit && errstep > ConvCrit) {
                 kinn++;
 
+                //if (currentPrecMatrix != null) {
+                //    var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
+                //    solver.DefineMatrix(currentPrecMatrix);
+                //    var temp = step.CloneAs();
+                //    step.ClearEntries();
+                //    solver.Solve(step, temp);
+                //}
+
                 step = GMRES(SolutionVec, currentX, f0, step, out errstep);
 
-                //  Console.WriteLine("Error Krylov:   " + errstep);
+                Console.WriteLine("Error Krylov:   " + errstep);
             }
 
             return step;
