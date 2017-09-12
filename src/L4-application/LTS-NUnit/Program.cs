@@ -103,7 +103,7 @@ namespace LTS_NUnit {
                 m_IOFields.Add(ltsTimeStepper.SgrdField);
                 timeStepper = ltsTimeStepper;
             } else if (ALTS) {
-                AdamsBashforthAdaptiveLTS ltsTimeStepper = new AdamsBashforthAdaptiveLTS(diffOp, new CoordinateMapping(u), null, ABorder, numOfSubgrids);
+                AdamsBashforthLTS ltsTimeStepper = new AdamsBashforthLTS(diffOp, new CoordinateMapping(u), null, ABorder, numOfSubgrids, conservative: false, adaptive: true);
                 ltsTimeStepper.SgrdField.Identification = "cluster";
                 m_IOFields.Add(ltsTimeStepper.SgrdField);
                 timeStepper = ltsTimeStepper;

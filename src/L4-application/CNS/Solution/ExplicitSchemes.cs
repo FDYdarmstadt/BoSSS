@@ -58,11 +58,6 @@ namespace CNS.Solution {
         LTS,
 
         /// <summary>
-        /// Family of Adams-Bashforth multi-step schemes with an adaptive local time stepping algorithm
-        /// </summary>
-        AdaptiveLTS,
-
-        /// <summary>
         /// Family of adaptive stabilized Chebyshev Runge-Kutta schemes
         /// <see cref="Rock4"/>
         /// </summary>
@@ -195,26 +190,6 @@ namespace CNS.Solution {
                             control.ExplicitOrder,
                         control.NumberOfSubGrids,
                         equationSystem.GetJoinedOperator().CFLConstraints);
-                    }
-                    break;
-
-                case ExplicitSchemes.AdaptiveLTS:
-                    if (control.DomainType == DomainTypes.StaticImmersedBoundary
-                        || control.DomainType == DomainTypes.MovingImmersedBoundary) {
-                        throw new ArgumentException("Not implemented");
-                    } else {
-                        // HACK
-                        AdamsBashforthAdaptiveLTS timeStepperBla = new AdamsBashforthAdaptiveLTS(
-                        //timeStepper = new AdamsBashforthAdaptiveLTS(
-                        equationSystem.GetJoinedOperator().ToSpatialOperator(),
-                            fieldsMap,
-                            parameterMap,
-                            control.ExplicitOrder,
-                        control.NumberOfSubGrids,
-                        equationSystem.GetJoinedOperator().CFLConstraints);
-
-                        timeStepperBla.OnBeforeComputeChangeRate += (t1, t2) => program.WorkingSet.UpdateDerivedVariables(program, program.SpeciesMap.SubGrid.VolumeMask);
-                        timeStepper = timeStepperBla;
                     }
                     break;
 
