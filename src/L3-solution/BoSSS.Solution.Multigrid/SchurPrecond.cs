@@ -58,6 +58,8 @@ namespace BoSSS.Solution.Multigrid {
         MultigridOperator m_mgop;
 
         BlockMsrMatrix Mtx;
+
+        MsrMatrix P;
         MsrMatrix ConvDiff, pGrad, divVel;
         int[] Uidx, Pidx;
 
@@ -94,21 +96,8 @@ namespace BoSSS.Solution.Multigrid {
             int L = M.RowPartitioning.LocalLength;
 
             int i0 = Mtx.RowPartitioning.i0;
-        }
 
-        public void ResetStat() {
-            m_Converged = false;
-            m_ThisLevelIterations = 0;
-        }
-
-        bool m_Converged = false;
-        int m_ThisLevelIterations = 0;
-
-        public void Solve<U, V>(U X, V B)
-            where U : IList<double>
-            where V : IList<double> {
-
-            MsrMatrix P = new MsrMatrix(Mtx);
+            P = new MsrMatrix(Mtx);
             P.Clear();
 
             //// A and pressure
@@ -142,10 +131,23 @@ namespace BoSSS.Solution.Multigrid {
             //var ConvDiffInvMtx = ConvDiffInv.ToMsrMatrix();
 
             ConvDiff.AccSubMatrixTo(1.0, P, default(int[]), Uidx, default(int[]), Uidx);
-            //pGrad.AccSubMatrixTo(1.0, P, default(int[]), Uidx, default(int[]), Pidx);
+            pGrad.AccSubMatrixTo(1.0, P, default(int[]), Uidx, default(int[]), Pidx);
             SchurMtx.AccSubMatrixTo(1.0, P, default(int[]), Pidx, default(int[]), Pidx);
             //// x= inv(P)*b !!!!! To be done with approximate Inverse
             // P.SpMV(1, B, 0, X);
+        }
+
+        public void ResetStat() {
+            m_Converged = false;
+            m_ThisLevelIterations = 0;
+        }
+
+        bool m_Converged = false;
+        int m_ThisLevelIterations = 0;
+
+        public void Solve<U, V>(U X, V B)
+            where U : IList<double>
+            where V : IList<double> {
 
             //// Building the exact inverse of the Preconditioning Matrix x=inv(P)*b
             using (var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver()) {
