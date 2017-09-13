@@ -29,7 +29,7 @@ using ilPSP.Connectors.Matlab;
 using MathNet.Numerics.LinearAlgebra.Double;
 
 namespace BoSSS.Solution.Multigrid {
-    public class SchurPrec : ISolverSmootherTemplate, ISolverWithCallback {
+    public class SchurPrecond : ISolverSmootherTemplate, ISolverWithCallback {
         public int IterationsInNested {
             get {
                 throw new NotImplementedException();
@@ -111,9 +111,9 @@ namespace BoSSS.Solution.Multigrid {
             MsrMatrix P = new MsrMatrix(Mtx);
             P.Clear();
 
-            // A and pressure
-            ConvDiff.AccSubMatrixTo(1.0, P, default(int[]), Uidx, default(int[]), Uidx);
-            pGrad.AccSubMatrixTo(1.0, P, default(int[]), Uidx, default(int[]), Pidx);
+            //// A and pressure
+            //ConvDiff.AccSubMatrixTo(1.0, P, default(int[]), Uidx, default(int[]), Uidx);
+            //pGrad.AccSubMatrixTo(1.0, P, default(int[]), Uidx, default(int[]), Pidx);
 
             // Debugging output
             //ConvDiff.SaveToTextFileSparse("ConvDiff");
@@ -122,29 +122,28 @@ namespace BoSSS.Solution.Multigrid {
 
             // Building the Schur complement
             MultidimensionalArray ConvDiffInv = MultidimensionalArray.Create(Uidx.Length, Uidx.Length);
-            MultidimensionalArray SchurInv = MultidimensionalArray.Create(Pidx.Length, Pidx.Length);
+            MultidimensionalArray Schur = MultidimensionalArray.Create(Pidx.Length, Pidx.Length);
 
             using (BatchmodeConnector bmc = new BatchmodeConnector()) {
-                bmc.PutMatrix(ConvDiff.ToFullMatrixOnProc0(), "ConvDiff");
-                bmc.PutMatrix(divVel.ToFullMatrixOnProc0(), "divVel");
-                bmc.PutMatrix(pGrad.ToFullMatrixOnProc0(), "pGrad");
-                bmc.Cmd("ConvDiffInv = inv(ConvDiff)");
+                bmc.PutSparseMatrix(ConvDiff, "ConvDiff");
+                bmc.PutSparseMatrix(divVel, "divVel");
+                bmc.PutSparseMatrix(pGrad, "pGrad");
+                bmc.Cmd("ConvDiffInv = inv(full(ConvDiff))");
                 bmc.Cmd("Schur = divVel*ConvDiffInv");
                 bmc.Cmd("Schur = Schur*pGrad");
                 //bmc.Cmd("SchurInv = inv(Schur)");
                 //bmc.GetMatrix(ConvDiffInv, "ConvDiffInv");
-                bmc.GetMatrix(SchurInv, "-Schur");
-
+                bmc.GetMatrix(Schur, "-Schur");
                 bmc.Execute(false);
             }
 
 
-            var SchurInvMtx = SchurInv.ToMsrMatrix();
-            var ConvDiffInvMtx = ConvDiffInv.ToMsrMatrix();
+            var SchurMtx = Schur.ToMsrMatrix();
+            //var ConvDiffInvMtx = ConvDiffInv.ToMsrMatrix();
 
-            //ConvDiffInvMtx.AccSubMatrixTo(1.0, P, default(int[]), Uidx, default(int[]), Uidx);
+            ConvDiff.AccSubMatrixTo(1.0, P, default(int[]), Uidx, default(int[]), Uidx);
             //pGrad.AccSubMatrixTo(1.0, P, default(int[]), Uidx, default(int[]), Pidx);
-            SchurInvMtx.AccSubMatrixTo(1.0, P, default(int[]), Pidx, default(int[]), Pidx);
+            SchurMtx.AccSubMatrixTo(1.0, P, default(int[]), Pidx, default(int[]), Pidx);
             //// x= inv(P)*b !!!!! To be done with approximate Inverse
             // P.SpMV(1, B, 0, X);
 
