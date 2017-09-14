@@ -60,7 +60,7 @@ namespace BoSSS.Solution.Multigrid {
         BlockMsrMatrix Mtx;
 
         MsrMatrix P;
-        MsrMatrix ConvDiff, pGrad, divVel;
+        MsrMatrix ConvDiff, pGrad, divVel, ConvDiffpGrad, SchurMtx;
         int[] Uidx, Pidx;
 
         public void Init(MultigridOperator op) {
@@ -85,6 +85,7 @@ namespace BoSSS.Solution.Multigrid {
 
             ConvDiff = new MsrMatrix(Upart, Upart, 1, 1);
             pGrad = new MsrMatrix(Upart, Ppart, 1, 1);
+            ConvDiffpGrad = new MsrMatrix(Upart, Upart + Ppart);
             divVel = new MsrMatrix(Ppart, Upart, 1, 1);
 
             M.AccSubMatrixTo(1.0, ConvDiff, Uidx, default(int[]), Uidx, default(int[]));
@@ -127,7 +128,8 @@ namespace BoSSS.Solution.Multigrid {
             }
 
 
-            var SchurMtx = Schur.ToMsrMatrix();
+
+            SchurMtx = Schur.ToMsrMatrix();
             //var ConvDiffInvMtx = ConvDiffInv.ToMsrMatrix();
 
             ConvDiff.AccSubMatrixTo(1.0, P, default(int[]), Uidx, default(int[]), Uidx);
@@ -149,11 +151,61 @@ namespace BoSSS.Solution.Multigrid {
             where U : IList<double>
             where V : IList<double> {
 
-            //// Building the exact inverse of the Preconditioning Matrix x=inv(P)*b
+            // Directly invert Preconditioning Matrix
             using (var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver()) {
                 solver.DefineMatrix(P);
                 solver.Solve(X, B);
             }
+
+        }
+
+
+        /// <summary>
+        /// Solve Preconditioning Matrix in Subsystems
+        /// </summary>
+        /// <typeparam name="U"></typeparam>
+        /// <typeparam name="V"></typeparam>
+        /// <param name="X"></param>
+        /// <param name="B"></param>
+        public void SolveSubproblems<U, V>(U X, V B)
+            where U : IList<double>
+            where V : IList<double> {
+            var Bu = new double[Uidx.Length];
+            Bu = B.GetSubVector(0, Uidx.Length);
+
+            var Bp = new double[Pidx.Length];
+            Bp = B.GetSubVector(Uidx.Length, Pidx.Length);
+
+            var Xu = Bu.CloneAs();
+            Xu.ClearEntries();
+            var Xp = Bp.CloneAs();
+            Xp.ClearEntries();
+
+            // Solve Schur*s=q
+            using (var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver()) {
+                solver.DefineMatrix(SchurMtx);
+                solver.Solve(Xp, Bp);
+            }
+
+
+
+            // Solve ConvDiff*w=v-q*pGrad
+            pGrad.SpMVpara(-1, Xp, 1, Bu);
+            using (var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver()) {
+                solver.DefineMatrix(ConvDiff);
+                solver.Solve(Xu, Bu);
+            }
+
+            var temp = new double[Uidx.Length + Pidx.Length];
+            temp.SetAll(0.0);
+
+            for (int i = 0; i < Uidx.Length; i++)
+                temp[i] = Xu[i];
+
+            for (int i = Uidx.Length; i < Uidx.Length + Pidx.Length; i++)
+                temp[i] = Xp[i - Uidx.Length];
+
+            X.SetV(temp);
         }
     }
 }
