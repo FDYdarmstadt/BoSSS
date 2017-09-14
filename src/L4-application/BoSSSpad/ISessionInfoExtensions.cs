@@ -15,12 +15,10 @@ limitations under the License.
 */
 
 using BoSSS.Application.BoSSSpad;
-using BoSSS.Platform;
 using BoSSS.Solution.Control;
 using ilPSP;
 using ilPSP.Connectors.Matlab;
 using ilPSP.Utils;
-using Microsoft.XmlDiffPatch;
 using Mono.CSharp;
 using System;
 using System.Collections.Generic;
@@ -1099,98 +1097,38 @@ namespace BoSSS.Foundation.IO {
 
         /// <summary>
         /// Compares the control files of <paramref name="session"/> and
-        /// <paramref name="other"/> and displays the result as HTML.
+        /// <paramref name="other"/> and displays the result using kdiff
         /// </summary>
         /// <param name="session"></param>
         /// <param name="other"></param>
         /// <returns></returns>
         public static string Diff(this ISessionInfo session, ISessionInfo other) {
-            string thisSessionDir = DatabaseDriver.GetSessionDirectory(session);
-            string thisOldControlFile = Path.Combine(thisSessionDir, "control.txt");
-            string thisNewControlFile = Path.Combine(thisSessionDir, "Control.txt");
+            string sessionDir = DatabaseDriver.GetSessionDirectory(session);
+            string controlFile = Path.Combine(sessionDir, "Control.txt");
 
-            if (File.Exists(thisOldControlFile)) {
-                XmlDocument doc = new XmlDocument();
-                doc.Load(thisOldControlFile);
-
-                string otherControlFile = Path.Combine(
-                    DatabaseDriver.GetSessionDirectory(other), "control.txt");
-                if (!File.Exists(otherControlFile)) {
-                    throw new FileNotFoundException(string.Format(
-                        "Could not find control.txt for session {0}; either the"
-                            + " control file is missing or the session is using"
-                            + " the new control file version",
-                        other.ID));
-                }
-
-                XmlDocument otherDoc = new XmlDocument();
-                otherDoc.Load(otherControlFile);
-
-                XmlDiff diff = new XmlDiff(
-                    XmlDiffOptions.IgnoreComments |
-                    XmlDiffOptions.IgnoreChildOrder |
-                    XmlDiffOptions.IgnoreWhitespace);
-
-                XmlDocument diffXml = new XmlDocument();
-                using (StringWriter diffWriter = new StringWriter()) {
-                    bool identical = diff.Compare(doc, otherDoc, new XmlTextWriter(diffWriter));
-
-                    if (identical) {
-                        return "The configuration files of the selected sessions are identical";
-                    }
-
-                    diffXml.LoadXml(diffWriter.ToString());
-                }
-
-                XmlDiffView view = new XmlDiffView();
-                view.Load(new XmlNodeReader(doc), new XmlNodeReader(diffXml));
-
-                string filename = Path.GetTempFileName() + ".html";
-                using (StreamWriter sw = new StreamWriter(filename)) {
-                    sw.Write("<html><body><table width='100%'>");
-
-                    sw.Write("<tr><td><b>Session " + session.ID);
-                    sw.Write("</b></td><td><b>Session " + other.ID);
-                    sw.Write("</b></td></tr>");
-
-                    view.GetHtml(sw);
-
-                    //Finish wrapping up the generated HTML and complete the file.
-                    sw.Write("</table></body></html>");
-                    sw.Close();
-                }
-
-                Process.Start(filename);
-
-                // Count differences
-                XmlNamespaceManager nsmgr = new XmlNamespaceManager(diffXml.NameTable);
-                nsmgr.AddNamespace("xd", diffXml.DocumentElement.NamespaceURI);
-                return String.Format(
-                    "Found {0} differences",
-                    diffXml.SelectNodes("//xd:change|//xd:add|//xd:remove", nsmgr).Count);
-            } else if (File.Exists(thisNewControlFile)) {
-                string otherControlFile = Path.Combine(
-                    DatabaseDriver.GetSessionDirectory(other), "Control.txt");
-                if (!File.Exists(otherControlFile)) {
-                    throw new FileNotFoundException(string.Format(
-                        "Could not find Control.txt for session {0}; either"
-                            + " the control file is missing or the session is"
-                            + " using the old control file version",
-                        other.ID));
-                }
-
-                ProcessStartInfo psi = new ProcessStartInfo();
-                string programFiles = System.Environment.GetFolderPath(System.Environment.SpecialFolder.ProgramFilesX86);
-                psi.FileName = Path.Combine(Path.Combine(programFiles, "KDiff3"), "kdiff3.exe");
-                psi.Arguments = String.Format("\"{0}\" \"{1}\"", thisNewControlFile, otherControlFile);
-                psi.UseShellExecute = false;
-
-                using (Process process = Process.Start(psi)) {
-                    return "Opening files in external application (kdiff3)";
-                }
-            } else {
+            if (!File.Exists(controlFile)) {
                 throw new FileNotFoundException(String.Format(
                     "Could not find a control file for session {0}", session.ID));
+            }
+
+            string otherControlFile = Path.Combine(
+                DatabaseDriver.GetSessionDirectory(other), "Control.txt");
+            if (!File.Exists(otherControlFile)) {
+                throw new FileNotFoundException(string.Format(
+                    "Could not find Control.txt for session {0}; either"
+                        + " the control file is missing or the session is"
+                        + " using the old control file version",
+                    other.ID));
+            }
+
+            ProcessStartInfo psi = new ProcessStartInfo();
+            string programFiles = System.Environment.GetFolderPath(System.Environment.SpecialFolder.ProgramFilesX86);
+            psi.FileName = Path.Combine(Path.Combine(programFiles, "KDiff3"), "kdiff3.exe");
+            psi.Arguments = String.Format("\"{0}\" \"{1}\"", controlFile, otherControlFile);
+            psi.UseShellExecute = false;
+
+            using (Process process = Process.Start(psi)) {
+                return "Opening files in external application (kdiff3)";
             }
         }
 
@@ -1338,7 +1276,7 @@ namespace BoSSS.Foundation.IO {
             var sortedSessions = sessions.OrderBy(s => s.ComputeNodeNames.Count());
             double minNodes = sortedSessions.First().ComputeNodeNames.Count();
             double minTime = sortedSessions.First().GetAverageComputingTimePerTimestep();
-            
+
             if (groupKeySelector == null) {
                 groupKeySelector = (s => "allGroups");
             }
