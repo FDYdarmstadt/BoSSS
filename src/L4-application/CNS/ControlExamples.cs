@@ -973,7 +973,7 @@ namespace CNS {
             return c;
         }
 
-        public static CNSControl ShockTube(string dbPath = null, int dgDegree = 2, int numOfCellsX = 50, int numOfCellsY = 1, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = true) {
+        public static CNSControl ShockTube(string dbPath = null, int dgDegree = 2, int numOfCellsX = 100, int numOfCellsY = 1, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = true) {
 
             CNSControl c = new CNSControl();
 
@@ -982,15 +982,19 @@ namespace CNS {
             c.DbPath = dbPath;
             c.savetodb = dbPath != null && saveToDb;
             c.saveperiod = 10;
-            c.PrintInterval = 1;
+            c.PrintInterval = 100;
 
             double xMin = 0;
             double xMax = 1;
             double yMin = 0;
             double yMax = 1;
 
-            //c.ActiveOperators = Operators.Convection;
-            c.ActiveOperators = Operators.Convection | Operators.ArtificialViscosity;
+            bool useArtificialViscosity = true;
+
+            if (useArtificialViscosity)
+                c.ActiveOperators = Operators.Convection | Operators.ArtificialViscosity;
+            else
+                c.ActiveOperators = Operators.Convection;
             c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
 
             // Shock-capturing
@@ -999,17 +1003,17 @@ namespace CNS {
             double epsilon0 = 1.0;
             double kappa = 0.5;
 
-            Variable sensorVariable = Variables.Density;
-            c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
-            c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
+            if (useArtificialViscosity) {
+                Variable sensorVariable = Variables.Density;
+                c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
+            }
 
             c.ProjectName = "Shock tube";
             if (true1D)
                 c.SessionName = String.Format("Shock tube, 1D, dgDegree = {0}, noOfCellsX = {1}, sensorLimit = {2:0.00E-00}", dgDegree, numOfCellsX, sensorLimit);
             else
                 c.SessionName = String.Format("Shock tube, 2D, dgDegree = {0}, noOfCellsX = {1}, noOfCellsX = {2}, sensorLimit = {3:0.00E-00}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit);
-
-
             c.Tags.Add("Shock tube");
             c.Tags.Add("Artificial viscosity");
 
@@ -1019,12 +1023,12 @@ namespace CNS {
             //c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             //c.ExplicitOrder = 4;
 
-            // Adaptive local time stepping scheme (order=1, subgrid=1 --> explicit Euler)
-            //c.ExplicitScheme = ExplicitSchemes.AdamsBashforth;
-            //c.ExplicitOrder = 2;
+            // (A)LTS
             c.ExplicitScheme = ExplicitSchemes.LTS;
             c.ExplicitOrder = 2;
             c.NumberOfSubGrids = 3;
+            c.ReclusteringInterval = 100;
+            c.FluxCorrection = false;
 
             c.EquationOfState = IdealGas.Air;
 
@@ -1038,19 +1042,23 @@ namespace CNS {
             c.AddVariable(Variables.Velocity.xComponent, dgDegree);
             c.AddVariable(Variables.Pressure, dgDegree);
             c.AddVariable(Variables.Entropy, dgDegree);
-            c.AddVariable(Variables.Sensor, dgDegree);
             c.AddVariable(Variables.LocalMachNumber, dgDegree);
             c.AddVariable(Variables.Rank, 0);
+            if (useArtificialViscosity)
+                c.AddVariable(Variables.Sensor, dgDegree);
             if (true1D == false) {
                 c.AddVariable(Variables.Momentum.yComponent, dgDegree);
                 c.AddVariable(Variables.Velocity.yComponent, dgDegree);
-                c.AddVariable(Variables.ArtificalViscosity, 2);
+                if (useArtificialViscosity)
+                    c.AddVariable(Variables.ArtificialViscosity, 2);
             } else {
-                c.AddVariable(Variables.ArtificalViscosity, 1);
+                if (useArtificialViscosity)
+                    c.AddVariable(Variables.ArtificialViscosity, 1);
             }
             c.AddVariable(Variables.CFL, 0);
             c.AddVariable(Variables.CFLConvective, 0);
-            c.AddVariable(Variables.CFLArtificialViscosity, 0);
+            if (useArtificialViscosity)
+                c.AddVariable(Variables.CFLArtificialViscosity, 0);
             if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS))
                 c.AddVariable(Variables.LTSSubGrids, 0);
 
@@ -1114,11 +1122,11 @@ namespace CNS {
             // Time config
             c.dtMin = 0.0;
             c.dtMax = 1.0;
-            //c.dtFixed = 1.0e-5;
+            //c.dtFixed = 1.0e-3;
             c.CFLFraction = 0.3;
             c.Endtime = 0.25;
-            //c.NoOfTimesteps = int.MaxValue;
-            c.NoOfTimesteps = 5;
+            c.NoOfTimesteps = int.MaxValue;
+            //c.NoOfTimesteps = 10;
 
             return c;
         }
@@ -1162,17 +1170,20 @@ namespace CNS {
             //double sensorLimit = 1e-2;
             double epsilon0 = 1.0;
             double kappa = 1.0;
-            Variable sensorVariable = Variables.Density;
-            c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
-            if (AV)
+
+            if (AV) {
+                Variable sensorVariable = Variables.Density;
+                c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
                 c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
+            }
 
             c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             //c.ExplicitScheme = ExplicitSchemes.RungeKutta;
-            //c.ExplicitScheme = ExplicitSchemes.AdaptiveLTS;
             c.ExplicitScheme = ExplicitSchemes.LTS;
-            c.ExplicitOrder = 2;
-            c.NumberOfSubGrids = 2;
+            c.ExplicitOrder = 3;
+            c.NumberOfSubGrids = 3;
+            c.ReclusteringInterval = 1;
+            c.FluxCorrection = false;
 
             c.EquationOfState = IdealGas.Air;
             c.MachNumber = 1.0 / Math.Sqrt(c.EquationOfState.HeatCapacityRatio);
@@ -1189,9 +1200,10 @@ namespace CNS {
             c.AddVariable(Variables.Entropy, dgDegree);
             c.AddVariable(Variables.Viscosity, dgDegree);
             c.AddVariable(Variables.LocalMachNumber, dgDegree);
-            c.AddVariable(Variables.Sensor, dgDegree);
-            if (AV)
-                c.AddVariable(Variables.ArtificalViscosity, 2);
+            if (AV) {
+                c.AddVariable(Variables.Sensor, dgDegree);
+                c.AddVariable(Variables.ArtificialViscosity, 2);
+            }
             c.AddVariable(Variables.Rank, 0);
 
             // A-LTS variables
@@ -1326,7 +1338,7 @@ namespace CNS {
             c.Endtime = 0.25;
             //c.dtFixed = 1.0e-6;
             //c.CFLFraction = 0.5; // altes Setting fuer Rechnungen auf Lichtenberg
-            c.CFLFraction = 0.5;
+            c.CFLFraction = 0.3;
             //c.dtFixed = 1.31e-5;
             //c.NoOfTimesteps = 5;
             c.NoOfTimesteps = int.MaxValue;
@@ -1612,7 +1624,7 @@ namespace CNS {
                     c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
 
                 c.AddVariable(Variables.Sensor, dgDegree);
-                c.AddVariable(Variables.ArtificalViscosity, 2);
+                c.AddVariable(Variables.ArtificialViscosity, 2);
 
                 c.Tags.Add("Artificial viscosity");
 
@@ -1782,7 +1794,7 @@ namespace CNS {
                     c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
 
                 c.AddVariable(Variables.Sensor, dgDegree);
-                c.AddVariable(Variables.ArtificalViscosity, 3);
+                c.AddVariable(Variables.ArtificialViscosity, 3);
 
                 c.Tags.Add("Artificial viscosity");
 

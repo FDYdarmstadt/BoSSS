@@ -168,9 +168,9 @@ namespace BoSSS.Solution.Timestepping {
                 CompleteChangeRate = new double[Mapping.LocalLength];
                 for (int j = 0; j < sgrd.LocalNoOfCells; j++) {
                     int cell = jSub2jCell[j];
-                    // cell in sgrd
-                    // f== each field
-                    // n== basis polynomial
+                    // cell == global cell index
+                    // f == each field
+                    // n == basis polynomial
                     foreach (DGField f in Mapping.Fields) {
                         for (int n = 0; n < f.Basis.GetLength(cell); n++) {
                             int index = Mapping.LocalUniqueCoordinateIndex(f, cell, n);
