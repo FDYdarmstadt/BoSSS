@@ -29,7 +29,7 @@ using ilPSP.Connectors.Matlab;
 using MathNet.Numerics.LinearAlgebra.Double;
 
 namespace BoSSS.Solution.Multigrid {
-    public class SchurPrec : ISolverSmootherTemplate, ISolverWithCallback {
+    public class SchurPrecond : ISolverSmootherTemplate, ISolverWithCallback {
         public int IterationsInNested {
             get {
                 throw new NotImplementedException();
@@ -58,7 +58,9 @@ namespace BoSSS.Solution.Multigrid {
         MultigridOperator m_mgop;
 
         BlockMsrMatrix Mtx;
-        MsrMatrix ConvDiff, pGrad, divVel;
+
+        MsrMatrix P;
+        MsrMatrix ConvDiff, pGrad, divVel, ConvDiffpGrad, SchurMtx;
         int[] Uidx, Pidx;
 
         public void Init(MultigridOperator op) {
@@ -75,14 +77,12 @@ namespace BoSSS.Solution.Multigrid {
             Uidx = MgMap.ProblemMapping.GetSubvectorIndices(true, D.ForLoop(i => i));
             Pidx = MgMap.ProblemMapping.GetSubvectorIndices(true, D);
 
-            //CoordinateMapping Umap = this.Velocity.Mapping;
-            //CoordinateMapping Pmap = this.Pressure.Mapping;
             int Upart = Uidx.Length;
             int Ppart = Pidx.Length;
 
-
             ConvDiff = new MsrMatrix(Upart, Upart, 1, 1);
             pGrad = new MsrMatrix(Upart, Ppart, 1, 1);
+            ConvDiffpGrad = new MsrMatrix(Upart, Upart + Ppart);
             divVel = new MsrMatrix(Ppart, Upart, 1, 1);
 
             M.AccSubMatrixTo(1.0, ConvDiff, Uidx, default(int[]), Uidx, default(int[]));
@@ -94,6 +94,42 @@ namespace BoSSS.Solution.Multigrid {
             int L = M.RowPartitioning.LocalLength;
 
             int i0 = Mtx.RowPartitioning.i0;
+
+            P = new MsrMatrix(Mtx);
+            P.Clear();
+
+            // Debugging output
+            //ConvDiff.SaveToTextFileSparse("ConvDiff");
+            //divVel.SaveToTextFileSparse("divVel");
+            //pGrad.SaveToTextFileSparse("pGrad");
+
+            // Building the Schur complement
+            //MultidimensionalArray ConvDiffInv = MultidimensionalArray.Create(Uidx.Length, Uidx.Length);
+            MultidimensionalArray Schur = MultidimensionalArray.Create(Pidx.Length, Pidx.Length);
+
+            using (BatchmodeConnector bmc = new BatchmodeConnector()) {
+                bmc.PutSparseMatrix(ConvDiff, "ConvDiff");
+                bmc.PutSparseMatrix(divVel, "divVel");
+                bmc.PutSparseMatrix(pGrad, "pGrad");
+                bmc.Cmd("ConvDiffInv = inv(full(ConvDiff))");
+                bmc.Cmd("Schur = divVel*ConvDiffInv");
+                bmc.Cmd("Schur = Schur*pGrad");
+                //bmc.Cmd("SchurInv = inv(Schur)");
+                //bmc.GetMatrix(ConvDiffInv, "ConvDiffInv");
+                bmc.GetMatrix(Schur, "-Schur");
+                bmc.Execute(false);
+            }
+
+
+
+            SchurMtx = Schur.ToMsrMatrix();
+            //var ConvDiffInvMtx = ConvDiffInv.ToMsrMatrix();
+
+            //ConvDiff.AccSubMatrixTo(1.0, P, default(int[]), Uidx, default(int[]), Uidx);
+            //pGrad.AccSubMatrixTo(1.0, P, default(int[]), Uidx, default(int[]), Pidx);
+            //SchurMtx.AccSubMatrixTo(1.0, P, default(int[]), Pidx, default(int[]), Pidx);
+            //// x= inv(P)*b !!!!! To be done with approximate Inverse
+            // P.SpMV(1, B, 0, X);
         }
 
         public void ResetStat() {
@@ -108,51 +144,62 @@ namespace BoSSS.Solution.Multigrid {
             where U : IList<double>
             where V : IList<double> {
 
-            MsrMatrix P = new MsrMatrix(Mtx);
-            P.Clear();
+            SolveSubproblems(X, B);
 
-            // A and pressure
-            ConvDiff.AccSubMatrixTo(1.0, P, default(int[]), Uidx, default(int[]), Uidx);
-            pGrad.AccSubMatrixTo(1.0, P, default(int[]), Uidx, default(int[]), Pidx);
+            //Directly invert Preconditioning Matrix
+            //using (var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver()) {
+            //    solver.DefineMatrix(P);
+            //    solver.Solve(X, B);
+            //}
 
-            // Debugging output
-            //ConvDiff.SaveToTextFileSparse("ConvDiff");
-            //divVel.SaveToTextFileSparse("divVel");
-            //pGrad.SaveToTextFileSparse("pGrad");
-
-            // Building the Schur complement
-            MultidimensionalArray ConvDiffInv = MultidimensionalArray.Create(Uidx.Length, Uidx.Length);
-            MultidimensionalArray SchurInv = MultidimensionalArray.Create(Pidx.Length, Pidx.Length);
-
-            using (BatchmodeConnector bmc = new BatchmodeConnector()) {
-                bmc.PutMatrix(ConvDiff.ToFullMatrixOnProc0(), "ConvDiff");
-                bmc.PutMatrix(divVel.ToFullMatrixOnProc0(), "divVel");
-                bmc.PutMatrix(pGrad.ToFullMatrixOnProc0(), "pGrad");
-                bmc.Cmd("ConvDiffInv = inv(ConvDiff)");
-                bmc.Cmd("Schur = divVel*ConvDiffInv");
-                bmc.Cmd("Schur = Schur*pGrad");
-                //bmc.Cmd("SchurInv = inv(Schur)");
-                //bmc.GetMatrix(ConvDiffInv, "ConvDiffInv");
-                bmc.GetMatrix(SchurInv, "-Schur");
-
-                bmc.Execute(false);
-            }
+        }
 
 
-            var SchurInvMtx = SchurInv.ToMsrMatrix();
-            var ConvDiffInvMtx = ConvDiffInv.ToMsrMatrix();
+        /// <summary>
+        /// Solve Preconditioning Matrix in Subsystems with ConvDiff, pGrad and Schur
+        /// </summary>
+        /// <typeparam name="U"></typeparam>
+        /// <typeparam name="V"></typeparam>
+        /// <param name="X"></param>
+        /// <param name="B"></param>
+        public void SolveSubproblems<U, V>(U X, V B)
+            where U : IList<double>
+            where V : IList<double> {
 
-            //ConvDiffInvMtx.AccSubMatrixTo(1.0, P, default(int[]), Uidx, default(int[]), Uidx);
-            //pGrad.AccSubMatrixTo(1.0, P, default(int[]), Uidx, default(int[]), Pidx);
-            SchurInvMtx.AccSubMatrixTo(1.0, P, default(int[]), Pidx, default(int[]), Pidx);
-            //// x= inv(P)*b !!!!! To be done with approximate Inverse
-            // P.SpMV(1, B, 0, X);
+            var Bu = new double[Uidx.Length];
+            var Xu = Bu.CloneAs();
+            Bu = B.GetSubVector(Uidx,default(int[]));
+            var Bp = new double[Pidx.Length];
+            var Xp = Bp.CloneAs();
+            Bp = B.GetSubVector(Pidx, default(int[]));
 
-            //// Building the exact inverse of the Preconditioning Matrix x=inv(P)*b
+            Xu = X.GetSubVector(Uidx, default(int[]));
+            Xp = X.GetSubVector(Pidx, default(int[]));
+
+            // Solve Schur*s=q
             using (var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver()) {
-                solver.DefineMatrix(P);
-                solver.Solve(X, B);
+                solver.DefineMatrix(SchurMtx);
+                solver.Solve(Xp, Bp);
             }
+
+            // Solve ConvDiff*w=v-q*pGrad
+            pGrad.SpMVpara(-1, Xp, 1, Bu);
+            using (var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver()) {
+                solver.DefineMatrix(ConvDiff);
+                solver.Solve(Xu, Bu);
+            }
+
+            var temp = new double[Uidx.Length + Pidx.Length];
+
+            for (int i = 0; i < Uidx.Length; i++) {
+                temp[Uidx[i]] = Xu[i];
+            }
+
+            for (int i = 0; i < Pidx.Length; i++) {
+                temp[Pidx[i]] = Xp[i];
+            }
+
+            X.SetV(temp);
         }
     }
 }

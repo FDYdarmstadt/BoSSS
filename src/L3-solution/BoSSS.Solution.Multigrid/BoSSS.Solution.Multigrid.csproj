@@ -71,7 +71,7 @@
     <Compile Include="NonlinGMRES.cs" />
     <Compile Include="NonlinGMRES2.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SchurPrec.cs" />
+    <Compile Include="SchurPrecond.cs" />
     <Compile Include="Schwarz.cs" />
     <Compile Include="SoftGMRES.cs" />
     <Compile Include="SoftPCG.cs" />
