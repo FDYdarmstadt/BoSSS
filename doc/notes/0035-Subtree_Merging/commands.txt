@@ -1,9 +1,0 @@
-git remote add root \\dc1\bosss\root.git 
-git fetch root
-git checkout -b staging-branch root/master
-git subtree split -P public -b root-public
-git checkout master
-git merge root-public
-git branch -d root-public staging-branch
-git remote remove root
-git branch
