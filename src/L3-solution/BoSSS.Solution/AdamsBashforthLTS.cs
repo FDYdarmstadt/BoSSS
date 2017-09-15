@@ -183,6 +183,7 @@ namespace BoSSS.Solution.Timestepping {
                 numOfSubgridsInit = numOfSubgrids;
                 this.timeStepCount = 1;
                 this.adaptive = true;
+                RungeKuttaScheme.OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforComputechangeRate(t1, t2);
             }
             hackOn = false;
 
@@ -221,18 +222,8 @@ namespace BoSSS.Solution.Timestepping {
                 RungeKuttaScheme.OnBeforeComputeChangeRate += UpdateSensorAndAV;
             }
 
-            //RungeKuttaScheme = new RungeKutta(
-            //    RungeKutta.RungeKuttaSchemes.ExplicitEuler,
-            //    spatialOp,
-            //    Fieldsmap,
-            //    Parameters,
-            //    timeStepConstraints,
-            //    sgrd);
-            //RungeKuttaScheme.OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforComputechangeRate(t1, t2);
-
-
-
-            //this.saveToDBCallback = saveToDBCallback;
+            // Saving time steps in subgrids
+            this.saveToDBCallback = saveToDBCallback;
         }
 
         /// <summary>
@@ -306,37 +297,6 @@ namespace BoSSS.Solution.Timestepping {
         protected virtual MultidimensionalArray GetTestMetric() {
             MultidimensionalArray cellMetric = MultidimensionalArray.Create(gridData.iLogicalCells.NoOfLocalUpdatedCells);
 
-            //if (m_Time < 4e-5) {
-            //    if (gridData.CellPartitioning.MpiRank == 0) {
-            //        cellMetric[0] = 1;
-            //    }
-
-            //    if (gridData.CellPartitioning.MpiRank == 1) {
-            //        cellMetric[0] = 0.1;
-            //    }
-
-            //    if (gridData.CellPartitioning.MpiRank == 2) {
-            //        cellMetric[0] = 1;
-            //        cellMetric[1] = 0.05;
-            //    }
-            //} else {
-            //    // 3 sub-grids
-            //    //cellMetric[0] = 0.5;
-            //    //cellMetric[1] = 0.5;
-            //    //cellMetric[2] = 1;
-            //    //cellMetric[3] = 2;
-
-            //    //cellMetric[0] = 1;
-            //    //cellMetric[1] = 0.5;
-            //    //cellMetric[2] = 2;
-
-            //    // 2 sub-grids
-            //    //cellMetric[0] = 0.5;
-            //    //cellMetric[1] = 0.5;
-            //    //cellMetric[2] = 0.5;
-            //    //cellMetric[3] = 1;
-            //}
-
             if (m_Time < 5e-5) {
                 for (int i = 0; i < cellMetric.Length / 2; i++)
                     cellMetric[i] = 1.0;
@@ -350,8 +310,6 @@ namespace BoSSS.Solution.Timestepping {
                 for (int i = cellMetric.Length / 2; i < cellMetric.Length; i++)
                     cellMetric[i] = 1.0;
             }
-
-
 
             return cellMetric;
         }
@@ -387,6 +345,7 @@ namespace BoSSS.Solution.Timestepping {
             MultidimensionalArray means = CreateMeans(cellMetric);
 
             ClusteringKmean Kmean = new ClusteringKmean(cellMetric.To1DArray(), numOfSubgrids, means.To1DArray());
+
             // The corresponding sub-grid IDs
             int[] clustered = Kmean.Cluster();
             int[] ClusterCount = Kmean.ClusterCount;
@@ -554,8 +513,8 @@ namespace BoSSS.Solution.Timestepping {
                     double time0 = m_Time;
                     double time1 = m_Time + dt;
 
-
-                    //TimestepNumber subTimestep = new TimestepNumber(timeStepCount - 1);
+                    //if (saveToDBCallback != null)
+                    TimestepNumber subTimestep = new TimestepNumber(timeStepCount - 1);
 
                     // evolve function
                     // evolves each sub-grid with its own time step: only one step
@@ -570,10 +529,10 @@ namespace BoSSS.Solution.Timestepping {
                     // Update AB_LTS.Time
                     m_Time = m_Time + dt / (double)NumOfLocalTimeSteps[numOfSubgrids - 1];
 
-
-                    //subTimestep = subTimestep.NextIteration();
-                    //saveToDBCallback(subTimestep, m_Time);
-
+                    if (saveToDBCallback != null) {
+                        subTimestep = subTimestep.NextIteration();
+                        saveToDBCallback(subTimestep, m_Time);
+                    }
 
                     // Saves the History of DG_Coordinates for each sub-grid
                     Queue<double[]>[] historyDGC_Q = new Queue<double[]>[numOfSubgrids];
@@ -623,13 +582,15 @@ namespace BoSSS.Solution.Timestepping {
 
                                 m_Time = localABevolve.Min(s => s.Time);
 
-                                //subTimestep = subTimestep.NextIteration();
-                                //saveToDBCallback(subTimestep, m_Time);
+                                if (saveToDBCallback != null) {
+                                    subTimestep = subTimestep.NextIteration();
+                                    saveToDBCallback(subTimestep, m_Time);
+                                }
                             }
-                            
+
                             //subTimestep = subTimestep.NextIteration();
                             //saveToDBCallback(subTimestep, m_Time);
-                            
+
                             // Are we at an (intermediate -) syncronization levels ?
                             // For conservatvity, we have to correct the values of the larger cell cluster
                             if (fluxCorrection) {
@@ -949,7 +910,7 @@ namespace BoSSS.Solution.Timestepping {
                 }
                 MaxLocalTS = NumOfLocalTimeSteps.Last();
 
-                // Prints for each timestep the substeps
+                // Prints the substeps for each timestep 
                 //int ii = 0;
                 //foreach (int i in NumOfLocalTimeSteps) {
                 //    if (ii != 0) {
