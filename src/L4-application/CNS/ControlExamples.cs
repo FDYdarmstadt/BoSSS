@@ -981,8 +981,8 @@ namespace CNS {
             //dbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db";
             c.DbPath = dbPath;
             c.savetodb = dbPath != null && saveToDb;
-            c.saveperiod = 10;
-            c.PrintInterval = 100;
+            c.saveperiod = 1;
+            c.PrintInterval = 1;
 
             double xMin = 0;
             double xMax = 1;
@@ -1025,9 +1025,9 @@ namespace CNS {
 
             // (A)LTS
             c.ExplicitScheme = ExplicitSchemes.LTS;
-            c.ExplicitOrder = 2;
+            c.ExplicitOrder = 3;
             c.NumberOfSubGrids = 3;
-            c.ReclusteringInterval = 100;
+            c.ReclusteringInterval = 1;
             c.FluxCorrection = false;
 
             c.EquationOfState = IdealGas.Air;
@@ -1126,7 +1126,7 @@ namespace CNS {
             c.CFLFraction = 0.3;
             c.Endtime = 0.25;
             c.NoOfTimesteps = int.MaxValue;
-            //c.NoOfTimesteps = 10;
+            //c.NoOfTimesteps = 2;
 
             return c;
         }
@@ -1180,7 +1180,7 @@ namespace CNS {
             c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             //c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitScheme = ExplicitSchemes.LTS;
-            c.ExplicitOrder = 3;
+            c.ExplicitOrder = 2;
             c.NumberOfSubGrids = 3;
             c.ReclusteringInterval = 1;
             c.FluxCorrection = false;
