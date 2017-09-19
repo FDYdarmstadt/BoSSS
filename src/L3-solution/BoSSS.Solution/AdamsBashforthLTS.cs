@@ -158,7 +158,7 @@ namespace BoSSS.Solution.Timestepping {
         /// <param name="fluxCorrection">Bool for triggering the fluss correction</param>
         /// <param name="reclusteringInterval">Interval for potential reclustering</param>
         /// <param name="test"></param>
-        /// <remarks>Uses the k-Mean clustering, see <see cref="BoSSS.Solution.Utils.ClusteringKmean"/>, to generate the element groups</remarks>
+        /// <remarks>Uses the k-Mean clustering, see <see cref="BoSSS.Solution.Utils.Kmeans"/>, to generate the element groups</remarks>
         public AdamsBashforthLTS(SpatialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters, int order, int numOfSubgrids, IList<TimeStepConstraint> timeStepConstraints = null, SubGrid sgrd = null, bool fluxCorrection = true, int reclusteringInterval = 0, ChangeRateCallback test = null, Action<TimestepNumber, double> saveToDBCallback = null)
             : base(spatialOp, Fieldsmap, Parameters, order, timeStepConstraints, sgrd) {
 
@@ -258,7 +258,7 @@ namespace BoSSS.Solution.Timestepping {
             MultidimensionalArray cellMetric = GetCellMetric();
             MultidimensionalArray means = CreateMeans(cellMetric);
 
-            ClusteringKmean Kmean = new ClusteringKmean(cellMetric.To1DArray(), numOfSubgrids, means.To1DArray());
+            Kmeans Kmean = new Kmeans(cellMetric.To1DArray(), numOfSubgrids, means.To1DArray());
 
             // The corresponding sub-grid IDs
             int[] clustered = Kmean.Cluster();
@@ -277,7 +277,7 @@ namespace BoSSS.Solution.Timestepping {
             int counter = numOfSubgrids;
             for (int i = 0; i < numOfSubgrids; i++) {
                 if (ClusterCount[i] == 0) {
-                    System.Console.WriteLine("Sub-grid/Cluster " + (i + 1) + ", with mean value " + Kmean.means[i] + ", is empty and not used anymore!");
+                    System.Console.WriteLine("Sub-grid/Cluster " + (i + 1) + ", with mean value " + Kmean.Means[i] + ", is empty and not used anymore!");
                     counter--;
                 }
             }
