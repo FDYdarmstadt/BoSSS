@@ -1,13 +1,19 @@
-﻿/*
- *
- * Copyright (c) 2010, Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
- *
- * This file is part of the BoSSS software.
- * The software (source code or binaries compiled from the source code) may not
- * be copied, compiled or executed, partly or as a whole, without an explicit
- * written permission from the Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics), TU Darmstadt.
- *
- */
+﻿/* =======================================================================
+Copyright 2017 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 using System;
 using BoSSS.Solution;
 using BoSSS.Foundation;
@@ -20,6 +26,8 @@ using ilPSP.Utils;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Solution.Utils;
 using ilPSP;
+using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace ALTSTests {
     /// <summary>
@@ -58,9 +66,11 @@ namespace ALTSTests {
         ExplicitEuler timeStepper;
         SpatialOperator diffOp;
 
-        internal int ABOrder = 1;
+        internal int ABOrder = 2;
         internal int numOfSubgrids = 3;
         internal double energyNorm;
+
+        double dtFixed = 1e-5;
 
         protected override GridCommons CreateOrLoadGrid() {
             GridCommons grd;
@@ -93,10 +103,10 @@ namespace ALTSTests {
             CoordinateMapping coordMap;
             coordMap = new CoordinateMapping(viscosity, Velocity[0], Velocity[1]);
 
+            // 3 sub-grids
             MultidimensionalArray metricOne = MultidimensionalArray.Create(numOfCellsX);
             MultidimensionalArray metricTwo = MultidimensionalArray.Create(numOfCellsX);
 
-            // 3 sub-grids
             metricOne[0] = 2;
             metricOne[1] = 1;
             metricOne[2] = 0.5;
@@ -105,20 +115,56 @@ namespace ALTSTests {
             metricTwo[1] = 0.5;
             metricTwo[2] = 2;
 
-            timeStepper = new AdamsBashforthLTS(diffOp, new CoordinateMapping(c), coordMap, order: ABOrder, numOfSubgrids: this.numOfSubgrids, fluxCorrection: false, reclusteringInterval: 1);
+            CustomTimestepConstraint = new SurrogateConstraint(GridData, dtFixed, dtFixed, double.MaxValue, double.MaxValue, metricOne, metricTwo);
 
+            timeStepper = new AdamsBashforthLTS(
+                diffOp,
+                new CoordinateMapping(c),
+                coordMap,
+                order: ABOrder,
+                numOfSubgrids: this.numOfSubgrids,
+                timeStepConstraints: new List<TimeStepConstraint>() { CustomTimestepConstraint },
+                fluxCorrection: false,
+                reclusteringInterval: 1);
+
+            // Sub-grid visualization
             AdamsBashforthLTS timeStepper2 = timeStepper as AdamsBashforthLTS;
-            timeStepper = timeStepper2;
-
-            // Set cell metrics for dynamic clustering
-            timeStepper2.MetricOne = metricOne;
-            timeStepper2.MetricTwo = metricTwo;
-            timeStepper2.ChangeMetricTime = 4e-5;
-            timeStepper2.IsNUnitTest = true;
-
-            // Enable sub-grid visualization
-            timeStepper2.SgrdField.Identification = "cluster";
+            timeStepper2.SgrdField.Identification = "clusterLTS";
             m_IOFields.Add(timeStepper2.SgrdField);
+            timeStepper = timeStepper2;
+        }
+
+        private const double ChangeMetricTime = 4e-5;
+
+        private SurrogateConstraint CustomTimestepConstraint;
+
+        private class SurrogateConstraint : TimeStepConstraint {
+
+            private MultidimensionalArray MetricOne;
+
+            private MultidimensionalArray MetricTwo;
+
+            internal bool FirstMetricActive = true;
+
+            public SurrogateConstraint(GridData gridData, double dtMin, double dtMax, double dtFraction, double EndTime, MultidimensionalArray MetricOne, MultidimensionalArray MetricTwo) :
+                base(gridData, dtMin, dtMax, dtFraction, EndTime) {
+
+                this.MetricOne = MetricOne;
+                this.MetricTwo = MetricTwo;
+            }
+
+            public override double GetLocalStepSize(int i0, int Length) {
+                MultidimensionalArray currentMetric;
+                if (FirstMetricActive) {
+                    currentMetric = MetricOne;
+                } else {
+                    currentMetric = MetricTwo;
+                }
+
+                Debug.Assert(Length == 1);
+
+                return currentMetric[i0];
+            }
         }
 
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
@@ -133,9 +179,13 @@ namespace ALTSTests {
 
                 // Set time step size
                 if (dt <= 0)
-                    dt = 1e-5;
+                    dt = dtFixed;
 
                 Console.Write("Timestep " + TimestepNo + " ...");
+
+                if (phystime >= ChangeMetricTime) {
+                    CustomTimestepConstraint.FirstMetricActive = false;
+                }
 
                 timeStepper.Perform(dt);
 

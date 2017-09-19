@@ -125,28 +125,6 @@ namespace BoSSS.Solution.Timestepping {
 
         Queue<double>[] historyTime_Q;
 
-        //################### HACKS for NUnit Test
-        public MultidimensionalArray MetricOne {
-            get;
-            set;
-        }
-
-        public MultidimensionalArray MetricTwo {
-            get;
-            set;
-        }
-
-        public double ChangeMetricTime {
-            get;
-            set;
-        }
-
-        public bool IsNUnitTest {
-            get;
-            set;
-        }
-        //################### HACKS for NUnit Test
-
         /// <summary>
         /// Hack for testing A-LTS with the scalar transport equation
         /// </summary>
@@ -157,10 +135,15 @@ namespace BoSSS.Solution.Timestepping {
 
         //################# Hack for time step counting
         private int timeStepCount;
+        //################# Hack for time step counting
 
+        //################# Hack for update derived variables in every (A)LTS sub-step
         private bool hackOn;
+        //################# Hack for update derived variables in every (A)LTS sub-step
 
+        //################# Hack for saving to database in every (A)LTS sub-step
         private Action<TimestepNumber, double> saveToDBCallback;
+        //################# Hack for saving to database in every (A)LTS sub-step
 
         /// <summary>
         /// Standard constructor for the (adaptive) local time stepping algorithm
@@ -178,6 +161,8 @@ namespace BoSSS.Solution.Timestepping {
         /// <remarks>Uses the k-Mean clustering, see <see cref="BoSSS.Solution.Utils.ClusteringKmean"/>, to generate the element groups</remarks>
         public AdamsBashforthLTS(SpatialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters, int order, int numOfSubgrids, IList<TimeStepConstraint> timeStepConstraints = null, SubGrid sgrd = null, bool fluxCorrection = true, int reclusteringInterval = 0, ChangeRateCallback test = null, Action<TimestepNumber, double> saveToDBCallback = null)
             : base(spatialOp, Fieldsmap, Parameters, order, timeStepConstraints, sgrd) {
+
+            this.timeStepConstraints = timeStepConstraints;
 
             if (reclusteringInterval != 0) {
                 numOfSubgridsInit = numOfSubgrids;
@@ -250,91 +235,20 @@ namespace BoSSS.Solution.Timestepping {
         }
 
         /// <summary>
-        /// Gives the minimal euclidean distance between two vertices in each cell
+        /// Returns a cell metric based on the smallest <see cref="TimeStepConstraint"/>
         /// </summary>
-        /// <returns></returns>
-        protected virtual MultidimensionalArray GetSmallestDistanceInCells() {
-            return gridData.iGeomCells.h_min;
-        }
-
-        /// <summary>
-        /// Creates a cell metric based on the active time step constraints
-        /// </summary>
-        /// <returns>Returns a cell metric as multi-dimensional array</returns>
-        protected MultidimensionalArray GetTimeStepsConstraintsInCells() {
+        /// <returns>Cell metric as <see cref="MultidimensionalArray"/></returns>
+        protected MultidimensionalArray GetCellMetric() {
             MultidimensionalArray cellMetric = MultidimensionalArray.Create(gridData.iLogicalCells.NoOfLocalUpdatedCells);
 
             // Adapted from Variables.cs --> DerivedVariable CFL
             for (int i = 0; i < gridData.iLogicalCells.NoOfLocalUpdatedCells; i++) {
-                cellMetric[i] = timeStepConstraints.Min(c => c.GetLocalStepSize(i, 1));
+                cellMetric[i] = this.timeStepConstraints.Min(c => c.GetLocalStepSize(i, 1));
             }
 
             return cellMetric;
         }
-
-        /// <summary>
-        /// Creates a cell metric based on 1/artificial viscosity
-        /// </summary>
-        /// <returns>Returns a cell metric as multi-dimensional array</returns>
-        protected MultidimensionalArray GetOneOverAVInCells() {
-            MultidimensionalArray cellMetric = MultidimensionalArray.Create(gridData.iGeomCells.NoOfCells);
-            DGField avField = ParameterMapping.Fields.Where(c => c.Identification.Equals("viscosity")).Single();
-
-            foreach (Chunk chunk in CellMask.GetFullMask(avField.GridDat)) {
-                for (int i = 0; i < chunk.Len; i++) {
-                    int cell = i + chunk.i0;
-                    cellMetric[cell] = 1 / (avField.GetMeanValue(cell) + 1);
-                }
-            }
-
-            return cellMetric;
-        }
-
-        /// <summary>
-        /// Return a fixed metric for testing
-        /// </summary>
-        /// <returns></returns>
-        protected virtual MultidimensionalArray GetTestMetric() {
-            MultidimensionalArray cellMetric = MultidimensionalArray.Create(gridData.iLogicalCells.NoOfLocalUpdatedCells);
-
-            if (m_Time < 5e-5) {
-                for (int i = 0; i < cellMetric.Length / 2; i++)
-                    cellMetric[i] = 1.0;
-
-                for (int i = cellMetric.Length / 2; i < cellMetric.Length; i++)
-                    cellMetric[i] = 0.5;
-            } else {
-                for (int i = 0; i < cellMetric.Length / 2; i++)
-                    cellMetric[i] = 0.5;
-
-                for (int i = cellMetric.Length / 2; i < cellMetric.Length; i++)
-                    cellMetric[i] = 1.0;
-            }
-
-            return cellMetric;
-        }
-
-        private MultidimensionalArray GetNUnitMetric() {
-            if (m_Time < ChangeMetricTime)
-                return MetricOne;
-            else
-                return MetricTwo;
-        }
-
-        /// <summary>
-        /// Returns a metric for the Kmeans algorithm (cell clustering)
-        /// </summary>
-        /// <returns></returns>
-        protected virtual MultidimensionalArray GetCellMetric() {
-            if (IsNUnitTest)
-                return GetNUnitMetric();
-            else
-                //return GetTimeStepsConstraintsInCells();
-                return GetSmallestDistanceInCells();
-            //return GetOneOverAVInCells();
-            //return GetTestMetric();
-        }
-
+        
         /// <summary>
         /// Creates the sub-grids for the LTS algorithm
         /// </summary>
@@ -442,7 +356,7 @@ namespace BoSSS.Solution.Timestepping {
         /// <summary>
         /// Performs one time step
         /// </summary>
-        /// <param name="dt">size of time step</param>
+        /// <param name="dt">Time step size that equals -1, if no fixed time step is prescribed</param>
         public override double Perform(double dt) {
             using (new ilPSP.Tracing.FuncTrace()) {
 
