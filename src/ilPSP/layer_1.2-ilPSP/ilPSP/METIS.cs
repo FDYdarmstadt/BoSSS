@@ -34,7 +34,7 @@ namespace ilPSP.Kraypis {
         /// <summary>
         /// Indices into METIS options array
         /// </summary>
-        public enum OPTIONS_CODES {
+        public enum OptionCodes {
             METIS_OPTION_PTYPE = 0,
             METIS_OPTION_OBJTYPE = 1,
             METIS_OPTION_CTYPE = 2,
@@ -56,10 +56,20 @@ namespace ilPSP.Kraypis {
         }
 
         /// <summary>
+        /// Return codes returned by METIS functions
+        /// </summary>
+        public enum ReturnCodes {
+            METIS_OK = 1,    /*!< Returned normally */
+            METIS_ERROR_INPUT = -2,   /*!< Returned due to erroneous inputs and/or options */
+            METIS_ERROR_MEMORY = -3,   /*!< Returned due to insufficient memory */
+            METIS_ERROR = -4    /*!< Some other errors */
+        }
+
+        /// <summary>
         /// see METIS manual;
         /// </summary>
         [DllImport("metis", EntryPoint = "METIS_PartGraphKway")]
-        public static extern void PartGraphKway(ref int nvtxs, ref int ncon,
+        public static extern int PartGraphKway(ref int nvtxs, ref int ncon,
                                                 int[] xadj, int[] adjncy,
                                                 int[] vwgt, int[] vsize, int[] adjwgt,
                                                 ref int nparts, double[] tpwgts, double[] ubvec,
@@ -69,7 +79,7 @@ namespace ilPSP.Kraypis {
         /// see METIS manual;
         /// </summary>
         [DllImport("metis", EntryPoint = "METIS_PartGraphRecursive")]
-        public static extern void PartGraphRecursive(ref int nvtxs, ref int ncon,
+        public static extern int PartGraphRecursive(ref int nvtxs, ref int ncon,
                                                      int[] xadj, int[] adjncy,
                                                      int[] vwgt, int[] vsize, int[] adjwgt,
                                                      ref int nparts, double[] tpwgts, double[] ubvec,
