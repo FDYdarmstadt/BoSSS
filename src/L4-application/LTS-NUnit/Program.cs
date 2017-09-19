@@ -30,9 +30,6 @@ namespace LTS_NUnit {
     /// <summary>
     /// NUnit test project for the implementation of LTS:
     /// The scalar transport equation of the BoSSS Tutorial is used to test LTS.
-    /// In total 4 test runs are done:
-    /// - 2 runs with LTS-order 2 and two different time steps
-    /// - 2 runs with LTS-order 3 and two different time steps
     /// </summary>
     class Program : Application {
         static void Main(string[] args) {
@@ -58,10 +55,10 @@ namespace LTS_NUnit {
 
         //For testing
         //internal int ABorder = 2;
-        //internal double dt_input = 2E-3;
-        //internal bool LTS = true;
-        //internal bool ALTS = false;
-        //internal int numOfSubgrids = 3;
+        //internal double dt_input = 2E-3 / 4;
+        //internal bool LTS = false;
+        //internal bool ALTS = true;
+        //internal int numOfSubgrids = 1;
 
         protected override GridCommons CreateOrLoadGrid() {
             double[] xnodes1 = GenericBlas.Linspace(-1, 0, a1 + 1);
@@ -98,13 +95,13 @@ namespace LTS_NUnit {
             diffOp.Commit();
 
             if (LTS) {
-                AdamsBashforthLTS ltsTimeStepper = new AdamsBashforthLTS(diffOp, new CoordinateMapping(u), null, ABorder, numOfSubgrids, fluxCorrection: true);
-                ltsTimeStepper.SgrdField.Identification = "cluster";
+                AdamsBashforthLTS ltsTimeStepper = new AdamsBashforthLTS(diffOp, new CoordinateMapping(u), null, ABorder, numOfSubgrids, fluxCorrection: true, reclusteringInterval: 0);
+                ltsTimeStepper.SgrdField.Identification = "clusterLTS";
                 m_IOFields.Add(ltsTimeStepper.SgrdField);
                 timeStepper = ltsTimeStepper;
             } else if (ALTS) {
                 AdamsBashforthLTS ltsTimeStepper = new AdamsBashforthLTS(diffOp, new CoordinateMapping(u), null, ABorder, numOfSubgrids, fluxCorrection: false, reclusteringInterval: 1);
-                ltsTimeStepper.SgrdField.Identification = "cluster";
+                ltsTimeStepper.SgrdField.Identification = "clusterLTS";
                 m_IOFields.Add(ltsTimeStepper.SgrdField);
                 timeStepper = ltsTimeStepper;
             } else {
@@ -121,11 +118,11 @@ namespace LTS_NUnit {
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             using (new FuncTrace()) {
                 if (dt <= 0) {
-                    NoOfTimesteps = 20000;
+                    NoOfTimesteps = 10000;
                     EndTime = 2;
                     dt = dt_input;
-                    if (TimestepNo < 3)
-                        dt /= 3;
+                    //if (TimestepNo < 3)
+                    //    dt /= 3;
                     if (EndTime - phystime < dt)
                         dt = EndTime - phystime;
                 }
