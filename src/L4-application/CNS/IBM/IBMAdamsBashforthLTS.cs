@@ -83,14 +83,14 @@ namespace CNS.IBM {
             // Right now, only "hard-coded" with half time-step for all cut-cells
             {
                 SubGrid cutCellSgrd = new SubGrid(cutAndTargetCells);
-                SubGrid finestSgrd = subgridList.Last();
+                SubGrid finestSgrd = subGridList.Last();
 
                 finestSgrd = new SubGrid(finestSgrd.VolumeMask.Except(cutAndTargetCells).Intersect(speciesMap.SubGrid.VolumeMask));
-                subgridList.RemoveAt(subgridList.Count - 1);
+                subGridList.RemoveAt(subGridList.Count - 1);
 
-                subgridList.Add(finestSgrd);
+                subGridList.Add(finestSgrd);
 
-                subgridList.Add(cutCellSgrd);
+                subGridList.Add(cutCellSgrd);
 
                 // For debugging, change values in SgrdField
                 //if (SgrdField != null) {
@@ -110,14 +110,14 @@ namespace CNS.IBM {
 
 
                 MaxLocalTS = NumOfLocalTimeSteps.Last();
-                numOfSubgrids = subgridList.Count;
+                numOfSubgrids = subGridList.Count;
             }
 
             if (this.numOfSubgrids == 1)
                 throw new ArgumentException("Clustering yields only to one sub-grid, LTS is not possible! Element sizes of your grid are too similar");
 
-            localABevolve = new ABevolve[subgridList.Count];
-            for (int i = 0; i < subgridList.Count; i++) {
+            localABevolve = new ABevolve[subGridList.Count];
+            for (int i = 0; i < subGridList.Count; i++) {
                 localABevolve[i] = new IBMABevolve(
                     standardOperator,
                     boundaryOperator,
@@ -127,12 +127,12 @@ namespace CNS.IBM {
                     control.ExplicitOrder,
                     control.LevelSetQuadratureOrder,
                     control.MomentFittingVariant,
-                    subgridList[i]);
+                    subGridList[i]);
             }
             GetBoundaryTopology();
 
             for (int i = 0; i < numOfSubgrids; i++) {
-                Console.WriteLine("LTS: id=" + i + " -> sub-steps=" + NumOfLocalTimeSteps[i] + " and elements=" + subgridList[i].GlobalNoOfCells);
+                Console.WriteLine("LTS: id=" + i + " -> sub-steps=" + NumOfLocalTimeSteps[i] + " and elements=" + subGridList[i].GlobalNoOfCells);
             }
 
             // StarUp Phase needs an IBM time stepper

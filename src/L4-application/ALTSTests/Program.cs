@@ -129,8 +129,8 @@ namespace ALTSTests {
 
             // Sub-grid visualization
             AdamsBashforthLTS timeStepper2 = timeStepper as AdamsBashforthLTS;
-            timeStepper2.SgrdField.Identification = "clusterLTS";
-            m_IOFields.Add(timeStepper2.SgrdField);
+            timeStepper2.subGridField.Identification = "clusterLTS";
+            m_IOFields.Add(timeStepper2.subGridField);
             timeStepper = timeStepper2;
         }
 

@@ -125,7 +125,7 @@ namespace LTS_NUnit {
                     fluxCorrection: true,
                     reclusteringInterval: 0,
                     timeStepConstraints: new List<TimeStepConstraint>() { CustomTimestepConstraint });
-                m_IOFields.Add(ltsTimeStepper.SgrdField);
+                m_IOFields.Add(ltsTimeStepper.subGridField);
                 timeStepper = ltsTimeStepper;
             } else if (ALTS) {
                 AdamsBashforthLTS ltsTimeStepper = new AdamsBashforthLTS(
@@ -137,7 +137,7 @@ namespace LTS_NUnit {
                     fluxCorrection: false,
                     reclusteringInterval: 1,
                     timeStepConstraints: new List<TimeStepConstraint>() { CustomTimestepConstraint });
-                m_IOFields.Add(ltsTimeStepper.SgrdField);
+                m_IOFields.Add(ltsTimeStepper.subGridField);
                 timeStepper = ltsTimeStepper;
             } else {
                 timeStepper = new AdamsBashforth(diffOp, new CoordinateMapping(u), null, ABorder);
