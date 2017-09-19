@@ -60,7 +60,7 @@ namespace BoSSS.Solution.Multigrid {
         BlockMsrMatrix Mtx;
 
         MsrMatrix P;
-        MsrMatrix ConvDiff, pGrad, divVel, ConvDiffpGrad, SchurMtx, PoissonMtx, SchurConvMtx;
+        MsrMatrix ConvDiff, pGrad, divVel, ConvDiffpGrad, SchurMtx, PoissonMtx, SchurConvMtx, invVelMassMatrix;
         int[] Uidx, Pidx;
 
         public void Init(MultigridOperator op) {
@@ -108,32 +108,41 @@ namespace BoSSS.Solution.Multigrid {
             op.MassMatrix.AccSubMatrixTo(1.0, velMassMatrix, Uidx, default(int[]), Uidx, default(int[]));
 
             // Building complete Schur and Approximate Schur
-            MultidimensionalArray Poisson = MultidimensionalArray.Create(Pidx.Length, Pidx.Length);
-            MultidimensionalArray SchurConvPart = MultidimensionalArray.Create(Pidx.Length, Pidx.Length);
-            MultidimensionalArray Schur = MultidimensionalArray.Create(Pidx.Length, Pidx.Length);
-            using (BatchmodeConnector bmc = new BatchmodeConnector()) {
-                bmc.PutSparseMatrix(ConvDiff, "ConvDiff");
-                bmc.PutSparseMatrix(velMassMatrix, "MassMatrix");
-                bmc.PutSparseMatrix(divVel, "divVel");
-                bmc.PutSparseMatrix(pGrad, "pGrad");
-                bmc.Cmd("Qdiag = diag(diag(MassMatrix))");
-                bmc.Cmd("invT=inv(Qdiag)");
-                bmc.Cmd("Poisson = full(invT)*pGrad");
-                bmc.Cmd("ConvPart = ConvDiff*Poisson");
-                bmc.Cmd("ConvPart= full(invT)*ConvPart");
-                bmc.Cmd("ConvPart= divVel*ConvPart");
-                bmc.Cmd("Poisson = divVel*Poisson");
-                bmc.Cmd("ConvDiffInv = inv(full(ConvDiff))");
-                bmc.Cmd("Schur = divVel*ConvDiffInv");
-                bmc.Cmd("Schur = Schur*pGrad");
-                bmc.GetMatrix(Poisson, "Poisson");
-                bmc.GetMatrix(SchurConvPart, "ConvPart");
-                bmc.GetMatrix(Schur, "-Schur");
-                bmc.Execute(false);
+            //MultidimensionalArray Poisson = MultidimensionalArray.Create(Pidx.Length, Pidx.Length);
+            //MultidimensionalArray SchurConvPart = MultidimensionalArray.Create(Pidx.Length, Pidx.Length);
+            //MultidimensionalArray Schur = MultidimensionalArray.Create(Pidx.Length, Pidx.Length);
+            //using (BatchmodeConnector bmc = new BatchmodeConnector()) {
+            //    bmc.PutSparseMatrix(ConvDiff, "ConvDiff");
+            //    bmc.PutSparseMatrix(velMassMatrix, "MassMatrix");
+            //    bmc.PutSparseMatrix(divVel, "divVel");
+            //    bmc.PutSparseMatrix(pGrad, "pGrad");
+            //    bmc.Cmd("Qdiag = diag(diag(MassMatrix))");
+            //    bmc.Cmd("invT=inv(Qdiag)");
+            //    bmc.Cmd("Poisson = full(invT)*pGrad");
+            //    bmc.Cmd("ConvPart = ConvDiff*Poisson");
+            //    bmc.Cmd("ConvPart= full(invT)*ConvPart");
+            //    bmc.Cmd("ConvPart= divVel*ConvPart");
+            //    bmc.Cmd("Poisson = divVel*Poisson");
+            //    bmc.Cmd("ConvDiffInv = inv(full(ConvDiff))");
+            //    bmc.Cmd("Schur = divVel*ConvDiffInv");
+            //    bmc.Cmd("Schur = Schur*pGrad");
+            //    bmc.GetMatrix(Poisson, "Poisson");
+            //    bmc.GetMatrix(SchurConvPart, "ConvPart");
+            //    bmc.GetMatrix(Schur, "-Schur");
+            //    bmc.Execute(false);
+            //}
+            //PoissonMtx = Poisson.ToMsrMatrix();
+            //SchurConvMtx = SchurConvPart.ToMsrMatrix();
+            //SchurMtx = Schur.ToMsrMatrix();
+
+            //// Do assembly for approximate Schur inverse
+            invVelMassMatrix = velMassMatrix.CloneAs();
+            invVelMassMatrix.Clear();
+            for (int i = 0; i < velMassMatrix.NoOfCols; i++) {
+                invVelMassMatrix.SetDiagonalElement(i, 1 / velMassMatrix[i, i]);
             }
-            PoissonMtx = Poisson.ToMsrMatrix();
-            SchurConvMtx = SchurConvPart.ToMsrMatrix();
-            SchurMtx = Schur.ToMsrMatrix();
+            PoissonMtx = MsrMatrix.Multiply(invVelMassMatrix, pGrad);
+            PoissonMtx = MsrMatrix.Multiply(divVel, PoissonMtx);
 
 
             //var ConvDiffInvMtx = ConvDiffInv.ToMsrMatrix();
@@ -232,7 +241,20 @@ namespace BoSSS.Solution.Multigrid {
                 solver.Solve(temp, Bp);
             }
 
-            SchurConvMtx.SpMVpara(1, temp, 0, Xp);
+
+            //SchurConvMtx.SpMVpara(1, temp, 0, Xp);
+
+            // Schur Convective part
+            var sol = new double[pGrad.NoOfRows];
+            pGrad.SpMVpara(1, temp, 0, sol);
+            temp = sol.ToArray();
+            invVelMassMatrix.SpMVpara(1, temp, 0, sol);
+            temp = sol.ToArray();
+            ConvDiff.SpMVpara(1, temp, 0, sol);
+            temp = sol.ToArray();
+            invVelMassMatrix.SpMVpara(1, temp, 0, sol);
+            temp = sol.ToArray();
+            divVel.SpMVpara(1, temp, 0, Xp);
 
             using (var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver()) {
                 solver.DefineMatrix(PoissonMtx);
