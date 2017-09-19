@@ -15,45 +15,74 @@ limitations under the License.
 */
 
 using System.Runtime.InteropServices;
-using MPI.Wrappers;
 
 namespace ilPSP.Kraypis {
 
     /// <summary>
-    /// wrappers to METIS functions
+    /// wrappers to METIS functions (API version 5.1.0)
     /// </summary>
     /// <remarks>
-    /// <b>IMPORTANT: Licencing issues:</b><br/>
-    /// METIS and ParMETIS <see cref="ParMETIS_V3"/> do not ship with free
-    /// license, neither their source nor  binaries compiled from it can be
-    /// shipped with this software;<br/>
-    /// On some Linux distributions, like Debian (and derived distributions
-    /// like Ubuntu) and Gentoo, this software can be installed from the local
-    /// package repository (because they own a special permission from the
-    /// METIS/ParMETIS developers).<br/>
-    /// For Windows systems, the sources of the METIS software can be
-    /// downloaded from http://glaros.dtc.umn.edu/gkhome/metis/metis/overview,
-    /// they must be compiled individually. Visual Studio Project files are provided.
+    /// METIS can downloaded from http://glaros.dtc.umn.edu/gkhome/metis/metis/overview
     /// </remarks>
     public class METIS {
+
+        /// <summary>
+        /// Length of the METIS options array
+        /// </summary>
+        public const int METIS_NOPTIONS = 40;
+
+        /// <summary>
+        /// Indices into METIS options array
+        /// </summary>
+        public enum OptionCodes {
+            METIS_OPTION_PTYPE = 0,
+            METIS_OPTION_OBJTYPE = 1,
+            METIS_OPTION_CTYPE = 2,
+            METIS_OPTION_IPTYPE = 3,
+            METIS_OPTION_RTYPE = 4,
+            METIS_OPTION_DBGLVL = 5,
+            METIS_OPTION_NITER = 6,
+            METIS_OPTION_NCUTS = 7,
+            METIS_OPTION_SEED = 8,
+            METIS_OPTION_NO2HOP = 9,
+            METIS_OPTION_MINCONN = 10,
+            METIS_OPTION_CONTIG = 11,
+            METIS_OPTION_COMPRESS = 12,
+            METIS_OPTION_CCORDER = 13,
+            METIS_OPTION_PFACTOR = 14,
+            METIS_OPTION_NSEPS = 15,
+            METIS_OPTION_UFACTOR = 16,
+            METIS_OPTION_NUMBERING = 17
+        }
+
+        /// <summary>
+        /// Return codes returned by METIS functions
+        /// </summary>
+        public enum ReturnCodes {
+            METIS_OK = 1,    /*!< Returned normally */
+            METIS_ERROR_INPUT = -2,   /*!< Returned due to erroneous inputs and/or options */
+            METIS_ERROR_MEMORY = -3,   /*!< Returned due to insufficient memory */
+            METIS_ERROR = -4    /*!< Some other errors */
+        }
 
         /// <summary>
         /// see METIS manual;
         /// </summary>
         [DllImport("metis", EntryPoint = "METIS_PartGraphKway")]
-        public static extern void PartGraphKway(ref int nvtxs,
+        public static extern int PartGraphKway(ref int nvtxs, ref int ncon,
                                                 int[] xadj, int[] adjncy,
-                                                int[] vwgt, int[] adjwgt,
-                                                ref int wgtflag, ref int numflag, ref int nparts,
-                                                int[] options, ref int edgecut, int[] part);
+                                                int[] vwgt, int[] vsize, int[] adjwgt,
+                                                ref int nparts, double[] tpwgts, double[] ubvec,
+                                                int[] options, ref int objval, int[] part);
+
         /// <summary>
         /// see METIS manual;
         /// </summary>
         [DllImport("metis", EntryPoint = "METIS_PartGraphRecursive")]
-        public static extern void PartGraphRecursive(ref int nvtxs,
+        public static extern int PartGraphRecursive(ref int nvtxs, ref int ncon,
                                                      int[] xadj, int[] adjncy,
-                                                     int[] vwgt, int[] adjwgt,
-                                                     ref int wgtflag, ref int numflag, ref int nparts,
-                                                     int[] options, ref int edgecut, int[] part);
+                                                     int[] vwgt, int[] vsize, int[] adjwgt,
+                                                     ref int nparts, double[] tpwgts, double[] ubvec,
+                                                     int[] options, ref int objval, int[] part);
     }
 }
