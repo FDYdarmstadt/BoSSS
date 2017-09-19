@@ -69,7 +69,7 @@
     <Compile Include="ArrayHelper.cs" />
     <Compile Include="BDFSchemeCoeffs.cs" />
     <Compile Include="BoundaryConditionMap.cs" />
-    <Compile Include="ClusteringKmean.cs" />
+    <Compile Include="Kmeans.cs" />
     <Compile Include="ControlOptionRequirementAttribute.cs" />
     <Compile Include="EdgeIntegral.cs" />
     <Compile Include="Formula.cs" />
