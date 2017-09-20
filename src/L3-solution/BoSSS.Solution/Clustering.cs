@@ -26,12 +26,29 @@ using System.Linq;
 
 namespace BoSSS.Solution.Utils {
 
+    /// <summary>
+    /// Class for a cell clustering that devides the grid into sub-grids
+    /// </summary>
     public class Clustering {
 
+        /// <summary>
+        /// Information about the grid
+        /// </summary>
         private IGridData gridData;
+
+        /// <summary>
+        /// The time step constraints that the Clustering is based on
+        /// </summary>
         private IList<TimeStepConstraint> timeStepConstraints;
+
+        /// <summary>
+        /// Number of clusters
+        /// </summary>
         private int numOfClusters;
 
+        /// <summary>
+        /// List of sub-grids
+        /// </summary>
         public List<SubGrid> SubGridList {
             get;
             set;
@@ -42,9 +59,15 @@ namespace BoSSS.Solution.Utils {
         /// </summary>
         public DGField SubGridField {
             get;
-            private set;
+            set;
         }
 
+        /// <summary>
+        /// Constructor for the grid clustering
+        /// </summary>
+        /// <param name="gridData">Information about the grid</param>
+        /// <param name="timeStepConstraints">Time step constraings used as cell metric for the clustering</param>
+        /// <param name="numOfClusters">Number of clusters</param>
         public Clustering(IGridData gridData, IList<TimeStepConstraint> timeStepConstraints, int numOfClusters) {
             this.gridData = gridData;
             this.timeStepConstraints = timeStepConstraints;
@@ -55,15 +78,15 @@ namespace BoSSS.Solution.Utils {
         }
 
         /// <summary>
-        /// Creates the sub-grids for the LTS algorithm
-        /// </summary>
+        /// Creates the sub-grids of the clustering
+        /// </summary>     
+        /// <param name="numOfClusters">Number of clusters</param>
+        /// <returns>A list of sub-grids</returns>
         public List<SubGrid> CreateSubGrids(int numOfClusters) {
-            // Number of clusters can be changed
             this.numOfClusters = numOfClusters;
             int numOfCells = gridData.iLogicalCells.NoOfLocalUpdatedCells;
-            MultidimensionalArray cellMetric = GetCellMetric();
 
-            //MultidimensionalArray cellMetric = GetCellMetric();
+            MultidimensionalArray cellMetric = GetCellMetric();
             MultidimensionalArray means = CreateMeans(cellMetric);
 
             Kmeans Kmean = new Kmeans(cellMetric.To1DArray(), numOfClusters, means.To1DArray());
@@ -129,7 +152,7 @@ namespace BoSSS.Solution.Utils {
         /// e.g., minimal distance between two nodes in a cell <see cref="GridData.CellData.h_min"/>
         /// </summary>
         /// <param name="cellMetric">Given cell metric</param>
-        /// <returns>Double[] with the length of the number of given subgrids></returns>
+        /// <returns>Double[] with the length of the number of given sub-grids></returns>
         private MultidimensionalArray CreateMeans(MultidimensionalArray cellMetric) {
             //MultidimensionalArray means = MultidimensionalArray.Create(NumOfSgrd);
             double h_min = cellMetric.Min(d => double.IsNaN(d) ? double.MaxValue : d); // .Where(d => !double.IsNaN(d)).ToArray().Min();
@@ -155,6 +178,7 @@ namespace BoSSS.Solution.Utils {
         /// <summary>
         /// Checks for changes between two clusterings
         /// </summary>
+        /// <param name="oldClustering">A clustering which should be compared to</param>
         /// <returns>True, if clustering has changed. False, if clustering has not changed.</returns>
         public bool CheckForNewClustering(List<SubGrid> oldClustering) {
             bool localResult = false;   // false = no reclustering needed
@@ -180,6 +204,10 @@ namespace BoSSS.Solution.Utils {
             return globalResult;
         }
 
+        /// <summary>
+        /// Returns a cell metric value in every cell
+        /// </summary>
+        /// <returns>Cell metric as <see cref="MultidimensionalArray"/></returns>
         public MultidimensionalArray GetCellMetric() {
             MultidimensionalArray cellMetric = MultidimensionalArray.Create(gridData.iLogicalCells.NoOfLocalUpdatedCells);
 

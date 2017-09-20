@@ -80,7 +80,7 @@ namespace CNS.IBM {
 
             clustering = new Clustering(this.gridData, this.timeStepConstraints, this.numOfSubgrids);
             subGridList = clustering.SubGridList;
-            subGridField = clustering.SubGridField;
+            SubGridField = clustering.SubGridField;
 
             CalculateNumberOfLocalTS();
 
