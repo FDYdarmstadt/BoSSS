@@ -153,10 +153,6 @@ namespace BoSSS.Solution.Multigrid {
                 EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);
                 var nft = ft.L2NormPow2().MPISum().Sqrt(); var nf0 = f0.L2NormPow2().MPISum().Sqrt(); var ff0 = nf0 * nf0; var ffc = nft * nft; var ffm = nft * nft;
 
-#if DEBUG
-                Console.WriteLine("Start residuum for nonlinear iteration:  " + nft);
-#endif
-
                 // Control of the the step size
                 while (nft >= (1 - alpha * lambda) * nf0 && iarm < maxStep) {
 
@@ -353,7 +349,9 @@ namespace BoSSS.Solution.Multigrid {
 
                 rho = g[k].Abs();
 
-                //Console.WriteLine("Error NewtonGMRES:   " + rho);
+                Console.WriteLine("Error NewtonGMRES:   " + rho);
+
+                //Console.WriteLine("Error NewtonGMRES:   " + rho );
 
                 k++;
 
@@ -390,7 +388,7 @@ namespace BoSSS.Solution.Multigrid {
 
             Console.WriteLine("Error Krylov:   " + errstep);
 
-            while (kinn < restart_limit && errstep > ConvCrit) {
+            while (kinn < restart_limit && errstep > GMRESConvCrit) {
                 kinn++;
 
                 step = GMRES(SolutionVec, currentX, f0, step, out errstep);
