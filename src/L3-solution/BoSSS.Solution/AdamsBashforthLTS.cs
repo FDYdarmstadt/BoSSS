@@ -132,13 +132,12 @@ namespace BoSSS.Solution.Timestepping {
 
         Queue<double>[] historyTime_Q;
 
-        /// <summary>
-        /// Hack for testing A-LTS with the scalar transport equation
-        /// </summary>
+        //################# Hack for testing A-LTS with the scalar transport equation
         public ChangeRateCallback UpdateSensorAndAV {
             get;
             private set;
         }
+        //################# Hack for testing A-LTS with the scalar transport equation
 
         //################# Hack for time step counting
         private int timeStepCount;
@@ -164,7 +163,6 @@ namespace BoSSS.Solution.Timestepping {
         /// <param name="sgrd">Sub-grids, e.g., from previous time steps</param>
         /// <param name="fluxCorrection">Bool for triggering the fluss correction</param>
         /// <param name="reclusteringInterval">Interval for potential reclustering</param>
-        /// <param name="test"></param>
         /// <remarks>Uses the k-Mean clustering, see <see cref="BoSSS.Solution.Utils.Kmeans"/>, to generate the element groups</remarks>
         public AdamsBashforthLTS(SpatialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters, int order, int numOfSubgrids, IList<TimeStepConstraint> timeStepConstraints = null, SubGrid sgrd = null, bool fluxCorrection = true, int reclusteringInterval = 0, ChangeRateCallback test = null, Action<TimestepNumber, double> saveToDBCallback = null)
             : base(spatialOp, Fieldsmap, Parameters, order, timeStepConstraints, sgrd) {
@@ -537,7 +535,7 @@ namespace BoSSS.Solution.Timestepping {
         /// It is needed after a restart, such that all time stepper restart from the 
         /// same common simulation time. 
         /// </summary>
-        /// <param name="NewTime"></param>
+        /// <param name="NewTime">Time to be set</param>
         public override void ResetTime(double NewTime) {
             base.ResetTime(NewTime);
             RungeKuttaScheme.ResetTime(NewTime);
@@ -629,11 +627,10 @@ namespace BoSSS.Solution.Timestepping {
         /// <summary>
         /// Calculates to which sub-grid the cell belongs. Each cell belongs only to one sub-grid!
         /// </summary>
-        /// <param name="cell">
-        /// Cell-ID</param>
-        /// <param name="LocalCells2SubgridIndex">
-        /// storage of all <see cref="SubGrid.LocalCellIndex2SubgridIndex"/> arrays for each LTS sub-grid</param>
-        /// <returns>LTS sub-grid ID to which the cell belong</returns>
+        /// <param name="cell">Cell-ID</param>
+        /// <param name="LocalCells2SubgridIndex">Storage of all <see cref="SubGrid.LocalCellIndex2SubgridIndex"/>
+        /// arrays for each LTS sub-grid</param>
+        /// <returns>LTS sub-grid ID which the cell belong to</returns>
         protected int GetSubgridIdOf(int cell, int[][] LocalCells2SubgridIndex) {
             int id = -1;
             for (int i = 0; i < numOfSubgrids; i++) {
