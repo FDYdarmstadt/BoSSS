@@ -37,6 +37,7 @@ namespace BoSSS.Application.CDG_ProjectionTest {
             CDGprojectionMain p = null;
 
             //System.Threading.Thread.Sleep(10000);
+            //ilPSP.Environment.StdoutOnlyOnRank0 = false;
 
             BoSSS.Solution.Application._Main(new string[0], true, null, delegate () {
                 p = new CDGprojectionMain();

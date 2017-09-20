@@ -29,21 +29,21 @@ namespace BoSSS.Application.CDG_ProjectionTest {
         protected override int[] ComputeNewCellDistribution(int TimeStepNo, double physTime) {
             if (MPISize <= 1)
                 return null;
-
-            //int iL = this.Grid.CellPartitioning.LocalLength;
-            //int[] CellDist = new int[iL];
-            //for (int i = 0; i < iL; i++) {
+            //int i0 = this.Grid.CellPartitioning.i0;
+            //int iE = this.Grid.CellPartitioning.iE;
+            //int[] CellDist = new int[iE - i0];
+            //for (int i = i0; i < iE; i++) {
             //    switch (MPIRank) {
             //        case 0: {
-            //                CellDist[i] = 0;
+            //                if (i == i0) {
+            //                    CellDist[i - i0] = 1;
+            //                } else {
+            //                    CellDist[i - i0] = 0;
+            //                }
             //                break;
             //            }
             //        case 1: {
-            //                if (i == 0) {
-            //                    CellDist[i] = 0;
-            //                } else {
-            //                    CellDist[i] = 1;
-            //                }
+            //                CellDist[i - i0] = 1;
             //                break;
             //            }
             //    }
@@ -56,14 +56,14 @@ namespace BoSSS.Application.CDG_ProjectionTest {
 
         protected override GridCommons CreateOrLoadGrid() {
 
-            //double[] Xnodes = GenericBlas.Linspace(0, 4, 6);
-            //double[] Ynodes = GenericBlas.Linspace(0, 4, 6);
+            //double[] Xnodes = GenericBlas.Linspace(0, 4, 9);
+            //double[] Ynodes = GenericBlas.Linspace(0, 4, 9);
             //var grid = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
 
-            //double[] Xnodes = GenericBlas.Linspace(0, 3, 4);
-            //double[] Ynodes = GenericBlas.Linspace(0, 3, 3);
-            //double[] Znodes = GenericBlas.Linspace(0, 3, 3);
-            //var grid = Grid3D.Cartesian3DGrid(Xnodes, Ynodes, Znodes);
+            double[] Xnodes = GenericBlas.Linspace(0, 3, 5);
+            double[] Ynodes = GenericBlas.Linspace(0, 3, 5);
+            double[] Znodes = GenericBlas.Linspace(0, 3, 2);
+            var grid = Grid3D.Cartesian3DGrid(Xnodes, Ynodes, Znodes);
 
             //int MeshPara = 32;
             //double[] nodesX = GenericBlas.Linspace(-2, 2, MeshPara + 1);
@@ -80,15 +80,15 @@ namespace BoSSS.Application.CDG_ProjectionTest {
             //double[] Ynodes = Grid1D.TanhSpacing(0, 3, 9, 1.5, false);
             //var grid = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
 
-            var box_outer_p1 = new double[2] { 0, 0 };
-            var box_outer_p2 = new double[2] { 3, 3 };
-            var box_outer = new GridCommons.GridBox(box_outer_p1, box_outer_p2, 3, 3);
+            //var box_outer_p1 = new double[2] { 0, 0 };
+            //var box_outer_p2 = new double[2] { 3, 3 };
+            //var box_outer = new GridCommons.GridBox(box_outer_p1, box_outer_p2, 3, 3);
 
-            var box_inner_p1 = new double[2] { 1, 1 };
-            var box_inner_p2 = new double[2] { 2, 2 };
-            var box_inner = new GridCommons.GridBox(box_inner_p1, box_inner_p2, 2, 2);
+            //var box_inner_p1 = new double[2] { 1, 1 };
+            //var box_inner_p2 = new double[2] { 2, 2 };
+            //var box_inner = new GridCommons.GridBox(box_inner_p1, box_inner_p2, 2, 2);
 
-            var grid = Grid2D.HangingNodes2D(box_outer, box_inner);
+            //var grid = Grid2D.HangingNodes2D(box_outer, box_inner);
 
             //this.m_GridPartitioningType = GridPartType.ParMETIS;
 
@@ -106,18 +106,18 @@ namespace BoSSS.Application.CDG_ProjectionTest {
 
         protected override void CreateFields() {
 
-            int degree = 2;
+            int degree = 1;
 
             //SpecFemBasis specBasis = new SpecFemBasis(this.GridData, degree);
 
-            Basis dgBasis = new Basis(this.GridData, degree); // specBasis.ContainingDGBasis;
-            Basis cdgBasis = dgBasis;
+            //Basis dgBasis = specBasis.ContainingDGBasis;
+            //Basis cdgBasis = dgBasis;
 
             //specField = new SpecFemField(specBasis);
             //specFieldDG = new SinglePhaseField(dgBasis, "specFEM");
 
-            //Basis dgBasis = new Basis(this.GridData, degree);
-            //Basis cdgBasis = new Basis(this.GridData, degree + 2);
+            Basis dgBasis = new Basis(this.GridData, degree);
+            Basis cdgBasis = new Basis(this.GridData, degree);
 
             origin = new SinglePhaseField(dgBasis, "origin");
             cdgField = new ContinuousDGField(cdgBasis);
@@ -135,21 +135,22 @@ namespace BoSSS.Application.CDG_ProjectionTest {
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
 
-            origin.ProjectField((x, y) => (Math.Sin(x) + Math.Cos(x) + x - (y + 1)));   // 2D
-            //origin.ProjectField((x, y, z) => (Math.Sin(x) + Math.Cos(x) + x - (y + 1) + Math.Sin(z))); // 3D
+            //origin.ProjectField((x, y) => (Math.Sin(x) + Math.Cos(x) + x - (y + 1)));   // 2D
+            origin.ProjectField((x, y, z) => (Math.Sin(x) + Math.Cos(x) + x - (y + 1) + Math.Sin(z))); // 3D
             //origin.ProjectField((x, y, z) => Math.Sqrt(x.Pow2() + y.Pow2() + z.Pow2()) - 1);
             //origin.ProjectField((x, y) => x * x + y * y * y - x * y);
             //origin.ProjectField((x,y) => x + y);
             //origin.ProjectField((x, y) => Math.Sin(2 * Math.PI * (x / 3.0)));
 
 
-            CellMask msk2D = CellMask.GetCellMask(this.GridData, X => (X[0] > 1.0 && X[0] < 2.0 && X[1] > 1.0 && X[1] < 3.0));
-            //|| (X[0] > 1.0 && X[0] < 2.0 && X[1] > 0.0 && X[1] < 3.0));
-            //|| (X[0] > 2.0 && X[0] < 3.0 && X[1] > 0.0 && X[1] < 1.0));
+            CellMask msk2D = CellMask.GetCellMask(this.GridData, X => (X[0] > 0.0 && X[0] < 2.0 && X[1] > 0.0 && X[1] < 1.0)
+            || (X[0] > 1.0 && X[0] < 3.0 && X[1] > 1.0 && X[1] < 2.0)
+            || (X[0] > 2.0 && X[0] < 4.0 && X[1] > 2.0 && X[1] < 3.0)
+            || (X[0] > 3.0 && X[0] < 4.0 && X[1] > 3.0 && X[1] < 4.0));
             //CellMask msk3D = CellMask.GetCellMask(this.GridData, X => (X[0] > 0.0 && X[0] < 3.0 && X[1] > 0.0 && X[1] < 3.0 && X[2] > 0.0 && X[2] < 1.5)
             //|| (X[0] > 0.0 && X[0] < 1.5 && X[1] > 0.0 && X[1] < 3.0 && X[2] > 0.0 && X[2] < 3.0)
             //|| (X[0] > 0.0 && X[0] < 3.0 && X[1] > 0.0 && X[1] < 1.5 && X[2] > 0.0 && X[2] < 3.0));
-            CellMask test = null; // msk2D;
+            CellMask test = null;
 
             cdgField.ProjectDGField(1.0, origin, test);
             cdgField.AccToDGField(1.0, result);
@@ -182,7 +183,7 @@ namespace BoSSS.Application.CDG_ProjectionTest {
             //result.Evaluate(4,1,ns4, res4);
             //result.Evaluate(11, 1, ns11, res11);
 
-            
+
 
             PlotCurrentState(0.0, 0, 4);
 
