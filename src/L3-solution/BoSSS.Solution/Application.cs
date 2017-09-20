@@ -128,7 +128,7 @@ namespace BoSSS.Solution {
         /// So, for overriding the control file, it must be set after 
         /// calling <see cref="InitMPI"/>;
         /// </summary>
-        protected GridPartType m_GridPartitioningType = Foundation.Grid.GridPartType.ParMETIS;
+        protected GridPartType m_GridPartitioningType = Foundation.Grid.GridPartType.METIS;
 
         /// <summary>
         /// Additional options for Grid Partitioning, see <see cref="m_GridPartitioningType"/>;
@@ -1112,6 +1112,7 @@ namespace BoSSS.Solution {
                     //DatabaseDriver.SaveGrid(Grid);
                     bool GridReplaced;
                     GridCommons _grid = this.Grid;
+                    //DatabaseDriver.SaveGrid(_grid);
                     DatabaseDriver.SaveGridIfUnique(ref _grid, out GridReplaced, this.m_Database);
                     this.Grid = _grid;
 
@@ -1973,6 +1974,7 @@ namespace BoSSS.Solution {
                 this.Grid,
                 TimeStepNo,
                 m_GridPartitioningType,
+                m_GridPartitioningOptions,
                 Control != null ? Control.DynamicLoadBalancing_ImbalanceThreshold : 0.12,
                 Control != null ? Control.DynamicLoadBalancing_Period : 5);
         }

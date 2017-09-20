@@ -53,14 +53,9 @@ namespace CNS.Solution {
 
         /// <summary>
         /// Family of Adams-Bashforth multi-step schemes with Local Time Stepping
-        /// <see cref="AdamsBashforth"/>
+        /// <see cref="AdamsBashforthLTS"/>
         /// </summary>
         LTS,
-
-        /// <summary>
-        /// Family of Adams-Bashforth multi-step schemes with an adaptive local time stepping algorithm
-        /// </summary>
-        AdaptiveLTS,
 
         /// <summary>
         /// Family of adaptive stabilized Chebyshev Runge-Kutta schemes
@@ -132,11 +127,11 @@ namespace CNS.Solution {
                     //RungeKutta timeStepper;
                     if (control.DomainType == DomainTypes.Standard) {
                         timeStepper = new RungeKutta(
-                            RungeKutta.GetDefaultScheme(control.ExplicitOrder),
-                            equationSystem.GetJoinedOperator().ToSpatialOperator(),
-                            fieldsMap,
-                            parameterMap,
-                            equationSystem.GetJoinedOperator().CFLConstraints);
+                        RungeKutta.GetDefaultScheme(control.ExplicitOrder),
+                        equationSystem.GetJoinedOperator().ToSpatialOperator(),
+                        fieldsMap,
+                        parameterMap,
+                        equationSystem.GetJoinedOperator().CFLConstraints);
                     } else {
                         IBMControl ibmControl = (IBMControl)control;
                         timeStepper = ibmControl.TimesteppingStrategy.CreateRungeKuttaTimeStepper(
@@ -178,28 +173,20 @@ namespace CNS.Solution {
                             (IBMControl)control,
                             equationSystem.GetJoinedOperator().CFLConstraints);
                     } else {
+                        //AdamsBashforthLTS timeStepperBla = new AdamsBashforthLTS(
                         timeStepper = new AdamsBashforthLTS(
                             equationSystem.GetJoinedOperator().ToSpatialOperator(),
                             fieldsMap,
                             parameterMap,
                             control.ExplicitOrder,
-                        control.NumberOfSubGrids,
-                        equationSystem.GetJoinedOperator().CFLConstraints);
-                    }
-                    break;
+                            control.NumberOfSubGrids,
+                            equationSystem.GetJoinedOperator().CFLConstraints,
+                            reclusteringInterval: control.ReclusteringInterval,
+                            fluxCorrection: control.FluxCorrection,
+                            saveToDBCallback: program.SaveToDatabase);
 
-                case ExplicitSchemes.AdaptiveLTS:
-                    if (control.DomainType == DomainTypes.StaticImmersedBoundary
-                        || control.DomainType == DomainTypes.MovingImmersedBoundary) {
-                        throw new ArgumentException("Not implemented");
-                    } else {
-                        timeStepper = new AdamsBashforthAdaptiveLTS(
-                            equationSystem.GetJoinedOperator().ToSpatialOperator(),
-                            fieldsMap,
-                            parameterMap,
-                            control.ExplicitOrder,
-                        control.NumberOfSubGrids,
-                        equationSystem.GetJoinedOperator().CFLConstraints);
+                        //timeStepperBla.OnBeforeComputeChangeRate += (t1, t2) => program.WorkingSet.UpdateDerivedVariables(program, program.SpeciesMap.SubGrid.VolumeMask);
+                        //timeStepper = timeStepperBla;
                     }
                     break;
 

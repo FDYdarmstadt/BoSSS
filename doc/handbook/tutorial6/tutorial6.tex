@@ -4,29 +4,26 @@
 \graphicspath{{tutorial6/tutorial6.texbatch/}}
 
 \BoSSScmd{
-///\label{chap:scalarConvection}
 ///\section*{What's new}
-///\label{sec:scalarConvection_new}
 ///\begin{itemize}
-/// \item Structure of stiffness matrix
-/// \item Stability regions of explicit time integration schemes
-/// \item Determination and significance of most critical Eigenvalue
-/// \item Calculation of stable time step $dt_0$
-/// \item Influence of grid resolution and polynomial degree on time step size
+/// \item structure of stiffness matrix
+/// \item stability regions of explicit time integration schemes
+/// \item determination and significance of most critical Eigenvalue
+/// \item calculation of stable time step $dt_0$
+/// \item influence of grid resolution and polynomial degree on time step size
 ///\end{itemize}
 ///
 ///\section*{Prerequisites}
-///\label{sec:scalarConvection_prereq}
 ///\begin{itemize}
-/// \item Implementation of fluxes (Tutorials 4 and 5)
-/// \item Explicit time integration (Tutorial 4)
-/// \item Basics of convergence studies (Tutorial 2 and 5)
-/// \item Grid generation (Tutorial 2)
+/// \item implementation of fluxes, chapter \ref{SpatialOperator} and \ref{NumFlux}
+/// \item explicit time integration, chapter \ref{SpatialOperator}
+/// \item basics of convergence studies, chapters \ref{GridInstantiation} and \ref{NumFlux} 
+/// \item grid generation, chapter \ref{GridInstantiation}
 ///\end{itemize}
 ///
 ///In this tutorial, you will learn the basics of time discretization. Using the Upwind, 
 ///Central and two Lax-Friedrichs fluxes the tutorial first visualizes the structure of the stiffness matrix and its Eigenvalues.
-///Then the stability regions of explicit time integration schemes, e.g. the Explicit Euler method, are considered. 
+///Then the stability regions of explicit time integration schemes, e.g. the explicit Euler method, are considered. 
 ///Using the fourth order Runge-Kutta scheme the Eigenvalues are studied for different polynomial orders 
 ///and grid resolutions in order to find the most critical Eigenvalue. Finally, the influence of grid resolution 
 ///and polynomial degree on the time step size is examined and the stable time step $dt_0$ determined in order to obtain a stable and converging solution.
@@ -49,7 +46,6 @@
 ///\section{Solution within the BoSSS Framework}
 ///\label{sec:scalarConvection_tutorial}
  }
-\BoSSSexe
 \BoSSScmd{
 restart;
  }
@@ -410,7 +406,7 @@ gp3.PlotNow();
  }
 \BoSSSexe
 \BoSSScmd{
-/// \subsubsection{Stability region of the fourth order Runge-Kutta scheme}\label{sec:scalarConvection_RK4}
+/// \subsection{Stability region of the fourth order Runge-Kutta scheme}\label{sec:scalarConvection_RK4}
  }
 \BoSSSexe
 \BoSSScmd{

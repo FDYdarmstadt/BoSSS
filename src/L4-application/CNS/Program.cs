@@ -229,6 +229,7 @@ namespace CNS {
             using (var ht = new FuncTrace()) {
                 int printInterval = Control.PrintInterval;
                 if (DatabaseDriver.MyRank == 0 && TimestepNo % printInterval == 0) {
+                    //Console.WriteLine();
                     Console.Write("Starting time step #" + TimestepNo + "...");
                 }
 
@@ -384,6 +385,10 @@ namespace CNS {
         /// <returns></returns>
         protected virtual BoundaryConditionMap GetBoundaryConditionMap() {
             return new BoundaryConditionMap(GridData, Control);
+        }
+
+        public new void SaveToDatabase(TimestepNumber ts, double phystime) {
+            base.SaveToDatabase(ts, phystime);
         }
     }
 }

@@ -25,14 +25,13 @@ using ilPSP;
 using BoSSS.Foundation.Grid.Classic;
 using ilPSP.Utils;
 using BoSSS.Foundation.Grid.RefElements;
+using System.Diagnostics;
+using System.Collections.Generic;
 
 namespace LTS_NUnit {
     /// <summary>
     /// NUnit test project for the implementation of LTS:
     /// The scalar transport equation of the BoSSS Tutorial is used to test LTS.
-    /// In total 4 test runs are done:
-    /// - 2 runs with LTS-order 2 and two different time steps
-    /// - 2 runs with LTS-order 3 and two different time steps
     /// </summary>
     class Program : Application {
         static void Main(string[] args) {
@@ -58,10 +57,10 @@ namespace LTS_NUnit {
 
         //For testing
         //internal int ABorder = 2;
-        //internal double dt_input = 2E-3;
-        //internal bool LTS = true;
-        //internal bool ALTS = false;
-        //internal int numOfSubgrids = 3;
+        //internal double dt_input = 2E-3 / 4;
+        //internal bool LTS = false;
+        //internal bool ALTS = true;
+        //internal int numOfSubgrids = 1;
 
         protected override GridCommons CreateOrLoadGrid() {
             double[] xnodes1 = GenericBlas.Linspace(-1, 0, a1 + 1);
@@ -92,20 +91,53 @@ namespace LTS_NUnit {
             m_IOFields.Add(u);
         }
 
+        private SurrogateConstraint CustomTimestepConstraint;
+
+        private class SurrogateConstraint : TimeStepConstraint {
+
+            private MultidimensionalArray CellMetric;
+
+            public SurrogateConstraint(GridData gridData, double dtMin, double dtMax, double dtFraction, double EndTime) :
+                base(gridData, dtMin, dtMax, dtFraction, EndTime) {
+            }
+
+            public override double GetLocalStepSize(int i0, int Length) {
+                Debug.Assert(Length == 1);
+
+                return gridData.iGeomCells.h_min[i0];
+            }
+        }
+
         protected override void CreateEquationsAndSolvers(LoadBalancingData L) {
             SpatialOperator diffOp = new SpatialOperator(1, 0, 1, QuadOrderFunc.MaxDegTimesTwo(), "u", "codom1");
             diffOp.EquationComponents["codom1"].Add(new ScalarTransportFlux());
             diffOp.Commit();
 
+            CustomTimestepConstraint = new SurrogateConstraint(GridData, dt_input, dt_input, double.MaxValue, double.MaxValue);
+
             if (LTS) {
-                AdamsBashforthLTS ltsTimeStepper = new AdamsBashforthLTS(diffOp, new CoordinateMapping(u), null, ABorder, numOfSubgrids, conservative: true);
-                ltsTimeStepper.SgrdField.Identification = "cluster";
-                m_IOFields.Add(ltsTimeStepper.SgrdField);
+                AdamsBashforthLTS ltsTimeStepper = new AdamsBashforthLTS(
+                    diffOp,
+                    new CoordinateMapping(u),
+                    null,
+                    ABorder,
+                    numOfSubgrids,
+                    fluxCorrection: true,
+                    reclusteringInterval: 0,
+                    timeStepConstraints: new List<TimeStepConstraint>() { CustomTimestepConstraint });
+                m_IOFields.Add(ltsTimeStepper.SubGridField);
                 timeStepper = ltsTimeStepper;
             } else if (ALTS) {
-                AdamsBashforthAdaptiveLTS ltsTimeStepper = new AdamsBashforthAdaptiveLTS(diffOp, new CoordinateMapping(u), null, ABorder, numOfSubgrids);
-                ltsTimeStepper.SgrdField.Identification = "cluster";
-                m_IOFields.Add(ltsTimeStepper.SgrdField);
+                AdamsBashforthLTS ltsTimeStepper = new AdamsBashforthLTS(
+                    diffOp,
+                    new CoordinateMapping(u),
+                    null,
+                    ABorder,
+                    numOfSubgrids,
+                    fluxCorrection: false,
+                    reclusteringInterval: 1,
+                    timeStepConstraints: new List<TimeStepConstraint>() { CustomTimestepConstraint });
+                m_IOFields.Add(ltsTimeStepper.SubGridField);
                 timeStepper = ltsTimeStepper;
             } else {
                 timeStepper = new AdamsBashforth(diffOp, new CoordinateMapping(u), null, ABorder);
@@ -121,11 +153,11 @@ namespace LTS_NUnit {
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             using (new FuncTrace()) {
                 if (dt <= 0) {
-                    NoOfTimesteps = 20000;
+                    NoOfTimesteps = 10000;
                     EndTime = 2;
                     dt = dt_input;
-                    if (TimestepNo < 3)
-                        dt /= 3;
+                    //if (TimestepNo < 3)
+                    //    dt /= 3;
                     if (EndTime - phystime < dt)
                         dt = EndTime - phystime;
                 }

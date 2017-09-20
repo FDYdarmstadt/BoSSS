@@ -59,7 +59,7 @@
     <Compile Include="ABevolve.cs" />
     <Compile Include="AdamsBashforth.cs" />
     <Compile Include="AdamsBashforthLTS.cs" />
-    <Compile Include="AdamsBashforthAdaptiveLTS.cs" />
+    <Compile Include="Clustering.cs" />
     <Compile Include="LoadBalancing\CellCostEstimatorLibrary.cs" />
     <Compile Include="LoadBalancing\ICellCostEstimator.cs" />
     <Compile Include="LoadBalancing\RuntimeCellCostEstimator.cs" />
@@ -70,7 +70,7 @@
     <Compile Include="ArrayHelper.cs" />
     <Compile Include="BDFSchemeCoeffs.cs" />
     <Compile Include="BoundaryConditionMap.cs" />
-    <Compile Include="ClusteringKmean.cs" />
+    <Compile Include="Kmeans.cs" />
     <Compile Include="ControlOptionRequirementAttribute.cs" />
     <Compile Include="EdgeIntegral.cs" />
     <Compile Include="Formula.cs" />

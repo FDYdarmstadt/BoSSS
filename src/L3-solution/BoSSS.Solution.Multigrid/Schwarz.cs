@@ -189,13 +189,22 @@ namespace BoSSS.Solution.Multigrid {
                 int[] part = new int[JComp];
                 {
                     if (NoOfParts > 1) {
-                        int wgtflag = 0;
-                        int numflag = 0;
+                        int ncon = 1;
                         int edgecut = 0;
-                        int[] options = new int[] { 0, 0, 0, 0, 0 };
-                        METIS.PartGraphKway(ref JComp, xadj, adjncy.ToArray(),
-                            null, null, ref wgtflag, ref numflag, ref NoOfParts, options,
-                            ref edgecut, part);
+                        int[] options = null; //new int[] { 0, 0, 0, 0, 0 };
+                        METIS.PartGraphKway(
+                            ref JComp, ref ncon,
+                            xadj,
+                            adjncy.ToArray(),
+                            null,
+                            null,
+                            null,
+                            ref NoOfParts,
+                            null,
+                            null,
+                            options,
+                            ref edgecut,
+                            part);
                     } else {
                         part.SetAll(0);
                     }

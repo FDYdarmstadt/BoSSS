@@ -30,6 +30,7 @@ using BoSSS.Solution.Timestepping;
 using ilPSP.Utils;
 using MPI.Wrappers;
 using ilPSP;
+using BoSSS.Solution.Utils;
 
 namespace CNS.IBM {
 
@@ -76,21 +77,25 @@ namespace CNS.IBM {
 
             // Normal LTS constructor
             this.NumOfLocalTimeSteps = new List<int>(numOfSubgrids);
-            CreateSubGrids();
+
+            clustering = new Clustering(this.gridData, this.timeStepConstraints, this.numOfSubgrids);
+            subGridList = clustering.SubGridList;
+            SubGridField = clustering.SubGridField;
+
             CalculateNumberOfLocalTS();
 
             // Modify SubgridList, to account smaller time-steps because of cut-cells
             // Right now, only "hard-coded" with half time-step for all cut-cells
             {
                 SubGrid cutCellSgrd = new SubGrid(cutAndTargetCells);
-                SubGrid finestSgrd = subgridList.Last();
+                SubGrid finestSgrd = subGridList.Last();
 
                 finestSgrd = new SubGrid(finestSgrd.VolumeMask.Except(cutAndTargetCells).Intersect(speciesMap.SubGrid.VolumeMask));
-                subgridList.RemoveAt(subgridList.Count - 1);
+                subGridList.RemoveAt(subGridList.Count - 1);
 
-                subgridList.Add(finestSgrd);
+                subGridList.Add(finestSgrd);
 
-                subgridList.Add(cutCellSgrd);
+                subGridList.Add(cutCellSgrd);
 
                 // For debugging, change values in SgrdField
                 //if (SgrdField != null) {
@@ -110,14 +115,14 @@ namespace CNS.IBM {
 
 
                 MaxLocalTS = NumOfLocalTimeSteps.Last();
-                numOfSubgrids = subgridList.Count;
+                numOfSubgrids = subGridList.Count;
             }
 
             if (this.numOfSubgrids == 1)
                 throw new ArgumentException("Clustering yields only to one sub-grid, LTS is not possible! Element sizes of your grid are too similar");
 
-            localABevolve = new ABevolve[subgridList.Count];
-            for (int i = 0; i < subgridList.Count; i++) {
+            localABevolve = new ABevolve[subGridList.Count];
+            for (int i = 0; i < subGridList.Count; i++) {
                 localABevolve[i] = new IBMABevolve(
                     standardOperator,
                     boundaryOperator,
@@ -127,12 +132,12 @@ namespace CNS.IBM {
                     control.ExplicitOrder,
                     control.LevelSetQuadratureOrder,
                     control.MomentFittingVariant,
-                    subgridList[i]);
+                    subGridList[i]);
             }
             GetBoundaryTopology();
 
             for (int i = 0; i < numOfSubgrids; i++) {
-                Console.WriteLine("LTS: id=" + i + " -> sub-steps=" + NumOfLocalTimeSteps[i] + " and elements=" + subgridList[i].GlobalNoOfCells);
+                Console.WriteLine("LTS: id=" + i + " -> sub-steps=" + NumOfLocalTimeSteps[i] + " and elements=" + subGridList[i].GlobalNoOfCells);
             }
 
             // StarUp Phase needs an IBM time stepper
@@ -144,13 +149,6 @@ namespace CNS.IBM {
                 speciesMap,
                 timeStepConstraints);
         }
-
-        protected override MultidimensionalArray GetSmallestDistanceInCells() {
-            //SpeciesId species = speciesMap.Tracker.GetSpeciesId(IBMEnvironment.FluidSpeciesName);
-            //return speciesMap.QuadSchemeHelper.CellAgglomeration.CellLengthScales[species].Storage;
-            return ((BoSSS.Foundation.Grid.Classic.GridData)gridData).Cells.h_min;
-        }
-
 
         private void BuildEvaluatorsAndMasks() {
             CellMask fluidCells = speciesMap.SubGrid.VolumeMask;

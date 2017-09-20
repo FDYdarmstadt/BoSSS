@@ -33,7 +33,7 @@ namespace NSE_SIMPLE.Incompressible {
             c.savetodb = false;
 
             c.GridGuid = new Guid("0062a338-a8a4-4d52-9b16-bc79379dd4d5");
-            c.GridPartType = GridPartType.ParMETIS;
+            c.GridPartType = GridPartType.METIS;
 
             c.ProjectName = "Steady_SIMPLE 2D Channel";
             c.ProjectDescription = "NUnitTest for Steady_SIMPLE";
@@ -134,7 +134,7 @@ namespace NSE_SIMPLE.Incompressible {
             c.savetodb = false;
 
             c.GridGuid = new Guid("06e506b2-9cb7-48c5-ba5d-22fc57645aac");
-            c.GridPartType = GridPartType.ParMETIS;
+            c.GridPartType = GridPartType.METIS;
 
             c.ProjectName = "Unsteady_SIMPLE Taylor vortex";
             c.ProjectDescription = "NUnitTest for Unsteady_SIMPLE";

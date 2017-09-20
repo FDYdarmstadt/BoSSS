@@ -48,6 +48,14 @@ namespace MPI.Wrappers {
             get;
         }
 
+        void Gatherv(IntPtr sendbuf, int sendcount, MPI_Datatype sendtype,
+                     IntPtr recvbuf, IntPtr recvcounts, IntPtr displs, MPI_Datatype recvtype,
+                     int root, MPI_Comm comm);
+
+        void Scatterv(IntPtr sendbuf, IntPtr sendcounts, IntPtr displs, MPI_Datatype sendtype,
+                      IntPtr recvbuf, int recvcount, MPI_Datatype recvtype,
+                      int root, MPI_Comm comm);
+
         /// <summary>
         /// MPI_ALLGATHER can be thought of as MPI_GATHER, but where all
         /// processes receive the result, instead of just the root. The block

@@ -53,7 +53,7 @@ Other useful commands are:
 \end{description}
 
 \subsection{Navigating through history}
-\BoSSSpad{} maintains a history of the last 500 issued commands. The individual entries can be accessed in the style of the standard Unix/Linux shell \lstinline{Bash}. That is, commands can be accessed in the order of their submission using the up and down keys. Moreover, the page up and page down keys can be used to \emph{serach} the history for commands that are equal to the current command up the current cursor position. As an example, consider the following command:
+\BoSSSpad{} maintains a history of the last 500 issued commands. The individual entries can be accessed in the style of the standard Unix/Linux shell \lstinline{Bash}. That is, commands can be accessed in the order of their submission using the up and down keys. Moreover, the page up and page down keys can be used to \emph{search} the history for commands that are equal to the current command up the current cursor position. As an example, consider the following command:
 \begin{lstlisting}[title=Example history search]
 databases.First().Sessions.Newest()
 \end{lstlisting}
@@ -189,7 +189,7 @@ The following fields and methods can be used:
 	Displays a residual plot window (Gnuplot required) for the selected residuals
 	
 	\item[Residuals(...).PlotLive()]
-	Displays a residual plot window that continuously updated when new residual data arrives
+	Displays a residual plot window that is continuously updated when new residual data arrives
 	
 	\item[RestartedFrom]
 	If this session has been restarted from another session, this field contains the original session's ID.
@@ -220,7 +220,7 @@ In addition to the use of standard LINQ operators, lists of sessions offer conve
 	Returns all sessions which have been created within the last \lstinline{noOfPreviousDays} days.
 	
 	\item[RestartedFrom(PartialGuid id)]
-	Filters all sessions which have been restarted from a session with the given id.
+	Filters all sessions which have been restarted from a session with the given \code{id}.
 	
 	\item[ToDataSet(\ldots)]
 	Each of the numerous variants of this method extracts user-defined data from the last timestep of the respective sessions and turns the result into a \lstinline{DataSet} (cf. section \ref{sec:DataSet})
@@ -284,7 +284,7 @@ The following fields and methods can be used:
 
 \subsection{ITimestepInfo}
 \label{sec:ITimestepInfo}
-Variables of type \lstinline{ITimestepInfo} store basic information about a timestep. Each \lstinline{ITimestepInfo} comes with a \lstinline{TimeStepNumber} that can represent a timestep (e.g.. "1"), a sub-timestep (e.g. "1.2" for the second iteration in the first timestep) or even a sub-sub-timestep (e.g., "1.2.1" for the first sub-iteration of the second timestep in the first timestep)
+Variables of type \lstinline{ITimestepInfo} store basic information about a timestep. Each \lstinline{ITimestepInfo} comes with a \lstinline{TimeStepNumber} that can represent a timestep (e.g. "1"), a sub-timestep (e.g. "1.2" for the second iteration in the first timestep) or even a sub-sub-timestep (e.g., "1.2.1" for the first sub-iteration of the second timestep in the first timestep)
 The following fields and methods can be used:
 \begin{description}
 	\item[Fields]
@@ -368,7 +368,7 @@ A \lstinline{DataSet} represents a potentially grouped set of data in the form o
 	Save the data in a latex file for creating a plot in a publication
 	
 	\item[SaveTextFileToPublish(String path)]
-	Save the data to a text file in tabular form, addionally a second text file saves the linear regression values of this data.\\ Naming convention: path+Data.txt and path+Rgrs.txt
+	Save the data to a text file in tabular form, additionally a second text file saves the linear regression values of this data.\\ Naming convention: path+Data.txt and path+Rgrs.txt
 	
 	\item[Without(params string{[}{]} groupNames))]
 	Subtracts the data rows associated with the given group name(s)
@@ -380,7 +380,7 @@ A \lstinline{DataSet} represents a potentially grouped set of data in the form o
 
 The command \lstinline{Export()} creates a so-called \lstinline{ExportInstruction} for a session, a timestep or a grid with default options. The default options can be modified by calling one or more of the below commands via method chaining (also, see section \ref{sec:examples}). However, the actual export process does not start before the command \lstinline{Do()} is called.
 
-The following methods are available for all types of \lstinline{ExportInstruction} (Sessions, timesteps and grids):
+The following methods are available for all types of \lstinline{ExportInstruction} (sessions, timesteps and grids):
 \begin{description}
 	\item[AndOpenYouMust()]
 	Equivalent (but funnier) alternative to \lstinline{DoAndOpen()}.
@@ -416,7 +416,7 @@ The following methods are available for sessions and timesteps:
 	Restricts the set of exported fields to the fields with the given names. By default, all stored fields are included in the export.
 	
 	\item[WithReconstruction()]
-	Enables reconstruction of a smooth variable field (which is turned off by default) by calculating node-wise averages
+	Enables reconstruction of a smooth variable field (which is turned off by default) by calculating node-wise averages.
 \end{description}
 
 The following methods are available for sessions only:
@@ -521,7 +521,7 @@ In this section, examples are shown to illustrate basic and more advanced workfl
 
 Assuming that the field \lstinline{db1} still exists, the following commands are possible.
 \begin{lstlisting}[title=Advanced Examples]
-// Finds all sessions whose ID starts with "a4c" and stores the result in
+// Finds all sessions whose IDs starts with "a4c" and stores the result in
 // the variable 'session'
 > var session = db1.Sessions.WithGuid("a4c")
 
@@ -579,7 +579,7 @@ foreach(ISessionInfo s in sessions) { s.Copy(databases.Third()); }
 
 // Create a Dataset with the Meshsize as x-axis,
 // the L2Norm of the Field "DivAfter" as y- axis and
-// the polynomial degree of the Field as grouing parameter
+// the polynomial degree of the Field as grouping parameter
 > var mydataset = mytimesteps.ToDataSet(
 	t => t.Grid.GetMeshSize(),
 	t => t.Fields.Find("DivAfter").L2Norm(),

@@ -55,7 +55,7 @@ namespace BoSSS.Application.SpecFEM {
             double[] nodesY = GenericBlas.Linspace(-3, 3, MeshPara / 2 + 1); 
             var grid = Grid2D.Cartesian2DGrid(nodesX, nodesY, periodicX: m_periodicX, periodicY: m_periodicY); 
 
-            this.m_GridPartitioningType = GridPartType.ParMETIS;
+            this.m_GridPartitioningType = GridPartType.METIS;
             return grid; 
 
 

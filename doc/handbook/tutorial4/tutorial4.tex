@@ -50,7 +50,6 @@
 ///\section{Solution within the \BoSSS{} framework}
 ///We start a new project
  }
-\BoSSSexe
 \BoSSScmd{
 restart
  }
@@ -67,7 +66,7 @@ Directory.GetFiles(".", "*.plt").ForEach(file => File.Delete(file));
 \BoSSScmd{
 /// \subsection{Projection and visualization}
 /// In this first section we get to know the plotting tool \code{Tecplot}, which generates .plt-files of our \code{DGFields}. 
-/// Previously, we define the exact solution $c_{Excat}(x,y,t)$ and the scalar components of the velocity field $\vec{u}$ as functions, 
+/// Previously, we define the exact solution $c_{Exact}(x,y,t)$ and the scalar components of the velocity field $\vec{u}$ as functions, 
 Func<double[], double, double> cExact =  \newline 
 \btab (X, t) => Math.Cos(Math.Cos(t)*X[0] - Math.Sin(t)*X[1]);
  }
@@ -131,7 +130,7 @@ tecplot.PlotFields( \newline
  }
 \BoSSSexe
 \BoSSScmd{
-/// There should be now two plot-files in your current directory. Those can be opened by any standard viewer for .plt-files.
+/// There should now be two plot-files in your current directory. Those can be opened by any standard viewer for .plt-files.
  }
 \BoSSSexe
 \BoSSScmd{
@@ -257,7 +256,7 @@ for (int i = 1; i <= numberOfTimesteps; i++) \{ \newline
 \BoSSSexe
 \BoSSScmd{
 /// Furthermore, we can postprocess our simulation data in various ways: For example, 
-/// we can compute the L2 Error at the end of the simulation
+/// we can compute the L2-Error at the end of the simulation
 double error = ch.L2Error(X => cExact(X, timeStepper.Time)); \newline 
 error;
  }
@@ -265,7 +264,7 @@ error;
 \BoSSScmd{
 /// \section{Advanced topics}
 /// So far we used the \code{timestepper} to evaluate the \code{SpatialOperator} in order to get 
-/// the current changerate for the explicit Euler scheme. In the next section we will evaluate the operator 
+/// the current change rate for the explicit Euler scheme. In the next section we will evaluate the operator 
 /// in each iteration manually. But first we set the \code{DGField} back to the initial values and plot
 ch.ProjectField(X => cExact(X, 0.0));\newline 
 tecplot.PlotFields( \newline 
@@ -300,7 +299,7 @@ evaluator.Evaluate(1.0, 0.0, flux, time: 0.0);\newline
 \BoSSSexe
 \BoSSScmd{
 /// Finally, we can use this kind of \code{spatial operator} evaluation to implement the explicit Euler scheme manually.   
-double physTime                = 0.0;\newline 
+double physTime = 0.0;\newline 
 for (int i = 1; i <= numberOfTimesteps; i++) \{ \newline 
 \btab evaluator.Evaluate(1.0, 0.0, flux, time: physTime);\newline 
 \btab DGCoordinates.axpy<double[]>(flux, -dt);\newline 
