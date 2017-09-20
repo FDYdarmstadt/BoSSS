@@ -44,14 +44,17 @@ namespace BoSSS.Solution.Utils {
         /// <summary>
         /// Number of clusters
         /// </summary>
-        private int numOfClusters;
+        public int NumOfClusters {
+            get;
+            private set;
+        }
 
         /// <summary>
         /// List of sub-grids
         /// </summary>
         public List<SubGrid> SubGridList {
             get;
-            set;
+            private set;
         }
 
         /// <summary>
@@ -59,7 +62,7 @@ namespace BoSSS.Solution.Utils {
         /// </summary>
         public DGField SubGridField {
             get;
-            set;
+            private set;
         }
 
         /// <summary>
@@ -71,10 +74,10 @@ namespace BoSSS.Solution.Utils {
         public Clustering(IGridData gridData, IList<TimeStepConstraint> timeStepConstraints, int numOfClusters) {
             this.gridData = gridData;
             this.timeStepConstraints = timeStepConstraints;
-            this.numOfClusters = numOfClusters;
+            this.NumOfClusters = numOfClusters;
 
             this.SubGridField = new SinglePhaseField(new Basis(gridData, 0));
-            this.SubGridList = CreateSubGrids(this.numOfClusters);
+            this.SubGridList = CreateSubGrids(this.NumOfClusters);
         }
 
         /// <summary>
@@ -83,7 +86,7 @@ namespace BoSSS.Solution.Utils {
         /// <param name="numOfClusters">Number of clusters</param>
         /// <returns>A list of sub-grids</returns>
         public List<SubGrid> CreateSubGrids(int numOfClusters) {
-            this.numOfClusters = numOfClusters;
+            this.NumOfClusters = numOfClusters;
             int numOfCells = gridData.iLogicalCells.NoOfLocalUpdatedCells;
 
             MultidimensionalArray cellMetric = GetCellMetric();
@@ -141,7 +144,7 @@ namespace BoSSS.Solution.Utils {
                     j++;
                 }
             }
-            numOfClusters = counter;
+            this.NumOfClusters = counter;
 
             return SubGridList;
         }
@@ -167,12 +170,12 @@ namespace BoSSS.Solution.Utils {
                 h_max += 0.1 * h_max; // Dirty hack for IBM cases with equidistant grids
 
             // Tanh Spacing, which yields to more cell cluster for smaller cells
-            var means = Grid1D.TanhSpacing(h_min, h_max, numOfClusters, 4.0, true).Reverse().ToArray();
+            var means = Grid1D.TanhSpacing(h_min, h_max, NumOfClusters, 4.0, true).Reverse().ToArray();
 
             // Equidistant spacing, in general not the best choice
             //means = GenericBlas.Linspace(h_min, h_max, NumOfSgrd).Reverse().ToArray();
 
-            return MultidimensionalArray.CreateWrapper(means, numOfClusters);
+            return MultidimensionalArray.CreateWrapper(means, NumOfClusters);
         }
 
         /// <summary>
@@ -219,6 +222,18 @@ namespace BoSSS.Solution.Utils {
             return cellMetric;
 
             //return gridData.iGeomCells.h_min;
+        }
+
+        /// <summary>
+        /// Updates the clustering variables when they have been changed by another class/method
+        /// </summary>
+        /// <param name="subGridList">List of clusters</param>
+        /// <param name="subGridField">Cluster to be plotted</param>
+        /// <param name="numOfClusters">Number of clusters</param>
+        public void UpdateClusteringVariables(List<SubGrid> subGridList, DGField subGridField, int numOfClusters) {
+            this.SubGridList = subGridList;
+            this.SubGridField = subGridField;
+            this.NumOfClusters = numOfClusters;
         }
     }
 }
