@@ -740,19 +740,19 @@ namespace BoSSS.Foundation {
             //A.SaveToTextFile("C:\\tmp\\AMatrix.txt");
 
             // test with matlab
-            MultidimensionalArray output = MultidimensionalArray.Create(1, 2);
-            Console.WriteLine("Calling MATLAB/Octave...");
-            using (BatchmodeConnector bmc = new BatchmodeConnector()) {
-                bmc.PutSparseMatrix(A, "A");
-                bmc.Cmd("rank_A = rank(full(A))");
-                bmc.Cmd("rank_AT = rank(full(A'))");
-                bmc.GetMatrix(output, "[rank_A, rank_AT]");
+            //MultidimensionalArray output = MultidimensionalArray.Create(1, 2);
+            //Console.WriteLine("Calling MATLAB/Octave...");
+            //using (BatchmodeConnector bmc = new BatchmodeConnector()) {
+            //    bmc.PutSparseMatrix(A, "A");
+            //    bmc.Cmd("rank_A = rank(full(A))");
+            //    bmc.Cmd("rank_AT = rank(full(A'))");
+            //    bmc.GetMatrix(output, "[rank_A, rank_AT]");
 
-                bmc.Execute(false);
-            }
+            //    bmc.Execute(false);
+            //}
 
-            Console.WriteLine("A: No of Rows = {0}; rank = {1}", A.NoOfRows, output[0, 0]);
-            Console.WriteLine("AT: No of Rows = {0}; rank = {1}", A.Transpose().NoOfRows, output[0, 1]);
+            //Console.WriteLine("A: No of Rows = {0}; rank = {1}", A.NoOfRows, output[0, 0]);
+            //Console.WriteLine("AT: No of Rows = {0}; rank = {1}", A.Transpose().NoOfRows, output[0, 1]);
 
 
             // solve
