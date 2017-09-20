@@ -30,6 +30,7 @@ using BoSSS.Solution.Timestepping;
 using ilPSP.Utils;
 using MPI.Wrappers;
 using ilPSP;
+using BoSSS.Solution.Utils;
 
 namespace CNS.IBM {
 
@@ -76,7 +77,11 @@ namespace CNS.IBM {
 
             // Normal LTS constructor
             this.NumOfLocalTimeSteps = new List<int>(numOfSubgrids);
-            CreateSubGrids();
+
+            clustering = new Clustering(this.gridData, this.timeStepConstraints, this.numOfSubgrids);
+            subGridList = clustering.SubGridList;
+            subGridField = clustering.SubGridField;
+
             CalculateNumberOfLocalTS();
 
             // Modify SubgridList, to account smaller time-steps because of cut-cells
@@ -144,13 +149,6 @@ namespace CNS.IBM {
                 speciesMap,
                 timeStepConstraints);
         }
-
-        protected override MultidimensionalArray GetSmallestDistanceInCells() {
-            //SpeciesId species = speciesMap.Tracker.GetSpeciesId(IBMEnvironment.FluidSpeciesName);
-            //return speciesMap.QuadSchemeHelper.CellAgglomeration.CellLengthScales[species].Storage;
-            return ((BoSSS.Foundation.Grid.Classic.GridData)gridData).Cells.h_min;
-        }
-
 
         private void BuildEvaluatorsAndMasks() {
             CellMask fluidCells = speciesMap.SubGrid.VolumeMask;
