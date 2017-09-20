@@ -75,8 +75,6 @@ namespace BoSSS.Solution.Multigrid {
 
         public MsrMatrix currentPrecMatrix = null;
 
-        public ISolverSmootherTemplate Precond;
-
 
 
         public override void SolverDriver<S>(CoordinateVector SolutionVec, S RHS) {
@@ -120,16 +118,11 @@ namespace BoSSS.Solution.Multigrid {
                 fNormo = fnorm;
                 itc++;
 
-                // Brute force PrecMatrix
-                //currentPrecMatrix = diffjac(SolutionVec, x, f0);
-                //PrecSolver.DefineMatrix(currentPrecMatrix);
-
-                if (Precond != null) {
-                    Precond.Init(CurrentLin);
-                }
-
                 // How should the inverse of the Jacobian be approximated?
                 if (ApproxJac == ApproxInvJacobianOptions.GMRES) {
+                    if (Precond != null) {
+                        Precond.Init(CurrentLin);
+                    }
                     step = Krylov(SolutionVec, x, f0, out errstep);
                 } else if (ApproxJac == ApproxInvJacobianOptions.DirectSolver) {
                     CurrentJac = diffjac(SolutionVec, x, f0);
