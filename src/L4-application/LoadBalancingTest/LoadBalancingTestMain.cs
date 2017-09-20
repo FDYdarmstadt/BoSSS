@@ -293,6 +293,7 @@ namespace BoSSS.Application.LoadBalancingTest {
                 this.Grid,
                 TimeStepNo,
                 GridPartType.none,
+                "",
                 imbalanceThreshold: 0.0,
                 Period: 3);
 

@@ -327,11 +327,11 @@ namespace CNS {
         //depends on the order of the variables in the variable list
         //######################################################################
         private static SpecFemBasis avSpecFEMBasis;
-        public static readonly DerivedVariable ArtificalViscosity = new DerivedVariable(
+        public static readonly DerivedVariable ArtificialViscosity = new DerivedVariable(
             "artificialViscosity",
             VariableTypes.Other,
-            delegate (DGField artificalViscosity, CellMask cellMask, IProgram<CNSControl> program) {
-                ConventionalDGField avField = artificalViscosity as ConventionalDGField;
+            delegate (DGField artificialViscosity, CellMask cellMask, IProgram<CNSControl> program) {
+                ConventionalDGField avField = artificialViscosity as ConventionalDGField;
                 int D = cellMask.GridData.SpatialDimension;
 
                 // Determine piecewise constant viscosity
@@ -462,7 +462,7 @@ namespace CNS {
         /// The sub-grid ids of individual local time-stepping sub-grids
         /// </summary>
         public static readonly DerivedVariable LTSSubGrids = new DerivedVariable(
-            "LTSSubGrids",
+            "clusterLTS",
             VariableTypes.Other,
             delegate (DGField subGridField, CellMask cellMask, IProgram<CNSControl> program) {
                 Program<CNSControl> p = (Program<CNSControl>)program;

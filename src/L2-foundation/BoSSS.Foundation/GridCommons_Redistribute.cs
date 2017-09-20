@@ -49,9 +49,9 @@ namespace BoSSS.Foundation.Grid.Classic {
                 switch (method) {
                     case GridPartType.METIS:
                         if (size > 1) {
-                            int.TryParse(PartOptions, out int noOfRefinements);
-
-                            int[] part = ComputePartitionMETIS(noOfRefinements: noOfRefinements);
+                            int.TryParse(PartOptions, out int noOfPartitioningsToChooseFrom);
+                            noOfPartitioningsToChooseFrom = Math.Max(1, noOfPartitioningsToChooseFrom);
+                            int[] part = ComputePartitionMETIS(noOfPartitioningsToChooseFrom: noOfPartitioningsToChooseFrom);
                             RedistributeGrid(part);
                         }
                         break;
@@ -141,11 +141,11 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// Computes a grid partitioning (which cell should be on which processor)
         /// using the serial METIS library -- work is only done on MPi rank 0.
         /// </summary>
-        /// <param name="cellWeights">
-        /// If not null, defines the weight associted with each cell on this process
+        /// <param name="cellWeightsLocal">
+        /// If not null, defines the weight associted with each cell on the current process
         /// </param>
-        /// <param name="refineCurrentPartitioning">
-        /// Refines the current partitioning instead of starting from scratch
+        /// <param name="noOfPartitioningsToChooseFrom">
+        /// Tells METIS to compute
         /// </param>
         /// <returns>
         /// Index: local cell index, content: MPI Processor rank;<br/>
@@ -154,7 +154,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// For each local cell index, the returned array contains the MPI
         /// process rank where the cell should be placed.
         /// </returns>
-        public int[] ComputePartitionMETIS(int[] cellWeightsLocal = null, int noOfRefinements = 0) {
+        public int[] ComputePartitionMETIS(int[] cellWeightsLocal = null, int noOfPartitioningsToChooseFrom = 1) {
             using (new FuncTrace()) {
                 int size = this.Size;
                 int rank = this.MyRank;
@@ -256,39 +256,47 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                     // Call METIS
                     int nparts = size;
-                    int edgecut = -1;
-                    int numflag = 0; // 0 -> use C-style ordering
                     Debug.Assert((cellWeightsGlobal == null) == (cellWeightsLocal == null));
-                    int ncon = (cellWeightsGlobal == null) ? 0 : 1;  // Use 0 or 1 weight per vertex/cell
-                    int wgtflag = cellWeightsGlobal == null ? 0 : 2; // Just use vertex/cell weights
-                    int[] Options = new int[5]; // 0-th entry is 0, therefore all others should be ignored; however, we reserve the mem in case of any access
+                    int ncon = 1;  // One weight per vertex/cell
+                    int objval = -1; // Value of the objective function at return time
 
-                    METIS.PartGraphKway(
-                        ref J,
+                    int[] Options = new int[METIS.METIS_NOPTIONS];
+                    Options[(int)METIS.OptionCodes.METIS_OPTION_NCUTS] = noOfPartitioningsToChooseFrom; // 5 cuts
+                    Options[(int)METIS.OptionCodes.METIS_OPTION_NITER] = 10; // This is the default refinement iterations
+                    Options[(int)METIS.OptionCodes.METIS_OPTION_UFACTOR] = 30; // Maximum imbalance of 3 percent (this is the default kway clustering)
+
+                    METIS.ReturnCodes status = (METIS.ReturnCodes)METIS.PartGraphKway(
+                        nvtxs: ref J,
+                        ncon: ref ncon,
                         xadj: xadj,
                         adjncy: adjncy.ToArray(),
-                        vwgt: cellWeightsGlobal,
+                        vwgt: cellWeightsGlobal, // if null, METIS assumes all have weight 1
+                        vsize: null, // No information about communication size
                         adjwgt: null, // No edge weights
-                        wgtflag: ref wgtflag,
-                        numflag: ref numflag,
                         nparts: ref nparts,
-                        options: Options, 
-                        edgecut: ref edgecut,
+                        tpwgts: null, // No weights for partition constraints
+                        ubvec: null, // No imbalance tolerance for constraints
+                        options: Options,
+                        objval: ref objval,
                         part: globalResult);
+
+                    if (status != METIS.ReturnCodes.METIS_OK) {
+                        throw new Exception(String.Format(
+                            "Error partitioning the mesh. METIS reported {0}",
+                            status));
+                    }
 
                     int[] CountCheck = new int[size];
                     int J2 = this.NumberOfCells;
                     for (int i = 0; i < J2; i++) {
                         CountCheck[globalResult[i]]++;
                     }
-                    for(int rnk = 0; rnk < size; rnk++) {
+                    for (int rnk = 0; rnk < size; rnk++) {
                         if (CountCheck[rnk] <= 0) {
                             throw new ApplicationException("METIS produced illegal partitioning - 0 cells on process " + rnk + ".");
                         }
                     }
                 }
-
-                //System.Diagnostics.Debugger.Launch();
 
                 int[] localLengths = new int[size];
                 for (int p = 0; p < localLengths.Length; p++) {
@@ -296,7 +304,6 @@ namespace BoSSS.Foundation.Grid.Classic {
                 }
                 int[] localResult = globalResult.MPIScatterv(localLengths);
 
-                
                 return localResult;
             }
         }
@@ -582,13 +589,13 @@ namespace BoSSS.Foundation.Grid.Classic {
         }
 
 
-        private delegate void ParMETISAction(
+        private delegate METIS.ReturnCodes ParMETISAction(
             int[] vtxdist,
             int[] xadj,
             int[] adjncy,
             int[] vwgt,
             int[] adjwgt,
-            int[] wgtflag,
+            ref int wgtflag,
             ref int numflag,
             ref int ncon,
             ref int nparts,
@@ -649,36 +656,62 @@ namespace BoSSS.Foundation.Grid.Classic {
                         xadj[j + 1] = adjncyL.Count;
                     }
 
-                    // Call ParMETIS
+                    // Prepare ParMETIS parameters
                     ParMETISAction parmetisAction;
                     if (refineCurrentPartitioning) {
-                        parmetisAction = ParMETIS_V3.V3_RefineKway;
+                        parmetisAction = ParMETIS.V3_RefineKway;
                     } else {
-                        parmetisAction = ParMETIS_V3.V3_PartKway;
+                        parmetisAction = ParMETIS.V3_PartKway;
                     }
 
                     int nparts = size;
-                    int edgecut = -1;
-                    int[] result = new int[J + 1];
-                    int numflag = 0; // 0 -> use C-style ordering
-                    int ncon = (cellWeights == null) ? 0 : 1;  // Use 0 or 1 weight per vertex/cell
+                    int ncon = 1; // Just one balance constraint (vertex weights)
                     MPI_Comm wrld = csMPI.Raw._COMM.WORLD;
-                    parmetisAction(
+                    int wgtflag = 2; // Cell weights only
+                    if (cellWeights == null) {
+                        // Cell weights null causes problems with ParMETIS
+                        cellWeights = new int[NoOfUpdateCells];
+                        cellWeights.SetAll(1);
+                    }
+                    int numflag = 0; // 0 -> use C-style ordering
+
+                    // Equal distribution of balance constraints (default)
+                    float[] tpwgts = new float[ncon * nparts];
+                    for (int i = 0; i < tpwgts.Length; i++) {
+                        tpwgts[i] = 1.0f / nparts;
+                    }
+
+                    // Default imbalance tolerance (5%)
+                    float[] ubvec = new float[ncon];
+                    for (int i = 0; i < ubvec.Length; i++) {
+                        ubvec[i] = 1.05F;
+                    }
+
+                    // Call ParMETIS
+                    int edgecut = 0;
+                    int[] result = new int[J + 1];
+                    METIS.ReturnCodes status = parmetisAction(
                         vtxdist: currentCellPartitioning,
                         xadj: xadj,
                         adjncy: adjncyL.ToArray(),
                         vwgt: cellWeights,
                         adjwgt: null, // No edge weights
-                        wgtflag: new int[] { cellWeights == null ? 0 : 2 }, // Just use vertex/cell weights
+                        wgtflag: ref wgtflag,
                         numflag: ref numflag,
                         ncon: ref ncon,
                         nparts: ref nparts,
-                        tpwgts: null,
-                        ubvec: null,
-                        options: new int[] { 0 }, // use default
+                        tpwgts: tpwgts,
+                        ubvec: ubvec,
+                        options: new int[] { 0, 0, 0 }, // use default
                         edgecut: ref edgecut,
                         partitioningResult: result,
                         MPIComm: wrld);
+
+                    if (status != METIS.ReturnCodes.METIS_OK) {
+                        throw new Exception(String.Format(
+                            "Error partitioning the mesh. ParMETIS reported {0}",
+                            status));
+                    }
 
                     Array.Resize(ref result, J);
                     return result;

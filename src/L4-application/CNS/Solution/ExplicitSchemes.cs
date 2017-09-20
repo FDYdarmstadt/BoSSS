@@ -53,7 +53,7 @@ namespace CNS.Solution {
 
         /// <summary>
         /// Family of Adams-Bashforth multi-step schemes with Local Time Stepping
-        /// <see cref="AdamsBashforth"/>
+        /// <see cref="AdamsBashforthLTS"/>
         /// </summary>
         LTS,
 
@@ -126,17 +126,12 @@ namespace CNS.Solution {
                 case ExplicitSchemes.RungeKutta:
                     //RungeKutta timeStepper;
                     if (control.DomainType == DomainTypes.Standard) {
-                        // HACK
-                        //RungeKutta timeStepperBla = new RungeKutta(
                         timeStepper = new RungeKutta(
                         RungeKutta.GetDefaultScheme(control.ExplicitOrder),
                         equationSystem.GetJoinedOperator().ToSpatialOperator(),
                         fieldsMap,
                         parameterMap,
                         equationSystem.GetJoinedOperator().CFLConstraints);
-
-                        //timeStepperBla.OnBeforeComputeChangeRate += (t1, t2) => program.WorkingSet.UpdateDerivedVariables(program, program.SpeciesMap.SubGrid.VolumeMask);
-                        //timeStepper = timeStepperBla;
                     } else {
                         IBMControl ibmControl = (IBMControl)control;
                         timeStepper = ibmControl.TimesteppingStrategy.CreateRungeKuttaTimeStepper(
@@ -157,17 +152,12 @@ namespace CNS.Solution {
                             (IBMControl)control,
                             equationSystem.GetJoinedOperator().CFLConstraints);
                     } else {
-                        // HACK
-                        //AdamsBashforth timeStepperBla = new AdamsBashforth(
                         timeStepper = new AdamsBashforth(
                         equationSystem.GetJoinedOperator().ToSpatialOperator(),
                         fieldsMap,
                         parameterMap,
                         control.ExplicitOrder,
                         equationSystem.GetJoinedOperator().CFLConstraints);
-
-                        //timeStepperBla.OnBeforeComputeChangeRate += (t1, t2) => program.WorkingSet.UpdateDerivedVariables(program, program.SpeciesMap.SubGrid.VolumeMask);
-                        //timeStepper = timeStepperBla;
                     }
                     break;
 
@@ -183,13 +173,20 @@ namespace CNS.Solution {
                             (IBMControl)control,
                             equationSystem.GetJoinedOperator().CFLConstraints);
                     } else {
+                        //AdamsBashforthLTS timeStepperBla = new AdamsBashforthLTS(
                         timeStepper = new AdamsBashforthLTS(
                             equationSystem.GetJoinedOperator().ToSpatialOperator(),
                             fieldsMap,
                             parameterMap,
                             control.ExplicitOrder,
-                        control.NumberOfSubGrids,
-                        equationSystem.GetJoinedOperator().CFLConstraints);
+                            control.NumberOfSubGrids,
+                            equationSystem.GetJoinedOperator().CFLConstraints,
+                            reclusteringInterval: control.ReclusteringInterval,
+                            fluxCorrection: control.FluxCorrection,
+                            saveToDBCallback: program.SaveToDatabase);
+
+                        //timeStepperBla.OnBeforeComputeChangeRate += (t1, t2) => program.WorkingSet.UpdateDerivedVariables(program, program.SpeciesMap.SubGrid.VolumeMask);
+                        //timeStepper = timeStepperBla;
                     }
                     break;
 

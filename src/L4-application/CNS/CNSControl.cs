@@ -240,10 +240,28 @@ namespace CNS {
         /// <summary>
         /// The Number of sub-grids for Local Time Stepping
         /// </summary>
-        /// The Option is only used if <see cref="ExplicitScheme"/> is
+        /// This option is only used if <see cref="ExplicitScheme"/> is
         /// equal to LTS
         [InclusiveLowerBound(1)]
         public int NumberOfSubGrids = 1;
+        
+        /// <summary>
+        /// The amount of time steps after which a reclustering is performed if <see cref="ExplicitSchemes.LTS"/>
+        /// is used in adaptive mode (<see cref="ReclusteringInterval"/> != 0).
+        /// </summary>
+        /// <remarks>
+        /// This option is only used if <see cref="ExplicitScheme"/> is equal to LTS.
+        /// </remarks>
+        public int ReclusteringInterval = 0;
+
+        /// <summary>
+        /// Enables/Disables the flux correction to obtain a (non-)conservative
+        /// <see cref="ExplicitSchemes.LTS"/> scheme. Not avaiblable for adaptive LTS.
+        /// </summary>
+        /// <remarks>
+        /// This option is only used if <see cref="ExplicitScheme"/> is equal to LTS.
+        /// </remarks>
+        public bool FluxCorrection = true;
 
         /// <summary>
         /// The implicit scheme to be used.
