@@ -75,8 +75,6 @@ namespace BoSSS.Solution.Multigrid {
 
         public MsrMatrix currentPrecMatrix = null;
 
-        public ISolverSmootherTemplate Precond;
-
 
 
         public override void SolverDriver<S>(CoordinateVector SolutionVec, S RHS) {
@@ -120,16 +118,11 @@ namespace BoSSS.Solution.Multigrid {
                 fNormo = fnorm;
                 itc++;
 
-                // Brute force PrecMatrix
-                //currentPrecMatrix = diffjac(SolutionVec, x, f0);
-                //PrecSolver.DefineMatrix(currentPrecMatrix);
-
-                if (Precond != null) {
-                    Precond.Init(CurrentLin);
-                }
-
                 // How should the inverse of the Jacobian be approximated?
                 if (ApproxJac == ApproxInvJacobianOptions.GMRES) {
+                    if (Precond != null) {
+                        Precond.Init(CurrentLin);
+                    }
                     step = Krylov(SolutionVec, x, f0, out errstep);
                 } else if (ApproxJac == ApproxInvJacobianOptions.DirectSolver) {
                     CurrentJac = diffjac(SolutionVec, x, f0);
@@ -152,10 +145,6 @@ namespace BoSSS.Solution.Multigrid {
                 this.CurrentLin.TransformSolFrom(SolutionVec, xt);
                 EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);
                 var nft = ft.L2NormPow2().MPISum().Sqrt(); var nf0 = f0.L2NormPow2().MPISum().Sqrt(); var ff0 = nf0 * nf0; var ffc = nft * nft; var ffm = nft * nft;
-
-#if DEBUG
-                Console.WriteLine("Start residuum for nonlinear iteration:  " + nft);
-#endif
 
                 // Control of the the step size
                 while (nft >= (1 - alpha * lambda) * nf0 && iarm < maxStep) {
@@ -353,7 +342,9 @@ namespace BoSSS.Solution.Multigrid {
 
                 rho = g[k].Abs();
 
-                //Console.WriteLine("Error NewtonGMRES:   " + rho);
+                Console.WriteLine("Error NewtonGMRES:   " + rho);
+
+                //Console.WriteLine("Error NewtonGMRES:   " + rho );
 
                 k++;
 
@@ -390,7 +381,7 @@ namespace BoSSS.Solution.Multigrid {
 
             Console.WriteLine("Error Krylov:   " + errstep);
 
-            while (kinn < restart_limit && errstep > ConvCrit) {
+            while (kinn < restart_limit && errstep > GMRESConvCrit) {
                 kinn++;
 
                 step = GMRES(SolutionVec, currentX, f0, step, out errstep);
