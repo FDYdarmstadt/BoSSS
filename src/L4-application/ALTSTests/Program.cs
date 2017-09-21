@@ -66,11 +66,12 @@ namespace ALTSTests {
         ExplicitEuler timeStepper;
         SpatialOperator diffOp;
 
-        internal int ABOrder = 2;
+        internal int ABOrder = 3;
         internal int numOfSubgrids = 3;
         internal double energyNorm;
 
         double dtFixed = 1e-5;
+        double endTime = 10e-5;
 
         protected override GridCommons CreateOrLoadGrid() {
             GridCommons grd;
@@ -115,7 +116,7 @@ namespace ALTSTests {
             metricTwo[1] = 0.5;
             metricTwo[2] = 2;
 
-            CustomTimestepConstraint = new SurrogateConstraint(GridData, dtFixed, dtFixed, double.MaxValue, double.MaxValue, metricOne, metricTwo);
+            CustomTimestepConstraint = new SurrogateConstraint(GridData, dtFixed, dtFixed, double.MaxValue, endTime, metricOne, metricTwo);
 
             timeStepper = new AdamsBashforthLTS(
                 diffOp,
@@ -175,7 +176,7 @@ namespace ALTSTests {
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             using (new FuncTrace()) {
                 base.NoOfTimesteps = int.MaxValue;
-                base.EndTime = 10e-5;
+                base.EndTime = endTime;
 
                 // Set time step size
                 if (dt <= 0)

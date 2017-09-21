@@ -182,8 +182,8 @@ namespace CNS.Solution {
                             control.NumberOfSubGrids,
                             equationSystem.GetJoinedOperator().CFLConstraints,
                             reclusteringInterval: control.ReclusteringInterval,
-                            fluxCorrection: control.FluxCorrection,
-                            saveToDBCallback: program.SaveToDatabase);
+                            fluxCorrection: control.FluxCorrection);
+                        //saveToDBCallback: program.SaveToDatabase);
 
                         //timeStepperBla.OnBeforeComputeChangeRate += (t1, t2) => program.WorkingSet.UpdateDerivedVariables(program, program.SpeciesMap.SubGrid.VolumeMask);
                         //timeStepper = timeStepperBla;

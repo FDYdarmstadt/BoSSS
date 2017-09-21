@@ -177,7 +177,6 @@ namespace BoSSS.Solution.Timestepping {
                     RungeKuttaScheme.OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforComputechangeRate(t1, t2);
             }
 
-            this.timeStepConstraints = timeStepConstraints;
             this.reclusteringInterval = reclusteringInterval;
             this.numOfSubgrids = numOfSubgrids;
             this.gridData = Fieldsmap.Fields.First().GridDat;

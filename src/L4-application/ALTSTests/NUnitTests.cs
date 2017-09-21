@@ -59,7 +59,7 @@ namespace ALTSTests {
 
             double energyNorm = test.energyNorm;
 
-            Assert.IsTrue(energyNorm < maxEnergyNorm + 1e-14);
+            Assert.IsTrue(energyNorm < maxEnergyNorm + 1e-15);
         }
 
         // Call tests
