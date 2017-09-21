@@ -21,7 +21,7 @@ namespace CNS.ShockCapturing {
     public class SmoothedHeavisideArtificialViscosityLaw : IArtificialViscosityLaw {
 
         private IShockSensor sensor;
-        
+
         private double dgDegree;
 
         private double sensorLimit;
@@ -30,32 +30,41 @@ namespace CNS.ShockCapturing {
 
         private double kappa;
 
-        public SmoothedHeavisideArtificialViscosityLaw(IShockSensor sensor, int dgDegree, double sensorLimit, double epsilon0, double kappa) {
+        private double lambdaMax;
+
+        public SmoothedHeavisideArtificialViscosityLaw(IShockSensor sensor, int dgDegree, double sensorLimit, double epsilon0, double kappa, double lambdaMax = double.MaxValue) {
             this.sensor = sensor;
             this.dgDegree = dgDegree;
             this.sensorLimit = sensorLimit;
             this.epsilon0 = epsilon0;
             this.kappa = kappa;
+            this.lambdaMax = lambdaMax;
         }
-      
+
         public double GetViscosity(int jCell, double cellSize, StateVector state) {
             double s0 = Math.Log10(sensorLimit / (double)Math.Pow(dgDegree, 4));
             double se = Math.Log10(sensor.GetSensorValue(jCell) + 1e-15);
 
             double epsilonE;
-            if (se < s0 - kappa) {
+            if (se < s0 - kappa)
                 epsilonE = 0.0;
-            } else if (se > s0 + kappa) {
+            else if (se > s0 + kappa)
                 epsilonE = epsilon0;
-            } else {
+            else
                 epsilonE = 0.5 * epsilon0 * (1.0 + Math.Sin(0.5 * Math.PI * (se - s0) / kappa));
-            }
 
-            double lambdaMax = state.SpeedOfSound + state.Velocity.Abs();
-            //double lambdaMax = 20; //DMR
-            //double lambdaMax = 2; //Shock Tube
+            double lambdaMax;
+            if (this.lambdaMax == double.MaxValue)
+                lambdaMax = state.SpeedOfSound + state.Velocity.Abs();
+            else
+                lambdaMax = this.lambdaMax;
+            //lambdaMax = 20; //DMR
+            //lambdaMax = 2; //Shock Tube
+
             double fudgeFactor = 0.5;   // Kloeckner (2011)
+
             epsilonE = fudgeFactor * epsilonE * lambdaMax * cellSize / dgDegree;
+
             return epsilonE;
         }
     }

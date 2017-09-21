@@ -70,19 +70,17 @@ namespace CNS.IBM {
             this.boundaryParameterMap = parametersMap;
             agglomerationPatternHasChanged = true;
 
-
             cutCells = speciesMap.Tracker._Regions.GetCutCellMask();
-            cutAndTargetCells = cutCells.Union(speciesMap.Agglomerator.AggInfo.TargetCells);
-            
+            cutAndTargetCells = cutCells.Union(speciesMap.Agglomerator.AggInfo.TargetCells);            
 
             // Normal LTS constructor
             this.NumOfLocalTimeSteps = new List<int>(numOfSubgrids);
 
             clustering = new Clustering(this.gridData, this.timeStepConstraints, this.numOfSubgrids);
-            subGridList = clustering.SubGridList;
-            SubGridField = clustering.SubGridField;
+            UpdateLTSVariables(); 
 
-            CalculateNumberOfLocalTS();
+            CalculateNumberOfLocalTS(); // Might remove sub-grids when time step sizes are too similar
+            clustering.UpdateClusteringVariables(this.subGridList, this.SubGridField, this.numOfSubgrids);
 
             // Modify SubgridList, to account smaller time-steps because of cut-cells
             // Right now, only "hard-coded" with half time-step for all cut-cells
@@ -117,6 +115,7 @@ namespace CNS.IBM {
                 MaxLocalTS = NumOfLocalTimeSteps.Last();
                 numOfSubgrids = subGridList.Count;
             }
+            clustering.UpdateClusteringVariables(this.subGridList, this.SubGridField, this.numOfSubgrids);
 
             if (this.numOfSubgrids == 1)
                 throw new ArgumentException("Clustering yields only to one sub-grid, LTS is not possible! Element sizes of your grid are too similar");

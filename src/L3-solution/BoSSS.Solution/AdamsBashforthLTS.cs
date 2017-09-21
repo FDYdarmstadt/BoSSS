@@ -132,13 +132,12 @@ namespace BoSSS.Solution.Timestepping {
 
         Queue<double>[] historyTime_Q;
 
-        /// <summary>
-        /// Hack for testing A-LTS with the scalar transport equation
-        /// </summary>
+        //################# Hack for testing A-LTS with the scalar transport equation
         public ChangeRateCallback UpdateSensorAndAV {
             get;
             private set;
         }
+        //################# Hack for testing A-LTS with the scalar transport equation
 
         //################# Hack for time step counting
         private int timeStepCount;
@@ -151,7 +150,7 @@ namespace BoSSS.Solution.Timestepping {
         //################# Hack for saving to database in every (A)LTS sub-step
         private Action<TimestepNumber, double> saveToDBCallback;
         //################# Hack for saving to database in every (A)LTS sub-step
-        
+
         /// <summary>
         /// Standard constructor for the (adaptive) local time stepping algorithm
         /// </summary>
@@ -164,7 +163,6 @@ namespace BoSSS.Solution.Timestepping {
         /// <param name="sgrd">Sub-grids, e.g., from previous time steps</param>
         /// <param name="fluxCorrection">Bool for triggering the fluss correction</param>
         /// <param name="reclusteringInterval">Interval for potential reclustering</param>
-        /// <param name="test"></param>
         /// <remarks>Uses the k-Mean clustering, see <see cref="BoSSS.Solution.Utils.Kmeans"/>, to generate the element groups</remarks>
         public AdamsBashforthLTS(SpatialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters, int order, int numOfSubgrids, IList<TimeStepConstraint> timeStepConstraints = null, SubGrid sgrd = null, bool fluxCorrection = true, int reclusteringInterval = 0, ChangeRateCallback test = null, Action<TimestepNumber, double> saveToDBCallback = null)
             : base(spatialOp, Fieldsmap, Parameters, order, timeStepConstraints, sgrd) {
@@ -181,19 +179,19 @@ namespace BoSSS.Solution.Timestepping {
 
             this.timeStepConstraints = timeStepConstraints;
             this.reclusteringInterval = reclusteringInterval;
-            // numOfSubgrids can be changed by CreateSubGrids, if less significant different element sizes than numOfSubgrids exist
             this.numOfSubgrids = numOfSubgrids;
             this.gridData = Fieldsmap.Fields.First().GridDat;
             this.fluxCorrection = fluxCorrection;
 
             NumOfLocalTimeSteps = new List<int>(this.numOfSubgrids);
 
+            // numOfSubgrids can be changed by CreateSubGrids(), if less significant different element sizes than numOfSubgrids exist
             clustering = new Clustering(this.gridData, this.timeStepConstraints, this.numOfSubgrids);
-            subGridList = clustering.SubGridList;
-            SubGridField = clustering.SubGridField;
+            UpdateLTSVariables();
 
-            //CreateSubGrids();
-            CalculateNumberOfLocalTS();
+            CalculateNumberOfLocalTS(); // Might remove sub-grids when time step sizes are too similar
+            clustering.UpdateClusteringVariables(this.subGridList, this.SubGridField, this.numOfSubgrids);
+
             localABevolve = new ABevolve[this.numOfSubgrids];
 
             // i == "Grid Id"
@@ -250,8 +248,12 @@ namespace BoSSS.Solution.Timestepping {
                             numOfSubgrids = numOfSubgridsInit;
 
                             this.subGridList = clustering.CreateSubGrids(numOfSubgrids);
+                            UpdateLTSVariables();
+                            //this.numOfSubgrids = clustering.NumOfClusters;
+
                             CalculateNumberOfLocalTS(); // Might remove sub-grids when time step sizes are too similar
-                            clustering.SubGridList = this.subGridList;
+                            clustering.UpdateClusteringVariables(this.subGridList, this.SubGridField, this.numOfSubgrids);
+                            //clustering.SubGridList = this.subGridList;
 
                             // Store oldClustering in a List of SubGrids
                             List<SubGrid> oldClustering = new List<SubGrid>(localABevolve.Count());
@@ -300,7 +302,7 @@ namespace BoSSS.Solution.Timestepping {
                     if (timeStepConstraints != null) {
                         dt = CalculateTimeStep();
                     }
-
+                    
                     for (int i = 0; i < this.numOfSubgrids; i++) {
                         Console.WriteLine("LTS: id=" + i + " -> sub-steps=" + NumOfLocalTimeSteps[i] + " and elements=" + subGridList[i].GlobalNoOfCells);
                     }
@@ -537,7 +539,7 @@ namespace BoSSS.Solution.Timestepping {
         /// It is needed after a restart, such that all time stepper restart from the 
         /// same common simulation time. 
         /// </summary>
-        /// <param name="NewTime"></param>
+        /// <param name="NewTime">Time to be set</param>
         public override void ResetTime(double NewTime) {
             base.ResetTime(NewTime);
             RungeKuttaScheme.ResetTime(NewTime);
@@ -629,11 +631,10 @@ namespace BoSSS.Solution.Timestepping {
         /// <summary>
         /// Calculates to which sub-grid the cell belongs. Each cell belongs only to one sub-grid!
         /// </summary>
-        /// <param name="cell">
-        /// Cell-ID</param>
-        /// <param name="LocalCells2SubgridIndex">
-        /// storage of all <see cref="SubGrid.LocalCellIndex2SubgridIndex"/> arrays for each LTS sub-grid</param>
-        /// <returns>LTS sub-grid ID to which the cell belong</returns>
+        /// <param name="cell">Cell-ID</param>
+        /// <param name="LocalCells2SubgridIndex">Storage of all <see cref="SubGrid.LocalCellIndex2SubgridIndex"/>
+        /// arrays for each LTS sub-grid</param>
+        /// <returns>LTS sub-grid ID which the cell belong to</returns>
         protected int GetSubgridIdOf(int cell, int[][] LocalCells2SubgridIndex) {
             int id = -1;
             for (int i = 0; i < numOfSubgrids; i++) {
@@ -1003,6 +1004,16 @@ namespace BoSSS.Solution.Timestepping {
                     id = i;
             }
             return id;
+        }
+
+        /// <summary>
+        /// Updates the LTS variables when they have been changed by methods
+        /// from <see cref="Clustering"/>
+        /// </summary>
+        protected void UpdateLTSVariables() {
+            this.subGridList = clustering.SubGridList;
+            this.SubGridField = clustering.SubGridField;
+            this.numOfSubgrids = clustering.NumOfClusters;
         }
     }
 }
