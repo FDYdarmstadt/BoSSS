@@ -1,7 +1,0 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Job Version="3.000" Id="215" State="Configuring" CreateTime="15.02.2011 10:52:59" Name="Dummy" UnitType="Core" Owner="FDY\mueller" UserName="" Project="" JobType="Batch" JobTemplate="Default" Priority="Normal" OrderBy="" RequeueCount="0" AutoRequeueCount="0" PendingReason="None" AutoCalculateMax="true" AutoCalculateMin="true" Progress="0" ProgressMessage="" NotifyOnStart="false" NotifyOnCompletion="false" xmlns="http://schemas.microsoft.com/HPCS2008R2/scheduler/">
-    <Dependencies />
-    <Tasks>
-        <Task Version="3.000" Id="210" ParentJobId="215" State="Configuring" UnitType="Core" WorkDirectory="\\fdyprime\userspace\mueller\cluster\" NiceId="1" CommandLine="mpiexec NSE2.exe -c control.xml" StdOutFilePath="\\fdyprime\userspace\mueller\cluster\stdout.txt" StdErrFilePath="\\fdyprime\userspace\mueller\cluster\stderr.txt" RequeueCount="0" PendingReason="None" StartValue="0" EndValue="0" IncrementValue="1" GroupId="218" CreateTime="15.02.2011 10:52:59" Name="My Task" MinCores="8" MaxCores="8" AutoRequeueCount="0" Type="Basic" FailJobOnFailure="false" />
-    </Tasks>
-</Job>

@@ -981,8 +981,8 @@ namespace CNS {
             //dbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db";
             c.DbPath = dbPath;
             c.savetodb = dbPath != null && saveToDb;
-            c.saveperiod = 10;
-            c.PrintInterval = 100;
+            c.saveperiod = 1;
+            c.PrintInterval = 1;
 
             double xMin = 0;
             double xMax = 1;
@@ -1025,9 +1025,9 @@ namespace CNS {
 
             // (A)LTS
             c.ExplicitScheme = ExplicitSchemes.LTS;
-            c.ExplicitOrder = 2;
+            c.ExplicitOrder = 3;
             c.NumberOfSubGrids = 3;
-            c.ReclusteringInterval = 100;
+            c.ReclusteringInterval = 1;
             c.FluxCorrection = false;
 
             c.EquationOfState = IdealGas.Air;
@@ -1126,12 +1126,12 @@ namespace CNS {
             c.CFLFraction = 0.3;
             c.Endtime = 0.25;
             c.NoOfTimesteps = int.MaxValue;
-            //c.NoOfTimesteps = 10;
+            //c.NoOfTimesteps = 2;
 
             return c;
         }
 
-        public static CNSControl DoubleMachReflection(string dbPath = null, int dgDegree = 2, int numOfCellsX = 100, int numOfCellsY = 100, double xMax = 1, double sensorLimit = 1e-3) {
+        public static CNSControl DoubleMachReflection(string dbPath = null, int dgDegree = 2, int numOfCellsX = 400, int numOfCellsY = 100, double xMax = 4, double sensorLimit = 1e-3) {
             CNSControl c = new CNSControl();
 
             //dbPath = @"e:\bosss_db";
@@ -1139,7 +1139,7 @@ namespace CNS {
             //dbPath = @"/work/scratch/yp19ysog/bosss_db_lb_scratch";
             c.DbPath = dbPath;
             c.savetodb = dbPath != null;
-            c.saveperiod = 1;
+            c.saveperiod = 10;
             c.PrintInterval = 1;
 
             bool AV = true;
@@ -1160,27 +1160,29 @@ namespace CNS {
 
             double cellSize = Math.Min((xMax - xMin) / numOfCellsX, (yMax - yMin) / numOfCellsY);
 
-            if (AV)
+            if (AV) {
                 c.ActiveOperators = Operators.Convection | Operators.ArtificialViscosity;
-            else
+            } else {
                 c.ActiveOperators = Operators.Convection;
+            }
             c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
 
             // Shock-capturing
             //double sensorLimit = 1e-2;
             double epsilon0 = 1.0;
             double kappa = 1.0;
+            double lambdaMax = 20;
 
             if (AV) {
                 Variable sensorVariable = Variables.Density;
                 c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
-                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
+                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax);
             }
 
             c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             //c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitScheme = ExplicitSchemes.LTS;
-            c.ExplicitOrder = 3;
+            c.ExplicitOrder = 2;
             c.NumberOfSubGrids = 3;
             c.ReclusteringInterval = 1;
             c.FluxCorrection = false;
