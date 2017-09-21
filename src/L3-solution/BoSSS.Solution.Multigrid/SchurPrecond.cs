@@ -63,6 +63,10 @@ namespace BoSSS.Solution.Multigrid {
         MsrMatrix ConvDiff, pGrad, divVel, ConvDiffpGrad, SchurMtx, PoissonMtx, SchurConvMtx, invVelMassMatrix;
         int[] Uidx, Pidx;
 
+        public enum SchurOptions { exact = 1, decoupledApprox = 2 }
+
+        public SchurOptions SchurOpt = SchurOptions.exact;
+
         public void Init(MultigridOperator op) {
             int D = op.Mapping.GridData.SpatialDimension;
             var M = op.OperatorMatrix;
@@ -110,51 +114,55 @@ namespace BoSSS.Solution.Multigrid {
             var velMassMatrix = new MsrMatrix(Upart, Upart, 1, 1);
             op.MassMatrix.AccSubMatrixTo(1.0, velMassMatrix, Uidx, default(int[]), Uidx, default(int[]));
 
-            // Building complete Schur and Approximate Schur
-            MultidimensionalArray Poisson = MultidimensionalArray.Create(Pidx.Length, Pidx.Length);
-            MultidimensionalArray SchurConvPart = MultidimensionalArray.Create(Pidx.Length, Pidx.Length);
-            MultidimensionalArray Schur = MultidimensionalArray.Create(Pidx.Length, Pidx.Length);
-            using (BatchmodeConnector bmc = new BatchmodeConnector()) {
-                bmc.PutSparseMatrix(ConvDiff, "ConvDiff");
-                bmc.PutSparseMatrix(velMassMatrix, "MassMatrix");
-                bmc.PutSparseMatrix(divVel, "divVel");
-                bmc.PutSparseMatrix(pGrad, "pGrad");
-                bmc.Cmd("Qdiag = diag(diag(MassMatrix))");
-                bmc.Cmd("invT=inv(Qdiag)");
-                bmc.Cmd("Poisson = full(invT)*pGrad");
-                bmc.Cmd("ConvPart = ConvDiff*Poisson");
-                bmc.Cmd("ConvPart= full(invT)*ConvPart");
-                bmc.Cmd("ConvPart= divVel*ConvPart");
-                bmc.Cmd("Poisson = divVel*Poisson");
-                bmc.Cmd("ConvDiffInv = inv(full(ConvDiff))");
-                bmc.Cmd("Schur = divVel*ConvDiffInv");
-                bmc.Cmd("Schur = Schur*pGrad");
-                bmc.GetMatrix(Poisson, "Poisson");
-                bmc.GetMatrix(SchurConvPart, "ConvPart");
-                bmc.GetMatrix(Schur, "-Schur");
-                bmc.Execute(false);
+            if (SchurOpt == SchurOptions.exact) {
+                // Building complete Schur and Approximate Schur
+                MultidimensionalArray Poisson = MultidimensionalArray.Create(Pidx.Length, Pidx.Length);
+                MultidimensionalArray SchurConvPart = MultidimensionalArray.Create(Pidx.Length, Pidx.Length);
+                MultidimensionalArray Schur = MultidimensionalArray.Create(Pidx.Length, Pidx.Length);
+                using (BatchmodeConnector bmc = new BatchmodeConnector()) {
+                    bmc.PutSparseMatrix(ConvDiff, "ConvDiff");
+                    bmc.PutSparseMatrix(velMassMatrix, "MassMatrix");
+                    bmc.PutSparseMatrix(divVel, "divVel");
+                    bmc.PutSparseMatrix(pGrad, "pGrad");
+                    bmc.Cmd("Qdiag = diag(diag(MassMatrix))");
+                    bmc.Cmd("invT=inv(Qdiag)");
+                    bmc.Cmd("Poisson = full(invT)*pGrad");
+                    bmc.Cmd("ConvPart = ConvDiff*Poisson");
+                    bmc.Cmd("ConvPart= full(invT)*ConvPart");
+                    bmc.Cmd("ConvPart= divVel*ConvPart");
+                    bmc.Cmd("Poisson = divVel*Poisson");
+                    bmc.Cmd("ConvDiffInv = inv(full(ConvDiff))");
+                    bmc.Cmd("Schur = divVel*ConvDiffInv");
+                    bmc.Cmd("Schur = Schur*pGrad");
+                    bmc.GetMatrix(Poisson, "Poisson");
+                    bmc.GetMatrix(SchurConvPart, "ConvPart");
+                    bmc.GetMatrix(Schur, "-Schur");
+                    bmc.Execute(false);
+                }
+                PoissonMtx = Poisson.ToMsrMatrix();
+                SchurConvMtx = SchurConvPart.ToMsrMatrix();
+                SchurMtx = Schur.ToMsrMatrix();
+                SchurMtx.Acc(PxP, 1);
+
+                ConvDiff.AccSubMatrixTo(1.0, P, default(int[]), Uidx, default(int[]), Uidx);
+                pGrad.AccSubMatrixTo(1.0, P, default(int[]), Uidx, default(int[]), Pidx);
+                SchurMtx.AccSubMatrixTo(1.0, P, default(int[]), Pidx, default(int[]), Pidx);
+            } else if (SchurOpt == SchurOptions.decoupledApprox) {
+
+                // Do assembly for approximate Schur inverse
+                invVelMassMatrix = velMassMatrix.CloneAs();
+                invVelMassMatrix.Clear();
+                for (int i = 0; i < velMassMatrix.NoOfCols; i++) {
+                    invVelMassMatrix.SetDiagonalElement(i, 1 / velMassMatrix[i, i]);
+                }
+                PoissonMtx = MsrMatrix.Multiply(invVelMassMatrix, pGrad);
+                PoissonMtx = MsrMatrix.Multiply(divVel, PoissonMtx);
+                PoissonMtx.Acc(PxP, 1);
             }
-            PoissonMtx = Poisson.ToMsrMatrix();
-            SchurConvMtx = SchurConvPart.ToMsrMatrix();
-            SchurMtx = Schur.ToMsrMatrix();
-            SchurMtx.Acc(PxP, 1);
-
-            // Do assembly for approximate Schur inverse
-            //invVelMassMatrix = velMassMatrix.CloneAs();
-            //invVelMassMatrix.Clear();
-            //for (int i = 0; i < velMassMatrix.NoOfCols; i++) {
-            //    invVelMassMatrix.SetDiagonalElement(i, 1 / velMassMatrix[i, i]);
-            //}
-            //PoissonMtx = MsrMatrix.Multiply(invVelMassMatrix, pGrad);
-            //PoissonMtx = MsrMatrix.Multiply(divVel, PoissonMtx);
-            //PoissonMtx.Acc(PxP, 1);
-
 
             //var ConvDiffInvMtx = ConvDiffInv.ToMsrMatrix();
 
-            ConvDiff.AccSubMatrixTo(1.0, P, default(int[]), Uidx, default(int[]), Uidx);
-            pGrad.AccSubMatrixTo(1.0, P, default(int[]), Uidx, default(int[]), Pidx);
-            SchurMtx.AccSubMatrixTo(1.0, P, default(int[]), Pidx, default(int[]), Pidx);
+
             //// x= inv(P)*b !!!!! To be done with approximate Inverse
             // P.SpMV(1, B, 0, X);
         }
@@ -171,14 +179,16 @@ namespace BoSSS.Solution.Multigrid {
             where U : IList<double>
             where V : IList<double> {
 
-            //SolveSubproblems(X, B);
+            if (SchurOpt == SchurOptions.exact) {
+                //Directly invert Preconditioning Matrix
+                using (var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver()) {
+                    solver.DefineMatrix(P);
+                    solver.Solve(X, B);
+                }
+            } else if (SchurOpt == SchurOptions.decoupledApprox) {
 
-            //Directly invert Preconditioning Matrix
-            using (var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver()) {
-                solver.DefineMatrix(P);
-                solver.Solve(X, B);
+                SolveSubproblems(X, B);
             }
-
         }
 
 
@@ -246,9 +256,6 @@ namespace BoSSS.Solution.Multigrid {
                 solver.DefineMatrix(PoissonMtx);
                 solver.Solve(temp, Bp);
             }
-
-
-            //SchurConvMtx.SpMVpara(1, temp, 0, Xp);
 
             // Schur Convective part
             var sol = new double[pGrad.NoOfRows];
