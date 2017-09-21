@@ -144,12 +144,13 @@ namespace BoSSS.Solution.Timestepping {
         //################# Hack for time step counting
 
         //################# Hack for update derived variables in every (A)LTS sub-step
-        private bool hackOn;
+        private bool AVHackOn;
         //################# Hack for update derived variables in every (A)LTS sub-step
 
         //################# Hack for saving to database in every (A)LTS sub-step
         private Action<TimestepNumber, double> saveToDBCallback;
         //################# Hack for saving to database in every (A)LTS sub-step
+
 
         /// <summary>
         /// Standard constructor for the (adaptive) local time stepping algorithm
@@ -164,16 +165,16 @@ namespace BoSSS.Solution.Timestepping {
         /// <param name="fluxCorrection">Bool for triggering the fluss correction</param>
         /// <param name="reclusteringInterval">Interval for potential reclustering</param>
         /// <remarks>Uses the k-Mean clustering, see <see cref="BoSSS.Solution.Utils.Kmeans"/>, to generate the element groups</remarks>
-        public AdamsBashforthLTS(SpatialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters, int order, int numOfSubgrids, IList<TimeStepConstraint> timeStepConstraints = null, SubGrid sgrd = null, bool fluxCorrection = true, int reclusteringInterval = 0, ChangeRateCallback test = null, Action<TimestepNumber, double> saveToDBCallback = null)
+        public AdamsBashforthLTS(SpatialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters, int order, int numOfSubgrids, IList<TimeStepConstraint> timeStepConstraints = null, SubGrid sgrd = null, bool fluxCorrection = true, int reclusteringInterval = 0, ChangeRateCallback test = null, Action<TimestepNumber, double> saveToDBCallback = null, bool AVHackOn = false)
             : base(spatialOp, Fieldsmap, Parameters, order, timeStepConstraints, sgrd) {
 
-            hackOn = false;
+            this.AVHackOn = AVHackOn;
 
             if (reclusteringInterval != 0) {
                 numOfSubgridsInit = numOfSubgrids;
                 this.timeStepCount = 1;
                 this.adaptive = true;
-                if (hackOn)
+                if (this.AVHackOn)
                     RungeKuttaScheme.OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforComputechangeRate(t1, t2);
             }
 
@@ -196,7 +197,7 @@ namespace BoSSS.Solution.Timestepping {
             // i == "Grid Id"
             for (int i = 0; i < subGridList.Count; i++) {
                 localABevolve[i] = new ABevolve(spatialOp, Fieldsmap, Parameters, order, adaptive: this.adaptive, sgrd: subGridList[i]);
-                if (hackOn)
+                if (this.AVHackOn)
                     localABevolve[i].OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforComputechangeRate(t1, t2);
             }
 
@@ -280,7 +281,7 @@ namespace BoSSS.Solution.Timestepping {
                                 for (int i = 0; i < subGridList.Count; i++) {
                                     localABevolve[i] = new ABevolve(Operator, Mapping, ParameterMapping, order, adaptive: true, sgrd: subGridList[i]);
                                     localABevolve[i].ResetTime(m_Time);
-                                    if (hackOn)
+                                    if (AVHackOn)
                                         localABevolve[i].OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforComputechangeRate(t1, t2);
                                     if (UpdateSensorAndAV != null)
                                         localABevolve[i].OnBeforeComputeChangeRate += UpdateSensorAndAV;     // Scalar transport
