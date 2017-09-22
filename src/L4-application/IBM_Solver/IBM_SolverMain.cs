@@ -1022,6 +1022,7 @@ namespace BoSSS.Application.IBM_Solver {
             string restartLine = File.ReadLines(pathToPhysicalData).Skip(idx_restartLine - 1).Take(1).First();
             double[] values = Array.ConvertAll<string, double>(restartLine.Split('\t'), double.Parse);
 
+            // First try of making it independent of timestep number and size
            /* string restartLine = "";
             // Calculcation of dt 
             var physicalData = File.ReadLines(pathToPhysicalData);
