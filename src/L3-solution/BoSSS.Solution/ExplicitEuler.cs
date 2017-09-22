@@ -76,7 +76,7 @@ namespace BoSSS.Solution.Timestepping {
         /// </summary>
         public IList<TimeStepConstraint> timeStepConstraints {
             get;
-            private set;
+            protected set;
         }
 
         protected SubGrid Subgrid;

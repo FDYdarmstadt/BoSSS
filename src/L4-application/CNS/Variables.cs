@@ -468,7 +468,7 @@ namespace CNS {
                 Program<CNSControl> p = (Program<CNSControl>)program;
                 AdamsBashforthLTS lts = (AdamsBashforthLTS)p.TimeStepper;
                 if (lts != null)
-                    subGridField.CopyFrom(lts.SgrdField);
+                    subGridField.CopyFrom(lts.SubGridField);
             });
     }
 }

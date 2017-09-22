@@ -73,7 +73,7 @@ namespace BoSSS.Solution {
         /// See <see cref="Control.AppControl.DynamicLoadBalancing_Period"/>.
         /// </param>
         /// <returns></returns>
-        public int[] GetNewPartitioning(int performanceClassCount, int[] cellToPerformanceClassMap, GridCommons Grid, int TimestepNo, GridPartType gridPartType, double imbalanceThreshold, int Period) {
+        public int[] GetNewPartitioning(int performanceClassCount, int[] cellToPerformanceClassMap, GridCommons Grid, int TimestepNo, GridPartType gridPartType, string PartOptions, double imbalanceThreshold, int Period) {
             // Create new model if number of cell classes has changed
             if (CurrentCellCostEstimator == null
                 || CurrentCellCostEstimator.PerformanceClassCount != performanceClassCount) {
@@ -98,6 +98,8 @@ namespace BoSSS.Solution {
             int[] result;
             switch (gridPartType) {
                 case GridPartType.METIS:
+                    int.TryParse(PartOptions, out int noOfPartitioningsToChooseFrom);
+                    noOfPartitioningsToChooseFrom = Math.Max(1, noOfPartitioningsToChooseFrom);
                     result = Grid.ComputePartitionMETIS(cellCosts);
                     isFirstRepartitioning = false;
                     break;
