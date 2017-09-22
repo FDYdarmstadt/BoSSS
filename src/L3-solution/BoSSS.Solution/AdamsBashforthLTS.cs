@@ -217,7 +217,7 @@ namespace BoSSS.Solution.Timestepping {
             }
 
             // Saving time steps in subgrids
-            this.saveToDBCallback = saveToDBCallback;
+            //this.saveToDBCallback = saveToDBCallback;
         }
 
         /// <summary>
@@ -351,6 +351,10 @@ namespace BoSSS.Solution.Timestepping {
                         }
                     }
 
+                    // ############################### Hack
+                    double[] BackupDGCoordinates = new double[Mapping.LocalLength];
+                    // ############################### Hack
+
                     // Perform the local time steps
                     for (int localTS = 1; localTS < MaxLocalTS; localTS++) {
                         for (int id = 1; id < numOfSubgrids; id++) {
@@ -358,11 +362,24 @@ namespace BoSSS.Solution.Timestepping {
                             if ((localABevolve[id].Time - m_Time) < 1e-10) {
                                 double localDt = dt / NumOfLocalTimeSteps[id];
 
+                                // ############################### Hack
+                                BackupDGCoordinates.Clear();
+                                DGCoordinates.CopyTo(BackupDGCoordinates, 0);
+                                //// ############################### Hack
+
                                 DGCoordinates.Clear();
                                 DGCoordinates.CopyFrom(historyDGC_Q[id].Last(), 0);
 
                                 double[] interpolatedCells = InterpolateBoundaryValues(historyDGC_Q, id, localABevolve[id].Time);
                                 DGCoordinates.axpy<double[]>(interpolatedCells, 1);
+
+                                // ############################### Hack
+                                for (int i = 0; i < BackupDGCoordinates.Length; i++) {
+                                    if (DGCoordinates[i] != 0)
+                                        BackupDGCoordinates[i] = 0;
+                                }
+                                DGCoordinates.axpy<double[]>(BackupDGCoordinates, 1);
+                                // ############################### Hack
 
                                 localABevolve[id].Perform(localDt);
 

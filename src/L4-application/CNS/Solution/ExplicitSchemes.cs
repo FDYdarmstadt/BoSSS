@@ -183,8 +183,8 @@ namespace CNS.Solution {
                             equationSystem.GetJoinedOperator().CFLConstraints,
                             reclusteringInterval: control.ReclusteringInterval,
                             fluxCorrection: control.FluxCorrection,
-                            AVHackOn: control.AVHackOn);
-                        //saveToDBCallback: program.SaveToDatabase);
+                            AVHackOn: control.AVHackOn,
+                            saveToDBCallback: program.SaveToDatabase);
 
                         //timeStepperBla.OnBeforeComputeChangeRate += (t1, t2) => program.WorkingSet.UpdateDerivedVariables(program, program.SpeciesMap.SubGrid.VolumeMask);
                         //timeStepper = timeStepperBla;
