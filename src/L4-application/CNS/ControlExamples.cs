@@ -989,9 +989,9 @@ namespace CNS {
             double yMin = 0;
             double yMax = 1;
 
-            bool useArtificialViscosity = true;
+            bool AV = true;
 
-            if (useArtificialViscosity)
+            if (AV)
                 c.ActiveOperators = Operators.Convection | Operators.ArtificialViscosity;
             else
                 c.ActiveOperators = Operators.Convection;
@@ -1003,7 +1003,7 @@ namespace CNS {
             double epsilon0 = 1.0;
             double kappa = 0.5;
 
-            if (useArtificialViscosity) {
+            if (AV) {
                 Variable sensorVariable = Variables.Density;
                 c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
                 c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
@@ -1017,11 +1017,11 @@ namespace CNS {
 
             // (A)LTS
             c.ExplicitScheme = ExplicitSchemes.LTS;
-            c.ExplicitOrder = 3;
+            c.ExplicitOrder = 2;
             c.NumberOfSubGrids = 3;
             c.ReclusteringInterval = 1;
             c.FluxCorrection = false;
-            if (useArtificialViscosity) {
+            if (AV) {
                 c.AVHackOn = true;
             }
 
@@ -1039,20 +1039,20 @@ namespace CNS {
             c.AddVariable(Variables.Entropy, dgDegree);
             c.AddVariable(Variables.LocalMachNumber, dgDegree);
             c.AddVariable(Variables.Rank, 0);
-            if (useArtificialViscosity)
+            if (AV)
                 c.AddVariable(Variables.Sensor, dgDegree);
             if (true1D == false) {
                 c.AddVariable(Variables.Momentum.yComponent, dgDegree);
                 c.AddVariable(Variables.Velocity.yComponent, dgDegree);
-                if (useArtificialViscosity)
+                if (AV)
                     c.AddVariable(Variables.ArtificialViscosity, 2);
             } else {
-                if (useArtificialViscosity)
+                if (AV)
                     c.AddVariable(Variables.ArtificialViscosity, 1);
             }
             c.AddVariable(Variables.CFL, 0);
             c.AddVariable(Variables.CFLConvective, 0);
-            if (useArtificialViscosity)
+            if (AV)
                 c.AddVariable(Variables.CFLArtificialViscosity, 0);
             if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS))
                 c.AddVariable(Variables.LTSSubGrids, 0);
