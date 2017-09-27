@@ -210,7 +210,7 @@ namespace BoSSS.Application.IBM_Solver {
 
         protected bool U0MeanRequired = false;
 
-        protected XQuadFactoryHelper.MomentFittingVariants momentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+        protected XQuadFactoryHelper.MomentFittingVariants momentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Classic;
 
         protected XSpatialOperator IBM_Op;
 
@@ -1011,7 +1011,18 @@ namespace BoSSS.Application.IBM_Solver {
             string pathToPhysicalData = System.IO.Path.Combine(pathToOldSessionDir, "PhysicalData.txt");
             string[] records = File.ReadAllLines(pathToPhysicalData);
 
-            string restartLine = "";
+            string line1 = File.ReadLines(pathToPhysicalData).Skip(1).Take(1).First();
+            string line2 = File.ReadLines(pathToPhysicalData).Skip(2).Take(1).First();
+            string[] fields_line1 = line1.Split('\t');
+            string[] fields_line2 = line2.Split('\t');
+
+            double dt = Convert.ToDouble(fields_line2[1]) - Convert.ToDouble(fields_line1[1]);
+
+            int idx_restartLine = Convert.ToInt32(time / dt + 1.0);
+            string restartLine = File.ReadLines(pathToPhysicalData).Skip(idx_restartLine - 1).Take(1).First();
+            double[] values = Array.ConvertAll<string, double>(restartLine.Split('\t'), double.Parse);
+
+           /* string restartLine = "";
             // Calculcation of dt 
             var physicalData = File.ReadLines(pathToPhysicalData);
             int count = 0;
@@ -1034,7 +1045,7 @@ namespace BoSSS.Application.IBM_Solver {
             // Using dt to find line of restart time
            // int idx_restartLine = Convert.ToInt32(time / dt + 1.0);
             //string restartLine = File.ReadLines(pathToPhysicalData).Skip(idx_restartLine - 1).Take(1).First();
-            double[] values = Array.ConvertAll<string, double>(restartLine.Split('\t'), double.Parse);
+            double[] values = Array.ConvertAll<string, double>(restartLine.Split('\t'), double.Parse);*/
 
             // Adding PhysicalData.txt
             if ((base.MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty))

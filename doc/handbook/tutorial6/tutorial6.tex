@@ -46,6 +46,7 @@
 ///\section{Solution within the BoSSS Framework}
 ///\label{sec:scalarConvection_tutorial}
  }
+\BoSSSexeSilent
 \BoSSScmd{
 restart;
  }
@@ -686,21 +687,15 @@ Func<double[], double[], double> slope = delegate(double[] xValues,       \newli
  }
 \BoSSSexe
 \BoSSScmd{
- % 
- }
-\BoSSSexe
-\BoSSScmdSilent{
-/// BoSSScmdSilent BoSSSexeSilent
 using NUnit.Framework;
  }
-\BoSSSexeSilent
+\BoSSSexe
 \BoSSScmd{
 var stepSize = criticalValues.ExtractSubArrayShallow(0, -1).To1DArray();       \newline 
 slope(oneOverMeshSize, stepSize);
  }
 \BoSSSexe
-\BoSSScmdSilent{
-/// BoSSScmdSilent
+\BoSSScmd{
 Assert.LessOrEqual(Math.Abs(slope(oneOverMeshSize, stepSize)-1),1E-01);
  }
 \BoSSSexe
@@ -709,8 +704,7 @@ var stepSize = criticalValues.ExtractSubArrayShallow(-1, 0).To1DArray();       \
 slope(numberOfBasisPolynomials, stepSize);
  }
 \BoSSSexe
-\BoSSScmdSilent{
-/// BoSSScmdSilent
+\BoSSScmd{
 Assert.LessOrEqual(Math.Abs(slope(numberOfBasisPolynomials, stepSize)-1.6),1E-01);
  }
 \BoSSSexe

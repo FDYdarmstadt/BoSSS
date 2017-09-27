@@ -423,10 +423,14 @@ namespace BoSSS.Application.IBM_Solver {
             // basic database options
             // ======================
 
-            C.DbPath = _DbPath;
+            //C.DbPath = _DbPath;
+
+            C.DbPath = @"\\dc1\userspace\stange\HiWi_database\PerformanceTests";
             C.savetodb = true;
 
-          
+            bool restart = false;
+            string restartSession = "67a29dcc-ade9-4704-b198-b3380e774f5a";
+            string restartGrid = "42e1ede0-40fc-4267-9d48-94c0397ac9a5";
 
             switch (i)
             {
@@ -435,7 +439,7 @@ namespace BoSSS.Application.IBM_Solver {
                     break;
 
                 case 2:
-                    C.MeshFactor = 1.77; //0.92;
+                    C.MeshFactor = 3.0; //1.77; //0.92;
                     break;
 
                 case 3:
@@ -516,60 +520,92 @@ namespace BoSSS.Application.IBM_Solver {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
 
+            // restart options
+            // ===============
+            if (restart)
+            {
+                C.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid(restartSession), -1);
+                C.GridGuid = new Guid(restartGrid);
+            }
             //grid and boundary conditions
             // ============================
 
-            C.GridFunc = delegate {
+            // Initial Values
+            // ==============
 
-                var _xNodes1 = Grid1D.TanhSpacing(-2.0, -1.0, Convert.ToInt32(10.0 * C.MeshFactor), 0.5, false); //10
-                _xNodes1 = _xNodes1.GetSubVector(0, (_xNodes1.Length - 1));
-                var _xNodes2 = GenericBlas.Linspace(-1.0, 2.0, Convert.ToInt32(35.0 * C.MeshFactor)); //35
-                _xNodes2 = _xNodes2.GetSubVector(0, (_xNodes2.Length - 1));
-                var _xNodes3 = Grid1D.TanhSpacing(2.0, 20.0, Convert.ToInt32(60.0 * C.MeshFactor), 1.5, true); //60
+            double radius = 0.5;
+            C.PhysicalParameters.rho_A = 1.0;
+            C.PhysicalParameters.mu_A = 1.0 / 100.0;
 
-                var xNodes = ArrayTools.Cat(_xNodes1, _xNodes2, _xNodes3);
-
-
-                var _yNodes1 = Grid1D.TanhSpacing(-2.0, -1.0, Convert.ToInt32(7.0 * C.MeshFactor), 0.9, false); //7
-                _yNodes1 = _yNodes1.GetSubVector(0, (_yNodes1.Length - 1));
-                var _yNodes2 = GenericBlas.Linspace(-1.0, 1.0, Convert.ToInt32(25.0 * C.MeshFactor)); //25
-                _yNodes2 = _yNodes2.GetSubVector(0, (_yNodes2.Length - 1));
-                var _yNodes3 = Grid1D.TanhSpacing(1.0, 2.1, Convert.ToInt32(7.0 * C.MeshFactor), 1.1, true); //7
-                var yNodes = ArrayTools.Cat(_yNodes1, _yNodes2, _yNodes3);
-
-
-
-                //double[] xNodes = GenericBlas.Linspace(0 * BaseSize, 22 * BaseSize, 25);
-                //double[] yNodes = GenericBlas.Linspace(0 * BaseSize, 4.1 * BaseSize, 25);
-                var grd = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: xPeriodic);
-                grd.EdgeTagNames.Add(1, "Velocity_Inlet_upper");
-                grd.EdgeTagNames.Add(2, "Velocity_Inlet_lower");
-                if (!xPeriodic)
+            if (!restart)
+            {
+                C.GridFunc = delegate
                 {
-                    grd.EdgeTagNames.Add(3, "Velocity_Inlet_left");
-                    grd.EdgeTagNames.Add(4, "Pressure_Outlet_right");
+
+                    var _xNodes1 = Grid1D.TanhSpacing(-2.0, -1.0, Convert.ToInt32(10.0 * C.MeshFactor), 0.5, false); //10
+                    _xNodes1 = _xNodes1.GetSubVector(0, (_xNodes1.Length - 1));
+                    var _xNodes2 = GenericBlas.Linspace(-1.0, 2.0, Convert.ToInt32(35.0 * C.MeshFactor)); //35
+                    _xNodes2 = _xNodes2.GetSubVector(0, (_xNodes2.Length - 1));
+                    var _xNodes3 = Grid1D.TanhSpacing(2.0, 20.0, Convert.ToInt32(60.0 * C.MeshFactor), 1.5, true); //60
+
+                    var xNodes = ArrayTools.Cat(_xNodes1, _xNodes2, _xNodes3);
+
+
+                    var _yNodes1 = Grid1D.TanhSpacing(-2.0, -1.0, Convert.ToInt32(7.0 * C.MeshFactor), 0.9, false); //7
+                    _yNodes1 = _yNodes1.GetSubVector(0, (_yNodes1.Length - 1));
+                    var _yNodes2 = GenericBlas.Linspace(-1.0, 1.0, Convert.ToInt32(25.0 * C.MeshFactor)); //25
+                    _yNodes2 = _yNodes2.GetSubVector(0, (_yNodes2.Length - 1));
+                    var _yNodes3 = Grid1D.TanhSpacing(1.0, 2.1, Convert.ToInt32(7.0 * C.MeshFactor), 1.1, true); //7
+                    var yNodes = ArrayTools.Cat(_yNodes1, _yNodes2, _yNodes3);
+
+
+
+                    //double[] xNodes = GenericBlas.Linspace(0 * BaseSize, 22 * BaseSize, 25);
+                    //double[] yNodes = GenericBlas.Linspace(0 * BaseSize, 4.1 * BaseSize, 25);
+                    var grd = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: xPeriodic);
+                    grd.EdgeTagNames.Add(1, "Velocity_Inlet_upper");
+                    grd.EdgeTagNames.Add(2, "Velocity_Inlet_lower");
+                    if (!xPeriodic)
+                    {
+                        grd.EdgeTagNames.Add(3, "Velocity_Inlet_left");
+                        grd.EdgeTagNames.Add(4, "Pressure_Outlet_right");
+                    }
+
+                    grd.DefineEdgeTags(delegate (double[] X)
+                    {
+                        byte et = 0;
+                        if (Math.Abs(X[1] - (-2.0 * BaseSize)) <= 1.0e-8)
+                            et = 1;
+                        if (Math.Abs(X[1] - (+2.1 * BaseSize)) <= 1.0e-8)
+                            et = 2;
+                        if (!xPeriodic && Math.Abs(X[0] - (-2.0 * BaseSize)) <= 1.0e-8)
+                            et = 3;
+                        if (!xPeriodic && Math.Abs(X[0] - (+20.0 * BaseSize)) <= 1.0e-8)
+                            et = 4;
+
+
+                        Debug.Assert(et != 0);
+                        return et;
+                    });
+
+                    Console.WriteLine("Cells:    {0}", grd.NumberOfCells);
+
+                    return grd;
+                };
+                if (only_channel)
+                {
+                    C.InitialValues_Evaluators.Add("Phi", X => -1);
+                }
+                else
+                {
+                    C.InitialValues_Evaluators.Add("Phi", X => -(X[0]).Pow2() + -(X[1]).Pow2() + radius.Pow2());
                 }
 
-                grd.DefineEdgeTags(delegate (double[] X) {
-                    byte et = 0;
-                    if (Math.Abs(X[1] - (-2.0 * BaseSize)) <= 1.0e-8)
-                        et = 1;
-                    if (Math.Abs(X[1] - (+2.1 * BaseSize)) <= 1.0e-8)
-                        et = 2;
-                    if (!xPeriodic && Math.Abs(X[0] - (-2.0 * BaseSize)) <= 1.0e-8)
-                        et = 3;
-                    if (!xPeriodic && Math.Abs(X[0] - (+20.0 * BaseSize)) <= 1.0e-8)
-                        et = 4;
 
+                //C.InitialValues.Add("Phi", X => -1);
 
-                    Debug.Assert(et != 0);
-                    return et;
-                });
-
-                Console.WriteLine("Cells:    {0}", grd.NumberOfCells);
-
-                return grd;
-            };
+                C.InitialValues_Evaluators.Add("VelocityX", X => 4.0 * 1.5 * (X[1] + 2.0) * (4.1 - (X[1] + 2.0)) / (4.1 * 4.1));
+            }
 
             //C.GridFunc = delegate {
 
@@ -633,31 +669,14 @@ namespace BoSSS.Application.IBM_Solver {
             C.AddBoundaryCondition("Pressure_Outlet_right");
 
 
-            // Initial Values
-            // ==============
-
-            double radius = 0.5;
-            C.PhysicalParameters.rho_A = 1.0;
-            C.PhysicalParameters.mu_A = 1.0 / 20.0;
+            
 
             //C.InitialValues.Add("Phi", X => phi(X, 0));
 
             //C.InitialValues.Add("Phi", X => ((X[0] / (radius * BaseSize)) - mPx) * (X[0] / (radius * BaseSize)) - mPx) + ((X[1]) / (radius * BaseSize)) - 2.)Pow2() - radius.Pow2()));  // quadratic form
             //    );
 
-            if (only_channel)
-            {
-                C.InitialValues_Evaluators.Add("Phi", X => -1);
-            }
-            else
-            {
-                C.InitialValues_Evaluators.Add("Phi", X => -(X[0]).Pow2() + -(X[1]).Pow2() + radius.Pow2());
-            }
-
             
-            //C.InitialValues.Add("Phi", X => -1);
-
-            C.InitialValues_Evaluators.Add("VelocityX", X => 4.0 * 1.5 * (X[1] + 2.0) * (4.1 - (X[1] + 2.0)) / (4.1 * 4.1));
             //C.InitialValues.Add("VelocityX", delegate (double[] X)
             //{
             //    double x = X[0];
@@ -723,11 +742,11 @@ namespace BoSSS.Application.IBM_Solver {
             // ============
 
             C.Timestepper_Scheme = IBM_Control.TimesteppingScheme.BDF2;
-            double dt = 1E14;
+            double dt = 0.1;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 70;
-            C.NoOfTimesteps = 1;
+            C.NoOfTimesteps = 10;
 
             // haben fertig...
             // ===============
