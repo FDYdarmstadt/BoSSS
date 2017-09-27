@@ -1112,8 +1112,8 @@ namespace BoSSS.Solution {
                     //DatabaseDriver.SaveGrid(Grid);
                     bool GridReplaced;
                     GridCommons _grid = this.Grid;
-                    //DatabaseDriver.SaveGrid(_grid);
-                    DatabaseDriver.SaveGridIfUnique(ref _grid, out GridReplaced, this.m_Database);
+                    DatabaseDriver.SaveGrid(_grid);
+                    //DatabaseDriver.SaveGridIfUnique(ref _grid, out GridReplaced, this.m_Database);
                     this.Grid = _grid;
 
                 }
@@ -1838,17 +1838,15 @@ namespace BoSSS.Solution {
                 // create new grid
                 // ===============
                 this.MultigridSequence = null;
-                this.GridData.Invalidate();
-                if (this.LsTrk != null) {
-                    this.LsTrk.Invalidate();
-                    this.LsTrk = null;
-                }
-
+                
                 this.Grid.RedistributeGrid(NewPartition);
                 var newGridData = new GridData(this.Grid);
                 this.GridData = newGridData;
-                oldGridData = null;
-
+                oldGridData.Invalidate();
+                if (this.LsTrk != null) {
+                    this.LsTrk.Invalidate();
+                }
+                
                 if (this.Control == null || this.Control.NoOfMultigridLevels > 0)
                     this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
                 else
@@ -1928,6 +1926,8 @@ namespace BoSSS.Solution {
 
                 // re-create solvers, blablabla
                 CreateEquationsAndSolvers(loadbal);
+
+                
             }
         }
 

@@ -3625,9 +3625,9 @@ namespace ilPSP.LinSolvers {
                     *pI = count;
                     pI++;
 
-                    Debug.Assert(m_j0S.Length >= count);
-                    Debug.Assert(m_JES.Length >= count);
-                    Debug.Assert(m_Offset.Length >= count + 1);
+                    Debug.Assert((count == 0 && m_j0S == null) || (m_j0S.Length >= count));
+                    Debug.Assert((count == 0 && m_JES == null) || (m_JES.Length >= count));
+                    Debug.Assert((count == 0 && m_Offset == null) || (m_Offset.Length >= count + 1));
 
                     fixed (int* p_j0S = m_j0S, p_jES = m_JES, p_Offset = m_Offset) {
                         int* _j0S = p_j0S, _jES = p_jES, _Offset = p_Offset;
@@ -4358,6 +4358,10 @@ namespace ilPSP.LinSolvers {
                             }
                         }
                     }
+
+                    Debug.Assert((C.count > 0) == (A.count > 0 || B.count > 0));
+                    Debug.Assert((A.count <= 0 && B.count <= 0) || (C.m_j0S != null));
+
                 }
             }
 
