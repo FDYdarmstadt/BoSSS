@@ -200,7 +200,7 @@ namespace BoSSS.Solution.Utils {
             unsafe {
                 int localResultAsInt = localResult ? 1 : 0;
                 int globalResultAsInt;
-                csMPI.Raw.Allreduce((IntPtr)(&localResultAsInt), (IntPtr)(&globalResultAsInt), SubGridList.Count, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.LOR, csMPI.Raw._COMM.WORLD);
+                csMPI.Raw.Allreduce((IntPtr)(&localResultAsInt), (IntPtr)(&globalResultAsInt), 1, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.LOR, csMPI.Raw._COMM.WORLD);
                 globalResult = globalResultAsInt == 1 ? true : false;
             }
 
