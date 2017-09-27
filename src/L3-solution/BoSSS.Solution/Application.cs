@@ -1250,6 +1250,7 @@ namespace BoSSS.Solution {
             }
         }
 
+
         /// <summary>
         /// Optional interface tracker if XDG is used.
         /// </summary>
@@ -1257,7 +1258,7 @@ namespace BoSSS.Solution {
             get;
             protected set;
         }
-
+        
         /// <summary>
         /// Extended grid information.
         /// </summary>
@@ -1932,8 +1933,9 @@ namespace BoSSS.Solution {
         }
 
         /// <summary>
-        /// Additional backup (internal states of time integrators before grid redistribution
+        /// Additional backup (e.g. internal states of time integrators before grid redistribution)
         /// during dynamic load balancing.
+        /// May also be used to invalidate internal states related to the old <see cref="GridData"/> or <see cref="LsTrk"/> objects.
         /// </summary>
         public virtual void DataBackupBeforeBalancing(LoadBalancingData L) {
 
