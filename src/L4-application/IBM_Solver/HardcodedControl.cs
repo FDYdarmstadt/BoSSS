@@ -25,6 +25,7 @@ using ilPSP.Utils;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
+using BoSSS.Solution;
 
 namespace BoSSS.Application.IBM_Solver {
     /// <summary>
@@ -1214,6 +1215,15 @@ namespace BoSSS.Application.IBM_Solver {
         static public IBM_Control DrivenCavity(int k = 2, int Cells = 10, string dbpath = null) {
             IBM_Control C = new IBM_Control();
 
+
+            C.DynamicLoadBalancing_Period = 1;
+            C.DynamicLoadBalancing_CellCostEstimatorFactory = delegate (int noOfPerformanceClasses) {
+                Console.WriteLine("i was called");
+                int[] map = new int[] { 1, 5, 100 };
+                return new StaticCellCostEstimator(map);
+            };
+
+
             // Solver Options
             C.NoOfTimesteps = 100;
             C.MaxSolverIterations = 100;
@@ -1222,6 +1232,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.DbPath = null;
             C.ProjectName = "ChannelFlow";
             C.SessionName = "GasGebn";
+            C.NoOfMultigridLevels = 1;
 
             // Calculate Navier-Stokes? 
             C.PhysicalParameters.IncludeConvection = true;
@@ -1323,7 +1334,8 @@ namespace BoSSS.Application.IBM_Solver {
             C.InitialValues_Evaluators.Add("VelocityX", X => 0.0);
             C.InitialValues_Evaluators.Add("VelocityY", X => 0.0);
             C.InitialValues_Evaluators.Add("Pressure", X => 0.0);
-            C.InitialValues_Evaluators.Add("Phi", X => -1);
+            //C.InitialValues_Evaluators.Add("Phi", X => -1);
+            C.InitialValues_Evaluators.Add("Phi", X => -(X[0]).Pow2() + -(X[1]).Pow2() + 0.5.Pow2());
 
             return C;
         }
