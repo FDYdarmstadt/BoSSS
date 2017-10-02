@@ -104,12 +104,12 @@ namespace BoSSS.Foundation.Grid.RefElements {
         NodeSet m_Center;
 
         /// <summary>
-        /// Center (ov gravity) of this reference element.
+        /// Center (of gravity) of this reference element.
         /// </summary>
         public NodeSet Center {
             get {
                 if(m_Center == null) {
-                    m_Center = new NodeSet(this, new double[this.SpatialDimension]);
+                    m_Center = new NodeSet(this, new double[Math.Max(1, this.SpatialDimension)]);
                 }
                 return m_Center;
             }
