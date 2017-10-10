@@ -389,13 +389,13 @@ throw new ArgumentException("error in codomain variables list; identifier \"" + 
         /// And another wrapper.
         /// </summary>
         public void Evaluate(double time, params DGField[] f) {
-            this.Evaluate(time, null, f);
+            this.Evaluate(time, null, SubGridBoundaryModes.OpenBoundary, f);
         }
 
         /// <summary>
         /// And another wrapper.
         /// </summary>
-        public void Evaluate(double time, SubGrid subGrid = null,  params DGField[] f) {
+        public void Evaluate(double time, SubGrid subGrid = null, SubGridBoundaryModes subGridBoundaryMode = SubGridBoundaryModes.OpenBoundary,  params DGField[] f) {
             if(DomainVar.Count + ParameterVar.Count + CodomainVar.Count != f.Length)
                 throw new ArgumentException("wrong number of domain/parameter/codomain fields", "f");
 
@@ -405,7 +405,7 @@ throw new ArgumentException("error in codomain variables list; identifier \"" + 
             DGField[] Parameters = f.GetSubVector(this.DomainVar.Count, this.ParameterVar.Count);
             CoordinateMapping outp = new CoordinateMapping(f.GetSubVector(this.DomainVar.Count + this.ParameterVar.Count, this.CodomainVar.Count));
 
-            this.Evaluate(1.0, 0.0, inp, Parameters, outp, subGrid, null, null, SubGridBoundaryModes.OpenBoundary, time);
+            this.Evaluate(1.0, 0.0, inp, Parameters, outp, subGrid, null, null, subGridBoundaryMode, time);
         }
 
 
