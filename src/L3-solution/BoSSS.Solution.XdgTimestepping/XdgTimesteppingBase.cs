@@ -212,6 +212,11 @@ namespace BoSSS.Solution.XdgTimestepping {
         public int Config_MinIterations = 4;
 
         /// <summary>
+        /// Default Solver for the linear system
+        /// </summary>
+        public ISolverSmootherTemplate Config_linearSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS };
+
+        /// <summary>
         /// Scaling of the mass matrix, for each species and each variable.
         /// </summary>
         public IDictionary<SpeciesId, IEnumerable<double>> Config_MassScale {
@@ -431,9 +436,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                         this.Config_MultigridOperator) {
                         MaxIter = Config_MaxIterations,
                         MinIter = Config_MinIterations,
-                        m_LinearSolver = new DirectSolver() {
-                            WhichSolver = Config_DirectSolver
-                        },
+                        m_LinearSolver =  Config_linearSolver,
                         ConvCrit = Config_SolverConvergenceCriterion,
                     };
                 } else {
