@@ -26,6 +26,7 @@ using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
 using BoSSS.Foundation.IO;
+using BoSSS.Solution;
 
 namespace BoSSS.Application.IBM_Solver {
     public class HardcodedPerformance {
@@ -39,12 +40,19 @@ namespace BoSSS.Application.IBM_Solver {
             C.DbPath = null;
             C.savetodb = false;
 
-            C.DbPath = @"\\dc1\userspace\stange\HiWi_database\PerformanceTests";
+            C.DbPath = @"\\dc1\userspace\krause\BoSSS_DBs\Bug";
 
-            string restartSession = "727da287-1b6a-463e-b7c9-7cc19093b5b3";
-            string restartGrid = "3f8f3445-46f1-47ed-ac0e-8f0260f64d8f";
+            //string restartSession = "727da287-1b6a-463e-b7c9-7cc19093b5b3";
+            //string restartGrid = "3f8f3445-46f1-47ed-ac0e-8f0260f64d8f";
 
-            
+            C.DynamicLoadBalancing_Period = 1;
+            C.DynamicLoadBalancing_CellCostEstimatorFactory = delegate (int noOfPerformanceClasses) {
+                Console.WriteLine("i was called");
+                int[] map = new int[] { 1, 5, 100 };
+                return new StaticCellCostEstimator(map);
+            };
+
+
 
             // Assign correct names
 
@@ -111,11 +119,11 @@ namespace BoSSS.Application.IBM_Solver {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
 
-            if (restart)
-            {
-                C.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid(restartSession), -1);
-                C.GridGuid = new Guid(restartGrid);
-            }
+            //if (restart)
+            //{
+            //    C.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid(restartSession), -1);
+            //    C.GridGuid = new Guid(restartGrid);
+            //}
             // Load Grid
             if (!restart)
             {
@@ -406,6 +414,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.dtMin = dt;
             C.Endtime = 10000000;
             C.NoOfTimesteps = 1;
+            C.NoOfMultigridLevels = 3;
 
             return C;
         }
