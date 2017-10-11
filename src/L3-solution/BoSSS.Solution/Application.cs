@@ -1411,13 +1411,18 @@ namespace BoSSS.Solution {
                 if (this.CurrentSessionInfo.ID.Equals(Guid.Empty))
                     return null;
 
-
-                var tsi = this.DatabaseDriver.SaveTimestep(
-                    t,
-                    timestepno,
-                    this.CurrentSessionInfo,
-                    this.GridData,
-                    this.IOFields);
+                ITimestepInfo tsi;
+                try {
+                    tsi = this.DatabaseDriver.SaveTimestep(
+                        t,
+                        timestepno,
+                        this.CurrentSessionInfo,
+                        this.GridData,
+                        this.IOFields);
+                } catch(Exception e) {
+                    Console.WriteLine(e.GetType().Name + " on rank " + this.MPIRank + " saveing timestep " + timestepno + ": "+ e.Message);
+                    tsi = null; 
+                }
 
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
