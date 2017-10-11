@@ -784,6 +784,15 @@ namespace BoSSS.Application.IBM_Solver {
                 LevSet.AccConstant(-1.0);
             }
 
+            Console.WriteLine("!!!GMRES solver stats are saved in .txt file!!!");
+            if (File.Exists("GMRES_Stats.txt"))
+            {                
+                File.Delete("GMRES_Stats.txt");
+            }
+            using (StreamWriter writer = new StreamWriter("GMRES_Stats.txt", true))
+            {
+                writer.WriteLine("#GMRESIter" + "   " + "error");
+            }
             CreateEquationsAndSolvers(null);
             After_SetInitialOrLoadRestart();
             m_BDF_Timestepper.SingleInit();
