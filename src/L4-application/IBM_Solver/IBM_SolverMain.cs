@@ -430,7 +430,6 @@ namespace BoSSS.Application.IBM_Solver {
                     m_BDF_Timestepper.m_ResLogger = base.ResLogger;
                     m_BDF_Timestepper.m_ResidualNames = ArrayTools.Cat(this.ResidualMomentum.Select(f => f.Identification), this.ResidualContinuity.Identification);
                     m_BDF_Timestepper.Config_linearSolver = this.Control.LinearSolver;
-                    m_BDF_Timestepper.Config_DirectSolver = this.Control.whichSolver;
                     m_BDF_Timestepper.Config_SolverConvergenceCriterion = this.Control.Solver_ConvergenceCriterion;
                     m_BDF_Timestepper.Config_MaxIterations = this.Control.MaxSolverIterations;
                     m_BDF_Timestepper.Config_MinIterations = this.Control.MinSolverIterations;
