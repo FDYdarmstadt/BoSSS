@@ -957,7 +957,7 @@ namespace BoSSS.Application.IBM_Solver {
                     var scheme = SchemeHelper.GetVolumeQuadScheme(spId);
                     var rule = scheme.Compile(this.GridData, order);
 
-                    DiffInt += this.Pressure.LxError(this.Control.ExSol_Pressure_Evaluator.Vectorize(0.0), (a, b) => (a - b), rule);
+                    DiffInt += this.Pressure.LxError(this.Control.ExSol_Pressure_Evaluator.Vectorize(0.0), (X, a, b) => (a - b), rule);
                     //Volume +=  this.Pressure.GetSpeciesShadowField(spc).LxError(null, (a, b) => (1.0), rule);
                 }
                 double Volume2 = (new SubGrid(CellMask.GetFullMask(this.GridData))).Volume;
@@ -974,7 +974,7 @@ namespace BoSSS.Application.IBM_Solver {
                     var scheme = SchemeHelper.GetVolumeQuadScheme(spId);
                     var rule = scheme.Compile(this.GridData, order);
 
-                    double IdV = this.Pressure.LxError(this.Control.ExSol_Pressure_Evaluator.Vectorize(0.0), (a, b) => (a - b - PressureDiffMean).Pow2(), rule);
+                    double IdV = this.Pressure.LxError(this.Control.ExSol_Pressure_Evaluator.Vectorize(0.0), (X, a, b) => (a - b - PressureDiffMean).Pow2(), rule);
                     L2Error += IdV;
                     L2Error_Species.Add(spc, IdV.Sqrt());
 
