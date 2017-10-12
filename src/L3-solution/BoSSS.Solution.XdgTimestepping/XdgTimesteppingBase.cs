@@ -214,7 +214,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Default Solver for the linear system
         /// </summary>
-        public ISolverSmootherTemplate Config_linearSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS };
+        public ISolverSmootherTemplate Config_linearSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.PARDISO };
 
         /// <summary>
         /// Scaling of the mass matrix, for each species and each variable.
