@@ -345,9 +345,9 @@ namespace BoSSS.Application.IBM_Solver {
                 #endregion
 
                 // Set Initial Conditions
-                C.InitialValues_Evaluators.Add("VelocityX", X => 0);
+                C.InitialValues_Evaluators.Add("VelocityX", X => 0.5);
                 C.InitialValues_Evaluators.Add("VelocityY", X => 0);
-                C.InitialValues_Evaluators.Add("VelocityZ", X => 0.5);
+                C.InitialValues_Evaluators.Add("VelocityZ", X => 0);
                 C.InitialValues_Evaluators.Add("Pressure", X => 0);
 
                 if (only_channel)
