@@ -57,8 +57,7 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup>
-    <StartupObject>
-    </StartupObject>
+    <StartupObject>BoSSS.Application.IBM_Solver.IBM_SolverMain</StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -75,6 +74,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ApproxPredictor.cs" />
+    <Compile Include="HardcodedPrecTest.cs" />
     <Compile Include="HardcodedPerformance.cs" />
     <Compile Include="HarcodedControl3D.cs" />
     <Compile Include="DoNotTouchParameters.cs" />

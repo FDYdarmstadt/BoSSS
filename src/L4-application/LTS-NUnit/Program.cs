@@ -49,18 +49,13 @@ namespace LTS_NUnit {
         ExplicitEuler timeStepper;
         DGField u;
 
-        internal int ABorder;
-        internal double dt_input;
-        internal bool LTS;
-        internal bool ALTS;
-        internal int numOfSubgrids;
+        internal int ABorder = 2;
+        internal double dt_input = 2E-3;
+        internal bool LTS = false;
+        internal bool ALTS = true;
+        internal int numOfSubgrids = 3;
 
-        //For testing
-        //internal int ABorder = 2;
-        //internal double dt_input = 2E-3 / 4;
-        //internal bool LTS = false;
-        //internal bool ALTS = true;
-        //internal int numOfSubgrids = 1;
+        double endTime = 2;
 
         protected override GridCommons CreateOrLoadGrid() {
             double[] xnodes1 = GenericBlas.Linspace(-1, 0, a1 + 1);
@@ -113,7 +108,7 @@ namespace LTS_NUnit {
             diffOp.EquationComponents["codom1"].Add(new ScalarTransportFlux());
             diffOp.Commit();
 
-            CustomTimestepConstraint = new SurrogateConstraint(GridData, dt_input, dt_input, double.MaxValue, double.MaxValue);
+            CustomTimestepConstraint = new SurrogateConstraint(GridData, dt_input, dt_input, double.MaxValue, endTime);
 
             if (LTS) {
                 AdamsBashforthLTS ltsTimeStepper = new AdamsBashforthLTS(
@@ -154,7 +149,7 @@ namespace LTS_NUnit {
             using (new FuncTrace()) {
                 if (dt <= 0) {
                     NoOfTimesteps = 10000;
-                    EndTime = 2;
+                    EndTime = endTime;
                     dt = dt_input;
                     //if (TimestepNo < 3)
                     //    dt /= 3;

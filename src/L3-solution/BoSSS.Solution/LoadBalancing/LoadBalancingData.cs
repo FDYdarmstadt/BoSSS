@@ -206,8 +206,7 @@ namespace BoSSS.Solution {
             double[] R = new double[(Pos / sizeof(double)) + 1];
             byte[] buf = ms.GetBuffer();
 
-            unsafe
-            {
+            unsafe {
                 fixed (void* _pbuf = buf, _bR = R) {
                     byte* pbuf = (byte*)_pbuf, pR = (byte*)_bR;
 
@@ -251,8 +250,7 @@ namespace BoSSS.Solution {
         static byte[] ConvertBuffer(double[] buf) {
             byte[] R = new byte[buf.Length * sizeof(double)];
 
-            unsafe
-            {
+            unsafe {
                 fixed (void* _pbuf = buf, _bR = R) {
                     byte* pbuf = (byte*)_pbuf, pR = (byte*)_bR;
 
@@ -325,7 +323,7 @@ namespace BoSSS.Solution {
         /// <param name="Reference">
         /// Unique string reference under which data has been stored before grid-redistribution.
         /// </param>
-        public void RestoreVector(Action<int,double[]> OutputFunc, string Reference) {
+        public void RestoreVector(Action<int, double[]> OutputFunc, string Reference) {
             double[][] dataVec = m_DGFieldData[Reference];
             Debug.Assert(dataVec.Length == m_newJ);
             for (int j = 0; j < m_newJ; j++) {
@@ -396,12 +394,12 @@ namespace BoSSS.Solution {
                 m_newJ = m_oldJ; // hack to make next line working
                 RestoreVector<Tuple<long, double>[], Tuple<long, double>[][]>(check_AedgGathered, Reference + "::CutCellMetrics-Edge:" + SpeciesName);
                 m_newJ = bkup_new_J;
-                for(int j = 0; j < m_oldJ; j++) {
+                for (int j = 0; j < m_oldJ; j++) {
                     var Lst1 = AedgGathered[j];
                     var Lst2 = check_AedgGathered[j];
                     Debug.Assert(Lst1.Length == Lst2.Length);
                     int LL = Lst2.Length;
-                    for(int l = 0; l < LL; l++) {
+                    for (int l = 0; l < LL; l++) {
                         Debug.Assert(Lst1[l].Item1 == Lst2[l].Item1);
                         Debug.Assert(Lst1[l].Item2 == Lst2[l].Item2);
                     }
@@ -484,7 +482,7 @@ namespace BoSSS.Solution {
 
             for (int iEdge = 0; iEdge < NoEdg; iEdge++) {
                 var Data = InputFunc(iEdge);
-                
+
                 int jCell0 = Edg2Cel[iEdge, 0];
                 int jCell1 = Edg2Cel[iEdge, 1];
                 int Face0 = FaceIdx[iEdge, 0];
@@ -493,7 +491,7 @@ namespace BoSSS.Solution {
                     Ret[jCell0] = new List<Tuple<long, T>>();
                 if (jCell1 >= 0 && jCell1 < J && Ret[jCell1] == null)
                     Ret[jCell1] = new List<Tuple<long, T>>();
-                
+
                 if (jCell1 >= 0) {
                     //
                     long Ident0 = grd.iLogicalCells.GetGlobalID(jCell1);
@@ -501,7 +499,7 @@ namespace BoSSS.Solution {
                     Debug.Assert(Ident0 >= 0);
                     Debug.Assert(Ident1 >= 0);
                     Ret[jCell0].Add(new Tuple<long, T>(Ident0, Data));
-                    if(jCell1 < J)
+                    if (jCell1 < J)
                         Ret[jCell1].Add(new Tuple<long, T>(Ident1, Data));
                 } else {
                     Face1 = 1234;
@@ -513,7 +511,7 @@ namespace BoSSS.Solution {
 
                 Debug.Assert(jCell0 < J);
             }
-            
+
             // converting lists to arrays sucks...
             var _Ret = new Tuple<long, T>[J][];
             for (int j = 0; j < J; j++) {
@@ -555,7 +553,7 @@ namespace BoSSS.Solution {
 
                     bool boundaryEdge;
                     int IdentFace;
-                    if(Ident < 0) {
+                    if (Ident < 0) {
                         boundaryEdge = true;
                         Ident *= -1;
                         IdentFace = (int)(0xffffffff & (Ident));
@@ -648,7 +646,7 @@ namespace BoSSS.Solution {
                 double[][] oldFieldsData = new double[m_oldJ][];
                 {
                     double[][][] oldFields = FieldNames.Select(rstring => this.m_DGFieldData[rstring]).ToArray();
-                    
+
                     for (int j = 0; j < m_oldJ; j++) {
                         int Ntot = 0;
                         for (int iF = 0; iF < NoFields; iF++)
@@ -745,10 +743,10 @@ namespace BoSSS.Solution {
 
             MultidimensionalArray TempBlock = MultidimensionalArray.Create(IBlock, IBlock);
 
-            for(int jSrc_Loc = 0; jSrc_Loc < J; jSrc_Loc++) { // loop over cells resp. local block-indices
+            for (int jSrc_Loc = 0; jSrc_Loc < J; jSrc_Loc++) { // loop over cells resp. local block-indices
                 int jSrcGlob = jSrc_Loc + RowPart.FirstBlock; // block-row index
                 int jDstGlob = (int)TargetBlockIdxS[jSrc_Loc]; // block-column index
-                
+
                 Debug.Assert(RowPart.IsLocalBlock(jSrcGlob));
                 int i0 = RowPart.GetBlockI0(jSrcGlob);
                 int BT = RowPart.GetBlockType(jSrcGlob);
@@ -757,7 +755,7 @@ namespace BoSSS.Solution {
                 Debug.Assert(IBlock == RowPart.GetBlockLen(jSrcGlob));
 
 
-                int j0 = IBlock*jDstGlob; // this would not work for variable size blocking
+                int j0 = IBlock * jDstGlob; // this would not work for variable size blocking
 #if DEBUG
                 if (ColPart.IsLocalBlock(jDstGlob)) {
                     // column block corresponds to some cell 
@@ -774,7 +772,7 @@ namespace BoSSS.Solution {
                 for (int i = 0; i < IBlock; i++)
                     TempBlock[i, i] = 0.0;
 
-                for(int k = 0; k < K; k++) {
+                for (int k = 0; k < K; k++) {
                     int A = _i0[k];
                     int E = Len[k] + A;
                     for (int i = A; i < E; i++)
@@ -789,15 +787,14 @@ namespace BoSSS.Solution {
 
         /// <summary>
         /// Old Matrices which will be redistributed.
-        /// 
         /// </summary>
-        Dictionary<string, Tuple<int[], int[], BlockMsrMatrix>> m_Matrices = new Dictionary<string, Tuple<int[],int[],BlockMsrMatrix>>();
+        Dictionary<string, Tuple<int[], int[], BlockMsrMatrix>> m_Matrices = new Dictionary<string, Tuple<int[], int[], BlockMsrMatrix>>();
 
 
         static public int[] GetDGBasisHash(IList<Basis> BS) {
             int[] pS = new int[BS.Count];
             for (int i = 0; i < pS.Length; i++) {
-                if(BS[i] is XDGBasis) {
+                if (BS[i] is XDGBasis) {
                     pS[i] = -BS[i].Degree;
                 } else {
                     pS[i] = -BS[i].Degree - 1;
@@ -806,14 +803,54 @@ namespace BoSSS.Solution {
             return pS;
         }
 
-        
+        static BlockPartitioning CloneBlockPartitioning(IBlockPartitioning part) {
+            int J = part.LocalNoOfBlocks;
+            int j0 = part.FirstBlock;
+            if (!part.AllBlockSizesEqual)
+                throw new NotSupportedException();
+
+            int Sz = part.GetBlockI0(j0 + 1) - part.GetBlockI0(j0);
+            int[] BlockType = new int[J];
+
+            int maxBT = 0;
+            for (int j = 0; j < J; j++) {
+                int blockType = part.GetBlockType(j + j0);
+                BlockType[j] = blockType;
+                maxBT = Math.Max(maxBT, blockType);
+            }
+            int[][] _Subblk_i0 = new int[maxBT + 1][];
+            int[][] _SubblkLen = new int[maxBT + 1][];
+            for (int b = 0; b <= maxBT; b++) {
+                _Subblk_i0[b] = part.GetSubblk_i0(b);
+                _SubblkLen[b] = part.GetSubblkLen(b);
+            }
+
+            return new BlockPartitioning(
+                part.LocalLength,
+                Sz,
+                _Subblk_i0, _SubblkLen,
+                BlockType,
+                part.MPI_Comm);
+        }
+
+        Dictionary<int[], BlockPartitioning> m_OldBlockings = new Dictionary<int[], BlockPartitioning>(new FuncEqualityComparer<int[]>((A, B) => ArrayTools.Equals(A, B)));
+
+
         public void BackupMatrix(BlockMsrMatrix M, string Reference, UnsetteledCoordinateMapping RowMapping, UnsetteledCoordinateMapping ColMapping) {
             CheckMatrix(M, RowMapping, ColMapping, m_oldJ);
 
-            m_Matrices.Add(Reference, new Tuple<int[], int[], BlockMsrMatrix>(
-                GetDGBasisHash(RowMapping.BasisS),
-                GetDGBasisHash(ColMapping.BasisS),
-                M));
+            int[] rowHash = GetDGBasisHash(RowMapping.BasisS);
+            int[] colHash = GetDGBasisHash(ColMapping.BasisS);
+
+            if (!m_OldBlockings.ContainsKey(rowHash))
+                m_OldBlockings.Add(rowHash, CloneBlockPartitioning(M._RowPartitioning));
+            if (!m_OldBlockings.ContainsKey(colHash))
+                m_OldBlockings.Add(colHash, CloneBlockPartitioning(M._ColPartitioning));
+
+            
+            BlockMsrMatrix Msave = M.RecyclePermute(m_OldBlockings[rowHash], m_OldBlockings[colHash], new int[0, 2], new int[0, 2]);
+
+            m_Matrices.Add(Reference, new Tuple<int[], int[], BlockMsrMatrix>(rowHash, colHash, Msave));
         }
 
         private static void CheckMatrix(BlockMsrMatrix M, UnsetteledCoordinateMapping RowMapping, UnsetteledCoordinateMapping ColMapping, int J) {
