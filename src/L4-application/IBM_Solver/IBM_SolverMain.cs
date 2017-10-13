@@ -224,7 +224,7 @@ namespace BoSSS.Application.IBM_Solver
 
         protected XSpatialOperator IBM_Op;
 
-        public string GMRES_Stats_path;
+        public string SessionPath;
 
         /// <summary>
         /// Integration degree of HMF used throughout the application: this should ensure that
@@ -459,7 +459,7 @@ namespace BoSSS.Application.IBM_Solver
                     m_BDF_Timestepper.Config_SolverConvergenceCriterion = this.Control.Solver_ConvergenceCriterion;
                     m_BDF_Timestepper.Config_MaxIterations = this.Control.MaxSolverIterations;
                     m_BDF_Timestepper.Config_MinIterations = this.Control.MinSolverIterations;
-                    m_BDF_Timestepper.SessionPath = GMRES_Stats_path;
+                    m_BDF_Timestepper.SessionPath = SessionPath;
                 }
 
             }
@@ -857,14 +857,15 @@ namespace BoSSS.Application.IBM_Solver
                 Console.WriteLine("!!!GMRES solver stats are saved in .txt file!!!");
                 if (this.Control.savetodb)
                 {
-                    GMRES_Stats_path = this.Control.DbPath + "\\sessions\\" + this.CurrentSessionInfo.ID;
-                    using (StreamWriter writer = new StreamWriter(GMRES_Stats_path + "\\GMRES_Stats.txt", true))
+                    SessionPath = this.Control.DbPath + "\\sessions\\" + this.CurrentSessionInfo.ID;
+                    using (StreamWriter writer = new StreamWriter(SessionPath + "\\GMRES_Stats.txt", true))
                     {
                         writer.WriteLine("#GMRESIter" + "   " + "error");
                     }
                 }
                 else
                 {
+                    SessionPath = Directory.GetCurrentDirectory();
                     if (File.Exists("GMRES_Stats.txt"))
                     {
                         File.Delete("GMRES_Stats.txt");
