@@ -26,6 +26,7 @@ using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
 using BoSSS.Solution;
+using BoSSS.Platform.Utils.Geom;
 
 namespace BoSSS.Application.IBM_Solver {
     /// <summary>
@@ -50,7 +51,7 @@ namespace BoSSS.Application.IBM_Solver {
 
             // Timestepper
             C.Timestepper_Scheme = IBM_Control.TimesteppingScheme.ImplicitEuler;
-            double dt = 1E20;
+            double dt = 1E30;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 60;
@@ -60,7 +61,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.PhysicalParameters.rho_A = 1;
 
             // 1/Re
-            C.PhysicalParameters.mu_A = 1.0 / 0.1;
+            C.PhysicalParameters.mu_A = 2.0 / 200;
 
 
             // Create Fields
@@ -939,7 +940,7 @@ namespace BoSSS.Application.IBM_Solver {
             //    CutOutPoint2[1] = 0.5;
             //    CutOutPoint2[2] = 3;
 
-            //    var CutOut = new BoundingBox(3);
+            //   var CutOut = new BoundingBox(3);
             //    CutOut.AddPoint(CutOutPoint1);
             //    CutOut.AddPoint(CutOutPoint2);
 
@@ -1225,13 +1226,12 @@ namespace BoSSS.Application.IBM_Solver {
 
 
             // Solver Options
-            C.NoOfTimesteps = 100;
             C.MaxSolverIterations = 100;
             C.MinSolverIterations = 1;
             C.savetodb = false;
             C.DbPath = null;
             C.ProjectName = "ChannelFlow";
-            C.SessionName = "GasGebn";
+            C.SessionName = "Channel";
             C.NoOfMultigridLevels = 1;
 
             // Calculate Navier-Stokes? 
@@ -1239,7 +1239,7 @@ namespace BoSSS.Application.IBM_Solver {
 
             // Timestepper
             C.Timestepper_Scheme = IBM_Control.TimesteppingScheme.ImplicitEuler;
-            double dt = 1E20;
+            double dt = 1E50;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 60;
@@ -1249,7 +1249,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.PhysicalParameters.rho_A = 1;
 
             // 1/Re
-            C.PhysicalParameters.mu_A = 2.0 / 10.0;
+            C.PhysicalParameters.mu_A = 2.0 / 200;
 
 
             // Create Fields
@@ -1328,14 +1328,156 @@ namespace BoSSS.Application.IBM_Solver {
             C.AddBoundaryCondition("Wall");
 
             // Set Initial Conditions
-            //C.InitialValues_Evaluators.Add("VelocityX", X => 1 - X[1] * X[1]);
-            //C.InitialValues_Evaluators.Add("VelocityY", X => 0);
+            //C.InitialValues_Evaluators.Add("VelocityX", X => (2*(2*X[1] -1)*(1-((2*X[0] -1)* (2 * X[0] - 1)))));
+            //C.InitialValues_Evaluators.Add("VelocityY", X => (-2 * (2 * X[0] - 1) * (1 - ((2 *X[1] - 1)) * (2 *X[1] - 1))));
             //C.InitialValues_Evaluators.Add("Pressure", X => 2.0*C.PhysicalParameters.mu_A*(-X[0] + 10));
             C.InitialValues_Evaluators.Add("VelocityX", X => 0.0);
             C.InitialValues_Evaluators.Add("VelocityY", X => 0.0);
             C.InitialValues_Evaluators.Add("Pressure", X => 0.0);
-            //C.InitialValues_Evaluators.Add("Phi", X => -1);
-            C.InitialValues_Evaluators.Add("Phi", X => -(X[0]).Pow2() + -(X[1]).Pow2() + 0.5.Pow2());
+            C.InitialValues_Evaluators.Add("Phi", X => -1);
+            //C.InitialValues_Evaluators.Add("Phi", X => -(X[0]).Pow2() + -(X[1]).Pow2() + 0.5.Pow2());
+
+            return C;
+        }
+
+        static public IBM_Control BackwardStep(int k = 2, int cellsX = 20, int cellsY = 10, string dbpath = null) {
+            IBM_Control C = new IBM_Control();
+
+
+            C.DynamicLoadBalancing_Period = 1;
+            C.DynamicLoadBalancing_CellCostEstimatorFactory = delegate (int noOfPerformanceClasses) {
+                Console.WriteLine("i was called");
+                int[] map = new int[] { 1, 5, 100 };
+                return new StaticCellCostEstimator(map);
+            };
+
+            C.DbPath = @"P:\BoSSS_DBs\Bug";
+
+            // Solver Options
+            C.MaxSolverIterations = 100;
+            C.MinSolverIterations = 1;
+            C.savetodb = false;
+            C.ProjectName = "BackwardStep";
+            C.SessionName = "BackwardStep";
+            C.NoOfMultigridLevels = 5;
+
+            // Calculate Navier-Stokes? 
+            C.PhysicalParameters.IncludeConvection = true;
+
+            // Timestepper
+            C.Timestepper_Scheme = IBM_Control.TimesteppingScheme.ImplicitEuler;
+            double dt = 0.1;
+            C.dtMax = dt;
+            C.dtMin = dt;
+            C.Endtime = 60;
+            C.NoOfTimesteps = 5;
+
+            // Physical values
+            C.PhysicalParameters.rho_A = 1;
+
+            // 1/Re
+            C.PhysicalParameters.mu_A = 2.0 / 10;
+
+
+            // Create Fields
+            C.FieldOptions.Add("VelocityX", new FieldOpts() {
+                Degree = k,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("VelocityY", new FieldOpts() {
+                Degree = k,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Pressure", new FieldOpts() {
+                Degree = k - 1,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("PhiDG", new FieldOpts() {
+                Degree = 2,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Phi", new FieldOpts() {
+                Degree = 2,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+
+            // Create Grid
+            C.GridFunc = delegate {
+                var _xNodes = GenericBlas.Linspace(-1, 5, cellsX + 1);
+                var _yNodes = GenericBlas.Linspace(-1, 1, cellsY + 1);
+
+                double[] CutOutPoint1 = new double[2] { -1, -1 };
+                double[] CutOutPoint2 = new double[2] { 0, 0 };
+
+                var CutOut = new BoundingBox(2);
+                CutOut.AddPoint(CutOutPoint1);
+                CutOut.AddPoint(CutOutPoint2);
+
+                var grd = Grid2D.Cartesian2DGrid(_xNodes, _yNodes, CellType.Square_Linear,CutOuts:CutOut);
+
+
+                grd.EdgeTagNames.Add(1, "Velocity_inlet");
+                grd.EdgeTagNames.Add(2, "Wall");
+                grd.EdgeTagNames.Add(3, "Pressure_Outlet");
+
+
+                grd.DefineEdgeTags(delegate (double[] _X) {
+                    var X = _X;
+                    double x = X[0];
+                    double y = X[1];
+
+                    if ((Math.Abs(y - (0)) < 1.0e-6) && (x< 1.0e-6))
+                        // bottom step
+                        return 2;
+
+                    if (Math.Abs(y - (-1)) < 1.0e-6) 
+                        // bottom
+                        return 2;
+
+                    if ((Math.Abs(x - (0)) < 1.0e-6) && y< 1.0e-6)
+                        // bottom step
+                        return 2;
+
+                    if (Math.Abs(y - (+1)) < 1.0e-6)
+                        // top
+                        return 2;
+
+                    if ((Math.Abs(x - (-1)) < 1.0e-6) && (y> 1.0e-6))
+                        // left
+                        return 1;
+
+                    if (Math.Abs(x - (5)) < 1.0e-6)
+                        // right
+                        return 3;
+                    throw new ArgumentOutOfRangeException();
+                });
+
+                Console.WriteLine("Backward Step Flow");
+
+                return grd;
+            };
+
+            Func<double[], double, double> VelocityXex, VelocityYex, Pressure;
+            VelocityXex = (X, t) => (1 - (X[1] * X[1]));
+            VelocityYex = (X, t) => (0);
+            Pressure = (X, t) => (0);
+
+
+
+            C.AddBoundaryCondition("Velocity_inlet", "VelocityX", X => -4*X[1]*(X[1]+4));
+            C.AddBoundaryCondition("Pressure_Outlet");
+
+            C.AddBoundaryCondition("Wall");
+
+            // Set Initial Conditions
+            //C.InitialValues_Evaluators.Add("VelocityX", X => (2*(2*X[1] -1)*(1-((2*X[0] -1)* (2 * X[0] - 1)))));
+            //C.InitialValues_Evaluators.Add("VelocityY", X => (-2 * (2 * X[0] - 1) * (1 - ((2 *X[1] - 1)) * (2 *X[1] - 1))));
+            //C.InitialValues_Evaluators.Add("Pressure", X => 2.0*C.PhysicalParameters.mu_A*(-X[0] + 10));
+            C.InitialValues_Evaluators.Add("VelocityX", X => 0.0);
+            C.InitialValues_Evaluators.Add("VelocityY", X => 0.0);
+            C.InitialValues_Evaluators.Add("Pressure", X => 0.0);
+            C.InitialValues_Evaluators.Add("Phi", X => -1);
+            //C.InitialValues_Evaluators.Add("Phi", X => -(X[0]).Pow2() + -(X[1]).Pow2() + 0.5.Pow2());
 
             return C;
         }

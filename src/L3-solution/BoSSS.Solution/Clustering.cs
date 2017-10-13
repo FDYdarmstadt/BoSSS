@@ -215,8 +215,17 @@ namespace BoSSS.Solution.Utils {
             MultidimensionalArray cellMetric = MultidimensionalArray.Create(gridData.iLogicalCells.NoOfLocalUpdatedCells);
 
             // Adapted from Variables.cs --> DerivedVariable CFL
-            for (int i = 0; i < gridData.iLogicalCells.NoOfLocalUpdatedCells; i++) {
-                cellMetric[i] = this.timeStepConstraints.Min(c => c.GetLocalStepSize(i, 1));
+            //for (int i = 0; i < gridData.iLogicalCells.NoOfLocalUpdatedCells; i++) {
+            //    cellMetric[i] = this.timeStepConstraints.Min(c => c.GetLocalStepSize(i, 1));
+            //}
+
+            int count = 0;
+            foreach (Chunk chunk in CellMask.GetFullMask(gridData)) {
+                for (int i = 0; i < chunk.Len; i++) {
+                    int cell = i + chunk.i0;
+                    cellMetric[count] = this.timeStepConstraints.Min(c => c.GetLocalStepSize((int)gridData.iLogicalCells.GetGlobalID(cell), 1));
+                    count++;
+                }
             }
 
             return cellMetric;
