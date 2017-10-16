@@ -26,6 +26,7 @@ using ilPSP;
 using BoSSS.Platform;
 using BoSSS.Platform.Utils;
 using BoSSS.Foundation;
+using System.IO;
 
 namespace BoSSS.Solution.Multigrid
 {
@@ -54,11 +55,14 @@ namespace BoSSS.Solution.Multigrid
             }
         }
 
+
         MultigridOperator m_mgop;
 
         public ISolverSmootherTemplate Precond;
 
         BlockMsrMatrix Matrix;
+
+        public string m_SessionPath;
 
         public double m_Tolerance = 1.0e-10;
         public int m_MaxIterations = 10000;
@@ -66,12 +70,10 @@ namespace BoSSS.Solution.Multigrid
         public int NoOfIterations = 0;
 
 
-        public Action<int, double[], double[], MultigridOperator> IterationCallback
-        {
+        public Action<int, double[], double[], MultigridOperator> IterationCallback {
             get;
             set;
         }
-
 
         /// <summary>
         /// number of iterations between restarts
@@ -281,11 +283,20 @@ namespace BoSSS.Solution.Multigrid
                     //    }
                     //}
 
+                    using (StreamWriter writer = new StreamWriter(m_SessionPath + "//GMRES_Stats.txt", true))
+                    {
+                        writer.WriteLine(i + "   " + error);
+                    }
+
 
 
                     if (error <= m_Tolerance)
                     {
                         // update approximation and exit
+                        using (StreamWriter writer = new StreamWriter(m_SessionPath + "//GMRES_Stats.txt", true))
+                        {
+                            writer.WriteLine("");
+                        }
 
                         //y = H(1:i,1:i) \ s(1:i);    
                         y = new double[i];
@@ -365,10 +376,8 @@ namespace BoSSS.Solution.Multigrid
         }
 
 
-        public int IterationsInNested
-        {
-            get
-            {
+        public int IterationsInNested {
+            get {
                 if (this.Precond != null)
                     return this.Precond.IterationsInNested + this.Precond.ThisLevelIterations;
                 else
@@ -376,18 +385,14 @@ namespace BoSSS.Solution.Multigrid
             }
         }
 
-        public int ThisLevelIterations
-        {
-            get
-            {
+        public int ThisLevelIterations {
+            get {
                 return this.NoOfIterations;
             }
         }
 
-        public bool Converged
-        {
-            get
-            {
+        public bool Converged {
+            get {
                 return m_Converged;
             }
         }

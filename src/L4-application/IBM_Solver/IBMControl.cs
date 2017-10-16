@@ -210,6 +210,9 @@ namespace BoSSS.Application.IBM_Solver {
             MultiInit
         }
 
+        public ISolverSmootherTemplate LinearSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS };
+       
+
         /// <summary>
         /// 
         /// </summary>
