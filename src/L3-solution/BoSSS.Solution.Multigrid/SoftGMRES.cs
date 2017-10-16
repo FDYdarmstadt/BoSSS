@@ -62,6 +62,8 @@ namespace BoSSS.Solution.Multigrid
 
         BlockMsrMatrix Matrix;
 
+        public string m_SessionPath;
+
         public double m_Tolerance = 1.0e-10;
         public int m_MaxIterations = 10000;
 
@@ -281,22 +283,20 @@ namespace BoSSS.Solution.Multigrid
                     //    }
                     //}
 
-                    if (File.Exists("GMRES_Stats.txt"))
-                        using (StreamWriter writer = new StreamWriter("GMRES_Stats.txt", true))
-                        {
-                            writer.WriteLine(i + "   " + error);
-                        }
+                    using (StreamWriter writer = new StreamWriter(m_SessionPath + "//GMRES_Stats.txt", true))
+                    {
+                        writer.WriteLine(i + "   " + error);
+                    }
 
 
 
                     if (error <= m_Tolerance)
                     {
                         // update approximation and exit
-                        if (File.Exists("GMRES_Stats.txt"))
-                            using (StreamWriter writer = new StreamWriter("GMRES_Stats.txt", true))
-                            {
-                                writer.WriteLine("");
-                            }
+                        using (StreamWriter writer = new StreamWriter(m_SessionPath + "//GMRES_Stats.txt", true))
+                        {
+                            writer.WriteLine("");
+                        }
 
                         //y = H(1:i,1:i) \ s(1:i);    
                         y = new double[i];

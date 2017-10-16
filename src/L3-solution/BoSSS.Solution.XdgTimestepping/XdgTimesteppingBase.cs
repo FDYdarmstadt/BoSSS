@@ -205,6 +205,10 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         public int Config_MaxIterations = 1000;
 
+        /// <summary>
+        /// Session path for writing in database
+        /// </summary>
+        public string SessionPath = "";
 
         /// <summary>
         /// Minimum number of iterations for an iterative solver (linear or nonlinear).
@@ -436,7 +440,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                         this.Config_MultigridOperator) {
                         MaxIter = Config_MaxIterations,
                         MinIter = Config_MinIterations,
-                        m_LinearSolver =  Config_linearSolver,
+                        m_LinearSolver = Config_linearSolver,
+                        m_SessionPath = SessionPath,
                         ConvCrit = Config_SolverConvergenceCriterion,
                     };
                 } else {

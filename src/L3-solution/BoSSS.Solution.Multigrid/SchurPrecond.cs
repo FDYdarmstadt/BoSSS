@@ -28,17 +28,21 @@ using BoSSS.Foundation;
 using ilPSP.Connectors.Matlab;
 using MathNet.Numerics.LinearAlgebra.Double;
 
-namespace BoSSS.Solution.Multigrid {
-    public class SchurPrecond : ISolverSmootherTemplate, ISolverWithCallback {
+namespace BoSSS.Solution.Multigrid
+{
+    public class SchurPrecond : ISolverSmootherTemplate, ISolverWithCallback
+    {
         public int IterationsInNested {
             get {
-                throw new NotImplementedException();
+                return 0;
+                //throw new NotImplementedException();
             }
         }
 
         public int ThisLevelIterations {
             get {
-                throw new NotImplementedException();
+                return 0;
+                //throw new NotImplementedException();
             }
         }
 
@@ -48,10 +52,12 @@ namespace BoSSS.Solution.Multigrid {
 
         public Action<int, double[], double[], MultigridOperator> IterationCallback {
             get {
-                throw new NotImplementedException();
+                return null;
+                //throw new NotImplementedException();
             }
             set {
-                throw new NotImplementedException();
+             
+                //throw new NotImplementedException();
             }
         }
 
@@ -69,7 +75,8 @@ namespace BoSSS.Solution.Multigrid {
 
         public SchurOptions SchurOpt = SchurOptions.exact;
 
-        public void Init(MultigridOperator op) {
+        public void Init(MultigridOperator op)
+        {
             int D = op.Mapping.GridData.SpatialDimension;
             var M = op.OperatorMatrix;
             var MgMap = op.Mapping;
@@ -115,13 +122,16 @@ namespace BoSSS.Solution.Multigrid {
             var velMassMatrix = new MsrMatrix(Upart, Upart, 1, 1);
             op.MassMatrix.AccSubMatrixTo(1.0, velMassMatrix, Uidx, default(int[]), Uidx, default(int[]));
 
-            switch (SchurOpt) {
-                case SchurOptions.exact: {
+            switch (SchurOpt)
+            {
+                case SchurOptions.exact:
+                    {
                         // Building complete Schur and Approximate Schur
                         MultidimensionalArray Poisson = MultidimensionalArray.Create(Pidx.Length, Pidx.Length);
                         MultidimensionalArray SchurConvPart = MultidimensionalArray.Create(Pidx.Length, Pidx.Length);
                         MultidimensionalArray Schur = MultidimensionalArray.Create(Pidx.Length, Pidx.Length);
-                        using (BatchmodeConnector bmc = new BatchmodeConnector()) {
+                        using (BatchmodeConnector bmc = new BatchmodeConnector())
+                        {
                             bmc.PutSparseMatrix(ConvDiff, "ConvDiff");
                             bmc.PutSparseMatrix(velMassMatrix, "MassMatrix");
                             bmc.PutSparseMatrix(divVel, "divVel");
@@ -152,16 +162,21 @@ namespace BoSSS.Solution.Multigrid {
                         SchurMtx.AccSubMatrixTo(1.0, P, default(int[]), Pidx, default(int[]), Pidx);
                         return;
                     }
-                case SchurOptions.decoupledApprox: {
+                case SchurOptions.decoupledApprox:
+                    {
                         // Do assembly for approximate Schur inverse
                         invVelMassMatrix = velMassMatrix.CloneAs();
                         invVelMassMatrix.Clear();
                         invVelMassMatrixSqrt = invVelMassMatrix.CloneAs();
-                        for (int i = 0; i < velMassMatrix.NoOfCols; i++) {
-                            if (ApproxScaling) {
+                        for (int i = 0; i < velMassMatrix.NoOfCols; i++)
+                        {
+                            if (ApproxScaling)
+                            {
                                 invVelMassMatrix.SetDiagonalElement(i, 1 / velMassMatrix[i, i]);
                                 invVelMassMatrixSqrt.SetDiagonalElement(i, 1 / Math.Sqrt(velMassMatrix[i, i]));
-                            } else {
+                            }
+                            else
+                            {
                                 invVelMassMatrix.SetDiagonalElement(i, 1);
                                 invVelMassMatrixSqrt.SetDiagonalElement(i, 1);
                             }
@@ -193,7 +208,7 @@ namespace BoSSS.Solution.Multigrid {
 
 
                         // Possion scaled by inverse of the velocity mass matrix 
-                        PoissonMtx_T = MsrMatrix.Multiply(invVelMassMatrix, pGrad);
+                        PoissonMtx_T = MsrMatrix.Multiply(invVelMassMatrix, pGrad); 
                         PoissonMtx_T = MsrMatrix.Multiply(divVel, PoissonMtx_T);
                         ////PoissonMtx_T.Acc(PxP, 1); // p.379
 
@@ -203,11 +218,13 @@ namespace BoSSS.Solution.Multigrid {
                         //PoissonMtx_H.Acc(PxP, 1); // p.379
                         return;
                     }
-                case SchurOptions.SIMPLE: {
+                case SchurOptions.SIMPLE:
+                    {
 
                         var invdiag_ConvDiff = ConvDiff.CloneAs();
                         invdiag_ConvDiff.Clear();
-                        for (int i = 0; i < ConvDiff.NoOfCols; i++) {
+                        for (int i = 0; i < ConvDiff.NoOfCols; i++)
+                        {
                             invdiag_ConvDiff[i, i] = 1 / ConvDiff[i, i];
                         }
 
@@ -229,7 +246,8 @@ namespace BoSSS.Solution.Multigrid {
             // P.SpMV(1, B, 0, X);
         }
 
-        public void ResetStat() {
+        public void ResetStat()
+        {
             m_Converged = false;
             m_ThisLevelIterations = 0;
         }
@@ -239,29 +257,35 @@ namespace BoSSS.Solution.Multigrid {
 
         public void Solve<U, V>(U X, V B)
             where U : IList<double>
-            where V : IList<double> {
+            where V : IList<double>
+        {
 
             //using (var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver()) {
             //    solver.DefineMatrix(P);
             //    solver.Solve(X, B);
             //}
 
-            switch (SchurOpt) {
-                case SchurOptions.exact: {
+            switch (SchurOpt)
+            {
+                case SchurOptions.exact:
+                    {
                         // Directly invert Preconditioning Matrix
-                        using (var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver()) {
+                        using (var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver())
+                        {
                             solver.DefineMatrix(P);
                             solver.Solve(X, B);
                         }
                         return;
                     }
 
-                case SchurOptions.decoupledApprox: {
+                case SchurOptions.decoupledApprox:
+                    {
                         SolveSubproblems(X, B);
                         return;
                     }
 
-                case SchurOptions.SIMPLE: {
+                case SchurOptions.SIMPLE:
+                    {
                         SolveSIMPLE(X, B);
                         return;
                     }
@@ -280,7 +304,8 @@ namespace BoSSS.Solution.Multigrid {
         /// <param name="B"></param>
         public void SolveSubproblems<U, V>(U X, V B)
             where U : IList<double>
-            where V : IList<double> {
+            where V : IList<double>
+        {
 
             var Bu = new double[Uidx.Length];
             var Xu = Bu.CloneAs();
@@ -292,27 +317,26 @@ namespace BoSSS.Solution.Multigrid {
             Xu = X.GetSubVector(Uidx, default(int[]));
             Xp = X.GetSubVector(Pidx, default(int[]));
 
-            //using (var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver()) {
-            //    solver.DefineMatrix(ConvDiffPoissonMtx);
-            //    solver.Solve(Xp, Bp);
-            //}
-
             ApproxAndSolveSchur(Xp, Bp);
 
             // Solve ConvDiff*w=v-q*pGrad
             pGrad.SpMVpara(-1, Xp, 1, Bu);
-            using (var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver()) {
+
+            using (var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver())
+            {
                 solver.DefineMatrix(ConvDiff);
                 solver.Solve(Xu, Bu);
             }
 
             var temp = new double[Uidx.Length + Pidx.Length];
 
-            for (int i = 0; i < Uidx.Length; i++) {
+            for (int i = 0; i < Uidx.Length; i++)
+            {
                 temp[Uidx[i]] = Xu[i];
             }
 
-            for (int i = 0; i < Pidx.Length; i++) {
+            for (int i = 0; i < Pidx.Length; i++)
+            {
                 temp[Pidx[i]] = Xp[i];
             }
 
@@ -325,12 +349,14 @@ namespace BoSSS.Solution.Multigrid {
         /// </summary>
         public void ApproxAndSolveSchur<U, V>(U Xp, V Bp)
            where U : IList<double>
-           where V : IList<double> {
+           where V : IList<double>
+        {
 
             var temp = new double[Xp.Count];
 
             // Poisson solve
-            using (var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver()) {
+            using (var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver())
+            {
                 solver.DefineMatrix(PoissonMtx_T);
                 solver.Solve(temp, Bp);
             }
@@ -350,20 +376,9 @@ namespace BoSSS.Solution.Multigrid {
             temp = sol.ToArray();
             divVel.SpMVpara(1, temp, 0, Xp);
 
-            //ConvDiffPoissonMtx.SpMV(1, temp, 0, Xp);
-
-            // Schur Convective part
-            //var sol = new double[pGrad.NoOfRows];
-            //pGrad.SpMVpara(1, temp, 0, sol);
-            //temp = sol.ToArray();
-            //sol.Clear();
-            //ConvDiff.SpMVpara(1, temp, 0, sol);
-            //temp = sol.ToArray();
-            //divVel.SpMVpara(1, temp, 0, Xp);
-
-
             // Poisson solve
-            using (var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver()) {
+            using (var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver())
+            {
                 solver.DefineMatrix(PoissonMtx_T);
                 solver.Solve(Xp, Xp);
             }
@@ -378,7 +393,8 @@ namespace BoSSS.Solution.Multigrid {
         /// <param name="B"></param>
         public void SolveSIMPLE<U, V>(U X, V B)
            where U : IList<double>
-           where V : IList<double> {
+           where V : IList<double>
+        {
 
             var Bu = new double[Uidx.Length];
             var Xu = Bu.CloneAs();
@@ -391,7 +407,8 @@ namespace BoSSS.Solution.Multigrid {
             Xp = X.GetSubVector(Pidx, default(int[]));
 
             // Solve SIMPLE Schur
-            using (var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver()) {
+            using (var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver())
+            {
                 solver.DefineMatrix(simpleSchur);
                 solver.Solve(Xp, Bp);
             }
@@ -399,18 +416,21 @@ namespace BoSSS.Solution.Multigrid {
 
             // Solve ConvDiff*w=v-q*pGrad
             pGrad.SpMVpara(-1, Xp, 1, Bu);
-            using (var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver()) {
+            using (var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver())
+            {
                 solver.DefineMatrix(ConvDiff);
                 solver.Solve(Xu, Bu);
             }
 
             var temp = new double[Uidx.Length + Pidx.Length];
 
-            for (int i = 0; i < Uidx.Length; i++) {
+            for (int i = 0; i < Uidx.Length; i++)
+            {
                 temp[Uidx[i]] = Xu[i];
             }
 
-            for (int i = 0; i < Pidx.Length; i++) {
+            for (int i = 0; i < Pidx.Length; i++)
+            {
                 temp[Pidx[i]] = Xp[i];
             }
 
