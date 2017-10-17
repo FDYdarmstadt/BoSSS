@@ -70,36 +70,31 @@ namespace BoSSS.Foundation {
             }
         }
 
+        ISparseSolver m_OpSolver;
 
-        //MultidimensionalArray CondAtVert;    // 1. index: local vertice index / 2. index: 0 = actual cond, 1 = potential own cond, 2 = potential cond
+        int[] CellMask2Coord;
 
-        //int maxVCond;
+        int[] GlobalVert2Local;
 
-
-        int[] Cell2Coord;
-
-        int[] mask2OpCoord;
-
-   
 
         /// <summary>
-        /// linear solver for the quadratic optimization problem, Opmatrix has to be defined! 
+        /// linear solver for the quadratic optimization problem, matrix A has to be defined! 
         /// </summary>
-        //public ilPSP.LinSolvers.ISparseSolver OpSolver {
-        //    get {
-        //        if (m_OpSolver == null) {
-        //            //var solver = new ilPSP.LinSolvers.monkey.CG();
-        //            //solver.MatrixType = ilPSP.LinSolvers.monkey.MatrixType.Auto;
-        //            //solver.DevType = ilPSP.LinSolvers.monkey.DeviceType.CPU;
-        //            //solver.Tolerance = 1.0e-12;
-        //            //var solver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
-        //            var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
-        //            m_OpSolver = solver;
-        //        }
+        public ilPSP.LinSolvers.ISparseSolver OpSolver {
+            get {
+                if (m_OpSolver == null) {
+                    //var solver = new ilPSP.LinSolvers.monkey.CG();
+                    //solver.MatrixType = ilPSP.LinSolvers.monkey.MatrixType.Auto;
+                    //solver.DevType = ilPSP.LinSolvers.monkey.DeviceType.CPU;
+                    //solver.Tolerance = 1.0e-12;
+                    //var solver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
+                    var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
+                    m_OpSolver = solver;
+                }
 
-        //        return m_OpSolver;
-        //    }
-        //}
+                return m_OpSolver;
+            }
+        }
 
 
 
@@ -111,6 +106,33 @@ namespace BoSSS.Foundation {
                 mask = CellMask.GetFullMask(m_grd);
             }
 
+            // hack
+            //CellMask2Coord = new int[m_grd.Cells.NoOfLocalUpdatedCells];
+            List<int> maskedVert = new List<int>();
+            //int numCoord = 0;
+            foreach (var chunk in mask) {
+                int j0 = chunk.i0;
+                int jE = chunk.JE;
+                for (int j = j0; j < jE; j++) {
+                    //CellMask2Coord[j] = numCoord;
+                    //numCoord += DGField.Basis.GetLength(j);
+                    int[] vertAtCell = m_grd.Cells.CellVertices[j];
+                    foreach (int vert in vertAtCell) {
+                        if (!maskedVert.Contains(vert)) {
+                            maskedVert.Add(vert);
+                        }
+                    }
+                }
+            }
+            //m_Coordinates = MultidimensionalArray.Create(numCoord);
+            GlobalVert2Local = new int[m_grd.Vertices.NoOfNodes4LocallyUpdatedCells];
+            int localVertInd = 0;
+            foreach (int vert in maskedVert) {
+                GlobalVert2Local[vert] = localVertInd;
+                localVertInd++;
+            }
+
+
             int degree = m_Basis.Degree;
 
             // get DG-coordinates (change of basis for projection on a higher polynomial degree)
@@ -121,6 +143,7 @@ namespace BoSSS.Foundation {
                     int N = DGField.Basis.GetLength(j);
                     for (int n = 0; n < N; n++) {
                         m_Coordinates[m_Mapping.LocalUniqueCoordinateIndex(0, j, n)] = DGField.Coordinates[j, n];
+                        //m_Coordinates[CellMask2Coord[j] + n] = DGField.Coordinates[j, n];
                     }
                 }
             }
@@ -131,18 +154,26 @@ namespace BoSSS.Foundation {
             SubGrid maskSG = new SubGrid(mask);
             EdgeMask innerEM = maskSG.InnerEdgesMask;
 
+
             // get interpolation points for the continuity constraints
             NodeSet qNodes = getEdgeInterpolationNodes(0, 0);
 
 
-            MultidimensionalArray B = MultidimensionalArray.Create(innerEM.NoOfItemsLocally * qNodes.NoOfNodes, (int)m_Mapping.GlobalCount);
+            //MultidimensionalArray B = MultidimensionalArray.Create(innerEM.NoOfItemsLocally * qNodes.NoOfNodes, (int)m_Mapping.GlobalCount);
+            //MultidimensionalArray B = MultidimensionalArray.Create(innerEM.NoOfItemsLocally * qNodes.NoOfNodes, m_Coordinates.Length);
+            List<int> AcceptedEdges = new List<int>();
+            List<NodeSet> AcceptedNodes = new List<NodeSet>();
+
 
 
             int nodeCount = 0;
-            int NumVert = m_grd.Vertices.NoOfNodes4LocallyUpdatedCells;
-            MultidimensionalArray CondAtVert = MultidimensionalArray.Create(NumVert, 3);    // 1. index: local vertice index / 2. index: 0 = actual cond, 1 = potential own cond, 2 = potential cond
-            MultidimensionalArray CondIncidenceMatrix = MultidimensionalArray.Create(NumVert, NumVert, 3);  // upper triangular matrix in the first two indices
-            //int maxVCond = ((2 * m_grd.SpatialDimension) - 1) * (m_grd.SpatialDimension - 1) - (m_grd.SpatialDimension - 2);
+            //int NumVert = m_grd.Vertices.NoOfNodes4LocallyUpdatedCells;
+            //MultidimensionalArray CondAtVert = MultidimensionalArray.Create(NumVert, 3);    // 1. index: local vertice index / 2. index: 0 = actual cond, 1 = potential own cond, 2 = potential cond
+            //MultidimensionalArray CondIncidenceMatrix = MultidimensionalArray.Create(NumVert, NumVert, 3);  // upper triangular matrix in the first two indices
+            int NumVert = localVertInd;
+            MultidimensionalArray CondAtVert = MultidimensionalArray.Create(NumVert, 3);
+            MultidimensionalArray CondIncidenceMatrix = MultidimensionalArray.Create(NumVert, NumVert, 3);
+
             int[][] EdgeSend = m_grd.Edges.EdgeSendLists;
             int[][] EdgeInsert = m_grd.Edges.EdgeInsertLists;
             List<int> InterprocEdges = new List<int>();
@@ -152,9 +183,9 @@ namespace BoSSS.Foundation {
             int[] local2Interproc = new int[NumVert];
             local2Interproc.SetAll(-1);
             List<List<int>> ProcsAtInterprocVert = new List<List<int>>();
-            bool nonConformEdge;
-            BitArray CellsAtNonConform = new BitArray(m_grd.Cells.NoOfLocalUpdatedCells);
-            List<int> nonConformEdges = new List<int>();
+            //bool nonConformEdge;
+            //BitArray CellsAtNonConform = new BitArray(m_grd.Cells.NoOfLocalUpdatedCells);
+            //List<int> nonConformEdges = new List<int>();
             //List<List<int>> VertAtNonConformEdges = new List<List<int>>();
 
             // local edges per process
@@ -216,27 +247,27 @@ namespace BoSSS.Foundation {
                         int vert = vertAtCell1[i];
                         if (vertAtCell2.Contains(vert)) {
                             VertAtEdge.Add(vert);
-                            CondAtVert[vert, 2] += 1;   // potential condition at vert
+                            CondAtVert[GlobalVert2Local[vert], 2] += 1;   // potential condition at vert
                             if (!isInterprocEdge) { // && !nonConformEdge) {
-                                CondAtVert[vert, 0] += 1;   // actual condition at vert 
-                                CondAtVert[vert, 1] += 1;   // potential own cond at vert (local edge)
+                                CondAtVert[GlobalVert2Local[vert], 0] += 1;   // actual condition at vert 
+                                CondAtVert[GlobalVert2Local[vert], 1] += 1;   // potential own cond at vert (local edge)
                             } else {
                                 if (InterprocEdges.Contains(j)) {
-                                    CondAtVert[vert, 1] += 1;   // potential own cond at vert (interproc edge)
+                                    CondAtVert[GlobalVert2Local[vert], 1] += 1;   // potential own cond at vert (interproc edge)
                                 }
-                                if (local2Interproc[vert] == -1) {
-                                    local2Interproc[vert] = ProcsAtInterprocVert.Count();
+                                if (local2Interproc[GlobalVert2Local[vert]] == -1) {
+                                    local2Interproc[GlobalVert2Local[vert]] = ProcsAtInterprocVert.Count();
                                     List<int> procsAtVert = new List<int>();
                                     procsAtVert.Add(neighbourProc);
                                     ProcsAtInterprocVert.Add(procsAtVert);
                                 } else {
-                                    List<int> procsAtVert = ProcsAtInterprocVert.ElementAt(local2Interproc[vert]);
+                                    List<int> procsAtVert = ProcsAtInterprocVert.ElementAt(local2Interproc[GlobalVert2Local[vert]]);
                                     if (!procsAtVert.Contains(neighbourProc)) {
                                         procsAtVert.Add(neighbourProc);
                                     }
                                 }
                             }
-                            if (CondAtVert[vert,0] == 4) {
+                            if (CondAtVert[GlobalVert2Local[vert], 0] == 4) {
                                 numVCond++;
                             }
                         }
@@ -265,16 +296,18 @@ namespace BoSSS.Foundation {
                                     m = VertAtEdge.ElementAt(indV2);
                                     n = VertAtEdge.ElementAt(indV1);
                                 }
-                                CondIncidenceMatrix[m, n, 2] += 1;  // potential condition at edge
+                                int m_loc = GlobalVert2Local[m];
+                                int n_loc = GlobalVert2Local[n];
+                                CondIncidenceMatrix[m_loc, n_loc, 2] += 1;  // potential condition at edge
                                 if (!isInterprocEdge) {
-                                    CondIncidenceMatrix[m, n, 0] += 1;   // actual condition at edge 
-                                    CondIncidenceMatrix[m, n, 1] += 1;   // potential own cond at edge (local edge/face)
+                                    CondIncidenceMatrix[m_loc, n_loc, 0] += 1;   // actual condition at edge 
+                                    CondIncidenceMatrix[m_loc, n_loc, 1] += 1;   // potential own cond at edge (local edge/face)
                                 } else {
                                     if (InterprocEdges.Contains(j)) {
-                                        CondIncidenceMatrix[m, n, 1] += 1;   // potential own cond at vert (interproc edge)
+                                        CondIncidenceMatrix[m_loc, n_loc, 1] += 1;   // potential own cond at vert (interproc edge)
                                     }
                                 }
-                                if (CondIncidenceMatrix[m, n, 0] == 4) {
+                                if (CondIncidenceMatrix[m_loc, n_loc, 0] == 4) {
                                     numECond++;
                                     if (m_grd.Vertices.Coordinates[m, 0] == m_grd.Vertices.Coordinates[n, 0]) {
                                         edgeOrientation[0] = 1;
@@ -288,10 +321,14 @@ namespace BoSSS.Foundation {
                             }
                         }
                     }
+
                    
                     if (!isInterprocEdge) { // && !nonConformEdge) {
 
+                        AcceptedEdges.Add(j);
+
                         qNodes = getEdgeInterpolationNodes(numVCond, numECond, edgeOrientation);
+                        AcceptedNodes.Add(qNodes);
 
                         //if (qNodes != null) {
                         //    Console.WriteLine("proc {0}: numECond = {1}, No of qNodes = {2}", m_grd.MpiRank, numECond, qNodes.NoOfNodes);
@@ -301,19 +338,21 @@ namespace BoSSS.Foundation {
 
                         if (qNodes != null) {
 
-                            // set continuity constraints
-                            var results = m_Basis.EdgeEval(qNodes, j, 1);
+                            //// set continuity constraints
+                            //var results = m_Basis.EdgeEval(qNodes, j, 1);
 
-                            for (int qN = 0; qN < qNodes.NoOfNodes; qN++) {
-                                // Cell1
-                                for (int p = 0; p < this.m_Basis.GetLength(cell1); p++) {
-                                    B[nodeCount + qN, m_Mapping.GlobalUniqueCoordinateIndex(0, cell1, p)] = results.Item1[0, qN, p];
-                                }
-                                // Cell2
-                                for (int p = 0; p < this.m_Basis.GetLength(cell2); p++) {
-                                    B[nodeCount + qN, m_Mapping.GlobalUniqueCoordinateIndex(0, cell2, p)] = -results.Item2[0, qN, p];
-                                }
-                            }
+                            //for (int qN = 0; qN < qNodes.NoOfNodes; qN++) {
+                            //    // Cell1
+                            //    for (int p = 0; p < this.m_Basis.GetLength(cell1); p++) {
+                            //        //B[nodeCount + qN, m_Mapping.GlobalUniqueCoordinateIndex(0, cell1, p)] = results.Item1[0, qN, p];
+                            //        B[nodeCount + qN, CellMask2Coord[cell1]] = results.Item1[0, qN, p];
+                            //    }
+                            //    // Cell2
+                            //    for (int p = 0; p < this.m_Basis.GetLength(cell2); p++) {
+                            //        //B[nodeCount + qN, m_Mapping.GlobalUniqueCoordinateIndex(0, cell2, p)] = -results.Item2[0, qN, p];
+                            //        B[nodeCount + qN, CellMask2Coord[cell2]] = results.Item1[0, qN, p];
+                            //    }
+                            //}
                             nodeCount += qNodes.NoOfNodes;
                         }
                     }
@@ -321,6 +360,7 @@ namespace BoSSS.Foundation {
                 }
             }
 
+            #region hanging nodes
 
             //BitArray ishangingNode = new BitArray(m_grd.Vertices.NoOfNodes4LocallyUpdatedCells);
 
@@ -628,9 +668,9 @@ namespace BoSSS.Foundation {
             //    }
             //    edge++;
             //}
+#endregion
 
-
-            int nodeCount_OnProc = nodeCount;
+            //int nodeCount_OnProc = nodeCount;
 
 
             // interprocess edges 
@@ -700,7 +740,10 @@ namespace BoSSS.Foundation {
                 //    }
                 //}
 
+                AcceptedEdges.Add(j);
+
                 qNodes = getEdgeInterpolationNodes(numVCond, numECond);
+                AcceptedNodes.Add(qNodes);
 
                 //if (qNodes != null) {
                 //    Console.WriteLine("proc {0}: numECond = {1}, No of qNodes = {2} - interproc Edge", m_grd.MpiRank, numECond, qNodes.NoOfNodes);
@@ -711,18 +754,18 @@ namespace BoSSS.Foundation {
                 if (qNodes != null) {
 
                     // set continuity constraints
-                    var results = m_Basis.EdgeEval(qNodes, j, 1);
+                    //var results = m_Basis.EdgeEval(qNodes, j, 1);
 
-                    for (int qN = 0; qN < qNodes.NoOfNodes; qN++) {
-                        // Cell1
-                        for (int p = 0; p < this.m_Basis.GetLength(cell1); p++) {
-                            B[nodeCount + qN, m_Mapping.GlobalUniqueCoordinateIndex(0, cell1, p)] = results.Item1[0, qN, p];
-                        }
-                        // Cell2
-                        for (int p = 0; p < this.m_Basis.GetLength(cell2); p++) {
-                            B[nodeCount + qN, m_Mapping.GlobalUniqueCoordinateIndex(0, cell2, p)] = -results.Item2[0, qN, p];
-                        }
-                    }
+                    //for (int qN = 0; qN < qNodes.NoOfNodes; qN++) {
+                    //    // Cell1
+                    //    for (int p = 0; p < this.m_Basis.GetLength(cell1); p++) {
+                    //        B[nodeCount + qN, m_Mapping.GlobalUniqueCoordinateIndex(0, cell1, p)] = results.Item1[0, qN, p];
+                    //    }
+                    //    // Cell2
+                    //    for (int p = 0; p < this.m_Basis.GetLength(cell2); p++) {
+                    //        B[nodeCount + qN, m_Mapping.GlobalUniqueCoordinateIndex(0, cell2, p)] = -results.Item2[0, qN, p];
+                    //    }
+                    //}
                     nodeCount += qNodes.NoOfNodes;
                 }
                 edge++;
@@ -730,11 +773,45 @@ namespace BoSSS.Foundation {
             }
 
 
-
-
             Partitioning rowPart = new Partitioning(nodeCount);
             MsrMatrix A = new MsrMatrix(rowPart, m_Mapping);
-            A.AccBlock(rowPart.i0, 0, 1.0, B.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { nodeCount - 1, (int)m_Mapping.GlobalCount - 1 }));
+
+            int count = 0;
+            nodeCount = 0;
+            foreach (int j in AcceptedEdges) {
+
+                int cell1 = m_grd.Edges.CellIndices[j, 0];
+                int cell2 = m_grd.Edges.CellIndices[j, 1];
+
+
+                // set continuity constraints
+                qNodes = AcceptedNodes.ElementAt(count);
+
+                var results = m_Basis.EdgeEval(qNodes, j, 1);
+
+                for (int qN = 0; qN < qNodes.NoOfNodes; qN++) {
+                    // Cell1
+                    for (int p = 0; p < this.m_Basis.GetLength(cell1); p++) {
+                        A[nodeCount + qN, m_Mapping.GlobalUniqueCoordinateIndex(0, cell1, p)] = results.Item1[0, qN, p];
+                    }
+                    // Cell2
+                    for (int p = 0; p < this.m_Basis.GetLength(cell2); p++) {
+                        A[nodeCount + qN, m_Mapping.GlobalUniqueCoordinateIndex(0, cell2, p)] = -results.Item2[0, qN, p];
+                    }
+                }
+                count++;
+                nodeCount += qNodes.NoOfNodes;
+                    
+
+         
+            }
+
+
+            //Partitioning rowPart = new Partitioning(nodeCount);
+            //MsrMatrix A = new MsrMatrix(rowPart, m_Mapping);
+            //A.AccBlock(rowPart.i0, 0, 1.0, B.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { nodeCount - 1, (int)m_Mapping.GlobalCount - 1 }));
+            //MsrMatrix A = new MsrMatrix(nodeCount, m_Coordinates.Length, 1, 1);
+            //A.AccBlock(0, 0, 1.0, B.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { nodeCount - 1, m_Coordinates.Length - 1 }));
             //A.AccBlock(rowPart.i0 + nodeCount, 0, 1.0, B2);
 
             //A.SaveToTextFile("C:\\tmp\\AMatrix.txt");
@@ -764,10 +841,10 @@ namespace BoSSS.Foundation {
             double[] v = new double[rowPart.LocalLength];
             double[] x = new double[m_Coordinates.Length];
 
-            var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
+            //OpSolver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
 
-            solver.DefineMatrix(AAT);
-            solver.Solve(v, RHS);
+            OpSolver.DefineMatrix(AAT);
+            OpSolver.Solve(v, RHS);
 
             A.Transpose().SpMVpara(-1.0, v, 0.0, x);
 
@@ -1096,6 +1173,7 @@ namespace BoSSS.Foundation {
                     double[] CDGcoord = new double[N];
                     for (int n = 0; n < N; n++) {
                         CDGcoord[n] = m_Coordinates[m_Mapping.LocalUniqueCoordinateIndex(0, j, n)];
+                        //CDGcoord[n] = m_Coordinates[CellMask2Coord[j] + n];
                     }
 
                     double[] DGcoord = new double[N];
