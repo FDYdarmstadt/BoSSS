@@ -63,7 +63,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             RefElement[] KrefS = oldGrid.RefElements; // all ref elements used
             RefElement.SubdivisionTreeNode[] KrefS_SubDiv = new RefElement.SubdivisionTreeNode[KrefS.Length]; // subdivision tree for each ref element
             RefElement.SubdivisionTreeNode[][] KrefS_SubdivLeaves = new RefElement.SubdivisionTreeNode[KrefS.Length][]; // actual subdivision elements
-            Tuple<int, int>[][,] KrefS_SubdivConnections = new Tuple<int, int>[KrefS.Length][,]; // connections between elements; 1st idx: ref elem; 2nd idx: subdiv elm; 3rd idx: face of subdiv elm; content: idx od subdiv elm
+            Tuple<int, int>[][,] KrefS_SubdivConnections = new Tuple<int, int>[KrefS.Length][,]; // connections between elements; 1st idx: ref elem; 2nd idx: subdiv elm; 3rd idx: face of subdiv elm; content: idx of subdiv elm
             int[][][] KrefS_Faces2Subdiv = new int[KrefS.Length][][]; // mapping: [ref elm, face of ref elm] -> Subdivision elements which bound to this face.
             for(int iKref = 0; iKref < KrefS.Length; iKref++) {
                 RefElement Kref = KrefS[iKref];
@@ -168,8 +168,11 @@ namespace BoSSS.Foundation.Grid.Classic {
             int[,] Edge2Cell = this.Edges.CellIndices;
             byte[] EdgeTags = this.Edges.EdgeTags;
 
-            for (int j = 0; j < J; j++) {
-                if (CellsToRefineBitmask[j]) {
+            for (int j = 0; j < J; j++) { // loop over all original cells...
+                if (CellsToRefineBitmask[j]) { 
+                    // +++++++++++++++
+                    // cell is refined 
+                    // +++++++++++++++
                     int iKref = this.Cells.GetRefElementIndex(j);
 
                     foreach(int i in Cells2Edges[j]) { // loop over old edges 
@@ -200,20 +203,27 @@ namespace BoSSS.Foundation.Grid.Classic {
                         }
 
                         // connect all 'hereCells' to the 'peerCells'
-                        todo
+                        foreach(var hC in hereCells) {
+                            foreach(var pC in peerCells) {
+                                ArrayTools.AddToArray(new CellFaceTag() {
+                                        ConformalNeighborship = false,
+                                        NeighCell_GlobalID = pC.GlobalID,
+                                        FaceIndex = iFace
+                                    }, ref hC.CellFaceTags);
+                            }
+                        }
 
                     }
 
-
-                    for(int iSubdiv = 0; iSubdiv < KrefS_SubdivLeaves[iKref].Length; iSubdiv++) {
-                        var newCell = refinedOnes[j][iSubdiv];
-
-
-
-
-                    }
+                    //for(int iSubdiv = 0; iSubdiv < KrefS_SubdivLeaves[iKref].Length; iSubdiv++) {
+                    //    var newCell = refinedOnes[j][iSubdiv];
+                    //}
 
                 } else if (RefineNeighborsBitmask[j]) {
+                    // ++++++++++++++++++++++++++
+                    // neighbor cell was refined
+                    // ++++++++++++++++++++++++++
+
                     Debug.Assert(CellsToRefineBitmask[j] == false); // only for cells which are not refined themselves
                     Debug.Assert(object.ReferenceEquals(newGrid.Cells[j], oldGrid.Cells[j]) == false); // we are allowed to change the cell object
                     var newCell = newGrid.Cells[j];

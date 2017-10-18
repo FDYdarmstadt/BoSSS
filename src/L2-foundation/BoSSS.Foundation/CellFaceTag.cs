@@ -102,7 +102,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         int m_SignedEdgeTag;
 
         /// <summary>
-        /// Face index of the cell.
+        /// Face index of the owner cell (*not* the cell referenced with <see cref="NeighCell_GlobalID"/>).
         /// </summary>
         [DataMember]
         public int FaceIndex;

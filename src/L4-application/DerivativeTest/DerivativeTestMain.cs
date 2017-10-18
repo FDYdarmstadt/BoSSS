@@ -151,7 +151,7 @@ namespace BoSSS.Application.DerivativeTest {
 
     class DerivativeTestMain : BoSSS.Solution.Application {
 
-        public static int GRID_CASE = 13;
+        public static int GRID_CASE = 12;
         public static string GRID_FILE = "..\\..\\TestGrids\\wedding2D_v16.cgns";
 
         static void Main(string[] args) {
@@ -359,6 +359,9 @@ namespace BoSSS.Application.DerivativeTest {
                     var base_grid = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-3, 3, 4), GenericBlas.Linspace(-3, 3, 4));
                     var base_gdat = new GridData(base_grid);
                     grd = base_gdat.Refine();
+
+                    grd.Plot2DGrid();
+
                     break;
                 }
 
