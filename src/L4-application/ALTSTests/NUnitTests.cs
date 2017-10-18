@@ -68,18 +68,29 @@ namespace ALTSTests {
         // In this case, restarting a LTS simulation with another clustering is possible
         // because a history is not needed. 
         public static void ALTSDynClust_order1_subgrids3() {
-            ALTSDynClustering(order: 1, subGrids: 3, maxEnergyNorm: 7.772253056189100E-01);
+            //3 cells
+            //ALTSDynClustering(order: 1, subGrids: 3, maxEnergyNorm: 7.772253056189100E-01);
+
+            //4 cells
+            ALTSDynClustering(order: 1, subGrids: 4, maxEnergyNorm: 7.905061733461980E-01);
         }
 
         [Test]
         public static void ALTSDynClust_order2_subgrids3() {
-            ALTSDynClustering(order: 2, subGrids: 3, maxEnergyNorm: 7.772253058420590E-01);
+            //3 cells
+            //ALTSDynClustering(order: 2, subGrids: 3, maxEnergyNorm: 7.772253058420590E-01);
+
+            //4 cells
+            ALTSDynClustering(order: 2, subGrids: 4, maxEnergyNorm: 7.905061732830720E-01);
         }
 
         [Test]
         public static void ALTSDynClust_order3_subgrids3() {
-            ALTSDynClustering(order: 3, subGrids: 3, maxEnergyNorm: 7.772253058420650E-01);
-        }
+            //3 cells
+            //ALTSDynClustering(order: 3, subGrids: 3, maxEnergyNorm: 7.772253058420650E-01);
 
+            //4 cells
+            ALTSDynClustering(order: 3, subGrids: 4, maxEnergyNorm: 7.905061732830850E-01);
+        }
     }
 }
