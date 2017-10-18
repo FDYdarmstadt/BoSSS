@@ -105,12 +105,6 @@
     <Reference Include="log4net">
       <HintPath>..\..\..\libs\log4net-1.2.10\bin\cli\1.0\release\log4net.dll</HintPath>
     </Reference>
-    <Reference Include="XmlDiffPatch">
-      <HintPath>..\..\..\libs\XMLDiffPatch.1.0.8.28\xmldiffpatch.dll</HintPath>
-    </Reference>
-    <Reference Include="XmlDiffPatch.View">
-      <HintPath>..\..\..\libs\XMLDiffPatch.1.0.8.28\XmlDiffPatch.View.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="autonomuousPlotter.cs" />

@@ -1,4 +1,20 @@
-﻿using System;
+﻿/* =======================================================================
+Copyright 2017 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -18,7 +34,7 @@ namespace BoSSS.Solution.Multigrid {
         /// <summary>
         /// Maximum number of Newton iterations
         /// </summary>
-        public int MaxIter = 3;
+        public int MaxIter = 50;
 
         /// <summary>
         /// Minimum number of Newton iterations
@@ -28,13 +44,13 @@ namespace BoSSS.Solution.Multigrid {
         /// <summary>
         /// Maximum number of GMRES(m) restarts
         /// </summary>
-        public int restart_limit = 1;
+        public int restart_limit = 10;
 
 
         /// <summary>
         /// Maximum dimension of the krylov subspace. Equals m in GMRES(m)
         /// </summary>
-        public int maxKrylovDim = 5;
+        public int maxKrylovDim = 20;
 
         /// <summary>
         /// Convergence criterium for nonlinear iteration
@@ -44,20 +60,21 @@ namespace BoSSS.Solution.Multigrid {
         /// <summary>
         /// Maximum number of steplength iterations
         /// </summary>
-        public double maxStep = 5;
+        public double maxStep = 10;
 
         /// <summary>
         /// Convergence for Krylov and GMRES iterations
         /// </summary>
         public double GMRESConvCrit = 1e-9;
 
-        public ISolverSmootherTemplate m_LinearSolver;
-
         public CoordinateVector m_SolutionVec;
 
-        public enum ApproxJacobianOptions { GMRES = 1, exact = 2 }
+        public enum ApproxInvJacobianOptions { GMRES = 1, DirectSolver = 2 }
 
-        public ApproxJacobianOptions ApprocJac = ApproxJacobianOptions.exact;
+        public ApproxInvJacobianOptions ApproxJac = ApproxInvJacobianOptions.DirectSolver;
+
+        public MsrMatrix currentPrecMatrix = null;
+
 
 
         public override void SolverDriver<S>(CoordinateVector SolutionVec, S RHS) {
@@ -79,9 +96,10 @@ namespace BoSSS.Solution.Multigrid {
             xt = new double[x.Length];
             ft = new double[x.Length];
 
+
             this.CurrentLin.TransformSolFrom(SolutionVec, x);
-            EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);
-            Console.WriteLine("Residual Evluate Operator:   " + ft.L2NormPow2().MPISum().Sqrt());
+            base.EvalResidual(x, ref f0);
+
 
             // fnorm
             double fnorm = f0.L2NormPow2().MPISum().Sqrt();
@@ -90,7 +108,6 @@ namespace BoSSS.Solution.Multigrid {
             double[] step = new double[x.Length];
             double[] stepOld = new double[x.Length];
             MsrMatrix CurrentJac;
-
 
             Console.WriteLine("Start residuum for nonlinear iteration:  " + fnorm);
 
@@ -101,29 +118,21 @@ namespace BoSSS.Solution.Multigrid {
                 fNormo = fnorm;
                 itc++;
 
-                // dKrylov
-                if (ApprocJac == ApproxJacobianOptions.GMRES) {
-                    //Console.WriteLine("Solving Jacobian with GMRES....");
+                // How should the inverse of the Jacobian be approximated?
+                if (ApproxJac == ApproxInvJacobianOptions.GMRES) {
+                    if (Precond != null) {
+                        Precond.Init(CurrentLin);
+                    }
                     step = Krylov(SolutionVec, x, f0, out errstep);
-                } else {
-
-                    //Console.WriteLine("Solving Jacobian exact....");
+                } else if (ApproxJac == ApproxInvJacobianOptions.DirectSolver) {
                     CurrentJac = diffjac(SolutionVec, x, f0);
-
                     var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
-
                     solver.DefineMatrix(CurrentJac);
                     step.ClearEntries();
                     solver.Solve(step, f0);
+                } else {
+                    throw new NotImplementedException("Your approximation option for the jacobian seems not to be existent.");
                 }
-
-                var temp2 = step.CloneAs();
-                temp2.AccV(-1, stepOld);
-                stepOld = step.CloneAs();
-
-                #if DEBUG
-                Console.WriteLine("Difference of step:   " + temp2.L2Norm());
-                #endif
 
                 // Start line search
                 xOld = x;
@@ -136,10 +145,6 @@ namespace BoSSS.Solution.Multigrid {
                 this.CurrentLin.TransformSolFrom(SolutionVec, xt);
                 EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);
                 var nft = ft.L2NormPow2().MPISum().Sqrt(); var nf0 = f0.L2NormPow2().MPISum().Sqrt(); var ff0 = nf0 * nf0; var ffc = nft * nft; var ffm = nft * nft;
-
-                #if DEBUG
-                Console.WriteLine("Start residuum for nonlinear iteration:  " + nft);
-                #endif  
 
                 // Control of the the step size
                 while (nft >= (1 - alpha * lambda) * nf0 && iarm < maxStep) {
@@ -166,9 +171,9 @@ namespace BoSSS.Solution.Multigrid {
                     ffc = nft * nft;
                     iarm++;
 
-                    #if DEBUG
+#if DEBUG
                     Console.WriteLine("Step size:  " + lambda + "with Residuum:  " + nft);
-                    #endif
+#endif
                 }
                 // transform solution back to 'original domain'
                 // to perform the linearization at the new point...
@@ -180,6 +185,8 @@ namespace BoSSS.Solution.Multigrid {
 
                 // residual evaluation & callback
                 base.EvalResidual(xt, ref ft);
+
+               // EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);
 
                 //base.Init(SolutionVec, RHS, out x, out f0);
 
@@ -206,13 +213,13 @@ namespace BoSSS.Solution.Multigrid {
         /// <param name="xinit">initial iterate</param>
         /// <param name="errstep">error of step</param>
         /// <returns></returns>
-        public double[] NewtonGMRES(CoordinateVector SolutionVec, double[] currentX, double[] f0, double[] xinit, out double errstep) {
+        public double[] GMRES(CoordinateVector SolutionVec, double[] currentX, double[] f0, double[] xinit, out double errstep) {
             int n = f0.Length;
-            int reorth = 3;
+            int reorth = 1; // Orthogonalization method -> 1: Brown/Hindmarsh condition, 3: Always reorthogonalize
 
             // RHS of the linear equation system 
             double[] b = new double[n];
-            b.AccV(-1, f0);
+            b.AccV(1, f0);
 
             double[] x = new double[n];
             double[] r = new double[n];
@@ -225,8 +232,13 @@ namespace BoSSS.Solution.Multigrid {
             //Initial solution
             if (xinit.L2Norm() != 0) {
                 x = xinit.CloneAs();
-                r.SetV(dirder(SolutionVec, currentX, x, f0), -1);
-                r.AccV(-1, f0);
+                r.AccV(-1, dirder(SolutionVec, currentX, x, f0));
+            }
+
+            if (Precond != null) {
+                var temp2 = r.CloneAs();
+                r.ClearEntries();
+                Precond.Solve(r, temp2);
             }
 
             int m = maxKrylovDim;
@@ -240,7 +252,7 @@ namespace BoSSS.Solution.Multigrid {
             double[] g = new double[m + 1];
             g[0] = rho;
 
-            Console.WriteLine("Error NewtonGMRES:   " + rho);
+            //Console.WriteLine("Error NewtonGMRES:   " + rho);
 
             // Termination of entry
             if (rho < GMRESConvCrit)
@@ -252,9 +264,15 @@ namespace BoSSS.Solution.Multigrid {
 
             while ((rho > GMRESConvCrit) && k <= m) {
 
-
                 // Call directional derivative
                 V[k].SetV(dirder(SolutionVec, currentX, V[k - 1], f0));
+
+                if (Precond != null) {
+                    var temp3 = V[k].CloneAs();
+                    V[k].ClearEntries();
+                    Precond.Solve(V[k], temp3);
+                }
+
                 double normav = V[k].L2NormPow2().MPISum().Sqrt();
 
                 // Modified Gram-Schmidt
@@ -266,7 +284,7 @@ namespace BoSSS.Solution.Multigrid {
                 double normav2 = H[k, k - 1];
 
                 // Reorthogonalize ?
-                if ((reorth == 1 && normav + 0.001 * normav2 == normav) || reorth == 3) {
+                if ((reorth == 1 && Math.Round(normav + 0.001 * normav2, 3) == Math.Round(normav, 3) || reorth == 3)) {
                     for (int j = 1; j <= k; j++) {
                         double hr = GenericBlas.InnerProd(V[k], V[j - 1]).MPISum();
                         H[j - 1, k - 1] = H[j - 1, k - 1] + hr;
@@ -326,14 +344,19 @@ namespace BoSSS.Solution.Multigrid {
 
                 Console.WriteLine("Error NewtonGMRES:   " + rho);
 
+                //Console.WriteLine("Error NewtonGMRES:   " + rho );
+
                 k++;
 
             }
 
-            k--;
-            // update approximation and exit
 
-            //y = H(1:i,1:i) \ s(1:i);    
+            k--;
+
+            Console.WriteLine("GMRES completed after:   " + k + "steps");
+
+            // update approximation and exit
+            //y = H(1:i,1:i) \ g(1:i);    
             y = new double[k];
             H.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { k - 1, k - 1 })
                 .Solve(y, g.GetSubVector(0, k));
@@ -351,17 +374,17 @@ namespace BoSSS.Solution.Multigrid {
 
         }
 
-        public double[] Krylov(CoordinateVector SolutionVec, double[] currentX, double[] f0, out double errstep) {
+        public double[]  Krylov(CoordinateVector SolutionVec, double[] currentX, double[] f0, out double errstep) {
 
-            double[] step = NewtonGMRES(SolutionVec, currentX, f0, new double[currentX.Length], out errstep);
+            double[] step = GMRES(SolutionVec, currentX, f0, new double[currentX.Length], out errstep);
             int kinn = 0;
 
             Console.WriteLine("Error Krylov:   " + errstep);
 
-            while (kinn < restart_limit && errstep > ConvCrit) {
+            while (kinn < restart_limit && errstep > GMRESConvCrit) {
                 kinn++;
 
-                step = NewtonGMRES(SolutionVec, currentX, f0, step, out errstep);
+                step = GMRES(SolutionVec, currentX, f0, step, out errstep);
 
                 Console.WriteLine("Error Krylov:   " + errstep);
             }
@@ -406,7 +429,6 @@ namespace BoSSS.Solution.Multigrid {
             temp.CopyEntries(SolutionVec);
 
             this.CurrentLin.TransformSolFrom(SolutionVec, del);
-
 
             EvaluateOperator(1.0, SolutionVec.Mapping.Fields, fx);
 
@@ -528,6 +550,36 @@ namespace BoSSS.Solution.Multigrid {
             return jac;
         }
 
+        /// <summary>
+        /// Evaluation of the nonlinear operator.
+        /// </summary>
+        /// <param name="alpha"></param>
+        /// <param name="CurrentState">
+        /// Current state of DG fields
+        /// </param>
+        /// <param name="beta">
+        /// Pre-scaling of <paramref name="Output"/>.
+        /// </param>
+        /// <param name="Output"></param>
+        //public override void EvaluateOperator(double alpha, IEnumerable<DGField> CurrentState, double[] Output) {
+        //    BlockMsrMatrix OpMtxRaw, MassMtxRaw;
+        //    double[] OpAffineRaw;
+        //    this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, CurrentState.ToArray());
+
+        //    OpMtxRaw.SpMV(alpha, new CoordinateVector(CurrentState.ToArray()), 1.0, OpAffineRaw);
+
+        //    CurrentLin.TransformRhsInto(OpAffineRaw, Output);
+
+        //    // Inverse of current PrexMatrix
+        //    if (currentPrecMatrix != null) {
+        //        var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
+        //        solver.DefineMatrix(currentPrecMatrix);
+        //        var temp = Output.CloneAs();
+        //        Output.ClearEntries();
+        //        solver.Solve(Output, temp);
+        //    }
+
+        //}
 
     }
 }

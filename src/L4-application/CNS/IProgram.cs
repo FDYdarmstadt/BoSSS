@@ -17,6 +17,7 @@ limitations under the License.
 using System;
 using BoSSS.Solution;
 using CNS.EquationSystem;
+using BoSSS.Foundation.IO;
 
 namespace CNS {
 
@@ -54,5 +55,7 @@ namespace CNS {
         Operator FullOperator {
             get;
         }
+
+        void SaveToDatabase(TimestepNumber ts, double phystime);
     }
 }

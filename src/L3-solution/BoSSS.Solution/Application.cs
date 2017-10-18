@@ -1112,7 +1112,8 @@ namespace BoSSS.Solution {
                     //DatabaseDriver.SaveGrid(Grid);
                     bool GridReplaced;
                     GridCommons _grid = this.Grid;
-                    DatabaseDriver.SaveGridIfUnique(ref _grid, out GridReplaced, this.m_Database);
+                    DatabaseDriver.SaveGrid(_grid);
+                    //DatabaseDriver.SaveGridIfUnique(ref _grid, out GridReplaced, this.m_Database);
                     this.Grid = _grid;
 
                 }
@@ -1249,6 +1250,7 @@ namespace BoSSS.Solution {
             }
         }
 
+
         /// <summary>
         /// Optional interface tracker if XDG is used.
         /// </summary>
@@ -1256,7 +1258,7 @@ namespace BoSSS.Solution {
             get;
             protected set;
         }
-
+        
         /// <summary>
         /// Extended grid information.
         /// </summary>
@@ -1409,13 +1411,18 @@ namespace BoSSS.Solution {
                 if (this.CurrentSessionInfo.ID.Equals(Guid.Empty))
                     return null;
 
-
-                var tsi = this.DatabaseDriver.SaveTimestep(
-                    t,
-                    timestepno,
-                    this.CurrentSessionInfo,
-                    this.GridData,
-                    this.IOFields);
+                ITimestepInfo tsi;
+                try {
+                    tsi = this.DatabaseDriver.SaveTimestep(
+                        t,
+                        timestepno,
+                        this.CurrentSessionInfo,
+                        this.GridData,
+                        this.IOFields);
+                } catch(Exception e) {
+                    Console.WriteLine(e.GetType().Name + " on rank " + this.MPIRank + " saveing timestep " + timestepno + ": "+ e.Message);
+                    tsi = null; 
+                }
 
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
@@ -1837,17 +1844,15 @@ namespace BoSSS.Solution {
                 // create new grid
                 // ===============
                 this.MultigridSequence = null;
-                this.GridData.Invalidate();
-                if (this.LsTrk != null) {
-                    this.LsTrk.Invalidate();
-                    this.LsTrk = null;
-                }
-
+                
                 this.Grid.RedistributeGrid(NewPartition);
                 var newGridData = new GridData(this.Grid);
                 this.GridData = newGridData;
-                oldGridData = null;
-
+                oldGridData.Invalidate();
+                if (this.LsTrk != null) {
+                    this.LsTrk.Invalidate();
+                }
+                
                 if (this.Control == null || this.Control.NoOfMultigridLevels > 0)
                     this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
                 else
@@ -1927,12 +1932,15 @@ namespace BoSSS.Solution {
 
                 // re-create solvers, blablabla
                 CreateEquationsAndSolvers(loadbal);
+
+                
             }
         }
 
         /// <summary>
-        /// Additional backup (internal states of time integrators before grid redistribution
+        /// Additional backup (e.g. internal states of time integrators before grid redistribution)
         /// during dynamic load balancing.
+        /// May also be used to invalidate internal states related to the old <see cref="GridData"/> or <see cref="LsTrk"/> objects.
         /// </summary>
         public virtual void DataBackupBeforeBalancing(LoadBalancingData L) {
 
@@ -1973,6 +1981,7 @@ namespace BoSSS.Solution {
                 this.Grid,
                 TimeStepNo,
                 m_GridPartitioningType,
+                m_GridPartitioningOptions,
                 Control != null ? Control.DynamicLoadBalancing_ImbalanceThreshold : 0.12,
                 Control != null ? Control.DynamicLoadBalancing_Period : 5);
         }
