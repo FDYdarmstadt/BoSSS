@@ -98,7 +98,7 @@ namespace BoSSS.Solution.Gnuplot {
 
                 gp.Execute();
 
-
+                Console.WriteLine("Pres any key to continue...");
                 Console.ReadKey();
             }
 

@@ -1023,11 +1023,9 @@ namespace BoSSS.Foundation.Grid.Classic {
 
  
         /// <summary>
-        /// 'ínput data': cell-neighborship information obtained from
-        /// <see cref="GridCommons.GetCellNeighbourship"/>.<br/>
-        /// 'output data': <see cref="CellData.CellNeighbours_global_tmp"/>,
-        /// <see cref="CellData.CellNeighbours"/> and various entries of
-        /// <see cref="Parallel"/>
+        /// Parallel setup, e.g. send and receive lists.
+        /// - 'ínput data': cell-neighborship information obtained from <see cref="GridCommons.GetCellNeighbourship"/>.
+        /// - 'output data': <see cref="CellData.CellNeighbours_global_tmp"/>, <see cref="CellData.CellNeighbours"/> and various entries of <see cref="Parallel"/>
         /// </summary>
         void ParallelSetup() {
             using (new FuncTrace()) {

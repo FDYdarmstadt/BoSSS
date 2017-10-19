@@ -331,6 +331,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 public int Cell1_PeriodicTrafoIdx;
                 public int Cell2_PeriodicTrafoIdx;
 
+
                 public int EdgeKrefIndex {
                     get {
                         return (int)(EdgeInfo.EdgeSimplexIdxMask & info);
@@ -679,10 +680,16 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                         } else {
 
-                            if (FaceIntersect(V_f1, V_f2,
+                            if(K_j1.GlobalID == 2 && K_j2.GlobalID == 6)
+                                Debugger.Break();
+
+
+                            bool bFoundIntersection = FaceIntersect(V_f1, V_f2,
                                 Kref1.GetFaceTrafo(face1), Kref1.GetInverseFaceTrafo(face1),
                                 VerticesFor_KrefEdge,
-                                out conformal1, out conformal2, out newTrafo, out Edg_idx)) {
+                                out conformal1, out conformal2, out newTrafo, out Edg_idx);
+
+                            if(bFoundIntersection) {
                                 // intersection found
 
                                 //Debug.Assert(Edge.FaceIndex1 == byte.MaxValue || Edge.FaceIndex1 == e1);
@@ -693,6 +700,8 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                                 face1 = int.MaxValue - 10;
                                 face2 = int.MaxValue - 10;
+                            } else if() {
+                                Debug.Assert(bFoundIntersection == false);
                             } else {
                                 MultidimensionalArray Vtx1 = MultidimensionalArray.Create(Kref1.Vertices.Lengths);
                                 m_owner.TransformLocal2Global(Kref1.Vertices, Vtx1, j1);

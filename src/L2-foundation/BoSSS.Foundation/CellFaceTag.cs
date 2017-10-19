@@ -70,16 +70,32 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// </remarks>
         public byte EdgeTag {
             set {
-                bool signFlag = PeriodicInverse;
-                m_SignedEdgeTag = value;
-                PeriodicInverse = signFlag;
+                if(value >= 255)
+                    throw new ArgumentOutOfRangeException("255 is a reserved value");
+                //bool signFlag = PeriodicInverse;
+                //m_SignedEdgeTag = value;
+                //PeriodicInverse = signFlag;
+
+                int v = value;
+                if(m_SignedEdgeTag )
+
+                m_SignedEdgeTag |= 
+                m_SignedEdgeTag &= (EdgeTag & 0xFF);
             }
             get {
-                int r = Math.Abs(m_SignedEdgeTag);
+                int r;
+                if(m_SignedEdgeTag = )
+                
+                = Math.Abs(m_SignedEdgeTag);
                 Debug.Assert(r < 255, "in reserved value range");
+                
+
                 return (byte)r;
             }
         }
+
+        const int PeriodicInverseMask = int.MinValue; // equals 0x80000000
+        const int EdgeMayBeEmpty = 0x4000000;
 
         /// <summary>
         /// Indicates on which 'side' of the periodic transformation this cell
@@ -89,7 +105,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// </summary>
         public bool PeriodicInverse {
             get {
-                return (m_SignedEdgeTag < 0);
+                return (m_SignedEdgeTag & PeriodicInverseMask) != 0;
             }
             set {
                 int sign = value ? -1 : 1;
@@ -97,6 +113,16 @@ namespace BoSSS.Foundation.Grid.Classic {
                 m_SignedEdgeTag = sign * unsignedTag;
             }
         }
+
+        public bool EdgeMayBeEmpty {
+            get {
+                return m
+            }
+            set {
+
+            }
+        }
+
 
         [DataMember]
         int m_SignedEdgeTag;

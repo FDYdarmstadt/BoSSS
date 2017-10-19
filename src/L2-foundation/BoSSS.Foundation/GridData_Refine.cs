@@ -35,7 +35,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             GridCommons oldGrid = this.m_Grid;
             GridCommons newGrid = new GridCommons(oldGrid.RefElements, oldGrid.EdgeRefElements);
 
-            int[] CellsToRefine = new[] { 1 };
+            int[] CellsToRefine = new[] { 1, 2 };
 
 
             int NewNoOfCells = CellsToRefine.Length * 3 + this.Cells.NoOfLocalUpdatedCells;
