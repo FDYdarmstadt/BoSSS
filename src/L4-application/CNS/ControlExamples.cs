@@ -973,15 +973,15 @@ namespace CNS {
             return c;
         }
 
-        public static CNSControl ShockTube(string dbPath = null, int dgDegree = 2, int numOfCellsX = 100, int numOfCellsY = 1, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = true) {
+        public static CNSControl ShockTube(string dbPath = null, int dgDegree = 2, int numOfCellsX = 50, int numOfCellsY = 1, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = true) {
 
             CNSControl c = new CNSControl();
 
-            //dbPath = @"e:\bosss_db";
+            dbPath = @"c:\bosss_db";
             //dbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db";
             c.DbPath = dbPath;
             c.savetodb = dbPath != null && saveToDb;
-            c.saveperiod = 1;
+            c.saveperiod = 100;
             c.PrintInterval = 10;
 
             double xMin = 0;
@@ -1017,7 +1017,8 @@ namespace CNS {
 
             // (A)LTS
             c.ExplicitScheme = ExplicitSchemes.LTS;
-            c.ExplicitOrder = 2;
+            //c.ExplicitScheme = ExplicitSchemes.AdamsBashforth;
+            c.ExplicitOrder = 3;
             c.NumberOfSubGrids = 3;
             c.ReclusteringInterval = 1;
             c.FluxCorrection = false;
@@ -1114,14 +1115,6 @@ namespace CNS {
                 c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => 0.0);
             }
 
-            c.ProjectName = "Shock tube";
-            if (true1D)
-                c.SessionName = String.Format("Shock tube, 1D, dgDegree = {0}, noOfCellsX = {1}, sensorLimit = {2:0.00E-00}", dgDegree, numOfCellsX, sensorLimit);
-            else
-                c.SessionName = String.Format("Shock tube, 2D, dgDegree = {0}, noOfCellsX = {1}, noOfCellsX = {2}, sensorLimit = {3:0.00E-00}, CFLFraction = {4:0.00E-00}, ALTS 2/3", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction);
-            c.Tags.Add("Shock tube");
-            c.Tags.Add("Artificial viscosity");
-
             // Time config
             c.dtMin = 0.0;
             c.dtMax = 1.0;
@@ -1129,7 +1122,14 @@ namespace CNS {
             c.CFLFraction = 0.3;
             c.Endtime = 0.25;
             c.NoOfTimesteps = int.MaxValue;
-            //c.NoOfTimesteps = 2;
+
+            c.ProjectName = "Shock tube";
+            if (true1D)
+                c.SessionName = String.Format("Shock tube, 1D, dgDegree = {0}, noOfCellsX = {1}, sensorLimit = {2:0.00E-00}", dgDegree, numOfCellsX, sensorLimit);
+            else
+                c.SessionName = String.Format("Shock tube, 2D, dgDegree = {0}, noOfCellsX = {1}, noOfCellsX = {2}, sensorLimit = {3:0.00E-00}, CFLFraction = {4:0.00E-00}, ALTS {5}/{6}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids);
+            //c.Tags.Add("Shock tube");
+            //c.Tags.Add("Artificial viscosity");
 
             return c;
         }
@@ -1137,7 +1137,7 @@ namespace CNS {
         public static CNSControl DoubleMachReflection(string dbPath = null, int dgDegree = 2, int numOfCellsX = 400, int numOfCellsY = 100, double xMax = 4, double sensorLimit = 1e-3) {
             CNSControl c = new CNSControl();
 
-            dbPath = @"e:\bosss_db";
+            dbPath = @"c:\bosss_db";
             //dbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db";
             //dbPath = @"/work/scratch/yp19ysog/bosss_db_lb_scratch";
             c.DbPath = dbPath;
@@ -1352,9 +1352,10 @@ namespace CNS {
             c.NoOfTimesteps = int.MaxValue;
 
             c.ProjectName = "Double Mach reflection";
-            c.SessionName = String.Format("DMR (clean-up), dgDegree = {0}, numOfCellsX = {1}, numOfCellsY = {2}, sensorLimit = {3:0.00E-00}, CFLFraction = {4:0.00E-00}, A-LTS 2/3, lamdaMax fix = 20", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction);
-            c.Tags.Add("Double Mach reflection");
-            c.Tags.Add("Artificial viscosity");
+            c.SessionName = String.Format("DMR, dgDegree = {0}, numOfCellsX = {1}, numOfCellsY = {2}, sensorLimit = {3:0.00E-00}, CFLFraction = {4:0.00E-00}, ALTS {5}/{6}, lamdaMax = {7}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, lambdaMax);
+            //c.Tags.Add("Double Mach reflection");
+            //c.Tags.Add("Artificial viscosity");
+            //c.Tags.Add("Adaptive local time stepping");
 
             return c;
         }
