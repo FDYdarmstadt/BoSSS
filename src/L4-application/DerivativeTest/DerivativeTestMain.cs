@@ -356,11 +356,11 @@ namespace BoSSS.Application.DerivativeTest {
                 }
 
                 case 12: {
-                    var base_grid = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-3, 3, 4), GenericBlas.Linspace(-3, 3, 4));
+                    var base_grid = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-3, 3, 4), GenericBlas.Linspace(-1, 1, 2));
                     var base_gdat = new GridData(base_grid);
                     grd = base_gdat.Refine();
 
-                    grd.Plot2DGrid();
+                    //grd.Plot2DGrid();
 
                     break;
                 }

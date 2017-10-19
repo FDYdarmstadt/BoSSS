@@ -35,7 +35,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             GridCommons oldGrid = this.m_Grid;
             GridCommons newGrid = new GridCommons(oldGrid.RefElements, oldGrid.EdgeRefElements);
 
-            int[] CellsToRefine = new[] { 4 };
+            int[] CellsToRefine = new[] { 1 };
 
 
             int NewNoOfCells = CellsToRefine.Length * 3 + this.Cells.NoOfLocalUpdatedCells;
@@ -140,10 +140,11 @@ namespace BoSSS.Foundation.Grid.Classic {
                         for (int iFace = 0; iFace < Kref.NoOfFaces; iFace++) {
                             int iSubDiv_Neigh = Connections[iSubDiv, iFace].Item1;
                             if (iSubDiv_Neigh >= 0) {
-                                CellFaceTag cft;
-                                cft.ConformalNeighborship = true;
-                                cft.NeighCell_GlobalID = newCellS[Connections[iSubDiv, iFace].Item1].GlobalID;
-                                cft.FaceIndex = iFace;
+                                ArrayTools.AddToArray(new CellFaceTag() {
+                                        ConformalNeighborship = true,
+                                        NeighCell_GlobalID = newCellS[Connections[iSubDiv, iFace].Item1].GlobalID,
+                                        FaceIndex = iFace
+                                    }, ref newCellS[iSubDiv].CellFaceTags);
                             }
                         }
                     }
@@ -184,35 +185,38 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                         // neighbor index
                         int jNeigh = Edge2Cell[iEdge, Other];
-                        int iKrefNeigh = this.Cells.GetRefElementIndex(jNeigh);
+                        if (jNeigh >= 0) {
+                            int iKrefNeigh = this.Cells.GetRefElementIndex(jNeigh);
 
-                        // face indices
-                        int iFace_Neigh = Edge2Face[iEdge, Other]; // face at neighbor cell
-                        int iFace = Edge2Face[iEdge, Me]; // face at cell j
+                            // face indices
+                            int iFace_Neigh = Edge2Face[iEdge, Other]; // face at neighbor cell
+                            int iFace = Edge2Face[iEdge, Me]; // face at cell j
 
-                        // affected cells on 'Me'-side of the edge
-                        IEnumerable<Cell> hereCells;
-                        hereCells = KrefS_Faces2Subdiv[iKref][iFace].Select(idx => refinedOnes[j][idx]);
+                            // affected cells on 'Me'-side of the edge
+                            IEnumerable<Cell> hereCells;
+                            hereCells = KrefS_Faces2Subdiv[iKref][iFace].Select(idx => refinedOnes[j][idx]);
 
-                        // peer cells
-                        IEnumerable<Cell> peerCells;
-                        if(CellsToRefineBitmask[jNeigh]) {
-                            peerCells = KrefS_Faces2Subdiv[iKrefNeigh][iFace_Neigh].Select(idx => refinedOnes[jNeigh][idx]);
-                        } else {
-                            peerCells = new[] { newGrid.Cells[jNeigh] };
-                        }
+                            // peer cells
+                            IEnumerable<Cell> peerCells;
+                            if (CellsToRefineBitmask[jNeigh]) {
+                                peerCells = KrefS_Faces2Subdiv[iKrefNeigh][iFace_Neigh].Select(idx => refinedOnes[jNeigh][idx]);
+                            } else {
+                                peerCells = new[] { newGrid.Cells[jNeigh] };
+                            }
 
-                        // connect all 'hereCells' to the 'peerCells'
-                        foreach(var hC in hereCells) {
-                            foreach(var pC in peerCells) {
-                                ArrayTools.AddToArray(new CellFaceTag() {
+                            // connect all 'hereCells' to the 'peerCells'
+                            foreach (var hC in hereCells) {
+                                foreach (var pC in peerCells) {
+                                    ArrayTools.AddToArray(new CellFaceTag() {
                                         ConformalNeighborship = false,
                                         NeighCell_GlobalID = pC.GlobalID,
                                         FaceIndex = iFace
                                     }, ref hC.CellFaceTags);
+                                }
                             }
-                        }
+                        } else {
 
+                        }
                     }
 
                     //for(int iSubdiv = 0; iSubdiv < KrefS_SubdivLeaves[iKref].Length; iSubdiv++) {
@@ -264,15 +268,20 @@ namespace BoSSS.Foundation.Grid.Classic {
                             foreach(int i in C2E_j) {
                                 Debug.Assert(i != 0);
                                 int _iEdge = Math.Abs(i) - 1;
-                                Other = i > 0 ? 1 : 0;
-                                Me = i < 0 ? 1 : 0;
-                                Debug.Assert(Edge2Cell[_iEdge, Me] == j);
-                                if(Edge2Cell[_iEdge, Other] == jNeigh) {
+                                int _Other = i > 0 ? 1 : 0;
+                                int _Me = i < 0 ? 1 : 0;
+                                Debug.Assert(Edge2Cell[_iEdge, _Me] == j);
+                                if(Edge2Cell[_iEdge, _Other] == jNeigh) {
+                                    Me = _Me;
+                                    Other = _Other;
                                     Debug.Assert(iEdge < 0); // Edge found twice
                                     iEdge = _iEdge;
                                 }
                             }
                             Debug.Assert(iEdge >= 0); // unable to find edge
+                            Debug.Assert(Edge2Cell[iEdge, Me] == j);
+                            Debug.Assert(Edge2Cell[iEdge, Other] == jNeigh);
+
 
                             // know face of old neighbor cell
                             int iFace_Neigh = Edge2Face[iEdge, Other]; // face at neighbor cell

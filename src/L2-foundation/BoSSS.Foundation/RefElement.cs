@@ -1527,26 +1527,38 @@ namespace BoSSS.Foundation.Grid.RefElements {
             }
 
             /// <summary>
-            /// affine-linear transformation from the local coordinates of this node
+            /// Affine-linear transformation from the local coordinates of this node
             /// to the coordinate system of the parent node.
             /// </summary>
-            public AffineTrafo Trafo2Parrent;
+            public AffineTrafo Trafo2Parrent {
+                get;
+                private set;
+            }
 
             /// <summary>
-            /// the inverse of <see cref="Trafo2Parrent"/>
+            /// The inverse of <see cref="Trafo2Parrent"/>
             /// </summary>
-            public AffineTrafo TrafoFromParrent;
+            public AffineTrafo TrafoFromParrent {
+                get;
+                private set;
+            }
 
             /// <summary>
-            /// affine-linear transformation from the local coordinates of this node
+            /// Affine-linear transformation from the local coordinates of this node
             /// to the coordinate system of the root node of the subdivision tree.
             /// </summary>
-            public AffineTrafo Trafo2Root;
+            public AffineTrafo Trafo2Root {
+                get;
+                private set;
+            }
 
             /// <summary>
             /// inverse of <see cref="Trafo2Root"/>
             /// </summary>
-            public AffineTrafo TrafoFromRoot;
+            public AffineTrafo TrafoFromRoot {
+                get;
+                private set;
+            }
 
             /// <summary>
             /// initializes <see cref="Trafo2Parrent"/> and <see cref="Trafo2Root"/>;<br/>
@@ -1567,8 +1579,8 @@ namespace BoSSS.Foundation.Grid.RefElements {
                     double[,] root_Basis_plus1 = GetSubMatrix(root.Vertices, 0, D + 1, 0, D);
                     double[,] parrent_Basis_plus1 = GetSubMatrix(m_Parrent.Vertices, 0, D + 1, 0, D);
 
-                    Trafo2Root = AffineTrafo.FromPoints(this_Basis_plus1, root_Basis_plus1);
-                    Trafo2Parrent = AffineTrafo.FromPoints(this_Basis_plus1, parrent_Basis_plus1);
+                    Trafo2Root = AffineTrafo.FromPoints(root_Basis_plus1, this_Basis_plus1);
+                    Trafo2Parrent = (m_Parrent.TrafoFromRoot) * Trafo2Root;
                 }
 
                 TrafoFromParrent = Trafo2Parrent.Invert();
