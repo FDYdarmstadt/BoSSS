@@ -76,26 +76,25 @@ namespace BoSSS.Foundation.Grid.Classic {
                 //m_SignedEdgeTag = value;
                 //PeriodicInverse = signFlag;
 
-                int v = value;
-                if(m_SignedEdgeTag )
+                if (m_SignedEdgeTag < 0)
+                    throw new NotSupportedException();
 
-                m_SignedEdgeTag |= 
-                m_SignedEdgeTag &= (EdgeTag & 0xFF);
+                m_SignedEdgeTag = (value & 0xFF) | (m_SignedEdgeTag & ~0xFF);
             }
             get {
                 int r;
-                if(m_SignedEdgeTag = )
-                
-                = Math.Abs(m_SignedEdgeTag);
+                if (m_SignedEdgeTag < 0) {
+                    r = Math.Abs(m_SignedEdgeTag);
+                } else {
+                    r = m_SignedEdgeTag & 0xFF;
+                }
                 Debug.Assert(r < 255, "in reserved value range");
-                
-
                 return (byte)r;
             }
         }
 
-        const int PeriodicInverseMask = int.MinValue; // equals 0x80000000
-        const int EdgeMayBeEmpty = 0x4000000;
+        const int PeriodicInverseMask = 0x4000000;
+        const int EdgeMayBeEmptyMask = 0x2000000;
 
         /// <summary>
         /// Indicates on which 'side' of the periodic transformation this cell
@@ -105,21 +104,39 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// </summary>
         public bool PeriodicInverse {
             get {
-                return (m_SignedEdgeTag & PeriodicInverseMask) != 0;
+                return (m_SignedEdgeTag & PeriodicInverseMask) != 0
+                    || m_SignedEdgeTag < 0; // legacy stuff
             }
             set {
-                int sign = value ? -1 : 1;
-                int unsignedTag = Math.Abs(m_SignedEdgeTag);
-                m_SignedEdgeTag = sign * unsignedTag;
+                if (m_SignedEdgeTag < 0)
+                    throw new NotSupportedException();
+
+                if (value)
+                    m_SignedEdgeTag |= PeriodicInverseMask;
+                else
+                    m_SignedEdgeTag &= ~PeriodicInverseMask;
             }
         }
 
+        /// <summary>
+        /// Used for grid refinement operations; this flag indicates that an edge may be empty, and it will be tested geometrically.
+        /// If it is empty, it will be ignored.
+        /// </summary>
         public bool EdgeMayBeEmpty {
             get {
-                return m
+                if (m_SignedEdgeTag < 0)
+                    return false;
+
+                return (m_SignedEdgeTag & EdgeMayBeEmptyMask) != 0;
             }
             set {
+                if (m_SignedEdgeTag < 0)
+                    throw new NotSupportedException();
 
+                if (value)
+                    m_SignedEdgeTag |= EdgeMayBeEmptyMask;
+                else
+                    m_SignedEdgeTag &= ~EdgeMayBeEmptyMask;
             }
         }
 

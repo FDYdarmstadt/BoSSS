@@ -72,6 +72,11 @@ namespace BoSSS.Foundation.Grid.Classic {
                     return CellFaceTag.EdgeTag >= GridCommons.FIRST_PERIODIC_BC_TAG;
                 }
             }
+
+            /// <summary>
+            /// See <see cref="CellFaceTag.EdgeMayBeEmpty"/>.
+            /// </summary>
+            public bool EdgeMayBeEmpty;
         }
 
         /// <summary>
@@ -388,7 +393,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                     if (_Cell_j.CellFaceTags[w].NeighCell_GlobalID >= 0)
                                         Cell_j_Neighs.Add(new Neighbour() {
                                             Neighbour_GlobalIndex = otherNeighbours[w],
-                                            CellFaceTag = _Cell_j.CellFaceTags[w]
+                                            CellFaceTag = _Cell_j.CellFaceTags[w],
                                         });
                                 }
                             }

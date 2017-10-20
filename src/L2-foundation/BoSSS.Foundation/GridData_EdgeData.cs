@@ -330,7 +330,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 public bool IsPeriodic;
                 public int Cell1_PeriodicTrafoIdx;
                 public int Cell2_PeriodicTrafoIdx;
-
+                public bool EdgeMayBeEmpty;
 
                 public int EdgeKrefIndex {
                     get {
@@ -362,13 +362,9 @@ namespace BoSSS.Foundation.Grid.Classic {
             public RefElement GetRefElement(int e) {
                 return this.EdgeRefElements[this.GetRefElementIndex(e)];
             }
-
-            
-
-
             
             /// <summary>
-            /// temporary edge data structure during assembly process
+            /// Temporary edge data structure during assembly process.
             /// </summary>
             private List<ComputeEdgesHelper> m_EdgesTmp;
 
@@ -397,7 +393,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     int i0 = m_owner.CellPartitioning.i0;
 
                     if (m_EdgesTmp != null)
-                        throw new ApplicationException("internal errror.");
+                        throw new ApplicationException("internal error.");
                     m_EdgesTmp = new List<ComputeEdgesHelper>(J * 2);
                     m_CellsToEdgesTmp = new List<int>[Je];
 
@@ -435,8 +431,15 @@ namespace BoSSS.Foundation.Grid.Classic {
                             ceh.EdgeTag = cn_je.CellFaceTag.EdgeTag;
                             if (!cn_je.CellFaceTag.ConformalNeighborship)
                                 ceh.info |= EdgeInfo.Cell1_Nonconformal;
+                            ceh.EdgeMayBeEmpty = cn_je.CellFaceTag.EdgeMayBeEmpty;
+
+
 
                             if (ceh.Cell2 < J) {
+                                // ++++++++++++++++++++++++++++++++++++
+                                // edge between cells on this processor
+                                // ++++++++++++++++++++++++++++++++++++
+
                                 int K2 = CellNeighbours[ceh.Cell2].Length;
                                 int found = 0;
                                 for (int e2 = 0; e2 < K2; e2++) {
@@ -458,14 +461,20 @@ namespace BoSSS.Foundation.Grid.Classic {
                                             + " and cell " + GlId1 + ", is defined multiple times.");
                                 }
                             } else {
+                                // +++++++++++++++++++
+                                // interprocess - edge
+                                // +++++++++++++++++++
+
                                 ceh.info = EdgeInfo.Interprocess;
                             }
 
                             {
-                                var cn_je2 = CellNeighbours_Global[ceh.Cell2].Single(x => x.Neighbour_GlobalIndex == (j + i0));
+                                GridCommons.Neighbour cn_je2 = CellNeighbours_Global[ceh.Cell2].Single(x => x.Neighbour_GlobalIndex == (j + i0));
                                 ceh.FaceIndex2 = (byte)cn_je2.CellFaceTag.FaceIndex;
                                 if (!cn_je2.CellFaceTag.ConformalNeighborship)
                                     ceh.info |= EdgeInfo.Cell2_Nonconformal;
+                                Debug.Assert(cn_je.CellFaceTag.EdgeMayBeEmpty == cn_je2.CellFaceTag.EdgeMayBeEmpty);
+
 
                                 if (cn_je2.CellFaceTag.EdgeTag != ceh.EdgeTag) {
                                     throw new ApplicationException(string.Format("Inconsistent edge tag."));
@@ -680,8 +689,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                         } else {
 
-                            if(K_j1.GlobalID == 2 && K_j2.GlobalID == 6)
-                                Debugger.Break();
+                           
 
 
                             bool bFoundIntersection = FaceIntersect(V_f1, V_f2,
@@ -700,8 +708,11 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                                 face1 = int.MaxValue - 10;
                                 face2 = int.MaxValue - 10;
-                            } else if() {
+                            } else if(Edge.EdgeMayBeEmpty) {
                                 Debug.Assert(bFoundIntersection == false);
+
+
+
                             } else {
                                 MultidimensionalArray Vtx1 = MultidimensionalArray.Create(Kref1.Vertices.Lengths);
                                 m_owner.TransformLocal2Global(Kref1.Vertices, Vtx1, j1);

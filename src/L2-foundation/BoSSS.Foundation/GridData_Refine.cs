@@ -198,10 +198,13 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                             // peer cells
                             IEnumerable<Cell> peerCells;
+                            bool bEdgeMayBeEmpty;
                             if (CellsToRefineBitmask[jNeigh]) {
                                 peerCells = KrefS_Faces2Subdiv[iKrefNeigh][iFace_Neigh].Select(idx => refinedOnes[jNeigh][idx]);
+                                bEdgeMayBeEmpty = true;
                             } else {
                                 peerCells = new[] { newGrid.Cells[jNeigh] };
+                                bEdgeMayBeEmpty = false;
                             }
 
                             // connect all 'hereCells' to the 'peerCells'
@@ -210,7 +213,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                                     ArrayTools.AddToArray(new CellFaceTag() {
                                         ConformalNeighborship = false,
                                         NeighCell_GlobalID = pC.GlobalID,
-                                        FaceIndex = iFace
+                                        FaceIndex = iFace,
+                                        EdgeMayBeEmpty = bEdgeMayBeEmpty
                                     }, ref hC.CellFaceTags);
                                 }
                             }
