@@ -395,8 +395,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     if (m_EdgesTmp != null)
                         throw new ApplicationException("internal error.");
                     m_EdgesTmp = new List<ComputeEdgesHelper>(J * 2);
-                    m_CellsToEdgesTmp = new List<int>[Je];
-
+                    
                     int mask;
                     unchecked {
                         mask = (int)0x80000000;
@@ -432,9 +431,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             if (!cn_je.CellFaceTag.ConformalNeighborship)
                                 ceh.info |= EdgeInfo.Cell1_Nonconformal;
                             ceh.EdgeMayBeEmpty = cn_je.CellFaceTag.EdgeMayBeEmpty;
-
-
-
+                            
                             if (ceh.Cell2 < J) {
                                 // ++++++++++++++++++++++++++++++++++++
                                 // edge between cells on this processor
@@ -514,16 +511,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             // add edge to list
                             m_EdgesTmp.Add(ceh);
 
-                            // cells to edges:
-                            var cell1_edges = m_CellsToEdgesTmp[ceh.Cell1];
-                            if (cell1_edges == null)
-                                m_CellsToEdgesTmp[ceh.Cell1] = cell1_edges = new List<int>();
-                            var cell2_edges = m_CellsToEdgesTmp[ceh.Cell2];
-                            if (cell2_edges == null)
-                                m_CellsToEdgesTmp[ceh.Cell2] = cell2_edges = new List<int>();
-
-                            cell1_edges.Add(m_EdgesTmp.Count - 1);
-                            cell2_edges.Add(m_EdgesTmp.Count - 1);
+                           
                         }
                     }
 
@@ -558,6 +546,9 @@ namespace BoSSS.Foundation.Grid.Classic {
             internal void DetermineEdgeTrafo() {
                 using (new FuncTrace()) {
 
+                    m_CellsToEdgesTmp = new List<int>[m_owner.Cells.NoOfCells];
+
+
                     // preparation: helper vars
                     // ========================
 
@@ -568,11 +559,13 @@ namespace BoSSS.Foundation.Grid.Classic {
                     List<Tuple<int,AffineTrafo>> e2cTrafo = new List<Tuple<int, AffineTrafo>>();
 
                     MultidimensionalArray[] VerticesFor_KrefEdge = this.EdgeRefElements.Select(KrefEdge => KrefEdge.Vertices).ToArray();
-                    
+
                     // work
                     // ====
 
                     // loop over all edges....
+                    int skippedEdgesCount = 0;
+                    List<int> skippedEdges = new List<int>();
                     for (int e = 0; e < this.m_EdgesTmp.Count; e++) {
 
                         // cache some vars..
@@ -711,8 +704,27 @@ namespace BoSSS.Foundation.Grid.Classic {
                             } else if(Edge.EdgeMayBeEmpty) {
                                 Debug.Assert(bFoundIntersection == false);
 
+                                //m_owner.m_Cells.CellNeighbours_global_tmp[j1]
 
+                                int ij2 = Array.IndexOf(m_owner.m_Cells.m_CellNeighbours[j1], j2);
+                                Debug.Assert(ij2 >= 0);
+                                ArrayTools.RemoveAt(ref m_owner.m_Cells.m_CellNeighbours[j1], ij2);
+                                var a1 = m_owner.m_Cells.CellNeighbours_global_tmp[j1].ToArray();
+                                ArrayTools.RemoveAt(ref a1, ij2);
+                                m_owner.m_Cells.CellNeighbours_global_tmp[j1] = a1;
 
+                                int ij1 = Array.IndexOf(m_owner.m_Cells.m_CellNeighbours[j2], j1);
+                                Debug.Assert(ij1 >= 0);
+                                ArrayTools.RemoveAt(ref m_owner.m_Cells.m_CellNeighbours[j2], ij1);
+                                var a2 = m_owner.m_Cells.CellNeighbours_global_tmp[j2].ToArray();
+                                ArrayTools.RemoveAt(ref a2, ij1);
+                                m_owner.m_Cells.CellNeighbours_global_tmp[j2] = a2;
+
+                                skippedEdgesCount++;
+                                skippedEdges.Add(e);
+
+                                //throw new NotSupportedException();
+                                continue;
                             } else {
                                 MultidimensionalArray Vtx1 = MultidimensionalArray.Create(Kref1.Vertices.Lengths);
                                 m_owner.TransformLocal2Global(Kref1.Vertices, Vtx1, j1);
@@ -746,6 +758,20 @@ namespace BoSSS.Foundation.Grid.Classic {
                             Bild.ExtractSubArrayShallow(st, en).Set(V_f2_in_K2.ExtractSubArrayShallow(st, en));
                             var K_j2ToK_j1 = AffineTrafo.FromPoints(Urbild, Bild);
                             Trafo2 = K_j2ToK_j1 * Trafo1; // transformation form edge to cell 2;
+                        }
+
+                        // cells to edges
+                        // --------------
+                        {
+                            var cell1_edges = m_CellsToEdgesTmp[j1];
+                            if(cell1_edges == null)
+                                m_CellsToEdgesTmp[j1] = cell1_edges = new List<int>();
+                            var cell2_edges = m_CellsToEdgesTmp[j2];
+                            if(cell2_edges == null)
+                                m_CellsToEdgesTmp[j2] = cell2_edges = new List<int>();
+
+                            cell1_edges.Add(e - skippedEdgesCount);
+                            cell2_edges.Add(e - skippedEdgesCount);
                         }
 
                         {
@@ -808,6 +834,19 @@ namespace BoSSS.Foundation.Grid.Classic {
                         // store
                         // -----
                         this.m_EdgesTmp[e] = Edge;
+                    }
+
+                    if(skippedEdgesCount > 0) {
+                        int sk = 1;
+                        for(int e = skippedEdges[0]; e < m_EdgesTmp.Count - skippedEdges.Count; e++) {
+                            while(sk < skippedEdges.Count && e + sk == skippedEdges[sk]) {
+                                sk++;
+                            }
+                            m_EdgesTmp[e] = m_EdgesTmp[e + sk];
+                        }
+
+                        m_EdgesTmp.RemoveRange(m_EdgesTmp.Count - skippedEdges.Count, skippedEdges.Count);
+
                     }
                     
                     lock(padlock) {

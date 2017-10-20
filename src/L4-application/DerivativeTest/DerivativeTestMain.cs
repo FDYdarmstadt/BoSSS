@@ -357,6 +357,7 @@ namespace BoSSS.Application.DerivativeTest {
 
                 case 12: {
                     var base_grid = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-3, 5, 5), GenericBlas.Linspace(-1, 1, 2));
+                    grd = base_grid;
                     var base_gdat = new GridData(base_grid);
                     grd = base_gdat.Refine();
 

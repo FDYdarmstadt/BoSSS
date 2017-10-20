@@ -1046,7 +1046,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 var CNglb = m_Grid.GetCellNeighbourship(true);
                 Debug.Assert(CNglb.Length == (J + J_BC));
 
-                
+
 
                 // separate normal cells and boundary-condition -- cells
                 // =====================================================

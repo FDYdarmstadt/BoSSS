@@ -47,6 +47,8 @@ namespace ilPSP.Utils {
             A = newA;
         }
 
+        
+
 
         /// <summary>
         /// returns an array of length <paramref name="l"/>, with each entry set to <paramref name="c"/>.
