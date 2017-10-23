@@ -1022,9 +1022,6 @@ namespace CNS {
             c.NumberOfSubGrids = 3;
             c.ReclusteringInterval = 1;
             c.FluxCorrection = false;
-            if (AV) {
-                c.AVHackOn = true;
-            }
 
             c.EquationOfState = IdealGas.Air;
 
@@ -1189,9 +1186,6 @@ namespace CNS {
             c.NumberOfSubGrids = 3;
             c.ReclusteringInterval = 1;
             c.FluxCorrection = false;
-            if (AV) {
-                c.AVHackOn = true;
-            }
 
             c.EquationOfState = IdealGas.Air;
             c.MachNumber = 1.0 / Math.Sqrt(c.EquationOfState.HeatCapacityRatio);

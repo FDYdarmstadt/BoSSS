@@ -150,7 +150,6 @@ namespace CNS.Tests.ArtificialViscosity {
                 c.NumberOfSubGrids = 3;
                 c.ReclusteringInterval = 1;
                 c.FluxCorrection = false;
-                c.AVHackOn = true;
             }
 
             int dgDegree = 3;

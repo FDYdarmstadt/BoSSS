@@ -263,8 +263,6 @@ namespace CNS {
         /// </remarks>
         public bool FluxCorrection = true;
 
-        public bool AVHackOn = false;
-
         /// <summary>
         /// The implicit scheme to be used.
         /// </summary>
