@@ -1158,6 +1158,15 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
         }
 
+        /// <summary>
+        /// Index compression on a single processor.
+        /// </summary>
+        /// <param name="_IDX">
+        /// Input, a collection of numbers, structured into a staggered array.
+        /// </param>
+        /// <returns>
+        /// A staggered array with equal number of entries as <paramref name="_IDX"/>.
+        /// </returns>
         static private int[][] CompressIndexRange(int[][] _IDX) {
 
             // Pass 1: Bereich bestimmen

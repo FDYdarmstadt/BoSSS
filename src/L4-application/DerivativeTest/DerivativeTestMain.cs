@@ -361,18 +361,21 @@ namespace BoSSS.Application.DerivativeTest {
                     //grid1.Plot2DGrid();
 
                     var gdat1 = new GridData(grid1);
-                    var grid2 = gdat1.Refine(new int[] { 1, 2 } );
+                    var grid2 = gdat1.Adapt(new int[] { 1, 2 }, null );
                     //grid2.Plot2DGrid();
 
                     var gdat2 = new GridData(grid2);
-                    var grid3 = gdat2.Refine(new int[] { 2, 4 });
+                    var grid3 = gdat2.Adapt(new int[] { 2, 4 }, null);
                     //grid3.Plot2DGrid();
 
                     var gdat3 = new GridData(grid3);
-                    var grid4 = gdat3.Refine(new int[] { 11, 14, 15 });
-                    grid4.Plot2DGrid();
+                    var grid4 = gdat3.Adapt(new int[] { 11, 14, 15 }, null);
+
+                    var gdat4 = new GridData(grid4);
+                    var grid5 = gdat4.Adapt(new int[] { 15 }, new[] { new[] { 14, 19, 20, 21 } });
+                    grid5.Plot2DGrid();
                                         
-                    grd = grid4;
+                    grd = grid5;
 
                     break;
                 }

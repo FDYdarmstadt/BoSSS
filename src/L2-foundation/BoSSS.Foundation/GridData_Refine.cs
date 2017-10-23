@@ -32,25 +32,67 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// <summary>
         /// Creates a new grid, which is an adaptive refinement (cell by cell) of this grid.
         /// </summary>
-        public GridCommons Refine(int[] CellsToRefine) {
+        public GridCommons Adapt(int[] CellsToRefine, int[][] CellsToCoarsen) {
             GridCommons oldGrid = this.m_Grid;
             GridCommons newGrid = new GridCommons(oldGrid.RefElements, oldGrid.EdgeRefElements);
 
             
 
-            int NewNoOfCells = CellsToRefine.Length * 3 + this.Cells.NoOfLocalUpdatedCells;
             int J = this.Cells.NoOfLocalUpdatedCells;
 
             BitArray CellsToRefineBitmask = new BitArray(J);
-            BitArray RefineNeighborsBitmask = new BitArray(J);
-            foreach(int jCell in CellsToRefine) {
-                CellsToRefineBitmask[jCell] = true;
+            BitArray CellsToCoarseBitmask = new BitArray(J);
+            BitArray AdaptNeighborsBitmask = new BitArray(J);
+            if(CellsToRefine != null) {
+                foreach(int jCell in CellsToRefine) {
+                    if(CellsToRefineBitmask[jCell] == true)
+                        throw new ArgumentException("Double entry.", "CellsToRefine");
 
-                int[] Neighs, dummy;
-                this.GetCellNeighbours(jCell, GetCellNeighbours_Mode.ViaEdges, out Neighs, out dummy);
+                    CellsToRefineBitmask[jCell] = true;
 
-                foreach(int jNeigh in Neighs) {
-                    RefineNeighborsBitmask[jNeigh] = true;
+                    int[] Neighs, dummy;
+                    this.GetCellNeighbours(jCell, GetCellNeighbours_Mode.ViaEdges, out Neighs, out dummy);
+
+                    foreach(int jNeigh in Neighs) {
+                        AdaptNeighborsBitmask[jNeigh] = true;
+                    }
+                }
+            }
+
+            if(CellsToCoarsen != null) {
+                foreach(int[] jCellS in CellsToCoarsen) {
+
+                    // cluster of cells to coarsen
+                    Cell[] CellS = jCellS.Select(j => this.Cells.GetCell(j)).ToArray();
+                                        
+                    for(int z = 0; z < CellS.Length; z++) {
+                        int j = jCellS[z];
+
+                        if(CellsToRefineBitmask[j] == true)
+                            throw new ArgumentException("Cannot refine and coarsen the same cell.");
+                        if(CellsToCoarseBitmask[j] == true)
+                            throw new ArgumentException("Double entry.", "CellsToCoarsen");
+
+                        Cell Cj = this.Cells.GetCell(j);
+                        if(Cj.CoarseningPeers == null)
+                            throw new ArgumentException("Coarsening not available for respective cell.");
+                        if(Cj.CoarseningPeers.Length != jCellS.Length - 1)
+                            throw new ArgumentException("Coarsening cluster seems incomplete.");
+
+                        foreach(long gid in Cj.CoarseningPeers) {
+                            if(CellS.Where(cl => cl.GlobalID == gid).Count() != 1)
+                                throw new ArgumentException("Coarsening cluster seems incomplete.");
+                        }
+
+                        int[] Neighs, dummy;
+                        this.GetCellNeighbours(j, GetCellNeighbours_Mode.ViaEdges, out Neighs, out dummy);
+
+                        foreach(int jNeigh in Neighs) {
+                            if(Array.IndexOf(jCellS, jNeigh) < 0) {
+                                AdaptNeighborsBitmask[jNeigh] = true;
+                            }
+                        }
+                    }
                 }
             }
 
@@ -89,13 +131,50 @@ namespace BoSSS.Foundation.Grid.Classic {
             // ================
 
             Debug.Assert(this.MpiSize == 1, "still need to adjust the following lines.");
+            
             long GlobalIdCounter = oldGrid.NumberOfCells_l;
             int PtrNewCells = oldGrid.NoOfUpdateCells;
-            newGrid.Cells = new Cell[NewNoOfCells];
+            //newGrid.Cells = new Cell[NewNoOfCells];
+            List<Cell> newCells = new List<Cell>();
+
             int newVertexCounter = oldGrid.Cells.Max(cl => cl.NodeIndices.Max()) + 1;
-            Cell[][] refinedOnes = new Cell[J][];
+            Cell[][] adaptedCells = new Cell[J][];
             for(int j = 0; j < J; j++) {
-                if (CellsToRefineBitmask[j]) {
+                Debug.Assert(CellsToCoarseBitmask[j] && CellsToCoarseBitmask[j] == false, "Cannot refine and coarsen the same cell.");
+
+                if(CellsToRefineBitmask[j] && CellsToCoarseBitmask[j] == false) {
+                    if(AdaptNeighborsBitmask[j]) {
+                        // neighbor information needs to be updated
+
+                        var oldCell = oldGrid.Cells[j];
+                        var newCell = oldCell.CloneAs(); // data 
+                        newCells.Add(newCell);
+                        adaptedCells[j] = new Cell[] { newCell };
+
+                    } else {
+                        // cell and neighbors remain unchanged
+                        newCells.Add(oldGrid.Cells[j]);
+                    }
+                }
+            }
+
+            // coarsening
+            // ----------
+            if(CellsToCoarsen != null) {
+                foreach(int[] jCellS in CellsToCoarsen) {
+
+                    // cluster of cells to coarsen
+                    Cell[] CellS = jCellS.Select(j => this.Cells.GetCell(j)).ToArray();
+
+
+
+                }
+            }
+
+            // refinement
+            // ----------
+            if(CellsToRefine != null) {
+                foreach(int j in CellsToRefine) {
                     var oldCell = oldGrid.Cells[j];
                     int iKref = this.Cells.GetRefElementIndex(j);
                     var Kref = KrefS[iKref];
@@ -104,14 +183,14 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                     NodeSet RefNodes = Kref.GetInterpolationNodes(oldCell.Type);
 
-                    Cell[] newCellS = new Cell[Leaves.Length];
-                    refinedOnes[j] = newCellS;
-                    for (int iSubDiv = 0; iSubDiv < Leaves.Length; iSubDiv++) { // pass 1: create new cells
+                    Cell[] refinedCells = new Cell[Leaves.Length];
+                    adaptedCells[j] = refinedCells;
+                    for(int iSubDiv = 0; iSubDiv < Leaves.Length; iSubDiv++) { // pass 1: create new cells
 
                         // create new cell
                         Cell newCell = new Cell();
                         newCell.Type = oldCell.Type;
-                        if (iSubDiv == 0) {
+                        if(iSubDiv == 0) {
                             newCell.GlobalID = oldCell.GlobalID;
                             newGrid.Cells[j] = newCell;
                         } else {
@@ -121,7 +200,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             newGrid.Cells[PtrNewCells] = newCell;
                             PtrNewCells++;
                         }
-                        newCellS[iSubDiv] = newCell;
+                        refinedCells[iSubDiv] = newCell;
 
                         // Vertices
                         var RefNodesRoot = Leaves[iSubDiv].Trafo2Root.Transform(RefNodes);
@@ -135,31 +214,26 @@ namespace BoSSS.Foundation.Grid.Classic {
                             newVertexCounter++;
                         }
                     }
-                    for (int iSubDiv = 0; iSubDiv < Leaves.Length; iSubDiv++) { // pass 2: do other things
-                        // neighbors within
-                        for (int iFace = 0; iFace < Kref.NoOfFaces; iFace++) {
+                    for(int iSubDiv = 0; iSubDiv < Leaves.Length; iSubDiv++) { // pass 2: do other things
+                                                                               // neighbors within
+                        for(int iFace = 0; iFace < Kref.NoOfFaces; iFace++) {
                             int iSubDiv_Neigh = Connections[iSubDiv, iFace].Item1;
-                            if (iSubDiv_Neigh >= 0) {
+                            if(iSubDiv_Neigh >= 0) {
                                 ArrayTools.AddToArray(new CellFaceTag() {
-                                        ConformalNeighborship = true,
-                                        NeighCell_GlobalID = newCellS[Connections[iSubDiv, iFace].Item1].GlobalID,
-                                        FaceIndex = iFace
-                                    }, ref newCellS[iSubDiv].CellFaceTags);
+                                    ConformalNeighborship = true,
+                                    NeighCell_GlobalID = refinedCells[Connections[iSubDiv, iFace].Item1].GlobalID,
+                                    FaceIndex = iFace
+                                }, ref refinedCells[iSubDiv].CellFaceTags);
                             }
                         }
                     }
-                } else if(RefineNeighborsBitmask[j]) {
-                    // neighbor information needs to be updated
 
-                    var oldCell = oldGrid.Cells[j];
-                    var newCell = oldCell.CloneAs(); // data 
-                    newGrid.Cells[j] = newCell;
-                    
-                } else {
-                    // cell and neighbors remain unchanged
-                    newGrid.Cells[j] = oldGrid.Cells[j];
+                    newCells.AddRange(refinedCells);
                 }
             }
+
+
+            newGrid.Cells = newCells.ToArray();
 
             // fix neighborship
             // ================
@@ -199,7 +273,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                             // connect all affected cells on 'Me'-side of the edge to original or refined cell on the other side of the edge
                             foreach(int idx in KrefS_Faces2Subdiv[iKref][iFace]) { // loop over all affected cells on 'Me'-side...
-                                Cell hC = refinedOnes[j][idx]; // cell on 'Me'-side
+                                Cell hC = adaptedCells[j][idx]; // cell on 'Me'-side
                                 
                                 if( CellsToRefineBitmask[jNeigh]) {
                                     // +++++++++++++++++++++++++++++
@@ -207,7 +281,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                     // +++++++++++++++++++++++++++++
 
                                     foreach(int nidx in KrefS_Faces2Subdiv[iKrefNeigh][iFace_Neigh]) {
-                                        var pC = refinedOnes[jNeigh][nidx]; // cell on 'Other' side
+                                        var pC = adaptedCells[jNeigh][nidx]; // cell on 'Other' side
 
                                         MultidimensionalArray VtxFace1 = KrefS_SubdivLeaves[iKref][idx].GetFaceVertices(iFace);
 
@@ -257,7 +331,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     //    var newCell = refinedOnes[j][iSubdiv];
                     //}
 
-                } else if (RefineNeighborsBitmask[j]) {
+                } else if (AdaptNeighborsBitmask[j]) {
                     // ++++++++++++++++++++++++++
                     // neighbor cell was refined
                     // ++++++++++++++++++++++++++
@@ -291,7 +365,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     foreach (int jNeigh in oldNeighs) {
                         if (CellsToRefineBitmask[jNeigh]) {
                             // we have to add the new neighbors
-                            Cell[] refined_Neighs = refinedOnes[jNeigh];
+                            Cell[] refined_Neighs = adaptedCells[jNeigh];
                             Debug.Assert(refined_Neighs != null);
                             int iKrefNeigh = this.Cells.GetRefElementIndex(jNeigh);
 
