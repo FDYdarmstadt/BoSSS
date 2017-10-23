@@ -8,11 +8,10 @@
  * written permission from the Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics), TU Darmstadt.
  *
  */
-using System.Globalization;
-using System.Threading;
 using BoSSS.Solution;
 using NUnit.Framework;
-using System;
+using System.Globalization;
+using System.Threading;
 
 namespace ALTSTests {
     /// <summary>
@@ -43,17 +42,18 @@ namespace ALTSTests {
         }
 
         public static void ALTSDynClustering(int order, int subGrids, double maxEnergyNorm) {
-            Program test = null;
+            NUnitTests test = null;
 
             Application._Main(
                 new string[0],
                 true,
                 "",
                 delegate () {
-                    test = new Program() {
+                    test = new NUnitTests() {
                         ABOrder = order,
-                        numOfSubgrids = subGrids
+                        numOfSubgrids = subGrids,
                     };
+                    test.m_GridPartitioningType = BoSSS.Foundation.Grid.GridPartType.none;
                     return test;
                 });
 
