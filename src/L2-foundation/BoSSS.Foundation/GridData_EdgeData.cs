@@ -330,8 +330,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 public bool IsPeriodic;
                 public int Cell1_PeriodicTrafoIdx;
                 public int Cell2_PeriodicTrafoIdx;
-                public bool EdgeMayBeEmpty;
-
+                
                 public int EdgeKrefIndex {
                     get {
                         return (int)(EdgeInfo.EdgeSimplexIdxMask & info);
@@ -430,7 +429,6 @@ namespace BoSSS.Foundation.Grid.Classic {
                             ceh.EdgeTag = cn_je.CellFaceTag.EdgeTag;
                             if (!cn_je.CellFaceTag.ConformalNeighborship)
                                 ceh.info |= EdgeInfo.Cell1_Nonconformal;
-                            ceh.EdgeMayBeEmpty = cn_je.CellFaceTag.EdgeMayBeEmpty;
                             
                             if (ceh.Cell2 < J) {
                                 // ++++++++++++++++++++++++++++++++++++
@@ -470,7 +468,6 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 ceh.FaceIndex2 = (byte)cn_je2.CellFaceTag.FaceIndex;
                                 if (!cn_je2.CellFaceTag.ConformalNeighborship)
                                     ceh.info |= EdgeInfo.Cell2_Nonconformal;
-                                Debug.Assert(cn_je.CellFaceTag.EdgeMayBeEmpty == cn_je2.CellFaceTag.EdgeMayBeEmpty);
 
 
                                 if (cn_je2.CellFaceTag.EdgeTag != ceh.EdgeTag) {
@@ -701,30 +698,6 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                                 face1 = int.MaxValue - 10;
                                 face2 = int.MaxValue - 10;
-                            } else if(Edge.EdgeMayBeEmpty) {
-                                Debug.Assert(bFoundIntersection == false);
-
-                                //m_owner.m_Cells.CellNeighbours_global_tmp[j1]
-
-                                int ij2 = Array.IndexOf(m_owner.m_Cells.m_CellNeighbours[j1], j2);
-                                Debug.Assert(ij2 >= 0);
-                                ArrayTools.RemoveAt(ref m_owner.m_Cells.m_CellNeighbours[j1], ij2);
-                                var a1 = m_owner.m_Cells.CellNeighbours_global_tmp[j1].ToArray();
-                                ArrayTools.RemoveAt(ref a1, ij2);
-                                m_owner.m_Cells.CellNeighbours_global_tmp[j1] = a1;
-
-                                int ij1 = Array.IndexOf(m_owner.m_Cells.m_CellNeighbours[j2], j1);
-                                Debug.Assert(ij1 >= 0);
-                                ArrayTools.RemoveAt(ref m_owner.m_Cells.m_CellNeighbours[j2], ij1);
-                                var a2 = m_owner.m_Cells.CellNeighbours_global_tmp[j2].ToArray();
-                                ArrayTools.RemoveAt(ref a2, ij1);
-                                m_owner.m_Cells.CellNeighbours_global_tmp[j2] = a2;
-
-                                skippedEdgesCount++;
-                                skippedEdges.Add(e);
-
-                                //throw new NotSupportedException();
-                                continue;
                             } else {
                                 MultidimensionalArray Vtx1 = MultidimensionalArray.Create(Kref1.Vertices.Lengths);
                                 m_owner.TransformLocal2Global(Kref1.Vertices, Vtx1, j1);

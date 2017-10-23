@@ -94,8 +94,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         }
 
         const int PeriodicInverseMask = 0x4000000;
-        const int EdgeMayBeEmptyMask = 0x2000000;
-
+        
         /// <summary>
         /// Indicates on which 'side' of the periodic transformation this cell
         /// resides. If false, resides on the side associated with the original
@@ -118,27 +117,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
         }
 
-        /// <summary>
-        /// Used for grid refinement operations; this flag indicates that an edge may be empty, and it will be tested geometrically.
-        /// If it is empty, it will be ignored.
-        /// </summary>
-        public bool EdgeMayBeEmpty {
-            get {
-                if (m_SignedEdgeTag < 0)
-                    return false;
-
-                return (m_SignedEdgeTag & EdgeMayBeEmptyMask) != 0;
-            }
-            set {
-                if (m_SignedEdgeTag < 0)
-                    throw new NotSupportedException();
-
-                if (value)
-                    m_SignedEdgeTag |= EdgeMayBeEmptyMask;
-                else
-                    m_SignedEdgeTag &= ~EdgeMayBeEmptyMask;
-            }
-        }
+       
 
 
         [DataMember]
