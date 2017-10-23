@@ -91,6 +91,15 @@ namespace BoSSS.Foundation.Grid.Classic {
             ret.Type = this.Type;
             return ret;
         }
+
+        /// <summary>
+        /// If this cell was created by adaptive mesh refinement, 
+        /// this are the GlobalId's of the other cells which have been created in the refinement operation.
+        /// </summary>
+        public long[] CoarseningPeers;
+
+
+
     }
 
     /// <summary>

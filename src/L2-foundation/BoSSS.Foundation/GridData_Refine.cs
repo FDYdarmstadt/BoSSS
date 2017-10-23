@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Foundation.Grid.RefElements;
+using BoSSS.Platform.LinAlg;
 using ilPSP;
 using ilPSP.Utils;
 using System;
@@ -167,13 +168,16 @@ namespace BoSSS.Foundation.Grid.Classic {
             int[][] Cells2Edges = this.Cells.Cells2Edges;
             int[,] Edge2Cell = this.Edges.CellIndices;
             byte[] EdgeTags = this.Edges.EdgeTags;
+            MultidimensionalArray[] VerticesFor_KrefEdge = this.Edges.EdgeRefElements.Select(KrefEdge => KrefEdge.Vertices).ToArray();
 
-            for (int j = 0; j < J; j++) { // loop over all original cells...
+
+            for(int j = 0; j < J; j++) { // loop over all original cells...
                 if (CellsToRefineBitmask[j]) { 
                     // +++++++++++++++
                     // cell is refined 
                     // +++++++++++++++
                     int iKref = this.Cells.GetRefElementIndex(j);
+                    var Kref = this.Cells.GetRefElement(j);
 
                     foreach(int i in Cells2Edges[j]) { // loop over old edges 
                         // edge index, in and out
@@ -186,34 +190,61 @@ namespace BoSSS.Foundation.Grid.Classic {
                         int jNeigh = Edge2Cell[iEdge, Other];
                         if (jNeigh >= 0) {
                             int iKrefNeigh = this.Cells.GetRefElementIndex(jNeigh);
+                            var KrefNeigh = this.Cells.GetRefElement(jNeigh);
 
                             // face indices
                             int iFace_Neigh = Edge2Face[iEdge, Other]; // face at neighbor cell
                             int iFace = Edge2Face[iEdge, Me]; // face at cell j
 
-                            // affected cells on 'Me'-side of the edge
-                            IEnumerable<Cell> hereCells;
-                            hereCells = KrefS_Faces2Subdiv[iKref][iFace].Select(idx => refinedOnes[j][idx]);
 
-                            // peer cells
-                            IEnumerable<Cell> peerCells;
-                            bool bEdgeMayBeEmpty;
-                            if (CellsToRefineBitmask[jNeigh]) {
-                                peerCells = KrefS_Faces2Subdiv[iKrefNeigh][iFace_Neigh].Select(idx => refinedOnes[jNeigh][idx]);
-                                bEdgeMayBeEmpty = true;
-                            } else {
-                                peerCells = new[] { newGrid.Cells[jNeigh] };
-                                bEdgeMayBeEmpty = false;
-                            }
+                            // connect all affected cells on 'Me'-side of the edge to original or refined cell on the other side of the edge
+                            foreach(int idx in KrefS_Faces2Subdiv[iKref][iFace]) { // loop over all affected cells on 'Me'-side...
+                                Cell hC = refinedOnes[j][idx]; // cell on 'Me'-side
+                                
+                                if( CellsToRefineBitmask[jNeigh]) {
+                                    // +++++++++++++++++++++++++++++
+                                    // neighbor cell is also refined
+                                    // +++++++++++++++++++++++++++++
 
-                            // connect all 'hereCells' to the 'peerCells'
-                            foreach (var hC in hereCells) {
-                                foreach (var pC in peerCells) {
+                                    foreach(int nidx in KrefS_Faces2Subdiv[iKrefNeigh][iFace_Neigh]) {
+                                        var pC = refinedOnes[jNeigh][nidx]; // cell on 'Other' side
+
+                                        MultidimensionalArray VtxFace1 = KrefS_SubdivLeaves[iKref][idx].GetFaceVertices(iFace);
+
+                                        MultidimensionalArray VtxFace2;
+                                        {
+                                            MultidimensionalArray VtxFace2_L = KrefS_SubdivLeaves[iKrefNeigh][nidx].GetFaceVertices(iFace_Neigh);
+                                            MultidimensionalArray VtxFace2_G = MultidimensionalArray.Create(VtxFace2_L.GetLength(0), VtxFace2_L.GetLength(1));
+                                            VtxFace2 = MultidimensionalArray.Create(VtxFace2_L.GetLength(0), VtxFace2_L.GetLength(1));
+                                            this.TransformLocal2Global(VtxFace2_L, VtxFace2_G, jNeigh);
+                                            bool[] Converged = new bool[VtxFace2_L.NoOfRows];
+                                            this.TransformGlobal2Local(VtxFace2_G, VtxFace2, j, Converged);
+                                            if(Converged.Any(t => t == false))
+                                                throw new ArithmeticException("Newton divergence");
+                                        }
+
+                                        
+                                        bool bIntersect = GridData.EdgeData.FaceIntersect(VtxFace1, VtxFace2,
+                                            Kref.GetFaceTrafo(iFace), Kref.GetInverseFaceTrafo(iFace),
+                                            VerticesFor_KrefEdge,
+                                            out bool conformal1, out bool conformal2, out AffineTrafo newTrafo, out int Edg_idx);
+                                            
+                                        if(bIntersect) {
+                                            ArrayTools.AddToArray(new CellFaceTag() {
+                                                ConformalNeighborship = false,
+                                                NeighCell_GlobalID = pC.GlobalID,
+                                                FaceIndex = iFace
+                                            }, ref hC.CellFaceTags);
+                                        }
+                                    }
+                                } else {
+                                    // ++++++++++++++++++++++++++++++
+                                    // neighbor cell is *not* refined
+                                    // ++++++++++++++++++++++++++++++
                                     ArrayTools.AddToArray(new CellFaceTag() {
                                         ConformalNeighborship = false,
-                                        NeighCell_GlobalID = pC.GlobalID,
-                                        FaceIndex = iFace,
-                                        EdgeMayBeEmpty = bEdgeMayBeEmpty
+                                        NeighCell_GlobalID = newGrid.Cells[jNeigh].GlobalID,
+                                        FaceIndex = iFace
                                     }, ref hC.CellFaceTags);
                                 }
                             }
@@ -318,8 +349,9 @@ namespace BoSSS.Foundation.Grid.Classic {
 
 
 
+         
 
 
-        public GridCommons Coarsen()
+
     }
 }

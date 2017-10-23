@@ -1309,6 +1309,39 @@ namespace BoSSS.Foundation.Grid.RefElements {
             }
 
 
+
+            NodeSet[] m_FaceVertices;
+
+            /// <summary>
+            /// Returns the vertices of the <paramref name="iFace"/>--th face.
+            /// </summary>
+            public NodeSet GetFaceVertices(int iFace) {
+                if(m_FaceVertices == null) {
+                    var Kref = m_RefElement;
+                    m_FaceVertices = new NodeSet[Kref.NoOfFaces];
+                    int NoOfVtxPerFace = Kref.FaceRefElement.NoOfVertices;
+                    int D = Kref.SpatialDimension;
+                    Debug.Assert(Kref.FaceToVertexIndices.GetLength(0) == Kref.NoOfFaces);
+                    Debug.Assert(Kref.FaceToVertexIndices.GetLength(1) == NoOfVtxPerFace);
+
+                    for(int _iFace = 0; _iFace < m_FaceVertices.Length; _iFace++) {
+                        m_FaceVertices[_iFace] = new NodeSet(Kref, NoOfVtxPerFace, D);
+
+                        for(int k = 0; k < NoOfVtxPerFace; k++) {
+                            int k1 = Kref.FaceToVertexIndices[_iFace, k];
+                            for(int d = 0; d < D; d++) {
+                                m_FaceVertices[_iFace][k, d] = Vertices[k1, d];
+                            }
+                        }
+                        m_FaceVertices[_iFace].LockForever();
+                    }
+                }
+
+                return m_FaceVertices[iFace];
+            }
+
+
+
             /// <summary>
             /// Cache for <see cref="GetNeighbor(int)"/>.
             /// </summary>

@@ -949,7 +949,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             /// <param name="VerticesFor_KrefEdge">
             /// How many vertices the i-th edge element have?
             /// </param>
-            static bool FaceIntersect(
+            internal static bool FaceIntersect(
                 MultidimensionalArray VtxFace1,
                 MultidimensionalArray VtxFace2,
                 AffineTrafo TrafoEdge,

@@ -59,8 +59,11 @@ namespace BoSSS.Solution.Gnuplot {
         /// </summary>
         public static void Plot2DGrid(this GridCommons grd) {
             using (var gp = new Gnuplot()) {
+                Console.WriteLine("Plotting 2D grid with gnuplot...");
+
                 if (grd.SpatialDimension != 2)
                     throw new NotSupportedException("works only for 2D grid");
+                
 
                 int J = grd.Cells.Length;
                 for (int j = 0; j < J; j++) {
@@ -90,15 +93,16 @@ namespace BoSSS.Solution.Gnuplot {
                         yNodes[k] = yC + dy;
                     }
 
-                    gp.PlotXY(xNodes, yNodes, title: j.ToString(), format: (new PlotFormat(Style: Styles.LinesPoints, lineColor: ((LineColors)j))));
+                    gp.PlotXY(xNodes, yNodes, title: null, format: (new PlotFormat(Style: Styles.LinesPoints, lineColor: ((LineColors)j))));
 
+                    gp.Cmd("set label \"{0}\" at {1},{2}", j.ToString(), xC.ToStringDot(), yC.ToStringDot());
 
 
                 }
 
                 gp.Execute();
 
-                Console.WriteLine("Pres any key to continue...");
+                Console.WriteLine("Press any key to continue...");
                 Console.ReadKey();
             }
 
