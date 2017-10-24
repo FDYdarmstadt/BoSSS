@@ -158,6 +158,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                 }
             }
 
+            
+
             // coarsening
             // ----------
             if(CellsToCoarsen != null) {
@@ -166,7 +168,18 @@ namespace BoSSS.Foundation.Grid.Classic {
                     // cluster of cells to coarsen
                     Cell[] CellS = jCellS.Select(j => this.Cells.GetCell(j)).ToArray();
 
+                    Cell Cell0 = CellS.Single(cl => cl.ParentCell != null);
+                    Cell Mother = Cell0.ParentCell;
 
+                    /*
+                    Mother.CellFaceTags
+                    Mother.CoarseningPeers
+                    Mother.NodeIndices
+                    Mother.ParentCell
+                    Mother.Type
+                    Mother.GlobalID
+                    Mother.TransformationParams
+                    */
 
                 }
             }
@@ -193,6 +206,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         if(iSubDiv == 0) {
                             newCell.GlobalID = oldCell.GlobalID;
                             newGrid.Cells[j] = newCell;
+                            newCell.ParentCell = oldCell.CloneAs();
                         } else {
                             newCell.GlobalID = GlobalIdCounter;
                             GlobalIdCounter++;
@@ -214,8 +228,15 @@ namespace BoSSS.Foundation.Grid.Classic {
                             newVertexCounter++;
                         }
                     }
+
+
                     for(int iSubDiv = 0; iSubDiv < Leaves.Length; iSubDiv++) { // pass 2: do other things
-                                                                               // neighbors within
+                        refinedCells[iSubDiv].CoarseningPeers = refinedCells
+                            .Where(cell => cell.GlobalID != refinedCells[iSubDiv].GlobalID)
+                            .Select(cell => cell.GlobalID)
+                            .ToArray();
+                        
+                        // neighbors within
                         for(int iFace = 0; iFace < Kref.NoOfFaces; iFace++) {
                             int iSubDiv_Neigh = Connections[iSubDiv, iFace].Item1;
                             if(iSubDiv_Neigh >= 0) {
