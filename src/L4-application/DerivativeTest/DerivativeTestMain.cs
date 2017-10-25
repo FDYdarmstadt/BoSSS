@@ -370,7 +370,7 @@ namespace BoSSS.Application.DerivativeTest {
 
                     var gdat3 = new GridData(grid3);
                     var grid4 = gdat3.Adapt(new int[] { 11, 14, 15 }, null);
-                    grid4.Plot2DGrid();
+                    //grid4.Plot2DGrid();
 
                     var gdat4 = new GridData(grid4);
                     var grid5 = gdat4.Adapt(null, new[] { new[] { 13, 14, 15, 16 } });

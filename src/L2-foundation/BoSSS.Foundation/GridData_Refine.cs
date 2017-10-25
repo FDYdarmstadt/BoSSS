@@ -348,11 +348,18 @@ namespace BoSSS.Foundation.Grid.Classic {
                             // neighbor index
                             int jNeigh = Edge2Cell[iEdge, Other];
                             if(jNeigh >= 0) {
-                                if(!(adaptedCells[jNeigh].Length == 1 && object.ReferenceEquals(adaptedCells[jNeigh], hC))) { // skip edges that were removed due to coarsening (internal edges of the subdivision cluster)
+                                if(!(adaptedCells[jNeigh].Length == 1 && object.ReferenceEquals(adaptedCells[jNeigh][0], hC))) { // skip edges that were removed due to coarsening (internal edges of the subdivision cluster)
 
                                     AddCFT(newGrid, CellsToRefineBitmask, CellsToCoarseBitmask, AdaptNeighborsBitmask, KrefS_SubdivLeaves, KrefS_Faces2Subdiv, adaptedCells, VerticesFor_KrefEdge, 
                                         iEdge, j, hC, jNeigh, int.MinValue);
-                                    
+#if DEBUG
+                                    foreach(var cfTag in hC.CellFaceTags) {
+                                        long ngid = cfTag.NeighCell_GlobalID;
+                                        if(ngid >= 0) {
+                                            Debug.Assert(hC.CellFaceTags.Where(cfTag2 => cfTag2.NeighCell_GlobalID == ngid).Count() == 1);
+                                        }
+                                    }
+#endif
                                 }
                             } else {
                                 // boundary edge: nothing to do
@@ -376,7 +383,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         // remove out-dated neighborship info
                         if(newCell.CellFaceTags != null && newCell.CellFaceTags.Length > 0) {
                             foreach(int jNeigh in oldNeighs) {
-                                if(CellsToRefineBitmask[jNeigh]) {
+                                if(CellsToRefineBitmask[jNeigh] || CellsToCoarseBitmask[jNeigh]) {
                                     // one of the neighbors has changed, so _potentially_ the cell face tags have to be updated
                                     long gId_Neigh = this.Cells.GetGlobalID(jNeigh);
 
@@ -390,8 +397,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 }
                             }
                         }
-
-                        
+                                                
                         // add new neighborship info
                         foreach(int jNeigh in oldNeighs) {
                             // find edge
@@ -446,8 +452,33 @@ namespace BoSSS.Foundation.Grid.Classic {
                 // finalize
                 // ========
                 int bCoarsenedGlobal = bCoarsened.MPIMax();
-                if(bCoarsenedGlobal > 0)
+                if(bCoarsenedGlobal > 0) {
+#if DEBUG
+                    if(this.MpiSize == 1) {
+                        List<int> allgids = new List<int>();
+                        foreach(var cl in newGrid.Cells) {
+                            allgids.Add((int)(cl.GlobalID));
+                        }
+                        bool[] markers = new bool[allgids.Max() + 1];
+                        foreach(int gid in allgids) {
+                            Debug.Assert(markers[gid] == false);
+                            markers[gid] = true;
+                        }
+
+                        foreach(var cl in newGrid.Cells) {
+                            if(cl.CellFaceTags != null) {
+                                for(int i = 0; i < cl.CellFaceTags.Length; i++) {
+                                    long ngid = cl.CellFaceTags[i].NeighCell_GlobalID;
+                                    Debug.Assert(markers[ngid] == true);
+                                }
+                            }
+                        }
+                    }
+#endif
+
                     newGrid.CompressGlobalID();
+
+                }
 
                 return newGrid;
             }
@@ -539,7 +570,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                 var pC = adaptedCells[jNeigh][0]; // cell on 'Other' side
 
-                if (pC.CellFaceTags.Where(cfTag => cfTag.NeighCell_GlobalID == pC.GlobalID && cfTag.FaceIndex == iFace).Count() <= 0) {
+                if (hC.CellFaceTags.Where(cfTag => cfTag.NeighCell_GlobalID == pC.GlobalID && cfTag.FaceIndex == iFace).Count() <= 0) {
                     ArrayTools.AddToArray(new CellFaceTag() {
                         NeighCell_GlobalID = pC.GlobalID,
                         FaceIndex = iFace
@@ -559,11 +590,13 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                 var pC = adaptedCells[jNeigh][0];
 
-                ArrayTools.AddToArray(new CellFaceTag() {
-                    ConformalNeighborship = false,
-                    NeighCell_GlobalID = pC.GlobalID,
-                    FaceIndex = iFace
-                }, ref hC.CellFaceTags);
+                if(hC.CellFaceTags.Where(cfTag => cfTag.NeighCell_GlobalID == pC.GlobalID && cfTag.FaceIndex == iFace).Count() <= 0) {
+                    ArrayTools.AddToArray(new CellFaceTag() {
+                        ConformalNeighborship = false,
+                        NeighCell_GlobalID = pC.GlobalID,
+                        FaceIndex = iFace
+                    }, ref hC.CellFaceTags);
+                }
             }
         }
 

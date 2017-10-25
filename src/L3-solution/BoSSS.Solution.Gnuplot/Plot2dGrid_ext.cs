@@ -93,9 +93,12 @@ namespace BoSSS.Solution.Gnuplot {
                         yNodes[k] = yC + dy;
                     }
 
+                    double hy = yNodes.Max() - yNodes.Min();
+
                     gp.PlotXY(xNodes, yNodes, title: null, format: (new PlotFormat(Style: Styles.LinesPoints, lineColor: ((LineColors)j))));
 
-                    gp.Cmd("set label \"{0}\" at {1},{2}", j.ToString(), xC.ToStringDot(), yC.ToStringDot());
+                    gp.Cmd("set label \"{0}\" at {2},{3} font \"Arial,5\"", j.ToString(), Cell_j.GlobalID, xC.ToStringDot(), (yC + hy * 0.21).ToStringDot());
+                    gp.Cmd("set label \"[{1}]\" at {2},{3} font \"Arial,5\"", j.ToString(), Cell_j.GlobalID, xC.ToStringDot(), (yC - hy * 0.21).ToStringDot());
 
 
                 }
