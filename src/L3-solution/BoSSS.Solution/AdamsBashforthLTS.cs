@@ -383,16 +383,36 @@ namespace BoSSS.Solution.Timestepping {
 
                                 // Use unmodified values in history of DGCoordinates (DGCoordinates could have been modified by
                                 // InterpolateBoundaryValues, should be resetted afterwards) 
-                                for (int i = 0; i < DGCoordinates.Length; i++) {
-                                    if (historyDGC_Q[id].Last()[i] != 0)
-                                        DGCoordinates[i] = historyDGC_Q[id].Last()[i];
+                                // RICHTIG, aber LANGSAM
+                                //for (int i = 0; i < DGCoordinates.Length; i++) {
+                                //    if (historyDGC_Q[id].Last()[i] != 0)
+                                //        DGCoordinates[i] = historyDGC_Q[id].Last()[i];
+                                //}
+
+                                // FALSCH
+                                //foreach (Chunk chunk in subGridList[id].VolumeMask) {
+                                //    foreach (int cell in chunk.Elements) {
+                                //        DGCoordinates[cell] = historyDGC_Q[id].Last()[cell];
+                                //    }
+                                //}
+
+                                foreach (Chunk chunk in subGridList[id].VolumeMask) {
+                                    foreach (int cell in chunk.Elements) {
+                                        // f == each field
+                                        // n == basis polynomial
+                                        foreach (DGField f in Mapping.Fields) {
+                                            for (int n = 0; n < f.Basis.GetLength(cell); n++) {
+                                                int coordinateIndex = Mapping.LocalUniqueCoordinateIndex(f, cell, n);
+                                                DGCoordinates[coordinateIndex] = historyDGC_Q[id].Last()[coordinateIndex];
+                                            }
+                                        }
+                                    }
                                 }
 
-                                InterpolateBoundaryValues(historyDGC_Q, id, localABevolve[id].Time, out List<double> interpolatedCells, out List<int> interpolatedCellsIndices);
+                                Dictionary<int, double> myDic = InterpolateBoundaryValues(historyDGC_Q, id, localABevolve[id].Time);
 
-                                for (int i = 0; i < interpolatedCells.Count; i++) {
-                                    int globalPos = interpolatedCellsIndices[i];
-                                    DGCoordinates[globalPos] = interpolatedCells[i];
+                                foreach (KeyValuePair<int, double> kvp in myDic) {
+                                    DGCoordinates[kvp.Key] = kvp.Value;
                                 }
 
                                 localABevolve[id].Perform(localDt);
@@ -814,10 +834,9 @@ namespace BoSSS.Solution.Timestepping {
         /// Array of the complete grid, which has only non-zero entries for
         /// the interpolated cells
         /// </returns>
-        protected void InterpolateBoundaryValues(Queue<double[]>[] historyDG, int id, double interpolTime, out List<double> interpolatedCells, out List<int> interpolatedCellsIndices) {
+        protected Dictionary<int, double> InterpolateBoundaryValues(Queue<double[]>[] historyDG, int id, double interpolTime) {
             SubGrid sgrd = BoundarySgrds[id - 1];
-            interpolatedCells = new List<double>();
-            interpolatedCellsIndices = new List<int>();
+            Dictionary<int, double> myDic = new Dictionary<int, double>();
 
             for (int j = 0; j < sgrd.LocalNoOfCells; j++) {
                 //int cell = sgrd.SubgridIndex2LocalCellIndex[j]; --> changed to local-only operation
@@ -828,19 +847,20 @@ namespace BoSSS.Solution.Timestepping {
                 // n== basis polynomial
                 foreach (DGField f in Mapping.Fields) {
                     for (int n = 0; n < f.Basis.GetLength(cell); n++) {
-                        int index = Mapping.LocalUniqueCoordinateIndex(f, cell, n);
+                        int cellIndex = Mapping.LocalUniqueCoordinateIndex(f, cell, n);
                         double[] valueHist = new double[order];
                         int k = 0;
                         foreach (double[] histArray in historyDG[BoundaryGridId]) {
-                            valueHist[k] = histArray[index];
+                            valueHist[k] = histArray[cellIndex];
                             k++;
                         }
                         double[] timeHistory = GetBoundaryCellTimeHistory(BoundaryGridId, cell);
-                        interpolatedCells.Add(Interpolate(timeHistory, valueHist, interpolTime, order));
-                        interpolatedCellsIndices.Add(index);
+                        double interpolatedValue = Interpolate(timeHistory, valueHist, interpolTime, order);
+                        myDic.Add(cellIndex, interpolatedValue);
                     }
                 }
             }
+            return myDic;
         }
 
         //protected double[] InterpolateBoundaryValues(Queue<double[]>[] historyDG, int id, double interpolTime) {
