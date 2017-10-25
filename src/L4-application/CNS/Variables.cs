@@ -369,7 +369,7 @@ namespace CNS {
                 // Project visocsity onto continuous, multilinear space
                 if (D < 3) {
                     // Standard version
-                    if (avSpecFEMBasis == null) {
+                    if (avSpecFEMBasis == null || !avField.Basis.Equals(avSpecFEMBasis.ContainingDGBasis)) {
                         avSpecFEMBasis = new SpecFemBasis(program.GridData, 2);
                     }
                     SpecFemField specFemField = new SpecFemField(avSpecFEMBasis);

@@ -126,12 +126,16 @@ namespace CNS.Solution {
                 case ExplicitSchemes.RungeKutta:
                     //RungeKutta timeStepper;
                     if (control.DomainType == DomainTypes.Standard) {
+                        //RungeKutta timeStepperBla = new RungeKutta(
                         timeStepper = new RungeKutta(
-                        RungeKutta.GetDefaultScheme(control.ExplicitOrder),
-                        equationSystem.GetJoinedOperator().ToSpatialOperator(),
-                        fieldsMap,
-                        parameterMap,
-                        equationSystem.GetJoinedOperator().CFLConstraints);
+                            RungeKutta.GetDefaultScheme(control.ExplicitOrder),
+                            equationSystem.GetJoinedOperator().ToSpatialOperator(),
+                            fieldsMap,
+                            parameterMap,
+                            equationSystem.GetJoinedOperator().CFLConstraints);
+
+                        //timeStepperBla.OnBeforeComputeChangeRate += (t1, t2) => program.WorkingSet.UpdateDerivedVariables(program, program.SpeciesMap.SubGrid.VolumeMask);
+                        //timeStepper = timeStepperBla;
                     } else {
                         IBMControl ibmControl = (IBMControl)control;
                         timeStepper = ibmControl.TimesteppingStrategy.CreateRungeKuttaTimeStepper(
@@ -153,11 +157,15 @@ namespace CNS.Solution {
                             equationSystem.GetJoinedOperator().CFLConstraints);
                     } else {
                         timeStepper = new AdamsBashforth(
+                        //AdamsBashforth timeStepperBla = new AdamsBashforth(
                         equationSystem.GetJoinedOperator().ToSpatialOperator(),
                         fieldsMap,
                         parameterMap,
                         control.ExplicitOrder,
                         equationSystem.GetJoinedOperator().CFLConstraints);
+
+                        //timeStepperBla.OnBeforeComputeChangeRate += (t1, t2) => program.WorkingSet.UpdateDerivedVariables(program, program.SpeciesMap.SubGrid.VolumeMask);
+                        //timeStepper = timeStepperBla;
                     }
                     break;
 
@@ -183,7 +191,7 @@ namespace CNS.Solution {
                             equationSystem.GetJoinedOperator().CFLConstraints,
                             reclusteringInterval: control.ReclusteringInterval,
                             fluxCorrection: control.FluxCorrection,
-                            AVHackOn: control.AVHackOn,
+                            AVHackOn: control.ActiveOperators.HasFlag(Operators.ArtificialViscosity),
                             saveToDBCallback: program.SaveToDatabase);
 
                         //timeStepperBla.OnBeforeComputeChangeRate += (t1, t2) => program.WorkingSet.UpdateDerivedVariables(program, program.SpeciesMap.SubGrid.VolumeMask);
