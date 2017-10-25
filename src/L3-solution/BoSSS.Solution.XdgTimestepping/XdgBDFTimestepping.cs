@@ -919,7 +919,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     }
 
                     Debug.Assert(m_Stack_CutCellMetrics[0] != null);
-                    if (!m_Stack_CutCellMetrics[0].SpeciesList.IsSetEqual(Config_MassScale.Keys))
+                    if (!m_Stack_CutCellMetrics[0].SpeciesList.SetEquals(Config_MassScale.Keys))
                         throw new ApplicationException("Mismatch between species lists.");
 
                     m_CurrentAgglomeration = new MultiphaseCellAgglomerator(
