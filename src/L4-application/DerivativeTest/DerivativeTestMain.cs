@@ -371,11 +371,11 @@ namespace BoSSS.Application.DerivativeTest {
                     var gdat3 = new GridData(grid3);
                     var grid4 = gdat3.Adapt(new int[] { 11, 14, 15 }, null);
 
-                    //var gdat4 = new GridData(grid4);
-                    //var grid5 = gdat4.Adapt(new int[] { 15 }, new[] { new[] { 14, 19, 20, 21 } });
+                    var gdat4 = new GridData(grid4);
+                    var grid5 = gdat4.Adapt(new int[] { 15 }, null /*new[] { new[] { 14, 19, 20, 21 } }*/);
                     //grid5.Plot2DGrid();
                                         
-                    grd = grid4;
+                    grd = grid5;
 
                     break;
                 }

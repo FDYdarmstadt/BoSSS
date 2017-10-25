@@ -236,7 +236,6 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 GlobalIdCounter++;
                             }
                             refinedCells[iSubDiv] = newCell;
-                            newCells.Add(newCell);
 
                             // Vertices
                             var RefNodesRoot = Leaves[iSubDiv].Trafo2Root.Transform(RefNodes);
@@ -435,7 +434,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                         }
 
                     } else {
-                        Debug.Assert(object.ReferenceEquals(newGrid.Cells[j], oldGrid.Cells[j]) == true);
+                        Debug.Assert(adaptedCells[j] == null);
+                        //Debug.Assert(object.ReferenceEquals(newGrid.Cells[j], oldGrid.Cells[j]) == true);
                     }
 
                     

@@ -28,7 +28,7 @@ namespace BoSSS.Solution.Utils {
     static public class GridCommons_extensions {
 
         /// <summary>
-        /// creates fields that mark the boundary conditions
+        /// Creates fields that mark the boundary conditions.
         /// </summary>
         public static DGField[] BoundaryMark(this GridData m_gridData) {
             List<DGField> demo_fields = new List<DGField>();
