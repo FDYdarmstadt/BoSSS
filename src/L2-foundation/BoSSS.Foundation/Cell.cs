@@ -90,7 +90,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             Debug.Assert(typeof(CellFaceTag).IsValueType);
             ret.Type = this.Type;
             ret.CoarseningPeers = CoarseningPeers != null ? CoarseningPeers.CloneAs() : null;
-            ret.ParrentCell = ParrentCell != null ? ParrentCell.CloneAs() : null;
+            ret.ParentCell = ParentCell != null ? ParentCell.CloneAs() : null;
             return ret;
         }
 
