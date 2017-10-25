@@ -351,50 +351,12 @@ namespace BoSSS.Solution.Timestepping {
                         }
                     }
 
-                    // ############################### Hack
-                    //double[] BackupDGCoordinates = new double[Mapping.LocalLength];
-                    // ############################### Hack
-
                     // Perform the local time steps
                     for (int localTS = 1; localTS < MaxLocalTS; localTS++) {
                         for (int id = 1; id < numOfSubgrids; id++) {
                             //Evolve Condition: Is "ABevolve.Time" at "AB_LTS.Time"?
                             if ((localABevolve[id].Time - m_Time) < 1e-10) {
                                 double localDt = dt / NumOfLocalTimeSteps[id];
-
-                                // ############################### Hack
-                                //BackupDGCoordinates.Clear();
-                                //DGCoordinates.CopyTo(BackupDGCoordinates, 0);
-                                // ############################### Hack
-
-                                //DGCoordinates.Clear();
-                                //DGCoordinates.CopyFrom(historyDGC_Q[id].Last(), 0);
-
-                                //double[] interpolatedCells = InterpolateBoundaryValues(historyDGC_Q, id, localABevolve[id].Time);
-                                //DGCoordinates.axpy<double[]>(interpolatedCells, 1);
-
-                                // ############################### Hack
-                                //for (int i = 0; i < BackupDGCoordinates.Length; i++) {
-                                //    if (DGCoordinates[i] != 0)
-                                //        BackupDGCoordinates[i] = 0;
-                                //}
-                                //DGCoordinates.axpy<double[]>(BackupDGCoordinates, 1);
-                                // ############################### Hack
-
-                                // Use unmodified values in history of DGCoordinates (DGCoordinates could have been modified by
-                                // InterpolateBoundaryValues, should be resetted afterwards) 
-                                // RICHTIG, aber LANGSAM
-                                //for (int i = 0; i < DGCoordinates.Length; i++) {
-                                //    if (historyDGC_Q[id].Last()[i] != 0)
-                                //        DGCoordinates[i] = historyDGC_Q[id].Last()[i];
-                                //}
-
-                                // FALSCH
-                                //foreach (Chunk chunk in subGridList[id].VolumeMask) {
-                                //    foreach (int cell in chunk.Elements) {
-                                //        DGCoordinates[cell] = historyDGC_Q[id].Last()[cell];
-                                //    }
-                                //}
 
                                 foreach (Chunk chunk in subGridList[id].VolumeMask) {
                                     foreach (int cell in chunk.Elements) {
@@ -862,36 +824,6 @@ namespace BoSSS.Solution.Timestepping {
             }
             return myDic;
         }
-
-        //protected double[] InterpolateBoundaryValues(Queue<double[]>[] historyDG, int id, double interpolTime) {
-        //    double[] result = new double[Mapping.LocalLength];
-        //    SubGrid sgrd = BoundarySgrds[id - 1];
-
-        //    //calculation
-        //    for (int j = 0; j < sgrd.LocalNoOfCells; j++) {
-        //        //int cell = sgrd.SubgridIndex2LocalCellIndex[j]; --> changed to local-only operation
-        //        int cell = jSub2jCell[id - 1][j];
-        //        int BoundaryGridId = BoundaryTopology[id - 1, cell];
-        //        // cell at boundary
-        //        // f== each field
-        //        // n== basis polynomial
-        //        foreach (DGField f in Mapping.Fields) {
-        //            for (int n = 0; n < f.Basis.GetLength(cell); n++) {
-        //                int index = Mapping.LocalUniqueCoordinateIndex(f, cell, n);
-        //                double[] valueHist = new double[order];
-        //                int k = 0;
-        //                foreach (double[] histArray in historyDG[BoundaryGridId]) {
-        //                    valueHist[k] = histArray[index];
-        //                    k++;
-        //                }
-        //                double[] timeHistory = GetBoundaryCellTimeHistory(BoundaryGridId, cell);
-        //                result[index] = Interpolate(timeHistory, valueHist, interpolTime, order);
-        //            }
-        //        }
-
-        //    }
-        //    return result;
-        //}
 
         /// <summary>
         /// Returns the update times of the boundary cells of a particular cluster.
