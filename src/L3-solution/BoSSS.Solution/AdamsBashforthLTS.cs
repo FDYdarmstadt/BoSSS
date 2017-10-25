@@ -302,7 +302,7 @@ namespace BoSSS.Solution.Timestepping {
                     if (timeStepConstraints != null) {
                         dt = CalculateTimeStep();
                     }
-                    
+
                     for (int i = 0; i < this.numOfSubgrids; i++) {
                         Console.WriteLine("LTS: id=" + i + " -> sub-steps=" + NumOfLocalTimeSteps[i] + " and elements=" + subGridList[i].GlobalNoOfCells);
                     }
@@ -351,10 +351,6 @@ namespace BoSSS.Solution.Timestepping {
                         }
                     }
 
-                    // ############################### Hack
-                    double[] BackupDGCoordinates = new double[Mapping.LocalLength];
-                    // ############################### Hack
-
                     // Perform the local time steps
                     for (int localTS = 1; localTS < MaxLocalTS; localTS++) {
                         for (int id = 1; id < numOfSubgrids; id++) {
@@ -362,24 +358,24 @@ namespace BoSSS.Solution.Timestepping {
                             if ((localABevolve[id].Time - m_Time) < 1e-10) {
                                 double localDt = dt / NumOfLocalTimeSteps[id];
 
-                                // ############################### Hack
-                                BackupDGCoordinates.Clear();
-                                DGCoordinates.CopyTo(BackupDGCoordinates, 0);
-                                //// ############################### Hack
-
-                                DGCoordinates.Clear();
-                                DGCoordinates.CopyFrom(historyDGC_Q[id].Last(), 0);
-
-                                double[] interpolatedCells = InterpolateBoundaryValues(historyDGC_Q, id, localABevolve[id].Time);
-                                DGCoordinates.axpy<double[]>(interpolatedCells, 1);
-
-                                // ############################### Hack
-                                for (int i = 0; i < BackupDGCoordinates.Length; i++) {
-                                    if (DGCoordinates[i] != 0)
-                                        BackupDGCoordinates[i] = 0;
+                                foreach (Chunk chunk in subGridList[id].VolumeMask) {
+                                    foreach (int cell in chunk.Elements) {
+                                        // f == each field
+                                        // n == basis polynomial
+                                        foreach (DGField f in Mapping.Fields) {
+                                            for (int n = 0; n < f.Basis.GetLength(cell); n++) {
+                                                int coordinateIndex = Mapping.LocalUniqueCoordinateIndex(f, cell, n);
+                                                DGCoordinates[coordinateIndex] = historyDGC_Q[id].Last()[coordinateIndex];
+                                            }
+                                        }
+                                    }
                                 }
-                                DGCoordinates.axpy<double[]>(BackupDGCoordinates, 1);
-                                // ############################### Hack
+
+                                Dictionary<int, double> myDic = InterpolateBoundaryValues(historyDGC_Q, id, localABevolve[id].Time);
+
+                                foreach (KeyValuePair<int, double> kvp in myDic) {
+                                    DGCoordinates[kvp.Key] = kvp.Value;
+                                }
 
                                 localABevolve[id].Perform(localDt);
 
@@ -408,6 +404,8 @@ namespace BoSSS.Solution.Timestepping {
                     }
 
                     // Finalize step
+                    // Use unmodified values in history of DGCoordinates (DGCoordinates could have been modified by
+                    // InterpolateBoundaryValues, should be resetted afterwards) 
                     DGCoordinates.Clear();
                     for (int id = 0; id < numOfSubgrids; id++) {
                         DGCoordinates.axpy<double[]>(historyDGC_Q[id].Last(), 1);
@@ -798,11 +796,10 @@ namespace BoSSS.Solution.Timestepping {
         /// Array of the complete grid, which has only non-zero entries for
         /// the interpolated cells
         /// </returns>
-        protected double[] InterpolateBoundaryValues(Queue<double[]>[] historyDG, int id, double interpolTime) {
-            double[] result = new double[Mapping.LocalLength];
+        protected Dictionary<int, double> InterpolateBoundaryValues(Queue<double[]>[] historyDG, int id, double interpolTime) {
             SubGrid sgrd = BoundarySgrds[id - 1];
+            Dictionary<int, double> myDic = new Dictionary<int, double>();
 
-            //calculation
             for (int j = 0; j < sgrd.LocalNoOfCells; j++) {
                 //int cell = sgrd.SubgridIndex2LocalCellIndex[j]; --> changed to local-only operation
                 int cell = jSub2jCell[id - 1][j];
@@ -812,20 +809,20 @@ namespace BoSSS.Solution.Timestepping {
                 // n== basis polynomial
                 foreach (DGField f in Mapping.Fields) {
                     for (int n = 0; n < f.Basis.GetLength(cell); n++) {
-                        int index = Mapping.LocalUniqueCoordinateIndex(f, cell, n);
+                        int cellIndex = Mapping.LocalUniqueCoordinateIndex(f, cell, n);
                         double[] valueHist = new double[order];
                         int k = 0;
                         foreach (double[] histArray in historyDG[BoundaryGridId]) {
-                            valueHist[k] = histArray[index];
+                            valueHist[k] = histArray[cellIndex];
                             k++;
                         }
                         double[] timeHistory = GetBoundaryCellTimeHistory(BoundaryGridId, cell);
-                        result[index] = Interpolate(timeHistory, valueHist, interpolTime, order);
+                        double interpolatedValue = Interpolate(timeHistory, valueHist, interpolTime, order);
+                        myDic.Add(cellIndex, interpolatedValue);
                     }
                 }
-
             }
-            return result;
+            return myDic;
         }
 
         /// <summary>

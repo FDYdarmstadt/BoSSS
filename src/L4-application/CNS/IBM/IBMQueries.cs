@@ -206,7 +206,7 @@ namespace CNS.IBM {
 
                         index++;
                     },
-                    (a, b) => (a - b) * (a - b),
+                    (X, a, b) => (a - b) * (a - b),
                     composititeRule);
 
                 // No value is NaN, but the results. How can this be?
