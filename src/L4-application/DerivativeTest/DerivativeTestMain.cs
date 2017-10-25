@@ -61,10 +61,9 @@ namespace BoSSS.Application.DerivativeTest {
 
         [Test]
 #if DEBUG
-        public static void DerivativeTest_BuildInGrid([Range(1, 11)] int gridCase, [Values(2, 10000000)] int bulksize_limit, [Values(1024, 1024 * 1024 * 128)] int cache_size) {
+        public static void DerivativeTest_BuildInGrid([Range(1, 12)] int gridCase, [Values(2, 10000000)] int bulksize_limit, [Values(1024, 1024 * 1024 * 128)] int cache_size) {
 #else
-        public static void DerivativeTest_BuildInGrid([Range(1, 11)] int gridCase, [Values(1, 500, 10000000)] int bulksize_limit, [Values(1024, 1024 * 1024 * 128)] int cache_size) {
-        public static void DerivativeTest_BuildInGrid([Range(1, 14)] int gridCase, [Values(1, 500, 10000000)] int bulksize_limit, [Values(1024, 1024 * 1024 * 128)] int cache_size) {
+        public static void DerivativeTest_BuildInGrid([Range(1, 12)] int gridCase, [Values(1, 500, 10000000)] int bulksize_limit, [Values(1024, 1024 * 1024 * 128)] int cache_size) {
 #endif
             DerivativeTestMain.GRID_CASE = gridCase;
             DerivativeTestMain p = null;
