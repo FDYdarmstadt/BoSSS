@@ -383,14 +383,35 @@ namespace BoSSS.Solution.Timestepping {
 
                                 // Use unmodified values in history of DGCoordinates (DGCoordinates could have been modified by
                                 // InterpolateBoundaryValues, should be resetted afterwards) 
-                                for (int i = 0; i < DGCoordinates.Length; i++) {
-                                    if (historyDGC_Q[id].Last()[i] != 0)
-                                        DGCoordinates[i] = historyDGC_Q[id].Last()[i];
+                                // RICHTIG, aber LANGSAM
+                                //for (int i = 0; i < DGCoordinates.Length; i++) {
+                                //    if (historyDGC_Q[id].Last()[i] != 0)
+                                //        DGCoordinates[i] = historyDGC_Q[id].Last()[i];
+                                //}
+
+                                // FALSCH
+                                //foreach (Chunk chunk in subGridList[id].VolumeMask) {
+                                //    foreach (int cell in chunk.Elements) {
+                                //        DGCoordinates[cell] = historyDGC_Q[id].Last()[cell];
+                                //    }
+                                //}
+
+                                foreach (Chunk chunk in subGridList[id].VolumeMask) {
+                                    foreach (int cell in chunk.Elements) {
+                                        // f == each field
+                                        // n == basis polynomial
+                                        foreach (DGField f in Mapping.Fields) {
+                                            for (int n = 0; n < f.Basis.GetLength(cell); n++) {
+                                                int coordinateIndex = Mapping.LocalUniqueCoordinateIndex(f, cell, n);
+                                                DGCoordinates[coordinateIndex] = historyDGC_Q[id].Last()[coordinateIndex];
+                                            }
+                                        }
+                                    }
                                 }
-                                                                
+
                                 Dictionary<int, double> myDic = InterpolateBoundaryValues(historyDGC_Q, id, localABevolve[id].Time);
 
-                                foreach(KeyValuePair<int, double> kvp in myDic) {
+                                foreach (KeyValuePair<int, double> kvp in myDic) {
                                     DGCoordinates[kvp.Key] = kvp.Value;
                                 }
 
