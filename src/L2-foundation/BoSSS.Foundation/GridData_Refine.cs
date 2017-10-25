@@ -533,7 +533,12 @@ namespace BoSSS.Foundation.Grid.Classic {
                     var pC = adaptedCells[jNeigh][nidx]; // cell on 'Other' side
                     
                     bool bIntersect;
-                    MultidimensionalArray VtxFace1 = KrefS_SubdivLeaves[iKref][idx].GetFaceVertices(iFace);
+                    MultidimensionalArray VtxFace1;
+                    if(CellsToRefineBitmask[j]) {
+                        VtxFace1 = KrefS_SubdivLeaves[iKref][idx].GetFaceVertices(iFace);
+                    } else {
+                        VtxFace1 = Kref.GetFaceVertices(iFace);
+                    }
 
                     MultidimensionalArray VtxFace2;
                     {
@@ -560,7 +565,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         }, ref hC.CellFaceTags);
                     }
                 }
-            } else if(CellsToRefineBitmask[jNeigh]) {
+            } else if(CellsToCoarseBitmask[jNeigh]) {
                 // + + + + + + + + + + + + + + 
                 // neighbor cell is coarsened
                 // + + + + + + + + + + + + + +
