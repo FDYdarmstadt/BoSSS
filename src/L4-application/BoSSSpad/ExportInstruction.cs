@@ -123,6 +123,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             Process plotProcess = new Process();
             plotProcess.StartInfo.WindowStyle = ProcessWindowStyle.Minimized;
+            plotProcess.StartInfo.WorkingDirectory = outputPath; // quick fix: Tecplot creates temp files, working dir needs to be writeable
             if (config.NumberOfProcesses == 1) {
                 plotProcess.StartInfo.FileName = plotGenPath;
             } else {
