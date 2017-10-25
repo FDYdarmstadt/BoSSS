@@ -73,6 +73,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 throw new ArgumentException("Cannot refine and coarsen the same cell.");
                             if(CellsToCoarseBitmask[j] == true)
                                 throw new ArgumentException("Double entry.", "CellsToCoarsen");
+                            CellsToCoarseBitmask[j] = true;
 
                             Cell Cj = this.Cells.GetCell(j);
                             if(Cj.CoarseningPeers == null)
