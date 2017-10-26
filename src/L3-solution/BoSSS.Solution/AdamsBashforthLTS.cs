@@ -198,7 +198,7 @@ namespace BoSSS.Solution.Timestepping {
             }
 
             // Saving time steps in subgrids
-            this.saveToDBCallback = saveToDBCallback;
+            //this.saveToDBCallback = saveToDBCallback;
         }
 
         /// <summary>
