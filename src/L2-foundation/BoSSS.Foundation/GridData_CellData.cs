@@ -64,7 +64,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// all metrics which are associated to one cell
         /// </summary>
         public class CellData : IGeometricalCellsData, ILogicalCellData {
-
+            
             /// <summary>
             /// All reference elements for cells, see <see cref="GetRefElementIndex(int)"/> resp. <see cref="GetRefElement(int)"/>.
             /// </summary>
@@ -326,12 +326,11 @@ namespace BoSSS.Foundation.Grid.Classic {
                         if (iKref < 0)
                             throw new NotSupportedException("unknown cell type;");
                         Debug.Assert(iKref == Types.IndexOfMin(suppTypes => suppTypes.Contains(Cj.Type)));
-
-
+                        
                         var Kref = m_owner.Grid.GetRefElement(iKref);
 
                         InfoFlags[j] |= (CellInfo.RefElementIndex_Mask & ((CellInfo)iKref));
-
+                        
                         // affine-linear cell ?
                         if (Cj.Type.IsLinear()) {
                             InfoFlags[j] |= CellInfo.CellIsAffineLinear;
@@ -402,6 +401,8 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                 }
             }
+
+          
 
             /// <summary>
             /// see <see cref="CellInfo"/>

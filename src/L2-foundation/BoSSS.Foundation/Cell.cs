@@ -91,6 +91,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             ret.Type = this.Type;
             ret.CoarseningPeers = CoarseningPeers != null ? CoarseningPeers.CloneAs() : null;
             ret.ParentCell = ParentCell != null ? ParentCell.CloneAs() : null;
+            ret.RefinementLevel = this.RefinementLevel;
             return ret;
         }
 
@@ -99,13 +100,17 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// this are the GlobalId's of the other cells which have been created in the refinement operation.
         /// </summary>
         public long[] CoarseningPeers;
-
-
+        
         /// <summary>
         /// If this cell was created by adaptive mesh refinement, 
         /// the parent cell from which this cell was created from. This member is required to be able to coarsen the mesh again.
         /// </summary>
         public Cell ParentCell;
+
+        /// <summary>
+        /// How often the cell was refined.
+        /// </summary>
+        public int RefinementLevel;
     }
 
     /// <summary>

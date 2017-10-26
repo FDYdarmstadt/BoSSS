@@ -17,12 +17,12 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
-namespace BoSSS.Application.LoadBalancingTest {
+namespace BoSSS.Application.AdaptiveMeshRefinementTest {
 
     /// <summary>
-    /// App which performs basic tests on dynamic load balancing.
+    /// App which performs basic tests on adaptive mesh refinement and dynamic load balancing.
     /// </summary>
-    class LoadBalancingTestMain : BoSSS.Solution.Application {
+    class AdaptiveMeshRefinementTestMain : BoSSS.Solution.Application {
 
         static void Main(string[] args) {
             XQuadFactoryHelper.CheckQuadRules = true;
@@ -31,216 +31,54 @@ namespace BoSSS.Application.LoadBalancingTest {
                 args,
                 true,
                 null,
-                () => new LoadBalancingTestMain());
+                () => new AdaptiveMeshRefinementTestMain());
         }
 
         protected override GridCommons CreateOrLoadGrid() {
-            double[] nodes = GenericBlas.Linspace(-5, 5, 21);
+            double[] nodes = GenericBlas.Linspace(-5, 5, 61);
             var grd = Grid2D.Cartesian2DGrid(nodes, nodes);
             base.m_GridPartitioningType = GridPartType.none;
             return grd;
         }
 
-        XDGField u;
-        XDGField uResidual;
-        XDGField uEx;
+        SinglePhaseField u;
 
-        SinglePhaseField Amarker;
-        SinglePhaseField Bmarker;
-
-        SinglePhaseField MPICellRank;
-
-        LevelSet LevSet;
 
         protected override void CreateFields() {
-            LevSet = new LevelSet(new Basis(this.GridData, 2), "LevelSet");
-            base.LsTrk = new LevelSetTracker(this.GridData, 1, new string[] { "A", "B" }, LevSet);
-
-            var xBasis = new XDGBasis(base.LsTrk, DEGREE);
-            u = new XDGField(xBasis, "u");
-            uResidual = new XDGField(xBasis, "Res");
-            uEx = new XDGField(xBasis, "uEx");
-
-            Amarker = new SinglePhaseField(new Basis(this.GridData, 0), "Amarker");
-            Bmarker = new SinglePhaseField(new Basis(this.GridData, 0), "Bmarker");
-            MPICellRank = new SinglePhaseField(new Basis(this.GridData, 0), "MPIRank");
-            base.m_RegisteredFields.Add(LevSet);
+            
+            var Basis = new Basis(base.GridData, DEGREE);
+            u = new SinglePhaseField(Basis, "u");
             base.m_RegisteredFields.Add(u);
-            base.m_RegisteredFields.Add(uEx);
-            base.m_RegisteredFields.Add(uResidual);
-            base.m_RegisteredFields.Add(Amarker);
-            base.m_RegisteredFields.Add(Bmarker);
-            base.m_RegisteredFields.Add(MPICellRank);
         }
 
         /// <summary>
         /// turn dynamic balancing on/off
         /// </summary>
-        internal bool DynamicBalance = true;
+        internal bool DynamicBalance = false;
 
         /// <summary>
         /// DG polynomial degree
         /// </summary>
         internal int DEGREE = 3;
 
-        internal Func<int, ICellCostEstimator> cellCostEstimatorFactory = CellCostEstimatorLibrary.AllCellsAreEqual;
-
-        /// <summary>
-        /// Cell Agglomeration threshold
-        /// </summary>
-        internal double THRESHOLD = 0.1;
-
-        /// <summary>
-        /// Equation coefficient, species A.
-        /// </summary>
-        const double alpha_A = 0.1;
-
-        /// <summary>
-        /// Equation coefficient, species B.
-        /// </summary>
-        const double alpha_B = 3.5;
-
-        /// <summary>
-        /// Sets level-set and solution at time (<paramref name="time"/> + <paramref name="dt"/>).
-        /// </summary>
-        double DelUpdateLevelset(DGField[] CurrentState, double time, double dt, double UnderRelax, bool _incremental) {
-
-            // new time
-            double t = time + dt;
-
-            // project new level-set
-            double s = 1.0;
-            LevSet.ProjectField((x, y) => -(x - s * t).Pow2() - y.Pow2() + (2.4).Pow2());
-            LsTrk.UpdateTracker(incremental: _incremental);
-
-            // exact solution for new timestep
-            uEx.GetSpeciesShadowField("A").ProjectField((x, y) => x + alpha_A * t);
-            uEx.GetSpeciesShadowField("B").ProjectField((x, y) => x + alpha_B * t);
-
-            u.Clear();
-            u.Acc(1.0, uEx);
-
-            // markieren, wo ueberhaupt A und B sind
-            Amarker.Clear();
-            Bmarker.Clear();
-            Amarker.AccConstant(+1.0, LsTrk._Regions.GetSpeciesSubGrid("A").VolumeMask);
-            Bmarker.AccConstant(1.0, LsTrk._Regions.GetSpeciesSubGrid("B").VolumeMask);
-
-            // MPI rank
-            MPICellRank.Clear();
-            MPICellRank.AccConstant(base.MPIRank);
-
-            // return level-set residual
-            return 0.0;
-        }
-
         /// <summary>
         /// Setting initial value.
         /// </summary>
         protected override void SetInitial() {
-            this.DelUpdateLevelset(null, 0.0, 0.0, 0.0, false);
         }
 
-        XSpatialOperator Op;
-
-        XdgBDFTimestepping TimeIntegration;
 
         protected override void CreateEquationsAndSolvers(LoadBalancingData L) {
-            Op = new XSpatialOperator(1, 0, 1, QuadOrderFunc.SumOfMaxDegrees(RoundUp: true), "u", "c1");
-
-            var blkFlux = new DxFlux(this.LsTrk, alpha_A, alpha_B);
-            Op.EquationComponents["c1"].Add(blkFlux); // Flux in Bulk Phase;
-            Op.EquationComponents["c1"].Add(new LevSetFlx(this.LsTrk, alpha_A, alpha_B)); // flux am lev-set 0
-            Op.OnIntegratingBulk += blkFlux.NowIntegratingBulk;
-
-            Op.Commit();
-
+            
             if (L == null) {
-                TimeIntegration = new XdgBDFTimestepping(
-                    new DGField[] { u }, new DGField[] { uResidual }, base.LsTrk,
-                    true,
-                    DelComputeOperatorMatrix, DelUpdateLevelset, DelUpdateCutCellMetrics,
-                    3, // BDF3
-                       //-1, // Crank-Nicolson
-                       //0, // Explicit Euler
-                    LevelSetHandling.LieSplitting,
-                    MassMatrixShapeandDependence.IsTimeDependent,
-                    SpatialOperatorType.LinearTimeDependent,
-                    MassScale,
-                    MultigridOperatorConfig,
-                    this.MultigridSequence,
-                    this.THRESHOLD,
-                    true);
+                
             } else {
-                Debug.Assert(object.ReferenceEquals(this.MultigridSequence[0].ParentGrid, this.GridData));
-                TimeIntegration.DataRestoreAfterBalancing(L, new DGField[] { u }, new DGField[] { uResidual }, base.LsTrk, this.MultigridSequence);
+                throw new NotImplementedException("todo");
             }
         }
 
-        /// <summary>
-        /// Block scaling of the mass matrix.
-        /// </summary>
-        protected IDictionary<SpeciesId, IEnumerable<double>> MassScale {
-            get {
-                double[] _rho = new double[] { 1 };
-                IDictionary<SpeciesId, IEnumerable<double>> R = new Dictionary<SpeciesId, IEnumerable<double>>();
-                R.Add(this.LsTrk.GetSpeciesId("A"), _rho);
-                R.Add(this.LsTrk.GetSpeciesId("B"), _rho);
-                return R;
-            }
-        }
-
-        MultigridOperator.ChangeOfBasisConfig[][] MultigridOperatorConfig {
-            get {
-                int pu = this.u.Basis.Degree;
-
-                // set the MultigridOperator configuration for each level:
-                // it is not necessary to have exactly as many configurations as actual multigrid levels:
-                // the last configuration entry will be used for all higher level
-                MultigridOperator.ChangeOfBasisConfig[][] configs = new MultigridOperator.ChangeOfBasisConfig[this.MultigridSequence.Length][];
-                for (int iLevel = 0; iLevel < configs.Length; iLevel++) {
-                    configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[1];
 
 
-                    // configuration for pressure
-                    configs[iLevel][0] = new MultigridOperator.ChangeOfBasisConfig() {
-                        Degree = Math.Max(1, pu - iLevel),
-                        mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
-                        VarIndex = new int[] { 0 }
-                    };
-
-                }
-
-                return configs;
-            }
-        }
-
-        CutCellMetrics DelUpdateCutCellMetrics() {
-            return new CutCellMetrics(
-                HMF,
-                this.Op.QuadOrderFunction(new int[] { u.Basis.Degree }, new int[0], new int[] { uResidual.Basis.Degree }),
-                this.LsTrk,
-                this.LsTrk.SpeciesIdS.ToArray());
-        }
-
-        const XQuadFactoryHelper.MomentFittingVariants HMF = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
-
-        protected virtual void DelComputeOperatorMatrix(BlockMsrMatrix OpMatrix, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, MultiphaseCellAgglomerator Agglomerator, double phystime) {
-            OpMatrix.Clear();
-            OpAffine.ClearEntries();
-
-            Op.ComputeMatrixEx(base.LsTrk,
-                u.Mapping, null, uResidual.Mapping,
-                OpMatrix, OpAffine, false,
-                phystime,
-                false,
-                XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes,
-                base.LsTrk.SpeciesIdS.ToArray());
-        }
-
-        public override void DataBackupBeforeBalancing(LoadBalancingData L) {
-            TimeIntegration.DataBackupBeforeBalancing(L);
-        }
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             using (new FuncTrace()) {
@@ -251,16 +89,6 @@ namespace BoSSS.Application.LoadBalancingTest {
                 base.NoOfTimesteps = 20;
                 dt = 0.1;
 
-                // initial value
-                if (TimestepNo == 1)
-                    TimeIntegration.SingleInit();
-
-                // compute one time-step
-                TimeIntegration.Solve(phystime, dt, ComputeOnlyResidual: true);
-                double ResidualNorm = this.uResidual.L2Norm();
-
-                // done.
-                Console.WriteLine("    done.");
 
                 // return
                 //base.TerminationKey = true;
@@ -268,83 +96,8 @@ namespace BoSSS.Application.LoadBalancingTest {
             }
         }
 
-        /// <summary>
-        /// A dummy routine in order to test cell dynamic load balancing 
-        /// (**not** a good balancing, but triggers redistribution).
-        /// </summary>
-        protected override int[] ComputeNewCellDistribution(int TimeStepNo, double physTime) {
-            if (!DynamicBalance || MPISize <= 1)
-                return null;
-
-            int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
-
-            int[] PerformanceClasses = new int[J];
-            var CC = this.LsTrk._Regions.GetCutCellMask();
-            foreach (int j in CC.ItemEnum)
-                PerformanceClasses[j] = 1;
-
-            if (balancer == null) {
-                balancer = new LoadBalancer(cellCostEstimatorFactory);
-            }
-
-            return balancer.GetNewPartitioning(
-                2,
-                PerformanceClasses,
-                this.Grid,
-                TimeStepNo,
-                GridPartType.none,
-                "",
-                imbalanceThreshold: 0.0,
-                Period: 3);
-
-            /*
-            if (MPISize == 4 && TimeStepNo > 5) {
-                int[] Part = new int[J];
-
-                double speed = this.GridData.Cells.h_maxGlobal / 0.3;
-                for (int j = 0; j < J; j++) {
-                    double[] X = this.GridData.Cells.CellCenter.GetRow(j);
-                    double x = X[0];
-                    double y = X[1];
-
-                    int px = x < Math.Min(physTime * speed, 2) ? 0 : 1;
-                    int py = y < 0 ? 0 : 1;
-
-                    Part[j] = px * 2 + py;
-                }
-
-                return Part;
-            } else if (MPISize == 2) {
-                int[] Part = new int[J];
-
-                double speed = this.GridData.Cells.h_maxGlobal / 0.3;
-
-                for (int j = 0; j < J; j++) {
-                    double[] X = this.GridData.Cells.CellCenter.GetRow(j);
-                    double x = X[0];
-                    double y = X[1];
-
-                    int px = x < Math.Min(physTime * speed, 2) ? 0 : 1;
-                    int py = y < 0 ? 0 : 1;
-
-                    Part[j] = px;
-                }
-
-                //return null;
-                return Part;
-            } else if (MPISize == 1) {
-                int[] Part = new int[J];
-                return Part;
-            } else {
-                return null;
-            }
-            */
-        }
-
-        LoadBalancer balancer;
-
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
-            string filename = "LoadBalancingTest." + timestepNo;
+            string filename = "AdaptiveMeshRefinementTestMain." + timestepNo;
             Tecplot.PlotFields(base.m_RegisteredFields.ToArray(), filename, physTime, superSampling);
         }
     }
