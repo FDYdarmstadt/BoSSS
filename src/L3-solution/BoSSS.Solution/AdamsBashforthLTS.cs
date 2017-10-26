@@ -247,6 +247,11 @@ namespace BoSSS.Solution.Timestepping {
                             // Otherwise the value could be changed by the constructor of the parent class (AdamsBashforthLTS.cs) --> CreateSubGrids()
                             numOfSubgrids = numOfSubgridsInit;
 
+
+                            // Fix for update problem of artificial viscosity
+                            RaiseOnBeforComputechangeRate(Time, dt);
+
+
                             this.subGridList = clustering.CreateSubGrids(numOfSubgrids);
                             UpdateLTSVariables();
                             //this.numOfSubgrids = clustering.NumOfClusters;
