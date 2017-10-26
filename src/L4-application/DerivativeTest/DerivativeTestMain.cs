@@ -41,11 +41,17 @@ using BoSSS.Solution;
 
 namespace BoSSS.Application.DerivativeTest {
 
+    /// <summary>
+    /// containes NUnit tests.
+    /// </summary>
     [TestFixture]
-    public class Tests {
+    static public class Tests {
 
         static int CHUNK_DATA_LIMIT_bkup;
 
+        /// <summary>
+        /// MPI init.
+        /// </summary>
         [TestFixtureSetUp]
         public static void SetUp() {
             bool MpiInit;
@@ -53,12 +59,19 @@ namespace BoSSS.Application.DerivativeTest {
             ilPSP.Environment.Bootstrap(new string[0], BoSSS.Solution.Application.GetBoSSSInstallDir(), out MpiInit);
         }
 
+        /// <summary>
+        /// MPI finalization.
+        /// </summary>
         [TestFixtureTearDown]
         public static void Cleanup() {
             //Console.Out.Dispose();
             MPI.Wrappers.csMPI.Raw.mpiFinalize();
         }
 
+
+        /// <summary>
+        /// Basic grid tests, tested in DEBUG and RELEASE configuration.
+        /// </summary>
         [Test]
 #if DEBUG
         public static void DerivativeTest_BuildInGrid([Range(1, 12)] int gridCase, [Values(2, 10000000)] int bulksize_limit, [Values(1024, 1024 * 1024 * 128)] int cache_size) {
@@ -78,7 +91,10 @@ namespace BoSSS.Application.DerivativeTest {
             Assert.IsTrue(p.m_passed);
         }
 
-#if !DEBUG        
+        /// <summary>
+        /// Larger grid tests, tested only in RELEASE configuration.
+        /// </summary>
+#if !DEBUG
         [Test]
         public static void DerivativeTest_BuildInGrid_Ext([Range(30, 33)] int gridCase, [Values(1, 500, 10000000)] int bulksize_limit, [Values(1024, 1024 * 1024 * 128)] int cache_size) {
             DerivativeTestMain.GRID_CASE = gridCase;
@@ -98,7 +114,7 @@ namespace BoSSS.Application.DerivativeTest {
         /// <summary>
         /// Filenames of test grids.
         /// </summary>
-        string[] m_testFiles {
+        static string[] m_testFiles {
             get {
                 List<string> R = new List<string>();
                 R.AddRange(Directory.GetFiles("../../TestGrids/", "*.msh").Select(f => Path.GetFileName(f)));
@@ -148,11 +164,24 @@ namespace BoSSS.Application.DerivativeTest {
 
     }
 
+    /// <summary>
+    /// Main class of the App.
+    /// </summary>
     class DerivativeTestMain : BoSSS.Solution.Application {
 
+        /// <summary>
+        /// Switch for the test-case, see implementation of <see cref="CreateOrLoadGrid"/>.
+        /// </summary>
         public static int GRID_CASE = 12;
+
+        /// <summary>
+        /// Grid/mesh file to use, see implementation of <see cref="CreateOrLoadGrid"/>.
+        /// </summary>
         public static string GRID_FILE = "..\\..\\TestGrids\\wedding2D_v16.cgns";
 
+        /// <summary>
+        /// Application entry point.
+        /// </summary>
         static void Main(string[] args) {
             //Quadrature_Bulksize.BULKSIZE_LIMIT_OVERRIDE = 1;
             BoSSS.Solution.Application.InitMPI(args);
@@ -194,6 +223,9 @@ namespace BoSSS.Application.DerivativeTest {
             BoSSS.Solution.Application.FinalizeMPI();
         }
 
+        /// <summary>
+        /// Nop.
+        /// </summary>
         protected override void CreateEquationsAndSolvers(LoadBalancingData L) {
         }
 
@@ -208,6 +240,9 @@ namespace BoSSS.Application.DerivativeTest {
         SinglePhaseField Laplace_f1_Analytical;
         SinglePhaseField Laplace_f2_Analytical;
 
+        /// <summary>
+        /// Creation of DG fields.
+        /// </summary>
         protected override void CreateFields() {
             int GridDeg = this.Grid.Cells.Select(cl => this.Grid.GetRefElement(cl.Type).GetInterpolationDegree(cl.Type)).Max();
             int D = this.GridData.SpatialDimension;
@@ -246,6 +281,9 @@ namespace BoSSS.Application.DerivativeTest {
         double EdgeArea = -1;
         double CellVolume = -1;
 
+        /// <summary>
+        /// See also <see cref="GRID_CASE"/> and <see cref="GRID_FILE"/>.
+        /// </summary>
         protected override GridCommons CreateOrLoadGrid() {
 
             GridCommons grd;
@@ -504,6 +542,10 @@ namespace BoSSS.Application.DerivativeTest {
 
         bool AltRefSol = false;
 
+
+        /// <summary>
+        /// Sets fields an their exact derivatives.
+        /// </summary>
         protected override void SetInitial() {
 
             if (this.GridData.SpatialDimension == 3) {
@@ -552,6 +594,9 @@ namespace BoSSS.Application.DerivativeTest {
                 throw new NotImplementedException();
         }
 
+        /// <summary>
+        /// Usual plotting
+        /// </summary>
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
             Tecplot.PlotFields(
                 ArrayTools.Cat<DGField>(f1Gradient_Analytical, f1Gradient_Numerical, f1, GridData.BoundaryMark(), Laplace_f1_Numerical, Laplace_f2_Numerical),
@@ -573,6 +618,9 @@ namespace BoSSS.Application.DerivativeTest {
             OpMtx.SpMVpara(1.0, fin.CoordinateVector, 1.0, fres.CoordinateVector);
         }
 
+        /// <summary>
+        /// computes derivatives in various ways and compares them against known values.
+        /// </summary>
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
 
             base.EndTime = 0.0;
