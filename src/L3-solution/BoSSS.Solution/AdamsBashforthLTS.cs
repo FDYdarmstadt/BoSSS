@@ -132,16 +132,7 @@ namespace BoSSS.Solution.Timestepping {
 
         Queue<double>[] historyTime_Q;
 
-        //################# Hack for testing A-LTS with the scalar transport equation
-        public ChangeRateCallback UpdateSensorAndAV {
-            get;
-            private set;
-        }
-        //################# Hack for testing A-LTS with the scalar transport equation
-
-        //################# Hack for time step counting
         private int timeStepCount;
-        //################# Hack for time step counting
 
         //################# Hack for update derived variables in every (A)LTS sub-step
         private bool AVHackOn;
@@ -150,7 +141,6 @@ namespace BoSSS.Solution.Timestepping {
         //################# Hack for saving to database in every (A)LTS sub-step
         private Action<TimestepNumber, double> saveToDBCallback;
         //################# Hack for saving to database in every (A)LTS sub-step
-
 
         /// <summary>
         /// Standard constructor for the (adaptive) local time stepping algorithm
@@ -165,7 +155,7 @@ namespace BoSSS.Solution.Timestepping {
         /// <param name="fluxCorrection">Bool for triggering the fluss correction</param>
         /// <param name="reclusteringInterval">Interval for potential reclustering</param>
         /// <remarks>Uses the k-Mean clustering, see <see cref="BoSSS.Solution.Utils.Kmeans"/>, to generate the element groups</remarks>
-        public AdamsBashforthLTS(SpatialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters, int order, int numOfSubgrids, IList<TimeStepConstraint> timeStepConstraints = null, SubGrid sgrd = null, bool fluxCorrection = true, int reclusteringInterval = 0, ChangeRateCallback test = null, Action<TimestepNumber, double> saveToDBCallback = null, bool AVHackOn = false)
+        public AdamsBashforthLTS(SpatialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters, int order, int numOfSubgrids, IList<TimeStepConstraint> timeStepConstraints = null, SubGrid sgrd = null, bool fluxCorrection = true, int reclusteringInterval = 0, Action<TimestepNumber, double> saveToDBCallback = null, bool AVHackOn = false)
             : base(spatialOp, Fieldsmap, Parameters, order, timeStepConstraints, sgrd) {
 
             this.AVHackOn = AVHackOn;
@@ -207,15 +197,6 @@ namespace BoSSS.Solution.Timestepping {
                 Console.WriteLine("(A)LTS: id=" + i + " -> sub-steps=" + NumOfLocalTimeSteps[i] + " and elements=" + subGridList[i].GlobalNoOfCells);
             }
 
-            // Hack for scalar transport
-            if (test != null) {
-                UpdateSensorAndAV = test;
-                for (int i = 0; i < subGridList.Count; i++) {
-                    localABevolve[i].OnBeforeComputeChangeRate += UpdateSensorAndAV;
-                }
-                RungeKuttaScheme.OnBeforeComputeChangeRate += UpdateSensorAndAV;
-            }
-
             // Saving time steps in subgrids
             //this.saveToDBCallback = saveToDBCallback;
         }
@@ -247,13 +228,14 @@ namespace BoSSS.Solution.Timestepping {
                             // Otherwise the value could be changed by the constructor of the parent class (AdamsBashforthLTS.cs) --> CreateSubGrids()
                             numOfSubgrids = numOfSubgridsInit;
 
+                            // Fix for update problem of artificial viscosity
+                            RaiseOnBeforComputechangeRate(Time, dt);
+                            
                             this.subGridList = clustering.CreateSubGrids(numOfSubgrids);
                             UpdateLTSVariables();
-                            //this.numOfSubgrids = clustering.NumOfClusters;
 
                             CalculateNumberOfLocalTS(); // Might remove sub-grids when time step sizes are too similar
                             clustering.UpdateClusteringVariables(this.subGridList, this.SubGridField, this.numOfSubgrids);
-                            //clustering.SubGridList = this.subGridList;
 
                             // Store oldClustering in a List of SubGrids
                             List<SubGrid> oldClustering = new List<SubGrid>(localABevolve.Count());
@@ -261,16 +243,12 @@ namespace BoSSS.Solution.Timestepping {
                                 oldClustering.Add(abE.sgrd);
 
                             bool reclustered = clustering.CheckForNewClustering(oldClustering);
-                            //bool reclustered = true;
 
                             // After the intitial phase, activate adaptive mode for all ABevolve objects
                             foreach (ABevolve abE in localABevolve)
                                 abE.adaptive = true;
 
-                            //if (order != 1 && reclustered) {
                             if (reclustered) {
-                                //CalculateNumberOfLocalTS();   // Change: is called after CreateSubGrids(), might be simplified
-
                                 // Store all localAbevolve objects from the last time step for copying the histories
                                 ShortenHistories(localABevolve);
                                 localABevolvePrevious = localABevolve;
@@ -283,15 +261,10 @@ namespace BoSSS.Solution.Timestepping {
                                     localABevolve[i].ResetTime(m_Time);
                                     if (AVHackOn)
                                         localABevolve[i].OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforComputechangeRate(t1, t2);
-                                    if (UpdateSensorAndAV != null)
-                                        localABevolve[i].OnBeforeComputeChangeRate += UpdateSensorAndAV;     // Scalar transport
                                 }
 
                                 CopyHistoriesOfABevolver();
 
-                                //for (int i = 0; i < this.numOfSubgrids; i++) {
-                                //    Console.WriteLine("LTS: id=" + i + " -> sub-steps=" + NumOfLocalTimeSteps[i] + " and elements=" + subgridList[i].GlobalNoOfCells);
-                                //}
                             } else
                                 Console.WriteLine("#####Clustering has NOT changed in timestep{0}#####", timeStepCount);
 
@@ -316,11 +289,9 @@ namespace BoSSS.Solution.Timestepping {
                     double time0 = m_Time;
                     double time1 = m_Time + dt;
 
-                    //if (saveToDBCallback != null)
                     TimestepNumber subTimestep = new TimestepNumber(timeStepCount - 1);
 
-                    // evolve function
-                    // evolves each sub-grid with its own time step: only one step
+                    // Evolves each sub-grid with its own time step: only one step
                     // the result is not written to m_DGCoordinates!!!
                     for (int i = 0; i < numOfSubgrids; i++) {
                         //localABevolve[i].completeBndFluxes.Clear();
@@ -387,7 +358,7 @@ namespace BoSSS.Solution.Timestepping {
                                 }
                             }
 
-                            // Are we at an (intermediate -) syncronization levels ?
+                            // Are we at an (intermediate-) syncronization levels?
                             // For conservatvity, we have to correct the values of the larger cell cluster
                             if (fluxCorrection) {
                                 for (int idCoarse = 0; idCoarse < id; idCoarse++) {
