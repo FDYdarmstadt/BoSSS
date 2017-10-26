@@ -47,7 +47,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         static ILog Logger = LogManager.GetLogger(typeof(GridCommons));
 
         /// <summary>
-        /// cells of the grid
+        /// Cells of the grid.
         /// </summary>
         /// <remarks>
         /// Cannot be implemented as property since NonSerialized only works
@@ -57,7 +57,8 @@ namespace BoSSS.Foundation.Grid.Classic {
         public Cell[] Cells;
 
         /// <summary>
-        /// Optional elements that mark boundary conditions;
+        /// Optional elements that mark boundary conditions. Their global indices resp. global Id's 
+        /// start after those of the <see cref="Cells"/>.
         /// </summary>
         [NonSerialized]
         public BCElement[] BcCells;
@@ -1157,6 +1158,15 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
         }
 
+        /// <summary>
+        /// Index compression on a single processor.
+        /// </summary>
+        /// <param name="_IDX">
+        /// Input, a collection of numbers, structured into a staggered array.
+        /// </param>
+        /// <returns>
+        /// A staggered array with equal number of entries as <paramref name="_IDX"/>.
+        /// </returns>
         static private int[][] CompressIndexRange(int[][] _IDX) {
 
             // Pass 1: Bereich bestimmen

@@ -700,15 +700,13 @@ namespace BoSSS.Foundation.IO {
             if (glbNoOfBcCells_A != glbNoOfBcCells_B)
                 return false;
             
-            if (!ArrayTools.Equals(A.RefElements, B.RefElements, (a, b) => object.ReferenceEquals(a, b)))
+            if (!ArrayTools.ListEquals(A.RefElements, B.RefElements, (a, b) => object.ReferenceEquals(a, b)))
                 return false;
-            if (!ArrayTools.Equals(A.EdgeRefElements, B.EdgeRefElements, (a, b) => object.ReferenceEquals(a, b)))
+            if (!ArrayTools.ListEquals(A.EdgeRefElements, B.EdgeRefElements, (a, b) => object.ReferenceEquals(a, b)))
                 return false;
-
-            if (!ArrayTools.Equals(A.EdgeTagNames, B.EdgeTagNames, (a, b) => (a.Key == b.Key && a.Value.Equals(b.Value))))
+            if (!ArrayTools.ListEquals(A.EdgeTagNames, B.EdgeTagNames, (a, b) => (a.Key == b.Key && a.Value.Equals(b.Value))))
                 return false;
-
-            if (!ArrayTools.Equals(A.PeriodicTrafo, B.PeriodicTrafo, (a, b) => a.ApproximateEquals(b)))
+            if (!ArrayTools.ListEquals(A.PeriodicTrafo, B.PeriodicTrafo, (a, b) => a.ApproximateEquals(b)))
                 return false;
 
             return true;
@@ -775,7 +773,7 @@ namespace BoSSS.Foundation.IO {
 
                     Debug.Assert(Ca.GlobalID == Cb.GlobalID);
 
-                    if (!ArrayTools.Equals(Ca.NodeIndices, Cb.NodeIndices, (ia, ib) => ia == ib)) {
+                    if (!ArrayTools.ListEquals(Ca.NodeIndices, Cb.NodeIndices, (ia, ib) => ia == ib)) {
                         match = 0;
                         break;
                     }
@@ -877,7 +875,7 @@ namespace BoSSS.Foundation.IO {
 
                     Debug.Assert(Ca.GlobalID == Cb.GlobalID);
 
-                    if (!ArrayTools.Equals(Ca.NodeIndices, Cb.NodeIndices, (ia, ib) => ia == ib)) {
+                    if (!ArrayTools.ListEquals(Ca.NodeIndices, Cb.NodeIndices, (ia, ib) => ia == ib)) {
                         match = 0;
                         break;
                     }
@@ -1133,7 +1131,7 @@ namespace BoSSS.Foundation.IO {
                         //    Data = Coords
                         //};
                         vec[j].AppendDGCoordinates(Coords);
-                        Debug.Assert(ArrayTools.Equals(Coords, vec[j].GetDGCoordinates(idxF)));
+                        Debug.Assert(ArrayTools.ListEquals(Coords, vec[j].GetDGCoordinates(idxF)));
                     }
                 }
 

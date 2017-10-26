@@ -171,7 +171,7 @@ namespace BoSSS.Platform.LinAlg {
             for (int l = 0; l < L; l++) {
                 ArrayTools.GetRow(vtx, l, x);
                 var yl = Transform(x);
-                ret.SetRow(yl, l);
+                ret.SetRow(l, yl);
             }
 
             return ret;
