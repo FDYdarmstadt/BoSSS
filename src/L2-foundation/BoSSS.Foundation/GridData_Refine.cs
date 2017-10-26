@@ -174,6 +174,14 @@ namespace BoSSS.Foundation.Grid.Classic {
                         // cluster of cells to coarsen
                         Cell[] CellS = jCellS.Select(j => this.Cells.GetCell(j)).ToArray();
 
+                        int RefinementLevel = CellS[0].RefinementLevel - 1;
+                        if (RefinementLevel < 0)
+                            throw new ArgumentException("Refinement level out of range - corrupted data structure.");
+                        foreach(var cl in CellS) {
+                            if(cl.RefinementLevel != RefinementLevel+1)
+                                throw new ArgumentException("Refinement varies within refinement cluster - corrupted data structure.");
+                        }
+
                         Cell Cell0 = CellS.Single(cl => cl.ParentCell != null);
                         Cell Mother = Cell0.ParentCell;
 
@@ -195,6 +203,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         restoredCell.ParentCell = Mother.ParentCell;
                         restoredCell.GlobalID = Mother.GlobalID;
                         restoredCell.TransformationParams = Mother.TransformationParams;
+                        restoredCell.RefinementLevel = RefinementLevel;
 
                         // boundary conditions by cell face tags
                         restoredCell.CellFaceTags = Mother.CellFaceTags.Where(cftag => cftag.EdgeTag > 0 && cftag.EdgeTag < GridCommons.FIRST_PERIODIC_BC_TAG).ToArray();
@@ -236,7 +245,9 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 newCell.GlobalID = GlobalIdCounter;
                                 GlobalIdCounter++;
                             }
+                            newCell.RefinementLevel = oldCell.RefinementLevel + 1;
                             refinedCells[iSubDiv] = newCell;
+                            
 
                             // Vertices
                             var RefNodesRoot = Leaves[iSubDiv].Trafo2Root.Transform(RefNodes);
