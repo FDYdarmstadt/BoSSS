@@ -51,6 +51,10 @@ namespace CNS {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
+
+            CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder0th();
+            
+
             Application<CNSControl>._Main(
                 args,
                 false,

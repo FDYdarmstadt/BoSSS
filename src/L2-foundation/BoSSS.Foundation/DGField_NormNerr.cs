@@ -700,7 +700,7 @@ namespace BoSSS.Foundation {
                 base.AllocateBuffers(NoOfItems, rule);
 
                 int NoOfNodes = rule.GetLength(0);
-                if (m_func != null) {
+                if (m_func != null || m_Map != null) {
                     m_NodesTransformed.Allocate(new int[] { NoOfItems, NoOfNodes, GridDat.SpatialDimension });
                 }
             }
@@ -716,15 +716,19 @@ namespace BoSSS.Foundation {
                 // evaluate scalar function ans store result in 'EvalResult'
                 // =========================================================
                 Debug.Assert(!((m_func != null) && (m_funcEx != null)));
-                if (m_func != null || m_Map != null) {
+                if(m_func != null || m_Map != null) {
                     GridDat.TransformLocal2Global(NodesUntransformed, i0, Length, m_NodesTransformed, 0);
+                }
 
+                if(m_func != null) { 
                     MultidimensionalArray inp = m_NodesTransformed.ResizeShallow(new int[] { Length * M, D });
                     MultidimensionalArray outp = EvalResult.ResizeShallow(new int[] { Length * M });
                     m_func(inp, outp);
-                }
+                    Debug.Assert(m_funcEx == null);
+                } 
                 if (m_funcEx != null) {
                     m_funcEx(i0, Length, NodesUntransformed, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
+                    Debug.Assert(m_func == null);
                 }
 
 
