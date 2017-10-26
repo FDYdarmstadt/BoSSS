@@ -943,11 +943,11 @@ namespace BoSSS.Foundation.Grid.RefElements {
             int cnt = 0;
             for (int i = 0; i < leaves.Length; i++) {
 
-                double det = leaves[i].TrafoFromRoot.Matrix.Determinant();
+                double det = leaves[i].Trafo2Root.Matrix.Determinant();
 
                 // loop over all nodes of the base quad. rule
                 int N = BaseRule.NoOfNodes;
-                leaves[i].TrafoFromRoot.Transform(
+                leaves[i].Trafo2Root.Transform(
                     BaseRule.Nodes,
                     ret.Nodes.ExtractSubArrayShallow(
                         new int[] { cnt, 0 },
@@ -1174,7 +1174,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
                 for (int j = 0; j < J; j++) {
                     double[] vtx = ArrayTools.GetRow(rvtx, j);
                     double[] t1 = trafo.Transform(vtx);
-                    double[] t = m_Parrent.TrafoFromRoot.Transform(t1);
+                    double[] t = m_Parrent.Trafo2Root.Transform(t1);
 
                     this.Vertices.SetRow(j, t);
                 }
@@ -1610,8 +1610,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
 
                     double[,] this_Basis_plus1 = GetSubMatrix(Vertices, 0, D + 1, 0, D);
                     double[,] root_Basis_plus1 = GetSubMatrix(root.Vertices, 0, D + 1, 0, D);
-                    double[,] parrent_Basis_plus1 = GetSubMatrix(m_Parrent.Vertices, 0, D + 1, 0, D);
-
+                    
                     Trafo2Root = AffineTrafo.FromPoints(root_Basis_plus1, this_Basis_plus1);
                     Trafo2Parrent = (m_Parrent.TrafoFromRoot) * Trafo2Root;
                 }

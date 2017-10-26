@@ -161,7 +161,7 @@ namespace BoSSS.Application.DerivativeTest {
             // ==============
 
 
-            for (int i = 12; i <= 12; i++) {
+            for (int i = 1; i <= 12; i++) {
                 BoSSS.Solution.Application._Main(args, true, null, delegate () {
                     var R = new DerivativeTestMain();
                     GRID_CASE = i;
