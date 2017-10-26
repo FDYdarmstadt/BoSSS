@@ -161,7 +161,7 @@ namespace BoSSS.Application.DerivativeTest {
             // ==============
 
 
-            for (int i = 9; i <= 9; i++) {
+            for (int i = 1; i <= 12; i++) {
                 BoSSS.Solution.Application._Main(args, true, null, delegate () {
                     var R = new DerivativeTestMain();
                     GRID_CASE = i;
@@ -324,7 +324,6 @@ namespace BoSSS.Application.DerivativeTest {
                     var grd3 = Grid2D.Cartesian2DGrid(xNodes3, yNodes3, type: CellType.Square_Linear);
                     var grdJ = GridCommons.MergeLogically(grd1, GridCommons.MergeLogically(grd2, grd3));
                     grd = GridCommons.Seal(grdJ, 4);
-                    //grd.Plot2DGrid();
 
                     break;
                 }
