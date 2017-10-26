@@ -28,6 +28,7 @@ using ilPSP;
 
 namespace BoSSS.Solution.NSECommon {
 
+    
     /// <summary>
     /// A configuration switch to <see cref="swipViscosityBase"/> and decendants, to
     /// switch between different variants of inhomogeneous-diffusion forms
@@ -56,6 +57,7 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         H
     }
+    
 
     /// <summary>
     /// A configuration switch to <see cref="swipViscosityBase"/> and decendants, to
