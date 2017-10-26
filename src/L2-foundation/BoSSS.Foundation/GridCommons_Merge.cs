@@ -331,12 +331,18 @@ namespace BoSSS.Foundation.Grid.Classic {
             // Its better to use vertices in the interior of the element; if we use vertices at the corners, we might get
             // intersection of edges that just share one point.
 
+
+            // Define all edges that will be tested (set to boundary edges)
+            // ============================================================
             int[] UnknownEdges = gdat.BoundaryEdges.ItemEnum.ToArray();
             int L = UnknownEdges.Sum(iEdg => TestNodes[gdat.Edges.GetRefElementIndex(iEdg)].NoOfNodes);
+            
+            // Transform nodes on edges (that should be tested) to global coordinates
+            // ======================================================================
 
             MultidimensionalArray TestNodesGlobal = MultidimensionalArray.Create(L, D);
             MultidimensionalArray NormalsGlobal = MultidimensionalArray.Create(L, D);
-            int[] NodeToEdge = new int[L];
+            int[] NodeToEdge = new int[L]; // pointer l -> Edge index, where l is the first index into 'TestNodesGlobal' & 'NormalsGlobal'
 
 
             int[,] E2C = gdat.Edges.CellIndices;
@@ -361,9 +367,13 @@ namespace BoSSS.Foundation.Grid.Classic {
                 cnt += K;
             }
 
+            // binary tree to speed up point localization
             int[] pl_Permutation = new int[L];
             PointLocalization pl = new PointLocalization(TestNodesGlobal, 0.01, pl_Permutation);
             Debug.Assert(!object.ReferenceEquals(pl.Points, TestNodesGlobal));
+
+            // compare search edges to all other nodes
+            // =======================================
 
             // mapping: cell --> Neighbour cell index, face index
             // 1st index: Cell index;
@@ -374,7 +384,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             byte[,] E2F = gdat.Edges.FaceIndices;
 
             int cnt2 = 0;
-            for (int iEdgC = 0; iEdgC < UnknownEdges.Length; iEdgC++) {
+            for (int iEdgC = 0; iEdgC < UnknownEdges.Length; iEdgC++) { // loop over edges that may get sealed
                 int iEdg = UnknownEdges[iEdgC];
                 int iKref = gdat.Edges.GetRefElementIndex(iEdg);
                 NodeSet Ns = TestNodes[iKref];
@@ -389,7 +399,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 int[] I0 = new int[] { cnt2, 0 };
                 int[] IE = new int[] { cnt2 + K - 1, D - 1 };
                 MultidimensionalArray TN = TestNodesGlobal.ExtractSubArrayShallow(I0, IE);
-                MultidimensionalArray N1 = NormalsGlobal.ExtractSubArrayShallow(I0, IE);
+                //MultidimensionalArray N1 = NormalsGlobal.ExtractSubArrayShallow(I0, IE);
 
                 // find bounding box for edge
                 BoundingBox bbEdge = new BoundingBox(TN);
@@ -411,12 +421,12 @@ namespace BoSSS.Foundation.Grid.Classic {
                     GeomBinTreeBranchCode.CreateFormPoint(pl.PointsBB, bbEdge.Max),
                     out bbEdgeSigBits);
 
-                // determine all points in cell
+                // determine all points in bounding box
                 int iP0, Len;
                 pl.GetPointsInBranch(bbEdgeCode, bbEdgeSigBits, out iP0, out Len);
 
                 // determine all edged which potentially overlap with edge 'iEdg'
-                HashSet<int> PotOvrlap = new HashSet<int>();
+                HashSet<int> PotOvrlap = new HashSet<int>(); // a set of edge indices
                 for (int n = 0; n < Len; n++) {
                     int l = iP0 + n;
                     int iPt = pl_Permutation[l];
@@ -437,6 +447,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         continue;
                     int iFace2 = E2F[iOvrlapEdge, 0];
                     Debug.Assert(E2F[iOvrlapEdge, 1] == byte.MaxValue);
+
 
                     int AllreadyFound = FoundPairings[jCell1] == null ?
                         0 : FoundPairings[jCell1].Where(tp => tp.Item1 == jCell2 && tp.Item2 == iFace1).Count();
@@ -484,6 +495,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                         //if (Math.Abs(Math.Abs(Math.Acos(GenericBlas.InnerProd(N1d, N2d))) - Math.PI) > 1.0e-8)
                         if (Math.Abs(GenericBlas.InnerProd(N1d, N2d) + 1.0) > 1.0e-8)
                             continue;
+
+
 
                         // if we reach this point, jCell1 should match with jCell2/iFace2
                         if (FoundPairings[jCell1] == null)
