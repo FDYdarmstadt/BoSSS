@@ -186,15 +186,85 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
          
         SinglePhaseField Refined_u;
         VectorField<SinglePhaseField> Refined_Grad_u;
-        SinglePhaseField Refined_MagGrad_u; 
+        SinglePhaseField Refined_MagGrad_u;
 
 
         void UpdateRefinedGrid(double time) {
             int J = RefinedGrid.Cells.NoOfLocalUpdatedCells;
 
-            BitArray Cells
+            bool NoRefinement = true;
+            int[] DesiredLevel = new int[J];
+            for(int j = 0; j < J; j++) {
+                double GradMag = Refined_MagGrad_u.GetMeanValue(j);
+
+                int DesiredLevel_j = 0;
+                if(GradMag > 0.4)
+                    DesiredLevel_j = 2;
+                if(GradMag > 0.75)
+                    DesiredLevel_j = 3;
+                
+                if(DesiredLevel[j] < DesiredLevel_j) {
+                    DesiredLevel[j] = DesiredLevel_j;
+                    NoRefinement = false;
+                    RefineNeighboursRecursive(RefinedGrid, DesiredLevel, j, DesiredLevel_j - 1);
+                }
+            }
+
+            if(!NoRefinement) {
 
 
+                List<int> CellsToRefineList = new List<int>();
+                for(int j = 0; j < J; j++) {
+                    int ActualLevel_j = RefinedGrid.Cells.GetCell(j).RefinementLevel;
+                    int DesiredLevel_j = DesiredLevel[j];
+
+                    if(ActualLevel_j < DesiredLevel_j)
+                        CellsToRefineList.Add(j);
+                }
+
+                Console.WriteLine("Refining " + CellsToRefineList.Count + " of " + J + " cells");
+
+                // create new Grid & DG fields
+                // ===========================
+
+                GridCommons newGrid = RefinedGrid.Adapt(CellsToRefineList, null);
+                RefinedGrid = new GridData(newGrid);
+
+                var Basis = new Basis(RefinedGrid, DEGREE);
+                Refined_u = new SinglePhaseField(Basis, "u");
+                Refined_Grad_u = new VectorField<SinglePhaseField>(base.GridData.SpatialDimension, Basis, "Grad_u", (bs, nmn) => new SinglePhaseField(bs, nmn));
+                Refined_MagGrad_u = new SinglePhaseField(new Basis(RefinedGrid, 0), "Magnitude_Grad_u");
+            }
+
+
+            {
+                Refined_u.Clear();
+                Refined_u.ProjectField(NonVectorizedScalarFunction.Vectorize(uEx, time));
+
+                Refined_Grad_u.Clear();
+                Refined_Grad_u.Gradient(1.0, Refined_u);
+
+                Refined_MagGrad_u.Clear();
+                Refined_MagGrad_u.ProjectFunction(1.0,
+                    (double[] X, double[] U, int jCell) => Math.Sqrt(U[0].Pow2() + U[1].Pow2()),
+                    new Foundation.Quadrature.CellQuadratureScheme(),
+                    Refined_Grad_u.ToArray());
+
+            }
+        }
+
+        static void RefineNeighboursRecursive(GridData gdat, int[] DesiredLevel, int j, int DesiredLevelNeigh) {
+
+            if(DesiredLevelNeigh <= 0)
+                return;
+            
+            foreach(var jNeigh in gdat.Cells.CellNeighbours[j]) {
+                var cl = gdat.Cells.GetCell(j);
+                if(cl.RefinementLevel < DesiredLevelNeigh) {
+                    DesiredLevel[jNeigh] = DesiredLevelNeigh;
+                    RefineNeighboursRecursive(gdat, DesiredLevel, jNeigh, DesiredLevelNeigh - 1);
+                }
+            }
         }
 
 
@@ -209,8 +279,8 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
                 dt = Math.PI*2 / base.NoOfTimesteps;
 
                 UpdateBaseGrid(phystime + dt);
+                UpdateRefinedGrid(phystime + dt);
 
-                
                 // return
                 //base.TerminationKey = true;
                 return dt;
@@ -218,8 +288,12 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
         }
 
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
-            string filename = "AdaptiveMeshRefinementTestMain." + timestepNo;
+            string filename = "BaseGrid." + timestepNo;
             Tecplot.PlotFields(base.m_RegisteredFields.ToArray(), filename, physTime, superSampling);
+
+            DGField[] RefinedFields = new[] { Refined_u, Refined_Grad_u[0], Refined_Grad_u[1], Refined_MagGrad_u };
+            string filename2 = "RefinedGrid." + timestepNo;
+            Tecplot.PlotFields(RefinedFields, filename2, physTime, superSampling);
         }
     }
 }

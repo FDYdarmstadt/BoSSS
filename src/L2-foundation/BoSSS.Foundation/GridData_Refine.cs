@@ -34,7 +34,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// <summary>
         /// Creates a new grid, which is an adaptive refinement (cell by cell) of this grid.
         /// </summary>
-        public GridCommons Adapt(int[] CellsToRefine, int[][] CellsToCoarsen) {
+        public GridCommons Adapt(IEnumerable<int> CellsToRefine, int[][] CellsToCoarsen) {
             using(new FuncTrace()) {
                 GridCommons oldGrid = this.m_Grid;
                 GridCommons newGrid = new GridCommons(oldGrid.RefElements, oldGrid.EdgeRefElements);
