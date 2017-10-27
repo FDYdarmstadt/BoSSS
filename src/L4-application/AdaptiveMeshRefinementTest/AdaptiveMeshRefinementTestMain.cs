@@ -5,9 +5,9 @@ using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
 using BoSSS.Platform.Utils.Geom;
 using BoSSS.Solution;
+using BoSSS.Solution.Utils;
 using BoSSS.Solution.Multigrid;
 using BoSSS.Solution.Tecplot;
-using BoSSS.Solution.Utils;
 using BoSSS.Solution.XdgTimestepping;
 using ilPSP;
 using ilPSP.LinSolvers;
@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Collections;
 
 namespace BoSSS.Application.AdaptiveMeshRefinementTest {
 
@@ -86,12 +87,12 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
 
 
         static void Main(string[] args) {
-            bool MpiInit;
-            ilPSP.Environment.Bootstrap(new string[0], BoSSS.Solution.Application.GetBoSSSInstallDir(), out MpiInit);
+            //bool MpiInit;
+            //ilPSP.Environment.Bootstrap(new string[0], BoSSS.Solution.Application.GetBoSSSInstallDir(), out MpiInit);
 
-            RefineScheisse();
+            //RefineScheisse();
 
-            return;
+            //return;
 
             BoSSS.Solution.Application._Main(
                 args,
@@ -108,19 +109,19 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
         }
 
         SinglePhaseField u;
-
+        VectorField<SinglePhaseField> Grad_u;
+        SinglePhaseField MagGrad_u;
 
         protected override void CreateFields() {
-            
             var Basis = new Basis(base.GridData, DEGREE);
             u = new SinglePhaseField(Basis, "u");
+            Grad_u = new VectorField<SinglePhaseField>(base.GridData.SpatialDimension, Basis, "Grad_u", (bs, nmn) => new SinglePhaseField(bs, nmn));
+            MagGrad_u = new SinglePhaseField(new Basis(base.GridData, 0), "Magnitude_Grad_u");
             base.m_RegisteredFields.Add(u);
+            base.m_RegisteredFields.AddRange(Grad_u);
+            base.m_RegisteredFields.Add(MagGrad_u);
         }
 
-        /// <summary>
-        /// turn dynamic balancing on/off
-        /// </summary>
-        internal bool DynamicBalance = false;
 
         /// <summary>
         /// DG polynomial degree
@@ -131,6 +132,44 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
         /// Setting initial value.
         /// </summary>
         protected override void SetInitial() {
+            UpdateBaseGrid(0.0);
+
+            RefinedGrid = this.GridData;
+            Refined_u = this.u;
+            Refined_Grad_u = this.Grad_u;
+            Refined_MagGrad_u = this.MagGrad_u;
+        }
+
+        private void UpdateBaseGrid(double time) {
+
+            u.Clear();
+            u.ProjectField(NonVectorizedScalarFunction.Vectorize(uEx, time));
+            
+            Grad_u.Clear();
+            Grad_u.Gradient(1.0, u);
+
+            MagGrad_u.Clear();
+            MagGrad_u.ProjectFunction(1.0,
+                (double[] X, double[] U, int jCell) => Math.Sqrt(U[0].Pow2() + U[1].Pow2()),
+                new Foundation.Quadrature.CellQuadratureScheme(),
+                Grad_u.ToArray());
+        }
+
+        static double uEx(double[] X, double time) {
+            double x = X[0];
+            double y = X[1];
+            
+            double r = Math.Sqrt(x * x + y * y);
+            double alpha = Math.Atan2(y, x);
+
+            double alpha0 = alpha - time;
+
+            double x0 = Math.Cos(alpha0) * r;
+            double y0 = Math.Sin(alpha0) * r;
+            
+            double val = Math.Exp(- x0.Pow2() - (y0 - 2.5).Pow2()); 
+
+            return val;
         }
 
 
@@ -143,6 +182,20 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             }
         }
 
+        GridData RefinedGrid = null;
+         
+        SinglePhaseField Refined_u;
+        VectorField<SinglePhaseField> Refined_Grad_u;
+        SinglePhaseField Refined_MagGrad_u; 
+
+
+        void UpdateRefinedGrid(double time) {
+            int J = RefinedGrid.Cells.NoOfLocalUpdatedCells;
+
+            BitArray Cells
+
+
+        }
 
 
 
@@ -152,10 +205,12 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
                 Console.WriteLine("    Timestep # " + TimestepNo + ", phystime = " + phystime + " ... ");
 
                 // timestepping params
-                base.NoOfTimesteps = 20;
-                dt = 0.1;
+                base.NoOfTimesteps = 100;
+                dt = Math.PI*2 / base.NoOfTimesteps;
 
+                UpdateBaseGrid(phystime + dt);
 
+                
                 // return
                 //base.TerminationKey = true;
                 return dt;

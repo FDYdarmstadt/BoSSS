@@ -3,7 +3,7 @@ using MPI.Wrappers;
 using NUnit.Framework;
 using System;
 
-namespace BoSSS.Application.LoadBalancingTest {
+namespace BoSSS.Application.AdaptiveMeshRefinementTest {
 
     /// <summary>
     /// Complete Test for the load balancing.

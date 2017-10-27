@@ -4,108 +4,90 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.Utils;
 using ilPSP;
+using BoSSS.Platform.LinAlg;
 
-namespace BoSSS.Application.LoadBalancingTest {
+namespace BoSSS.Application.AdaptiveMeshRefinementTest {
 
-    /// <summary>
-    /// fluss fuer du/dx; (Ableitung nach 1. Raumrichtung), bulk-Phase;
+        /// <summary>
+    /// Flux for an 2D scalar transport equation
     /// </summary>
-    class DxFlux : LinearFlux {
-
-        LevelSetTracker m_LsTrk;
-        double alpha_A;
-        double alpha_B;
-
-        public DxFlux(LevelSetTracker _LsTrk, double _alpha_A, double _alpha_B) {
-            m_LsTrk = _LsTrk;
-            alpha_A = _alpha_A;
-            alpha_B = _alpha_B;
+    class ScalarTransportFlux : NonlinearFlux {
+        
+        double Inflow(double time) {
+            return 0.0;
         }
 
+        /// <summary>
+        /// The predefined, div-free flow field
+        /// </summary>
+        Vector2D FlowField(double[] x) {
+            Vector2D u;
+            u.x = x[1];
+            u.y = -x[0];
+            return u;
+        }
+
+
+
+        protected override double BorderEdgeFlux(double time, double[] X, double[] normal, byte EdgeTag, double[] Uin, int jEdge) {
+            Vector2D n; n.x = normal[0]; n.y = normal[1];
+
+            var vel = FlowField(X);
+
+            if(n * vel >= 0) {
+                // flow from inside 
+                return (vel * Uin[0]) * n;
+            } else {
+                // flow from outside into the domain
+                return (vel * Uin[0]) * n;
+                //return (vel * Inflow(time)) * n;
+            }
+        }
+
+        /// <summary>
+        /// a new comment
+        /// </summary>
+        /// <param name="time"></param>
+        /// <param name="X"></param>
+        /// <param name="normal"></param>
+        /// <param name="Uin"></param>
+        /// <param name="Uout"></param>
+        /// <returns></returns>
+        protected override double InnerEdgeFlux(double time, double[] X, double[] normal, double[] Uin, double[] Uout, int jEdge) {
+            Vector2D n; n.x = normal[0]; n.y = normal[1];
+
+            var vel = FlowField(X);
+
+            if(vel * n > 0)
+                return (vel * Uin[0]) * n;
+            else
+                return (vel * Uout[0]) * n;
+
+        }
+
+        protected override void Flux(double time, double[] X, double[] U, double[] output) {
+            Vector2D o;
+            o = FlowField(X) * U[0];
+            output[0] = o.x;
+            output[1] = o.y;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
         public override IList<string> ArgumentOrdering {
-            get {
-                return new string[] { "u" };
-            }
+            get { return new string[] { "u" }; }
         }
 
-        protected override double BorderEdgeFlux(ref Foundation.CommonParamsBnd inp, double[] Uin) {
-            return -alpha * Uin[0] * inp.Normale[0];
-        }
-
-        protected override double InnerEdgeFlux(ref Foundation.CommonParams inp, double[] Uin, double[] Uout) {
-            return -alpha * 0.5 * (Uin[0] + Uout[0]) * inp.Normale[0];
-        }
-
-        protected override void Flux(ref Foundation.CommonParamsVol inp, double[] U, double[] output) {
-            output[0] = -alpha * U[0];
-        }
-
-        double alpha;
-
-        public void NowIntegratingBulk(string speciesName, SpeciesId SpcId, MultidimensionalArray LengthScales) {
-            switch(speciesName) {
-                case "A": alpha = alpha_A; break;
-                case "B": alpha = alpha_B; break;
-                default: throw new NotImplementedException();
-            }
-        }
-    }
-
-    /// <summary>
-    /// Flux for du/dx at the interface;
-    /// </summary>
-    class LevSetFlx : ILevelSetComponent {
-
-        LevelSetTracker m_LsTrk;
-        double alpha_A;
-        double alpha_B;
-
-        public LevSetFlx(LevelSetTracker _LsTrk, double _alpha_A, double _alpha_B) {
-            m_LsTrk = _LsTrk;
-            alpha_A = _alpha_A;
-            alpha_B = _alpha_B;
-        }
-        
-        public IList<string> ArgumentOrdering {
-            get {
-                return new string[] { "u" };
-            }
-        }
-        
-        public TermActivationFlags LevelSetTerms {
-            get {
-                return TermActivationFlags.UxV;
-            }
-        }
-
-        public IList<string> ParameterOrdering {
+        /// <summary>
+        /// the transport velocity
+        /// </summary>
+        public override IList<string> ParameterOrdering {
             get {
                 return null;
             }
         }
 
-        public double LevelSetForm(ref CommonParamsLs inp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-            double FlxNeg = -U_Neg[0] * inp.n[0] * alpha_A;
-            double FlxPos = -U_Pos[0] * inp.n[0] * alpha_B;
-            return (FlxNeg * vA - FlxPos * vB);
-        }
-
-        public int LevelSetIndex {
-            get {
-                return 0;
-            }
-        }
-
-        public SpeciesId PositiveSpecies {
-            get { 
-                return m_LsTrk.GetSpeciesId("B"); 
-            }
-        }
-
-        public SpeciesId NegativeSpecies {
-            get { 
-                return m_LsTrk.GetSpeciesId("A"); 
-            }
-        }
     }
+
 }
