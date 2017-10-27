@@ -438,6 +438,25 @@ namespace BoSSS.Platform.Utils.Geom {
         }
 
         /// <summary>
+        /// True, if this bounding box overlaps with another one.
+        /// </summary>
+        public bool Overlap(BoundingBox other) {
+            if(this.D != other.D)
+                throw new ArgumentException("Cannot compare boxes of different spatial dimension.");
+
+            int _d = this.D;
+            for(int d = 0; d < _d; d++) {
+                if(other.Min[d] > this.Max[d])
+                    return false;
+                if(other.Max[d] < this.Min[d])
+                    return false;
+            }
+
+            return true;
+        }
+
+
+        /// <summary>
         /// finds the minimum distance of point <paramref name="pt"/> to one point within
         /// the box;
         /// </summary>

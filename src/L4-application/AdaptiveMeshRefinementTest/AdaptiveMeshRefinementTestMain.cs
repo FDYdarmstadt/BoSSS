@@ -102,7 +102,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
         }
 
         protected override GridCommons CreateOrLoadGrid() {
-            double[] nodes = GenericBlas.Linspace(-5, 5, 61);
+            double[] nodes = GenericBlas.Linspace(-5, 5, 21);
             var grd = Grid2D.Cartesian2DGrid(nodes, nodes);
             base.m_GridPartitioningType = GridPartType.none;
             return grd;
@@ -198,10 +198,10 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
                 double GradMag = Refined_MagGrad_u.GetMeanValue(j);
 
                 int DesiredLevel_j = 0;
-                if(GradMag > 0.4)
+                if(GradMag > 0.6)
+                    DesiredLevel_j = 1;
+                if(GradMag > 0.81)
                     DesiredLevel_j = 2;
-                if(GradMag > 0.75)
-                    DesiredLevel_j = 3;
                 
                 if(DesiredLevel[j] < DesiredLevel_j) {
                     DesiredLevel[j] = DesiredLevel_j;
