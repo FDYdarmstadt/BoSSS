@@ -211,6 +211,19 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
                 }
             }
 
+            SinglePhaseField Ok2Coarsen = new SinglePhaseField(new Basis(RefinedGrid, 0), "Ok2Coarsen");
+
+            for(int j = 0; j < J; j++) {
+                int ActualLevel_j = RefinedGrid.Cells.GetCell(j).RefinementLevel;
+                int DesiredLevel_j = DesiredLevel[j];
+
+                if(ActualLevel_j > DesiredLevel_j) {
+                    Ok2Coarsen.SetMeanValue(j, 1.0);
+                }
+
+            }
+
+
             if(!NoRefinement) {
 
 
