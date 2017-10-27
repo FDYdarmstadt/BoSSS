@@ -762,8 +762,8 @@ namespace BoSSS.Solution {
                     Debug.Assert(IBlock == ColPart.GetBlockLen(jDstGlob));
                     Debug.Assert(j0 == ColPart.GetBlockI0(jDstGlob));
                     int CBT = ColPart.GetBlockType(jDstGlob);
-                    Debug.Assert(ArrayTools.Equals(_i0, ColPart.GetSubblk_i0(CBT)));
-                    Debug.Assert(ArrayTools.Equals(Len, ColPart.GetSubblkLen(CBT)));
+                    Debug.Assert(ArrayTools.AreEqual(_i0, ColPart.GetSubblk_i0(CBT)));
+                    Debug.Assert(ArrayTools.AreEqual(Len, ColPart.GetSubblkLen(CBT)));
                 }
 #endif
                 Debug.Assert(_i0.Length == Len.Length);
@@ -833,7 +833,7 @@ namespace BoSSS.Solution {
                 part.MPI_Comm);
         }
 
-        Dictionary<int[], BlockPartitioning> m_OldBlockings = new Dictionary<int[], BlockPartitioning>(new FuncEqualityComparer<int[]>((A, B) => ArrayTools.Equals(A, B)));
+        Dictionary<int[], BlockPartitioning> m_OldBlockings = new Dictionary<int[], BlockPartitioning>(new FuncEqualityComparer<int[]>((A, B) => ArrayTools.AreEqual(A, B)));
 
 
         public void BackupMatrix(BlockMsrMatrix M, string Reference, UnsetteledCoordinateMapping RowMapping, UnsetteledCoordinateMapping ColMapping) {
@@ -869,8 +869,8 @@ namespace BoSSS.Solution {
         }
         
 
-        Dictionary<int[], BlockMsrMatrix> m_RowPermutationMatrices = new Dictionary<int[], BlockMsrMatrix>(new FuncEqualityComparer<int[]>((a, b) => ArrayTools.Equals(a, b)));
-        Dictionary<int[], BlockMsrMatrix> m_ColPermutationMatrices = new Dictionary<int[], BlockMsrMatrix>(new FuncEqualityComparer<int[]>((a, b) => ArrayTools.Equals(a, b)));
+        Dictionary<int[], BlockMsrMatrix> m_RowPermutationMatrices = new Dictionary<int[], BlockMsrMatrix>(new FuncEqualityComparer<int[]>((a, b) => ArrayTools.AreEqual(a, b)));
+        Dictionary<int[], BlockMsrMatrix> m_ColPermutationMatrices = new Dictionary<int[], BlockMsrMatrix>(new FuncEqualityComparer<int[]>((a, b) => ArrayTools.AreEqual(a, b)));
 
 
         public void RestoreMatrix(BlockMsrMatrix Mtx_new, string Reference, UnsetteledCoordinateMapping RowMapping, UnsetteledCoordinateMapping ColMapping) {
@@ -881,9 +881,9 @@ namespace BoSSS.Solution {
             int[] RowHash = GetDGBasisHash(RowMapping.BasisS);
             int[] ColHash = GetDGBasisHash(ColMapping.BasisS);
 
-            if (!ArrayTools.Equals(RowHash, m_Matrices[Reference].Item1))
+            if (!ArrayTools.AreEqual(RowHash, m_Matrices[Reference].Item1))
                 throw new ApplicationException();
-            if (!ArrayTools.Equals(ColHash, m_Matrices[Reference].Item2))
+            if (!ArrayTools.AreEqual(ColHash, m_Matrices[Reference].Item2))
                 throw new ApplicationException();
 
             BlockMsrMatrix P_Row = GetRowPermutationMatrix(Mtx_new, Mtx_old, RowHash);

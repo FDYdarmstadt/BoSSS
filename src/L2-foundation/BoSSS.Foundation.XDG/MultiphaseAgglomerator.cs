@@ -311,7 +311,7 @@ namespace BoSSS.Foundation.XDG {
                 // we don't need multiplication-from-the-right at all
                 RequireRight = 0;
             } else {
-                if (RowMap.EqualsUnsetteled(ColMap) && ArrayTools.Equals(ColMapAggSw, RowMapAggSw)) {
+                if (RowMap.EqualsUnsetteled(ColMap) && ArrayTools.ListEquals(ColMapAggSw, RowMapAggSw)) {
                     // we can use the same matrix for right and left multiplication
                     RequireRight = 1;
 

@@ -921,8 +921,8 @@ namespace BoSSS.Foundation.Grid.RefElements {
 
             // generate subdivision of this simplex
             // ------------------------------------
-            RefElement.SubdivisionTree subdiv = this.GetSubdivisionTree(NoOfSubDiv);
-            RefElement.SubdivisionTree[] leaves = subdiv.GetLeaves();
+            RefElement.SubdivisionTreeNode subdiv = this.GetSubdivisionTree(NoOfSubDiv);
+            RefElement.SubdivisionTreeNode[] leaves = subdiv.GetLeaves();
 
             // get "base rule", which will be "multiplied"
             // -------------------------------------------
@@ -943,11 +943,11 @@ namespace BoSSS.Foundation.Grid.RefElements {
             int cnt = 0;
             for (int i = 0; i < leaves.Length; i++) {
 
-                double det = leaves[i].TrafoFromRoot.Matrix.Determinant();
+                double det = leaves[i].Trafo2Root.Matrix.Determinant();
 
                 // loop over all nodes of the base quad. rule
                 int N = BaseRule.NoOfNodes;
-                leaves[i].TrafoFromRoot.Transform(
+                leaves[i].Trafo2Root.Transform(
                     BaseRule.Nodes,
                     ret.Nodes.ExtractSubArrayShallow(
                         new int[] { cnt, 0 },
@@ -1109,7 +1109,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// </summary>
         /// <param name="Levels"></param>
         /// <returns></returns>
-        public SubdivisionTree GetSubdivisionTree(int Levels) {
+        public SubdivisionTreeNode GetSubdivisionTree(int Levels) {
             // check arg.
             if (Levels < 0) {
                 throw new ArgumentException(
@@ -1117,7 +1117,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
             }
 
             // gen. level 0
-            SubdivisionTree ret = new SubdivisionTree(this);
+            SubdivisionTreeNode ret = new SubdivisionTreeNode(this);
             // generate subdiv
             ret.SubdivideRecursive(Levels);
 
@@ -1126,20 +1126,20 @@ namespace BoSSS.Foundation.Grid.RefElements {
         }
 
         /// <summary>
-        /// 
+        /// One node of a subdivision tree, as provided b< <see cref="GetSubdivisionTree(int)"/>
         /// </summary>
-        public class SubdivisionTree {
+        public class SubdivisionTreeNode {
 
             /// <summary>
-            /// creates the root object of the tree
+            /// Creates the root object of the tree
             /// </summary>
             /// <param name="s"></param>
-            internal SubdivisionTree(RefElement s) {
+            internal SubdivisionTreeNode(RefElement s) {
                 m_Parrent = null;
                 Children = null;
                 m_RefElement = s;
 
-                Vertices = s.Vertices.To2DArray();
+                Vertices = s.Vertices;
                 InitializeTrafo();
             }
 
@@ -1160,7 +1160,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
             /// <summary>
             /// recursive ctor.
             /// </summary>
-            private SubdivisionTree(SubdivisionTree parrent, AffineTrafo trafo) {
+            private SubdivisionTreeNode(SubdivisionTreeNode parrent, AffineTrafo trafo) {
                 m_Parrent = parrent;
                 m_RefElement = parrent.m_RefElement;
 
@@ -1169,15 +1169,16 @@ namespace BoSSS.Foundation.Grid.RefElements {
                 int J = rvtx.GetLength(0); // No. of vertices
                 int D = rvtx.GetLength(1); // spatial dim.
 
-                this.Vertices = new double[J, D];
+                this.Vertices = new NodeSet(m_RefElement, J, D);
 
                 for (int j = 0; j < J; j++) {
                     double[] vtx = ArrayTools.GetRow(rvtx, j);
                     double[] t1 = trafo.Transform(vtx);
-                    double[] t = m_Parrent.TrafoFromRoot.Transform(t1);
+                    double[] t = m_Parrent.Trafo2Root.Transform(t1);
 
-                    this.Vertices.SetRow(t, j);
+                    this.Vertices.SetRow(j, t);
                 }
+                this.Vertices.LockForever();
 
                 InitializeTrafo();
             }
@@ -1238,7 +1239,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
                 // do recursion
                 // ============
                 if (Children != null) {
-                    foreach (SubdivisionTree c in Children) {
+                    foreach (SubdivisionTreeNode c in Children) {
                         c.CollectGlobalVerticesRecursive(__GlobalVertice, EqualDiamPow2);
                     }
                 }
@@ -1247,7 +1248,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
             void SetGlobalVerticeRecursive(double[,] __GlobalVertice) {
                 m_GlobalVertice = __GlobalVertice;
                 if (Children != null) {
-                    foreach (SubdivisionTree c in Children) {
+                    foreach (SubdivisionTreeNode c in Children) {
                         c.SetGlobalVerticeRecursive(__GlobalVertice);
                     }
                 }
@@ -1257,7 +1258,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
             /// implementation of <see cref="GetLeaves"/>;
             /// </summary>
             /// <param name="outp"></param>
-            private void GetLeavesRecursive(List<SubdivisionTree> outp) {
+            private void GetLeavesRecursive(List<SubdivisionTreeNode> outp) {
                 if (Children == null)
                     outp.Add(this);
                 else {
@@ -1267,18 +1268,200 @@ namespace BoSSS.Foundation.Grid.RefElements {
             }
 
             /// <summary>
-            /// returns all leaves of the subdivision tree,
+            /// Returns all leaves of the subdivision tree,
             /// i.e. all nodes which have no child's.
             /// </summary>
             /// <returns></returns>
-            public SubdivisionTree[] GetLeaves() {
+            public SubdivisionTreeNode[] GetLeaves() {
                 if (m_Parrent != null)
                     throw new ApplicationException("must be called from the parrent object");
-                List<SubdivisionTree> ret = new List<SubdivisionTree>();
+                List<SubdivisionTreeNode> ret = new List<SubdivisionTreeNode>();
 
                 GetLeavesRecursive(ret);
 
+                Debug.Assert(ret.ListEquals(ret[0].GetLevel()));
+
                 return ret.ToArray();
+            }
+
+            /// <summary>
+            /// The refinement level of this node in the tree.
+            /// </summary>
+            public int RefinementLevel {
+                get {
+                    if (m_Parrent == null)
+                        return 0;
+                    else
+                        return m_Parrent.RefinementLevel + 1;
+                }
+            }
+
+            /// <summary>
+            /// Returns all tree nodes on the actual refinement level (see <see cref="RefinementLevel"/>).
+            /// </summary>
+            public SubdivisionTreeNode[] GetLevel() {
+                var root = this.TreeRoot;
+                var R = new List<SubdivisionTreeNode>();
+
+                root.GetLevelRecursive(R, this.RefinementLevel);
+
+                return R.ToArray();
+            }
+
+
+
+            NodeSet[] m_FaceVertices;
+
+            /// <summary>
+            /// Returns the vertices of the <paramref name="iFace"/>--th face.
+            /// </summary>
+            public NodeSet GetFaceVertices(int iFace) {
+                if(m_FaceVertices == null) {
+                    var Kref = m_RefElement;
+                    m_FaceVertices = new NodeSet[Kref.NoOfFaces];
+                    int NoOfVtxPerFace = Kref.FaceRefElement.NoOfVertices;
+                    int D = Kref.SpatialDimension;
+                    Debug.Assert(Kref.FaceToVertexIndices.GetLength(0) == Kref.NoOfFaces);
+                    Debug.Assert(Kref.FaceToVertexIndices.GetLength(1) == NoOfVtxPerFace);
+
+                    for(int _iFace = 0; _iFace < m_FaceVertices.Length; _iFace++) {
+                        m_FaceVertices[_iFace] = new NodeSet(Kref, NoOfVtxPerFace, D);
+
+                        for(int k = 0; k < NoOfVtxPerFace; k++) {
+                            int k1 = Kref.FaceToVertexIndices[_iFace, k];
+                            for(int d = 0; d < D; d++) {
+                                m_FaceVertices[_iFace][k, d] = Vertices[k1, d];
+                            }
+                        }
+                        m_FaceVertices[_iFace].LockForever();
+                    }
+                }
+
+                return m_FaceVertices[iFace];
+            }
+
+
+
+            /// <summary>
+            /// Cache for <see cref="GetNeighbor(int)"/>.
+            /// </summary>
+            int[] m_NeighborIndex;
+
+            /// <summary>
+            /// Cache for <see cref="GetNeighbor(int)"/>.
+            /// </summary>
+            int[] m_NeighborFace;
+
+
+            /// <summary>
+            /// Neighbor ship information on the respective refinement level.
+            /// </summary>
+            /// <param name="iFace">
+            /// A face index of the reference element.
+            /// </param>
+            /// <returns>
+            /// An pair
+            /// - item 1: neighbor index, i.e. index into the return value of <see cref="GetLevel"/>.
+            /// - item 2: face index of the neighbor 
+            /// Negative return values indicate that there is no neighbor at <paramref name="iFace"/>.
+            /// </returns>
+            public Tuple<int,int> GetNeighbor(int iFace) {
+                // Check Args
+                // ==========
+                var Kref = this.m_RefElement;
+                int NoOfFaces = Kref.NoOfFaces;
+                if (iFace < 0 || iFace >= Kref.NoOfFaces)
+                    throw new ArgumentException();
+
+                // check caches
+                // ============
+                Debug.Assert((m_NeighborFace == null) == (m_NeighborIndex == null));
+                if(m_NeighborIndex == null) {
+                    m_NeighborIndex = new int[NoOfFaces];
+                    m_NeighborFace = new int[NoOfFaces];
+                    ArrayTools.SetAll(m_NeighborFace, int.MinValue);
+                }
+
+                // search geometrical neigbor for respective face (if not cached)
+                // ==============================================================
+                if (m_NeighborFace[iFace] == int.MinValue) {
+                    int[,] F2V = Kref.FaceToVertexIndices;
+                    Debug.Assert(F2V.GetLength(0) == NoOfFaces);
+
+                    int[] GlbVtxIdx = this.GlobalVerticeInd;
+
+                    //    this.GlobalVerticeInd.Select(idx => )
+                    int[] FaceVertice = new int[F2V.GetLength(1)];
+                    for (int i = 0; i < FaceVertice.Length; i++)
+                        FaceVertice[i] = GlbVtxIdx[F2V[iFace, i]];
+
+                    SubdivisionTreeNode[] Neighbors = GetLevel();
+                    int[] NeighFaceVertice = new int[F2V.GetLength(1)];
+                    bool bFound = false;
+                    Debug.Assert(Neighbors.ContainsExactly(this));
+
+                    for (int iNeigh = 0; iNeigh < Neighbors.Length; iNeigh++) {
+                        if (object.ReferenceEquals(Neighbors[iNeigh], this))
+                            continue;
+                        int[] NeighGlbVtxIdx = Neighbors[iNeigh].GlobalVerticeInd;
+
+                        for(int iNeighFace = 0; iNeighFace < NoOfFaces; iNeighFace++) {
+                            for (int i = 0; i < FaceVertice.Length; i++)
+                                NeighFaceVertice[i] = NeighGlbVtxIdx[F2V[iNeighFace, i]];
+
+                            if(FaceVertice.SetEquals(NeighFaceVertice)) {
+                                m_NeighborIndex[iFace] = iNeigh;
+                                m_NeighborFace[iFace] = iNeighFace;
+                                bFound = true;
+                                break;
+                            }
+
+                        }
+
+                        if (bFound)
+                            break;
+                    }
+
+                    if(!bFound) {
+                        // no neighbor for respective face
+                        m_NeighborIndex[iFace] = -1;
+
+                        double[] Normal = Kref.FaceNormals.GetRow(iFace);
+                        double[] TrfNormal = new double[Normal.Length];
+                        Debug.Assert(Normal.Length == Kref.SpatialDimension);
+                        this.Trafo2Root.Matrix.gemv(1.0, Normal, 0.0, TrfNormal, true);
+
+                        int OrgFace = -1;
+                        for (int iOrgFace = 0; iOrgFace < Kref.NoOfFaces; iOrgFace++) {
+                            double alpha = GenericBlas.Angle(TrfNormal, Kref.FaceNormals.GetRow(iOrgFace)).Abs();
+                            if(alpha < (1.0*Math.PI/180.0)) {
+                                Debug.Assert(OrgFace < 0);
+                                OrgFace = iOrgFace;
+                            }
+                        }
+                        Debug.Assert(OrgFace >= 0);
+
+                        m_NeighborFace[iFace] = OrgFace;
+                    }
+
+                }
+
+                // return
+                // ======
+                return (new Tuple<int, int>(m_NeighborIndex[iFace], m_NeighborFace[iFace]));
+            }
+
+
+            /// <summary>
+            /// Implementation of <see cref="GetLeaves"/>;
+            /// </summary>
+            private void GetLevelRecursive(List<SubdivisionTreeNode> outp, int Depth) {
+                if (Depth == 0) {
+                    outp.Add(this);
+                } else {
+                    foreach (var c in Children)
+                        c.GetLevelRecursive(outp, Depth - 1);
+                }
             }
 
 
@@ -1294,7 +1477,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
             ///   <item>2nd index: spatial dimension</item>
             /// </list>
             /// </summary>
-            public double[,] Vertices;
+            public NodeSet Vertices;
 
             /// <summary>
             /// <see cref="GlobalVerticeInd"/>
@@ -1345,14 +1528,26 @@ namespace BoSSS.Foundation.Grid.RefElements {
             /// <summary>
             /// <see cref="Parrent"/>
             /// </summary>
-            SubdivisionTree m_Parrent;
+            SubdivisionTreeNode m_Parrent;
 
             /// <summary>
             /// Parent node of this
             /// </summary>
-            public SubdivisionTree Parrent {
+            public SubdivisionTreeNode Parrent {
                 get {
                     return m_Parrent;
+                }
+            }
+
+            /// <summary>
+            /// Root of the tree/ancestor of all <see cref="Parrent"/>s.
+            /// </summary>
+            public SubdivisionTreeNode TreeRoot {
+                get {
+                    if (m_Parrent == null)
+                        return this;
+                    else
+                        return m_Parrent.TreeRoot;
                 }
             }
 
@@ -1361,30 +1556,42 @@ namespace BoSSS.Foundation.Grid.RefElements {
             /// </summary>
             /// <returns></returns>
             public int GetParrentIndex() {
-                return Array.IndexOf<SubdivisionTree>(m_Parrent.Children, this);
+                return Array.IndexOf<SubdivisionTreeNode>(m_Parrent.Children, this);
             }
 
             /// <summary>
-            /// affine-linear transformation from the local coordinates of this node
+            /// Affine-linear transformation from the local coordinates of this node
             /// to the coordinate system of the parent node.
             /// </summary>
-            public AffineTrafo Trafo2Parrent;
+            public AffineTrafo Trafo2Parrent {
+                get;
+                private set;
+            }
 
             /// <summary>
-            /// the inverse of <see cref="Trafo2Parrent"/>
+            /// The inverse of <see cref="Trafo2Parrent"/>
             /// </summary>
-            public AffineTrafo TrafoFromParrent;
+            public AffineTrafo TrafoFromParrent {
+                get;
+                private set;
+            }
 
             /// <summary>
-            /// affine-linear transformation from the local coordinates of this node
+            /// Affine-linear transformation from the local coordinates of this node
             /// to the coordinate system of the root node of the subdivision tree.
             /// </summary>
-            public AffineTrafo Trafo2Root;
+            public AffineTrafo Trafo2Root {
+                get;
+                private set;
+            }
 
             /// <summary>
             /// inverse of <see cref="Trafo2Root"/>
             /// </summary>
-            public AffineTrafo TrafoFromRoot;
+            public AffineTrafo TrafoFromRoot {
+                get;
+                private set;
+            }
 
             /// <summary>
             /// initializes <see cref="Trafo2Parrent"/> and <see cref="Trafo2Root"/>;<br/>
@@ -1399,25 +1606,34 @@ namespace BoSSS.Foundation.Grid.RefElements {
                     Trafo2Parrent = AffineTrafo.Identity(D);
                     Trafo2Root = AffineTrafo.Identity(D);
                 } else {
-                    SubdivisionTree root = GetRoot();
+                    SubdivisionTreeNode root = GetRoot();
 
-                    double[,] this_Basis_plus1 = ArrayTools.GetSubMatrix(Vertices, 0, D + 1, 0, D);
-                    double[,] root_Basis_plus1 = ArrayTools.GetSubMatrix(root.Vertices, 0, D + 1, 0, D);
-                    double[,] parrent_Basis_plus1 = ArrayTools.GetSubMatrix(m_Parrent.Vertices, 0, D + 1, 0, D);
-
-                    Trafo2Root = AffineTrafo.FromPoints(this_Basis_plus1, root_Basis_plus1);
-                    Trafo2Parrent = AffineTrafo.FromPoints(this_Basis_plus1, parrent_Basis_plus1);
+                    double[,] this_Basis_plus1 = GetSubMatrix(Vertices, 0, D + 1, 0, D);
+                    double[,] root_Basis_plus1 = GetSubMatrix(root.Vertices, 0, D + 1, 0, D);
+                    
+                    Trafo2Root = AffineTrafo.FromPoints(root_Basis_plus1, this_Basis_plus1);
+                    Trafo2Parrent = (m_Parrent.TrafoFromRoot) * Trafo2Root;
                 }
 
                 TrafoFromParrent = Trafo2Parrent.Invert();
                 TrafoFromRoot = Trafo2Root.Invert();
             }
 
+            public static double[,] GetSubMatrix(NodeSet inp, int RowStart, int NoOfRows, int ColStart, int NoOfCols) {
+                double[,] outp = new double[NoOfRows, NoOfCols];
+                for (int i = 0; i < NoOfRows; i++) {
+                    for (int j = 0; j < NoOfCols; j++) {
+                        outp[i, j] = inp[RowStart + i, ColStart + j];
+                    }
+                }
+                return outp;
+            }
+
             /// <summary>
             /// returns the root of this tree of objects
             /// </summary>
             /// <returns></returns>
-            public SubdivisionTree GetRoot() {
+            public SubdivisionTreeNode GetRoot() {
                 if (m_Parrent == null)
                     return this;
                 else
@@ -1432,9 +1648,9 @@ namespace BoSSS.Foundation.Grid.RefElements {
                     return;
 
                 AffineTrafo[] subdivS = m_RefElement.GetSubdivision();
-                Children = new SubdivisionTree[subdivS.Length];
+                Children = new SubdivisionTreeNode[subdivS.Length];
                 for (int i = 0; i < subdivS.Length; i++) {
-                    Children[i] = new SubdivisionTree(this, subdivS[i]);
+                    Children[i] = new SubdivisionTreeNode(this, subdivS[i]);
                     Children[i].SubdivideRecursive(Levels - 1);
                 }
             }
@@ -1443,7 +1659,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
             /// can be null, is 
             /// initialized by calling <see cref="SubdivideRecursive"/>
             /// </summary>
-            public SubdivisionTree[] Children;
+            public SubdivisionTreeNode[] Children;
         }
 
         /*
@@ -1878,7 +2094,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
             // ... aber ein paar Tests haben noch nie geschadet.
             Debug.Assert(this.SpatialDimension == obj.SpatialDimension);
             Debug.Assert(this.NoOfVertices == obj.NoOfVertices);
-            Debug.Assert(ArrayTools.Equals(this.m_Vertices.Storage, obj.m_Vertices.Storage));
+            Debug.Assert(ArrayTools.ListEquals(this.m_Vertices.Storage, obj.m_Vertices.Storage));
 
             return true;
         }

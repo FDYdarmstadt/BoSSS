@@ -51,6 +51,7 @@ namespace CNS {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
+            
             Application<CNSControl>._Main(
                 args,
                 false,
@@ -308,6 +309,9 @@ namespace CNS {
         /// </summary>
         protected override void SetInitial() {
             WorkingSet.ProjectInitialValues(SpeciesMap, base.Control.InitialValues_Evaluators);
+            if (Control.ShockSensor != null) {
+                Control.ShockSensor.UpdateSensorValues(WorkingSet);
+            }
             WorkingSet.UpdateDerivedVariables(this, SpeciesMap.SubGrid.VolumeMask);
         }
 
@@ -376,7 +380,7 @@ namespace CNS {
                     CellPerfomanceClasses[j] = 2;
             }
         }
-        
+
         /// <summary>
         /// Constructs the boundary condition map to be used by the solver.
         /// Override this method if a specific application support specialized,

@@ -727,6 +727,31 @@ namespace ilPSP.Utils {
 
             return Math.Acos(cos_alpha);
         }
+
+        /// <summary>
+        /// Computes the angle, in radians, between the vectors 
+        /// <paramref name="a"/> and <paramref name="b"/>.
+        /// </summary>
+        static public double Angle<TX, TY>(TX a, TY b)
+            where TX : IList<double>
+            where TY : IList<double> //
+        {
+            Debug.Assert(a.Count == b.Count, "mismatch in vector length");
+            
+            double cos_alpha = 0, l1 = 0, l2 = 0;
+            for (int i = a.Count - 1; i >= 0; i--) {
+                double v1i = a[i];
+                double v2i = b[i];
+
+                l1 += v1i*v1i;
+                l2 += v2i*v2i;
+
+                cos_alpha += v1i*v2i;
+            }
+            cos_alpha *= 1.0/Math.Sqrt(l1*l2);
+
+            return Math.Acos(cos_alpha);
+        }
     }
     
     /// <summary>
