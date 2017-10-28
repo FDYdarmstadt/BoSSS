@@ -254,6 +254,8 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
                             Debug.Assert(CoarseningCluster[jC] == null);
                             CoarseningCluster[jC] = CC;
                         }
+                    } else {
+                        //Console.WriteLine("Not ok to coarsen.");
                     }
                 }
             }
@@ -339,6 +341,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             }
 
             SinglePhaseField Ok2CoarsenViz = new SinglePhaseField(new Basis(RefinedGrid, 0), "Ok2Coarsen");
+            SinglePhaseField CombinedMarkr = new SinglePhaseField(new Basis(RefinedGrid, 0), "CombinedMarker");
             SinglePhaseField CClustersMViz = new SinglePhaseField(new Basis(RefinedGrid, 0), "CoarseningClusters");
             BitArray Ok2Coarsen = new BitArray(J);
             var rnd = new Random();
@@ -350,17 +353,17 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
                     Ok2CoarsenViz.SetMeanValue(j, 1.0);
                     Ok2Coarsen[j] = true;
                 }
-                
+                //Ok2Coarsen[j] = true;
             }
 
             int[][] CClusters = FindCoarseningClusters(Ok2Coarsen);
 
             List<int[]> Coarsening = new List<int[]>();
+            int NoOfCellsToCoarsen = 0;
             for(int j = 0; j < J; j++) {
-
-
-               
+                               
                 if(CClusters[j] != null) {
+                    NoOfCellsToCoarsen++;
                     double jitter = rnd.NextDouble() * 0.5 + 1.0;
                     foreach(int jc in CClusters[j]) {
                         if (CClustersMViz.GetMeanValue(jc) == 0.0) {
@@ -368,13 +371,23 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
                         }
                     }
 
+                    Debug.Assert(CClusters[j].Contains(j));
                     if(j == CClusters[j].Min()) {
                         Coarsening.Add(CClusters[j]);
                     }
                 }
             }
+            //if (iTimestep == 10) {
+            //    Console.WriteLine("Now really coarsening");
+            //} else {
+            //    Coarsening.Clear();
+            //}
 
-            Tecplot.PlotFields(new DGField[] { Ok2CoarsenViz, CClustersMViz }, "Coarsen", time, 0);
+            CombinedMarkr.ProjectProduct(1.0, Ok2CoarsenViz, CClustersMViz);
+
+            Console.WriteLine("       No of cells to coarsen: " + NoOfCellsToCoarsen);
+
+            Tecplot.PlotFields(ArrayTools.Cat<DGField>(RefinedGrid.BoundaryMark(), Ok2CoarsenViz, CClustersMViz, CombinedMarkr ), "Coarsen", time, 0);
 
 
             if((!NoRefinement) || (Coarsening.Count > 0)) {

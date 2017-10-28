@@ -204,7 +204,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                         Cell Cell0 = CellS.Single(cl => cl.ParentCell != null);
                         Cell Mother = Cell0.ParentCell;
-
+                        Debug.Assert(CellS.Where(cl => cl.GlobalID == Mother.GlobalID).Count() == 1);
                        
                         Cell restoredCell = new Cell();
                         restoredCell.Type = Mother.Type;
@@ -467,8 +467,9 @@ namespace BoSSS.Foundation.Grid.Classic {
                             allgids.Add((int)(cl.GlobalID));
                         }
                         bool[] markers = new bool[allgids.Max() + 1];
-                        foreach(int gid in allgids) {
-                            Debug.Assert(markers[gid] == false);
+                        for(int i = 0; i < allgids.Count; i++) {
+                            long gid = allgids[i];
+                            Debug.Assert(markers[gid] == false, "Some GlobalID is used twice.");
                             markers[gid] = true;
                         }
 

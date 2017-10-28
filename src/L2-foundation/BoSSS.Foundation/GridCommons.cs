@@ -1268,6 +1268,10 @@ namespace BoSSS.Foundation.Grid.Classic {
                 if (Cj.CellFaceTags != null) {
                     oldCellFaceTagIDs.AddRange(Cj.CellFaceTags.Select(cft => (int)cft.NeighCell_GlobalID));
                 }
+                if(Cj.CoarseningPeers != null) {
+                    oldCellFaceTagIDs.AddRange(Cj.CoarseningPeers.Select((long l) => ((int)l)));
+                }
+
             }
             int J_BC = this.NoOfBcCells;
             for (int j = 0; j < J_BC; j++) {
@@ -1299,6 +1303,14 @@ namespace BoSSS.Foundation.Grid.Classic {
                     for (int l = 0; l < L; l++) {
                         Debug.Assert(Cj.CellFaceTags[l].NeighCell_GlobalID == oldCellFaceTagIDs[c2]);
                         Cj.CellFaceTags[l].NeighCell_GlobalID = newCellFaceTagIDs[c2];
+                        c2++;
+                    }
+                }
+                if(Cj.CoarseningPeers != null) {
+                    int L = Cj.CoarseningPeers.Length;
+                    for (int l = 0; l < L; l++) {
+                        Debug.Assert(Cj.CoarseningPeers[l] == oldCellFaceTagIDs[c2]);
+                        Cj.CoarseningPeers[l] = newCellFaceTagIDs[c2];
                         c2++;
                     }
                 }
