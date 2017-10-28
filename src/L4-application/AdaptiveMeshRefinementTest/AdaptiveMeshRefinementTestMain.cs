@@ -190,7 +190,134 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
         SinglePhaseField Refined_MagGrad_u;
 
 
-        void UpdateRefinedGrid(double time) {
+        int[][] FindCoarseningClusters(BitArray Ok2Coarsen) {
+            int JE = RefinedGrid.Cells.NoOfCells;
+            int J = RefinedGrid.Cells.NoOfLocalUpdatedCells;
+
+            if (Ok2Coarsen.Length != JE)
+                throw new ArgumentException();
+
+            int[][] CellNeighbours = RefinedGrid.Cells.CellNeighbours;
+
+            List<Cell> temp = new List<Cell>();
+            long[] SearchGids;
+            List<int> tempCC = new List<int>();
+
+            int RecursionDepht = -1;
+            if (RefinedGrid.SpatialDimension == 1)
+                RecursionDepht = 1;
+            else if (RefinedGrid.SpatialDimension == 2)
+                RecursionDepht = 2;
+            else if (RefinedGrid.SpatialDimension == 3)
+                RecursionDepht = 4;
+            else
+                throw new NotSupportedException();
+
+            int[][] CoarseningCluster = new int[JE][];
+
+
+            BitArray marker = new BitArray(JE);
+            for(int j = 0; j < J; j++) {
+                if (marker[j])
+                    continue;
+                if (!Ok2Coarsen[j])
+                    continue;
+
+                Cell Cell_j = RefinedGrid.Cells.GetCell(j);
+                int Level = Cell_j.RefinementLevel;
+
+                if (Level == 0) {
+                    marker[j] = true;
+                    continue;
+                }
+
+                temp.Clear();
+                temp.Add(Cell_j);
+
+                tempCC.Clear();
+                tempCC.Add(j);
+
+                SearchGids = new long[Cell_j.CoarseningPeers.Length + 1];
+                Array.Copy(Cell_j.CoarseningPeers, SearchGids, SearchGids.Length - 1);
+                SearchGids[SearchGids.Length - 1] = Cell_j.GlobalID;
+
+                bool complete = false;
+                FindCoarseiningClusterRecursive(j, RecursionDepht, CellNeighbours, marker, RefinedGrid.Cells.GetCell, Level, SearchGids, tempCC, ref complete);
+                foreach(int jC in tempCC) {
+                    marker[jC] = true;
+                }
+
+                if(complete) {
+                    if (!tempCC.Any(jC => Ok2Coarsen[jC] == false)) {
+                        int[] CC = tempCC.ToArray();
+                        foreach (int jC in CC) {
+                            Debug.Assert(CoarseningCluster[jC] == null);
+                            CoarseningCluster[jC] = CC;
+                        }
+                    }
+                }
+            }
+
+
+            return CoarseningCluster;
+        }
+
+        static void FindCoarseiningClusterRecursive(int j, int MaxRecursionDeph,
+            int[][] CellNeighbours, BitArray marker, Func<int, Cell> GetCell, int Level, long[] SearchGids,
+            List<int> CoarseiningCluster, ref bool complete) {
+
+            Debug.Assert(CoarseiningCluster.Contains(j) == true);
+
+            int[] Neighs = CellNeighbours[j];
+            foreach (var jNeigh in Neighs) {
+                if (marker[jNeigh] == true)
+                    continue;
+                if (CoarseiningCluster.Contains(jNeigh))
+                    continue;
+
+                Cell Cell_neigh = GetCell(jNeigh);
+                if (Cell_neigh.RefinementLevel != Level)
+                    continue;
+
+                if (SearchGids.Contains(Cell_neigh.GlobalID) == false)
+                    continue;
+                if (Cell_neigh.CoarseningPeers.IsSubsetOf(SearchGids) == false)
+                    continue;
+
+                CoarseiningCluster.Add(jNeigh);
+                
+                if(CoarseiningCluster.Count == SearchGids.Length) {
+                    complete = true;
+#if DEBUG
+                    foreach(int j1 in CoarseiningCluster) {
+                        Cell Cell_j1 = GetCell(j1);
+                        Debug.Assert(Cell_j1.RefinementLevel > 0);
+                        Debug.Assert(Cell_j1.CoarseningPeers != null);
+                        Debug.Assert(Cell_j1.CoarseningPeers.Length == CoarseiningCluster.Count - 1);
+                        Debug.Assert(Cell_j1.RefinementLevel == Level);
+                        Debug.Assert(Array.IndexOf(SearchGids, Cell_j1.GlobalID) >= 0);
+                        foreach(long gid_cp in Cell_j1.CoarseningPeers) {
+                            Debug.Assert(Array.IndexOf(SearchGids, gid_cp) >= 0);
+                        }
+                    }
+#endif
+                    return;
+                }
+
+                if (MaxRecursionDeph > 0)
+                    FindCoarseiningClusterRecursive(jNeigh, MaxRecursionDeph - 1,
+                        CellNeighbours, marker, GetCell, Level, SearchGids, CoarseiningCluster, ref complete);
+
+                if(complete) {
+                    return;
+                }
+            }
+            
+        }
+
+
+
+        void UpdateRefinedGrid(double time, int iTimestep) {
             int J = RefinedGrid.Cells.NoOfLocalUpdatedCells;
 
             bool NoRefinement = true;
@@ -211,20 +338,46 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
                 }
             }
 
-            SinglePhaseField Ok2Coarsen = new SinglePhaseField(new Basis(RefinedGrid, 0), "Ok2Coarsen");
-
+            SinglePhaseField Ok2CoarsenViz = new SinglePhaseField(new Basis(RefinedGrid, 0), "Ok2Coarsen");
+            SinglePhaseField CClustersMViz = new SinglePhaseField(new Basis(RefinedGrid, 0), "CoarseningClusters");
+            BitArray Ok2Coarsen = new BitArray(J);
+            var rnd = new Random();
             for(int j = 0; j < J; j++) {
                 int ActualLevel_j = RefinedGrid.Cells.GetCell(j).RefinementLevel;
                 int DesiredLevel_j = DesiredLevel[j];
 
                 if(ActualLevel_j > DesiredLevel_j) {
-                    Ok2Coarsen.SetMeanValue(j, 1.0);
+                    Ok2CoarsenViz.SetMeanValue(j, 1.0);
+                    Ok2Coarsen[j] = true;
                 }
-
+                
             }
 
+            int[][] CClusters = FindCoarseningClusters(Ok2Coarsen);
 
-            if(!NoRefinement) {
+            List<int[]> Coarsening = new List<int[]>();
+            for(int j = 0; j < J; j++) {
+
+
+               
+                if(CClusters[j] != null) {
+                    double jitter = rnd.NextDouble() * 0.5 + 1.0;
+                    foreach(int jc in CClusters[j]) {
+                        if (CClustersMViz.GetMeanValue(jc) == 0.0) {
+                            CClustersMViz.SetMeanValue(jc, jitter);
+                        }
+                    }
+
+                    if(j == CClusters[j].Min()) {
+                        Coarsening.Add(CClusters[j]);
+                    }
+                }
+            }
+
+            Tecplot.PlotFields(new DGField[] { Ok2CoarsenViz, CClustersMViz }, "Coarsen", time, 0);
+
+
+            if((!NoRefinement) || (Coarsening.Count > 0)) {
 
 
                 List<int> CellsToRefineList = new List<int>();
@@ -236,12 +389,12 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
                         CellsToRefineList.Add(j);
                 }
 
-                Console.WriteLine("Refining " + CellsToRefineList.Count + " of " + J + " cells");
+                Console.WriteLine("       Refining " + CellsToRefineList.Count + " of " + J + " cells");
 
                 // create new Grid & DG fields
                 // ===========================
 
-                GridCommons newGrid = RefinedGrid.Adapt(CellsToRefineList, null);
+                GridCommons newGrid = RefinedGrid.Adapt(CellsToRefineList, Coarsening);
                 RefinedGrid = new GridData(newGrid);
 
                 var Basis = new Basis(RefinedGrid, DEGREE);
@@ -293,7 +446,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
                 dt = Math.PI*2 / base.NoOfTimesteps;
 
                 UpdateBaseGrid(phystime + dt);
-                UpdateRefinedGrid(phystime + dt);
+                UpdateRefinedGrid(phystime + dt, TimestepNo);
 
                 // return
                 //base.TerminationKey = true;

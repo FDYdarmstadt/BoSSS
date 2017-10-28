@@ -390,11 +390,14 @@ namespace BoSSS.Foundation.Grid.Classic {
                             if (otherNeighbours != null) {
                                 for (int w = 0; w < otherNeighbours.Length; w++) {
                                     Debug.Assert(_Cell_j.CellFaceTags[w].NeighCell_GlobalID < 0 == otherNeighbours[w] < 0);
-                                    if (_Cell_j.CellFaceTags[w].NeighCell_GlobalID >= 0)
-                                        Cell_j_Neighs.Add(new Neighbour() {
-                                            Neighbour_GlobalIndex = otherNeighbours[w],
-                                            CellFaceTag = _Cell_j.CellFaceTags[w],
-                                        });
+                                    if (_Cell_j.CellFaceTags[w].NeighCell_GlobalID >= 0) {
+                                        if (Cell_j_Neighs.Where(neigh => neigh.Neighbour_GlobalIndex == otherNeighbours[w]).Count() <= 0) { // filter duplicates
+                                            Cell_j_Neighs.Add(new Neighbour() {
+                                                Neighbour_GlobalIndex = otherNeighbours[w],
+                                                CellFaceTag = _Cell_j.CellFaceTags[w],
+                                            });
+                                        }
+                                    }
                                 }
                             }
                         } else {

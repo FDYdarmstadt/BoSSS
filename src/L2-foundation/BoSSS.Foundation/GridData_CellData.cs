@@ -775,7 +775,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 int J = NoOfLocalUpdatedCells;
                 return ((j < J) ? m_owner.m_Grid.Cells[j] : m_owner.m_Parallel.ExternalCells[j - J]);
             }
-
+            
             /// <summary>
             /// Cell type for cell <paramref name="jCell"/>.
             /// </summary>

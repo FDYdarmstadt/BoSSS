@@ -35,7 +35,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// <summary>
         /// Creates a new grid, which is an adaptive refinement (cell by cell) of this grid.
         /// </summary>
-        public GridCommons Adapt(IEnumerable<int> CellsToRefine, int[][] CellsToCoarsen) {
+        public GridCommons Adapt(IEnumerable<int> CellsToRefine, IEnumerable<int[]> CellsToCoarsen) {
             using(new FuncTrace()) {
                 GridCommons oldGrid = this.m_Grid;
                 GridCommons newGrid = new GridCommons(oldGrid.RefElements, oldGrid.EdgeRefElements);
@@ -217,8 +217,10 @@ namespace BoSSS.Foundation.Grid.Classic {
                         restoredCell.RefinementLevel = RefinementLevel;
 
                         // boundary conditions by cell face tags
-                        restoredCell.CellFaceTags = Mother.CellFaceTags.Where(cftag => cftag.EdgeTag > 0 && cftag.EdgeTag < GridCommons.FIRST_PERIODIC_BC_TAG).ToArray();
-                        
+                        if (Mother.CellFaceTags != null) {
+                            restoredCell.CellFaceTags = Mother.CellFaceTags.Where(cftag => cftag.EdgeTag > 0 && cftag.EdgeTag < GridCommons.FIRST_PERIODIC_BC_TAG).ToArray();
+                        }
+
                         foreach(var j in jCellS) {
                             Debug.Assert(adaptedCells[j] == null);
                             adaptedCells[j] = new[] { restoredCell };
