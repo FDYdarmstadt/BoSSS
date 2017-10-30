@@ -1171,7 +1171,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             for (int d = 0; d < dimension; d++) {
                 nodes[d] = GenericBlas.Linspace(box.boundingBox.Min[d], box.boundingBox.Max[d], box.numOfCells[d] + 1);
             }
-            var grd = Grid2D.Cartesian2DGrid(nodes[0], nodes[1], periodicX: periodicX, periodicY: periodicY, CutOuts: gridBoxes[1].boundingBox);
+            var grd = Grid2D.Cartesian2DGrid(nodes[0], nodes[1], periodicX: periodicX, periodicY: periodicY, CutOuts: new[] { gridBoxes[1].boundingBox });
             gridList.Add(grd);
 
 
