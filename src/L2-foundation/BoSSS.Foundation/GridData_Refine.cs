@@ -45,6 +45,43 @@ namespace BoSSS.Foundation.Grid.Classic {
                 BitArray CellsToRefineBitmask = new BitArray(J);
                 BitArray CellsToCoarseBitmask = new BitArray(J);
                 BitArray AdaptNeighborsBitmask = new BitArray(J);
+
+                // templates for subdivision
+                // =========================
+
+                RefElement[] KrefS = oldGrid.RefElements; // all ref elements used
+                RefElement.SubdivisionTreeNode[] KrefS_SubDiv = new RefElement.SubdivisionTreeNode[KrefS.Length]; // subdivision tree for each ref element
+                RefElement.SubdivisionTreeNode[][] KrefS_SubdivLeaves = new RefElement.SubdivisionTreeNode[KrefS.Length][]; // actual subdivision elements
+                Tuple<int, int>[][,] KrefS_SubdivConnections = new Tuple<int, int>[KrefS.Length][,]; // connections between elements; 1st idx: ref elem; 2nd idx: subdiv elm; 3rd idx: face of subdiv elm; content: [idx of subdiv elm,idx of face]
+                int[][][] KrefS_Faces2Subdiv = new int[KrefS.Length][][]; // mapping: [ref elm, face of ref elm] -> Subdivision elements which bound to this face.
+                for(int iKref = 0; iKref < KrefS.Length; iKref++)
+                {
+                    RefElement Kref = KrefS[iKref];
+                    KrefS_SubDiv[iKref] = Kref.GetSubdivisionTree(1);
+                    KrefS_SubdivLeaves[iKref] = KrefS_SubDiv[0].GetLeaves();
+                    Debug.Assert(ArrayTools.ListEquals(KrefS_SubdivLeaves[iKref], KrefS_SubDiv[iKref].Children[0].GetLevel(), (a, b) => object.ReferenceEquals(a, b)));
+                    KrefS_Faces2Subdiv[iKref] = new int[Kref.NoOfFaces][];
+
+                    KrefS_SubdivConnections[iKref] = new Tuple<int, int>[KrefS[iKref].NoOfFaces, KrefS[iKref].NoOfFaces];
+                    for(int iSubdiv = 0; iSubdiv < KrefS_SubdivConnections[iKref].GetLength(0); iSubdiv++)
+                    { // loop over subdivision elements
+                        for(int iFace = 0; iFace < KrefS_SubdivConnections[iKref].GetLength(0); iFace++)
+                        { // loop over faces of subdivision elements
+                            var t = KrefS_SubdivLeaves[iKref][iSubdiv].GetNeighbor(iFace);
+                            if(t.Item1 < 0)
+                            {
+                                // at the boundary of the subdivision
+                                ArrayTools.AddToArray(iSubdiv, ref KrefS_Faces2Subdiv[iKref][t.Item2]);
+                            }
+                            KrefS_SubdivConnections[iKref][iSubdiv, iFace] = t;
+                        }
+                    }
+                }
+
+
+                // Check Input, set Bitmasks
+                // =========================
+
                 if(CellsToRefine != null) {
                     foreach(int jCell in CellsToRefine) {
                         if(CellsToRefineBitmask[jCell] == true)
@@ -62,10 +99,22 @@ namespace BoSSS.Foundation.Grid.Classic {
                 }
 
                 if(CellsToCoarsen != null) {
-                    foreach(int[] jCellS in CellsToCoarsen) {
+                    foreach(int[] jCellS in CellsToCoarsen) { // loop over all coarsening clusters...
 
                         // cluster of cells to coarsen
                         Cell[] CellS = jCellS.Select(j => this.Cells.GetCell(j)).ToArray();
+
+                        int CoarseningClusterID = CellS[0].CoarseningClusterID;
+                        int iKref = this.Cells.GetRefElementIndex(jCellS[0]);
+                        int RefinementLevel = CellS[0].RefinementLevel;
+                        
+                        if(jCellS.Length != KrefS_SubdivLeaves[iKref].Length)
+                            throw new ArgumentException("Number of elements in coarsening cluster does not match refinment template for respective element type.");
+                        if(RefinementLevel <= 0 || CoarseningClusterID <= 0)
+                            throw new ArgumentException("Coarsening not available for respective cell.");
+
+                        if(CellS.Where(cl => cl.ParentCell != null).Count() != 1)
+                            throw new ArgumentException("Coarsening cluster seems wrong, or internal data may be corrupted.");
 
                         for(int z = 0; z < CellS.Length; z++) {
                             int j = jCellS[z];
@@ -77,15 +126,18 @@ namespace BoSSS.Foundation.Grid.Classic {
                             CellsToCoarseBitmask[j] = true;
 
                             Cell Cj = this.Cells.GetCell(j);
-                            if(Cj.CoarseningPeers == null)
-                                throw new ArgumentException("Coarsening not available for respective cell.");
-                            if(Cj.CoarseningPeers.Length != jCellS.Length - 1)
-                                throw new ArgumentException("Coarsening cluster seems incomplete.");
-
-                            foreach(long gid in Cj.CoarseningPeers) {
-                                if(CellS.Where(cl => cl.GlobalID == gid).Count() != 1)
-                                    throw new ArgumentException("Coarsening cluster seems incomplete.");
-                            }
+                            //if(Cj.CoarseningPeers == null)
+                            //    throw new ArgumentException("Coarsening not available for respective cell.");
+                            //if(Cj.CoarseningPeers.Length != jCellS.Length - 1)
+                            //    throw new ArgumentException("Coarsening cluster seems incomplete.");
+                            //if(Cj.CoarseningPeers.Length != jCellS.Length - 1)
+                            //    throw new ArgumentException("Coarsening cluster seems incomplete.");
+                            //foreach(long gid in jCellS) {
+                            //    if(CellS.Where(cl => cl.GlobalID == gid).Count() != 1)
+                            //        throw new ArgumentException("Coarsening cluster seems incomplete.");
+                            //}
+                            if(CoarseningClusterID != Cj.CoarseningClusterID)
+                                throw new ArgumentException("Mismatch of 'CoarseningClusterID' within cluster.");
 
                             int[] Neighs, dummy;
                             this.GetCellNeighbours(j, GetCellNeighbours_Mode.ViaEdges, out Neighs, out dummy);
@@ -102,33 +154,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                 int InsertCounter = J;
 
-                // templates for subdivision
-                // =========================
-
-                RefElement[] KrefS = oldGrid.RefElements; // all ref elements used
-                RefElement.SubdivisionTreeNode[] KrefS_SubDiv = new RefElement.SubdivisionTreeNode[KrefS.Length]; // subdivision tree for each ref element
-                RefElement.SubdivisionTreeNode[][] KrefS_SubdivLeaves = new RefElement.SubdivisionTreeNode[KrefS.Length][]; // actual subdivision elements
-                Tuple<int, int>[][,] KrefS_SubdivConnections = new Tuple<int, int>[KrefS.Length][,]; // connections between elements; 1st idx: ref elem; 2nd idx: subdiv elm; 3rd idx: face of subdiv elm; content: [idx of subdiv elm,idx of face]
-                int[][][] KrefS_Faces2Subdiv = new int[KrefS.Length][][]; // mapping: [ref elm, face of ref elm] -> Subdivision elements which bound to this face.
-                for(int iKref = 0; iKref < KrefS.Length; iKref++) {
-                    RefElement Kref = KrefS[iKref];
-                    KrefS_SubDiv[iKref] = Kref.GetSubdivisionTree(1);
-                    KrefS_SubdivLeaves[iKref] = KrefS_SubDiv[0].GetLeaves();
-                    Debug.Assert(ArrayTools.ListEquals(KrefS_SubdivLeaves[iKref], KrefS_SubDiv[iKref].Children[0].GetLevel(), (a, b) => object.ReferenceEquals(a, b)));
-                    KrefS_Faces2Subdiv[iKref] = new int[Kref.NoOfFaces][];
-
-                    KrefS_SubdivConnections[iKref] = new Tuple<int, int>[KrefS[iKref].NoOfFaces, KrefS[iKref].NoOfFaces];
-                    for(int iSubdiv = 0; iSubdiv < KrefS_SubdivConnections[iKref].GetLength(0); iSubdiv++) { // loop over subdivision elements
-                        for(int iFace = 0; iFace < KrefS_SubdivConnections[iKref].GetLength(0); iFace++) { // loop over faces of subdivision elements
-                            var t = KrefS_SubdivLeaves[iKref][iSubdiv].GetNeighbor(iFace);
-                            if(t.Item1 < 0) {
-                                // at the boundary of the subdivision
-                                ArrayTools.AddToArray(iSubdiv, ref KrefS_Faces2Subdiv[iKref][t.Item2]);
-                            }
-                            KrefS_SubdivConnections[iKref][iSubdiv, iFace] = t;
-                        }
-                    }
-                }
+                
 
                 // create new cells
                 // ================
@@ -188,6 +214,9 @@ namespace BoSSS.Foundation.Grid.Classic {
                 // ----------
                 int bCoarsened = 0;
                 if(CellsToCoarsen != null) {
+
+                    
+                    
                     foreach(int[] jCellS in CellsToCoarsen) {
                         bCoarsened = 0xFFFF;
 
@@ -204,17 +233,19 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                         Cell Cell0 = CellS.Single(cl => cl.ParentCell != null);
                         Cell Mother = Cell0.ParentCell;
-                        Debug.Assert(CellS.Where(cl => cl.GlobalID == Mother.GlobalID).Count() == 1);
+                        //Debug.Assert(CellS.Where(cl => cl.GlobalID == Mother.GlobalID).Count() == 1);
+                        Debug.Assert(Mother.RefinementLevel == RefinementLevel);
                        
                         Cell restoredCell = new Cell();
                         restoredCell.Type = Mother.Type;
                         Debug.Assert(Mother.Type == Cell0.Type);
                         restoredCell.NodeIndices = Mother.NodeIndices;
-                        restoredCell.CoarseningPeers = Mother.CoarseningPeers;
+                        restoredCell.CoarseningClusterID = Mother.CoarseningClusterID;
                         restoredCell.ParentCell = Mother.ParentCell;
-                        restoredCell.GlobalID = Mother.GlobalID;
+                        restoredCell.GlobalID = Cell0.GlobalID;
                         restoredCell.TransformationParams = Mother.TransformationParams;
                         restoredCell.RefinementLevel = RefinementLevel;
+                        restoredCell.CoarseningClusterSize = Mother.CoarseningClusterSize;
 
                         // boundary conditions by cell face tags
                         if (Mother.CellFaceTags != null) {
@@ -234,6 +265,18 @@ namespace BoSSS.Foundation.Grid.Classic {
                 // refinement
                 // ----------
                 if(CellsToRefine != null) {
+
+                    int NewCoarseningClusterId;
+                    {
+                        int[] locData = new int[]{
+                           this.m_Grid.Cells.Max(cl => cl.CoarseningClusterID),
+                            CellsToCoarsen.Count() + 1
+                        };
+                        int[] glbData = locData.MPIMax();
+
+                        NewCoarseningClusterId = glbData[0] + 1 + glbData[1] * this.MpiRank;
+                    }
+
                     foreach(int j in CellsToRefine) {
                         var oldCell = oldGrid.Cells[j];
                         int iKref = this.Cells.GetRefElementIndex(j);
@@ -259,6 +302,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 GlobalIdCounter++;
                             }
                             newCell.RefinementLevel = oldCell.RefinementLevel + 1;
+                            newCell.CoarseningClusterSize = Leaves.Length;
+                            newCell.CoarseningClusterID = NewCoarseningClusterId;
                             refinedCells[iSubDiv] = newCell;
                             
 
@@ -274,14 +319,14 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 newVertexCounter++;
                             }
                         }
-
+                        NewCoarseningClusterId++;
 
                         for(int iSubDiv = 0; iSubDiv < Leaves.Length; iSubDiv++) { // pass 2: do other things
-                            // record information for (later) coarsening
-                            refinedCells[iSubDiv].CoarseningPeers = refinedCells
-                                .Where(cell => cell.GlobalID != refinedCells[iSubDiv].GlobalID)
-                                .Select(cell => cell.GlobalID)
-                                .ToArray();
+                            //// record information for (later) coarsening
+                            //refinedCells[iSubDiv].CoarseningPeers = refinedCells
+                            //    .Where(cell => cell.GlobalID != refinedCells[iSubDiv].GlobalID)
+                            //    .Select(cell => cell.GlobalID)
+                            //    .ToArray();
 
                             // neighbors within
                             for(int iFace = 0; iFace < Kref.NoOfFaces; iFace++) {

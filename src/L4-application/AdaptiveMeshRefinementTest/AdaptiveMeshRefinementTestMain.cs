@@ -200,7 +200,6 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             int[][] CellNeighbours = RefinedGrid.Cells.CellNeighbours;
 
             List<Cell> temp = new List<Cell>();
-            long[] SearchGids;
             List<int> tempCC = new List<int>();
 
             int RecursionDepht = -1;
@@ -237,12 +236,16 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
                 tempCC.Clear();
                 tempCC.Add(j);
 
-                SearchGids = new long[Cell_j.CoarseningPeers.Length + 1];
-                Array.Copy(Cell_j.CoarseningPeers, SearchGids, SearchGids.Length - 1);
-                SearchGids[SearchGids.Length - 1] = Cell_j.GlobalID;
+                //SearchGids = new long[Cell_j.CoarseningPeers.Length + 1];
+                //Array.Copy(Cell_j.CoarseningPeers, SearchGids, SearchGids.Length - 1);
+                //SearchGids[SearchGids.Length - 1] = Cell_j.GlobalID;
+                int SearchID = Cell_j.CoarseningClusterID;
+                int ClusterSize = Cell_j.CoarseningClusterSize;
+                Debug.Assert(SearchID > 0);
+
 
                 bool complete = false;
-                FindCoarseiningClusterRecursive(j, RecursionDepht, CellNeighbours, marker, RefinedGrid.Cells.GetCell, Level, SearchGids, tempCC, ref complete);
+                FindCoarseiningClusterRecursive(j, RecursionDepht, CellNeighbours, marker, RefinedGrid.Cells.GetCell, Level, SearchID, ClusterSize, tempCC, ref complete);
                 foreach(int jC in tempCC) {
                     marker[jC] = true;
                 }
@@ -265,7 +268,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
         }
 
         static void FindCoarseiningClusterRecursive(int j, int MaxRecursionDeph,
-            int[][] CellNeighbours, BitArray marker, Func<int, Cell> GetCell, int Level, long[] SearchGids,
+            int[][] CellNeighbours, BitArray marker, Func<int, Cell> GetCell, int Level, int SearchID, int ClusterSize,
             List<int> CoarseiningCluster, ref bool complete) {
 
             Debug.Assert(CoarseiningCluster.Contains(j) == true);
@@ -281,26 +284,26 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
                 if (Cell_neigh.RefinementLevel != Level)
                     continue;
 
-                if (SearchGids.Contains(Cell_neigh.GlobalID) == false)
-                    continue;
-                if (Cell_neigh.CoarseningPeers.IsSubsetOf(SearchGids) == false)
+                if (Cell_neigh.CoarseningClusterID != SearchID)
                     continue;
 
                 CoarseiningCluster.Add(jNeigh);
                 
-                if(CoarseiningCluster.Count == SearchGids.Length) {
+                if(CoarseiningCluster.Count == ClusterSize) {
                     complete = true;
 #if DEBUG
                     foreach(int j1 in CoarseiningCluster) {
                         Cell Cell_j1 = GetCell(j1);
                         Debug.Assert(Cell_j1.RefinementLevel > 0);
-                        Debug.Assert(Cell_j1.CoarseningPeers != null);
-                        Debug.Assert(Cell_j1.CoarseningPeers.Length == CoarseiningCluster.Count - 1);
+                        //Debug.Assert(Cell_j1.CoarseningPeers != null);
+                        //Debug.Assert(Cell_j1.CoarseningPeers.Length == CoarseiningCluster.Count - 1);
                         Debug.Assert(Cell_j1.RefinementLevel == Level);
-                        Debug.Assert(Array.IndexOf(SearchGids, Cell_j1.GlobalID) >= 0);
-                        foreach(long gid_cp in Cell_j1.CoarseningPeers) {
-                            Debug.Assert(Array.IndexOf(SearchGids, gid_cp) >= 0);
-                        }
+                        Debug.Assert(Cell_j1.CoarseningClusterID == SearchID);
+                        Debug.Assert(Cell_j1.CoarseningClusterSize == ClusterSize);
+                        //Debug.Assert(Array.IndexOf(SearchGids, Cell_j1.GlobalID) >= 0);
+                        //foreach(long gid_cp in Cell_j1.CoarseningPeers) {
+                        //    Debug.Assert(Array.IndexOf(SearchGids, gid_cp) >= 0);
+                        //}
                     }
 #endif
                     return;
@@ -308,7 +311,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
 
                 if (MaxRecursionDeph > 0)
                     FindCoarseiningClusterRecursive(jNeigh, MaxRecursionDeph - 1,
-                        CellNeighbours, marker, GetCell, Level, SearchGids, CoarseiningCluster, ref complete);
+                        CellNeighbours, marker, GetCell, Level, SearchID, ClusterSize, CoarseiningCluster, ref complete);
 
                 if(complete) {
                     return;

@@ -228,6 +228,51 @@ namespace MPI.Wrappers {
         }
 
         /// <summary>
+        /// equal to <see cref="MPIMax(int[],MPI_Comm)"/>, acting on the
+        /// WORLD-communicator
+        /// </summary>
+        static public int[] MPIMax(this int[] i) {
+            return MPIMax(i, csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// returns the maximum of each entry of <paramref name="i"/> on all MPI-processes in the
+        /// <paramref name="comm"/>--communicator.
+        /// </summary>
+        static public int[] MPIMax(this int[] i, MPI_Comm comm) {
+            int[] R = new int[i.Length];
+            unsafe {
+                fixed (int* loc = i, glob = R) {
+                    csMPI.Raw.Allreduce(((IntPtr)(loc)), ((IntPtr)(glob)), i.Length, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.MAX, comm);
+                }
+            }
+            return R;
+        }
+
+        /// <summary>
+        /// equal to <see cref="MPIMin(int[],MPI_Comm)"/>, acting on the
+        /// WORLD-communicator
+        /// </summary>
+        static public int[] MPIMin(this int[] i) {
+            return MPIMin(i, csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// returns the minimum of each entry of <paramref name="i"/> on all MPI-processes in the
+        /// <paramref name="comm"/>--communicator.
+        /// </summary>
+        static public int[] MPIMin(this int[] i, MPI_Comm comm) {
+            int[] R = new int[i.Length];
+            unsafe {
+                fixed (int* loc = i, glob = R) {
+                    csMPI.Raw.Allreduce(((IntPtr)(loc)), ((IntPtr)(glob)), i.Length, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.MIN, comm);
+                }
+            }
+            return R;
+        }
+
+
+        /// <summary>
         /// Equal to <see cref="MPISum(int[],MPI_Comm)"/>, acting on the
         /// WORLD-communicator
         /// </summary>
@@ -324,7 +369,7 @@ namespace MPI.Wrappers {
         }
 
         /// <summary>
-        /// returns the sum of <paramref name="i"/> on all MPI-processes in the
+        /// returns the maximum of <paramref name="i"/> on all MPI-processes in the
         /// <paramref name="comm"/>--communicator.
         /// </summary>
         static public double MPIMax(this double i, MPI_Comm comm) {
