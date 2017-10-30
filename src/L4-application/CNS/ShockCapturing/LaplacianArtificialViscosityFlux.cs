@@ -16,6 +16,7 @@ limitations under the License.
 
 using BoSSS.Foundation;
 using BoSSS.Solution.NSECommon;
+using CNS.Boundary;
 using ilPSP;
 using System.Collections.Generic;
 
@@ -23,8 +24,16 @@ namespace CNS.ShockCapturing {
 
     class LaplacianArtificialViscosityFlux : ipLaplace {
 
-        public LaplacianArtificialViscosityFlux(int order, MultidimensionalArray cj, Variable variable) :
-            base((order + 1) * (order + CNSEnvironment.NumberOfDimensions) / (double)CNSEnvironment.NumberOfDimensions, cj, variable) {
+        private IBoundaryConditionMap boundaryMap;
+
+        private ISpeciesMap speciesMap;
+
+        //public LaplacianArtificialViscosityFlux(int order, MultidimensionalArray cj, string[] arguments, int affectedComponent, IBoundaryConditionMap boundaryMap, ISpeciesMap speciesMap) :
+        //    base((order + 1) * (order + CNSEnvironment.NumberOfDimensions) / (double)CNSEnvironment.NumberOfDimensions, cj, arguments, affectedComponent) {
+        public LaplacianArtificialViscosityFlux(int order, MultidimensionalArray cj, Variable variable, IBoundaryConditionMap boundaryMap, ISpeciesMap speciesMap) :
+        base((order + 1) * (order + CNSEnvironment.NumberOfDimensions) / (double)CNSEnvironment.NumberOfDimensions, cj, variable) {
+            this.boundaryMap = boundaryMap;
+            this.speciesMap = speciesMap;
         }
 
         public override double Nu(double[] x, double[] parameter, int jCell) {
@@ -35,9 +44,50 @@ namespace CNS.ShockCapturing {
             return false;
         }
 
+        //public override double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
+        //    StateVector stateIn = new StateVector(_uA, speciesMap.GetMaterial(double.NaN));
+        //    //StateVector boundaryState = boundaryMap.GetBoundaryState(inp.EdgeTag, inp.time, inp.X, inp.Normale, stateIn);
+        //    //double[] _uB = boundaryState.ToArray();
+
+        //    double[] _uB = stateIn.ToArray();
+
+        //    double[,] _Grad_uB = _Grad_uA;
+
+        //    double _vB = 0; // JA
+        //    double[] _Grad_vB = _Grad_vA; // JA
+
+        //    double[] paramsOut = inp.Parameters_IN; // Vielleicht AV innen = außen?
+        //    //double[] paramsOut = new double[inp.Parameters_IN.Length]; // Vielleicht AV innen = außen?
+
+        //    CommonParams inpInner = new CommonParams() {
+        //        GridDat = inp.GridDat,
+        //        iEdge = inp.iEdge,
+        //        Normale = inp.Normale,
+        //        Parameters_IN = inp.Parameters_IN,
+        //        Parameters_OUT = paramsOut,
+        //        time = inp.time,
+        //        X = inp.X
+        //    };
+
+        //    return base.InnerEdgeForm(ref inpInner, _uA, _uB, _Grad_uA, _Grad_uB, _vA, _vB, _Grad_vA, _Grad_vB);
+        //}
+
+        //public override double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
+        //    double Acc = 0.0;
+
+        //    double nuA = this.Nu(inp.X, inp.Parameters_IN, inp.jCellIn);
+
+        //    for (int d = 0; d < inp.D; d++)
+        //        Acc += nuA * _Grad_uA[0, d] * _vA * inp.Normale[d]; // consistency term
+
+        //    Acc *= this.m_alpha;
+
+        //    return Acc;
+        //}
+
         public override IList<string> ParameterOrdering {
             get {
-                return new string[] { "artificialViscosity" } ;
+                return new string[] { "artificialViscosity" };
             }
         }
     }
