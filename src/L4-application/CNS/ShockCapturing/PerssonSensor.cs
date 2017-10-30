@@ -30,13 +30,17 @@ namespace CNS.ShockCapturing {
 
         private double sensorLimit;
 
-        private DGField sensorValues;
+        private double[] sensorValues;
 
         private int fileCount = 0;
 
         private int lineCount = 0;
 
         //private StreamWriter sensorOnOffWriter = null;
+
+        private DGField fieldToTestRestricted;
+
+        ICompositeQuadRule<QuadRule> compositeRule;
 
         public PerssonSensor(Variable sensorVariable, double sensorLimit) {
             this.sensorVariable = sensorVariable;
@@ -48,80 +52,71 @@ namespace CNS.ShockCapturing {
                 Concat(fieldSet.DerivedFields.Values).
                 Where(f => f.Identification == sensorVariable.Name).
                 Single();
+            int degree = fieldToTest.Basis.Degree;
+            int noOfCells = fieldToTest.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
 
-            DGField fieldToTestRestricted = new SinglePhaseField(
-                new Basis(fieldToTest.GridDat, fieldToTest.Basis.Degree - 1));
-            fieldToTestRestricted.AccLaidBack(1.0, fieldToTest);
+            if (sensorValues == null || fieldToTestRestricted.Basis.Degree != degree || sensorValues.Length != noOfCells) {
+                fieldToTestRestricted = new SinglePhaseField(
+                    new Basis(fieldToTest.GridDat, degree));
+                sensorValues = new double[noOfCells];
+                CellQuadratureScheme scheme = new CellQuadratureScheme();
+                compositeRule = scheme.SaveCompile(fieldToTest.GridDat, 2 * fieldToTest.Basis.Degree);
+            }
 
-            DGField difference = fieldToTestRestricted - fieldToTest;
+            int i0 = 1;
+            int degreeMinusOne = degree - 1;
+            for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+                i0 *= (degreeMinusOne + d + 1);
+            }
+            for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+                i0 /= (d + 1);
+            }
 
-            sensorValues = new SinglePhaseField(
-                new Basis(fieldToTest.GridDat, 0));
+            for (int cell = 0; cell < noOfCells; cell++) {
+                for (int coordinate = i0; coordinate < fieldToTest.Basis.Length; coordinate++) {
+                    fieldToTestRestricted.Coordinates[cell, coordinate] = fieldToTest.Coordinates[cell, coordinate];
+                }
+            }
 
-            CellQuadratureScheme scheme = new CellQuadratureScheme();
-            var rule = scheme.SaveCompile(fieldToTest.GridDat, 2 * fieldToTest.Basis.Degree);
-            double[] a = difference.LocalLxError((ScalarFunction)null, null, rule);
+            // Note: This is the _only_ expensive part!
+            double[] a = fieldToTestRestricted.LocalLxError((ScalarFunction)null, null, compositeRule);
+            double[] b = fieldToTest.LocalLxError((ScalarFunction)null, null, compositeRule);
+            
 
-
-            double[] b = fieldToTest.LocalLxError((ScalarFunction)null, null, rule);
-            //var clone = fieldToTest.CloneAs();
-            //foreach (Chunk chunk in CellMask.GetFullMask(clone.GridDat)) {
-            //    for (int i = 0; i < chunk.Len; i++) {
-            //        int cell = i + chunk.i0;
-            //        clone.SetMeanValue(cell, 1.0);
-            //    }
-            //}
-            //double[] b = clone.LocalLxError((ScalarFunction)null, null, rule);
-
-            int cellIndex = 0;
-
-            sensorLimit = sensorLimit / Math.Pow(fieldToTest.Basis.Degree, 4);
-
-            double[] cellCenters = ((GridData)fieldSet.Density.GridDat).Cells.CellCenter.ExtractSubArrayShallow(-1, 0).To1DArray();
+            //double[] cellCenters = ((GridData)fieldSet.Density.GridDat).Cells.CellCenter.ExtractSubArrayShallow(-1, 0).To1DArray();
 
             //if (sensorOnOffWriter == null) {
             //    sensorOnOffWriter = CreateNewStreamWriter();
             //}
 
-            foreach (Chunk chunk in CellMask.GetFullMask(fieldToTest.GridDat)) {
-                for (int i = 0; i < chunk.Len; i++) {
-                    int cell = i + chunk.i0;
+            sensorLimit = sensorLimit / Math.Pow(fieldToTest.Basis.Degree, 4);
+            for (int cell = 0; cell < noOfCells; cell++) {
+                double mySensorValue = a[cell] / b[cell];
 
-                    //CellMask singleCellMask = new CellMask(fieldToTest.GridDat, Chunk.GetSingleElementChunk(cell));
-                    //double a = difference.L2Norm(singleCellMask);
-                    //double b = fieldToTest.L2Norm(singleCellMask);
-                    double mySensorValue = a[cellIndex] / b[cellIndex];
+                #region AV on in entire domain (checked for each time step)
+                //double maxSensor = sensorValues.GetMeanValue(0);
+                //if (mySensorValue > maxSensor) {
+                //    for (int j = 0; j < fieldToTest.GridDat.iLogicalCells.NoOfLocalUpdatedCells; j++) {
+                //        sensorValues.SetMeanValue(j, mySensorValue);
+                //    }
+                //}
+                #endregion
 
-                    // not using L2-norm --> only the scalar product
-                    //mySensorValue = mySensorValue * mySensorValue;
+                // comment when using region AV on in entire domain (checked for each time step)
+                sensorValues[cell] = mySensorValue;
 
-                    #region AV on in entire domain (checked for each time step)
-                    //double maxSensor = sensorValues.GetMeanValue(0);
-                    //if (mySensorValue > maxSensor) {
-                    //    for (int j = 0; j < fieldToTest.GridDat.iLogicalCells.NoOfLocalUpdatedCells; j++) {
-                    //        sensorValues.SetMeanValue(j, mySensorValue);
-                    //    }
-                    //}
-                    #endregion
-
-                    // comment when using region AV on in entire domain (checked for each time step)
-                    sensorValues.SetMeanValue(cell, mySensorValue);
-
-                    // Store AV On/Off-Values to extra file
-                    //if (mySensorValue > sensorLimit) {
-                    //    sensorOnOffWriter.Write(cellCenters[i + chunk.i0] + "\t" + "{0:0.000000000} \r\n", physTime);
-                    //    lineCount++;
-                    //    if (FileIsFull(5000)) {
-                    //        sensorOnOffWriter.Flush();
-                    //        sensorOnOffWriter.Close();
-                    //        sensorOnOffWriter = CreateNewStreamWriter();
-                    //    }
-                    //}
-
-                    cellIndex++;
-                }
-                //sensorOnOffWriter.Flush();
+                // Store AV On/Off-Values to extra file
+                //if (mySensorValue > sensorLimit) {
+                //    sensorOnOffWriter.Write(cellCenters[i + chunk.i0] + "\t" + "{0:0.000000000} \r\n", physTime);
+                //    lineCount++;
+                //    if (FileIsFull(5000)) {
+                //        sensorOnOffWriter.Flush();
+                //        sensorOnOffWriter.Close();
+                //        sensorOnOffWriter = CreateNewStreamWriter();
+                //    }
+                //}
             }
+            //sensorOnOffWriter.Flush();
         }
 
         private StreamWriter CreateNewStreamWriter() {
@@ -144,7 +139,7 @@ namespace CNS.ShockCapturing {
         }
 
         public double GetSensorValue(int cellIndex) {
-            return sensorValues.GetMeanValue(cellIndex);
+            return sensorValues[cellIndex];
         }
 
     }
