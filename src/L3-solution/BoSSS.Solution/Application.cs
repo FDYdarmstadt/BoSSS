@@ -1681,7 +1681,7 @@ namespace BoSSS.Solution {
                 int i = 0;
                 for (i = i0.MajorNumber + 1; (i <= i0.MajorNumber + (long)NoOfTimesteps) && EndTime - physTime > 1.0E-10 && !TerminationKey; i++) {
                     tr.Info("performing timestep " + i + ", physical time = " + physTime);
-                    this.MpiRedistribute(i, physTime);
+                    this.MpiRedistributeAndMeshAdapt(i, physTime);
                     this.QueryResultTable.UpdateKey("Timestep", ((int)i));
                     double dt = RunSolverOneStep(i, physTime, -1);
                     tr.Info("simulated time: " + dt + " timeunits.");
@@ -1746,9 +1746,9 @@ namespace BoSSS.Solution {
         }
 
         /// <summary>
-        /// Main routine for dynamic load balancing.
+        /// Main routine for dynamic load balancing and adaptive mesh refinement.
         /// </summary>
-        virtual protected void MpiRedistribute(int TimeStepNo, double physTime) {
+        virtual protected void MpiRedistributeAndMeshAdapt(int TimeStepNo, double physTime) {
             //if (this.MPISize <= 1)
             //    return;
             //Console.WriteLine("REM: dynamic load balancing for 1 processor is active.");
@@ -1757,108 +1757,91 @@ namespace BoSSS.Solution {
                 // init / determine if partition has changed / check Partitioning
                 // ==============================================================
 
-                int[] NewPartition = ComputeNewCellDistribution(TimeStepNo, physTime);
-                if (NewPartition == null)
-                    // nothing to do
-                    return;
+                int[] NewPartition;
+                GridCommons newGrid = this.AdaptMesh();
+                if(newGrid == null) {
+                    NewPartition = ComputeNewCellDistribution(TimeStepNo, physTime);
+                    if(NewPartition == null)
+                        // nothing to do
+                        return;
 
-                int JupOld = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
+                    int JupOld = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
+                    int NoOfRedistCells = CheckPartition(NewPartition, JupOld);
 
-                int locNoOfRedistCells = 0;
-                int MyRank = this.MPIRank;
-                var oldGridData = this.GridData;
-                int mpiRank = oldGridData.CellPartitioning.MpiRank;
-                int mpiSize = oldGridData.CellPartitioning.MpiSize;
+                    if(NoOfRedistCells <= 0) {
+                        return;
+                    } else {
+                        Console.WriteLine("Re-distribution of " + NoOfRedistCells + " cells.");
+                    }
 
-                // check Partitioning
-                if (NewPartition.Length != JupOld)
-                    throw new ApplicationException("Illegal length of return value of 'ComputeNewCellDistrubution'.");
-
-                int[] locNoOfCellsPerProcessor = new int[mpiSize + 1], NoOfCellsPerProcessor;
-                for (int j = 0; j < JupOld; j++) {
-                    if (NewPartition[j] < 0)
-                        throw new ApplicationException("Illegal MPI rank '" + NewPartition[j] + "' from 'ComputeNewCellDistribution(...)'.");
-                    if (NewPartition[j] >= mpiSize)
-                        throw new ApplicationException("Illegal MPI rank '" + NewPartition[j] + "' from 'ComputeNewCellDistribution(...)' - larger or equal than MPI size, which is '" + mpiSize + "'.");
-                    if (NewPartition[j] != mpiRank)
-                        locNoOfRedistCells++;
-
-                    locNoOfCellsPerProcessor[NewPartition[j]]++;
-                }
-                locNoOfCellsPerProcessor[mpiSize] = locNoOfRedistCells;
-
-                NoOfCellsPerProcessor = locNoOfCellsPerProcessor.MPISum();
-                int NoOfRedistCells = NoOfCellsPerProcessor[mpiSize];
-
-                //for (int proc = 0; proc < mpiSize; proc++)
-                //    Console.WriteLine("Proc {0}: {1} cells.", proc, NoOfCellsPerProcessor[proc]);
-
-                for (int proc = 0; proc < mpiSize; proc++) {
-                    if (NoOfCellsPerProcessor[proc] <= 0)
-                        throw new ApplicationException("Zero cells on one processor are nor allowed.");
-                }
-
-                if (NoOfRedistCells <= 0) {
-                    return;
                 } else {
-                    Console.WriteLine("Re-distribution of " + NoOfRedistCells + " cells.");
+
+
                 }
+
 
                 // backup old data
                 // ===============
+                GridData oldGridData;
+                {
+                    oldGridData = this.GridData;
+                    LevelSetTracker oldLsTrk = this.LsTrk;
+
+                    LoadBalancingData loadbal = new LoadBalancingData(oldGridData, oldLsTrk);
 
 
-                LevelSetTracker oldLsTrk = this.LsTrk;
+                    // id's of the fields which we are going to rescue
+                    string[] FieldIds = m_RegisteredFields.Select(f => f.Identification).ToArray();
 
-                LoadBalancingData loadbal = new LoadBalancingData(oldGridData, oldLsTrk);
+                    // tau   is the GlobalID-permutation of the **old** grid
+                    Permutation tau = oldGridData.CurrentGlobalIdPermutation.CloneAs();
 
-
-                // id's of the fields which we are going to rescue
-                string[] FieldIds = m_RegisteredFields.Select(f => f.Identification).ToArray();
-
-                // tau   is the GlobalID-permutation of the **old** grid
-                Permutation tau = oldGridData.CurrentGlobalIdPermutation.CloneAs();
-
-                // backup level-set tracker 
-                int[] oldTrackerData = null;
-                int trackerVersion = -1;
-                if (this.LsTrk != null) {
-                    oldTrackerData = this.LsTrk.BackupBeforeLoadBalance();
-                    trackerVersion = this.LsTrk.VersionCnt;
-                }
-
-                // backup DG Fields
-                foreach (var f in this.m_RegisteredFields) {
-                    if (f is XDGField) {
-                        XDGBasis xb = ((XDGField)f).Basis;
-                        if (!object.ReferenceEquals(xb.Tracker, oldLsTrk))
-                            throw new ApplicationException();
+                    // backup level-set tracker 
+                    int[] oldTrackerData = null;
+                    int trackerVersion = -1;
+                    if(this.LsTrk != null) {
+                        oldTrackerData = this.LsTrk.BackupBeforeLoadBalance();
+                        trackerVersion = this.LsTrk.VersionCnt;
                     }
-                    loadbal.BackupField(f);
-                }
 
-                // backup user data
-                this.DataBackupBeforeBalancing(loadbal);
+                    // backup DG Fields
+                    foreach(var f in this.m_RegisteredFields) {
+                        if(f is XDGField) {
+                            XDGBasis xb = ((XDGField)f).Basis;
+                            if(!object.ReferenceEquals(xb.Tracker, oldLsTrk))
+                                throw new ApplicationException();
+                        }
+                        loadbal.BackupField(f);
+                    }
+
+                    // backup user data
+                    this.DataBackupBeforeBalancing(loadbal);
+                }
 
                 // create new grid
                 // ===============
-                this.MultigridSequence = null;
-                
-                this.Grid.RedistributeGrid(NewPartition);
-                var newGridData = new GridData(this.Grid);
-                this.GridData = newGridData;
-                oldGridData.Invalidate();
-                if (this.LsTrk != null) {
-                    this.LsTrk.Invalidate();
+                if(newGrid == null) {
+                    this.MultigridSequence = null;
+
+                    this.Grid.RedistributeGrid(NewPartition);
+                    var newGridData = new GridData(this.Grid);
+                    this.GridData = newGridData;
+                    oldGridData.Invalidate();
+                    if(this.LsTrk != null) {
+                        this.LsTrk.Invalidate();
+                    }
+
+                    if(this.Control == null || this.Control.NoOfMultigridLevels > 0)
+                        this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
+                    else
+                        this.MultigridSequence = new AggregationGrid[0];
+
+                    //Console.WriteLine("P {0}: new grid: {1} cells.", MPIRank, newGridData.iLogicalCells.NoOfLocalUpdatedCells);
+                } else {
+
+
+
                 }
-                
-                if (this.Control == null || this.Control.NoOfMultigridLevels > 0)
-                    this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
-                else
-                    this.MultigridSequence = new AggregationGrid[0];
-
-                //Console.WriteLine("P {0}: new grid: {1} cells.", MPIRank, newGridData.iLogicalCells.NoOfLocalUpdatedCells);
-
 
                 // compute redistribution permutation
                 // ==================================
@@ -1884,7 +1867,7 @@ namespace BoSSS.Solution {
                 int newJ = newGridData.CellPartitioning.LocalLength;
 
                 int[] newTrackerData = null;
-                if (oldTrackerData != null) {
+                if(oldTrackerData != null) {
                     newTrackerData = new int[newJ];
                     Resorting.ApplyToVector(oldTrackerData, newTrackerData, newGridData.CellPartitioning);
                     oldTrackerData = null;
@@ -1900,7 +1883,7 @@ namespace BoSSS.Solution {
                 this.m_IOFields.Clear();
 
                 // re-create fields
-                if (this.Control != null) {
+                if(this.Control != null) {
                     InitFromAttributes.CreateFieldsAuto(
                         this, GridData, this.Control.FieldOptions, this.m_IOFields, this.m_RegisteredFields);
                 }
@@ -1909,10 +1892,10 @@ namespace BoSSS.Solution {
                 loadbal.SetNewTracker(this.LsTrk);
 
                 // re-set Level-Set tracker
-                if (newTrackerData != null) {
+                if(newTrackerData != null) {
                     Debug.Assert(object.ReferenceEquals(this.LsTrk.GridDat, this.GridData));
-                    foreach (var f in m_RegisteredFields) {
-                        if (f is XDGField) {
+                    foreach(var f in m_RegisteredFields) {
+                        if(f is XDGField) {
                             ((XDGField)f).Override_TrackerVersionCnt(trackerVersion);
                         }
                     }
@@ -1920,10 +1903,10 @@ namespace BoSSS.Solution {
                 }
 
                 // set dg coördinates
-                foreach (var f in m_RegisteredFields) {
-                    if (f is XDGField) {
+                foreach(var f in m_RegisteredFields) {
+                    if(f is XDGField) {
                         XDGBasis xb = ((XDGField)f).Basis;
-                        if (!object.ReferenceEquals(xb.Tracker, this.LsTrk))
+                        if(!object.ReferenceEquals(xb.Tracker, this.LsTrk))
                             throw new ApplicationException();
                     }
                     loadbal.RestoreDGField(f);
@@ -1932,8 +1915,45 @@ namespace BoSSS.Solution {
                 // re-create solvers, blablabla
                 CreateEquationsAndSolvers(loadbal);
 
-                
+
             }
+        }
+
+        private static int CheckPartition(int[] NewPartition, int JupOld) {
+            int mpiRank = oldGridData.CellPartitioning.MpiRank;
+            int mpiSize = oldGridData.CellPartitioning.MpiSize;
+
+            int locNoOfRedistCells = 0;
+
+            // check Partitioning
+            if(NewPartition.Length != JupOld)
+                throw new ApplicationException("Illegal length of return value of 'ComputeNewCellDistribution'.");
+
+            int[] locNoOfCellsPerProcessor = new int[mpiSize + 1], NoOfCellsPerProcessor;
+            for(int j = 0; j < JupOld; j++) {
+                if(NewPartition[j] < 0)
+                    throw new ApplicationException("Illegal MPI rank '" + NewPartition[j] + "' from 'ComputeNewCellDistribution(...)'.");
+                if(NewPartition[j] >= mpiSize)
+                    throw new ApplicationException("Illegal MPI rank '" + NewPartition[j] + "' from 'ComputeNewCellDistribution(...)' - larger or equal than MPI size, which is '" + mpiSize + "'.");
+                if(NewPartition[j] != mpiRank)
+                    locNoOfRedistCells++;
+
+                locNoOfCellsPerProcessor[NewPartition[j]]++;
+            }
+            locNoOfCellsPerProcessor[mpiSize] = locNoOfRedistCells;
+
+            NoOfCellsPerProcessor = locNoOfCellsPerProcessor.MPISum();
+            int NoOfRedistCells = NoOfCellsPerProcessor[mpiSize];
+
+            //for (int proc = 0; proc < mpiSize; proc++)
+            //    Console.WriteLine("Proc {0}: {1} cells.", proc, NoOfCellsPerProcessor[proc]);
+
+            for(int proc = 0; proc < mpiSize; proc++) {
+                if(NoOfCellsPerProcessor[proc] <= 0)
+                    throw new ApplicationException("Zero cells on one processor are nor allowed.");
+            }
+
+            return NoOfRedistCells;
         }
 
         /// <summary>
@@ -1947,6 +1967,14 @@ namespace BoSSS.Solution {
 
 
         LoadBalancer m_Balancer;
+
+        /// <summary>
+        /// Adaptation of the current mesh (<see cref="Grid"/>).
+        /// </summary>
+        protected virtual GridCommons AdaptMesh() {
+            
+            return null;
+        }
 
         /// <summary>
         /// Default implementation (which does nothing) for the computation of the grid partitioning
