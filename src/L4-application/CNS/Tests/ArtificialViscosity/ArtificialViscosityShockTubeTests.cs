@@ -88,30 +88,30 @@ namespace CNS.Tests.ArtificialViscosity {
                 Tuple.Create("L2ErrorVelocity", 1.125e-2),
                 Tuple.Create("L2ErrorPressure", 2.217e-2));
         }
-        //[Test]
-        //public static void ToroTest1_ALTS1() {
-        //    CheckErrorThresholds(
-        //        SetupToroTest1(explicitScheme: ExplicitSchemes.LTS, explicitOrder: 1),
-        //        Tuple.Create("L2ErrorDensity", 3.6e-2),
-        //        Tuple.Create("L2ErrorVelocity", 1.125e-2),
-        //        Tuple.Create("L2ErrorPressure", 2.217e-2));
-        //}
-        //[Test]
-        //public static void ToroTest1_ALTS2() {
-        //    CheckErrorThresholds(
-        //        SetupToroTest1(explicitScheme: ExplicitSchemes.LTS, explicitOrder: 2),
-        //        Tuple.Create("L2ErrorDensity", 3.6e-2),
-        //        Tuple.Create("L2ErrorVelocity", 1.125e-2),
-        //        Tuple.Create("L2ErrorPressure", 2.217e-2));
-        //}
-        //[Test]
-        //public static void ToroTest1_ALTS3() {
-        //    CheckErrorThresholds(
-        //        SetupToroTest1(explicitScheme: ExplicitSchemes.LTS, explicitOrder: 3),
-        //        Tuple.Create("L2ErrorDensity", 3.6e-2),
-        //        Tuple.Create("L2ErrorVelocity", 1.125e-2),
-        //        Tuple.Create("L2ErrorPressure", 2.217e-2));
-        //}
+        [Test]
+        public static void ToroTest1_ALTS1() {
+            CheckErrorThresholds(
+                SetupToroTest1(explicitScheme: ExplicitSchemes.LTS, explicitOrder: 1),
+                Tuple.Create("L2ErrorDensity", 3.6e-2),
+                Tuple.Create("L2ErrorVelocity", 1.125e-2),
+                Tuple.Create("L2ErrorPressure", 2.217e-2));
+        }
+        [Test]
+        public static void ToroTest1_ALTS2() {
+            CheckErrorThresholds(
+                SetupToroTest1(explicitScheme: ExplicitSchemes.LTS, explicitOrder: 2),
+                Tuple.Create("L2ErrorDensity", 3.6e-2),
+                Tuple.Create("L2ErrorVelocity", 1.125e-2),
+                Tuple.Create("L2ErrorPressure", 2.217e-2));
+        }
+        [Test]
+        public static void ToroTest1_ALTS3() {
+            CheckErrorThresholds(
+                SetupToroTest1(explicitScheme: ExplicitSchemes.LTS, explicitOrder: 3),
+                Tuple.Create("L2ErrorDensity", 3.6e-2),
+                Tuple.Create("L2ErrorVelocity", 1.125e-2),
+                Tuple.Create("L2ErrorPressure", 2.217e-2));
+        }
 
         /// <summary>
         /// Template of the control file for all shock tube tests using artificial viscosity
@@ -169,8 +169,8 @@ namespace CNS.Tests.ArtificialViscosity {
             c.AddVariable(Variables.Pressure, dgDegree);
             c.AddVariable(Variables.Entropy, dgDegree);
             c.AddVariable(Variables.Viscosity, dgDegree);
-            c.AddVariable(Variables.Sensor, dgDegree);
             c.AddVariable(Variables.ArtificialViscosity, 1);
+            //c.AddVariable(Variables.Sensor, dgDegree);
             c.AddVariable(Variables.LocalMachNumber, dgDegree);
 
             c.GridFunc = delegate {

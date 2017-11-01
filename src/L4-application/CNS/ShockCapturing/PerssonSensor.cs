@@ -123,6 +123,7 @@ namespace CNS.ShockCapturing {
                 //sensorOnOffWriter.Flush();
             }
         }
+
         private StreamWriter CreateNewStreamWriter() {
             fileCount++;
             string streamPath = "AV_OnOff_" + fileCount + ".txt";
@@ -141,6 +142,7 @@ namespace CNS.ShockCapturing {
             } else
                 return false;
         }
+
         public double GetSensorValue(int cellIndex) {
             return sensorValues.GetMeanValue(cellIndex);
         }

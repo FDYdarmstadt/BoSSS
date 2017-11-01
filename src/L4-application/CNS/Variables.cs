@@ -449,8 +449,6 @@ namespace CNS {
             VariableTypes.Other,
             delegate (DGField s, CellMask cellMask, IProgram<CNSControl> program) {
                 IShockSensor sensor = program.Control.ShockSensor;
-                sensor.UpdateSensorValues(program.WorkingSet);
-
                 foreach (Chunk chunk in cellMask) {
                     foreach (int cell in chunk.Elements) {
                         s.SetMeanValue(cell, sensor.GetSensorValue(cell));

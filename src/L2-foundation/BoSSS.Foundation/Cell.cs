@@ -89,8 +89,23 @@ namespace BoSSS.Foundation.Grid.Classic {
             ret.CellFaceTags = this.CellFaceTags == null ? null : this.CellFaceTags.CloneAs();
             Debug.Assert(typeof(CellFaceTag).IsValueType);
             ret.Type = this.Type;
+            ret.CoarseningPeers = CoarseningPeers != null ? CoarseningPeers.CloneAs() : null;
+            ret.ParentCell = ParentCell != null ? ParentCell.CloneAs() : null;
             return ret;
         }
+
+        /// <summary>
+        /// If this cell was created by adaptive mesh refinement, 
+        /// this are the GlobalId's of the other cells which have been created in the refinement operation.
+        /// </summary>
+        public long[] CoarseningPeers;
+
+
+        /// <summary>
+        /// If this cell was created by adaptive mesh refinement, 
+        /// the parent cell from which this cell was created from. This member is required to be able to coarsen the mesh again.
+        /// </summary>
+        public Cell ParentCell;
     }
 
     /// <summary>

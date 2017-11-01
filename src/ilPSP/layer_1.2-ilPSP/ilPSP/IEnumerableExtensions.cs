@@ -547,7 +547,7 @@ namespace ilPSP {
         /// <summary>
         /// true, if all elements in <paramref name="A"/> are also in <paramref name="B"/> and vice-versa
         /// </summary>
-        public static bool IsSetEqual<T>(this IEnumerable<T> A, IEnumerable<T> B) {
+        public static bool SetEquals<T>(this IEnumerable<T> A, IEnumerable<T> B) {
             return (A.IsSubsetOf<T>(B) && B.IsSubsetOf<T>(A));
         }
         

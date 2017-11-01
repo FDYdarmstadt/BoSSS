@@ -124,18 +124,13 @@ namespace CNS.Solution {
             ITimeStepper timeStepper;
             switch (timeStepperType) {
                 case ExplicitSchemes.RungeKutta:
-                    //RungeKutta timeStepper;
                     if (control.DomainType == DomainTypes.Standard) {
-                        //RungeKutta timeStepperBla = new RungeKutta(
                         timeStepper = new RungeKutta(
                             RungeKutta.GetDefaultScheme(control.ExplicitOrder),
                             equationSystem.GetJoinedOperator().ToSpatialOperator(),
                             fieldsMap,
                             parameterMap,
                             equationSystem.GetJoinedOperator().CFLConstraints);
-
-                        //timeStepperBla.OnBeforeComputeChangeRate += (t1, t2) => program.WorkingSet.UpdateDerivedVariables(program, program.SpeciesMap.SubGrid.VolumeMask);
-                        //timeStepper = timeStepperBla;
                     } else {
                         IBMControl ibmControl = (IBMControl)control;
                         timeStepper = ibmControl.TimesteppingStrategy.CreateRungeKuttaTimeStepper(
@@ -157,15 +152,11 @@ namespace CNS.Solution {
                             equationSystem.GetJoinedOperator().CFLConstraints);
                     } else {
                         timeStepper = new AdamsBashforth(
-                        //AdamsBashforth timeStepperBla = new AdamsBashforth(
                         equationSystem.GetJoinedOperator().ToSpatialOperator(),
                         fieldsMap,
                         parameterMap,
                         control.ExplicitOrder,
                         equationSystem.GetJoinedOperator().CFLConstraints);
-
-                        //timeStepperBla.OnBeforeComputeChangeRate += (t1, t2) => program.WorkingSet.UpdateDerivedVariables(program, program.SpeciesMap.SubGrid.VolumeMask);
-                        //timeStepper = timeStepperBla;
                     }
                     break;
 
@@ -181,7 +172,6 @@ namespace CNS.Solution {
                             (IBMControl)control,
                             equationSystem.GetJoinedOperator().CFLConstraints);
                     } else {
-                        //AdamsBashforthLTS timeStepperBla = new AdamsBashforthLTS(
                         timeStepper = new AdamsBashforthLTS(
                             equationSystem.GetJoinedOperator().ToSpatialOperator(),
                             fieldsMap,
@@ -193,9 +183,6 @@ namespace CNS.Solution {
                             fluxCorrection: control.FluxCorrection,
                             AVHackOn: control.ActiveOperators.HasFlag(Operators.ArtificialViscosity),
                             saveToDBCallback: program.SaveToDatabase);
-
-                        //timeStepperBla.OnBeforeComputeChangeRate += (t1, t2) => program.WorkingSet.UpdateDerivedVariables(program, program.SpeciesMap.SubGrid.VolumeMask);
-                        //timeStepper = timeStepperBla;
                     }
                     break;
 
@@ -229,6 +216,23 @@ namespace CNS.Solution {
                         "Unknown explicit time stepper type \"{0}\"", timeStepperType));
             }
 
+            // Make sure shock sensor is updated before every flux evaluation
+            if (control.ShockSensor != null) {
+                ExplicitEuler explicitEulerBasedTimestepper = timeStepper as ExplicitEuler;
+                if (explicitEulerBasedTimestepper == null) {
+                    throw new ConfigurationException(String.Format(
+                        "Shock-capturing currently not implemented for time-steppers of type '{0}~",
+                        timeStepperType));
+                } else {
+                    explicitEulerBasedTimestepper.OnBeforeComputeChangeRate += delegate (double absTime, double relTime) {
+                        program.Control.ShockSensor.UpdateSensorValues(program.WorkingSet);
+                        var variableFieldPair = program.WorkingSet.DerivedFields.Single(f => f.Value.Identification == Variables.ArtificialViscosity);
+                        variableFieldPair.Key.UpdateFunction(variableFieldPair.Value, program.SpeciesMap.SubGrid.VolumeMask, program);
+                    };
+                }
+            }
+
+            // Make sure limiter is applied after each modification of conservative variables
             if (control.Limiter != null) {
                 ExplicitEuler explicitEulerBasedTimestepper = timeStepper as ExplicitEuler;
                 if (explicitEulerBasedTimestepper == null) {
@@ -236,7 +240,7 @@ namespace CNS.Solution {
                         "Limiting currently not implemented for time-steppers of type '{0}~",
                         timeStepperType));
                 } else {
-                    explicitEulerBasedTimestepper.OnAfterFieldUpdate +=
+                    explicitEulerBasedTimestepper.OnAfterFieldUpdate += 
                         (t, f) => control.Limiter.LimitFieldValues(program);
                 }
             }
