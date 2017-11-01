@@ -269,8 +269,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                     int NewCoarseningClusterId;
                     {
                         int[] locData = new int[]{
-                           this.m_Grid.Cells.Max(cl => cl.CoarseningClusterID),
-                            CellsToCoarsen.Count() + 1
+                           (this.m_Grid.Cells.Max(cl => cl.CoarseningClusterID)),
+                           (CellsToRefine.Count() + 1)
                         };
                         int[] glbData = locData.MPIMax();
 
