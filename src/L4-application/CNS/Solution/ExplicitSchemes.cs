@@ -181,7 +181,6 @@ namespace CNS.Solution {
                             equationSystem.GetJoinedOperator().CFLConstraints,
                             reclusteringInterval: control.ReclusteringInterval,
                             fluxCorrection: control.FluxCorrection,
-                            AVHackOn: control.ActiveOperators.HasFlag(Operators.ArtificialViscosity),
                             saveToDBCallback: program.SaveToDatabase);
                     }
                     break;
