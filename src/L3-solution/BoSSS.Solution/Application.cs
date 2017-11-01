@@ -1754,13 +1754,23 @@ namespace BoSSS.Solution {
             //Console.WriteLine("REM: dynamic load balancing for 1 processor is active.");
 
             using (new FuncTrace()) {
-                // init / determine if partition has changed / check Partitioning
-                // ==============================================================
 
-                int[] NewPartition;
+                // ===============
+                // mesh adaptation
+                // ===============
                 GridCommons newGrid = this.AdaptMesh();
+                
+
                 if(newGrid == null) {
-                    NewPartition = ComputeNewCellDistribution(TimeStepNo, physTime);
+                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    // no mesh adaptation, but (maybe) grid redistribution (load balancing)
+                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+                    // init / determine if partition has changed / check Partitioning
+                    // ==============================================================
+
+                    int[] NewPartition = ComputeNewCellDistribution(TimeStepNo, physTime);
                     if(NewPartition == null)
                         // nothing to do
                         return;
@@ -1774,155 +1784,257 @@ namespace BoSSS.Solution {
                         Console.WriteLine("Re-distribution of " + NoOfRedistCells + " cells.");
                     }
 
-                } else {
+                    // backup old data
+                    // ===============
+                    GridData oldGridData = this.GridData;
+                    Permutation tau;
+                    int[] oldTrackerData;
+                    LoadBalancingData loadbal;
+                    BackupData(oldGridData, this.LsTrk, out loadbal, out tau, out oldTrackerData, out int trackerVersion);
 
+                    // create new grid
+                    // ===============
+                    GridData newGridData;
+                    {
+                        this.MultigridSequence = null;
 
-                }
-
-
-                // backup old data
-                // ===============
-                GridData oldGridData;
-                {
-                    oldGridData = this.GridData;
-                    LevelSetTracker oldLsTrk = this.LsTrk;
-
-                    LoadBalancingData loadbal = new LoadBalancingData(oldGridData, oldLsTrk);
-
-
-                    // id's of the fields which we are going to rescue
-                    string[] FieldIds = m_RegisteredFields.Select(f => f.Identification).ToArray();
-
-                    // tau   is the GlobalID-permutation of the **old** grid
-                    Permutation tau = oldGridData.CurrentGlobalIdPermutation.CloneAs();
-
-                    // backup level-set tracker 
-                    int[] oldTrackerData = null;
-                    int trackerVersion = -1;
-                    if(this.LsTrk != null) {
-                        oldTrackerData = this.LsTrk.BackupBeforeLoadBalance();
-                        trackerVersion = this.LsTrk.VersionCnt;
-                    }
-
-                    // backup DG Fields
-                    foreach(var f in this.m_RegisteredFields) {
-                        if(f is XDGField) {
-                            XDGBasis xb = ((XDGField)f).Basis;
-                            if(!object.ReferenceEquals(xb.Tracker, oldLsTrk))
-                                throw new ApplicationException();
+                        this.Grid.RedistributeGrid(NewPartition);
+                        newGridData = new GridData(this.Grid);
+                        this.GridData = newGridData;
+                        oldGridData.Invalidate();
+                        if(this.LsTrk != null) {
+                            this.LsTrk.Invalidate();
                         }
-                        loadbal.BackupField(f);
+
+                        if(this.Control == null || this.Control.NoOfMultigridLevels > 0)
+                            this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
+                        else
+                            this.MultigridSequence = new AggregationGrid[0];
+
+                        //Console.WriteLine("P {0}: new grid: {1} cells.", MPIRank, newGridData.iLogicalCells.NoOfLocalUpdatedCells);
                     }
 
-                    // backup user data
-                    this.DataBackupBeforeBalancing(loadbal);
-                }
+                    // compute redistribution permutation
+                    // ==================================
 
-                // create new grid
-                // ===============
-                if(newGrid == null) {
-                    this.MultigridSequence = null;
+                    Permutation Resorting;
+                    {
+                        // sigma is the GlobalID-permutation of the **new** grid
+                        Permutation sigma = newGridData.CurrentGlobalIdPermutation;
 
-                    this.Grid.RedistributeGrid(NewPartition);
-                    var newGridData = new GridData(this.Grid);
-                    this.GridData = newGridData;
-                    oldGridData.Invalidate();
-                    if(this.LsTrk != null) {
-                        this.LsTrk.Invalidate();
+                        // compute resorting permutation
+                        Permutation invSigma = sigma.Invert();
+                        Resorting = invSigma * tau;
+                        tau = null;
+                        invSigma = null;
+                    }
+                    //Console.WriteLine("P {0}: Resorting: {1} entries.", MPIRank, Resorting.LocalLength);
+                    //ilPSP.Environment.StdoutOnlyOnRank0 = true;
+                    //Debug.Assert(Resorting.LocalLength == newGridData.iLogicalCells.NoOfLocalUpdatedCells);
+
+
+                    // sent data around the world
+                    // ==========================
+                    int newJ = newGridData.CellPartitioning.LocalLength;
+
+                    int[] newTrackerData = null;
+                    if(oldTrackerData != null) {
+                        newTrackerData = new int[newJ];
+                        Resorting.ApplyToVector(oldTrackerData, newTrackerData, newGridData.CellPartitioning);
+                        oldTrackerData = null;
                     }
 
-                    if(this.Control == null || this.Control.NoOfMultigridLevels > 0)
-                        this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
-                    else
-                        this.MultigridSequence = new AggregationGrid[0];
+                    loadbal.Resort(Resorting, newGridData);
 
-                    //Console.WriteLine("P {0}: new grid: {1} cells.", MPIRank, newGridData.iLogicalCells.NoOfLocalUpdatedCells);
-                } else {
+                    // re-init simulation
+                    // ==================
 
+                    // release old DG fields
+                    this.m_RegisteredFields.Clear();
+                    this.m_IOFields.Clear();
 
+                    // re-create fields
+                    if(this.Control != null) {
+                        InitFromAttributes.CreateFieldsAuto(
+                            this, GridData, this.Control.FieldOptions, this.m_IOFields, this.m_RegisteredFields);
+                    }
+                    CreateFields(); // full user control   
+                    PostRestart(physTime);
+                    loadbal.SetNewTracker(this.LsTrk);
 
-                }
+                    // re-set Level-Set tracker
+                    if(newTrackerData != null) {
+                        Debug.Assert(object.ReferenceEquals(this.LsTrk.GridDat, this.GridData));
+                        foreach(var f in m_RegisteredFields) {
+                            if(f is XDGField) {
+                                ((XDGField)f).Override_TrackerVersionCnt(trackerVersion);
+                            }
+                        }
+                        this.LsTrk.RestoreAfterLoadBalance(trackerVersion, newTrackerData);
+                    }
 
-                // compute redistribution permutation
-                // ==================================
-
-                Permutation Resorting;
-                {
-                    // sigma is the GlobalID-permutation of the **new** grid
-                    Permutation sigma = newGridData.CurrentGlobalIdPermutation;
-
-                    // compute resorting permutation
-                    Permutation invSigma = sigma.Invert();
-                    Resorting = invSigma * tau;
-                    tau = null;
-                    invSigma = null;
-                }
-                //Console.WriteLine("P {0}: Resorting: {1} entries.", MPIRank, Resorting.LocalLength);
-                //ilPSP.Environment.StdoutOnlyOnRank0 = true;
-                //Debug.Assert(Resorting.LocalLength == newGridData.iLogicalCells.NoOfLocalUpdatedCells);
-
-
-                // sent data around the world
-                // ==========================
-                int newJ = newGridData.CellPartitioning.LocalLength;
-
-                int[] newTrackerData = null;
-                if(oldTrackerData != null) {
-                    newTrackerData = new int[newJ];
-                    Resorting.ApplyToVector(oldTrackerData, newTrackerData, newGridData.CellPartitioning);
-                    oldTrackerData = null;
-                }
-
-                loadbal.Resort(Resorting, newGridData);
-
-                // re-init simulation
-                // ==================
-
-                // store some old data
-                this.m_RegisteredFields.Clear();
-                this.m_IOFields.Clear();
-
-                // re-create fields
-                if(this.Control != null) {
-                    InitFromAttributes.CreateFieldsAuto(
-                        this, GridData, this.Control.FieldOptions, this.m_IOFields, this.m_RegisteredFields);
-                }
-                CreateFields(); // full user control   
-                PostRestart(physTime);
-                loadbal.SetNewTracker(this.LsTrk);
-
-                // re-set Level-Set tracker
-                if(newTrackerData != null) {
-                    Debug.Assert(object.ReferenceEquals(this.LsTrk.GridDat, this.GridData));
+                    // set dg coördinates
                     foreach(var f in m_RegisteredFields) {
                         if(f is XDGField) {
-                            ((XDGField)f).Override_TrackerVersionCnt(trackerVersion);
+                            XDGBasis xb = ((XDGField)f).Basis;
+                            if(!object.ReferenceEquals(xb.Tracker, this.LsTrk))
+                                throw new ApplicationException();
                         }
+                        loadbal.RestoreDGField(f);
                     }
-                    this.LsTrk.RestoreAfterLoadBalance(trackerVersion, newTrackerData);
+
+                    // re-create solvers, blablabla
+                    CreateEquationsAndSolvers(loadbal);
+
+
+                } else {
+                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    // mesh adaptation
+                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    
+                    // backup old data
+                    // ===============
+                  
+                    GridData oldGridData = this.GridData;
+                    GridCommons oldGrid = oldGridData.Grid;
+                    Permutation tau;
+                    int[] oldTrackerData;
+                    LoadBalancingData loadbal;
+                    BackupData(oldGridData, this.LsTrk, out loadbal, out tau, out oldTrackerData, out int trackerVersion);
+
+                    
+
+                    // check for grid redistribution
+                    // =============================
+
+                    int[] NewPartition = ComputeNewCellDistribution(TimeStepNo, physTime);
+                    if(NewPartition != null) {
+                        // grid also has to be re-distributed
+
+                        // rem: the new Partition correlates to the OLD grid
+                        // (don't know how to solve this)
+
+                        throw new NotImplementedException("todo.");
+
+                        /*
+                        int JupOld = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
+                        int NoOfRedistCells = CheckPartition(NewPartition, JupOld);
+
+                        if(NoOfRedistCells <= 0) {
+                            // nop
+                        } else {
+                            Console.WriteLine("Re-distribution of " + NoOfRedistCells + " cells.");
+                        }
+                        */
+                    }
+
+
+                    // create new grid
+                    // ===============
+                    GridData newGridData;
+                    {
+                        this.MultigridSequence = null;
+                                               
+
+                        newGridData = new GridData(this.Grid);
+                        this.GridData = newGridData;
+                        oldGridData.Invalidate();
+                        if(this.LsTrk != null) {
+                            this.LsTrk.Invalidate();
+                        }
+
+                        if(this.Control == null || this.Control.NoOfMultigridLevels > 0)
+                            this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
+                        else
+                            this.MultigridSequence = new AggregationGrid[0];
+
+                        //Console.WriteLine("P {0}: new grid: {1} cells.", MPIRank, newGridData.iLogicalCells.NoOfLocalUpdatedCells);
+                    }
+
+                    // compute redistribution permutation
+                    // ==================================
+
+                    Permutation Resorting;
+                    {
+                        // sigma is the GlobalID-permutation of the **new** grid
+                        Permutation sigma = newGridData.CurrentGlobalIdPermutation;
+
+                        // compute resorting permutation
+                        Permutation invSigma = sigma.Invert();
+                        Resorting = invSigma * tau;
+                        tau = null;
+                        invSigma = null;
+                    }
+                    //Console.WriteLine("P {0}: Resorting: {1} entries.", MPIRank, Resorting.LocalLength);
+                    //ilPSP.Environment.StdoutOnlyOnRank0 = true;
+                    //Debug.Assert(Resorting.LocalLength == newGridData.iLogicalCells.NoOfLocalUpdatedCells);
+
+
+                    // sent data around the world
+                    // ==========================
+                    int newJ = newGridData.CellPartitioning.LocalLength;
+
+                    int[] newTrackerData = null;
+                    if(oldTrackerData != null) {
+                        newTrackerData = new int[newJ];
+                        Resorting.ApplyToVector(oldTrackerData, newTrackerData, newGridData.CellPartitioning);
+                        oldTrackerData = null;
+                    }
+
+                    loadbal.Resort(Resorting, newGridData);
+
+
                 }
 
-                // set dg coördinates
-                foreach(var f in m_RegisteredFields) {
-                    if(f is XDGField) {
-                        XDGBasis xb = ((XDGField)f).Basis;
-                        if(!object.ReferenceEquals(xb.Tracker, this.LsTrk))
-                            throw new ApplicationException();
-                    }
-                    loadbal.RestoreDGField(f);
-                }
 
-                // re-create solvers, blablabla
-                CreateEquationsAndSolvers(loadbal);
 
 
             }
         }
 
-        private static int CheckPartition(int[] NewPartition, int JupOld) {
-            int mpiRank = oldGridData.CellPartitioning.MpiRank;
-            int mpiSize = oldGridData.CellPartitioning.MpiSize;
+        private void BackupData(GridData oldGridData, LevelSetTracker oldLsTrk, 
+            out LoadBalancingData loadbal, out Permutation tau, out int[] oldTrackerData, out int trackerVersion) {
 
+            trackerVersion = -1;
+            oldTrackerData = null;
+
+            loadbal = new LoadBalancingData(oldGridData, oldLsTrk);
+
+
+            // id's of the fields which we are going to rescue
+            string[] FieldIds = m_RegisteredFields.Select(f => f.Identification).ToArray();
+
+            // tau   is the GlobalID-permutation of the **old** grid
+            tau = oldGridData.CurrentGlobalIdPermutation.CloneAs();
+
+            // backup level-set tracker 
+            if(oldLsTrk != null) {
+                oldTrackerData = oldLsTrk.BackupBeforeLoadBalance();
+                trackerVersion = oldLsTrk.VersionCnt;
+            }
+
+            // backup DG Fields
+            foreach(var f in this.m_RegisteredFields) {
+                if(f is XDGField) {
+                    XDGBasis xb = ((XDGField)f).Basis;
+                    if(!object.ReferenceEquals(xb.Tracker, oldLsTrk))
+                        throw new ApplicationException();
+                }
+                loadbal.BackupField(f);
+            }
+
+            // backup user data
+            this.DataBackupBeforeBalancing(loadbal);
+
+
+        }
+
+        private static int CheckPartition(int[] NewPartition, int JupOld) {
+            int mpiRank;// = oldGridData.CellPartitioning.MpiRank;
+            int mpiSize;// = oldGridData.CellPartitioning.MpiSize;
+            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out mpiRank);
+            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out mpiSize);
+            
             int locNoOfRedistCells = 0;
 
             // check Partitioning

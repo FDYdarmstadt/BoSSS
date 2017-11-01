@@ -32,6 +32,10 @@ using System.Threading.Tasks;
 namespace BoSSS.Foundation.Grid.Classic {
     partial class GridData {
 
+        
+
+
+
         /// <summary>
         /// Creates a new grid, which is an adaptive refinement (cell by cell) of this grid.
         /// </summary>
