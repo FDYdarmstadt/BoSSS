@@ -89,23 +89,44 @@ namespace BoSSS.Foundation.Grid.Classic {
             ret.CellFaceTags = this.CellFaceTags == null ? null : this.CellFaceTags.CloneAs();
             Debug.Assert(typeof(CellFaceTag).IsValueType);
             ret.Type = this.Type;
-            ret.CoarseningPeers = CoarseningPeers != null ? CoarseningPeers.CloneAs() : null;
+            //ret.CoarseningPeers = CoarseningPeers != null ? CoarseningPeers.CloneAs() : null;
+            ret.CoarseningClusterID = CoarseningClusterID;
             ret.ParentCell = ParentCell != null ? ParentCell.CloneAs() : null;
+            ret.RefinementLevel = this.RefinementLevel;
+            ret.CoarseningClusterSize = this.CoarseningClusterSize;
             return ret;
         }
 
+        /*
         /// <summary>
         /// If this cell was created by adaptive mesh refinement, 
         /// this are the GlobalId's of the other cells which have been created in the refinement operation.
         /// </summary>
         public long[] CoarseningPeers;
-
-
+        */
+                
         /// <summary>
         /// If this cell was created by adaptive mesh refinement, 
         /// the parent cell from which this cell was created from. This member is required to be able to coarsen the mesh again.
         /// </summary>
         public Cell ParentCell;
+
+        /// <summary>
+        /// How often the cell was refined.
+        /// </summary>
+        public int RefinementLevel;
+
+        /// <summary>
+        /// If this cell was created by adaptive mesh refinement, 
+        /// the siblings in the coasening cluster can be identified by this ID/Token.
+        /// </summary>
+        public int CoarseningClusterID;
+
+        /// <summary>
+        /// If this cell was created by adaptive mesh refinement, 
+        /// the number of siblings in the coasening cluster.
+        /// </summary>
+        public int CoarseningClusterSize;
     }
 
     /// <summary>

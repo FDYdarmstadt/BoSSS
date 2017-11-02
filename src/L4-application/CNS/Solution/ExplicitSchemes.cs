@@ -181,7 +181,6 @@ namespace CNS.Solution {
                             equationSystem.GetJoinedOperator().CFLConstraints,
                             reclusteringInterval: control.ReclusteringInterval,
                             fluxCorrection: control.FluxCorrection,
-                            AVHackOn: control.ActiveOperators.HasFlag(Operators.ArtificialViscosity),
                             saveToDBCallback: program.SaveToDatabase);
                     }
                     break;
@@ -240,7 +239,7 @@ namespace CNS.Solution {
                         "Limiting currently not implemented for time-steppers of type '{0}~",
                         timeStepperType));
                 } else {
-                    explicitEulerBasedTimestepper.OnAfterFieldUpdate += 
+                    explicitEulerBasedTimestepper.OnAfterFieldUpdate +=
                         (t, f) => control.Limiter.LimitFieldValues(program);
                 }
             }

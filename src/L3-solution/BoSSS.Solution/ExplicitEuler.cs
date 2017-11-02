@@ -219,7 +219,7 @@ namespace BoSSS.Solution.Timestepping {
         /// of <see cref="Evaluator"/>.<br/>
         /// Override this method e.g. for the implementation of (some types of) limiters.
         /// </remarks>
-        virtual internal protected void ComputeChangeRate(double[] k, double AbsTime, double RelTime, double[] edgeFluxes=null) {
+        virtual internal protected void ComputeChangeRate(double[] k, double AbsTime, double RelTime, double[] edgeFluxes = null) {
             if (OnBeforeComputeChangeRate != null) {
                 OnBeforeComputeChangeRate(AbsTime, RelTime);
             }

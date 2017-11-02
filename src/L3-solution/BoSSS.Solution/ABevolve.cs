@@ -102,67 +102,52 @@ namespace BoSSS.Solution.Timestepping {
         /// <param name="dt">size of time step</param>
         public override double Perform(double dt) {
             using (var tr = new ilPSP.Tracing.FuncTrace()) {
-
-                using (new ilPSP.Tracing.BlockTrace("Perform.Block1: Check history length", tr)) {
-                    // Checking History
-                    if (HistoryDGCoordinate.Count >= order)
-                        HistoryDGCoordinate.Dequeue();
-                    if (HistoryChangeRate.Count >= order) {
-                        HistoryChangeRate.Dequeue();
-                        HistoryBndFluxes.Dequeue();
-                    }
+                // Checking History
+                if (HistoryDGCoordinate.Count >= order)
+                    HistoryDGCoordinate.Dequeue();
+                if (HistoryChangeRate.Count >= order) {
+                    HistoryChangeRate.Dequeue();
+                    HistoryBndFluxes.Dequeue();
                 }
 
-                using (new ilPSP.Tracing.BlockTrace("Perform.Block2: Compute AB-coefficients", tr)) {
-                    // Compute AB Coefficents                
-                    if (adaptive) {
-                        if (historyTimePerCell.Count > order - 1)
-                            historyTimePerCell.Dequeue();
+                // Compute AB Coefficents                
+                if (adaptive) {
+                    if (historyTimePerCell.Count > order - 1)
+                        historyTimePerCell.Dequeue();
 
-                        ABCoefficientsPerCell = new double[sgrd.LocalNoOfCells][];
-                        for (int cell = 0; cell < sgrd.LocalNoOfCells; cell++) {
-                            double[] historyTimeArray = new double[order];
-                            int i = 0;
-                            foreach (double[] historyPerCell in historyTimePerCell) {
-                                historyTimeArray[i] = historyPerCell[cell];
-                                i++;
-                            }
-                            historyTimeArray[i] = m_Time;
-                            ABCoefficientsPerCell[cell] = ComputeCoefficients(dt, historyTimeArray);
+                    ABCoefficientsPerCell = new double[sgrd.LocalNoOfCells][];
+                    for (int cell = 0; cell < sgrd.LocalNoOfCells; cell++) {
+                        double[] historyTimeArray = new double[order];
+                        int i = 0;
+                        foreach (double[] historyPerCell in historyTimePerCell) {
+                            historyTimeArray[i] = historyPerCell[cell];
+                            i++;
                         }
-                    } else {
-                        double[] historyTimeArray = HistoryTime.ToArray();
-                        ABCoefficients = ComputeCoefficients(dt, historyTimeArray);
+                        historyTimeArray[i] = m_Time;
+                        ABCoefficientsPerCell[cell] = ComputeCoefficients(dt, historyTimeArray);
                     }
+                } else {
+                    double[] historyTimeArray = HistoryTime.ToArray();
+                    ABCoefficients = ComputeCoefficients(dt, historyTimeArray);
                 }
 
                 double[] upDGC;
-                using (new ilPSP.Tracing.BlockTrace("Perform.Block3: Update changerate", tr)) {
-                    CurrentChangeRate = new double[Mapping.LocalLength];
-                    currentBndFluxes = new double[numOfEdges * Mapping.Fields.Count];
-                    ComputeChangeRate(CurrentChangeRate, m_Time, 0, currentBndFluxes);
+                CurrentChangeRate = new double[Mapping.LocalLength];
+                currentBndFluxes = new double[numOfEdges * Mapping.Fields.Count];
+                ComputeChangeRate(CurrentChangeRate, m_Time, 0, currentBndFluxes);
 
-                    ////////////// Calculate complete change rate with older steps
-                    MakeABStep();
+                ////////////// Calculate complete change rate with older steps
+                MakeABStep();
 
-                    // Update DGCoordinates for History
-                    // (Hint: calls extra function to gives the ability to modify the update procedure, i.e in IBM case)
-                    upDGC = ComputesUpdatedDGCoordinates(CompleteChangeRate);
-                }
+                // Update DGCoordinates for History
+                // (Hint: calls extra function to gives the ability to modify the update procedure, i.e in IBM case)
+                upDGC = ComputesUpdatedDGCoordinates(CompleteChangeRate);
 
-                using (new ilPSP.Tracing.BlockTrace("Perform.Block4: Update history", tr)) {
-                    // Keeps track of histories
-                    HistoryDGCoordinate.Enqueue(upDGC);
-                    HistoryChangeRate.Enqueue(CurrentChangeRate);
-                    HistoryBndFluxes.Enqueue(currentBndFluxes);
-                    UpdateTimeHistory(dt);
-                }
-
-                //HistoryDGCoordinate.Dequeue();
-                //HistoryChangeRate.Dequeue();
-                //HistoryBndFluxes.Dequeue();
-                //if (adaptive)
-                //    historyTimePerCell.Dequeue();
+                // Keeps track of histories
+                HistoryDGCoordinate.Enqueue(upDGC);
+                HistoryChangeRate.Enqueue(CurrentChangeRate);
+                HistoryBndFluxes.Enqueue(currentBndFluxes);
+                UpdateTimeHistory(dt);
 
                 // Update local sub-grid time
                 m_Time = m_Time + dt;

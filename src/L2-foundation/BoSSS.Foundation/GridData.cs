@@ -1045,7 +1045,24 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                 var CNglb = m_Grid.GetCellNeighbourship(true);
                 Debug.Assert(CNglb.Length == (J + J_BC));
+#if DEBUG
+                for(int j = 0; j < J; j++) {
+                    var CNglb_j = CNglb[j].ToArray();
 
+                    for(int n1 = 0; n1 < CNglb_j.Length; n1++) {
+                        for (int n2 = 0; n2 < CNglb_j.Length; n2++) {
+                            if(n1 != n2) {
+                                if((CNglb_j[n1].Neighbour_GlobalIndex == CNglb_j[n2].Neighbour_GlobalIndex) && (CNglb_j[n1].Neighbour_GlobalIndex >= 0 )  && (CNglb_j[n2].Neighbour_GlobalIndex >= 0 )) {
+                                    long GlId0 = m_Grid.Cells[j].GlobalID;
+                                    
+                                    throw new ApplicationException("Fatal error in cell graph: edge between " + GlId0
+                                            + " and some other cell is defined multiple times.");
+                                }
+                            }
+                        }
+                    }
+                }
+#endif
 
 
                 // separate normal cells and boundary-condition -- cells
@@ -1169,8 +1186,17 @@ namespace BoSSS.Foundation.Grid.Classic {
                             ClNg[j][n] = int.MinValue;
                         }
                     }
-
+#if DEBUG
+                    for(int n1 = 0; n1 < Nj; n1++) {
+                        for(int n2 = 0; n2 < Nj; n2++) {
+                            if(n1 != n2) {
+                                Debug.Assert(ClNg[j][n1] != ClNg[j][n2]);
+                            }
+                        }
+                    }
                     Debug.Assert(ClNg[j].Where(i => i < 0).Count() == 0);
+
+#endif
                 }
 
                 // build send lists
