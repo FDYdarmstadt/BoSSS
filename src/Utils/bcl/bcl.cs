@@ -112,6 +112,7 @@ namespace bcl {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
+            Debugger.Launch();
             myEnv = new MyEnvironment();
             if (args.Length < 1) {
                 PrintUsage();
