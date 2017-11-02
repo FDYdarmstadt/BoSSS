@@ -255,20 +255,11 @@ namespace bcl {
         public DirectoryInfo BOSSS_LIBS;
 
         /// <summary>
-        /// bosss L0-L4 repository: %BOSSS_ROOT%/src/public
-        /// </summary>
-        public DirectoryInfo BOSSS_SRC_PUBLIC;
-
-        /// <summary>
         /// %BOSSS_ROOT/src
         /// </summary>
         public DirectoryInfo BOSSS_SRC;
 
-        /// <summary>
-        /// database explorer source code repository: %BOSSS_ROOT/src/DBE
-        /// </summary>
-        public DirectoryInfo BOSSS_SRC_DBE;
-
+        
         /// <summary>
         /// Path to the database explorer application
         /// </summary>
@@ -324,11 +315,6 @@ namespace bcl {
                 if (BOSSS_ROOT != null)
                     BOSSS_SRC = new DirectoryInfo(Path.Combine(BOSSS_ROOT.FullName, "src"));
 
-                if (BOSSS_ROOT != null)
-                    BOSSS_SRC_DBE = new DirectoryInfo(Path.Combine(BOSSS_SRC.FullName, "DBE"));
-
-                if (BOSSS_ROOT != null)
-                    BOSSS_SRC_PUBLIC = new DirectoryInfo(Path.Combine(BOSSS_SRC.FullName, "public"));
 
                 BOSSS_INSTALL = GetBoSSSInstallDir();
 

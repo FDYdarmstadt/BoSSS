@@ -23,7 +23,7 @@ namespace bcl.create_proj {
             // source and dest dir
             string srcDir = Path.Combine(
                 bcl.myEnv.BOSSS_SRC.FullName,
-                Path.Combine("public", "src",  "L4-application", "BoSSSTemplateProject"));
+                Path.Combine("L4-application", "BoSSSTemplateProject"));
 
             string destDir;
             if (Path.IsPathRooted(m_CreationPath)) {
