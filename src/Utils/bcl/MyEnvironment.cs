@@ -189,18 +189,14 @@ namespace bcl {
             var src = _d.GetDirectories("src").FirstOrDefault();
             if (src == null)
                 return false;
-
-            var pub = src.GetDirectories("public").FirstOrDefault();
-            if (pub == null)
-                return false;
-            var DBE = src.GetDirectories("DBEv2").FirstOrDefault();
-            if (DBE == null)
-                return false;
-            var ilPSP = src.GetDirectories("ilPSP").FirstOrDefault();
-            if (ilPSP == null)
+            var doc = _d.GetDirectories("doc").FirstOrDefault();
+            if(doc == null)
                 return false;
             var libs = _d.GetDirectories("libs").FirstOrDefault();
-            if (libs == null)
+            if(libs == null)
+                return false;
+            var InnoSetup = _d.GetDirectories("InnoSetup").FirstOrDefault();
+            if(InnoSetup == null)
                 return false;
 
             return true;
