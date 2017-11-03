@@ -356,39 +356,43 @@ namespace BoSSS.Foundation.Grid {
 #if DEBUG
             int JG = CM.GridData.iGeomCells.NoOfCells;
             BitArray test = new BitArray(JG);
-            foreach (var t_i0_len in ret) {
+            foreach(var t_i0_len in ret) {
                 int j0 = t_i0_len.Item1;
                 int Len = t_i0_len.Item2;
-                for (int j = j0; j < j0 + Len; j++) {
-                    Debug.Assert(test[j] == false);
+                var Flag_j0 = CM.GridData.iGeomCells.InfoFlags[j0] & ConsecutiveMask;
+                for(int j = j0; j < j0 + Len; j++) {
+                    Debug.Assert(test[j] == false); // each geometric cell is touched only once.
                     test[j] = true;
+                    var Flag_j = CM.GridData.iGeomCells.InfoFlags[j0] & ConsecutiveMask;
+                    Debug.Assert(Flag_j == Flag_j0); // each geometric cell has the same 
                 }
             }
+
             BitArray CMmask = CM.GetBitMask();
             int[][] L2G = CM.GridData.iLogicalCells.AggregateCellToParts;
-            for (int jL = 0; jL < CMmask.Count; jL++) {
-                if (L2G == null || L2G[jL] == null) {
+            for(int jL = 0; jL < CMmask.Count; jL++) {
+                if(L2G == null || L2G[jL] == null) {
                     int jG = jL;
-                    if (CMmask[jL] != test[jG]) {
+                    if(CMmask[jL] != test[jG]) {
                         var r = new Mask2GeomChunks_Enumable() { CM = CM, MaxVecLen = MaxVecLen, ConsecutiveMask = ConsecutiveMask };
 
-                        foreach (var _t_i0_len in r) {
-                int j0 = _t_i0_len.Item1;
-                int Len = _t_i0_len.Item2;
-                for (int j = j0; j < j0 + Len; j++) {
+                        foreach(var _t_i0_len in r) {
+                            int j0 = _t_i0_len.Item1;
+                            int Len = _t_i0_len.Item2;
+                            for(int j = j0; j < j0 + Len; j++) {
                                 Console.WriteLine(j);
-                }
-            }
+                            }
+                        }
 
                         Debugger.Break();
                     }
                     Debug.Assert(CMmask[jL] == test[jG]);
                 } else {
-                    foreach (int jG in L2G[jL])
+                    foreach(int jG in L2G[jL])
                         Debug.Assert(CMmask[jL] == test[jG]);
                 }
             }
-                        
+
 #endif
             return ret;
         }

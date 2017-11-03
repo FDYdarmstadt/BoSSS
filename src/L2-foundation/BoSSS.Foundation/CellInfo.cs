@@ -30,8 +30,8 @@ namespace BoSSS.Foundation.Grid {
         Undefined = 0,
 
         /// <summary>
-        /// marks the region of the info in which the cell type index (index
-        /// into <see cref="GridCommons.RefElements"/>) is encoded
+        /// Marks the region of the info in which the reference element index index (index
+        /// into <see cref="GridCommons.RefElements"/>) is encoded.
         /// </summary>
         RefElementIndex_Mask = 0x7, // binary: 0111
 
@@ -44,6 +44,13 @@ namespace BoSSS.Foundation.Grid {
         /// Marks cells which are aggregated from smaller parts.
         /// </summary>
         IsAggregate = 0x10, // binary: 10000
+
+        /// <summary>
+        /// Marks the region of the info in which the cell type (see <see cref="BoSSS.Foundation.Grid.RefElements.CellType"/>)
+        /// is encoded.
+        /// </summary>
+        CellType_Mask = 0xFF00,
+
 
         /// <summary>
         /// All flags on, implementing this ensures that the enum 

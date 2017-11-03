@@ -74,9 +74,9 @@ namespace BoSSS.Application.DerivativeTest {
         /// </summary>
         [Test]
 #if DEBUG
-        public static void DerivativeTest_BuildInGrid([Range(1, 12)] int gridCase, [Values(2, 10000000)] int bulksize_limit, [Values(1024, 1024 * 1024 * 128)] int cache_size) {
+        public static void DerivativeTest_BuildInGrid([Range(1, 15)] int gridCase, [Values(2, 10000000)] int bulksize_limit, [Values(1024, 1024 * 1024 * 128)] int cache_size) {
 #else
-        public static void DerivativeTest_BuildInGrid([Range(1, 12)] int gridCase, [Values(1, 500, 10000000)] int bulksize_limit, [Values(1024, 1024 * 1024 * 128)] int cache_size) {
+        public static void DerivativeTest_BuildInGrid([Range(1, 15)] int gridCase, [Values(1, 500, 10000000)] int bulksize_limit, [Values(1024, 1024 * 1024 * 128)] int cache_size) {
 #endif
             DerivativeTestMain.GRID_CASE = gridCase;
             DerivativeTestMain p = null;
@@ -96,7 +96,7 @@ namespace BoSSS.Application.DerivativeTest {
         /// </summary>
 #if !DEBUG
         [Test]
-        public static void DerivativeTest_BuildInGrid_Ext([Range(30, 33)] int gridCase, [Values(1, 500, 10000000)] int bulksize_limit, [Values(1024, 1024 * 1024 * 128)] int cache_size) {
+        public static void DerivativeTest_BuildInGrid_Ext([Range(30, 31)] int gridCase, [Values(1, 500, 10000000)] int bulksize_limit, [Values(1024, 1024 * 1024 * 128)] int cache_size) {
             DerivativeTestMain.GRID_CASE = gridCase;
             DerivativeTestMain p = null;
             Quadrature_Bulksize.CHUNK_DATA_LIMIT = bulksize_limit;
@@ -186,11 +186,15 @@ namespace BoSSS.Application.DerivativeTest {
             //Quadrature_Bulksize.BULKSIZE_LIMIT_OVERRIDE = 1;
             BoSSS.Solution.Application.InitMPI(args);
 
+            foreach( var o in System.Enum.GetValues(typeof(CellType))) {
+                Console.WriteLine(o.ToString() + " " + ((int)o) + " " + o.GetType().FullName);
+            }
+
             // Build-In Grids
             // ==============
 
 
-            for (int i = 12; i <= 12; i++) {
+            for (int i = 13; i <= 13; i++) {
                 BoSSS.Solution.Application._Main(args, true, null, delegate () {
                     var R = new DerivativeTestMain();
                     GRID_CASE = i;
@@ -417,27 +421,34 @@ namespace BoSSS.Application.DerivativeTest {
 
                     break;
                 }
-
-
-                // ++++++++++++++++++++++++++++++++++++++++++++++++++++
-                // more expensive grids (not tested in DEBUG MODE)
-                // ++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-                case 30: {
+                
+                case 13: {
                     double[] rNodes = GenericBlas.Linspace(1, 4, 8);
                     double[] sNodes = GenericBlas.Linspace(0, 0.5, 15);
                     grd = Grid2D.CurvedSquareGrid(rNodes, sNodes, CellType.Square_9, PeriodicS: false);
                     break;
                 }
 
-                case 31: {
+                case 14: {
                     double[] rNodes = GenericBlas.Linspace(1, 4, 13);
                     double[] sNodes = GenericBlas.Linspace(0, 0.5, 25);
                     grd = Grid2D.CurvedSquareGrid(rNodes, sNodes, CellType.Square_16, PeriodicS: false);
                     break;
                 }
 
-                case 32: {
+                case 15: {
+                    double[] rNodes = GenericBlas.Linspace(1, 2, 4);
+                    double[] sNodes = GenericBlas.Linspace(0, 0.5, 4);
+                    double[] zNodes = GenericBlas.Linspace(-1, 1, 5);
+                    grd = Grid3D.CylinderGrid(rNodes, sNodes, zNodes, CellType.Cube_27, PeriodicS: false, PeriodicZ: false);
+                    break;
+                }
+
+                // ++++++++++++++++++++++++++++++++++++++++++++++++++++
+                // more expensive grids (not tested in DEBUG MODE)
+                // ++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                case 30: {
                     double[] xnodes = GenericBlas.Linspace(-1, 1, 7);
                     double[] ynodes = GenericBlas.Linspace(-1, 1, 9);
                     double[] znodes = GenericBlas.Linspace(-1, 1, 8);
@@ -445,13 +456,6 @@ namespace BoSSS.Application.DerivativeTest {
                     break;
                 }
 
-                case 33: {
-                    double[] rNodes = GenericBlas.Linspace(1, 2, 4);
-                    double[] sNodes = GenericBlas.Linspace(0, 0.5, 4);
-                    double[] zNodes = GenericBlas.Linspace(-1, 1, 5);
-                    grd = Grid3D.CylinderGrid(rNodes, sNodes, zNodes, CellType.Cube_27, PeriodicS: false, PeriodicZ: false);
-                    break;
-                }
 
 
                 // +++++++++++++++++++++++++++++++++
