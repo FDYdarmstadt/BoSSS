@@ -243,6 +243,14 @@ namespace CNS.Tests.IBMTests {
         public static IBMControl ControlLocalTimeStepping() {
             IBMControl c = ControlTemplate(dgDegree: 2, divisions: 1, levelSetPosition: -0.25);
 
+            //string dbPath = @"c:\bosss_db";
+            //string dbPath = null;
+            ////dbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db";
+            //c.DbPath = dbPath;
+            //c.savetodb = dbPath != null;
+            //c.saveperiod = 1;
+            //c.PrintInterval = 1;
+
             c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
             c.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Classic;
             c.LevelSetQuadratureOrder = 5;
@@ -251,6 +259,8 @@ namespace CNS.Tests.IBMTests {
             c.ExplicitOrder = 3;
             c.ExplicitScheme = ExplicitSchemes.LTS;
             c.NumberOfSubGrids = 3;
+
+            //c.AddVariable(Variables.IBMLTSSubGrids, 0);
 
             return c;
         }

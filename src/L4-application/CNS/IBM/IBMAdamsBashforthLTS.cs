@@ -71,13 +71,13 @@ namespace CNS.IBM {
             agglomerationPatternHasChanged = true;
 
             cutCells = speciesMap.Tracker._Regions.GetCutCellMask();
-            cutAndTargetCells = cutCells.Union(speciesMap.Agglomerator.AggInfo.TargetCells);            
+            cutAndTargetCells = cutCells.Union(speciesMap.Agglomerator.AggInfo.TargetCells);
 
             // Normal LTS constructor
             this.NumOfLocalTimeSteps = new List<int>(numOfSubgrids);
 
             clustering = new Clustering(this.gridData, this.timeStepConstraints, this.numOfSubgrids);
-            UpdateLTSVariables(); 
+            UpdateLTSVariables();
 
             CalculateNumberOfLocalTS(); // Might remove sub-grids when time step sizes are too similar
             clustering.UpdateClusteringVariables(this.subGridList, this.SubGridField, this.numOfSubgrids);
@@ -107,7 +107,7 @@ namespace CNS.IBM {
                 //    }
                 //}
 
-                
+
                 int numTSfinest = NumOfLocalTimeSteps.Last();
                 NumOfLocalTimeSteps.Add(2 * numTSfinest);
 
@@ -115,6 +115,17 @@ namespace CNS.IBM {
                 MaxLocalTS = NumOfLocalTimeSteps.Last();
                 numOfSubgrids = subGridList.Count;
             }
+
+            // ############# HACK for visualising subGrids for IBM-LTS test cases
+            this.SubGridField.Clear();
+            for (int i = 0; i < subGridList.Count; i++) {
+                for (int cell = 0; cell < subGridList[i].LocalNoOfCells; cell++) {
+                    this.SubGridField.SetMeanValue(subGridList[i].SubgridIndex2LocalCellIndex[cell], i);
+                    //this.SubGridField.SetMeanValue(subGridList[i].SubgridIndex2LocalCellIndex[cell], 1000);
+                }
+            }
+            // ############# HACK for visualising subGrids for IBM-LTS test cases
+
             clustering.UpdateClusteringVariables(this.subGridList, this.SubGridField, this.numOfSubgrids);
 
             if (this.numOfSubgrids == 1)
@@ -159,7 +170,7 @@ namespace CNS.IBM {
 
             CellQuadratureScheme volumeScheme = speciesMap.QuadSchemeHelper.GetVolumeQuadScheme(
                 species, true, fluidCells, control.LevelSetQuadratureOrder);
-            
+
             // Does _not_ include agglomerated edges
             EdgeMask nonVoidEdges = speciesMap.QuadSchemeHelper.GetEdgeMask(species);
             EdgeQuadratureScheme edgeScheme = speciesMap.QuadSchemeHelper.GetEdgeQuadScheme(
