@@ -225,9 +225,15 @@ namespace CNS.Tests.IBMTests {
 
             CheckErrorThresholds(
                 p.QueryHandler.QueryResults,
-                Tuple.Create("L2ErrorDensity", 3.0e-3),
-                Tuple.Create("L2ErrorPressure", 3.7e-3),
-                Tuple.Create("L2ErrorEntropy", 3.6e-3));
+            // Old test errors by Stephan
+            //Tuple.Create("L2ErrorDensity", 3.0e-3),
+            //Tuple.Create("L2ErrorPressure", 3.7e-3),
+            //Tuple.Create("L2ErrorEntropy", 3.6e-3));
+
+            // Stricter error bounds
+            Tuple.Create("L2ErrorDensity", 0.00262077353927322 + 1e-14),
+            Tuple.Create("L2ErrorPressure", 0.0033710870856724 + 1e-14),
+            Tuple.Create("L2ErrorEntropy", 0.00255881311446833 + 1e-14));
         }
 
         /// <summary>
