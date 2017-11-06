@@ -96,7 +96,7 @@ namespace BoSSS.Application.DerivativeTest {
         /// </summary>
 #if !DEBUG
         [Test]
-        public static void DerivativeTest_BuildInGrid_Ext([Range(30, 31)] int gridCase, [Values(1, 500, 10000000)] int bulksize_limit, [Values(1024, 1024 * 1024 * 128)] int cache_size) {
+        public static void DerivativeTest_BuildInGrid_Ext([Range(30, 30)] int gridCase, [Values(1, 500, 10000000)] int bulksize_limit, [Values(1024, 1024 * 1024 * 128)] int cache_size) {
             DerivativeTestMain.GRID_CASE = gridCase;
             DerivativeTestMain p = null;
             Quadrature_Bulksize.CHUNK_DATA_LIMIT = bulksize_limit;
@@ -186,9 +186,7 @@ namespace BoSSS.Application.DerivativeTest {
             //Quadrature_Bulksize.BULKSIZE_LIMIT_OVERRIDE = 1;
             BoSSS.Solution.Application.InitMPI(args);
 
-            foreach( var o in System.Enum.GetValues(typeof(CellType))) {
-                Console.WriteLine(o.ToString() + " " + ((int)o) + " " + o.GetType().FullName);
-            }
+ 
 
             // Build-In Grids
             // ==============
