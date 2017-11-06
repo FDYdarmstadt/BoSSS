@@ -330,6 +330,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                         var Kref = m_owner.Grid.GetRefElement(iKref);
 
                         InfoFlags[j] |= (CellInfo.RefElementIndex_Mask & ((CellInfo)iKref));
+                        Debug.Assert(((((int)Cj.Type) << 8) & ((int)CellInfo.CellType_Mask)) == (((int)Cj.Type) << 8));
+                        InfoFlags[j] |= (CellInfo)(((int)Cj.Type) << 8);
                         
                         // affine-linear cell ?
                         if (Cj.Type.IsLinear()) {
@@ -780,7 +782,9 @@ namespace BoSSS.Foundation.Grid.Classic {
             /// Cell type for cell <paramref name="jCell"/>.
             /// </summary>
             public CellType GetCellType(int j) {
-                return GetCell(j).Type;
+                int iType = (((int)(InfoFlags[j])) & ((int)(CellInfo.CellType_Mask))) >> 8;
+                Debug.Assert(iType == ((int)(GetCell(j).Type)));
+                return ((CellType)iType);
             }
 
 
