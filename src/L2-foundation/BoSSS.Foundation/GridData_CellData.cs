@@ -64,7 +64,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// all metrics which are associated to one cell
         /// </summary>
         public class CellData : IGeometricalCellsData, ILogicalCellData {
-
+            
             /// <summary>
             /// All reference elements for cells, see <see cref="GetRefElementIndex(int)"/> resp. <see cref="GetRefElement(int)"/>.
             /// </summary>
@@ -326,12 +326,13 @@ namespace BoSSS.Foundation.Grid.Classic {
                         if (iKref < 0)
                             throw new NotSupportedException("unknown cell type;");
                         Debug.Assert(iKref == Types.IndexOfMin(suppTypes => suppTypes.Contains(Cj.Type)));
-
-
+                        
                         var Kref = m_owner.Grid.GetRefElement(iKref);
 
                         InfoFlags[j] |= (CellInfo.RefElementIndex_Mask & ((CellInfo)iKref));
-
+                        Debug.Assert(((((int)Cj.Type) << 8) & ((int)CellInfo.CellType_Mask)) == (((int)Cj.Type) << 8));
+                        InfoFlags[j] |= (CellInfo)(((int)Cj.Type) << 8);
+                        
                         // affine-linear cell ?
                         if (Cj.Type.IsLinear()) {
                             InfoFlags[j] |= CellInfo.CellIsAffineLinear;
@@ -402,6 +403,8 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                 }
             }
+
+          
 
             /// <summary>
             /// see <see cref="CellInfo"/>
@@ -774,12 +777,14 @@ namespace BoSSS.Foundation.Grid.Classic {
                 int J = NoOfLocalUpdatedCells;
                 return ((j < J) ? m_owner.m_Grid.Cells[j] : m_owner.m_Parallel.ExternalCells[j - J]);
             }
-
+            
             /// <summary>
             /// Cell type for cell <paramref name="jCell"/>.
             /// </summary>
             public CellType GetCellType(int j) {
-                return GetCell(j).Type;
+                int iType = (((int)(InfoFlags[j])) & ((int)(CellInfo.CellType_Mask))) >> 8;
+                Debug.Assert(iType == ((int)(GetCell(j).Type)));
+                return ((CellType)iType);
             }
 
 

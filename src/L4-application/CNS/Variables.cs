@@ -468,5 +468,18 @@ namespace CNS {
                 if (lts != null)
                     subGridField.CopyFrom(lts.SubGridField);
             });
+
+        /// <summary>
+        /// The sub-grid ids of individual local time-stepping sub-grids
+        /// </summary>
+        public static readonly DerivedVariable IBMLTSSubGrids = new DerivedVariable(
+            "clusterIBMLTS",
+            VariableTypes.Other,
+            delegate (DGField subGridField, CellMask cellMask, IProgram<CNSControl> program) {
+                Program<IBMControl> p = (Program<IBMControl>)program;
+                IBMAdamsBashforthLTS lts = (IBMAdamsBashforthLTS)p.TimeStepper;
+                if (lts != null)
+                    subGridField.CopyFrom(lts.SubGridField);
+            });
     }
 }

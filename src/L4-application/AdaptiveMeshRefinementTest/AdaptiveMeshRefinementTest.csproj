@@ -3,11 +3,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{E56B9CE4-14DC-4256-A337-46E5D298B722}</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <ProjectGuid>{CF280064-130D-4C5A-9AB1-0615243B01C6}</ProjectGuid>
+    <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>BoSSS.Solution.NSECommon</RootNamespace>
-    <AssemblyName>BoSSS.Solution.NSECommon</AssemblyName>
+    <RootNamespace>BoSSS.Application.AdaptiveMeshRefinementTest</RootNamespace>
+    <AssemblyName>AdaptiveMeshRefinementTest</AssemblyName>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <TargetFrameworkProfile />
@@ -16,86 +16,60 @@
     <DebugSymbols>true</DebugSymbols>
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DebugType>full</DebugType>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <WarningLevel>4</WarningLevel>
     <Optimize>false</Optimize>
+    <Prefer32Bit>false</Prefer32Bit>
     <UseVSHostingProcess>true</UseVSHostingProcess>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Optimize>true</Optimize>
     <DebugType>pdbonly</DebugType>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <WarningLevel>4</WarningLevel>
-    <UseVSHostingProcess>true</UseVSHostingProcess>
-    <DocumentationFile>bin\Release\BoSSS.Solution.NSECommon.XML</DocumentationFile>
+    <DocumentationFile>bin\Release\AdaptiveMeshRefinementTest.xml</DocumentationFile>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Windows.Forms" />
     <Reference Include="log4net">
       <HintPath>..\..\..\libs\log4net-1.2.10\bin\cli\1.0\release\log4net.dll</HintPath>
     </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
     <Reference Include="nunit.framework">
       <HintPath>..\..\..\libs\NUnit-2.6.0.12051\bin\framework\nunit.framework.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Buoyancy.cs" />
-    <Compile Include="ConvectionAtIB.cs" />
-    <Compile Include="DivergenceAtIB.cs" />
-    <Compile Include="IBMSolverUtils.cs" />
-    <Compile Include="ipLaplace.cs" />
-    <Compile Include="NSEOperatorConfiguration.cs" />
-    <Compile Include="PressureFormAtIB.cs" />
-    <Compile Include="TimeDerivativeLinearSource.cs" />
-    <Compile Include="CoupledLaxFriedrichsScalar.cs" />
-    <Compile Include="CoupledLaxFriedrichsVelocity.cs" />
-    <Compile Include="Divergence_CentralDifference.cs" />
-    <Compile Include="LambdaConvection.cs" />
-    <Compile Include="LinearizedScalarConvection2.cs" />
-    <Compile Include="MaterialLawCombustion.cs" />
-    <Compile Include="ReactionHeatSourceLinearized.cs" />
-    <Compile Include="ReactionSpeciesSourceLinearized.cs" />
-    <Compile Include="RHSManuSourceDivKonti.cs" />
-    <Compile Include="RHSManuSourceNS.cs" />
-    <Compile Include="RHSManuSourceTransportEq.cs" />
-    <Compile Include="SIPDiffusion.cs" />
-    <Compile Include="SIPPressureCorrection.cs" />
-    <Compile Include="LinearizedScalarConvection.cs" />
-    <Compile Include="MaterialLawBase.cs" />
-    <Compile Include="MaterialLawLowMach.cs" />
-    <Compile Include="MaterialLawMultiphase.cs" />
-    <Compile Include="PressureStabilization.cs" />
-    <Compile Include="swipHeatConduction.cs" />
-    <Compile Include="swipViscosity.cs" />
-    <Compile Include="Divergence_DerivativeSource.cs" />
-    <Compile Include="IncompressibleBcType.cs" />
-    <Compile Include="IncompressibleBoundaryCondMap.cs" />
-    <Compile Include="LinearizedConvection.cs" />
-    <Compile Include="PressureGradient.cs" />
+    <Compile Include="AllUpTest.cs" />
+    <Compile Include="Fluxes.cs" />
+    <Compile Include="AdaptiveMeshRefinementTestMain.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SolverUtils.cs" />
-    <Compile Include="VariableNames.cs" />
-    <Compile Include="Viscosity.cs" />
-    <Compile Include="ViscosityAtIB.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\ilPSP\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj">
-      <Project>{dd9bf776-38ca-4fc9-8f42-5ed700bde7ad}</Project>
+      <Project>{DD9BF776-38CA-4FC9-8F42-5ED700BDE7AD}</Project>
       <Name>MPI.Wrappers</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.HYPRE\ilPSP.LinSolvers.HYPRE.csproj">
+      <Project>{332083B9-C7FD-4B04-95EC-B0C729B21883}</Project>
+      <Name>ilPSP.LinSolvers.HYPRE</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.monkey\ilPSP.LinSolvers.monkey.csproj">
+      <Project>{B18AEDC3-C7A5-4DA6-ABD3-E981B002ADDE}</Project>
+      <Name>ilPSP.LinSolvers.monkey</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj">
-      <Project>{8e6d8f23-623f-4204-b4ab-a088c0cd83aa}</Project>
+      <Project>{8E6D8F23-623F-4204-B4AB-A088C0CD83AA}</Project>
       <Name>ilPSP</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\L1-platform\BoSSS.Platform\BoSSS.Platform.csproj">
@@ -107,17 +81,32 @@
       <Name>BoSSS.Foundation.Grid</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.XDG\BoSSS.Foundation.XDG.csproj">
-      <Project>{9a8cdc1f-64f7-441e-849d-66f2c56600f2}</Project>
+      <Project>{9A8CDC1F-64F7-441E-849D-66F2C56600F2}</Project>
       <Name>BoSSS.Foundation.XDG</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\BoSSS.Solution\BoSSS.Solution.csproj">
-      <Project>{DF7F5ABD-E606-41CD-BEEF-31A95D136DEA}</Project>
-      <Name>BoSSS.Solution</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj">
       <Project>{17A60FBA-20B4-451D-98E1-8D742F368569}</Project>
       <Name>BoSSS.Foundation</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Multigrid\BoSSS.Solution.Multigrid.csproj">
+      <Project>{efe8c307-09bc-4f58-b991-6ef8fd6d5eff}</Project>
+      <Name>BoSSS.Solution.Multigrid</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Tecplot\BoSSS.Solution.Tecplot.csproj">
+      <Project>{D0546422-EC92-4964-82E9-8EE819A2F786}</Project>
+      <Name>BoSSS.Solution.Tecplot</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XdgTimestepping\BoSSS.Solution.XdgTimestepping.csproj">
+      <Project>{d8a961c8-75a9-4ecd-8627-c598697e7318}</Project>
+      <Name>BoSSS.Solution.XdgTimestepping</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution\BoSSS.Solution.csproj">
+      <Project>{DF7F5ABD-E606-41CD-BEEF-31A95D136DEA}</Project>
+      <Name>BoSSS.Solution</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -25,6 +25,7 @@ using ilPSP.Utils;
 using MPI.Wrappers;
 using ilPSP;
 using BoSSS.Foundation.Grid.RefElements;
+using BoSSS.Platform.Utils.Geom;
 
 namespace BoSSS.Foundation.Grid.Classic {
 
@@ -704,9 +705,15 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 MultidimensionalArray Vtx2 = MultidimensionalArray.Create(Kref2.Vertices.Lengths);
                                 m_owner.TransformLocal2Global(Kref2.Vertices, Vtx2, j2);
 
+                                BoundingBox BB1 = new BoundingBox(Vtx1);
+                                BoundingBox BB2 = new BoundingBox(Vtx2);
+                                BB1.ExtendByFactor(1e-8);
+                                BB2.ExtendByFactor(1e-8);
+                                bool bbIntersect = BB1.Overlap(BB2);
+
                                 throw new ApplicationException("Fatal error in grid: Cell " + K_j1.GlobalID + " and Cell "
                                 + K_j2.GlobalID + " are specified to be neighbors, but the do not seem "
-                                + "to have a matching edge geometrically.");
+                                + "to have a matching edge geometrically. Bounding box overlap is " + bbIntersect + ".");
                             }
                         }
 

@@ -483,6 +483,18 @@ namespace BoSSS.Foundation.XDG {
                 return matchesOne;
             }
 
+            /// <summary>
+            /// Outputs a piecewise constant field which is 0 outside the narrow band
+            /// 1+width on cut cells and decreasing on the near-cells
+            /// </summary>
+            public SinglePhaseField ToDGField(){
+                SinglePhaseField TrackerField = new SinglePhaseField(new Basis(m_owner.GridDat, 0));
+                // decrement loop: 
+                for (int width = 0; width <= m_owner.NearRegionWidth ; width++) {
+                    TrackerField.AccConstant(1, this.GetNearFieldMask(width));
+                }                    
+                return TrackerField;
+            }
         }
     }
 }

@@ -65,7 +65,7 @@ namespace BoSSS.Foundation {
             protected set;
         }
 
-        
+
         /// <summary>
         /// creates a new basis
         /// </summary>
@@ -94,21 +94,21 @@ namespace BoSSS.Foundation {
         /// <returns></returns>
         virtual public bool IsSubBasis(Basis other) {
 
-            if(!object.ReferenceEquals(other.m_GridDat, this.m_GridDat))
+            if (!object.ReferenceEquals(other.m_GridDat, this.m_GridDat))
                 return false;
 
             int L = m_GridDat.iGeomCells.RefElements.Length;
             Debug.Assert(this.Polynomials.Count == L);
             Debug.Assert(other.Polynomials.Count == L);
 
-            for(int l = 0; l < L; l++) {
+            for (int l = 0; l < L; l++) {
                 int N = this.Polynomials[l].Count;
 
-                if(other.Polynomials[l].Count < N)
+                if (other.Polynomials[l].Count < N)
                     return false;
-                
-                for(int i = N - 1; i >= 0; i--)
-                    if(!this.Polynomials[l][i].Equals(other.Polynomials[l][i]))
+
+                for (int i = N - 1; i >= 0; i--)
+                    if (!this.Polynomials[l][i].Equals(other.Polynomials[l][i]))
                         return false;
             }
 
@@ -134,17 +134,17 @@ namespace BoSSS.Foundation {
             Debug.Assert(this.Polynomials.Count == L);
             Debug.Assert(other.Polynomials.Count == L);
 
-            for(int l = 0; l < L; l++) {
+            for (int l = 0; l < L; l++) {
                 int N = this.Polynomials[l].Count;
-                if(other.Polynomials[l].Count != N)
+                if (other.Polynomials[l].Count != N)
                     return false;
 
-                for(int i = N - 1; i >= 0; i--)
-                    if(!this.Polynomials[l][i].Equals(other.Polynomials[l][i]))
+                for (int i = N - 1; i >= 0; i--)
+                    if (!this.Polynomials[l][i].Equals(other.Polynomials[l][i]))
                         return false;
             }
 
-            
+
             return true;
         }
 
@@ -166,7 +166,7 @@ namespace BoSSS.Foundation {
             get;
             private set;
         }
-               
+
 
         /// <summary>
         /// returns the number of basis functions in the cell <paramref name="jCell"/>;
@@ -177,7 +177,7 @@ namespace BoSSS.Foundation {
             int iKref = this.GridDat.iGeomCells.GetRefElementIndex(jGeom);
             int N = this.Polynomials[iKref].Count;
 #if DEBUG
-            foreach(int jG in this.GridDat.GetGeometricCellIndices(jCell)) {
+            foreach (int jG in this.GridDat.GetGeometricCellIndices(jCell)) {
                 int _iKref = this.GridDat.iGeomCells.GetRefElementIndex(jGeom);
                 int _N = this.Polynomials[_iKref].Count;
                 Debug.Assert(N == _N);
@@ -186,7 +186,26 @@ namespace BoSSS.Foundation {
             return N;
         }
 
-        
+        /// <summary>
+        /// Returns at list of indices into <see cref="Polynomials"/>[$iKref], where
+        /// $iKref ist the reference element index for cell <paramref name="jCell"/>.
+        /// In particular, returns the indices of all polynomials with the given
+        /// <paramref name="degree"/>.
+        /// </summary>
+        /// <param name="jCell"></param>
+        /// <param name="degree"></param>
+        /// <returns></returns>
+        public IEnumerable<int> GetPolynomialIndicesForDegree(int jCell, int degree) {
+            int jGeom = this.GridDat.GetGeometricCellIndices(jCell).First();
+            int iKref = this.GridDat.iGeomCells.GetRefElementIndex(jGeom);
+
+            for (int index = 0; index < Polynomials[iKref].Count; index++) {
+                if (Polynomials[iKref][index].AbsoluteDegree == degree) {
+                    yield return index;
+                }
+            }
+        }
+
         /// <summary>
         /// highest polynomial degree of all basis polynomials
         /// </summary>
@@ -224,7 +243,7 @@ namespace BoSSS.Foundation {
             }
         }
 
-        
+
         /// <summary>
         /// Evaluates all polynomials in reference space
         /// in this basis (see <see cref="Polynomials"/>);
@@ -241,12 +260,12 @@ namespace BoSSS.Foundation {
             int N = this.Polynomials[iKref].Count;
             MultidimensionalArray Values = this.GridDat.ChefBasis.BasisValues.GetValues(Ns, this.Degree);
 
-            if(Values.GetLength(1) == N)
+            if (Values.GetLength(1) == N)
                 return Values;
             else
                 return Values.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { Ns.NoOfNodes - 1, N - 1 });
         }
-         
+
 
         /// <summary>
         /// Evaluates the gradient of all polynomials in reference space in this basis (see <see cref="Polynomials"/>);
@@ -265,7 +284,7 @@ namespace BoSSS.Foundation {
             int D = this.GridDat.SpatialDimension;
             MultidimensionalArray Values = this.GridDat.ChefBasis.BasisGradientValues.GetValues(Ns, this.Degree);
 
-            if(Values.GetLength(1) == N)
+            if (Values.GetLength(1) == N)
                 return Values;
             else
                 return Values.ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { Ns.NoOfNodes - 1, N - 1, D - 1 });
@@ -289,13 +308,13 @@ namespace BoSSS.Foundation {
         /// where \f$ \vec{\xi}_m \f$ is the \f$ m \f$-th vector in the nodeset <paramref name="Ns"/>.
         /// </returns>        
         public MultidimensionalArray Evaluate2ndDeriv(NodeSet Ns) {
-            
+
             int iKref = Ns.GetVolumeRefElementIndex(this.GridDat);
             int N = this.Polynomials[iKref].Count;
             int D = this.GridDat.SpatialDimension;
             MultidimensionalArray Values = this.GridDat.ChefBasis.BasisHessianValues.GetValues(Ns, this.Degree);
 
-            if(Values.GetLength(1) == N)
+            if (Values.GetLength(1) == N)
                 return Values;
             else
                 return Values.ExtractSubArrayShallow(new int[] { 0, 0, 0, 0 }, new int[] { Ns.NoOfNodes - 1, N - 1, D - 1, D - 1 });
@@ -327,10 +346,10 @@ namespace BoSSS.Foundation {
             int D = this.GridDat.SpatialDimension;
             MultidimensionalArray Values = this.GridDat.ChefBasis.CellBasisHessianValues.GetValue_Cell(Nodes, j0, Len, this.Degree);
 
-            if(Values.GetLength(2) == N)
+            if (Values.GetLength(2) == N)
                 return Values;
             else
-                return Values.ExtractSubArrayShallow(new int[] { 0, 0, 0, 0, 0}, new int[] { Len- 1, Nodes.NoOfNodes - 1, N - 1, D - 1, D - 1 });
+                return Values.ExtractSubArrayShallow(new int[] { 0, 0, 0, 0, 0 }, new int[] { Len - 1, Nodes.NoOfNodes - 1, N - 1, D - 1, D - 1 });
 
         }
 
@@ -378,10 +397,10 @@ namespace BoSSS.Foundation {
             Debug.Assert(Len == ret.Item2.GetLength(0));
             Debug.Assert(nodes.NoOfNodes == ret.Item2.GetLength(1));
 
-            if(ret.Item1.GetLength(0) != Len) {
+            if (ret.Item1.GetLength(0) != Len) {
                 int M = ret.Item1.GetLength(1);
                 int N = ret.Item1.GetLength(2);
-                
+
 
                 ret = new Tuple<MultidimensionalArray, MultidimensionalArray>(
                     ret.Item1.ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { Len - 1, M - 1, N - 1 }),
@@ -390,7 +409,7 @@ namespace BoSSS.Foundation {
             return ret;
         }
 
-       
+
 
         /// <summary>
         /// Evaluates the gradient of all polynomials in this basis (see <see cref="Polynomials"/>) within specified cells.
@@ -435,7 +454,7 @@ namespace BoSSS.Foundation {
         /// </returns>
         public virtual Tuple<MultidimensionalArray, MultidimensionalArray> EdgeEvalGradient(NodeSet NS, int j0, int Len) {
             var ret = this.GridDat.ChefBasis.CellBasisGradientValues.GetValue_EdgeDV(NS, j0, Len, this.Degree);
-            if(ret.Item1.GetLength(0) != Len) {
+            if (ret.Item1.GetLength(0) != Len) {
                 int M = ret.Item1.GetLength(1);
                 int N = ret.Item1.GetLength(2);
                 int D = ret.Item1.GetLength(3);
@@ -447,7 +466,7 @@ namespace BoSSS.Foundation {
             return ret;
         }
 
-  
+
         /// <summary>
         /// This class contains all necessary information to recreate a Basis.
         /// </summary>
@@ -507,7 +526,7 @@ namespace BoSSS.Foundation {
             /// </summary>
             public override int GetHashCode() {
                 // http://stackoverflow.com/questions/1646807/quick-and-simple-hash-code-combinations
-                int hash =  9311; // a prime number
+                int hash = 9311; // a prime number
                 hash += 319993 * GridGuid.GetHashCode();
                 hash += 319993 * this.Degree;
                 return hash;

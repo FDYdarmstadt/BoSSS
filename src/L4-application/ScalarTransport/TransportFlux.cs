@@ -23,7 +23,7 @@ using System.Collections.Generic;
 namespace BoSSS.Application.ScalarTransport {
 
     /// <summary>
-    /// flux fo an 2D scalar transport equation
+    /// Flux for an 2D scalar transport equation
     /// </summary>
     class ScalarTransportFlux : NonlinearFlux {
         
