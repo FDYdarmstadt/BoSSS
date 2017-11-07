@@ -393,7 +393,10 @@ namespace BoSSS.Solution.Multigrid {
                     //blockSolvers[iPart] = new PARDISOSolver();
                     //blockSolvers[iPart].CacheFactorization = true;
                     //blockSolvers[iPart].DefineMatrix(Block);
-                    blockSolvers[iPart] = new FullDirectSolver();
+                    //blockSolvers[iPart] = new FullDirectSolver();
+                    //blockSolvers[iPart].DefineMatrix(Block);
+
+                    blockSolvers[iPart] = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
                     blockSolvers[iPart].DefineMatrix(Block);
                 }
             }

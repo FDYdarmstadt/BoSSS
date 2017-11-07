@@ -70,17 +70,31 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// </remarks>
         public byte EdgeTag {
             set {
-                bool signFlag = PeriodicInverse;
-                m_SignedEdgeTag = value;
-                PeriodicInverse = signFlag;
+                if(value >= 255)
+                    throw new ArgumentOutOfRangeException("255 is a reserved value");
+                //bool signFlag = PeriodicInverse;
+                //m_SignedEdgeTag = value;
+                //PeriodicInverse = signFlag;
+
+                if (m_SignedEdgeTag < 0)
+                    throw new NotSupportedException();
+
+                m_SignedEdgeTag = (value & 0xFF) | (m_SignedEdgeTag & ~0xFF);
             }
             get {
-                int r = Math.Abs(m_SignedEdgeTag);
+                int r;
+                if (m_SignedEdgeTag < 0) {
+                    r = Math.Abs(m_SignedEdgeTag);
+                } else {
+                    r = m_SignedEdgeTag & 0xFF;
+                }
                 Debug.Assert(r < 255, "in reserved value range");
                 return (byte)r;
             }
         }
 
+        const int PeriodicInverseMask = 0x4000000;
+        
         /// <summary>
         /// Indicates on which 'side' of the periodic transformation this cell
         /// resides. If false, resides on the side associated with the original
@@ -89,26 +103,36 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// </summary>
         public bool PeriodicInverse {
             get {
-                return (m_SignedEdgeTag < 0);
+                return (m_SignedEdgeTag & PeriodicInverseMask) != 0
+                    || m_SignedEdgeTag < 0; // legacy stuff
             }
             set {
-                int sign = value ? -1 : 1;
-                int unsignedTag = Math.Abs(m_SignedEdgeTag);
-                m_SignedEdgeTag = sign * unsignedTag;
+                if (m_SignedEdgeTag < 0)
+                    throw new NotSupportedException();
+
+                if (value)
+                    m_SignedEdgeTag |= PeriodicInverseMask;
+                else
+                    m_SignedEdgeTag &= ~PeriodicInverseMask;
             }
         }
+
+       
+
 
         [DataMember]
         int m_SignedEdgeTag;
 
         /// <summary>
-        /// Face index of the Cell
+        /// Face index of the owner cell (*not* the cell referenced with <see cref="NeighCell_GlobalID"/>).
         /// </summary>
         [DataMember]
         public int FaceIndex;
 
         /// <summary>
-        /// global identification of the neighbor cell
+        /// Two options, depending on  <see cref="EdgeTag"/>:
+        /// - internal edges or periodic boundaries: the global identification of the neighbor cell, i.e. this entry is non-negative.
+        /// - not used for cell face tags that represent boundary conditions: then, this entry should be negative.
         /// </summary>
         [DataMember]
         public long NeighCell_GlobalID;

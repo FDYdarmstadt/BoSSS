@@ -1,18 +1,23 @@
-﻿/*
- *
- * Copyright (c) 2010, Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
- *
- * This file is part of the BoSSS software. 
- * The software (source code or binaries compiled from the source code) may not
- * be copied, compiled or executed, partly or as a whole, without an explicit 
- * written permission from the Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics), TU Darmstadt.
- *
- */
-using System.Globalization;
-using System.Threading;
+﻿/* =======================================================================
+Copyright 2017 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 using BoSSS.Solution;
 using NUnit.Framework;
-using System;
+using System.Globalization;
+using System.Threading;
 
 namespace ALTSTests {
     /// <summary>
@@ -43,23 +48,24 @@ namespace ALTSTests {
         }
 
         public static void ALTSDynClustering(int order, int subGrids, double maxEnergyNorm) {
-            Program test = null;
+            NUnitTests test = null;
 
             Application._Main(
                 new string[0],
                 true,
                 "",
                 delegate () {
-                    test = new Program() {
+                    test = new NUnitTests() {
                         ABOrder = order,
-                        numOfSubgrids = subGrids
+                        numOfSubgrids = subGrids,
                     };
+                    test.m_GridPartitioningType = BoSSS.Foundation.Grid.GridPartType.none;
                     return test;
                 });
 
             double energyNorm = test.energyNorm;
 
-            Assert.IsTrue(energyNorm < maxEnergyNorm + 1e-14);
+            Assert.IsTrue(energyNorm < maxEnergyNorm + 1e-15);
         }
 
         // Call tests
@@ -68,18 +74,29 @@ namespace ALTSTests {
         // In this case, restarting a LTS simulation with another clustering is possible
         // because a history is not needed. 
         public static void ALTSDynClust_order1_subgrids3() {
-            ALTSDynClustering(order: 1, subGrids: 3, maxEnergyNorm: 7.772253056189100E-01);
+            //3 cells
+            //ALTSDynClustering(order: 1, subGrids: 3, maxEnergyNorm: 7.772253056189100E-01);
+
+            //4 cells
+            ALTSDynClustering(order: 1, subGrids: 4, maxEnergyNorm: 7.905061733461980E-01);
         }
 
         [Test]
         public static void ALTSDynClust_order2_subgrids3() {
-            ALTSDynClustering(order: 2, subGrids: 3, maxEnergyNorm: 7.772253058420590E-01);
+            //3 cells
+            //ALTSDynClustering(order: 2, subGrids: 3, maxEnergyNorm: 7.772253058420590E-01);
+
+            //4 cells
+            ALTSDynClustering(order: 2, subGrids: 4, maxEnergyNorm: 7.905061732830720E-01);
         }
 
         [Test]
         public static void ALTSDynClust_order3_subgrids3() {
-            ALTSDynClustering(order: 3, subGrids: 3, maxEnergyNorm: 7.772253058420650E-01);
-        }
+            //3 cells
+            //ALTSDynClustering(order: 3, subGrids: 3, maxEnergyNorm: 7.772253058420650E-01);
 
+            //4 cells
+            ALTSDynClustering(order: 3, subGrids: 4, maxEnergyNorm: 7.905061732830850E-01);
+        }
     }
 }

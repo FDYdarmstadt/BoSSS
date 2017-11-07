@@ -658,9 +658,9 @@ namespace ilPSP.LinSolvers.PARDISO {
                         }
                     }
 #if DEBUG
-                    Debug.Assert(ArrayTools.Equals<double>(aClone, m_PardisoMatrix.a), "PARDISO changed the matrix.");
-                    Debug.Assert(ArrayTools.Equals<int>(iaClone, m_PardisoMatrix.ia), "PARDISO changed the matrix.");
-                    Debug.Assert(ArrayTools.Equals<int>(jaClone, m_PardisoMatrix.ja), "PARDISO changed the matrix.");
+                    Debug.Assert(ArrayTools.ListEquals<double>(aClone, m_PardisoMatrix.a), "PARDISO changed the matrix.");
+                    Debug.Assert(ArrayTools.ListEquals<int>(iaClone, m_PardisoMatrix.ia), "PARDISO changed the matrix.");
+                    Debug.Assert(ArrayTools.ListEquals<int>(jaClone, m_PardisoMatrix.ja), "PARDISO changed the matrix.");
 #endif
 
                 }

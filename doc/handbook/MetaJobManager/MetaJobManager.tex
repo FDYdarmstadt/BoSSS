@@ -256,31 +256,31 @@ Table.ExtractColumns("SessionName", "DGdegree:rho", "L2ErrorDensity").Print();
 \BoSSSexe
 \BoSSScmd{
 /// Here, we use the workflow management tools to simulate compressible flows \emph{with} immersed boundaries, thus we first have to load the namespaces of the CNS and IBM solver:
-using BoSSS.Application.IBM\_Solver;
+//using BoSSS.Application.IBM\_Solver;
  }
 \BoSSSexe
 \BoSSScmd{
-Type solver2 = typeof(IBM\_SolverMain);\newline 
-solver2.Assembly.Location;
+//Type solver2 = typeof(IBM\_SolverMain);\newline 
+//solver2.Assembly.Location;
  }
 \BoSSSexe
 \BoSSScmdSilent{
 /// BoSSScmdSilent BoSSSexeSilent
-// first, do some cleanup\newline 
-if(System.IO.Directory.Exists(@"C:\textbackslash tmp\textbackslash TutorialNetworkDb\_db"))\newline 
-\btab System.IO.Directory.Delete(@"C:\textbackslash tmp\textbackslash TutorialNetworkDb\_db",true);
+/// first, do some cleanup
+//if(System.IO.Directory.Exists(@"C:\textbackslash tmp\textbackslash TutorialNetworkDb\_db"))\newline 
+//    System.IO.Directory.Delete(@"C:\textbackslash tmp\textbackslash TutorialNetworkDb\_db",true);
  }
 \BoSSSexeSilent
 \BoSSScmd{
 /// For this tutorial, we use a local drive to simulate the network database:\newline 
-var myNetworkDb = OpenOrCreateDatabase(@"C:\textbackslash tmp\textbackslash TutorialNetworkDb\_db");\newline 
+//var myNetworkDb = OpenOrCreateDatabase(@"C:\textbackslash tmp\textbackslash TutorialNetworkDb\_db");\newline 
 /// When using a real network drive, the path to the drive would be given as: 
 //var myNetworkDb = OpenOrCreateDatabase(@"\textbackslash \textbackslash \textbackslash $server\textbackslash $ \textbackslash \textbackslash $path\_to\_database\textbackslash $");
  }
 \BoSSSexe
 \BoSSScmd{
 /// Again, we fake the network capabilities:
-var myHPC = myBatch;  \newline 
+//var myHPC = myBatch;  \newline 
 /// For a Microsoft HPC-Server this would read:
 //var myHPC   = new MsHPC2012Client(@"\textbackslash \textbackslash dc1\textbackslash scratch\textbackslash hpcdeploy", \newline 
 //                          "hpccluster",\newline 
@@ -296,15 +296,15 @@ var myHPC = myBatch;  \newline
 /// \BoSSSpad, without the need of an external file.
 /// In order to shorten things, we start with a predefined control object
 /// and modify it.
-var StartupObject\_Network = HardcodedControl.ChannelFlow();
+//var StartupObject\_Network = HardcodedControl.ChannelFlow();
  }
 \BoSSSexe
 \BoSSScmd{
 /// E.g., we can mofify individual members:
-StartupObject\_Network.DbPath              = myNetworkDb.Path;\newline 
-StartupObject\_Network.NoOfTimesteps       = 2;\newline 
-StartupObject\_Network.MaxSolverIterations = 35;\newline 
-StartupObject\_Network.savetodb            = true;
+//StartupObject\_Network.DbPath              = myNetworkDb.Path;\newline 
+//StartupObject\_Network.NoOfTimesteps       = 2;\newline 
+//StartupObject\_Network.MaxSolverIterations = 35;\newline 
+//StartupObject\_Network.savetodb            = true;
  }
 \BoSSSexe
 \BoSSScmd{
@@ -317,7 +317,7 @@ StartupObject\_Network.savetodb            = true;
 \BoSSSexe
 \BoSSScmd{
 /// E.g. the following would not work:
-StartupObject\_Network.InitialValues\_Evaluators["VelocityX"] = X => 0.5;\newline 
+//StartupObject\_Network.InitialValues\_Evaluators["VelocityX"] = X => 0.5;\newline 
 /// The reason is that the expression {\tt X => 0.5} is only valid within
 /// this \BoSSSpad ~document and cannot be saved in a file and loaded again
 /// due to technical restrictions of .NET resp. C\#.
@@ -328,8 +328,8 @@ StartupObject\_Network.InitialValues\_Evaluators["VelocityX"] = X => 0.5;\newlin
 \BoSSSexe
 \BoSSScmd{
 /// But first, we clear the entries from the predefined object:
-StartupObject\_Network.InitialValues\_Evaluators.Clear();\newline 
-StartupObject\_Network.Queries.Clear();
+//StartupObject\_Network.InitialValues\_Evaluators.Clear();\newline 
+//StartupObject\_Network.Queries.Clear();
  }
 \BoSSSexe
 \BoSSScmd{
@@ -339,36 +339,36 @@ StartupObject\_Network.Queries.Clear();
  }
 \BoSSSexe
 \BoSSScmd{
-string CommonCode = @"\newline 
-\btab Random r = new Random();\newline 
-\btab Func<double[],double> Noise = delegate(double[] X) \{\newline 
-\btab \btab double y          = X[1];\newline 
-\btab \btab double NoiseScale = (1 - y*y);\newline 
-\btab \btab return r.NextDouble()*NoiseScale;\newline 
-\btab \};\newline 
-";
+//string CommonCode = @"\newline 
+//    Random r = new Random();\newline 
+//    Func<double[],double> Noise = delegate(double[] X) \{\newline 
+//        double y          = X[1];\newline 
+//        double NoiseScale = (1 - y*y);\newline 
+//        return r.NextDouble()*NoiseScale;\newline 
+//    \};\newline 
+//";
  }
 \BoSSSexe
 \BoSSScmd{
 /// Using the additional code defined above, we are able to set 
 /// the initial values...
-StartupObject\_Network.InitialValues.Clear();\newline 
-StartupObject\_Network.InitialValues.Add("VelocityX", \newline 
-\btab new Formula("X => Noise(X)*(1 - X[1]*X[1])", false, CommonCode));\newline 
-StartupObject\_Network.InitialValues.Add("VelocityY", \newline 
-\btab new Formula("X => 0.0", false));
+//StartupObject\_Network.InitialValues.Clear();\newline 
+//StartupObject\_Network.InitialValues.Add("VelocityX", \newline 
+//    new Formula("X => Noise(X)*(1 - X[1]*X[1])", false, CommonCode));\newline 
+//StartupObject\_Network.InitialValues.Add("VelocityY", \newline 
+//    new Formula("X => 0.0", false));
  }
 \BoSSSexe
 \BoSSScmd{
 /// ... as well as the boundary conditions for the control object:
-StartupObject\_Network.BoundaryValues.Clear();\newline 
-StartupObject\_Network.AddBoundaryCondition("Velocity\_inlet");\newline 
-StartupObject\_Network.AddBoundaryCondition("Pressure\_Outlet");\newline 
-StartupObject\_Network.AddBoundaryCondition("Wall\_bottom");\newline 
-StartupObject\_Network.AddBoundaryCondition("Wall\_top");\newline 
-StartupObject\_Network.BoundaryValues["Velocity\_inlet"].Values.Add(\newline 
-\btab \btab "VelocityX",\newline 
-\btab \btab new Formula("X => (1 - X[1]*X[1])", false));
+//StartupObject\_Network.BoundaryValues.Clear();\newline 
+//StartupObject\_Network.AddBoundaryCondition("Velocity\_inlet");\newline 
+//StartupObject\_Network.AddBoundaryCondition("Pressure\_Outlet");\newline 
+//StartupObject\_Network.AddBoundaryCondition("Wall\_bottom");\newline 
+//StartupObject\_Network.AddBoundaryCondition("Wall\_top");\newline 
+//StartupObject\_Network.BoundaryValues["Velocity\_inlet"].Values.Add(\newline 
+//        "VelocityX",\newline 
+//        new Formula("X => (1 - X[1]*X[1])", false));
  }
 \BoSSSexe
 \BoSSScmd{
@@ -378,93 +378,93 @@ StartupObject\_Network.BoundaryValues["Velocity\_inlet"].Values.Add(\newline
  }
 \BoSSSexe
 \BoSSScmd{
-StartupObject\_Network.GridFunc = null;
+//StartupObject\_Network.GridFunc = null;
  }
 \BoSSSexe
 \BoSSScmd{
-var xNodes = GenericBlas.Linspace(0, 10, 101);\newline 
-var yNodes = GenericBlas.Linspace(-1, 1, 21);\newline 
-var Grid   = Grid2D.Cartesian2DGrid(xNodes, yNodes);
+//var xNodes = GenericBlas.Linspace(0, 10, 101);\newline 
+//var yNodes = GenericBlas.Linspace(-1, 1, 21);\newline 
+//var Grid   = Grid2D.Cartesian2DGrid(xNodes, yNodes);
  }
 \BoSSSexe
 \BoSSScmd{
-Grid.EdgeTagNames.Add(1, "Velocity\_inlet");\newline 
-Grid.EdgeTagNames.Add(4, "Pressure\_Outlet");\newline 
-Grid.EdgeTagNames.Add(2, "Wall\_bottom");\newline 
-Grid.EdgeTagNames.Add(3, "Wall\_top");
+//Grid.EdgeTagNames.Add(1, "Velocity\_inlet");\newline 
+//Grid.EdgeTagNames.Add(4, "Pressure\_Outlet");\newline 
+//Grid.EdgeTagNames.Add(2, "Wall\_bottom");\newline 
+//Grid.EdgeTagNames.Add(3, "Wall\_top");
  }
 \BoSSSexe
 \BoSSScmd{
-Grid.DefineEdgeTags(delegate (double[] \_X) \{\newline 
-\btab var X    = \_X;\newline 
-\btab double x = X[0];\newline 
-\btab double y = X[1];\newline 
- \newline 
-\btab if (Math.Abs(y - (-1)) < 1.0e-6)\newline 
-\btab    // bottom\newline 
-\btab    return 2;\newline 
- \newline 
-\btab if (Math.Abs(y - (+1)) < 1.0e-6)\newline 
-\btab    // top\newline 
-\btab    return 3;\newline 
- \newline 
-\btab if (Math.Abs(x - (0)) < 1.0e-6)\newline 
-\btab    // left\newline 
-\btab    return 1;\newline 
- \newline 
-\btab if (Math.Abs(x - (10)) < 1.0e-6)\newline 
-\btab    // right\newline 
-\btab    return 4;\newline 
-\btab throw new Exception();\newline 
-\});
+//Grid.DefineEdgeTags(delegate (double[] \_X) \{\newline 
+//    var X    = \_X;\newline 
+//    double x = X[0];\newline 
+//    double y = X[1];\newline 
+// \newline 
+//    if (Math.Abs(y - (-1)) < 1.0e-6)\newline 
+//       // bottom\newline 
+//       return 2;\newline 
+// \newline 
+//    if (Math.Abs(y - (+1)) < 1.0e-6)\newline 
+//       // top\newline 
+//       return 3;\newline 
+// \newline 
+//    if (Math.Abs(x - (0)) < 1.0e-6)\newline 
+//       // left\newline 
+//       return 1;\newline 
+// \newline 
+//    if (Math.Abs(x - (10)) < 1.0e-6)\newline 
+//       // right\newline 
+//       return 4;\newline 
+//    throw new Exception();\newline 
+//\});
  }
 \BoSSSexe
 \BoSSScmd{
-Grid;
+//Grid;
  }
 \BoSSSexe
 \BoSSScmd{
-bool found;\newline 
-Guid GridGuid = myNetworkDb.SaveGrid(Grid);
+//bool found;\newline 
+//Guid GridGuid = myNetworkDb.SaveGrid(Grid);
  }
 \BoSSSexe
 \BoSSScmd{
-StartupObject\_Network.GridGuid = GridGuid;
+//StartupObject\_Network.GridGuid = GridGuid;
  }
 \BoSSSexe
 \BoSSScmd{
-var oneJob\_Network = new Job("byCmdLine\_HPC", solver2);
+//var oneJob\_Network = new Job("byCmdLine\_HPC", solver2);
  }
 \BoSSSexe
 \BoSSScmd{
-oneJob\_Network.SetControlObject(StartupObject\_Network);\newline 
-oneJob\_Network.Activate(myHPC);
+//oneJob\_Network.SetControlObject(StartupObject\_Network);\newline 
+//oneJob\_Network.Activate(myHPC);
  }
 \BoSSSexe
 \BoSSScmd{
 /// We can e.g. obtain the status of the job:
-oneJob\_Network.Status;
+//oneJob\_Network.Status;
  }
 \BoSSSexe
 \BoSSScmd{
 /// Again, we block until both of our jobs have finished:
-WorkflowMgm.BlockUntilAllJobsTerminate(360);
+//WorkflowMgm.BlockUntilAllJobsTerminate(360);
  }
 \BoSSSexe
 \BoSSScmd{
 /// We can also obtain the session which was stored during the execution of the 
 /// job:
-var Snet = oneJob\_Network.LatestSession;\newline 
-Snet;
+//var Snet = oneJob\_Network.LatestSession;\newline 
+//Snet;
  }
 \BoSSSexe
 \BoSSScmdSilent{
 /// BoSSScmdSilent BoSSSexeSilent
-if(System.IO.Directory.Exists(myNetworkDb.Path))\{\newline 
-\btab DatabaseUtils.DeleteDatabase(myNetworkDb.Path);\newline 
-\}\newline 
-if(System.IO.Directory.Exists(myLocalDb.Path))\newline 
-\btab DatabaseUtils.DeleteDatabase(myLocalDb.Path);\newline 
-MiniBatchProcessor.Server.SendTerminationSignal();
+//if(System.IO.Directory.Exists(myNetworkDb.Path))\{\newline 
+//    DatabaseUtils.DeleteDatabase(myNetworkDb.Path);\newline 
+//\}\newline 
+//if(System.IO.Directory.Exists(myLocalDb.Path))\newline 
+//    DatabaseUtils.DeleteDatabase(myLocalDb.Path);\newline 
+//MiniBatchProcessor.Server.SendTerminationSignal();
  }
 \BoSSSexeSilent

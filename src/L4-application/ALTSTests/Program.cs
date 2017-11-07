@@ -40,7 +40,9 @@ namespace ALTSTests {
     class Program : Application {
         static void Main(string[] args) {
             Application._Main(args, true, "", delegate () {
-                return new Program();
+                Program p = new Program();
+                p.m_GridPartitioningType = BoSSS.Foundation.Grid.GridPartType.none;
+                return p;
             });
         }
 
@@ -51,7 +53,8 @@ namespace ALTSTests {
         double rightValue = 1;
         double pod = 0.45;
 
-        int numOfCellsX = 3;
+        //int numOfCellsX = 3;
+        int numOfCellsX = 4;
         int numOfCellsY = 1;
         double xMin = 0;
         double xMax = 1;
@@ -66,11 +69,13 @@ namespace ALTSTests {
         ExplicitEuler timeStepper;
         SpatialOperator diffOp;
 
-        internal int ABOrder = 2;
-        internal int numOfSubgrids = 3;
+        internal int ABOrder = 1;
+        internal int numOfSubgrids = 4;
         internal double energyNorm;
 
         double dtFixed = 1e-5;
+        double endTime = 10e-5;
+        private const double ChangeMetricTime = 4e-5;
 
         protected override GridCommons CreateOrLoadGrid() {
             GridCommons grd;
@@ -83,6 +88,8 @@ namespace ALTSTests {
         }
 
         protected override void CreateFields() {
+            //Debugger.Launch();
+
             Basis cBasis = new Basis(this.GridData, dgDegree);
             c = new SinglePhaseField(cBasis, "c");
             Velocity = new VectorField<SinglePhaseField>(this.GridData.SpatialDimension, new Basis(this.GridData, dgDegree), "Velocity", SinglePhaseField.Factory);
@@ -107,15 +114,27 @@ namespace ALTSTests {
             MultidimensionalArray metricOne = MultidimensionalArray.Create(numOfCellsX);
             MultidimensionalArray metricTwo = MultidimensionalArray.Create(numOfCellsX);
 
+            // 3 cells
+            //metricOne[0] = 2;
+            //metricOne[1] = 1;
+            //metricOne[2] = 0.5;
+
+            //metricTwo[0] = 1;
+            //metricTwo[1] = 0.5;
+            //metricTwo[2] = 2;
+
+            // 4 cells
             metricOne[0] = 2;
             metricOne[1] = 1;
             metricOne[2] = 0.5;
+            metricOne[3] = 0.25;
 
-            metricTwo[0] = 1;
-            metricTwo[1] = 0.5;
-            metricTwo[2] = 2;
+            metricTwo[0] = 0.5;
+            metricTwo[1] = 2;
+            metricTwo[2] = 0.25;
+            metricTwo[3] = 1;
 
-            CustomTimestepConstraint = new SurrogateConstraint(GridData, dtFixed, dtFixed, double.MaxValue, double.MaxValue, metricOne, metricTwo);
+            CustomTimestepConstraint = new SurrogateConstraint(GridData, dtFixed, dtFixed, double.MaxValue, endTime, metricOne, metricTwo);
 
             timeStepper = new AdamsBashforthLTS(
                 diffOp,
@@ -133,8 +152,6 @@ namespace ALTSTests {
             m_IOFields.Add(timeStepper2.SubGridField);
             timeStepper = timeStepper2;
         }
-
-        private const double ChangeMetricTime = 4e-5;
 
         private SurrogateConstraint CustomTimestepConstraint;
 
@@ -154,6 +171,8 @@ namespace ALTSTests {
             }
 
             public override double GetLocalStepSize(int i0, int Length) {
+                int i0global = (int)gridData.iLogicalCells.GetGlobalID(i0);
+
                 MultidimensionalArray currentMetric;
                 if (FirstMetricActive) {
                     currentMetric = MetricOne;
@@ -163,7 +182,7 @@ namespace ALTSTests {
 
                 Debug.Assert(Length == 1);
 
-                return currentMetric[i0];
+                return currentMetric[i0global];
             }
         }
 
@@ -175,7 +194,7 @@ namespace ALTSTests {
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             using (new FuncTrace()) {
                 base.NoOfTimesteps = int.MaxValue;
-                base.EndTime = 10e-5;
+                base.EndTime = endTime;
 
                 // Set time step size
                 if (dt <= 0)

@@ -158,7 +158,7 @@ namespace BoSSS.Foundation {
                     int[] _i0_bT = _Subblk_i0[blockType];
                     Debug.Assert(len_bT.Length == NoOfBasisS);
                     Debug.Assert(_i0_bT.Length == NoOfBasisS);
-                    Debug.Assert(ArrayTools.Equals<int>(_i0_bT, m_j0CoordinateIndex.GetSubVector(0, NoOfBasisS)));
+                    Debug.Assert(ArrayTools.ListEquals<int>(_i0_bT, m_j0CoordinateIndex.GetSubVector(0, NoOfBasisS)));
 
                     bFound = true;                    
                     for(int i = 0; i < NoOfBasisS; i++) {
@@ -217,7 +217,7 @@ namespace BoSSS.Foundation {
             if (m_j0Subblk_i0_Backup == null) {
                 m_j0Subblk_i0_Backup = m_j0Subblk_i0.CloneAs();
             } else {
-                Debug.Assert(ArrayTools.Equals<int>(m_j0Subblk_i0, m_j0Subblk_i0_Backup), "Some moron messed with the start indices.");
+                Debug.Assert(ArrayTools.ListEquals<int>(m_j0Subblk_i0, m_j0Subblk_i0_Backup), "Some moron messed with the start indices.");
             }
 #endif
             return m_j0Subblk_i0;

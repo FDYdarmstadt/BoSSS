@@ -369,7 +369,7 @@ namespace CNS {
                 // Project visocsity onto continuous, multilinear space
                 if (D < 3) {
                     // Standard version
-                    if (avSpecFEMBasis == null) {
+                    if (avSpecFEMBasis == null || !avField.Basis.Equals(avSpecFEMBasis.ContainingDGBasis)) {
                         avSpecFEMBasis = new SpecFemBasis(program.GridData, 2);
                     }
                     SpecFemField specFemField = new SpecFemField(avSpecFEMBasis);
@@ -449,8 +449,6 @@ namespace CNS {
             VariableTypes.Other,
             delegate (DGField s, CellMask cellMask, IProgram<CNSControl> program) {
                 IShockSensor sensor = program.Control.ShockSensor;
-                sensor.UpdateSensorValues(program.WorkingSet);
-
                 foreach (Chunk chunk in cellMask) {
                     foreach (int cell in chunk.Elements) {
                         s.SetMeanValue(cell, sensor.GetSensorValue(cell));
@@ -467,6 +465,19 @@ namespace CNS {
             delegate (DGField subGridField, CellMask cellMask, IProgram<CNSControl> program) {
                 Program<CNSControl> p = (Program<CNSControl>)program;
                 AdamsBashforthLTS lts = (AdamsBashforthLTS)p.TimeStepper;
+                if (lts != null)
+                    subGridField.CopyFrom(lts.SubGridField);
+            });
+
+        /// <summary>
+        /// The sub-grid ids of individual local time-stepping sub-grids
+        /// </summary>
+        public static readonly DerivedVariable IBMLTSSubGrids = new DerivedVariable(
+            "clusterIBMLTS",
+            VariableTypes.Other,
+            delegate (DGField subGridField, CellMask cellMask, IProgram<CNSControl> program) {
+                Program<IBMControl> p = (Program<IBMControl>)program;
+                IBMAdamsBashforthLTS lts = (IBMAdamsBashforthLTS)p.TimeStepper;
                 if (lts != null)
                     subGridField.CopyFrom(lts.SubGridField);
             });

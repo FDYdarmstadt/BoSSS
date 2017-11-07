@@ -238,7 +238,7 @@ namespace BoSSS.Foundation {
                     int E = CellPairs.Count;
                     int[,] _CellPairs = new int[E, 2];
                     for (int e = 0; e < E; e++)
-                        _CellPairs.SetRow(CellPairs[e], e);
+                        _CellPairs.SetRow(e, CellPairs[e]);
 
                     double[] preScale = new double[scaling.Count];
                     preScale.SetAll(1.0);

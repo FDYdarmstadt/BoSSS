@@ -50,6 +50,8 @@ namespace BoSSS.Solution.Multigrid {
 
         public ISolverSmootherTemplate m_LinearSolver;
 
+        public string m_SessionPath;
+
         public double UnderRelax = 1.0;
 
 
@@ -68,6 +70,8 @@ namespace BoSSS.Solution.Multigrid {
             double[] Correction = new double[Solution.Length];
             double ResidualNorm = Residual.L2NormPow2().MPISum().Sqrt();
             int NoOfIterations = 0;
+            if(m_LinearSolver.GetType()== typeof(SoftGMRES))
+            ((SoftGMRES)m_LinearSolver).m_SessionPath = m_SessionPath;
 
             OnIterationCallback(NoOfIterations, Solution.CloneAs(), Residual.CloneAs(), this.CurrentLin);
             

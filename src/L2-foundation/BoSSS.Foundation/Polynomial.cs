@@ -480,7 +480,7 @@ namespace BoSSS.Foundation.Grid {
 
             if(!ArrayTools.AreEqual(this.Exponents, other.Exponents))
                 return false;
-            if(!ArrayTools.Equals(this.Coeff, other.Coeff))
+            if(!ArrayTools.AreEqual(this.Coeff, other.Coeff))
                 return false;
 
             return true;

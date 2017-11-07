@@ -14198,36 +14198,36 @@ namespace BoSSS.Foundation.Grid.RefElements {
 
             {
                 double[,] vtxsub = new double[3, 2];
-                vtxsub.SetRow(_0, 0);
-                vtxsub.SetRow(A, 1);
-                vtxsub.SetRow(C, 2);
+                vtxsub.SetRow(0, _0);
+                vtxsub.SetRow(1, A);
+                vtxsub.SetRow(2, C);
 
                 ret[0] = AffineTrafo.FromPoints(Vertices.To2DArray(), vtxsub);
             }
 
             {
                 double[,] vtxsub = new double[3, 2];
-                vtxsub.SetRow(A, 0);
-                vtxsub.SetRow(_1, 1);
-                vtxsub.SetRow(B, 2);
+                vtxsub.SetRow(0, A);
+                vtxsub.SetRow(1, _1);
+                vtxsub.SetRow(2, B);
 
                 ret[1] = AffineTrafo.FromPoints(Vertices.To2DArray(), vtxsub);
             }
 
             {
                 double[,] vtxsub = new double[3, 2];
-                vtxsub.SetRow(C, 0);
-                vtxsub.SetRow(B, 1);
-                vtxsub.SetRow(_2, 2);
+                vtxsub.SetRow(0, C);
+                vtxsub.SetRow(1, B);
+                vtxsub.SetRow(2, _2);
 
                 ret[2] = AffineTrafo.FromPoints(Vertices.To2DArray(), vtxsub);
             }
 
             {
                 double[,] vtxsub = new double[3, 2];
-                vtxsub.SetRow(B, 0);
-                vtxsub.SetRow(C, 1);
-                vtxsub.SetRow(A, 2);
+                vtxsub.SetRow(0, B);
+                vtxsub.SetRow(1, C);
+                vtxsub.SetRow(2, A);
 
                 ret[3] = AffineTrafo.FromPoints(Vertices.To2DArray(), vtxsub);
             }

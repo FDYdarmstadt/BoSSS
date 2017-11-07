@@ -1057,26 +1057,8 @@ namespace BoSSS.Foundation.IO {
             if (controlObj is T) {
                 return (T)controlObj;
             } else if (controlObj is IEnumerable<T>) {
-                // Try to determine selected case by a hack ("hack" as in: I
-                // can't tell how fragile this construct is...). Should change
-                // at some point...
-                DirectoryInfo dirInfo = new DirectoryInfo(sessionDir);
-                string prefix = "ParameterStudy.case-";
-                FileInfo[] files = dirInfo.GetFiles(prefix + "*");
-                if (files.Length == 0 || files.Length > 1) {
-                    throw new Exception(
-                        "Found multiple parameter study case files. This should not have happened.");
-                }
-
-                string parameterStudyFile = files.Single().Name;
-                string caseIdentifier = parameterStudyFile.Substring(prefix.Length);
-                caseIdentifier = caseIdentifier.Substring(0, caseIdentifier.IndexOf('.'));
-
-                int parameterStudyCase;
-                if (!int.TryParse(caseIdentifier, out parameterStudyCase)) {
-                    throw new Exception(
-                        "Parameter study case file did not contain any numeric identifier. This should not have happened.");
-                }
+                // We did a parameter study -> extract the correct control object from the list
+                int.TryParse(session.KeysAndQueries["id:pstudy_case"].ToString(), out int parameterStudyCase);
 
                 IEnumerable<T> objectList = (IEnumerable<T>)controlObj;
                 if (parameterStudyCase < 1 || parameterStudyCase > objectList.Count()) {

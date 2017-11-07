@@ -65,16 +65,22 @@ namespace BoSSS.Solution.Utils {
             private set;
         }
 
+        public SubGrid SubGrid {
+            get;
+            private set;
+        }
+
         /// <summary>
         /// Constructor for the grid clustering
         /// </summary>
         /// <param name="gridData">Information about the grid</param>
         /// <param name="timeStepConstraints">Time step constraings used as cell metric for the clustering</param>
         /// <param name="numOfClusters">Number of clusters</param>
-        public Clustering(IGridData gridData, IList<TimeStepConstraint> timeStepConstraints, int numOfClusters) {
+        public Clustering(IGridData gridData, IList<TimeStepConstraint> timeStepConstraints, int numOfClusters, SubGrid subGrid = null) {
             this.gridData = gridData;
             this.timeStepConstraints = timeStepConstraints;
             this.NumOfClusters = numOfClusters;
+            this.SubGrid = subGrid;
 
             this.SubGridField = new SinglePhaseField(new Basis(gridData, 0));
             this.SubGridList = CreateSubGrids(this.NumOfClusters);
@@ -158,9 +164,12 @@ namespace BoSSS.Solution.Utils {
         /// <returns>Double[] with the length of the number of given sub-grids></returns>
         private MultidimensionalArray CreateMeans(MultidimensionalArray cellMetric) {
             //MultidimensionalArray means = MultidimensionalArray.Create(NumOfSgrd);
-            double h_min = cellMetric.Min(d => double.IsNaN(d) ? double.MaxValue : d); // .Where(d => !double.IsNaN(d)).ToArray().Min();
-            double h_max = cellMetric.Max();
+            double h_min = int.MaxValue;
+            h_min = cellMetric.Min(d => double.IsNaN(d) ? h_min : d); // .Where(d => !double.IsNaN(d)).ToArray().Min();
+            double h_max = int.MinValue;
+            h_max = cellMetric.Max(d => double.IsNaN(d) ? h_max : d);
             Console.WriteLine("Clustering: Create tanh spaced means");
+
             // Getting global h_min and h_max
             ilPSP.MPICollectiveWatchDog.Watch();
             h_min = h_min.MPIMin();
@@ -200,7 +209,7 @@ namespace BoSSS.Solution.Utils {
             unsafe {
                 int localResultAsInt = localResult ? 1 : 0;
                 int globalResultAsInt;
-                csMPI.Raw.Allreduce((IntPtr)(&localResultAsInt), (IntPtr)(&globalResultAsInt), SubGridList.Count, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.LOR, csMPI.Raw._COMM.WORLD);
+                csMPI.Raw.Allreduce((IntPtr)(&localResultAsInt), (IntPtr)(&globalResultAsInt), 1, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.LOR, csMPI.Raw._COMM.WORLD);
                 globalResult = globalResultAsInt == 1 ? true : false;
             }
 
@@ -214,14 +223,22 @@ namespace BoSSS.Solution.Utils {
         public MultidimensionalArray GetCellMetric() {
             MultidimensionalArray cellMetric = MultidimensionalArray.Create(gridData.iLogicalCells.NoOfLocalUpdatedCells);
 
-            // Adapted from Variables.cs --> DerivedVariable CFL
-            for (int i = 0; i < gridData.iLogicalCells.NoOfLocalUpdatedCells; i++) {
-                cellMetric[i] = this.timeStepConstraints.Min(c => c.GetLocalStepSize(i, 1));
+            // Only relevant for IBM cases: Set all values in void cells to infinity such that
+            // these cells belong to the cluster with the largest maximum stable time step
+            if (this.SubGrid != null) {
+                for (int cell = 0; cell < cellMetric.Length; cell++)
+                    cellMetric[cell] = double.NaN;
+                for (int subGridCell = 0; subGridCell < this.SubGrid.LocalNoOfCells; subGridCell++) {
+                    int localCellIndex = this.SubGrid.SubgridIndex2LocalCellIndex[subGridCell];
+                    cellMetric[localCellIndex] = this.timeStepConstraints.Min(c => c.GetLocalStepSize(localCellIndex, 1));
+                }
+            } else {
+                // Adapted from Variables.cs --> DerivedVariable CFL
+                for (int i = 0; i < gridData.iLogicalCells.NoOfLocalUpdatedCells; i++)
+                    cellMetric[i] = this.timeStepConstraints.Min(c => c.GetLocalStepSize(i, 1));
             }
 
             return cellMetric;
-
-            //return gridData.iGeomCells.h_min;
         }
 
         /// <summary>

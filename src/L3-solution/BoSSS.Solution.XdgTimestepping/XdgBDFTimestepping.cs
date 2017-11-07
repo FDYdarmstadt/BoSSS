@@ -58,7 +58,6 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// </summary>
     public class XdgBDFTimestepping : XdgTimesteppingBase {
 
-
         /// <summary>
         /// Constructor;
         /// </summary>
@@ -489,7 +488,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 
             m_Stack_CutCellMetrics[0] = this.UpdateCutCellMetrics();
-            if (!m_Stack_CutCellMetrics[0].SpeciesList.IsSetEqual(Config_MassScale.Keys))
+            if (!m_Stack_CutCellMetrics[0].SpeciesList.SetEquals(Config_MassScale.Keys))
                 throw new ApplicationException("Mismatch between species lists.");
 
             m_CurrentAgglomeration = new MultiphaseCellAgglomerator(
@@ -757,7 +756,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                         oldAggTrsh = null;
                     }
 
-                    if (!m_Stack_CutCellMetrics[0].SpeciesList.IsSetEqual(Config_MassScale.Keys))
+                    if (!m_Stack_CutCellMetrics[0].SpeciesList.SetEquals(Config_MassScale.Keys))
                         throw new ApplicationException("Mismatch between species lists.");
 
                     m_CurrentAgglomeration = new MultiphaseCellAgglomerator(
@@ -920,7 +919,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     }
 
                     Debug.Assert(m_Stack_CutCellMetrics[0] != null);
-                    if (!m_Stack_CutCellMetrics[0].SpeciesList.IsSetEqual(Config_MassScale.Keys))
+                    if (!m_Stack_CutCellMetrics[0].SpeciesList.SetEquals(Config_MassScale.Keys))
                         throw new ApplicationException("Mismatch between species lists.");
 
                     m_CurrentAgglomeration = new MultiphaseCellAgglomerator(
@@ -1216,7 +1215,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 int[] Jtot =
                     (new int[] { base.m_LsTrk._Regions.GetCutCellMask().NoOfItemsLocally.MPISum(), base.m_LsTrk.GridDat.Cells.NoOfLocalUpdatedCells })
                     .MPISum();
-                //Console.WriteLine("No of cells {0}, No of cut cells {1}.", Jtot[1], Jtot[0]);
+                Console.WriteLine("No of cells {0}, No of cut cells {1}.", Jtot[1], Jtot[0]);
                 if (Jtot[0] == Jtot[1])
                     throw new ArithmeticException("All cells are cut cells - check your settings!");
             }
@@ -1418,7 +1417,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             // new cut-cell metric
             m_Stack_CutCellMetrics[0] = this.UpdateCutCellMetrics();
-            if (!m_Stack_CutCellMetrics[0].SpeciesList.IsSetEqual(Config_MassScale.Keys))
+            if (!m_Stack_CutCellMetrics[0].SpeciesList.SetEquals(Config_MassScale.Keys))
                 throw new ApplicationException("Mismatch between species lists.");
 
 

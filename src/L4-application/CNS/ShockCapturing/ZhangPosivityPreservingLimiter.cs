@@ -78,7 +78,7 @@ namespace CNS.ShockCapturing {
                     SpeciesId species = speciesMap.Tracker.GetSpeciesId(speciesMap.Control.FluidSpeciesName);
                     double volume = speciesMap.QuadSchemeHelper.NonAgglomeratedMetrics.CutCellVolumes[species][cell];
 
-                    double integralDensity = fieldSet.Density.LxError((ScalarFunction)null, (a, b) => a, singleCellRule);
+                    double integralDensity = fieldSet.Density.LxError((ScalarFunction)null, (X, a, b) => a, singleCellRule);
                     double meanDensity = integralDensity / volume;
 
                     if (meanDensity < epsilon) {
@@ -114,11 +114,11 @@ namespace CNS.ShockCapturing {
                     }
 #endif
 
-                    double integralMomentumX = fieldSet.Momentum[0].LxError((ScalarFunction)null, (a, b) => a, singleCellRule);
+                    double integralMomentumX = fieldSet.Momentum[0].LxError((ScalarFunction)null, (X, a, b) => a, singleCellRule);
                     double meanMomentumX = integralMomentumX / volume;
-                    double integralMomentumY = fieldSet.Momentum[1].LxError((ScalarFunction)null, (a, b) => a, singleCellRule);
+                    double integralMomentumY = fieldSet.Momentum[1].LxError((ScalarFunction)null, (X, a, b) => a, singleCellRule);
                     double meanMomentumY = integralMomentumY / volume;
-                    double integralEnergy = fieldSet.Energy.LxError((ScalarFunction)null, (a, b) => a, singleCellRule);
+                    double integralEnergy = fieldSet.Energy.LxError((ScalarFunction)null, (X, a, b) => a, singleCellRule);
                     double meanEnergy = integralEnergy / volume;
 
                     double meanInnerEnergy = meanEnergy - 0.5 * (meanMomentumX * meanMomentumX + meanMomentumY * meanMomentumY) / meanDensity;

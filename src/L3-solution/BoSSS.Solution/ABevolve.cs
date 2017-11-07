@@ -101,7 +101,7 @@ namespace BoSSS.Solution.Timestepping {
         /// </summary>
         /// <param name="dt">size of time step</param>
         public override double Perform(double dt) {
-            using (new ilPSP.Tracing.FuncTrace()) {
+            using (var tr = new ilPSP.Tracing.FuncTrace()) {
                 // Checking History
                 if (HistoryDGCoordinate.Count >= order)
                     HistoryDGCoordinate.Dequeue();
@@ -131,6 +131,7 @@ namespace BoSSS.Solution.Timestepping {
                     ABCoefficients = ComputeCoefficients(dt, historyTimeArray);
                 }
 
+                double[] upDGC;
                 CurrentChangeRate = new double[Mapping.LocalLength];
                 currentBndFluxes = new double[numOfEdges * Mapping.Fields.Count];
                 ComputeChangeRate(CurrentChangeRate, m_Time, 0, currentBndFluxes);
@@ -140,20 +141,13 @@ namespace BoSSS.Solution.Timestepping {
 
                 // Update DGCoordinates for History
                 // (Hint: calls extra function to gives the ability to modify the update procedure, i.e in IBM case)
-                double[] upDGC = ComputesUpdatedDGCoordinates(CompleteChangeRate);
+                upDGC = ComputesUpdatedDGCoordinates(CompleteChangeRate);
 
                 // Keeps track of histories
                 HistoryDGCoordinate.Enqueue(upDGC);
                 HistoryChangeRate.Enqueue(CurrentChangeRate);
                 HistoryBndFluxes.Enqueue(currentBndFluxes);
-
                 UpdateTimeHistory(dt);
-
-                //HistoryDGCoordinate.Dequeue();
-                //HistoryChangeRate.Dequeue();
-                //HistoryBndFluxes.Dequeue();
-                //if (adaptive)
-                //    historyTimePerCell.Dequeue();
 
                 // Update local sub-grid time
                 m_Time = m_Time + dt;

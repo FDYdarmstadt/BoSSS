@@ -71,54 +71,67 @@ namespace CNS.IBM {
             agglomerationPatternHasChanged = true;
 
             cutCells = speciesMap.Tracker._Regions.GetCutCellMask();
-            cutAndTargetCells = cutCells.Union(speciesMap.Agglomerator.AggInfo.TargetCells);            
+            cutAndTargetCells = cutCells.Union(speciesMap.Agglomerator.AggInfo.TargetCells);
 
             // Normal LTS constructor
             this.NumOfLocalTimeSteps = new List<int>(numOfSubgrids);
 
-            clustering = new Clustering(this.gridData, this.timeStepConstraints, this.numOfSubgrids);
-            UpdateLTSVariables(); 
+            SubGrid fluidSubGrid = this.speciesMap.SubGrid;
+
+
+
+            clustering = new Clustering(this.gridData, this.timeStepConstraints, this.numOfSubgrids, fluidSubGrid);
+            UpdateLTSVariables();
 
             CalculateNumberOfLocalTS(); // Might remove sub-grids when time step sizes are too similar
             clustering.UpdateClusteringVariables(this.subGridList, this.SubGridField, this.numOfSubgrids);
 
             // Modify SubgridList, to account smaller time-steps because of cut-cells
             // Right now, only "hard-coded" with half time-step for all cut-cells
-            {
-                SubGrid cutCellSgrd = new SubGrid(cutAndTargetCells);
-                SubGrid finestSgrd = subGridList.Last();
+            //{
+            //    SubGrid cutCellSgrd = new SubGrid(cutAndTargetCells);
+            //    SubGrid finestSgrd = subGridList.Last();
 
-                finestSgrd = new SubGrid(finestSgrd.VolumeMask.Except(cutAndTargetCells).Intersect(speciesMap.SubGrid.VolumeMask));
-                subGridList.RemoveAt(subGridList.Count - 1);
+            //    finestSgrd = new SubGrid(finestSgrd.VolumeMask.Except(cutAndTargetCells).Intersect(speciesMap.SubGrid.VolumeMask));
+            //    subGridList.RemoveAt(subGridList.Count - 1);
 
-                subGridList.Add(finestSgrd);
+            //    subGridList.Add(finestSgrd);
 
-                subGridList.Add(cutCellSgrd);
+            //    subGridList.Add(cutCellSgrd);
 
-                // For debugging, change values in SgrdField
-                //if (SgrdField != null) {
-                //    SgrdField.Clear();
-                //    int ii = 0;
-                //    foreach (SubGrid sgrd in SgrdList) {
-                //        for (int i = 0; i < sgrd.LocalNoOfCells; i++) {
-                //            SgrdField.SetMeanValue(sgrd.SubgridIndex2LocalCellIndex[i], ii);
-                //        }
-                //        ii++;
-                //    }
-                //}
-
-                
-                int numTSfinest = NumOfLocalTimeSteps.Last();
-                NumOfLocalTimeSteps.Add(2 * numTSfinest);
+            //    // For debugging, change values in SgrdField
+            //    //if (SgrdField != null) {
+            //    //    SgrdField.Clear();
+            //    //    int ii = 0;
+            //    //    foreach (SubGrid sgrd in SgrdList) {
+            //    //        for (int i = 0; i < sgrd.LocalNoOfCells; i++) {
+            //    //            SgrdField.SetMeanValue(sgrd.SubgridIndex2LocalCellIndex[i], ii);
+            //    //        }
+            //    //        ii++;
+            //    //    }
+            //    //}
 
 
-                MaxLocalTS = NumOfLocalTimeSteps.Last();
-                numOfSubgrids = subGridList.Count;
+            //    int numTSfinest = NumOfLocalTimeSteps.Last();
+            //    NumOfLocalTimeSteps.Add(2 * numTSfinest);
+
+
+            //    MaxLocalTS = NumOfLocalTimeSteps.Last();
+            //    numOfSubgrids = subGridList.Count;
+            //}
+
+            // ############# HACK for visualising subGrids for IBM-LTS test cases
+            this.SubGridField.Clear();
+            for (int i = 0; i < subGridList.Count; i++) {
+                for (int cell = 0; cell < subGridList[i].LocalNoOfCells; cell++) {
+                    this.SubGridField.SetMeanValue(subGridList[i].SubgridIndex2LocalCellIndex[cell], i);
+                    //this.SubGridField.SetMeanValue(subGridList[i].SubgridIndex2LocalCellIndex[cell], 1000);
+                }
             }
-            clustering.UpdateClusteringVariables(this.subGridList, this.SubGridField, this.numOfSubgrids);
+            // ############# HACK for visualising subGrids for IBM-LTS test cases
 
-            if (this.numOfSubgrids == 1)
-                throw new ArgumentException("Clustering yields only to one sub-grid, LTS is not possible! Element sizes of your grid are too similar");
+            //if (this.numOfSubgrids == 1)
+            //    throw new ArgumentException("Clustering yields only to one sub-grid, LTS is not possible! Element sizes of your grid are too similar");
 
             localABevolve = new ABevolve[subGridList.Count];
             for (int i = 0; i < subGridList.Count; i++) {
@@ -159,7 +172,7 @@ namespace CNS.IBM {
 
             CellQuadratureScheme volumeScheme = speciesMap.QuadSchemeHelper.GetVolumeQuadScheme(
                 species, true, fluidCells, control.LevelSetQuadratureOrder);
-            
+
             // Does _not_ include agglomerated edges
             EdgeMask nonVoidEdges = speciesMap.QuadSchemeHelper.GetEdgeMask(species);
             EdgeQuadratureScheme edgeScheme = speciesMap.QuadSchemeHelper.GetEdgeQuadScheme(

@@ -482,7 +482,7 @@ namespace BoSSS.Foundation {
         /// <param name="Map">
         /// Arbitrary mapping applied to the values of this field and
         /// <paramref name="function"/> at some point, which is finally integrated.
-        /// E.g., the mapping for an L2-error would be \f$ (a,b) => (a - b)^2 \f$, 
+        /// E.g., the mapping for an L2-error would be \f$ (\vec{x},a,b) => (a - b)^2 \f$, 
         /// where \f$ a \f$ is the value of this field at some point \f$ \vec{x} \f$ and
         /// \f$ b \f$ is the value of <paramref name="function"/> at \f$ \vec{x} \f$.
         /// </param>
@@ -491,7 +491,7 @@ namespace BoSSS.Foundation {
         /// this field minus <paramref name="function"/>, approximated by the
         /// quadrature rule <paramref name="rule"/>
         /// </returns>
-        public double LxError(ScalarFunction function, Func<double, double, double> Map, ICompositeQuadRule<QuadRule> rule) {
+        public double LxError(ScalarFunction function, Func<double[], double, double, double> Map, ICompositeQuadRule<QuadRule> rule) {
             MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
 
             using (new FuncTrace()) {
@@ -516,7 +516,7 @@ namespace BoSSS.Foundation {
         /// <param name="Map">
         /// Arbiter mapping applied to the values of this field and
         /// <paramref name="function"/> at some point, which is finally integrated.
-        /// E.g., the mapping for an L2-error would be \f$ (a,b) => (a - b)^2 \f$, 
+        /// E.g., the mapping for an L2-error would be \f$ (\vec{x},a,b) => (a - b)^2 \f$, 
         /// where \f$ a \f$ is the value of this field at some point \f$ \vec{x} \f$ and
         /// \f$ b \f$ is the value of <paramref name="function"/> at \f$ \vec{x} \f$.
         /// </param>
@@ -524,7 +524,7 @@ namespace BoSSS.Foundation {
         /// on all invoking MPI processes, the L2 norm of
         /// this field minus <paramref name="function"/>
         /// </returns>
-        public double LxError(ScalarFunctionEx function, Func<double, double, double> Map, ICompositeQuadRule<QuadRule> rule) {
+        public double LxError(ScalarFunctionEx function, Func<double[], double, double, double> Map, ICompositeQuadRule<QuadRule> rule) {
             MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
 
             using (new FuncTrace()) {
@@ -534,7 +534,10 @@ namespace BoSSS.Foundation {
                 double nrmtot = l2nq.LxNorm.MPISum();
                 return nrmtot;
             }
+
         }
+
+        
 
         /// <summary>
         /// Variant of
@@ -562,7 +565,7 @@ namespace BoSSS.Foundation {
         /// <paramref name="function"/>, approximated by the quadrature rule
         /// <paramref name="quadRule"/>
         /// </returns>
-        public double[] LocalLxError(ScalarFunction function, Func<double, double, double> Map, ICompositeQuadRule<QuadRule> quadRule) {
+        public double[] LocalLxError(ScalarFunction function, Func<double[], double, double, double> Map, ICompositeQuadRule<QuadRule> quadRule) {
             using (new FuncTrace()) {
                 LocalLxNormQuadrature quacdrature = new LocalLxNormQuadrature(this, function, Map, quadRule);
                 quacdrature.Execute();
@@ -625,7 +628,7 @@ namespace BoSSS.Foundation {
             CellQuadratureScheme scheme = null;
             if (CM != null)
                 scheme = new CellQuadratureScheme(true, CM);
-            double r = LxError((ScalarFunction)null, (a, b) => a.Abs(), scheme.SaveCompile(this.GridDat, 2 * m_Basis.Degree));
+            double r = LxError((ScalarFunction)null, (X, a, b) => a.Abs(), scheme.SaveCompile(this.GridDat, 2 * m_Basis.Degree));
             return r;
         }
 
@@ -660,7 +663,7 @@ namespace BoSSS.Foundation {
             /// <summary>
             /// ctor.
             /// </summary>
-            public LxNormQuadrature(DGField owner, ScalarFunction func, Func<double, double, double> Map, ICompositeQuadRule<QuadRule> rule)
+            public LxNormQuadrature(DGField owner, ScalarFunction func, Func<double[], double, double, double> Map, ICompositeQuadRule<QuadRule> rule)
                 : base(new int[] { 1 }, owner.Basis.GridDat, rule) //
             {
                 m_func = func;
@@ -671,7 +674,7 @@ namespace BoSSS.Foundation {
             /// <summary>
             /// ctor.
             /// </summary>
-            public LxNormQuadrature(DGField owner, ScalarFunctionEx func, Func<double, double, double> Map, ICompositeQuadRule<QuadRule> rule)
+            public LxNormQuadrature(DGField owner, ScalarFunctionEx func, Func<double[], double, double, double> Map, ICompositeQuadRule<QuadRule> rule)
                 : base(new int[] { 1 }, owner.Basis.GridDat, rule) //
             {
                 m_funcEx = func;
@@ -684,7 +687,7 @@ namespace BoSSS.Foundation {
             ScalarFunction m_func;
             ScalarFunctionEx m_funcEx;
 
-            Func<double, double, double> m_Map;
+            Func<double[], double, double, double> m_Map;
 
             /// <summary>
             /// 1st index: cell index (minus some offset);
@@ -697,7 +700,7 @@ namespace BoSSS.Foundation {
                 base.AllocateBuffers(NoOfItems, rule);
 
                 int NoOfNodes = rule.GetLength(0);
-                if (m_func != null) {
+                if (m_func != null || m_Map != null) {
                     m_NodesTransformed.Allocate(new int[] { NoOfItems, NoOfNodes, GridDat.SpatialDimension });
                 }
             }
@@ -713,15 +716,19 @@ namespace BoSSS.Foundation {
                 // evaluate scalar function ans store result in 'EvalResult'
                 // =========================================================
                 Debug.Assert(!((m_func != null) && (m_funcEx != null)));
-                if (m_func != null) {
+                if(m_func != null || m_Map != null) {
                     GridDat.TransformLocal2Global(NodesUntransformed, i0, Length, m_NodesTransformed, 0);
+                }
 
+                if(m_func != null) { 
                     MultidimensionalArray inp = m_NodesTransformed.ResizeShallow(new int[] { Length * M, D });
                     MultidimensionalArray outp = EvalResult.ResizeShallow(new int[] { Length * M });
                     m_func(inp, outp);
-                }
+                    Debug.Assert(m_funcEx == null);
+                } 
                 if (m_funcEx != null) {
                     m_funcEx(i0, Length, NodesUntransformed, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
+                    Debug.Assert(m_func == null);
                 }
 
 
@@ -746,12 +753,18 @@ namespace BoSSS.Foundation {
                     MultidimensionalArray fieldvals = MultidimensionalArray.Create(new int[] { Length, NodesUntransformed.GetLength(0) });
                     m_Owner.Evaluate(i0, Length, NodesUntransformed, fieldvals, -1.0);
 
+                    double[] X = new double[D];
 
                     for (int j = 0; j < Length; j++) {
                         for (int m = 0; m < M; m++) {
                             double e;
                             e = EvalResult[j, m, 0];
-                            EvalResult[j, m, 0] = this.m_Map(fieldvals[j, m], e);
+
+                            for(int d = 0; d < D; d++) {
+                                X[d] = m_NodesTransformed[j, m, d];
+                            }
+
+                            EvalResult[j, m, 0] = this.m_Map(X, fieldvals[j, m], e);
                         }
                     }
                 }
@@ -781,7 +794,7 @@ namespace BoSSS.Foundation {
         /// </summary>
         class LocalLxNormQuadrature : LxNormQuadrature {
 
-            public LocalLxNormQuadrature(DGField owner, ScalarFunction func, Func<double, double, double> Map, ICompositeQuadRule<QuadRule> rule)
+            public LocalLxNormQuadrature(DGField owner, ScalarFunction func, Func<double[], double, double, double> Map, ICompositeQuadRule<QuadRule> rule)
                 : base(owner, func, Map, rule) {
                 m_localLxNorms = new double[rule.NumberOfItems];
             }

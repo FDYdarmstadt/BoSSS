@@ -1151,9 +1151,9 @@ namespace BoSSS.Foundation {
 
 
         /// <summary>
-        /// accumulate this field to a DG Field
+        /// Accumulate this field to a DG Field
         /// </summary>
-        /// <param name="alpha"></param>
+        /// <param name="alpha">Scaling factor</param>
         /// <param name="DGField"></param>
         /// <param name="mask"></param>
         public void AccToDGField(double alpha, ConventionalDGField DGField, CellMask mask = null) {
