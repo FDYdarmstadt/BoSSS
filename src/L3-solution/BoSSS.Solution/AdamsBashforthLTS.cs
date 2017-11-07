@@ -47,10 +47,7 @@ namespace BoSSS.Solution.Timestepping {
             protected set;
         }
 
-        /// <summary>
-        /// List containing all sub-grids
-        /// </summary>
-        protected List<SubGrid> subGridList;
+        //protected Clusterer.Clustering CurrentClustering;
 
         /// <summary>
         /// Local evolvers
@@ -119,20 +116,22 @@ namespace BoSSS.Solution.Timestepping {
 
         /// <summary>
         /// Interval for reclustering when LTS is used in adpative mode
-        /// 0: standard LTS, e.g., 10: <see cref="Clustering.CheckForNewClustering(List{SubGrid})"/> is called in every tenth time step
+        /// 0: standard LTS, e.g., 10: <see cref="Clusterer.CheckForNewClustering(List{SubGrid})"/> is called in every tenth time step
         /// </summary>
         protected int reclusteringInterval;
 
         /// <summary>
-        /// <see cref="Clustering"/> based on the time step constraint in each cell. Devides the grids into sub-grids.
+        /// <see cref="Clusterer"/> based on the time step constraint in each cell. Devides the grids into sub-grids.
         /// </summary>
-        protected Clustering clustering;
+        protected Clusterer clusterer;
 
         private bool IBM = false;
 
         Queue<double>[] historyTime_Q;
 
         private int timeStepCount;
+
+        protected Clusterer.Clustering CurrentClustering;
 
         //################# Hack for saving to database in every (A)LTS sub-step
         private Action<TimestepNumber, double> saveToDBCallback;
@@ -147,18 +146,18 @@ namespace BoSSS.Solution.Timestepping {
         /// <param name="order">LTS/AB order</param>
         /// <param name="numOfSubgrids">Amount of sub-grids/clusters to be used for LTS</param>
         /// <param name="timeStepConstraints">Time step constraints for later usage as metric</param>
-        /// <param name="sgrd">Sub-grids, e.g., from previous time steps</param>
+        /// <param name="subGrid">Sub-grids, e.g., from previous time steps</param>
         /// <param name="fluxCorrection">Bool for triggering the fluss correction</param>
         /// <param name="reclusteringInterval">Interval for potential reclustering</param>
         /// <remarks>Uses the k-Mean clustering, see <see cref="BoSSS.Solution.Utils.Kmeans"/>, to generate the element groups</remarks>
-        public AdamsBashforthLTS(SpatialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters, int order, int numOfSubgrids, IList<TimeStepConstraint> timeStepConstraints = null, SubGrid sgrd = null, bool fluxCorrection = true, int reclusteringInterval = 0, Action<TimestepNumber, double> saveToDBCallback = null)
-            : base(spatialOp, Fieldsmap, Parameters, order, timeStepConstraints, sgrd) {
+        public AdamsBashforthLTS(SpatialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters, int order, int numOfSubgrids, IList<TimeStepConstraint> timeStepConstraints = null, SubGrid subGrid = null, bool fluxCorrection = true, int reclusteringInterval = 0, Action<TimestepNumber, double> saveToDBCallback = null)
+            : base(spatialOp, Fieldsmap, Parameters, order, timeStepConstraints, subGrid) {
 
             if (reclusteringInterval != 0) {
                 numOfSubgridsInit = numOfSubgrids;
                 this.timeStepCount = 1;
                 this.adaptive = true;
-                    RungeKuttaScheme.OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforComputechangeRate(t1, t2);
+                RungeKuttaScheme.OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforComputechangeRate(t1, t2);
             }
 
             this.reclusteringInterval = reclusteringInterval;
@@ -169,24 +168,22 @@ namespace BoSSS.Solution.Timestepping {
             NumOfLocalTimeSteps = new List<int>(this.numOfSubgrids);
 
             // numOfSubgrids can be changed by CreateSubGrids(), if less significant different element sizes than numOfSubgrids exist
-            clustering = new Clustering(this.gridData, this.timeStepConstraints, this.numOfSubgrids);
-            UpdateLTSVariables();
-
-            CalculateNumberOfLocalTS(); // Might remove sub-grids when time step sizes are too similar
-            clustering.UpdateClusteringVariables(this.subGridList, this.SubGridField, this.numOfSubgrids);
+            clusterer = new Clusterer(this.gridData, this.timeStepConstraints);
+            CurrentClustering = clusterer.CreateClustering(this.numOfSubgrids, subGrid);
+            CurrentClustering = CalculateNumberOfLocalTS(CurrentClustering); // Might remove sub-grids when time step sizes are too similar
 
             localABevolve = new ABevolve[this.numOfSubgrids];
 
             // i == "Grid Id"
-            for (int i = 0; i < subGridList.Count; i++) {
-                localABevolve[i] = new ABevolve(spatialOp, Fieldsmap, Parameters, order, adaptive: this.adaptive, sgrd: subGridList[i]);
-                    localABevolve[i].OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforComputechangeRate(t1, t2);
+            for (int i = 0; i < CurrentClustering.NumberOfClusters; i++) {
+                localABevolve[i] = new ABevolve(spatialOp, Fieldsmap, Parameters, order, adaptive: this.adaptive, sgrd: CurrentClustering.Clusters[i]);
+                localABevolve[i].OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforComputechangeRate(t1, t2);
             }
 
             GetBoundaryTopology();
 
             for (int i = 0; i < this.numOfSubgrids; i++) {
-                Console.WriteLine("(A)LTS: id=" + i + " -> sub-steps=" + NumOfLocalTimeSteps[i] + " and elements=" + subGridList[i].GlobalNoOfCells);
+                Console.WriteLine("(A)LTS: id=" + i + " -> sub-steps=" + NumOfLocalTimeSteps[i] + " and elements=" + CurrentClustering.Clusters[i].GlobalNoOfCells);
             }
 
             // Saving time steps in subgrids
@@ -222,19 +219,11 @@ namespace BoSSS.Solution.Timestepping {
 
                             // Fix for update problem of artificial viscosity
                             RaiseOnBeforComputechangeRate(Time, dt);
-                            
-                            this.subGridList = clustering.CreateSubGrids(numOfSubgrids);
-                            UpdateLTSVariables();
 
-                            CalculateNumberOfLocalTS(); // Might remove sub-grids when time step sizes are too similar
-                            clustering.UpdateClusteringVariables(this.subGridList, this.SubGridField, this.numOfSubgrids);
-
-                            // Store oldClustering in a List of SubGrids
-                            List<SubGrid> oldClustering = new List<SubGrid>(localABevolve.Count());
-                            foreach (ABevolve abE in localABevolve)
-                                oldClustering.Add(abE.sgrd);
-
-                            bool reclustered = clustering.CheckForNewClustering(oldClustering);
+                            var oldClustering = CurrentClustering;
+                            CurrentClustering = clusterer.CreateClustering(numOfSubgrids, null);
+                            CurrentClustering = CalculateNumberOfLocalTS(CurrentClustering); // Might remove sub-grids when time step sizes are too similar
+                            bool reclustered = clusterer.CheckForNewClustering(oldClustering, CurrentClustering);
 
                             // After the intitial phase, activate adaptive mode for all ABevolve objects
                             foreach (ABevolve abE in localABevolve)
@@ -248,10 +237,10 @@ namespace BoSSS.Solution.Timestepping {
                                 // Create array of Abevolve objects based on the new clustering
                                 localABevolve = new ABevolve[this.numOfSubgrids];
 
-                                for (int i = 0; i < subGridList.Count; i++) {
-                                    localABevolve[i] = new ABevolve(Operator, Mapping, ParameterMapping, order, adaptive: true, sgrd: subGridList[i]);
+                                for (int i = 0; i < CurrentClustering.NumberOfClusters; i++) {
+                                    localABevolve[i] = new ABevolve(Operator, Mapping, ParameterMapping, order, adaptive: true, sgrd: CurrentClustering.Clusters[i]);
                                     localABevolve[i].ResetTime(m_Time);
-                                        localABevolve[i].OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforComputechangeRate(t1, t2);
+                                    localABevolve[i].OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforComputechangeRate(t1, t2);
                                 }
 
                                 CopyHistoriesOfABevolver();
@@ -260,15 +249,15 @@ namespace BoSSS.Solution.Timestepping {
                                 Console.WriteLine("#####Clustering has NOT changed in timestep{0}#####", timeStepCount);
 
                             GetBoundaryTopology();
+
+                            for (int i = 0; i < this.numOfSubgrids; i++) {
+                                Console.WriteLine("LTS: id=" + i + " -> sub-steps=" + NumOfLocalTimeSteps[i] + " and elements=" + CurrentClustering.Clusters[i].GlobalNoOfCells);
+                            }
                         }
                     }
 
                     if (timeStepConstraints != null) {
                         dt = CalculateTimeStep();
-                    }
-
-                    for (int i = 0; i < this.numOfSubgrids; i++) {
-                        Console.WriteLine("LTS: id=" + i + " -> sub-steps=" + NumOfLocalTimeSteps[i] + " and elements=" + subGridList[i].GlobalNoOfCells);
                     }
 
                     double[,] CorrectionMatrix = new double[this.numOfSubgrids, this.numOfSubgrids];
@@ -320,7 +309,7 @@ namespace BoSSS.Solution.Timestepping {
                             if ((localABevolve[id].Time - m_Time) < 1e-10) {
                                 double localDt = dt / NumOfLocalTimeSteps[id];
 
-                                foreach (Chunk chunk in subGridList[id].VolumeMask) {
+                                foreach (Chunk chunk in CurrentClustering.Clusters[id].VolumeMask) {
                                     foreach (int cell in chunk.Elements) {
                                         // f == each field
                                         // n == basis polynomial
@@ -399,7 +388,7 @@ namespace BoSSS.Solution.Timestepping {
                     }
 
                     // Needed for the history
-                    for (int i = 0; i < subGridList.Count; i++) {
+                    for (int i = 0; i < CurrentClustering.NumberOfClusters; i++) {
                         double[] localCurrentChangeRate = new double[currentChangeRate.Length];
                         double[] edgeFlux = new double[gridData.iGeomEdges.Count * Mapping.Fields.Count];
                         localABevolve[i].ComputeChangeRate(localCurrentChangeRate, m_Time, 0, edgeFlux);
@@ -413,8 +402,8 @@ namespace BoSSS.Solution.Timestepping {
 
                     // Saves ChangeRateHistory for AB LTS
                     // Only entries for the specific sub-grid
-                    for (int i = 0; i < subGridList.Count; i++) {
-                        localABevolve[i].HistoryDGCoordinate.Enqueue(OrderValuesBySubgrid(subGridList[i], upDGC));
+                    for (int i = 0; i < CurrentClustering.NumberOfClusters; i++) {
+                        localABevolve[i].HistoryDGCoordinate.Enqueue(OrderValuesBySubgrid(CurrentClustering.Clusters[i], upDGC));
                         if (!adaptive)
                             localABevolve[i].HistoryTime.Enqueue(RungeKuttaScheme.Time);
                     }
@@ -446,12 +435,12 @@ namespace BoSSS.Solution.Timestepping {
             double[] edgeBndFluxCoarse = localABevolve[coarseID].completeBndFluxes;
             double[] edgeBndFluxFine = localABevolve[fineID].completeBndFluxes;
 
-            int[] LocalCellIdx2SubgridIdx = subGridList[coarseID].LocalCellIndex2SubgridIndex;
+            int[] LocalCellIdx2SubgridIdx = CurrentClustering.Clusters[coarseID].LocalCellIndex2SubgridIndex;
 
-            CellMask CellMaskCoarse = subGridList[coarseID].VolumeMask;
+            CellMask CellMaskCoarse = CurrentClustering.Clusters[coarseID].VolumeMask;
 
             //Only the edges of coarseID and fineID are needed
-            EdgeMask unionEdgeMask = subGridList[coarseID].BoundaryEdgesMask.Intersect(subGridList[fineID].BoundaryEdgesMask);
+            EdgeMask unionEdgeMask = CurrentClustering.Clusters[coarseID].BoundaryEdgesMask.Intersect(CurrentClustering.Clusters[fineID].BoundaryEdgesMask);
 
             int cellCoarse;
             int cellFine;
@@ -542,12 +531,12 @@ namespace BoSSS.Solution.Timestepping {
             BitArray[] SgrdWithGhostCells = new BitArray[numOfSubgrids];
             // prepare the calculation and  save temporarily all array which involve MPI communication
             for (int id = 0; id < numOfSubgrids; id++) {
-                LocalCells2SubgridIndex[id] = subGridList[id].LocalCellIndex2SubgridIndex;
-                SgrdWithGhostCells[id] = subGridList[id].VolumeMask.GetBitMaskWithExternal();
+                LocalCells2SubgridIndex[id] = CurrentClustering.Clusters[id].LocalCellIndex2SubgridIndex;
+                SgrdWithGhostCells[id] = CurrentClustering.Clusters[id].VolumeMask.GetBitMaskWithExternal();
             }
 
             for (int id = 1; id < numOfSubgrids; id++) {
-                SubGrid sgrd = subGridList[id];
+                SubGrid sgrd = CurrentClustering.Clusters[id];
                 BitArray BoBA = new BitArray(gridData.iLogicalCells.NoOfLocalUpdatedCells);
 
                 //BitArray SgrdWithGhostCell = sgrd.VolumeMask.GetBitMaskWithExternal();
@@ -632,7 +621,7 @@ namespace BoSSS.Solution.Timestepping {
                     // Use "harmonic sum" of step - sizes, see
                     // WatkinsAsthanaJameson2016 for the reasoning
                     double dt = 1.0 / timeStepConstraints.Sum(
-                            c => 1.0 / c.GetGloballyAdmissibleStepSize(subGridList[i]));
+                            c => 1.0 / c.GetGloballyAdmissibleStepSize(CurrentClustering.Clusters[i]));
                     if (dt == 0.0) {
                         throw new ArgumentException(
                             "Time-step size is exactly zero.");
@@ -694,16 +683,16 @@ namespace BoSSS.Solution.Timestepping {
         /// <summary>
         /// Calculates the number of sub-steps for each sub-grid
         /// </summary>
-        protected void CalculateNumberOfLocalTS() {
+        protected Clusterer.Clustering CalculateNumberOfLocalTS(Clusterer.Clustering clustering) {
             NumOfLocalTimeSteps.Clear();
 
-            double[] sendHmin = new double[numOfSubgrids];
-            double[] rcvHmin = new double[numOfSubgrids];
+            double[] sendHmin = new double[clustering.NumberOfClusters];
+            double[] rcvHmin = new double[clustering.NumberOfClusters];
 
-            MultidimensionalArray cellMetric = clustering.GetCellMetric();
-            for (int i = 0; i < numOfSubgrids; i++) {
+            MultidimensionalArray cellMetric = clusterer.GetCellMetric(clustering.SubGrid);
+            for (int i = 0; i < clustering.NumberOfClusters; i++) {
                 double h_min = double.MaxValue;
-                CellMask volumeMask = subGridList[i].VolumeMask;
+                CellMask volumeMask = clustering.Clusters[i].VolumeMask;
                 foreach (Chunk c in volumeMask) {
                     int JE = c.JE;
                     for (int j = c.i0; j < JE; j++) {
@@ -716,12 +705,13 @@ namespace BoSSS.Solution.Timestepping {
             // MPI to ensure that each processor has the same NumLocalTS
             unsafe {
                 fixed (double* pSend = sendHmin, pRcv = rcvHmin) {
-                    csMPI.Raw.Allreduce((IntPtr)(pSend), (IntPtr)(pRcv), numOfSubgrids, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._OP.MIN, csMPI.Raw._COMM.WORLD);
+                    csMPI.Raw.Allreduce((IntPtr)(pSend), (IntPtr)(pRcv), clustering.NumberOfClusters, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._OP.MIN, csMPI.Raw._COMM.WORLD);
                 }
             }
 
             int jj = 0; // Counter for the current position in the Lists
-            for (int i = 0; i < numOfSubgrids; i++) {
+            List<SubGrid> newClusters = new List<SubGrid>();
+            for (int i = 0; i < clustering.NumberOfClusters; i++) {
                 double fraction = rcvHmin[0] / rcvHmin[i];
                 // Accounting for roundoff errors
                 double eps = 1.0e-2;
@@ -731,21 +721,23 @@ namespace BoSSS.Solution.Timestepping {
                 } else {
                     subSteps = (int)Math.Floor(fraction);
                 }
+
                 if (i > 0 && subSteps == NumOfLocalTimeSteps[jj - 1]) {
                     // Combine both subgrids and remove the old ones
-                    SubGrid combinedSubgrid = new SubGrid(subGridList[jj].VolumeMask.Union(subGridList[jj - 1].VolumeMask));
-                    subGridList.RemoveRange(jj - 1, 2);
-                    subGridList.Insert(jj - 1, combinedSubgrid);
+                    SubGrid combinedSubgrid = new SubGrid(clustering.Clusters[jj].VolumeMask.Union(clustering.Clusters[jj - 1].VolumeMask));
+                    newClusters.Add(combinedSubgrid);
                     Console.WriteLine("Clustering leads to sub-grids which are too similar, i.e. they have the same local time step size. They are combined.");
                 } else {
+                    newClusters.Add(clustering.Clusters[jj]);
                     NumOfLocalTimeSteps.Add(subSteps);
                     jj++;
                 }
-
             }
-            Debug.Assert(NumOfLocalTimeSteps.Count == subGridList.Count);
+
             numOfSubgrids = NumOfLocalTimeSteps.Count;
             MaxLocalTS = NumOfLocalTimeSteps[numOfSubgrids - 1];
+
+            return new Clusterer.Clustering(newClusters, clustering.SubGrid);
         }
 
         /// <summary>
@@ -980,16 +972,6 @@ namespace BoSSS.Solution.Timestepping {
                     id = i;
             }
             return id;
-        }
-
-        /// <summary>
-        /// Updates the LTS variables when they have been changed by methods
-        /// from <see cref="Clustering"/>
-        /// </summary>
-        protected void UpdateLTSVariables() {
-            this.subGridList = clustering.SubGridList;
-            this.SubGridField = clustering.SubGridField;
-            this.numOfSubgrids = clustering.NumOfClusters;
         }
     }
 }

@@ -80,11 +80,10 @@ namespace CNS.IBM {
 
 
 
-            clustering = new Clustering(this.gridData, this.timeStepConstraints, this.numOfSubgrids, fluidSubGrid);
-            UpdateLTSVariables();
+            clusterer = new Clusterer(this.gridData, this.timeStepConstraints);
+            CurrentClustering = clusterer.CreateClustering(this.numOfSubgrids, fluidSubGrid);
 
-            CalculateNumberOfLocalTS(); // Might remove sub-grids when time step sizes are too similar
-            clustering.UpdateClusteringVariables(this.subGridList, this.SubGridField, this.numOfSubgrids);
+            CurrentClustering = CalculateNumberOfLocalTS(CurrentClustering); // Might remove sub-grids when time step sizes are too similar
 
             // Modify SubgridList, to account smaller time-steps because of cut-cells
             // Right now, only "hard-coded" with half time-step for all cut-cells
@@ -122,9 +121,9 @@ namespace CNS.IBM {
 
             // ############# HACK for visualising subGrids for IBM-LTS test cases
             this.SubGridField.Clear();
-            for (int i = 0; i < subGridList.Count; i++) {
-                for (int cell = 0; cell < subGridList[i].LocalNoOfCells; cell++) {
-                    this.SubGridField.SetMeanValue(subGridList[i].SubgridIndex2LocalCellIndex[cell], i);
+            for (int i = 0; i < CurrentClustering.NumberOfClusters; i++) {
+                for (int cell = 0; cell < CurrentClustering.Clusters[i].LocalNoOfCells; cell++) {
+                    this.SubGridField.SetMeanValue(CurrentClustering.Clusters[i].SubgridIndex2LocalCellIndex[cell], i);
                     //this.SubGridField.SetMeanValue(subGridList[i].SubgridIndex2LocalCellIndex[cell], 1000);
                 }
             }
@@ -133,8 +132,8 @@ namespace CNS.IBM {
             //if (this.numOfSubgrids == 1)
             //    throw new ArgumentException("Clustering yields only to one sub-grid, LTS is not possible! Element sizes of your grid are too similar");
 
-            localABevolve = new ABevolve[subGridList.Count];
-            for (int i = 0; i < subGridList.Count; i++) {
+            localABevolve = new ABevolve[CurrentClustering.NumberOfClusters];
+            for (int i = 0; i < localABevolve.Length; i++) {
                 localABevolve[i] = new IBMABevolve(
                     standardOperator,
                     boundaryOperator,
@@ -144,12 +143,12 @@ namespace CNS.IBM {
                     control.ExplicitOrder,
                     control.LevelSetQuadratureOrder,
                     control.MomentFittingVariant,
-                    subGridList[i]);
+                    CurrentClustering.Clusters[i]);
             }
             GetBoundaryTopology();
 
             for (int i = 0; i < numOfSubgrids; i++) {
-                Console.WriteLine("LTS: id=" + i + " -> sub-steps=" + NumOfLocalTimeSteps[i] + " and elements=" + subGridList[i].GlobalNoOfCells);
+                Console.WriteLine("LTS: id=" + i + " -> sub-steps=" + NumOfLocalTimeSteps[i] + " and elements=" + CurrentClustering.Clusters[i].GlobalNoOfCells);
             }
 
             // StarUp Phase needs an IBM time stepper

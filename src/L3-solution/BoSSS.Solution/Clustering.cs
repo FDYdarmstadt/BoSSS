@@ -29,7 +29,37 @@ namespace BoSSS.Solution.Utils {
     /// <summary>
     /// Class for a cell clustering that devides the grid into sub-grids
     /// </summary>
-    public class Clustering {
+    public class Clusterer {
+
+        public class Clustering {
+
+            public Clustering(List<SubGrid> clusters, SubGrid subGrid) {
+                this.Clusters = clusters;
+                this.SubGrid = subGrid;
+                //this.SubGridField = clusterField;
+            }
+
+            public List<SubGrid> Clusters {
+                get;
+                private set;
+            }
+
+            public int NumberOfClusters {
+                get {
+                    return Clusters.Count();
+                }
+            }
+
+            public SubGrid SubGrid {
+                get;
+                private set;
+            }
+
+            //public DGField SubGridField {
+            //    get;
+            //    private set;
+            //}
+        }
 
         /// <summary>
         /// Information about the grid
@@ -42,30 +72,9 @@ namespace BoSSS.Solution.Utils {
         private IList<TimeStepConstraint> timeStepConstraints;
 
         /// <summary>
-        /// Number of clusters
-        /// </summary>
-        public int NumOfClusters {
-            get;
-            private set;
-        }
-
-        /// <summary>
-        /// List of sub-grids
-        /// </summary>
-        public List<SubGrid> SubGridList {
-            get;
-            private set;
-        }
-
-        /// <summary>
         /// Helper Field needed for the visualization of the sub-grids
         /// </summary>
         public DGField SubGridField {
-            get;
-            private set;
-        }
-
-        public SubGrid SubGrid {
             get;
             private set;
         }
@@ -75,15 +84,11 @@ namespace BoSSS.Solution.Utils {
         /// </summary>
         /// <param name="gridData">Information about the grid</param>
         /// <param name="timeStepConstraints">Time step constraings used as cell metric for the clustering</param>
-        /// <param name="numOfClusters">Number of clusters</param>
-        public Clustering(IGridData gridData, IList<TimeStepConstraint> timeStepConstraints, int numOfClusters, SubGrid subGrid = null) {
+        public Clusterer(IGridData gridData, IList<TimeStepConstraint> timeStepConstraints) {
             this.gridData = gridData;
             this.timeStepConstraints = timeStepConstraints;
-            this.NumOfClusters = numOfClusters;
-            this.SubGrid = subGrid;
 
             this.SubGridField = new SinglePhaseField(new Basis(gridData, 0));
-            this.SubGridList = CreateSubGrids(this.NumOfClusters);
         }
 
         /// <summary>
@@ -91,38 +96,40 @@ namespace BoSSS.Solution.Utils {
         /// </summary>     
         /// <param name="numOfClusters">Number of clusters</param>
         /// <returns>A list of sub-grids</returns>
-        public List<SubGrid> CreateSubGrids(int numOfClusters) {
-            this.NumOfClusters = numOfClusters;
+        public Clustering CreateClustering(int numOfClusters, SubGrid subGrid = null) {
+            if (subGrid == null) {
+                subGrid = new SubGrid(CellMask.GetFullMask(gridData));
+            }
+
             int numOfCells = gridData.iLogicalCells.NoOfLocalUpdatedCells;
 
-            MultidimensionalArray cellMetric = GetCellMetric();
-            MultidimensionalArray means = CreateMeans(cellMetric);
-
+            MultidimensionalArray cellMetric = GetCellMetric(subGrid);
+            MultidimensionalArray means = CreateInitialMeans(cellMetric, numOfClusters);
             Kmeans Kmean = new Kmeans(cellMetric.To1DArray(), numOfClusters, means.To1DArray());
 
             // The corresponding sub-grid IDs
-            int[] clustered = Kmean.Cluster();
-            int[] clusterCount = Kmean.ClusterCount;
+            int[] cellToClusterMap = Kmean.Cluster();
+            int[] noOfCellsPerCluster = Kmean.ClusterCount;
 
             unsafe {
                 int[] globalCC = new int[numOfClusters];
                 // send = means[]
                 // receive = globalMeans[]
-                fixed (int* pSend = &clusterCount[0], pRcv = &globalCC[0]) {
+                fixed (int* pSend = &noOfCellsPerCluster[0], pRcv = &globalCC[0]) {
                     csMPI.Raw.Allreduce((IntPtr)(pSend), (IntPtr)(pRcv), numOfClusters, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.SUM, csMPI.Raw._COMM.WORLD);
                 }
-                clusterCount = globalCC;
+                noOfCellsPerCluster = globalCC;
             }
 
             int counter = numOfClusters;
             for (int i = 0; i < numOfClusters; i++) {
-                if (clusterCount[i] == 0) {
+                if (noOfCellsPerCluster[i] == 0) {
                     System.Console.WriteLine("Sub-grid/Cluster " + (i + 1) + ", with mean value " + Kmean.Means[i] + ", is empty and not used anymore!");
                     counter--;
                 }
             }
 
-            SubGridList = new List<SubGrid>(counter);
+            var clusters = new List<SubGrid>(counter);
 
             // Generating BitArray for all Subgrids, even for those which are empty, i.e ClusterCount == 0
             BitArray[] baMatrix = new BitArray[numOfClusters];
@@ -133,10 +140,10 @@ namespace BoSSS.Solution.Utils {
             // Filling the BitArrays
             this.SubGridField.Clear();
             for (int i = 0; i < numOfCells; i++) {
-                if (clustered[i] != -1) { // Happens only in the IBM case for void cells
-                    baMatrix[clustered[i]][i] = true;
+                if (cellToClusterMap[i] != -1) { // Happens only in the IBM case for void cells
+                    baMatrix[cellToClusterMap[i]][i] = true;
                     // For Debugging: Visualizes the clusters in a field
-                    this.SubGridField.SetMeanValue(i, clustered[i] + 0 * gridData.CellPartitioning.MpiRank);
+                    this.SubGridField.SetMeanValue(i, cellToClusterMap[i] + 0 * gridData.CellPartitioning.MpiRank);
                 }
             }
 
@@ -144,15 +151,14 @@ namespace BoSSS.Solution.Utils {
             int j = 0;
             for (int i = 0; i < numOfClusters; i++) {
                 // Generating only the sub-grids which are not empty
-                if (clusterCount[i] != 0) {
+                if (noOfCellsPerCluster[i] != 0) {
                     BitArray ba = baMatrix[i];
-                    this.SubGridList.Add(new SubGrid(new CellMask(gridData, ba)));
+                    clusters.Add(new SubGrid(new CellMask(gridData, ba)));
                     j++;
                 }
             }
-            this.NumOfClusters = counter;
 
-            return SubGridList;
+            return new Clustering(clusters, subGrid);
         }
 
         /// <summary>
@@ -162,12 +168,13 @@ namespace BoSSS.Solution.Utils {
         /// </summary>
         /// <param name="cellMetric">Given cell metric</param>
         /// <returns>Double[] with the length of the number of given sub-grids></returns>
-        private MultidimensionalArray CreateMeans(MultidimensionalArray cellMetric) {
-            //MultidimensionalArray means = MultidimensionalArray.Create(NumOfSgrd);
-            double h_min = int.MaxValue;
-            h_min = cellMetric.Min(d => double.IsNaN(d) ? h_min : d); // .Where(d => !double.IsNaN(d)).ToArray().Min();
-            double h_max = int.MinValue;
-            h_max = cellMetric.Max(d => double.IsNaN(d) ? h_max : d);
+        private MultidimensionalArray CreateInitialMeans(MultidimensionalArray cellMetric, int numOfClusters) {
+            System.Diagnostics.Debug.Assert(
+                cellMetric.Storage.All(d => double.IsNaN(d) == false),
+                "Cell metrics contains fucked up entries");
+            
+            double h_min = cellMetric.Min();
+            double h_max = cellMetric.Max();
             Console.WriteLine("Clustering: Create tanh spaced means");
 
             // Getting global h_min and h_max
@@ -179,12 +186,12 @@ namespace BoSSS.Solution.Utils {
                 h_max += 0.1 * h_max; // Dirty hack for IBM cases with equidistant grids
 
             // Tanh Spacing, which yields to more cell cluster for smaller cells
-            var means = Grid1D.TanhSpacing(h_min, h_max, NumOfClusters, 4.0, true).Reverse().ToArray();
+            var means = Grid1D.TanhSpacing(h_min, h_max, numOfClusters, 4.0, true).Reverse().ToArray();
 
             // Equidistant spacing, in general not the best choice
             //means = GenericBlas.Linspace(h_min, h_max, NumOfSgrd).Reverse().ToArray();
 
-            return MultidimensionalArray.CreateWrapper(means, NumOfClusters);
+            return MultidimensionalArray.CreateWrapper(means, numOfClusters);
         }
 
         /// <summary>
@@ -192,14 +199,14 @@ namespace BoSSS.Solution.Utils {
         /// </summary>
         /// <param name="oldClustering">A clustering which should be compared to</param>
         /// <returns>True, if clustering has changed. False, if clustering has not changed.</returns>
-        public bool CheckForNewClustering(List<SubGrid> oldClustering) {
+        public bool CheckForNewClustering(Clustering oldClustering, Clustering newClustering) {
             bool localResult = false;   // false = no reclustering needed
 
-            if (SubGridList.Count != oldClustering.Count)
+            if (newClustering.NumberOfClusters != oldClustering.NumberOfClusters)
                 localResult = true;
             else {
-                for (int i = 0; i < SubGridList.Count; i++) {
-                    if (!SubGridList[i].VolumeMask.Equals(oldClustering[i].VolumeMask)) {
+                for (int i = 0; i < newClustering.NumberOfClusters; i++) {
+                    if (!newClustering.Clusters[i].VolumeMask.Equals(oldClustering.Clusters[i].VolumeMask)) {
                         localResult = true;
                     }
                 }
@@ -220,37 +227,26 @@ namespace BoSSS.Solution.Utils {
         /// Returns a cell metric value in every cell
         /// </summary>
         /// <returns>Cell metric as <see cref="MultidimensionalArray"/></returns>
-        public MultidimensionalArray GetCellMetric() {
-            MultidimensionalArray cellMetric = MultidimensionalArray.Create(gridData.iLogicalCells.NoOfLocalUpdatedCells);
-
-            // Only relevant for IBM cases: Set all values in void cells to infinity such that
-            // these cells belong to the cluster with the largest maximum stable time step
-            if (this.SubGrid != null) {
-                for (int cell = 0; cell < cellMetric.Length; cell++)
-                    cellMetric[cell] = double.NaN;
-                for (int subGridCell = 0; subGridCell < this.SubGrid.LocalNoOfCells; subGridCell++) {
-                    int localCellIndex = this.SubGrid.SubgridIndex2LocalCellIndex[subGridCell];
-                    cellMetric[localCellIndex] = this.timeStepConstraints.Min(c => c.GetLocalStepSize(localCellIndex, 1));
-                }
-            } else {
-                // Adapted from Variables.cs --> DerivedVariable CFL
-                for (int i = 0; i < gridData.iLogicalCells.NoOfLocalUpdatedCells; i++)
-                    cellMetric[i] = this.timeStepConstraints.Min(c => c.GetLocalStepSize(i, 1));
+        public MultidimensionalArray GetCellMetric(SubGrid subGrid) {
+            MultidimensionalArray cellMetric = MultidimensionalArray.Create(subGrid.LocalNoOfCells);
+            
+            for (int subGridCell = 0; subGridCell < subGrid.LocalNoOfCells; subGridCell++) {
+                int localCellIndex = subGrid.SubgridIndex2LocalCellIndex[subGridCell];
+                cellMetric[subGridCell] = this.timeStepConstraints.Min(c => c.GetLocalStepSize(localCellIndex, 1));
             }
 
             return cellMetric;
         }
 
-        /// <summary>
-        /// Updates the clustering variables when they have been changed by another class/method
-        /// </summary>
-        /// <param name="subGridList">List of clusters</param>
-        /// <param name="subGridField">Cluster to be plotted</param>
-        /// <param name="numOfClusters">Number of clusters</param>
-        public void UpdateClusteringVariables(List<SubGrid> subGridList, DGField subGridField, int numOfClusters) {
-            this.SubGridList = subGridList;
-            this.SubGridField = subGridField;
-            this.NumOfClusters = numOfClusters;
-        }
+        ///// <summary>
+        ///// Updates the clustering variables when they have been changed by another class/method
+        ///// </summary>
+        ///// <param name="subGridList">List of clusters</param>
+        ///// <param name="subGridField">Cluster to be plotted</param>
+        ///// <param name="numOfClusters">Number of clusters</param>
+        //public void UpdateClusteringVariables(List<SubGrid> subGridList, DGField subGridField, int numOfClusters) {
+        //    this.SubGridList = subGridList;
+        //    this.SubGridField = subGridField;
+        //}
     }
 }
