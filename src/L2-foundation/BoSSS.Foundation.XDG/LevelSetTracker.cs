@@ -2041,10 +2041,12 @@ namespace BoSSS.Foundation.XDG {
 
                         int MaxVecLen = (int)Math.Ceiling(16000.0 / ((double)TestNodes.Max(ns => ns.NoOfNodes)));
                         MaxVecLen = Math.Max(1, MaxVecLen);
+                        
 
-                        foreach (var t_j0_Len in SearchMask.GetGeometricCellChunks(MaxVecLen, CellInfo.RefElementIndex_Mask)) { // loop over all cells in the search mask...
+                        foreach(var t_j0_Len in SearchMask.GetGeometricCellChunks(MaxVecLen, CellInfo.RefElementIndex_Mask | CellInfo.CellType_Mask)) { // loop over all cells in the search mask...
                             int j = t_j0_Len.Item1;
                             int VecLen = t_j0_Len.Item2;
+
 
                             int iKref = m_gDat.Cells.GetRefElementIndex(j);
                             var Kref = Krefs[iKref];

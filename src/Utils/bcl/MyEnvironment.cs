@@ -189,18 +189,14 @@ namespace bcl {
             var src = _d.GetDirectories("src").FirstOrDefault();
             if (src == null)
                 return false;
-
-            var pub = src.GetDirectories("public").FirstOrDefault();
-            if (pub == null)
-                return false;
-            var DBE = src.GetDirectories("DBEv2").FirstOrDefault();
-            if (DBE == null)
-                return false;
-            var ilPSP = src.GetDirectories("ilPSP").FirstOrDefault();
-            if (ilPSP == null)
+            var doc = _d.GetDirectories("doc").FirstOrDefault();
+            if(doc == null)
                 return false;
             var libs = _d.GetDirectories("libs").FirstOrDefault();
-            if (libs == null)
+            if(libs == null)
+                return false;
+            var InnoSetup = _d.GetDirectories("InnoSetup").FirstOrDefault();
+            if(InnoSetup == null)
                 return false;
 
             return true;
@@ -259,20 +255,11 @@ namespace bcl {
         public DirectoryInfo BOSSS_LIBS;
 
         /// <summary>
-        /// bosss L0-L4 repository: %BOSSS_ROOT%/src/public
-        /// </summary>
-        public DirectoryInfo BOSSS_SRC_PUBLIC;
-
-        /// <summary>
         /// %BOSSS_ROOT/src
         /// </summary>
         public DirectoryInfo BOSSS_SRC;
 
-        /// <summary>
-        /// database explorer source code repository: %BOSSS_ROOT/src/DBE
-        /// </summary>
-        public DirectoryInfo BOSSS_SRC_DBE;
-
+        
         /// <summary>
         /// Path to the database explorer application
         /// </summary>
@@ -328,11 +315,6 @@ namespace bcl {
                 if (BOSSS_ROOT != null)
                     BOSSS_SRC = new DirectoryInfo(Path.Combine(BOSSS_ROOT.FullName, "src"));
 
-                if (BOSSS_ROOT != null)
-                    BOSSS_SRC_DBE = new DirectoryInfo(Path.Combine(BOSSS_SRC.FullName, "DBE"));
-
-                if (BOSSS_ROOT != null)
-                    BOSSS_SRC_PUBLIC = new DirectoryInfo(Path.Combine(BOSSS_SRC.FullName, "public"));
 
                 BOSSS_INSTALL = GetBoSSSInstallDir();
 
