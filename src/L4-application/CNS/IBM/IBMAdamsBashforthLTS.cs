@@ -90,16 +90,6 @@ namespace CNS.IBM {
             for (int i = 0; i < CurrentClustering.NumberOfClusters; i++) {
                 Console.WriteLine("IBM (A)LTS: id=" + i + " -> elements=" + CurrentClustering.Clusters[i].GlobalNoOfCells);
             }
-
-            //// ############# HACK for visualising subGrids for IBM-LTS test cases
-            //this.SubGridField.Clear();
-            //for (int i = 0; i < CurrentClustering.NumberOfClusters; i++) {
-            //    for (int cell = 0; cell < CurrentClustering.Clusters[i].LocalNoOfCells; cell++) {
-            //        this.SubGridField.SetMeanValue(CurrentClustering.Clusters[i].SubgridIndex2LocalCellIndex[cell], i);
-            //        //this.SubGridField.SetMeanValue(subGridList[i].SubgridIndex2LocalCellIndex[cell], 1000);
-            //    }
-            //}
-            //// ############# HACK for visualising subGrids for IBM-LTS test cases
             
             localABevolve = new ABevolve[CurrentClustering.NumberOfClusters];
             for (int i = 0; i < localABevolve.Length; i++) {

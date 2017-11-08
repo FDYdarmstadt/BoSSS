@@ -33,12 +33,6 @@ namespace BoSSS.Solution.Utils {
 
         public class Clustering {
 
-            public Clustering(List<SubGrid> clusters, SubGrid subGrid) {
-                this.Clusters = clusters;
-                this.SubGrid = subGrid;
-                //this.SubGridField = clusterField;
-            }
-
             public List<SubGrid> Clusters {
                 get;
                 private set;
@@ -55,10 +49,10 @@ namespace BoSSS.Solution.Utils {
                 private set;
             }
 
-            //public DGField SubGridField {
-            //    get;
-            //    private set;
-            //}
+            public Clustering(List<SubGrid> clusters, SubGrid subGrid) {
+                this.Clusters = clusters;
+                this.SubGrid = subGrid;
+            }
         }
 
         /// <summary>
@@ -72,14 +66,6 @@ namespace BoSSS.Solution.Utils {
         private IList<TimeStepConstraint> timeStepConstraints;
 
         /// <summary>
-        /// Helper Field needed for the visualization of the sub-grids
-        /// </summary>
-        public DGField SubGridField {
-            get;
-            private set;
-        }
-
-        /// <summary>
         /// Constructor for the grid clustering
         /// </summary>
         /// <param name="gridData">Information about the grid</param>
@@ -87,8 +73,6 @@ namespace BoSSS.Solution.Utils {
         public Clusterer(IGridData gridData, IList<TimeStepConstraint> timeStepConstraints) {
             this.gridData = gridData;
             this.timeStepConstraints = timeStepConstraints;
-
-            this.SubGridField = new SinglePhaseField(new Basis(gridData, 0));
         }
 
         /// <summary>
@@ -138,10 +122,8 @@ namespace BoSSS.Solution.Utils {
             }
 
             // Filling the BitArrays
-            this.SubGridField.Clear();
             for (int i = 0; i < numOfCells; i++) {
                 baMatrix[subGridCellToClusterMap[i]][subGrid.SubgridIndex2LocalCellIndex[i]] = true;
-                this.SubGridField.SetMeanValue(i, subGridCellToClusterMap[i] + 0 * gridData.CellPartitioning.MpiRank);
             }
 
             // Generating the sub-grids

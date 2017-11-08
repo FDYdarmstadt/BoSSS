@@ -457,29 +457,27 @@ namespace CNS {
             });
 
         /// <summary>
-        /// The sub-grid ids of individual local time-stepping sub-grids
+        /// The clusters when using local time stepping
         /// </summary>
-        public static readonly DerivedVariable LTSSubGrids = new DerivedVariable(
+        public static readonly DerivedVariable LTSClusters = new DerivedVariable(
             "clusterLTS",
             VariableTypes.Other,
-            delegate (DGField subGridField, CellMask cellMask, IProgram<CNSControl> program) {
-                Program<CNSControl> p = (Program<CNSControl>)program;
-                AdamsBashforthLTS lts = (AdamsBashforthLTS)p.TimeStepper;
-                if (lts != null)
-                    subGridField.CopyFrom(lts.SubGridField);
-            });
-
-        /// <summary>
-        /// The sub-grid ids of individual local time-stepping sub-grids
-        /// </summary>
-        public static readonly DerivedVariable IBMLTSSubGrids = new DerivedVariable(
-            "clusterIBMLTS",
-            VariableTypes.Other,
-            delegate (DGField subGridField, CellMask cellMask, IProgram<CNSControl> program) {
+            delegate (DGField ClusterVisualizationField, CellMask cellMask, IProgram<CNSControl> program) {
                 Program<IBMControl> p = (Program<IBMControl>)program;
-                IBMAdamsBashforthLTS lts = (IBMAdamsBashforthLTS)p.TimeStepper;
-                if (lts != null)
-                    subGridField.CopyFrom(lts.SubGridField);
+                AdamsBashforthLTS LTSTimeStepper = (AdamsBashforthLTS)p.TimeStepper;
+
+                if (LTSTimeStepper != null) {
+                    for (int i = 0; i < LTSTimeStepper.CurrentClustering.NumberOfClusters; i++) {
+                        SubGrid currentCluster = LTSTimeStepper.CurrentClustering.Clusters[i];
+                        for (int j = 0; j < currentCluster.LocalNoOfCells; j++) {
+                            foreach (Chunk chunk in currentCluster.VolumeMask) {
+                                foreach (int cell in chunk.Elements) {
+                                    ClusterVisualizationField.SetMeanValue(cell, i);
+                                }
+                            }
+                        }
+                    }
+                }
             });
     }
 }

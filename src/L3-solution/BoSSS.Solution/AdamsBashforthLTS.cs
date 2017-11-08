@@ -82,14 +82,6 @@ namespace BoSSS.Solution.Timestepping {
         protected int[][] jSub2jCell;
 
         /// <summary>
-        /// Helper Field, just needed for visualization of the individual sub-grids
-        /// </summary>
-        public DGField SubGridField {
-            get;
-            protected set;
-        }
-
-        /// <summary>
         /// Information about the grid
         /// </summary>
         protected IGridData gridData;
@@ -131,7 +123,10 @@ namespace BoSSS.Solution.Timestepping {
 
         private int timeStepCount;
 
-        protected Clusterer.Clustering CurrentClustering;
+        public Clusterer.Clustering CurrentClustering {
+            get;
+            protected set;
+        }
 
         //################# Hack for saving to database in every (A)LTS sub-step
         private Action<TimestepNumber, double> saveToDBCallback;
@@ -167,10 +162,9 @@ namespace BoSSS.Solution.Timestepping {
 
             NumOfLocalTimeSteps = new List<int>(this.numOfClusters);
 
-            // numOfSubgrids can be changed by CreateSubGrids(), if less significant different element sizes than numOfSubgrids exist
             clusterer = new Clusterer(this.gridData, this.timeStepConstraints);
-            CurrentClustering = clusterer.CreateClustering(this.numOfClusters, subGrid);
-            CurrentClustering = CalculateNumberOfLocalTS(CurrentClustering); // Might remove sub-grids when time step sizes are too similar
+            CurrentClustering = clusterer.CreateClustering(this.numOfClusters, subGrid);    // Might remove clusters when their centres are too close
+            CurrentClustering = CalculateNumberOfLocalTS(CurrentClustering); // Might remove clusters when time step sizes are too similar
 
             localABevolve = new ABevolve[this.numOfClusters];
 
@@ -732,14 +726,6 @@ namespace BoSSS.Solution.Timestepping {
                     newClusters.Add(clustering.Clusters[jj]);
                     NumOfLocalTimeSteps.Add(subSteps);
                     jj++;
-                }
-            }
-
-            this.SubGridField.Clear();
-            for (int i = 0; i < newClusters.Count; i++) {
-                for (int cell = 0; cell < newClusters[i].LocalNoOfCells; cell++) {
-                    this.SubGridField.SetMeanValue(newClusters[i].SubgridIndex2LocalCellIndex[cell], i);
-                    //this.SubGridField.SetMeanValue(subGridList[i].SubgridIndex2LocalCellIndex[cell], 1000);
                 }
             }
 
