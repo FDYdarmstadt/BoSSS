@@ -100,11 +100,15 @@ namespace BoSSS.Solution.Multigrid
             //LocalMatrix = op.MassMatrix.CloneAs().ToMsrMatrix();
             //LocalMatrix.Clear();
 
+            //var U0 = new VectorField<SinglePhaseField>(op.BaseGridProblemMapping Take(D).Select(F => (SinglePhaseField)F).ToArray());
+
             UnsetteledCoordinateMapping test = new UnsetteledCoordinateMapping(op.BaseGridProblemMapping.BasisS.GetSubVector(0, D));
 
-            var U0_U0mean = new SinglePhaseField[D];
+            var U0 = ((BoSSS.Foundation.CoordinateMapping)op.Mapping.ProblemMapping).Fields.GetSubVector(0,2);
 
-            LocalMatrix = LocalOp.ComputeMatrix(test, U0_U0mean, test, time: m_dt);
+            var empty = new SinglePhaseField[D];
+
+            LocalMatrix = LocalOp.ComputeMatrix(test, empty, test, time: m_dt);
 
 
             Uidx = op.Mapping.ProblemMapping.GetSubvectorIndices(true, D.ForLoop(i => i));
@@ -130,17 +134,13 @@ namespace BoSSS.Solution.Multigrid
 
             var M = op.OperatorMatrix;
 
-            
-
             M.AccSubMatrixTo(1.0, ConvDiff, Uidx, default(int[]), Uidx, default(int[]));
             M.AccSubMatrixTo(1.0, pGrad, Uidx, default(int[]), Pidx, default(int[]));
             M.AccSubMatrixTo(1.0, divVel, Pidx, default(int[]), Uidx, default(int[]));
 
             LocalMatrix.SaveToTextFileSparse("LocalConvDiffMatrix");
             ConvDiff.SaveToTextFileSparse("ConvDiff");
-
             op.MassMatrix.SaveToTextFileSparse("MassMatrix");
-
             VelocityMass.SaveToTextFileSparse("VelocityMass");
         }
 
@@ -151,7 +151,7 @@ namespace BoSSS.Solution.Multigrid
         }
 
         bool m_Converged = false;
-        int m_ThisLevelIterations = 0;
+        int m_ThisLevelIterations;
 
         public void Solve<U, V>(U X, V B)
             where U : IList<double>
@@ -186,7 +186,6 @@ namespace BoSSS.Solution.Multigrid
 
             P.SaveToTextFileSparse("LocalSchur");
 
-
             using (var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver())
             {
                 solver.DefineMatrix(P);
@@ -204,7 +203,7 @@ namespace BoSSS.Solution.Multigrid
             //}           
 
 
-            // Solve ConvDiff*w=v-q*pGrad
+            // Solve ConvD           iff*w=v-q*pGrad
             pGrad.SpMVpara(-1, Xp, 1, Bu);
 
             using (var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver())
@@ -268,7 +267,7 @@ namespace BoSSS.Solution.Multigrid
 
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA)
         {
-
+            return 0;
             int D = inp.D;
             double acc = 0.0;
             for (int d = 0; d < D; d++)
@@ -281,6 +280,7 @@ namespace BoSSS.Solution.Multigrid
 
         public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT)
         {
+            return 0;
             int D = inp.D;
             double acc = 0;
             for (int d = 0; d < D; d++)
@@ -288,7 +288,9 @@ namespace BoSSS.Solution.Multigrid
                 acc += (_Grad_uIN[0, d] * inp.Normale[d] * _vIN - _Grad_uOUT[0, d] * inp.Normale[d] * _vOUT) * muA;
             }
 
-            return -acc;
+            //acc -= (_uIN[0] - _uOUT[0]) * (_vIN - _vOUT) * muA;
+
+            return acc;
 
         }
 
@@ -318,7 +320,7 @@ namespace BoSSS.Solution.Multigrid
             //}
 
 
-            return -acc;
+            return acc;
         }
 
     }
