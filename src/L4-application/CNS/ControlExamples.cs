@@ -1353,7 +1353,6 @@ namespace CNS {
             c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
 
             // Shock-capturing
-            //double sensorLimit = 1e-2;
             double epsilon0 = 1.0;
             double kappa = 1.0;
             double lambdaMax = 20;
@@ -1387,19 +1386,21 @@ namespace CNS {
             c.AddVariable(Variables.Entropy, dgDegree);
             c.AddVariable(Variables.Viscosity, dgDegree);
             c.AddVariable(Variables.LocalMachNumber, dgDegree);
+            c.AddVariable(Variables.Rank, 0);
             if (AV) {
                 c.AddVariable(Variables.Sensor, dgDegree);
                 c.AddVariable(Variables.ArtificialViscosity, 2);
             }
-            c.AddVariable(Variables.Rank, 0);
 
-            // A-LTS variables
+            // LTS variables
             c.AddVariable(Variables.CFL, 0);
             c.AddVariable(Variables.CFLConvective, 0);
-            if (AV)
+            if (AV) {
                 c.AddVariable(Variables.CFLArtificialViscosity, 0);
-            if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS))
+            }
+            if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS)) {
                 c.AddVariable(Variables.LTSClusters, 0);
+            }
 
             DerivedVariable Schlieren = new DerivedVariable(
                 "schlieren",
@@ -1521,13 +1522,10 @@ namespace CNS {
             // Time config
             c.dtMin = 0.0;
             c.dtMax = 1.0;
-            //c.Endtime = 0.012;
             c.Endtime = 0.25;
             //c.dtFixed = 1.0e-6;
             //c.CFLFraction = 0.5; // altes Setting fuer Rechnungen auf Lichtenberg
             c.CFLFraction = 0.3;
-            //c.dtFixed = 1.31e-5;
-            //c.NoOfTimesteps = 5;
             c.NoOfTimesteps = int.MaxValue;
 
             c.ProjectName = "Double Mach reflection";
