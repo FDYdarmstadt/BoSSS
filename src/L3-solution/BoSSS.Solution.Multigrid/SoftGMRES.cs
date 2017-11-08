@@ -362,8 +362,8 @@ namespace BoSSS.Solution.Multigrid
                     norm_r = r.L2NormPow2().MPISum().Sqrt();
                     s[i + 1 - 1] = norm_r;
                     error = s[i + 1 - 1] / bnrm2;        // % check convergence
-                    if (error2 <= m_Tolerance)
-                        break;
+                  //  if (error2 <= m_Tolerance) Check for error not error2
+                        //break;
                 }
 
                 if (IterationCallback != null)
