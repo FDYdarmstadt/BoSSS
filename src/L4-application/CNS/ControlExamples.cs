@@ -977,12 +977,12 @@ namespace CNS {
 
             CNSControl c = new CNSControl();
 
-            dbPath = @"c:\bosss_db";
+            //dbPath = @"c:\bosss_db";
             //dbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db";
             c.DbPath = dbPath;
             c.savetodb = dbPath != null && saveToDb;
-            c.saveperiod = 100;
-            c.PrintInterval = 10;
+            c.saveperiod = 1;
+            c.PrintInterval = 1;
 
             double xMin = 0;
             double xMax = 1;
@@ -1319,7 +1319,7 @@ namespace CNS {
         public static CNSControl DoubleMachReflection(string dbPath = null, int dgDegree = 2, int numOfCellsX = 400, int numOfCellsY = 100, double xMax = 4, double sensorLimit = 1e-3) {
             CNSControl c = new CNSControl();
 
-            dbPath = @"c:\bosss_db";
+            //dbPath = @"c:\bosss_db";
             //dbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db";
             //dbPath = @"/work/scratch/yp19ysog/bosss_db_lb_scratch";
             c.DbPath = dbPath;
