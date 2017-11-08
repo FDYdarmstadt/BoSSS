@@ -90,6 +90,11 @@ namespace BoSSS.Solution {
                 return null;
             }
 
+            Console.WriteLine(
+                "Runtime imbalance ({0:0.##E-00}) was above configured threshold ({1:0.##E-00}); attempting repartitioning",
+                CurrentCellCostEstimator.ImbalanceEstimate(),
+                imbalanceThreshold);
+
             int[] cellCosts = CurrentCellCostEstimator.GetEstimatedCellCosts();
             if (cellCosts == null) {
                 return null;
@@ -111,7 +116,11 @@ namespace BoSSS.Solution {
                         result = Grid.ComputePartitionParMETIS(cellCosts);
                         isFirstRepartitioning = false;
                     } else {
-                        result = Grid.ComputePartitionParMETIS(cellCosts, refineCurrentPartitioning: true);
+                        // Refinement currently deactivate because it behaves
+                        // strangely when large numbers of cells should be
+                        // repartitioned
+                        //result = Grid.ComputePartitionParMETIS(cellCosts, refineCurrentPartitioning: true);
+                        result = Grid.ComputePartitionParMETIS(cellCosts);
                     }
                     break;
 
