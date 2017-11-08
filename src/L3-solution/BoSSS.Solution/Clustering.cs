@@ -118,7 +118,8 @@ namespace BoSSS.Solution.Utils {
             // Generating BitArray for all Subgrids, even for those which are empty, i.e ClusterCount == 0
             BitArray[] baMatrix = new BitArray[numOfClusters];
             for (int i = 0; i < numOfClusters; i++) {
-                baMatrix[i] = new BitArray(gridData.iLogicalCells.NoOfCells);
+                //baMatrix[i] = new BitArray(gridData.iLogicalCells.NoOfCells);
+                baMatrix[i] = new BitArray(gridData.iLogicalCells.NoOfLocalUpdatedCells);
             }
 
             // Filling the BitArrays
