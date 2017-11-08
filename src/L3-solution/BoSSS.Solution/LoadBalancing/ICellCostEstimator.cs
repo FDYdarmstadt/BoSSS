@@ -17,6 +17,7 @@ limitations under the License.
 using ilPSP;
 using MPI.Wrappers;
 using System;
+using System.Diagnostics;
 using System.Linq;
 
 namespace BoSSS.Solution {
@@ -77,15 +78,8 @@ namespace BoSSS.Solution {
             double[] allCosts = localCost.MPIAllGather();
             double minCost = allCosts.Min();
             double maxCost = allCosts.Max();
-
-            double EstimatedImbalance = (maxCost - minCost) / Math.Max(double.Epsilon, maxCost);
-            Console.WriteLine(
-                "Runtime imbalance: min {0:0.##E-00}, max {1:0.##E-00}, imbalance {2:0.##E-00}",
-                minCost,
-                maxCost,
-                EstimatedImbalance);
-
-            return EstimatedImbalance;
+            
+            return (maxCost - minCost) / Math.Max(double.Epsilon, maxCost);
         }
     }
 }

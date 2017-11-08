@@ -15,38 +15,71 @@ limitations under the License.
 */
 
 using System;
-using System.Linq;
 
 namespace CNS.ShockCapturing {
 
+    /// <summary>
+    /// Artificial viscosity law where artificial viscosity is either fully on
+    /// or off, without a smooth transitioning
+    /// </summary>
     public class HeavisideArtificialViscosityLaw : IArtificialViscosityLaw {
 
         private IShockSensor sensor;
 
-        private double cellSize;
-
-        private double dgDegree = 0;
+        private double dgDegree;
 
         private double sensorLimit;
 
-        private double epsilon0;
+        private double refViscosity;
 
-        public HeavisideArtificialViscosityLaw(IShockSensor sensor, double cellSize, int dgDegree, double sensorLimit, double epsilon0) {
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="sensor">
+        /// A shock sensor
+        /// </param>
+        /// <param name="dgDegree">
+        /// Approximation degree of the field to which the given
+        /// <paramref name="sensor"/> is applied
+        /// </param>
+        /// <param name="refSensorLimit">
+        /// Base value of the hard sensor limit (before scaling) that
+        /// distinguishes between AV or no AV
+        /// </param>
+        /// <param name="refViscosity">
+        /// Base value of the viscosity (before scaling) that should be used in
+        /// shocked cells.
+        /// </param>
+        public HeavisideArtificialViscosityLaw(IShockSensor sensor, int dgDegree, double refSensorLimit, double refViscosity) {
             this.sensor = sensor;
-            this.cellSize = cellSize;
-            this.sensorLimit = sensorLimit;
-            this.epsilon0 = epsilon0;
+            this.sensorLimit = refSensorLimit / (double)Math.Pow(dgDegree, 4);
+            this.refViscosity = refViscosity;
+            this.dgDegree = dgDegree;
         }
 
+        /// <summary>
+        /// The viscosity to be used in the given cell
+        /// </summary>
+        /// <param name="jCell"></param>
+        /// <param name="cellSize"></param>
+        /// <param name="state"></param>
+        /// <returns></returns>
         public double GetViscosity(int jCell, double cellSize, StateVector state) {
-            double S0 = sensorLimit / Math.Pow(dgDegree, 4);
-            double Se = sensor.GetSensorValue(jCell);
-
-            if (Se > S0) {
-                return epsilon0 * cellSize / dgDegree;
+            if (sensor.GetSensorValue(jCell) > sensorLimit) {
+                return refViscosity * cellSize / dgDegree;
             } else {
                 return 0.0;
             }
+        }
+
+        /// <summary>
+        /// True, if <see cref="GetViscosity(int, double, StateVector)"/>
+        /// returns non-zero value for the given cell
+        /// </summary>
+        /// <param name="jCell"></param>
+        /// <returns></returns>
+        public bool IsShocked(int jCell) {
+            return (sensor.GetSensorValue(jCell) > sensorLimit);
         }
     }
 }

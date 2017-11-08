@@ -363,7 +363,11 @@ namespace BoSSS.Foundation.XDG {
             if (!this.SpeciesList.Contains(sp))
                 throw new ArgumentException("Given species '" + this.lsTrk.GetSpeciesName(sp) + "' is not supported.");
 
-            var allRelevantEdges = this.m_SpeciesSubgrid_InnerAndDomainEdges[sp].Intersect(this.m_CutCellSubgrid_InnerEdges);
+            //var allRelevantEdges = this.m_SpeciesSubgrid_InnerAndDomainEdges[sp].Intersect(this.m_CutCellSubgrid_InnerEdges);
+
+            var innerCutCellEdges = this.lsTrk._Regions.GetCutCellSubGrid().InnerEdgesMask;
+            var boundaryCutCellEdges = ExecutionMask.Intersect(this.lsTrk._Regions.GetCutCellSubGrid().BoundaryEdgesMask, this.lsTrk.GridDat.BoundaryEdges);
+            var allRelevantEdges = this.m_SpeciesSubgrid_InnerAndDomainEdges[sp].Intersect(ExecutionMask.Union(innerCutCellEdges, boundaryCutCellEdges));
 
             EdgeMask AggEdges = this.CellAgglomeration != null ? this.CellAgglomeration.GetAgglomerator(sp).AggInfo.AgglomerationEdges : null;
             if (AggEdges != null && AggEdges.NoOfItemsLocally > 0)
