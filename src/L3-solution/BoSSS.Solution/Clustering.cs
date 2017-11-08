@@ -101,14 +101,16 @@ namespace BoSSS.Solution.Utils {
                 subGrid = new SubGrid(CellMask.GetFullMask(gridData));
             }
 
-            int numOfCells = gridData.iLogicalCells.NoOfLocalUpdatedCells;
+            // Attention: numOfCells can equal all local cells or only the local cells of a subgrid,
+            // e.g., the fluid cells in an IBM simulation
+            int numOfCells = subGrid.LocalNoOfCells;
 
             MultidimensionalArray cellMetric = GetCellMetric(subGrid);
             MultidimensionalArray means = CreateInitialMeans(cellMetric, numOfClusters);
             Kmeans Kmean = new Kmeans(cellMetric.To1DArray(), numOfClusters, means.To1DArray());
 
             // The corresponding sub-grid IDs
-            int[] cellToClusterMap = Kmean.Cluster();
+            int[] subGridCellToClusterMap = Kmean.Cluster();
             int[] noOfCellsPerCluster = Kmean.ClusterCount;
 
             unsafe {
@@ -129,32 +131,26 @@ namespace BoSSS.Solution.Utils {
                 }
             }
 
-            var clusters = new List<SubGrid>(counter);
-
             // Generating BitArray for all Subgrids, even for those which are empty, i.e ClusterCount == 0
             BitArray[] baMatrix = new BitArray[numOfClusters];
             for (int i = 0; i < numOfClusters; i++) {
-                baMatrix[i] = new BitArray(numOfCells);
+                baMatrix[i] = new BitArray(gridData.iLogicalCells.NoOfCells);
             }
 
             // Filling the BitArrays
             this.SubGridField.Clear();
             for (int i = 0; i < numOfCells; i++) {
-                if (cellToClusterMap[i] != -1) { // Happens only in the IBM case for void cells
-                    baMatrix[cellToClusterMap[i]][i] = true;
-                    // For Debugging: Visualizes the clusters in a field
-                    this.SubGridField.SetMeanValue(i, cellToClusterMap[i] + 0 * gridData.CellPartitioning.MpiRank);
-                }
+                baMatrix[subGridCellToClusterMap[i]][subGrid.SubgridIndex2LocalCellIndex[i]] = true;
+                this.SubGridField.SetMeanValue(i, subGridCellToClusterMap[i] + 0 * gridData.CellPartitioning.MpiRank);
             }
 
             // Generating the sub-grids
-            int j = 0;
+            List<SubGrid> clusters = new List<SubGrid>(counter);
             for (int i = 0; i < numOfClusters; i++) {
                 // Generating only the sub-grids which are not empty
                 if (noOfCellsPerCluster[i] != 0) {
                     BitArray ba = baMatrix[i];
                     clusters.Add(new SubGrid(new CellMask(gridData, ba)));
-                    j++;
                 }
             }
 
@@ -172,7 +168,7 @@ namespace BoSSS.Solution.Utils {
             System.Diagnostics.Debug.Assert(
                 cellMetric.Storage.All(d => double.IsNaN(d) == false),
                 "Cell metrics contains fucked up entries");
-            
+
             double h_min = cellMetric.Min();
             double h_max = cellMetric.Max();
             Console.WriteLine("Clustering: Create tanh spaced means");
@@ -202,9 +198,9 @@ namespace BoSSS.Solution.Utils {
         public bool CheckForNewClustering(Clustering oldClustering, Clustering newClustering) {
             bool localResult = false;   // false = no reclustering needed
 
-            if (newClustering.NumberOfClusters != oldClustering.NumberOfClusters)
+            if (newClustering.NumberOfClusters != oldClustering.NumberOfClusters) {
                 localResult = true;
-            else {
+            } else {
                 for (int i = 0; i < newClustering.NumberOfClusters; i++) {
                     if (!newClustering.Clusters[i].VolumeMask.Equals(oldClustering.Clusters[i].VolumeMask)) {
                         localResult = true;
@@ -229,7 +225,7 @@ namespace BoSSS.Solution.Utils {
         /// <returns>Cell metric as <see cref="MultidimensionalArray"/></returns>
         public MultidimensionalArray GetCellMetric(SubGrid subGrid) {
             MultidimensionalArray cellMetric = MultidimensionalArray.Create(subGrid.LocalNoOfCells);
-            
+
             for (int subGridCell = 0; subGridCell < subGrid.LocalNoOfCells; subGridCell++) {
                 int localCellIndex = subGrid.SubgridIndex2LocalCellIndex[subGridCell];
                 cellMetric[subGridCell] = this.timeStepConstraints.Min(c => c.GetLocalStepSize(localCellIndex, 1));
@@ -237,16 +233,5 @@ namespace BoSSS.Solution.Utils {
 
             return cellMetric;
         }
-
-        ///// <summary>
-        ///// Updates the clustering variables when they have been changed by another class/method
-        ///// </summary>
-        ///// <param name="subGridList">List of clusters</param>
-        ///// <param name="subGridField">Cluster to be plotted</param>
-        ///// <param name="numOfClusters">Number of clusters</param>
-        //public void UpdateClusteringVariables(List<SubGrid> subGridList, DGField subGridField, int numOfClusters) {
-        //    this.SubGridList = subGridList;
-        //    this.SubGridField = subGridField;
-        //}
     }
 }
