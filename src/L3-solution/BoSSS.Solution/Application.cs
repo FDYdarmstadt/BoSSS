@@ -1110,7 +1110,6 @@ namespace BoSSS.Solution {
                 if (!passiveIo && !DatabaseDriver.GridExists(Grid.GridGuid)) {
 
                     //DatabaseDriver.SaveGrid(Grid);
-                    bool GridReplaced;
                     GridCommons _grid = this.Grid;
                     DatabaseDriver.SaveGrid(_grid);
                     //DatabaseDriver.SaveGridIfUnique(ref _grid, out GridReplaced, this.m_Database);

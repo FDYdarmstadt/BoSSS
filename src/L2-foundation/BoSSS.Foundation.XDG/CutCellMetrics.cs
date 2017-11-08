@@ -73,9 +73,9 @@ namespace BoSSS.Foundation.XDG {
             this.SpeciesList = (new List<SpeciesId>(__CutCellVolumes.Keys)).AsReadOnly();
 
 
-            if (!__InterfaceArea.Keys.IsSetEqual(this.SpeciesList))
+            if (!__InterfaceArea.Keys.SetEquals(this.SpeciesList))
                 throw new ArgumentException();
-            if (!__CutEdgeAreas.Keys.IsSetEqual(this.SpeciesList))
+            if (!__CutEdgeAreas.Keys.SetEquals(this.SpeciesList))
                 throw new ArgumentException();
 
             int JE = _LsTrk.GridDat.iLogicalCells.NoOfCells;
@@ -223,12 +223,9 @@ namespace BoSSS.Foundation.XDG {
                 // compute cut cell volumes
                 // ------------------------
 
-                var quadScheme = schH.GetVolumeQuadScheme(spc);
-                var quadRule = quadScheme.Compile(gd, this.HMForder);
-
                 BoSSS.Foundation.Quadrature.CellQuadrature.GetQuadrature(
                     new int[] { 1 }, gd,
-                    quadRule,
+                    schH.GetVolumeQuadScheme(spc).Compile(gd, this.HMForder),
                     _Evaluate: delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) //
                     {
                         EvalResult.SetAll(1.0);

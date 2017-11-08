@@ -620,7 +620,7 @@ namespace BoSSS.Solution.Multigrid {
                         int[] ZerosEntries2 = ModifiedInverseChol(SymmPart, OUT_rightPC, 1.0e-12, true);
                         OUT_rightPC.TransposeTo(OUT_LeftPC);
 
-                        if(!ZerosEntries2.IsSetEqual(ZerosEntries))
+                        if(!ZerosEntries2.SetEquals(ZerosEntries))
                             throw new ArithmeticException();
 
                         

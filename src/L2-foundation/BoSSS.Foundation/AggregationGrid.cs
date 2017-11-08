@@ -507,7 +507,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 }
 
 #if DEBUG
-                Debug.Assert(this.iParallel.ProcessesToReceiveFrom.IsSetEqual(ProcCheck));
+                Debug.Assert(this.iParallel.ProcessesToReceiveFrom.SetEquals(ProcCheck));
 #endif
             }
             

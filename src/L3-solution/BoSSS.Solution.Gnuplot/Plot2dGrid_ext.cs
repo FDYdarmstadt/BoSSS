@@ -21,9 +21,10 @@ using System.Text;
 using BoSSS.Platform;
 //using BoSSS.Foundation.Grid;
 using ilPSP;
+using BoSSS.Foundation.Grid.Classic;
 
 namespace BoSSS.Solution.Gnuplot {
-    
+
     /// <summary>
     /// Grid plotting
     /// </summary>
@@ -31,7 +32,7 @@ namespace BoSSS.Solution.Gnuplot {
 
 
         public static void PlotCoordinateLabels(this MultidimensionalArray X, string filename) {
-            using (var gp = new Gnuplot()){
+            using (var gp = new Gnuplot()) {
                 int L = X.NoOfRows;
                 if (X.NoOfCols != 2)
                     throw new NotSupportedException("works only for 2D grid");
@@ -52,47 +53,63 @@ namespace BoSSS.Solution.Gnuplot {
         }
 
 
-                /*
-                /// <summary>
-                /// plot a 2D grid
-                /// </summary>
-                public static void Plot2DGrid(this GridCommons grd) {
-                    using (var gp = new Gnuplot()) {
-                        if (grd.SpatialDimension != 2)
-                            throw new NotSupportedException("works only for 2D grid");
+
+        /// <summary>
+        /// plot a 2D grid
+        /// </summary>
+        public static void Plot2DGrid(this GridCommons grd) {
+            using (var gp = new Gnuplot()) {
+                Console.WriteLine("Plotting 2D grid with gnuplot...");
+
+                if (grd.SpatialDimension != 2)
+                    throw new NotSupportedException("works only for 2D grid");
+                
+
+                int J = grd.Cells.Length;
+                for (int j = 0; j < J; j++) {
+                    var Cell_j = grd.Cells[j];
+                    //var Kref = grd.RefElements.Single(KK => KK.SupportedCellTypes.Contains(Cell_j.Type));
+
+                    //var Vtx = Kref.Vertices;
+                    //var _Vtx = Kref.GetSubDivTree(3).GlobalVertice;
+                    //var Vtx = MultidimensionalArray.Create(_Vtx.GetLength(0), _Vtx.GetLength(1));
+                    //Vtx.SetA2d(_Vtx);
+                    //Vtx.Scale(1);
+
+                    var Vtx_glob = Cell_j.TransformationParams;
 
 
+                    double[] xNodes = Vtx_glob.ExtractSubArrayShallow(-1, 0).To1DArray();
+                    double[] yNodes = Vtx_glob.ExtractSubArrayShallow(-1, 1).To1DArray();
+                    double xC = xNodes.Sum() / xNodes.Length;
+                    double yC = yNodes.Sum() / yNodes.Length;
+                    for (int k = 0; k < xNodes.Length; k++) {
+                        double dx = xNodes[k] - xC;
+                        dx *= 0.95;
+                        xNodes[k] = xC + dx;
 
-                        int J = grd.Cells.Length;
-                        for (int j = 0; j < J; j++) {
-                            var Cell_j = grd.Cells[j];
-                            var Kref = grd.RefElements.Single(KK => KK.SupportedCellTypes.Contains(Cell_j.Type));
-
-                            var Vtx = Kref.Vertices;
-                            //var _Vtx = Kref.GetSubDivTree(3).GlobalVertice;
-                            //var Vtx = MultidimensionalArray.Create(_Vtx.GetLength(0), _Vtx.GetLength(1));
-                            //Vtx.SetA2d(_Vtx);
-                            //Vtx.Scale(1);
-
-                            var Vtx_glob = MultidimensionalArray.Create(1, Vtx.GetLength(0), Vtx.GetLength(1));
-
-                            //Kref.TransformLocal2Global(Vtx, Vtx_glob, 0, Cell_j.Type, Cell_j.TransformationParams);
-
-
-                            var xNodes = Vtx_glob.ExtractSubArrayShallow(0, -1, 0).To1DArray();
-                            var yNodes = Vtx_glob.ExtractSubArrayShallow(0, -1, 1).To1DArray();
-
-                            gp.PlotXY(xNodes, yNodes, title:j.ToString(), pstyle:PlotStyle.Linespoints);
-
-
-
-                        }
-
-
-                        Console.ReadKey();
+                        double dy = yNodes[k] - yC;
+                        dy *= 0.95;
+                        yNodes[k] = yC + dy;
                     }
 
+                    double hy = yNodes.Max() - yNodes.Min();
+
+                    gp.PlotXY(xNodes, yNodes, title: null, format: (new PlotFormat(Style: Styles.LinesPoints, lineColor: ((LineColors)j))));
+
+                    gp.Cmd("set label \"{0}\" at {2},{3} font \"Arial,5\"", j.ToString(), Cell_j.GlobalID, xC.ToStringDot(), (yC + hy * 0.21).ToStringDot());
+                    gp.Cmd("set label \"[{1}]\" at {2},{3} font \"Arial,5\"", j.ToString(), Cell_j.GlobalID, xC.ToStringDot(), (yC - hy * 0.21).ToStringDot());
+
+
                 }
-                 */
+
+                gp.Execute();
+
+                Console.WriteLine("Press any key to continue...");
+                Console.ReadKey();
             }
+
+        }
+
+    }
 }

@@ -66,16 +66,16 @@ namespace CNS.IBM {
 
                 if (!speciesMap.Agglomerator.AggInfo.Equals(oldAgglomerationInfo)) {
                     // Agglomeration pattern has changed, redo agglomeration
-                    AgglomerateAndExtrapolateDGCoordinates();
+                    AgglomerateAndExtrapolateDGCoordinates();   // eq. (38)-(41)
                     oldAgglomerationInfo = speciesMap.Agglomerator.AggInfo;
                 }
 
                 levelSetHasMoved = false;
             }
             
-            dt = base.Perform(dt);
+            dt = base.Perform(dt);  // eq. (42)
             
-            speciesMap.Agglomerator.Extrapolate(DGCoordinates.Mapping);
+            speciesMap.Agglomerator.Extrapolate(DGCoordinates.Mapping); // eq. (43)
 
             return dt;
         }

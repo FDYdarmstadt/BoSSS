@@ -35,8 +35,8 @@ namespace CNS.IBM {
     /// an immersed boundary. That is:
     /// <list type="bullet">
     /// <item>Uses adapted quadrature for cut cells</item>
-    /// <item>Evaluates additional operator to accounts BCs at level set</item>
-    /// <item>Uses agglomeration</item>
+    /// <item>Evaluates an additional operator to account for BCs at the level set</item>
+    /// <item>Uses cell agglomeration</item>
     /// </list>
     /// </summary>
     public abstract class IBMRungeKutta : RungeKutta {
@@ -53,15 +53,6 @@ namespace CNS.IBM {
 
         private SpatialOperator boundaryOperator;
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="scheme"></param>
-        /// <param name="standardOperator"></param>
-        /// <param name="boundaryOperator"></param>
-        /// <param name="fieldsMap"></param>
-        /// <param name="parametersMap"></param>
-        /// <param name="speciesMap"></param>
         public IBMRungeKutta(
             SpatialOperator standardOperator,
             SpatialOperator boundaryOperator,
@@ -138,14 +129,13 @@ namespace CNS.IBM {
         }
 
         protected void AgglomerateAndExtrapolateDGCoordinates() {
-            SpeciesId speciesId = speciesMap.Tracker.GetSpeciesId(speciesMap.Control.FluidSpeciesName);
             IBMMassMatrixFactory massMatrixFactory = speciesMap.GetMassMatrixFactory(Mapping);
             BlockMsrMatrix nonAgglomeratedMassMatrix = massMatrixFactory.NonAgglomeratedMassMatrix;
 
-            IBMUtility.SubMatrixSpMV(nonAgglomeratedMassMatrix, 1.0, DGCoordinates, 0.0, DGCoordinates, cutCells);
-            speciesMap.Agglomerator.ManipulateRHS(DGCoordinates, Mapping);
-            IBMUtility.SubMatrixSpMV(massMatrixFactory.InverseMassMatrix, 1.0, DGCoordinates, 0.0, DGCoordinates, cutAndTargetCells);
-            speciesMap.Agglomerator.Extrapolate(DGCoordinates.Mapping);
+            IBMUtility.SubMatrixSpMV(nonAgglomeratedMassMatrix, 1.0, DGCoordinates, 0.0, DGCoordinates, cutCells);  // eq. (39)
+            speciesMap.Agglomerator.ManipulateRHS(DGCoordinates, Mapping);  // eq. (39)
+            IBMUtility.SubMatrixSpMV(massMatrixFactory.InverseMassMatrix, 1.0, DGCoordinates, 0.0, DGCoordinates, cutAndTargetCells);   // eq. (39)
+            speciesMap.Agglomerator.Extrapolate(DGCoordinates.Mapping); // eq. (41)
         }
     }
 }

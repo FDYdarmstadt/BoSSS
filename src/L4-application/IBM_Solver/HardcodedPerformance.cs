@@ -36,7 +36,6 @@ namespace BoSSS.Application.IBM_Solver {
 
             // basic database options
             // ======================
-            string _DbPath = @"/work/scratch/ws35kire/work_db/"; 
             C.DbPath = null;
             C.savetodb = true;
             C.savetodb = false;
@@ -427,8 +426,7 @@ namespace BoSSS.Application.IBM_Solver {
             // int cells_x, int cells_yz
             IBM_Control C = new IBM_Control();
             bool xPeriodic = false;
-            double VelXBase = 0.0;
-             int i = 2;
+            int i = 2;
             const double BaseSize = 1.0;
 
             // basic database options

@@ -56,14 +56,14 @@ namespace BoSSS.Application.CDG_ProjectionTest {
 
         protected override GridCommons CreateOrLoadGrid() {
 
-            //double[] Xnodes = GenericBlas.Linspace(0, 4, 9);
-            //double[] Ynodes = GenericBlas.Linspace(0, 4, 9);
-            //var grid = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
+            double[] Xnodes = GenericBlas.Linspace(0, 4, 3);
+            double[] Ynodes = GenericBlas.Linspace(0, 4, 3);
+            var grid = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
 
-            double[] Xnodes = GenericBlas.Linspace(0, 3, 5);
-            double[] Ynodes = GenericBlas.Linspace(0, 3, 5);
-            double[] Znodes = GenericBlas.Linspace(0, 3, 2);
-            var grid = Grid3D.Cartesian3DGrid(Xnodes, Ynodes, Znodes);
+            //double[] Xnodes = GenericBlas.Linspace(0, 3, 5);
+            //double[] Ynodes = GenericBlas.Linspace(0, 3, 5);
+            //double[] Znodes = GenericBlas.Linspace(0, 3, 2);
+            //var grid = Grid3D.Cartesian3DGrid(Xnodes, Ynodes, Znodes);
 
             //int MeshPara = 32;
             //double[] nodesX = GenericBlas.Linspace(-2, 2, MeshPara + 1);
@@ -135,18 +135,18 @@ namespace BoSSS.Application.CDG_ProjectionTest {
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
 
-            //origin.ProjectField((x, y) => (Math.Sin(x) + Math.Cos(x) + x - (y + 1)));   // 2D
-            origin.ProjectField((x, y, z) => (Math.Sin(x) + Math.Cos(x) + x - (y + 1) + Math.Sin(z))); // 3D
+            origin.ProjectField((x, y) => (Math.Sin(x) + Math.Cos(x) + x - (Math.Cos(y) + 1)));   // 2D
+            //origin.ProjectField((x, y, z) => (Math.Sin(x) + Math.Cos(x) + x - (y + 1) + Math.Sin(z))); // 3D
             //origin.ProjectField((x, y, z) => Math.Sqrt(x.Pow2() + y.Pow2() + z.Pow2()) - 1);
             //origin.ProjectField((x, y) => x * x + y * y * y - x * y);
             //origin.ProjectField((x,y) => x + y);
             //origin.ProjectField((x, y) => Math.Sin(2 * Math.PI * (x / 3.0)));
 
 
-            CellMask msk2D = CellMask.GetCellMask(this.GridData, X => (X[0] > 0.0 && X[0] < 2.0 && X[1] > 0.0 && X[1] < 1.0)
-            || (X[0] > 1.0 && X[0] < 3.0 && X[1] > 1.0 && X[1] < 2.0)
-            || (X[0] > 2.0 && X[0] < 4.0 && X[1] > 2.0 && X[1] < 3.0)
-            || (X[0] > 3.0 && X[0] < 4.0 && X[1] > 3.0 && X[1] < 4.0));
+            CellMask msk2D = CellMask.GetCellMask(this.GridData, X => (X[0] > 0.0 && X[0] < 4.0 && X[1] > 0.0 && X[1] < 1.0));
+            //|| (X[0] > 1.0 && X[0] < 3.0 && X[1] > 1.0 && X[1] < 2.0)
+            //|| (X[0] > 2.0 && X[0] < 4.0 && X[1] > 2.0 && X[1] < 3.0)
+            //|| (X[0] > 3.0 && X[0] < 4.0 && X[1] > 3.0 && X[1] < 4.0));
             //CellMask msk3D = CellMask.GetCellMask(this.GridData, X => (X[0] > 0.0 && X[0] < 3.0 && X[1] > 0.0 && X[1] < 3.0 && X[2] > 0.0 && X[2] < 1.5)
             //|| (X[0] > 0.0 && X[0] < 1.5 && X[1] > 0.0 && X[1] < 3.0 && X[2] > 0.0 && X[2] < 3.0)
             //|| (X[0] > 0.0 && X[0] < 3.0 && X[1] > 0.0 && X[1] < 1.5 && X[2] > 0.0 && X[2] < 3.0));

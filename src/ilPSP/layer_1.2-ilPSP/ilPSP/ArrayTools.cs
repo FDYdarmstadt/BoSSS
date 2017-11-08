@@ -47,6 +47,8 @@ namespace ilPSP.Utils {
             A = newA;
         }
 
+        
+
 
         /// <summary>
         /// returns an array of length <paramref name="l"/>, with each entry set to <paramref name="c"/>.
@@ -235,7 +237,7 @@ namespace ilPSP.Utils {
         /// row index (2nd index) into <paramref name="mtx"/>, where <paramref name="row"/> should be inserted;
         /// </param>
         /// <param name="mtx"></param>
-        public static void SetRow<T, V>(this T[,] mtx, V row, int rowind) 
+        public static void SetRow<T, V>(this T[,] mtx, int rowind, V row) 
             where V : IList<T>
         {
 
@@ -384,10 +386,8 @@ namespace ilPSP.Utils {
 
         }
 
-
-
         /// <summary>
-        /// extracts a submatrix from a matrix,
+        /// Extracts a sub-matrix from a matrix,
         /// version without memory allocation;
         /// </summary>
         /// <param name="inp"></param>
@@ -401,18 +401,15 @@ namespace ilPSP.Utils {
             int I1 = RowInd.Length;
             int I2 = ColInd.Length;
 
-            for (int i = 0; i < I1; i++)
+            for (int i = 0; i < I1; i++) {
                 for (int j = 0; j < I2; j++) {
                     outp[i, j] = inp[RowInd[i], ColInd[j]];
                 }
-
-
+            }
         }
 
-
-
         /// <summary>
-        /// extracts a submatrix from a matrix,
+        /// extracts a sub-matrix from a matrix,
         /// version with memory allocation;
         /// </summary>
         /// <param name="inp"></param>
@@ -1053,7 +1050,7 @@ namespace ilPSP.Utils {
         /// <param name="EqualityFunc">
         /// optional comparison function
         /// </param>
-        public static bool Equals<T>(IEnumerable<T> first, IEnumerable<T> second, Func<T,T,bool> EqualityFunc = null) {
+        public static bool ListEquals<T>(this IEnumerable<T> first, IEnumerable<T> second, Func<T,T,bool> EqualityFunc = null) {
             if (ReferenceEquals(first, second)) {
                 return true;
             }
@@ -1093,8 +1090,30 @@ namespace ilPSP.Utils {
         }
 
         /// <summary>
-        /// Checks two two-dimensional arrays for equality using the default
-        /// equality comparer for the given type.
+        /// Checks two  arrays for equality using  using 
+        /// either the default equality comparer for the given type or a custom comparison (<paramref name="EqualityFunc"/>).
+        /// </summary>
+        /// <typeparam name="T">
+        /// The type of the objects in both arrays
+        /// </typeparam>
+        /// <param name="first">First array</param>
+        /// <param name="second">Second array</param>
+        /// <returns>
+        /// If any of the operands is null, false is returned. Otherwise, all
+        /// elements are checked for equality using <paramref name="EqualityFunc"/> (if provided), otherwise
+        /// <see cref="EqualityComparer{T}.Equals"/>
+        /// </returns>
+        /// <param name="EqualityFunc">
+        /// optional comparison function
+        /// </param>
+        public static bool AreEqual<T>(T[] first, T[] second, Func<T, T, bool> EqualityFunc = null) {
+            return ListEquals(first, second, EqualityFunc);
+        }
+
+
+        /// <summary>
+        /// Checks two two-dimensional arrays for equality using 
+        /// either the default equality comparer for the given type or a custom comparison (<paramref name="EqualityFunc"/>).
         /// </summary>
         /// <typeparam name="T">
         /// The type of the objects in both arrays
@@ -1144,8 +1163,8 @@ namespace ilPSP.Utils {
         }
 
         /// <summary>
-        /// Checks two three-dimensional arrays for equality using the default
-        /// equality comparer for the given type.
+        /// Checks two three-dimensional arrays for equality using  using 
+        /// either the default equality comparer for the given type or a custom comparison (<paramref name="EqualityFunc"/>).
         /// </summary>
         /// <typeparam name="T">
         /// The type of the objects in both arrays

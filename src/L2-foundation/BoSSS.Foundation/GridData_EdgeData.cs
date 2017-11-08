@@ -25,6 +25,7 @@ using ilPSP.Utils;
 using MPI.Wrappers;
 using ilPSP;
 using BoSSS.Foundation.Grid.RefElements;
+using BoSSS.Platform.Utils.Geom;
 
 namespace BoSSS.Foundation.Grid.Classic {
 
@@ -130,7 +131,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
 
             /// <summary>
-            /// Ell reference elements for edges.
+            /// Reference elements for edges.
             /// </summary>
             public RefElement[] EdgeRefElements {
                 get {
@@ -330,7 +331,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 public bool IsPeriodic;
                 public int Cell1_PeriodicTrafoIdx;
                 public int Cell2_PeriodicTrafoIdx;
-
+                
                 public int EdgeKrefIndex {
                     get {
                         return (int)(EdgeInfo.EdgeSimplexIdxMask & info);
@@ -361,13 +362,9 @@ namespace BoSSS.Foundation.Grid.Classic {
             public RefElement GetRefElement(int e) {
                 return this.EdgeRefElements[this.GetRefElementIndex(e)];
             }
-
-            
-
-
             
             /// <summary>
-            /// temporary edge data structure during assembly process
+            /// Temporary edge data structure during assembly process.
             /// </summary>
             private List<ComputeEdgesHelper> m_EdgesTmp;
 
@@ -396,10 +393,9 @@ namespace BoSSS.Foundation.Grid.Classic {
                     int i0 = m_owner.CellPartitioning.i0;
 
                     if (m_EdgesTmp != null)
-                        throw new ApplicationException("internal errror.");
+                        throw new ApplicationException("internal error.");
                     m_EdgesTmp = new List<ComputeEdgesHelper>(J * 2);
-                    m_CellsToEdgesTmp = new List<int>[Je];
-
+                    
                     int mask;
                     unchecked {
                         mask = (int)0x80000000;
@@ -434,8 +430,12 @@ namespace BoSSS.Foundation.Grid.Classic {
                             ceh.EdgeTag = cn_je.CellFaceTag.EdgeTag;
                             if (!cn_je.CellFaceTag.ConformalNeighborship)
                                 ceh.info |= EdgeInfo.Cell1_Nonconformal;
-
+                            
                             if (ceh.Cell2 < J) {
+                                // ++++++++++++++++++++++++++++++++++++
+                                // edge between cells on this processor
+                                // ++++++++++++++++++++++++++++++++++++
+
                                 int K2 = CellNeighbours[ceh.Cell2].Length;
                                 int found = 0;
                                 for (int e2 = 0; e2 < K2; e2++) {
@@ -457,14 +457,19 @@ namespace BoSSS.Foundation.Grid.Classic {
                                             + " and cell " + GlId1 + ", is defined multiple times.");
                                 }
                             } else {
+                                // +++++++++++++++++++
+                                // interprocess - edge
+                                // +++++++++++++++++++
+
                                 ceh.info = EdgeInfo.Interprocess;
                             }
 
                             {
-                                var cn_je2 = CellNeighbours_Global[ceh.Cell2].Single(x => x.Neighbour_GlobalIndex == (j + i0));
+                                GridCommons.Neighbour cn_je2 = CellNeighbours_Global[ceh.Cell2].Single(x => x.Neighbour_GlobalIndex == (j + i0));
                                 ceh.FaceIndex2 = (byte)cn_je2.CellFaceTag.FaceIndex;
                                 if (!cn_je2.CellFaceTag.ConformalNeighborship)
                                     ceh.info |= EdgeInfo.Cell2_Nonconformal;
+
 
                                 if (cn_je2.CellFaceTag.EdgeTag != ceh.EdgeTag) {
                                     throw new ApplicationException(string.Format("Inconsistent edge tag."));
@@ -504,16 +509,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             // add edge to list
                             m_EdgesTmp.Add(ceh);
 
-                            // cells to edges:
-                            var cell1_edges = m_CellsToEdgesTmp[ceh.Cell1];
-                            if (cell1_edges == null)
-                                m_CellsToEdgesTmp[ceh.Cell1] = cell1_edges = new List<int>();
-                            var cell2_edges = m_CellsToEdgesTmp[ceh.Cell2];
-                            if (cell2_edges == null)
-                                m_CellsToEdgesTmp[ceh.Cell2] = cell2_edges = new List<int>();
-
-                            cell1_edges.Add(m_EdgesTmp.Count - 1);
-                            cell2_edges.Add(m_EdgesTmp.Count - 1);
+                           
                         }
                     }
 
@@ -548,6 +544,9 @@ namespace BoSSS.Foundation.Grid.Classic {
             internal void DetermineEdgeTrafo() {
                 using (new FuncTrace()) {
 
+                    m_CellsToEdgesTmp = new List<int>[m_owner.Cells.NoOfCells];
+
+
                     // preparation: helper vars
                     // ========================
 
@@ -558,11 +557,13 @@ namespace BoSSS.Foundation.Grid.Classic {
                     List<Tuple<int,AffineTrafo>> e2cTrafo = new List<Tuple<int, AffineTrafo>>();
 
                     MultidimensionalArray[] VerticesFor_KrefEdge = this.EdgeRefElements.Select(KrefEdge => KrefEdge.Vertices).ToArray();
-                    
+
                     // work
                     // ====
 
                     // loop over all edges....
+                    int skippedEdgesCount = 0;
+                    List<int> skippedEdges = new List<int>();
                     for (int e = 0; e < this.m_EdgesTmp.Count; e++) {
 
                         // cache some vars..
@@ -679,10 +680,15 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                         } else {
 
-                            if (FaceIntersect(V_f1, V_f2,
+                           
+
+
+                            bool bFoundIntersection = FaceIntersect(V_f1, V_f2,
                                 Kref1.GetFaceTrafo(face1), Kref1.GetInverseFaceTrafo(face1),
                                 VerticesFor_KrefEdge,
-                                out conformal1, out conformal2, out newTrafo, out Edg_idx)) {
+                                out conformal1, out conformal2, out newTrafo, out Edg_idx);
+
+                            if(bFoundIntersection) {
                                 // intersection found
 
                                 //Debug.Assert(Edge.FaceIndex1 == byte.MaxValue || Edge.FaceIndex1 == e1);
@@ -699,9 +705,15 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 MultidimensionalArray Vtx2 = MultidimensionalArray.Create(Kref2.Vertices.Lengths);
                                 m_owner.TransformLocal2Global(Kref2.Vertices, Vtx2, j2);
 
+                                BoundingBox BB1 = new BoundingBox(Vtx1);
+                                BoundingBox BB2 = new BoundingBox(Vtx2);
+                                BB1.ExtendByFactor(1e-8);
+                                BB2.ExtendByFactor(1e-8);
+                                bool bbIntersect = BB1.Overlap(BB2);
+
                                 throw new ApplicationException("Fatal error in grid: Cell " + K_j1.GlobalID + " and Cell "
-                                + K_j2.GlobalID + " are specified to be neighbours, but the do not seem "
-                                + "to have a matching edge geometrically.");
+                                + K_j2.GlobalID + " are specified to be neighbors, but the do not seem "
+                                + "to have a matching edge geometrically. Bounding box overlap is " + bbIntersect + ".");
                             }
                         }
 
@@ -726,6 +738,20 @@ namespace BoSSS.Foundation.Grid.Classic {
                             Bild.ExtractSubArrayShallow(st, en).Set(V_f2_in_K2.ExtractSubArrayShallow(st, en));
                             var K_j2ToK_j1 = AffineTrafo.FromPoints(Urbild, Bild);
                             Trafo2 = K_j2ToK_j1 * Trafo1; // transformation form edge to cell 2;
+                        }
+
+                        // cells to edges
+                        // --------------
+                        {
+                            var cell1_edges = m_CellsToEdgesTmp[j1];
+                            if(cell1_edges == null)
+                                m_CellsToEdgesTmp[j1] = cell1_edges = new List<int>();
+                            var cell2_edges = m_CellsToEdgesTmp[j2];
+                            if(cell2_edges == null)
+                                m_CellsToEdgesTmp[j2] = cell2_edges = new List<int>();
+
+                            cell1_edges.Add(e - skippedEdgesCount);
+                            cell2_edges.Add(e - skippedEdgesCount);
                         }
 
                         {
@@ -788,6 +814,19 @@ namespace BoSSS.Foundation.Grid.Classic {
                         // store
                         // -----
                         this.m_EdgesTmp[e] = Edge;
+                    }
+
+                    if(skippedEdgesCount > 0) {
+                        int sk = 1;
+                        for(int e = skippedEdges[0]; e < m_EdgesTmp.Count - skippedEdges.Count; e++) {
+                            while(sk < skippedEdges.Count && e + sk == skippedEdges[sk]) {
+                                sk++;
+                            }
+                            m_EdgesTmp[e] = m_EdgesTmp[e + sk];
+                        }
+
+                        m_EdgesTmp.RemoveRange(m_EdgesTmp.Count - skippedEdges.Count, skippedEdges.Count);
+
                     }
                     
                     lock(padlock) {
@@ -890,7 +929,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             /// <param name="VerticesFor_KrefEdge">
             /// How many vertices the i-th edge element have?
             /// </param>
-            static bool FaceIntersect(
+            internal static bool FaceIntersect(
                 MultidimensionalArray VtxFace1,
                 MultidimensionalArray VtxFace2,
                 AffineTrafo TrafoEdge,

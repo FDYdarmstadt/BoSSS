@@ -394,7 +394,7 @@ namespace BoSSS.Foundation.Grid.Voronoi {
                             for(int i = 0; i < NoOfFacesFound; i++) {
                                 int Matches = 0;
                                 for(int l = 0; l < NoOfFacesFound; l++) {
-                                    if (FaceIdx[i].IsSetEqual(EdgesTemp[IdedEdgsAtOneCell[l]].Vertices))
+                                    if (FaceIdx[i].SetEquals(EdgesTemp[IdedEdgsAtOneCell[l]].Vertices))
                                         Matches++;
                                 }
                                 Debug.Assert(Matches == 1);
@@ -406,7 +406,7 @@ namespace BoSSS.Foundation.Grid.Voronoi {
                             for (int i = 0; i < FaceIdx.Length; i++) {
                                 int Matches = 0;
                                 for (int l = 0; l < NoOfFacesFound; l++) {
-                                    if (FaceIdx[i].IsSetEqual(EdgesTemp[IdedEdgsAtOneCell[l]].Vertices)) {
+                                    if (FaceIdx[i].SetEquals(EdgesTemp[IdedEdgsAtOneCell[l]].Vertices)) {
                                         Matches++;
                                     }
                                 }
