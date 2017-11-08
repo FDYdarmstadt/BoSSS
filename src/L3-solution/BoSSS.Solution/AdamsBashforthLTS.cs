@@ -108,7 +108,7 @@ namespace BoSSS.Solution.Timestepping {
 
         /// <summary>
         /// Interval for reclustering when LTS is used in adpative mode
-        /// 0: standard LTS, e.g., 10: <see cref="Clusterer.CheckForNewClustering(List{SubGrid})"/> is called in every tenth time step
+        /// 0: standard LTS, e.g., 10: <see cref="Clusterer.CheckForNewClustering(Clusterer.Clustering, Clusterer.Clustering)"/> is called in every tenth time step
         /// </summary>
         protected int reclusteringInterval;
 
@@ -116,8 +116,6 @@ namespace BoSSS.Solution.Timestepping {
         /// <see cref="Clusterer"/> based on the time step constraint in each cell. Devides the grids into sub-grids.
         /// </summary>
         protected Clusterer clusterer;
-
-        private bool IBM = false;
 
         Queue<double>[] historyTime_Q;
 
@@ -164,6 +162,11 @@ namespace BoSSS.Solution.Timestepping {
 
             clusterer = new Clusterer(this.gridData, this.timeStepConstraints);
             CurrentClustering = clusterer.CreateClustering(this.numOfClusters, subGrid);    // Might remove clusters when their centres are too close
+
+            for (int i = 0; i < CurrentClustering.NumberOfClusters; i++) {
+                Console.WriteLine("(A)LTS: id=" + i + " -> elements=" + CurrentClustering.Clusters[i].GlobalNoOfCells);
+            }
+
             CurrentClustering = CalculateNumberOfLocalTS(CurrentClustering); // Might remove clusters when time step sizes are too similar
 
             localABevolve = new ABevolve[this.numOfClusters];
@@ -192,7 +195,6 @@ namespace BoSSS.Solution.Timestepping {
 
             this.gridData = Fieldsmap.Fields.First().GridDat;
             this.numOfClusters = NumOfSgrd;
-            this.IBM = IBM;
             this.fluxCorrection = fluxCorrection;
         }
 
@@ -239,11 +241,14 @@ namespace BoSSS.Solution.Timestepping {
 
                                 CopyHistoriesOfABevolver();
 
-                            } else
+                            } else {
                                 Console.WriteLine("#####Clustering has NOT changed in timestep{0}#####", timeStepCount);
+                            }
+
 
                             GetBoundaryTopology();
 
+                            // Number of substeps could have changed
                             for (int i = 0; i < this.numOfClusters; i++) {
                                 Console.WriteLine("LTS: id=" + i + " -> sub-steps=" + NumOfLocalTimeSteps[i] + " and elements=" + CurrentClustering.Clusters[i].GlobalNoOfCells);
                             }
@@ -629,11 +634,6 @@ namespace BoSSS.Solution.Timestepping {
                     dt = Math.Min(Math.Max(dt, timeStepConstraints.First().dtMin), timeStepConstraints.First().dtMax);
 
                     localDts[i] = dt;
-                }
-
-                if (IBM) {
-                    //localDts[NumOfSgrd - 1] *= 1.0;
-                    //localDts[NumOfSgrd - 1] *= 1.0/ timeStepConstraints.First().dtFraction;
                 }
 
                 NumOfLocalTimeSteps.Clear();

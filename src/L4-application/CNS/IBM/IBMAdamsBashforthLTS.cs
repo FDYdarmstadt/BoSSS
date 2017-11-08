@@ -88,7 +88,7 @@ namespace CNS.IBM {
             CurrentClustering = CalculateNumberOfLocalTS(CurrentClustering); // Might remove sub-grids when time step sizes are too similar
 
             for (int i = 0; i < CurrentClustering.NumberOfClusters; i++) {
-                Console.WriteLine("IBM (A)LTS: id=" + i + " -> elements=" + CurrentClustering.Clusters[i].GlobalNoOfCells);
+                Console.WriteLine("IBM (A)LTS: id=" + i + " -> sub-steps=" + NumOfLocalTimeSteps[i] + " and elements=" + CurrentClustering.Clusters[i].GlobalNoOfCells);
             }
             
             localABevolve = new ABevolve[CurrentClustering.NumberOfClusters];
