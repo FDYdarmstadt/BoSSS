@@ -1053,7 +1053,7 @@ namespace CNS {
             if (AV)
                 c.AddVariable(Variables.CFLArtificialViscosity, 0);
             if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS))
-                c.AddVariable(Variables.LTSSubGrids, 0);
+                c.AddVariable(Variables.LTSClusters, 0);
 
             c.GridFunc = delegate {
                 double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
@@ -1238,7 +1238,7 @@ namespace CNS {
             if (AV)
                 c.AddVariable(Variables.CFLArtificialViscosity, 0);
             if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS))
-                c.AddVariable(Variables.LTSSubGrids, 0);
+                c.AddVariable(Variables.LTSClusters, 0);
 
             c.GridFunc = delegate {
                 double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
@@ -1399,7 +1399,7 @@ namespace CNS {
             if (AV)
                 c.AddVariable(Variables.CFLArtificialViscosity, 0);
             if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS))
-                c.AddVariable(Variables.LTSSubGrids, 0);
+                c.AddVariable(Variables.LTSClusters, 0);
 
             DerivedVariable Schlieren = new DerivedVariable(
                 "schlieren",
