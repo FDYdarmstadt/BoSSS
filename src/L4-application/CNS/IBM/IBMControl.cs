@@ -36,7 +36,7 @@ namespace CNS.IBM {
                         nameof(performanceClassCount));
                 }
 
-                int[] map = new int[] { 0, 1, 15 };
+                int[] map = new int[] { 1, 15, 0 };
                 return new StaticCellCostEstimator(map);
             };
         }

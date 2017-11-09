@@ -29,7 +29,7 @@ namespace BoSSS.Solution {
     /// the compute load is balanced evenly among the MPI processors.
     /// </summary>
     public class LoadBalancer {
-        
+
         /// <summary>
         /// A factory used to update
         /// <see cref="CurrentCellCostEstimator"/> if required
@@ -90,6 +90,11 @@ namespace BoSSS.Solution {
                 return null;
             }
 
+            Console.WriteLine(
+                "Runtime imbalance ({0:P1}) was above configured threshold ({1:P1}); attempting repartitioning",
+                CurrentCellCostEstimator.ImbalanceEstimate(),
+                imbalanceThreshold);
+
             int[] cellCosts = CurrentCellCostEstimator.GetEstimatedCellCosts();
             if (cellCosts == null) {
                 return null;
@@ -111,9 +116,16 @@ namespace BoSSS.Solution {
                         result = Grid.ComputePartitionParMETIS(cellCosts);
                         isFirstRepartitioning = false;
                     } else {
-                        result = Grid.ComputePartitionParMETIS(cellCosts, refineCurrentPartitioning: true);
+                        // Refinement currently deactivate because it behaves
+                        // strangely when large numbers of cells should be
+                        // repartitioned
+                        //result = Grid.ComputePartitionParMETIS(cellCosts, refineCurrentPartitioning: true);
+                        result = Grid.ComputePartitionParMETIS(cellCosts);
                     }
                     break;
+
+                case GridPartType.Hilbert:
+                    return Grid.ComputePartitionHilbert(cellCosts);
 
                 case GridPartType.none:
                     result = IndexBasedPartition(cellCosts);
@@ -131,7 +143,7 @@ namespace BoSSS.Solution {
                     "LoadBalancer computed invalid partitioning; no cells left on rank {0}",
                     Grid.MyRank));
             }
-            
+
             return result;
         }
 

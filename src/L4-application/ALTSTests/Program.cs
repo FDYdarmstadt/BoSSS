@@ -147,10 +147,10 @@ namespace ALTSTests {
                 reclusteringInterval: 1);
 
             // Sub-grid visualization
-            AdamsBashforthLTS timeStepper2 = timeStepper as AdamsBashforthLTS;
-            timeStepper2.SubGridField.Identification = "clusterLTS";
-            m_IOFields.Add(timeStepper2.SubGridField);
-            timeStepper = timeStepper2;
+            //AdamsBashforthLTS timeStepper2 = timeStepper as AdamsBashforthLTS;
+            //timeStepper2.SubGridField.Identification = "clusterLTS";
+            //m_IOFields.Add(timeStepper2.SubGridField);
+            //timeStepper = timeStepper2;
         }
 
         private SurrogateConstraint CustomTimestepConstraint;
