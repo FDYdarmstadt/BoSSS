@@ -993,8 +993,9 @@ namespace CNS {
 
             if (AV)
                 c.ActiveOperators = Operators.Convection | Operators.ArtificialViscosity;
-            else
+            else {
                 c.ActiveOperators = Operators.Convection;
+            }
             c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
 
             // Shock-capturing
@@ -1042,18 +1043,22 @@ namespace CNS {
             if (true1D == false) {
                 c.AddVariable(Variables.Momentum.yComponent, dgDegree);
                 c.AddVariable(Variables.Velocity.yComponent, dgDegree);
-                if (AV)
+                if (AV) {
                     c.AddVariable(Variables.ArtificialViscosity, 2);
+                }
             } else {
-                if (AV)
+                if (AV) {
                     c.AddVariable(Variables.ArtificialViscosity, 1);
+                }
             }
             c.AddVariable(Variables.CFL, 0);
             c.AddVariable(Variables.CFLConvective, 0);
-            if (AV)
+            if (AV) {
                 c.AddVariable(Variables.CFLArtificialViscosity, 0);
-            if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS))
+            }
+            if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS)) {
                 c.AddVariable(Variables.LTSClusters, 0);
+            }
 
             c.GridFunc = delegate {
                 double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
@@ -1090,10 +1095,11 @@ namespace CNS {
                     double y = X[1];
                 }
 
-                if (x <= 0.5)
+                if (x <= 0.5) {
                     return 1.0;
-                else
+                } else {
                     return 0.125;
+                }
             });
             c.InitialValues_Evaluators.Add(Variables.Pressure, delegate (double[] X) {
                 double x = X[0];
@@ -1102,10 +1108,11 @@ namespace CNS {
                     double y = X[1];
                 }
 
-                if (x <= 0.5)
+                if (x <= 0.5) {
                     return 1.0;
-                else
+                } else {
                     return 0.1;
+                }
             });
             c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => 0.0);
             if (true1D == false) {
@@ -1418,10 +1425,11 @@ namespace CNS {
                         foreach (Chunk chunk in cellMask) {
                             foreach (int cell in chunk.Elements) {
                                 double updateValue = schlieren.GetMeanValue(cell) + Math.Pow(derivative.GetMeanValue(cell), 2);
-                                if (d == (D - 1))
+                                if (d == (D - 1)) {
                                     schlieren.SetMeanValue(cell, Math.Sqrt(updateValue));
-                                else
+                                } else {
                                     schlieren.SetMeanValue(cell, updateValue);
+                                }
                             }
                         }
                     }
