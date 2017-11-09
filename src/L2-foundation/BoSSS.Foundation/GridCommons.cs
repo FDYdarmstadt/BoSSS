@@ -1256,11 +1256,13 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// start at 0 and 
         /// occupy a continuous region of natural numbers.
         /// </summary>
-        public void CompressGlobalID() {
+        public void CompressGlobalID(IList<long> AdditionalGlobalIdsToTransform = default(long[])) {
             List<int> oldGlobalID = new List<int>();
             List<int> oldCellFaceTagIDs = new List<int>();
-
+            
             int J = this.Cells.Length;
+
+
             for (int j = 0; j < J; j++) {
                 var Cj = this.Cells[j];
                 oldGlobalID.Add((int)Cj.GlobalID);
@@ -1271,7 +1273,6 @@ namespace BoSSS.Foundation.Grid.Classic {
                 //if(Cj.CoarseningPeers != null) {
                 //    oldCellFaceTagIDs.AddRange(Cj.CoarseningPeers.Select((long l) => ((int)l)));
                 //}
-
             }
             int J_BC = this.NoOfBcCells;
             for (int j = 0; j < J_BC; j++) {
@@ -1283,7 +1284,11 @@ namespace BoSSS.Foundation.Grid.Classic {
                     oldCellFaceTagIDs.AddRange(Bj.NeighCell_GlobalIDs.Select(f => (int)f));
                 }
             }
-
+            if(AdditionalGlobalIdsToTransform != null) {
+                for(int i = 0; i < AdditionalGlobalIdsToTransform.Count; i++) {
+                    oldCellFaceTagIDs.AddRange((int)(AdditionalGlobalIdsToTransform[i]));
+                }
+            }
 
 
 
@@ -1329,8 +1334,13 @@ namespace BoSSS.Foundation.Grid.Classic {
                     }
                 }
             }
+            if(AdditionalGlobalIdsToTransform != null) {
+                for(int i = 0; i < AdditionalGlobalIdsToTransform.Count; i++) {
+                    AdditionalGlobalIdsToTransform[i] = newCellFaceTagIDs[c2];
+                }
+            }
 
-            Debug.Assert(c2 == newCellFaceTagIDs.Length);
+            Debug.Assert(c2 == newCellFaceTagIDs.Length + (AdditionalGlobalIdsToTransform != null ? AdditionalGlobalIdsToTransform.Length : 0));
         }
 
         /// <summary>
