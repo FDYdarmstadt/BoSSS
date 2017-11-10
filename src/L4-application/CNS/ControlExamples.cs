@@ -1158,10 +1158,11 @@ namespace CNS {
 
             c.DomainType = DomainTypes.StaticImmersedBoundary;
 
-            if (AV)
+            if (AV) {
                 c.ActiveOperators = Operators.Convection | Operators.ArtificialViscosity;
-            else
+            } else {
                 c.ActiveOperators = Operators.Convection;
+            }
             c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
 
             // Shock-capturing
@@ -1175,7 +1176,6 @@ namespace CNS {
                 c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
                 c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
             }
-
 
             //################################ IBM
             c.LevelSetFunction = delegate (double[] X, double t) {
@@ -1202,7 +1202,6 @@ namespace CNS {
             c.AddVariable(IBMVariables.LevelSet, 1);
             //################################ IBM
 
-
             // Runge-Kutta schemes
             //c.ExplicitScheme = ExplicitSchemes.AdamsBashforth;
             //c.ExplicitOrder = 3;
@@ -1211,7 +1210,7 @@ namespace CNS {
             c.ExplicitScheme = ExplicitSchemes.LTS;
             //c.ExplicitScheme = ExplicitSchemes.AdamsBashforth;
             c.ExplicitOrder = 3;
-            c.NumberOfSubGrids = 1;
+            c.NumberOfSubGrids = 2;
             c.ReclusteringInterval = 0;
             c.FluxCorrection = false;
 
@@ -1229,23 +1228,24 @@ namespace CNS {
             c.AddVariable(Variables.Entropy, dgDegree);
             c.AddVariable(Variables.LocalMachNumber, dgDegree);
             c.AddVariable(Variables.Rank, 0);
-            //if (AV)
-            //    c.AddVariable(Variables.Sensor, dgDegree);
             if (true1D == false) {
                 c.AddVariable(Variables.Momentum.yComponent, dgDegree);
                 c.AddVariable(Variables.Velocity.yComponent, dgDegree);
-                if (AV)
+                if (AV) {
                     c.AddVariable(Variables.ArtificialViscosity, 2);
+                }
             } else {
-                if (AV)
+                if (AV) {
                     c.AddVariable(Variables.ArtificialViscosity, 1);
+                }
             }
             c.AddVariable(Variables.CFL, 0);
-            c.AddVariable(Variables.CFLConvective, 0);
-            if (AV)
-                c.AddVariable(Variables.CFLArtificialViscosity, 0);
-            if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS))
+            if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS)) {
                 c.AddVariable(Variables.LTSClusters, 0);
+            }
+            if (AV) {
+                c.AddVariable(Variables.CFLArtificialViscosity, 0);
+            }
 
             c.GridFunc = delegate {
                 double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
