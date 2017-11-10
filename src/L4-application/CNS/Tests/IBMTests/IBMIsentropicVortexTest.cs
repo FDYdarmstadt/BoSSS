@@ -244,14 +244,14 @@ namespace CNS.Tests.IBMTests {
             IBMControl c = ControlTemplate(dgDegree: 2, divisions: 1, levelSetPosition: -0.25);
 
             // Store results in database
-            //string dbPath = @"c:\bosss_db";
-            ////string dbPath = null;
+            ////string dbPath = @"c:\bosss_db";
+            //string dbPath = null;
             ////dbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db";
             //c.DbPath = dbPath;
             //c.savetodb = dbPath != null;
             //c.saveperiod = 1;
             //c.PrintInterval = 1;
-            //c.AddVariable(Variables.IBMLTSSubGrids, 0);
+            //c.AddVariable(Variables.LTSClusters, 0);
 
             c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
             c.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Classic;

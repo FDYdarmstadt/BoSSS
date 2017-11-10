@@ -18,6 +18,11 @@ using System;
 
 namespace CNS.ShockCapturing {
 
+    /// <summary>
+    /// An artificial viscosity law with a smooth transitioning between full
+    /// AV (sensor above upper threshold) cells and AV (sensor below lower
+    /// threshold).
+    /// </summary>
     public class SmoothedHeavisideArtificialViscosityLaw : IArtificialViscosityLaw {
 
         private IShockSensor sensor;
@@ -26,38 +31,87 @@ namespace CNS.ShockCapturing {
 
         private double sensorLimit;
 
-        private double epsilon0;
+        private double refMaxViscosity;
 
         private double kappa;
 
-        private double lambdaMax;
+        private double? lambdaMax;
 
-        public SmoothedHeavisideArtificialViscosityLaw(IShockSensor sensor, int dgDegree, double sensorLimit, double epsilon0, double kappa, double lambdaMax = double.MaxValue) {
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="sensor">
+        /// Some shock sensor
+        /// </param>
+        /// <param name="dgDegree">
+        /// Approximation degree of the field to which the given
+        /// <paramref name="sensor"/> is applied
+        /// </param>
+        /// <param name="refSensorLimit">
+        /// Base value of the sensor limit (before scaling) that defines the
+        /// amount of AV to be used. More precisely, this values defines the
+        /// center of smooth Heaviside approximation (i.e., exactly half of the
+        /// specified maximum <paramref name="refMaxViscosity"/> will be
+        /// applied for the given sensor value)
+        /// </param>
+        /// <param name="refMaxViscosity">
+        /// Base value of the maximum viscosity (before scaling) that should be
+        /// used in shocked cells.
+        /// </param>
+        /// <param name="kappa">
+        /// Width (in terms of "range of sensor values") of the smoothed
+        /// transition zone between full AV and no AV
+        /// </param>
+        /// <param name="lambdaMax">
+        /// Optional: Additional scaling coefficient for the AV. If none is
+        /// given, an estimate will be used according the local flow state
+        /// </param>
+        public SmoothedHeavisideArtificialViscosityLaw(IShockSensor sensor, int dgDegree, double refSensorLimit, double refMaxViscosity, double kappa, double? lambdaMax = null) {
             this.sensor = sensor;
             this.dgDegree = dgDegree;
-            this.sensorLimit = sensorLimit;
-            this.epsilon0 = epsilon0;
+            this.sensorLimit = Math.Log10(refSensorLimit / (double)Math.Pow(dgDegree, 4));
+            this.refMaxViscosity = refMaxViscosity;
             this.kappa = kappa;
             this.lambdaMax = lambdaMax;
         }
 
+        /// <summary>
+        /// Returns AV acoording to the configured sensor using a smoothed
+        /// (sine wave) AV activation profile.
+        /// </summary>
+        /// <param name="jCell">
+        /// The considered cell
+        /// </param>
+        /// <param name="cellSize">
+        /// A measure for the size of the cell
+        /// </param>
+        /// <param name="state">
+        /// The local flow state
+        /// </param>
+        /// <returns>
+        /// For some sensor value \f$ s \f$, the artificial viscosity
+        /// \f$ \nu \f$ is calculated as
+        /// \f[ 
+        ///     \nu = \nu_0 \begin{cases}
+        ///         0     & \text{ if } s \lt s_0 - \kappa\\
+        ///         1 & \text{ if } s \gt s_0 + \kappa\\
+        ///         \frac{1}{2} \left(1 + \sin(\frac{1}{2 \kappa} \pi (s - s_0) \right)
+        ///     \end{cases}
+        /// \f]
+        /// </returns>
         public double GetViscosity(int jCell, double cellSize, StateVector state) {
-            double s0 = Math.Log10(sensorLimit / (double)Math.Pow(dgDegree, 4));
-            double se = Math.Log10(sensor.GetSensorValue(jCell) + 1e-15);
+            double sensorValue = Math.Log10(sensor.GetSensorValue(jCell) + 1e-15);
 
             double epsilonE;
-            if (se < s0 - kappa)
+            if (sensorValue < sensorLimit - kappa) {
                 epsilonE = 0.0;
-            else if (se > s0 + kappa)
-                epsilonE = epsilon0;
-            else
-                epsilonE = 0.5 * epsilon0 * (1.0 + Math.Sin(0.5 * Math.PI * (se - s0) / kappa));
+            } else if (sensorValue > sensorLimit + kappa) {
+                epsilonE = refMaxViscosity;
+            } else {
+                epsilonE = 0.5 * refMaxViscosity * (1.0 + Math.Sin(0.5 * Math.PI * (sensorValue - sensorLimit) / kappa));
+            }
 
-            double lambdaMax;
-            if (this.lambdaMax == double.MaxValue)
-                lambdaMax = state.SpeedOfSound + state.Velocity.Abs();
-            else
-                lambdaMax = this.lambdaMax;
+            double lambdaMax = this.lambdaMax ?? state.SpeedOfSound + state.Velocity.Abs();
             //lambdaMax = 20; //DMR
             //lambdaMax = 2; //Shock Tube
 
@@ -66,6 +120,18 @@ namespace CNS.ShockCapturing {
             epsilonE = fudgeFactor * epsilonE * lambdaMax * cellSize / dgDegree;
 
             return epsilonE;
+        }
+
+        /// <summary>
+        /// Returns true of AV is non-zero, i.e. if sensor value is lower than
+        /// the lower AV threshold used in 
+        /// <see cref="GetViscosity(int, double, StateVector)"/>
+        /// </summary>
+        /// <param name="jCell"></param>
+        /// <returns></returns>
+        public bool IsShocked(int jCell) {
+            double se = Math.Log10(sensor.GetSensorValue(jCell) + 1e-15);
+            return (se >= sensorLimit - kappa);
         }
     }
 }
