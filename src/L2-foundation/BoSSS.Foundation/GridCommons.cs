@@ -1340,7 +1340,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 }
             }
 
-            Debug.Assert(c2 == newCellFaceTagIDs.Length + (AdditionalGlobalIdsToTransform != null ? AdditionalGlobalIdsToTransform.Length : 0));
+            Debug.Assert(c2 == newCellFaceTagIDs.Length + (AdditionalGlobalIdsToTransform != null ? AdditionalGlobalIdsToTransform.Count : 0));
         }
 
         /// <summary>

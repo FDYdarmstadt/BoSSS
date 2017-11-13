@@ -20,6 +20,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using ilPSP;
 using ilPSP.Utils;
+using ilPSP.Tracing;
 
 namespace BoSSS.Foundation.Comm {
 
@@ -212,118 +213,119 @@ namespace BoSSS.Foundation.Comm {
         /// </summary>
         /// <returns></returns>
         public Permutation Invert() {
-            Permutation inv = new Permutation(this);
-            int localLength = m_Partition.LocalLength; //m_LocalLengths[m_Master.MyRank];
-            int size;
-            MPI.Wrappers.csMPI.Raw.Comm_Size(m_Comm, out size);
+            using(new FuncTrace()) {
+                Permutation inv = new Permutation(this);
+                int localLength = m_Partition.LocalLength; //m_LocalLengths[m_Master.MyRank];
+                int size;
+                MPI.Wrappers.csMPI.Raw.Comm_Size(m_Comm, out size);
 
 
-            inv.m_Values = new long[localLength];
-            long myi0Offset = m_Partition.i0; //m_i0Offset[m_Master.MyRank];
+                inv.m_Values = new long[localLength];
+                long myi0Offset = m_Partition.i0; //m_i0Offset[m_Master.MyRank];
 
-            Many2ManyMessenger<PermutationEntry> m2m = new Many2ManyMessenger<PermutationEntry>(m_Comm);
-            int[] NoOfItemsToSent = new int[size];
-
-
-            // calc i0's for each process
-            // ==========================
-
-            long[] i0 = new long[size + 1];
-            for (int i = 1; i <= size; i++)
-                i0[i] = i0[i - 1] + m_Partition.GetLocalLength(i - 1);// m_LocalLengths[i - 1];
+                Many2ManyMessenger<PermutationEntry> m2m = new Many2ManyMessenger<PermutationEntry>(m_Comm);
+                int[] NoOfItemsToSent = new int[size];
 
 
+                // calc i0's for each process
+                // ==========================
 
-            // do local inversion and collect items 
-            // ====================================
-            List<PermutationEntry>[] itemsToSend = new List<PermutationEntry>[size];
-            for (int p = 0; p < size; p++)
-                itemsToSend[p] = new List<PermutationEntry>();
+                long[] i0 = new long[size + 1];
+                for(int i = 1; i <= size; i++)
+                    i0[i] = i0[i - 1] + m_Partition.GetLocalLength(i - 1);// m_LocalLengths[i - 1];
 
-            for (int i = 0; i < localLength; i++) {
 
-                // decide wether inversion of entry i is local or has to be transmitted ...
-                if (m_Values[i] >= myi0Offset && m_Values[i] < (myi0Offset + localLength)) {
-                    // local 
-                    inv.m_Values[this.m_Values[i] - myi0Offset] = i + myi0Offset;
 
-                } else {
-                    // transmit
+                // do local inversion and collect items 
+                // ====================================
+                List<PermutationEntry>[] itemsToSend = new List<PermutationEntry>[size];
+                for(int p = 0; p < size; p++)
+                    itemsToSend[p] = new List<PermutationEntry>();
 
-                    // find target processor
-                    int targProc = m_Partition.FindProcess(m_Values[i]);
+                for(int i = 0; i < localLength; i++) {
 
-                    NoOfItemsToSent[targProc]++;
+                    // decide wether inversion of entry i is local or has to be transmitted ...
+                    if(m_Values[i] >= myi0Offset && m_Values[i] < (myi0Offset + localLength)) {
+                        // local 
+                        inv.m_Values[this.m_Values[i] - myi0Offset] = i + myi0Offset;
 
-                    // collect item
-                    PermutationEntry pe;
-                    pe.Index = myi0Offset + i;
-                    pe.PermVal = m_Values[i];
-                    itemsToSend[targProc].Add(pe);
+                    } else {
+                        // transmit
+
+                        // find target processor
+                        int targProc = m_Partition.FindProcess(m_Values[i]);
+
+                        NoOfItemsToSent[targProc]++;
+
+                        // collect item
+                        PermutationEntry pe;
+                        pe.Index = myi0Offset + i;
+                        pe.PermVal = m_Values[i];
+                        itemsToSend[targProc].Add(pe);
+                    }
                 }
-            }
 
 
-            // setup messenger
-            // ===============
+                // setup messenger
+                // ===============
 
-            for (int i = 0; i < size; i++) {
-                if (NoOfItemsToSent[i] > 0)
-                    m2m.SetCommPath(i, NoOfItemsToSent[i]);
-            }
-            m2m.CommitCommPaths();
-
-            // transmit data
-            // =============
-
-            //csMPI.Raw.Barrier(csMPI.Raw.MPI_COMM_WORLD);
-            //Console.WriteLine("one");
-            //csMPI.Raw.Barrier(csMPI.Raw.MPI_COMM_WORLD);
-            //Console.WriteLine("two");
-            //csMPI.Raw.Barrier(csMPI.Raw.MPI_COMM_WORLD);
-            //Console.WriteLine("three");
-
-            m2m.StartTransmission(1);
-
-            for (int p = 0; p < size; p++) {
-                if (NoOfItemsToSent[p] <= 0)
-                    continue;
-
-                //Many2ManyMessenger.Buffer<PermEntry> sndbuf = new Many2ManyMessenger.Buffer<PermEntry>(m2m, false, p);
-                PermutationEntry[] items = itemsToSend[p].ToArray();
-                m2m.SendBuffers(p).CopyFrom(items, 0);
-
-                m2m.TransmittData(p);
-            }
-
-            m2m.FinishBlocking();
-
-            // invert received items
-            // =====================
-
-
-            for (int p = 0; p < size; p++) {
-                Many2ManyMessenger<PermutationEntry>.Buffer rcvbuf = m2m.ReceiveBuffers(p);
-                if (rcvbuf == null)
-                    continue; // no data from process no. p
-
-                int cnt = rcvbuf.Count;
-
-                PermutationEntry[] items = new PermutationEntry[cnt];
-                rcvbuf.CopyTo(items, 0);
-
-
-                for (int i = 0; i < cnt; i++) {
-                    inv.m_Values[items[i].PermVal - myi0Offset] = items[i].Index;
+                for(int i = 0; i < size; i++) {
+                    if(NoOfItemsToSent[i] > 0)
+                        m2m.SetCommPath(i, NoOfItemsToSent[i]);
                 }
+                m2m.CommitCommPaths();
+
+                // transmit data
+                // =============
+
+                //csMPI.Raw.Barrier(csMPI.Raw.MPI_COMM_WORLD);
+                //Console.WriteLine("one");
+                //csMPI.Raw.Barrier(csMPI.Raw.MPI_COMM_WORLD);
+                //Console.WriteLine("two");
+                //csMPI.Raw.Barrier(csMPI.Raw.MPI_COMM_WORLD);
+                //Console.WriteLine("three");
+
+                m2m.StartTransmission(1);
+
+                for(int p = 0; p < size; p++) {
+                    if(NoOfItemsToSent[p] <= 0)
+                        continue;
+
+                    //Many2ManyMessenger.Buffer<PermEntry> sndbuf = new Many2ManyMessenger.Buffer<PermEntry>(m2m, false, p);
+                    PermutationEntry[] items = itemsToSend[p].ToArray();
+                    m2m.SendBuffers(p).CopyFrom(items, 0);
+
+                    m2m.TransmittData(p);
+                }
+
+                m2m.FinishBlocking();
+
+                // invert received items
+                // =====================
+
+
+                for(int p = 0; p < size; p++) {
+                    Many2ManyMessenger<PermutationEntry>.Buffer rcvbuf = m2m.ReceiveBuffers(p);
+                    if(rcvbuf == null)
+                        continue; // no data from process no. p
+
+                    int cnt = rcvbuf.Count;
+
+                    PermutationEntry[] items = new PermutationEntry[cnt];
+                    rcvbuf.CopyTo(items, 0);
+
+
+                    for(int i = 0; i < cnt; i++) {
+                        inv.m_Values[items[i].PermVal - myi0Offset] = items[i].Index;
+                    }
+                }
+
+
+                // finalize
+                // ========
+                m2m.Dispose();
+                return inv;
             }
-
-
-            // finalize
-            // ========
-            m2m.Dispose();
-            return inv;
-
         }
 
         /// <summary>
@@ -364,151 +366,153 @@ namespace BoSSS.Foundation.Comm {
             where T1 : IList<long>
             where T2 : IList<long> //
         {
-            if (Keys.Count != Result.Count) {
-                throw new ArgumentException("Keys and Result array must have the same number of elements");
-            }
-
-            int cnt = Keys.Count;
-            int myrank;
-            int size;
-            MPI.Wrappers.csMPI.Raw.Comm_Size(this.m_Comm, out size);
-            MPI.Wrappers.csMPI.Raw.Comm_Rank(this.m_Comm, out myrank);
-            ilPSP.MPICollectiveWatchDog.Watch(this.m_Comm);
-
-
-            // create objects for questions to other processors
-            // ================================================
-
-            List<int>[] Questions = new List<int>[size];
-            List<int>[] iQuestions = new List<int>[size];
-            for (int p = 0; p < size; p++) {
-                Questions[p] = new List<int>();
-                iQuestions[p] = new List<int>();
-            }
-
-            // local evaluation of the permutation mapping
-            // ===========================================
-            for (int i = 0; i < cnt; i++) {
-                long idx = Keys[i];
-                if (idx < 0 || idx >= TotalLength)
-                    throw new ArgumentException("argument out of range; (argument values start at 0)");
-
-                long idxLocal = idx - i0Offset;
-                if (idxLocal >= 0 && idxLocal < LocalLength) {
-                    // local evaluation
-
-                    Result[i] = m_Values[idxLocal]; // that's all, folks
-                } else {
-                    // another processor has to be asked
-
-                    int targProcess = m_Partition.FindProcess(idx);
-                    int idxLoc = (int)(idx - m_Partition.GetI0Offest(targProcess)); // m_i0Offset[targProcess]);
-                    Questions[targProcess].Add(idxLoc);
-                    iQuestions[targProcess].Add(i);
+            using(new FuncTrace()) {
+                if(Keys.Count != Result.Count) {
+                    throw new ArgumentException("Keys and Result array must have the same number of elements");
                 }
-            }
 
-            // --------------------
-            // Ask other processors
-            // --------------------
+                int cnt = Keys.Count;
+                int myrank;
+                int size;
+                MPI.Wrappers.csMPI.Raw.Comm_Size(this.m_Comm, out size);
+                MPI.Wrappers.csMPI.Raw.Comm_Rank(this.m_Comm, out myrank);
+                ilPSP.MPICollectiveWatchDog.Watch(this.m_Comm);
 
-            // setup question messenger
-            // ========================
 
-            Many2ManyMessenger<int> m2mAsk = new Many2ManyMessenger<int>(m_Comm);
-            for (int p = 0; p < size; p++) {
-                if (Questions[p].Count > 0) {
-                    m2mAsk.SetCommPath(p, Questions[p].Count);
+                // create objects for questions to other processors
+                // ================================================
+
+                List<int>[] Questions = new List<int>[size];
+                List<int>[] iQuestions = new List<int>[size];
+                for(int p = 0; p < size; p++) {
+                    Questions[p] = new List<int>();
+                    iQuestions[p] = new List<int>();
                 }
-            }
 
-            m2mAsk.CommitCommPaths();
+                // local evaluation of the permutation mapping
+                // ===========================================
+                for(int i = 0; i < cnt; i++) {
+                    long idx = Keys[i];
+                    if(idx < 0 || idx >= TotalLength)
+                        throw new ArgumentException("argument out of range; (argument values start at 0)");
 
-            // transmit data
-            // =============
+                    long idxLocal = idx - i0Offset;
+                    if(idxLocal >= 0 && idxLocal < LocalLength) {
+                        // local evaluation
 
-            m2mAsk.StartTransmission(1);
+                        Result[i] = m_Values[idxLocal]; // that's all, folks
+                    } else {
+                        // another processor has to be asked
 
-            for (int p = 0; p < size; p++) {
-                if (Questions[p].Count > 0) {
-                    m2mAsk.SendBuffers(p).CopyFrom(Questions[p].ToArray(), 0);
-                    Questions[p] = null;
-                    m2mAsk.TransmittData(p);
+                        int targProcess = m_Partition.FindProcess(idx);
+                        int idxLoc = (int)(idx - m_Partition.GetI0Offest(targProcess)); // m_i0Offset[targProcess]);
+                        Questions[targProcess].Add(idxLoc);
+                        iQuestions[targProcess].Add(i);
+                    }
                 }
-            }
 
-            // wait until communication is finished
-            // ====================================
+                // --------------------
+                // Ask other processors
+                // --------------------
 
-            m2mAsk.FinishBlocking();
+                // setup question messenger
+                // ========================
 
-            // --------------------------
-            // answer to other processors
-            // --------------------------
-
-
-            // setup answer messenger
-            // ======================
-
-            Many2ManyMessenger<long> m2mAnswer = new Many2ManyMessenger<long>(m_Comm);
-            for (int p = 0; p < size; p++) {
-                if (m2mAsk.ReceiveBuffers(p) != null) {
-                    m2mAnswer.SetCommPath(p, m2mAsk.ReceiveBuffers(p).Count);
+                Many2ManyMessenger<int> m2mAsk = new Many2ManyMessenger<int>(m_Comm);
+                for(int p = 0; p < size; p++) {
+                    if(Questions[p].Count > 0) {
+                        m2mAsk.SetCommPath(p, Questions[p].Count);
+                    }
                 }
-            }
-            m2mAnswer.CommitCommPaths();
 
-            // transmit data
-            // =============
+                m2mAsk.CommitCommPaths();
 
-            m2mAnswer.StartTransmission(1);
+                // transmit data
+                // =============
 
-            for (int p = 0; p < size; p++) {
-                Many2ManyMessenger<int>.Buffer q = m2mAsk.ReceiveBuffers(p);
-                Many2ManyMessenger<long>.Buffer r = m2mAnswer.SendBuffers(p);
+                m2mAsk.StartTransmission(1);
 
-                if (q != null) {
-                    int _cnt = q.Count;
+                for(int p = 0; p < size; p++) {
+                    if(Questions[p].Count > 0) {
+                        m2mAsk.SendBuffers(p).CopyFrom(Questions[p].ToArray(), 0);
+                        Questions[p] = null;
+                        m2mAsk.TransmittData(p);
+                    }
+                }
 
-                    for (int i = 0; i < _cnt; i++) {
-                        r[i] = m_Values[q[i]];
+                // wait until communication is finished
+                // ====================================
+
+                m2mAsk.FinishBlocking();
+
+                // --------------------------
+                // answer to other processors
+                // --------------------------
+
+
+                // setup answer messenger
+                // ======================
+
+                Many2ManyMessenger<long> m2mAnswer = new Many2ManyMessenger<long>(m_Comm);
+                for(int p = 0; p < size; p++) {
+                    if(m2mAsk.ReceiveBuffers(p) != null) {
+                        m2mAnswer.SetCommPath(p, m2mAsk.ReceiveBuffers(p).Count);
+                    }
+                }
+                m2mAnswer.CommitCommPaths();
+
+                // transmit data
+                // =============
+
+                m2mAnswer.StartTransmission(1);
+
+                for(int p = 0; p < size; p++) {
+                    Many2ManyMessenger<int>.Buffer q = m2mAsk.ReceiveBuffers(p);
+                    Many2ManyMessenger<long>.Buffer r = m2mAnswer.SendBuffers(p);
+
+                    if(q != null) {
+                        int _cnt = q.Count;
+
+                        for(int i = 0; i < _cnt; i++) {
+                            r[i] = m_Values[q[i]];
+                        }
+
+                        m2mAnswer.TransmittData(p);
                     }
 
-                    m2mAnswer.TransmittData(p);
                 }
-
-            }
-            m2mAsk.Dispose();
+                m2mAsk.Dispose();
 
 
-            // wait until communication is finished
-            // ====================================
+                // wait until communication is finished
+                // ====================================
 
-            m2mAnswer.FinishBlocking();
+                m2mAnswer.FinishBlocking();
 
-            // ------------------------------------------
-            // evaluate the answers from other processors
-            // ------------------------------------------
+                // ------------------------------------------
+                // evaluate the answers from other processors
+                // ------------------------------------------
 
-            for (int p = 0; p < size; p++) {
-                Many2ManyMessenger<long>.Buffer r = m2mAnswer.ReceiveBuffers(p);
+                for(int p = 0; p < size; p++) {
+                    Many2ManyMessenger<long>.Buffer r = m2mAnswer.ReceiveBuffers(p);
 
-                if (r != null) {
-                    // test
-                    if (r.Count != iQuestions[p].Count)
-                        throw new ApplicationException("internal error: mismatch between number of questions/answers");
+                    if(r != null) {
+                        // test
+                        if(r.Count != iQuestions[p].Count)
+                            throw new ApplicationException("internal error: mismatch between number of questions/answers");
 
-                    int c = iQuestions[p].Count;
-                    List<int> iQeus = iQuestions[p];
+                        int c = iQuestions[p].Count;
+                        List<int> iQeus = iQuestions[p];
 
-                    for (int i = 0; i < c; i++) {
-                        Result[iQeus[i]] = r[i];
+                        for(int i = 0; i < c; i++) {
+                            Result[iQeus[i]] = r[i];
+                        }
+
+
                     }
-
-
                 }
+                m2mAnswer.Dispose();
             }
-            m2mAnswer.Dispose();
         }
 
         [Serializable]
@@ -543,51 +547,53 @@ namespace BoSSS.Foundation.Comm {
         /// <param name="output">
         /// On exit, <paramref name="output"/>[<see cref="Values"/>[j]] = <paramref name="input"/>[j]
         /// </param>
-        public void ApplyToVector<I>(IList<I> input, IList<I> output, Partitioning outputPartitioning) {
-            if (input.Count != this.LocalLength) 
-                throw new ArgumentException("wrong size of input vector.");
-            if (output.Count != outputPartitioning.LocalLength)
-                throw new ArgumentException("wrong size of output vector.");
+        public void ApplyToVector<I>(IList<I> input, IList<I> output, IPartitioning outputPartitioning) {
+            using(new FuncTrace()) {
+                if(input.Count != this.LocalLength)
+                    throw new ArgumentException("wrong size of input vector.");
+                if(output.Count != outputPartitioning.LocalLength)
+                    throw new ArgumentException("wrong size of output vector.");
 
-            long[] TargetInd = this.Values;
-            // keys: processors which should receive data from this processor
-            Dictionary<int, ApplyToVector_Helper<I>> sendData =
-                new Dictionary<int, ApplyToVector_Helper<I>>(); 
+                long[] TargetInd = this.Values;
+                // keys: processors which should receive data from this processor
+                Dictionary<int, ApplyToVector_Helper<I>> sendData =
+                    new Dictionary<int, ApplyToVector_Helper<I>>();
 
-            int out_myI0 = outputPartitioning.i0;
-            int out_nextI0 = out_myI0 + outputPartitioning.LocalLength;
-            int J = this.Partitioning.LocalLength;
+                int out_myI0 = outputPartitioning.i0;
+                int out_nextI0 = out_myI0 + outputPartitioning.LocalLength;
+                int J = this.Partitioning.LocalLength;
 
-            for (int j = 0; j < J; j++) {
-                if (out_myI0 <= TargetInd[j] && TargetInd[j] < out_nextI0) {
-                    // target index located on this processor
-                    output[(int)(TargetInd[j] - out_myI0)] = input[j];
-                } else {
-                    // target index located on other processor
+                for(int j = 0; j < J; j++) {
+                    if(out_myI0 <= TargetInd[j] && TargetInd[j] < out_nextI0) {
+                        // target index located on this processor
+                        output[(int)(TargetInd[j] - out_myI0)] = input[j];
+                    } else {
+                        // target index located on other processor
 
-                    int TargProc = outputPartitioning.FindProcess(TargetInd[j]);
+                        int TargProc = outputPartitioning.FindProcess(TargetInd[j]);
 
-                    ApplyToVector_Helper<I> sendData_TargProc = null;
-                    if (!sendData.TryGetValue(TargProc, out sendData_TargProc)) {
-                        sendData_TargProc = new ApplyToVector_Helper<I>();
-                        sendData.Add(TargProc, sendData_TargProc);
+                        ApplyToVector_Helper<I> sendData_TargProc = null;
+                        if(!sendData.TryGetValue(TargProc, out sendData_TargProc)) {
+                            sendData_TargProc = new ApplyToVector_Helper<I>();
+                            sendData.Add(TargProc, sendData_TargProc);
+                        }
+
+                        sendData_TargProc.Items.Add(input[j]);
+                        sendData_TargProc.TargetIndices.Add(TargetInd[j]);
                     }
-
-                    sendData_TargProc.Items.Add(input[j]);
-                    sendData_TargProc.TargetIndices.Add(TargetInd[j]);
                 }
-            }
 
-            var rcvData = SerialisationMessenger.ExchangeData(
-                sendData, MPI.Wrappers.csMPI.Raw._COMM.WORLD);
+                var rcvData = SerialisationMessenger.ExchangeData(
+                    sendData, MPI.Wrappers.csMPI.Raw._COMM.WORLD);
 
-            foreach (var rcvPkt in rcvData.Values) {
-                int K = rcvPkt.Items.Count;
-                Debug.Assert(rcvPkt.Items.Count == rcvPkt.TargetIndices.Count);
+                foreach(var rcvPkt in rcvData.Values) {
+                    int K = rcvPkt.Items.Count;
+                    Debug.Assert(rcvPkt.Items.Count == rcvPkt.TargetIndices.Count);
 
-                for (int k = 0; k < K; k++) {
-                    int locIdx = (int)(rcvPkt.TargetIndices[k]) - out_myI0;
-                    output[locIdx] = rcvPkt.Items[k];
+                    for(int k = 0; k < K; k++) {
+                        int locIdx = (int)(rcvPkt.TargetIndices[k]) - out_myI0;
+                        output[locIdx] = rcvPkt.Items[k];
+                    }
                 }
             }
         }

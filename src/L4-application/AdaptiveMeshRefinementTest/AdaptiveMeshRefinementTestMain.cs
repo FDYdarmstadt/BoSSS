@@ -65,7 +65,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
                 Console.WriteLine();
 
 
-                grd = gdat.Adapt(CellsToRefine.ToArray(), null);
+                grd = gdat.Adapt(CellsToRefine.ToArray(), null, out GridCorrelation Old2NewCorr);
                 gdat = new GridData(grd);
                 u = new SinglePhaseField(new Basis(gdat, 0), "u");
                 Tecplot.PlotFields(new DGField[] { u }, "Refinment-" + iLevel, 0.0, 0);
@@ -137,8 +137,11 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
 
             RefinedGrid = this.GridData;
             Refined_u = this.u;
+            Refined_TestData = new SinglePhaseField(this.u.Basis, "TestData");
             Refined_Grad_u = this.Grad_u;
             Refined_MagGrad_u = this.MagGrad_u;
+
+            Refined_TestData.ProjectField((x, y) => x * x + y * y);
         }
 
         private void UpdateBaseGrid(double time) {
@@ -188,6 +191,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
         SinglePhaseField Refined_u;
         VectorField<SinglePhaseField> Refined_Grad_u;
         SinglePhaseField Refined_MagGrad_u;
+        SinglePhaseField Refined_TestData;
 
 
         int[][] FindCoarseningClusters(BitArray Ok2Coarsen) {
@@ -323,11 +327,17 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
 
 
         void UpdateRefinedGrid(double time, int iTimestep) {
-            int J = RefinedGrid.Cells.NoOfLocalUpdatedCells;
+            int oldJ = RefinedGrid.Cells.NoOfLocalUpdatedCells;
+
+            double[][] TestData_DGCoordinates = new double[oldJ][];
+            for(int j = 0; j < oldJ; j++) {
+                TestData_DGCoordinates[j] = Refined_TestData.Coordinates.GetRow(j);
+            }
+
 
             bool NoRefinement = true;
-            int[] DesiredLevel = new int[J];
-            for(int j = 0; j < J; j++) {
+            int[] DesiredLevel = new int[oldJ];
+            for(int j = 0; j < oldJ; j++) {
                 double GradMag = Refined_MagGrad_u.GetMeanValue(j);
 
                 int DesiredLevel_j = 0;
@@ -346,9 +356,9 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             SinglePhaseField Ok2CoarsenViz = new SinglePhaseField(new Basis(RefinedGrid, 0), "Ok2Coarsen");
             SinglePhaseField CombinedMarkr = new SinglePhaseField(new Basis(RefinedGrid, 0), "CombinedMarker");
             SinglePhaseField CClustersMViz = new SinglePhaseField(new Basis(RefinedGrid, 0), "CoarseningClusters");
-            BitArray Ok2Coarsen = new BitArray(J);
+            BitArray Ok2Coarsen = new BitArray(oldJ);
             var rnd = new Random();
-            for(int j = 0; j < J; j++) {
+            for(int j = 0; j < oldJ; j++) {
                 int ActualLevel_j = RefinedGrid.Cells.GetCell(j).RefinementLevel;
                 int DesiredLevel_j = DesiredLevel[j];
 
@@ -363,7 +373,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
 
             List<int[]> Coarsening = new List<int[]>();
             int NoOfCellsToCoarsen = 0;
-            for(int j = 0; j < J; j++) {
+            for(int j = 0; j < oldJ; j++) {
                                
                 if(CClusters[j] != null) {
                     NoOfCellsToCoarsen++;
@@ -392,12 +402,12 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
 
             Tecplot.PlotFields(ArrayTools.Cat<DGField>(RefinedGrid.BoundaryMark(), Ok2CoarsenViz, CClustersMViz, CombinedMarkr ), "Coarsen", time, 0);
 
-
+            GridCorrelation Old2NewCorr;
             if((!NoRefinement) || (Coarsening.Count > 0)) {
 
 
                 List<int> CellsToRefineList = new List<int>();
-                for(int j = 0; j < J; j++) {
+                for(int j = 0; j < oldJ; j++) {
                     int ActualLevel_j = RefinedGrid.Cells.GetCell(j).RefinementLevel;
                     int DesiredLevel_j = DesiredLevel[j];
 
@@ -405,18 +415,21 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
                         CellsToRefineList.Add(j);
                 }
 
-                Console.WriteLine("       Refining " + CellsToRefineList.Count + " of " + J + " cells");
+                Console.WriteLine("       Refining " + CellsToRefineList.Count + " of " + oldJ + " cells");
 
                 // create new Grid & DG fields
                 // ===========================
 
-                GridCommons newGrid = RefinedGrid.Adapt(CellsToRefineList, Coarsening);
+                GridCommons newGrid = RefinedGrid.Adapt(CellsToRefineList, Coarsening, out Old2NewCorr);
                 RefinedGrid = new GridData(newGrid);
 
                 var Basis = new Basis(RefinedGrid, DEGREE);
                 Refined_u = new SinglePhaseField(Basis, "u");
+                Refined_TestData = new SinglePhaseField(Basis, "TestData");
                 Refined_Grad_u = new VectorField<SinglePhaseField>(base.GridData.SpatialDimension, Basis, "Grad_u", (bs, nmn) => new SinglePhaseField(bs, nmn));
                 Refined_MagGrad_u = new SinglePhaseField(new Basis(RefinedGrid, 0), "Magnitude_Grad_u");
+            } else {
+                Old2NewCorr = null;
             }
 
 
@@ -432,6 +445,21 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
                     (double[] X, double[] U, int jCell) => Math.Sqrt(U[0].Pow2() + U[1].Pow2()),
                     new Foundation.Quadrature.CellQuadratureScheme(),
                     Refined_Grad_u.ToArray());
+
+
+                if(Old2NewCorr != null) {
+                    Old2NewCorr.ComputeDataRedist(RefinedGrid);
+
+                    int newJ = RefinedGrid.Cells.NoOfLocalUpdatedCells;
+
+                    double[][][] ReDistDGCoords = new double[newJ][][];
+                    Old2NewCorr.ApplyToVector(TestData_DGCoordinates, ReDistDGCoords, RefinedGrid.CellPartitioning);
+
+                    for(int j = 0; j < newJ; j++) {
+                        dfdsf
+                    }
+
+                }
 
             }
         }
@@ -474,7 +502,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             string filename = "BaseGrid." + timestepNo;
             Tecplot.PlotFields(base.m_RegisteredFields.ToArray(), filename, physTime, superSampling);
 
-            DGField[] RefinedFields = new[] { Refined_u, Refined_Grad_u[0], Refined_Grad_u[1], Refined_MagGrad_u };
+            DGField[] RefinedFields = new[] { Refined_u, Refined_TestData, Refined_Grad_u[0], Refined_Grad_u[1], Refined_MagGrad_u };
             string filename2 = "RefinedGrid." + timestepNo;
             Tecplot.PlotFields(RefinedFields, filename2, physTime, superSampling);
         }
