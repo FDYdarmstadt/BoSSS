@@ -20,6 +20,7 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution;
+using BoSSS.Solution.Control;
 using BoSSS.Solution.GridImport;
 using BoSSS.Solution.Queries;
 using CNS.Convection;
@@ -979,7 +980,7 @@ namespace CNS {
             CNSControl c = new CNSControl();
 
 
-            c.DynamicLoadBalancing_CellCostEstimatorFactory = delegate (int performanceClassCount) {
+            c.DynamicLoadBalancing_CellCostEstimatorFactory = delegate (IApplication<AppControl> app, int performanceClassCount) {
                 if (performanceClassCount != 2) {
                     throw new ConfigurationException();
                 }
