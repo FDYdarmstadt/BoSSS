@@ -141,7 +141,7 @@ namespace ALTSTests {
                 new CoordinateMapping(c),
                 coordMap,
                 order: ABOrder,
-                numOfSubgrids: this.numOfSubgrids,
+                numOfClusters: this.numOfSubgrids,
                 timeStepConstraints: new List<TimeStepConstraint>() { CustomTimestepConstraint },
                 fluxCorrection: false,
                 reclusteringInterval: 1);

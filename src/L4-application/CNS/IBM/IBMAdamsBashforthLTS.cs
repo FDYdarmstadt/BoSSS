@@ -56,8 +56,9 @@ namespace CNS.IBM {
             CoordinateMapping parametersMap,
             ISpeciesMap ibmSpeciesMap,
             IBMControl control,
-            IList<TimeStepConstraint> timeStepConstraints)
-            : base(standardOperator, fieldsMap, null, control.ExplicitOrder, control.NumberOfSubGrids, true, timeStepConstraints) {
+            IList<TimeStepConstraint> timeStepConstraints,
+            int reclusteringInterval)
+            : base(standardOperator, fieldsMap, null, control.ExplicitOrder, control.NumberOfSubGrids, true, timeStepConstraints, reclusteringInterval: reclusteringInterval) {
 
             this.speciesMap = ibmSpeciesMap as ImmersedSpeciesMap;
             if (this.speciesMap == null) {
