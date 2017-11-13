@@ -17,6 +17,7 @@ limitations under the License.
 using BoSSS.Foundation.XDG;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution;
+using BoSSS.Solution.Control;
 using CNS.EquationSystem;
 using CNS.Exception;
 using System;
@@ -29,7 +30,7 @@ namespace CNS.IBM {
     public class IBMControl : CNSControl {
 
         public IBMControl() : base() {
-            this.DynamicLoadBalancing_CellCostEstimatorFactory = delegate (int performanceClassCount) {
+            this.DynamicLoadBalancing_CellCostEstimatorFactory = delegate (IApplication<AppControl> app, int performanceClassCount) {
                 if (performanceClassCount != 3) {
                     throw new ArgumentException(
                         "Only valid for exactly three performance classes",

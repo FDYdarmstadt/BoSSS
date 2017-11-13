@@ -19,6 +19,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
 using BoSSS.Platform.LinAlg;
+using BoSSS.Solution;
 using BoSSS.Solution.GridImport;
 using BoSSS.Solution.Queries;
 using CNS.Convection;
@@ -977,7 +978,22 @@ namespace CNS {
 
             CNSControl c = new CNSControl();
 
-            //dbPath = @"c:\bosss_db";
+
+            c.DynamicLoadBalancing_CellCostEstimatorFactory = delegate (int performanceClassCount) {
+                if (performanceClassCount != 2) {
+                    throw new ConfigurationException();
+                }
+
+                int[] performanceClassToCostMap = new int[] { 1, 10 };
+                return new StaticCellCostEstimator(performanceClassToCostMap);
+            };
+            c.DynamicLoadBalancing_ImbalanceThreshold = 0.1;
+            c.DynamicLoadBalancing_Period = 10;
+
+
+
+
+            dbPath = @"e:\bosss_db\GridOfTomorrow\";
             //dbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db";
             c.DbPath = dbPath;
             c.savetodb = dbPath != null && saveToDb;
@@ -1016,9 +1032,9 @@ namespace CNS {
             //c.ExplicitOrder = 4;
 
             // (A)LTS
-            c.ExplicitScheme = ExplicitSchemes.LTS;
-            //c.ExplicitScheme = ExplicitSchemes.AdamsBashforth;
-            c.ExplicitOrder = 3;
+            //c.ExplicitScheme = ExplicitSchemes.LTS;
+            c.ExplicitScheme = ExplicitSchemes.AdamsBashforth;
+            c.ExplicitOrder = 1;
             c.NumberOfSubGrids = 3;
             c.ReclusteringInterval = 1;
             c.FluxCorrection = false;
