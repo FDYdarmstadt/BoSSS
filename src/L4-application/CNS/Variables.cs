@@ -463,9 +463,7 @@ namespace CNS {
             "clusterLTS",
             VariableTypes.Other,
             delegate (DGField ClusterVisualizationField, CellMask cellMask, IProgram<CNSControl> program) {
-                Program<CNSControl> p = (Program<CNSControl>)program;
-                //var p = program;
-                AdamsBashforthLTS LTSTimeStepper = (AdamsBashforthLTS)p.TimeStepper;
+                AdamsBashforthLTS LTSTimeStepper = (AdamsBashforthLTS)program.TimeStepper;
 
                 if (LTSTimeStepper != null) {
                     for (int i = 0; i < LTSTimeStepper.CurrentClustering.NumberOfClusters; i++) {
