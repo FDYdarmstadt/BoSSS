@@ -24,7 +24,6 @@ using MPI.Wrappers;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 
 namespace BoSSS.Solution.Timestepping {
@@ -216,7 +215,7 @@ namespace BoSSS.Solution.Timestepping {
                 //this.timeStepConstraints.ForEach(s => s.currentTime = m_Time);
 
                 if (localABevolve[0].HistoryChangeRate.Count >= order - 1) {
-
+                    bool reclustered = false;
                     if (adaptive) {
                         if (timeStepCount % reclusteringInterval == 0) {
                             // Necessary in order to use the number of sub-grids specified by the user for the reclustering in each time step
@@ -229,7 +228,7 @@ namespace BoSSS.Solution.Timestepping {
                             var oldClustering = CurrentClustering;
                             CurrentClustering = clusterer.CreateClustering(numOfClusters, null);
                             CurrentClustering = CalculateNumberOfLocalTS(CurrentClustering); // Might remove sub-grids when time step sizes are too similar
-                            bool reclustered = clusterer.CheckForNewClustering(oldClustering, CurrentClustering);
+                            reclustered = clusterer.CheckForNewClustering(oldClustering, CurrentClustering);
 
                             // After the intitial phase, activate adaptive mode for all ABevolve objects
                             foreach (ABevolve abE in localABevolve)
@@ -252,21 +251,23 @@ namespace BoSSS.Solution.Timestepping {
                                 CopyHistoriesOfABevolver();
 
                             } else {
-                                Console.WriteLine("#####Clustering has NOT changed in timestep{0}#####", timeStepCount);
+                                //Console.WriteLine("#####Clustering has NOT changed in timestep{0}#####", timeStepCount);
                             }
 
 
                             GetBoundaryTopology();
-
-                            // Number of substeps could have changed
-                            for (int i = 0; i < this.numOfClusters; i++) {
-                                Console.WriteLine("LTS: id=" + i + " -> sub-steps=" + NumOfLocalTimeSteps[i] + " and elements=" + CurrentClustering.Clusters[i].GlobalNoOfCells);
-                            }
                         }
                     }
 
                     if (timeStepConstraints != null) {
                         dt = CalculateTimeStep();
+                    }
+
+                    // Number of substeps could have changed
+                    if (reclustered) {
+                        for (int i = 0; i < this.numOfClusters; i++) {
+                            Console.WriteLine("LTS: id=" + i + " -> sub-steps=" + NumOfLocalTimeSteps[i] + " and elements=" + CurrentClustering.Clusters[i].GlobalNoOfCells);
+                        }
                     }
 
                     double[,] CorrectionMatrix = new double[this.numOfClusters, this.numOfClusters];
