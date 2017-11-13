@@ -452,11 +452,14 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
 
                     int newJ = RefinedGrid.Cells.NoOfLocalUpdatedCells;
 
+                    
+
+
                     double[][][] ReDistDGCoords = new double[newJ][][];
                     Old2NewCorr.ApplyToVector(TestData_DGCoordinates, ReDistDGCoords, RefinedGrid.CellPartitioning);
 
                     for(int j = 0; j < newJ; j++) {
-                        dfdsf
+                        Refined_TestData.Coordinates.SetRow(j, ReDistDGCoords[j].First());
                     }
 
                 }

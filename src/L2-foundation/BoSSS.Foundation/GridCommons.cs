@@ -1105,56 +1105,58 @@ namespace BoSSS.Foundation.Grid.Classic {
         }
 
         static private int[][] CompressIndexRangeParallel(int[][] IDX) {
-            // Pseudo-Parallel: collect all info on process 0 and do the serial job
+            using(new FuncTrace()) {
+                // Pseudo-Parallel: collect all info on process 0 and do the serial job
 
-            int Rank, size;
-            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
-            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out Rank);
+                int Rank, size;
+                csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
+                csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out Rank);
 
-            //SerialisationMessenger sms = new SerialisationMessenger(csMPI.Raw._COMM.WORLD);
+                //SerialisationMessenger sms = new SerialisationMessenger(csMPI.Raw._COMM.WORLD);
 
 
 
-            if (Rank > 0) {
-                Dictionary<int, int[][]> Packet = new Dictionary<int, int[][]>();
-                Packet.Add(0, IDX);
+                if(Rank > 0) {
+                    Dictionary<int, int[][]> Packet = new Dictionary<int, int[][]>();
+                    Packet.Add(0, IDX);
 
-                var ret = SerialisationMessenger.ExchangeData(Packet, csMPI.Raw._COMM.WORLD);
-                Debug.Assert(ret.Count == 0);
+                    var ret = SerialisationMessenger.ExchangeData(Packet, csMPI.Raw._COMM.WORLD);
+                    Debug.Assert(ret.Count == 0);
 
-                Packet.Clear();
-                var R = SerialisationMessenger.ExchangeData(Packet, csMPI.Raw._COMM.WORLD);
-                Debug.Assert(R.Count == 1);
+                    Packet.Clear();
+                    var R = SerialisationMessenger.ExchangeData(Packet, csMPI.Raw._COMM.WORLD);
+                    Debug.Assert(R.Count == 1);
 
-                return R[0];
+                    return R[0];
 
-            } else {
+                } else {
 
-                Dictionary<int, int[][]> Packet = new Dictionary<int, int[][]>();
-                var other_IDX = SerialisationMessenger.ExchangeData(Packet, csMPI.Raw._COMM.WORLD);
-                Debug.Assert(other_IDX.Count == size - 1);
+                    Dictionary<int, int[][]> Packet = new Dictionary<int, int[][]>();
+                    var other_IDX = SerialisationMessenger.ExchangeData(Packet, csMPI.Raw._COMM.WORLD);
+                    Debug.Assert(other_IDX.Count == size - 1);
 
-                //int TotalNoofPackets = IDX.Length + other_IDX.Values.Sum(idx => idx.Length);
-                List<int[]> All = new List<int[]>();
-                All.AddRange(IDX);
-                for (int p = 1; p < size; p++)
-                    All.AddRange(other_IDX[p]);
+                    //int TotalNoofPackets = IDX.Length + other_IDX.Values.Sum(idx => idx.Length);
+                    List<int[]> All = new List<int[]>();
+                    All.AddRange(IDX);
+                    for(int p = 1; p < size; p++)
+                        All.AddRange(other_IDX[p]);
 
-                var Compressed_IDX = CompressIndexRange(All.ToArray());
+                    var Compressed_IDX = CompressIndexRange(All.ToArray());
 
-                Dictionary<int, int[][]> Return = new Dictionary<int, int[][]>();
-                int i0 = IDX.Length;
-                for (int p = 1; p < size; p++) {
-                    int L = other_IDX[p].Length;
-                    var send_p = Compressed_IDX.GetSubVector(i0, L);
+                    Dictionary<int, int[][]> Return = new Dictionary<int, int[][]>();
+                    int i0 = IDX.Length;
+                    for(int p = 1; p < size; p++) {
+                        int L = other_IDX[p].Length;
+                        var send_p = Compressed_IDX.GetSubVector(i0, L);
 
-                    Return.Add(p, send_p);
-                    i0 += L;
+                        Return.Add(p, send_p);
+                        i0 += L;
+                    }
+
+                    SerialisationMessenger.ExchangeData(Return, csMPI.Raw._COMM.WORLD);
+
+                    return Compressed_IDX.GetSubVector(0, IDX.Length);
                 }
-
-                SerialisationMessenger.ExchangeData(Return, csMPI.Raw._COMM.WORLD);
-
-                return Compressed_IDX.GetSubVector(0, IDX.Length);
             }
         }
 
@@ -1270,9 +1272,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 if (Cj.CellFaceTags != null) {
                     oldCellFaceTagIDs.AddRange(Cj.CellFaceTags.Select(cft => (int)cft.NeighCell_GlobalID));
                 }
-                //if(Cj.CoarseningPeers != null) {
-                //    oldCellFaceTagIDs.AddRange(Cj.CoarseningPeers.Select((long l) => ((int)l)));
-                //}
+                
             }
             int J_BC = this.NoOfBcCells;
             for (int j = 0; j < J_BC; j++) {
@@ -1295,6 +1295,8 @@ namespace BoSSS.Foundation.Grid.Classic {
             int[][] New = CompressIndexRangeParallel(new int[][] { oldGlobalID.ToArray(), oldCellFaceTagIDs.ToArray() });
             int[] newGlobalID = New[0];
             int[] newCellFaceTagIDs = New[1];
+            Debug.Assert(oldGlobalID.Count == newGlobalID.Length);
+            Debug.Assert(oldCellFaceTagIDs.Count == newCellFaceTagIDs.Length);
 
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
@@ -1311,14 +1313,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         c2++;
                     }
                 }
-                //if(Cj.CoarseningPeers != null) {
-                //    int L = Cj.CoarseningPeers.Length;
-                //    for (int l = 0; l < L; l++) {
-                //        Debug.Assert(Cj.CoarseningPeers[l] == oldCellFaceTagIDs[c2]);
-                //        Cj.CoarseningPeers[l] = newCellFaceTagIDs[c2];
-                //        c2++;
-                //    }
-                //}
+                
             }
             for (int j = 0; j < J_BC; j++) {
                 var Bj = this.BcCells[j];
@@ -1337,10 +1332,11 @@ namespace BoSSS.Foundation.Grid.Classic {
             if(AdditionalGlobalIdsToTransform != null) {
                 for(int i = 0; i < AdditionalGlobalIdsToTransform.Count; i++) {
                     AdditionalGlobalIdsToTransform[i] = newCellFaceTagIDs[c2];
+                    c2++;
                 }
             }
 
-            Debug.Assert(c2 == newCellFaceTagIDs.Length + (AdditionalGlobalIdsToTransform != null ? AdditionalGlobalIdsToTransform.Count : 0));
+            Debug.Assert(c2 == newCellFaceTagIDs.Length);
         }
 
         /// <summary>
