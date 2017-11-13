@@ -979,22 +979,19 @@ namespace CNS {
 
             CNSControl c = new CNSControl();
 
+            // Load balancing
+            //c.DynamicLoadBalancing_CellCostEstimatorFactory = delegate (IApplication<AppControl> app, int performanceClassCount) {
+            //    if (performanceClassCount != 2) {
+            //        throw new ConfigurationException();
+            //    }
 
-            c.DynamicLoadBalancing_CellCostEstimatorFactory = delegate (IApplication<AppControl> app, int performanceClassCount) {
-                if (performanceClassCount != 2) {
-                    throw new ConfigurationException();
-                }
+            //    int[] performanceClassToCostMap = new int[] { 1, 10 };
+            //    return new StaticCellCostEstimator(performanceClassToCostMap);
+            //};
+            //c.DynamicLoadBalancing_ImbalanceThreshold = 0.1;
+            //c.DynamicLoadBalancing_Period = 10;
 
-                int[] performanceClassToCostMap = new int[] { 1, 10 };
-                return new StaticCellCostEstimator(performanceClassToCostMap);
-            };
-            c.DynamicLoadBalancing_ImbalanceThreshold = 0.1;
-            c.DynamicLoadBalancing_Period = 10;
-
-
-
-
-            dbPath = @"e:\bosss_db\GridOfTomorrow\";
+            //dbPath = @"e:\bosss_db\GridOfTomorrow\";
             //dbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db";
             c.DbPath = dbPath;
             c.savetodb = dbPath != null && saveToDb;
@@ -1008,16 +1005,14 @@ namespace CNS {
 
             bool AV = true;
 
-            if (AV)
+            if (AV) {
                 c.ActiveOperators = Operators.Convection | Operators.ArtificialViscosity;
-            else {
+            } else {
                 c.ActiveOperators = Operators.Convection;
             }
             c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
 
             // Shock-capturing
-            //double sensorLimit = 1e-4;
-            //double lambdaMax = 2.0;     // HAS TO BE CHECKED (is working anyway)
             double epsilon0 = 1.0;
             double kappa = 0.5;
 
@@ -1034,9 +1029,9 @@ namespace CNS {
             //c.ExplicitOrder = 4;
 
             // (A)LTS
-            //c.ExplicitScheme = ExplicitSchemes.LTS;
-            c.ExplicitScheme = ExplicitSchemes.AdamsBashforth;
-            c.ExplicitOrder = 1;
+            c.ExplicitScheme = ExplicitSchemes.LTS;
+            //c.ExplicitScheme = ExplicitSchemes.AdamsBashforth;
+            c.ExplicitOrder = 3;
             c.NumberOfSubGrids = 3;
             c.ReclusteringInterval = 1;
             c.FluxCorrection = false;
@@ -1055,8 +1050,6 @@ namespace CNS {
             c.AddVariable(Variables.Entropy, dgDegree);
             c.AddVariable(Variables.LocalMachNumber, dgDegree);
             c.AddVariable(Variables.Rank, 0);
-            //if (AV)
-            //    c.AddVariable(Variables.Sensor, dgDegree);
             if (true1D == false) {
                 c.AddVariable(Variables.Momentum.yComponent, dgDegree);
                 c.AddVariable(Variables.Velocity.yComponent, dgDegree);
@@ -1145,10 +1138,11 @@ namespace CNS {
             c.NoOfTimesteps = int.MaxValue;
 
             c.ProjectName = "Shock tube";
-            if (true1D)
+            if (true1D) {
                 c.SessionName = String.Format("Shock tube, 1D, dgDegree = {0}, noOfCellsX = {1}, sensorLimit = {2:0.00E-00}", dgDegree, numOfCellsX, sensorLimit);
-            else
+            } else {
                 c.SessionName = String.Format("Shock tube, 2D, dgDegree = {0}, noOfCellsX = {1}, noOfCellsX = {2}, sensorLimit = {3:0.00E-00}, CFLFraction = {4:0.00E-00}, ALTS {5}/{6}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids);
+            }
             //c.Tags.Add("Shock tube");
             //c.Tags.Add("Artificial viscosity");
 
