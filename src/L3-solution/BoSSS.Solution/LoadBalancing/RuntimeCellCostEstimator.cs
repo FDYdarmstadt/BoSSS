@@ -45,7 +45,7 @@ namespace BoSSS.Solution {
         /// <summary>
         /// <see cref="MaxNoOfTimesteps"/>
         /// </summary>
-        private int m_MaxNoOfTimesteps = 10;
+        private int m_MaxNoOfTimesteps = 20;
 
         /// <summary>
         /// Number of time-steps which are used to obtain the performance model.
@@ -290,7 +290,7 @@ namespace BoSSS.Solution {
         private List<double> localRunTimeEstimates = new List<double>();
         
         /// <summary>
-        /// Pushes the latest timing measurements to <see cref="cellCountsOverTime"/> and <see cref="costsOverTime"/>.
+        /// Pushes the latest timing measurements
         /// </summary>
         private void PushData(double[] cellCountPerClass, double cost) {
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int MpiSize);

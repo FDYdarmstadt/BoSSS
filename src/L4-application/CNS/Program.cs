@@ -22,12 +22,14 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Solution;
 using BoSSS.Solution.ASCIIExport;
 using BoSSS.Solution.Tecplot;
+using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.Utils;
 using CNS.Boundary;
 using CNS.EquationSystem;
 using CNS.Exception;
 using CNS.IBM;
 using CNS.Residual;
+using CNS.ShockCapturing;
 using CNS.Solution;
 using ilPSP;
 using ilPSP.Tracing;
@@ -51,7 +53,7 @@ namespace CNS {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
-            
+
             Application<CNSControl>._Main(
                 args,
                 false,
@@ -178,7 +180,6 @@ namespace CNS {
             FullOperator = operatorFactory.GetJoinedOperator();
 
             CoordinateMapping variableMap = new CoordinateMapping(WorkingSet.ConservativeVariables);
-
             TimeStepperFactory timeStepperFactory = new TimeStepperFactory(
                 Control,
                 GridData,
@@ -199,6 +200,12 @@ namespace CNS {
                 this,
                 Control,
                 FullOperator.ToSpatialOperator()).ToArray();
+
+            if (Control.ShockSensor != null) {
+                Control.ShockSensor.UpdateSensorValues(WorkingSet);
+            }
+            WorkingSet.UpdateDerivedVariables(this, SpeciesMap.SubGrid.VolumeMask);
+
         }
 
         /// <summary>
@@ -242,7 +249,6 @@ namespace CNS {
                 e.ExceptionBcast();
 
                 dt = TimeStepper.Perform(dt);
-                WorkingSet.UpdateDerivedVariables(this, SpeciesMap.SubGrid.VolumeMask);
 
                 if (DatabaseDriver.MyRank == 0 && TimestepNo % printInterval == 0) {
                     Console.WriteLine(" done. PhysTime: {0:0.#######E-00}, dt: {1:0.###E-00}", phystime, dt);
@@ -256,6 +262,14 @@ namespace CNS {
 
                 return dt;
             }
+        }
+
+        protected override ITimestepInfo SaveToDatabase(TimestepNumber timestepno, double t) {
+            if (Control.ShockSensor != null) {
+                Control.ShockSensor.UpdateSensorValues(WorkingSet);
+            }
+            WorkingSet.UpdateDerivedVariables(this, SpeciesMap.SubGrid.VolumeMask);
+            return base.SaveToDatabase(timestepno, t);
         }
 
         private bool ShouldTerminate(IDictionary<string, double> residuals) {
@@ -309,10 +323,6 @@ namespace CNS {
         /// </summary>
         protected override void SetInitial() {
             WorkingSet.ProjectInitialValues(SpeciesMap, base.Control.InitialValues_Evaluators);
-            if (Control.ShockSensor != null) {
-                Control.ShockSensor.UpdateSensorValues(WorkingSet);
-            }
-            WorkingSet.UpdateDerivedVariables(this, SpeciesMap.SubGrid.VolumeMask);
         }
 
         /// <summary>
@@ -322,11 +332,6 @@ namespace CNS {
         public override void PostRestart(double time) {
             //FullOperator = operatorFactory.GetJoinedOperator();
             this.startTime = time;
-
-            // This will often recompute data already present in the restart,
-            // but some of the configured derived variables might not have been
-            // in the original session, so let's play it safe
-            WorkingSet.UpdateDerivedVariables(this, SpeciesMap.SubGrid.VolumeMask);
 
             ImmersedSpeciesMap ibmMap = SpeciesMap as ImmersedSpeciesMap;
             if (ibmMap != null) {
@@ -360,24 +365,71 @@ namespace CNS {
         /// Standard:
         /// All cells are class 0
         /// 
+        /// Standard + AV:
+        /// AV cells are 1, all others are 0
+        /// 
         /// IBM:
-        /// - void cells are 0
-        /// - non-cut fluid cells are 1
-        /// - cut cells are 2
+        /// - standard fluid cells are 0
+        /// - cut cells are 1
+        /// - void cells are 2
+        /// 
+        /// IBM + AV:
+        /// To do
         /// </summary>
         protected override void GetCellPerformanceClasses(out int NoOfClasses, out int[] CellPerfomanceClasses) {
             int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
+            CellPerfomanceClasses = new int[J];
 
             if (Control.DomainType == DomainTypes.Standard) {
-                NoOfClasses = 1;
-                CellPerfomanceClasses = new int[J];
+                if (Control.ExplicitScheme == ExplicitSchemes.LTS) {
+                    AdamsBashforthLTS ltsTimeStepper = this.TimeStepper as AdamsBashforthLTS;
+                    if (ltsTimeStepper == null) {
+                        throw new ConfigurationException();
+                    }
+
+
+                    NoOfClasses = ltsTimeStepper.CurrentClustering.NumberOfClusters;
+                    for (int i = 0; i < ltsTimeStepper.CurrentClustering.NumberOfClusters; i++) {
+                        int noOfTimesteps = ltsTimeStepper.NumOfLocalTimeSteps[i];
+                        foreach (Chunk chunk in ltsTimeStepper.CurrentClustering.Clusters[i].VolumeMask) {
+                            foreach (int cell in chunk.Elements) {
+                                CellPerfomanceClasses[cell] = i;
+                            }
+                        }
+                    }
+                } else {
+                    // All are equally expensive, just leave all values to zero
+                    NoOfClasses = 1;
+                }
+
+
+                //if (Control.ActiveOperators.HasFlag(Operators.ArtificialViscosity)) {
+                //    // Distinguish between normal cells (0) and shick/AV cells (1)
+                //    NoOfClasses = 2;
+                //    foreach (Chunk chunk in Control.ArtificialViscosityLaw.GetShockedCellMask(GridData)) {
+                //        foreach (int cell in chunk.Elements) {
+                //            CellPerfomanceClasses[cell] = 1;
+                //        }
+                //    }
+                //} else {
+                //    // All are equally expensive, just leave all values to zero
+                //    NoOfClasses = 1;
+                //}
             } else {
-                NoOfClasses = 3;
-                CellPerfomanceClasses = new int[J];
-                foreach (int j in LsTrk._Regions.GetSpeciesMask("fluid").ItemEnum)
-                    CellPerfomanceClasses[j] = 1;
-                foreach (int j in LsTrk._Regions.GetCutCellMask().ItemEnum)
-                    CellPerfomanceClasses[j] = 2;
+                IBMControl ibmControl = Control as IBMControl;
+
+                if (Control.ActiveOperators.HasFlag(Operators.ArtificialViscosity)) {
+                    throw new NotImplementedException();
+                } else {
+                    // Distinguish between pure fluid (0), cut cells (1) and void (2) cells
+                    NoOfClasses = 3;
+                    foreach (int j in LsTrk._Regions.GetCutCellMask().ItemEnum) {
+                        CellPerfomanceClasses[j] = 1;
+                    }
+                    foreach (int j in LsTrk._Regions.GetSpeciesMask(ibmControl.VoidSpeciesName).ItemEnum) {
+                        CellPerfomanceClasses[j] = 2;
+                    }
+                }
             }
         }
 
@@ -391,8 +443,13 @@ namespace CNS {
             return new BoundaryConditionMap(GridData, Control);
         }
 
-        public new void SaveToDatabase(TimestepNumber ts, double phystime) {
-            base.SaveToDatabase(ts, phystime);
+        /// <summary>
+        /// See <see cref="SaveToDatabase(TimestepNumber, double)"/>
+        /// </summary>
+        /// <param name="ts"></param>
+        /// <param name="phystime"></param>
+        void IProgram<T>.SaveToDatabase(TimestepNumber ts, double phystime) {
+            this.SaveToDatabase(ts, phystime);
         }
     }
 }

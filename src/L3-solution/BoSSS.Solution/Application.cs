@@ -2115,9 +2115,9 @@ namespace BoSSS.Solution {
             }
 
             return m_Balancer.GetNewPartitioning(
+                this,
                 performanceClassCount,
                 performanceClasses,
-                this.Grid,
                 TimeStepNo,
                 m_GridPartitioningType,
                 m_GridPartitioningOptions,

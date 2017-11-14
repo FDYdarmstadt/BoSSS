@@ -25,162 +25,162 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// <summary>
         /// Linear quad (3 points)
         /// </summary>
-        Square_Linear,
+        Square_Linear = 0,
 
         /// <summary>
         /// linear triangle
         /// </summary>
-        Triangle_3,
+        Triangle_3 =  1,
 
         /// <summary>
         /// linear cube (4 points)
         /// </summary>
-        Cube_Linear,
+        Cube_Linear = 2,
 
         /// <summary>
         /// linear (4-point) tetra
         /// </summary>
-        Tetra_Linear,
+        Tetra_Linear = 3,
 
         /// <summary>
         /// Quadratic tetra
         /// </summary>
-        Tetra_10,
+        Tetra_10 = 4,
 
         /// <summary>
         /// Cubic tetra
         /// </summary>
-        Tetra_20,
+        Tetra_20 = 5,
 
         /// <summary>
         /// Quartic tetra
         /// </summary>
-        Tetra_35,
+        Tetra_35 = 6,
 
         /// <summary>
         /// Qunitic tetra
         /// </summary>
-        Tetra_56,
+        Tetra_56 = 7,
 
         /// <summary>
         /// Bi-linear square
         /// </summary>
-        Square_4,
+        Square_4 = 8,
 
         /// <summary>
         /// Quadratic square
         /// </summary>
-        Square_8,
+        Square_8 = 9,
 
         /// <summary>
         /// Bi-quadratic square
         /// </summary>
-        Square_9,
+        Square_9 = 10,
 
         /// <summary>
         /// Cubic square
         /// </summary>
-        Square_12,
+        Square_12 = 11,
 
         /// <summary>
         /// Bi-cubic square
         /// </summary>
-        Square_16,
+        Square_16 = 12,
 
         /// <summary>
         /// Bi-quartic square
         /// </summary>
-        Square_25,
+        Square_25 = 13,
 
         /// <summary>
         /// Bi-quintic square
         /// </summary>
-        Square_36,
+        Square_36 = 14,
 
         /// <summary>
         /// Bi-sextic square
         /// </summary>
-        Square_49,
+        Square_49 = 15,
 
         /// <summary>
         /// Bi-septic square
         /// </summary>
-        Square_64,
+        Square_64 = 16,
 
         /// <summary>
         /// Bi-octic square
         /// </summary>
-        Square_81,
+        Square_81 = 17,
 
         /// <summary>
         /// Bi-nonic square (if such a thing exists...)
         /// </summary>
-        Square_100,
+        Square_100 = 18,
 
         /// <summary>
         /// Cubic triangle
         /// </summary>
-        Triangle_9,
+        Triangle_9 = 19,
 
         /// <summary>
         /// Quadratic triangle
         /// </summary>
-        Triangle_6,
+        Triangle_6 = 20,
 
         /// <summary>
         /// ?
         /// </summary>
-        Triangle_21,
+        Triangle_21 = 21,
 
         /// <summary>
         /// ?
         /// </summary>
-        Triangle_15,
+        Triangle_15 = 22,
 
         /// <summary>
         /// What the hell?
         /// </summary>
-        Triangle_152,
+        Triangle_152 = 23,
 
         /// <summary>
         /// ?
         /// </summary>
-        Triangle_12,
+        Triangle_12 = 24,
 
         /// <summary>
         /// ?
         /// </summary>
-        Triangle_10,
+        Triangle_10 = 25,
 
         /// <summary>
         /// Tri-linear cube
         /// </summary>
-        Cube_8,
+        Cube_8 = 26,
 
         /// <summary>
         /// Cubic cube (lol)
         /// </summary>
-        Cube_20,
+        Cube_20 = 27,
 
         /// <summary>
         /// Tri-cubic cube (lol again)
         /// </summary>
-        Cube_27,
+        Cube_27 = 28,
 
         /// <summary>
         /// Tri-quartic cube
         /// </summary>
-        Cube_64,
+        Cube_64 = 29,
 
         /// <summary>
         /// Tri-quintic cube
         /// </summary>
-        Cube_125,
+        Cube_125 = 30,
 
         /// <summary>
         /// Tri-sextic cube
         /// </summary>
-        Cube_216,
+        Cube_216 = 31,
 
         ///// <summary> </summary>
         //Cube_343,
@@ -197,32 +197,39 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// <summary>
         /// Linear line element
         /// </summary>
-        Line_2,
+        Line_2 = 32,
 
         /// <summary>
         /// Quadratic line element
         /// </summary>
-        Line_3,
+        Line_3 = 33,
 
         /// <summary>
         /// Cubic line element
         /// </summary>
-        Line_4,
+        Line_4 = 34,
 
         /// <summary>
         /// Quartic line element
         /// </summary>
-        Line_5,
+        Line_5 = 35,
 
         /// <summary>
         /// Quintic line element
         /// </summary>
-        Line_6,
+        Line_6 = 36,
 
         /// <summary>
         /// Zero-dimensional element
         /// </summary>
-        Point
+        Point = 37,
+
+
+        /// <summary>
+        /// All flags on, implementing this ensures that the enum 
+        /// is compiled using 32 bits.
+        /// </summary>
+        AllOn = unchecked((int)~0)
     }
 
     /// <summary>
