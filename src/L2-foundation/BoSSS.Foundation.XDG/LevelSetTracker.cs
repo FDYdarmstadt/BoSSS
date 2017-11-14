@@ -1794,7 +1794,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Late stage of dynamic load balancing, restoring data after the grid cells were re-distributed.
         /// </summary>
-        public void RestoreAfterLoadBalance(int versionNo, int[] ExchangeData, bool ObUp =true) {
+        public void RestoreAfterLoadBalance(int versionNo, int[] ExchangeData, bool ObUp = true) {
             using (new FuncTrace()) {
                 int J = m_gDat.Cells.NoOfLocalUpdatedCells;
                 int JA = m_gDat.Cells.NoOfCells;

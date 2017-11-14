@@ -1758,9 +1758,8 @@ namespace BoSSS.Solution {
                 // ===============
                 // mesh adaptation
                 // ===============
-                GridCommons newGrid = this.AdaptMesh();
+                this.AdaptMesh(out var newGrid, out var old2newGridCorr);
                 
-
                 if(newGrid == null) {
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // no mesh adaptation, but (maybe) grid redistribution (load balancing)
@@ -1901,8 +1900,7 @@ namespace BoSSS.Solution {
                     int[] oldTrackerData;
                     LoadBalancingData loadbal;
                     BackupData(oldGridData, this.LsTrk, out loadbal, out tau, out oldTrackerData, out int trackerVersion);
-
-                    
+                                       
 
                     // check for grid redistribution
                     // =============================
@@ -1953,27 +1951,16 @@ namespace BoSSS.Solution {
 
                     // compute redistribution permutation
                     // ==================================
+                    
+                    old2newGridCorr.ComputeDataRedist(newGridData);
 
-                    Permutation Resorting;
-                    {
-                        // sigma is the GlobalID-permutation of the **new** grid
-                        Permutation sigma = newGridData.CurrentGlobalIdPermutation;
-
-                        // compute resorting permutation
-                        Permutation invSigma = sigma.Invert();
-                        Resorting = invSigma * tau;
-                        tau = null;
-                        invSigma = null;
-                    }
-                    //Console.WriteLine("P {0}: Resorting: {1} entries.", MPIRank, Resorting.LocalLength);
-                    //ilPSP.Environment.StdoutOnlyOnRank0 = true;
-                    //Debug.Assert(Resorting.LocalLength == newGridData.iLogicalCells.NoOfLocalUpdatedCells);
-
-
+                    int newJ = newGridData.Cells.NoOfLocalUpdatedCells;
+                    int[][] TargMappingIdx = new int[newJ][];
+                    old2newGridCorr.GetTargetMappingIndex(TargMappingIdx, newGridData.CellPartitioning);
+                    
                     // sent data around the world
                     // ==========================
-                    int newJ = newGridData.CellPartitioning.LocalLength;
-
+                    
                     int[] newTrackerData = null;
                     if(oldTrackerData != null) {
                         newTrackerData = new int[newJ];
@@ -1983,7 +1970,45 @@ namespace BoSSS.Solution {
 
                     loadbal.Resort(Resorting, newGridData);
 
+                    // re-init simulation
+                    // ==================
 
+                    // release old DG fields
+                    this.m_RegisteredFields.Clear();
+                    this.m_IOFields.Clear();
+
+                    // re-create fields
+                    if(this.Control != null) {
+                        InitFromAttributes.CreateFieldsAuto(
+                            this, GridData, this.Control.FieldOptions, this.m_IOFields, this.m_RegisteredFields);
+                    }
+                    CreateFields(); // full user control   
+                    PostRestart(physTime);
+                    loadbal.SetNewTracker(this.LsTrk);
+
+                    // re-set Level-Set tracker
+                    if(newTrackerData != null) {
+                        Debug.Assert(object.ReferenceEquals(this.LsTrk.GridDat, this.GridData));
+                        foreach(var f in m_RegisteredFields) {
+                            if(f is XDGField) {
+                                ((XDGField)f).Override_TrackerVersionCnt(trackerVersion);
+                            }
+                        }
+                        this.LsTrk.RestoreAfterLoadBalance(trackerVersion, newTrackerData);
+                    }
+
+                    // set dg coördinates
+                    foreach(var f in m_RegisteredFields) {
+                        if(f is XDGField) {
+                            XDGBasis xb = ((XDGField)f).Basis;
+                            if(!object.ReferenceEquals(xb.Tracker, this.LsTrk))
+                                throw new ApplicationException();
+                        }
+                        loadbal.RestoreDGField(f);
+                    }
+
+                    // re-create solvers, blablabla
+                    CreateEquationsAndSolvers(loadbal);
                 }
 
 
@@ -2083,9 +2108,9 @@ namespace BoSSS.Solution {
         /// <summary>
         /// Adaptation of the current mesh (<see cref="Grid"/>).
         /// </summary>
-        protected virtual GridCommons AdaptMesh() {
-            
-            return null;
+        protected virtual void AdaptMesh(out GridCommons newGrid, out GridCorrelation old2NewGrid) {
+            newGrid = null;
+            old2NewGrid = null;
         }
 
         /// <summary>

@@ -290,7 +290,7 @@ namespace BoSSS.Solution {
         }
 
         /// <summary>
-        /// Loads some floating-point data vector before grid-redistribution.
+        /// Loads some floating-point data vector after grid-redistribution.
         /// </summary>
         /// <param name="vec">
         /// Output, a vector which indices correlate with the logical cell indices,
@@ -315,7 +315,7 @@ namespace BoSSS.Solution {
         }
 
         /// <summary>
-        /// Loads some floating-point data vector before grid-redistribution.
+        /// Loads some floating-point data vector after grid-redistribution.
         /// </summary>
         /// <param name="OutputFunc">
         /// Output, which stores the output;
@@ -708,9 +708,8 @@ namespace BoSSS.Solution {
             }
         }
 
-
         /// <summary>
-        /// 
+        /// Permutation matrix from an old to a new partitioning. 
         /// </summary>
         /// <param name="RowPart">Row partitioning, i.e. new data partitioning.</param>
         /// <param name="ColPart">Column partitioning, i.e. old data partitioning.</param>
@@ -835,7 +834,21 @@ namespace BoSSS.Solution {
 
         Dictionary<int[], BlockPartitioning> m_OldBlockings = new Dictionary<int[], BlockPartitioning>(new FuncEqualityComparer<int[]>((A, B) => ArrayTools.AreEqual(A, B)));
 
-
+        /// <summary>
+        /// Backup of some operator matrix before grid-redistribution.
+        /// </summary>
+        /// <param name="M">
+        /// Matrix which should be saved.
+        /// </param>
+        /// <param name="Reference">
+        /// Unique string reference under which data can be referenced after grid-redistribution.
+        /// </param>
+        /// <param name="RowMapping">
+        /// Coordinate mapping to correlate the matrix rows with cells of the computational grid.
+        /// </param>
+        /// <param name="ColMapping">
+        ///  Coordinate mapping to correlate the matrix columns with cells of the computational grid.
+        /// </param>
         public void BackupMatrix(BlockMsrMatrix M, string Reference, UnsetteledCoordinateMapping RowMapping, UnsetteledCoordinateMapping ColMapping) {
             CheckMatrix(M, RowMapping, ColMapping, m_oldJ);
 
@@ -873,6 +886,21 @@ namespace BoSSS.Solution {
         Dictionary<int[], BlockMsrMatrix> m_ColPermutationMatrices = new Dictionary<int[], BlockMsrMatrix>(new FuncEqualityComparer<int[]>((a, b) => ArrayTools.AreEqual(a, b)));
 
 
+        /// <summary>
+        /// Reload of some operator after before grid-redistribution.
+        /// </summary>
+        /// <param name="Mtx_new">
+        /// Output, matrix which should be restored.
+        /// </param>
+        /// <param name="Reference">
+        /// Unique string reference under which data has been stored before grid-redistribution.
+        /// </param>
+        /// <param name="RowMapping">
+        /// Coordinate mapping to correlate the matrix rows with cells of the computational grid.
+        /// </param>
+        /// <param name="ColMapping">
+        ///  Coordinate mapping to correlate the matrix columns with cells of the computational grid.
+        /// </param>
         public void RestoreMatrix(BlockMsrMatrix Mtx_new, string Reference, UnsetteledCoordinateMapping RowMapping, UnsetteledCoordinateMapping ColMapping) {
             int J = m_NewGrid.iLogicalCells.NoOfLocalUpdatedCells;
             CheckMatrix(Mtx_new, RowMapping, ColMapping, J);
@@ -932,84 +960,7 @@ namespace BoSSS.Solution {
             return P_Col;
         }
 
-        /*
-        static double[][] BackupDgFields(string[] FieldIds, IEnumerable<DGField> Fields, out LevelSetTracker LsTrk) {
-
-            // init
-            // ====
-            var oldGridData = Fields.First().Basis.GridDat;
-
-            LsTrk = null;
-
-            DGField[] __oldFields = new DGField[FieldIds.Length];
-            Basis[] oldBasis = new Basis[FieldIds.Length];
-            for (int i = 0; i < __oldFields.Length; i++) {
-                __oldFields[i] = Fields.Single(f => f.Identification.Equals(FieldIds[i]));
-                oldBasis[i] = __oldFields[i].Basis;
-
-                if (__oldFields[i] is XDGField) {
-                    LevelSetTracker trk = ((XDGField)__oldFields[i]).Basis.Tracker;
-
-                    if (LsTrk == null) {
-                        LsTrk = trk;
-                    } else {
-                        if (!object.ReferenceEquals(trk, LsTrk))
-                            throw new ArgumentException("More than one level-set tracker is not allowed.");
-                    }
-                }
-            }
-
-
-
-            return oldFieldsData;
-        }
-        */
-
-        /*
-        static void RestoreDgFields(string[] FieldIds, IEnumerable<DGField> Fields, double[][] newFieldsData) {
-            // init
-            // ====
-            var newGridData = Fields.First().Basis.GridDat;
-
-            DGField[] __newFields = new DGField[FieldIds.Length];
-            Basis[] newBasis = new Basis[FieldIds.Length];
-            for (int i = 0; i < __newFields.Length; i++) {
-                __newFields[i] = Fields.Single(f => f.Identification.Equals(FieldIds[i]));
-                newBasis[i] = __newFields[i].Basis;
-            }
-
-            // set DG field data for new fields
-            // ================================
-
-            int newJ = newGridData.CellPartitioning.LocalLength;
-            int[] Ns = new int[newBasis.Length];
-            for (int j = 0; j < newJ; j++) {
-                int Ntot = 0;
-                for (int iF = 0; iF < newBasis.Length; iF++) {
-                    Ns[iF] = newBasis[iF].GetLength(j);
-                    Ntot += Ns[iF];
-                }
-
-                double[] data_j = newFieldsData[j];
-                if (data_j.Length != newBasis.Length + Ntot)
-                    throw new ApplicationException();
-
-                int cnt = 0;
-                for (int iF = 0; iF < newBasis.Length; iF++) {
-                    int Njif = (int)data_j[cnt];
-                    cnt++;
-                    if (Njif != Ns[iF])
-                        throw new ApplicationException();
-
-                    for (int n = 0; n < Njif; n++) {
-                        __newFields[iF].Coordinates[j, n] = data_j[cnt];
-                        cnt++;
-                    }
-                }
-            }
-        }
-        */
-
+       
 
     }
 }
