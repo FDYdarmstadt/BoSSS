@@ -56,8 +56,9 @@ namespace CNS.IBM {
             CoordinateMapping parametersMap,
             ISpeciesMap ibmSpeciesMap,
             IBMControl control,
-            IList<TimeStepConstraint> timeStepConstraints)
-            : base(standardOperator, fieldsMap, null, control.ExplicitOrder, control.NumberOfSubGrids, true, timeStepConstraints) {
+            IList<TimeStepConstraint> timeStepConstraints,
+            int reclusteringInterval)
+            : base(standardOperator, fieldsMap, null, control.ExplicitOrder, control.NumberOfSubGrids, true, timeStepConstraints, reclusteringInterval: reclusteringInterval) {
 
             this.speciesMap = ibmSpeciesMap as ImmersedSpeciesMap;
             if (this.speciesMap == null) {
@@ -74,65 +75,25 @@ namespace CNS.IBM {
             cutAndTargetCells = cutCells.Union(speciesMap.Agglomerator.AggInfo.TargetCells);
 
             // Normal LTS constructor
-            this.NumOfLocalTimeSteps = new List<int>(numOfSubgrids);
+            this.NumOfLocalTimeSteps = new List<int>(numOfClusters);
 
-            clustering = new Clustering(this.gridData, this.timeStepConstraints, this.numOfSubgrids);
-            UpdateLTSVariables();
+            SubGrid fluidSubGrid = this.speciesMap.SubGrid;
 
-            CalculateNumberOfLocalTS(); // Might remove sub-grids when time step sizes are too similar
-            clustering.UpdateClusteringVariables(this.subGridList, this.SubGridField, this.numOfSubgrids);
+            clusterer = new Clusterer(this.gridData, this.timeStepConstraints);
+            CurrentClustering = clusterer.CreateClustering(this.numOfClusters, fluidSubGrid);
 
-            // Modify SubgridList, to account smaller time-steps because of cut-cells
-            // Right now, only "hard-coded" with half time-step for all cut-cells
-            {
-                SubGrid cutCellSgrd = new SubGrid(cutAndTargetCells);
-                SubGrid finestSgrd = subGridList.Last();
-
-                finestSgrd = new SubGrid(finestSgrd.VolumeMask.Except(cutAndTargetCells).Intersect(speciesMap.SubGrid.VolumeMask));
-                subGridList.RemoveAt(subGridList.Count - 1);
-
-                subGridList.Add(finestSgrd);
-
-                subGridList.Add(cutCellSgrd);
-
-                // For debugging, change values in SgrdField
-                //if (SgrdField != null) {
-                //    SgrdField.Clear();
-                //    int ii = 0;
-                //    foreach (SubGrid sgrd in SgrdList) {
-                //        for (int i = 0; i < sgrd.LocalNoOfCells; i++) {
-                //            SgrdField.SetMeanValue(sgrd.SubgridIndex2LocalCellIndex[i], ii);
-                //        }
-                //        ii++;
-                //    }
-                //}
-
-
-                int numTSfinest = NumOfLocalTimeSteps.Last();
-                NumOfLocalTimeSteps.Add(2 * numTSfinest);
-
-
-                MaxLocalTS = NumOfLocalTimeSteps.Last();
-                numOfSubgrids = subGridList.Count;
+            for (int i = 0; i < CurrentClustering.NumberOfClusters; i++) {
+                Console.WriteLine("IBM (A)LTS: id=" + i + " -> elements=" + CurrentClustering.Clusters[i].GlobalNoOfCells);
             }
 
-            // ############# HACK for visualising subGrids for IBM-LTS test cases
-            this.SubGridField.Clear();
-            for (int i = 0; i < subGridList.Count; i++) {
-                for (int cell = 0; cell < subGridList[i].LocalNoOfCells; cell++) {
-                    this.SubGridField.SetMeanValue(subGridList[i].SubgridIndex2LocalCellIndex[cell], i);
-                    //this.SubGridField.SetMeanValue(subGridList[i].SubgridIndex2LocalCellIndex[cell], 1000);
-                }
+            CurrentClustering = CalculateNumberOfLocalTS(CurrentClustering); // Might remove sub-grids when time step sizes are too similar
+
+            for (int i = 0; i < CurrentClustering.NumberOfClusters; i++) {
+                Console.WriteLine("IBM (A)LTS: id=" + i + " -> sub-steps=" + NumOfLocalTimeSteps[i] + " and elements=" + CurrentClustering.Clusters[i].GlobalNoOfCells);
             }
-            // ############# HACK for visualising subGrids for IBM-LTS test cases
-
-            clustering.UpdateClusteringVariables(this.subGridList, this.SubGridField, this.numOfSubgrids);
-
-            if (this.numOfSubgrids == 1)
-                throw new ArgumentException("Clustering yields only to one sub-grid, LTS is not possible! Element sizes of your grid are too similar");
-
-            localABevolve = new ABevolve[subGridList.Count];
-            for (int i = 0; i < subGridList.Count; i++) {
+            
+            localABevolve = new ABevolve[CurrentClustering.NumberOfClusters];
+            for (int i = 0; i < localABevolve.Length; i++) {
                 localABevolve[i] = new IBMABevolve(
                     standardOperator,
                     boundaryOperator,
@@ -142,12 +103,12 @@ namespace CNS.IBM {
                     control.ExplicitOrder,
                     control.LevelSetQuadratureOrder,
                     control.MomentFittingVariant,
-                    subGridList[i]);
+                    CurrentClustering.Clusters[i]);
             }
             GetBoundaryTopology();
 
-            for (int i = 0; i < numOfSubgrids; i++) {
-                Console.WriteLine("LTS: id=" + i + " -> sub-steps=" + NumOfLocalTimeSteps[i] + " and elements=" + subGridList[i].GlobalNoOfCells);
+            for (int i = 0; i < CurrentClustering.NumberOfClusters; i++) {
+                Console.WriteLine("LTS: id=" + i + " -> sub-steps=" + NumOfLocalTimeSteps[i] + " and elements=" + CurrentClustering.Clusters[i].GlobalNoOfCells);
             }
 
             // StarUp Phase needs an IBM time stepper

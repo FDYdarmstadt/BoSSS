@@ -33,7 +33,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 namespace BoSSS.Solution {
 
     /// <summary>
-    /// During dynamic load balancing <see cref="Application{T}.MpiRedistribute(int, double)"/>, this is used to
+    /// During dynamic load balancing <see cref="Application{T}.MpiRedistributeAndMeshAdapt(int, double)"/>, this is used to
     /// - backup/serialize objects before balancing and
     /// - restore/serialize objects after balancing.
     /// </summary>
