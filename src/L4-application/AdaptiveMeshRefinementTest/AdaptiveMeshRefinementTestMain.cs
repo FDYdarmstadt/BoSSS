@@ -450,16 +450,45 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
                 if(Old2NewCorr != null) {
                     Old2NewCorr.ComputeDataRedist(RefinedGrid);
 
+                    int pDeg = Refined_TestData.Basis.Degree;
+
                     int newJ = RefinedGrid.Cells.NoOfLocalUpdatedCells;
-
-                    
-
+                    int[][] TargMappingIdx = new int[newJ][];
+                    Old2NewCorr.GetTargetMappingIndex(TargMappingIdx, RefinedGrid.CellPartitioning);
 
                     double[][][] ReDistDGCoords = new double[newJ][][];
                     Old2NewCorr.ApplyToVector(TestData_DGCoordinates, ReDistDGCoords, RefinedGrid.CellPartitioning);
 
                     for(int j = 0; j < newJ; j++) {
-                        Refined_TestData.Coordinates.SetRow(j, ReDistDGCoords[j].First());
+                        if(TargMappingIdx[j] == null) {
+                            Debug.Assert(ReDistDGCoords[j].Length == 1);
+                            Refined_TestData.Coordinates.SetRow(j, ReDistDGCoords[j][0]);
+                        } else {
+                            Debug.Assert(ReDistDGCoords[j].Length == TargMappingIdx[j].Length);
+
+                            int iKref = RefinedGrid.Cells.GetRefElementIndex(j);
+
+                            if(TargMappingIdx[j].Length == 1) {
+                                // refinement
+
+                                var Trafo = Old2NewCorr.GetSubdivBasisTransform(iKref, TargMappingIdx[j][0], pDeg);
+                                double[] Coords_j = Refined_TestData.Coordinates.GetRow(j);
+                                Trafo.gemv(1.0, ReDistDGCoords[j][0], 1.0, Coords_j, transpose: false);
+                                Refined_TestData.Coordinates.SetRow(j, Coords_j);
+
+                            } else {
+                                // coarsening
+
+                                int L = ReDistDGCoords[j].Length;
+                                double[] Coords_j = Refined_TestData.Coordinates.GetRow(j);
+                                for(int l = 0; l < L; l++) {
+                                    var Trafo = Old2NewCorr.GetSubdivBasisTransform(iKref, TargMappingIdx[j][l], pDeg);
+                                    Trafo.gemv(1.0, ReDistDGCoords[j][l], 1.0, Coords_j, transpose: true);
+                                }
+                                Refined_TestData.Coordinates.SetRow(j, Coords_j);
+                            }
+
+                        }
                     }
 
                 }

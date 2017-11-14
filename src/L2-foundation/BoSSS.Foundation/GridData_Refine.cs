@@ -96,7 +96,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     }
                 }
 
-                
+                Old2New.KrefS_SubdivLeaves = KrefS_SubdivLeaves;
 
 
                 // Check Input, set Bitmasks
@@ -236,7 +236,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                         Debug.Assert(Old2New.MappingIndex[j] == null);
                         Debug.Assert(Old2New.DestGlobalId[j] == null);
-                        Old2New.MappingIndex[j] = new int[] { -1 };
+                        Old2New.MappingIndex[j] = null;
                         Old2New.DestGlobalId[j] = new long[] { newCells[newCells.Count - 1].GlobalID };
 
                     } else {
@@ -330,6 +330,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                         Debug.Assert(adaptedCells[j] == null);
                         Cell[] refinedCells = new Cell[Leaves.Length];
                         adaptedCells[j] = refinedCells;
+
+                        Debug.Assert(Old2New.MappingIndex[j] == null);
                         Old2New.MappingIndex[j] = new int[Leaves.Length];
                         for(int iSubDiv = 0; iSubDiv < Leaves.Length; iSubDiv++) { // pass 1: create new cells
 
@@ -388,7 +390,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                         newCells.AddRange(refinedCells);
 
-                        Debug.Assert(Old2New.MappingIndex[j] == null);
+                        
                         Debug.Assert(Old2New.DestGlobalId[j] == null);
                         Old2New.DestGlobalId[j] = refinedCells.Select(Cl => Cl.GlobalID).ToArray();
                     }

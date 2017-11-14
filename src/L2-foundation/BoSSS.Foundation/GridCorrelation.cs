@@ -134,13 +134,14 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
         }
 
+
         public void ApplyToVector<I>(IList<I> input, IList<I[]> output, IPartitioning outputPartitioning) {
             using(new FuncTrace()) {
                 Debug.Assert(DestGlobalId.Length == MappingIndex.Length);
                 Debug.Assert(OldGlobalId.Length == MappingIndex.Length);
-                int J = DestGlobalId.Length;
+                int oldJ = DestGlobalId.Length;
 
-                if(input.Count != J)
+                if(input.Count != oldJ)
                     throw new ArgumentException("Mismatch between input vector length and current data length.");
                 if(output.Count != outputPartitioning.LocalLength)
                     throw new ArgumentException("Length mismatch of output list and output partition.");
@@ -150,7 +151,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 // keys: processors which should receive data from this processor
                 Dictionary<int, ApplyToVector_Helper<I>> AllSendData = new Dictionary<int, ApplyToVector_Helper<I>>();
 
-                for(int j = 0; j < J; j++) {
+                for(int j = 0; j < oldJ; j++) {
                     I data_j = input[j];
 
                     foreach(int jDest in TargetIdx[j]) {
@@ -212,6 +213,90 @@ namespace BoSSS.Foundation.Grid.Classic {
             public List<I> Items = new List<I>();
         }
 
+        public void GetTargetMappingIndex(int[][] TargetMappingIndex, IPartitioning outputPartitioning) {
+            using(new FuncTrace()) {
+                Debug.Assert(DestGlobalId.Length == MappingIndex.Length);
+                Debug.Assert(OldGlobalId.Length == MappingIndex.Length);
+                int oldJ = DestGlobalId.Length;
+
+                if(TargetMappingIndex.Length != outputPartitioning.LocalLength)
+                    throw new ArgumentException("Length mismatch of output list and output partition.");
+
+                int j0Dest = outputPartitioning.i0;
+
+                // keys: processors which should receive data from this processor
+                Dictionary<int, GetTargetMapping_Helper> AllSendData = new Dictionary<int, GetTargetMapping_Helper>();
+
+                for(int j = 0; j < oldJ; j++) {
+                    int[] MappingIndex_j = MappingIndex[j];
+                    if(MappingIndex_j != null) {
+                        Debug.Assert(TargetIdx[j].Length == MappingIndex_j.Length);
+                        int L = MappingIndex_j.Length;
+
+                        for(int l = 0; l < L; l++) {
+                            
+                            int jDest = TargetIdx[j][l];
+                            int MapIdx = MappingIndex_j[l];
+
+                            if(outputPartitioning.IsInLocalRange(jDest)) {
+                                int[] destCollection = TargetMappingIndex[jDest - j0Dest];
+                                ArrayTools.AddToArray(MapIdx, ref destCollection);
+                                TargetMappingIndex[jDest - j0Dest] = destCollection;
+                            } else {
+                                int targProc = outputPartitioning.FindProcess(jDest);
+
+                                GetTargetMapping_Helper dataTargPrc;
+                                if(!AllSendData.TryGetValue(targProc, out dataTargPrc)) {
+                                    dataTargPrc = new GetTargetMapping_Helper();
+                                    AllSendData.Add(targProc, dataTargPrc);
+                                }
+
+                                dataTargPrc.TargetIndices.Add(jDest);
+                                dataTargPrc.Items.Add(MapIdx);
+                            }
+
+                        }
+                    } else {
+                        Debug.Assert(TargetIdx[j].Length == 1);
+                    }
+                }
+
+                var AllRcvData = SerialisationMessenger.ExchangeData(AllSendData, outputPartitioning.MPI_Comm);
+
+                foreach(var kv in AllRcvData) {
+                    int rcvProc = kv.Key;
+                    j0Dest = outputPartitioning.GetI0Offest(rcvProc);
+
+                    var TIdxs = kv.Value.TargetIndices;
+                    var TVals = kv.Value.Items;
+                    Debug.Assert(TIdxs.Count == TVals.Count);
+                    int L = TIdxs.Count;
+
+                    for(int l = 0; l < L; l++) {
+                        int idx = TIdxs[l] - j0Dest;
+                        Debug.Assert(outputPartitioning.IsInLocalRange(idx));
+
+                        int[] destCollection = TargetMappingIndex[idx];
+                        ArrayTools.AddToArray(TVals[idx], ref destCollection);
+                        TargetMappingIndex[idx] = destCollection;
+                    }
+
+
+                }
+
+            }
+        }
+               
+
+
+        /// <summary>
+        /// Data structure used in <see cref="GetTargetMappingIndex(int[][], IPartitioning)"/>.
+        /// </summary>
+        [Serializable]
+        class GetTargetMapping_Helper {
+            public List<int> TargetIndices = new List<int>();
+            public List<int> Items = new List<int>();
+        }
 
     }
 }

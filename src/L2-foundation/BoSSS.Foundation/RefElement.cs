@@ -1071,7 +1071,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
                 throw new NotImplementedException("Unknown spatial dimension");
             }
 
-            Debug.Assert(this.OrthonormalPolynomials.Where(poly => poly.AbsoluteDegree == p).Count() == p);
+            Debug.Assert(this.OrthonormalPolynomials.Where(poly => poly.AbsoluteDegree == p).Count() == n);
 
             return n;
         }
@@ -1085,7 +1085,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
                 throw new ArgumentOutOfRangeException();
 
             int n = 0;
-            for(int i = 0; i < p; i++)
+            for(int i = 0; i <= p; i++)
                 n += GetNoOfOrthonormalPolynomialsForDegree(i);
 
             return n;
