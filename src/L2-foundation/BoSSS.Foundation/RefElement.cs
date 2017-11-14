@@ -1753,12 +1753,44 @@ namespace BoSSS.Foundation.Grid.RefElements {
                 MultidimensionalArray PolyAtRootNodes = MultidimensionalArray.Create(Nk, Np);
                 Polys.Evaluate(NodesAtRoot, PolyAtRootNodes);
 
-                double onbScale = Math.Sqrt(TrafoFromRoot.Matrix.Determinant());
-                Debug.Assert(onbScale > 1.0);
+                double onbScale = 1.0/Math.Sqrt(TrafoFromRoot.Matrix.Determinant());
 
                 MultidimensionalArray A = MultidimensionalArray.Create(Np, Np);
                 A.Multiply(onbScale, PolyAtNodes, PolyAtRootNodes, qr.Weights, 0.0, "mn", "km", "kn", "k");
-                
+
+#if DEBUG
+                // Check that the matrix is upper triangular
+                double LowerTriNorm = 0.0;
+                double UpperTriNorm = 0.0;
+                for(int iRow = 0; iRow < Np; iRow++) {
+                    for(int j = 0; j < iRow; j++)
+                        LowerTriNorm += Math.Abs(A[iRow, j]);
+                    for(int j = iRow; j < Np; j++)
+                        UpperTriNorm += Math.Abs(A[iRow, j]);
+                }
+                Debug.Assert(LowerTriNorm < UpperTriNorm * 1.0e-10);
+#endif
+                for(int iRow = 0; iRow < Np; iRow++) {
+                    for(int j = 0; j < iRow; j++)
+                        A[iRow, j] = 0.0; // strictly enforce lower tri.
+                }
+
+#if DEBUG
+                for(int k = 0; k < Nk; k++) { // test for each node
+                    for(int n = 0; n < Np; n++) { // test for each polynomial
+                        double RootVal = PolyAtRootNodes[k, n];
+
+                        double LeafVal = 0.0;
+                        for(int m = 0; m < Np; m++) {
+                            LeafVal += PolyAtNodes[k, m] * A[m, n] / onbScale;
+                        }
+                        Debug.Assert(Math.Abs(LeafVal - RootVal) < 1.0e-8);
+                    }
+                }
+
+
+#endif
+
                 return A;
             }
 

@@ -18,7 +18,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Collections;
-
+using NUnit.Framework;
 
 namespace BoSSS.Application.AdaptiveMeshRefinementTest {
 
@@ -26,75 +26,8 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
     /// App which performs basic tests on adaptive mesh refinement and dynamic load balancing.
     /// </summary>
     class AdaptiveMeshRefinementTestMain : BoSSS.Solution.Application {
-
-        static void RefineScheisse() {
-            double[] nodes = GenericBlas.Linspace(-5, 5, 7);
-
-            BoundingBox BL = new BoundingBox(new[] { new[] { -10.0, -10.0 }, new[] { 0.0, 0.0 } });
-            GridCommons grd = Grid2D.Cartesian2DGrid(nodes, nodes, CutOuts: new BoundingBox[] { BL });
-            GridData gdat = new GridData(grd);
-
-            SinglePhaseField u = new SinglePhaseField(new Basis(gdat, 0), "u");
-            Tecplot.PlotFields(new DGField[] { u }, "Refinment-0", 0.0, 0);
-
-            int MaxRefinement = 5;
-
-            for(int iLevel = 0; iLevel <= MaxRefinement; iLevel++) {
-                Console.WriteLine("Level " + iLevel);
-
-                HashSet<int> CellsToRefine = new HashSet<int>();
-                int J = gdat.Cells.NoOfLocalUpdatedCells;
-                for(int j = 0; j < J; j++) {
-                    double xc = gdat.Cells.CellCenter[j, 0];
-                    double yc = gdat.Cells.CellCenter[j, 1];
-                    int RefinementLevel = gdat.Cells.GetCell(j).RefinementLevel;
-
-                    double r = Math.Sqrt(xc * xc + yc * yc);
-
-                    if((RefinementLevel < MaxRefinement) && (r < gdat.Cells.h_minGlobal*2)) {
-                        CellsToRefine.Add(j);
-                        RefineNeighboursRecursive(gdat, CellsToRefine, j, RefinementLevel);
-
-                    }
-                }
-
-                Console.Write("  refine: ");
-                foreach(int j in CellsToRefine) {
-                    Console.Write(j + " ");
-                }
-                Console.WriteLine();
-
-
-                grd = gdat.Adapt(CellsToRefine.ToArray(), null, out GridCorrelation Old2NewCorr);
-                gdat = new GridData(grd);
-                u = new SinglePhaseField(new Basis(gdat, 0), "u");
-                Tecplot.PlotFields(new DGField[] { u }, "Refinment-" + iLevel, 0.0, 0);
-
-            }
-        }
-
-        static void RefineNeighboursRecursive(GridData gdat, HashSet<int> CellsToRefine, int j, int DesiredLevel) {
-
-            foreach(var jNeigh in gdat.Cells.CellNeighbours[j]) {
-                var cl = gdat.Cells.GetCell(j);
-                if(cl.RefinementLevel < DesiredLevel) {
-                    CellsToRefine.Add(jNeigh);
-                    RefineNeighboursRecursive(gdat, CellsToRefine, jNeigh, cl.RefinementLevel);
-                }
-            }
-
-        }
-
-
-
+        
         static void Main(string[] args) {
-            //bool MpiInit;
-            //ilPSP.Environment.Bootstrap(new string[0], BoSSS.Solution.Application.GetBoSSSInstallDir(), out MpiInit);
-
-            //RefineScheisse();
-
-            //return;
-
             BoSSS.Solution.Application._Main(
                 args,
                 true,
@@ -103,8 +36,12 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
         }
 
         protected override GridCommons CreateOrLoadGrid() {
-            double[] nodes = GenericBlas.Linspace(-5, 5, 21);
-            var grd = Grid2D.Cartesian2DGrid(nodes, nodes);
+            double[] xNodes = GenericBlas.Linspace(-5, 5, 21);
+            double[] yNodes = GenericBlas.Linspace(-5, 5, 21);
+            //double[] xNodes = GenericBlas.Linspace(-3, 3, 4);
+            //double[] yNodes = GenericBlas.Linspace(-1, 1, 2);
+
+            var grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
             base.m_GridPartitioningType = GridPartType.none;
             return grd;
         }
@@ -141,8 +78,13 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             Refined_Grad_u = this.Grad_u;
             Refined_MagGrad_u = this.MagGrad_u;
 
-            Refined_TestData.ProjectField((x, y) => x * x + y * y);
+            Refined_TestData.ProjectField(TestDataFunc);
         }
+
+        static double TestDataFunc(double x, double y) {
+            return (x * x + y * y);
+        }
+
 
         private void UpdateBaseGrid(double time) {
 
@@ -351,22 +293,21 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
                     NoRefinement = false;
                     RefineNeighboursRecursive(RefinedGrid, DesiredLevel, j, DesiredLevel_j - 1);
                 }
+                
+                //if(j == 1) {
+                //    DesiredLevel[j] = 1;
+                //    NoRefinement = false;
+                //}
             }
 
-            SinglePhaseField Ok2CoarsenViz = new SinglePhaseField(new Basis(RefinedGrid, 0), "Ok2Coarsen");
-            SinglePhaseField CombinedMarkr = new SinglePhaseField(new Basis(RefinedGrid, 0), "CombinedMarker");
-            SinglePhaseField CClustersMViz = new SinglePhaseField(new Basis(RefinedGrid, 0), "CoarseningClusters");
             BitArray Ok2Coarsen = new BitArray(oldJ);
-            var rnd = new Random();
             for(int j = 0; j < oldJ; j++) {
                 int ActualLevel_j = RefinedGrid.Cells.GetCell(j).RefinementLevel;
                 int DesiredLevel_j = DesiredLevel[j];
 
                 if(ActualLevel_j > DesiredLevel_j) {
-                    Ok2CoarsenViz.SetMeanValue(j, 1.0);
                     Ok2Coarsen[j] = true;
                 }
-                //Ok2Coarsen[j] = true;
             }
 
             int[][] CClusters = FindCoarseningClusters(Ok2Coarsen);
@@ -377,12 +318,6 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
                                
                 if(CClusters[j] != null) {
                     NoOfCellsToCoarsen++;
-                    double jitter = rnd.NextDouble() * 0.5 + 1.0;
-                    foreach(int jc in CClusters[j]) {
-                        if (CClustersMViz.GetMeanValue(jc) == 0.0) {
-                            CClustersMViz.SetMeanValue(jc, jitter);
-                        }
-                    }
 
                     Debug.Assert(CClusters[j].Contains(j));
                     if(j == CClusters[j].Min()) {
@@ -390,22 +325,12 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
                     }
                 }
             }
-            //if (iTimestep == 10) {
-            //    Console.WriteLine("Now really coarsening");
-            //} else {
-            //    Coarsening.Clear();
-            //}
-
-            CombinedMarkr.ProjectProduct(1.0, Ok2CoarsenViz, CClustersMViz);
 
             Console.WriteLine("       No of cells to coarsen: " + NoOfCellsToCoarsen);
-
-            Tecplot.PlotFields(ArrayTools.Cat<DGField>(RefinedGrid.BoundaryMark(), Ok2CoarsenViz, CClustersMViz, CombinedMarkr ), "Coarsen", time, 0);
-
+           
             GridCorrelation Old2NewCorr;
             if((!NoRefinement) || (Coarsening.Count > 0)) {
-
-
+                
                 List<int> CellsToRefineList = new List<int>();
                 for(int j = 0; j < oldJ; j++) {
                     int ActualLevel_j = RefinedGrid.Cells.GetCell(j).RefinementLevel;
@@ -471,10 +396,13 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
                             if(TargMappingIdx[j].Length == 1) {
                                 // refinement
 
-                                var Trafo = Old2NewCorr.GetSubdivBasisTransform(iKref, TargMappingIdx[j][0], pDeg);
+                                MultidimensionalArray Trafo = Old2NewCorr.GetSubdivBasisTransform(iKref, TargMappingIdx[j][0], pDeg);
+
                                 double[] Coords_j = Refined_TestData.Coordinates.GetRow(j);
                                 Trafo.gemv(1.0, ReDistDGCoords[j][0], 1.0, Coords_j, transpose: false);
                                 Refined_TestData.Coordinates.SetRow(j, Coords_j);
+
+                                //Console.WriteLine("Refine projection...");
 
                             } else {
                                 // coarsening
@@ -486,6 +414,8 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
                                     Trafo.gemv(1.0, ReDistDGCoords[j][l], 1.0, Coords_j, transpose: true);
                                 }
                                 Refined_TestData.Coordinates.SetRow(j, Coords_j);
+
+                                //Console.WriteLine("Coarsen projection...");
                             }
 
                         }
@@ -523,6 +453,11 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
 
                 UpdateBaseGrid(phystime + dt);
                 UpdateRefinedGrid(phystime + dt, TimestepNo);
+
+                // check error
+                double L2err = Refined_TestData.L2Error(TestDataFunc);
+                Console.WriteLine("Projection error from old to new grid: " + L2err);
+                Assert.LessOrEqual(L2err, 1.0e-8, "Projection error from old to new grid to high.");
 
                 // return
                 //base.TerminationKey = true;
