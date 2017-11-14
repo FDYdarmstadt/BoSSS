@@ -1795,7 +1795,7 @@ namespace BoSSS.Foundation.XDG {
         /// Late stage of dynamic load balancing, restoring data after the grid cells were re-distributed.
         /// </summary>
         public void RestoreAfterLoadBalance(int versionNo, int[] ExchangeData, bool ObUp = true) {
-            using (new FuncTrace()) {
+            using(new FuncTrace()) {
                 int J = m_gDat.Cells.NoOfLocalUpdatedCells;
                 int JA = m_gDat.Cells.NoOfCells;
                 Debug.Assert(ExchangeData.Length == J);
@@ -1811,7 +1811,47 @@ namespace BoSSS.Foundation.XDG {
                 ushort[] oldR = PreviousRegions.m_LevSetRegions;
                 ushort[] newR = _Regions.m_LevSetRegions;
 
-                for (int j = 0; j < J; j++) {
+                for(int j = 0; j < J; j++) {
+                    int C = ExchangeData[j];
+                    ushort ra = (ushort)(C & 0x0000FFFF);
+                    ushort rb = (ushort)((C & 0xFFFF0000) >> 16);
+                    oldR[j] = ra;
+                    newR[j] = rb;
+                }
+
+                MPIUpdate(oldR, this.GridDat);
+                MPIUpdate(newR, this.GridDat);
+
+                PreviousRegions.Recalc_LenToNextchange();
+                _Regions.Recalc_LenToNextchange();
+
+                if(ObUp)
+                    this.ObserverUpdate();
+            }
+        }
+
+        /// <summary>
+        /// Late stage of mesh adaptation (which may includes dynamic load balancing), 
+        /// restoring data after the grid cells were re-distributed.
+        /// </summary>
+        public void RestoreAfterMeshAdaptation(int versionNo, int[][] ExchangeData, bool ObUp = true) {
+            using(new FuncTrace()) {
+                int J = m_gDat.Cells.NoOfLocalUpdatedCells;
+                int JA = m_gDat.Cells.NoOfCells;
+                Debug.Assert(ExchangeData.Length == J);
+
+                PreviousRegions = new LevelSetRegionsInfo(this) {
+                    m_LevSetRegions = new ushort[JA],
+                    Version = versionNo - 1
+                };
+                _Regions = new LevelSetRegionsInfo(this) {
+                    m_LevSetRegions = new ushort[JA],
+                    Version = versionNo
+                };
+                ushort[] oldR = PreviousRegions.m_LevSetRegions;
+                ushort[] newR = _Regions.m_LevSetRegions;
+
+                for(int j = 0; j < J; j++) {
                     int C = ExchangeData[j];
                     ushort ra = (ushort)(C & 0x0000FFFF);
                     ushort rb = (ushort)((C & 0xFFFF0000) >> 16);

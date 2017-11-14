@@ -1961,14 +1961,14 @@ namespace BoSSS.Solution {
                     // sent data around the world
                     // ==========================
                     
-                    int[] newTrackerData = null;
+                    int[][] newTrackerData = null;
                     if(oldTrackerData != null) {
-                        newTrackerData = new int[newJ];
-                        Resorting.ApplyToVector(oldTrackerData, newTrackerData, newGridData.CellPartitioning);
+                        newTrackerData = new int[newJ][];
+                        old2newGridCorr.ApplyToVector(oldTrackerData, newTrackerData, newGridData.CellPartitioning);
                         oldTrackerData = null;
                     }
 
-                    loadbal.Resort(Resorting, newGridData);
+                    loadbal.Resort(old2newGridCorr, newGridData);
 
                     // re-init simulation
                     // ==================
@@ -1994,7 +1994,7 @@ namespace BoSSS.Solution {
                                 ((XDGField)f).Override_TrackerVersionCnt(trackerVersion);
                             }
                         }
-                        this.LsTrk.RestoreAfterLoadBalance(trackerVersion, newTrackerData);
+                        this.LsTrk.RestoreAfterMeshAdaptation(trackerVersion, newTrackerData);
                     }
 
                     // set dg coördinates
@@ -2050,8 +2050,6 @@ namespace BoSSS.Solution {
 
             // backup user data
             this.DataBackupBeforeBalancing(loadbal);
-
-
         }
 
         private static int CheckPartition(int[] NewPartition, int JupOld) {
