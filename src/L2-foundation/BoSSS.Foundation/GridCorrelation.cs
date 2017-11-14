@@ -213,6 +213,8 @@ namespace BoSSS.Foundation.Grid.Classic {
             public List<I> Items = new List<I>();
         }
 
+
+
         public void GetTargetMappingIndex(int[][] TargetMappingIndex, IPartitioning outputPartitioning) {
             using(new FuncTrace()) {
                 Debug.Assert(DestGlobalId.Length == MappingIndex.Length);

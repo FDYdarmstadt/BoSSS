@@ -19,8 +19,250 @@ using System.Diagnostics;
 using System.Linq;
 using System.Collections;
 using NUnit.Framework;
+using MPI.Wrappers;
 
 namespace BoSSS.Application.AdaptiveMeshRefinementTest {
+
+    /// <summary>
+    /// Basic algorithms for refinement and coarsening.
+    /// </summary>
+    public class GridRefinementControler {
+
+        /// <summary>
+        /// Computes refinement and coarsening lists 
+        /// (inputs for <see cref="GridData.Adapt(IEnumerable{int}, IEnumerable{int[]}, out GridCorrelation)"/>),
+        /// based on a refinement indicator.
+        /// </summary>
+        /// <param name="CurrentGrid">
+        /// Current grid.
+        /// </param>
+        /// <param name="LevelIndicator">
+        /// Mapping from (local cell index, current refinement level) to desired refinement level for the respective cell,
+        /// see <see cref="Cell.RefinementLevel"/>.
+        /// </param>
+        /// <param name="CellsToRefineList">
+        /// Output, local indices of cells which should be refined.
+        /// </param>
+        /// <param name="Coarsening">
+        /// Output, clusters of cells (identified by local cell indices) which can be combined into coarser cells.
+        /// </param>
+        /// <returns>
+        /// True if any refinement or coarsening of the current grid should be performed; otherwise false.
+        /// </returns>
+        public static bool ComputeGridChange(GridData CurrentGrid, Func<int, int, int> LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening) {
+            int oldJ = CurrentGrid.Cells.NoOfLocalUpdatedCells;
+
+            bool NoRefinement = true;
+            int[] DesiredLevel = new int[oldJ];
+            for(int j = 0; j < oldJ; j++) {
+                /*
+                double GradMag = Refined_MagGrad_u.GetMeanValue(j);
+
+                int DesiredLevel_j = 0;
+                if(GradMag > 0.6)
+                    DesiredLevel_j = 1;
+                if(GradMag > 0.81)
+                    DesiredLevel_j = 2;
+                */
+                int CurrentLevel_j = CurrentGrid.Cells.GetCell(j).RefinementLevel;
+                int DesiredLevel_j = LevelIndicator(j, CurrentLevel_j);
+                
+                if(DesiredLevel[j] < DesiredLevel_j) {
+                    DesiredLevel[j] = DesiredLevel_j;
+                    NoRefinement = false;
+                    RefineNeighboursRecursive(CurrentGrid, DesiredLevel, j, DesiredLevel_j - 1);
+                }
+            }
+
+            BitArray Ok2Coarsen = new BitArray(oldJ);
+            for(int j = 0; j < oldJ; j++) {
+                int ActualLevel_j = CurrentGrid.Cells.GetCell(j).RefinementLevel;
+                int DesiredLevel_j = DesiredLevel[j];
+
+                if(ActualLevel_j > DesiredLevel_j) {
+                    Ok2Coarsen[j] = true;
+                }
+            }
+
+            int[][] CClusters = FindCoarseningClusters(Ok2Coarsen, CurrentGrid);
+
+            Coarsening = new List<int[]>();
+            int NoOfCellsToCoarsen = 0;
+            for(int j = 0; j < oldJ; j++) {
+
+                if(CClusters[j] != null) {
+                    NoOfCellsToCoarsen++;
+
+                    Debug.Assert(CClusters[j].Contains(j));
+                    if(j == CClusters[j].Min()) {
+                        Coarsening.Add(CClusters[j]);
+                    }
+                }
+            }
+                       
+            CellsToRefineList = new List<int>();
+            if((!NoRefinement) || (Coarsening.Count > 0)) {
+
+                for(int j = 0; j < oldJ; j++) {
+                    int ActualLevel_j = CurrentGrid.Cells.GetCell(j).RefinementLevel;
+                    int DesiredLevel_j = DesiredLevel[j];
+
+                    if(ActualLevel_j < DesiredLevel_j)
+                        CellsToRefineList.Add(j);
+                }
+            } 
+
+            return (!NoRefinement);
+        }
+
+
+
+        static int[][] FindCoarseningClusters(BitArray Ok2Coarsen, GridData CurrentGrid) {
+            int JE = CurrentGrid.Cells.NoOfCells;
+            int J = CurrentGrid.Cells.NoOfLocalUpdatedCells;
+
+            if(Ok2Coarsen.Length != JE)
+                throw new ArgumentException();
+
+            int[][] CellNeighbours = CurrentGrid.Cells.CellNeighbours;
+
+            List<Cell> temp = new List<Cell>();
+            List<int> tempCC = new List<int>();
+
+            int RecursionDepht = -1;
+            if(CurrentGrid.SpatialDimension == 1)
+                RecursionDepht = 1;
+            else if(CurrentGrid.SpatialDimension == 2)
+                RecursionDepht = 2;
+            else if(CurrentGrid.SpatialDimension == 3)
+                RecursionDepht = 4;
+            else
+                throw new NotSupportedException();
+
+            int[][] CoarseningCluster = new int[JE][];
+
+
+            BitArray marker = new BitArray(JE);
+            for(int j = 0; j < J; j++) {
+                if(marker[j])
+                    continue;
+                if(!Ok2Coarsen[j])
+                    continue;
+
+                Cell Cell_j = CurrentGrid.Cells.GetCell(j);
+                int Level = Cell_j.RefinementLevel;
+
+                if(Level == 0) {
+                    marker[j] = true;
+                    continue;
+                }
+
+                temp.Clear();
+                temp.Add(Cell_j);
+
+                tempCC.Clear();
+                tempCC.Add(j);
+
+                //SearchGids = new long[Cell_j.CoarseningPeers.Length + 1];
+                //Array.Copy(Cell_j.CoarseningPeers, SearchGids, SearchGids.Length - 1);
+                //SearchGids[SearchGids.Length - 1] = Cell_j.GlobalID;
+                int SearchID = Cell_j.CoarseningClusterID;
+                int ClusterSize = Cell_j.CoarseningClusterSize;
+                Debug.Assert(SearchID > 0);
+
+
+                bool complete = false;
+                FindCoarseiningClusterRecursive(j, RecursionDepht, CellNeighbours, marker, CurrentGrid.Cells.GetCell, Level, SearchID, ClusterSize, tempCC, ref complete);
+                foreach(int jC in tempCC) {
+                    marker[jC] = true;
+                }
+
+                if(complete) {
+                    if(!tempCC.Any(jC => Ok2Coarsen[jC] == false)) {
+                        int[] CC = tempCC.ToArray();
+                        foreach(int jC in CC) {
+                            Debug.Assert(CoarseningCluster[jC] == null);
+                            CoarseningCluster[jC] = CC;
+                        }
+                    } else {
+                        //Console.WriteLine("Not ok to coarsen.");
+                    }
+                }
+            }
+
+
+            return CoarseningCluster;
+        }
+
+        static void FindCoarseiningClusterRecursive(int j, int MaxRecursionDeph,
+            int[][] CellNeighbours, BitArray marker, Func<int, Cell> GetCell, int Level, int SearchID, int ClusterSize,
+            List<int> CoarseiningCluster, ref bool complete) {
+
+            Debug.Assert(CoarseiningCluster.Contains(j) == true);
+
+            int[] Neighs = CellNeighbours[j];
+            foreach(var jNeigh in Neighs) {
+                if(marker[jNeigh] == true)
+                    continue;
+                if(CoarseiningCluster.Contains(jNeigh))
+                    continue;
+
+                Cell Cell_neigh = GetCell(jNeigh);
+                if(Cell_neigh.RefinementLevel != Level)
+                    continue;
+
+                if(Cell_neigh.CoarseningClusterID != SearchID)
+                    continue;
+
+                CoarseiningCluster.Add(jNeigh);
+
+                if(CoarseiningCluster.Count == ClusterSize) {
+                    complete = true;
+#if DEBUG
+                    foreach(int j1 in CoarseiningCluster) {
+                        Cell Cell_j1 = GetCell(j1);
+                        Debug.Assert(Cell_j1.RefinementLevel > 0);
+                        //Debug.Assert(Cell_j1.CoarseningPeers != null);
+                        //Debug.Assert(Cell_j1.CoarseningPeers.Length == CoarseiningCluster.Count - 1);
+                        Debug.Assert(Cell_j1.RefinementLevel == Level);
+                        Debug.Assert(Cell_j1.CoarseningClusterID == SearchID);
+                        Debug.Assert(Cell_j1.CoarseningClusterSize == ClusterSize);
+                        //Debug.Assert(Array.IndexOf(SearchGids, Cell_j1.GlobalID) >= 0);
+                        //foreach(long gid_cp in Cell_j1.CoarseningPeers) {
+                        //    Debug.Assert(Array.IndexOf(SearchGids, gid_cp) >= 0);
+                        //}
+                    }
+#endif
+                    return;
+                }
+
+                if(MaxRecursionDeph > 0)
+                    FindCoarseiningClusterRecursive(jNeigh, MaxRecursionDeph - 1,
+                        CellNeighbours, marker, GetCell, Level, SearchID, ClusterSize, CoarseiningCluster, ref complete);
+
+                if(complete) {
+                    return;
+                }
+            }
+
+        }
+
+        static void RefineNeighboursRecursive(GridData gdat, int[] DesiredLevel, int j, int DesiredLevelNeigh) {
+            if(DesiredLevelNeigh <= 0)
+                return;
+
+            foreach(var jNeigh in gdat.Cells.CellNeighbours[j]) {
+                var cl = gdat.Cells.GetCell(j);
+                if(cl.RefinementLevel < DesiredLevelNeigh) {
+                    DesiredLevel[jNeigh] = DesiredLevelNeigh;
+                    RefineNeighboursRecursive(gdat, DesiredLevel, jNeigh, DesiredLevelNeigh - 1);
+                }
+            }
+        }
+
+    }
+
+
 
     /// <summary>
     /// App which performs basic tests on adaptive mesh refinement and dynamic load balancing.
@@ -135,215 +377,59 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
         SinglePhaseField Refined_MagGrad_u;
         SinglePhaseField Refined_TestData;
 
+        /// <summary>
+        /// Very primitive refinement indicator, works on a gradient criterion.
+        /// </summary>
+        int LevelInicator(int j, int CurrentLevel) {
+            double GradMag = Refined_MagGrad_u.GetMeanValue(j);
 
-        int[][] FindCoarseningClusters(BitArray Ok2Coarsen) {
-            int JE = RefinedGrid.Cells.NoOfCells;
-            int J = RefinedGrid.Cells.NoOfLocalUpdatedCells;
+            int DesiredLevel_j = 0;
+            if(GradMag > 0.6)
+                DesiredLevel_j = 1;
+            if(GradMag > 0.81)
+                DesiredLevel_j = 2;
 
-            if (Ok2Coarsen.Length != JE)
-                throw new ArgumentException();
-
-            int[][] CellNeighbours = RefinedGrid.Cells.CellNeighbours;
-
-            List<Cell> temp = new List<Cell>();
-            List<int> tempCC = new List<int>();
-
-            int RecursionDepht = -1;
-            if (RefinedGrid.SpatialDimension == 1)
-                RecursionDepht = 1;
-            else if (RefinedGrid.SpatialDimension == 2)
-                RecursionDepht = 2;
-            else if (RefinedGrid.SpatialDimension == 3)
-                RecursionDepht = 4;
-            else
-                throw new NotSupportedException();
-
-            int[][] CoarseningCluster = new int[JE][];
-
-
-            BitArray marker = new BitArray(JE);
-            for(int j = 0; j < J; j++) {
-                if (marker[j])
-                    continue;
-                if (!Ok2Coarsen[j])
-                    continue;
-
-                Cell Cell_j = RefinedGrid.Cells.GetCell(j);
-                int Level = Cell_j.RefinementLevel;
-
-                if (Level == 0) {
-                    marker[j] = true;
-                    continue;
-                }
-
-                temp.Clear();
-                temp.Add(Cell_j);
-
-                tempCC.Clear();
-                tempCC.Add(j);
-
-                //SearchGids = new long[Cell_j.CoarseningPeers.Length + 1];
-                //Array.Copy(Cell_j.CoarseningPeers, SearchGids, SearchGids.Length - 1);
-                //SearchGids[SearchGids.Length - 1] = Cell_j.GlobalID;
-                int SearchID = Cell_j.CoarseningClusterID;
-                int ClusterSize = Cell_j.CoarseningClusterSize;
-                Debug.Assert(SearchID > 0);
-
-
-                bool complete = false;
-                FindCoarseiningClusterRecursive(j, RecursionDepht, CellNeighbours, marker, RefinedGrid.Cells.GetCell, Level, SearchID, ClusterSize, tempCC, ref complete);
-                foreach(int jC in tempCC) {
-                    marker[jC] = true;
-                }
-
-                if(complete) {
-                    if (!tempCC.Any(jC => Ok2Coarsen[jC] == false)) {
-                        int[] CC = tempCC.ToArray();
-                        foreach (int jC in CC) {
-                            Debug.Assert(CoarseningCluster[jC] == null);
-                            CoarseningCluster[jC] = CC;
-                        }
-                    } else {
-                        //Console.WriteLine("Not ok to coarsen.");
-                    }
-                }
-            }
-
-
-            return CoarseningCluster;
+            return DesiredLevel_j;
         }
-
-        static void FindCoarseiningClusterRecursive(int j, int MaxRecursionDeph,
-            int[][] CellNeighbours, BitArray marker, Func<int, Cell> GetCell, int Level, int SearchID, int ClusterSize,
-            List<int> CoarseiningCluster, ref bool complete) {
-
-            Debug.Assert(CoarseiningCluster.Contains(j) == true);
-
-            int[] Neighs = CellNeighbours[j];
-            foreach (var jNeigh in Neighs) {
-                if (marker[jNeigh] == true)
-                    continue;
-                if (CoarseiningCluster.Contains(jNeigh))
-                    continue;
-
-                Cell Cell_neigh = GetCell(jNeigh);
-                if (Cell_neigh.RefinementLevel != Level)
-                    continue;
-
-                if (Cell_neigh.CoarseningClusterID != SearchID)
-                    continue;
-
-                CoarseiningCluster.Add(jNeigh);
-                
-                if(CoarseiningCluster.Count == ClusterSize) {
-                    complete = true;
-#if DEBUG
-                    foreach(int j1 in CoarseiningCluster) {
-                        Cell Cell_j1 = GetCell(j1);
-                        Debug.Assert(Cell_j1.RefinementLevel > 0);
-                        //Debug.Assert(Cell_j1.CoarseningPeers != null);
-                        //Debug.Assert(Cell_j1.CoarseningPeers.Length == CoarseiningCluster.Count - 1);
-                        Debug.Assert(Cell_j1.RefinementLevel == Level);
-                        Debug.Assert(Cell_j1.CoarseningClusterID == SearchID);
-                        Debug.Assert(Cell_j1.CoarseningClusterSize == ClusterSize);
-                        //Debug.Assert(Array.IndexOf(SearchGids, Cell_j1.GlobalID) >= 0);
-                        //foreach(long gid_cp in Cell_j1.CoarseningPeers) {
-                        //    Debug.Assert(Array.IndexOf(SearchGids, gid_cp) >= 0);
-                        //}
-                    }
-#endif
-                    return;
-                }
-
-                if (MaxRecursionDeph > 0)
-                    FindCoarseiningClusterRecursive(jNeigh, MaxRecursionDeph - 1,
-                        CellNeighbours, marker, GetCell, Level, SearchID, ClusterSize, CoarseiningCluster, ref complete);
-
-                if(complete) {
-                    return;
-                }
-            }
-            
-        }
-
 
 
         void UpdateRefinedGrid(double time, int iTimestep) {
             int oldJ = RefinedGrid.Cells.NoOfLocalUpdatedCells;
+
+            // backup of old DG data
+            // =====================
 
             double[][] TestData_DGCoordinates = new double[oldJ][];
             for(int j = 0; j < oldJ; j++) {
                 TestData_DGCoordinates[j] = Refined_TestData.Coordinates.GetRow(j);
             }
 
+            // Check grid changes
+            // ==================
 
-            bool NoRefinement = true;
-            int[] DesiredLevel = new int[oldJ];
-            for(int j = 0; j < oldJ; j++) {
-                double GradMag = Refined_MagGrad_u.GetMeanValue(j);
-
-                int DesiredLevel_j = 0;
-                if(GradMag > 0.6)
-                    DesiredLevel_j = 1;
-                if(GradMag > 0.81)
-                    DesiredLevel_j = 2;
-                
-                if(DesiredLevel[j] < DesiredLevel_j) {
-                    DesiredLevel[j] = DesiredLevel_j;
-                    NoRefinement = false;
-                    RefineNeighboursRecursive(RefinedGrid, DesiredLevel, j, DesiredLevel_j - 1);
-                }
-                
-                //if(j == 1) {
-                //    DesiredLevel[j] = 1;
-                //    NoRefinement = false;
-                //}
-            }
-
-            BitArray Ok2Coarsen = new BitArray(oldJ);
-            for(int j = 0; j < oldJ; j++) {
-                int ActualLevel_j = RefinedGrid.Cells.GetCell(j).RefinementLevel;
-                int DesiredLevel_j = DesiredLevel[j];
-
-                if(ActualLevel_j > DesiredLevel_j) {
-                    Ok2Coarsen[j] = true;
-                }
-            }
-
-            int[][] CClusters = FindCoarseningClusters(Ok2Coarsen);
-
-            List<int[]> Coarsening = new List<int[]>();
+            bool AnyChange = GridRefinementControler.ComputeGridChange(RefinedGrid, LevelInicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+            int NoOfCellsToRefine = 0;
             int NoOfCellsToCoarsen = 0;
-            for(int j = 0; j < oldJ; j++) {
-                               
-                if(CClusters[j] != null) {
-                    NoOfCellsToCoarsen++;
-
-                    Debug.Assert(CClusters[j].Contains(j));
-                    if(j == CClusters[j].Min()) {
-                        Coarsening.Add(CClusters[j]);
-                    }
-                }
+            if(AnyChange) {
+                int[] glb = (new int[] {
+                    CellsToRefineList.Count,
+                    Coarsening.Sum(L => L.Length),
+                }).MPISum();
+                NoOfCellsToRefine = glb[0];
+                NoOfCellsToCoarsen = glb[1];
             }
 
-            Console.WriteLine("       No of cells to coarsen: " + NoOfCellsToCoarsen);
-           
+            // Update Grid and create new DG fields
+            // ====================================
+
             GridCorrelation Old2NewCorr;
-            if((!NoRefinement) || (Coarsening.Count > 0)) {
-                
-                List<int> CellsToRefineList = new List<int>();
-                for(int j = 0; j < oldJ; j++) {
-                    int ActualLevel_j = RefinedGrid.Cells.GetCell(j).RefinementLevel;
-                    int DesiredLevel_j = DesiredLevel[j];
+            if(AnyChange) {
 
-                    if(ActualLevel_j < DesiredLevel_j)
-                        CellsToRefineList.Add(j);
-                }
 
-                Console.WriteLine("       Refining " + CellsToRefineList.Count + " of " + oldJ + " cells");
 
-                // create new Grid & DG fields
-                // ===========================
+                Console.WriteLine("       Refining " + NoOfCellsToRefine + " of " + oldJ + " cells");
+                Console.WriteLine("       Coarsening " + NoOfCellsToCoarsen + " of " + oldJ + " cells");
+
 
                 GridCommons newGrid = RefinedGrid.Adapt(CellsToRefineList, Coarsening, out Old2NewCorr);
                 RefinedGrid = new GridData(newGrid);
@@ -357,6 +443,8 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
                 Old2NewCorr = null;
             }
 
+            // Set Data on new Grid
+            // ====================
 
             {
                 Refined_u.Clear();
@@ -426,20 +514,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             }
         }
 
-        static void RefineNeighboursRecursive(GridData gdat, int[] DesiredLevel, int j, int DesiredLevelNeigh) {
-
-            if(DesiredLevelNeigh <= 0)
-                return;
-            
-            foreach(var jNeigh in gdat.Cells.CellNeighbours[j]) {
-                var cl = gdat.Cells.GetCell(j);
-                if(cl.RefinementLevel < DesiredLevelNeigh) {
-                    DesiredLevel[jNeigh] = DesiredLevelNeigh;
-                    RefineNeighboursRecursive(gdat, DesiredLevel, jNeigh, DesiredLevelNeigh - 1);
-                }
-            }
-        }
-
+        
 
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
