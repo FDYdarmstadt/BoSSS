@@ -85,16 +85,26 @@ namespace BoSSS.Solution {
 
         /// <summary>
         /// Stores the backup data of DG Fields before re-distribution.
+        /// - dictionary key: string reference to identify DG field
+        /// - 1st value index: local cell index, old grid
+        /// - 2nd value index: DG coordinate index within cell
         /// </summary>
         Dictionary<string, double[][]> m_oldDGFieldData = new Dictionary<string, double[][]>();
 
         /// <summary>
         /// Stores the backup data of DG Fields after re-distribution (when no mesh adaptation is performed).
+        /// - dictionary key: string reference to identify DG field
+        /// - 1st value index: local cell index, new grid
+        /// - 2nd value index: DG coordinate index within cell
         /// </summary>
         Dictionary<string, double[][]> m_newDGFieldData_OnlyRedist;
 
         /// <summary>
         /// Stores the backup data of DG Fields after mesh adaptation.
+        /// - dictionary key: string reference to identify DG field
+        /// - 1st value index: local cell index, new grid.
+        /// - 2nd value index: enumeration of cells; for refined and conserved cells, this contains only one element; for cells which are coarsened, this corresponds to all cells of the coarsening cluster.
+        /// - 3rd value index: DG coordinate index within cell.
         /// </summary>
         Dictionary<string, double[][][]> m_newDGFieldData_GridAdapta;
 
@@ -798,25 +808,30 @@ namespace BoSSS.Solution {
                 // re-format re-distributed data
                 m_newDGFieldData_GridAdapta = new Dictionary<string, double[][][]>();
                 {
-                    double[][][] newFields = new double[FieldNames.Length][][];
+                    double[][][][] newFields = new double[FieldNames.Length][][][]; // indices: [field, cell idx, enum over coarsening, DG mode]
                     for(int iF = 0; iF < NoFields; iF++) {
-                        newFields[iF] = new double[m_newJ][];
+                        newFields[iF] = new double[m_newJ][][];
                     }
                     for(int j = 0; j < m_newJ; j++) {
                         double[][] data_j = newFieldsData[j];
+                        int L = data_j.Length; // cell cluster size (equal 1 for refined or conserved cells)
 
-                        int cnt = 0;
-                        for(int iF = 0; iF < NoFields; iF++) {
-                            int Nj = (int)data_j[cnt];
-                            cnt++;
-                            double[] data_iF_j = new double[Nj];
-                            for(int n = 0; n < Nj; n++) {
-                                data_iF_j[n] = data_j[cnt];
+                        for(int l = 0; l < L; l++) {
+                            double[] data_jl = data_j[l];
+
+                            int cnt = 0;
+                            for(int iF = 0; iF < NoFields; iF++) {
+                                int Nj = (int)data_jl[cnt];
                                 cnt++;
+                                double[] data_iF_jl = new double[Nj];
+                                for(int n = 0; n < Nj; n++) {
+                                    data_iF_jl[n] = data_jl[cnt];
+                                    cnt++;
+                                }
+                                newFields[iF][j][l] = data_iF_jl;
                             }
-                            newFields[iF][j] = data_iF_j;
+                            Debug.Assert(cnt == data_jl.Length);
                         }
-                        Debug.Assert(cnt == data_j.Length);
                     }
 
                     for(int iF = 0; iF < NoFields; iF++) {
