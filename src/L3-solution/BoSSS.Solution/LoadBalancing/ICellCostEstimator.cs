@@ -78,7 +78,7 @@ namespace BoSSS.Solution {
             double[] allCosts = localCost.MPIAllGather();
             double minCost = allCosts.Min();
             double maxCost = allCosts.Max();
-            
+
             return (maxCost - minCost) / Math.Max(double.Epsilon, maxCost);
         }
     }

@@ -4,6 +4,7 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution;
+using BoSSS.Solution.Control;
 using BoSSS.Solution.Multigrid;
 using BoSSS.Solution.Tecplot;
 using BoSSS.Solution.Utils;
@@ -83,7 +84,7 @@ namespace BoSSS.Application.LoadBalancingTest {
         /// </summary>
         internal int DEGREE = 3;
 
-        internal Func<int, ICellCostEstimator> cellCostEstimatorFactory = CellCostEstimatorLibrary.AllCellsAreEqual;
+        internal Func<IApplication<AppControl>, int, ICellCostEstimator> cellCostEstimatorFactory = CellCostEstimatorLibrary.AllCellsAreEqual;
 
         /// <summary>
         /// Cell Agglomeration threshold
@@ -288,9 +289,9 @@ namespace BoSSS.Application.LoadBalancingTest {
             }
 
             return balancer.GetNewPartitioning(
+                this,
                 2,
                 PerformanceClasses,
-                this.Grid,
                 TimeStepNo,
                 GridPartType.none,
                 "",

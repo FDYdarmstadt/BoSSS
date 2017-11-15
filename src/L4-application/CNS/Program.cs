@@ -22,6 +22,7 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Solution;
 using BoSSS.Solution.ASCIIExport;
 using BoSSS.Solution.Tecplot;
+using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.Utils;
 using CNS.Boundary;
 using CNS.EquationSystem;
@@ -380,18 +381,40 @@ namespace CNS {
             CellPerfomanceClasses = new int[J];
 
             if (Control.DomainType == DomainTypes.Standard) {
-                if (Control.ActiveOperators.HasFlag(Operators.ArtificialViscosity)) {
-                    // Distinguish between normal cells (0) and shick/AV cells (1)
-                    NoOfClasses = 2;
-                    foreach (Chunk chunk in Control.ArtificialViscosityLaw.GetShockedCellMask(GridData)) {
-                        foreach (int cell in chunk.Elements) {
-                            CellPerfomanceClasses[cell] = 1;
+                if (Control.ExplicitScheme == ExplicitSchemes.LTS) {
+                    AdamsBashforthLTS ltsTimeStepper = this.TimeStepper as AdamsBashforthLTS;
+                    if (ltsTimeStepper == null) {
+                        throw new ConfigurationException();
+                    }
+
+
+                    NoOfClasses = ltsTimeStepper.CurrentClustering.NumberOfClusters;
+                    for (int i = 0; i < ltsTimeStepper.CurrentClustering.NumberOfClusters; i++) {
+                        int noOfTimesteps = ltsTimeStepper.NumOfLocalTimeSteps[i];
+                        foreach (Chunk chunk in ltsTimeStepper.CurrentClustering.Clusters[i].VolumeMask) {
+                            foreach (int cell in chunk.Elements) {
+                                CellPerfomanceClasses[cell] = i;
+                            }
                         }
                     }
                 } else {
                     // All are equally expensive, just leave all values to zero
                     NoOfClasses = 1;
                 }
+
+
+                //if (Control.ActiveOperators.HasFlag(Operators.ArtificialViscosity)) {
+                //    // Distinguish between normal cells (0) and shick/AV cells (1)
+                //    NoOfClasses = 2;
+                //    foreach (Chunk chunk in Control.ArtificialViscosityLaw.GetShockedCellMask(GridData)) {
+                //        foreach (int cell in chunk.Elements) {
+                //            CellPerfomanceClasses[cell] = 1;
+                //        }
+                //    }
+                //} else {
+                //    // All are equally expensive, just leave all values to zero
+                //    NoOfClasses = 1;
+                //}
             } else {
                 IBMControl ibmControl = Control as IBMControl;
 

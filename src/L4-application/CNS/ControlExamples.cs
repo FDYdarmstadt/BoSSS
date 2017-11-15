@@ -19,6 +19,8 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
 using BoSSS.Platform.LinAlg;
+using BoSSS.Solution;
+using BoSSS.Solution.Control;
 using BoSSS.Solution.GridImport;
 using BoSSS.Solution.Queries;
 using CNS.Convection;
@@ -977,7 +979,19 @@ namespace CNS {
 
             CNSControl c = new CNSControl();
 
-            //dbPath = @"c:\bosss_db";
+            // Load balancing
+            //c.DynamicLoadBalancing_CellCostEstimatorFactory = delegate (IApplication<AppControl> app, int performanceClassCount) {
+            //    if (performanceClassCount != 2) {
+            //        throw new ConfigurationException();
+            //    }
+
+            //    int[] performanceClassToCostMap = new int[] { 1, 10 };
+            //    return new StaticCellCostEstimator(performanceClassToCostMap);
+            //};
+            //c.DynamicLoadBalancing_ImbalanceThreshold = 0.1;
+            //c.DynamicLoadBalancing_Period = 10;
+
+            //dbPath = @"e:\bosss_db\GridOfTomorrow\";
             //dbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db";
             c.DbPath = dbPath;
             c.savetodb = dbPath != null && saveToDb;
@@ -991,15 +1005,14 @@ namespace CNS {
 
             bool AV = true;
 
-            if (AV)
+            if (AV) {
                 c.ActiveOperators = Operators.Convection | Operators.ArtificialViscosity;
-            else
+            } else {
                 c.ActiveOperators = Operators.Convection;
+            }
             c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
 
             // Shock-capturing
-            //double sensorLimit = 1e-4;
-            //double lambdaMax = 2.0;     // HAS TO BE CHECKED (is working anyway)
             double epsilon0 = 1.0;
             double kappa = 0.5;
 
@@ -1037,23 +1050,25 @@ namespace CNS {
             c.AddVariable(Variables.Entropy, dgDegree);
             c.AddVariable(Variables.LocalMachNumber, dgDegree);
             c.AddVariable(Variables.Rank, 0);
-            //if (AV)
-            //    c.AddVariable(Variables.Sensor, dgDegree);
             if (true1D == false) {
                 c.AddVariable(Variables.Momentum.yComponent, dgDegree);
                 c.AddVariable(Variables.Velocity.yComponent, dgDegree);
-                if (AV)
+                if (AV) {
                     c.AddVariable(Variables.ArtificialViscosity, 2);
+                }
             } else {
-                if (AV)
+                if (AV) {
                     c.AddVariable(Variables.ArtificialViscosity, 1);
+                }
             }
             c.AddVariable(Variables.CFL, 0);
             c.AddVariable(Variables.CFLConvective, 0);
-            if (AV)
+            if (AV) {
                 c.AddVariable(Variables.CFLArtificialViscosity, 0);
-            if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS))
+            }
+            if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS)) {
                 c.AddVariable(Variables.LTSClusters, 0);
+            }
 
             c.GridFunc = delegate {
                 double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
@@ -1090,10 +1105,11 @@ namespace CNS {
                     double y = X[1];
                 }
 
-                if (x <= 0.5)
+                if (x <= 0.5) {
                     return 1.0;
-                else
+                } else {
                     return 0.125;
+                }
             });
             c.InitialValues_Evaluators.Add(Variables.Pressure, delegate (double[] X) {
                 double x = X[0];
@@ -1102,10 +1118,11 @@ namespace CNS {
                     double y = X[1];
                 }
 
-                if (x <= 0.5)
+                if (x <= 0.5) {
                     return 1.0;
-                else
+                } else {
                     return 0.1;
+                }
             });
             c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => 0.0);
             if (true1D == false) {
@@ -1121,10 +1138,11 @@ namespace CNS {
             c.NoOfTimesteps = int.MaxValue;
 
             c.ProjectName = "Shock tube";
-            if (true1D)
+            if (true1D) {
                 c.SessionName = String.Format("Shock tube, 1D, dgDegree = {0}, noOfCellsX = {1}, sensorLimit = {2:0.00E-00}", dgDegree, numOfCellsX, sensorLimit);
-            else
+            } else {
                 c.SessionName = String.Format("Shock tube, 2D, dgDegree = {0}, noOfCellsX = {1}, noOfCellsX = {2}, sensorLimit = {3:0.00E-00}, CFLFraction = {4:0.00E-00}, ALTS {5}/{6}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids);
+            }
             //c.Tags.Add("Shock tube");
             //c.Tags.Add("Artificial viscosity");
 
@@ -1151,10 +1169,11 @@ namespace CNS {
 
             c.DomainType = DomainTypes.StaticImmersedBoundary;
 
-            if (AV)
+            if (AV) {
                 c.ActiveOperators = Operators.Convection | Operators.ArtificialViscosity;
-            else
+            } else {
                 c.ActiveOperators = Operators.Convection;
+            }
             c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
 
             // Shock-capturing
@@ -1168,7 +1187,6 @@ namespace CNS {
                 c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
                 c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
             }
-
 
             //################################ IBM
             c.LevelSetFunction = delegate (double[] X, double t) {
@@ -1195,7 +1213,6 @@ namespace CNS {
             c.AddVariable(IBMVariables.LevelSet, 1);
             //################################ IBM
 
-
             // Runge-Kutta schemes
             //c.ExplicitScheme = ExplicitSchemes.AdamsBashforth;
             //c.ExplicitOrder = 3;
@@ -1204,7 +1221,7 @@ namespace CNS {
             c.ExplicitScheme = ExplicitSchemes.LTS;
             //c.ExplicitScheme = ExplicitSchemes.AdamsBashforth;
             c.ExplicitOrder = 3;
-            c.NumberOfSubGrids = 1;
+            c.NumberOfSubGrids = 2;
             c.ReclusteringInterval = 0;
             c.FluxCorrection = false;
 
@@ -1222,23 +1239,24 @@ namespace CNS {
             c.AddVariable(Variables.Entropy, dgDegree);
             c.AddVariable(Variables.LocalMachNumber, dgDegree);
             c.AddVariable(Variables.Rank, 0);
-            //if (AV)
-            //    c.AddVariable(Variables.Sensor, dgDegree);
             if (true1D == false) {
                 c.AddVariable(Variables.Momentum.yComponent, dgDegree);
                 c.AddVariable(Variables.Velocity.yComponent, dgDegree);
-                if (AV)
+                if (AV) {
                     c.AddVariable(Variables.ArtificialViscosity, 2);
+                }
             } else {
-                if (AV)
+                if (AV) {
                     c.AddVariable(Variables.ArtificialViscosity, 1);
+                }
             }
             c.AddVariable(Variables.CFL, 0);
-            c.AddVariable(Variables.CFLConvective, 0);
-            if (AV)
-                c.AddVariable(Variables.CFLArtificialViscosity, 0);
-            if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS))
+            if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS)) {
                 c.AddVariable(Variables.LTSClusters, 0);
+            }
+            if (AV) {
+                c.AddVariable(Variables.CFLArtificialViscosity, 0);
+            }
 
             c.GridFunc = delegate {
                 double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
@@ -1418,10 +1436,11 @@ namespace CNS {
                         foreach (Chunk chunk in cellMask) {
                             foreach (int cell in chunk.Elements) {
                                 double updateValue = schlieren.GetMeanValue(cell) + Math.Pow(derivative.GetMeanValue(cell), 2);
-                                if (d == (D - 1))
+                                if (d == (D - 1)) {
                                     schlieren.SetMeanValue(cell, Math.Sqrt(updateValue));
-                                else
+                                } else {
                                     schlieren.SetMeanValue(cell, updateValue);
+                                }
                             }
                         }
                     }

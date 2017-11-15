@@ -18,13 +18,23 @@ using System.Linq;
 
 namespace BoSSS.Solution {
 
+    /// <summary>
+    /// Cell cost estimate with a fixed mapping between a performance class and
+    /// and cost value
+    /// </summary>
     public class StaticCellCostEstimator : ICellCostEstimator {
 
+        /// <summary>
+        /// <see cref="ICellCostEstimator"/>
+        /// </summary>
         public int PerformanceClassCount {
             get;
             private set;
         }
 
+        /// <summary>
+        /// <see cref="ICellCostEstimator"/>
+        /// </summary>
         public double EstimatedLocalCost {
             get;
             private set;
@@ -32,18 +42,24 @@ namespace BoSSS.Solution {
 
         private int[] performanceClassToCostMap;
 
-        private int[] currentCellToPerformanceClassMap;
-
         private int[] cellToCostMap;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="performanceClassToCostMap">
+        /// The fixed mapping between performance classes and their costs
+        /// </param>
         public StaticCellCostEstimator(int[] performanceClassToCostMap) {
             this.performanceClassToCostMap = performanceClassToCostMap;
             this.PerformanceClassCount = performanceClassToCostMap.Length;
         }
 
+        /// <summary>
+        /// <see cref="ICellCostEstimator"/>
+        /// </summary>
+        /// <param name="cellToPerformanceClassMap"></param>
         public void UpdateEstimates(int[] cellToPerformanceClassMap) {
-            this.currentCellToPerformanceClassMap = cellToPerformanceClassMap;
-
             cellToCostMap = new int[cellToPerformanceClassMap.Length];
             for (int j = 0; j < cellToPerformanceClassMap.Length; j++) {
                 int performanceClass = cellToPerformanceClassMap[j];
@@ -53,6 +69,10 @@ namespace BoSSS.Solution {
             EstimatedLocalCost = cellToCostMap.Sum();
         }
 
+        /// <summary>
+        /// <see cref="ICellCostEstimator"/>
+        /// </summary>
+        /// <returns></returns>
         public int[] GetEstimatedCellCosts() {
             return cellToCostMap;
         }

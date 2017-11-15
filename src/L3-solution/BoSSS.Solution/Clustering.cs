@@ -154,7 +154,7 @@ namespace BoSSS.Solution.Utils {
 
             double h_min = cellMetric.Min();
             double h_max = cellMetric.Max();
-            Console.WriteLine("Clustering: Create tanh spaced means");
+            //Console.WriteLine("Clustering: Create tanh spaced means");
 
             // Getting global h_min and h_max
             ilPSP.MPICollectiveWatchDog.Watch();
