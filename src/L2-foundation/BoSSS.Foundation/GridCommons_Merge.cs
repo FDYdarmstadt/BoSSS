@@ -308,7 +308,6 @@ namespace BoSSS.Foundation.Grid.Classic {
             return R;
         }
 
-
         /// <summary>
         /// Usually used after <see cref="MergeLogically(GridCommons, GridCommons)"/>; this method finds element boundaries
         /// which intersect geometrically, but not logically and inserts a <see cref="CellFaceTag"/> which connects those cells.

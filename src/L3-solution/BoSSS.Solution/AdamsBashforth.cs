@@ -76,11 +76,6 @@ namespace BoSSS.Solution.Timestepping {
         public RungeKutta RungeKuttaScheme;
 
         /// <summary>
-        /// the active sub-grid
-        /// </summary>
-        protected SubGrid subgrid;
-
-        /// <summary>
         /// Adams-Bashforth Constructor
         /// </summary>
         /// <param name="spatialOp">Spatial operator</param>
@@ -104,8 +99,6 @@ namespace BoSSS.Solution.Timestepping {
                 throw new ArgumentException("Order not supported. Order must be between 1 and 3, but was " + order, "order");
             }
             this.order = order;
-
-            this.subgrid = sgrd;
 
             HistoryChangeRate = new Queue<double[]>(order);
 

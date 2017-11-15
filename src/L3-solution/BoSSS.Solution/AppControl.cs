@@ -491,7 +491,8 @@ namespace BoSSS.Solution.Control {
         /// <summary>
         /// A method that creates a new estimator for the runtime cost of individual cells
         /// </summary>
-        public Func<int, ICellCostEstimator> DynamicLoadBalancing_CellCostEstimatorFactory = CellCostEstimatorLibrary.AllCellsAreEqual;
+        public Func<IApplication<AppControl>, int, ICellCostEstimator> DynamicLoadBalancing_CellCostEstimatorFactory =
+            CellCostEstimatorLibrary.AllCellsAreEqual;
 
         /// <summary>
         /// Number of time-steps, after which dynamic load balancing is performed; if negative, dynamic load balancing is turned off.
