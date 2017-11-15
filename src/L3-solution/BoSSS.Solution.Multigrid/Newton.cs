@@ -26,6 +26,7 @@ using ilPSP;
 using ilPSP.LinSolvers;
 using ilPSP.Connectors.Matlab;
 using ilPSP.Tracing;
+using System.IO;
 
 namespace BoSSS.Solution.Multigrid {
     public class Newton : NonlinearSolver {
@@ -76,7 +77,7 @@ namespace BoSSS.Solution.Multigrid {
 
         public MsrMatrix currentPrecMatrix = null;
 
-
+        public string m_SessionPath;
 
         public override void SolverDriver<S>(CoordinateVector SolutionVec, S RHS) {
 
@@ -359,6 +360,12 @@ namespace BoSSS.Solution.Multigrid {
 
                     Console.WriteLine("Error NewtonGMRES:   " + rho);
 
+                    using (StreamWriter writer = new StreamWriter(m_SessionPath + "//GMRES_Stats.txt", true))
+                    {
+                    writer.WriteLine(k + "   " + rho);
+                    }
+
+
                     //Console.WriteLine("Error NewtonGMRES:   " + rho );
 
                     k++;
@@ -381,6 +388,11 @@ namespace BoSSS.Solution.Multigrid {
                 // x = x + V(:,1:i)*y;
                 for (int ii = 0; ii < k; ii++) {
                     x.AccV(y[ii], V[ii]);
+                }
+
+                // update approximation and exit
+                using (StreamWriter writer = new StreamWriter(m_SessionPath + "//GMRES_Stats.txt", true)) {
+                    writer.WriteLine("");
                 }
 
                 errstep = rho;
