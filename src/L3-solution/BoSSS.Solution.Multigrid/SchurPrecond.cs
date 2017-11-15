@@ -182,8 +182,8 @@ namespace BoSSS.Solution.Multigrid
                             }
                         }
 
-                        invVelMassMatrix.SaveToTextFileSparse("invVelMassMatrix");
-                        velMassMatrix.SaveToTextFileSparse("velMassMatrix");
+                        //invVelMassMatrix.SaveToTextFileSparse("invVelMassMatrix");
+                        //velMassMatrix.SaveToTextFileSparse("velMassMatrix");
 
 
                         //ConvDiffPoissonMtx = MsrMatrix.Multiply(ConvDiff, pGrad);
