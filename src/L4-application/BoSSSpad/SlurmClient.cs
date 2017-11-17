@@ -19,13 +19,31 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Renci.SshNet;
 
 namespace BoSSS.Application.BoSSSpad {
 
     /// <summary>
     /// A <see cref="BatchProcessorClient"/> implementation for slurm systems on unix based hpc platforms
     /// </summary>
-    class SlurmClient : BatchProcessorClient {
+    public class SlurmClient : BatchProcessorClient {
+
+        string m_Username;
+        string m_Password;
+        string m_ServerName;
+        SshClient SSHConnection;
+
+        public SlurmClient(string DeploymentBaseDirectory, string ServerName, string Username = null, string Password = null) {
+            base.DeploymentBaseDirectory = DeploymentBaseDirectory;
+            m_Username = Username;
+            m_Password = Password;
+            m_ServerName = ServerName;
+
+            SSHConnection = new SshClient(m_ServerName, m_Username, m_Password);
+
+            SSHConnection.Connect();
+        }
+
         public override void EvaluateStatus(Job myJob, out int SubmitCount, out bool isRunning, out bool wasSuccessful, out bool isFailed, out string DeployDir) {
             throw new NotImplementedException();
         }
