@@ -168,7 +168,7 @@ namespace BoSSS.Solution.Timestepping {
 
             CurrentClustering = CalculateNumberOfLocalTS(CurrentClustering); // Might remove clusters when time step sizes are too similar
 
-            localABevolve = new ABevolve[this.numOfClusters];
+            localABevolve = new ABevolve[CurrentClustering.NumberOfClusters];
 
             // i == "Grid Id"
             for (int i = 0; i < CurrentClustering.NumberOfClusters; i++) {
@@ -178,7 +178,7 @@ namespace BoSSS.Solution.Timestepping {
 
             GetBoundaryTopology();
 
-            for (int i = 0; i < this.numOfClusters; i++) {
+            for (int i = 0; i < CurrentClustering.NumberOfClusters; i++) {
                 Console.WriteLine("(A)LTS: id=" + i + " -> sub-steps=" + NumOfLocalTimeSteps[i] + " and elements=" + CurrentClustering.Clusters[i].GlobalNoOfCells);
             }
 

@@ -32,14 +32,20 @@ using System.Threading.Tasks;
 namespace BoSSS.Foundation.Grid.Classic {
     partial class GridData {
 
+        
+
+
+
         /// <summary>
         /// Creates a new grid, which is an adaptive refinement (cell by cell) of this grid.
         /// </summary>
-        public GridCommons Adapt(IEnumerable<int> CellsToRefine, IEnumerable<int[]> CellsToCoarsen) {
+        public GridCommons Adapt(IEnumerable<int> CellsToRefine, IEnumerable<int[]> CellsToCoarsen, out GridCorrelation Old2New) {
             using(new FuncTrace()) {
                 GridCommons oldGrid = this.m_Grid;
                 GridCommons newGrid = new GridCommons(oldGrid.RefElements, oldGrid.EdgeRefElements);
-                
+
+                Old2New = new GridCorrelation();
+                                
                 int J = this.Cells.NoOfLocalUpdatedCells;
 
                 BitArray CellsToRefineBitmask = new BitArray(J);
@@ -54,8 +60,12 @@ namespace BoSSS.Foundation.Grid.Classic {
                 RefElement.SubdivisionTreeNode[][] KrefS_SubdivLeaves = new RefElement.SubdivisionTreeNode[KrefS.Length][]; // actual subdivision elements
                 Tuple<int, int>[][,] KrefS_SubdivConnections = new Tuple<int, int>[KrefS.Length][,]; // connections between elements; 1st idx: ref elem; 2nd idx: subdiv elm; 3rd idx: face of subdiv elm; content: [idx of subdiv elm,idx of face]
                 int[][][] KrefS_Faces2Subdiv = new int[KrefS.Length][][]; // mapping: [ref elm, face of ref elm] -> Subdivision elements which bound to this face.
-                for(int iKref = 0; iKref < KrefS.Length; iKref++)
-                {
+                Old2New.GeometricMapping = new AffineTrafo[KrefS.Length][];
+                //List<AffineTrafo> InterCellTrafos = new List<AffineTrafo>();
+                //int[][] RefinementIctIdx = new int[KrefS.Length][];
+                //int[][] CoarseningIctIdx = new int[KrefS.Length][];
+
+                for(int iKref = 0; iKref < KrefS.Length; iKref++) {
                     RefElement Kref = KrefS[iKref];
                     KrefS_SubDiv[iKref] = Kref.GetSubdivisionTree(1);
                     KrefS_SubdivLeaves[iKref] = KrefS_SubDiv[0].GetLeaves();
@@ -63,20 +73,30 @@ namespace BoSSS.Foundation.Grid.Classic {
                     KrefS_Faces2Subdiv[iKref] = new int[Kref.NoOfFaces][];
 
                     KrefS_SubdivConnections[iKref] = new Tuple<int, int>[KrefS[iKref].NoOfFaces, KrefS[iKref].NoOfFaces];
-                    for(int iSubdiv = 0; iSubdiv < KrefS_SubdivConnections[iKref].GetLength(0); iSubdiv++)
-                    { // loop over subdivision elements
-                        for(int iFace = 0; iFace < KrefS_SubdivConnections[iKref].GetLength(0); iFace++)
-                        { // loop over faces of subdivision elements
+                    for(int iSubdiv = 0; iSubdiv < KrefS_SubdivConnections[iKref].GetLength(0); iSubdiv++) { // loop over subdivision elements
+                        for(int iFace = 0; iFace < KrefS_SubdivConnections[iKref].GetLength(0); iFace++) { // loop over faces of subdivision elements
                             var t = KrefS_SubdivLeaves[iKref][iSubdiv].GetNeighbor(iFace);
-                            if(t.Item1 < 0)
-                            {
+                            if(t.Item1 < 0) {
                                 // at the boundary of the subdivision
                                 ArrayTools.AddToArray(iSubdiv, ref KrefS_Faces2Subdiv[iKref][t.Item2]);
                             }
                             KrefS_SubdivConnections[iKref][iSubdiv, iFace] = t;
                         }
                     }
+
+                    //RefinementIctIdx[iKref] = new int[KrefS_SubdivLeaves[iKref].Length];
+                    //CoarseningIctIdx[iKref] = new int[KrefS_SubdivLeaves[iKref].Length];
+                    Old2New.GeometricMapping[iKref] = new AffineTrafo[KrefS_SubdivLeaves[iKref].Length];
+                    for(int iSubDiv = 0; iSubDiv < KrefS_SubdivLeaves[iKref].Length; iSubDiv++) {
+                        Old2New.GeometricMapping[iKref][iSubDiv] = KrefS_SubdivLeaves[iKref][iSubDiv].TrafoFromRoot;
+                        //InterCellTrafos.Add(KrefS_SubdivLeaves[iKref][iSubDiv].TrafoFromRoot);
+                        //RefinementIctIdx[iKref][iSubDiv] = InterCellTrafos.Count - 1;
+                        //InterCellTrafos.Add(KrefS_SubdivLeaves[iKref][iSubDiv].Trafo2Root);
+                        //CoarseningIctIdx[iKref][iSubDiv] = InterCellTrafos.Count - 1;
+                    }
                 }
+
+                Old2New.KrefS_SubdivLeaves = KrefS_SubdivLeaves;
 
 
                 // Check Input, set Bitmasks
@@ -109,7 +129,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         int RefinementLevel = CellS[0].RefinementLevel;
                         
                         if(jCellS.Length != KrefS_SubdivLeaves[iKref].Length)
-                            throw new ArgumentException("Number of elements in coarsening cluster does not match refinment template for respective element type.");
+                            throw new ArgumentException("Number of elements in coarsening cluster does not match refinement template for respective element type.");
                         if(RefinementLevel <= 0 || CoarseningClusterID <= 0)
                             throw new ArgumentException("Coarsening not available for respective cell.");
 
@@ -168,9 +188,17 @@ namespace BoSSS.Foundation.Grid.Classic {
                 int newVertexCounter = oldGrid.Cells.Max(cl => cl.NodeIndices.Max()) + 1;
                 Cell[][] adaptedCells = new Cell[J][];
 
+                Old2New.OldGlobalId = this.CurrentGlobalIdPermutation.Values.CloneAs();
+                Old2New.MappingIndex = new int[J][];
+                Old2New.DestGlobalId = new long[J][];
+
                 // clone neighbors of refined/coarsened cells
                 // ------------------------------------------
                 for (int j = 0; j < J; j++) {
+                    Debug.Assert(Old2New.OldGlobalId[j] == this.Cells.GetCell(j).GlobalID);
+                    Debug.Assert(Old2New.OldGlobalId[j] == oldGrid.Cells[j].GlobalID);
+                    Debug.Assert(object.ReferenceEquals(this.Cells.GetCell(j), oldGrid.Cells[j]));
+
                     Debug.Assert((CellsToRefineBitmask[j] && CellsToCoarseBitmask[j]) == false, "Cannot refine and coarsen the same cell.");
 
                     if((CellsToRefineBitmask[j] || CellsToCoarseBitmask[j]) == false) {
@@ -205,6 +233,12 @@ namespace BoSSS.Foundation.Grid.Classic {
                             // cell and neighbors remain unchanged
                             newCells.Add(oldGrid.Cells[j]);
                         }
+
+                        Debug.Assert(Old2New.MappingIndex[j] == null);
+                        Debug.Assert(Old2New.DestGlobalId[j] == null);
+                        Old2New.MappingIndex[j] = null;
+                        Old2New.DestGlobalId[j] = new long[] { newCells[newCells.Count - 1].GlobalID };
+
                     } else {
                         Debug.Assert(CellsToRefineBitmask[j] || CellsToCoarseBitmask[j]);
                     }
@@ -214,14 +248,13 @@ namespace BoSSS.Foundation.Grid.Classic {
                 // ----------
                 int bCoarsened = 0;
                 if(CellsToCoarsen != null) {
-
-                    
                     
                     foreach(int[] jCellS in CellsToCoarsen) {
                         bCoarsened = 0xFFFF;
 
                         // cluster of cells to coarsen
                         Cell[] CellS = jCellS.Select(j => this.Cells.GetCell(j)).ToArray();
+                        Debug.Assert(jCellS.Length == CellS.Length);
 
                         int RefinementLevel = CellS[0].RefinementLevel - 1;
                         if (RefinementLevel < 0)
@@ -246,19 +279,27 @@ namespace BoSSS.Foundation.Grid.Classic {
                         restoredCell.TransformationParams = Mother.TransformationParams;
                         restoredCell.RefinementLevel = RefinementLevel;
                         restoredCell.CoarseningClusterSize = Mother.CoarseningClusterSize;
+                        restoredCell.CoarseningLeafIndex = Mother.CoarseningLeafIndex;
 
                         // boundary conditions by cell face tags
                         if (Mother.CellFaceTags != null) {
                             restoredCell.CellFaceTags = Mother.CellFaceTags.Where(cftag => cftag.EdgeTag > 0 && cftag.EdgeTag < GridCommons.FIRST_PERIODIC_BC_TAG).ToArray();
                         }
 
-                        foreach(var j in jCellS) {
+                        for(int iSubDiv = 0; iSubDiv < jCellS.Length; iSubDiv++) {
+                            int j = jCellS[iSubDiv];
+                            Cell Cj = CellS[iSubDiv];
                             Debug.Assert(adaptedCells[j] == null);
                             adaptedCells[j] = new[] { restoredCell };
+
+                            Debug.Assert(Old2New.MappingIndex[j] == null);
+                            Debug.Assert(Old2New.DestGlobalId[j] == null);
+                            Old2New.MappingIndex[j] = new int[] { Cj.CoarseningLeafIndex };
+                            Old2New.DestGlobalId[j] = new long[] { restoredCell.GlobalID };
                         }
-
-
+                        
                         newCells.Add(restoredCell);
+
                     }
                 }
 
@@ -289,6 +330,9 @@ namespace BoSSS.Foundation.Grid.Classic {
                         Debug.Assert(adaptedCells[j] == null);
                         Cell[] refinedCells = new Cell[Leaves.Length];
                         adaptedCells[j] = refinedCells;
+
+                        Debug.Assert(Old2New.MappingIndex[j] == null);
+                        Old2New.MappingIndex[j] = new int[Leaves.Length];
                         for(int iSubDiv = 0; iSubDiv < Leaves.Length; iSubDiv++) { // pass 1: create new cells
 
                             // create new cell
@@ -304,8 +348,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                             newCell.RefinementLevel = oldCell.RefinementLevel + 1;
                             newCell.CoarseningClusterSize = Leaves.Length;
                             newCell.CoarseningClusterID = NewCoarseningClusterId;
+                            newCell.CoarseningLeafIndex = iSubDiv;
                             refinedCells[iSubDiv] = newCell;
-                            
 
                             // Vertices
                             var RefNodesRoot = Leaves[iSubDiv].Trafo2Root.Transform(RefNodes);
@@ -318,6 +362,9 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 newCell.NodeIndices[i] = newVertexCounter;
                                 newVertexCounter++;
                             }
+
+                            // correlation
+                            Old2New.MappingIndex[j][iSubDiv] = iSubDiv;
                         }
                         NewCoarseningClusterId++;
 
@@ -342,6 +389,10 @@ namespace BoSSS.Foundation.Grid.Classic {
                         }
 
                         newCells.AddRange(refinedCells);
+
+                        
+                        Debug.Assert(Old2New.DestGlobalId[j] == null);
+                        Old2New.DestGlobalId[j] = refinedCells.Select(Cl => Cl.GlobalID).ToArray();
                     }
                 }
 
@@ -529,8 +580,24 @@ namespace BoSSS.Foundation.Grid.Classic {
                     }
 #endif
 
-                    newGrid.CompressGlobalID();
+                    List<long> old2NewGid = new List<long>();
+                    Debug.Assert(Old2New.DestGlobalId.Length == J);
+                    for(int j = 0; j < J; j++) {
+                        old2NewGid.AddRange(Old2New.DestGlobalId[j]);
+                    }
 
+                    newGrid.CompressGlobalID(old2NewGid);
+
+                    int c2 = 0;
+                    for(int j = 0; j < J; j++) {
+                        long[] o2nj = Old2New.DestGlobalId[j];
+                        int K = o2nj.Length;
+                        for(int k = 0; k < K; k++) {
+                            o2nj[k] = old2NewGid[c2];
+                            c2++;
+                        }
+                    }
+                    Debug.Assert(c2 == old2NewGid.Count);
                 }
 
                 return newGrid;

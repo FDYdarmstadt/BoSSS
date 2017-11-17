@@ -186,9 +186,7 @@ namespace BoSSS.Application.DerivativeTest {
             //Quadrature_Bulksize.BULKSIZE_LIMIT_OVERRIDE = 1;
             BoSSS.Solution.Application.InitMPI(args);
 
-            foreach( var o in System.Enum.GetValues(typeof(CellType))) {
-                Console.WriteLine(o.ToString() + " " + ((int)o) + " " + o.GetType().FullName);
-            }
+ 
 
             // Build-In Grids
             // ==============
@@ -401,20 +399,22 @@ namespace BoSSS.Application.DerivativeTest {
                     //grd = base_grid;
                     //grid1.Plot2DGrid();
 
+                    GridCorrelation grc;
+
                     var gdat1 = new GridData(grid1);
-                    var grid2 = gdat1.Adapt(new int[] { 1, 2 }, null);
+                    var grid2 = gdat1.Adapt(new int[] { 1, 2 }, null, out grc);
                     //grid2.Plot2DGrid();
 
                     var gdat2 = new GridData(grid2);
-                    var grid3 = gdat2.Adapt(new int[] { 2, 4 }, null);
+                    var grid3 = gdat2.Adapt(new int[] { 2, 4 }, null, out grc);
                     //grid3.Plot2DGrid();
 
                     var gdat3 = new GridData(grid3);
-                    var grid4 = gdat3.Adapt(new int[] { 11, 14, 15 }, null);
+                    var grid4 = gdat3.Adapt(new int[] { 11, 14, 15 }, null, out grc);
                     //grid4.Plot2DGrid();
 
                     var gdat4 = new GridData(grid4);
-                    var grid5 = gdat4.Adapt(new[] { 4, 21, 22, 10 }, new[] { new[] { 13, 14, 15, 16 } });
+                    var grid5 = gdat4.Adapt(new[] { 4, 21, 22, 10 }, new[] { new[] { 13, 14, 15, 16 } }, out grc);
                     //grid5.Plot2DGrid();
                                         
                     grd = grid5;
