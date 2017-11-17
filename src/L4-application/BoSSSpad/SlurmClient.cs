@@ -20,6 +20,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Renci.SshNet;
+using System.IO;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -45,15 +46,48 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         public override void EvaluateStatus(Job myJob, out int SubmitCount, out bool isRunning, out bool wasSuccessful, out bool isFailed, out string DeployDir) {
-            throw new NotImplementedException();
+            string PrjName = InteractiveShell.WorkflowMgm.CurrentProject;
+            DeployDir = null;
+            isRunning = false;
+            wasSuccessful = false;
+            isFailed = false;
+
+            var jobID = myJob.BatchProcessorIdentifierToken;
+
+            var tempString = "squeue -j "+jobID;
+
+            var squeue = SSHConnection.RunCommand(tempString);
+            int tempcount = -1;
+            //while (squeue_all.Result.Contains("\n")) { 
+
+            //    tempcount++;
+            //}
+
+            SubmitCount = tempcount;
         }
 
+
+
+
         public override string GetStderrFile(Job myJob) {
-            throw new NotImplementedException();
+            string fp = Path.Combine(myJob.DeploymentDirectory, "stderr.txt");
+            if (File.Exists(fp)) {
+                return fp;
+            }
+            else {
+                return null;
+            }
+
         }
 
         public override string GetStdoutFile(Job myJob) {
-            throw new NotImplementedException();
+            string fp = Path.Combine(myJob.DeploymentDirectory, "stdout.txt");
+            if (File.Exists(fp)) {
+                return fp;
+            }
+            else {
+                return null;
+            }
         }
 
         public override object Submit(Job myJob) {
