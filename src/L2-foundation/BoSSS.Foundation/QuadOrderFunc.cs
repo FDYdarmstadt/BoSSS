@@ -24,16 +24,25 @@ namespace BoSSS.Foundation {
     /// </summary>
     static public class QuadOrderFunc {
 
+        /// <summary>
+        /// Twice the maximum degree of any of the domain, parameter or codomain fields.
+        /// </summary>
+        /// <returns></returns>
         public static Func<int[], int[], int[], int> MaxDegTimesTwo() {
             return (DomDegs, ParamDegs, CoDomDegs) => 2 * Math.Max(Math.Max(MaxOr0(DomDegs), MaxOr0(ParamDegs)), MaxOr0(CoDomDegs));
         }
 
+        /// <summary>
+        /// A fixed quadrature order, which completely ignored the DG polynomial degrees of any DG field.
+        /// </summary>
+        /// <param name="order">fixed quadrature order.</param>
+        /// <returns>A function which always returns the value <paramref name="order"/>.</returns>
         public static Func<int[], int[], int[], int> FixedOrder(int order) {
             return ((DomDegs, ParamDegs, CoDomDegs) => order);
         }
 
         /// <summary>
-        /// Assumes a linear integrand
+        /// Assumes a linear integrand, resp. flux.
         /// </summary>
         /// <returns>
         /// A function that computes an integration degree according to
@@ -69,6 +78,9 @@ namespace BoSSS.Foundation {
             return ((DomDegs, ParamDegs, CoDomDegs) => (SumOfMaxDegreesWithRounding(DomDegs, ParamDegs, CoDomDegs, NonLinDeg, RoundUp)));
         }
         
+        /// <summary>
+        /// used by <see cref="SumOfMaxDegrees(int, bool)"/>.
+        /// </summary>
         private static int SumOfMaxDegreesWithRounding(int[] DomainDegrees, int[] ParamDegrees, int[] CoDomainDegrees, int NonlinDegree, bool RoundUp) {
             int order = MaxOr0(DomainDegrees) * NonlinDegree + MaxOr0(ParamDegrees) + MaxOr0(CoDomainDegrees);
             if (RoundUp) {
