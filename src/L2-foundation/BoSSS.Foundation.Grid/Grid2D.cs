@@ -1473,120 +1473,175 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                     // meshing of ring section
                     // ========================
-
-                    int iRing = 0;
-                    int iPrevRing = 3;
-                    int iNextRing = 2;
-                    int iPrevCon = 0;
-                    int iNextCon = 0;
-
                     double[] alphaS = GenericBlas.Linspace(0, 1, NoOfCenterNodes);
                     double[] betaS = GenericBlas.Linspace(0, 1, NoOfRadialNodes);
 
-                    double phi_st = Math.PI * 0.25 + 2 * Math.PI * 0.5;
-                    double phi_en = Math.PI * 0.25 + 1 * Math.PI * 0.5;
+                    for (int iRing = 0; iRing < 4; iRing++) {
+                        int iPrevRing, iNextRing, iPrevCon, iNextCon;
+                        double phi_st, phi_en;
+                        double x_st, x_en, y_st, y_en;
 
-                    double x_st = -CenterSectionWidth * 0.5;
-                    double x_en = -CenterSectionWidth * 0.5;
-                    double y_st = -CenterSectionWidth * 0.5;
-                    double y_en = +CenterSectionWidth * 0.5;
+                        switch(iRing) {
+                            case 0: // left
+                            iPrevRing = 3;
+                            iNextRing = 2;
+                            iPrevCon = 0;
+                            iNextCon = 0;
+                        
+                            phi_st = Math.PI * 0.25 + 2 * Math.PI * 0.5;
+                            phi_en = Math.PI * 0.25 + 1 * Math.PI * 0.5;
+
+                            x_st = -CenterSectionWidth * 0.5;
+                            x_en = -CenterSectionWidth * 0.5;
+                            y_st = -CenterSectionWidth * 0.5;
+                            y_en = +CenterSectionWidth * 0.5;
+                            break;
+
+                            case 1: // right
+                            iPrevRing = 3;
+                            iNextRing = 2;
+                            iPrevCon = 0;
+                            iNextCon = 0;
+                        
+                            phi_st = +Math.PI * 0.25;
+                            phi_en = -Math.PI * 0.25;
+
+                            x_st = +CenterSectionWidth * 0.5;
+                            x_en = +CenterSectionWidth * 0.5;
+                            y_st = +CenterSectionWidth * 0.5;
+                            y_en = -CenterSectionWidth * 0.5;
+                            break;
+
+                            case 2: // top
+                            iPrevRing = 3;
+                            iNextRing = 2;
+                            iPrevCon = 0;
+                            iNextCon = 0;
+                        
+                            phi_st = +Math.PI * 0.25 + 1*Math.PI*0.5;
+                            phi_en = +Math.PI * 0.25;
+
+                            x_st = -CenterSectionWidth * 0.5;
+                            x_en = +CenterSectionWidth * 0.5;
+                            y_st = +CenterSectionWidth * 0.5;
+                            y_en = +CenterSectionWidth * 0.5;
+                            break;
+
+                            case 3: // bottom
+                            iPrevRing = 3;
+                            iNextRing = 2;
+                            iPrevCon = 0;
+                            iNextCon = 0;
+                        
+                            phi_st = +Math.PI * 0.25 + 3*Math.PI*0.5;
+                            phi_en = +Math.PI * 0.25 + 2*Math.PI*0.5;
+
+                            x_st = +CenterSectionWidth * 0.5;
+                            x_en = -CenterSectionWidth * 0.5;
+                            y_st = -CenterSectionWidth * 0.5;
+                            y_en = -CenterSectionWidth * 0.5;
+                            break;
+
+                            default: throw new Exception();
+                        }
 
 
-                    for(int iPhi = 0; iPhi < (NoOfCenterNodes - 1); iPhi++) {
-                        double phi0 = phi_st * (1.0 - alphaS[iPhi]) + phi_en * alphaS[iPhi];
-                        double phi1 = phi_st * (1.0 - alphaS[iPhi + 1]) + phi_en * alphaS[iPhi + 1];
 
-                        double xC0 = x_st * (1.0 - alphaS[iPhi]) + x_en * alphaS[iPhi];
-                        double xC1 = x_st * (1.0 - alphaS[iPhi + 1]) + x_en * alphaS[iPhi + 1];
-                        double yC0 = y_st * (1.0 - alphaS[iPhi]) + y_en * alphaS[iPhi];
-                        double yC1 = y_st * (1.0 - alphaS[iPhi + 1]) + y_en * alphaS[iPhi + 1];
+                        for (int iPhi = 0; iPhi < (NoOfCenterNodes - 1); iPhi++) {
+                            double phi0 = phi_st * (1.0 - alphaS[iPhi]) + phi_en * alphaS[iPhi];
+                            double phi1 = phi_st * (1.0 - alphaS[iPhi + 1]) + phi_en * alphaS[iPhi + 1];
 
-                        for(int iR = 0; iR < (NoOfRadialNodes - 1); iR++) {
-                            //double beta0 = betaS[NoOfRadialNodes - iR - 1];
-                            //double beta1 = betaS[NoOfRadialNodes - iR - 2];
-                            double beta0 = betaS[iR];
-                            double beta1 = betaS[iR + 1];
+                            double xC0 = x_st * (1.0 - alphaS[iPhi]) + x_en * alphaS[iPhi];
+                            double xC1 = x_st * (1.0 - alphaS[iPhi + 1]) + x_en * alphaS[iPhi + 1];
+                            double yC0 = y_st * (1.0 - alphaS[iPhi]) + y_en * alphaS[iPhi];
+                            double yC1 = y_st * (1.0 - alphaS[iPhi + 1]) + y_en * alphaS[iPhi + 1];
 
-                            // create cell
-                            Cell Cj = new Cell();
-                            Cj.GlobalID = RingSections_Gid[iRing][iR, iPhi];
-                            Cj.Type = type;
-                            AllCells.Add(Cj);
-                            
-                            // set nodes
-                            Cj.TransformationParams = MultidimensionalArray.Create(NoOfNodes, 2);
-                            for(int k = 0; k < NoOfNodes; k++) {
-                                double phi = 0.5 * (phi1 - phi0) * InterpolationNodes[k, 0] + 0.5 * (phi1 + phi0);
-                                double xA = Math.Cos(phi) * Radius;
-                                double yA = Math.Sin(phi) * Radius;
+                            for (int iR = 0; iR < (NoOfRadialNodes - 1); iR++) {
+                                //double beta0 = betaS[NoOfRadialNodes - iR - 1];
+                                //double beta1 = betaS[NoOfRadialNodes - iR - 2];
+                                double beta0 = betaS[iR];
+                                double beta1 = betaS[iR + 1];
 
-                                double xC =  0.5 * (xC1 - xC0) * InterpolationNodes[k, 0] + 0.5 * (xC1 + xC0);
-                                double yC =  0.5 * (yC1 - yC0) * InterpolationNodes[k, 0] + 0.5 * (yC1 + yC0);
-                                
-                                double beta = 0.5 * (beta1 - beta0) * InterpolationNodes[k, 1] + 0.5 * (beta1 + beta0);
+                                // create cell
+                                Cell Cj = new Cell();
+                                Cj.GlobalID = RingSections_Gid[iRing][iR, iPhi];
+                                Cj.Type = type;
+                                AllCells.Add(Cj);
 
-                                double x = xC * (1 - beta) + xA * beta;
-                                double y = yC * (1 - beta) + yA * beta;
+                                // set nodes
+                                Cj.TransformationParams = MultidimensionalArray.Create(NoOfNodes, 2);
+                                for (int k = 0; k < NoOfNodes; k++) {
+                                    double phi = 0.5 * (phi1 - phi0) * InterpolationNodes[k, 0] + 0.5 * (phi1 + phi0);
+                                    double xA = Math.Cos(phi) * Radius;
+                                    double yA = Math.Sin(phi) * Radius;
 
-                                Cj.TransformationParams[k, 0] = x;
-                                Cj.TransformationParams[k, 1] = y;
-                            }
+                                    double xC = 0.5 * (xC1 - xC0) * InterpolationNodes[k, 0] + 0.5 * (xC1 + xC0);
+                                    double yC = 0.5 * (yC1 - yC0) * InterpolationNodes[k, 0] + 0.5 * (yC1 + yC0);
 
-                            // node indices (neighborship via cell face tags
-                            Cj.NodeIndices = new int[] { PtCount, PtCount + 1, PtCount + 2, PtCount + 3 };
-                            PtCount += 4;
+                                    double beta = 0.5 * (beta1 - beta0) * InterpolationNodes[k, 1] + 0.5 * (beta1 + beta0);
 
-                            // neigborship
-                            if(iR > 0) {
-                                ArrayTools.AddToArray(new CellFaceTag() {
-                                    FaceIndex = (int)Square.Edge.Bottom,
-                                    NeighCell_GlobalID = RingSections_Gid[iRing][iR - 1, iPhi]
+                                    double x = xC * (1 - beta) + xA * beta;
+                                    double y = yC * (1 - beta) + yA * beta;
+
+                                    Cj.TransformationParams[k, 0] = x;
+                                    Cj.TransformationParams[k, 1] = y;
+                                }
+
+                                // node indices (neighborship via cell face tags
+                                Cj.NodeIndices = new int[] { PtCount, PtCount + 1, PtCount + 2, PtCount + 3 };
+                                PtCount += 4;
+
+                                // neigborship
+                                if (iR > 0) {
+                                    ArrayTools.AddToArray(new CellFaceTag() {
+                                        FaceIndex = (int)Square.Edge.Bottom,
+                                        NeighCell_GlobalID = RingSections_Gid[iRing][iR - 1, iPhi]
                                     }, ref Cj.CellFaceTags);
-                            } else {
-                                //ArrayTools.AddToArray(new CellFaceTag() {
-                                //        FaceIndex = (int) Square.Edge.Left,
-                                //        NeighCell_GlobalID = RingSections_Gid[0][0, iY]
-                                //    }, ref Cj.CellFaceTags);
-                            }
+                                } else {
+                                    //ArrayTools.AddToArray(new CellFaceTag() {
+                                    //        FaceIndex = (int) Square.Edge.Left,
+                                    //        NeighCell_GlobalID = RingSections_Gid[0][0, iY]
+                                    //    }, ref Cj.CellFaceTags);
+                                }
 
-                            if(iR < (NoOfRadialNodes - 2)) {
-                                ArrayTools.AddToArray(new CellFaceTag() {
-                                        FaceIndex = (int) Square.Edge.Top,
+                                if (iR < (NoOfRadialNodes - 2)) {
+                                    ArrayTools.AddToArray(new CellFaceTag() {
+                                        FaceIndex = (int)Square.Edge.Top,
                                         NeighCell_GlobalID = RingSections_Gid[iRing][iR + 1, iPhi]
                                     }, ref Cj.CellFaceTags);
-                            } else {
-                                //ArrayTools.AddToArray(new CellFaceTag() {
-                                //        FaceIndex = (int) Square.Edge.Right,
-                                //        NeighCell_GlobalID = RingSections_Gid[1][0, iY]
-                                //    }, ref Cj.CellFaceTags);
-                            }
-                            
-                            if(iPhi > 0) {
-                                ArrayTools.AddToArray(new CellFaceTag() {
-                                        FaceIndex = (int) Square.Edge.Left,
+                                } else {
+                                    //ArrayTools.AddToArray(new CellFaceTag() {
+                                    //        FaceIndex = (int) Square.Edge.Right,
+                                    //        NeighCell_GlobalID = RingSections_Gid[1][0, iY]
+                                    //    }, ref Cj.CellFaceTags);
+                                }
+
+                                if (iPhi > 0) {
+                                    ArrayTools.AddToArray(new CellFaceTag() {
+                                        FaceIndex = (int)Square.Edge.Left,
                                         NeighCell_GlobalID = RingSections_Gid[iRing][iR, iPhi - 1]
                                     }, ref Cj.CellFaceTags);
-                            } else {
-                                //ArrayTools.AddToArray(new CellFaceTag() {
-                                //        FaceIndex = (int) Square.Edge.Bottom,
-                                //        NeighCell_GlobalID = RingSections_Gid[3][0, iX]
-                                //    }, ref Cj.CellFaceTags);
-                            }
+                                } else {
+                                    //ArrayTools.AddToArray(new CellFaceTag() {
+                                    //        FaceIndex = (int) Square.Edge.Bottom,
+                                    //        NeighCell_GlobalID = RingSections_Gid[3][0, iX]
+                                    //    }, ref Cj.CellFaceTags);
+                                }
 
-                            if(iPhi < (NoOfCenterNodes - 2)) {
-                                ArrayTools.AddToArray(new CellFaceTag() {
-                                        FaceIndex = (int) Square.Edge.Right,
+                                if (iPhi < (NoOfCenterNodes - 2)) {
+                                    ArrayTools.AddToArray(new CellFaceTag() {
+                                        FaceIndex = (int)Square.Edge.Right,
                                         NeighCell_GlobalID = RingSections_Gid[iRing][iR, iPhi + 1]
                                     }, ref Cj.CellFaceTags);
-                            } else {
-                                //ArrayTools.AddToArray(new CellFaceTag() {
-                                //        FaceIndex = (int) Square.Edge.Top,
-                                //        NeighCell_GlobalID = RingSections_Gid[1][0, iX]
-                                //    }, ref Cj.CellFaceTags);
+                                } else {
+                                    //ArrayTools.AddToArray(new CellFaceTag() {
+                                    //        FaceIndex = (int) Square.Edge.Top,
+                                    //        NeighCell_GlobalID = RingSections_Gid[1][0, iX]
+                                    //    }, ref Cj.CellFaceTags);
+                                }
                             }
                         }
                     }
-
                     // finalize
                     // ========
 
