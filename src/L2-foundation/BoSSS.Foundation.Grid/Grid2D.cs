@@ -1359,7 +1359,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                     // Reference element nodes
                     // =======================
-                    var Kref = grid.RefElements.Single(KK => KK.GetType() == typeof(Cube));
+                    var Kref = grid.RefElements.Single(KK => KK.GetType() == typeof(Square));
                     NodeSet InterpolationNodes = Kref.GetInterpolationNodes(type);
                     int NoOfNodes = InterpolationNodes.NoOfNodes;
 
@@ -1374,10 +1374,11 @@ namespace BoSSS.Foundation.Grid.Classic {
                     }
 
                     long[][,] RingSections_Gid = new long[4][,];
-                    for(int iRing = 0; iRing < 4; iRing++) {
+                    for(int _iRing = 0; _iRing < 4; _iRing++) {
+                        RingSections_Gid[_iRing] = new long[NoOfRadialNodes - 1, NoOfCenterNodes - 1];
                         for(int iR = 0; iR < (NoOfRadialNodes - 1); iR++) {
                             for(int iPhi = 0; iPhi < (NoOfCenterNodes - 1); iPhi++) {
-                                RingSections_Gid[iRing][iR, iPhi] = cnt;
+                                RingSections_Gid[_iRing][iR, iPhi] = cnt;
                                 cnt++;
                             }
                         }
@@ -1409,7 +1410,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             
                             for(int k = 0; k < NoOfNodes; k++) {
                                 double x = 0.5 * (x1 - x0) * InterpolationNodes[k, 0] + 0.5 * (x1 + x0);
-                                double y = 0.5 * (y1 - y0) * InterpolationNodes[k, 0] + 0.5 * (y1 + y0);
+                                double y = 0.5 * (y1 - y0) * InterpolationNodes[k, 1] + 0.5 * (y1 + y0);
                                 Cj.TransformationParams[k, 0] = x;
                                 Cj.TransformationParams[k, 1] = y;
                             }
@@ -1425,10 +1426,10 @@ namespace BoSSS.Foundation.Grid.Classic {
                                         NeighCell_GlobalID = CenterSection_Gid[iX - 1, iY]
                                     }, ref Cj.CellFaceTags);
                             } else {
-                                ArrayTools.AddToArray(new CellFaceTag() {
-                                        FaceIndex = (int) Square.Edge.Left,
-                                        NeighCell_GlobalID = RingSections_Gid[0][0, iY]
-                                    }, ref Cj.CellFaceTags);
+                                //ArrayTools.AddToArray(new CellFaceTag() {
+                                //        FaceIndex = (int) Square.Edge.Left,
+                                //        NeighCell_GlobalID = RingSections_Gid[0][0, iY]
+                                //    }, ref Cj.CellFaceTags);
                             }
 
                             if(iX < (NoOfCenterNodes - 2)) {
@@ -1437,10 +1438,10 @@ namespace BoSSS.Foundation.Grid.Classic {
                                         NeighCell_GlobalID = CenterSection_Gid[iX + 1, iY]
                                     }, ref Cj.CellFaceTags);
                             } else {
-                                ArrayTools.AddToArray(new CellFaceTag() {
-                                        FaceIndex = (int) Square.Edge.Right,
-                                        NeighCell_GlobalID = RingSections_Gid[1][0, iY]
-                                    }, ref Cj.CellFaceTags);
+                                //ArrayTools.AddToArray(new CellFaceTag() {
+                                //        FaceIndex = (int) Square.Edge.Right,
+                                //        NeighCell_GlobalID = RingSections_Gid[1][0, iY]
+                                //    }, ref Cj.CellFaceTags);
                             }
                             
                             if(iY > 0) {
@@ -1449,10 +1450,10 @@ namespace BoSSS.Foundation.Grid.Classic {
                                         NeighCell_GlobalID = CenterSection_Gid[iX, iY - 1]
                                     }, ref Cj.CellFaceTags);
                             } else {
-                                ArrayTools.AddToArray(new CellFaceTag() {
-                                        FaceIndex = (int) Square.Edge.Bottom,
-                                        NeighCell_GlobalID = RingSections_Gid[3][0, iX]
-                                    }, ref Cj.CellFaceTags);
+                                //ArrayTools.AddToArray(new CellFaceTag() {
+                                //        FaceIndex = (int) Square.Edge.Bottom,
+                                //        NeighCell_GlobalID = RingSections_Gid[3][0, iX]
+                                //    }, ref Cj.CellFaceTags);
                             }
 
                             if(iY < (NoOfCenterNodes - 2)) {
@@ -1461,10 +1462,10 @@ namespace BoSSS.Foundation.Grid.Classic {
                                         NeighCell_GlobalID = CenterSection_Gid[iX, iY + 1]
                                     }, ref Cj.CellFaceTags);
                             } else {
-                                ArrayTools.AddToArray(new CellFaceTag() {
-                                        FaceIndex = (int) Square.Edge.Top,
-                                        NeighCell_GlobalID = RingSections_Gid[1][0, iX]
-                                    }, ref Cj.CellFaceTags);
+                                //ArrayTools.AddToArray(new CellFaceTag() {
+                                //        FaceIndex = (int) Square.Edge.Top,
+                                //        NeighCell_GlobalID = RingSections_Gid[1][0, iX]
+                                //    }, ref Cj.CellFaceTags);
                             }
                             
                         }
@@ -1493,7 +1494,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                     for(int iPhi = 0; iPhi < (NoOfCenterNodes - 1); iPhi++) {
                         double phi0 = phi_st * (1.0 - alphaS[iPhi]) + phi_en * alphaS[iPhi];
-                        double phi1 = phi_st * (1.0 - alphaS[iPhi]) + phi_en * alphaS[iPhi];
+                        double phi1 = phi_st * (1.0 - alphaS[iPhi + 1]) + phi_en * alphaS[iPhi + 1];
 
                         double xC0 = x_st * (1.0 - alphaS[iPhi]) + x_en * alphaS[iPhi];
                         double xC1 = x_st * (1.0 - alphaS[iPhi + 1]) + x_en * alphaS[iPhi + 1];
@@ -1501,6 +1502,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                         double yC1 = y_st * (1.0 - alphaS[iPhi + 1]) + y_en * alphaS[iPhi + 1];
 
                         for(int iR = 0; iR < (NoOfRadialNodes - 1); iR++) {
+                            //double beta0 = betaS[NoOfRadialNodes - iR - 1];
+                            //double beta1 = betaS[NoOfRadialNodes - iR - 2];
                             double beta0 = betaS[iR];
                             double beta1 = betaS[iR + 1];
 
@@ -1511,6 +1514,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             AllCells.Add(Cj);
                             
                             // set nodes
+                            Cj.TransformationParams = MultidimensionalArray.Create(NoOfNodes, 2);
                             for(int k = 0; k < NoOfNodes; k++) {
                                 double phi = 0.5 * (phi1 - phi0) * InterpolationNodes[k, 0] + 0.5 * (phi1 + phi0);
                                 double xA = Math.Cos(phi) * Radius;
@@ -1535,58 +1539,53 @@ namespace BoSSS.Foundation.Grid.Classic {
                             // neigborship
                             if(iR > 0) {
                                 ArrayTools.AddToArray(new CellFaceTag() {
-                                    FaceIndex = (int)Square.Edge.Left,
-                                    NeighCell_GlobalID = RingSections_Gid[iRing][iR - 1, iY];
+                                    FaceIndex = (int)Square.Edge.Bottom,
+                                    NeighCell_GlobalID = RingSections_Gid[iRing][iR - 1, iPhi]
                                     }, ref Cj.CellFaceTags);
                             } else {
-                                ArrayTools.AddToArray(new CellFaceTag() {
-                                        FaceIndex = (int) Square.Edge.Left,
-                                        NeighCell_GlobalID = RingSections_Gid[0][0, iY]
-                                    }, ref Cj.CellFaceTags);
+                                //ArrayTools.AddToArray(new CellFaceTag() {
+                                //        FaceIndex = (int) Square.Edge.Left,
+                                //        NeighCell_GlobalID = RingSections_Gid[0][0, iY]
+                                //    }, ref Cj.CellFaceTags);
                             }
 
-                            if(iX < (NoOfCenterNodes - 2)) {
+                            if(iR < (NoOfRadialNodes - 2)) {
                                 ArrayTools.AddToArray(new CellFaceTag() {
-                                        FaceIndex = (int) Square.Edge.Right,
-                                        NeighCell_GlobalID = CenterSection_Gid[iX + 1, iY]
+                                        FaceIndex = (int) Square.Edge.Top,
+                                        NeighCell_GlobalID = RingSections_Gid[iRing][iR + 1, iPhi]
                                     }, ref Cj.CellFaceTags);
                             } else {
-                                ArrayTools.AddToArray(new CellFaceTag() {
-                                        FaceIndex = (int) Square.Edge.Right,
-                                        NeighCell_GlobalID = RingSections_Gid[1][0, iY]
-                                    }, ref Cj.CellFaceTags);
+                                //ArrayTools.AddToArray(new CellFaceTag() {
+                                //        FaceIndex = (int) Square.Edge.Right,
+                                //        NeighCell_GlobalID = RingSections_Gid[1][0, iY]
+                                //    }, ref Cj.CellFaceTags);
                             }
                             
-                            if(iY > 0) {
+                            if(iPhi > 0) {
                                 ArrayTools.AddToArray(new CellFaceTag() {
-                                        FaceIndex = (int) Square.Edge.Bottom,
-                                        NeighCell_GlobalID = CenterSection_Gid[iX, iY - 1]
+                                        FaceIndex = (int) Square.Edge.Left,
+                                        NeighCell_GlobalID = RingSections_Gid[iRing][iR, iPhi - 1]
                                     }, ref Cj.CellFaceTags);
                             } else {
-                                ArrayTools.AddToArray(new CellFaceTag() {
-                                        FaceIndex = (int) Square.Edge.Bottom,
-                                        NeighCell_GlobalID = RingSections_Gid[3][0, iX]
-                                    }, ref Cj.CellFaceTags);
+                                //ArrayTools.AddToArray(new CellFaceTag() {
+                                //        FaceIndex = (int) Square.Edge.Bottom,
+                                //        NeighCell_GlobalID = RingSections_Gid[3][0, iX]
+                                //    }, ref Cj.CellFaceTags);
                             }
 
-                            if(iY < (NoOfCenterNodes - 2)) {
+                            if(iPhi < (NoOfCenterNodes - 2)) {
                                 ArrayTools.AddToArray(new CellFaceTag() {
-                                        FaceIndex = (int) Square.Edge.Top,
-                                        NeighCell_GlobalID = CenterSection_Gid[iX, iY + 1]
+                                        FaceIndex = (int) Square.Edge.Right,
+                                        NeighCell_GlobalID = RingSections_Gid[iRing][iR, iPhi + 1]
                                     }, ref Cj.CellFaceTags);
                             } else {
-                                ArrayTools.AddToArray(new CellFaceTag() {
-                                        FaceIndex = (int) Square.Edge.Top,
-                                        NeighCell_GlobalID = RingSections_Gid[1][0, iX]
-                                    }, ref Cj.CellFaceTags);
+                                //ArrayTools.AddToArray(new CellFaceTag() {
+                                //        FaceIndex = (int) Square.Edge.Top,
+                                //        NeighCell_GlobalID = RingSections_Gid[1][0, iX]
+                                //    }, ref Cj.CellFaceTags);
                             }
-
-
                         }
                     }
-
-
-
 
                     // finalize
                     // ========

@@ -392,7 +392,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     if (NegativeJacobianFlag > 0) {
                         for (int j = 0; j < JE; j++) {
                             if (_JacobiDet[j] < 0)
-                                throw new ArithmeticException(string.Format("Found {3} cell(s) (of {4} tested) with non-positive Jacobian determinat. First problem occured at cell #{0}, global ID {1}, Jacobian determinant is {2}.", j, this.GetCell(j).GlobalID, _JacobiDet[j], NegativeJacobianFlag, JE));
+                                throw new ArithmeticException(string.Format("Found {3} cell(s) (of {4} tested) with non-positive Jacobian determinant. First problem occurred at cell #{0}, global ID {1}, Jacobian determinant is {2}.", j, this.GetCell(j).GlobalID, _JacobiDet[j], NegativeJacobianFlag, JE));
                         }
                     }
 
