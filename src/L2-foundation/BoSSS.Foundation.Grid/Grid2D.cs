@@ -1303,7 +1303,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
 
         /// <summary>
-        /// Generates a so-acalled O-grid of a circular domain.
+        /// Generates a so-called O-grid of a circular domain.
         /// </summary>
         /// <param name="Radius">Radius of the circular domain.</param>
         /// <param name="CenterSectionWidth">With of center section which is meshed Cartesian.</param>
