@@ -1426,10 +1426,11 @@ namespace BoSSS.Foundation.Grid.Classic {
                                         NeighCell_GlobalID = CenterSection_Gid[iX - 1, iY]
                                     }, ref Cj.CellFaceTags);
                             } else {
-                                //ArrayTools.AddToArray(new CellFaceTag() {
-                                //        FaceIndex = (int) Square.Edge.Left,
-                                //        NeighCell_GlobalID = RingSections_Gid[0][0, iY]
-                                //    }, ref Cj.CellFaceTags);
+                                // connection to left ring segment
+                                ArrayTools.AddToArray(new CellFaceTag() {
+                                        FaceIndex = (int) Square.Edge.Left,
+                                        NeighCell_GlobalID = RingSections_Gid[0][0, iY]
+                                    }, ref Cj.CellFaceTags);
                             }
 
                             if(iX < (NoOfCenterNodes - 2)) {
@@ -1438,10 +1439,11 @@ namespace BoSSS.Foundation.Grid.Classic {
                                         NeighCell_GlobalID = CenterSection_Gid[iX + 1, iY]
                                     }, ref Cj.CellFaceTags);
                             } else {
-                                //ArrayTools.AddToArray(new CellFaceTag() {
-                                //        FaceIndex = (int) Square.Edge.Right,
-                                //        NeighCell_GlobalID = RingSections_Gid[1][0, iY]
-                                //    }, ref Cj.CellFaceTags);
+                                // connection to right ring segment
+                                ArrayTools.AddToArray(new CellFaceTag() {
+                                        FaceIndex = (int) Square.Edge.Right,
+                                        NeighCell_GlobalID = RingSections_Gid[1][0, NoOfCenterNodes - 2 - iY]
+                                    }, ref Cj.CellFaceTags);
                             }
                             
                             if(iY > 0) {
@@ -1450,10 +1452,11 @@ namespace BoSSS.Foundation.Grid.Classic {
                                         NeighCell_GlobalID = CenterSection_Gid[iX, iY - 1]
                                     }, ref Cj.CellFaceTags);
                             } else {
-                                //ArrayTools.AddToArray(new CellFaceTag() {
-                                //        FaceIndex = (int) Square.Edge.Bottom,
-                                //        NeighCell_GlobalID = RingSections_Gid[3][0, iX]
-                                //    }, ref Cj.CellFaceTags);
+                                // connection to bottom ring segment
+                                ArrayTools.AddToArray(new CellFaceTag() {
+                                        FaceIndex = (int) Square.Edge.Bottom,
+                                        NeighCell_GlobalID = RingSections_Gid[3][0, NoOfCenterNodes - 2 - iX]
+                                    }, ref Cj.CellFaceTags);
                             }
 
                             if(iY < (NoOfCenterNodes - 2)) {
@@ -1462,10 +1465,11 @@ namespace BoSSS.Foundation.Grid.Classic {
                                         NeighCell_GlobalID = CenterSection_Gid[iX, iY + 1]
                                     }, ref Cj.CellFaceTags);
                             } else {
-                                //ArrayTools.AddToArray(new CellFaceTag() {
-                                //        FaceIndex = (int) Square.Edge.Top,
-                                //        NeighCell_GlobalID = RingSections_Gid[1][0, iX]
-                                //    }, ref Cj.CellFaceTags);
+                                // connection to top ring segment
+                                ArrayTools.AddToArray(new CellFaceTag() {
+                                        FaceIndex = (int) Square.Edge.Top,
+                                        NeighCell_GlobalID = RingSections_Gid[2][0, iX]
+                                    }, ref Cj.CellFaceTags);
                             }
                             
                         }
@@ -1481,12 +1485,18 @@ namespace BoSSS.Foundation.Grid.Classic {
                         double phi_st, phi_en;
                         double x_st, x_en, y_st, y_en;
 
+                        int inc_iX, inc_iY, OiX, OiY;
+
                         switch(iRing) {
                             case 0: // left
                             iNextRing = 2;
                             iPrevRing = 3;
                             //iPrevCon = NoOfCenterNodes - 2;
                             //iNextCon = 0;
+                            inc_iX = 0;
+                            inc_iY = 1;
+                            OiX = 0;
+                            OiY = 0;
                         
                             phi_st = Math.PI * 0.25 + 2 * Math.PI * 0.5;
                             phi_en = Math.PI * 0.25 + 1 * Math.PI * 0.5;
@@ -1502,6 +1512,10 @@ namespace BoSSS.Foundation.Grid.Classic {
                             iPrevRing = 2; // top
                             //iPrevCon = 0;
                             //iNextCon = NoOfCenterNodes - 2;
+                            inc_iX = 0;
+                            inc_iY = -1;
+                            OiX = NoOfCenterNodes - 2;
+                            OiY = NoOfCenterNodes - 2;
                         
                             phi_st = +Math.PI * 0.25;
                             phi_en = -Math.PI * 0.25;
@@ -1515,8 +1529,10 @@ namespace BoSSS.Foundation.Grid.Classic {
                             case 2: // top
                             iNextRing = 1; // right
                             iPrevRing = 0; // left
-                            //iPrevCon = NoOfCenterNodes - 2;
-                            //iNextCon = 0;
+                            inc_iX = 1;
+                            inc_iY = 0;
+                            OiX = 0;
+                            OiY = NoOfCenterNodes - 2;
                         
                             phi_st = +Math.PI * 0.25 + 1*Math.PI*0.5;
                             phi_en = +Math.PI * 0.25;
@@ -1530,8 +1546,10 @@ namespace BoSSS.Foundation.Grid.Classic {
                             case 3: // bottom
                             iNextRing = 0; // left
                             iPrevRing = 1; // right
-                            //iPrevCon = 0;
-                            //iNextCon = 0;
+                            inc_iX = -1;
+                            inc_iY = 0;
+                            OiX = NoOfCenterNodes - 2;
+                            OiY = 0;
                         
                             phi_st = +Math.PI * 0.25 + 3*Math.PI*0.5;
                             phi_en = +Math.PI * 0.25 + 2*Math.PI*0.5;
@@ -1598,10 +1616,12 @@ namespace BoSSS.Foundation.Grid.Classic {
                                         NeighCell_GlobalID = RingSections_Gid[iRing][iR - 1, iPhi]
                                     }, ref Cj.CellFaceTags);
                                 } else {
-                                    //ArrayTools.AddToArray(new CellFaceTag() {
-                                    //        FaceIndex = (int) Square.Edge.Left,
-                                    //        NeighCell_GlobalID = RingSections_Gid[0][0, iY]
-                                    //    }, ref Cj.CellFaceTags);
+                                    // connection to center section
+
+                                    ArrayTools.AddToArray(new CellFaceTag() {
+                                        FaceIndex = (int)Square.Edge.Bottom,
+                                        NeighCell_GlobalID = CenterSection_Gid[OiX + iPhi * inc_iX, OiY + iPhi * inc_iY]
+                                    }, ref Cj.CellFaceTags);
                                 }
 
                                 if (iR < (NoOfRadialNodes - 2)) {
