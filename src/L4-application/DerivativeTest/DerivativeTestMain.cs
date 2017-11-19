@@ -446,6 +446,7 @@ namespace BoSSS.Application.DerivativeTest {
 
                 case 16: {
                     grd = Grid2D.Ogrid(0.5, 1, 5, 3, CellType.Square_4);
+                    grd = Grid3D.Ogrid(0.5, 1, 5, 3, GenericBlas.Linspace(0,4,5));
                     break;
                 }
 
