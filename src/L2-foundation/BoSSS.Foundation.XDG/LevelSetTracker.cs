@@ -1296,6 +1296,16 @@ namespace BoSSS.Foundation.XDG {
         /// Variant of <see cref="GetLevelSetGradients"/> which normalizes the
         /// gradients before returning them
         /// </summary>
+        ///  <param name="levSetInd">The index of the level set</param>
+        /// <param name="NS">
+        /// Nodes to evaluate at.
+        /// </param>
+        ///  /// <param name="j0">
+        /// The first cell to be evaluated
+        /// </param>
+        /// <param name="Len">
+        /// The number of cell to be evaluated
+        /// </param>
         public MultidimensionalArray GetLevelSetNormals(int levSetInd, NodeSet NS, int j0, int Len) {
             return m_LevelSetNormalsCache[levSetInd].GetValue_Cell(NS, j0, Len);
         }
