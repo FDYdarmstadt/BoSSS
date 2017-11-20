@@ -171,7 +171,8 @@ namespace CNS.Solution {
                             speciesMap,
                             (IBMControl)control,
                             equationSystem.GetJoinedOperator().CFLConstraints,
-                            reclusteringInterval: control.ReclusteringInterval);
+                            reclusteringInterval: control.ReclusteringInterval,
+                            fluxCorrection: control.FluxCorrection);
                     } else {
                         timeStepper = new AdamsBashforthLTS(
                             equationSystem.GetJoinedOperator().ToSpatialOperator(),

@@ -206,7 +206,7 @@ namespace BoSSS.Solution.Utils {
         /// Returns a cell metric value in every cell
         /// </summary>
         /// <returns>Cell metric as <see cref="MultidimensionalArray"/></returns>
-        public MultidimensionalArray GetCellMetric(SubGrid subGrid) {
+        public MultidimensionalArray GetCellMetric(SubGrid subGrid){
             MultidimensionalArray cellMetric = MultidimensionalArray.Create(subGrid.LocalNoOfCells);
 
             for (int subGridCell = 0; subGridCell < subGrid.LocalNoOfCells; subGridCell++) {
