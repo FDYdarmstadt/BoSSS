@@ -82,44 +82,44 @@ namespace CNS.Tests.ArtificialViscosity {
         public static void ToroTest1_RK1() {
             CheckErrorThresholds(
                 SetupToroTest1(explicitScheme: ExplicitSchemes.RungeKutta, explicitOrder: 1, numOfClusters: -1),
-                //Tuple.Create("L2ErrorDensity", 3.6e-2),
-                //Tuple.Create("L2ErrorVelocity", 1.2e-2),
-                //Tuple.Create("L2ErrorPressure", 3.7e-2));
-                Tuple.Create("L2ErrorDensity", 2.133e-2),
-                Tuple.Create("L2ErrorVelocity", 1.125e-2),
-                Tuple.Create("L2ErrorPressure", 2.217e-2));
+                //Tuple.Create("L2ErrorDensity", 2.133e-2),
+                //Tuple.Create("L2ErrorVelocity", 1.125e-2),
+                //Tuple.Create("L2ErrorPressure", 2.217e-2));
+                Tuple.Create("L2ErrorDensity", 0.0213295440070947 + 1e-14),
+                Tuple.Create("L2ErrorVelocity", 0.0112419647692771 + 1e-14),
+                Tuple.Create("L2ErrorPressure", 0.0221686517166847 + 1e-14));
         }
         [Test]
         public static void ToroTest1_ALTS1_3() {
             CheckErrorThresholds(
                 SetupToroTest1(explicitScheme: ExplicitSchemes.LTS, explicitOrder: 1, numOfClusters: 3),
-                Tuple.Create("L2ErrorDensity", 2.133e-2),
-                Tuple.Create("L2ErrorVelocity", 1.125e-2),
-                Tuple.Create("L2ErrorPressure", 2.217e-2));
+                Tuple.Create("L2ErrorDensity", 0.0213233520929519 + 1e-14),
+                Tuple.Create("L2ErrorVelocity", 0.0112404986333599 + 1e-14),
+                Tuple.Create("L2ErrorPressure", 0.0221621831639872 + 1e-14));
         }
         [Test]
         public static void ToroTest1_ALTS2_3() {
             CheckErrorThresholds(
                 SetupToroTest1(explicitScheme: ExplicitSchemes.LTS, explicitOrder: 2, numOfClusters: 3),
-                Tuple.Create("L2ErrorDensity", 2.133e-2),
-                Tuple.Create("L2ErrorVelocity", 1.125e-2),
-                Tuple.Create("L2ErrorPressure", 2.217e-2));
+                Tuple.Create("L2ErrorDensity", 0.0213221338536003 + 1e-14),
+                Tuple.Create("L2ErrorVelocity", 0.0112395603913243 + 1e-14),
+                Tuple.Create("L2ErrorPressure", 0.0221608822934621 + 1e-14));
         }
         [Test]
         public static void ToroTest1_ALTS3_3() {
             CheckErrorThresholds(
                 SetupToroTest1(explicitScheme: ExplicitSchemes.LTS, explicitOrder: 3, numOfClusters: 3),
-                Tuple.Create("L2ErrorDensity", 2.133e-2),
-                Tuple.Create("L2ErrorVelocity", 1.125e-2),
-                Tuple.Create("L2ErrorPressure", 2.217e-2));
+                Tuple.Create("L2ErrorDensity", 0.0213233152388806 + 1e-14),
+                Tuple.Create("L2ErrorVelocity", 0.01123851527621 + 1e-14),
+                Tuple.Create("L2ErrorPressure", 0.0221620445902869 + 1e-14));
         }
         [Test]
         public static void ToroTest1_ALTS3_4() {
             CheckErrorThresholds(
                 SetupToroTest1(explicitScheme: ExplicitSchemes.LTS, explicitOrder: 3, numOfClusters: 4),
-                Tuple.Create("L2ErrorDensity", 2.133e-2),
-                Tuple.Create("L2ErrorVelocity", 1.125e-2),
-                Tuple.Create("L2ErrorPressure", 2.217e-2));
+                Tuple.Create("L2ErrorDensity", 0.0213033175670039 + 1e-14),
+                Tuple.Create("L2ErrorVelocity", 0.0112159195300983 + 1e-14),
+                Tuple.Create("L2ErrorPressure", 0.0221417911406063 + 1e-14));
         }
 
         /// <summary>
@@ -142,6 +142,11 @@ namespace CNS.Tests.ArtificialViscosity {
 
             c.DbPath = null;
             c.savetodb = false;
+
+            //c.DbPath = @"c:\bosss_db\";
+            //c.savetodb = true;
+            //c.saveperiod = 100;
+            //c.PrintInterval = 100;
 
             c.ActiveOperators = Operators.Convection | Operators.ArtificialViscosity;
             c.ConvectiveFluxType = convectiveFlux;
@@ -182,6 +187,9 @@ namespace CNS.Tests.ArtificialViscosity {
             c.AddVariable(Variables.ArtificialViscosity, 1);
             //c.AddVariable(Variables.Sensor, dgDegree);
             c.AddVariable(Variables.LocalMachNumber, dgDegree);
+            if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS)) {
+                c.AddVariable(Variables.LTSClusters, 0);
+            }
 
             c.GridFunc = delegate {
                 double[] xNodes = GenericBlas.Linspace(0.0, 1.0, noOfCellsPerDirection + 1);
