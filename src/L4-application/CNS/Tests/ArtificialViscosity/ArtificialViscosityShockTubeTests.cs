@@ -54,7 +54,7 @@ namespace CNS.Tests.ArtificialViscosity {
         /// The results are compared to the analytical solution that is calculated by
         /// the ExactRiemannSolver implementation in BoSSS.
         /// </summary>
-        private static Dictionary<string, object> SetupToroTest1(ExplicitSchemes explicitScheme, int explicitOrder) {
+        private static Dictionary<string, object> SetupToroTest1(ExplicitSchemes explicitScheme, int explicitOrder, int numOfClusters) {
             CNSControl c = GetArtificialViscosityShockTubeControlTemplate(
                 convectiveFlux: ConvectiveFluxTypes.OptimizedHLLC,
                 densityLeft: 1.0,
@@ -65,7 +65,8 @@ namespace CNS.Tests.ArtificialViscosity {
                 pressureRight: 0.1,
                 discontinuityPosition: 0.5,
                 explicitScheme: explicitScheme,
-                explicitOrder: explicitOrder);
+                explicitOrder: explicitOrder,
+                numOfClusters: numOfClusters);
 
             c.ProjectName = "Artificial viscosity, shock tube, Toro test 1";
             c.ProjectDescription = "Toro 2009, p. 129, table 4.1, test 1";
@@ -80,7 +81,7 @@ namespace CNS.Tests.ArtificialViscosity {
         [Test]
         public static void ToroTest1_RK1() {
             CheckErrorThresholds(
-                SetupToroTest1(explicitScheme: ExplicitSchemes.RungeKutta, explicitOrder: 1),
+                SetupToroTest1(explicitScheme: ExplicitSchemes.RungeKutta, explicitOrder: 1, numOfClusters: -1),
                 //Tuple.Create("L2ErrorDensity", 3.6e-2),
                 //Tuple.Create("L2ErrorVelocity", 1.2e-2),
                 //Tuple.Create("L2ErrorPressure", 3.7e-2));
@@ -89,26 +90,34 @@ namespace CNS.Tests.ArtificialViscosity {
                 Tuple.Create("L2ErrorPressure", 2.217e-2));
         }
         [Test]
-        public static void ToroTest1_ALTS1() {
+        public static void ToroTest1_ALTS1_3() {
             CheckErrorThresholds(
-                SetupToroTest1(explicitScheme: ExplicitSchemes.LTS, explicitOrder: 1),
-                Tuple.Create("L2ErrorDensity", 3.6e-2),
+                SetupToroTest1(explicitScheme: ExplicitSchemes.LTS, explicitOrder: 1, numOfClusters: 3),
+                Tuple.Create("L2ErrorDensity", 2.133e-2),
                 Tuple.Create("L2ErrorVelocity", 1.125e-2),
                 Tuple.Create("L2ErrorPressure", 2.217e-2));
         }
         [Test]
-        public static void ToroTest1_ALTS2() {
+        public static void ToroTest1_ALTS2_3() {
             CheckErrorThresholds(
-                SetupToroTest1(explicitScheme: ExplicitSchemes.LTS, explicitOrder: 2),
-                Tuple.Create("L2ErrorDensity", 3.6e-2),
+                SetupToroTest1(explicitScheme: ExplicitSchemes.LTS, explicitOrder: 2, numOfClusters: 3),
+                Tuple.Create("L2ErrorDensity", 2.133e-2),
                 Tuple.Create("L2ErrorVelocity", 1.125e-2),
                 Tuple.Create("L2ErrorPressure", 2.217e-2));
         }
         [Test]
-        public static void ToroTest1_ALTS3() {
+        public static void ToroTest1_ALTS3_3() {
             CheckErrorThresholds(
-                SetupToroTest1(explicitScheme: ExplicitSchemes.LTS, explicitOrder: 3),
-                Tuple.Create("L2ErrorDensity", 3.6e-2),
+                SetupToroTest1(explicitScheme: ExplicitSchemes.LTS, explicitOrder: 3, numOfClusters: 3),
+                Tuple.Create("L2ErrorDensity", 2.133e-2),
+                Tuple.Create("L2ErrorVelocity", 1.125e-2),
+                Tuple.Create("L2ErrorPressure", 2.217e-2));
+        }
+        [Test]
+        public static void ToroTest1_ALTS3_4() {
+            CheckErrorThresholds(
+                SetupToroTest1(explicitScheme: ExplicitSchemes.LTS, explicitOrder: 3, numOfClusters: 4),
+                Tuple.Create("L2ErrorDensity", 2.133e-2),
                 Tuple.Create("L2ErrorVelocity", 1.125e-2),
                 Tuple.Create("L2ErrorPressure", 2.217e-2));
         }
@@ -126,8 +135,9 @@ namespace CNS.Tests.ArtificialViscosity {
         /// <param name="discontinuityPosition"></param>
         /// <param name="explicitScheme"></param>
         /// <param name="explicitOrder"></param>
+        /// <param name="numOfClusters"></param>
         /// <returns></returns>
-        private static CNSControl GetArtificialViscosityShockTubeControlTemplate(ConvectiveFluxTypes convectiveFlux, double densityLeft, double velocityLeft, double pressureLeft, double densityRight, double velocityRight, double pressureRight, double discontinuityPosition, ExplicitSchemes explicitScheme, int explicitOrder) {
+        private static CNSControl GetArtificialViscosityShockTubeControlTemplate(ConvectiveFluxTypes convectiveFlux, double densityLeft, double velocityLeft, double pressureLeft, double densityRight, double velocityRight, double pressureRight, double discontinuityPosition, ExplicitSchemes explicitScheme, int explicitOrder, int numOfClusters) {
             CNSControl c = new CNSControl();
 
             c.DbPath = null;
@@ -147,7 +157,7 @@ namespace CNS.Tests.ArtificialViscosity {
             c.ExplicitScheme = explicitScheme;
             c.ExplicitOrder = explicitOrder;
             if (explicitScheme == ExplicitSchemes.LTS) {
-                c.NumberOfSubGrids = 3;
+                c.NumberOfSubGrids = numOfClusters;
                 c.ReclusteringInterval = 1;
                 c.FluxCorrection = false;
             }
