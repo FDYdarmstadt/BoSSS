@@ -89,11 +89,10 @@ namespace CNS.IBM {
 
             CurrentClustering = CalculateNumberOfLocalTS(CurrentClustering); // Might remove sub-grids when time step sizes are too similar
 
-            //localABevolve = new ABevolve[CurrentClustering.NumberOfClusters];
-            localABevolve = new IBMABevolve[CurrentClustering.NumberOfClusters];
+            ABevolver = new IBMABevolve[CurrentClustering.NumberOfClusters];
 
-            for (int i = 0; i < localABevolve.Length; i++) {
-                localABevolve[i] = new IBMABevolve(
+            for (int i = 0; i < ABevolver.Length; i++) {
+                ABevolver[i] = new IBMABevolve(
                     standardOperator,
                     boundaryOperator,
                     fieldsMap,
@@ -207,7 +206,7 @@ namespace CNS.IBM {
                 agglomerationPatternHasChanged = false;
 
                 //Broadcast to RungeKutta and ABevolve ???
-                foreach (IBMABevolve evolver in localABevolve) {
+                foreach (IBMABevolve evolver in ABevolver) {
                     evolver.BuildEvaluatorsAndMasks();
                     evolver.agglomerationPatternHasChanged = false;
                 }
@@ -219,50 +218,27 @@ namespace CNS.IBM {
             return dt;
         }
 
-        protected override bool DoTheReclustering() {
-            Clusterer.Clustering oldClustering = CurrentClustering;
-            CurrentClustering = clusterer.CreateClustering(numOfClusters, this.speciesMap.SubGrid);
-            CurrentClustering = CalculateNumberOfLocalTS(CurrentClustering); // Might remove sub-grids when time step sizes are too similar
-            bool reclustered = clusterer.CheckForNewClustering(oldClustering, CurrentClustering);
+        protected override ABevolve[] CreateNewABevolver() {
+            // Create array of Abevolve objects based on the new clustering
+            ABevolver = new IBMABevolve[this.numOfClusters];
 
-            // After the intitial phase, activate adaptive mode for all ABevolve objects
-            foreach (ABevolve abE in localABevolve) {
-                abE.SetAdaptive(true);
+            for (int i = 0; i < ABevolver.Length; i++) {
+                ABevolver[i] = new IBMABevolve(
+                    standardOperator,
+                    boundaryOperator,
+                    fieldsMap,
+                    boundaryParameterMap,
+                    speciesMap,
+                    control.ExplicitOrder,
+                    control.LevelSetQuadratureOrder,
+                    control.MomentFittingVariant,
+                    sgrd: CurrentClustering.Clusters[i],
+                    adaptive: this.adaptive);
+                ABevolver[i].ResetTime(m_Time);
+                //localABevolve[i].OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforComputechangeRate(t1, t2);
             }
 
-            if (reclustered) {
-                // Store all localAbevolve objects from the last time step for copying the histories
-                ShortenHistories(localABevolve);
-                localABevolvePrevious = localABevolve;
-
-                // Create array of Abevolve objects based on the new clustering
-                localABevolve = new IBMABevolve[this.numOfClusters];
-
-                for (int i = 0; i < localABevolve.Length; i++) {
-                    localABevolve[i] = new IBMABevolve(
-                        standardOperator,
-                        boundaryOperator,
-                        fieldsMap,
-                        boundaryParameterMap,
-                        speciesMap,
-                        control.ExplicitOrder,
-                        control.LevelSetQuadratureOrder,
-                        control.MomentFittingVariant,
-                        sgrd: CurrentClustering.Clusters[i],
-                        adaptive: this.adaptive);
-                    localABevolve[i].ResetTime(m_Time);
-                    //localABevolve[i].OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforComputechangeRate(t1, t2);
-                }
-
-                CopyHistoriesOfABevolver();
-
-            } else {
-                //Console.WriteLine("#####Clustering has NOT changed in timestep{0}#####", timeStepCount);
-            }
-
-            GetBoundaryTopology();
-
-            return reclustered;
+            return ABevolver;
         }
     }
 }

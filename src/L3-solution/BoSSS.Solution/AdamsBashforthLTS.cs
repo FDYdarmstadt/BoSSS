@@ -49,7 +49,7 @@ namespace BoSSS.Solution.Timestepping {
         /// <summary>
         /// Local evolvers
         /// </summary>
-        protected ABevolve[] localABevolve;
+        protected ABevolve[] ABevolver;
 
         /// <summary>
         /// Number of maximum local time-steps, 
@@ -97,11 +97,6 @@ namespace BoSSS.Solution.Timestepping {
         /// Constant number of sub-grids specified by the user
         /// </summary>
         static int numOfClustersInit;
-
-        /// <summary>
-        /// localABevolve objects from the previous time step needed for copying the histories
-        /// </summary>
-        protected ABevolve[] localABevolvePrevious;
 
         /// <summary>
         /// Interval for reclustering when LTS is used in adpative mode
@@ -167,22 +162,21 @@ namespace BoSSS.Solution.Timestepping {
 
             CurrentClustering = CalculateNumberOfLocalTS(CurrentClustering); // Might remove clusters when time step sizes are too similar
 
-            localABevolve = new ABevolve[CurrentClustering.NumberOfClusters];
+            ABevolver = new ABevolve[CurrentClustering.NumberOfClusters];
 
             //for (int i = 0; i < CurrentClustering.NumberOfClusters; i++) {
             //    //Console.WriteLine("(A)LTS: id=" + i + " -> sub-steps=" + NumOfLocalTimeSteps[i] + " and elements=" + CurrentClustering.Clusters[i].GlobalNoOfCells);
             //    Console.WriteLine("After CalculateNumberofLocalTS: id=" + i + " -> sub-steps=" + NumOfLocalTimeSteps[i] + " and elements=" + CurrentClustering.Clusters[i].GlobalNoOfCells);
             //}
 
-            for (int i = 0; i < localABevolve.Length; i++) {
-                localABevolve[i] = new ABevolve(spatialOp, Fieldsmap, Parameters, order, adaptive: this.adaptive, sgrd: CurrentClustering.Clusters[i]);
-                localABevolve[i].OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforComputechangeRate(t1, t2);
+            for (int i = 0; i < ABevolver.Length; i++) {
+                ABevolver[i] = new ABevolve(spatialOp, Fieldsmap, Parameters, order, adaptive: this.adaptive, sgrd: CurrentClustering.Clusters[i]);
+                ABevolver[i].OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforComputechangeRate(t1, t2);
             }
 
             GetBoundaryTopology();
 
             for (int i = 0; i < CurrentClustering.NumberOfClusters; i++) {
-                //Console.WriteLine("(A)LTS: id=" + i + " -> sub-steps=" + NumOfLocalTimeSteps[i] + " and elements=" + CurrentClustering.Clusters[i].GlobalNoOfCells);
                 Console.WriteLine("ABLTS Ctor: id=" + i + " -> sub-steps=" + NumOfLocalTimeSteps[i] + " and elements=" + CurrentClustering.Clusters[i].GlobalNoOfCells);
             }
 
@@ -191,7 +185,7 @@ namespace BoSSS.Solution.Timestepping {
         }
 
         /// <summary>
-        /// Constructor for LTS with IBM, currently under development!
+        /// Constructor for (A)LTS with IBM
         /// </summary>
         public AdamsBashforthLTS(SpatialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters, int order, int numOfClusters, bool IBM, IList<TimeStepConstraint> timeStepConstraints = null, SubGrid sgrd = null, bool fluxCorrection = true, int reclusteringInterval = 0)
             : base(spatialOp, Fieldsmap, Parameters, order, timeStepConstraints, sgrd) {
@@ -218,7 +212,7 @@ namespace BoSSS.Solution.Timestepping {
 
                 //this.timeStepConstraints.ForEach(s => s.currentTime = m_Time);
 
-                if (localABevolve[0].HistoryChangeRate.Count >= order - 1) {
+                if (ABevolver[0].HistoryChangeRate.Count >= order - 1) {
                     bool reclustered = false;
                     if (adaptive) {
                         if (timeStepCount % reclusteringInterval == 0) {
@@ -229,7 +223,24 @@ namespace BoSSS.Solution.Timestepping {
                             // Fix for update problem of artificial viscosity
                             RaiseOnBeforComputechangeRate(Time, dt);
 
-                            reclustered = DoTheReclustering();
+                            Clusterer.Clustering oldClustering = CurrentClustering;
+                            CurrentClustering = clusterer.CreateClustering(numOfClusters, null);
+                            CurrentClustering = CalculateNumberOfLocalTS(CurrentClustering); // Might remove sub-grids when time step sizes are too similar
+                            reclustered = clusterer.CheckForNewClustering(oldClustering, CurrentClustering);
+
+                            // After the intitial phase, activate adaptive mode for all ABevolve objects
+                            foreach (ABevolve abE in ABevolver) {
+                                abE.adaptive = true;
+                            }
+
+                            if (reclustered) {
+                                ShortenHistories(ABevolver);
+                                ABevolve[] oldABevolver = ABevolver;
+                                ABevolver = CreateNewABevolver();
+                                CopyHistoriesOfABevolver(oldABevolver);
+                            }
+
+                            GetBoundaryTopology();
                         }
                     }
 
@@ -263,7 +274,7 @@ namespace BoSSS.Solution.Timestepping {
                     for (int i = 0; i < numOfClusters; i++) {
                         //localABevolve[i].completeBndFluxes.Clear();
                         //if (localABevolve[i].completeBndFluxes.Any(x => x != 0.0)) Console.WriteLine("Not all Bnd fluxes were used in correction step!!!");
-                        localABevolve[i].Perform(dt / (double)NumOfLocalTimeSteps[i]);
+                        ABevolver[i].Perform(dt / (double)NumOfLocalTimeSteps[i]);
                     }
 
                     // After evolving each cell update the time with dt_min
@@ -278,14 +289,14 @@ namespace BoSSS.Solution.Timestepping {
                     // Saves the History of DG_Coordinates for each sub-grid
                     Queue<double[]>[] historyDGC_Q = new Queue<double[]>[numOfClusters];
                     for (int i = 0; i < numOfClusters; i++) {
-                        historyDGC_Q[i] = localABevolve[i].HistoryDGCoordinate;
+                        historyDGC_Q[i] = ABevolver[i].HistoryDGCoordinate;
                     }
 
                     if (!adaptive) {
                         // Saves DtHistory for each sub-grid
                         historyTime_Q = new Queue<double>[numOfClusters];
                         for (int i = 0; i < numOfClusters; i++) {
-                            historyTime_Q[i] = localABevolve[i].HistoryTime;
+                            historyTime_Q[i] = ABevolver[i].HistoryTime;
                         }
                     }
 
@@ -293,7 +304,7 @@ namespace BoSSS.Solution.Timestepping {
                     for (int localTS = 1; localTS < maxNumOfLocalTimeSteps; localTS++) {
                         for (int id = 1; id < numOfClusters; id++) {
                             //Evolve Condition: Is "ABevolve.Time" at "AB_LTS.Time"?
-                            if ((localABevolve[id].Time - m_Time) < 1e-10) {
+                            if ((ABevolver[id].Time - m_Time) < 1e-10) {
                                 double localDt = dt / NumOfLocalTimeSteps[id];
 
                                 foreach (Chunk chunk in CurrentClustering.Clusters[id].VolumeMask) {
@@ -309,15 +320,15 @@ namespace BoSSS.Solution.Timestepping {
                                     }
                                 }
 
-                                Dictionary<int, double> myDic = InterpolateBoundaryValues(historyDGC_Q, id, localABevolve[id].Time);
+                                Dictionary<int, double> myDic = InterpolateBoundaryValues(historyDGC_Q, id, ABevolver[id].Time);
 
                                 foreach (KeyValuePair<int, double> kvp in myDic) {
                                     DGCoordinates[kvp.Key] = kvp.Value;
                                 }
 
-                                localABevolve[id].Perform(localDt);
+                                ABevolver[id].Perform(localDt);
 
-                                m_Time = localABevolve.Min(s => s.Time);
+                                m_Time = ABevolver.Min(s => s.Time);
 
                                 if (saveToDBCallback != null) {
                                     subTimestep = subTimestep.NextIteration();
@@ -329,12 +340,12 @@ namespace BoSSS.Solution.Timestepping {
                             // For conservatvity, we have to correct the values of the larger cell cluster
                             if (fluxCorrection) {
                                 for (int idCoarse = 0; idCoarse < id; idCoarse++) {
-                                    if (Math.Abs(localABevolve[id].Time - localABevolve[idCoarse].Time) < 1e-10 &&
-                                         !(Math.Abs(localABevolve[idCoarse].Time - CorrectionMatrix[idCoarse, id]) < 1e-10)) {
+                                    if (Math.Abs(ABevolver[id].Time - ABevolver[idCoarse].Time) < 1e-10 &&
+                                         !(Math.Abs(ABevolver[idCoarse].Time - CorrectionMatrix[idCoarse, id]) < 1e-10)) {
                                         if (fluxCorrection) {
                                             CorrectFluxes(idCoarse, id, historyDGC_Q);
                                         }
-                                        CorrectionMatrix[idCoarse, id] = localABevolve[idCoarse].Time;
+                                        CorrectionMatrix[idCoarse, id] = ABevolver[idCoarse].Time;
                                     }
                                 }
                             }
@@ -360,16 +371,16 @@ namespace BoSSS.Solution.Timestepping {
                     // Save history: Time
                     if (adaptive) {
                         for (int i = 0; i < numOfClusters; i++) {
-                            double[] currentTime = new double[localABevolve[i].sgrd.LocalNoOfCells];
+                            double[] currentTime = new double[ABevolver[i].sgrd.LocalNoOfCells];
                             for (int j = 0; j < currentTime.Length; j++) {
                                 currentTime[j] = m_Time;
                             }
-                            localABevolve[i].historyTimePerCell.Enqueue(currentTime);
+                            ABevolver[i].historyTimePerCell.Enqueue(currentTime);
                         }
                     } else {
-                        if (localABevolve[0].HistoryTime.Count == 0) {
+                        if (ABevolver[0].HistoryTime.Count == 0) {
                             for (int i = 0; i < numOfClusters; i++) {
-                                localABevolve[i].HistoryTime.Enqueue(m_Time);
+                                ABevolver[i].HistoryTime.Enqueue(m_Time);
                             }
                         }
                     }
@@ -378,9 +389,9 @@ namespace BoSSS.Solution.Timestepping {
                     for (int i = 0; i < CurrentClustering.NumberOfClusters; i++) {
                         double[] localCurrentChangeRate = new double[currentChangeRate.Length];
                         double[] edgeFlux = new double[gridData.iGeomEdges.Count * Mapping.Fields.Count];
-                        localABevolve[i].ComputeChangeRate(localCurrentChangeRate, m_Time, 0, edgeFlux);
-                        localABevolve[i].HistoryChangeRate.Enqueue(localCurrentChangeRate);
-                        localABevolve[i].HistoryBndFluxes.Enqueue(edgeFlux);
+                        ABevolver[i].ComputeChangeRate(localCurrentChangeRate, m_Time, 0, edgeFlux);
+                        ABevolver[i].HistoryChangeRate.Enqueue(localCurrentChangeRate);
+                        ABevolver[i].HistoryBndFluxes.Enqueue(edgeFlux);
                     }
 
                     dt = RungeKuttaScheme.Perform(dt);
@@ -390,15 +401,15 @@ namespace BoSSS.Solution.Timestepping {
                     // Saves ChangeRateHistory for AB LTS
                     // Only entries for the specific sub-grid
                     for (int i = 0; i < CurrentClustering.NumberOfClusters; i++) {
-                        localABevolve[i].HistoryDGCoordinate.Enqueue(OrderValuesBySubgrid(CurrentClustering.Clusters[i], upDGC));
+                        ABevolver[i].HistoryDGCoordinate.Enqueue(OrderValuesBySubgrid(CurrentClustering.Clusters[i], upDGC));
                         if (!adaptive)
-                            localABevolve[i].HistoryTime.Enqueue(RungeKuttaScheme.Time);
+                            ABevolver[i].HistoryTime.Enqueue(RungeKuttaScheme.Time);
                     }
 
                     // RK is a global timeStep
                     // -> time update for all other timeStepper with rk.Time
                     m_Time = RungeKuttaScheme.Time;
-                    foreach (ABevolve ab in localABevolve) {
+                    foreach (ABevolve ab in ABevolver) {
                         ab.ResetTime(m_Time);
                     }
                 }
@@ -419,8 +430,8 @@ namespace BoSSS.Solution.Timestepping {
         /// <param name="historyDGC_Q"></param>
         protected void CorrectFluxes(int coarseID, int fineID, Queue<double[]>[] historyDGC_Q) {
             // Gather edgeFlux data
-            double[] edgeBndFluxCoarse = localABevolve[coarseID].completeBndFluxes;
-            double[] edgeBndFluxFine = localABevolve[fineID].completeBndFluxes;
+            double[] edgeBndFluxCoarse = ABevolver[coarseID].completeBndFluxes;
+            double[] edgeBndFluxFine = ABevolver[fineID].completeBndFluxes;
 
             int[] LocalCellIdx2SubgridIdx = CurrentClustering.Clusters[coarseID].LocalCellIndex2SubgridIndex;
 
@@ -470,9 +481,9 @@ namespace BoSSS.Solution.Timestepping {
 
 
                             // Update Fluxes
-                            double fluxScaling = 1.0 / localABevolve[coarseID].ABCoefficients[0];
-                            localABevolve[coarseID].CurrentChangeRate[indexCoarse] += fluxScaling * edgeDG_Correction;
-                            localABevolve[coarseID].HistoryBndFluxes.Last()[indexEdge] -= fluxScaling * edgeDG_Correction / basisScaling;
+                            double fluxScaling = 1.0 / ABevolver[coarseID].ABCoefficients[0];
+                            ABevolver[coarseID].CurrentChangeRate[indexCoarse] += fluxScaling * edgeDG_Correction;
+                            ABevolver[coarseID].HistoryBndFluxes.Last()[indexEdge] -= fluxScaling * edgeDG_Correction / basisScaling;
                             //Update local DGCoordinates
                             historyDGC_Q[coarseID].Last()[indexCoarse] -= edgeDG_Correction;
 
@@ -497,7 +508,7 @@ namespace BoSSS.Solution.Timestepping {
             base.ResetTime(NewTime);
             RungeKuttaScheme.ResetTime(NewTime);
 
-            foreach (var ABevolve in localABevolve) {
+            foreach (var ABevolve in ABevolver) {
                 ABevolve.ResetTime(NewTime);
             }
 
@@ -537,7 +548,7 @@ namespace BoSSS.Solution.Timestepping {
 
                         if (cell2 >= gridData.iLogicalCells.NoOfLocalUpdatedCells) { //special case: cell2 is "ghost-cell" at MPI border
                             if (SgrdWithGhostCells[id][cell2]) {
-                                int gridId = GetSubgridIdOf(cell1, LocalCells2SubgridIndex);
+                                int gridId = GetSubgridIdOf(cell1, LocalCells2SubgridIndex, ABevolver);
                                 if (gridId != -1) { // cell is not in void area of IBM
                                     BoundaryTopology[id - 1, cell1] = gridId;
                                     BoBA[cell1] = true;
@@ -546,7 +557,7 @@ namespace BoSSS.Solution.Timestepping {
                         } else if (cell1 >= 0 && cell2 >= 0 && LocalCells2SubgridIndex[id][cell1] >= 0 && LocalCells2SubgridIndex[id][cell2] < 0) {
                             //BoT[id - 1, cell2] = getSgrdIdOf(cell2, LocalCells2SubgridIndex);
                             //BoBA[cell2] = true;
-                            int gridId = GetSubgridIdOf(cell2, LocalCells2SubgridIndex);
+                            int gridId = GetSubgridIdOf(cell2, LocalCells2SubgridIndex, ABevolver);
                             if (gridId != -1) { // cell is not in void area of IBM
                                 BoundaryTopology[id - 1, cell2] = gridId;
                                 BoBA[cell2] = true;
@@ -555,7 +566,7 @@ namespace BoSSS.Solution.Timestepping {
                         } else if (cell1 >= 0 && cell2 >= 0 && LocalCells2SubgridIndex[id][cell2] >= 0 && LocalCells2SubgridIndex[id][cell1] < 0) {
                             //BoT[id - 1, cell1] = getSgrdIdOf(cell1, LocalCells2SubgridIndex);
                             //BoBA[cell1] = true;
-                            int gridId = GetSubgridIdOf(cell1, LocalCells2SubgridIndex);
+                            int gridId = GetSubgridIdOf(cell1, LocalCells2SubgridIndex, ABevolver);
                             if (gridId != -1) { // cell is not in void area of IBM
                                 BoundaryTopology[id - 1, cell1] = gridId;
                                 BoBA[cell1] = true;
@@ -588,9 +599,9 @@ namespace BoSSS.Solution.Timestepping {
         /// <param name="LocalCells2SubgridIndex">Storage of all <see cref="SubGrid.LocalCellIndex2SubgridIndex"/>
         /// arrays for each LTS sub-grid</param>
         /// <returns>LTS sub-grid ID which the cell belong to</returns>
-        protected int GetSubgridIdOf(int cell, int[][] LocalCells2SubgridIndex) {
+        protected int GetSubgridIdOf(int cell, int[][] LocalCells2SubgridIndex, ABevolve[] ABevolver) {
             int id = -1;
-            for (int i = 0; i < numOfClusters; i++) {
+            for (int i = 0; i < ABevolver.Length; i++) {
                 if (LocalCells2SubgridIndex[i][cell] >= 0)
                     id = i;
             }
@@ -770,10 +781,10 @@ namespace BoSSS.Solution.Timestepping {
         /// <returns>Array of update times of the boundary cells of a cluster</returns>
         virtual protected double[] GetBoundaryCellTimeHistory(int clusterId, int cell) {
             if (adaptive) {
-                Queue<double[]> historyTimePerCell = localABevolve[clusterId].historyTimePerCell;
+                Queue<double[]> historyTimePerCell = ABevolver[clusterId].historyTimePerCell;
 
                 // Mapping from local cell index to subgrid index
-                int subgridIndex = localABevolve[clusterId].sgrd.LocalCellIndex2SubgridIndex[cell]; // Könnte im Parallelen zu Problemen führen (Stephan)
+                int subgridIndex = ABevolver[clusterId].sgrd.LocalCellIndex2SubgridIndex[cell]; // Könnte im Parallelen zu Problemen führen (Stephan)
 
                 // Add times from history
                 double[] result = new double[order];
@@ -784,7 +795,7 @@ namespace BoSSS.Solution.Timestepping {
                 }
 
                 // Add current time
-                result[i] = localABevolve[clusterId].Time;
+                result[i] = ABevolver[clusterId].Time;
 
                 return result;
             } else
@@ -850,20 +861,20 @@ namespace BoSSS.Solution.Timestepping {
         /// Therefore, all information is first copied in a "cell-based" intermediate state
         /// and then redistributed to the ABevolve objects based on the new clustering.
         /// </summary>
-        protected void CopyHistoriesOfABevolver() {
+        protected void CopyHistoriesOfABevolver(ABevolve[] oldABevolver) {
 
             // Previous ABevolve objects: Link "LocalCells --> SubgridIndex"
-            int[][] LocalCells2SubgridIndexPrevious = new int[localABevolvePrevious.Length][];
-            for (int id = 0; id < localABevolvePrevious.Length; id++) {
-                LocalCells2SubgridIndexPrevious[id] = localABevolvePrevious[id].sgrd.LocalCellIndex2SubgridIndex;
+            int[][] LocalCells2SubgridIndexPrevious = new int[oldABevolver.Length][];
+            for (int id = 0; id < oldABevolver.Length; id++) {
+                LocalCells2SubgridIndexPrevious[id] = oldABevolver[id].sgrd.LocalCellIndex2SubgridIndex;
             }
 
             // New ABevolve objects: Link "SubgridIndex --> LocalCells"
             //int[][] LocalCells2SubgridIndex = new int[localABevolve.Length][];
-            int[][] Subgrid2LocalCellsIndex = new int[localABevolve.Length][];
-            for (int id = 0; id < localABevolve.Length; id++) {
+            int[][] Subgrid2LocalCellsIndex = new int[ABevolver.Length][];
+            for (int id = 0; id < ABevolver.Length; id++) {
                 //LocalCells2SubgridIndex[id] = localABevolve[id].sgrd.LocalCellIndex2SubgridIndex;
-                Subgrid2LocalCellsIndex[id] = localABevolve[id].sgrd.SubgridIndex2LocalCellIndex;
+                Subgrid2LocalCellsIndex[id] = ABevolver[id].sgrd.SubgridIndex2LocalCellIndex;
             }
 
             // Helper arrays
@@ -872,35 +883,35 @@ namespace BoSSS.Solution.Timestepping {
             double[] timesPerCellPrevious = new double[Mapping.LocalLength];
 
             // Very likely, this is unnecessary (already done in Perform(dt))
-            ShortenHistories(localABevolvePrevious);
+            ShortenHistories(oldABevolver);
 
             // Copy histories from previous to new ABevolve objects (loop over all cells) depending on the LTS order
             for (int ord = 0; ord < order - 1; ord++) {
                 for (int cell = 0; cell < gridData.iLogicalCells.NoOfLocalUpdatedCells; cell++) {
                     // Previous subgrid of the cell
-                    int oldClusterID = GetSubgridIdOfPrevious(cell, LocalCells2SubgridIndexPrevious);
+                    int oldClusterID = GetSubgridIdOf(cell, LocalCells2SubgridIndexPrevious, oldABevolver);
 
                     // Previous subgrid index of the cell
                     int subgridIndex = LocalCells2SubgridIndexPrevious[oldClusterID][cell];
 
                     // Store time-history of the cell
-                    timesPerCellPrevious[cell] = localABevolvePrevious[oldClusterID].historyTimePerCell.ElementAt(ord)[subgridIndex];
+                    timesPerCellPrevious[cell] = oldABevolver[oldClusterID].historyTimePerCell.ElementAt(ord)[subgridIndex];
 
                     foreach (DGField f in Mapping.Fields) {
                         for (int n = 0; n < f.Basis.GetLength(cell); n++) {
                             // f == field, n == basis polynomial
                             int index = Mapping.LocalUniqueCoordinateIndex(f, cell, n);
-                            changeRatesPrevious[index] = localABevolvePrevious[oldClusterID].HistoryChangeRate.ElementAt(ord)[index];
-                            DGCoordinatesPrevious[index] = localABevolvePrevious[oldClusterID].HistoryDGCoordinate.ElementAt(ord)[index];
+                            changeRatesPrevious[index] = oldABevolver[oldClusterID].HistoryChangeRate.ElementAt(ord)[index];
+                            DGCoordinatesPrevious[index] = oldABevolver[oldClusterID].HistoryDGCoordinate.ElementAt(ord)[index];
                         }
                     }
                 }
 
                 // Fill histories of the new ABevolve objects
-                for (int id = 0; id < localABevolve.Length; id++) {
-                    localABevolve[id].historyTimePerCell.Enqueue(OrderValuesBySubgridLength(localABevolve[id].sgrd, timesPerCellPrevious, Subgrid2LocalCellsIndex[id]));
-                    localABevolve[id].HistoryChangeRate.Enqueue(OrderValuesBySubgrid(localABevolve[id].sgrd, changeRatesPrevious));
-                    localABevolve[id].HistoryDGCoordinate.Enqueue(OrderValuesBySubgrid(localABevolve[id].sgrd, DGCoordinatesPrevious));
+                for (int id = 0; id < ABevolver.Length; id++) {
+                    ABevolver[id].historyTimePerCell.Enqueue(OrderValuesBySubgridLength(ABevolver[id].sgrd, timesPerCellPrevious, Subgrid2LocalCellsIndex[id]));
+                    ABevolver[id].HistoryChangeRate.Enqueue(OrderValuesBySubgrid(ABevolver[id].sgrd, changeRatesPrevious));
+                    ABevolver[id].HistoryDGCoordinate.Enqueue(OrderValuesBySubgrid(ABevolver[id].sgrd, DGCoordinatesPrevious));
                 }
             }
         }
@@ -926,8 +937,8 @@ namespace BoSSS.Solution.Timestepping {
         /// <summary>
         /// Deletes unnecessary entries in the histories
         /// </summary>
-        protected void ShortenHistories(ABevolve[] abEArray) {
-            foreach (ABevolve abE in abEArray) {
+        protected void ShortenHistories(ABevolve[] ABevolver) {
+            foreach (ABevolve abE in ABevolver) {
                 if (abE.historyTimePerCell.Count > order - 1)
                     abE.historyTimePerCell.Dequeue();
 
@@ -939,54 +950,17 @@ namespace BoSSS.Solution.Timestepping {
             }
         }
 
-        /// <summary>
-        /// Calculates to which sub-grid the cell belongs. Each cell belongs only to one sub-grid!
-        /// </summary>
-        /// <param name="cell">
-        /// Cell-ID</param>
-        /// <param name="LocalCells2SubgridIndex">
-        /// storage of all <see cref="SubGrid.LocalCellIndex2SubgridIndex"/> arrays for each LTS sub-grid</param>
-        /// <returns>LTS sub-grid ID to which the cell belong</returns>
-        private int GetSubgridIdOfPrevious(int cell, int[][] LocalCells2SubgridIndex) {
-            int id = -1;
-            for (int i = 0; i < localABevolvePrevious.Length; i++) {            // Might be adapted in parent class, looping over ABevolve objects instead of NumOfSubgrids
-                if (LocalCells2SubgridIndex[i][cell] >= 0)
-                    id = i;
-            }
-            return id;
-        }
+        protected virtual ABevolve[] CreateNewABevolver() {
+            // Create array of Abevolve objects based on the new clustering
+            ABevolver = new ABevolve[this.numOfClusters];
 
-        protected virtual bool DoTheReclustering() {
-            Clusterer.Clustering oldClustering = CurrentClustering;
-            CurrentClustering = clusterer.CreateClustering(numOfClusters, null);
-            CurrentClustering = CalculateNumberOfLocalTS(CurrentClustering); // Might remove sub-grids when time step sizes are too similar
-            bool reclustered = clusterer.CheckForNewClustering(oldClustering, CurrentClustering);
-
-            // After the intitial phase, activate adaptive mode for all ABevolve objects
-            foreach (ABevolve abE in localABevolve) {
-                abE.adaptive = true;
+            for (int i = 0; i < ABevolver.Length; i++) {
+                ABevolver[i] = new ABevolve(Operator, Mapping, ParameterMapping, order, adaptive: true, sgrd: CurrentClustering.Clusters[i]);
+                ABevolver[i].ResetTime(m_Time);
+                ABevolver[i].OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforComputechangeRate(t1, t2);
             }
 
-            if (reclustered) {
-                // Store all localAbevolve objects from the last time step for copying the histories
-                ShortenHistories(localABevolve);
-                localABevolvePrevious = localABevolve;
-
-                // Create array of Abevolve objects based on the new clustering
-                localABevolve = new ABevolve[this.numOfClusters];
-
-                for (int i = 0; i < localABevolve.Length; i++) {
-                    localABevolve[i] = new ABevolve(Operator, Mapping, ParameterMapping, order, adaptive: true, sgrd: CurrentClustering.Clusters[i]);
-                    localABevolve[i].ResetTime(m_Time);
-                    localABevolve[i].OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforComputechangeRate(t1, t2);
-                }
-
-                CopyHistoriesOfABevolver();
-            }
-
-            GetBoundaryTopology();
-
-            return reclustered;
+            return ABevolver;
         }
     }
 }
