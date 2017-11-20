@@ -233,17 +233,19 @@ namespace BoSSS.Solution.Timestepping {
                         }
                     }
 
+                    // Number of substeps could have changed
                     if (timeStepConstraints != null) {
                         dt = CalculateTimeStep();
                     }
 
-                    // Number of substeps could have changed
-                    //if (reclustered) {
-                        for (int i = 0; i < this.numOfClusters; i++) {
-                            //Console.WriteLine("LTS: id=" + i + " -> sub-steps=" + NumOfLocalTimeSteps[i] + " and elements=" + CurrentClustering.Clusters[i].GlobalNoOfCells);
-                            Console.WriteLine("Last Check: id=" + i + " -> sub-steps=" + NumOfLocalTimeSteps[i] + " and elements=" + CurrentClustering.Clusters[i].GlobalNoOfCells);
-                        }
-                    //}
+                    if (reclustered) {
+                        Console.WriteLine("RECLUSTERING");
+                    } else {
+                        Console.WriteLine("POSSIBLE CHANGE OF numOfLocalTS");
+                    }
+                    for (int i = 0; i < this.numOfClusters; i++) {
+                        Console.WriteLine("id=" + i + " -> sub-steps=" + NumOfLocalTimeSteps[i] + " and elements=" + CurrentClustering.Clusters[i].GlobalNoOfCells);
+                    }
 
                     double[,] CorrectionMatrix = new double[this.numOfClusters, this.numOfClusters];
 
@@ -689,8 +691,8 @@ namespace BoSSS.Solution.Timestepping {
                 }
             }
 
-            int jj = 0; // Counter for the current position in the Lists
             List<SubGrid> newClusters = new List<SubGrid>();
+
             for (int i = 0; i < clustering.NumberOfClusters; i++) {
                 double fraction = rcvHmin[0] / rcvHmin[i];
                 // Accounting for roundoff errors
@@ -702,20 +704,15 @@ namespace BoSSS.Solution.Timestepping {
                     subSteps = (int)Math.Floor(fraction);
                 }
 
-                //if (i > 0 && subSteps == NumOfLocalTimeSteps[jj - 1]) {
                 if (i > 0 && subSteps == NumOfLocalTimeSteps.Last()) {
-                    // Combine both subgrids and remove the old ones
-                    //SubGrid combinedSubgrid = new SubGrid(clustering.Clusters[jj].VolumeMask.Union(clustering.Clusters[jj - 1].VolumeMask));
-                    SubGrid combinedSubgrid = new SubGrid(clustering.Clusters[i].VolumeMask.Union(clustering.Clusters[i - 1].VolumeMask));
-                    //newClusters.RemoveAt(jj - 1);   // (can be done better without removing subgrids)
-                    newClusters.RemoveAt(i - 1);   // (can be done better without removing subgrids)
+                    // Combine both subgrids and remove the previous one
+                    SubGrid combinedSubgrid = new SubGrid(newClusters.Last().VolumeMask.Union(clustering.Clusters[i].VolumeMask));
+                    newClusters.RemoveAt(newClusters.Count() - 1);   // (can be done better without removing subgrids, but how?)
                     newClusters.Add(combinedSubgrid);
-                    Console.WriteLine("CalculateNumberOfLocalTS: Clustering leads to sub-grids which are too similar, i.e. they have the same local time step size. They are combined.");
+                    Console.WriteLine("CalculateNumberOfLocalTS: Clustering leads to sub-grids which are too similar, i.e. they have the same number of local time steps. They are combined.");
                 } else {
-                    //newClusters.Add(clustering.Clusters[jj]);
                     newClusters.Add(clustering.Clusters[i]);
                     NumOfLocalTimeSteps.Add(subSteps);
-                    //jj++;
                 }
             }
 
@@ -962,15 +959,7 @@ namespace BoSSS.Solution.Timestepping {
         protected virtual bool DoTheReclustering() {
             Clusterer.Clustering oldClustering = CurrentClustering;
             CurrentClustering = clusterer.CreateClustering(numOfClusters, null);
-            //for (int i = 0; i < CurrentClustering.NumberOfClusters; i++) {
-            //    //Console.WriteLine("LTS: id=" + i + " -> sub-steps=" + NumOfLocalTimeSteps[i] + " and elements=" + CurrentClustering.Clusters[i].GlobalNoOfCells);
-            //    Console.WriteLine("RECLUSTERING after CreateClustering: id=" + i + " -> elements=" + CurrentClustering.Clusters[i].GlobalNoOfCells);
-            //}
             CurrentClustering = CalculateNumberOfLocalTS(CurrentClustering); // Might remove sub-grids when time step sizes are too similar
-            //for (int i = 0; i < CurrentClustering.NumberOfClusters; i++) {
-            //    //Console.WriteLine("LTS: id=" + i + " -> sub-steps=" + NumOfLocalTimeSteps[i] + " and elements=" + CurrentClustering.Clusters[i].GlobalNoOfCells);
-            //    Console.WriteLine("RECLUSTERING CalculateNumberOfLocalTS: id=" + i + " -> sub-steps=" + NumOfLocalTimeSteps[i] + " and elements=" + CurrentClustering.Clusters[i].GlobalNoOfCells);
-            //}
             bool reclustered = clusterer.CheckForNewClustering(oldClustering, CurrentClustering);
 
             // After the intitial phase, activate adaptive mode for all ABevolve objects
@@ -993,9 +982,6 @@ namespace BoSSS.Solution.Timestepping {
                 }
 
                 CopyHistoriesOfABevolver();
-
-            } else {
-                //Console.WriteLine("#####Clustering has NOT changed in timestep{0}#####", timeStepCount);
             }
 
             GetBoundaryTopology();
