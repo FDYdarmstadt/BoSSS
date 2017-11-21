@@ -40,6 +40,9 @@ namespace BoSSS.Application.BoSSSpad {
             m_Password = Password;
             m_ServerName = ServerName;
 
+            if (!Directory.Exists(base.DeploymentBaseDirectory))
+                Directory.CreateDirectory(base.DeploymentBaseDirectory);
+
             SSHConnection = new SshClient(m_ServerName, m_Username, m_Password);
 
             SSHConnection.Connect();
@@ -52,22 +55,10 @@ namespace BoSSS.Application.BoSSSpad {
             wasSuccessful = false;
             isFailed = false;
 
-            var jobID = myJob.BatchProcessorIdentifierToken;
 
-            var tempString = "squeue -j "+jobID;
 
-            var squeue = SSHConnection.RunCommand(tempString);
-            int tempcount = -1;
-            //while (squeue_all.Result.Contains("\n")) { 
-
-            //    tempcount++;
-            //}
-
-            SubmitCount = tempcount;
+            SubmitCount = 0;
         }
-
-
-
 
         public override string GetStderrFile(Job myJob) {
             string fp = Path.Combine(myJob.DeploymentDirectory, "stderr.txt");
@@ -91,7 +82,76 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         public override object Submit(Job myJob) {
-            throw new NotImplementedException();
+
+            buildSlurmScript(myJob, new string[] { "module load gcc", "module load openmpi/hcc/1.6.5", "module load acml" });
+
+            string path = "\\home\\" + m_Username + myJob.DeploymentDirectory.Substring(2);
+            string convertCmd = " dos2unix " + path + "\\batch.sh";
+            string sbatchCmd = " sbatch "+path + "\\batch.sh";
+
+            System.Threading.Thread.Sleep(5000);
+
+            Console.WriteLine();
+            var result1 = SSHConnection.RunCommand(convertCmd.Replace("\\", "/"));
+            Console.WriteLine(result1.Error);
+            var result2 = SSHConnection.RunCommand(sbatchCmd.Replace("\\", "/"));
+            Console.WriteLine(result2.Result);
+
+            return null;
         }
+
+        public void buildSlurmScript(Job myJob, string[] moduleLoad) {
+
+            string jobname = myJob.Name;
+            string stdoutpath = myJob.Stdout;
+            string stderrpath = myJob.Stderr;
+            string executiontime = "03:00:00";
+            int MPIcores = myJob.NumberOfMPIProcs;
+            string usermail = m_Username;
+            //string solverdirection = myJob.Solver;
+            string startupstring;
+            string quote = "\"";
+
+            using (var str = new StringWriter()) {
+                str.Write("mpiexec mono ");
+                str.Write(Path.GetFileName(myJob.EntryAssembly.Location));
+                //for (int i = 0; i<myJob.EnvironmentVars.Count;i++) {
+                    str.Write(" ");
+                    str.Write(myJob.EnvironmentVars["BOSSS_ARG_"+0]);
+                str.Write(" ");
+                
+                str.Write(quote + myJob.EnvironmentVars["BOSSS_ARG_" +1]+ quote);
+                //}
+                startupstring = str.ToString();
+            }
+
+            string path = myJob.DeploymentDirectory + "\\batch.sh";
+
+            using (StreamWriter sw = File.CreateText(path)) {
+                sw.WriteLine("#!/bin/sh");
+                sw.WriteLine("#SBATCH -J " + jobname);
+                sw.WriteLine("#SBATCH -o " + stdoutpath);
+                sw.WriteLine("#SBATCH -e " + stderrpath);
+                sw.WriteLine("#SBATCH -t " + executiontime);
+                sw.WriteLine("#SBATCH --mem-per-cpu=1750");
+                sw.WriteLine("#SBATCH -n " + MPIcores);
+                //sw.WriteLine("#SBATCH --mail-user= " + usermail);
+                sw.WriteLine("#SBATCH -C avx");
+
+                // Load modules
+                foreach (string arg in moduleLoad) {
+                    sw.WriteLine(arg);
+                }
+
+                // Set startupstring
+                sw.WriteLine(startupstring);
+            }
+
+
+
+
+
+        }
+
     }
 }
