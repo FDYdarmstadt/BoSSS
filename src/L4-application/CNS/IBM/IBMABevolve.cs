@@ -29,7 +29,8 @@ using System.Collections;
 using System.Collections.Generic;
 
 namespace CNS.IBM {
-    class IBMABevolve :ABevolve {
+
+    class IBMABevolve : ABevolve {
 
         private ImmersedSpeciesMap speciesMap;
 
@@ -52,8 +53,9 @@ namespace CNS.IBM {
             int explicitOrder,
             int levelSetQuadratureOrder,
             XQuadFactoryHelper.MomentFittingVariants momentFittingVariant,
-            SubGrid sgrd)
-            : base(standardOperator, fieldsMap, null, explicitOrder, sgrd: sgrd)  {
+            SubGrid sgrd,
+            bool adaptive = false)
+            : base(standardOperator, fieldsMap, null, explicitOrder, adaptive: adaptive, sgrd: sgrd) {
 
             speciesMap = ibmSpeciesMap as ImmersedSpeciesMap;
             if (speciesMap == null) {
@@ -111,7 +113,7 @@ namespace CNS.IBM {
         }
 
 
-        protected override void ComputeChangeRate(double[] k, double AbsTime, double RelTime, double[] edgeFluxes =null) {
+        protected override void ComputeChangeRate(double[] k, double AbsTime, double RelTime, double[] edgeFluxes = null) {
             Evaluator.Evaluate(1.0, 0.0, k, AbsTime, outputBndEdge: edgeFluxes);
             Debug.Assert(
                 !k.Any(f => double.IsNaN(f)),
@@ -156,20 +158,18 @@ namespace CNS.IBM {
 
             dt = base.Perform(dt);
             return dt;
-
         }
-
 
         protected override double[] ComputesUpdatedDGCoordinates(double[] completeChangeRate) {
             double[] y0 = new double[Mapping.LocalLength];
             DGCoordinates.CopyTo(y0, 0);
             DGCoordinates.axpy<double[]>(completeChangeRate, -1);
-            
+
             // Speciality for IBM: Do the extrapolation
             speciesMap.Agglomerator.Extrapolate(DGCoordinates.Mapping);
 
             double[] upDGC = DGCoordinates.ToArray();
-            upDGC = orderValuesBySgrd(upDGC);
+            upDGC = OrderValuesBySgrd(upDGC);
             // DGCoordinates should be untouched after calling this method
             DGCoordinates.Clear();
             DGCoordinates.CopyFrom(y0, 0);
@@ -183,7 +183,7 @@ namespace CNS.IBM {
         /// </summary>
         /// <param name="results">Result for the complete Grid</param>
         /// <returns>Array with entries only for the sgrd-cells</returns>
-        private double[] orderValuesBySgrd(double[] results) {
+        private double[] OrderValuesBySgrd(double[] results) {
             double[] ordered = new double[Mapping.LocalLength];
 
             for (int j = 0; j < sgrd.LocalNoOfCells; j++) {
