@@ -390,7 +390,7 @@ namespace CNS {
 
                     NoOfClasses = ltsTimeStepper.CurrentClustering.NumberOfClusters;
                     for (int i = 0; i < ltsTimeStepper.CurrentClustering.NumberOfClusters; i++) {
-                        int noOfTimesteps = ltsTimeStepper.NumOfLocalTimeSteps[i];
+                        int noOfTimesteps = ltsTimeStepper.NumberOfLocalTimeSteps[i];
                         foreach (Chunk chunk in ltsTimeStepper.CurrentClustering.Clusters[i].VolumeMask) {
                             foreach (int cell in chunk.Elements) {
                                 CellPerfomanceClasses[cell] = i;

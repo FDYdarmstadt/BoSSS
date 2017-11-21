@@ -76,7 +76,7 @@ namespace CNS.IBM {
             cutAndTargetCells = cutCells.Union(speciesMap.Agglomerator.AggInfo.TargetCells);
 
             // Normal LTS constructor
-            this.NumOfLocalTimeSteps = new List<int>(control.NumberOfSubGrids);
+            this.NumberOfLocalTimeSteps = new List<int>(control.NumberOfSubGrids);
 
             SubGrid fluidSubGrid = this.speciesMap.SubGrid;
 
@@ -108,7 +108,7 @@ namespace CNS.IBM {
             GetBoundaryTopology();
 
             for (int i = 0; i < CurrentClustering.NumberOfClusters; i++) {
-                Console.WriteLine("IBM (A)LTS: id=" + i + " -> sub-steps=" + NumOfLocalTimeSteps[i] + " and elements=" + CurrentClustering.Clusters[i].GlobalNoOfCells);
+                Console.WriteLine("IBM (A)LTS: id=" + i + " -> sub-steps=" + NumberOfLocalTimeSteps[i] + " and elements=" + CurrentClustering.Clusters[i].GlobalNoOfCells);
             }
 
             // Start-up phase needs an IBM Runge-Kutta time stepper
