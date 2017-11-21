@@ -16,6 +16,7 @@ limitations under the License.
 
 using BoSSS.Foundation;
 using BoSSS.Foundation.Quadrature;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
@@ -69,11 +70,11 @@ namespace CNS.ShockCapturing {
                     denominator += fieldToTest.Coordinates[cell, coordinate] * fieldToTest.Coordinates[cell, coordinate];
                 }
 
+                Debug.Assert(denominator != 0, "Persson sensor: Denominator is zero!");
+
                 sensorValues[cell] = numerator / denominator;
             }
-
-
-
+            
 
             //if (fieldToTestRestricted == null || fieldToTestRestricted.Basis.Degree != degree || sensorValues.Length != noOfCells) {
             //    fieldToTestRestricted = new SinglePhaseField(
