@@ -62,6 +62,10 @@ namespace BoSSS.Solution.Timestepping {
 
         internal bool adaptive;
 
+        public void SetAdaptive(bool OnOff) {
+            this.adaptive = OnOff;
+        }
+
         public Queue<double[]> HistoryABCoefficients {
             get;
             private set;

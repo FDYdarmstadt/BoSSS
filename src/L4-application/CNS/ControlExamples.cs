@@ -975,7 +975,7 @@ namespace CNS {
             return c;
         }
 
-        public static CNSControl ShockTube(string dbPath = null, int dgDegree = 2, int numOfCellsX = 50, int numOfCellsY = 1, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = true) {
+        public static CNSControl ShockTube(string dbPath = null, int dgDegree = 2, int numOfCellsX = 50, int numOfCellsY = 1, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = false) {
 
             CNSControl c = new CNSControl();
 
@@ -991,8 +991,9 @@ namespace CNS {
             //c.DynamicLoadBalancing_ImbalanceThreshold = 0.1;
             //c.DynamicLoadBalancing_Period = 10;
 
+            dbPath = @"c:\bosss_db\";
             //dbPath = @"e:\bosss_db\GridOfTomorrow\";
-            //dbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db";
+            //dbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db\";
             c.DbPath = dbPath;
             c.savetodb = dbPath != null && saveToDb;
             c.saveperiod = 1;
@@ -1032,7 +1033,7 @@ namespace CNS {
             c.ExplicitScheme = ExplicitSchemes.LTS;
             //c.ExplicitScheme = ExplicitSchemes.AdamsBashforth;
             c.ExplicitOrder = 3;
-            c.NumberOfSubGrids = 3;
+            c.NumberOfSubGrids = 4;
             c.ReclusteringInterval = 1;
             c.FluxCorrection = false;
 
@@ -1202,8 +1203,8 @@ namespace CNS {
             c.ExplicitScheme = ExplicitSchemes.LTS;
             //c.ExplicitScheme = ExplicitSchemes.AdamsBashforth;
             c.ExplicitOrder = 1;
-            c.NumberOfSubGrids = 3;
-            c.ReclusteringInterval = 0;
+            c.NumberOfSubGrids = 4;
+            c.ReclusteringInterval = 1;
             c.FluxCorrection = false;
 
             c.EquationOfState = IdealGas.Air;
@@ -1214,14 +1215,16 @@ namespace CNS {
 
             c.AddVariable(Variables.Density, dgDegree);
             c.AddVariable(Variables.Momentum.xComponent, dgDegree);
-            c.AddVariable(Variables.Energy, dgDegree);
+            c.AddVariable(Variables.Momentum.yComponent, dgDegree);
             c.AddVariable(Variables.Velocity.xComponent, dgDegree);
+            c.AddVariable(Variables.Velocity.yComponent, dgDegree);
             c.AddVariable(Variables.Pressure, dgDegree);
+            c.AddVariable(Variables.Energy, dgDegree);
+
             c.AddVariable(Variables.Entropy, dgDegree);
             c.AddVariable(Variables.LocalMachNumber, dgDegree);
             c.AddVariable(Variables.Rank, 0);
-            c.AddVariable(Variables.Momentum.yComponent, dgDegree);
-            c.AddVariable(Variables.Velocity.yComponent, dgDegree);
+
             c.AddVariable(Variables.CFL, 0);
             if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS)) {
                 c.AddVariable(Variables.LTSClusters, 0);
@@ -1244,7 +1247,7 @@ namespace CNS {
                         return 3;
                     } else if (Math.Abs(X[0]) < 1e-14) {    // left
                         return 1;
-                    } else if (Math.Abs(X[0] - (xMax - xMin)) < 1e-14) {    // ´right
+                    } else if (Math.Abs(X[0] - (xMax - xMin)) < 1e-14) {    // right
                         return 2;
                     } else {
                         throw new System.Exception("Problem with definition of boundary conditions");
@@ -1293,7 +1296,6 @@ namespace CNS {
             double densityRight = 1.0;
             double pressure = 1.0;
             double velocityXLeft = 2.0;
-            double velocityXRight = 0.0;
             double velocityY = 0.0;
 
             c.AddBoundaryCondition("SubsonicInlet", Variables.Density, (X, t) => densityLeft);
@@ -1305,7 +1307,7 @@ namespace CNS {
             // Initial conditions
             c.InitialValues_Evaluators.Add(Variables.Density, X => densityLeft - SmoothJump(DistanceToLine(X, 0)) * (densityLeft - densityRight));
             c.InitialValues_Evaluators.Add(Variables.Pressure, X => pressure);
-            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => velocityXLeft - SmoothJump(DistanceToLine(X, 0)) * (velocityXLeft - velocityXRight));
+            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => velocityXLeft);
             c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => velocityY);
 
             // Time config 
