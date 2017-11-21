@@ -142,8 +142,10 @@ namespace BoSSS.Solution.Timestepping {
                 numOfClustersInit = numOfClusters;
                 this.timeStepCount = 1;
                 this.adaptive = true;
-                RungeKuttaScheme.OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforComputechangeRate(t1, t2);
             }
+
+            // Add OnBeforeComputeChangeRate (AV) to start-up phase time stepper
+            RungeKuttaScheme.OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforeComputechangeRate(t1, t2); // problem
 
             this.reclusteringInterval = reclusteringInterval;
             this.numOfClusters = numOfClusters;
@@ -171,7 +173,7 @@ namespace BoSSS.Solution.Timestepping {
 
             for (int i = 0; i < ABevolver.Length; i++) {
                 ABevolver[i] = new ABevolve(spatialOp, Fieldsmap, Parameters, order, adaptive: this.adaptive, sgrd: CurrentClustering.Clusters[i]);
-                ABevolver[i].OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforComputechangeRate(t1, t2);
+                ABevolver[i].OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforeComputechangeRate(t1, t2);
             }
 
             GetBoundaryTopology();
@@ -198,7 +200,7 @@ namespace BoSSS.Solution.Timestepping {
                 numOfClustersInit = numOfClusters;
                 this.timeStepCount = 1;
                 this.adaptive = true;
-                //RungeKuttaScheme.OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforComputechangeRate(t1, t2);
+                RungeKuttaScheme.OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforeComputechangeRate(t1, t2);
             }
             this.reclusteringInterval = reclusteringInterval;
         }
@@ -210,8 +212,6 @@ namespace BoSSS.Solution.Timestepping {
         public override double Perform(double dt) {
             using (new ilPSP.Tracing.FuncTrace()) {
 
-                //this.timeStepConstraints.ForEach(s => s.currentTime = m_Time);
-
                 if (ABevolver[0].HistoryChangeRate.Count >= order - 1) {
                     bool reclustered = false;
                     if (adaptive) {
@@ -221,7 +221,7 @@ namespace BoSSS.Solution.Timestepping {
                             numOfClusters = numOfClustersInit;
 
                             // Fix for update problem of artificial viscosity
-                            RaiseOnBeforComputechangeRate(Time, dt);
+                            RaiseOnBeforeComputechangeRate(Time, dt);
 
                             Clusterer.Clustering oldClustering = CurrentClustering;
                             CurrentClustering = clusterer.CreateClustering(numOfClusters, null);
@@ -241,21 +241,16 @@ namespace BoSSS.Solution.Timestepping {
                             }
 
                             GetBoundaryTopology();
+
+                            if (reclustered) {
+                                Console.WriteLine("RECLUSTERING");
+                            }
                         }
                     }
 
                     // Number of substeps could have changed
                     if (timeStepConstraints != null) {
                         dt = CalculateTimeStep();
-                    }
-
-                    if (reclustered) {
-                        Console.WriteLine("RECLUSTERING");
-                    } else {
-                        Console.WriteLine("POSSIBLE CHANGE OF numOfLocalTS");
-                    }
-                    for (int i = 0; i < this.numOfClusters; i++) {
-                        Console.WriteLine("id=" + i + " -> sub-steps=" + NumOfLocalTimeSteps[i] + " and elements=" + CurrentClustering.Clusters[i].GlobalNoOfCells);
                     }
 
                     double[,] CorrectionMatrix = new double[this.numOfClusters, this.numOfClusters];
@@ -415,8 +410,9 @@ namespace BoSSS.Solution.Timestepping {
                 }
             }
 
-            if (adaptive)
+            if (adaptive) {
                 timeStepCount++;
+            }
 
             return dt;
         }
@@ -635,7 +631,8 @@ namespace BoSSS.Solution.Timestepping {
                     localDts[i] = dt;
                 }
 
-                NumOfLocalTimeSteps.Clear();
+                //NumOfLocalTimeSteps.Clear();
+                bool hasChanged = false;
                 for (int i = 0; i < numOfClusters; i++) {
                     double fraction = localDts[0] / localDts[i];
                     //Accounting for roundoff errors
@@ -647,7 +644,10 @@ namespace BoSSS.Solution.Timestepping {
                         subSteps = (int)Math.Floor(fraction);
                     }
 
-                    NumOfLocalTimeSteps.Add(subSteps);
+                    if (NumOfLocalTimeSteps[i] != subSteps) {
+                        hasChanged = true;
+                        NumOfLocalTimeSteps[i] = subSteps;
+                    }
                 }
                 maxNumOfLocalTimeSteps = NumOfLocalTimeSteps.Last();
 
@@ -661,6 +661,13 @@ namespace BoSSS.Solution.Timestepping {
                 //    }
                 //    ii++;
                 //}
+
+                if (hasChanged) {
+                    Console.WriteLine("CHANGE OF SUBSTEPS");
+                    for (int i = 0; i < this.numOfClusters; i++) {
+                        Console.WriteLine("id=" + i + " -> sub-steps=" + NumOfLocalTimeSteps[i] + " and elements=" + CurrentClustering.Clusters[i].GlobalNoOfCells);
+                    }
+                }
 
                 return localDts[0];
 
@@ -702,9 +709,8 @@ namespace BoSSS.Solution.Timestepping {
                 }
             }
 
-            List<SubGrid> newClusters = new List<SubGrid>();
-
-            for (int i = 0; i < clustering.NumberOfClusters; i++) {
+            int[] numOfSubSteps = new int[clustering.NumberOfClusters];
+            for (int i = 0; i < numOfSubSteps.Length; i++) {
                 double fraction = rcvHmin[0] / rcvHmin[i];
                 // Accounting for roundoff errors
                 double eps = 1.0e-2;
@@ -715,15 +721,24 @@ namespace BoSSS.Solution.Timestepping {
                     subSteps = (int)Math.Floor(fraction);
                 }
 
-                if (i > 0 && subSteps == NumOfLocalTimeSteps.Last()) {
+                numOfSubSteps[i] = subSteps;
+            }
+
+            List<SubGrid> newClusters = new List<SubGrid>();
+
+            for (int i = 0; i < clustering.NumberOfClusters; i++) {
+
+                if (i < clustering.NumberOfClusters - 1 && numOfSubSteps[i] == numOfSubSteps[i + 1]) {
                     // Combine both subgrids and remove the previous one
-                    SubGrid combinedSubgrid = new SubGrid(newClusters.Last().VolumeMask.Union(clustering.Clusters[i].VolumeMask));
-                    newClusters.RemoveAt(newClusters.Count() - 1);   // (can be done better without removing subgrids, but how?)
+                    SubGrid combinedSubgrid = new SubGrid(clustering.Clusters[i].VolumeMask.Union(clustering.Clusters[i + 1].VolumeMask));
                     newClusters.Add(combinedSubgrid);
                     Console.WriteLine("CalculateNumberOfLocalTS: Clustering leads to sub-grids which are too similar, i.e. they have the same number of local time steps. They are combined.");
+                    NumOfLocalTimeSteps.Add(numOfSubSteps[i]);
+
+                    i++;
                 } else {
                     newClusters.Add(clustering.Clusters[i]);
-                    NumOfLocalTimeSteps.Add(subSteps);
+                    NumOfLocalTimeSteps.Add(numOfSubSteps[i]);
                 }
             }
 
@@ -957,7 +972,7 @@ namespace BoSSS.Solution.Timestepping {
             for (int i = 0; i < ABevolver.Length; i++) {
                 ABevolver[i] = new ABevolve(Operator, Mapping, ParameterMapping, order, adaptive: true, sgrd: CurrentClustering.Clusters[i]);
                 ABevolver[i].ResetTime(m_Time);
-                ABevolver[i].OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforComputechangeRate(t1, t2);
+                ABevolver[i].OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforeComputechangeRate(t1, t2);
             }
 
             return ABevolver;
