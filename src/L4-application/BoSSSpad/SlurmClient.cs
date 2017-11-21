@@ -89,13 +89,18 @@ namespace BoSSS.Application.BoSSSpad {
             string convertCmd = " dos2unix " + path + "\\batch.sh";
             string sbatchCmd = " sbatch "+path + "\\batch.sh";
 
-            System.Threading.Thread.Sleep(5000);
+            // Otherwise it didn´t work
+            System.Threading.Thread.Sleep(3000);
 
+            // Convert from Windows to Unix and submit job
             Console.WriteLine();
             var result1 = SSHConnection.RunCommand(convertCmd.Replace("\\", "/"));
             Console.WriteLine(result1.Error);
             var result2 = SSHConnection.RunCommand(sbatchCmd.Replace("\\", "/"));
             Console.WriteLine(result2.Result);
+
+            // Hardcoded extract of JobID
+            myJob.EnvironmentVars.Add("JobID", result2.Result.Substring(20,7));
 
             return null;
         }
