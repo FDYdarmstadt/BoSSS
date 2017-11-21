@@ -287,20 +287,20 @@ namespace BoSSS.Solution.Multigrid
                         //    }
                         //}
 
-                        using (StreamWriter writer = new StreamWriter(m_SessionPath + "//GMRES_Stats.txt", true))
-                        {
-                            writer.WriteLine(i + "   " + error);
-                        }
+                        //using (StreamWriter writer = new StreamWriter(m_SessionPath + "//GMRES_Stats.txt", true))
+                        //{
+                        Console.WriteLine(i + "   " + error);
+                        //}
 
 
 
                         if (error <= m_Tolerance)
                         {
                             // update approximation and exit
-                            using (StreamWriter writer = new StreamWriter(m_SessionPath + "//GMRES_Stats.txt", true))
-                            {
-                                writer.WriteLine("");
-                            }
+                            //using (StreamWriter writer = new StreamWriter(m_SessionPath + "//GMRES_Stats.txt", true))
+                            //{
+                            //    writer.WriteLine("");
+                            //}
 
                             //y = H(1:i,1:i) \ s(1:i);    
                             y = new double[i];
