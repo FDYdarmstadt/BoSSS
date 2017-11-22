@@ -114,7 +114,7 @@ namespace CNS.IBM {
 
 #if DEBUG
                     if (double.IsNaN(cflhere)) {
-                        throw new Exception.NumericalAlgorithmException("Could not determine CFL number");
+                        throw new Exception("Could not determine CFL number");
                     }
 #endif
 

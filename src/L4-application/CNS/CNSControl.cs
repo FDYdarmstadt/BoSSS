@@ -19,7 +19,6 @@ using BoSSS.Solution.Control;
 using CNS.Convection;
 using CNS.Diffusion;
 using CNS.EquationSystem;
-using CNS.Exception;
 using CNS.MaterialProperty;
 using CNS.Residual;
 using CNS.ShockCapturing;
@@ -46,20 +45,20 @@ namespace CNS {
 
                 if (FieldOptions.ContainsKey(Variables.Momentum.yComponent)
                     && FieldOptions[Variables.Momentum.yComponent].Degree != degree) {
-                    throw new ConfigurationException(
+                    throw new Exception(
                         "All momentum components must have the same polynomial degree");
                 }
 
                 if (FieldOptions.ContainsKey(Variables.Momentum.zComponent)
                     && FieldOptions[Variables.Momentum.zComponent].Degree != degree) {
-                    throw new ConfigurationException(
+                    throw new Exception(
                         "All momentum components must have the same polynomial degree");
                 }
             }
 
             if (TimeSteppingScheme != TimeSteppingSchemes.Implicit) {
                 if (ExplicitScheme == ExplicitSchemes.None) {
-                    throw new ConfigurationException(String.Format(
+                    throw new Exception(String.Format(
                         "An explicit scheme must be specified if time stepping scheme '{0}' is used",
                         TimeSteppingScheme));
                 }
@@ -70,7 +69,7 @@ namespace CNS {
             }
 
             if (MachNumber <= 0.0) {
-                throw new ConfigurationException("Illegal Mach number");
+                throw new Exception("Illegal Mach number");
             }
         }
 

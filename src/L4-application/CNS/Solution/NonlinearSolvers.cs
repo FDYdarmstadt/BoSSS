@@ -16,6 +16,7 @@ limitations under the License.
 
 using BoSSS.Foundation;
 using ilPSP.LinSolvers;
+using System;
 
 namespace CNS.Solution {
 
@@ -74,7 +75,7 @@ namespace CNS.Solution {
                 case NonlinearSolvers.FixedPointIteration:
                     double damping = config.FixedPointDamping;
                     if (damping <= 0.0) {
-                        throw new Exception.ConfigurationException(
+                        throw new Exception(
                             "Damping factor must not be less than or equal to zero");
                     }
 

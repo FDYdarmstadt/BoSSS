@@ -14,27 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
-using System.IO;
 using BoSSS.Foundation.Grid;
-using BoSSS.Foundation.XDG;
-using BoSSS.Platform.LinAlg;
-using BoSSS.Solution.Control;
-using BoSSS.Solution.GridImport;
+using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.Queries;
 using CNS.Convection;
 using CNS.Diffusion;
 using CNS.EquationSystem;
-using CNS.Exception;
-using CNS.IBM;
 using CNS.MaterialProperty;
 using CNS.Residual;
 using CNS.Solution;
 using CNS.Source;
 using ilPSP.Utils;
-using BoSSS.Foundation.Grid.Classic;
+using System;
 using static BoSSS.Foundation.Grid.Classic.GridCommons;
-using BoSSS.Foundation.Grid.RefElements;
 
 namespace CNS.Tests.MMS {
 
@@ -510,7 +502,7 @@ namespace CNS.Tests.MMS {
             if (Guid.TryParse(grid, out gridGuid)) {
                 c.GridGuid = gridGuid;
             } else {
-                throw new ConfigurationException(
+                throw new Exception(
                  "Could not find a grid at " + grid);
             }
 

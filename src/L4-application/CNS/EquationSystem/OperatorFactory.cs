@@ -14,16 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System.Collections.Generic;
 using BoSSS.Foundation;
-using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Classic;
 using CNS.Boundary;
 using CNS.Convection;
 using CNS.Diffusion;
-using CNS.Exception;
-using CNS.Source;
 using CNS.ShockCapturing;
-using BoSSS.Foundation.Grid.Classic;
+using CNS.Source;
+using System;
+using System.Collections.Generic;
 
 namespace CNS.EquationSystem {
 
@@ -98,7 +97,7 @@ namespace CNS.EquationSystem {
             bool hasConvection = control.ActiveOperators.HasFlag(Operators.Convection);
             bool hasDiffusion = control.ActiveOperators.HasFlag(Operators.Diffusion);
             if (!hasConvection && !hasDiffusion) {
-                throw new ConfigurationException(
+                throw new Exception(
                     "Either convective or diffusive terms must be active");
             }
 

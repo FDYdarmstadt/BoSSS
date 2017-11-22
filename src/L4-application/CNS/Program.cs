@@ -18,22 +18,17 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
-using BoSSS.Foundation.XDG;
 using BoSSS.Solution;
 using BoSSS.Solution.ASCIIExport;
 using BoSSS.Solution.Tecplot;
 using BoSSS.Solution.Timestepping;
-using BoSSS.Solution.Utils;
 using CNS.Boundary;
 using CNS.EquationSystem;
-using CNS.Exception;
 using CNS.IBM;
 using CNS.Residual;
-using CNS.ShockCapturing;
 using CNS.Solution;
 using ilPSP;
 using ilPSP.Tracing;
-using ilPSP.Utils;
 using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
@@ -278,7 +273,7 @@ namespace CNS {
                 bool terminate = true;
                 foreach (var keyThresholdPair in Control.ResidualBasedTerminationCriteria) {
                     if (!residuals.ContainsKey(keyThresholdPair.Key)) {
-                        throw new Exception.ConfigurationException(String.Format(
+                        throw new Exception(String.Format(
                             "A termination criterion is based on {0} was found"
                                 + " but the corresponding residual value was"
                                 + " not calculated.",
@@ -384,7 +379,7 @@ namespace CNS {
                 if (Control.ExplicitScheme == ExplicitSchemes.LTS) {
                     AdamsBashforthLTS ltsTimeStepper = this.TimeStepper as AdamsBashforthLTS;
                     if (ltsTimeStepper == null) {
-                        throw new ConfigurationException();
+                        throw new Exception();
                     }
 
 

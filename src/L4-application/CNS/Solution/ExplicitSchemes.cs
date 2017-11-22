@@ -15,17 +15,11 @@ limitations under the License.
 */
 
 using BoSSS.Foundation;
-using BoSSS.Foundation.Grid;
-using BoSSS.Foundation.Quadrature;
-using BoSSS.Platform;
 using BoSSS.Solution;
 using BoSSS.Solution.Timestepping;
 using CNS.EquationSystem;
-using CNS.Exception;
 using CNS.IBM;
-using CNS.ShockCapturing;
 using System;
-using System.Collections;
 using System.Linq;
 
 namespace CNS.Solution {
@@ -213,7 +207,7 @@ namespace CNS.Solution {
                     throw new System.ArgumentException("Cannot instantiate empty scheme");
 
                 default:
-                    throw new Exception.InternalErrorException(String.Format(
+                    throw new Exception(String.Format(
                         "Unknown explicit time stepper type \"{0}\"", timeStepperType));
             }
 
@@ -221,7 +215,7 @@ namespace CNS.Solution {
             if (control.ShockSensor != null) {
                 ExplicitEuler explicitEulerBasedTimestepper = timeStepper as ExplicitEuler;
                 if (explicitEulerBasedTimestepper == null) {
-                    throw new ConfigurationException(String.Format(
+                    throw new Exception(String.Format(
                         "Shock-capturing currently not implemented for time-steppers of type '{0}~",
                         timeStepperType));
                 } else {
@@ -237,7 +231,7 @@ namespace CNS.Solution {
             if (control.Limiter != null) {
                 ExplicitEuler explicitEulerBasedTimestepper = timeStepper as ExplicitEuler;
                 if (explicitEulerBasedTimestepper == null) {
-                    throw new ConfigurationException(String.Format(
+                    throw new Exception(String.Format(
                         "Limiting currently not implemented for time-steppers of type '{0}~",
                         timeStepperType));
                 } else {

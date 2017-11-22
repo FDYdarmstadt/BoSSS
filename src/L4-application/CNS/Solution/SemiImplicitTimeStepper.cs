@@ -14,10 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
 using BoSSS.Foundation;
 using BoSSS.Solution;
-using CNS.Exception;
+using System;
 
 namespace CNS.TimeStepping {
 
@@ -64,7 +63,7 @@ namespace CNS.TimeStepping {
             get {
                 double time = explicitTimeStepper.Time;
                 if (implicitTimeStepper.Time != time) {
-                    throw new InternalErrorException("Explicit and implicit part are at different time levels. This should not have happened");
+                    throw new Exception("Explicit and implicit part are at different time levels. This should not have happened");
                 }
                 return time;
             }

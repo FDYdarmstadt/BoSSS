@@ -20,19 +20,19 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution;
-using BoSSS.Solution.Control;
 using BoSSS.Solution.GridImport;
 using BoSSS.Solution.Queries;
+using BoSSS.Solution.Timestepping;
 using CNS.Convection;
 using CNS.Diffusion;
 using CNS.EquationSystem;
-using CNS.Exception;
 using CNS.IBM;
 using CNS.MaterialProperty;
 using CNS.Residual;
 using CNS.ShockCapturing;
 using CNS.Solution;
 using CNS.Source;
+using ilPSP;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
@@ -350,7 +350,7 @@ namespace CNS {
                     if (File.Exists(grid)) {
                         _grid = GridImporter.Import(grid);
                     } else {
-                        throw new ConfigurationException(
+                        throw new Exception(
                             "Could not find a grid at " + grid);
                     }
 
@@ -992,6 +992,9 @@ namespace CNS {
             //c.DynamicLoadBalancing_Period = 10;
 
             dbPath = @"c:\bosss_db\";
+            
+
+
             //dbPath = @"e:\bosss_db\GridOfTomorrow\";
             //dbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db\";
             c.DbPath = dbPath;
@@ -1509,6 +1512,8 @@ namespace CNS {
 
             return c;
         }
+
+
 
         public static CNSControl DoubleMachReflection(string dbPath = null, int dgDegree = 2, int numOfCellsX = 400, int numOfCellsY = 100, double xMax = 4, double sensorLimit = 1e-3) {
             CNSControl c = new CNSControl();
@@ -2264,7 +2269,7 @@ namespace CNS {
             if (Guid.TryParse(grid, out gridGuid)) {
                 c.GridGuid = gridGuid;
             } else {
-                throw new ConfigurationException(
+                throw new Exception(
                  "Could not find a grid at " + grid);
             }
 
