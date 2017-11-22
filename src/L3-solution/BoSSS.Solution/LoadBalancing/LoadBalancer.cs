@@ -112,7 +112,7 @@ namespace BoSSS.Solution {
                 imbalanceThreshold);
 
             IList<int[]> cellCosts = CurrentCellCostEstimators.Select(estimator => estimator.GetEstimatedCellCosts()).ToList();
-            if (cellCosts == null) {
+            if (cellCosts == null || cellCosts.All(c => c == null)) {
                 return null;
             }
 
