@@ -200,7 +200,6 @@ namespace CNS.Tests.MMS {
             c.ResidualLoggerType = ResidualLoggerTypes.ChangeRate | ResidualLoggerTypes.Query;
 
             // Time-Stepping Settings
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 4;
 
@@ -323,7 +322,6 @@ namespace CNS.Tests.MMS {
             c.ResidualLoggerType = ResidualLoggerTypes.ChangeRate | ResidualLoggerTypes.Query;
 
             // Time-Stepping Settings
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 4;
 
@@ -453,7 +451,6 @@ namespace CNS.Tests.MMS {
             c.SIPGPenaltyScaling = 1.3;
 
             // Time-Stepping Settings
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 4;
 

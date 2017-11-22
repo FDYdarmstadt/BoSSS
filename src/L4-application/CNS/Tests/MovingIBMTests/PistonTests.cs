@@ -264,7 +264,6 @@ namespace CNS.Tests.MovingIBMTests {
             c.EquationOfState = IdealGas.Air;
             c.MachNumber = 1.0 / Math.Sqrt(c.EquationOfState.HeatCapacityRatio);
 
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.TimesteppingStrategy = timeSteppingStrategy;
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = rkDegree;

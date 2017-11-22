@@ -187,9 +187,6 @@
     <Compile Include="Tests\ViscousShockProfile\ViscousShockProfile.cs" />
     <Compile Include="Residual\IResidualLogger.cs" />
     <Compile Include="Residual\QueryLogger.cs" />
-    <Compile Include="Solution\FixedPointIteration.cs" />
-    <Compile Include="Solution\ImplicitSchemes.cs" />
-    <Compile Include="Solution\IIterativeImplicitScheme.cs" />
     <Compile Include="SingleSpeciesMap.cs" />
     <Compile Include="Residual\ResidualLoggerTypes.cs" />
     <Compile Include="Residual\NullResidualLogger.cs" />
@@ -211,17 +208,14 @@
     <Compile Include="Residual\ResidualLogger.cs" />
     <Compile Include="Residual\RigorousResidualLogger.cs" />
     <Compile Include="Source\CustomSourceBuilder.cs" />
-    <Compile Include="Solution\NonlinearSolvers.cs" />
     <Compile Include="Tests\IsentropicVortex\IsentropicVortexTest.cs" />
     <Compile Include="Tests\Ringleb\RinglebTest.cs" />
     <Compile Include="Tests\Ringleb\ExactRinglebBoundaryState.cs" />
     <Compile Include="Tests\Ringleb\RinglebExactSolution.cs" />
     <Compile Include="Solution\ExplicitSchemes.cs" />
-    <Compile Include="Solution\TimeSteppingSchemes.cs" />
     <Compile Include="Boundary\AdiabaticSlipWall.cs" />
     <Compile Include="Boundary\AdiabaticWall.cs" />
     <Compile Include="Variable.cs" />
-    <Compile Include="Solution\SemiImplicitTimeStepper.cs" />
     <Compile Include="StateVector.cs" />
     <Compile Include="Boundary\BoundaryConditionMap.cs" />
     <Compile Include="EquationSystem\OperatorFactory.cs" />
@@ -306,30 +300,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Tests\IsentropicVortex\VortexRock4.xml" />
-    <Content Include="Tests\ViscousShockProfile\VSP_M4_PowerLaw.xml">
-      <SubType>Designer</SubType>
-    </Content>
-    <Content Include="Tests\ViscousShockProfile\VSP_M4_PowerLaw_unsteady.xml">
-      <SubType>Designer</SubType>
-    </Content>
-    <Content Include="Tests\ViscousShockProfile\VSP_M4_Constant_unsteady.xml">
-      <SubType>Designer</SubType>
-    </Content>
-    <Content Include="Tests\ViscousShockProfile\VSP_M4_Constant.xml">
-      <SubType>Designer</SubType>
-    </Content>
-    <Content Include="Tests\ViscousShockProfile\VSP_M2_PowerLaw_unsteady.xml">
-      <SubType>Designer</SubType>
-    </Content>
-    <Content Include="Tests\ViscousShockProfile\VSP_M2_unsteady.xml">
-      <SubType>Designer</SubType>
-    </Content>
-    <Content Include="Tests\ViscousShockProfile\VSP_M2.xml">
-      <SubType>Designer</SubType>
-    </Content>
-    <Content Include="Tests\ViscousShockProfile\VSP_M2_powerLaw.xml">
-      <SubType>Designer</SubType>
-    </Content>
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

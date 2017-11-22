@@ -67,7 +67,6 @@ namespace CNS.Tests.BoundaryConditions {
 
                     c.ActiveOperators = Operators.Convection | Operators.CustomSource;
                     c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
-                    c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
                     c.ExplicitScheme = Solution.ExplicitSchemes.RungeKutta;
                     c.ExplicitOrder = 1;
                     c.EquationOfState = IdealGas.Air;

@@ -94,7 +94,6 @@ namespace CNS {
 
             c.MachNumber = 0.2;
 
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 4;
 
@@ -211,7 +210,6 @@ namespace CNS {
             c.EquationOfState = IdealGas.Air;
             c.MachNumber = 1.0 / Math.Sqrt(c.EquationOfState.HeatCapacityRatio);
 
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 4;
 
@@ -299,7 +297,6 @@ namespace CNS {
             c.DiffusiveFluxType = DiffusiveFluxTypes.OptimizedSIPG;
             c.SIPGPenaltyScaling = 1.0;
 
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.ExplicitScheme = ExplicitSchemes.LTS;
             c.ExplicitOrder = 2;
             c.NumberOfSubGrids = 3;
@@ -428,7 +425,6 @@ namespace CNS {
             c.EquationOfState = IdealGas.Air;
             c.MachNumber = 1.0 / Math.Sqrt(c.EquationOfState.HeatCapacityRatio);
 
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 1;
 
@@ -523,7 +519,6 @@ namespace CNS {
             c.MachNumber = 1.0 / Math.Sqrt(c.EquationOfState.HeatCapacityRatio);
 
             c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 1;
 
@@ -678,7 +673,6 @@ namespace CNS {
             c.ActiveOperators = Operators.Convection | Operators.Diffusion;
             c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
             c.DiffusiveFluxType = DiffusiveFluxTypes.OptimizedSIPG;
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 1;
 
@@ -776,7 +770,6 @@ namespace CNS {
             c.EquationOfState = IdealGas.Air;
             c.MachNumber = 1.0 / Math.Sqrt(c.EquationOfState.HeatCapacityRatio);
 
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 1;
 
@@ -876,7 +869,6 @@ namespace CNS {
             double levelSetPosition = -1 + 1 / (double)(2 * unitResolution);
 
             // Time Stepping
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.ExplicitScheme = ExplicitSchemes.LTS;
             c.ExplicitOrder = 3;
             c.dtMin = 0.0;
@@ -1026,8 +1018,6 @@ namespace CNS {
                 c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
                 c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
             }
-
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
 
             // Runge-Kutta schemes
             //c.ExplicitScheme = ExplicitSchemes.RungeKutta;
@@ -1196,8 +1186,6 @@ namespace CNS {
 
             c.ActiveOperators = Operators.Convection;
             c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
-
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
 
             // Runge-Kutta schemes
             //c.ExplicitScheme = ExplicitSchemes.RungeKutta;
@@ -1389,7 +1377,6 @@ namespace CNS {
 
             c.AgglomerationThreshold = 0.2;
 
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.AddVariable(IBMVariables.LevelSet, 1);
             //################################ IBM
 
@@ -1573,7 +1560,6 @@ namespace CNS {
                 c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax);
             }
 
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.FluxCorrection = false;
 
             c.EquationOfState = IdealGas.Air;
@@ -1762,7 +1748,6 @@ namespace CNS {
             c.EquationOfState = IdealGas.Air;
             c.MachNumber = 1.0 / Math.Sqrt(c.EquationOfState.HeatCapacityRatio);
 
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 1;
 
@@ -1847,7 +1832,6 @@ namespace CNS {
             c.MachNumber = Mach;
 
             c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 1;
 
@@ -1949,7 +1933,6 @@ namespace CNS {
             c.SessionName = String.Format(
                 "Cylindrical explosion, degree={0}, numCells={1}, sensorLimit = {2:0.00E-00}", dgDegree, numCells, sensorLimit);
 
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 1;
             c.EquationOfState = IdealGas.Air;
@@ -2054,7 +2037,6 @@ namespace CNS {
             c.SessionName = String.Format(
                 "Cylindrical explosion 1D, numCells={1}", dgDegree, numCells);
 
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 1;
             c.EquationOfState = IdealGas.Air;
@@ -2118,7 +2100,6 @@ namespace CNS {
             c.SessionName = String.Format(
                 "Spherical explosion, degree={0}, numCells={1}, sensorLimit = {2:0.00E-00}", dgDegree, numCells, sensorLimit);
 
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 1;
             c.EquationOfState = IdealGas.Air;
@@ -2227,7 +2208,6 @@ namespace CNS {
             c.DiffusiveFluxType = DiffusiveFluxTypes.OptimizedSIPG;
             c.SIPGPenaltyScaling = 1.0;
 
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 4;
             c.NumberOfSubGrids = 3;

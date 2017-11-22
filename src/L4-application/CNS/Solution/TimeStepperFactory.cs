@@ -67,11 +67,7 @@ namespace CNS.Solution {
 
         /// <summary>
         /// Constructs a new time-stepper for the variables represented by
-        /// <paramref name="variableMap"/>. The type of time stepper
-        /// depends on the configuration options 
-        /// <see cref="CNSControl.TimeSteppingScheme"/>,
-        /// <see cref="CNSControl.ExplicitScheme"/> and
-        /// <see cref="CNSControl.ImplicitScheme"/>
+        /// <paramref name="variableMap"/>.
         /// </summary>
         /// <param name="variableMap">
         /// The variables that will be affected by the constructed time stepper
@@ -84,30 +80,14 @@ namespace CNS.Solution {
         /// </returns>
         public ITimeStepper GetTimeStepper<T>(CoordinateMapping variableMap, CoordinateMapping parameterMap, Program<T> program)
             where T : CNSControl, new() {
-            switch (config.TimeSteppingScheme) {
-                case TimeSteppingSchemes.Explicit:
-                    return config.ExplicitScheme.Instantiate(
-                        config,
-                        equationSystem,
-                        variableMap,
-                        parameterMap,
-                        speciesMap,
-                        program);
 
-                case TimeSteppingSchemes.Implicit:
-                    return config.ImplicitScheme.Instantiate(
-                        config,
-                        equationSystem.GetJoinedOperator().ToSpatialOperator(),
-                        variableMap,
-                        parameterMap);
-
-                case TimeSteppingSchemes.MostlyImplicit:
-                case TimeSteppingSchemes.MostlyExplicit:
-                    throw new NotImplementedException();
-
-                default:
-                    throw new ArgumentException("Unknown time stepping scheme");
-            }
+            return config.ExplicitScheme.Instantiate(
+                config,
+                equationSystem,
+                variableMap,
+                parameterMap,
+                speciesMap,
+                program);
         }
     }
 }

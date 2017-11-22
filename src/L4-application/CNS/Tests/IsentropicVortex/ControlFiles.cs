@@ -42,7 +42,6 @@ namespace CNS.Tests.IsentropicVortex {
             c.savetodb = false;
 
             c.ActiveOperators = Operators.Convection;
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 4;
 

@@ -174,7 +174,6 @@ namespace CNS.Tests.DiffusiveFlux {
                     throw new ArgumentException("Wrong diffusive type, only SIPG (0) and OptimizedSIPG (1) exist");
             }
             c.SIPGPenaltyScaling = 1.0;
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 1;
 

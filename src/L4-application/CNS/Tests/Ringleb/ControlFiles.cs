@@ -41,7 +41,6 @@ namespace CNS.Tests.Ringleb {
 
             c.ActiveOperators = Operators.Convection;
             c.EquationOfState = eos;
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 4;
 

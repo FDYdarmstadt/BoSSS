@@ -156,8 +156,6 @@ namespace CNS.Tests.ArtificialViscosity {
             c.ReynoldsNumber = 1.0;
             c.PrandtlNumber = 0.71;
 
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
-
             // Time stepping scheme
             c.ExplicitScheme = explicitScheme;
             c.ExplicitOrder = explicitOrder;
