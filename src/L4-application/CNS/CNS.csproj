@@ -112,6 +112,7 @@
     <Compile Include="Source\SpongeLayerConfig.cs" />
     <Compile Include="Tests\ArtificialViscosity\ArtificialViscosityShockTubeTests.cs" />
     <Compile Include="Tests\ConvectiveFlux\ShockTubeTests.cs" />
+    <Compile Include="Tests\IBMTests\IBMALTSTest.cs" />
     <Compile Include="Tests\IBMTests\IBMIsentropicVortexTest.cs" />
     <Compile Include="Tests\MMS\MMS_steady.cs" />
     <Compile Include="Tests\MMS\MMS_Test.cs" />

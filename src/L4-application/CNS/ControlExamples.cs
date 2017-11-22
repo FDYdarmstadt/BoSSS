@@ -975,7 +975,7 @@ namespace CNS {
             return c;
         }
 
-        public static CNSControl ShockTube(string dbPath = null, int dgDegree = 2, int numOfCellsX = 50, int numOfCellsY = 1, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = false) {
+        public static CNSControl ShockTube(string dbPath = null, int dgDegree = 4, int numOfCellsX = 50, int numOfCellsY = 1, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = false) {
 
             CNSControl c = new CNSControl();
 
@@ -996,7 +996,7 @@ namespace CNS {
             //dbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db\";
             c.DbPath = dbPath;
             c.savetodb = dbPath != null && saveToDb;
-            c.saveperiod = 1;
+            c.saveperiod = 10;
             c.PrintInterval = 1;
 
             double xMin = 0;
@@ -1021,6 +1021,7 @@ namespace CNS {
                 Variable sensorVariable = Variables.Density;
                 c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
                 c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
+                //c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 2);
             }
 
             c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
@@ -1029,11 +1030,14 @@ namespace CNS {
             //c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             //c.ExplicitOrder = 4;
 
+            //Adams-Bashforth
+            //c.ExplicitScheme = ExplicitSchemes.AdamsBashforth;
+            //c.ExplicitOrder = 3;
+
             // (A)LTS
             c.ExplicitScheme = ExplicitSchemes.LTS;
-            //c.ExplicitScheme = ExplicitSchemes.AdamsBashforth;
             c.ExplicitOrder = 3;
-            c.NumberOfSubGrids = 4;
+            c.NumberOfSubGrids = 1;
             c.ReclusteringInterval = 1;
             c.FluxCorrection = false;
 
@@ -1134,7 +1138,7 @@ namespace CNS {
             c.dtMin = 0.0;
             c.dtMax = 1.0;
             //c.dtFixed = 1.0e-3;
-            c.CFLFraction = 0.3;
+            c.CFLFraction = 0.3/2;
             c.Endtime = 0.25;
             c.NoOfTimesteps = int.MaxValue;
 
@@ -1150,7 +1154,7 @@ namespace CNS {
             return c;
         }
 
-        public static IBMControl IBMContactDiscontinuity(string dbPath = null, int dgDegree = 2, int numOfCellsX = 40, int numOfCellsY = 10, bool saveToDb = false) {
+        public static IBMControl IBMContactDiscontinuity(double levelSetPosition = 0.25, string dbPath = null, int dgDegree = 2, int numOfCellsX = 40, int numOfCellsY = 10, bool saveToDb = true) {
 
             IBMControl c = new IBMControl();
 
@@ -1167,8 +1171,6 @@ namespace CNS {
             double yMax = 1;
 
             c.DomainType = DomainTypes.StaticImmersedBoundary;
-
-            double levelSetPosition = 0.25;
 
             c.LevelSetFunction = delegate (double[] X, double t) {
                 double y = X[1];
@@ -1195,13 +1197,8 @@ namespace CNS {
 
             c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
 
-            // Runge-Kutta schemes
-            //c.ExplicitScheme = ExplicitSchemes.RungeKutta;
-            //c.ExplicitOrder = 4;
-
             // (A)LTS
             c.ExplicitScheme = ExplicitSchemes.LTS;
-            //c.ExplicitScheme = ExplicitSchemes.AdamsBashforth;
             c.ExplicitOrder = 1;
             c.NumberOfSubGrids = 4;
             c.ReclusteringInterval = 1;
@@ -1317,7 +1314,6 @@ namespace CNS {
             c.CFLFraction = 0.3;
             c.Endtime = 0.05;
             c.NoOfTimesteps = int.MaxValue;
-            //c.NoOfTimesteps = 10;
 
             c.ProjectName = "IBM contact discontinuity";
             c.SessionName = String.Format("IBM contact discontinuity, 2D, dgDegree = {0}, noOfCellsX = {1}, noOfCellsX = {2}, CFLFraction = {3:0.00E-00}, ALTS {4}/{5}", dgDegree, numOfCellsX, numOfCellsY, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids);
