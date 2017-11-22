@@ -76,12 +76,12 @@ namespace CNS.IBM {
             cutAndTargetCells = cutCells.Union(speciesMap.Agglomerator.AggInfo.TargetCells);
 
             // Normal LTS constructor
-            this.NumOfLocalTimeSteps = new List<int>(numOfClusters);
+            this.NumberOfLocalTimeSteps = new List<int>(control.NumberOfSubGrids);
 
             SubGrid fluidSubGrid = this.speciesMap.SubGrid;
 
             clusterer = new Clusterer(this.gridData, this.timeStepConstraints);
-            CurrentClustering = clusterer.CreateClustering(this.numOfClusters, fluidSubGrid);
+            CurrentClustering = clusterer.CreateClustering(control.NumberOfSubGrids, fluidSubGrid);
 
             for (int i = 0; i < CurrentClustering.NumberOfClusters; i++) {
                 Console.WriteLine("IBM (A)LTS: id=" + i + " -> elements=" + CurrentClustering.Clusters[i].GlobalNoOfCells);
@@ -108,7 +108,7 @@ namespace CNS.IBM {
             GetBoundaryTopology();
 
             for (int i = 0; i < CurrentClustering.NumberOfClusters; i++) {
-                Console.WriteLine("IBM (A)LTS: id=" + i + " -> sub-steps=" + NumOfLocalTimeSteps[i] + " and elements=" + CurrentClustering.Clusters[i].GlobalNoOfCells);
+                Console.WriteLine("IBM (A)LTS: id=" + i + " -> sub-steps=" + NumberOfLocalTimeSteps[i] + " and elements=" + CurrentClustering.Clusters[i].GlobalNoOfCells);
             }
 
             // Start-up phase needs an IBM Runge-Kutta time stepper
@@ -218,9 +218,9 @@ namespace CNS.IBM {
             return dt;
         }
 
-        protected override ABevolve[] CreateNewABevolver() {
+        protected override void CreateNewABevolver() {
             // Create array of Abevolve objects based on the new clustering
-            ABevolver = new IBMABevolve[this.numOfClusters];
+            ABevolver = new IBMABevolve[CurrentClustering.NumberOfClusters];
 
             for (int i = 0; i < ABevolver.Length; i++) {
                 ABevolver[i] = new IBMABevolve(
@@ -237,8 +237,6 @@ namespace CNS.IBM {
                 ABevolver[i].ResetTime(m_Time);
                 //localABevolve[i].OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforComputechangeRate(t1, t2);
             }
-
-            return ABevolver;
         }
     }
 }

@@ -221,14 +221,14 @@ namespace BoSSS.Solution.Timestepping {
         /// </remarks>
         virtual internal protected void ComputeChangeRate(double[] k, double AbsTime, double RelTime, double[] edgeFluxes = null) {
             using (var tr = new ilPSP.Tracing.FuncTrace()) {
-                RaiseOnBeforComputechangeRate(AbsTime, RelTime);
+                RaiseOnBeforeComputechangeRate(AbsTime, RelTime);
 
                 // k += F(u0)
                 Evaluator.Evaluate<double[]>(1.0, 1.0, k, AbsTime, outputBndEdge: edgeFluxes);
             }
         }
 
-        protected void RaiseOnBeforComputechangeRate(double AbsTime, double RelTime) {
+        protected void RaiseOnBeforeComputechangeRate(double AbsTime, double RelTime) {
             if (OnBeforeComputeChangeRate != null) {
                 OnBeforeComputeChangeRate(AbsTime, RelTime);
             }
