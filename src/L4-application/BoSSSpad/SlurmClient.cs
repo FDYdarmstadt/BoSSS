@@ -21,6 +21,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Renci.SshNet;
 using System.IO;
+using System.Security;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -32,18 +33,25 @@ namespace BoSSS.Application.BoSSSpad {
         string m_Username;
         string m_Password;
         string m_ServerName;
-        SshClient SSHConnection;
+        SshClient SSHConnection;     
 
-        public SlurmClient(string DeploymentBaseDirectory, string ServerName, string Username = null, string Password = null) {
+
+        public SlurmClient(string DeploymentBaseDirectory, string ServerName, string Username = null) {
             base.DeploymentBaseDirectory = DeploymentBaseDirectory;
             m_Username = Username;
-            m_Password = Password;
             m_ServerName = ServerName;
 
             if (!Directory.Exists(base.DeploymentBaseDirectory))
                 Directory.CreateDirectory(base.DeploymentBaseDirectory);
 
+            Console.WriteLine();
+            Console.WriteLine("Please enter your password...");
+            m_Password = ReadPassword();
+            Console.WriteLine("Connecting to "+ServerName+"...");
+            Console.WriteLine();
+
             SSHConnection = new SshClient(m_ServerName, m_Username, m_Password);
+
 
             SSHConnection.Connect();
         }
@@ -55,7 +63,36 @@ namespace BoSSS.Application.BoSSSpad {
             wasSuccessful = false;
             isFailed = false;
 
+            SshCommand output;
 
+            if (myJob.EnvironmentVars.ContainsKey("JobID")) {
+                output = SSHConnection.RunCommand("squeue -j " + myJob.EnvironmentVars["JobID"] + " -o %T");
+                int startindex = output.Result.IndexOf("\n") ;
+                int endindex = output.Result.IndexOf("\n",startindex+1);
+                var jobstatus = output.Result.Substring(startindex+1, (endindex-startindex)-1);
+
+                switch (jobstatus) {
+                    case "RUNNING":
+                        isRunning = true;
+                        break;
+
+                    case "PENDING":
+                        isRunning = true;
+                        break;
+
+                    case "":
+                        wasSuccessful = true;
+                        break;
+
+                    case "FAILED":
+                        isFailed = true;
+                        break;
+
+                    default:
+                        throw new NotImplementedException("Unknown job state: " + jobstatus);
+                }
+            }
+            
 
             SubmitCount = 0;
         }
@@ -87,10 +124,10 @@ namespace BoSSS.Application.BoSSSpad {
 
             string path = "\\home\\" + m_Username + myJob.DeploymentDirectory.Substring(2);
             string convertCmd = " dos2unix " + path + "\\batch.sh";
-            string sbatchCmd = " sbatch "+path + "\\batch.sh";
+            string sbatchCmd = " sbatch " + path + "\\batch.sh";
 
             // Otherwise it didn´t work
-            System.Threading.Thread.Sleep(3000);
+            System.Threading.Thread.Sleep(7000);
 
             // Convert from Windows to Unix and submit job
             Console.WriteLine();
@@ -100,7 +137,7 @@ namespace BoSSS.Application.BoSSSpad {
             Console.WriteLine(result2.Result);
 
             // Hardcoded extract of JobID
-            myJob.EnvironmentVars.Add("JobID", result2.Result.Substring(20,7));
+            myJob.EnvironmentVars.Add("JobID", result2.Result.Substring(20, 7));
 
             return null;
         }
@@ -121,11 +158,11 @@ namespace BoSSS.Application.BoSSSpad {
                 str.Write("mpiexec mono ");
                 str.Write(Path.GetFileName(myJob.EntryAssembly.Location));
                 //for (int i = 0; i<myJob.EnvironmentVars.Count;i++) {
-                    str.Write(" ");
-                    str.Write(myJob.EnvironmentVars["BOSSS_ARG_"+0]);
                 str.Write(" ");
-                
-                str.Write(quote + myJob.EnvironmentVars["BOSSS_ARG_" +1]+ quote);
+                str.Write(myJob.EnvironmentVars["BOSSS_ARG_" + 0]);
+                str.Write(" ");
+
+                str.Write(quote + myJob.EnvironmentVars["BOSSS_ARG_" + 1] + quote);
                 //}
                 startupstring = str.ToString();
             }
@@ -152,10 +189,35 @@ namespace BoSSS.Application.BoSSSpad {
                 sw.WriteLine(startupstring);
             }
 
+        }
 
-
-
-
+        public static string ReadPassword() {
+            string password = "";
+            ConsoleKeyInfo info = Console.ReadKey(true);
+            while (info.Key != ConsoleKey.Enter) {
+                if (info.Key != ConsoleKey.Backspace) {
+                    Console.Write("*");
+                    password += info.KeyChar;
+                }
+                else if (info.Key == ConsoleKey.Backspace) {
+                    if (!string.IsNullOrEmpty(password)) {
+                        // remove one character from the list of password characters
+                        password = password.Substring(0, password.Length - 1);
+                        // get the location of the cursor
+                        int pos = Console.CursorLeft;
+                        // move the cursor to the left by one character
+                        Console.SetCursorPosition(pos - 1, Console.CursorTop);
+                        // replace it with space
+                        Console.Write(" ");
+                        // move the cursor to the left by one character again
+                        Console.SetCursorPosition(pos - 1, Console.CursorTop);
+                    }
+                }
+                info = Console.ReadKey(true);
+            }
+            // add a new line because user pressed enter at the end of their password
+            Console.WriteLine();
+            return password;
         }
 
     }
