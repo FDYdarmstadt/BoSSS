@@ -149,13 +149,13 @@ namespace BoSSS.Solution {
 #if DEBUG
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rank);
             for (int i = 0; i < noOfEstimates; i++) {
-                for (int j = 0; j < PerformanceClassCount; j++) {
+                for (int j = 0; j < CurrentPerformanceClassCount; j++) {
                     Debug.Assert(RecvBuf[rank, i, j] == SendBuf[i, j]);
                     Debug.Assert(RecvBuf[rank, i, j] == localCellCounts[i][j]);
                 }
 
-                Debug.Assert(RecvBuf[rank, i, PerformanceClassCount] == SendBuf[i, PerformanceClassCount]);
-                Debug.Assert(RecvBuf[rank, i, PerformanceClassCount] == localRunTimeEstimates[i]);
+                Debug.Assert(RecvBuf[rank, i, CurrentPerformanceClassCount] == SendBuf[i, CurrentPerformanceClassCount]);
+                Debug.Assert(RecvBuf[rank, i, CurrentPerformanceClassCount] == localRunTimeEstimates[i]);
             }
 #endif
             
