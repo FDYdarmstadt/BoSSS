@@ -228,7 +228,7 @@ namespace BoSSS.Solution.Timestepping {
             Evaluator.Evaluate<double[]>(1.0, 1.0, k, AbsTime, outputBndEdge: edgeFluxes);
         }
 
-        protected void RaiseOnBeforComputechangeRate(double AbsTime, double RelTime) {
+        protected void RaiseOnBeforeComputechangeRate(double AbsTime, double RelTime) {
             if (OnBeforeComputeChangeRate != null) {
                 OnBeforeComputeChangeRate(AbsTime, RelTime);
             }
