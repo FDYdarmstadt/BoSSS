@@ -93,7 +93,12 @@ namespace BoSSS.Solution {
             this.InstrumentationPaths = instrumentationPaths;
         }
 
-        public void UpdateEstimates(int[] cellToPerformanceClassMap) {
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="performanceClassCount"></param>
+        /// <param name="cellToPerformanceClassMap"></param>
+        public void UpdateEstimates(int performanceClassCount, int[] cellToPerformanceClassMap) {
             currentCellToPerformanceClassMap = cellToPerformanceClassMap;
             int J = cellToPerformanceClassMap.Length;
 

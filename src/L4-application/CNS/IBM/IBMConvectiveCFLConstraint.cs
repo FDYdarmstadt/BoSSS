@@ -85,7 +85,14 @@ namespace CNS.IBM {
             for (int i = 0; i < Length; i++) {
                 int cell = i0 + i;
 
+                // Option 1: Use volume fraction times traditional metric, such
+                // that time-steps are identical to non-IBM cases when no
+                // interface is present
                 double hmin = hMin[cell] * volFrac[cell];
+
+                // Option 2: Use length scale "volume over surface", which seems
+                // to be more robust for awkward cuts. However, yields
+                // significantly smaller time-steps in uncut cells
                 //double hmin = hMinArray[cell];
 
 

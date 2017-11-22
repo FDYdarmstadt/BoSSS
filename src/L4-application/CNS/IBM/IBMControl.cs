@@ -30,7 +30,8 @@ namespace CNS.IBM {
     public class IBMControl : CNSControl {
 
         public IBMControl() : base() {
-            this.DynamicLoadBalancing_CellCostEstimatorFactory = delegate (IApplication<AppControl> app, int performanceClassCount) {
+            Console.WriteLine("Warning: Auto-adding default estimator factory for IBM. Is this what you want?");
+            this.DynamicLoadBalancing_CellCostEstimatorFactories.Add(delegate (IApplication<AppControl> app, int performanceClassCount) {
                 if (performanceClassCount != 3) {
                     throw new ArgumentException(
                         "Only valid for exactly three performance classes",
@@ -39,7 +40,7 @@ namespace CNS.IBM {
 
                 int[] map = new int[] { 1, 15, 0 };
                 return new StaticCellCostEstimator(map);
-            };
+            });
         }
 
         /// <summary>

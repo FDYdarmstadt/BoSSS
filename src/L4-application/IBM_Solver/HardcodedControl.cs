@@ -1218,11 +1218,11 @@ namespace BoSSS.Application.IBM_Solver {
 
 
             C.DynamicLoadBalancing_Period = 1;
-            C.DynamicLoadBalancing_CellCostEstimatorFactory = delegate (IApplication<AppControl> app, int noOfPerformanceClasses) {
+            C.DynamicLoadBalancing_CellCostEstimatorFactories.Add(delegate (IApplication<AppControl> app, int noOfPerformanceClasses) {
                 Console.WriteLine("i was called");
                 int[] map = new int[] { 1, 5, 100 };
                 return new StaticCellCostEstimator(map);
-            };
+            });
 
 
             // Solver Options
@@ -1345,11 +1345,11 @@ namespace BoSSS.Application.IBM_Solver {
 
 
             C.DynamicLoadBalancing_Period = 1;
-            C.DynamicLoadBalancing_CellCostEstimatorFactory = delegate (IApplication<AppControl> app, int noOfPerformanceClasses) {
+            C.DynamicLoadBalancing_CellCostEstimatorFactories.Add(delegate (IApplication<AppControl> app, int noOfPerformanceClasses) {
                 Console.WriteLine("i was called");
                 int[] map = new int[] { 1, 5, 100 };
                 return new StaticCellCostEstimator(map);
-            };
+            });
 
             C.DbPath = @"P:\BoSSS_DBs\Bug";
 

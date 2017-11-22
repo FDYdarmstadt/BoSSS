@@ -220,12 +220,12 @@ namespace BoSSS.Solution.Timestepping {
         /// Override this method e.g. for the implementation of (some types of) limiters.
         /// </remarks>
         virtual internal protected void ComputeChangeRate(double[] k, double AbsTime, double RelTime, double[] edgeFluxes = null) {
-            if (OnBeforeComputeChangeRate != null) {
-                OnBeforeComputeChangeRate(AbsTime, RelTime);
-            }
+            using (var tr = new ilPSP.Tracing.FuncTrace()) {
+                RaiseOnBeforComputechangeRate(AbsTime, RelTime);
 
-            // k += F(u0)
-            Evaluator.Evaluate<double[]>(1.0, 1.0, k, AbsTime, outputBndEdge: edgeFluxes);
+                // k += F(u0)
+                Evaluator.Evaluate<double[]>(1.0, 1.0, k, AbsTime, outputBndEdge: edgeFluxes);
+            }
         }
 
         protected void RaiseOnBeforComputechangeRate(double AbsTime, double RelTime) {
