@@ -14,21 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
-using BoSSS.Platform;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.Queries;
 using CNS.Convection;
 using CNS.EquationSystem;
 using CNS.MaterialProperty;
-using CNS.Solution;
+using ilPSP;
 using ilPSP.Utils;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
-using ilPSP;
-
 
 namespace CNS.Tests.ConvectiveFlux {
 
@@ -338,7 +334,6 @@ namespace CNS.Tests.ConvectiveFlux {
             c.EquationOfState = IdealGas.Air;
             c.MachNumber = 1.0 / Math.Sqrt(c.EquationOfState.HeatCapacityRatio);
 
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 1;
 

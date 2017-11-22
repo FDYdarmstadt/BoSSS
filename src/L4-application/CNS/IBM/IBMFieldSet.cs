@@ -54,7 +54,7 @@ namespace CNS.IBM {
             this.config = config;
 
             if (config.RestartInfo == null && !config.FieldOptions.ContainsKey(IBMVariables.LevelSet)) {
-                throw new Exception.ConfigurationException(
+                throw new Exception(
                     "Field 'levelSet' is required for IBM applications");
             }
 

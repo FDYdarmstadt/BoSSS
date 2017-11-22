@@ -66,7 +66,7 @@ namespace BoSSS.Solution.Multigrid
         BlockMsrMatrix Mtx;
 
         MsrMatrix P;
-        MsrMatrix ConvDiff, pGrad, divVel, ConvDiffPoissonMtx, SchurMtx, PoissonMtx, PoissonMtx_T, PoissonMtx_H, SchurConvMtx, invVelMassMatrix, invVelMassMatrixSqrt, simpleSchur;
+        MsrMatrix ConvDiff, pGrad, divVel, ConvDiffPoissonMtx, SchurMtx, PoissonMtx, PoissonMtx_T, PoissonMtx_H, SchurConvMtx, invVelMassMatrix, invVelMassMatrixSqrt, simpleSchur, velMassMatrix;
         int[] Uidx, Pidx;
 
         public enum SchurOptions { exact = 1, decoupledApprox = 2, SIMPLE = 3 }
@@ -119,7 +119,7 @@ namespace BoSSS.Solution.Multigrid
             //PxP.SaveToTextFileSparse("PxP");
 
 
-            var velMassMatrix = new MsrMatrix(Upart, Upart, 1, 1);
+            velMassMatrix = new MsrMatrix(Upart, Upart, 1, 1);
             op.MassMatrix.AccSubMatrixTo(1.0, velMassMatrix, Uidx, default(int[]), Uidx, default(int[]));
 
             switch (SchurOpt)
@@ -172,8 +172,8 @@ namespace BoSSS.Solution.Multigrid
                         {
                             if (ApproxScaling)
                             {
-                                invVelMassMatrix.SetDiagonalElement(i, 1 / velMassMatrix[i, i]);
-                                invVelMassMatrixSqrt.SetDiagonalElement(i, 1 / Math.Sqrt(velMassMatrix[i, i]));
+                                invVelMassMatrix.SetDiagonalElement(i, 1 / (velMassMatrix[i, i]));
+                                invVelMassMatrixSqrt.SetDiagonalElement(i, 1 / (Math.Sqrt(velMassMatrix[i, i])));
                             }
                             else
                             {
@@ -191,7 +191,8 @@ namespace BoSSS.Solution.Multigrid
 
                         // Inverse of mass matrix in Matlab
                         //MultidimensionalArray temp = MultidimensionalArray.Create(Uidx.Length, Uidx.Length);
-                        //using (BatchmodeConnector bmc = new BatchmodeConnector()) {
+                        //using (BatchmodeConnector bmc = new BatchmodeConnector())
+                        //{
                         //    bmc.PutSparseMatrix(velMassMatrix, "velMassMatrix");
                         //    bmc.Cmd("invVelMassMatrix = inv(full(velMassMatrix))");
                         //    bmc.GetMatrix(temp, "invVelMassMatrix");
@@ -205,6 +206,9 @@ namespace BoSSS.Solution.Multigrid
                         //ConvDiff.AccSubMatrixTo(1.0, P, default(int[]), Uidx, default(int[]), Uidx);
                         //pGrad.AccSubMatrixTo(1.0, P, default(int[]), Uidx, default(int[]), Pidx);
                         //ConvDiffPoissonMtx.AccSubMatrixTo(1.0, P, default(int[]), Pidx, default(int[]), Pidx);
+
+                        //op.MassMatrix.SaveToTextFileSparse("MassMatrix");
+                        //velMassMatrix.SaveToTextFileSparse("velMassMatrix2");
 
 
                         // Possion scaled by inverse of the velocity mass matrix 
@@ -353,6 +357,7 @@ namespace BoSSS.Solution.Multigrid
         {
 
             var temp = new double[Xp.Count];
+            var sol = new double[pGrad.NoOfRows];
 
             // Poisson solve
             using (var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver())
@@ -362,24 +367,27 @@ namespace BoSSS.Solution.Multigrid
             }
 
             // Schur Convective part with scaling
-            var sol = new double[pGrad.NoOfRows];
             pGrad.SpMVpara(1, temp, 0, sol);
+
             temp = sol.ToArray();
             sol.Clear();
             invVelMassMatrix.SpMVpara(1, temp, 0, sol);
+
             temp = sol.ToArray();
             sol.Clear();
             ConvDiff.SpMVpara(1, temp, 0, sol);
+
             temp = sol.ToArray();
             sol.Clear();
-            invVelMassMatrix.SpMVpara(1, temp, 0, sol);
+            invVelMassMatrixSqrt.SpMVpara(1, temp, 0, sol);
+
             temp = sol.ToArray();
             divVel.SpMVpara(1, temp, 0, Xp);
 
             // Poisson solve
             using (var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver())
             {
-                solver.DefineMatrix(PoissonMtx_T);
+                solver.DefineMatrix(PoissonMtx_H);
                 solver.Solve(Xp, Xp);
             }
         }
