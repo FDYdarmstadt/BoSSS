@@ -2111,7 +2111,13 @@ namespace BoSSS.Solution {
             }
 
             if (m_Balancer == null) {
-                m_Balancer = new LoadBalancer(Control.DynamicLoadBalancing_CellCostEstimatorFactory);
+                var estimatorFactories = Control.DynamicLoadBalancing_CellCostEstimatorFactories;
+                if (estimatorFactories.IsNullOrEmpty()) {
+                    estimatorFactories = new List<Func<IApplication<AppControl>, int, ICellCostEstimator>>() {
+                        CellCostEstimatorLibrary.AllCellsAreEqual
+                    };
+                }
+                m_Balancer = new LoadBalancer(estimatorFactories);
             }
 
             return m_Balancer.GetNewPartitioning(

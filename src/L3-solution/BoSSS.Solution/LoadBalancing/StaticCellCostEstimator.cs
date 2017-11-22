@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using System.Collections.Generic;
 using System.Linq;
 
 namespace BoSSS.Solution {
@@ -58,8 +59,9 @@ namespace BoSSS.Solution {
         /// <summary>
         /// <see cref="ICellCostEstimator"/>
         /// </summary>
+        /// <p<param name="performanceClassCount"></param>
         /// <param name="cellToPerformanceClassMap"></param>
-        public void UpdateEstimates(int[] cellToPerformanceClassMap) {
+        public void UpdateEstimates(int performanceClassCount, int[] cellToPerformanceClassMap) {
             cellToCostMap = new int[cellToPerformanceClassMap.Length];
             for (int j = 0; j < cellToPerformanceClassMap.Length; j++) {
                 int performanceClass = cellToPerformanceClassMap[j];

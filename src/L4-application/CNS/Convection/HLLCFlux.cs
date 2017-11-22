@@ -16,8 +16,8 @@ limitations under the License.
 
 using BoSSS.Platform.LinAlg;
 using CNS.Boundary;
-using CNS.Exception;
 using CNS.MaterialProperty;
+using System;
 
 namespace CNS.Convection {
 
@@ -37,7 +37,7 @@ namespace CNS.Convection {
         protected HLLCFlux(CNSControl config, IBoundaryConditionMap boundaryMap, IEulerEquationComponent equationComponent, ISpeciesMap speciesMap)
             : base(config, boundaryMap, equationComponent, speciesMap) {
             if (config.EquationOfState is IdealGas == false) {
-                throw new ConfigurationException("HLLC flux currently only works for ideal gases");
+                throw new Exception("HLLC flux currently only works for ideal gases");
             }
         }
 
@@ -97,7 +97,7 @@ namespace CNS.Convection {
             } else if (waveSpeedOut < 0.0) {
                 edgeFlux = equationComponent.Flux(stateOut) * normal;
             } else {
-                throw new NumericalAlgorithmException("Inconsistency in HLLC flux detected. Might the flow state be invalid?");
+                throw new Exception("Inconsistency in HLLC flux detected. Might the flow state be invalid?");
             }
 
             return edgeFlux;
