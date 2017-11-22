@@ -982,9 +982,6 @@ namespace CNS {
             //c.DynamicLoadBalancing_Period = 10;
 
             dbPath = @"c:\bosss_db\";
-
-
-
             //dbPath = @"e:\bosss_db\GridOfTomorrow\";
             //dbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db\";
             c.DbPath = dbPath;

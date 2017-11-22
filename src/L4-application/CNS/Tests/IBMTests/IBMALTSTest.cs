@@ -17,13 +17,11 @@ limitations under the License.
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
 using BoSSS.Platform.LinAlg;
-using BoSSS.Solution;
 using BoSSS.Solution.Queries;
 using CNS.Convection;
 using CNS.EquationSystem;
 using CNS.IBM;
 using CNS.MaterialProperty;
-using CNS.Solution;
 using ilPSP.Utils;
 using NUnit.Framework;
 using System;
@@ -76,8 +74,6 @@ namespace CNS.Tests.IBMTests {
 
             c.ActiveOperators = Operators.Convection;
             c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
-
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
 
             // (A)LTS
             c.ExplicitScheme = ExplicitSchemes.LTS;
