@@ -28,7 +28,6 @@ namespace CNS.Tests.MovingIBMTests {
 
     class MovingIBMIsentropicVortexTests {
 
-
         public static IBMControl MovingFrameIBMIsentropicVortex(string dbPath = null, int dgDegree = 3, int noOfCellsPerDirection = 20, double initialLevelSetPosition = -0.9, double agglomerationThreshold = 0.2) {
             IBMControl c = new IBMControl();
 
