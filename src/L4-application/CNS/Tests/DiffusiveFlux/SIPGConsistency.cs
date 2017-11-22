@@ -14,20 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
-using System.IO;
-using System.Linq;
 using BoSSS.Foundation;
-using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
 using BoSSS.Solution;
 using CNS.Diffusion;
 using CNS.EquationSystem;
 using CNS.MaterialProperty;
-using CNS.Solution;
-using NUnit.Framework;
 using ilPSP.Utils;
-using BoSSS.Foundation.Grid.Classic;
+using NUnit.Framework;
+using System;
+using System.IO;
+using System.Linq;
 
 namespace CNS.Tests.DiffusiveFlux {
 

@@ -22,7 +22,7 @@ using CNS.IBM;
 using System;
 using System.Linq;
 
-namespace CNS.Solution {
+namespace CNS {
 
     /// <summary>
     /// Supported classes of time-stepping schemes
@@ -59,13 +59,13 @@ namespace CNS.Solution {
 
         /// <summary>
         /// Special fourth order Runge-Kutta scheme with 5 stages; see
-        /// <see cref="RungeKutta.RungeKuttaScheme.SSP54"/>.
+        /// <see cref="RungeKuttaScheme.SSP54"/>.
         /// </summary>
         SSP54,
 
         /// <summary>
         /// Special fourth order Runge-Kutta scheme with 8 stages; see
-        /// <see cref="RungeKutta.RungeKuttaScheme.RKC84"/>.
+        /// <see cref="RungeKuttaScheme.RKC84"/>.
         /// </summary>
         RKC84
     }

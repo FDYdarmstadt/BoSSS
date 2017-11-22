@@ -17,7 +17,6 @@ using CNS.Exception;
 using CNS.IBM;
 using CNS.MaterialProperty;
 using CNS.Residual;
-using CNS.Solution;
 using CNS.Source;
 
 string dbPath = @"..\..\Tests\IBMTests\IBMCylinderTests.zip";

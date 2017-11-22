@@ -22,7 +22,6 @@ using CNS.Diffusion;
 using CNS.EquationSystem;
 using CNS.MaterialProperty;
 using CNS.Residual;
-using CNS.Solution;
 using CNS.Source;
 using ilPSP.Utils;
 using System;

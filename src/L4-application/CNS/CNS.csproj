@@ -212,7 +212,7 @@
     <Compile Include="Tests\Ringleb\RinglebTest.cs" />
     <Compile Include="Tests\Ringleb\ExactRinglebBoundaryState.cs" />
     <Compile Include="Tests\Ringleb\RinglebExactSolution.cs" />
-    <Compile Include="Solution\ExplicitSchemes.cs" />
+    <Compile Include="ExplicitSchemes.cs" />
     <Compile Include="Boundary\AdiabaticSlipWall.cs" />
     <Compile Include="Boundary\AdiabaticWall.cs" />
     <Compile Include="Variable.cs" />
@@ -229,7 +229,6 @@
     <Compile Include="Boundary\SubsonicOutlet.cs" />
     <Compile Include="Boundary\SupersonicInlet.cs" />
     <Compile Include="Boundary\SupersonicOutlet.cs" />
-    <Compile Include="Solution\TimeStepperFactory.cs" />
     <Compile Include="CNSFieldSet.cs" />
   </ItemGroup>
   <ItemGroup>

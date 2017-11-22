@@ -21,7 +21,6 @@ using CNS.EquationSystem;
 using CNS.IBM;
 using CNS.MaterialProperty;
 using CNS.Residual;
-using CNS.Solution;
 using ilPSP.Utils;
 using System;
 

@@ -22,9 +22,7 @@ using CNS.EquationSystem;
 using CNS.MaterialProperty;
 using CNS.Residual;
 using CNS.ShockCapturing;
-using CNS.Solution;
 using CNS.Source;
-using ilPSP.LinSolvers;
 using System;
 using System.Collections.Generic;
 

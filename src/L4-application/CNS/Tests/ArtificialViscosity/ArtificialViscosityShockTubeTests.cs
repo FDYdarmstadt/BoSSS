@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using ilPSP;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.Queries;
@@ -22,7 +21,7 @@ using CNS.Convection;
 using CNS.EquationSystem;
 using CNS.MaterialProperty;
 using CNS.ShockCapturing;
-using CNS.Solution;
+using ilPSP;
 using ilPSP.Utils;
 using NUnit.Framework;
 using System;

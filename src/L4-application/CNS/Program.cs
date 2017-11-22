@@ -26,7 +26,6 @@ using CNS.Boundary;
 using CNS.EquationSystem;
 using CNS.IBM;
 using CNS.Residual;
-using CNS.Solution;
 using ilPSP;
 using ilPSP.Tracing;
 using MPI.Wrappers;
@@ -168,19 +167,19 @@ namespace CNS {
         /// <summary>
         /// Creates the correct equations depending on
         /// <see cref="CNSControl.DomainType"/>. Additionally, it creates
-        /// the associated time stepper using an instance of
-        /// <see cref="TimeStepperFactory"/>.
+        /// the associated time stepper
         /// </summary>
         protected override void CreateEquationsAndSolvers(LoadBalancingData loadBalancingData) {
             FullOperator = operatorFactory.GetJoinedOperator();
 
             CoordinateMapping variableMap = new CoordinateMapping(WorkingSet.ConservativeVariables);
-            TimeStepperFactory timeStepperFactory = new TimeStepperFactory(
+            TimeStepper = Control.ExplicitScheme.Instantiate(
                 Control,
-                GridData,
                 operatorFactory,
-                SpeciesMap);
-            TimeStepper = timeStepperFactory.GetTimeStepper(variableMap, ParameterMapping, this);
+                variableMap,
+                ParameterMapping,
+                SpeciesMap,
+                this);
 
             // Resets simulation time after a restart
             TimeStepper.ResetTime(startTime);
@@ -200,7 +199,6 @@ namespace CNS {
                 Control.ShockSensor.UpdateSensorValues(WorkingSet);
             }
             WorkingSet.UpdateDerivedVariables(this, SpeciesMap.SubGrid.VolumeMask);
-
         }
 
         /// <summary>
