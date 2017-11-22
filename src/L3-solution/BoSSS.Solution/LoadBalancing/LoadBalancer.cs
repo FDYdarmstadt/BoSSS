@@ -82,7 +82,7 @@ namespace BoSSS.Solution {
             // Create new model if number of cell classes has changed
             for (int i = 0; i < cellCostEstimatorFactories.Count; i++) {
                 if (CurrentCellCostEstimators[i] == null
-                    || CurrentCellCostEstimators[i].PerformanceClassCount != performanceClassCount) {
+                    || CurrentCellCostEstimators[i].CurrentPerformanceClassCount != performanceClassCount) {
                     CurrentCellCostEstimators[i] = cellCostEstimatorFactories[i](app, performanceClassCount);
                 }
 
@@ -93,7 +93,7 @@ namespace BoSSS.Solution {
                 || TimestepNo % Period != 0) {
                 return null;
             }
-
+            
             // No new partitioning if imbalance below threshold
             double[] imbalanceEstimates =
                 CurrentCellCostEstimators.Select(estimator => estimator.ImbalanceEstimate()).ToArray();

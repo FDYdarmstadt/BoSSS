@@ -90,6 +90,7 @@
     <Compile Include="Convection\RusanovFluxBuilder.cs" />
     <Compile Include="Convection\RusanovFlux.cs" />
     <Compile Include="CNSEnvironment.cs" />
+    <Compile Include="LoadBalancing\LTSCellCostEstimator.cs" />
     <Compile Include="ShockCapturing\ArtificialViscosityCFLConstraint.cs" />
     <Compile Include="IBM\IBMFieldSet.cs" />
     <Compile Include="IBM\IBMMassMatrixFactory.cs" />

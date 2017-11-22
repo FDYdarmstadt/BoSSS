@@ -27,6 +27,7 @@ using CNS.Convection;
 using CNS.Diffusion;
 using CNS.EquationSystem;
 using CNS.IBM;
+using CNS.LoadBalancing;
 using CNS.MaterialProperty;
 using CNS.Residual;
 using CNS.ShockCapturing;
@@ -992,7 +993,7 @@ namespace CNS {
             //c.DynamicLoadBalancing_Period = 10;
 
             dbPath = @"c:\bosss_db\";
-            
+
 
 
             //dbPath = @"e:\bosss_db\GridOfTomorrow\";
@@ -1518,19 +1519,29 @@ namespace CNS {
         public static CNSControl DoubleMachReflection(string dbPath = null, int dgDegree = 2, int numOfCellsX = 400, int numOfCellsY = 100, double xMax = 4, double sensorLimit = 1e-3) {
             CNSControl c = new CNSControl();
 
-            //dbPath = @"c:\bosss_db";
+            //dbPath = @"e:\bosss_db\GridOfTomorrow";
             //dbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db";
             //dbPath = @"/work/scratch/yp19ysog/bosss_db_lb_scratch";
             c.DbPath = dbPath;
             c.savetodb = dbPath != null;
             c.saveperiod = 10;
             c.PrintInterval = 1;
+            
+            //c.ExplicitScheme = ExplicitSchemes.RungeKutta;
+            c.ExplicitScheme = ExplicitSchemes.LTS;
+            c.ExplicitOrder = 1;
+            c.NumberOfSubGrids = 3;
+            c.ReclusteringInterval = 20;
 
+            // Add one balance constraint for each subgrid
+            c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(LTSCellCostEstimator.Factory(c.NumberOfSubGrids));
+            c.DynamicLoadBalancing_ImbalanceThreshold = 0.1;
+            c.DynamicLoadBalancing_Period = 10;
+            
             bool AV = true;
 
-            //c.GridPartType = GridPartType.ParMETIS;
-            //c.GridPartOptions = "5";
-            c.GridPartType = GridPartType.none;
+            c.GridPartType = GridPartType.ParMETIS;
+            //c.GridPartType = GridPartType.none;
 
             double xMin = 0;
             //double xMax = 4;
@@ -1563,11 +1574,6 @@ namespace CNS {
             }
 
             c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
-            //c.ExplicitScheme = ExplicitSchemes.RungeKutta;
-            c.ExplicitScheme = ExplicitSchemes.LTS;
-            c.ExplicitOrder = 2;
-            c.NumberOfSubGrids = 3;
-            c.ReclusteringInterval = 1;
             c.FluxCorrection = false;
 
             c.EquationOfState = IdealGas.Air;

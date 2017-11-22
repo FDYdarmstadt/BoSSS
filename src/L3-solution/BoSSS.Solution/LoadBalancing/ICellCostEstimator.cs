@@ -41,7 +41,7 @@ namespace BoSSS.Solution {
         /// <summary>
         /// The total number of performance classes
         /// </summary>
-        int PerformanceClassCount {
+        int CurrentPerformanceClassCount {
             get;
         }
 

@@ -32,17 +32,6 @@ namespace BoSSS.Solution {
     public class RuntimeCellCostEstimator : ICellCostEstimator {
 
         /// <summary>
-        /// The number all performance classes;
-        /// (e.g. performance class 0 is a normal cell, performance class 1 is
-        /// an expensive cell with special treatment; then we have two
-        /// performance classes).
-        /// </summary>
-        public int PerformanceClassCount {
-            get;
-            private set;
-        }
-
-        /// <summary>
         /// <see cref="MaxNoOfTimesteps"/>
         /// </summary>
         private int m_MaxNoOfTimesteps = 20;
@@ -85,11 +74,15 @@ namespace BoSSS.Solution {
             private set;
         }
 
+        public int CurrentPerformanceClassCount {
+            get;
+            private set;
+        }
+
         /// <summary>
         /// Constructor.
         /// </summary>
-        public RuntimeCellCostEstimator(int performanceClassCount, string[][] instrumentationPaths) {
-            this.PerformanceClassCount = performanceClassCount;
+        public RuntimeCellCostEstimator(string[][] instrumentationPaths) {
             this.InstrumentationPaths = instrumentationPaths;
         }
 
@@ -99,6 +92,7 @@ namespace BoSSS.Solution {
         /// <param name="performanceClassCount"></param>
         /// <param name="cellToPerformanceClassMap"></param>
         public void UpdateEstimates(int performanceClassCount, int[] cellToPerformanceClassMap) {
+            CurrentPerformanceClassCount = performanceClassCount;
             currentCellToPerformanceClassMap = cellToPerformanceClassMap;
             int J = cellToPerformanceClassMap.Length;
 
@@ -109,7 +103,7 @@ namespace BoSSS.Solution {
             if (CallCount >= 3) {
 
                 // Locally count cells for each performance class
-                double[] cellCountPerClass = new double[PerformanceClassCount];
+                double[] cellCountPerClass = new double[performanceClassCount];
                 for (int j = 0; j < J; j++) {
                     int performanceClass = cellToPerformanceClassMap[j];
                     cellCountPerClass[performanceClass]++;
@@ -131,17 +125,17 @@ namespace BoSSS.Solution {
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int MpiSize);
 
             MultidimensionalArray SendBuf = MultidimensionalArray.Create(
-                noOfEstimates, PerformanceClassCount + 1);
+                noOfEstimates, CurrentPerformanceClassCount + 1);
             for (int i = 0; i < noOfEstimates; i++) {
-                for (int j = 0; j < PerformanceClassCount; j++) {
+                for (int j = 0; j < CurrentPerformanceClassCount; j++) {
                     SendBuf[i, j] = localCellCounts[i][j];
                 }
 
-                SendBuf[i, PerformanceClassCount] = localRunTimeEstimates[i];
+                SendBuf[i, CurrentPerformanceClassCount] = localRunTimeEstimates[i];
             }
 
             MultidimensionalArray RecvBuf = MultidimensionalArray.Create(
-                MpiSize, noOfEstimates, PerformanceClassCount + 1);
+                MpiSize, noOfEstimates, CurrentPerformanceClassCount + 1);
 
             unsafe {
                 fixed (double* pSendBuf = &SendBuf.Storage[0], pRecvBuf = &RecvBuf.Storage[0]) {
@@ -167,16 +161,16 @@ namespace BoSSS.Solution {
             
             // TO DO: MAKE EFFICIENT
             int noOfRows = MpiSize * noOfEstimates;
-            int noOfColumns = PerformanceClassCount;
+            int noOfColumns = CurrentPerformanceClassCount;
             MultidimensionalArray matrix = MultidimensionalArray.Create(noOfRows, noOfColumns);
             MultidimensionalArray rhs = MultidimensionalArray.Create(noOfRows, 1);
             for (int i = 0; i < MpiSize; i++) {
                 for (int j = 0; j < noOfEstimates; j++) {
-                    for (int k = 0; k < PerformanceClassCount; k++) {
+                    for (int k = 0; k < CurrentPerformanceClassCount; k++) {
                         matrix[i * noOfEstimates + j, k] = RecvBuf[i, j, k];
                     }
 
-                    rhs[i * noOfEstimates + j, 0] = RecvBuf[i, j, PerformanceClassCount];
+                    rhs[i * noOfEstimates + j, 0] = RecvBuf[i, j, CurrentPerformanceClassCount];
                 }
             }
 
@@ -223,7 +217,7 @@ namespace BoSSS.Solution {
             
 
             if (MpiSize > 1 && rhs.Length > MpiSize) {
-                MultidimensionalArray costs = MultidimensionalArray.Create(PerformanceClassCount, 1);
+                MultidimensionalArray costs = MultidimensionalArray.Create(CurrentPerformanceClassCount, 1);
                 matrix.LeastSquareSolve(costs, rhs);
                 //reducedMatrix.LeastSquareSolve(costs, reducedRHS);
 
@@ -232,7 +226,7 @@ namespace BoSSS.Solution {
                 int[] intCost = costs.Storage.Select(
                     cost => Math.Max(1, (int)Math.Round(1e3 * (cost / maxCost)))).ToArray();
 
-                for (int i = 0; i < PerformanceClassCount; i++) {
+                for (int i = 0; i < CurrentPerformanceClassCount; i++) {
                     Console.WriteLine(
                         "Cost of cell type {0}: \tabs:{1:0.##E-00} \trel1: {2:0.0%}\trel2: {3:0.0%}\tint: {4}",
                         i,
