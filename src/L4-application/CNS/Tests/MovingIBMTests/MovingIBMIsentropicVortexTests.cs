@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
 using BoSSS.Platform.LinAlg;
@@ -22,14 +21,12 @@ using CNS.Convection;
 using CNS.EquationSystem;
 using CNS.IBM;
 using CNS.MaterialProperty;
-using CNS.Solution;
 using ilPSP.Utils;
 using System;
 
 namespace CNS.Tests.MovingIBMTests {
 
     class MovingIBMIsentropicVortexTests {
-
 
         public static IBMControl MovingFrameIBMIsentropicVortex(string dbPath = null, int dgDegree = 3, int noOfCellsPerDirection = 20, double initialLevelSetPosition = -0.9, double agglomerationThreshold = 0.2) {
             IBMControl c = new IBMControl();
@@ -50,7 +47,6 @@ namespace CNS.Tests.MovingIBMTests {
             c.EquationOfState = IdealGas.Air;
             c.MachNumber = 1.0 / Math.Sqrt(c.EquationOfState.HeatCapacityRatio);
 
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.TimesteppingStrategy = TimesteppingStrategies.MovingFrameFlux;
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 1;

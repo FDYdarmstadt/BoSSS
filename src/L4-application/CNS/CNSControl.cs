@@ -22,9 +22,7 @@ using CNS.EquationSystem;
 using CNS.MaterialProperty;
 using CNS.Residual;
 using CNS.ShockCapturing;
-using CNS.Solution;
 using CNS.Source;
-using ilPSP.LinSolvers;
 using System;
 using System.Collections.Generic;
 
@@ -54,18 +52,6 @@ namespace CNS {
                     throw new Exception(
                         "All momentum components must have the same polynomial degree");
                 }
-            }
-
-            if (TimeSteppingScheme != TimeSteppingSchemes.Implicit) {
-                if (ExplicitScheme == ExplicitSchemes.None) {
-                    throw new Exception(String.Format(
-                        "An explicit scheme must be specified if time stepping scheme '{0}' is used",
-                        TimeSteppingScheme));
-                }
-            }
-
-            if (TimeSteppingScheme != TimeSteppingSchemes.Explicit) {
-                throw new NotImplementedException();
             }
 
             if (MachNumber <= 0.0) {
@@ -211,12 +197,6 @@ namespace CNS {
         public DiffusiveFluxTypes DiffusiveFluxType = DiffusiveFluxTypes.OptimizedSIPG;
 
         /// <summary>
-        /// The type of time stepping to be used. Supported choices are
-        /// "explicit", "implicit" and "semi-implicit".
-        /// </summary>
-        public TimeSteppingSchemes TimeSteppingScheme = TimeSteppingSchemes.Explicit;
-
-        /// <summary>
         /// The explicit time integration scheme to be used.
         /// </summary>
         /// <remarks>
@@ -261,28 +241,6 @@ namespace CNS {
         /// This option is only used if <see cref="ExplicitScheme"/> is equal to LTS.
         /// </remarks>
         public bool FluxCorrection = true;
-
-        /// <summary>
-        /// The implicit scheme to be used.
-        /// </summary>
-        /// <remarks>
-        /// This option is ignored if <see cref="TimeSteppingScheme"/> is
-        /// equal to "explicit"
-        /// </remarks>
-        public ImplicitSchemes ImplicitScheme = ImplicitSchemes.None;
-
-        /// <summary>
-        /// The sparse solver to be used for the solution of the linear
-        /// system of equations appearing in the scheme defined by
-        /// <see cref="ImplicitScheme"/>
-        /// </summary>
-        public Func<ISparseSolver> ImplicitSolverFactory = null;
-
-        /// <summary>
-        /// The solver for nonlinear systems required by any implicit
-        /// scheme for compressible equations.
-        /// </summary>
-        public NonlinearSolvers NonlinearSolver = NonlinearSolvers.None;
 
         /// <summary>
         /// The configured Mach Number in the far field.

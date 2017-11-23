@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System.Collections.Generic;
+using System;
 using System.Linq;
 
 namespace BoSSS.Solution {
@@ -28,7 +28,7 @@ namespace BoSSS.Solution {
         /// <summary>
         /// <see cref="ICellCostEstimator"/>
         /// </summary>
-        public int PerformanceClassCount {
+        public int CurrentPerformanceClassCount {
             get;
             private set;
         }
@@ -53,7 +53,7 @@ namespace BoSSS.Solution {
         /// </param>
         public StaticCellCostEstimator(int[] performanceClassToCostMap) {
             this.performanceClassToCostMap = performanceClassToCostMap;
-            this.PerformanceClassCount = performanceClassToCostMap.Length;
+            this.CurrentPerformanceClassCount = performanceClassToCostMap.Length;
         }
 
         /// <summary>
@@ -62,6 +62,10 @@ namespace BoSSS.Solution {
         /// <p<param name="performanceClassCount"></param>
         /// <param name="cellToPerformanceClassMap"></param>
         public void UpdateEstimates(int performanceClassCount, int[] cellToPerformanceClassMap) {
+            if (performanceClassCount != CurrentPerformanceClassCount) {
+                throw new Exception("Changing number of performance classes not supported");
+            }
+
             cellToCostMap = new int[cellToPerformanceClassMap.Length];
             for (int j = 0; j < cellToPerformanceClassMap.Length; j++) {
                 int performanceClass = cellToPerformanceClassMap[j];

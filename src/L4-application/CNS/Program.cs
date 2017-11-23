@@ -26,7 +26,6 @@ using CNS.Boundary;
 using CNS.EquationSystem;
 using CNS.IBM;
 using CNS.Residual;
-using CNS.Solution;
 using ilPSP;
 using ilPSP.Tracing;
 using MPI.Wrappers;
@@ -48,7 +47,6 @@ namespace CNS {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
-
             Application<CNSControl>._Main(
                 args,
                 false,
@@ -114,12 +112,6 @@ namespace CNS {
         protected IResidualLogger[] residualLoggers;
 
         /// <summary>
-        /// An optional field for the visualization of the clustering in case
-        /// of local time-stepping.
-        /// </summary>
-        protected DGField SubGridField;
-
-        /// <summary>
         /// Simulation time after restart (needed for time stepping)
         /// </summary>
         protected double startTime = 0.0;
@@ -141,9 +133,6 @@ namespace CNS {
             CNSEnvironment.Initialize(grid.SpatialDimension);
             return grid;
         }
-
-        // Hack
-        //public SpecFemField specFemField;
 
         /// <summary>
         /// Initializes the <see cref="WorkingSet"/> and adds all relevant
@@ -168,19 +157,19 @@ namespace CNS {
         /// <summary>
         /// Creates the correct equations depending on
         /// <see cref="CNSControl.DomainType"/>. Additionally, it creates
-        /// the associated time stepper using an instance of
-        /// <see cref="TimeStepperFactory"/>.
+        /// the associated time stepper
         /// </summary>
         protected override void CreateEquationsAndSolvers(LoadBalancingData loadBalancingData) {
             FullOperator = operatorFactory.GetJoinedOperator();
 
             CoordinateMapping variableMap = new CoordinateMapping(WorkingSet.ConservativeVariables);
-            TimeStepperFactory timeStepperFactory = new TimeStepperFactory(
+            TimeStepper = Control.ExplicitScheme.Instantiate(
                 Control,
-                GridData,
                 operatorFactory,
-                SpeciesMap);
-            TimeStepper = timeStepperFactory.GetTimeStepper(variableMap, ParameterMapping, this);
+                variableMap,
+                ParameterMapping,
+                SpeciesMap,
+                this);
 
             // Resets simulation time after a restart
             TimeStepper.ResetTime(startTime);
@@ -195,12 +184,8 @@ namespace CNS {
                 this,
                 Control,
                 FullOperator.ToSpatialOperator()).ToArray();
-
-            if (Control.ShockSensor != null) {
-                Control.ShockSensor.UpdateSensorValues(WorkingSet);
-            }
+            
             WorkingSet.UpdateDerivedVariables(this, SpeciesMap.SubGrid.VolumeMask);
-
         }
 
         /// <summary>
@@ -245,7 +230,7 @@ namespace CNS {
 
                 dt = TimeStepper.Perform(dt);
 
-                if (DatabaseDriver.MyRank == 0 && TimestepNo % printInterval == 0) {
+                if (TimestepNo % printInterval == 0) {
                     Console.WriteLine(" done. PhysTime: {0:0.#######E-00}, dt: {1:0.###E-00}", phystime, dt);
                 }
 
@@ -259,12 +244,24 @@ namespace CNS {
             }
         }
 
+        /// <summary>
+        /// Makes sure all derived variables are updated before saving
+        /// </summary>
+        /// <param name="timestepno"></param>
+        /// <param name="t"></param>
+        /// <returns></returns>
         protected override ITimestepInfo SaveToDatabase(TimestepNumber timestepno, double t) {
-            if (Control.ShockSensor != null) {
-                Control.ShockSensor.UpdateSensorValues(WorkingSet);
-            }
             WorkingSet.UpdateDerivedVariables(this, SpeciesMap.SubGrid.VolumeMask);
             return base.SaveToDatabase(timestepno, t);
+        }
+
+        /// <summary>
+        /// See <see cref="SaveToDatabase(TimestepNumber, double)"/>
+        /// </summary>
+        /// <param name="ts"></param>
+        /// <param name="phystime"></param>
+        void IProgram<T>.SaveToDatabase(TimestepNumber ts, double phystime) {
+            this.SaveToDatabase(ts, phystime);
         }
 
         private bool ShouldTerminate(IDictionary<string, double> residuals) {
@@ -325,27 +322,12 @@ namespace CNS {
         /// and recomputes all derived variables
         /// </summary>
         public override void PostRestart(double time) {
-            //FullOperator = operatorFactory.GetJoinedOperator();
             this.startTime = time;
 
-            ImmersedSpeciesMap ibmMap = SpeciesMap as ImmersedSpeciesMap;
-            if (ibmMap != null) {
+            if (SpeciesMap is ImmersedSpeciesMap ibmMap) {
                 LsTrk = ibmMap.Tracker;
             }
         }
-
-        /// <summary>
-        /// Disposes the time-stepper if necessary.
-        /// </summary>
-        public override void Dispose() {
-            IDisposable disposable = TimeStepper as IDisposable;
-            if (disposable != null) {
-                disposable.Dispose();
-            }
-
-            base.Dispose();
-        }
-
 
         protected override int[] ComputeNewCellDistribution(int TimeStepNo, double physTime) {
             ImmersedSpeciesMap ibmMap = SpeciesMap as ImmersedSpeciesMap;
@@ -436,15 +418,6 @@ namespace CNS {
         /// <returns></returns>
         protected virtual BoundaryConditionMap GetBoundaryConditionMap() {
             return new BoundaryConditionMap(GridData, Control);
-        }
-
-        /// <summary>
-        /// See <see cref="SaveToDatabase(TimestepNumber, double)"/>
-        /// </summary>
-        /// <param name="ts"></param>
-        /// <param name="phystime"></param>
-        void IProgram<T>.SaveToDatabase(TimestepNumber ts, double phystime) {
-            this.SaveToDatabase(ts, phystime);
         }
     }
 }

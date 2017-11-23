@@ -22,7 +22,6 @@ using CNS.EquationSystem;
 using CNS.IBM;
 using CNS.MaterialProperty;
 using CNS.Residual;
-using CNS.Solution;
 using ilPSP.Utils;
 using System;
 
@@ -120,7 +119,6 @@ namespace CNS.Tests.IBMTests {
             c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
 
             // Time-Stepping Settings
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 1;
 
@@ -257,7 +255,6 @@ namespace CNS.Tests.IBMTests {
             c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
 
             // Time-Stepping Settings
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 1;
 
@@ -391,7 +388,6 @@ namespace CNS.Tests.IBMTests {
             c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
 
             // Time-Stepping Settings
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 1;
 

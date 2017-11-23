@@ -82,7 +82,7 @@ namespace BoSSS.Solution {
             // Create new model if number of cell classes has changed
             for (int i = 0; i < cellCostEstimatorFactories.Count; i++) {
                 if (CurrentCellCostEstimators[i] == null
-                    || CurrentCellCostEstimators[i].PerformanceClassCount != performanceClassCount) {
+                    || CurrentCellCostEstimators[i].CurrentPerformanceClassCount != performanceClassCount) {
                     CurrentCellCostEstimators[i] = cellCostEstimatorFactories[i](app, performanceClassCount);
                 }
 
@@ -93,7 +93,7 @@ namespace BoSSS.Solution {
                 || TimestepNo % Period != 0) {
                 return null;
             }
-
+            
             // No new partitioning if imbalance below threshold
             double[] imbalanceEstimates =
                 CurrentCellCostEstimators.Select(estimator => estimator.ImbalanceEstimate()).ToArray();
@@ -112,11 +112,11 @@ namespace BoSSS.Solution {
                 imbalanceThreshold);
 
             IList<int[]> cellCosts = CurrentCellCostEstimators.Select(estimator => estimator.GetEstimatedCellCosts()).ToList();
-            if (cellCosts == null) {
+            if (cellCosts == null || cellCosts.All(c => c == null)) {
                 return null;
             }
 
-            if (gridPartType != GridPartType.ParMETIS && cellCosts.Count > 0) {
+            if (gridPartType != GridPartType.ParMETIS && cellCosts.Count > 1) {
                 throw new NotImplementedException("Multiple balance constraints only supported using ParMETIS for now");
             }
             
