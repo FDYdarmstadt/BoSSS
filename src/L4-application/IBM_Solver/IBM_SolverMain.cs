@@ -786,23 +786,26 @@ namespace BoSSS.Application.IBM_Solver {
                 LevSet.AccConstant(-1.0);
             }
 
-            if(this.MPISize == 1) {
-                Console.WriteLine("!!!GMRES solver stats are saved in .txt file!!!");
-                if(this.Control.savetodb) {
-                    SessionPath = this.Control.DbPath + "\\sessions\\" + this.CurrentSessionInfo.ID;
-                    using(StreamWriter writer = new StreamWriter(SessionPath + "\\GMRES_Stats.txt", true)) {
-                        writer.WriteLine("#GMRESIter" + "   " + "error");
-                    }
-                } else {
-                    SessionPath = Directory.GetCurrentDirectory();
-                    if(File.Exists("GMRES_Stats.txt")) {
-                        File.Delete("GMRES_Stats.txt");
-                    }
-                    using(StreamWriter writer = new StreamWriter("GMRES_Stats.txt", true)) {
-                        writer.WriteLine("#GMRESIter" + "   " + "error");
-                    }
-                }
-            }
+
+            // =======================OUTPUT FOR GMRES=====================================
+            //if(this.MPISize == 1) {
+            //    Console.WriteLine("!!!GMRES solver stats are saved in .txt file!!!");
+            //    if(this.Control.savetodb) {
+            //        SessionPath = this.Control.DbPath + "\\sessions\\" + this.CurrentSessionInfo.ID;
+            //        using(StreamWriter writer = new StreamWriter(SessionPath + "\\GMRES_Stats.txt", true)) {
+            //            writer.WriteLine("#GMRESIter" + "   " + "error");
+            //        }
+            //    } else {
+            //        SessionPath = Directory.GetCurrentDirectory();
+            //        if(File.Exists("GMRES_Stats.txt")) {
+            //            File.Delete("GMRES_Stats.txt");
+            //        }
+            //        using(StreamWriter writer = new StreamWriter("GMRES_Stats.txt", true)) {
+            //            writer.WriteLine("#GMRESIter" + "   " + "error");
+            //        }
+            //    }
+            //}
+
             CreateEquationsAndSolvers(null);
             After_SetInitialOrLoadRestart();
             m_BDF_Timestepper.SingleInit();
