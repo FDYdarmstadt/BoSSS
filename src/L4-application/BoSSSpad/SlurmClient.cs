@@ -124,7 +124,8 @@ namespace BoSSS.Application.BoSSSpad {
 
         public override object Submit(Job myJob) {
 
-            buildSlurmScript(myJob, new string[] { "source "+"/home/"+m_Username+"/.bashrc", "module load gcc", "module load openmpi/gcc/2.1.2", "module load acml" });
+            //buildSlurmScript(myJob, new string[] { "source "+"/home/"+m_Username+"/.bashrc", "module load gcc", "module load openmpi/gcc/2.1.2", "module load acml" });
+            buildSlurmScript(myJob, new string[] { "source " + "/home/" + m_Username + "/.bashrc","module load acml"});
 
             string path = "\\home\\" + m_Username + myJob.DeploymentDirectory.Substring(2);
             string convertCmd = " dos2unix " + path + "\\batch.sh";
@@ -153,23 +154,19 @@ namespace BoSSS.Application.BoSSSpad {
             string jobpath_unix = jobpath_win.Replace("\\", "/");
 
             string jobname = myJob.Name;
-            string executiontime = "03:00:00";
+            string executiontime = myJob.ExecutionTime;
             int MPIcores = myJob.NumberOfMPIProcs;
             string usermail = m_Username;
-            //string solverdirection = myJob.Solver;
             string startupstring;
             string quote = "\"";
 
             using (var str = new StringWriter()) {
                 str.Write("mpiexec mono ");
-                str.Write(jobpath_unix+"/"+Path.GetFileName(myJob.EntryAssembly.Location));
-                //for (int i = 0; i<myJob.EnvironmentVars.Count;i++) {
+                str.Write(jobpath_unix+"/"+Path.GetFileName(myJob.EntryAssembly.Location));              
                 str.Write(" ");
                 str.Write(myJob.EnvironmentVars["BOSSS_ARG_" + 0]);
                 str.Write(" ");
-
                 str.Write(quote + myJob.EnvironmentVars["BOSSS_ARG_" + 1] + quote);
-                //}
                 startupstring = str.ToString();
             }
 
