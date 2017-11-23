@@ -150,7 +150,7 @@ namespace MiniBatchProcessor {
                             using (var exit = new StreamReader(ExitCodeFile)) {
                                 ExitCode = int.Parse(exit.ReadLine());
                             }
-                        } catch (Exception) {
+                        } catch (Exception e) {
                             ExitCode = -1;
                         }
                     }
