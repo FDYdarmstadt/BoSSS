@@ -882,9 +882,6 @@ namespace BoSSS.Solution.Timestepping {
             double[] DGCoordinatesPrevious = new double[Mapping.LocalLength];
             double[] timesPerCellPrevious = new double[Mapping.LocalLength];
 
-            // Very likely, this is unnecessary (already done in Perform(dt))
-            ShortenHistories(oldABevolver);
-
             // Copy histories from previous to new ABevolve objects (loop over all cells) depending on the LTS order
             // CAN BE IMPROVED, sufficient to save it once in ctor
             if (subGrid == null) {
