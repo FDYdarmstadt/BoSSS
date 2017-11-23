@@ -163,7 +163,7 @@ namespace BoSSS.Solution {
         public void RestoreDGField(DGField f, string Reference) {
             int newJ = this.m_newJ;
             if(this.GridAdaptation) {
-                
+                todo
 
             } else {
                 double[][] newFieldsData = m_newDGFieldData_OnlyRedist[Reference];
