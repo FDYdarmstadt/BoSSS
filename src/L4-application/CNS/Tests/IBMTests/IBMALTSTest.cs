@@ -35,7 +35,7 @@ namespace CNS.Tests.IBMTests {
         public static IBMControl IBMALTSTestContactDiscontinuity(double levelSetPosition, int explicitOrder, int numOfClusters) {
             IBMControl c = new IBMControl();
 
-            c.DbPath = @"c:\bosss_db";
+            //c.DbPath = @"c:\bosss_db";
             c.savetodb = false;
             c.saveperiod = 1;
             c.PrintInterval = 1;
