@@ -91,6 +91,7 @@
     <Compile Include="Convection\RusanovFlux.cs" />
     <Compile Include="CNSEnvironment.cs" />
     <Compile Include="LoadBalancing\ArtificialViscosityCellClassifier.cs" />
+    <Compile Include="LoadBalancing\IBMCellClassifier.cs" />
     <Compile Include="LoadBalancing\ICellClassifier.cs" />
     <Compile Include="LoadBalancing\IndifferentCellClassifier.cs" />
     <Compile Include="LoadBalancing\LTSCellClassifier.cs" />
