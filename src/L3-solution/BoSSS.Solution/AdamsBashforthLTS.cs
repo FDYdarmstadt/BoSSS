@@ -150,10 +150,6 @@ namespace BoSSS.Solution.Timestepping {
             this.gridData = Fieldsmap.Fields.First().GridDat;
             this.fluxCorrection = fluxCorrection;
 
-            if (subGrid == null) {
-                this.subGrid = new SubGrid(CellMask.GetFullMask(gridData));
-            }
-
             NumberOfLocalTimeSteps = new List<int>(numOfClusters);
 
             clusterer = new Clusterer(this.gridData, this.TimeStepConstraints);
@@ -194,10 +190,6 @@ namespace BoSSS.Solution.Timestepping {
                 this.adaptive = true;
             }
             this.reclusteringInterval = reclusteringInterval;
-
-            if (subGrid == null) {
-                this.subGrid = new SubGrid(CellMask.GetFullMask(gridData));
-            }
 
             // Add OnBeforeComputeChangeRate (AV) to start-up phase time stepper
             RungeKuttaScheme.OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforeComputechangeRate(t1, t2);
