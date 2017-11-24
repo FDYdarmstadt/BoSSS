@@ -197,7 +197,8 @@ namespace BoSSS.Solution.Timestepping {
         /// <summary>
         /// Computes the Adams-Bashforth coefficients
         /// </summary>
-        /// <param name="dt">size of time step</param>
+        /// <param name="dt">Time step size</param>
+        /// <param name="histTime">Time history</param>
         /// <remarks>
         /// Coefficients depend on the previous time steps, saved in historyTime
         /// </remarks>
