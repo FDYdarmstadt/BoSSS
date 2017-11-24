@@ -32,13 +32,14 @@ using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 
 namespace BoSSS.Solution {
+    
 
     /// <summary>
     /// During dynamic load balancing <see cref="Application{T}.MpiRedistributeAndMeshAdapt(int, double)"/>, this is used to
     /// - backup/serialize objects before balancing and
     /// - restore/serialize objects after balancing.
     /// </summary>
-    public class LoadBalancingData {
+    public class LoadBalancingData : GridUpdateData {
 
         /// <summary>
         /// ctor;
@@ -53,43 +54,7 @@ namespace BoSSS.Solution {
             m_oldJ = m_OldGrid.CellPartitioning.LocalLength;
         }
 
-        /// <summary>
-        /// Old Grid, before re-distribution.
-        /// </summary>
-        IGridData m_OldGrid;
-
-        /// <summary>
-        /// Number of locally updated cells in old grid, before load balancing. (<see cref="ILogicalCellData.NoOfLocalUpdatedCells"/>).
-        /// </summary>
-        int m_oldJ;
-
-        /// <summary>
-        /// Level-set tracker before redistribution.
-        /// </summary>
-        LevelSetTracker m_OldTracker;
-
-        /// <summary>
-        /// Number of locally updated cells in old grid, before load balancing. (<see cref="ILogicalCellData.NoOfLocalUpdatedCells"/>).
-        /// </summary>
-        int m_newJ = -1;
-
-        /// <summary>
-        /// New Grid, before re-distribution.
-        /// </summary>
-        internal IGridData m_NewGrid;
-
-        /// <summary>
-        /// New Level-Set tracker, after grid redistribution.
-        /// </summary>
-        LevelSetTracker m_NewTracker;
-
-        /// <summary>
-        /// Stores the backup data of DG Fields before re-distribution.
-        /// - dictionary key: string reference to identify DG field
-        /// - 1st value index: local cell index, old grid
-        /// - 2nd value index: DG coordinate index within cell
-        /// </summary>
-        Dictionary<string, double[][]> m_oldDGFieldData = new Dictionary<string, double[][]>();
+        
 
         /// <summary>
         /// Stores the backup data of DG Fields after re-distribution (when no mesh adaptation is performed).
@@ -98,15 +63,7 @@ namespace BoSSS.Solution {
         /// - 2nd value index: DG coordinate index within cell
         /// </summary>
         Dictionary<string, double[][]> m_newDGFieldData_OnlyRedist;
-
-        /// <summary>
-        /// Stores the backup data of DG Fields after mesh adaptation.
-        /// - dictionary key: string reference to identify DG field
-        /// - 1st value index: local cell index, new grid.
-        /// - 2nd value index: enumeration of cells; for refined and conserved cells, this contains only one element; for cells which are coarsened, this corresponds to all cells of the coarsening cluster.
-        /// - 3rd value index: DG coordinate index within cell.
-        /// </summary>
-        Dictionary<string, double[][][]> m_newDGFieldData_GridAdapta;
+                
 
         /// <summary>
         /// Resorting permutation, points from old to new, i.e. New[<see cref="Resorting"/>[j]] = Old[j].
@@ -118,40 +75,12 @@ namespace BoSSS.Solution {
         /// </summary>
         Permutation InverseResorting;
 
-        /// <summary>
-        /// Backup data for some DG field before grid-redistribution.
-        /// </summary>
-        /// <param name="f"></param>
-        /// <param name="Reference">
-        /// Unique string reference under which the re-distributed data can be accessed later, within <see cref="RestoreDGField(DGField, string)"/>.
-        /// </param>
-        public void BackupField(DGField f, string Reference) {
-            if(!object.ReferenceEquals(f.GridDat, m_OldGrid)) {
-                throw new ArgumentException("DG field seems to be assigned to some other grid.");
-            }
-
-            Basis oldBasis = f.Basis;
-
-            double[][] oldFieldsData = new double[m_oldJ][];
-            m_oldDGFieldData.Add(Reference, oldFieldsData);
-
-            for(int j = 0; j < m_oldJ; j++) {
-                int Nj = oldBasis.GetLength(j);
-                double[] data_j = new double[Nj];
-                for(int n = 0; n < Nj; n++) {
-                    data_j[n] = f.Coordinates[j, n];
-                }
-
-                oldFieldsData[j] = data_j;
-            }
-        }
 
         /// <summary>
-        /// See <see cref="BackupField(DGField, string)"/>.
+        /// Correlation of old and new grid under re-meshing.
         /// </summary>
-        public void BackupField(DGField f) {
-            BackupField(f, f.Identification);
-        }
+        GridCorrelation Remeshing;
+
 
         /// <summary>
         /// Loads the DG coordinates after grid-redistribution.
@@ -160,12 +89,10 @@ namespace BoSSS.Solution {
         /// <param name="Reference">
         /// Unique string reference under which data has been stored before grid-redistribution.
         /// </param>
-        public void RestoreDGField(DGField f, string Reference) {
-            int newJ = this.m_newJ;
-            if(this.GridAdaptation) {
-                todo
+        public override void RestoreDGField(DGField f, string Reference) {
+            using(new FuncTrace()) {
+                int newJ = this.m_newJ;
 
-            } else {
                 double[][] newFieldsData = m_newDGFieldData_OnlyRedist[Reference];
                 Debug.Assert(newFieldsData.Length == newJ);
                 Basis newBasis = f.Basis;
@@ -186,12 +113,50 @@ namespace BoSSS.Solution {
             }
         }
 
+
         /// <summary>
-        /// See <see cref="RestoreDGField(DGField, string)"/>.
+        /// Loads some data vector before grid-redistribution.
         /// </summary>
-        public void RestoreDGField(DGField f) {
-            RestoreDGField(f, f.Identification);
+        /// <param name="vec">
+        /// Output, a vector which indices correlate with the logical cell indices,
+        /// i.e. its length must be a multiple of the number of cells (<see cref="ILogicalCellData.NoOfLocalUpdatedCells"/>).
+        /// </param>
+        /// <param name="Reference">
+        /// Unique string reference under which data has been stored before grid-redistribution.
+        /// </param>
+        public void RestoreVector<T, V>(V vec, string Reference)
+            where V : IList<T> //
+        {
+            using(new FuncTrace()) {
+                if(vec.Count != m_newJ)
+                    throw new ArgumentException();
+
+                var SerializedData = m_newDGFieldData_OnlyRedist[Reference];
+                Debug.Assert(SerializedData.Length == m_newJ);
+                var fmt = new BinaryFormatter();
+
+                for(int j = 0; j < m_newJ; j++) {
+                    using(var ms = new MemoryStream(ConvertBuffer(SerializedData[j]))) {
+                        vec[j] = (T)(fmt.Deserialize(ms));
+                    }
+                }
+            }
         }
+
+        static byte[] ConvertBuffer(double[] buf) {
+            byte[] R = new byte[buf.Length * sizeof(double)];
+
+            unsafe {
+                fixed (void* _pbuf = buf, _bR = R) {
+                    byte* pbuf = (byte*)_pbuf, pR = (byte*)_bR;
+
+                    for(int i = 0; i < R.Length; i++)
+                        pR[i] = pbuf[i];
+                }
+            }
+            return R;
+        }
+
 
         /// <summary>
         /// Backup data for some vector before grid-redistribution.
@@ -243,51 +208,7 @@ namespace BoSSS.Solution {
             return R;
         }
 
-        /// <summary>
-        /// Loads some data vector before grid-redistribution.
-        /// </summary>
-        /// <param name="vec">
-        /// Output, a vector which indices correlate with the logical cell indices,
-        /// i.e. its length must be a multiple of the number of cells (<see cref="ILogicalCellData.NoOfLocalUpdatedCells"/>).
-        /// </param>
-        /// <param name="Reference">
-        /// Unique string reference under which data has been stored before grid-redistribution.
-        /// </param>
-        public void RestoreVector<T, V>(V vec, string Reference)
-            where V : IList<T> //
-        {
-            using(new FuncTrace()) {
-                if(vec.Count != m_newJ)
-                    throw new ArgumentException();
-
-                var SerializedData = m_newDGFieldData_OnlyRedist[Reference];
-                Debug.Assert(SerializedData.Length == m_newJ);
-                var fmt = new BinaryFormatter();
-
-                for(int j = 0; j < m_newJ; j++) {
-                    using(var ms = new MemoryStream(ConvertBuffer(SerializedData[j]))) {
-                        vec[j] = (T)(fmt.Deserialize(ms));
-                    }
-                }
-            }
-        }
-
-        static byte[] ConvertBuffer(double[] buf) {
-            byte[] R = new byte[buf.Length * sizeof(double)];
-
-            unsafe {
-                fixed (void* _pbuf = buf, _bR = R) {
-                    byte* pbuf = (byte*)_pbuf, pR = (byte*)_bR;
-
-                    for(int i = 0; i < R.Length; i++)
-                        pR[i] = pbuf[i];
-                }
-            }
-            return R;
-        }
-
-
-        /// <summary>
+         /// <summary>
         /// Backup data for some floating-point vector before grid-redistribution.
         /// </summary>
         /// <param name="vec">
@@ -313,6 +234,8 @@ namespace BoSSS.Solution {
 
             m_oldDGFieldData.Add(Reference, dataVec);
         }
+
+        
 
         /// <summary>
         /// Loads some floating-point data vector after grid-redistribution.
@@ -365,7 +288,6 @@ namespace BoSSS.Solution {
             public int HMForder;
             public XQuadFactoryHelper.MomentFittingVariants HMFvariant;
         }
-
 
         /// <summary>
         /// Backup of a cut-cell metric.
@@ -641,14 +563,6 @@ namespace BoSSS.Solution {
 
         }
 
-        /// <summary>
-        /// Set the new level-set-tracker after it is available.
-        /// </summary>
-        public void SetNewTracker(LevelSetTracker NewTracker) {
-            if(NewTracker != null && !object.ReferenceEquals(NewTracker.GridDat, m_NewGrid))
-                throw new ArgumentException();
-            m_NewTracker = NewTracker;
-        }
 
         /// <summary>
         /// Apply the resorting (only mesh redistribution between MPI processors, no mesh adaptation)
@@ -735,112 +649,6 @@ namespace BoSSS.Solution {
             }
         }
 
-        /// <summary>
-        /// Whether the grid is only re-distributed, or also adapted.
-        /// - true: mesh adaptation is used; the grid/mesh may also be re-distributed.
-        /// - false: only grid re-distribution.
-        /// </summary>
-        public bool GridAdaptation {
-            get;
-            private set;
-        }
-
-
-        /// <summary>
-        /// Apply the resorting (including mesh adaptation).
-        /// </summary>
-        public void Resort(GridCorrelation r, GridData NewGrid) {
-            using(new FuncTrace()) {
-                this.GridAdaptation = false;
-                this.Resorting = null;
-                this.InverseResorting = null;
-
-                m_OldGrid = null;
-                m_OldTracker = null;
-                m_NewGrid = NewGrid;
-                m_newJ = m_NewGrid.iLogicalCells.NoOfLocalUpdatedCells;
-                
-                // fix the sequence in which we serialize/de-serialize fields
-                string[] FieldNames = this.m_oldDGFieldData.Keys.ToArray();
-                int NoFields = FieldNames.Length;
-
-                // format data for serialization
-                double[][] oldFieldsData = new double[m_oldJ][]; // 1st: cell; 2nd enum
-                {
-
-                    double[][][] oldFields = FieldNames.Select(rstring => this.m_oldDGFieldData[rstring]).ToArray(); // 1st: field; 2nd: cell; 3rd: DG coord
-
-                    for(int j = 0; j < m_oldJ; j++) {
-                        int Ntot = 0;
-                        for(int iF = 0; iF < NoFields; iF++)
-                            Ntot += oldFields[iF][j].Length;
-
-                        // pack the DG coords for each field into one array of the form
-                        // { Np_f1, DGcoords_f1, Np_f2, DGcoords_f2, .... };
-
-                        double[] data_j = new double[Ntot + NoFields];
-                        int cnt = 0;
-                        for(int iF = 0; iF < NoFields; iF++) {
-                            double[] data_iF_j = oldFields[iF][j];
-                            int Nj = data_iF_j.Length;
-                            data_j[cnt] = Nj;
-                            cnt++;
-                            for(int n = 0; n < Nj; n++) {
-                                data_j[cnt] = data_iF_j[n];
-                                cnt++;
-                            }
-                        }
-                        oldFieldsData[j] = data_j;
-                    }
-                    oldFields = null;
-                    m_oldDGFieldData = null;
-                }
-
-                // redistribute data
-                double[][][] newFieldsData = new double[m_newJ][][];
-                {
-                    //Resorting.ApplyToVector(oldFieldsData, newFieldsData, m_NewGrid.CellPartitioning);
-                    r.ApplyToVector(oldFieldsData, newFieldsData, m_NewGrid.CellPartitioning);
-                    oldFieldsData = null;
-                    Debug.Assert(newFieldsData.Length == m_newJ);
-                }
-
-                // re-format re-distributed data
-                m_newDGFieldData_GridAdapta = new Dictionary<string, double[][][]>();
-                {
-                    double[][][][] newFields = new double[FieldNames.Length][][][]; // indices: [field, cell idx, enum over coarsening, DG mode]
-                    for(int iF = 0; iF < NoFields; iF++) {
-                        newFields[iF] = new double[m_newJ][][];
-                    }
-                    for(int j = 0; j < m_newJ; j++) {
-                        double[][] data_j = newFieldsData[j];
-                        int L = data_j.Length; // cell cluster size (equal 1 for refined or conserved cells)
-
-                        for(int l = 0; l < L; l++) {
-                            double[] data_jl = data_j[l];
-
-                            int cnt = 0;
-                            for(int iF = 0; iF < NoFields; iF++) {
-                                int Nj = (int)data_jl[cnt];
-                                cnt++;
-                                double[] data_iF_jl = new double[Nj];
-                                for(int n = 0; n < Nj; n++) {
-                                    data_iF_jl[n] = data_jl[cnt];
-                                    cnt++;
-                                }
-                                newFields[iF][j][l] = data_iF_jl;
-                            }
-                            Debug.Assert(cnt == data_jl.Length);
-                        }
-                    }
-
-                    for(int iF = 0; iF < NoFields; iF++) {
-                        m_newDGFieldData_GridAdapta.Add(FieldNames[iF], newFields[iF]);
-                    }
-                }
-            }
-
-        }
 
 
 
@@ -1099,4 +907,7 @@ namespace BoSSS.Solution {
 
 
     }
+
+
+   
 }

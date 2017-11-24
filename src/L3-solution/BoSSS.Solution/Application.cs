@@ -1483,7 +1483,7 @@ namespace BoSSS.Solution {
         /// <param name="L">
         /// If restarted after dynamic load balancing, the respective data.
         /// </param>
-        protected abstract void CreateEquationsAndSolvers(LoadBalancingData L);
+        protected abstract void CreateEquationsAndSolvers(GridUpdateData L);
 
 
         /// <summary>
@@ -1788,8 +1788,8 @@ namespace BoSSS.Solution {
                     GridData oldGridData = this.GridData;
                     Permutation tau;
                     int[] oldTrackerData;
-                    LoadBalancingData loadbal;
-                    BackupData(oldGridData, this.LsTrk, out loadbal, out tau, out oldTrackerData, out int trackerVersion);
+                    LoadBalancingData loadbal = new LoadBalancingData(oldGridData, this.LsTrk);
+                    BackupData(oldGridData, this.LsTrk, loadbal, out tau, out oldTrackerData, out int trackerVersion);
 
                     // create new grid
                     // ===============
@@ -1898,8 +1898,8 @@ namespace BoSSS.Solution {
                     GridCommons oldGrid = oldGridData.Grid;
                     Permutation tau;
                     int[] oldTrackerData;
-                    LoadBalancingData loadbal;
-                    BackupData(oldGridData, this.LsTrk, out loadbal, out tau, out oldTrackerData, out int trackerVersion);
+                    RemeshingData loadbal = new RemeshingData();
+                    BackupData(oldGridData, this.LsTrk, loadbal, out tau, out oldTrackerData, out int trackerVersion);
                                        
 
                     // check for grid redistribution
@@ -2018,12 +2018,12 @@ namespace BoSSS.Solution {
         }
 
         private void BackupData(GridData oldGridData, LevelSetTracker oldLsTrk, 
-            out LoadBalancingData loadbal, out Permutation tau, out int[] oldTrackerData, out int trackerVersion) {
+            GridUpdateData loadbal, out Permutation tau, out int[] oldTrackerData, out int trackerVersion) {
 
             trackerVersion = -1;
             oldTrackerData = null;
 
-            loadbal = new LoadBalancingData(oldGridData, oldLsTrk);
+            //loadbal = new LoadBalancingData(oldGridData, oldLsTrk);
 
 
             // id's of the fields which we are going to rescue
@@ -2096,7 +2096,7 @@ namespace BoSSS.Solution {
         /// during dynamic load balancing.
         /// May also be used to invalidate internal states related to the old <see cref="GridData"/> or <see cref="LsTrk"/> objects.
         /// </summary>
-        public virtual void DataBackupBeforeBalancing(LoadBalancingData L) {
+        public virtual void DataBackupBeforeBalancing(GridUpdateData L) {
 
         }
 
