@@ -451,6 +451,13 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
         }
 
         protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
+
+            if(TimestepNo > 3 && TimestepNo % 3 != 0) {
+                newGrid = null;
+                old2NewGrid = null;
+                return;
+            }
+
             // Check grid changes
             // ==================
 
