@@ -196,7 +196,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             }
         }
 
-        protected override void CreateEquationsAndSolvers(LoadBalancingData L) {
+        protected override void CreateEquationsAndSolvers(GridUpdateData L) {
             if (Operator != null)
                 return;
 

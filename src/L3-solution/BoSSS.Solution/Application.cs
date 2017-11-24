@@ -1898,8 +1898,8 @@ namespace BoSSS.Solution {
                     GridCommons oldGrid = oldGridData.Grid;
                     Permutation tau;
                     int[] oldTrackerData;
-                    RemeshingData loadbal = new RemeshingData();
-                    BackupData(oldGridData, this.LsTrk, loadbal, out tau, out oldTrackerData, out int trackerVersion);
+                    RemeshingData remshDat = new RemeshingData();
+                    BackupData(oldGridData, this.LsTrk, remshDat, out tau, out oldTrackerData, out int trackerVersion);
                                        
 
                     // check for grid redistribution
@@ -1968,7 +1968,7 @@ namespace BoSSS.Solution {
                         oldTrackerData = null;
                     }
 
-                    loadbal.Resort(old2newGridCorr, newGridData);
+                    remshDat.Resort(old2newGridCorr, newGridData);
 
                     // re-init simulation
                     // ==================
@@ -1984,7 +1984,7 @@ namespace BoSSS.Solution {
                     }
                     CreateFields(); // full user control   
                     PostRestart(physTime);
-                    loadbal.SetNewTracker(this.LsTrk);
+                    remshDat.SetNewTracker(this.LsTrk);
 
                     // re-set Level-Set tracker
                     if(newTrackerData != null) {
@@ -2004,16 +2004,12 @@ namespace BoSSS.Solution {
                             if(!object.ReferenceEquals(xb.Tracker, this.LsTrk))
                                 throw new ApplicationException();
                         }
-                        loadbal.RestoreDGField(f);
+                        remshDat.RestoreDGField(f);
                     }
 
                     // re-create solvers, blablabla
-                    CreateEquationsAndSolvers(loadbal);
+                    CreateEquationsAndSolvers(remshDat);
                 }
-
-
-
-
             }
         }
 

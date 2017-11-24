@@ -23,6 +23,10 @@ namespace BoSSS.Solution {
         /// </summary>
         Dictionary<string, double[][][]> m_newDGFieldData_GridAdapta;
 
+        /// <summary>
+        /// How the cells in the old mesh relate to cells in the new mesh.
+        /// </summary>
+        GridCorrelation m_Old2NewCorr;
 
         /// <summary>
         /// Apply the resorting (including mesh adaptation).
@@ -30,7 +34,7 @@ namespace BoSSS.Solution {
         public void Resort(GridCorrelation r, GridData NewGrid) {
             using(new FuncTrace()) {
                 this.GridAdaptation = false;
-
+                m_Old2NewCorr = r;
                 m_OldGrid = null;
                 m_OldTracker = null;
                 m_NewGrid = NewGrid;
@@ -131,13 +135,14 @@ namespace BoSSS.Solution {
             using(new FuncTrace()) {
                 int newJ = this.m_newJ;
 
+                GridData NewGrid = (GridData)m_NewGrid;
 
                 int pDeg = f.Basis.Degree; //  Refined_TestData.Basis.Degree;
 
                 //int newJ = RefinedGrid.Cells.NoOfLocalUpdatedCells;
                 int[][] TargMappingIdx = new int[newJ][];
 
-                Old2NewCorr.GetTargetMappingIndex(TargMappingIdx, RefinedGrid.CellPartitioning);
+                m_Old2NewCorr.GetTargetMappingIndex(TargMappingIdx, NewGrid.CellPartitioning);
 
                 double[][][] ReDistDGCoords = m_newDGFieldData_GridAdapta[Reference];
                 Debug.Assert(ReDistDGCoords.Length == newJ);
@@ -152,12 +157,12 @@ namespace BoSSS.Solution {
                     } else {
                         Debug.Assert(ReDistDGCoords[j].Length == TargMappingIdx[j].Length);
 
-                        int iKref = m_NewGrid.Cells.GetRefElementIndex(j);
+                        int iKref = NewGrid.Cells.GetRefElementIndex(j);
 
                         if(TargMappingIdx[j].Length == 1) {
                             // refinement
 
-                            MultidimensionalArray Trafo = Old2NewCorr.GetSubdivBasisTransform(iKref, TargMappingIdx[j][0], pDeg);
+                            MultidimensionalArray Trafo = m_Old2NewCorr.GetSubdivBasisTransform(iKref, TargMappingIdx[j][0], pDeg);
 
                             double[] Coords_j = f.Coordinates.GetRow(j);
                             Trafo.gemv(1.0, ReDistDGCoords[j][0], 1.0, Coords_j, transpose: false);
@@ -171,7 +176,7 @@ namespace BoSSS.Solution {
                             int L = ReDistDGCoords[j].Length;
                             double[] Coords_j = f.Coordinates.GetRow(j);
                             for(int l = 0; l < L; l++) {
-                                var Trafo = Old2NewCorr.GetSubdivBasisTransform(iKref, TargMappingIdx[j][l], pDeg);
+                                var Trafo = m_Old2NewCorr.GetSubdivBasisTransform(iKref, TargMappingIdx[j][l], pDeg);
                                 Trafo.gemv(1.0, ReDistDGCoords[j][l], 1.0, Coords_j, transpose: true);
                             }
                             f.Coordinates.SetRow(j, Coords_j);
@@ -181,10 +186,6 @@ namespace BoSSS.Solution {
 
                     }
                 }
-
-
-
-
             }
         }
     }

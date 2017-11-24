@@ -105,7 +105,7 @@ namespace ipPoisson {
         IMutableMatrixEx LaplaceMtx;
         double[] LaplaceAffine;
 
-        protected override void CreateEquationsAndSolvers(LoadBalancingData L) {
+        protected override void CreateEquationsAndSolvers(GridUpdateData L) {
             using(FuncTrace tr = new FuncTrace()) {
 
                 

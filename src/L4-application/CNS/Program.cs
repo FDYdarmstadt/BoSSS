@@ -176,7 +176,7 @@ namespace CNS {
         /// the associated time stepper using an instance of
         /// <see cref="TimeStepperFactory"/>.
         /// </summary>
-        protected override void CreateEquationsAndSolvers(LoadBalancingData loadBalancingData) {
+        protected override void CreateEquationsAndSolvers(GridUpdateData loadBalancingData) {
             FullOperator = operatorFactory.GetJoinedOperator();
 
             CoordinateMapping variableMap = new CoordinateMapping(WorkingSet.ConservativeVariables);
