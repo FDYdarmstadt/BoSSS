@@ -163,20 +163,21 @@ namespace BoSSS.Solution.Timestepping {
                     (ParameterMapping == null) ? (new DGField[0]) : ParameterMapping.Fields;
 
                 this.TimeStepConstraints = timeStepConstraints;
-                subGrid = sgrd;
+                
+                subGrid = sgrd ?? new SubGrid(CellMask.GetFullMask(Fieldsmap.First().GridDat));
 
                 // generate Evaluator
                 // ==================
 
-                CellMask cm = (sgrd == null) ? null : sgrd.VolumeMask;
-                EdgeMask em = (sgrd == null) ? null : sgrd.AllEdgesMask;
+                CellMask cm = subGrid.VolumeMask;
+                EdgeMask em = subGrid.AllEdgesMask;
 
                 Operator = spatialOp;
                 m_Evaluator = new Lazy<SpatialOperator.Evaluator>(() => spatialOp.GetEvaluatorEx(
                     Fieldsmap, ParameterFields, Fieldsmap,
                     new EdgeQuadratureScheme(true, em),
                     new CellQuadratureScheme(true, cm),
-                    sgrd,
+                    subGrid,
                     sgrdBnd));
             }
         }
