@@ -293,6 +293,11 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
         VectorField<SinglePhaseField> Grad_u;
         SinglePhaseField MagGrad_u;
 
+        XDGField uX;
+        XDGField uXResidual;
+        XDGField uXEx;
+        LevelSet LevSet;
+
         protected override void CreateFields() {
             var Basis = new Basis(base.GridData, DEGREE);
             u = new SinglePhaseField(Basis, "u");
@@ -303,6 +308,18 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             base.m_RegisteredFields.AddRange(Grad_u);
             base.m_RegisteredFields.Add(MagGrad_u);
             base.m_RegisteredFields.Add(TestData);
+
+            LevSet = new LevelSet(new Basis(this.GridData, 2), "LevelSet");
+            base.LsTrk = new LevelSetTracker(this.GridData, 1, new string[] { "A", "B" }, LevSet);
+            base.m_RegisteredFields.Add(LevSet);
+
+            var xBasis = new XDGBasis(base.LsTrk, DEGREE);
+            uX = new XDGField(xBasis, "uX");
+            uXResidual = new XDGField(xBasis, "ResX");
+            uXEx = new XDGField(xBasis, "uXEx");
+            base.m_RegisteredFields.Add(uX);
+            base.m_RegisteredFields.Add(uXResidual);
+            base.m_RegisteredFields.Add(uXEx);
         }
 
 
@@ -317,6 +334,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
         protected override void SetInitial() {
             UpdateBaseGrid(0.0);
             TestData.ProjectField(TestDataFunc);
+            this.DelUpdateLevelset(null, 0.0, 0.0, 0.0, false);
 
             /*
             RefinedGrid = this.GridData;
@@ -328,6 +346,47 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             */
         }
 
+
+        /// <summary>
+        /// Equation coefficient, species A.
+        /// </summary>
+        const double alpha_A = 0.1;
+
+        /// <summary>
+        /// Equation coefficient, species B.
+        /// </summary>
+        const double alpha_B = 3.5;
+
+
+        /// <summary>
+        /// Sets level-set and solution at time (<paramref name="time"/> + <paramref name="dt"/>).
+        /// </summary>
+        double DelUpdateLevelset(DGField[] CurrentState, double time, double dt, double UnderRelax, bool _incremental) {
+
+            // new time
+            double t = time + dt;
+
+            // project new level-set
+            double s = 1.0;
+            LevSet.ProjectField((x, y) => -(x - s * t).Pow2() - y.Pow2() + (2.4).Pow2());
+            LsTrk.UpdateTracker(incremental: _incremental);
+
+            // exact solution for new timestep
+            uXEx.GetSpeciesShadowField("A").ProjectField((x, y) => x + alpha_A * t);
+            uXEx.GetSpeciesShadowField("B").ProjectField((x, y) => x + alpha_B * t);
+
+            uX.Clear();
+            uX.Acc(1.0, uXEx);
+
+            // return level-set residual
+            return 0.0;
+        }
+
+
+        /// <summary>
+        /// A polynomial expression which is projected onto <see cref="TestData"/>; since it is polynomial,
+        /// the data should remain constant under refinement and coarsening.
+        /// </summary>
         static double TestDataFunc(double x, double y) {
             return (x * x + y * y);
         }
@@ -391,8 +450,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             return DesiredLevel_j;
         }
 
-        protected override void AdaptMesh(out GridCommons newGrid, out GridCorrelation old2NewGrid) {
-
+        protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
             // Check grid changes
             // ==================
 
@@ -427,130 +485,6 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
                 old2NewGrid = null;
             }
         }
-
-
-        /*
-        void UpdateRefinedGrid(double time, int iTimestep) {
-            int oldJ = RefinedGrid.Cells.NoOfLocalUpdatedCells;
-
-            // backup of old DG data
-            // =====================
-
-            double[][] TestData_DGCoordinates = new double[oldJ][];
-            for(int j = 0; j < oldJ; j++) {
-                TestData_DGCoordinates[j] = Refined_TestData.Coordinates.GetRow(j);
-            }
-
-            // Check grid changes
-            // ==================
-
-            bool AnyChange = GridRefinementControler.ComputeGridChange(RefinedGrid, LevelInicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
-            int NoOfCellsToRefine = 0;
-            int NoOfCellsToCoarsen = 0;
-            if(AnyChange) {
-                int[] glb = (new int[] {
-                    CellsToRefineList.Count,
-                    Coarsening.Sum(L => L.Length),
-                }).MPISum();
-                NoOfCellsToRefine = glb[0];
-                NoOfCellsToCoarsen = glb[1];
-            }
-
-            // Update Grid and create new DG fields
-            // ====================================
-
-            GridCorrelation Old2NewCorr;
-            if(AnyChange) {
-
-
-
-                Console.WriteLine("       Refining " + NoOfCellsToRefine + " of " + oldJ + " cells");
-                Console.WriteLine("       Coarsening " + NoOfCellsToCoarsen + " of " + oldJ + " cells");
-
-
-                GridCommons newGrid = RefinedGrid.Adapt(CellsToRefineList, Coarsening, out Old2NewCorr);
-                RefinedGrid = new GridData(newGrid);
-
-                var Basis = new Basis(RefinedGrid, DEGREE);
-                Refined_u = new SinglePhaseField(Basis, "u");
-                Refined_TestData = new SinglePhaseField(Basis, "TestData");
-                Refined_Grad_u = new VectorField<SinglePhaseField>(base.GridData.SpatialDimension, Basis, "Grad_u", (bs, nmn) => new SinglePhaseField(bs, nmn));
-                Refined_MagGrad_u = new SinglePhaseField(new Basis(RefinedGrid, 0), "Magnitude_Grad_u");
-            } else {
-                Old2NewCorr = null;
-            }
-
-            // Set Data on new Grid
-            // ====================
-
-            {
-                Refined_u.Clear();
-                Refined_u.ProjectField(NonVectorizedScalarFunction.Vectorize(uEx, time));
-
-                Refined_Grad_u.Clear();
-                Refined_Grad_u.Gradient(1.0, Refined_u);
-
-                Refined_MagGrad_u.Clear();
-                Refined_MagGrad_u.ProjectFunction(1.0,
-                    (double[] X, double[] U, int jCell) => Math.Sqrt(U[0].Pow2() + U[1].Pow2()),
-                    new Foundation.Quadrature.CellQuadratureScheme(),
-                    Refined_Grad_u.ToArray());
-
-
-                if(Old2NewCorr != null) {
-                    Old2NewCorr.ComputeDataRedist(RefinedGrid);
-
-                    int pDeg = Refined_TestData.Basis.Degree;
-
-                    int newJ = RefinedGrid.Cells.NoOfLocalUpdatedCells;
-                    int[][] TargMappingIdx = new int[newJ][];
-                    Old2NewCorr.GetTargetMappingIndex(TargMappingIdx, RefinedGrid.CellPartitioning);
-
-                    double[][][] ReDistDGCoords = new double[newJ][][];
-                    Old2NewCorr.ApplyToVector(TestData_DGCoordinates, ReDistDGCoords, RefinedGrid.CellPartitioning);
-
-                    for(int j = 0; j < newJ; j++) {
-                        if(TargMappingIdx[j] == null) {
-                            Debug.Assert(ReDistDGCoords[j].Length == 1);
-                            Refined_TestData.Coordinates.SetRow(j, ReDistDGCoords[j][0]);
-                        } else {
-                            Debug.Assert(ReDistDGCoords[j].Length == TargMappingIdx[j].Length);
-
-                            int iKref = RefinedGrid.Cells.GetRefElementIndex(j);
-
-                            if(TargMappingIdx[j].Length == 1) {
-                                // refinement
-
-                                MultidimensionalArray Trafo = Old2NewCorr.GetSubdivBasisTransform(iKref, TargMappingIdx[j][0], pDeg);
-
-                                double[] Coords_j = Refined_TestData.Coordinates.GetRow(j);
-                                Trafo.gemv(1.0, ReDistDGCoords[j][0], 1.0, Coords_j, transpose: false);
-                                Refined_TestData.Coordinates.SetRow(j, Coords_j);
-
-                                //Console.WriteLine("Refine projection...");
-
-                            } else {
-                                // coarsening
-
-                                int L = ReDistDGCoords[j].Length;
-                                double[] Coords_j = Refined_TestData.Coordinates.GetRow(j);
-                                for(int l = 0; l < L; l++) {
-                                    var Trafo = Old2NewCorr.GetSubdivBasisTransform(iKref, TargMappingIdx[j][l], pDeg);
-                                    Trafo.gemv(1.0, ReDistDGCoords[j][l], 1.0, Coords_j, transpose: true);
-                                }
-                                Refined_TestData.Coordinates.SetRow(j, Coords_j);
-
-                                //Console.WriteLine("Coarsen projection...");
-                            }
-
-                        }
-                    }
-
-                }
-
-            }
-        }
-        */
 
 
 
