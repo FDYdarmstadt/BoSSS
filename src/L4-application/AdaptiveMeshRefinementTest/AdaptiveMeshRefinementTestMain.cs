@@ -562,6 +562,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
                 // timestepping params
                 base.NoOfTimesteps = 100;
                 dt = Math.PI*2 / base.NoOfTimesteps;
+                base.NoOfTimesteps = 20;
 
                 UpdateBaseGrid(phystime + dt);
                 //UpdateRefinedGrid(phystime + dt, TimestepNo);
