@@ -45,7 +45,6 @@ namespace CNS.IBM {
 
         private CellMask cutAndTargetCells;
 
-
         public IBMAdamsBashforth(
             SpatialOperator standardOperator,
             SpatialOperator boundaryOperator,
