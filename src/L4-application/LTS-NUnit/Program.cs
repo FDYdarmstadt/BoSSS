@@ -90,8 +90,6 @@ namespace LTS_NUnit {
 
         private class SurrogateConstraint : TimeStepConstraint {
 
-            private MultidimensionalArray CellMetric;
-
             public SurrogateConstraint(GridData gridData, double dtMin, double dtMax, double dtFraction, double EndTime) :
                 base(gridData, dtMin, dtMax, dtFraction, EndTime) {
             }
