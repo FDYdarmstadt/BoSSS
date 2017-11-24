@@ -15,7 +15,9 @@ limitations under the License.
 */
 
 using BoSSS.Foundation;
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.XDG;
 using ilPSP;
 using ilPSP.Tracing;
 using System;
@@ -33,6 +35,20 @@ namespace BoSSS.Solution {
     /// - restore/serialize objects on the refined grid
     /// </summary>
     public class RemeshingData : GridUpdateData {
+
+
+        /// <summary>
+        /// ctor;
+        /// </summary>
+        /// <param name="oldGrid"></param>
+        /// <param name="oldTracker"></param>
+        internal RemeshingData(IGridData oldGrid, LevelSetTracker oldTracker) {
+            if(oldTracker != null && !object.ReferenceEquals(oldTracker.GridDat, oldGrid))
+                throw new ArgumentException();
+            m_OldGrid = oldGrid;
+            m_OldTracker = oldTracker;
+            m_oldJ = m_OldGrid.CellPartitioning.LocalLength;
+        }
 
         /// <summary>
         /// Stores the backup data of DG Fields after mesh adaptation.
@@ -115,6 +131,9 @@ namespace BoSSS.Solution {
                     for(int j = 0; j < m_newJ; j++) {
                         double[][] data_j = newFieldsData[j];
                         int L = data_j.Length; // cell cluster size (equal 1 for refined or conserved cells)
+
+                        for(int iF = 0; iF < NoFields; iF++)
+                            newFields[iF][j] = new double[L][];
 
                         for(int l = 0; l < L; l++) {
                             double[] data_jl = data_j[l];

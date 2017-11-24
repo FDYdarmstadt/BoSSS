@@ -1898,7 +1898,7 @@ namespace BoSSS.Solution {
                     GridCommons oldGrid = oldGridData.Grid;
                     Permutation tau;
                     int[] oldTrackerData;
-                    RemeshingData remshDat = new RemeshingData();
+                    RemeshingData remshDat = new RemeshingData(oldGridData, this.LsTrk);
                     BackupData(oldGridData, this.LsTrk, remshDat, out tau, out oldTrackerData, out int trackerVersion);
                                        
 
@@ -1932,14 +1932,15 @@ namespace BoSSS.Solution {
                     GridData newGridData;
                     {
                         this.MultigridSequence = null;
-                                               
 
+                        this.Grid = newGrid;
                         newGridData = new GridData(this.Grid);
                         this.GridData = newGridData;
                         oldGridData.Invalidate();
                         if(this.LsTrk != null) {
                             this.LsTrk.Invalidate();
                         }
+                        oldGridData = null;
 
                         if(this.Control == null || this.Control.NoOfMultigridLevels > 0)
                             this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));

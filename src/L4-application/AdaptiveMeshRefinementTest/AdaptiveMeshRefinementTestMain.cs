@@ -288,6 +288,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             return grd;
         }
 
+        SinglePhaseField TestData;
         SinglePhaseField u;
         VectorField<SinglePhaseField> Grad_u;
         SinglePhaseField MagGrad_u;
@@ -297,9 +298,11 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             u = new SinglePhaseField(Basis, "u");
             Grad_u = new VectorField<SinglePhaseField>(base.GridData.SpatialDimension, Basis, "Grad_u", (bs, nmn) => new SinglePhaseField(bs, nmn));
             MagGrad_u = new SinglePhaseField(new Basis(base.GridData, 0), "Magnitude_Grad_u");
+            TestData = new SinglePhaseField(Basis, "TestData");
             base.m_RegisteredFields.Add(u);
             base.m_RegisteredFields.AddRange(Grad_u);
             base.m_RegisteredFields.Add(MagGrad_u);
+            base.m_RegisteredFields.Add(TestData);
         }
 
 
@@ -313,14 +316,16 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
         /// </summary>
         protected override void SetInitial() {
             UpdateBaseGrid(0.0);
+            TestData.ProjectField(TestDataFunc);
 
+            /*
             RefinedGrid = this.GridData;
             Refined_u = this.u;
             Refined_TestData = new SinglePhaseField(this.u.Basis, "TestData");
             Refined_Grad_u = this.Grad_u;
             Refined_MagGrad_u = this.MagGrad_u;
 
-            Refined_TestData.ProjectField(TestDataFunc);
+            */
         }
 
         static double TestDataFunc(double x, double y) {
@@ -366,22 +371,16 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             if (L == null) {
                 
             } else {
-                throw new NotImplementedException("todo");
+                //throw new NotImplementedException("todo");
             }
         }
 
-        GridData RefinedGrid = null;
-         
-        SinglePhaseField Refined_u;
-        VectorField<SinglePhaseField> Refined_Grad_u;
-        SinglePhaseField Refined_MagGrad_u;
-        SinglePhaseField Refined_TestData;
 
         /// <summary>
         /// Very primitive refinement indicator, works on a gradient criterion.
         /// </summary>
         int LevelInicator(int j, int CurrentLevel) {
-            double GradMag = Refined_MagGrad_u.GetMeanValue(j);
+            double GradMag = MagGrad_u.GetMeanValue(j);
 
             int DesiredLevel_j = 0;
             if(GradMag > 0.6)
@@ -392,7 +391,45 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             return DesiredLevel_j;
         }
 
+        protected override void AdaptMesh(out GridCommons newGrid, out GridCorrelation old2NewGrid) {
 
+            // Check grid changes
+            // ==================
+
+            bool AnyChange = GridRefinementControler.ComputeGridChange(this.GridData, LevelInicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+            int NoOfCellsToRefine = 0;
+            int NoOfCellsToCoarsen = 0;
+            if(AnyChange) {
+                int[] glb = (new int[] {
+                    CellsToRefineList.Count,
+                    Coarsening.Sum(L => L.Length),
+                }).MPISum();
+                NoOfCellsToRefine = glb[0];
+                NoOfCellsToCoarsen = glb[1];
+            }
+            int oldJ = this.GridData.CellPartitioning.TotalLength;
+
+            // Update Grid
+            // ===========
+           
+            if(AnyChange) {
+
+                
+
+                Console.WriteLine("       Refining " + NoOfCellsToRefine + " of " + oldJ + " cells");
+                Console.WriteLine("       Coarsening " + NoOfCellsToCoarsen + " of " + oldJ + " cells");
+
+
+                newGrid = this.GridData.Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
+                
+            } else {
+                newGrid = null;
+                old2NewGrid = null;
+            }
+        }
+
+
+        /*
         void UpdateRefinedGrid(double time, int iTimestep) {
             int oldJ = RefinedGrid.Cells.NoOfLocalUpdatedCells;
 
@@ -513,8 +550,8 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
 
             }
         }
+        */
 
-        
 
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
@@ -527,10 +564,10 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
                 dt = Math.PI*2 / base.NoOfTimesteps;
 
                 UpdateBaseGrid(phystime + dt);
-                UpdateRefinedGrid(phystime + dt, TimestepNo);
+                //UpdateRefinedGrid(phystime + dt, TimestepNo);
 
                 // check error
-                double L2err = Refined_TestData.L2Error(TestDataFunc);
+                double L2err = TestData.L2Error(TestDataFunc);
                 Console.WriteLine("Projection error from old to new grid: " + L2err);
                 Assert.LessOrEqual(L2err, 1.0e-8, "Projection error from old to new grid to high.");
 
@@ -541,12 +578,13 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
         }
 
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
-            string filename = "BaseGrid." + timestepNo;
+            string filename = "AdaptiveMeshRefinementTest." + timestepNo;
             Tecplot.PlotFields(base.m_RegisteredFields.ToArray(), filename, physTime, superSampling);
 
-            DGField[] RefinedFields = new[] { Refined_u, Refined_TestData, Refined_Grad_u[0], Refined_Grad_u[1], Refined_MagGrad_u };
-            string filename2 = "RefinedGrid." + timestepNo;
-            Tecplot.PlotFields(RefinedFields, filename2, physTime, superSampling);
+
+            //DGField[] RefinedFields = new[] { Refined_u, Refined_TestData, Refined_Grad_u[0], Refined_Grad_u[1], Refined_MagGrad_u };
+            //string filename2 = "RefinedGrid." + timestepNo;
+            //Tecplot.PlotFields(RefinedFields, filename2, physTime, superSampling);
         }
     }
 }
