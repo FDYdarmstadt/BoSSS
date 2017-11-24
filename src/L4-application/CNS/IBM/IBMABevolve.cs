@@ -71,9 +71,9 @@ namespace CNS.IBM {
 
         internal void BuildEvaluatorsAndMasks() {
 
-            CellMask fluidCells = speciesMap.SubGrid.VolumeMask.Intersect(ABSubgrid.VolumeMask);
-            cutCells = speciesMap.Tracker._Regions.GetCutCellMask().Intersect(ABSubgrid.VolumeMask);
-            cutAndTargetCells = cutCells.Union(speciesMap.Agglomerator.AggInfo.TargetCells).Intersect(ABSubgrid.VolumeMask);
+            CellMask fluidCells = speciesMap.SubGrid.VolumeMask.Intersect(ABSubGrid.VolumeMask);
+            cutCells = speciesMap.Tracker._Regions.GetCutCellMask().Intersect(ABSubGrid.VolumeMask);
+            cutAndTargetCells = cutCells.Union(speciesMap.Agglomerator.AggInfo.TargetCells).Intersect(ABSubGrid.VolumeMask);
 
 
             IBMControl control = speciesMap.Control;
@@ -85,7 +85,7 @@ namespace CNS.IBM {
 
             // Does _not_ include agglomerated edges
             EdgeMask nonVoidEdges = speciesMap.QuadSchemeHelper.GetEdgeMask(species);
-            nonVoidEdges = nonVoidEdges.Intersect(ABSubgrid.AllEdgesMask);
+            nonVoidEdges = nonVoidEdges.Intersect(ABSubGrid.AllEdgesMask);
             EdgeQuadratureScheme edgeScheme = speciesMap.QuadSchemeHelper.GetEdgeQuadScheme(
                 species, true, nonVoidEdges, control.LevelSetQuadratureOrder);
 
@@ -96,7 +96,7 @@ namespace CNS.IBM {
                     Mapping,
                     edgeScheme,
                     volumeScheme,
-                    ABSubgrid,
+                    ABSubGrid,
                     subGridBoundaryTreatment: SpatialOperator.SubGridBoundaryModes.InnerEdgeLTS));
 
             // Evaluator for boundary conditions at level set zero contour
@@ -186,8 +186,8 @@ namespace CNS.IBM {
         private double[] OrderValuesBySgrd(double[] results) {
             double[] ordered = new double[Mapping.LocalLength];
 
-            for (int j = 0; j < ABSubgrid.LocalNoOfCells; j++) {
-                int cell = ABSubgrid.SubgridIndex2LocalCellIndex[j];
+            for (int j = 0; j < ABSubGrid.LocalNoOfCells; j++) {
+                int cell = ABSubGrid.SubgridIndex2LocalCellIndex[j];
                 // cell in sgrd
                 // f== each field
                 // n== basis polynomial
