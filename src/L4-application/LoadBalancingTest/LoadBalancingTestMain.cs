@@ -285,7 +285,7 @@ namespace BoSSS.Application.LoadBalancingTest {
                 PerformanceClasses[j] = 1;
 
             if (balancer == null) {
-                balancer = new LoadBalancer(cellCostEstimatorFactory);
+                balancer = new LoadBalancer(new List<Func<IApplication<AppControl>, int, ICellCostEstimator>>() { cellCostEstimatorFactory });
             }
 
             return balancer.GetNewPartitioning(

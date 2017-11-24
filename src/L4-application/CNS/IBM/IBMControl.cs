@@ -19,7 +19,6 @@ using BoSSS.Platform.LinAlg;
 using BoSSS.Solution;
 using BoSSS.Solution.Control;
 using CNS.EquationSystem;
-using CNS.Exception;
 using System;
 
 namespace CNS.IBM {
@@ -30,7 +29,8 @@ namespace CNS.IBM {
     public class IBMControl : CNSControl {
 
         public IBMControl() : base() {
-            this.DynamicLoadBalancing_CellCostEstimatorFactory = delegate (IApplication<AppControl> app, int performanceClassCount) {
+            Console.WriteLine("Warning: Auto-adding default estimator factory for IBM. Is this what you want?");
+            this.DynamicLoadBalancing_CellCostEstimatorFactories.Add(delegate (IApplication<AppControl> app, int performanceClassCount) {
                 if (performanceClassCount != 3) {
                     throw new ArgumentException(
                         "Only valid for exactly three performance classes",
@@ -39,7 +39,7 @@ namespace CNS.IBM {
 
                 int[] map = new int[] { 1, 15, 0 };
                 return new StaticCellCostEstimator(map);
-            };
+            });
         }
 
         /// <summary>
@@ -122,7 +122,7 @@ namespace CNS.IBM {
             base.Verify();
 
             if (DomainType == DomainTypes.Standard) {
-                throw new ConfigurationException(
+                throw new Exception(
                     "Wrong domain type for immersed boundary runs");
             }
 
@@ -131,13 +131,13 @@ namespace CNS.IBM {
                     // Everything is fine (level set data is read from database
                     // and is not moving)
                 } else {
-                    throw new ConfigurationException(
+                    throw new Exception(
                         "A level set function is required when running in IBM mode");
                 }
             }
 
             if (!FieldOptions.ContainsKey(IBMVariables.LevelSet)) {
-                throw new ConfigurationException(
+                throw new Exception(
                     "A level set is required when running in IBM mode");
             }
         }

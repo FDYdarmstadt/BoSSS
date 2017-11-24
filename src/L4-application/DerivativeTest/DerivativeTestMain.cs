@@ -74,9 +74,9 @@ namespace BoSSS.Application.DerivativeTest {
         /// </summary>
         [Test]
 #if DEBUG
-        public static void DerivativeTest_BuildInGrid([Range(1, 15)] int gridCase, [Values(2, 10000000)] int bulksize_limit, [Values(1024, 1024 * 1024 * 128)] int cache_size) {
+        public static void DerivativeTest_BuildInGrid([Range(1, 13)] int gridCase, [Values(2, 10000000)] int bulksize_limit, [Values(1024)] int cache_size) {
 #else
-        public static void DerivativeTest_BuildInGrid([Range(1, 15)] int gridCase, [Values(1, 500, 10000000)] int bulksize_limit, [Values(1024, 1024 * 1024 * 128)] int cache_size) {
+        public static void DerivativeTest_BuildInGrid([Range(1, 16)] int gridCase, [Values(1, 500, 10000000)] int bulksize_limit, [Values(1024, 1024 * 1024 * 128)] int cache_size) {
 #endif
             DerivativeTestMain.GRID_CASE = gridCase;
             DerivativeTestMain p = null;
@@ -172,7 +172,7 @@ namespace BoSSS.Application.DerivativeTest {
         /// <summary>
         /// Switch for the test-case, see implementation of <see cref="CreateOrLoadGrid"/>.
         /// </summary>
-        public static int GRID_CASE = 12;
+        public static int GRID_CASE = 16;
 
         /// <summary>
         /// Grid/mesh file to use, see implementation of <see cref="CreateOrLoadGrid"/>.
@@ -186,15 +186,13 @@ namespace BoSSS.Application.DerivativeTest {
             //Quadrature_Bulksize.BULKSIZE_LIMIT_OVERRIDE = 1;
             BoSSS.Solution.Application.InitMPI(args);
 
-            foreach( var o in System.Enum.GetValues(typeof(CellType))) {
-                Console.WriteLine(o.ToString() + " " + ((int)o) + " " + o.GetType().FullName);
-            }
+ 
 
             // Build-In Grids
             // ==============
 
 
-            for (int i = 13; i <= 13; i++) {
+            for (int i = 16; i <= 16; i++) {
                 BoSSS.Solution.Application._Main(args, true, null, delegate () {
                     var R = new DerivativeTestMain();
                     GRID_CASE = i;
@@ -401,6 +399,7 @@ namespace BoSSS.Application.DerivativeTest {
                     //grd = base_grid;
                     //grid1.Plot2DGrid();
 
+
                     var gdat1 = new GridData(grid1);
                     var grid2 = gdat1.Adapt(new int[] { 1, 2 }, null, out GridCorrelation o2c_1);
                     //grid2.Plot2DGrid();
@@ -415,6 +414,7 @@ namespace BoSSS.Application.DerivativeTest {
 
                     var gdat4 = new GridData(grid4);
                     var grid5 = gdat4.Adapt(new[] { 4, 21, 22, 10 }, new[] { new[] { 13, 14, 15, 16 } }, out GridCorrelation o2c_4);
+
                     //grid5.Plot2DGrid();
                                         
                     grd = grid5;
@@ -443,6 +443,13 @@ namespace BoSSS.Application.DerivativeTest {
                     grd = Grid3D.CylinderGrid(rNodes, sNodes, zNodes, CellType.Cube_27, PeriodicS: false, PeriodicZ: false);
                     break;
                 }
+
+                case 16: {
+                    grd = Grid2D.Ogrid(0.5, 1, 5, 3, CellType.Square_4);
+                    //grd = Grid3D.Ogrid(0.5, 1, 5, 3, GenericBlas.Linspace(0,4,5));
+                    break;
+                }
+
 
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // more expensive grids (not tested in DEBUG MODE)

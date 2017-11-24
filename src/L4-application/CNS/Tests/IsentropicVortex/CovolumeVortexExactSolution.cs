@@ -14,13 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
 using BoSSS.Platform.LinAlg;
-using CNS.Exception;
 using CNS.MaterialProperty;
+using System;
 
 namespace CNS.Tests.IsentropicVortex {
-    
+
     /// <summary>
     /// Exact solution for isentropic vortex in a covolume gas; see Mueller2014
     /// </summary>
@@ -82,7 +81,7 @@ namespace CNS.Tests.IsentropicVortex {
             int n = 0;
             while (true) {
                 if (n >= maxIterations) {
-                    throw new NumericalAlgorithmException("No convergence");
+                    throw new Exception("No convergence");
                 }
                 
                 density = 0.5 * (densityRight + densityLeft);

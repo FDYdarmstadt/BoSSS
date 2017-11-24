@@ -74,12 +74,16 @@ namespace BoSSS.Solution.Timestepping {
         /// <summary>
         /// List of various time step constraints, e.g CFL condition
         /// </summary>
-        public IList<TimeStepConstraint> timeStepConstraints {
+        public IList<TimeStepConstraint> TimeStepConstraints {
             get;
             protected set;
         }
 
-        protected SubGrid Subgrid;
+        /// <summary>
+        /// <see cref="Foundation.Grid.SubGrid"/> that is used for time integration,
+        /// e.g., in an IBM simulation this is only fluid part
+        /// </summary>
+        protected SubGrid subGrid;
 
         /// <summary>
         /// 
@@ -158,21 +162,22 @@ namespace BoSSS.Solution.Timestepping {
                 IList<DGField> ParameterFields =
                     (ParameterMapping == null) ? (new DGField[0]) : ParameterMapping.Fields;
 
-                this.timeStepConstraints = timeStepConstraints;
-                Subgrid = sgrd;
+                this.TimeStepConstraints = timeStepConstraints;
+                
+                subGrid = sgrd ?? new SubGrid(CellMask.GetFullMask(Fieldsmap.First().GridDat));
 
                 // generate Evaluator
                 // ==================
 
-                CellMask cm = (sgrd == null) ? null : sgrd.VolumeMask;
-                EdgeMask em = (sgrd == null) ? null : sgrd.AllEdgesMask;
+                CellMask cm = subGrid.VolumeMask;
+                EdgeMask em = subGrid.AllEdgesMask;
 
                 Operator = spatialOp;
                 m_Evaluator = new Lazy<SpatialOperator.Evaluator>(() => spatialOp.GetEvaluatorEx(
                     Fieldsmap, ParameterFields, Fieldsmap,
                     new EdgeQuadratureScheme(true, em),
                     new CellQuadratureScheme(true, cm),
-                    sgrd,
+                    subGrid,
                     sgrdBnd));
             }
         }
@@ -220,15 +225,15 @@ namespace BoSSS.Solution.Timestepping {
         /// Override this method e.g. for the implementation of (some types of) limiters.
         /// </remarks>
         virtual internal protected void ComputeChangeRate(double[] k, double AbsTime, double RelTime, double[] edgeFluxes = null) {
-            if (OnBeforeComputeChangeRate != null) {
-                OnBeforeComputeChangeRate(AbsTime, RelTime);
-            }
+            using (var tr = new ilPSP.Tracing.FuncTrace()) {
+                RaiseOnBeforeComputechangeRate(AbsTime, RelTime);
 
-            // k += F(u0)
-            Evaluator.Evaluate<double[]>(1.0, 1.0, k, AbsTime, outputBndEdge: edgeFluxes);
+                // k += F(u0)
+                Evaluator.Evaluate<double[]>(1.0, 1.0, k, AbsTime, outputBndEdge: edgeFluxes);
+            }
         }
 
-        protected void RaiseOnBeforComputechangeRate(double AbsTime, double RelTime) {
+        protected void RaiseOnBeforeComputechangeRate(double AbsTime, double RelTime) {
             if (OnBeforeComputeChangeRate != null) {
                 OnBeforeComputeChangeRate(AbsTime, RelTime);
             }
@@ -290,7 +295,7 @@ namespace BoSSS.Solution.Timestepping {
         /// <param name="dt">size of timestep</param>
         public virtual double Perform(double dt) {
             using (new ilPSP.Tracing.FuncTrace()) {
-                if (timeStepConstraints != null) {
+                if (TimeStepConstraints != null) {
                     dt = CalculateTimeStep();
                 }
                 double[] k = new double[Mapping.LocalLength];
@@ -312,11 +317,11 @@ namespace BoSSS.Solution.Timestepping {
         /// <returns></returns>
         virtual protected double CalculateTimeStep() {
             double dt;
-            if (timeStepConstraints.First().dtMin != timeStepConstraints.First().dtMax) {
+            if (TimeStepConstraints.First().dtMin != TimeStepConstraints.First().dtMax) {
                 // Use "harmonic sum" of step - sizes, see
                 // WatkinsAsthanaJameson2016 for the reasoning
-                dt = 1.0 / timeStepConstraints.Sum(
-                        c => 1.0 / c.GetGloballyAdmissibleStepSize(Subgrid));
+                dt = 1.0 / TimeStepConstraints.Sum(
+                        c => 1.0 / c.GetGloballyAdmissibleStepSize(subGrid));
                 if (dt == 0.0) {
                     throw new ArgumentException(
                         "Time-step size is exactly zero.");
@@ -325,11 +330,11 @@ namespace BoSSS.Solution.Timestepping {
                         "Could not determine stable time-step size. This indicates illegal values in some cells.");
                 }
 
-                dt = Math.Min(dt, timeStepConstraints.First().Endtime - Time);
-                dt = Math.Min(Math.Max(dt, timeStepConstraints.First().dtMin), timeStepConstraints.First().dtMax);
+                dt = Math.Min(dt, TimeStepConstraints.First().Endtime - Time);
+                dt = Math.Min(Math.Max(dt, TimeStepConstraints.First().dtMin), TimeStepConstraints.First().dtMax);
             } else {
-                dt = timeStepConstraints.First().dtMin;
-                dt = Math.Min(dt, timeStepConstraints.First().Endtime - Time);
+                dt = TimeStepConstraints.First().dtMin;
+                dt = Math.Min(dt, TimeStepConstraints.First().Endtime - Time);
             }
 
             return dt;

@@ -45,7 +45,6 @@ namespace CNS.IBM {
 
         private CellMask cutAndTargetCells;
 
-
         public IBMAdamsBashforth(
             SpatialOperator standardOperator,
             SpatialOperator boundaryOperator,
@@ -154,9 +153,6 @@ namespace CNS.IBM {
         /// agglomerated and multiplied by the inverse mass matrix (of the
         /// agglomerated basis)
         /// </summary>
-        /// <param name="k"></param>
-        /// <param name="AbsTime"></param>
-        /// <param name="RelTime"></param>
         protected override void ComputeChangeRate(double[] k, double AbsTime, double RelTime, double[] edgeFluxes = null) {
             Evaluator.Evaluate(1.0, 0.0, k, AbsTime);
             Debug.Assert(

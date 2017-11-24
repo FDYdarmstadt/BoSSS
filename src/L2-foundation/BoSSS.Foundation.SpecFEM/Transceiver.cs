@@ -14,18 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using ilPSP;
+using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using BoSSS.Platform;
-using MPI.Wrappers;
-using System.Runtime.InteropServices;
-using ilPSP;
 using System.Diagnostics;
+using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace BoSSS.Foundation.SpecFEM {
-    
+
     /// <summary>
     /// MPI data exchange for Spectral Elements
     /// </summary>
@@ -41,11 +39,11 @@ namespace BoSSS.Foundation.SpecFEM {
             for (int rnk = 0; rnk < Size; rnk++) {
                 if (basis.MPI_SendLists[rnk] != null) {
                     int L = basis.MPI_SendLists[rnk].Length;
-                    _SendBuffers.Add(new Tuple<int, IntPtr>(rnk, Marshal.AllocHGlobal(sizeof(double)*L)));
+                    _SendBuffers.Add(new Tuple<int, IntPtr>(rnk, Marshal.AllocHGlobal(sizeof(double) * L)));
                 }
                 if (basis.MPI_InsertLists[rnk] != null) {
                     int L = basis.MPI_InsertLists[rnk].Length;
-                    _ReceiveBuffers.Add(new Tuple<int, IntPtr>(rnk, Marshal.AllocHGlobal(sizeof(double)*L)));
+                    _ReceiveBuffers.Add(new Tuple<int, IntPtr>(rnk, Marshal.AllocHGlobal(sizeof(double) * L)));
                 }
 
             }
@@ -107,8 +105,7 @@ namespace BoSSS.Foundation.SpecFEM {
 
                 int[] SndList = SendLists[Rank];
 
-                unsafe
-                {
+                unsafe {
                     int L = SndList.Length;
                     double* p0 = (double*)Buffer;
 
@@ -140,8 +137,7 @@ namespace BoSSS.Foundation.SpecFEM {
                 Tuple<int, IntPtr> kv = _ReceiveBuffers[index - NoOf_PsendTo];
                 int[] InsList = InsertLists[kv.Item1];
 
-                unsafe
-                {
+                unsafe {
                     int L = InsList.Length;
                     double* p0 = (double*)kv.Item2;
 
@@ -166,7 +162,7 @@ namespace BoSSS.Foundation.SpecFEM {
             int[][] InsertLists = m_Basis.MPI_SendLists;
             var _SendBuffers = this.ReceiveBuffers;
             var _ReceiveBuffers = this.SendBuffers;
-            
+
 
             int NoOf_PsendTo = _SendBuffers.Length;    // Number of processes to send to
             int NoOf_PrvcFrm = _ReceiveBuffers.Length; // Number of processes to receive from
@@ -179,15 +175,15 @@ namespace BoSSS.Foundation.SpecFEM {
             // set up non-blocking receive
             // ===========================
 
-            for( int i = 0; i < NoOf_PrvcFrm; i++) {
-                Tuple<int,IntPtr> kv = _ReceiveBuffers[i];
+            for (int i = 0; i < NoOf_PrvcFrm; i++) {
+                Tuple<int, IntPtr> kv = _ReceiveBuffers[i];
                 int Rank = kv.Item1;
                 IntPtr Buffer = kv.Item2;
 
                 csMPI.Raw.Irecv(Buffer, InsertLists[Rank].Length, csMPI.Raw._DATATYPE.DOUBLE, Rank, 2341, csMPI.Raw._COMM.WORLD, out req[NoOf_PsendTo + i]);
             }
 
-            
+
             // initiate sending
             // ================
 
@@ -225,7 +221,7 @@ namespace BoSSS.Foundation.SpecFEM {
                 if (index < NoOf_PsendTo)
                     // send finished
                     continue;
-                
+
                 // else: receive finished
                 Tuple<int, IntPtr> kv = _ReceiveBuffers[index - NoOf_PsendTo];
                 int[] InsList = InsertLists[kv.Item1];
@@ -234,7 +230,7 @@ namespace BoSSS.Foundation.SpecFEM {
                     int L = InsList.Length;
                     double* p0 = (double*)kv.Item2;
 
-                    for (int l =0; l < L; l++) {
+                    for (int l = 0; l < L; l++) {
                         A[InsList[l]] = Math.Max(A[InsList[l]], *p0);
                         p0++;
                     }
@@ -319,7 +315,7 @@ namespace BoSSS.Foundation.SpecFEM {
                     int L = InsList.Length;
                     double* p0 = (double*)kv.Item2;
 
-                    for (int l =0; l < L; l++) {
+                    for (int l = 0; l < L; l++) {
                         A[InsList[l]] = *p0;
                         p0++;
                     }

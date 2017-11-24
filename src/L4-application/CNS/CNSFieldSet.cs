@@ -240,6 +240,7 @@ namespace CNS {
         /// update function <see cref="DerivedVariable.UpdateFunction"/>
         /// </summary>
         public void UpdateDerivedVariables(IProgram<CNSControl> program, CellMask cellMask) {
+            program.Control.ShockSensor?.UpdateSensorValues(program.WorkingSet);
             foreach (var pair in DerivedFields) {
                 pair.Key.UpdateFunction(pair.Value, cellMask, program);
             }
