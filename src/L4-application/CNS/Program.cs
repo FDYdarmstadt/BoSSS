@@ -15,16 +15,15 @@ limitations under the License.
 */
 
 using BoSSS.Foundation;
-using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
 using BoSSS.Solution;
 using BoSSS.Solution.ASCIIExport;
 using BoSSS.Solution.Tecplot;
-using BoSSS.Solution.Timestepping;
 using CNS.Boundary;
 using CNS.EquationSystem;
 using CNS.IBM;
+using CNS.LoadBalancing;
 using CNS.Residual;
 using ilPSP;
 using ilPSP.Tracing;
@@ -217,13 +216,12 @@ namespace CNS {
             using (var ht = new FuncTrace()) {
                 int printInterval = Control.PrintInterval;
                 if (DatabaseDriver.MyRank == 0 && TimestepNo % printInterval == 0) {
-                    //Console.WriteLine();
                     Console.Write("Starting time step #" + TimestepNo + "...");
                 }
 
-                System.Exception e = null;
+                Exception e = null;
                 try {
-                } catch (System.Exception ee) {
+                } catch (Exception ee) {
                     e = ee;
                 }
                 e.ExceptionBcast();
@@ -329,9 +327,14 @@ namespace CNS {
             }
         }
 
+        /// <summary>
+        /// See <see cref="Application{T}.ComputeNewCellDistribution(int, double)"/>
+        /// </summary>
+        /// <param name="TimeStepNo"></param>
+        /// <param name="physTime"></param>
+        /// <returns></returns>
         protected override int[] ComputeNewCellDistribution(int TimeStepNo, double physTime) {
-            ImmersedSpeciesMap ibmMap = SpeciesMap as ImmersedSpeciesMap;
-            if (ibmMap != null) {
+            if (SpeciesMap is ImmersedSpeciesMap ibmMap) {
                 LsTrk = ibmMap.Tracker;
             }
 
@@ -339,75 +342,12 @@ namespace CNS {
         }
 
         /// <summary>
-        /// Standard:
-        /// All cells are class 0
-        /// 
-        /// Standard + AV:
-        /// AV cells are 1, all others are 0
-        /// 
-        /// IBM:
-        /// - standard fluid cells are 0
-        /// - cut cells are 1
-        /// - void cells are 2
-        /// 
-        /// IBM + AV:
-        /// To do
+        /// See <see cref="ICellClassifier"/>
         /// </summary>
+        /// <param name="NoOfClasses"></param>
+        /// <param name="CellPerfomanceClasses"></param>
         protected override void GetCellPerformanceClasses(out int NoOfClasses, out int[] CellPerfomanceClasses) {
-            int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
-            CellPerfomanceClasses = new int[J];
-
-            if (Control.DomainType == DomainTypes.Standard) {
-                if (Control.ExplicitScheme == ExplicitSchemes.LTS) {
-                    AdamsBashforthLTS ltsTimeStepper = this.TimeStepper as AdamsBashforthLTS;
-                    if (ltsTimeStepper == null) {
-                        throw new Exception();
-                    }
-
-
-                    NoOfClasses = ltsTimeStepper.CurrentClustering.NumberOfClusters;
-                    for (int i = 0; i < ltsTimeStepper.CurrentClustering.NumberOfClusters; i++) {
-                        int noOfTimesteps = ltsTimeStepper.NumberOfLocalTimeSteps[i];
-                        foreach (Chunk chunk in ltsTimeStepper.CurrentClustering.Clusters[i].VolumeMask) {
-                            foreach (int cell in chunk.Elements) {
-                                CellPerfomanceClasses[cell] = i;
-                            }
-                        }
-                    }
-                } else {
-                    // All are equally expensive, just leave all values to zero
-                    NoOfClasses = 1;
-                }
-
-
-                //if (Control.ActiveOperators.HasFlag(Operators.ArtificialViscosity)) {
-                //    // Distinguish between normal cells (0) and shick/AV cells (1)
-                //    NoOfClasses = 2;
-                //    foreach (Chunk chunk in Control.ArtificialViscosityLaw.GetShockedCellMask(GridData)) {
-                //        foreach (int cell in chunk.Elements) {
-                //            CellPerfomanceClasses[cell] = 1;
-                //        }
-                //    }
-                //} else {
-                //    // All are equally expensive, just leave all values to zero
-                //    NoOfClasses = 1;
-                //}
-            } else {
-                IBMControl ibmControl = Control as IBMControl;
-
-                if (Control.ActiveOperators.HasFlag(Operators.ArtificialViscosity)) {
-                    throw new NotImplementedException();
-                } else {
-                    // Distinguish between pure fluid (0), cut cells (1) and void (2) cells
-                    NoOfClasses = 3;
-                    foreach (int j in LsTrk._Regions.GetCutCellMask().ItemEnum) {
-                        CellPerfomanceClasses[j] = 1;
-                    }
-                    foreach (int j in LsTrk._Regions.GetSpeciesMask(ibmControl.VoidSpeciesName).ItemEnum) {
-                        CellPerfomanceClasses[j] = 2;
-                    }
-                }
-            }
+            (NoOfClasses, CellPerfomanceClasses) = Control.DynamicLoadBalancing_CellClassifier.ClassifyCells(this);
         }
 
         /// <summary>

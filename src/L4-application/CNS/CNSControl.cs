@@ -19,6 +19,7 @@ using BoSSS.Solution.Control;
 using CNS.Convection;
 using CNS.Diffusion;
 using CNS.EquationSystem;
+using CNS.LoadBalancing;
 using CNS.MaterialProperty;
 using CNS.Residual;
 using CNS.ShockCapturing;
@@ -199,19 +200,11 @@ namespace CNS {
         /// <summary>
         /// The explicit time integration scheme to be used.
         /// </summary>
-        /// <remarks>
-        /// This option is ignored if <see cref="TimeSteppingScheme"/> is
-        /// equal to "implicit"
-        /// </remarks>
         public ExplicitSchemes ExplicitScheme = ExplicitSchemes.RungeKutta;
 
         /// <summary>
         /// The order of the explicit time integration scheme.
         /// </summary>
-        /// <remarks>
-        /// This option is ignored if <see cref="TimeSteppingScheme"/> is
-        /// equal to "implicit"
-        /// </remarks>
         [InclusiveLowerBound(1)]
         [InclusiveUpperBound(4)]
         public int ExplicitOrder = 1;
@@ -374,5 +367,11 @@ namespace CNS {
         /// boundary condition.
         /// </summary>
         public SpongeLayerConfig SpongeLayerConfig = null;
+
+        /// <summary>
+        /// A classifier that decides which performance class a cell
+        /// (currently) belongs to
+        /// </summary>
+        public ICellClassifier DynamicLoadBalancing_CellClassifier = new IndifferentCellClassifier();
     }
 }
