@@ -151,7 +151,7 @@ namespace BoSSS.Application.Matrix_MPItest {
         XSpatialOperator Op;
         int m_quadOrder;
 
-        protected override void CreateEquationsAndSolvers(LoadBalancingData L) {
+        protected override void CreateEquationsAndSolvers(GridUpdateData L) {
             m_quadOrder = u1.Basis.Degree * 2;
 
             Op = new XSpatialOperator(2, 0, 2, (A, B, c) => m_quadOrder, "u1", "u2", "c1", "c2");

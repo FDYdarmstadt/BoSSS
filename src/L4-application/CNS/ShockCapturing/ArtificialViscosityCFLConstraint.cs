@@ -20,6 +20,7 @@ using BoSSS.Platform.LinAlg;
 using CNS.EquationSystem;
 using CNS.MaterialProperty;
 using System;
+using System.Diagnostics;
 using System.Linq;
 
 namespace CNS.ShockCapturing {
@@ -98,6 +99,9 @@ namespace CNS.ShockCapturing {
                     //double nu = state.GetViscosity(cell) / config.ReynoldsNumber;
                     DGField artificialViscosity = workingSet.ParameterFields.Where(c => c.Identification.Equals("artificialViscosity")).Single();
                     double nu = artificialViscosity.GetMeanValue(cell) / config.ReynoldsNumber;
+
+                    Debug.Assert(!double.IsNaN(nu), "ArtificialViscosityCFLConstraint: nu is NaN!");
+
                     double cflhere;
                     if (nu == 0) {
                         cflhere = double.MaxValue;

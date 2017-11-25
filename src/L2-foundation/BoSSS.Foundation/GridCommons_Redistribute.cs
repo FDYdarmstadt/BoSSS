@@ -46,12 +46,13 @@ namespace BoSSS.Foundation.Grid.Classic {
                 //// invalid from now on
                 //m_GlobalId2CellIndexMap = null;
 
+                int[] part;
                 switch (method) {
                     case GridPartType.METIS:
                         if (size > 1) {
                             int.TryParse(PartOptions, out int noOfPartitioningsToChooseFrom);
                             noOfPartitioningsToChooseFrom = Math.Max(1, noOfPartitioningsToChooseFrom);
-                            int[] part = ComputePartitionMETIS(noOfPartitioningsToChooseFrom: noOfPartitioningsToChooseFrom);
+                            part = ComputePartitionMETIS(noOfPartitioningsToChooseFrom: noOfPartitioningsToChooseFrom);
                             RedistributeGrid(part);
                         }
                         break;
@@ -61,7 +62,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         if (size > 1) {
                             int.TryParse(PartOptions, out int noOfRefinements);
 
-                            int[] part = ComputePartitionParMETIS();
+                            part = ComputePartitionParMETIS();
                             RedistributeGrid(part);
 
                             for (int i = 0; i < noOfRefinements; i++) {
@@ -71,9 +72,13 @@ namespace BoSSS.Foundation.Grid.Classic {
                         }
                         break;
 
-                    case GridPartType.none:
+                    case GridPartType.Hilbert:
+                        part = ComputePartitionHilbert();
+                        RedistributeGrid(part);
                         break;
 
+                    case GridPartType.none:
+                        break;
 
                     case GridPartType.Predefined:
                         if (size > 1) {
@@ -95,7 +100,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             Console.WriteLine("redistribution according to " + PartOptions);
 
                             var partHelp = m_PredefinedGridPartitioning[PartOptions];
-                            int[] part = partHelp.CellToRankMap;
+                            part = partHelp.CellToRankMap;
                             if (part == null) {
                                 var cp = this.CellPartitioning;
                                 part = iom.LoadVector<int>(partHelp.Guid, ref cp).ToArray();
@@ -611,7 +616,10 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// by calling ParMETIS.
         /// </summary>
         /// <param name="cellWeights">
-        /// If not null, defines the weight associted with each cell on this process
+        /// If not null, defines the (list of) weights associated with each
+        /// cell on this process. If multiple weights are present per cell,
+        /// this implies that there are multiple balance constraints to be
+        /// obeyed by ParMETIS
         /// </param>
         /// <param name="refineCurrentPartitioning">
         /// Refines the current partitioning instead of starting from scratch
@@ -623,7 +631,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// For each local cell index, the returned array contains the MPI
         /// process rank where the cell should be placed.
         /// </returns>
-        public int[] ComputePartitionParMETIS(int[] cellWeights = null, bool refineCurrentPartitioning = false) {
+        public int[] ComputePartitionParMETIS(IList<int[]> cellWeights = null, bool refineCurrentPartitioning = false) {
             using (new FuncTrace()) {
                 int size = this.Size;
                 int rank = this.MyRank;
@@ -664,15 +672,30 @@ namespace BoSSS.Foundation.Grid.Classic {
                         parmetisAction = ParMETIS.V3_PartKway;
                     }
 
-                    int nparts = size;
-                    int ncon = 1; // Just one balance constraint (vertex weights)
-                    MPI_Comm wrld = csMPI.Raw._COMM.WORLD;
-                    int wgtflag = 2; // Cell weights only
+
                     if (cellWeights == null) {
                         // Cell weights null causes problems with ParMETIS
-                        cellWeights = new int[NoOfUpdateCells];
-                        cellWeights.SetAll(1);
+                        cellWeights = new List<int[]>() { new int[NoOfUpdateCells] };
+                        cellWeights.Single().SetAll(1);
                     }
+
+                    Debug.Assert(
+                        cellWeights.All(w => w.Length == cellWeights[0].Length),
+                        "All cell weights arrays must have the same length!");
+
+                    int[] cellWeightsFlattened = new int[cellWeights.Sum(c => c.Length)];
+                    int index = 0;
+                    for (int iCell = 0; iCell < cellWeights[0].Length; iCell++) {
+                        for (int iConstraint = 0; iConstraint < cellWeights.Count; iConstraint++) {
+                            cellWeightsFlattened[index] = cellWeights[iConstraint][iCell];
+                            index++;
+                        }
+                    }
+
+                    int nparts = size;
+                    int ncon = cellWeights.Count; // Number of balance constraints
+                    MPI_Comm wrld = csMPI.Raw._COMM.WORLD;
+                    int wgtflag = 2; // Cell weights only
                     int numflag = 0; // 0 -> use C-style ordering
 
                     // Equal distribution of balance constraints (default)
@@ -694,7 +717,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         vtxdist: currentCellPartitioning,
                         xadj: xadj,
                         adjncy: adjncyL.ToArray(),
-                        vwgt: cellWeights,
+                        vwgt: cellWeightsFlattened,
                         adjwgt: null, // No edge weights
                         wgtflag: ref wgtflag,
                         numflag: ref numflag,
@@ -720,6 +743,40 @@ namespace BoSSS.Foundation.Grid.Classic {
                     return new int[J];
                 }
             }
+        }
+
+        public int[] ComputePartitionHilbert(int[] cellCosts = null) {
+            // Step 1: Compute some global indexing pattern for all cells
+            // according to space-filling curve
+            long globalNumberOfCells = long.MaxValue;
+            int[] localToGlobalIndexMap = null; // Maps local cell index to global index in Hilbert curve
+
+            // Step 2: Compute numbers of cells per process (TODO: obey weighting!)
+            int size = this.Size;
+            int minNoOfCellsPerProcess = (int)(globalNumberOfCells / size);
+            int noOfSurplusCells = (int)(globalNumberOfCells % size);
+
+            int[] numbersOfCellsPerProcess = new int[size];
+            numbersOfCellsPerProcess.SetAll(minNoOfCellsPerProcess);
+            for (int i = 0; i < noOfSurplusCells; i++) {
+                numbersOfCellsPerProcess[i]++;
+            }
+
+            // Step 3: Determine target rank for each local cell
+            int[] partitioning = new int[NoOfUpdateCells];
+            for (int i = 0; i < NoOfUpdateCells; i++) {
+                long globalIndex = localToGlobalIndexMap[i];
+
+                int targetRank = 0;
+                long firstIndexForTargetRank = 0;
+                while (globalIndex >= firstIndexForTargetRank + numbersOfCellsPerProcess[targetRank]) {
+                    firstIndexForTargetRank += numbersOfCellsPerProcess[targetRank];
+                    targetRank++;
+                }
+                partitioning[i] = targetRank;
+            }
+
+            return partitioning;
         }
 
         private bool CheckPartitioning(Master cm, int[] nodesPart) {

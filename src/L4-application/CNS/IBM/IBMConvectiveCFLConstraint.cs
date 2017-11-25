@@ -14,17 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
-using System.Linq;
-using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
-using BoSSS.Platform;
 using BoSSS.Platform.LinAlg;
 using CNS.EquationSystem;
-using CNS.Exception;
 using CNS.MaterialProperty;
 using ilPSP;
-using BoSSS.Foundation.Grid.Classic;
+using System;
+using System.Linq;
 
 namespace CNS.IBM {
 
@@ -37,13 +34,6 @@ namespace CNS.IBM {
         private CNSControl config;
 
         private ImmersedSpeciesMap speciesMap;
-
-        /// <summary>
-        /// Factors by Gassner
-        /// </summary>
-        private static double[] alpha_max = new double[] {
-            // 2.0 is just a guess
-            1.8, 1.3, 1.1, 0.9, 0.7, 0.7};
 
         /// <summary>
         /// Constructs a constraint that respects the given
@@ -87,18 +77,23 @@ namespace CNS.IBM {
                 speciesMap.Tracker.GetLevSetValues(0, base.EvaluationPoints[iKref], i0, Length);
 
             SpeciesId species = speciesMap.Tracker.GetSpeciesId(speciesMap.Control.FluidSpeciesName);
-            var hMinArray = speciesMap.QuadSchemeHelper.CellAgglomeration.CellLengthScales[species];
-            //var volFrac = speciesMap.QuadSchemeHelper.CellAgglomeration.CellVolumeFrac[species];
-            //var hMinGass = speciesMap.h_min;
-            //var hMin = gridData.Cells.h_min;
+            //var hMinArray = speciesMap.QuadSchemeHelper.CellAgglomeration.CellLengthScales[species];
+            var volFrac = speciesMap.QuadSchemeHelper.CellAgglomeration.CellVolumeFrac[species];
+            var hMin = gridData.Cells.h_min;
 
             double cfl = double.MaxValue;
             for (int i = 0; i < Length; i++) {
                 int cell = i0 + i;
 
-                //double hmin = hMin[cell] * volFrac[cell];
-                double hmin = hMinArray[cell];
-                //double hmin = hMinGass[cell];
+                // Option 1: Use volume fraction times traditional metric, such
+                // that time-steps are identical to non-IBM cases when no
+                // interface is present
+                double hmin = hMin[cell] * volFrac[cell];
+
+                // Option 2: Use length scale "volume over surface", which seems
+                // to be more robust for awkward cuts. However, yields
+                // significantly smaller time-steps in uncut cells
+                //double hmin = hMinArray[cell];
 
 
                 for (int node = 0; node < noOfNodesPerCell; node++) {
@@ -119,7 +114,7 @@ namespace CNS.IBM {
 
 #if DEBUG
                     if (double.IsNaN(cflhere)) {
-                        throw new NumericalAlgorithmException("Could not determine CFL number");
+                        throw new Exception("Could not determine CFL number");
                     }
 #endif
 
@@ -129,7 +124,6 @@ namespace CNS.IBM {
 
             int degree = workingSet.ConservativeVariables.Max(f => f.Basis.Degree);
             int twoNPlusOne = 2 * degree + 1;
-            //return cfl * alpha_max[degree] / twoNPlusOne;
             return cfl / twoNPlusOne;
         }
     }

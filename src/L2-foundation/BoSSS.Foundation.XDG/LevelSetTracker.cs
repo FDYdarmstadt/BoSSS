@@ -988,8 +988,8 @@ namespace BoSSS.Foundation.XDG {
 
 
         /// <summary>
-        /// extracts the distance layer index for level set <paramref name="levSetInd"/>
-        /// from the code <paramref name="code"/> (see <see cref="m_LevSetRegions"/>).
+        /// Extracts the distance layer index for level-set <paramref name="levSetInd"/>
+        /// from the code <paramref name="code"/> (see <see cref="LevelSetRegionsInfo.LevelSetRegions"/>).
         /// </summary>
         /// <param name="code"></param>
         /// <param name="levSetInd"></param>
@@ -999,28 +999,24 @@ namespace BoSSS.Foundation.XDG {
         /// which are cut by the level set.
         /// </remarks>
         public static int DecodeLevelSetDist(ushort code, int levSetInd) {
-            return (((int)code >> (4 * levSetInd)) & 0xf) - 8;
+            int R = (((int)code >> (4 * levSetInd)) & 0xf) - 8;
+            Debug.Assert(-7 <= R);
+            Debug.Assert(R <= +7);
+            return R;
         }
 
         /// <summary>
-        /// 
+        /// Encodes the distance layer index <paramref name="dist"/> for level-set <paramref name="levSetInd"/>
+        /// int the code <paramref name="code"/> (<see cref="LevelSetRegionsInfo.LevelSetRegions"/>).
         /// </summary>
-        /// <param name="dist"></param>
-        /// <param name="levSetInd"></param>
-        /// <param name="code"></param>
-        /// <returns></returns>
         static public void EncodeLevelSetDist(ref ushort code, int dist, int levSetInd) {
+            Debug.Assert(-7 <= dist);
+            Debug.Assert(dist <= +7);
             int c = ((dist + 8) << (4 * levSetInd));
             int msk = (0xf << (4 * levSetInd));
             code = (ushort)((code & ~msk) | c);
         }
-
-
-
-
-
-
-
+        
         /// <summary>
         /// 
         /// </summary>
@@ -1296,6 +1292,16 @@ namespace BoSSS.Foundation.XDG {
         /// Variant of <see cref="GetLevelSetGradients"/> which normalizes the
         /// gradients before returning them
         /// </summary>
+        ///  <param name="levSetInd">The index of the level set</param>
+        /// <param name="NS">
+        /// Nodes to evaluate at.
+        /// </param>
+        ///  /// <param name="j0">
+        /// The first cell to be evaluated
+        /// </param>
+        /// <param name="Len">
+        /// The number of cell to be evaluated
+        /// </param>
         public MultidimensionalArray GetLevelSetNormals(int levSetInd, NodeSet NS, int j0, int Len) {
             return m_LevelSetNormalsCache[levSetInd].GetValue_Cell(NS, j0, Len);
         }
@@ -1794,8 +1800,8 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Late stage of dynamic load balancing, restoring data after the grid cells were re-distributed.
         /// </summary>
-        public void RestoreAfterLoadBalance(int versionNo, int[] ExchangeData, bool ObUp =true) {
-            using (new FuncTrace()) {
+        public void RestoreAfterLoadBalance(int versionNo, int[] ExchangeData, bool ObUp = true) {
+            using(new FuncTrace()) {
                 int J = m_gDat.Cells.NoOfLocalUpdatedCells;
                 int JA = m_gDat.Cells.NoOfCells;
                 Debug.Assert(ExchangeData.Length == J);
@@ -1811,10 +1817,95 @@ namespace BoSSS.Foundation.XDG {
                 ushort[] oldR = PreviousRegions.m_LevSetRegions;
                 ushort[] newR = _Regions.m_LevSetRegions;
 
-                for (int j = 0; j < J; j++) {
+                for(int j = 0; j < J; j++) {
                     int C = ExchangeData[j];
                     ushort ra = (ushort)(C & 0x0000FFFF);
                     ushort rb = (ushort)((C & 0xFFFF0000) >> 16);
+                    oldR[j] = ra;
+                    newR[j] = rb;
+                }
+
+                MPIUpdate(oldR, this.GridDat);
+                MPIUpdate(newR, this.GridDat);
+
+                PreviousRegions.Recalc_LenToNextchange();
+                _Regions.Recalc_LenToNextchange();
+
+                if(ObUp)
+                    this.ObserverUpdate();
+            }
+        }
+
+        /// <summary>
+        /// Late stage of mesh adaptation (which may includes dynamic load balancing), 
+        /// restoring data after the grid cells were re-distributed.
+        /// </summary>
+        public void RestoreAfterMeshAdaptation(int versionNo, int[][] ExchangeData, bool ObUp = true) {
+            using(new FuncTrace()) {
+                int J = m_gDat.Cells.NoOfLocalUpdatedCells;
+                int JA = m_gDat.Cells.NoOfCells;
+                Debug.Assert(ExchangeData.Length == J);
+
+                int NoOfLevSets = this.LevelSets.Count;
+
+                PreviousRegions = new LevelSetRegionsInfo(this) {
+                    m_LevSetRegions = new ushort[JA],
+                    Version = versionNo - 1
+                };
+                _Regions = new LevelSetRegionsInfo(this) {
+                    m_LevSetRegions = new ushort[JA],
+                    Version = versionNo
+                };
+                ushort[] oldR = PreviousRegions.m_LevSetRegions;
+                ushort[] newR = _Regions.m_LevSetRegions;
+
+                for(int j = 0; j < J; j++) {
+                    int[] CL = ExchangeData[j];
+                    int L = CL.Length;
+                    ushort ra = 0, rb = 0;
+                    if(L > 1) {
+                        // +++++++++++++++++++++++
+                        // cell coarsening
+                        // +++++++++++++++++++++++
+
+                        // combine cell codes (by taking the minimum)
+                        
+                        for(int iLs = 0; iLs < NoOfLevSets; iLs++) {
+                            int NewDistLs = int.MaxValue;
+                            int OldDistLs = int.MaxValue;
+
+                            for(int l = 0; l < L; l++) { // loop over all cells in coarsening cell cluster
+                                int C = CL[l];
+                                ushort ra_l = (ushort)(C & 0x0000FFFF);
+                                ushort rb_l = (ushort)((C & 0xFFFF0000) >> 16);
+
+                                int NewLsDist_l = DecodeLevelSetDist(ra_l, iLs);
+                                if(Math.Abs(NewDistLs) < Math.Abs(NewLsDist_l)) {
+                                    NewDistLs = NewLsDist_l;
+                                }
+
+                                int OldLsDist_l = DecodeLevelSetDist(rb_l, iLs);
+                                if(Math.Abs(OldDistLs) < Math.Abs(OldLsDist_l)) {
+                                    OldDistLs = OldLsDist_l;
+                                }
+                            }
+                            Debug.Assert(Math.Abs(NewDistLs) <= this.NearRegionWidth + 1);
+                            Debug.Assert(Math.Abs(OldDistLs) <= this.NearRegionWidth + 1);
+
+                            EncodeLevelSetDist(ref ra, NewDistLs, iLs);
+                            EncodeLevelSetDist(ref rb, OldDistLs, iLs);
+                        }
+
+                    } else {
+                        // ++++++++++++++++++++++++++++++++++++++++
+                        // cell is either refined or conserved 
+                        // ++++++++++++++++++++++++++++++++++++++++
+
+                        int C = CL[0];
+                        ra = (ushort)(C & 0x0000FFFF);
+                        rb = (ushort)((C & 0xFFFF0000) >> 16);
+                    }
+
                     oldR[j] = ra;
                     newR[j] = rb;
                 }

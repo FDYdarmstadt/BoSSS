@@ -8,7 +8,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>CNS</RootNamespace>
     <AssemblyName>CNS</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
@@ -90,6 +90,12 @@
     <Compile Include="Convection\RusanovFluxBuilder.cs" />
     <Compile Include="Convection\RusanovFlux.cs" />
     <Compile Include="CNSEnvironment.cs" />
+    <Compile Include="LoadBalancing\ArtificialViscosityCellClassifier.cs" />
+    <Compile Include="LoadBalancing\IBMCellClassifier.cs" />
+    <Compile Include="LoadBalancing\ICellClassifier.cs" />
+    <Compile Include="LoadBalancing\IndifferentCellClassifier.cs" />
+    <Compile Include="LoadBalancing\LTSCellClassifier.cs" />
+    <Compile Include="LoadBalancing\LTSCellCostEstimator.cs" />
     <Compile Include="ShockCapturing\ArtificialViscosityCFLConstraint.cs" />
     <Compile Include="IBM\IBMFieldSet.cs" />
     <Compile Include="IBM\IBMMassMatrixFactory.cs" />
@@ -112,6 +118,7 @@
     <Compile Include="Source\SpongeLayerConfig.cs" />
     <Compile Include="Tests\ArtificialViscosity\ArtificialViscosityShockTubeTests.cs" />
     <Compile Include="Tests\ConvectiveFlux\ShockTubeTests.cs" />
+    <Compile Include="Tests\IBMTests\IBMALTSTest.cs" />
     <Compile Include="Tests\IBMTests\IBMIsentropicVortexTest.cs" />
     <Compile Include="Tests\MMS\MMS_steady.cs" />
     <Compile Include="Tests\MMS\MMS_Test.cs" />
@@ -159,7 +166,6 @@
     <Compile Include="EquationSystem\CFLConstraint.cs" />
     <Compile Include="EquationSystem\Operator.cs" />
     <Compile Include="EquationSystem\NullFluxBuilder.cs" />
-    <Compile Include="Exception\ConfigurationException.cs" />
     <Compile Include="IBM\IBMConvectiveCFLConstraint.cs" />
     <Compile Include="IBM\IBMOperatorFactory.cs" />
     <Compile Include="IBM\ImmersedSpeciesMap.cs" />
@@ -187,9 +193,6 @@
     <Compile Include="Tests\ViscousShockProfile\ViscousShockProfile.cs" />
     <Compile Include="Residual\IResidualLogger.cs" />
     <Compile Include="Residual\QueryLogger.cs" />
-    <Compile Include="Solution\FixedPointIteration.cs" />
-    <Compile Include="Solution\ImplicitSchemes.cs" />
-    <Compile Include="Solution\IIterativeImplicitScheme.cs" />
     <Compile Include="SingleSpeciesMap.cs" />
     <Compile Include="Residual\ResidualLoggerTypes.cs" />
     <Compile Include="Residual\NullResidualLogger.cs" />
@@ -208,22 +211,17 @@
     <Compile Include="MaterialProperty\IdealGas.cs" />
     <Compile Include="MaterialProperty\IEquationOfState.cs" />
     <Compile Include="MaterialProperty\TaitLaw.cs" />
-    <Compile Include="Exception\InternalErrorException.cs" />
     <Compile Include="Residual\ResidualLogger.cs" />
-    <Compile Include="Exception\NumericalAlgorithmException.cs" />
     <Compile Include="Residual\RigorousResidualLogger.cs" />
     <Compile Include="Source\CustomSourceBuilder.cs" />
-    <Compile Include="Solution\NonlinearSolvers.cs" />
     <Compile Include="Tests\IsentropicVortex\IsentropicVortexTest.cs" />
     <Compile Include="Tests\Ringleb\RinglebTest.cs" />
     <Compile Include="Tests\Ringleb\ExactRinglebBoundaryState.cs" />
     <Compile Include="Tests\Ringleb\RinglebExactSolution.cs" />
-    <Compile Include="Solution\ExplicitSchemes.cs" />
-    <Compile Include="Solution\TimeSteppingSchemes.cs" />
+    <Compile Include="ExplicitSchemes.cs" />
     <Compile Include="Boundary\AdiabaticSlipWall.cs" />
     <Compile Include="Boundary\AdiabaticWall.cs" />
     <Compile Include="Variable.cs" />
-    <Compile Include="Solution\SemiImplicitTimeStepper.cs" />
     <Compile Include="StateVector.cs" />
     <Compile Include="Boundary\BoundaryConditionMap.cs" />
     <Compile Include="EquationSystem\OperatorFactory.cs" />
@@ -237,7 +235,6 @@
     <Compile Include="Boundary\SubsonicOutlet.cs" />
     <Compile Include="Boundary\SupersonicInlet.cs" />
     <Compile Include="Boundary\SupersonicOutlet.cs" />
-    <Compile Include="Solution\TimeStepperFactory.cs" />
     <Compile Include="CNSFieldSet.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -308,30 +305,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Tests\IsentropicVortex\VortexRock4.xml" />
-    <Content Include="Tests\ViscousShockProfile\VSP_M4_PowerLaw.xml">
-      <SubType>Designer</SubType>
-    </Content>
-    <Content Include="Tests\ViscousShockProfile\VSP_M4_PowerLaw_unsteady.xml">
-      <SubType>Designer</SubType>
-    </Content>
-    <Content Include="Tests\ViscousShockProfile\VSP_M4_Constant_unsteady.xml">
-      <SubType>Designer</SubType>
-    </Content>
-    <Content Include="Tests\ViscousShockProfile\VSP_M4_Constant.xml">
-      <SubType>Designer</SubType>
-    </Content>
-    <Content Include="Tests\ViscousShockProfile\VSP_M2_PowerLaw_unsteady.xml">
-      <SubType>Designer</SubType>
-    </Content>
-    <Content Include="Tests\ViscousShockProfile\VSP_M2_unsteady.xml">
-      <SubType>Designer</SubType>
-    </Content>
-    <Content Include="Tests\ViscousShockProfile\VSP_M2.xml">
-      <SubType>Designer</SubType>
-    </Content>
-    <Content Include="Tests\ViscousShockProfile\VSP_M2_powerLaw.xml">
-      <SubType>Designer</SubType>
-    </Content>
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
@@ -361,6 +334,7 @@
   <ItemGroup>
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
+  <ItemGroup />
   <!--Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" /-->
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

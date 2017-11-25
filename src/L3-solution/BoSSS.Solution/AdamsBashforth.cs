@@ -76,11 +76,6 @@ namespace BoSSS.Solution.Timestepping {
         public RungeKutta RungeKuttaScheme;
 
         /// <summary>
-        /// the active sub-grid
-        /// </summary>
-        protected SubGrid subgrid;
-
-        /// <summary>
         /// Adams-Bashforth Constructor
         /// </summary>
         /// <param name="spatialOp">Spatial operator</param>
@@ -104,8 +99,6 @@ namespace BoSSS.Solution.Timestepping {
                 throw new ArgumentException("Order not supported. Order must be between 1 and 3, but was " + order, "order");
             }
             this.order = order;
-
-            this.subgrid = sgrd;
 
             HistoryChangeRate = new Queue<double[]>(order);
 
@@ -140,7 +133,7 @@ namespace BoSSS.Solution.Timestepping {
         public override double Perform(double dt) {
             using (new ilPSP.Tracing.FuncTrace()) {
 
-                if (timeStepConstraints != null) {
+                if (TimeStepConstraints != null) {
                     dt = CalculateTimeStep();
                 }
 
@@ -204,7 +197,8 @@ namespace BoSSS.Solution.Timestepping {
         /// <summary>
         /// Computes the Adams-Bashforth coefficients
         /// </summary>
-        /// <param name="dt">size of time step</param>
+        /// <param name="dt">Time step size</param>
+        /// <param name="histTime">Time history</param>
         /// <remarks>
         /// Coefficients depend on the previous time steps, saved in historyTime
         /// </remarks>

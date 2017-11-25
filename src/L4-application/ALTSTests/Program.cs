@@ -98,7 +98,7 @@ namespace ALTSTests {
             m_IOFields.Add(c);
         }
 
-        protected override void CreateEquationsAndSolvers(LoadBalancingData L) {
+        protected override void CreateEquationsAndSolvers(GridUpdateData L) {
             diffOp = new SpatialOperator(
                 new string[] { "c" },
                 new string[] { "viscosity", "VelocityX", "VelocityY" },
@@ -141,16 +141,16 @@ namespace ALTSTests {
                 new CoordinateMapping(c),
                 coordMap,
                 order: ABOrder,
-                numOfSubgrids: this.numOfSubgrids,
+                numOfClusters: this.numOfSubgrids,
                 timeStepConstraints: new List<TimeStepConstraint>() { CustomTimestepConstraint },
                 fluxCorrection: false,
                 reclusteringInterval: 1);
 
             // Sub-grid visualization
-            AdamsBashforthLTS timeStepper2 = timeStepper as AdamsBashforthLTS;
-            timeStepper2.SubGridField.Identification = "clusterLTS";
-            m_IOFields.Add(timeStepper2.SubGridField);
-            timeStepper = timeStepper2;
+            //AdamsBashforthLTS timeStepper2 = timeStepper as AdamsBashforthLTS;
+            //timeStepper2.SubGridField.Identification = "clusterLTS";
+            //m_IOFields.Add(timeStepper2.SubGridField);
+            //timeStepper = timeStepper2;
         }
 
         private SurrogateConstraint CustomTimestepConstraint;

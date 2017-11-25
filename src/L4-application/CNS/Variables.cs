@@ -260,13 +260,13 @@ namespace CNS {
                     // the fact that velocity has already been upated is EVIL
 
                     //if (Velocity == null) {
-                    //    throw new ConfigurationException(
+                    //    throw new Exception(
                     //        "Currently, computing vorticity requires calculating the velocity first");
                     //}
 
                     //switch (CNSEnvironment.NumberOfDimensions) {
                     //    case 1:
-                    //        throw new ConfigurationException(
+                    //        throw new Exception(
                     //            "The concept of vorticity does not make sense for"
                     //            + " one-dimensional flows");
 
@@ -285,7 +285,7 @@ namespace CNS {
                     //        break;
 
                     //    default:
-                    //        throw new InternalErrorException();
+                    //        throw new Exception();
                     //}
                 }));
 
@@ -457,29 +457,26 @@ namespace CNS {
             });
 
         /// <summary>
-        /// The sub-grid ids of individual local time-stepping sub-grids
+        /// The clusters when using local time stepping
         /// </summary>
-        public static readonly DerivedVariable LTSSubGrids = new DerivedVariable(
+        public static readonly DerivedVariable LTSClusters = new DerivedVariable(
             "clusterLTS",
             VariableTypes.Other,
-            delegate (DGField subGridField, CellMask cellMask, IProgram<CNSControl> program) {
-                Program<CNSControl> p = (Program<CNSControl>)program;
-                AdamsBashforthLTS lts = (AdamsBashforthLTS)p.TimeStepper;
-                if (lts != null)
-                    subGridField.CopyFrom(lts.SubGridField);
-            });
+            delegate (DGField ClusterVisualizationField, CellMask cellMask, IProgram<CNSControl> program) {
+                AdamsBashforthLTS LTSTimeStepper = (AdamsBashforthLTS)program.TimeStepper;
 
-        /// <summary>
-        /// The sub-grid ids of individual local time-stepping sub-grids
-        /// </summary>
-        public static readonly DerivedVariable IBMLTSSubGrids = new DerivedVariable(
-            "clusterIBMLTS",
-            VariableTypes.Other,
-            delegate (DGField subGridField, CellMask cellMask, IProgram<CNSControl> program) {
-                Program<IBMControl> p = (Program<IBMControl>)program;
-                IBMAdamsBashforthLTS lts = (IBMAdamsBashforthLTS)p.TimeStepper;
-                if (lts != null)
-                    subGridField.CopyFrom(lts.SubGridField);
+                if (LTSTimeStepper != null) {
+                    for (int i = 0; i < LTSTimeStepper.CurrentClustering.NumberOfClusters; i++) {
+                        SubGrid currentCluster = LTSTimeStepper.CurrentClustering.Clusters[i];
+                        for (int j = 0; j < currentCluster.LocalNoOfCells; j++) {
+                            foreach (Chunk chunk in currentCluster.VolumeMask) {
+                                foreach (int cell in chunk.Elements) {
+                                    ClusterVisualizationField.SetMeanValue(cell, i);
+                                }
+                            }
+                        }
+                    }
+                }
             });
     }
 }

@@ -14,15 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using BoSSS.Foundation.Grid;
-using BoSSS.Solution.Control;
-using BoSSS.Platform;
-using System.Collections;
-using CNS.Exception;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Solution.Control;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace CNS.Boundary {
 
@@ -165,7 +161,7 @@ namespace CNS.Boundary {
             Func<double[], double, double>[] result = GetOptionalVelocityBoundaryValueFunction(boundaryCondition);
             
             if (result == null) {
-                throw new ConfigurationException(String.Format(
+                throw new Exception(String.Format(
                     "Missing definition of velocity component for boundary condition"));
             }
 
