@@ -26,11 +26,6 @@ namespace BoSSS.Application.LoadBalancingTest {
     class LoadBalancingTestMain : BoSSS.Solution.Application {
 
         static void Main(string[] args) {
-            AllUpTest.SetUp();
-            AllUpTest.RuntimeCostDynamicBalanceTest(1);
-            AllUpTest.TestFixtureTearDown();
-
-            /*
             XQuadFactoryHelper.CheckQuadRules = true;
 
             BoSSS.Solution.Application._Main(
@@ -38,7 +33,6 @@ namespace BoSSS.Application.LoadBalancingTest {
                 true,
                 null,
                 () => new LoadBalancingTestMain());
-                */
         }
 
         protected override GridCommons CreateOrLoadGrid() {
