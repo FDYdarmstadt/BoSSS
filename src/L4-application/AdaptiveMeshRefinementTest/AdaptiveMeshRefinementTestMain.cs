@@ -28,10 +28,11 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
     class AdaptiveMeshRefinementTestMain : BoSSS.Solution.Application {
 
         static void RefineScheisse() {
-            double[] nodes = GenericBlas.Linspace(-5, 5, 7);
+            double[] xnodes = GenericBlas.Linspace(-1, 3, 13);
+            double[] ynodes = GenericBlas.Linspace(-1, 1, 7);
 
             BoundingBox BL = new BoundingBox(new[] { new[] { -10.0, -10.0 }, new[] { 0.0, 0.0 } });
-            GridCommons grd = Grid2D.Cartesian2DGrid(nodes, nodes, CutOuts: new BoundingBox[] { BL });
+            GridCommons grd = Grid2D.Cartesian2DGrid(xnodes, ynodes, CutOuts: new BoundingBox[] { BL });
             GridData gdat = new GridData(grd);
 
             SinglePhaseField u = new SinglePhaseField(new Basis(gdat, 0), "u");
@@ -88,12 +89,11 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
 
 
         static void Main(string[] args) {
-            //bool MpiInit;
-            //ilPSP.Environment.Bootstrap(new string[0], BoSSS.Solution.Application.GetBoSSSInstallDir(), out MpiInit);
+            ilPSP.Environment.Bootstrap(new string[0], BoSSS.Solution.Application.GetBoSSSInstallDir(), out bool MpiInit);
 
-            //RefineScheisse();
+            RefineScheisse();
 
-            //return;
+            return;
 
             BoSSS.Solution.Application._Main(
                 args,
