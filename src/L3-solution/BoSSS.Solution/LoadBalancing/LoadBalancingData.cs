@@ -338,9 +338,12 @@ namespace BoSSS.Solution {
                 Tuple<long, double>[][] check_AedgGathered = new Tuple<long, double>[m_oldJ][];
 
                 int bkup_new_J = m_newJ;
-                m_newJ = m_oldJ; // hack to make next line working
+                Debug.Assert(m_newDGFieldData_OnlyRedist == null);
+                this.m_newDGFieldData_OnlyRedist = m_oldDGFieldData;
+                this.m_newJ = m_oldJ; // hack to make next line working
                 RestoreVector<Tuple<long, double>[], Tuple<long, double>[][]>(check_AedgGathered, Reference + "::CutCellMetrics-Edge:" + SpeciesName);
-                m_newJ = bkup_new_J;
+                this.m_newJ = bkup_new_J;
+                this.m_newDGFieldData_OnlyRedist = null;
                 for(int j = 0; j < m_oldJ; j++) {
                     var Lst1 = AedgGathered[j];
                     var Lst2 = check_AedgGathered[j];
