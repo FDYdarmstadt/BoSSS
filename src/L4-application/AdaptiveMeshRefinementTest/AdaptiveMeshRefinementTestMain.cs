@@ -46,10 +46,13 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
         /// <param name="Coarsening">
         /// Output, clusters of cells (identified by local cell indices) which can be combined into coarser cells.
         /// </param>
+        /// <param name="CutCells">
+        /// If not null, a mask of cells in which coarsening is forbidden (usually cut-calls);
+        /// </param>
         /// <returns>
         /// True if any refinement or coarsening of the current grid should be performed; otherwise false.
         /// </returns>
-        public static bool ComputeGridChange(GridData CurrentGrid, Func<int, int, int> LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening) {
+        public static bool ComputeGridChange(GridData CurrentGrid, CellMask CutCells, Func<int, int, int> LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening) {
             int oldJ = CurrentGrid.Cells.NoOfLocalUpdatedCells;
 
             bool NoRefinement = true;
@@ -83,6 +86,12 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
                     Ok2Coarsen[j] = true;
                 }
             }
+            if(CutCells != null) {
+                foreach(int j in CutCells.ItemEnum) {
+                    Ok2Coarsen[j] = false;
+                }
+            }
+
 
             int[][] CClusters = FindCoarseningClusters(Ok2Coarsen, CurrentGrid);
 
@@ -315,6 +324,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
 
             var xBasis = new XDGBasis(base.LsTrk, DEGREE);
             uX = new XDGField(xBasis, "uX");
+            uX.UpdateBehaviour = BehaveUnder_LevSetMoovement.AutoExtrapolate;
             uXResidual = new XDGField(xBasis, "ResX");
             uXEx = new XDGField(xBasis, "uXEx");
             base.m_RegisteredFields.Add(uX);
@@ -464,7 +474,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             // Check grid changes
             // ==================
 
-            bool AnyChange = GridRefinementControler.ComputeGridChange(this.GridData, LevelInicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+            bool AnyChange = GridRefinementControler.ComputeGridChange(this.GridData, LsTrk._Regions.GetCutCellMask(), LevelInicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
             int NoOfCellsToRefine = 0;
             int NoOfCellsToCoarsen = 0;
             if(AnyChange) {
