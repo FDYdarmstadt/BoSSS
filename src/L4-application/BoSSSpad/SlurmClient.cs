@@ -35,7 +35,12 @@ namespace BoSSS.Application.BoSSSpad {
         string m_ServerName;
         SshClient SSHConnection;     
 
-
+        /// <summary>
+        /// Client for submitting jobs directly from the BoSSSpad to slurm systems
+        /// </summary>
+        /// <param name="DeploymentBaseDirectory"></param>
+        /// <param name="ServerName"></param>
+        /// <param name="Username"></param>
         public SlurmClient(string DeploymentBaseDirectory, string ServerName, string Username = null) {
             base.DeploymentBaseDirectory = DeploymentBaseDirectory;
             m_Username = Username;
@@ -124,11 +129,15 @@ namespace BoSSS.Application.BoSSSpad {
 
         public override object Submit(Job myJob) {
 
-            //buildSlurmScript(myJob, new string[] { "source "+"/home/"+m_Username+"/.bashrc", "module load gcc", "module load openmpi/gcc/2.1.2", "module load acml" });
-            buildSlurmScript(myJob, new string[] { "source " + "/home/" + m_Username + "/.bashrc","module load acml"});
+            // load users .bashrc with all dependencies
+            buildSlurmScript(myJob, new string[] { "source " + "/home/" + m_Username + "/.bashrc"});
+
 
             string path = "\\home\\" + m_Username + myJob.DeploymentDirectory.Substring(2);
+            // Converting script to unix format
             string convertCmd = " dos2unix " + path + "\\batch.sh";
+
+            // Submitting script to sbatch system
             string sbatchCmd = " sbatch " + path + "\\batch.sh";
 
             // Otherwise it didn´t work
@@ -147,6 +156,11 @@ namespace BoSSS.Application.BoSSSpad {
             return null;
         }
 
+        /// <summary>
+        /// build batch script with all necessary parameters
+        /// </summary>
+        /// <param name="myJob"></param>
+        /// <param name="moduleLoad"></param>
         public void buildSlurmScript(Job myJob, string[] moduleLoad) {
 
             string jobpath_win = "\\home\\" + m_Username + myJob.DeploymentDirectory.Substring(2);
@@ -194,6 +208,10 @@ namespace BoSSS.Application.BoSSSpad {
 
         }
 
+        /// <summary>
+        /// Read in log in password for HPC computing system
+        /// </summary>
+        /// <returns></returns>
         public static string ReadPassword() {
             string password = "";
             ConsoleKeyInfo info = Console.ReadKey(true);
