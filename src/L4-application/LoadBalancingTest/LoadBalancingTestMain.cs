@@ -37,6 +37,9 @@ namespace BoSSS.Application.LoadBalancingTest {
         }
 
         protected override GridCommons CreateOrLoadGrid() {
+            if(MPIRank == 0)
+                Debugger.Launch();
+
             double[] nodes = GenericBlas.Linspace(-5, 5, 21);
             var grd = Grid2D.Cartesian2DGrid(nodes, nodes);
             base.m_GridPartitioningType = GridPartType.none;
@@ -244,6 +247,7 @@ namespace BoSSS.Application.LoadBalancingTest {
         }
 
         public override void DataBackupBeforeBalancing(GridUpdateData L) {
+         
             TimeIntegration.DataBackupBeforeBalancing(L);
         }
 

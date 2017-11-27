@@ -590,12 +590,12 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Step 1 of 2 for dynamic load balancing: creating a backup of this objects 
         /// status in the load-balancing thing <paramref name="L"/>
         /// </summary>
-        public void DataBackupBeforeBalancing(GridUpdateData _L) {
+        public void DataBackupBeforeBalancing(GridUpdateData L) {
             using (new FuncTrace()) {
                 if (m_PrivateBalancingInfo != null)
                     throw new NotSupportedException();
 
-                LoadBalancingData L = (LoadBalancingData)_L; // Provisorium
+                //LoadBalancingData L = (LoadBalancingData)_L; // Provisorium
 
                 m_PrivateBalancingInfo = new PrivateBalancingInfo();
                 m_PrivateBalancingInfo.NoOfFields = m_Stack_u[0].Mapping.Fields.Count;
@@ -1117,12 +1117,17 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 
         /// <summary>
-        /// 
+        /// Solver.
         /// </summary>
-        /// <param name="phystime"></param>
-        /// <param name="dt"></param>
-        /// <param name="timestepNumber"></param>
-        /// <param name="ComputeOnlyResidual"></param>
+        /// <param name="phystime">
+        /// Physical time for the initial value.
+        /// </param>
+        /// <param name="dt">
+        /// Time-step size, must be the same value for each call in the lifetime of this object.
+        /// </param>
+        /// <param name="ComputeOnlyResidual">
+        /// If true, no solution is performed; only the residual of the actual solution is computed.
+        /// </param>
         public void Solve(double phystime, double dt, bool ComputeOnlyResidual = false) {
             if (dt <= 0)
                 throw new ArgumentOutOfRangeException();
@@ -1151,12 +1156,17 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Solver;
         /// </summary>
-        /// <param name="phystime"></param>
+        /// <param name="phystime">
+        /// Physical time for the initial value.
+        /// </param>
         /// <param name="dt">
         /// Time-step size, must be the same value for each call in the lifetime of this object.
         /// </param>
         /// <param name="ComputeOnlyResidual">
         /// If true, no solution is performed; only the residual of the actual solution is computed.
+        /// </param>
+        /// <param name="increment">
+        /// Sub-timestep index (used during BDF startup).
         /// </param>
         public void Solve_Increment(int increment, double phystime, double dt, bool ComputeOnlyResidual = false) {
             if (dt <= 0)
