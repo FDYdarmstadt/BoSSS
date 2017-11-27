@@ -202,8 +202,9 @@ namespace BoSSS.Solution {
                     int Nj = xb.GetLength(j);
                     Debug.Assert(Nj == NoOfSpc * Np);
 
-                    double[] data_j = new double[Nj + NoOfSpc];
-                    int c = 0;
+                    double[] data_j = new double[Nj + NoOfSpc + 1];
+                    data_j[0] = NoOfSpc;
+                    int c = 1;
                     for(int iSpc = 0; iSpc < NoOfSpc; iSpc++) {
                         SpeciesId spc = lsTrk.GetSpeciesIdFromIndex(j, iSpc);
                         data_j[c] = spc.cntnt;
@@ -246,34 +247,15 @@ namespace BoSSS.Solution {
                 double[][][] ReDistDGCoords = m_newDGFieldData_GridAdapta[Reference];
                 Debug.Assert(ReDistDGCoords.Length == newJ);
 
+                if(f is ConventionalDGField) {
+                    // +++++++++++++++
+                    // normal DG field
+                    // +++++++++++++++
 
-                if(f is XDGField) {
-                    XDGField xf = f as XDGField;
-                    LevelSetTracker lsTrk = xf.Basis.Tracker;
-                    int Np = xf.Basis.NonX_Basis.Length;
-                    if(!object.ReferenceEquals(m_NewTracker, lsTrk))
-                        throw new ArgumentException("LevelSetTracker seems duplicate, or something.");                    
-
-                    for(int j = 0; j < newJ; j++) {
-                        if(TargMappingIdx[j] == null) {
-                            // unchanged cell
-                            Debug.Assert(ReDistDGCoords[j].Length == 1);
-                            Debug.Assert(ReDistDGCoords[j][0].Length == xf.Basis.GetLength(j));
-                            double[] ReDistDGCoords_jl = ReDistDGCoords[j][0];
-                            int Nj = ReDistDGCoords_jl.Length;
-                            Debug.Assert(Nj % Np == 0);
-                            for(int n = 0; n < Nj; n++) {
-                                f.Coordinates[j, n] = ReDistDGCoords_jl[n];
-                            }
-                        } else {
-                            int NoOfSpc =  lsTrk.GetNoOfSpecies(j);
-                            for(int iSpc = 0; iSpc < NoOfSpc; iSpc++) {
-                                DoCellj(f, NewGrid, pDeg, TargMappingIdx, ReDistDGCoords, j, m_Old2NewCorr, Np*iSpc, Np);
-                            }
-                        }
-                    }
-                } else if(f is ConventionalDGField) {
                     int Np = f.Basis.Length;
+
+                    double[] temp = new double[Np];
+                    double[] acc = new double[Np];
 
                     for(int j = 0; j < newJ; j++) {
                         if(TargMappingIdx[j] == null) {
@@ -281,8 +263,74 @@ namespace BoSSS.Solution {
                             Debug.Assert(ReDistDGCoords[j].Length == 1);
                             f.Coordinates.SetRow(j, ReDistDGCoords[j][0]);
                         } else {
-                            DoCellj(f, NewGrid, pDeg, TargMappingIdx, ReDistDGCoords, j, m_Old2NewCorr, 0, Np);
+                            DoCellj(f, NewGrid, pDeg, TargMappingIdx, ReDistDGCoords, j, m_Old2NewCorr, 0, Np, temp, acc);
+                        }
+                    }
+                } else if(f is XDGField) {
+                    // +++++++++++++++++++++++
+                    // treatment of XDG fields
+                    // +++++++++++++++++++++++
 
+                    // (as always, more difficult)
+
+                    XDGField xf = f as XDGField;
+                    LevelSetTracker lsTrk = xf.Basis.Tracker;
+                    int Np = xf.Basis.NonX_Basis.Length;
+                    double[] temp = new double[Np];
+                    double[] acc = new double[Np];
+
+                    if(!object.ReferenceEquals(m_NewTracker, lsTrk))
+                        throw new ArgumentException("LevelSetTracker seems duplicate, or something.");                    
+
+                    for(int j = 0; j < newJ; j++) {
+                        int NoOfSpc =  lsTrk.GetNoOfSpecies(j);
+
+                        if(TargMappingIdx[j] == null) {
+                            // unchanged cell
+                            Debug.Assert(ReDistDGCoords[j].Length == 1);
+                            Debug.Assert(ReDistDGCoords[j][0].Length == xf.Basis.GetLength(j));
+                            double[] ReDistDGCoords_jl = ReDistDGCoords[j][0];
+                            Debug.Assert(ReDistDGCoords_jl.Length == NoOfSpc*Np + NoOfSpc + 1);
+                            Debug.Assert(ReDistDGCoords_jl[0] == NoOfSpc);
+
+                            int c = 1;
+                            for(int iSpc = 0; iSpc < NoOfSpc; iSpc++) {
+#if DEBUG
+                                SpeciesId rcvSpc;
+                                rcvSpc.cntnt = (int) ReDistDGCoords_jl[c];
+                                Debug.Assert(rcvSpc == lsTrk.GetSpeciesIdFromIndex(j, iSpc));
+#endif
+                                c++;
+
+                                for(int n = 0; n < Np; n++) {
+                                    f.Coordinates[j, n + Np*iSpc] = ReDistDGCoords_jl[c];
+                                    c++;
+                                }
+                            }
+                            Debug.Assert(c == ReDistDGCoords_jl.Length);
+
+                        } else {
+                            // coarsening or refinement
+
+                            int L = ReDistDGCoords[j].Length;
+                            for(int l = 0; l < L; l++) {
+                                double[] ReDistDGCoords_jl = ReDistDGCoords[j][l];
+                                int NoSpcOrg = (int) ReDistDGCoords_jl[0]; // no of species in original cells
+
+                                int c = 1;
+                                for(int iSpcRecv = 0; iSpcRecv < NoOfSpc; iSpcRecv++) { // loop over species in original cell
+
+                                    SpeciesId rcvSpc;
+                                    rcvSpc.cntnt = (int)ReDistDGCoords_jl[c];
+                                    c++;
+
+                                    int iSpc = lsTrk.GetSpeciesIndex(rcvSpc, j); // species index in new cell 
+                                    Debug.Assert(iSpcRecv == iSpc || L > 1); 
+
+
+                                    DoCellj(f, NewGrid, pDeg, TargMappingIdx, ReDistDGCoords, j, m_Old2NewCorr, Np * iSpc, Np, temp, acc);
+                                }
+                            }
                         }
                     }
                 } else {
@@ -291,25 +339,19 @@ namespace BoSSS.Solution {
             }
         }
 
-        static private void DoCellj(DGField f, GridData NewGrid, int pDeg, int[][] TargMappingIdx, double[][][] ReDistDGCoords, int j, GridCorrelation Old2NewCorr, int N0, int Np) {
+        static private void DoCellj(DGField f, GridData NewGrid, int pDeg, int[][] TargMappingIdx, double[][][] ReDistDGCoords, int j, GridCorrelation Old2NewCorr, int N0rcv, int Np, double[] ReDistDGCoords_jl, double[] Coords_j) {
             Debug.Assert(ReDistDGCoords[j].Length == TargMappingIdx[j].Length);
 
             int iKref = NewGrid.Cells.GetRefElementIndex(j);
 
-            double[] Coords_j = new double[Np];
+            Debug.Assert(Coords_j.Length == Np);
+            Debug.Assert(ReDistDGCoords_jl.Length == Np);
+
             for(int n = 0; n < Np; n++) {
                 Coords_j[n] = f.Coordinates[j, N0 + n];
             }
             double[][] ReDistDGCoords_j = ReDistDGCoords[j];
-            double[] ReDistDGCoords_jl;
-            bool xtr;
-            if(ReDistDGCoords_j[0].Length != Np) {
-                xtr = true;
-                ReDistDGCoords_jl = new double[Np];
-            } else {
-                xtr = false;
-                ReDistDGCoords_jl = null;
-            }
+            
 
 
             if(TargMappingIdx[j].Length == 1) {
@@ -319,19 +361,10 @@ namespace BoSSS.Solution {
 
                 MultidimensionalArray Trafo = Old2NewCorr.GetSubdivBasisTransform(iKref, TargMappingIdx[j][0], pDeg);
 
-
-                if(!xtr) {
-                    ReDistDGCoords_jl = ReDistDGCoords[j][0];
-                    Debug.Assert(ReDistDGCoords[j][0].Length == Np);
-                } else {
-                    for(int n = 0; n < Np; n++) {
-                        ReDistDGCoords_jl[n] = ReDistDGCoords[j][0][N0 + n];
-                    }
+                for(int n = 0; n < Np; n++) {
+                    ReDistDGCoords_jl[n] = ReDistDGCoords_j[0][N0 + n];
                 }
-
                 Trafo.gemv(1.0, ReDistDGCoords_jl, 1.0, Coords_j, transpose: false);
-               
-
             } else {
                 // ++++++++++
                 // coarsening
@@ -341,15 +374,9 @@ namespace BoSSS.Solution {
                 for(int l = 0; l < L; l++) {
                     var Trafo = Old2NewCorr.GetSubdivBasisTransform(iKref, TargMappingIdx[j][l], pDeg);
 
-                    if(!xtr) {
-                        ReDistDGCoords_jl = ReDistDGCoords[j][l];
-                        Debug.Assert(ReDistDGCoords[j][0].Length == Np);
-                    } else {
-                        for(int n = 0; n < Np; n++) {
-                            ReDistDGCoords_jl[n] = ReDistDGCoords[j][l][N0 + n];
-                        }
+                    for(int n = 0; n < Np; n++) {
+                        ReDistDGCoords_jl[n] = ReDistDGCoords_j[l][N0 + n];
                     }
-
 
                     Trafo.gemv(1.0, ReDistDGCoords_jl, 1.0, Coords_j, transpose: true);
                 }
