@@ -53,7 +53,7 @@ namespace CNS.IBM {
         }
 
         public override double Perform(double dt) {
-            if (timeStepConstraints != null) {
+            if (TimeStepConstraints != null) {
                 dt = CalculateTimeStep();
             }
 

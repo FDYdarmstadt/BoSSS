@@ -40,7 +40,7 @@ namespace BoSSS.Solution.Timestepping {
         /// <summary>
         /// Subgrid of all cells belonging to the cluster
         /// </summary>
-        internal protected SubGrid ABSubgrid;
+        internal protected SubGrid ABSubGrid;
 
         /// <summary>
         /// Time history of each cell
@@ -102,7 +102,7 @@ namespace BoSSS.Solution.Timestepping {
         /// <remarks>Result of the local sub-step is saved in historyDGC, not directly in m_DGCoordinates</remarks>
         public ABevolve(SpatialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters, int order, bool adaptive = false, SubGrid sgrd = null)
                 : base(spatialOp, Fieldsmap, Parameters, order, null, sgrd) {
-            this.ABSubgrid = sgrd;
+            this.ABSubGrid = sgrd;
             HistoryDGCoordinate = new Queue<double[]>(order);
             RungeKuttaScheme = null; // Instance of RungeKutta not needed 
             jSub2jCell = sgrd.SubgridIndex2LocalCellIndex;
@@ -136,8 +136,8 @@ namespace BoSSS.Solution.Timestepping {
                     if (historyTimePerCell.Count > order - 1)
                         historyTimePerCell.Dequeue();
 
-                    ABCoefficientsPerCell = new double[ABSubgrid.LocalNoOfCells][];
-                    for (int cell = 0; cell < ABSubgrid.LocalNoOfCells; cell++) {
+                    ABCoefficientsPerCell = new double[ABSubGrid.LocalNoOfCells][];
+                    for (int cell = 0; cell < ABSubGrid.LocalNoOfCells; cell++) {
                         double[] historyTimeArray = new double[order];
                         int i = 0;
                         foreach (double[] historyPerCell in historyTimePerCell) {
@@ -184,11 +184,11 @@ namespace BoSSS.Solution.Timestepping {
 
             if (adaptive) {
                 CompleteChangeRate = new double[Mapping.LocalLength];
-                for (int j = 0; j < ABSubgrid.LocalNoOfCells; j++) {
+                for (int j = 0; j < ABSubGrid.LocalNoOfCells; j++) {
                     int cell = jSub2jCell[j];
-                    // cell == global cell index
-                    // f == each field
-                    // n == basis polynomial
+                    // cell = global cell index
+                    // f = each field
+                    // n = basis polynomial
                     foreach (DGField f in Mapping.Fields) {
                         for (int n = 0; n < f.Basis.GetLength(cell); n++) {
                             int index = Mapping.LocalUniqueCoordinateIndex(f, cell, n);
@@ -229,7 +229,7 @@ namespace BoSSS.Solution.Timestepping {
         /// <param name="dt"></param>
         protected virtual void UpdateTimeHistory(double dt) {
             if (adaptive) {
-                double[] currentTime = new double[ABSubgrid.LocalNoOfCells];
+                double[] currentTime = new double[ABSubGrid.LocalNoOfCells];
                 for (int i = 0; i < currentTime.Length; i++) {
                     currentTime[i] = m_Time;
                 }
@@ -246,9 +246,9 @@ namespace BoSSS.Solution.Timestepping {
 
         /// <summary>
         /// Computes the new intermediate DGCoordinates. 
-        /// Important: It doesn't changes the DGCoordinates <see cref="ExplicitEuler.DGCoordinates"/>.
+        /// Important: It does not change the DGCoordinates <see cref="ExplicitEuler.DGCoordinates"/>.
         /// </summary>
-        /// <param name="completeChangeRate">complete ChangeRate of a sub-grid for one sub-step</param>
+        /// <param name="completeChangeRate">Complete ChangeRate of a cluster for one sub-step</param>
         /// <returns>intermediate DGCoordinates as array</returns>
         protected virtual double[] ComputesUpdatedDGCoordinates(double[] completeChangeRate) {
             // Standard case: Just add completeChangeRate to DGCoordinates as array
@@ -268,11 +268,11 @@ namespace BoSSS.Solution.Timestepping {
         private double[] OrderValuesBySgrd(double[] results) {
             double[] ordered = new double[Mapping.LocalLength];
 
-            for (int j = 0; j < ABSubgrid.LocalNoOfCells; j++) {
+            for (int j = 0; j < ABSubGrid.LocalNoOfCells; j++) {
                 int cell = jSub2jCell[j];
-                // cell in sgrd
-                // f== each field
-                // n== basis polynomial
+                // cell in the sub-grid
+                // f = each field
+                // n = basis polynomial
                 foreach (DGField f in Mapping.Fields) {
                     for (int n = 0; n < f.Basis.GetLength(cell); n++) {
                         int index = Mapping.LocalUniqueCoordinateIndex(f, cell, n);

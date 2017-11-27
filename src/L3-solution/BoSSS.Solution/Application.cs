@@ -1483,7 +1483,7 @@ namespace BoSSS.Solution {
         /// <param name="L">
         /// If restarted after dynamic load balancing, the respective data.
         /// </param>
-        protected abstract void CreateEquationsAndSolvers(LoadBalancingData L);
+        protected abstract void CreateEquationsAndSolvers(GridUpdateData L);
 
 
         /// <summary>
@@ -1758,9 +1758,8 @@ namespace BoSSS.Solution {
                 // ===============
                 // mesh adaptation
                 // ===============
-                GridCommons newGrid = this.AdaptMesh();
+                this.AdaptMesh(out var newGrid, out var old2newGridCorr);
                 
-
                 if(newGrid == null) {
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // no mesh adaptation, but (maybe) grid redistribution (load balancing)
@@ -1789,8 +1788,8 @@ namespace BoSSS.Solution {
                     GridData oldGridData = this.GridData;
                     Permutation tau;
                     int[] oldTrackerData;
-                    LoadBalancingData loadbal;
-                    BackupData(oldGridData, this.LsTrk, out loadbal, out tau, out oldTrackerData, out int trackerVersion);
+                    LoadBalancingData loadbal = new LoadBalancingData(oldGridData, this.LsTrk);
+                    BackupData(oldGridData, this.LsTrk, loadbal, out tau, out oldTrackerData, out int trackerVersion);
 
                     // create new grid
                     // ===============
@@ -1899,10 +1898,9 @@ namespace BoSSS.Solution {
                     GridCommons oldGrid = oldGridData.Grid;
                     Permutation tau;
                     int[] oldTrackerData;
-                    LoadBalancingData loadbal;
-                    BackupData(oldGridData, this.LsTrk, out loadbal, out tau, out oldTrackerData, out int trackerVersion);
-
-                    
+                    RemeshingData remshDat = new RemeshingData(oldGridData, this.LsTrk);
+                    BackupData(oldGridData, this.LsTrk, remshDat, out tau, out oldTrackerData, out int trackerVersion);
+                                       
 
                     // check for grid redistribution
                     // =============================
@@ -1934,14 +1932,15 @@ namespace BoSSS.Solution {
                     GridData newGridData;
                     {
                         this.MultigridSequence = null;
-                                               
 
+                        this.Grid = newGrid;
                         newGridData = new GridData(this.Grid);
                         this.GridData = newGridData;
                         oldGridData.Invalidate();
                         if(this.LsTrk != null) {
                             this.LsTrk.Invalidate();
                         }
+                        oldGridData = null;
 
                         if(this.Control == null || this.Control.NoOfMultigridLevels > 0)
                             this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
@@ -1953,52 +1952,75 @@ namespace BoSSS.Solution {
 
                     // compute redistribution permutation
                     // ==================================
+                    
+                    old2newGridCorr.ComputeDataRedist(newGridData);
 
-                    Permutation Resorting;
-                    {
-                        // sigma is the GlobalID-permutation of the **new** grid
-                        Permutation sigma = newGridData.CurrentGlobalIdPermutation;
-
-                        // compute resorting permutation
-                        Permutation invSigma = sigma.Invert();
-                        Resorting = invSigma * tau;
-                        tau = null;
-                        invSigma = null;
-                    }
-                    //Console.WriteLine("P {0}: Resorting: {1} entries.", MPIRank, Resorting.LocalLength);
-                    //ilPSP.Environment.StdoutOnlyOnRank0 = true;
-                    //Debug.Assert(Resorting.LocalLength == newGridData.iLogicalCells.NoOfLocalUpdatedCells);
-
-
+                    int newJ = newGridData.Cells.NoOfLocalUpdatedCells;
+                    int[][] TargMappingIdx = new int[newJ][];
+                    old2newGridCorr.GetTargetMappingIndex(TargMappingIdx, newGridData.CellPartitioning);
+                    
                     // sent data around the world
                     // ==========================
-                    int newJ = newGridData.CellPartitioning.LocalLength;
-
-                    int[] newTrackerData = null;
+                    
+                    int[][] newTrackerData = null;
                     if(oldTrackerData != null) {
-                        newTrackerData = new int[newJ];
-                        Resorting.ApplyToVector(oldTrackerData, newTrackerData, newGridData.CellPartitioning);
+                        newTrackerData = new int[newJ][];
+                        old2newGridCorr.ApplyToVector(oldTrackerData, newTrackerData, newGridData.CellPartitioning);
                         oldTrackerData = null;
                     }
 
-                    loadbal.Resort(Resorting, newGridData);
+                    remshDat.Resort(old2newGridCorr, newGridData);
 
+                    // re-init simulation
+                    // ==================
 
+                    // release old DG fields
+                    this.m_RegisteredFields.Clear();
+                    this.m_IOFields.Clear();
+
+                    // re-create fields
+                    if(this.Control != null) {
+                        InitFromAttributes.CreateFieldsAuto(
+                            this, GridData, this.Control.FieldOptions, this.m_IOFields, this.m_RegisteredFields);
+                    }
+                    CreateFields(); // full user control   
+                    PostRestart(physTime);
+                    remshDat.SetNewTracker(this.LsTrk);
+
+                    // re-set Level-Set tracker
+                    if(newTrackerData != null) {
+                        Debug.Assert(object.ReferenceEquals(this.LsTrk.GridDat, this.GridData));
+                        foreach(var f in m_RegisteredFields) {
+                            if(f is XDGField) {
+                                ((XDGField)f).Override_TrackerVersionCnt(trackerVersion);
+                            }
+                        }
+                        this.LsTrk.RestoreAfterMeshAdaptation(trackerVersion, newTrackerData);
+                    }
+
+                    // set dg coördinates
+                    foreach(var f in m_RegisteredFields) {
+                        if(f is XDGField) {
+                            XDGBasis xb = ((XDGField)f).Basis;
+                            if(!object.ReferenceEquals(xb.Tracker, this.LsTrk))
+                                throw new ApplicationException();
+                        }
+                        remshDat.RestoreDGField(f);
+                    }
+
+                    // re-create solvers, blablabla
+                    CreateEquationsAndSolvers(remshDat);
                 }
-
-
-
-
             }
         }
 
         private void BackupData(GridData oldGridData, LevelSetTracker oldLsTrk, 
-            out LoadBalancingData loadbal, out Permutation tau, out int[] oldTrackerData, out int trackerVersion) {
+            GridUpdateData loadbal, out Permutation tau, out int[] oldTrackerData, out int trackerVersion) {
 
             trackerVersion = -1;
             oldTrackerData = null;
 
-            loadbal = new LoadBalancingData(oldGridData, oldLsTrk);
+            //loadbal = new LoadBalancingData(oldGridData, oldLsTrk);
 
 
             // id's of the fields which we are going to rescue
@@ -2025,8 +2047,6 @@ namespace BoSSS.Solution {
 
             // backup user data
             this.DataBackupBeforeBalancing(loadbal);
-
-
         }
 
         private static int CheckPartition(int[] NewPartition, int JupOld) {
@@ -2073,7 +2093,7 @@ namespace BoSSS.Solution {
         /// during dynamic load balancing.
         /// May also be used to invalidate internal states related to the old <see cref="GridData"/> or <see cref="LsTrk"/> objects.
         /// </summary>
-        public virtual void DataBackupBeforeBalancing(LoadBalancingData L) {
+        public virtual void DataBackupBeforeBalancing(GridUpdateData L) {
 
         }
 
@@ -2083,9 +2103,9 @@ namespace BoSSS.Solution {
         /// <summary>
         /// Adaptation of the current mesh (<see cref="Grid"/>).
         /// </summary>
-        protected virtual GridCommons AdaptMesh() {
-            
-            return null;
+        protected virtual void AdaptMesh(out GridCommons newGrid, out GridCorrelation old2NewGrid) {
+            newGrid = null;
+            old2NewGrid = null;
         }
 
         /// <summary>

@@ -99,7 +99,7 @@ namespace BoSSS.Application.SpecFEM {
         */
         }
 
-        protected override void CreateEquationsAndSolvers(LoadBalancingData L) {
+        protected override void CreateEquationsAndSolvers(GridUpdateData L) {
         }
 
         internal bool Passed = false;

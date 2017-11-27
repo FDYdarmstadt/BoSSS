@@ -133,7 +133,7 @@ namespace BoSSS.Solution.Timestepping {
         public override double Perform(double dt) {
             using (new ilPSP.Tracing.FuncTrace()) {
 
-                if (timeStepConstraints != null) {
+                if (TimeStepConstraints != null) {
                     dt = CalculateTimeStep();
                 }
 

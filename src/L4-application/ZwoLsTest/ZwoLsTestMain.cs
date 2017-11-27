@@ -176,7 +176,7 @@ namespace BoSSS.Application.ZwoLsTest {
         XSpatialOperator Op;
 
 
-        protected override void CreateEquationsAndSolvers(LoadBalancingData L) {
+        protected override void CreateEquationsAndSolvers(GridUpdateData L) {
             Op = new XSpatialOperator(1, 0, 1, QuadOrderFunc.SumOfMaxDegrees(RoundUp: true), "u", "c1");
 
             Op.EquationComponents["c1"].Add(new DxFlux()); // Flux in Bulk Phase;

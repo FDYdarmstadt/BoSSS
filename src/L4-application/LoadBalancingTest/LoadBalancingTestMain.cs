@@ -146,7 +146,7 @@ namespace BoSSS.Application.LoadBalancingTest {
 
         XdgBDFTimestepping TimeIntegration;
 
-        protected override void CreateEquationsAndSolvers(LoadBalancingData L) {
+        protected override void CreateEquationsAndSolvers(GridUpdateData L) {
             Op = new XSpatialOperator(1, 0, 1, QuadOrderFunc.SumOfMaxDegrees(RoundUp: true), "u", "c1");
 
             var blkFlux = new DxFlux(this.LsTrk, alpha_A, alpha_B);
@@ -239,7 +239,7 @@ namespace BoSSS.Application.LoadBalancingTest {
                 base.LsTrk.SpeciesIdS.ToArray());
         }
 
-        public override void DataBackupBeforeBalancing(LoadBalancingData L) {
+        public override void DataBackupBeforeBalancing(GridUpdateData L) {
             TimeIntegration.DataBackupBeforeBalancing(L);
         }
 
