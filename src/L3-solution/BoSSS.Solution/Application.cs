@@ -1956,8 +1956,7 @@ namespace BoSSS.Solution {
                     old2newGridCorr.ComputeDataRedist(newGridData);
 
                     int newJ = newGridData.Cells.NoOfLocalUpdatedCells;
-                    int[][] TargMappingIdx = new int[newJ][];
-                    old2newGridCorr.GetTargetMappingIndex(TargMappingIdx, newGridData.CellPartitioning);
+                    //int[][] TargMappingIdx = old2newGridCorr.GetTargetMappingIndex(newGridData.CellPartitioning);
                     
                     // sent data around the world
                     // ==========================

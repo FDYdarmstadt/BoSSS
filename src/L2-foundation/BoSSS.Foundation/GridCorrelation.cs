@@ -214,15 +214,43 @@ namespace BoSSS.Foundation.Grid.Classic {
         }
 
 
+        int[][] m_TargetMappingIndex;
 
-        public void GetTargetMappingIndex(int[][] TargetMappingIndex, IPartitioning outputPartitioning) {
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="TargetMappingIndex"></param>
+        /// <param name="outputPartitioning">
+        /// Partitioning of the new grid, resp the return array.
+        /// </param>
+        /// <returns>
+        /// - 1st index: cell index in new grid, correlates with <paramref name="outputPartitioning"/>.
+        /// - 2nd index: enumeration over cells (in the old grid) which are combined in the new grid. 
+        ///   For cells with refinement, always one entry, for cells which are coarsened a greater number of entries.
+        ///   If null, the cell is not changed.
+        /// - content: Subdivision leaf index, correlates with 2nd index of <see cref="KrefS_SubdivLeaves"/>, can be used as an input to <see cref="GetSubdivBasisTransform(int, int, int)"/>.
+        /// </returns>
+        public int[][] GetTargetMappingIndex(IPartitioning outputPartitioning) {
             using(new FuncTrace()) {
                 Debug.Assert(DestGlobalId.Length == MappingIndex.Length);
                 Debug.Assert(OldGlobalId.Length == MappingIndex.Length);
                 int oldJ = DestGlobalId.Length;
 
-                if(TargetMappingIndex.Length != outputPartitioning.LocalLength)
-                    throw new ArgumentException("Length mismatch of output list and output partition.");
+                // Caching
+                // =======
+
+                if(m_TargetMappingIndex != null) {
+                    // caching 
+                    if(m_TargetMappingIndex.Length != outputPartitioning.LocalLength)
+                        throw new ArgumentException("Length mismatch of output list and output partition.");
+
+                    return m_TargetMappingIndex;
+                }
+
+                // local evaluation, prepare communication
+                // =======================================
+
+                m_TargetMappingIndex = new int[outputPartitioning.LocalLength][];
 
                 int j0Dest = outputPartitioning.i0;
 
@@ -241,9 +269,9 @@ namespace BoSSS.Foundation.Grid.Classic {
                             int MapIdx = MappingIndex_j[l];
 
                             if(outputPartitioning.IsInLocalRange(jDest)) {
-                                int[] destCollection = TargetMappingIndex[jDest - j0Dest];
+                                int[] destCollection = m_TargetMappingIndex[jDest - j0Dest];
                                 ArrayTools.AddToArray(MapIdx, ref destCollection);
-                                TargetMappingIndex[jDest - j0Dest] = destCollection;
+                                m_TargetMappingIndex[jDest - j0Dest] = destCollection;
                             } else {
                                 int targProc = outputPartitioning.FindProcess(jDest);
 
@@ -263,6 +291,9 @@ namespace BoSSS.Foundation.Grid.Classic {
                     }
                 }
 
+                // communication
+                // =============
+
                 var AllRcvData = SerialisationMessenger.ExchangeData(AllSendData, outputPartitioning.MPI_Comm);
 
                 foreach(var kv in AllRcvData) {
@@ -278,14 +309,16 @@ namespace BoSSS.Foundation.Grid.Classic {
                         int idx = TIdxs[l] - j0Dest;
                         Debug.Assert(outputPartitioning.IsInLocalRange(idx));
 
-                        int[] destCollection = TargetMappingIndex[idx];
+                        int[] destCollection = m_TargetMappingIndex[idx];
                         ArrayTools.AddToArray(TVals[idx], ref destCollection);
-                        TargetMappingIndex[idx] = destCollection;
+                        m_TargetMappingIndex[idx] = destCollection;
                     }
-
-
                 }
 
+                // return
+                // ======
+
+                return m_TargetMappingIndex;
             }
         }
                

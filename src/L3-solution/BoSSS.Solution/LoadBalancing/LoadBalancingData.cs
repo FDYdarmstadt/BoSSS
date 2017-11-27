@@ -75,11 +75,33 @@ namespace BoSSS.Solution {
         /// </summary>
         Permutation InverseResorting;
 
-
         /// <summary>
-        /// Correlation of old and new grid under re-meshing.
+        /// Backup data for some DG field before update of grid.
         /// </summary>
-        GridCorrelation Remeshing;
+        /// <param name="f"></param>
+        /// <param name="Reference">
+        /// Unique string reference under which the re-distributed data can be accessed later, within <see cref="RestoreDGField(DGField, string)"/>.
+        /// </param>
+        override public void BackupField(DGField f, string Reference) {
+            if(!object.ReferenceEquals(f.GridDat, m_OldGrid)) {
+                throw new ArgumentException("DG field seems to be assigned to some other grid.");
+            }
+
+            Basis oldBasis = f.Basis;
+
+            double[][] oldFieldsData = new double[m_oldJ][];
+            m_oldDGFieldData.Add(Reference, oldFieldsData);
+
+            for(int j = 0; j < m_oldJ; j++) {
+                int Nj = oldBasis.GetLength(j);
+                double[] data_j = new double[Nj];
+                for(int n = 0; n < Nj; n++) {
+                    data_j[n] = f.Coordinates[j, n];
+                }
+
+                oldFieldsData[j] = data_j;
+            }
+        }
 
 
         /// <summary>
