@@ -8,7 +8,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>CNS</RootNamespace>
     <AssemblyName>CNS</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
@@ -90,6 +90,11 @@
     <Compile Include="Convection\RusanovFluxBuilder.cs" />
     <Compile Include="Convection\RusanovFlux.cs" />
     <Compile Include="CNSEnvironment.cs" />
+    <Compile Include="LoadBalancing\ArtificialViscosityCellClassifier.cs" />
+    <Compile Include="LoadBalancing\IBMCellClassifier.cs" />
+    <Compile Include="LoadBalancing\ICellClassifier.cs" />
+    <Compile Include="LoadBalancing\IndifferentCellClassifier.cs" />
+    <Compile Include="LoadBalancing\LTSCellClassifier.cs" />
     <Compile Include="LoadBalancing\LTSCellCostEstimator.cs" />
     <Compile Include="ShockCapturing\ArtificialViscosityCFLConstraint.cs" />
     <Compile Include="IBM\IBMFieldSet.cs" />

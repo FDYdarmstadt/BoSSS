@@ -228,7 +228,7 @@ namespace BoSSS.Application.DerivativeTest {
         /// <summary>
         /// Nop.
         /// </summary>
-        protected override void CreateEquationsAndSolvers(LoadBalancingData L) {
+        protected override void CreateEquationsAndSolvers(GridUpdateData L) {
         }
 
         SinglePhaseField f1;
@@ -399,22 +399,22 @@ namespace BoSSS.Application.DerivativeTest {
                     //grd = base_grid;
                     //grid1.Plot2DGrid();
 
-                    GridCorrelation grc;
 
                     var gdat1 = new GridData(grid1);
-                    var grid2 = gdat1.Adapt(new int[] { 1, 2 }, null, out grc);
+                    var grid2 = gdat1.Adapt(new int[] { 1, 2 }, null, out GridCorrelation o2c_1);
                     //grid2.Plot2DGrid();
 
                     var gdat2 = new GridData(grid2);
-                    var grid3 = gdat2.Adapt(new int[] { 2, 4 }, null, out grc);
+                    var grid3 = gdat2.Adapt(new int[] { 2, 4 }, null, out GridCorrelation o2c_2);
                     //grid3.Plot2DGrid();
 
                     var gdat3 = new GridData(grid3);
-                    var grid4 = gdat3.Adapt(new int[] { 11, 14, 15 }, null, out grc);
+                    var grid4 = gdat3.Adapt(new int[] { 11, 14, 15 }, null, out GridCorrelation o2c_3);
                     //grid4.Plot2DGrid();
 
                     var gdat4 = new GridData(grid4);
-                    var grid5 = gdat4.Adapt(new[] { 4, 21, 22, 10 }, new[] { new[] { 13, 14, 15, 16 } }, out grc);
+                    var grid5 = gdat4.Adapt(new[] { 4, 21, 22, 10 }, new[] { new[] { 13, 14, 15, 16 } }, out GridCorrelation o2c_4);
+
                     //grid5.Plot2DGrid();
                                         
                     grd = grid5;

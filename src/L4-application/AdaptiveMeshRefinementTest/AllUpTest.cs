@@ -24,28 +24,25 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
         }
 
        
-        /*
         /// <summary>
         /// Da Test!
         /// </summary>
         [Test]
         static public void RuntimeCostDynamicBalanceTest(
-            [Values(1, 2)] int DGdegree) {
-            LoadBalancingTestMain p = null;
+            [Values(2, 3)] int DGdegree) {
+            AdaptiveMeshRefinementTestMain p = null;
             
             BoSSS.Solution.Application._Main(
                 new string[0],
                 true,
                 null,
                 delegate () {
-                    p = new LoadBalancingTestMain();
-                    p.DynamicBalance = true;
+                    p = new AdaptiveMeshRefinementTestMain();
                     p.DEGREE = DGdegree;
-                    p.cellCostEstimatorFactory = CellCostEstimatorLibrary.MeasureCostOfWhateverFlorianThinksIsRelevantButIDontUnderstand;
                     return p;
                 });
         }
-        */
+        
 
         /// <summary>
         /// MPI shutdown.

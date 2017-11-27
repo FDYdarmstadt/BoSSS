@@ -202,7 +202,7 @@ namespace NSE_SIMPLE {
         /// <summary>
         /// 
         /// </summary>
-        protected override void CreateEquationsAndSolvers(LoadBalancingData L) {
+        protected override void CreateEquationsAndSolvers(GridUpdateData L) {
             using (new FuncTrace()) {
 
                 // Create SIMPLEStatus
