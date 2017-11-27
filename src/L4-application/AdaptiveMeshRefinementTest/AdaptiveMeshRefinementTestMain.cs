@@ -332,9 +332,8 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
         /// Setting initial value.
         /// </summary>
         protected override void SetInitial() {
-            UpdateBaseGrid(0.0);
             TestData.ProjectField(TestDataFunc);
-            this.DelUpdateLevelset(null, 0.0, 0.0, 0.0, false);
+            DelUpdateLevelset(new DGField[] { uX }, 0.0, 0.0, 1.0, false);
 
             /*
             RefinedGrid = this.GridData;
@@ -342,7 +341,6 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             Refined_TestData = new SinglePhaseField(this.u.Basis, "TestData");
             Refined_Grad_u = this.Grad_u;
             Refined_MagGrad_u = this.MagGrad_u;
-
             */
         }
 
@@ -378,6 +376,19 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             uX.Clear();
             uX.Acc(1.0, uXEx);
 
+            // single-phase-properties
+            u.Clear();
+            u.ProjectField(NonVectorizedScalarFunction.Vectorize(uEx, t));
+            
+            Grad_u.Clear();
+            Grad_u.Gradient(1.0, u);
+
+            MagGrad_u.Clear();
+            MagGrad_u.ProjectFunction(1.0,
+                (double[] X, double[] U, int jCell) => Math.Sqrt(U[0].Pow2() + U[1].Pow2()),
+                new Foundation.Quadrature.CellQuadratureScheme(),
+                Grad_u.ToArray());
+
             // return level-set residual
             return 0.0;
         }
@@ -391,22 +402,9 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             return (x * x + y * y);
         }
 
-
-        private void UpdateBaseGrid(double time) {
-
-            u.Clear();
-            u.ProjectField(NonVectorizedScalarFunction.Vectorize(uEx, time));
-            
-            Grad_u.Clear();
-            Grad_u.Gradient(1.0, u);
-
-            MagGrad_u.Clear();
-            MagGrad_u.ProjectFunction(1.0,
-                (double[] X, double[] U, int jCell) => Math.Sqrt(U[0].Pow2() + U[1].Pow2()),
-                new Foundation.Quadrature.CellQuadratureScheme(),
-                Grad_u.ToArray());
-        }
-
+        /// <summary>
+        /// Function which is projected onto <see cref="u"/>;
+        /// </summary>
         static double uEx(double[] X, double time) {
             double x = X[0];
             double y = X[1];
@@ -423,6 +421,9 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
 
             return val;
         }
+
+
+        
 
 
         protected override void CreateEquationsAndSolvers(GridUpdateData L) {
@@ -493,8 +494,6 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             }
         }
 
-
-
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             using (new FuncTrace()) {
                 // Elo
@@ -505,8 +504,9 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
                 dt = Math.PI*2 / base.NoOfTimesteps;
                 base.NoOfTimesteps = 20;
 
-                UpdateBaseGrid(phystime + dt);
+                //UpdateBaseGrid(phystime + dt);
                 //UpdateRefinedGrid(phystime + dt, TimestepNo);
+                DelUpdateLevelset(new DGField[] { uX }, phystime, dt, 1.0, false);
 
                 // check error
                 double L2err = TestData.L2Error(TestDataFunc);

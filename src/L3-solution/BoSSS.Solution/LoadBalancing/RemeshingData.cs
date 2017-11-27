@@ -174,6 +174,9 @@ namespace BoSSS.Solution {
             using(new FuncTrace()) {
                 int newJ = this.m_newJ;
 
+                if(f is XDGField)
+                    throw new 
+
                 GridData NewGrid = (GridData)m_NewGrid;
 
                 int pDeg = f.Basis.Degree; //  Refined_TestData.Basis.Degree;

@@ -122,10 +122,6 @@ namespace BoSSS.Solution {
             BackupField(f, f.Identification);
         }
 
-        
-
-       
-
         /// <summary>
         /// See <see cref="RestoreDGField(DGField, string)"/>.
         /// </summary>
