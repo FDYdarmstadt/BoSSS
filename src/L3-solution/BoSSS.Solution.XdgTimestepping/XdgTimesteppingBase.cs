@@ -433,7 +433,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 // the nonlinear solvers:
                 // +++++++++++++++++++++++++++++++++++++++++++++
 
-                if (Config_LevelSetHandling != LevelSetHandling.Coupled_Iterative) {
+                if(Config_LevelSetHandling != LevelSetHandling.Coupled_Iterative) {
                     nonlinSolver = new FixpointIterator(
                         this.AssembleMatrixCallback,
                         this.MultigridBasis,
@@ -442,13 +442,13 @@ namespace BoSSS.Solution.XdgTimestepping {
                         MinIter = Config_MinIterations,
                         m_LinearSolver = Config_linearSolver,
                         m_SessionPath = SessionPath,
-                        ConvCrit = Config_SolverConvergenceCriterion,
+                        ConvCrit = Config_SolverConvergenceCriterion
                     };
                 } else {
                     nonlinSolver = new FixpointIterator(
-                    this.AssembleMatrixCallback,
-                    this.MultigridBasis,
-                    this.Config_MultigridOperator) {
+                        this.AssembleMatrixCallback,
+                        this.MultigridBasis,
+                        this.Config_MultigridOperator) {
                         MaxIter = Config_MaxIterations,
                         MinIter = Config_MinIterations,
                         m_LinearSolver = Config_linearSolver,

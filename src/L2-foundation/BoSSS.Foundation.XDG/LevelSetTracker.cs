@@ -1880,18 +1880,18 @@ namespace BoSSS.Foundation.XDG {
                                 ushort rb_l = (ushort)((C & 0xFFFF0000) >> 16);
 
                                 int NewLsDist_l = DecodeLevelSetDist(ra_l, iLs);
-                                if(Math.Abs(NewDistLs) < Math.Abs(NewLsDist_l)) {
+                                if(Math.Abs(NewDistLs) > Math.Abs(NewLsDist_l)) {
                                     NewDistLs = NewLsDist_l;
                                 }
 
                                 int OldLsDist_l = DecodeLevelSetDist(rb_l, iLs);
-                                if(Math.Abs(OldDistLs) < Math.Abs(OldLsDist_l)) {
+                                if(Math.Abs(OldDistLs) > Math.Abs(OldLsDist_l)) {
                                     OldDistLs = OldLsDist_l;
                                 }
                             }
-                            Debug.Assert(Math.Abs(NewDistLs) <= this.NearRegionWidth + 1);
-                            Debug.Assert(Math.Abs(OldDistLs) <= this.NearRegionWidth + 1);
-
+                            Debug.Assert(Math.Abs(NewDistLs) <= 7);
+                            Debug.Assert(Math.Abs(OldDistLs) <= 7);
+                            
                             EncodeLevelSetDist(ref ra, NewDistLs, iLs);
                             EncodeLevelSetDist(ref rb, OldDistLs, iLs);
                         }
