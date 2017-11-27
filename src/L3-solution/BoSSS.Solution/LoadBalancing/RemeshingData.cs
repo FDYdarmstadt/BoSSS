@@ -263,7 +263,10 @@ namespace BoSSS.Solution {
                             Debug.Assert(ReDistDGCoords[j].Length == 1);
                             f.Coordinates.SetRow(j, ReDistDGCoords[j][0]);
                         } else {
-                            DoCellj(f, NewGrid, pDeg, TargMappingIdx, ReDistDGCoords, j, m_Old2NewCorr, 0, Np, temp, acc);
+                            int L = ReDistDGCoords[j].Length;
+                            for(int l = 0; l < L; l++) {
+                                DoCellj(f, NewGrid, pDeg, TargMappingIdx[j], ReDistDGCoords[j], l, m_Old2NewCorr, 0, 0, Np, temp, acc);
+                            }
                         }
                     }
                 } else if(f is XDGField) {
@@ -325,10 +328,12 @@ namespace BoSSS.Solution {
                                     c++;
 
                                     int iSpc = lsTrk.GetSpeciesIndex(rcvSpc, j); // species index in new cell 
-                                    Debug.Assert(iSpcRecv == iSpc || L > 1); 
+                                    Debug.Assert(iSpcRecv == iSpc || L > 1);
 
+                                    int N0rcv = c;
+                                    c += Np;
 
-                                    DoCellj(f, NewGrid, pDeg, TargMappingIdx, ReDistDGCoords, j, m_Old2NewCorr, Np * iSpc, Np, temp, acc);
+                                    DoCellj(f, NewGrid, pDeg, TargMappingIdx[j], ReDistDGCoords[j], l, m_Old2NewCorr, N0rcv, Np * iSpc, Np, temp, acc);
                                 }
                             }
                         }
@@ -339,8 +344,8 @@ namespace BoSSS.Solution {
             }
         }
 
-        static private void DoCellj(DGField f, GridData NewGrid, int pDeg, int[][] TargMappingIdx, double[][][] ReDistDGCoords, int j, GridCorrelation Old2NewCorr, int N0rcv, int Np, double[] ReDistDGCoords_jl, double[] Coords_j) {
-            Debug.Assert(ReDistDGCoords[j].Length == TargMappingIdx[j].Length);
+        static private void DoCellj(DGField f, GridData NewGrid, int pDeg, int[] TargMappingIdx_j, double[][] ReDistDGCoords_j, int l, GridCorrelation Old2NewCorr, int N0rcv, int N0acc, int Np, double[] ReDistDGCoords_jl, double[] Coords_j) {
+            Debug.Assert(ReDistDGCoords_j.Length == TargMappingIdx_j.Length);
 
             int iKref = NewGrid.Cells.GetRefElementIndex(j);
 
@@ -348,21 +353,21 @@ namespace BoSSS.Solution {
             Debug.Assert(ReDistDGCoords_jl.Length == Np);
 
             for(int n = 0; n < Np; n++) {
-                Coords_j[n] = f.Coordinates[j, N0 + n];
+                Coords_j[n] = f.Coordinates[j, N0acc + n];
             }
-            double[][] ReDistDGCoords_j = ReDistDGCoords[j];
             
+            int L = ReDistDGCoords_j.Length;
 
 
-            if(TargMappingIdx[j].Length == 1) {
+            if(TargMappingIdx_j.Length == 1) {
                 // ++++++++++
                 // refinement
                 // ++++++++++
 
-                MultidimensionalArray Trafo = Old2NewCorr.GetSubdivBasisTransform(iKref, TargMappingIdx[j][0], pDeg);
+                MultidimensionalArray Trafo = Old2NewCorr.GetSubdivBasisTransform(iKref, TargMappingIdx_j[0], pDeg);
 
                 for(int n = 0; n < Np; n++) {
-                    ReDistDGCoords_jl[n] = ReDistDGCoords_j[0][N0 + n];
+                    ReDistDGCoords_jl[n] = ReDistDGCoords_j[0][N0rcv + n];
                 }
                 Trafo.gemv(1.0, ReDistDGCoords_jl, 1.0, Coords_j, transpose: false);
             } else {
@@ -370,22 +375,21 @@ namespace BoSSS.Solution {
                 // coarsening
                 // ++++++++++
 
-                int L = ReDistDGCoords[j].Length;
-                for(int l = 0; l < L; l++) {
-                    var Trafo = Old2NewCorr.GetSubdivBasisTransform(iKref, TargMappingIdx[j][l], pDeg);
 
-                    for(int n = 0; n < Np; n++) {
-                        ReDistDGCoords_jl[n] = ReDistDGCoords_j[l][N0 + n];
-                    }
+                var Trafo = Old2NewCorr.GetSubdivBasisTransform(iKref, TargMappingIdx_j[l], pDeg);
 
-                    Trafo.gemv(1.0, ReDistDGCoords_jl, 1.0, Coords_j, transpose: true);
+                for(int n = 0; n < Np; n++) {
+                    ReDistDGCoords_jl[n] = ReDistDGCoords_j[l][N0rcv + n];
                 }
+
+                Trafo.gemv(1.0, ReDistDGCoords_jl, 1.0, Coords_j, transpose: true);
+
 
 
             }
 
             for(int n = 0; n < Np; n++) {
-                f.Coordinates[j, N0 + n] = Coords_j[n];
+                f.Coordinates[j, N0acc + n] = Coords_j[n];
             }
 
         }
