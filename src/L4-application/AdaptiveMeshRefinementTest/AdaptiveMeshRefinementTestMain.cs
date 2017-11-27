@@ -335,6 +335,8 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             TestData.ProjectField(TestDataFunc);
             DelUpdateLevelset(new DGField[] { uX }, 0.0, 0.0, 1.0, false);
 
+            uX.ProjectField((x, y) => 1.0);
+
             /*
             RefinedGrid = this.GridData;
             Refined_u = this.u;
@@ -373,8 +375,8 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             uXEx.GetSpeciesShadowField("A").ProjectField((x, y) => x + alpha_A * t);
             uXEx.GetSpeciesShadowField("B").ProjectField((x, y) => x + alpha_B * t);
 
-            uX.Clear();
-            uX.Acc(1.0, uXEx);
+           // uX.Clear();
+            //uX.Acc(1.0, uXEx);
 
             // single-phase-properties
             u.Clear();

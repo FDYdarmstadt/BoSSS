@@ -265,7 +265,7 @@ namespace BoSSS.Solution {
                         } else {
                             int L = ReDistDGCoords[j].Length;
                             for(int l = 0; l < L; l++) {
-                                DoCellj(f, NewGrid, pDeg, TargMappingIdx[j], ReDistDGCoords[j], l, m_Old2NewCorr, 0, 0, Np, temp, acc);
+                                DoCellj(j, f, NewGrid, pDeg, TargMappingIdx[j], ReDistDGCoords[j], l, m_Old2NewCorr, 0, 0, Np, temp, acc);
                             }
                         }
                     }
@@ -291,7 +291,6 @@ namespace BoSSS.Solution {
                         if(TargMappingIdx[j] == null) {
                             // unchanged cell
                             Debug.Assert(ReDistDGCoords[j].Length == 1);
-                            Debug.Assert(ReDistDGCoords[j][0].Length == xf.Basis.GetLength(j));
                             double[] ReDistDGCoords_jl = ReDistDGCoords[j][0];
                             Debug.Assert(ReDistDGCoords_jl.Length == NoOfSpc*Np + NoOfSpc + 1);
                             Debug.Assert(ReDistDGCoords_jl[0] == NoOfSpc);
@@ -321,7 +320,7 @@ namespace BoSSS.Solution {
                                 int NoSpcOrg = (int) ReDistDGCoords_jl[0]; // no of species in original cells
 
                                 int c = 1;
-                                for(int iSpcRecv = 0; iSpcRecv < NoOfSpc; iSpcRecv++) { // loop over species in original cell
+                                for(int iSpcRecv = 0; iSpcRecv < NoSpcOrg; iSpcRecv++) { // loop over species in original cell
 
                                     SpeciesId rcvSpc;
                                     rcvSpc.cntnt = (int)ReDistDGCoords_jl[c];
@@ -333,8 +332,9 @@ namespace BoSSS.Solution {
                                     int N0rcv = c;
                                     c += Np;
 
-                                    DoCellj(f, NewGrid, pDeg, TargMappingIdx[j], ReDistDGCoords[j], l, m_Old2NewCorr, N0rcv, Np * iSpc, Np, temp, acc);
+                                    DoCellj(j, xf, NewGrid, pDeg, TargMappingIdx[j], ReDistDGCoords[j], l, m_Old2NewCorr, N0rcv, Np * iSpc, Np, temp, acc);
                                 }
+                                Debug.Assert(c == ReDistDGCoords_jl.Length);
                             }
                         }
                     }
@@ -344,7 +344,7 @@ namespace BoSSS.Solution {
             }
         }
 
-        static private void DoCellj(DGField f, GridData NewGrid, int pDeg, int[] TargMappingIdx_j, double[][] ReDistDGCoords_j, int l, GridCorrelation Old2NewCorr, int N0rcv, int N0acc, int Np, double[] ReDistDGCoords_jl, double[] Coords_j) {
+        static private void DoCellj(int j, DGField f, GridData NewGrid, int pDeg, int[] TargMappingIdx_j, double[][] ReDistDGCoords_j, int l, GridCorrelation Old2NewCorr, int N0rcv, int N0acc, int Np, double[] ReDistDGCoords_jl, double[] Coords_j) {
             Debug.Assert(ReDistDGCoords_j.Length == TargMappingIdx_j.Length);
 
             int iKref = NewGrid.Cells.GetRefElementIndex(j);
@@ -363,7 +363,7 @@ namespace BoSSS.Solution {
                 // ++++++++++
                 // refinement
                 // ++++++++++
-
+                Debug.Assert(l == 0);
                 MultidimensionalArray Trafo = Old2NewCorr.GetSubdivBasisTransform(iKref, TargMappingIdx_j[0], pDeg);
 
                 for(int n = 0; n < Np; n++) {
