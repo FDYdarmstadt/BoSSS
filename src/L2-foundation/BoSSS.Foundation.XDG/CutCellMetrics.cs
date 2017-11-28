@@ -34,6 +34,7 @@ namespace BoSSS.Foundation.XDG {
     /// </summary>
     public class CutCellMetrics {
 
+        /*
         /// <summary>
         /// Ctor.
         /// </summary>
@@ -41,6 +42,7 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="_quadorder">The quadrature order of HMF which should be used for computing cell volumes.</param>
         /// <param name="momentFittingVaraint">The kind of HMF which should be used for computing cell volumes.</param>
         /// <param name="SpeciesList">A list of species for which the agglomeration should be computed.</param>
+        [Obsolete]
         public CutCellMetrics(
             XQuadFactoryHelper.MomentFittingVariants momentFittingVaraint,
             int _quadorder,
@@ -54,6 +56,24 @@ namespace BoSSS.Foundation.XDG {
 
             this.ComputeNonAgglomeratedMetrics();
         }
+        */
+
+        /// <summary>
+        /// owner object.
+        /// </summary>
+        public XDGSpaceMetrics XDGSpaceMetrics {
+            get;
+            private set;
+        }
+
+        /// <summary>
+        /// ctor.
+        /// </summary>
+        internal CutCellMetrics(XDGSpaceMetrics owner) {
+            XDGSpaceMetrics = owner;
+        }
+
+
 
         /// <summary>
         /// Constructor where all data is provided externally; not for user interaction, used e.g. for dynamic load balancing.
@@ -103,32 +123,36 @@ namespace BoSSS.Foundation.XDG {
         /// The quadrature order of HMF which should be used for computing cell volumes and edge areas.
         /// </summary>
         public int HMForder {
-            get;
-            private set;
+            get {
+                return XDGSpaceMetrics.CutCellQuadOrder;
+            }
         }
 
         /// <summary>
         /// The kind of HMF which is be used for computing cell volumes.
         /// </summary>
         public XQuadFactoryHelper.MomentFittingVariants HMFvariant {
-            get;
-            private set;
+            get {
+                return XDGSpaceMetrics.CutCellQuadratureType;
+            }
         }
 
         /// <summary>
         /// All species for which agglomeration is available.
         /// </summary>
         public IEnumerable<SpeciesId> SpeciesList {
-            get;
-            private set;
+            get {
+                return XDGSpaceMetrics.SpeciesList;
+            }
         }
 
         /// <summary>
         /// Link to the tracker.
         /// </summary>
         public LevelSetTracker Tracker {
-            get;
-            private set;
+            get {
+                return XDGSpaceMetrics.Tracker;
+            }
         }
 
 

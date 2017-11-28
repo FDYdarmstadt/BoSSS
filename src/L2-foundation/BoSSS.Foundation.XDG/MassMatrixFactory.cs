@@ -34,22 +34,23 @@ namespace BoSSS.Foundation.XDG {
     public class MassMatrixFactory {
 
         /// <summary>
-        /// ctor.
+        /// owner object.
         /// </summary>
-        public MassMatrixFactory(
-            Basis _MaxBasis,
-            MultiphaseCellAgglomerator agglomerator
-            ) {
-
-            Debug.Assert(object.ReferenceEquals(_MaxBasis.GridDat, agglomerator.Tracker.GridDat));
-
-            this.MaxBasis = _MaxBasis;
-            m_agglomerator = agglomerator;
-            m_LsTrk = agglomerator.Tracker;
-            m_quadorder = agglomerator.HMForder;
-            this.MomentFittingVariant = agglomerator.HMFvariant;
+        public XDGSpaceMetrics XDGSpaceMetrics {
+            get;
+            private set;
         }
 
+
+        /// <summary>
+        /// ctor.
+        /// </summary>
+        public MassMatrixFactory(XDGSpaceMetrics __XDGSpaceMetrics) {
+            XDGSpaceMetrics = __XDGSpaceMetrics;
+            this.MaxBasis = new Basis(XDGSpaceMetrics.Tracker.GridDat, XDGSpaceMetrics.CutCellQuadOrder / 2);
+        }
+
+        /*
         /// <summary>
         /// quadrature order used for creating the volume rule
         /// </summary>
@@ -58,6 +59,7 @@ namespace BoSSS.Foundation.XDG {
                 return m_quadorder;
             }
         }
+        */
 
         /// <summary>
         /// the maximal supported basis if this factory
@@ -67,51 +69,46 @@ namespace BoSSS.Foundation.XDG {
             private set;
         }
 
-        int m_quadorder;
-        Basis m_MaxNonXBasis {
-            get {
-                if (MaxBasis is XDGBasis) {
-                    return ((XDGBasis)MaxBasis).NonX_Basis;
-                } else {
-                    return MaxBasis;
-                }
-            }
-        }
-        MultiphaseCellAgglomerator m_agglomerator;
-        LevelSetTracker m_LsTrk;
+        //Basis m_MaxNonXBasis {
+        //    get {
+        //        if (MaxBasis is XDGBasis) {
+        //            return ((XDGBasis)MaxBasis).NonX_Basis;
+        //        } else {
+        //            return MaxBasis;
+        //        }
+        //    }
+        //}
 
-        /// <summary>
-        /// what a hack. 
-        /// </summary>
-        public MultiphaseCellAgglomerator Agglomerator {
-            get {
-                return m_agglomerator;
-            }
-        }
 
-        public XQuadFactoryHelper.MomentFittingVariants MomentFittingVariant {
-            get;
-            private set;
-        }
+        //MultiphaseCellAgglomerator m_agglomerator;
 
-        /// <summary>
-        /// Computes the mass matrices for a given mapping, for all species in <see cref="AvailableSpecies"/>
-        /// </summary>
-        public BlockDiagonalMatrix GetMassMatrix_depr(UnsetteledCoordinateMapping mapping, bool inverse) {
-            double[] alpha = new double[mapping.BasisS.Count];
-            alpha.SetAll(1.0);
-            return GetMassMatrix_depr(mapping, alpha, inverse, this.AvailableSpecies.ToArray());
-        }
+        //LevelSetTracker m_LsTrk;
 
-        /// <summary>
-        /// Computes the mass matrices for a given mapping.
-        /// </summary>
-        public BlockDiagonalMatrix GetMassMatrix_depr(UnsetteledCoordinateMapping mapping, double[] _alpha, bool inverse, params SpeciesId[] Spc) {
-            Dictionary<SpeciesId, IEnumerable<double>> alpha = new Dictionary<SpeciesId, IEnumerable<double>>();
-            foreach (var species in Spc)
-                alpha.Add(species, _alpha.CloneAs());
-            return GetMassMatrix_depr(mapping, alpha, inverse);
-        }
+   
+
+        //public XQuadFactoryHelper.MomentFittingVariants MomentFittingVariant {
+        //    get;
+        //    private set;
+        //}
+
+        ///// <summary>
+        ///// Computes the mass matrices for a given mapping, for all species in <see cref="AvailableSpecies"/>
+        ///// </summary>
+        //public BlockDiagonalMatrix GetMassMatrix_depr(UnsetteledCoordinateMapping mapping, bool inverse) {
+        //    double[] alpha = new double[mapping.BasisS.Count];
+        //    alpha.SetAll(1.0);
+        //    return GetMassMatrix_depr(mapping, alpha, inverse, this.AvailableSpecies.ToArray());
+        //}
+
+        ///// <summary>
+        ///// Computes the mass matrices for a given mapping.
+        ///// </summary>
+        //public BlockDiagonalMatrix GetMassMatrix_depr(UnsetteledCoordinateMapping mapping, double[] _alpha, bool inverse, params SpeciesId[] Spc) {
+        //    Dictionary<SpeciesId, IEnumerable<double>> alpha = new Dictionary<SpeciesId, IEnumerable<double>>();
+        //    foreach (var species in Spc)
+        //        alpha.Add(species, _alpha.CloneAs());
+        //    return GetMassMatrix_depr(mapping, alpha, inverse);
+        //}
 
         /// <summary>
         /// computes the mass matrices for a given mapping.
@@ -162,6 +159,7 @@ namespace BoSSS.Foundation.XDG {
             return GetMassMatrix(mapping, alpha, inverse);
         }
 
+        /*
         /// <summary>
         /// computes the mass matrices for a given mapping.
         /// </summary>
@@ -191,7 +189,7 @@ namespace BoSSS.Foundation.XDG {
             AccMassMatrix(Return, mapping, alpha, inverse, VariableAgglomerationSwitch);
             return Return;
         }
-
+        */
 
         /// <summary>
         /// Provides access to a 'raw' form of the mass matrix, where only blocks for the cut cells
@@ -246,7 +244,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public IEnumerable<SpeciesId> AvailableSpecies {
             get {
-                return this.m_agglomerator.SpeciesList;
+                return this.XDGSpaceMetrics.SpeciesList;
             }
         }
 
@@ -266,7 +264,8 @@ namespace BoSSS.Foundation.XDG {
         /// computes the mass matrices for a given mapping and accumulates the mass matrix to some other matrix.
         /// </summary>
         public void AccMassMatrix<T>(T M, UnsetteledCoordinateMapping mapping, IDictionary<SpeciesId, IEnumerable<double>> _alpha, bool inverse = false, bool[] VariableAgglomerationSwitch = null)
-            where T : IMutableMatrixEx {
+            where T : IMutableMatrixEx //
+        {
             using (new FuncTrace()) {
                 var _basisS = mapping.BasisS.ToArray();
                 var ctx = _basisS[0].GridDat;

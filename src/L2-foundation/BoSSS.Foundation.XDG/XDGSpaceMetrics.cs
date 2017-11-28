@@ -1,4 +1,5 @@
 ﻿using ilPSP;
+using ilPSP.Tracing;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,9 +24,28 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// ctor.
         /// </summary>
-        internal XDGSpaceMetrics(XQuadFactoryHelper qfHelper, int __quadorder) {
-            CutCellQuadOrder = __quadorder;
-            m_qfHelper = qfHelper;
+        internal XDGSpaceMetrics(LevelSetTracker lsTrk, XQuadFactoryHelper qfHelper, int __quadorder, SpeciesId[] speciesIds) {
+            using(new FuncTrace()) {
+                // ----
+                // init 
+                // ----
+
+                if(!speciesIds.IsSubsetOf(lsTrk.SpeciesIdS)) {
+                    throw new ArgumentException();
+                }
+                CutCellQuadOrder = __quadorder;
+                m_qfHelper = qfHelper;
+                this.Tracker = lsTrk;
+                this.m_SpeciesList = speciesIds.ToArray();
+
+                // ---------------------
+                // compute all the stuff
+                // ---------------------
+
+                m_CutCellMetrics = new CutCellMetrics(this);
+                m_MassMatrixFactory = new MassMatrixFactory(this);
+
+            }
         }
 
         /// <summary>
@@ -34,6 +54,17 @@ namespace BoSSS.Foundation.XDG {
         public XQuadFactoryHelper XQuadFactoryHelper {
             get {
                 return m_qfHelper;
+            }
+        }
+
+        MassMatrixFactory m_MassMatrixFactory;
+        
+        /// <summary>
+        /// Ye olde provider of the best mass matrices in town. 
+        /// </summary>
+        public MassMatrixFactory MassMatrixFactory {
+            get {
+                return m_MassMatrixFactory;
             }
         }
 
@@ -74,13 +105,14 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
+        CutCellMetrics m_CutCellMetrics;
+
         /// <summary>
         /// Cell measures and metrics for cut cells
         /// </summary>
         public CutCellMetrics CutCellMetrics {
             get {
-
-
+                return m_CutCellMetrics;
             }
         }
 
