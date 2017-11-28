@@ -672,7 +672,7 @@ namespace BoSSS.Foundation.XDG {
                 }
 
                 if (this.AgglomerationThreshold <= 1e-6) {
-                    // special treatment for no agglomeration -- which is anyway not recomended at all
+                    // special treatment for no agglomeration -- which is anyway not recommended at all
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
                     CellMask spcDom = this.Tracker._Regions.GetSpeciesMask(spc);

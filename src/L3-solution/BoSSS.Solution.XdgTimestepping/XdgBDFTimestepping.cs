@@ -1168,7 +1168,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <param name="increment">
         /// Sub-timestep index (used during BDF startup).
         /// </param>
-        public void Solve_Increment(int increment, double phystime, double dt, bool ComputeOnlyResidual = false) {
+        void Solve_Increment(int increment, double phystime, double dt, bool ComputeOnlyResidual = false) {
             if (dt <= 0)
                 throw new ArgumentOutOfRangeException();
             if (m_CurrentDt > 0 && Math.Abs(dt / m_CurrentDt - 1.0) > 1.0e-14)
@@ -1340,6 +1340,16 @@ namespace BoSSS.Solution.XdgTimestepping {
                 var SplittingAgg = new MultiphaseCellAgglomerator(newCCM, 0.0, true, false, true, new CutCellMetrics[] { oldCCM }, new double[] { 0.0 });
                 SplittingAgg.Extrapolate(this.CurrentStateMapping);
             }
+
+            // ====================
+            // release end-of-stack
+            // ====================
+            int ie = m_Stack_OpMatrix.Length - 1;
+            Debug.Assert(m_Stack_OpMatrix.Length == m_Stack_OpAffine.Length);
+            Debug.Assert((m_Stack_OpMatrix[ie] == null) == (m_Stack_OpAffine[ie] == null));
+            m_Stack_OpMatrix[ie] = null;
+            m_Stack_OpAffine[ie] = null;
+            m_Stack_MassMatrix[m_Stack_MassMatrix.Length - 1] = null;
         }
 
 

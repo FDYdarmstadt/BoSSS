@@ -72,14 +72,20 @@ namespace BoSSS.Foundation.XDG {
             ExactCircle
         }
 
-        private MomentFittingVariants momentFittingVariant;
+        /// <summary>
+        /// Used type of the HMF.
+        /// </summary>
+        public MomentFittingVariants CutCellQuadratureType {
+            get;
+            private set;
+        }
 
         /// <summary>
         /// ctor.
         /// </summary>
         internal XQuadFactoryHelper(LevelSetTracker _lsTrk, MomentFittingVariants momentFittingVariant) {
             lsTrk = _lsTrk;
-            this.momentFittingVariant = momentFittingVariant;
+            this.CutCellQuadratureType = momentFittingVariant;
         }
 
 #if DEBUG
@@ -120,7 +126,7 @@ namespace BoSSS.Foundation.XDG {
                         this.lsTrk,
                         KrefVol,
                         levSetIndex,
-                        momentFittingVariant == MomentFittingVariants.OneStepGaussAndStokes);
+                        CutCellQuadratureType == MomentFittingVariants.OneStepGaussAndStokes);
                 }
 
                 return LineAndPoint_in2D[levSetIndex].GetPointFactory();
@@ -230,7 +236,7 @@ namespace BoSSS.Foundation.XDG {
                     m_VolumeFactory = new IQuadRuleFactory<QuadRule>[this.lsTrk.LevelSets.Count];
 
                 if (m_VolumeFactory[levSetIndex] == null) {
-                    switch (momentFittingVariant) {
+                    switch (CutCellQuadratureType) {
                         case MomentFittingVariants.Classic:
                             m_VolumeFactory[levSetIndex] = new LevelSetVolumeQuadRuleFactory(
                                 this.lsTrk,
@@ -243,7 +249,7 @@ namespace BoSSS.Foundation.XDG {
                         case MomentFittingVariants.OneStepGauss:
                         case MomentFittingVariants.OneStepGaussAndStokes:
                         {
-                            bool bStokes = momentFittingVariant == MomentFittingVariants.OneStepGaussAndStokes;
+                            bool bStokes = CutCellQuadratureType == MomentFittingVariants.OneStepGaussAndStokes;
                             LevelSetComboRuleFactory2 ComboRuleFactroy = new LevelSetComboRuleFactory2(
                                 this.lsTrk, levSetIndex,
                                     this.GetCellFaceFactory(levSetIndex, Kref),
@@ -270,7 +276,7 @@ namespace BoSSS.Foundation.XDG {
                         
                         default:
                             throw new NotSupportedException(String.Format(
-                                "Variant {0} not implemented.", momentFittingVariant));
+                                "Variant {0} not implemented.", CutCellQuadratureType));
                     }
                 }
 
@@ -339,7 +345,7 @@ namespace BoSSS.Foundation.XDG {
 
             if (m_SurfaceFactory[levSetIndex] == null) {
                 var ctx = lsTrk.GridDat;
-                switch (momentFittingVariant) {
+                switch (CutCellQuadratureType) {
                     case MomentFittingVariants.Classic:
                     m_SurfaceFactory[levSetIndex] = new LevelSetSurfaceQuadRuleFactory(
                          lsTrk,
@@ -350,7 +356,7 @@ namespace BoSSS.Foundation.XDG {
                     case MomentFittingVariants.OneStepGauss:
                     case MomentFittingVariants.OneStepGaussAndStokes:
                     {
-                        bool bStokes = momentFittingVariant == MomentFittingVariants.OneStepGaussAndStokes;
+                        bool bStokes = CutCellQuadratureType == MomentFittingVariants.OneStepGaussAndStokes;
                         var ComboRuleFactroy = new LevelSetComboRuleFactory2(
                                 this.lsTrk,
                                 levSetIndex,
@@ -380,7 +386,7 @@ namespace BoSSS.Foundation.XDG {
 
                     default:
                     throw new NotSupportedException(String.Format(
-                        "Variant {0} not implemented.", momentFittingVariant));
+                        "Variant {0} not implemented.", CutCellQuadratureType));
                 }
             }
 

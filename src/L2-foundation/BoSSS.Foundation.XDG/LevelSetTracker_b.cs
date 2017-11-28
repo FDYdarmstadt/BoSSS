@@ -35,6 +35,7 @@ namespace BoSSS.Foundation.XDG {
         public Dictionary<XQuadFactoryHelper.MomentFittingVariants, XQuadFactoryHelper> m_QuadFactoryHelpers
             = new Dictionary<XQuadFactoryHelper.MomentFittingVariants,XQuadFactoryHelper>();
 
+        /*
         /// <summary>
         /// Central 'factory' for creating Level Set - related quadrature.
         /// </summary>
@@ -49,5 +50,11 @@ namespace BoSSS.Foundation.XDG {
         }
         
       
+        */
+
+
+        public XDGSpaceMetrics GetXDGSpaceMetrics(XQuadFactoryHelper.MomentFittingVariants variant, int quadorder, int stackindex) {
+
+        }
     }
 }

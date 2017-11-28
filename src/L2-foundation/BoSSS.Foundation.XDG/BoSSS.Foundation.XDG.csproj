@@ -107,6 +107,7 @@
     <Compile Include="XDGField_GenericEval.cs" />
     <Compile Include="XDGField_IO.cs" />
     <Compile Include="XdgOperatorQuadratureSet.cs" />
+    <Compile Include="XDGSpaceMetrics.cs" />
     <Compile Include="XDGUtils.cs" />
     <Compile Include="Quadrature\XQuadFactoryHelper.cs" />
     <Compile Include="Quadrature\XQuadSchemeHelper.cs" />
