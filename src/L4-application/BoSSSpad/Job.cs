@@ -319,6 +319,7 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
+
         /// <summary>
         /// Returns the session which is the result of this job.
         /// </summary>
@@ -600,6 +601,20 @@ namespace BoSSS.Application.BoSSSpad {
 
 
                 return stw.ToString();
+            }
+        }
+
+        string m_ExecutionTime = "00:05:00";
+
+        /// <summary>
+        /// Estimated execution time limit. Important for slurm queuing
+        /// </summary>
+        public string ExecutionTime {
+            get {
+                return m_ExecutionTime;
+            }
+            set {
+                m_ExecutionTime = value;
             }
         }
 

@@ -14,9 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
-using System.Diagnostics;
-using System.Linq;
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Quadrature;
@@ -26,9 +23,11 @@ using BoSSS.Solution;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.Queries;
 using BoSSS.Solution.Utils;
-using CNS.Exception;
 using CNS.MaterialProperty;
 using ilPSP;
+using System;
+using System.Diagnostics;
+using System.Linq;
 
 namespace CNS.IBM {
 
@@ -48,13 +47,13 @@ namespace CNS.IBM {
             return delegate (IApplication<AppControl> app, double time) {
                 IProgram<CNSControl> program = app as IProgram<CNSControl>;
                 if (program == null) {
-                    throw new InternalErrorException();
+                    throw new Exception();
                 }
 
                 ImmersedSpeciesMap speciesMap = program.SpeciesMap as ImmersedSpeciesMap;
                 IBMControl control = program.Control as IBMControl;
                 if (speciesMap == null || control == null) {
-                    throw new ConfigurationException(
+                    throw new Exception(
                         "Query is only valid for immersed boundary runs");
                 }
 
@@ -73,13 +72,13 @@ namespace CNS.IBM {
             return delegate (IApplication<AppControl> app, double time) {
                 IProgram<CNSControl> program = app as IProgram<CNSControl>;
                 if (program == null) {
-                    throw new InternalErrorException();
+                    throw new Exception();
                 }
 
                 ImmersedSpeciesMap speciesMap = program.SpeciesMap as ImmersedSpeciesMap;
                 IBMControl control = program.Control as IBMControl;
                 if (speciesMap == null || control == null) {
-                    throw new ConfigurationException(
+                    throw new Exception(
                         "Query is only valid for immersed boundary runs");
                 }
 
@@ -104,7 +103,7 @@ namespace CNS.IBM {
             return delegate (IApplication<AppControl> app, double time) {
                 IProgram<CNSControl> program = app as IProgram<CNSControl>;
                 if (program == null) {
-                    throw new InternalErrorException();
+                    throw new Exception();
                 }
 
                 if (!firstCall) {
@@ -130,13 +129,13 @@ namespace CNS.IBM {
             return delegate (IApplication<AppControl> app, double time) {
                 IProgram<CNSControl> program = app as IProgram<CNSControl>;
                 if (program == null) {
-                    throw new InternalErrorException();
+                    throw new Exception();
                 }
 
                 ImmersedSpeciesMap speciesMap = program.SpeciesMap as ImmersedSpeciesMap;
                 IBMControl control = program.Control as IBMControl;
                 if (speciesMap == null || control == null) {
-                    throw new ConfigurationException(
+                    throw new Exception(
                         "Query is only valid for immersed boundary runs");
                 }
 
@@ -164,11 +163,11 @@ namespace CNS.IBM {
                         QuadRule rule = chunkRulePairs[index].Rule;
 
                         if (chunk.i0 != j0 || chunk.Len != Len) {
-                            throw new InternalErrorException();
+                            throw new Exception();
                         }
 
                         if (rule.NoOfNodes != nodes.GetLength(0)) {
-                            throw new InternalErrorException();
+                            throw new Exception();
                         }
 
                         MultidimensionalArray rho = MultidimensionalArray.Create(chunk.Len, rule.NoOfNodes);
@@ -232,13 +231,13 @@ namespace CNS.IBM {
             return delegate (IApplication<AppControl> app, double time) {
                 IProgram<CNSControl> program = app as IProgram<CNSControl>;
                 if (program == null) {
-                    throw new InternalErrorException();
+                    throw new Exception();
                 }
 
                 ImmersedSpeciesMap speciesMap = program.SpeciesMap as ImmersedSpeciesMap;
                 IBMControl control = program.Control as IBMControl;
                 if (speciesMap == null || control == null) {
-                    throw new ConfigurationException(
+                    throw new Exception(
                         "Query is only valid for immersed boundary runs");
                 }
                 DGField density = program.WorkingSet.Density;

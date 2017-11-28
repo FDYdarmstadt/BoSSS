@@ -15,19 +15,15 @@ limitations under the License.
 */
 
 using BoSSS.Foundation;
-using BoSSS.Foundation.XDG;
-using BoSSS.Platform;
-using BoSSS.Solution.Utils;
+using BoSSS.Solution;
 using CNS.EquationSystem;
-using CNS.Exception;
+using ilPSP;
 using ilPSP.LinSolvers;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using ilPSP;
-using BoSSS.Solution;
 
 namespace CNS.IBM {
 
@@ -37,7 +33,7 @@ namespace CNS.IBM {
             : base(standardOperator, boundaryOperator, fieldsMap, parametersMap, speciesMap, timeStepConstraints) {
 
             if (speciesMap.Control.DomainType != DomainTypes.MovingImmersedBoundary) {
-                throw new ConfigurationException();
+                throw new Exception();
             }
         }
 
@@ -57,7 +53,7 @@ namespace CNS.IBM {
         }
 
         public override double Perform(double dt) {
-            if (timeStepConstraints != null) {
+            if (TimeStepConstraints != null) {
                 dt = CalculateTimeStep();
             }
 

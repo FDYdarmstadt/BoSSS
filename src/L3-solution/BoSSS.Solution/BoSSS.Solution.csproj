@@ -28,7 +28,7 @@
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
     <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -60,6 +60,7 @@
     <Compile Include="AdamsBashforth.cs" />
     <Compile Include="AdamsBashforthLTS.cs" />
     <Compile Include="Clustering.cs" />
+    <Compile Include="LoadBalancing\GridUpdateData.cs" />
     <Compile Include="LoadBalancing\CellCostEstimatorLibrary.cs" />
     <Compile Include="LoadBalancing\ICellCostEstimator.cs" />
     <Compile Include="LoadBalancing\RuntimeCellCostEstimator.cs" />
@@ -109,6 +110,7 @@
     <Compile Include="PlotDriver.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Query.cs" />
+    <Compile Include="LoadBalancing\RemeshingData.cs" />
     <Compile Include="ResidualLogger.cs" />
     <Compile Include="ROCK4.cs" />
     <Compile Include="ROCK4_parameters.cs" />

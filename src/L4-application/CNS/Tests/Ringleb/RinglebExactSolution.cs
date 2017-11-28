@@ -14,9 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
 using BoSSS.Platform.LinAlg;
-using CNS.Exception;
+using System;
 
 namespace CNS.Tests.Ringleb {
 
@@ -104,7 +103,7 @@ namespace CNS.Tests.Ringleb {
 
                 double g = EvaluateG(tau, kappa);
                 if (double.IsNaN(g)) {
-                    throw new NumericalAlgorithmException(
+                    throw new Exception(
                         "Encountered NaN in the function 'g' of the Ringleb solution");
                 }
 

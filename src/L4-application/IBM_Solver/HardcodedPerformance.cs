@@ -46,11 +46,11 @@ namespace BoSSS.Application.IBM_Solver {
             //string restartGrid = "3f8f3445-46f1-47ed-ac0e-8f0260f64d8f";
 
             C.DynamicLoadBalancing_Period = 1;
-            C.DynamicLoadBalancing_CellCostEstimatorFactory = delegate (int noOfPerformanceClasses) {
+            C.DynamicLoadBalancing_CellCostEstimatorFactories.Add(delegate (IApplication<AppControl> app, int noOfPerformanceClasses) {
                 Console.WriteLine("i was called");
                 int[] map = new int[] { 1, 5, 100 };
                 return new StaticCellCostEstimator(map);
-            };
+            });
 
 
 

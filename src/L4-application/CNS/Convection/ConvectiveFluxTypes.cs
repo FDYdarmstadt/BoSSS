@@ -16,8 +16,8 @@ limitations under the License.
 
 using CNS.Boundary;
 using CNS.EquationSystem;
-using CNS.Exception;
 using CNS.IBM;
+using System;
 
 namespace CNS.Convection {
 
@@ -108,7 +108,7 @@ namespace CNS.Convection {
                     return NullFluxBuilder.Instance;
 
                 default:
-                    throw new InternalErrorException("Unknown flux function \"" + flux + "\"");
+                    throw new Exception("Unknown flux function \"" + flux + "\"");
             }
         }
     }

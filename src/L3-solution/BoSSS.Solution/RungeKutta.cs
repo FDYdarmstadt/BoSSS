@@ -243,7 +243,7 @@ namespace BoSSS.Solution.Timestepping {
 
             using (var tr = new ilPSP.Tracing.FuncTrace()) {
 
-                if (timeStepConstraints != null) {
+                if (TimeStepConstraints != null) {
                     dt = CalculateTimeStep();
                 }
 

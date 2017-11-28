@@ -246,23 +246,44 @@ namespace ilPSP.LinSolvers.MUMPS {
                 }
 
 
-                // throw memory errors
-                if (mumps_par.info[0] == -8 || mumps_par.info[0] == -9 || mumps_par.info[0] == -11 || mumps_par.info[0] == -12 || mumps_par.info[0] == -13 || mumps_par.info[0] == -14 || mumps_par.info[0] == -15) {
-                    throw new ApplicationException("A MUMPS memory error occured on proc with rank: " + rank + ". Error Code:  " + mumps_par.info[0]+ "  (For further information see MUMPS handbook or contact your local MUMPS support)");
-                }
+                switch (mumps_par.info[0]) {
+                    // no error, no warning
+                    //=====================
+                    case 0: break; 
 
-                // throw all other errors
-                // Just in case, those should be written to console anyway, since ICNTL(1) is set to default output
-                if (mumps_par.info[0] < 0) {
-                    string ErrorString = String.Format("MUMPS: An Error occurred Info(1) ={0}, Info(2) = {1}", mumps_par.info[0], mumps_par.info[1]);
-                    throw new ApplicationException(ErrorString);
-                }
-                else if (mumps_par.info[0] < 0) {
-                    string WarningString = String.Format("MUMPS: An Error occurred Info(1) ={0}, Info(2) = {1}", mumps_par.info[0], mumps_par.info[1]);
-                    Console.WriteLine(WarningString);
-                }
+                    // throw memory errors
+                    //====================
+                    case -8:
+                    case -9:
+                    case -11:
+                    case -12:
+                    case -14:
+                    case -15:
+                        throw new ApplicationException("A MUMPS memory error occured on proc with rank: " + rank +
+                            ". Error Code:  " + mumps_par.info[0] +
+                            "  (For further information see MUMPS handbook or contact your local MUMPS support)");
 
-                    mumps_par.job = 3;
+                    // throw singular Matrix
+                    //======================
+                    case -10:
+                        throw new ApplicationException("MUMPS encountered a numerically singular Matrix");
+
+                    // throw all other errors and warnings
+                    // Just in case, those should be written to console anyway, since ICNTL(1) is set to default output
+                    //=================================================================================================
+                    default:
+                        if (mumps_par.info[0] < 0) {
+                            string ErrorString = String.Format("MUMPS: An Error occurred Info(1) ={0}, Info(2) = {1}", mumps_par.info[0], mumps_par.info[1]);
+                            throw new ApplicationException(ErrorString);
+                        }
+                        else { // i.e. mumps_par.info[0] > 0 which are warnings
+                            string WarningString = String.Format("MUMPS: An Error occurred Info(1) ={0}, Info(2) = {1}", mumps_par.info[0], mumps_par.info[1]);
+                            Console.WriteLine(WarningString);
+                            break;
+                        }
+                }
+                               
+                mumps_par.job = 3;
                 MUMPS_csharp.mumps_cs(ref mumps_par);
                 //if (rank != 0)
                 //mumps_par.irn = new int[] { };

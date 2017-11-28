@@ -154,7 +154,7 @@ namespace BoSSS.Solution.Utils {
 
             double h_min = cellMetric.Min();
             double h_max = cellMetric.Max();
-            Console.WriteLine("Clustering: Create tanh spaced means");
+            //Console.WriteLine("Clustering: Create tanh spaced means");
 
             // Getting global h_min and h_max
             ilPSP.MPICollectiveWatchDog.Watch();
@@ -206,7 +206,7 @@ namespace BoSSS.Solution.Utils {
         /// Returns a cell metric value in every cell
         /// </summary>
         /// <returns>Cell metric as <see cref="MultidimensionalArray"/></returns>
-        public MultidimensionalArray GetCellMetric(SubGrid subGrid) {
+        public MultidimensionalArray GetCellMetric(SubGrid subGrid){
             MultidimensionalArray cellMetric = MultidimensionalArray.Create(subGrid.LocalNoOfCells);
 
             for (int subGridCell = 0; subGridCell < subGrid.LocalNoOfCells; subGridCell++) {

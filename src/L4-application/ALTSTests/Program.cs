@@ -98,7 +98,7 @@ namespace ALTSTests {
             m_IOFields.Add(c);
         }
 
-        protected override void CreateEquationsAndSolvers(LoadBalancingData L) {
+        protected override void CreateEquationsAndSolvers(GridUpdateData L) {
             diffOp = new SpatialOperator(
                 new string[] { "c" },
                 new string[] { "viscosity", "VelocityX", "VelocityY" },
@@ -141,7 +141,7 @@ namespace ALTSTests {
                 new CoordinateMapping(c),
                 coordMap,
                 order: ABOrder,
-                numOfSubgrids: this.numOfSubgrids,
+                numOfClusters: this.numOfSubgrids,
                 timeStepConstraints: new List<TimeStepConstraint>() { CustomTimestepConstraint },
                 fluxCorrection: false,
                 reclusteringInterval: 1);

@@ -14,12 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
-using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Classic;
 using CNS.Boundary;
 using CNS.EquationSystem;
-using CNS.Exception;
-using BoSSS.Foundation.Grid.Classic;
+using System;
 
 namespace CNS.Diffusion {
 
@@ -81,14 +79,14 @@ namespace CNS.Diffusion {
             switch (diffusiveFlux) {
                 case DiffusiveFluxTypes.SIPG:
                     if (minDegree < 1) {
-                        throw new ConfigurationException(
+                        throw new Exception(
                             "SIPG is only valid for DG degrees greater than 0");
                     }
                     return new SIPGFluxBuilder(control, boundaryMap, speciesMap, gridData);
 
                 case DiffusiveFluxTypes.OptimizedSIPG:
                     if (minDegree < 1) {
-                        throw new ConfigurationException(
+                        throw new Exception(
                             "SIPG is only valid for DG degrees greater than 0");
                     }
                     return new OptimizedSIPGFluxBuilder(control, boundaryMap, speciesMap, gridData);
@@ -97,7 +95,7 @@ namespace CNS.Diffusion {
                     return NullFluxBuilder.Instance;
 
                 default:
-                    throw new InternalErrorException("Unknown flux function \"" + diffusiveFlux + "\"");
+                    throw new Exception("Unknown flux function \"" + diffusiveFlux + "\"");
             }
         }
     }

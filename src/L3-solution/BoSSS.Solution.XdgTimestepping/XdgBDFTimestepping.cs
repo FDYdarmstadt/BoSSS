@@ -590,10 +590,13 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Step 1 of 2 for dynamic load balancing: creating a backup of this objects 
         /// status in the load-balancing thing <paramref name="L"/>
         /// </summary>
-        public void DataBackupBeforeBalancing(LoadBalancingData L) {
+        public void DataBackupBeforeBalancing(GridUpdateData _L) {
             using (new FuncTrace()) {
                 if (m_PrivateBalancingInfo != null)
                     throw new NotSupportedException();
+
+                LoadBalancingData L = (LoadBalancingData)_L; // Provisorium
+
                 m_PrivateBalancingInfo = new PrivateBalancingInfo();
                 m_PrivateBalancingInfo.NoOfFields = m_Stack_u[0].Mapping.Fields.Count;
 
@@ -675,13 +678,15 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Step 2 of 2 for dynamic load balancing: restore this objects 
         /// status after the grid has been re-distributed.
         /// </summary>
-        public void DataRestoreAfterBalancing(LoadBalancingData L,
+        public void DataRestoreAfterBalancing(GridUpdateData _L,
             IEnumerable<DGField> Fields,
             IEnumerable<DGField> IterationResiduals,
             LevelSetTracker LsTrk,
             AggregationGrid[] _MultigridSequence) //
         {
             using (new FuncTrace()) {
+                LoadBalancingData L = (LoadBalancingData)_L; // provisorium
+
                 if (m_PrivateBalancingInfo == null)
                     throw new NotSupportedException();
 

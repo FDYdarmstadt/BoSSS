@@ -17,7 +17,7 @@ limitations under the License.
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Platform;
-using CNS.Exception;
+using System;
 using static CNS.Variable;
 
 namespace CNS.IBM {
@@ -43,7 +43,7 @@ namespace CNS.IBM {
                 delegate (DGField gradientField, CellMask cellMask, IProgram<CNSControl> program) {
                     IBMControl control = program.Control as IBMControl;
                     if (control == null) {
-                        throw new ConfigurationException(
+                        throw new Exception(
                             "Level set gradient can only be computed in immersed boundary runs");
                     }
 

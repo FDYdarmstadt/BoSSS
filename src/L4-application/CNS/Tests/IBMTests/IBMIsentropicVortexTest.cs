@@ -14,19 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
-using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution;
 using CNS.Convection;
 using CNS.EquationSystem;
 using CNS.IBM;
 using CNS.MaterialProperty;
-using CNS.Solution;
 using CNS.Tests.IsentropicVortex;
-using NUnit.Framework;
 using ilPSP.Utils;
-using BoSSS.Foundation.Grid.Classic;
+using NUnit.Framework;
+using System;
 
 namespace CNS.Tests.IBMTests {
 
@@ -225,15 +223,9 @@ namespace CNS.Tests.IBMTests {
 
             CheckErrorThresholds(
                 p.QueryHandler.QueryResults,
-            // Old test errors by Stephan
-            //Tuple.Create("L2ErrorDensity", 3.0e-3),
-            //Tuple.Create("L2ErrorPressure", 3.7e-3),
-            //Tuple.Create("L2ErrorEntropy", 3.6e-3));
-
-            // Stricter error bounds
-            Tuple.Create("L2ErrorDensity", 0.00262077353927322 + 1e-14),
-            Tuple.Create("L2ErrorPressure", 0.0033710870856724 + 1e-14),
-            Tuple.Create("L2ErrorEntropy", 0.00255881311446833 + 1e-14));
+                Tuple.Create("L2ErrorDensity", 0.00297005411330652 + 1e-14),
+                Tuple.Create("L2ErrorPressure", 0.003620872445471 + 1e-14),
+                Tuple.Create("L2ErrorEntropy", 0.0035529798265443 + 1e-14));
         }
 
         /// <summary>
@@ -341,7 +333,6 @@ namespace CNS.Tests.IBMTests {
             c.DomainType = DomainTypes.StaticImmersedBoundary;
             c.ActiveOperators = Operators.Convection;
             c.ConvectiveFluxType = ConvectiveFluxTypes.Rusanov;
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 1;
             c.EquationOfState = IdealGas.Air;
@@ -409,7 +400,6 @@ namespace CNS.Tests.IBMTests {
             c.DomainType = DomainTypes.StaticImmersedBoundary;
             c.ActiveOperators = Operators.Convection;
             c.ConvectiveFluxType = ConvectiveFluxTypes.Rusanov;
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 1;
             c.EquationOfState = IdealGas.Air;

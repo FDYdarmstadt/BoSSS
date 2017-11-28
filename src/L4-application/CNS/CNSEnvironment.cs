@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using CNS.Exception;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -95,7 +95,7 @@ namespace CNS {
                     break;
 
                 default:
-                    throw new InternalErrorException("Invalid number of dimensions");
+                    throw new Exception("Invalid number of dimensions");
             }
 
             PrimalArgumentToIndexMap = new Dictionary<Variable, int>();

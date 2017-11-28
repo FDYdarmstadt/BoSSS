@@ -14,17 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
-using System.Linq;
-using BoSSS.Foundation.Grid;
-using BoSSS.Platform;
+using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.XDG;
 using BoSSS.Platform.LinAlg;
-using CNS.Exception;
 using CNS.EquationSystem;
 using CNS.MaterialProperty;
 using ilPSP;
-using BoSSS.Foundation.Grid.Classic;
-using BoSSS.Foundation.XDG;
+using System;
+using System.Linq;
 
 namespace CNS.IBM {
 
@@ -124,7 +121,7 @@ namespace CNS.IBM {
 
 #if DEBUG
                     if (double.IsNaN(cflhere)) {
-                        throw new NumericalAlgorithmException("Could not determine CFL number");
+                        throw new Exception("Could not determine CFL number");
                     }
 #endif
 
