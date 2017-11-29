@@ -117,7 +117,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         Picard = 0,
 
         /// <summary>
-        /// Newtons method coupled with GMRES as default. Convergeces quadratically but needs a good approximation
+        /// Newtons method coupled with GMRES as default. Convergeces quadratically but needs a good approximation. Preconditioning of the Newton-GMRES is set to LinearSolver.
         /// </summary>
         Newton = 1,
     }
