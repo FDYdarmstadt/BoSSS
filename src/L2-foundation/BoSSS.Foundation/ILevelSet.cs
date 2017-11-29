@@ -16,6 +16,7 @@ limitations under the License.
 
 using BoSSS.Platform;
 using ilPSP;
+using System;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -25,7 +26,7 @@ namespace BoSSS.Foundation.XDG {
     /// by BoSSS or come from some external object which implements this
     /// interface.
     /// </summary>
-    public interface ILevelSet {
+    public interface ILevelSet : ICloneable {
 
         /// <summary>
         /// Evaluates the level set 

@@ -40,7 +40,7 @@ namespace BoSSS.Foundation.XDG {
     /// After changing one ore more level sets, the <see cref="UpdateTracker()"/>-method must be
     /// called.
     /// </remarks>
-    public partial class LevelSetTracker : IObservable<LevelSetTracker.LevelSetRegionsInfo>, IDisposable {
+    public partial class LevelSetTracker : IObservable<LevelSetTracker.LevelSetRegions>, IDisposable {
 
         /// <summary>
         /// Region code (see <see cref="m_LevSetRegions"/>) indicating that all level set values in a cell are in
@@ -68,11 +68,8 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="__NearRegionWidth">
         /// width of near region, in number of cells
         /// </param>
-        /// <param name="StackLen">
-        /// Number of items stored in the level-set stack.
-        /// </param>
-        public LevelSetTracker(GridData Context, int __NearRegionWidth, string[] _SpeciesTable, int StackLen, ILevelSet levSet1) {
-            ConstructorCommon(Context, __NearRegionWidth, _SpeciesTable, StackLen, levSet1);
+        public LevelSetTracker(GridData Context, int __NearRegionWidth, string[] _SpeciesTable, ILevelSet levSet1) {
+            ConstructorCommon(Context, __NearRegionWidth, _SpeciesTable, levSet1);
         }
 
         /// <summary>
@@ -86,11 +83,8 @@ namespace BoSSS.Foundation.XDG {
         /// </param>
         /// <param name="BruteForceDivisions"></param>
         /// <param name="BruteForceOrder"></param>
-        /// <param name="StackLen">
-        /// Number of items stored in the level-set stack.
-        /// </param>
-        public LevelSetTracker(GridData Context, int __NearRegionWidth, int BruteForceDivisions, int BruteForceOrder, string[] _SpeciesTable, int StackLen, ILevelSet levSet1) {
-            ConstructorCommon(Context, __NearRegionWidth, BruteForceOrder, BruteForceDivisions, _SpeciesTable, StackLen, levSet1);
+        public LevelSetTracker(GridData Context, int __NearRegionWidth, int BruteForceDivisions, int BruteForceOrder, string[] _SpeciesTable, ILevelSet levSet1) {
+            ConstructorCommon(Context, __NearRegionWidth, BruteForceOrder, BruteForceDivisions, _SpeciesTable, levSet1);
         }
 
         /// <summary>
@@ -103,10 +97,7 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="__NearRegionWidth">
         /// width of near region, in number of cells
         /// </param>
-        /// <param name="StackLen">
-        /// Number of items stored in the level-set stack.
-        /// </param>
-        public LevelSetTracker(GridData Context, int __NearRegionWidth, string[,] _SpeciesTable, int StackLen, ILevelSet levSet1, ILevelSet levSet2) {
+        public LevelSetTracker(GridData Context, int __NearRegionWidth, string[,] _SpeciesTable, ILevelSet levSet1, ILevelSet levSet2) {
             ConstructorCommon(Context, __NearRegionWidth, _SpeciesTable, levSet1, levSet2);
         }
 
@@ -156,63 +147,59 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="__NearRegionWidth"></param>
         /// <param name="SpeciesTable"></param>
         /// <param name="levSets"></param>
-        /// <param name="StackLen"></param>
-        private LevelSetTracker(GridData Context, int __NearRegionWidth, Array SpeciesTable,, int StackLen, params ILevelSet[] levSets) {
-            ConstructorCommon(Context, __NearRegionWidth, 5, 2, SpeciesTable, StackLen, levSets);
+        private LevelSetTracker(GridData Context, int __NearRegionWidth, Array SpeciesTable, params ILevelSet[] levSets) {
+            ConstructorCommon(Context, __NearRegionWidth, 5, 2, SpeciesTable, levSets);
         }
 
         /// <summary>
         /// Implementation of the constructor with default values for the brute
         /// force quadrature (see <see cref="SetBruteForceQuadratureRules"/>).
         /// </summary>
-        private void ConstructorCommon(GridData Context, int __NearRegionWidth, Array SpeciesTable, int StackLen, params ILevelSet[] levSets) {
-            ConstructorCommon(Context, __NearRegionWidth, 5, 2, SpeciesTable, StackLen, levSets);
+        private void ConstructorCommon(GridData Context, int __NearRegionWidth, Array SpeciesTable, params ILevelSet[] levSets) {
+            ConstructorCommon(Context, __NearRegionWidth, 5, 2, SpeciesTable, levSets);
+        }
+
+        /// <summary>
+        /// Number of previous states in the various history stacks (<see cref="LevelSetDataHistories"/>, <see cref="LevelSetHistories"/>, <see cref="RegionsHistory"/>, etc.).
+        /// </summary>
+        public int HistoryLength {
+            get {
+                int L = RegionsHistory.HistoryLength;
+
+                for(int iLs = 0; iLs < m_LevelSetDataHistories.Length; iLs++) {
+                    Debug.Assert(m_LevelSetDataHistories[iLs].HistoryLength == L);
+                    Debug.Assert(m_LevelSetHistories[iLs].HistoryLength == L);
+                }
+
+                return L;
+            }
+            set {
+                int currentLen = this.HistoryLength;
+                if(value != currentLen) {
+                    RegionsHistory.HistoryLength = value;
+                    for(int iLs = 0; iLs < m_LevelSetDataHistories.Length; iLs++) {
+                        m_LevelSetDataHistories[iLs].HistoryLength = value;
+                        m_LevelSetHistories[iLs].HistoryLength = value;
+                    }
+                }
+            }
         }
 
         /// <summary>
         /// Implementation of the constructor;
         /// </summary>
-        private void ConstructorCommon(GridData griData, int __NearRegionWidth, int BruteForceDivisions, int BruteForceOrder, Array SpeciesTable, int StackLen, params ILevelSet[] levSets) {
+        private void ConstructorCommon(GridData griData, int __NearRegionWidth, int BruteForceDivisions, int BruteForceOrder, Array SpeciesTable, params ILevelSet[] levSets) {
             // check args, init members
             // ========================
-            m_LevelSets = new HistoryStack<ILevelSet>[levSets.Length];
+            m_LevelSetHistories = new HistoryStack<ILevelSet>[levSets.Length];
             for(int iLs = 0; iLs < levSets.Length; iLs++) {
-                m_LevelSets[iLs] = new HistoryStack<ILevelSet>(levSets[iLs]);
+                m_LevelSetHistories[iLs] = new HistoryStack<ILevelSet>(levSets[iLs]);
             }
             m_gDat = griData;
             if (__NearRegionWidth < 0 || __NearRegionWidth > 6)
                 throw new ArgumentException("near region width must be between 0 (including) and 7 (excluding)", "__NearRegionWidth");
             m_NearRegionWidth = __NearRegionWidth;
             
-            m_LevelSetValc = new LevSetValueCache[m_LevelSets.Length];
-            m_LevelSetGradientsCache = new LevelSetGradientCache[m_LevelSets.Length];
-            m_LevelSetNormalsCache = new LevelSetNormalsCache[m_LevelSets.Length];
-            m_LevelSetReferenceGradientsCache = new LevelSetReferenceGradientCache[m_LevelSets.Length];
-            m_LevelSetReferenceNormalsCache = new LevelSetReferenceNormalsCache[m_LevelSets.Length];
-            m_LevelSetReferenceCurvatureCache = new LevelSetReferenceCurvatureCache[m_LevelSets.Length];
-            m_LevelSetReferenceHessianCache = new LevelSetReferenceHessianCache[m_LevelSets.Length];
-            for (int i = 0; i < m_LevelSets.Length; i++) {
-                m_LevelSetValc[i] = new LevSetValueCache(m_LevelSets[i], griData);
-                m_LevelSetGradientsCache[i] = new LevelSetGradientCache(m_LevelSets[i], griData);
-                m_LevelSetNormalsCache[i] = new LevelSetNormalsCache(this, i);
-                m_LevelSetReferenceGradientsCache[i] = new LevelSetReferenceGradientCache(m_LevelSets[i], this);
-                m_LevelSetReferenceNormalsCache[i] = new LevelSetReferenceNormalsCache(this, i);
-                m_LevelSetReferenceCurvatureCache[i] = new LevelSetReferenceCurvatureCache(this, i);
-                m_LevelSetReferenceHessianCache[i] = new LevelSetReferenceHessianCache(this, i);
-            }
-
-            // 
-            //foreach (SpeciesConfig sc in speciesconf) {
-            //    if (m_SpeciesNames.Contains(sc.SpeciesName))
-            //        throw new ArgumentException("species named \"" + sc.SpeciesName + "\" occures twice.", "speciesconf");
-            //    m_SpeciesNames.Add(sc.SpeciesName);
-
-            //    foreach (bool[] state in sc.LevelSetState) {
-            //        if (state.Length != levSets.Length)
-            //            throw new ArgumentException("illegal configuration.", "speciesconf");
-            //    }
-            //}
-
             if (SpeciesTable.Rank != levSets.Length)
                 throw new ArgumentException("rank of species table must match number of level sets.", "SpeciesTable");
             m_SpeciesTable = SpeciesTable;
@@ -224,14 +211,25 @@ namespace BoSSS.Foundation.XDG {
             ComputeNoOfSpeciesRecursive(0, new int[4]);
             CollectLevelSetSignCodes();
             ComputeGhostTable();
-
-
-            // init 
-            // ====
             m_LevSetAllowedMovement = new int[levSets.Length];
             ArrayTools.SetAll(m_LevSetAllowedMovement, 1);
-            UpdateTracker();
 
+
+            // init stacks
+            // ===========
+
+            m_LevelSetHistories = new HistoryStack<ILevelSet>[levSets.Length];
+            m_LevelSetDataHistories = new HistoryStack<LevelSetData>[levSets.Length];
+            for(int iLs =0; iLs < levSets.Length; iLs++) {
+                m_LevelSetHistories[iLs] = new HistoryStack<ILevelSet>(levSets[iLs]);
+                m_LevelSetDataHistories[iLs] = new HistoryStack<LevelSetData>(new LevelSetData(this, iLs));
+            }
+            RegionsHistory = new HistoryStack<LevelSetRegions>(new LevelSetRegions(this));
+
+            // 1st tracker update
+            // ==================
+
+            UpdateTracker();
         }
 
         /// <summary>
@@ -247,7 +245,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         void ComputeGhostTable() {
             m_GhostTable = new bool[this.m_SpeciesNames.Count][];
-            int NoOfLevSets = m_LevelSets.Length;
+            int NoOfLevSets = m_LevelSetHistories.Length;
 
             foreach (String specNmn in this.m_SpeciesNames) {
                 SpeciesId specId = GetSpeciesId(specNmn);
@@ -356,7 +354,7 @@ namespace BoSSS.Foundation.XDG {
         /// with level sets with signs <paramref name="LevSetSigns"/>;
         /// </returns>
         public ICollection<string> CollectPossibleSpecies(params LevelsetSign[] LevSetSigns) {
-            if (LevSetSigns.Length != m_LevelSets.Length)
+            if (LevSetSigns.Length != m_LevelSetHistories.Length)
                 throw new ArgumentException("length must match number of level sets;", "LevSetSigns");
 
             int[] signs = new int[LevSetSigns.Length];
@@ -521,22 +519,23 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// Information about the current level set sign in each cell.
+        /// Information about the level set sign for current and previous states (see <see cref="PushStacks"/>).
         /// </summary>
-        public HistoryStack<LevelSetRegionsInfo> Regions {
+        public HistoryStack<LevelSetRegions> RegionsHistory {
             get;
             private set;
         }
 
-        /*
         /// <summary>
-        /// Information about the previous level set sign in each cell.
+        /// Information about the current level set sign in each cell.
         /// </summary>
-        public LevelSetRegionsInfo PreviousRegions {
-            get;
-            private set;
+        public LevelSetRegions Regions {
+            get {
+                return RegionsHistory.Current;
+            }
         }
-        */
+
+        
 
         /// <summary>
         /// 
@@ -563,7 +562,7 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="levelSetValues">signs of all level set functions</param>
         /// <returns></returns>
         public SpeciesId GetSpeciesIdFromSign(params double[] levelSetValues) {
-            if (levelSetValues.Length != this.m_LevelSets.Length)
+            if (levelSetValues.Length != this.m_LevelSetHistories.Length)
                 throw new ArgumentException();
             var lssc = LevelSetSignCode.ComputeLevelSetBytecode(levelSetValues);
             return this.GetSpeciesId(this.GetSpecies(lssc));
@@ -660,20 +659,70 @@ namespace BoSSS.Foundation.XDG {
 
 
         /// <summary>
-        /// The level sets;
+        /// The level sets stack;
         /// - 1st index: index of level-set
         /// - 2nd index: index into stack
         /// </summary>
-        public IList<HistoryStack<ILevelSet>> LevelSets {
+        public IList<HistoryStack<ILevelSet>> LevelSetHistories {
             get {
-                return m_LevelSets.ToList();
+                return m_LevelSetHistories.ToList();
             }
         }
+
+        /// <summary>
+        /// Advances the history stacks which store previous states of the level-set tracker
+        /// (see <see cref="LevelSetDataHistories"/>, <see cref="LevelSetHistories"/>, <see cref="RegionsHistory"/>, etc.).
+        /// </summary>
+        public void PushStacks() {
+            int NoOfLs = LevelSets.Count;
+
+            Debug.Assert(NoOfLs == m_LevelSets.Length);
+            for(int iLs = 0; iLs < NoOfLs; iLs++) {
+                m_LevelSetHistories[iLs].Push((ls1) => ls1, (ls1, ls0) => ls1.CloneAs());
+            }
+
+            Debug.Assert(NoOfLs == m_LevelSetDataHistories.Length);
+            for(int iLs = 0; iLs < NoOfLs; iLs++) {
+                m_LevelSetDataHistories[iLs].Push((data1) => new LevelSetData(this, iLs), (data1, data0) => data1);
+
+                for(int iStack = 1; iStack > m_LevelSetDataHistories[iLs].GetPopulatedLength(); iStack++) {
+                    m_LevelSetDataHistories[iLs][iStack].m_StackIdx = iStack;
+                }
+            }
+
+            RegionsHistory.Push((r1) => new LevelSetRegions(this), (r1, r0) => r1);
+        }
+
+        ILevelSet[] m_LevelSets = null;
+
+        /// <summary>
+        /// The level sets, identic to the top of the level-set stack 
+        /// - 1st index: index of level-set
+        /// - 2nd index: index into stack
+        /// </summary>
+        public IList<ILevelSet> LevelSets {
+            get {
+                if(m_LevelSets == null) { // accelerate access if a user accesses this very often
+                    m_LevelSets = new ILevelSet[m_LevelSetHistories.Length];
+                    for(int iLs = 0; iLs < m_LevelSets.Length; iLs++) {
+                        m_LevelSets[iLs] = m_LevelSetHistories[iLs].Current;
+                    }
+                }
+#if DEBUG
+                Debug.Assert(m_LevelSets.Length == m_LevelSetHistories.Length);
+                for(int iLs = 0; iLs < m_LevelSets.Length; iLs++) {
+                    Debug.Assert(object.ReferenceEquals(m_LevelSets[iLs], m_LevelSetHistories[iLs].Current));
+                }
+#endif
+                return m_LevelSets;
+            }
+        }
+
 
         GridData m_gDat;
 
         /// <summary>
-        /// sdjk
+        /// Reference to the background grid of the XDG space.
         /// </summary>
         public GridData GridDat {
             get {
@@ -681,11 +730,8 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        HistoryStack<ILevelSet>[] m_LevelSets;
-
-        
-        
-        
+        HistoryStack<ILevelSet>[] m_LevelSetHistories;
+       
 
         /// <summary>
         /// returns the (possible) number of species in 
@@ -707,7 +753,7 @@ namespace BoSSS.Foundation.XDG {
         /// <list type="bullet">
         ///   <item>positive far (FAR+)</item>
         ///   <item>negative far (FAR-)</item>
-        ///   <item>positive near, negative near or cutted</item>
+        ///   <item>positive near, negative near or cut</item>
         /// </list>
         /// This implies, that also for cells in the near region, memory is allocated for more than one
         /// species.
@@ -735,10 +781,9 @@ namespace BoSSS.Foundation.XDG {
         int[] m_NoOfSpecies = new int[81];
 
         /// <summary>
-        /// There are 3 states for each levelset in each cell:
-        /// Completly positive, Completly negative or cutted;
-        /// Considering at max. 4 Levelsets, this leads to 3<sup>4</sup> = 81 different states.<br/>
-        /// For the sign of all 4 level sets, there are 2<sup>4</sup> = 16 different states.<br/>
+        /// - There are 3 states for each level-set in each cell: completely positive, completely negative or cut;
+        /// - Considering at max. 4 level-sets, this leads to 3<sup>4</sup> = 81 different states.
+        /// - For the sign of all 4 level-sets, there are 2<sup>4</sup> = 16 different states.
         /// </summary>
         int[] m_SpeciesIndex = new int[81 * 16];
 
@@ -758,7 +803,7 @@ namespace BoSSS.Foundation.XDG {
         /// <list type="bullet">
         ///   <item><b>positive</b>: the cell is in the positive FAR region</item>
         ///   <item><b>negative</b>: the cell is in the negative FAR region</item>
-        ///   <item><b>0</b>: the cell is cutted or in the positive or negative near region;</item>
+        ///   <item><b>0</b>: the cell is cut or in the positive or negative near region;</item>
         /// </list>
         /// </param>
         /// <param name="_ReducedRegionCode">
@@ -877,7 +922,7 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="levSetInd"></param>
         /// <returns></returns>
         public ushort LevelSetBitmask(int levSetInd) {
-            if (levSetInd < 0 || levSetInd >= m_LevelSets.Length)
+            if (levSetInd < 0 || levSetInd >= m_LevelSetHistories.Length)
                 throw new ArgumentException("unknown level set.", "levset");
 
             return (ushort)(0xF << (4 * levSetInd));
@@ -947,11 +992,12 @@ namespace BoSSS.Foundation.XDG {
         public void TestRegions() {
 
 
-            for (int i = 0; i < m_LevelSets.Length; i++) {
+            for (int i = 0; i < m_LevelSetHistories.Length; i++) { // loop over level sets
+                var data = this.m_LevelSetDataHistories[i].Current;
                 for (int j = 0; j < m_gDat.Cells.NoOfCells; j++) {
                     int iKref = this.GridDat.Cells.GetRefElementIndex(j);
 
-                    MultidimensionalArray levSetVals = this.GetLevSetValues(i, TestNodes[iKref], j, 1);
+                    MultidimensionalArray levSetVals = data.GetLevSetValues(TestNodes[iKref], j, 1);
 
                     bool containsPos = false;
                     bool containsNeg = false;
@@ -966,7 +1012,7 @@ namespace BoSSS.Foundation.XDG {
                     }
 
 
-                    int dist = LevelSetTracker.DecodeLevelSetDist(_Regions.m_LevSetRegions[j], i);
+                    int dist = LevelSetTracker.DecodeLevelSetDist(Regions.m_LevSetRegions[j], i);
 
                     if (dist > 0 && containsNeg)
                         throw new ApplicationException();
@@ -983,9 +1029,9 @@ namespace BoSSS.Foundation.XDG {
         /// checks if the level set may has moved more than one cell
         /// </summary>
         int CheckLevelSetCFL(int LevSetIdx) {
-            ushort[] oldCode = this.Regions[0].m_LevSetRegions;
+            ushort[] oldCode = this.RegionsHistory[0].m_LevSetRegions;
 
-            CellMask newCut = this.Regions[1].GetCutCellSubgrid4LevSet(LevSetIdx).VolumeMask;
+            CellMask newCut = this.RegionsHistory[1].GetCutCellSubgrid4LevSet(LevSetIdx).VolumeMask;
 
             int fail_count = 0;
 
@@ -1014,12 +1060,14 @@ namespace BoSSS.Foundation.XDG {
         /// Early stage of dynamic load balancing, backup of data before the grid cells are re-distributed.
         /// </summary>
         public int[] BackupBeforeLoadBalance() {
+            throw new NotImplementedException("todo"); 
+            /*
             using (new FuncTrace()) {
                 int Jup = this.GridDat.CellPartitioning.LocalLength;
                 int[] tempRegionData = new int[Jup];
 
-                var oldRegion = this.Regions[0].m_LevSetRegions;
-                var newRegion = this.Regions[1].m_LevSetRegions;
+                var oldRegion = this.RegionsHistory[0].m_LevSetRegions;
+                var newRegion = this.RegionsHistory[1].m_LevSetRegions;
 
                 for (int j = 0; j < Jup; j++) {
                     ushort a = oldRegion[j];
@@ -1031,8 +1079,8 @@ namespace BoSSS.Foundation.XDG {
 #if DEBUG
                 RestoreAfterLoadBalance(this.m_VersionCnt, tempRegionData, false);
                 int JA = m_gDat.Cells.NoOfCells;
-                var restored1 = PreviousRegions.m_LevSetRegions;
-                var restored2 = _Regions.m_LevSetRegions;
+                var restored1 = RegionsHistory[0].m_LevSetRegions;
+                var restored2 = Regions.m_LevSetRegions;
                 for (int j = 0; j < JA; j++) {
                     Debug.Assert(restored1[j] == oldRegion[j]);
                     Debug.Assert(restored2[j] == newRegion[j]);
@@ -1041,22 +1089,25 @@ namespace BoSSS.Foundation.XDG {
 
                 return tempRegionData;
             }
+            */
         }
 
         /// <summary>
         /// Late stage of dynamic load balancing, restoring data after the grid cells were re-distributed.
         /// </summary>
         public void RestoreAfterLoadBalance(int versionNo, int[] ExchangeData, bool ObUp = true) {
+            throw new NotImplementedException("todo"); 
+            /*
             using(new FuncTrace()) {
                 int J = m_gDat.Cells.NoOfLocalUpdatedCells;
                 int JA = m_gDat.Cells.NoOfCells;
                 Debug.Assert(ExchangeData.Length == J);
 
-                PreviousRegions = new LevelSetRegionsInfo(this) {
+                PreviousRegions = new LevelSetRegions(this) {
                     m_LevSetRegions = new ushort[JA],
                     Version = versionNo - 1
                 };
-                _Regions = new LevelSetRegionsInfo(this) {
+                _Regions = new LevelSetRegions(this) {
                     m_LevSetRegions = new ushort[JA],
                     Version = versionNo
                 };
@@ -1080,6 +1131,7 @@ namespace BoSSS.Foundation.XDG {
                 if(ObUp)
                     this.ObserverUpdate();
             }
+            */
         }
 
         /// <summary>
@@ -1087,6 +1139,8 @@ namespace BoSSS.Foundation.XDG {
         /// restoring data after the grid cells were re-distributed.
         /// </summary>
         public void RestoreAfterMeshAdaptation(int versionNo, int[][] ExchangeData, bool ObUp = true) {
+            throw new NotImplementedException("todo"); 
+            /*
             using(new FuncTrace()) {
                 int J = m_gDat.Cells.NoOfLocalUpdatedCells;
                 int JA = m_gDat.Cells.NoOfCells;
@@ -1094,11 +1148,11 @@ namespace BoSSS.Foundation.XDG {
 
                 int NoOfLevSets = this.LevelSets.Count;
 
-                PreviousRegions = new LevelSetRegionsInfo(this) {
+                PreviousRegions = new LevelSetRegions(this) {
                     m_LevSetRegions = new ushort[JA],
                     Version = versionNo - 1
                 };
-                _Regions = new LevelSetRegionsInfo(this) {
+                Regions = new LevelSetRegions(this) {
                     m_LevSetRegions = new ushort[JA],
                     Version = versionNo
                 };
@@ -1160,11 +1214,12 @@ namespace BoSSS.Foundation.XDG {
                 MPIUpdate(newR, this.GridDat);
 
                 PreviousRegions.Recalc_LenToNextchange();
-                _Regions.Recalc_LenToNextchange();
+                Regions.Recalc_LenToNextchange();
 
                 if(ObUp)
                     this.ObserverUpdate();
             }
+            */
         }
 
 
@@ -1205,7 +1260,7 @@ namespace BoSSS.Foundation.XDG {
                 }
                 CellMask oldNearMask = null;
                 if (incremental)
-                    oldNearMask = this.Regions[1].GetNearFieldMask(m_NearRegionWidth);
+                    oldNearMask = this.RegionsHistory[1].GetNearFieldMask(m_NearRegionWidth);
                 else
                     oldNearMask = null;
 
@@ -1234,11 +1289,9 @@ namespace BoSSS.Foundation.XDG {
                 //int NoOfSmplxVertice = smplx.NoOfVertices;
                 var Krefs = m_gDat.Grid.RefElements;
                 int[] NoOfSmplxVertice = Krefs.Select(Kref => Kref.NoOfVertices).ToArray();
-                int NoOfLevSets = m_LevelSets.Length;
-
-                PreviousRegions = _Regions;
-                _Regions = new LevelSetRegionsInfo(this);
-                _Regions.Version = m_VersionCnt;
+                int NoOfLevSets = m_LevelSetHistories.Length;
+                
+                Regions.Version = m_VersionCnt;
 
                 ushort[] VertexMarker, LevSetRegions, LevSetRegionsUnsigned;
                 BitArray[] LevSetNeg;
@@ -1248,8 +1301,8 @@ namespace BoSSS.Foundation.XDG {
 
                     // init memory
                     // ===========
-                    _Regions.m_LevSetRegions = new ushort[JA];
-                    LevSetRegions = _Regions.m_LevSetRegions;
+                    Regions.m_LevSetRegions = new ushort[JA];
+                    LevSetRegions = Regions.m_LevSetRegions;
                     LevSetRegionsUnsigned = new ushort[JA];
 
                     // necessary to avoid a 'LevelSetCFLException' on the first
@@ -1267,7 +1320,7 @@ namespace BoSSS.Foundation.XDG {
                         VertexMarker[i] = AllFARplus;
                     VertexMarkerExternal = new ushort[JA - J, Krefs.Max(Kref => Kref.NoOfVertices)];
 
-                    LevSetNeg = new BitArray[m_LevelSets.Length]; // true marks a cell in which the level set field is completely 
+                    LevSetNeg = new BitArray[m_LevelSetHistories.Length]; // true marks a cell in which the level set field is completely 
                                                                   // negative
                     for (int i = 0; i < LevSetNeg.Length; i++)
                         LevSetNeg[i] = new BitArray(J);
@@ -1329,21 +1382,10 @@ namespace BoSSS.Foundation.XDG {
 
 
                     // clear cached level set values (level set may has changed)
-                    foreach (var ch in m_LevelSetValc) {
-                        ch.Clear();
+                    foreach(var lsdh in LevelSetDataHistories) {
+                        lsdh.Current.ClearCaches();
                     }
-                    foreach (var ch in m_LevelSetGradientsCache) {
-                        ch.Clear();
-                    }
-                    foreach (var ch in m_LevelSetReferenceGradientsCache) {
-                        ch.Clear();
-                    }
-                    foreach (var ch in m_LevelSetNormalsCache) {
-                        ch.Clear();
-                    }
-                    foreach (var ch in m_LevelSetReferenceNormalsCache) {
-                        ch.Clear();
-                    }
+                    
                 }
                 #endregion
 
@@ -1359,9 +1401,9 @@ namespace BoSSS.Foundation.XDG {
 
                         CellMask SearchMask;
                         if (incremental) {
-                            int NoofLevSets = m_LevelSets.Length;
+                            int NoofLevSets = m_LevelSetHistories.Length;
 
-                            ushort[] __PrevLevSetRegions = PreviousRegions.m_LevSetRegions;
+                            ushort[] __PrevLevSetRegions = RegionsHistory[0].m_LevSetRegions;
 
                             for (int levSetind = 0; levSetind < NoofLevSets; levSetind++) {
                                 BitArray _LevSetNeg = LevSetNeg[levSetind];
@@ -1391,9 +1433,9 @@ namespace BoSSS.Foundation.XDG {
                             int[] _TestNodesPerFace = this.TestNodesPerFace[iKref];
 
                             // loop over level sets ...
-                            for (int levSetind = m_LevelSets.Length - 1; levSetind >= 0; levSetind--) {
-
-                                MultidimensionalArray levSetVal = GetLevSetValues(levSetind, this.TestNodes[iKref], j, VecLen);
+                            for (int levSetind = m_LevelSetHistories.Length - 1; levSetind >= 0; levSetind--) {
+                                var data = this.m_LevelSetDataHistories[levSetind].Current;
+                                MultidimensionalArray levSetVal = data.GetLevSetValues(this.TestNodes[iKref], j, VecLen);
 
                                 for (int jj = 0; jj < VecLen; jj++) {
                                     bool Pos = false;
@@ -1469,7 +1511,7 @@ namespace BoSSS.Foundation.XDG {
                         // ========================
 
                         // loop over level sets ...
-                        for (int levSetind = m_LevelSets.Length - 1; levSetind >= 0; levSetind--) {
+                        for (int levSetind = m_LevelSetHistories.Length - 1; levSetind >= 0; levSetind--) {
                             for (int _j = 0; _j < JA; _j++) {
                                 int[] _VerticeInd = VerticeInd[_j];
                                 int _NoOfSmplxVertice = _VerticeInd.Length;
@@ -1488,7 +1530,7 @@ namespace BoSSS.Foundation.XDG {
 
                         // MPI Update (vertex markers)
                         // ===========================
-                        MPIUpdateVertex(VertexMarker, VertexMarkerExternal, m_gDat, m_LevelSets.Length);
+                        MPIUpdateVertex(VertexMarker, VertexMarkerExternal, m_gDat, m_LevelSetHistories.Length);
                     }
 
 
@@ -1510,7 +1552,7 @@ namespace BoSSS.Foundation.XDG {
                                 //    vtxMarkers[k] = VertexMarker[VerticeInd[j, k]];
                                 ushort[] __PrevLevSetRegions = null;
                                 if (incremental)
-                                    __PrevLevSetRegions = PreviousRegions.m_LevSetRegions;
+                                    __PrevLevSetRegions = RegionsHistory[0].m_LevSetRegions;
 
                                 for (int levSetInd = 0; levSetInd < NoOfLevSets; levSetInd++) {
 
@@ -1544,7 +1586,7 @@ namespace BoSSS.Foundation.XDG {
                             // MPI update
                             // ----------
                             MPIUpdate(LevSetRegionsUnsigned, m_gDat);
-                            MPIUpdateVertex(VertexMarker, VertexMarkerExternal, m_gDat, m_LevelSets.Length);
+                            MPIUpdateVertex(VertexMarker, VertexMarkerExternal, m_gDat, m_LevelSetHistories.Length);
                         }
                     }
 
@@ -1569,7 +1611,7 @@ namespace BoSSS.Foundation.XDG {
 
                     // recalculate m_LenToNextChange
                     // =============================
-                    Regions.Current.Recalc_LenToNextchange();
+                    RegionsHistory.Current.Recalc_LenToNextchange();
                 }
 
                
@@ -1614,7 +1656,7 @@ namespace BoSSS.Foundation.XDG {
                 if (throwCFL) {
                     LevelSetCFLException exception = new LevelSetCFLException(fail);
                     foreach (var reference in m_Observers) {
-                        IObserver<LevelSetRegionsInfo> observer = reference.Target;
+                        IObserver<LevelSetRegions> observer = reference.Target;
                         if (observer != null) {
                             observer.OnError(exception);
                         }
@@ -1631,20 +1673,15 @@ namespace BoSSS.Foundation.XDG {
         /// Clears all internal references for this object, to make sure that any attempt to use it leads to an exception.
         /// </summary>
         public void Invalidate() {
-            this.Regions = null;
+            this.RegionsHistory = null;
             this.m_SpeciesNames = null;
             this.m_SpeciesIndex2Id = null;
             this.m_SpeciesIndex = null;
             this.m_gDat = null;
             this.m_GhostTable = null;
-            this.m_LevelSetGradientsCache = null;
-            this.m_LevelSetNormalsCache = null;
-            this.m_LevelSetReferenceCurvatureCache = null;
-            this.m_LevelSetReferenceGradientsCache = null;
-            this.m_LevelSetReferenceHessianCache = null;
-            this.m_LevelSetReferenceNormalsCache = null;
-            this.m_LevelSetValc = null;
-            this.m_LevelSets = null;
+            this.m_LevelSetDataHistories = null;
+            this.RegionsHistory = null; 
+            this.m_LevelSetHistories = null;
             this.m_LevelSetSignCodes = null;
             this.m_LevSetAllowedMovement = null;
             this.m_NoOfSpecies = null;
@@ -1679,9 +1716,9 @@ namespace BoSSS.Foundation.XDG {
                 
                 // call the update method of all active fields
                 foreach (var reference in m_Observers) {
-                    IObserver<LevelSetRegionsInfo> observer = reference.Target;
+                    IObserver<LevelSetRegions> observer = reference.Target;
                     if (observer != null) {
-                        reference.Target.OnNext(_Regions);
+                        reference.Target.OnNext(Regions);
                     }
                 }
             }
@@ -1822,8 +1859,8 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// See <see cref="Subscribe"/>;
         /// </summary>
-        private List<BoSSS.Platform.WeakReference<IObserver<LevelSetRegionsInfo>>> m_Observers =
-            new List<BoSSS.Platform.WeakReference<IObserver<LevelSetRegionsInfo>>>();
+        private List<BoSSS.Platform.WeakReference<IObserver<LevelSetRegions>>> m_Observers =
+            new List<BoSSS.Platform.WeakReference<IObserver<LevelSetRegions>>>();
 
         /// <summary>
         /// At construction time, objects may register themselves at the level
@@ -1838,9 +1875,9 @@ namespace BoSSS.Foundation.XDG {
         /// <see cref="WeakReference{T}"/>) so that garbage collection will not
         /// be affected by the subscription.
         /// </remarks>
-        public IDisposable Subscribe(IObserver<LevelSetRegionsInfo> observer) {
-            BoSSS.Platform.WeakReference<IObserver<LevelSetRegionsInfo>> reference =
-                new BoSSS.Platform.WeakReference<IObserver<LevelSetRegionsInfo>>(observer);
+        public IDisposable Subscribe(IObserver<LevelSetRegions> observer) {
+            BoSSS.Platform.WeakReference<IObserver<LevelSetRegions>> reference =
+                new BoSSS.Platform.WeakReference<IObserver<LevelSetRegions>>(observer);
             m_Observers.Add(reference);
             return new Unsubscriber(this, reference);
         }
@@ -1859,7 +1896,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// The observer that may want to unregister itself.
             /// </summary>
-            private BoSSS.Platform.WeakReference<IObserver<LevelSetRegionsInfo>> observer;
+            private BoSSS.Platform.WeakReference<IObserver<LevelSetRegions>> observer;
 
             /// <summary>
             /// Creates a new unsubscriber.
@@ -1870,7 +1907,7 @@ namespace BoSSS.Foundation.XDG {
             /// <param name="observer">
             /// The observer that may want to unregister itself.
             /// </param>
-            public Unsubscriber(LevelSetTracker owner, BoSSS.Platform.WeakReference<IObserver<LevelSetRegionsInfo>> observer) {
+            public Unsubscriber(LevelSetTracker owner, BoSSS.Platform.WeakReference<IObserver<LevelSetRegions>> observer) {
                 this.owner = owner;
                 this.observer = observer;
             }
@@ -1900,7 +1937,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public void Dispose() {
             foreach (var reference in m_Observers) {
-                IObserver<LevelSetRegionsInfo> observer = reference.Target;
+                IObserver<LevelSetRegions> observer = reference.Target;
                 if (observer != null) {
                     observer.OnCompleted();
                 }

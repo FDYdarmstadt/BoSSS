@@ -58,7 +58,7 @@ namespace BoSSS.Foundation.XDG {
                 m_QuadFactoryHelpers[variant] = new XQuadFactoryHelper(this, variant);
             }
 
-
+            throw new NotImplementedException("todo");
         }
 
 
@@ -81,14 +81,13 @@ namespace BoSSS.Foundation.XDG {
                 m_Current = curr;
             }
 
-
             /// <summary>
             /// <see cref="PushCount"/>
             /// </summary>
-            protected int m_PushCount = 0;
+            int m_PushCount = 0;
 
             /// <summary>
-            /// counts every call to <see cref="Push"/>
+            /// Counts every call to <see cref="Push"/>
             /// </summary>
             public int PushCount {
                 get {
@@ -100,18 +99,27 @@ namespace BoSSS.Foundation.XDG {
             /// either a double for time-dependent scalars, which are constant in space (e.g. ambient pressure in Low-Mach solver)
             /// or a <see cref="BoSSS.Foundation.DGField"/> or a <see cref="BoSSS.Foundation.VectorField{T}"/>.
             /// </summary>
-            protected T m_Current;
+            T m_Current;
 
             /// <summary>
             /// see <see cref="HistoryLength"/>
             /// </summary>
-            protected int m_HistoryLength = 0;
+            int m_HistoryLength = 0;
 
             /// <summary>
             /// the number of Timesteps that is stored <em>in addition</em> to the current one
             /// </summary>
             public int HistoryLength {
-                get { return m_HistoryLength; }
+                get {
+                    return m_HistoryLength;
+                }
+                set {
+                    m_HistoryLength = value;
+                    if(History.Count > m_HistoryLength) {
+                        History.RemoveRange(m_HistoryLength, History.Count - m_HistoryLength);
+                        Debug.Assert(History.Count == m_HistoryLength);
+                    }
+                }
             }
 
             /// <summary>
@@ -128,9 +136,9 @@ namespace BoSSS.Foundation.XDG {
             }
 
             /// <summary>
-            /// container for previous values: entries are either of type <see cref="DGField"/> or <see cref="VectorField{t}"/>
+            /// Sontainer for previous states.
             /// </summary>
-            protected ArrayList History = new ArrayList();
+            List<T> History = new List<T>();
 
             /// <summary>
             /// pushes a new variable set onto the top of the stack
@@ -145,10 +153,25 @@ namespace BoSSS.Foundation.XDG {
             ///                     | 
             ///    After Push(..):  | a  a  b  c
             /// </code>
-            /// Because of this behavior, any difference norm (sometimes incorrectly called 'residual')
-            /// should be computed prior to the <see cref="Push"/>-operation.
             /// </remarks>
-            abstract public void Push();
+            internal void Push(Func<T,T> Replicator1, Func<T,T,T> Replicator0) {
+                if(History.Count < HistoryLength) {
+                    History.Add(default(T));
+                }
+                if(History.Count > HistoryLength) {
+                    History.RemoveRange(HistoryLength, History.Count - HistoryLength);
+                    Debug.Assert(History.Count == HistoryLength);
+                }
+
+                for(int i = History.Count - 1; i >= 1; i++) {
+                    History[i] = History[i - 1];
+                }
+
+                if(History.Count > 0) {
+                    History[0] = Replicator0(m_Current, History[0]);
+                }
+                m_Current = Replicator1(m_Current);
+            }
 
 
 
@@ -162,6 +185,10 @@ namespace BoSSS.Foundation.XDG {
             public T this[int i] {
                 get {
                     if(i > 1)
+                        throw new IndexOutOfRangeException();
+                    if(i <= -m_HistoryLength)
+                        throw new IndexOutOfRangeException();
+                    if(i <= -GetPopulatedLength())
                         throw new IndexOutOfRangeException();
 
                     if(i == 1)

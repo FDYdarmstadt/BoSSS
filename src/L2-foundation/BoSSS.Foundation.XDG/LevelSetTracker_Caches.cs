@@ -1,4 +1,19 @@
-﻿using ilPSP;
+﻿/* =======================================================================
+Copyright 2017 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+using ilPSP;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -11,38 +26,81 @@ namespace BoSSS.Foundation.XDG {
     partial class LevelSetTracker {
 
 
+        HistoryStack<LevelSetData>[] m_LevelSetDataHistories;
+
+        /// <summary>
+        /// Stack for data of previous level-set states. 
+        /// </summary>
+        public HistoryStack<LevelSetData>[] LevelSetDataHistories {
+            get {
+                return m_LevelSetDataHistories;
+            }
+        }
+
+
         /// <summary>
         /// Caches for normals, curvature, etc, for each level-set.
         /// </summary>
         public class LevelSetData {
-            LevSetValueCache[] m_LevelSetValc;
+            LevSetValueCache m_LevelSetValc;
 
-            LevelSetGradientCache[] m_LevelSetGradientsCache;
+            LevelSetGradientCache m_LevelSetGradientsCache;
 
-            LevelSetNormalsCache[] m_LevelSetNormalsCache;
+            LevelSetNormalsCache m_LevelSetNormalsCache;
 
-            LevelSetReferenceGradientCache[] m_LevelSetReferenceGradientsCache;
+            LevelSetReferenceGradientCache m_LevelSetReferenceGradientsCache;
 
-            LevelSetReferenceNormalsCache[] m_LevelSetReferenceNormalsCache;
+            LevelSetReferenceNormalsCache m_LevelSetReferenceNormalsCache;
 
-            LevelSetReferenceCurvatureCache[] m_LevelSetReferenceCurvatureCache;
+            LevelSetReferenceCurvatureCache m_LevelSetReferenceCurvatureCache;
 
-            LevelSetReferenceHessianCache[] m_LevelSetReferenceHessianCache;
+            LevelSetReferenceHessianCache m_LevelSetReferenceHessianCache;
+
+            internal void ClearCaches() {
+                m_LevelSetValc.Clear();
+                m_LevelSetGradientsCache.Clear();
+                m_LevelSetReferenceGradientsCache.Clear();
+                m_LevelSetNormalsCache.Clear();
+                m_LevelSetReferenceNormalsCache.Clear();
+            }
+
+
+            LevelSetTracker m_owner;
+            internal int m_StackIdx = 1;
+            int m_iLevSet;
+
+            ILevelSet GetLevSet() {
+                return m_owner.m_LevelSetHistories[m_iLevSet][m_StackIdx];
+            }
+
+
+            internal LevelSetData(LevelSetTracker __owner, int iLevSet) {
+                m_owner = __owner;
+                m_iLevSet = iLevSet;
+
+                m_LevelSetValc = new LevSetValueCache(this);
+                m_LevelSetGradientsCache = new LevelSetGradientCache(this);
+                m_LevelSetNormalsCache = new LevelSetNormalsCache(this);
+                m_LevelSetReferenceGradientsCache = new LevelSetReferenceGradientCache(this);
+                m_LevelSetReferenceNormalsCache = new LevelSetReferenceNormalsCache(this);
+                m_LevelSetReferenceCurvatureCache = new LevelSetReferenceCurvatureCache(this);
+                m_LevelSetReferenceHessianCache = new LevelSetReferenceHessianCache(this);
+
+            }
 
 
 
             /// <summary>
             /// Cached evaluation of the level set fields (values of the level-set field).
             /// </summary>
-            /// <param name="levSetInd"></param>
             /// <param name="NS"></param>
             /// <param name="j0">local index of first cell to evaluate</param>
             /// <param name="Len">number of cells to evaluate</param>
             /// <returns>
             /// values of the level set field at the nodes of the specified node set.
             /// </returns>
-            public MultidimensionalArray GetLevSetValues(int levSetInd, NodeSet NS, int j0, int Len) {
-                return m_LevelSetValc[levSetInd].GetValue_Cell(NS, j0, Len);
+            public MultidimensionalArray GetLevSetValues(NodeSet NS, int j0, int Len) {
+                return m_LevelSetValc.GetValue_Cell(NS, j0, Len);
             }
 
             /// <summary>
@@ -50,18 +108,19 @@ namespace BoSSS.Foundation.XDG {
             /// </summary>
             class LevSetValueCache : Caching.CacheLogic_CNs {
 
-                internal LevSetValueCache(ILevelSet levSet, GridData gridData)
-                    : base(gridData) {
-                    m_LevSet = levSet;
+                internal LevSetValueCache(LevelSetData o)
+                    : base(o.m_owner.GridDat) //
+                {
+                    m_owner = o;    
                 }
 
-                ILevelSet m_LevSet;
+                LevelSetData m_owner;
 
                 /// <summary>
                 /// 
                 /// </summary>
                 protected override void ComputeValues(NodeSet N, int j0, int Len, MultidimensionalArray output) {
-                    m_LevSet.Evaluate(j0, Len, N, output);
+                    m_owner.GetLevSet().Evaluate(j0, Len, N, output);
                 }
 
                 /// <summary>
@@ -79,25 +138,16 @@ namespace BoSSS.Foundation.XDG {
             /// </summary>
             private class LevelSetGradientCache : Caching.CacheLogic_CNs {
 
-                /// <summary>
-                /// The level set in question
-                /// </summary>
-                private ILevelSet levelSet;
+                LevelSetData m_owner;
 
                 /// <summary>
                 /// Constructs a value cache for the evaluation of the gradient of
                 /// the given level set.
                 /// </summary>
-                /// <param name="levelSet">
-                /// The level set in question
-                /// </param>
-                /// <param name="nsc">
-                /// The node set controller holding the evaluation nodes
-                /// </param>
-                internal LevelSetGradientCache(ILevelSet levelSet, GridData gridData)
-                    : base(gridData) //
+                internal LevelSetGradientCache(LevelSetData o)
+                    : base(o.m_owner.GridDat) //
                 {
-                    this.levelSet = levelSet;
+                    m_owner = o;
                 }
 
                 /// <summary>
@@ -116,7 +166,7 @@ namespace BoSSS.Foundation.XDG {
                 /// <see cref="ILevelSet.EvaluateGradient"/>
                 /// </param>
                 protected override void ComputeValues(NodeSet N, int j0, int Len, MultidimensionalArray output) {
-                    levelSet.EvaluateGradient(j0, Len, N, output);
+                    m_owner.GetLevSet().EvaluateGradient(j0, Len, N, output);
                 }
 
                 /// <summary>
@@ -135,7 +185,6 @@ namespace BoSSS.Foundation.XDG {
             /// <paramref name="NodeSetIndex"/>. The layout of the resulting array
             /// is equivalent to <see cref="ILevelSet.EvaluateGradient"/>.
             /// </summary>
-            /// <param name="levSetInd">The index of the level set</param>
             /// <param name="NS">
             /// Nodes to evaluate at.
             /// </param>
@@ -146,27 +195,24 @@ namespace BoSSS.Foundation.XDG {
             /// The number of cell to be evaluated
             /// </param>
             /// <returns></returns>
-            public MultidimensionalArray GetLevelSetGradients(int levSetInd, NodeSet NS, int j0, int Len) {
-                return m_LevelSetGradientsCache[levSetInd].GetValue_Cell(NS, j0, Len);
+            public MultidimensionalArray GetLevelSetGradients(NodeSet NS, int j0, int Len) {
+                return m_LevelSetGradientsCache.GetValue_Cell(NS, j0, Len);
             }
 
             private class LevelSetReferenceGradientCache : Caching.CacheLogic_CNs {
 
-                private ILevelSet levelSet;
+                LevelSetData m_owner;
 
-                private LevelSetTracker owner;
-
-                internal LevelSetReferenceGradientCache(ILevelSet levelSet, LevelSetTracker owner)
-                    : base(owner.GridDat) //
+                internal LevelSetReferenceGradientCache(LevelSetData o)
+                    : base(o.m_owner.GridDat) //
                 {
-                    this.levelSet = levelSet;
-                    this.owner = owner;
+                    this.m_owner = o;
                 }
 
                 protected override void ComputeValues(NodeSet N, int j0, int Len, MultidimensionalArray output) {
-                    LevelSet levelSetField = levelSet as LevelSet;
+                    LevelSet levelSetField = m_owner.GetLevSet() as LevelSet;
                     if(levelSetField == null) {
-                        ComputeValuesNonField(levelSet, N, j0, Len, output);
+                        ComputeValuesNonField(m_owner.GetLevSet(), N, j0, Len, output);
                     } else {
                         ComputeValuesField(levelSetField, N, j0, Len, output);
                     }
@@ -216,11 +262,11 @@ namespace BoSSS.Foundation.XDG {
                 private void ComputeValuesNonField(ILevelSet levelSet, NodeSet NS, int j0, int Len, MultidimensionalArray output) {
                     int noOfNodes = NS.NoOfNodes;
                     int D = NS.SpatialDimension;
-                    var R = owner.GridDat.Cells.Transformation;
-                    var JacDet = owner.GridDat.ChefBasis.Scaling;
-                    var Cells = owner.GridDat.Cells;
+                    var R = m_owner.m_owner.GridDat.Cells.Transformation;
+                    var JacDet = m_owner.m_owner.GridDat.ChefBasis.Scaling;
+                    var Cells = m_owner.m_owner.GridDat.Cells;
 
-                    MultidimensionalArray physGradient = owner.GetLevelSetGradients(0, NS, j0, Len);
+                    MultidimensionalArray physGradient = m_owner.GetLevelSetGradients(NS, j0, Len);
                     for(int i = 0; i < Len; i++) {
                         int jCell = j0 + i;
                         if(Cells.IsCellAffineLinear(jCell)) {
@@ -253,7 +299,6 @@ namespace BoSSS.Foundation.XDG {
             /// <paramref name="NodeSetIndex"/>. The layout of the resulting array
             /// is equivalent to <see cref="ILevelSet.EvaluateGradient"/>.
             /// </summary>
-            /// <param name="levSetInd">The index of the level set</param>
             /// <param name="NS">
             /// Nodes to evaluate at.
             /// </param>
@@ -264,26 +309,24 @@ namespace BoSSS.Foundation.XDG {
             /// The number of cell to be evaluated
             /// </param>
             /// <returns></returns>
-            public MultidimensionalArray GetLevelSetReferenceGradients(int levSetInd, NodeSet NS, int j0, int Len) {
-                return m_LevelSetReferenceGradientsCache[levSetInd].GetValue_Cell(NS, j0, Len);
+            public MultidimensionalArray GetLevelSetReferenceGradients(NodeSet NS, int j0, int Len) {
+                return m_LevelSetReferenceGradientsCache.GetValue_Cell(NS, j0, Len);
             }
 
             private class LevelSetNormalsCache : Caching.CacheLogic_CNs {
 
-                private LevelSetTracker owner;
+                private LevelSetData m_owner;
 
-                private int levelSetIndex;
 
-                public LevelSetNormalsCache(LevelSetTracker owner, int levelSetIndex)
-                    : base(owner.GridDat) //
+                public LevelSetNormalsCache(LevelSetData o)
+                    : base(o.m_owner.GridDat) //
                 {
-                    this.owner = owner;
-                    this.levelSetIndex = levelSetIndex;
+                    this.m_owner = o;
                 }
 
                 protected override void ComputeValues(NodeSet NS, int j0, int Len, MultidimensionalArray output) {
                     MultidimensionalArray gradient =
-                        owner.m_LevelSetGradientsCache[levelSetIndex].GetValue_Cell(NS, j0, Len);
+                        m_owner.m_LevelSetGradientsCache.GetValue_Cell(NS, j0, Len);
                     //gradient.Storage.CopyTo(output.Storage, 0);
                     Debug.Assert(gradient.Dimension == 3 && output.Dimension == 3);
                     Debug.Assert(gradient.GetLength(1) == output.GetLength(1));
@@ -324,7 +367,6 @@ namespace BoSSS.Foundation.XDG {
             /// Variant of <see cref="GetLevelSetGradients"/> which normalizes the
             /// gradients before returning them
             /// </summary>
-            ///  <param name="levSetInd">The index of the level set</param>
             /// <param name="NS">
             /// Nodes to evaluate at.
             /// </param>
@@ -334,26 +376,24 @@ namespace BoSSS.Foundation.XDG {
             /// <param name="Len">
             /// The number of cell to be evaluated
             /// </param>
-            public MultidimensionalArray GetLevelSetNormals(int levSetInd, NodeSet NS, int j0, int Len) {
-                return m_LevelSetNormalsCache[levSetInd].GetValue_Cell(NS, j0, Len);
+            public MultidimensionalArray GetLevelSetNormals(NodeSet NS, int j0, int Len) {
+                return m_LevelSetNormalsCache.GetValue_Cell(NS, j0, Len);
             }
 
             private class LevelSetReferenceNormalsCache : Caching.CacheLogic_CNs {
 
-                private LevelSetTracker owner;
+                private LevelSetData m_owner;
 
-                private int levelSetIndex;
 
-                public LevelSetReferenceNormalsCache(LevelSetTracker owner, int levelSetIndex)
-                    : base(owner.GridDat) //
+                public LevelSetReferenceNormalsCache(LevelSetData o)
+                    : base(o.m_owner.GridDat) //
                 {
-                    this.owner = owner;
-                    this.levelSetIndex = levelSetIndex;
+                    m_owner = o;
                 }
 
                 protected override void ComputeValues(NodeSet NS, int j0, int Len, MultidimensionalArray output) {
                     MultidimensionalArray gradient =
-                        owner.m_LevelSetReferenceGradientsCache[levelSetIndex].GetValue_Cell(NS, j0, Len);
+                        m_owner.m_LevelSetReferenceGradientsCache.GetValue_Cell(NS, j0, Len);
                     gradient.Storage.CopyTo(output.Storage, 0);
 
                     for(int i = 0; i < gradient.GetLength(0); i++) {
@@ -386,7 +426,6 @@ namespace BoSSS.Foundation.XDG {
             /// Variant of <see cref="GetLevelSetReferenceGradients(int, NodeSet, int, int)"/> which normalizes the
             /// gradients before returning them.
             /// </summary>
-            ///  <param name="levSetInd">The index of the level set</param>
             /// <param name="NS">
             /// Nodes to evaluate at.
             /// </param>
@@ -396,22 +435,25 @@ namespace BoSSS.Foundation.XDG {
             /// <param name="Len">
             /// The number of cell to be evaluated
             /// </param>
-            public MultidimensionalArray GetLevelSetReferenceNormals(int levSetInd, NodeSet NS, int j0, int Len) {
-                return m_LevelSetReferenceNormalsCache[levSetInd].GetValue_Cell(NS, j0, Len);
+            public MultidimensionalArray GetLevelSetReferenceNormals(NodeSet NS, int j0, int Len) {
+                return m_LevelSetReferenceNormalsCache.GetValue_Cell(NS, j0, Len);
             }
 
-            public MultidimensionalArray GetLevelSetNormalReferenceToPhysicalMetrics(int levSetInd, NodeSet NS, int j0, int Len) {
-                MultidimensionalArray physGradients = GetLevelSetGradients(levSetInd, NS, j0, Len);
-                MultidimensionalArray refGradients = GetLevelSetReferenceGradients(levSetInd, NS, j0, Len);
+            /// <summary>
+            /// Some integral transformation metrics....
+            /// </summary>
+            public MultidimensionalArray GetLevelSetNormalReferenceToPhysicalMetrics(NodeSet NS, int j0, int Len) {
+                MultidimensionalArray physGradients = GetLevelSetGradients(NS, j0, Len);
+                MultidimensionalArray refGradients = GetLevelSetReferenceGradients(NS, j0, Len);
                 int noOfNodes = physGradients.GetLength(1);
-                int D = GridDat.Grid.SpatialDimension;
-                var OneOverSqrt_AbsJacobiDet = GridDat.ChefBasis.Scaling;
+                int D = m_owner.GridDat.Grid.SpatialDimension;
+                var OneOverSqrt_AbsJacobiDet = m_owner.GridDat.ChefBasis.Scaling;
                 MultidimensionalArray result = MultidimensionalArray.Create(Len, noOfNodes);
 
                 for(int i = 0; i < Len; i++) {
                     int jCell = j0 + i;
 
-                    if(GridDat.Cells.IsCellAffineLinear(jCell)) {
+                    if(m_owner.GridDat.Cells.IsCellAffineLinear(jCell)) {
                         double sc = OneOverSqrt_AbsJacobiDet[jCell];
                         for(int j = 0; j < noOfNodes; j++) {
                             double normPhys = 0.0;
@@ -482,28 +524,27 @@ namespace BoSSS.Foundation.XDG {
 
             private class LevelSetReferenceHessianCache : Caching.CacheLogic_CNs {
 
-                private LevelSetTracker owner;
+                private LevelSetData m_owner;
 
                 private int levelSetIndex;
 
-                public LevelSetReferenceHessianCache(LevelSetTracker owner, int levelSetIndex)
-                    : base(owner.GridDat) //
+                public LevelSetReferenceHessianCache(LevelSetData owner)
+                    : base(owner.m_owner.GridDat) //
                 {
-                    this.owner = owner;
-                    this.levelSetIndex = levelSetIndex;
+                    this.m_owner = owner;
                 }
 
 
 
                 protected override void ComputeValues(NodeSet NS, int j0, int Len, MultidimensionalArray output) {
-                    LevelSet LevSet = (LevelSet)this.owner.LevelSets[this.levelSetIndex];
+                    LevelSet LevSet = (LevelSet)(this.m_owner.GetLevSet());
 
                     var BasisHessian = LevSet.Basis.Evaluate2ndDeriv(NS);
 
                     Debug.Assert(output.GetLength(0) == Len);
                     int N = LevSet.Basis.Length;
                     Debug.Assert(BasisHessian.GetLength(1) == N);
-                    int D = this.owner.m_gDat.SpatialDimension;
+                    int D = this.m_owner.m_owner.GridDat.SpatialDimension;
                     Debug.Assert(D == BasisHessian.GetLength(2));
                     Debug.Assert(D == BasisHessian.GetLength(3));
                     Debug.Assert(D == output.GetLength(2));
@@ -523,33 +564,31 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// The Hessian of the level set field with respect to reference coordinates.
             /// </summary>
-            /// <param name="levSetInd"></param>
             /// <param name="NodeSet"></param>
             /// <param name="j0">first cell to evaluate</param>
             /// <param name="Len">number of cells to evaluate</param>
             /// <returns></returns>
-            public MultidimensionalArray GetLevelSetReferenceHessian(int levSetInd, NodeSet nodes, int j0, int Len) {
-                return m_LevelSetReferenceHessianCache[levSetInd].GetValue_Cell(nodes, j0, Len);
+            public MultidimensionalArray GetLevelSetReferenceHessian(NodeSet nodes, int j0, int Len) {
+                return m_LevelSetReferenceHessianCache.GetValue_Cell(nodes, j0, Len);
             }
 
             private class LevelSetReferenceCurvatureCache : Caching.CacheLogic_CNs {
 
-                private LevelSetTracker owner;
+                private LevelSetData m_owner;
 
                 private int levelSetIndex;
 
-                public LevelSetReferenceCurvatureCache(LevelSetTracker owner, int levelSetIndex)
-                    : base(owner.GridDat) //
+                public LevelSetReferenceCurvatureCache(LevelSetData owner)
+                    : base(owner.m_owner.GridDat) //
                 {
-                    this.owner = owner;
-                    this.levelSetIndex = levelSetIndex;
+                    this.m_owner = owner;
                 }
 
                 protected override void ComputeValues(NodeSet NS, int j0, int Len, MultidimensionalArray output) {
 
-                    MultidimensionalArray Phi = owner.GetLevSetValues(this.levelSetIndex, NS, j0, Len);
-                    MultidimensionalArray GradPhi = owner.GetLevelSetReferenceGradients(this.levelSetIndex, NS, j0, Len);
-                    MultidimensionalArray HessPhi = owner.GetLevelSetReferenceHessian(this.levelSetIndex, NS, j0, Len);
+                    MultidimensionalArray Phi = m_owner.GetLevSetValues(NS, j0, Len);
+                    MultidimensionalArray GradPhi = m_owner.GetLevelSetReferenceGradients(NS, j0, Len);
+                    MultidimensionalArray HessPhi = m_owner.GetLevelSetReferenceHessian(NS, j0, Len);
 
                     MultidimensionalArray ooNormGrad = new MultidimensionalArray(2);
                     MultidimensionalArray Laplace = new MultidimensionalArray(2);
@@ -557,7 +596,7 @@ namespace BoSSS.Foundation.XDG {
 
                     int K = output.GetLength(1);
                     int D = GradPhi.GetLength(2);
-                    Debug.Assert(D == this.owner.GridDat.SpatialDimension);
+                    Debug.Assert(D == this.m_owner.m_owner.GridDat.SpatialDimension);
 
                     ooNormGrad.Allocate(Len, K);
                     Laplace.Allocate(Len, K);
@@ -614,10 +653,13 @@ namespace BoSSS.Foundation.XDG {
             /// <param name="j0">first cell to evaluate</param>
             /// <param name="Len">number of cells to evaluate</param>
             /// <returns></returns>
-            public MultidimensionalArray GetLevelSetReferenceCurvature(int levSetInd, NodeSet NS, int j0, int Len) {
-                return m_LevelSetReferenceCurvatureCache[levSetInd].GetValue_Cell(NS, j0, Len);
+            public MultidimensionalArray GetLevelSetReferenceCurvature(NodeSet NS, int j0, int Len) {
+                return m_LevelSetReferenceCurvatureCache.GetValue_Cell(NS, j0, Len);
             }
 
+            public object Clone() {
+                throw new NotImplementedException();
+            }
         }
 
     }

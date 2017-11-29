@@ -60,7 +60,7 @@ namespace BoSSS.Foundation.XDG {
     /// <summary>
     /// a DG field for a cut-cell -basis (<see cref="XDGBasis"/>);
     /// </summary>
-    public partial class XDGField : DGField, IObserver<LevelSetTracker.LevelSetRegionsInfo> {
+    public partial class XDGField : DGField, IObserver<LevelSetTracker.LevelSetRegions> {
 
         /// <summary>
         /// an implementation of <see cref="FieldFactory{T}"/> that creates <see cref="XDGField"/>-DG-fields.
@@ -1211,7 +1211,7 @@ namespace BoSSS.Foundation.XDG {
         /// latest status of the level set.
         /// </summary>
         /// <param name="levelSetStatus"></param>
-        public void OnNext(LevelSetTracker.LevelSetRegionsInfo levelSetStatus) {
+        public void OnNext(LevelSetTracker.LevelSetRegions levelSetStatus) {
             int J = this.GridDat.iLogicalCells.NoOfCells;
             LevelSetTracker trk = m_CCBasis.Tracker;
 

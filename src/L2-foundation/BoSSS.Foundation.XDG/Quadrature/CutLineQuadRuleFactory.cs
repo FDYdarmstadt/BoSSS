@@ -60,7 +60,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
     /// two-dimensional domains that are intersected by the level set (i.e.,
     /// integrals over cut segments)
     /// </summary>
-    public class CutLineQuadRuleFactory : IQuadRuleFactory<CellBoundaryQuadRule>, IObserver<LevelSetTracker.LevelSetRegionsInfo> {
+    public class CutLineQuadRuleFactory : IQuadRuleFactory<CellBoundaryQuadRule>, IObserver<LevelSetTracker.LevelSetRegions> {
 
         /// <summary>
         /// The line reference element.
@@ -449,7 +449,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// Clears the cache.
         /// </summary>
         /// <param name="value"></param>
-        public void OnNext(LevelSetTracker.LevelSetRegionsInfo value) {
+        public void OnNext(LevelSetTracker.LevelSetRegions value) {
             cache.Clear();
         }
 

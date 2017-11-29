@@ -29,14 +29,14 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// A summary of information about a level set
         /// </summary>
-        public class LevelSetRegionsInfo {
+        public class LevelSetRegions {
 
             LevelSetTracker m_owner;
 
             /// <summary>
             /// Constructor
             /// </summary>
-            internal LevelSetRegionsInfo(LevelSetTracker owner) {
+            internal LevelSetRegions(LevelSetTracker owner) {
                 m_owner = owner;
             }
 
@@ -52,7 +52,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// Level set region codes for locally updated and external cells
             /// </summary>
-            public ushort[] LevelSetRegions {
+            public ushort[] LevelSetRegionsCode {
                 get {
                     return m_LevSetRegions;
                 }
@@ -170,7 +170,7 @@ namespace BoSSS.Foundation.XDG {
                     for(int j = 0; j < J; j++) {
                         ushort code = m_LevSetRegions[j];
 
-                        for(int levSetIdx = 0; levSetIdx < m_owner.m_LevelSets.Length; levSetIdx++) {
+                        for(int levSetIdx = 0; levSetIdx < m_owner.m_LevelSetHistories.Length; levSetIdx++) {
                             int dist = LevelSetTracker.DecodeLevelSetDist(code, levSetIdx);
                             if(Math.Abs(dist) <= FieldWidth) {
                                 ba[j] = true;
@@ -204,7 +204,7 @@ namespace BoSSS.Foundation.XDG {
                 if(FieldWidth > m_owner.m_NearRegionWidth)
                     throw new ArgumentException("Near-" + FieldWidth + " cannot be acquired, because this tracker is set to detect at most Near-" + m_owner.m_NearRegionWidth + ".", "FieldWidth");
 
-                if(m_owner.m_LevelSets.Length == 1)
+                if(m_owner.m_LevelSetHistories.Length == 1)
                     // if there is only one Level Set, no need to separate between
                     // cells-cut-by-any-level-set and cells-cut-by-a-specific-level-set
                     return GetNearFieldSubgrid4LevSet(0, FieldWidth);
@@ -239,12 +239,12 @@ namespace BoSSS.Foundation.XDG {
 
                 if(FieldWidth > m_owner.m_NearRegionWidth)
                     throw new ArgumentException("Near-" + FieldWidth + " cannot be acquired, because this tracker is set to detect at most Near-" + m_owner.m_NearRegionWidth + ".", "FieldWidth");
-                if(levSetIdx < 0 || levSetIdx >= this.m_owner.m_LevelSets.Length)
+                if(levSetIdx < 0 || levSetIdx >= this.m_owner.m_LevelSetHistories.Length)
                     throw new IndexOutOfRangeException();
 
 
                 if(m_NearField4LevelSet == null || m_NearField4LevelSet.GetLength(1) != this.m_owner.m_NearRegionWidth) {
-                    m_NearField4LevelSet = new SubGrid[this.m_owner.m_LevelSets.Length, this.m_owner.m_NearRegionWidth + 1];
+                    m_NearField4LevelSet = new SubGrid[this.m_owner.m_LevelSetHistories.Length, this.m_owner.m_NearRegionWidth + 1];
                 }
 
                 if(m_NearField4LevelSet[levSetIdx, FieldWidth] == null) {
@@ -274,12 +274,12 @@ namespace BoSSS.Foundation.XDG {
 
                 if(FieldWidth > m_owner.m_NearRegionWidth)
                     throw new ArgumentException("Near-" + FieldWidth + " cannot be acquired, because this tracker is set to detect at most Near-" + m_owner.m_NearRegionWidth + ".", "FieldWidth");
-                if(levSetIdx < 0 || levSetIdx >= this.m_owner.m_LevelSets.Length)
+                if(levSetIdx < 0 || levSetIdx >= this.m_owner.m_LevelSetHistories.Length)
                     throw new IndexOutOfRangeException();
 
 
                 if(m_NearMask4LevelSet == null || m_NearMask4LevelSet.GetLength(1) != m_owner.m_NearRegionWidth) {
-                    m_NearMask4LevelSet = new CellMask[m_owner.m_LevelSets.Length, m_owner.m_NearRegionWidth + 1];
+                    m_NearMask4LevelSet = new CellMask[m_owner.m_LevelSetHistories.Length, m_owner.m_NearRegionWidth + 1];
                 }
 
                 if(m_NearMask4LevelSet[levSetIdx, FieldWidth] == null) {
@@ -331,7 +331,7 @@ namespace BoSSS.Foundation.XDG {
                 MPICollectiveWatchDog.Watch();
                 if(sign == 0.0)
                     throw new ArgumentException("must be either positive or negative");
-                if(LevelSetIndex < 0 || LevelSetIndex >= m_owner.m_LevelSets.Length)
+                if(LevelSetIndex < 0 || LevelSetIndex >= m_owner.m_LevelSetHistories.Length)
                     throw new IndexOutOfRangeException("invalid level set index");
 
                 int _sign = Math.Sign(sign);
@@ -460,7 +460,7 @@ namespace BoSSS.Foundation.XDG {
                 // situation in the current cell
                 for(int k = 0; k < signCodes.Length; k++) {
                     bool matches = true;
-                    for(int j = 0; j < m_owner.m_LevelSets.Length; j++) {
+                    for(int j = 0; j < m_owner.m_LevelSetHistories.Length; j++) {
                         int sign = Math.Sign(DecodeLevelSetDist(m_LevSetRegions[jCell], j));
 
                         // Cell is cut, both signs exist and thus the mask

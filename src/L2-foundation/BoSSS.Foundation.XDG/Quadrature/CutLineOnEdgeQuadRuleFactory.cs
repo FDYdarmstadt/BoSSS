@@ -79,7 +79,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
     /// <see cref="CellEdgeBoundaryQuadRule"/>) in the style of
     /// <see cref="CutLineQuadRuleFactory"/>
     /// </summary>
-    class CutLineOnEdgeQuadRuleFactory : IQuadRuleFactory<CellEdgeBoundaryQuadRule>, IObserver<LevelSetTracker.LevelSetRegionsInfo> {
+    class CutLineOnEdgeQuadRuleFactory : IQuadRuleFactory<CellEdgeBoundaryQuadRule>, IObserver<LevelSetTracker.LevelSetRegions> {
 
         /// <summary>
         /// Minimal distance between two points
@@ -417,7 +417,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// Clears cached quadrature rules.
         /// </summary>
         /// <param name="value"></param>
-        public void OnNext(LevelSetTracker.LevelSetRegionsInfo value) {
+        public void OnNext(LevelSetTracker.LevelSetRegions value) {
             cache.Clear();
         }
 
