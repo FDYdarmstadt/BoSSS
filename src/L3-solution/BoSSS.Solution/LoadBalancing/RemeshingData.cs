@@ -179,7 +179,6 @@ namespace BoSSS.Solution {
                 Basis oldBasis = f.Basis;
                 int Nj = oldBasis.Length;
 
-
                 for(int j = 0; j < m_oldJ; j++) {
                     double[] data_j = new double[Nj];
                     for(int n = 0; n < Nj; n++) {

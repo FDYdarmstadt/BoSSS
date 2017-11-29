@@ -73,7 +73,7 @@ namespace BoSSS.Foundation.XDG {
             XDGSpaceMetrics = owner;
         }
 
-
+        /*
 
         /// <summary>
         /// Constructor where all data is provided externally; not for user interaction, used e.g. for dynamic load balancing.
@@ -117,7 +117,7 @@ namespace BoSSS.Foundation.XDG {
             this.InterfaceArea = __InterfaceArea;
             this.CutEdgeAreas = __CutEdgeAreas;
         }
-
+        */
 
         /// <summary>
         /// The quadrature order of HMF which should be used for computing cell volumes and edge areas.
@@ -200,7 +200,7 @@ namespace BoSSS.Foundation.XDG {
             int NoSpc = species.Count();
             int[,] E2C = gd.Edges.CellIndices;
 
-            var schH = new XQuadSchemeHelper(lsTrk, this.HMFvariant, species);
+            var schH = new XQuadSchemeHelper(XDGSpaceMetrics);
 
             double[] vec_cellMetrics = new double[JE * NoSpc * 2];
 

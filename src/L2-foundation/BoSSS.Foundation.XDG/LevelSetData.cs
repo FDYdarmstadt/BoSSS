@@ -84,8 +84,8 @@ namespace BoSSS.Foundation.XDG {
                 m_LenToNextChange = new int[JA];
                 m_LenToNextChange[JA - 1] = 1;
                 ushort regionCd = m_LevSetRegions[JA - 1];
-                for (int j = JA - 2; j >= 0; j--) {
-                    if (m_LevSetRegions[j] != regionCd) {
+                for(int j = JA - 2; j >= 0; j--) {
+                    if(m_LevSetRegions[j] != regionCd) {
                         m_LenToNextChange[j] = 1;
                         regionCd = m_LevSetRegions[j];
                     } else {
@@ -150,29 +150,29 @@ namespace BoSSS.Foundation.XDG {
             /// </remarks>
             public CellMask GetNearFieldMask(int FieldWidth) {
 
-                if (FieldWidth > m_owner.NearRegionWidth)
+                if(FieldWidth > m_owner.NearRegionWidth)
                     throw new ArgumentException("Near-" + FieldWidth + " cannot be acquired, because this tracker is set to detect at most Near-" + m_owner.NearRegionWidth + ".", "FieldWidth");
 
-                if (this.m_owner.LevelSets.Count == 1)
+                if(this.m_owner.LevelSets.Count == 1)
                     // if there is only one Level Set, no need to separate between
                     // cells-cut-by-any-level-set and cells-cut-by-a-specific-level-set
                     return GetNearMask4LevSet(0, FieldWidth);
 
-                if (m_NearMask == null) {
+                if(m_NearMask == null) {
                     m_NearMask = new CellMask[m_owner.m_NearRegionWidth + 1];
                 }
 
-                if (m_NearMask[FieldWidth] == null) {
+                if(m_NearMask[FieldWidth] == null) {
                     int J = m_owner.m_gDat.Cells.NoOfLocalUpdatedCells;
                     BitArray ba = new BitArray(J, false);
                     //int NoL = m_LevelSets.Length;
 
-                    for (int j = 0; j < J; j++) {
+                    for(int j = 0; j < J; j++) {
                         ushort code = m_LevSetRegions[j];
 
-                        for (int levSetIdx = 0; levSetIdx < m_owner.m_LevelSets.Length; levSetIdx++) {
+                        for(int levSetIdx = 0; levSetIdx < m_owner.m_LevelSets.Length; levSetIdx++) {
                             int dist = LevelSetTracker.DecodeLevelSetDist(code, levSetIdx);
-                            if (Math.Abs(dist) <= FieldWidth) {
+                            if(Math.Abs(dist) <= FieldWidth) {
                                 ba[j] = true;
                                 continue;
                             }
@@ -201,19 +201,19 @@ namespace BoSSS.Foundation.XDG {
             public SubGrid GetNearFieldSubgrid(int FieldWidth) {
                 MPICollectiveWatchDog.Watch();
 
-                if (FieldWidth > m_owner.m_NearRegionWidth)
+                if(FieldWidth > m_owner.m_NearRegionWidth)
                     throw new ArgumentException("Near-" + FieldWidth + " cannot be acquired, because this tracker is set to detect at most Near-" + m_owner.m_NearRegionWidth + ".", "FieldWidth");
 
-                if (m_owner.m_LevelSets.Length == 1)
+                if(m_owner.m_LevelSets.Length == 1)
                     // if there is only one Level Set, no need to separate between
                     // cells-cut-by-any-level-set and cells-cut-by-a-specific-level-set
                     return GetNearFieldSubgrid4LevSet(0, FieldWidth);
 
-                if (m_NearField == null) {
+                if(m_NearField == null) {
                     m_NearField = new SubGrid[m_owner.m_NearRegionWidth + 1];
                 }
 
-                if (m_NearField[FieldWidth] == null) {
+                if(m_NearField[FieldWidth] == null) {
                     m_NearField[FieldWidth] = new SubGrid(GetNearFieldMask(FieldWidth));
                 }
 
@@ -237,17 +237,17 @@ namespace BoSSS.Foundation.XDG {
             public SubGrid GetNearFieldSubgrid4LevSet(int levSetIdx, int FieldWidth) {
                 MPICollectiveWatchDog.Watch();
 
-                if (FieldWidth > m_owner.m_NearRegionWidth)
+                if(FieldWidth > m_owner.m_NearRegionWidth)
                     throw new ArgumentException("Near-" + FieldWidth + " cannot be acquired, because this tracker is set to detect at most Near-" + m_owner.m_NearRegionWidth + ".", "FieldWidth");
-                if (levSetIdx < 0 || levSetIdx >= this.m_owner.m_LevelSets.Length)
+                if(levSetIdx < 0 || levSetIdx >= this.m_owner.m_LevelSets.Length)
                     throw new IndexOutOfRangeException();
 
 
-                if (m_NearField4LevelSet == null || m_NearField4LevelSet.GetLength(1) != this.m_owner.m_NearRegionWidth) {
+                if(m_NearField4LevelSet == null || m_NearField4LevelSet.GetLength(1) != this.m_owner.m_NearRegionWidth) {
                     m_NearField4LevelSet = new SubGrid[this.m_owner.m_LevelSets.Length, this.m_owner.m_NearRegionWidth + 1];
                 }
 
-                if (m_NearField4LevelSet[levSetIdx, FieldWidth] == null) {
+                if(m_NearField4LevelSet[levSetIdx, FieldWidth] == null) {
                     // create subgrid
                     m_NearField4LevelSet[levSetIdx, FieldWidth] = new SubGrid(GetNearMask4LevSet(levSetIdx, FieldWidth));
                 }
@@ -272,28 +272,28 @@ namespace BoSSS.Foundation.XDG {
             public CellMask GetNearMask4LevSet(int levSetIdx, int FieldWidth) {
 
 
-                if (FieldWidth > m_owner.m_NearRegionWidth)
+                if(FieldWidth > m_owner.m_NearRegionWidth)
                     throw new ArgumentException("Near-" + FieldWidth + " cannot be acquired, because this tracker is set to detect at most Near-" + m_owner.m_NearRegionWidth + ".", "FieldWidth");
-                if (levSetIdx < 0 || levSetIdx >= this.m_owner.m_LevelSets.Length)
+                if(levSetIdx < 0 || levSetIdx >= this.m_owner.m_LevelSets.Length)
                     throw new IndexOutOfRangeException();
 
 
-                if (m_NearMask4LevelSet == null || m_NearMask4LevelSet.GetLength(1) != m_owner.m_NearRegionWidth) {
+                if(m_NearMask4LevelSet == null || m_NearMask4LevelSet.GetLength(1) != m_owner.m_NearRegionWidth) {
                     m_NearMask4LevelSet = new CellMask[m_owner.m_LevelSets.Length, m_owner.m_NearRegionWidth + 1];
                 }
 
-                if (m_NearMask4LevelSet[levSetIdx, FieldWidth] == null) {
+                if(m_NearMask4LevelSet[levSetIdx, FieldWidth] == null) {
                     // create subgrid
 
                     int J = m_owner.m_gDat.Cells.NoOfLocalUpdatedCells;
                     BitArray ba = new BitArray(J, false);
                     //int NoL = m_LevelSets.Length;
 
-                    for (int j = 0; j < J; j++) {
+                    for(int j = 0; j < J; j++) {
                         ushort code = m_LevSetRegions[j];
 
                         int dist = LevelSetTracker.DecodeLevelSetDist(code, levSetIdx);
-                        if (Math.Abs(dist) <= FieldWidth) {
+                        if(Math.Abs(dist) <= FieldWidth) {
                             ba[j] = true;
                             continue;
                         }
@@ -311,13 +311,13 @@ namespace BoSSS.Foundation.XDG {
             public SubGrid GetSpeciesSubGrid(SpeciesId specId) {
                 MPICollectiveWatchDog.Watch();
 
-                if (m_SpeciesSubGrids == null)
+                if(m_SpeciesSubGrids == null)
                     m_SpeciesSubGrids = new Dictionary<SpeciesId, SubGrid>();
 
-                if (!m_SpeciesSubGrids.ContainsKey(specId)) {
+                if(!m_SpeciesSubGrids.ContainsKey(specId)) {
                     CellMask cm = GetSpeciesMask(specId);
                     m_SpeciesSubGrids.Add(specId, new SubGrid(cm));
-                } 
+                }
                 return this.m_SpeciesSubGrids[specId];
             }
 
@@ -329,22 +329,22 @@ namespace BoSSS.Foundation.XDG {
             /// </summary>
             public SubGrid GetLevelSetWing(int LevelSetIndex, double sign) {
                 MPICollectiveWatchDog.Watch();
-                if (sign == 0.0)
+                if(sign == 0.0)
                     throw new ArgumentException("must be either positive or negative");
-                if (LevelSetIndex < 0 || LevelSetIndex >= m_owner.m_LevelSets.Length)
+                if(LevelSetIndex < 0 || LevelSetIndex >= m_owner.m_LevelSets.Length)
                     throw new IndexOutOfRangeException("invalid level set index");
 
                 int _sign = Math.Sign(sign);
                 int iwing = _sign * (LevelSetIndex + 1);
 
-                if (m_LevelSetWings == null)
+                if(m_LevelSetWings == null)
                     m_LevelSetWings = new SortedDictionary<int, SubGrid>();
 
-                if (!m_LevelSetWings.ContainsKey(iwing)) {
+                if(!m_LevelSetWings.ContainsKey(iwing)) {
 
                     int J = m_owner.GridDat.Cells.NoOfLocalUpdatedCells;
                     BitArray mask = new BitArray(J);
-                    for (int j = 0; j < J; j++) {
+                    for(int j = 0; j < J; j++) {
                         int dist = DecodeLevelSetDist(m_LevSetRegions[j], LevelSetIndex);
                         mask[j] = (dist * _sign >= 0);
                     }
@@ -403,24 +403,24 @@ namespace BoSSS.Foundation.XDG {
             /// species <paramref name="speciesId"/>
             /// </returns>
             public CellMask GetSpeciesMask(SpeciesId speciesId) {
-                if (m_SpeciesMask == null)
+                if(m_SpeciesMask == null)
                     m_SpeciesMask = new Dictionary<SpeciesId, CellMask>();
-                if (!m_SpeciesMask.ContainsKey(speciesId)) {
+                if(!m_SpeciesMask.ContainsKey(speciesId)) {
 
                     int J = m_owner.m_gDat.Grid.NoOfUpdateCells;
                     BitArray mask = new BitArray(J);
                     LevelSetSignCode[] signCodes = m_owner.GetLevelSetSignCodes(speciesId);
 
-                    if (signCodes.Length == 0) {
+                    if(signCodes.Length == 0) {
                         throw new ArgumentException("Unknown species " + speciesId, "speciesName");
                     }
 
-                    for (int jCell = 0; jCell < J; jCell++) {
+                    for(int jCell = 0; jCell < J; jCell++) {
                         bool matchesOne = IsSpeciesPresentInCell(speciesId, jCell);
 
                         // mask[i] = matches would also do it but a set operation on
                         // a BitMask is heavier than this ugly additional if statement
-                        if (matchesOne) {
+                        if(matchesOne) {
                             mask[jCell] = true;
                         }
                     }
@@ -458,21 +458,21 @@ namespace BoSSS.Foundation.XDG {
 
                 // Check if at least one of the sign codes matches the
                 // situation in the current cell
-                for (int k = 0; k < signCodes.Length; k++) {
+                for(int k = 0; k < signCodes.Length; k++) {
                     bool matches = true;
-                    for (int j = 0; j < m_owner.m_LevelSets.Length; j++) {
+                    for(int j = 0; j < m_owner.m_LevelSets.Length; j++) {
                         int sign = Math.Sign(DecodeLevelSetDist(m_LevSetRegions[jCell], j));
 
                         // Cell is cut, both signs exist and thus the mask
                         // matches for sure
-                        if (sign == 0) {
+                        if(sign == 0) {
                             continue;
                         }
 
                         int signCodeEntry = (signCodes[k].val & 0x1 << j) >> j;
 
                         // Code translation: 2 * {0, 1} - 1 = {-1, 1}
-                        if (sign != 2 * signCodeEntry - 1) {
+                        if(sign != 2 * signCodeEntry - 1) {
                             matches = false;
                             break;
                         }
@@ -487,13 +487,96 @@ namespace BoSSS.Foundation.XDG {
             /// Outputs a piecewise constant field which is 0 outside the narrow band
             /// 1+width on cut cells and decreasing on the near-cells
             /// </summary>
-            public SinglePhaseField ToDGField(){
+            public SinglePhaseField ToDGField() {
                 SinglePhaseField TrackerField = new SinglePhaseField(new Basis(m_owner.GridDat, 0));
                 // decrement loop: 
-                for (int width = 0; width <= m_owner.NearRegionWidth ; width++) {
+                for(int width = 0; width <= m_owner.NearRegionWidth; width++) {
                     TrackerField.AccConstant(1, this.GetNearFieldMask(width));
-                }                    
+                }
                 return TrackerField;
+            }
+
+            /// <summary>
+            /// returns the (possible) number of species in cell <paramref name="j"/>;
+            /// </summary>
+            /// <param name="j">
+            /// local cell index;
+            /// </param>
+            /// <param name="ReducedRegionCode">
+            /// on exit, the reduced region code for cell <paramref name="j"/>
+            /// in an 3-adic representation; This number 
+            /// is later on required as an input for <see cref="GetSpeciesIndex(SpeciesId,int)"/>;
+            /// </param>
+            /// <returns></returns>
+            /// <remarks>
+            /// Here, three states for each of the for level sets are considered:
+            /// <list type="bullet">
+            ///   <item>positive far (FAR+)</item>
+            ///   <item>negative far (FAR-)</item>
+            ///   <item>positive near, negative near or cut</item>
+            /// </list>
+            /// This implies, that also for cells in the near region, memory is allocated for more than one
+            /// species.
+            /// </remarks>
+            public int GetNoOfSpecies(int j, out ReducedRegionCode ReducedRegionCode) {
+                ushort celJ = m_LevSetRegions[j];
+                return this.m_owner.GetNoOfSpeciesByRegionCode(celJ, out ReducedRegionCode);
+            }
+
+
+            /// <summary>
+            /// this function is the inverse to <see cref="GetSpeciesIndex(SpeciesId,int)"/>;
+            /// </summary>
+            /// <param name="_ReducedRegionCode">
+            /// the value returned by the 2nd parameter of <see cref="GetNoOfSpecies"/>;
+            /// </param>
+            /// <param name="SpeciesIndex"></param>
+            /// <returns></returns>
+            /// <remarks>
+            /// this function is the inverse to <see cref="GetSpeciesIndex(SpeciesId, int)"/>
+            /// </remarks>
+            /// <param name="jCell">
+            /// local cell index.
+            /// </param>
+            public SpeciesId GetSpeciesIdFromIndex(int jCell, int SpeciesIndex) {
+                ReducedRegionCode rrc;
+                int NoOfSpc = GetNoOfSpecies(jCell, out rrc);
+                if(SpeciesIndex >= NoOfSpc) {
+                    SpeciesId invalid;
+                    invalid.cntnt = int.MinValue;
+                    return invalid;
+                } else {
+                    return m_owner.GetSpeciesIdFromIndex(rrc, SpeciesIndex);
+                }
+            }
+
+
+            /// <summary>
+            /// Returns the index of species '<paramref name="_SpeciesId"/>' in the cell '<paramref name="jCell"/>'.
+            /// </summary>
+            /// <param name="jCell">
+            /// a local cell index
+            /// </param>
+            /// <param name="_SpeciesId">
+            /// species identification
+            /// </param>
+            public int GetSpeciesIndex(SpeciesId _SpeciesId, int jCell) {
+                ReducedRegionCode rrc;
+                int NoOfSpc = this.GetNoOfSpecies(jCell, out rrc);
+                return m_owner.GetSpeciesIndex(rrc, _SpeciesId);
+            }
+
+            /// <summary>
+            /// returns the (possible) number of species in cell <paramref name="j"/>;
+            /// </summary>
+            /// <param name="j">
+            /// local cell index;
+            /// </param>
+            /// <returns></returns>
+            public int GetNoOfSpecies(int j) {
+                ReducedRegionCode dummy;
+                int NoOf = GetNoOfSpecies(j, out dummy);
+                return NoOf;
             }
         }
     }

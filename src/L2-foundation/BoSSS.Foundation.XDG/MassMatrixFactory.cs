@@ -131,7 +131,7 @@ namespace BoSSS.Foundation.XDG {
                 alpha = new Dictionary<SpeciesId, IEnumerable<double>>();
                 double[] AllOne = new double[NoVar];
                 AllOne.SetAll(1.0);
-                foreach (var spc in this.m_LsTrk.SpeciesIdS) {
+                foreach (var spc in this.XDGSpaceMetrics.SpeciesList) {
                     alpha.Add(spc, AllOne);
                 }
             }

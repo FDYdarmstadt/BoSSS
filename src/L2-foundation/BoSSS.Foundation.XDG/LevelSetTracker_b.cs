@@ -30,10 +30,10 @@ namespace BoSSS.Foundation.XDG {
 
     partial class LevelSetTracker {
 
-        
+
 
         public Dictionary<XQuadFactoryHelper.MomentFittingVariants, XQuadFactoryHelper> m_QuadFactoryHelpers
-            = new Dictionary<XQuadFactoryHelper.MomentFittingVariants,XQuadFactoryHelper>();
+            = new Dictionary<XQuadFactoryHelper.MomentFittingVariants, XQuadFactoryHelper>();
 
         /*
         /// <summary>
@@ -54,7 +54,133 @@ namespace BoSSS.Foundation.XDG {
 
 
         public XDGSpaceMetrics GetXDGSpaceMetrics(XQuadFactoryHelper.MomentFittingVariants variant, int quadorder, int stackindex) {
+            if(!m_QuadFactoryHelpers.ContainsKey(variant)) {
+                m_QuadFactoryHelpers[variant] = new XQuadFactoryHelper(this, variant);
+            }
+
 
         }
+
+
+
+        /// <summary>
+        /// Base class for all types of histories,
+        /// i.e. scalar histories (constant in space)
+        /// and scalar- and vector-fields histories (not constant in space).
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        sealed public class HistoryStack<T> {
+
+            /// <summary>
+            /// ctor
+            /// </summary>
+            internal HistoryStack(T curr) {
+                if(!(curr.GetType().IsValueType) && (curr == null))
+                    throw new ArgumentNullException();
+
+                m_Current = curr;
+            }
+
+
+            /// <summary>
+            /// <see cref="PushCount"/>
+            /// </summary>
+            protected int m_PushCount = 0;
+
+            /// <summary>
+            /// counts every call to <see cref="Push"/>
+            /// </summary>
+            public int PushCount {
+                get {
+                    return m_PushCount;
+                }
+            }
+
+            /// <summary>
+            /// either a double for time-dependent scalars, which are constant in space (e.g. ambient pressure in Low-Mach solver)
+            /// or a <see cref="BoSSS.Foundation.DGField"/> or a <see cref="BoSSS.Foundation.VectorField{T}"/>.
+            /// </summary>
+            protected T m_Current;
+
+            /// <summary>
+            /// see <see cref="HistoryLength"/>
+            /// </summary>
+            protected int m_HistoryLength = 0;
+
+            /// <summary>
+            /// the number of Timesteps that is stored <em>in addition</em> to the current one
+            /// </summary>
+            public int HistoryLength {
+                get { return m_HistoryLength; }
+            }
+
+            /// <summary>
+            /// returns the minimum of the two numbers:
+            /// <list type="bullet">
+            ///   <item>number of <see cref="Push"/> - operations carried out on this object</item>
+            ///   <item><see cref="m_HistoryLength"/></item>
+            /// </list>
+            /// If this value is, e.g. 2, this means that timesteps 1, 0, -1 are available;
+            /// </summary>
+            /// <returns></returns>
+            public int GetPopulatedLength() {
+                return History.Count;
+            }
+
+            /// <summary>
+            /// container for previous values: entries are either of type <see cref="DGField"/> or <see cref="VectorField{t}"/>
+            /// </summary>
+            protected ArrayList History = new ArrayList();
+
+            /// <summary>
+            /// pushes a new variable set onto the top of the stack
+            /// </summary>
+            /// <remarks>
+            /// An example of the Push-operation, for <see cref="HistoryLength"/>==3:
+            /// <code>
+            /// 
+            ///    Timestep Index ->  1  0 -1 -2 
+            ///   -----------------------------------
+            ///    Before Push(..): | a  b  c  d 
+            ///                     | 
+            ///    After Push(..):  | a  a  b  c
+            /// </code>
+            /// Because of this behavior, any difference norm (sometimes incorrectly called 'residual')
+            /// should be computed prior to the <see cref="Push"/>-operation.
+            /// </remarks>
+            abstract public void Push();
+
+
+
+            /// <summary>
+            /// Gets access to previous (and actual) timesteps.
+            /// </summary>
+            /// <param name="i">
+            /// Either 1 (equal to <see cref="Current"/>) or a non-positive value:
+            /// the first item in the stack is 0, the second item is -1, etc..
+            /// </param>
+            public T this[int i] {
+                get {
+                    if(i > 1)
+                        throw new IndexOutOfRangeException();
+
+                    if(i == 1)
+                        return (T)m_Current;
+                    else
+                        return (T)History[-i];
+                }
+            }
+
+            /// <summary>
+            /// The top item of the stack.
+            /// </summary>
+            public T Current {
+                get {
+                    return this[1];
+                }
+            }
+
+        }
+
     }
 }

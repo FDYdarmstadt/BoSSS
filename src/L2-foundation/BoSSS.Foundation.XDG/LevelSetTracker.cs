@@ -68,8 +68,11 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="__NearRegionWidth">
         /// width of near region, in number of cells
         /// </param>
-        public LevelSetTracker(GridData Context, int __NearRegionWidth, string[] _SpeciesTable, ILevelSet levSet1) {
-            ConstructorCommon(Context, __NearRegionWidth, _SpeciesTable, levSet1);
+        /// <param name="StackLen">
+        /// Number of items stored in the level-set stack.
+        /// </param>
+        public LevelSetTracker(GridData Context, int __NearRegionWidth, string[] _SpeciesTable, int StackLen, ILevelSet levSet1) {
+            ConstructorCommon(Context, __NearRegionWidth, _SpeciesTable, StackLen, levSet1);
         }
 
         /// <summary>
@@ -83,8 +86,11 @@ namespace BoSSS.Foundation.XDG {
         /// </param>
         /// <param name="BruteForceDivisions"></param>
         /// <param name="BruteForceOrder"></param>
-        public LevelSetTracker(GridData Context, int __NearRegionWidth, int BruteForceDivisions, int BruteForceOrder, string[] _SpeciesTable, ILevelSet levSet1) {
-            ConstructorCommon(Context, __NearRegionWidth, BruteForceOrder, BruteForceDivisions, _SpeciesTable, levSet1);
+        /// <param name="StackLen">
+        /// Number of items stored in the level-set stack.
+        /// </param>
+        public LevelSetTracker(GridData Context, int __NearRegionWidth, int BruteForceDivisions, int BruteForceOrder, string[] _SpeciesTable, int StackLen, ILevelSet levSet1) {
+            ConstructorCommon(Context, __NearRegionWidth, BruteForceOrder, BruteForceDivisions, _SpeciesTable, StackLen, levSet1);
         }
 
         /// <summary>
@@ -97,7 +103,10 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="__NearRegionWidth">
         /// width of near region, in number of cells
         /// </param>
-        public LevelSetTracker(GridData Context, int __NearRegionWidth, string[,] _SpeciesTable, ILevelSet levSet1, ILevelSet levSet2) {
+        /// <param name="StackLen">
+        /// Number of items stored in the level-set stack.
+        /// </param>
+        public LevelSetTracker(GridData Context, int __NearRegionWidth, string[,] _SpeciesTable, int StackLen, ILevelSet levSet1, ILevelSet levSet2) {
             ConstructorCommon(Context, __NearRegionWidth, _SpeciesTable, levSet1, levSet2);
         }
 
@@ -112,7 +121,10 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="__NearRegionWidth">
         /// width of near region, in number of cells
         /// </param>
-        public LevelSetTracker(GridData Context, int __NearRegionWidth, string[,,] _SpeciesTable, ILevelSet levSet1, ILevelSet levSet2, ILevelSet levSet3) {
+        /// <param name="StackLen">
+        /// Number of items stored in the level-set stack.
+        /// </param>
+        public LevelSetTracker(GridData Context, int __NearRegionWidth, string[,,] _SpeciesTable, int StackLen, ILevelSet levSet1, ILevelSet levSet2, ILevelSet levSet3) {
             ConstructorCommon(Context, __NearRegionWidth, SpeciesTable, levSet1, levSet2, levSet3);
         }
 
@@ -128,7 +140,11 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="__NearRegionWidth">
         /// width of near region, in number of cells
         /// </param>
-        public LevelSetTracker(GridData Context, int __NearRegionWidth, string[,,,] _SpeciesTable, ILevelSet levSet1, ILevelSet levSet2, ILevelSet levSet3, ILevelSet levSet4) {
+        /// <param name="StackLen">
+        /// Number of items stored in the level-set stack.
+        /// </param>
+        /// 
+        public LevelSetTracker(GridData Context, int __NearRegionWidth, string[,,,] _SpeciesTable, int StackLen, ILevelSet levSet1, ILevelSet levSet2, ILevelSet levSet3, ILevelSet levSet4) {
             ConstructorCommon(Context, __NearRegionWidth, _SpeciesTable, levSet1, levSet2, levSet3, levSet4);
         }
 
@@ -140,29 +156,29 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="__NearRegionWidth"></param>
         /// <param name="SpeciesTable"></param>
         /// <param name="levSets"></param>
-        private LevelSetTracker(GridData Context, int __NearRegionWidth, Array SpeciesTable, params ILevelSet[] levSets) {
-            ConstructorCommon(Context, __NearRegionWidth, 5, 2, SpeciesTable, levSets);
+        /// <param name="StackLen"></param>
+        private LevelSetTracker(GridData Context, int __NearRegionWidth, Array SpeciesTable,, int StackLen, params ILevelSet[] levSets) {
+            ConstructorCommon(Context, __NearRegionWidth, 5, 2, SpeciesTable, StackLen, levSets);
         }
 
         /// <summary>
         /// Implementation of the constructor with default values for the brute
         /// force quadrature (see <see cref="SetBruteForceQuadratureRules"/>).
         /// </summary>
-        /// <param name="Context"></param>
-        /// <param name="__NearRegionWidth"></param>
-        /// <param name="SpeciesTable"></param>
-        /// <param name="levSets"></param>
-        private void ConstructorCommon(GridData Context, int __NearRegionWidth, Array SpeciesTable, params ILevelSet[] levSets) {
-            ConstructorCommon(Context, __NearRegionWidth, 5, 2, SpeciesTable, levSets);
+        private void ConstructorCommon(GridData Context, int __NearRegionWidth, Array SpeciesTable, int StackLen, params ILevelSet[] levSets) {
+            ConstructorCommon(Context, __NearRegionWidth, 5, 2, SpeciesTable, StackLen, levSets);
         }
 
         /// <summary>
         /// Implementation of the constructor;
         /// </summary>
-        private void ConstructorCommon(GridData griData, int __NearRegionWidth, int BruteForceDivisions, int BruteForceOrder, Array SpeciesTable, params ILevelSet[] levSets) {
+        private void ConstructorCommon(GridData griData, int __NearRegionWidth, int BruteForceDivisions, int BruteForceOrder, Array SpeciesTable, int StackLen, params ILevelSet[] levSets) {
             // check args, init members
             // ========================
-            m_LevelSets = levSets;
+            m_LevelSets = new HistoryStack<ILevelSet>[levSets.Length];
+            for(int iLs = 0; iLs < levSets.Length; iLs++) {
+                m_LevelSets[iLs] = new HistoryStack<ILevelSet>(levSets[iLs]);
+            }
             m_gDat = griData;
             if (__NearRegionWidth < 0 || __NearRegionWidth > 6)
                 throw new ArgumentException("near region width must be between 0 (including) and 7 (excluding)", "__NearRegionWidth");
@@ -507,11 +523,12 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Information about the current level set sign in each cell.
         /// </summary>
-        public LevelSetRegionsInfo _Regions {
+        public HistoryStack<LevelSetRegionsInfo> Regions {
             get;
             private set;
         }
 
+        /*
         /// <summary>
         /// Information about the previous level set sign in each cell.
         /// </summary>
@@ -519,6 +536,7 @@ namespace BoSSS.Foundation.XDG {
             get;
             private set;
         }
+        */
 
         /// <summary>
         /// 
@@ -642,11 +660,13 @@ namespace BoSSS.Foundation.XDG {
 
 
         /// <summary>
-        /// the level sets
+        /// The level sets;
+        /// - 1st index: index of level-set
+        /// - 2nd index: index into stack
         /// </summary>
-        public IList<ILevelSet> LevelSets {
+        public IList<HistoryStack<ILevelSet>> LevelSets {
             get {
-                return (IList<ILevelSet>)m_LevelSets.Clone();
+                return m_LevelSets.ToList();
             }
         }
 
@@ -661,61 +681,11 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        ILevelSet[] m_LevelSets;
+        HistoryStack<ILevelSet>[] m_LevelSets;
 
-        LevSetValueCache[] m_LevelSetValc;
-
-        LevelSetGradientCache[] m_LevelSetGradientsCache;
-
-        LevelSetNormalsCache[] m_LevelSetNormalsCache;
-
-        LevelSetReferenceGradientCache[] m_LevelSetReferenceGradientsCache;
-
-        LevelSetReferenceNormalsCache[] m_LevelSetReferenceNormalsCache;
-
-        LevelSetReferenceCurvatureCache[] m_LevelSetReferenceCurvatureCache;
-
-        LevelSetReferenceHessianCache[] m_LevelSetReferenceHessianCache;
-
-        /// <summary>
-        /// returns the (possible) number of species in cell <paramref name="j"/>;
-        /// </summary>
-        /// <param name="j">
-        /// local cell index;
-        /// </param>
-        /// <param name="ReducedRegionCode">
-        /// on exit, the reduced region code for cell <paramref name="j"/>
-        /// in an 3-adic representation; This number 
-        /// is later on required as an input for <see cref="GetSpeciesIndex(SpeciesId,int)"/>;
-        /// </param>
-        /// <returns></returns>
-        /// <remarks>
-        /// Here, three states for each of the for level sets are considered:
-        /// <list type="bullet">
-        ///   <item>positive far (FAR+)</item>
-        ///   <item>negative far (FAR-)</item>
-        ///   <item>positive near, negative near or cut</item>
-        /// </list>
-        /// This implies, that also for cells in the near region, memory is allocated for more than one
-        /// species.
-        /// </remarks>
-        public int GetNoOfSpecies(int j, out ReducedRegionCode ReducedRegionCode) {
-            ushort celJ = _Regions.m_LevSetRegions[j];
-            return GetNoOfSpeciesByRegionCode(celJ, out ReducedRegionCode);
-        }
-
-        /// <summary>
-        /// returns the (possible) number of species in cell <paramref name="j"/>;
-        /// </summary>
-        /// <param name="j">
-        /// local cell index;
-        /// </param>
-        /// <returns></returns>
-        public int GetNoOfSpecies(int j) {
-            ReducedRegionCode dummy;
-            int NoOf = GetNoOfSpecies(j, out dummy);
-            return NoOf;
-        }
+        
+        
+        
 
         /// <summary>
         /// returns the (possible) number of species in 
@@ -752,7 +722,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         /// <remarks>
         /// This array, which contains exactly 3<sup>4</sup> = 81 entries, stores the number of
-        /// speciec for each possible combination of level sets; <br/>
+        /// species for each possible combination of level sets; <br/>
         /// For each level set, in each cell, we distinct between three different states:
         /// <list type="bullet">
         ///   <item>the cell if in the positive FAR region: <i>distance</i> == 7, i.e. the <i>code</i> is 0xf</item>
@@ -824,37 +794,7 @@ namespace BoSSS.Foundation.XDG {
             m_NoOfSpecies[ReducedRegionCode] = NumSpecies;
         }
 
-        ///// <summary>
-        ///// Encodes the signs of the level set values into a byte code
-        ///// </summary>
-        ///// <param name="levelSetValues">
-        ///// The values of the level sets at a given point
-        ///// </param>
-        ///// <returns>
-        ///// A byte code where the n-th bit (starting from the least significant
-        ///// bit) is 0 if <paramref name="levelSetValues"/>[n] is less than zero
-        ///// and 1 otherwise.
-        ///// </returns>
-        //public static int ComputeLevelSetBytecode(params double[] levelSetValues) {
-        //    if (levelSetValues.Length > 4) {
-        //        throw new ArgumentException("Currently, a maximum of 4 level sets is supported", "levelSetValues");
-        //    }
-
-        //    int result = 0;
-        //    if (levelSetValues.Length > 0 && levelSetValues[0] >= 0) {
-        //        result += 1;
-        //    }
-        //    if (levelSetValues.Length > 1 && levelSetValues[1] >= 0) {
-        //        result += 2;
-        //    }
-        //    if (levelSetValues.Length > 2 && levelSetValues[2] >= 0) {
-        //        result += 4;
-        //    }
-        //    if (levelSetValues.Length > 3 && levelSetValues[3] >= 0) {
-        //        result += 8;
-        //    }
-        //    return result;
-        //}
+        
 
         /// <summary>
         /// the index of some species, with level set signs <paramref name="LevelSetSignBytecode"/>
@@ -887,34 +827,7 @@ namespace BoSSS.Foundation.XDG {
             ReducedRegionCode = ReducedRegionCode | SpeciesIndex; // equal to ind += LevelSetSignBytecode, if  0 <= LevelSetSignBytecode < 16
             return m_SpeciesIndex2Id[ReducedRegionCode];
         }
-
-        /// <summary>
-        /// this function is the inverse to <see cref="GetSpeciesIndex(SpeciesId,int)"/>;
-        /// </summary>
-        /// <param name="_ReducedRegionCode">
-        /// the value returned by the 2nd parameter of <see cref="GetNoOfSpecies"/>;
-        /// </param>
-        /// <param name="SpeciesIndex"></param>
-        /// <returns></returns>
-        /// <remarks>
-        /// this function is the inverse to <see cref="GetSpeciesIndex(SpeciesId, int)"/>
-        /// </remarks>
-        /// <param name="jCell">
-        /// local cell index.
-        /// </param>
-        public SpeciesId GetSpeciesIdFromIndex(int jCell, int SpeciesIndex) {
-            ReducedRegionCode rrc;
-            int NoOfSpc = GetNoOfSpecies(jCell, out rrc);
-            if (SpeciesIndex >= NoOfSpc) {
-                SpeciesId invalid;
-                invalid.cntnt = int.MinValue;
-                return invalid;
-            } else {
-                return GetSpeciesIdFromIndex(rrc, SpeciesIndex);
-            }
-        }
-
-
+        
         /// <summary>
         /// converts a species id (<paramref name="_SpeciesId"/>) into a species index;
         /// Note that the sorting of species is not constant (over the grid), so the return value
@@ -939,21 +852,7 @@ namespace BoSSS.Foundation.XDG {
             return m_SpeciesId2Index[__ReducedRegionCode];
         }
 
-        /// <summary>
-        /// Returns the index of species '<paramref name="_SpeciesId"/>' in the cell '<paramref name="jCell"/>'.
-        /// </summary>
-        /// <param name="jCell">
-        /// a local cell index
-        /// </param>
-        /// <param name="_SpeciesId">
-        /// species identification
-        /// </param>
-        public int GetSpeciesIndex(SpeciesId _SpeciesId, int jCell) {
-            ReducedRegionCode rrc;
-            int NoOfSpc = this.GetNoOfSpecies(jCell, out rrc);
-            return GetSpeciesIndex(rrc, _SpeciesId);
-        }
-
+        
 
         private void SetSpeciesIndex(int ind, LevelSetSignCode LevelSetSignBytecode, int SpeciesIndex, SpeciesId speciesId, int NoOfSpecies) {
             int ind2 = ind << 4;
@@ -965,14 +864,12 @@ namespace BoSSS.Foundation.XDG {
             m_SpeciesId2Index[ind * 16 + speciesId.cntnt - ___SpeciesIDOffest] = SpeciesIndex;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="levSet"></param>
-        /// <returns></returns>
-        public int GetLevelSetIndex(ILevelSet levSet) {
-            return Array.IndexOf<ILevelSet>(m_LevelSets, levSet);
-        }
+        ///// <summary>
+        ///// 
+        ///// </summary>
+        //public int GetLevelSetIndex(ILevelSet levSet) {
+        //    return Array.IndexOf<ILevelSet>(m_LevelSets, levSet);
+        //}
 
         /// <summary>
         /// 
@@ -1017,658 +914,7 @@ namespace BoSSS.Foundation.XDG {
             code = (ushort)((code & ~msk) | c);
         }
         
-        /// <summary>
-        /// 
-        /// </summary>
-        class LevSetValueCache : Caching.CacheLogic_CNs {
-
-            internal LevSetValueCache(ILevelSet levSet, GridData gridData)
-                : base(gridData) {
-                m_LevSet = levSet;
-            }
-
-            ILevelSet m_LevSet;
-
-            /// <summary>
-            /// 
-            /// </summary>
-            protected override void ComputeValues(NodeSet N, int j0, int Len, MultidimensionalArray output) {
-                m_LevSet.Evaluate(j0, Len, N, output);
-            }
-
-            /// <summary>
-            /// 
-            /// </summary>
-            protected override MultidimensionalArray Allocate(int i0, int Len, NodeSet NS) {
-                return MultidimensionalArray.Create(Len, NS.NoOfNodes);
-            }
-        }
-
-        /// <summary>
-        /// cached evaluation of the level set fields.
-        /// </summary>
-        /// <param name="levSetInd"></param>
-        /// <param name="NS"></param>
-        /// <param name="j0">local index of first cell to evaluate</param>
-        /// <param name="Len">number of cells to evaluate</param>
-        /// <returns>
-        /// values of the level set field at the nodes of the specified node set.
-        /// </returns>
-        public MultidimensionalArray GetLevSetValues(int levSetInd, NodeSet NS, int j0, int Len) {
-            return m_LevelSetValc[levSetInd].GetValue_Cell(NS, j0, Len);
-        }
-
-        /// <summary>
-        /// Caches the gradient of a level set
-        /// </summary>
-        private class LevelSetGradientCache : Caching.CacheLogic_CNs {
-
-            /// <summary>
-            /// The level set in question
-            /// </summary>
-            private ILevelSet levelSet;
-
-            /// <summary>
-            /// Constructs a value cache for the evaluation of the gradient of
-            /// the given level set.
-            /// </summary>
-            /// <param name="levelSet">
-            /// The level set in question
-            /// </param>
-            /// <param name="nsc">
-            /// The node set controller holding the evaluation nodes
-            /// </param>
-            internal LevelSetGradientCache(ILevelSet levelSet, GridData gridData)
-                : base(gridData) //
-            {
-                this.levelSet = levelSet;
-            }
-
-            /// <summary>
-            /// <see cref="ILevelSet.EvaluateGradient"/>
-            /// </summary>
-            /// <param name="NodeSetIndex">
-            /// <see cref="ILevelSet.EvaluateGradient"/>
-            /// </param>
-            /// <param name="j0">
-            /// <see cref="ILevelSet.EvaluateGradient"/>
-            /// </param>
-            /// <param name="Len">
-            /// <see cref="ILevelSet.EvaluateGradient"/>
-            /// </param>
-            /// <param name="output">
-            /// <see cref="ILevelSet.EvaluateGradient"/>
-            /// </param>
-            protected override void ComputeValues(NodeSet N, int j0, int Len, MultidimensionalArray output) {
-                levelSet.EvaluateGradient(j0, Len, N, output);
-            }
-
-            /// <summary>
-            /// <see cref="NodeSetController.ByCellValueCache{MultidimensionalArray}.Allocate"/>
-            /// </summary>
-            protected override MultidimensionalArray Allocate(int i0, int Len, NodeSet N) {
-                return MultidimensionalArray.Create(Len, N.NoOfNodes, N.SpatialDimension);
-            }
-
-
-        }
-
-        /// <summary>
-        /// Calculates the gradients of the level set in every affected cell
-        /// and every point contained the node set identified by
-        /// <paramref name="NodeSetIndex"/>. The layout of the resulting array
-        /// is equivalent to <see cref="ILevelSet.EvaluateGradient"/>.
-        /// </summary>
-        /// <param name="levSetInd">The index of the level set</param>
-        /// <param name="NS">
-        /// Nodes to evaluate at.
-        /// </param>
-        /// <param name="j0">
-        /// The first cell to be evaluated
-        /// </param>
-        /// <param name="Len">
-        /// The number of cell to be evaluated
-        /// </param>
-        /// <returns></returns>
-        public MultidimensionalArray GetLevelSetGradients(int levSetInd, NodeSet NS, int j0, int Len) {
-            return m_LevelSetGradientsCache[levSetInd].GetValue_Cell(NS, j0, Len);
-        }
-
-        private class LevelSetReferenceGradientCache : Caching.CacheLogic_CNs {
-
-            private ILevelSet levelSet;
-
-            private LevelSetTracker owner;
-
-            internal LevelSetReferenceGradientCache(ILevelSet levelSet, LevelSetTracker owner)
-                : base(owner.GridDat) //
-            {
-                this.levelSet = levelSet;
-                this.owner = owner;
-            }
-
-            protected override void ComputeValues(NodeSet N, int j0, int Len, MultidimensionalArray output) {
-                LevelSet levelSetField = levelSet as LevelSet;
-                if (levelSetField == null) {
-                    ComputeValuesNonField(levelSet, N, j0, Len, output);
-                } else {
-                    ComputeValuesField(levelSetField, N, j0, Len, output);
-                }
-            }
-
-            protected override MultidimensionalArray Allocate(int i0, int Len, NodeSet NS) {
-                int D = base.GridData.SpatialDimension;
-                return MultidimensionalArray.Create(Len, NS.NoOfNodes, D);
-            }
-
-            private void ComputeValuesField(LevelSet levelSet, NodeSet NS, int j0, int Len, MultidimensionalArray output) {
-                int D = levelSet.Basis.GridDat.SpatialDimension;
-                MultidimensionalArray grad = levelSet.Basis.EvaluateGradient(NS);
-                int noOfNodes = grad.GetLength(0);
-
-                unsafe
-                {
-                    fixed (double* pGrad = &grad.Storage[0], pRes = &output.Storage[0])
-                    {
-                        double* pResCur = pRes;
-                        double* pGradCur = pGrad;
-                        for (int i = 0; i < Len; i++) {
-                            for (int j = 0; j < noOfNodes; j++) {
-                                //double norm = 0.0;
-                                for (int d = 0; d < D; d++) {
-                                    for (int k = 0; k < levelSet.Basis.MinimalLength; k++) {
-                                        *(pResCur + d) += levelSet.Coordinates[i + j0, k] * *(pGradCur + grad.Index(j, k, d));
-                                    }
-                                }
-
-                                pResCur += D;
-                            }
-                        }
-                    }
-                }
-
-                //// Reference implementation
-                //for (int i = 0; i < Len; i++) {
-                //    for (int j = 0; j < noOfNodes; j++) {
-                //        for (int d = 0; d < D; d++) {
-                //            for (int k = 0; k < levelSetField.Basis.MinimalLength; k++) {
-                //                output[i, j, d] += levelSetField.Coordinates[i + j0, k] * grad[j, k, d];
-                //            }
-                //        }
-                //    }
-                //}
-            }
-
-            private void ComputeValuesNonField(ILevelSet levelSet, NodeSet NS, int j0, int Len, MultidimensionalArray output) {
-                int noOfNodes = NS.NoOfNodes;
-                int D = NS.SpatialDimension;
-                var R = owner.GridDat.Cells.Transformation;
-                var JacDet = owner.GridDat.ChefBasis.Scaling;
-                var Cells = owner.GridDat.Cells;
-
-                MultidimensionalArray physGradient = owner.GetLevelSetGradients(0, NS, j0, Len);
-                for (int i = 0; i < Len; i++) {
-                    int jCell = j0 + i;
-                    if (Cells.IsCellAffineLinear(jCell)) {
-                        double det = JacDet[j0 + i];
-
-                        for (int j = 0; j < noOfNodes; j++) {
-                            for (int d = 0; d < D; d++) {
-                                double r = 0.0;
-                                for (int dd = 0; dd < D; dd++) {
-                                    r += R[i + j0, dd, d] * physGradient[i, j, dd];
-                                }
-
-                                output[i, j, d] = r / det;
-                            }
-                        }
-                    } else {
-                        throw new NotImplementedException("todo: nonlinear cell");
-                    }
-                }
-            }
-
-
-
-        }
-
-        public MultidimensionalArray GetLevelSetReferenceGradients(int levSetInd, NodeSet NS, int j0, int Len) {
-            return m_LevelSetReferenceGradientsCache[levSetInd].GetValue_Cell(NS, j0, Len);
-        }
-
-        private class LevelSetNormalsCache : Caching.CacheLogic_CNs {
-
-            private LevelSetTracker owner;
-
-            private int levelSetIndex;
-
-            public LevelSetNormalsCache(LevelSetTracker owner, int levelSetIndex)
-                : base(owner.GridDat) //
-            {
-                this.owner = owner;
-                this.levelSetIndex = levelSetIndex;
-            }
-
-            protected override void ComputeValues(NodeSet NS, int j0, int Len, MultidimensionalArray output) {
-                MultidimensionalArray gradient =
-                    owner.m_LevelSetGradientsCache[levelSetIndex].GetValue_Cell(NS, j0, Len);
-                //gradient.Storage.CopyTo(output.Storage, 0);
-                Debug.Assert(gradient.Dimension == 3 && output.Dimension == 3);
-                Debug.Assert(gradient.GetLength(1) == output.GetLength(1));
-                Debug.Assert(gradient.GetLength(2) == output.GetLength(2));
-                Debug.Assert(output.GetLength(0) == Len);
-                output.Set(gradient.ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { Len - 1, gradient.GetLength(1) - 1, gradient.GetLength(2) - 1 }));
-
-                int N = gradient.GetLength(1);
-                int D = gradient.GetLength(2);
-
-                for (int i = 0; i < Len; i++) {
-                    for (int j = 0; j < gradient.GetLength(1); j++) {
-                        double normOfGradient = 0.0;
-                        for (int k = 0; k < D; k++) {
-                            normOfGradient += gradient[i, j, k] * gradient[i, j, k];
-                        }
-
-                        // Avoid NaN. Normal is zero in this case
-                        if (normOfGradient == 0.0) {
-                            continue;
-                        }
-
-                        double OOnormOfGradient = 1.0 / Math.Sqrt(normOfGradient);
-
-                        for (int k = 0; k < D; k++) {
-                            output[i, j, k] *= OOnormOfGradient;
-                        }
-                    }
-                }
-            }
-
-            protected override MultidimensionalArray Allocate(int i0, int Len, NodeSet NS) {
-                return MultidimensionalArray.Create(Len, NS.NoOfNodes, NS.SpatialDimension);
-            }
-        }
-
-        /// <summary>
-        /// Variant of <see cref="GetLevelSetGradients"/> which normalizes the
-        /// gradients before returning them
-        /// </summary>
-        ///  <param name="levSetInd">The index of the level set</param>
-        /// <param name="NS">
-        /// Nodes to evaluate at.
-        /// </param>
-        ///  /// <param name="j0">
-        /// The first cell to be evaluated
-        /// </param>
-        /// <param name="Len">
-        /// The number of cell to be evaluated
-        /// </param>
-        public MultidimensionalArray GetLevelSetNormals(int levSetInd, NodeSet NS, int j0, int Len) {
-            return m_LevelSetNormalsCache[levSetInd].GetValue_Cell(NS, j0, Len);
-        }
-
-        private class LevelSetReferenceNormalsCache : Caching.CacheLogic_CNs {
-
-            private LevelSetTracker owner;
-
-            private int levelSetIndex;
-
-            public LevelSetReferenceNormalsCache(LevelSetTracker owner, int levelSetIndex)
-                : base(owner.GridDat) //
-            {
-                this.owner = owner;
-                this.levelSetIndex = levelSetIndex;
-            }
-
-            protected override void ComputeValues(NodeSet NS, int j0, int Len, MultidimensionalArray output) {
-                MultidimensionalArray gradient =
-                    owner.m_LevelSetReferenceGradientsCache[levelSetIndex].GetValue_Cell(NS, j0, Len);
-                gradient.Storage.CopyTo(output.Storage, 0);
-
-                for (int i = 0; i < gradient.GetLength(0); i++) {
-                    for (int j = 0; j < gradient.GetLength(1); j++) {
-                        double normOfGradient = 0.0;
-                        for (int d = 0; d < gradient.GetLength(2); d++) {
-                            normOfGradient += gradient[i, j, d] * gradient[i, j, d];
-                        }
-
-                        // Avoid NaN. Normal is zero in this case
-                        if (normOfGradient == 0.0) {
-                            continue;
-                        }
-
-                        normOfGradient = Math.Sqrt(normOfGradient);
-
-                        for (int d = 0; d < gradient.GetLength(2); d++) {
-                            output[i, j, d] = gradient[i, j, d] / normOfGradient;
-                        }
-                    }
-                }
-            }
-
-            protected override MultidimensionalArray Allocate(int i0, int Len, NodeSet NS) {
-                return MultidimensionalArray.Create(Len, NS.NoOfNodes, NS.SpatialDimension);
-            }
-        }
-
-        public MultidimensionalArray GetLevelSetReferenceNormals(int levSetInd, NodeSet NS, int j0, int Len) {
-            return m_LevelSetReferenceNormalsCache[levSetInd].GetValue_Cell(NS, j0, Len);
-        }
-
-        public MultidimensionalArray GetLevelSetNormalReferenceToPhysicalMetrics(int levSetInd, NodeSet NS, int j0, int Len) {
-            MultidimensionalArray physGradients = GetLevelSetGradients(levSetInd, NS, j0, Len);
-            MultidimensionalArray refGradients = GetLevelSetReferenceGradients(levSetInd, NS, j0, Len);
-            int noOfNodes = physGradients.GetLength(1);
-            int D = GridDat.Grid.SpatialDimension;
-            var OneOverSqrt_AbsJacobiDet = GridDat.ChefBasis.Scaling;
-            MultidimensionalArray result = MultidimensionalArray.Create(Len, noOfNodes);
-
-            for (int i = 0; i < Len; i++) {
-                int jCell = j0 + i;
-
-                if (GridDat.Cells.IsCellAffineLinear(jCell)) {
-                    double sc = OneOverSqrt_AbsJacobiDet[jCell];
-                    for (int j = 0; j < noOfNodes; j++) {
-                        double normPhys = 0.0;
-                        double normRef = 0.0;
-
-                        for (int d = 0; d < D; d++) {
-                            normPhys += physGradients[i, j, d] * physGradients[i, j, d];
-                            normRef += refGradients[i, j, d] * refGradients[i, j, d];
-                        }
-
-                        result[i, j] = Math.Sqrt(normRef / normPhys) * sc;
-                    }
-                } else {
-
-                    throw new NotImplementedException("nonlinear cell: todo");
-                }
-            }
-
-
-            //{
-            //    double erracc = 0;
-
-            //    var NormalsRef = this.GetLevelSetReferenceNormals(levSetInd, NodeSetIndex, j0, Len);
-            //    var NoramlsPhys = this.GetLevelSetNormals(levSetInd, NodeSetIndex, j0, Len);
-
-            //    MultidimensionalArray Jacobi = MultidimensionalArray.Create(D, D);
-            //    double[] v1 = new double[D];
-
-
-            //    for (int i = 0; i < Len; i++) {
-            //        int jCell = i + j0;
-            //        for (int d1 = 0; d1 < D; d1++) {
-            //            for (int d2 = 0; d2 < D; d2++) {
-            //                Jacobi[d1, d2] = Ctx.GridDat.Transformation[jCell, d1 + D*d2];
-            //            }
-            //        }
-
-            //        for (int iNode = 0; iNode < noOfNodes; iNode++) {
-
-            //            for (int d1 = 0; d1 < D; d1++) {
-            //                double acc = 0;
-            //                for (int d2 = 0; d2 < D; d2++) {
-            //                    acc += Jacobi[d1, d2]*NormalsRef[i, iNode, d2];
-            //                }
-            //                v1[d1] = acc;
-            //            }
-
-            //            double metrix = 0;
-            //            for (int d = 0; d < D; d++)
-            //                metrix += v1[d]*NoramlsPhys[i, iNode, d];
-
-            //            double anderemetrix = result[i, iNode];
-
-            //            erracc += (metrix - anderemetrix).Pow2();
-            //        }
-            //    }
-
-            //    Console.WriteLine("metrix test: " + erracc);
-            //}
-
-
-
-
-            return result;
-        }
-
-        ///// <summary>
-        ///// 
-        ///// </summary>
-        //class LevelSetBitmaskCache : NodeSetController.ByCellValueCache<byte[]> {
-
-
-        //    internal LevelSetBitmaskCache(LevelSetTracker owner)
-        //        : base(owner.m_context.NSC) {
-        //        m_owner = owner;
-        //    }
-
-        //    LevelSetTracker m_owner;
-
-
-        //    /// <summary>
-        //    /// 
-        //    /// </summary>
-        //    /// <param name="NodeSetIndex"></param>
-        //    /// <param name="j0"></param>
-        //    /// <param name="Len"></param>
-        //    /// <param name="output"></param>
-        //    protected override void ComputeValues(int NodeSetIndex, int j0, int Len, byte[] output) {
-        //        Array.Clear(output, 0, output.Length);
-
-        //        for (int i = 0; i < m_owner.m_LevelSets.Length; i++) {
-        //            MultidimensionalArray LevSetVal = m_owner.m_LevelSetValc[i].GetValue(NodeSetIndex, j0, Len);
-
-        //            int NoOfNodes = LevSetVal.GetLength(1);
-        //            byte PosMask = m_owner.LevelSetPositiveMask(i);
-        //            byte NegMask = m_owner.LevelSetPositiveMask(i);
-
-        //            for (int j = 0; j < Len; j++) {
-        //                for (int k = 0; k < NoOfNodes; k++) {
-        //                    double v = LevSetVal[j, k];
-
-        //                    if (v <= 0) output[j] |= NegMask;
-        //                    if (v >= 0) output[j] |= PosMask;
-        //                }
-        //            }
-
-        //        }
-        //    }
-
-        //    /// <summary>
-        //    /// 
-        //    /// </summary>
-        //    /// <param name="Len"></param>
-        //    /// <param name="NoOfNodes"></param>
-        //    /// <param name="D"></param>
-        //    /// <returns></returns>
-        //    protected override byte[] Allocate(int Len, int NoOfNodes, int D) {
-        //        return new byte[Len];
-        //    }
-        //}
-
-        ///// <summary>
-        ///// used by <see cref="GetLevSetBitMask"/>;
-        ///// </summary>
-        //LevelSetBitmaskCache m_LevelSetBitmaskCache;
-
-        ///// <summary>
-        ///// 
-        ///// </summary>
-        ///// <param name="NodeSetIndex"></param>
-        ///// <param name="j0"></param>
-        ///// <param name="Len"></param>
-        ///// <returns>
-        ///// A bitmask that indicates wether some cell is in the positive domain, 
-        ///// in the negative domain, or cut by a level set (see remaks).
-        ///// </returns>
-        ///// <remarks>
-        ///// With respect to some level set, there are three possible states for some cell:
-        ///// <list type="bullet">
-        /////   <item>(A): the cell lies completely in the positive domain of the level set, or...</item>
-        /////   <item>(B): the cell lies completely within the negative domain of the level set, or...</item>
-        /////   <item>(C): the cell is cut by the level set.</item>
-        ///// </list>
-        ///// These states, for each cell <i>j</i> and each  
-        ///// level set <i>G</i> in <see cref="LevelSets"/>, are identified by bitmasks: Therefore, let be...
-        ///// <list type="bullet">
-        /////   <item>
-        /////     <i>Gp</i> the positive set bitmask, i.e. <i>Gp</i>=<see cref="LevelSetPositiveMask"/>(<i>G</i>) and 
-        /////   </item>
-        /////   <item>
-        /////     <i>Gn</i> the negative set bitmask, i.e. <i>Gn</i>=<see cref="LevelSetNegativeMask"/>(<i>G</i>).
-        /////   </item>
-        ///// </list>
-        ///// Then, cases (A), (B) and (C) are encoded in the following way:
-        ///// <list type="bullet">
-        /////   <item>
-        /////   (A) is the case if, and only if, (<i>Gp</i> BAND <code>LevelSetBitMasks</code>[<i>j</i>]) is true
-        /////   and (<i>Gn</i> BAND <code>LevelSetBitMasks</code>[<i>j</i>]) is false, 
-        /////   </item>
-        /////   <item>
-        /////   (B) is the case if, and only if, (<i>Gn</i> BAND <code>LevelSetBitMasks</code>[<i>j</i>]) is true
-        /////   and (<i>Gp</i> BAND <code>LevelSetBitMasks</code>[<i>j</i>]) is false and
-        /////   </item>
-        /////   <item>
-        /////   (C) is the case if, and only if, (<i>Gp</i> BAND <code>LevelSetBitMasks</code>[<i>j</i>]) is true
-        /////   and (<i>Gn</i> BAND <code>LevelSetBitMasks</code>[<i>j</i>]) is true. 
-        /////   </item>
-        ///// </list>
-        ///// Here, BAND denotes bitwise AND, and <i>j</i> a local cell index.</remarks>
-        //public byte[] GetLevSetBitMask(int NodeSetIndex, int j0, int Len) {
-        //    return m_LevelSetBitmaskCache.GetValue(NodeSetIndex, j0, Len);
-        //}
-
-        private class LevelSetReferenceHessianCache : Caching.CacheLogic_CNs {
-
-            private LevelSetTracker owner;
-
-            private int levelSetIndex;
-
-            public LevelSetReferenceHessianCache(LevelSetTracker owner, int levelSetIndex)
-                : base(owner.GridDat) //
-            {
-                this.owner = owner;
-                this.levelSetIndex = levelSetIndex;
-            }
-
-
-
-            protected override void ComputeValues(NodeSet NS, int j0, int Len, MultidimensionalArray output) {
-                LevelSet LevSet = (LevelSet)this.owner.LevelSets[this.levelSetIndex];
-
-                var BasisHessian = LevSet.Basis.Evaluate2ndDeriv(NS);
-
-                Debug.Assert(output.GetLength(0) == Len);
-                int N = LevSet.Basis.Length;
-                Debug.Assert(BasisHessian.GetLength(1) == N);
-                int D = this.owner.m_gDat.SpatialDimension;
-                Debug.Assert(D == BasisHessian.GetLength(2));
-                Debug.Assert(D == BasisHessian.GetLength(3));
-                Debug.Assert(D == output.GetLength(2));
-                Debug.Assert(D == output.GetLength(3));
-                int K = output.GetLength(1); // No of nodes
-                Debug.Assert(K == BasisHessian.GetLength(0));
-
-                var Coordinates = ((MultidimensionalArray)LevSet.Coordinates).ExtractSubArrayShallow(new int[] { j0, 0 }, new int[] { j0 + Len - 1, N - 1 });
-                output.Multiply(1.0, BasisHessian, Coordinates, 0.0, "jkdr", "kndr", "jn");
-            }
-
-            protected override MultidimensionalArray Allocate(int j0, int Len, NodeSet N) {
-                return MultidimensionalArray.Create(Len, N.NoOfNodes, N.SpatialDimension, N.SpatialDimension);
-            }
-        }
-
-        /// <summary>
-        /// the Hessian with respect to reference coordinates, of the level set function 
-        /// </summary>
-        /// <param name="levSetInd"></param>
-        /// <param name="NodeSet"></param>
-        /// <param name="j0">first cell to evaluate</param>
-        /// <param name="Len">number of cells to evaluate</param>
-        /// <returns></returns>
-        public MultidimensionalArray GetLevelSetReferenceHessian(int levSetInd, NodeSet nodes, int j0, int Len) {
-            return m_LevelSetReferenceHessianCache[levSetInd].GetValue_Cell(nodes, j0, Len);
-        }
-
-        private class LevelSetReferenceCurvatureCache : Caching.CacheLogic_CNs {
-
-            private LevelSetTracker owner;
-
-            private int levelSetIndex;
-
-            public LevelSetReferenceCurvatureCache(LevelSetTracker owner, int levelSetIndex)
-                : base(owner.GridDat) //
-            {
-                this.owner = owner;
-                this.levelSetIndex = levelSetIndex;
-            }
-
-            protected override void ComputeValues(NodeSet NS, int j0, int Len, MultidimensionalArray output) {
-
-                MultidimensionalArray Phi = owner.GetLevSetValues(this.levelSetIndex, NS, j0, Len);
-                MultidimensionalArray GradPhi = owner.GetLevelSetReferenceGradients(this.levelSetIndex, NS, j0, Len);
-                MultidimensionalArray HessPhi = owner.GetLevelSetReferenceHessian(this.levelSetIndex, NS, j0, Len);
-
-                MultidimensionalArray ooNormGrad = new MultidimensionalArray(2);
-                MultidimensionalArray Laplace = new MultidimensionalArray(2);
-                MultidimensionalArray Q = new MultidimensionalArray(3);
-
-                int K = output.GetLength(1);
-                int D = GradPhi.GetLength(2);
-                Debug.Assert(D == this.owner.GridDat.SpatialDimension);
-
-                ooNormGrad.Allocate(Len, K);
-                Laplace.Allocate(Len, K);
-                Q.Allocate(Len, K, D);
-
-
-                // compute the monstrous formula
-                // -----------------------------
-
-                // norm of Gradient:
-                for (int d = 0; d < D; d++) {
-                    var GradPhi_d = GradPhi.ExtractSubArrayShallow(-1, -1, d);
-                    ooNormGrad.Multiply(1.0, GradPhi_d, GradPhi_d, 1.0, "ik", "ik", "ik");
-                }
-                ooNormGrad.ApplyAll(x => 1.0 / Math.Sqrt(x));
-
-                // laplacian of phi:
-                for (int d = 0; d < D; d++) {
-                    var HessPhi_d_d = HessPhi.ExtractSubArrayShallow(-1, -1, d, d);
-                    Laplace.Acc(1.0, HessPhi_d_d);
-                }
-
-                // result = Laplacian(phi)/|Grad phi|
-                output.Multiply(1.0, Laplace, ooNormGrad, 0.0, "ik", "ik", "ik");
-
-
-                // result = Grad(1/|Grad(phi)|)
-                for (int d1 = 0; d1 < D; d1++) {
-                    var Qd = Q.ExtractSubArrayShallow(-1, -1, d1);
-
-                    for (int d2 = 0; d2 < D; d2++) {
-                        var Grad_d2 = GradPhi.ExtractSubArrayShallow(-1, -1, d2);
-                        var Hess_d2_d1 = HessPhi.ExtractSubArrayShallow(-1, -1, d2, d1);
-
-                        Qd.Multiply(-1.0, Grad_d2, Hess_d2_d1, 1.0, "ik", "ik", "ik");
-                    }
-                }
-
-                ooNormGrad.ApplyAll(x => x * x * x);
-
-                output.Multiply(1.0, GradPhi, Q, ooNormGrad, 1.0, "ik", "ikd", "ikd", "ik");
-            }
-
-            protected override MultidimensionalArray Allocate(int j0, int Len, NodeSet N) {
-                return MultidimensionalArray.Create(Len, N.NoOfNodes);
-            }
-        }
-
-        public MultidimensionalArray GetLevelSetReferenceCurvature(int levSetInd, NodeSet NS, int j0, int Len) {
-            return m_LevelSetReferenceCurvatureCache[levSetInd].GetValue_Cell(NS, j0, Len);
-        }
-
+             
 
 
 
@@ -1737,9 +983,9 @@ namespace BoSSS.Foundation.XDG {
         /// checks if the level set may has moved more than one cell
         /// </summary>
         int CheckLevelSetCFL(int LevSetIdx) {
-            ushort[] oldCode = this.PreviousRegions.m_LevSetRegions;
+            ushort[] oldCode = this.Regions[0].m_LevSetRegions;
 
-            CellMask newCut = this._Regions.GetCutCellSubgrid4LevSet(LevSetIdx).VolumeMask;
+            CellMask newCut = this.Regions[1].GetCutCellSubgrid4LevSet(LevSetIdx).VolumeMask;
 
             int fail_count = 0;
 
@@ -1772,8 +1018,8 @@ namespace BoSSS.Foundation.XDG {
                 int Jup = this.GridDat.CellPartitioning.LocalLength;
                 int[] tempRegionData = new int[Jup];
 
-                var oldRegion = PreviousRegions.m_LevSetRegions;
-                var newRegion = _Regions.m_LevSetRegions;
+                var oldRegion = this.Regions[0].m_LevSetRegions;
+                var newRegion = this.Regions[1].m_LevSetRegions;
 
                 for (int j = 0; j < Jup; j++) {
                     ushort a = oldRegion[j];
@@ -1959,7 +1205,7 @@ namespace BoSSS.Foundation.XDG {
                 }
                 CellMask oldNearMask = null;
                 if (incremental)
-                    oldNearMask = this._Regions.GetNearFieldMask(m_NearRegionWidth);
+                    oldNearMask = this.Regions[1].GetNearFieldMask(m_NearRegionWidth);
                 else
                     oldNearMask = null;
 
@@ -2323,12 +1569,10 @@ namespace BoSSS.Foundation.XDG {
 
                     // recalculate m_LenToNextChange
                     // =============================
-                    _Regions.Recalc_LenToNextchange();
+                    Regions.Current.Recalc_LenToNextchange();
                 }
 
-                if (PreviousRegions == null)
-                    PreviousRegions = _Regions;
-
+               
                 // forget values that are not correct anymore
                 // ==========================================
                 //this.VolFraction = null;
@@ -2387,8 +1631,7 @@ namespace BoSSS.Foundation.XDG {
         /// Clears all internal references for this object, to make sure that any attempt to use it leads to an exception.
         /// </summary>
         public void Invalidate() {
-            this._Regions = null;
-            this.PreviousRegions = null;
+            this.Regions = null;
             this.m_SpeciesNames = null;
             this.m_SpeciesIndex2Id = null;
             this.m_SpeciesIndex = null;
@@ -2400,9 +1643,9 @@ namespace BoSSS.Foundation.XDG {
             this.m_LevelSetReferenceGradientsCache = null;
             this.m_LevelSetReferenceHessianCache = null;
             this.m_LevelSetReferenceNormalsCache = null;
+            this.m_LevelSetValc = null;
             this.m_LevelSets = null;
             this.m_LevelSetSignCodes = null;
-            this.m_LevelSetValc = null;
             this.m_LevSetAllowedMovement = null;
             this.m_NoOfSpecies = null;
             this.m_Observers = null;

@@ -37,20 +37,21 @@ namespace BoSSS.Foundation.XDG {
     /// </summary>
     public class XQuadSchemeHelper {
 
-        /// <summary>
-        /// Cell agglomeration object/can be null if not provided at construction time.
-        /// </summary>
-        public MultiphaseCellAgglomerator CellAgglomeration {
-            private set;
-            get;
-        }
+        ///// <summary>
+        ///// Cell agglomeration object/can be null if not provided at construction time.
+        ///// </summary>
+        //public MultiphaseCellAgglomerator CellAgglomeration {
+        //    private set;
+        //    get;
+        //}
 
         /// <summary>
         /// 
         /// </summary>
         public CutCellMetrics NonAgglomeratedMetrics {
-            get;
-            private set;
+            get {
+                return XDGSpaceMetrics.CutCellMetrics;
+            }
         }
 
 
@@ -58,8 +59,9 @@ namespace BoSSS.Foundation.XDG {
         /// Selected variant of the moment-fitting procedure
         /// </summary>
         public XQuadFactoryHelper.MomentFittingVariants MomentFittingVariant {
-            get;
-            private set;
+            get {
+                return XDGSpaceMetrics.CutCellQuadratureType;
+            }
         }
 
         /// <summary>
@@ -70,20 +72,21 @@ namespace BoSSS.Foundation.XDG {
         /// therefore this is hardcoded to false.
         /// </remarks>
         public bool GhostSupport {
-            get;
-            private set;
+            get {
+                return false;
+            }
         }
-
-
-
+        
         /// <summary>
         /// All species for which agglomeration is available.
         /// </summary>
         public IEnumerable<SpeciesId> SpeciesList {
-            get;
-            private set;
+            get {
+                return XDGSpaceMetrics.SpeciesList;
+            }
         }
 
+        /*
         /// <summary>
         /// ctor.
         /// </summary>
@@ -100,27 +103,30 @@ namespace BoSSS.Foundation.XDG {
 
             ConstructorCommon();
         }
+        */
 
         /// <summary>
-        /// ctor.
+        /// owner object.
         /// </summary>
-        /// <param name="_lsTrk"></param>
-        /// <param name="momentFittingVariant"></param>
-        public XQuadSchemeHelper(LevelSetTracker _lsTrk, XQuadFactoryHelper.MomentFittingVariants momentFittingVariant, int order = 0, params SpeciesId[] __SpeciesList) {
-
-            MPICollectiveWatchDog.Watch();
-            this.lsTrk = _lsTrk;
-            this.MomentFittingVariant = momentFittingVariant;
-            this.CellAgglomeration = null;
-            this.NonAgglomeratedMetrics = new CutCellMetrics(momentFittingVariant, order, lsTrk, __SpeciesList);
-            this.SpeciesList = __SpeciesList.ToList().AsReadOnly();
-            this.GhostSupport = false;
-
-            ConstructorCommon();
+        public XDGSpaceMetrics XDGSpaceMetrics {
+            get;
+            private set;
         }
 
 
 
+        /// <summary>
+        /// ctor.
+        /// </summary>
+        public XQuadSchemeHelper(XDGSpaceMetrics __XDGSpaceMetrics) {
+
+            MPICollectiveWatchDog.Watch();
+            this.XDGSpaceMetrics = __XDGSpaceMetrics;
+            ConstructorCommon();
+        }
+
+
+        /*
         /// <summary>
         /// ctor.
         /// </summary>
@@ -155,6 +161,7 @@ namespace BoSSS.Foundation.XDG {
 
             ConstructorCommon();
         }
+        */
 
         void ConstructorCommon() {
             var Krefs = this.lsTrk.GridDat.Grid.RefElements;
@@ -296,7 +303,7 @@ namespace BoSSS.Foundation.XDG {
         /// 2nd index: level set
         /// </summary>
         /// <remarks>
-        /// Be aware that this migt contain also edges like <c>e</c>,
+        /// Be aware that this might contain also edges like <c>e</c>,
         /// which are, topologically inner edges of the cut-cell-subgrid but not cut by the level-set:
         /// <code>
         ///     o----------o-----------o
@@ -356,7 +363,11 @@ namespace BoSSS.Foundation.XDG {
         Dictionary<RefElement, EdgeMask> m_Subgrid4Kref_AllEdges = new Dictionary<RefElement, EdgeMask>();
         */
 
-        LevelSetTracker lsTrk;
+        LevelSetTracker lsTrk {
+            get {
+                return XDGSpaceMetrics.Tracker;
+            }
+        }
 
 
         public EdgeQuadratureScheme Get_SurfaceElement_EdgeQuadScheme(SpeciesId sp) {
@@ -369,9 +380,9 @@ namespace BoSSS.Foundation.XDG {
             var boundaryCutCellEdges = ExecutionMask.Intersect(this.lsTrk._Regions.GetCutCellSubGrid().BoundaryEdgesMask, this.lsTrk.GridDat.BoundaryEdges);
             var allRelevantEdges = this.m_SpeciesSubgrid_InnerAndDomainEdges[sp].Intersect(ExecutionMask.Union(innerCutCellEdges, boundaryCutCellEdges));
 
-            EdgeMask AggEdges = this.CellAgglomeration != null ? this.CellAgglomeration.GetAgglomerator(sp).AggInfo.AgglomerationEdges : null;
-            if (AggEdges != null && AggEdges.NoOfItemsLocally > 0)
-                allRelevantEdges = allRelevantEdges.Except(AggEdges);
+            //EdgeMask AggEdges = this.CellAgglomeration != null ? this.CellAgglomeration.GetAgglomerator(sp).AggInfo.AgglomerationEdges : null;
+            //if (AggEdges != null && AggEdges.NoOfItemsLocally > 0)
+            //    allRelevantEdges = allRelevantEdges.Except(AggEdges);
 
 
             var edgeQrIns = new EdgeQuadratureScheme(false, allRelevantEdges);
@@ -380,7 +391,7 @@ namespace BoSSS.Foundation.XDG {
                 for (int iLevSet = 0; iLevSet < lsTrk.LevelSets.Count; iLevSet++) { // loop over level sets...
                     EdgeMask cutEdges = this.GetCutEdges(Kref, iLevSet);
 
-                    var factory = this.lsTrk.GetXQuadFactoryHelper(MomentFittingVariant).GetSurfaceElement_BoundaryRuleFactory(iLevSet, Kref);
+                    var factory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet, Kref);
 
                     edgeQrIns.AddFactory(factory, cutEdges);
                 }
@@ -402,7 +413,7 @@ namespace BoSSS.Foundation.XDG {
 
             foreach (var Kref in lsTrk.GridDat.Grid.RefElements) {
                 for (int iLevSet = 0; iLevSet < lsTrk.LevelSets.Count; iLevSet++) { // loop over level sets...
-                    var surfaceFactory = this.lsTrk.GetXQuadFactoryHelper(MomentFittingVariant).GetSurfaceFactory(iLevSet, Kref);
+                    var surfaceFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceFactory(iLevSet, Kref);
                     LevSetQrIns = LevSetQrIns.AddFactory(surfaceFactory, this.lsTrk._Regions.GetCutCellMask4LevSet(iLevSet));
                 }
             }
@@ -438,7 +449,7 @@ namespace BoSSS.Foundation.XDG {
 
 
                         var jmp = IdentifyWing(iLevSet, sp);
-                        var factory = this.lsTrk.GetXQuadFactoryHelper(MomentFittingVariant).GetEdgeRuleFactory(iLevSet, jmp, Kref);
+                        var factory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetEdgeRuleFactory(iLevSet, jmp, Kref);
                         edgeQrIns.AddFactoryDomainPair(factory, cutEdges, fixedOrder);
                     }
                 }
@@ -606,10 +617,10 @@ namespace BoSSS.Foundation.XDG {
                 allRelevantEdges = this.m_SpeciesSubgrid_InnerAndDomainEdges[sp].Intersect(IntegrationDomainRestriction);
             }
 
-            // optionally, exclude edges between agglomerated cells
-            EdgeMask AggEdges = (this.CellAgglomeration != null) ? (this.CellAgglomeration.GetAgglomerator(sp).AggInfo.AgglomerationEdges) : (default(EdgeMask));
-            if (AggEdges != null && AggEdges.NoOfItemsLocally > 0)
-                allRelevantEdges = allRelevantEdges.Except(AggEdges);
+            //// optionally, exclude edges between agglomerated cells
+            //EdgeMask AggEdges = (this.CellAgglomeration != null) ? (this.CellAgglomeration.GetAgglomerator(sp).AggInfo.AgglomerationEdges) : (default(EdgeMask));
+            //if (AggEdges != null && AggEdges.NoOfItemsLocally > 0)
+            //    allRelevantEdges = allRelevantEdges.Except(AggEdges);
             return allRelevantEdges;
         }
 
@@ -641,7 +652,7 @@ namespace BoSSS.Foundation.XDG {
                 for (int iKref = 0; iKref < lsTrk.GridDat.Grid.RefElements.Length; iKref++) {
                     RefElement Kref = lsTrk.GridDat.Grid.RefElements[iKref];
                     var _cutDom = cutCells.Intersect(lsTrk.GridDat.Cells.GetCells4Refelement(iKref));
-                    var factory = this.lsTrk.GetXQuadFactoryHelper(MomentFittingVariant).GetVolRuleFactory(iLevSet, jmp, Kref);
+                    var factory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetVolRuleFactory(iLevSet, jmp, Kref);
                     volQrIns.AddFactoryDomainPair(factory, _cutDom, fixedOrder);
                 }
             }
@@ -669,7 +680,7 @@ namespace BoSSS.Foundation.XDG {
             CellQuadratureScheme LevSetQrIns = new CellQuadratureScheme(false, IntegrationDom);
 
             foreach (var Kref in lsTrk.GridDat.Grid.RefElements) {
-                var surfaceFactory = this.lsTrk.GetXQuadFactoryHelper(MomentFittingVariant).GetSurfaceFactory(iLevSet, Kref);
+                var surfaceFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceFactory(iLevSet, Kref);
                 LevSetQrIns.AddFactoryDomainPair(surfaceFactory, (CellMask)null, fixedOrder);
             }
 
@@ -715,7 +726,7 @@ namespace BoSSS.Foundation.XDG {
 
             // test parameters
             var jmp = Foundation.XDG.Quadrature.HMF.JumpTypes.Heaviside;
-            var sch = this.lsTrk.GetXQuadFactoryHelper(MomentFittingVariant);
+            var sch = this.XDGSpaceMetrics.XQuadFactoryHelper;
             var spNm = this.lsTrk.GetSpeciesName(spc);
             var spId = LsTrk.GetSpeciesId(spNm);
             var DomainOfInterest = LsTrk._Regions.GetCutCellSubgrid4LevSet(0);
