@@ -26,14 +26,14 @@ namespace BoSSS.Foundation.XDG {
     partial class LevelSetTracker {
 
 
-        HistoryStack<LevelSetData>[] m_LevelSetDataHistories;
+        HistoryStack<LevelSetData>[] m_DataHistories;
 
         /// <summary>
         /// Stack for data of previous level-set states. 
         /// </summary>
-        public HistoryStack<LevelSetData>[] LevelSetDataHistories {
+        public HistoryStack<LevelSetData>[] DataHistories {
             get {
-                return m_LevelSetDataHistories;
+                return m_DataHistories;
             }
         }
 
@@ -64,10 +64,46 @@ namespace BoSSS.Foundation.XDG {
                 m_LevelSetReferenceNormalsCache.Clear();
             }
 
+            /// <summary>
+            /// Owner object.
+            /// </summary>
+            public LevelSetTracker Tracker {
+                get {
+                    return m_owner;
+                }
+            }
+
+            /// <summary>
+            /// Region object which correlates with actual <see cref="HistoryIndex"/>.
+            /// </summary>
+            public LevelSetTracker.LevelSetRegions Region {
+                get {
+                    return Tracker.RegionsHistory[HistoryIndex];
+                }
+            }
 
             LevelSetTracker m_owner;
             internal int m_StackIdx = 1;
             int m_iLevSet;
+
+            /// <summary>
+            /// Index into the level-set history, see e.g. <see cref="LevelSetTracker.LevelSetHistories"/>.
+            /// </summary>
+            public int HistoryIndex {
+                get {
+                    return m_StackIdx;
+                }
+            }
+
+            /// <summary>
+            /// Index of the corresponding level-set, see e.g. <see cref="LevelSetTracker.LevelSetHistories"/>.
+            /// </summary>
+            public int LevelSetIndex {
+                get {
+                    return m_iLevSet;
+                }
+            }
+
 
             ILevelSet GetLevSet() {
                 return m_owner.m_LevelSetHistories[m_iLevSet][m_StackIdx];

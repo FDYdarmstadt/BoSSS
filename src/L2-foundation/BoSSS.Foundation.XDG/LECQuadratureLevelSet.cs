@@ -380,7 +380,7 @@ namespace BoSSS.Foundation.XDG {
             // Evaluate level sets and normals
             // -------------------------------
             var NoOfLevSets = m_lsTrk.LevelSets.Count;
-            MultidimensionalArray Normals = m_lsTrk.LevelSetDataHistories[m_LevSetIdx].Current.GetLevelSetNormals(QuadNodes, i0, Len);
+            MultidimensionalArray Normals = m_lsTrk.DataHistories[m_LevSetIdx].Current.GetLevelSetNormals(QuadNodes, i0, Len);
             base.CustomTimers[3].Stop();
 
             // Evaluate basis and test functions

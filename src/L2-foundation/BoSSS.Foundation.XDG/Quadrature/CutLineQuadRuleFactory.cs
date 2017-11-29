@@ -131,9 +131,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// <param name="Kref">
         /// Reference element index
         /// </param>
-        /// <param name="levSetIndex">
-        /// Index of the considered level set in <paramref name="tracker"/>
-        /// </param>
+        /// <param name="lsData"></param>
         /// <param name="rootFindingAlgorithm">
         /// Selected root-finding algorithm for the line segments. Default is
         /// <see cref="LineSegment.DefaultRootFindingAlgorithm"/>
@@ -149,27 +147,25 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// phi - Tolerance > 0 are considered 'positive'.
         /// </param>
         public CutLineQuadRuleFactory(
-            LevelSetTracker tracker,
+            LevelSetTracker.LevelSetData lsData,
             RefElement Kref,
-            int levSetIndex = 0,
             LineSegment.IRootFindingAlgorithm rootFindingAlgorithm = null,
             JumpTypes jumpType = JumpTypes.Heaviside,
             double tolerace = 1.0e-13) {
 
-            this.tracker = tracker;
+            this.tracker = lsData.Tracker;
             this.RefElement = Kref;
             this.RootFindingAlgorithm = rootFindingAlgorithm ?? LineSegment.DefaultRootFindingAlgorithm;
             this.referenceLineSegments = GetReferenceLineSegments();
             this.jumpType = jumpType;
+            this.levelSetData = lsData;
 
             this.iKref = this.tracker.GridDat.Grid.RefElements.IndexOf(this.RefElement, (A, B) => object.ReferenceEquals(A, B));
             if (this.iKref < 0)
                 throw new ArgumentException("Reference element cannot be found in the provided grid.");
 
-            if (levSetIndex >= tracker.LevelSets.Count) {
-                throw new ArgumentOutOfRangeException("Please specify a valid index for the level set function");
-            }
-            this.levelSetIndex = levSetIndex;
+            
+            this.levelSetIndex = lsData.LevelSetIndex;
             if (tolerace < 0.0)
                 throw new ArgumentOutOfRangeException();
             this.Tolerance = tolerace;
@@ -184,6 +180,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         }
 
         CellBoundaryQuadRule emptyrule;
+
+        LevelSetTracker.LevelSetData levelSetData;
 
         /// <summary>
         /// The selected root-finding algorithm
@@ -262,7 +260,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                             if(jumpType != JumpTypes.Implicit) {
                                 //using (tracker.GridDat.NSC.CreateLock(MultidimensionalArray.CreateWrapper(point, 1, D), this.iKref, -1.0)) {
-                                MultidimensionalArray levelSetValue = tracker.GetLevSetValues(levelSetIndex, _point, cell, 1);
+                                MultidimensionalArray levelSetValue = this.levelSetData.GetLevSetValues(_point, cell, 1);
 
                                 switch(jumpType) {
                                     case JumpTypes.Heaviside:

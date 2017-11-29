@@ -56,14 +56,17 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
         private int levelSetIndex;
 
-        public LevelSetEdgeSurfaceQuadRuleFactory(LevelSetTracker tracker, int levSetInd, IQuadRuleFactory<CellEdgeBoundaryQuadRule> edgeRuleFactory, JumpTypes jumpType) {
-            this.tracker = tracker;
-            if (levSetInd >= tracker.LevelSets.Count) {
-                throw new ArgumentOutOfRangeException("Please specify a valid index for the level set function");
-            }
-            this.levelSetIndex = levSetInd;
+        LevelSetTracker.LevelSetData LevelSetData;
+
+        /// <summary>
+        /// Ctor
+        /// </summary>
+        public LevelSetEdgeSurfaceQuadRuleFactory(LevelSetTracker.LevelSetData lsData,  IQuadRuleFactory<CellEdgeBoundaryQuadRule> edgeRuleFactory, JumpTypes jumpType) {
+            this.tracker = lsData.Tracker;
+            this.levelSetIndex = lsData.LevelSetIndex;
             this.edgeRuleFactory = edgeRuleFactory;
             this.jumpType = jumpType;
+            this.LevelSetData = lsData;
         }
 
         #region IQuadRuleFactory<CellBoundaryQuadRule> Members
@@ -270,14 +273,14 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             }
         }
 
-        public static MultidimensionalArray EvaluateRefNormalsOnEdge(LevelSetTracker tracker, int levSetInd, int cell, CellBoundaryQuadRule rule, int localEdge) {
+        public static MultidimensionalArray EvaluateRefNormalsOnEdge(LevelSetTracker.LevelSetData lsData, int cell, CellBoundaryQuadRule rule, int localEdge) {
             if (rule.NumbersOfNodesPerFace[localEdge] == 0) {
                 return null;
             }
 
-            MultidimensionalArray gradients = EvaluateLevelSetReferenceGradientsOnEdge(tracker, levSetInd, cell, rule, localEdge);
+            MultidimensionalArray gradients = EvaluateLevelSetReferenceGradientsOnEdge(lsData, cell, rule, localEdge);
             int noOfNodes = gradients.GetLength(0);
-            int D = tracker.GridDat.SpatialDimension;
+            int D = lsData.Tracker.GridDat.SpatialDimension;
 
             MultidimensionalArray normals = MultidimensionalArray.Create(noOfNodes, D);
             for (int i = 0; i < noOfNodes; i++) {
@@ -300,10 +303,11 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             return normals;
         }
 
-        private static MultidimensionalArray EvaluateLevelSetGradientsOnEdge(LevelSetTracker tracker, int levSetIndex, int cell, CellBoundaryQuadRule rule, int localEdge) {
-            int edge = Math.Abs(tracker.GridDat.Cells.Cells2Edges[cell][localEdge]) - 1;
-            int D = tracker.GridDat.SpatialDimension;
-            MultidimensionalArray volumeGradients = tracker.GetLevelSetGradients(levSetIndex, rule.Nodes, cell, 1);
+        private static MultidimensionalArray EvaluateLevelSetGradientsOnEdge(LevelSetTracker.LevelSetData lsData, int cell, CellBoundaryQuadRule rule, int localEdge) {
+            var gdat = lsData.Tracker.GridDat;
+            int edge = Math.Abs(gdat.Cells.Cells2Edges[cell][localEdge]) - 1;
+            int D = gdat.SpatialDimension;
+            MultidimensionalArray volumeGradients = lsData.GetLevelSetGradients(rule.Nodes, cell, 1);
 
             int noOfNodes = rule.NumbersOfNodesPerFace[localEdge];
             if (noOfNodes == 0) {
@@ -312,26 +316,27 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
             int offset = rule.NumbersOfNodesPerFace.Take(localEdge).Sum();
             MultidimensionalArray normals = MultidimensionalArray.Create(noOfNodes, D);
+            var NormalsForAffine = gdat.Edges.NormalsForAffine;
             for (int i = 0; i < noOfNodes; i++) {
                 double normalComponent = 0.0;
                 for (int d = 0; d < D; d++) {
-                    normalComponent += volumeGradients[0, offset + i, d] * tracker.GridDat.Edges.NormalsForAffine[edge, d];
+                    normalComponent += volumeGradients[0, offset + i, d] * NormalsForAffine[edge, d];
                 }
 
                 // Subtract normal component
                 for (int d = 0; d < D; d++) {
                     normals[i, d] = volumeGradients[0, offset + i, d]
-                        - normalComponent * tracker.GridDat.Edges.NormalsForAffine[edge, d];
+                        - normalComponent * NormalsForAffine[edge, d];
                 }
             }
 
             return normals;
         }
 
-        private static MultidimensionalArray EvaluateLevelSetReferenceGradientsOnEdge(LevelSetTracker tracker, int levSetIndex, int cell, CellBoundaryQuadRule rule, int localEdge) {
-            int D = tracker.GridDat.SpatialDimension;
-            MultidimensionalArray volumeGradients = tracker.GetLevelSetReferenceGradients(levSetIndex, rule.Nodes, cell, 1);
-            MultidimensionalArray edgeNormals = tracker.GridDat.Grid.RefElements[0].FaceNormals;
+        private static MultidimensionalArray EvaluateLevelSetReferenceGradientsOnEdge(LevelSetTracker.LevelSetData LevelSetData, int cell, CellBoundaryQuadRule rule, int localEdge) {
+            int D = LevelSetData.Tracker.GridDat.SpatialDimension;
+            MultidimensionalArray volumeGradients = LevelSetData.GetLevelSetReferenceGradients(rule.Nodes, cell, 1);
+            MultidimensionalArray edgeNormals = LevelSetData.Tracker.GridDat.Grid.RefElements[0].FaceNormals;
 
             int noOfNodes = rule.NumbersOfNodesPerFace[localEdge];
             if (noOfNodes == 0) {
@@ -356,30 +361,32 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             return normals;
         }
 
-        public static MultidimensionalArray GetMetricTermsOnEdge(LevelSetTracker tracker, int levSetIndex, CellBoundaryQuadRule rule, int cell, int localEdge) {
+        public static MultidimensionalArray GetMetricTermsOnEdge(LevelSetTracker.LevelSetData LevelSetData, int levSetIndex, CellBoundaryQuadRule rule, int cell, int localEdge) {
             if (rule.NumbersOfNodesPerFace[localEdge] == 0) {
                 return null;
             }
 
-            MultidimensionalArray physGradients = EvaluateLevelSetGradientsOnEdge(tracker, levSetIndex, cell, rule, localEdge);
-            MultidimensionalArray refGradients = EvaluateLevelSetReferenceGradientsOnEdge(tracker, levSetIndex, cell, rule, localEdge);
+            MultidimensionalArray physGradients = EvaluateLevelSetGradientsOnEdge(LevelSetData, cell, rule, localEdge);
+            MultidimensionalArray refGradients = EvaluateLevelSetReferenceGradientsOnEdge(LevelSetData, cell, rule, localEdge);
             int noOfNodes = physGradients.GetLength(0);
-            int D = tracker.GridDat.SpatialDimension;
+            int D = LevelSetData.Tracker.GridDat.SpatialDimension;
             MultidimensionalArray result = MultidimensionalArray.Create(noOfNodes);
 
-            int edge = Math.Abs(tracker.GridDat.Cells.Cells2Edges[cell][localEdge]) - 1;
+            int edge = Math.Abs(LevelSetData.Tracker.GridDat.Cells.Cells2Edges[cell][localEdge]) - 1;
 
+            var JacobiDet = LevelSetData.Tracker.GridDat.Cells.JacobiDet;
+            var SqrtGramian = LevelSetData.Tracker.GridDat.Edges.SqrtGramian;
             for (int j = 0; j < noOfNodes; j++) {
                 double normPhys = 0.0;
                 double normRef = 0.0;
 
-                for (int d = 0; d < tracker.GridDat.SpatialDimension; d++) {
+                for (int d = 0; d < D; d++) {
                     normPhys += physGradients[j, d] * physGradients[j, d];
                     normRef += refGradients[j, d] * refGradients[j, d];
                 }
 
-                result[j] = Math.Sqrt(normRef / normPhys) / tracker.GridDat.Edges.SqrtGramian[edge] *
-                    Math.Sqrt(tracker.GridDat.Cells.JacobiDet[cell]);
+                result[j] = Math.Sqrt(normRef / normPhys) / SqrtGramian[edge] *
+                    Math.Sqrt(JacobiDet[cell]);
                 //    result[j] = Math.Sqrt(normRef / normPhys) / tracker.GridDat.Edges.SqrtGramian[edge] / tracker.Ctx.GridDat.OneOverSqrt_AbsDetTransformation[cell];
             }
 

@@ -160,14 +160,14 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// Number of previous states in the various history stacks (<see cref="LevelSetDataHistories"/>, <see cref="LevelSetHistories"/>, <see cref="RegionsHistory"/>, etc.).
+        /// Number of previous states in the various history stacks (<see cref="DataHistories"/>, <see cref="LevelSetHistories"/>, <see cref="RegionsHistory"/>, etc.).
         /// </summary>
         public int HistoryLength {
             get {
                 int L = RegionsHistory.HistoryLength;
 
-                for(int iLs = 0; iLs < m_LevelSetDataHistories.Length; iLs++) {
-                    Debug.Assert(m_LevelSetDataHistories[iLs].HistoryLength == L);
+                for(int iLs = 0; iLs < m_DataHistories.Length; iLs++) {
+                    Debug.Assert(m_DataHistories[iLs].HistoryLength == L);
                     Debug.Assert(m_LevelSetHistories[iLs].HistoryLength == L);
                 }
 
@@ -177,8 +177,8 @@ namespace BoSSS.Foundation.XDG {
                 int currentLen = this.HistoryLength;
                 if(value != currentLen) {
                     RegionsHistory.HistoryLength = value;
-                    for(int iLs = 0; iLs < m_LevelSetDataHistories.Length; iLs++) {
-                        m_LevelSetDataHistories[iLs].HistoryLength = value;
+                    for(int iLs = 0; iLs < m_DataHistories.Length; iLs++) {
+                        m_DataHistories[iLs].HistoryLength = value;
                         m_LevelSetHistories[iLs].HistoryLength = value;
                     }
                 }
@@ -219,12 +219,12 @@ namespace BoSSS.Foundation.XDG {
             // ===========
 
             m_LevelSetHistories = new HistoryStack<ILevelSet>[levSets.Length];
-            m_LevelSetDataHistories = new HistoryStack<LevelSetData>[levSets.Length];
+            m_DataHistories = new HistoryStack<LevelSetData>[levSets.Length];
             for(int iLs =0; iLs < levSets.Length; iLs++) {
                 m_LevelSetHistories[iLs] = new HistoryStack<ILevelSet>(levSets[iLs]);
-                m_LevelSetDataHistories[iLs] = new HistoryStack<LevelSetData>(new LevelSetData(this, iLs));
+                m_DataHistories[iLs] = new HistoryStack<LevelSetData>(new LevelSetData(this, iLs));
             }
-            RegionsHistory = new HistoryStack<LevelSetRegions>(new LevelSetRegions(this));
+            m_RegionsHistory = new HistoryStack<LevelSetRegions>(new LevelSetRegions(this));
 
             // 1st tracker update
             // ==================
@@ -518,12 +518,15 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
+        HistoryStack<LevelSetRegions> m_RegionsHistory;
+
         /// <summary>
         /// Information about the level set sign for current and previous states (see <see cref="PushStacks"/>).
         /// </summary>
         public HistoryStack<LevelSetRegions> RegionsHistory {
-            get;
-            private set;
+            get {
+                return m_RegionsHistory;
+            }
         }
 
         /// <summary>
@@ -671,7 +674,7 @@ namespace BoSSS.Foundation.XDG {
 
         /// <summary>
         /// Advances the history stacks which store previous states of the level-set tracker
-        /// (see <see cref="LevelSetDataHistories"/>, <see cref="LevelSetHistories"/>, <see cref="RegionsHistory"/>, etc.).
+        /// (see <see cref="DataHistories"/>, <see cref="LevelSetHistories"/>, <see cref="RegionsHistory"/>, etc.).
         /// </summary>
         public void PushStacks() {
             int NoOfLs = LevelSets.Count;
@@ -681,16 +684,16 @@ namespace BoSSS.Foundation.XDG {
                 m_LevelSetHistories[iLs].Push((ls1) => ls1, (ls1, ls0) => ls1.CloneAs());
             }
 
-            Debug.Assert(NoOfLs == m_LevelSetDataHistories.Length);
+            Debug.Assert(NoOfLs == m_DataHistories.Length);
             for(int iLs = 0; iLs < NoOfLs; iLs++) {
-                m_LevelSetDataHistories[iLs].Push((data1) => new LevelSetData(this, iLs), (data1, data0) => data1);
+                m_DataHistories[iLs].Push((data1) => new LevelSetData(this, iLs), (data1, data0) => data1);
 
-                for(int iStack = 1; iStack > m_LevelSetDataHistories[iLs].GetPopulatedLength(); iStack++) {
-                    m_LevelSetDataHistories[iLs][iStack].m_StackIdx = iStack;
+                for(int iStack = 1; iStack > m_DataHistories[iLs].GetPopulatedLength(); iStack++) {
+                    m_DataHistories[iLs][iStack].m_StackIdx = iStack;
                 }
             }
 
-            RegionsHistory.Push((r1) => new LevelSetRegions(this), (r1, r0) => r1);
+            m_RegionsHistory.Push((r1) => new LevelSetRegions(this), (r1, r0) => r1);
         }
 
         ILevelSet[] m_LevelSets = null;
@@ -993,7 +996,7 @@ namespace BoSSS.Foundation.XDG {
 
 
             for (int i = 0; i < m_LevelSetHistories.Length; i++) { // loop over level sets
-                var data = this.m_LevelSetDataHistories[i].Current;
+                var data = this.m_DataHistories[i].Current;
                 for (int j = 0; j < m_gDat.Cells.NoOfCells; j++) {
                     int iKref = this.GridDat.Cells.GetRefElementIndex(j);
 
@@ -1382,7 +1385,7 @@ namespace BoSSS.Foundation.XDG {
 
 
                     // clear cached level set values (level set may has changed)
-                    foreach(var lsdh in LevelSetDataHistories) {
+                    foreach(var lsdh in DataHistories) {
                         lsdh.Current.ClearCaches();
                     }
                     
@@ -1434,7 +1437,7 @@ namespace BoSSS.Foundation.XDG {
 
                             // loop over level sets ...
                             for (int levSetind = m_LevelSetHistories.Length - 1; levSetind >= 0; levSetind--) {
-                                var data = this.m_LevelSetDataHistories[levSetind].Current;
+                                var data = this.m_DataHistories[levSetind].Current;
                                 MultidimensionalArray levSetVal = data.GetLevSetValues(this.TestNodes[iKref], j, VecLen);
 
                                 for (int jj = 0; jj < VecLen; jj++) {
@@ -1673,14 +1676,13 @@ namespace BoSSS.Foundation.XDG {
         /// Clears all internal references for this object, to make sure that any attempt to use it leads to an exception.
         /// </summary>
         public void Invalidate() {
-            this.RegionsHistory = null;
+            this.m_RegionsHistory = null;
             this.m_SpeciesNames = null;
             this.m_SpeciesIndex2Id = null;
             this.m_SpeciesIndex = null;
             this.m_gDat = null;
             this.m_GhostTable = null;
-            this.m_LevelSetDataHistories = null;
-            this.RegionsHistory = null; 
+            this.m_DataHistories = null;
             this.m_LevelSetHistories = null;
             this.m_LevelSetSignCodes = null;
             this.m_LevSetAllowedMovement = null;

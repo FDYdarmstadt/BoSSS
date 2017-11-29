@@ -108,8 +108,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// <summary>
         /// constructor.
         /// </summary>
-        /// <param name="tracker">
-        /// Tracker containing the level set to be integrated over
+        /// <param name="lsData">
         /// </param>
         /// <param name="edgeRuleFactory">
         /// Some factory that provides quadrature rules for the integration 
@@ -134,29 +133,26 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// <param name="levSetIndex">
         /// Index of the considered level set in <paramref name="tracker"/>
         /// </param>
-        /// <param name="jumpType">
-        /// Determines the level set region to be integrated over (negative
-        /// level set values, positive level set values, or both)
-        /// </param>
+
         public LevelSetVolumeQuadRuleFactory(
-            LevelSetTracker tracker,
+            LevelSetTracker.LevelSetData lsData,
             IQuadRuleFactory<CellBoundaryQuadRule> edgeRuleFactory,
             IQuadRuleFactory<QuadRule> surfaceRuleFactory,
-            int levSetIndex = 0,
             JumpTypes jumpType = JumpTypes.Heaviside) {
 
             if (jumpType == JumpTypes.Implicit) {
                 throw new NotSupportedException();
             }
 
-            this.tracker = tracker;
-            if (tracker.LevelSets.Count <= levSetIndex)
-                throw new ArgumentOutOfRangeException("Please provide a valid index for the level set.");
-            this.levelSetIndex = levSetIndex;
+            this.tracker = lsData.Tracker;
+            this.levelSetIndex = lsData.LevelSetIndex;
             this.edgeRuleFactory = edgeRuleFactory;
             this.surfaceRuleFactory = surfaceRuleFactory;
             this.jumpType = jumpType;
+            this.LevelSetData = lsData;
         }
+
+        LevelSetTracker.LevelSetData LevelSetData;
 
         #region IQuadRuleFactory<QuadRule> Members
 
@@ -268,8 +264,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                 NodeSet centerNode = new NodeSet(RefElement, center);
                                 centerNode.LockForever();
 
-                                MultidimensionalArray normal = tracker.GetLevelSetReferenceNormals(0, centerNode, cell.Value, 1);
-                                MultidimensionalArray dist = tracker.GetLevSetValues(0, centerNode, cell.Value, 1);
+                                MultidimensionalArray normal = LevelSetData.GetLevelSetReferenceNormals(centerNode, cell.Value, 1);
+                                MultidimensionalArray dist = LevelSetData.GetLevSetValues(centerNode, cell.Value, 1);
 
                                 double scaling = Math.Sqrt(tracker.GridDat.Cells.JacobiDet[cell.Value]);
 
@@ -433,7 +429,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                             mappedNodes.LockForever();
 
                             // Remove nodes in negative part
-                            MultidimensionalArray levelSetValues = tracker.GetLevSetValues(0, mappedNodes, cell, 1);
+                            MultidimensionalArray levelSetValues = LevelSetData.GetLevSetValues(mappedNodes, cell, 1);
                             List<int> nodesToBeCopied = new List<int>(mappedNodes.GetLength(0));
                             for (int n = 0; n < nodes.GetLength(0); n++) {
                                 if (levelSetValues[0, n] >= 0.0) {

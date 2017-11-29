@@ -34,6 +34,15 @@ namespace BoSSS.Foundation.XDG {
             LevelSetTracker m_owner;
 
             /// <summary>
+            /// Owner object.
+            /// </summary>
+            public LevelSetTracker Tracker {
+                get {
+                    return m_owner;
+                }
+            }
+
+            /// <summary>
             /// Constructor
             /// </summary>
             internal LevelSetRegions(LevelSetTracker owner) {

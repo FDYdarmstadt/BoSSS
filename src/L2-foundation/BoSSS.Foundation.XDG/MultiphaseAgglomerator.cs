@@ -675,7 +675,7 @@ namespace BoSSS.Foundation.XDG {
                     // special treatment for no agglomeration -- which is anyway not recommended at all
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                    CellMask spcDom = this.Tracker._Regions.GetSpeciesMask(spc);
+                    CellMask spcDom = this.Tracker.Regions.GetSpeciesMask(spc);
 
                     foreach (int j in spcDom.ItemEnum) {
 
@@ -689,7 +689,7 @@ namespace BoSSS.Foundation.XDG {
 
 
 #if DEBUG
-                foreach (int jCell in this.Tracker._Regions.GetSpeciesMask(spc).ItemEnum) {
+                foreach (int jCell in this.Tracker.Regions.GetSpeciesMask(spc).ItemEnum) {
                     Debug.Assert(!(double.IsNaN(LengthScales[jCell]) || double.IsInfinity(LengthScales[jCell])));
                 }
 
@@ -758,7 +758,7 @@ namespace BoSSS.Foundation.XDG {
                 {
 
                     // mask for the cells in which we -- potentially -- want to do agglomeration
-                    var AggCandidates = Tracker._Regions.GetSpeciesMask(spId).GetBitMaskWithExternal().CloneAs();
+                    var AggCandidates = Tracker.Regions.GetSpeciesMask(spId).GetBitMaskWithExternal().CloneAs();
 
 
                     // pass 1: determine agglomeration sources
@@ -771,7 +771,7 @@ namespace BoSSS.Foundation.XDG {
                         // for the present timestep
                         // - - - - - - - - - - - - - 
 
-                        CellMask suspectsForAgg = Tracker._Regions.GetCutCellMask().Intersect(Tracker._Regions.GetSpeciesMask(spId));
+                        CellMask suspectsForAgg = Tracker.Regions.GetCutCellMask().Intersect(Tracker.Regions.GetSpeciesMask(spId));
                         foreach (int jCell in suspectsForAgg.ItemEnum) {
                             double totVol = grdDat.Cells.GetCellVolume(jCell);
 

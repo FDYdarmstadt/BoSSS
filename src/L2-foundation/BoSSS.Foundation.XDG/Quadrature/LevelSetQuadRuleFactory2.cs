@@ -149,7 +149,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         IQuadRuleFactory<CellBoundaryQuadRule> LevelSetBoundaryLineFactory;
 
         /// <summary>
-        /// 
+        /// Ctor.
         /// </summary>
         /// <param name="tracker"></param>
         /// <param name="iLevSet"></param>
@@ -161,7 +161,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// <param name="cellFaceFactory"></param>
         /// <param name="_UseGauß"></param>
         /// <param name="_UseStokes"></param>
-        public LevelSetQuadRuleFactory2(LevelSetTracker tracker, int iLevSet,
+        public LevelSetQuadRuleFactory2(LevelSetTracker.LevelSetData levelSetData,
             IQuadRuleFactory<CellBoundaryQuadRule> cellFaceFactory,
             IQuadRuleFactory<CellBoundaryQuadRule> _LevelSetBoundaryLineFactory,
             bool _UseStokes, bool _UseGauß,
@@ -170,6 +170,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         {
             this.UseStokes = _UseStokes;
             this.UseGauß = _UseGauß;
+            this.LevelSetData = levelSetData;
 
             this.SurfaceNodesOnZeroLevset = _SurfaceNodesOnZeroLevset;
             this.Docheck = _DoCheck;
@@ -185,16 +186,18 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     "simplex", "'simplex' must be a volume - reference element");
             }
             
-            this.tracker = tracker;
-            this.LevelSetIndex = iLevSet;
+            this.tracker = levelSetData.Tracker;
+            this.LevelSetIndex = levelSetData.LevelSetIndex;
             this.cellFaceFactory = cellFaceFactory;
             this.SurfaceNodesOnZeroLevset = _SurfaceNodesOnZeroLevset;
             this.LevelSetBoundaryLineFactory = _LevelSetBoundaryLineFactory;
 
             int iKref = this.tracker.GridDat.Grid.RefElements.IndexOf(Kref);
             this.MaxGrid = this.tracker.GridDat.Cells.GetCells4Refelement(iKref).Intersect(
-                tracker._Regions.GetCutCellMask4LevSet(this.LevelSetIndex));
+                levelSetData.Region.GetCutCellMask4LevSet(this.LevelSetIndex));
         }
+
+        LevelSetTracker.LevelSetData LevelSetData;
 
         /// <summary>
         /// the intersection of the cut cells for Level Set <see cref="LevelSetIndex"/>
@@ -332,7 +335,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                         MultidimensionalArray metrics;
                         {
                             int iKref = grddat.Cells.GetRefElementIndex(jCell);
-                            metrics = tracker.GetLevelSetNormalReferenceToPhysicalMetrics(this.LevelSetIndex, surfNodes, jCell, 1);
+                            metrics = LevelSetData.GetLevelSetNormalReferenceToPhysicalMetrics(surfNodes, jCell, 1);
                         }
 
                         MultidimensionalArray Mtx_Gauss = null;
@@ -469,7 +472,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
             // evaluate Basis and Gradient of Basis
             var Phi = TestBasis.Values.GetValues(SurfQrNodes); // test function, n
-            var LevelSetNormals = this.tracker.GetLevelSetReferenceNormals(this.LevelSetIndex, SurfQrNodes, jCell, 1).ExtractSubArrayShallow(0, -1, -1);
+            var LevelSetNormals = this.LevelSetData.GetLevelSetReferenceNormals(SurfQrNodes, jCell, 1).ExtractSubArrayShallow(0, -1, -1);
             //metrics = tracker.GetLevelSetNormalReferenceToPhysicalMetrics(this.LevelSetIndex, 0, jCell, 1);
             
             // multiply
@@ -659,7 +662,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
             //var LevsetNormal = this.LsTrk.GetLevelSetReferenceNormals(iLevSet, 0, jCell, 1);  // reference
             //var Curvature = this.LsTrk.GetLevelSetReferenceCurvature(iLevSet, 0, jCell, 1);   // reference
-            var LevsetNormal = this.tracker.GetLevelSetNormals(iLevSet, surfaceNodes, jCell, 1).ExtractSubArrayShallow(0, -1, -1); // physical
+            var LevsetNormal = this.LevelSetData.GetLevelSetNormals(surfaceNodes, jCell, 1).ExtractSubArrayShallow(0, -1, -1); // physical
             var Curvature = MultidimensionalArray.Create(1, NoOfNodes);                                  // physical
             ((LevelSet)(this.tracker.LevelSets[iLevSet])).EvaluateTotalCurvature(jCell, 1, surfaceNodes, Curvature);  // physical
 
@@ -731,7 +734,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     //MultidimensionalArray BasisValues = TestBasis.Evaluate(0);                 // reference
                     //var LSNormals = LsTrk.GetLevelSetReferenceNormals(iLevSet, 0, i0, Length); // reference
                     MultidimensionalArray BasisValues = TestBasis.CellEval(NS.Nodes, i0, Length);         // physical
-                    MultidimensionalArray LSNormals = this.tracker.GetLevelSetNormals(this.LevelSetIndex, NS.Nodes, i0, Length);  // physical
+                    MultidimensionalArray LSNormals = this.LevelSetData.GetLevelSetNormals(NS.Nodes, i0, Length);  // physical
 
                     for (int i = 0; i < Length; i++) { // loop over cells
                         //if(i0 + i == 1) {

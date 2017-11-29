@@ -118,11 +118,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// <summary>
         /// Constructor
         /// </summary>
-        /// <param name="tracker">
-        /// Tracker containing the level set to be integrated over
-        /// </param>
-        /// <param name="levSetInd">
-        /// Index of the considered level set within <paramref name="tracker"/>
+        /// <param name="levelSetData">
         /// </param>
         /// <param name="edgeRuleFactory">
         /// Quadrature rule factory for the integration over the edges of the
@@ -132,12 +128,12 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// <see cref="LevelSetEdgeVolumeQuadRuleFactory"/>
         /// </param>
         public LevelSetSurfaceQuadRuleFactory(
-            LevelSetTracker tracker,
+            LevelSetTracker.LevelSetData levelSetData,
             IQuadRuleFactory<CellBoundaryQuadRule> edgeRuleFactory,
             int levSetInd = 0) {
 
-            this.tracker = tracker;
-
+            this.tracker = levelSetData.Tracker;
+            this.LevelSetData = levelSetData;
             if (!object.ReferenceEquals(RefElement, edgeRuleFactory.RefElement)) {
                 throw new ArgumentException();
             }
@@ -146,8 +142,10 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             if (tracker.LevelSets.Count <= levSetInd || levelSetIndex < 0) {
                 throw new ArgumentOutOfRangeException("Please provide a valid index for the level set.");
             }
-            this.levelSetIndex = levSetInd;
+            this.levelSetIndex = levelSetData.LevelSetIndex;
         }
+
+        LevelSetTracker.LevelSetData LevelSetData;
 
         #region IQuadRuleFactory<QuadRule>
 
@@ -505,9 +503,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                 MultidimensionalArray phis = EvaluatePhis(i0, length, nodes);
                 MultidimensionalArray normals =
-                    tracker.GetLevelSetReferenceNormals(levSetIndex, nodes, i0, length);
+                    LevelSetData.GetLevelSetReferenceNormals(nodes, i0, length);
                 MultidimensionalArray metrics =
-                    tracker.GetLevelSetNormalReferenceToPhysicalMetrics(levSetIndex, nodes, i0, length);
+                    LevelSetData.GetLevelSetNormalReferenceToPhysicalMetrics(nodes, i0, length);
 
                 if (!phis.IsContinious || !quadResults.IsContinious || !normals.IsContinious || !metrics.IsContinious) {
                     throw new NotImplementedException(
@@ -632,9 +630,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                 MultidimensionalArray phis = EvaluatePhis(jCell, nodes);
                 MultidimensionalArray normals =
-                    tracker.GetLevelSetReferenceNormals(levSetIndex, nodes, jCell, 1);
+                    LevelSetData.GetLevelSetReferenceNormals(nodes, jCell, 1);
                 MultidimensionalArray metrics =
-                    tracker.GetLevelSetNormalReferenceToPhysicalMetrics(levSetIndex, nodes, jCell, 1);
+                    LevelSetData.GetLevelSetNormalReferenceToPhysicalMetrics(nodes, jCell, 1);
 
                 // Additional space required by Fortran routine
                 double[] rhs = new double[Math.Max(noOfNodes, noOfPhis)];
@@ -810,7 +808,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     mappedNodes.LockForever();
 
                     // Remove nodes in negative part
-                    MultidimensionalArray levelSetValues = tracker.GetLevSetValues(0, mappedNodes, jCell, 1);
+                    MultidimensionalArray levelSetValues = LevelSetData.GetLevSetValues(mappedNodes, jCell, 1);
                     List<int> nodesToBeCopied = new List<int>(mappedNodes.GetLength(0));
                     for (int n = 0; n < nodes.GetLength(0); n++) {
                         if (levelSetValues[0, n] >= 0.0) {
@@ -928,8 +926,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                         NodeSet centerNode = new NodeSet(RefElement, center);
                         centerNode.LockForever();
 
-                        MultidimensionalArray normal = tracker.GetLevelSetReferenceNormals(0, centerNode, cell.Value, 1);
-                        MultidimensionalArray dist = tracker.GetLevSetValues(0, centerNode, cell.Value, 1);
+                        MultidimensionalArray normal = LevelSetData.GetLevelSetReferenceNormals(centerNode, cell.Value, 1);
+                        MultidimensionalArray dist = LevelSetData.GetLevSetValues(centerNode, cell.Value, 1);
 
                         double scaling = Math.Sqrt(tracker.GridDat.Cells.JacobiDet[cell.Value]);
 

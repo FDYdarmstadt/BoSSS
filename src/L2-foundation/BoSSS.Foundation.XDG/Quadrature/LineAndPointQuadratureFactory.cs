@@ -33,11 +33,13 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
     public class LineAndPointQuadratureFactory {
 
-        public LineAndPointQuadratureFactory(LevelSetTracker tracker, RefElement Kref, int levSetIndex, bool SupportPointrule, LineSegment.IRootFindingAlgorithm rootFindingAlgorithm = null) {
-            this.tracker = tracker;
+        public LineAndPointQuadratureFactory(RefElement Kref, 
+            LevelSetTracker.LevelSetData levelSetData, 
+            bool SupportPointrule, LineSegment.IRootFindingAlgorithm rootFindingAlgorithm = null) {
+            this.tracker = levelSetData.Tracker;
             this.m_RefElement = Kref;
             this.Tolerance = 1e-13;
-            this.LevelSetIndex = levSetIndex;
+            this.LevelSetData = levelSetData;
             this.SupportPointrule = SupportPointrule;
             this.RootFindingAlgorithm = rootFindingAlgorithm ?? new LineSegment.SafeGuardedNewtonMethod(this.Tolerance*0.1);
             this.referenceLineSegments = GetReferenceLineSegments(out this.segmentSorting, this.m_RefElement, this.RootFindingAlgorithm, this.tracker, this.LevelSetIndex);
@@ -50,11 +52,15 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             if (this.iKref < 0)
                 throw new ArgumentException("Reference element cannot be found in the provided grid.");
 
-            if (levSetIndex >= tracker.LevelSets.Count) {
-                throw new ArgumentOutOfRangeException("Please specify a valid index for the level set function");
-            }
+            
 
-            this.MaxGrid = this.tracker.GridDat.Cells.GetCells4Refelement(this.iKref).Intersect(tracker._Regions.GetCutCellMask4LevSet(this.LevelSetIndex));
+            this.MaxGrid = this.tracker.GridDat.Cells.GetCells4Refelement(this.iKref).Intersect(LevelSetData.Region.GetCutCellMask4LevSet(this.LevelSetIndex));
+        }
+
+        int LevelSetIndex {
+            get {
+                return LevelSetData.LevelSetIndex;
+            }
         }
 
         /// <summary>
@@ -87,9 +93,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         RefElement m_RefElement;
 
         /// <summary>
-        /// index of the respective level-set
+        ///Node-wise evaluation of the level-set field.
         /// </summary>
-        protected int LevelSetIndex;
+        protected LevelSetTracker.LevelSetData LevelSetData;
 
         bool SupportPointrule;
 
@@ -125,9 +131,10 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
 
             private ChunkRulePair<CellBoundaryQuadRule> GetUncutRule(int jCell, int order) {
-                int iLs = this.m_Owner.LevelSetIndex;
+                int iLs = this.m_Owner.LevelSetData.LevelSetIndex;
+                int iHi = this.m_Owner.LevelSetData.HistoryIndex;
                 var Lstrk = this.m_Owner.tracker;
-                int iDist = LevelSetTracker.DecodeLevelSetDist(Lstrk._Regions.m_LevSetRegions[jCell], iLs);
+                int iDist = LevelSetTracker.DecodeLevelSetDist(Lstrk.RegionsHistory[iHi].m_LevSetRegions[jCell], iLs);
                 if (Lstrk.GridDat.Cells.GetRefElementIndex(jCell) != m_Owner.iKref)
                     throw new ArgumentException("illegal cell mask.");
                 if (iDist > 0)

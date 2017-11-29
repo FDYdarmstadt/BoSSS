@@ -135,6 +135,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             return cache.Keys.ToArray();
         }
 
+        LevelSetTracker.LevelSetData lsData;
+
         /// <summary>
         /// Constructor
         /// </summary>
@@ -142,18 +144,19 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// <param name="levelSetIndex"></param>
         /// <param name="rootFindingAlgorithm"></param>
         /// <param name="jumpType"></param>
-        public CutLineOnEdgeQuadRuleFactory(LevelSetTracker tracker, int levelSetIndex, LineSegment.IRootFindingAlgorithm rootFindingAlgorithm = null, JumpTypes jumpType = JumpTypes.Heaviside) {
+        public CutLineOnEdgeQuadRuleFactory(LevelSetTracker.LevelSetData __lsData, LineSegment.IRootFindingAlgorithm rootFindingAlgorithm = null, JumpTypes jumpType = JumpTypes.Heaviside) {
             if (tracker.GridDat.SpatialDimension < 3) {
                 throw new ArgumentException("Only applicable in 3d", "tracker");
             }
 
-            this.tracker = tracker;
+            this.tracker = lsData.Tracker;
+            this.lsData = __lsData;
             this.RootFindingAlgorithm = rootFindingAlgorithm ?? LineSegment.DefaultRootFindingAlgorithm;
             this.jumpType = jumpType;
             if (levelSetIndex >= tracker.LevelSets.Count) {
                 throw new ArgumentOutOfRangeException("Please specify a valid index for the level set function");
             }
-            this.levelSetIndex = levelSetIndex;
+            this.levelSetIndex = lsData.LevelSetIndex;
             this.referenceLineSegments = GetReferenceLineSegments();
 
             tracker.Subscribe(this);
@@ -238,7 +241,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                 if(jumpType != JumpTypes.Implicit) {
                                     //using (tracker.GridDat.NSC.CreateLock(
                                     //    MultidimensionalArray.CreateWrapper(point, 1, D), 0, -1.0)) {
-                                    MultidimensionalArray levelSetValue = tracker.GetLevSetValues(levelSetIndex, _point, cell, 1);
+                                    MultidimensionalArray levelSetValue = lsData.GetLevSetValues(_point, cell, 1);
 
                                     switch(jumpType) {
                                         case JumpTypes.Heaviside:
