@@ -1758,7 +1758,7 @@ namespace BoSSS.Solution {
                 // ===============
                 // mesh adaptation
                 // ===============
-                this.AdaptMesh(out var newGrid, out var old2newGridCorr);
+                this.AdaptMesh(TimeStepNo, out var newGrid, out var old2newGridCorr);
                 
                 if(newGrid == null) {
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1956,8 +1956,7 @@ namespace BoSSS.Solution {
                     old2newGridCorr.ComputeDataRedist(newGridData);
 
                     int newJ = newGridData.Cells.NoOfLocalUpdatedCells;
-                    int[][] TargMappingIdx = new int[newJ][];
-                    old2newGridCorr.GetTargetMappingIndex(TargMappingIdx, newGridData.CellPartitioning);
+                    //int[][] TargMappingIdx = old2newGridCorr.GetTargetMappingIndex(newGridData.CellPartitioning);
                     
                     // sent data around the world
                     // ==========================
@@ -2103,7 +2102,7 @@ namespace BoSSS.Solution {
         /// <summary>
         /// Adaptation of the current mesh (<see cref="Grid"/>).
         /// </summary>
-        protected virtual void AdaptMesh(out GridCommons newGrid, out GridCorrelation old2NewGrid) {
+        protected virtual void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
             newGrid = null;
             old2NewGrid = null;
         }

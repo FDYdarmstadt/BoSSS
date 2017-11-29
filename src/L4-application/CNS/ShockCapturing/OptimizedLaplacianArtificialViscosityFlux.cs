@@ -53,7 +53,7 @@ namespace CNS.ShockCapturing {
 
         IList<string> IEquationComponent.ParameterOrdering {
             get {
-                return new string[] { "artificialViscosity" };
+                return new string[] { Variables.ArtificialViscosity };
             }
         }
         #endregion

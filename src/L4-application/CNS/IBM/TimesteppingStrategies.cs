@@ -38,7 +38,7 @@ namespace CNS.IBM {
             this TimesteppingStrategies strategy,
             IBMControl control,
             OperatorFactory equationSystem,
-            CoordinateMapping fieldsMap,
+            CNSFieldSet fieldSet,
             CoordinateMapping parameterMap,
             ISpeciesMap speciesMap,
             IList<TimeStepConstraint> timeStepConstraints) {
@@ -50,22 +50,23 @@ namespace CNS.IBM {
                     "speciesMap");
             }
 
+            CoordinateMapping variableMap = new CoordinateMapping(fieldSet.ConservativeVariables);
             switch (strategy) {
                 case TimesteppingStrategies.LieSplitting:
                 case TimesteppingStrategies.StrangSplitting:
                     return new IBMSplitRungeKutta(
-                        equationSystem.GetConvectiveOperator().Union(equationSystem.GetDiffusiveOperator()).ToSpatialOperator(),
-                        equationSystem.GetSourceTermOperator().ToSpatialOperator(),
-                        fieldsMap,
+                        equationSystem.GetConvectiveOperator().Union(equationSystem.GetDiffusiveOperator()).ToSpatialOperator(fieldSet),
+                        equationSystem.GetSourceTermOperator().ToSpatialOperator(fieldSet),
+                        variableMap,
                         parameterMap,
                         ibmSpeciesMap,
                         timeStepConstraints);
 
                 case TimesteppingStrategies.MovingFrameFlux:
                     return new IBMMovingFrameRungeKutta(
-                        equationSystem.GetConvectiveOperator().Union(equationSystem.GetDiffusiveOperator()).ToSpatialOperator(),
-                        equationSystem.GetSourceTermOperator().ToSpatialOperator(),
-                        fieldsMap,
+                        equationSystem.GetConvectiveOperator().Union(equationSystem.GetDiffusiveOperator()).ToSpatialOperator(fieldSet),
+                        equationSystem.GetSourceTermOperator().ToSpatialOperator(fieldSet),
+                        variableMap,
                         parameterMap,
                         ibmSpeciesMap,
                         timeStepConstraints);

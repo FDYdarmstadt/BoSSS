@@ -20,6 +20,7 @@ using BoSSS.Foundation.XDG;
 using ilPSP.Tracing;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
@@ -85,7 +86,6 @@ namespace BoSSS.Solution {
         /// Unique string reference under which data has been stored before grid-redistribution.
         /// </param>
         public abstract void RestoreDGField(DGField f, string Reference);
-
         
         /// <summary>
         /// Backup data for some DG field before update of grid.
@@ -94,26 +94,7 @@ namespace BoSSS.Solution {
         /// <param name="Reference">
         /// Unique string reference under which the re-distributed data can be accessed later, within <see cref="RestoreDGField(DGField, string)"/>.
         /// </param>
-        public void BackupField(DGField f, string Reference) {
-            if(!object.ReferenceEquals(f.GridDat, m_OldGrid)) {
-                throw new ArgumentException("DG field seems to be assigned to some other grid.");
-            }
-
-            Basis oldBasis = f.Basis;
-
-            double[][] oldFieldsData = new double[m_oldJ][];
-            m_oldDGFieldData.Add(Reference, oldFieldsData);
-
-            for(int j = 0; j < m_oldJ; j++) {
-                int Nj = oldBasis.GetLength(j);
-                double[] data_j = new double[Nj];
-                for(int n = 0; n < Nj; n++) {
-                    data_j[n] = f.Coordinates[j, n];
-                }
-
-                oldFieldsData[j] = data_j;
-            }
-        }
+        abstract public void BackupField(DGField f, string Reference);
 
         /// <summary>
         /// See <see cref="BackupField(DGField, string)"/>.
@@ -121,10 +102,6 @@ namespace BoSSS.Solution {
         public void BackupField(DGField f) {
             BackupField(f, f.Identification);
         }
-
-        
-
-       
 
         /// <summary>
         /// See <see cref="RestoreDGField(DGField, string)"/>.

@@ -83,7 +83,10 @@ namespace BoSSS.Solution.Timestepping {
         /// <see cref="Foundation.Grid.SubGrid"/> that is used for time integration,
         /// e.g., in an IBM simulation this is only fluid part
         /// </summary>
-        protected SubGrid subGrid;
+        public SubGrid SubGrid {
+            get;
+            private set;
+        }
 
         /// <summary>
         /// 
@@ -164,20 +167,20 @@ namespace BoSSS.Solution.Timestepping {
 
                 this.TimeStepConstraints = timeStepConstraints;
                 
-                subGrid = sgrd ?? new SubGrid(CellMask.GetFullMask(Fieldsmap.First().GridDat));
+                SubGrid = sgrd ?? new SubGrid(CellMask.GetFullMask(Fieldsmap.First().GridDat));
 
                 // generate Evaluator
                 // ==================
 
-                CellMask cm = subGrid.VolumeMask;
-                EdgeMask em = subGrid.AllEdgesMask;
+                CellMask cm = SubGrid.VolumeMask;
+                EdgeMask em = SubGrid.AllEdgesMask;
 
                 Operator = spatialOp;
                 m_Evaluator = new Lazy<SpatialOperator.Evaluator>(() => spatialOp.GetEvaluatorEx(
                     Fieldsmap, ParameterFields, Fieldsmap,
                     new EdgeQuadratureScheme(true, em),
                     new CellQuadratureScheme(true, cm),
-                    subGrid,
+                    SubGrid,
                     sgrdBnd));
             }
         }
@@ -321,7 +324,7 @@ namespace BoSSS.Solution.Timestepping {
                 // Use "harmonic sum" of step - sizes, see
                 // WatkinsAsthanaJameson2016 for the reasoning
                 dt = 1.0 / TimeStepConstraints.Sum(
-                        c => 1.0 / c.GetGloballyAdmissibleStepSize(subGrid));
+                        c => 1.0 / c.GetGloballyAdmissibleStepSize(SubGrid));
                 if (dt == 0.0) {
                     throw new ArgumentException(
                         "Time-step size is exactly zero.");
