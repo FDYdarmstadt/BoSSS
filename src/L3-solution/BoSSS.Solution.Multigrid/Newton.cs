@@ -226,7 +226,7 @@ namespace BoSSS.Solution.Multigrid {
         public double[] GMRES(CoordinateVector SolutionVec, double[] currentX, double[] f0, double[] xinit, out double errstep) {
             using (var tr = new FuncTrace()) {
                 int n = f0.Length;
-                int reorth = 0; // Orthogonalization method -> 1: Brown/Hindmarsh condition, 3: Always reorthogonalize
+                int reorth = 1; // Orthogonalization method -> 1: Brown/Hindmarsh condition, 3: Always reorthogonalize
 
                 // RHS of the linear equation system 
                 double[] b = new double[n];
@@ -280,9 +280,6 @@ namespace BoSSS.Solution.Multigrid {
                     //CurrentLin.OperatorMatrix.SpMV(1.0, V[k-1], 0.0, temp3);
                     // Call directional derivative
                     //V[k].SetV(f0);
-
-                    Console.WriteLine("V[k] norm:  " + V[k].L2NormPow2().MPISum().Sqrt());
-
 
                     if (Precond != null) {
                         var temp3 = V[k].CloneAs();
@@ -377,7 +374,7 @@ namespace BoSSS.Solution.Multigrid {
 
                 k--;
 
-                Console.WriteLine("GMRES completed after:   " + k + "steps");
+                //Console.WriteLine("GMRES completed after:   " + k + "steps");
 
                 // update approximation and exit
                 //y = H(1:i,1:i) \ g(1:i);    
