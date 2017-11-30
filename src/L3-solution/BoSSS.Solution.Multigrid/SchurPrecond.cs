@@ -168,7 +168,7 @@ namespace BoSSS.Solution.Multigrid
                         invVelMassMatrix = velMassMatrix.CloneAs();
                         invVelMassMatrix.Clear();
                         invVelMassMatrixSqrt = invVelMassMatrix.CloneAs();
-                        for (int i = 0; i < velMassMatrix.NoOfCols; i++)
+                        for (int i = velMassMatrix.RowPartitioning.i0; i < velMassMatrix.RowPartitioning.iE; i++)
                         {
                             if (ApproxScaling)
                             {
@@ -227,7 +227,7 @@ namespace BoSSS.Solution.Multigrid
 
                         var invdiag_ConvDiff = ConvDiff.CloneAs();
                         invdiag_ConvDiff.Clear();
-                        for (int i = 0; i < ConvDiff.NoOfCols; i++)
+                        for (int i = ConvDiff.RowPartitioning.i0; i < ConvDiff.RowPartitioning.iE; i++)
                         {
                             invdiag_ConvDiff[i, i] = 1 / ConvDiff[i, i];
                         }
@@ -310,6 +310,13 @@ namespace BoSSS.Solution.Multigrid
             where U : IList<double>
             where V : IList<double>
         {
+            // For MPI
+            var idxU = Uidx[0];
+            for (int i = 0; i < Uidx.Length; i++)
+                Uidx[i] -= idxU;
+            var idxP = Pidx[0];
+            for (int i = 0; i < Pidx.Length; i++)
+                Pidx[i] -= idxP;
 
             var Bu = new double[Uidx.Length];
             var Xu = Bu.CloneAs();
@@ -406,6 +413,15 @@ namespace BoSSS.Solution.Multigrid
 
             var Bu = new double[Uidx.Length];
             var Xu = Bu.CloneAs();
+
+            // For MPI
+            var idxU = Uidx[0];
+            for (int i = 0; i < Uidx.Length; i++)
+                Uidx[i] -= idxU;
+            var idxP = Pidx[0];
+            for (int i = 0; i < Pidx.Length; i++)
+                Pidx[i] -= idxP;
+
             Bu = B.GetSubVector(Uidx, default(int[]));
             var Bp = new double[Pidx.Length];
             var Xp = Bp.CloneAs();

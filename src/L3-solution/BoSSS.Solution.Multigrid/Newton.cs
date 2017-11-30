@@ -249,7 +249,7 @@ namespace BoSSS.Solution.Multigrid {
                 if (Precond != null) {
                     var temp2 = r.CloneAs();
                     r.ClearEntries();
-                    //this.OpMtxRaw.InvertBlocks(OnlyDiagonal: true,Subblocks:true).SpMV(1, temp2, 0, r);
+                    //this.OpMtxRaw.InvertBlocks(OnlyDiagonal: false, Subblocks: false).SpMV(1, temp2, 0, r);
                     Precond.Solve(r, temp2);
                 }
 
@@ -284,7 +284,7 @@ namespace BoSSS.Solution.Multigrid {
                     if (Precond != null) {
                         var temp3 = V[k].CloneAs();
                         V[k].ClearEntries();
-                        //this.OpMtxRaw.InvertBlocks(OnlyDiagonal: true,Subblocks:true).SpMV(1, temp3, 0, V[k]);
+                        //this.OpMtxRaw.InvertBlocks(false,false).SpMV(1, temp3, 0, V[k]);
                         Precond.Solve(V[k], temp3);
                     }
 
@@ -407,7 +407,7 @@ namespace BoSSS.Solution.Multigrid {
 
             Console.WriteLine("Error Krylov:   " + errstep);
 
-            while (kinn < restart_limit && errstep > GMRESConvCrit) {
+            while (kinn < restart_limit && errstep.MPISum() > GMRESConvCrit) {
                 kinn++;
 
                 step = GMRES(SolutionVec, currentX, f0, step, out errstep);
