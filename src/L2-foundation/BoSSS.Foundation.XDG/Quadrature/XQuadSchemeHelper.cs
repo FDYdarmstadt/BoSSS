@@ -37,14 +37,6 @@ namespace BoSSS.Foundation.XDG {
     /// </summary>
     public class XQuadSchemeHelper {
 
-        ///// <summary>
-        ///// Cell agglomeration object/can be null if not provided at construction time.
-        ///// </summary>
-        //public MultiphaseCellAgglomerator CellAgglomeration {
-        //    private set;
-        //    get;
-        //}
-
         /// <summary>
         /// 
         /// </summary>
@@ -118,7 +110,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// ctor.
         /// </summary>
-        public XQuadSchemeHelper(XDGSpaceMetrics __XDGSpaceMetrics) {
+        internal XQuadSchemeHelper(XDGSpaceMetrics __XDGSpaceMetrics) {
 
             MPICollectiveWatchDog.Watch();
             this.XDGSpaceMetrics = __XDGSpaceMetrics;

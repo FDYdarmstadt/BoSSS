@@ -49,7 +49,7 @@ namespace BoSSS.Foundation.XDG {
                 if (momentFittingVariant == XQuadFactoryHelper.MomentFittingVariants.Classic)
                     HMForder -= 2;
 
-                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk._Regions.GetCutCellMask());
+                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
 
                 double force = 0;
 

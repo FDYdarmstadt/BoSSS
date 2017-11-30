@@ -214,7 +214,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                         continue;
                     }
 
-                    MultidimensionalArray normals = EvaluateRefNormalsOnEdge(tracker, levelSetIndex, cell, optimizedRule, e);
+                    MultidimensionalArray normals = EvaluateRefNormalsOnEdge(this.LevelSetData, cell, optimizedRule, e);
                     //MultidimensionalArray metrics = GetMetricTermsOnEdge(tracker, levelSetIndex, optimizedRule, cell, e);
 
                     //lh = tracker.GridDat.NSC.LockNodeSetFamily(tracker.GridDat.NSC.CreateContainer(

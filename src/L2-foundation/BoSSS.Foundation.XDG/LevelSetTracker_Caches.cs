@@ -65,11 +65,11 @@ namespace BoSSS.Foundation.XDG {
             }
 
             /// <summary>
-            /// Owner object.
+            /// Link to background grid.
             /// </summary>
-            public LevelSetTracker Tracker {
+            public GridData GridDat {
                 get {
-                    return m_owner;
+                    return m_owner.GridDat;
                 }
             }
 
@@ -78,11 +78,11 @@ namespace BoSSS.Foundation.XDG {
             /// </summary>
             public LevelSetTracker.LevelSetRegions Region {
                 get {
-                    return Tracker.RegionsHistory[HistoryIndex];
+                    return m_owner.RegionsHistory[HistoryIndex];
                 }
             }
 
-            LevelSetTracker m_owner;
+            LevelSetTracker m_owner; // don't expose this public, it would circumvent the idea of encapsulating a certain level-set time level.
             internal int m_StackIdx = 1;
             int m_iLevSet;
 

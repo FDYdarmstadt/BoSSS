@@ -91,10 +91,10 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// </summary>
         private static readonly Line lineSimplex = Line.Instance;
 
-        /// <summary>
-        /// Tracks the level set location
-        /// </summary>
-        private LevelSetTracker tracker;
+        ///// <summary>
+        ///// Tracks the level set location
+        ///// </summary>
+        //private LevelSetTracker tracker;
 
         /// <summary>
         /// The line segments of the reference element.
@@ -145,21 +145,17 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// <param name="rootFindingAlgorithm"></param>
         /// <param name="jumpType"></param>
         public CutLineOnEdgeQuadRuleFactory(LevelSetTracker.LevelSetData __lsData, LineSegment.IRootFindingAlgorithm rootFindingAlgorithm = null, JumpTypes jumpType = JumpTypes.Heaviside) {
-            if (tracker.GridDat.SpatialDimension < 3) {
+            if (__lsData.GridDat.SpatialDimension < 3) {
                 throw new ArgumentException("Only applicable in 3d", "tracker");
             }
 
-            this.tracker = lsData.Tracker;
             this.lsData = __lsData;
             this.RootFindingAlgorithm = rootFindingAlgorithm ?? LineSegment.DefaultRootFindingAlgorithm;
             this.jumpType = jumpType;
-            if (levelSetIndex >= tracker.LevelSets.Count) {
-                throw new ArgumentOutOfRangeException("Please specify a valid index for the level set function");
-            }
             this.levelSetIndex = lsData.LevelSetIndex;
             this.referenceLineSegments = GetReferenceLineSegments();
 
-            tracker.Subscribe(this);
+            //tracker.Subscribe(this);
         }
 
         /// <summary>
@@ -184,7 +180,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// <returns></returns>
         public IEnumerable<IChunkRulePair<CellEdgeBoundaryQuadRule>> GetQuadRuleSet(ExecutionMask mask, int order) {
             if (mask == null) {
-                mask = CellMask.GetFullMask(tracker.GridDat);
+                mask = CellMask.GetFullMask(this.lsData.GridDat);
             }
 
             if (mask is CellMask == false) {
@@ -196,8 +192,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             }
 
             QuadRule baseRule = lineSimplex.GetQuadratureRule(order);
-            int D = tracker.GridDat.SpatialDimension;
-            int noOfEdges = tracker.GridDat.Grid.RefElements[0].NoOfFaces;
+            int D = lsData.GridDat.SpatialDimension;
+            int noOfEdges = lsData.GridDat.Grid.RefElements[0].NoOfFaces;
             int noOfEdgesOfEdge = RefElement.FaceRefElement.NoOfFaces;
 
             var result = new List<ChunkRulePair<CellEdgeBoundaryQuadRule>>(mask.NoOfItemsLocally);
@@ -215,15 +211,15 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     List<double[]> nodes = new List<double[]>();
                     List<double> weights = new List<double>();
 
-                    if (tracker.GridDat.Cells.Cells2Edges[cell].Length != noOfEdges) {
+                    if (lsData.GridDat.Cells.Cells2Edges[cell].Length != noOfEdges) {
                         throw new NotImplementedException("Not implemented for hanging nodes");
                     }
 
                     int[] noOfNodesPerEdge = new int[noOfEdges];
                     int[,] noOfNodesPerEdgeOfEdge = new int[noOfEdges, noOfEdgesOfEdge];
                     for (int e = 0; e < noOfEdges; e++) {
-                        int edge = Math.Abs(tracker.GridDat.Cells.Cells2Edges[cell][e]) - 1;
-                        double edgeDet = tracker.GridDat.Edges.SqrtGramian[edge];
+                        int edge = Math.Abs(lsData.GridDat.Cells.Cells2Edges[cell][e]) - 1;
+                        double edgeDet = lsData.GridDat.Edges.SqrtGramian[edge];
 
                         for (int ee = 0; ee < noOfEdgesOfEdge; ee++) {
                             LineSegment refSegment = referenceLineSegments[e, ee];
@@ -391,7 +387,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                             segment.ProjectBasisPolynomials(levelSetField.Basis);
                         }
 
-                        tracker.Subscribe(segment);
+                        //tracker.Subscribe(segment);
                     }
 
                     lineSegments[e, ee] = segment;

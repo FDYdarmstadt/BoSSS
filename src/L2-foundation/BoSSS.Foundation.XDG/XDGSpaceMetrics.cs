@@ -44,18 +44,30 @@ namespace BoSSS.Foundation.XDG {
 
                 m_CutCellMetrics = new CutCellMetrics(this);
                 m_MassMatrixFactory = new MassMatrixFactory(this);
-
+                m_XQuadSchemeHelper = new XQuadSchemeHelper(this);
             }
         }
 
         /// <summary>
-        /// Used as an input for the co0nstruction of <see cref="XQuadSchemeHelper"/>.
+        /// Provides access to quadrature factories; however, most of the time the user wants to use schemes, <see cref="XQuadSchemeHelper"/>.
         /// </summary>
         public XQuadFactoryHelper XQuadFactoryHelper {
             get {
                 return m_qfHelper;
             }
         }
+
+        XQuadSchemeHelper m_XQuadSchemeHelper;
+
+        /// <summary>
+        /// Provides access to quadrature schemes on cut-cell domains.
+        /// </summary>
+        public XQuadSchemeHelper XQuadSchemeHelper {
+            get {
+                return m_XQuadSchemeHelper;
+            }
+        }
+
 
         MassMatrixFactory m_MassMatrixFactory;
         
