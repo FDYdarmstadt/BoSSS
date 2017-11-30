@@ -364,7 +364,7 @@ namespace BoSSS.Solution.Multigrid
         {
 
             var temp = new double[Xp.Count];
-            var sol = new double[pGrad.NoOfRows];
+            var sol = new double[pGrad.RowPartitioning.LocalLength];
 
             // Poisson solve
             using (var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver())
