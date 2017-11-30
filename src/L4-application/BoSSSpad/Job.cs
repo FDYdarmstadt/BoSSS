@@ -564,15 +564,17 @@ namespace BoSSS.Application.BoSSSpad {
 
             // deploy executables:
             bool RequiresDeploy = false;
-            if (DeployDir != null) {
+            if (DeployDir == null) {
                 if (!Directory.Exists(this.DeploymentDirectory) ||
                         !File.Exists(Path.Combine(DeployDir, Path.GetFileName(this.EntryAssembly.Location)))) {
                     RequiresDeploy = true;
                 }
-            } else {
-                RequiresDeploy = true;
+            }
+            else {
+                RequiresDeploy = false;
             }
 
+           
             if (RequiresDeploy) {
                 this.DeploymentDirectory = bpc.GetNewDeploymentDir(this);
                 bpc.DeployExecuteables(this, AdditionalDeploymentFiles);

@@ -53,7 +53,7 @@ namespace BoSSS.Application.BoSSSpad {
         private IList<int> columnIndices;
         private int stride;
         private string[] variables;
-        private ISessionInfo session;
+        public ISessionInfo session;
         private string CurrentLine = null;
 
         /// <summary>
