@@ -28,12 +28,6 @@ using System.Linq;
 
 namespace BoSSS.Foundation.XDG {
 
-
-
-
-
-
-
     /// <summary>
     /// Creation of XDG mass-matrices.
     /// </summary>

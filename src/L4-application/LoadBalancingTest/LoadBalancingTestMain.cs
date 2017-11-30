@@ -13,6 +13,7 @@ using ilPSP;
 using ilPSP.LinSolvers;
 using ilPSP.Tracing;
 using ilPSP.Utils;
+using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -142,6 +143,9 @@ namespace BoSSS.Application.LoadBalancingTest {
             this.DelUpdateLevelset(null, 0.0, 0.0, 0.0, false);
         }
 
+        /// <summary>
+        /// The operator d/dx
+        /// </summary>
         XSpatialOperator Op;
 
         XdgBDFTimestepping TimeIntegration;
@@ -259,6 +263,7 @@ namespace BoSSS.Application.LoadBalancingTest {
                 // compute one time-step
                 TimeIntegration.Solve(phystime, dt, ComputeOnlyResidual: true);
                 double ResidualNorm = this.uResidual.L2Norm();
+                Assert.LessOrEqual(ResidualNorm, 1.0e-8, "Unusually large and ugly residual norm detected.");
 
                 // done.
                 Console.WriteLine("    done.");
