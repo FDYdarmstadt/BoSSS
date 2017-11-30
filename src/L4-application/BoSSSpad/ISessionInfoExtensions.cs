@@ -1672,19 +1672,22 @@ namespace BoSSS.Foundation.IO {
 
             // Change maxNumberMethods to how many methods you want considered if no  methods specified
             int maxNumberMethods = 10;
+            double[] fraction = new double[maxNumberMethods];
+            bool initFrac = false;
 
             // Find methods if none given
             if (methods == null)
             {
+                int idx = sessions.IndexOfMax(s => s.ComputeNodeNames.Count());
                 var temp_fs = new FileStream[1];
                 BinaryFormatter fmt = new BinaryFormatter();
                 MethodCallRecord[] mcr = new MethodCallRecord[1];
-                temp_fs[0] = new FileStream(@path + "\\sessions\\" + sessions.Pick(0).ID + "\\profiling_bin.0.txt", FileMode.Open);
+                temp_fs[0] = new FileStream(@path + "\\sessions\\" + sessions.Pick(idx).ID + "\\profiling_bin.0.txt", FileMode.Open);
                 mcr[0] = (MethodCallRecord)fmt.Deserialize(temp_fs[0]);
                 temp_fs[0].Close();
 
                 // int i = 1;
-                var mostExpensive = mcr[0].FindChild("BoSSS.Application.IBM_Solver.IBM_SolverMain.RunSolverOneStep").CompleteCollectiveReport().OrderByDescending(cr => cr.ExclusiveTicks);
+                var mostExpensive = mcr[0].FindChild("BoSSS.Application.IBM_Solver.IBM_SolverMain.RunSolverOneStep").CompleteCollectiveReport().OrderByDescending(cr => cr.ExclusiveTimeFractionOfRoot);
 
                 methods = new string[maxNumberMethods];
                 for (int i = 0; i < maxNumberMethods; i++)
@@ -1692,6 +1695,8 @@ namespace BoSSS.Foundation.IO {
                    // Console.Write("Rank " + i + ": ");
                    // Console.WriteLine(mostExpensive.Pick(i).ToString());
                     methods[i] = mostExpensive.Pick(i).Name;
+                    fraction[i] = mostExpensive.Pick(i).ExclusiveTimeFractionOfRoot;
+                    initFrac = true;
                 }
             }
             int numberMethods = methods.Length;
@@ -1702,7 +1707,6 @@ namespace BoSSS.Foundation.IO {
             double[][] times = new double[numberSessions][];
             int[] processors = new int[numberSessions];
             string[] methods2 = methods;
-            double[] fraction = new double[numberMethods];
 
             // Iterate over sessions
             for (int i = 0; i < numberSessions; i++)
@@ -1729,10 +1733,10 @@ namespace BoSSS.Foundation.IO {
                     // Iterate over methods
                     for (int k = 0; k < numberMethods; k++)
                     {
-                        if (i == 0 && j == 0)
+                        /*if (i == 0 && j == 0)
                         {
-                            fraction[k] = mcr[j].FindChildren(methods[k]).Select(s => s.ExclusiveTimeFractionOfRoot).Max();
-                        }
+                            fraction[k] = mcr[j].FindChild("BoSSS.Application.IBM_Solver.IBM_SolverMain.RunSolverOneStep").CompleteCollectiveReport().Pick(k).ExclusiveTimeFractionOfRoot;
+                        }*/
                         // Get execution time of current method for current processor
                         double[] temp = new double[numberMethods];
                         temp[k] = mcr[j].FindChildren(methods[k]).Select(s => s.TimeSpentInMethod.TotalSeconds).Max();
@@ -1796,14 +1800,16 @@ namespace BoSSS.Foundation.IO {
             for (int i = 0; i < numberMethods; i++)
             {
                 Console.WriteLine("Rank " + i + ": " + methods2[i]);
+                if(initFrac) { 
                 Console.WriteLine("\t Time fraction of root: " + fraction[i].ToString("p3"));
+                }
             }
             Console.WriteLine("\n Worst scaling functions");
             Console.WriteLine("============================");
             for (int i = 0; i < numberMethods; i++)
             {
                 Console.WriteLine("Rank " + i + ": " + sortedMethods[i]);
-                Console.WriteLine("\t speedup slope: " + regressions[i].ToString("p3"));
+                Console.WriteLine("\t speedup slope: " + regressions[i].ToString("N3"));
             }
 
             return data;
