@@ -31,23 +31,21 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         /// <param name="LsTrk">Level-Set tracker</param>
         /// <param name="func">function which is integrated</param>
-        /// <param name="momentFittingVariant"></param>
-        /// <param name="SchemeHelper">optional XQuadSchemeHelper</param>
         /// <param name="HMForder"></param>
+        /// <param name="spc">species, over whose surface is integrated</param>
         /// <returns>Integral of <param name="func">func</param> over all MPI processors</returns>
-        static public double GetIntegralOverZeroLevelSet(LevelSetTracker LsTrk, ScalarFunctionEx func, XQuadFactoryHelper.MomentFittingVariants momentFittingVariant, int HMForder, XQuadSchemeHelper SchemeHelper = null) {
+        static public double GetIntegralOverZeroLevelSet(LevelSetTracker LsTrk, ScalarFunctionEx func, int HMForder, SpeciesId spc) {
             using (new FuncTrace()) {
                 if (LsTrk.LevelSets.Count != 1)
                     throw new NotImplementedException();
 
 
-                if(SchemeHelper == null)
-                    SchemeHelper = LsTrk.GetXDGSpaceMetrics(momentFittingVariant, HMForder, 1).XQuadSchemeHelper;
+                var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new SpeciesId[] { spc }, HMForder, 1).XQuadSchemeHelper;
                         // new XQuadSchemeHelper(LsTrk, momentFittingVariant);
 
                 // Classic HMF uses order+1 for Surface Integrals and additionally 1 order higher for the HMF system
                 // e.g order-2 is the cached quad rule 
-                if (momentFittingVariant == XQuadFactoryHelper.MomentFittingVariants.Classic)
+                if (SchemeHelper.MomentFittingVariant == XQuadFactoryHelper.MomentFittingVariants.Classic)
                     HMForder -= 2;
 
                 CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());

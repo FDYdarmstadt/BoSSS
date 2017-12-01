@@ -32,33 +32,112 @@ namespace BoSSS.Foundation.XDG {
 
 
 
-        public Dictionary<XQuadFactoryHelper.MomentFittingVariants, XQuadFactoryHelper> m_QuadFactoryHelpers
-            = new Dictionary<XQuadFactoryHelper.MomentFittingVariants, XQuadFactoryHelper>();
+        HistoryStack<Dictionary<XQuadFactoryHelper.MomentFittingVariants, XQuadFactoryHelper>> m_QuadFactoryHelpersHistory = null;
+           
 
-        /*
+        
         /// <summary>
         /// Central 'factory' for creating Level Set - related quadrature.
         /// </summary>
         /// <remarks>
         /// The centralized approach should avoid multiple creation of the same quadrature rule.
         /// </remarks>
-        public XQuadFactoryHelper GetXQuadFactoryHelper(XQuadFactoryHelper.MomentFittingVariants variant) {
-            if (!m_QuadFactoryHelpers.ContainsKey(variant)) {
-                m_QuadFactoryHelpers[variant] = new XQuadFactoryHelper(this, variant);
+        XQuadFactoryHelper GetXQuadFactoryHelper(XQuadFactoryHelper.MomentFittingVariants variant, int HistoryIndex) {
+            var dict = m_QuadFactoryHelpersHistory[HistoryIndex];
+            
+            if (!dict.ContainsKey(variant)) {
+                dict[variant] = new XQuadFactoryHelper(
+                    this.DataHistories.Select(hist => hist[HistoryIndex]).ToArray(),
+                    variant);
             }
-            return m_QuadFactoryHelpers[variant];
+
+            return dict[variant];
         }
         
       
-        */
+        HistoryStack<Dictionary<Tuple<SpeciesId[], XQuadFactoryHelper.MomentFittingVariants, int>, XDGSpaceMetrics>> m_XDGSpaceMetricsHistory = null;
+        
+        Dictionary<Tuple<SpeciesId[], XQuadFactoryHelper.MomentFittingVariants, int>, XDGSpaceMetrics> NewXDGSpaceMetricsCache() {
+            return new Dictionary<Tuple<SpeciesId[], XQuadFactoryHelper.MomentFittingVariants, int>, XDGSpaceMetrics>(
+                new FuncEqualityComparer<Tuple<SpeciesId[], XQuadFactoryHelper.MomentFittingVariants, int>>(
+                    delegate(Tuple<SpeciesId[], XQuadFactoryHelper.MomentFittingVariants, int> A, Tuple<SpeciesId[], XQuadFactoryHelper.MomentFittingVariants, int> B) {
+                        //if(.)
+                        if(!ArrayTools.ListEquals(A.Item1, B.Item1, (a, b) => a.cntnt == b.cntnt))
+                            return false;
+                        if(A.Item2 != B.Item2)
+                            return false;
+                        if(A.Item3 != B.Item3)
+                            return false;
+
+                        return true;
+                    }));
+
+        }
 
 
-        public XDGSpaceMetrics GetXDGSpaceMetrics(XQuadFactoryHelper.MomentFittingVariants variant, int quadorder, int stackindex) {
-            if(!m_QuadFactoryHelpers.ContainsKey(variant)) {
-                m_QuadFactoryHelpers[variant] = new XQuadFactoryHelper(this, variant);
+
+        public XDGSpaceMetrics GetXDGSpaceMetrics(SpeciesId[] Spc, int CutCellsQuadOrder, int HistoryIndex) {
+            //if(!m_QuadFactoryHelpers.ContainsKey(variant)) {
+            //    m_QuadFactoryHelpers[variant] = new XQuadFactoryHelper(this, variant);
+            //}
+
+            var CutCellsQuadType = this.CutCellQuadratureType;
+
+            //throw new NotImplementedException("todo");
+            var dict = m_XDGSpaceMetricsHistory[HistoryIndex];
+            var key = new Tuple<SpeciesId[], XQuadFactoryHelper.MomentFittingVariants, int>(Spc, this.CutCellQuadratureType, CutCellsQuadOrder);
+            if(!dict.ContainsKey(key)) {
+                dict.Add(key,
+                    new XDGSpaceMetrics(this,
+                        GetXQuadFactoryHelper(CutCellsQuadType, HistoryIndex),
+                        CutCellsQuadOrder,
+                        Spc,
+                        HistoryIndex
+                        )
+                );
             }
 
-            throw new NotImplementedException("todo");
+            return dict[key];
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="Spc"></param>
+        /// <param name="CutCellsQuadOrder"></param>
+        /// <param name="oldCcm"></param>
+        /// <param name="oldTs__AgglomerationTreshold"></param>
+        /// <param name="__AgglomerationTreshold">
+        /// Volume fraction, which triggers cell agglomeration;
+        /// see <see cref="MultiphaseCellAgglomerator.AgglomerationThreshold"/></param>
+        /// <param name="oldTs__AgglomerationTreshold">
+        /// Agglomeration thresholds for   _previous_ timesteps, correlates with <paramref name="oldCcm"/>.
+        /// </param>
+        /// <param name="AgglomerateNewborn">
+        /// 'Newborn' cut-cells 
+        /// are agglomerated to cells which already exist in the previous  timestep.
+        /// </param>
+        /// <param name="AgglomerateDecased">
+        /// 'Deceased' cut-cells are agglomerated to cells which exist in the next timestep.
+        /// </param>
+        /// <param name="ExceptionOnFailedAgglomeration">
+        /// If true, an exception is thrown for 
+        /// any cell which should be agglomerated, if no neighbour is found.
+        /// </param>
+        /// <param name="NewbornAndDecasedThreshold">
+        /// Volume fraction threshold at which a cut-cell counts as newborn, resp. deceased, see <paramref name="AgglomerateNewbornAndDeceased"/>;
+        /// </param>        
+        /// <returns></returns>
+        public MultiphaseCellAgglomerator GetAgglomerator(
+            SpeciesId[] Spc, int CutCellsQuadOrder,
+            double __AgglomerationTreshold, 
+            bool AgglomerateNewborn = false, bool AgglomerateDecased = false, bool ExceptionOnFailedAgglomeration = true, 
+            CutCellMetrics[] oldCcm = null, double[] oldTs__AgglomerationTreshold = null,
+            double NewbornAndDecasedThreshold = 1.0e-6
+            ) {
+
+            return new MultiphaseCellAgglomerator(this, Spc, CutCellsQuadOrder,
+                __AgglomerationTreshold, AgglomerateNewborn, AgglomerateDecased, ExceptionOnFailedAgglomeration, oldTs__AgglomerationTreshold, NewbornAndDecasedThreshold);
         }
 
 

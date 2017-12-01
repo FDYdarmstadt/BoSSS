@@ -83,12 +83,16 @@ namespace BoSSS.Foundation.XDG {
         /// Link to the tracker.
         /// </summary>
         public LevelSetTracker Tracker {
-            get {
-                return NonAgglomeratedMetrics.Tracker;
-            }
+            get;
+            private set;
         }
 
         public CutCellMetrics NonAgglomeratedMetrics {
+            get;
+            private set;
+        }
+
+        public XDGSpaceMetrics XDGSpaceMetrics {
             get;
             private set;
         }
@@ -98,10 +102,6 @@ namespace BoSSS.Foundation.XDG {
         /// ctor.
         /// </summary>
         /// <param name="__AgglomerationTreshold">see <see cref="AgglomerationThreshold"/></param>
-        /// <param name="ccm"></param>
-        /// <param name="oldCcm">
-        /// Cut-cell-metrics for  _previous_ timesteps, see <paramref name="AgglomerateNewbornAndDeceased"/>.
-        /// </param>
         /// <param name="oldTs__AgglomerationTreshold">
         /// Agglomeration thresholds for   _previous_ timesteps, correlates with <paramref name="oldCcm"/>.
         /// </param>
@@ -119,9 +119,15 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="NewbornAndDecasedThreshold">
         /// Volume fraction threshold at which a cut-cell counts as newborn, resp. deceased, see <paramref name="AgglomerateNewbornAndDeceased"/>;
         /// </param>
-        public MultiphaseCellAgglomerator(CutCellMetrics ccm, double __AgglomerationTreshold, 
+        /// <param name="CutCellsQuadOrder"></param>
+        /// <param name="CutCellsQuadType"></param>
+        /// <param name="lsTrk"></param>
+        internal MultiphaseCellAgglomerator(
+            LevelSetTracker lsTrk,
+            SpeciesId[] Spc, int CutCellsQuadOrder,
+            double __AgglomerationTreshold, 
             bool AgglomerateNewborn = false, bool AgglomerateDecased = false, bool ExceptionOnFailedAgglomeration = true, 
-            CutCellMetrics[] oldCcm = null, double[] oldTs__AgglomerationTreshold = null,
+            double[] oldTs__AgglomerationTreshold = null,
             double NewbornAndDecasedThreshold = 1.0e-6) {
             if (__AgglomerationTreshold < 0.0 || __AgglomerationTreshold >= 1.0)
                 throw new ArgumentOutOfRangeException();
@@ -129,13 +135,20 @@ namespace BoSSS.Foundation.XDG {
             if (NewbornAndDecasedThreshold < 0.0 || NewbornAndDecasedThreshold >= 1.0)
                 throw new ArgumentOutOfRangeException();
 
-            this.NonAgglomeratedMetrics = ccm;
+            this.Tracker = lsTrk;
+
+            this.XDGSpaceMetrics = lsTrk.GetXDGSpaceMetrics(Spc, CutCellsQuadOrder, 1);
+            this.NonAgglomeratedMetrics = lsTrk.GetXDGSpaceMetrics(Spc, CutCellsQuadOrder, 1).CutCellMetrics;
             this.AgglomerationThreshold = __AgglomerationTreshold;
 
-            if (AgglomerateNewborn || AgglomerateDecased) {
-                if (oldCcm == null || oldCcm.Length <= 0 || oldCcm.Any(occm => occm == null)) {
-                    throw new ArgumentException("old cut cell-volumes are required.");
+            CutCellMetrics[] oldCcm;
+            if(AgglomerateNewborn || AgglomerateDecased) {
+                oldCcm = new CutCellMetrics[oldTs__AgglomerationTreshold.Length];
+                for(int iHistory = 0; iHistory < oldCcm.Length; iHistory++) {
+                    oldCcm[iHistory] = lsTrk.GetXDGSpaceMetrics(Spc, CutCellsQuadOrder, -iHistory).CutCellMetrics;
                 }
+            } else {
+                oldCcm = null;
             }
 
             if ((oldCcm == null) != (oldTs__AgglomerationTreshold == null)) {
@@ -210,7 +223,7 @@ namespace BoSSS.Foundation.XDG {
             var ret = new Dictionary<SpeciesId, XSpatialOperator.SpeciesFrameMatrix<IMutableMatrixEx>>();
             foreach (var kv in DictAgglomeration) {
                 var Species = kv.Key;
-                var mtx_spc = new XSpatialOperator.SpeciesFrameMatrix<IMutableMatrixEx>(Matrix, this.Tracker, Species, RowMap, ColMap);
+                var mtx_spc = new XSpatialOperator.SpeciesFrameMatrix<IMutableMatrixEx>(Matrix, this.Tracker.Regions, Species, RowMap, ColMap);
                 ret.Add(Species, mtx_spc);
             }
 
@@ -231,15 +244,16 @@ namespace BoSSS.Foundation.XDG {
             UnsetteledCoordinateMapping m_Map;
             SpeciesId m_spId;
 
-            LevelSetTracker m_LsTrk;
+            LevelSetTracker.LevelSetRegions m_LsRegion;
 
             public int MaxDeg = -1;
 
             public int NoOfVars;
 
-            public MiniMapping(UnsetteledCoordinateMapping Map, SpeciesId spId) {
+            public MiniMapping(UnsetteledCoordinateMapping Map, SpeciesId spId, LevelSetTracker.LevelSetRegions r) {
                 m_Map = Map;
                 m_spId = spId;
+                m_LsRegion = r;
 
                 Basis[] BS = Map.BasisS.ToArray();
                 NS = new int[BS.Length];
@@ -250,7 +264,7 @@ namespace BoSSS.Foundation.XDG {
                     XDGBasis xBasis = BS[iVar] as XDGBasis;
                     if (xBasis != null) {
                         NS[iVar] = xBasis.NonX_Basis.Length;
-                        m_LsTrk = xBasis.Tracker;
+                        //m_LsTrk = xBasis.Tracker;
                         VarIsXdg[iVar] = true;
                     } else {
                         NS[iVar] = BS[iVar].Length;
@@ -263,7 +277,7 @@ namespace BoSSS.Foundation.XDG {
 
             public int i0Func(int jCell, int iVar) {
                 if (VarIsXdg[iVar]) {
-                    int iSpc = m_LsTrk.GetSpeciesIndex(this.m_spId, jCell);
+                    int iSpc = m_LsRegion.GetSpeciesIndex(this.m_spId, jCell);
                     return m_Map.GlobalUniqueCoordinateIndex(iVar, jCell, iSpc * NS[iVar]);
                 } else {
                     return m_Map.GlobalUniqueCoordinateIndex(iVar, jCell, 0);
@@ -330,9 +344,9 @@ namespace BoSSS.Foundation.XDG {
 
                     if (m_Agglomerator != null) {
 
-                        CellMask spcMask = this.Tracker._Regions.GetSpeciesMask(Species);
+                        CellMask spcMask = this.Tracker.Regions.GetSpeciesMask(Species);
 
-                        MiniMapping rowMini = new MiniMapping(RowMap, Species);
+                        MiniMapping rowMini = new MiniMapping(RowMap, Species, this.Tracker.Regions);
                         MsrMatrix LeftMul_Species = m_Agglomerator.GetRowManipulationMatrix(RowMap, rowMini.MaxDeg, rowMini.NoOfVars, rowMini.i0Func, rowMini.NFunc, false, spcMask);
                         if (LeftMul == null) {
                             LeftMul = LeftMul_Species;
@@ -342,7 +356,7 @@ namespace BoSSS.Foundation.XDG {
 
 
                         if (!object.ReferenceEquals(LeftMul, RightMul) && RightMul != null) {
-                            MiniMapping colMini = new MiniMapping(ColMap, Species);
+                            MiniMapping colMini = new MiniMapping(ColMap, Species, this.Tracker.Regions);
                             MsrMatrix RightMul_Species = m_Agglomerator.GetRowManipulationMatrix(ColMap, colMini.MaxDeg, colMini.NoOfVars, colMini.i0Func, colMini.NFunc, false, spcMask);
 
                             if (RightMul == null) {
@@ -402,37 +416,12 @@ namespace BoSSS.Foundation.XDG {
             var ret = new Dictionary<SpeciesId, XSpatialOperator.SpeciesFrameVector<T>>();
             foreach (var kv in DictAgglomeration) {
                 var Species = kv.Key;
-                var vec_spc = new XSpatialOperator.SpeciesFrameVector<T>(this.Tracker, Species, vec, Map);
+                var vec_spc = new XSpatialOperator.SpeciesFrameVector<T>(this.Tracker.Regions, Species, vec, Map);
                 ret.Add(Species, vec_spc);
             }
             return ret;
         }
-
-        /*
-        /// <summary>
-        /// Performs the agglomeration operation for a right-hand-side vector.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="vec">the right-hand-side vector onto which the agglomeration is applied (input/output)</param>
-        /// <param name="Map">coordinate mapping for <paramref name="vec"/></param>
-        public void ManipulateRHS_Mk2<T>(T vec, UnsetteledCoordinateMapping Map, bool[] RowMapAggSw = null)
-            where T : IList<double> //
-        {
-            MPICollectiveWatchDog.Watch();
-
-            var vecS = GetFrameVectors(vec, Map);
-            foreach (var kv in DictAgglomeration) {
-                var Species = kv.Key;
-                var m_Agglomerator = kv.Value;
-
-                if (m_Agglomerator != null) {
-                    var vec_spc = vecS[Species];
-                    // m_Agglomerator.ManipulateRHS_Mk2(vec_spc, vec_spc.Mapping, RowMapAggSw);
-                    throw new NotImplementedException("todo");
-                }
-            }
-        }
-        */
+        
 
         /// <summary>
         /// for all DG fields in <paramref name="Map"/>, this clears all entries which correspond to agglomerated cells.
@@ -532,14 +521,14 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="basename">base name for the output files</param>
         public void PlotAgglomerationPairs(string basename) {
 
-            var xqs = new XQuadSchemeHelper(this);
+            var xqs = this.XDGSpaceMetrics.XQuadSchemeHelper;
 
             foreach (var Species in this.Tracker.SpeciesIdS) {
                 if (!DictAgglomeration.ContainsKey(Species)) {
                     continue;
                 }
 
-                var gdat = this.Tracker.GridDat;
+                var gdat = this.XDGSpaceMetrics.GridDat;
                 int J = gdat.Cells.NoOfLocalUpdatedCells;
                 int D = gdat.SpatialDimension;
 
@@ -715,7 +704,7 @@ namespace BoSSS.Foundation.XDG {
             MultidimensionalArray CellVolumes, MultidimensionalArray edgeArea, 
             bool AgglomerateNewbornAndDeceased, bool ExceptionOnFailedAgglomeration, 
             MultidimensionalArray[] oldCellVolumes, double[] oldTs__AgglomerationTreshold, double NewbornAndDecasedThreshold) //
-            {
+        {
 
             using (var tracer = new FuncTrace()) {
                 MPICollectiveWatchDog.Watch();
@@ -793,31 +782,36 @@ namespace BoSSS.Foundation.XDG {
                     }
 
                     int NoTimeLev = oldTs__AgglomerationTreshold != null ? oldTs__AgglomerationTreshold.Length : 0;
-                    if (NoTimeLev > 0) {
+                    if(NoTimeLev > 0) {
                         // for the previous timestep
                         // - - - - - - - - - - - - - 
 
-                        ushort[] PrevRegions = Tracker.PreviousRegions.LevelSetRegions;
+                        //ushort[][] PrevRegions = new ushort[NoTimeLev][];
+                        //CellMask suspectsForAgg = Tracker.PreviousRegions.GetSpeciesMask(spId);
+                        //CellMask[] suspectsForAgg = new CellMask[NoTimeLev];
+                        //for(int itl = 0; itl < NoTimeLev; itl++) {
+                        //    PrevRegions[itl] = Tracker.RegionsHistory[-itl].LevelSetRegionsCode;
+                        //    suspectsForAgg[itl] = Tracker.RegionsHistory[-itl].GetSpeciesMask(spId);
+                        //}
+
                         LevelSetSignCode[] signCodes = Tracker.GetLevelSetSignCodes(spId);
                         int NoOfLevSets = Tracker.LevelSets.Count;
 
-                        CellMask suspectsForAgg = Tracker.PreviousRegions.GetSpeciesMask(spId);
-                        foreach (int jCell in suspectsForAgg.ItemEnum) {
-                            
+                        for(int iTimeLev = 0; iTimeLev < NoTimeLev; iTimeLev++) {
+                            CellMask suspectsForAgg = Tracker.RegionsHistory[-iTimeLev].GetSpeciesMask(spId);
+                            foreach(int jCell in suspectsForAgg.ItemEnum) {
 
-                            double totVol = grdDat.Cells.GetCellVolume(jCell);
-                            
-                            for (int iTimeLev = 0; iTimeLev < NoTimeLev; iTimeLev++) {
 
-                                double spcVol = oldCellVolumes[iTimeLev][jCell];
+                                double totVol = grdDat.Cells.GetCellVolume(jCell);
+                                                                double spcVol = oldCellVolumes[iTimeLev][jCell];
                                 double alpha = oldTs__AgglomerationTreshold[iTimeLev];
                                 spcVol = Math.Max(spcVol, 0.0);
                                 double frac = spcVol / totVol;
                                 frac = Math.Min(1.0, Math.Max(0.0, frac));
 
-                                if (frac < alpha) {
+                                if(frac < alpha) {
                                     // cell 'jCell' should be agglomerated to some other cell
-                                    if (!AgglomCellsBitmask[jCell]) {
+                                    if(!AgglomCellsBitmask[jCell]) {
                                         AgglomCellsBitmask[jCell] = true;
                                         AgglomCellsList.Add(jCell);
                                     }
@@ -829,7 +823,7 @@ namespace BoSSS.Foundation.XDG {
 
                     if (AgglomerateNewbornAndDeceased) {
                         //CellMask oldSpeciesCells = this.Tracker.LevelSetData.PreviousSubGrids[spId].VolumeMask;
-                        CellMask newSpeciesCells = Tracker._Regions.GetSpeciesMask(spId);
+                        CellMask newSpeciesCells = Tracker.Regions.GetSpeciesMask(spId);
 
 
                         // only accept cells with positive volume (new species cells)

@@ -181,22 +181,24 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             //    throw new ArgumentException();
             
             this.Kref = cellFaceFactory.RefElement;
-            if (!tracker.GridDat.Grid.RefElements.Contains(Kref, ReferenceComparer.Instance)) {
+            if (! levelSetData.GridDat.Grid.RefElements.Contains(Kref, ReferenceComparer.Instance)) {
                 throw new ArgumentOutOfRangeException(
                     "simplex", "'simplex' must be a volume - reference element");
             }
             
-            this.tracker = levelSetData.Tracker;
             this.LevelSetIndex = levelSetData.LevelSetIndex;
             this.cellFaceFactory = cellFaceFactory;
             this.SurfaceNodesOnZeroLevset = _SurfaceNodesOnZeroLevset;
             this.LevelSetBoundaryLineFactory = _LevelSetBoundaryLineFactory;
 
             int iKref = this.tracker.GridDat.Grid.RefElements.IndexOf(Kref);
-            this.MaxGrid = this.tracker.GridDat.Cells.GetCells4Refelement(iKref).Intersect(
+            this.MaxGrid = levelSetData.GridDat.Cells.GetCells4Refelement(iKref).Intersect(
                 levelSetData.Region.GetCutCellMask4LevSet(this.LevelSetIndex));
         }
 
+        /// <summary>
+        /// Evaluation of the level-set.
+        /// </summary>
         LevelSetTracker.LevelSetData LevelSetData;
 
         /// <summary>

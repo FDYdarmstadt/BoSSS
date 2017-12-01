@@ -190,8 +190,7 @@ namespace BoSSS.Foundation.XDG {
         /// Computes Cell-volumes and edge areas before agglomeration.
         /// </summary>
         void ComputeNonAgglomeratedMetrics() {
-            var lsTrk = this.Tracker;
-            var gd = lsTrk.GridDat;
+            var gd = XDGSpaceMetrics.GridDat;
             int JE = gd.Cells.NoOfCells;
             int J = gd.Cells.NoOfLocalUpdatedCells;
             int D = gd.SpatialDimension;
@@ -327,17 +326,17 @@ namespace BoSSS.Foundation.XDG {
             // loop over level-sets
             if (species.Length > 0) {
                 // find domain of all species: 
-                CellMask SpeciesCommonDom = lsTrk._Regions.GetSpeciesMask(species[0]);
+                CellMask SpeciesCommonDom = XDGSpaceMetrics.LevelSetRegions.GetSpeciesMask(species[0]);
                 for (int iSpc = 1; iSpc < species.Length; iSpc++) {
-                    SpeciesCommonDom = SpeciesCommonDom.Union(lsTrk._Regions.GetSpeciesMask(species[iSpc]));
+                    SpeciesCommonDom = SpeciesCommonDom.Union(XDGSpaceMetrics.LevelSetRegions.GetSpeciesMask(species[iSpc]));
                 }
-                BitArray[] SpeciesBitMask = species.Select(spc => lsTrk._Regions.GetSpeciesMask(spc).GetBitMask()).ToArray(); 
+                BitArray[] SpeciesBitMask = species.Select(spc => XDGSpaceMetrics.LevelSetRegions.GetSpeciesMask(spc).GetBitMask()).ToArray();
 
-                int NoOfLs = lsTrk.LevelSets.Count;
+                int NoOfLs = XDGSpaceMetrics.NoOfLevelSets;
                 int NoOfSpc = species.Length;
                 for (int iLevSet = 0; iLevSet < NoOfLs; iLevSet++) {
                     
-                    var LsDom = lsTrk._Regions.GetCutCellMask4LevSet(iLevSet);
+                    var LsDom = XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet);
                     var IntegrationDom = LsDom.Intersect(SpeciesCommonDom);
 
                     //if (IntegrationDom.NoOfItemsLocally > 0) { -> Doesn't work if Bjoerns HMF is used, eds up in an mpi dead lock
