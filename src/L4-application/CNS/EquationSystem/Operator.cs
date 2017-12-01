@@ -19,6 +19,7 @@ using System.Linq;
 using BoSSS.Foundation;
 using ilPSP;
 using BoSSS.Solution;
+using System;
 
 namespace CNS.EquationSystem {
 
@@ -34,7 +35,7 @@ namespace CNS.EquationSystem {
         /// Configuration options
         /// </summary>
         private CNSControl config;
-        
+
         /// <summary>
         /// The parameter ordering that is constructed from the parameter
         /// orderings of the different components.
@@ -148,12 +149,11 @@ namespace CNS.EquationSystem {
                 CNSEnvironment.PrimalArgumentOrdering,
                 GetParameterOrdering(fieldSet),
                 CNSEnvironment.PrimalArgumentOrdering,
-                QuadOrderFunc.NonLinear(2));
+                QuadOrderFunc.NonLinearWithoutParameters(2));
             MapComponents(spatialOp);
             spatialOp.Commit();
             return spatialOp;
         }
-
         /// <summary>
         /// Maps the <see cref="IEquationComponent"/>s in
         /// <paramref name="op"/> to the relevant equation components in
