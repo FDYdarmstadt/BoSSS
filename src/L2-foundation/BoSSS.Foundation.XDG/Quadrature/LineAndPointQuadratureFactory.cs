@@ -41,7 +41,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             this.LevelSetData = levelSetData;
             this.SupportPointrule = SupportPointrule;
             this.RootFindingAlgorithm = rootFindingAlgorithm ?? new LineSegment.SafeGuardedNewtonMethod(this.Tolerance*0.1);
-            this.referenceLineSegments = GetReferenceLineSegments(out this.segmentSorting, this.m_RefElement, this.RootFindingAlgorithm, this.tracker, this.LevelSetIndex);
+            this.referenceLineSegments = GetReferenceLineSegments(out this.segmentSorting, this.m_RefElement, this.RootFindingAlgorithm, levelSetData, this.LevelSetIndex);
            
 
             if (this.LevelSetData.GridDat.Grid.SpatialDimension != 2)
@@ -132,7 +132,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             private ChunkRulePair<CellBoundaryQuadRule> GetUncutRule(int jCell, int order) {
                 int iLs = this.m_Owner.LevelSetData.LevelSetIndex;
                 int iDist = LevelSetTracker.DecodeLevelSetDist(this.m_Owner.LevelSetData.Region.m_LevSetRegions[jCell], iLs);
-                if (Lstrk.GridDat.Cells.GetRefElementIndex(jCell) != m_Owner.iKref)
+                if ( this.m_Owner.LevelSetData.GridDat.Cells.GetRefElementIndex(jCell) != m_Owner.iKref)
                     throw new ArgumentException("illegal cell mask.");
                 if (iDist > 0)
                     return new ChunkRulePair<CellBoundaryQuadRule>(Chunk.GetSingleElementChunk(jCell), GetPosRule(order));
@@ -417,7 +417,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     int TotalNoOfRoots = 0;
                     for (int e = 0; e < referenceLineSegments.Length; e++) {
                         LineSegment referenceSegment = referenceLineSegments[e];
-                        double[] roots = referenceSegment.GetRoots(tracker.LevelSets[levSetIndex], jCell, iKref);
+                        double[] roots = referenceSegment.GetRoots(LevelSetData.LevelSet, jCell, iKref);
                         _roots[e] = FilterRoots(roots, rootFilterTol);
                         TotalNoOfRoots += _roots[e].Length;
                     }
@@ -1153,12 +1153,12 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                 if (!lineSegments.Contains(newSegment)) {
                     lineSegments.Add(newSegment);
-                    tracker.Subscribe(newSegment);
+                    //tracker.Subscribe(newSegment);
                 }
             }
 
             foreach (LineSegment segment in lineSegments) {
-                LevelSet levelSetField = tracker.LevelSets[LevelSetIndex] as LevelSet;
+                LevelSet levelSetField = levelSetData.LevelSet as LevelSet;
                 if (levelSetField != null) {
                     segment.ProjectBasisPolynomials(levelSetField.Basis);
                 }
@@ -1201,7 +1201,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                             if (segment.iVertexEnd == Soll_iVtxStart) {
                                 var si = segment.Inverse;
-                                tracker.Subscribe(si);
+                                //tracker.Subscribe(si);
                                 sotierung.Add(-j);
                                 NoOfhits++;
                             }

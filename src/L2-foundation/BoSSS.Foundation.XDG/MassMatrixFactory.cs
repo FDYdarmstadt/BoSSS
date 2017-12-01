@@ -47,7 +47,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public MassMatrixFactory(XDGSpaceMetrics __XDGSpaceMetrics) {
             XDGSpaceMetrics = __XDGSpaceMetrics;
-            this.MaxBasis = new Basis(XDGSpaceMetrics.Tracker.GridDat, XDGSpaceMetrics.CutCellQuadOrder / 2);
+            this.MaxBasis = new Basis(XDGSpaceMetrics.GridDat, XDGSpaceMetrics.CutCellQuadOrder / 2);
         }
 
         /*

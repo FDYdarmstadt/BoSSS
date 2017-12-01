@@ -156,7 +156,7 @@ namespace BoSSS.Foundation.XDG {
         */
 
         void ConstructorCommon() {
-            var Krefs = this.lsTrk.GridDat.Grid.RefElements;
+            var Krefs = this.XDGSpaceMetrics.GridDat.Grid.RefElements;
 
 
             // initialize some mask's and subgrids
@@ -168,33 +168,34 @@ namespace BoSSS.Foundation.XDG {
 
             // 
             foreach (var spId in this.SpeciesList) {
-                SubGrid spSgrd = this.lsTrk._Regions.GetSpeciesSubGrid(spId);
+                SubGrid spSgrd = this.XDGSpaceMetrics.LevelSetRegions.GetSpeciesSubGrid(spId);
 
                 this.m_SpeciesSubgrid_InnerAndDomainEdges.Add(
                     spId,
-                    spSgrd.InnerEdgesMask.Union(spSgrd.AllEdgesMask.Intersect(lsTrk.GridDat.BoundaryEdges)));
+                    spSgrd.InnerEdgesMask.Union(spSgrd.AllEdgesMask.Intersect(XDGSpaceMetrics.GridDat.BoundaryEdges)));
             }
 
             // all cut edges
             // =============
-            m_CutCellSubgrid_InnerEdges = this.lsTrk._Regions.GetCutCellSubGrid().InnerEdgesMask;
+            m_CutCellSubgrid_InnerEdges = this.XDGSpaceMetrics.LevelSetRegions.GetCutCellSubGrid().InnerEdgesMask;
 
             // cut edges sorted according to reference element and level-set
             // =============================================================
-            this.m_CutEdges = new EdgeMask[Krefs.Length, this.lsTrk.LevelSets.Count()];
-            this.m_HMFEdgesDomain = new EdgeMask[Krefs.Length, this.lsTrk.LevelSets.Count()];
+            int NoOfLs = this.XDGSpaceMetrics.NoOfLevelSets;
+            this.m_CutEdges = new EdgeMask[Krefs.Length, NoOfLs];
+            this.m_HMFEdgesDomain = new EdgeMask[Krefs.Length, NoOfLs];
             for (int iKref = 0; iKref < this.m_CutEdges.GetLength(0); iKref++) {
 
                 for (int iLevSet = 0; iLevSet < this.m_CutEdges.GetLength(1); iLevSet++) {
-                    EdgeMask cutEdges = this.lsTrk._Regions.GetCutCellSubgrid4LevSet(iLevSet).InnerEdgesMask.Union(
-                            this.lsTrk._Regions.GetCutCellSubgrid4LevSet(iLevSet).AllEdgesMask.Intersect(lsTrk.GridDat.BoundaryEdges));
+                    EdgeMask cutEdges = this.XDGSpaceMetrics.LevelSetRegions.GetCutCellSubgrid4LevSet(iLevSet).InnerEdgesMask.Union(
+                            this.XDGSpaceMetrics.LevelSetRegions.GetCutCellSubgrid4LevSet(iLevSet).AllEdgesMask.Intersect(this.XDGSpaceMetrics.GridDat.BoundaryEdges));
 
-                    cutEdges = cutEdges.Intersect(this.lsTrk.GridDat.GetRefElementSubGrid(iKref).AllEdgesMask);
+                    cutEdges = cutEdges.Intersect(this.XDGSpaceMetrics.GridDat.GetRefElementSubGrid(iKref).AllEdgesMask);
 
                     this.m_CutEdges[iKref, iLevSet] = cutEdges;
 
                     // (all edges of 'Kref'-elements) \cap (all edges of cells cut by 'iLevSet')  
-                    this.m_HMFEdgesDomain[iKref, iLevSet] = lsTrk._Regions.GetCutCellSubgrid4LevSet(iLevSet).AllEdgesMask.Intersect(this.lsTrk.GridDat.GetRefElementSubGrid(iKref).AllEdgesMask);
+                    this.m_HMFEdgesDomain[iKref, iLevSet] = this.XDGSpaceMetrics.LevelSetRegions.GetCutCellSubgrid4LevSet(iLevSet).AllEdgesMask.Intersect(this.XDGSpaceMetrics.GridDat.GetRefElementSubGrid(iKref).AllEdgesMask);
                 }
             }
 
@@ -316,7 +317,7 @@ namespace BoSSS.Foundation.XDG {
         /// reference element <paramref name="Kref"/>.
         /// </summary>
         EdgeMask GetCutEdges(RefElement Kref, int iLevSet) {
-            int iKref = this.lsTrk.GridDat.Grid.RefElements.IndexOf(Kref);
+            int iKref = this.XDGSpaceMetrics.GridDat.Grid.RefElements.IndexOf(Kref);
             return m_CutEdges[iKref, iLevSet];
         }
         
@@ -326,7 +327,7 @@ namespace BoSSS.Foundation.XDG {
         /// reference element <paramref name="Kref"/>.
         /// </summary>
         EdgeMask GetHMFEdgesDomain(RefElement Kref, int iLevSet) {
-            int iKref = this.lsTrk.GridDat.Grid.RefElements.IndexOf(Kref, (a, b) => object.ReferenceEquals(a, b));
+            int iKref = this.XDGSpaceMetrics.GridDat.Grid.RefElements.IndexOf(Kref, (a, b) => object.ReferenceEquals(a, b));
             return m_HMFEdgesDomain[iKref, iLevSet];
         }
 
@@ -355,21 +356,21 @@ namespace BoSSS.Foundation.XDG {
         Dictionary<RefElement, EdgeMask> m_Subgrid4Kref_AllEdges = new Dictionary<RefElement, EdgeMask>();
         */
 
-        LevelSetTracker lsTrk {
-            get {
-                return XDGSpaceMetrics.Tracker;
-            }
-        }
+        //LevelSetTracker lsTrk {
+        //    get {
+        //        return XDGSpaceMetrics.Tracker;
+        //    }
+        //}
 
 
         public EdgeQuadratureScheme Get_SurfaceElement_EdgeQuadScheme(SpeciesId sp) {
             if (!this.SpeciesList.Contains(sp))
-                throw new ArgumentException("Given species '" + this.lsTrk.GetSpeciesName(sp) + "' is not supported.");
+                throw new ArgumentException("Given species (id = " + sp.cntnt + ") is not supported.");
 
             //var allRelevantEdges = this.m_SpeciesSubgrid_InnerAndDomainEdges[sp].Intersect(this.m_CutCellSubgrid_InnerEdges);
 
-            var innerCutCellEdges = this.lsTrk._Regions.GetCutCellSubGrid().InnerEdgesMask;
-            var boundaryCutCellEdges = ExecutionMask.Intersect(this.lsTrk._Regions.GetCutCellSubGrid().BoundaryEdgesMask, this.lsTrk.GridDat.BoundaryEdges);
+            var innerCutCellEdges = this.XDGSpaceMetrics.LevelSetRegions.GetCutCellSubGrid().InnerEdgesMask;
+            var boundaryCutCellEdges = ExecutionMask.Intersect(this.XDGSpaceMetrics.LevelSetRegions.GetCutCellSubGrid().BoundaryEdgesMask, this.XDGSpaceMetrics.GridDat.BoundaryEdges);
             var allRelevantEdges = this.m_SpeciesSubgrid_InnerAndDomainEdges[sp].Intersect(ExecutionMask.Union(innerCutCellEdges, boundaryCutCellEdges));
 
             //EdgeMask AggEdges = this.CellAgglomeration != null ? this.CellAgglomeration.GetAgglomerator(sp).AggInfo.AgglomerationEdges : null;
@@ -379,8 +380,8 @@ namespace BoSSS.Foundation.XDG {
 
             var edgeQrIns = new EdgeQuadratureScheme(false, allRelevantEdges);
 
-            foreach (var Kref in lsTrk.GridDat.Grid.RefElements) {
-                for (int iLevSet = 0; iLevSet < lsTrk.LevelSets.Count; iLevSet++) { // loop over level sets...
+            foreach (var Kref in XDGSpaceMetrics.GridDat.Grid.RefElements) {
+                for (int iLevSet = 0; iLevSet < XDGSpaceMetrics.NoOfLevelSets; iLevSet++) { // loop over level sets...
                     EdgeMask cutEdges = this.GetCutEdges(Kref, iLevSet);
 
                     var factory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet, Kref);
@@ -392,31 +393,42 @@ namespace BoSSS.Foundation.XDG {
             return edgeQrIns;
         }
 
+        /// <summary>
+        /// Interior quadrature for the surface elements, i.e. for each cut background-cell \f$ K_j \f$ a quadrature to approximate
+        /// \f[
+        ///    \oint_{K_j \cap \mathfrak{I} } \ldots \mathrm{dS} .
+        /// \f]
+        /// </summary>
         public CellQuadratureScheme Get_SurfaceElement_VolumeQuadScheme(SpeciesId sp) {
             if (!this.SpeciesList.Contains(sp))
-                throw new ArgumentException("Given species '" + this.lsTrk.GetSpeciesName(sp) + "' is not supported.");
+                throw new ArgumentException("Given species (id = " + sp.cntnt + ") is not supported.");
 
 
 
-            var spdom = lsTrk._Regions.GetSpeciesMask(sp);
-            var IntegrationDom = this.lsTrk._Regions.GetCutCellMask().Intersect(spdom);
+            var spdom = XDGSpaceMetrics.LevelSetRegions.GetSpeciesMask(sp);
+            var IntegrationDom = XDGSpaceMetrics.LevelSetRegions.GetCutCellMask().Intersect(spdom);
 
             var LevSetQrIns = new CellQuadratureScheme(false, IntegrationDom);
 
-            foreach (var Kref in lsTrk.GridDat.Grid.RefElements) {
-                for (int iLevSet = 0; iLevSet < lsTrk.LevelSets.Count; iLevSet++) { // loop over level sets...
+            foreach (var Kref in XDGSpaceMetrics.GridDat.Grid.RefElements) {
+                for (int iLevSet = 0; iLevSet < XDGSpaceMetrics.NoOfLevelSets; iLevSet++) { // loop over level sets...
                     var surfaceFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceFactory(iLevSet, Kref);
-                    LevSetQrIns = LevSetQrIns.AddFactory(surfaceFactory, this.lsTrk._Regions.GetCutCellMask4LevSet(iLevSet));
+                    LevSetQrIns = LevSetQrIns.AddFactory(surfaceFactory, XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet));
                 }
             }
 
             return LevSetQrIns;
         }
 
-
+        /// <summary>
+        /// Boundary quadrature for the surface elements, i.e. for each cut background-cell \f$ K_j \f$ a quadrature to approximate
+        /// \f[
+        ///    \int_{\partial K_j \cap \mathfrak{I} } \ldots \mathrm{dS} .
+        /// \f]
+        /// </summary>
         public EdgeQuadratureScheme GetEdgeQuadScheme(SpeciesId sp, bool UseDefaultFactories = true, EdgeMask IntegrationDomain = null, int? fixedOrder = null) {
             if (!this.SpeciesList.Contains(sp))
-                throw new ArgumentException("Given species '" + this.lsTrk.GetSpeciesName(sp) + "' is not supported.");
+                throw new ArgumentException("Given species (id = " + sp.cntnt + ") is not supported.");
 
 
             // determine domain
@@ -430,11 +442,11 @@ namespace BoSSS.Foundation.XDG {
                 EdgeQuadratureScheme edgeQrIns = new EdgeQuadratureScheme(UseDefaultFactories, allRelevantEdges);
 
                 // overwrite with cut-cell-rules in cut-cells:
-                foreach (var Kref in lsTrk.GridDat.Grid.RefElements) {
-                    for (int iLevSet = 0; iLevSet < lsTrk.LevelSets.Count; iLevSet++) { // loop over level sets...
+                foreach (var Kref in XDGSpaceMetrics.GridDat.Grid.RefElements) {
+                    for (int iLevSet = 0; iLevSet < XDGSpaceMetrics.NoOfLevelSets; iLevSet++) { // loop over level sets...
                         EdgeMask cutEdges = this.GetCutEdges(Kref, iLevSet).Intersect(allRelevantEdges);
 #if DEBUG
-                        CellMask difference = cutEdges.GetAdjacentCells(lsTrk.GridDat).Except(lsTrk._Regions.GetCutCellMask4LevSet(iLevSet));
+                        CellMask difference = cutEdges.GetAdjacentCells(XDGSpaceMetrics.GridDat).Except(XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet));
                         if (difference.Count() > 0)
                             throw new ArithmeticException("Edges of the Cells" + difference.GetSummary() + " are detected as cut, but these cells are not contained in the cut Cell-Mask of the Level-Set-Tracker");
 #endif
@@ -461,16 +473,16 @@ namespace BoSSS.Foundation.XDG {
         /// und darum...).
         /// </remarks>
         public JumpTypes IdentifyWing(int levSetIdx, SpeciesId sp) {
-            int NoOfLevSets = lsTrk.LevelSets.Count;
+            int NoOfLevSets = this.XDGSpaceMetrics.NoOfLevelSets;
 
             if (levSetIdx < 0 || levSetIdx > NoOfLevSets)
                 throw new ArgumentOutOfRangeException();
 
             if (NoOfLevSets == 1) {
-                string[] speciesTable = (string[])lsTrk.SpeciesTable;
+                string[] speciesTable = (string[]) (this.XDGSpaceMetrics.LevelSetRegions.SpeciesTable);
                 Debug.Assert(speciesTable.Length == 2);
 
-                string spN = lsTrk.GetSpeciesName(sp);
+                string spN = this.XDGSpaceMetrics.LevelSetRegions.GetSpeciesName(sp);
 
                 if (spN == speciesTable[0])
                     return JumpTypes.OneMinusHeaviside;
@@ -480,11 +492,11 @@ namespace BoSSS.Foundation.XDG {
                     throw new Exception("should not happen.");
 
             } else if (NoOfLevSets == 2) {
-                string[,] speciesTable = (string[,])lsTrk.SpeciesTable;
+                string[,] speciesTable = (string[,])(this.XDGSpaceMetrics.LevelSetRegions.SpeciesTable);
                 Debug.Assert(speciesTable.GetLength(0) == 2);
                 Debug.Assert(speciesTable.GetLength(1) == 2);
 
-                string spN = lsTrk.GetSpeciesName(sp);
+                string spN = this.XDGSpaceMetrics.LevelSetRegions.GetSpeciesName(sp);
 
                 int cnt = 0;
                 JumpTypes jmpRet = JumpTypes.Implicit;
@@ -519,7 +531,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public EdgeQuadratureScheme GetEdgeGhostScheme(SpeciesId sp, EdgeMask IntegrationDomainRestriction = null) {
             if (!this.SpeciesList.Contains(sp))
-                throw new ArgumentException("Given species '" + this.lsTrk.GetSpeciesName(sp) + "' is not supported.");
+                throw new ArgumentException("Given species (" + sp.cntnt + ") is not supported.");
 
             // select all edges for species sp with a positive measure
             // =======================================================
@@ -534,7 +546,7 @@ namespace BoSSS.Foundation.XDG {
 
             // return
             // ======
-            return new EdgeQuadratureScheme(true, new EdgeMask(this.lsTrk.GridDat, EdgBitMask));
+            return new EdgeQuadratureScheme(true, new EdgeMask(this.XDGSpaceMetrics.GridDat, EdgBitMask));
 
 
             /*
@@ -599,7 +611,7 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="IntegrationDomainRestriction">Optional restriction to the integration domain.</param>
         public EdgeMask GetEdgeMask(SpeciesId sp, EdgeMask IntegrationDomainRestriction = null) {
             if (!this.SpeciesList.Contains(sp))
-                throw new ArgumentException("Given species '" + this.lsTrk.GetSpeciesName(sp) + "' is not supported.");
+                throw new ArgumentException("Given species ( id = " + sp.cntnt + ") is not supported.");
 
             EdgeMask allRelevantEdges;
             if (IntegrationDomainRestriction == null) {
@@ -622,7 +634,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public CellQuadratureScheme GetVolumeQuadScheme(SpeciesId sp, bool UseDefaultFactories = true, CellMask IntegrationDomain = null, int? fixedOrder = null) {
             if (!this.SpeciesList.Contains(sp))
-                throw new ArgumentException("Given species '" + this.lsTrk.GetSpeciesName(sp) + "' is not supported.");
+                throw new ArgumentException("Given species (id = " + sp.cntnt + ") is not supported.");
 
             CellMask CellMask = GetCellMask(sp, IntegrationDomain);
 
@@ -635,15 +647,15 @@ namespace BoSSS.Foundation.XDG {
             var volQrIns = (new CellQuadratureScheme(UseDefaultFactories, CellMask));
 
             // now: rules for the cut-cells:
-            for (int iLevSet = 0; iLevSet < lsTrk.LevelSets.Count; iLevSet++) { // loop over level sets
-                var cutDom = lsTrk._Regions.GetCutCellMask4LevSet(iLevSet);
+            for (int iLevSet = 0; iLevSet < XDGSpaceMetrics.NoOfLevelSets; iLevSet++) { // loop over level sets
+                var cutDom = XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet);
                 var cutCells = cutDom.Intersect(CellMask);
 
                 var jmp = IdentifyWing(iLevSet, sp);
 
-                for (int iKref = 0; iKref < lsTrk.GridDat.Grid.RefElements.Length; iKref++) {
-                    RefElement Kref = lsTrk.GridDat.Grid.RefElements[iKref];
-                    var _cutDom = cutCells.Intersect(lsTrk.GridDat.Cells.GetCells4Refelement(iKref));
+                for (int iKref = 0; iKref < XDGSpaceMetrics.GridDat.Grid.RefElements.Length; iKref++) {
+                    RefElement Kref = XDGSpaceMetrics.GridDat.Grid.RefElements[iKref];
+                    var _cutDom = cutCells.Intersect(XDGSpaceMetrics.GridDat.Cells.GetCells4Refelement(iKref));
                     var factory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetVolRuleFactory(iLevSet, jmp, Kref);
                     volQrIns.AddFactoryDomainPair(factory, _cutDom, fixedOrder);
                 }
@@ -652,26 +664,36 @@ namespace BoSSS.Foundation.XDG {
             return volQrIns;
         }
 
-        public CellMask GetCellMask(SpeciesId sp, CellMask IntegrationDomain) {
+        private CellMask GetCellMask(SpeciesId sp, CellMask IntegrationDomain) {
             if (!this.SpeciesList.Contains(sp))
-                throw new ArgumentException("Given species '" + this.lsTrk.GetSpeciesName(sp) + "' is not supported.");
+                throw new ArgumentException("Given species (sp = " + sp.cntnt + ") is not supported.");
 
 
             CellMask OutCellMask;
 
             if (IntegrationDomain == null) {
-                OutCellMask = lsTrk._Regions.GetSpeciesMask(sp);
+                OutCellMask = XDGSpaceMetrics.LevelSetRegions.GetSpeciesMask(sp);
             } else {
-                OutCellMask = lsTrk._Regions.GetSpeciesMask(sp).Intersect(IntegrationDomain);
+                OutCellMask = XDGSpaceMetrics.LevelSetRegions.GetSpeciesMask(sp).Intersect(IntegrationDomain);
             }
             return OutCellMask;
         }
 
+        /// <summary>
+        /// Quadrature scheme for the integration over the level-set, i.e. for each cut background-cell \f$ K_j \f$ a quadrature to approximate
+        /// \f[
+        ///    \oint_{K_j \cap \mathfrak{I} } \ldots \mathrm{dS} .
+        /// \f] 
+        /// </summary>
+        /// <param name="iLevSet"></param>
+        /// <param name="IntegrationDom"></param>
+        /// <param name="fixedOrder"></param>
+        /// <returns></returns>
         public CellQuadratureScheme GetLevelSetquadScheme(int iLevSet, CellMask IntegrationDom, int? fixedOrder = null) {
 
             CellQuadratureScheme LevSetQrIns = new CellQuadratureScheme(false, IntegrationDom);
 
-            foreach (var Kref in lsTrk.GridDat.Grid.RefElements) {
+            foreach (var Kref in XDGSpaceMetrics.GridDat.Grid.RefElements) {
                 var surfaceFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceFactory(iLevSet, Kref);
                 LevSetQrIns.AddFactoryDomainPair(surfaceFactory, (CellMask)null, fixedOrder);
             }
@@ -701,34 +723,33 @@ namespace BoSSS.Foundation.XDG {
         }
         */
 
-        /// <summary>
-        /// Writes diagnostic information about quadrature rules into csv-textfiles.
-        /// </summary>
-        public void RuleInfo(string spc, string volruleName, string levsetRuleName, string cellBndRule, string edgeRuleName, int order) {
-            RuleInfo(lsTrk.GetSpeciesId(spc), volruleName, levsetRuleName, cellBndRule, edgeRuleName, order);
-        }
+        ///// <summary>
+        ///// Writes diagnostic information about quadrature rules into csv-textfiles.
+        ///// </summary>
+        //public void RuleInfo(string spc, string volruleName, string levsetRuleName, string cellBndRule, string edgeRuleName, int order) {
+        //    RuleInfo(lsTrk.GetSpeciesId(spc), volruleName, levsetRuleName, cellBndRule, edgeRuleName, order);
+        //}
 
         /// <summary>
         /// Writes diagnostic information about quadrature rules into csv-textfiles.
         /// </summary>
-        public void RuleInfo(SpeciesId spc, string volruleName, string levsetRuleName, string cellBndRule, string edgeRuleName, int order) {
+        public void RuleInfo(SpeciesId spc, string volruleName, string levsetRuleName, string cellBndRule, string edgeRuleName, int order, int iLevSet) {
 
-            var _Context = this.lsTrk.GridDat;
-            var LsTrk = this.lsTrk;
+            var _Context = this.XDGSpaceMetrics.GridDat;
 
             // test parameters
             var jmp = Foundation.XDG.Quadrature.HMF.JumpTypes.Heaviside;
             var sch = this.XDGSpaceMetrics.XQuadFactoryHelper;
-            var spNm = this.lsTrk.GetSpeciesName(spc);
-            var spId = LsTrk.GetSpeciesId(spNm);
-            var DomainOfInterest = LsTrk._Regions.GetCutCellSubgrid4LevSet(0);
+            var spNm = this.XDGSpaceMetrics.LevelSetRegions.GetSpeciesName(spc);
+            //var spId = LsTrk.GetSpeciesId(spNm);
+            var DomainOfInterest = XDGSpaceMetrics.LevelSetRegions.GetCutCellSubgrid4LevSet(iLevSet);
 
 
             if (volruleName != null) {
                 int J = _Context.Cells.NoOfLocalUpdatedCells;
                 double[] TotWeights = new double[J];
 
-                foreach (var Kref in this.lsTrk.GridDat.Grid.RefElements) {
+                foreach (var Kref in this.XDGSpaceMetrics.GridDat.Grid.RefElements) {
                     var volfactory = sch.GetVolRuleFactory(0, jmp, Kref);
                     var qrset = volfactory.GetQuadRuleSet(DomainOfInterest.VolumeMask, order);
                     foreach (var chk in qrset) {
@@ -749,7 +770,7 @@ namespace BoSSS.Foundation.XDG {
                 int J = _Context.Cells.NoOfLocalUpdatedCells;
                 double[] TotWeights = new double[J];
 
-                foreach (var Kref in this.lsTrk.GridDat.Grid.RefElements) {
+                foreach (var Kref in this.XDGSpaceMetrics.GridDat.Grid.RefElements) {
                     var levsetFactory = sch.GetSurfaceFactory(0, Kref);
                     var qrset = levsetFactory.GetQuadRuleSet(DomainOfInterest.VolumeMask, order);
 
@@ -771,10 +792,10 @@ namespace BoSSS.Foundation.XDG {
 
             {
 
-                int NoEdg = this.lsTrk.GridDat.Edges.Count;
+                int NoEdg = this.XDGSpaceMetrics.GridDat.Edges.Count;
                 double[] TotWeights = new double[NoEdg];
 
-                foreach (var Kref in this.lsTrk.GridDat.Grid.RefElements) {
+                foreach (var Kref in this.XDGSpaceMetrics.GridDat.Grid.RefElements) {
                     var edgeFactory = sch.GetEdgeRuleFactory(0, jmp, Kref);
                     var qrset = edgeFactory.GetQuadRuleSet(DomainOfInterest.AllEdgesMask, order);
 

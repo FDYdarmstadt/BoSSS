@@ -39,10 +39,11 @@ namespace BoSSS.Foundation.XDG {
             using (new FuncTrace()) {
                 if (LsTrk.LevelSets.Count != 1)
                     throw new NotImplementedException();
-                               
 
-                if (SchemeHelper == null)
-                    SchemeHelper = new XQuadSchemeHelper(LsTrk, momentFittingVariant);
+
+                if(SchemeHelper == null)
+                    SchemeHelper = LsTrk.GetXDGSpaceMetrics(momentFittingVariant, HMForder, 1).XQuadSchemeHelper;
+                        // new XQuadSchemeHelper(LsTrk, momentFittingVariant);
 
                 // Classic HMF uses order+1 for Surface Integrals and additionally 1 order higher for the HMF system
                 // e.g order-2 is the cached quad rule 

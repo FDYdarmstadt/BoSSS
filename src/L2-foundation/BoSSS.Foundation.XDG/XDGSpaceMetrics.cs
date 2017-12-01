@@ -1,7 +1,10 @@
-﻿using ilPSP;
+﻿using BoSSS.Foundation.Grid.Classic;
+using ilPSP;
 using ilPSP.Tracing;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -24,7 +27,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// ctor.
         /// </summary>
-        internal XDGSpaceMetrics(LevelSetTracker lsTrk, XQuadFactoryHelper qfHelper, int __quadorder, SpeciesId[] speciesIds) {
+        internal XDGSpaceMetrics(LevelSetTracker lsTrk, XQuadFactoryHelper qfHelper, int __quadorder, SpeciesId[] speciesIds, int HistoyIndex) {
             using(new FuncTrace()) {
                 // ----
                 // init 
@@ -37,6 +40,9 @@ namespace BoSSS.Foundation.XDG {
                 m_qfHelper = qfHelper;
                 this.Tracker = lsTrk;
                 this.m_SpeciesList = speciesIds.ToArray();
+
+                m_LevelSetRegions = lsTrk.RegionsHistory[HistoyIndex];
+                m_LevelSetData = lsTrk.DataHistories.Select(his => his[HistoyIndex]).ToList().AsReadOnly();
 
                 // ---------------------
                 // compute all the stuff
@@ -80,14 +86,55 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
+        
         /// <summary>
         /// The owner object.
         /// </summary>
-        public LevelSetTracker Tracker {
+        private LevelSetTracker Tracker {
             get;
-            private set;
+            set;
         }
 
+        /// <summary>
+        /// Underlying background mesh of the XDG space.
+        /// </summary>
+        public GridData GridDat {
+            get {
+                return Tracker.GridDat;
+            }
+        }
+
+        LevelSetTracker.LevelSetRegions m_LevelSetRegions;
+
+        /// <summary>
+        /// Constant during object lifetime.
+        /// </summary>
+        public LevelSetTracker.LevelSetRegions LevelSetRegions {
+            get {
+                return m_LevelSetRegions;
+            }
+        }
+
+        ReadOnlyCollection<LevelSetTracker.LevelSetData> m_LevelSetData;
+
+        /// <summary>
+        /// Constant during object lifetime. 
+        /// </summary>
+        public IList<LevelSetTracker.LevelSetData> LevelSetData {
+            get {
+                return m_LevelSetData;
+            }
+        }
+
+        /// <summary>
+        /// The number of level-sets used.
+        /// </summary>
+        public int NoOfLevelSets {
+            get {
+                Debug.Assert(m_LevelSetData.Count == Tracker.NoOfLevelSets);
+                return m_LevelSetData.Count;
+            }
+        }
 
         /// <summary>
         /// The quadrature order used for cut cells volumes.

@@ -21,6 +21,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Platform;
 using System.Collections;
 using ilPSP;
+using BoSSS.Foundation.Grid.Classic;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -33,14 +34,14 @@ namespace BoSSS.Foundation.XDG {
 
             LevelSetTracker m_owner;
 
-            /// <summary>
-            /// Owner object.
-            /// </summary>
-            public LevelSetTracker Tracker {
-                get {
-                    return m_owner;
-                }
-            }
+            ///// <summary>
+            ///// Owner object.
+            ///// </summary>
+            //public LevelSetTracker Tracker {
+            //    get {
+            //        return m_owner;
+            //    }
+            //}
 
             /// <summary>
             /// Constructor
@@ -179,7 +180,7 @@ namespace BoSSS.Foundation.XDG {
                     for(int j = 0; j < J; j++) {
                         ushort code = m_LevSetRegions[j];
 
-                        for(int levSetIdx = 0; levSetIdx < m_owner.m_LevelSetHistories.Length; levSetIdx++) {
+                        for(int levSetIdx = 0; levSetIdx < m_owner.NoOfLevelSets; levSetIdx++) {
                             int dist = LevelSetTracker.DecodeLevelSetDist(code, levSetIdx);
                             if(Math.Abs(dist) <= FieldWidth) {
                                 ba[j] = true;
@@ -213,7 +214,7 @@ namespace BoSSS.Foundation.XDG {
                 if(FieldWidth > m_owner.m_NearRegionWidth)
                     throw new ArgumentException("Near-" + FieldWidth + " cannot be acquired, because this tracker is set to detect at most Near-" + m_owner.m_NearRegionWidth + ".", "FieldWidth");
 
-                if(m_owner.m_LevelSetHistories.Length == 1)
+                if(m_owner.NoOfLevelSets == 1)
                     // if there is only one Level Set, no need to separate between
                     // cells-cut-by-any-level-set and cells-cut-by-a-specific-level-set
                     return GetNearFieldSubgrid4LevSet(0, FieldWidth);
@@ -248,12 +249,12 @@ namespace BoSSS.Foundation.XDG {
 
                 if(FieldWidth > m_owner.m_NearRegionWidth)
                     throw new ArgumentException("Near-" + FieldWidth + " cannot be acquired, because this tracker is set to detect at most Near-" + m_owner.m_NearRegionWidth + ".", "FieldWidth");
-                if(levSetIdx < 0 || levSetIdx >= this.m_owner.m_LevelSetHistories.Length)
+                if(levSetIdx < 0 || levSetIdx >= this.m_owner.NoOfLevelSets)
                     throw new IndexOutOfRangeException();
 
 
                 if(m_NearField4LevelSet == null || m_NearField4LevelSet.GetLength(1) != this.m_owner.m_NearRegionWidth) {
-                    m_NearField4LevelSet = new SubGrid[this.m_owner.m_LevelSetHistories.Length, this.m_owner.m_NearRegionWidth + 1];
+                    m_NearField4LevelSet = new SubGrid[this.m_owner.NoOfLevelSets, this.m_owner.m_NearRegionWidth + 1];
                 }
 
                 if(m_NearField4LevelSet[levSetIdx, FieldWidth] == null) {
@@ -283,12 +284,12 @@ namespace BoSSS.Foundation.XDG {
 
                 if(FieldWidth > m_owner.m_NearRegionWidth)
                     throw new ArgumentException("Near-" + FieldWidth + " cannot be acquired, because this tracker is set to detect at most Near-" + m_owner.m_NearRegionWidth + ".", "FieldWidth");
-                if(levSetIdx < 0 || levSetIdx >= this.m_owner.m_LevelSetHistories.Length)
+                if(levSetIdx < 0 || levSetIdx >= this.m_owner.NoOfLevelSets)
                     throw new IndexOutOfRangeException();
 
 
                 if(m_NearMask4LevelSet == null || m_NearMask4LevelSet.GetLength(1) != m_owner.m_NearRegionWidth) {
-                    m_NearMask4LevelSet = new CellMask[m_owner.m_LevelSetHistories.Length, m_owner.m_NearRegionWidth + 1];
+                    m_NearMask4LevelSet = new CellMask[m_owner.NoOfLevelSets, m_owner.m_NearRegionWidth + 1];
                 }
 
                 if(m_NearMask4LevelSet[levSetIdx, FieldWidth] == null) {
@@ -340,7 +341,7 @@ namespace BoSSS.Foundation.XDG {
                 MPICollectiveWatchDog.Watch();
                 if(sign == 0.0)
                     throw new ArgumentException("must be either positive or negative");
-                if(LevelSetIndex < 0 || LevelSetIndex >= m_owner.m_LevelSetHistories.Length)
+                if(LevelSetIndex < 0 || LevelSetIndex >= m_owner.m_LevelSetHistories.Count)
                     throw new IndexOutOfRangeException("invalid level set index");
 
                 int _sign = Math.Sign(sign);
@@ -469,7 +470,7 @@ namespace BoSSS.Foundation.XDG {
                 // situation in the current cell
                 for(int k = 0; k < signCodes.Length; k++) {
                     bool matches = true;
-                    for(int j = 0; j < m_owner.m_LevelSetHistories.Length; j++) {
+                    for(int j = 0; j < m_owner.NoOfLevelSets; j++) {
                         int sign = Math.Sign(DecodeLevelSetDist(m_LevSetRegions[jCell], j));
 
                         // Cell is cut, both signs exist and thus the mask
@@ -586,6 +587,48 @@ namespace BoSSS.Foundation.XDG {
                 ReducedRegionCode dummy;
                 int NoOf = GetNoOfSpecies(j, out dummy);
                 return NoOf;
+            }
+
+            /// <summary>
+            /// Equal to <see cref="LevelSetTracker.SpeciesIdS"/>.
+            /// </summary>
+            public IList<SpeciesId> SpeciesIdS {
+                get {
+                    return m_owner.SpeciesIdS;
+                }
+            }
+
+            /// <summary>
+            /// See <see cref="LevelSetTracker.SpeciesTable"/>.
+            /// </summary>
+            public Array SpeciesTable {
+                get {
+                    return m_owner.SpeciesTable;
+                }
+            }
+
+            /// <summary>
+            /// Equal to <see cref="LevelSetTracker.GetSpeciesName(SpeciesId)"/>.
+            /// </summary>
+            public String GetSpeciesName(SpeciesId id) {
+                return m_owner.GetSpeciesName(id);
+            }
+
+            /// <summary>
+            /// Equal to <see cref="LevelSetTracker.GetSpeciesName(string)"/>.
+            /// </summary>
+            public SpeciesId GetSpeciesId(string SpeciesName) {
+                return m_owner.GetSpeciesId(SpeciesName);
+            }
+
+
+            /// <summary>
+            /// Link to the underlying background grid of the XDG discretization.
+            /// </summary>
+            public GridData GridDat {
+                get {
+                    return m_owner.GridDat;
+                }
             }
         }
     }

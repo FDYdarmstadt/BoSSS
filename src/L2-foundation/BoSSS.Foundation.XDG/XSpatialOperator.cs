@@ -263,14 +263,18 @@ namespace BoSSS.Foundation.XDG {
                );
         }
 
-            /// <summary>
-            /// computation of operator matrix
-            /// </summary>
-            public void ComputeMatrixEx<M, V>(LevelSetTracker lsTrk,
+        /// <summary>
+        /// computation of operator matrix
+        /// </summary>
+        public void ComputeMatrixEx<M, V>(LevelSetTracker lsTrk,
             UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap,
-            M Matrix, V AffineOffset, bool OnlyAffine, double time, bool MPIParameterExchange, XQuadFactoryHelper.MomentFittingVariants momentFittingVariant, SubGrid subGrid, params SpeciesId[] whichSpc)
+            M Matrix, V AffineOffset, bool OnlyAffine, 
+            double time, 
+            bool MPIParameterExchange, 
+            XQuadFactoryHelper.MomentFittingVariants momentFittingVariant, SubGrid subGrid, params SpeciesId[] whichSpc)
             where M : IMutableMatrixEx
-            where V : IList<double> {
+            where V : IList<double>  //
+        {
 
             int order = this.GetOrderFromQROF(DomainMap, Parameters, CodomainMap);
             MultiphaseCellAgglomerator dummy = new MultiphaseCellAgglomerator(new CutCellMetrics(momentFittingVariant, order, lsTrk, whichSpc), 0.0, false);

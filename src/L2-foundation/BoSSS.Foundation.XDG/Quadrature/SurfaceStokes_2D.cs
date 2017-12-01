@@ -160,7 +160,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             this.Docheck = _DoCheck;
 
             this.RefElement = cellBoundaryFactory.RefElement;
-            if (!tracker.GridDat.Grid.RefElements.Contains(RefElement, ReferenceComparer.Instance)) {
+            if (!lsData.GridDat.Grid.RefElements.Contains(RefElement, ReferenceComparer.Instance)) {
                 throw new ArgumentOutOfRangeException(
                     "simplex", "'simplex' must be a volume - reference element");
             }

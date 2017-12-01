@@ -146,14 +146,14 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        /// <summary>
-        /// Link to the tracker.
-        /// </summary>
-        public LevelSetTracker Tracker {
-            get {
-                return XDGSpaceMetrics.Tracker;
-            }
-        }
+        ///// <summary>
+        ///// Link to the tracker.
+        ///// </summary>
+        //public LevelSetTracker Tracker {
+        //    get {
+        //        return XDGSpaceMetrics.Tracker;
+        //    }
+        //}
 
 
         /// <summary>

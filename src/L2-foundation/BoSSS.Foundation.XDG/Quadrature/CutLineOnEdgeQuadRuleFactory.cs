@@ -148,6 +148,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             if (__lsData.GridDat.SpatialDimension < 3) {
                 throw new ArgumentException("Only applicable in 3d", "tracker");
             }
+            if(__lsData.GridDat.Cells.RefElements.Length > 1)
+                throw new NotSupportedException();
 
             this.lsData = __lsData;
             this.RootFindingAlgorithm = rootFindingAlgorithm ?? LineSegment.DefaultRootFindingAlgorithm;
@@ -225,7 +227,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                             LineSegment refSegment = referenceLineSegments[e, ee];
                             double edgeOfEdgeDet = RefElement.FaceRefElement.FaceTrafoGramianSqrt[ee];
 
-                            double[] roots = refSegment.GetRoots(tracker.LevelSets[levelSetIndex], cell, 0);
+                            double[] roots = refSegment.GetRoots(lsData.LevelSet, cell, 0);
                             LineSegment[] subSegments = refSegment.Split(roots);
 
                             for (int k = 0; k < subSegments.Length; k++) {
@@ -318,7 +320,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// </summary>
         public RefElement RefElement {
             get {
-                return tracker.GridDat.Grid.RefElements[0];
+                return lsData.GridDat.Grid.RefElements[0];
             }
         }
 
@@ -342,8 +344,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// equality) which ensures that this does not affect performance.
         /// </remarks>
         private LineSegment[,] GetReferenceLineSegments() {
-            int D = tracker.GridDat.SpatialDimension;
-            int noOfEdges = tracker.GridDat.Grid.RefElements[0].NoOfFaces;
+            int D = lsData.GridDat.SpatialDimension;
+            int noOfEdges = lsData.GridDat.Grid.RefElements[0].NoOfFaces;
             int noOfEdgesOfEdge = RefElement.FaceRefElement.NoOfFaces;
 
             MultidimensionalArray edgeOfEdgeVertices = MultidimensionalArray.Create(2, 1);
@@ -353,7 +355,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             MultidimensionalArray edgeVertices = MultidimensionalArray.Create(
                 edgeOfEdgeVertices.GetLength(0), RefElement.FaceRefElement.SpatialDimension);
             MultidimensionalArray volumeVertices = MultidimensionalArray.Create(
-                edgeVertices.GetLength(0), tracker.GridDat.SpatialDimension);
+                edgeVertices.GetLength(0), D);
 
             // Remember encountered segments so that $lineSegments contains no
             // duplicates and roots can be cached efficiently
@@ -361,12 +363,12 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 noOfEdges * noOfEdgesOfEdge / 2);
 
             LineSegment[,] lineSegments = new LineSegment[noOfEdges, noOfEdgesOfEdge];
-            LevelSet levelSetField = tracker.LevelSets[levelSetIndex] as LevelSet;
+            LevelSet levelSetField = lsData.LevelSet as LevelSet;
             for (int ee = 0; ee < noOfEdgesOfEdge; ee++) {
                 RefElement.FaceRefElement.TransformFaceCoordinates(ee, edgeOfEdgeVertices, edgeVertices);
 
                 for (int e = 0; e < noOfEdges; e++) {
-                    tracker.GridDat.Grid.RefElements[0].TransformFaceCoordinates(
+                    lsData.GridDat.Grid.RefElements[0].TransformFaceCoordinates(
                         e, edgeVertices, volumeVertices);
 
                     double[] start = new double[D];

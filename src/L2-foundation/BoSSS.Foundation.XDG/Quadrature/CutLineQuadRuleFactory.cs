@@ -67,13 +67,13 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// </summary>
         private static readonly Line lineSimplex = Line.Instance;
 
-        /// <summary>
-        /// Tracks the level set location
-        /// </summary>
-        private LevelSetTracker tracker;
+        ///// <summary>
+        ///// Tracks the level set location
+        ///// </summary>
+        //private LevelSetTracker tracker;
 
         /// <summary>
-        /// Index of the considered level set in <see cref="tracker"/>
+        /// Index of the considered level set.
         /// </summary>
         private int levelSetIndex;
 
@@ -153,14 +153,13 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             JumpTypes jumpType = JumpTypes.Heaviside,
             double tolerace = 1.0e-13) {
 
-            this.tracker = lsData.Tracker;
             this.RefElement = Kref;
             this.RootFindingAlgorithm = rootFindingAlgorithm ?? LineSegment.DefaultRootFindingAlgorithm;
             this.referenceLineSegments = GetReferenceLineSegments();
             this.jumpType = jumpType;
             this.levelSetData = lsData;
 
-            this.iKref = this.tracker.GridDat.Grid.RefElements.IndexOf(this.RefElement, (A, B) => object.ReferenceEquals(A, B));
+            this.iKref = lsData.GridDat.Grid.RefElements.IndexOf(this.RefElement, (A, B) => object.ReferenceEquals(A, B));
             if (this.iKref < 0)
                 throw new ArgumentException("Reference element cannot be found in the provided grid.");
 
@@ -170,13 +169,13 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 throw new ArgumentOutOfRangeException();
             this.Tolerance = tolerace;
 
-            emptyrule = CellBoundaryQuadRule.CreateEmpty(this.RefElement, 1,  tracker.GridDat.SpatialDimension, referenceLineSegments.Length);
+            emptyrule = CellBoundaryQuadRule.CreateEmpty(this.RefElement, 1,  levelSetData.GridDat.SpatialDimension, referenceLineSegments.Length);
                         // create a rule with just one node and weight zero;
                         // this should avoid some special-case handling for empty rules
             emptyrule.NumbersOfNodesPerFace[0] = 1;
             emptyrule.Nodes.LockForever();
             
-            tracker.Subscribe(this);
+            //tracker.Subscribe(this);
         }
 
         CellBoundaryQuadRule emptyrule;
@@ -209,7 +208,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             //Console.WriteLine("boundary order: " + order);
 
             if (mask == null) {
-                mask = CellMask.GetFullMask(tracker.GridDat);
+                mask = CellMask.GetFullMask(levelSetData.GridDat);
             }
 
             if (order != lastOrder) {
@@ -219,8 +218,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             double[] EdgeToVolumeTransformationDeterminants = this.RefElement.FaceTrafoGramianSqrt;
 
             QuadRule baseRule = lineSimplex.GetQuadratureRule(order);
-            int D = tracker.GridDat.SpatialDimension;
-            var _Cells = tracker.GridDat.Cells;
+            int D = levelSetData.GridDat.SpatialDimension;
+            var _Cells = levelSetData.GridDat.Cells;
 
             var result = new List<ChunkRulePair<CellBoundaryQuadRule>>(mask.NoOfItemsLocally);
             foreach (Chunk chunk in mask) {
@@ -241,7 +240,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     for (int e = 0; e < referenceLineSegments.Length; e++) {
                         LineSegment referenceSegment = referenceLineSegments[e];
                         int iKref = _Cells.GetRefElementIndex(cell);
-                        double[] roots = referenceSegment.GetRoots(tracker.LevelSets[levelSetIndex], cell, iKref);
+                        double[] roots = referenceSegment.GetRoots(levelSetData.LevelSet, cell, iKref);
                         double edgeDet = EdgeToVolumeTransformationDeterminants[e];
 
                         LineSegment[] subSegments = referenceSegment.Split(roots);
@@ -414,12 +413,12 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                 if (!lineSegments.Contains(newSegment)) {
                     lineSegments.Add(newSegment);
-                    tracker.Subscribe(newSegment);
+                    //tracker.Subscribe(newSegment);
                 }
             }
 
             foreach (LineSegment segment in lineSegments) {
-                LevelSet levelSetField = tracker.LevelSets[levelSetIndex] as LevelSet;
+                LevelSet levelSetField = levelSetData.LevelSet as LevelSet;
                 if (levelSetField != null) {
                     segment.ProjectBasisPolynomials(levelSetField.Basis);
                 }

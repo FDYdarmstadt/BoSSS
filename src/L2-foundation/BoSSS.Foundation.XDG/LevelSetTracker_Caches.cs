@@ -21,17 +21,20 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using BoSSS.Foundation.Grid.Classic;
+using System.Collections.ObjectModel;
 
 namespace BoSSS.Foundation.XDG {
     partial class LevelSetTracker {
 
 
-        HistoryStack<LevelSetData>[] m_DataHistories;
+         ReadOnlyCollection<HistoryStack<LevelSetData>> m_DataHistories;
 
         /// <summary>
         /// Stack for data of previous level-set states. 
+        /// - 1st index: level-set index
+        /// - 2nd index (into history): 1, 0, -1, ... for current, previous, et. timestep.
         /// </summary>
-        public HistoryStack<LevelSetData>[] DataHistories {
+        public IList<HistoryStack<LevelSetData>> DataHistories {
             get {
                 return m_DataHistories;
             }
@@ -65,7 +68,7 @@ namespace BoSSS.Foundation.XDG {
             }
 
             /// <summary>
-            /// Link to background grid.
+            /// Link to the underlying background grid of the XDG discretization.
             /// </summary>
             public GridData GridDat {
                 get {
@@ -107,6 +110,15 @@ namespace BoSSS.Foundation.XDG {
 
             ILevelSet GetLevSet() {
                 return m_owner.m_LevelSetHistories[m_iLevSet][m_StackIdx];
+            }
+
+            /// <summary>
+            /// Access the level-set.
+            /// </summary>
+            public ILevelSet LevelSet {
+                get {
+                    return GetLevSet();
+                }
             }
 
 
