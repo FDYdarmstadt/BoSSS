@@ -35,8 +35,21 @@ namespace ilPSP.LinSolvers.MUMPS {
 
         bool verbose;
 
-        public MUMPSSolver(bool verbose = false) {
+        MPI_Comm m_MPI_Comm;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="verbose"></param>
+        /// <param name="MPI"></param>
+        public MUMPSSolver(bool verbose = false, bool MPI = true) {
             this.verbose = verbose;
+            if (MPI == true) {
+                this.m_MPI_Comm = csMPI.Raw._COMM.WORLD;
+            } else {
+                this.m_MPI_Comm = csMPI.Raw._COMM.SELF;
+            }
+            
         }
 
         public void DefineMatrix(IMutableMatrixEx M) {
@@ -127,16 +140,16 @@ namespace ilPSP.LinSolvers.MUMPS {
 
                     r.NoOfIterations = 1;
                     int rank; int size;
-                    csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
-                    csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
+                    csMPI.Raw.Comm_Rank(this.m_MPI_Comm, out rank);
+                    csMPI.Raw.Comm_Size(this.m_MPI_Comm, out size);
 
                     r.Converged = MUMPSInitAndSolve(m_OrgMatrix, gath_b);
 
-                    csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+                    csMPI.Raw.Barrier(this.m_MPI_Comm);
                     unsafe
                     {
                         bool snd = r.Converged;
-                        csMPI.Raw.Bcast((IntPtr)(&snd), 1, csMPI.Raw._DATATYPE.BYTE, 0, csMPI.Raw._COMM.WORLD);
+                        csMPI.Raw.Bcast((IntPtr)(&snd), 1, csMPI.Raw._DATATYPE.BYTE, 0, this.m_MPI_Comm);
                         r.Converged = snd;
                     }
 
@@ -150,7 +163,7 @@ namespace ilPSP.LinSolvers.MUMPS {
                     }
                     
 
-                    csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+                    csMPI.Raw.Barrier(this.m_MPI_Comm);
 
                     st.Stop();
 
@@ -175,17 +188,17 @@ namespace ilPSP.LinSolvers.MUMPS {
                 mumps_par.keep8 = new long[150];
                 mumps_par.info = new int[40];
                 mumps_par.infog = new int[40];
-                mumps_par.rinfo = new double[40];
+                mumps_par.rinfo = new double[40]; 
                 mumps_par.rinfog = new double[40];
 
                 int rank, size;
-                csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
-                csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
+                csMPI.Raw.Comm_Rank(this.m_MPI_Comm, out rank);
+                csMPI.Raw.Comm_Size(this.m_MPI_Comm, out size);
 
 
 
                 //Initialize MUMPS
-                mumps_par.par = 1; mumps_par.job = -1; mumps_par.comm_fortran = MPI.Wrappers.csMPI.Raw._COMM.WORLD.m1; mumps_par.sym = m_MumpsMatrix.Symmetric;
+                mumps_par.par = 1; mumps_par.job = -1; mumps_par.comm_fortran = this.m_MPI_Comm.m1; mumps_par.sym = m_MumpsMatrix.Symmetric;
 
                 MUMPS_csharp.mumps_cs(ref mumps_par);
 
@@ -307,8 +320,8 @@ namespace ilPSP.LinSolvers.MUMPS {
         /// </param>
         private void ScatterFromProc0(double[] __x, double[] _x) {
             int size, rank;
-            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
-            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
+            csMPI.Raw.Comm_Size(this.m_MPI_Comm, out size);
+            csMPI.Raw.Comm_Rank(this.m_MPI_Comm, out rank);
 
             if (size > 1) {
                 // distribute solution to other processors
@@ -322,7 +335,7 @@ namespace ilPSP.LinSolvers.MUMPS {
                         fixed (double* px = &_x[0])
                         {
                             for (int targ_rank = 1; targ_rank < size; targ_rank++) {
-                                csMPI.Raw.Send((IntPtr)(px + m_OrgMatrix.RowPartitioning.GetI0Offest(targ_rank)), m_OrgMatrix.RowPartitioning.GetLocalLength(targ_rank), csMPI.Raw._DATATYPE.DOUBLE, targ_rank, 4444 + targ_rank, csMPI.Raw._COMM.WORLD);
+                                csMPI.Raw.Send((IntPtr)(px + m_OrgMatrix.RowPartitioning.GetI0Offest(targ_rank)), m_OrgMatrix.RowPartitioning.GetLocalLength(targ_rank), csMPI.Raw._DATATYPE.DOUBLE, targ_rank, 4444 + targ_rank, this.m_MPI_Comm);
                             }
                         }
                     }
@@ -333,7 +346,7 @@ namespace ilPSP.LinSolvers.MUMPS {
                         fixed (double* px = &__x[0])
                         {
                             MPI_Status _st;
-                            csMPI.Raw.Recv((IntPtr)px, m_OrgMatrix.RowPartitioning.LocalLength, csMPI.Raw._DATATYPE.DOUBLE, 0, 4444 + rank, csMPI.Raw._COMM.WORLD, out _st);
+                            csMPI.Raw.Recv((IntPtr)px, m_OrgMatrix.RowPartitioning.LocalLength, csMPI.Raw._DATATYPE.DOUBLE, 0, 4444 + rank, this.m_MPI_Comm, out _st);
                         }
                     }
                 }
@@ -357,8 +370,8 @@ namespace ilPSP.LinSolvers.MUMPS {
         /// <param name="_b">gathered solution vectors</param>
         private void GatherOnProc0(double[] __x, double[] __b, out double[] _x, out double[] _b) {
             int size, rank;
-            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
-            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
+            csMPI.Raw.Comm_Size(this.m_MPI_Comm, out size);
+            csMPI.Raw.Comm_Rank(this.m_MPI_Comm, out rank);
 
             if (size > 1) {
                 // gather rhs on processor 0
@@ -376,7 +389,7 @@ namespace ilPSP.LinSolvers.MUMPS {
                         {
                             for (int rcv_rank = 1; rcv_rank < size; rcv_rank++) {
                                 MPI_Status stat;
-                                csMPI.Raw.Recv((IntPtr)(pb + m_OrgMatrix.RowPartitioning.GetI0Offest(rcv_rank)), m_OrgMatrix.RowPartitioning.GetLocalLength(rcv_rank), csMPI.Raw._DATATYPE.DOUBLE, rcv_rank, 342346 + rcv_rank, csMPI.Raw._COMM.WORLD, out stat);
+                                csMPI.Raw.Recv((IntPtr)(pb + m_OrgMatrix.RowPartitioning.GetI0Offest(rcv_rank)), m_OrgMatrix.RowPartitioning.GetLocalLength(rcv_rank), csMPI.Raw._DATATYPE.DOUBLE, rcv_rank, 342346 + rcv_rank, this.m_MPI_Comm, out stat);
                             }
                         }
                     }
@@ -387,7 +400,7 @@ namespace ilPSP.LinSolvers.MUMPS {
                     {
                         fixed (double* pb = &__b[0])
                         {
-                            csMPI.Raw.Send((IntPtr)pb, m_OrgMatrix.RowPartitioning.LocalLength, csMPI.Raw._DATATYPE.DOUBLE, 0, 342346 + rank, csMPI.Raw._COMM.WORLD);
+                            csMPI.Raw.Send((IntPtr)pb, m_OrgMatrix.RowPartitioning.LocalLength, csMPI.Raw._DATATYPE.DOUBLE, 0, 342346 + rank, this.m_MPI_Comm);
                         }
                     }
 
