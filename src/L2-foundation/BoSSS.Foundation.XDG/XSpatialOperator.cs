@@ -192,7 +192,7 @@ namespace BoSSS.Foundation.XDG {
         public void ComputeMatrixEx<M, V>(LevelSetTracker lsTrk,
             UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap,
             M Matrix, V AffineOffset, bool OnlyAffine, double time, bool ParameterMPIExchange,
-            XQuadFactoryHelper.MomentFittingVariants momentFittingVariant, IDictionary<SpeciesId, MultidimensionalArray> CellLengthScales,
+            IDictionary<SpeciesId, MultidimensionalArray> CellLengthScales,
             SubGrid SubGrid, params SpeciesId[] whichSpc)
             where M : IMutableMatrixEx
             where V : IList<double> {
@@ -205,7 +205,7 @@ namespace BoSSS.Foundation.XDG {
                 lsTrk,
                 DomainMap, Parameters, CodomainMap,
                 Matrix, AffineOffset, OnlyAffine, time,
-                ParameterMPIExchange, SpeciesDictionary, momentFittingVariant, CellLengthScales,
+                ParameterMPIExchange, SpeciesDictionary, CellLengthScales,
                 //agg, out mass,
                 SubGrid);
 
@@ -226,13 +226,12 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="ParameterMPIExchange"></param>
         /// <param name="whichSpc"></param>
         /// <param name="time"></param>
-        /// <param name="momentFittingVariant"></param>
         public void ComputeMatrixEx<M, V>(
             LevelSetTracker lsTrk,
             UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap,
             M Matrix, V AffineOffset, bool OnlyAffine,
             double time, bool ParameterMPIExchange,
-            XQuadFactoryHelper.MomentFittingVariants momentFittingVariant, IDictionary<SpeciesId, MultidimensionalArray> CellLengthScales,
+            IDictionary<SpeciesId, MultidimensionalArray> CellLengthScales,
             params SpeciesId[] whichSpc)
             where M : IMutableMatrixEx
             where V : IList<double> //
@@ -242,7 +241,7 @@ namespace BoSSS.Foundation.XDG {
                 DomainMap, Parameters, CodomainMap,
                 Matrix, AffineOffset, OnlyAffine, time,
                 ParameterMPIExchange,
-                momentFittingVariant, CellLengthScales,
+                CellLengthScales,
                 null, whichSpc);
         }
 
@@ -252,14 +251,14 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public void ComputeMatrixEx<M, V>(LevelSetTracker lsTrk,
             UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap,
-            M Matrix, V AffineOffset, bool OnlyAffine, double time, bool MPIParameterExchange, XQuadFactoryHelper.MomentFittingVariants momentFittingVariant,
+            M Matrix, V AffineOffset, bool OnlyAffine, double time, bool MPIParameterExchange, 
             params SpeciesId[] whichSpc)
             where M : IMutableMatrixEx
             where V : IList<double> {
             this.ComputeMatrixEx<M, V>(lsTrk,
                DomainMap, Parameters, CodomainMap,
                Matrix, AffineOffset,
-               OnlyAffine, time, MPIParameterExchange, momentFittingVariant,subGrid:null,whichSpc:whichSpc
+               OnlyAffine, time, MPIParameterExchange, subGrid:null,whichSpc:whichSpc
                );
         }
 
@@ -271,7 +270,7 @@ namespace BoSSS.Foundation.XDG {
             M Matrix, V AffineOffset, bool OnlyAffine, 
             double time, 
             bool MPIParameterExchange, 
-            XQuadFactoryHelper.MomentFittingVariants momentFittingVariant, SubGrid subGrid, params SpeciesId[] whichSpc)
+            SubGrid subGrid, params SpeciesId[] whichSpc)
             where M : IMutableMatrixEx
             where V : IList<double>  //
         {
@@ -288,7 +287,7 @@ namespace BoSSS.Foundation.XDG {
             this.ComputeMatrixEx<M, V>(lsTrk,
                 DomainMap, Parameters, CodomainMap,
                 Matrix, AffineOffset,
-                OnlyAffine, time, MPIParameterExchange, bla, momentFittingVariant,
+                OnlyAffine, time, MPIParameterExchange, bla, 
                 dummy.CellLengthScales, subGrid);
 
             Debug.Assert(dummy.TotalNumberOfAgglomerations <= 0, "internal error");
@@ -303,7 +302,7 @@ namespace BoSSS.Foundation.XDG {
         public void ComputeMatrixEx<M, V>(LevelSetTracker lsTrk,
             UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap,
             M Matrix, V AffineOffset, bool OnlyAffine, double time, bool MPIParameterExchange,
-            IDictionary<SpeciesId, QrSchemPair> SpeciesSchemes, XQuadFactoryHelper.MomentFittingVariants momentFittingVariant, IDictionary<SpeciesId, MultidimensionalArray> CellLengthScales,
+            IDictionary<SpeciesId, QrSchemPair> SpeciesSchemes, IDictionary<SpeciesId, MultidimensionalArray> CellLengthScales,
             SubGrid SubGrid = null)
             where M : IMutableMatrixEx
             where V : IList<double> {

@@ -42,7 +42,7 @@ namespace BoSSS.Foundation.XDG {
         /// <remarks>
         /// The centralized approach should avoid multiple creation of the same quadrature rule.
         /// </remarks>
-        XQuadFactoryHelper GetXQuadFactoryHelper(XQuadFactoryHelper.MomentFittingVariants variant, int HistoryIndex) {
+        XQuadFactoryHelper GetXQuadFactoryHelper(XQuadFactoryHelper.MomentFittingVariants variant, int HistoryIndex = 1) {
             var dict = m_QuadFactoryHelpersHistory[HistoryIndex];
             
             if (!dict.ContainsKey(variant)) {
@@ -74,9 +74,18 @@ namespace BoSSS.Foundation.XDG {
 
         }
 
+        public ISet<int> GetCachedOrders() {
+            HashSet<int> hs = new HashSet<int>();
+            foreach(var t in m_XDGSpaceMetricsHistory.Current.Keys) {
+                hs.Add(t.Item3);
+            }
+
+            return hs;
+        }
 
 
-        public XDGSpaceMetrics GetXDGSpaceMetrics(SpeciesId[] Spc, int CutCellsQuadOrder, int HistoryIndex) {
+
+        public XDGSpaceMetrics GetXDGSpaceMetrics(SpeciesId[] Spc, int CutCellsQuadOrder, int HistoryIndex = 1) {
             //if(!m_QuadFactoryHelpers.ContainsKey(variant)) {
             //    m_QuadFactoryHelpers[variant] = new XQuadFactoryHelper(this, variant);
             //}
