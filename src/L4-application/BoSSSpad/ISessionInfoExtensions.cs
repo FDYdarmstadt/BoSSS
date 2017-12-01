@@ -1709,7 +1709,6 @@ namespace BoSSS.Foundation.IO {
             DataSet[] data = new DataSet[2*numberMethods];
             double[][] times = new double[numberSessions][];
             int[] processors = new int[numberSessions];
-            string[] methods2 = methods;
 
             // Iterate over sessions
             for (int i = 0; i < numberSessions; i++)
@@ -1771,6 +1770,7 @@ namespace BoSSS.Foundation.IO {
             Array.Sort(processors, times);
 
             KeyValuePair<string, double>[] test = new KeyValuePair<string, double>[numberMethods];
+            KeyValuePair<string, double>[] test2 = new KeyValuePair<string, double>[numberMethods];
             // Create DataSets and ideal curves
             for (int i = 0; i < numberMethods; i++)
             {
@@ -1800,13 +1800,17 @@ namespace BoSSS.Foundation.IO {
                 data[i] = new DataSet(dataRowsConvergence);
                 data[i+numberMethods] = new DataSet(dataRowsSpeedup);
                 test[i] = new KeyValuePair<string, double>(methods[i], Math.Min(data.Skip(numberMethods).Pick(i).Regression().Pick(0).Value, data.Skip(numberMethods).Pick(i).Regression().Pick(1).Value));
+                test2[i] = new KeyValuePair<string, double>(methods[i], fraction[i]);
             }
 
             // Use slope of actual speedup curve to sort methods and DataSets by "worst scaling"
             //KeyValuePair<string[], double[]> test = new KeyValuePair<string[], double[]>(methods, data.Skip(numberMethods).Take(numberMethods).Select(ds => Math.Min(ds.Regression().Pick(0).Value, ds.Regression().Pick(1).Value)).ToArray());
             test = test.OrderBy(t => t.Value).ToArray();
-              double[] regressions = test.Select(s => s.Value).ToArray();
+            test2 = test2.OrderByDescending(t => t.Value).ToArray();
+            double[] regressions = test.Select(s => s.Value).ToArray();
             double[] regressions2 = regressions;
+            string[] methods2 = test2.Select(s => s.Key).ToArray();
+            double[] fractions2 = test2.Select(s => s.Value).ToArray();
             string[] sortedMethods = test.Select(s => s.Key).ToArray();
 
            // Write out the most expensive functions and the worst scaling functions
@@ -1815,7 +1819,7 @@ namespace BoSSS.Foundation.IO {
             for (int i = 0; i < numberMethods; i++)
             {
                 Console.WriteLine("Rank " + i + ": " + methods2[i]);
-                Console.WriteLine("\t Time fraction of root: " + fraction[i].ToString("p3"));
+                Console.WriteLine("\t Time fraction of root: " + fractions2[i].ToString("p3"));
             }
             Console.WriteLine("\n Sorted by worst scaling");
             Console.WriteLine("============================");
