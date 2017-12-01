@@ -122,13 +122,10 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="__NearRegionWidth">
         /// width of near region, in number of cells
         /// </param>
-        /// <param name="StackLen">
-        /// Number of items stored in the level-set stack.
-        /// </param>
         /// <param name="cutCellquadType">
         /// the type of integration in cut-cells; if more than one type is required within a single application, two <see cref="LevelSetTracker"/>'s should be used.
         /// </param>
-        public LevelSetTracker(GridData BackgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType, int __NearRegionWidth, string[,,] _SpeciesTable, int StackLen, ILevelSet levSet1, ILevelSet levSet2, ILevelSet levSet3) {
+        public LevelSetTracker(GridData BackgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType, int __NearRegionWidth, string[,,] _SpeciesTable, ILevelSet levSet1, ILevelSet levSet2, ILevelSet levSet3) {
             ConstructorCommon(BackgroundGrid, cutCellquadType, __NearRegionWidth, SpeciesTable, levSet1, levSet2, levSet3);
         }
 
@@ -144,13 +141,10 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="__NearRegionWidth">
         /// width of near region, in number of cells
         /// </param>
-        /// <param name="StackLen">
-        /// Number of items stored in the level-set stack.
-        /// </param>
         /// <param name="cutCellquadType">
         /// the type of integration in cut-cells; if more than one type is required within a single application, two <see cref="LevelSetTracker"/>'s should be used.
         /// </param>
-        public LevelSetTracker(GridData BackgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType, int __NearRegionWidth, string[,,,] _SpeciesTable, int StackLen, ILevelSet levSet1, ILevelSet levSet2, ILevelSet levSet3, ILevelSet levSet4) {
+        public LevelSetTracker(GridData BackgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType, int __NearRegionWidth, string[,,,] _SpeciesTable, ILevelSet levSet1, ILevelSet levSet2, ILevelSet levSet3, ILevelSet levSet4) {
             ConstructorCommon(BackgroundGrid, cutCellquadType, __NearRegionWidth, _SpeciesTable, levSet1, levSet2, levSet3, levSet4);
         }
 

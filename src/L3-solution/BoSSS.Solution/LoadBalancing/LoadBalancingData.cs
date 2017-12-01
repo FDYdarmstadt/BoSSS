@@ -311,6 +311,7 @@ namespace BoSSS.Solution {
             public XQuadFactoryHelper.MomentFittingVariants HMFvariant;
         }
 
+        /*
         /// <summary>
         /// Backup of a cut-cell metric.
         /// </summary>
@@ -432,7 +433,7 @@ namespace BoSSS.Solution {
             ccm = new CutCellMetrics(da.HMFvariant, da.HMForder, m_NewTracker,
                 CcVol, CcInt, CcEdg);
         }
-
+        */
 
 
         /// <summary>

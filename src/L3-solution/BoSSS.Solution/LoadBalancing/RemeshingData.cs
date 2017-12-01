@@ -196,7 +196,7 @@ namespace BoSSS.Solution {
                 LevelSetTracker lsTrk = m_OldTracker;
 
                 for(int j = 0; j < m_oldJ; j++) {
-                    int NoOfSpc = lsTrk.GetNoOfSpecies(j);
+                    int NoOfSpc = lsTrk.Regions.GetNoOfSpecies(j);
                     
                     int Nj = xb.GetLength(j);
                     Debug.Assert(Nj == NoOfSpc * Np);
@@ -205,7 +205,7 @@ namespace BoSSS.Solution {
                     data_j[0] = NoOfSpc;
                     int c = 1;
                     for(int iSpc = 0; iSpc < NoOfSpc; iSpc++) {
-                        SpeciesId spc = lsTrk.GetSpeciesIdFromIndex(j, iSpc);
+                        SpeciesId spc = lsTrk.Regions.GetSpeciesIdFromIndex(j, iSpc);
                         data_j[c] = spc.cntnt;
                         c++;
                         for(int n = 0; n < Np; n++) {
@@ -285,7 +285,7 @@ namespace BoSSS.Solution {
                         throw new ArgumentException("LevelSetTracker seems duplicate, or something.");                    
 
                     for(int j = 0; j < newJ; j++) {
-                        int NoOfSpc =  lsTrk.GetNoOfSpecies(j);
+                        int NoOfSpc =  lsTrk.Regions.GetNoOfSpecies(j);
 
                         if(TargMappingIdx[j] == null) {
                             // unchanged cell
@@ -299,7 +299,7 @@ namespace BoSSS.Solution {
 #if DEBUG
                                 SpeciesId rcvSpc;
                                 rcvSpc.cntnt = (int) ReDistDGCoords_jl[c];
-                                Debug.Assert(rcvSpc == lsTrk.GetSpeciesIdFromIndex(j, iSpc));
+                                Debug.Assert(rcvSpc == lsTrk.Regions.GetSpeciesIdFromIndex(j, iSpc));
 #endif
                                 c++;
 
@@ -325,7 +325,7 @@ namespace BoSSS.Solution {
                                     rcvSpc.cntnt = (int)ReDistDGCoords_jl[c];
                                     c++;
 
-                                    int iSpc = lsTrk.GetSpeciesIndex(rcvSpc, j); // species index in new cell 
+                                    int iSpc = lsTrk.Regions.GetSpeciesIndex(rcvSpc, j); // species index in new cell 
                                     Debug.Assert(iSpcRecv == iSpc || L > 1);
 
                                     int N0rcv = c;
