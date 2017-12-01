@@ -515,7 +515,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 //MoveLevelSetAndRelatedStuff(locCurSt, m_CurrentPhystime, m_CurrentDt, 1.0);
                 if (Math.Abs(m_ImplStParams.m_ActualLevSetRelTime - m_ImplStParams.m_RelTime) > 1.0e-14) {
                     MoveLevelSetAndRelatedStuff(locCurSt,
-                        m_ImplStParams.m_CurrentPhystime, m_ImplStParams.m_CurrentDt * m_ImplStParams.m_RelTime, 1.0,
+                        m_ImplStParams.m_CurrentPhystime, m_ImplStParams.m_CurrentDt * m_ImplStParams.m_RelTime, IterUnderrelax,
                         m_ImplStParams.m_Mass, m_ImplStParams.m_k);
 
                     // note that we need to update the agglomeration
@@ -683,7 +683,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     // move level-set:
                     if (Math.Abs(ActualLevSetRelTime - RelTime) > 1.0e-14) {
 
-                        this.MoveLevelSetAndRelatedStuff(u0.Mapping.Fields.ToArray(), PhysTime, dt * RelTime, 1.0, Mass, k);
+                        this.MoveLevelSetAndRelatedStuff(u0.Mapping.Fields.ToArray(), PhysTime, dt * RelTime, IterUnderrelax, Mass, k);
                         this.UpdateAgglom(false);
                         BlockMsrMatrix PM, SM;
                         UpdateMassMatrix(out PM, out SM);

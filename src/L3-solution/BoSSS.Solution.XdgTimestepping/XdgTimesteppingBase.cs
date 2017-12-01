@@ -194,6 +194,12 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         /// <summary>
+        /// in case of coupledIterative the fratro for underrelaxing the level set movement 
+        /// </summary>
+        public double IterUnderrelax = 1.0;
+
+
+        /// <summary>
         /// Convergence criterion if a nonlinear solver has to be used.
         /// </summary>
         public double Config_SolverConvergenceCriterion = 1.0e-8;

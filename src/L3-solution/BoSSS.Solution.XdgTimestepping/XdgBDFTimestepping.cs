@@ -891,7 +891,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 if (this.Config_LevelSetHandling == LevelSetHandling.Coupled_Once && m_IterationCounter == 0
                     || this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
 
-                    MoveLevelSetAndRelatedStuff(locCurSt, m_CurrentPhystime, m_CurrentDt, 0.7);
+                    MoveLevelSetAndRelatedStuff(locCurSt, m_CurrentPhystime, m_CurrentDt, IterUnderrelax);
 
                     // note that we need to update the agglomeration
                     updateAgglom = true;
