@@ -120,9 +120,9 @@ namespace BoSSS.Foundation.XDG {
         */
 
         /// <summary>
-        /// The quadrature order of HMF which should be used for computing cell volumes and edge areas.
+        /// The quadrature order used for computing cell volumes and edge areas.
         /// </summary>
-        public int HMForder {
+        public int CutCellQuadratureOrder {
             get {
                 return XDGSpaceMetrics.CutCellQuadOrder;
             }
@@ -228,7 +228,7 @@ namespace BoSSS.Foundation.XDG {
 
                 BoSSS.Foundation.Quadrature.EdgeQuadrature.GetQuadrature(
                     new int[] { 1 }, gd,
-                    schH.GetEdgeQuadScheme(spc).Compile(gd, this.HMForder),
+                    schH.GetEdgeQuadScheme(spc).Compile(gd, this.CutCellQuadratureOrder),
                     _Evaluate: delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) //
                     {
                         EvalResult.SetAll(1.0);
@@ -248,7 +248,7 @@ namespace BoSSS.Foundation.XDG {
 
                 BoSSS.Foundation.Quadrature.CellQuadrature.GetQuadrature(
                     new int[] { 1 }, gd,
-                    schH.GetVolumeQuadScheme(spc).Compile(gd, this.HMForder),
+                    schH.GetVolumeQuadScheme(spc).Compile(gd, this.CutCellQuadratureOrder),
                     _Evaluate: delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) //
                     {
                         EvalResult.SetAll(1.0);
@@ -345,7 +345,7 @@ namespace BoSSS.Foundation.XDG {
                         // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
                         CellQuadratureScheme SurfIntegration = schH.GetLevelSetquadScheme(iLevSet, IntegrationDom);
-                        var rule = SurfIntegration.Compile(gd, this.HMForder);
+                        var rule = SurfIntegration.Compile(gd, this.CutCellQuadratureOrder);
                         
                         BoSSS.Foundation.Quadrature.CellQuadrature.GetQuadrature(
                             new int[] { 1 }, gd,

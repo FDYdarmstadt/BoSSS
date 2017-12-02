@@ -62,6 +62,9 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <param name="useX">
         /// U dont want to know!
         /// </param>
+        /// <param name="_MultigridSequence"></param>
+        /// <param name="_CutCellQuadOrder">Order of quadrature in cut cells, required e.g. for <see cref="LevelSetTracker.GetXDGSpaceMetrics(SpeciesId[], int, int)"/></param>
+        /// <param name="_SpId">Species to compute, actually a subset of <see cref="LevelSetTracker.SpeciesIdS"/></param>
         /// <param name="_MultigridOperatorConfig">
         /// Configuration of block-preconditioner, if null a default value is chosen.
         /// </param>
@@ -70,7 +73,6 @@ namespace BoSSS.Solution.XdgTimestepping {
             LevelSetTracker LsTrk,
             DelComputeOperatorMatrix _ComputeOperatorMatrix,
             DelUpdateLevelset _UpdateLevelset,
-            DelUpdateCutCellMetrics _UpdateCutCellMetrics,
             RungeKuttaScheme _RKscheme,
             LevelSetHandling _LevelSetHandling,
             MassMatrixShapeandDependence _MassMatrixShapeandDependence,
@@ -78,6 +80,8 @@ namespace BoSSS.Solution.XdgTimestepping {
             IDictionary<SpeciesId, IEnumerable<double>> _MassScale,
             MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig,
             AggregationGrid[] _MultigridSequence,
+            SpeciesId[] _SpId,
+            int _CutCellQuadOrder,
             double _AgglomerationThreshold, bool useX) {
 
             // check args, set internals
@@ -89,14 +93,17 @@ namespace BoSSS.Solution.XdgTimestepping {
                 if (!Fields[iFld].Basis.Equals(IterationResiduals[iFld].Basis))
                     throw new ArgumentException(string.Format("Mismatch between {0}-th basis of fields and residuals.", iFld));
             }
-            
+
+            if(_MassScale != null) {
+                if(!IEnumerableExtensions.SetEquals(_SpId, _MassScale.Keys))
+                    throw new ArgumentException();
+            }
+                        
             base.Residuals = new CoordinateVector(IterationResiduals);
 
             if (!(_RKscheme.IsExplicit || _RKscheme.IsDiagonallyImplicit)) {
                 throw new NotSupportedException("Only supporting explicit or diagonally implicit schemes.");
             }
-
-            
 
             base.m_LsTrk = LsTrk;
             base.Config_LevelSetHandling = _LevelSetHandling;
@@ -104,11 +111,12 @@ namespace BoSSS.Solution.XdgTimestepping {
             base.Config_SpatialOperatorType = _SpatialOperatorType;
             base.ComputeOperatorMatrix = _ComputeOperatorMatrix;
             base.UpdateLevelset = _UpdateLevelset;
-            base.UpdateCutCellMetrics = _UpdateCutCellMetrics;
             base.Config_MassScale = _MassScale;
             base.Config_AgglomerationThreshold = _AgglomerationThreshold;
             this.m_RKscheme = _RKscheme.CloneAs();
             base.MultigridSequence = _MultigridSequence;
+            base.Config_SpeciesToCompute = _SpId;
+            base.Config_CutCellQuadratureOrder = _CutCellQuadOrder;
             if (_MultigridSequence == null || _MultigridSequence.Length < 1)
                 throw new ArgumentException("At least one grid level is required.");
 
@@ -122,9 +130,21 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             base.CommonConfigurationChecks();
 
+            // configure stack of level-set-tracker
+            // ------------------------------------
+
+            if(Config_LevelSetHandling == LevelSetHandling.None) {
+                m_LsTrk.IncreaseHistoryLength(0);
+            } else if(Config_LevelSetHandling == LevelSetHandling.LieSplitting
+                  || Config_LevelSetHandling == LevelSetHandling.StrangSplitting) {
+                m_LsTrk.IncreaseHistoryLength(1);
+            } else {
+                m_LsTrk.IncreaseHistoryLength(S + 1);
+            }
+
             // multigrid - init
             // ----------------
-
+            
             InitMultigrid(Fields, useX);
         }
 
@@ -289,14 +309,23 @@ namespace BoSSS.Solution.XdgTimestepping {
                     ls_dt *= 0.5;
 
                 // remember which old cells had values
-                var oldCCM = this.UpdateCutCellMetrics();
+                //var oldCCM = this.UpdateCutCellMetrics();
                 
                 // evolve the level set
+                int oldPushCount = m_LsTrk.PushCount;
                 this.MoveLevelSetAndRelatedStuff(m_CurrentState.Mapping.Fields.ToArray(), phystime, ls_dt, 1.0, null, null);
+                int newPushCount = m_LsTrk.PushCount;
+                if((newPushCount - oldPushCount) != 1)
+                    throw new ApplicationException();
+                
 
                 // in the case of splitting, the fields must be extrapolated 
-                var newCCM = this.UpdateCutCellMetrics();
-                var SplittingAgg = new MultiphaseCellAgglomerator(newCCM, 0.0, true, false, true, new CutCellMetrics[] { oldCCM }, new double[] { 0.0 });
+                //var newCCM = this.UpdateCutCellMetrics();
+                //var SplittingAgg = new MultiphaseCellAgglomerator(newCCM, 0.0, true, false, true, new CutCellMetrics[] { oldCCM }, new double[] { 0.0 });
+                Debug.Assert(m_LsTrk.HistoryLength >= 1);
+                var SplittingAgg = m_LsTrk.GetAgglomerator(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder,
+                    __AgglomerationTreshold: 0.0, AgglomerateNewborn: true, AgglomerateDecased: false, ExceptionOnFailedAgglomeration: true,
+                    oldTs__AgglomerationTreshold: new double[] { 0.0 });
                 SplittingAgg.Extrapolate(this.CurrentStateMapping);
 
                 // yes, we use splitting (i.e. only one mass matrix is required)
@@ -344,14 +373,22 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             if (this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting) {
                 // remember which old cells had values
-                var oldCCM = this.UpdateCutCellMetrics();
+                //var oldCCM = this.UpdateCutCellMetrics();
 
                 // evolve the level set
+                int oldPushCount = m_LsTrk.PushCount;
                 this.MoveLevelSetAndRelatedStuff(m_CurrentState.Mapping.Fields.ToArray(), phystime + dt * 0.5, dt * 0.5, 1.0, null, null);
+                int newPushCount = m_LsTrk.PushCount;
+                if((newPushCount - oldPushCount) != 1)
+                    throw new ApplicationException();
 
                 // in the case of splitting, the fields must be extrapolated 
-                var newCCM = this.UpdateCutCellMetrics();
-                var SplittingAgg = new MultiphaseCellAgglomerator(newCCM, 0.0, true, false, true, new CutCellMetrics[] { oldCCM }, new double[] { 0.0 });
+                //var newCCM = this.UpdateCutCellMetrics();
+                //var SplittingAgg = new MultiphaseCellAgglomerator(newCCM, 0.0, true, false, true, new CutCellMetrics[] { oldCCM }, new double[] { 0.0 });
+                Debug.Assert(m_LsTrk.HistoryLength >= 1);
+                var SplittingAgg = m_LsTrk.GetAgglomerator(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder,
+                    __AgglomerationTreshold: 0.0, AgglomerateNewborn: true, AgglomerateDecased: false, ExceptionOnFailedAgglomeration: true,
+                    oldTs__AgglomerationTreshold: new double[] { 0.0 });
                 SplittingAgg.Extrapolate(this.CurrentStateMapping);
             }
         }

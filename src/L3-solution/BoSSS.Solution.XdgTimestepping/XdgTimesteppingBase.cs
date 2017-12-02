@@ -68,10 +68,10 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// </returns>
     public delegate double DelUpdateLevelset(DGField[] CurrentState, double time, double dt, double UnderRelax, bool incremental);
 
-    /// <summary>
-    /// Callback-template for to obtain cut-cell metrics.
-    /// </summary>
-    public delegate CutCellMetrics DelUpdateCutCellMetrics();
+    ///// <summary>
+    ///// Callback-template for to obtain cut-cell metrics.
+    ///// </summary>
+    //public delegate CutCellMetrics DelUpdateCutCellMetrics();
 
     /// <summary>
     /// Callback-template for pushing the level-set in case of increment timestepping
@@ -228,6 +228,22 @@ namespace BoSSS.Solution.XdgTimestepping {
             protected set;
         }
 
+        /// <summary>
+        /// Species to compute, must be a subset of <see cref="LevelSetTracker.SpeciesIdS"/>
+        /// </summary>
+        public SpeciesId[] Config_SpeciesToCompute {
+            get;
+            protected set;
+        }
+
+        /// <summary>
+        /// Quadrature order on cut cells.
+        /// </summary>
+        public int Config_CutCellQuadratureOrder {
+            get;
+            protected set;
+        }
+
 
         /// <summary>
         /// Whether the operator is linear, nonlinear.
@@ -254,13 +270,13 @@ namespace BoSSS.Solution.XdgTimestepping {
             protected set;
         }
 
-        /// <summary>
-        /// Callback routine to update the cut-cell metrics.
-        /// </summary>
-        public DelUpdateCutCellMetrics UpdateCutCellMetrics {
-            get;
-            protected set;
-        }
+        ///// <summary>
+        ///// Callback routine to update the cut-cell metrics.
+        ///// </summary>
+        //public DelUpdateCutCellMetrics UpdateCutCellMetrics {
+        //    get;
+        //    protected set;
+        //}
 
         /// <summary>
         /// As usual the threshold for cell agglomeration.

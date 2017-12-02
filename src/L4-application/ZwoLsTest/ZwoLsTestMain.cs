@@ -273,7 +273,7 @@ namespace BoSSS.Application.ZwoLsTest {
             SinglePhaseField xt = new SinglePhaseField(NonAgglom.Basis, "test");
             xt.ProjectField(1.0,
                 SomePolynomial.Vectorize(),
-                qsh.GetVolumeQuadScheme(this.LsTrk.GetSpeciesId("B")).Compile(this.GridData, Agg.HMForder));
+                qsh.GetVolumeQuadScheme(this.LsTrk.GetSpeciesId("B")).Compile(this.GridData, Agg.CutCellQuadratureOrder));
                        
             CoordinateMapping map = xt.Mapping;
 

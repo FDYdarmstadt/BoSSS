@@ -74,6 +74,9 @@ namespace BoSSS.Foundation.XDG {
 
         }
 
+        /// <summary>
+        /// The order of all cut-cell quadrature rules which are present in the cache.
+        /// </summary>
         public ISet<int> GetCachedOrders() {
             HashSet<int> hs = new HashSet<int>();
             foreach(var t in m_XDGSpaceMetricsHistory.Current.Keys) {
@@ -141,7 +144,7 @@ namespace BoSSS.Foundation.XDG {
             SpeciesId[] Spc, int CutCellsQuadOrder,
             double __AgglomerationTreshold, 
             bool AgglomerateNewborn = false, bool AgglomerateDecased = false, bool ExceptionOnFailedAgglomeration = true, 
-            CutCellMetrics[] oldCcm = null, double[] oldTs__AgglomerationTreshold = null,
+            double[] oldTs__AgglomerationTreshold = null,
             double NewbornAndDecasedThreshold = 1.0e-6
             ) {
 

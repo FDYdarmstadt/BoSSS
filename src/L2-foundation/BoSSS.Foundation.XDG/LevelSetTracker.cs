@@ -172,6 +172,21 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
+        /// Increases <see cref="HistoryLength"/> to <paramref name="ReqLeng"/>, if the latter is smaler.
+        /// </summary>
+        /// <param name="ReqLeng">The requested length</param>
+        /// <returns>
+        /// the actual value of <see cref="HistoryLength"/>
+        /// </returns>
+        public int IncreaseHistoryLength(int ReqLeng) {
+            if(ReqLeng < 0)
+                throw new ArgumentException();
+            HistoryLength = Math.Max(ReqLeng, HistoryLength);
+            return HistoryLength;
+        }
+
+
+        /// <summary>
         /// Number of previous states in the various history stacks (<see cref="DataHistories"/>, <see cref="LevelSetHistories"/>, <see cref="RegionsHistory"/>, etc.).
         /// </summary>
         public int HistoryLength {
@@ -198,6 +213,24 @@ namespace BoSSS.Foundation.XDG {
                     m_XDGSpaceMetricsHistory.HistoryLength = value;
                 }
                 Debug.Assert(HistoryLength == value);
+            }
+        }
+
+        /// <summary>
+        /// Number of times <see cref="PushStacks"/> was called;
+        /// </summary>
+        public int PushCount {
+            get {
+                int L = RegionsHistory.PushCount;
+
+                for(int iLs = 0; iLs < NoOfLevelSets; iLs++) {
+                    Debug.Assert(m_DataHistories[iLs].PushCount == L);
+                    Debug.Assert(m_LevelSetHistories[iLs].PushCount == L);
+                }
+                Debug.Assert(m_QuadFactoryHelpersHistory.PushCount == L);
+                Debug.Assert(m_XDGSpaceMetricsHistory.PushCount == L);
+
+                return L;
             }
         }
 

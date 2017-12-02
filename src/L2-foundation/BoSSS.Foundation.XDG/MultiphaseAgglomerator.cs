@@ -53,11 +53,11 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// The quadrature order of HMF which should be used for computing cell volumes.
+        /// The quadrature order used for computing cell volumes and edge areas.
         /// </summary>
-        public int HMForder {
+        public int CutCellQuadratureOrder {
             get {
-                return NonAgglomeratedMetrics.HMForder;
+                return NonAgglomeratedMetrics.CutCellQuadratureOrder;
             }
         }
 
@@ -532,7 +532,7 @@ namespace BoSSS.Foundation.XDG {
                 int J = gdat.Cells.NoOfLocalUpdatedCells;
                 int D = gdat.SpatialDimension;
 
-                var CompScheme = xqs.GetVolumeQuadScheme(Species).Compile(gdat, this.HMForder);
+                var CompScheme = xqs.GetVolumeQuadScheme(Species).Compile(gdat, this.CutCellQuadratureOrder);
 
                 MultidimensionalArray CenterOfGravity = MultidimensionalArray.Create(J, D);
 

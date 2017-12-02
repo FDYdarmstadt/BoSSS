@@ -79,19 +79,21 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Triggers a delayed initialization of the BDF scheme.
         /// If true, it is the users responsibility to call either <see cref="SingleInit"/> or <see cref="MultiInit(double, double, Action{int, double, DGField[]})"/>.
         /// </param>
-        /// <param name="useX">
+        /// <param name="_useX">
         /// Use XDG-Fields because of Level Set. -> DIRTY HACK
         /// </param>
         /// <param name="_MultigridOperatorConfig">
         /// Configuration of block-preconditioner, if null a default value is chosen.
         /// </param>
+        /// <param name="_CutCellQuadOrder">Order of quadrature in cut cells, required e.g. for <see cref="LevelSetTracker.GetXDGSpaceMetrics(SpeciesId[], int, int)"/></param>
+        /// <param name="_SpId">Species to compute, actually a subset of <see cref="LevelSetTracker.SpeciesIdS"/></param>
+        /// <param name="_MultigridSequence"></param>
         public XdgBDFTimestepping(IEnumerable<DGField> Fields,
             IEnumerable<DGField> IterationResiduals,
             LevelSetTracker LsTrk,
             bool DelayInit,
             DelComputeOperatorMatrix _ComputeOperatorMatrix,
             DelUpdateLevelset _UpdateLevelset,
-            DelUpdateCutCellMetrics _UpdateCutCellMetrics,
             int BDForder,
             LevelSetHandling _LevelSetHandling,
             MassMatrixShapeandDependence _MassMatrixShapeandDependence,
@@ -99,6 +101,8 @@ namespace BoSSS.Solution.XdgTimestepping {
             IDictionary<SpeciesId, IEnumerable<double>> _MassScale,
             MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig,
             AggregationGrid[] _MultigridSequence,
+            SpeciesId[] _SpId,
+            int _CutCellQuadOrder,
             double _AgglomerationThreshold, bool _useX) {
 
             if (Fields.Count() != IterationResiduals.Count())
@@ -108,17 +112,22 @@ namespace BoSSS.Solution.XdgTimestepping {
                     throw new ArgumentException(string.Format("Mismatch between {0}-th basis of fields and residuals.", iFld));
             }
                        
+            if(_MassScale != null) {
+                if(!IEnumerableExtensions.SetEquals(_SpId, _MassScale.Keys))
+                    throw new ArgumentException();
+            }
 
             this.Config_LevelSetHandling = _LevelSetHandling;
             this.Config_MassMatrixShapeandDependence = _MassMatrixShapeandDependence;
             this.Config_SpatialOperatorType = _SpatialOperatorType;
             this.ComputeOperatorMatrix = _ComputeOperatorMatrix;
             this.UpdateLevelset = _UpdateLevelset;
-            this.UpdateCutCellMetrics = _UpdateCutCellMetrics;
             this.Config_MassScale = _MassScale;
             this.Config_AgglomerationThreshold = _AgglomerationThreshold;
             this.useX = _useX;
             base.MultigridSequence = _MultigridSequence;
+            base.Config_SpeciesToCompute = _SpId;
+            base.Config_CutCellQuadratureOrder = _CutCellQuadOrder;
             if (_MultigridSequence == null || _MultigridSequence.Length < 1)
                 throw new ArgumentException("At least one grid level is required.");
 
@@ -156,13 +165,14 @@ namespace BoSSS.Solution.XdgTimestepping {
             // cut-cell-metrics stack
             // ----------------------
 
-            if (Config_LevelSetHandling == LevelSetHandling.None
-                || Config_LevelSetHandling == LevelSetHandling.LieSplitting
-                || Config_LevelSetHandling == LevelSetHandling.StrangSplitting)
-                m_Stack_CutCellMetrics = new CutCellMetrics[1];
-            else
-                m_Stack_CutCellMetrics = new CutCellMetrics[S + 1];
-
+            if(Config_LevelSetHandling == LevelSetHandling.None) {
+                m_LsTrk.IncreaseHistoryLength(0);
+            } else if(Config_LevelSetHandling == LevelSetHandling.LieSplitting
+                  || Config_LevelSetHandling == LevelSetHandling.StrangSplitting) {
+                m_LsTrk.IncreaseHistoryLength(1);
+            } else {
+                m_LsTrk.IncreaseHistoryLength(S + 1);
+            }
 
             // mass-matrix stack
             // -----------------
@@ -237,10 +247,10 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         bool useX;
 
-        //
-        // stack of cut-cell metrics
-        //
-        CutCellMetrics[] m_Stack_CutCellMetrics;
+        ////
+        //// stack of cut-cell metrics
+        ////
+        //CutCellMetrics[] m_Stack_CutCellMetrics;
 
         //
         // stack of mass matrices (matrices _without_ agglomeration)
@@ -323,20 +333,20 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Debug.Assert(m_PrecondMassMatrix != null);
             }
 
-            // cut-cell metrics
-            // ----------------
-            if (this.Config_LevelSetHandling != LevelSetHandling.None) {
-                // we expect the level-set to change in every timestep
+            //// cut-cell metrics
+            //// ----------------
+            //if (this.Config_LevelSetHandling != LevelSetHandling.None) {
+            //    // we expect the level-set to change in every timestep
 
-                for (int i = m_Stack_CutCellMetrics.Length - 1; i >= 1; i--) {
-                    m_Stack_CutCellMetrics[i] = m_Stack_CutCellMetrics[i - 1];
-                }
-                m_Stack_CutCellMetrics[0] = null;
-            } else {
-                // a level-set which is static over all timeteps
+            //    for (int i = m_Stack_CutCellMetrics.Length - 1; i >= 1; i--) {
+            //        m_Stack_CutCellMetrics[i] = m_Stack_CutCellMetrics[i - 1];
+            //    }
+            //    m_Stack_CutCellMetrics[0] = null;
+            //} else {
+            //    // a level-set which is static over all timeteps
 
-                Debug.Assert(m_Stack_CutCellMetrics[0] != null);
-            }
+            //    Debug.Assert(m_Stack_CutCellMetrics[0] != null);
+            //}
 
 
             // saves first timesteps (actual timerstpe size dt) in  case of incrementInit
@@ -363,9 +373,9 @@ namespace BoSSS.Solution.XdgTimestepping {
                     if (m_Stack_MassMatrix_incHist != null)
                         m_Stack_MassMatrix[i] = m_Stack_MassMatrix_incHist[m_TSCchain[0].S - i];
 
-                    // cut-cell metrics
-                    if (m_Stack_CutCellMetrics_incHist != null)
-                        m_Stack_CutCellMetrics[i] = m_Stack_CutCellMetrics_incHist[m_TSCchain[0].S - i];
+                    //// cut-cell metrics
+                    //if (m_Stack_CutCellMetrics_incHist != null)
+                    //    m_Stack_CutCellMetrics[i] = m_Stack_CutCellMetrics_incHist[m_TSCchain[0].S - i];
 
                     // get rid off the incrementHistory
                     m_Stack_u_incHist = null;
@@ -393,9 +403,9 @@ namespace BoSSS.Solution.XdgTimestepping {
             if (m_Stack_MassMatrix_incHist != null) 
                 m_Stack_MassMatrix_incHist[incrementHist] = m_Stack_MassMatrix[1];
 
-            // cut-cell metrics
-            if (m_Stack_CutCellMetrics_incHist != null)
-                m_Stack_CutCellMetrics_incHist[incrementHist] = m_Stack_CutCellMetrics[1];
+            //// cut-cell metrics
+            //if (m_Stack_CutCellMetrics_incHist != null)
+            //    m_Stack_CutCellMetrics_incHist[incrementHist] = m_Stack_CutCellMetrics[1];
 
         }
 
@@ -479,7 +489,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             {
                 int[] Jtot =
-                    (new int[] { base.m_LsTrk._Regions.GetCutCellMask().NoOfItemsLocally.MPISum(), base.m_LsTrk.GridDat.Cells.NoOfLocalUpdatedCells })
+                    (new int[] { base.m_LsTrk.Regions.GetCutCellMask().NoOfItemsLocally.MPISum(), base.m_LsTrk.GridDat.Cells.NoOfLocalUpdatedCells })
                     .MPISum();
                 //Console.WriteLine("No of cells {0}, No of cut cells {1}.", Jtot[1], Jtot[0]);
                 if (Jtot[0] == Jtot[1])
@@ -487,14 +497,17 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
 
 
-            m_Stack_CutCellMetrics[0] = this.UpdateCutCellMetrics();
-            if (!m_Stack_CutCellMetrics[0].SpeciesList.SetEquals(Config_MassScale.Keys))
-                throw new ApplicationException("Mismatch between species lists.");
+            //m_Stack_CutCellMetrics[0] = this.UpdateCutCellMetrics();
+            //if (!m_Stack_CutCellMetrics[0].SpeciesList.SetEquals(Config_MassScale.Keys))
+            //    throw new ApplicationException("Mismatch between species lists.");
 
-            m_CurrentAgglomeration = new MultiphaseCellAgglomerator(
-                    m_Stack_CutCellMetrics[0],
-                    this.Config_AgglomerationThreshold, false, false, true,
-                    null, null);
+            //m_CurrentAgglomeration = new MultiphaseCellAgglomerator(
+            //        m_Stack_CutCellMetrics[0],
+            //        this.Config_AgglomerationThreshold, false, false, true,
+            //        null, null);
+            m_CurrentAgglomeration = m_LsTrk.GetAgglomerator(base.Config_SpeciesToCompute , base.Config_CutCellQuadratureOrder, this.Config_AgglomerationThreshold, 
+                AgglomerateNewborn: false, AgglomerateDecased: false, ExceptionOnFailedAgglomeration: true);
+
 
             // update Multigrid-XDG basis
             Debug.Assert(object.ReferenceEquals(base.MultigridBasis[0][0].DGBasis.GridDat, m_CurrentAgglomeration.Tracker.GridDat));
@@ -535,10 +548,11 @@ namespace BoSSS.Solution.XdgTimestepping {
                     || (this.Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsTimeAndSolutionDependent)
                     ) {
                     int NF = CurrentStateMapping.Fields.Count;
-                    MassMatrixFactory MassFact = new MassMatrixFactory(CurrentStateMapping.BasisS.ElementAtMax(b => b.Degree), m_CurrentAgglomeration);
+                    //MassMatrixFactory MassFact = new MassMatrixFactory(CurrentStateMapping.BasisS.ElementAtMax(b => b.Degree), m_CurrentAgglomeration);
+                    MassMatrixFactory MassFact = m_LsTrk.GetXDGSpaceMetrics(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder).MassMatrixFactory;
                     m_PrecondMassMatrix = MassFact.GetMassMatrix(CurrentStateMapping, false);
                     m_Stack_MassMatrix[0] = new BlockMsrMatrix(CurrentStateMapping);
-                    MassFact.AccMassMatrix(m_Stack_MassMatrix[0], CurrentStateMapping, _alpha: Config_MassScale, VariableAgglomerationSwitch: NF.ForLoop(i => false));
+                    MassFact.AccMassMatrix(m_Stack_MassMatrix[0], CurrentStateMapping, _alpha: Config_MassScale);
                 }
             }
 
@@ -590,12 +604,12 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Step 1 of 2 for dynamic load balancing: creating a backup of this objects 
         /// status in the load-balancing thing <paramref name="L"/>
         /// </summary>
-        public void DataBackupBeforeBalancing(GridUpdateData L) {
+        public void DataBackupBeforeBalancing(GridUpdateData _L) {
             using (new FuncTrace()) {
                 if (m_PrivateBalancingInfo != null)
                     throw new NotSupportedException();
 
-                //LoadBalancingData L = (LoadBalancingData)_L; // Provisorium
+                LoadBalancingData L = (LoadBalancingData)_L; // Provisorium
 
                 m_PrivateBalancingInfo = new PrivateBalancingInfo();
                 m_PrivateBalancingInfo.NoOfFields = m_Stack_u[0].Mapping.Fields.Count;
@@ -644,15 +658,15 @@ namespace BoSSS.Solution.XdgTimestepping {
                 m_Stack_OpMatrix = null;
                 m_Stack_OpAffine = null;
 
-                // backup the cut-cell metrics
-                m_PrivateBalancingInfo.m_Stack_CutCellMetrics = new bool[m_Stack_CutCellMetrics.Length];
-                for (int i = 0; i < m_Stack_CutCellMetrics.Length; i++) {
-                    if (m_Stack_CutCellMetrics[i] != null) {
-                        m_PrivateBalancingInfo.m_Stack_CutCellMetrics[i] = true;
-                        L.BackupCutCellMetrics(m_Stack_CutCellMetrics[i], GetName__CutCellMetrics(i));
-                    }
-                }
-                m_Stack_CutCellMetrics = null;
+                //// backup the cut-cell metrics
+                //m_PrivateBalancingInfo.m_Stack_CutCellMetrics = new bool[m_Stack_CutCellMetrics.Length];
+                //for (int i = 0; i < m_Stack_CutCellMetrics.Length; i++) {
+                //    if (m_Stack_CutCellMetrics[i] != null) {
+                //        m_PrivateBalancingInfo.m_Stack_CutCellMetrics[i] = true;
+                //        L.BackupCutCellMetrics(m_Stack_CutCellMetrics[i], GetName__CutCellMetrics(i));
+                //    }
+                //}
+                //m_Stack_CutCellMetrics = null;
 
                 // Delete agglomeration
                 m_CurrentAgglomeration = null;
@@ -669,7 +683,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             public bool[] m_Stack_MassMatrix;
             public bool[] m_Stack_OpMatrix;
             public bool[] m_Stack_OpAffine;
-            public bool[] m_Stack_CutCellMetrics;
+            //public bool[] m_Stack_CutCellMetrics;
         }
 
 
@@ -740,20 +754,20 @@ namespace BoSSS.Solution.XdgTimestepping {
                     }
                 }
 
-                // backup the cut-cell metrics
-                m_Stack_CutCellMetrics = new CutCellMetrics[m_PrivateBalancingInfo.m_Stack_CutCellMetrics.Length];
-                for (int i = 0; i < m_Stack_CutCellMetrics.Length; i++) {
-                    if (m_PrivateBalancingInfo.m_Stack_CutCellMetrics[i]) {
-                        L.RestoreCutCellMetrics(out m_Stack_CutCellMetrics[i], GetName__CutCellMetrics(i));
-                    }
-                }
+                //// backup the cut-cell metrics
+                //m_Stack_CutCellMetrics = new CutCellMetrics[m_PrivateBalancingInfo.m_Stack_CutCellMetrics.Length];
+                //for (int i = 0; i < m_Stack_CutCellMetrics.Length; i++) {
+                //    if (m_PrivateBalancingInfo.m_Stack_CutCellMetrics[i]) {
+                //        L.RestoreCutCellMetrics(out m_Stack_CutCellMetrics[i], GetName__CutCellMetrics(i));
+                //    }
+                //}
 
                 // Agglomerator
                 if (m_Stack_CutCellMetrics[0] != null) {
-                    CutCellMetrics[] prevCCM;
-                    double[] oldAggTrsh;
+                    //CutCellMetrics[] prevCCM;
+                    //double[] oldAggTrsh;
 
-                    prevCCM = m_Stack_CutCellMetrics.Skip(1).Where(ccm => ccm != null).ToArray();
+                    //prevCCM = m_Stack_CutCellMetrics.Skip(1).Where(ccm => ccm != null).ToArray();
                     oldAggTrsh = new double[prevCCM.Length];
                     ArrayTools.SetAll(oldAggTrsh, this.Config_AgglomerationThreshold);
                     if (prevCCM.Length <= 0) {
@@ -761,13 +775,13 @@ namespace BoSSS.Solution.XdgTimestepping {
                         oldAggTrsh = null;
                     }
 
-                    if (!m_Stack_CutCellMetrics[0].SpeciesList.SetEquals(Config_MassScale.Keys))
-                        throw new ApplicationException("Mismatch between species lists.");
+                    //if (!m_Stack_CutCellMetrics[0].SpeciesList.SetEquals(Config_MassScale.Keys))
+                    //    throw new ApplicationException("Mismatch between species lists.");
 
-                    m_CurrentAgglomeration = new MultiphaseCellAgglomerator(
-                        m_Stack_CutCellMetrics[0],
-                        this.Config_AgglomerationThreshold, prevCCM != null, prevCCM != null, true,
-                        prevCCM, oldAggTrsh);
+                    //m_CurrentAgglomeration = new MultiphaseCellAgglomerator(
+                    //    m_Stack_CutCellMetrics[0],
+                    //    this.Config_AgglomerationThreshold, prevCCM != null, prevCCM != null, true,
+                    //    prevCCM, oldAggTrsh);
                 }
 
                 // finished
@@ -927,10 +941,14 @@ namespace BoSSS.Solution.XdgTimestepping {
                     if (!m_Stack_CutCellMetrics[0].SpeciesList.SetEquals(Config_MassScale.Keys))
                         throw new ApplicationException("Mismatch between species lists.");
 
-                    m_CurrentAgglomeration = new MultiphaseCellAgglomerator(
-                        m_Stack_CutCellMetrics[0],
-                        this.Config_AgglomerationThreshold, prevCCM != null, prevCCM != null, true,
-                        prevCCM, oldAggTrsh);
+                    //m_CurrentAgglomeration = new MultiphaseCellAgglomerator(
+                    //    m_Stack_CutCellMetrics[0],
+                    //    this.Config_AgglomerationThreshold, prevCCM != null, prevCCM != null, true,
+                    //    prevCCM, oldAggTrsh);
+                    m_CurrentAgglomeration = m_LsTrk.GetAgglomerator(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder,
+                        base.Config_AgglomerationThreshold, 
+                        
+                        )
 
                     // update Multigrid-XDG basis
                     Debug.Assert(object.ReferenceEquals(base.MultigridBasis[0][0].DGBasis.GridDat, m_CurrentAgglomeration.Tracker.GridDat));
@@ -1205,21 +1223,29 @@ namespace BoSSS.Solution.XdgTimestepping {
                     ls_dt *= 0.5;
 
                 // remember which old cells had values
-                var oldCCM = this.UpdateCutCellMetrics();
+                //var oldCCM = this.UpdateCutCellMetrics();
 
                 // evolve the level set
+                int oldPushCount = m_LsTrk.PushCount;
                 this.MoveLevelSetAndRelatedStuff(m_Stack_u[0].Mapping.Fields.ToArray(), phystime, ls_dt, 1.0);
+                int newPushCount = m_LsTrk.PushCount;
+                if((newPushCount - oldPushCount) != 1)
+                    throw new ApplicationException();
 
                 // in the case of splitting, the fields must be extrapolated 
-                var newCCM = this.UpdateCutCellMetrics();
-                var SplittingAgg = new MultiphaseCellAgglomerator(newCCM, 0.0, true, false, true, new CutCellMetrics[] { oldCCM }, new double[] { 0.0 });
+                //var newCCM = this.UpdateCutCellMetrics();
+                //var SplittingAgg = new MultiphaseCellAgglomerator(newCCM, 0.0, true, false, true, new CutCellMetrics[] { oldCCM }, new double[] { 0.0 });
+                Debug.Assert(m_LsTrk.HistoryLength >= 1);
+                var SplittingAgg = m_LsTrk.GetAgglomerator(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder,
+                    __AgglomerationTreshold: 0.0, AgglomerateNewborn: true, AgglomerateDecased: false, ExceptionOnFailedAgglomeration: true,
+                    oldTs__AgglomerationTreshold: new double[] { 0.0 });
                 for (int i = 0; i < this.m_Stack_u.Length; i++)
                     SplittingAgg.Extrapolate(this.m_Stack_u[i].Mapping);
 
                 // clear the old agglom; in case of splitting, the agglom does not depend on previous time-steps
                 m_CurrentAgglomeration = null;
-                Debug.Assert(m_Stack_CutCellMetrics.Length == 1);
-                m_Stack_CutCellMetrics[0] = base.UpdateCutCellMetrics();
+                //Debug.Assert(m_Stack_CutCellMetrics.Length == 1);
+                //m_Stack_CutCellMetrics[0] = base.UpdateCutCellMetrics();
             }
 
             // ==============================================
@@ -1228,7 +1254,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             {
                 int[] Jtot =
-                    (new int[] { base.m_LsTrk._Regions.GetCutCellMask().NoOfItemsLocally.MPISum(), base.m_LsTrk.GridDat.Cells.NoOfLocalUpdatedCells })
+                    (new int[] { base.m_LsTrk.Regions.GetCutCellMask().NoOfItemsLocally.MPISum(), base.m_LsTrk.GridDat.Cells.NoOfLocalUpdatedCells })
                     .MPISum();
                 Console.WriteLine("No of cells {0}, No of cut cells {1}.", Jtot[1], Jtot[0]);
                 if (Jtot[0] == Jtot[1])
@@ -1330,15 +1356,26 @@ namespace BoSSS.Solution.XdgTimestepping {
             if (this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting) {
 
                 // remember which old cells had values
-                var oldCCM = this.UpdateCutCellMetrics();
+                //var oldCCM = this.UpdateCutCellMetrics();
 
                 // evolve the level set
+                int oldPushCount = m_LsTrk.PushCount;
                 this.MoveLevelSetAndRelatedStuff(m_Stack_u[0].Mapping.Fields.ToArray(), phystime + dt * 0.5, dt * 0.5, 1.0);
+                int newPushCount = m_LsTrk.PushCount;
+                if((newPushCount - oldPushCount) != 1)
+                    throw new ApplicationException();
 
                 // in the case of splitting, the fields must be extrapolated 
-                var newCCM = this.UpdateCutCellMetrics();
-                var SplittingAgg = new MultiphaseCellAgglomerator(newCCM, 0.0, true, false, true, new CutCellMetrics[] { oldCCM }, new double[] { 0.0 });
-                SplittingAgg.Extrapolate(this.CurrentStateMapping);
+                //var newCCM = this.UpdateCutCellMetrics();
+                //var SplittingAgg = new MultiphaseCellAgglomerator(newCCM, 0.0, true, false, true, new CutCellMetrics[] { oldCCM }, new double[] { 0.0 });
+                //SplittingAgg.Extrapolate(this.CurrentStateMapping);
+                Debug.Assert(m_LsTrk.HistoryLength >= 1);
+                var SplittingAgg = m_LsTrk.GetAgglomerator(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder,
+                    __AgglomerationTreshold: 0.0, AgglomerateNewborn: true, AgglomerateDecased: false, ExceptionOnFailedAgglomeration: true,
+                    oldTs__AgglomerationTreshold: new double[] { 0.0 });
+                for (int i = 0; i < this.m_Stack_u.Length; i++)
+                    SplittingAgg.Extrapolate(this.m_Stack_u[i].Mapping);
+
             }
 
             // ====================
