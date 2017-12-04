@@ -129,7 +129,8 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
                     this.Phi.ProjectField(this.test.GetLevelSet);
                     this.LsTrk.UpdateTracker();
 
-                    var schemes = new XQuadSchemeHelper(LsTrk, this.momentFittingVariant, LsTrk.SpeciesIdS.ToArray());
+                    //var schemes = new XQuadSchemeHelper(LsTrk, this.momentFittingVariant, LsTrk.SpeciesIdS.ToArray());
+                    var schemes = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), this.QUAD_ORDER, 1).XQuadSchemeHelper;
                     
                     var cutCells = LsTrk.Regions.GetCutCellSubGrid().VolumeMask;
 

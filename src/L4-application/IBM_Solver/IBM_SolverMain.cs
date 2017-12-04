@@ -723,7 +723,7 @@ namespace BoSSS.Application.IBM_Solver {
 
 #if DEBUG
                 {
-                    var Uncut = LsTrk._Regions.GetCutCellMask().Complement();
+                    var Uncut = LsTrk.Regions.GetCutCellMask().Complement();
 
 
                     VectorField<SinglePhaseField> U0mean_check = new VectorField<SinglePhaseField>(D, new Basis(LsTrk.GridDat, 0), SinglePhaseField.Factory);
@@ -1017,9 +1017,9 @@ namespace BoSSS.Application.IBM_Solver {
             NoOfClasses = 3;
             int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
             CellPerfomanceClasses = new int[J];
-            foreach(int j in LsTrk._Regions.GetSpeciesMask("A").ItemEnum)
+            foreach(int j in LsTrk.Regions.GetSpeciesMask("A").ItemEnum)
                 CellPerfomanceClasses[j] = 1;
-            foreach(int j in LsTrk._Regions.GetCutCellMask().ItemEnum)
+            foreach(int j in LsTrk.Regions.GetCutCellMask().ItemEnum)
                 CellPerfomanceClasses[j] = 2;
         }
 

@@ -141,7 +141,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                         this.Phi.ProjectField(X => this.Control.Phi(X, Time));
 
                         // HMF hacks
-                        if ((this.Control.CircleRadius != null) != (this.Control.HMF == XQuadFactoryHelper.MomentFittingVariants.ExactCircle))
+                        if ((this.Control.CircleRadius != null) != (this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.ExactCircle))
                             throw new ApplicationException("Illegal HMF configuration.");
                         if (this.Control.CircleRadius != null) {
                             ExactCircleLevelSetIntegration.RADIUS = new double[] { this.Control.CircleRadius(Time) };
@@ -421,7 +421,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 UpdateMarkerFields();
 
                 // HMF hacks
-                if ((this.Control.CircleRadius != null) != (this.Control.HMF == XQuadFactoryHelper.MomentFittingVariants.ExactCircle))
+                if ((this.Control.CircleRadius != null) != (this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.ExactCircle))
                     throw new ApplicationException("Illegal HMF configuration.");
                 if (this.Control.CircleRadius != null) {
                     ExactCircleLevelSetIntegration.RADIUS = new double[] { this.Control.CircleRadius(phystime + dt) };
@@ -434,7 +434,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         void ComputeL2Error(double PhysTime) {
             Console.WriteLine("Phystime = " + PhysTime);
 
-            if ((this.Control.CircleRadius != null) != (this.Control.HMF == XQuadFactoryHelper.MomentFittingVariants.ExactCircle))
+            if ((this.Control.CircleRadius != null) != (this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.ExactCircle))
                 throw new ApplicationException("Illegal HMF configuration.");
             if (this.Control.CircleRadius != null) {
                 ExactCircleLevelSetIntegration.RADIUS = new double[] { this.Control.CircleRadius(PhysTime) };
@@ -469,8 +469,8 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
             double uA_min, uA_max, uB_min, uB_max;
             int dummy1, dummy2;
-            uNum_A.GetExtremalValues(out uA_min, out uA_max, out dummy1, out dummy2, this.LsTrk._Regions.GetSpeciesMask("A"));
-            uNum_B.GetExtremalValues(out uB_min, out uB_max, out dummy1, out dummy2, this.LsTrk._Regions.GetSpeciesMask("B"));
+            uNum_A.GetExtremalValues(out uA_min, out uA_max, out dummy1, out dummy2, this.LsTrk.Regions.GetSpeciesMask("A"));
+            uNum_B.GetExtremalValues(out uB_min, out uB_max, out dummy1, out dummy2, this.LsTrk.Regions.GetSpeciesMask("B"));
 
             base.QueryHandler.ValueQuery("uA_Min", uA_min);
             base.QueryHandler.ValueQuery("uA_Max", uA_max);

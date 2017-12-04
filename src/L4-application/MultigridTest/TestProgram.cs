@@ -371,7 +371,7 @@ namespace BoSSS.Application.MultigridTest {
                 LevSet = new LevelSet(new Basis(grid, 2), "LevelSet");
                 LevSet.Clear();
                 LevSet.ProjectField(LevSetFunc);
-                LsTrk = new LevelSetTracker(grid, TrackerWidth, new string[] { "A", "B" }, LevSet);
+                LsTrk = new LevelSetTracker(grid, XQuadFactoryHelper.MomentFittingVariants.Classic, TrackerWidth, new string[] { "A", "B" }, LevSet);
                 LsTrk.UpdateTracker();
 
                 XB = new XDGBasis(LsTrk, p);
@@ -391,9 +391,9 @@ namespace BoSSS.Application.MultigridTest {
                 var map = new UnsetteledCoordinateMapping(opXB);
 
                 int quadOrder = Dummy.QuadOrderFunction(map.BasisS.Select(bs => bs.Degree).ToArray(), new int[0], map.BasisS.Select(bs => bs.Degree).ToArray());
-                agg = new MultiphaseCellAgglomerator(new CutCellMetrics(momentFittingVariant, quadOrder, LsTrk, LsTrk.SpeciesIdS.ToArray()), AggregationThreshold, false);
-
-                
+                //agg = new MultiphaseCellAgglomerator(new CutCellMetrics(momentFittingVariant, quadOrder, LsTrk, LsTrk.SpeciesIdS.ToArray()), AggregationThreshold, false);
+                agg = LsTrk.GetAgglomerator(LsTrk.SpeciesIdS.ToArray(), quadOrder, __AgglomerationTreshold: AggregationThreshold);
+                               
 
                 foreach (var S in LsTrk.SpeciesIdS)
                     Console.WriteLine("Species {0}, no. of agglomerated cells {1} ",
@@ -789,7 +789,7 @@ namespace BoSSS.Application.MultigridTest {
 
                 foreach (var spc in xt.LsTrk.SpeciesIdS) {
                     var Test_spc = Test.GetSpeciesShadowField(spc);
-                    var SpcMask = xt.LsTrk._Regions.GetSpeciesMask(spc);
+                    var SpcMask = xt.LsTrk.Regions.GetSpeciesMask(spc);
 
                     BitArray AggSourceBitmask = xt.agg.GetAgglomerator(spc).AggInfo.SourceCells.GetBitMask();
 

@@ -59,7 +59,7 @@ namespace BoSSS.Application.LoadBalancingTest {
 
         protected override void CreateFields() {
             LevSet = new LevelSet(new Basis(this.GridData, 2), "LevelSet");
-            base.LsTrk = new LevelSetTracker(this.GridData, 1, new string[] { "A", "B" }, LevSet);
+            base.LsTrk = new LevelSetTracker(this.GridData, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, 1, new string[] { "A", "B" }, LevSet);
 
             var xBasis = new XDGBasis(base.LsTrk, DEGREE);
             u = new XDGField(xBasis, "u");
@@ -128,8 +128,8 @@ namespace BoSSS.Application.LoadBalancingTest {
             // markieren, wo ueberhaupt A und B sind
             Amarker.Clear();
             Bmarker.Clear();
-            Amarker.AccConstant(+1.0, LsTrk._Regions.GetSpeciesSubGrid("A").VolumeMask);
-            Bmarker.AccConstant(1.0, LsTrk._Regions.GetSpeciesSubGrid("B").VolumeMask);
+            Amarker.AccConstant(+1.0, LsTrk.Regions.GetSpeciesSubGrid("A").VolumeMask);
+            Bmarker.AccConstant(1.0, LsTrk.Regions.GetSpeciesSubGrid("B").VolumeMask);
 
             // MPI rank
             MPICellRank.Clear();
@@ -154,7 +154,9 @@ namespace BoSSS.Application.LoadBalancingTest {
         XdgBDFTimestepping TimeIntegration;
 
         protected override void CreateEquationsAndSolvers(GridUpdateData L) {
-            Op = new XSpatialOperator(1, 0, 1, QuadOrderFunc.SumOfMaxDegrees(RoundUp: true), "u", "c1");
+            int quadorder = this.u.Basis.Degree * 2 + 1;
+
+            Op = new XSpatialOperator(1, 0, 1, (A, B, C) => quadorder, "u", "c1");
 
             var blkFlux = new DxFlux(this.LsTrk, alpha_A, alpha_B);
             Op.EquationComponents["c1"].Add(blkFlux); // Flux in Bulk Phase;
@@ -167,7 +169,7 @@ namespace BoSSS.Application.LoadBalancingTest {
                 TimeIntegration = new XdgBDFTimestepping(
                     new DGField[] { u }, new DGField[] { uResidual }, base.LsTrk,
                     true,
-                    DelComputeOperatorMatrix, DelUpdateLevelset, DelUpdateCutCellMetrics,
+                    DelComputeOperatorMatrix, DelUpdateLevelset,
                     3, // BDF3
                        //-1, // Crank-Nicolson
                        //0, // Explicit Euler
@@ -177,6 +179,8 @@ namespace BoSSS.Application.LoadBalancingTest {
                     MassScale,
                     MultigridOperatorConfig,
                     this.MultigridSequence,
+                    this.LsTrk.SpeciesIdS.ToArray(),
+                    quadorder
                     this.THRESHOLD,
                     true);
             } else {
@@ -223,13 +227,13 @@ namespace BoSSS.Application.LoadBalancingTest {
             }
         }
 
-        CutCellMetrics DelUpdateCutCellMetrics() {
-            return new CutCellMetrics(
-                HMF,
-                this.Op.QuadOrderFunction(new int[] { u.Basis.Degree }, new int[0], new int[] { uResidual.Basis.Degree }),
-                this.LsTrk,
-                this.LsTrk.SpeciesIdS.ToArray());
-        }
+        //CutCellMetrics DelUpdateCutCellMetrics() {
+        //    return new CutCellMetrics(
+        //        HMF,
+        //        this.Op.QuadOrderFunction(new int[] { u.Basis.Degree }, new int[0], new int[] { uResidual.Basis.Degree }),
+        //        this.LsTrk,
+        //        this.LsTrk.SpeciesIdS.ToArray());
+        //}
 
         const XQuadFactoryHelper.MomentFittingVariants HMF = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
 
@@ -242,7 +246,6 @@ namespace BoSSS.Application.LoadBalancingTest {
                 OpMatrix, OpAffine, false,
                 phystime,
                 false,
-                XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes,
                 base.LsTrk.SpeciesIdS.ToArray());
         }
 
@@ -289,7 +292,7 @@ namespace BoSSS.Application.LoadBalancingTest {
             int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
 
             int[] PerformanceClasses = new int[J];
-            var CC = this.LsTrk._Regions.GetCutCellMask();
+            var CC = this.LsTrk.Regions.GetCutCellMask();
             foreach (int j in CC.ItemEnum)
                 PerformanceClasses[j] = 1;
 
