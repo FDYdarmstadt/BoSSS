@@ -174,7 +174,9 @@ namespace CutCellQuadrature {
 
         protected override void CreateFields() {
             levelSet = testCase.GetLevelSet(GridData);
-            levelSetTracker = new LevelSetTracker(GridData, 1, new string[] { "A", "B" }, levelSet);
+            levelSetTracker = new LevelSetTracker(GridData, 
+                XQuadFactoryHelper.MomentFittingVariants.Classic, // should have no effect, this app creates its own quad-rules independent of the tracker
+                1, new string[] { "A", "B" }, levelSet);
 
             XDGField = new XDGField(
                 new XDGBasis(levelSetTracker, testCase.IntegrandDegree), "XDGField");
