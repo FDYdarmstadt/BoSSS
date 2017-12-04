@@ -236,13 +236,13 @@ namespace CNS.Tests.IBMTests {
         }
 
         // Wprks only if AV projection is off
-        //[Test]
-        //public static void IBMAVTest() {
-        //    CheckErrorThresholds(
-        //        SetupIBMAVTest(),
-        //        Tuple.Create("L2NormDensity", 53.8811127551010000 + 1e-10),
-        //        Tuple.Create("L2NormVelocityX", 1.5491933384829700 + 1e-10),
-        //        Tuple.Create("L2NormPressure", 0.7745966692415230 + 1e-10));
-        //}
+        [Test]
+        public static void IBMAVTest() {
+            CheckErrorThresholds(
+                SetupIBMAVTest(),
+                Tuple.Create("L2NormDensity", 53.8771980076417000 + 1e-10),
+                Tuple.Create("L2NormVelocityX", 1.5491933384829700 + 1e-10),
+                Tuple.Create("L2NormPressure", 0.7745966692416890 + 1e-10));
+        }
     }
 }

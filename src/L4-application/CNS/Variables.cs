@@ -389,6 +389,7 @@ namespace CNS {
                     specFemField.ProjectDGFieldMaximum(1.0, avField);
                     avField.Clear();
                     specFemField.AccToDGField(1.0, avField);
+                    avField.Clear(CellMask.GetFullMask(program.GridData).Except(program.SpeciesMap.SubGrid.VolumeMask));
                 } else {
                     //MultidimensionalArray verticeCoordinates = MultidimensionalArray.Create(
                     //    NoOfCells, verticesPerCell, dimension);
