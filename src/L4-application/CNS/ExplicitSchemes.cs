@@ -144,7 +144,7 @@ namespace CNS {
 
                         timeStepper = new IBMAdamsBashforth(
                             ibmFactory.GetJoinedOperator().ToSpatialOperator(fieldSet),
-                            ibmFactory.GetBoundaryOperator().ToSpatialOperator(fieldSet),
+                            ibmFactory.GetImmersedBoundaryOperator().ToSpatialOperator(fieldSet),
                             variableMap,
                             parameterMap,
                             speciesMap,
@@ -170,7 +170,7 @@ namespace CNS {
 
                         timeStepper = new IBMAdamsBashforthLTS(
                             equationSystem.GetJoinedOperator().ToSpatialOperator(fieldSet),
-                            ibmFactory.GetBoundaryOperator().ToSpatialOperator(fieldSet),
+                            ibmFactory.GetImmersedBoundaryOperator().ToSpatialOperator(fieldSet),
                             variableMap,
                             parameterMap,
                             speciesMap,
