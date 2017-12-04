@@ -35,7 +35,7 @@ namespace BoSSS.Solution {
         /// Instantiates those fields that are marked by an <see cref="InstantiateFromControlFileAttribute"/> - attribute;
         /// </summary>
         public static void CreateFieldsAuto(object _this, GridData context,
-            IDictionary<string, FieldOpts> FieldOptions,
+            IDictionary<string, FieldOpts> FieldOptions, XQuadFactoryHelper.MomentFittingVariants cutCellQuadType,
             ICollection<DGField> IOFields, ICollection<DGField> RegisteredFields) {
             FieldInfo[] fields = _this.GetType().GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.FlattenHierarchy | BindingFlags.Static);
 
@@ -168,19 +168,20 @@ namespace BoSSS.Solution {
                     if (LevelSetTracker == null)
                         throw new ApplicationException("missing Level Set Tracker");
                     LevelSetTrackerAttribute att = (LevelSetTrackerAttribute)(LevelSetTracker.GetCustomAttributes(typeof(LevelSetTrackerAttribute), true)[0]);
+                    
 
                     switch (LevelSetsSorted.Length) {
                         case 1:
-                            lsTrk = new LevelSetTracker(context, XQuadFactoryHelper.MomentFittingVariants.Classic, att.m_NearCellWidth, (string[])(att.GetSpeciesTable(1)), LevelSetsInstances[0]);
+                            lsTrk = new LevelSetTracker(context, cutCellQuadType, att.m_NearCellWidth, (string[])(att.GetSpeciesTable(1)), LevelSetsInstances[0]);
                             break;
                         case 2:
-                            lsTrk = new LevelSetTracker(context, XQuadFactoryHelper.MomentFittingVariants.Classic, att.m_NearCellWidth, (string[,])(att.GetSpeciesTable(2)), LevelSetsInstances[0], LevelSetsInstances[1]);
+                            lsTrk = new LevelSetTracker(context, cutCellQuadType, att.m_NearCellWidth, (string[,])(att.GetSpeciesTable(2)), LevelSetsInstances[0], LevelSetsInstances[1]);
                             break;
                         case 3:
-                            lsTrk = new LevelSetTracker(context, XQuadFactoryHelper.MomentFittingVariants.Classic, att.m_NearCellWidth, (string[,,])(att.GetSpeciesTable(3)), LevelSetsInstances[0], LevelSetsInstances[1], LevelSetsInstances[2]);
+                            lsTrk = new LevelSetTracker(context, cutCellQuadType, att.m_NearCellWidth, (string[,,])(att.GetSpeciesTable(3)), LevelSetsInstances[0], LevelSetsInstances[1], LevelSetsInstances[2]);
                             break;
                         case 4:
-                            lsTrk = new LevelSetTracker(context, XQuadFactoryHelper.MomentFittingVariants.Classic, att.m_NearCellWidth, (string[,,,])(att.GetSpeciesTable(4)), LevelSetsInstances[0], LevelSetsInstances[1], LevelSetsInstances[2], LevelSetsInstances[3]);
+                            lsTrk = new LevelSetTracker(context, cutCellQuadType, att.m_NearCellWidth, (string[,,,])(att.GetSpeciesTable(4)), LevelSetsInstances[0], LevelSetsInstances[1], LevelSetsInstances[2], LevelSetsInstances[3]);
                             break;
 
                     }

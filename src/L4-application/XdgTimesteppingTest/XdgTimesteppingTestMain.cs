@@ -440,9 +440,9 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 ExactCircleLevelSetIntegration.RADIUS = new double[] { this.Control.CircleRadius(PhysTime) };
             }
 
-            XQuadSchemeHelper schH = new XQuadSchemeHelper(this.LsTrk, this.Control.HMF, this.LsTrk.SpeciesIdS.ToArray());
             int order = Math.Max(this.u.Basis.Degree * 3, 3);
-
+            XQuadSchemeHelper schH = LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), order).XQuadSchemeHelper;
+            
             var uNum_A = this.u.GetSpeciesShadowField("A");
             var uNum_B = this.u.GetSpeciesShadowField("B");
 
@@ -453,7 +453,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             Func<double[], double, double> uJmp_Ex = ((X, t) => this.Control.uA_Ex(X, t) - this.Control.uB_Ex(X, t));
 
             SinglePhaseField uNumJump = new SinglePhaseField(uNum_A.Basis, "Jump");
-            var CC = LsTrk._Regions.GetCutCellMask();
+            var CC = LsTrk.Regions.GetCutCellMask();
             uNumJump.Acc(+1.0, uNum_A, CC);
             uNumJump.Acc(-1.0, uNum_B, CC);
             double JmpL2Err = uNumJump.L2Error(uJmp_Ex.Vectorize(PhysTime), order, schH.GetLevelSetquadScheme(0, CC));

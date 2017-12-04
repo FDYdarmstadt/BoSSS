@@ -1151,7 +1151,7 @@ namespace BoSSS.Solution {
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
                 if (this.Control != null) {
                     InitFromAttributes.CreateFieldsAuto(
-                        this, GridData, this.Control.FieldOptions, this.m_IOFields, this.m_RegisteredFields);
+                        this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
                 }
                 CreateFields(); // full user control                
 
@@ -1855,7 +1855,7 @@ namespace BoSSS.Solution {
                     // re-create fields
                     if(this.Control != null) {
                         InitFromAttributes.CreateFieldsAuto(
-                            this, GridData, this.Control.FieldOptions, this.m_IOFields, this.m_RegisteredFields);
+                            this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
                     }
                     CreateFields(); // full user control   
                     PostRestart(physTime);
@@ -1980,7 +1980,7 @@ namespace BoSSS.Solution {
                     // re-create fields
                     if(this.Control != null) {
                         InitFromAttributes.CreateFieldsAuto(
-                            this, GridData, this.Control.FieldOptions, this.m_IOFields, this.m_RegisteredFields);
+                            this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
                     }
                     CreateFields(); // full user control   
                     PostRestart(physTime);
