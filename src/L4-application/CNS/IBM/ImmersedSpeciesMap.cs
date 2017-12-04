@@ -89,7 +89,7 @@ namespace CNS.IBM {
 
                     bool agglomerateNewbornAndDeceased = true;
                     var oldAggThreshold = new double[] { Control.AgglomerationThreshold };
-                    if (Tracker.PopulatedStackLength <= 0) {
+                    if (Tracker.PopulatedHistoryLength <= 0) {
                         agglomerateNewbornAndDeceased = false;
                         oldAggThreshold = null;
                     }

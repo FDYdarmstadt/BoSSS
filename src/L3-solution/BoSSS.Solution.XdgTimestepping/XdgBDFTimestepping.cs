@@ -803,8 +803,8 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 
                     double[] oldAggTrsh;
-                    if(m_LsTrk.PopulatedStackLength > 0) {
-                        oldAggTrsh = new double[m_LsTrk.PopulatedStackLength];
+                    if(m_LsTrk.PopulatedHistoryLength > 0) {
+                        oldAggTrsh = new double[m_LsTrk.PopulatedHistoryLength];
                         ArrayTools.SetAll(oldAggTrsh, this.Config_AgglomerationThreshold);
                     } else {
                         oldAggTrsh = null;
@@ -962,8 +962,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 if (updateAgglom || m_CurrentAgglomeration == null) {
 
                     double[] oldAggTrsh;
-                    if(m_LsTrk.PopulatedStackLength > 0) {
-                        oldAggTrsh = new double[m_LsTrk.PopulatedStackLength];
+                    if(m_LsTrk.PopulatedHistoryLength > 0) {
+                        oldAggTrsh = new double[m_LsTrk.PopulatedHistoryLength];
                         ArrayTools.SetAll(oldAggTrsh, this.Config_AgglomerationThreshold);
                     } else {
                         oldAggTrsh = null;

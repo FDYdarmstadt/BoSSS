@@ -237,7 +237,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// The number of previous time-steps available in the various stacks, see also <see cref="HistoryStack{T}.GetPopulatedLength"/>.
         /// </summary>
-        public int PopulatedStackLength {
+        public int PopulatedHistoryLength {
             get {
                 int L = RegionsHistory.GetPopulatedLength();
 
@@ -266,14 +266,6 @@ namespace BoSSS.Foundation.XDG {
             if (SpeciesTable.Rank != levSets.Length)
                 throw new ArgumentException("rank of species table must match number of level sets.", "SpeciesTable");
             m_SpeciesTable = SpeciesTable;
-            SpeciesId invalid;
-            invalid.cntnt = int.MinValue;
-            ArrayTools.SetAll(m_SpeciesIndex2Id, invalid);
-            ArrayTools.SetAll(m_SpeciesId2Index, int.MinValue);
-            CollectSpeciesNamesRecursive(0, new int[m_SpeciesTable.Rank]);
-            ComputeNoOfSpeciesRecursive(0, new int[4]);
-            CollectLevelSetSignCodes();
-            ComputeGhostTable();
             m_LevSetAllowedMovement = new int[levSets.Length];
             ArrayTools.SetAll(m_LevSetAllowedMovement, 1);
             this.CutCellQuadratureType = cutCellQuadratureType;
@@ -294,10 +286,23 @@ namespace BoSSS.Foundation.XDG {
                 new Dictionary<XQuadFactoryHelper.MomentFittingVariants, XQuadFactoryHelper>());
             m_XDGSpaceMetricsHistory = new HistoryStack<Dictionary<Tuple<SpeciesId[], XQuadFactoryHelper.MomentFittingVariants, int>, XDGSpaceMetrics>>(NewXDGSpaceMetricsCache());
 
+            this.IncreaseHistoryLength(1); // at least one previous time-step is required to support update of XDG fields
+
             // 1st tracker update
             // ==================
 
+            SpeciesId invalid;
+            invalid.cntnt = int.MinValue;
+            ArrayTools.SetAll(m_SpeciesIndex2Id, invalid);
+            ArrayTools.SetAll(m_SpeciesId2Index, int.MinValue);
+            CollectSpeciesNamesRecursive(0, new int[m_SpeciesTable.Rank]);
+            ComputeNoOfSpeciesRecursive(0, new int[4]);
+            CollectLevelSetSignCodes();
+            ComputeGhostTable();
+
+
             UpdateTracker();
+            PushStacks();
         }
 
         /// <summary>
@@ -769,7 +774,7 @@ namespace BoSSS.Foundation.XDG {
                 }
             }
 
-            m_RegionsHistory.Push((r1) => new LevelSetRegions(this), (r1, r0) => r1);
+            m_RegionsHistory.Push((r1) => r1.CloneAs(), (r1, r0) => r1);
 
             m_QuadFactoryHelpersHistory.Push((r1) => new Dictionary<XQuadFactoryHelper.MomentFittingVariants, XQuadFactoryHelper>(), (r1, r0) => r1);
 
@@ -814,14 +819,14 @@ namespace BoSSS.Foundation.XDG {
             get {
                 if(m_LevelSets == null) { // accelerate access if a user accesses this very often
                     var _LevelSets = new ILevelSet[m_LevelSetHistories.Count];
-                    for(int iLs = 0; iLs < NoOfLevelSets; iLs++) {
+                    for(int iLs = 0; iLs < m_LevelSetHistories.Count; iLs++) {
                         _LevelSets[iLs] = m_LevelSetHistories[iLs].Current;
                     }
                     m_LevelSets = _LevelSets.ToList().AsReadOnly();
                 }
 #if DEBUG
                 Debug.Assert(m_LevelSets.Count == m_LevelSetHistories.Count);
-                for(int iLs = 0; iLs < NoOfLevelSets; iLs++) {
+                for(int iLs = 0; iLs < m_LevelSetHistories.Count; iLs++) {
                     Debug.Assert(object.ReferenceEquals(m_LevelSets[iLs], m_LevelSetHistories[iLs].Current));
                 }
 #endif
@@ -1371,7 +1376,7 @@ namespace BoSSS.Foundation.XDG {
                 }
                 CellMask oldNearMask = null;
                 if (incremental)
-                    oldNearMask = this.RegionsHistory[1].GetNearFieldMask(m_NearRegionWidth);
+                    oldNearMask = this.RegionsHistory[1].GetNearFieldMask(m_NearRegionWidth); // index '[1]' is NO mistake!
                 else
                     oldNearMask = null;
 
@@ -1737,20 +1742,22 @@ namespace BoSSS.Foundation.XDG {
                 int[] fail;
                 using (new BlockTrace("CFL_CHECK", tr)) {
 
-                    {
+                    fail = new int[NoOfLevSets];
+                    if(this.PopulatedHistoryLength > 0) {
                         m_LevSetAllowedMovement = __LevSetAllowedMovement;
 
                         // cannot be moved down because we need the OLD subgrid
-                        fail = new int[NoOfLevSets];
                         throwCFL = false;
-                        for (int levSetInd = 0; levSetInd < NoOfLevSets; levSetInd++) {
+                        for(int levSetInd = 0; levSetInd < NoOfLevSets; levSetInd++) {
 
-                            if (m_LevSetAllowedMovement[levSetInd] <= m_NearRegionWidth)
+                            if(m_LevSetAllowedMovement[levSetInd] <= m_NearRegionWidth)
                                 fail[levSetInd] = CheckLevelSetCFL(levSetInd);
-                            if (fail[levSetInd] > 0)
+                            if(fail[levSetInd] > 0)
                                 throwCFL = true;
 
                         }
+                    } else {
+                        throwCFL = false;
                     }
                 }
 

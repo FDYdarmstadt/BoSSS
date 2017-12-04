@@ -1217,13 +1217,20 @@ namespace BoSSS.Foundation.XDG {
 
             m_Coordinates.BeginResize(m_CCBasis.MaximalLength);
 
+            if (m_UpdateBehaviour == BehaveUnder_LevSetMoovement.PreserveMemory || m_UpdateBehaviour == BehaveUnder_LevSetMoovement.AutoExtrapolate) {
+                if(trk.HistoryLength < 1)
+                    throw new NotSupportedException("LevelSettracker must have at a history length >= 1 in order to support 'PreserveMemory' or 'AutoExtrapolate'.");
+            }
+
+
             // application check
             if (m_TrackerVersionCnt < (levelSetStatus.Version - 1))
                 throw new ApplicationException("missed at least one memory update; field can't be updated anymore with arg. \"Preserve=true\"");
 
             // rearrange DG coordinates if regions have changed
             // ===============================================
-            if (m_UpdateBehaviour == BehaveUnder_LevSetMoovement.PreserveMemory || m_UpdateBehaviour == BehaveUnder_LevSetMoovement.AutoExtrapolate) {
+            if ((m_UpdateBehaviour == BehaveUnder_LevSetMoovement.PreserveMemory || m_UpdateBehaviour == BehaveUnder_LevSetMoovement.AutoExtrapolate)
+                && trk.PopulatedHistoryLength >= 1) {
                 // rearrange DG coordinates, preserve State of each species 
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -1353,7 +1360,7 @@ namespace BoSSS.Foundation.XDG {
             }
 
             // do Extrapolation, if necessary
-            if (m_UpdateBehaviour == BehaveUnder_LevSetMoovement.AutoExtrapolate) {
+            if (m_UpdateBehaviour == BehaveUnder_LevSetMoovement.AutoExtrapolate && trk.PopulatedHistoryLength >= 1) {
                 foreach (var species in m_CCBasis.Tracker.SpeciesIdS) {
                     AutoExtrapolateSpecies(species, trk.RegionsHistory[0].GetSpeciesSubGrid(species));
                 }

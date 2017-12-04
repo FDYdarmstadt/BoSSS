@@ -87,6 +87,9 @@ namespace BoSSS.Foundation.XDG {
             private set;
         }
 
+        /// <summary>
+        /// Cut-cell length scales before agglomeration
+        /// </summary>
         public CutCellMetrics NonAgglomeratedMetrics {
             get;
             private set;

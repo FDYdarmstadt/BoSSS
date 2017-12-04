@@ -30,7 +30,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// A summary of information about a level set
         /// </summary>
-        public class LevelSetRegions {
+        public class LevelSetRegions : ICloneable {
 
             LevelSetTracker m_owner;
 
@@ -619,6 +619,18 @@ namespace BoSSS.Foundation.XDG {
             /// </summary>
             public SpeciesId GetSpeciesId(string SpeciesName) {
                 return m_owner.GetSpeciesId(SpeciesName);
+            }
+
+            /// <summary>
+            /// Non-Shallow copy
+            /// </summary>
+            /// <returns></returns>
+            public object Clone() {
+                return new LevelSetRegions(this.m_owner) {
+                    m_LenToNextChange = this.m_LenToNextChange.CloneAs(),
+                    m_LevSetRegions = this.m_LevSetRegions.CloneAs(),
+                    Version = this.Version
+                };
             }
 
 

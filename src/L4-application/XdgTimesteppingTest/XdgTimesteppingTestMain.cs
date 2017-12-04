@@ -51,13 +51,13 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         /// Les main routine.
         /// </summary>
         static void Main(string[] args) {
-            BoSSS.Solution.Application<XdgTimesteppingTestControl>._Main(args, false, null, delegate () {
-                return new XdgTimesteppingMain();
-            });
+            //BoSSS.Solution.Application<XdgTimesteppingTestControl>._Main(args, false, null, delegate () {
+            //    return new XdgTimesteppingMain();
+            //});
             
-            //TestProgram.Init();
-            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder(TimeSteppingScheme.ImplicitEuler, 0.2d, 8);
-            //TestProgram.Cleanup();
+            TestProgram.Init();
+            BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder(TimeSteppingScheme.ImplicitEuler, 0.2d, 8);
+            TestProgram.Cleanup();
         }
 #pragma warning disable 649
 
