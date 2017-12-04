@@ -71,6 +71,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         internal CutCellMetrics(XDGSpaceMetrics owner) {
             XDGSpaceMetrics = owner;
+            ComputeNonAgglomeratedMetrics();
         }
 
         /*
