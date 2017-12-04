@@ -168,7 +168,6 @@
     <Compile Include="EquationSystem\CFLConstraint.cs" />
     <Compile Include="EquationSystem\Operator.cs" />
     <Compile Include="EquationSystem\NullFluxBuilder.cs" />
-    <Compile Include="IBM\IBMConvectiveCFLConstraint.cs" />
     <Compile Include="IBM\IBMOperatorFactory.cs" />
     <Compile Include="IBM\ImmersedSpeciesMap.cs" />
     <Compile Include="IBM\BoundaryConditionSourceFluxBuilder.cs" />

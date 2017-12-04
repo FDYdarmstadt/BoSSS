@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using CNS.Boundary;
 using CNS.EquationSystem;
@@ -49,30 +48,6 @@ namespace CNS.IBM {
 
             this.boundaryFluxBuilders.Add(new BoundaryConditionSourceFluxBuilder(
                 control, boundaryMap, speciesMap, convectiveFluxBuilder, diffusiveFluxBuilder));
-        }
-
-        /// <summary>
-        /// Overrides the behavior of
-        /// <see cref="OperatorFactory.GetConvectiveOperator"/> by using
-        /// <see cref="IBMConvectiveCFLConstraint"/> instead of
-        /// <see cref="Convection.ConvectiveCFLConstraint"/>
-        /// </summary>
-        /// <returns></returns>
-        public override Operator GetConvectiveOperator() {
-            Operator op = new Operator(control);
-            if (convectiveFluxBuilder != null) {
-                convectiveFluxBuilder.BuildFluxes(op);
-            }
-
-            if (!op.IsEmpty) {
-                op.CFLConstraints.Add(new IBMConvectiveCFLConstraint(
-                    control,
-                    gridData,
-                    workingSet,
-                    speciesMap));
-            }
-
-            return op;
         }
 
         /// <summary>
