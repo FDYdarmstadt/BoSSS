@@ -74,11 +74,11 @@ namespace CNS.IBM {
             Material material = speciesMap.GetMaterial(double.NaN);
 
             MultidimensionalArray levelSetValues =
-                speciesMap.Tracker.GetLevSetValues(0, base.EvaluationPoints[iKref], i0, Length);
+                speciesMap.Tracker.DataHistories[0].Current.GetLevSetValues(base.EvaluationPoints[iKref], i0, Length);
 
             SpeciesId species = speciesMap.Tracker.GetSpeciesId(speciesMap.Control.FluidSpeciesName);
             //var hMinArray = speciesMap.QuadSchemeHelper.CellAgglomeration.CellLengthScales[species];
-            var volFrac = speciesMap.QuadSchemeHelper.CellAgglomeration.CellVolumeFrac[species];
+            var volFrac = speciesMap.CellAgglomeration.CellVolumeFrac[species];
             var hMin = gridData.Cells.h_min;
 
             double cfl = double.MaxValue;

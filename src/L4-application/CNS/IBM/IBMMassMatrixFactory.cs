@@ -42,14 +42,18 @@ namespace CNS.IBM {
         /// </summary>
         public readonly ImmersedSpeciesMap SpeciesMap;
 
+        string m_FluidSpeciesName;
+
+        int m_quadOrder;
+
         /// <summary>
-        /// 
+        /// ctor.
         /// </summary>
-        /// <param name="speciesMap"></param>
-        /// <param name="mapping"></param>
-        public IBMMassMatrixFactory(ImmersedSpeciesMap speciesMap, CoordinateMapping mapping) {
+        public IBMMassMatrixFactory(ImmersedSpeciesMap speciesMap, CoordinateMapping mapping, string fluidSpeciesName, int quadOrder) {
             this.Mapping = mapping;
             this.SpeciesMap = speciesMap;
+            this.m_FluidSpeciesName = fluidSpeciesName;
+            this.m_quadOrder = quadOrder;
             speciesMap.Tracker.Subscribe(this);
         }
 
@@ -62,9 +66,12 @@ namespace CNS.IBM {
             get {
                 if (baseFactory == null) {
                     Basis maxBasis = Mapping.BasisS.ElementAtMax(b => b.Degree);
-                    baseFactory = new MassMatrixFactory(
-                        maxBasis,
-                        SpeciesMap.QuadSchemeHelper.CellAgglomeration);
+                    //baseFactory = new MassMatrixFactory(
+                    //    maxBasis,
+                    //    SpeciesMap.QuadSchemeHelper.CellAgglomeration);
+                    baseFactory = this.SpeciesMap.Tracker.GetXDGSpaceMetrics(
+                        new SpeciesId[] { this.SpeciesMap.Tracker.GetSpeciesId(m_FluidSpeciesName) }, m_quadOrder, 1)
+                        .MassMatrixFactory;                      
                 }
                 return baseFactory;
             }
@@ -131,8 +138,7 @@ namespace CNS.IBM {
                         Mapping,
                         new Dictionary<SpeciesId, IEnumerable<double>>() {
                             { speciesId, Enumerable.Repeat(1.0, Mapping.NoOfVariables) } },
-                        inverse: false,
-                        VariableAgglomerationSwitch: new bool[Mapping.Fields.Count]);
+                        inverse: false);
 
                     // Make void part 0 instead of -1
                     CellMask fluidCells = SpeciesMap.SubGrid.VolumeMask;
@@ -159,7 +165,7 @@ namespace CNS.IBM {
         /// </summary>
         /// <param name="value"></param>
         public void OnNext(LevelSetTracker.LevelSetRegions value) {
-            this.baseFactory = null;
+            //this.baseFactory = null;
             this.nonAgglomeratedMassMatrix = null;
             this.massMatrix = null;
             this.inverseMassMatrix = null;

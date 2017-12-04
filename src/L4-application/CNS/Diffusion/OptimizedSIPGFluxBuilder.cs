@@ -55,7 +55,7 @@ namespace CNS.Diffusion {
                 ImmersedSpeciesMap IBMspeciesMap = speciesMap as ImmersedSpeciesMap;
                 cellMetricFunc = delegate () {
                     SpeciesId species = IBMspeciesMap.Tracker.GetSpeciesId(IBMspeciesMap.Control.FluidSpeciesName);
-                    MultidimensionalArray cellMetric = IBMspeciesMap.QuadSchemeHelper.CellAgglomeration.CellLengthScales[species].CloneAs();
+                    MultidimensionalArray cellMetric = IBMspeciesMap.CellAgglomeration.CellLengthScales[species].CloneAs();
                     cellMetric.ApplyAll(x => 1 / x);
                     // Needed, because 1/x produces NaN in void cells and can happen that penalty factor leads then to NaN
                     cellMetric.ApplyAll(delegate (double x) {

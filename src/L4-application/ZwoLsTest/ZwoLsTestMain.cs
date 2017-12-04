@@ -107,7 +107,7 @@ namespace BoSSS.Application.ZwoLsTest {
                 //speciesTable[0, 1] = "X"; // 'verbotene' Species: sollte in der geg. LevelSet-Konstellation nicht vorkommen!
                 //speciesTable[0, 0] = "A"; // linker Rand von A
 
-                base.LsTrk = new LevelSetTracker(this.GridData, 1, speciesTable, Phi0, Phi1);
+                base.LsTrk = new LevelSetTracker(this.GridData, MomentFittingVariant, 1, speciesTable, Phi0, Phi1);
             }
 
             u = new SinglePhaseField(new Basis(this.GridData, DEGREE), "U");
@@ -160,7 +160,7 @@ namespace BoSSS.Application.ZwoLsTest {
             Phi1.ProjectField((x, y) => -(x - offset).Pow2() - y.Pow2() + (2.4).Pow2());
             LsTrk.UpdateTracker();
 
-            if (LsTrk._Regions.GetSpeciesSubGrid("X").GlobalNoOfCells > 0)
+            if (LsTrk.Regions.GetSpeciesSubGrid("X").GlobalNoOfCells > 0)
                 throw new ApplicationException("there should be no X-species");
         }
 
@@ -204,7 +204,7 @@ namespace BoSSS.Application.ZwoLsTest {
             // ========================================================
 
 
-            var Bmask = LsTrk._Regions.GetSpeciesMask("B");
+            var Bmask = LsTrk.Regions.GetSpeciesMask("B");
 
             XDGField xt = new XDGField(new XDGBasis(this.LsTrk, this.u.Basis.Degree), "XDG-test");
             xt.GetSpeciesShadowField("B").ProjectField(1.0,
@@ -239,10 +239,11 @@ namespace BoSSS.Application.ZwoLsTest {
         }
 
 
-        void TestAgglomeration_Projection(MultiphaseCellAgglomerator Agg) {
+        void TestAgglomeration_Projection(int quadOrder, MultiphaseCellAgglomerator Agg) {
 
-            var Bmask = LsTrk._Regions.GetSpeciesMask("B");
+            var Bmask = LsTrk.Regions.GetSpeciesMask("B");
             var BbitMask = Bmask.GetBitMask();
+            var XDGmetrics = LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), quadOrder, 1);
 
             int degree = Math.Max(0, this.u.Basis.Degree - 1);
 
@@ -266,8 +267,8 @@ namespace BoSSS.Application.ZwoLsTest {
             // ------------------------------------------------
             // project the polynomial onto the aggomerated XDG-field
             // ------------------------------------------------
-            
-            var qsh = new XQuadSchemeHelper(Agg);
+
+            var qsh = XDGmetrics.XQuadSchemeHelper;
 
             // Compute the inner product of 'SomePolynomial' with the cut-cell-basis, ...
             SinglePhaseField xt = new SinglePhaseField(NonAgglom.Basis, "test");
@@ -292,7 +293,7 @@ namespace BoSSS.Application.ZwoLsTest {
             }
 
             // ... multiply with the inverse mass-matrix, ...
-            var Mfact = new MassMatrixFactory(xt.Basis, Agg);
+            var Mfact = XDGmetrics.MassMatrixFactory;
             MsrMatrix InvMassMtx = Mfact.GetMassMatrix(map, true).ToMsrMatrix();
             double[] xAggVec = new double[xVec.Length];
 
@@ -331,30 +332,32 @@ namespace BoSSS.Application.ZwoLsTest {
 
             // Agglomerator setup
             int quadOrder = Op.QuadOrderFunction(new int[] { u.Basis.Degree }, new int[0], new int[] { u.Basis.Degree });
-            Agg = new MultiphaseCellAgglomerator(new CutCellMetrics(MomentFittingVariant, quadOrder, LsTrk, LsTrk.GetSpeciesId("B")), this.THRESHOLD, false);
+            //Agg = new MultiphaseCellAgglomerator(new CutCellMetrics(MomentFittingVariant, quadOrder, LsTrk, ), this.THRESHOLD, false);
+            Agg = LsTrk.GetAgglomerator(new SpeciesId[] { LsTrk.GetSpeciesId("B") }, quadOrder, this.THRESHOLD);
+
             Console.WriteLine("Inter-Process agglomeration? " + Agg.GetAgglomerator(LsTrk.GetSpeciesId("B")).AggInfo.InterProcessAgglomeration);
             if (this.THRESHOLD > 0.01) {
                 TestAgglomeration_Extraploation(Agg);
-                TestAgglomeration_Projection(Agg);
+                TestAgglomeration_Projection(quadOrder, Agg);
             }
 
             // operator matrix assembly
             Op.ComputeMatrixEx(LsTrk,
                 u.Mapping, null, u.Mapping,
                 OperatorMatrix, Affine, false, 0.0, true,
-                MomentFittingVariant, Agg.CellLengthScales,
+                Agg.CellLengthScales,
                 LsTrk.GetSpeciesId("B"));
             Agg.ManipulateMatrixAndRHS(OperatorMatrix, Affine, u.Mapping, u.Mapping);
 
             // mass matrix factory
-            Mfact = new MassMatrixFactory(u.Basis, Agg);
+            Mfact = LsTrk.GetXDGSpaceMetrics(new SpeciesId[] { LsTrk.GetSpeciesId("B") }, quadOrder, 1).MassMatrixFactory;// new MassMatrixFactory(u.Basis, Agg);
                         
             // Mass matrix/Inverse Mass matrix
             var MassInv = Mfact.GetMassMatrix(u.Mapping, new double[] { 1.0 }, true, LsTrk.GetSpeciesId("B"));
             var Mass = Mfact.GetMassMatrix(u.Mapping, new double[] { 1.0 }, false, LsTrk.GetSpeciesId("B"));
 
             // test that operator depends only on B-species values
-            double DepTest = LsTrk._Regions.GetSpeciesSubGrid("B").TestMatrixDependency(OperatorMatrix, u.Mapping, u.Mapping);
+            double DepTest = LsTrk.Regions.GetSpeciesSubGrid("B").TestMatrixDependency(OperatorMatrix, u.Mapping, u.Mapping);
             Console.WriteLine("Matrix dependency test: " + DepTest);
             Assert.LessOrEqual(DepTest, 0.0);
 
@@ -371,19 +374,19 @@ namespace BoSSS.Application.ZwoLsTest {
 
 
             // markieren, wo ueberhaupt A und B sind
-            Bmarker.AccConstant(1.0, LsTrk._Regions.GetSpeciesSubGrid("B").VolumeMask);
-            Amarker.AccConstant(+1.0, LsTrk._Regions.GetSpeciesSubGrid("A").VolumeMask);
-            Xmarker.AccConstant(+1.0, LsTrk._Regions.GetSpeciesSubGrid("X").VolumeMask);
+            Bmarker.AccConstant(1.0, LsTrk.Regions.GetSpeciesSubGrid("B").VolumeMask);
+            Amarker.AccConstant(+1.0, LsTrk.Regions.GetSpeciesSubGrid("A").VolumeMask);
+            Xmarker.AccConstant(+1.0, LsTrk.Regions.GetSpeciesSubGrid("X").VolumeMask);
 
             // compute error
             ERR.Clear();
-            ERR.Acc(1.0, du_dx_Exact, LsTrk._Regions.GetSpeciesSubGrid("B").VolumeMask);
-            ERR.Acc(-1.0, du_dx, LsTrk._Regions.GetSpeciesSubGrid("B").VolumeMask);
-            double L2Err = ERR.L2Norm(LsTrk._Regions.GetSpeciesSubGrid("B").VolumeMask);
+            ERR.Acc(1.0, du_dx_Exact, LsTrk.Regions.GetSpeciesSubGrid("B").VolumeMask);
+            ERR.Acc(-1.0, du_dx, LsTrk.Regions.GetSpeciesSubGrid("B").VolumeMask);
+            double L2Err = ERR.L2Norm(LsTrk.Regions.GetSpeciesSubGrid("B").VolumeMask);
             Console.WriteLine("L2 Error: " + L2Err);
 
             XERR.Clear();
-            XERR.GetSpeciesShadowField("B").Acc(1.0, ERR, LsTrk._Regions.GetSpeciesSubGrid("B").VolumeMask);
+            XERR.GetSpeciesShadowField("B").Acc(1.0, ERR, LsTrk.Regions.GetSpeciesSubGrid("B").VolumeMask);
             double xL2Err = XERR.L2Norm();
             Console.WriteLine("L2 Error (in XDG space): " + xL2Err);
 
@@ -448,14 +451,14 @@ namespace BoSSS.Application.ZwoLsTest {
             MsrMatrix ConMatrix = new MsrMatrix(new Partitioning(J));
             MsrMatrix ConMatrix2 = new MsrMatrix(new Partitioning(J));
             var map = new UnsetteledCoordinateMapping(new Basis(this.GridData, 0));
-            var FConMatrix = new XSpatialOperator.SpeciesFrameMatrix<MsrMatrix>(ConMatrix2, this.LsTrk, this.LsTrk.GetSpeciesId("B"), map, map);
+            var FConMatrix = new XSpatialOperator.SpeciesFrameMatrix<MsrMatrix>(ConMatrix2, this.LsTrk.Regions, this.LsTrk.GetSpeciesId("B"), map, map);
 
             int jCell0 = this.GridData.CellPartitioning.i0;
 
 
 
             //for (int e = 0; e < E; e++) {
-            foreach (int e in this.LsTrk._Regions.GetSpeciesSubGrid("B").InnerEdgesMask.ItemEnum) {
+            foreach (int e in this.LsTrk.Regions.GetSpeciesSubGrid("B").InnerEdgesMask.ItemEnum) {
                 int j0 = e2c[e, 0];
                 int j1 = e2c[e, 1];
 
