@@ -106,10 +106,10 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             CutMarker.Clear();
             NearMarker.Clear();
             DOFMarker.Clear();
-            foreach (int j in this.LsTrk._Regions.GetCutCellMask4LevSet(0).ItemEnum) {
+            foreach (int j in this.LsTrk.Regions.GetCutCellMask4LevSet(0).ItemEnum) {
                 CutMarker.SetMeanValue(j, 1);
             }
-            foreach (int j in this.LsTrk._Regions.GetNearFieldMask(1).ItemEnum) {
+            foreach (int j in this.LsTrk.Regions.GetNearFieldMask(1).ItemEnum) {
                 NearMarker.SetMeanValue(j, 1);
             }
             int J = this.GridData.Cells.NoOfLocalUpdatedCells;
@@ -217,7 +217,9 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 throw new NotImplementedException();
             }
 
+            int quadOrder;
             if (this.Control.Eq == Equation.ScalarTransport) {
+                quadOrder = this.LinearQuadratureDegree; 
 
                 Func<double[], double, double>[] uBnd = new Func<double[], double, double>[this.Grid.EdgeTagNames.Keys.Max() + 1];
                 for (int iEdgeTag = 1; iEdgeTag < uBnd.Length; iEdgeTag++) {
@@ -229,12 +231,14 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                     }
                 }
 
-                Operator = new XSpatialOperator(1, 2, 1, (A, B, C) => this.LinearQuadratureDegree, "u", "Vx", "Vy", "Cod1");
+                Operator = new XSpatialOperator(1, 2, 1, (A, B, C) => quadOrder, "u", "Vx", "Vy", "Cod1");
                 Operator.EquationComponents["Cod1"].Add(new TranportFlux_Bulk() { Inflow = uBnd });
                 Operator.EquationComponents["Cod1"].Add(new TransportFlux_Interface(this.LsTrk, S));
                 Operator.Commit();
             } else if (this.Control.Eq == Equation.HeatEq) {
-                Operator = new XSpatialOperator(1, 0, 1, (A, B, C) => this.LinearQuadratureDegree, "u", "Cod1");
+                quadOrder = this.LinearQuadratureDegree;
+
+                Operator = new XSpatialOperator(1, 0, 1, (A, B, C) => quadOrder, "u", "Cod1");
 
                 var bulkFlx = new HeatFlux_Bulk() { m_muA = this.Control.muA, m_muB = this.Control.muB, m_rhsA = this.Control.rhsA, m_rhsB = this.Control.rhsB };
                 var intfFlx = new HeatFlux_Interface(this.LsTrk, S) { m_muA = this.Control.muA, m_muB = this.Control.muB };
@@ -245,7 +249,9 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 Operator.Commit();
 
             } else if (this.Control.Eq == Equation.Burgers) {
-                Operator = new XSpatialOperator(1, 1, 1, (A, B, C) => this.NonlinearQuadratureDegree, "u", "u0", "Cod1");
+                quadOrder = this.NonlinearQuadratureDegree;
+
+                Operator = new XSpatialOperator(1, 1, 1, (A, B, C) => quadOrder, "u", "u0", "Cod1");
                 Operator.EquationComponents["Cod1"].Add(new BurgersFlux_Bulk() { Direction = this.Control.BurgersDirection, Inflow = this.Control.u_Ex });
                 Operator.EquationComponents["Cod1"].Add(new BurgersFlux_Interface(this.LsTrk, S, this.Control.BurgersDirection));
                 Operator.Commit();
@@ -303,23 +309,25 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
             if (bdfOrder > -1000) {
                 m_BDF_Timestepper = new XdgBDFTimestepping(new DGField[] { this.u }, new DGField[] { this.Residual }, LsTrk, true,
-                    DelComputeOperatorMatrix, DelUpdateLevelset, DelUpdateCutCellMetrics,
+                    DelComputeOperatorMatrix, DelUpdateLevelset,
                     bdfOrder,
                     lsh,
                     MassMatrixShapeandDependence.IsTimeDependent,
                     SpatialOperatorType.LinearTimeDependent,
                     MassScale,
                     null, base.MultigridSequence,
+                    this.LsTrk.SpeciesIdS.ToArray(), quadOrder,
                     this.Control.AgglomerationThreshold, false);
             } else {
                 m_RK_Timestepper = new XdgRKTimestepping(new DGField[] { this.u }, new DGField[] { this.Residual }, LsTrk,
-                    DelComputeOperatorMatrix, DelUpdateLevelset, DelUpdateCutCellMetrics,
+                    DelComputeOperatorMatrix, DelUpdateLevelset,
                     rksch,
                     lsh,
                     MassMatrixShapeandDependence.IsTimeDependent,
                     SpatialOperatorType.LinearTimeDependent,
                     MassScale,
                     null, base.MultigridSequence,
+                    this.LsTrk.SpeciesIdS.ToArray(), quadOrder,
                     this.Control.AgglomerationThreshold, false);
             }
         }
@@ -342,7 +350,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             Operator.ComputeMatrixEx(CurrentAgg.Tracker,
                 Mapping, Params, Mapping,
                 OpMtx, OpAffine, false, phystime, true,
-                this.Control.HMF, CurrentAgg.CellLengthScales,
+                CurrentAgg.CellLengthScales,
                 CurrentAgg.SpeciesList.ToArray());
         }
 
@@ -355,9 +363,9 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             return 0.0;
         }
 
-        CutCellMetrics DelUpdateCutCellMetrics() {
-            return new CutCellMetrics(this.Control.HMF, this.LinearQuadratureDegree, this.LsTrk, this.LsTrk.SpeciesIdS.ToArray());
-        }
+        //CutCellMetrics DelUpdateCutCellMetrics() {
+        //    return new CutCellMetrics(this.Control.HMF, this.LinearQuadratureDegree, this.LsTrk, this.LsTrk.SpeciesIdS.ToArray());
+        //}
 
         IDictionary<SpeciesId, IEnumerable<double>> MassScale {
             get {
