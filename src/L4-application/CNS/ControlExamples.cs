@@ -1126,7 +1126,7 @@ namespace CNS {
             c.dtMin = 0.0;
             c.dtMax = 1.0;
             //c.dtFixed = 1.0e-3;
-            c.CFLFraction = 0.3/2;
+            c.CFLFraction = 0.3 / 2;
             c.Endtime = 0.25;
             c.NoOfTimesteps = int.MaxValue;
 
@@ -1142,12 +1142,11 @@ namespace CNS {
             return c;
         }
 
-        public static IBMControl IBMContactDiscontinuity(double levelSetPosition = 0.45, string dbPath = null, int dgDegree = 2, int numOfCellsX = 20, int numOfCellsY = 5, double sensorLimit = 1e-3, bool saveToDb = false) {
+        public static IBMControl IBMContactDiscontinuity(string dbPath = null, int dgDegree = 2, int numOfCellsX = 20, int numOfCellsY = 5, double sensorLimit = 1e-3, bool saveToDb = false) {
 
             IBMControl c = new IBMControl();
 
             dbPath = @"c:\bosss_db";
-            //dbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db";
             c.DbPath = dbPath;
             c.savetodb = dbPath != null && saveToDb;
             c.saveperiod = 1;
@@ -1159,6 +1158,14 @@ namespace CNS {
             double yMax = 1;
 
             c.DomainType = DomainTypes.StaticImmersedBoundary;
+
+            // Adjust height of cut cells such that we obtain AVCFL_cutcell = 0.5 * AVCFL
+            // Here, this only depends on h_min
+            double width = (xMax - xMin) / numOfCellsX;
+            double height = (yMax - yMin) / numOfCellsY;
+            double heightCutCell = (-2.0 * width * height) / (2.0 * height - 2.0 * Math.Sqrt(2) * width - 2.0 * Math.Sqrt(2) * height);
+
+            double levelSetPosition = 2 * height + (height - heightCutCell);
 
             c.LevelSetFunction = delegate (double[] X, double t) {
                 double y = X[1];
@@ -1235,6 +1242,8 @@ namespace CNS {
             }
 
             c.AddVariable(Variables.CFL, 0);
+            c.AddVariable(Variables.CFLConvective, 0);
+            c.AddVariable(Variables.CFLArtificialViscosity, 0);
             if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS)) {
                 c.AddVariable(Variables.LTSClusters, 0);
             }
@@ -1322,8 +1331,8 @@ namespace CNS {
             // Time config 
             c.dtMin = 0.0;
             c.dtMax = 1.0;
-            c.dtFixed = 1.0e-4;
-            //c.CFLFraction = 0.3;
+            //c.dtFixed = 1.0e-4;
+            c.CFLFraction = 0.3;
             //c.Endtime = 0.05;
             //c.NoOfTimesteps = int.MaxValue;
             c.NoOfTimesteps = 500;
@@ -1699,7 +1708,7 @@ namespace CNS {
             c.savetodb = dbPath != null;
             c.saveperiod = 10;
             c.PrintInterval = 1;
-            
+
             //c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitScheme = ExplicitSchemes.LTS;
             c.ExplicitOrder = 1;
@@ -1710,7 +1719,7 @@ namespace CNS {
             c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(LTSCellCostEstimator.Factory(c.NumberOfSubGrids));
             c.DynamicLoadBalancing_ImbalanceThreshold = 0.1;
             c.DynamicLoadBalancing_Period = 10;
-            
+
             bool AV = true;
 
             c.GridPartType = GridPartType.ParMETIS;
