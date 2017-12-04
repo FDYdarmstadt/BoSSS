@@ -30,7 +30,7 @@ namespace CNS.IBM {
     /// Wrapper around <see cref="MassMatrixFactory"/> that ensures that the
     /// mass matrix is also invertible in void cells
     /// </summary>
-    public class IBMMassMatrixFactory : IObserver<LevelSetTracker.LevelSetRegionsInfo> {
+    public class IBMMassMatrixFactory : IObserver<LevelSetTracker.LevelSetRegions> {
 
         /// <summary>
         /// 
@@ -158,7 +158,7 @@ namespace CNS.IBM {
         /// Discards all saved mass matrices
         /// </summary>
         /// <param name="value"></param>
-        public void OnNext(LevelSetTracker.LevelSetRegionsInfo value) {
+        public void OnNext(LevelSetTracker.LevelSetRegions value) {
             this.baseFactory = null;
             this.nonAgglomeratedMassMatrix = null;
             this.massMatrix = null;

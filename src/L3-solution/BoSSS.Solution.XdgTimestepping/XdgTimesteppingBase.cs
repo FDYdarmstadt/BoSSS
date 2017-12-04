@@ -187,7 +187,9 @@ namespace BoSSS.Solution.XdgTimestepping {
             protected set;
         }
 
-
+        /// <summary>
+        /// How the interface motion should be integrated
+        /// </summary>
         public LevelSetHandling Config_LevelSetHandling {
             get;
             protected set;

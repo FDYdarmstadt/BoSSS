@@ -30,7 +30,7 @@ namespace CNS.IBM {
     /// A species map for a single species that is embedded into domain, i.e.
     /// that encloses and/or is enclosed by a void domain. 
     /// </summary>
-    public class ImmersedSpeciesMap : ISpeciesMap, IObserver<LevelSetTracker.LevelSetRegionsInfo> {
+    public class ImmersedSpeciesMap : ISpeciesMap, IObserver<LevelSetTracker.LevelSetRegions> {
 
         /// <summary>
         /// The material/fluid of the represented, immersed fluid.
@@ -241,7 +241,7 @@ namespace CNS.IBM {
         /// Discards old quadrature information
         /// </summary>
         /// <param name="value"></param>
-        public void OnNext(LevelSetTracker.LevelSetRegionsInfo value) {
+        public void OnNext(LevelSetTracker.LevelSetRegions value) {
             this.quadSchemeHelper = null;
             this.MassMatrixFactory = null;
         }

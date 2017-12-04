@@ -235,6 +235,24 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
+        /// The number of previous time-steps available in the various stacks, see also <see cref="HistoryStack{T}.GetPopulatedLength"/>.
+        /// </summary>
+        public int PopulatedStackLength {
+            get {
+                int L = RegionsHistory.GetPopulatedLength();
+
+                for(int iLs = 0; iLs < NoOfLevelSets; iLs++) {
+                    Debug.Assert(m_DataHistories[iLs].GetPopulatedLength() == L);
+                    Debug.Assert(m_LevelSetHistories[iLs].GetPopulatedLength() == L);
+                }
+                Debug.Assert(m_QuadFactoryHelpersHistory.GetPopulatedLength() == L);
+                Debug.Assert(m_XDGSpaceMetricsHistory.GetPopulatedLength() == L);
+                
+                return L;
+            }
+        }
+
+        /// <summary>
         /// Implementation of the constructor;
         /// </summary>
         private void ConstructorCommon(GridData griData, int __NearRegionWidth, int BruteForceDivisions, int BruteForceOrder, Array SpeciesTable, XQuadFactoryHelper.MomentFittingVariants cutCellQuadratureType, params ILevelSet[] levSets) {

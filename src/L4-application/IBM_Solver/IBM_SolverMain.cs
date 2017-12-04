@@ -421,7 +421,7 @@ namespace BoSSS.Application.IBM_Solver {
                     m_BDF_Timestepper = new XdgBDFTimestepping(
                         Unknowns, Residual,
                         LsTrk, true,
-                        DelComputeOperatorMatrix, DelUpdateLevelset, DelUpdateCutCellMetrics,
+                        DelComputeOperatorMatrix, DelUpdateLevelset, 
                         bdfOrder,
                         lsh,
                         MassMatrixShapeandDependence.IsNonIdentity,
@@ -489,7 +489,7 @@ namespace BoSSS.Application.IBM_Solver {
             IBM_Op.ComputeMatrixEx(LsTrk,
                 Mapping, Params, Mapping,
                 OpMatrix, OpAffine, false, phystime, true,
-                momentFittingVariant, Agglomerator.CellLengthScales,
+                Agglomerator.CellLengthScales,
                 FluidSpecies);
 
 #if DEBUG
@@ -538,9 +538,9 @@ namespace BoSSS.Application.IBM_Solver {
             return 0.0;
         }
 
-        public virtual CutCellMetrics DelUpdateCutCellMetrics() {
-            return new CutCellMetrics(momentFittingVariant, this.HMForder, LsTrk, this.FluidSpecies);
-        }
+        //public virtual CutCellMetrics DelUpdateCutCellMetrics() {
+        //    return new CutCellMetrics(momentFittingVariant, this.HMForder, LsTrk, this.FluidSpecies);
+        //}
 
         protected TextWriter Log_DragAndLift;
         protected double[] force = new double[3];
@@ -584,9 +584,9 @@ namespace BoSSS.Application.IBM_Solver {
                     }
                 }
 
-                force = IBMSolverUtils.GetForces(Velocity, Pressure, this.LsTrk, this.momentFittingVariant, this.Control.PhysicalParameters.mu_A);
+                force = IBMSolverUtils.GetForces(Velocity, Pressure, this.LsTrk, this.Control.PhysicalParameters.mu_A);
                 //oldtorque = torque;
-                torque = IBMSolverUtils.GetTorque(Velocity, Pressure, this.LsTrk, this.momentFittingVariant, this.Control.PhysicalParameters.mu_A, this.Control.particleRadius);
+                torque = IBMSolverUtils.GetTorque(Velocity, Pressure, this.LsTrk, this.Control.PhysicalParameters.mu_A, this.Control.particleRadius);
 
                 if((base.MPIRank == 0) && (Log_DragAndLift != null)) {
                     string line;
@@ -666,13 +666,14 @@ namespace BoSSS.Application.IBM_Solver {
         /// <param name="U0mean"></param>
         private void ComputeAverageU(VectorField<SinglePhaseField> U0, VectorField<SinglePhaseField> U0mean) {
             using(FuncTrace ft = new FuncTrace()) {
-                var CC = this.LsTrk._Regions.GetCutCellMask();
+                var CC = this.LsTrk.Regions.GetCutCellMask();
                 int D = this.LsTrk.GridDat.SpatialDimension;
                 double minvol = Math.Pow(this.LsTrk.GridDat.Cells.h_minGlobal, D);
 
                 int QuadDegree = this.HMForder;
 
-                var qh = new XQuadSchemeHelper(LsTrk, momentFittingVariant, this.FluidSpecies);
+                //var qh = new XQuadSchemeHelper(LsTrk, momentFittingVariant, this.FluidSpecies);
+                var qh = LsTrk.GetXDGSpaceMetrics(this.FluidSpecies, QuadDegree, 1).XQuadSchemeHelper;
                 foreach(var Spc in this.FluidSpecies) { // loop over species...
                     //var Spc = this.LsTrk.GetSpeciesId("B"); {
                     // shadow fields
@@ -682,12 +683,12 @@ namespace BoSSS.Application.IBM_Solver {
 
                     // normal cells:
                     for(int d = 0; d < D; d++) {
-                        U0mean_Spc[d].AccLaidBack(1.0, U0_Spc[d], this.LsTrk._Regions.GetSpeciesMask(Spc));
+                        U0mean_Spc[d].AccLaidBack(1.0, U0_Spc[d], this.LsTrk.Regions.GetSpeciesMask(Spc));
                     }
 
 
                     // cut cells
-                    var scheme = qh.GetVolumeQuadScheme(Spc, IntegrationDomain: this.LsTrk._Regions.GetCutCellMask());
+                    var scheme = qh.GetVolumeQuadScheme(Spc, IntegrationDomain: this.LsTrk.Regions.GetCutCellMask());
 
                     var rule = scheme.Compile(this.LsTrk.GridDat, QuadDegree);
                     CellQuadrature.GetQuadrature(new int[] { D + 1 }, // vector components: ( avg_vel[0], ... , avg_vel[D-1], cell_volume )
