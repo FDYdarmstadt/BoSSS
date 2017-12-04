@@ -211,8 +211,7 @@ namespace BoSSS.Application.IBM_Solver {
 
         protected bool U0MeanRequired = false;
 
-        protected XQuadFactoryHelper.MomentFittingVariants momentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Classic;
-
+       
         protected XSpatialOperator IBM_Op;
 
         public string SessionPath;
@@ -428,6 +427,7 @@ namespace BoSSS.Application.IBM_Solver {
                         SpatialOp,
                         MassScale,
                         this.MultigridOperatorConfig, base.MultigridSequence,
+                        this.FluidSpecies, this.HMForder,
                         this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold, false);
                     m_BDF_Timestepper.m_ResLogger = base.ResLogger;
                     m_BDF_Timestepper.m_ResidualNames = ArrayTools.Cat(this.ResidualMomentum.Select(f => f.Identification), this.ResidualContinuity.Identification);
@@ -763,6 +763,8 @@ namespace BoSSS.Application.IBM_Solver {
             using(new FuncTrace()) {
                 base.CreateFields();
                 base.LsTrk = this.LevsetTracker;
+                if(Control.CutCellQuadratureType != this.LevsetTracker.CutCellQuadratureType)
+                    throw new ApplicationException();
                 //if (this.Control.LevelSetSmoothing) {
                 //    SmoothedLevelSet = new SpecFemField(new SpecFemBasis((GridData)LevSet.GridDat, LevSet.Basis.Degree + 1));
                 //}
@@ -774,7 +776,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// </summary>
         protected override void SetInitial() {
             // Set particle radius for exact circle integration
-            if(this.momentFittingVariant == XQuadFactoryHelper.MomentFittingVariants.ExactCircle)
+            if(this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.ExactCircle)
                 BoSSS.Foundation.XDG.Quadrature.HMF.ExactCircleLevelSetIntegration.RADIUS = new double[] { this.Control.particleRadius };
             Console.WriteLine("Total number of cells:    {0}", Grid.Cells.Count().MPISum());
             Console.WriteLine("Total number of DOFs:     {0}", CurrentSolution.Count().MPISum());
@@ -938,15 +940,16 @@ namespace BoSSS.Application.IBM_Solver {
 
 
             int D = this.GridData.SpatialDimension;
-
             int order = 0;
-            if(this.LsTrk.GetXQuadFactoryHelper(momentFittingVariant).GetCachedVolumeOrders(0).Length > 0) {
-                order = this.LsTrk.GetXQuadFactoryHelper(momentFittingVariant).GetCachedVolumeOrders(0).Max();
+            if (LsTrk.GetCachedOrders().Count > 0) {
+                order = LsTrk.GetCachedOrders().Max();
+            } else {
+                order = 1;
             }
-            order = Math.Max(order, Velocity[0].Basis.Degree * 2);
 
-            var SchemeHelper = new XQuadSchemeHelper(this.LsTrk, momentFittingVariant, FluidSpecies);
-
+            //var SchemeHelper = new XQuadSchemeHelper(LsTrk, momentFittingVariant, LsTrk.GetSpeciesId("A"));
+            var SchemeHelper = LsTrk.GetXDGSpaceMetrics(FluidSpecies, order, 1).XQuadSchemeHelper;
+            
             // Velocity error
             // ==============
             if(this.Control.ExSol_Velocity_Evaluator != null) {

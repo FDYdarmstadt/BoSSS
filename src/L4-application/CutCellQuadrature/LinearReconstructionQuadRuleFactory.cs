@@ -153,7 +153,7 @@ namespace CutCellQuadrature {
                     reconstructedRule.Nodes.LockForever();
 
                     MultidimensionalArray metrics =
-                        tracker.GetLevelSetNormalReferenceToPhysicalMetrics(0, reconstructedRule.Nodes, cell, 1);
+                        tracker.DataHistories[0].Current.GetLevelSetNormalReferenceToPhysicalMetrics(reconstructedRule.Nodes, cell, 1);
                     for (int i = 0; i < reconstructedRule.NoOfNodes; i++) {
                         reconstructedRule.Weights[i] /= metrics[0, i];
                     }

@@ -597,7 +597,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             R.Phi = ((double[] X, double t) => X[0].Pow2() + X[1].Pow2() - (1.0 + t).Pow2());
 
             R.CircleRadius = t => (1.0 + t);
-            R.HMF = XQuadFactoryHelper.MomentFittingVariants.ExactCircle;
+            R.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.ExactCircle;
 
             R.InitialValues_Evaluators.Add("Phi", X => R.Phi(X, 0.0));
             R.InitialValues_Evaluators.Add("Vx", X => X[0] / Math.Sqrt(X[0].Pow2() + X[1].Pow2()));

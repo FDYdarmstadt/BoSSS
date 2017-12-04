@@ -180,7 +180,7 @@ namespace BoSSS.Application.LoadBalancingTest {
                     MultigridOperatorConfig,
                     this.MultigridSequence,
                     this.LsTrk.SpeciesIdS.ToArray(),
-                    quadorder
+                    quadorder,
                     this.THRESHOLD,
                     true);
             } else {

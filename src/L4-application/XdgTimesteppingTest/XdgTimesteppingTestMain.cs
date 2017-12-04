@@ -93,6 +93,8 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             base.CreateFields();
             base.LsTrk = MyLsTrk;
             this.u.UpdateBehaviour = BehaveUnder_LevSetMoovement.AutoExtrapolate;
+            if(Control.CutCellQuadratureType != base.LsTrk.CutCellQuadratureType)
+                throw new ApplicationException();
 
             CutMarker = new SinglePhaseField(new Basis(this.GridData, 0), "CutMarker");
             NearMarker = new SinglePhaseField(new Basis(this.GridData, 0), "NearMarker");

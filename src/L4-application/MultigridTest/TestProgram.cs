@@ -403,8 +403,9 @@ namespace BoSSS.Application.MultigridTest {
                 // mass matrix factory
                 // ===================
 
-                Basis maxB = map.BasisS.ElementAtMax(b => b.Degree);
-                MassFact = new MassMatrixFactory(maxB, agg);
+                // Basis maxB = map.BasisS.ElementAtMax(b => b.Degree);
+                //MassFact = new MassMatrixFactory(maxB, agg);
+                MassFact = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), quadOrder, 1).MassMatrixFactory;
 
 
                 // Test field
