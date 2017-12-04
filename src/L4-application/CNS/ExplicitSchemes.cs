@@ -137,9 +137,14 @@ namespace CNS {
                 case ExplicitSchemes.AdamsBashforth:
                     if (control.DomainType == DomainTypes.StaticImmersedBoundary
                         || control.DomainType == DomainTypes.MovingImmersedBoundary) {
+                        IBMOperatorFactory ibmFactory = equationSystem as IBMOperatorFactory;
+                        if (ibmFactory == null) {
+                            throw new Exception();
+                        }
+
                         timeStepper = new IBMAdamsBashforth(
-                            equationSystem.GetConvectiveOperator().Union(equationSystem.GetDiffusiveOperator()).ToSpatialOperator(fieldSet),
-                            equationSystem.GetSourceTermOperator().ToSpatialOperator(fieldSet),
+                            ibmFactory.GetJoinedOperator().ToSpatialOperator(fieldSet),
+                            ibmFactory.GetBoundaryOperator().ToSpatialOperator(fieldSet),
                             variableMap,
                             parameterMap,
                             speciesMap,
@@ -158,9 +163,14 @@ namespace CNS {
                 case ExplicitSchemes.LTS:
                     if (control.DomainType == DomainTypes.StaticImmersedBoundary
                         || control.DomainType == DomainTypes.MovingImmersedBoundary) {
+                        IBMOperatorFactory ibmFactory = equationSystem as IBMOperatorFactory;
+                        if (ibmFactory == null) {
+                            throw new Exception();
+                        }
+
                         timeStepper = new IBMAdamsBashforthLTS(
-                            equationSystem.GetConvectiveOperator().Union(equationSystem.GetDiffusiveOperator()).ToSpatialOperator(fieldSet),
-                            equationSystem.GetSourceTermOperator().ToSpatialOperator(fieldSet),
+                            equationSystem.GetJoinedOperator().ToSpatialOperator(fieldSet),
+                            ibmFactory.GetBoundaryOperator().ToSpatialOperator(fieldSet),
                             variableMap,
                             parameterMap,
                             speciesMap,
