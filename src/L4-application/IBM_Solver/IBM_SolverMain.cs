@@ -435,6 +435,7 @@ namespace BoSSS.Application.IBM_Solver {
                     m_BDF_Timestepper.Config_SolverConvergenceCriterion = this.Control.Solver_ConvergenceCriterion;
                     m_BDF_Timestepper.Config_MaxIterations = this.Control.MaxSolverIterations;
                     m_BDF_Timestepper.Config_MinIterations = this.Control.MinSolverIterations;
+                    m_BDF_Timestepper.Config_NonlinearSolver = this.Control.NonlinearMethod;
                     m_BDF_Timestepper.SessionPath = SessionPath;
                 }
 

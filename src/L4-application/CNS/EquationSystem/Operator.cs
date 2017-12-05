@@ -19,6 +19,7 @@ using System.Linq;
 using BoSSS.Foundation;
 using ilPSP;
 using BoSSS.Solution;
+using System;
 
 namespace CNS.EquationSystem {
 
@@ -39,14 +40,13 @@ namespace CNS.EquationSystem {
         /// The parameter ordering that is constructed from the parameter
         /// orderings of the different components.
         /// </summary>
-        private IList<string> parameterOrdering {
-            get {
-                return DensityComponents.
-                    SelectMany(f => f.ParameterOrdering ?? new string[0]).
-                    Union(MomentumComponents.SelectMany(f => f.SelectMany(g => g.ParameterOrdering ?? new string[0]))).
-                    Union(EnergyComponents.SelectMany(f => f.ParameterOrdering ?? new string[0])).
-                    ToList();
-            }
+        private IList<string> GetParameterOrdering(CNSFieldSet fieldSet) {
+            //return DensityComponents.
+            //    SelectMany(f => f.ParameterOrdering ?? new string[0]).
+            //    Union(MomentumComponents.SelectMany(f => f.SelectMany(g => g.ParameterOrdering ?? new string[0]))).
+            //    Union(EnergyComponents.SelectMany(f => f.ParameterOrdering ?? new string[0])).
+            //    ToList();
+            return fieldSet.ParameterFields.Select(f => f.Identification).ToList();
         }
 
         /// <summary>
@@ -144,17 +144,16 @@ namespace CNS.EquationSystem {
         /// components that have been assigned to this operator.
         /// </summary>
         /// <returns></returns>
-        public SpatialOperator ToSpatialOperator() {
+        public SpatialOperator ToSpatialOperator(CNSFieldSet fieldSet) {
             SpatialOperator spatialOp = new SpatialOperator(
                 CNSEnvironment.PrimalArgumentOrdering,
-                parameterOrdering,
+                GetParameterOrdering(fieldSet),
                 CNSEnvironment.PrimalArgumentOrdering,
-                QuadOrderFunc.NonLinear(2));
+                QuadOrderFunc.NonLinearWithoutParameters(2));
             MapComponents(spatialOp);
             spatialOp.Commit();
             return spatialOp;
         }
-
         /// <summary>
         /// Maps the <see cref="IEquationComponent"/>s in
         /// <paramref name="op"/> to the relevant equation components in

@@ -193,7 +193,7 @@ namespace CNS.IBM {
         /// <param name="mapping"></param>
         /// <returns></returns>
         public IBMMassMatrixFactory GetMassMatrixFactory(CoordinateMapping mapping) {
-            if (MassMatrixFactory == null) {
+            if (MassMatrixFactory == null || !mapping.Equals(MassMatrixFactory.Mapping)) {
                 MassMatrixFactory = new IBMMassMatrixFactory(this, mapping);
             }
             return MassMatrixFactory;

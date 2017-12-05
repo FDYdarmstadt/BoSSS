@@ -81,44 +81,56 @@ namespace CNS.Tests.ArtificialViscosity {
         public static void ToroTest1_RK1() {
             CheckErrorThresholds(
                 SetupToroTest1(explicitScheme: ExplicitSchemes.RungeKutta, explicitOrder: 1, numOfClusters: -1),
-                //Tuple.Create("L2ErrorDensity", 2.133e-2),
-                //Tuple.Create("L2ErrorVelocity", 1.125e-2),
-                //Tuple.Create("L2ErrorPressure", 2.217e-2));
-                Tuple.Create("L2ErrorDensity", 0.0213295440070947 + 1e-14),
-                Tuple.Create("L2ErrorVelocity", 0.0112419647692771 + 1e-14),
-                Tuple.Create("L2ErrorPressure", 0.0221686517166847 + 1e-14));
+                //Tuple.Create("L2ErrorDensity", 0.0213295440070947 + 1e-14),   //thresholds before changing quad order of AV
+                //Tuple.Create("L2ErrorVelocity", 0.0112419647692771 + 1e-14),
+                //Tuple.Create("L2ErrorPressure", 0.0221686517166847 + 1e-14));
+                Tuple.Create("L2ErrorDensity", 0.0213295144110587 + 1e-14),
+                Tuple.Create("L2ErrorVelocity", 0.0112424957360476 + 1e-14),
+                Tuple.Create("L2ErrorPressure", 0.0221692599463277 + 1e-14));
         }
         [Test]
         public static void ToroTest1_ALTS1_3() {
             CheckErrorThresholds(
                 SetupToroTest1(explicitScheme: ExplicitSchemes.LTS, explicitOrder: 1, numOfClusters: 3),
-                Tuple.Create("L2ErrorDensity", 0.0213233520929519 + 1e-14),
-                Tuple.Create("L2ErrorVelocity", 0.0112404986333599 + 1e-14),
-                Tuple.Create("L2ErrorPressure", 0.0221621831639872 + 1e-14));
+                //Tuple.Create("L2ErrorDensity", 0.0213233520929519 + 1e-14),
+                //Tuple.Create("L2ErrorVelocity", 0.0112404986333599 + 1e-14),
+                //Tuple.Create("L2ErrorPressure", 0.0221621831639872 + 1e-14));
+                Tuple.Create("L2ErrorDensity", 0.0213233225887192 + 1e-14),
+                Tuple.Create("L2ErrorVelocity", 0.0112410192725479 + 1e-14),
+                Tuple.Create("L2ErrorPressure", 0.0221627888301022 + 1e-14));
         }
         [Test]
         public static void ToroTest1_ALTS2_3() {
             CheckErrorThresholds(
                 SetupToroTest1(explicitScheme: ExplicitSchemes.LTS, explicitOrder: 2, numOfClusters: 3),
-                Tuple.Create("L2ErrorDensity", 0.0213221338536003 + 1e-14),
-                Tuple.Create("L2ErrorVelocity", 0.0112395603913243 + 1e-14),
-                Tuple.Create("L2ErrorPressure", 0.0221608822934621 + 1e-14));
+                //Tuple.Create("L2ErrorDensity", 0.0213221338536003 + 1e-14),
+                //Tuple.Create("L2ErrorVelocity", 0.0112395603913243 + 1e-14),
+                //Tuple.Create("L2ErrorPressure", 0.0221608822934621 + 1e-14));
+                Tuple.Create("L2ErrorDensity", 0.0213221043663509 + 1e-14),
+                Tuple.Create("L2ErrorVelocity", 0.0112400763052089 + 1e-14),
+                Tuple.Create("L2ErrorPressure", 0.0221614877490578 + 1e-14));
         }
         [Test]
         public static void ToroTest1_ALTS3_3() {
             CheckErrorThresholds(
                 SetupToroTest1(explicitScheme: ExplicitSchemes.LTS, explicitOrder: 3, numOfClusters: 3),
-                Tuple.Create("L2ErrorDensity", 0.0213233152388806 + 1e-14),
-                Tuple.Create("L2ErrorVelocity", 0.01123851527621 + 1e-14),
-                Tuple.Create("L2ErrorPressure", 0.0221620445902869 + 1e-14));
+                //Tuple.Create("L2ErrorDensity", 0.0213233152388806 + 1e-14),
+                //Tuple.Create("L2ErrorVelocity", 0.01123851527621 + 1e-14),
+                //Tuple.Create("L2ErrorPressure", 0.0221620445902869 + 1e-14));
+                Tuple.Create("L2ErrorDensity", 0.0213232857482851 + 1e-14),
+                Tuple.Create("L2ErrorVelocity", 0.0112390275141092 + 1e-14),
+                Tuple.Create("L2ErrorPressure", 0.0221626504269355 + 1e-14));
         }
         [Test]
         public static void ToroTest1_ALTS3_4() {
             CheckErrorThresholds(
                 SetupToroTest1(explicitScheme: ExplicitSchemes.LTS, explicitOrder: 3, numOfClusters: 4),
-                Tuple.Create("L2ErrorDensity", 0.0213033175670039 + 1e-14),
-                Tuple.Create("L2ErrorVelocity", 0.0112159195300983 + 1e-14),
-                Tuple.Create("L2ErrorPressure", 0.0221417911406063 + 1e-14));
+                //Tuple.Create("L2ErrorDensity", 0.0213033175670039 + 1e-14),
+                //Tuple.Create("L2ErrorVelocity", 0.0112159195300983 + 1e-14),
+                //Tuple.Create("L2ErrorPressure", 0.0221417911406063 + 1e-14));
+                Tuple.Create("L2ErrorDensity", 0.0213032882872332 + 1e-14),
+                Tuple.Create("L2ErrorVelocity", 0.011216449840882 + 1e-14),
+                Tuple.Create("L2ErrorPressure", 0.0221423943810654 + 1e-14));
         }
 
         /// <summary>

@@ -272,7 +272,7 @@ namespace BoSSS.Foundation.XDG {
             where M : IMutableMatrixEx
             where V : IList<double> {
 
-            int order = this.GetOrderFromQROF(DomainMap, Parameters, CodomainMap);
+            int order = this.GetOrderFromQuadOrderFunction(DomainMap, Parameters, CodomainMap);
             MultiphaseCellAgglomerator dummy = new MultiphaseCellAgglomerator(new CutCellMetrics(momentFittingVariant, order, lsTrk, whichSpc), 0.0, false);
 
             var bla = new Dictionary<SpeciesId, QrSchemPair>();
@@ -370,7 +370,7 @@ namespace BoSSS.Foundation.XDG {
                 #region find quadrature instructions
                 // ----------------------------
 
-                int order = this.GetOrderFromQROF(DomainMap, Parameters, CodomainMap);
+                int order = this.GetOrderFromQuadOrderFunction(DomainMap, Parameters, CodomainMap);
                 ((FixedOrder_SpatialOperator)this.GhostEdgesOperator).m_Order = order;
                 ((FixedOrder_SpatialOperator)this.SurfaceElementOperator).m_Order = order;
                 tr.Info("XSpatialOperator.ComputeMatrixEx quad order: " + order);

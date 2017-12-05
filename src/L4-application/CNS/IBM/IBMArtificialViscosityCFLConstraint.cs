@@ -1,58 +1,58 @@
-﻿/* =======================================================================
-Copyright 2017 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
-using BoSSS.Foundation;
+﻿using BoSSS.Foundation;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.XDG;
 using BoSSS.Platform.LinAlg;
 using CNS.EquationSystem;
 using CNS.MaterialProperty;
+using ilPSP;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace CNS.ShockCapturing {
-
+namespace CNS.IBM {
     /// <summary>
     /// Implementation of the CFL constraint induced by the diffusive terms of
     /// the compressible Navier-Stokes equations. The exact implementation is
     /// based on the formulas presented in Gassner, Loercher, Munz 2008:
     /// A Discontinuous Galerkin Scheme based on a Space-Time Expansion II.
-    /// Viscous Flow Equations in Multi Dimensions
+    /// Viscous Flow Equations in Multi Dimensions.
+    /// <seealso cref="IBMDiffusiveCFLConstraint"/>
     /// </summary>
-    public class ArtificialViscosityCFLConstraint : CFLConstraint {
+    public class IBMArtificialViscosityCFLConstraint : CFLConstraint {
 
-        public ArtificialViscosityCFLConstraint(
+        /// <summary>
+        /// Factors by Gassner, see <see cref="GetBetaMax"/>
+        /// </summary>
+        private static double[] beta_max = new double[] {
+            // 2.0 is just a guess
+            2.0, 1.46, 0.8, 0.54, 0.355, 0.28, 0.21, 0.16, 0.14, 0.12, 0.1 };
+
+        private CNSControl config;
+
+        private ImmersedSpeciesMap speciesMap;
+
+        /// <summary>
+        /// Constructs a new CFL constraint based on artificial viscosity
+        /// for IBM simulations
+        /// </summary>
+        /// <param name="config"></param>
+        /// <param name="gridData"></param>
+        /// <param name="workingSet"></param>
+        /// <param name="speciesMap"></param>
+        public IBMArtificialViscosityCFLConstraint(
             CNSControl config, GridData gridData, CNSFieldSet workingSet, ISpeciesMap speciesMap)
             : base(gridData, workingSet) {
 
             this.config = config;
-            this.speciesMap = speciesMap;
+            this.speciesMap = speciesMap as ImmersedSpeciesMap;
 
             if (gridData.Grid.RefElements.Length > 1) {
                 throw new NotImplementedException();
             }
         }
-
-        private CNSControl config;
-
-        private ISpeciesMap speciesMap;
-
-        private static double[] beta_max = new double[] {
-            // 2.0 is just a guess
-            2.0, 1.46, 0.8, 0.54, 0.355, 0.28, 0.21, 0.16, 0.14, 0.12, 0.1 };
 
         /// <summary>
         /// Get experimentally obtained stability limit by Gassner for
@@ -79,19 +79,28 @@ namespace CNS.ShockCapturing {
             int iKref = gridData.Cells.GetRefElementIndex(i0);
             int noOfNodesPerCell = base.EvaluationPoints[iKref].NoOfNodes;
 
+            // IBM part
+            MultidimensionalArray levelSetValues = speciesMap.Tracker.GetLevSetValues(0, base.EvaluationPoints[iKref], i0, Length);
+            SpeciesId species = speciesMap.Tracker.GetSpeciesId(speciesMap.Control.FluidSpeciesName);
+            var hMinArray = speciesMap.QuadSchemeHelper.CellAgglomeration.CellLengthScales[species];
+
             double cfl = double.MaxValue;
             for (int i = 0; i < Length; i++) {
                 int cell = i0 + i;
 
                 for (int node = 0; node < noOfNodesPerCell; node++) {
-                    double hmin = gridData.Cells.h_min[cell];
+                    if (levelSetValues[i, node].Sign() != (double)speciesMap.Control.FluidSpeciesSign) {
+                        continue;
+                    }
 
-                    double coeff = Math.Max(4.0 / 3.0, config.EquationOfState.HeatCapacityRatio / config.PrandtlNumber);
+                    // IBM part
+                    double hmin = hMinArray[cell];
 
                     DGField artificialViscosity = workingSet.ParameterFields.Where(c => c.Identification.Equals("artificialViscosity")).Single();
                     double nu = artificialViscosity.GetMeanValue(cell) / config.ReynoldsNumber;
+                    Debug.Assert(!double.IsNaN(nu), "IBMArtificialViscosityCFLConstraint: nu is NaN!");
 
-                    Debug.Assert(!double.IsNaN(nu), "ArtificialViscosityCFLConstraint: nu is NaN!");
+                    double coeff = Math.Max(4.0 / 3.0, config.EquationOfState.HeatCapacityRatio / config.PrandtlNumber);
 
                     double cflhere;
                     if (nu == 0) {
@@ -99,6 +108,12 @@ namespace CNS.ShockCapturing {
                     } else {
                         cflhere = hmin * hmin / coeff / nu;
                     }
+
+#if DEBUG
+                    if (double.IsNaN(cflhere)) {
+                        throw new Exception("Could not determine CFL number");
+                    }
+#endif
 
                     cfl = Math.Min(cfl, cflhere);
                 }

@@ -160,12 +160,11 @@ namespace CNS {
         /// </summary>
         protected override void CreateEquationsAndSolvers(GridUpdateData loadBalancingData) {
             FullOperator = operatorFactory.GetJoinedOperator();
-
-            CoordinateMapping variableMap = new CoordinateMapping(WorkingSet.ConservativeVariables);
+            
             TimeStepper = Control.ExplicitScheme.Instantiate(
                 Control,
                 operatorFactory,
-                variableMap,
+                WorkingSet,
                 ParameterMapping,
                 SpeciesMap,
                 this);
@@ -182,7 +181,7 @@ namespace CNS {
             residualLoggers = Control.ResidualLoggerType.Instantiate(
                 this,
                 Control,
-                FullOperator.ToSpatialOperator()).ToArray();
+                FullOperator.ToSpatialOperator(WorkingSet)).ToArray();
             
             WorkingSet.UpdateDerivedVariables(this, SpeciesMap.SubGrid.VolumeMask);
         }
