@@ -1619,9 +1619,10 @@ namespace BoSSS.Foundation.IO {
         /// <param name="sessions"> List of sessions of the same problem but different MPIs </param>
         /// <param name="methods"> Array of methods to be evaluated. If methods == null, the 10 most expensive methods will be taken. </param>
         /// <param name="exclusive"> Boolean that defines if exclusive or inclusive times will be calculated. Methods will still be chosen by exclusive times. </param>
-        public static void EvaluatePerformanceAndPlot(this IEnumerable<ISessionInfo> sessions, string[] methods = null, bool exclusive = true)
+        /// <param name="solver"> String that indicates the solver. Up to now only implemented for IBM_Solver and CNS. </param>
+        public static void EvaluatePerformanceAndPlot(this IEnumerable<ISessionInfo> sessions, string[] methods = null, bool exclusive = true, string solver = "IBM_Solver")
         {
-            DataSet[] data = sessions.EvaluatePerformance(methods,exclusive);
+            DataSet[] data = sessions.EvaluatePerformance(methods,exclusive,solver);
             int numberDataSets = data.Length;
             int numberSessions = sessions.Count();
 
@@ -1672,15 +1673,30 @@ namespace BoSSS.Foundation.IO {
         /// <param name="sessions"> List of sessions of the same problem but different MPIs </param>
         /// <param name="methods"> Array of methods to be evaluated. If methods == null, the 10 most expensive methods will be taken. </param>
         /// <param name="exclusive"> Boolean that defines if exclusive or inclusive times will be calculated. Methods will still be chosen by exclusive times. </param>
+        /// <param name="solver"> String that indicates the solver. Up to now only implemented for IBM_Solver and CNS. </param>
         /// <returns>
         /// Returns an array of DataSets, where the first half contains the convergence data for every method and the second half the speedup data.
         /// </returns>
-        public static DataSet[] EvaluatePerformance(this IEnumerable<ISessionInfo> sessions, string[] methods = null, bool exclusive = true)
+        public static DataSet[] EvaluatePerformance(this IEnumerable<ISessionInfo> sessions, string[] methods = null, bool exclusive = true, string solver = "IBM_Solver")
         {
             string path = sessions.Pick(0).Database.Path;
+            string mainMethod;
+            switch(solver)
+            {
+                case "IBM_Solver":
+                    mainMethod = "BoSSS.Application.IBM_Solver.IBM_SolverMain.RunSolverOneStep";
+                    break;
+                case "CNS":
+                    mainMethod = "CNS.Program`1.RunSolverOneStep";
+                    break;
+                default:
+                    throw new ApplicationException("Main method not defined for this solver yet");
+            }
+            
+
 
             // Change maxNumberMethods to how many methods you want considered if no  methods specified
-            int maxNumberMethods = 10;
+            int maxNumberMethods = 8;
             double[] fraction = new double[maxNumberMethods];
             int idx = sessions.IndexOfMax(s => s.ComputeNodeNames.Count());
 
@@ -1693,9 +1709,8 @@ namespace BoSSS.Foundation.IO {
                 temp_fs[0] = new FileStream(@path + "\\sessions\\" + sessions.Pick(idx).ID + "\\profiling_bin.0.txt", FileMode.Open);
                 mcr[0] = (MethodCallRecord)fmt.Deserialize(temp_fs[0]);
                 temp_fs[0].Close();
-
-                // int i = 1;
-                var mostExpensive = mcr[0].FindChild("BoSSS.Application.IBM_Solver.IBM_SolverMain.RunSolverOneStep").CompleteCollectiveReport().OrderByDescending(cr => cr.ExclusiveTimeFractionOfRoot);
+                
+                var mostExpensive = mcr[0].FindChild(mainMethod).CompleteCollectiveReport().OrderByDescending(cr => cr.ExclusiveTimeFractionOfRoot);
 
                 methods = new string[maxNumberMethods];
                 for (int i = 0; i < maxNumberMethods; i++)
@@ -1739,7 +1754,7 @@ namespace BoSSS.Foundation.IO {
                         // Get execution time of current method for current processor
                         double[] tempTime = new double[numberMethods];
                         double[] tempFractions = new double[numberMethods];
-                        value = mcr[j].FindChild("BoSSS.Application.IBM_Solver.IBM_SolverMain.RunSolverOneStep");
+                        value = mcr[j].FindChild(mainMethod);
                         if (exclusive)
                         {
                             tempTime[k] = value.FindChildren(methods[k]).Select(s => s.TimeExclusive.TotalSeconds).Max();
