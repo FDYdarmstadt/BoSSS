@@ -218,15 +218,16 @@ namespace BoSSS.Foundation.IO {
         /// <param name="session">
         /// The session which queryResults should be read.
         /// </param>
+        /// <param name="path">Path to the Query File</param>
         /// <returns>
         /// Dictionary of QueryResults.
         /// Key: QueryId
         /// Value: QueryValue
         /// </returns>
-        public static IDictionary<string, double> QueryResults(this ISessionInfo session) {
+        public static IDictionary<string, double> QueryResults(this ISessionInfo session, string path = "queryResults.txt") {
             Dictionary<string, double> QueryDictionary = new Dictionary<string, double>();
 
-            string QueryPath = Path.Combine(DatabaseDriver.GetSessionDirectory(session), "queryResults.txt");
+            string QueryPath = Path.Combine(DatabaseDriver.GetSessionDirectory(session), path);
 
             using (StreamReader reader = new StreamReader(QueryPath)) {
                 string[] QueryHeader = reader.ReadLine().Trim().Split(new char[] { '\t' });

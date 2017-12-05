@@ -18,6 +18,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using CNS.Boundary;
 using CNS.EquationSystem;
+using System.Collections.Generic;
 
 namespace CNS.IBM {
 
@@ -26,6 +27,8 @@ namespace CNS.IBM {
     /// flows.
     /// </summary>
     public class IBMOperatorFactory : OperatorFactory {
+        
+        protected readonly IList<FluxBuilder> boundaryFluxBuilders = new List<FluxBuilder>();
 
         /// <summary>
         /// Constructs a new operator factory which additionally implements
@@ -44,7 +47,7 @@ namespace CNS.IBM {
             IBoundaryConditionMap boundaryMap)
             : base(control, gridData, workingSet, speciesMap, boundaryMap) {
 
-            this.sourceTermBuilders.Add(new BoundaryConditionSourceFluxBuilder(
+            this.boundaryFluxBuilders.Add(new BoundaryConditionSourceFluxBuilder(
                 control, boundaryMap, speciesMap, convectiveFluxBuilder, diffusiveFluxBuilder));
         }
 
@@ -91,6 +94,15 @@ namespace CNS.IBM {
                     gridData,
                     workingSet,
                     speciesMap));
+            }
+
+            return op;
+        }
+
+        public Operator GetBoundaryOperator() {
+            Operator op = new Operator(control);
+            foreach (FluxBuilder builder in boundaryFluxBuilders) {
+                builder.BuildFluxes(op);
             }
 
             return op;

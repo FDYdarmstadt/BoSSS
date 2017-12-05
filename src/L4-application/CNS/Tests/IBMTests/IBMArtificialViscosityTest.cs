@@ -1,0 +1,248 @@
+﻿/* =======================================================================
+Copyright 2017 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.XDG;
+using BoSSS.Platform.LinAlg;
+using BoSSS.Solution.Queries;
+using CNS.Convection;
+using CNS.EquationSystem;
+using CNS.IBM;
+using CNS.MaterialProperty;
+using CNS.ShockCapturing;
+using ilPSP.Utils;
+using NUnit.Framework;
+using System;
+using System.Collections.Generic;
+
+namespace CNS.Tests.IBMTests {
+
+    [TestFixture]
+    public class IBMArtificialViscosityTest : TestProgram<IBMControl> {
+
+        public static IBMControl IBMAVTestContactDiscontinuity() {
+            IBMControl c = new IBMControl();
+
+            c.DbPath = @"c:\bosss_db";
+            c.savetodb = false;
+            c.saveperiod = 1;
+            c.PrintInterval = 1;
+
+            int dgDegree = 2;
+
+            double xMin = 0.0;
+            double xMax = 1.0;
+            double yMin = 0.0;
+            double yMax = 1.0;
+
+            int numOfCellsX = 20;
+            int numOfCellsY = 5;
+
+            c.DomainType = DomainTypes.StaticImmersedBoundary;
+
+            // Adjust height of cut cells such that we obtain AVCFL_cutcell = 0.5 * AVCFL
+            // Here, this only depends on h_min
+            double width = (xMax - xMin) / numOfCellsX;
+            double height = (yMax - yMin) / numOfCellsY;
+            double heightCutCell = (-2.0 * width * height) / (2.0 * height - 2.0 * Math.Sqrt(2) * width - 2.0 * Math.Sqrt(2) * height);
+
+            double levelSetPosition = 2 * height + (height - heightCutCell);
+
+            c.LevelSetFunction = delegate (double[] X, double t) {
+                double y = X[1];
+                return y - levelSetPosition;
+            };
+            c.LevelSetBoundaryTag = "AdiabaticSlipWall";
+
+            c.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            c.LevelSetQuadratureOrder = 6;
+            c.AgglomerationThreshold = 0.2;
+            c.AddVariable(IBMVariables.LevelSet, 1);
+
+            bool AV = true;
+
+            if (AV) {
+                c.ActiveOperators = Operators.Convection | Operators.ArtificialViscosity;
+            } else {
+                c.ActiveOperators = Operators.Convection;
+            }
+            c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
+
+            // Shock-capturing
+            double sensorLimit = 1.0e-3;
+            double epsilon0 = 1.0;
+            double kappa = 0.5;
+
+            Variable sensorVariable = Variables.Density;
+            c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+
+            if (AV) {
+                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
+            }
+
+            // Runge-Kutta
+            c.ExplicitScheme = ExplicitSchemes.RungeKutta;
+            c.ExplicitOrder = 1;
+
+            c.EquationOfState = IdealGas.Air;
+
+            c.MachNumber = 1.0 / Math.Sqrt(c.EquationOfState.HeatCapacityRatio);
+            c.ReynoldsNumber = 1.0;
+            c.PrandtlNumber = 0.71;
+
+            c.AddVariable(Variables.Density, dgDegree);
+            c.AddVariable(Variables.Momentum.xComponent, dgDegree);
+            c.AddVariable(Variables.Momentum.yComponent, dgDegree);
+            c.AddVariable(Variables.Velocity.xComponent, dgDegree);
+            c.AddVariable(Variables.Velocity.yComponent, dgDegree);
+            c.AddVariable(Variables.Pressure, dgDegree);
+            c.AddVariable(Variables.Energy, dgDegree);
+
+            c.AddVariable(Variables.Entropy, dgDegree);
+            c.AddVariable(Variables.LocalMachNumber, dgDegree);
+            c.AddVariable(Variables.Rank, 0);
+            c.AddVariable(Variables.Sensor, 0);
+
+            if (AV) {
+                c.AddVariable(Variables.ArtificialViscosity, 2);
+            }
+
+            c.AddVariable(Variables.CFL, 0);
+            c.AddVariable(Variables.CFLConvective, 0);
+            c.AddVariable(Variables.CFLArtificialViscosity, 0);
+            if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS)) {
+                c.AddVariable(Variables.LTSClusters, 0);
+            }
+
+            c.GridFunc = delegate {
+                double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
+                double[] yNodes = GenericBlas.Linspace(yMin, yMax, numOfCellsY + 1);
+                var grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
+
+                // Boundary conditions
+                grid.EdgeTagNames.Add(1, "SubsonicInlet");
+                grid.EdgeTagNames.Add(2, "SubsonicOutlet");
+                grid.EdgeTagNames.Add(3, "AdiabaticSlipWall");
+
+                grid.DefineEdgeTags(delegate (double[] X) {
+                    if (Math.Abs(X[1]) < 1e-14) {   // bottom
+                        return 3;
+                    } else if (Math.Abs(X[1] - (yMax - yMin)) < 1e-14) {    // top
+                        return 3;
+                    } else if (Math.Abs(X[0]) < 1e-14) {    // left
+                        return 1;
+                    } else if (Math.Abs(X[0] - (xMax - xMin)) < 1e-14) {    // right
+                        return 2;
+                    } else {
+                        throw new System.Exception("Problem with definition of boundary conditions");
+                    }
+                });
+
+                return grid;
+            };
+
+            Func<double[], double, double> DistanceToLine = delegate (double[] X, double t) {
+                // direction vector
+                Vector2D p1 = new Vector2D(0.5, 0.0);
+                Vector2D p2 = new Vector2D(0.5, 1.0);
+                Vector2D p = p2 - p1;
+
+                // normal vector
+                Vector2D n = new Vector2D(p.y, -p.x);
+                n.Normalize();
+
+                // angle between line and x-axis
+                //double alpha = Math.Atan(Math.Abs((p2.y - p1.y)) / Math.Abs((p2.x - p1.x)));
+                double alpha = Math.PI / 2;
+
+                // distance of a point X to the origin (normal to the line)
+                double nDotX = n.x * (X[0]) + n.y * (X[1]);
+
+                // shock speed
+                double vs = 1;
+
+                // distance to line
+                double distance = nDotX - (Math.Sin(alpha) * p1.x + vs * t);
+
+                return distance;
+            };
+
+            double cellSize = Math.Min((xMax - xMin) / numOfCellsX, (yMax - yMin) / numOfCellsY);
+
+            Func<double, double> SmoothJump = delegate (double distance) {
+                // smoothing should be in the range of h/p
+                double maxDistance = 2.0 * cellSize / Math.Max(dgDegree, 1);
+
+                return (Math.Tanh(distance / maxDistance) + 1.0) * 0.5;
+            };
+
+            double densityLeft = 100.0;
+            double densityRight = 1.0;
+            double pressure = 1.0;
+            double velocityXLeft = 2.0;
+            double velocityY = 0.0;
+
+            c.AddBoundaryCondition("SubsonicInlet", Variables.Density, (X, t) => densityLeft);
+            c.AddBoundaryCondition("SubsonicInlet", Variables.Velocity.xComponent, (X, t) => velocityXLeft);
+            c.AddBoundaryCondition("SubsonicInlet", Variables.Velocity.yComponent, (X, t) => velocityY);
+            c.AddBoundaryCondition("SubsonicOutlet", Variables.Pressure, (X, t) => pressure);
+            c.AddBoundaryCondition("AdiabaticSlipWall");
+
+            // Initial conditions
+            c.InitialValues_Evaluators.Add(Variables.Density, X => densityLeft - SmoothJump(DistanceToLine(X, 0)) * (densityLeft - densityRight));
+            c.InitialValues_Evaluators.Add(Variables.Pressure, X => pressure);
+            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => velocityXLeft);
+            c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => velocityY);
+
+            // Time config 
+            c.dtMin = 0.0;
+            c.dtMax = 1.0;
+            c.CFLFraction = 0.3;
+            c.Endtime = 5e-3;
+            c.NoOfTimesteps = int.MaxValue;
+
+            // Queries for comparison
+            c.Queries.Add("L2NormDensity", QueryLibrary.L2Norm(Variables.Density.Name));
+            c.Queries.Add("L2NormVelocityX", QueryLibrary.L2Norm(Variables.Velocity.xComponent.Name));
+            c.Queries.Add("L2NormPressure", QueryLibrary.L2Norm(Variables.Pressure));
+
+            return c;
+        }
+
+        private static Dictionary<string, object> SetupIBMAVTest() {
+            IBMControl c = IBMAVTestContactDiscontinuity();
+
+            c.ProjectName = "IBM artificial viscosity tests";
+            c.SessionName = String.Format("IBM artificial viscosity test (contact discontinuity)");
+
+            var solver = new Program();
+            solver.Init(c, null);
+            solver.RunSolverMode();
+
+            return solver.QueryHandler.QueryResults;
+        }
+
+        // Wprks only if AV projection is off
+        //[Test]
+        //public static void IBMAVTest() {
+        //    CheckErrorThresholds(
+        //        SetupIBMAVTest(),
+        //        Tuple.Create("L2NormDensity", 53.8811127551010000 + 1e-10),
+        //        Tuple.Create("L2NormVelocityX", 1.5491933384829700 + 1e-10),
+        //        Tuple.Create("L2NormPressure", 0.7745966692415230 + 1e-10));
+        //}
+    }
+}
