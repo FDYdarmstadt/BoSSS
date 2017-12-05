@@ -1237,6 +1237,7 @@ namespace BoSSS.Foundation.XDG {
                 double[] coordsFull = new double[m_CCBasis.MaximalLength];
                 ushort[] OldRegionCode = trk.RegionsHistory[0].LevelSetRegionsCode;
                 ushort[] NewRegionCode = trk.RegionsHistory[1].LevelSetRegionsCode;
+                Debug.Assert(!object.ReferenceEquals(OldRegionCode, NewRegionCode));
 
                 int Nsep = m_CCBasis.DOFperSpeciesPerCell;
                 int i0CmnFull = trk.TotalNoOfSpecies * Nsep;

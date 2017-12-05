@@ -523,21 +523,11 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
 
 
-            //m_Stack_CutCellMetrics[0] = this.UpdateCutCellMetrics();
-            //if (!m_Stack_CutCellMetrics[0].SpeciesList.SetEquals(Config_MassScale.Keys))
-            //    throw new ApplicationException("Mismatch between species lists.");
-
-            //m_CurrentAgglomeration = new MultiphaseCellAgglomerator(
-            //        m_Stack_CutCellMetrics[0],
-            //        this.Config_AgglomerationThreshold, false, false, true,
-            //        null, null);
-            m_CurrentAgglomeration = m_LsTrk.GetAgglomerator(base.Config_SpeciesToCompute , base.Config_CutCellQuadratureOrder, this.Config_AgglomerationThreshold, 
-                AgglomerateNewborn: false, AgglomerateDecased: false, ExceptionOnFailedAgglomeration: true);
 
 
             // update Multigrid-XDG basis
-            Debug.Assert(object.ReferenceEquals(base.MultigridBasis[0][0].DGBasis.GridDat, m_CurrentAgglomeration.Tracker.GridDat));
-            base.MultigridBasis.UpdateXdgAggregationBasis(m_CurrentAgglomeration);
+            //Debug.Assert(object.ReferenceEquals(base.MultigridBasis[0][0].DGBasis.GridDat, m_CurrentAgglomeration.Tracker.GridDat));
+            //base.MultigridBasis.UpdateXdgAggregationBasis(m_CurrentAgglomeration);
 
             // mass matrix update
             // ------------------
@@ -941,7 +931,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 // ----------------------
 
                 bool updateAgglom = false;
-                if (this.Config_LevelSetHandling == LevelSetHandling.Coupled_Once && m_IterationCounter == 0
+                if ((this.Config_LevelSetHandling == LevelSetHandling.Coupled_Once && m_IterationCounter == 0)
                     || this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
 
                     MoveLevelSetAndRelatedStuff(locCurSt, m_CurrentPhystime, m_CurrentDt, 0.7);
@@ -950,41 +940,46 @@ namespace BoSSS.Solution.XdgTimestepping {
                     updateAgglom = true;
                 }
 
-                // update agglomeration
-                // --------------------
-#if DEBUG
                 if (this.Config_LevelSetHandling == LevelSetHandling.LieSplitting || this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting) {
-                    if (m_IterationCounter == 0)
+                    if(m_IterationCounter == 0) {
                         Debug.Assert(m_CurrentAgglomeration == null);
+                        updateAgglom = true;
+                    } else {
+                        Debug.Assert(m_CurrentAgglomeration != null);
+                    }
                     // ensure, that, when splitting is used we update the agglomerator in the very first iteration.
                 }
-#endif
-                if (updateAgglom || m_CurrentAgglomeration == null) {
+                // update agglomeration
+                // --------------------
 
-                    double[] oldAggTrsh;
-                    if(m_PopulatedStackDepth > 0) {
-                        oldAggTrsh = new double[m_PopulatedStackDepth];
-                        ArrayTools.SetAll(oldAggTrsh, this.Config_AgglomerationThreshold);
+                if(updateAgglom || m_CurrentAgglomeration == null) {
+
+                    if(this.Config_LevelSetHandling == LevelSetHandling.LieSplitting || this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting) {
+                        // Agglomeration update in the case of splitting - agglomeration does **NOT** depend on previous time-steps
+
+                        Debug.Assert(m_IterationCounter == 0);
+                        m_CurrentAgglomeration = m_LsTrk.GetAgglomerator(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder, this.Config_AgglomerationThreshold,
+                            AgglomerateNewborn: false, AgglomerateDecased: false, ExceptionOnFailedAgglomeration: true);
+
                     } else {
-                        oldAggTrsh = null;
+                        // Agglomeration update in the case of a moving interface - consider previous time-steps
+                        double[] oldAggTrsh;
+                        if(m_PopulatedStackDepth > 0) {
+                            oldAggTrsh = new double[m_PopulatedStackDepth];
+                            ArrayTools.SetAll(oldAggTrsh, this.Config_AgglomerationThreshold);
+                        } else {
+                            oldAggTrsh = null;
+                        }
+                        Debug.Assert(m_Stack_MassMatrix.Where(mm => mm != null).Count() == m_PopulatedStackDepth);
+
+
+                        m_CurrentAgglomeration = m_LsTrk.GetAgglomerator(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder,
+                            __AgglomerationTreshold: base.Config_AgglomerationThreshold,
+                            AgglomerateNewborn: (oldAggTrsh != null), AgglomerateDecased: (oldAggTrsh != null),
+                            ExceptionOnFailedAgglomeration: true,
+                            oldTs__AgglomerationTreshold: oldAggTrsh);
+
                     }
-                    Debug.Assert(m_Stack_MassMatrix.Where(mm => mm != null).Count() == m_PopulatedStackDepth);
-
-                    //Debug.Assert(m_Stack_CutCellMetrics[0] != null);
-                    //if (!m_Stack_CutCellMetrics[0].SpeciesList.SetEquals(Config_MassScale.Keys))
-                    //    throw new ApplicationException("Mismatch between species lists.");
-
-                    //m_CurrentAgglomeration = new MultiphaseCellAgglomerator(
-                    //    m_Stack_CutCellMetrics[0],
-                    //    this.Config_AgglomerationThreshold, prevCCM != null, prevCCM != null, true,
-                    //    prevCCM, oldAggTrsh);
-                    
-                    m_CurrentAgglomeration = m_LsTrk.GetAgglomerator(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder,
-                        __AgglomerationTreshold: base.Config_AgglomerationThreshold,
-                        AgglomerateNewborn: (oldAggTrsh != null), AgglomerateDecased: (oldAggTrsh != null), 
-                        ExceptionOnFailedAgglomeration: true, 
-                        oldTs__AgglomerationTreshold: oldAggTrsh);
-
 
 
                     // update Multigrid-XDG basis
@@ -1292,10 +1287,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 for (int i = 0; i < this.m_Stack_u.Length; i++)
                     SplittingAgg.Extrapolate(this.m_Stack_u[i].Mapping);
 
-                // clear the old agglom; in case of splitting, the agglom does not depend on previous time-steps
+                // delete new agglomeration; in case of splitting, the agglomeration for the **bulk operator timestep** does not depend on previous time-steps
                 m_CurrentAgglomeration = null;
-                //Debug.Assert(m_Stack_CutCellMetrics.Length == 1);
-                //m_Stack_CutCellMetrics[0] = base.UpdateCutCellMetrics();
             }
 
             // ==============================================

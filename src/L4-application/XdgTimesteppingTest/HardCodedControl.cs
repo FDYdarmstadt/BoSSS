@@ -68,9 +68,10 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             // ====
 
             R.GridFunc = delegate () {
+                Console.WriteLine("remove me");
                 var grd = Grid2D.Cartesian2DGrid(
                     GenericBlas.Linspace(-7, 7, 7 * GridResolutionFactor + 1), 
-                    GenericBlas.Linspace(-7, 7, 7 * GridResolutionFactor + 1)
+                    GenericBlas.Linspace(-7, 7, 2 * GridResolutionFactor + 1)
                     );
                 grd.EdgeTagNames.Add(1, "Inflow");
                 grd.DefineEdgeTags(X => (byte)1);
