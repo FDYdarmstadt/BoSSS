@@ -78,12 +78,12 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             ctrl.InterfaceMode = InterfaceMode.MovingInterface;
 
             BoSSS.Solution.Application<XdgTimesteppingTestControl>.CommandLineOptions ops = null;
-            Console.WriteLine("remove me VVVV");
-            ops = new BoSSS.Solution.Application<XdgTimesteppingTestControl>.CommandLineOptions() {
-                delPlt = true,
-                ImmediatePlotPeriod = 1,
-                SuperSampling = 5
-            };
+            //Console.WriteLine("remove me VVVV");
+            //ops = new BoSSS.Solution.Application<XdgTimesteppingTestControl>.CommandLineOptions() {
+            //    delPlt = true,
+            //    ImmediatePlotPeriod = 1,
+            //    SuperSampling = 5
+            //};
 
             // run
             // ------------------------------------------
@@ -196,12 +196,12 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
             BoSSS.Solution.Application<XdgTimesteppingTestControl>.CommandLineOptions ops = null;
 
-            Console.WriteLine("Remove blow    VVVV");
-            ops = new BoSSS.Solution.Application<XdgTimesteppingTestControl>.CommandLineOptions() {
-                delPlt = true,
-                ImmediatePlotPeriod = 1,
-                SuperSampling = 5
-            };
+            //Console.WriteLine("Remove blow    VVVV");
+            //ops = new BoSSS.Solution.Application<XdgTimesteppingTestControl>.CommandLineOptions() {
+            //    delPlt = true,
+            //    ImmediatePlotPeriod = 1,
+            //    SuperSampling = 5
+            //};
 
             //*/
 

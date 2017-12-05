@@ -818,7 +818,6 @@ namespace BoSSS.Foundation.XDG {
                                         AgglomCellsBitmask[jCell] = true;
                                         AgglomCellsList.Add(jCell);
                                     }
-                                    break; // we agglomerate the cell, no need to check the other time levels.
                                 }
                             }
                         }

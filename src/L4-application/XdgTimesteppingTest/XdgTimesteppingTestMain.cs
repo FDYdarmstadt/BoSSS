@@ -59,8 +59,8 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             TestProgram.Init();
             //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestBurgers_HighOrder(0, 0.08d, "bdf", 8);
             //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_MultiinitHighOrder(0, 0.23);
-            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder(TimeSteppingScheme.BDF2, 0.23, 8);
-            BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_Splitting_LowOrder(TimeSteppingScheme.BDF2, 0.23, 8, 0.0);
+            BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder(TimeSteppingScheme.BDF2, 0.23, 8);
+            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_Splitting_LowOrder(TimeSteppingScheme.BDF2, 0.23, 8, 0.0);
             TestProgram.Cleanup();
         }
 #pragma warning disable 649
@@ -426,10 +426,9 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             if ((m_BDF_Timestepper == null) == (m_RK_Timestepper == null))
                 throw new ApplicationException();
 
-            Console.WriteLine("Remove me umbedingt!!!");
            
             if(m_BDF_Timestepper != null) {
-                m_BDF_Timestepper.Solve(phystime, dt, ComputeOnlyResidual:false);
+                m_BDF_Timestepper.Solve(phystime, dt);
             } else {
                 m_RK_Timestepper.Solve(phystime, dt);
             }
