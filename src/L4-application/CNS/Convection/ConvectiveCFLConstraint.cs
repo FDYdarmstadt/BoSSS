@@ -126,7 +126,7 @@ namespace CNS.Convection {
                                 // Following quantities need scaling according to
                                 // non -dimensionalization, see StateVector/IdealGas
                                 double kineticEnergy = 0.5 * momentumSquared / density * gamma * Ma * Ma;
-                                double sos = Math.Sqrt((gamma - 1.0) * (energy - kineticEnergy)) / Ma;
+                                double sos = Math.Sqrt((gamma - 1.0) * (energy - kineticEnergy) / density) / Ma;
 
                                 double flowSpeed = Math.Sqrt(momentumSquared) / density;
                                 double cflhere = hmin[cell] / (flowSpeed + sos);
@@ -134,6 +134,18 @@ namespace CNS.Convection {
 #if DEBUG
                                 if (double.IsNaN(cflhere)) {
                                     throw new Exception("Could not determine CFL number");
+                                }
+
+                                Vector3D momentum = new Vector3D();
+                                for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+                                    momentum[d] = momentumValues[d][i, node];
+                                }
+                                StateVector state = new StateVector(
+                                    material, densityValues[i, node], momentum, energyValues[i, node]);
+                                double cflgeneric = hmin[cell] /
+                                    (state.Velocity.Abs() + material.EquationOfState.GetSpeedOfSound(state));
+                                if (Math.Abs(cflgeneric - cflhere) > 1e-15) {
+                                    throw new Exception("Inconsistency in optimized evaluation of cfl number");
                                 }
 #endif
 
