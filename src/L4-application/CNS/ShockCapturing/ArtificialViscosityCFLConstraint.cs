@@ -80,7 +80,7 @@ namespace CNS.ShockCapturing {
             int iKref = gridData.Cells.GetRefElementIndex(i0);
             int noOfNodesPerCell = base.EvaluationPoints[iKref].NoOfNodes;
             double scaling = Math.Max(4.0 / 3.0, config.EquationOfState.HeatCapacityRatio / config.PrandtlNumber);
-            DGField artificialViscosity = workingSet.ParameterFields.Where(c => c.Identification.Equals("artificialViscosity")).Single();
+            DGField artificialViscosity = workingSet.ParameterFields.Where(c => c.Identification.Equals(Variables.ArtificialViscosity)).Single();
             var hmin = gridData.Cells.h_min;
 
             double cfl = double.MaxValue;
