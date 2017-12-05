@@ -324,7 +324,7 @@ namespace BoSSS.Solution.Timestepping {
                 // Use "harmonic sum" of step - sizes, see
                 // WatkinsAsthanaJameson2016 for the reasoning
                 dt = 1.0 / TimeStepConstraints.Sum(
-                        c => 1.0 / c.GetGloballyAdmissibleStepSize(SubGrid));
+                    c => 1.0 / c.GetGloballyAdmissibleStepSize(SubGrid));
                 if (dt == 0.0) {
                     throw new ArgumentException(
                         "Time-step size is exactly zero.");

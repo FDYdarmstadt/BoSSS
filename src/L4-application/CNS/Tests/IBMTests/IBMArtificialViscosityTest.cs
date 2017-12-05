@@ -115,7 +115,7 @@ namespace CNS.Tests.IBMTests {
             c.AddVariable(Variables.Entropy, dgDegree);
             c.AddVariable(Variables.LocalMachNumber, dgDegree);
             c.AddVariable(Variables.Rank, 0);
-            c.AddVariable(Variables.Sensor, 0);
+            c.AddVariable(Variables.ShockSensor, 0);
 
             if (AV) {
                 c.AddVariable(Variables.ArtificialViscosity, 2);
