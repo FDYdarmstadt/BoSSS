@@ -90,7 +90,6 @@
     <Compile Include="Convection\RusanovFluxBuilder.cs" />
     <Compile Include="Convection\RusanovFlux.cs" />
     <Compile Include="CNSEnvironment.cs" />
-    <Compile Include="IBM\IBMArtificialViscosityCFLConstraint.cs" />
     <Compile Include="LoadBalancing\ArtificialViscosityCellClassifier.cs" />
     <Compile Include="LoadBalancing\IBMCellClassifier.cs" />
     <Compile Include="LoadBalancing\ICellClassifier.cs" />

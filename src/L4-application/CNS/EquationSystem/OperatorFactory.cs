@@ -219,19 +219,11 @@ namespace CNS.EquationSystem {
 
             // TODO add IBM AV CFL constraint
             if (control.ActiveOperators.HasFlag(Operators.ArtificialViscosity)) {
-                if (speciesMap is ImmersedSpeciesMap) {
-                    op.CFLConstraints.Add(new IBMArtificialViscosityCFLConstraint(
-                        control,
-                        gridData,
-                        workingSet,
-                        speciesMap));
-                } else {
-                    op.CFLConstraints.Add(new ArtificialViscosityCFLConstraint(
-                        control,
-                        gridData,
-                        workingSet,
-                        speciesMap));
-                }
+                op.CFLConstraints.Add(new ArtificialViscosityCFLConstraint(
+                    control,
+                    gridData,
+                    workingSet,
+                    speciesMap));
             }
 
             return op;
