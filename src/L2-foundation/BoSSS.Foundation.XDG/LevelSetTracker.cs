@@ -790,6 +790,10 @@ namespace BoSSS.Foundation.XDG {
                     Debug.Assert(!object.ReferenceEquals(LevelSetHistories[iLs][iH], LevelSetHistories[iLs][iH - 1]));
                 }
                 Debug.Assert(!object.ReferenceEquals(RegionsHistory[iH], RegionsHistory[iH - 1]));
+
+                for(int iLs = 0; iLs < NoOfLs; iLs++) {
+                    Debug.Assert(DataHistories[iLs][iH].HistoryIndex == iH);
+                }
             }
 #endif
         }

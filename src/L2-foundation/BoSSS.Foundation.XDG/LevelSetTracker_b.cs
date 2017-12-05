@@ -254,7 +254,7 @@ namespace BoSSS.Foundation.XDG {
                     Debug.Assert(History.Count == HistoryLength);
                 }
 
-                for(int i = History.Count - 1; i >= 1; i++) {
+                for(int i = History.Count - 1; i >= 1; i--) {
                     History[i] = History[i - 1];
                 }
 

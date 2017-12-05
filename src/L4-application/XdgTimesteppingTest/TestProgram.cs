@@ -80,10 +80,12 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             BoSSS.Solution.Application<XdgTimesteppingTestControl>.CommandLineOptions ops = null;
             
             ops = new BoSSS.Solution.Application<XdgTimesteppingTestControl>.CommandLineOptions() {
-                //delPlt = true,
-                //ImmediatePlotPeriod = 1,
-                //SuperSampling = 5
+                delPlt = true,
+                ImmediatePlotPeriod = 1,
+                SuperSampling = 5
             };
+            Console.WriteLine("Remember to remove me.");
+
             /*
             //*/
 

@@ -43,6 +43,9 @@ namespace BoSSS.Foundation.XDG {
 
                 m_LevelSetRegions = lsTrk.RegionsHistory[HistoyIndex];
                 m_LevelSetData = lsTrk.DataHistories.Select(his => his[HistoyIndex]).ToList().AsReadOnly();
+                foreach(var lsData in m_LevelSetData) {
+                    Debug.Assert(lsData.HistoryIndex == HistoyIndex);
+                }
 
                 // ---------------------
                 // compute all the stuff

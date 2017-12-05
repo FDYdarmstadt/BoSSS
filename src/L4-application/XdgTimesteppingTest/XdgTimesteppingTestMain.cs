@@ -55,6 +55,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             //    return new XdgTimesteppingMain();
             //});
             
+            Console.WriteLine("Remember to remove me.");
             TestProgram.Init();
             BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder(TimeSteppingScheme.ImplicitEuler, 0.2d, 8);
             TestProgram.Cleanup();
@@ -104,6 +105,8 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             base.RegisterField(DOFMarker, IOListOption.Always);
         }
 
+        static int PlotCont = 1;
+
         void UpdateMarkerFields() {
             CutMarker.Clear();
             NearMarker.Clear();
@@ -119,6 +122,37 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 DOFMarker.SetMeanValue(j, this.u.Basis.GetLength(j));
             }
 
+            Tecplot.PlotFields(new DGField[] { CutMarker, NearMarker }, "Markers-" + PlotCont + ".csv", 0.0, 1);
+            LsTrk.Regions.GetCutCellMask().SaveToTextFile("Cut-" + PlotCont + ".csv", false);
+            LsTrk.Regions.GetSpeciesMask("A").SaveToTextFile("SpcA-" + PlotCont + ".csv", false);
+            LsTrk.Regions.GetSpeciesMask("B").SaveToTextFile("SpcB-" + PlotCont + ".csv", false);
+
+            int qOrd = this.LinearQuadratureDegree;
+            var sch = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), qOrd, 1).XQuadSchemeHelper;
+            
+            var schCut = sch.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+            var RuleCut = schCut.SaveCompile(this.GridData, qOrd);
+            ICompositeQuadRule_Ext.SumOfWeightsToTextFileVolume(RuleCut, this.GridData, "CutRule-" + PlotCont + ".csv");
+
+            var schB = sch.GetVolumeQuadScheme(LsTrk.GetSpeciesId("B"));
+            var RuleB = schB.SaveCompile(this.GridData, qOrd);
+            ICompositeQuadRule_Ext.SumOfWeightsToTextFileVolume(RuleB, this.GridData, "B_Rule-" + PlotCont + ".csv");
+
+            var schA = sch.GetVolumeQuadScheme(LsTrk.GetSpeciesId("A"));
+            var RuleA = schA.SaveCompile(this.GridData, qOrd);
+            ICompositeQuadRule_Ext.SumOfWeightsToTextFileVolume(RuleA, this.GridData, "A_Rule-" + PlotCont + ".csv");
+
+            var eschB = sch.GetEdgeQuadScheme(LsTrk.GetSpeciesId("B"));
+            var ERuleB = eschB.SaveCompile(this.GridData, qOrd);
+            ICompositeQuadRule_Ext.SumOfWeightsToTextFileEdge(ERuleB, this.GridData, "Be_Rule-" + PlotCont + ".csv");
+
+            var eschA = sch.GetEdgeQuadScheme(LsTrk.GetSpeciesId("A"));
+            var ERuleA = eschA.SaveCompile(this.GridData, qOrd);
+            ICompositeQuadRule_Ext.SumOfWeightsToTextFileEdge(ERuleA, this.GridData, "Ae_Rule-" + PlotCont + ".csv");
+
+
+
+            PlotCont++;
         }
 
         protected override void SetInitial() {

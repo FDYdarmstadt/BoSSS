@@ -227,9 +227,15 @@ namespace BoSSS.Foundation.XDG {
                 // compute cut edge area
                 // ---------------------
 
+                var edgeScheme = schH.GetEdgeQuadScheme(spc);
+                Console.WriteLine("Remove Me");
+                if(edgeScheme.Domain.GetSummary() == "{ 0-21 }")
+                    edgeScheme = schH.GetEdgeQuadScheme(spc);
+                var edgeRule = edgeScheme.Compile(gd, this.CutCellQuadratureOrder);
+
                 BoSSS.Foundation.Quadrature.EdgeQuadrature.GetQuadrature(
                     new int[] { 1 }, gd,
-                    schH.GetEdgeQuadScheme(spc).Compile(gd, this.CutCellQuadratureOrder),
+                    edgeRule,
                     _Evaluate: delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) //
                     {
                         EvalResult.SetAll(1.0);
@@ -247,9 +253,12 @@ namespace BoSSS.Foundation.XDG {
                 // compute cut cell volumes
                 // ------------------------
 
+                var volScheme = schH.GetVolumeQuadScheme(spc);
+                var volRule = volScheme.Compile(gd, this.CutCellQuadratureOrder);
+
                 BoSSS.Foundation.Quadrature.CellQuadrature.GetQuadrature(
                     new int[] { 1 }, gd,
-                    schH.GetVolumeQuadScheme(spc).Compile(gd, this.CutCellQuadratureOrder),
+                    volRule,
                     _Evaluate: delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) //
                     {
                         EvalResult.SetAll(1.0);

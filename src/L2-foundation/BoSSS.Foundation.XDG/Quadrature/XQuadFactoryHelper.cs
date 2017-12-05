@@ -98,6 +98,7 @@ namespace BoSSS.Foundation.XDG {
             }
 
             this.CutCellQuadratureType = momentFittingVariant;
+            this.m_LevelSetDatas = lsDatas.CloneAs();
         }
 
 #if DEBUG

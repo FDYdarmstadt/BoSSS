@@ -962,6 +962,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 if (updateAgglom || m_CurrentAgglomeration == null) {
 
                     double[] oldAggTrsh;
+                    Console.WriteLine("Fix me");
                     if(m_LsTrk.PopulatedHistoryLength > 0) {
                         oldAggTrsh = new double[m_LsTrk.PopulatedHistoryLength];
                         ArrayTools.SetAll(oldAggTrsh, this.Config_AgglomerationThreshold);
