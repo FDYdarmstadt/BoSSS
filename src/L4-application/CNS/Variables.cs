@@ -222,12 +222,7 @@ namespace CNS {
                 }
 
                 // Query each cell individually so we get local results
-                TimeStepConstraint cflConstraint;
-                if (P.Control is IBMControl) {
-                    cflConstraint = P.FullOperator.CFLConstraints.OfType<IBMArtificialViscosityCFLConstraint>().Single();
-                } else {
-                    cflConstraint = P.FullOperator.CFLConstraints.OfType<ArtificialViscosityCFLConstraint>().Single();
-                }
+                TimeStepConstraint cflConstraint = P.FullOperator.CFLConstraints.OfType<ArtificialViscosityCFLConstraint>().Single();
 
                 for (int i = 0; i < P.Grid.NoOfUpdateCells; i++) {
                     double localCFL = cflConstraint.GetLocalStepSize(i, 1);
