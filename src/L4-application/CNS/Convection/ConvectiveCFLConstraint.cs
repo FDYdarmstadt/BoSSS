@@ -129,7 +129,7 @@ namespace CNS.Convection {
                                 double sos = Math.Sqrt((gamma - 1.0) * (energy - kineticEnergy) / density) / Ma;
 
                                 double flowSpeed = Math.Sqrt(momentumSquared) / density;
-                                double cflhere = hmin[cell] / (flowSpeed + sos);
+                                double cflhere = hminlocal / (flowSpeed + sos);
 
 #if DEBUG
                                 if (double.IsNaN(cflhere)) {
@@ -142,7 +142,7 @@ namespace CNS.Convection {
                                 }
                                 StateVector state = new StateVector(
                                     material, densityValues[i, node], momentum, energyValues[i, node]);
-                                double cflgeneric = hmin[cell] /
+                                double cflgeneric = hminlocal /
                                     (state.Velocity.Abs() + material.EquationOfState.GetSpeedOfSound(state));
                                 if (Math.Abs(cflgeneric - cflhere) > 1e-15) {
                                     throw new Exception("Inconsistency in optimized evaluation of cfl number");

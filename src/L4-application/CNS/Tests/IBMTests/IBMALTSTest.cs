@@ -31,7 +31,7 @@ namespace CNS.Tests.IBMTests {
 
     [TestFixture]
     public class IBMALTSTest : TestProgram<IBMControl> {
-
+        
         public static IBMControl IBMALTSTestContactDiscontinuity(double levelSetPosition, int explicitOrder, int numOfClusters) {
             IBMControl c = new IBMControl();
 
