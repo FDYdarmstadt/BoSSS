@@ -228,9 +228,6 @@ namespace BoSSS.Foundation.XDG {
                 // ---------------------
 
                 var edgeScheme = schH.GetEdgeQuadScheme(spc);
-                Console.WriteLine("Remove Me");
-                if(edgeScheme.Domain.GetSummary() == "{ 0-21 }")
-                    edgeScheme = schH.GetEdgeQuadScheme(spc);
                 var edgeRule = edgeScheme.Compile(gd, this.CutCellQuadratureOrder);
 
                 BoSSS.Foundation.Quadrature.EdgeQuadrature.GetQuadrature(

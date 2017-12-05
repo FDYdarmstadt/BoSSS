@@ -57,7 +57,9 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             
             Console.WriteLine("Remember to remove me.");
             TestProgram.Init();
-            BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder(TimeSteppingScheme.ImplicitEuler, 0.2d, 8);
+            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestBurgers_HighOrder(0, 0.08d, "bdf", 8);
+            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_MultiinitHighOrder(0, 0.23);
+            BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder(TimeSteppingScheme.BDF2, 0.23, 8);
             TestProgram.Cleanup();
         }
 #pragma warning disable 649
@@ -105,7 +107,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             base.RegisterField(DOFMarker, IOListOption.Always);
         }
 
-        static int PlotCont = 1;
+        //static int PlotCont = 1;
 
         void UpdateMarkerFields() {
             CutMarker.Clear();
@@ -122,6 +124,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 DOFMarker.SetMeanValue(j, this.u.Basis.GetLength(j));
             }
 
+            /*
             Tecplot.PlotFields(new DGField[] { CutMarker, NearMarker }, "Markers-" + PlotCont + ".csv", 0.0, 1);
             LsTrk.Regions.GetCutCellMask().SaveToTextFile("Cut-" + PlotCont + ".csv", false);
             LsTrk.Regions.GetSpeciesMask("A").SaveToTextFile("SpcA-" + PlotCont + ".csv", false);
@@ -150,9 +153,8 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             var ERuleA = eschA.SaveCompile(this.GridData, qOrd);
             ICompositeQuadRule_Ext.SumOfWeightsToTextFileEdge(ERuleA, this.GridData, "Ae_Rule-" + PlotCont + ".csv");
 
-
-
             PlotCont++;
+            */
         }
 
         protected override void SetInitial() {

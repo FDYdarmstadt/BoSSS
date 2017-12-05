@@ -759,6 +759,8 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public void PushStacks() {
             int NoOfLs = LevelSets.Count;
+            int PHL = PopulatedHistoryLength;
+            int HL = this.HistoryLength;
 
             Debug.Assert(NoOfLs == m_LevelSets.Count);
             for(int iLs = 0; iLs < NoOfLs; iLs++) {
@@ -769,8 +771,9 @@ namespace BoSSS.Foundation.XDG {
             for(int iLs = 0; iLs < NoOfLs; iLs++) {
                 m_DataHistories[iLs].Push((data1) => new LevelSetData(this, iLs), (data1, data0) => data1);
 
-                for(int iStack = 1; iStack > m_DataHistories[iLs].GetPopulatedLength(); iStack++) {
-                    m_DataHistories[iLs][iStack].m_StackIdx = iStack;
+                // fix the history index...
+                for(int iStack = 1; iStack > Math.Max(-PHL - 1, -HL); iStack--) {
+                    m_DataHistories[iLs][iStack].m_HistoryIndex = iStack;
                 }
             }
 
@@ -784,13 +787,15 @@ namespace BoSSS.Foundation.XDG {
             for(int iLs = 0; iLs < NoOfLs; iLs++) {
                 Debug.Assert(object.ReferenceEquals(LevelSets[iLs], LevelSetHistories[iLs].Current));
             }
-            int HL = this.HistoryLength;
-            for(int iH = 1; iH > -HL + 1; iH--) {
+            PHL = PopulatedHistoryLength;
+            for(int iH = 1; iH > -PHL + 1; iH--) {
                 for(int iLs = 0; iLs < NoOfLs; iLs++) {
                     Debug.Assert(!object.ReferenceEquals(LevelSetHistories[iLs][iH], LevelSetHistories[iLs][iH - 1]));
                 }
                 Debug.Assert(!object.ReferenceEquals(RegionsHistory[iH], RegionsHistory[iH - 1]));
+            }
 
+            for(int iH = 1; iH > -PHL; iH--) {
                 for(int iLs = 0; iLs < NoOfLs; iLs++) {
                     Debug.Assert(DataHistories[iLs][iH].HistoryIndex == iH);
                 }

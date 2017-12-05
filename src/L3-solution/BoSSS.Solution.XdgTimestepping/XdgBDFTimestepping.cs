@@ -803,13 +803,13 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 
                     double[] oldAggTrsh;
-                    if(m_LsTrk.PopulatedHistoryLength > 0) {
-                        oldAggTrsh = new double[m_LsTrk.PopulatedHistoryLength];
+                    if(m_PopulatedStackDepth > 0) {
+                        oldAggTrsh = new double[m_PopulatedStackDepth];
                         ArrayTools.SetAll(oldAggTrsh, this.Config_AgglomerationThreshold);
                     } else {
                         oldAggTrsh = null;
                     }
-
+                    
                     m_CurrentAgglomeration = m_LsTrk.GetAgglomerator(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder,
                         __AgglomerationTreshold: base.Config_AgglomerationThreshold,
                         AgglomerateNewborn: (oldAggTrsh != null), AgglomerateDecased: (oldAggTrsh != null), 
@@ -962,13 +962,13 @@ namespace BoSSS.Solution.XdgTimestepping {
                 if (updateAgglom || m_CurrentAgglomeration == null) {
 
                     double[] oldAggTrsh;
-                    Console.WriteLine("Fix me");
-                    if(m_LsTrk.PopulatedHistoryLength > 0) {
-                        oldAggTrsh = new double[m_LsTrk.PopulatedHistoryLength];
+                    if(m_PopulatedStackDepth > 0) {
+                        oldAggTrsh = new double[m_PopulatedStackDepth];
                         ArrayTools.SetAll(oldAggTrsh, this.Config_AgglomerationThreshold);
                     } else {
                         oldAggTrsh = null;
                     }
+                    Debug.Assert(m_Stack_MassMatrix.Where(mm => mm != null).Count() == m_PopulatedStackDepth);
 
                     //Debug.Assert(m_Stack_CutCellMetrics[0] != null);
                     //if (!m_Stack_CutCellMetrics[0].SpeciesList.SetEquals(Config_MassScale.Keys))
@@ -978,11 +978,14 @@ namespace BoSSS.Solution.XdgTimestepping {
                     //    m_Stack_CutCellMetrics[0],
                     //    this.Config_AgglomerationThreshold, prevCCM != null, prevCCM != null, true,
                     //    prevCCM, oldAggTrsh);
+                    
                     m_CurrentAgglomeration = m_LsTrk.GetAgglomerator(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder,
                         __AgglomerationTreshold: base.Config_AgglomerationThreshold,
                         AgglomerateNewborn: (oldAggTrsh != null), AgglomerateDecased: (oldAggTrsh != null), 
                         ExceptionOnFailedAgglomeration: true, 
                         oldTs__AgglomerationTreshold: oldAggTrsh);
+
+
 
                     // update Multigrid-XDG basis
                     Debug.Assert(object.ReferenceEquals(base.MultigridBasis[0][0].DGBasis.GridDat, m_CurrentAgglomeration.Tracker.GridDat));
@@ -1254,6 +1257,8 @@ namespace BoSSS.Solution.XdgTimestepping {
             if (this.Config_LevelSetHandling == LevelSetHandling.LieSplitting
                 || this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting) {
 
+                Debug.Assert(m_CurrentAgglomeration == null);
+
                 double ls_dt = dt;
                 if (this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting)
                     ls_dt *= 0.5;
@@ -1400,14 +1405,15 @@ namespace BoSSS.Solution.XdgTimestepping {
             if(newLsTrkPushCount != oldLsTrkPushCount)
                 throw new ApplicationException("Calling 'LevelSetTracker.PushStacks()' is not allowed. Level-set-tracker stacks must be controlled by time-stepper.");
 
+            m_CurrentAgglomeration = null;
+
             // ===========================================
             // update level-set (in the case of splitting)
             // ===========================================
 
             if (this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting) {
 
-                // remember which old cells had values
-                //var oldCCM = this.UpdateCutCellMetrics();
+                Debug.Assert(m_CurrentAgglomeration == null);
 
                 // evolve the level set
                 m_LsTrk.IncreaseHistoryLength(1);
@@ -1436,6 +1442,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 for (int i = 0; i < this.m_Stack_u.Length; i++)
                     SplittingAgg.Extrapolate(this.m_Stack_u[i].Mapping);
 
+                Debug.Assert(m_CurrentAgglomeration == null);
             }
 
             // ====================
@@ -1523,15 +1530,27 @@ namespace BoSSS.Solution.XdgTimestepping {
         ///  - re-sorting of matrices and vectors if the ordering of DOFs has changed.
         /// </summary>
         private void MoveLevelSetAndRelatedStuff(DGField[] locCurSt, double PhysTime, double dt, double UnderRelax) {
-            if(Config_LevelSetHandling == LevelSetHandling.None)
+            if(Config_LevelSetHandling == LevelSetHandling.None) {
                 throw new ApplicationException("internal error");
-            
+            }
+            if(m_IterationCounter > 0) {
+                if(Config_LevelSetHandling != LevelSetHandling.Coupled_Iterative)
+                    throw new ApplicationException("internal error");
+            }
+
             // perform extrapolation:
             // If we use Agglomeration, the extrapolation is
             // also necessary for SinglePhaseFields, since we have no valid values in cells which are agglomerated.
-            Debug.Assert(object.ReferenceEquals(this.m_CurrentAgglomeration.Tracker, this.m_LsTrk));
-            this.m_CurrentAgglomeration.Extrapolate(CurrentStateMapping);
-
+            if(m_CurrentAgglomeration != null) {
+                Debug.Assert(object.ReferenceEquals(this.m_CurrentAgglomeration.Tracker, this.m_LsTrk));
+                this.m_CurrentAgglomeration.Extrapolate(CurrentStateMapping);
+            } else {
+                if(m_IterationCounter > 1) {
+                    Debug.Assert(Config_LevelSetHandling == LevelSetHandling.LieSplitting || Config_LevelSetHandling == LevelSetHandling.StrangSplitting);
+                    
+                }
+            }
+            
             // level-set evolution
             int oldVersion = m_LsTrk.VersionCnt;
             int oldPushCount = m_LsTrk.PushCount;

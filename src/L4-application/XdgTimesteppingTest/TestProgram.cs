@@ -79,15 +79,11 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
             BoSSS.Solution.Application<XdgTimesteppingTestControl>.CommandLineOptions ops = null;
             
-            ops = new BoSSS.Solution.Application<XdgTimesteppingTestControl>.CommandLineOptions() {
-                delPlt = true,
-                ImmediatePlotPeriod = 1,
-                SuperSampling = 5
-            };
-            Console.WriteLine("Remember to remove me.");
-
-            /*
-            //*/
+            //ops = new BoSSS.Solution.Application<XdgTimesteppingTestControl>.CommandLineOptions() {
+                //delPlt = true,
+                //ImmediatePlotPeriod = 1,
+                //SuperSampling = 5
+            //};
 
             // run
             // ------------------------------------------
@@ -123,7 +119,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
             TimeSteppingScheme tsc;
             switch (PolyOrder) {
-                case 0: tsc = TimeSteppingScheme.ImplicitEuler; break;
+                case 0: tsc = TimeSteppingScheme.BDF2; Console.WriteLine("Remember to remove "); break;
                 case 1: tsc = TimeSteppingScheme.BDF2; break;
                 case 2: tsc = TimeSteppingScheme.BDF3; break;
                 case 3: tsc = TimeSteppingScheme.BDF4; break;
@@ -141,7 +137,8 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             ctrl.InterfaceMode = InterfaceMode.MovingInterface;
 
             BoSSS.Solution.Application<XdgTimesteppingTestControl>.CommandLineOptions ops = null;
-            /*
+
+            Console.WriteLine("Remember to remove ");
             ops = new BoSSS.Solution.Application<XdgTimesteppingTestControl>.CommandLineOptions() {
                 delPlt = true,
                 ImmediatePlotPeriod = 1,
@@ -274,12 +271,14 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 throw new ArgumentOutOfRangeException();
             }
 
+            Console.WriteLine("Polyorder = {0}, timestepper = {1}", PolyOrder, ctrl.TimeSteppingScheme);
+
             ctrl.NoOfTimesteps = NoOfTs;
             ctrl.dtFixed = TimestepSize;
             ctrl.Endtime = ctrl.dtFixed * ctrl.NoOfTimesteps;
             
             BoSSS.Solution.Application<XdgTimesteppingTestControl>.CommandLineOptions ops = null;
-            
+
             //ops = new BoSSS.Solution.Application<XdgTimesteppingTestControl>.CommandLineOptions() {
             //    delPlt = true,
             //    ImmediatePlotPeriod = 1,

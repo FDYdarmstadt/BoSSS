@@ -86,7 +86,7 @@ namespace BoSSS.Foundation.XDG {
             }
 
             LevelSetTracker m_owner; // don't expose this public, it would circumvent the idea of encapsulating a certain level-set time level.
-            internal int m_StackIdx = 1;
+            internal int m_HistoryIndex = 1;
             int m_iLevSet;
 
             /// <summary>
@@ -94,7 +94,7 @@ namespace BoSSS.Foundation.XDG {
             /// </summary>
             public int HistoryIndex {
                 get {
-                    return m_StackIdx;
+                    return m_HistoryIndex;
                 }
             }
 
@@ -109,7 +109,7 @@ namespace BoSSS.Foundation.XDG {
 
 
             ILevelSet GetLevSet() {
-                return m_owner.m_LevelSetHistories[m_iLevSet][m_StackIdx];
+                return m_owner.m_LevelSetHistories[m_iLevSet][m_HistoryIndex];
             }
 
             /// <summary>
