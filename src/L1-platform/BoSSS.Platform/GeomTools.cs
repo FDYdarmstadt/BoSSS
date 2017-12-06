@@ -783,4 +783,47 @@ namespace BoSSS.Platform.Utils.Geom {
             return Ret;
         }
     }
+
+    /// <summary>
+    /// 2D Rotation about the origin
+    /// </summary>
+    public class Rotation {
+
+        /// <summary>
+        /// Initializes the Rotation Matrix
+        /// </summary>
+        /// <param name="phi"></param>
+        public Rotation(double phi) {
+            cos = Math.Cos(phi);
+            sin = Math.Sin(phi);
+        }
+
+        private double cos;
+        private double sin;
+
+        /// <summary>
+        /// Rotate the Coordinate
+        /// </summary>
+        /// <param name="X">input coordinate</param>
+        /// <returns>rotated coordinate </returns>
+        public double[] Transform(double[] X) {
+            if (X.Length != 2) { throw new ArithmeticException("Only 2D!"); };
+            double x = X[0] * cos - X[1] * sin;
+            double y = X[0] * sin + X[1] * cos;
+            return new double[2] { x, y };
+        }
+
+        /// <summary>
+        /// Rotate the Coordinate about the angle phi
+        /// </summary>
+        /// <param name="X">input coordinate</param>
+        /// <param name="phi">rotation angle</param>
+        /// <returns>rotated coordinate </returns>
+        public double[] Transform(double[] X, double phi) {
+            if (X.Length != 2) { throw new ArithmeticException("Only 2D!"); };
+            double x = X[0] * Math.Cos(phi) - X[1] * Math.Sin(phi);
+            double y = X[0] * Math.Sin(phi) + X[1] * Math.Cos(phi);
+            return new double[2] { x, y };
+        }
+    }
 }
