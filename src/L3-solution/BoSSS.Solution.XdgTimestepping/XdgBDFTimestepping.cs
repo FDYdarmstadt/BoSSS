@@ -579,8 +579,14 @@ namespace BoSSS.Solution.XdgTimestepping {
             if (OpInit && m_TSCchain[0].theta0 != 0.0) {
                 // we perform the extrapolation to have valid parameters if
                 // - the operator matrix depends on these values
-                Debug.Assert(object.ReferenceEquals(this.m_CurrentAgglomeration.Tracker, this.m_LsTrk));
-                this.m_CurrentAgglomeration.Extrapolate(CurrentStateMapping);
+                //if(this.m_CurrentAgglomeration != null) {
+                //} else {
+                //    Debug.Assert(m_IterationCounter == 0 || Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsIdentity);
+                //}
+                
+                //    Debug.Assert(object.ReferenceEquals(this.m_CurrentAgglomeration.Tracker, this.m_LsTrk));
+                //    this.m_CurrentAgglomeration.Extrapolate(CurrentStateMapping);
+                Debug.Assert(m_CurrentAgglomeration == null);
 
                 if (m_Stack_OpMatrix[0] == null) {
                     m_Stack_OpMatrix[0] = new BlockMsrMatrix(CurrentStateMapping);
@@ -1538,10 +1544,10 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Debug.Assert(object.ReferenceEquals(this.m_CurrentAgglomeration.Tracker, this.m_LsTrk));
                 this.m_CurrentAgglomeration.Extrapolate(CurrentStateMapping);
             } else {
-                if(m_IterationCounter > 1) {
-                    Debug.Assert(Config_LevelSetHandling == LevelSetHandling.LieSplitting || Config_LevelSetHandling == LevelSetHandling.StrangSplitting);
-                    
-                }
+                //if(m_IterationCounter > 1) {
+                //    Debug.Assert(Config_LevelSetHandling == LevelSetHandling.LieSplitting || Config_LevelSetHandling == LevelSetHandling.StrangSplitting);
+                //}
+                Debug.Assert(m_IterationCounter == 0 || Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsIdentity);
             }
             
             // level-set evolution
