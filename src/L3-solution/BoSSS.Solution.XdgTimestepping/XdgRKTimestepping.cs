@@ -132,15 +132,15 @@ namespace BoSSS.Solution.XdgTimestepping {
             // configure stack of level-set-tracker
             // ------------------------------------
 
-            //if(Config_LevelSetHandling == LevelSetHandling.None) {
-            //    m_LsTrk.IncreaseHistoryLength(0);
-            //} else if(Config_LevelSetHandling == LevelSetHandling.LieSplitting
-            //      || Config_LevelSetHandling == LevelSetHandling.StrangSplitting) {
-            //    m_LsTrk.IncreaseHistoryLength(1);
-            //} else {
-            //    m_LsTrk.IncreaseHistoryLength(S + 1);
-            //}
-            m_LsTrk.IncreaseHistoryLength(1);
+            if(Config_LevelSetHandling == LevelSetHandling.None) {
+                m_LsTrk.IncreaseHistoryLength(0);
+            } else if(Config_LevelSetHandling == LevelSetHandling.LieSplitting
+                  || Config_LevelSetHandling == LevelSetHandling.StrangSplitting) {
+                m_LsTrk.IncreaseHistoryLength(1);
+            } else {
+                m_LsTrk.IncreaseHistoryLength(m_RKscheme.Stages);
+            }
+            //m_LsTrk.IncreaseHistoryLength(1);
 
             // multigrid - init
             // ----------------
@@ -166,15 +166,19 @@ namespace BoSSS.Solution.XdgTimestepping {
             BlockMsrMatrix[] MassMatrixStack, 
             double[][] k) {
 
-            
+
             // level-set evolution
+            int oldPushCount = m_LsTrk.PushCount;
             int oldVersion = m_LsTrk.VersionCnt;
             m_LastLevelSetResidual = this.UpdateLevelset(locCurSt, PhysTime, dt, UnderRelax, (this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting));
             int newVersion = m_LsTrk.VersionCnt;
+            int newPushCount = m_LsTrk.PushCount;
 
             if ((newVersion - oldVersion) != 1)
                 throw new ApplicationException("Expecting exactly one call to 'UpdateTracker(...)' in 'UpdateLevelset(...)'.");
-
+            if(oldPushCount != newPushCount) {
+                throw new ApplicationException("Phushing the history stacks of the level-set tracker is reserved to the timestepper (during one timestep).");
+            }
             
 
             if (MassMatrixStack != null && MassMatrixStack.Length > 1) {
@@ -602,7 +606,8 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
 #endif
             if (updateAgglom || m_CurrentAgglomeration == null) {
-                
+                if(m_ImplStParams.m_IterationCounter <= 0)// only push tracker in the first iter
+                    m_LsTrk.PushStacks();
                 this.UpdateAgglom(m_ImplStParams.m_IterationCounter > 0);
 
 
@@ -751,8 +756,8 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                     // move level-set:
                     if (Math.Abs(ActualLevSetRelTime - RelTime) > 1.0e-14) {
-
                         this.MoveLevelSetAndRelatedStuff(u0.Mapping.Fields.ToArray(), PhysTime, dt * RelTime, 1.0, Mass, k);
+                        this.m_LsTrk.PushStacks();
                         this.UpdateAgglom(false);
                         BlockMsrMatrix PM, SM;
                         UpdateMassMatrix(out PM, out SM);
