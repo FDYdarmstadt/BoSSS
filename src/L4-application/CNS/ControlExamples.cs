@@ -1696,12 +1696,10 @@ namespace CNS {
             return c;
         }
 
-        public static CNSControl IBMObliqueShockTube(string dbPath = null, int dgDegree = 2, int numOfCellsX = 50, int numOfCellsY = 5, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = false) {
-
+        public static CNSControl IBMObliqueShockTube(string dbPath = null, int dgDegree = 2, int numOfCellsX = 50, int numOfCellsY = 50, double sensorLimit = 1e-4, bool saveToDb = false) {
             IBMControl c = new IBMControl();
 
             dbPath = @"c:\bosss_db";
-            //dbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db";
             c.DbPath = dbPath;
             c.savetodb = dbPath != null && saveToDb;
             c.saveperiod = 1;
@@ -1726,29 +1724,34 @@ namespace CNS {
             // Shock-capturing
             double epsilon0 = 1.0;
             double kappa = 0.5;
-
             if (AV) {
                 Variable sensorVariable = Variables.Density;
                 c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
                 c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
             }
 
-            double alpha = Math.PI/16;
-            Func<double, double> line = delegate (double x) {
-                return Math.Tan(alpha) * (x - 0.0) + 0.1;
+            // Level set
+            double beta = Math.PI / 16;
+            double[] startOfLine1 = new double[] { 0.0, 0.1 };
+            double distanceBetweenLines = 0.6;
+            double[] startOfLine2 = new double[] { 0.0, startOfLine1[1] + distanceBetweenLines * Math.Cos(beta) };
+
+            Func<double, double> line1 = delegate (double x) {
+                return Math.Tan(beta) * (x - startOfLine1[0]) + startOfLine1[1];
             };
-            c.LevelSetFunction = delegate (double[] X, double t) {
-                //return X[1] - 0.45;
-                //return X[1] - (Math.Tan(alpha) *(X[0] - 0.0) + 0.1);
-                return line(X[1]);
+            Func<double, double> line2 = delegate (double x) {
+                return Math.Tan(beta) * (x - startOfLine2[0]) + startOfLine2[1];
             };
 
+            c.LevelSetFunction = delegate (double[] X, double t) {
+                return -(X[1] - line1(X[0])) * (X[1] - line2(X[0]));
+            };
             c.LevelSetBoundaryTag = "AdiabaticSlipWall";
 
             c.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             c.LevelSetQuadratureOrder = 6;
             c.AgglomerationThreshold = 0.2;
-            c.AddVariable(IBMVariables.LevelSet, 1);
+            c.AddVariable(IBMVariables.LevelSet, 2);
 
             // Runge-Kutta schemes
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
@@ -1769,24 +1772,22 @@ namespace CNS {
 
             c.AddVariable(Variables.Density, dgDegree);
             c.AddVariable(Variables.Momentum.xComponent, dgDegree);
+            c.AddVariable(Variables.Momentum.yComponent, dgDegree);
             c.AddVariable(Variables.Energy, dgDegree);
             c.AddVariable(Variables.Velocity.xComponent, dgDegree);
+            c.AddVariable(Variables.Velocity.yComponent, dgDegree);
             c.AddVariable(Variables.Pressure, dgDegree);
+
             c.AddVariable(Variables.Entropy, dgDegree);
             c.AddVariable(Variables.LocalMachNumber, dgDegree);
             c.AddVariable(Variables.Rank, 0);
-            if (true1D == false) {
-                c.AddVariable(Variables.Momentum.yComponent, dgDegree);
-                c.AddVariable(Variables.Velocity.yComponent, dgDegree);
-                if (AV) {
-                    c.AddVariable(Variables.ArtificialViscosity, 2);
-                }
-            } else {
-                if (AV) {
-                    c.AddVariable(Variables.ArtificialViscosity, 1);
-                }
-            }
             c.AddVariable(Variables.CFL, 0);
+            c.AddVariable(Variables.CFLConvective, 0);
+
+            if (AV) {
+                c.AddVariable(Variables.ArtificialViscosity, 2);
+                c.AddVariable(Variables.CFLArtificialViscosity, 0);
+            }
 
             if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS)) {
                 c.AddVariable(Variables.LTSClusters, 0);
@@ -1794,86 +1795,81 @@ namespace CNS {
 
             c.GridFunc = delegate {
                 double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
+                double[] yNodes = GenericBlas.Linspace(yMin, yMax, numOfCellsY + 1);
+                var grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
 
-                if (true1D) {
-                    var grid = Grid1D.LineGrid(xNodes, periodic: false);
-                    // Boundary conditions
-                    grid.EdgeTagNames.Add(1, "AdiabaticSlipWall");
+                // Boundary conditions
+                grid.EdgeTagNames.Add(1, "AdiabaticSlipWall");
+                grid.DefineEdgeTags(delegate (double[] X) {
+                    return 1;
+                });
 
-                    grid.DefineEdgeTags(delegate (double[] _X) {
-                        return 1;
-                    });
-                    return grid;
-                } else {
-                    double[] yNodes = GenericBlas.Linspace(yMin, yMax, numOfCellsY + 1);
-                    var grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
-                    // Boundary conditions
-                    grid.EdgeTagNames.Add(1, "AdiabaticSlipWall");
-
-                    grid.DefineEdgeTags(delegate (double[] _X) {
-                        return 1;
-                    });
-                    return grid;
-                }
+                return grid;
             };
 
             c.AddBoundaryCondition("AdiabaticSlipWall");
 
-            // Initial conditions
-            c.InitialValues_Evaluators.Add(Variables.Density, delegate (double[] X) {
-                double x = X[0];
-
-                if (true1D == false) {
-                    double y = X[1];
-                }
-
-                if (x <= 0.5) {
-                    return 1.0;
-                } else {
-                    return 0.125;
-                }
-            });
-            c.InitialValues_Evaluators.Add(Variables.Pressure, delegate (double[] X) {
-                double x = X[0];
-
-                if (true1D == false) {
-                    double y = X[1];
-                }
-
-                if (x <= 0.5) {
-                    return 1.0;
-                } else {
-                    return 0.1;
-                }
-            });
-            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => 0.0);
-            if (true1D == false) {
-                c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => 0.0);
+            double crossProduct2D(double[] a, double[] b) {
+                return a[0] * b[1] - a[1] * b[0];
             }
+
+            // Normal vector
+            Vector2D p1 = new Vector2D(0.5, line1(0.5));
+            Vector2D p2 = new Vector2D(0.6, line1(0.6));
+            Vector2D normalVector = p2 - p1;
+
+            // Direction vector
+            Vector2D r = new Vector2D(normalVector.y, -normalVector.x);
+            r.Normalize();
+
+            // Distance from a point X to the line
+            double[] p = new double[] { 0.5, line1(0.5) };
+
+            double DistanceFromPointToLine(double[] X, double[] pointOnLine, double[] directionVector) {
+                double[] X_minus_pointOnLine = new double[] { X[0] - pointOnLine[0], X[1] - pointOnLine[1] };
+                double distance = crossProduct2D(directionVector, X_minus_pointOnLine) / Math.Sqrt(Math.Pow(directionVector[0], 2) + Math.Pow(directionVector[1], 2));
+
+                return distance;
+            }
+
+            double cellSize = Math.Min((xMax - xMin) / numOfCellsX, (yMax - yMin) / numOfCellsY);
+
+            Func<double, double> SmoothJump = delegate (double distance) {
+                // smoothing should be in the range of h/p
+                double maxDistance = 2.0 * cellSize / Math.Max(dgDegree, 1);
+
+                return (Math.Tanh(distance / maxDistance) + 1.0) * 0.5;
+            };
+
+            // Initial conditions
+            double densityLeft = 1.0;
+            double densityRight = 0.125;
+            double pressureLeft = 1.0;
+            double pressureRight = 0.1;
+
+            c.InitialValues_Evaluators.Add(Variables.Density, X => densityLeft - SmoothJump(DistanceFromPointToLine(X, p, r)) * (densityLeft - densityRight));
+            c.InitialValues_Evaluators.Add(Variables.Pressure, X => pressureLeft - SmoothJump(DistanceFromPointToLine(X, p, r)) * (pressureLeft - pressureRight));
+            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => 0.0);
+            c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => 0.0);
 
             // Time config
             c.dtMin = 0.0;
             c.dtMax = 1.0;
-            //c.dtFixed = 1.0e-3;
             c.CFLFraction = 0.3;
-            c.Endtime = 0.25;
-            c.NoOfTimesteps = int.MaxValue;
+            //c.Endtime = 0.25;
+            //c.NoOfTimesteps = int.MaxValue;
+            c.NoOfTimesteps = 2;
 
-            c.ProjectName = "IBM Shock tube";
-            if (true1D)
-                c.SessionName = String.Format("IBM Shock tube, 1D, dgDegree = {0}, noOfCellsX = {1}, sensorLimit = {2:0.00E-00}, CFLFraction = {3:0.00E-00}, ALTS {4}/{5}", dgDegree, numOfCellsX, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids);
-            else
-                c.SessionName = String.Format("IBM Shock tube, 2D, dgDegree = {0}, noOfCellsX = {1}, noOfCellsX = {2}, sensorLimit = {3:0.00E-00}, CFLFraction = {4:0.00E-00}, ALTS {5}/{6}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids);
+            c.ProjectName = "IBM oblique shock tube";
+            c.SessionName = String.Format("IBM oblique shock tube, dgDegree = {0}, noOfCellsX = {1}, noOfCellsX = {2}, sensorLimit = {3:0.00E-00}, CFLFraction = {4:0.00E-00}, ALTS {5}/{6}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids);
 
             return c;
         }
 
-
-
         public static CNSControl DoubleMachReflection(string dbPath = null, int dgDegree = 2, int numOfCellsX = 400, int numOfCellsY = 100, double xMax = 4, double sensorLimit = 1e-3) {
             CNSControl c = new CNSControl();
 
-            dbPath = @"e:\bosss_db\GridOfTomorrow";
+            //dbPath = @"e:\bosss_db\GridOfTomorrow";
             //dbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db";
             //dbPath = @"/work/scratch/yp19ysog/bosss_db_lb_scratch";
             c.DbPath = dbPath;
@@ -2085,7 +2081,7 @@ namespace CNS {
             //c.dtFixed = 1.0e-6;
             //c.CFLFraction = 0.5; // altes Setting fuer Rechnungen auf Lichtenberg
             c.CFLFraction = 0.3;
-            c.NoOfTimesteps = int.MaxValue;
+            c.NoOfTimesteps = 2;
 
             c.ProjectName = "Double Mach reflection";
             c.SessionName = String.Format("DMR, dgDegree = {0}, numOfCellsX = {1}, numOfCellsY = {2}, sensorLimit = {3:0.00E-00}, CFLFraction = {4:0.00E-00}, ALTS {5}/{6}, lamdaMax = {7}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, lambdaMax);
