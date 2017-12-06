@@ -901,8 +901,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         }
 
-
-
+       
         /// <summary>
         /// Callback-routine  to update the linear resp. linearized system, 
         /// see <see cref="AssembleMatrixDel"/> resp. <see cref="NonlinearSolver.m_AssembleMatrix"/>.
@@ -978,6 +977,10 @@ namespace BoSSS.Solution.XdgTimestepping {
                         }
                         Debug.Assert(m_Stack_MassMatrix.Where(mm => mm != null).Count() == m_PopulatedStackDepth);
 
+                        //TS++;
+
+                        //if(TS == 3)
+                        //    Console.WriteLine("break");
 
                         m_CurrentAgglomeration = m_LsTrk.GetAgglomerator(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder,
                             __AgglomerationTreshold: base.Config_AgglomerationThreshold,
@@ -985,6 +988,11 @@ namespace BoSSS.Solution.XdgTimestepping {
                             ExceptionOnFailedAgglomeration: true,
                             oldTs__AgglomerationTreshold: oldAggTrsh);
 
+
+                        //m_CurrentAgglomeration.PlotAgglomerationPairs("agglom-" + TS );
+                        //Console.WriteLine("internal ts" + TS);
+                        //Console.WriteLine("  no of agg, A {0} ", m_CurrentAgglomeration.GetAgglomerator(m_LsTrk.GetSpeciesId("A")).TotalNumberOfAgglomerations);
+                        //Console.WriteLine("  no of agg, B {0} ", m_CurrentAgglomeration.GetAgglomerator(m_LsTrk.GetSpeciesId("B")).TotalNumberOfAgglomerations);
                     }
 
 
@@ -1307,7 +1315,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 int[] Jtot =
                     (new int[] { base.m_LsTrk.Regions.GetCutCellMask().NoOfItemsLocally.MPISum(), base.m_LsTrk.GridDat.Cells.NoOfLocalUpdatedCells })
                     .MPISum();
-                Console.WriteLine("No of cells {0}, No of cut cells {1}.", Jtot[1], Jtot[0]);
+                //Console.WriteLine("No of cells {0}, No of cut cells {1}.", Jtot[1], Jtot[0]);
                 if (Jtot[0] == Jtot[1])
                     throw new ArithmeticException("All cells are cut cells - check your settings!");
             }

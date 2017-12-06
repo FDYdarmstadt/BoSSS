@@ -246,8 +246,8 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
             // set up
             // ------------------------------------------
-            XdgTimesteppingTestControl ctrl = HardCodedControl.Burgers(angle: 0, degree: PolyOrder, GridResolutionFactor: 1, tsm: InterfaceMode.MovingInterface);
 
+            XdgTimesteppingTestControl ctrl = HardCodedControl.Burgers(angle: 0, degree: PolyOrder, GridResolutionFactor: 1, tsm: InterfaceMode.MovingInterface);
             if (Timestepper == "bdf") {
                 switch (PolyOrder) {
                     case 0: ctrl.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler; break;
@@ -277,13 +277,12 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             ctrl.Endtime = ctrl.dtFixed * ctrl.NoOfTimesteps;
             
             BoSSS.Solution.Application<XdgTimesteppingTestControl>.CommandLineOptions ops = null;
-
+            //Console.WriteLine("Please remove me");
             //ops = new BoSSS.Solution.Application<XdgTimesteppingTestControl>.CommandLineOptions() {
             //    delPlt = true,
             //    ImmediatePlotPeriod = 1,
             //    SuperSampling = 3
             //};
-            // */
 
             // run
             // ------------------------------------------
