@@ -33,8 +33,6 @@ namespace BoSSS.Foundation.XDG {
 
 
         HistoryStack<Dictionary<XQuadFactoryHelper.MomentFittingVariants, XQuadFactoryHelper>> m_QuadFactoryHelpersHistory = null;
-           
-
         
         /// <summary>
         /// Central 'factory' for creating Level Set - related quadrature.

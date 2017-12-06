@@ -364,6 +364,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             BlockMsrMatrix[] MassMatrix = new BlockMsrMatrix[performSplitting ? 1 : 2];
             //m_AllCCM.Clear();
             m_RequiredTimeLevels = 0;
+            m_LsTrk.PushStacks();
             this.UpdateAgglom(false);
             base.MultigridBasis.UpdateXdgAggregationBasis(m_CurrentAgglomeration);
             BlockMsrMatrix PM, SM;
@@ -389,7 +390,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             // final stage
             RKstageExplicit(phystime, dt, k, m_RKscheme.Stages, MassMatrix, u0, m_RKscheme.c[m_RKscheme.Stages - 1], m_RKscheme.b, 1.0);
-            
+                        
             // ===========================================
             // update level-set (in the case of splitting)
             // ===========================================

@@ -468,6 +468,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                         RHSandSolution.CheckForNanOrInf();
 #endif
 
+                        
+
                         if (this.Docheck) {
                             // Probe:
                             MultidimensionalArray X = MultidimensionalArray.Create(NoOfNodes * 2); // weights
@@ -509,6 +511,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                 }
 
                                 VolumeRule[jSub] = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(jCell), qr_l);
+                                
                             }
 
                             {

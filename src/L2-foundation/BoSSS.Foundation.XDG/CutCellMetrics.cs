@@ -34,30 +34,6 @@ namespace BoSSS.Foundation.XDG {
     /// </summary>
     public class CutCellMetrics {
 
-        /*
-        /// <summary>
-        /// Ctor.
-        /// </summary>
-        /// <param name="lstrk"></param>
-        /// <param name="_quadorder">The quadrature order of HMF which should be used for computing cell volumes.</param>
-        /// <param name="momentFittingVaraint">The kind of HMF which should be used for computing cell volumes.</param>
-        /// <param name="SpeciesList">A list of species for which the agglomeration should be computed.</param>
-        [Obsolete]
-        public CutCellMetrics(
-            XQuadFactoryHelper.MomentFittingVariants momentFittingVaraint,
-            int _quadorder,
-            LevelSetTracker _LsTrk,
-            params SpeciesId[] SpeciesList) {
-
-            this.Tracker = _LsTrk;
-            this.HMForder = _quadorder;
-            this.HMFvariant = momentFittingVaraint;
-            this.SpeciesList = (new List<SpeciesId>(SpeciesList)).AsReadOnly();
-
-            this.ComputeNonAgglomeratedMetrics();
-        }
-        */
-
         /// <summary>
         /// owner object.
         /// </summary>
@@ -73,52 +49,6 @@ namespace BoSSS.Foundation.XDG {
             XDGSpaceMetrics = owner;
             ComputeNonAgglomeratedMetrics();
         }
-
-        /*
-
-        /// <summary>
-        /// Constructor where all data is provided externally; not for user interaction, used e.g. for dynamic load balancing.
-        /// </summary>
-        public CutCellMetrics(
-            XQuadFactoryHelper.MomentFittingVariants momentFittingVaraint,
-            int _quadorder,
-            LevelSetTracker _LsTrk,
-            Dictionary<SpeciesId, MultidimensionalArray> __CutCellVolumes,
-            Dictionary<SpeciesId, MultidimensionalArray> __InterfaceArea,
-            Dictionary<SpeciesId, MultidimensionalArray> __CutEdgeAreas
-            ) {
-
-            this.Tracker = _LsTrk;
-            this.HMForder = _quadorder;
-            this.HMFvariant = momentFittingVaraint;
-            this.SpeciesList = (new List<SpeciesId>(__CutCellVolumes.Keys)).AsReadOnly();
-
-
-            if (!__InterfaceArea.Keys.SetEquals(this.SpeciesList))
-                throw new ArgumentException();
-            if (!__CutEdgeAreas.Keys.SetEquals(this.SpeciesList))
-                throw new ArgumentException();
-
-            int JE = _LsTrk.GridDat.iLogicalCells.NoOfCells;
-
-            foreach (var A in __CutCellVolumes.Values) {
-                if (A.Dimension != 1 || A.GetLength(0) != JE)
-                    throw new ArgumentException();
-            }
-            foreach (var A in __InterfaceArea.Values) {
-                if (A.Dimension != 1 || A.GetLength(0) != JE)
-                    throw new ArgumentException();
-            }
-            foreach (var A in __CutEdgeAreas.Values) {
-                if (A.Dimension != 1 || A.GetLength(0) != _LsTrk.GridDat.iGeomEdges.Count)
-                    throw new ArgumentException();
-            }
-
-            this.CutCellVolumes = __CutCellVolumes;
-            this.InterfaceArea = __InterfaceArea;
-            this.CutEdgeAreas = __CutEdgeAreas;
-        }
-        */
 
         /// <summary>
         /// The quadrature order used for computing cell volumes and edge areas.
@@ -146,16 +76,6 @@ namespace BoSSS.Foundation.XDG {
                 return XDGSpaceMetrics.SpeciesList;
             }
         }
-
-        ///// <summary>
-        ///// Link to the tracker.
-        ///// </summary>
-        //public LevelSetTracker Tracker {
-        //    get {
-        //        return XDGSpaceMetrics.Tracker;
-        //    }
-        //}
-
 
         /// <summary>
         /// Volume of non-agglomerated cut cells.
@@ -214,6 +134,9 @@ namespace BoSSS.Foundation.XDG {
             this.CutCellVolumes = new Dictionary<SpeciesId, MultidimensionalArray>();
             this.InterfaceArea = new Dictionary<SpeciesId, MultidimensionalArray>();
 
+            //var schS = new List<CellQuadratureScheme>();
+            //var rulz = new List<ICompositeQuadRule<QuadRule>>();
+
 
             // edges and volumes
             // =================
@@ -253,6 +176,9 @@ namespace BoSSS.Foundation.XDG {
                 var volScheme = schH.GetVolumeQuadScheme(spc);
                 var volRule = volScheme.Compile(gd, this.CutCellQuadratureOrder);
 
+                //schS.Add(volScheme);
+                //rulz.Add(volRule);
+
                 BoSSS.Foundation.Quadrature.CellQuadrature.GetQuadrature(
                     new int[] { 1 }, gd,
                     volRule,
@@ -271,6 +197,7 @@ namespace BoSSS.Foundation.XDG {
                     }).Execute();
             }
 
+            
             // interface surface
             // =================
 
@@ -400,6 +327,21 @@ namespace BoSSS.Foundation.XDG {
                 this.InterfaceArea.Add(spc, cellMetrics.ExtractSubArrayShallow(-1, iSpc, 0).CloneAs());
                 this.CutCellVolumes.Add(spc, cellMetrics.ExtractSubArrayShallow(-1, iSpc, 1).CloneAs());
             }
+
+            //Console.WriteLine("Erinn - debug code.");
+            //for(int j = 0; j < J; j++) {
+            //    double totVol = gd.Cells.GetCellVolume(j);
+
+            //    double blaVol = 0;
+            //    for(int iSpc = 0; iSpc < species.Length; iSpc++) {
+            //        var spc = species[iSpc];
+            //        var cellVolS = this.CutCellVolumes[spc][j];
+            //        blaVol += cellVolS;
+            //    }
+
+            //    Debug.Assert(Math.Abs(totVol - blaVol) / totVol < 1.0e-8);
+
+            //}
         }
     }
 }

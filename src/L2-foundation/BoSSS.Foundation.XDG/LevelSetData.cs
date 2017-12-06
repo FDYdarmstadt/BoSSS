@@ -106,6 +106,18 @@ namespace BoSSS.Foundation.XDG {
 
             }
 
+
+            internal void InvalidateCaches() {
+                this.m_LevelSetWings = null;
+                this.m_NearField = null;
+                this.m_NearField4LevelSet = null;
+                this.m_NearMask = null;
+                this.m_NearMask4LevelSet = null;
+                this.m_SpeciesMask = null;
+                this.m_SpeciesSubGrids = null;
+            }
+
+
             /// <summary>
             /// Returns the subgrid of those cells which are cut by level set No. <paramref name="LevSetIdx"/>.
             /// </summary>

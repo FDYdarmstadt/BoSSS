@@ -1428,7 +1428,9 @@ namespace BoSSS.Foundation.XDG {
                     // ===========
                     Regions.m_LevSetRegions = new ushort[JA];
                     LevSetRegions = Regions.m_LevSetRegions;
+                    Regions.InvalidateCaches();
                     LevSetRegionsUnsigned = new ushort[JA];
+
 
                     // necessary to avoid a 'LevelSetCFLException' on the first
                     // call to this method
@@ -1743,7 +1745,7 @@ namespace BoSSS.Foundation.XDG {
                 // ==========================================
                 this.m_QuadFactoryHelpersHistory.Current.Clear();
                 this.m_XDGSpaceMetricsHistory.Current.Clear();
-
+                
                 // check the LevelSet CFL
                 // ======================
 
