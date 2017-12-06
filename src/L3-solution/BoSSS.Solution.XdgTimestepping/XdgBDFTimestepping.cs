@@ -597,7 +597,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 Debug.Assert(m_Stack_OpMatrix[0].InfNorm() == 0);
                 Debug.Assert(m_Stack_OpAffine[0].L2Norm() == 0);
-                this.ComputeOperatorMatrix(m_Stack_OpMatrix[0], m_Stack_OpAffine[0], CurrentStateMapping, CurrentStateMapping.Fields.ToArray(), m_CurrentAgglomeration, m_CurrentPhystime + m_CurrentDt);
+                this.ComputeOperatorMatrix(m_Stack_OpMatrix[0], m_Stack_OpAffine[0], CurrentStateMapping, CurrentStateMapping.Fields.ToArray(), base.GetAgglomeratedLengthScales(), m_CurrentPhystime + m_CurrentDt);
             }
         }
 
@@ -1051,7 +1051,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Debug.Assert(m_Stack_OpMatrix[0].InfNorm() == 0);
                 Debug.Assert(m_Stack_OpAffine[0].L2Norm() == 0);
                 Debug.Assert(object.ReferenceEquals(this.m_CurrentAgglomeration.Tracker, this.m_LsTrk));
-                this.ComputeOperatorMatrix(m_Stack_OpMatrix[0], m_Stack_OpAffine[0], CurrentStateMapping, locCurSt, m_CurrentAgglomeration, m_CurrentPhystime + m_CurrentDt);
+                this.ComputeOperatorMatrix(m_Stack_OpMatrix[0], m_Stack_OpAffine[0], CurrentStateMapping, locCurSt, base.GetAgglomeratedLengthScales(), m_CurrentPhystime + m_CurrentDt);
 
                 // assemble system
                 // ---------------

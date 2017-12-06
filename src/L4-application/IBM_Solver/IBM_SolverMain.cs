@@ -457,7 +457,7 @@ namespace BoSSS.Application.IBM_Solver {
 
         int DelComputeOperatorMatrix_CallCounter = 0;
 
-        protected virtual void DelComputeOperatorMatrix(BlockMsrMatrix OpMatrix, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, MultiphaseCellAgglomerator Agglomerator, double phystime) {
+        protected virtual void DelComputeOperatorMatrix(BlockMsrMatrix OpMatrix, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime) {
             DelComputeOperatorMatrix_CallCounter++;
 
             // compute operator
@@ -483,14 +483,16 @@ namespace BoSSS.Application.IBM_Solver {
             var Params = ArrayTools.Cat<SinglePhaseField>(
                 U0_U0mean);
 
-            m_LenScales = Agglomerator.CellLengthScales[LsTrk.SpeciesIdS[0]];
+            m_LenScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
 
             // create matrix and affine vector:
             IBM_Op.ComputeMatrixEx(LsTrk,
                 Mapping, Params, Mapping,
                 OpMatrix, OpAffine, false, phystime, true,
-                Agglomerator.CellLengthScales,
+                AgglomeratedCellLengthScales,
                 FluidSpecies);
+
+            m_LenScales = null;
 
 #if DEBUG
             if(DelComputeOperatorMatrix_CallCounter == 1) {

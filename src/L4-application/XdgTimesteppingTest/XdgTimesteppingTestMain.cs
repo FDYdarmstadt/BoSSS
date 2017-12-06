@@ -54,13 +54,13 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             //BoSSS.Solution.Application<XdgTimesteppingTestControl>._Main(args, false, null, delegate () {
             //    return new XdgTimesteppingMain();
             //});
-            
+
             Console.WriteLine("Remember to remove me.");
             TestProgram.Init();
-            BoSSS.Application.XdgTimesteppingTest.TestProgram.TestBurgers_HighOrder(1, 0.08d, "bdf", 8);
+            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestBurgers_HighOrder(1, 0.08d, "bdf", 8);
             //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_MultiinitHighOrder(0, 0.23);
             //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder(TimeSteppingScheme.BDF2, 0.23, 8);
-            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_Splitting_LowOrder(TimeSteppingScheme.BDF2, 0.23, 8, 0.0);
+            BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_Splitting_LowOrder(TimeSteppingScheme.RK1, 0.23, 8, 0.0);
             TestProgram.Cleanup();
         }
 #pragma warning disable 649
@@ -368,7 +368,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             }
         }
 
-        void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, MultiphaseCellAgglomerator CurrentAgg, double phystime) {
+        void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime) {
 
             DGField[] Params = null;
             if (this.Control.Eq == Equation.ScalarTransport)
@@ -383,11 +383,11 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             // compute operator
             Debug.Assert(OpMtx.InfNorm() == 0.0);
             Debug.Assert(OpAffine.L2Norm() == 0.0);
-            Operator.ComputeMatrixEx(CurrentAgg.Tracker,
+            Operator.ComputeMatrixEx(this.LsTrk,
                 Mapping, Params, Mapping,
                 OpMtx, OpAffine, false, phystime, true,
-                CurrentAgg.CellLengthScales,
-                CurrentAgg.SpeciesList.ToArray());
+                AgglomeratedCellLengthScales,
+                AgglomeratedCellLengthScales.Keys.ToArray());
         }
 
         

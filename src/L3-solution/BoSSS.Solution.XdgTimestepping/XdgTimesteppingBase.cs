@@ -43,9 +43,11 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// Corresponds with row and columns of <paramref name="OpMtx"/>, resp. with <paramref name="OpAffine"/>.
     /// </param>
     /// <param name="CurrentState"></param>
-    /// <param name="CurrentAgg"></param>
+    /// <param name="AgglomeratedCellLengthScales">
+    /// Length scale *of agglomerated grid* for each cell, e.g. to set penalty parameters. 
+    /// </param>
     /// <param name="time"></param>
-    public delegate void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, MultiphaseCellAgglomerator CurrentAgg, double time);
+    public delegate void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time);
 
     /// <summary>
     /// Callback-template for level-set updates.
@@ -422,6 +424,25 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Agglomerator for the currently set level-set position . 
         /// </summary>
         protected MultiphaseCellAgglomerator m_CurrentAgglomeration;
+
+        /// <summary>
+        /// Agglomerated length scales, input for <see cref="ComputeOperatorMatrix"/>.
+        /// </summary>
+        protected Dictionary<SpeciesId, MultidimensionalArray> GetAgglomeratedLengthScales() {
+            if(m_CurrentAgglomeration != null) {
+                //
+                // agglomerated length scales are available from 
+                //
+                return m_CurrentAgglomeration.CellLengthScales;
+            } else {
+                //
+                // 'Notlösung' -- no actual agglomeration available - use length scales form a temporary agglomerator.
+                //
+                var agg = this.m_LsTrk.GetAgglomerator(this.Config_SpeciesToCompute, this.Config_CutCellQuadratureOrder, this.Config_AgglomerationThreshold);
+                return agg.CellLengthScales;
+            }
+        }
+
 
         /// <summary>
         /// Returns either a solver for the Navier-Stokes or the Stokes system.

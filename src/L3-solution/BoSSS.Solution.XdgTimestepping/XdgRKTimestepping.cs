@@ -204,6 +204,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         //List<CutCellMetrics> m_AllCCM = new List<CutCellMetrics>();
+        int m_RequiredTimeLevels = 0;
 
         void UpdateAgglom(bool ReplaceTop) {
             //var newCCM = this.UpdateCutCellMetrics();
@@ -214,27 +215,32 @@ namespace BoSSS.Solution.XdgTimestepping {
             //else
             //    m_AllCCM.Add(newCCM);
 
-            //CutCellMetrics[] prevCCM;
-            //double[] oldAggTrsh;
-            //prevCCM = m_AllCCM.Take(m_AllCCM.Count - 1).ToArray();
-            //oldAggTrsh = new double[prevCCM.Length];
-            //ArrayTools.SetAll(oldAggTrsh, this.Config_AgglomerationThreshold);
-            //if (prevCCM.Length <= 0) {
-            //    prevCCM = null;
-            //    oldAggTrsh = null;
-            //}
+            if(m_RequiredTimeLevels == 0 && ReplaceTop == true)
+                throw new NotSupportedException();
+            if(!ReplaceTop)
+                m_RequiredTimeLevels++;
+
+            double[] oldAggTrsh;
+            if(m_RequiredTimeLevels > 1) {
+                oldAggTrsh = new double[m_RequiredTimeLevels - 1];
+                ArrayTools.SetAll(oldAggTrsh, this.Config_AgglomerationThreshold);
+            } else {
+                oldAggTrsh = null;
+            }
+            Debug.Assert(m_LsTrk.PopulatedHistoryLength >= m_RequiredTimeLevels - 1);
+
 
             //m_CurrentAgglomeration = new MultiphaseCellAgglomerator(
             //    newCCM,
             //    this.Config_AgglomerationThreshold, prevCCM != null, prevCCM != null, true,
             //    prevCCM, oldAggTrsh);
 
-            //m_CurrentAgglomeration = m_LsTrk.GetAgglomerator(Config_SpeciesToCompute, Config_CutCellQuadratureOrder, 
-            //    this.Config_AgglomerationThreshold,
-            //    )
+            m_CurrentAgglomeration = m_LsTrk.GetAgglomerator(Config_SpeciesToCompute, Config_CutCellQuadratureOrder,
+                this.Config_AgglomerationThreshold,
+                AgglomerateNewborn: oldAggTrsh != null, AgglomerateDecased: (oldAggTrsh != null), ExceptionOnFailedAgglomeration: true,
+                oldTs__AgglomerationTreshold: oldAggTrsh);
 
-            throw new NotImplementedException("todo");
-
+            
             foreach (var spId in m_CurrentAgglomeration.SpeciesList) {
                 string SpName = m_LsTrk.GetSpeciesName(spId);
                 int NoOfAgg = m_CurrentAgglomeration.GetAgglomerator(spId).AggInfo.AgglomerationPairs.Length;
@@ -357,6 +363,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             // init mass matrix & cut-cell metrics 
             BlockMsrMatrix[] MassMatrix = new BlockMsrMatrix[performSplitting ? 1 : 2];
             //m_AllCCM.Clear();
+            m_RequiredTimeLevels = 0;
             this.UpdateAgglom(false);
             base.MultigridBasis.UpdateXdgAggregationBasis(m_CurrentAgglomeration);
             BlockMsrMatrix PM, SM;
@@ -650,7 +657,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             var OpMatrix = new BlockMsrMatrix(CurrentStateMapping);
             var OpAffine = new double[Ndof];
 
-            this.ComputeOperatorMatrix(OpMatrix, OpAffine, CurrentStateMapping, locCurSt, m_CurrentAgglomeration, m_ImplStParams.m_CurrentPhystime + m_ImplStParams.m_CurrentDt*m_ImplStParams.m_RelTime);
+            this.ComputeOperatorMatrix(OpMatrix, OpAffine, CurrentStateMapping, locCurSt, base.GetAgglomeratedLengthScales(), m_ImplStParams.m_CurrentPhystime + m_ImplStParams.m_CurrentDt*m_ImplStParams.m_RelTime);
 
 
             // assemble system
@@ -840,7 +847,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             BlockMsrMatrix OpMtx = new BlockMsrMatrix(this.CurrentStateMapping);
             double[] OpAff = new double[this.CurrentStateMapping.LocalLength];
-            base.ComputeOperatorMatrix(OpMtx, OpAff, this.CurrentStateMapping, this.CurrentStateMapping.Fields.ToArray(), m_CurrentAgglomeration, PhysTime);
+            base.ComputeOperatorMatrix(OpMtx, OpAff, this.CurrentStateMapping, this.CurrentStateMapping.Fields.ToArray(), base.GetAgglomeratedLengthScales(), PhysTime);
 
             k.SetV(OpAff);
             OpMtx.SpMV(1.0, this.m_CurrentState, 1.0, k);
