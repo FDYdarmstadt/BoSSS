@@ -1235,7 +1235,7 @@ namespace CNS {
             c.AddVariable(Variables.Entropy, dgDegree);
             c.AddVariable(Variables.LocalMachNumber, dgDegree);
             c.AddVariable(Variables.Rank, 0);
-            c.AddVariable(Variables.Sensor, 0);
+            c.AddVariable(Variables.ShockSensor, 0);
 
             if (AV) {
                 c.AddVariable(Variables.ArtificialViscosity, 2);
@@ -1407,7 +1407,7 @@ namespace CNS {
             c.AddVariable(Variables.Entropy, dgDegree);
             c.AddVariable(Variables.LocalMachNumber, dgDegree);
             c.AddVariable(Variables.Rank, 0);
-            c.AddVariable(Variables.Sensor, 0);
+            c.AddVariable(Variables.ShockSensor, 0);
 
             if (AV) {
                 c.AddVariable(Variables.ArtificialViscosity, 2);
@@ -1774,7 +1774,7 @@ namespace CNS {
             c.AddVariable(Variables.LocalMachNumber, dgDegree);
             c.AddVariable(Variables.Rank, 0);
             if (AV) {
-                c.AddVariable(Variables.Sensor, dgDegree);
+                c.AddVariable(Variables.ShockSensor, dgDegree);
                 c.AddVariable(Variables.ArtificialViscosity, 2);
             }
 
@@ -2192,7 +2192,7 @@ namespace CNS {
                 c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(
                     c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
 
-                c.AddVariable(Variables.Sensor, dgDegree);
+                c.AddVariable(Variables.ShockSensor, dgDegree);
                 c.AddVariable(Variables.ArtificialViscosity, 2);
 
                 c.Tags.Add("Artificial viscosity");
@@ -2360,7 +2360,7 @@ namespace CNS {
                 c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(
                     c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
 
-                c.AddVariable(Variables.Sensor, dgDegree);
+                c.AddVariable(Variables.ShockSensor, dgDegree);
                 c.AddVariable(Variables.ArtificialViscosity, 3);
 
                 c.Tags.Add("Artificial viscosity");

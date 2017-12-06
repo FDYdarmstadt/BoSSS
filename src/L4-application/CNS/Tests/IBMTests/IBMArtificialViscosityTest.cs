@@ -36,7 +36,8 @@ namespace CNS.Tests.IBMTests {
         public static IBMControl IBMAVTestContactDiscontinuity() {
             IBMControl c = new IBMControl();
 
-            c.DbPath = @"c:\bosss_db";
+            //c.DbPath = @"c:\bosss_db";
+            c.DbPath = null;
             c.savetodb = false;
             c.saveperiod = 1;
             c.PrintInterval = 1;
@@ -114,7 +115,7 @@ namespace CNS.Tests.IBMTests {
             c.AddVariable(Variables.Entropy, dgDegree);
             c.AddVariable(Variables.LocalMachNumber, dgDegree);
             c.AddVariable(Variables.Rank, 0);
-            c.AddVariable(Variables.Sensor, 0);
+            c.AddVariable(Variables.ShockSensor, 0);
 
             if (AV) {
                 c.AddVariable(Variables.ArtificialViscosity, 2);
@@ -236,13 +237,13 @@ namespace CNS.Tests.IBMTests {
         }
 
         // Wprks only if AV projection is off
-        //[Test]
-        //public static void IBMAVTest() {
-        //    CheckErrorThresholds(
-        //        SetupIBMAVTest(),
-        //        Tuple.Create("L2NormDensity", 53.8811127551010000 + 1e-10),
-        //        Tuple.Create("L2NormVelocityX", 1.5491933384829700 + 1e-10),
-        //        Tuple.Create("L2NormPressure", 0.7745966692415230 + 1e-10));
-        //}
+        [Test]
+        public static void IBMAVTest() {
+            CheckErrorThresholds(
+                SetupIBMAVTest(),
+                Tuple.Create("L2NormDensity", 53.8771980076417000 + 1e-10),
+                Tuple.Create("L2NormVelocityX", 1.5491933384829700 + 1e-10),
+                Tuple.Create("L2NormPressure", 0.7745966692416890 + 1e-10));
+        }
     }
 }

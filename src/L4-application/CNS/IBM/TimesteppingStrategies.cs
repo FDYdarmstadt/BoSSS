@@ -61,7 +61,7 @@ namespace CNS.IBM {
                 case TimesteppingStrategies.StrangSplitting:
                     return new IBMSplitRungeKutta(
                         equationSystem.GetJoinedOperator().ToSpatialOperator(fieldSet),
-                        ibmFactory.GetBoundaryOperator().ToSpatialOperator(fieldSet),
+                        ibmFactory.GetImmersedBoundaryOperator().ToSpatialOperator(fieldSet),
                         variableMap,
                         parameterMap,
                         ibmSpeciesMap,
@@ -70,7 +70,7 @@ namespace CNS.IBM {
                 case TimesteppingStrategies.MovingFrameFlux:
                     return new IBMMovingFrameRungeKutta(
                         equationSystem.GetJoinedOperator().ToSpatialOperator(fieldSet),
-                        ibmFactory.GetBoundaryOperator().ToSpatialOperator(fieldSet),
+                        ibmFactory.GetImmersedBoundaryOperator().ToSpatialOperator(fieldSet),
                         variableMap,
                         parameterMap,
                         ibmSpeciesMap,
