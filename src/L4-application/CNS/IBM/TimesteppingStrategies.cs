@@ -50,13 +50,18 @@ namespace CNS.IBM {
                     "speciesMap");
             }
 
+            IBMOperatorFactory ibmFactory = equationSystem as IBMOperatorFactory;
+            if (ibmFactory == null) {
+                throw new Exception();
+            }
+
             CoordinateMapping variableMap = new CoordinateMapping(fieldSet.ConservativeVariables);
             switch (strategy) {
                 case TimesteppingStrategies.LieSplitting:
                 case TimesteppingStrategies.StrangSplitting:
                     return new IBMSplitRungeKutta(
-                        equationSystem.GetConvectiveOperator().Union(equationSystem.GetDiffusiveOperator()).ToSpatialOperator(fieldSet),
-                        equationSystem.GetSourceTermOperator().ToSpatialOperator(fieldSet),
+                        equationSystem.GetJoinedOperator().ToSpatialOperator(fieldSet),
+                        ibmFactory.GetImmersedBoundaryOperator().ToSpatialOperator(fieldSet),
                         variableMap,
                         parameterMap,
                         ibmSpeciesMap,
@@ -64,8 +69,8 @@ namespace CNS.IBM {
 
                 case TimesteppingStrategies.MovingFrameFlux:
                     return new IBMMovingFrameRungeKutta(
-                        equationSystem.GetConvectiveOperator().Union(equationSystem.GetDiffusiveOperator()).ToSpatialOperator(fieldSet),
-                        equationSystem.GetSourceTermOperator().ToSpatialOperator(fieldSet),
+                        equationSystem.GetJoinedOperator().ToSpatialOperator(fieldSet),
+                        ibmFactory.GetImmersedBoundaryOperator().ToSpatialOperator(fieldSet),
                         variableMap,
                         parameterMap,
                         ibmSpeciesMap,

@@ -118,6 +118,7 @@
     <Compile Include="Source\SpongeLayerConfig.cs" />
     <Compile Include="Tests\ArtificialViscosity\ArtificialViscosityShockTubeTests.cs" />
     <Compile Include="Tests\ConvectiveFlux\ShockTubeTests.cs" />
+    <Compile Include="Tests\IBMTests\IBMArtificialViscosityTest.cs" />
     <Compile Include="Tests\IBMTests\IBMALTSTest.cs" />
     <Compile Include="Tests\IBMTests\IBMIsentropicVortexTest.cs" />
     <Compile Include="Tests\MMS\MMS_steady.cs" />
@@ -138,7 +139,6 @@
     <Compile Include="Diffusion\SIPGFlux.cs" />
     <Compile Include="Diffusion\DiffusiveCFLConstraint.cs" />
     <Compile Include="Diffusion\DiffusiveFluxTypes.cs" />
-    <Compile Include="IBM\IBMDiffusiveCFLConstraint.cs" />
     <Compile Include="IBM\IBMQueries.cs" />
     <Compile Include="IBM\IBMUtility.cs" />
     <Compile Include="IProgram.cs" />
@@ -166,7 +166,6 @@
     <Compile Include="EquationSystem\CFLConstraint.cs" />
     <Compile Include="EquationSystem\Operator.cs" />
     <Compile Include="EquationSystem\NullFluxBuilder.cs" />
-    <Compile Include="IBM\IBMConvectiveCFLConstraint.cs" />
     <Compile Include="IBM\IBMOperatorFactory.cs" />
     <Compile Include="IBM\ImmersedSpeciesMap.cs" />
     <Compile Include="IBM\BoundaryConditionSourceFluxBuilder.cs" />

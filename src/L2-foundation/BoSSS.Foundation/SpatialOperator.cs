@@ -448,7 +448,7 @@ namespace BoSSS.Foundation {
             var GridDat = CheckArguments(DomainMap, Parameters, CodomainMap);
 
 
-            int order = GetOrderFromQROF(DomainMap, Parameters, CodomainMap);
+            int order = GetOrderFromQuadOrderFunction(DomainMap, Parameters, CodomainMap);
 
 
             //if (Parameters == null) {
@@ -473,7 +473,7 @@ namespace BoSSS.Foundation {
 
         }
 
-        public int GetOrderFromQROF(UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap) {
+        public int GetOrderFromQuadOrderFunction(UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap) {
             /// Compute Quadrature Order
             int order;
             int[] DomainDegrees = DomainMap.BasisS.Select(f => f.Degree).ToArray();
@@ -621,7 +621,7 @@ namespace BoSSS.Foundation {
 
             int order = 0;
             if(edgeRule == null || volRule == null) 
-                order = this.GetOrderFromQROF(DomainMap, Parameters, CodomainMap);
+                order = this.GetOrderFromQuadOrderFunction(DomainMap, Parameters, CodomainMap);
             
             if(edgeRule == null)
                 edgeRule = edgeQuadScheme.SaveCompile(GridDat, order);
@@ -1482,7 +1482,7 @@ namespace BoSSS.Foundation {
                     if (!m_Owner.IsCommited)
                         throw new ApplicationException("operator assembly must be finalized before by calling 'Commit' before this method can be called.");
 
-                    int order = owner.GetOrderFromQROF(m_DomainMapping, ParameterMap, CodomainVarMap);
+                    int order = owner.GetOrderFromQuadOrderFunction(m_DomainMapping, ParameterMap, CodomainVarMap);
                     //int order = FindQuadratureOrder(DomainVarMap, CodomainVarMap);
                     
                     

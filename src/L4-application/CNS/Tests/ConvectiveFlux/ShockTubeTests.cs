@@ -391,6 +391,8 @@ namespace CNS.Tests.ConvectiveFlux {
             c.CFLFraction = 0.5;
             c.NoOfTimesteps = int.MaxValue;
 
+            c.PrintInterval = 50;
+
             return c;
         }
     }
