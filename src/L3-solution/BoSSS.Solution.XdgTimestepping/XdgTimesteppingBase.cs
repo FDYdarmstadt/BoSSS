@@ -451,15 +451,16 @@ namespace BoSSS.Solution.XdgTimestepping {
                         ConvCrit = Config_SolverConvergenceCriterion,
                     };
                 } else {
-                    nonlinSolver = new FixpointIterator(
+                    nonlinSolver = new CoupledFixpointIterator(
                     this.AssembleMatrixCallback,
                     this.MultigridBasis,
-                    this.Config_MultigridOperator) {
+                    this.Config_MultigridOperator,
+                    this.LevelSetIterationStep) {
                         MaxIter = Config_MaxIterations,
                         MinIter = Config_MinIterations,
                         m_LinearSolver = Config_linearSolver,
                         ConvCrit = Config_SolverConvergenceCriterion,
-                        LastIteration_Converged = LevelSetConvergenceReached,
+                        CoupledIteration_Converged = LevelSetConvergenceReached,
                     };
                 }
 
@@ -516,9 +517,9 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         public double m_LastLevelSetResidual;
 
-        protected bool LevelSetConvergenceReached(double Residual_Solver) {
+        protected bool LevelSetConvergenceReached() {
 
-            return (Residual_Solver < Config_SolverConvergenceCriterion && m_LastLevelSetResidual < Config_LevelSetConvergenceCriterion);
+            return (m_LastLevelSetResidual < Config_LevelSetConvergenceCriterion);
         }
 
         /// <summary>
@@ -633,5 +634,8 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// required for block-precond.
         /// </param>
         abstract protected void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, DGField[] argCurSt);
+
+
+        abstract protected void LevelSetIterationStep(DGField[] locCurSt);
     }
 }

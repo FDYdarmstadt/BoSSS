@@ -654,6 +654,13 @@ namespace BoSSS.Solution.XdgTimestepping {
             m_ImplStParams.m_IterationCounter++;
         }
 
+
+        protected override void LevelSetIterationStep(DGField[] locCurSt) {
+            throw new NotImplementedException();
+        }
+
+
+
         private void RKstageExplicit(double PhysTime, double dt, double[][] k, int s, BlockMsrMatrix[] Mass, CoordinateVector u0, double ActualLevSetRelTime, double[] RK_as, double RelTime) {
             Debug.Assert(s <= m_RKscheme.Stages);
             for(int i = 0; i < s; i++) {

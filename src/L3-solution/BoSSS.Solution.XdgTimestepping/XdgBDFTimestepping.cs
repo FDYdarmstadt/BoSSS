@@ -888,8 +888,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 // ----------------------
 
                 bool updateAgglom = false;
-                if (this.Config_LevelSetHandling == LevelSetHandling.Coupled_Once && m_IterationCounter == 0
-                    || this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
+                if (this.Config_LevelSetHandling == LevelSetHandling.Coupled_Once && m_IterationCounter == 0) { 
+                    //|| this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
 
                     MoveLevelSetAndRelatedStuff(locCurSt, m_CurrentPhystime, m_CurrentDt, IterUnderrelax);
 
@@ -1092,10 +1092,66 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
         }
 
+
+        protected override void LevelSetIterationStep(DGField[] argCurSt) {
+            using (new FuncTrace()) {
+
+                // copy data from 'argCurSt' to 'CurrentStateMapping', if necessary 
+                // -----------------------------------------------------------
+                DGField[] locCurSt = CurrentStateMapping.Fields.ToArray();
+                if (locCurSt.Length != argCurSt.Length) {
+                    throw new ApplicationException();
+                }
+                int NF = locCurSt.Length;
+                for (int iF = 0; iF < NF; iF++) {
+                    if (object.ReferenceEquals(locCurSt[iF], argCurSt[iF])) {
+                        // nothing to do
+                    } else {
+                        locCurSt[iF].Clear();
+                        locCurSt[iF].Acc(1.0, argCurSt[iF]);
+                    }
+
+                }
+
+                // update of level-set
+                // ----------------------
+
+                MoveLevelSetAndRelatedStuff(locCurSt, m_CurrentPhystime, m_CurrentDt, IterUnderrelax);
+
+
+                // update agglomeration
+                // --------------------
+
+                CutCellMetrics[] prevCCM;
+                double[] oldAggTrsh;
+
+                prevCCM = m_Stack_CutCellMetrics.Skip(1).Where(ccm => ccm != null).ToArray();
+                oldAggTrsh = new double[prevCCM.Length];
+                ArrayTools.SetAll(oldAggTrsh, this.Config_AgglomerationThreshold);
+                if (prevCCM.Length <= 0) {
+                    prevCCM = null;
+                    oldAggTrsh = null;
+                }
+
+                Debug.Assert(m_Stack_CutCellMetrics[0] != null);
+                if (!m_Stack_CutCellMetrics[0].SpeciesList.SetEquals(Config_MassScale.Keys))
+                    throw new ApplicationException("Mismatch between species lists.");
+
+                m_CurrentAgglomeration = new MultiphaseCellAgglomerator(
+                    m_Stack_CutCellMetrics[0],
+                    this.Config_AgglomerationThreshold, prevCCM != null, prevCCM != null, true,
+                    prevCCM, oldAggTrsh);
+
+                // update Multigrid-XDG basis
+                Debug.Assert(object.ReferenceEquals(base.MultigridBasis[0][0].DGBasis.GridDat, m_CurrentAgglomeration.Tracker.GridDat));
+                base.MultigridBasis.UpdateXdgAggregationBasis(m_CurrentAgglomeration);
+
+            }
+        }
+
         double m_CurrentPhystime;
         double m_CurrentDt = -1;
-        //double m_LastLevelSetResidual;
-        //int m_TimestepCounter = 0;
+
 
         static double MatrixDist(MsrMatrix _A, MsrMatrix B) {
             MsrMatrix A = _A.CloneAs();
