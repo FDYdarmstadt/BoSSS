@@ -86,8 +86,7 @@ namespace BoSSS.Application.LoadBalancingTest {
         /// </summary>
         internal int DEGREE = 3;
 
-        internal Func<IApplication<AppControl>, int, ICellCostEstimator> cellCostEstimatorFactory = CellCostEstimatorLibrary.AllCellsAreEqual;
-
+        
         /// <summary>
         /// Cell Agglomeration threshold
         /// </summary>
@@ -286,6 +285,10 @@ namespace BoSSS.Application.LoadBalancingTest {
                 Assert.Greater(TotalNoOfReparts, 0, "Load-balancing was not tested at all.");
             }
         }
+
+
+        internal Func<IApplication<AppControl>, int, ICellCostEstimator> cellCostEstimatorFactory = CellCostEstimatorLibrary.AllCellsAreEqual;
+
 
         /// <summary>
         /// A dummy routine in order to test cell dynamic load balancing 

@@ -114,7 +114,7 @@ namespace BoSSS.Solution {
         }
 
         /// <summary>
-        /// Solves alinear regression cost model
+        /// Solves a linear regression cost model
         /// </summary>
         /// <returns></returns>
         public int[] GetEstimatedCellCosts() {
