@@ -52,7 +52,7 @@ namespace BoSSS.Application.ZwoLsTest {
                 args,
                 true,
                 null,
-                () => new ZwoLsTestMain() { DEGREE = 3, THRESHOLD = 0.1d });
+                () => new ZwoLsTestMain() { DEGREE = 1, THRESHOLD = 0.3d });
         }
 
         protected override GridCommons CreateOrLoadGrid() {
@@ -243,7 +243,7 @@ namespace BoSSS.Application.ZwoLsTest {
 
             var Bmask = LsTrk.Regions.GetSpeciesMask("B");
             var BbitMask = Bmask.GetBitMask();
-            var XDGmetrics = LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), quadOrder, 1);
+            var XDGmetrics = LsTrk.GetXDGSpaceMetrics(new SpeciesId[] { LsTrk.GetSpeciesId("B") }, quadOrder, 1);
 
             int degree = Math.Max(0, this.u.Basis.Degree - 1);
 
@@ -259,7 +259,7 @@ namespace BoSSS.Application.ZwoLsTest {
             // ------------------------------------------------
             // project the polynomial onto a single-phase field
             // ------------------------------------------------
-            SinglePhaseField NonAgglom = new SinglePhaseField(new Basis(this.GridData, degree), "test");
+            SinglePhaseField NonAgglom = new SinglePhaseField(new Basis(this.GridData, degree), "NonAgglom");
             NonAgglom.ProjectField(1.0,
                 SomePolynomial.Vectorize(),
                 new CellQuadratureScheme(true, Bmask));
@@ -285,19 +285,19 @@ namespace BoSSS.Application.ZwoLsTest {
             {
                 double[] xVec2 = xVec.CloneAs();
                 Agg.ClearAgglomerated(xVec2, map); // clearing should have no effect now.
-                double[] dist = xVec2.CloneAs();
-                dist.AccV(-1.0, xVec);
 
-                double Err3 = GenericBlas.L2NormPow2(dist).MPISum().Sqrt();
+                double Err3 = GenericBlas.L2DistPow2(xVec, xVec2).MPISum().Sqrt();
                 Assert.LessOrEqual(Err3, 0.0);
             }
 
             // ... multiply with the inverse mass-matrix, ...
             var Mfact = XDGmetrics.MassMatrixFactory;
-            MsrMatrix InvMassMtx = Mfact.GetMassMatrix(map, true).ToMsrMatrix();
+            BlockMsrMatrix MassMtx = Mfact.GetMassMatrix(map, false);
+            Agg.ManipulateMatrixAndRHS(MassMtx, default(double[]), map, map);
+            var InvMassMtx = MassMtx.InvertBlocks(OnlyDiagonal: true, Subblocks: true, ignoreEmptyBlocks: true, SymmetricalInversion: true);
             double[] xAggVec = new double[xVec.Length];
 
-            InvMassMtx.SpMVpara(1.0, xVec, 0.0, xAggVec);
+            InvMassMtx.SpMV(1.0, xVec, 0.0, xAggVec);
             
             // ... and extrapolate. 
             // Since we projected a polynomial, the projection is exact and after extrapolation, must be equal
@@ -353,8 +353,11 @@ namespace BoSSS.Application.ZwoLsTest {
             Mfact = LsTrk.GetXDGSpaceMetrics(new SpeciesId[] { LsTrk.GetSpeciesId("B") }, quadOrder, 1).MassMatrixFactory;// new MassMatrixFactory(u.Basis, Agg);
                         
             // Mass matrix/Inverse Mass matrix
-            var MassInv = Mfact.GetMassMatrix(u.Mapping, new double[] { 1.0 }, true, LsTrk.GetSpeciesId("B"));
+            //var MassInv = Mfact.GetMassMatrix(u.Mapping, new double[] { 1.0 }, true, LsTrk.GetSpeciesId("B"));
             var Mass = Mfact.GetMassMatrix(u.Mapping, new double[] { 1.0 }, false, LsTrk.GetSpeciesId("B"));
+            Agg.ManipulateMatrixAndRHS(Mass, default(double[]), u.Mapping, u.Mapping);
+            var MassInv = Mass.InvertBlocks(OnlyDiagonal: true, Subblocks: true, ignoreEmptyBlocks: true, SymmetricalInversion: true);
+            
 
             // test that operator depends only on B-species values
             double DepTest = LsTrk.Regions.GetSpeciesSubGrid("B").TestMatrixDependency(OperatorMatrix, u.Mapping, u.Mapping);
