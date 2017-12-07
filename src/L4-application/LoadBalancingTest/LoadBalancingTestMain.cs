@@ -13,6 +13,7 @@ using ilPSP;
 using ilPSP.LinSolvers;
 using ilPSP.Tracing;
 using ilPSP.Utils;
+using MPI.Wrappers;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
@@ -37,9 +38,6 @@ namespace BoSSS.Application.LoadBalancingTest {
         }
 
         protected override GridCommons CreateOrLoadGrid() {
-            if(MPIRank == 0)
-                Debugger.Launch();
-
             double[] nodes = GenericBlas.Linspace(-5, 5, 21);
             var grd = Grid2D.Cartesian2DGrid(nodes, nodes);
             base.m_GridPartitioningType = GridPartType.none;
@@ -151,6 +149,9 @@ namespace BoSSS.Application.LoadBalancingTest {
         /// </summary>
         XSpatialOperator Op;
 
+        /// <summary>
+        /// The BDF time integrator - makes load balancing challenging.
+        /// </summary>
         XdgBDFTimestepping TimeIntegration;
 
         protected override void CreateEquationsAndSolvers(GridUpdateData L) {
@@ -227,13 +228,6 @@ namespace BoSSS.Application.LoadBalancingTest {
             }
         }
 
-        //CutCellMetrics DelUpdateCutCellMetrics() {
-        //    return new CutCellMetrics(
-        //        HMF,
-        //        this.Op.QuadOrderFunction(new int[] { u.Basis.Degree }, new int[0], new int[] { uResidual.Basis.Degree }),
-        //        this.LsTrk,
-        //        this.LsTrk.SpeciesIdS.ToArray());
-        //}
 
         const XQuadFactoryHelper.MomentFittingVariants HMF = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
 
@@ -281,6 +275,18 @@ namespace BoSSS.Application.LoadBalancingTest {
             }
         }
 
+        int m_NoOfReparts = 0;
+
+        /// <summary>
+        /// Check is load-balancing was actually tested.
+        /// </summary>
+        protected override void Bye() {
+            if(MPISize > 1) {
+                int TotalNoOfReparts = m_NoOfReparts.MPISum();
+                Assert.Greater(TotalNoOfReparts, 0, "Load-balancing was not tested at all.");
+            }
+        }
+
         /// <summary>
         /// A dummy routine in order to test cell dynamic load balancing 
         /// (**not** a good balancing, but triggers redistribution).
@@ -289,18 +295,26 @@ namespace BoSSS.Application.LoadBalancingTest {
             if (!DynamicBalance || MPISize <= 1)
                 return null;
 
+            //if(MPIRank == 0)
+            //    Debugger.Launch();
+
             int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
 
             int[] PerformanceClasses = new int[J];
             var CC = this.LsTrk.Regions.GetCutCellMask();
-            foreach (int j in CC.ItemEnum)
+            foreach(int j in CC.ItemEnum) {
                 PerformanceClasses[j] = 1;
+            }
+            int NoCutCells = CC.NoOfItemsLocally.MPISum();
+            Console.WriteLine("Number of cut cells: " + NoCutCells);
 
             if (balancer == null) {
-                balancer = new LoadBalancer(new List<Func<IApplication<AppControl>, int, ICellCostEstimator>>() { cellCostEstimatorFactory });
+                balancer = new LoadBalancer(
+                    new List<Func<IApplication<AppControl>, int, ICellCostEstimator>>() { cellCostEstimatorFactory }
+                    );
             }
 
-            return balancer.GetNewPartitioning(
+            int[] NewPart = balancer.GetNewPartitioning(
                 this,
                 2,
                 PerformanceClasses,
@@ -309,6 +323,16 @@ namespace BoSSS.Application.LoadBalancingTest {
                 "",
                 imbalanceThreshold: 0.0,
                 Period: 3);
+
+            if(NewPart != null) {
+                int myRank = this.MPIRank;
+                foreach(int tr in NewPart) {
+                    if(tr != myRank)
+                        m_NoOfReparts++;
+                }
+            }
+            
+            return NewPart;
 
             /*
             if (MPISize == 4 && TimeStepNo > 5) {
