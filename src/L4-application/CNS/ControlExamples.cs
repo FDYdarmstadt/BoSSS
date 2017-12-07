@@ -965,7 +965,7 @@ namespace CNS {
             return c;
         }
 
-        public static CNSControl ShockTube(string dbPath = null, int dgDegree = 2, int numOfCellsX = 50, int numOfCellsY = 1, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = false) {
+        public static CNSControl ShockTube(string dbPath = null, int dgDegree = 2, int numOfCellsX = 50, int numOfCellsY = 1, double sensorLimit = 1e-3, bool true1D = false, bool saveToDb = false) {
 
             CNSControl c = new CNSControl();
 
@@ -1123,42 +1123,15 @@ namespace CNS {
             Func<double, double> Jump = (x => x <= 0.5 ? 0 : 1);
 
             // Initial conditions
-            //c.InitialValues_Evaluators.Add(Variables.Density, delegate (double[] X) {
-            //    double x = X[0];
-
-            //    if (true1D == false) {
-            //        double y = X[1];
-            //    }
-
-            //    if (x <= 0.5) {
-            //        return 1.0;
-            //    } else {
-            //        return 0.125;
-            //    }
-            //});
-            //c.InitialValues_Evaluators.Add(Variables.Pressure, delegate (double[] X) {
-            //    double x = X[0];
-
-            //    if (true1D == false) {
-            //        double y = X[1];
-            //    }
-
-            //    if (x <= 0.5) {
-            //        return 1.0;
-            //    } else {
-            //        return 0.1;
-            //    }
-            //});
-            // Initial conditions
             double densityLeft = 1.0;
             double densityRight = 0.125;
             double pressureLeft = 1.0;
             double pressureRight = 0.1;
 
-            c.InitialValues_Evaluators.Add(Variables.Density, X => densityLeft - SmoothJump(DistanceFromPointToLine(X, p, r)) * (densityLeft - densityRight));
-            c.InitialValues_Evaluators.Add(Variables.Pressure, X => pressureLeft - SmoothJump(DistanceFromPointToLine(X, p, r)) * (pressureLeft - pressureRight));
-            //c.InitialValues_Evaluators.Add(Variables.Density, X => densityLeft - Jump(X[0]) * (densityLeft - densityRight));
-            //c.InitialValues_Evaluators.Add(Variables.Pressure, X => pressureLeft - Jump(X[0]) * (pressureLeft - pressureRight));
+            //c.InitialValues_Evaluators.Add(Variables.Density, X => densityLeft - SmoothJump(DistanceFromPointToLine(X, p, r)) * (densityLeft - densityRight));
+            //c.InitialValues_Evaluators.Add(Variables.Pressure, X => pressureLeft - SmoothJump(DistanceFromPointToLine(X, p, r)) * (pressureLeft - pressureRight));
+            c.InitialValues_Evaluators.Add(Variables.Density, X => densityLeft - Jump(X[0]) * (densityLeft - densityRight));
+            c.InitialValues_Evaluators.Add(Variables.Pressure, X => pressureLeft - Jump(X[0]) * (pressureLeft - pressureRight));
             c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => 0.0);
             if (true1D == false) {
                 c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => 0.0);
@@ -1178,8 +1151,6 @@ namespace CNS {
             } else {
                 c.SessionName = String.Format("Shock tube, 2D, dgDegree = {0}, noOfCellsX = {1}, noOfCellsX = {2}, sensorLimit = {3:0.00E-00}, CFLFraction = {4:0.00E-00}, ALTS {5}/{6}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids);
             }
-            //c.Tags.Add("Shock tube");
-            //c.Tags.Add("Artificial viscosity");
 
             return c;
         }
@@ -1557,7 +1528,6 @@ namespace CNS {
 
 
         public static CNSControl IBMShockTube(string dbPath = null, int dgDegree = 2, int numOfCellsX = 50, int numOfCellsY = 5, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = false) {
-
             IBMControl c = new IBMControl();
 
             dbPath = @"c:\bosss_db";
@@ -1751,10 +1721,9 @@ namespace CNS {
             double xMax = 1.3;
             double yMin = 0;
             double yMax = 0.65;
+            double shockPosition = 0.8;
 
             bool AV = true;
-
-            double shockPosition = 0.8;
 
             c.DomainType = DomainTypes.StaticImmersedBoundary;
 
