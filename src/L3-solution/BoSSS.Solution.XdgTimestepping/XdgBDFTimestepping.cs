@@ -247,11 +247,6 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         bool useX;
 
-        ////
-        //// stack of cut-cell metrics
-        ////
-        //CutCellMetrics[] m_Stack_CutCellMetrics;
-
         //
         // stack of mass matrices (matrices _without_ agglomeration)
         //
@@ -1253,6 +1248,9 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             // update multigrid basis _once_ in object lifetime for steady level set:
             if (this.Config_LevelSetHandling == LevelSetHandling.None && OneTimeMgInit == false) {
+                m_CurrentAgglomeration = m_LsTrk.GetAgglomerator(Config_SpeciesToCompute, Config_CutCellQuadratureOrder, Config_AgglomerationThreshold,
+                    AgglomerateNewborn: false, AgglomerateDecased: false, ExceptionOnFailedAgglomeration: true);
+
                 Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
                 Debug.Assert(object.ReferenceEquals(base.MultigridBasis[0][0].DGBasis.GridDat, m_CurrentAgglomeration.Tracker.GridDat));
                 base.MultigridBasis.UpdateXdgAggregationBasis(m_CurrentAgglomeration);
@@ -1412,7 +1410,8 @@ namespace BoSSS.Solution.XdgTimestepping {
             if(newLsTrkPushCount != oldLsTrkPushCount)
                 throw new ApplicationException("Calling 'LevelSetTracker.PushStacks()' is not allowed. Level-set-tracker stacks must be controlled by time-stepper.");
 
-            m_CurrentAgglomeration = null;
+            if(Config_LevelSetHandling != LevelSetHandling.None)
+                m_CurrentAgglomeration = null;
 
             // ===========================================
             // update level-set (in the case of splitting)
