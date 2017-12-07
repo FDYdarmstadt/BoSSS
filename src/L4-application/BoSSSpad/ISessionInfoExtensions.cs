@@ -1619,9 +1619,10 @@ namespace BoSSS.Foundation.IO {
         /// <param name="sessions"> List of sessions of the same problem but different MPIs </param>
         /// <param name="methods"> Array of methods to be evaluated. If methods == null, the 10 most expensive methods will be taken. </param>
         /// <param name="exclusive"> Boolean that defines if exclusive or inclusive times will be calculated. Methods will still be chosen by exclusive times. </param>
-        public static void EvaluatePerformanceAndPlot(this IEnumerable<ISessionInfo> sessions, string[] methods = null, bool exclusive = true)
+        /// <param name="solver"> String that indicates the solver. Up to now only implemented for IBM_Solver and CNS. </param>
+        public static void EvaluatePerformanceAndPlot(this IEnumerable<ISessionInfo> sessions, string[] methods = null, bool exclusive = true, string solver = "IBM_Solver")
         {
-            DataSet[] data = sessions.EvaluatePerformance(methods,exclusive);
+            DataSet[] data = sessions.EvaluatePerformance(methods,exclusive,solver);
             int numberDataSets = data.Length;
             int numberSessions = sessions.Count();
 
@@ -1672,15 +1673,30 @@ namespace BoSSS.Foundation.IO {
         /// <param name="sessions"> List of sessions of the same problem but different MPIs </param>
         /// <param name="methods"> Array of methods to be evaluated. If methods == null, the 10 most expensive methods will be taken. </param>
         /// <param name="exclusive"> Boolean that defines if exclusive or inclusive times will be calculated. Methods will still be chosen by exclusive times. </param>
+        /// <param name="solver"> String that indicates the solver. Up to now only implemented for IBM_Solver and CNS. </param>
         /// <returns>
         /// Returns an array of DataSets, where the first half contains the convergence data for every method and the second half the speedup data.
         /// </returns>
-        public static DataSet[] EvaluatePerformance(this IEnumerable<ISessionInfo> sessions, string[] methods = null, bool exclusive = true)
+        public static DataSet[] EvaluatePerformance(this IEnumerable<ISessionInfo> sessions, string[] methods = null, bool exclusive = true, string solver = "IBM_Solver")
         {
             string path = sessions.Pick(0).Database.Path;
+            string mainMethod;
+            switch(solver)
+            {
+                case "IBM_Solver":
+                    mainMethod = "BoSSS.Application.IBM_Solver.IBM_SolverMain.RunSolverOneStep";
+                    break;
+                case "CNS":
+                    mainMethod = "CNS.Program`1.RunSolverOneStep";
+                    break;
+                default:
+                    throw new ApplicationException("Main method not defined for this solver yet");
+            }
+            
+
 
             // Change maxNumberMethods to how many methods you want considered if no  methods specified
-            int maxNumberMethods = 10;
+            int maxNumberMethods = 8;
             double[] fraction = new double[maxNumberMethods];
             int idx = sessions.IndexOfMax(s => s.ComputeNodeNames.Count());
 
@@ -1693,9 +1709,8 @@ namespace BoSSS.Foundation.IO {
                 temp_fs[0] = new FileStream(@path + "\\sessions\\" + sessions.Pick(idx).ID + "\\profiling_bin.0.txt", FileMode.Open);
                 mcr[0] = (MethodCallRecord)fmt.Deserialize(temp_fs[0]);
                 temp_fs[0].Close();
-
-                // int i = 1;
-                var mostExpensive = mcr[0].FindChild("BoSSS.Application.IBM_Solver.IBM_SolverMain.RunSolverOneStep").CompleteCollectiveReport().OrderByDescending(cr => cr.ExclusiveTimeFractionOfRoot);
+                
+                var mostExpensive = mcr[0].FindChild(mainMethod).CompleteCollectiveReport().OrderByDescending(cr => cr.ExclusiveTimeFractionOfRoot);
 
                 methods = new string[maxNumberMethods];
                 for (int i = 0; i < maxNumberMethods; i++)
@@ -1710,7 +1725,6 @@ namespace BoSSS.Foundation.IO {
             DataSet[] data = new DataSet[2*numberMethods];
             double[][] times = new double[numberSessions][];
             int[] processors = new int[numberSessions];
-            string[] methods2 = methods;
 
             // Iterate over sessions
             for (int i = 0; i < numberSessions; i++)
@@ -1740,7 +1754,7 @@ namespace BoSSS.Foundation.IO {
                         // Get execution time of current method for current processor
                         double[] tempTime = new double[numberMethods];
                         double[] tempFractions = new double[numberMethods];
-                        value = mcr[j].FindChild("BoSSS.Application.IBM_Solver.IBM_SolverMain.RunSolverOneStep");
+                        value = mcr[j].FindChild(mainMethod);
                         if (exclusive)
                         {
                             tempTime[k] = value.FindChildren(methods[k]).Select(s => s.TimeExclusive.TotalSeconds).Max();
@@ -1771,7 +1785,8 @@ namespace BoSSS.Foundation.IO {
             }
             Array.Sort(processors, times);
 
-            KeyValuePair<string, double>[] test = new KeyValuePair<string, double>[numberMethods];
+            KeyValuePair<string, double>[] methodRegressionPair = new KeyValuePair<string, double>[numberMethods];
+            KeyValuePair<string, double>[] methodFractionPair = new KeyValuePair<string, double>[numberMethods];
             // Create DataSets and ideal curves
             for (int i = 0; i < numberMethods; i++)
             {
@@ -1800,15 +1815,18 @@ namespace BoSSS.Foundation.IO {
                 // Create DataSets from DataRows
                 data[i] = new DataSet(dataRowsConvergence);
                 data[i+numberMethods] = new DataSet(dataRowsSpeedup);
-                test[i] = new KeyValuePair<string, double>(methods[i], Math.Min(data.Skip(numberMethods).Pick(i).Regression().Pick(0).Value, data.Skip(numberMethods).Pick(i).Regression().Pick(1).Value));
+                methodRegressionPair[i] = new KeyValuePair<string, double>(methods[i], Math.Min(data.Skip(numberMethods).Pick(i).Regression().Pick(0).Value, data.Skip(numberMethods).Pick(i).Regression().Pick(1).Value));
+                methodFractionPair[i] = new KeyValuePair<string, double>(methods[i], fraction[i]);
             }
 
             // Use slope of actual speedup curve to sort methods and DataSets by "worst scaling"
-            //KeyValuePair<string[], double[]> test = new KeyValuePair<string[], double[]>(methods, data.Skip(numberMethods).Take(numberMethods).Select(ds => Math.Min(ds.Regression().Pick(0).Value, ds.Regression().Pick(1).Value)).ToArray());
-            test = test.OrderBy(t => t.Value).ToArray();
-              double[] regressions = test.Select(s => s.Value).ToArray();
+            methodRegressionPair = methodRegressionPair.OrderBy(t => t.Value).ToArray();
+            methodFractionPair = methodFractionPair.OrderByDescending(t => t.Value).ToArray();
+            double[] regressions = methodRegressionPair.Select(s => s.Value).ToArray();
             double[] regressions2 = regressions;
-            string[] sortedMethods = test.Select(s => s.Key).ToArray();
+            string[] methods2 = methodFractionPair.Select(s => s.Key).ToArray();
+            double[] fractions2 = methodFractionPair.Select(s => s.Value).ToArray();
+            string[] sortedMethods = methodRegressionPair.Select(s => s.Key).ToArray();
 
            // Write out the most expensive functions and the worst scaling functions
             Console.WriteLine("\n Most expensive functions");
@@ -1816,7 +1834,7 @@ namespace BoSSS.Foundation.IO {
             for (int i = 0; i < numberMethods; i++)
             {
                 Console.WriteLine("Rank " + i + ": " + methods2[i]);
-                Console.WriteLine("\t Time fraction of root: " + fraction[i].ToString("p3"));
+                Console.WriteLine("\t Time fraction of root: " + fractions2[i].ToString("p3"));
             }
             Console.WriteLine("\n Sorted by worst scaling");
             Console.WriteLine("============================");
