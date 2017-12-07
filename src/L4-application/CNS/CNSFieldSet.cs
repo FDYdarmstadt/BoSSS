@@ -154,7 +154,7 @@ namespace CNS {
         public virtual DGField[] ParameterFields {
             get {
                 if (this.config.ActiveOperators.HasFlag(Operators.ArtificialViscosity)) {
-                    return DerivedFields.Values.Where(f => f.Identification == Variables.ArtificialViscosity).ToArray();
+                    return new DGField[] { DerivedFields[Variables.ArtificialViscosity] };
                 } else {
                     return new DGField[0];
                 }

@@ -14,12 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation;
+using BoSSS.Solution;
+using ilPSP;
 using System.Collections.Generic;
 using System.Linq;
-using BoSSS.Foundation;
-using ilPSP;
-using BoSSS.Solution;
-using System;
 
 namespace CNS.EquationSystem {
 
@@ -37,15 +36,11 @@ namespace CNS.EquationSystem {
         private CNSControl config;
 
         /// <summary>
-        /// The parameter ordering that is constructed from the parameter
-        /// orderings of the different components.
+        /// The parameter ordering that is constructed from the the parameters
+        /// defined by the operator factory since it should know what the
+        /// operators need
         /// </summary>
         private IList<string> GetParameterOrdering(CNSFieldSet fieldSet) {
-            //return DensityComponents.
-            //    SelectMany(f => f.ParameterOrdering ?? new string[0]).
-            //    Union(MomentumComponents.SelectMany(f => f.SelectMany(g => g.ParameterOrdering ?? new string[0]))).
-            //    Union(EnergyComponents.SelectMany(f => f.ParameterOrdering ?? new string[0])).
-            //    ToList();
             return fieldSet.ParameterFields.Select(f => f.Identification).ToList();
         }
 
@@ -154,6 +149,7 @@ namespace CNS.EquationSystem {
             spatialOp.Commit();
             return spatialOp;
         }
+
         /// <summary>
         /// Maps the <see cref="IEquationComponent"/>s in
         /// <paramref name="op"/> to the relevant equation components in

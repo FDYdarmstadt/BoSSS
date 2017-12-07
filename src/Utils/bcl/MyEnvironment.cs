@@ -278,7 +278,7 @@ namespace bcl {
             Console.WriteLine("Installation (binaries): " + BOSSS_INSTALL.FullName);
             Console.WriteLine("Source code:             " + ((BOSSS_ROOT != null) ? BOSSS_ROOT.FullName : "null"));
             Console.WriteLine("User configuration:      " + BOSSS_USER.FullName);
-            Console.WriteLine("Native libraries:        " + BOSSS_BIN_NATIVE.FullName);
+            Console.WriteLine("Native libraries:        " + BOSSS_BIN_NATIVE?.FullName); //BOSSS_BIN_NATIVE can be null in non-windows environments
         }
 
         /// <summary>
@@ -365,17 +365,23 @@ namespace bcl {
         /// <summary>
         /// searches for the User- or Machine-environment variable 'BOSSS_INSTALL'
         /// and verifies the existence of this directory.
+        /// the extended syntax of GetEnvironmentVariable seems to be problematic 
+        /// when not on windows
         /// </summary>
         /// <returns></returns>
         static DirectoryInfo GetBoSSSInstallDir() {
             string si1 = System.Environment.GetEnvironmentVariable("BOSSS_INSTALL", EnvironmentVariableTarget.User);
             string si2 = System.Environment.GetEnvironmentVariable("BOSSS_INSTALL", EnvironmentVariableTarget.Machine);
+			string si3 = System.Environment.GetEnvironmentVariable("BOSSS_INSTALL");
 
-            string si = null;
+			string si = null;
             if (si1 != null && si1.Length > 0) {
                 si = si1;
             } else if (si2 != null && si2.Length > 0) {
                 si = si2;
+			}
+			else if (si3 != null && si3.Length > 0)   {
+				si = si3;
             }
 
 

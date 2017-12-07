@@ -119,14 +119,13 @@ namespace CNS.MaterialProperty {
         /// <see cref="IEquationOfState.GetSpeedOfSound"/>
         /// </param>
         /// <returns>
-        /// \f$ \sqrt{\kappa \frac{p}{\rho}}  / \text{Ma}\f$ 
+        /// \f$ \sqrt{\frac{p}{\rho}} / \text{Ma}\f$ 
         /// where
         /// \f$ \rho\f$  = <see name="StateVector.Density"/>
-        /// \f$ p\f$  = <see name="StateVector.Pressure"/>
-        /// and \f$ \kappa\f$  is the heat capacity ratio
-        /// supplied to <see cref="IdealGas.IdealGas"/>.
+        /// \f$ p\f$  = <see name="StateVector.Pressure"/>.
         /// </returns>
         public double GetSpeedOfSound(StateVector state) {
+            // Equals sqrt{\kappa \frac{p}{\rho}} for Ma = \kappa
             return Math.Sqrt(state.Pressure / state.Density) / state.Material.Control.MachNumber;
         }
 
