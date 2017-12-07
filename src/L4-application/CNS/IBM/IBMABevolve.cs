@@ -55,7 +55,7 @@ namespace CNS.IBM {
             XQuadFactoryHelper.MomentFittingVariants momentFittingVariant,
             SubGrid sgrd,
             bool adaptive = false)
-            : base(standardOperator, fieldsMap, null, explicitOrder, adaptive: adaptive, sgrd: sgrd) {
+            : base(standardOperator, fieldsMap, parametersMap, explicitOrder, adaptive: adaptive, sgrd: sgrd) {
 
             speciesMap = ibmSpeciesMap as ImmersedSpeciesMap;
             if (speciesMap == null) {
@@ -92,7 +92,7 @@ namespace CNS.IBM {
             this.m_Evaluator = new Lazy<SpatialOperator.Evaluator>(() =>
                 this.Operator.GetEvaluatorEx(
                     Mapping,
-                    null, // TO DO: I SIMPLY REMOVE PARAMETERMAP HERE; MAKE THIS MORE PRETTY
+                    boundaryParameterMap,
                     Mapping,
                     edgeScheme,
                     volumeScheme,
@@ -108,7 +108,7 @@ namespace CNS.IBM {
                     Mapping,
                     boundaryParameterMap,
                     Mapping,
-                    null, // Contains no boundary terms
+                    null, // Contains no boundary terms --> PROBLEM??????????
                     boundaryVolumeScheme));
         }
 

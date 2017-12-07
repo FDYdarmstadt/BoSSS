@@ -35,7 +35,12 @@ namespace BoSSS.Application.BoSSSpad {
         string m_ServerName;
         SshClient SSHConnection;     
 
-
+        /// <summary>
+        /// Client for submitting jobs directly from the BoSSSpad to slurm systems
+        /// </summary>
+        /// <param name="DeploymentBaseDirectory"></param>
+        /// <param name="ServerName"></param>
+        /// <param name="Username"></param>
         public SlurmClient(string DeploymentBaseDirectory, string ServerName, string Username = null) {
             base.DeploymentBaseDirectory = DeploymentBaseDirectory;
             m_Username = Username;
@@ -69,14 +74,18 @@ namespace BoSSS.Application.BoSSSpad {
                 output = SSHConnection.RunCommand("squeue -j " + myJob.EnvironmentVars["JobID"] + " -o %T");
                 int startindex = output.Result.IndexOf("\n") ;
                 int endindex = output.Result.IndexOf("\n",startindex+1);
-                var jobstatus = output.Result.Substring(startindex+1, (endindex-startindex)-1);
+                string jobstatus;
+                if (startindex ==-1 || endindex==-1) {
+                    jobstatus = "";
+                }
+                else {
+                    jobstatus = output.Result.Substring(startindex + 1, (endindex - startindex) - 1);
+                }
 
                 switch (jobstatus) {
                     case "RUNNING":
-                        isRunning = true;
-                        break;
-
                     case "PENDING":
+                    case "COMPLETING":
                         isRunning = true;
                         break;
 
@@ -120,14 +129,19 @@ namespace BoSSS.Application.BoSSSpad {
 
         public override object Submit(Job myJob) {
 
-            buildSlurmScript(myJob, new string[] { "module load gcc", "module load openmpi/hcc/1.6.5", "module load acml" });
+            // load users .bashrc with all dependencies
+            buildSlurmScript(myJob, new string[] { "source " + "/home/" + m_Username + "/.bashrc"});
+
 
             string path = "\\home\\" + m_Username + myJob.DeploymentDirectory.Substring(2);
+            // Converting script to unix format
             string convertCmd = " dos2unix " + path + "\\batch.sh";
+
+            // Submitting script to sbatch system
             string sbatchCmd = " sbatch " + path + "\\batch.sh";
 
             // Otherwise it didn´t work
-            System.Threading.Thread.Sleep(7000);
+            System.Threading.Thread.Sleep(5000);
 
             // Convert from Windows to Unix and submit job
             Console.WriteLine();
@@ -142,28 +156,31 @@ namespace BoSSS.Application.BoSSSpad {
             return null;
         }
 
+        /// <summary>
+        /// build batch script with all necessary parameters
+        /// </summary>
+        /// <param name="myJob"></param>
+        /// <param name="moduleLoad"></param>
         public void buildSlurmScript(Job myJob, string[] moduleLoad) {
 
+            string jobpath_win = "\\home\\" + m_Username + myJob.DeploymentDirectory.Substring(2);
+
+            string jobpath_unix = jobpath_win.Replace("\\", "/");
+
             string jobname = myJob.Name;
-            string stdoutpath = myJob.Stdout;
-            string stderrpath = myJob.Stderr;
-            string executiontime = "03:00:00";
+            string executiontime = myJob.ExecutionTime;
             int MPIcores = myJob.NumberOfMPIProcs;
             string usermail = m_Username;
-            //string solverdirection = myJob.Solver;
             string startupstring;
             string quote = "\"";
 
             using (var str = new StringWriter()) {
                 str.Write("mpiexec mono ");
-                str.Write(Path.GetFileName(myJob.EntryAssembly.Location));
-                //for (int i = 0; i<myJob.EnvironmentVars.Count;i++) {
+                str.Write(jobpath_unix+"/"+Path.GetFileName(myJob.EntryAssembly.Location));              
                 str.Write(" ");
                 str.Write(myJob.EnvironmentVars["BOSSS_ARG_" + 0]);
                 str.Write(" ");
-
                 str.Write(quote + myJob.EnvironmentVars["BOSSS_ARG_" + 1] + quote);
-                //}
                 startupstring = str.ToString();
             }
 
@@ -172,8 +189,8 @@ namespace BoSSS.Application.BoSSSpad {
             using (StreamWriter sw = File.CreateText(path)) {
                 sw.WriteLine("#!/bin/sh");
                 sw.WriteLine("#SBATCH -J " + jobname);
-                sw.WriteLine("#SBATCH -o " + stdoutpath);
-                sw.WriteLine("#SBATCH -e " + stderrpath);
+                sw.WriteLine("#SBATCH -o "+jobpath_unix + "/stdout.txt"); 
+                sw.WriteLine("#SBATCH -e " + jobpath_unix + "/stderr.txt");
                 sw.WriteLine("#SBATCH -t " + executiontime);
                 sw.WriteLine("#SBATCH --mem-per-cpu=1750");
                 sw.WriteLine("#SBATCH -n " + MPIcores);
@@ -191,6 +208,10 @@ namespace BoSSS.Application.BoSSSpad {
 
         }
 
+        /// <summary>
+        /// Read in log in password for HPC computing system
+        /// </summary>
+        /// <returns></returns>
         public static string ReadPassword() {
             string password = "";
             ConsoleKeyInfo info = Console.ReadKey(true);

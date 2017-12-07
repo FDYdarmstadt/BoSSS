@@ -20,7 +20,6 @@ using BoSSS.Solution.Timestepping;
 using CNS.EquationSystem;
 using CNS.IBM;
 using System;
-using System.Linq;
 
 namespace CNS {
 
@@ -88,7 +87,7 @@ namespace CNS {
         /// <param name="equationSystem">
         /// The equation system to be solved
         /// </param>
-        /// <param name="fieldsMap">
+        /// <param name="fieldSet">
         /// Fields affected by the time-stepper
         /// </param>
         /// <param name="parameterMap">
@@ -109,96 +108,106 @@ namespace CNS {
             this ExplicitSchemes timeStepperType,
             CNSControl control,
             OperatorFactory equationSystem,
-            CoordinateMapping fieldsMap,
+            CNSFieldSet fieldSet,
             CoordinateMapping parameterMap,
             ISpeciesMap speciesMap,
             IProgram<T> program)
             where T : CNSControl, new() {
 
+            CoordinateMapping variableMap = new CoordinateMapping(fieldSet.ConservativeVariables);
+
+            IBMControl ibmControl = control as IBMControl;
+            IBMOperatorFactory ibmFactory = equationSystem as IBMOperatorFactory;
+            if (control.DomainType != DomainTypes.Standard
+                && (ibmFactory == null || ibmControl == null)) {
+                throw new Exception();
+            }
+
             ITimeStepper timeStepper;
             switch (timeStepperType) {
-                case ExplicitSchemes.RungeKutta:
-                    if (control.DomainType == DomainTypes.Standard) {
-                        timeStepper = new RungeKutta(
-                            RungeKutta.GetDefaultScheme(control.ExplicitOrder),
-                            equationSystem.GetJoinedOperator().ToSpatialOperator(),
-                            fieldsMap,
-                            parameterMap,
-                            equationSystem.GetJoinedOperator().CFLConstraints);
-                    } else {
-                        IBMControl ibmControl = (IBMControl)control;
-                        timeStepper = ibmControl.TimesteppingStrategy.CreateRungeKuttaTimeStepper(
-                            ibmControl, equationSystem, fieldsMap, parameterMap, speciesMap,
-                            equationSystem.GetJoinedOperator().CFLConstraints);
-                    }
+                case ExplicitSchemes.RungeKutta when control.DomainType == DomainTypes.Standard:
+                    timeStepper = new RungeKutta(
+                        RungeKutta.GetDefaultScheme(control.ExplicitOrder),
+                        equationSystem.GetJoinedOperator().ToSpatialOperator(fieldSet),
+                        variableMap,
+                        parameterMap,
+                        equationSystem.GetJoinedOperator().CFLConstraints);
                     break;
 
-                case ExplicitSchemes.AdamsBashforth:
-                    if (control.DomainType == DomainTypes.StaticImmersedBoundary
-                        || control.DomainType == DomainTypes.MovingImmersedBoundary) {
-                        timeStepper = new IBMAdamsBashforth(
-                            equationSystem.GetConvectiveOperator().Union(equationSystem.GetDiffusiveOperator()).ToSpatialOperator(),
-                            equationSystem.GetSourceTermOperator().ToSpatialOperator(),
-                            fieldsMap,
-                            parameterMap,
-                            speciesMap,
-                            (IBMControl)control,
-                            equationSystem.GetJoinedOperator().CFLConstraints);
-                    } else {
-                        timeStepper = new AdamsBashforth(
-                        equationSystem.GetJoinedOperator().ToSpatialOperator(),
-                        fieldsMap,
+                case ExplicitSchemes.RungeKutta:
+                    timeStepper = ibmControl.TimesteppingStrategy.CreateRungeKuttaTimeStepper(
+                        ibmControl,
+                        equationSystem,
+                        fieldSet,
+                        parameterMap,
+                        speciesMap,
+                        equationSystem.GetJoinedOperator().CFLConstraints);
+                    break;
+
+                case ExplicitSchemes.AdamsBashforth when control.DomainType == DomainTypes.Standard:
+                    timeStepper = new AdamsBashforth(
+                        equationSystem.GetJoinedOperator().ToSpatialOperator(fieldSet),
+                        variableMap,
                         parameterMap,
                         control.ExplicitOrder,
                         equationSystem.GetJoinedOperator().CFLConstraints);
-                    }
+                    break;
+
+                case ExplicitSchemes.AdamsBashforth:
+                    timeStepper = new IBMAdamsBashforth(
+                        ibmFactory.GetJoinedOperator().ToSpatialOperator(fieldSet),
+                        ibmFactory.GetImmersedBoundaryOperator().ToSpatialOperator(fieldSet),
+                        variableMap,
+                        parameterMap,
+                        speciesMap,
+                        ibmControl,
+                        equationSystem.GetJoinedOperator().CFLConstraints);
+                    break;
+
+                case ExplicitSchemes.LTS when control.DomainType == DomainTypes.Standard:
+                    timeStepper = new AdamsBashforthLTS(
+                        equationSystem.GetJoinedOperator().ToSpatialOperator(fieldSet),
+                        variableMap,
+                        parameterMap,
+                        control.ExplicitOrder,
+                        control.NumberOfSubGrids,
+                        equationSystem.GetJoinedOperator().CFLConstraints,
+                        reclusteringInterval: control.ReclusteringInterval,
+                        fluxCorrection: control.FluxCorrection,
+                        saveToDBCallback: program.SaveToDatabase);
                     break;
 
                 case ExplicitSchemes.LTS:
-                    if (control.DomainType == DomainTypes.StaticImmersedBoundary
-                        || control.DomainType == DomainTypes.MovingImmersedBoundary) {
-                        timeStepper = new IBMAdamsBashforthLTS(
-                            equationSystem.GetConvectiveOperator().Union(equationSystem.GetDiffusiveOperator()).ToSpatialOperator(),
-                            equationSystem.GetSourceTermOperator().ToSpatialOperator(),
-                            fieldsMap,
-                            parameterMap,
-                            speciesMap,
-                            (IBMControl)control,
-                            equationSystem.GetJoinedOperator().CFLConstraints,
-                            reclusteringInterval: control.ReclusteringInterval,
-                            fluxCorrection: control.FluxCorrection);
-                    } else {
-                        timeStepper = new AdamsBashforthLTS(
-                            equationSystem.GetJoinedOperator().ToSpatialOperator(),
-                            fieldsMap,
-                            parameterMap,
-                            control.ExplicitOrder,
-                            control.NumberOfSubGrids,
-                            equationSystem.GetJoinedOperator().CFLConstraints,
-                            reclusteringInterval: control.ReclusteringInterval,
-                            fluxCorrection: control.FluxCorrection,
-                            saveToDBCallback: program.SaveToDatabase);
-                    }
+                    timeStepper = new IBMAdamsBashforthLTS(
+                        equationSystem.GetJoinedOperator().ToSpatialOperator(fieldSet),
+                        ibmFactory.GetImmersedBoundaryOperator().ToSpatialOperator(fieldSet),
+                        variableMap,
+                        parameterMap,
+                        speciesMap,
+                        ibmControl,
+                        equationSystem.GetJoinedOperator().CFLConstraints,
+                        reclusteringInterval: control.ReclusteringInterval,
+                        fluxCorrection: control.FluxCorrection);
                     break;
 
-                case ExplicitSchemes.Rock4:
-                    timeStepper = new ROCK4(equationSystem.GetJoinedOperator().ToSpatialOperator(), new CoordinateVector(fieldsMap), null);
+                case ExplicitSchemes.Rock4 when control.DomainType == DomainTypes.Standard:
+                    timeStepper = new ROCK4(equationSystem.GetJoinedOperator().ToSpatialOperator(fieldSet), new CoordinateVector(variableMap), null);
                     break;
 
-                case ExplicitSchemes.SSP54:
+                case ExplicitSchemes.SSP54 when control.DomainType == DomainTypes.Standard:
                     timeStepper = new RungeKutta(
                         RungeKuttaScheme.SSP54,
-                        equationSystem.GetJoinedOperator().ToSpatialOperator(),
-                        fieldsMap,
+                        equationSystem.GetJoinedOperator().ToSpatialOperator(fieldSet),
+                        variableMap,
                         parameterMap,
                         equationSystem.GetJoinedOperator().CFLConstraints);
                     break;
 
-                case ExplicitSchemes.RKC84:
+                case ExplicitSchemes.RKC84 when control.DomainType == DomainTypes.Standard:
                     timeStepper = new RungeKutta(
                         RungeKuttaScheme.RKC84,
-                        equationSystem.GetJoinedOperator().ToSpatialOperator(),
-                        fieldsMap,
+                        equationSystem.GetJoinedOperator().ToSpatialOperator(fieldSet),
+                        variableMap,
                         parameterMap,
                         equationSystem.GetJoinedOperator().CFLConstraints);
                     break;
@@ -207,8 +216,10 @@ namespace CNS {
                     throw new System.ArgumentException("Cannot instantiate empty scheme");
 
                 default:
-                    throw new Exception(String.Format(
-                        "Unknown explicit time stepper type \"{0}\"", timeStepperType));
+                    throw new NotImplementedException(String.Format(
+                        "Explicit time stepper type '{0}' not implemented for domain type '{1}'",
+                        timeStepperType,
+                        control.DomainType));
             }
 
             // Make sure shock sensor is updated before every flux evaluation
@@ -216,15 +227,18 @@ namespace CNS {
                 ExplicitEuler explicitEulerBasedTimestepper = timeStepper as ExplicitEuler;
                 if (explicitEulerBasedTimestepper == null) {
                     throw new Exception(String.Format(
-                        "Shock-capturing currently not implemented for time-steppers of type '{0}~",
+                        "Shock-capturing currently not implemented for time-steppers of type '{0}'",
                         timeStepperType));
-                } else {
-                    explicitEulerBasedTimestepper.OnBeforeComputeChangeRate += delegate (double absTime, double relTime) {
-                        program.Control.ShockSensor.UpdateSensorValues(program.WorkingSet);
-                        var variableFieldPair = program.WorkingSet.DerivedFields.Single(f => f.Value.Identification == Variables.ArtificialViscosity);
-                        variableFieldPair.Key.UpdateFunction(variableFieldPair.Value, program.SpeciesMap.SubGrid.VolumeMask, program);
-                    };
                 }
+
+                explicitEulerBasedTimestepper.OnBeforeComputeChangeRate += delegate (double absTime, double relTime) {
+                    program.Control.ShockSensor.UpdateSensorValues(
+                        program.WorkingSet,
+                        program.SpeciesMap,
+                        explicitEulerBasedTimestepper.SubGrid.VolumeMask);
+                    var avField = program.WorkingSet.DerivedFields[Variables.ArtificialViscosity];
+                    Variables.ArtificialViscosity.UpdateFunction(avField, program.SpeciesMap.SubGrid.VolumeMask, program);
+                };
             }
 
             // Make sure limiter is applied after each modification of conservative variables
@@ -234,10 +248,10 @@ namespace CNS {
                     throw new Exception(String.Format(
                         "Limiting currently not implemented for time-steppers of type '{0}~",
                         timeStepperType));
-                } else {
-                    explicitEulerBasedTimestepper.OnAfterFieldUpdate +=
-                        (t, f) => control.Limiter.LimitFieldValues(program);
                 }
+
+                explicitEulerBasedTimestepper.OnAfterFieldUpdate +=
+                    (t, f) => control.Limiter.LimitFieldValues(program);
             }
 
             return timeStepper;

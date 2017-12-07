@@ -180,7 +180,7 @@ namespace BoSSS.Solution.Multigrid {
                         iarm++;
 
 #if DEBUG
-                    Console.WriteLine("Step size:  " + lambda + "with Residuum:  " + nft);
+                        Console.WriteLine("Step size:  " + lambda + "with Residuum:  " + nft);
 #endif
                     }
                     // transform solution back to 'original domain'
@@ -249,7 +249,7 @@ namespace BoSSS.Solution.Multigrid {
                 if (Precond != null) {
                     var temp2 = r.CloneAs();
                     r.ClearEntries();
-                    //this.OpMtxRaw.InvertBlocks(OnlyDiagonal: true,Subblocks:true).SpMV(1, temp2, 0, r);
+                    //this.OpMtxRaw.InvertBlocks(OnlyDiagonal: false, Subblocks: false).SpMV(1, temp2, 0, r);
                     Precond.Solve(r, temp2);
                 }
 
@@ -281,11 +281,10 @@ namespace BoSSS.Solution.Multigrid {
                     // Call directional derivative
                     //V[k].SetV(f0);
 
-
                     if (Precond != null) {
                         var temp3 = V[k].CloneAs();
                         V[k].ClearEntries();
-                        //this.OpMtxRaw.InvertBlocks(OnlyDiagonal: true,Subblocks:true).SpMV(1, temp3, 0, V[k]);
+                        //this.OpMtxRaw.InvertBlocks(false,false).SpMV(1, temp3, 0, V[k]);
                         Precond.Solve(V[k], temp3);
                     }
 
@@ -299,6 +298,7 @@ namespace BoSSS.Solution.Multigrid {
                     H[k, k - 1] = V[k].L2NormPow2().MPISum().Sqrt();
                     double normav2 = H[k, k - 1];
 
+
                     // Reorthogonalize ?
                     if ((reorth == 1 && Math.Round(normav + 0.001 * normav2, 3) == Math.Round(normav, 3) || reorth == 3)) {
                         for (int j = 1; j <= k; j++) {
@@ -308,7 +308,6 @@ namespace BoSSS.Solution.Multigrid {
                         }
                         H[k, k - 1] = V[k].L2NormPow2().MPISum().Sqrt();
                     }
-
 
                     // Watch out for happy breakdown
                     if (H[k, k - 1] != 0)
@@ -356,14 +355,14 @@ namespace BoSSS.Solution.Multigrid {
                         //g[k] = w2;
                     }
 
-                    rho = g[k].Abs();
+                    rho = Math.Abs(g[k]);
 
                     Console.WriteLine("Error NewtonGMRES:   " + rho);
 
-                    using (StreamWriter writer = new StreamWriter(m_SessionPath + "//GMRES_Stats.txt", true))
-                    {
-                    writer.WriteLine(k + "   " + rho);
-                    }
+                    //using (StreamWriter writer = new StreamWriter(m_SessionPath + "//GMRES_Stats.txt", true))
+                    //{
+                    //writer.WriteLine(k + "   " + rho);
+                    //}
 
 
                     //Console.WriteLine("Error NewtonGMRES:   " + rho );
@@ -375,7 +374,7 @@ namespace BoSSS.Solution.Multigrid {
 
                 k--;
 
-                Console.WriteLine("GMRES completed after:   " + k + "steps");
+                //Console.WriteLine("GMRES completed after:   " + k + "steps");
 
                 // update approximation and exit
                 //y = H(1:i,1:i) \ g(1:i);    
@@ -391,9 +390,9 @@ namespace BoSSS.Solution.Multigrid {
                 }
 
                 // update approximation and exit
-                using (StreamWriter writer = new StreamWriter(m_SessionPath + "//GMRES_Stats.txt", true)) {
-                    writer.WriteLine("");
-                }
+                //using (StreamWriter writer = new StreamWriter(m_SessionPath + "//GMRES_Stats.txt", true)) {
+                //    writer.WriteLine("");
+                //}
 
                 errstep = rho;
 
@@ -408,7 +407,7 @@ namespace BoSSS.Solution.Multigrid {
 
             Console.WriteLine("Error Krylov:   " + errstep);
 
-            while (kinn < restart_limit && errstep > GMRESConvCrit) {
+            while (kinn < restart_limit && errstep.MPISum() > GMRESConvCrit) {
                 kinn++;
 
                 step = GMRES(SolutionVec, currentX, f0, step, out errstep);
@@ -437,17 +436,19 @@ namespace BoSSS.Solution.Multigrid {
                 double[] fx = new double[f0.Length];
 
                 // Scale the step
-                if (w.L2Norm() == 0) {
+                if (w.L2Norm().MPISum() == 0) {
                     fx.Clear();
                     return fx;
                 }
 
-                double xs = GenericBlas.InnerProd(currentX, w).MPISum() / w.L2NormPow2().MPISum().Sqrt();
+                var normw = w.L2NormPow2().MPISum().Sqrt();
+
+                double xs = GenericBlas.InnerProd(currentX, w).MPISum() / normw;
 
                 if (xs != 0) {
                     epsnew = epsnew * Math.Max(Math.Abs(xs), 1) * Math.Sign(xs);
                 }
-                epsnew = epsnew / w.L2Norm();
+                epsnew = epsnew / w.L2Norm().MPISum();
 
                 var del = currentX.CloneAs();
 
@@ -470,11 +471,9 @@ namespace BoSSS.Solution.Multigrid {
 
                 OpMtxRaw.SpMV(1.0, new CoordinateVector(SolutionVec.Mapping.Fields.ToArray()), 1.0, OpAffineRaw);
 
-
                 CurrentLin.TransformRhsInto(OpAffineRaw, fx);
 
                 SolutionVec.CopyEntries(temp);
-
 
                 // (f1 - f0) / epsnew
                 fx.AccV(1, f0);
@@ -628,5 +627,108 @@ namespace BoSSS.Solution.Multigrid {
 
         //}
 
+        /// <summary>
+        /// Gathers RHS and solution vector on process 0 for more than one MPI process.
+        /// </summary>
+        /// <param name="__b">local part of rhs</param>
+        /// <param name="__x">local part of solution/initial guess</param>
+        /// <param name="_x">gathered rhs</param>
+        /// <param name="_b">gathered solution vectors</param>
+        private void GatherOnProc0(double[] __x, double[] __b, out double[] _x, out double[] _b) {
+            int size, rank;
+            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
+            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
+
+            if (size > 1) {
+                // gather rhs on processor 0
+                // +++++++++++++++++++++++++
+
+                if (rank == 0) {
+                    _x = new double[OpMtxRaw.RowPartitioning.TotalLength];
+                    _b = new double[OpMtxRaw.RowPartitioning.TotalLength];
+
+                    Array.Copy(__b, 0, _b, 0, OpMtxRaw.RowPartitioning.LocalLength);
+
+                    unsafe {
+                        fixed (double* pb = &_b[0]) {
+                            for (int rcv_rank = 1; rcv_rank < size; rcv_rank++) {
+                                MPI_Status stat;
+                                csMPI.Raw.Recv((IntPtr)(pb + OpMtxRaw.RowPartitioning.GetI0Offest(rcv_rank)), OpMtxRaw.RowPartitioning.GetLocalLength(rcv_rank), csMPI.Raw._DATATYPE.DOUBLE, rcv_rank, 342346 + rcv_rank, csMPI.Raw._COMM.WORLD, out stat);
+                            }
+                        }
+                    }
+
+                }
+                else {
+                    // send my part to P0
+                    unsafe {
+                        fixed (double* pb = &__b[0]) {
+                            csMPI.Raw.Send((IntPtr)pb, OpMtxRaw.RowPartitioning.LocalLength, csMPI.Raw._DATATYPE.DOUBLE, 0, 342346 + rank, csMPI.Raw._COMM.WORLD);
+                        }
+                    }
+
+                    _x = null;
+                    _b = null;
+                }
+            }
+            else {
+                _x = __x;
+                _b = __b;
+            }
+
+        }
+
+        /// <summary>
+        /// Scatters solution vector from process 0 to other MPI processors.
+        /// </summary>
+        /// <param name="__x">
+        /// input; long vector on proc 0
+        /// </param>
+        /// <param name="_x">
+        /// output;
+        /// </param>
+        private void ScatterFromProc0(double[] __x, double[] _x) {
+            int size, rank;
+            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
+            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
+
+            if (size > 1) {
+                // distribute solution to other processors
+                // +++++++++++++++++++++++++++++++++++++++
+
+                if (rank == 0) {
+                    Array.Copy(_x, 0, __x, 0, OpMtxRaw.RowPartitioning.LocalLength);
+
+                    unsafe {
+                        fixed (double* px = &_x[0]) {
+                            for (int targ_rank = 1; targ_rank < size; targ_rank++) {
+                                csMPI.Raw.Send((IntPtr)(px + OpMtxRaw.RowPartitioning.GetI0Offest(targ_rank)), OpMtxRaw.RowPartitioning.GetLocalLength(targ_rank), csMPI.Raw._DATATYPE.DOUBLE, targ_rank, 4444 + targ_rank, csMPI.Raw._COMM.WORLD);
+                            }
+                        }
+                    }
+
+                }
+                else {
+                    unsafe {
+                        fixed (double* px = &__x[0]) {
+                            MPI_Status _st;
+                            csMPI.Raw.Recv((IntPtr)px, OpMtxRaw.RowPartitioning.LocalLength, csMPI.Raw._DATATYPE.DOUBLE, 0, 4444 + rank, csMPI.Raw._COMM.WORLD, out _st);
+                        }
+                    }
+                }
+            }
+            else {
+                if (!object.ReferenceEquals(__x, _x)) {
+                    int L = __x.Length;
+                    if (__x.Length != _x.Length)
+                        throw new ApplicationException("internal error.");
+                    Array.Copy(_x, __x, L);
+                }
+
+            }
+        }
+
     }
+
+
 }
