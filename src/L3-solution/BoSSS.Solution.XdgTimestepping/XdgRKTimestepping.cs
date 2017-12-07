@@ -207,23 +207,14 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         }
 
-#if DEBUG
-        int[][] m_OldSources;
-        double[][][] m_OldVolumes;
+//#if DEBUG
+//        int[][] m_OldSources;
+//        double[][][] m_OldVolumes;
+//#endif
         List<int> m_Versions = new List<int>();
-#endif
-
-        //List<CutCellMetrics> m_AllCCM = new List<CutCellMetrics>();
         int m_RequiredTimeLevels = 0;
 
         void UpdateAgglom(bool ReplaceTop) {
-            //var newCCM = this.UpdateCutCellMetrics();
-            //if (!newCCM.SpeciesList.SetEquals(Config_MassScale.Keys))
-            //    throw new ApplicationException("Mismatch between species lists.");
-            //if (ReplaceTop)
-            //    m_AllCCM[m_AllCCM.Count - 1] = newCCM;
-            //else
-            //    m_AllCCM.Add(newCCM);
 
             if(m_RequiredTimeLevels == 0) 
                 m_Versions.Clear();
@@ -240,7 +231,8 @@ namespace BoSSS.Solution.XdgTimestepping {
             Debug.Assert(m_RequiredTimeLevels == m_Versions.Count);
 
             for(int i = 0; i < m_Versions.Count; i++) {
-                Debug.Assert(m_Versions[ m_Versions.Count - 1 - i] == m_LsTrk.RegionsHistory[1 - i].Version);
+                if(m_Versions[m_Versions.Count - 1 - i] != m_LsTrk.RegionsHistory[1 - i].Version)
+                    throw new ApplicationException("Internal Error, level-set-tracker history stack messed up."); // cheap test, also affordable in release
             }
 
 
@@ -253,53 +245,53 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
             Debug.Assert(m_LsTrk.PopulatedHistoryLength >= m_RequiredTimeLevels - 1);
 
-#if DEBUG
-            if(m_RequiredTimeLevels > 1) {
-                Debug.Assert(m_OldSources != null);
-            } else {
-                m_OldSources = null;
-                m_OldVolumes = null;
-            }
-#endif
+//#if DEBUG
+//            if(m_RequiredTimeLevels > 1) {
+//                Debug.Assert(m_OldSources != null);
+//            } else {
+//                m_OldSources = null;
+//                m_OldVolumes = null;
+//            }
+//#endif
             m_CurrentAgglomeration = m_LsTrk.GetAgglomerator(Config_SpeciesToCompute, Config_CutCellQuadratureOrder,
                 this.Config_AgglomerationThreshold,
                 AgglomerateNewborn: oldAggTrsh != null, AgglomerateDecased: (oldAggTrsh != null), ExceptionOnFailedAgglomeration: true,
                 oldTs__AgglomerationTreshold: oldAggTrsh);
-#if DEBUG
-            int[][] NewSources = new int[Config_SpeciesToCompute.Length][];
-            {
-                for(int iSpc = 0; iSpc < NewSources.Length; iSpc++) {
-                    var Spc = Config_SpeciesToCompute[iSpc];
-                    NewSources[iSpc] = m_CurrentAgglomeration.GetAgglomerator(Spc).AggInfo.SourceCells.ItemEnum.ToArray();
-                }
-            }
-            double[][][] NewVolumes = new double[m_RequiredTimeLevels][][];
-            for(int iTs = 0; iTs < m_RequiredTimeLevels; iTs++) {
-                NewVolumes[iTs] = new double[Config_SpeciesToCompute.Length][];
-                for(int iSpc = 0; iSpc < NewSources.Length; iSpc++) {
-                    var Spc = Config_SpeciesToCompute[iSpc];
-                    NewVolumes[iTs][iSpc] = m_LsTrk.GetXDGSpaceMetrics(Config_SpeciesToCompute, Config_CutCellQuadratureOrder, 1 - iTs).CutCellMetrics.CutCellVolumes[Spc].To1DArray();
-                }
-            }
+//#if DEBUG
+//            int[][] NewSources = new int[Config_SpeciesToCompute.Length][];
+//            {
+//                for(int iSpc = 0; iSpc < NewSources.Length; iSpc++) {
+//                    var Spc = Config_SpeciesToCompute[iSpc];
+//                    NewSources[iSpc] = m_CurrentAgglomeration.GetAgglomerator(Spc).AggInfo.SourceCells.ItemEnum.ToArray();
+//                }
+//            }
+//            double[][][] NewVolumes = new double[m_RequiredTimeLevels][][];
+//            for(int iTs = 0; iTs < m_RequiredTimeLevels; iTs++) {
+//                NewVolumes[iTs] = new double[Config_SpeciesToCompute.Length][];
+//                for(int iSpc = 0; iSpc < NewSources.Length; iSpc++) {
+//                    var Spc = Config_SpeciesToCompute[iSpc];
+//                    NewVolumes[iTs][iSpc] = m_LsTrk.GetXDGSpaceMetrics(Config_SpeciesToCompute, Config_CutCellQuadratureOrder, 1 - iTs).CutCellMetrics.CutCellVolumes[Spc].To1DArray();
+//                }
+//            }
 
 
-            if(m_RequiredTimeLevels > 1) {
-                for(int iSpc = 0; iSpc < NewSources.Length; iSpc++) {
-                    var Spc = Config_SpeciesToCompute[iSpc];
-                    int[] _OldSources_spc = m_OldSources[iSpc];
-                    int[] _NewSources_spc = NewSources[iSpc];
-                    Debug.Assert(_OldSources_spc.IsSubsetOf(_NewSources_spc));
-                }
-            }
-            m_OldSources = NewSources;
-            m_OldVolumes = NewVolumes;
-#endif
+//            if(m_RequiredTimeLevels > 1) {
+//                for(int iSpc = 0; iSpc < NewSources.Length; iSpc++) {
+//                    var Spc = Config_SpeciesToCompute[iSpc];
+//                    int[] _OldSources_spc = m_OldSources[iSpc];
+//                    int[] _NewSources_spc = NewSources[iSpc];
+//                    Debug.Assert(_OldSources_spc.IsSubsetOf(_NewSources_spc));
+//                }
+//            }
+//            m_OldSources = NewSources;
+//            m_OldVolumes = NewVolumes;
+//#endif
 
-            foreach (var spId in m_CurrentAgglomeration.SpeciesList) {
-                string SpName = m_LsTrk.GetSpeciesName(spId);
-                int NoOfAgg = m_CurrentAgglomeration.GetAgglomerator(spId).AggInfo.AgglomerationPairs.Length;
-                Console.WriteLine("Species {0}, time {2}, number of agglomerations: {1}", SpName, NoOfAgg, m_RequiredTimeLevels);
-            }
+            //foreach (var spId in m_CurrentAgglomeration.SpeciesList) {
+            //    string SpName = m_LsTrk.GetSpeciesName(spId);
+            //    int NoOfAgg = m_CurrentAgglomeration.GetAgglomerator(spId).AggInfo.AgglomerationPairs.Length;
+            //    Console.WriteLine("Species {0}, time {2}, number of agglomerations: {1}", SpName, NoOfAgg, m_RequiredTimeLevels);
+            //}
         }
         
         /// <summary>
@@ -637,6 +629,8 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 //MoveLevelSetAndRelatedStuff(locCurSt, m_CurrentPhystime, m_CurrentDt, 1.0);
                 if (Math.Abs(m_ImplStParams.m_ActualLevSetRelTime - m_ImplStParams.m_RelTime) > 1.0e-14) {
+                    if(m_ImplStParams.m_IterationCounter <= 0)// only push tracker in the first iter
+                        m_LsTrk.PushStacks();
                     MoveLevelSetAndRelatedStuff(locCurSt,
                         m_ImplStParams.m_CurrentPhystime, m_ImplStParams.m_CurrentDt * m_ImplStParams.m_RelTime, 1.0,
                         m_ImplStParams.m_Mass, m_ImplStParams.m_k);
@@ -656,8 +650,6 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
 #endif
             if (updateAgglom || m_CurrentAgglomeration == null) {
-                if(m_ImplStParams.m_IterationCounter <= 0)// only push tracker in the first iter
-                    m_LsTrk.PushStacks();
                 this.UpdateAgglom(m_ImplStParams.m_IterationCounter > 0);
 
 
