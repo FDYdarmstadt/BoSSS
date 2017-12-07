@@ -260,6 +260,7 @@ namespace BoSSS.Foundation.XDG {
                     History[0] = Replicator0(m_Current, History[0]);
                 }
                 m_Current = Replicator1(m_Current);
+                m_PushCount++;
             }
 
 

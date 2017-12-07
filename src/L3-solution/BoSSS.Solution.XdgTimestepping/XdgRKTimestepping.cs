@@ -207,6 +207,12 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         }
 
+#if DEBUG
+        int[][] m_OldSources;
+        double[][][] m_OldVolumes;
+        List<int> m_Versions = new List<int>();
+#endif
+
         //List<CutCellMetrics> m_AllCCM = new List<CutCellMetrics>();
         int m_RequiredTimeLevels = 0;
 
@@ -219,10 +225,24 @@ namespace BoSSS.Solution.XdgTimestepping {
             //else
             //    m_AllCCM.Add(newCCM);
 
+            if(m_RequiredTimeLevels == 0) 
+                m_Versions.Clear();
+            
+
             if(m_RequiredTimeLevels == 0 && ReplaceTop == true)
                 throw new NotSupportedException();
-            if(!ReplaceTop)
+            if(!ReplaceTop) {
                 m_RequiredTimeLevels++;
+                m_Versions.Add(m_LsTrk.Regions.Version);
+            } else {
+                m_Versions[m_Versions.Count - 1] = m_LsTrk.Regions.Version;
+            }
+            Debug.Assert(m_RequiredTimeLevels == m_Versions.Count);
+
+            for(int i = 0; i < m_Versions.Count; i++) {
+                Debug.Assert(m_Versions[ m_Versions.Count - 1 - i] == m_LsTrk.RegionsHistory[1 - i].Version);
+            }
+
 
             double[] oldAggTrsh;
             if(m_RequiredTimeLevels > 1) {
@@ -233,22 +253,52 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
             Debug.Assert(m_LsTrk.PopulatedHistoryLength >= m_RequiredTimeLevels - 1);
 
-
-            //m_CurrentAgglomeration = new MultiphaseCellAgglomerator(
-            //    newCCM,
-            //    this.Config_AgglomerationThreshold, prevCCM != null, prevCCM != null, true,
-            //    prevCCM, oldAggTrsh);
-
+#if DEBUG
+            if(m_RequiredTimeLevels > 1) {
+                Debug.Assert(m_OldSources != null);
+            } else {
+                m_OldSources = null;
+                m_OldVolumes = null;
+            }
+#endif
             m_CurrentAgglomeration = m_LsTrk.GetAgglomerator(Config_SpeciesToCompute, Config_CutCellQuadratureOrder,
                 this.Config_AgglomerationThreshold,
                 AgglomerateNewborn: oldAggTrsh != null, AgglomerateDecased: (oldAggTrsh != null), ExceptionOnFailedAgglomeration: true,
                 oldTs__AgglomerationTreshold: oldAggTrsh);
+#if DEBUG
+            int[][] NewSources = new int[Config_SpeciesToCompute.Length][];
+            {
+                for(int iSpc = 0; iSpc < NewSources.Length; iSpc++) {
+                    var Spc = Config_SpeciesToCompute[iSpc];
+                    NewSources[iSpc] = m_CurrentAgglomeration.GetAgglomerator(Spc).AggInfo.SourceCells.ItemEnum.ToArray();
+                }
+            }
+            double[][][] NewVolumes = new double[m_RequiredTimeLevels][][];
+            for(int iTs = 0; iTs < m_RequiredTimeLevels; iTs++) {
+                NewVolumes[iTs] = new double[Config_SpeciesToCompute.Length][];
+                for(int iSpc = 0; iSpc < NewSources.Length; iSpc++) {
+                    var Spc = Config_SpeciesToCompute[iSpc];
+                    NewVolumes[iTs][iSpc] = m_LsTrk.GetXDGSpaceMetrics(Config_SpeciesToCompute, Config_CutCellQuadratureOrder, 1 - iTs).CutCellMetrics.CutCellVolumes[Spc].To1DArray();
+                }
+            }
 
-            
+
+            if(m_RequiredTimeLevels > 1) {
+                for(int iSpc = 0; iSpc < NewSources.Length; iSpc++) {
+                    var Spc = Config_SpeciesToCompute[iSpc];
+                    int[] _OldSources_spc = m_OldSources[iSpc];
+                    int[] _NewSources_spc = NewSources[iSpc];
+                    Debug.Assert(_OldSources_spc.IsSubsetOf(_NewSources_spc));
+                }
+            }
+            m_OldSources = NewSources;
+            m_OldVolumes = NewVolumes;
+#endif
+
             foreach (var spId in m_CurrentAgglomeration.SpeciesList) {
                 string SpName = m_LsTrk.GetSpeciesName(spId);
                 int NoOfAgg = m_CurrentAgglomeration.GetAgglomerator(spId).AggInfo.AgglomerationPairs.Length;
-                Console.WriteLine("Species {0}, number of agglomerations: {1}", SpName, NoOfAgg);
+                Console.WriteLine("Species {0}, time {2}, number of agglomerations: {1}", SpName, NoOfAgg, m_RequiredTimeLevels);
             }
         }
         
@@ -756,8 +806,8 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                     // move level-set:
                     if (Math.Abs(ActualLevSetRelTime - RelTime) > 1.0e-14) {
-                        this.MoveLevelSetAndRelatedStuff(u0.Mapping.Fields.ToArray(), PhysTime, dt * RelTime, 1.0, Mass, k);
                         this.m_LsTrk.PushStacks();
+                        this.MoveLevelSetAndRelatedStuff(u0.Mapping.Fields.ToArray(), PhysTime, dt * RelTime, 1.0, Mass, k);
                         this.UpdateAgglom(false);
                         BlockMsrMatrix PM, SM;
                         UpdateMassMatrix(out PM, out SM);
@@ -870,10 +920,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             Debug.Assert(Part.EqualsPartition(this.CurrentStateMapping));
 
             int J = m_LsTrk.GridDat.Cells.NoOfLocalUpdatedCells;
-
-            var AggSourceBitmaskA = m_CurrentAgglomeration.GetAgglomerator(m_LsTrk.GetSpeciesId("A")).AggInfo.SourceCells.GetBitMask();
-            var AggSourceBitmaskB = m_CurrentAgglomeration.GetAgglomerator(m_LsTrk.GetSpeciesId("B")).AggInfo.SourceCells.GetBitMask();
-
+                   
             double[] MtxVals = null;
             int[] Indices = null;
 

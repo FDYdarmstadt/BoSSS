@@ -806,7 +806,7 @@ namespace BoSSS.Foundation.XDG {
 
 
                                 double totVol = grdDat.Cells.GetCellVolume(jCell);
-                                                                double spcVol = oldCellVolumes[iTimeLev][jCell];
+                                double spcVol = oldCellVolumes[iTimeLev][jCell];
                                 double alpha = oldTs__AgglomerationTreshold[iTimeLev];
                                 spcVol = Math.Max(spcVol, 0.0);
                                 double frac = spcVol / totVol;
@@ -822,7 +822,7 @@ namespace BoSSS.Foundation.XDG {
                             }
                         }
                     }
-
+                    
                     if(AgglomerateNewborn) {
 
                         for(int j = 0; j < Jup; j++) {
@@ -846,13 +846,9 @@ namespace BoSSS.Foundation.XDG {
                                             AgglomCellsBitmask[jNewbornCell] = true;
                                         }
                                     }
-
                                 }
                             }
-
                         }
-
-
                     }
 
                     if(AgglomerateDeceased) {
@@ -886,11 +882,11 @@ namespace BoSSS.Foundation.XDG {
 
 
                     }
-
+                    //*/
 
 
                     /*
-                    if (AgglomerateNewbornAndDeceased) {
+                    if (AgglomerateNewborn || AgglomerateDeceased) {
                         //CellMask oldSpeciesCells = this.Tracker.LevelSetData.PreviousSubGrids[spId].VolumeMask;
                         CellMask newSpeciesCells = Tracker.Regions.GetSpeciesMask(spId);
 
@@ -957,7 +953,7 @@ namespace BoSSS.Foundation.XDG {
                         }
 
                     }
-                    */
+                    //*/
 
                     // pass 2: determine agglomeration targets
                     // ---------------------------------------
