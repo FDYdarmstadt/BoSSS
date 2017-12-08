@@ -913,7 +913,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
 
         }
-
+        
        
         /// <summary>
         /// Callback-routine  to update the linear resp. linearized system, 
@@ -1168,6 +1168,25 @@ namespace BoSSS.Solution.XdgTimestepping {
                     Debug.Assert(Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsIdentity);
                     System.AccEyeSp(1.0 / dt);
                 }
+#if DEBUG
+                {
+                    // compare "private" and "official" mass matrix stack
+                    // (private may be removed soon)
+
+                    for(int i = 0; i < m_Stack_MassMatrix.Length; i++) {
+                        var MM = m_Stack_MassMatrix[i];
+                        var MMcomp = new BlockMsrMatrix(CurrentStateMapping);
+                        m_LsTrk.GetXDGSpaceMetrics(Config_SpeciesToCompute, Config_CutCellQuadratureOrder, 1 - i)
+                            .MassMatrixFactory
+                            .AccMassMatrix(MMcomp, CurrentStateMapping, _alpha: Config_MassScale);
+                        var sollNull = MMcomp.CloneAs();
+                        sollNull.Acc(-1.0, MM);
+                        double normMMcomp = sollNull.InfNorm();
+                        Debug.Assert(normMMcomp == 0.0);
+                    }
+                }
+
+#endif
 
                 // perform agglomeration
                 // ---------------------
@@ -1180,6 +1199,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 m_IterationCounter++;
             }
         }
+
+
 
         double m_CurrentPhystime;
         double m_CurrentDt = -1;

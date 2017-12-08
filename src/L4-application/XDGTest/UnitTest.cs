@@ -43,7 +43,7 @@ namespace BoSSS.Application.XDGTest {
             double thres = 1.0e-10;
 
             Console.WriteLine("L2 Error of solution: " + err + " (threshold is " + thres + ")");
-            Assert.IsTrue(err < thres);
+            Assert.LessOrEqual(err, thres);
         }
     }
 

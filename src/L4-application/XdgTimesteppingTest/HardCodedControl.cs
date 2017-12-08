@@ -164,7 +164,6 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             R.GridFunc = delegate () {
                 double[] Xnodes = GenericBlas.Linspace(-2, 2, 7 * GridResolutionFactor + 1);
                 double[] Ynodes = GenericBlas.Linspace(-2, 2, 7 * GridResolutionFactor + 1);
-
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
 
                 grd.EdgeTagNames.Add(1, "Dirichlet");

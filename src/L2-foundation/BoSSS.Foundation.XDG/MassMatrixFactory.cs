@@ -296,7 +296,7 @@ namespace BoSSS.Foundation.XDG {
                         throw new ArgumentException("Number of alpha's must match number of variables/fields in mapping.");
                 }
 
-                var regions = XDGSpaceMetrics.LevelSetRegions;
+                LevelSetTracker.LevelSetRegions regions = null;// XDGSpaceMetrics.LevelSetRegions;
 
 
                 // compute the Mass-Blocks for the cut cells...
@@ -331,7 +331,7 @@ namespace BoSSS.Foundation.XDG {
                             Basis basis = _basisS[fld];
                             if (Xbasis != null) {
                                 nonXbasis = Xbasis.NonX_Basis;
-
+                                regions = Xbasis.Tracker.Regions; // compute species indices with respect to **actual** regions !!!!
                                 //if (!object.ReferenceEquals(Xbasis.Tracker, this.XDGSpaceMetrics.))
                                 //    throw new ArgumentException();
                             } else {
