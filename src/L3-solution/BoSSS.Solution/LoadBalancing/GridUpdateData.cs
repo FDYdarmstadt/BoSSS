@@ -111,14 +111,22 @@ namespace BoSSS.Solution {
         }
 
 
-        /// <summary>
-        /// Set the new level-set-tracker after it is available.
-        /// </summary>
-        public void SetNewTracker(LevelSetTracker NewTracker) {
-            if(NewTracker != null && !object.ReferenceEquals(NewTracker.GridDat, m_NewGrid))
-                throw new ArgumentException();
-            m_NewTracker = NewTracker;
+        ///// <summary>
+        ///// Set the new level-set-tracker after it is available.
+        ///// </summary>
+        //public void SetNewTracker(LevelSetTracker NewTracker) {
+        //    if(NewTracker != null && !object.ReferenceEquals(NewTracker.GridDat, m_NewGrid))
+        //        throw new ArgumentException();
+        //    m_NewTracker = NewTracker;
+        //}
+
+
+        protected void BackupTracker () {
+
         }
+
+
+        protected abstract void RestoreTracker();
 
 
         /// <summary>
