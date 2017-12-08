@@ -570,8 +570,8 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 
                 // compute mass matrix (only once in application lifetime)
-                Debug.Assert((m_PrecondMassMatrix == null) == (m_Stack_MassMatrix[0] == null));
-                if ((this.Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsNonIdentity && m_PrecondMassMatrix == null)
+                //Debug.Assert((m_PrecondMassMatrix == null) == (m_Stack_MassMatrix[0] == null));
+                if ((this.Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsNonIdentity)// && m_PrecondMassMatrix == null)
                     || (this.Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsTimeDependent && m_IterationCounter == 0)
                     || (this.Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsTimeAndSolutionDependent)
                     ) {

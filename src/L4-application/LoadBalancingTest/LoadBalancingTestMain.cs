@@ -301,10 +301,7 @@ namespace BoSSS.Application.LoadBalancingTest {
             //if(MPIRank == 0)
             //    Debugger.Launch();
             int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
-<<<<<<< HEAD
-
-=======
->>>>>>> exchange/AMR
+            int[] NewPart;
             /*
             int[] PerformanceClasses = new int[J];
             var CC = this.LsTrk.Regions.GetCutCellMask();
@@ -331,15 +328,9 @@ namespace BoSSS.Application.LoadBalancingTest {
                 Period: 3);
 
             
-<<<<<<< HEAD
-            return NewPart;
-            */
-            
-=======
+
             */
 
-            int[] NewPart;
->>>>>>> exchange/AMR
             if (MPISize == 4 && TimeStepNo > 5) {
                 NewPart = new int[J];
 
@@ -380,9 +371,9 @@ namespace BoSSS.Application.LoadBalancingTest {
             } else {
                 return null;
             }
-<<<<<<< HEAD
+
             //*/
-=======
+
 
             if(NewPart != null) {
                 int myRank = this.MPIRank;
@@ -393,7 +384,6 @@ namespace BoSSS.Application.LoadBalancingTest {
             }
             
             return NewPart;
->>>>>>> exchange/AMR
         }
 
         LoadBalancer balancer;
