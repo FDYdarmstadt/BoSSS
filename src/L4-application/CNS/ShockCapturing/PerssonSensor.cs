@@ -17,6 +17,7 @@ limitations under the License.
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Quadrature;
+using BoSSS.Platform;
 using CNS.IBM;
 using ilPSP;
 using ilPSP.LinSolvers;
@@ -55,7 +56,10 @@ namespace CNS.ShockCapturing {
             IMatrix coordinatesTimesMassMatrix;
             IMatrix coordinatesTruncatedTimesMassMatrix;
             if (speciesMap is ImmersedSpeciesMap ibmMap) {
-                BlockMsrMatrix massMatrix = ibmMap.GetMassMatrixFactory(fieldToTest.Mapping).MassMatrix;
+                // Note: This has to be the _non_-agglomerated mass matrix
+                // because we still live on the non-agglomerated mesh at this
+                // point
+                BlockMsrMatrix massMatrix = ibmMap.GetMassMatrixFactory(fieldToTest.Mapping).NonAgglomeratedMassMatrix;
 
                 // Old
                 DGField temp = fieldToTest.CloneAs();
