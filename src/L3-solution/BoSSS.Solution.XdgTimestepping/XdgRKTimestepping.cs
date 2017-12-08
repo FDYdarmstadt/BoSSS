@@ -328,6 +328,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     //MassMatrixFactory MassFact = new MassMatrixFactory(CurrentStateMapping.BasisS.ElementAtMax(b => b.Degree), m_CurrentAgglomeration);
                     MassMatrixFactory MassFact = m_LsTrk.GetXDGSpaceMetrics(Config_SpeciesToCompute, Config_CutCellQuadratureOrder, 1).MassMatrixFactory;
                     PrecondMassMatrix = MassFact.GetMassMatrix(CurrentStateMapping, false);
+                    m_CurrentAgglomeration.ManipulateMatrixAndRHS(PrecondMassMatrix, default(double[]), CurrentStateMapping, CurrentStateMapping);
                     ScaledMassMatrix = new BlockMsrMatrix(CurrentStateMapping);
 
                     int NF = this.CurrentStateMapping.Fields.Count;

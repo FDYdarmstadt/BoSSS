@@ -356,7 +356,7 @@ namespace BoSSS.Application.ZwoLsTest {
             //var MassInv = Mfact.GetMassMatrix(u.Mapping, new double[] { 1.0 }, true, LsTrk.GetSpeciesId("B"));
             var Mass = Mfact.GetMassMatrix(u.Mapping, new double[] { 1.0 }, false, LsTrk.GetSpeciesId("B"));
             Agg.ManipulateMatrixAndRHS(Mass, default(double[]), u.Mapping, u.Mapping);
-            var MassInv = Mass.InvertBlocks(OnlyDiagonal: true, Subblocks: true, ignoreEmptyBlocks: true, SymmetricalInversion: true);
+            var MassInv = Mass.InvertBlocks(OnlyDiagonal: true, Subblocks: true, ignoreEmptyBlocks: true, SymmetricalInversion: false);
             
 
             // test that operator depends only on B-species values

@@ -302,7 +302,7 @@ namespace BoSSS.Application.LoadBalancingTest {
             //    Debugger.Launch();
 
             int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
-
+            /*
             int[] PerformanceClasses = new int[J];
             var CC = this.LsTrk.Regions.GetCutCellMask();
             foreach(int j in CC.ItemEnum) {
@@ -327,6 +327,51 @@ namespace BoSSS.Application.LoadBalancingTest {
                 imbalanceThreshold: 0.0,
                 Period: 3);
 
+            
+            */
+
+            int[] NewPart;
+            if (MPISize == 4 && TimeStepNo > 5) {
+                NewPart = new int[J];
+
+                double speed = this.GridData.Cells.h_maxGlobal / 0.3;
+                for (int j = 0; j < J; j++) {
+                    double[] X = this.GridData.Cells.CellCenter.GetRow(j);
+                    double x = X[0];
+                    double y = X[1];
+
+                    int px = x < Math.Min(physTime * speed, 2) ? 0 : 1;
+                    int py = y < 0 ? 0 : 1;
+
+                    NewPart[j] = px * 2 + py;
+                }
+
+                //return Part;
+            } else if (MPISize == 2) {
+                NewPart = new int[J];
+
+                double speed = this.GridData.Cells.h_maxGlobal / 0.3;
+
+                for (int j = 0; j < J; j++) {
+                    double[] X = this.GridData.Cells.CellCenter.GetRow(j);
+                    double x = X[0];
+                    double y = X[1];
+
+                    int px = x < Math.Min(physTime * speed, 2) ? 0 : 1;
+                    int py = y < 0 ? 0 : 1;
+
+                    NewPart[j] = px;
+                }
+
+                //return null;
+                //return Part;
+            } else if (MPISize == 1) {
+                
+                return null;
+            } else {
+                return null;
+            }
+
             if(NewPart != null) {
                 int myRank = this.MPIRank;
                 foreach(int tr in NewPart) {
@@ -336,49 +381,6 @@ namespace BoSSS.Application.LoadBalancingTest {
             }
             
             return NewPart;
-
-            /*
-            if (MPISize == 4 && TimeStepNo > 5) {
-                int[] Part = new int[J];
-
-                double speed = this.GridData.Cells.h_maxGlobal / 0.3;
-                for (int j = 0; j < J; j++) {
-                    double[] X = this.GridData.Cells.CellCenter.GetRow(j);
-                    double x = X[0];
-                    double y = X[1];
-
-                    int px = x < Math.Min(physTime * speed, 2) ? 0 : 1;
-                    int py = y < 0 ? 0 : 1;
-
-                    Part[j] = px * 2 + py;
-                }
-
-                return Part;
-            } else if (MPISize == 2) {
-                int[] Part = new int[J];
-
-                double speed = this.GridData.Cells.h_maxGlobal / 0.3;
-
-                for (int j = 0; j < J; j++) {
-                    double[] X = this.GridData.Cells.CellCenter.GetRow(j);
-                    double x = X[0];
-                    double y = X[1];
-
-                    int px = x < Math.Min(physTime * speed, 2) ? 0 : 1;
-                    int py = y < 0 ? 0 : 1;
-
-                    Part[j] = px;
-                }
-
-                //return null;
-                return Part;
-            } else if (MPISize == 1) {
-                int[] Part = new int[J];
-                return Part;
-            } else {
-                return null;
-            }
-            */
         }
 
         LoadBalancer balancer;

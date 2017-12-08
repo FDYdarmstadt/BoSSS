@@ -518,7 +518,17 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
 
 
+            // update multigrid basis _once_ in object lifetime for steady level set:
+            // ----------------------
+            if (this.Config_LevelSetHandling == LevelSetHandling.None && OneTimeMgInit == false) {
+                m_CurrentAgglomeration = m_LsTrk.GetAgglomerator(Config_SpeciesToCompute, Config_CutCellQuadratureOrder, Config_AgglomerationThreshold,
+                    AgglomerateNewborn: false, AgglomerateDecased: false, ExceptionOnFailedAgglomeration: true);
 
+                Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
+                Debug.Assert(object.ReferenceEquals(base.MultigridBasis[0][0].DGBasis.GridDat, m_CurrentAgglomeration.Tracker.GridDat));
+                base.MultigridBasis.UpdateXdgAggregationBasis(m_CurrentAgglomeration);
+                OneTimeMgInit = true;
+            }
 
             // update Multigrid-XDG basis
             //Debug.Assert(object.ReferenceEquals(base.MultigridBasis[0][0].DGBasis.GridDat, m_CurrentAgglomeration.Tracker.GridDat));
@@ -561,7 +571,12 @@ namespace BoSSS.Solution.XdgTimestepping {
                     int NF = CurrentStateMapping.Fields.Count;
                     //MassMatrixFactory MassFact = new MassMatrixFactory(CurrentStateMapping.BasisS.ElementAtMax(b => b.Degree), m_CurrentAgglomeration);
                     MassMatrixFactory MassFact = m_LsTrk.GetXDGSpaceMetrics(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder).MassMatrixFactory;
+
+                    // matrix used for precond (must be agglomerated)
                     m_PrecondMassMatrix = MassFact.GetMassMatrix(CurrentStateMapping, false);
+                    m_CurrentAgglomeration.ManipulateMatrixAndRHS(m_PrecondMassMatrix, default(double[]), CurrentStateMapping, CurrentStateMapping);
+
+                    // matrix for time derivative
                     m_Stack_MassMatrix[0] = new BlockMsrMatrix(CurrentStateMapping);
                     MassFact.AccMassMatrix(m_Stack_MassMatrix[0], CurrentStateMapping, _alpha: Config_MassScale);
                 }
@@ -904,11 +919,11 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <param name="argCurSt">Input, current state of solution.</param>
         /// <param name="System">Output.</param>
         /// <param name="Affine">Output.</param>
-        /// <param name="MassMatrix">
+        /// <param name="PrecondMassMatrix">
         /// Mass matrix including agglomeration, without any scaling,
         /// required for block-precond.
         /// </param>
-        protected override void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, DGField[] argCurSt) {
+        protected override void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix PrecondMassMatrix, DGField[] argCurSt) {
             using (new FuncTrace()) {
                 // copy data from 'argCurSt' to 'CurrentStateMapping', if necessary 
                 // -----------------------------------------------------------
@@ -1003,7 +1018,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     // may occur e.g. if one runs the FSI solver as a pure single-phase solver,
                     // i.e. if the Level-Set is outside the domain.
 
-                    MassMatrix = null;
+                    PrecondMassMatrix = null;
                 } else {
                     // checks:
                     Debug.Assert(this.Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsNonIdentity
@@ -1023,12 +1038,17 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                         //MassMatrixFactory MassFact = new MassMatrixFactory(CurrentStateMapping.BasisS.ElementAtMax(b => b.Degree), m_CurrentAgglomeration);
                         MassMatrixFactory MassFact = m_LsTrk.GetXDGSpaceMetrics(Config_SpeciesToCompute, Config_CutCellQuadratureOrder, 1).MassMatrixFactory;
+
+                        // matrix for preconditioner (Agglom required)
                         m_PrecondMassMatrix = MassFact.GetMassMatrix(CurrentStateMapping, false);
+                        m_CurrentAgglomeration.ManipulateMatrixAndRHS(m_PrecondMassMatrix, default(double[]), CurrentStateMapping, CurrentStateMapping);
+
+                        // mass matrix for time derivative
                         m_Stack_MassMatrix[0] = new BlockMsrMatrix(CurrentStateMapping);
                         MassFact.AccMassMatrix(m_Stack_MassMatrix[0], CurrentStateMapping, _alpha: Config_MassScale);
                     }
 
-                    MassMatrix = m_PrecondMassMatrix;
+                    PrecondMassMatrix = m_PrecondMassMatrix;
                 }
 
 
@@ -1246,16 +1266,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Console.WriteLine("Increment solve, timestep #{0}, dt = {1} ...", increment, dt);
 
 
-            // update multigrid basis _once_ in object lifetime for steady level set:
-            if (this.Config_LevelSetHandling == LevelSetHandling.None && OneTimeMgInit == false) {
-                m_CurrentAgglomeration = m_LsTrk.GetAgglomerator(Config_SpeciesToCompute, Config_CutCellQuadratureOrder, Config_AgglomerationThreshold,
-                    AgglomerateNewborn: false, AgglomerateDecased: false, ExceptionOnFailedAgglomeration: true);
-
-                Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
-                Debug.Assert(object.ReferenceEquals(base.MultigridBasis[0][0].DGBasis.GridDat, m_CurrentAgglomeration.Tracker.GridDat));
-                base.MultigridBasis.UpdateXdgAggregationBasis(m_CurrentAgglomeration);
-                OneTimeMgInit = true;
-            }
+            
 
 
             // ===========================================
