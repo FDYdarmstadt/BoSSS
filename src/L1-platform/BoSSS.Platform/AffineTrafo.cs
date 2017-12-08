@@ -132,7 +132,7 @@ namespace BoSSS.Platform.LinAlg {
         }
 
         /// <summary>
-        /// applies this transformation to a series of vectors
+        /// Applies this transformation to a series of vectors.
         /// </summary>
         public void Transform(MultidimensionalArray vtxIn, MultidimensionalArray vtxOut) {
             if (vtxIn.GetLength(1) != DomainDimension)
@@ -156,6 +156,7 @@ namespace BoSSS.Platform.LinAlg {
                 }
             }
         }
+        
 
         /// <summary>
         /// applies this transformation to a series of vectors
@@ -171,7 +172,7 @@ namespace BoSSS.Platform.LinAlg {
             for (int l = 0; l < L; l++) {
                 ArrayTools.GetRow(vtx, l, x);
                 var yl = Transform(x);
-                ret.SetRow(yl, l);
+                ret.SetRow(l, yl);
             }
 
             return ret;

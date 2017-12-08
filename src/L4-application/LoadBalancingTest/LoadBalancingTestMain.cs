@@ -4,6 +4,7 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution;
+using BoSSS.Solution.Control;
 using BoSSS.Solution.Multigrid;
 using BoSSS.Solution.Tecplot;
 using BoSSS.Solution.Utils;
@@ -12,6 +13,7 @@ using ilPSP;
 using ilPSP.LinSolvers;
 using ilPSP.Tracing;
 using ilPSP.Utils;
+using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -83,7 +85,7 @@ namespace BoSSS.Application.LoadBalancingTest {
         /// </summary>
         internal int DEGREE = 3;
 
-        internal Func<int, ICellCostEstimator> cellCostEstimatorFactory = CellCostEstimatorLibrary.AllCellsAreEqual;
+        internal Func<IApplication<AppControl>, int, ICellCostEstimator> cellCostEstimatorFactory = CellCostEstimatorLibrary.AllCellsAreEqual;
 
         /// <summary>
         /// Cell Agglomeration threshold
@@ -141,11 +143,14 @@ namespace BoSSS.Application.LoadBalancingTest {
             this.DelUpdateLevelset(null, 0.0, 0.0, 0.0, false);
         }
 
+        /// <summary>
+        /// The operator d/dx
+        /// </summary>
         XSpatialOperator Op;
 
         XdgBDFTimestepping TimeIntegration;
 
-        protected override void CreateEquationsAndSolvers(LoadBalancingData L) {
+        protected override void CreateEquationsAndSolvers(GridUpdateData L) {
             Op = new XSpatialOperator(1, 0, 1, QuadOrderFunc.SumOfMaxDegrees(RoundUp: true), "u", "c1");
 
             var blkFlux = new DxFlux(this.LsTrk, alpha_A, alpha_B);
@@ -238,7 +243,7 @@ namespace BoSSS.Application.LoadBalancingTest {
                 base.LsTrk.SpeciesIdS.ToArray());
         }
 
-        public override void DataBackupBeforeBalancing(LoadBalancingData L) {
+        public override void DataBackupBeforeBalancing(GridUpdateData L) {
             TimeIntegration.DataBackupBeforeBalancing(L);
         }
 
@@ -258,6 +263,7 @@ namespace BoSSS.Application.LoadBalancingTest {
                 // compute one time-step
                 TimeIntegration.Solve(phystime, dt, ComputeOnlyResidual: true);
                 double ResidualNorm = this.uResidual.L2Norm();
+                Assert.LessOrEqual(ResidualNorm, 1.0e-8, "Unusually large and ugly residual norm detected.");
 
                 // done.
                 Console.WriteLine("    done.");
@@ -284,13 +290,13 @@ namespace BoSSS.Application.LoadBalancingTest {
                 PerformanceClasses[j] = 1;
 
             if (balancer == null) {
-                balancer = new LoadBalancer(cellCostEstimatorFactory);
+                balancer = new LoadBalancer(new List<Func<IApplication<AppControl>, int, ICellCostEstimator>>() { cellCostEstimatorFactory });
             }
 
             return balancer.GetNewPartitioning(
+                this,
                 2,
                 PerformanceClasses,
-                this.Grid,
                 TimeStepNo,
                 GridPartType.none,
                 "",

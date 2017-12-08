@@ -290,6 +290,16 @@ namespace BoSSS.Solution.Control {
             }
         }
 
+
+        ///// <summary>
+        ///// Adds a time-dependent initial value (e.g. some external force field which may change over time).
+        ///// </summary>
+        ///// <param name="fieldname">Name of the DG field which should hold the initial value.</param>
+        ///// <param name="value">Function of the boundary condition</param>
+        //public void AddInitialValue(string fieldname, Func<double[], double> value) {
+        //    this.InitialValues_Evaluators.Add(fieldname, value);
+        //}
+
         /// <summary>
         /// Contains a list of queries that shall be evaluated at the end of
         /// the simulation
@@ -481,7 +491,8 @@ namespace BoSSS.Solution.Control {
         /// <summary>
         /// A method that creates a new estimator for the runtime cost of individual cells
         /// </summary>
-        public Func<int, ICellCostEstimator> DynamicLoadBalancing_CellCostEstimatorFactory = CellCostEstimatorLibrary.AllCellsAreEqual;
+        public List<Func<IApplication<AppControl>, int, ICellCostEstimator>> DynamicLoadBalancing_CellCostEstimatorFactories =
+            new List<Func<IApplication<AppControl>, int, ICellCostEstimator>>();
 
         /// <summary>
         /// Number of time-steps, after which dynamic load balancing is performed; if negative, dynamic load balancing is turned off.

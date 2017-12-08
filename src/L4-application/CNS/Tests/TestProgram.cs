@@ -42,7 +42,7 @@ namespace CNS.Tests {
                 out dummy);
             Thread.CurrentThread.CurrentCulture = CultureInfo.CurrentCulture;
         }
-        
+
         /// <summary>
         /// Checks the errors for density, pressure and entropy against predefined
         /// thresholds.
@@ -58,6 +58,7 @@ namespace CNS.Tests {
                 double error = (double)resultsTable[queryName];
                 string message = String.Format(
                     "{0}: {1} (Threshold is {2})",
+                    //"{0:F16}: {1:F16} (Threshold is {2:F16})",
                     queryName,
                     error,
                     threshold);

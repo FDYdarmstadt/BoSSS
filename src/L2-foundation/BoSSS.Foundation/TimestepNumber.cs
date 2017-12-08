@@ -249,7 +249,7 @@ namespace BoSSS.Foundation.IO {
         /// <param name="other"></param>
         /// <returns></returns>
         public bool Equals(TimestepNumber other) {
-            return ArrayTools.Equals(numbers, other.numbers);
+            return ArrayTools.ListEquals(numbers, other.numbers);
         }
 
         #endregion

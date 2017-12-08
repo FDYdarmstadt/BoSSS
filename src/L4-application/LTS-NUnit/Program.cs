@@ -90,8 +90,6 @@ namespace LTS_NUnit {
 
         private class SurrogateConstraint : TimeStepConstraint {
 
-            private MultidimensionalArray CellMetric;
-
             public SurrogateConstraint(GridData gridData, double dtMin, double dtMax, double dtFraction, double EndTime) :
                 base(gridData, dtMin, dtMax, dtFraction, EndTime) {
             }
@@ -103,7 +101,7 @@ namespace LTS_NUnit {
             }
         }
 
-        protected override void CreateEquationsAndSolvers(LoadBalancingData L) {
+        protected override void CreateEquationsAndSolvers(GridUpdateData L) {
             SpatialOperator diffOp = new SpatialOperator(1, 0, 1, QuadOrderFunc.MaxDegTimesTwo(), "u", "codom1");
             diffOp.EquationComponents["codom1"].Add(new ScalarTransportFlux());
             diffOp.Commit();
@@ -120,7 +118,6 @@ namespace LTS_NUnit {
                     fluxCorrection: true,
                     reclusteringInterval: 0,
                     timeStepConstraints: new List<TimeStepConstraint>() { CustomTimestepConstraint });
-                m_IOFields.Add(ltsTimeStepper.SubGridField);
                 timeStepper = ltsTimeStepper;
             } else if (ALTS) {
                 AdamsBashforthLTS ltsTimeStepper = new AdamsBashforthLTS(
@@ -132,7 +129,6 @@ namespace LTS_NUnit {
                     fluxCorrection: false,
                     reclusteringInterval: 1,
                     timeStepConstraints: new List<TimeStepConstraint>() { CustomTimestepConstraint });
-                m_IOFields.Add(ltsTimeStepper.SubGridField);
                 timeStepper = ltsTimeStepper;
             } else {
                 timeStepper = new AdamsBashforth(diffOp, new CoordinateMapping(u), null, ABorder);

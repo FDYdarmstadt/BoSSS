@@ -80,7 +80,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Subdivision {
         /// </remarks>
         public IEnumerable<KeyValuePair<Chunk, IEnumerable<SubdivisionNode>>> GetSubdivisionNodes(ExecutionMask mask) {
             using (new FuncTrace()) {
-                RefElement.SubdivisionTree[] leaves = RefElement.GetSubdivisionTree(numberOfSubdivisions).GetLeaves();
+                RefElement.SubdivisionTreeNode[] leaves = RefElement.GetSubdivisionTree(numberOfSubdivisions).GetLeaves();
 
                 foreach (Chunk chunk in mask) {
                     yield return new KeyValuePair<Chunk, IEnumerable<SubdivisionNode>>(

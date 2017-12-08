@@ -240,7 +240,7 @@ namespace BoSSS.Solution {
 
             /// <summary>
             /// Controls the number of subdivisions of a single grid cell
-            /// (<see cref="RefElement.SubdivisionTree"/>) in the output. If 0, the original
+            /// (<see cref="RefElement.SubdivisionTreeNode"/>) in the output. If 0, the original
             /// grid should be exported
             /// </summary>
             /// <example>
@@ -322,7 +322,7 @@ namespace BoSSS.Solution {
             /// Leaves of the subdivision tree which hold the results of the
             /// <see cref="superSampling"/> divisions of the grid cells.
             /// </summary>
-            protected RefElement.SubdivisionTree[] subdivisionTreeLeaves;
+            protected RefElement.SubdivisionTreeNode[] subdivisionTreeLeaves;
 
             /// <summary>
             /// The number of vertices one cell consists of (depends on the grid
@@ -332,7 +332,7 @@ namespace BoSSS.Solution {
 
             /// <summary>
             /// The local vertices' coordinates
-            /// <see cref="RefElement.SubdivisionTree.GlobalVertice"/>
+            /// <see cref="RefElement.SubdivisionTreeNode.GlobalVertice"/>
             /// </summary>
             private NodeSet localVerticeCoordinates;
 
@@ -392,7 +392,7 @@ namespace BoSSS.Solution {
                     // default values
                     // ==============
 
-                    RefElement.SubdivisionTree subdiv = this.Zone_Element.GetSubdivisionTree((int)superSampling);
+                    RefElement.SubdivisionTreeNode subdiv = this.Zone_Element.GetSubdivisionTree((int)superSampling);
                     subdivisionTreeLeaves = subdiv.GetLeaves();
                     verticesPerCell = subdiv.GlobalVertice.GetLength(0);
 

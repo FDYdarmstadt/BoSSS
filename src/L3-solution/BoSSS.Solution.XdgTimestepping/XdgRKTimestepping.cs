@@ -187,7 +187,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         void UpdateAgglom(bool ReplaceTop) {
             var newCCM = this.UpdateCutCellMetrics();
-            if (!newCCM.SpeciesList.IsSetEqual(Config_MassScale.Keys))
+            if (!newCCM.SpeciesList.SetEquals(Config_MassScale.Keys))
                 throw new ApplicationException("Mismatch between species lists.");
             if (ReplaceTop)
                 m_AllCCM[m_AllCCM.Count - 1] = newCCM;

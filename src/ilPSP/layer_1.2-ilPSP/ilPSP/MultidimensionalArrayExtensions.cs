@@ -102,7 +102,7 @@ namespace ilPSP {
         /// L2-norm over all entries
         /// </summary>
         static public double L2Dist(this MultidimensionalArray mda, MultidimensionalArray mdb) {
-            if (!ArrayTools.Equals(mda.Lengths, mdb.Lengths, (La, Lb) => La == Lb))
+            if (!ArrayTools.ListEquals(mda.Lengths, mdb.Lengths, (La, Lb) => La == Lb))
                 throw new ArgumentException("Arrays must have the same length.");
 
             double ret = 0;

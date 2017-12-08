@@ -14,11 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
 using BoSSS.Solution.Queries;
 using CNS.EquationSystem;
 using CNS.MaterialProperty;
-using CNS.Solution;
+using System;
 
 namespace CNS.Tests.Ringleb {
 
@@ -41,7 +40,6 @@ namespace CNS.Tests.Ringleb {
 
             c.ActiveOperators = Operators.Convection;
             c.EquationOfState = eos;
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 4;
 

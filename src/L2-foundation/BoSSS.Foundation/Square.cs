@@ -37,22 +37,22 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// </summary>
         public enum Edge {
             /// <summary>
-            /// edge between this cell the neighbour cell with x - coordinates closer to negative infinity
+            /// edge between this cell the neighbor cell with x - coordinates closer to negative infinity
             /// </summary>
             Left = 0,
 
             /// <summary>
-            /// edge between this cell the neighbour cell with x - coordinates closer to positive infinity
+            /// edge between this cell the neighbor cell with x - coordinates closer to positive infinity
             /// </summary>
             Right = 1,
 
             /// <summary>
-            /// edge between this cell the neighbour cell with y - coordinates closer to positive infinity
+            /// edge between this cell the neighbor cell with y - coordinates closer to positive infinity
             /// </summary>
             Top = 2,
 
             /// <summary>
-            /// edge between this cell the neighbour cell with y - coordinates closer to negative infinity
+            /// edge between this cell the neighbor cell with y - coordinates closer to negative infinity
             /// </summary>
             Bottom = 3
 

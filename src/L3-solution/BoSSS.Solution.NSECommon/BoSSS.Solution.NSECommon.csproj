@@ -9,7 +9,7 @@
     <RootNamespace>BoSSS.Solution.NSECommon</RootNamespace>
     <AssemblyName>BoSSS.Solution.NSECommon</AssemblyName>
     <FileAlignment>512</FileAlignment>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
     <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
@@ -90,6 +90,14 @@
     <Compile Include="ViscosityAtIB.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\ilPSP\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj">
+      <Project>{dd9bf776-38ca-4fc9-8f42-5ed700bde7ad}</Project>
+      <Name>MPI.Wrappers</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj">
+      <Project>{8e6d8f23-623f-4204-b4ab-a088c0cd83aa}</Project>
+      <Name>ilPSP</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\L1-platform\BoSSS.Platform\BoSSS.Platform.csproj">
       <Project>{B7D5F7C7-EA9F-4506-AB69-C3CD2AA8C938}</Project>
       <Name>BoSSS.Platform</Name>
@@ -106,21 +114,9 @@
       <Project>{DF7F5ABD-E606-41CD-BEEF-31A95D136DEA}</Project>
       <Name>BoSSS.Solution</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\ilPSP\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj">
-      <Project>{DD9BF776-38CA-4FC9-8F42-5ED700BDE7AD}</Project>
-      <Name>MPI.Wrappers</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj">
-      <Project>{8E6D8F23-623F-4204-B4AB-A088C0CD83AA}</Project>
-      <Name>ilPSP</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj">
       <Project>{17A60FBA-20B4-451D-98E1-8D742F368569}</Project>
       <Name>BoSSS.Foundation</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.monkey\ilPSP.LinSolvers.monkey.csproj">
-      <Project>{B18AEDC3-C7A5-4DA6-ABD3-E981B002ADDE}</Project>
-      <Name>ilPSP.LinSolvers.monkey</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

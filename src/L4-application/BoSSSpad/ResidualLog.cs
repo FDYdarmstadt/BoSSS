@@ -53,7 +53,7 @@ namespace BoSSS.Application.BoSSSpad {
         private IList<int> columnIndices;
         private int stride;
         private string[] variables;
-        private ISessionInfo session;
+        public ISessionInfo session;
         private string CurrentLine = null;
 
         /// <summary>
@@ -93,6 +93,15 @@ namespace BoSSS.Application.BoSSSpad {
             this.session = session;
             // Finally, finish the object by setting all the properties.            
             this.Norm = norm;
+
+            // Read the Data into the Logger
+            try {
+                ReadResiduals();
+            }
+            catch (Exception e) {
+                Console.WriteLine(e);
+                return;
+            }
         }
 
         private void InitializeReaderAndValues() {

@@ -75,7 +75,7 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
             return test.GetGrid();
         }
 
-        protected override void CreateEquationsAndSolvers(LoadBalancingData L) {
+        protected override void CreateEquationsAndSolvers(GridUpdateData L) {
         }
 
         LevelSet Phi;

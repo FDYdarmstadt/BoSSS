@@ -19,14 +19,12 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.SpecFEM;
-using BoSSS.Platform;
 using BoSSS.Solution;
 using BoSSS.Solution.Timestepping;
-using CNS.IBM;
+using CNS.Convection;
 using CNS.ShockCapturing;
 using ilPSP;
 using System;
-using System.IO;
 using System.Linq;
 using static CNS.Variable;
 
@@ -184,7 +182,8 @@ namespace CNS {
 
                 // Query each cell individually so we get local results
                 for (int i = 0; i < P.Grid.NoOfUpdateCells; i++) {
-                    double localCFL = P.FullOperator.CFLConstraints.Min(c => c.GetLocalStepSize(i, 1));
+                    // Use "harmonic sum" of individual step sizes - see ExplicitEuler
+                    double localCFL = 1.0 / P.FullOperator.CFLConstraints.Sum(c => 1.0 / c.GetLocalStepSize(i, 1));
                     cfl.SetMeanValue(i, localCFL);
                 }
             });
@@ -201,7 +200,8 @@ namespace CNS {
                 }
 
                 // Query each cell individually so we get local results
-                TimeStepConstraint cflConstraint = P.FullOperator.CFLConstraints.OfType<Convection.ConvectiveCFLConstraint>().Single();
+                TimeStepConstraint cflConstraint = P.FullOperator.CFLConstraints.OfType<ConvectiveCFLConstraint>().Single();
+
                 for (int i = 0; i < P.Grid.NoOfUpdateCells; i++) {
                     double localCFL = cflConstraint.GetLocalStepSize(i, 1);
                     cfl.SetMeanValue(i, localCFL);
@@ -221,6 +221,7 @@ namespace CNS {
 
                 // Query each cell individually so we get local results
                 TimeStepConstraint cflConstraint = P.FullOperator.CFLConstraints.OfType<ArtificialViscosityCFLConstraint>().Single();
+
                 for (int i = 0; i < P.Grid.NoOfUpdateCells; i++) {
                     double localCFL = cflConstraint.GetLocalStepSize(i, 1);
                     cfl.SetMeanValue(i, localCFL);
@@ -260,13 +261,13 @@ namespace CNS {
                     // the fact that velocity has already been upated is EVIL
 
                     //if (Velocity == null) {
-                    //    throw new ConfigurationException(
+                    //    throw new Exception(
                     //        "Currently, computing vorticity requires calculating the velocity first");
                     //}
 
                     //switch (CNSEnvironment.NumberOfDimensions) {
                     //    case 1:
-                    //        throw new ConfigurationException(
+                    //        throw new Exception(
                     //            "The concept of vorticity does not make sense for"
                     //            + " one-dimensional flows");
 
@@ -285,7 +286,7 @@ namespace CNS {
                     //        break;
 
                     //    default:
-                    //        throw new InternalErrorException();
+                    //        throw new Exception();
                     //}
                 }));
 
@@ -321,11 +322,9 @@ namespace CNS {
         /// <summary>
         /// The local non-dimensional artifical viscosity
         /// </summary>
-        /// 
-        //######################################################################
-        //IMPORTANT: UPDATE ONLY POSSIBLE AFTER SENSOR FIELD WAS UPDATED/CREATED
-        //depends on the order of the variables in the variable list
-        //######################################################################
+        /// <remarks>
+        /// IMPORTANT: UPDATE ONLY POSSIBLE AFTER SENSOR FIELD WAS UPDATED/CREATED
+        /// </remarks>
         private static SpecFemBasis avSpecFEMBasis;
         public static readonly DerivedVariable ArtificialViscosity = new DerivedVariable(
             "artificialViscosity",
@@ -369,25 +368,15 @@ namespace CNS {
                 // Project visocsity onto continuous, multilinear space
                 if (D < 3) {
                     // Standard version
-                    if (avSpecFEMBasis == null) {
+                    if (avSpecFEMBasis == null || !avField.Basis.Equals(avSpecFEMBasis.ContainingDGBasis)) {
                         avSpecFEMBasis = new SpecFemBasis(program.GridData, 2);
                     }
                     SpecFemField specFemField = new SpecFemField(avSpecFEMBasis);
                     specFemField.ProjectDGFieldMaximum(1.0, avField);
                     avField.Clear();
                     specFemField.AccToDGField(1.0, avField);
+                    avField.Clear(CellMask.GetFullMask(program.GridData).Except(program.SpeciesMap.SubGrid.VolumeMask));
                 } else {
-                    //MultidimensionalArray verticeCoordinates = MultidimensionalArray.Create(
-                    //    NoOfCells, verticesPerCell, dimension);
-                    //context.TransformLocal2Global(
-                    //    localVerticeCoordinates,
-                    //    cnk.i0,
-                    //    cnk.Len,
-                    //    verticeCoordinates,
-                    //    cnt);
-                    //PlotDriver.ZoneDriver.InitializeVertice2(
-                    //    ;
-
                     if (program.GridData.MpiSize > 1) {
                         throw new NotImplementedException();
                     }
@@ -444,13 +433,11 @@ namespace CNS {
         /// <summary>
         /// The local sensor value of a shock sensor
         /// </summary>
-        public static readonly DerivedVariable Sensor = new DerivedVariable(
+        public static readonly DerivedVariable ShockSensor = new DerivedVariable(
             "sensor",
             VariableTypes.Other,
             delegate (DGField s, CellMask cellMask, IProgram<CNSControl> program) {
                 IShockSensor sensor = program.Control.ShockSensor;
-                sensor.UpdateSensorValues(program.WorkingSet);
-
                 foreach (Chunk chunk in cellMask) {
                     foreach (int cell in chunk.Elements) {
                         s.SetMeanValue(cell, sensor.GetSensorValue(cell));
@@ -459,16 +446,29 @@ namespace CNS {
             });
 
         /// <summary>
-        /// The sub-grid ids of individual local time-stepping sub-grids
+        /// The clusters when using local time stepping
         /// </summary>
-        public static readonly DerivedVariable LTSSubGrids = new DerivedVariable(
+        public static readonly DerivedVariable LTSClusters = new DerivedVariable(
             "clusterLTS",
             VariableTypes.Other,
-            delegate (DGField subGridField, CellMask cellMask, IProgram<CNSControl> program) {
-                Program<CNSControl> p = (Program<CNSControl>)program;
-                AdamsBashforthLTS lts = (AdamsBashforthLTS)p.TimeStepper;
-                if (lts != null)
-                    subGridField.CopyFrom(lts.SubGridField);
+            delegate (DGField ClusterVisualizationField, CellMask cellMask, IProgram<CNSControl> program) {
+                AdamsBashforthLTS LTSTimeStepper = (AdamsBashforthLTS)program.TimeStepper;
+
+                // Don't fail, just ignore
+                if (LTSTimeStepper == null) {
+                    return;
+                }
+
+                for (int i = 0; i < LTSTimeStepper.CurrentClustering.NumberOfClusters; i++) {
+                    SubGrid currentCluster = LTSTimeStepper.CurrentClustering.Clusters[i];
+                    for (int j = 0; j < currentCluster.LocalNoOfCells; j++) {
+                        foreach (Chunk chunk in currentCluster.VolumeMask) {
+                            foreach (int cell in chunk.Elements) {
+                                ClusterVisualizationField.SetMeanValue(cell, i);
+                            }
+                        }
+                    }
+                }
             });
     }
 }

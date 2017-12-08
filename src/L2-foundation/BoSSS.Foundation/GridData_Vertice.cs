@@ -556,7 +556,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 var NodesInTrf = MultidimensionalArray.Create(NodesIn.Lengths);
                 ict.Transform(NodesIn, NodesInTrf);
 
-                if (!ArrayTools.Equals(NodesInTrf.Lengths, NodesOut.Lengths))
+                if (!ArrayTools.ListEquals(NodesInTrf.Lengths, NodesOut.Lengths))
                     throw new ApplicationException("Error in algorithm.");
 
                 int NoOfNodes = NodesIn.GetLength(0);

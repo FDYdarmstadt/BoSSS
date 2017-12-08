@@ -15,15 +15,13 @@ limitations under the License.
 */
 
 using BoSSS.Foundation;
-using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Classic;
 using CNS.Boundary;
-using CNS.Exception;
 using CNS.MaterialProperty;
+using ilPSP;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using ilPSP;
-using BoSSS.Foundation.Grid.Classic;
 
 namespace CNS.Diffusion {
 
@@ -153,7 +151,7 @@ namespace CNS.Diffusion {
             stateOut = new StateVector(new double[dimension + 2], speciesMap.GetMaterial(double.NaN));
 
             if (config.EquationOfState is IdealGas == false) {
-                throw new ConfigurationException("SIPG flux currently only works for ideal gases");
+                throw new Exception("SIPG flux currently only works for ideal gases");
             }
 
             GTensorIn = new double[dimension, dimension, dimension + 2];

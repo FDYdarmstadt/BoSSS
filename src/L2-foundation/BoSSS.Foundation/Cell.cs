@@ -89,8 +89,44 @@ namespace BoSSS.Foundation.Grid.Classic {
             ret.CellFaceTags = this.CellFaceTags == null ? null : this.CellFaceTags.CloneAs();
             Debug.Assert(typeof(CellFaceTag).IsValueType);
             ret.Type = this.Type;
+            ret.CoarseningClusterID = CoarseningClusterID;
+            ret.ParentCell = ParentCell != null ? ParentCell.CloneAs() : null;
+            ret.RefinementLevel = this.RefinementLevel;
+            ret.CoarseningClusterSize = this.CoarseningClusterSize;
+            ret.CoarseningLeafIndex = this.CoarseningLeafIndex;
             return ret;
         }
+        
+                
+        /// <summary>
+        /// If this cell was created by adaptive mesh refinement, 
+        /// the parent cell from which this cell was created from. This member is required to be able to coarsen the mesh again.
+        /// </summary>
+        public Cell ParentCell;
+
+        /// <summary>
+        /// How often the cell was refined.
+        /// </summary>
+        public int RefinementLevel;
+
+        /// <summary>
+        /// If this cell was created by adaptive mesh refinement, 
+        /// the siblings in the coarsening cluster can be identified by this ID/Token.
+        /// </summary>
+        public int CoarseningClusterID;
+        
+        /// <summary>
+        /// If this cell was created by adaptive mesh refinement, 
+        /// the number of siblings in the coarsening cluster.
+        /// </summary>
+        public int CoarseningClusterSize;
+
+        /// <summary>
+        /// If this cell was created by adaptive mesh refinement, 
+        /// the index within the coarsening cluster.
+        /// </summary>
+        public int CoarseningLeafIndex;
+
     }
 
     /// <summary>

@@ -14,26 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
-using System.IO;
-using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
-using BoSSS.Platform.LinAlg;
-using BoSSS.Solution;
-using BoSSS.Solution.Control;
-using BoSSS.Solution.GridImport;
-using BoSSS.Solution.Queries;
 using CNS.Convection;
-using CNS.Diffusion;
 using CNS.EquationSystem;
-using CNS.Exception;
 using CNS.IBM;
 using CNS.MaterialProperty;
 using CNS.Residual;
-using CNS.Solution;
-using CNS.Source;
-using BoSSS.Foundation.Grid.Classic;
 using ilPSP.Utils;
+using System;
 
 namespace CNS.Tests.IBMTests {
 
@@ -110,7 +99,6 @@ namespace CNS.Tests.IBMTests {
             c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
 
             // Time-Stepping Settings
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 1;
 

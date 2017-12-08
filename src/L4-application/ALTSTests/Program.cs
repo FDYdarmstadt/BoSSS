@@ -53,7 +53,8 @@ namespace ALTSTests {
         double rightValue = 1;
         double pod = 0.45;
 
-        int numOfCellsX = 3;
+        //int numOfCellsX = 3;
+        int numOfCellsX = 4;
         int numOfCellsY = 1;
         double xMin = 0;
         double xMax = 1;
@@ -68,12 +69,13 @@ namespace ALTSTests {
         ExplicitEuler timeStepper;
         SpatialOperator diffOp;
 
-        internal int ABOrder = 3;
-        internal int numOfSubgrids = 3;
+        internal int ABOrder = 1;
+        internal int numOfSubgrids = 4;
         internal double energyNorm;
 
         double dtFixed = 1e-5;
         double endTime = 10e-5;
+        private const double ChangeMetricTime = 4e-5;
 
         protected override GridCommons CreateOrLoadGrid() {
             GridCommons grd;
@@ -86,6 +88,8 @@ namespace ALTSTests {
         }
 
         protected override void CreateFields() {
+            //Debugger.Launch();
+
             Basis cBasis = new Basis(this.GridData, dgDegree);
             c = new SinglePhaseField(cBasis, "c");
             Velocity = new VectorField<SinglePhaseField>(this.GridData.SpatialDimension, new Basis(this.GridData, dgDegree), "Velocity", SinglePhaseField.Factory);
@@ -94,7 +98,7 @@ namespace ALTSTests {
             m_IOFields.Add(c);
         }
 
-        protected override void CreateEquationsAndSolvers(LoadBalancingData L) {
+        protected override void CreateEquationsAndSolvers(GridUpdateData L) {
             diffOp = new SpatialOperator(
                 new string[] { "c" },
                 new string[] { "viscosity", "VelocityX", "VelocityY" },
@@ -110,13 +114,25 @@ namespace ALTSTests {
             MultidimensionalArray metricOne = MultidimensionalArray.Create(numOfCellsX);
             MultidimensionalArray metricTwo = MultidimensionalArray.Create(numOfCellsX);
 
+            // 3 cells
+            //metricOne[0] = 2;
+            //metricOne[1] = 1;
+            //metricOne[2] = 0.5;
+
+            //metricTwo[0] = 1;
+            //metricTwo[1] = 0.5;
+            //metricTwo[2] = 2;
+
+            // 4 cells
             metricOne[0] = 2;
             metricOne[1] = 1;
             metricOne[2] = 0.5;
+            metricOne[3] = 0.25;
 
-            metricTwo[0] = 1;
-            metricTwo[1] = 0.5;
-            metricTwo[2] = 2;
+            metricTwo[0] = 0.5;
+            metricTwo[1] = 2;
+            metricTwo[2] = 0.25;
+            metricTwo[3] = 1;
 
             CustomTimestepConstraint = new SurrogateConstraint(GridData, dtFixed, dtFixed, double.MaxValue, endTime, metricOne, metricTwo);
 
@@ -125,19 +141,17 @@ namespace ALTSTests {
                 new CoordinateMapping(c),
                 coordMap,
                 order: ABOrder,
-                numOfSubgrids: this.numOfSubgrids,
+                numOfClusters: this.numOfSubgrids,
                 timeStepConstraints: new List<TimeStepConstraint>() { CustomTimestepConstraint },
                 fluxCorrection: false,
                 reclusteringInterval: 1);
 
             // Sub-grid visualization
-            AdamsBashforthLTS timeStepper2 = timeStepper as AdamsBashforthLTS;
-            timeStepper2.SubGridField.Identification = "clusterLTS";
-            m_IOFields.Add(timeStepper2.SubGridField);
-            timeStepper = timeStepper2;
+            //AdamsBashforthLTS timeStepper2 = timeStepper as AdamsBashforthLTS;
+            //timeStepper2.SubGridField.Identification = "clusterLTS";
+            //m_IOFields.Add(timeStepper2.SubGridField);
+            //timeStepper = timeStepper2;
         }
-
-        private const double ChangeMetricTime = 4e-5;
 
         private SurrogateConstraint CustomTimestepConstraint;
 
@@ -157,6 +171,8 @@ namespace ALTSTests {
             }
 
             public override double GetLocalStepSize(int i0, int Length) {
+                int i0global = (int)gridData.iLogicalCells.GetGlobalID(i0);
+
                 MultidimensionalArray currentMetric;
                 if (FirstMetricActive) {
                     currentMetric = MetricOne;
@@ -166,7 +182,7 @@ namespace ALTSTests {
 
                 Debug.Assert(Length == 1);
 
-                return currentMetric[i0];
+                return currentMetric[i0global];
             }
         }
 

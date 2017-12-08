@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>BoSSSTemplateProject</RootNamespace>
     <AssemblyName>BoSSSTemplateProject</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -25,12 +25,6 @@
     <CodeAnalysisUseTypeNameInSuppression>true</CodeAnalysisUseTypeNameInSuppression>
     <CodeAnalysisModuleSuppressionsFile>GlobalSuppressions.cs</CodeAnalysisModuleSuppressionsFile>
     <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <CodeAnalysisRuleSetDirectories>;c:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\\Rule Sets</CodeAnalysisRuleSetDirectories>
-    <CodeAnalysisIgnoreBuiltInRuleSets>true</CodeAnalysisIgnoreBuiltInRuleSets>
-    <CodeAnalysisRuleDirectories>;c:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\FxCop\\Rules</CodeAnalysisRuleDirectories>
-    <CodeAnalysisIgnoreBuiltInRules>true</CodeAnalysisIgnoreBuiltInRules>
-    <CodeAnalysisFailOnMissingRules>false</CodeAnalysisFailOnMissingRules>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
@@ -44,11 +38,6 @@
     <CodeAnalysisUseTypeNameInSuppression>true</CodeAnalysisUseTypeNameInSuppression>
     <CodeAnalysisModuleSuppressionsFile>GlobalSuppressions.cs</CodeAnalysisModuleSuppressionsFile>
     <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <CodeAnalysisRuleSetDirectories>;c:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\\Rule Sets</CodeAnalysisRuleSetDirectories>
-    <CodeAnalysisIgnoreBuiltInRuleSets>false</CodeAnalysisIgnoreBuiltInRuleSets>
-    <CodeAnalysisRuleDirectories>;c:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\FxCop\\Rules</CodeAnalysisRuleDirectories>
-    <CodeAnalysisIgnoreBuiltInRules>false</CodeAnalysisIgnoreBuiltInRules>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
@@ -63,19 +52,23 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\ilPSP\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj">
+    <ProjectReference Include="..\..\ilPSP\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj">
       <Project>{dd9bf776-38ca-4fc9-8f42-5ed700bde7ad}</Project>
       <Name>MPI.Wrappers</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\ilPSP\layer_1.2-ilPSP\ilPSP.Connectors.Matlab\ilPSP.Connectors.Matlab.csproj">
-      <Project>{6886abb3-ce89-4537-9f2a-25f926d1840b}</Project>
-      <Name>ilPSP.Connectors.Matlab</Name>
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.MUMPS\ilPSP.LinSolvers.MUMPS.csproj">
+      <Project>{757e59f0-53bf-4c0d-87b3-3329161cb148}</Project>
+      <Name>ilPSP.LinSolvers.MUMPS</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.monkey\ilPSP.LinSolvers.monkey.csproj">
-      <Project>{b18aedc3-c7a5-4da6-abd3-e981b002adde}</Project>
-      <Name>ilPSP.LinSolvers.monkey</Name>
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.PARDISO\ilPSP.LinSolvers.PARDISO.csproj">
+      <Project>{db9ca35d-9980-462a-85cc-cb33dcfd5a28}</Project>
+      <Name>ilPSP.LinSolvers.PARDISO</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj">
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers\ilPSP.LinSolvers.csproj">
+      <Project>{45eff2bd-0bcc-4aea-9e87-7d86d6423b0c}</Project>
+      <Name>ilPSP.LinSolvers</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj">
       <Project>{8e6d8f23-623f-4204-b4ab-a088c0cd83aa}</Project>
       <Name>ilPSP</Name>
     </ProjectReference>
@@ -86,6 +79,10 @@
     <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.Grid\BoSSS.Foundation.Grid.csproj">
       <Project>{13585226-5046-494d-947c-b97479566081}</Project>
       <Name>BoSSS.Foundation.Grid</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.XDG\BoSSS.Foundation.XDG.csproj">
+      <Project>{9a8cdc1f-64f7-441e-849d-66f2c56600f2}</Project>
+      <Name>BoSSS.Foundation.XDG</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj">
       <Project>{17a60fba-20b4-451d-98e1-8d742f368569}</Project>

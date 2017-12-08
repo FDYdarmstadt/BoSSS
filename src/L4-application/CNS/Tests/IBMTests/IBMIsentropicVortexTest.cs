@@ -14,19 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
-using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution;
 using CNS.Convection;
 using CNS.EquationSystem;
 using CNS.IBM;
 using CNS.MaterialProperty;
-using CNS.Solution;
 using CNS.Tests.IsentropicVortex;
-using NUnit.Framework;
 using ilPSP.Utils;
-using BoSSS.Foundation.Grid.Classic;
+using NUnit.Framework;
+using System;
 
 namespace CNS.Tests.IBMTests {
 
@@ -225,9 +223,9 @@ namespace CNS.Tests.IBMTests {
 
             CheckErrorThresholds(
                 p.QueryHandler.QueryResults,
-                Tuple.Create("L2ErrorDensity", 3.0e-3),
-                Tuple.Create("L2ErrorPressure", 3.7e-3),
-                Tuple.Create("L2ErrorEntropy", 3.6e-3));
+                Tuple.Create("L2ErrorDensity", 0.00297005411330652 + 1e-14),
+                Tuple.Create("L2ErrorPressure", 0.003620872445471 + 1e-14),
+                Tuple.Create("L2ErrorEntropy", 0.0035529798265443 + 1e-14));
         }
 
         /// <summary>
@@ -236,6 +234,16 @@ namespace CNS.Tests.IBMTests {
         /// <returns></returns>
         public static IBMControl ControlLocalTimeStepping() {
             IBMControl c = ControlTemplate(dgDegree: 2, divisions: 1, levelSetPosition: -0.25);
+
+            // Store results in database
+            ////string dbPath = @"c:\bosss_db";
+            //string dbPath = null;
+            ////dbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db";
+            //c.DbPath = dbPath;
+            //c.savetodb = dbPath != null;
+            //c.saveperiod = 1;
+            //c.PrintInterval = 1;
+            //c.AddVariable(Variables.LTSClusters, 0);
 
             c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
             c.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Classic;
@@ -325,7 +333,6 @@ namespace CNS.Tests.IBMTests {
             c.DomainType = DomainTypes.StaticImmersedBoundary;
             c.ActiveOperators = Operators.Convection;
             c.ConvectiveFluxType = ConvectiveFluxTypes.Rusanov;
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 1;
             c.EquationOfState = IdealGas.Air;
@@ -393,7 +400,6 @@ namespace CNS.Tests.IBMTests {
             c.DomainType = DomainTypes.StaticImmersedBoundary;
             c.ActiveOperators = Operators.Convection;
             c.ConvectiveFluxType = ConvectiveFluxTypes.Rusanov;
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 1;
             c.EquationOfState = IdealGas.Air;

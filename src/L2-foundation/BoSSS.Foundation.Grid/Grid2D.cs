@@ -643,10 +643,10 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// Arbitrary Transformation Functions might be introduced.
         /// </summary>
         /// <param name="rNodes">
-        /// Vector consisting of Points in r-Direction
+        /// Vector consisting of Points in radial direction, must be greater than 0.
         /// </param>
         /// <param name="sNodes">
-        /// Vector consisting of Points in s-Direction
+        /// Vector consisting of Points in rotational direction.
         /// </param>
         /// <param name="CellType">
         /// Type of Elements. Currently only Quads supported.
@@ -848,6 +848,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// </param>
         /// <returns></returns>
         public delegate double[] Param2XYTopology(double rPoint, double sPoint);
+        
         /// <summary>
         /// Generates a Grid Consisting of a curved Surface from Coordinates in
         /// Parametric Description<see cref="Grid2D.Param2XY"/>. Later
@@ -1171,7 +1172,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             for (int d = 0; d < dimension; d++) {
                 nodes[d] = GenericBlas.Linspace(box.boundingBox.Min[d], box.boundingBox.Max[d], box.numOfCells[d] + 1);
             }
-            var grd = Grid2D.Cartesian2DGrid(nodes[0], nodes[1], periodicX: periodicX, periodicY: periodicY, CutOuts: gridBoxes[1].boundingBox);
+            var grd = Grid2D.Cartesian2DGrid(nodes[0], nodes[1], periodicX: periodicX, periodicY: periodicY, CutOuts: new[] { gridBoxes[1].boundingBox });
             gridList.Add(grd);
 
 
@@ -1296,10 +1297,400 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
 
             return madeAdjustments;
-        } 
+        }
+
+
+
+
+        /// <summary>
+        /// Generates a so-called O-grid of a circular domain.
+        /// </summary>
+        /// <param name="Radius">Radius of the circular domain.</param>
+        /// <param name="CenterSectionWidth">With of center section which is meshed Cartesian.</param>
+        /// <param name="NoOfCenterNodes">
+        /// Number of nodes in the center section, in each direction. this also determines the 
+        /// Number of nodes in rotational direction for each of the four ring segments.
+        /// </param>
+        /// <param name="NoOfRadialNodes">Number of nodes in the radial section.</param>
+        /// <param name="NoOfNodesPerSection">Number of nodes in rotational direction for each of the four ring segmants</param>
+        /// <param name="type">Cell type.</param>
+        /// <returns>
+        /// A block-structured O-grid.
+        /// </returns>
+        public static Grid2D Ogrid(double CenterSectionWidth, double Radius, int NoOfCenterNodes, int NoOfRadialNodes, CellType type = CellType.Square_4) {
+            using(new FuncTrace()) {
+                if(!(Square.Instance).SupportedCellTypes.Contains(type))
+                    throw new ArgumentException("illegal cell type.");
+                if(CellTypeExtensions.IsLinear(type)) {
+                    throw new ArgumentException("illegal cell type.");
+                }
+                if(Radius <= 0)
+                    throw new ArgumentOutOfRangeException();
+                if(CenterSectionWidth <= 0)
+                    throw new ArgumentOutOfRangeException();
+                if(Radius * Radius <= 0.5 * CenterSectionWidth * CenterSectionWidth)
+                    throw new ArgumentOutOfRangeException();
+                if(NoOfCenterNodes < 2)
+                    throw new ArgumentOutOfRangeException();
+                if(NoOfRadialNodes < 2)
+                    throw new ArgumentOutOfRangeException();
+               
+               
+                MPICollectiveWatchDog.Watch();
+                Grid2D grid = new Grid2D(Square.Instance);
+                
+                int myrank;
+                int size;
+                csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out myrank);
+                csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
+                
+
+                
+
+                if(myrank == 0) {
+
+
+                    // create all cells on process 0
+                    // (can be redistributed later on)
+                    // ++++++++++++++++++++++++++++++++++
+                    List<Cell> AllCells = new List<Cell>();
+                    int PtCount = 0;
+
+                    // Reference element nodes
+                    // =======================
+                    var Kref = grid.RefElements.Single(KK => KK.GetType() == typeof(Square));
+                    NodeSet InterpolationNodes = Kref.GetInterpolationNodes(type);
+                    int NoOfNodes = InterpolationNodes.NoOfNodes;
+
+                    // Allocate GlobalID's
+                    long[,] CenterSection_Gid = new long[NoOfCenterNodes - 1, NoOfCenterNodes - 1];
+                    long cnt = 0;
+                    for(int iX = 0; iX < (NoOfCenterNodes - 1); iX++) {
+                        for(int iY = 0; iY < (NoOfCenterNodes - 1); iY++) {
+                            CenterSection_Gid[iX, iY] = cnt;
+                            cnt++;
+                        }
+                    }
+
+                    long[][,] RingSections_Gid = new long[4][,];
+                    for(int _iRing = 0; _iRing < 4; _iRing++) {
+                        RingSections_Gid[_iRing] = new long[NoOfRadialNodes - 1, NoOfCenterNodes - 1];
+                        for(int iR = 0; iR < (NoOfRadialNodes - 1); iR++) {
+                            for(int iPhi = 0; iPhi < (NoOfCenterNodes - 1); iPhi++) {
+                                RingSections_Gid[_iRing][iR, iPhi] = cnt;
+                                cnt++;
+                            }
+                        }
+                    }
+
+
+                     // meshing of center section
+                     // =========================
+
+                     double[] CenterNodes = GenericBlas.Linspace(-CenterSectionWidth * 0.5, CenterSectionWidth * 0.5, NoOfCenterNodes);
+
+
+                    for(int iX = 0; iX < (NoOfCenterNodes - 1); iX++) {
+                        for(int iY = 0; iY < (NoOfCenterNodes - 1); iY++) {
+
+                            // create cell
+                            Cell Cj = new Cell();
+                            Cj.GlobalID = CenterSection_Gid[iX,iY];
+                            Cj.Type = type;
+                            AllCells.Add(Cj);
+
+                            // physical coordinates
+                            Cj.TransformationParams = MultidimensionalArray.Create(NoOfNodes, 2);
+                            
+                            double x0 = CenterNodes[iX];
+                            double x1 = CenterNodes[iX + 1];
+                            double y0 = CenterNodes[iY];
+                            double y1 = CenterNodes[iY + 1];
+                            
+                            for(int k = 0; k < NoOfNodes; k++) {
+                                double x = 0.5 * (x1 - x0) * InterpolationNodes[k, 0] + 0.5 * (x1 + x0);
+                                double y = 0.5 * (y1 - y0) * InterpolationNodes[k, 1] + 0.5 * (y1 + y0);
+                                Cj.TransformationParams[k, 0] = x;
+                                Cj.TransformationParams[k, 1] = y;
+                            }
+
+                            // node indices (neighborship via cell face tags
+                            Cj.NodeIndices = new int[] { PtCount, PtCount + 1, PtCount + 2, PtCount + 3 };
+                            PtCount += 4;
+
+                            // neigborship
+                            if(iX > 0) {
+                                ArrayTools.AddToArray(new CellFaceTag() {
+                                        FaceIndex = (int) Square.Edge.Left,
+                                        NeighCell_GlobalID = CenterSection_Gid[iX - 1, iY],
+                                        ConformalNeighborship = true
+                                    }, ref Cj.CellFaceTags);
+                            } else {
+                                // connection to left ring segment
+                                ArrayTools.AddToArray(new CellFaceTag() {
+                                        FaceIndex = (int) Square.Edge.Left,
+                                        NeighCell_GlobalID = RingSections_Gid[0][0, iY],
+                                        ConformalNeighborship = true
+                                    }, ref Cj.CellFaceTags);
+                            }
+
+                            if(iX < (NoOfCenterNodes - 2)) {
+                                ArrayTools.AddToArray(new CellFaceTag() {
+                                        FaceIndex = (int) Square.Edge.Right,
+                                        NeighCell_GlobalID = CenterSection_Gid[iX + 1, iY],
+                                        ConformalNeighborship = true
+                                    }, ref Cj.CellFaceTags);
+                            } else {
+                                // connection to right ring segment
+                                ArrayTools.AddToArray(new CellFaceTag() {
+                                        FaceIndex = (int) Square.Edge.Right,
+                                        NeighCell_GlobalID = RingSections_Gid[1][0, NoOfCenterNodes - 2 - iY],
+                                        ConformalNeighborship = true
+                                    }, ref Cj.CellFaceTags);
+                            }
+                            
+                            if(iY > 0) {
+                                ArrayTools.AddToArray(new CellFaceTag() {
+                                        FaceIndex = (int) Square.Edge.Bottom,
+                                        NeighCell_GlobalID = CenterSection_Gid[iX, iY - 1],
+                                        ConformalNeighborship = true
+                                    }, ref Cj.CellFaceTags);
+                            } else {
+                                // connection to bottom ring segment
+                                ArrayTools.AddToArray(new CellFaceTag() {
+                                        FaceIndex = (int) Square.Edge.Bottom,
+                                        NeighCell_GlobalID = RingSections_Gid[3][0, NoOfCenterNodes - 2 - iX],
+                                        ConformalNeighborship = true
+                                    }, ref Cj.CellFaceTags);
+                            }
+
+                            if(iY < (NoOfCenterNodes - 2)) {
+                                ArrayTools.AddToArray(new CellFaceTag() {
+                                        FaceIndex = (int) Square.Edge.Top,
+                                        NeighCell_GlobalID = CenterSection_Gid[iX, iY + 1]
+                                    }, ref Cj.CellFaceTags);
+                            } else {
+                                // connection to top ring segment
+                                ArrayTools.AddToArray(new CellFaceTag() {
+                                        FaceIndex = (int) Square.Edge.Top,
+                                        NeighCell_GlobalID = RingSections_Gid[2][0, iX],
+                                        ConformalNeighborship = true
+                                    }, ref Cj.CellFaceTags);
+                            }
+                            
+                        }
+                    }
+
+                    // meshing of ring section
+                    // ========================
+                    double[] alphaS = GenericBlas.Linspace(0, 1, NoOfCenterNodes);
+                    double[] betaS = GenericBlas.Linspace(0, 1, NoOfRadialNodes);
+
+                    for (int iRing = 0; iRing < 4; iRing++) {
+                        int iPrevRing, iNextRing;//, iPrevCon, iNextCon;
+                        double phi_st, phi_en;
+                        double x_st, x_en, y_st, y_en;
+
+                        int inc_iX, inc_iY, OiX, OiY;
+
+                        switch(iRing) {
+                            case 0: // left
+                            iNextRing = 2;
+                            iPrevRing = 3;
+                            //iPrevCon = NoOfCenterNodes - 2;
+                            //iNextCon = 0;
+                            inc_iX = 0;
+                            inc_iY = 1;
+                            OiX = 0;
+                            OiY = 0;
+                        
+                            phi_st = Math.PI * 0.25 + 2 * Math.PI * 0.5;
+                            phi_en = Math.PI * 0.25 + 1 * Math.PI * 0.5;
+
+                            x_st = -CenterSectionWidth * 0.5;
+                            x_en = -CenterSectionWidth * 0.5;
+                            y_st = -CenterSectionWidth * 0.5;
+                            y_en = +CenterSectionWidth * 0.5;
+                            break;
+
+                            case 1: // right
+                            iNextRing = 3; // bottom
+                            iPrevRing = 2; // top
+                            //iPrevCon = 0;
+                            //iNextCon = NoOfCenterNodes - 2;
+                            inc_iX = 0;
+                            inc_iY = -1;
+                            OiX = NoOfCenterNodes - 2;
+                            OiY = NoOfCenterNodes - 2;
+                        
+                            phi_st = +Math.PI * 0.25;
+                            phi_en = -Math.PI * 0.25;
+
+                            x_st = +CenterSectionWidth * 0.5;
+                            x_en = +CenterSectionWidth * 0.5;
+                            y_st = +CenterSectionWidth * 0.5;
+                            y_en = -CenterSectionWidth * 0.5;
+                            break;
+
+                            case 2: // top
+                            iNextRing = 1; // right
+                            iPrevRing = 0; // left
+                            inc_iX = 1;
+                            inc_iY = 0;
+                            OiX = 0;
+                            OiY = NoOfCenterNodes - 2;
+                        
+                            phi_st = +Math.PI * 0.25 + 1*Math.PI*0.5;
+                            phi_en = +Math.PI * 0.25;
+
+                            x_st = -CenterSectionWidth * 0.5;
+                            x_en = +CenterSectionWidth * 0.5;
+                            y_st = +CenterSectionWidth * 0.5;
+                            y_en = +CenterSectionWidth * 0.5;
+                            break;
+
+                            case 3: // bottom
+                            iNextRing = 0; // left
+                            iPrevRing = 1; // right
+                            inc_iX = -1;
+                            inc_iY = 0;
+                            OiX = NoOfCenterNodes - 2;
+                            OiY = 0;
+                        
+                            phi_st = +Math.PI * 0.25 + 3*Math.PI*0.5;
+                            phi_en = +Math.PI * 0.25 + 2*Math.PI*0.5;
+
+                            x_st = +CenterSectionWidth * 0.5;
+                            x_en = -CenterSectionWidth * 0.5;
+                            y_st = -CenterSectionWidth * 0.5;
+                            y_en = -CenterSectionWidth * 0.5;
+                            break;
+
+                            default: throw new Exception();
+                        }
+
+
+
+                        for (int iPhi = 0; iPhi < (NoOfCenterNodes - 1); iPhi++) {
+                            double phi0 = phi_st * (1.0 - alphaS[iPhi]) + phi_en * alphaS[iPhi];
+                            double phi1 = phi_st * (1.0 - alphaS[iPhi + 1]) + phi_en * alphaS[iPhi + 1];
+
+                            double xC0 = x_st * (1.0 - alphaS[iPhi]) + x_en * alphaS[iPhi];
+                            double xC1 = x_st * (1.0 - alphaS[iPhi + 1]) + x_en * alphaS[iPhi + 1];
+                            double yC0 = y_st * (1.0 - alphaS[iPhi]) + y_en * alphaS[iPhi];
+                            double yC1 = y_st * (1.0 - alphaS[iPhi + 1]) + y_en * alphaS[iPhi + 1];
+
+                            for (int iR = 0; iR < (NoOfRadialNodes - 1); iR++) {
+                                //double beta0 = betaS[NoOfRadialNodes - iR - 1];
+                                //double beta1 = betaS[NoOfRadialNodes - iR - 2];
+                                double beta0 = betaS[iR];
+                                double beta1 = betaS[iR + 1];
+
+                                // create cell
+                                Cell Cj = new Cell();
+                                Cj.GlobalID = RingSections_Gid[iRing][iR, iPhi];
+                                Cj.Type = type;
+                                AllCells.Add(Cj);
+
+                                // set nodes
+                                Cj.TransformationParams = MultidimensionalArray.Create(NoOfNodes, 2);
+                                for (int k = 0; k < NoOfNodes; k++) {
+                                    double phi = 0.5 * (phi1 - phi0) * InterpolationNodes[k, 0] + 0.5 * (phi1 + phi0);
+                                    double xA = Math.Cos(phi) * Radius;
+                                    double yA = Math.Sin(phi) * Radius;
+
+                                    double xC = 0.5 * (xC1 - xC0) * InterpolationNodes[k, 0] + 0.5 * (xC1 + xC0);
+                                    double yC = 0.5 * (yC1 - yC0) * InterpolationNodes[k, 0] + 0.5 * (yC1 + yC0);
+
+                                    double beta = 0.5 * (beta1 - beta0) * InterpolationNodes[k, 1] + 0.5 * (beta1 + beta0);
+
+                                    double x = xC * (1 - beta) + xA * beta;
+                                    double y = yC * (1 - beta) + yA * beta;
+
+                                    Cj.TransformationParams[k, 0] = x;
+                                    Cj.TransformationParams[k, 1] = y;
+                                }
+
+                                // node indices (neighborship via cell face tags
+                                Cj.NodeIndices = new int[] { PtCount, PtCount + 1, PtCount + 2, PtCount + 3 };
+                                PtCount += 4;
+
+                                // neigborship
+                                if (iR > 0) {
+                                    ArrayTools.AddToArray(new CellFaceTag() {
+                                        FaceIndex = (int)Square.Edge.Bottom,
+                                        NeighCell_GlobalID = RingSections_Gid[iRing][iR - 1, iPhi],
+                                        ConformalNeighborship = true
+                                    }, ref Cj.CellFaceTags);
+                                } else {
+                                    // connection to center section
+
+                                    ArrayTools.AddToArray(new CellFaceTag() {
+                                        FaceIndex = (int)Square.Edge.Bottom,
+                                        NeighCell_GlobalID = CenterSection_Gid[OiX + iPhi * inc_iX, OiY + iPhi * inc_iY],
+                                        ConformalNeighborship = true
+                                    }, ref Cj.CellFaceTags);
+                                }
+
+                                if (iR < (NoOfRadialNodes - 2)) {
+                                    ArrayTools.AddToArray(new CellFaceTag() {
+                                        FaceIndex = (int)Square.Edge.Top,
+                                        NeighCell_GlobalID = RingSections_Gid[iRing][iR + 1, iPhi],
+                                        ConformalNeighborship = true
+                                    }, ref Cj.CellFaceTags);
+                                } else {
+                                    //ArrayTools.AddToArray(new CellFaceTag() {
+                                    //        FaceIndex = (int) Square.Edge.Right,
+                                    //        NeighCell_GlobalID = RingSections_Gid[1][0, iY]
+                                    //    }, ref Cj.CellFaceTags);
+                                }
+
+                                if (iPhi > 0) {
+                                    ArrayTools.AddToArray(new CellFaceTag() {
+                                        FaceIndex = (int)Square.Edge.Left,
+                                        NeighCell_GlobalID = RingSections_Gid[iRing][iR, iPhi - 1],
+                                        ConformalNeighborship = true
+                                    }, ref Cj.CellFaceTags);
+                                } else {
+                                    // connection to previous ring segment
+                                    ArrayTools.AddToArray(new CellFaceTag() {
+                                        FaceIndex = (int)Square.Edge.Left,
+                                        NeighCell_GlobalID = RingSections_Gid[iPrevRing][iR, NoOfCenterNodes - 2],
+                                        ConformalNeighborship = true
+                                    }, ref Cj.CellFaceTags);
+                                }
+
+                                if (iPhi < (NoOfCenterNodes - 2)) {
+                                    ArrayTools.AddToArray(new CellFaceTag() {
+                                        FaceIndex = (int)Square.Edge.Right,
+                                        NeighCell_GlobalID = RingSections_Gid[iRing][iR, iPhi + 1],
+                                        ConformalNeighborship = true
+                                    }, ref Cj.CellFaceTags);
+                                } else {
+                                    // connection to next ring segment
+                                    ArrayTools.AddToArray(new CellFaceTag() {
+                                            FaceIndex = (int) Square.Edge.Right,
+                                            NeighCell_GlobalID = RingSections_Gid[iNextRing][iR, 0],
+                                            ConformalNeighborship = true
+                                        }, ref Cj.CellFaceTags);
+                                }
+                            }
+                        }
+                    }
+                    // finalize
+                    // ========
+
+                    grid.Cells = AllCells.ToArray();
+                } else {
+                    grid.Cells = new Cell[0];
+                }
+                return grid;
+
+            }
+        }
 
     }
 
 
-  
+
 }

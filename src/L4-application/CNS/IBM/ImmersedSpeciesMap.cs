@@ -179,7 +179,7 @@ namespace CNS.IBM {
             this.material = material;
 
             this.tracker = new LevelSetTracker(
-                (GridData) levelSet.GridDat,
+                (GridData)levelSet.GridDat,
                 0,
                 new string[] { Control.VoidSpeciesName, Control.FluidSpeciesName },
                 levelSet);
@@ -193,7 +193,7 @@ namespace CNS.IBM {
         /// <param name="mapping"></param>
         /// <returns></returns>
         public IBMMassMatrixFactory GetMassMatrixFactory(CoordinateMapping mapping) {
-            if (MassMatrixFactory == null) {
+            if (MassMatrixFactory == null || !mapping.Equals(MassMatrixFactory.Mapping)) {
                 MassMatrixFactory = new IBMMassMatrixFactory(this, mapping);
             }
             return MassMatrixFactory;
@@ -201,106 +201,13 @@ namespace CNS.IBM {
 
         private IBMMassMatrixFactory MassMatrixFactory;
 
-
-        /// <summary>
-        /// Adjusts h_min of the orginal mesh, due to cut-cells
-        /// </summary>
-        public MultidimensionalArray h_min
-        {
-            get
-            {
-                if (hMin == null) {
-                    if (MassMatrixFactory == null) return null;
-                    hMin = MultidimensionalArray.Create(GridData.Cells.NoOfLocalUpdatedCells);
-                    MultidimensionalArray hMinUncut = GridData.Cells.h_min;
-                    CellMask cutCells = this.Tracker._Regions.GetCutCellMask();
-                    CellMask cutAndTargetCells = cutCells.Union(this.Agglomerator.AggInfo.TargetCells).Except(this.Agglomerator.AggInfo.SourceCells);
-                    var massMatrix = this.MassMatrixFactory.MassMatrix;
-
-                    for (int iCell = 0; iCell < hMin.Length; iCell++) {
-                        // Iterates over all Chunks and looks if cell "i" is inside, i.e "i" is cut and/or target cell
-                        if (cutAndTargetCells.SelectMany(c => c.Elements).Contains(iCell)) {
-                            // Calculate Barycenter and smallest distance to neighbouring edge
-                            
-                            hMin[iCell] = CalculateHmin(IBMUtility.GetBlock( massMatrix, iCell), iCell);
-                        } else {
-                            hMin[iCell] = hMinUncut[iCell];
-                        }
-                    }
-
-                    // Conservative assumption for agglomerated cells:
-                    // Both cells have h_min of target cell, i.e
-                    // the increase of h_min due to the addional source cell is only marginal.
-                    foreach (var agg_pair in Agglomerator.AggInfo.AgglomerationPairs) {
-                        hMin[agg_pair.jCellSource] = hMin[agg_pair.jCellTarget];
-                    }
-                }
-
-                return hMin;
-            }
-
-        }
-
-        private MultidimensionalArray hMin;
-
-        //Assumes linear cells
-        //Calculates the barycenter for each cell and then the minimal distance to each face
-        private double CalculateHmin(ilPSP.Utils.IMatrix massMatrix, int cell) {
-            int[] edges = GridData.Cells.Cells2Edges[cell];
-
-            // Calculate Barycenter of Cell via MassMatrix
-            double[] cellCenterLocal = new double[GridData.SpatialDimension];
-            // y-coordinate
-            cellCenterLocal[1] = 1.0 / Math.Sqrt(3) * massMatrix[0, 1] / massMatrix[0, 0];
-            // x-coordinate
-            cellCenterLocal[0] = 1.0 / Math.Sqrt(3) * massMatrix[0, 2] / massMatrix[0, 0];
-            MultidimensionalArray cellCenterGlobal = MultidimensionalArray.Create(1, 2);
-            GridData.TransformLocal2Global(MultidimensionalArray.CreateWrapper(cellCenterLocal, 1, 2), cellCenterGlobal, cell);
-
-            double minimalDistance = this.Control.LevelSetFunction(new double[] { cellCenterGlobal[0, 0], cellCenterGlobal[0, 1] }, 0.0);
-
-            // Calculate distance from barycenter with Hesse normal form
-            int noOfFaces = GridData.Grid.RefElements[0].NoOfFaces;
-            var edgeCenters = GridData.Grid.RefElements[0].FaceCenters;
-            MultidimensionalArray edgeCentersGlobal = MultidimensionalArray.Create(edgeCenters.Lengths);
-            GridData.TransformLocal2Global(edgeCenters, edgeCentersGlobal, cell);
-            for (int ec = 0; ec < edges.Length; ec++) {
-                int iEdge = edges[ec];
-                double sign = Math.Sign(iEdge);
-                iEdge = Math.Abs(iEdge) - 1;
-                int iFace = GridData.Edges.FaceIndices[iEdge, 0];
-
-                if (sign < 0.0) {
-                    iFace = GridData.Edges.FaceIndices[iEdge, 1];
-                }
-
-                double xNormal = GridData.Edges.NormalsForAffine[iEdge, 0] * sign;
-                double yNormal = GridData.Edges.NormalsForAffine[iEdge, 1] * sign;
-
-                double edgePoint_x = edgeCentersGlobal[iFace, 0];
-                double edgePoint_y = edgeCentersGlobal[iFace, 1];
-
-                // Note: distance should be always positiv, because normals are pointing outward
-                double distance = (edgePoint_x * xNormal + edgePoint_y * yNormal) - (cellCenterGlobal[0, 0] * xNormal + cellCenterGlobal[0, 1] * yNormal);
-                System.Diagnostics.Debug.Assert(distance > 0.0, "Calculated distance should be a positive number, but was " + distance);
-                if (distance < minimalDistance) {
-                    minimalDistance = distance;
-                }
-            }
-
-            return 2 * minimalDistance;
-
-        }
-
         #region ISpeciesMap Members
 
         /// <summary>
         /// Information about the grid
         /// </summary>
-        public GridData GridData
-        {
-            get
-            {
+        public GridData GridData {
+            get {
                 return tracker.GridDat;
             }
         }
@@ -336,7 +243,6 @@ namespace CNS.IBM {
         /// <param name="value"></param>
         public void OnNext(LevelSetTracker.LevelSetRegionsInfo value) {
             this.quadSchemeHelper = null;
-            this.hMin = null;
             this.MassMatrixFactory = null;
         }
 
