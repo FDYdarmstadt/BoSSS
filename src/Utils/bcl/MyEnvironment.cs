@@ -379,8 +379,7 @@ namespace bcl {
                 si = si1;
             } else if (si2 != null && si2.Length > 0) {
                 si = si2;
-			}
-			else if (si3 != null && si3.Length > 0)   {
+			} else if (si3 != null && si3.Length > 0) {
 				si = si3;
             }
 
