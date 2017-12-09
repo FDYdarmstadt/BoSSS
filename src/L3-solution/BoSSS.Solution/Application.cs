@@ -1914,7 +1914,9 @@ namespace BoSSS.Solution {
                     }
                     CreateFields(); // full user control   
                     PostRestart(physTime);
-                    loadbal.SetNewTracker(this.LsTrk);
+
+                    //loadbal.SetNewTracker(this.LsTrk);
+                    throw new NotImplementedException();
 
                     // re-set Level-Set tracker
                     if(newTrackerData != null) {
@@ -2039,7 +2041,8 @@ namespace BoSSS.Solution {
                     }
                     CreateFields(); // full user control   
                     PostRestart(physTime);
-                    remshDat.SetNewTracker(this.LsTrk);
+                    //remshDat.SetNewTracker(this.LsTrk);
+                    throw new NotImplementedException();
 
                     // re-set Level-Set tracker
                     if(newTrackerData != null) {

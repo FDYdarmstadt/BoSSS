@@ -311,6 +311,13 @@ namespace BoSSS.Solution {
             public XQuadFactoryHelper.MomentFittingVariants HMFvariant;
         }
 
+        /// <summary>
+        /// Restores the state of the level-set tracker after load balancing.
+        /// </summary>
+        protected override void RestoreTracker() {
+            throw new NotImplementedException();
+        }
+
         /*
         /// <summary>
         /// Backup of a cut-cell metric.

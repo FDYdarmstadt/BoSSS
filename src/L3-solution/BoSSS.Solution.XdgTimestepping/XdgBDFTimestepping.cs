@@ -531,10 +531,11 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 
                 // matrix used for precond (must be agglomerated)
-                MassMatrixFactory MassFact = m_LsTrk.GetXDGSpaceMetrics(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder).MassMatrixFactory;
-                m_PrecondMassMatrix = MassFact.GetMassMatrix(CurrentStateMapping, false);
-                m_CurrentAgglomeration.ManipulateMatrixAndRHS(m_PrecondMassMatrix, default(double[]), CurrentStateMapping, CurrentStateMapping);
-
+                if(this.Config_MassMatrixShapeandDependence != MassMatrixShapeandDependence.IsIdentity) {
+                    MassMatrixFactory MassFact = m_LsTrk.GetXDGSpaceMetrics(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder).MassMatrixFactory;
+                    m_PrecondMassMatrix = MassFact.GetMassMatrix(CurrentStateMapping, false);
+                    m_CurrentAgglomeration.ManipulateMatrixAndRHS(m_PrecondMassMatrix, default(double[]), CurrentStateMapping, CurrentStateMapping);
+                }
             }
 
             // update Multigrid-XDG basis
@@ -1169,7 +1170,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     System.AccEyeSp(1.0 / dt);
                 }
 #if DEBUG
-                {
+                if(Config_MassMatrixShapeandDependence != MassMatrixShapeandDependence.IsIdentity) {
                     // compare "private" and "official" mass matrix stack
                     // (private may be removed soon)
 

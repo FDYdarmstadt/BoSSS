@@ -392,5 +392,12 @@ namespace BoSSS.Solution {
             }
 
         }
+
+        /// <summary>
+        /// Restores the state of the level-set tracker after re-meshing.
+        /// </summary>
+        protected override void RestoreTracker() {
+            throw new NotImplementedException();
+        }
     }
 }
