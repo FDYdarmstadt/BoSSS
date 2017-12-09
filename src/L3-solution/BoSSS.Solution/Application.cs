@@ -1835,6 +1835,8 @@ namespace BoSSS.Solution {
                     if(NoOfRedistCells <= 0) {
                         return;
                     } else {
+                        //Debugger.Launch();
+
                         Console.WriteLine("Re-distribution of " + NoOfRedistCells + " cells.");
                     }
 
@@ -1842,9 +1844,8 @@ namespace BoSSS.Solution {
                     // ===============
                     GridData oldGridData = this.GridData;
                     Permutation tau;
-                    int[] oldTrackerData;
                     GridUpdateDataVault_LoadBal loadbal = new GridUpdateDataVault_LoadBal(oldGridData, this.LsTrk);
-                    BackupData(oldGridData, this.LsTrk, loadbal, out tau, out oldTrackerData, out int trackerVersion);
+                    BackupData(oldGridData, this.LsTrk, loadbal, out tau);
 
                     // create new grid
                     // ===============
@@ -1891,12 +1892,12 @@ namespace BoSSS.Solution {
                     // ==========================
                     int newJ = newGridData.CellPartitioning.LocalLength;
 
-                    int[] newTrackerData = null;
-                    if(oldTrackerData != null) {
-                        newTrackerData = new int[newJ];
-                        Resorting.ApplyToVector(oldTrackerData, newTrackerData, newGridData.CellPartitioning);
-                        oldTrackerData = null;
-                    }
+                    //int[] newTrackerData = null;
+                    //if(oldTrackerData != null) {
+                    //    newTrackerData = new int[newJ];
+                    //    Resorting.ApplyToVector(oldTrackerData, newTrackerData, newGridData.CellPartitioning);
+                    //    oldTrackerData = null;
+                    //}
 
                     loadbal.Resort(Resorting, newGridData);
 
@@ -1915,19 +1916,20 @@ namespace BoSSS.Solution {
                     CreateFields(); // full user control   
                     PostRestart(physTime);
 
-                    //loadbal.SetNewTracker(this.LsTrk);
-                    throw new NotImplementedException();
-
+                    
                     // re-set Level-Set tracker
-                    if(newTrackerData != null) {
-                        Debug.Assert(object.ReferenceEquals(this.LsTrk.GridDat, this.GridData));
-                        foreach(var f in m_RegisteredFields) {
-                            if(f is XDGField) {
-                                ((XDGField)f).Override_TrackerVersionCnt(trackerVersion);
-                            }
-                        }
-                        this.LsTrk.RestoreAfterLoadBalance(trackerVersion, newTrackerData);
-                    }
+                    int trackerVersion = loadbal.SetNewTracker(this.LsTrk);
+                    //if(this.LsTrk != null) {
+                    //    Debug.Assert(object.ReferenceEquals(this.LsTrk.GridDat, this.GridData));
+                    //    Debug.Assert(this.LsTrk.Regions.Version == trackerVersion);
+                    //    foreach(var f in m_RegisteredFields) {
+                    //        if(f is XDGField) {
+                    //            ((XDGField)f).Override_TrackerVersionCnt(trackerVersion);
+                    //        }
+                    //    }
+
+                        
+                    //}
 
                     // set dg coördinates
                     foreach(var f in m_RegisteredFields) {
@@ -1954,9 +1956,8 @@ namespace BoSSS.Solution {
                     GridData oldGridData = this.GridData;
                     GridCommons oldGrid = oldGridData.Grid;
                     Permutation tau;
-                    int[] oldTrackerData;
                     GridUpdateDataVault_Adapt remshDat = new GridUpdateDataVault_Adapt(oldGridData, this.LsTrk);
-                    BackupData(oldGridData, this.LsTrk, remshDat, out tau, out oldTrackerData, out int trackerVersion);
+                    BackupData(oldGridData, this.LsTrk, remshDat, out tau);
                                        
 
                     // check for grid redistribution
@@ -2017,13 +2018,7 @@ namespace BoSSS.Solution {
                     
                     // sent data around the world
                     // ==========================
-                    
-                    int[][] newTrackerData = null;
-                    if(oldTrackerData != null) {
-                        newTrackerData = new int[newJ][];
-                        old2newGridCorr.ApplyToVector(oldTrackerData, newTrackerData, newGridData.CellPartitioning);
-                        oldTrackerData = null;
-                    }
+                                      
 
                     remshDat.Resort(old2newGridCorr, newGridData);
 
@@ -2041,19 +2036,18 @@ namespace BoSSS.Solution {
                     }
                     CreateFields(); // full user control   
                     PostRestart(physTime);
-                    //remshDat.SetNewTracker(this.LsTrk);
-                    throw new NotImplementedException();
 
                     // re-set Level-Set tracker
-                    if(newTrackerData != null) {
-                        Debug.Assert(object.ReferenceEquals(this.LsTrk.GridDat, this.GridData));
-                        foreach(var f in m_RegisteredFields) {
-                            if(f is XDGField) {
-                                ((XDGField)f).Override_TrackerVersionCnt(trackerVersion);
-                            }
-                        }
-                        this.LsTrk.RestoreAfterMeshAdaptation(trackerVersion, newTrackerData);
-                    }
+                    int trackerVersion = remshDat.SetNewTracker(this.LsTrk);
+                    //if(this.LsTrk != null) {
+                    //    Debug.Assert(object.ReferenceEquals(this.LsTrk.GridDat, this.GridData));
+                    //    Debug.Assert(this.LsTrk.Regions.Version == trackerVersion);
+                    //    foreach(var f in m_RegisteredFields) {
+                    //        if(f is XDGField) {
+                    //            ((XDGField)f).Override_TrackerVersionCnt(trackerVersion);
+                    //        }
+                    //    }
+                    //}
 
                     // set dg coördinates
                     foreach(var f in m_RegisteredFields) {
@@ -2072,10 +2066,10 @@ namespace BoSSS.Solution {
         }
 
         private void BackupData(GridData oldGridData, LevelSetTracker oldLsTrk, 
-            GridUpdateDataVaultBase loadbal, out Permutation tau, out int[] oldTrackerData, out int trackerVersion) {
+            GridUpdateDataVaultBase loadbal, out Permutation tau) {
 
-            trackerVersion = -1;
-            oldTrackerData = null;
+            //trackerVersion = -1;
+            //oldTrackerData = null;
 
             //loadbal = new LoadBalancingData(oldGridData, oldLsTrk);
 
@@ -2087,10 +2081,7 @@ namespace BoSSS.Solution {
             tau = oldGridData.CurrentGlobalIdPermutation.CloneAs();
 
             // backup level-set tracker 
-            if(oldLsTrk != null) {
-                oldTrackerData = oldLsTrk.BackupBeforeLoadBalance();
-                trackerVersion = oldLsTrk.VersionCnt;
-            }
+            loadbal.BackupTracker();
 
             // backup DG Fields
             foreach(var f in this.m_RegisteredFields) {

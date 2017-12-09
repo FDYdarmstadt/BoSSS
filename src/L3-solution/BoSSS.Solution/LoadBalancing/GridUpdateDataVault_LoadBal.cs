@@ -54,8 +54,6 @@ namespace BoSSS.Solution {
             m_oldJ = m_OldGrid.CellPartitioning.LocalLength;
         }
 
-        
-
         /// <summary>
         /// Stores the backup data of DG Fields after re-distribution (when no mesh adaptation is performed).
         /// - dictionary key: string reference to identify DG field
@@ -63,7 +61,6 @@ namespace BoSSS.Solution {
         /// - 2nd value index: DG coordinate index within cell
         /// </summary>
         Dictionary<string, double[][]> m_newDGFieldData_OnlyRedist;
-                
 
         /// <summary>
         /// Resorting permutation, points from old to new, i.e. New[<see cref="Resorting"/>[j]] = Old[j].
@@ -181,85 +178,6 @@ namespace BoSSS.Solution {
 
 
         /// <summary>
-        /// Backup data for some vector before grid-redistribution.
-        /// </summary>
-        /// <param name="vec">
-        /// Output, a vector which indices correlate with the logical cell indices,
-        /// i.e. its length must be a multiple of the number of cells (<see cref="ILogicalCellData.NoOfLocalUpdatedCells"/>).    
-        /// </param>
-        /// <param name="Reference">
-        /// Unique string reference under which the re-distributed data can be accessed later, within <see cref="RestoreDGField(DGField, string)"/>.
-        /// </param>
-        public void BackupVector<T, V>(V vec, string Reference)
-            where V : IList<T> //
-        {
-            using(new FuncTrace()) {
-                if(vec.Count != m_oldJ)
-                    throw new ArgumentException();
-
-                var SerializedData = new double[m_oldJ][];
-
-                using(var ms = new MemoryStream()) {
-                    var fmt = new BinaryFormatter();
-
-                    for(int j = 0; j < m_oldJ; j++) {
-                        ms.Position = 0;
-                        fmt.Serialize(ms, vec[j]);
-
-                        SerializedData[j] = CopyData(ms);
-                    }
-                }
-
-                m_oldDGFieldData.Add(Reference, SerializedData);
-            }
-        }
-
-        static double[] CopyData(MemoryStream ms) {
-            long Pos = ms.Position;
-            double[] R = new double[(Pos / sizeof(double)) + 1];
-            byte[] buf = ms.GetBuffer();
-
-            unsafe {
-                fixed (void* _pbuf = buf, _bR = R) {
-                    byte* pbuf = (byte*)_pbuf, pR = (byte*)_bR;
-
-                    for(int i = 0; i < Pos; i++)
-                        pR[i] = pbuf[i];
-                }
-            }
-            return R;
-        }
-
-         /// <summary>
-        /// Backup data for some floating-point vector before grid-redistribution.
-        /// </summary>
-        /// <param name="vec">
-        /// Input, a vector which indices correlate with the logical cell indices,
-        /// i.e. its length must be a multiple of the number of cells (<see cref="ILogicalCellData.NoOfLocalUpdatedCells"/>).        
-        /// </param>
-        /// <param name="Reference">
-        /// Unique string reference under which the re-distributed data can be accessed later, within <see cref="RestoreDGField(DGField, string)"/>.
-        /// </param>
-        public void BackupVector<V>(V vec, string Reference) where V : IList<double> {
-            int L = vec.Count;
-            if(L % m_oldJ != 0)
-                throw new ArgumentException();
-            int BlockLen = L / m_oldJ;
-
-            double[][] dataVec = new double[m_oldJ][];
-            for(int j = 0; j < m_oldJ; j++) {
-                double[] data_j = new double[BlockLen];
-                for(int n = 0; n < BlockLen; n++)
-                    data_j[n] = vec[n + BlockLen * j];
-                dataVec[j] = data_j;
-            }
-
-            m_oldDGFieldData.Add(Reference, dataVec);
-        }
-
-        
-
-        /// <summary>
         /// Loads some floating-point data vector after grid-redistribution.
         /// </summary>
         /// <param name="vec">
@@ -284,6 +202,38 @@ namespace BoSSS.Solution {
             }
         }
 
+
+        /// <summary>
+        /// Loads some 16-bit-integer vector before grid-redistribution (<see cref="LevelSetTracker.LevelSetRegions.RegionsCode"/>).
+        /// </summary>
+        /// <param name="vec">
+        /// Output, a vector which indices correlate with the logical cell indices,
+        /// i.e. its length must be a multiple of the number of cells (<see cref="ILogicalCellData.NoOfLocalUpdatedCells"/>).
+        /// </param>
+        /// <param name="Reference">
+        /// Unique string reference under which data has been stored before grid-redistribution.
+        /// </param>
+        public void RestoreVector(ushort[] vec, string Reference)  {
+            int L = vec.Length;
+            if(L % m_newJ != 0)
+                throw new ArgumentException();
+            int BlockLen = L / m_newJ;
+
+            double[][] dataVec = m_newDGFieldData_OnlyRedist[Reference];
+            Debug.Assert(dataVec.Length == m_newJ);
+            for(int j = 0; j < m_newJ; j++) {
+                double[] data_j = dataVec[j];
+                for(int n = 0; n < BlockLen; n++) {
+                    Debug.Assert(data_j[n] >= 0);
+                    Debug.Assert(data_j[n] <= ushort.MaxValue);
+                    
+                    vec[n + BlockLen * j] = ((ushort)data_j[n]);
+
+                    Debug.Assert(vec[n + BlockLen * j] == data_j[n]);
+                }
+            }
+        }
+
         /// <summary>
         /// Loads some floating-point data vector after grid-redistribution.
         /// </summary>
@@ -302,7 +252,7 @@ namespace BoSSS.Solution {
             }
         }
 
-
+        /*
         Dictionary<string, CcmData> m_CCMdata = new Dictionary<string, CcmData>();
 
         class CcmData {
@@ -310,12 +260,42 @@ namespace BoSSS.Solution {
             public int HMForder;
             public XQuadFactoryHelper.MomentFittingVariants HMFvariant;
         }
+        */
 
         /// <summary>
         /// Restores the state of the level-set tracker after load balancing.
         /// </summary>
-        protected override void RestoreTracker() {
-            throw new NotImplementedException();
+        protected override int RestoreTracker() {
+            using(new FuncTrace()) {
+                if(m_NewTracker != null) {
+                    m_NewTracker.IncreaseHistoryLength(m_LsTrkPrivData.HistoryLength);
+                    int NoLs = m_NewTracker.NoOfLevelSets;
+                    Basis[] NewLSbasis = m_NewTracker.LevelSets.Select(LS => ((LevelSet)LS).Basis).ToArray();
+
+                    for(int iH = -m_LsTrkPrivData.PopultatedHistoryLength + 1; iH <= 1; iH++) {
+
+                        SinglePhaseField[] tmpLS = new SinglePhaseField[NoLs];
+                        for(int iLS = 0; iLS < NoLs; iLS++) {
+                            tmpLS[iLS] = new SinglePhaseField(NewLSbasis[iLS], "tmpLS#" + iLS);
+                            this.RestoreDGField(tmpLS[iLS], base.GetLSbackupName(iH, iLS));
+                        }
+
+                        ushort[] RegionCode = new ushort[m_newJ];
+                        this.RestoreVector(RegionCode, base.GetLSregioncodeName(iH));
+
+                        m_NewTracker.ReplaceCurrentTimeLevel(tmpLS, RegionCode, m_LsTrkPrivData.Versions[1 - iH]);
+
+                        if(iH < 1) {
+                            m_NewTracker.PushStacks();
+                        }
+                    }
+                    m_NewTracker.ObserverHack();
+
+                    return m_LsTrkPrivData.Versions[0];
+                } else {
+                    return int.MinValue;
+                }
+            }
         }
 
         /*

@@ -140,7 +140,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// dirty hack used by dynamic load balancing.
         /// </summary>
-        public void Override_TrackerVersionCnt(int i) {
+        internal void Override_TrackerVersionCnt(int i) {
             m_TrackerVersionCnt = i;
         }
 

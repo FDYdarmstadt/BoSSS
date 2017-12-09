@@ -1195,7 +1195,10 @@ namespace BoSSS.Foundation.XDG {
         /// - 3rd item: level-set version index, <see cref="LevelSetRegions.Version"/>
         /// </returns>
         public Tuple<LevelSet[], ushort[], int> BackupTimeLevel(int iHistory) {
-            ushort[] RegionClone = this.RegionsHistory[iHistory].RegionsCode.CloneAs();
+            Debugger.Launch();
+            int Jup = this.GridDat.Cells.NoOfLocalUpdatedCells;
+            ushort[] RegionClone = new ushort[Jup];
+            Array.Copy(this.RegionsHistory[iHistory].RegionsCode, 0, RegionClone, 0, Jup);
 
             int NoOfLevelSets = this.NoOfLevelSets;
             LevelSet[] LevSetClones = new LevelSet[NoOfLevelSets];
@@ -1288,182 +1291,11 @@ namespace BoSSS.Foundation.XDG {
             // update region code
             // ==================
 
-            this.Regions.m_LevSetRegions = RegionCode;
+            Array.Copy(RegionCode, 0, this.Regions.m_LevSetRegions, 0, RegionCode.Length);
             this.Regions.Version = VersionCounter;
+            MPIUpdate(this.Regions.m_LevSetRegions, this.GridDat);
             this.Regions.Recalc_LenToNextchange();
-
         }
-
-
-
-
-        /// <summary>
-        /// Early stage of dynamic load balancing, backup of data before the grid cells are re-distributed.
-        /// </summary>
-        public int[] BackupBeforeLoadBalance() {
-            throw new NotImplementedException("todo"); 
-            /*
-            using (new FuncTrace()) {
-                int Jup = this.GridDat.CellPartitioning.LocalLength;
-                int[] tempRegionData = new int[Jup];
-
-                var oldRegion = this.RegionsHistory[0].m_LevSetRegions;
-                var newRegion = this.RegionsHistory[1].m_LevSetRegions;
-
-                for (int j = 0; j < Jup; j++) {
-                    ushort a = oldRegion[j];
-                    ushort b = newRegion[j];
-                    int C = a | ((int)b << 16);
-                    tempRegionData[j] = C;
-                }
-                
-#if DEBUG
-                RestoreAfterLoadBalance(this.m_VersionCnt, tempRegionData, false);
-                int JA = m_gDat.Cells.NoOfCells;
-                var restored1 = RegionsHistory[0].m_LevSetRegions;
-                var restored2 = Regions.m_LevSetRegions;
-                for (int j = 0; j < JA; j++) {
-                    Debug.Assert(restored1[j] == oldRegion[j]);
-                    Debug.Assert(restored2[j] == newRegion[j]);
-                }
-#endif 
-
-                return tempRegionData;
-            }
-            */
-        }
-
-        /// <summary>
-        /// Late stage of dynamic load balancing, restoring data after the grid cells were re-distributed.
-        /// </summary>
-        public void RestoreAfterLoadBalance(int versionNo, int[] ExchangeData, bool ObUp = true) {
-            throw new NotImplementedException("todo"); 
-            /*
-            using(new FuncTrace()) {
-                int J = m_gDat.Cells.NoOfLocalUpdatedCells;
-                int JA = m_gDat.Cells.NoOfCells;
-                Debug.Assert(ExchangeData.Length == J);
-
-                PreviousRegions = new LevelSetRegions(this) {
-                    m_LevSetRegions = new ushort[JA],
-                    Version = versionNo - 1
-                };
-                _Regions = new LevelSetRegions(this) {
-                    m_LevSetRegions = new ushort[JA],
-                    Version = versionNo
-                };
-                ushort[] oldR = PreviousRegions.m_LevSetRegions;
-                ushort[] newR = _Regions.m_LevSetRegions;
-
-                for(int j = 0; j < J; j++) {
-                    int C = ExchangeData[j];
-                    ushort ra = (ushort)(C & 0x0000FFFF);
-                    ushort rb = (ushort)((C & 0xFFFF0000) >> 16);
-                    oldR[j] = ra;
-                    newR[j] = rb;
-                }
-
-                MPIUpdate(oldR, this.GridDat);
-                MPIUpdate(newR, this.GridDat);
-
-                PreviousRegions.Recalc_LenToNextchange();
-                _Regions.Recalc_LenToNextchange();
-
-                if(ObUp)
-                    this.ObserverUpdate();
-            }
-            */
-        }
-
-        /// <summary>
-        /// Late stage of mesh adaptation (which may includes dynamic load balancing), 
-        /// restoring data after the grid cells were re-distributed.
-        /// </summary>
-        public void RestoreAfterMeshAdaptation(int versionNo, int[][] ExchangeData, bool ObUp = true) {
-            throw new NotImplementedException("todo"); 
-            /*
-            using(new FuncTrace()) {
-                int J = m_gDat.Cells.NoOfLocalUpdatedCells;
-                int JA = m_gDat.Cells.NoOfCells;
-                Debug.Assert(ExchangeData.Length == J);
-
-                int NoOfLevSets = this.LevelSets.Count;
-
-                PreviousRegions = new LevelSetRegions(this) {
-                    m_LevSetRegions = new ushort[JA],
-                    Version = versionNo - 1
-                };
-                Regions = new LevelSetRegions(this) {
-                    m_LevSetRegions = new ushort[JA],
-                    Version = versionNo
-                };
-                ushort[] oldR = PreviousRegions.m_LevSetRegions;
-                ushort[] newR = _Regions.m_LevSetRegions;
-
-                for(int j = 0; j < J; j++) {
-                    int[] CL = ExchangeData[j];
-                    int L = CL.Length;
-                    ushort ra = 0, rb = 0;
-                    if(L > 1) {
-                        // +++++++++++++++++++++++
-                        // cell coarsening
-                        // +++++++++++++++++++++++
-
-                        // combine cell codes (by taking the minimum)
-                        
-                        for(int iLs = 0; iLs < NoOfLevSets; iLs++) {
-                            int NewDistLs = int.MaxValue;
-                            int OldDistLs = int.MaxValue;
-
-                            for(int l = 0; l < L; l++) { // loop over all cells in coarsening cell cluster
-                                int C = CL[l];
-                                ushort ra_l = (ushort)(C & 0x0000FFFF);
-                                ushort rb_l = (ushort)((C & 0xFFFF0000) >> 16);
-
-                                int NewLsDist_l = DecodeLevelSetDist(ra_l, iLs);
-                                if(Math.Abs(NewDistLs) > Math.Abs(NewLsDist_l)) {
-                                    NewDistLs = NewLsDist_l;
-                                }
-
-                                int OldLsDist_l = DecodeLevelSetDist(rb_l, iLs);
-                                if(Math.Abs(OldDistLs) > Math.Abs(OldLsDist_l)) {
-                                    OldDistLs = OldLsDist_l;
-                                }
-                            }
-                            Debug.Assert(Math.Abs(NewDistLs) <= 7);
-                            Debug.Assert(Math.Abs(OldDistLs) <= 7);
-                            
-                            EncodeLevelSetDist(ref ra, NewDistLs, iLs);
-                            EncodeLevelSetDist(ref rb, OldDistLs, iLs);
-                        }
-
-                    } else {
-                        // ++++++++++++++++++++++++++++++++++++++++
-                        // cell is either refined or conserved 
-                        // ++++++++++++++++++++++++++++++++++++++++
-
-                        int C = CL[0];
-                        ra = (ushort)(C & 0x0000FFFF);
-                        rb = (ushort)((C & 0xFFFF0000) >> 16);
-                    }
-
-                    oldR[j] = ra;
-                    newR[j] = rb;
-                }
-
-                MPIUpdate(oldR, this.GridDat);
-                MPIUpdate(newR, this.GridDat);
-
-                PreviousRegions.Recalc_LenToNextchange();
-                Regions.Recalc_LenToNextchange();
-
-                if(ObUp)
-                    this.ObserverUpdate();
-            }
-            */
-        }
-
-
 
         /// <summary>
         /// Must be called after changing the level-set;
@@ -1934,7 +1766,9 @@ namespace BoSSS.Foundation.XDG {
             this.TestNodesPerFace = null;
         }
 
-
+        /// <summary>
+        /// Calls the <see cref="IObserver{LevelSetRegions}.OnNext(LevelSetRegions)"/> for all observers.
+        /// </summary>
         private void ObserverUpdate() {
             using (new FuncTrace()) {
 
@@ -1960,6 +1794,45 @@ namespace BoSSS.Foundation.XDG {
                 foreach (var reference in m_Observers) {
                     IObserver<LevelSetRegions> observer = reference.Target;
                     if (observer != null) {
+                        reference.Target.OnNext(Regions);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Dirty Hack to support dynamic load balancing,
+        /// Calls the <see cref="IObserver{LevelSetRegions}.OnNext(LevelSetRegions)"/> for all observers
+        /// </summary>
+        public void ObserverHack() {
+            using (new FuncTrace()) {
+
+                // Remove obsolete observers from list...
+                // ======================================
+                for (int i = 0; i < m_Observers.Count; i++) {
+                    if (!m_Observers[i].IsAlive) {
+                        m_Observers.RemoveAt(i);
+                        i--;
+                    }
+                }
+
+                // update memory of all registered fields
+                // =====================================
+                // a disadvantage of this notification-by-weak-ref -- approach
+                // is that the 'UpdateMemory' may be called also for
+                // objects that are already unused but not yet collected...
+                // A solution would be to call GC.Collect(), but it is not known
+                // whether a GC run or update of unused memory is more expensive.
+
+                
+                // call the update method of all active fields
+                foreach (var reference in m_Observers) {
+                    IObserver<LevelSetRegions> observer = reference.Target;
+                    if (observer != null) {
+                        if(observer is XDGField) {
+                            ((XDGField)observer).Override_TrackerVersionCnt(Regions.Version);
+                        }
+
                         reference.Target.OnNext(Regions);
                     }
                 }

@@ -620,9 +620,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             return this.GetType().FullName + "::Stack_u[" + i + "," + iF + "]";
         }
 
-        private string GetName__Stack_MassMatrix(int i) {
-            return this.GetType().FullName + "::Stack_MassMatrix[" + i + "]";
-        }
+       
 
         private string GetName__Stack_OpAffine(int i) {
             return this.GetType().FullName + "::Stack_OpAffine[" + i + "]";
@@ -631,22 +629,17 @@ namespace BoSSS.Solution.XdgTimestepping {
         private string GetName__Stack_OpMatrix(int i) {
             return this.GetType().FullName + "::Stack_OpMatrix[" + i + "]";
         }
-
-        private string GetName__CutCellMetrics(int i) {
-            return this.GetType().FullName + "::CutCellMetrics[" + i + "]";
-        }
-
+        
         /// <summary>
         /// Step 1 of 2 for dynamic load balancing: creating a backup of this objects 
         /// status in the load-balancing thing <paramref name="L"/>
         /// </summary>
-        public void DataBackupBeforeBalancing(GridUpdateDataVaultBase _L) {
+        public void DataBackupBeforeBalancing(GridUpdateDataVaultBase L) {
             using (new FuncTrace()) {
                 if (m_PrivateBalancingInfo != null)
                     throw new NotSupportedException();
 
-                GridUpdateDataVault_LoadBal L = (GridUpdateDataVault_LoadBal)_L; // Provisorium
-
+                
                 m_PrivateBalancingInfo = new PrivateBalancingInfo();
                 m_PrivateBalancingInfo.NoOfFields = m_Stack_u[0].Mapping.Fields.Count;
 
@@ -671,39 +664,22 @@ namespace BoSSS.Solution.XdgTimestepping {
                 for (int i = 0; i < m_Stack_MassMatrix.Length; i++) {
                     if (m_Stack_MassMatrix[i] != null) {
                         m_PrivateBalancingInfo.m_Stack_MassMatrix[i] = true;
-                        L.BackupMatrix(m_Stack_MassMatrix[i], GetName__Stack_MassMatrix(i), map, map);
                     }
                 }
                 m_Stack_MassMatrix = null;
 
                 // backup operator
                 Debug.Assert(m_Stack_OpMatrix.Length == m_Stack_OpAffine.Length);
-                m_PrivateBalancingInfo.m_Stack_OpMatrix = new bool[m_Stack_OpMatrix.Length];
-                m_PrivateBalancingInfo.m_Stack_OpAffine = new bool[m_Stack_OpAffine.Length];
+                m_PrivateBalancingInfo.m_Stack_Operator = new bool[m_Stack_OpMatrix.Length];
                 for (int i = 0; i < m_Stack_OpMatrix.Length; i++) {
-                    if (m_Stack_OpMatrix[i] != null) {
-                        m_PrivateBalancingInfo.m_Stack_OpMatrix[i] = true;
-                        L.BackupMatrix(m_Stack_OpMatrix[i], GetName__Stack_OpMatrix(i), map, map);
-                    }
-
-                    if (m_Stack_OpAffine[i] != null) {
-                        m_PrivateBalancingInfo.m_Stack_OpAffine[i] = true;
-                        L.BackupVector(m_Stack_OpAffine[i], GetName__Stack_OpAffine(i));
+                    Debug.Assert((m_Stack_OpMatrix[i] != null) == (m_Stack_OpAffine[i] != null));
+                    if ((m_Stack_OpMatrix[i] != null) || (m_Stack_OpAffine[i] != null)) {
+                        m_PrivateBalancingInfo.m_Stack_Operator[i] = true;
                     }
                 }
                 m_Stack_OpMatrix = null;
                 m_Stack_OpAffine = null;
-
-                //// backup the cut-cell metrics
-                //m_PrivateBalancingInfo.m_Stack_CutCellMetrics = new bool[m_Stack_CutCellMetrics.Length];
-                //for (int i = 0; i < m_Stack_CutCellMetrics.Length; i++) {
-                //    if (m_Stack_CutCellMetrics[i] != null) {
-                //        m_PrivateBalancingInfo.m_Stack_CutCellMetrics[i] = true;
-                //        L.BackupCutCellMetrics(m_Stack_CutCellMetrics[i], GetName__CutCellMetrics(i));
-                //    }
-                //}
-                //m_Stack_CutCellMetrics = null;
-
+                
                 // Delete agglomeration
                 m_CurrentAgglomeration = null;
                 base.MultigridBasis = null;
@@ -717,9 +693,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             public int NoOfFields; 
             public bool[] m_Stack_u;
             public bool[] m_Stack_MassMatrix;
-            public bool[] m_Stack_OpMatrix;
-            public bool[] m_Stack_OpAffine;
-            //public bool[] m_Stack_CutCellMetrics;
+            public bool[] m_Stack_Operator;
         }
 
 
@@ -728,14 +702,13 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Step 2 of 2 for dynamic load balancing: restore this objects 
         /// status after the grid has been re-distributed.
         /// </summary>
-        public void DataRestoreAfterBalancing(GridUpdateDataVaultBase _L,
+        public void DataRestoreAfterBalancing(GridUpdateDataVaultBase L,
             IEnumerable<DGField> Fields,
             IEnumerable<DGField> IterationResiduals,
             LevelSetTracker LsTrk,
             AggregationGrid[] _MultigridSequence) //
         {
             using (new FuncTrace()) {
-                GridUpdateDataVault_LoadBal L = (GridUpdateDataVault_LoadBal)_L; // provisorium
 
                 if (m_PrivateBalancingInfo == null)
                     throw new NotSupportedException();
@@ -770,48 +743,16 @@ namespace BoSSS.Solution.XdgTimestepping {
                 for (int i = 0; i < m_Stack_MassMatrix.Length; i++) {
                     if (m_PrivateBalancingInfo.m_Stack_MassMatrix[i]) {
                         m_Stack_MassMatrix[i] = new BlockMsrMatrix(this.CurrentStateMapping);
-                        L.RestoreMatrix(m_Stack_MassMatrix[i], GetName__Stack_MassMatrix(i), CurrentStateMapping, CurrentStateMapping);
+                        //L.RestoreMatrix(m_Stack_MassMatrix[i], GetName__Stack_MassMatrix(i), CurrentStateMapping, CurrentStateMapping);
+                        m_LsTrk.GetXDGSpaceMetrics(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder, 1 - i)
+                            .MassMatrixFactory
+                            .AccMassMatrix(m_Stack_MassMatrix[i], CurrentStateMapping, _alpha: Config_MassScale);
                     }
                 }
 
-                // restore operator matrix
-                Debug.Assert(m_PrivateBalancingInfo.m_Stack_OpMatrix.Length == m_PrivateBalancingInfo.m_Stack_OpAffine.Length);
-                m_Stack_OpMatrix = new BlockMsrMatrix[m_PrivateBalancingInfo.m_Stack_OpMatrix.Length];
-                m_Stack_OpAffine = new double[m_PrivateBalancingInfo.m_Stack_OpAffine.Length][];
-                for (int i = 0; i < m_Stack_OpMatrix.Length; i++) {
-                    if (m_PrivateBalancingInfo.m_Stack_OpMatrix[i]) {
-                        m_Stack_OpMatrix[i] = new BlockMsrMatrix(this.CurrentStateMapping);
-                        L.RestoreMatrix(m_Stack_OpMatrix[i], GetName__Stack_OpMatrix(i), CurrentStateMapping, CurrentStateMapping);
-                    }
-
-                    if (m_PrivateBalancingInfo.m_Stack_OpAffine[i]) {
-                        m_Stack_OpAffine[i] = new double[CurrentStateMapping.LocalLength];
-                        L.RestoreVector(m_Stack_OpAffine[i], GetName__Stack_OpAffine(i));
-                    }
-                }
-
-                //// backup the cut-cell metrics
-                //m_Stack_CutCellMetrics = new CutCellMetrics[m_PrivateBalancingInfo.m_Stack_CutCellMetrics.Length];
-                //for (int i = 0; i < m_Stack_CutCellMetrics.Length; i++) {
-                //    if (m_PrivateBalancingInfo.m_Stack_CutCellMetrics[i]) {
-                //        L.RestoreCutCellMetrics(out m_Stack_CutCellMetrics[i], GetName__CutCellMetrics(i));
-                //    }
-                //}
 
                 // Agglomerator
                 {
-                    //CutCellMetrics[] prevCCM;
-                    //double[] oldAggTrsh;
-
-                    //prevCCM = m_Stack_CutCellMetrics.Skip(1).Where(ccm => ccm != null).ToArray();
-                    //oldAggTrsh = new double[prevCCM.Length];
-                    //ArrayTools.SetAll(oldAggTrsh, this.Config_AgglomerationThreshold);
-                    //if (prevCCM.Length <= 0) {
-                    //    prevCCM = null;
-                    //    oldAggTrsh = null;
-                    //}
-
-
                     double[] oldAggTrsh;
                     if(m_PopulatedStackDepth > 0) {
                         oldAggTrsh = new double[m_PopulatedStackDepth];
@@ -826,6 +767,29 @@ namespace BoSSS.Solution.XdgTimestepping {
                         ExceptionOnFailedAgglomeration: true, 
                         oldTs__AgglomerationTreshold: oldAggTrsh);
 
+                }
+
+                // restore operator matrix
+                m_Stack_OpMatrix = new BlockMsrMatrix[m_PrivateBalancingInfo.m_Stack_Operator.Length];
+                m_Stack_OpAffine = new double[m_PrivateBalancingInfo.m_Stack_Operator.Length][];
+                for(int i = 0; i < m_Stack_OpMatrix.Length; i++) {
+                    //if (m_PrivateBalancingInfo.m_Stack_OpMatrix[i]) {
+                    //    m_Stack_OpMatrix[i] = new BlockMsrMatrix(this.CurrentStateMapping);
+                    //    L.RestoreMatrix(m_Stack_OpMatrix[i], GetName__Stack_OpMatrix(i), CurrentStateMapping, CurrentStateMapping);
+                    //}
+
+                    //if (m_PrivateBalancingInfo.m_Stack_OpAffine[i]) {
+                    //    m_Stack_OpAffine[i] = new double[CurrentStateMapping.LocalLength];
+                    //    L.RestoreVector(m_Stack_OpAffine[i], GetName__Stack_OpAffine(i));
+                    //}
+
+                    if(!m_PrivateBalancingInfo.m_Stack_Operator[i])
+                        continue;
+
+                    m_Stack_OpMatrix[i] = new BlockMsrMatrix(CurrentStateMapping);
+                    m_Stack_OpAffine[i] = new double[CurrentStateMapping.LocalLength];
+                    this.ComputeOperatorMatrix(m_Stack_OpMatrix[i], m_Stack_OpAffine[i],
+                        m_Stack_u[i].Mapping, m_Stack_u[i].Mapping.Fields.ToArray(), base.GetAgglomeratedLengthScales(), m_CurrentPhystime + m_CurrentDt);
                 }
 
                 // finished
