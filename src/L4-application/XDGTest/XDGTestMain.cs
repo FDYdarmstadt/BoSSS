@@ -77,7 +77,7 @@ namespace BoSSS.Application.XDGTest {
             //this.LevSet.ProjectField((_2D)((x, y) => (x - 0.1)));
             this.LevSet.ProjectField((_2D)((x, y) => ((x - 0.83) / 0.8).Pow2() + (y / 0.8).Pow2() - 1.0));
             this.LsTrk.UpdateTracker();
-
+            this.LsTrk.PushStacks();
             this.Pressure.ProjectField((_2D)((x, y) => 1 - y * y));
 
             //PlotCurrentState(0, 0, 3);

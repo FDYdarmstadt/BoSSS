@@ -528,6 +528,13 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Debug.Assert(object.ReferenceEquals(base.MultigridBasis[0][0].DGBasis.GridDat, m_CurrentAgglomeration.Tracker.GridDat));
                 base.MultigridBasis.UpdateXdgAggregationBasis(m_CurrentAgglomeration);
                 OneTimeMgInit = true;
+
+
+                // matrix used for precond (must be agglomerated)
+                MassMatrixFactory MassFact = m_LsTrk.GetXDGSpaceMetrics(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder).MassMatrixFactory;
+                m_PrecondMassMatrix = MassFact.GetMassMatrix(CurrentStateMapping, false);
+                m_CurrentAgglomeration.ManipulateMatrixAndRHS(m_PrecondMassMatrix, default(double[]), CurrentStateMapping, CurrentStateMapping);
+
             }
 
             // update Multigrid-XDG basis
@@ -563,20 +570,16 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 
                 // compute mass matrix (only once in application lifetime)
-                Debug.Assert((m_PrecondMassMatrix == null) == (m_Stack_MassMatrix[0] == null));
-                if ((this.Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsNonIdentity && m_PrecondMassMatrix == null)
+                //Debug.Assert((m_PrecondMassMatrix == null) == (m_Stack_MassMatrix[0] == null));
+                if ((this.Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsNonIdentity)// && m_PrecondMassMatrix == null)
                     || (this.Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsTimeDependent && m_IterationCounter == 0)
                     || (this.Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsTimeAndSolutionDependent)
                     ) {
                     int NF = CurrentStateMapping.Fields.Count;
                     //MassMatrixFactory MassFact = new MassMatrixFactory(CurrentStateMapping.BasisS.ElementAtMax(b => b.Degree), m_CurrentAgglomeration);
-                    MassMatrixFactory MassFact = m_LsTrk.GetXDGSpaceMetrics(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder).MassMatrixFactory;
-
-                    // matrix used for precond (must be agglomerated)
-                    m_PrecondMassMatrix = MassFact.GetMassMatrix(CurrentStateMapping, false);
-                    m_CurrentAgglomeration.ManipulateMatrixAndRHS(m_PrecondMassMatrix, default(double[]), CurrentStateMapping, CurrentStateMapping);
-
+                    
                     // matrix for time derivative
+                    MassMatrixFactory MassFact = m_LsTrk.GetXDGSpaceMetrics(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder).MassMatrixFactory;
                     m_Stack_MassMatrix[0] = new BlockMsrMatrix(CurrentStateMapping);
                     MassFact.AccMassMatrix(m_Stack_MassMatrix[0], CurrentStateMapping, _alpha: Config_MassScale);
                 }
@@ -910,7 +913,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
 
         }
-
+        
        
         /// <summary>
         /// Callback-routine  to update the linear resp. linearized system, 
@@ -1165,6 +1168,25 @@ namespace BoSSS.Solution.XdgTimestepping {
                     Debug.Assert(Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsIdentity);
                     System.AccEyeSp(1.0 / dt);
                 }
+#if DEBUG
+                {
+                    // compare "private" and "official" mass matrix stack
+                    // (private may be removed soon)
+
+                    for(int i = 0; i < m_Stack_MassMatrix.Length; i++) {
+                        var MM = m_Stack_MassMatrix[i];
+                        var MMcomp = new BlockMsrMatrix(CurrentStateMapping);
+                        m_LsTrk.GetXDGSpaceMetrics(Config_SpeciesToCompute, Config_CutCellQuadratureOrder, 1 - i)
+                            .MassMatrixFactory
+                            .AccMassMatrix(MMcomp, CurrentStateMapping, _alpha: Config_MassScale);
+                        var sollNull = MMcomp.CloneAs();
+                        sollNull.Acc(-1.0, MM);
+                        double normMMcomp = sollNull.InfNorm();
+                        Debug.Assert(normMMcomp == 0.0);
+                    }
+                }
+
+#endif
 
                 // perform agglomeration
                 // ---------------------
@@ -1177,6 +1199,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 m_IterationCounter++;
             }
         }
+
+
 
         double m_CurrentPhystime;
         double m_CurrentDt = -1;

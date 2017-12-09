@@ -1502,6 +1502,19 @@ namespace BoSSS.Solution {
                 var relevantFields = m_RegisteredFields.Union(
                     m_IOFields, ReferenceComparer.Instance).ToArray();
 
+                foreach(var f in relevantFields) {
+                    if(f is XDGField) {
+                        var xdgf = (XDGField)f;
+                        if(!object.ReferenceEquals(xdgf.Basis.Tracker, this.LsTrk))
+                            throw new ApplicationException("XDG is defined against unknown level-set tracker!");
+                    }
+                }
+
+
+                // pass 1: singel phase fields
+                // ===========================
+
+                var Pass2_Evaluators = new Dictionary<string, Func<double[], double>>();
                 foreach (var val in this.Control.InitialValues_Evaluators) {
                     string DesiredFieldName = val.Key;
                     ScalarFunction Function = Utils.NonVectorizedScalarFunction.Vectorize(val.Value);
@@ -1521,8 +1534,11 @@ namespace BoSSS.Solution {
                                 tr.Info("projecting XDG-field \"" + f.Identification + "\"");
                                 string spc = NameAndSpc[1];
                                 var xdgf = (XDGField)f;
-                                var SpeciesOnlyField = xdgf.GetSpeciesShadowField(spc);
-                                SpeciesOnlyField.ProjectField(Function);
+                                //var SpeciesOnlyField = xdgf.GetSpeciesShadowField(spc);
+                                //SpeciesOnlyField.ProjectField(Function);
+
+                                Pass2_Evaluators.Add(val.Key, val.Value);
+                                
                                 found = true;
                                 break;
                             }
@@ -1533,6 +1549,45 @@ namespace BoSSS.Solution {
                         throw new ApplicationException(
                             "initial value specified for a field named \"" + DesiredFieldName +
                             "\", but no field with that identification exists in context.");
+                    }
+                }
+
+                // pass 2: XDG fields
+                // ===========================
+
+                if(Pass2_Evaluators.Count > 0) {
+                    LsTrk.UpdateTracker();
+                    LsTrk.PushStacks();
+
+                    foreach(var val in Pass2_Evaluators) {
+                        string DesiredFieldName = val.Key;
+                        ScalarFunction Function = Utils.NonVectorizedScalarFunction.Vectorize(val.Value);
+
+                        bool found = false;
+                        foreach(DGField f in relevantFields) {
+                            if(f.Identification.Equals(DesiredFieldName)) {
+                                throw new ApplicationException();
+                            } else {
+
+                                // now, the XDG hack:
+                                var NameAndSpc = DesiredFieldName.Split(new string[] { "#" }, StringSplitOptions.RemoveEmptyEntries);
+                                if(NameAndSpc.Length == 2 && f.Identification.Equals(NameAndSpc[0])) {
+                                    tr.Info("projecting XDG-field \"" + f.Identification + "\"");
+                                    string spc = NameAndSpc[1];
+                                    var xdgf = (XDGField)f;
+                                    var SpeciesOnlyField = xdgf.GetSpeciesShadowField(spc);
+                                    SpeciesOnlyField.ProjectField(Function);
+                                    found = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if(!found) {
+                            throw new ApplicationException(
+                                "initial value specified for a field named \"" + DesiredFieldName +
+                                "\", but no field with that identification exists in context.");
+                        }
                     }
                 }
             }
