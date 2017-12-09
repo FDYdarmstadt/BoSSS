@@ -370,8 +370,8 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// If <paramref name="New2Old"/> false, the other way around.
         /// </returns>
         public static int[] SpeciesUpdate(LevelSetTracker LsTrk, int jCell, bool New2Old) {
-            ushort[] OldCode = LsTrk.RegionsHistory[0].m_LevSetRegions;
-            ushort[] NewCode = LsTrk.RegionsHistory[1].m_LevSetRegions;
+            ushort[] OldCode = LsTrk.RegionsHistory[0].RegionsCode;
+            ushort[] NewCode = LsTrk.RegionsHistory[1].RegionsCode;
 
             // Only if the return value of this function is positive, a mapping from current species index to previous species index
             // - index: current species index in cell <paramref name="jCell"/>.
@@ -445,7 +445,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 cout.Write("\t");
 
                 // level-set distance
-                int dist = LevelSetTracker.DecodeLevelSetDist(LsTrk.Regions.m_LevSetRegions[j], 0);
+                int dist = LevelSetTracker.DecodeLevelSetDist(LsTrk.Regions.RegionsCode[j], 0);
                 cout.Write(dist);
                 cout.Write("\t");
 

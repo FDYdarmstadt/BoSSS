@@ -33,15 +33,7 @@ namespace BoSSS.Foundation.XDG {
         public class LevelSetRegions : ICloneable {
 
             LevelSetTracker m_owner;
-
-            ///// <summary>
-            ///// Owner object.
-            ///// </summary>
-            //public LevelSetTracker Tracker {
-            //    get {
-            //        return m_owner;
-            //    }
-            //}
+         
 
             /// <summary>
             /// Constructor
@@ -62,7 +54,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// Level set region codes for locally updated and external cells
             /// </summary>
-            public ushort[] LevelSetRegionsCode {
+            public ushort[] RegionsCode {
                 get {
                     return m_LevSetRegions;
                 }
@@ -77,7 +69,7 @@ namespace BoSSS.Foundation.XDG {
             /// Level set region code,
             /// for locally updated and external cells
             /// </summary>
-            public ushort[] m_LevSetRegions;
+            internal ushort[] m_LevSetRegions;
 
             /// <summary>
             /// For each cell <em>j</em>, the number of cells that follow with the same 

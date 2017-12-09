@@ -1182,6 +1182,120 @@ namespace BoSSS.Foundation.XDG {
         }
 
         
+        /// <summary>
+        /// Backup of the internal state of the level-set tracker for a certain history stack index (<paramref name="iHistory"/>).
+        /// Not the entire state is backed up (cell masks, cut-cell quadrature rules, mass matrices, ..., are lost),
+        /// but everything essential to restore a certain state.
+        /// </summary>
+        /// <param name="iHistory">History stack index.</param>
+        /// <returns>
+        /// Can be used as input for <see cref="ReplaceCurrentTimeLevel(SinglePhaseField[], int)"/> or <see cref="ReplaceCurrentTimeLevel(SinglePhaseField[], ushort[], int)"/>.
+        /// - 1st item: clone of the level-set fields, <see cref="m_LevelSetHistories"/>
+        /// - 2nd item: region code for each cell, <see cref="LevelSetRegions.RegionsCode"/>
+        /// - 3rd item: level-set version index, <see cref="LevelSetRegions.Version"/>
+        /// </returns>
+        public Tuple<LevelSet[], ushort[], int> BackupTimeLevel(int iHistory) {
+            ushort[] RegionClone = this.RegionsHistory[iHistory].RegionsCode.CloneAs();
+
+            int NoOfLevelSets = this.NoOfLevelSets;
+            LevelSet[] LevSetClones = new LevelSet[NoOfLevelSets];
+            for(int iLs = 0; iLs < NoOfLevelSets; iLs++) {
+                LevelSet Ls = (LevelSet)(this.LevelSetHistories[iLs][iHistory]);
+                LevSetClones[iLs] = Ls;
+            }
+
+            return new Tuple<LevelSet[], ushort[], int>(LevSetClones, RegionClone, this.RegionsHistory[iHistory].Version);
+        }
+
+        /// <summary>
+        /// Counterpart of <see cref="BackupTimeLevel(int)"/>, but the region codes (<see cref="LevelSetRegions.RegionsCode"/>) are
+        /// re-computed by calling <see cref="UpdateTracker(int, bool, int[])"/>.
+        /// </summary>
+        /// <param name="LevSet">Level-Sets</param>
+        /// <param name="VersionCounter"><see cref="LevelSetRegions.Version"/></param>
+        /// <remarks>
+        /// Used e.g. for mesh adaptation.
+        /// </remarks>
+        public void ReplaceCurrentTimeLevel(SinglePhaseField[] LevSet, int VersionCounter) {
+            if(LevSet.Length != this.NoOfLevelSets)
+                throw new ArgumentOutOfRangeException();
+            int NoOfLevelSet = this.NoOfLevelSets;
+
+            // invalidate everything we got so far
+            // ===================================
+
+            this.Regions.InvalidateCaches();
+            for(int iLs = 0; iLs < NoOfLevelSets; iLs++) {
+                this.DataHistories[iLs].Current.ClearCaches();
+            }
+
+            m_QuadFactoryHelpersHistory.Current.Clear();
+
+            m_XDGSpaceMetricsHistory.Current.Clear();
+
+            // set level-set data
+            // ==================
+                        
+            for(int iLs = 0; iLs < NoOfLevelSets; iLs++) {
+                LevelSet Ls = (LevelSet)(this.LevelSets[iLs]);
+                Ls.Clear();
+                Ls.Acc(1.0, LevSet[iLs]);
+            }
+
+            // update tracker
+            // ==============
+
+            UpdateTracker();
+            this.Regions.Version = VersionCounter;
+
+        }
+
+        /// <summary>
+        /// Counterpart of <see cref="BackupTimeLevel(int)"/>, but the region codes (<see cref="LevelSetRegions.RegionsCode"/>) are
+        /// re-computed by calling <see cref="UpdateTracker(int, bool, int[])"/>.
+        /// </summary>
+        /// <param name="LevSet">Level-Sets</param>
+        /// <param name="VersionCounter"><see cref="LevelSetRegions.Version"/></param>
+        /// <param name="RegionCode"><see cref="LevelSetRegions.RegionsCode"/></param>
+        public void ReplaceCurrentTimeLevel(SinglePhaseField[] LevSet, ushort[] RegionCode, int VersionCounter) {
+            if(LevSet.Length != this.NoOfLevelSets)
+                throw new ArgumentOutOfRangeException();
+            int NoOfLevelSet = this.NoOfLevelSets;
+            if(RegionCode.Length != this.GridDat.Cells.NoOfLocalUpdatedCells)
+                throw new ArgumentOutOfRangeException();
+
+            // invalidate everything we got so far
+            // ===================================
+
+            this.Regions.InvalidateCaches();
+            for(int iLs = 0; iLs < NoOfLevelSets; iLs++) {
+                this.DataHistories[iLs].Current.ClearCaches();
+            }
+
+            m_QuadFactoryHelpersHistory.Current.Clear();
+
+            m_XDGSpaceMetricsHistory.Current.Clear();
+
+            // set level-set data
+            // ==================
+                        
+            for(int iLs = 0; iLs < NoOfLevelSets; iLs++) {
+                LevelSet Ls = (LevelSet)(this.LevelSets[iLs]);
+                Ls.Clear();
+                Ls.Acc(1.0, LevSet[iLs]);
+            }
+
+            // update region code
+            // ==================
+
+            this.Regions.m_LevSetRegions = RegionCode;
+            this.Regions.Version = VersionCounter;
+            this.Regions.Recalc_LenToNextchange();
+
+        }
+
+
+
 
         /// <summary>
         /// Early stage of dynamic load balancing, backup of data before the grid cells are re-distributed.
