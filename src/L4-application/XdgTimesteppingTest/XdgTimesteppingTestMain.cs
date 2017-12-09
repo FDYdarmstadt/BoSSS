@@ -57,6 +57,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
             //Console.WriteLine("Remember to remove me.");
             //TestProgram.Init();
+            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder(TimeSteppingScheme.BDF2, 0.2d, 8);
             //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestBurgers_HighOrder(0, 0.08d, "bdf", 8);
             //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestBurgers_HighOrder(2, 0.08d, "bdf", 8);
             //TestProgram.Cleanup();

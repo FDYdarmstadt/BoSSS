@@ -1176,6 +1176,10 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                     for(int i = 0; i < m_Stack_MassMatrix.Length; i++) {
                         var MM = m_Stack_MassMatrix[i];
+                        if(MM == null)
+                            continue;
+                        if(i >= m_LsTrk.PopulatedHistoryLength)
+                            continue;
                         var MMcomp = new BlockMsrMatrix(CurrentStateMapping);
                         m_LsTrk.GetXDGSpaceMetrics(Config_SpeciesToCompute, Config_CutCellQuadratureOrder, 1 - i)
                             .MassMatrixFactory
