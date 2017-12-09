@@ -153,7 +153,7 @@ namespace BoSSS.Application.LoadBalancingTest {
         /// </summary>
         XdgBDFTimestepping TimeIntegration;
 
-        protected override void CreateEquationsAndSolvers(GridUpdateData L) {
+        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
             int quadorder = this.u.Basis.Degree * 2 + 1;
 
             Op = new XSpatialOperator(1, 0, 1, (A, B, C) => quadorder, "u", "c1");
@@ -242,7 +242,7 @@ namespace BoSSS.Application.LoadBalancingTest {
                 base.LsTrk.SpeciesIdS.ToArray());
         }
 
-        public override void DataBackupBeforeBalancing(GridUpdateData L) {
+        public override void DataBackupBeforeBalancing(GridUpdateDataVaultBase L) {
          
             TimeIntegration.DataBackupBeforeBalancing(L);
         }

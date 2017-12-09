@@ -83,7 +83,7 @@ namespace BoSSS.Application.XDGTest {
             //PlotCurrentState(0, 0, 3);
         }
 
-        protected override void CreateEquationsAndSolvers(GridUpdateData L) {
+        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
         }
 
         internal double AutoExtrapolationErr = double.MinValue;

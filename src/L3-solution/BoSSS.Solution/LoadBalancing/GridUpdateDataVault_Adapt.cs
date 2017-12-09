@@ -34,7 +34,7 @@ namespace BoSSS.Solution {
     /// - backup/serialize objects on the original grid
     /// - restore/serialize objects on the refined grid
     /// </summary>
-    public class RemeshingData : GridUpdateData {
+    public class GridUpdateDataVault_Adapt : GridUpdateDataVaultBase {
 
 
         /// <summary>
@@ -42,7 +42,7 @@ namespace BoSSS.Solution {
         /// </summary>
         /// <param name="oldGrid"></param>
         /// <param name="oldTracker"></param>
-        internal RemeshingData(IGridData oldGrid, LevelSetTracker oldTracker) {
+        internal GridUpdateDataVault_Adapt(IGridData oldGrid, LevelSetTracker oldTracker) {
             if(oldTracker != null && !object.ReferenceEquals(oldTracker.GridDat, oldGrid))
                 throw new ArgumentException();
             m_OldGrid = oldGrid;

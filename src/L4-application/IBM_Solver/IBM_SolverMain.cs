@@ -229,7 +229,7 @@ namespace BoSSS.Application.IBM_Solver {
 
         protected XdgBDFTimestepping m_BDF_Timestepper;
 
-        protected override void CreateEquationsAndSolvers(GridUpdateData L) {
+        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
 
             // =================================
             // create operator
@@ -447,7 +447,7 @@ namespace BoSSS.Application.IBM_Solver {
             Debug.Assert(m_BDF_Timestepper != null);
         }
 
-        public override void DataBackupBeforeBalancing(GridUpdateData L) {
+        public override void DataBackupBeforeBalancing(GridUpdateDataVaultBase L) {
             m_BDF_Timestepper.DataBackupBeforeBalancing(L);
             m_CurrentResidual = null;
             m_CurrentSolution = null;

@@ -202,7 +202,7 @@ namespace NSE_SIMPLE {
         /// <summary>
         /// 
         /// </summary>
-        protected override void CreateEquationsAndSolvers(GridUpdateData L) {
+        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
             using (new FuncTrace()) {
 
                 // Create SIMPLEStatus

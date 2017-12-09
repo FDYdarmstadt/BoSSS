@@ -39,14 +39,14 @@ namespace BoSSS.Solution {
     /// - backup/serialize objects before balancing and
     /// - restore/serialize objects after balancing.
     /// </summary>
-    public class LoadBalancingData : GridUpdateData {
+    public class GridUpdateDataVault_LoadBal : GridUpdateDataVaultBase {
 
         /// <summary>
         /// ctor;
         /// </summary>
         /// <param name="oldGrid"></param>
         /// <param name="oldTracker"></param>
-        internal LoadBalancingData(IGridData oldGrid, LevelSetTracker oldTracker) {
+        internal GridUpdateDataVault_LoadBal(IGridData oldGrid, LevelSetTracker oldTracker) {
             if(oldTracker != null && !object.ReferenceEquals(oldTracker.GridDat, oldGrid))
                 throw new ArgumentException();
             m_OldGrid = oldGrid;

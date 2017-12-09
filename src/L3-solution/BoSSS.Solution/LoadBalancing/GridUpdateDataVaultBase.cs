@@ -37,7 +37,7 @@ namespace BoSSS.Solution {
     /// - backup/serialize objects before balancing and
     /// - restore/serialize objects after balancing.
     /// </summary>
-    abstract public class GridUpdateData {
+    abstract public class GridUpdateDataVaultBase {
 
         /// <summary>
         /// Old Grid, before re-distribution.

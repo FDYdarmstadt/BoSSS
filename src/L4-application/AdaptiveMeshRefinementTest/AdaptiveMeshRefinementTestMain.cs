@@ -438,7 +438,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
         
 
 
-        protected override void CreateEquationsAndSolvers(GridUpdateData L) {
+        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
             
             if (L == null) {
                 

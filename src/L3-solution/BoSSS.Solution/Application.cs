@@ -1483,7 +1483,7 @@ namespace BoSSS.Solution {
         /// <param name="L">
         /// If restarted after dynamic load balancing, the respective data.
         /// </param>
-        protected abstract void CreateEquationsAndSolvers(GridUpdateData L);
+        protected abstract void CreateEquationsAndSolvers(GridUpdateDataVaultBase L);
 
 
         /// <summary>
@@ -1843,7 +1843,7 @@ namespace BoSSS.Solution {
                     GridData oldGridData = this.GridData;
                     Permutation tau;
                     int[] oldTrackerData;
-                    LoadBalancingData loadbal = new LoadBalancingData(oldGridData, this.LsTrk);
+                    GridUpdateDataVault_LoadBal loadbal = new GridUpdateDataVault_LoadBal(oldGridData, this.LsTrk);
                     BackupData(oldGridData, this.LsTrk, loadbal, out tau, out oldTrackerData, out int trackerVersion);
 
                     // create new grid
@@ -1955,7 +1955,7 @@ namespace BoSSS.Solution {
                     GridCommons oldGrid = oldGridData.Grid;
                     Permutation tau;
                     int[] oldTrackerData;
-                    RemeshingData remshDat = new RemeshingData(oldGridData, this.LsTrk);
+                    GridUpdateDataVault_Adapt remshDat = new GridUpdateDataVault_Adapt(oldGridData, this.LsTrk);
                     BackupData(oldGridData, this.LsTrk, remshDat, out tau, out oldTrackerData, out int trackerVersion);
                                        
 
@@ -2072,7 +2072,7 @@ namespace BoSSS.Solution {
         }
 
         private void BackupData(GridData oldGridData, LevelSetTracker oldLsTrk, 
-            GridUpdateData loadbal, out Permutation tau, out int[] oldTrackerData, out int trackerVersion) {
+            GridUpdateDataVaultBase loadbal, out Permutation tau, out int[] oldTrackerData, out int trackerVersion) {
 
             trackerVersion = -1;
             oldTrackerData = null;
@@ -2150,7 +2150,7 @@ namespace BoSSS.Solution {
         /// during dynamic load balancing.
         /// May also be used to invalidate internal states related to the old <see cref="GridData"/> or <see cref="LsTrk"/> objects.
         /// </summary>
-        public virtual void DataBackupBeforeBalancing(GridUpdateData L) {
+        public virtual void DataBackupBeforeBalancing(GridUpdateDataVaultBase L) {
 
         }
 
