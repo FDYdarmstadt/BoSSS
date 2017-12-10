@@ -53,6 +53,15 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
+        /// similar to <see cref="AgglomerationThreshold"/>, but for old timesteps
+        /// </summary>
+        public double[] AgglomerationThreshold_Oldtimesteps {
+            get;
+            private set;
+        }
+
+
+        /// <summary>
         /// The quadrature order used for computing cell volumes and edge areas.
         /// </summary>
         public int CutCellQuadratureOrder {
@@ -137,12 +146,13 @@ namespace BoSSS.Foundation.XDG {
 
             if (NewbornAndDecasedThreshold < 0.0 || NewbornAndDecasedThreshold >= 1.0)
                 throw new ArgumentOutOfRangeException();
-
+            
             this.Tracker = lsTrk;
 
             this.XDGSpaceMetrics = lsTrk.GetXDGSpaceMetrics(Spc, CutCellsQuadOrder, 1);
             this.NonAgglomeratedMetrics = lsTrk.GetXDGSpaceMetrics(Spc, CutCellsQuadOrder, 1).CutCellMetrics;
             this.AgglomerationThreshold = __AgglomerationTreshold;
+            this.AgglomerationThreshold_Oldtimesteps = oldTs__AgglomerationTreshold;
 
             CutCellMetrics[] oldCcm;
             if(AgglomerateNewborn || AgglomerateDecased) {

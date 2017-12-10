@@ -1195,7 +1195,6 @@ namespace BoSSS.Foundation.XDG {
         /// - 3rd item: level-set version index, <see cref="LevelSetRegions.Version"/>
         /// </returns>
         public Tuple<LevelSet[], ushort[], int> BackupTimeLevel(int iHistory) {
-            Debugger.Launch();
             int Jup = this.GridDat.Cells.NoOfLocalUpdatedCells;
             ushort[] RegionClone = new ushort[Jup];
             Array.Copy(this.RegionsHistory[iHistory].RegionsCode, 0, RegionClone, 0, Jup);

@@ -668,6 +668,12 @@ namespace BoSSS.Solution.XdgTimestepping {
                 }
                 m_Stack_MassMatrix = null;
 
+                // agglomeration
+                if(m_CurrentAgglomeration != null) {
+                    m_PrivateBalancingInfo.m_Agglomeration = true;
+                    m_PrivateBalancingInfo.m_Agglomeration_oldTrsh = m_CurrentAgglomeration.AgglomerationThreshold_Oldtimesteps;
+                }
+
                 // backup operator
                 Debug.Assert(m_Stack_OpMatrix.Length == m_Stack_OpAffine.Length);
                 m_PrivateBalancingInfo.m_Stack_Operator = new bool[m_Stack_OpMatrix.Length];
@@ -684,6 +690,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 m_CurrentAgglomeration = null;
                 base.MultigridBasis = null;
                 base.MultigridSequence = null;
+                OneTimeMgInit = false;
             }
         }
 
@@ -694,6 +701,8 @@ namespace BoSSS.Solution.XdgTimestepping {
             public bool[] m_Stack_u;
             public bool[] m_Stack_MassMatrix;
             public bool[] m_Stack_Operator;
+            public bool m_Agglomeration;
+            public double[] m_Agglomeration_oldTrsh;
         }
 
 
@@ -752,12 +761,9 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 
                 // Agglomerator
-                {
-                    double[] oldAggTrsh;
-                    if(m_PopulatedStackDepth > 0) {
-                        oldAggTrsh = new double[m_PopulatedStackDepth];
-                        ArrayTools.SetAll(oldAggTrsh, this.Config_AgglomerationThreshold);
-                    } else {
+                if(m_PrivateBalancingInfo.m_Agglomeration) {
+                    double[] oldAggTrsh = m_PrivateBalancingInfo.m_Agglomeration_oldTrsh;
+                    if(oldAggTrsh != null && oldAggTrsh.Length <= 0) {
                         oldAggTrsh = null;
                     }
                     
