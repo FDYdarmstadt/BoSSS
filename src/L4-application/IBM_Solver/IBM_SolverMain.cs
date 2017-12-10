@@ -829,6 +829,7 @@ namespace BoSSS.Application.IBM_Solver {
 
                 this.LsTrk.UpdateTracker();
                 this.DGLevSet.IncreaseHistoryLength(1);
+                this.LsTrk.PushStacks();
                 this.DGLevSet.Push();
 
             }
