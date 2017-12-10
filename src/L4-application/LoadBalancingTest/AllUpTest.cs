@@ -65,6 +65,7 @@ namespace BoSSS.Application.LoadBalancingTest {
                 });
         }
 
+        /*
         /// <summary>
         /// Da Test!
         /// </summary>
@@ -95,7 +96,7 @@ namespace BoSSS.Application.LoadBalancingTest {
                     return p;
                 });
         }
-
+        */
         /// <summary>
         /// MPI shutdown.
         /// </summary>
