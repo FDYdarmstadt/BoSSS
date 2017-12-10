@@ -291,6 +291,11 @@ namespace BoSSS.Solution {
                     }
                     m_NewTracker.ObserverHack();
 
+                    if(m_NewTracker.PopulatedHistoryLength < m_LsTrkPrivData.PopultatedHistoryLength)
+                        throw new ApplicationException();
+                    if(m_NewTracker.HistoryLength < m_LsTrkPrivData.HistoryLength)
+                        throw new ApplicationException();
+
                     return m_LsTrkPrivData.Versions[0];
                 } else {
                     return int.MinValue;

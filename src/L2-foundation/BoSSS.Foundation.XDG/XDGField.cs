@@ -108,12 +108,12 @@ namespace BoSSS.Foundation.XDG {
                 m_Coordinates.Resize(j, m_CCBasis.GetLength(j));
             }
             m_Coordinates.FinishResize();
-            m_TrackerVersionCnt = m_CCBasis.Tracker.VersionCnt;
+            //m_TrackerVersionCnt = m_CCBasis.Tracker.VersionCnt;
 
 
             // register field with level set tracker
             // -------------------------------------
-            this.m_TrackerVersionCnt = m_CCBasis.Tracker.Regions.Version;
+            //this.m_TrackerVersionCnt = m_CCBasis.Tracker.Regions.Version;
             m_CCBasis.Tracker.Subscribe(this);
             this.OnNext(m_CCBasis.Tracker.Regions); // initialize data structures.
         }
@@ -135,14 +135,14 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        int m_TrackerVersionCnt = int.MinValue;
+        //int m_TrackerVersionCnt = int.MinValue;
 
-        /// <summary>
-        /// dirty hack used by dynamic load balancing.
-        /// </summary>
-        internal void Override_TrackerVersionCnt(int i) {
-            m_TrackerVersionCnt = i;
-        }
+        ///// <summary>
+        ///// dirty hack used by dynamic load balancing.
+        ///// </summary>
+        //internal void Override_TrackerVersionCnt(int i) {
+        //    m_TrackerVersionCnt = i;
+        //}
 
         /// <summary>
         /// caches the return value of <see cref="GetSpeciesShadowField(SpeciesId)"/>;
@@ -509,7 +509,7 @@ namespace BoSSS.Foundation.XDG {
         public override object Clone() {
             XDGField r = new XDGField(m_CCBasis, this.Identification);
             r.m_Coordinates = (FieldStorage)m_Coordinates.Clone();
-            r.m_TrackerVersionCnt = this.m_TrackerVersionCnt;
+            //r.m_TrackerVersionCnt = this.m_TrackerVersionCnt;
             r.m_UpdateBehaviour = this.m_UpdateBehaviour;
             return r;
         }
@@ -1224,8 +1224,8 @@ namespace BoSSS.Foundation.XDG {
 
 
             // application check
-            if (m_TrackerVersionCnt < (levelSetStatus.Version - 1))
-                throw new ApplicationException("missed at least one memory update; field can't be updated anymore with arg. \"Preserve=true\"");
+            //if (m_TrackerVersionCnt < (levelSetStatus.Version - 1))
+            //    throw new ApplicationException("missed at least one memory update; field can't be updated anymore with arg. \"Preserve=true\"");
 
             // rearrange DG coordinates if regions have changed
             // ===============================================
@@ -1315,7 +1315,7 @@ namespace BoSSS.Foundation.XDG {
                 // the DOF in the near band will be crap anyway...
                 m_Coordinates.Clear();
 
-            m_TrackerVersionCnt = levelSetStatus.Version;
+            //m_TrackerVersionCnt = levelSetStatus.Version;
 
             // update MPI buffer size
             // ======================
