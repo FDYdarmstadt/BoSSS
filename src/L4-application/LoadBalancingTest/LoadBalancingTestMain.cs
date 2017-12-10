@@ -287,7 +287,7 @@ namespace BoSSS.Application.LoadBalancingTest {
         }
 
 
-        internal Func<IApplication<AppControl>, int, ICellCostEstimator> cellCostEstimatorFactory = CellCostEstimatorLibrary.AllCellsAreEqual;
+        internal Func<IApplication<AppControl>, int, ICellCostEstimator> cellCostEstimatorFactory = CellCostEstimatorLibrary.OperatorAssemblyAndCutCellQuadrules;
 
 
         /// <summary>
@@ -302,7 +302,7 @@ namespace BoSSS.Application.LoadBalancingTest {
             //    Debugger.Launch();
             int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
             int[] NewPart;
-            /*
+            
             int[] PerformanceClasses = new int[J];
             var CC = this.LsTrk.Regions.GetCutCellMask();
             foreach(int j in CC.ItemEnum) {
@@ -317,7 +317,7 @@ namespace BoSSS.Application.LoadBalancingTest {
                     );
             }
 
-            int[] NewPart = balancer.GetNewPartitioning(
+            NewPart = balancer.GetNewPartitioning(
                 this,
                 2,
                 PerformanceClasses,
@@ -329,7 +329,7 @@ namespace BoSSS.Application.LoadBalancingTest {
 
             
 
-            */
+            /*
 
             if (MPISize == 4 && TimeStepNo > 5) {
                 NewPart = new int[J];
