@@ -478,7 +478,7 @@ namespace CNS {
             "schlieren",
             VariableTypes.Other,
             delegate (DGField schlierenField, CellMask cellMask, IProgram<CNSControl> program) {
-                //schlieren.Clear();
+                schlierenField.Clear();
 
                 // Calculate the magnitude of the density gradient
                 SinglePhaseField derivative = new SinglePhaseField(schlierenField.Basis, "derivative");
