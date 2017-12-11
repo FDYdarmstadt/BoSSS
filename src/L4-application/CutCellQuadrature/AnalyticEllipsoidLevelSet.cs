@@ -41,6 +41,15 @@ namespace CutCellQuadrature {
 
         private double offsetZ;
 
+        public Object Clone() {
+            return new AnalyticEllipsoidLevelSet(this.gridData) {
+                offsetX = this.offsetX,
+                offsetY = this.offsetY,
+                offsetZ = this.offsetZ
+            };
+        }
+
+
         public AnalyticEllipsoidLevelSet(GridData gridData) {
             this.gridData = gridData;
         }

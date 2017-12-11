@@ -158,7 +158,7 @@ namespace CNS {
         /// <see cref="CNSControl.DomainType"/>. Additionally, it creates
         /// the associated time stepper
         /// </summary>
-        protected override void CreateEquationsAndSolvers(GridUpdateData loadBalancingData) {
+        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase loadBalancingData) {
             FullOperator = operatorFactory.GetJoinedOperator();
             
             TimeStepper = Control.ExplicitScheme.Instantiate(

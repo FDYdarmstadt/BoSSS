@@ -173,11 +173,12 @@ namespace BoSSS.Foundation.XDG {
             SpeciesId posSpc = this.PositiveSpecies;
             SpeciesId negSpc = this.NegativeSpecies;
 
+            var Reg = lsTrk.Regions;
             for (int c = 0; c < NoOfVars; c++) { // loop over variables...
                 for (int j = 0; j < Len; j++) { // loop over items...
 
                     ReducedRegionCode rrc;
-                    int NoOf = lsTrk.GetNoOfSpecies(j + inp.i0, out rrc);
+                    int NoOf = Reg.GetNoOfSpecies(j + inp.i0, out rrc);
                     Debug.Assert(NoOf == 2);
                     //int iSpcPos = lsTrk.GetSpeciesIndex(rrc, pos);
                     //int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, neg);
@@ -256,11 +257,11 @@ namespace BoSSS.Foundation.XDG {
             SpeciesId posSpc = this.PositiveSpecies;
             SpeciesId negSpc = this.NegativeSpecies;
 
+            var Reg = lsTrk.Regions;
             for (int c = 0; c < NoOfVars; c++) { // loop over variables...
                 for (int j = 0; j < Len; j++) { // loop over items...
-
                     ReducedRegionCode rrc;
-                    int NoOf = lsTrk.GetNoOfSpecies(j + inp.i0, out rrc);
+                    int NoOf = Reg.GetNoOfSpecies(j + inp.i0, out rrc);
                     Debug.Assert(NoOf == 2);
                     //int iSpcPos = lsTrk.GetSpeciesIndex(rrc, pos);
                     //int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, neg);
@@ -342,11 +343,11 @@ namespace BoSSS.Foundation.XDG {
             SpeciesId posSpc = this.PositiveSpecies;
             SpeciesId negSpc = this.NegativeSpecies;
 
+            var Reg = lsTrk.Regions;
             for (int c = 0; c < NoOfVars; c++) { // loop over variables...
                 for (int j = 0; j < Len; j++) { // loop over items...
-
                     ReducedRegionCode rrc;
-                    int NoOf = lsTrk.GetNoOfSpecies(j + inp.i0, out rrc);
+                    int NoOf = Reg.GetNoOfSpecies(j + inp.i0, out rrc);
                     Debug.Assert(NoOf == 2);
                     //int iSpcPos = lsTrk.GetSpeciesIndex(rrc, pos);
                     //int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, neg);
@@ -427,11 +428,12 @@ namespace BoSSS.Foundation.XDG {
             SpeciesId posSpc = this.PositiveSpecies;
             SpeciesId negSpc = this.NegativeSpecies;
 
+            var Reg = lsTrk.Regions;
             for (int c = 0; c < NoOfVars; c++) { // loop over variables...
                 for (int j = 0; j < Len; j++) { // loop over items...
 
                     ReducedRegionCode rrc;
-                    int NoOf = lsTrk.GetNoOfSpecies(j + inp.i0, out rrc);
+                    int NoOf = Reg.GetNoOfSpecies(j + inp.i0, out rrc);
                     Debug.Assert(NoOf == 2);
                     //int iSpcPos = lsTrk.GetSpeciesIndex(rrc, pos);
                     //int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, neg);
@@ -509,10 +511,11 @@ namespace BoSSS.Foundation.XDG {
             SpeciesId posSpc = this.PositiveSpecies;
             SpeciesId negSpc = this.NegativeSpecies;
 
+            var Reg = lsTrk.Regions;
             for (int j = 0; j < Len; j++) { // loop over items...
 
                 ReducedRegionCode rrc;
-                int NoOf = lsTrk.GetNoOfSpecies(j + inp.i0, out rrc);
+                int NoOf = Reg.GetNoOfSpecies(j + inp.i0, out rrc);
                 Debug.Assert(NoOf == 2);
                 //int iSpcPos = lsTrk.GetSpeciesIndex(rrc, pos);
                 //int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, neg);
@@ -589,9 +592,10 @@ namespace BoSSS.Foundation.XDG {
             SpeciesId posSpc = this.PositiveSpecies;
             SpeciesId negSpc = this.NegativeSpecies;
 
+            var Reg = lsTrk.Regions;
             for (int j = 0; j < Len; j++) { // loop over items...
                 ReducedRegionCode rrc;
-                int NoOf = lsTrk.GetNoOfSpecies(j + inp.i0, out rrc);
+                int NoOf = Reg.GetNoOfSpecies(j + inp.i0, out rrc);
                 Debug.Assert(NoOf == 2);
                 //int iSpcPos = lsTrk.GetSpeciesIndex(rrc, pos);
                 //int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, neg);

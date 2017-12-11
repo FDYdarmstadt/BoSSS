@@ -93,6 +93,8 @@ namespace CNS.ShockCapturing {
                 coordinatesTruncatedTimesMassMatrix = fieldToTest.Coordinates;
             }
             //IMatrix coordinatesTimesMassMatrix = fieldToTest.Coordinates;
+            
+            //cellMask.SaveToTextFile("fluidCells.txt");
 
             // This is equivalent to norm(restrictedField) / norm(originalField)
             // Note: THIS WILL FAIL IN CUT CELLS
@@ -109,13 +111,20 @@ namespace CNS.ShockCapturing {
                     denominator += fieldToTest.Coordinates[cell, coordinate] * coordinatesTimesMassMatrix[cell, coordinate];
                 }
 
-                Debug.Assert(denominator != 0, "Persson sensor: Denominator is zero!");
+                double result;
+                if (denominator == 0.0) {
+                    result = 0.0;
+                } else {
+                    result = numerator / denominator;
+                }
 
-                Debug.Assert(!(numerator / denominator).IsNaN(), "Persson sensor: Sensor value is NaN!");
+                //Debug.Assert(denominator != 0, "Persson sensor: Denominator is zero!");
 
-                Debug.Assert(numerator / denominator >= 0, "Persson sensor: Sensor value is negative!");
+                //Debug.Assert(!(numerator / denominator).IsNaN(), "Persson sensor: Sensor value is NaN!");
 
-                sensorValues[cell] = numerator / denominator;
+                //Debug.Assert(numerator / denominator >= 0, "Persson sensor: Sensor value is negative!");
+
+                sensorValues[cell] = result;
             }
         }
 

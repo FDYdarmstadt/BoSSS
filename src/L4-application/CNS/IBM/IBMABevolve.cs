@@ -72,7 +72,7 @@ namespace CNS.IBM {
         internal void BuildEvaluatorsAndMasks() {
 
             CellMask fluidCells = speciesMap.SubGrid.VolumeMask.Intersect(ABSubGrid.VolumeMask);
-            cutCells = speciesMap.Tracker._Regions.GetCutCellMask().Intersect(ABSubGrid.VolumeMask);
+            cutCells = speciesMap.Tracker.Regions.GetCutCellMask().Intersect(ABSubGrid.VolumeMask);
             cutAndTargetCells = cutCells.Union(speciesMap.Agglomerator.AggInfo.TargetCells).Intersect(ABSubGrid.VolumeMask);
 
 

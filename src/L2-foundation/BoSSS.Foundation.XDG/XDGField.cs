@@ -60,7 +60,7 @@ namespace BoSSS.Foundation.XDG {
     /// <summary>
     /// a DG field for a cut-cell -basis (<see cref="XDGBasis"/>);
     /// </summary>
-    public partial class XDGField : DGField, IObserver<LevelSetTracker.LevelSetRegionsInfo> {
+    public partial class XDGField : DGField, IObserver<LevelSetTracker.LevelSetRegions> {
 
         /// <summary>
         /// an implementation of <see cref="FieldFactory{T}"/> that creates <see cref="XDGField"/>-DG-fields.
@@ -113,9 +113,9 @@ namespace BoSSS.Foundation.XDG {
 
             // register field with level set tracker
             // -------------------------------------
-            this.m_TrackerVersionCnt = m_CCBasis.Tracker._Regions.Version;
+            this.m_TrackerVersionCnt = m_CCBasis.Tracker.Regions.Version;
             m_CCBasis.Tracker.Subscribe(this);
-            this.OnNext(m_CCBasis.Tracker._Regions); // initialize data structures.
+            this.OnNext(m_CCBasis.Tracker.Regions); // initialize data structures.
         }
         
         XDGBasis m_CCBasis;
@@ -140,7 +140,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// dirty hack used by dynamic load balancing.
         /// </summary>
-        public void Override_TrackerVersionCnt(int i) {
+        internal void Override_TrackerVersionCnt(int i) {
             m_TrackerVersionCnt = i;
         }
 
@@ -212,7 +212,7 @@ namespace BoSSS.Foundation.XDG {
                     int JE = cnk.i0 + cnk.Len;
                     for (int j = cnk.i0; j < JE; j++) {
                         ReducedRegionCode rrc;
-                        int NoOfSpec = m_CCBasis.Tracker.GetNoOfSpecies(j, out rrc);
+                        int NoOfSpec = m_CCBasis.Tracker.Regions.GetNoOfSpecies(j, out rrc);
 
                         int Nmin = Math.Min(Nsep, a.Basis.GetLength(j));
 
@@ -265,7 +265,7 @@ namespace BoSSS.Foundation.XDG {
                     int JE = cnk.i0 + cnk.Len;
                     for (int j = cnk.i0; j < JE; j++) {
                         ReducedRegionCode rrc;
-                        int NoOfSpec = m_CCBasis.Tracker.GetNoOfSpecies(j, out rrc); // both fields own the same tracker,
+                        int NoOfSpec = m_CCBasis.Tracker.Regions.GetNoOfSpecies(j, out rrc); // both fields own the same tracker,
                         // so the number of species in cell j is equal for
                         // both fields, '_a' and 'this'.
                         int n0, _n0;
@@ -556,7 +556,7 @@ namespace BoSSS.Foundation.XDG {
         public bool GetCoordinates4Species(int jCell, SpeciesId specId, double[] ouput_DGcords4spec) {
             LevelSetTracker trk = m_CCBasis.Tracker;
             ReducedRegionCode rrc;
-            int NoOfSpec = trk.GetNoOfSpecies(jCell, out rrc);
+            int NoOfSpec = trk.Regions.GetNoOfSpecies(jCell, out rrc);
             int SpeciedIdx = m_CCBasis.Tracker.GetSpeciesIndex(rrc, specId);
 
 
@@ -596,7 +596,7 @@ namespace BoSSS.Foundation.XDG {
         public bool SetCoordinates4Species(int jCell, SpeciesId specId, double[] input_DGcords4spec) {
             LevelSetTracker trk = m_CCBasis.Tracker;
             ReducedRegionCode rrc;
-            int NoOfSpec = trk.GetNoOfSpecies(jCell, out rrc);
+            int NoOfSpec = trk.Regions.GetNoOfSpecies(jCell, out rrc);
             int SpeciedIdx = m_CCBasis.Tracker.GetSpeciesIndex(rrc, specId);
 
             if (SpeciedIdx < 0) {
@@ -616,7 +616,7 @@ namespace BoSSS.Foundation.XDG {
 
         void AutoExtrapolateSpecies(SpeciesId Id, SubGrid oldSpeciesSubGrid) {
             LevelSetTracker LsTrk = m_CCBasis.Tracker;
-            SubGrid NearBand = m_CCBasis.Tracker._Regions.GetNearFieldSubgrid4LevSet(0, m_CCBasis.Tracker.NearRegionWidth);
+            SubGrid NearBand = m_CCBasis.Tracker.Regions.GetNearFieldSubgrid4LevSet(0, m_CCBasis.Tracker.NearRegionWidth);
             if (m_CCBasis.Tracker.LevelSets.Count > 1)
                 // instead of LevelSetTracker.GetNearFieldSubgrid4LevSet(..)
                 // we would need some LevelSetTracker.GetNearFieldSpeciesBorder(...)
@@ -624,7 +624,7 @@ namespace BoSSS.Foundation.XDG {
 
             var SpeciesField = this.GetSpeciesShadowField(Id);
 
-            CellMask ExtrapolateTo = NearBand.VolumeMask.Intersect(LsTrk._Regions.GetSpeciesSubGrid(Id).VolumeMask);
+            CellMask ExtrapolateTo = NearBand.VolumeMask.Intersect(LsTrk.Regions.GetSpeciesSubGrid(Id).VolumeMask);
             CellMask ExtrapolateFrom = oldSpeciesSubGrid.VolumeMask;
             
             SpeciesField.CellExtrapolation(ExtrapolateTo, ExtrapolateFrom);
@@ -652,7 +652,7 @@ namespace BoSSS.Foundation.XDG {
 
             int J = this.GridDat.iLogicalCells.NoOfCells;
             for (int j = 0; j < J; j++) {
-                ReducedRegionCode redRegionCode = ReducedRegionCode.Extract(trk._Regions.m_LevSetRegions[j]);
+                ReducedRegionCode redRegionCode = ReducedRegionCode.Extract(trk.Regions.m_LevSetRegions[j]);
                 int spec_idx = trk.GetSpeciesIndex(redRegionCode, SpeciesId);
 
                 if (spec_idx >= 0) {
@@ -825,7 +825,7 @@ namespace BoSSS.Foundation.XDG {
                 var lsTrk = this.Basis.Tracker;
 
                 foreach (var spc in lsTrk.SpeciesIdS) {
-                    var domain = lsTrk._Regions.GetSpeciesSubGrid(spc).VolumeMask;
+                    var domain = lsTrk.Regions.GetSpeciesSubGrid(spc).VolumeMask;
                     CellQuadratureScheme _scheme;
                     if (scheme == null) {
                         _scheme = new CellQuadratureScheme(UseDefaultFactories: true, domain:domain);
@@ -984,7 +984,7 @@ namespace BoSSS.Foundation.XDG {
                     // avoid watchdog errors in DEBUG caused by runtime difference
                     csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 #endif
-                    CellMask _em = this.Basis.Tracker._Regions.GetSpeciesSubGrid(SpcId).VolumeMask;
+                    CellMask _em = this.Basis.Tracker.Regions.GetSpeciesSubGrid(SpcId).VolumeMask;
                     if (em != null)
                         emS[iSpc] = _em.Intersect(em);
                     else
@@ -1020,7 +1020,7 @@ namespace BoSSS.Foundation.XDG {
                 else
                     _f = f;
 
-                SubGrid sgrd = this.Basis.Tracker._Regions.GetSpeciesSubGrid(SpcId);
+                SubGrid sgrd = this.Basis.Tracker.Regions.GetSpeciesSubGrid(SpcId);
                 if (optionalSubGrid != null)
                     sgrd = new SubGrid(sgrd.VolumeMask.Intersect(optionalSubGrid.VolumeMask));
 
@@ -1066,7 +1066,7 @@ namespace BoSSS.Foundation.XDG {
             }
 
             foreach (SpeciesId sp in tracker.SpeciesIdS) {
-                var Grd = tracker._Regions.GetSpeciesSubGrid(sp);
+                var Grd = tracker.Regions.GetSpeciesSubGrid(sp);
 
                 DGField a_sp;
                 if (a is XDGField) {
@@ -1107,7 +1107,7 @@ namespace BoSSS.Foundation.XDG {
             }
 
             foreach (SpeciesId sp in tracker.SpeciesIdS) {
-                var Grd = tracker._Regions.GetSpeciesSubGrid(sp);
+                var Grd = tracker.Regions.GetSpeciesSubGrid(sp);
 
                 DGField a_sp;
                 if (a is XDGField) {
@@ -1211,11 +1211,17 @@ namespace BoSSS.Foundation.XDG {
         /// latest status of the level set.
         /// </summary>
         /// <param name="levelSetStatus"></param>
-        public void OnNext(LevelSetTracker.LevelSetRegionsInfo levelSetStatus) {
+        public void OnNext(LevelSetTracker.LevelSetRegions levelSetStatus) {
             int J = this.GridDat.iLogicalCells.NoOfCells;
             LevelSetTracker trk = m_CCBasis.Tracker;
 
             m_Coordinates.BeginResize(m_CCBasis.MaximalLength);
+
+            if (m_UpdateBehaviour == BehaveUnder_LevSetMoovement.PreserveMemory || m_UpdateBehaviour == BehaveUnder_LevSetMoovement.AutoExtrapolate) {
+                if(trk.HistoryLength < 1)
+                    throw new NotSupportedException("LevelSettracker must have at a history length >= 1 in order to support 'PreserveMemory' or 'AutoExtrapolate'.");
+            }
+
 
             // application check
             if (m_TrackerVersionCnt < (levelSetStatus.Version - 1))
@@ -1223,13 +1229,15 @@ namespace BoSSS.Foundation.XDG {
 
             // rearrange DG coordinates if regions have changed
             // ===============================================
-            if (m_UpdateBehaviour == BehaveUnder_LevSetMoovement.PreserveMemory || m_UpdateBehaviour == BehaveUnder_LevSetMoovement.AutoExtrapolate) {
+            if ((m_UpdateBehaviour == BehaveUnder_LevSetMoovement.PreserveMemory || m_UpdateBehaviour == BehaveUnder_LevSetMoovement.AutoExtrapolate)
+                && trk.PopulatedHistoryLength >= 1) {
                 // rearrange DG coordinates, preserve State of each species 
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
                 double[] coordsFull = new double[m_CCBasis.MaximalLength];
-                ushort[] OldRegionCode = trk.PreviousRegions.LevelSetRegions;
-                ushort[] NewRegionCode = trk._Regions.LevelSetRegions;
+                ushort[] OldRegionCode = trk.RegionsHistory[0].RegionsCode;
+                ushort[] NewRegionCode = trk.RegionsHistory[1].RegionsCode;
+                Debug.Assert(!object.ReferenceEquals(OldRegionCode, NewRegionCode));
 
                 int Nsep = m_CCBasis.DOFperSpeciesPerCell;
                 int i0CmnFull = trk.TotalNoOfSpecies * Nsep;
@@ -1353,9 +1361,9 @@ namespace BoSSS.Foundation.XDG {
             }
 
             // do Extrapolation, if necessary
-            if (m_UpdateBehaviour == BehaveUnder_LevSetMoovement.AutoExtrapolate) {
+            if (m_UpdateBehaviour == BehaveUnder_LevSetMoovement.AutoExtrapolate && trk.PopulatedHistoryLength >= 1) {
                 foreach (var species in m_CCBasis.Tracker.SpeciesIdS) {
-                    AutoExtrapolateSpecies(species, trk.PreviousRegions.GetSpeciesSubGrid(species));
+                    AutoExtrapolateSpecies(species, trk.RegionsHistory[0].GetSpeciesSubGrid(species));
                 }
             }
         }
