@@ -35,102 +35,47 @@ namespace BoSSS.Foundation.XDG {
     public class CutCellMetrics {
 
         /// <summary>
-        /// Ctor.
+        /// owner object.
         /// </summary>
-        /// <param name="lstrk"></param>
-        /// <param name="_quadorder">The quadrature order of HMF which should be used for computing cell volumes.</param>
-        /// <param name="momentFittingVaraint">The kind of HMF which should be used for computing cell volumes.</param>
-        /// <param name="SpeciesList">A list of species for which the agglomeration should be computed.</param>
-        public CutCellMetrics(
-            XQuadFactoryHelper.MomentFittingVariants momentFittingVaraint,
-            int _quadorder,
-            LevelSetTracker _LsTrk,
-            params SpeciesId[] SpeciesList) {
-
-            this.Tracker = _LsTrk;
-            this.HMForder = _quadorder;
-            this.HMFvariant = momentFittingVaraint;
-            this.SpeciesList = (new List<SpeciesId>(SpeciesList)).AsReadOnly();
-
-            this.ComputeNonAgglomeratedMetrics();
-        }
-
-        /// <summary>
-        /// Constructor where all data is provided externally; not for user interaction, used e.g. for dynamic load balancing.
-        /// </summary>
-        public CutCellMetrics(
-            XQuadFactoryHelper.MomentFittingVariants momentFittingVaraint,
-            int _quadorder,
-            LevelSetTracker _LsTrk,
-            Dictionary<SpeciesId, MultidimensionalArray> __CutCellVolumes,
-            Dictionary<SpeciesId, MultidimensionalArray> __InterfaceArea,
-            Dictionary<SpeciesId, MultidimensionalArray> __CutEdgeAreas
-            ) {
-
-            this.Tracker = _LsTrk;
-            this.HMForder = _quadorder;
-            this.HMFvariant = momentFittingVaraint;
-            this.SpeciesList = (new List<SpeciesId>(__CutCellVolumes.Keys)).AsReadOnly();
-
-
-            if (!__InterfaceArea.Keys.SetEquals(this.SpeciesList))
-                throw new ArgumentException();
-            if (!__CutEdgeAreas.Keys.SetEquals(this.SpeciesList))
-                throw new ArgumentException();
-
-            int JE = _LsTrk.GridDat.iLogicalCells.NoOfCells;
-
-            foreach (var A in __CutCellVolumes.Values) {
-                if (A.Dimension != 1 || A.GetLength(0) != JE)
-                    throw new ArgumentException();
-            }
-            foreach (var A in __InterfaceArea.Values) {
-                if (A.Dimension != 1 || A.GetLength(0) != JE)
-                    throw new ArgumentException();
-            }
-            foreach (var A in __CutEdgeAreas.Values) {
-                if (A.Dimension != 1 || A.GetLength(0) != _LsTrk.GridDat.iGeomEdges.Count)
-                    throw new ArgumentException();
-            }
-
-            this.CutCellVolumes = __CutCellVolumes;
-            this.InterfaceArea = __InterfaceArea;
-            this.CutEdgeAreas = __CutEdgeAreas;
-        }
-
-
-        /// <summary>
-        /// The quadrature order of HMF which should be used for computing cell volumes and edge areas.
-        /// </summary>
-        public int HMForder {
+        public XDGSpaceMetrics XDGSpaceMetrics {
             get;
             private set;
+        }
+
+        /// <summary>
+        /// ctor.
+        /// </summary>
+        internal CutCellMetrics(XDGSpaceMetrics owner) {
+            XDGSpaceMetrics = owner;
+            ComputeNonAgglomeratedMetrics();
+        }
+
+        /// <summary>
+        /// The quadrature order used for computing cell volumes and edge areas.
+        /// </summary>
+        public int CutCellQuadratureOrder {
+            get {
+                return XDGSpaceMetrics.CutCellQuadOrder;
+            }
         }
 
         /// <summary>
         /// The kind of HMF which is be used for computing cell volumes.
         /// </summary>
         public XQuadFactoryHelper.MomentFittingVariants HMFvariant {
-            get;
-            private set;
+            get {
+                return XDGSpaceMetrics.CutCellQuadratureType;
+            }
         }
 
         /// <summary>
         /// All species for which agglomeration is available.
         /// </summary>
         public IEnumerable<SpeciesId> SpeciesList {
-            get;
-            private set;
+            get {
+                return XDGSpaceMetrics.SpeciesList;
+            }
         }
-
-        /// <summary>
-        /// Link to the tracker.
-        /// </summary>
-        public LevelSetTracker Tracker {
-            get;
-            private set;
-        }
-
 
         /// <summary>
         /// Volume of non-agglomerated cut cells.
@@ -166,8 +111,7 @@ namespace BoSSS.Foundation.XDG {
         /// Computes Cell-volumes and edge areas before agglomeration.
         /// </summary>
         void ComputeNonAgglomeratedMetrics() {
-            var lsTrk = this.Tracker;
-            var gd = lsTrk.GridDat;
+            var gd = XDGSpaceMetrics.GridDat;
             int JE = gd.Cells.NoOfCells;
             int J = gd.Cells.NoOfLocalUpdatedCells;
             int D = gd.SpatialDimension;
@@ -176,7 +120,7 @@ namespace BoSSS.Foundation.XDG {
             int NoSpc = species.Count();
             int[,] E2C = gd.Edges.CellIndices;
 
-            var schH = new XQuadSchemeHelper(lsTrk, this.HMFvariant, species);
+            var schH = new XQuadSchemeHelper(XDGSpaceMetrics);
 
             double[] vec_cellMetrics = new double[JE * NoSpc * 2];
 
@@ -189,6 +133,9 @@ namespace BoSSS.Foundation.XDG {
             this.CutEdgeAreas = new Dictionary<SpeciesId, MultidimensionalArray>();
             this.CutCellVolumes = new Dictionary<SpeciesId, MultidimensionalArray>();
             this.InterfaceArea = new Dictionary<SpeciesId, MultidimensionalArray>();
+
+            //var schS = new List<CellQuadratureScheme>();
+            //var rulz = new List<ICompositeQuadRule<QuadRule>>();
 
 
             // edges and volumes
@@ -203,9 +150,12 @@ namespace BoSSS.Foundation.XDG {
                 // compute cut edge area
                 // ---------------------
 
+                var edgeScheme = schH.GetEdgeQuadScheme(spc);
+                var edgeRule = edgeScheme.Compile(gd, this.CutCellQuadratureOrder);
+
                 BoSSS.Foundation.Quadrature.EdgeQuadrature.GetQuadrature(
                     new int[] { 1 }, gd,
-                    schH.GetEdgeQuadScheme(spc).Compile(gd, this.HMForder),
+                    edgeRule,
                     _Evaluate: delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) //
                     {
                         EvalResult.SetAll(1.0);
@@ -223,9 +173,15 @@ namespace BoSSS.Foundation.XDG {
                 // compute cut cell volumes
                 // ------------------------
 
+                var volScheme = schH.GetVolumeQuadScheme(spc);
+                var volRule = volScheme.Compile(gd, this.CutCellQuadratureOrder);
+
+                //schS.Add(volScheme);
+                //rulz.Add(volRule);
+
                 BoSSS.Foundation.Quadrature.CellQuadrature.GetQuadrature(
                     new int[] { 1 }, gd,
-                    schH.GetVolumeQuadScheme(spc).Compile(gd, this.HMForder),
+                    volRule,
                     _Evaluate: delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) //
                     {
                         EvalResult.SetAll(1.0);
@@ -241,6 +197,7 @@ namespace BoSSS.Foundation.XDG {
                     }).Execute();
             }
 
+            
             // interface surface
             // =================
 
@@ -303,17 +260,17 @@ namespace BoSSS.Foundation.XDG {
             // loop over level-sets
             if (species.Length > 0) {
                 // find domain of all species: 
-                CellMask SpeciesCommonDom = lsTrk._Regions.GetSpeciesMask(species[0]);
+                CellMask SpeciesCommonDom = XDGSpaceMetrics.LevelSetRegions.GetSpeciesMask(species[0]);
                 for (int iSpc = 1; iSpc < species.Length; iSpc++) {
-                    SpeciesCommonDom = SpeciesCommonDom.Union(lsTrk._Regions.GetSpeciesMask(species[iSpc]));
+                    SpeciesCommonDom = SpeciesCommonDom.Union(XDGSpaceMetrics.LevelSetRegions.GetSpeciesMask(species[iSpc]));
                 }
-                BitArray[] SpeciesBitMask = species.Select(spc => lsTrk._Regions.GetSpeciesMask(spc).GetBitMask()).ToArray(); 
+                BitArray[] SpeciesBitMask = species.Select(spc => XDGSpaceMetrics.LevelSetRegions.GetSpeciesMask(spc).GetBitMask()).ToArray();
 
-                int NoOfLs = lsTrk.LevelSets.Count;
+                int NoOfLs = XDGSpaceMetrics.NoOfLevelSets;
                 int NoOfSpc = species.Length;
                 for (int iLevSet = 0; iLevSet < NoOfLs; iLevSet++) {
                     
-                    var LsDom = lsTrk._Regions.GetCutCellMask4LevSet(iLevSet);
+                    var LsDom = XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet);
                     var IntegrationDom = LsDom.Intersect(SpeciesCommonDom);
 
                     //if (IntegrationDom.NoOfItemsLocally > 0) { -> Doesn't work if Bjoerns HMF is used, eds up in an mpi dead lock
@@ -322,7 +279,7 @@ namespace BoSSS.Foundation.XDG {
                         // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
                         CellQuadratureScheme SurfIntegration = schH.GetLevelSetquadScheme(iLevSet, IntegrationDom);
-                        var rule = SurfIntegration.Compile(gd, this.HMForder);
+                        var rule = SurfIntegration.Compile(gd, this.CutCellQuadratureOrder);
                         
                         BoSSS.Foundation.Quadrature.CellQuadrature.GetQuadrature(
                             new int[] { 1 }, gd,
@@ -370,6 +327,21 @@ namespace BoSSS.Foundation.XDG {
                 this.InterfaceArea.Add(spc, cellMetrics.ExtractSubArrayShallow(-1, iSpc, 0).CloneAs());
                 this.CutCellVolumes.Add(spc, cellMetrics.ExtractSubArrayShallow(-1, iSpc, 1).CloneAs());
             }
+
+            //Console.WriteLine("Erinn - debug code.");
+            //for(int j = 0; j < J; j++) {
+            //    double totVol = gd.Cells.GetCellVolume(j);
+
+            //    double blaVol = 0;
+            //    for(int iSpc = 0; iSpc < species.Length; iSpc++) {
+            //        var spc = species[iSpc];
+            //        var cellVolS = this.CutCellVolumes[spc][j];
+            //        blaVol += cellVolS;
+            //    }
+
+            //    Debug.Assert(Math.Abs(totVol - blaVol) / totVol < 1.0e-8);
+
+            //}
         }
     }
 }

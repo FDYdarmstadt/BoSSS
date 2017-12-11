@@ -86,12 +86,12 @@ namespace BoSSS.Application.BoSSSpad {
 
 
             // Assembly References
-            eval.ReferenceAssembly(Assembly.Load("ilPSP"));
-            eval.ReferenceAssembly(typeof(SimpleSolversInterface).Assembly);
+            eval.ReferenceAssembly(typeof(ilPSP.Environment).Assembly);
+            eval.ReferenceAssembly(typeof(ilPSP.LinSolvers.SimpleSolversInterface).Assembly);
             eval.ReferenceAssembly(typeof(BatchmodeConnector).Assembly); // Do it this cause connector is not referenced anywhere else, i.e. the assembly will often be missing otherwise
             eval.ReferenceAssembly(typeof(NUnit.Framework.Assert).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.PlotGenerator.PlotApplication).Assembly);
-            eval.ReferenceAssembly(Assembly.Load("BoSSS.Platform"));
+            eval.ReferenceAssembly(typeof(BoSSS.Platform.Utils.Geom.BoundingBox).Assembly);
             eval.ReferenceAssembly(Assembly.Load("BoSSS.Foundation"));
             eval.ReferenceAssembly(Assembly.Load("BoSSS.Foundation.XDG"));
             eval.ReferenceAssembly(Assembly.Load("BoSSS.Foundation.Grid"));

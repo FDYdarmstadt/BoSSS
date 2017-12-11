@@ -42,8 +42,8 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="SupportExternal">
         /// true: support also indices related to external/ghost cells
         /// </param>
-        public FrameBase(LevelSetTracker lsTrk, SpeciesId spcId, UnsetteledCoordinateMapping __FullMap, bool SupportExternal) {
-            m_lsTrk = lsTrk;
+        public FrameBase(LevelSetTracker.LevelSetRegions regions, SpeciesId spcId, UnsetteledCoordinateMapping __FullMap, bool SupportExternal) {
+            m_Regions = regions;
             m_spcId = spcId;
             FrameMap = CreateMap(__FullMap);
             FullMap = __FullMap;
@@ -81,7 +81,7 @@ namespace BoSSS.Foundation.XDG {
             return new UnsetteledCoordinateMapping(basisS.ToArray<Basis>());
         }
 
-        LevelSetTracker m_lsTrk;
+        LevelSetTracker.LevelSetRegions m_Regions;
         SpeciesId m_spcId;
 
         /// <summary>
@@ -123,9 +123,8 @@ namespace BoSSS.Foundation.XDG {
             int Jtot = FrameMap.GridDat.iLogicalCells.NoOfCells;
             int G = BasisS.Length;
             for (int j = 0; j < Jup; j++) { // loop over all cells ...
-                ReducedRegionCode rrc;
-                int NoOfSpc = m_lsTrk.GetNoOfSpecies(j, out rrc);
-                int iSpc = m_lsTrk.GetSpeciesIndex(rrc, m_spcId);
+                int NoOfSpc = m_Regions.GetNoOfSpecies(j);
+                int iSpc = m_Regions.GetSpeciesIndex(m_spcId, j);
 
                 for (int g = 0; g < G; g++) { // loop over all basises
                     Basis b = BasisS[g];
@@ -164,12 +163,11 @@ namespace BoSSS.Foundation.XDG {
                 int j, g, n;
                 FrameMap.LocalFieldCoordinateIndex(iLoc, out g, out j, out n);
 
-                ReducedRegionCode rrc;
-                int NoOfSpc = m_lsTrk.GetNoOfSpecies(j, out rrc);
+                int NoOfSpc = m_Regions.GetNoOfSpecies(j);
                 Basis b = BasisS[g];
                 XDGBasis xb = XBasisS[g];
                 bool b_is_XDGbasis = (xb != null);
-                int iSpc = m_lsTrk.GetSpeciesIndex(rrc, m_spcId);
+                int iSpc = m_Regions.GetSpeciesIndex(m_spcId, j);
 
                 if (b_is_XDGbasis) {
                     if (iSpc < 0) {
@@ -257,7 +255,7 @@ namespace BoSSS.Foundation.XDG {
              */
 
             {
-                int NoOfSpc = this.m_lsTrk.TotalNoOfSpecies;
+                int NoOfSpc = this.m_Regions.SpeciesIdS.Count;
                 int N_frame = this.FrameMap.MaxTotalNoOfCoordinatesPerCell;
                 var FramBasisS = this.FrameMap.BasisS.ToArray();
                 var FullBasisS = this.FullMap.BasisS.ToArray();
@@ -362,7 +360,7 @@ namespace BoSSS.Foundation.XDG {
                     int jCellLoc, iSpc;
                     if (m_Last_jCellGlob != jCellGlob) {
                         jCellLoc = Parallel.Global2LocalIdx[jCellGlob];
-                        iSpc = m_lsTrk.GetSpeciesIndex(this.m_spcId, jCellLoc);
+                        iSpc = m_Regions.GetSpeciesIndex(this.m_spcId, jCellLoc);
                         m_Last_jCellGlob = jCellGlob;
                         m_Last_jCellLoc = jCellLoc;
                         m_Last_iSpc = iSpc;
@@ -463,8 +461,8 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="cm">
         /// determines which cells should be in the sub-vector-indices-list; null indicates all cells.
         /// </param>
-        /// <param name="lsTrk">
-        /// level-set -tracker object, required for obtaining the species-information.
+        /// <param name="regions">
+        /// Determines which XDG-coordinate belongs to which species.
         /// </param>
         /// <param name="presenceTest">
         /// if true, cells where some species has zero measure are excluded from the sub-vector-indices-list.
@@ -474,7 +472,7 @@ namespace BoSSS.Foundation.XDG {
         /// cells which are eliminated by the agglomeration are excluded from the sub-vector-indices-list
         /// </param>
         /// <returns>a list of global (over all MPI processes) unique indices.</returns>
-        static public int[] GetSubvectorIndices(this UnsetteledCoordinateMapping mapping, LevelSetTracker lsTrk, int[] Fields,
+        static public int[] GetSubvectorIndices(this UnsetteledCoordinateMapping mapping, LevelSetTracker.LevelSetRegions regions, int[] Fields,
             ICollection<SpeciesId> _SpcIds = null, CellMask cm = null, bool presenceTest = true, MultiphaseCellAgglomerator drk = null) {
 
             #region Check Arguments
@@ -482,7 +480,7 @@ namespace BoSSS.Foundation.XDG {
             SpeciesId[] SpcIds = null;
             if (_SpcIds == null) {
                 // take all species, if arg is null
-                SpcIds = lsTrk.SpeciesIdS.ToArray();
+                SpcIds = regions.SpeciesIdS.ToArray();
             }
             else {
                 SpcIds = _SpcIds.ToArray();
@@ -498,7 +496,7 @@ namespace BoSSS.Foundation.XDG {
 
             int[][] ExcludeLists;
             if (drk != null) {
-                ExcludeLists = new int[lsTrk.SpeciesIdS.Count][]; //  new Dictionary<SpeciesId, int[]>();
+                ExcludeLists = new int[regions.SpeciesIdS.Count][]; //  new Dictionary<SpeciesId, int[]>();
                 foreach (var id in SpcIds) {
                     int[] ExcludeList = drk.GetAgglomerator(id).AggInfo.AgglomerationPairs.Select(pair => pair.jCellSource).ToArray();
                     Array.Sort(ExcludeList);
@@ -513,18 +511,18 @@ namespace BoSSS.Foundation.XDG {
             #region determine over which cells we want to loop
             // ==========================================
             CellMask loopCells;
-            if ((new HashSet<SpeciesId>(lsTrk.SpeciesIdS)).SetEquals(new HashSet<SpeciesId>(SpcIds))) {
+            if ((new HashSet<SpeciesId>(regions.SpeciesIdS)).SetEquals(new HashSet<SpeciesId>(SpcIds))) {
                 if (cm == null) {
-                    loopCells = CellMask.GetFullMask(lsTrk.GridDat);
+                    loopCells = CellMask.GetFullMask(regions.GridDat);
                 }
                 else {
                     loopCells = cm;
                 }
             }
             else {
-                loopCells = lsTrk._Regions.GetSpeciesMask(SpcIds[0]);
+                loopCells = regions.GetSpeciesMask(SpcIds[0]);
                 for (int i = 1; i < SpcIds.Length; i++)
-                    loopCells = loopCells.Intersect(lsTrk._Regions.GetSpeciesMask(SpcIds[i]));
+                    loopCells = loopCells.Intersect(regions.GetSpeciesMask(SpcIds[i]));
                 if (cm != null)
                     loopCells = loopCells.Intersect(cm);
             } 
@@ -547,42 +545,49 @@ namespace BoSSS.Foundation.XDG {
             int Len_iSpcS = iSpcS.Length;
 
 
-            int[] ExcludeListsPointer = new int[lsTrk.SpeciesIdS.Count];
+            int[] ExcludeListsPointer = new int[regions.SpeciesIdS.Count];
 
 
             // loop over cells?
             foreach (int jCell in loopCells.ItemEnum) {
 
-                ReducedRegionCode rrc;
-                int NoOfSpc = lsTrk.GetNoOfSpecies(jCell, out rrc);
+                int NoOfSpc = regions.GetNoOfSpecies(jCell);
 
-                #region Code, whick sucks (and some day i will figure out why, and what it does)
+                #region  
+                //
+                // in cell 'jCell', for each species in 'SpcIds' ...
+                // * is the species present in 'jCell'?
+                // * what is the species index in 'jCell'?
+                // * we also have to consider that due to agglomeration, the respective cut-cell for the species might have been agglomerated.
+                // so we determine
+                // * 'KK' is the number of species (from 'SpcIds') which is actually present and not agglomerated in 'jCell'
+                // * for i in (0 ... KK-1), iSpcS[i] is a tuple of (Species-index-in-cell, SpeciesID)
+                //
                 // yes, the following code sucks:
                 KK = 0;
-                for (int k = 0; k < Len_iSpcS; k++) { // loop over all species...
+                for (int k = 0; k < Len_iSpcS; k++) { // loop over all species (provided as argument)...
                     SpeciesId id = SpcIds[k];
-                    int __iSpcS = lsTrk.GetSpeciesIndex(rrc, id);
+                    int __iSpcS = regions.GetSpeciesIndex(id, jCell);
                     if (__iSpcS >= 0) {
                         // species index is non-negative, so indices for the species are allocated ...
-                        if (!presenceTest || lsTrk._Regions.IsSpeciesPresentInCell(id, jCell)) {
+                        if (!presenceTest || regions.IsSpeciesPresentInCell(id, jCell)) {
                             // species is also present (i.e. has a greater-than-zero measure ...
 
-                            if (drk == null) {
+                            if(drk == null) {
                                 // no agglomeration exclution
                                 iSpcS[KK] = new Tuple<int, SpeciesId>(__iSpcS, id);
                                 KK++;
-                            }
-                            else {
+                            } else {
                                 int q = id.cntnt - LevelSetTracker.___SpeciesIDOffest;
                                 var el = ExcludeLists[q];
 
-                                while (ExcludeListsPointer[q] < el.Length
+                                while(ExcludeListsPointer[q] < el.Length
                                     && el[ExcludeListsPointer[q]] < jCell) {
                                     ExcludeListsPointer[q]++;
                                 }
                                 Debug.Assert(ExcludeListsPointer[q] >= el.Length || el[ExcludeListsPointer[q]] >= jCell);
 
-                                if (ExcludeListsPointer[q] >= el.Length || el[ExcludeListsPointer[q]] != jCell) {
+                                if(ExcludeListsPointer[q] >= el.Length || el[ExcludeListsPointer[q]] != jCell) {
                                     // cell is also not agglomerated ...
                                     iSpcS[KK] = new Tuple<int, SpeciesId>(__iSpcS, id);
                                     KK++;
@@ -596,10 +601,9 @@ namespace BoSSS.Foundation.XDG {
                 // --------- esc (end of sucking code) 
                 #endregion
 
-                for (int k = 0; k < KK; k++) {
-                    int iSpc = iSpcS[k].Item1;
-
-
+                for (int k = 0; k < KK; k++) { // loop over species in cell
+                    int iSpc = iSpcS[k].Item1; 
+                    
                     for (int i = 0; i < Fields.Length; i++) {
                         int iField = Fields[i];
 

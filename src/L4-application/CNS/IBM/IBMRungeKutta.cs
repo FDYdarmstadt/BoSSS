@@ -69,7 +69,7 @@ namespace CNS.IBM {
 
         protected void UpdateEvaluatorsAndMasks() {
             CellMask fluidCells = speciesMap.SubGrid.VolumeMask;
-            cutCells = speciesMap.Tracker._Regions.GetCutCellMask();
+            cutCells = speciesMap.Tracker.Regions.GetCutCellMask();
             cutAndTargetCells = cutCells.Union(speciesMap.Agglomerator.AggInfo.TargetCells);
 
             IBMControl control = speciesMap.Control;
@@ -111,7 +111,7 @@ namespace CNS.IBM {
             levelSet.ProjectField(X => speciesMap.Control.LevelSetFunction(X, time));
             speciesMap.Tracker.UpdateTracker();
 
-            cutCells = speciesMap.Tracker._Regions.GetCutCellMask();
+            cutCells = speciesMap.Tracker.Regions.GetCutCellMask();
             cutAndTargetCells = cutCells.Union(speciesMap.Agglomerator.AggInfo.TargetCells);
 
             // EVIL HACK SINCE UPDATE OF GRADIENT ONLY HAPPENS AFTER TIME-STEP SO FAR
