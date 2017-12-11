@@ -319,7 +319,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             base.m_RegisteredFields.Add(TestData);
 
             LevSet = new LevelSet(new Basis(this.GridData, 2), "LevelSet");
-            base.LsTrk = new LevelSetTracker(this.GridData, 1, new string[] { "A", "B" }, LevSet);
+            base.LsTrk = new LevelSetTracker(this.GridData, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, 1, new string[] { "A", "B" }, LevSet);
             base.m_RegisteredFields.Add(LevSet);
 
             var xBasis = new XDGBasis(base.LsTrk, DEGREE);
@@ -380,6 +380,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             double s = 1.0;
             LevSet.ProjectField((x, y) => -(x - s * t).Pow2() - y.Pow2() + (2.4).Pow2());
             LsTrk.UpdateTracker(incremental: _incremental);
+            LsTrk.PushStacks();
 
             // exact solution for new timestep
             uXEx.GetSpeciesShadowField("A").ProjectField((x, y) => x + alpha_A * t);
@@ -438,7 +439,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
         
 
 
-        protected override void CreateEquationsAndSolvers(GridUpdateData L) {
+        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
             
             if (L == null) {
                 
@@ -474,7 +475,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             // Check grid changes
             // ==================
 
-            bool AnyChange = GridRefinementControler.ComputeGridChange(this.GridData, LsTrk._Regions.GetCutCellMask(), LevelInicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+            bool AnyChange = GridRefinementControler.ComputeGridChange(this.GridData, LsTrk.Regions.GetCutCellMask(), LevelInicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
             int NoOfCellsToRefine = 0;
             int NoOfCellsToCoarsen = 0;
             if(AnyChange) {

@@ -35,7 +35,7 @@ namespace BoSSS.Solution {
             });
         }
 
-        public static RuntimeCellCostEstimator MeasureCostOfWhateverFlorianThinksIsRelevantButIDontUnderstand(IApplication<AppControl> app, int noOfPerformanceClasses) {
+        public static RuntimeCellCostEstimator OperatorAssemblyAndCutCellQuadrules(IApplication<AppControl> app, int noOfPerformanceClasses) {
             return new RuntimeCellCostEstimator(new string[][] {
                 new[] { "*RunSolverOneStep*", "*LevelSetComboRuleFactory2.GetQuadRuleSet_Internal*" },
                 new[] { "*RunSolverOneStep*", "*Edge_Integration*" },

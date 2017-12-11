@@ -185,7 +185,7 @@ namespace BoSSS.Application.ipViscosity {
         SpatialOperator Operator;
         MsrMatrix OperatorMtx;
         
-        protected override void CreateEquationsAndSolvers(GridUpdateData L) {
+        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
             using(FuncTrace tr = new FuncTrace()) {
 
                 this.BcMap = new IncompressibleBoundaryCondMap(this.GridData, grid.GetBoundaryConfig(), PhysicsMode.Incompressible);

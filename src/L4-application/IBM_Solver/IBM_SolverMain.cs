@@ -51,8 +51,6 @@ namespace BoSSS.Application.IBM_Solver {
         /// Application entry point.
         /// </summary>
         static void Main(string[] args) {
-
-
             BoSSS.Solution.Application<IBM_Control>._Main(args, false, "BoSSS.Solution.MultiphaseZoo", delegate () {
                 var p = new IBM_SolverMain();
                 p.m_GridPartitioningType = GridPartType.METIS;
@@ -211,8 +209,7 @@ namespace BoSSS.Application.IBM_Solver {
 
         protected bool U0MeanRequired = false;
 
-        protected XQuadFactoryHelper.MomentFittingVariants momentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Classic;
-
+       
         protected XSpatialOperator IBM_Op;
 
         public string SessionPath;
@@ -232,7 +229,7 @@ namespace BoSSS.Application.IBM_Solver {
 
         protected XdgBDFTimestepping m_BDF_Timestepper;
 
-        protected override void CreateEquationsAndSolvers(GridUpdateData L) {
+        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
 
             // =================================
             // create operator
@@ -421,13 +418,14 @@ namespace BoSSS.Application.IBM_Solver {
                     m_BDF_Timestepper = new XdgBDFTimestepping(
                         Unknowns, Residual,
                         LsTrk, true,
-                        DelComputeOperatorMatrix, DelUpdateLevelset, DelUpdateCutCellMetrics,
+                        DelComputeOperatorMatrix, DelUpdateLevelset, 
                         bdfOrder,
                         lsh,
                         MassMatrixShapeandDependence.IsNonIdentity,
                         SpatialOp,
                         MassScale,
                         this.MultigridOperatorConfig, base.MultigridSequence,
+                        this.FluidSpecies, this.HMForder,
                         this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold, false);
                     m_BDF_Timestepper.m_ResLogger = base.ResLogger;
                     m_BDF_Timestepper.m_ResidualNames = ArrayTools.Cat(this.ResidualMomentum.Select(f => f.Identification), this.ResidualContinuity.Identification);
@@ -435,6 +433,7 @@ namespace BoSSS.Application.IBM_Solver {
                     m_BDF_Timestepper.Config_SolverConvergenceCriterion = this.Control.Solver_ConvergenceCriterion;
                     m_BDF_Timestepper.Config_MaxIterations = this.Control.MaxSolverIterations;
                     m_BDF_Timestepper.Config_MinIterations = this.Control.MinSolverIterations;
+                    m_BDF_Timestepper.Config_NonlinearSolver = this.Control.NonlinearMethod;
                     m_BDF_Timestepper.SessionPath = SessionPath;
                 }
 
@@ -448,7 +447,7 @@ namespace BoSSS.Application.IBM_Solver {
             Debug.Assert(m_BDF_Timestepper != null);
         }
 
-        public override void DataBackupBeforeBalancing(GridUpdateData L) {
+        public override void DataBackupBeforeBalancing(GridUpdateDataVaultBase L) {
             m_BDF_Timestepper.DataBackupBeforeBalancing(L);
             m_CurrentResidual = null;
             m_CurrentSolution = null;
@@ -457,7 +456,7 @@ namespace BoSSS.Application.IBM_Solver {
 
         int DelComputeOperatorMatrix_CallCounter = 0;
 
-        protected virtual void DelComputeOperatorMatrix(BlockMsrMatrix OpMatrix, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, MultiphaseCellAgglomerator Agglomerator, double phystime) {
+        protected virtual void DelComputeOperatorMatrix(BlockMsrMatrix OpMatrix, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime) {
             DelComputeOperatorMatrix_CallCounter++;
 
             // compute operator
@@ -483,14 +482,16 @@ namespace BoSSS.Application.IBM_Solver {
             var Params = ArrayTools.Cat<SinglePhaseField>(
                 U0_U0mean);
 
-            m_LenScales = Agglomerator.CellLengthScales[LsTrk.SpeciesIdS[0]];
+            m_LenScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
 
             // create matrix and affine vector:
             IBM_Op.ComputeMatrixEx(LsTrk,
                 Mapping, Params, Mapping,
                 OpMatrix, OpAffine, false, phystime, true,
-                momentFittingVariant, Agglomerator.CellLengthScales,
+                AgglomeratedCellLengthScales,
                 FluidSpecies);
+
+            m_LenScales = null;
 
 #if DEBUG
             if(DelComputeOperatorMatrix_CallCounter == 1) {
@@ -538,9 +539,9 @@ namespace BoSSS.Application.IBM_Solver {
             return 0.0;
         }
 
-        public virtual CutCellMetrics DelUpdateCutCellMetrics() {
-            return new CutCellMetrics(momentFittingVariant, this.HMForder, LsTrk, this.FluidSpecies);
-        }
+        //public virtual CutCellMetrics DelUpdateCutCellMetrics() {
+        //    return new CutCellMetrics(momentFittingVariant, this.HMForder, LsTrk, this.FluidSpecies);
+        //}
 
         protected TextWriter Log_DragAndLift;
         protected double[] force = new double[3];
@@ -584,9 +585,9 @@ namespace BoSSS.Application.IBM_Solver {
                     }
                 }
 
-                force = IBMSolverUtils.GetForces(Velocity, Pressure, this.LsTrk, this.momentFittingVariant, this.Control.PhysicalParameters.mu_A);
+                force = IBMSolverUtils.GetForces(Velocity, Pressure, this.LsTrk, this.Control.PhysicalParameters.mu_A);
                 //oldtorque = torque;
-                torque = IBMSolverUtils.GetTorque(Velocity, Pressure, this.LsTrk, this.momentFittingVariant, this.Control.PhysicalParameters.mu_A, this.Control.particleRadius);
+                torque = IBMSolverUtils.GetTorque(Velocity, Pressure, this.LsTrk, this.Control.PhysicalParameters.mu_A, this.Control.particleRadius);
 
                 if((base.MPIRank == 0) && (Log_DragAndLift != null)) {
                     string line;
@@ -666,13 +667,14 @@ namespace BoSSS.Application.IBM_Solver {
         /// <param name="U0mean"></param>
         private void ComputeAverageU(VectorField<SinglePhaseField> U0, VectorField<SinglePhaseField> U0mean) {
             using(FuncTrace ft = new FuncTrace()) {
-                var CC = this.LsTrk._Regions.GetCutCellMask();
+                var CC = this.LsTrk.Regions.GetCutCellMask();
                 int D = this.LsTrk.GridDat.SpatialDimension;
                 double minvol = Math.Pow(this.LsTrk.GridDat.Cells.h_minGlobal, D);
 
                 int QuadDegree = this.HMForder;
 
-                var qh = new XQuadSchemeHelper(LsTrk, momentFittingVariant, this.FluidSpecies);
+                //var qh = new XQuadSchemeHelper(LsTrk, momentFittingVariant, this.FluidSpecies);
+                var qh = LsTrk.GetXDGSpaceMetrics(this.FluidSpecies, QuadDegree, 1).XQuadSchemeHelper;
                 foreach(var Spc in this.FluidSpecies) { // loop over species...
                     //var Spc = this.LsTrk.GetSpeciesId("B"); {
                     // shadow fields
@@ -682,12 +684,12 @@ namespace BoSSS.Application.IBM_Solver {
 
                     // normal cells:
                     for(int d = 0; d < D; d++) {
-                        U0mean_Spc[d].AccLaidBack(1.0, U0_Spc[d], this.LsTrk._Regions.GetSpeciesMask(Spc));
+                        U0mean_Spc[d].AccLaidBack(1.0, U0_Spc[d], this.LsTrk.Regions.GetSpeciesMask(Spc));
                     }
 
 
                     // cut cells
-                    var scheme = qh.GetVolumeQuadScheme(Spc, IntegrationDomain: this.LsTrk._Regions.GetCutCellMask());
+                    var scheme = qh.GetVolumeQuadScheme(Spc, IntegrationDomain: this.LsTrk.Regions.GetCutCellMask());
 
                     var rule = scheme.Compile(this.LsTrk.GridDat, QuadDegree);
                     CellQuadrature.GetQuadrature(new int[] { D + 1 }, // vector components: ( avg_vel[0], ... , avg_vel[D-1], cell_volume )
@@ -722,7 +724,7 @@ namespace BoSSS.Application.IBM_Solver {
 
 #if DEBUG
                 {
-                    var Uncut = LsTrk._Regions.GetCutCellMask().Complement();
+                    var Uncut = LsTrk.Regions.GetCutCellMask().Complement();
 
 
                     VectorField<SinglePhaseField> U0mean_check = new VectorField<SinglePhaseField>(D, new Basis(LsTrk.GridDat, 0), SinglePhaseField.Factory);
@@ -762,6 +764,8 @@ namespace BoSSS.Application.IBM_Solver {
             using(new FuncTrace()) {
                 base.CreateFields();
                 base.LsTrk = this.LevsetTracker;
+                if(Control.CutCellQuadratureType != this.LevsetTracker.CutCellQuadratureType)
+                    throw new ApplicationException();
                 //if (this.Control.LevelSetSmoothing) {
                 //    SmoothedLevelSet = new SpecFemField(new SpecFemBasis((GridData)LevSet.GridDat, LevSet.Basis.Degree + 1));
                 //}
@@ -773,7 +777,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// </summary>
         protected override void SetInitial() {
             // Set particle radius for exact circle integration
-            if(this.momentFittingVariant == XQuadFactoryHelper.MomentFittingVariants.ExactCircle)
+            if(this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.ExactCircle)
                 BoSSS.Foundation.XDG.Quadrature.HMF.ExactCircleLevelSetIntegration.RADIUS = new double[] { this.Control.particleRadius };
             Console.WriteLine("Total number of cells:    {0}", Grid.Cells.Count().MPISum());
             Console.WriteLine("Total number of DOFs:     {0}", CurrentSolution.Count().MPISum());
@@ -825,6 +829,7 @@ namespace BoSSS.Application.IBM_Solver {
 
                 this.LsTrk.UpdateTracker();
                 this.DGLevSet.IncreaseHistoryLength(1);
+                this.LsTrk.PushStacks();
                 this.DGLevSet.Push();
 
             }
@@ -940,15 +945,16 @@ namespace BoSSS.Application.IBM_Solver {
 
 
             int D = this.GridData.SpatialDimension;
-
             int order = 0;
-            if(this.LsTrk.GetXQuadFactoryHelper(momentFittingVariant).GetCachedVolumeOrders(0).Length > 0) {
-                order = this.LsTrk.GetXQuadFactoryHelper(momentFittingVariant).GetCachedVolumeOrders(0).Max();
+            if (LsTrk.GetCachedOrders().Count > 0) {
+                order = LsTrk.GetCachedOrders().Max();
+            } else {
+                order = 1;
             }
-            order = Math.Max(order, Velocity[0].Basis.Degree * 2);
 
-            var SchemeHelper = new XQuadSchemeHelper(this.LsTrk, momentFittingVariant, FluidSpecies);
-
+            //var SchemeHelper = new XQuadSchemeHelper(LsTrk, momentFittingVariant, LsTrk.GetSpeciesId("A"));
+            var SchemeHelper = LsTrk.GetXDGSpaceMetrics(FluidSpecies, order, 1).XQuadSchemeHelper;
+            
             // Velocity error
             // ==============
             if(this.Control.ExSol_Velocity_Evaluator != null) {
@@ -1019,9 +1025,9 @@ namespace BoSSS.Application.IBM_Solver {
             NoOfClasses = 3;
             int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
             CellPerfomanceClasses = new int[J];
-            foreach(int j in LsTrk._Regions.GetSpeciesMask("A").ItemEnum)
+            foreach(int j in LsTrk.Regions.GetSpeciesMask("A").ItemEnum)
                 CellPerfomanceClasses[j] = 1;
-            foreach(int j in LsTrk._Regions.GetCutCellMask().ItemEnum)
+            foreach(int j in LsTrk.Regions.GetCutCellMask().ItemEnum)
                 CellPerfomanceClasses[j] = 2;
         }
 

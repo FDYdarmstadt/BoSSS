@@ -87,9 +87,9 @@ namespace CNS.IBM {
             int noOfNodesPerCell = base.EvaluationPoints[iKref].NoOfNodes;
 
             MultidimensionalArray levelSetValues =
-                speciesMap.Tracker.GetLevSetValues(0, base.EvaluationPoints[iKref], i0, Length);
+                speciesMap.Tracker.DataHistories[0].Current.GetLevSetValues(base.EvaluationPoints[iKref], i0, Length);
             SpeciesId species = speciesMap.Tracker.GetSpeciesId(speciesMap.Control.FluidSpeciesName);
-            var hMinArray = speciesMap.QuadSchemeHelper.CellAgglomeration.CellLengthScales[species];
+            var hMinArray = speciesMap.CellAgglomeration.CellLengthScales[species];
             //var volFrac = speciesMap.QuadSchemeHelper.CellAgglomeration.CellVolumeFrac[species];
             //var hMinGass = speciesMap.h_min;
             //var hMin = gridData.Cells.h_min;

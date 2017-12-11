@@ -80,7 +80,7 @@ namespace CNS.IBM {
         /// </summary>
         public override DGField[] ParameterFields {
             get {
-                return LevelSetGradient;
+                return LevelSetGradient.Concat(base.ParameterFields).ToArray();
             }
         }
 

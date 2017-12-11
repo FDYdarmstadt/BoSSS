@@ -153,7 +153,7 @@ namespace BoSSS.Solution.Timestepping {
             NumberOfLocalTimeSteps = new List<int>(numOfClusters);
 
             clusterer = new Clusterer(this.gridData, this.TimeStepConstraints);
-            CurrentClustering = clusterer.CreateClustering(numOfClusters, this.subGrid);    // Might remove clusters when their centres are too close
+            CurrentClustering = clusterer.CreateClustering(numOfClusters, this.SubGrid);    // Might remove clusters when their centres are too close
             CurrentClustering = CalculateNumberOfLocalTS(CurrentClustering); // Might remove clusters when time step sizes are too similar
 
             ABevolver = new ABevolve[CurrentClustering.NumberOfClusters];
@@ -213,7 +213,7 @@ namespace BoSSS.Solution.Timestepping {
 
                             // Necessary in order to use the number of sub-grids specified by the user for the reclustering in each time step
                             // Otherwise the value could be changed by the constructor of the parent class (AdamsBashforthLTS.cs) --> CreateSubGrids()
-                            CurrentClustering = clusterer.CreateClustering(numberOfClustersInitial, this.subGrid);
+                            CurrentClustering = clusterer.CreateClustering(numberOfClustersInitial, this.SubGrid);
 
                             CurrentClustering = CalculateNumberOfLocalTS(CurrentClustering); // Might remove sub-grids when time step sizes are too similar
                             reclustered = clusterer.CheckForNewClustering(oldClustering, CurrentClustering);
@@ -881,7 +881,7 @@ namespace BoSSS.Solution.Timestepping {
 
             // Copy histories from previous to new ABevolve objects (loop over all cells) depending on the LTS order
             for (int ord = 0; ord < order - 1; ord++) {
-                foreach (Chunk chunk in this.subGrid.VolumeMask) {
+                foreach (Chunk chunk in this.SubGrid.VolumeMask) {
                     foreach (int cell in chunk.Elements) {
                         // Previous cluster of the cell
                         int oldClusterID = GetClusterIDOf(cell, oldABevolver);

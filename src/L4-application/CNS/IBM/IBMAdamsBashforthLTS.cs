@@ -56,7 +56,7 @@ namespace CNS.IBM {
         private IBMControl control;
 
         public IBMAdamsBashforthLTS(SpatialOperator standardOperator, SpatialOperator boundaryOperator, CoordinateMapping fieldsMap, CoordinateMapping boundaryParameterMap, ISpeciesMap ibmSpeciesMap, IBMControl control, IList<TimeStepConstraint> timeStepConstraints, int reclusteringInterval, bool fluxCorrection)
-            : base(standardOperator, fieldsMap, null, control.ExplicitOrder, control.NumberOfSubGrids, true, timeStepConstraints, reclusteringInterval: reclusteringInterval, fluxCorrection: fluxCorrection, subGrid: ibmSpeciesMap.SubGrid) {
+            : base(standardOperator, fieldsMap, boundaryParameterMap, control.ExplicitOrder, control.NumberOfSubGrids, true, timeStepConstraints, reclusteringInterval: reclusteringInterval, fluxCorrection: fluxCorrection, subGrid: ibmSpeciesMap.SubGrid) {
 
             this.speciesMap = ibmSpeciesMap as ImmersedSpeciesMap;
             if (this.speciesMap == null) {
@@ -72,7 +72,7 @@ namespace CNS.IBM {
 
             agglomerationPatternHasChanged = true;
 
-            cutCells = speciesMap.Tracker._Regions.GetCutCellMask();
+            cutCells = speciesMap.Tracker.Regions.GetCutCellMask();
             cutAndTargetCells = cutCells.Union(speciesMap.Agglomerator.AggInfo.TargetCells);
 
             // Normal LTS constructor
@@ -86,17 +86,8 @@ namespace CNS.IBM {
             ABevolver = new IBMABevolve[CurrentClustering.NumberOfClusters];
 
             for (int i = 0; i < ABevolver.Length; i++) {
-                ABevolver[i] = new IBMABevolve(
-                    standardOperator,
-                    boundaryOperator,
-                    fieldsMap,
-                    boundaryParameterMap,
-                    speciesMap,
-                    control.ExplicitOrder,
-                    control.LevelSetQuadratureOrder,
-                    control.MomentFittingVariant,
-                    sgrd: CurrentClustering.Clusters[i],
-                    adaptive: this.adaptive);
+                ABevolver[i] = new IBMABevolve(standardOperator, boundaryOperator, fieldsMap, boundaryParameterMap, speciesMap, control.ExplicitOrder, control.LevelSetQuadratureOrder, control.MomentFittingVariant, sgrd: CurrentClustering.Clusters[i], adaptive: this.adaptive);
+                ABevolver[i].OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforeComputechangeRate(t1, t2);
             }
 
             GetBoundaryTopology();
@@ -108,18 +99,12 @@ namespace CNS.IBM {
 #endif
 
             // Start-up phase needs an IBM Runge-Kutta time stepper
-            RungeKuttaScheme = new IBMSplitRungeKutta(
-                standardOperator,
-                boundaryOperator,
-                fieldsMap,
-                boundaryParameterMap,
-                speciesMap,
-                timeStepConstraints);
+            RungeKuttaScheme = new IBMSplitRungeKutta(standardOperator, boundaryOperator, fieldsMap, boundaryParameterMap, speciesMap, timeStepConstraints);
         }
 
         private void BuildEvaluatorsAndMasks() {
             CellMask fluidCells = speciesMap.SubGrid.VolumeMask;
-            cutCells = speciesMap.Tracker._Regions.GetCutCellMask();
+            cutCells = speciesMap.Tracker.Regions.GetCutCellMask();
             cutAndTargetCells = cutCells.Union(speciesMap.Agglomerator.AggInfo.TargetCells);
 
             IBMControl control = speciesMap.Control;
@@ -219,19 +204,9 @@ namespace CNS.IBM {
             ABevolver = new IBMABevolve[CurrentClustering.NumberOfClusters];
 
             for (int i = 0; i < ABevolver.Length; i++) {
-                ABevolver[i] = new IBMABevolve(
-                    standardOperator,
-                    boundaryOperator,
-                    fieldsMap,
-                    boundaryParameterMap,
-                    speciesMap,
-                    control.ExplicitOrder,
-                    control.LevelSetQuadratureOrder,
-                    control.MomentFittingVariant,
-                    sgrd: CurrentClustering.Clusters[i],
-                    adaptive: this.adaptive);
+                ABevolver[i] = new IBMABevolve(standardOperator, boundaryOperator, fieldsMap, boundaryParameterMap, speciesMap, control.ExplicitOrder, control.LevelSetQuadratureOrder, control.MomentFittingVariant, sgrd: CurrentClustering.Clusters[i], adaptive: this.adaptive);
                 ABevolver[i].ResetTime(m_Time);
-                //localABevolve[i].OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforComputechangeRate(t1, t2);
+                ABevolver[i].OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforeComputechangeRate(t1, t2);
             }
         }
     }

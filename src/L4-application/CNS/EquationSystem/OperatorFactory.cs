@@ -19,6 +19,7 @@ using BoSSS.Foundation.Grid.Classic;
 using CNS.Boundary;
 using CNS.Convection;
 using CNS.Diffusion;
+using CNS.IBM;
 using CNS.ShockCapturing;
 using CNS.Source;
 using System;
@@ -215,7 +216,8 @@ namespace CNS.EquationSystem {
             foreach (FluxBuilder builder in sourceTermBuilders) {
                 builder.BuildFluxes(op);
             }
-            
+
+            // TODO add IBM AV CFL constraint
             if (control.ActiveOperators.HasFlag(Operators.ArtificialViscosity)) {
                 op.CFLConstraints.Add(new ArtificialViscosityCFLConstraint(
                     control,

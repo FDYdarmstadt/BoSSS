@@ -45,7 +45,7 @@ namespace BoSSS.Application.BoSSSpad {
             using (Gnuplot gp = new Gnuplot()) {
                 gp.SetXLabel("Iteration");
                 gp.SetYLabel(log.Norm + " Norm");
-                gp.Cmd("set title \"Residual Plot\"");
+                gp.Cmd(string.Format("set title 'Residual Plot: {0}' noenhanced",log.session.Name));
                 gp.Cmd("set key outside under horizontal box");
                 gp.Cmd("set logscale y");
                 gp.Cmd("set format y \"10^{%L}\"");

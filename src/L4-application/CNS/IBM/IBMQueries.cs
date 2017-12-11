@@ -252,10 +252,9 @@ namespace CNS.IBM {
                         energy,
                         speciesMap,
                         direction,
-                        speciesMap.Tracker._Regions.GetCutCellMask()),
-                    control.MomentFittingVariant,
+                        speciesMap.Tracker.Regions.GetCutCellMask()),
                     control.LevelSetQuadratureOrder,
-                    speciesMap.QuadSchemeHelper);
+                    speciesMap.Tracker.GetSpeciesId(control.FluidSpeciesName));
             };
         }
 
@@ -326,7 +325,7 @@ namespace CNS.IBM {
                         0.0);
                 }
 
-                MultidimensionalArray normals = speciesMap.Tracker.GetLevelSetNormals(0, nodes, j0, Len);
+                MultidimensionalArray normals = speciesMap.Tracker.DataHistories[0].Current.GetLevelSetNormals(nodes, j0, Len);
 
                 Vector3D mVec = new Vector3D();
                 for (int i = 0; i < Len; i++) {
