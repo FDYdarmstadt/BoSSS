@@ -1344,10 +1344,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                     // --------------------------------
 
                     // use solver
-                    double[] spusi = m_Stack_u[0].ToArray();
                     nonlinSolver.SolverDriver(m_Stack_u[0], default(double[])); // Note: the RHS is passed as the affine part via 'this.SolverCallback'
-                    m_Stack_u[0].SetV(spusi);
-
+                    
                     // 'revert' agglomeration
                     Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
                     m_CurrentAgglomeration.Extrapolate(CurrentStateMapping);
@@ -1471,7 +1469,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             Debug.Assert((m_Stack_OpMatrix[ie] == null) == (m_Stack_OpAffine[ie] == null));
             m_Stack_OpMatrix[ie] = null;
             m_Stack_OpAffine[ie] = null;
-            m_Stack_MassMatrix[m_Stack_MassMatrix.Length - 1] = null;
+            //m_Stack_MassMatrix[m_Stack_MassMatrix.Length - 1] = null;
         }
 
 
