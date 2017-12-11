@@ -835,9 +835,10 @@ namespace BoSSS.Platform.Utils.Geom {
         /// <returns>Distance to the line</returns>
         public static double DistanceFromPointToLine(double[] X, double[] anyPointOnLine, double[] directionVector) {
             double[] X_minus_pointOnLine = new double[] { X[0] - anyPointOnLine[0], X[1] - anyPointOnLine[1] };
-            double distance = CrossProduct2D(directionVector, X_minus_pointOnLine) / Math.Sqrt(Math.Pow(directionVector[0], 2) + Math.Pow(directionVector[1], 2));
+            //double distance = CrossProduct2D(directionVector, X_minus_pointOnLine) / Math.Sqrt(Math.Pow(directionVector[0], 2) + Math.Pow(directionVector[1], 2));
+            double distance = CrossProduct2D(X_minus_pointOnLine, directionVector) / Math.Sqrt(Math.Pow(directionVector[0], 2) + Math.Pow(directionVector[1], 2));
 
-            return -distance;
+            return distance;
         }
 
         /// <summary>
