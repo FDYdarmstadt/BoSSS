@@ -39,6 +39,7 @@ namespace BoSSS.Application.XDGTest {
     /// </summary>
     class XDGTestMain : BoSSS.Solution.Application {
         static void Main(string[] args) {
+            
             BoSSS.Solution.Application._Main(args, true, "", delegate() {
                 var p = new XDGTestMain();
                 //p.passiveIo = true;
@@ -59,7 +60,7 @@ namespace BoSSS.Application.XDGTest {
 
         protected override void CreateFields() {
             this.LevSet = new LevelSet(new Basis(this.GridData, 2), "Phi");
-            this.LsTrk = new LevelSetTracker(this.GridData, 1, new string[] { "A", "B" }, LevSet);
+            this.LsTrk = new LevelSetTracker(this.GridData, XQuadFactoryHelper.MomentFittingVariants.Classic, 1, new string[] { "A", "B" }, LevSet);
             Pressure = new XDGField(new XDGBasis(this.LsTrk, 2), "Pressure");
         }
 
@@ -76,13 +77,13 @@ namespace BoSSS.Application.XDGTest {
             //this.LevSet.ProjectField((_2D)((x, y) => (x - 0.1)));
             this.LevSet.ProjectField((_2D)((x, y) => ((x - 0.83) / 0.8).Pow2() + (y / 0.8).Pow2() - 1.0));
             this.LsTrk.UpdateTracker();
-
+            this.LsTrk.PushStacks();
             this.Pressure.ProjectField((_2D)((x, y) => 1 - y * y));
 
-            PlotCurrentState(0, 0, 3);
+            //PlotCurrentState(0, 0, 3);
         }
 
-        protected override void CreateEquationsAndSolvers(GridUpdateData L) {
+        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
         }
 
         internal double AutoExtrapolationErr = double.MinValue;
@@ -102,6 +103,7 @@ namespace BoSSS.Application.XDGTest {
             this.LevSet.ProjectField((_2D)((x, y) => ((x - 0.83 - x0) / 0.8).Pow2() + (y / 0.8).Pow2() - 1.0));
             this.LsTrk.UpdateTracker();
 
+
             var RefPressure = new XDGField(this.Pressure.Basis);
             RefPressure.ProjectField((_2D)((x, y) => 1 - y * y));
             RefPressure.Acc(-1.0, Pressure);
@@ -111,7 +113,7 @@ namespace BoSSS.Application.XDGTest {
 
 
 
-            //PlotCurrentState(phystime + dt, TimestepNo);
+           // PlotCurrentState(phystime + dt, TimestepNo);
 
 
             Console.WriteLine("done.");

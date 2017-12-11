@@ -31,8 +31,9 @@ namespace BoSSS.Foundation.XDG {
         public static void AccLevelSetDist(this DGField f, double alpha, LevelSetTracker LevSetTrk, int LevSetIdx) {
             int J = f.Basis.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
 
+            var r = LevSetTrk.Regions;
             for (int j = 0; j < J; j++) {
-                int dist = LevelSetTracker.DecodeLevelSetDist(LevSetTrk._Regions.m_LevSetRegions[j], 0);
+                int dist = LevelSetTracker.DecodeLevelSetDist(r.m_LevSetRegions[j], 0);
                 f.SetMeanValue(j, f.GetMeanValue(j) + dist * alpha);
             }
         }
@@ -44,9 +45,10 @@ namespace BoSSS.Foundation.XDG {
         public static void AccNoOfSpecies(this DGField f, double alpha, LevelSetTracker LevSetTrk, int LevSetIdx) {
             int J = f.Basis.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
 
+            var r = LevSetTrk.Regions;
             for (int j = 0; j < J; j++) {
                 ReducedRegionCode rrc;
-                int NoOfSpec = LevSetTrk.GetNoOfSpecies(j, out rrc);
+                int NoOfSpec = r.GetNoOfSpecies(j, out rrc);
                 f.SetMeanValue(j, f.GetMeanValue(j) + NoOfSpec * alpha);
             }
         }

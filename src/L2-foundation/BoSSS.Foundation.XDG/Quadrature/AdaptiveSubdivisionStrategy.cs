@@ -32,16 +32,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Subdivision {
     /// if it is cut the interface.
     /// </summary>
     public class AdaptiveSubdivisionStrategy : ISubdivisionStrategy {
-
-        /// <summary>
-        /// The omnipresent context.
-        /// </summary>
-        private readonly GridData gridData;
-
-        /// <summary>
-        /// The level set tracker. Allows for the check if a simplex is cut.
-        /// </summary>
-        private readonly LevelSetTracker tracker;
+        
 
         /// <summary>
         /// The maximum number of subdivisions of the simplex
@@ -59,27 +50,22 @@ namespace BoSSS.Foundation.XDG.Quadrature.Subdivision {
         /// </summary>
         private readonly SimplexSubdivisionTree subdivisionTree;
 
-        /// <summary>
-        /// Level set index within the tracker's list
-        /// </summary>
-        private int levSetIndex;
 
         /// <summary>
-        /// Initializes the subdivision of the given simplex. Initially, the
-        /// simplex remains undivided.
+        /// level-set evaluation
         /// </summary>
-        /// <param name="refElement">
-        /// The simplex to subdivide.
-        /// </param>
-        /// <param name="tracker">
-        /// The level set tracker. Allows for the check if a simplex is cut.
-        /// </param>
-        /// <param name="maxDivisions">
-        /// The maximum number of subdivisions of the simplex
-        /// </param>
-        public AdaptiveSubdivisionStrategy(RefElement refElement, LevelSetTracker tracker, int maxDivisions)
-            : this(refElement, tracker, 0, maxDivisions) {
+        LevelSetTracker.LevelSetData LevelSetData;
+
+        
+        /// <summary>
+        /// The omnipresent context.
+        /// </summary>
+        private GridData gridData {
+            get {
+                return LevelSetData.GridDat;
+            }
         }
+
 
         /// <summary>
         /// Initializes the subdivision of the given simplex. Initially, the
@@ -95,16 +81,11 @@ namespace BoSSS.Foundation.XDG.Quadrature.Subdivision {
         /// <param name="maxDivisions">
         /// The maximum number of subdivisions of the simplex
         /// </param>
-        public AdaptiveSubdivisionStrategy(RefElement refElement, LevelSetTracker tracker, int levSetIndex, int maxDivisions) {
-            this.gridData = tracker.GridDat;
+        public AdaptiveSubdivisionStrategy(RefElement refElement, LevelSetTracker.LevelSetData levelSetData, int maxDivisions) {
             this.RefElement = refElement;
-            this.tracker = tracker;
-            if (levSetIndex >= tracker.LevelSets.Count) {
-                throw new ArgumentOutOfRangeException("Please specify a valid level set index.");
-            }
-            this.levSetIndex = levSetIndex;
             this.maxDivisions = maxDivisions;
             this.baseVertexSet = new NestedVertexSet(refElement.SpatialDimension);
+            this.LevelSetData = LevelSetData;
 
             int verticesPerCell = refElement.Vertices.GetLength(0);
             int[] simplexVertices = new int[verticesPerCell];
@@ -292,7 +273,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Subdivision {
                         int cell;
                         NodeSet vertices = GetVertices(iElement, currentSet, mask, out cell);
 
-                        MultidimensionalArray levelSetValues = tracker.GetLevSetValues(levSetIndex, vertices, cell, 1);
+                        MultidimensionalArray levelSetValues = LevelSetData.GetLevSetValues(vertices, cell, 1);
 
                         subdivisionTree.ReadDistances(levelSetValues.ExtractSubArrayShallow(0, -1));
 
@@ -308,7 +289,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Subdivision {
                         int cell;
                         NodeSet vertices = GetVertices(iElement, currentSet, mask, out cell);
                         if(vertices != null) {
-                            MultidimensionalArray levelSetValues = tracker.GetLevSetValues(levSetIndex, vertices, cell, 1);
+                            MultidimensionalArray levelSetValues = LevelSetData.GetLevSetValues(vertices, cell, 1);
 
                             subdivisionTree.ReadDistances(levelSetValues.ExtractSubArrayShallow(0, -1));
                         }

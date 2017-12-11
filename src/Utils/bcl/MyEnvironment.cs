@@ -361,7 +361,6 @@ namespace bcl {
                 }
             }
         }
-
         /// <summary>
         /// searches for the User- or Machine-environment variable 'BOSSS_INSTALL'
         /// and verifies the existence of this directory.
@@ -372,16 +371,15 @@ namespace bcl {
         static DirectoryInfo GetBoSSSInstallDir() {
             string si1 = System.Environment.GetEnvironmentVariable("BOSSS_INSTALL", EnvironmentVariableTarget.User);
             string si2 = System.Environment.GetEnvironmentVariable("BOSSS_INSTALL", EnvironmentVariableTarget.Machine);
-			string si3 = System.Environment.GetEnvironmentVariable("BOSSS_INSTALL");
+            string si3 = System.Environment.GetEnvironmentVariable("BOSSS_INSTALL");
 
 			string si = null;
             if (si1 != null && si1.Length > 0) {
                 si = si1;
             } else if (si2 != null && si2.Length > 0) {
                 si = si2;
-			}
-			else if (si3 != null && si3.Length > 0)   {
-				si = si3;
+            } else if (si3 != null && si3.Length > 0) {
+                si = si3;
             }
 
 

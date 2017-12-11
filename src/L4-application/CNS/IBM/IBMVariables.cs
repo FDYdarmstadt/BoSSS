@@ -57,7 +57,7 @@ namespace CNS.IBM {
                     //}
 
                     IBMFieldSet fieldSet = program.WorkingSet as IBMFieldSet;
-                    CellMask cutCells = program.SpeciesMap.As<ImmersedSpeciesMap>().Tracker._Regions.GetCutCellMask();
+                    CellMask cutCells = program.SpeciesMap.As<ImmersedSpeciesMap>().Tracker.Regions.GetCutCellMask();
 
                     gradientField.Clear();
                     gradientField.Derivative(

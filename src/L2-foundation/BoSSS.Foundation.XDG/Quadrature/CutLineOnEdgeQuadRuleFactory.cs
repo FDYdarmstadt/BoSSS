@@ -79,7 +79,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
     /// <see cref="CellEdgeBoundaryQuadRule"/>) in the style of
     /// <see cref="CutLineQuadRuleFactory"/>
     /// </summary>
-    class CutLineOnEdgeQuadRuleFactory : IQuadRuleFactory<CellEdgeBoundaryQuadRule>, IObserver<LevelSetTracker.LevelSetRegionsInfo> {
+    class CutLineOnEdgeQuadRuleFactory : IQuadRuleFactory<CellEdgeBoundaryQuadRule>, IObserver<LevelSetTracker.LevelSetRegions> {
 
         /// <summary>
         /// Minimal distance between two points
@@ -91,10 +91,10 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// </summary>
         private static readonly Line lineSimplex = Line.Instance;
 
-        /// <summary>
-        /// Tracks the level set location
-        /// </summary>
-        private LevelSetTracker tracker;
+        ///// <summary>
+        ///// Tracks the level set location
+        ///// </summary>
+        //private LevelSetTracker tracker;
 
         /// <summary>
         /// The line segments of the reference element.
@@ -135,6 +135,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             return cache.Keys.ToArray();
         }
 
+        LevelSetTracker.LevelSetData lsData;
+
         /// <summary>
         /// Constructor
         /// </summary>
@@ -142,21 +144,20 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// <param name="levelSetIndex"></param>
         /// <param name="rootFindingAlgorithm"></param>
         /// <param name="jumpType"></param>
-        public CutLineOnEdgeQuadRuleFactory(LevelSetTracker tracker, int levelSetIndex, LineSegment.IRootFindingAlgorithm rootFindingAlgorithm = null, JumpTypes jumpType = JumpTypes.Heaviside) {
-            if (tracker.GridDat.SpatialDimension < 3) {
+        public CutLineOnEdgeQuadRuleFactory(LevelSetTracker.LevelSetData __lsData, LineSegment.IRootFindingAlgorithm rootFindingAlgorithm = null, JumpTypes jumpType = JumpTypes.Heaviside) {
+            if (__lsData.GridDat.SpatialDimension < 3) {
                 throw new ArgumentException("Only applicable in 3d", "tracker");
             }
+            if(__lsData.GridDat.Cells.RefElements.Length > 1)
+                throw new NotSupportedException();
 
-            this.tracker = tracker;
+            this.lsData = __lsData;
             this.RootFindingAlgorithm = rootFindingAlgorithm ?? LineSegment.DefaultRootFindingAlgorithm;
             this.jumpType = jumpType;
-            if (levelSetIndex >= tracker.LevelSets.Count) {
-                throw new ArgumentOutOfRangeException("Please specify a valid index for the level set function");
-            }
-            this.levelSetIndex = levelSetIndex;
+            this.levelSetIndex = lsData.LevelSetIndex;
             this.referenceLineSegments = GetReferenceLineSegments();
 
-            tracker.Subscribe(this);
+            //tracker.Subscribe(this);
         }
 
         /// <summary>
@@ -181,7 +182,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// <returns></returns>
         public IEnumerable<IChunkRulePair<CellEdgeBoundaryQuadRule>> GetQuadRuleSet(ExecutionMask mask, int order) {
             if (mask == null) {
-                mask = CellMask.GetFullMask(tracker.GridDat);
+                mask = CellMask.GetFullMask(this.lsData.GridDat);
             }
 
             if (mask is CellMask == false) {
@@ -193,8 +194,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             }
 
             QuadRule baseRule = lineSimplex.GetQuadratureRule(order);
-            int D = tracker.GridDat.SpatialDimension;
-            int noOfEdges = tracker.GridDat.Grid.RefElements[0].NoOfFaces;
+            int D = lsData.GridDat.SpatialDimension;
+            int noOfEdges = lsData.GridDat.Grid.RefElements[0].NoOfFaces;
             int noOfEdgesOfEdge = RefElement.FaceRefElement.NoOfFaces;
 
             var result = new List<ChunkRulePair<CellEdgeBoundaryQuadRule>>(mask.NoOfItemsLocally);
@@ -212,21 +213,21 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     List<double[]> nodes = new List<double[]>();
                     List<double> weights = new List<double>();
 
-                    if (tracker.GridDat.Cells.Cells2Edges[cell].Length != noOfEdges) {
+                    if (lsData.GridDat.Cells.Cells2Edges[cell].Length != noOfEdges) {
                         throw new NotImplementedException("Not implemented for hanging nodes");
                     }
 
                     int[] noOfNodesPerEdge = new int[noOfEdges];
                     int[,] noOfNodesPerEdgeOfEdge = new int[noOfEdges, noOfEdgesOfEdge];
                     for (int e = 0; e < noOfEdges; e++) {
-                        int edge = Math.Abs(tracker.GridDat.Cells.Cells2Edges[cell][e]) - 1;
-                        double edgeDet = tracker.GridDat.Edges.SqrtGramian[edge];
+                        int edge = Math.Abs(lsData.GridDat.Cells.Cells2Edges[cell][e]) - 1;
+                        double edgeDet = lsData.GridDat.Edges.SqrtGramian[edge];
 
                         for (int ee = 0; ee < noOfEdgesOfEdge; ee++) {
                             LineSegment refSegment = referenceLineSegments[e, ee];
                             double edgeOfEdgeDet = RefElement.FaceRefElement.FaceTrafoGramianSqrt[ee];
 
-                            double[] roots = refSegment.GetRoots(tracker.LevelSets[levelSetIndex], cell, 0);
+                            double[] roots = refSegment.GetRoots(lsData.LevelSet, cell, 0);
                             LineSegment[] subSegments = refSegment.Split(roots);
 
                             for (int k = 0; k < subSegments.Length; k++) {
@@ -238,7 +239,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                 if(jumpType != JumpTypes.Implicit) {
                                     //using (tracker.GridDat.NSC.CreateLock(
                                     //    MultidimensionalArray.CreateWrapper(point, 1, D), 0, -1.0)) {
-                                    MultidimensionalArray levelSetValue = tracker.GetLevSetValues(levelSetIndex, _point, cell, 1);
+                                    MultidimensionalArray levelSetValue = lsData.GetLevSetValues(_point, cell, 1);
 
                                     switch(jumpType) {
                                         case JumpTypes.Heaviside:
@@ -319,7 +320,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// </summary>
         public RefElement RefElement {
             get {
-                return tracker.GridDat.Grid.RefElements[0];
+                return lsData.GridDat.Grid.RefElements[0];
             }
         }
 
@@ -343,8 +344,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// equality) which ensures that this does not affect performance.
         /// </remarks>
         private LineSegment[,] GetReferenceLineSegments() {
-            int D = tracker.GridDat.SpatialDimension;
-            int noOfEdges = tracker.GridDat.Grid.RefElements[0].NoOfFaces;
+            int D = lsData.GridDat.SpatialDimension;
+            int noOfEdges = lsData.GridDat.Grid.RefElements[0].NoOfFaces;
             int noOfEdgesOfEdge = RefElement.FaceRefElement.NoOfFaces;
 
             MultidimensionalArray edgeOfEdgeVertices = MultidimensionalArray.Create(2, 1);
@@ -354,7 +355,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             MultidimensionalArray edgeVertices = MultidimensionalArray.Create(
                 edgeOfEdgeVertices.GetLength(0), RefElement.FaceRefElement.SpatialDimension);
             MultidimensionalArray volumeVertices = MultidimensionalArray.Create(
-                edgeVertices.GetLength(0), tracker.GridDat.SpatialDimension);
+                edgeVertices.GetLength(0), D);
 
             // Remember encountered segments so that $lineSegments contains no
             // duplicates and roots can be cached efficiently
@@ -362,12 +363,12 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 noOfEdges * noOfEdgesOfEdge / 2);
 
             LineSegment[,] lineSegments = new LineSegment[noOfEdges, noOfEdgesOfEdge];
-            LevelSet levelSetField = tracker.LevelSets[levelSetIndex] as LevelSet;
+            LevelSet levelSetField = lsData.LevelSet as LevelSet;
             for (int ee = 0; ee < noOfEdgesOfEdge; ee++) {
                 RefElement.FaceRefElement.TransformFaceCoordinates(ee, edgeOfEdgeVertices, edgeVertices);
 
                 for (int e = 0; e < noOfEdges; e++) {
-                    tracker.GridDat.Grid.RefElements[0].TransformFaceCoordinates(
+                    lsData.GridDat.Grid.RefElements[0].TransformFaceCoordinates(
                         e, edgeVertices, volumeVertices);
 
                     double[] start = new double[D];
@@ -388,7 +389,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                             segment.ProjectBasisPolynomials(levelSetField.Basis);
                         }
 
-                        tracker.Subscribe(segment);
+                        //tracker.Subscribe(segment);
                     }
 
                     lineSegments[e, ee] = segment;
@@ -417,7 +418,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// Clears cached quadrature rules.
         /// </summary>
         /// <param name="value"></param>
-        public void OnNext(LevelSetTracker.LevelSetRegionsInfo value) {
+        public void OnNext(LevelSetTracker.LevelSetRegions value) {
             cache.Clear();
         }
 

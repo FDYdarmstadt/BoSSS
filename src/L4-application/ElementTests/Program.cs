@@ -135,7 +135,7 @@ namespace BoSSS.Application.ElementTests {
             return Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-1, 1, 5), GenericBlas.Linspace(-1, 1, 5));
         }
 
-        protected override void CreateEquationsAndSolvers(GridUpdateData L) {
+        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
         }
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {

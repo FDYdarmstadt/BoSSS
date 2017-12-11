@@ -41,7 +41,7 @@ namespace NSE_SIMPLE {
         /// <param name="IOFields"></param>
         /// <param name="RegisteredFields"></param>
         public BaseVariableSet(GridData GridDat, SIMPLEControl Control, ICollection<DGField> IOFields, ICollection<DGField> RegisteredFields) {
-            InitFromAttributes.CreateFieldsAuto(this, GridDat, Control.FieldOptions, IOFields, RegisteredFields);
+            InitFromAttributes.CreateFieldsAuto(this, GridDat, Control.FieldOptions, BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic, IOFields, RegisteredFields);
         }
 
         /// <summary>

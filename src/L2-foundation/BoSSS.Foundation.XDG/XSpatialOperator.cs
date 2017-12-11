@@ -192,7 +192,7 @@ namespace BoSSS.Foundation.XDG {
         public void ComputeMatrixEx<M, V>(LevelSetTracker lsTrk,
             UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap,
             M Matrix, V AffineOffset, bool OnlyAffine, double time, bool ParameterMPIExchange,
-            XQuadFactoryHelper.MomentFittingVariants momentFittingVariant, IDictionary<SpeciesId, MultidimensionalArray> CellLengthScales,
+            IDictionary<SpeciesId, MultidimensionalArray> CellLengthScales,
             SubGrid SubGrid, params SpeciesId[] whichSpc)
             where M : IMutableMatrixEx
             where V : IList<double> {
@@ -205,7 +205,7 @@ namespace BoSSS.Foundation.XDG {
                 lsTrk,
                 DomainMap, Parameters, CodomainMap,
                 Matrix, AffineOffset, OnlyAffine, time,
-                ParameterMPIExchange, SpeciesDictionary, momentFittingVariant, CellLengthScales,
+                ParameterMPIExchange, SpeciesDictionary, CellLengthScales,
                 //agg, out mass,
                 SubGrid);
 
@@ -226,13 +226,12 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="ParameterMPIExchange"></param>
         /// <param name="whichSpc"></param>
         /// <param name="time"></param>
-        /// <param name="momentFittingVariant"></param>
         public void ComputeMatrixEx<M, V>(
             LevelSetTracker lsTrk,
             UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap,
             M Matrix, V AffineOffset, bool OnlyAffine,
             double time, bool ParameterMPIExchange,
-            XQuadFactoryHelper.MomentFittingVariants momentFittingVariant, IDictionary<SpeciesId, MultidimensionalArray> CellLengthScales,
+            IDictionary<SpeciesId, MultidimensionalArray> CellLengthScales,
             params SpeciesId[] whichSpc)
             where M : IMutableMatrixEx
             where V : IList<double> //
@@ -242,7 +241,7 @@ namespace BoSSS.Foundation.XDG {
                 DomainMap, Parameters, CodomainMap,
                 Matrix, AffineOffset, OnlyAffine, time,
                 ParameterMPIExchange,
-                momentFittingVariant, CellLengthScales,
+                CellLengthScales,
                 null, whichSpc);
         }
 
@@ -252,28 +251,35 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public void ComputeMatrixEx<M, V>(LevelSetTracker lsTrk,
             UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap,
-            M Matrix, V AffineOffset, bool OnlyAffine, double time, bool MPIParameterExchange, XQuadFactoryHelper.MomentFittingVariants momentFittingVariant,
+            M Matrix, V AffineOffset, bool OnlyAffine, double time, bool MPIParameterExchange, 
             params SpeciesId[] whichSpc)
             where M : IMutableMatrixEx
             where V : IList<double> {
             this.ComputeMatrixEx<M, V>(lsTrk,
                DomainMap, Parameters, CodomainMap,
                Matrix, AffineOffset,
-               OnlyAffine, time, MPIParameterExchange, momentFittingVariant,subGrid:null,whichSpc:whichSpc
+               OnlyAffine, time, MPIParameterExchange, subGrid:null,whichSpc:whichSpc
                );
         }
 
-            /// <summary>
-            /// computation of operator matrix
-            /// </summary>
-            public void ComputeMatrixEx<M, V>(LevelSetTracker lsTrk,
+        /// <summary>
+        /// computation of operator matrix
+        /// </summary>
+        public void ComputeMatrixEx<M, V>(LevelSetTracker lsTrk,
             UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap,
-            M Matrix, V AffineOffset, bool OnlyAffine, double time, bool MPIParameterExchange, XQuadFactoryHelper.MomentFittingVariants momentFittingVariant, SubGrid subGrid, params SpeciesId[] whichSpc)
+            M Matrix, V AffineOffset, bool OnlyAffine, 
+            double time, 
+            bool MPIParameterExchange, 
+            SubGrid subGrid, params SpeciesId[] whichSpc)
             where M : IMutableMatrixEx
-            where V : IList<double> {
+            where V : IList<double>  //
+        {
 
+//<<<<<<< HEAD
             int order = this.GetOrderFromQuadOrderFunction(DomainMap, Parameters, CodomainMap);
-            MultiphaseCellAgglomerator dummy = new MultiphaseCellAgglomerator(new CutCellMetrics(momentFittingVariant, order, lsTrk, whichSpc), 0.0, false);
+            MultiphaseCellAgglomerator dummy = lsTrk.GetAgglomerator(whichSpc, order, 0.0);
+            //MultiphaseCellAgglomerator dummy = new MultiphaseCellAgglomerator(new CutCellMetrics(momentFittingVariant, order, lsTrk, whichSpc), 0.0, false);
+//>>>>>>> root/master
 
             var bla = new Dictionary<SpeciesId, QrSchemPair>();
             foreach (var sp in whichSpc)
@@ -282,7 +288,7 @@ namespace BoSSS.Foundation.XDG {
             this.ComputeMatrixEx<M, V>(lsTrk,
                 DomainMap, Parameters, CodomainMap,
                 Matrix, AffineOffset,
-                OnlyAffine, time, MPIParameterExchange, bla, momentFittingVariant,
+                OnlyAffine, time, MPIParameterExchange, bla, 
                 dummy.CellLengthScales, subGrid);
 
             Debug.Assert(dummy.TotalNumberOfAgglomerations <= 0, "internal error");
@@ -297,7 +303,7 @@ namespace BoSSS.Foundation.XDG {
         public void ComputeMatrixEx<M, V>(LevelSetTracker lsTrk,
             UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap,
             M Matrix, V AffineOffset, bool OnlyAffine, double time, bool MPIParameterExchange,
-            IDictionary<SpeciesId, QrSchemPair> SpeciesSchemes, XQuadFactoryHelper.MomentFittingVariants momentFittingVariant, IDictionary<SpeciesId, MultidimensionalArray> CellLengthScales,
+            IDictionary<SpeciesId, QrSchemPair> SpeciesSchemes, IDictionary<SpeciesId, MultidimensionalArray> CellLengthScales,
             SubGrid SubGrid = null)
             where M : IMutableMatrixEx
             where V : IList<double> {
@@ -379,7 +385,7 @@ namespace BoSSS.Foundation.XDG {
                 //    throw new ArgumentException("quadrature order mismatch.");
 
                 //var SchemeHelper = new XQuadSchemeHelper(agg);
-                var SchemeHelper = new XQuadSchemeHelper(lsTrk, momentFittingVariant, ReqSpecies);
+                var SchemeHelper = lsTrk.GetXDGSpaceMetrics(ReqSpecies, order, 1).XQuadSchemeHelper;// new XQuadSchemeHelper(lsTrk, momentFittingVariant, ReqSpecies);
                 #endregion
 
                 #region mass matrix factory
@@ -406,9 +412,9 @@ namespace BoSSS.Foundation.XDG {
                     SpeciesFrameVector<V>[] vec_spc = new SpeciesFrameVector<V>[ReqSpecies.Length];
                     for (int i = 0; i < ReqSpecies.Length; i++) {
                         SpeciesId SpId = ReqSpecies[i];
-                        mtx_spc[i] = new SpeciesFrameMatrix<M>(Matrix, lsTrk, SpId, CodomainMap, DomainMap);
+                        mtx_spc[i] = new SpeciesFrameMatrix<M>(Matrix, lsTrk.Regions, SpId, CodomainMap, DomainMap);
                         vec_spc[i] = (AffineOffset != null) ?
-                                (new SpeciesFrameVector<V>(lsTrk, SpId, AffineOffset, CodomainMap))
+                                (new SpeciesFrameVector<V>(lsTrk.Regions, SpId, AffineOffset, CodomainMap))
                                 :
                                 null;
                     }
@@ -581,7 +587,7 @@ namespace BoSSS.Foundation.XDG {
                         // (maybe not very efficient, but this code is already aber so was von far from being efficient.)
                         for (int iSpcA = 0; iSpcA < AllSpc.Count; iSpcA++) {
                             var SpeciesA = AllSpc[iSpcA];
-                            var SpeciesADom = lsTrk._Regions.GetSpeciesMask(SpeciesA);
+                            var SpeciesADom = lsTrk.Regions.GetSpeciesMask(SpeciesA);
                             if (SpeciesADom.NoOfItemsLocally <= 0)
                                 continue;
 
@@ -594,7 +600,7 @@ namespace BoSSS.Foundation.XDG {
                                 if (_iSpcA < 0 && _iSpcB < 0)
                                     continue;
 
-                                var SpeciesBDom = lsTrk._Regions.GetSpeciesMask(SpeciesB);
+                                var SpeciesBDom = lsTrk.Regions.GetSpeciesMask(SpeciesB);
                                 var SpeciesCommonDom = SpeciesADom.Intersect(SpeciesBDom);
 
                                 // Checks removed since they can cause parallel problems
@@ -608,7 +614,7 @@ namespace BoSSS.Foundation.XDG {
                                 int NoOfLs = lsTrk.LevelSets.Count;
                                 for (int iLevSet = 0; iLevSet < NoOfLs; iLevSet++) {
 
-                                    var LsDom = lsTrk._Regions.GetCutCellMask4LevSet(iLevSet);
+                                    var LsDom = lsTrk.Regions.GetCutCellMask4LevSet(iLevSet);
                                     var IntegrationDom = LsDom.Intersect(SpeciesCommonDom);
 
                                     // Check removed since it can cause parallel problems
@@ -678,12 +684,12 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// ctor.
             /// </summary>
-            /// <param name="lsTrk">level set tracker</param>
+            /// <param name="lsTrk_Regions">see <see cref="LevelSetTracker.Regions"/></param>
             /// <param name="spcId">species which should be framed</param>
             /// <param name="Full">the vector that should be framed</param>
             /// <param name="FullMap"></param>
-            public SpeciesFrameVector(LevelSetTracker lsTrk, SpeciesId spcId, V Full, UnsetteledCoordinateMapping FullMap)
-                : this(Full, new FrameBase(lsTrk, spcId, FullMap, false)) {
+            public SpeciesFrameVector(LevelSetTracker.LevelSetRegions lsTrk_Regions, SpeciesId spcId, V Full, UnsetteledCoordinateMapping FullMap)
+                : this(Full, new FrameBase(lsTrk_Regions, spcId, FullMap, false)) {
             }
 
 
@@ -846,24 +852,24 @@ namespace BoSSS.Foundation.XDG {
             /// ctor.
             /// </summary>
             /// <param name="full">the full operator matrix, from which the species <paramref name="spcId"/> should e framed (extracted)</param>
-            /// <param name="lsTrk">level set tracker</param>
+            /// <param name="lsTrk_regions">see <see cref="LevelSetTracker.Regions"/></param>
             /// <param name="spcId">the species of interest</param>
             /// <param name="fullMapRow">row mapping for the operator matrix <paramref name="full"/></param>
             /// <param name="fullMapCol">column mapping for the operator matrix <paramref name="full"/></param>
-            public SpeciesFrameMatrix(M full, LevelSetTracker lsTrk, SpeciesId spcId, UnsetteledCoordinateMapping fullMapRow, UnsetteledCoordinateMapping fullMapCol)
-                : this(lsTrk, full, new FrameBase(lsTrk, spcId, fullMapRow, false), new FrameBase(lsTrk, spcId, fullMapCol, true)) {
+            public SpeciesFrameMatrix(M full, LevelSetTracker.LevelSetRegions lsTrk_regions, SpeciesId spcId, UnsetteledCoordinateMapping fullMapRow, UnsetteledCoordinateMapping fullMapCol)
+                : this(lsTrk_regions, full, new FrameBase(lsTrk_regions, spcId, fullMapRow, false), new FrameBase(lsTrk_regions, spcId, fullMapCol, true)) {
             }
 
-            LevelSetTracker m_LsTrk;
+            LevelSetTracker.LevelSetRegions m_LsTrk_regions;
 
             /// <summary>
             /// ctor.
             /// </summary>
-            public SpeciesFrameMatrix(LevelSetTracker lst, M full, FrameBase __RowFrame, FrameBase __ColFrame) {
+            public SpeciesFrameMatrix(LevelSetTracker.LevelSetRegions lst, M full, FrameBase __RowFrame, FrameBase __ColFrame) {
                 m_full = full;
                 RowFrame = __RowFrame;
                 ColFrame = __ColFrame;
-                m_LsTrk = lst;
+                m_LsTrk_regions = lst;
 
 #if DEBUG
                 var grdDat = RowFrame.FullMap.BasisS.First().GridDat;
@@ -871,13 +877,13 @@ namespace BoSSS.Foundation.XDG {
                 int JE = grdDat.iLogicalCells.NoOfCells;
                 var spc = RowFrame.Species;
                 Debug.Assert(RowFrame.Species.Equals(ColFrame.Species));
-                var lsTrk = m_LsTrk;
+                var lsTrk = m_LsTrk_regions;
                 Basis[] RowBase = RowMapping.BasisS.ToArray();
                 Basis[] ColBase = ColMapping.BasisS.ToArray();
 
                 var _AvailableRowIdx = new List<int>();
                 for (int j = 0; j < J; j++) {
-                    int iSpc = m_LsTrk.GetSpeciesIndex(spc, j);
+                    int iSpc = m_LsTrk_regions.GetSpeciesIndex(spc, j);
 
                     if (iSpc >= 0) {
                         for (int k = 0; k < RowBase.Length; k++) {
@@ -895,7 +901,7 @@ namespace BoSSS.Foundation.XDG {
 
                 var _AvailableColIdx = new List<int>();
                 for (int j = 0; j < JE; j++) {
-                    int iSpc = m_LsTrk.GetSpeciesIndex(spc, j);
+                    int iSpc = m_LsTrk_regions.GetSpeciesIndex(spc, j);
 
                     if (iSpc >= 0) {
                         for (int k = 0; k < ColBase.Length; k++) {
