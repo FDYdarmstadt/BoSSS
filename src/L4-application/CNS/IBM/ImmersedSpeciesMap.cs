@@ -55,12 +55,12 @@ namespace CNS.IBM {
         /// </summary>
         public LevelSetTracker Tracker {
             get {
-                Tracker.IncreaseHistoryLength(1);
+                tracker.IncreaseHistoryLength(1);
                 if (firstCall) {
                     // This IS necessary... don't ask me why, though
                     // to have one previous state available, so all the incremental updates work
                     tracker.UpdateTracker();
-                    tracker.UpdateTracker();
+                    tracker.PushStacks();
                 }
                 
                 firstCall = false;
@@ -85,7 +85,7 @@ namespace CNS.IBM {
         /// </summary>
         public MultiphaseCellAgglomerator CellAgglomeration {
             get {
-                if(m_CellAgglomeration != null) {
+                if(m_CellAgglomeration == null) {
 
                     bool agglomerateNewbornAndDeceased = true;
                     var oldAggThreshold = new double[] { Control.AgglomerationThreshold };
