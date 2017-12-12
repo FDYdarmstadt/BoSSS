@@ -86,9 +86,9 @@ namespace CNS.ShockCapturing {
             double cfl = double.MaxValue;
             switch (speciesMap) {
                 case ImmersedSpeciesMap ibmMap: {
-                        MultidimensionalArray levelSetValues = ibmMap.Tracker.GetLevSetValues(0, base.EvaluationPoints[iKref], i0, Length);
+                        MultidimensionalArray levelSetValues = ibmMap.Tracker.DataHistories[0].Current.GetLevSetValues(base.EvaluationPoints[iKref], i0, Length);
                         SpeciesId species = ibmMap.Tracker.GetSpeciesId(ibmMap.Control.FluidSpeciesName);
-                        var hMinArray = ibmMap.QuadSchemeHelper.CellAgglomeration.CellLengthScales[species];
+                        var hMinArray = ibmMap.CellAgglomeration.CellLengthScales[species];
                         
                         for (int i = 0; i < Length; i++) {
                             int cell = i0 + i;

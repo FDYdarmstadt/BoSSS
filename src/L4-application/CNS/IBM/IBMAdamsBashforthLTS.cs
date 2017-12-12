@@ -72,7 +72,7 @@ namespace CNS.IBM {
 
             agglomerationPatternHasChanged = true;
 
-            cutCells = speciesMap.Tracker._Regions.GetCutCellMask();
+            cutCells = speciesMap.Tracker.Regions.GetCutCellMask();
             cutAndTargetCells = cutCells.Union(speciesMap.Agglomerator.AggInfo.TargetCells);
 
             // Normal LTS constructor
@@ -104,7 +104,7 @@ namespace CNS.IBM {
 
         private void BuildEvaluatorsAndMasks() {
             CellMask fluidCells = speciesMap.SubGrid.VolumeMask;
-            cutCells = speciesMap.Tracker._Regions.GetCutCellMask();
+            cutCells = speciesMap.Tracker.Regions.GetCutCellMask();
             cutAndTargetCells = cutCells.Union(speciesMap.Agglomerator.AggInfo.TargetCells);
 
             IBMControl control = speciesMap.Control;
