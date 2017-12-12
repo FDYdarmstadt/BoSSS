@@ -55,14 +55,14 @@ namespace CNS.IBM {
         /// </summary>
         public LevelSetTracker Tracker {
             get {
-                Tracker.IncreaseHistoryLength(1);
+                tracker.IncreaseHistoryLength(1);
                 if (firstCall) {
                     // This IS necessary... don't ask me why, though
                     // to have one previous state available, so all the incremental updates work
                     tracker.UpdateTracker();
-                    tracker.UpdateTracker();
+                    tracker.PushStacks();
                 }
-                
+
                 firstCall = false;
                 return tracker;
             }
@@ -78,14 +78,14 @@ namespace CNS.IBM {
 
         //private CutCellMetrics lastCutCellMetrics;
 
-        MultiphaseCellAgglomerator m_CellAgglomeration;
-        
+        MultiphaseCellAgglomerator cellAgglomeration;
+
         /// <summary>
         /// Current cell agglomeration.
         /// </summary>
         public MultiphaseCellAgglomerator CellAgglomeration {
             get {
-                if(m_CellAgglomeration != null) {
+                if (cellAgglomeration == null) {
 
                     bool agglomerateNewbornAndDeceased = true;
                     var oldAggThreshold = new double[] { Control.AgglomerationThreshold };
@@ -94,16 +94,16 @@ namespace CNS.IBM {
                         oldAggThreshold = null;
                     }
 
-                    m_CellAgglomeration = Tracker.GetAgglomerator(new SpeciesId[] {Tracker.GetSpeciesId(Control.FluidSpeciesName)},
+                    cellAgglomeration = Tracker.GetAgglomerator(new SpeciesId[] { Tracker.GetSpeciesId(Control.FluidSpeciesName) },
                         Control.LevelSetQuadratureOrder,
                         Control.AgglomerationThreshold,
                         AgglomerateNewborn: agglomerateNewbornAndDeceased, AgglomerateDecased: agglomerateNewbornAndDeceased,
                         oldTs__AgglomerationTreshold: oldAggThreshold);
 
 
-                    var speciesAgglomerator = m_CellAgglomeration.GetAgglomerator(
+                    var speciesAgglomerator = cellAgglomeration.GetAgglomerator(
                         Tracker.GetSpeciesId(Control.FluidSpeciesName));
-                    if(Control.PrintAgglomerationInfo) {
+                    if (Control.PrintAgglomerationInfo) {
 
                         bool stdoutOnlyOnRank0 = ilPSP.Environment.StdoutOnlyOnRank0;
                         ilPSP.Environment.StdoutOnlyOnRank0 = false;
@@ -114,20 +114,20 @@ namespace CNS.IBM {
                         ilPSP.Environment.StdoutOnlyOnRank0 = stdoutOnlyOnRank0;
                     }
 
-                    if(Control.SaveAgglomerationPairs) {
+                    if (Control.SaveAgglomerationPairs) {
                         int i = 0;
                         string fileName;
                         do {
                             fileName = String.Format(
                                 "agglomerationParis_rank{0}_{1}.txt", Tracker.GridDat.MpiRank, i);
                             i++;
-                        } while(File.Exists(fileName));
+                        } while (File.Exists(fileName));
 
                         speciesAgglomerator.PlotAgglomerationPairs(fileName, includeDummyPointIfEmpty: true);
                     }
                 }
 
-                return m_CellAgglomeration;
+                return cellAgglomeration;
             }
         }
 
@@ -139,7 +139,7 @@ namespace CNS.IBM {
         public XQuadSchemeHelper QuadSchemeHelper {
             get {
                 //if (quadSchemeHelper == null) {
-                if(Control.MomentFittingVariant == XQuadFactoryHelper.MomentFittingVariants.Classic) {
+                if (Control.MomentFittingVariant == XQuadFactoryHelper.MomentFittingVariants.Classic) {
                     BoSSS.Foundation.XDG.Quadrature.HMF.LevelSetSurfaceQuadRuleFactory.UseNodesOnLevset =
                         Control.SurfaceHMF_ProjectNodesToLevelSet;
                     BoSSS.Foundation.XDG.Quadrature.HMF.LevelSetSurfaceQuadRuleFactory.RestrictNodes =
