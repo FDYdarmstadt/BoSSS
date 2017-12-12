@@ -1151,7 +1151,7 @@ namespace BoSSS.Solution {
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
                 if (this.Control != null) {
                     InitFromAttributes.CreateFieldsAuto(
-                        this, GridData, this.Control.FieldOptions, this.m_IOFields, this.m_RegisteredFields);
+                        this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
                 }
                 CreateFields(); // full user control                
 
@@ -1483,7 +1483,7 @@ namespace BoSSS.Solution {
         /// <param name="L">
         /// If restarted after dynamic load balancing, the respective data.
         /// </param>
-        protected abstract void CreateEquationsAndSolvers(GridUpdateData L);
+        protected abstract void CreateEquationsAndSolvers(GridUpdateDataVaultBase L);
 
 
         /// <summary>
@@ -1502,6 +1502,19 @@ namespace BoSSS.Solution {
                 var relevantFields = m_RegisteredFields.Union(
                     m_IOFields, ReferenceComparer.Instance).ToArray();
 
+                foreach(var f in relevantFields) {
+                    if(f is XDGField) {
+                        var xdgf = (XDGField)f;
+                        if(!object.ReferenceEquals(xdgf.Basis.Tracker, this.LsTrk))
+                            throw new ApplicationException("XDG is defined against unknown level-set tracker!");
+                    }
+                }
+
+
+                // pass 1: singel phase fields
+                // ===========================
+
+                var Pass2_Evaluators = new Dictionary<string, Func<double[], double>>();
                 foreach (var val in this.Control.InitialValues_Evaluators) {
                     string DesiredFieldName = val.Key;
                     ScalarFunction Function = Utils.NonVectorizedScalarFunction.Vectorize(val.Value);
@@ -1521,8 +1534,11 @@ namespace BoSSS.Solution {
                                 tr.Info("projecting XDG-field \"" + f.Identification + "\"");
                                 string spc = NameAndSpc[1];
                                 var xdgf = (XDGField)f;
-                                var SpeciesOnlyField = xdgf.GetSpeciesShadowField(spc);
-                                SpeciesOnlyField.ProjectField(Function);
+                                //var SpeciesOnlyField = xdgf.GetSpeciesShadowField(spc);
+                                //SpeciesOnlyField.ProjectField(Function);
+
+                                Pass2_Evaluators.Add(val.Key, val.Value);
+                                
                                 found = true;
                                 break;
                             }
@@ -1533,6 +1549,45 @@ namespace BoSSS.Solution {
                         throw new ApplicationException(
                             "initial value specified for a field named \"" + DesiredFieldName +
                             "\", but no field with that identification exists in context.");
+                    }
+                }
+
+                // pass 2: XDG fields
+                // ===========================
+
+                if(Pass2_Evaluators.Count > 0) {
+                    LsTrk.UpdateTracker();
+                    LsTrk.PushStacks();
+
+                    foreach(var val in Pass2_Evaluators) {
+                        string DesiredFieldName = val.Key;
+                        ScalarFunction Function = Utils.NonVectorizedScalarFunction.Vectorize(val.Value);
+
+                        bool found = false;
+                        foreach(DGField f in relevantFields) {
+                            if(f.Identification.Equals(DesiredFieldName)) {
+                                throw new ApplicationException();
+                            } else {
+
+                                // now, the XDG hack:
+                                var NameAndSpc = DesiredFieldName.Split(new string[] { "#" }, StringSplitOptions.RemoveEmptyEntries);
+                                if(NameAndSpc.Length == 2 && f.Identification.Equals(NameAndSpc[0])) {
+                                    tr.Info("projecting XDG-field \"" + f.Identification + "\"");
+                                    string spc = NameAndSpc[1];
+                                    var xdgf = (XDGField)f;
+                                    var SpeciesOnlyField = xdgf.GetSpeciesShadowField(spc);
+                                    SpeciesOnlyField.ProjectField(Function);
+                                    found = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if(!found) {
+                            throw new ApplicationException(
+                                "initial value specified for a field named \"" + DesiredFieldName +
+                                "\", but no field with that identification exists in context.");
+                        }
                     }
                 }
             }
@@ -1780,6 +1835,8 @@ namespace BoSSS.Solution {
                     if(NoOfRedistCells <= 0) {
                         return;
                     } else {
+                        //Debugger.Launch();
+
                         Console.WriteLine("Re-distribution of " + NoOfRedistCells + " cells.");
                     }
 
@@ -1787,9 +1844,8 @@ namespace BoSSS.Solution {
                     // ===============
                     GridData oldGridData = this.GridData;
                     Permutation tau;
-                    int[] oldTrackerData;
-                    LoadBalancingData loadbal = new LoadBalancingData(oldGridData, this.LsTrk);
-                    BackupData(oldGridData, this.LsTrk, loadbal, out tau, out oldTrackerData, out int trackerVersion);
+                    GridUpdateDataVault_LoadBal loadbal = new GridUpdateDataVault_LoadBal(oldGridData, this.LsTrk);
+                    BackupData(oldGridData, this.LsTrk, loadbal, out tau);
 
                     // create new grid
                     // ===============
@@ -1836,12 +1892,12 @@ namespace BoSSS.Solution {
                     // ==========================
                     int newJ = newGridData.CellPartitioning.LocalLength;
 
-                    int[] newTrackerData = null;
-                    if(oldTrackerData != null) {
-                        newTrackerData = new int[newJ];
-                        Resorting.ApplyToVector(oldTrackerData, newTrackerData, newGridData.CellPartitioning);
-                        oldTrackerData = null;
-                    }
+                    //int[] newTrackerData = null;
+                    //if(oldTrackerData != null) {
+                    //    newTrackerData = new int[newJ];
+                    //    Resorting.ApplyToVector(oldTrackerData, newTrackerData, newGridData.CellPartitioning);
+                    //    oldTrackerData = null;
+                    //}
 
                     loadbal.Resort(Resorting, newGridData);
 
@@ -1855,22 +1911,25 @@ namespace BoSSS.Solution {
                     // re-create fields
                     if(this.Control != null) {
                         InitFromAttributes.CreateFieldsAuto(
-                            this, GridData, this.Control.FieldOptions, this.m_IOFields, this.m_RegisteredFields);
+                            this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
                     }
                     CreateFields(); // full user control   
                     PostRestart(physTime);
-                    loadbal.SetNewTracker(this.LsTrk);
 
+                    
                     // re-set Level-Set tracker
-                    if(newTrackerData != null) {
-                        Debug.Assert(object.ReferenceEquals(this.LsTrk.GridDat, this.GridData));
-                        foreach(var f in m_RegisteredFields) {
-                            if(f is XDGField) {
-                                ((XDGField)f).Override_TrackerVersionCnt(trackerVersion);
-                            }
-                        }
-                        this.LsTrk.RestoreAfterLoadBalance(trackerVersion, newTrackerData);
-                    }
+                    int trackerVersion = loadbal.SetNewTracker(this.LsTrk);
+                    //if(this.LsTrk != null) {
+                    //    Debug.Assert(object.ReferenceEquals(this.LsTrk.GridDat, this.GridData));
+                    //    Debug.Assert(this.LsTrk.Regions.Version == trackerVersion);
+                    //    foreach(var f in m_RegisteredFields) {
+                    //        if(f is XDGField) {
+                    //            ((XDGField)f).Override_TrackerVersionCnt(trackerVersion);
+                    //        }
+                    //    }
+
+                        
+                    //}
 
                     // set dg coördinates
                     foreach(var f in m_RegisteredFields) {
@@ -1897,9 +1956,8 @@ namespace BoSSS.Solution {
                     GridData oldGridData = this.GridData;
                     GridCommons oldGrid = oldGridData.Grid;
                     Permutation tau;
-                    int[] oldTrackerData;
-                    RemeshingData remshDat = new RemeshingData(oldGridData, this.LsTrk);
-                    BackupData(oldGridData, this.LsTrk, remshDat, out tau, out oldTrackerData, out int trackerVersion);
+                    GridUpdateDataVault_Adapt remshDat = new GridUpdateDataVault_Adapt(oldGridData, this.LsTrk);
+                    BackupData(oldGridData, this.LsTrk, remshDat, out tau);
                                        
 
                     // check for grid redistribution
@@ -1960,13 +2018,7 @@ namespace BoSSS.Solution {
                     
                     // sent data around the world
                     // ==========================
-                    
-                    int[][] newTrackerData = null;
-                    if(oldTrackerData != null) {
-                        newTrackerData = new int[newJ][];
-                        old2newGridCorr.ApplyToVector(oldTrackerData, newTrackerData, newGridData.CellPartitioning);
-                        oldTrackerData = null;
-                    }
+                                      
 
                     remshDat.Resort(old2newGridCorr, newGridData);
 
@@ -1980,22 +2032,22 @@ namespace BoSSS.Solution {
                     // re-create fields
                     if(this.Control != null) {
                         InitFromAttributes.CreateFieldsAuto(
-                            this, GridData, this.Control.FieldOptions, this.m_IOFields, this.m_RegisteredFields);
+                            this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
                     }
                     CreateFields(); // full user control   
                     PostRestart(physTime);
-                    remshDat.SetNewTracker(this.LsTrk);
 
                     // re-set Level-Set tracker
-                    if(newTrackerData != null) {
-                        Debug.Assert(object.ReferenceEquals(this.LsTrk.GridDat, this.GridData));
-                        foreach(var f in m_RegisteredFields) {
-                            if(f is XDGField) {
-                                ((XDGField)f).Override_TrackerVersionCnt(trackerVersion);
-                            }
-                        }
-                        this.LsTrk.RestoreAfterMeshAdaptation(trackerVersion, newTrackerData);
-                    }
+                    int trackerVersion = remshDat.SetNewTracker(this.LsTrk);
+                    //if(this.LsTrk != null) {
+                    //    Debug.Assert(object.ReferenceEquals(this.LsTrk.GridDat, this.GridData));
+                    //    Debug.Assert(this.LsTrk.Regions.Version == trackerVersion);
+                    //    foreach(var f in m_RegisteredFields) {
+                    //        if(f is XDGField) {
+                    //            ((XDGField)f).Override_TrackerVersionCnt(trackerVersion);
+                    //        }
+                    //    }
+                    //}
 
                     // set dg coördinates
                     foreach(var f in m_RegisteredFields) {
@@ -2014,10 +2066,10 @@ namespace BoSSS.Solution {
         }
 
         private void BackupData(GridData oldGridData, LevelSetTracker oldLsTrk, 
-            GridUpdateData loadbal, out Permutation tau, out int[] oldTrackerData, out int trackerVersion) {
+            GridUpdateDataVaultBase loadbal, out Permutation tau) {
 
-            trackerVersion = -1;
-            oldTrackerData = null;
+            //trackerVersion = -1;
+            //oldTrackerData = null;
 
             //loadbal = new LoadBalancingData(oldGridData, oldLsTrk);
 
@@ -2029,10 +2081,7 @@ namespace BoSSS.Solution {
             tau = oldGridData.CurrentGlobalIdPermutation.CloneAs();
 
             // backup level-set tracker 
-            if(oldLsTrk != null) {
-                oldTrackerData = oldLsTrk.BackupBeforeLoadBalance();
-                trackerVersion = oldLsTrk.VersionCnt;
-            }
+            loadbal.BackupTracker();
 
             // backup DG Fields
             foreach(var f in this.m_RegisteredFields) {
@@ -2092,7 +2141,7 @@ namespace BoSSS.Solution {
         /// during dynamic load balancing.
         /// May also be used to invalidate internal states related to the old <see cref="GridData"/> or <see cref="LsTrk"/> objects.
         /// </summary>
-        public virtual void DataBackupBeforeBalancing(GridUpdateData L) {
+        public virtual void DataBackupBeforeBalancing(GridUpdateDataVaultBase L) {
 
         }
 

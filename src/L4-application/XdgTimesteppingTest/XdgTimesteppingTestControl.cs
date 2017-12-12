@@ -24,10 +24,19 @@ using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Application.XdgTimesteppingTest {
 
-
+    /// <summary>
+    /// Interface treatment during time evolution
+    /// </summary>
     public enum InterfaceMode {
+
+        /// <summary>
+        /// splitting between interface motion and time integration of XDG fields.
+        /// </summary>
         Splitting = 0,
 
+        /// <summary>
+        /// Interface is moved concurrently with the timestep
+        /// </summary>
         MovingInterface = 1
     }
 
@@ -82,6 +91,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         /// </summary>
         public XdgTimesteppingTestControl() {
             base.NoOfMultigridLevels = 1;
+            base.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
         }
 
         
@@ -130,7 +140,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
 
         /// <summary>
-        /// 
+        /// Switch between splitting and moving interface.
         /// </summary>
         public InterfaceMode InterfaceMode = InterfaceMode.MovingInterface;
 
@@ -166,11 +176,6 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         /// 
         /// </summary>
         public double AgglomerationThreshold = 0.0;
-
-        /// <summary>
-        /// HMF to use
-        /// </summary>
-        public XQuadFactoryHelper.MomentFittingVariants HMF = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
 
         /// <summary>
         /// If <see cref="HMF"/>==<see cref="XQuadFactoryHelper.MomentFittingVariants.ExactCircle"/>, this is the 

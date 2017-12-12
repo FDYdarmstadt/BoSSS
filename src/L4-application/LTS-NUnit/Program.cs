@@ -101,7 +101,7 @@ namespace LTS_NUnit {
             }
         }
 
-        protected override void CreateEquationsAndSolvers(GridUpdateData L) {
+        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
             SpatialOperator diffOp = new SpatialOperator(1, 0, 1, QuadOrderFunc.MaxDegTimesTwo(), "u", "codom1");
             diffOp.EquationComponents["codom1"].Add(new ScalarTransportFlux());
             diffOp.Commit();

@@ -228,7 +228,7 @@ namespace BoSSS.Application.DerivativeTest {
         /// <summary>
         /// Nop.
         /// </summary>
-        protected override void CreateEquationsAndSolvers(GridUpdateData L) {
+        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
         }
 
         SinglePhaseField f1;

@@ -47,6 +47,7 @@
     <Compile Include="CellAgglomerator.cs" />
     <Compile Include="CutCellMetrics.cs" />
     <Compile Include="IEquationComponentExtensionXDG.cs" />
+    <Compile Include="LevelSetTracker_Caches.cs" />
     <Compile Include="Quadrature\AdaptiveSubdivisionStrategy.cs" />
     <Compile Include="BilinearForm.cs" />
     <Compile Include="Quadrature\BruteForceSubdivisionStrategy.cs" />
@@ -107,6 +108,7 @@
     <Compile Include="XDGField_GenericEval.cs" />
     <Compile Include="XDGField_IO.cs" />
     <Compile Include="XdgOperatorQuadratureSet.cs" />
+    <Compile Include="XDGSpaceMetrics.cs" />
     <Compile Include="XDGUtils.cs" />
     <Compile Include="Quadrature\XQuadFactoryHelper.cs" />
     <Compile Include="Quadrature\XQuadSchemeHelper.cs" />

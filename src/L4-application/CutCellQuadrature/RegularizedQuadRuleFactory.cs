@@ -72,10 +72,10 @@ namespace CutCellQuadrature {
 
             var result = new List<ChunkRulePair<QuadRule>>();
             foreach (var chunkRulePair in baseSet) {
-                MultidimensionalArray levelSetValues = tracker.GetLevSetValues(
-                    levSetIndex, chunkRulePair.Rule.Nodes, chunkRulePair.Chunk.i0, chunkRulePair.Chunk.Len);
-                MultidimensionalArray gradientValues = tracker.GetLevelSetGradients(
-                     levSetIndex, chunkRulePair.Rule.Nodes, chunkRulePair.Chunk.i0, chunkRulePair.Chunk.Len);
+                MultidimensionalArray levelSetValues = tracker.DataHistories[levSetIndex].Current.GetLevSetValues(
+                    chunkRulePair.Rule.Nodes, chunkRulePair.Chunk.i0, chunkRulePair.Chunk.Len);
+                MultidimensionalArray gradientValues = tracker.DataHistories[levSetIndex].Current.GetLevelSetGradients(
+                     chunkRulePair.Rule.Nodes, chunkRulePair.Chunk.i0, chunkRulePair.Chunk.Len);
                 
                 foreach (int cell in chunkRulePair.Chunk.Elements) {
                     QuadRule rule = chunkRulePair.Rule.CloneAs();
