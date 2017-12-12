@@ -105,7 +105,7 @@ namespace CNS.Tests.LoadBalancing {
 
                 Console.WriteLine("Max diff: " + maxDiff);
 
-                double densityDifference = refResults.Density.L2Error(loadBalResults.Density, quadratureDegree: 100);
+                double densityDifference = refResults.Density.L2Error(loadBalResults.Density);
                 string densityMessage = String.Format(
                     "Density: {0} (Threshold is {1})",
                     densityDifference,
@@ -115,7 +115,7 @@ namespace CNS.Tests.LoadBalancing {
             }
 
             for (int d = 0; d < refResults.Density.GridDat.SpatialDimension; d++) {
-                double momentumDifference = refResults.Momentum[d].L2Error(loadBalResults.Momentum[d], quadratureDegree: 10);
+                double momentumDifference = refResults.Momentum[d].L2Error(loadBalResults.Momentum[d]);
                 string momentumMessage = String.Format(
                     "Momentum[{0}]: {1} (Threshold is {2})",
                     d,
@@ -126,7 +126,7 @@ namespace CNS.Tests.LoadBalancing {
             }
 
             {
-                double energyDifference = refResults.Energy.L2Error(loadBalResults.Energy, quadratureDegree: 10);
+                double energyDifference = refResults.Energy.L2Error(loadBalResults.Energy);
                 string energyMessage = String.Format(
                     "Energy: {0} (Threshold is {1})",
                     energyDifference,
