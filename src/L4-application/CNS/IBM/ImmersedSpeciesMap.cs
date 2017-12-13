@@ -257,7 +257,6 @@ namespace CNS.IBM {
         public IBMMassMatrixFactory GetMassMatrixFactory(CoordinateMapping mapping) {
             if (MassMatrixFactory == null || !mapping.Equals(MassMatrixFactory.Mapping)) {
                 MassMatrixFactory = new IBMMassMatrixFactory(this, mapping, Control.FluidSpeciesName, Control.LevelSetQuadratureOrder);
-                //MassMatrixFactory = new IBMMassMatrixFactory(this, mapping);
             }
             return MassMatrixFactory;
         }
