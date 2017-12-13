@@ -16,7 +16,6 @@ limitations under the License.
 
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
-using BoSSS.Solution;
 using CNS.Convection;
 using CNS.EquationSystem;
 using CNS.IBM;
@@ -35,6 +34,14 @@ namespace CNS.Tests.IBMTests {
     [TestFixture]
     public class IBMIsentropicVortexTest : TestProgram<IBMControl> {
 
+        //private static CommandLineOptions args = new Application<IBMControl>.CommandLineOptions() {
+        //    delPlt = true,
+        //    ImmediatePlotPeriod = 1,
+        //    SuperSampling = 2
+        //};
+
+        private static CommandLineOptions args = null;
+
         ///// <summary>
         ///// Alternative entry point of this assembly that allows to perform
         ///// isentropic vortex tests conveniently.
@@ -43,9 +50,10 @@ namespace CNS.Tests.IBMTests {
         ///// Command line arguments
         ///// </param>
         //public static void Main(string[] args) {
+        //    SetUp();
         //    //IBMVortexOneStepGaussAndStokesNoAgglomerationTest();
-        //    //IBMVortexClassicAgglomerationTest();
-        //    IBMVortexCutNextToCutAgglomerationTest();
+        //    IBMVortexClassicAgglomerationTest();
+        //    //IBMVortexCutNextToCutAgglomerationTest();
         //    //IBMVortexClassicOptimizedHLLCAgglomerationTest();
         //    //IBMVortexLocalTimeSteppingTest();
         //}
@@ -57,15 +65,9 @@ namespace CNS.Tests.IBMTests {
         /// </summary>
         [Test]
         public static void IBMVortexOneStepGaussAndStokesNoAgglomerationTest() {
-            Program<IBMControl> p = null;
-            Application<IBMControl>._Main(
-                new string[] { @"-c cs:CNS.Tests.IBMTests.IBMIsentropicVortexTest.ControlNoAgglomeration()" },
-                false,
-                "",
-                delegate () {
-                    p = new IBMIsentropicVortexTest();
-                    return p;
-                });
+            Program<IBMControl> p = new IBMIsentropicVortexTest();
+            p.Init(ControlNoAgglomeration(), args);
+            p.RunSolverMode();
 
             CheckErrorThresholds(
                 p.QueryHandler.QueryResults,
@@ -95,15 +97,9 @@ namespace CNS.Tests.IBMTests {
         /// </summary>
         [Test]
         public static void IBMVortexClassicAgglomerationTest() {
-            Program<IBMControl> p = null;
-            Application<IBMControl>._Main(
-                new string[] { @"-c cs:CNS.Tests.IBMTests.IBMIsentropicVortexTest.ControlRusanovAgglomeration()" },
-                false,
-                "",
-                delegate () {
-                    p = new IBMIsentropicVortexTest();
-                    return p;
-                });
+            Program<IBMControl> p = new IBMIsentropicVortexTest();
+            p.Init(ControlRusanovAgglomeration(), args);
+            p.RunSolverMode();
 
             CheckErrorThresholds(
                 p.QueryHandler.QueryResults,
@@ -133,15 +129,9 @@ namespace CNS.Tests.IBMTests {
         /// </summary>
         [Test]
         public static void IBMVortexClassicHLLCAgglomerationTest() {
-            Program<IBMControl> p = null;
-            Application<IBMControl>._Main(
-                new string[] { @"-c cs:CNS.Tests.IBMTests.IBMIsentropicVortexTest.ControlHLLCAgglomeration()" },
-                false,
-                "",
-                delegate () {
-                    p = new IBMIsentropicVortexTest();
-                    return p;
-                });
+            Program<IBMControl> p = new IBMIsentropicVortexTest();
+            p.Init(ControlHLLCAgglomeration(), args);
+            p.RunSolverMode();
 
             CheckErrorThresholds(
                 p.QueryHandler.QueryResults,
@@ -172,15 +162,9 @@ namespace CNS.Tests.IBMTests {
         /// </summary>
         [Test]
         public static void IBMVortexClassicOptimizedHLLCAgglomerationTest() {
-            Program<IBMControl> p = null;
-            Application<IBMControl>._Main(
-                new string[] { @"-c cs:CNS.Tests.IBMTests.IBMIsentropicVortexTest.ControlOptimizedHLLCAgglomeration()" },
-                false,
-                "",
-                delegate () {
-                    p = new IBMIsentropicVortexTest();
-                    return p;
-                });
+            Program<IBMControl> p = new IBMIsentropicVortexTest();
+            p.Init(ControlOptimizedHLLCAgglomeration(), args);
+            p.RunSolverMode();
 
             CheckErrorThresholds(
                 p.QueryHandler.QueryResults,
@@ -211,15 +195,9 @@ namespace CNS.Tests.IBMTests {
         /// </summary>
         [Test]
         public static void IBMVortexLocalTimeSteppingTest() {
-            Program<IBMControl> p = null;
-            Application<IBMControl>._Main(
-                new string[] { @"-c cs:CNS.Tests.IBMTests.IBMIsentropicVortexTest.ControlLocalTimeStepping()" },
-                false,
-                "",
-                delegate () {
-                    p = new IBMIsentropicVortexTest();
-                    return p;
-                });
+            Program<IBMControl> p = new IBMIsentropicVortexTest();
+            p.Init(ControlLocalTimeStepping(), args);
+            p.RunSolverMode();
 
             CheckErrorThresholds(
                 p.QueryHandler.QueryResults,
@@ -234,16 +212,6 @@ namespace CNS.Tests.IBMTests {
         /// <returns></returns>
         public static IBMControl ControlLocalTimeStepping() {
             IBMControl c = ControlTemplate(dgDegree: 2, divisions: 1, levelSetPosition: -0.25);
-
-            // Store results in database
-            ////string dbPath = @"c:\bosss_db";
-            //string dbPath = null;
-            ////dbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db";
-            //c.DbPath = dbPath;
-            //c.savetodb = dbPath != null;
-            //c.saveperiod = 1;
-            //c.PrintInterval = 1;
-            //c.AddVariable(Variables.LTSClusters, 0);
 
             c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
             c.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Classic;
@@ -263,16 +231,10 @@ namespace CNS.Tests.IBMTests {
         /// </summary>
         [Test]
         public static void IBMVortexCutNextToCutNoAgglomerationTest() {
-            Program<IBMControl> p = null;
-            Application<IBMControl>._Main(
-                new string[] { @"-c cs:CNS.Tests.IBMTests.IBMIsentropicVortexTest.ControlCutNextToCutNoAgglomeration()" },
-                false,
-                "",
-                delegate () {
-                    p = new IBMIsentropicVortexTest();
-                    return p;
-                });
-
+            Program<IBMControl> p = new IBMIsentropicVortexTest();
+            p.Init(ControlCutNextToCutNoAgglomeration(), args);
+            p.RunSolverMode();
+            
             CheckErrorThresholds(
                 p.QueryHandler.QueryResults,
                 Tuple.Create("L2ErrorDensity", 2.8e-3),
@@ -294,17 +256,9 @@ namespace CNS.Tests.IBMTests {
         /// </summary>
         [Test]
         public static void IBMVortexCutNextToCutAgglomerationTest() {
-            Program<IBMControl> p = null;
-            Application<IBMControl>._Main(
-                new string[] { "--control", "cs:CNS.Tests.IBMTests.IBMIsentropicVortexTest.ControlCutNextToCutAgglomeration()"
-                    //, "-i1", "-u3", "--delplt" 
-                },
-                false,
-                "",
-                delegate () {
-                    p = new IBMIsentropicVortexTest();
-                    return p;
-                });
+            Program<IBMControl> p = new IBMIsentropicVortexTest();
+            p.Init(ControlCutNextToCutAgglomeration(), args);
+            p.RunSolverMode();
 
             CheckErrorThresholds(
                 p.QueryHandler.QueryResults,
@@ -320,9 +274,6 @@ namespace CNS.Tests.IBMTests {
         public static IBMControl ControlCutNextToCutAgglomeration() {
             return ControlCutNextToCut(agglomeration: true);
         }
-
-
-
 
         private static IBMControl ControlTemplate(int dgDegree, int divisions, double levelSetPosition) {
             IBMControl c = new IBMControl();
@@ -383,7 +334,6 @@ namespace CNS.Tests.IBMTests {
 
             return c;
         }
-
 
         private static IBMControl ControlCutNextToCut(bool agglomeration) {
             IBMControl c = new IBMControl();
@@ -453,6 +403,5 @@ namespace CNS.Tests.IBMTests {
 
             return c;
         }
-
     }
 }
