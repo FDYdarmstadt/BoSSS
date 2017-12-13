@@ -139,7 +139,7 @@ namespace CNS.IBM {
         public XQuadSchemeHelper QuadSchemeHelper {
             get {
                 //if (quadSchemeHelper == null) {
-                if (Control.MomentFittingVariant == XQuadFactoryHelper.MomentFittingVariants.Classic) {
+                if (Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Classic) {
                     BoSSS.Foundation.XDG.Quadrature.HMF.LevelSetSurfaceQuadRuleFactory.UseNodesOnLevset =
                         Control.SurfaceHMF_ProjectNodesToLevelSet;
                     BoSSS.Foundation.XDG.Quadrature.HMF.LevelSetSurfaceQuadRuleFactory.RestrictNodes =
@@ -241,7 +241,7 @@ namespace CNS.IBM {
 
             this.tracker = new LevelSetTracker(
                 (GridData)levelSet.GridDat,
-                Control.MomentFittingVariant,
+                Control.CutCellQuadratureType,
                 0,
                 new string[] { Control.VoidSpeciesName, Control.FluidSpeciesName },
                 levelSet);

@@ -83,7 +83,7 @@ namespace CNS.Tests.IBMTests {
         public static IBMControl ControlNoAgglomeration() {
             IBMControl c = ControlTemplate(dgDegree: 2, divisions: 1, levelSetPosition: -0.25);
 
-            c.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             c.LevelSetQuadratureOrder = 10;
             c.AgglomerationThreshold = 0.0;
 
@@ -115,7 +115,7 @@ namespace CNS.Tests.IBMTests {
         public static IBMControl ControlRusanovAgglomeration() {
             IBMControl c = ControlTemplate(dgDegree: 2, divisions: 1, levelSetPosition: -0.05);
 
-            c.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
             c.LevelSetQuadratureOrder = 5;
             c.AgglomerationThreshold = 0.1;
 
@@ -148,7 +148,7 @@ namespace CNS.Tests.IBMTests {
             IBMControl c = ControlTemplate(dgDegree: 2, divisions: 1, levelSetPosition: -0.05);
 
             c.ConvectiveFluxType = ConvectiveFluxTypes.HLLC;
-            c.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
             c.LevelSetQuadratureOrder = 5;
             c.AgglomerationThreshold = 0.1;
 
@@ -181,7 +181,7 @@ namespace CNS.Tests.IBMTests {
             IBMControl c = ControlTemplate(dgDegree: 2, divisions: 1, levelSetPosition: -0.05);
 
             c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
-            c.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
             c.LevelSetQuadratureOrder = 5;
             c.AgglomerationThreshold = 0.1;
 
@@ -214,7 +214,7 @@ namespace CNS.Tests.IBMTests {
             IBMControl c = ControlTemplate(dgDegree: 2, divisions: 1, levelSetPosition: -0.25);
 
             c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
-            c.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
             c.LevelSetQuadratureOrder = 5;
             c.AgglomerationThreshold = 0.0;
 
@@ -343,7 +343,7 @@ namespace CNS.Tests.IBMTests {
             double vortexSpeed = 1.0;
 
             // IBM Settings
-            c.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
             c.LevelSetQuadratureOrder = 5;
             c.AgglomerationThreshold = agglomeration ? 0.3 : 0.0;
 
