@@ -499,9 +499,9 @@ As mentioned in Section \ref{sec:information} the cluster has 4 login nodes and 
 The preparation for a job is similar like the first steps of testing the libraries in section \ref{sec:testing}:
 \begin{enumerate}
 \item compile your application on your local machine in Visual Studio
-\item transfer the application and its dependencies to the cluster
+\item transfer the application and its dependencies to the cluster (the specified path is relative to your \emph{home} directory)
 \begin{verbatim}
-bcl deploy-at $executable sftp://$TuID@$host:~/$executionDir
+bcl deploy-at $executable sftp://$TuID@$host:$executionDir
 \end{verbatim}
 \item optional: Use mono's Ahead of Time (AOT) compilation feature\footnote{\url{http://www.mono-project.com/AOT}} to gain some performance. To that end, navigate to \verb|~/$executionDir| and execute the following command:
 \begin{verbatim}
@@ -578,7 +578,7 @@ module load acml
 module list
 
 mpiexec  mono /home/$TuID/$executionDir/$executable ...
-	...--control /home/$TuID/$executionDir/control-file.xml
+	...--control /home/$TuID/$executionDir/control-file.cs
 \end{lstlisting}
 \end{minipage}
 
