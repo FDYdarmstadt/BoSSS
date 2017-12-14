@@ -432,7 +432,7 @@ ssh $TuID@$host
 \begin{verbatim}
 module load acml
 module load gcc
-module load openmpi/gcc/2.0.1
+module load openmpi/gcc/1.6.6
 \end{verbatim} 
 \item now the program can be started
 \begin{verbatim}
@@ -572,7 +572,7 @@ In listing \ref{lst:head_batch} the head of an example script is shown. With \ve
 label={lst:body_batch}]
 # Loading the required module
 module load gcc
-module load openmpi/gcc/2.0.1
+module load openmpi/gcc/1.6.6
 module load acml
 # Give an overview about all load modules
 module list
@@ -675,7 +675,7 @@ which should generate the graph displayed in Figure \ref{fig:puttyXFowarding_out
 \begin{itemize}
 \item \textbf{MPI-Error}:  The \emph{BoSSSpad} uses MPI communication, hence the MPI module needs to be loaded before starting the \emph{BoSSSpad} via
 \begin{verbatim}
-module load openmpi/gcc/2.0.1
+module load openmpi/gcc/1.6.6
 \end{verbatim}
 \item \textbf{Library missing}: After deploying the \emph{BoSSSpad}, the BoSSSpad folder contains a file \emph{Mono.CSharp.dll}. It can be that the \emph{BoSSSpad} doesn't find this library, because it searches for \emph{Mono.Csharp.dll}. Just copy the file:
 \begin{verbatim}
