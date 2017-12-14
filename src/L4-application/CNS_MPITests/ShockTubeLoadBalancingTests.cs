@@ -14,16 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
-using BoSSS.Foundation.Quadrature;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution;
 using BoSSS.Solution.Queries;
+using CNS;
 using CNS.Convection;
 using CNS.EquationSystem;
 using CNS.MaterialProperty;
+using CNS.Tests;
 using ilPSP;
 using ilPSP.Utils;
 using MPI.Wrappers;
@@ -32,15 +32,16 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-namespace CNS.Tests.LoadBalancing {
+namespace CNS_MPITests.Tests.LoadBalancing {
 
     public class ShockTubeLoadBalancingTests : TestProgram<CNSControl> {
 
+        //private static CommandLineOptions commandLineOptions = new Application<CNSControl>.CommandLineOptions() {
+        //    delPlt = true,
+        //    ImmediatePlotPeriod = 1
+        //};
 
-        static CommandLineOptions bla = new Application<CNSControl>.CommandLineOptions() {
-            delPlt = true,
-            ImmediatePlotPeriod = 1
-        };
+        private static CommandLineOptions commandLineOptions = null;
 
         public static void Main(string[] args) {
             SetUp();
@@ -49,63 +50,46 @@ namespace CNS.Tests.LoadBalancing {
         }
 
         private static void CheckRunsProduceSameResults(CNSControl refControl, CNSControl loadBalControl, double differenceThreshold = 1e-16) {
-            //Debug.Assert(refControl.DynamicLoadBalancing_Period <= 0);
-            //Debug.Assert(refControl.DynamicLoadBalancing_CellCostEstimatorFactories.Count == 0);
+            Debug.Assert(refControl.DynamicLoadBalancing_Period <= 0);
+            Debug.Assert(refControl.DynamicLoadBalancing_CellCostEstimatorFactories.Count == 0);
 
-            //Debug.Assert(loadBalControl.DynamicLoadBalancing_Period > 0);
-            //Debug.Assert(loadBalControl.DynamicLoadBalancing_CellClassifier != null);
-            //Debug.Assert(loadBalControl.DynamicLoadBalancing_CellCostEstimatorFactories.Count > 0);
+            Debug.Assert(loadBalControl.DynamicLoadBalancing_Period > 0);
+            Debug.Assert(loadBalControl.DynamicLoadBalancing_CellClassifier != null);
+            Debug.Assert(loadBalControl.DynamicLoadBalancing_CellCostEstimatorFactories.Count > 0);
 
             Console.WriteLine("Run WITHOUT load balancing");
-            var solver = new Program();
-            solver.Init(refControl);
-            //solver.Init(refControl, bla);
-            solver.RunSolverMode();
-            var refResults = solver.WorkingSet;
+            var refSolver = new ShockTubeLoadBalancingTests();
+            refSolver.Init(refControl, commandLineOptions);
+            refSolver.RunSolverMode();
 
             Console.WriteLine("Run WITH load balancing");
-            solver = new Program();
-            solver.Init(loadBalControl);
-            //solver.Init(loadBalControl, bla);
-            solver.RunSolverMode();
-            var loadBalResults = solver.WorkingSet;
+            var loadBalSolver = new ShockTubeLoadBalancingTests();
+            loadBalSolver.Init(loadBalControl, commandLineOptions);
+            loadBalSolver.RunSolverMode();
 
-            CompareErrors(refResults, loadBalResults, differenceThreshold);
+            // To be able to compare errors without using the databse, we to 
+            // agree on a single grid partitioning in the end -> use ref
+            Console.WriteLine("Transfering load balancing data to reference grid");
+            var refPartitioning = new int[loadBalSolver.GridData.Cells.NoOfLocalUpdatedCells];
+            for (int i = 0; i < refSolver.GridData.CellPartitioning.TotalLength; i++) {
+                int localIndex = loadBalSolver.GridData.CellPartitioning.TransformIndexToLocal(i);
+                if (localIndex >= 0 && localIndex < loadBalSolver.GridData.Cells.NoOfLocalUpdatedCells) {
+                    refPartitioning[localIndex] = refSolver.GridData.CellPartitioning.FindProcess(i);
+                }
+            }
+            loadBalSolver.MpiRedistributeAndMeshAdapt(
+                int.MinValue,
+                double.MinValue,
+                refPartitioning,
+                refSolver.GridData.CurrentGlobalIdPermutation);
+            
+            CompareErrors(refSolver.WorkingSet, loadBalSolver.WorkingSet, differenceThreshold);
         }
 
         protected static void CompareErrors(CNSFieldSet refResults, CNSFieldSet loadBalResults, double differenceThreshold) {
             List<Action> assertions = new List<Action>();
-
             {
-                Debugger.Launch();
-
-                refResults.Density.MPIExchange();
-                loadBalResults.Density.MPIExchange();
-
-                CellQuadratureScheme scheme = new CellQuadratureScheme();
-                var rule = scheme.SaveCompile(refResults.Density.GridDat, 10);
-
-                double[] refNorms = refResults.Density.LocalLxError((ScalarFunction)null, null, rule);
-                double[] loadBalNorms = loadBalResults.Density.LocalLxError((ScalarFunction)null, null, rule);
-                double maxDiff = 0.0;
-
-                ilPSP.Environment.StdoutOnlyOnRank0 = false;
-
-                Console.WriteLine(((GridData)refResults.Density.GridDat).MpiRank + " ref norms: " + refNorms.Length);
-                Console.WriteLine(((GridData)loadBalResults.Density.GridDat).MpiRank + " load bal norms: " + loadBalNorms.Length);
-
-                for (int i = 0; i < refResults.Density.GridDat.iLogicalCells.NoOfLocalUpdatedCells; i++) {
-                    maxDiff = Math.Max(maxDiff, Math.Abs(refNorms[i] - loadBalNorms[i]));
-                    //if (Math.Abs(refNorms[i] - loadBalNorms[i]) > differenceThreshold) {
-                    //    throw new Exception();
-                    //}
-                }
-
-                maxDiff = maxDiff.MPIMax();
-
-                Console.WriteLine("Max diff: " + maxDiff);
-
-                double densityDifference = refResults.Density.L2Error(loadBalResults.Density);
+                double densityDifference = refResults.Density.L2Error(loadBalResults.Density, overrideGridCheck: true);
                 string densityMessage = String.Format(
                     "Density: {0} (Threshold is {1})",
                     densityDifference,
@@ -115,7 +99,7 @@ namespace CNS.Tests.LoadBalancing {
             }
 
             for (int d = 0; d < refResults.Density.GridDat.SpatialDimension; d++) {
-                double momentumDifference = refResults.Momentum[d].L2Error(loadBalResults.Momentum[d]);
+                double momentumDifference = refResults.Momentum[d].L2Error(loadBalResults.Momentum[d], overrideGridCheck: true);
                 string momentumMessage = String.Format(
                     "Momentum[{0}]: {1} (Threshold is {2})",
                     d,
@@ -126,7 +110,7 @@ namespace CNS.Tests.LoadBalancing {
             }
 
             {
-                double energyDifference = refResults.Energy.L2Error(loadBalResults.Energy);
+                double energyDifference = refResults.Energy.L2Error(loadBalResults.Energy, overrideGridCheck: true);
                 string energyMessage = String.Format(
                     "Energy: {0} (Threshold is {1})",
                     energyDifference,
@@ -138,7 +122,7 @@ namespace CNS.Tests.LoadBalancing {
             assertions.ForEach(a => a());
         }
 
-        //[Test]
+        [Test]
         public static void TestLoadBalancingForRK1() {
             int dgDegree = 0;
             ExplicitSchemes explicitScheme = ExplicitSchemes.RungeKutta;
@@ -149,26 +133,15 @@ namespace CNS.Tests.LoadBalancing {
                 explicitScheme: explicitScheme,
                 explicitOrder: explicitOrder);
 
-            
-            cRef.NoOfTimesteps = 0;
-
-
-
             var cLoadBal = ShockTubeToro1Template(
                 dgDegree: dgDegree,
                 explicitScheme: explicitScheme,
                 explicitOrder: explicitOrder);
-            cLoadBal.GridPartType = GridPartType.none;
-            //cLoadBal.DynamicLoadBalancing_Period = 5;
-            //cLoadBal.DynamicLoadBalancing_CellClassifier = new IndifferentCellClassifier();
-            //cLoadBal.DynamicLoadBalancing_CellCostEstimatorFactories.Add(CellCostEstimatorLibrary.AllCellsAreEqual);
-            //cLoadBal.DynamicLoadBalancing_ImbalanceThreshold = 0.01;
-
-
-            cLoadBal.NoOfTimesteps = 0;
-
-
-
+            cLoadBal.DynamicLoadBalancing_Period = 5;
+            cLoadBal.DynamicLoadBalancing_CellClassifier = new RandomCellClassifier(2);
+            cLoadBal.DynamicLoadBalancing_CellCostEstimatorFactories.Add((p, i) => new StaticCellCostEstimator(new[] { 1, 10 }));
+            cLoadBal.DynamicLoadBalancing_ImbalanceThreshold = 0.01;
+            
             CheckRunsProduceSameResults(cRef, cLoadBal);
         }
 
@@ -275,8 +248,9 @@ namespace CNS.Tests.LoadBalancing {
 
             c.dtMin = 0.0;
             c.dtMax = 1.0;
-            c.dtFixed = 1.0e-6;
-            c.Endtime = 2e-04;
+            //c.dtFixed = 1.0e-6;
+            c.CFLFraction = 0.1;
+            c.Endtime = 0.2;
             c.NoOfTimesteps = int.MaxValue;
 
             return c;

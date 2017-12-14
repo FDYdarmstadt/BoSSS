@@ -16,7 +16,6 @@ limitations under the License.
 
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Quadrature;
-using BoSSS.Platform;
 using ilPSP;
 using ilPSP.Tracing;
 using ilPSP.Utils;
@@ -41,8 +40,7 @@ namespace BoSSS.Foundation {
 
                 InnerProductQuadrature ipq = new InnerProductQuadrature(a, b, quadScheme, a.Basis.Degree + b.Basis.Degree);
                 ipq.Execute();
-                unsafe
-                {
+                unsafe {
                     double innerProdTot = double.NaN;
                     double InnerProdLoc = ipq.m_InnerProd;
                     csMPI.Raw.Allreduce((IntPtr)(&InnerProdLoc), (IntPtr)(&innerProdTot), 1, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._OP.SUM, csMPI.Raw._COMM.WORLD);
@@ -145,7 +143,6 @@ namespace BoSSS.Foundation {
                 }
             }
         }
-
 
         /// <summary>
         /// Finds minimum and maximum value in cell <paramref name="jL"/>.
@@ -282,8 +279,7 @@ namespace BoSSS.Foundation {
                 if (Basis.GridDat.CellPartitioning.MpiSize > 1) {
                     double[] total = new double[2];
                     double[] local = new double[] { LocMax, -LocMin };
-                    unsafe
-                    {
+                    unsafe {
                         fixed (double* ploc = local, ptot = total) {
                             csMPI.Raw.Allreduce((IntPtr)ploc, (IntPtr)ptot, 2, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._OP.MAX, csMPI.Raw._COMM.WORLD);
                         }
@@ -313,8 +309,7 @@ namespace BoSSS.Foundation {
 
                     // in case of multiple global minimums/maximums, e.g. for a constant field, we return the lowest (jMaxGlob,jMinGlob) 
                     int[] jGlobM = new int[2];
-                    unsafe
-                    {
+                    unsafe {
                         fixed (int* ploc = jGlob, ptot = jGlobM) {
                             csMPI.Raw.Allreduce((IntPtr)ploc, (IntPtr)ptot, 2, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.MIN, csMPI.Raw._COMM.WORLD);
                         }
@@ -443,8 +438,14 @@ namespace BoSSS.Foundation {
         /// <param name="cm">
         /// Optional restriction of domain
         /// </param>
-        public double L2Error(DGField other, CellMask cm = null) {
-            if (!object.ReferenceEquals(this.GridDat, other.GridDat)) {
+        /// <param name="overrideGridCheck">
+        /// If this parameter is set to true, the error will be computed even
+        /// though <see cref="DGField.GridDat"/> is not identical for both
+        /// fields. Only do so if you are really sure that the grids are still
+        /// equivalent.
+        /// </param>
+        public double L2Error(DGField other, CellMask cm = null, bool overrideGridCheck = false) {
+            if (!overrideGridCheck && !object.ReferenceEquals(this.GridDat, other.GridDat)) {
                 throw new Exception(
                     "Cannot compute error between DG fields on different grids");
             }
@@ -542,7 +543,7 @@ namespace BoSSS.Foundation {
 
         }
 
-        
+
 
         /// <summary>
         /// Variant of
@@ -721,16 +722,16 @@ namespace BoSSS.Foundation {
                 // evaluate scalar function ans store result in 'EvalResult'
                 // =========================================================
                 Debug.Assert(!((m_func != null) && (m_funcEx != null)));
-                if(m_func != null || m_Map != null) {
+                if (m_func != null || m_Map != null) {
                     GridDat.TransformLocal2Global(NodesUntransformed, i0, Length, m_NodesTransformed, 0);
                 }
 
-                if(m_func != null) { 
+                if (m_func != null) {
                     MultidimensionalArray inp = m_NodesTransformed.ResizeShallow(new int[] { Length * M, D });
                     MultidimensionalArray outp = EvalResult.ResizeShallow(new int[] { Length * M });
                     m_func(inp, outp);
                     Debug.Assert(m_funcEx == null);
-                } 
+                }
                 if (m_funcEx != null) {
                     m_funcEx(i0, Length, NodesUntransformed, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
                     Debug.Assert(m_func == null);
@@ -765,7 +766,7 @@ namespace BoSSS.Foundation {
                             double e;
                             e = EvalResult[j, m, 0];
 
-                            for(int d = 0; d < D; d++) {
+                            for (int d = 0; d < D; d++) {
                                 X[d] = m_NodesTransformed[j, m, d];
                             }
 
@@ -811,7 +812,7 @@ namespace BoSSS.Foundation {
             }
 
             double[] m_localLxNorms;
-            
+
             public double[] LocalLxNorms {
                 get {
                     return m_localLxNorms;
@@ -854,8 +855,7 @@ namespace BoSSS.Foundation {
                 }
 
                 double accglob = double.NaN;
-                unsafe
-                {
+                unsafe {
                     csMPI.Raw.Allreduce((IntPtr)(&acc), (IntPtr)(&accglob), 1, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._OP.SUM, csMPI.Raw._COMM.WORLD);
                 }
 
@@ -967,8 +967,7 @@ namespace BoSSS.Foundation {
                 IntegralOverExQuadrature q = new IntegralOverExQuadrature(g, Fields, scheme.SaveCompile(g, order), f);
                 q.Execute();
 
-                unsafe
-                {
+                unsafe {
                     double locRes = q.result, glRes = 0;
                     csMPI.Raw.Allreduce((IntPtr)(&locRes), (IntPtr)(&glRes), 1, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._OP.SUM, csMPI.Raw._COMM.WORLD);
 
