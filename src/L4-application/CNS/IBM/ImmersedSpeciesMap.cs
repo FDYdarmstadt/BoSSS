@@ -87,7 +87,7 @@ namespace CNS.IBM {
         /// </summary>
         public MultiphaseCellAgglomerator CellAgglomeration {
             get {
-                //if (cellAgglomeration == null) {
+                if (cellAgglomeration == null) {
                     if (Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Classic) {
                         BoSSS.Foundation.XDG.Quadrature.HMF.LevelSetSurfaceQuadRuleFactory.UseNodesOnLevset =
                             Control.SurfaceHMF_ProjectNodesToLevelSet;
@@ -143,7 +143,7 @@ namespace CNS.IBM {
 
                         speciesAgglomerator.PlotAgglomerationPairs(fileName, includeDummyPointIfEmpty: true);
                     }
-                //}
+                }
 
                 return cellAgglomeration;
             }
@@ -242,7 +242,7 @@ namespace CNS.IBM {
 
         #endregion
 
-        #region IObservable<<evelSetData> Members
+        #region IObservable<LevelSetData> Members
 
         /// <summary>
         /// Discards old quadrature information
@@ -250,6 +250,7 @@ namespace CNS.IBM {
         /// <param name="value"></param>
         public void OnNext(LevelSetTracker.LevelSetRegions value) {
             this.MassMatrixFactory = null;
+            this.cellAgglomeration = null;
         }
 
         /// <summary>
