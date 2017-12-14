@@ -205,7 +205,7 @@ There are two ways to install the libraries:
 \item Download the latest version from the developers homepage and install them manually
 \item Copy the binaries from the local BoSSS repository onto the cluster 
 \end{itemize}
-Up to now (December 2013) \emph{mono} and \emph{HYPRE} needs to be installed. Binaries for \emph{ParMETIS} can be found in the BoSSS repository.
+Up to now \emph{mono} and \emph{HYPRE} needs to be installed. Binaries for \emph{ParMETIS} can be found in the BoSSS repository.
 
 \subsection{Connecting to the cluster}
 \label{sec:putty}
@@ -216,7 +216,7 @@ In general, the \emph{ssh} protocol is used to access the cluster. An \emph{ssh}
 \label{sec:mono}
 This is a step-by-step guide to install \emph{mono} the cluster. In total it takes about 1 hour to finish the installation!
 \begin{enumerate}
-\item Go to the developers homepage \url{http://download.mono-project.com/sources/mono/} and copy the link of your desired mono version (\verb|$mono-link|). As of November 2017 mono-5.9.0 is tested and working.
+\item Go to the developers homepage \url{http://download.mono-project.com/sources/mono/} and copy the link of your desired mono version (\verb|$mono-link|). As of December 2017 mono-5.9.0.415 is tested and working.
 \item Open a git bash and login on one of the four login nodes of the cluster, e.g 1
 \begin{verbatim}
 ssh $TuID@$host
@@ -226,11 +226,11 @@ ssh $TuID@$host
 mkdir mono
 cd mono
 \end{verbatim}
-\item download the \emph{mono} archive into the directory
+\item Download the \emph{mono} archive into the directory
 \begin{verbatim}
 wget $mono-link
 \end{verbatim}
-\item open \emph{mono} archive
+\item Open \emph{mono} archive
 \begin{verbatim}
 tar -xjf mono-x.x.x.tar.bz2
 \end{verbatim}
@@ -238,12 +238,12 @@ tar -xjf mono-x.x.x.tar.bz2
 \begin{verbatim}
 cd mono-x.x.x
 \end{verbatim}
-\item before compilation, mono has to be configured, which requires \emph{cmake}. Prefix gives the directory for the binaries
+\item before compilation, mono has to be configured, which requires \emph{cmake}. Prefix gives the directory for the binaries (these are two commands)
 \begin{verbatim}
 module load cmake
 ./configure --prefix=/home/$TuID/mono/mono-x.x.x_bin
 \end{verbatim} 
-\item after a successful configuration the compilation can be started
+\item After a successful configuration the compilation can be started
 \begin{verbatim}
 make
 \end{verbatim}
@@ -253,12 +253,12 @@ The whole compilation takes about 50-60 minutes!
 \begin{verbatim}
 make install
 \end{verbatim} 
-\item finally \emph{mono} has to be added to the \verb|PATH| and \verb|LD_LIBRARY_PATH| variable. This can be done in the .bashrc file: Go back to your \verb|$home| directory and open the .bashrc with an editor, e.g. vi
+\item Finally \emph{mono} has to be added to the \verb|PATH| and \verb|LD_LIBRARY_PATH| variable. This can be done in the .bashrc file: Go back to your \verb|$home| directory and open the .bashrc with an editor, e.g. vi
 \begin{verbatim}
 cd ~
 vi .bashrc
 \end{verbatim}
-add to following lines for the \verb|PATH| variable
+add to following lines for the \verb|PATH| variable (press \emph{i} to insert text)
 \begin{verbatim}
 PATH=/home/$TuID/mono/mono-x.x.x_bin/bin:$PATH
 export PATH
@@ -268,7 +268,7 @@ and for the \verb|LD_LIBRARY_PATH| variable
 LD_LIBRARY_PATH=/home/$TuID/mono/mono-x.x.x_bin/lib:$LD_LIBRARY_PATH
 export LD_LIBRARY_PATH
 \end{verbatim}
-Save the changes and reload .bashrc by prompting
+Press \emph{Esc} and type \emph{:wq} to save your latest changes and quit the application. Save the changes and reload .bashrc by prompting
 \begin{verbatim}
 source .bashrc
 \end{verbatim}
@@ -277,7 +277,7 @@ source .bashrc
 \subsection{Installing \emph{HYPRE}}
 Installing \emph{HYPRE} works similar to the installation routine of \emph{mono} (see section \ref{sec:mono}). Hence only the bash commands are given:
 \begin{enumerate}
-\item go to the developers homepage \verb|http://computation.llnl.gov/casc/hypre/software.html| and copy the link of your desired hypre version (\verb|$hypre-link|). 
+\item go to the developers homepage \url{http://computation.llnl.gov/casc/hypre/software.html} and copy the link of your desired hypre version (\verb|$hypre-link|). 
 \item login on the cluster
 \begin{verbatim}
 ssh $TuID@$host
@@ -332,7 +332,7 @@ BoSSS does not work with the latest version of \emph{ParMETIS}. Therefore an old
 \begin{enumerate}
 \item copy the \emph{ParMETIS} binary folder on the cluster
 \begin{verbatim}
-scp -r $BoSSSDir/src/ilPSP/layer_0/3rd_party/ParMETIS $TuID@$host:~/ParMETIS/
+scp -r $BoSSSDir/public/src/ilPSP/layer_0/3rd_party/ParMETIS $TuID@$host:~/ParMETIS/
 \end{verbatim}
 \item login on the cluster
 \begin{verbatim}
@@ -340,7 +340,9 @@ ssh $TuID@$host
 \end{verbatim}
 \item build \emph{ParMETIS} using the bash-script \emph{buildParMETIS.sh}
 \begin{verbatim}
-bash ./ParMETIS/buildParMETIS.sh
+cd ~/ParMETIS
+dos2unix buildParMETIS.sh
+bash buildParMETIS.sh
 \end{verbatim}
 \item  add the \emph{ParMETIS} library to the \verb|LD_LIBRARY_PATH| variable in .bashrc
 \begin{verbatim}

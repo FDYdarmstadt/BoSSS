@@ -1,0 +1,201 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="defs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="macros.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="metis.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="proto.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="rename.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="stdheaders.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="struct.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="balance.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="bucketsort.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ccgraph.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="checkgraph.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="coarsen.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="compress.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="debug.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="estmem.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="fm.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="fortran.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="frename.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="graph.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="initpart.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="kmetis.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="kvmetis.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="kwayfm.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="kwayrefine.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="kwayvolfm.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="kwayvolrefine.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="match.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mbalance.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mbalance2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mcoarsen.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="memory.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mesh.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="meshpart.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mfm.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mfm2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mincover.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="minitpart.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="minitpart2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mkmetis.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mkwayfmh.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mkwayrefine.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mmatch.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mmd.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mpmetis.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mrefine.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mrefine2.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mutil.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="myqsort.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ometis.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="parmetis.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="pmetis.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="pqueue.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="refine.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="separator.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sfm.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="srefine.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="stat.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="subdomains.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="timing.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="util.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
