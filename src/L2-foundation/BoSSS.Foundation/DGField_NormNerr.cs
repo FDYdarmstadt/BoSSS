@@ -444,6 +444,11 @@ namespace BoSSS.Foundation {
         /// Optional restriction of domain
         /// </param>
         public double L2Error(DGField other, CellMask cm = null) {
+            if (!object.ReferenceEquals(this.GridDat, other.GridDat)) {
+                throw new Exception(
+                    "Cannot compute error between DG fields on different grids");
+            }
+
             int order = Math.Max(this.Basis.Degree, other.Basis.Degree) * 2;
             CellQuadratureScheme cqs = new CellQuadratureScheme(domain: cm);
             return LxError(other.Evaluate, null, cqs.Compile(this.GridDat, order));
