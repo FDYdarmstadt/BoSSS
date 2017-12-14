@@ -355,7 +355,7 @@ export LD_LIBRARY_PATH
 \end{verbatim}
 \end{enumerate}
 Note: \verb|export LD_LIBRARY_PATH| needs only to be called once after the last change of the \verb|LD_LIBRARY_PATH|.\\\\
-\textit{Remark: If it does not compile it is easier to use the compiled binaries instead. You can find them in} \verb|\\fdyprime\misc\HHLR_binaries\ParMETIS\bin|
+\textit{Remark: If it does not compile it is easier to use the compiled binaries instead. You can find them in} \verb|\\dc1\bosss\binaries\hhlr\ParMETIS|
 \subsection{Installing \emph{PARDISO V5}}
 \begin{enumerate}
 \item download the newest \emph{PARDISO} Version from the Website \emph{http://www.pardiso-project.org} or from \verb|\\scratch\kummer\pardiso.zip| and copy the \verb|.so|-file to \verb|\home\$TUID/PARDISO|
@@ -432,7 +432,7 @@ ssh $TuID@$host
 \begin{verbatim}
 module load acml
 module load gcc
-module load openmpi/gcc/2.0.1
+module load openmpi/gcc/1.6.6
 \end{verbatim} 
 \item now the program can be started
 \begin{verbatim}
@@ -499,9 +499,9 @@ As mentioned in Section \ref{sec:information} the cluster has 4 login nodes and 
 The preparation for a job is similar like the first steps of testing the libraries in section \ref{sec:testing}:
 \begin{enumerate}
 \item compile your application on your local machine in Visual Studio
-\item transfer the application and its dependencies to the cluster
+\item transfer the application and its dependencies to the cluster (the specified path is relative to your \emph{home} directory)
 \begin{verbatim}
-bcl deploy-at $executable sftp://$TuID@$host:~/$executionDir
+bcl deploy-at $executable sftp://$TuID@$host:$executionDir
 \end{verbatim}
 \item optional: Use mono's Ahead of Time (AOT) compilation feature\footnote{\url{http://www.mono-project.com/AOT}} to gain some performance. To that end, navigate to \verb|~/$executionDir| and execute the following command:
 \begin{verbatim}
@@ -572,13 +572,13 @@ In listing \ref{lst:head_batch} the head of an example script is shown. With \ve
 label={lst:body_batch}]
 # Loading the required module
 module load gcc
-module load openmpi/gcc/2.0.1
+module load openmpi/gcc/1.6.6
 module load acml
 # Give an overview about all load modules
 module list
 
 mpiexec  mono /home/$TuID/$executionDir/$executable ...
-	...--control /home/$TuID/$executionDir/control-file.xml
+	...--control /home/$TuID/$executionDir/control-file.cs
 \end{lstlisting}
 \end{minipage}
 
@@ -675,7 +675,7 @@ which should generate the graph displayed in Figure \ref{fig:puttyXFowarding_out
 \begin{itemize}
 \item \textbf{MPI-Error}:  The \emph{BoSSSpad} uses MPI communication, hence the MPI module needs to be loaded before starting the \emph{BoSSSpad} via
 \begin{verbatim}
-module load openmpi/gcc/2.0.1
+module load openmpi/gcc/1.6.6
 \end{verbatim}
 \item \textbf{Library missing}: After deploying the \emph{BoSSSpad}, the BoSSSpad folder contains a file \emph{Mono.CSharp.dll}. It can be that the \emph{BoSSSpad} doesn't find this library, because it searches for \emph{Mono.Csharp.dll}. Just copy the file:
 \begin{verbatim}
