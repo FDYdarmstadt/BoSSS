@@ -86,7 +86,7 @@ namespace CNS.IBM {
             ABevolver = new IBMABevolve[CurrentClustering.NumberOfClusters];
 
             for (int i = 0; i < ABevolver.Length; i++) {
-                ABevolver[i] = new IBMABevolve(standardOperator, boundaryOperator, fieldsMap, boundaryParameterMap, speciesMap, control.ExplicitOrder, control.LevelSetQuadratureOrder, control.MomentFittingVariant, sgrd: CurrentClustering.Clusters[i], adaptive: this.adaptive);
+                ABevolver[i] = new IBMABevolve(standardOperator, boundaryOperator, fieldsMap, boundaryParameterMap, speciesMap, control.ExplicitOrder, control.LevelSetQuadratureOrder, control.CutCellQuadratureType, sgrd: CurrentClustering.Clusters[i], adaptive: this.adaptive);
                 ABevolver[i].OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforeComputechangeRate(t1, t2);
             }
 
@@ -204,7 +204,7 @@ namespace CNS.IBM {
             ABevolver = new IBMABevolve[CurrentClustering.NumberOfClusters];
 
             for (int i = 0; i < ABevolver.Length; i++) {
-                ABevolver[i] = new IBMABevolve(standardOperator, boundaryOperator, fieldsMap, boundaryParameterMap, speciesMap, control.ExplicitOrder, control.LevelSetQuadratureOrder, control.MomentFittingVariant, sgrd: CurrentClustering.Clusters[i], adaptive: this.adaptive);
+                ABevolver[i] = new IBMABevolve(standardOperator, boundaryOperator, fieldsMap, boundaryParameterMap, speciesMap, control.ExplicitOrder, control.LevelSetQuadratureOrder, control.CutCellQuadratureType, sgrd: CurrentClustering.Clusters[i], adaptive: this.adaptive);
                 ABevolver[i].ResetTime(m_Time);
                 ABevolver[i].OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforeComputechangeRate(t1, t2);
             }

@@ -440,7 +440,7 @@ namespace CNS {
                 return grid;
             };
 
-            c.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             c.LevelSetQuadratureOrder = 10;
             c.LevelSetBoundaryTag = "supersonicInlet";
 
@@ -582,7 +582,7 @@ namespace CNS {
 
             c.Queries.Add("L2ErrorEntropy", IBMQueries.L2Error(state => state.Entropy, (X, t) => 1.0));
 
-            c.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
             c.SurfaceHMF_ProjectNodesToLevelSet = false;
             c.SurfaceHMF_RestrictNodes = true;
             c.SurfaceHMF_UseGaussNodes = false;
@@ -724,7 +724,7 @@ namespace CNS {
             c.AddBoundaryCondition("adiabaticWall");
             c.LevelSetBoundaryTag = "adiabaticWall";
 
-            c.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
             c.LevelSetQuadratureOrder = levelSetQuadratureOrder;
             c.AgglomerationThreshold = agglomerationThreshold;
 
@@ -821,7 +821,7 @@ namespace CNS {
 
             c.Queries.Add("L2ErrorEntropy", IBMQueries.L2Error(state => state.Entropy, (X, t) => 1.0));
 
-            c.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
 
             c.SurfaceHMF_ProjectNodesToLevelSet = true;
             c.SurfaceHMF_RestrictNodes = true;
@@ -899,7 +899,7 @@ namespace CNS {
             c.LevelSetQuadratureOrder = 12;
             c.AgglomerationThreshold = 0.3;
             c.GridPartOptions = "0";
-            c.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
 
 
             // Solver Type
@@ -1196,7 +1196,7 @@ namespace CNS {
             //c.VolumeHMF_UseGaussNodes = false;
             //c.LevelSetQuadratureOrder = 6;
 
-            c.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             c.LevelSetQuadratureOrder = 6;
             c.AgglomerationThreshold = 0.2;
             c.AddVariable(IBMVariables.LevelSet, 1);
@@ -1582,7 +1582,7 @@ namespace CNS {
             };
             c.LevelSetBoundaryTag = "AdiabaticSlipWall";
 
-            c.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             c.LevelSetQuadratureOrder = 6;
             c.AgglomerationThreshold = 0.9;
             c.SaveAgglomerationPairs = true;
@@ -1941,7 +1941,7 @@ namespace CNS {
             };
             c.LevelSetBoundaryTag = "AdiabaticSlipWall";
 
-            c.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             c.LevelSetQuadratureOrder = 6;
             c.AgglomerationThreshold = 0.9;
             c.SaveAgglomerationPairs = true;
@@ -2138,7 +2138,7 @@ namespace CNS {
                 return grid;
             };
 
-            c.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
             c.SurfaceHMF_ProjectNodesToLevelSet = false;
             c.SurfaceHMF_RestrictNodes = true;
             c.SurfaceHMF_UseGaussNodes = false;
@@ -2267,7 +2267,7 @@ namespace CNS {
             c.AddBoundaryCondition("adiabaticSlipWall", Variables.Velocity[1], (X, t) => 0.0);
             c.LevelSetBoundaryTag = "adiabaticSlipWall";
 
-            c.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
             c.SurfaceHMF_ProjectNodesToLevelSet = false;
             c.SurfaceHMF_RestrictNodes = true;
             c.SurfaceHMF_UseGaussNodes = false;

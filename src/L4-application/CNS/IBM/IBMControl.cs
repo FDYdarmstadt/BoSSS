@@ -93,12 +93,6 @@ namespace CNS.IBM {
         /// </summary>
         public bool SaveAgglomerationPairs = false;
 
-        /// <summary>
-        /// The quadrature variant to be used
-        /// </summary>
-        public XQuadFactoryHelper.MomentFittingVariants MomentFittingVariant =
-            XQuadFactoryHelper.MomentFittingVariants.Classic;
-
         public bool SurfaceHMF_ProjectNodesToLevelSet = false;
 
         public bool SurfaceHMF_RestrictNodes = false;
