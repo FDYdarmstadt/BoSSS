@@ -1907,12 +1907,12 @@ namespace CNS {
         public static IBMControl IBMDoubleMachReflection(string dbPath = null, int dgDegree = 2, int numOfCellsX = 50, int numOfCellsY = 50, double sensorLimit = 1e-3) {
             IBMControl c = new IBMControl();
 
-            //dbPath = @"e:\bosss_db\GridOfTomorrow";
+            //dbPath = @"c:\bosss_db";
             //dbPath = @"\\dc1\userspace\geisenhofer\bosss_db";
             //dbPath = @"/work/scratch/yp19ysog/bosss_db_lb_scratch";
             c.DbPath = dbPath;
             c.savetodb = dbPath != null;
-            c.saveperiod = 1;
+            c.saveperiod = 100;
             c.PrintInterval = 1;
 
             c.DomainType = DomainTypes.StaticImmersedBoundary;
@@ -1960,11 +1960,6 @@ namespace CNS {
             //c.ReclusteringInterval = 20;
             //c.FluxCorrection = false;
 
-            // Add one balance constraint for each subgrid
-            //c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(LTSCellCostEstimator.Factory(c.NumberOfSubGrids));
-            //c.DynamicLoadBalancing_ImbalanceThreshold = 0.1;
-            //c.DynamicLoadBalancing_Period = 10;
-
             c.GridPartType = GridPartType.ParMETIS;
             //c.GridPartType = GridPartType.none;
 
@@ -1978,8 +1973,10 @@ namespace CNS {
             c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
 
             // Shock-capturing
-            Variable sensorVariable = Variables.Density;
-            c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+            if (dgDegree >= 1) {
+                Variable sensorVariable = Variables.Density;
+                c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+            }
 
             double lambdaMax = 20;
             if (AV) {
@@ -2005,7 +2002,9 @@ namespace CNS {
             c.AddVariable(Variables.Viscosity, dgDegree);
             c.AddVariable(Variables.LocalMachNumber, dgDegree);
             c.AddVariable(Variables.Rank, 0);
-            c.AddVariable(Variables.Schlieren, dgDegree - 1);
+            if (dgDegree >= 1) {
+                c.AddVariable(Variables.Schlieren, dgDegree - 1);
+            }
             if (AV) {
                 c.AddVariable(Variables.ShockSensor, dgDegree);
                 c.AddVariable(Variables.ArtificialViscosity, 2);
@@ -2039,7 +2038,7 @@ namespace CNS {
                         }
                         //return 3;
                     } else if (Math.Abs(X[1] - (yMax - yMin)) < 1e-14) {// oben
-                        return 3;
+                        return 1;
                     } else if (Math.Abs(X[0]) < 1e-14) { // links
                         return 1;
                     } else if (Math.Abs(X[0] - (xMax - xMin)) < 1e-14) {// rechts
@@ -2057,40 +2056,39 @@ namespace CNS {
 
             // Current x-position of the shock
             double shockSpeed = 10;
-            Func<double, double[]> getShockXPosition = delegate (double time) {
-                return new double[] { xWall + shockSpeed * time, 0.0 };
+            Func<double, double> ShockXPosition = delegate (double time) {
+                return xWall + shockSpeed * time;
             };
 
             Func<double, double> Jump = (x => x < 0 ? 0 : 1);
 
-            double smoothing = 4.0;
+            Func<double, double> SmoothJump = delegate (double distance) {
+                // smoothing should be in the range of h/p
+                double maxDistance = 4.0 * cellSize / Math.Max(dgDegree, 1);
+
+                return (Math.Tanh(distance / maxDistance) + 1.0) * 0.5;
+            };
 
             // Boundary conditions
-            c.AddBoundaryCondition("SupersonicInlet", Variables.Density, (X, t) => 8.0 - SimpleGeoTools.SmoothJump(SimpleGeoTools.DistanceFromPointToLine(X, getShockXPosition(t), r), cellSize, dgDegree, smoothing) * (8.0 - 1.4));
-            c.AddBoundaryCondition("SupersonicInlet", Variables.Velocity.xComponent, (X, t) => 8.25 - SimpleGeoTools.SmoothJump(SimpleGeoTools.DistanceFromPointToLine(X, getShockXPosition(t), r), cellSize, dgDegree, smoothing) * (8.25 - 0.0));
+            c.AddBoundaryCondition("SupersonicInlet", Variables.Density, (X, t) => 8.0 - SmoothJump(X[0] - ShockXPosition(t)) * (8.0 - 1.4));
+            c.AddBoundaryCondition("SupersonicInlet", Variables.Velocity.xComponent, (X, t) => 8.25 - SmoothJump(X[0] - ShockXPosition(t)) * (8.25 - 0.0));
             c.AddBoundaryCondition("SupersonicInlet", Variables.Velocity.yComponent, (X, t) => 0.0);
-            //c.AddBoundaryCondition("SupersonicInlet", Variables.Momentum.xComponent, (X, t) => 8.25 * 8.0 - SimpleGeoTools.SmoothJump(SimpleGeoTools.DistanceFromPointToLine(X, getShockXPosition(t), r), cellSize, dgDegree, smoothing) * (8.25 * 8.0 - 0.0));
-            //c.AddBoundaryCondition("SupersonicInlet", Variables.Momentum.yComponent, (X, t) => 0.0);
-            c.AddBoundaryCondition("SupersonicInlet", Variables.Pressure, (X, t) => 116.5 - SimpleGeoTools.SmoothJump(SimpleGeoTools.DistanceFromPointToLine(X, getShockXPosition(t), r), cellSize, dgDegree, smoothing));
-
-            c.AddBoundaryCondition("SupersonicOutlet", Variables.Pressure, (X, t) => 1.0);
+            c.AddBoundaryCondition("SupersonicInlet", Variables.Pressure, (X, t) => 116.5 - SmoothJump(X[0] - ShockXPosition(t)) * (116.5 - 1.0));
+            c.AddBoundaryCondition("SupersonicOutlet");
             c.AddBoundaryCondition("AdiabaticSlipWall");
 
             // Initial conditions
-            c.InitialValues_Evaluators.Add(Variables.Density, X => 8.0 - SimpleGeoTools.SmoothJump(SimpleGeoTools.DistanceFromPointToLine(X, getShockXPosition(0), r), cellSize, dgDegree, smoothing) * (8.0 - 1.4));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => 8.25 - SimpleGeoTools.SmoothJump(SimpleGeoTools.DistanceFromPointToLine(X, getShockXPosition(0), r), cellSize, dgDegree, smoothing) * (8.25 - 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => 0);
-            //c.InitialValues_Evaluators.Add(Variables.Momentum.xComponent, X => 8.25 * 8.0 - SimpleGeoTools.SmoothJump(SimpleGeoTools.DistanceFromPointToLine(X, getShockXPosition(0), r), cellSize, dgDegree, smoothing) * (8.25 * 8.0 - 0.0));
-            //c.InitialValues_Evaluators.Add(Variables.Momentum.yComponent, X => 0);
-            c.InitialValues_Evaluators.Add(Variables.Pressure, X => 116.5 - SimpleGeoTools.SmoothJump(SimpleGeoTools.DistanceFromPointToLine(X, getShockXPosition(0), r), cellSize, dgDegree, smoothing) * (116.5 - 1.0));
-            //c.InitialValues_Evaluators.Add(Variables.Energy, X => 116.5 - SimpleGeoTools.SmoothJump(SimpleGeoTools.DistanceFromPointToLine(X, getShockXPosition(0), r), cellSize, dgDegree, smoothing) * (116.5 - 1.0));
+            c.InitialValues_Evaluators.Add(Variables.Density, X => 8.0 - SmoothJump(X[0] - ShockXPosition(0)) * (8.0 - 1.4));
+            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => 8.25 - SmoothJump(X[0] - ShockXPosition(0)) * (8.25 - 0.0));
+            c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => 0.0);
+            c.InitialValues_Evaluators.Add(Variables.Pressure, X => 116.5 - SmoothJump(X[0] - ShockXPosition(0)) * (116.5 - 1.0));
 
             // Time config
             c.dtMin = 0.0;
             c.dtMax = 1.0;
-            c.Endtime = 0.25;
+            c.Endtime = 0.03;
             //c.dtFixed = 1.0e-6;
-            c.CFLFraction = 0.3;
+            c.CFLFraction = 0.6;
             c.NoOfTimesteps = int.MaxValue;
 
             c.ProjectName = "IBM double Mach reflection";
