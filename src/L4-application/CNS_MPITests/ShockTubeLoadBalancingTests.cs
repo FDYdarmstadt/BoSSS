@@ -23,6 +23,7 @@ using CNS;
 using CNS.Convection;
 using CNS.EquationSystem;
 using CNS.MaterialProperty;
+using CNS.ShockCapturing;
 using CNS.Tests;
 using ilPSP;
 using ilPSP.Utils;
@@ -45,13 +46,21 @@ namespace CNS_MPITests.Tests.LoadBalancing {
 
         public static void Main(string[] args) {
             SetUp();
-            TestLoadBalancingForRK1();
+            //TestLoadBalancingForDG0WithRK1();
+            //TestLoadBalancingForDG0WithAB1();
+            TestRebalancingForDG2WithRK1AndAV();
             csMPI.Raw.mpiFinalize();
         }
 
-        private static void CheckRunsProduceSameResults(CNSControl refControl, CNSControl loadBalControl, double differenceThreshold = 1e-16) {
+        private static void CheckRunsProduceSameResults(CNSControl refControl, double differenceThreshold = 1e-16) {
             Debug.Assert(refControl.DynamicLoadBalancing_Period <= 0);
             Debug.Assert(refControl.DynamicLoadBalancing_CellCostEstimatorFactories.Count == 0);
+
+            CNSControl loadBalControl = refControl.CloneAs();
+            loadBalControl.DynamicLoadBalancing_Period = 5;
+            loadBalControl.DynamicLoadBalancing_CellClassifier = new RandomCellClassifier(2);
+            loadBalControl.DynamicLoadBalancing_CellCostEstimatorFactories.Add((p, i) => new StaticCellCostEstimator(new[] { 1, 10 }));
+            loadBalControl.DynamicLoadBalancing_ImbalanceThreshold = 0.01;
 
             Debug.Assert(loadBalControl.DynamicLoadBalancing_Period > 0);
             Debug.Assert(loadBalControl.DynamicLoadBalancing_CellClassifier != null);
@@ -123,58 +132,84 @@ namespace CNS_MPITests.Tests.LoadBalancing {
         }
 
         [Test]
-        public static void TestLoadBalancingForRK1() {
+        public static void TestRebalancingForDG0WithRK1() {
             int dgDegree = 0;
             ExplicitSchemes explicitScheme = ExplicitSchemes.RungeKutta;
             int explicitOrder = 1;
 
-            var cRef = ShockTubeToro1Template(
+            var control = ShockTubeToro1Template(
                 dgDegree: dgDegree,
                 explicitScheme: explicitScheme,
                 explicitOrder: explicitOrder);
 
-            var cLoadBal = ShockTubeToro1Template(
-                dgDegree: dgDegree,
-                explicitScheme: explicitScheme,
-                explicitOrder: explicitOrder);
-            cLoadBal.DynamicLoadBalancing_Period = 5;
-            cLoadBal.DynamicLoadBalancing_CellClassifier = new RandomCellClassifier(2);
-            cLoadBal.DynamicLoadBalancing_CellCostEstimatorFactories.Add((p, i) => new StaticCellCostEstimator(new[] { 1, 10 }));
-            cLoadBal.DynamicLoadBalancing_ImbalanceThreshold = 0.01;
-            
-            CheckRunsProduceSameResults(cRef, cLoadBal);
+            CheckRunsProduceSameResults(control);
         }
 
-        //[Test]
-        //public static void TestLoadBalancingForRK1WithAV() {
-        //    ExplicitSchemes explicitScheme = ExplicitSchemes.RungeKutta;
-        //    int explicitOrder = 1;
-        //    int numOfClusters = -1;
+        [Test]
+        public static void TestRealancingForDG0WithAB1() {
+            int dgDegree = 0;
+            ExplicitSchemes explicitScheme = ExplicitSchemes.AdamsBashforth;
+            int explicitOrder = 1;
 
-        //    var cRef = ArtificialViscosityShockTubeTests.SetupToroTest1(
-        //        explicitScheme: explicitScheme, explicitOrder: explicitOrder, numOfClusters: numOfClusters);
-        //    var solver = new Program();
-        //    solver.Init(cRef, null);
-        //    solver.RunSolverMode();
+            var control = ShockTubeToro1Template(
+                dgDegree: dgDegree,
+                explicitScheme: explicitScheme,
+                explicitOrder: explicitOrder);
 
-        //    var cLoadBal = ArtificialViscosityShockTubeTests.SetupToroTest1(
-        //        explicitScheme: explicitScheme, explicitOrder: explicitOrder, numOfClusters: numOfClusters);
-        //    cLoadBal.DynamicLoadBalancing_Period = 5;
-        //    //cLoadBal.
+            CheckRunsProduceSameResults(control);
+        }
 
+        [Test]
+        public static void TestRebalancingForDG2WithRK1AndAV() {
+            int dgDegree = 2;
+            ExplicitSchemes explicitScheme = ExplicitSchemes.RungeKutta;
+            int explicitOrder = 1;
+            double endTime = 0.01;
 
-        //    cLoadBal.AddVariable(Variables.ArtificialViscosity, 1);
-        //    int dgDegree = 99;
+            Variable sensorVariable = Variables.Density;
+            double sensorLimit = 1e-3;
+            double epsilon0 = 1.0;
+            double kappa = 0.5;
 
-        //    double sensorLimit = 1e-4;
-        //    double epsilon0 = 1.0;
-        //    double kappa = 0.5;
-        //    Variable sensorVariable = Variables.Density;
-        //    cLoadBal.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
-        //    cLoadBal.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(cLoadBal.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
-        //}
+            var control = ShockTubeToro1Template(
+                dgDegree: dgDegree,
+                explicitScheme: explicitScheme,
+                explicitOrder: explicitOrder);
+            control.AddVariable(Variables.ArtificialViscosity, 1);
+            control.ActiveOperators |= Operators.ArtificialViscosity;
+            control.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+            control.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(control.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 2);
+            control.Endtime = endTime;
 
-        private static CNSControl ShockTubeToro1Template(int dgDegree, ExplicitSchemes explicitScheme, int explicitOrder, int noOfCells = 49) {
+            CheckRunsProduceSameResults(control);
+        }
+
+        [Test]
+        public static void TestRebalancingForDG2WithAB1AndAV() {
+            int dgDegree = 2;
+            ExplicitSchemes explicitScheme = ExplicitSchemes.AdamsBashforth;
+            int explicitOrder = 1;
+            double endTime = 0.01;
+
+            Variable sensorVariable = Variables.Density;
+            double sensorLimit = 1e-3;
+            double epsilon0 = 1.0;
+            double kappa = 0.5;
+
+            var control = ShockTubeToro1Template(
+                dgDegree: dgDegree,
+                explicitScheme: explicitScheme,
+                explicitOrder: explicitOrder);
+            control.AddVariable(Variables.ArtificialViscosity, 1);
+            control.ActiveOperators |= Operators.ArtificialViscosity;
+            control.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+            control.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(control.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 2);
+            control.Endtime = endTime;
+            
+            CheckRunsProduceSameResults(control);
+        }
+
+        private static CNSControl ShockTubeToro1Template(int dgDegree, ExplicitSchemes explicitScheme, int explicitOrder, int noOfCells = 50) {
             double densityLeft = 1.0;
             double velocityLeft = 0.0;
             double pressureLeft = 1.0;
