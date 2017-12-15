@@ -1912,7 +1912,7 @@ namespace CNS {
             //dbPath = @"/work/scratch/yp19ysog/bosss_db_lb_scratch";
             c.DbPath = dbPath;
             c.savetodb = dbPath != null;
-            c.saveperiod = 100;
+            c.saveperiod = 10;
             c.PrintInterval = 1;
 
             c.DomainType = DomainTypes.StaticImmersedBoundary;
@@ -1950,15 +1950,15 @@ namespace CNS {
             bool AV = true;
 
             // Runge-Kutta
-            c.ExplicitScheme = ExplicitSchemes.RungeKutta;
-            c.ExplicitOrder = 1;
+            //c.ExplicitScheme = ExplicitSchemes.RungeKutta;
+            //c.ExplicitOrder = 1;
 
             // LTS
-            //c.ExplicitScheme = ExplicitSchemes.LTS;
-            //c.ExplicitOrder = 1;
-            //c.NumberOfSubGrids = 3;
-            //c.ReclusteringInterval = 20;
-            //c.FluxCorrection = false;
+            c.ExplicitScheme = ExplicitSchemes.LTS;
+            c.ExplicitOrder = 1;
+            c.NumberOfSubGrids = 3;
+            c.ReclusteringInterval = 1;
+            c.FluxCorrection = false;
 
             c.GridPartType = GridPartType.ParMETIS;
             //c.GridPartType = GridPartType.none;
@@ -2086,16 +2086,13 @@ namespace CNS {
             // Time config
             c.dtMin = 0.0;
             c.dtMax = 1.0;
-            c.Endtime = 0.03;
+            c.Endtime = 0.05;
             //c.dtFixed = 1.0e-6;
-            c.CFLFraction = 0.6;
+            c.CFLFraction = 0.3;
             c.NoOfTimesteps = int.MaxValue;
 
             c.ProjectName = "IBM double Mach reflection";
             c.SessionName = String.Format("IBM DMR, dgDegree = {0}, numOfCellsX = {1}, numOfCellsY = {2}, sensorLimit = {3:0.00E-00}, CFLFraction = {4:0.00E-00}, ALTS {5}/{6}, lamdaMax = {7}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, lambdaMax);
-            //c.Tags.Add("Double Mach reflection");
-            //c.Tags.Add("Artificial viscosity");
-            //c.Tags.Add("Adaptive local time stepping");
 
             return c;
         }
