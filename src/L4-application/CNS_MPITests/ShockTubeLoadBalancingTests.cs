@@ -46,89 +46,12 @@ namespace CNS_MPITests.Tests.LoadBalancing {
 
         public static void Main(string[] args) {
             SetUp();
-            //TestLoadBalancingForDG0WithRK1();
-            //TestLoadBalancingForDG0WithAB1();
+            TestRebalancingForDG0WithRK1();
+            TestRealancingForDG0WithAB1();
+            //TestRebalancingForDG0WithLTS1();
             TestRebalancingForDG2WithRK1AndAV();
+            TestRebalancingForDG2WithAB1AndAV();
             csMPI.Raw.mpiFinalize();
-        }
-
-        private static void CheckRunsProduceSameResults(CNSControl refControl, double differenceThreshold = 1e-16) {
-            Debug.Assert(refControl.DynamicLoadBalancing_Period <= 0);
-            Debug.Assert(refControl.DynamicLoadBalancing_CellCostEstimatorFactories.Count == 0);
-
-            CNSControl loadBalControl = refControl.CloneAs();
-            loadBalControl.DynamicLoadBalancing_Period = 5;
-            loadBalControl.DynamicLoadBalancing_CellClassifier = new RandomCellClassifier(2);
-            loadBalControl.DynamicLoadBalancing_CellCostEstimatorFactories.Add((p, i) => new StaticCellCostEstimator(new[] { 1, 10 }));
-            loadBalControl.DynamicLoadBalancing_ImbalanceThreshold = 0.01;
-
-            Debug.Assert(loadBalControl.DynamicLoadBalancing_Period > 0);
-            Debug.Assert(loadBalControl.DynamicLoadBalancing_CellClassifier != null);
-            Debug.Assert(loadBalControl.DynamicLoadBalancing_CellCostEstimatorFactories.Count > 0);
-
-            Console.WriteLine("Run WITHOUT load balancing");
-            var refSolver = new ShockTubeLoadBalancingTests();
-            refSolver.Init(refControl, commandLineOptions);
-            refSolver.RunSolverMode();
-
-            Console.WriteLine("Run WITH load balancing");
-            var loadBalSolver = new ShockTubeLoadBalancingTests();
-            loadBalSolver.Init(loadBalControl, commandLineOptions);
-            loadBalSolver.RunSolverMode();
-
-            // To be able to compare errors without using the databse, we to 
-            // agree on a single grid partitioning in the end -> use ref
-            Console.WriteLine("Transfering load balancing data to reference grid");
-            var refPartitioning = new int[loadBalSolver.GridData.Cells.NoOfLocalUpdatedCells];
-            for (int i = 0; i < refSolver.GridData.CellPartitioning.TotalLength; i++) {
-                int localIndex = loadBalSolver.GridData.CellPartitioning.TransformIndexToLocal(i);
-                if (localIndex >= 0 && localIndex < loadBalSolver.GridData.Cells.NoOfLocalUpdatedCells) {
-                    refPartitioning[localIndex] = refSolver.GridData.CellPartitioning.FindProcess(i);
-                }
-            }
-            loadBalSolver.MpiRedistributeAndMeshAdapt(
-                int.MinValue,
-                double.MinValue,
-                refPartitioning,
-                refSolver.GridData.CurrentGlobalIdPermutation);
-            
-            CompareErrors(refSolver.WorkingSet, loadBalSolver.WorkingSet, differenceThreshold);
-        }
-
-        protected static void CompareErrors(CNSFieldSet refResults, CNSFieldSet loadBalResults, double differenceThreshold) {
-            List<Action> assertions = new List<Action>();
-            {
-                double densityDifference = refResults.Density.L2Error(loadBalResults.Density, overrideGridCheck: true);
-                string densityMessage = String.Format(
-                    "Density: {0} (Threshold is {1})",
-                    densityDifference,
-                    differenceThreshold);
-                Console.WriteLine(densityMessage);
-                assertions.Add(() => Assert.IsTrue(densityDifference < differenceThreshold, densityMessage));
-            }
-
-            for (int d = 0; d < refResults.Density.GridDat.SpatialDimension; d++) {
-                double momentumDifference = refResults.Momentum[d].L2Error(loadBalResults.Momentum[d], overrideGridCheck: true);
-                string momentumMessage = String.Format(
-                    "Momentum[{0}]: {1} (Threshold is {2})",
-                    d,
-                    momentumDifference,
-                    differenceThreshold);
-                Console.WriteLine(momentumMessage);
-                assertions.Add(() => Assert.IsTrue(momentumDifference < differenceThreshold, momentumMessage));
-            }
-
-            {
-                double energyDifference = refResults.Energy.L2Error(loadBalResults.Energy, overrideGridCheck: true);
-                string energyMessage = String.Format(
-                    "Energy: {0} (Threshold is {1})",
-                    energyDifference,
-                    differenceThreshold);
-                Console.WriteLine(energyMessage);
-                assertions.Add(() => Assert.IsTrue(energyDifference < differenceThreshold, energyMessage));
-            }
-
-            assertions.ForEach(a => a());
         }
 
         [Test]
@@ -159,27 +82,30 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             CheckRunsProduceSameResults(control);
         }
 
+        //[Test]
+        //public static void TestRebalancingForDG0WithLTS1() {
+        //    int dgDegree = 0;
+        //    ExplicitSchemes explicitScheme = ExplicitSchemes.LTS;
+        //    int explicitOrder = 1;
+
+        //    var control = ShockTubeToro1Template(
+        //        dgDegree: dgDegree,
+        //        explicitScheme: explicitScheme,
+        //        explicitOrder: explicitOrder);
+
+        //    CheckRunsProduceSameResults(control);
+        //}
+
         [Test]
         public static void TestRebalancingForDG2WithRK1AndAV() {
             int dgDegree = 2;
             ExplicitSchemes explicitScheme = ExplicitSchemes.RungeKutta;
             int explicitOrder = 1;
-            double endTime = 0.01;
 
-            Variable sensorVariable = Variables.Density;
-            double sensorLimit = 1e-3;
-            double epsilon0 = 1.0;
-            double kappa = 0.5;
-
-            var control = ShockTubeToro1Template(
+            var control = ShockTubeToro1WithAVTemplate(
                 dgDegree: dgDegree,
                 explicitScheme: explicitScheme,
                 explicitOrder: explicitOrder);
-            control.AddVariable(Variables.ArtificialViscosity, 1);
-            control.ActiveOperators |= Operators.ArtificialViscosity;
-            control.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
-            control.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(control.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 2);
-            control.Endtime = endTime;
 
             CheckRunsProduceSameResults(control);
         }
@@ -189,23 +115,12 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             int dgDegree = 2;
             ExplicitSchemes explicitScheme = ExplicitSchemes.AdamsBashforth;
             int explicitOrder = 1;
-            double endTime = 0.01;
 
-            Variable sensorVariable = Variables.Density;
-            double sensorLimit = 1e-3;
-            double epsilon0 = 1.0;
-            double kappa = 0.5;
-
-            var control = ShockTubeToro1Template(
+            var control = ShockTubeToro1WithAVTemplate(
                 dgDegree: dgDegree,
                 explicitScheme: explicitScheme,
                 explicitOrder: explicitOrder);
-            control.AddVariable(Variables.ArtificialViscosity, 1);
-            control.ActiveOperators |= Operators.ArtificialViscosity;
-            control.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
-            control.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(control.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 2);
-            control.Endtime = endTime;
-            
+
             CheckRunsProduceSameResults(control);
         }
 
@@ -288,7 +203,109 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             c.Endtime = 0.2;
             c.NoOfTimesteps = int.MaxValue;
 
+            // Use METIS since ParMETIS is not installed on build server
+            c.GridPartType = GridPartType.METIS;
+
             return c;
+        }
+
+        private static CNSControl ShockTubeToro1WithAVTemplate(int dgDegree, ExplicitSchemes explicitScheme, int explicitOrder, int noOfCells = 50) {
+            Variable sensorVariable = Variables.Density;
+            double sensorLimit = 1e-3;
+            double epsilon0 = 1.0;
+            double kappa = 0.5;
+            double endTime = 0.01;
+
+            var c = ShockTubeToro1Template(
+                dgDegree: dgDegree,
+                explicitScheme: explicitScheme,
+                explicitOrder: explicitOrder);
+            c.AddVariable(Variables.ArtificialViscosity, 1);
+            c.ActiveOperators |= Operators.ArtificialViscosity;
+            c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+            c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 2);
+            c.Endtime = endTime;
+
+            return c;
+        }
+
+        private static void CheckRunsProduceSameResults(CNSControl refControl, double differenceThreshold = 1e-16) {
+            Debug.Assert(refControl.DynamicLoadBalancing_Period <= 0);
+            Debug.Assert(refControl.DynamicLoadBalancing_CellCostEstimatorFactories.Count == 0);
+
+            CNSControl loadBalControl = refControl.CloneAs();
+            loadBalControl.DynamicLoadBalancing_Period = 5;
+            loadBalControl.DynamicLoadBalancing_CellClassifier = new RandomCellClassifier(2);
+            loadBalControl.DynamicLoadBalancing_CellCostEstimatorFactories.Add((p, i) => new StaticCellCostEstimator(new[] { 1, 10 }));
+            loadBalControl.DynamicLoadBalancing_ImbalanceThreshold = 0.01;
+
+            Debug.Assert(loadBalControl.DynamicLoadBalancing_Period > 0);
+            Debug.Assert(loadBalControl.DynamicLoadBalancing_CellClassifier != null);
+            Debug.Assert(loadBalControl.DynamicLoadBalancing_CellCostEstimatorFactories.Count > 0);
+
+            Console.WriteLine("Run WITHOUT load balancing");
+            var refSolver = new ShockTubeLoadBalancingTests();
+            refSolver.Init(refControl, commandLineOptions);
+            refSolver.RunSolverMode();
+
+            Console.WriteLine("Run WITH load balancing");
+            var loadBalSolver = new ShockTubeLoadBalancingTests();
+            loadBalSolver.Init(loadBalControl, commandLineOptions);
+            loadBalSolver.RunSolverMode();
+
+            // To be able to compare errors without using the databse, we to 
+            // agree on a single grid partitioning in the end -> use ref
+            Console.WriteLine("Transfering load balancing data to reference grid");
+            var refPartitioning = new int[loadBalSolver.GridData.Cells.NoOfLocalUpdatedCells];
+            for (int i = 0; i < refSolver.GridData.CellPartitioning.TotalLength; i++) {
+                int localIndex = loadBalSolver.GridData.CellPartitioning.TransformIndexToLocal(i);
+                if (localIndex >= 0 && localIndex < loadBalSolver.GridData.Cells.NoOfLocalUpdatedCells) {
+                    refPartitioning[localIndex] = refSolver.GridData.CellPartitioning.FindProcess(i);
+                }
+            }
+            loadBalSolver.MpiRedistributeAndMeshAdapt(
+                int.MinValue,
+                double.MinValue,
+                refPartitioning,
+                refSolver.GridData.CurrentGlobalIdPermutation);
+
+            CompareErrors(refSolver.WorkingSet, loadBalSolver.WorkingSet, differenceThreshold);
+        }
+
+        private static void CompareErrors(CNSFieldSet refResults, CNSFieldSet loadBalResults, double differenceThreshold) {
+            List<Action> assertions = new List<Action>();
+            {
+                double densityDifference = refResults.Density.L2Error(loadBalResults.Density, overrideGridCheck: true);
+                string densityMessage = String.Format(
+                    "Density: {0} (Threshold is {1})",
+                    densityDifference,
+                    differenceThreshold);
+                Console.WriteLine(densityMessage);
+                assertions.Add(() => Assert.IsTrue(densityDifference < differenceThreshold, densityMessage));
+            }
+
+            for (int d = 0; d < refResults.Density.GridDat.SpatialDimension; d++) {
+                double momentumDifference = refResults.Momentum[d].L2Error(loadBalResults.Momentum[d], overrideGridCheck: true);
+                string momentumMessage = String.Format(
+                    "Momentum[{0}]: {1} (Threshold is {2})",
+                    d,
+                    momentumDifference,
+                    differenceThreshold);
+                Console.WriteLine(momentumMessage);
+                assertions.Add(() => Assert.IsTrue(momentumDifference < differenceThreshold, momentumMessage));
+            }
+
+            {
+                double energyDifference = refResults.Energy.L2Error(loadBalResults.Energy, overrideGridCheck: true);
+                string energyMessage = String.Format(
+                    "Energy: {0} (Threshold is {1})",
+                    energyDifference,
+                    differenceThreshold);
+                Console.WriteLine(energyMessage);
+                assertions.Add(() => Assert.IsTrue(energyDifference < differenceThreshold, energyMessage));
+            }
+
+            assertions.ForEach(a => a());
         }
     }
 }
