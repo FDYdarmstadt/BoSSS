@@ -1944,7 +1944,7 @@ namespace CNS {
             c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             c.LevelSetQuadratureOrder = 6;
             c.AgglomerationThreshold = 0.9;
-            c.SaveAgglomerationPairs = true;
+            c.SaveAgglomerationPairs = false;
             c.AddVariable(IBMVariables.LevelSet, 2);
 
             bool AV = true;
