@@ -1920,7 +1920,7 @@ namespace BoSSS.Solution {
                             this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
                     }
                     CreateFields(); // full user control   
-                    PostRestart(physTime);
+                    PostRestart(physTime, TimeStepNo);
 
 
                     // re-set Level-Set tracker
@@ -2041,7 +2041,7 @@ namespace BoSSS.Solution {
                             this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
                     }
                     CreateFields(); // full user control   
-                    PostRestart(physTime);
+                    PostRestart(physTime, TimeStepNo);
 
                     // re-set Level-Set tracker
                     int trackerVersion = remshDat.SetNewTracker(this.LsTrk);
@@ -2810,7 +2810,7 @@ namespace BoSSS.Solution {
                 //throw new NotImplementedException("unknown restart type.");
             }
 
-            PostRestart(Time);
+            PostRestart(Time, TimestepNo);
 
             System.GC.Collect();
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
@@ -2827,7 +2827,7 @@ namespace BoSSS.Solution {
         /// should be carried out after a restart file has been loaded (e.g.,
         /// setting the correct time for a time-stepper)
         /// </summary>
-        public virtual void PostRestart(double time) {
+        public virtual void PostRestart(double time, TimestepNumber timestep) {
         }
 
         /// <summary>
