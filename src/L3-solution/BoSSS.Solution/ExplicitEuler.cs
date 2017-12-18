@@ -372,7 +372,7 @@ namespace BoSSS.Solution.Timestepping {
         /// <see cref="ITimeStepper.ResetTime"/>
         /// </summary>
         /// <param name="NewTime"></param>
-        public virtual void ResetTime(double NewTime) {
+        public virtual void ResetTime(double NewTime, int timestepNumber) {
             m_Time = NewTime;
         }
 

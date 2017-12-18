@@ -160,7 +160,7 @@ namespace NSE_SIMPLE {
         /// <summary>
         /// ...
         /// </summary>
-        public override void PostRestart(double time) {
+        public override void PostRestart(double time, TimestepNumber timestep) {
 
             //InitLogEnergyOrrSommerfeld();
 

@@ -45,8 +45,14 @@ namespace CNS.IBM {
             private set;
         }
 
-        bool firstCall = true;
+        /// <summary>
+        /// Hack required by <see cref="Tracker"/>
+        /// </summary>
+        private bool firstCall = true;
 
+        /// <summary>
+        /// Backing field for <see cref="Tracker"/>
+        /// </summary>
         private LevelSetTracker tracker;
 
         /// <summary>
@@ -62,7 +68,7 @@ namespace CNS.IBM {
                     tracker.UpdateTracker();
                     tracker.PushStacks();
                 }
-                
+
                 firstCall = false;
                 return tracker;
             }
@@ -71,22 +77,33 @@ namespace CNS.IBM {
             }
         }
 
-        ///// <summary>
-        ///// Backing field for <see cref="QuadSchemeHelper"/>
-        ///// </summary>
-        //private XQuadSchemeHelper quadSchemeHelper;
+        /// <summary>
+        /// Backing fields for <see cref="CellAgglomeration"/>
+        /// </summary>
+        private MultiphaseCellAgglomerator cellAgglomeration;
 
-        //private CutCellMetrics lastCutCellMetrics;
-
-        MultiphaseCellAgglomerator m_CellAgglomeration;
-        
         /// <summary>
         /// Current cell agglomeration.
         /// </summary>
         public MultiphaseCellAgglomerator CellAgglomeration {
             get {
-                if(m_CellAgglomeration == null) {
+                if (cellAgglomeration == null) {
+                    if (Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Classic) {
+                        BoSSS.Foundation.XDG.Quadrature.HMF.LevelSetSurfaceQuadRuleFactory.UseNodesOnLevset =
+                            Control.SurfaceHMF_ProjectNodesToLevelSet;
+                        BoSSS.Foundation.XDG.Quadrature.HMF.LevelSetSurfaceQuadRuleFactory.RestrictNodes =
+                            Control.SurfaceHMF_RestrictNodes;
+                        BoSSS.Foundation.XDG.Quadrature.HMF.LevelSetSurfaceQuadRuleFactory.UseGaussNodes =
+                            Control.SurfaceHMF_UseGaussNodes;
 
+                        BoSSS.Foundation.XDG.Quadrature.HMF.LevelSetVolumeQuadRuleFactory.NodeCountSafetyFactor =
+                            Control.VolumeHMF_NodeCountSafetyFactor;
+                        BoSSS.Foundation.XDG.Quadrature.HMF.LevelSetVolumeQuadRuleFactory.RestrictNodes =
+                            Control.VolumeHMF_RestrictNodes;
+                        BoSSS.Foundation.XDG.Quadrature.HMF.LevelSetVolumeQuadRuleFactory.UseGaussNodes =
+                            Control.VolumeHMF_UseGaussNodes;
+                    }
+                    
                     bool agglomerateNewbornAndDeceased = true;
                     var oldAggThreshold = new double[] { Control.AgglomerationThreshold };
                     if (Tracker.PopulatedHistoryLength <= 0) {
@@ -94,17 +111,18 @@ namespace CNS.IBM {
                         oldAggThreshold = null;
                     }
 
-                    m_CellAgglomeration = Tracker.GetAgglomerator(new SpeciesId[] {Tracker.GetSpeciesId(Control.FluidSpeciesName)},
+                    cellAgglomeration = Tracker.GetAgglomerator(
+                        new SpeciesId[] { Tracker.GetSpeciesId(Control.FluidSpeciesName) },
                         Control.LevelSetQuadratureOrder,
                         Control.AgglomerationThreshold,
-                        AgglomerateNewborn: agglomerateNewbornAndDeceased, AgglomerateDecased: agglomerateNewbornAndDeceased,
+                        AgglomerateNewborn: agglomerateNewbornAndDeceased,
+                        AgglomerateDecased: agglomerateNewbornAndDeceased,
                         oldTs__AgglomerationTreshold: oldAggThreshold);
 
-
-                    var speciesAgglomerator = m_CellAgglomeration.GetAgglomerator(
+                    var speciesAgglomerator = cellAgglomeration.GetAgglomerator(
                         Tracker.GetSpeciesId(Control.FluidSpeciesName));
-                    if(Control.PrintAgglomerationInfo) {
 
+                    if (Control.PrintAgglomerationInfo) {
                         bool stdoutOnlyOnRank0 = ilPSP.Environment.StdoutOnlyOnRank0;
                         ilPSP.Environment.StdoutOnlyOnRank0 = false;
                         Console.WriteLine(
@@ -114,23 +132,22 @@ namespace CNS.IBM {
                         ilPSP.Environment.StdoutOnlyOnRank0 = stdoutOnlyOnRank0;
                     }
 
-                    if(Control.SaveAgglomerationPairs) {
+                    if (Control.SaveAgglomerationPairs) {
                         int i = 0;
                         string fileName;
                         do {
                             fileName = String.Format(
                                 "agglomerationParis_rank{0}_{1}.txt", Tracker.GridDat.MpiRank, i);
                             i++;
-                        } while(File.Exists(fileName));
+                        } while (File.Exists(fileName));
 
                         speciesAgglomerator.PlotAgglomerationPairs(fileName, includeDummyPointIfEmpty: true);
                     }
                 }
 
-                return m_CellAgglomeration;
+                return cellAgglomeration;
             }
         }
-
 
         /// <summary>
         /// Quadrature scheme helper for the integration over the species with
@@ -138,83 +155,11 @@ namespace CNS.IBM {
         /// </summary>
         public XQuadSchemeHelper QuadSchemeHelper {
             get {
-                //if (quadSchemeHelper == null) {
-                if(Control.MomentFittingVariant == XQuadFactoryHelper.MomentFittingVariants.Classic) {
-                    BoSSS.Foundation.XDG.Quadrature.HMF.LevelSetSurfaceQuadRuleFactory.UseNodesOnLevset =
-                        Control.SurfaceHMF_ProjectNodesToLevelSet;
-                    BoSSS.Foundation.XDG.Quadrature.HMF.LevelSetSurfaceQuadRuleFactory.RestrictNodes =
-                        Control.SurfaceHMF_RestrictNodes;
-                    BoSSS.Foundation.XDG.Quadrature.HMF.LevelSetSurfaceQuadRuleFactory.UseGaussNodes =
-                        Control.SurfaceHMF_UseGaussNodes;
-
-                    BoSSS.Foundation.XDG.Quadrature.HMF.LevelSetVolumeQuadRuleFactory.NodeCountSafetyFactor =
-                        Control.VolumeHMF_NodeCountSafetyFactor;
-                    BoSSS.Foundation.XDG.Quadrature.HMF.LevelSetVolumeQuadRuleFactory.RestrictNodes =
-                        Control.VolumeHMF_RestrictNodes;
-                    BoSSS.Foundation.XDG.Quadrature.HMF.LevelSetVolumeQuadRuleFactory.UseGaussNodes =
-                        Control.VolumeHMF_UseGaussNodes;
-                }
-
                 SpeciesId[] species = new SpeciesId[] {
-                        Tracker.GetSpeciesId(Control.FluidSpeciesName)
-                    };
+                    Tracker.GetSpeciesId(Control.FluidSpeciesName)
+                };
 
                 return Tracker.GetXDGSpaceMetrics(species, Control.LevelSetQuadratureOrder, 1).XQuadSchemeHelper;
-
-                /*
-                CutCellMetrics cutCellMetrics = new CutCellMetrics(
-                    Control.MomentFittingVariant, Control.LevelSetQuadratureOrder, Tracker, species);
-
-                bool agglomerateNewbornAndDeceased = true;
-                var oldCCM = new CutCellMetrics[] { lastCutCellMetrics };
-                var oldAggThreshold = new double[] { Control.AgglomerationThreshold };
-                if (lastCutCellMetrics == null) {
-                    agglomerateNewbornAndDeceased = false;
-                    lastCutCellMetrics = cutCellMetrics;
-                    oldAggThreshold = null;
-                    oldCCM = null;
-                }
-                MultiphaseCellAgglomerator agglomerator = new MultiphaseCellAgglomerator(
-                    cutCellMetrics,
-                    Control.AgglomerationThreshold,
-                    AgglomerateNewborn: agglomerateNewbornAndDeceased, AgglomerateDecased: agglomerateNewbornAndDeceased,
-                    oldCcm: oldCCM,
-                    oldTs__AgglomerationTreshold: oldAggThreshold
-                    );
-
-
-                lastCutCellMetrics = cutCellMetrics;
-
-                var speciesAgglomerator = agglomerator.GetAgglomerator(
-                    Tracker.GetSpeciesId(Control.FluidSpeciesName));
-                if (Control.PrintAgglomerationInfo) {
-
-                    bool stdoutOnlyOnRank0 = ilPSP.Environment.StdoutOnlyOnRank0;
-                    ilPSP.Environment.StdoutOnlyOnRank0 = false;
-                    Console.WriteLine(
-                        "Agglomerating {0} cells on rank {1}",
-                        speciesAgglomerator.AggInfo.AgglomerationPairs.Length,
-                        Tracker.GridDat.MpiRank);
-                    ilPSP.Environment.StdoutOnlyOnRank0 = stdoutOnlyOnRank0;
-                }
-
-                if (Control.SaveAgglomerationPairs) {
-                    int i = 0;
-                    string fileName;
-                    do {
-                        fileName = String.Format(
-                            "agglomerationParis_rank{0}_{1}.txt", Tracker.GridDat.MpiRank, i);
-                        i++;
-                    } while (File.Exists(fileName));
-
-                    speciesAgglomerator.PlotAgglomerationPairs(fileName, includeDummyPointIfEmpty: true);
-                }
-
-                quadSchemeHelper = new XQuadSchemeHelper(agglomerator);
-                */
-                //}
-
-                //return quadSchemeHelper;
             }
         }
 
@@ -241,7 +186,7 @@ namespace CNS.IBM {
 
             this.tracker = new LevelSetTracker(
                 (GridData)levelSet.GridDat,
-                Control.MomentFittingVariant,
+                Control.CutCellQuadratureType,
                 0,
                 new string[] { Control.VoidSpeciesName, Control.FluidSpeciesName },
                 levelSet);
@@ -257,7 +202,6 @@ namespace CNS.IBM {
         public IBMMassMatrixFactory GetMassMatrixFactory(CoordinateMapping mapping) {
             if (MassMatrixFactory == null || !mapping.Equals(MassMatrixFactory.Mapping)) {
                 MassMatrixFactory = new IBMMassMatrixFactory(this, mapping, Control.FluidSpeciesName, Control.LevelSetQuadratureOrder);
-                //MassMatrixFactory = new IBMMassMatrixFactory(this, mapping);
             }
             return MassMatrixFactory;
         }
@@ -298,15 +242,15 @@ namespace CNS.IBM {
 
         #endregion
 
-        #region IObservable<<evelSetData> Members
+        #region IObservable<LevelSetData> Members
 
         /// <summary>
         /// Discards old quadrature information
         /// </summary>
         /// <param name="value"></param>
         public void OnNext(LevelSetTracker.LevelSetRegions value) {
-            //this.quadSchemeHelper = null;
             this.MassMatrixFactory = null;
+            this.cellAgglomeration = null;
         }
 
         /// <summary>

@@ -187,7 +187,7 @@ namespace CNS.Tests.IBMTests {
             c.Queries.Add("L2ErrorYMomentum", QueryLibrary.L2Error(Variables.Momentum[1], sessionAndGridGuid.Item3));
             c.Queries.Add("L2ErrorEnergy", QueryLibrary.L2Error(Variables.Energy, sessionAndGridGuid.Item3));
 
-            c.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
             c.SurfaceHMF_ProjectNodesToLevelSet = false;
             c.SurfaceHMF_RestrictNodes = true;
             c.SurfaceHMF_UseGaussNodes = false;

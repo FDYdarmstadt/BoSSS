@@ -52,10 +52,25 @@ namespace CNS {
             get;
         }
 
+        /// <summary>
+        /// The full operator to be evaluated
+        /// </summary>
         Operator FullOperator {
             get;
         }
 
+        /// <summary>
+        /// Save the given time-step to the databse
+        /// </summary>
+        /// <param name="ts"></param>
+        /// <param name="phystime"></param>
         void SaveToDatabase(TimestepNumber ts, double phystime);
+
+        /// <summary>
+        /// The current (major) time-step number
+        /// </summary>
+        int TimestepNumber {
+            get;
+        }
     }
 }
