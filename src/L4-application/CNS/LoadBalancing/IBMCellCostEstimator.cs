@@ -57,8 +57,8 @@ namespace CNS.LoadBalancing {
             EstimatedLocalCost = cellToCostMap.Sum();
         }
 
-        public static ICellCostEstimator GetStaticCostBasedEstimator() {
-            return new StaticCellCostEstimator(
+        public static Func<IApplication<AppControl>, int, ICellCostEstimator> GetStaticCostBasedEstimator() {
+            return (p, i) => new StaticCellCostEstimator(
                 new int[] { 10, 100, 1 });
         }
 
