@@ -71,7 +71,7 @@ namespace CNS.Tests.IBMTests {
             // NEXT STEP: SET THIS BOOL TO FALSE AND JUST USE IN POSITIVE SUB_VOLUME;
             // THEN TRY BOUNDING BOX APPROACH?
             // WHY THE HELL DOES THIS CONFIGURATION FAIL!??!?!?!?
-            c.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
             c.SurfaceHMF_ProjectNodesToLevelSet = false;
             c.SurfaceHMF_RestrictNodes = true;
             c.SurfaceHMF_UseGaussNodes = false;
@@ -87,7 +87,7 @@ namespace CNS.Tests.IBMTests {
             //c.DbPath = @"C:\bosss_dbv2\NACA0012";
             c.savetodb = true;
             c.saveperiod = 10000;
-            c.ProjectName = "MeshPara:" + MeshPara  + "_CFL=" + c.CFLFraction + "_p=" + dgDegree + "_agg=" + c.AgglomerationThreshold + "_alpha="+ alpha + "_HMF="+ c.MomentFittingVariant;
+            c.ProjectName = "MeshPara:" + MeshPara  + "_CFL=" + c.CFLFraction + "_p=" + dgDegree + "_agg=" + c.AgglomerationThreshold + "_alpha="+ alpha + "_HMF="+ c.CutCellQuadratureType;
             c.ProjectDescription = "NACA0012 Steady Test with Ma=0.5";
             c.Tags.Add("NACA0012");
             c.Tags.Add("IBM Test");

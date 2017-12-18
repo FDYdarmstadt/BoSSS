@@ -492,7 +492,7 @@ namespace BoSSS.Solution {
                         } else {
                             statement = incompleteStatement + "\n" + line;
                         }
-                        
+
                         try {
                             incompleteStatement = eval.Evaluate(statement, out controlObj, out result_set);
                         } catch (Exception e) {
@@ -1257,7 +1257,7 @@ namespace BoSSS.Solution {
             get;
             protected set;
         }
-        
+
         /// <summary>
         /// Extended grid information.
         /// </summary>
@@ -1418,9 +1418,9 @@ namespace BoSSS.Solution {
                         this.CurrentSessionInfo,
                         this.GridData,
                         this.IOFields);
-                } catch(Exception e) {
-                    Console.WriteLine(e.GetType().Name + " on rank " + this.MPIRank + " saveing timestep " + timestepno + ": "+ e.Message);
-                    tsi = null; 
+                } catch (Exception e) {
+                    Console.WriteLine(e.GetType().Name + " on rank " + this.MPIRank + " saveing timestep " + timestepno + ": " + e.Message);
+                    tsi = null;
                 }
 
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
@@ -1502,10 +1502,10 @@ namespace BoSSS.Solution {
                 var relevantFields = m_RegisteredFields.Union(
                     m_IOFields, ReferenceComparer.Instance).ToArray();
 
-                foreach(var f in relevantFields) {
-                    if(f is XDGField) {
+                foreach (var f in relevantFields) {
+                    if (f is XDGField) {
                         var xdgf = (XDGField)f;
-                        if(!object.ReferenceEquals(xdgf.Basis.Tracker, this.LsTrk))
+                        if (!object.ReferenceEquals(xdgf.Basis.Tracker, this.LsTrk))
                             throw new ApplicationException("XDG is defined against unknown level-set tracker!");
                     }
                 }
@@ -1538,7 +1538,7 @@ namespace BoSSS.Solution {
                                 //SpeciesOnlyField.ProjectField(Function);
 
                                 Pass2_Evaluators.Add(val.Key, val.Value);
-                                
+
                                 found = true;
                                 break;
                             }
@@ -1555,23 +1555,23 @@ namespace BoSSS.Solution {
                 // pass 2: XDG fields
                 // ===========================
 
-                if(Pass2_Evaluators.Count > 0) {
+                if (Pass2_Evaluators.Count > 0) {
                     LsTrk.UpdateTracker();
                     LsTrk.PushStacks();
 
-                    foreach(var val in Pass2_Evaluators) {
+                    foreach (var val in Pass2_Evaluators) {
                         string DesiredFieldName = val.Key;
                         ScalarFunction Function = Utils.NonVectorizedScalarFunction.Vectorize(val.Value);
 
                         bool found = false;
-                        foreach(DGField f in relevantFields) {
-                            if(f.Identification.Equals(DesiredFieldName)) {
+                        foreach (DGField f in relevantFields) {
+                            if (f.Identification.Equals(DesiredFieldName)) {
                                 throw new ApplicationException();
                             } else {
 
                                 // now, the XDG hack:
                                 var NameAndSpc = DesiredFieldName.Split(new string[] { "#" }, StringSplitOptions.RemoveEmptyEntries);
-                                if(NameAndSpc.Length == 2 && f.Identification.Equals(NameAndSpc[0])) {
+                                if (NameAndSpc.Length == 2 && f.Identification.Equals(NameAndSpc[0])) {
                                     tr.Info("projecting XDG-field \"" + f.Identification + "\"");
                                     string spc = NameAndSpc[1];
                                     var xdgf = (XDGField)f;
@@ -1583,7 +1583,7 @@ namespace BoSSS.Solution {
                             }
                         }
 
-                        if(!found) {
+                        if (!found) {
                             throw new ApplicationException(
                                 "initial value specified for a field named \"" + DesiredFieldName +
                                 "\", but no field with that identification exists in context.");
@@ -1803,7 +1803,7 @@ namespace BoSSS.Solution {
         /// <summary>
         /// Main routine for dynamic load balancing and adaptive mesh refinement.
         /// </summary>
-        virtual protected void MpiRedistributeAndMeshAdapt(int TimeStepNo, double physTime) {
+        virtual protected void MpiRedistributeAndMeshAdapt(int TimeStepNo, double physTime, int[] fixedPartition = null, Permutation fixedPermutation = null) {
             //if (this.MPISize <= 1)
             //    return;
             //Console.WriteLine("REM: dynamic load balancing for 1 processor is active.");
@@ -1814,8 +1814,8 @@ namespace BoSSS.Solution {
                 // mesh adaptation
                 // ===============
                 this.AdaptMesh(TimeStepNo, out var newGrid, out var old2newGridCorr);
-                
-                if(newGrid == null) {
+
+                if (newGrid == null) {
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // no mesh adaptation, but (maybe) grid redistribution (load balancing)
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1824,15 +1824,21 @@ namespace BoSSS.Solution {
                     // init / determine if partition has changed / check Partitioning
                     // ==============================================================
 
-                    int[] NewPartition = ComputeNewCellDistribution(TimeStepNo, physTime);
-                    if(NewPartition == null)
+                    //int[] NewPartition = ComputeNewCellDistribution(TimeStepNo, physTime);
+
+
+
+                    int[] NewPartition = fixedPartition ?? ComputeNewCellDistribution(TimeStepNo, physTime);
+
+
+                    if (NewPartition == null)
                         // nothing to do
                         return;
 
                     int JupOld = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
                     int NoOfRedistCells = CheckPartition(NewPartition, JupOld);
 
-                    if(NoOfRedistCells <= 0) {
+                    if (NoOfRedistCells <= 0) {
                         return;
                     } else {
                         //Debugger.Launch();
@@ -1857,11 +1863,11 @@ namespace BoSSS.Solution {
                         newGridData = new GridData(this.Grid);
                         this.GridData = newGridData;
                         oldGridData.Invalidate();
-                        if(this.LsTrk != null) {
+                        if (this.LsTrk != null) {
                             this.LsTrk.Invalidate();
                         }
 
-                        if(this.Control == null || this.Control.NoOfMultigridLevels > 0)
+                        if (this.Control == null || this.Control.NoOfMultigridLevels > 0)
                             this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
                         else
                             this.MultigridSequence = new AggregationGrid[0];
@@ -1875,7 +1881,7 @@ namespace BoSSS.Solution {
                     Permutation Resorting;
                     {
                         // sigma is the GlobalID-permutation of the **new** grid
-                        Permutation sigma = newGridData.CurrentGlobalIdPermutation;
+                        Permutation sigma = fixedPermutation ?? newGridData.CurrentGlobalIdPermutation;
 
                         // compute resorting permutation
                         Permutation invSigma = sigma.Invert();
@@ -1909,14 +1915,14 @@ namespace BoSSS.Solution {
                     this.m_IOFields.Clear();
 
                     // re-create fields
-                    if(this.Control != null) {
+                    if (this.Control != null) {
                         InitFromAttributes.CreateFieldsAuto(
                             this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
                     }
                     CreateFields(); // full user control   
-                    PostRestart(physTime);
+                    PostRestart(physTime, TimeStepNo);
 
-                    
+
                     // re-set Level-Set tracker
                     int trackerVersion = loadbal.SetNewTracker(this.LsTrk);
                     //if(this.LsTrk != null) {
@@ -1928,14 +1934,14 @@ namespace BoSSS.Solution {
                     //        }
                     //    }
 
-                        
+
                     //}
 
                     // set dg coördinates
-                    foreach(var f in m_RegisteredFields) {
-                        if(f is XDGField) {
+                    foreach (var f in m_RegisteredFields) {
+                        if (f is XDGField) {
                             XDGBasis xb = ((XDGField)f).Basis;
-                            if(!object.ReferenceEquals(xb.Tracker, this.LsTrk))
+                            if (!object.ReferenceEquals(xb.Tracker, this.LsTrk))
                                 throw new ApplicationException();
                         }
                         loadbal.RestoreDGField(f);
@@ -1949,22 +1955,22 @@ namespace BoSSS.Solution {
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // mesh adaptation
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                    
+
                     // backup old data
                     // ===============
-                  
+
                     GridData oldGridData = this.GridData;
                     GridCommons oldGrid = oldGridData.Grid;
                     Permutation tau;
                     GridUpdateDataVault_Adapt remshDat = new GridUpdateDataVault_Adapt(oldGridData, this.LsTrk);
                     BackupData(oldGridData, this.LsTrk, remshDat, out tau);
-                                       
+
 
                     // check for grid redistribution
                     // =============================
 
-                    int[] NewPartition = ComputeNewCellDistribution(TimeStepNo, physTime);
-                    if(NewPartition != null) {
+                    int[] NewPartition = fixedPartition ?? ComputeNewCellDistribution(TimeStepNo, physTime);
+                    if (NewPartition != null) {
                         // grid also has to be re-distributed
 
                         // rem: the new Partition correlates to the OLD grid
@@ -1995,12 +2001,12 @@ namespace BoSSS.Solution {
                         newGridData = new GridData(this.Grid);
                         this.GridData = newGridData;
                         oldGridData.Invalidate();
-                        if(this.LsTrk != null) {
+                        if (this.LsTrk != null) {
                             this.LsTrk.Invalidate();
                         }
                         oldGridData = null;
 
-                        if(this.Control == null || this.Control.NoOfMultigridLevels > 0)
+                        if (this.Control == null || this.Control.NoOfMultigridLevels > 0)
                             this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
                         else
                             this.MultigridSequence = new AggregationGrid[0];
@@ -2010,15 +2016,15 @@ namespace BoSSS.Solution {
 
                     // compute redistribution permutation
                     // ==================================
-                    
+
                     old2newGridCorr.ComputeDataRedist(newGridData);
 
                     int newJ = newGridData.Cells.NoOfLocalUpdatedCells;
                     //int[][] TargMappingIdx = old2newGridCorr.GetTargetMappingIndex(newGridData.CellPartitioning);
-                    
+
                     // sent data around the world
                     // ==========================
-                                      
+
 
                     remshDat.Resort(old2newGridCorr, newGridData);
 
@@ -2030,12 +2036,12 @@ namespace BoSSS.Solution {
                     this.m_IOFields.Clear();
 
                     // re-create fields
-                    if(this.Control != null) {
+                    if (this.Control != null) {
                         InitFromAttributes.CreateFieldsAuto(
                             this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
                     }
                     CreateFields(); // full user control   
-                    PostRestart(physTime);
+                    PostRestart(physTime, TimeStepNo);
 
                     // re-set Level-Set tracker
                     int trackerVersion = remshDat.SetNewTracker(this.LsTrk);
@@ -2050,10 +2056,10 @@ namespace BoSSS.Solution {
                     //}
 
                     // set dg coördinates
-                    foreach(var f in m_RegisteredFields) {
-                        if(f is XDGField) {
+                    foreach (var f in m_RegisteredFields) {
+                        if (f is XDGField) {
                             XDGBasis xb = ((XDGField)f).Basis;
-                            if(!object.ReferenceEquals(xb.Tracker, this.LsTrk))
+                            if (!object.ReferenceEquals(xb.Tracker, this.LsTrk))
                                 throw new ApplicationException();
                         }
                         remshDat.RestoreDGField(f);
@@ -2065,7 +2071,7 @@ namespace BoSSS.Solution {
             }
         }
 
-        private void BackupData(GridData oldGridData, LevelSetTracker oldLsTrk, 
+        private void BackupData(GridData oldGridData, LevelSetTracker oldLsTrk,
             GridUpdateDataVaultBase loadbal, out Permutation tau) {
 
             //trackerVersion = -1;
@@ -2081,13 +2087,15 @@ namespace BoSSS.Solution {
             tau = oldGridData.CurrentGlobalIdPermutation.CloneAs();
 
             // backup level-set tracker 
-            loadbal.BackupTracker();
+            if (this.LsTrk != null) {
+                loadbal.BackupTracker();
+            }
 
             // backup DG Fields
-            foreach(var f in this.m_RegisteredFields) {
-                if(f is XDGField) {
+            foreach (var f in this.m_RegisteredFields) {
+                if (f is XDGField) {
                     XDGBasis xb = ((XDGField)f).Basis;
-                    if(!object.ReferenceEquals(xb.Tracker, oldLsTrk))
+                    if (!object.ReferenceEquals(xb.Tracker, oldLsTrk))
                         throw new ApplicationException();
                 }
                 loadbal.BackupField(f);
@@ -2102,20 +2110,20 @@ namespace BoSSS.Solution {
             int mpiSize;// = oldGridData.CellPartitioning.MpiSize;
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out mpiRank);
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out mpiSize);
-            
+
             int locNoOfRedistCells = 0;
 
             // check Partitioning
-            if(NewPartition.Length != JupOld)
+            if (NewPartition.Length != JupOld)
                 throw new ApplicationException("Illegal length of return value of 'ComputeNewCellDistribution'.");
 
             int[] locNoOfCellsPerProcessor = new int[mpiSize + 1], NoOfCellsPerProcessor;
-            for(int j = 0; j < JupOld; j++) {
-                if(NewPartition[j] < 0)
+            for (int j = 0; j < JupOld; j++) {
+                if (NewPartition[j] < 0)
                     throw new ApplicationException("Illegal MPI rank '" + NewPartition[j] + "' from 'ComputeNewCellDistribution(...)'.");
-                if(NewPartition[j] >= mpiSize)
+                if (NewPartition[j] >= mpiSize)
                     throw new ApplicationException("Illegal MPI rank '" + NewPartition[j] + "' from 'ComputeNewCellDistribution(...)' - larger or equal than MPI size, which is '" + mpiSize + "'.");
-                if(NewPartition[j] != mpiRank)
+                if (NewPartition[j] != mpiRank)
                     locNoOfRedistCells++;
 
                 locNoOfCellsPerProcessor[NewPartition[j]]++;
@@ -2128,8 +2136,8 @@ namespace BoSSS.Solution {
             //for (int proc = 0; proc < mpiSize; proc++)
             //    Console.WriteLine("Proc {0}: {1} cells.", proc, NoOfCellsPerProcessor[proc]);
 
-            for(int proc = 0; proc < mpiSize; proc++) {
-                if(NoOfCellsPerProcessor[proc] <= 0)
+            for (int proc = 0; proc < mpiSize; proc++) {
+                if (NoOfCellsPerProcessor[proc] <= 0)
                     throw new ApplicationException("Zero cells on one processor are nor allowed.");
             }
 
@@ -2546,20 +2554,20 @@ namespace BoSSS.Solution {
                     long afterInit = 0;
                     app.m_QueryResultTable = nlog;
                     bool paast = false;
-#if DEBUG
+        #if DEBUG
                     {
-#else
+        #else
                     try {
-#endif
+        #endif
                         //app.Init(modControl, default(T), opt, modControl.confSolver.TracingNamespaces);
                         throw new NotSupportedException
                         afterInit = watch.ElapsedTicks;
                         app.RunSolverMode();
                         paast = true;
                         nlog.LogValue("pstudy_case_successful", true);
-#if DEBUG
+        #if DEBUG
                     }
-#else
+        #else
                     } catch (Exception e) {
                         nlog.LogValue("pstudy_case_successful", false);
                         if (_control.confParameterStudy.ContinueOnError) {
@@ -2569,7 +2577,7 @@ namespace BoSSS.Solution {
                             throw;
                         }
                     }
-#endif
+        #endif
                     watch.Stop();
 
 
@@ -2802,7 +2810,7 @@ namespace BoSSS.Solution {
                 //throw new NotImplementedException("unknown restart type.");
             }
 
-            PostRestart(Time);
+            PostRestart(Time, TimestepNo);
 
             System.GC.Collect();
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
@@ -2819,7 +2827,7 @@ namespace BoSSS.Solution {
         /// should be carried out after a restart file has been loaded (e.g.,
         /// setting the correct time for a time-stepper)
         /// </summary>
-        public virtual void PostRestart(double time) {
+        public virtual void PostRestart(double time, TimestepNumber timestep) {
         }
 
         /// <summary>
