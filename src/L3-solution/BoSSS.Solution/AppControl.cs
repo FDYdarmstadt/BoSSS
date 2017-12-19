@@ -490,6 +490,12 @@ namespace BoSSS.Solution.Control {
         }
 
         /// <summary>
+        /// If true, a redistribution will be attempted BEFORE the first
+        /// time-step starts
+        /// </summary>
+        public bool DynamicLoadBalancing_RedistributeAtStartup = false;
+
+        /// <summary>
         /// A method that creates a new estimator for the runtime cost of individual cells
         /// </summary>
         public List<Func<IApplication<AppControl>, int, ICellCostEstimator>> DynamicLoadBalancing_CellCostEstimatorFactories =

@@ -78,7 +78,7 @@ namespace BoSSS.Solution {
         /// See <see cref="Control.AppControl.DynamicLoadBalancing_Period"/>.
         /// </param>
         /// <returns></returns>
-        public int[] GetNewPartitioning(IApplication<AppControl> app, int performanceClassCount, int[] cellToPerformanceClassMap, int TimestepNo, GridPartType gridPartType, string PartOptions, double imbalanceThreshold, int Period) {
+        public int[] GetNewPartitioning(IApplication<AppControl> app, int performanceClassCount, int[] cellToPerformanceClassMap, int TimestepNo, GridPartType gridPartType, string PartOptions, double imbalanceThreshold, int Period, bool redistributeAtStartup) {
             // Create new model if number of cell classes has changed
             for (int i = 0; i < cellCostEstimatorFactories.Count; i++) {
                 if (CurrentCellCostEstimators[i] == null
@@ -90,13 +90,14 @@ namespace BoSSS.Solution {
             }
 
             if (app.Grid.Size == 1
-                || TimestepNo % Period != 0) {
+                || (TimestepNo == 0 && redistributeAtStartup)
+                || (Period > 0 &&  TimestepNo % Period != 0)) {
                 return null;
             }
-            
+
             // No new partitioning if imbalance below threshold
             double[] imbalanceEstimates =
-                CurrentCellCostEstimators.Select(estimator => estimator.ImbalanceEstimate()).ToArray();
+                    CurrentCellCostEstimators.Select(estimator => estimator.ImbalanceEstimate()).ToArray();
             bool imbalanceTooLarge = false;
             for (int i = 0; i < cellCostEstimatorFactories.Count; i++) {
                 imbalanceTooLarge |= (imbalanceEstimates[i] > imbalanceThreshold);
@@ -119,7 +120,7 @@ namespace BoSSS.Solution {
             if (gridPartType != GridPartType.ParMETIS && cellCosts.Count > 1) {
                 throw new NotImplementedException("Multiple balance constraints only supported using ParMETIS for now");
             }
-            
+
             int[] result;
             switch (gridPartType) {
                 case GridPartType.METIS:
