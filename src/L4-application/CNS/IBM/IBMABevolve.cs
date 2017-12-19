@@ -29,7 +29,8 @@ using System.Collections;
 using System.Collections.Generic;
 
 namespace CNS.IBM {
-    class IBMABevolve :ABevolve {
+
+    class IBMABevolve : ABevolve {
 
         private ImmersedSpeciesMap speciesMap;
 
@@ -52,8 +53,9 @@ namespace CNS.IBM {
             int explicitOrder,
             int levelSetQuadratureOrder,
             XQuadFactoryHelper.MomentFittingVariants momentFittingVariant,
-            SubGrid sgrd)
-            : base(standardOperator, fieldsMap, null, explicitOrder, sgrd: sgrd)  {
+            SubGrid sgrd,
+            bool adaptive = false)
+            : base(standardOperator, fieldsMap, parametersMap, explicitOrder, adaptive: adaptive, sgrd: sgrd) {
 
             speciesMap = ibmSpeciesMap as ImmersedSpeciesMap;
             if (speciesMap == null) {
@@ -69,9 +71,9 @@ namespace CNS.IBM {
 
         internal void BuildEvaluatorsAndMasks() {
 
-            CellMask fluidCells = speciesMap.SubGrid.VolumeMask.Intersect(sgrd.VolumeMask);
-            cutCells = speciesMap.Tracker._Regions.GetCutCellMask().Intersect(sgrd.VolumeMask);
-            cutAndTargetCells = cutCells.Union(speciesMap.Agglomerator.AggInfo.TargetCells).Intersect(sgrd.VolumeMask);
+            CellMask fluidCells = speciesMap.SubGrid.VolumeMask.Intersect(ABSubGrid.VolumeMask);
+            cutCells = speciesMap.Tracker.Regions.GetCutCellMask().Intersect(ABSubGrid.VolumeMask);
+            cutAndTargetCells = cutCells.Union(speciesMap.Agglomerator.AggInfo.TargetCells).Intersect(ABSubGrid.VolumeMask);
 
 
             IBMControl control = speciesMap.Control;
@@ -83,18 +85,18 @@ namespace CNS.IBM {
 
             // Does _not_ include agglomerated edges
             EdgeMask nonVoidEdges = speciesMap.QuadSchemeHelper.GetEdgeMask(species);
-            nonVoidEdges = nonVoidEdges.Intersect(sgrd.AllEdgesMask);
+            nonVoidEdges = nonVoidEdges.Intersect(ABSubGrid.AllEdgesMask);
             EdgeQuadratureScheme edgeScheme = speciesMap.QuadSchemeHelper.GetEdgeQuadScheme(
                 species, true, nonVoidEdges, control.LevelSetQuadratureOrder);
 
             this.m_Evaluator = new Lazy<SpatialOperator.Evaluator>(() =>
                 this.Operator.GetEvaluatorEx(
                     Mapping,
-                    null, // TO DO: I SIMPLY REMOVE PARAMETERMAP HERE; MAKE THIS MORE PRETTY
+                    boundaryParameterMap,
                     Mapping,
                     edgeScheme,
                     volumeScheme,
-                    sgrd,
+                    ABSubGrid,
                     subGridBoundaryTreatment: SpatialOperator.SubGridBoundaryModes.InnerEdgeLTS));
 
             // Evaluator for boundary conditions at level set zero contour
@@ -106,12 +108,12 @@ namespace CNS.IBM {
                     Mapping,
                     boundaryParameterMap,
                     Mapping,
-                    null, // Contains no boundary terms
+                    null, // Contains no boundary terms --> PROBLEM??????????
                     boundaryVolumeScheme));
         }
 
 
-        protected override void ComputeChangeRate(double[] k, double AbsTime, double RelTime, double[] edgeFluxes =null) {
+        protected override void ComputeChangeRate(double[] k, double AbsTime, double RelTime, double[] edgeFluxes = null) {
             Evaluator.Evaluate(1.0, 0.0, k, AbsTime, outputBndEdge: edgeFluxes);
             Debug.Assert(
                 !k.Any(f => double.IsNaN(f)),
@@ -156,20 +158,18 @@ namespace CNS.IBM {
 
             dt = base.Perform(dt);
             return dt;
-
         }
-
 
         protected override double[] ComputesUpdatedDGCoordinates(double[] completeChangeRate) {
             double[] y0 = new double[Mapping.LocalLength];
             DGCoordinates.CopyTo(y0, 0);
             DGCoordinates.axpy<double[]>(completeChangeRate, -1);
-            
+
             // Speciality for IBM: Do the extrapolation
             speciesMap.Agglomerator.Extrapolate(DGCoordinates.Mapping);
 
             double[] upDGC = DGCoordinates.ToArray();
-            upDGC = orderValuesBySgrd(upDGC);
+            upDGC = OrderValuesBySgrd(upDGC);
             // DGCoordinates should be untouched after calling this method
             DGCoordinates.Clear();
             DGCoordinates.CopyFrom(y0, 0);
@@ -183,11 +183,11 @@ namespace CNS.IBM {
         /// </summary>
         /// <param name="results">Result for the complete Grid</param>
         /// <returns>Array with entries only for the sgrd-cells</returns>
-        private double[] orderValuesBySgrd(double[] results) {
+        private double[] OrderValuesBySgrd(double[] results) {
             double[] ordered = new double[Mapping.LocalLength];
 
-            for (int j = 0; j < sgrd.LocalNoOfCells; j++) {
-                int cell = sgrd.SubgridIndex2LocalCellIndex[j];
+            for (int j = 0; j < ABSubGrid.LocalNoOfCells; j++) {
+                int cell = ABSubGrid.SubgridIndex2LocalCellIndex[j];
                 // cell in sgrd
                 // f== each field
                 // n== basis polynomial

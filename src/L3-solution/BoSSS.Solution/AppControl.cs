@@ -24,6 +24,7 @@ using System.Linq;
 using System.Reflection;
 using BoSSS.Platform;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.XDG;
 
 namespace BoSSS.Solution.Control {
 
@@ -491,8 +492,8 @@ namespace BoSSS.Solution.Control {
         /// <summary>
         /// A method that creates a new estimator for the runtime cost of individual cells
         /// </summary>
-        public Func<IApplication<AppControl>, int, ICellCostEstimator> DynamicLoadBalancing_CellCostEstimatorFactory =
-            CellCostEstimatorLibrary.AllCellsAreEqual;
+        public List<Func<IApplication<AppControl>, int, ICellCostEstimator>> DynamicLoadBalancing_CellCostEstimatorFactories =
+            new List<Func<IApplication<AppControl>, int, ICellCostEstimator>>();
 
         /// <summary>
         /// Number of time-steps, after which dynamic load balancing is performed; if negative, dynamic load balancing is turned off.
@@ -507,5 +508,12 @@ namespace BoSSS.Solution.Control {
         /// Dynamic load balancing is suppressed if the relative computation imbalance is below this value.
         /// </summary>
         public double DynamicLoadBalancing_ImbalanceThreshold = 0.12;
+
+
+        /// <summary>
+        /// Actual type of cut cell quadrature to use; If no XDG, is used, resp. no cut cells are present,
+        /// this setting has no effect.
+        /// </summary>
+        public XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
     }
 }

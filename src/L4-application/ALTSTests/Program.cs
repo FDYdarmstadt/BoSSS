@@ -98,7 +98,7 @@ namespace ALTSTests {
             m_IOFields.Add(c);
         }
 
-        protected override void CreateEquationsAndSolvers(LoadBalancingData L) {
+        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
             diffOp = new SpatialOperator(
                 new string[] { "c" },
                 new string[] { "viscosity", "VelocityX", "VelocityY" },

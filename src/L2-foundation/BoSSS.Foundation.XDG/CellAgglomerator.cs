@@ -998,7 +998,7 @@ namespace BoSSS.Foundation.XDG {
 
             double[] tmp = V.ToArray();
             if (object.ReferenceEquals(tmp, V))
-                throw new ApplicationException("Flache kopie sollte eigentlich ausgeschlossen sein!?");
+                throw new ApplicationException("shallow copy detected");
 
             AggMtx.SpMVpara(1.0, tmp, 1.0, V);
         }

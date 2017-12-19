@@ -616,7 +616,10 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// by calling ParMETIS.
         /// </summary>
         /// <param name="cellWeights">
-        /// If not null, defines the weight associted with each cell on this process
+        /// If not null, defines the (list of) weights associated with each
+        /// cell on this process. If multiple weights are present per cell,
+        /// this implies that there are multiple balance constraints to be
+        /// obeyed by ParMETIS
         /// </param>
         /// <param name="refineCurrentPartitioning">
         /// Refines the current partitioning instead of starting from scratch
@@ -628,7 +631,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// For each local cell index, the returned array contains the MPI
         /// process rank where the cell should be placed.
         /// </returns>
-        public int[] ComputePartitionParMETIS(int[] cellWeights = null, bool refineCurrentPartitioning = false) {
+        public int[] ComputePartitionParMETIS(IList<int[]> cellWeights = null, bool refineCurrentPartitioning = false) {
             using (new FuncTrace()) {
                 int size = this.Size;
                 int rank = this.MyRank;
@@ -669,15 +672,30 @@ namespace BoSSS.Foundation.Grid.Classic {
                         parmetisAction = ParMETIS.V3_PartKway;
                     }
 
-                    int nparts = size;
-                    int ncon = 1; // Just one balance constraint (vertex weights)
-                    MPI_Comm wrld = csMPI.Raw._COMM.WORLD;
-                    int wgtflag = 2; // Cell weights only
+
                     if (cellWeights == null) {
                         // Cell weights null causes problems with ParMETIS
-                        cellWeights = new int[NoOfUpdateCells];
-                        cellWeights.SetAll(1);
+                        cellWeights = new List<int[]>() { new int[NoOfUpdateCells] };
+                        cellWeights.Single().SetAll(1);
                     }
+
+                    Debug.Assert(
+                        cellWeights.All(w => w.Length == cellWeights[0].Length),
+                        "All cell weights arrays must have the same length!");
+
+                    int[] cellWeightsFlattened = new int[cellWeights.Sum(c => c.Length)];
+                    int index = 0;
+                    for (int iCell = 0; iCell < cellWeights[0].Length; iCell++) {
+                        for (int iConstraint = 0; iConstraint < cellWeights.Count; iConstraint++) {
+                            cellWeightsFlattened[index] = cellWeights[iConstraint][iCell];
+                            index++;
+                        }
+                    }
+
+                    int nparts = size;
+                    int ncon = cellWeights.Count; // Number of balance constraints
+                    MPI_Comm wrld = csMPI.Raw._COMM.WORLD;
+                    int wgtflag = 2; // Cell weights only
                     int numflag = 0; // 0 -> use C-style ordering
 
                     // Equal distribution of balance constraints (default)
@@ -699,7 +717,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         vtxdist: currentCellPartitioning,
                         xadj: xadj,
                         adjncy: adjncyL.ToArray(),
-                        vwgt: cellWeights,
+                        vwgt: cellWeightsFlattened,
                         adjwgt: null, // No edge weights
                         wgtflag: ref wgtflag,
                         numflag: ref numflag,
@@ -743,7 +761,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             for (int i = 0; i < noOfSurplusCells; i++) {
                 numbersOfCellsPerProcess[i]++;
             }
-            
+
             // Step 3: Determine target rank for each local cell
             int[] partitioning = new int[NoOfUpdateCells];
             for (int i = 0; i < NoOfUpdateCells; i++) {

@@ -14,26 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
-using System.IO;
-using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
-using BoSSS.Platform.LinAlg;
-using BoSSS.Solution;
-using BoSSS.Solution.Control;
-using BoSSS.Solution.GridImport;
 using BoSSS.Solution.Queries;
 using CNS.Convection;
-using CNS.Diffusion;
 using CNS.EquationSystem;
-using CNS.Exception;
 using CNS.IBM;
 using CNS.MaterialProperty;
 using CNS.Residual;
-using CNS.Solution;
-using CNS.Source;
 using ilPSP.Utils;
-using BoSSS.Foundation.Grid.Classic;
+using System;
 
 namespace CNS.Tests.IBMTests {
 
@@ -102,7 +92,7 @@ namespace CNS.Tests.IBMTests {
             // NEXT STEP: SET THIS BOOL TO FALSE AND JUST USE IN POSITIVE SUB_VOLUME;
             // THEN TRY BOUNDING BOX APPROACH?
             // WHY THE HELL DOES THIS CONFIGURATION FAIL!??!?!?!?
-            c.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
             c.SurfaceHMF_ProjectNodesToLevelSet = false;
             c.SurfaceHMF_RestrictNodes = true;
             c.SurfaceHMF_UseGaussNodes = false;
@@ -118,7 +108,7 @@ namespace CNS.Tests.IBMTests {
             //c.DbPath = @"/home/kraemer/GaussianBump/dbev2/";
             c.savetodb = true;
             c.saveperiod = 20000;
-            c.ProjectName = "BoxHMF=" + c.MomentFittingVariant + "_Ma=0.5_(" + 2 * noOfCells + "x" + noOfCells + ")_CFL=" + c.CFLFraction + "_lsQuadOrder=" + c.LevelSetQuadratureOrder + "_p=" + dgDegree + "_agg=" + c.AgglomerationThreshold + "_epsX=" + epsilonX + "_epsY=" + epsilonY;
+            c.ProjectName = "BoxHMF=" + c.CutCellQuadratureType + "_Ma=0.5_(" + 2 * noOfCells + "x" + noOfCells + ")_CFL=" + c.CFLFraction + "_lsQuadOrder=" + c.LevelSetQuadratureOrder + "_p=" + dgDegree + "_agg=" + c.AgglomerationThreshold + "_epsX=" + epsilonX + "_epsY=" + epsilonY;
             c.ProjectDescription = "GaussianBump with Ma=0.5";
             c.Tags.Add("Gaussian Bump");
             c.Tags.Add("IBM Test");
@@ -129,7 +119,6 @@ namespace CNS.Tests.IBMTests {
             c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
 
             // Time-Stepping Settings
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 1;
 
@@ -266,7 +255,6 @@ namespace CNS.Tests.IBMTests {
             c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
 
             // Time-Stepping Settings
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 1;
 
@@ -400,7 +388,6 @@ namespace CNS.Tests.IBMTests {
             c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
 
             // Time-Stepping Settings
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 1;
 
@@ -410,7 +397,7 @@ namespace CNS.Tests.IBMTests {
             //IBM Settings
             c.LevelSetBoundaryTag = "adiabaticSlipWall";
             c.LevelSetQuadratureOrder = 2 * lsDegree;
-            c.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
             c.AgglomerationThreshold = 0.3;
 
             // Primary Variables

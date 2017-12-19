@@ -90,6 +90,7 @@ namespace BoSSS.Foundation {
         /// </summary>
         /// <param name="NoOfDomFields">number of domain fields</param>
         /// <param name="NoOfCodomFields">number of codomain fields</param>
+        /// <param name="QuadOrderFunc">E.g., one of the members of <see cref="QuadOrderFunc"/>.</param>
         /// <param name="__varnames">
         /// names of domain variables 
         /// (entries 0 to (<paramref name="NoOfDomFields"/>-1)),
@@ -103,11 +104,12 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
-        /// 
+        /// ctor.
         /// </summary>
         /// <param name="NoOfDomFields"></param>
         /// <param name="NoOfCodomFields"></param>
         /// <param name="NoOfParameters"></param>
+        /// <param name="QuadOrderFunc">E.g., one of the members of <see cref="QuadOrderFunc"/>.</param>
         /// <param name="__varnames">
         /// names of domain variables, followed by the names of the parameter variables,
         /// followed by the names of the codomain variables;
@@ -128,6 +130,7 @@ namespace BoSSS.Foundation {
         /// <param name="__CoDomainVar">
         /// variable names in the Codomain of the spatial differential operator
         /// </param>
+        /// <param name="QuadOrderFunc">E.g., one of the members of <see cref="QuadOrderFunc"/>.</param>
         public SpatialOperator(IList<string> __DomainVar, IList<string> __CoDomainVar, Func<int[],int[],int[],int> QuadOrderFunc)
             : this(__DomainVar, null, __CoDomainVar, QuadOrderFunc) {
         }
@@ -145,6 +148,7 @@ namespace BoSSS.Foundation {
         /// <param name="__CoDomainVar">
         /// variable names in the Codomain of the spatial differential operator
         /// </param>
+        /// <param name="QuadOrderFunc">E.g., one of the members of <see cref="QuadOrderFunc"/>.</param>
         public SpatialOperator(IList<string> __DomainVar, IList<string> __ParameterVar, IList<string> __CoDomainVar, Func<int[], int[], int[], int> QuadOrderFunc) {
             m_DomainVar = new string[__DomainVar.Count];
             for (int i = 0; i < m_DomainVar.Length; i++) {
@@ -169,10 +173,9 @@ namespace BoSSS.Foundation {
             }
 
             m_CodomainVar = new string[__CoDomainVar.Count];
-            for (int i = 0; i < m_CodomainVar.Length; i++) {
-                if (Array.IndexOf<string>(m_CodomainVar, __CoDomainVar[i]) >= 0)
-                    
-throw new ArgumentException("error in codomain variables list; identifier \"" + __CoDomainVar[i] + "\" appears twice.", "__CoDomainVar");
+            for(int i = 0; i < m_CodomainVar.Length; i++) {
+                if(Array.IndexOf<string>(m_CodomainVar, __CoDomainVar[i]) >= 0)
+                    throw new ArgumentException("error in codomain variables list; identifier \"" + __CoDomainVar[i] + "\" appears twice.", "__CoDomainVar");
                 m_CodomainVar[i] = __CoDomainVar[i];
             }
 
@@ -445,7 +448,7 @@ throw new ArgumentException("error in codomain variables list; identifier \"" + 
             var GridDat = CheckArguments(DomainMap, Parameters, CodomainMap);
 
 
-            int order = GetOrderFromQROF(DomainMap, Parameters, CodomainMap);
+            int order = GetOrderFromQuadOrderFunction(DomainMap, Parameters, CodomainMap);
 
 
             //if (Parameters == null) {
@@ -470,7 +473,7 @@ throw new ArgumentException("error in codomain variables list; identifier \"" + 
 
         }
 
-        public int GetOrderFromQROF(UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap) {
+        public int GetOrderFromQuadOrderFunction(UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap) {
             /// Compute Quadrature Order
             int order;
             int[] DomainDegrees = DomainMap.BasisS.Select(f => f.Degree).ToArray();
@@ -618,7 +621,7 @@ throw new ArgumentException("error in codomain variables list; identifier \"" + 
 
             int order = 0;
             if(edgeRule == null || volRule == null) 
-                order = this.GetOrderFromQROF(DomainMap, Parameters, CodomainMap);
+                order = this.GetOrderFromQuadOrderFunction(DomainMap, Parameters, CodomainMap);
             
             if(edgeRule == null)
                 edgeRule = edgeQuadScheme.SaveCompile(GridDat, order);
@@ -1479,7 +1482,7 @@ throw new ArgumentException("error in codomain variables list; identifier \"" + 
                     if (!m_Owner.IsCommited)
                         throw new ApplicationException("operator assembly must be finalized before by calling 'Commit' before this method can be called.");
 
-                    int order = owner.GetOrderFromQROF(m_DomainMapping, ParameterMap, CodomainVarMap);
+                    int order = owner.GetOrderFromQuadOrderFunction(m_DomainMapping, ParameterMap, CodomainVarMap);
                     //int order = FindQuadratureOrder(DomainVarMap, CodomainVarMap);
                     
                     

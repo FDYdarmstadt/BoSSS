@@ -61,7 +61,7 @@ namespace QuadratureAndProjectionTest {
             return test.GetSingleCellGrid();
         }
 
-        protected override void CreateEquationsAndSolvers(LoadBalancingData L) {
+        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
         }
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {

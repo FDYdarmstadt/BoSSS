@@ -45,7 +45,6 @@ c.EquationOfState = IdealGas.Air;
 c.MachNumber = Mach;
 
 c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
-c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
 c.ExplicitScheme = ExplicitSchemes.RungeKutta;
 c.ExplicitOrder = 1;
 

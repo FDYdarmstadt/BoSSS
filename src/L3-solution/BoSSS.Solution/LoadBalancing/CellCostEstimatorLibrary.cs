@@ -29,14 +29,14 @@ namespace BoSSS.Solution {
         };
 
         public static RuntimeCellCostEstimator MeasureCostOfExplicitOperatorEvaluation(IApplication<AppControl> app, int noOfPerformanceClasses) {
-            return new RuntimeCellCostEstimator(noOfPerformanceClasses, new string[][] {
+            return new RuntimeCellCostEstimator(new string[][] {
                 new[] { "*RunSolverOneStep*", "Volume_Integration_NonLin" },
                 new[] { "*RunSolverOneStep*", "Edge_Integration_NonLin" },
             });
         }
 
-        public static RuntimeCellCostEstimator MeasureCostOfWhateverFlorianThinksIsRelevantButIDontUnderstand(IApplication<AppControl> app, int noOfPerformanceClasses) {
-            return new RuntimeCellCostEstimator(noOfPerformanceClasses, new string[][] {
+        public static RuntimeCellCostEstimator OperatorAssemblyAndCutCellQuadrules(IApplication<AppControl> app, int noOfPerformanceClasses) {
+            return new RuntimeCellCostEstimator(new string[][] {
                 new[] { "*RunSolverOneStep*", "*LevelSetComboRuleFactory2.GetQuadRuleSet_Internal*" },
                 new[] { "*RunSolverOneStep*", "*Edge_Integration*" },
                 new[] { "*RunSolverOneStep*", "*Volume_Integration*" },

@@ -29,7 +29,7 @@ namespace CNS.IBM {
     /// Variant of <see cref="Convection.ConvectiveCFLConstraint"/> for flows with
     /// immersed boundaries
     /// </summary>
-    public class IBMConvectiveCFLConstraint:CFLConstraint {
+    public class IBMConvectiveCFLConstraint : CFLConstraint {
 
         private CNSControl config;
 
@@ -44,13 +44,13 @@ namespace CNS.IBM {
         /// <param name="workingSet"></param>
         /// <param name="speciesMap"></param>
         public IBMConvectiveCFLConstraint(
-            CNSControl config,GridData gridData,CNSFieldSet workingSet,ISpeciesMap speciesMap)
-            : base(gridData,workingSet) {
+            CNSControl config, GridData gridData, CNSFieldSet workingSet, ISpeciesMap speciesMap)
+            : base(gridData, workingSet) {
 
             this.config = config;
             this.speciesMap = speciesMap as ImmersedSpeciesMap;
 
-            if(speciesMap == null) {
+            if (speciesMap == null) {
                 throw new ArgumentException(
                     "This type requires an instance of 'ImmersedSpeciesMap'",
                     "speciesMap");
@@ -67,52 +67,59 @@ namespace CNS.IBM {
         /// <returns>
         /// <see cref="Convection.ConvectiveCFLConstraint.GetCFLStepSize"/>
         /// </returns>
-        protected override double GetCFLStepSize(int i0,int Length) {
+        protected override double GetCFLStepSize(int i0, int Length) {
             int iKref = gridData.Cells.GetRefElementIndex(i0);
             int noOfNodesPerCell = base.EvaluationPoints[iKref].NoOfNodes;
             int D = gridData.Grid.SpatialDimension;
             Material material = speciesMap.GetMaterial(double.NaN);
 
             MultidimensionalArray levelSetValues =
-                speciesMap.Tracker.GetLevSetValues(0,base.EvaluationPoints[iKref],i0,Length);
+                speciesMap.Tracker.DataHistories[0].Current.GetLevSetValues(base.EvaluationPoints[iKref], i0, Length);
 
             SpeciesId species = speciesMap.Tracker.GetSpeciesId(speciesMap.Control.FluidSpeciesName);
             //var hMinArray = speciesMap.QuadSchemeHelper.CellAgglomeration.CellLengthScales[species];
-            var volFrac = speciesMap.QuadSchemeHelper.CellAgglomeration.CellVolumeFrac[species];
+            var volFrac = speciesMap.CellAgglomeration.CellVolumeFrac[species];
             var hMin = gridData.Cells.h_min;
 
             double cfl = double.MaxValue;
-            for(int i = 0;i < Length;i++) {
+            for (int i = 0; i < Length; i++) {
                 int cell = i0 + i;
 
+                // Option 1: Use volume fraction times traditional metric, such
+                // that time-steps are identical to non-IBM cases when no
+                // interface is present
                 double hmin = hMin[cell] * volFrac[cell];
+
+                // Option 2: Use length scale "volume over surface", which seems
+                // to be more robust for awkward cuts. However, yields
+                // significantly smaller time-steps in uncut cells
                 //double hmin = hMinArray[cell];
 
 
-                for(int node = 0;node < noOfNodesPerCell;node++) {
-                    if(levelSetValues[i,node].Sign() != (double)speciesMap.Control.FluidSpeciesSign) {
+                for (int node = 0; node < noOfNodesPerCell; node++) {
+                    if (levelSetValues[i, node].Sign() != (double)speciesMap.Control.FluidSpeciesSign) {
                         continue;
                     }
 
                     Vector3D momentum = new Vector3D();
-                    for(int d = 0;d < CNSEnvironment.NumberOfDimensions;d++) {
-                        momentum[d] = momentumValues[d][i,node];
+                    for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+                        momentum[d] = momentumValues[d][i, node];
                     }
 
 
 
                     StateVector state = new StateVector(
-                        material,densityValues[i,node],momentum,energyValues[i,node]);
+                        material, densityValues[i, node], momentum, energyValues[i, node]);
                     double cflhere = hmin / (state.Velocity.Abs() + state.SpeedOfSound);
 
 #if DEBUG
                     if (double.IsNaN(cflhere)) {
-                        //throw new NumericalAlgorithmException("Could not determine CFL number");
+                        throw new Exception("Could not determine CFL number");
                         throw new ArithmeticException("Could not determine CFL number");
                     }
 #endif
 
-                    cfl = Math.Min(cfl,cflhere);
+                    cfl = Math.Min(cfl, cflhere);
                 }
             }
 

@@ -181,7 +181,7 @@ namespace BoSSS.Solution.Statistic {
             var trk = injected.Basis.Tracker;
 
             foreach (var spc in trk.SpeciesIdS) {
-                var grd = trk._Regions.GetSpeciesMask(spc);
+                var grd = trk.Regions.GetSpeciesMask(spc);
 
                 InjectDGField(Fine2Coarse,
                     injected.GetSpeciesShadowField(spc),

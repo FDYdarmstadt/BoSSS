@@ -31,26 +31,27 @@ using BoSSS.Solution;
 namespace BoSSS.Application.IBM_Solver {
     public class HardcodedPerformance {
 
-        static public IBM_Control SphereFlow(int k, int cells_x, int cells_yz, bool only_channel = true, bool pardiso = true, int no_p = 1, int no_it = 1, bool restart = false, bool load_Grid = false, string _GridGuid = null) {
+        static public IBM_Control SphereFlow(string _DbPath = null, int k = 2, int cells_x = 11, int cells_yz = 9, bool only_channel = true, bool pardiso = true, int no_p = 1, int no_it = 1, bool restart = false, bool load_Grid = false, string _GridGuid = null) {
             IBM_Control C = new IBM_Control();
 
             // basic database options
             // ======================
-            C.DbPath = null;
+            //C.DbPath = _DbPath;
             C.savetodb = true;
-            C.savetodb = false;
+            //C.savetodb = false;
 
-            C.DbPath = @"\\dc1\userspace\krause\BoSSS_DBs\Bug";
+            //C.DbPath = @"\\dc1\userspace\krause\BoSSS_DBs\Bug";
+            C.DbPath = @"/home/ws35kire/test_db/";
 
             //string restartSession = "727da287-1b6a-463e-b7c9-7cc19093b5b3";
             //string restartGrid = "3f8f3445-46f1-47ed-ac0e-8f0260f64d8f";
 
             C.DynamicLoadBalancing_Period = 1;
-            C.DynamicLoadBalancing_CellCostEstimatorFactory = delegate (IApplication<AppControl> app, int noOfPerformanceClasses) {
+            C.DynamicLoadBalancing_CellCostEstimatorFactories.Add(delegate (IApplication<AppControl> app, int noOfPerformanceClasses) {
                 Console.WriteLine("i was called");
                 int[] map = new int[] { 1, 5, 100 };
                 return new StaticCellCostEstimator(map);
-            };
+            });
 
 
 
@@ -413,7 +414,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 10000000;
-            C.NoOfTimesteps = 10;
+            //C.NoOfTimesteps = 10;
             C.NoOfTimesteps = 1;
             C.NoOfMultigridLevels = 3;
 

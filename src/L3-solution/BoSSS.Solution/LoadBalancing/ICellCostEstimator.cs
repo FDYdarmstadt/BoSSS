@@ -17,6 +17,7 @@ limitations under the License.
 using ilPSP;
 using MPI.Wrappers;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
@@ -33,13 +34,14 @@ namespace BoSSS.Solution {
         /// <see cref="GetEstimatedCellCosts"/> for the given mapping
         /// cells and performance classes
         /// </summary>
+        /// <param name="performanceClassCount"></param>
         /// <param name="cellToPerformanceClassMap"></param>
-        void UpdateEstimates(int[] cellToPerformanceClassMap);
+        void UpdateEstimates(int performanceClassCount, int[] cellToPerformanceClassMap);
 
         /// <summary>
         /// The total number of performance classes
         /// </summary>
-        int PerformanceClassCount {
+        int CurrentPerformanceClassCount {
             get;
         }
 
@@ -68,7 +70,7 @@ namespace BoSSS.Solution {
         /// </summary>
         /// <param name="estimator"></param>
         /// <returns>
-        /// A number betweeen 0 and 1 which represents an estimate of the load
+        /// A number between 0 and 1 which represents an estimate of the load
         /// imbalance in percent
         /// </returns>
         public static double ImbalanceEstimate(this ICellCostEstimator estimator) {
@@ -76,10 +78,12 @@ namespace BoSSS.Solution {
 
             double localCost = estimator.EstimatedLocalCost;
             double[] allCosts = localCost.MPIAllGather();
+
             double minCost = allCosts.Min();
             double maxCost = allCosts.Max();
+            double imbalance = (maxCost - minCost) / Math.Max(double.Epsilon, maxCost);
 
-            return (maxCost - minCost) / Math.Max(double.Epsilon, maxCost);
+            return imbalance;
         }
     }
 }

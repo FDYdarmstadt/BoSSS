@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Foundation;
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Quadrature;
 using ilPSP;
@@ -37,7 +38,7 @@ namespace CNS.ShockCapturing {
             return sensorValues.GetMeanValue(cellIndex);
         }
 
-        public void UpdateSensorValues(CNSFieldSet fieldSet) {
+        public void UpdateSensorValues(CNSFieldSet fieldSet, ISpeciesMap speciesMap, CellMask cellMask) {
             DGField fieldToTest = fieldSet.ConservativeVariables.
                 Concat(fieldSet.DerivedFields.Values).
                 Where(f => f.Identification == sensorVariable.Name).
