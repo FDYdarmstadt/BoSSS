@@ -1912,10 +1912,16 @@ namespace CNS {
             //dbPath = @"/work/scratch/yp19ysog/bosss_db_lb_scratch";
             c.DbPath = dbPath;
             c.savetodb = dbPath != null;
-            c.saveperiod = 10;
+            c.saveperiod = 1;
             c.PrintInterval = 1;
 
             c.DomainType = DomainTypes.StaticImmersedBoundary;
+
+            c.DynamicLoadBalancing_CellClassifier = new IBMCellClassifier();
+            c.DynamicLoadBalancing_Period = 0;
+            c.DynamicLoadBalancing_RedistributeAtStartup = true;
+            c.DynamicLoadBalancing_CellCostEstimatorFactories.Add(IBMCellCostEstimator.GetStaticCostBasedEstimator());
+            //c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(IBMCellCostEstimator.GetMultiBalanceConstraintedBasedEstimators());
 
             double xMin = 0.0;
             double xMax = 0.5;
@@ -1950,15 +1956,15 @@ namespace CNS {
             bool AV = true;
 
             // Runge-Kutta
-            //c.ExplicitScheme = ExplicitSchemes.RungeKutta;
-            //c.ExplicitOrder = 1;
+            c.ExplicitScheme = ExplicitSchemes.RungeKutta;
+            c.ExplicitOrder = 1;
 
             // LTS
-            c.ExplicitScheme = ExplicitSchemes.LTS;
-            c.ExplicitOrder = 1;
-            c.NumberOfSubGrids = 3;
-            c.ReclusteringInterval = 1;
-            c.FluxCorrection = false;
+            //c.ExplicitScheme = ExplicitSchemes.LTS;
+            //c.ExplicitOrder = 1;
+            //c.NumberOfSubGrids = 3;
+            //c.ReclusteringInterval = 1;
+            //c.FluxCorrection = false;
 
             c.GridPartType = GridPartType.ParMETIS;
             //c.GridPartType = GridPartType.none;
@@ -2089,10 +2095,10 @@ namespace CNS {
             c.Endtime = 0.05;
             //c.dtFixed = 1.0e-6;
             c.CFLFraction = 0.3;
-            c.NoOfTimesteps = int.MaxValue;
+            c.NoOfTimesteps = 2;
 
             c.ProjectName = "IBM double Mach reflection";
-            c.SessionName = String.Format("IBM DMR, dgDegree = {0}, numOfCellsX = {1}, numOfCellsY = {2}, sensorLimit = {3:0.00E-00}, CFLFraction = {4:0.00E-00}, ALTS {5}/{6}, lamdaMax = {7}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, lambdaMax);
+            c.SessionName = String.Format("IBM DMR LOAD BAL, dgDegree = {0}, numOfCellsX = {1}, numOfCellsY = {2}, sensorLimit = {3:0.00E-00}, CFLFraction = {4:0.00E-00}, ALTS {5}/{6}, lamdaMax = {7}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, lambdaMax);
 
             return c;
         }
