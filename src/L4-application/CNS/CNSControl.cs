@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Foundation;
+using BoSSS.Solution;
 using BoSSS.Solution.Control;
 using CNS.Convection;
 using CNS.Diffusion;
@@ -24,8 +25,11 @@ using CNS.MaterialProperty;
 using CNS.Residual;
 using CNS.ShockCapturing;
 using CNS.Source;
+using ilPSP;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace CNS {
 
@@ -33,7 +37,7 @@ namespace CNS {
     /// Specialized control file for CNS
     /// </summary>
     [Serializable]
-    public class CNSControl : AppControl {
+    public class CNSControl : AppControl, ICloneable {
 
         /// <summary>
         /// Verifies the configuration
@@ -315,18 +319,18 @@ namespace CNS {
         /// A mapping between residual variables and the corresponding
         /// termination criteria
         /// </summary>
-        public readonly IDictionary<string, double> ResidualBasedTerminationCriteria = new Dictionary<string, double>();
+        public IDictionary<string, double> ResidualBasedTerminationCriteria = new Dictionary<string, double>();
 
         /// <summary>
         /// Custom source terms for the continuity equation
         /// </summary>
-        public readonly IList<Func<ISpeciesMap, INonlinearSource>> CustomContinuitySources =
+        public IList<Func<ISpeciesMap, INonlinearSource>> CustomContinuitySources =
             new List<Func<ISpeciesMap, INonlinearSource>>();
 
         /// <summary>
         /// Custom source terms for the momentum equations
         /// </summary>
-        public readonly IList<Func<ISpeciesMap, INonlinearSource>>[] CustomMomentumSources =
+        public IList<Func<ISpeciesMap, INonlinearSource>>[] CustomMomentumSources =
             new IList<Func<ISpeciesMap, INonlinearSource>>[3] {
                 new List<Func<ISpeciesMap, INonlinearSource>>(),
                 new List<Func<ISpeciesMap, INonlinearSource>>(),
@@ -335,7 +339,7 @@ namespace CNS {
         /// <summary>
         /// Custom source terms for the energy equation
         /// </summary>
-        public readonly IList<Func<ISpeciesMap, INonlinearSource>> CustomEnergySources =
+        public IList<Func<ISpeciesMap, INonlinearSource>> CustomEnergySources =
             new List<Func<ISpeciesMap, INonlinearSource>>();
 
         /// <summary>
@@ -373,5 +377,32 @@ namespace CNS {
         /// (currently) belongs to
         /// </summary>
         public ICellClassifier DynamicLoadBalancing_CellClassifier = new IndifferentCellClassifier();
+
+        /// <summary>
+        /// Clones this object, but beware: I'm not sure (yet) that I've
+        /// covered all cases
+        /// </summary>
+        /// <returns></returns>
+        public object Clone() {
+            var clone = (CNSControl)this.MemberwiseClone();
+            clone.CustomContinuitySources = new List<Func<ISpeciesMap, INonlinearSource>>();
+            clone.CustomContinuitySources.AddRange(this.CustomContinuitySources);
+
+            clone.CustomMomentumSources = new List<Func<ISpeciesMap, INonlinearSource>>[3] {
+                new List<Func<ISpeciesMap, INonlinearSource>>(),
+                new List<Func<ISpeciesMap, INonlinearSource>>(),
+                new List<Func<ISpeciesMap, INonlinearSource>>() };
+            for (int d = 0; d < this.CustomMomentumSources.Length; d++) {
+                clone.CustomMomentumSources[d].AddRange(this.CustomMomentumSources[d]);
+            }
+
+            clone.CustomEnergySources = new List<Func<ISpeciesMap, INonlinearSource>>();
+            clone.CustomEnergySources.AddRange(this.CustomEnergySources);
+
+            clone.DynamicLoadBalancing_CellCostEstimatorFactories = new List<Func<IApplication<AppControl>, int, ICellCostEstimator>>();
+            clone.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(this.DynamicLoadBalancing_CellCostEstimatorFactories);
+
+            return clone;
+        }
     }
 }

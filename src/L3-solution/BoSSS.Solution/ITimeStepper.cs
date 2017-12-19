@@ -33,7 +33,7 @@ namespace BoSSS.Solution {
         /// <summary>
         /// set <see cref="Time"/> to <paramref name="NewTime"/>
         /// </summary>
-        void ResetTime(double NewTime);
+        void ResetTime(double NewTime, int timestepNumber);
 
         /// <summary>
         /// 

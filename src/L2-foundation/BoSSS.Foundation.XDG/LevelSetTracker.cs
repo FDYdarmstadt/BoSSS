@@ -1249,7 +1249,7 @@ namespace BoSSS.Foundation.XDG {
 
             UpdateTracker();
             this.Regions.Version = VersionCounter;
-
+            this.m_VersionCnt = VersionCounter;
         }
 
         /// <summary>
@@ -1292,6 +1292,7 @@ namespace BoSSS.Foundation.XDG {
 
             Array.Copy(RegionCode, 0, this.Regions.m_LevSetRegions, 0, RegionCode.Length);
             this.Regions.Version = VersionCounter;
+            this.m_VersionCnt = VersionCounter;
             MPIUpdate(this.Regions.m_LevSetRegions, this.GridDat);
             this.Regions.Recalc_LenToNextchange();
         }
@@ -1828,9 +1829,9 @@ namespace BoSSS.Foundation.XDG {
                 foreach (var reference in m_Observers) {
                     IObserver<LevelSetRegions> observer = reference.Target;
                     if (observer != null) {
-                        if(observer is XDGField) {
-                            ((XDGField)observer).Override_TrackerVersionCnt(Regions.Version);
-                        }
+                        //if(observer is XDGField) {
+                        //    ((XDGField)observer).Override_TrackerVersionCnt(Regions.Version);
+                        //}
 
                         reference.Target.OnNext(Regions);
                     }

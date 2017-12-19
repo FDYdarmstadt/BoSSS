@@ -106,7 +106,7 @@ namespace BoSSS.Solution.Timestepping {
         /// <summary>
         /// Current time step number that is used for trigger the reclustering
         /// </summary>
-        private int timeStepCount;
+        protected int timestepNumber;
 
         /// <summary>
         /// The current <see cref="Clusterer.Clustering"/>
@@ -134,12 +134,12 @@ namespace BoSSS.Solution.Timestepping {
         /// <param name="reclusteringInterval">Interval for potential reclustering</param>
         /// <param name="saveToDBCallback">Hack for plotting all sub-steps</param>
         /// <remarks>Uses the k-Mean clustering, see <see cref="BoSSS.Solution.Utils.Kmeans"/>, to generate the element groups</remarks>
-        public AdamsBashforthLTS(SpatialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters, int order, int numOfClusters, IList<TimeStepConstraint> timeStepConstraints = null, SubGrid subGrid = null, bool fluxCorrection = true, int reclusteringInterval = 0, Action<TimestepNumber, double> saveToDBCallback = null)
+        public AdamsBashforthLTS(SpatialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters, int order, int numOfClusters, IList<TimeStepConstraint> timeStepConstraints = null, SubGrid subGrid = null, bool fluxCorrection = true, int reclusteringInterval = 0, Action<TimestepNumber, double> saveToDBCallback = null, int initialTimestepNumber = 1)
             : base(spatialOp, Fieldsmap, Parameters, order, timeStepConstraints, subGrid) {
 
             if (reclusteringInterval != 0) {
                 numberOfClustersInitial = numOfClusters;
-                this.timeStepCount = 1;
+                this.timestepNumber = initialTimestepNumber;
                 this.adaptive = true;
             }
 
@@ -178,7 +178,7 @@ namespace BoSSS.Solution.Timestepping {
         /// <summary>
         /// Constructor for (A)LTS with IBM
         /// </summary>
-        public AdamsBashforthLTS(SpatialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters, int order, int numOfClusters, bool IBM, IList<TimeStepConstraint> timeStepConstraints = null, SubGrid subGrid = null, bool fluxCorrection = true, int reclusteringInterval = 0)
+        public AdamsBashforthLTS(SpatialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters, int order, int numOfClusters, bool IBM, IList<TimeStepConstraint> timeStepConstraints = null, SubGrid subGrid = null, bool fluxCorrection = true, int reclusteringInterval = 0, int initialTimestepNumber = 1)
             : base(spatialOp, Fieldsmap, Parameters, order, timeStepConstraints, subGrid) {
 
             this.gridData = Fieldsmap.Fields.First().GridDat;
@@ -186,7 +186,7 @@ namespace BoSSS.Solution.Timestepping {
 
             if (reclusteringInterval != 0) {
                 numberOfClustersInitial = numOfClusters;
-                this.timeStepCount = 1;
+                this.timestepNumber = initialTimestepNumber;
                 this.adaptive = true;
             }
             this.reclusteringInterval = reclusteringInterval;
@@ -205,7 +205,7 @@ namespace BoSSS.Solution.Timestepping {
                 if (ABevolver[0].HistoryChangeRate.Count >= order - 1) {
                     bool reclustered = false;
                     if (adaptive) {
-                        if (timeStepCount % reclusteringInterval == 0) {
+                        if (timestepNumber % reclusteringInterval == 0) {
                             // Fix for update problem of artificial viscosity
                             RaiseOnBeforeComputechangeRate(Time, dt);
 
@@ -253,7 +253,7 @@ namespace BoSSS.Solution.Timestepping {
                     double time0 = m_Time;
                     double time1 = m_Time + dt;
 
-                    TimestepNumber subTimestep = new TimestepNumber(timeStepCount - 1);
+                    TimestepNumber subTimestep = new TimestepNumber(timestepNumber - 1);
 
                     // Evolves each sub-grid with its own time step (only one step)
                     // (The result is not written to m_DGCoordinates!)
@@ -395,13 +395,13 @@ namespace BoSSS.Solution.Timestepping {
                     // -> time update for all other timeStepper with rk.Time
                     m_Time = RungeKuttaScheme.Time;
                     foreach (ABevolve ab in ABevolver) {
-                        ab.ResetTime(m_Time);
+                        ab.ResetTime(m_Time, timestepNumber);
                     }
                 }
             }
 
             if (adaptive) {
-                timeStepCount++;
+                timestepNumber++;
             }
 
             return dt;
@@ -490,15 +490,15 @@ namespace BoSSS.Solution.Timestepping {
         /// same common simulation time. 
         /// </summary>
         /// <param name="NewTime">Time to be set</param>
-        public override void ResetTime(double NewTime) {
-            base.ResetTime(NewTime);
-            RungeKuttaScheme.ResetTime(NewTime);
+        public override void ResetTime(double NewTime, int timestepNumber) {
+            base.ResetTime(NewTime, timestepNumber);
+            RungeKuttaScheme.ResetTime(NewTime, timestepNumber);
 
             foreach (var ABevolve in ABevolver) {
-                ABevolve.ResetTime(NewTime);
+                ABevolve.ResetTime(NewTime, timestepNumber);
             }
 
-            RungeKuttaScheme.ResetTime(NewTime);
+            RungeKuttaScheme.ResetTime(NewTime, timestepNumber);
         }
 
         /// <summary>
@@ -670,7 +670,7 @@ namespace BoSSS.Solution.Timestepping {
             double[] sendHmin = new double[clustering.NumberOfClusters];
             double[] rcvHmin = new double[clustering.NumberOfClusters];
 
-            MultidimensionalArray cellMetric = clusterer.GetCellMetric(clustering.SubGrid);
+            MultidimensionalArray cellMetric = clusterer.GetStableTimestepSize(clustering.SubGrid);
             for (int i = 0; i < clustering.NumberOfClusters; i++) {
                 double h_min = double.MaxValue;
                 CellMask volumeMask = clustering.Clusters[i].VolumeMask;
@@ -953,7 +953,7 @@ namespace BoSSS.Solution.Timestepping {
 
             for (int i = 0; i < ABevolver.Length; i++) {
                 ABevolver[i] = new ABevolve(Operator, Mapping, ParameterMapping, order, adaptive: true, sgrd: CurrentClustering.Clusters[i]);
-                ABevolver[i].ResetTime(m_Time);
+                ABevolver[i].ResetTime(m_Time, timestepNumber);
                 ABevolver[i].OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforeComputechangeRate(t1, t2);
             }
         }

@@ -4,20 +4,20 @@ echo "---------- start of script ----------"
 
 module load acml
 module load gcc
-module load openmpi/gcc/2.0.1
+module load openmpi/gcc/1.6.6
 
 rm *.so
 
-cd metis
+cd METIS
 rm *.o
 mpicc -fPIC -c *.c
 cd ..
-mpicc -shared -o libmetis.so ./metis/*.o
+mpicc -shared -o libmetis.so ./METIS/*.o
 
-cd parmetis
+cd ParMETIS
 rm *.o
 mpicc -fPIC -c *.c
 cd ..
-mpicc -shared -o libparmetis.so ./parmetis/*.o -L. -lmetis
+mpicc -shared -o libparmetis.so ./ParMETIS/*.o -L. -lmetis
 
 echo "---------- end of script ----------"
