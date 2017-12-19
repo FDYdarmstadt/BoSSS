@@ -14,13 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using CNS.Boundary;
 using CNS.Convection;
-using CNS.Exception;
 using CNS.IBM;
 using CNS.MaterialProperty;
+using System;
 
 namespace CNS.EquationSystem {
 
@@ -80,7 +79,7 @@ namespace CNS.EquationSystem {
                     return new IBMFieldSet(gridData, (IBMControl)control);
 
                 default:
-                    throw new ConfigurationException();
+                    throw new Exception();
             }
         }
 
@@ -110,7 +109,7 @@ namespace CNS.EquationSystem {
                         (IBMControl)control, ibmWorkingSet.LevelSet, material);
 
                 default:
-                    throw new ConfigurationException();
+                    throw new Exception();
             }
         }
 
@@ -153,7 +152,7 @@ namespace CNS.EquationSystem {
                         boundaryMap);
 
                 default:
-                    throw new InternalErrorException(
+                    throw new Exception(
                         "Unknown formulation \"" + control.DomainType + "\"");
             }
         }

@@ -90,14 +90,14 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="jCell"></param>
         /// <returns></returns>
         public override int GetLength(int jCell) {
-            ushort code = m_Tracker._Regions.m_LevSetRegions[jCell];
+            ushort code = m_Tracker.Regions.m_LevSetRegions[jCell];
             if (code == LevelSetTracker.AllFARplus || code == LevelSetTracker.AllFARminus) {
                 // default: uncut cell
                 return base.GetLength(jCell);
             } else {
                 // cut cell
                 ReducedRegionCode dummy;
-                return (m_Tracker.GetNoOfSpecies(jCell, out dummy) * base.GetLength(jCell));
+                return (m_Tracker.Regions.GetNoOfSpecies(jCell, out dummy) * base.GetLength(jCell));
             }
         }
 
@@ -315,7 +315,7 @@ namespace BoSSS.Foundation.XDG {
                     output.Clear();
 
                     ReducedRegionCode rrc;
-                    int NoOfSpecies = trk.GetNoOfSpecies(j0, out rrc);
+                    int NoOfSpecies = trk.Regions.GetNoOfSpecies(j0, out rrc);
                     int Nsep = m_Owner.DOFperSpeciesPerCell;
                     
 
@@ -325,14 +325,14 @@ namespace BoSSS.Foundation.XDG {
 
                         int jCell = j + j0;
 
-                        ushort RegionCode = trk._Regions.m_LevSetRegions[jCell];
+                        ushort RegionCode = trk.Regions.m_LevSetRegions[jCell];
 
 
                         int dist = 0;
                         for (int i = 0; i < NoOfLevSets; i++) {
                             dist = LevelSetTracker.DecodeLevelSetDist(RegionCode, i);
                             if (dist == 0) {
-                                m_levSetVals[i] = trk.GetLevSetValues(i, NS, jCell, 1);
+                                m_levSetVals[i] = trk.DataHistories[i].Current.GetLevSetValues(NS, jCell, 1);
                             } else {
                                 //_levSetVals[i] = m_CCBasis.Tracker.GetLevSetValues(i, NodeSet, jCell, 1);
                                 m_levSetVals[i] = null;

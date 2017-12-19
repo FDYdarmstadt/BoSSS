@@ -35,7 +35,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
     /// ranging from -1 to 1. Here, t=-1 marks the start point and t=1 marks
     /// the end point of the segment.
     /// </summary>
-    public class LineSegment : IEquatable<LineSegment>, IObserver<LevelSetTracker.LevelSetRegionsInfo> {
+    public class LineSegment : IEquatable<LineSegment>, IObserver<LevelSetTracker.LevelSetRegions> {
 
         /// <summary>
         /// Minimal distance between two points.
@@ -899,7 +899,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// <param name="status">
         /// Not used.
         /// </param>
-        public void OnNext(LevelSetTracker.LevelSetRegionsInfo status) {
+        public void OnNext(LevelSetTracker.LevelSetRegions status) {
             rootsCache.Clear();
         }
 

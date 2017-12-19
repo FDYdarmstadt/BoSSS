@@ -54,15 +54,15 @@ namespace CutCellQuadrature {
                     QuadRule standardRule = chunkRulePair.Rule;
 
                     var pointRule = pointRules.Single(pair => pair.Chunk.i0 <= cell && pair.Chunk.JE > cell).Rule;
-                    MultidimensionalArray gradientsAtRoots = tracker.GetLevelSetGradients(0, pointRule.Nodes, cell, 1);
+                    MultidimensionalArray gradientsAtRoots = tracker.DataHistories[0].Current.GetLevelSetGradients(pointRule.Nodes, cell, 1);
 
                     QuadRule modifiedRule;
                     switch (pointRule.NoOfNodes) {
                         case 0:
                         case 1: {
                                 // Cell not really cut
-                                MultidimensionalArray levelSetValue = tracker.GetLevSetValues(
-                                    0, new NodeSet(RefElement, new double[2]), cell, 1);
+                                MultidimensionalArray levelSetValue = tracker.DataHistories[0].Current.GetLevSetValues(
+                                    new NodeSet(RefElement, new double[2]), cell, 1);
                                 if (Math.Sign(levelSetValue.Storage[0]) < 0) {
                                     // Cell is completely void
                                     QuadRule emptyRule = QuadRule.CreateEmpty(RefElement, 1, 2);
@@ -160,7 +160,7 @@ namespace CutCellQuadrature {
 
             // Use gradient of first root to determine correct direction of normal vector
             NodeSet bla = new NodeSet(RefElement, firstNode);
-            MultidimensionalArray gradient = tracker.GetLevelSetGradients(0, bla, cell, 1);
+            MultidimensionalArray gradient = tracker.DataHistories[0].Current.GetLevelSetGradients(bla, cell, 1);
             Vector2D gradientVector = new Vector2D(
                 gradient[0, 0, 0], gradient[0, 0, 1]);
             n.Scale(Math.Sign(gradientVector * n));

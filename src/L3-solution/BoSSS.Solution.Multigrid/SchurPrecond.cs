@@ -66,7 +66,7 @@ namespace BoSSS.Solution.Multigrid
         BlockMsrMatrix Mtx;
 
         MsrMatrix P;
-        MsrMatrix ConvDiff, pGrad, divVel, ConvDiffPoissonMtx, SchurMtx, PoissonMtx, PoissonMtx_T, PoissonMtx_H, SchurConvMtx, invVelMassMatrix, invVelMassMatrixSqrt, simpleSchur;
+        MsrMatrix ConvDiff, pGrad, divVel, ConvDiffPoissonMtx, SchurMtx, PoissonMtx, PoissonMtx_T, PoissonMtx_H, SchurConvMtx, invVelMassMatrix, invVelMassMatrixSqrt, simpleSchur, velMassMatrix;
         int[] Uidx, Pidx;
 
         public enum SchurOptions { exact = 1, decoupledApprox = 2, SIMPLE = 3 }
@@ -119,7 +119,7 @@ namespace BoSSS.Solution.Multigrid
             //PxP.SaveToTextFileSparse("PxP");
 
 
-            var velMassMatrix = new MsrMatrix(Upart, Upart, 1, 1);
+            velMassMatrix = new MsrMatrix(Upart, Upart, 1, 1);
             op.MassMatrix.AccSubMatrixTo(1.0, velMassMatrix, Uidx, default(int[]), Uidx, default(int[]));
 
             switch (SchurOpt)
@@ -168,12 +168,12 @@ namespace BoSSS.Solution.Multigrid
                         invVelMassMatrix = velMassMatrix.CloneAs();
                         invVelMassMatrix.Clear();
                         invVelMassMatrixSqrt = invVelMassMatrix.CloneAs();
-                        for (int i = 0; i < velMassMatrix.NoOfCols; i++)
+                        for (int i = velMassMatrix.RowPartitioning.i0; i < velMassMatrix.RowPartitioning.iE; i++)
                         {
                             if (ApproxScaling)
                             {
-                                invVelMassMatrix.SetDiagonalElement(i, 1 / velMassMatrix[i, i]);
-                                invVelMassMatrixSqrt.SetDiagonalElement(i, 1 / Math.Sqrt(velMassMatrix[i, i]));
+                                invVelMassMatrix.SetDiagonalElement(i, 1 / (velMassMatrix[i, i]));
+                                invVelMassMatrixSqrt.SetDiagonalElement(i, 1 / (Math.Sqrt(velMassMatrix[i, i])));
                             }
                             else
                             {
@@ -191,7 +191,8 @@ namespace BoSSS.Solution.Multigrid
 
                         // Inverse of mass matrix in Matlab
                         //MultidimensionalArray temp = MultidimensionalArray.Create(Uidx.Length, Uidx.Length);
-                        //using (BatchmodeConnector bmc = new BatchmodeConnector()) {
+                        //using (BatchmodeConnector bmc = new BatchmodeConnector())
+                        //{
                         //    bmc.PutSparseMatrix(velMassMatrix, "velMassMatrix");
                         //    bmc.Cmd("invVelMassMatrix = inv(full(velMassMatrix))");
                         //    bmc.GetMatrix(temp, "invVelMassMatrix");
@@ -205,6 +206,9 @@ namespace BoSSS.Solution.Multigrid
                         //ConvDiff.AccSubMatrixTo(1.0, P, default(int[]), Uidx, default(int[]), Uidx);
                         //pGrad.AccSubMatrixTo(1.0, P, default(int[]), Uidx, default(int[]), Pidx);
                         //ConvDiffPoissonMtx.AccSubMatrixTo(1.0, P, default(int[]), Pidx, default(int[]), Pidx);
+
+                        //op.MassMatrix.SaveToTextFileSparse("MassMatrix");
+                        //velMassMatrix.SaveToTextFileSparse("velMassMatrix2");
 
 
                         // Possion scaled by inverse of the velocity mass matrix 
@@ -223,7 +227,7 @@ namespace BoSSS.Solution.Multigrid
 
                         var invdiag_ConvDiff = ConvDiff.CloneAs();
                         invdiag_ConvDiff.Clear();
-                        for (int i = 0; i < ConvDiff.NoOfCols; i++)
+                        for (int i = ConvDiff.RowPartitioning.i0; i < ConvDiff.RowPartitioning.iE; i++)
                         {
                             invdiag_ConvDiff[i, i] = 1 / ConvDiff[i, i];
                         }
@@ -306,6 +310,13 @@ namespace BoSSS.Solution.Multigrid
             where U : IList<double>
             where V : IList<double>
         {
+            // For MPI
+            var idxU = Uidx[0];
+            for (int i = 0; i < Uidx.Length; i++)
+                Uidx[i] -= idxU;
+            var idxP = Pidx[0];
+            for (int i = 0; i < Pidx.Length; i++)
+                Pidx[i] -= idxP;
 
             var Bu = new double[Uidx.Length];
             var Xu = Bu.CloneAs();
@@ -353,6 +364,7 @@ namespace BoSSS.Solution.Multigrid
         {
 
             var temp = new double[Xp.Count];
+            var sol = new double[pGrad.RowPartitioning.LocalLength];
 
             // Poisson solve
             using (var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver())
@@ -362,24 +374,27 @@ namespace BoSSS.Solution.Multigrid
             }
 
             // Schur Convective part with scaling
-            var sol = new double[pGrad.NoOfRows];
             pGrad.SpMVpara(1, temp, 0, sol);
+
             temp = sol.ToArray();
             sol.Clear();
             invVelMassMatrix.SpMVpara(1, temp, 0, sol);
+
             temp = sol.ToArray();
             sol.Clear();
             ConvDiff.SpMVpara(1, temp, 0, sol);
+
             temp = sol.ToArray();
             sol.Clear();
-            invVelMassMatrix.SpMVpara(1, temp, 0, sol);
+            invVelMassMatrixSqrt.SpMVpara(1, temp, 0, sol);
+
             temp = sol.ToArray();
             divVel.SpMVpara(1, temp, 0, Xp);
 
             // Poisson solve
             using (var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver())
             {
-                solver.DefineMatrix(PoissonMtx_T);
+                solver.DefineMatrix(PoissonMtx_H);
                 solver.Solve(Xp, Xp);
             }
         }
@@ -398,6 +413,15 @@ namespace BoSSS.Solution.Multigrid
 
             var Bu = new double[Uidx.Length];
             var Xu = Bu.CloneAs();
+
+            // For MPI
+            var idxU = Uidx[0];
+            for (int i = 0; i < Uidx.Length; i++)
+                Uidx[i] -= idxU;
+            var idxP = Pidx[0];
+            for (int i = 0; i < Pidx.Length; i++)
+                Pidx[i] -= idxP;
+
             Bu = B.GetSubVector(Uidx, default(int[]));
             var Bp = new double[Pidx.Length];
             var Xp = Bp.CloneAs();

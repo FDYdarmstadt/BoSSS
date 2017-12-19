@@ -173,7 +173,7 @@ namespace BoSSS.Application.ScalarTransport {
         /// <summary>
         /// 
         /// </summary>
-        protected override void CreateEquationsAndSolvers(LoadBalancingData L) {
+        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
             diffOp = new SpatialOperator(new string[] { "u" },
                 Solution.NSECommon.VariableNames.VelocityVector(this.GridData.SpatialDimension),
                 new string[] { "codom1" },

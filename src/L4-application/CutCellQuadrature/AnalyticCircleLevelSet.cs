@@ -35,6 +35,14 @@ namespace CutCellQuadrature {
 
         private double offsetY;
 
+        public Object Clone() {
+            return new AnalyticCircleLevelSet(this.gridData) {
+                offsetX = this.offsetX,
+                offsetY = this.offsetY,
+                radius = this.radius
+            };
+        }
+
         public AnalyticCircleLevelSet(GridData gridData) {
             this.gridData = gridData;
         }

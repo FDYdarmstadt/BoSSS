@@ -14,9 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
 using BoSSS.Platform.LinAlg;
-using CNS.Exception;
+using System;
 
 namespace CNS.Boundary {
 
@@ -53,12 +52,12 @@ namespace CNS.Boundary {
 
             if (wallVelocities != null) {
                 if (wallVelocities.Length != CNSEnvironment.NumberOfDimensions) {
-                    throw new ConfigurationException();
+                    throw new Exception();
                 }
 
                 for (int d = 0; d < wallVelocities.Length; d++) {
                     if (wallVelocities[d] == null) {
-                        throw new ConfigurationException();
+                        throw new Exception();
                     }
                 }
             }
@@ -107,7 +106,7 @@ namespace CNS.Boundary {
 #if DEBUG
                 Vector3D n = new Vector3D(normal);
                 if (Math.Abs(velocity * n) > 1e-10) {
-                    throw new ConfigurationException(
+                    throw new Exception(
                         "Wall velocity must be tangent to the wall");
                 }
 #endif

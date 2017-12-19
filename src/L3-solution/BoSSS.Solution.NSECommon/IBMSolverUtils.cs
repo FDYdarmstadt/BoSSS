@@ -58,7 +58,7 @@ namespace BoSSS.Solution.NSECommon {
 
                 long GlobalID, GlobalCellIndex;
                 bool IsInside, onthisProc;
-                GridDat.LocatePoint(new double[D], out GlobalID, out GlobalCellIndex, out IsInside, out onthisProc, LsTrk._Regions.GetCutCellSubGrid().VolumeMask.Complement());
+                GridDat.LocatePoint(new double[D], out GlobalID, out GlobalCellIndex, out IsInside, out onthisProc, LsTrk.Regions.GetCutCellSubGrid().VolumeMask.Complement());
                 
                 int iRowGl = -111;
                 if (onthisProc) {
@@ -66,7 +66,7 @@ namespace BoSSS.Solution.NSECommon {
 
 
                     NodeSet CenterNode = new NodeSet(GridDat.iGeomCells.GetRefElement(jCell), new double[D]);
-                    MultidimensionalArray LevSetValues = LsTrk.GetLevSetValues(0, CenterNode, jCell, 1); ;
+                    MultidimensionalArray LevSetValues = LsTrk.DataHistories[0].Current.GetLevSetValues(CenterNode, jCell, 1); ;
 
 
                     MultidimensionalArray CenterNodeGlobal = MultidimensionalArray.Create(1, D);
@@ -76,7 +76,7 @@ namespace BoSSS.Solution.NSECommon {
 
                     LevelSetSignCode scode = LevelSetSignCode.ComputeLevelSetBytecode(LevSetValues[0, 0]);
                     ReducedRegionCode rrc;
-                    int No = LsTrk.GetNoOfSpecies(jCell, out rrc);
+                    int No = LsTrk.Regions.GetNoOfSpecies(jCell, out rrc);
                     int iSpc = LsTrk.GetSpeciesIndex(rrc, scode);
 
                     iRowGl = (int)map.GlobalUniqueCoordinateIndex_FromGlobal(iVar, GlobalCellIndex, 0);
@@ -92,7 +92,7 @@ namespace BoSSS.Solution.NSECommon {
                     int jCell = (int)GlobalCellIndex - GridDat.CellPartitioning.i0;
 
                     ReducedRegionCode rrc;
-                    int NoOfSpc = LsTrk.GetNoOfSpecies(jCell, out rrc);
+                    int NoOfSpc = LsTrk.Regions.GetNoOfSpecies(jCell, out rrc);
 
                     // set matrix row to identity
                     Mtx.ClearRow(iRowGl);
@@ -121,22 +121,24 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         /// <param name="LsTrk"></param>
         /// <param name="sigma"></param>
-        public static double GetSurfaceEnergy(LevelSetTracker LsTrk, double sigma, XQuadFactoryHelper.MomentFittingVariants momentFittingVariant) {
+        public static double GetSurfaceEnergy(LevelSetTracker LsTrk, double sigma) {
             using (new FuncTrace()) {
                 if (LsTrk.LevelSets.Count != 1)
                     throw new NotImplementedException();
 
                 double totSurface = 0;
 
+                
                 int order = 0;
-                if (LsTrk.GetXQuadFactoryHelper(momentFittingVariant).GetCachedSurfaceOrders(0).Length > 0) {
-                    order = LsTrk.GetXQuadFactoryHelper(momentFittingVariant).GetCachedSurfaceOrders(0).Max();
+                if (LsTrk.GetCachedOrders().Count > 0) {
+                    order = LsTrk.GetCachedOrders().Max();
                 } else {
                     order = 1;
                 }
 
-                var SchemeHelper = new XQuadSchemeHelper(LsTrk, momentFittingVariant, LsTrk.GetSpeciesId("A"));
-                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk._Regions.GetCutCellMask());
+                var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, order, 1).XQuadSchemeHelper;
+                //var SchemeHelper = new XQuadSchemeHelper(LsTrk, momentFittingVariant, LsTrk.GetSpeciesId("A"));
+                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
 
                 CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                     cqs.Compile(LsTrk.GridDat, order),
@@ -158,15 +160,12 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         /// <param name="U"></param>
         /// <param name="P"></param>
-        /// <param name="momentFittingVariant"></param>
         /// <param name="muA"></param>
         /// <returns></returns>
         static public double[] GetForces(VectorField<SinglePhaseField> U, SinglePhaseField P,
             LevelSetTracker LsTrk,
-            XQuadFactoryHelper.MomentFittingVariants momentFittingVariant,
             double muA) {
-            var _LsTrk = LsTrk;
-            int D = _LsTrk.GridDat.SpatialDimension;
+            int D = LsTrk.GridDat.SpatialDimension;
            // var UA = U.Select(u => u.GetSpeciesShadowField("A")).ToArray();
             var UA = U.ToArray();
 
@@ -177,7 +176,7 @@ namespace BoSSS.Solution.NSECommon {
             //if (RequiredOrder > agg.HMForder)
             //    throw new ArgumentException();
 
-            Console.WriteLine("Forces coeff: {0}, order = {1}", momentFittingVariant, RequiredOrder);
+            Console.WriteLine("Forces coeff: {0}, order = {1}", LsTrk.CutCellQuadratureType, RequiredOrder);
 
 
             ConventionalDGField pA = null;
@@ -193,7 +192,7 @@ namespace BoSSS.Solution.NSECommon {
                     MultidimensionalArray pARes = MultidimensionalArray.Create(Len, K);
 
                     // Evaluate tangential velocity to level-set surface
-                    var Normals = _LsTrk.GetLevelSetNormals(0, Ns, j0, Len);
+                    var Normals = LsTrk.DataHistories[0].Current.GetLevelSetNormals(Ns, j0, Len);
 
 
                     for (int i = 0; i < D; i++) {
@@ -271,14 +270,14 @@ namespace BoSSS.Solution.NSECommon {
                 
                 };
 
+                var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, RequiredOrder, 1).XQuadSchemeHelper;
+                //var SchemeHelper = new XQuadSchemeHelper(LsTrk, momentFittingVariant, );
+                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
 
-                var SchemeHelper = new XQuadSchemeHelper(_LsTrk, momentFittingVariant, _LsTrk.GetSpeciesId("A"));
-                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, _LsTrk._Regions.GetCutCellMask());
 
 
-
-                CellQuadrature.GetQuadrature(new int[] { 1 }, _LsTrk.GridDat,
-                    cqs.Compile(_LsTrk.GridDat, RequiredOrder), //  agg.HMForder),
+                CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
+                    cqs.Compile(LsTrk.GridDat, RequiredOrder), //  agg.HMForder),
                     delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
                         ErrFunc(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
                     },
@@ -300,13 +299,11 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         /// <param name="U"></param>
         /// <param name="P"></param>
-        /// <param name="momentFittingVariant"></param>
         /// <param name="muA"></param>
         /// <param name="particleRadius"></param>
         /// <returns></returns>
         static public double GetTorque(VectorField<SinglePhaseField> U, SinglePhaseField P,
             LevelSetTracker LsTrk,
-            XQuadFactoryHelper.MomentFittingVariants momentFittingVariant,
             double muA, double particleRadius) {
             var _LsTrk = LsTrk;
             int D = _LsTrk.GridDat.SpatialDimension;
@@ -318,7 +315,7 @@ namespace BoSSS.Solution.NSECommon {
             //if (RequiredOrder > agg.HMForder)
             //    throw new ArgumentException();
 
-            Console.WriteLine("Torque coeff: {0}, order = {1}", momentFittingVariant, RequiredOrder);
+            Console.WriteLine("Torque coeff: {0}, order = {1}", LsTrk.CutCellQuadratureType, RequiredOrder);
 
             ConventionalDGField pA = null;
             double force = new double();
@@ -331,7 +328,7 @@ namespace BoSSS.Solution.NSECommon {
                 MultidimensionalArray pARes = MultidimensionalArray.Create(Len, K);
 
                 // Evaluate tangential velocity to level-set surface
-                var Normals = _LsTrk.GetLevelSetNormals(0, Ns, j0, Len);
+                var Normals = _LsTrk.DataHistories[0].Current.GetLevelSetNormals(Ns, j0, Len);
 
                 for (int i = 0; i < D; i++) {
                     UA[i].EvaluateGradient(j0, Len, Ns, Grad_UARes.ExtractSubArrayShallow(-1, -1, i, -1), 0, 1);
@@ -372,8 +369,9 @@ namespace BoSSS.Solution.NSECommon {
 
             };
 
-            var SchemeHelper = new XQuadSchemeHelper(_LsTrk, momentFittingVariant, _LsTrk.GetSpeciesId("A"));
-            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, _LsTrk._Regions.GetCutCellMask());
+            var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, RequiredOrder, 1).XQuadSchemeHelper;
+            //var SchemeHelper = new XQuadSchemeHelper(_LsTrk, momentFittingVariant, _LsTrk.GetSpeciesId("A"));
+            CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, _LsTrk.Regions.GetCutCellMask());
 
             CellQuadrature.GetQuadrature(new int[] { 1 }, _LsTrk.GridDat,
                 cqs.Compile(_LsTrk.GridDat, RequiredOrder),
@@ -402,8 +400,6 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="particleRadius"></param>
         /// <returns></returns>
         static public void GetCellValues(VectorField<XDGField> U, XDGField P,
-            //MultiphaseCellAgglomerator agg, 
-            XQuadFactoryHelper.MomentFittingVariants momentFittingVariant,
             double muA, double particleRadius, SinglePhaseField P_atIB, SinglePhaseField gradU_atIB, SinglePhaseField gradUT_atIB) {
             var LsTrk = U[0].Basis.Tracker;
             int D = LsTrk.GridDat.SpatialDimension;
@@ -415,7 +411,7 @@ namespace BoSSS.Solution.NSECommon {
             //if (RequiredOrder > agg.HMForder)
             //    throw new ArgumentException();
 
-            Console.WriteLine("Cell values calculated by: {0}, order = {1}", momentFittingVariant, RequiredOrder);
+            Console.WriteLine("Cell values calculated by: {0}, order = {1}", LsTrk.CutCellQuadratureType, RequiredOrder);
 
             ConventionalDGField pA = null;
             double circumference = new double();
@@ -429,7 +425,7 @@ namespace BoSSS.Solution.NSECommon {
                     MultidimensionalArray pARes = MultidimensionalArray.Create(Len, K);
 
                     // Evaluate tangential velocity to level-set surface
-                    var Normals = LsTrk.GetLevelSetNormals(0, Ns, j0, Len);
+                    var Normals = LsTrk.DataHistories[0].Current.GetLevelSetNormals(Ns, j0, Len);
 
                     for (int i = 0; i < D; i++) {
                         UA[i].EvaluateGradient(j0, Len, Ns, Grad_UARes.ExtractSubArrayShallow(-1, -1, i, -1));
@@ -505,8 +501,8 @@ namespace BoSSS.Solution.NSECommon {
 
 
 
-                var SchemeHelper = new XQuadSchemeHelper(LsTrk, momentFittingVariant, LsTrk.GetSpeciesId("A"));
-                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk._Regions.GetCutCellMask());
+                var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, RequiredOrder, 1).XQuadSchemeHelper; //   new XQuadSchemeHelper(LsTrk, momentFittingVariant, );
+                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
 
                 CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                     cqs.Compile(LsTrk.GridDat, RequiredOrder),

@@ -14,10 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using CNS.Boundary;
 using CNS.EquationSystem;
+using System.Collections.Generic;
 
 namespace CNS.IBM {
 
@@ -26,6 +26,11 @@ namespace CNS.IBM {
     /// flows.
     /// </summary>
     public class IBMOperatorFactory : OperatorFactory {
+        
+        /// <summary>
+        /// Builder for all terms only active at the immersed boundary
+        /// </summary>
+        protected readonly IList<FluxBuilder> immersedBoundaryFluxBuilders = new List<FluxBuilder>();
 
         /// <summary>
         /// Constructs a new operator factory which additionally implements
@@ -44,53 +49,19 @@ namespace CNS.IBM {
             IBoundaryConditionMap boundaryMap)
             : base(control, gridData, workingSet, speciesMap, boundaryMap) {
 
-            this.sourceTermBuilders.Add(new BoundaryConditionSourceFluxBuilder(
+            this.immersedBoundaryFluxBuilders.Add(new BoundaryConditionSourceFluxBuilder(
                 control, boundaryMap, speciesMap, convectiveFluxBuilder, diffusiveFluxBuilder));
         }
 
         /// <summary>
-        /// Overrides the behavior of
-        /// <see cref="OperatorFactory.GetConvectiveOperator"/> by using
-        /// <see cref="IBMConvectiveCFLConstraint"/> instead of
-        /// <see cref="Convection.ConvectiveCFLConstraint"/>
+        /// Returns an operator containing all terms that enforce boundary
+        /// conditions at immersed boundaries
         /// </summary>
         /// <returns></returns>
-        public override Operator GetConvectiveOperator() {
+        public Operator GetImmersedBoundaryOperator() {
             Operator op = new Operator(control);
-            if (convectiveFluxBuilder != null) {
-                convectiveFluxBuilder.BuildFluxes(op);
-            }
-
-            if (!op.IsEmpty) {
-                op.CFLConstraints.Add(new IBMConvectiveCFLConstraint(
-                    control,
-                    gridData,
-                    workingSet,
-                    speciesMap));
-            }
-
-            return op;
-        }
-
-        /// <summary>
-        /// Overrides the behavior of
-        /// <see cref="OperatorFactory.GetDiffusiveOperator"/> by using
-        /// <see cref="IBMDiffusiveCFLConstraint"/> instead of
-        /// <see cref="Diffusion.DiffusiveCFLConstraint"/>
-        /// </summary>
-        /// <returns></returns>
-        public override Operator GetDiffusiveOperator() {
-            Operator op = new Operator(control);
-            if (diffusiveFluxBuilder != null) {
-                diffusiveFluxBuilder.BuildFluxes(op);
-            }
-
-            if (!op.IsEmpty) {
-                op.CFLConstraints.Add(new IBMDiffusiveCFLConstraint(
-                    control,
-                    gridData,
-                    workingSet,
-                    speciesMap));
+            foreach (FluxBuilder builder in immersedBoundaryFluxBuilders) {
+                builder.BuildFluxes(op);
             }
 
             return op;

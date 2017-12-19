@@ -132,27 +132,26 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// </summary>
         bool Docheck;
 
-        /// <summary>
-        /// the awesome level set tracker
-        /// </summary>
-        protected LevelSetTracker tracker;
+        ///// <summary>
+        ///// the awesome level set tracker
+        ///// </summary>
+        //protected LevelSetTracker tracker;
 
         IQuadRuleFactory<CellBoundaryQuadRule> cellBoundaryFactory;
 
         IQuadRuleFactory<CellBoundaryQuadRule> LevelSetBoundaryLineFactory;
 
         /// <summary>
-        /// 
+        /// Ctor.
         /// </summary>
-        /// <param name="tracker"></param>
-        /// <param name="iLevSet"></param>
+        /// <param name="lsData"></param>
         /// <param name="_SurfaceNodesOnZeroLevset">if true, the nodes for the surface integration are 'projected' onto the zero-level-set</param>
         /// <param name="_DoCheck">
         /// if true, the accuracy of the quadrature is checked after solution of the system
         /// </param>
         /// <param name="_LevelSetBoundaryLineFactory"></param>
         /// <param name="cellBoundaryFactory"></param>
-        public SurfaceStokes_2D(LevelSetTracker tracker, int iLevSet,
+        public SurfaceStokes_2D(LevelSetTracker.LevelSetData lsData,
             IQuadRuleFactory<CellBoundaryQuadRule> cellBoundaryFactory,
             IQuadRuleFactory<CellBoundaryQuadRule> _LevelSetBoundaryLineFactory,
             bool _SurfaceNodesOnZeroLevset = false,
@@ -161,21 +160,23 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             this.Docheck = _DoCheck;
 
             this.RefElement = cellBoundaryFactory.RefElement;
-            if (!tracker.GridDat.Grid.RefElements.Contains(RefElement, ReferenceComparer.Instance)) {
+            if (!lsData.GridDat.Grid.RefElements.Contains(RefElement, ReferenceComparer.Instance)) {
                 throw new ArgumentOutOfRangeException(
                     "simplex", "'simplex' must be a volume - reference element");
             }
 
-            this.tracker = tracker;
-            this.LevelSetIndex = iLevSet;
+            this.LevelSetData = lsData;
+            this.LevelSetIndex = lsData.LevelSetIndex;
             this.cellBoundaryFactory = cellBoundaryFactory;
             this.SurfaceNodesOnZeroLevset = _SurfaceNodesOnZeroLevset;
             this.LevelSetBoundaryLineFactory = _LevelSetBoundaryLineFactory;
 
-            int iKref = this.tracker.GridDat.Grid.RefElements.IndexOf(RefElement);
-            this.MaxGrid = this.tracker.GridDat.Cells.GetCells4Refelement(iKref).Intersect(
-                tracker._Regions.GetCutCellMask4LevSet(this.LevelSetIndex));
+            int iKref = this.LevelSetData.GridDat.Grid.RefElements.IndexOf(RefElement);
+            this.MaxGrid = this.LevelSetData.GridDat.Cells.GetCells4Refelement(iKref).Intersect(
+                lsData.Region.GetCutCellMask4LevSet(this.LevelSetIndex));
         }
+
+        LevelSetTracker.LevelSetData LevelSetData;
 
         /// <summary>
         /// the intersection of the cut cells for Level Set <see cref="LevelSetIndex"/>
@@ -235,7 +236,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 // ======
 
                 int NoOfEqTotal;
-                var TestBasis = new Basis(this.tracker.GridDat, IntOrder); // we loose a order of 1 for the volume rule due to the divergence operator
+                var TestBasis = new Basis(this.LevelSetData.GridDat, IntOrder); // we loose a order of 1 for the volume rule due to the divergence operator
                 NoOfEqTotal = TestBasis.Length;
 
                 // define Nodes
@@ -298,7 +299,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 ChunkRulePair<QuadRule>[] SurfaceRule;
                 {
                     SurfaceRule = new ChunkRulePair<QuadRule>[_mask.NoOfItemsLocally];
-                    var grddat = this.tracker.GridDat;
+                    var grddat = this.LevelSetData.GridDat;
                     int D = grddat.SpatialDimension;
 
                     // loop over cells in subgrid...
@@ -376,7 +377,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                         // return da rule!
                         // ===============
-                        var metrics = tracker.GetLevelSetNormalReferenceToPhysicalMetrics(this.LevelSetIndex, surfNodes, jCell, 1);
+                        var metrics = LevelSetData.GetLevelSetNormalReferenceToPhysicalMetrics(surfNodes, jCell, 1);
 
                         {
                             {
@@ -414,11 +415,11 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
             int D = Nodes.GetLength(1);
             int NoOfNodes = Nodes.GetLength(0);
-            var m_Context = this.tracker.GridDat;
-            LevelSet LevSet = (LevelSet)(this.tracker.LevelSets[this.LevelSetIndex]);
+            var m_Context = this.LevelSetData.GridDat;
+            //LevelSet LevSet = (LevelSet)(this.tracker.LevelSets[this.LevelSetIndex]);
 
-            MultidimensionalArray LevSetValues = MultidimensionalArray.Create(1, NoOfNodes);
-            MultidimensionalArray LevSetGrad = MultidimensionalArray.Create(1, NoOfNodes, D);
+            MultidimensionalArray LevSetValues;// = MultidimensionalArray.Create(1, NoOfNodes);
+            MultidimensionalArray LevSetGrad;// = MultidimensionalArray.Create(1, NoOfNodes, D);
 
             MultidimensionalArray x0_i_Local = MultidimensionalArray.Create(1, NoOfNodes, D);
             MultidimensionalArray x0_i_Global = MultidimensionalArray.Create(1, NoOfNodes, D); // quadrature nodes in global coordinates
@@ -439,9 +440,10 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                 int j = jCell;
 
-
-                LevSet.Evaluate(j, 1, Nodes, LevSetValues, 0, 0.0);
-                LevSet.EvaluateGradient(j, 1, Nodes, LevSetGrad);
+                LevSetValues = LevelSetData.GetLevSetValues(Nodes, j, 1);
+                LevSetGrad = LevelSetData.GetLevelSetGradients(Nodes, j, 1);
+                //LevSet.Evaluate(j, 1, Nodes, LevSetValues, 0, 0.0);
+                //LevSet.EvaluateGradient(j, 1, Nodes, LevSetGrad);
 
 
                 m_Context.TransformLocal2Global(new NodeSet(this.RefElement, x0_i_Local.ExtractSubArrayShallow(0, -1, -1)), j, 1, x0_i_Global, 0);
@@ -479,7 +481,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             int N = TestBasis.Length;
             int NoOfNodes = surfaceNodes.GetLength(0);
             int D = surfaceNodes.GetLength(1);
-            var GridDat = this.tracker.GridDat;
+            var GridDat = this.LevelSetData.GridDat;
             Debug.Assert(D == GridDat.SpatialDimension);
             int iKref = GridDat.Cells.GetRefElementIndex(jCell);
             var scalings = GridDat.Cells.JacobiDet;
@@ -491,7 +493,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
             var Phi = TestBasis.Evaluate(surfaceNodes);              // reference
             var GradPhi = TestBasis.EvaluateGradient(surfaceNodes);  // reference
-            var LevsetNormal = this.tracker.GetLevelSetReferenceNormals(iLevSet, surfaceNodes, jCell, 1).ExtractSubArrayShallow(0, -1, -1);   // reference
+            var LevsetNormal = this.LevelSetData.GetLevelSetReferenceNormals(surfaceNodes, jCell, 1).ExtractSubArrayShallow(0, -1, -1);   // reference
 
             var Coeffs = MultidimensionalArray.Create(N, NoOfNodes);
 
@@ -524,7 +526,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         
 
         MultidimensionalArray StokesAnsatzRHS(Basis TestBasis, CellBoundaryQuadratureScheme cellBndSchme, CellMask _mask, int order) {
-            var GridDat = this.tracker.GridDat;
+            var GridDat = this.LevelSetData.GridDat;
             CellBoundaryQuadrature<CellBoundaryQuadRule> qBnd = null;
             int iLevSet = this.LevelSetIndex;
             int N = TestBasis.Length;
@@ -544,7 +546,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 delegate (int i0, int Length, CellBoundaryQuadRule NS, MultidimensionalArray EvalResult) { // Evaluate
                     int NoOfNodes = NS.NoOfNodes;
                     MultidimensionalArray BasisValues = TestBasis.Evaluate(NS.Nodes);                 // reference
-                    var LSNormals = this.tracker.GetLevelSetReferenceNormals(iLevSet, NS.Nodes, i0, Length); // reference
+                    var LSNormals = this.LevelSetData.GetLevelSetReferenceNormals(NS.Nodes, i0, Length); // reference
 
                     for (int i = 0; i < Length; i++) { // loop over cells
 
@@ -700,27 +702,26 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// </summary>
         bool Docheck;
 
-        /// <summary>
-        /// the awesome level set tracker
-        /// </summary>
-        protected LevelSetTracker tracker;
+        ///// <summary>
+        ///// the awesome level set tracker
+        ///// </summary>
+        //protected LevelSetTracker tracker;
 
         IQuadRuleFactory<CellBoundaryQuadRule> cellBoundaryFactory;
 
         IQuadRuleFactory<CellBoundaryQuadRule> LevelSetBoundaryLineFactory;
 
         /// <summary>
-        /// 
+        /// ctor.
         /// </summary>
-        /// <param name="tracker"></param>
-        /// <param name="iLevSet"></param>
+        /// <param name="lsData"></param>
         /// <param name="_SurfaceNodesOnZeroLevset">if true, the nodes for the surface integration are 'projected' onto the zero-level-set</param>
         /// <param name="_DoCheck">
         /// if true, the accuracy of the quadrature is checked after solution of the system
         /// </param>
         /// <param name="_LevelSetBoundaryLineFactory"></param>
         /// <param name="cellBoundaryFactory"></param>
-        public SurfaceStokes_2D_Curvature(LevelSetTracker tracker, int iLevSet,
+        public SurfaceStokes_2D_Curvature(LevelSetTracker.LevelSetData lsData,
             IQuadRuleFactory<CellBoundaryQuadRule> cellBoundaryFactory,
             IQuadRuleFactory<CellBoundaryQuadRule> _LevelSetBoundaryLineFactory,
             bool _SurfaceNodesOnZeroLevset = false,
@@ -729,21 +730,23 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             this.Docheck = _DoCheck;
 
             this.RefElement = cellBoundaryFactory.RefElement;
-            if (!tracker.GridDat.Grid.RefElements.Contains(RefElement, ReferenceComparer.Instance)) {
+            if (!lsData.GridDat.Grid.RefElements.Contains(RefElement, ReferenceComparer.Instance)) {
                 throw new ArgumentOutOfRangeException(
                     "simplex", "'simplex' must be a volume - reference element");
             }
 
-            this.tracker = tracker;
-            this.LevelSetIndex = iLevSet;
+            this.LevelSetIndex = lsData.LevelSetIndex;
             this.cellBoundaryFactory = cellBoundaryFactory;
             this.SurfaceNodesOnZeroLevset = _SurfaceNodesOnZeroLevset;
             this.LevelSetBoundaryLineFactory = _LevelSetBoundaryLineFactory;
+            this.LevelSetData = lsData;
 
-            int iKref = this.tracker.GridDat.Grid.RefElements.IndexOf(RefElement);
-            this.MaxGrid = this.tracker.GridDat.Cells.GetCells4Refelement(iKref).Intersect(
-                tracker._Regions.GetCutCellMask4LevSet(this.LevelSetIndex));
+            int iKref = this.LevelSetData.GridDat.Grid.RefElements.IndexOf(RefElement);
+            this.MaxGrid = this.LevelSetData.GridDat.Cells.GetCells4Refelement(iKref).Intersect(
+                lsData.Region.GetCutCellMask4LevSet(this.LevelSetIndex));
         }
+
+        LevelSetTracker.LevelSetData LevelSetData;
 
         /// <summary>
         /// the intersection of the cut cells for Level Set <see cref="LevelSetIndex"/>
@@ -806,8 +809,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 // ======
 
                 int NoOfEqTotal;
-                var TestBasis = new Basis(this.tracker.GridDat, IntOrder); // we loose a order of 1 for the volume rule due to the divergence operator
-                NoOfEqTotal = TestBasis.Length * this.tracker.GridDat.Grid.SpatialDimension;
+                var TestBasis = new Basis(this.LevelSetData.GridDat, IntOrder); // we loose a order of 1 for the volume rule due to the divergence operator
+                NoOfEqTotal = TestBasis.Length * this.LevelSetData.GridDat.Grid.SpatialDimension;
 
                 // define Nodes
                 // ============
@@ -863,7 +866,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 ChunkRulePair<QuadRule>[] SurfaceRule;
                 {
                     SurfaceRule = new ChunkRulePair<QuadRule>[_mask.NoOfItemsLocally];
-                    var grddat = this.tracker.GridDat;
+                    var grddat = this.LevelSetData.GridDat;
                     int D = grddat.SpatialDimension;
 
                     // loop over cells in subgrid...
@@ -943,7 +946,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                         // return da rule!
                         // ===============
-                        var metrics = tracker.GetLevelSetNormalReferenceToPhysicalMetrics(this.LevelSetIndex, surfNodes, jCell, 1);
+                        var metrics = LevelSetData.GetLevelSetNormalReferenceToPhysicalMetrics(surfNodes, jCell, 1);
 
                         {
                             QuadRule qr_l = new QuadRule() {
@@ -977,11 +980,10 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
             int D = Nodes.GetLength(1);
             int NoOfNodes = Nodes.GetLength(0);
-            var m_Context = this.tracker.GridDat;
-            LevelSet LevSet = (LevelSet)(this.tracker.LevelSets[this.LevelSetIndex]);
+            var m_Context = this.LevelSetData.GridDat;
 
-            MultidimensionalArray LevSetValues = MultidimensionalArray.Create(1, NoOfNodes);
-            MultidimensionalArray LevSetGrad = MultidimensionalArray.Create(1, NoOfNodes, D);
+            MultidimensionalArray LevSetValues;// = MultidimensionalArray.Create(1, NoOfNodes);
+            MultidimensionalArray LevSetGrad;// = MultidimensionalArray.Create(1, NoOfNodes, D);
 
             MultidimensionalArray x0_i_Local = MultidimensionalArray.Create(1, NoOfNodes, D);
             MultidimensionalArray x0_i_Global = MultidimensionalArray.Create(1, NoOfNodes, D); // quadrature nodes in global coordinates
@@ -1003,8 +1005,10 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 int j = jCell;
 
 
-                LevSet.Evaluate(j, 1, Nodes, LevSetValues, 0, 0.0);
-                LevSet.EvaluateGradient(j, 1, Nodes, LevSetGrad);
+                //LevSet.Evaluate(j, 1, Nodes, LevSetValues, 0, 0.0);
+                //LevSet.EvaluateGradient(j, 1, Nodes, LevSetGrad);
+                LevSetValues = this.LevelSetData.GetLevSetValues(Nodes, j, 1);
+                LevSetGrad = this.LevelSetData.GetLevelSetGradients(Nodes, j, 1);
 
 
                 m_Context.TransformLocal2Global(new NodeSet(this.RefElement, x0_i_Local.ExtractSubArrayShallow(0, -1, -1)), j, 1, x0_i_Global, 0);
@@ -1042,7 +1046,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             int N = TestBasis.Length;
             int NoOfNodes = surfaceNodes.GetLength(0);
             int D = surfaceNodes.GetLength(1);
-            var GridDat = this.tracker.GridDat;
+            var GridDat = this.LevelSetData.GridDat;
             Debug.Assert(D == GridDat.SpatialDimension);
             int iKref = GridDat.Cells.GetRefElementIndex(jCell);
             var scalings = GridDat.Cells.JacobiDet;
@@ -1058,8 +1062,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             //var Phi = TestBasis.CellEval(surfaceNodes, jCell, 1).ExtractSubArrayShallow(0, -1, -1);                  // physical
             //var GradPhi = TestBasis.CellEvalGradient(surfaceNodes, jCell, 1).ExtractSubArrayShallow(0, -1, -1, -1);  // physical
 
-            var LevsetNormal = this.tracker.GetLevelSetReferenceNormals(iLevSet, surfaceNodes, jCell, 1).ExtractSubArrayShallow(0, -1, -1);   // reference
-            var Curvature = this.tracker.GetLevelSetReferenceCurvature(iLevSet, surfaceNodes, jCell, 1);   // reference
+            var LevsetNormal = this.LevelSetData.GetLevelSetReferenceNormals(surfaceNodes, jCell, 1).ExtractSubArrayShallow(0, -1, -1);   // reference
+            var Curvature = this.LevelSetData.GetLevelSetReferenceCurvature(surfaceNodes, jCell, 1);   // reference
             //var LevsetNormal = this.tracker.GetLevelSetNormals(iLevSet, surfaceNodes, jCell, 1).ExtractSubArrayShallow(0, -1, -1); // physical
             //var Curvature = MultidimensionalArray.Create(1, NoOfNodes);                                  // physical
             //this.tracker.LevelSets[iLevSet].EvaluateTotalCurvature(jCell, 1, surfaceNodes, Curvature);  // physical
@@ -1109,7 +1113,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         }
 
         MultidimensionalArray StokesAnsatzRHS(Basis TestBasis, CellBoundaryQuadratureScheme cellBndSchme, CellMask _mask, int order) {
-            var GridDat = this.tracker.GridDat;
+            var GridDat = this.LevelSetData.GridDat;
             CellBoundaryQuadrature<CellBoundaryQuadRule> qBnd = null;
             int iLevSet = this.LevelSetIndex;
             int N = TestBasis.Length;
@@ -1130,7 +1134,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 delegate (int i0, int Length, CellBoundaryQuadRule NS, MultidimensionalArray EvalResult) { // Evaluate
                     int NoOfNodes = NS.NoOfNodes;
                     MultidimensionalArray BasisValues = TestBasis.Evaluate(NS.Nodes);                 // reference
-                    var LSNormals = this.tracker.GetLevelSetReferenceNormals(iLevSet, NS.Nodes, i0, Length); // reference
+                    var LSNormals = this.LevelSetData.GetLevelSetReferenceNormals(NS.Nodes, i0, Length); // reference
                     //MultidimensionalArray BasisValues = TestBasis.CellEval(NS.Nodes, i0, Length);         // physical
                     //MultidimensionalArray LSNormals = this.tracker.GetLevelSetNormals(0, NS.Nodes, i0, Length);  // physical
 

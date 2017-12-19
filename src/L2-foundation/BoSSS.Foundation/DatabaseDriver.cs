@@ -225,7 +225,7 @@ namespace BoSSS.Foundation.IO {
         /// Tracing setup.
         /// </summary>
         void CloseTraceFile() {
-            if(logger_output != null)
+            if (logger_output != null)
                 logger_output.Close();
         }
 
@@ -254,11 +254,11 @@ namespace BoSSS.Foundation.IO {
 
             public override Type BindToType(string assemblyName, string typeName) {
 
-                if(assemblyName.Equals("BoSSS.Foundation") && typeName.Equals("BoSSS.Foundation.Grid.Cell[]")) {
+                if (assemblyName.Equals("BoSSS.Foundation") && typeName.Equals("BoSSS.Foundation.Grid.Cell[]")) {
                     typeName = "BoSSS.Foundation.Grid.Classic.Cell[]";
                 }
 
-                if(assemblyName.Equals("BoSSS.Foundation") && typeName.Equals("BoSSS.Foundation.Grid.BCElement[]")) {
+                if (assemblyName.Equals("BoSSS.Foundation") && typeName.Equals("BoSSS.Foundation.Grid.BCElement[]")) {
                     typeName = "BoSSS.Foundation.Grid.Classic.BCElement[]";
                 }
 
@@ -334,13 +334,15 @@ namespace BoSSS.Foundation.IO {
                 if (m_fsDriver == null)
                     throw new NotSupportedException("Can't save data when not connected to database.");
 
+#if DEBUG
                 // never trust the user
-                // ====================
-                {
-                    Guid id0 = id.MPIBroadcast(0);
-                    if (id0 != id)
-                        throw new ArgumentException("Guid differs at least on one MPI process.", "id");
+                Guid id0 = id.MPIBroadcast(0);
+                if (id0 != id) {
+                    throw new ArgumentException(
+                        "Guid differs at least on one MPI process.",
+                        nameof(id));
                 }
+#endif
 
                 // save parts
                 using (Stream s = m_fsDriver.GetDistVectorDataStream(true, id, MyRank))
@@ -418,7 +420,7 @@ namespace BoSSS.Foundation.IO {
                     part = new Partitioning(ie - i0);
                 }
 
-               
+
                 // check size
                 if (part.TotalLength != header.Partitioning.Last())
                     throw new ArgumentException("IO error: length of vector to load differs from total length of list.");
@@ -610,7 +612,7 @@ namespace BoSSS.Foundation.IO {
                         grid = m_Formatter.Deserialize<Grid.Classic.GridCommons>(reader);
                     }
                 }
-                
+
                 grid = grid.MPIBroadcast(0);
                 grid.Database = database;
                 grid.WriteTime = Utils.GetGridFileWriteTime(grid);
@@ -699,7 +701,7 @@ namespace BoSSS.Foundation.IO {
 
             if (glbNoOfBcCells_A != glbNoOfBcCells_B)
                 return false;
-            
+
             if (!ArrayTools.ListEquals(A.RefElements, B.RefElements, (a, b) => object.ReferenceEquals(a, b)))
                 return false;
             if (!ArrayTools.ListEquals(A.EdgeRefElements, B.EdgeRefElements, (a, b) => object.ReferenceEquals(a, b)))
@@ -718,7 +720,7 @@ namespace BoSSS.Foundation.IO {
             if ((A == null) != (B == null))
                 return false;
 
-            
+
             if (A.Cells == null)
                 throw new ArgumentException();
             int A_NumberOfBcCells = A.NumberOfBcCells;
@@ -766,7 +768,7 @@ namespace BoSSS.Foundation.IO {
 
                 // compare cells
                 // -------------
-                
+
                 for (int j = 0; j < A.Cells.Length; j++) {
                     Cell Ca = A.Cells[j];
                     Cell Cb = B_Cells[j];
@@ -838,7 +840,7 @@ namespace BoSSS.Foundation.IO {
 
                 if (A.BcCells.Length != B_BcCells.Length)
                     throw new ApplicationException("Internal error.");
-                
+
 
                 // put the cells of B into the same order as those of A
                 // ----------------------------------------------------
@@ -938,7 +940,7 @@ namespace BoSSS.Foundation.IO {
 
                 }
             }
-            
+
 
             match = match.MPIMin();
             return (match > 0);
@@ -962,7 +964,7 @@ namespace BoSSS.Foundation.IO {
 
                 var Grids = database.Grids;
                 foreach (var GrdInf in Grids) {
-                    Grid.Classic.GridCommons GrdInDb = (Grid.Classic.GridCommons) this.LoadGridInfo(GrdInf.ID, database);
+                    Grid.Classic.GridCommons GrdInDb = (Grid.Classic.GridCommons)this.LoadGridInfo(GrdInf.ID, database);
 
                     if (GridCommons_CustomEquality(grd, GrdInDb) == false)
                         continue;
@@ -1290,7 +1292,7 @@ namespace BoSSS.Foundation.IO {
                 // Permute data vector
                 // ===================
 
-                
+
                 var SortedDataVec = new CellFieldDataSet[DataVec.Count];
 
                 {
@@ -1302,7 +1304,7 @@ namespace BoSSS.Foundation.IO {
                     // compute resorting permutation
                     Permutation invSigma = sigma.Invert();
                     Permutation Resorting = invSigma * tau;
-                    tau = null;     
+                    tau = null;
                     invSigma = null;
 
                     // put dg coordinates into right order
