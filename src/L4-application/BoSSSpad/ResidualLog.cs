@@ -254,12 +254,13 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public void Plot() {
             //Create a Plotter and start it in a new Thread.
-            try {
-                ReadResiduals();
-            } catch (Exception e) {
-                Console.WriteLine(e);
-                return;
-            }
+            
+            //try {
+            //    ReadResiduals();
+            //} catch (Exception e) {
+            //    Console.WriteLine(e);
+            //    return;
+            //}
 
             Func<Form> Plotter = () => new ResidualForm(this);
             Thread threadPlotter = new Thread(() => AutonomuousPlotter.DisplayWindow(Plotter));

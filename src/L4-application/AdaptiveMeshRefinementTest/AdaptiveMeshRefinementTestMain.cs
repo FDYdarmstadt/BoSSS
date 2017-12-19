@@ -380,6 +380,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             double s = 1.0;
             LevSet.ProjectField((x, y) => -(x - s * t).Pow2() - y.Pow2() + (2.4).Pow2());
             LsTrk.UpdateTracker(incremental: _incremental);
+            LsTrk.PushStacks();
 
             // exact solution for new timestep
             uXEx.GetSpeciesShadowField("A").ProjectField((x, y) => x + alpha_A * t);

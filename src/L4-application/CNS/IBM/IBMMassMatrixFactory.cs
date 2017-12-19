@@ -66,12 +66,10 @@ namespace CNS.IBM {
             get {
                 if (baseFactory == null) {
                     Basis maxBasis = Mapping.BasisS.ElementAtMax(b => b.Degree);
-                    //baseFactory = new MassMatrixFactory(
-                    //    maxBasis,
-                    //    SpeciesMap.QuadSchemeHelper.CellAgglomeration);
-                    baseFactory = this.SpeciesMap.Tracker.GetXDGSpaceMetrics(
-                        new SpeciesId[] { this.SpeciesMap.Tracker.GetSpeciesId(m_FluidSpeciesName) }, m_quadOrder, 1)
-                        .MassMatrixFactory;                      
+                    var metrics = this.SpeciesMap.Tracker.GetXDGSpaceMetrics(
+                        new SpeciesId[] { this.SpeciesMap.Tracker.GetSpeciesId(m_FluidSpeciesName) },
+                        m_quadOrder, 1);
+                    baseFactory = metrics.MassMatrixFactory;
                 }
                 return baseFactory;
             }
@@ -89,7 +87,8 @@ namespace CNS.IBM {
             get {
                 if (massMatrix == null) {
                     massMatrix = BaseFactory.GetMassMatrix(Mapping, false);
-                    
+                    SpeciesMap.Agglomerator.ManipulateMatrixAndRHS(massMatrix, default(double[]), Mapping, Mapping);
+
                     // Make void part 0 instead of -1
                     CellMask fluidCells = SpeciesMap.SubGrid.VolumeMask;
                     foreach (Chunk chunk in fluidCells.Complement()) {
@@ -121,7 +120,7 @@ namespace CNS.IBM {
         public BlockMsrMatrix InverseMassMatrix {
             get {
                 if (inverseMassMatrix == null) {
-                    inverseMassMatrix = MassMatrix.InvertBlocks(ignoreEmptyBlocks: true, Subblocks:true, SymmetricalInversion:true, OnlyDiagonal:true);
+                    inverseMassMatrix = MassMatrix.InvertBlocks(ignoreEmptyBlocks: true, Subblocks: true, SymmetricalInversion: true, OnlyDiagonal: true);
                 }
 
                 return inverseMassMatrix;
@@ -129,7 +128,7 @@ namespace CNS.IBM {
         }
 
         BlockMsrMatrix nonAgglomeratedMassMatrix;
-        
+
         public BlockMsrMatrix NonAgglomeratedMassMatrix {
             get {
                 if (nonAgglomeratedMassMatrix == null) {

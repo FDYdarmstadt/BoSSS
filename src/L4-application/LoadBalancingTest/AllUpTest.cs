@@ -23,7 +23,7 @@ namespace BoSSS.Application.LoadBalancingTest {
                 BoSSS.Solution.Application.GetBoSSSInstallDir(),
                 out MpiInit);
         }
-
+        /*
         /// <summary>
         /// Da Test!
         /// </summary>
@@ -43,6 +43,7 @@ namespace BoSSS.Application.LoadBalancingTest {
                     return p;
                 });
         }
+        */
 
         /// <summary>
         /// Da Test!
