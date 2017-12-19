@@ -85,6 +85,7 @@ namespace BoSSS.Solution.Gnuplot {
         public Gnuplot(string AlternativeGnuplotPath = null, PlotFormat baseLineFormat = default(PlotFormat)) {
             this.m_baseLineFormat = baseLineFormat;
             m_sGNUPlotFileName = GetGnuplotPath(AlternativeGnuplotPath);
+            Console.WriteLine("Using gnuplot: " + m_sGNUPlotFileName);
         }
 
         /// <summary>
