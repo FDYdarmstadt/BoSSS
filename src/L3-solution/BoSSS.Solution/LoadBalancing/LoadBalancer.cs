@@ -89,9 +89,18 @@ namespace BoSSS.Solution {
                 CurrentCellCostEstimators[i].UpdateEstimates(performanceClassCount, cellToPerformanceClassMap);
             }
 
-            if (app.Grid.Size == 1
-                || (TimestepNo == 0 && redistributeAtStartup)
-                || (Period > 0 &&  TimestepNo % Period != 0)) {
+            if (app.Grid.Size == 1) {
+                return null;
+            }
+
+            bool performPertationing;
+            if (TimestepNo == 0) {
+                performPertationing = redistributeAtStartup;
+            } else {
+                performPertationing = (Period > 0 && TimestepNo % Period == 0);
+            }
+
+            if (!performPertationing) {
                 return null;
             }
 
