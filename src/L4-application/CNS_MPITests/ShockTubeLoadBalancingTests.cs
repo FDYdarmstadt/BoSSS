@@ -22,7 +22,6 @@ using BoSSS.Solution.Queries;
 using CNS;
 using CNS.Convection;
 using CNS.EquationSystem;
-using CNS.LoadBalancing;
 using CNS.MaterialProperty;
 using CNS.ShockCapturing;
 using CNS.Tests;
@@ -45,15 +44,17 @@ namespace CNS_MPITests.Tests.LoadBalancing {
 
         private static CommandLineOptions commandLineOptions = null;
 
+        private static int REBALANCING_PERIOD = 5;
+
         public static void Main(string[] args) {
             SetUp();
-            //TestRebalancingForDG0WithRK1();
-            //TestRealancingForDG0WithAB1();
-            //TestRebalancingForDG0WithLTS1SingleSubGrid();
+            TestRebalancingForDG0WithRK1();
+            TestRealancingForDG0WithAB1();
+            TestRebalancingForDG0WithLTS1SingleSubGrid();
             TestRebalancingForDG0WithLTS1TwoSubGrids();
-            //TestRebalancingForDG2WithRK1AndAV();
-            //TestRebalancingForDG2WithAB1AndAV();
-            csMPI.Raw.mpiFinalize();
+            TestRebalancingForDG2WithRK1AndAV();
+            TestRebalancingForDG2WithAB1AndAV();
+            TearDown();
         }
 
         [Test]
@@ -113,9 +114,9 @@ namespace CNS_MPITests.Tests.LoadBalancing {
                 gridStretching: gridStretching);
             control.NumberOfSubGrids = noOfSubgrids;
 
-
-            control.ReclusteringInterval = 5;
-
+            // MUST be the same as rebalancing period since LTS scheme MUST
+            // recluster after rebalancing (at least, it makes life much easier)
+            control.ReclusteringInterval = REBALANCING_PERIOD;
 
             control.NoOfTimesteps = 5;
             control.dtFixed = 1.5e-3;
@@ -269,7 +270,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             Debug.Assert(refControl.DynamicLoadBalancing_CellCostEstimatorFactories.Count == 0);
 
             CNSControl loadBalControl = refControl.CloneAs();
-            loadBalControl.DynamicLoadBalancing_Period = 5;
+            loadBalControl.DynamicLoadBalancing_Period = REBALANCING_PERIOD;
             loadBalControl.DynamicLoadBalancing_CellClassifier = new RandomCellClassifier(2);
             loadBalControl.DynamicLoadBalancing_CellCostEstimatorFactories.Add((p, i) => new StaticCellCostEstimator(new[] { 1, 10 }));
             loadBalControl.DynamicLoadBalancing_ImbalanceThreshold = 0.01;
@@ -314,6 +315,14 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             CompareErrors(refSolver.WorkingSet, loadBalSolver.WorkingSet, differenceThreshold);
         }
 
+        /// <summary>
+        /// Note: Only to be used if <paramref name="refResults"/> and
+        /// <paramref name="loadBalResults"/> have the same grid AND the same
+        /// grid partitioning
+        /// </summary>
+        /// <param name="refResults"></param>
+        /// <param name="loadBalResults"></param>
+        /// <param name="differenceThreshold"></param>
         private static void CompareErrors(CNSFieldSet refResults, CNSFieldSet loadBalResults, double differenceThreshold) {
             List<Action> assertions = new List<Action>();
             {
@@ -350,8 +359,10 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             assertions.ForEach(a => a());
         }
 
+        /// <summary>
+        /// </summary>
         [TestFixtureTearDown]
-        public static void SetUp() {
+        public static void TearDown() {
             csMPI.Raw.mpiFinalize();
         }
     }
