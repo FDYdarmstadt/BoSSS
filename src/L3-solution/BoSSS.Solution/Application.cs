@@ -1411,6 +1411,7 @@ namespace BoSSS.Solution {
                     return null;
 
                 ITimestepInfo tsi;
+                Exception e = null;
                 try {
                     tsi = this.DatabaseDriver.SaveTimestep(
                         t,
@@ -1418,11 +1419,13 @@ namespace BoSSS.Solution {
                         this.CurrentSessionInfo,
                         this.GridData,
                         this.IOFields);
-                } catch (Exception e) {
-                    Console.WriteLine(e.GetType().Name + " on rank " + this.MPIRank + " saveing timestep " + timestepno + ": " + e.Message);
+                } catch (Exception ee) {
+                    Console.WriteLine(ee.GetType().Name + " on rank " + this.MPIRank + " saveing timestep " + timestepno + ": " + ee.Message);
                     tsi = null;
+                    e = ee;
                 }
 
+                e.ExceptionBcast();
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
                 return tsi;
