@@ -22,6 +22,7 @@ using BoSSS.Solution.Queries;
 using CNS;
 using CNS.Convection;
 using CNS.EquationSystem;
+using CNS.LoadBalancing;
 using CNS.MaterialProperty;
 using CNS.ShockCapturing;
 using CNS.Tests;
@@ -46,11 +47,12 @@ namespace CNS_MPITests.Tests.LoadBalancing {
 
         public static void Main(string[] args) {
             SetUp();
-            TestRebalancingForDG0WithRK1();
-            TestRealancingForDG0WithAB1();
-            //TestRebalancingForDG0WithLTS1();
-            TestRebalancingForDG2WithRK1AndAV();
-            TestRebalancingForDG2WithAB1AndAV();
+            //TestRebalancingForDG0WithRK1();
+            //TestRealancingForDG0WithAB1();
+            //TestRebalancingForDG0WithLTS1SingleSubGrid();
+            TestRebalancingForDG0WithLTS1TwoSubGrids();
+            //TestRebalancingForDG2WithRK1AndAV();
+            //TestRebalancingForDG2WithAB1AndAV();
             csMPI.Raw.mpiFinalize();
         }
 
@@ -82,19 +84,44 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             CheckRunsProduceSameResults(control);
         }
 
+        [Test]
+        public static void TestRebalancingForDG0WithLTS1SingleSubGrid() {
+            int dgDegree = 0;
+            ExplicitSchemes explicitScheme = ExplicitSchemes.LTS;
+            int explicitOrder = 1;
+
+            var control = ShockTubeToro1Template(
+                dgDegree: dgDegree,
+                explicitScheme: explicitScheme,
+                explicitOrder: explicitOrder);
+
+            CheckRunsProduceSameResults(control);
+        }
+
         //[Test]
-        //public static void TestRebalancingForDG0WithLTS1() {
-        //    int dgDegree = 0;
-        //    ExplicitSchemes explicitScheme = ExplicitSchemes.LTS;
-        //    int explicitOrder = 1;
+        public static void TestRebalancingForDG0WithLTS1TwoSubGrids() {
+            int dgDegree = 0;
+            ExplicitSchemes explicitScheme = ExplicitSchemes.LTS;
+            int explicitOrder = 1;
+            int noOfSubgrids = 2;
+            double gridStretching = 1.0;
 
-        //    var control = ShockTubeToro1Template(
-        //        dgDegree: dgDegree,
-        //        explicitScheme: explicitScheme,
-        //        explicitOrder: explicitOrder);
+            var control = ShockTubeToro1Template(
+                dgDegree: dgDegree,
+                explicitScheme: explicitScheme,
+                explicitOrder: explicitOrder,
+                gridStretching: gridStretching);
+            control.NumberOfSubGrids = noOfSubgrids;
 
-        //    CheckRunsProduceSameResults(control);
-        //}
+
+            control.ReclusteringInterval = 5;
+
+
+            control.NoOfTimesteps = 5;
+            control.dtFixed = 1.5e-3;
+
+            CheckRunsProduceSameResults(control);
+        }
 
         [Test]
         public static void TestRebalancingForDG2WithRK1AndAV() {
@@ -124,7 +151,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             CheckRunsProduceSameResults(control);
         }
 
-        private static CNSControl ShockTubeToro1Template(int dgDegree, ExplicitSchemes explicitScheme, int explicitOrder, int noOfCells = 50) {
+        private static CNSControl ShockTubeToro1Template(int dgDegree, ExplicitSchemes explicitScheme, int explicitOrder, int noOfCells = 50, double gridStretching = 0.0) {
             double densityLeft = 1.0;
             double velocityLeft = 0.0;
             double pressureLeft = 1.0;
@@ -155,7 +182,15 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             c.AddVariable(Variables.Pressure, dgDegree);
 
             c.GridFunc = delegate {
-                double[] xNodes = GenericBlas.Linspace(0.0, 1.0, noOfCells + 1);
+                double xMin = 0.0;
+                double xMax = 1.0;
+
+                double[] xNodes;
+                if (gridStretching > 0.0) {
+                    xNodes = Grid1D.TanhSpacing(xMin, xMax, noOfCells + 1, gridStretching, true);
+                } else {
+                    xNodes = GenericBlas.Linspace(xMin, xMax, noOfCells + 1);
+                }
                 var grid = Grid1D.LineGrid(xNodes, periodic: false);
 
                 // Boundary conditions
@@ -239,6 +274,13 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             loadBalControl.DynamicLoadBalancing_CellCostEstimatorFactories.Add((p, i) => new StaticCellCostEstimator(new[] { 1, 10 }));
             loadBalControl.DynamicLoadBalancing_ImbalanceThreshold = 0.01;
 
+
+            //// TEST ONLY SUCCEEDS IF THESE LINES ARE IN
+            //loadBalControl.DynamicLoadBalancing_CellClassifier = new IndifferentCellClassifier();
+            //loadBalControl.DynamicLoadBalancing_CellCostEstimatorFactories.Clear();
+            //loadBalControl.DynamicLoadBalancing_CellCostEstimatorFactories.Add(CellCostEstimatorLibrary.AllCellsAreEqual);
+
+
             Debug.Assert(loadBalControl.DynamicLoadBalancing_Period > 0);
             Debug.Assert(loadBalControl.DynamicLoadBalancing_CellClassifier != null);
             Debug.Assert(loadBalControl.DynamicLoadBalancing_CellCostEstimatorFactories.Count > 0);
@@ -306,6 +348,11 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             }
 
             assertions.ForEach(a => a());
+        }
+
+        [TestFixtureTearDown]
+        public static void SetUp() {
+            csMPI.Raw.mpiFinalize();
         }
     }
 }
