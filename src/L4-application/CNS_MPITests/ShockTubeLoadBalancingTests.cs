@@ -48,12 +48,12 @@ namespace CNS_MPITests.Tests.LoadBalancing {
 
         public static void Main(string[] args) {
             SetUp();
-            TestRebalancingForDG0WithRK1();
-            TestRealancingForDG0WithAB1();
-            TestRebalancingForDG0WithLTS1SingleSubGrid();
+            //TestRebalancingForDG0WithRK1();
+            //TestRealancingForDG0WithAB1();
+            //TestRebalancingForDG0WithLTS1SingleSubGrid();
             TestRebalancingForDG0WithLTS1TwoSubGrids();
-            TestRebalancingForDG2WithRK1AndAV();
-            TestRebalancingForDG2WithAB1AndAV();
+            //TestRebalancingForDG2WithRK1AndAV();
+            //TestRebalancingForDG2WithAB1AndAV();
             TearDown();
         }
 
@@ -99,6 +99,11 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             CheckRunsProduceSameResults(control);
         }
 
+        /// <summary>
+        /// This test is currently deactivated because it fails; probably for
+        /// the following reason: the reclustering delivers different results
+        /// before and after load bal
+        /// </summary>
         //[Test]
         public static void TestRebalancingForDG0WithLTS1TwoSubGrids() {
             int dgDegree = 0;
@@ -150,6 +155,11 @@ namespace CNS_MPITests.Tests.LoadBalancing {
                 explicitOrder: explicitOrder);
 
             CheckRunsProduceSameResults(control);
+        }
+
+        //[Test]
+        public static void TestRebalancingForDG2WithLTS1AndAV() {
+            throw new NotImplementedException("to do");
         }
 
         private static CNSControl ShockTubeToro1Template(int dgDegree, ExplicitSchemes explicitScheme, int explicitOrder, int noOfCells = 50, double gridStretching = 0.0) {
