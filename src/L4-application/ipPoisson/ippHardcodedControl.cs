@@ -168,7 +168,7 @@ namespace ipPoisson {
         /// <param name="solver_name">
         /// Name of solver to use.
         /// </param>
-        public static ippControl TestCartesian2(int[] Res, double[] Stretch = null, string solver_name = "direct", int deg = 3) {
+        public static ippControl TestCartesian2(int[] Res, double[] Stretch = null, string solver_name = "softpcg+schwarz", int deg = 3) {
             if(Res.Length != 2 && Res.Length != 3)
                 throw new ArgumentOutOfRangeException();
             if(Stretch == null) {
@@ -225,6 +225,8 @@ namespace ipPoisson {
             };
 
             R.solver_name = solver_name;
+
+            R.NoOfMultigridLevels = 3;
 
             return R;
         }

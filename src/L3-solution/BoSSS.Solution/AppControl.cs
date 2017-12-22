@@ -332,7 +332,7 @@ namespace BoSSS.Solution.Control {
         /// <summary>
         /// Algorithm for grid partitioning.
         /// </summary>
-        public GridPartType GridPartType = GridPartType.ParMETIS;
+        public GridPartType GridPartType = GridPartType.METIS;
 
         /// <summary>
         /// grid partitioning options

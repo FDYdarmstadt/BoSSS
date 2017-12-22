@@ -263,22 +263,26 @@ namespace BoSSS.Solution.Multigrid {
                     Debug.Assert(test[i] == true);
             }
 #endif 
-
+            Debugger.Launch();
             // extend blocks according to desired overlap
             // ==========================================
             {
                 BitArray marker = new BitArray(JComp + JGhost);
 
-                if (overlap < 0)
+                if (Overlap < 0)
                     throw new ArgumentException();
-                if (overlap > 0) {
+                if (Overlap > 0) {
+                    if(Overlap > 1 && M.RowPartitioning.MpiSize > 1) {
+                        throw new NotSupportedException("In MPI parallel runs, the maximum supported overlap for the Schwarz preconditioner is 1.");
+                    }
+
                     foreach (List<int> bi in _Blocks) { // loop over blocks...
                         marker.SetAll(false); // marks all cells which are members of the block
                         foreach (int jcomp in bi)
                             marker[jcomp] = true;
 
                         // determine overlap regions
-                        for (int k = 0; k < overlap; k++) {
+                        for (int k = 0; k < Overlap; k++) {
                             int Jblock = bi.Count;
                             for (int j = 0; j < Jblock; j++) {
                                 int jCell = bi[j];
@@ -325,13 +329,22 @@ namespace BoSSS.Solution.Multigrid {
                         if (j < Jup) {
 
                             int N = MgMap.GetLength(j);
-                            int i0 = MgMap.LocalUniqueIndex(0, j, 0);
+                            int i0 = MgMap.GlobalUniqueIndex(0, j, 0);
 
                             for (int n = 0; n < N; n++) {
                                 bi.Add(i0 + n);
                             }
                         } else {
-                            throw new NotImplementedException("todo: MPI parallelization;");
+                            Debugger.Launch();
+
+                            int N = MgMap.GetLength(j);
+                            int i0 = MgMap.GlobalUniqueIndex(0, j, 0);
+                            for (int n = 0; n < N; n++) {
+                                bi.Add(i0 + n);
+                            }
+
+
+                            //throw new NotImplementedException("todo: MPI parallelization;");
                         }
                     }
 
@@ -353,7 +366,7 @@ namespace BoSSS.Solution.Multigrid {
                 foreach (var bi in BlockIndices)
                     bi.ForEach(delegate (int i) {
                         if (i < L) {
-                            Debug.Assert(test[i] == false || this.overlap > 0);
+                            Debug.Assert(test[i] == false || this.Overlap > 0);
                             test[i] = true;
                         }
                     });
@@ -398,14 +411,15 @@ namespace BoSSS.Solution.Multigrid {
                     MsrMatrix Block = new MsrMatrix(bi.Length, bi.Length, Bsz, Bsz);
                     M.WriteSubMatrixTo(Block, bi, default(int[]), bi, default(int[]));
 
-                    //blockSolvers[iPart] = new PARDISOSolver();
-                    //blockSolvers[iPart].CacheFactorization = true;
-                    //blockSolvers[iPart].DefineMatrix(Block);
+                    blockSolvers[iPart] = new PARDISOSolver() {
+                        CacheFactorization = true
+                    };
+                    blockSolvers[iPart].DefineMatrix(Block);
                     //blockSolvers[iPart] = new FullDirectSolver();
                     //blockSolvers[iPart].DefineMatrix(Block);
 
-                    blockSolvers[iPart] = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
-                    blockSolvers[iPart].DefineMatrix(Block);
+                    //blockSolvers[iPart] = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
+                    //blockSolvers[iPart].DefineMatrix(Block);
                 }
             }
 
@@ -451,7 +465,21 @@ namespace BoSSS.Solution.Multigrid {
 
         int[][] BlockIndices;
 
-        public int overlap = 2;
+        public int Overlap {
+            get {
+                return m_Overlap;
+            }
+            set {
+                if(value < 0)
+                    throw new ArgumentException();
+                if(value > 2)
+                    throw new ArgumentException();
+                m_Overlap = value;
+            }
+
+        }
+
+        int m_Overlap = 1;
 
 
         public Action<int, double[], double[], MultigridOperator> IterationCallback {
