@@ -1411,6 +1411,7 @@ namespace BoSSS.Solution {
                     return null;
 
                 ITimestepInfo tsi;
+                Exception e = null;
                 try {
                     tsi = this.DatabaseDriver.SaveTimestep(
                         t,
@@ -1418,11 +1419,13 @@ namespace BoSSS.Solution {
                         this.CurrentSessionInfo,
                         this.GridData,
                         this.IOFields);
-                } catch (Exception e) {
-                    Console.WriteLine(e.GetType().Name + " on rank " + this.MPIRank + " saveing timestep " + timestepno + ": " + e.Message);
+                } catch (Exception ee) {
+                    Console.WriteLine(ee.GetType().Name + " on rank " + this.MPIRank + " saveing timestep " + timestepno + ": " + ee.Message);
                     tsi = null;
+                    e = ee;
                 }
 
+                e.ExceptionBcast();
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
                 return tsi;
@@ -1733,7 +1736,9 @@ namespace BoSSS.Solution {
 
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
-                int i = 0;
+                int i = i0.MajorNumber;
+                this.MpiRedistributeAndMeshAdapt(i, physTime);
+
                 for (i = i0.MajorNumber + 1; (i <= i0.MajorNumber + (long)NoOfTimesteps) && EndTime - physTime > 1.0E-10 && !TerminationKey; i++) {
                     tr.Info("performing timestep " + i + ", physical time = " + physTime);
                     this.MpiRedistributeAndMeshAdapt(i, physTime);
@@ -2177,7 +2182,7 @@ namespace BoSSS.Solution {
         /// </returns>
         protected virtual int[] ComputeNewCellDistribution(int TimeStepNo, double physTime) {
             if (Control == null
-                || Control.DynamicLoadBalancing_Period <= 0
+                || (Control.DynamicLoadBalancing_Period < 0 && !Control.DynamicLoadBalancing_RedistributeAtStartup)
                 || MPISize <= 1)
                 return null;
 
@@ -2204,7 +2209,8 @@ namespace BoSSS.Solution {
                 m_GridPartitioningType,
                 m_GridPartitioningOptions,
                 Control != null ? Control.DynamicLoadBalancing_ImbalanceThreshold : 0.12,
-                Control != null ? Control.DynamicLoadBalancing_Period : 5);
+                Control != null ? Control.DynamicLoadBalancing_Period : 5,
+                redistributeAtStartup: Control.DynamicLoadBalancing_RedistributeAtStartup);
         }
 
 

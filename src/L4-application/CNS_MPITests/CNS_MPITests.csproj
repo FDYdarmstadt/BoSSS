@@ -52,7 +52,6 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CNS_MPITestsMain.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RandomCellClassifier.cs" />
     <Compile Include="ShockTubeLoadBalancingTests.cs" />
