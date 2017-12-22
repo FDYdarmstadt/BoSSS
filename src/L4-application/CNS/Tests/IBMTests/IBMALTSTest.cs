@@ -271,7 +271,7 @@ namespace CNS.Tests.IBMTests {
         public static void IBMALTSTest3_4_pos1() {
             CheckErrorThresholds(
                 SetupIBMALTSTest(levelSetPosition: 0.25, explicitOrder: 3, numOfClusters: 4),
-                Tuple.Create("L2NormDensity", 6.7854944137967E+001 + 1e-10),
+                Tuple.Create("L2NormDensity", 6.78549517081183E+001 + 1e-10),
                 Tuple.Create("L2NormVelocityX", 1.7888543819999E+000 + 1e-10),
                 Tuple.Create("L2NormPressure", 8.9442719099992E-001 + 1e-10));
         }
@@ -280,7 +280,7 @@ namespace CNS.Tests.IBMTests {
         public static void IBMALTSTest3_4_pos2() {
             CheckErrorThresholds(
                 SetupIBMALTSTest(levelSetPosition: 0.26, explicitOrder: 3, numOfClusters: 4),
-                Tuple.Create("L2NormDensity", 6.7854944287217E+001 + 1e-10),
+                Tuple.Create("L2NormDensity", 6.8549517077093E+001 + 1e-10),
                 Tuple.Create("L2NormVelocityX", 1.7888543819998E+000 + 1e-10),
                 Tuple.Create("L2NormPressure", 8.9442719100004E-001 + 1e-10));
         }

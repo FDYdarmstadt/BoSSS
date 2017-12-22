@@ -79,7 +79,7 @@ using BoSSS.Foundation.Grid.Classic;\newline
 using BoSSS.Foundation.Grid.RefElements;\newline 
 using BoSSS.Application.IBM\_Solver;
  }
-\BoSSSexe
+\BoSSSexeSilent
 \BoSSScmd{
 /// Now, a new database has to be created or opened by the following command
 var myDb = OpenOrCreateDatabase("C:\textbackslash \textbackslash tmp\textbackslash \textbackslash IBM\_db");
@@ -90,7 +90,7 @@ var myDb = OpenOrCreateDatabase("C:\textbackslash \textbackslash tmp\textbacksla
 Type solver = typeof(IBM\_SolverMain);\newline 
 solver.Assembly.Location;
  }
-\BoSSSexe
+\BoSSSexeSilent
 \BoSSScmd{
 /// Create a new control object for setting up the simulation
 var c = new IBM\_Control();
@@ -184,7 +184,7 @@ et = 3;\newline
 return et;\newline 
 \});
  }
-\BoSSSexe
+\BoSSSexeSilent
 \BoSSScmd{
 /// Return grid info and save
 grid;\newline 

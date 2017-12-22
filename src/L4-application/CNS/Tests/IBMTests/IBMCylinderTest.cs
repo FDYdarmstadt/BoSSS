@@ -23,9 +23,12 @@ using CNS.EquationSystem;
 using CNS.IBM;
 using CNS.MaterialProperty;
 using CNS.Residual;
+using ilPSP.Utils;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 
 namespace CNS.Tests.IBMTests {
 
@@ -43,18 +46,21 @@ namespace CNS.Tests.IBMTests {
         [Test]
         public static void IBMCylinder0th() {
             int dgDegree = 0;
-            IBMControl control = CylinderControl(dgDegree);
+            double endTime = 800.723;
+            IBMControl control = CylinderControl(dgDegree, endTime);
             var solver = new Program();
             solver.Init(control);
             solver.RunSolverMode();
 
             CheckErrorThresholds(
                 solver.QueryHandler.QueryResults,
-                Tuple.Create("L2ErrorDensity", 1.3369E-05),
-                Tuple.Create("L2ErrorXMomentum", 2.2514E-05),
-                Tuple.Create("L2ErrorYMomentum", 5.4635E-06),
-                Tuple.Create("L2ErrorEnergy", 4.9251E-06),
-                Tuple.Create("L2ErrorEntropy", 9.7658E-02));
+                Tuple.Create("L2ErrorDensity", 4.7987809216263E-06 + 1E-14),
+                Tuple.Create("L2ErrorXMomentum", 8.10374885275218E-06 + 1E-14),
+                Tuple.Create("L2ErrorYMomentum", 1.96659822231024E-06 + 1E-14),
+                Tuple.Create("L2ErrorEnergy", 1.77274964265508E-06 + 1E-14),
+                Tuple.Create("L2ErrorEntropy", 0.097256032622296 + 1E-14));
+
+            Debug.Assert(GetTimeStepNumber(solver) == 19973, "Did more or less timesteps than specified! Is the time step size still the same?");
         }
 
         /// <summary>
@@ -63,18 +69,21 @@ namespace CNS.Tests.IBMTests {
         [Test]
         public static void IBMCylinder1st() {
             int dgDegree = 1;
-            IBMControl control = CylinderControl(dgDegree);
+            double endTime = 800.207;
+            IBMControl control = CylinderControl(dgDegree, endTime);
             var solver = new Program();
             solver.Init(control);
             solver.RunSolverMode();
 
             CheckErrorThresholds(
                 solver.QueryHandler.QueryResults,
-                Tuple.Create("L2ErrorDensity", 2.6335E-08),
-                Tuple.Create("L2ErrorXMomentum", 9.7240E-08),
-                Tuple.Create("L2ErrorYMomentum", 2.8610E-07),
-                Tuple.Create("L2ErrorEnergy", 8.3690E-08),
-                Tuple.Create("L2ErrorEntropy", 1.8857E-02));
+                Tuple.Create("L2ErrorDensity", 9.60992941160667E-09 + 1E-14),
+                Tuple.Create("L2ErrorXMomentum", 3.5238883410484E-08 + 1E-14),
+                Tuple.Create("L2ErrorYMomentum", 1.03929684414075E-07 + 1E-14),
+                Tuple.Create("L2ErrorEnergy", 3.04802494616975E-08 + 1E-14),
+                Tuple.Create("L2ErrorEntropy", 0.0187571342568149 + 1E-14));
+
+            Debug.Assert(GetTimeStepNumber(solver) == 65680, "Did more or less timesteps than specified! Is the time step size still the same?");
         }
 
         /// <summary>
@@ -83,18 +92,21 @@ namespace CNS.Tests.IBMTests {
         [Test]
         public static void IBMCylinder2nd() {
             int dgDegree = 2;
-            IBMControl control = CylinderControl(dgDegree);
+            double endTime = 800.122;
+            IBMControl control = CylinderControl(dgDegree, endTime);
             var solver = new Program();
             solver.Init(control);
             solver.RunSolverMode();
-            
+
             CheckErrorThresholds(
                 solver.QueryHandler.QueryResults,
-                Tuple.Create("L2ErrorDensity", 2.3347E-06),
-                Tuple.Create("L2ErrorXMomentum", 9.6413E-06),
-                Tuple.Create("L2ErrorYMomentum", 1.0897E-05),
-                Tuple.Create("L2ErrorEnergy", 3.03861E-06),
-                Tuple.Create("L2ErrorEntropy", 1.1469E-03));
+                Tuple.Create("L2ErrorDensity", 1.41221118691485E-06 + 1E-14),
+                Tuple.Create("L2ErrorXMomentum", 5.48763410425118E-06 + 1E-14),
+                Tuple.Create("L2ErrorYMomentum", 6.60996706935798E-06 + 1E-14),
+                Tuple.Create("L2ErrorEnergy", 3.07664706080499E-06 + 1E-14),
+                Tuple.Create("L2ErrorEntropy", 0.00114689104001696 + 1E-14));
+
+            Debug.Assert(GetTimeStepNumber(solver) == 110694, "Did more or less timesteps than specified! Is the time step size still the same?");
         }
 
         /// <summary>
@@ -103,21 +115,24 @@ namespace CNS.Tests.IBMTests {
         [Test]
         public static void IBMCylinder3rd() {
             int dgDegree = 3;
-            IBMControl control = CylinderControl(dgDegree);
+            double endTime = 540.817;
+            IBMControl control = CylinderControl(dgDegree, endTime);
             var solver = new Program();
             solver.Init(control);
             solver.RunSolverMode();
 
             CheckErrorThresholds(
                 solver.QueryHandler.QueryResults,
-                Tuple.Create("L2ErrorDensity", 1.4935E-06),
-                Tuple.Create("L2ErrorXMomentum", 4.8652E-06),
-                Tuple.Create("L2ErrorYMomentum", 6.1838E-06),
-                Tuple.Create("L2ErrorEnergy", 3.7801E-06),
-                Tuple.Create("L2ErrorEntropy", 3.0844E-04));
+                Tuple.Create("L2ErrorDensity", 5.72502470891371E-07 + 1E-10),
+                Tuple.Create("L2ErrorXMomentum", 2.33389991976451E-06 + 1E-10),
+                Tuple.Create("L2ErrorYMomentum", 3.30066810669814E-06 + 1E-10),
+                Tuple.Create("L2ErrorEnergy", 1.54982738272624E-06 + 1E-10),
+                Tuple.Create("L2ErrorEntropy", 0.000130844038836861 + 1E-10));
+
+            Debug.Assert(GetTimeStepNumber(solver) == 156900, "Did more or less timesteps than specified! Is the time step size still the same?");
         }
 
-        private static IBMControl CylinderControl(int dgDegree) {
+        private static IBMControl CylinderControl(int dgDegree, double endTime) {
             string dbPath = @"..\..\Tests\IBMTests\IBMCylinderTests.zip";
             double Mach = 0.2;
             double agglomerationThreshold = 0.3;
@@ -201,8 +216,8 @@ namespace CNS.Tests.IBMTests {
             c.dtMin = 0.0;
             c.dtMax = 1.0;
             c.CFLFraction = 0.3;
-            c.Endtime = double.MaxValue;
-            c.NoOfTimesteps = 100;
+            c.Endtime = endTime;
+            c.NoOfTimesteps = int.MaxValue;
 
             c.PrintInterval = 1;
 

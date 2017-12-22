@@ -1709,8 +1709,17 @@ namespace BoSSS.Foundation.IO {
                 temp_fs[0] = new FileStream(@path + "\\sessions\\" + sessions.Pick(idx).ID + "\\profiling_bin.0.txt", FileMode.Open);
                 mcr[0] = (MethodCallRecord)fmt.Deserialize(temp_fs[0]);
                 temp_fs[0].Close();
-                
-                var mostExpensive = mcr[0].FindChild(mainMethod).CompleteCollectiveReport().OrderByDescending(cr => cr.ExclusiveTimeFractionOfRoot);
+
+                var findMainMethod = mcr[0].FindChild(mainMethod);
+                IOrderedEnumerable<CollectionReport> mostExpensive;
+                if (findMainMethod!= null)
+                {
+                     mostExpensive = findMainMethod.CompleteCollectiveReport().OrderByDescending(cr => cr.ExclusiveTimeFractionOfRoot);
+                } else
+                {
+                     mostExpensive = mcr[0].CompleteCollectiveReport().OrderByDescending(cr => cr.ExclusiveTimeFractionOfRoot);
+                }
+                //var mostExpensive = mcr[0].FindChild(mainMethod).CompleteCollectiveReport().OrderByDescending(cr => cr.ExclusiveTimeFractionOfRoot);
 
                 methods = new string[maxNumberMethods];
                 for (int i = 0; i < maxNumberMethods; i++)
@@ -1754,7 +1763,12 @@ namespace BoSSS.Foundation.IO {
                         // Get execution time of current method for current processor
                         double[] tempTime = new double[numberMethods];
                         double[] tempFractions = new double[numberMethods];
+                        
                         value = mcr[j].FindChild(mainMethod);
+                        if (value ==null)
+                        {
+                            value = mcr[j];
+                        }
                         if (exclusive)
                         {
                             tempTime[k] = value.FindChildren(methods[k]).Select(s => s.TimeExclusive.TotalSeconds).Max();
