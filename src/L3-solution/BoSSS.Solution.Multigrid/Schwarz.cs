@@ -84,8 +84,8 @@ namespace BoSSS.Solution.Multigrid {
                 blockLevelS.Add(thisLevel);
                 MultigridOperator blokOp = op;
                 for (int i = 0; i < this.Depth; i++) {
-                    if (blokOp.CoarserLevel == null)
-                        break;
+                    if(blokOp.CoarserLevel == null)
+                        throw new NotSupportedException("Not enough multigrid levels set to support a depth of "+ m_Depht + ".");
                     blokOp = blokOp.CoarserLevel;
                     blockLevelS.Add(blokOp.Mapping.AggGrid);
                 }
@@ -269,16 +269,16 @@ namespace BoSSS.Solution.Multigrid {
             {
                 BitArray marker = new BitArray(JComp + JGhost);
 
-                if (overlap < 0)
+                if (Overlap < 0)
                     throw new ArgumentException();
-                if (overlap > 0) {
+                if (Overlap > 0) {
                     foreach (List<int> bi in _Blocks) { // loop over blocks...
                         marker.SetAll(false); // marks all cells which are members of the block
                         foreach (int jcomp in bi)
                             marker[jcomp] = true;
 
                         // determine overlap regions
-                        for (int k = 0; k < overlap; k++) {
+                        for (int k = 0; k < Overlap; k++) {
                             int Jblock = bi.Count;
                             for (int j = 0; j < Jblock; j++) {
                                 int jCell = bi[j];
@@ -331,6 +331,8 @@ namespace BoSSS.Solution.Multigrid {
                                 bi.Add(i0 + n);
                             }
                         } else {
+                            Debugger.Launch();
+                            asd
                             throw new NotImplementedException("todo: MPI parallelization;");
                         }
                     }
@@ -353,7 +355,7 @@ namespace BoSSS.Solution.Multigrid {
                 foreach (var bi in BlockIndices)
                     bi.ForEach(delegate (int i) {
                         if (i < L) {
-                            Debug.Assert(test[i] == false || this.overlap > 0);
+                            Debug.Assert(test[i] == false || this.Overlap > 0);
                             test[i] = true;
                         }
                     });
@@ -443,8 +445,25 @@ namespace BoSSS.Solution.Multigrid {
 
         int[][] BlockIndices;
 
-        public int overlap = 2;
+        private int m_Overlap = 1;
 
+        /// <summary>
+        /// Overlap of the Schwarz blocks, in number-of-cells.
+        /// </summary>
+        public int Overlap {
+            get {
+                return m_Overlap;
+            }
+            set {
+                if(value < 0) {
+                    throw new ArgumentException();
+                }
+                if(value > 2) {
+                    throw new ArgumentException();
+                }
+                m_Overlap = value;
+            }
+        }
 
         public Action<int, double[], double[], MultigridOperator> IterationCallback {
             get;
