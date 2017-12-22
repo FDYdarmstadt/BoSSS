@@ -228,12 +228,11 @@ namespace CNS {
 
                 Exception e = null;
                 try {
+                    dt = TimeStepper.Perform(dt);
                 } catch (Exception ee) {
                     e = ee;
                 }
                 e.ExceptionBcast();
-
-                dt = TimeStepper.Perform(dt);
 
                 if (TimestepNo % printInterval == 0) {
                     Console.WriteLine(" done. PhysTime: {0:0.#######E-00}, dt: {1:0.###E-00}", phystime, dt);
