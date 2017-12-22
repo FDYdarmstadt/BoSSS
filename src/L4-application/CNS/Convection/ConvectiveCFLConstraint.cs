@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
 using BoSSS.Platform.LinAlg;
@@ -81,7 +82,7 @@ namespace CNS.Convection {
             int noOfNodesPerCell = base.EvaluationPoints[iKref].NoOfNodes;
             int D = gridData.Grid.SpatialDimension;
             Material material = speciesMap.GetMaterial(double.NaN);
-            MultidimensionalArray hmin = gridData.Cells.h_min;
+            MultidimensionalArray hmin = gridData.Cells.h_min.CloneAs();
             double gamma = material.EquationOfState.HeatCapacityRatio;
             double Ma = material.Control.MachNumber;
 
@@ -94,21 +95,17 @@ namespace CNS.Convection {
                             ibmMap.Tracker.DataHistories[0].Current.GetLevSetValues(base.EvaluationPoints[iKref], i0, Length);
 
                         SpeciesId species = ibmMap.Tracker.GetSpeciesId(ibmMap.Control.FluidSpeciesName);
-                        //var hMin = speciesMap.QuadSchemeHelper.CellAgglomeration.CellLengthScales[species];
-                        var volFrac = ibmMap.CellAgglomeration.CellVolumeFrac[species];
+                        var hminCut = ibmMap.CellAgglomeration.CellLengthScales[species];
+
+                        CellMask cutCellsThatAreNotSourceCells = ibmMap.Tracker.Regions.GetCutCellMask().Except(ibmMap.Agglomerator.AggInfo.SourceCells);
+                        foreach (int cell in cutCellsThatAreNotSourceCells.ItemEnum) {
+                            // Overwrite metric; it's a clone anyway!
+                            hmin[cell] = hminCut[cell];
+                        }
 
                         for (int i = 0; i < Length; i++) {
                             int cell = i0 + i;
-
-                            // Option 1: Use volume fraction times traditional metric, such
-                            // that time-steps are identical to non-IBM cases when no
-                            // interface is present
-                            double hminlocal = hmin[cell] * volFrac[cell];
-
-                            // Option 2: Use length scale "volume over surface", which seems
-                            // to be more robust for awkward cuts. However, yields
-                            // significantly smaller time-steps in uncut cells
-                            //double hminlocal = hMin[cell];
+                            double hminlocal = hmin[cell];
 
                             for (int node = 0; node < noOfNodesPerCell; node++) {
                                 if (levelSetValues[i, node].Sign() != (double)ibmMap.Control.FluidSpeciesSign) {
@@ -124,7 +121,7 @@ namespace CNS.Convection {
                                 double energy = energyValues[i, node];
 
                                 // Following quantities need scaling according to
-                                // non -dimensionalization, see StateVector/IdealGas
+                                // non-dimensionalization, see StateVector/IdealGas
                                 double kineticEnergy = 0.5 * momentumSquared / density * gamma * Ma * Ma;
                                 double sos = Math.Sqrt((gamma - 1.0) * (energy - kineticEnergy) / density) / Ma;
 
@@ -161,21 +158,18 @@ namespace CNS.Convection {
                             ibmMap.Tracker.DataHistories[0].Current.GetLevSetValues(base.EvaluationPoints[iKref], i0, Length);
 
                         SpeciesId species = ibmMap.Tracker.GetSpeciesId(ibmMap.Control.FluidSpeciesName);
-                        //var hMin = speciesMap.QuadSchemeHelper.CellAgglomeration.CellLengthScales[species];
-                        var volFrac = ibmMap.CellAgglomeration.CellVolumeFrac[species];
+                        var hminCut = ibmMap.CellAgglomeration.CellLengthScales[species];
+
+                        CellMask cutCellsThatAreNotSourceCells = ibmMap.Tracker.Regions.GetCutCellMask().Except(ibmMap.Agglomerator.AggInfo.SourceCells);
+                        foreach (int cell in cutCellsThatAreNotSourceCells.ItemEnum) {
+                            // Overwrite metric; it's a clone anyway!
+                            hmin[cell] = hminCut[cell];
+                        }
+
 
                         for (int i = 0; i < Length; i++) {
                             int cell = i0 + i;
-
-                            // Option 1: Use volume fraction times traditional metric, such
-                            // that time-steps are identical to non-IBM cases when no
-                            // interface is present
-                            double hminlocal = hmin[cell] * volFrac[cell];
-
-                            // Option 2: Use length scale "volume over surface", which seems
-                            // to be more robust for awkward cuts. However, yields
-                            // significantly smaller time-steps in uncut cells
-                            //double hminlocal = hMin[cell];
+                            double hminlocal = hmin[cell];
 
                             for (int node = 0; node < noOfNodesPerCell; node++) {
                                 if (levelSetValues[i, node].Sign() != (double)ibmMap.Control.FluidSpeciesSign) {
