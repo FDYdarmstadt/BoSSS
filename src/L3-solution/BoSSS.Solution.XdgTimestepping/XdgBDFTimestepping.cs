@@ -1500,14 +1500,14 @@ namespace BoSSS.Solution.XdgTimestepping {
                             m_BlockingStrategy = new Schwarz.MultigridBlocks() {
                                 Depth = 1
                             },
-                            overlap = 0
+                            Overlap = 0
                         },
                         i => new Schwarz() {
                             // this creates the post-smoother for each level
                             m_BlockingStrategy = new Schwarz.MultigridBlocks() {
                                 Depth = 1
                             },
-                            overlap = 0
+                            Overlap = 0
                         },
                         (i, mg) => {
                             mg.Gamma = 1;

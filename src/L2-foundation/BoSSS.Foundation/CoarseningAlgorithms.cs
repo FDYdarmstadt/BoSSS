@@ -73,8 +73,8 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 
 #if DEBUG
                     int iLevel = aggGrids.Count - 2;
-                    int JFine = aggGrids[iLevel].iLogicalCells.NoOfLocalUpdatedCells;
-                    int JCoarse = aggGrids[iLevel + 1].iLogicalCells.NoOfLocalUpdatedCells;
+                    int JFine = aggGrids[iLevel].iLogicalCells.NoOfCells;
+                    int JCoarse = aggGrids[iLevel + 1].iLogicalCells.NoOfCells;
 
                     // test that the coarse grid has significantly less cells than the fine grid.
                     double dJfine = JFine;

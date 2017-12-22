@@ -35,6 +35,7 @@ using BoSSS.Foundation.SpecFEM;
 using BoSSS.Solution.Queries;
 using BoSSS.Foundation.Grid.RefElements;
 using NUnit.Framework;
+using BoSSS.Solution.Multigrid;
 
 namespace ipPoisson {
 
@@ -102,7 +103,7 @@ namespace ipPoisson {
 
 
 
-        IMutableMatrixEx LaplaceMtx;
+        BlockMsrMatrix LaplaceMtx;
         double[] LaplaceAffine;
 
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
@@ -281,8 +282,8 @@ namespace ipPoisson {
                     ClassicSolve(out mintime, out maxtime, out converged, out NoOfIterations);
                     
                 } else {
-                    //ExperimentalSolve(out mintime, out maxtime, out converged, out NoOfIterations);
-                    throw new NotImplementedException("todo");
+                    ExperimentalSolve(out mintime, out maxtime, out converged, out NoOfIterations);
+                    
                 }
 
                 Console.WriteLine("finished; " + NoOfIterations + " iterations.");
@@ -400,10 +401,10 @@ namespace ipPoisson {
 
         List<DGField> MGColoring = new List<DGField>();
 
-        /*
+        
         private void ExperimentalSolve(out double mintime, out double maxtime, out bool Converged, out int NoOfIter) {
             int p = this.T.Basis.Degree;
-            var MgSeq = AggregationGrid.CreateSequence(this.GridData,MaxDepth:2);
+            var MgSeq = this.MultigridSequence;
             AggregationGridBasis[][] AggBasis = MgSeq.Select(aggGrid => new AggregationGridBasis[] { new AggregationGridBasis(this.T.Basis, aggGrid)}).ToArray();
 
             Console.WriteLine("Setting up multigrid operator...");
@@ -425,9 +426,7 @@ namespace ipPoisson {
                 string solverName = base.Control.solver_name.ToLower();
                 switch(solverName) {
                     case "direct":
-                        solver = new DirectSolver() {
-                            TestSolution = true
-                        };
+                        solver = new DirectSolver();
                         break;
 
                     case "softpcg+schwarz+directcoarse":
@@ -442,7 +441,7 @@ namespace ipPoisson {
                                 m_BlockingStrategy = new Schwarz.MultigridBlocks() {
                                     Depth = 2,
                                 },
-                                overlap = 2
+                                Overlap = 1
                             }
                         };
                         break;
@@ -457,7 +456,7 @@ namespace ipPoisson {
                                 m_BlockingStrategy = new Schwarz.MultigridBlocks() {
                                     Depth = 2,
                                 },
-                                overlap = 2
+                                Overlap = 1
                             }
                         };
                         break;
@@ -519,7 +518,7 @@ namespace ipPoisson {
                                     m_BlockingStrategy = new Schwarz.MultigridBlocks() {
                                         Depth = 2,
                                     },
-                                    overlap = 0
+                                    Overlap = 0
                                 },
                                 i => new Schwarz() {
                                     m_MaxIterations = 1,
@@ -527,7 +526,7 @@ namespace ipPoisson {
                                     m_BlockingStrategy = new Schwarz.MultigridBlocks() {
                                         Depth = 2,
                                     },
-                                    overlap = 0
+                                    Overlap = 0
                                 },
                                 (i, mg) => {
                                     mg.Gamma = 1;
@@ -612,7 +611,7 @@ namespace ipPoisson {
             Converged = solver.Converged;
             NoOfIter = solver.ThisLevelIterations;
         }
-        */
+        
 
         protected override void Bye() {
             object SolL2err;
