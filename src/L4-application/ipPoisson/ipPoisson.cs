@@ -282,8 +282,13 @@ namespace ipPoisson {
                     ClassicSolve(out mintime, out maxtime, out converged, out NoOfIterations);
                     
                 } else {
+<<<<<<< HEAD
                     ExperimentalSolve(out mintime, out maxtime, out converged, out NoOfIterations);
                     
+=======
+                    
+                    ExperimentalSolve(out mintime, out maxtime, out converged, out NoOfIterations);
+>>>>>>> exchange/master
                 }
 
                 Console.WriteLine("finished; " + NoOfIterations + " iterations.");
@@ -441,7 +446,11 @@ namespace ipPoisson {
                                 m_BlockingStrategy = new Schwarz.MultigridBlocks() {
                                     Depth = 2,
                                 },
+<<<<<<< HEAD
                                 Overlap = 1
+=======
+                                Overlap = 2
+>>>>>>> exchange/master
                             }
                         };
                         break;
@@ -536,8 +545,6 @@ namespace ipPoisson {
                         };
                         break;
 
-         
-
                     case "softpcg+blockjacobi":
 
                         solver = new SoftPCG() {
@@ -546,8 +553,6 @@ namespace ipPoisson {
                             Precond = new Jacobi() { NoOfIterations = 1, omega = 1 }
                         };
                         break;
-
-
 
                     case "classicmg":
                         solver = ClassicMultigrid.InitMultigridChain(MultigridOp,
@@ -563,16 +568,16 @@ namespace ipPoisson {
 
                     default:
                         throw new ApplicationException("unknown solver: " + solverName);
-
-
-
-
                 }
 
                 if(solver is ISolverWithCallback) {
                     ((ISolverWithCallback)solver).IterationCallback = delegate(int iter, double[] xI, double[] rI, MultigridOperator mgOp) {
                         double l2_RES = rI.L2NormPow2().MPISum().Sqrt();
-                        double l2_ERR =  GenericBlas.L2DistPow2(xI, T.CoordinateVector).MPISum().Sqrt();
+
+                        double[] xRef = new double[xI.Length];
+                        MultigridOp.TransformSolInto(T.CoordinateVector, xRef);
+
+                        double l2_ERR =  GenericBlas.L2DistPow2(xI, xRef).MPISum().Sqrt();
                         Console.WriteLine("Iter: {0}\tRes: {1:0.##E-00}\tErr: {2:0.##E-00}\tRunt: {3:0.##E-00}", iter, l2_RES, l2_ERR, stw.Elapsed.TotalSeconds);
                         //Tjac.CoordinatesAsVector.SetV(xI);
                         //Residual.CoordinatesAsVector.SetV(rI);
@@ -602,6 +607,8 @@ namespace ipPoisson {
                 
                 mintime = Math.Min(stw.Elapsed.TotalSeconds, mintime);
                 maxtime = Math.Max(stw.Elapsed.TotalSeconds, maxtime);
+
+                T.CoordinateVector.SetV(T2);
 
                 // Console.WriteLine("Number of iterations: {0}, runtime: {1} sec.", solver.NoOfIterations, stw.Elapsed.TotalSeconds);
             }

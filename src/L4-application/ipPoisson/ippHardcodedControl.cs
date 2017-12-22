@@ -64,7 +64,16 @@ namespace ipPoisson {
             return R;
         }
 
-
+        /// <summary>
+        /// Creates Nodes, yes it really does!
+        /// </summary>
+        /// <param name="res"></param>
+        /// <param name="stetch">
+        /// Factor which determines how much the intervals in the output grow; 1.0 is no stretching.
+        /// </param>
+        /// <param name="min"></param>
+        /// <param name="max"></param>
+        /// <returns></returns>
         static double[] CreateNodes(int res, double stetch, double min, double max) {
             if(stetch == 1.0)
                 return GenericBlas.Linspace(min, max, res + 1);
@@ -188,6 +197,7 @@ namespace ipPoisson {
             R.InitialValues_Evaluators.Add("RHS", X => -Math.Sin(X[0]));
             R.InitialValues_Evaluators.Add("Tex", X => Math.Sin(X[0]));
             R.ExactSolution_provided = true;
+            R.NoOfMultigridLevels = 3;
 
             R.GridFunc = delegate() {
                 if(Res.Length == 2) {
