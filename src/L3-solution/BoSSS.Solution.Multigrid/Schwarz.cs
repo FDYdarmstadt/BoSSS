@@ -263,7 +263,7 @@ namespace BoSSS.Solution.Multigrid {
                     Debug.Assert(test[i] == true);
             }
 #endif 
-            Debugger.Launch();
+
             // extend blocks according to desired overlap
             // ==========================================
             {
@@ -302,7 +302,6 @@ namespace BoSSS.Solution.Multigrid {
                         bi.Sort();
                     }
                 }
-
 
                 BlockCells = _Blocks.Select(list => list.ToArray()).ToArray();
             }
@@ -347,6 +346,7 @@ namespace BoSSS.Solution.Multigrid {
 
                 }
 
+
                 this.BlockIndices = _BlockIndices.Select(bi => bi.ToArray()).ToArray();
             }
 
@@ -372,14 +372,14 @@ namespace BoSSS.Solution.Multigrid {
 
             }
             
-            Console.WriteLine("Schwarz, blocking strategy {0}", this.m_BlockingStrategy.GetType().FullName);
-            double avg = 0;
-            for(int iblock  = 0; iblock < BlockIndices.Length; iblock++) {
-                Console.WriteLine("Schwarz, blocking strategy {0}, block {0}, DOFs per block {1}", iblock, BlockIndices[iblock].Length);
-                avg += BlockIndices[iblock].Length;
-            }
-            avg = Math.Round(avg / BlockIndices.Length);
-            Console.WriteLine("Average block size: " + avg);
+            //Console.WriteLine("Schwarz, blocking strategy {0}", this.m_BlockingStrategy.GetType().FullName);
+            //double avg = 0;
+            //for(int iblock  = 0; iblock < BlockIndices.Length; iblock++) {
+            //    Console.WriteLine("Schwarz, blocking strategy {0}, block {0}, DOFs per block {1}", iblock, BlockIndices[iblock].Length);
+            //    avg += BlockIndices[iblock].Length;
+            //}
+            //avg = Math.Round(avg / BlockIndices.Length);
+            //Console.WriteLine("Average block size: " + avg);
             
             // create solvers
             // ==============
@@ -411,12 +411,12 @@ namespace BoSSS.Solution.Multigrid {
                     blockSolvers[iPart] = new PARDISOSolver() {
                         CacheFactorization = true
                     };
-                    blockSolvers[iPart].DefineMatrix(Block);
+                    //blockSolvers[iPart].DefineMatrix(Block);
                     //blockSolvers[iPart] = new FullDirectSolver();
                     //blockSolvers[iPart].DefineMatrix(Block);
 
-                    //blockSolvers[iPart] = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
-                    //blockSolvers[iPart].DefineMatrix(Block);
+                    blockSolvers[iPart] = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
+                    blockSolvers[iPart].DefineMatrix(Block);
                 }
             }
 
