@@ -282,13 +282,7 @@ namespace ipPoisson {
                     ClassicSolve(out mintime, out maxtime, out converged, out NoOfIterations);
                     
                 } else {
-<<<<<<< HEAD
                     ExperimentalSolve(out mintime, out maxtime, out converged, out NoOfIterations);
-                    
-=======
-                    
-                    ExperimentalSolve(out mintime, out maxtime, out converged, out NoOfIterations);
->>>>>>> exchange/master
                 }
 
                 Console.WriteLine("finished; " + NoOfIterations + " iterations.");
@@ -446,11 +440,7 @@ namespace ipPoisson {
                                 m_BlockingStrategy = new Schwarz.MultigridBlocks() {
                                     Depth = 2,
                                 },
-<<<<<<< HEAD
                                 Overlap = 1
-=======
-                                Overlap = 2
->>>>>>> exchange/master
                             }
                         };
                         break;

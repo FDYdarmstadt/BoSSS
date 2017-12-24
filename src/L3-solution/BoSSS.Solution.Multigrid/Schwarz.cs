@@ -272,13 +272,10 @@ namespace BoSSS.Solution.Multigrid {
                 if (Overlap < 0)
                     throw new ArgumentException();
                 if (Overlap > 0) {
-<<<<<<< HEAD
                     if(Overlap > 1 && M.RowPartitioning.MpiSize > 1) {
                         throw new NotSupportedException("In MPI parallel runs, the maximum supported overlap for the Schwarz preconditioner is 1.");
                     }
 
-=======
->>>>>>> exchange/master
                     foreach (List<int> bi in _Blocks) { // loop over blocks...
                         marker.SetAll(false); // marks all cells which are members of the block
                         foreach (int jcomp in bi)
@@ -338,8 +335,6 @@ namespace BoSSS.Solution.Multigrid {
                                 bi.Add(i0 + n);
                             }
                         } else {
-                            Debugger.Launch();
-<<<<<<< HEAD
 
                             int N = MgMap.GetLength(j);
                             int i0 = MgMap.GlobalUniqueIndex(0, j, 0);
@@ -347,12 +342,6 @@ namespace BoSSS.Solution.Multigrid {
                                 bi.Add(i0 + n);
                             }
 
-
-                            //throw new NotImplementedException("todo: MPI parallelization;");
-=======
-                            asd
-                            throw new NotImplementedException("todo: MPI parallelization;");
->>>>>>> exchange/master
                         }
                     }
 
@@ -473,25 +462,11 @@ namespace BoSSS.Solution.Multigrid {
 
         int[][] BlockIndices;
 
-<<<<<<< HEAD
-        public int Overlap {
-            get {
-                return m_Overlap;
-            }
-            set {
-                if(value < 0)
-                    throw new ArgumentException();
-                if(value > 2)
-                    throw new ArgumentException();
-                m_Overlap = value;
-            }
 
-        }
 
-        int m_Overlap = 1;
-=======
+
         private int m_Overlap = 1;
->>>>>>> exchange/master
+
 
         /// <summary>
         /// Overlap of the Schwarz blocks, in number-of-cells.
