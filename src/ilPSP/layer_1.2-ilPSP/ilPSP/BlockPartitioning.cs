@@ -30,8 +30,114 @@ namespace ilPSP {
     /// </summary>
     public class BlockPartitioning : Partitioning, IBlockPartitioning {
 
+        public BlockPartitioning(int LocalLength, IEnumerable<int> BlockI0, IEnumerable<int> BlockLen, MPI_Comm MpiComm, bool i0isLocal = false) : base(LocalLength, MpiComm) {
+
+            //var enu_I0 = BlockI0.GetEnumerator();
+            //var enuLen = BlockLen.GetEnumerator();
+
+            Debug.Assert(base.LocalLength == LocalLength);
+
+            List<int> _SubblkLen1 = new List<int>();
+            List<int> _SubblkLen2 = new List<int>();
+            List<int> _BlockType = new List<int>();
+
+            //int NoOfBlocks = 0;
+            //while(enu_I0.MoveNext()) {
+            //    if (!enuLen.MoveNext())
+            //        throw new ArgumentException("Both enumerations must contain the same number of elements.");
+
+            //    int N = enuLen.Current;
+            //    int i0Block = enu_I0.Current;
+
+            //    if (i0isLocal)
+            //        i0Block += base.i0;
+            //    base.IsInLocalRange(i0Block);
+            //    base.IsInLocalRange(Math.Max(i0Block, i0Block + N - 1));
+
+
+
+
+            //    NoOfBlocks++;
+            //}
+            //if (enuLen.MoveNext())
+            //    throw new ArgumentException("Both enumerations must contain the same number of elements.");
+
+
+            int[] _BlockI0 = BlockI0.ToArray();
+            int[] _BlockLen = BlockLen.ToArray();
+
+            if(_BlockI0.Length != _BlockLen.Length)
+                throw new ArgumentException("Both enumerations must contain the same number of elements.");
+
+            int NoOfBlocks = _BlockI0.Length;
+            int[] BlockType = new int[NoOfBlocks];
+
+            int FrameBlockSize = -1;
+
+            for(int iBlock = 0; iBlock < NoOfBlocks; iBlock++) {
+                int i0Block = _BlockI0[iBlock];
+                if (i0isLocal)
+                    i0Block += base.i0;
+
+                int N = _BlockLen[iBlock];
+
+                base.IsInLocalRange(i0Block);
+                base.IsInLocalRange(Math.Max(i0Block, i0Block + N - 1));
+
+                int iEBlock;
+                if( iBlock < NoOfBlocks - 1) {
+                    iEBlock = _BlockI0[iBlock + 1];
+                    if (i0isLocal)
+                        iEBlock += base.i0;
+                } else {
+                    iEBlock = LocalLength + base.i0;
+                }
+
+                if (i0Block + N > iEBlock)
+                    throw new ArgumentException("Block Length exceeds i0 of next block.");
+
+                int NE = iEBlock - i0Block;
+
+                if (iBlock == 0) {
+                    FrameBlockSize = NE;
+                } else {
+                    if (NE != FrameBlockSize)
+                        FrameBlockSize = -1;
+                }
+
+                int iBlockType;
+                bool bFound = false;
+                for(iBlockType = 0; iBlockType < _SubblkLen1.Count; iBlockType++) {
+                    if(N == _SubblkLen1[iBlockType] && NE == _SubblkLen2[iBlockType]) {
+                        bFound = true;
+                        break;
+                    }
+                }
+                Debug.Assert(bFound == (iBlockType < _SubblkLen1.Count));
+                if(!bFound) {
+                    _SubblkLen1.Add(N);
+                    _SubblkLen2.Add(NE);
+                    iBlockType = _SubblkLen1.Count - 1;
+                }
+
+                Debug.Assert(N == _SubblkLen1[iBlockType]);
+                Debug.Assert(NE == _SubblkLen2[iBlockType]);
+                BlockType[iBlock] = iBlockType;
+            }
+
+            //
+
+            int NoOfBlockTypes = _SubblkLen1.Count;
+            int[][] i0_Sblk = NoOfBlocks.ForLoop(iBlkType => new int[] { 0 });
+            int[][] LenSblk = NoOfBlocks.ForLoop(iBlkType => new int[] { _SubblkLen1[iBlkType] });
+            ConstructorCommon(FrameBlockSize, i0_Sblk, LenSblk, BlockType, MpiComm);
+
+        }
+
+
+
         /// <summary>
-        /// Constructor.
+        /// Shallow constructor - basically everything has to be provided
         /// </summary>
         /// <param name="LocalLength"></param>
         /// <param name="FrameBlockSize">
@@ -55,21 +161,24 @@ namespace ilPSP {
             int[][] _Subblk_i0, int[][] _SubblkLen,
             int[] _BlockType,
             MPI_Comm MpiComm) : base(LocalLength, MpiComm) {
+            ConstructorCommon(FrameBlockSize, _Subblk_i0, _SubblkLen, _BlockType, MpiComm);
+        }
 
+        private void ConstructorCommon(int FrameBlockSize, int[][] _Subblk_i0, int[][] _SubblkLen, int[] _BlockType, MPI_Comm MpiComm) {
             MPICollectiveWatchDog.Watch(MpiComm);
-
+            int LocalLength = base.LocalLength;
 
             // ===============
             // check arguments
             // ===============
             if (_Subblk_i0.Length != _SubblkLen.Length)
                 throw new ArgumentException();
-                        
+
             for (int i = _Subblk_i0.Length - 1; i >= 0; i--) {
                 if (_Subblk_i0[i].Length != _SubblkLen[i].Length)
                     throw new ArgumentException();
                 int i0min = 0;
-                for(int iSblk = 0; iSblk < _Subblk_i0[i].Length; iSblk++) {
+                for (int iSblk = 0; iSblk < _Subblk_i0[i].Length; iSblk++) {
                     if (_Subblk_i0[i][iSblk] < i0min)
                         throw new ArgumentException("Potential sub-block overlapping.");
                     i0min += _SubblkLen[i][iSblk];
@@ -79,8 +188,8 @@ namespace ilPSP {
             this.m_Subblk_i0 = _Subblk_i0;
             this.m_SubblkLen = _SubblkLen;
 
-            if(FrameBlockSize >= 1) {
-                for(int BlockType = 0; BlockType < _Subblk_i0.Length; BlockType++) {
+            if (FrameBlockSize >= 1) {
+                for (int BlockType = 0; BlockType < _Subblk_i0.Length; BlockType++) {
                     int NoOfSubblocks = _Subblk_i0[BlockType].Length;
                     int BlockLen = _Subblk_i0[BlockType][NoOfSubblocks - 1] + _SubblkLen[BlockType][NoOfSubblocks - 1];
 
@@ -88,11 +197,11 @@ namespace ilPSP {
                         throw new ArgumentException();
                 }
 
-                if(LocalLength % FrameBlockSize != 0) {
+                if (LocalLength % FrameBlockSize != 0) {
                     throw new ArgumentException("'FrameBlockSize', if specified, must be a divider of 'LocalLength'.");
                 }
 
-                if(_BlockType != null) {
+                if (_BlockType != null) {
                     if (_BlockType.Length != LocalLength / FrameBlockSize)
                         throw new ArgumentException("Mismatch between number of blocks specified by '_BlockType' and 'LocalLength/FrameBlockSize'.");
                 }
@@ -112,7 +221,7 @@ namespace ilPSP {
             // ====================
 
             int LocalNoOfBlocks;
-            if(_BlockType != null) {
+            if (_BlockType != null) {
                 LocalNoOfBlocks = _BlockType.Length;
 
                 if (FrameBlockSize > 0) {
@@ -128,13 +237,13 @@ namespace ilPSP {
 
             m_BlocksPartition = new Partitioning(LocalNoOfBlocks, MpiComm);
 
-            if (_Subblk_i0.Length > 1) { 
+            if (_Subblk_i0.Length > 1) {
                 this.m_BlockType = _BlockType;
             } else {
                 this.m_BlockType = null;
             }
             int J = _BlockType.Length;
-            
+
             if (FrameBlockSize == 0) {
                 throw new ArgumentException();
             } else if (FrameBlockSize < 0) {
@@ -147,7 +256,7 @@ namespace ilPSP {
                     int B = _Subblk_i0[bT].Length;
                     int BlockLen = _Subblk_i0[bT][B - 1] + _SubblkLen[bT][B - 1];
                     BlockI0[j + 1] = BlockI0[j] + BlockLen;
-                    if(j == 0) {
+                    if (j == 0) {
                         FrameBlockSizeMaybe = BlockLen;
                     } else {
                         if (FrameBlockSizeMaybe != BlockLen)
@@ -173,7 +282,6 @@ namespace ilPSP {
 
             }
         }
-
 
         Partitioning m_BlocksPartition;
 

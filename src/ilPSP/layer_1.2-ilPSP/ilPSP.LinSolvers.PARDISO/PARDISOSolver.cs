@@ -449,7 +449,7 @@ namespace ilPSP.LinSolvers.PARDISO {
 
                 unsafe
                 {
-                    fixed(int* pSendCounts = SendCounts, pDispl = Displ {
+                    fixed(int* pSendCounts = SendCounts, pDispl = Displ) {
                         fixed (double* pSend = __x, pRecv = _x) {
                             csMPI.Raw.Scatterv(
                             (IntPtr)pSend,

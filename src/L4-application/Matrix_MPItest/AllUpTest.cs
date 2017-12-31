@@ -46,11 +46,7 @@ namespace BoSSS.Application.Matrix_MPItest {
                 // he is to poor to afford MATLAB, so he uses OCTAVE
                 BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
                 BatchmodeConnector.MatlabExecuteable = "C:\\cygwin64\\bin\\bash.exe";
-            } else if (System.Environment.MachineName.ToLowerInvariant().EndsWith("pcmit2")) {
-                // This is Florians Office PC;
-                BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
-                BatchmodeConnector.MatlabExecuteable = "D:\\cygwin64\\bin\\bash.exe";
-            }
+            } 
         }
 
         /// <summary>
