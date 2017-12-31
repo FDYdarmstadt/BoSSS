@@ -59,6 +59,7 @@
     <Compile Include="Fixpoint.cs" />
     <Compile Include="ILU.cs" />
     <Compile Include="LocalizedOperatorPrec.cs" />
+    <Compile Include="MPIexchange.cs" />
     <Compile Include="Newton.cs" />
     <Compile Include="OrthonormalizationScheme.cs" />
     <Compile Include="FlexGMRES.cs" />
