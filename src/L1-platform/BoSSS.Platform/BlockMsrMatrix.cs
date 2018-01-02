@@ -583,6 +583,9 @@ namespace ilPSP.LinSolvers {
         /// </summary>
         Dictionary<int, int[,]> SendLists = new Dictionary<int, int[,]>();
 
+        /// <summary>
+        /// Update of <see cref="ReceiveLists"/> and <see cref="SendLists"/>
+        /// </summary>
         void UpdateCommPattern(MPI_Comm comm) {
             MPICollectiveWatchDog.Watch(comm);
 
@@ -2727,12 +2730,17 @@ namespace ilPSP.LinSolvers {
 #endif
                 // determine MPI communicator
                 // ==========================
-                if (Target.MPI_Comm != this.MPI_Comm) {
+                if (Target.MPI_Comm != this.MPI_Comm && Target.MPI_Comm != csMPI.Raw._COMM.SELF) {
                     throw new ArgumentException("todo");
                 }
                 MPI_Comm comm = Target.MPI_Comm;
+                MPICollectiveWatchDog.Watch(comm);
 
-                Dictionary<int, int[,]> ExternalColIndices = DetermineExternColumnIndices(Target, ColumnIndicesSource, ColIndicesTarget, comm);
+                Dictionary<int, int[,]> ExternalColIndices;
+                if(comm != csMPI.Raw._COMM.SELF)
+                    ExternalColIndices = DetermineExternColumnIndices(Target, ColumnIndicesSource, ColIndicesTarget, comm);
+                else
+                    ExternalColIndices = new Dictionary<int, int[,]>();
 
                 // define permutation of column indices
                 // ====================================
