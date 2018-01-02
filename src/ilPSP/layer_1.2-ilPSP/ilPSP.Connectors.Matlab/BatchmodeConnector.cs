@@ -329,6 +329,7 @@ namespace ilPSP.Connectors.Matlab {
                 filepath = Path.Combine(WorkingDirectory.FullName, MatlabName);
             else
                 filepath = null;
+            filepath = filepath.MPIBroadcast(0);
             if(M != null) // if M is on a sub-communicator of WORLD, this should be null
                 M.SaveToTextFileSparse(filepath);
             
@@ -492,6 +493,7 @@ namespace ilPSP.Connectors.Matlab {
         /// </summary>
         /// <param name="MatlabCommand">the MATLAB command</param>
         public void Cmd(string MatlabCommand) {
+            ilPSP.MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
             if (Executed == true)
                 throw new InvalidOperationException("No commands can be added after Execute has been called.");
 
@@ -505,6 +507,7 @@ namespace ilPSP.Connectors.Matlab {
         /// </summary>
         /// <param name="MatlabCommand">the MATLAB command</param>
         public void Cmd(string MatlabCommand, params object[] formatParams) {
+            ilPSP.MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
             if (Executed == true) {
                 throw new InvalidOperationException(
                     "No commands can be added after Execute has been called.");

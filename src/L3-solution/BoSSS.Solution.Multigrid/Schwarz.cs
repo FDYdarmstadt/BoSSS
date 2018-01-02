@@ -481,7 +481,6 @@ namespace BoSSS.Solution.Multigrid {
             }
 #endif
 
-            Debugger.Launch();
 
             BlockMsrMatrix ExternalRowsTemp;
             if(myMpisize > 1 && Overlap > 0) {
@@ -505,9 +504,11 @@ namespace BoSSS.Solution.Multigrid {
             ExternalRows_BlockI0 = null;
             ExternalRows_BlockN = null;
 
-            
+
             // create solvers
             // ==============
+
+            Debugger.Launch();
 
             {
                 blockSolvers = new ISparseSolver[NoOfSchwzBlocks];
@@ -535,6 +536,14 @@ namespace BoSSS.Solution.Multigrid {
                     //}
 
                     BlockPartitioning localBlocking = new BlockPartitioning(bi.Count + l1.Count, LocalBlocks_i0[iPart], LocalBlocks_N[iPart], csMPI.Raw._COMM.SELF);
+
+                    {
+                        // convert the indices into 'ExternalRowsTemp' to global indices
+                        int l1L = l1.Count;
+                        int offset = ExternalRowsTemp._RowPartitioning.i0;
+                        for(int i = 0; i < l1L; i++)
+                            l1[i] += offset;
+                    }
 
                     BlockMsrMatrix Block = new BlockMsrMatrix(localBlocking, localBlocking);// bi.Length, bi.Length, Bsz, Bsz);
                     Mop.WriteSubMatrixTo(Block, bi, default(int[]), bi, default(int[]));
@@ -651,7 +660,7 @@ namespace BoSSS.Solution.Multigrid {
                             int L = LL + LE;
                             
                             SubVec = new double[L];
-                            for(int i = 0; i < L; i++) {
+                            for(int i = 0; i < LL; i++) {
                                 SubVec[i] = testRHS[this.BlockIndices_Local[iBlock][i]];
                             }
                             if(LE > 0) {
@@ -660,7 +669,7 @@ namespace BoSSS.Solution.Multigrid {
                                 }
                             }
                         } else {
-                            SubVec = null;
+                            SubVec = new double[0];
                         }
 
                         matlab.PutVector(SubVec, "SubVec" + g);
@@ -727,12 +736,15 @@ namespace BoSSS.Solution.Multigrid {
                 matlab.GetMatrix(testXErr, "testXErr");
 
                 matlab.Execute();
-                
+
                 for(int iGlbBlock = 0; iGlbBlock < GlobalNoOfBlocks; iGlbBlock++) {
+                    Console.WriteLine("Block #{0} Error " + BlockErr[iGlbBlock, 0], iGlbBlock);
+                    Console.WriteLine("RHS #{0} Error " + RhsErr[iGlbBlock, 0], iGlbBlock);
                     Debug.Assert(BlockErr[iGlbBlock,0] == 0);
                     Debug.Assert(RhsErr[iGlbBlock,0] == 0);
                 }
 
+                Console.WriteLine("X Error " + testXErr[0, 0]);
                 Debug.Assert(testXErr[0, 0] == 0.0);
             }
 
