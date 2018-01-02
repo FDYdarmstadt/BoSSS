@@ -673,21 +673,67 @@ namespace BoSSS.Solution.Multigrid {
                     matlab.Cmd("RhsErr({0} + 1, 1) = norm( SubVec{0} - testRHS( BlockIdx{0} ), inf );", iGlbBlock);
                 }
 
-                //MPIexchangeInverse<double[]> XExchange = new MPIexchangeInverse<double[]>
+                double[] testX = new double[testRHS.Length];
+                MPIexchangeInverse<double[]> XExchange = new MPIexchangeInverse<double[]>(MgMap, testX);
+
+                g = 0;
+                for(int rankCounter = 0; rankCounter < myMpisize; rankCounter++) {
+                    int rank_NoBlks = NoOfSchwzBlocks.MPIBroadcast(rankCounter);
+                    for(int iBlock = 0; iBlock < rank_NoBlks; iBlock++) {
+
+                        if(rankCounter == myMpiRank) {
+                            int LL = this.BlockIndices_Local[iBlock].Length;
+                            int LE;
+                            if(this.BlockIndices_External[iBlock] != null) {
+                                LE = this.BlockIndices_External[iBlock].Length;
+                            } else {
+                                LE = 0;
+                            }
+                            int L = LL + LE;
+                            
+                            
+                            for(int i = 0; i < L; i++) {
+                                testX[this.BlockIndices_Local[iBlock][i]] += (g + 1);
+                            }
+                            if(LE > 0) {
+                                for(int i = 0; i < LE; i++) {
+                                    XExchange.Vector_Ext[this.BlockIndices_External[iBlock][i]] += (g + 1);
+                                }
+                            }
+                        } else {
+                            //nop
+                        }
+                        
+                        g++;
+                    }
+                }
+                XExchange.TransceiveStartImReturn();
+                XExchange.TransceiveFinish(1.0);
+
+                matlab.Cmd("testXref = zeros({0},1);", MgMap.TotalLength);
+                for(int iGlbBlock = 0; iGlbBlock < GlobalNoOfBlocks; iGlbBlock++ ) {
+                    matlab.Cmd("testXref(BlockIdx{0},1) = testXref(BlockIdx{0},1) + ({0} + 1);", iGlbBlock);
+                }
+
+                matlab.PutVector(testX, "testX");
+                matlab.Cmd("testXErr = norm(testX - testXref, inf);");
 
                 MultidimensionalArray BlockErr = MultidimensionalArray.Create(GlobalNoOfBlocks, 1);
                 MultidimensionalArray RhsErr = MultidimensionalArray.Create(GlobalNoOfBlocks, 1);
+                MultidimensionalArray testXErr = MultidimensionalArray.Create(1, 1);
 
                 matlab.GetMatrix(BlockErr, "BlockErr");
                 matlab.GetMatrix(RhsErr, "RhsErr");
+                matlab.GetMatrix(testXErr, "testXErr");
 
                 matlab.Execute();
-
-
+                
                 for(int iGlbBlock = 0; iGlbBlock < GlobalNoOfBlocks; iGlbBlock++) {
                     Debug.Assert(BlockErr[iGlbBlock,0] == 0);
                     Debug.Assert(RhsErr[iGlbBlock,0] == 0);
                 }
+
+                Debug.Assert(testXErr[0, 0] == 0.0);
             }
 
 
