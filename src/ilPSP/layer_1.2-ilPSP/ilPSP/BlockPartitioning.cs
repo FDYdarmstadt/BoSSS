@@ -127,9 +127,10 @@ namespace ilPSP {
 
             //
 
+            Debug.Assert(_SubblkLen1.Count == _SubblkLen2.Count);
             int NoOfBlockTypes = _SubblkLen1.Count;
-            int[][] i0_Sblk = NoOfBlocks.ForLoop(iBlkType => new int[] { 0 });
-            int[][] LenSblk = NoOfBlocks.ForLoop(iBlkType => new int[] { _SubblkLen1[iBlkType] });
+            int[][] i0_Sblk = NoOfBlockTypes.ForLoop(iBlkType => new int[] { 0 });
+            int[][] LenSblk = NoOfBlockTypes.ForLoop(iBlkType => new int[] { _SubblkLen1[iBlkType] });
             ConstructorCommon(FrameBlockSize, i0_Sblk, LenSblk, BlockType, MpiComm);
 
         }

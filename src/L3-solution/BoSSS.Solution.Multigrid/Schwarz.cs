@@ -464,7 +464,7 @@ namespace BoSSS.Solution.Multigrid {
                     for(int iBlock = 0; iBlock < rank_NoBlks; iBlock++) {
                         double[] vec;
                         if(rankCounter == myMpiRank) {
-                            vec = ArrayTools.Cat(BlkIdx_gI_lR[iBlock], BlkIdx_gI_eR[iBlock]).Select(ii => ((double)ii)).ToArray();
+                            vec = ArrayTools.Cat(BlkIdx_gI_lR[iBlock], BlkIdx_gI_eR[iBlock]).Select(ii => ((double)(ii + 1))).ToArray();
                         } else {
                             vec = new double[0];
                         }
@@ -480,6 +480,8 @@ namespace BoSSS.Solution.Multigrid {
 #endif
             }
 #endif
+
+            Debugger.Launch();
 
             BlockMsrMatrix ExternalRowsTemp;
             if(myMpisize > 1 && Overlap > 0) {
@@ -547,11 +549,8 @@ namespace BoSSS.Solution.Multigrid {
                     blockSolvers[iPart] = new PARDISOSolver() {
                         CacheFactorization = true
                     };
-                    //blockSolvers[iPart].DefineMatrix(Block);
                     //blockSolvers[iPart] = new FullDirectSolver();
-                    //blockSolvers[iPart].DefineMatrix(Block);
-
-                    blockSolvers[iPart] = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
+                    //blockSolvers[iPart] = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
                     blockSolvers[iPart].DefineMatrix(Block);
                 }
 
@@ -582,6 +581,7 @@ namespace BoSSS.Solution.Multigrid {
             // =======================
             {
                 this.BlockIndices_Local = new int[NoOfSchwzBlocks][];
+                this.BlockIndices_External = new int[NoOfSchwzBlocks][];
                 int LocalI0 = MgMap.i0;
                 int LocalLength = MgMap.LocalLength;
 
@@ -618,11 +618,7 @@ namespace BoSSS.Solution.Multigrid {
                 matlab.PutSparseMatrix(Mop, "Full");
                 int GlobalNoOfBlocks = NoOfSchwzBlocks.MPISum();
 
-                MultidimensionalArray BlockErr = MultidimensionalArray.Create(GlobalNoOfBlocks, 1);
-                MultidimensionalArray RhsErr = MultidimensionalArray.Create(GlobalNoOfBlocks, 1);
-
-                matlab.GetMatrix(BlockErr, "BlockErr");
-                matlab.GetMatrix(RhsErr, "RhsErr");
+                
 
                 for(int iGlbBlock = 0; iGlbBlock < GlobalNoOfBlocks; iGlbBlock++ ) {
                     matlab.Cmd("BlockErr({0} + 1, 1) = norm( Block{0} - Full( BlockIdx{0}, BlockIdx{0} ), inf );", iGlbBlock);
@@ -656,11 +652,11 @@ namespace BoSSS.Solution.Multigrid {
                             
                             SubVec = new double[L];
                             for(int i = 0; i < L; i++) {
-                                SubVec[i] = testRHS[i];
+                                SubVec[i] = testRHS[this.BlockIndices_Local[iBlock][i]];
                             }
                             if(LE > 0) {
                                 for(int i = 0; i < LE; i++) {
-                                    SubVec[i + LL] = ResExchange.Vector_Ext[i];
+                                    SubVec[i + LL] = ResExchange.Vector_Ext[this.BlockIndices_External[iBlock][i]];
                                 }
                             }
                         } else {
@@ -679,7 +675,11 @@ namespace BoSSS.Solution.Multigrid {
 
                 //MPIexchangeInverse<double[]> XExchange = new MPIexchangeInverse<double[]>
 
+                MultidimensionalArray BlockErr = MultidimensionalArray.Create(GlobalNoOfBlocks, 1);
+                MultidimensionalArray RhsErr = MultidimensionalArray.Create(GlobalNoOfBlocks, 1);
 
+                matlab.GetMatrix(BlockErr, "BlockErr");
+                matlab.GetMatrix(RhsErr, "RhsErr");
 
                 matlab.Execute();
 

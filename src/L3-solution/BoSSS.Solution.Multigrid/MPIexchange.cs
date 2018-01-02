@@ -254,7 +254,7 @@ namespace BoSSS.Solution.Multigrid {
                     bool[] Markers = new bool[rqst.Length];
 #endif
 
-                    for (int iRqs = 0; iRqs <= rqst.Length; iRqs++) {
+                    for (int iRqs = 0; iRqs < rqst.Length; iRqs++) {
                         csMPI.Raw.Waitany(rqst.Length, rqst, out int index, out MPI_Status stat);
 #if DEBUG
                         Debug.Assert(Markers[iRqs] == false);
