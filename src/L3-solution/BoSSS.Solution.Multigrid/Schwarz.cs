@@ -14,6 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// extensive testing
+#define MATLAB_CHECK
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -229,6 +232,9 @@ namespace BoSSS.Solution.Multigrid {
         public BlockingStrategy m_BlockingStrategy;
         MultigridOperator m_MgOp;
 
+
+
+
         public void Init(MultigridOperator op) {
             var Mop = op.OperatorMatrix;
             var MgMap = op.Mapping;
@@ -246,11 +252,17 @@ namespace BoSSS.Solution.Multigrid {
             int JComp = ag.iLogicalCells.NoOfLocalUpdatedCells;
             int JGhost = ag.iLogicalCells.NoOfExternalCells;
 
+
+#if MATLAB_CHECK
+            var matlab = new ilPSP.Connectors.Matlab.BatchmodeConnector();
+#endif
+
+
             // get cell blocks
             // ===============
 
             var _Blocks = this.m_BlockingStrategy.GetBlocking(op);
-            int NoParts = _Blocks.Count();
+            int NoOfSchwzBlocks = _Blocks.Count();
 
             // test cell blocks
             // ================
@@ -267,7 +279,7 @@ namespace BoSSS.Solution.Multigrid {
                 for (int i = 0; i < test.Length; i++)
                     Debug.Assert(test[i] == true);
             }
-#endif 
+#endif
 
             // extend blocks according to desired overlap
             // ==========================================
@@ -315,10 +327,12 @@ namespace BoSSS.Solution.Multigrid {
             // convert cell blocks to DOF blocks
             // =================================
 
-            List<int>[] _LocallyStoredBlockIndices; // for each Schwarz block, (global) indices in the local range 
-            List<int>[] ExternalBlockIndices; //       for each Schwarz block, (global) indices of external rows and columns
-            List<int>[] TempExternalRowIndices; //     for each Schwarz block, (global) indices into the temporary matrix
-            List<int>[] L2; //                         for each Schwarz block, (local) indices of external rows and columns
+            List<int>[] BlkIdx_gI_lR; //  for each Schwarz block, (global) indices in the local range 
+#if DEBUG
+            List<int>[] BlkIdx_gI_eR; //  for each Schwarz block, (global) indices of external rows and columns
+#endif
+            List<int>[] TempRowIdx_gI; // for each Schwarz block, (global) indices into the temporary matrix
+            List<int>[] BlkIdx_lI_eR; //  for each Schwarz block, (local)  indices of external rows and columns
             List<int>[] LocalBlocks_i0, LocalBlocks_N; // blocking of the Schwarz-Blocks.
 
             // for matrix 'ExternalRowsTemp': which rows of 'Mop' are required locally
@@ -329,26 +343,29 @@ namespace BoSSS.Solution.Multigrid {
 
                 int LocalizedBlockCounter = 0;
                 
+                BlkIdx_gI_lR = NoOfSchwzBlocks.ForLoop(iPart => new List<int>(BlockCells[iPart].Length * MgMap.MaximalLength));
+#if DEBUG
+                BlkIdx_gI_eR = NoOfSchwzBlocks.ForLoop(iPart => new List<int>());
+#endif
+                LocalBlocks_i0 = NoOfSchwzBlocks.ForLoop(iPart => new List<int>());
+                LocalBlocks_N = NoOfSchwzBlocks.ForLoop(iPart => new List<int>());
 
-                _LocallyStoredBlockIndices = NoParts.ForLoop(iPart => new List<int>(BlockCells[iPart].Length * MgMap.MaximalLength));
-                ExternalBlockIndices = NoParts.ForLoop(iPart => new List<int>());
-                LocalBlocks_i0 = NoParts.ForLoop(iPart => new List<int>());
-                LocalBlocks_N = NoParts.ForLoop(iPart => new List<int>());
-
-                TempExternalRowIndices = NoParts.ForLoop(iPart => new List<int>());
-                L2 = NoParts.ForLoop(iPart => new List<int>());
+                TempRowIdx_gI = NoOfSchwzBlocks.ForLoop(iPart => new List<int>());
+                BlkIdx_lI_eR = NoOfSchwzBlocks.ForLoop(iPart => new List<int>());
 
                 
                 ExternalRowsIndices = new List<int>();
                 ExternalRows_BlockI0 = new List<int>();
                 ExternalRows_BlockN = new List<int>();
 
-                for (int iPart = 0; iPart < NoParts; iPart++) { // loop over parts...
+                for (int iPart = 0; iPart < NoOfSchwzBlocks; iPart++) { // loop over parts...
                     int[] bc = BlockCells[iPart];
-                    var biI = _LocallyStoredBlockIndices[iPart];
-                    var biE = ExternalBlockIndices[iPart];
-                    var l1 = TempExternalRowIndices[iPart];
-                    var l2 = L2[iPart];
+                    var biI = BlkIdx_gI_lR[iPart];
+#if DEBUG
+                    var biE = BlkIdx_gI_eR[iPart];
+#endif
+                    var l1 = TempRowIdx_gI[iPart];
+                    var l2 = BlkIdx_lI_eR[iPart];
                     var LBBi0 = LocalBlocks_i0[iPart];
                     var LBBN = LocalBlocks_N[iPart];
                     //var LEBidx = LocalizedExternalBlockIndices[iPart];
@@ -378,8 +395,9 @@ namespace BoSSS.Solution.Multigrid {
                             //LEBi0.Add(LocalizedBlockCounter);
                             //LEBn.Add(N);
                             for (int n = 0; n < N; n++) {
+#if DEBUG
                                 biE.Add(i0E + n);
-                                //LEBidx.Add(LocalizedBlockCounter); LocalizedBlockCounter++;
+#endif
                                 ExternalRowsIndices.Add(i0E + n);
                                 l1.Add(LocalizedBlockCounter + n);
                                 l2.Add(i0L + n);
@@ -394,9 +412,7 @@ namespace BoSSS.Solution.Multigrid {
 
                         anotherCounter += N;
                     }
-
                 }
-
 
                 //this.BlockIndices = _LocallyStoredBlockIndices.Select(bi => bi.ToArray()).ToArray();
             }
@@ -405,8 +421,68 @@ namespace BoSSS.Solution.Multigrid {
             // get rows for blocks that use external cells
             // ===========================================
 
+#if DEBUG
+            {
+                if(Overlap == 0) {
+                    Debug.Assert(ExternalRowsIndices.Count == 0);
+                    Debug.Assert(ExternalRows_BlockI0.Count == 0);
+                    Debug.Assert(ExternalRows_BlockN.Count == 0);
+                }
+
+                foreach(var bi in BlkIdx_gI_lR) {
+                    foreach(int idx in bi) {
+                        Debug.Assert(idx >= m_MgOp.Mapping.i0);
+                        Debug.Assert(idx < m_MgOp.Mapping.iE);
+                    }
+                }
+
+                foreach(var ei in BlkIdx_gI_eR) {
+                    foreach(int idx in ei) {
+                        Debug.Assert(idx < m_MgOp.Mapping.i0 || idx >= m_MgOp.Mapping.iE);
+                    }
+                }
+
+
+                int LL = m_MgOp.Mapping.LocalLength;
+                int jMax = m_MgOp.Mapping.AggGrid.iLogicalCells.NoOfCells - 1;
+                int LE = m_MgOp.Mapping.LocalUniqueIndex(0, jMax, 0) + m_MgOp.Mapping.GetLength(jMax);
+
+
+                foreach(var ci in BlkIdx_lI_eR) {
+                    foreach(int idx in ci) {
+                        Debug.Assert(idx >= LL);
+                        Debug.Assert(idx < LE);
+                    }
+                }
+#if MATLAB_CHECK
+                int globalBlockCounter = 0;
+                for(int rankCounter = 0; rankCounter < myMpisize; rankCounter++) {
+                    int rank_NoBlks = NoOfSchwzBlocks.MPIBroadcast(rankCounter);
+                    if(rankCounter == myMpiRank)
+                        Debug.Assert(rank_NoBlks == NoOfSchwzBlocks);
+
+                    for(int iBlock = 0; iBlock < rank_NoBlks; iBlock++) {
+                        double[] vec;
+                        if(rankCounter == myMpiRank) {
+                            vec = ArrayTools.Cat(BlkIdx_gI_lR[iBlock], BlkIdx_gI_eR[iBlock]).Select(ii => ((double)ii)).ToArray();
+                        } else {
+                            vec = new double[0];
+                        }
+
+                        matlab.PutVector(vec, string.Format("BlockIdx{0}", globalBlockCounter));
+
+                        globalBlockCounter++;
+                        csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+
+                    }
+
+                }
+#endif
+            }
+#endif
+
             BlockMsrMatrix ExternalRowsTemp;
-            if(myMpisize > 1) {
+            if(myMpisize > 1 && Overlap > 0) {
                 //int NoOfLocalRows = _ExternalBlockIndices.Sum(L => L.Count);
 
                 BlockPartitioning PermRow = new BlockPartitioning(ExternalRowsIndices.Count, ExternalRows_BlockI0, ExternalRows_BlockN, Mop.MPI_Comm, i0isLocal: true);
@@ -423,26 +499,22 @@ namespace BoSSS.Solution.Multigrid {
                 ExternalRowsTemp = null;
             }
 
+            ExternalRowsIndices = null;
+            ExternalRows_BlockI0 = null;
+            ExternalRows_BlockN = null;
 
-            
-            
-            //Console.WriteLine("Schwarz, blocking strategy {0}", this.m_BlockingStrategy.GetType().FullName);
-            //double avg = 0;
-            //for(int iblock  = 0; iblock < BlockIndices.Length; iblock++) {
-            //    Console.WriteLine("Schwarz, blocking strategy {0}, block {0}, DOFs per block {1}", iblock, BlockIndices[iblock].Length);
-            //    avg += BlockIndices[iblock].Length;
-            //}
-            //avg = Math.Round(avg / BlockIndices.Length);
-            //Console.WriteLine("Average block size: " + avg);
             
             // create solvers
             // ==============
 
             {
-                blockSolvers = new ISparseSolver[NoParts];
+                blockSolvers = new ISparseSolver[NoOfSchwzBlocks];
 
-                for (int iPart = 0; iPart < NoParts; iPart++) {
-                    var bi = _LocallyStoredBlockIndices[iPart];
+#if MATLAB_CHECK
+                List<BlockMsrMatrix> Blocks = new List<BlockMsrMatrix>();
+#endif
+                for (int iPart = 0; iPart < NoOfSchwzBlocks; iPart++) {
+                    var bi = BlkIdx_gI_lR[iPart];
 
                     int Bsz;
                     if (MgMap.MinimalLength == MgMap.MaximalLength)
@@ -450,7 +522,7 @@ namespace BoSSS.Solution.Multigrid {
                     else
                         Bsz = 1;
 
-                    var l1 = TempExternalRowIndices[iPart];
+                    var l1 = TempRowIdx_gI[iPart];
 
                     //if (M.RowPartitioning.MpiSize > 1) {
                     //    int i0Proc = M.RowPartitioning.i0;
@@ -469,7 +541,9 @@ namespace BoSSS.Solution.Multigrid {
                         int[] targRows = l1.Count.ForLoop(i => i + offset);
                         ExternalRowsTemp.WriteSubMatrixTo(Block, l1, targRows, bi, default(int[]));
                     }
-
+#if MATLAB_CHECK
+                    Blocks.Add(Block);
+#endif
                     blockSolvers[iPart] = new PARDISOSolver() {
                         CacheFactorization = true
                     };
@@ -480,17 +554,39 @@ namespace BoSSS.Solution.Multigrid {
                     blockSolvers[iPart] = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
                     blockSolvers[iPart].DefineMatrix(Block);
                 }
+
+#if MATLAB_CHECK
+                int globalBlockCounter = 0;
+                for(int rankCounter = 0; rankCounter < myMpisize; rankCounter++) {
+                    int rank_NoBlks = NoOfSchwzBlocks.MPIBroadcast(rankCounter);
+                    for(int iBlock = 0; iBlock < rank_NoBlks; iBlock++) {
+                        BlockMsrMatrix Block;
+                        if(rankCounter == myMpiRank) {
+                            Block = Blocks[iBlock];
+                        } else {
+                            Block = null;
+                        }
+
+                        matlab.PutSparseMatrix(Block, string.Format("Block{0}", globalBlockCounter));
+
+                        globalBlockCounter++;
+                        csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+
+                    }
+
+                }
+#endif
             }
 
             // Record required indices
             // =======================
             {
-                this.BlockIndices_Local = new int[NoParts][];
+                this.BlockIndices_Local = new int[NoOfSchwzBlocks][];
                 int LocalI0 = MgMap.i0;
                 int LocalLength = MgMap.LocalLength;
 
-                for(int iBlock = 0; iBlock < NoParts; iBlock++) {
-                    var _bi = _LocallyStoredBlockIndices[iBlock];
+                for(int iBlock = 0; iBlock < NoOfSchwzBlocks; iBlock++) {
+                    var _bi = BlkIdx_gI_lR[iBlock];
                     int L = _bi.Count;
                     int[] bil = new int[L];
                     this.BlockIndices_Local[iBlock] = bil;
@@ -501,21 +597,9 @@ namespace BoSSS.Solution.Multigrid {
                         Debug.Assert(bil[l] < MgMap.LocalLength);
                     }
 
-                    var _biE = L2[iBlock];
+                    var _biE = BlkIdx_lI_eR[iBlock];
                     if(_biE.Count > 0) {
-                        L = _biE.Count;
-                        int[] bie = new int[L];
-                        this.BlockIndices_External[iBlock] = bie;
-
-                        for(int l = 0; l < L; l++) {
-                            bie[l] = _biE[l];
-#if DEBUG
-                            Debug.Assert(bie[l] >= MgMap.LocalLength);
-                            int jMax = MgMap.AggGrid.iLogicalCells.NoOfCells - 1;
-                            Debug.Assert(bie[l] < MgMap.LocalUniqueIndex(0, jMax, 0) + MgMap.GetLength(jMax));
-#endif
-                            bie[l] -= LocalLength;
-                        }
+                        this.BlockIndices_External[iBlock] = _biE.ToArray();
                     }
                 }
             }
@@ -526,6 +610,90 @@ namespace BoSSS.Solution.Multigrid {
             if (CoarseSolver != null) {
                 CoarseSolver.Init(op.CoarserLevel);
             }
+
+            // Debug & Test-Code 
+            // =================
+#if MATLAB_CHECK
+            {
+                matlab.PutSparseMatrix(Mop, "Full");
+                int GlobalNoOfBlocks = NoOfSchwzBlocks.MPISum();
+
+                MultidimensionalArray BlockErr = MultidimensionalArray.Create(GlobalNoOfBlocks, 1);
+                MultidimensionalArray RhsErr = MultidimensionalArray.Create(GlobalNoOfBlocks, 1);
+
+                matlab.GetMatrix(BlockErr, "BlockErr");
+                matlab.GetMatrix(RhsErr, "RhsErr");
+
+                for(int iGlbBlock = 0; iGlbBlock < GlobalNoOfBlocks; iGlbBlock++ ) {
+                    matlab.Cmd("BlockErr({0} + 1, 1) = norm( Block{0} - Full( BlockIdx{0}, BlockIdx{0} ), inf );", iGlbBlock);
+                }
+                
+                Random rnd = new Random(myMpiRank);
+                double[] testRHS = new double[MgMap.LocalLength];
+                for(int i = 0; i < testRHS.Length; i++) {
+                    testRHS[i] = rnd.NextDouble();
+                }
+                matlab.PutVector(testRHS, "testRHS");
+
+                MPIexchange<double[]> ResExchange = new MPIexchange<double[]>(MgMap, testRHS);
+                ResExchange.TransceiveStartImReturn();
+                ResExchange.TransceiveFinish(0.0);
+
+                int g = 0;
+                for(int rankCounter = 0; rankCounter < myMpisize; rankCounter++) {
+                    int rank_NoBlks = NoOfSchwzBlocks.MPIBroadcast(rankCounter);
+                    for(int iBlock = 0; iBlock < rank_NoBlks; iBlock++) {
+                        double[] SubVec;
+                        if(rankCounter == myMpiRank) {
+                            int LL = this.BlockIndices_Local[iBlock].Length;
+                            int LE;
+                            if(this.BlockIndices_External[iBlock] != null) {
+                                LE = this.BlockIndices_External[iBlock].Length;
+                            } else {
+                                LE = 0;
+                            }
+                            int L = LL + LE;
+                            
+                            SubVec = new double[L];
+                            for(int i = 0; i < L; i++) {
+                                SubVec[i] = testRHS[i];
+                            }
+                            if(LE > 0) {
+                                for(int i = 0; i < LE; i++) {
+                                    SubVec[i + LL] = ResExchange.Vector_Ext[i];
+                                }
+                            }
+                        } else {
+                            SubVec = null;
+                        }
+
+                        matlab.PutVector(SubVec, "SubVec" + g);
+
+                        g++;
+                    }
+                }
+
+                for(int iGlbBlock = 0; iGlbBlock < GlobalNoOfBlocks; iGlbBlock++ ) {
+                    matlab.Cmd("RhsErr({0} + 1, 1) = norm( SubVec{0} - testRHS( BlockIdx{0} ), inf );", iGlbBlock);
+                }
+
+                //MPIexchangeInverse<double[]> XExchange = new MPIexchangeInverse<double[]>
+
+
+
+                matlab.Execute();
+
+
+                for(int iGlbBlock = 0; iGlbBlock < GlobalNoOfBlocks; iGlbBlock++) {
+                    Debug.Assert(BlockErr[iGlbBlock,0] == 0);
+                    Debug.Assert(RhsErr[iGlbBlock,0] == 0);
+                }
+            }
+
+
+            matlab.Dispose();
+#endif
+
         }
 
         class FullDirectSolver : ISparseSolver {
@@ -575,7 +743,7 @@ namespace BoSSS.Solution.Multigrid {
         /// List of external row and column indices for each Schwarz block.
         /// - 1st index: local block index
         /// - 2nd index: enumeration
-        /// - content: external index, minus the local offset (i.e. can be used directly as index into <see cref="MPIexchange{T}.Vector_Ext"/>, <see cref="MPIexchangeInverse{T}{T}.Vector_Ext"/>).
+        /// - content: external index (can be used e.g. as index into <see cref="MPIexchange{T}.Vector_Ext"/>, <see cref="MPIexchangeInverse{T}{T}.Vector_Ext"/>, but taking into account a local offset).
         /// </summary>
         int[][] BlockIndices_External;
 
@@ -624,6 +792,7 @@ namespace BoSSS.Solution.Multigrid {
         {
             int NoParts = this.BlockIndices_Local.Length;
 
+            // --------
             // Reminder: we solve for a correction, the basic idea is:
             //
             // X0 is current solution, state of 'X' at input time
@@ -634,14 +803,30 @@ namespace BoSSS.Solution.Multigrid {
             //    Xc = M^{-1}*Residual
             // then X=(X0+Xc) is an exact solution of 
             //    M*X = B
+            // --------
 
             double[] Res = new double[B.Count];
-            var ResExchange = new MPIexchange<double[]>(this.m_MgOp.Mapping, Res);
-            var XExchange = new MPIexchangeInverse<U>(this.m_MgOp.Mapping, X);
+            MPIexchange<double[]> ResExchange;
+            MPIexchangeInverse<U> XExchange;
+            if(Overlap > 0) {
+                ResExchange = new MPIexchange<double[]>(this.m_MgOp.Mapping, Res);
+                XExchange = new MPIexchangeInverse<U>(this.m_MgOp.Mapping, X);
+            } else {
+                ResExchange = null;
+                XExchange = null;
+#if DEBUG
+                foreach( var ciE in BlockIndices_External) {
+                    Debug.Assert(ciE == null || ciE.Length <= 0);
+                }
+#endif
+            }
+
+
+            int LocLength = m_MgOp.Mapping.LocalLength;
 
             for (int iIter = 0; iIter < m_MaxIterations; iIter++) {
                 this.NoIter++;
-                //double[] Res = B.ToArray();
+
                 Res.SetV(B);
                 this.MtxFull.SpMV(-1.0, X, 1.0, Res);
 
@@ -663,8 +848,10 @@ namespace BoSSS.Solution.Multigrid {
                     }
                 }
 
-                ResExchange.TransceiveStartImReturn();
-                ResExchange.TransceiveFinish(0.0);
+                if(Overlap > 0) {
+                    ResExchange.TransceiveStartImReturn();
+                    ResExchange.TransceiveFinish(0.0);
+                }
 
                 for (int iPart = 0; iPart < NoParts; iPart++) {
                     int[] ci = BlockIndices_Local[iPart];
@@ -678,19 +865,21 @@ namespace BoSSS.Solution.Multigrid {
 
                     // extract block part of residual
                     bi.AccV(1.0, Res, default(int[]), ci);
-                    if(ciE != null)
-                        bi.AccV(1.0, ResExchange.Vector_Ext, default(int[]), ciE, acc_index_shift: ci.Length);
+                    if(ciE != null && ciE.Length > 0)
+                        bi.AccV(1.0, ResExchange.Vector_Ext, default(int[]), ciE, acc_index_shift: ci.Length, b_index_shift: (-LocLength));
                     
                     blockSolvers[iPart].Solve(xi, bi);
 
                     // accumulate block solution 'xi' to global solution 'X'
                     X.AccV(1.0, xi, ci, default(int[]));
-                    if (ciE != null)
-                        XExchange.Vector_Ext.AccV(1.0, xi, ciE, default(int[]), b_index_shift: ci.Length);
+                    if (ciE != null && ciE.Length > 0)
+                        XExchange.Vector_Ext.AccV(1.0, xi, ciE, default(int[]), acc_index_shift: (-LocLength), b_index_shift: ci.Length);
                 }
 
-                XExchange.TransceiveStartImReturn();
-                XExchange.TransceiveFinish(1.0);
+                if(Overlap > 0) {
+                    XExchange.TransceiveStartImReturn();
+                    XExchange.TransceiveFinish(1.0);
+                }
             }
         }
 

@@ -356,7 +356,7 @@ namespace BoSSS.Solution.Multigrid {
                     S += n;
                     return S;
                 } else {
-                    // tipp MPI-Exchange von 
+                    // tipp MPI-Exchange von 'this.i0'
                     throw new NotImplementedException("todo");
                 }
 
