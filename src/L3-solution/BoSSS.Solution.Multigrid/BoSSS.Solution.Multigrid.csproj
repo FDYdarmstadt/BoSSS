@@ -8,7 +8,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>BoSSS.Solution.Multigrid</RootNamespace>
     <AssemblyName>BoSSS.Solution.Multigrid</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -58,6 +58,8 @@
     <Compile Include="ExtensionMethods.cs" />
     <Compile Include="Fixpoint.cs" />
     <Compile Include="ILU.cs" />
+    <Compile Include="LocalizedOperatorPrec.cs" />
+    <Compile Include="MPIexchange.cs" />
     <Compile Include="Newton.cs" />
     <Compile Include="OrthonormalizationScheme.cs" />
     <Compile Include="FlexGMRES.cs" />
@@ -125,6 +127,10 @@
     <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj">
       <Project>{17A60FBA-20B4-451D-98E1-8D742F368569}</Project>
       <Name>BoSSS.Foundation</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\BoSSS.Solution.NSECommon\BoSSS.Solution.NSECommon.csproj">
+      <Project>{E56B9CE4-14DC-4256-A337-46E5D298B722}</Project>
+      <Name>BoSSS.Solution.NSECommon</Name>
     </ProjectReference>
     <ProjectReference Include="..\BoSSS.Solution.Tecplot\BoSSS.Solution.Tecplot.csproj">
       <Project>{D0546422-EC92-4964-82E9-8EE819A2F786}</Project>

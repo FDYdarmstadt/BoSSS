@@ -1,4 +1,5 @@
 ﻿using BoSSS.Solution;
+using BoSSS.Solution.Control;
 using MPI.Wrappers;
 using NUnit.Framework;
 using System;
@@ -22,7 +23,7 @@ namespace BoSSS.Application.LoadBalancingTest {
                 BoSSS.Solution.Application.GetBoSSSInstallDir(),
                 out MpiInit);
         }
-
+        /*
         /// <summary>
         /// Da Test!
         /// </summary>
@@ -38,10 +39,11 @@ namespace BoSSS.Application.LoadBalancingTest {
                     p = new LoadBalancingTestMain();
                     p.DynamicBalance = false;
                     p.DEGREE = DGdegree;
-                    p.cellCostEstimatorFactory = CellCostEstimatorLibrary.MeasureCostOfWhateverFlorianThinksIsRelevantButIDontUnderstand;
+                    p.cellCostEstimatorFactory = CellCostEstimatorLibrary.OperatorAssemblyAndCutCellQuadrules;
                     return p;
                 });
         }
+        */
 
         /// <summary>
         /// Da Test!
@@ -59,11 +61,12 @@ namespace BoSSS.Application.LoadBalancingTest {
                     p = new LoadBalancingTestMain();
                     p.DynamicBalance = true;
                     p.DEGREE = DGdegree;
-                    p.cellCostEstimatorFactory = CellCostEstimatorLibrary.MeasureCostOfWhateverFlorianThinksIsRelevantButIDontUnderstand;
+                    p.cellCostEstimatorFactory = CellCostEstimatorLibrary.OperatorAssemblyAndCutCellQuadrules;
                     return p;
                 });
         }
 
+        /*
         /// <summary>
         /// Da Test!
         /// </summary>
@@ -80,7 +83,7 @@ namespace BoSSS.Application.LoadBalancingTest {
                     p = new LoadBalancingTestMain();
                     p.DynamicBalance = true;
                     p.DEGREE = DGdegree;
-                    p.cellCostEstimatorFactory = delegate(int performanceClassCount) {
+                    p.cellCostEstimatorFactory = delegate(IApplication<AppControl> app, int performanceClassCount) {
                         if (performanceClassCount != 2) {
                             throw new Exception();
                         }
@@ -94,7 +97,7 @@ namespace BoSSS.Application.LoadBalancingTest {
                     return p;
                 });
         }
-
+        */
         /// <summary>
         /// MPI shutdown.
         /// </summary>

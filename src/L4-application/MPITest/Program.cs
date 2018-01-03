@@ -56,6 +56,10 @@ namespace MPITest {
             int size;
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
 
+            ilPSP.Environment.StdoutOnlyOnRank0 = false;
+            Console.WriteLine("Hello from " + rank + " of " + size + ".");
+
+
             int result = 0;
             unsafe {
                 csMPI.Raw.Allreduce(

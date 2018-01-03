@@ -484,6 +484,9 @@ namespace MPI.Wrappers {
             return result;
         }
 
+        /// <summary>
+        /// Wrapper around <see cref="IMPIdriver.Gatherv(IntPtr, int, MPI_Datatype, IntPtr, IntPtr, IntPtr, MPI_Datatype, int, MPI_Comm)"/>
+        /// </summary>
         static public int[] MPIGatherv(this int[] send, int[] recvcounts) {
             return send.MPIGatherv(
                 recvcounts,
@@ -491,6 +494,9 @@ namespace MPI.Wrappers {
                 comm: csMPI.Raw._COMM.WORLD);
         }
 
+        /// <summary>
+        /// Wrapper around <see cref="IMPIdriver.Gatherv(IntPtr, int, MPI_Datatype, IntPtr, IntPtr, IntPtr, MPI_Datatype, int, MPI_Comm)"/>
+        /// </summary>
         static public int[] MPIGatherv(this int[] send, int[] recvcounts, int root, MPI_Comm comm) {
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int size);
             int[] result = new int[recvcounts.Sum()];
@@ -518,6 +524,51 @@ namespace MPI.Wrappers {
             return result;
         }
 
+        /// <summary>
+        /// Wrapper around <see cref="IMPIdriver.Gatherv(IntPtr, int, MPI_Datatype, IntPtr, IntPtr, IntPtr, MPI_Datatype, int, MPI_Comm)"/>
+        /// </summary>
+        static public double[] MPIGatherv(this double[] send, int[] recvcounts) {
+            return send.MPIGatherv(
+                recvcounts,
+                root: 0,
+                comm: csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// Wrapper around <see cref="IMPIdriver.Gatherv(IntPtr, int, MPI_Datatype, IntPtr, IntPtr, IntPtr, MPI_Datatype, int, MPI_Comm)"/>
+        /// </summary>
+        static public double[] MPIGatherv(this double[] send, int[] recvcounts, int root, MPI_Comm comm) {
+            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int size);
+            double[] result = new double[recvcounts.Sum()];
+
+            unsafe {
+                int* displs = stackalloc int[size];
+                for (int i = 1; i < size; i++) {
+                    displs[i] = displs[i - 1] + recvcounts[i - 1];
+                }
+
+                fixed (int*  pRcvcounts = &recvcounts[0] ) {
+                    fixed (double* pSend = &send[0], pResult = &result[0]) {
+                        csMPI.Raw.Gatherv(
+                            (IntPtr)pSend,
+                            send.Length,
+                            csMPI.Raw._DATATYPE.INT,
+                            (IntPtr)pResult,
+                            (IntPtr)pRcvcounts,
+                            (IntPtr)displs,
+                            csMPI.Raw._DATATYPE.INT,
+                            root,
+                            comm);
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Wrapper around <see cref="IMPIdriver.Scatterv(IntPtr, IntPtr, IntPtr, MPI_Datatype, IntPtr, int, MPI_Datatype, int, MPI_Comm)"/>.
+        /// </summary>
         static public int[] MPIScatterv(this int[] send, int[] sendcounts) {
             return send.MPIScatterv(
                 sendcounts,
@@ -525,6 +576,9 @@ namespace MPI.Wrappers {
                 comm: csMPI.Raw._COMM.WORLD);
         }
 
+        /// <summary>
+        /// Wrapper around <see cref="IMPIdriver.Scatterv(IntPtr, IntPtr, IntPtr, MPI_Datatype, IntPtr, int, MPI_Datatype, int, MPI_Comm)"/>.
+        /// </summary>
         static public int[] MPIScatterv(this int[] send, int[] sendcounts, int root, MPI_Comm comm) {
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int size);
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rank);
@@ -552,6 +606,55 @@ namespace MPI.Wrappers {
                         csMPI.Raw._DATATYPE.INT,
                         root,
                         comm);
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Wrapper around <see cref="IMPIdriver.Scatterv(IntPtr, IntPtr, IntPtr, MPI_Datatype, IntPtr, int, MPI_Datatype, int, MPI_Comm)"/>.
+        /// </summary>
+        static public double[] MPIScatterv(this double[] send, int[] sendcounts) {
+            return send.MPIScatterv(
+                sendcounts,
+                root: 0,
+                comm: csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// Wrapper around <see cref="IMPIdriver.Scatterv(IntPtr, IntPtr, IntPtr, MPI_Datatype, IntPtr, int, MPI_Datatype, int, MPI_Comm)"/>.
+        /// </summary>
+        static public double[] MPIScatterv(this double[] send, int[] sendcounts, int root, MPI_Comm comm) {
+            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int size);
+            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rank);
+            double[] result = new double[sendcounts[rank]];
+
+            unsafe
+            {
+                int* displs = stackalloc int[size];
+                for (int i = 1; i < size; i++) {
+                    displs[i] = displs[i - 1] + sendcounts[i - 1];
+                }
+
+                if (send == null || send.Length == 0) {
+                    // Dummy to avoid null pointer exception
+                    send = new double[1];
+                }
+
+                fixed (int* pSendcounts = &sendcounts[0]) {
+                    fixed (double* pSend = &send[0], pResult = &result[0]) {
+                        csMPI.Raw.Scatterv(
+                            (IntPtr)pSend,
+                            (IntPtr)pSendcounts,
+                            (IntPtr)displs,
+                            csMPI.Raw._DATATYPE.INT,
+                            (IntPtr)pResult,
+                            sendcounts[rank],
+                            csMPI.Raw._DATATYPE.INT,
+                            root,
+                            comm);
+                    }
                 }
             }
 

@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.XdgTimestepping;
 using System.Linq;
 
 namespace BoSSS.Application.IBM_Solver {
@@ -33,6 +34,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// </summary>
         public IBM_Control() {
             base.NoOfMultigridLevels = 1;
+            base.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
         }
 
         ///// <summary>
@@ -211,7 +213,8 @@ namespace BoSSS.Application.IBM_Solver {
         }
 
         public ISolverSmootherTemplate LinearSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS };
-       
+
+        public NonlinearSolverMethod NonlinearMethod = NonlinearSolverMethod.Picard;
 
         /// <summary>
         /// 

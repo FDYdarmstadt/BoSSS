@@ -75,13 +75,13 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
             return test.GetGrid();
         }
 
-        protected override void CreateEquationsAndSolvers(LoadBalancingData L) {
+        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
         }
 
         LevelSet Phi;
         protected override void CreateFields() {
             Phi = new LevelSet(new Basis(this.GridData, 2), "LevelSet");
-            base.LsTrk = new LevelSetTracker(this.GridData, 1, new string[] { "A", "B" }, Phi);
+            base.LsTrk = new LevelSetTracker(this.GridData, this.momentFittingVariant, 1, new string[] { "A", "B" }, Phi);
         }
 
 
@@ -129,9 +129,10 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
                     this.Phi.ProjectField(this.test.GetLevelSet);
                     this.LsTrk.UpdateTracker();
 
-                    var schemes = new XQuadSchemeHelper(LsTrk, this.momentFittingVariant, LsTrk.SpeciesIdS.ToArray());
+                    //var schemes = new XQuadSchemeHelper(LsTrk, this.momentFittingVariant, LsTrk.SpeciesIdS.ToArray());
+                    var schemes = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), this.QUAD_ORDER, 1).XQuadSchemeHelper;
                     
-                    var cutCells = LsTrk._Regions.GetCutCellSubGrid().VolumeMask;
+                    var cutCells = LsTrk.Regions.GetCutCellSubGrid().VolumeMask;
 
                     var volSchemeA = schemes.GetVolumeQuadScheme(this.LsTrk.GetSpeciesId("A"), IntegrationDomain: cutCells);
                     var volSchemeB = schemes.GetVolumeQuadScheme(this.LsTrk.GetSpeciesId("B"), IntegrationDomain: cutCells);

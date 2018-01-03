@@ -14,16 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
 using BoSSS.Platform.LinAlg;
-using BoSSS.Solution;
 using CNS.Convection;
 using CNS.EquationSystem;
 using CNS.IBM;
 using CNS.MaterialProperty;
-using CNS.Solution;
 using ilPSP.Utils;
 using NUnit.Framework;
 using System;
@@ -264,7 +261,6 @@ namespace CNS.Tests.MovingIBMTests {
             c.EquationOfState = IdealGas.Air;
             c.MachNumber = 1.0 / Math.Sqrt(c.EquationOfState.HeatCapacityRatio);
 
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.TimesteppingStrategy = timeSteppingStrategy;
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = rkDegree;
@@ -285,7 +281,7 @@ namespace CNS.Tests.MovingIBMTests {
                 return grid;
             };
 
-            c.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
             c.LevelSetQuadratureOrder = 10;
             c.LevelSetBoundaryTag = "adiabaticSlipWall";
             c.AgglomerationThreshold = agglomerationThreshold;

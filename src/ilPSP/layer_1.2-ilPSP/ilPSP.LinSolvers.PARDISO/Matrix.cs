@@ -54,7 +54,9 @@ namespace ilPSP.LinSolvers.PARDISO {
 
 
         public bool Symmetric = false;
-        
+
+        MPI_Comm m_comm;
+
         /// <summary>
         /// initializes this matrix as a copy of the matrix <paramref name="M"/>.
         /// </summary>
@@ -73,7 +75,7 @@ namespace ilPSP.LinSolvers.PARDISO {
             int size = M.RowPartitioning.MpiSize, rank = M.RowPartitioning.MpiRank;
             Debug.Assert(M.RowPartitioning.MpiRank == M.ColPartition.MpiRank);
             Debug.Assert(M.RowPartitioning.MpiSize == M.ColPartition.MpiSize);
-            var comm = M.MPI_Comm;
+            m_comm = M.MPI_Comm;
 
             int LR;
             int[] col = null;
@@ -152,7 +154,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                 else
                     len_loc = M.GetTotalNoOfNonZerosPerProcess();
 
-                Partitioning part = new Partitioning(len_loc, comm);
+                Partitioning part = new Partitioning(len_loc, m_comm);
                 if (part.TotalLength > int.MaxValue)
                     throw new ApplicationException("too many matrix entries for PARDISO - more than maximum 32-bit signed integer");
 
@@ -226,9 +228,9 @@ namespace ilPSP.LinSolvers.PARDISO {
 
                                 for (int rcv_rank = 1; rcv_rank < size; rcv_rank++) {
                                     MPI_Status status;
-                                    csMPI.Raw.Recv((IntPtr)(pa + part.GetI0Offest(rcv_rank)), part.GetLocalLength(rcv_rank), csMPI.Raw._DATATYPE.DOUBLE, rcv_rank, 321555 + rcv_rank, comm, out status);
-                                    csMPI.Raw.Recv((IntPtr)(pja + part.GetI0Offest(rcv_rank)), part.GetLocalLength(rcv_rank), csMPI.Raw._DATATYPE.INT, rcv_rank, 32155 + rcv_rank, comm, out status);
-                                    csMPI.Raw.Recv((IntPtr)(pia + M.RowPartitioning.GetI0Offest(rcv_rank)), M.RowPartitioning.GetLocalLength(rcv_rank), csMPI.Raw._DATATYPE.INT, rcv_rank, 3215 + rcv_rank, comm, out status);
+                                    csMPI.Raw.Recv((IntPtr)(pa + part.GetI0Offest(rcv_rank)), part.GetLocalLength(rcv_rank), csMPI.Raw._DATATYPE.DOUBLE, rcv_rank, 321555 + rcv_rank, m_comm, out status);
+                                    csMPI.Raw.Recv((IntPtr)(pja + part.GetI0Offest(rcv_rank)), part.GetLocalLength(rcv_rank), csMPI.Raw._DATATYPE.INT, rcv_rank, 32155 + rcv_rank, m_comm, out status);
+                                    csMPI.Raw.Recv((IntPtr)(pia + M.RowPartitioning.GetI0Offest(rcv_rank)), M.RowPartitioning.GetLocalLength(rcv_rank), csMPI.Raw._DATATYPE.INT, rcv_rank, 3215 + rcv_rank, m_comm, out status);
                                 }
                             }
                         }
@@ -244,9 +246,9 @@ namespace ilPSP.LinSolvers.PARDISO {
                     unsafe {
                         fixed (void* pia = &ia_loc[0], pja = &ja_loc[0], pa = &a_loc[0]) {
 
-                            csMPI.Raw.Send((IntPtr)pa, a_loc.Length, csMPI.Raw._DATATYPE.DOUBLE, 0, 321555 + rank, csMPI.Raw._COMM.WORLD);
-                            csMPI.Raw.Send((IntPtr)pja, ja_loc.Length, csMPI.Raw._DATATYPE.INT, 0, 32155 + rank, csMPI.Raw._COMM.WORLD);
-                            csMPI.Raw.Send((IntPtr)pia, ia_loc.Length, csMPI.Raw._DATATYPE.INT, 0, 3215 + rank, csMPI.Raw._COMM.WORLD);
+                            csMPI.Raw.Send((IntPtr)pa, a_loc.Length, csMPI.Raw._DATATYPE.DOUBLE, 0, 321555 + rank, m_comm);
+                            csMPI.Raw.Send((IntPtr)pja, ja_loc.Length, csMPI.Raw._DATATYPE.INT, 0, 32155 + rank, m_comm);
+                            csMPI.Raw.Send((IntPtr)pia, ia_loc.Length, csMPI.Raw._DATATYPE.INT, 0, 3215 + rank, m_comm);
                         }
                     }
                 }
@@ -280,8 +282,8 @@ namespace ilPSP.LinSolvers.PARDISO {
         public void SaveToTextFile(string path) {
 
             int Rank, Size;
-            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out Size);
-            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out Rank);
+            csMPI.Raw.Comm_Size(m_comm, out Size);
+            csMPI.Raw.Comm_Rank(m_comm, out Rank);
             string append = "";
             if (Rank >= 1)
                 return;

@@ -14,12 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using System;
+
 namespace CNS.Source {
 
     /// <summary>
     /// Configuration options for a sponge layer source term which serves as a
     /// non-reflecting boundary condition (see <see cref="SpongeLayerSource"/>)
     /// </summary>
+    [Serializable]
     public class SpongeLayerConfig {
 
         /// <summary>

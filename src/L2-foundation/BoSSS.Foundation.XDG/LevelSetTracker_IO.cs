@@ -53,6 +53,12 @@ namespace BoSSS.Foundation.XDG {
             internal int NearRegionWidth;
 
             /// <summary>
+            /// See <see cref="LevelSetTracker.CutCellQuadratureType"/>
+            /// </summary>
+            [DataMember]
+            public XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
+
+            /// <summary>
             /// See <see cref="LevelSetTracker.SpeciesTable"/>
             /// </summary>
             [DataMember]
@@ -73,7 +79,7 @@ namespace BoSSS.Foundation.XDG {
                     LS[i] = (LevelSet)this.LevelSets[i].Initialize(c);
                 }
 
-                var lsTrk = new LevelSetTracker(c.GridData, this.NearRegionWidth, this.SpeciesTable, LS);
+                var lsTrk = new LevelSetTracker(c.GridData, this.CutCellQuadratureType, this.NearRegionWidth, this.SpeciesTable, LS);
                 instance = lsTrk;
                 c.Add(this, lsTrk);
                 return lsTrk;
@@ -92,6 +98,8 @@ namespace BoSSS.Foundation.XDG {
                     if (!this.LevelSets[i].Equals(initializer.LevelSets[i]))
                         return false;
                 }
+                if(this.CutCellQuadratureType != initializer.CutCellQuadratureType)
+                    return false;
                 if (this.NearRegionWidth != initializer.NearRegionWidth)
                     return false;
                 if (this.SpeciesTable.Length != initializer.SpeciesTable.Length)
@@ -161,7 +169,8 @@ namespace BoSSS.Foundation.XDG {
                         LevelSets = this.LevelSets.Select(ls =>
                             (LevelSet.LevelSetInitializer)ls.As<LevelSet>().Initializer).ToArray(),
                         NearRegionWidth = this.NearRegionWidth,
-                        SpeciesTable = this.m_SpeciesTable
+                        SpeciesTable = this.m_SpeciesTable,
+                        CutCellQuadratureType = this.CutCellQuadratureType
                     };
                 }
                 return m_Initializer;

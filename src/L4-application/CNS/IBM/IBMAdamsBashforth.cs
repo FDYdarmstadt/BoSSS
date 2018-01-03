@@ -45,7 +45,6 @@ namespace CNS.IBM {
 
         private CellMask cutAndTargetCells;
 
-
         public IBMAdamsBashforth(
             SpatialOperator standardOperator,
             SpatialOperator boundaryOperator,
@@ -79,7 +78,7 @@ namespace CNS.IBM {
 
         private void BuildEvaluatorsAndMasks() {
             CellMask fluidCells = speciesMap.SubGrid.VolumeMask;
-            cutCells = speciesMap.Tracker._Regions.GetCutCellMask();
+            cutCells = speciesMap.Tracker.Regions.GetCutCellMask();
             cutAndTargetCells = cutCells.Union(speciesMap.Agglomerator.AggInfo.TargetCells);
 
             IBMControl control = speciesMap.Control;
@@ -130,8 +129,7 @@ namespace CNS.IBM {
                     Mapping,
                     new Dictionary<SpeciesId, IEnumerable<double>>() {
                         { speciesId, Enumerable.Repeat(1.0, Mapping.NoOfVariables) } },
-                    inverse: false,
-                    VariableAgglomerationSwitch: new bool[Mapping.Fields.Count]);
+                    inverse: false);
 
                 IBMUtility.SubMatrixSpMV(nonAgglomeratedMassMatrix, 1.0, DGCoordinates, 0.0, DGCoordinates, cutCells);
                 speciesMap.Agglomerator.ManipulateRHS(DGCoordinates, Mapping);
@@ -154,9 +152,6 @@ namespace CNS.IBM {
         /// agglomerated and multiplied by the inverse mass matrix (of the
         /// agglomerated basis)
         /// </summary>
-        /// <param name="k"></param>
-        /// <param name="AbsTime"></param>
-        /// <param name="RelTime"></param>
         protected override void ComputeChangeRate(double[] k, double AbsTime, double RelTime, double[] edgeFluxes = null) {
             Evaluator.Evaluate(1.0, 0.0, k, AbsTime);
             Debug.Assert(

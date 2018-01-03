@@ -1,0 +1,17 @@
+LIBRARY	"metis"
+EXPORTS
+    ; Referenced by BoSSS
+	METIS_PartGraphRecursive
+	METIS_PartGraphKway
+	METIS_WPartGraphRecursive
+	METIS_WPartGraphKway
+	METIS_WPartGraphVKway
+	
+    ; referenced by ParMETIS
+	METIS_mCPartGraphRecursive2
+    METIS_WPartGraphKway2
+    METIS_NodeComputeSeparator
+    METIS_EdgeComputeSeparator 
+    METIS_NodeND
+    METIS_NodeNDP
+

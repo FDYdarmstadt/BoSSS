@@ -14,15 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
-using System.Collections.Generic;
 using BoSSS.Foundation;
-using BoSSS.Platform;
-using BoSSS.Platform.LinAlg;
 using CNS.Boundary;
-using CNS.MaterialProperty;
-using CNS.Exception;
 using ilPSP;
+using System;
 
 namespace CNS.Convection {
 

@@ -61,12 +61,6 @@ namespace ALTSTests {
         /// <summary>
         /// calculating the inner edge fluxes by using a first oder upwind scheme
         /// </summary>
-        /// <param name="time"></param>
-        /// <param name="x"></param>
-        /// <param name="normal"></param>
-        /// <param name="Uin"></param>
-        /// <param name="Uout"></param>
-        /// <returns></returns>
         protected override double InnerEdgeFlux(double time, double[] x, double[] normal, double[] Uin, double[] Uout, int jEdge) {
             Vector2D n;
             n.x = normal[0];

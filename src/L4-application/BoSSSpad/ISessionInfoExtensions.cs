@@ -16,8 +16,10 @@ limitations under the License.
 
 using BoSSS.Application.BoSSSpad;
 using BoSSS.Solution.Control;
+using BoSSS.Solution.Gnuplot;
 using ilPSP;
 using ilPSP.Connectors.Matlab;
+using ilPSP.Tracing;
 using ilPSP.Utils;
 using Mono.CSharp;
 using System;
@@ -25,6 +27,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Xml;
 
 namespace BoSSS.Foundation.IO {
@@ -215,15 +218,16 @@ namespace BoSSS.Foundation.IO {
         /// <param name="session">
         /// The session which queryResults should be read.
         /// </param>
+        /// <param name="path">Path to the Query File</param>
         /// <returns>
         /// Dictionary of QueryResults.
         /// Key: QueryId
         /// Value: QueryValue
         /// </returns>
-        public static IDictionary<string, double> QueryResults(this ISessionInfo session) {
+        public static IDictionary<string, double> QueryResults(this ISessionInfo session, string path = "queryResults.txt") {
             Dictionary<string, double> QueryDictionary = new Dictionary<string, double>();
 
-            string QueryPath = Path.Combine(DatabaseDriver.GetSessionDirectory(session), "queryResults.txt");
+            string QueryPath = Path.Combine(DatabaseDriver.GetSessionDirectory(session), path);
 
             using (StreamReader reader = new StreamReader(QueryPath)) {
                 string[] QueryHeader = reader.ReadLine().Trim().Split(new char[] { '\t' });
@@ -1607,6 +1611,254 @@ namespace BoSSS.Foundation.IO {
             }
 
             Console.WriteLine("...Evaluation done");
+        }
+
+        /// <summary>
+        /// Calls EvaluatePerformance and plots the DataSets.
+        /// </summary>
+        /// <param name="sessions"> List of sessions of the same problem but different MPIs </param>
+        /// <param name="methods"> Array of methods to be evaluated. If methods == null, the 10 most expensive methods will be taken. </param>
+        /// <param name="exclusive"> Boolean that defines if exclusive or inclusive times will be calculated. Methods will still be chosen by exclusive times. </param>
+        /// <param name="solver"> String that indicates the solver. Up to now only implemented for IBM_Solver and CNS. </param>
+        public static void EvaluatePerformanceAndPlot(this IEnumerable<ISessionInfo> sessions, string[] methods = null, bool exclusive = true, string solver = "IBM_Solver")
+        {
+            DataSet[] data = sessions.EvaluatePerformance(methods,exclusive,solver);
+            int numberDataSets = data.Length;
+            int numberSessions = sessions.Count();
+
+            // Plotting of all methods' execution times over processors and their ideal curves using Gnuplot
+            for (int i = 0; i < numberDataSets/2; i++) {
+                Gnuplot gp = new Gnuplot();
+                gp.SetMultiplot(1, 2);
+                gp.SetSubPlot(0, 0);
+                gp.SetXLabel("Processors");
+                if (exclusive)
+                {
+                    gp.SetYLabel("Exlusive times [s]");
+                } else
+                {
+                    gp.SetYLabel("Inclusive times [s]");
+                }
+                gp.Cmd("set terminal wxt noraise");
+                gp.Cmd("set grid xtics ytics");
+
+                int lineColor = 0;
+                foreach (var group in data[i].dataGroups)
+                {
+                    gp.PlotXY(group.Abscissas, group.Values, group.Name.Split('.').Last(),
+                        new PlotFormat(lineColor: ((LineColors)(++lineColor)), pointType: ((PointTypes)4), pointSize: 1.5, Style: Styles.LinesPoints));
+                }
+                gp.WriteDeferredPlotCommands();
+                gp.SetSubPlot(0, 1);
+                gp.SetXLabel("Processors");
+                gp.SetYLabel("Speedup");
+                gp.Cmd("set terminal wxt noraise");
+                gp.Cmd("set grid xtics ytics");
+
+                lineColor = 0;
+                foreach (var group in data[i+numberDataSets/2].dataGroups)
+                {
+                    gp.PlotXY(group.Abscissas, group.Values, group.Name.Split('.').Last(),
+                        new PlotFormat(lineColor: ((LineColors)(++lineColor)), pointType: ((PointTypes)4), pointSize: 1.5, Style: Styles.LinesPoints));
+                }
+                gp.WriteDeferredPlotCommands();
+                gp.Execute();
+            }
+        }
+
+        /// <summary>
+        /// Calculates performance times from profiling_bins for each session for specified methods. Writes out a table of the most expensive and (of those) worst scaling functions. 
+        /// Returns data of convergence and speedup for each method over number of MPIs
+        /// </summary>
+        /// <param name="sessions"> List of sessions of the same problem but different MPIs </param>
+        /// <param name="methods"> Array of methods to be evaluated. If methods == null, the 10 most expensive methods will be taken. </param>
+        /// <param name="exclusive"> Boolean that defines if exclusive or inclusive times will be calculated. Methods will still be chosen by exclusive times. </param>
+        /// <param name="solver"> String that indicates the solver. Up to now only implemented for IBM_Solver and CNS. </param>
+        /// <returns>
+        /// Returns an array of DataSets, where the first half contains the convergence data for every method and the second half the speedup data.
+        /// </returns>
+        public static DataSet[] EvaluatePerformance(this IEnumerable<ISessionInfo> sessions, string[] methods = null, bool exclusive = true, string solver = "IBM_Solver")
+        {
+            string path = sessions.Pick(0).Database.Path;
+            string mainMethod;
+            switch(solver)
+            {
+                case "IBM_Solver":
+                    mainMethod = "BoSSS.Application.IBM_Solver.IBM_SolverMain.RunSolverOneStep";
+                    break;
+                case "CNS":
+                    mainMethod = "CNS.Program`1.RunSolverOneStep";
+                    break;
+                default:
+                    throw new ApplicationException("Main method not defined for this solver yet");
+            }
+            
+
+
+            // Change maxNumberMethods to how many methods you want considered if no  methods specified
+            int maxNumberMethods = 8;
+            double[] fraction = new double[maxNumberMethods];
+            int idx = sessions.IndexOfMax(s => s.ComputeNodeNames.Count());
+
+            // Find methods if none given
+            if (methods == null)
+            {
+                var temp_fs = new FileStream[1];
+                BinaryFormatter fmt = new BinaryFormatter();
+                MethodCallRecord[] mcr = new MethodCallRecord[1];
+                temp_fs[0] = new FileStream(@path + "\\sessions\\" + sessions.Pick(idx).ID + "\\profiling_bin.0.txt", FileMode.Open);
+                mcr[0] = (MethodCallRecord)fmt.Deserialize(temp_fs[0]);
+                temp_fs[0].Close();
+
+                var findMainMethod = mcr[0].FindChild(mainMethod);
+                IOrderedEnumerable<CollectionReport> mostExpensive;
+                if (findMainMethod!= null)
+                {
+                     mostExpensive = findMainMethod.CompleteCollectiveReport().OrderByDescending(cr => cr.ExclusiveTimeFractionOfRoot);
+                } else
+                {
+                     mostExpensive = mcr[0].CompleteCollectiveReport().OrderByDescending(cr => cr.ExclusiveTimeFractionOfRoot);
+                }
+                //var mostExpensive = mcr[0].FindChild(mainMethod).CompleteCollectiveReport().OrderByDescending(cr => cr.ExclusiveTimeFractionOfRoot);
+
+                methods = new string[maxNumberMethods];
+                for (int i = 0; i < maxNumberMethods; i++)
+                {
+                    methods[i] = mostExpensive.Pick(i).Name;
+                }
+            }
+            int numberMethods = methods.Length;
+
+            // Initialise variables
+            int numberSessions = sessions.Count();
+            DataSet[] data = new DataSet[2*numberMethods];
+            double[][] times = new double[numberSessions][];
+            int[] processors = new int[numberSessions];
+
+            // Iterate over sessions
+            for (int i = 0; i < numberSessions; i++)
+            {
+                // Get number of processors and save for later
+                int fileCount = (from file in Directory.EnumerateFiles(@path + "\\sessions\\" + sessions.Pick(i).ID, "profiling_bin.*", SearchOption.AllDirectories)
+                                 select file).Count();
+                int numberProcessors = fileCount;
+                processors[i] = numberProcessors;
+
+                var temp_fs = new FileStream[numberProcessors];
+                BinaryFormatter fmt = new BinaryFormatter();
+                MethodCallRecord[] mcr = new MethodCallRecord[numberProcessors];
+
+                double[] maxTime = new double[numberMethods];
+
+                // Iterate over MPIs
+                for (int j = 0; j < numberProcessors; j++)
+                {
+                    // read profiling_bin of current processor
+                    temp_fs[j] = new FileStream(@path + "\\sessions\\" + sessions.Pick(i).ID + "\\profiling_bin." + j + ".txt", FileMode.Open);
+                    MethodCallRecord value;
+                    mcr[j] = ((MethodCallRecord)fmt.Deserialize(temp_fs[j]));
+                    // Iterate over methods
+                    for (int k = 0; k < numberMethods; k++)
+                    {
+                        // Get execution time of current method for current processor
+                        double[] tempTime = new double[numberMethods];
+                        double[] tempFractions = new double[numberMethods];
+                        
+                        value = mcr[j].FindChild(mainMethod);
+                        if (value ==null)
+                        {
+                            value = mcr[j];
+                        }
+                        if (exclusive)
+                        {
+                            tempTime[k] = value.FindChildren(methods[k]).Select(s => s.TimeExclusive.TotalSeconds).Max();
+                            if (i == idx)
+                            {
+                                tempFractions[k] = value.FindChildren(methods[k]).Select(s => s.ExclusiveTimeFractionOfRoot).Max();
+                            }
+                        } else { 
+                            tempTime[k] = value.FindChildren(methods[k]).Select(s => s.TimeSpentInMethod.TotalSeconds).Max();
+                            if (i == idx)
+                            {
+                                tempFractions[k] = value.FindChildren(methods[k]).Select(s => s.TimeFractionOfRoot).Max();
+                            }
+                        }
+                        // Only save execution time if it is the highest value of all processor times
+                        if (tempTime[k] > maxTime[k])
+                        {
+                            maxTime[k] = tempTime[k];
+                        }
+                        if (tempFractions[k] > fraction[k])
+                        {
+                            fraction[k] = tempFractions[k];
+                        }
+                    }
+                    temp_fs[j].Close();
+                }
+                times[i] = maxTime;
+            }
+            Array.Sort(processors, times);
+
+            KeyValuePair<string, double>[] methodRegressionPair = new KeyValuePair<string, double>[numberMethods];
+            KeyValuePair<string, double>[] methodFractionPair = new KeyValuePair<string, double>[numberMethods];
+            // Create DataSets and ideal curves
+            for (int i = 0; i < numberMethods; i++)
+            {
+                // Calculation of ideal curves
+                double[] ideal = new double[numberSessions];
+                double[] idealSpeedUp = new double[numberSessions];
+                double startIdeal = times.Pick(0)[i];
+                for (int j = 0; j < numberSessions; j++)
+                {
+                    ideal[j] = Math.Pow(0.5, j) * startIdeal;
+                    idealSpeedUp[j] = processors[j];
+                }
+                var timeArray = times.Select(t => t.Pick(i));
+                double[] speedUpTimes = timeArray.Select(x => startIdeal * processors[0] / x).ToArray();
+
+                // Create DataRows for convergence and speedup with actual and ideal curve
+                KeyValuePair<string, double[][]>[] dataRowsConvergence = new KeyValuePair<string, double[][]>[2];
+                KeyValuePair<string, double[][]>[] dataRowsSpeedup = new KeyValuePair<string, double[][]>[2];
+                double[] doubleProcessors = processors.Select(Convert.ToDouble).ToArray();
+
+                dataRowsConvergence[0] = new KeyValuePair<string, double[][]>(methods[i], new double[][] { doubleProcessors, times.Select(s => s[i]).ToArray() });
+                dataRowsConvergence[1] = new KeyValuePair<string, double[][]>("ideal", new double[][] { doubleProcessors, ideal });
+                dataRowsSpeedup[0] = new KeyValuePair<string, double[][]>(methods[i], new double[][] { doubleProcessors, speedUpTimes });
+                dataRowsSpeedup[1] = new KeyValuePair<string, double[][]>("ideal", new double[][] { doubleProcessors, idealSpeedUp });
+
+                // Create DataSets from DataRows
+                data[i] = new DataSet(dataRowsConvergence);
+                data[i+numberMethods] = new DataSet(dataRowsSpeedup);
+                methodRegressionPair[i] = new KeyValuePair<string, double>(methods[i], Math.Min(data.Skip(numberMethods).Pick(i).Regression().Pick(0).Value, data.Skip(numberMethods).Pick(i).Regression().Pick(1).Value));
+                methodFractionPair[i] = new KeyValuePair<string, double>(methods[i], fraction[i]);
+            }
+
+            // Use slope of actual speedup curve to sort methods and DataSets by "worst scaling"
+            methodRegressionPair = methodRegressionPair.OrderBy(t => t.Value).ToArray();
+            methodFractionPair = methodFractionPair.OrderByDescending(t => t.Value).ToArray();
+            double[] regressions = methodRegressionPair.Select(s => s.Value).ToArray();
+            double[] regressions2 = regressions;
+            string[] methods2 = methodFractionPair.Select(s => s.Key).ToArray();
+            double[] fractions2 = methodFractionPair.Select(s => s.Value).ToArray();
+            string[] sortedMethods = methodRegressionPair.Select(s => s.Key).ToArray();
+
+           // Write out the most expensive functions and the worst scaling functions
+            Console.WriteLine("\n Most expensive functions");
+            Console.WriteLine("============================");
+            for (int i = 0; i < numberMethods; i++)
+            {
+                Console.WriteLine("Rank " + i + ": " + methods2[i]);
+                Console.WriteLine("\t Time fraction of root: " + fractions2[i].ToString("p3"));
+            }
+            Console.WriteLine("\n Sorted by worst scaling");
+            Console.WriteLine("============================");
+            for (int i = 0; i < numberMethods; i++)
+            {
+                Console.WriteLine("Rank " + i + ": " + sortedMethods[i]);
+                Console.WriteLine("\t speedup slope: " + regressions[i].ToString("N3"));
+            }
+
+            return data;
         }
     }
 }

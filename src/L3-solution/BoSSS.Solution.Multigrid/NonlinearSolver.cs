@@ -160,8 +160,6 @@ namespace BoSSS.Solution.Multigrid {
 
             OpMtxRaw.SpMV(alpha, new CoordinateVector(CurrentState.ToArray()), 1.0, OpAffineRaw);
 
-            double[] OutputClone = null;
-
             CurrentLin.TransformRhsInto(OpAffineRaw, Output);
 
         }

@@ -160,7 +160,7 @@ namespace NSE_SIMPLE {
         /// <summary>
         /// ...
         /// </summary>
-        public override void PostRestart(double time) {
+        public override void PostRestart(double time, TimestepNumber timestep) {
 
             //InitLogEnergyOrrSommerfeld();
 
@@ -202,7 +202,7 @@ namespace NSE_SIMPLE {
         /// <summary>
         /// 
         /// </summary>
-        protected override void CreateEquationsAndSolvers(LoadBalancingData L) {
+        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
             using (new FuncTrace()) {
 
                 // Create SIMPLEStatus

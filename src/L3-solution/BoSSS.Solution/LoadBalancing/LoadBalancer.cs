@@ -16,10 +16,13 @@ limitations under the License.
 
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Solution.Control;
 using ilPSP;
 using MPI.Wrappers;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
 namespace BoSSS.Solution {
 
@@ -32,14 +35,14 @@ namespace BoSSS.Solution {
 
         /// <summary>
         /// A factory used to update
-        /// <see cref="CurrentCellCostEstimator"/> if required
+        /// <see cref="CurrentCellCostEstimators"/> if required
         /// </summary>
-        private Func<int, ICellCostEstimator> cellCostEstimatorFactory;
+        private List<Func<IApplication<AppControl>, int, ICellCostEstimator>> cellCostEstimatorFactories;
 
         /// <summary>
-        /// A model that estimates the costs of different cells
+        /// A set of models that estimates the costs of different cells
         /// </summary>
-        public ICellCostEstimator CurrentCellCostEstimator {
+        public ICellCostEstimator[] CurrentCellCostEstimators {
             get;
             private set;
         }
@@ -54,18 +57,20 @@ namespace BoSSS.Solution {
         /// <summary>
         /// Constructor.
         /// </summary>
-        public LoadBalancer(Func<int, ICellCostEstimator> cellCostEstimatorFactory) {
-            this.cellCostEstimatorFactory = cellCostEstimatorFactory;
+        public LoadBalancer(List<Func<IApplication<AppControl>, int, ICellCostEstimator>> cellCostEstimatorFactories) {
+            this.cellCostEstimatorFactories = cellCostEstimatorFactories;
+            this.CurrentCellCostEstimators = new ICellCostEstimator[cellCostEstimatorFactories.Count];
         }
 
         /// <summary>
         /// Returns a new grid partition based on the performance model.
         /// </summary>
+        /// <param name="app"></param>
         /// <param name="performanceClassCount"></param>
         /// <param name="cellToPerformanceClassMap"></param>
-        /// <param name="Grid"></param>
         /// <param name="TimestepNo"></param>
         /// <param name="gridPartType">Grid partitioning type.</param>
+        /// <param name="PartOptions"></param>
         /// <param name="imbalanceThreshold">
         /// See <see cref="Control.AppControl.DynamicLoadBalancing_ImbalanceThreshold"/>.
         /// </param>
@@ -73,31 +78,56 @@ namespace BoSSS.Solution {
         /// See <see cref="Control.AppControl.DynamicLoadBalancing_Period"/>.
         /// </param>
         /// <returns></returns>
-        public int[] GetNewPartitioning(int performanceClassCount, int[] cellToPerformanceClassMap, GridCommons Grid, int TimestepNo, GridPartType gridPartType, string PartOptions, double imbalanceThreshold, int Period) {
+        public int[] GetNewPartitioning(IApplication<AppControl> app, int performanceClassCount, int[] cellToPerformanceClassMap, int TimestepNo, GridPartType gridPartType, string PartOptions, double imbalanceThreshold, int Period, bool redistributeAtStartup) {
             // Create new model if number of cell classes has changed
-            if (CurrentCellCostEstimator == null
-                || CurrentCellCostEstimator.PerformanceClassCount != performanceClassCount) {
-                CurrentCellCostEstimator = cellCostEstimatorFactory(performanceClassCount);
+            for (int i = 0; i < cellCostEstimatorFactories.Count; i++) {
+                if (CurrentCellCostEstimators[i] == null
+                    || CurrentCellCostEstimators[i].CurrentPerformanceClassCount != performanceClassCount) {
+                    CurrentCellCostEstimators[i] = cellCostEstimatorFactories[i](app, performanceClassCount);
+                }
+
+                CurrentCellCostEstimators[i].UpdateEstimates(performanceClassCount, cellToPerformanceClassMap);
             }
 
-            CurrentCellCostEstimator.UpdateEstimates(cellToPerformanceClassMap);
+            if (app.Grid.Size == 1) {
+                return null;
+            }
 
-            if (Grid.Size == 1
-                || TimestepNo % Period != 0
-                || CurrentCellCostEstimator.ImbalanceEstimate() < imbalanceThreshold) {
-                // No new partitioning if timestep not selected or imbalance
-                // below threshold
+            bool performPertationing;
+            if (TimestepNo == 0) {
+                performPertationing = redistributeAtStartup;
+            } else {
+                performPertationing = (Period > 0 && TimestepNo % Period == 0);
+            }
+
+            if (!performPertationing) {
+                return null;
+            }
+
+            // No new partitioning if imbalance below threshold
+            double[] imbalanceEstimates =
+                    CurrentCellCostEstimators.Select(estimator => estimator.ImbalanceEstimate()).ToArray();
+            bool imbalanceTooLarge = false;
+            for (int i = 0; i < cellCostEstimatorFactories.Count; i++) {
+                imbalanceTooLarge |= (imbalanceEstimates[i] > imbalanceThreshold);
+            }
+
+            if (!imbalanceTooLarge) {
                 return null;
             }
 
             Console.WriteLine(
-                "Runtime imbalance ({0:P1}) was above configured threshold ({1:P1}); attempting repartitioning",
-                CurrentCellCostEstimator.ImbalanceEstimate(),
+                "At least one runtime imbalance estimate ({0}) was above configured threshold ({1:P1}); attempting repartitioning",
+                String.Join(", ", imbalanceEstimates.Select(e => String.Format("{0:P1}", e))),
                 imbalanceThreshold);
 
-            int[] cellCosts = CurrentCellCostEstimator.GetEstimatedCellCosts();
-            if (cellCosts == null) {
+            IList<int[]> cellCosts = CurrentCellCostEstimators.Select(estimator => estimator.GetEstimatedCellCosts()).ToList();
+            if (cellCosts == null || cellCosts.All(c => c == null)) {
                 return null;
+            }
+
+            if (gridPartType != GridPartType.ParMETIS && cellCosts.Count > 1) {
+                throw new NotImplementedException("Multiple balance constraints only supported using ParMETIS for now");
             }
 
             int[] result;
@@ -105,7 +135,7 @@ namespace BoSSS.Solution {
                 case GridPartType.METIS:
                     int.TryParse(PartOptions, out int noOfPartitioningsToChooseFrom);
                     noOfPartitioningsToChooseFrom = Math.Max(1, noOfPartitioningsToChooseFrom);
-                    result = Grid.ComputePartitionMETIS(cellCosts);
+                    result = app.Grid.ComputePartitionMETIS(cellCosts.Single());
                     isFirstRepartitioning = false;
                     break;
 
@@ -113,22 +143,22 @@ namespace BoSSS.Solution {
                     // Do full ParMETIS run on first repartitioning since
                     // initial partitioning may be _really_ bad
                     if (isFirstRepartitioning) {
-                        result = Grid.ComputePartitionParMETIS(cellCosts);
+                        result = app.Grid.ComputePartitionParMETIS(cellCosts);
                         isFirstRepartitioning = false;
                     } else {
                         // Refinement currently deactivate because it behaves
                         // strangely when large numbers of cells should be
                         // repartitioned
                         //result = Grid.ComputePartitionParMETIS(cellCosts, refineCurrentPartitioning: true);
-                        result = Grid.ComputePartitionParMETIS(cellCosts);
+                        result = app.Grid.ComputePartitionParMETIS(cellCosts);
                     }
                     break;
 
                 case GridPartType.Hilbert:
-                    return Grid.ComputePartitionHilbert(cellCosts);
+                    return app.Grid.ComputePartitionHilbert(cellCosts.Single());
 
                 case GridPartType.none:
-                    result = IndexBasedPartition(cellCosts);
+                    result = IndexBasedPartition(cellCosts.Single());
                     break;
 
                 case GridPartType.Predefined:
@@ -141,7 +171,7 @@ namespace BoSSS.Solution {
             if (result.Length == 0) {
                 throw new Exception(String.Format(
                     "LoadBalancer computed invalid partitioning; no cells left on rank {0}",
-                    Grid.MyRank));
+                    app.Grid.MyRank));
             }
 
             return result;

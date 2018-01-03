@@ -897,7 +897,8 @@ namespace BoSSS.Foundation.Grid {
 
         /// <summary>
         /// list of processes (MPI ranks) which receive data from this process
-        /// index: MPIM process rank
+        /// - index: enumeration
+        /// - content: MPI process rank
         /// </summary>
         int[] ProcessesToSendTo {
             get;
@@ -916,8 +917,7 @@ namespace BoSSS.Foundation.Grid {
         /// stored in ascending order.
         /// </summary>
         /// <remarks>
-        /// - 1st index: target processor; if the 'p'-th entry is null, there
-        /// is no communication with processor 'p'
+        /// - 1st index: target processor; if the 'p'-th entry is null, there is no communication with processor 'p'
         /// - 2nd index: enumeration;
         /// - content: local cell index
         /// </remarks>
