@@ -1056,11 +1056,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 this.ComputeOperatorMatrix(m_Stack_OpMatrix[0], m_Stack_OpAffine[0], CurrentStateMapping, locCurSt, base.GetAgglomeratedLengthScales(), m_CurrentPhystime + m_CurrentDt);
 
 
-                // Operator Analysis
-                // -----------------
-
-                //this.OperatorMatrixAnalysis(m_Stack_OpMatrix[0], CurrentStateMapping);
-
                 // assemble system
                 // ---------------
 
@@ -1454,9 +1449,9 @@ namespace BoSSS.Solution.XdgTimestepping {
                     m_ResLogger.CustomValue(0.0, "LevelSet");
                 }
 
-                if (Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative && m_ResLogger != null) {
-                    m_ResLogger.CustomValue(0.0, "LevelSet");
-                }
+                //if (Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative && m_ResLogger != null) {
+                //    m_ResLogger.CustomValue(0.0, "LevelSet");
+                //}
 
                 //Tecplot.Tecplot.PlotFields(ArrayTools.Cat(m_Stack_u[0].Mapping.Fields, ResidualFields), "strange", 0.0, 4);
 
