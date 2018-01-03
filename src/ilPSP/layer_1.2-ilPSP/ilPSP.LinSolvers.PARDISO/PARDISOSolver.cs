@@ -42,10 +42,6 @@ namespace ilPSP.LinSolvers.PARDISO {
         /// ctor
         /// </summary>
         public PARDISOSolver() {
-            //MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
-            //csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
-            //if (rank == 0)
-            //    Debugger.Launch();
         }
         
         /// <summary>
@@ -307,16 +303,16 @@ namespace ilPSP.LinSolvers.PARDISO {
                         PARDISODispose();
                     }
 
-                    csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+                    csMPI.Raw.Barrier(MpiComm);
                     unsafe {
                         bool snd = r.Converged;
-                        csMPI.Raw.Bcast((IntPtr)(&snd), 1, csMPI.Raw._DATATYPE.BYTE, 0, csMPI.Raw._COMM.WORLD);
+                        csMPI.Raw.Bcast((IntPtr)(&snd), 1, csMPI.Raw._DATATYPE.BYTE, 0, MpiComm);
                         r.Converged = snd;
                     }
 
                     ScatterFromProc0(_x, gath_x);
 
-                    csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+                    csMPI.Raw.Barrier(MpiComm);
 
                     // write back / return
                     if(x.GetType() != typeof(double[])) {
@@ -527,7 +523,7 @@ namespace ilPSP.LinSolvers.PARDISO {
 
 
                 int rank;
-                csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
+                csMPI.Raw.Comm_Rank(MpiComm, out rank);
                 if (rank == 0) {
 #if DEBUG
                     double[] aClone = (double[])m_PardisoMatrix.a.Clone();
