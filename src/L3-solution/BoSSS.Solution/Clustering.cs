@@ -89,7 +89,7 @@ namespace BoSSS.Solution.Utils {
             // e.g., the fluid cells in an IBM simulation
             int numOfCells = subGrid.LocalNoOfCells;
 
-            MultidimensionalArray cellMetric = GetCellMetric(subGrid);
+            MultidimensionalArray cellMetric = GetStableTimestepSize(subGrid);
             MultidimensionalArray means = CreateInitialMeans(cellMetric, numOfClusters);
             Kmeans Kmean = new Kmeans(cellMetric.To1DArray(), numOfClusters, means.To1DArray());
 
@@ -118,7 +118,8 @@ namespace BoSSS.Solution.Utils {
             // Generating BitArray for all Subgrids, even for those which are empty, i.e ClusterCount == 0
             BitArray[] baMatrix = new BitArray[numOfClusters];
             for (int i = 0; i < numOfClusters; i++) {
-                baMatrix[i] = new BitArray(gridData.iLogicalCells.NoOfCells);
+                //baMatrix[i] = new BitArray(gridData.iLogicalCells.NoOfCells);
+                baMatrix[i] = new BitArray(gridData.iLogicalCells.NoOfLocalUpdatedCells);
             }
 
             // Filling the BitArrays
@@ -153,7 +154,7 @@ namespace BoSSS.Solution.Utils {
 
             double h_min = cellMetric.Min();
             double h_max = cellMetric.Max();
-            Console.WriteLine("Clustering: Create tanh spaced means");
+            //Console.WriteLine("Clustering: Create tanh spaced means");
 
             // Getting global h_min and h_max
             ilPSP.MPICollectiveWatchDog.Watch();
@@ -205,7 +206,7 @@ namespace BoSSS.Solution.Utils {
         /// Returns a cell metric value in every cell
         /// </summary>
         /// <returns>Cell metric as <see cref="MultidimensionalArray"/></returns>
-        public MultidimensionalArray GetCellMetric(SubGrid subGrid) {
+        public MultidimensionalArray GetStableTimestepSize(SubGrid subGrid){
             MultidimensionalArray cellMetric = MultidimensionalArray.Create(subGrid.LocalNoOfCells);
 
             for (int subGridCell = 0; subGridCell < subGrid.LocalNoOfCells; subGridCell++) {

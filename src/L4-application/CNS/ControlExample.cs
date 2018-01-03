@@ -27,7 +27,6 @@ c.Tags.Add("Isentropic vortex");
 
 c.ActiveOperators = Operators.Convection;
 c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
-c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
 c.ExplicitScheme = ExplicitSchemes.RungeKutta;
 c.ExplicitOrder = 4;
 

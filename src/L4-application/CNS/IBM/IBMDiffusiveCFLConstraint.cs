@@ -14,17 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
-using System.Linq;
-using BoSSS.Foundation.Grid;
-using BoSSS.Platform;
+using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.XDG;
 using BoSSS.Platform.LinAlg;
-using CNS.Exception;
 using CNS.EquationSystem;
 using CNS.MaterialProperty;
 using ilPSP;
-using BoSSS.Foundation.Grid.Classic;
-using BoSSS.Foundation.XDG;
+using System;
+using System.Linq;
 
 namespace CNS.IBM {
 
@@ -90,9 +87,9 @@ namespace CNS.IBM {
             int noOfNodesPerCell = base.EvaluationPoints[iKref].NoOfNodes;
 
             MultidimensionalArray levelSetValues =
-                speciesMap.Tracker.GetLevSetValues(0, base.EvaluationPoints[iKref], i0, Length);
+                speciesMap.Tracker.DataHistories[0].Current.GetLevSetValues(base.EvaluationPoints[iKref], i0, Length);
             SpeciesId species = speciesMap.Tracker.GetSpeciesId(speciesMap.Control.FluidSpeciesName);
-            var hMinArray = speciesMap.QuadSchemeHelper.CellAgglomeration.CellLengthScales[species];
+            var hMinArray = speciesMap.CellAgglomeration.CellLengthScales[species];
             //var volFrac = speciesMap.QuadSchemeHelper.CellAgglomeration.CellVolumeFrac[species];
             //var hMinGass = speciesMap.h_min;
             //var hMin = gridData.Cells.h_min;
@@ -124,7 +121,7 @@ namespace CNS.IBM {
 
 #if DEBUG
                     if (double.IsNaN(cflhere)) {
-                        throw new NumericalAlgorithmException("Could not determine CFL number");
+                        throw new Exception("Could not determine CFL number");
                     }
 #endif
 

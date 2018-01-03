@@ -145,11 +145,11 @@ namespace BoSSS.Foundation.XDG {
                 var lsTrk = m_Owner.Basis.Tracker;
                 int j = 0;
                 while (j < Len) {
-                    int L = Math.Min(lsTrk._Regions.m_LenToNextChange[j0 + j], Len - j);
+                    int L = Math.Min(lsTrk.Regions.m_LenToNextChange[j0 + j], Len - j);
 
                     ReducedRegionCode ReducedRegionCode;
                     int NoOfSpecies;
-                    NoOfSpecies = lsTrk.GetNoOfSpecies(j0 + j, out ReducedRegionCode);
+                    NoOfSpecies = lsTrk.Regions.GetNoOfSpecies(j0 + j, out ReducedRegionCode);
                     int ispec = lsTrk.GetSpeciesIndex(ReducedRegionCode, this.SpeciesId);
 
                     if (NoOfSpecies == 1) {
@@ -273,7 +273,7 @@ namespace BoSSS.Foundation.XDG {
             public double this[int j, int n] {
                 get {
                     ReducedRegionCode rrc;
-                    int NoOfSpec = LsTrk.GetNoOfSpecies(j, out rrc);
+                    int NoOfSpec = LsTrk.Regions.GetNoOfSpecies(j, out rrc);
 
                     int iSpec = LsTrk.GetSpeciesIndex(rrc, m_SpecisId);
                     if (iSpec < 0)
@@ -288,7 +288,7 @@ namespace BoSSS.Foundation.XDG {
                 }
                 set {
                     ReducedRegionCode rrc;
-                    int NoOfSpec = LsTrk.GetNoOfSpecies(j, out rrc);
+                    int NoOfSpec = LsTrk.Regions.GetNoOfSpecies(j, out rrc);
 
                     int iSpec = LsTrk.GetSpeciesIndex(rrc, m_SpecisId);
                     if (iSpec < 0)
@@ -334,7 +334,7 @@ namespace BoSSS.Foundation.XDG {
 
                 for (int j = 0; j < Jext; j++) {
                     ReducedRegionCode rrc;
-                    int NoOfSpec = ccBasis.Tracker.GetNoOfSpecies(j, out rrc); // both fields own the same tracker,
+                    int NoOfSpec = ccBasis.Tracker.Regions.GetNoOfSpecies(j, out rrc); // both fields own the same tracker,
                     // so the number of species in cell j is equal for
                     // both fields, '_a' and 'this'.
 

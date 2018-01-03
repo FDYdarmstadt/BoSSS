@@ -61,7 +61,7 @@ namespace BoSSS.Solution.Timestepping {
         /// <summary>
         /// set <see cref="Time"/> to <paramref name="NewTime"/>
         /// </summary>
-        public void ResetTime(double NewTime) {
+        public void ResetTime(double NewTime, int timestepNumber) {
             this.Time = NewTime;
         }
 

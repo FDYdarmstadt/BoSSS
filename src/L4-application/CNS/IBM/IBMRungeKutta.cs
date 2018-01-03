@@ -60,8 +60,7 @@ namespace CNS.IBM {
             CoordinateMapping parametersMap,
             ImmersedSpeciesMap speciesMap,
             IList<TimeStepConstraint> timeStepConstraints)
-            // TO DO: I SIMPLY REMOVED PARAMETERMAP HERE; MAKE THIS MORE PRETTY
-            : base(RungeKutta.GetDefaultScheme(speciesMap.Control.ExplicitOrder), standardOperator, fieldsMap, null, timeStepConstraints, speciesMap.SubGrid) {
+            : base(RungeKutta.GetDefaultScheme(speciesMap.Control.ExplicitOrder), standardOperator, fieldsMap, parametersMap, timeStepConstraints, speciesMap.SubGrid) {
 
             this.speciesMap = speciesMap;
             this.boundaryOperator = boundaryOperator;
@@ -70,7 +69,7 @@ namespace CNS.IBM {
 
         protected void UpdateEvaluatorsAndMasks() {
             CellMask fluidCells = speciesMap.SubGrid.VolumeMask;
-            cutCells = speciesMap.Tracker._Regions.GetCutCellMask();
+            cutCells = speciesMap.Tracker.Regions.GetCutCellMask();
             cutAndTargetCells = cutCells.Union(speciesMap.Agglomerator.AggInfo.TargetCells);
 
             IBMControl control = speciesMap.Control;
@@ -87,7 +86,7 @@ namespace CNS.IBM {
             this.m_Evaluator = new Lazy<SpatialOperator.Evaluator>(() =>
                 this.Operator.GetEvaluatorEx(
                     Mapping,
-                    null, // TO DO: I SIMPLY REMOVE PARAMETERMAP HERE; MAKE THIS MORE PRETTY
+                    boundaryParameterMap,
                     Mapping,
                     edgeScheme,
                     volumeScheme,
@@ -112,7 +111,7 @@ namespace CNS.IBM {
             levelSet.ProjectField(X => speciesMap.Control.LevelSetFunction(X, time));
             speciesMap.Tracker.UpdateTracker();
 
-            cutCells = speciesMap.Tracker._Regions.GetCutCellMask();
+            cutCells = speciesMap.Tracker.Regions.GetCutCellMask();
             cutAndTargetCells = cutCells.Union(speciesMap.Agglomerator.AggInfo.TargetCells);
 
             // EVIL HACK SINCE UPDATE OF GRADIENT ONLY HAPPENS AFTER TIME-STEP SO FAR

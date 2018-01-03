@@ -8,7 +8,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>BoSSS.Application.BoSSSpad</RootNamespace>
     <AssemblyName>BoSSSpad</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>
     <FileAlignment>512</FileAlignment>
@@ -144,6 +144,7 @@
     <Compile Include="InteractiveShell.cs" />
     <Compile Include="SafeEvaluator.cs" />
     <Compile Include="SessionExportInstruction.cs" />
+    <Compile Include="SlurmClient.cs" />
     <Compile Include="TableExtensions.cs" />
     <Compile Include="TypeExtensions.cs" />
     <Compile Include="DataSet.cs" />

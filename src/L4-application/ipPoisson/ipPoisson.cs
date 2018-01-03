@@ -35,6 +35,8 @@ using BoSSS.Foundation.SpecFEM;
 using BoSSS.Solution.Queries;
 using BoSSS.Foundation.Grid.RefElements;
 using NUnit.Framework;
+using BoSSS.Solution.Multigrid;
+using ilPSP.Connectors.Matlab;
 
 namespace ipPoisson {
 
@@ -65,6 +67,9 @@ namespace ipPoisson {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
+
+            //BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
+            //BatchmodeConnector.MatlabExecuteable = "C:\\cygwin\\bin\\bash.exe";
             
             _Main(args, false, "", delegate() {
                 Program p = new Program();
@@ -102,10 +107,10 @@ namespace ipPoisson {
 
 
 
-        IMutableMatrixEx LaplaceMtx;
+        BlockMsrMatrix LaplaceMtx;
         double[] LaplaceAffine;
 
-        protected override void CreateEquationsAndSolvers(LoadBalancingData L) {
+        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
             using(FuncTrace tr = new FuncTrace()) {
 
                 
@@ -281,8 +286,7 @@ namespace ipPoisson {
                     ClassicSolve(out mintime, out maxtime, out converged, out NoOfIterations);
                     
                 } else {
-                    //ExperimentalSolve(out mintime, out maxtime, out converged, out NoOfIterations);
-                    throw new NotImplementedException("todo");
+                    ExperimentalSolve(out mintime, out maxtime, out converged, out NoOfIterations);
                 }
 
                 Console.WriteLine("finished; " + NoOfIterations + " iterations.");
@@ -400,10 +404,10 @@ namespace ipPoisson {
 
         List<DGField> MGColoring = new List<DGField>();
 
-        /*
+        
         private void ExperimentalSolve(out double mintime, out double maxtime, out bool Converged, out int NoOfIter) {
             int p = this.T.Basis.Degree;
-            var MgSeq = AggregationGrid.CreateSequence(this.GridData,MaxDepth:2);
+            var MgSeq = this.MultigridSequence;
             AggregationGridBasis[][] AggBasis = MgSeq.Select(aggGrid => new AggregationGridBasis[] { new AggregationGridBasis(this.T.Basis, aggGrid)}).ToArray();
 
             Console.WriteLine("Setting up multigrid operator...");
@@ -425,9 +429,7 @@ namespace ipPoisson {
                 string solverName = base.Control.solver_name.ToLower();
                 switch(solverName) {
                     case "direct":
-                        solver = new DirectSolver() {
-                            TestSolution = true
-                        };
+                        solver = new DirectSolver();
                         break;
 
                     case "softpcg+schwarz+directcoarse":
@@ -442,7 +444,7 @@ namespace ipPoisson {
                                 m_BlockingStrategy = new Schwarz.MultigridBlocks() {
                                     Depth = 2,
                                 },
-                                overlap = 2
+                                Overlap = 1
                             }
                         };
                         break;
@@ -457,7 +459,7 @@ namespace ipPoisson {
                                 m_BlockingStrategy = new Schwarz.MultigridBlocks() {
                                     Depth = 2,
                                 },
-                                overlap = 2
+                                Overlap = 1
                             }
                         };
                         break;
@@ -519,7 +521,7 @@ namespace ipPoisson {
                                     m_BlockingStrategy = new Schwarz.MultigridBlocks() {
                                         Depth = 2,
                                     },
-                                    overlap = 0
+                                    Overlap = 0
                                 },
                                 i => new Schwarz() {
                                     m_MaxIterations = 1,
@@ -527,7 +529,7 @@ namespace ipPoisson {
                                     m_BlockingStrategy = new Schwarz.MultigridBlocks() {
                                         Depth = 2,
                                     },
-                                    overlap = 0
+                                    Overlap = 0
                                 },
                                 (i, mg) => {
                                     mg.Gamma = 1;
@@ -537,8 +539,6 @@ namespace ipPoisson {
                         };
                         break;
 
-         
-
                     case "softpcg+blockjacobi":
 
                         solver = new SoftPCG() {
@@ -547,8 +547,6 @@ namespace ipPoisson {
                             Precond = new Jacobi() { NoOfIterations = 1, omega = 1 }
                         };
                         break;
-
-
 
                     case "classicmg":
                         solver = ClassicMultigrid.InitMultigridChain(MultigridOp,
@@ -564,16 +562,16 @@ namespace ipPoisson {
 
                     default:
                         throw new ApplicationException("unknown solver: " + solverName);
-
-
-
-
                 }
 
                 if(solver is ISolverWithCallback) {
                     ((ISolverWithCallback)solver).IterationCallback = delegate(int iter, double[] xI, double[] rI, MultigridOperator mgOp) {
                         double l2_RES = rI.L2NormPow2().MPISum().Sqrt();
-                        double l2_ERR =  GenericBlas.L2DistPow2(xI, T.CoordinateVector).MPISum().Sqrt();
+
+                        double[] xRef = new double[xI.Length];
+                        MultigridOp.TransformSolInto(T.CoordinateVector, xRef);
+
+                        double l2_ERR =  GenericBlas.L2DistPow2(xI, xRef).MPISum().Sqrt();
                         Console.WriteLine("Iter: {0}\tRes: {1:0.##E-00}\tErr: {2:0.##E-00}\tRunt: {3:0.##E-00}", iter, l2_RES, l2_ERR, stw.Elapsed.TotalSeconds);
                         //Tjac.CoordinatesAsVector.SetV(xI);
                         //Residual.CoordinatesAsVector.SetV(rI);
@@ -604,6 +602,8 @@ namespace ipPoisson {
                 mintime = Math.Min(stw.Elapsed.TotalSeconds, mintime);
                 maxtime = Math.Max(stw.Elapsed.TotalSeconds, maxtime);
 
+                T.CoordinateVector.SetV(T2);
+
                 // Console.WriteLine("Number of iterations: {0}, runtime: {1} sec.", solver.NoOfIterations, stw.Elapsed.TotalSeconds);
             }
 
@@ -612,7 +612,7 @@ namespace ipPoisson {
             Converged = solver.Converged;
             NoOfIter = solver.ThisLevelIterations;
         }
-        */
+        
 
         protected override void Bye() {
             object SolL2err;
@@ -659,5 +659,6 @@ namespace ipPoisson {
             return ctrl.IsDirichlet(inp);
         }
     }
+
 
 }

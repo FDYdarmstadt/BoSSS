@@ -113,7 +113,7 @@ namespace BoSSS.Solution.Multigrid {
                 P.SetV(R);
             }
 
-            double alpha = R.InnerProd(P);
+            double alpha = R.InnerProd(P).MPISum();
             double alpha_0 = alpha;
             double ResNorm;
 
@@ -137,7 +137,7 @@ namespace BoSSS.Solution.Multigrid {
 
                 
                 m_Matrix.SpMV(1.0, P, 0, V);
-                double VxP = V.InnerProd(P);
+                double VxP = V.InnerProd(P).MPISum();
                 //Console.WriteLine("VxP: {0}", VxP);
                 if(double.IsNaN(VxP) || double.IsInfinity(VxP))
                     throw new ArithmeticException();

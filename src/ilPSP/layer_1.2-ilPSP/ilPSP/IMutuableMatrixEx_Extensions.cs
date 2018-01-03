@@ -482,10 +482,10 @@ namespace ilPSP.LinSolvers {
             using (new FuncTrace()) {
                 int rank, size;
 
-                csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
-                csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
+                csMPI.Raw.Comm_Rank(M.MPI_Comm, out rank);
+                csMPI.Raw.Comm_Size(M.MPI_Comm, out size);
 
-                SerialisationMessenger sms = new SerialisationMessenger(csMPI.Raw._COMM.WORLD);
+                SerialisationMessenger sms = new SerialisationMessenger(M.MPI_Comm);
 
                 int NoOfNonZeros = M.GetTotalNoOfNonZeros();
                 

@@ -30,7 +30,7 @@ namespace CNS.ShockCapturing {
         /// Updates the sensor values in all cells
         /// </summary>
         /// <param name="fieldSet"></param>
-        void UpdateSensorValues(CNSFieldSet fieldSet);
+        void UpdateSensorValues(CNSFieldSet fieldSet, ISpeciesMap speciesMap, CellMask cellMask);
 
         /// <summary>
         /// Returns the current value of the sensor in cell <paramref name="cell"/>

@@ -17,8 +17,10 @@ limitations under the License.
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Threading;
 using BoSSS.Solution;
+using ilPSP.Utils;
 using NUnit.Framework;
 
 namespace CNS.Tests {
@@ -42,7 +44,7 @@ namespace CNS.Tests {
                 out dummy);
             Thread.CurrentThread.CurrentCulture = CultureInfo.CurrentCulture;
         }
-        
+
         /// <summary>
         /// Checks the errors for density, pressure and entropy against predefined
         /// thresholds.
@@ -58,6 +60,7 @@ namespace CNS.Tests {
                 double error = (double)resultsTable[queryName];
                 string message = String.Format(
                     "{0}: {1} (Threshold is {2})",
+                    //"{0:F16}: {1:F16} (Threshold is {2:F16})",
                     queryName,
                     error,
                     threshold);
@@ -67,6 +70,14 @@ namespace CNS.Tests {
             }
 
             assertions.ForEach(a => a());
+        }
+
+        protected static int GetTimeStepNumber(Program solver) {
+            solver.QueryResultTable.FormatTable(out string[] KeyColumnNames, out string[] ValueColumnNames, out object[,] KeyTable, out object[,] ValueTable);
+            int iCol = Array.IndexOf(KeyColumnNames, "Timestep");
+            int iTimeStep = (int)(KeyTable.GetColumn(iCol).Last());
+
+            return iTimeStep;
         }
     }
 }

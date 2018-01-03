@@ -36,7 +36,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// Represents a single set of abscissas with the corresponding set of
         /// values
         /// </summary>
-        private struct DataGroup : ICloneable {
+        public struct DataGroup : ICloneable {
 
             /// <summary>
             /// The name of the group
@@ -100,7 +100,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// This will be done on the fly during
         /// the post-processing of the data
         /// </remarks>
-        private readonly DataGroup[] dataGroups;
+        public readonly DataGroup[] dataGroups;
 
         /// <summary>
         /// Indicates whether the abscissas should be scaled logarithmically.

@@ -14,13 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.Queries;
 using CNS.Convection;
 using CNS.EquationSystem;
 using CNS.MaterialProperty;
-using CNS.Solution;
 using ilPSP.Utils;
 using System;
 
@@ -42,7 +40,6 @@ namespace CNS.Tests.IsentropicVortex {
             c.savetodb = false;
 
             c.ActiveOperators = Operators.Convection;
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 4;
 

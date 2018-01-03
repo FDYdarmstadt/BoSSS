@@ -89,7 +89,7 @@ namespace BoSSS.Solution.Utils {
             } while (changed && changedMean && iter <= maxIerations);
 
 
-            Console.WriteLine("K-means finished after " + iter + " iterations");
+            //Console.WriteLine("K-means finished after " + iter + " iterations");
             return Cell2Cluster;
         }
 
