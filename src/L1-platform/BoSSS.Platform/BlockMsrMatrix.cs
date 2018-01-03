@@ -2874,6 +2874,7 @@ namespace ilPSP.LinSolvers {
                                 int jBlk = kv.Key;
                                 BlockEntry Blk = kv.Value;
 
+                                // determine block range
                                 int j0, JE;
                                 if (m_ColPartitioning.FirstBlock <= jBlk && jBlk < m_ColPartitioning.FirstBlock + m_ColPartitioning.LocalNoOfBlocks) {
                                     j0 = m_ColPartitioning.GetBlockI0(jBlk);

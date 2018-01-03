@@ -467,7 +467,7 @@ namespace BoSSS.Solution.Multigrid {
                     int extOffset = m_map.LocalLength;
 
                     int cnt = 0;
-                    for (int jCell = 0; jCell < JE; jCell++) {
+                    for (int jCell = J0; jCell < JE; jCell++) {
                         Debug.Assert(jCell >= m_master.iLogicalCells.NoOfLocalUpdatedCells);
 
                         int N = m_map.GetLength(jCell);
