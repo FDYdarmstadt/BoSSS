@@ -2662,24 +2662,24 @@ namespace ilPSP.LinSolvers {
                 RowIndicesSource,
                 RowIndicesTarget,
                 ColumnIndicesSource,
-                ColumnInidcesTarget);
+                ColumnInidcesTarget,
+                default(int[]), default(int[]));
         }
 
 
         /// <summary>
-        /// Extracts a submatrix from this matrix and accumulates it to
-        /// another matrix.
+        /// Extracts a submatrix from this matrix and accumulates it to another matrix.
         /// </summary>
         /// <param name="alpha">
         /// scaling factor
         /// </param>
-        /// <param name="RowIndicesSource">row indices into this matrix</param>
+        /// <param name="RowIndicesSource">Row indices into this matrix, in the local range (<see cref="IPartitioning.IsInLocalRange(int)"/>).</param>
         /// <param name="RowIndicesTarget">
         /// if null is specified, this array is assumed to be
         /// {0,1, ... , <paramref name="RowIndicesSource"/>.Length-1]};
         /// </param>
         /// <param name="ColumnIndicesSource">
-        /// column indices into this matrix
+        /// Column indices into this matrix, in the local range (<see cref="IPartitioning.IsInLocalRange(int)"/>).
         /// </param>
         /// <param name="ColIndicesTarget">
         /// if null is specified, this array is assumed to be
@@ -2692,14 +2692,22 @@ namespace ilPSP.LinSolvers {
         /// [<paramref name="RowIndicesSource"/>[i],<paramref name="ColumnIndicesSource"/>[j]]-th
         /// entry of this matrix.
         /// </param>
-        public void AccSubMatrixTo<V1, V2, V3, V4>(
+        /// <param name="ExternalColIndicesTarget"></param>
+        /// <param name="ExternalColumnIndicesSource">
+        /// Additional/optional row indices into this matrix in the external range (<see cref="IPartitioning.IsInLocalRange(int)"/> evaluates to false).
+        /// These are not exchanged over MPI.
+        /// </param>
+        public void AccSubMatrixTo<V1, V2, V3, V4, V5, V6>(
             double alpha, IMutableMatrixEx Target,
             V1 RowIndicesSource, V2 RowIndicesTarget,
-            V3 ColumnIndicesSource, V4 ColIndicesTarget)
+            V3 ColumnIndicesSource, V4 ColIndicesTarget,
+            V5 ExternalColumnIndicesSource, V6 ExternalColIndicesTarget)
             where V1 : IEnumerable<int>
             where V2 : IEnumerable<int>
             where V3 : IEnumerable<int>
-            where V4 : IEnumerable<int> //
+            where V4 : IEnumerable<int> 
+            where V5 : IEnumerable<int>
+            where V6 : IEnumerable<int> //
         {
             using (new FuncTrace()) {
 
@@ -2722,10 +2730,25 @@ namespace ilPSP.LinSolvers {
                 }
 
                 if (RowIndicesTarget != null && RowIndicesTarget.Count() != RowIndicesSource.Count()) {
-                    throw new ArgumentException("Mismatch between number of source and target indices.");
+                    throw new ArgumentException("Mismatch between number of source and target indices (rows).");
                 }
                 if (ColIndicesTarget != null && ColIndicesTarget.Count() != ColumnIndicesSource.Count()) {
-                    throw new ArgumentException("Mismatch between number of source and target indices.");
+                    throw new ArgumentException("Mismatch between number of source and target indices (columns).");
+                }
+
+                if((ExternalColumnIndicesSource == null) != (ExternalColIndicesTarget == null)) {
+                    throw new ArgumentException("Mismatch between external column source and target indices.");
+                }
+
+                if(ExternalColumnIndicesSource != null) {
+                    if(ExternalColumnIndicesSource.Count() != ExternalColIndicesTarget.Count()) {
+                        throw new ArgumentException("Mismatch between number of external source and target indices.");
+                    }
+
+                    foreach(int i in ExternalColumnIndicesSource) {
+                        if(this.m_ColPartitioning.IsInLocalRange(i) == true)
+                            throw new ArgumentException("External column indices are expected to be external.");
+                    }
                 }
 #endif
                 // determine MPI communicator
@@ -2783,6 +2806,24 @@ namespace ilPSP.LinSolvers {
                         for (int l = 0; l < L; l++) {
                             ExternalColIndexPermutation.Add(IdxEs[l, 0], IdxEs[l, 1]);
                         }
+                    }
+
+                    if(ExternalColumnIndicesSource != null) {
+                        IEnumerator<int> enuSrc = ExternalColumnIndicesSource.GetEnumerator();
+                        IEnumerator<int> enuTrg = ExternalColIndicesTarget.GetEnumerator();
+                        while(enuSrc.MoveNext()) {
+                            bool t = enuTrg.MoveNext();
+                            Debug.Assert(t == true);
+
+                            int iSrc = enuSrc.Current;
+                            int iTrg = enuTrg.Current;
+                            if(!m_ColPartitioning.IsInLocalRange(iSrc))
+                                throw new ArgumentException("External column indices are expected to be external.");
+
+                            ExternalColIndexPermutation.Add(iSrc, iTrg);
+                        }
+                        Debug.Assert(enuTrg.MoveNext() == false);
+
                     }
                 }
 

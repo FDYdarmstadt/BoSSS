@@ -549,8 +549,9 @@ namespace BoSSS.Solution.Multigrid {
                         int[] targRows = l1.Count.ForLoop(i => i + offset);
 
                         var biE = BlkIdx_gI_eR[iPart];
+                        int[] extTargCols = biE.Count.ForLoop(i => i + offset);
 
-                        ExternalRowsTemp.AccSubMatrixTo(1.0, Block, l1, targRows, bi, default(int[]));
+                        ExternalRowsTemp.AccSubMatrixTo(1.0, Block, l1, targRows, bi, default(int[]), biE, extTargCols);
                     }
 #if MATLAB_CHECK
                     Blocks.Add(Block);
