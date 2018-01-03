@@ -2666,6 +2666,20 @@ namespace ilPSP.LinSolvers {
                 default(int[]), default(int[]));
         }
 
+        /// <summary>
+        /// See <see cref="AccSubMatrixTo{V1, V2, V3, V4, V5, V6}(double, IMutableMatrixEx, V1, V2, V3, V4, V5, V6)"/>, with less paramters.
+        /// </summary>
+        public void AccSubMatrixTo<V1, V2, V3, V4>(
+            double alpha, IMutableMatrixEx Target,
+            V1 RowIndicesSource, V2 RowIndicesTarget,
+            V3 ColumnIndicesSource, V4 ColIndicesTarget)
+            where V1 : IEnumerable<int>
+            where V2 : IEnumerable<int>
+            where V3 : IEnumerable<int>
+            where V4 : IEnumerable<int>//
+        {
+            AccSubMatrixTo<V1, V2, V3, V4, int[], int[]>(alpha, Target, RowIndicesSource, RowIndicesTarget, ColumnIndicesSource, ColIndicesTarget, null, null);
+        }
 
         /// <summary>
         /// Extracts a submatrix from this matrix and accumulates it to another matrix.
