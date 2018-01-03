@@ -98,10 +98,10 @@ namespace BoSSS.Solution.Multigrid
             divVel = new MsrMatrix(Ppart, Upart, 1, 1);
             var PxP = new MsrMatrix(Ppart, Ppart, 1, 1);
 
-            M.AccSubMatrixTo(1.0, ConvDiff, Uidx, default(int[]), Uidx, default(int[]));
-            M.AccSubMatrixTo(1.0, pGrad, Uidx, default(int[]), Pidx, default(int[]));
-            M.AccSubMatrixTo(1.0, divVel, Pidx, default(int[]), Uidx, default(int[]));
-            M.AccSubMatrixTo(1.0, PxP, Pidx, default(int[]), Pidx, default(int[]));
+            M.AccSubMatrixTo(1.0, ConvDiff, Uidx, default(int[]), Uidx, default(int[]), default(int[]), default(int[]));
+            M.AccSubMatrixTo(1.0, pGrad, Uidx, default(int[]), Pidx, default(int[]), default(int[]), default(int[]));
+            M.AccSubMatrixTo(1.0, divVel, Pidx, default(int[]), Uidx, default(int[]), default(int[]), default(int[]));
+            M.AccSubMatrixTo(1.0, PxP, Pidx, default(int[]), Pidx, default(int[]), default(int[]), default(int[]));
 
             Mtx = M;
 
@@ -120,7 +120,7 @@ namespace BoSSS.Solution.Multigrid
 
 
             velMassMatrix = new MsrMatrix(Upart, Upart, 1, 1);
-            op.MassMatrix.AccSubMatrixTo(1.0, velMassMatrix, Uidx, default(int[]), Uidx, default(int[]));
+            op.MassMatrix.AccSubMatrixTo(1.0, velMassMatrix, Uidx, default(int[]), Uidx, default(int[]), default(int[]), default(int[]));
 
             switch (SchurOpt)
             {
