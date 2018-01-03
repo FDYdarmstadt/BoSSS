@@ -36,6 +36,7 @@ using BoSSS.Solution.Queries;
 using BoSSS.Foundation.Grid.RefElements;
 using NUnit.Framework;
 using BoSSS.Solution.Multigrid;
+using ilPSP.Connectors.Matlab;
 
 namespace ipPoisson {
 
@@ -66,6 +67,9 @@ namespace ipPoisson {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
+
+            BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
+            BatchmodeConnector.MatlabExecuteable = "C:\\cygwin\\bin\\bash.exe";
             
             _Main(args, false, "", delegate() {
                 Program p = new Program();
