@@ -68,8 +68,8 @@ namespace ipPoisson {
         /// <param name="args"></param>
         static void Main(string[] args) {
 
-            BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
-            BatchmodeConnector.MatlabExecuteable = "C:\\cygwin\\bin\\bash.exe";
+            //BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
+            //BatchmodeConnector.MatlabExecuteable = "C:\\cygwin\\bin\\bash.exe";
             
             _Main(args, false, "", delegate() {
                 Program p = new Program();

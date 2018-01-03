@@ -256,6 +256,11 @@ namespace BoSSS.Solution.Multigrid {
             var matlab = new ilPSP.Connectors.Matlab.BatchmodeConnector();
 #endif
 
+            //Mop.Clear();
+            //for(int i = Mop.RowPartitioning.i0; i < Mop.RowPartitioning.iE; i++) {
+            //    Mop[i, i] = i + 1;
+            //}
+
 
             // get cell blocks
             // ===============
@@ -361,9 +366,7 @@ namespace BoSSS.Solution.Multigrid {
                     var l2 = BlkIdx_lI_eR[iPart];
                     var LBBi0 = LocalBlocks_i0[iPart];
                     var LBBN = LocalBlocks_N[iPart];
-                    //var LEBidx = LocalizedExternalBlockIndices[iPart];
-                    //var LEBi0 = LocalizedExternalBlockI0[iPart];
-                    //var LEBn = LocalizedExternalBlockN[iPart];
+
 
                     int Jblock = bc.Length;
                     int anotherCounter = 0;
@@ -505,7 +508,7 @@ namespace BoSSS.Solution.Multigrid {
 
             // create solvers
             // ==============
-            Debugger.Launch();
+            
 
             {
                 blockSolvers = new ISparseSolver[NoOfSchwzBlocks];
@@ -550,7 +553,8 @@ namespace BoSSS.Solution.Multigrid {
 
                         var biE = BlkIdx_gI_eR[iPart];
                         int[] extTargCols = biE.Count.ForLoop(i => i + offset);
-
+                        
+                        Mop.AccSubMatrixTo(1.0, Block, bi, default(int[]), new int[0], default(int[]), biE, extTargCols);
                         ExternalRowsTemp.AccSubMatrixTo(1.0, Block, l1, targRows, bi, default(int[]), biE, extTargCols);
                     }
 #if MATLAB_CHECK

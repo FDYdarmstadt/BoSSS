@@ -2817,7 +2817,7 @@ namespace ilPSP.LinSolvers {
 
                             int iSrc = enuSrc.Current;
                             int iTrg = enuTrg.Current;
-                            if(!m_ColPartitioning.IsInLocalRange(iSrc))
+                            if(m_ColPartitioning.IsInLocalRange(iSrc) == true)
                                 throw new ArgumentException("External column indices are expected to be external.");
 
                             ExternalColIndexPermutation.Add(iSrc, iTrg);
