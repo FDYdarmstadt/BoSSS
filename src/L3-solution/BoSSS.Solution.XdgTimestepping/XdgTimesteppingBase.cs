@@ -417,7 +417,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         /// <param name="nonlinSolver"></param>
         /// <param name="linearSolver"></param>
-        protected string GetSolver(out NonlinearSolver nonlinSolver, out ISolverSmootherTemplate linearSolver) {
+        protected virtual string GetSolver(out NonlinearSolver nonlinSolver, out ISolverSmootherTemplate linearSolver) {
             nonlinSolver = null;
             linearSolver = null;
 
@@ -439,30 +439,23 @@ namespace BoSSS.Solution.XdgTimestepping {
                 // the nonlinear solvers:
                 // +++++++++++++++++++++++++++++++++++++++++++++
 
-                if (Config_LevelSetHandling != LevelSetHandling.Coupled_Iterative) {
-                    nonlinSolver = new FixpointIterator(
-                        this.AssembleMatrixCallback,
-                        this.MultigridBasis,
-                        this.Config_MultigridOperator) {
+                nonlinSolver = new FixpointIterator(
+                    this.AssembleMatrixCallback,
+                    this.MultigridBasis,
+                    this.Config_MultigridOperator) {
                         MaxIter = Config_MaxIterations,
                         MinIter = Config_MinIterations,
                         m_LinearSolver = Config_linearSolver,
                         m_SessionPath = SessionPath,
                         ConvCrit = Config_SolverConvergenceCriterion,
-                    };
-                } else {
-                    nonlinSolver = new CoupledFixpointIterator(
-                    this.AssembleMatrixCallback,
-                    this.MultigridBasis,
-                    this.Config_MultigridOperator,
-                    this.LevelSetIterationStep) {
-                        MaxIter = Config_MaxIterations,
-                        MinIter = Config_MinIterations,
-                        m_LinearSolver = Config_linearSolver,
-                        ConvCrit = Config_SolverConvergenceCriterion,
-                        CoupledIteration_Converged = LevelSetConvergenceReached,
-                    };
+                        CoupledIteration = this.LevelSetIterationStep
+                };
+
+                if (Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative && nonlinSolver.GetType() == typeof(FixpointIterator)) {
+                    //((FixpointIterator)nonlinSolver).CoupledIteration = this.LevelSetIterationStep;
+                    ((FixpointIterator)nonlinSolver).CoupledIteration_Converged = this.LevelSetConvergenceReached;
                 }
+
 
             } else {
 
