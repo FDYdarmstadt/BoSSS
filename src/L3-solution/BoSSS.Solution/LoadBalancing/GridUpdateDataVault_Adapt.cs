@@ -286,26 +286,43 @@ namespace BoSSS.Solution {
 
                     for(int j = 0; j < newJ; j++) {
                         int NoOfSpc =  lsTrk.Regions.GetNoOfSpecies(j);
+                        f.Coordinates.ClearRow(j);
 
                         if(TargMappingIdx[j] == null) {
                             // unchanged cell
                             Debug.Assert(ReDistDGCoords[j].Length == 1);
                             double[] ReDistDGCoords_jl = ReDistDGCoords[j][0];
-                            Debug.Assert(ReDistDGCoords_jl.Length == NoOfSpc*Np + NoOfSpc + 1);
-                            Debug.Assert(ReDistDGCoords_jl[0] == NoOfSpc);
+                            //Debug.Assert(ReDistDGCoords_jl.Length == NoOfSpc*Np + NoOfSpc + 1);
+                            //Debug.Assert(ReDistDGCoords_jl[0] == NoOfSpc);
+
+
+                            int NoOfSpcR = (int)(ReDistDGCoords_jl[0]); // Number of species received!
 
                             int c = 1;
-                            for(int iSpc = 0; iSpc < NoOfSpc; iSpc++) {
-#if DEBUG
+                            for(int iSpcR = 0; iSpcR < NoOfSpcR; iSpcR++) { // loop over received species...
+                                                                            //#if DEBUG
+                                                                            //                                SpeciesId rcvSpc;
+                                                                            //                                rcvSpc.cntnt = (int) ReDistDGCoords_jl[c];
+                                                                            //                                Debug.Assert(rcvSpc == lsTrk.Regions.GetSpeciesIdFromIndex(j, iSpc));
+                                                                            //#endif
                                 SpeciesId rcvSpc;
                                 rcvSpc.cntnt = (int) ReDistDGCoords_jl[c];
-                                Debug.Assert(rcvSpc == lsTrk.Regions.GetSpeciesIdFromIndex(j, iSpc));
-#endif
                                 c++;
+                                int iSpcTarg = lsTrk.Regions.GetSpeciesIndex(rcvSpc, j);
 
-                                for(int n = 0; n < Np; n++) {
-                                    f.Coordinates[j, n + Np*iSpc] = ReDistDGCoords_jl[c];
-                                    c++;
+
+                                if(iSpcTarg >= 0) {
+                                    for(int n = 0; n < Np; n++) {
+                                        f.Coordinates[j, n + Np * iSpcTarg] = ReDistDGCoords_jl[c];
+                                        c++;
+                                    }
+                                } else {
+                                    double testNorm = 0;
+                                    for(int n = 0; n < Np; n++) {
+                                        testNorm += ReDistDGCoords_jl[c].Pow2();
+                                        c++;
+                                    }
+
                                 }
                             }
                             Debug.Assert(c == ReDistDGCoords_jl.Length);
@@ -326,12 +343,12 @@ namespace BoSSS.Solution {
                                     c++;
 
                                     int iSpc = lsTrk.Regions.GetSpeciesIndex(rcvSpc, j); // species index in new cell 
-                                    Debug.Assert(iSpcRecv == iSpc || L > 1);
+                                    //Debug.Assert(iSpcRecv == iSpc || L > 1);
 
                                     int N0rcv = c;
                                     c += Np;
-
-                                    DoCellj(j, xf, NewGrid, pDeg, TargMappingIdx[j], ReDistDGCoords[j], l, m_Old2NewCorr, N0rcv, Np * iSpc, Np, temp, acc);
+                                    if(iSpc >= 0)
+                                        DoCellj(j, xf, NewGrid, pDeg, TargMappingIdx[j], ReDistDGCoords[j], l, m_Old2NewCorr, N0rcv, Np * iSpc, Np, temp, acc);
                                 }
                                 Debug.Assert(c == ReDistDGCoords_jl.Length);
                             }
@@ -393,14 +410,42 @@ namespace BoSSS.Solution {
 
         }
 
-
-
-
         /// <summary>
         /// Restores the state of the level-set tracker after re-meshing.
         /// </summary>
         protected override int RestoreTracker() {
-            throw new NotImplementedException();
+            using(new FuncTrace()) {
+                if(m_NewTracker != null) {
+                    m_NewTracker.IncreaseHistoryLength(m_LsTrkPrivData.HistoryLength);
+                    int NoLs = m_NewTracker.NoOfLevelSets;
+                    Basis[] NewLSbasis = m_NewTracker.LevelSets.Select(LS => ((LevelSet)LS).Basis).ToArray();
+
+                    for(int iH = -m_LsTrkPrivData.PopultatedHistoryLength + 1; iH <= 1; iH++) {
+
+                        SinglePhaseField[] tmpLS = new SinglePhaseField[NoLs];
+                        for(int iLS = 0; iLS < NoLs; iLS++) {
+                            tmpLS[iLS] = new SinglePhaseField(NewLSbasis[iLS], "tmpLS#" + iLS);
+                            this.RestoreDGField(tmpLS[iLS], base.GetLSbackupName(iH, iLS));
+                        }
+
+                        m_NewTracker.ReplaceCurrentTimeLevel(tmpLS, m_LsTrkPrivData.Versions[1 - iH]);
+
+                        if(iH < 1) {
+                            m_NewTracker.PushStacks();
+                        }
+                    }
+                    m_NewTracker.ObserverHack();
+
+                    if(m_NewTracker.PopulatedHistoryLength < m_LsTrkPrivData.PopultatedHistoryLength)
+                        throw new ApplicationException();
+                    if(m_NewTracker.HistoryLength < m_LsTrkPrivData.HistoryLength)
+                        throw new ApplicationException();
+
+                    return m_LsTrkPrivData.Versions[0];
+                } else {
+                    return int.MinValue;
+                }
+            }
         }
     }
 }

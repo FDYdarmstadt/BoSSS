@@ -113,7 +113,15 @@ namespace CNS {
         /// <summary>
         /// Simulation time after restart (needed for time stepping)
         /// </summary>
-        protected double startTime = 0.0;
+        protected double StartTime = 0.0;
+
+        /// <summary>
+        /// Simulation timestep restart (needed for time stepping)
+        /// </summary>
+        public int TimestepNumber {
+            get;
+            protected set;
+        }
 
         /// <summary>
         /// Standard constructor, <see cref="Application"/>
@@ -158,7 +166,7 @@ namespace CNS {
         /// <see cref="CNSControl.DomainType"/>. Additionally, it creates
         /// the associated time stepper
         /// </summary>
-        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase loadBalancingData) {
+        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase gridUpdateData) {
             FullOperator = operatorFactory.GetJoinedOperator();
             
             TimeStepper = Control.ExplicitScheme.Instantiate(
@@ -170,10 +178,10 @@ namespace CNS {
                 this);
 
             // Resets simulation time after a restart
-            TimeStepper.ResetTime(startTime);
+            TimeStepper.ResetTime(StartTime, TimestepNumber);
 
             // Configure residual handling
-            if (loadBalancingData == null) {
+            if (gridUpdateData == null) {
                 // Do not change these settings upon repartitioning
                 ResLogger.WriteResidualsToTextFile = true;
                 ResLogger.WriteResidualsToConsole = false;
@@ -220,12 +228,11 @@ namespace CNS {
 
                 Exception e = null;
                 try {
+                    dt = TimeStepper.Perform(dt);
                 } catch (Exception ee) {
                     e = ee;
                 }
                 e.ExceptionBcast();
-
-                dt = TimeStepper.Perform(dt);
 
                 if (TimestepNo % printInterval == 0) {
                     Console.WriteLine(" done. PhysTime: {0:0.#######E-00}, dt: {1:0.###E-00}", phystime, dt);
@@ -318,8 +325,8 @@ namespace CNS {
         /// Sets the simulation time of the restart (needed for time stepping)
         /// and recomputes all derived variables
         /// </summary>
-        public override void PostRestart(double time) {
-            this.startTime = time;
+        public override void PostRestart(double time, TimestepNumber timestep) {
+            this.StartTime = time;
 
             if (SpeciesMap is ImmersedSpeciesMap ibmMap) {
                 LsTrk = ibmMap.Tracker;

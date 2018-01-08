@@ -339,6 +339,31 @@ namespace BoSSS.Solution.Multigrid {
             return S;
         }
 
+        public int GlobalUniqueIndex(int ifld, int jCell, int n) {
+            Debug.Assert(ifld >= 0 && ifld < this.m_DgDegree.Length);
+            Debug.Assert(jCell >= 0 && jCell < (this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells + this.AggGrid.iLogicalCells.NoOfExternalCells));
+            Debug.Assert(n >= 0 && n < this.AggBasis[ifld].GetLength(jCell, this.m_DgDegree[ifld]));
+
+            int Jup = this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
+            if(jCell < Jup) {
+                return this.i0 + LocalUniqueIndex(ifld, jCell, n);
+            } else {
+                if(this.m_i0 == null) {
+                    long jGlb = this.AggGrid.iParallel.GlobalIndicesExternalCells[jCell - Jup];
+                    int S = ((int)jGlb) * this.MaximalLength;
+                    for(int iF = 0; iF < ifld; iF++)
+                        S += this.AggBasis[iF].GetLength(jCell, this.m_DgDegree[iF]);
+                    S += n;
+                    return S;
+                } else {
+                    // tipp MPI-Exchange von 'this.i0'
+                    throw new NotImplementedException("todo");
+                }
+
+            }
+
+        }
+
         /// <summary>
         /// 
         /// </summary>
