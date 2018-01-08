@@ -829,6 +829,7 @@ namespace BoSSS.Application.IBM_Solver {
 
                 this.LsTrk.UpdateTracker();
                 this.DGLevSet.IncreaseHistoryLength(1);
+                this.LsTrk.PushStacks();
                 this.DGLevSet.Push();
 
             }
@@ -1030,7 +1031,7 @@ namespace BoSSS.Application.IBM_Solver {
                 CellPerfomanceClasses[j] = 2;
         }
 
-        public override void PostRestart(double time) {
+        public override void PostRestart(double time, TimestepNumber timestep) {
             // // Find path to PhysicalData.txt
             // var fsDriver = this.DatabaseDriver.FsDriver;
             // string pathToOldSessionDir = System.IO.Path.Combine(

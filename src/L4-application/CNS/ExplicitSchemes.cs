@@ -174,7 +174,8 @@ namespace CNS {
                         equationSystem.GetJoinedOperator().CFLConstraints,
                         reclusteringInterval: control.ReclusteringInterval,
                         fluxCorrection: control.FluxCorrection,
-                        saveToDBCallback: program.SaveToDatabase);
+                        saveToDBCallback: program.SaveToDatabase,
+                        initialTimestepNumber: program.TimestepNumber);
                     break;
 
                 case ExplicitSchemes.LTS:

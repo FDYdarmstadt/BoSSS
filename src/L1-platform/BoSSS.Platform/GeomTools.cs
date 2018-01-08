@@ -815,6 +815,49 @@ namespace BoSSS.Platform.Utils.Geom {
         }
     }
 
+    /// <summary>
+    /// 2D Rotation about the origin
+    /// </summary>
+    public class Rotation2D {
+
+        /// <summary>
+        /// Initializes the Rotation Matrix
+        /// </summary>
+        /// <param name="phi"></param>
+        public Rotation2D(double phi) {
+            cos = Math.Cos(phi);
+            sin = Math.Sin(phi);
+        }
+
+        private double cos;
+        private double sin;
+
+        /// <summary>
+        /// Rotate the Coordinate
+        /// </summary>
+        /// <param name="X">input coordinate</param>
+        /// <returns>rotated coordinate </returns>
+        public double[] Transform(double[] X) {
+            if (X.Length != 2) { throw new ArithmeticException("Only 2D!"); };
+            double x = X[0] * cos - X[1] * sin;
+            double y = X[0] * sin + X[1] * cos;
+            return new double[2] { x, y };
+        }
+
+        /// <summary>
+        /// Rotate the Coordinate about the angle phi
+        /// </summary>
+        /// <param name="X">input coordinate</param>
+        /// <param name="phi">rotation angle</param>
+        /// <returns>rotated coordinate </returns>
+        public double[] Transform(double[] X, double phi) {
+            if (X.Length != 2) { throw new ArithmeticException("Only 2D!"); };
+            double x = X[0] * Math.Cos(phi) - X[1] * Math.Sin(phi);
+            double y = X[0] * Math.Sin(phi) + X[1] * Math.Cos(phi);
+            return new double[2] { x, y };
+        }
+    }
+
     public static class SimpleGeoTools {
         /// <summary>
         /// Calculates the cross product of two vectors in 2D
@@ -835,9 +878,10 @@ namespace BoSSS.Platform.Utils.Geom {
         /// <returns>Distance to the line</returns>
         public static double DistanceFromPointToLine(double[] X, double[] anyPointOnLine, double[] directionVector) {
             double[] X_minus_pointOnLine = new double[] { X[0] - anyPointOnLine[0], X[1] - anyPointOnLine[1] };
-            double distance = CrossProduct2D(directionVector, X_minus_pointOnLine) / Math.Sqrt(Math.Pow(directionVector[0], 2) + Math.Pow(directionVector[1], 2));
+            //double distance = CrossProduct2D(directionVector, X_minus_pointOnLine) / Math.Sqrt(Math.Pow(directionVector[0], 2) + Math.Pow(directionVector[1], 2));
+            double distance = CrossProduct2D(X_minus_pointOnLine, directionVector) / Math.Sqrt(Math.Pow(directionVector[0], 2) + Math.Pow(directionVector[1], 2));
 
-            return -distance;
+            return distance;
         }
 
         /// <summary>

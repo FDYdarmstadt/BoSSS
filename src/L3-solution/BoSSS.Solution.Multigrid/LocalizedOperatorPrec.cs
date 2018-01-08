@@ -124,19 +124,19 @@ namespace BoSSS.Solution.Multigrid
             var leftChangeBasesVel = new MsrMatrix(Upart, Upart, 1, 1);
             var rightChangeBasesVel = new MsrMatrix(Upart, Upart, 1, 1);
 
-            op.MassMatrix.AccSubMatrixTo(1.0, VelocityMass, Uidx, default(int[]), Uidx, default(int[]));
+            op.MassMatrix.AccSubMatrixTo(1.0, VelocityMass, Uidx, default(int[]), Uidx, default(int[]), default(int[]), default(int[]));
 
-            op.LeftChangeOfBasis.AccSubMatrixTo(1.0, leftChangeBasesVel, Uidx, default(int[]), Uidx, default(int[]));
-            op.RightChangeOfBasis.AccSubMatrixTo(1.0, rightChangeBasesVel, Uidx, default(int[]), Uidx, default(int[]));
+            op.LeftChangeOfBasis.AccSubMatrixTo(1.0, leftChangeBasesVel, Uidx, default(int[]), Uidx, default(int[]), default(int[]), default(int[]));
+            op.RightChangeOfBasis.AccSubMatrixTo(1.0, rightChangeBasesVel, Uidx, default(int[]), Uidx, default(int[]), default(int[]), default(int[]));
 
             var temp = MsrMatrix.Multiply(leftChangeBasesVel, LocalMatrix);
             LocalMatrix = MsrMatrix.Multiply(temp, rightChangeBasesVel);
 
             var M = op.OperatorMatrix;
 
-            M.AccSubMatrixTo(1.0, ConvDiff, Uidx, default(int[]), Uidx, default(int[]));
-            M.AccSubMatrixTo(1.0, pGrad, Uidx, default(int[]), Pidx, default(int[]));
-            M.AccSubMatrixTo(1.0, divVel, Pidx, default(int[]), Uidx, default(int[]));
+            M.AccSubMatrixTo(1.0, ConvDiff, Uidx, default(int[]), Uidx, default(int[]), default(int[]), default(int[]));
+            M.AccSubMatrixTo(1.0, pGrad, Uidx, default(int[]), Pidx, default(int[]), default(int[]), default(int[]));
+            M.AccSubMatrixTo(1.0, divVel, Pidx, default(int[]), Uidx, default(int[]), default(int[]), default(int[]));
 
             LocalMatrix.SaveToTextFileSparse("LocalConvDiffMatrix");
             ConvDiff.SaveToTextFileSparse("ConvDiff");

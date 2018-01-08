@@ -332,7 +332,7 @@ namespace BoSSS.Solution.Control {
         /// <summary>
         /// Algorithm for grid partitioning.
         /// </summary>
-        public GridPartType GridPartType = GridPartType.ParMETIS;
+        public GridPartType GridPartType = GridPartType.METIS;
 
         /// <summary>
         /// grid partitioning options
@@ -488,6 +488,12 @@ namespace BoSSS.Solution.Control {
             get;
             set;
         }
+
+        /// <summary>
+        /// If true, a redistribution will be attempted BEFORE the first
+        /// time-step starts
+        /// </summary>
+        public bool DynamicLoadBalancing_RedistributeAtStartup = false;
 
         /// <summary>
         /// A method that creates a new estimator for the runtime cost of individual cells

@@ -17,8 +17,10 @@ limitations under the License.
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Threading;
 using BoSSS.Solution;
+using ilPSP.Utils;
 using NUnit.Framework;
 
 namespace CNS.Tests {
@@ -68,6 +70,14 @@ namespace CNS.Tests {
             }
 
             assertions.ForEach(a => a());
+        }
+
+        protected static int GetTimeStepNumber(Program solver) {
+            solver.QueryResultTable.FormatTable(out string[] KeyColumnNames, out string[] ValueColumnNames, out object[,] KeyTable, out object[,] ValueTable);
+            int iCol = Array.IndexOf(KeyColumnNames, "Timestep");
+            int iTimeStep = (int)(KeyTable.GetColumn(iCol).Last());
+
+            return iTimeStep;
         }
     }
 }

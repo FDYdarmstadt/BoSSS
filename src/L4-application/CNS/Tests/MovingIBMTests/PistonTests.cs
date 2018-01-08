@@ -281,7 +281,7 @@ namespace CNS.Tests.MovingIBMTests {
                 return grid;
             };
 
-            c.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
             c.LevelSetQuadratureOrder = 10;
             c.LevelSetBoundaryTag = "adiabaticSlipWall";
             c.AgglomerationThreshold = agglomerationThreshold;
