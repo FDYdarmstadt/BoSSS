@@ -962,7 +962,9 @@ namespace BoSSS.Solution.XdgTimestepping {
                         } else {
                             oldAggTrsh = null;
                         }
-                        Debug.Assert(m_Stack_MassMatrix.Where(mm => mm != null).Count() == m_PopulatedStackDepth);
+                        if (this.Config_LevelSetHandling != LevelSetHandling.Coupled_Iterative) {
+                            Debug.Assert(m_Stack_MassMatrix.Where(mm => mm != null).Count() == m_PopulatedStackDepth);
+                        }
 
                         //TS++;
 
