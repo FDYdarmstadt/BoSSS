@@ -189,57 +189,52 @@ namespace BoSSS.Application.IBM_Solver
             C.MaxSolverIterations = 50;
             C.Solver_ConvergenceCriterion = 1E-5;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
+            C.NonlinearMethod = Solution.XdgTimestepping.NonlinearSolverMethod.Newton;
 
 
             // Choosing the Preconditioner
             ISolverSmootherTemplate Prec;
 
-            Prec = new SchurPrecond()
-            {
-                SchurOpt = SchurPrecond.SchurOptions.decoupledApprox
-            };
+            //Prec = new SchurPrecond()
+            //{
+            //    SchurOpt = SchurPrecond.SchurOptions.decoupledApprox
+            //};
 
             //Prec = new SchurPrecond()
             //{
             //    SchurOpt = SchurPrecond.SchurOptions.SIMPLE
             //};
 
-            //Prec = new Schwarz()
-            //{
-            //    m_BlockingStrategy = new Schwarz.METISBlockingStrategy()
-            //    {
-            //        NoOfParts = 5,
-            //    },
-            //    CoarseSolver = new DirectSolver()
-            //    {
-            //        WhichSolver = DirectSolver._whichSolver.MUMPS
-            //    },
-            // overlap =1
-            //};
+            C.LinearSolver = new Schwarz() {
+                m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
+                    NoOfParts = 4,
+                },
+                //CoarseSolver = new DirectSolver() {
+                //    WhichSolver = DirectSolver._whichSolver.MUMPS
+                //},
+                Overlap = 1
+            };
 
 
-            //Prec = new Schwarz()
-            //{
-            //    m_BlockingStrategy = new Schwarz.MultigridBlocks()
-            //    {
-            //        Depth = 5,
+            //C.LinearSolver = new Schwarz() {
+            //    m_BlockingStrategy = new Schwarz.MultigridBlocks() {
+            //        Depth = 2,
             //    },
-            //    CoarseSolver = new DirectSolver()
-            //    {
-            //        WhichSolver = DirectSolver._whichSolver.MUMPS
-            //    },
-            //    overlap = 1
+            //    //CoarseSolver = new DirectSolver() {
+            //    //    WhichSolver = DirectSolver._whichSolver.MUMPS
+            //    //},
+            //    Overlap = 0
             //};
 
 
 
-            C.LinearSolver = new SoftGMRES()
-            {
-                MaxKrylovDim = C.MaxKrylovDim,
-                Precond = Prec,
-                m_Tolerance = 1E-6,
-                m_MaxIterations = 50
-            };       
+            //C.LinearSolver = new SoftGMRES()
+            //{
+            //    MaxKrylovDim = C.MaxKrylovDim,
+            //    Precond = Prec,
+            //    m_Tolerance = 1E-6,
+            //    m_MaxIterations = 50
+            //};       
 
             // Timestepping
             // ============
@@ -250,7 +245,7 @@ namespace BoSSS.Application.IBM_Solver
             C.dtMin = dt;
             C.Endtime = 10000000;
             C.NoOfTimesteps = 1;
-            C.NoOfMultigridLevels = 1;
+            C.NoOfMultigridLevels = 3;
 
             return C;
         }
