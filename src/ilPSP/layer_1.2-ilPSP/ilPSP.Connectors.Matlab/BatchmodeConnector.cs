@@ -54,7 +54,14 @@ namespace ilPSP.Connectors.Matlab {
         /// <summary>
         /// the rank of the current process in the MPI-WORLD communicator
         /// </summary>
-        int Rank;
+        int Rank {
+            get {
+                var comm = csMPI.Raw._COMM.WORLD;
+                int rnk;
+                csMPI.Raw.Comm_Rank(comm, out rnk);
+                return rnk;
+            }
+        }
 
 
         private string get_program_path(string pname) {
@@ -121,7 +128,6 @@ namespace ilPSP.Connectors.Matlab {
         /// </param>
         public BatchmodeConnector(string WorkingPath = null) {
             ilPSP.MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
-            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out Rank);
             this.m_Flav = Flav;
 
             // create/check working path
@@ -306,10 +312,15 @@ namespace ilPSP.Connectors.Matlab {
         /// <summary>
         /// Transfers a sparse matrix to MATLAB.
         /// </summary>
-        /// <param name="M">matrix to transfer</param>
+        /// <param name="M">
+        /// Matrix to transfer;
+        /// If the matrix lives only on a sub-communicator of <see cref="IMPI_CommConstants.WORLD"/>, 
+        /// this should be null on those processors which do not belong to the world-communicator.
+        /// </param>
         /// <param name="MatlabName">the name which <paramref name="M"/> should have in the MATLAB session</param>
         public void PutSparseMatrix(IMutableMatrixEx M, string MatlabName) {
-            ilPSP.MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
+            var comm = csMPI.Raw._COMM.WORLD;
+            ilPSP.MPICollectiveWatchDog.Watch(comm);
             if (Executed == true)
                 throw new InvalidOperationException("No Data can be put after Execute() has been called..");
 
@@ -318,7 +329,10 @@ namespace ilPSP.Connectors.Matlab {
                 filepath = Path.Combine(WorkingDirectory.FullName, MatlabName);
             else
                 filepath = null;
-            M.SaveToTextFileSparse(filepath);
+            filepath = filepath.MPIBroadcast(0);
+            if(M != null) // if M is on a sub-communicator of WORLD, this should be null
+                M.SaveToTextFileSparse(filepath);
+            
             if (Rank == 0)
                 CreatedFiles.Add(filepath);
 
@@ -334,7 +348,8 @@ namespace ilPSP.Connectors.Matlab {
         /// session
         /// </param>
         public void PutMatrix(IMatrix M, string MatlabName) {
-            ilPSP.MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
+            var comm = csMPI.Raw._COMM.WORLD;
+            ilPSP.MPICollectiveWatchDog.Watch(comm);
             if (Executed) {
                 throw new InvalidOperationException("No Data can be put after Execute() has been called..");
             }
@@ -351,14 +366,18 @@ namespace ilPSP.Connectors.Matlab {
             Cmd(MatlabName + " = dlmread('" + TranslatePath(filepath) + "');");
         }
 
+        
+
         /// <summary>
         /// transfers a vector <paramref name="vec"/> to MATLAB;
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="vec">vector to transfer</param>
         /// <param name="MatlabName">the name which <paramref name="vec"/> should have in the MATLAB session</param>
+        /// <param name="comm">MPI communicator</param>
         public void PutVector<T>(T vec, string MatlabName) where T : IEnumerable<double> {
-            ilPSP.MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
+            var comm = csMPI.Raw._COMM.WORLD;
+            ilPSP.MPICollectiveWatchDog.Watch(comm);
             if (Executed == true)
                 throw new InvalidOperationException("No commands can be added after Execute() has been called.");
 
@@ -367,12 +386,13 @@ namespace ilPSP.Connectors.Matlab {
                 filepath = Path.Combine(WorkingDirectory.FullName, MatlabName);
             else
                 filepath = null;
-            vec.SaveToTextFile(filepath);
+            vec.SaveToTextFile(filepath, comm);
             if (Rank == 0)
                 CreatedFiles.Add(filepath);
 
             Cmd(MatlabName + " = dlmread('" + TranslatePath(filepath) + "');");
         }
+
 
         /// <summary>
         /// Imports a matrix from MATLAB.
@@ -394,7 +414,8 @@ namespace ilPSP.Connectors.Matlab {
         /// 5. Optionally, the result can be obtained from <see cref="OutputObjects"/>.
         /// </remarks>
         public void GetMatrix(IMatrix M, string MatlabName) {
-            ilPSP.MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
+            var comm = csMPI.Raw._COMM.WORLD;
+            ilPSP.MPICollectiveWatchDog.Watch(comm);
             if (Executed == true)
                 throw new InvalidOperationException("No commands can be added after Execute() has been called.");
 
@@ -418,7 +439,8 @@ namespace ilPSP.Connectors.Matlab {
         /// Quick hack to return the 2nd output argument from output from `"[V, C] = voronoin(...);"`.
         /// </summary>
         public void GetStaggeredIntArray(int[][] A, string MatlabName) {
-            ilPSP.MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
+            var comm = csMPI.Raw._COMM.WORLD;
+            ilPSP.MPICollectiveWatchDog.Watch(comm);
             if (Executed == true)
                 throw new InvalidOperationException("No commands can be added after Execute() has been called.");
             if (A == null)
@@ -471,6 +493,7 @@ namespace ilPSP.Connectors.Matlab {
         /// </summary>
         /// <param name="MatlabCommand">the MATLAB command</param>
         public void Cmd(string MatlabCommand) {
+            ilPSP.MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
             if (Executed == true)
                 throw new InvalidOperationException("No commands can be added after Execute has been called.");
 
@@ -484,6 +507,7 @@ namespace ilPSP.Connectors.Matlab {
         /// </summary>
         /// <param name="MatlabCommand">the MATLAB command</param>
         public void Cmd(string MatlabCommand, params object[] formatParams) {
+            ilPSP.MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
             if (Executed == true) {
                 throw new InvalidOperationException(
                     "No commands can be added after Execute has been called.");
@@ -512,7 +536,7 @@ namespace ilPSP.Connectors.Matlab {
             if (Executed == true)
                 throw new InvalidOperationException("Execute can be called only once.");
 
-
+            int Rank = this.Rank;
 
             // run MATLAB
             // ==========
