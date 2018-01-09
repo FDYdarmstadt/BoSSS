@@ -42,10 +42,6 @@ namespace ilPSP.LinSolvers.PARDISO {
         /// ctor
         /// </summary>
         public PARDISOSolver() {
-            MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
-            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
-            //if (rank == 0)
-            //    Debugger.Launch();
         }
         
         /// <summary>
@@ -97,6 +93,16 @@ namespace ilPSP.LinSolvers.PARDISO {
         /// PARDISO matrix
         /// </summary>
         Matrix m_PardisoMatrix;
+
+
+        /// <summary>
+        /// Communicator on which the solver is defined.
+        /// </summary>
+        public MPI_Comm MpiComm {
+            get {
+                return m_OrgMatrix.MPI_Comm;
+            }
+        }
         
         /// <summary>
         /// converts <paramref name="M"/> into suitable structures for PARDISO;
@@ -107,6 +113,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                 throw new ApplicationException("matrix is already defined. 'DefineMatrix'-method can be invoked only once in the lifetime of this object.");
 
             m_OrgMatrix = M;
+            MPICollectiveWatchDog.Watch(this.MpiComm);
         }
 
         Version m_Version = Version.MKL;
@@ -214,7 +221,8 @@ namespace ilPSP.LinSolvers.PARDISO {
         public SolverResult Solve<Tdiag, Tunknowns, Trhs>(double Scale, Tdiag d, Tunknowns x, Trhs rhs)
             where Tdiag : System.Collections.Generic.IList<double>
             where Tunknowns : System.Collections.Generic.IList<double>
-            where Trhs : System.Collections.Generic.IList<double> {
+            where Trhs : System.Collections.Generic.IList<double> // 
+        {
 
             //
             using (var tr = new FuncTrace()) {
@@ -295,16 +303,16 @@ namespace ilPSP.LinSolvers.PARDISO {
                         PARDISODispose();
                     }
 
-                    csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+                    csMPI.Raw.Barrier(MpiComm);
                     unsafe {
                         bool snd = r.Converged;
-                        csMPI.Raw.Bcast((IntPtr)(&snd), 1, csMPI.Raw._DATATYPE.BYTE, 0, csMPI.Raw._COMM.WORLD);
+                        csMPI.Raw.Bcast((IntPtr)(&snd), 1, csMPI.Raw._DATATYPE.BYTE, 0, MpiComm);
                         r.Converged = snd;
                     }
 
                     ScatterFromProc0(_x, gath_x);
 
-                    csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+                    csMPI.Raw.Barrier(MpiComm);
 
                     // write back / return
                     if(x.GetType() != typeof(double[])) {
@@ -414,32 +422,47 @@ namespace ilPSP.LinSolvers.PARDISO {
         /// </param>
         private void ScatterFromProc0(double[] __x, double[] _x) {
             int size, rank;
-            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
-            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
+            csMPI.Raw.Comm_Size(this.MpiComm, out size);
+            csMPI.Raw.Comm_Rank(this.MpiComm, out rank);
+            Debug.Assert(size == m_OrgMatrix.RowPartitioning.MpiSize);
+            Debug.Assert(size == m_OrgMatrix.ColPartition.MpiSize);
+            Debug.Assert(rank == m_OrgMatrix.RowPartitioning.MpiRank);
+            Debug.Assert(rank == m_OrgMatrix.ColPartition.MpiRank);
+
+            Debug.Assert(__x == null || rank == 0);
 
             if (size > 1) {
                 // distribute solution to other processors
                 // +++++++++++++++++++++++++++++++++++++++
 
-                if (rank == 0) {
-                    Array.Copy(_x, 0, __x, 0, m_OrgMatrix.RowPartitioning.LocalLength);
-
-                    unsafe {
-                        fixed (double* px = &_x[0]) {
-                            for (int targ_rank = 1; targ_rank < size; targ_rank++) {
-                                csMPI.Raw.Send((IntPtr)(px + m_OrgMatrix.RowPartitioning.GetI0Offest(targ_rank)), m_OrgMatrix.RowPartitioning.GetLocalLength(targ_rank), csMPI.Raw._DATATYPE.DOUBLE, targ_rank, 4444 + targ_rank, csMPI.Raw._COMM.WORLD);
-                            }
-                        }
-                    }
-
-                } else {
-                    unsafe {
-                        fixed (double* px = &__x[0]) {
-                            MPI_Status _st;
-                            csMPI.Raw.Recv((IntPtr)px, m_OrgMatrix.RowPartitioning.LocalLength, csMPI.Raw._DATATYPE.DOUBLE, 0, 4444 + rank, csMPI.Raw._COMM.WORLD, out _st);
-                        }
-                    }
+                int[] SendCounts = new int[size];
+                int[] Displ = new int[size];
+                for(int r = 0; r < size; r++) {
+                    SendCounts[r] = m_OrgMatrix.RowPartitioning.GetLocalLength(r);
+                    Displ[r] = m_OrgMatrix.RowPartitioning.GetI0Offest(r);
                 }
+
+
+                unsafe
+                {
+                    fixed(int* pSendCounts = SendCounts, pDispl = Displ) {
+                        fixed (double* pSend = __x, pRecv = _x) {
+                            csMPI.Raw.Scatterv(
+                            (IntPtr)pSend,
+                            (IntPtr)pSendCounts,
+                            (IntPtr)pDispl,
+                            csMPI.Raw._DATATYPE.INT,
+                            (IntPtr)pRecv,
+                            SendCounts[rank],
+                            csMPI.Raw._DATATYPE.INT,
+                            0,
+                            this.MpiComm);
+                        }
+                    }
+
+                }
+
+
             } else {
                 if (!object.ReferenceEquals(__x, _x)) {
                     int L = __x.Length;
@@ -460,39 +483,28 @@ namespace ilPSP.LinSolvers.PARDISO {
         /// <param name="_b">gathered solution vectors</param>
         private void GatherOnProc0( double[] __x, double[] __b, out double[] _x, out double[] _b) {
             int size, rank;
-            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
-            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
+            csMPI.Raw.Comm_Size(this.MpiComm, out size);
+            csMPI.Raw.Comm_Rank(this.MpiComm, out rank);
+            Debug.Assert(size == m_OrgMatrix.RowPartitioning.MpiSize);
+            Debug.Assert(size == m_OrgMatrix.ColPartition.MpiSize);
+            Debug.Assert(rank == m_OrgMatrix.RowPartitioning.MpiRank);
+            Debug.Assert(rank == m_OrgMatrix.ColPartition.MpiRank);
+
+
+            // This is bad style: 
+            // Driver for the driver for the driver...
 
             if (size > 1) {
                 // gather rhs on processor 0
                 // +++++++++++++++++++++++++
 
-                if (rank == 0) {
-                    _x = new double[m_OrgMatrix.RowPartitioning.TotalLength];
-                    _b = new double[m_OrgMatrix.RowPartitioning.TotalLength];
-
-                    Array.Copy(__b, 0, _b, 0, m_OrgMatrix.RowPartitioning.LocalLength);
-
-                    unsafe {
-                        fixed (double* pb = &_b[0]) {
-                            for (int rcv_rank = 1; rcv_rank < size; rcv_rank++) {
-                                MPI_Status stat;
-                                csMPI.Raw.Recv((IntPtr)(pb + m_OrgMatrix.RowPartitioning.GetI0Offest(rcv_rank)), m_OrgMatrix.RowPartitioning.GetLocalLength(rcv_rank), csMPI.Raw._DATATYPE.DOUBLE, rcv_rank, 342346 + rcv_rank, csMPI.Raw._COMM.WORLD, out stat);
-                            }
-                        }
-                    }
-
-                } else {
-                    // send my part to P0
-                    unsafe {
-                        fixed (double* pb = &__b[0]) {
-                            csMPI.Raw.Send((IntPtr)pb, m_OrgMatrix.RowPartitioning.LocalLength, csMPI.Raw._DATATYPE.DOUBLE, 0, 342346 + rank, csMPI.Raw._COMM.WORLD);
-                        }
-                    }
-
-                    _x = null;
-                    _b = null;
+                int[] RcvCounts = new int[size];
+                for(int r = 0; r < size; r++) {
+                    RcvCounts[r] = m_OrgMatrix.RowPartitioning.GetLocalLength(r);
                 }
+
+                _x = MPIExtensions.MPIGatherv(__x, RcvCounts, 0, this.MpiComm);
+                _b = MPIExtensions.MPIGatherv(__b, RcvCounts, 0, this.MpiComm);
             } else {
                 _x = __x;
                 _b = __b;
@@ -511,7 +523,7 @@ namespace ilPSP.LinSolvers.PARDISO {
 
 
                 int rank;
-                csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
+                csMPI.Raw.Comm_Rank(MpiComm, out rank);
                 if (rank == 0) {
 #if DEBUG
                     double[] aClone = (double[])m_PardisoMatrix.a.Clone();

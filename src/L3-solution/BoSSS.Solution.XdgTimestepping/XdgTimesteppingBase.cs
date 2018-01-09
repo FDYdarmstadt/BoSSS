@@ -230,6 +230,11 @@ namespace BoSSS.Solution.XdgTimestepping {
         public int Config_MaxIterations = 1000;
 
         /// <summary>
+        /// Under relaxation factor for iterative solver.
+        /// </summary>
+        public double Config_UnderRelax = 1.0;
+
+        /// <summary>
         /// Session path for writing in database
         /// </summary>
         public string SessionPath = "";
@@ -507,6 +512,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                                 m_LinearSolver = Config_linearSolver,
                                 m_SessionPath = SessionPath,
                                 ConvCrit = Config_SolverConvergenceCriterion,
+                        UnderRelax = Config_UnderRelax
                             };
                             break;
 

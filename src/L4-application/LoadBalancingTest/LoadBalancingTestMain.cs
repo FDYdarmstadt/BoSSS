@@ -325,7 +325,8 @@ namespace BoSSS.Application.LoadBalancingTest {
                 GridPartType.none,
                 "",
                 imbalanceThreshold: 0.0,
-                Period: 3);
+                Period: 3,
+                redistributeAtStartup: false);
 
             
 

@@ -693,7 +693,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
             // ----------------
             m_EdgeRefElements = new RefElement[m_ClassNameOfEdgeRefElement.Length];
-            for (int i = 0; i < m_RefElements.Length; i++) {
+            for (int i = 0; i < m_EdgeRefElements.Length; i++) {
                 Type type = GetRefElementType(m_ClassNameOfEdgeRefElement[i]);
                 PropertyInfo inst = type.GetProperty("Instance", BindingFlags.Static | BindingFlags.Public);
                 m_EdgeRefElements[i] = (RefElement)(inst.GetValue(null, null));
