@@ -579,8 +579,12 @@ namespace BoSSS.Foundation.Grid.Classic {
                             if(cl.CellFaceTags != null) {
                                 for(int i = 0; i < cl.CellFaceTags.Length; i++) {
                                     long ngid = cl.CellFaceTags[i].NeighCell_GlobalID;
+<<<<<<< Updated upstream
                                     if (ngid >= 0)
                                         Debug.Assert(markers[ngid] == true);
+=======
+                         //           Debug.Assert(markers[ngid] == true);
+>>>>>>> Stashed changes
                                 }
                             }
                         }
