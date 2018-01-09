@@ -63,6 +63,7 @@
     </Compile>
     <Compile Include="Grid2D.cs" />
     <Compile Include="Grid3D.cs" />
+    <Compile Include="GridRefinementController.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
