@@ -581,9 +581,6 @@ namespace BoSSS.Foundation.Grid.Classic {
                                     long ngid = cl.CellFaceTags[i].NeighCell_GlobalID;
                                     if (ngid >= 0)
                                     Debug.Assert(markers[ngid] == true);
-=======
-                         //           Debug.Assert(markers[ngid] == true);
->>>>>>> Stashed changes
                                 }
                             }
                         }
