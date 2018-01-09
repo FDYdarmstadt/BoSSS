@@ -441,7 +441,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             // these two cells will be joint into one cell -> no new neighborship
                             Debug.Assert(ReferenceEquals(adaptedCells1[0], adaptedCells2[0]));
                             continue;
-                        }
+                        } 
 
                     }
 
@@ -491,7 +491,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             Debug.Assert(Cl1.GlobalID != Cl2.GlobalID);
 
 
-                                int conCount1;
+                            int conCount1;
                             if(Cl1.CellFaceTags == null) {
                                 conCount1 = 0;
                             } else {
@@ -573,7 +573,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                             if(cl.CellFaceTags != null) {
                                 for(int i = 0; i < cl.CellFaceTags.Length; i++) {
                                     long ngid = cl.CellFaceTags[i].NeighCell_GlobalID;
-                                    Debug.Assert(markers[ngid] == true);
+                                    if (ngid >= 0)
+                                        Debug.Assert(markers[ngid] == true);
                                 }
                             }
                         }
