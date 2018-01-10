@@ -917,19 +917,23 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 }
 
+
                 // update of level-set
                 // ----------------------
 
-
                 bool updateAgglom = false;
-                //if (this.Config_LevelSetHandling == LevelSetHandling.Coupled_Once && m_IterationCounter == 0
-                //    || this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
+                if ((this.Config_LevelSetHandling == LevelSetHandling.Coupled_Once && m_IterationCounter == 0)
+                    || (this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative && CoupledIteration)) {
 
-                //    MoveLevelSetAndRelatedStuff(locCurSt, m_CurrentPhystime, m_CurrentDt, IterUnderrelax);
+                    m_CoupledIterationCounter++;
+                    if (this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative)
+                        Console.WriteLine("Coupled Iteration {0}:", m_CoupledIterationCounter);
 
-                //    // note that we need to update the agglomeration
-                //    updateAgglom = true;
-                //}
+                    MoveLevelSetAndRelatedStuff(locCurSt, m_CurrentPhystime, m_CurrentDt, IterUnderrelax);
+
+                    // note that we need to update the agglomeration
+                    updateAgglom = true;
+                }
 
                 if (this.Config_LevelSetHandling == LevelSetHandling.LieSplitting || this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting) {
                     if(m_IterationCounter == 0) {
@@ -941,10 +945,11 @@ namespace BoSSS.Solution.XdgTimestepping {
                     // ensure, that, when splitting is used we update the agglomerator in the very first iteration.
                 }
 
+
                 // update agglomeration
                 // --------------------
 
-                if(updateAgglom || CoupledIteration || m_CurrentAgglomeration == null) {
+                if(updateAgglom || m_CurrentAgglomeration == null) {
 
                     if(this.Config_LevelSetHandling == LevelSetHandling.LieSplitting || this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting) {
                         // Agglomeration update in the case of splitting - agglomeration does **NOT** depend on previous time-steps
@@ -1029,7 +1034,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                     PrecondMassMatrix = m_PrecondMassMatrix;
 
-                    CoupledIteration = false;
+                    CoupledIteration = true;
                 }
 
 
@@ -1184,43 +1189,30 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
 
-        bool CoupledIteration = false;
+        bool CoupledIteration = true;
+
+        int m_CoupledIterationCounter = 0;
 
 
-        protected override void LevelSetIterationStep(DGField[] argCurSt) {
-            using (new FuncTrace()) {
+        /// <summary>
+        /// customizable callback routine for the handling of the coupled level-set iteration
+        /// </summary>
+        /// <param name="iterIndex"></param>
+        /// <param name="currentSol"></param>
+        /// <param name="currentRes"></param>
+        /// <param name="Mgop"></param>
+        protected void CoupledIterationCallback(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop)
+        {
 
-                // copy data from 'argCurSt' to 'CurrentStateMapping', if necessary 
-                // -----------------------------------------------------------
-                DGField[] locCurSt = CurrentStateMapping.Fields.ToArray();
-                if (locCurSt.Length != argCurSt.Length) {
-                    throw new ApplicationException();
-                }
-                int NF = locCurSt.Length;
-                for (int iF = 0; iF < NF; iF++) {
-                    if (object.ReferenceEquals(locCurSt[iF], argCurSt[iF])) {
-                        // nothing to do
-                    } else {
-                        locCurSt[iF].Clear();
-                        locCurSt[iF].Acc(1.0, argCurSt[iF]);
-                    }
+            double ResidualNorm = currentRes.L2NormPow2().MPISum().Sqrt();
 
-                }
-
-                // update of level-set
-                // ----------------------
-                if (this.Config_LevelSetHandling == LevelSetHandling.Coupled_Once && m_IterationCounter == 0
-                    || this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
-
-                    //Console.WriteLine("MoveLevelSet...");
-                    MoveLevelSetAndRelatedStuff(locCurSt, m_CurrentPhystime, m_CurrentDt, IterUnderrelax);
-
-                    CoupledIteration = true;
-                }
-
-
+            // delay the update of the level-set until the flow solver converged
+            if (ResidualNorm >= this.Config_SolverConvergenceCriterion) { 
+                this.CoupledIteration = false;
             }
+
         }
+
 
 
         double m_CurrentPhystime;
@@ -1302,6 +1294,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             m_CurrentPhystime = phystime;
             m_CurrentDt = dt;
             m_IterationCounter = 0;
+            m_CoupledIterationCounter = 0;
 
             PushStack(increment);
             if (incrementTimesteps == 1)
@@ -1592,7 +1585,12 @@ namespace BoSSS.Solution.XdgTimestepping {
             string description = base.GetSolver(out nonlinSolver, out linearSolver);
 
             if (RequiresNonlinearSolver) {
+
+                if (this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative)
+                    nonlinSolver.IterationCallback += this.CoupledIterationCallback;
+
                 nonlinSolver.IterationCallback += this.CustomIterationCallback;
+
             } else {
                 if (linearSolver is ISolverWithCallback) {
                     ((ISolverWithCallback)linearSolver).IterationCallback += this.CustomIterationCallback;
