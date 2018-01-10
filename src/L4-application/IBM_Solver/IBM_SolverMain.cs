@@ -494,7 +494,7 @@ namespace BoSSS.Application.IBM_Solver {
             m_LenScales = null;
 
 #if DEBUG
-            if(DelComputeOperatorMatrix_CallCounter == 1) {
+            if (DelComputeOperatorMatrix_CallCounter == 1) {
                 int[] Uidx = SaddlePointProblemMapping.GetSubvectorIndices(true, D.ForLoop(i => i));
                 int[] Pidx = SaddlePointProblemMapping.GetSubvectorIndices(true, D);
                 CoordinateMapping Umap = this.Velocity.Mapping;
@@ -511,7 +511,7 @@ namespace BoSSS.Application.IBM_Solver {
                 double ErrInfAbs = Err.InfNorm();
                 double denom = Math.Max(pGradT.InfNorm(), Math.Max(pGrad.InfNorm(), divVel.InfNorm()));
                 double ErrInfRel = ErrInfAbs / denom;
-                if(ErrInfRel >= 1e-8)
+                if (ErrInfRel >= 1e-8)
                     throw new ArithmeticException("Stokes discretization error: | div + grad^t |oo is high; absolute: " + ErrInfAbs + ", relative: " + ErrInfRel + " (denominator: " + denom + ")");
                 //Console.WriteLine("Stokes discretization error: | div - grad ^ t |oo is high; absolute: " + ErrInfAbs + ", relative: " + ErrInfRel + " (denom: " + denom + ")");
             }
@@ -728,13 +728,13 @@ namespace BoSSS.Application.IBM_Solver {
 
 
                     VectorField<SinglePhaseField> U0mean_check = new VectorField<SinglePhaseField>(D, new Basis(LsTrk.GridDat, 0), SinglePhaseField.Factory);
-                    for(int d = 0; d < D; d++) {
+                    for (int d = 0; d < D; d++) {
                         U0mean_check[d].ProjectField(1.0, U0[d].Evaluate,
                             new CellQuadratureScheme(false, Uncut).AddFixedOrderRules(LsTrk.GridDat, U0[d].Basis.Degree + 1));
                     }
 
-                    foreach(var _Spc in this.LsTrk.SpeciesIdS) { // loop over species...
-                        for(int d = 0; d < D; d++) {
+                    foreach (var _Spc in this.LsTrk.SpeciesIdS) { // loop over species...
+                        for (int d = 0; d < D; d++) {
                             U0mean_check[d].AccLaidBack(-1.0, U0mean[d]);
                         }
                     }
@@ -1118,54 +1118,62 @@ namespace BoSSS.Application.IBM_Solver {
 
         protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
 
-            //if (TimestepNo > 3 && TimestepNo % 3 != 0) {
-            //    newGrid = null;
-            //    old2NewGrid = null;
-            //    return;
-            //}
+            if (this.Control.AdaptiveMeshRefinement) {
 
-            // Check grid changes
-            // ==================
+                //if (TimestepNo > 3 && TimestepNo % 3 != 0) {
+                //    newGrid = null;
+                //    old2NewGrid = null;
+                //    return;
+                //}
 
-            CellMask CutCells = LsTrk.Regions.GetCutCellMask();
-            CellMask CutCellNeighbors = LsTrk.Regions.GetNearFieldMask(1);
-            var CutCellArray = CutCells.ItemEnum.ToArray();
-            var CutCellNeighborsArray = CutCellNeighbors.ItemEnum.ToArray();
-            var AllCells = CutCellArray.Concat(CutCellNeighborsArray).ToArray();
+                // Check grid changes
+                // ==================
 
-            var NoCoarseningcells = new CellMask(this.GridData, AllCells);
+                CellMask CutCells = LsTrk.Regions.GetCutCellMask();
+                CellMask CutCellNeighbors = LsTrk.Regions.GetNearFieldMask(1);
+                var CutCellArray = CutCells.ItemEnum.ToArray();
+                var CutCellNeighborsArray = CutCellNeighbors.ItemEnum.ToArray();
+                var AllCells = CutCellArray.Concat(CutCellNeighborsArray).ToArray();
 
-            bool AnyChange = GridRefinementController.ComputeGridChange(this.GridData, NoCoarseningcells, LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
-            int NoOfCellsToRefine = 0;
-            int NoOfCellsToCoarsen = 0;
-            if (AnyChange) {
-                int[] glb = (new int[] {
+                var NoCoarseningcells = new CellMask(this.GridData, AllCells);
+
+                bool AnyChange = GridRefinementController.ComputeGridChange(this.GridData, NoCoarseningcells, LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+                int NoOfCellsToRefine = 0;
+                int NoOfCellsToCoarsen = 0;
+                if (AnyChange) {
+                    int[] glb = (new int[] {
                     CellsToRefineList.Count,
                     Coarsening.Sum(L => L.Length),
                 }).MPISum();
-                NoOfCellsToRefine = glb[0];
-                NoOfCellsToCoarsen = glb[1];
-            }
-            int oldJ = this.GridData.CellPartitioning.TotalLength;
+                    NoOfCellsToRefine = glb[0];
+                    NoOfCellsToCoarsen = glb[1];
+                }
+                int oldJ = this.GridData.CellPartitioning.TotalLength;
 
-            // Update Grid
-            // ===========
+                // Update Grid
+                // ===========
 
-            if (AnyChange) {
+                if (AnyChange) {
 
-                Console.WriteLine("       Refining " + NoOfCellsToRefine + " of " + oldJ + " cells");
-                Console.WriteLine("       Coarsening " + NoOfCellsToCoarsen + " of " + oldJ + " cells");
+                    Console.WriteLine("       Refining " + NoOfCellsToRefine + " of " + oldJ + " cells");
+                    Console.WriteLine("       Coarsening " + NoOfCellsToCoarsen + " of " + oldJ + " cells");
 
-                newGrid = this.GridData.Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
+                    newGrid = this.GridData.Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
+
+                } else {
+
+                    Console.WriteLine("No changes in Grid");
+                    newGrid = null;
+                    old2NewGrid = null;
+                }
+
+                debug = true;
 
             } else {
 
-                Console.WriteLine("No changes in Grid");
                 newGrid = null;
                 old2NewGrid = null;
             }
-
-            debug = true;
         }
 
     }
