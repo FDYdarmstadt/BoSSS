@@ -34,6 +34,9 @@ namespace BoSSS.Solution.Control {
     [Serializable]
     public class AppControl {
 
+
+        public abstract Application<T> GetSolver<T>() where T : AppControl;
+
         /// <summary>
         /// The generating code as text representation
         /// </summary>

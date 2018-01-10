@@ -25,7 +25,7 @@ using ilPSP.Utils;
 using ilPSP;
 using BoSSS.Foundation.Grid.RefElements;
 
-namespace ipPoisson {
+namespace BoSSS.Application.ipPoisson {
 
     /// <summary>
     /// predefined control-objects

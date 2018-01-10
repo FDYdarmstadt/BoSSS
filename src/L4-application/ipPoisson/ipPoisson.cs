@@ -38,7 +38,7 @@ using NUnit.Framework;
 using BoSSS.Solution.Multigrid;
 using ilPSP.Connectors.Matlab;
 
-namespace ipPoisson {
+namespace BoSSS.Application.ipPoisson {
 
     class Program : Application<ippControl> {
 
