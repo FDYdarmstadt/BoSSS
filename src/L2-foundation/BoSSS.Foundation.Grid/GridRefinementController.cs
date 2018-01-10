@@ -122,6 +122,10 @@ namespace BoSSS.Foundation.Grid {
                 }
             }
 
+            // If any cells which should refined are members of CutCells
+            if (CellsToRefineList.Count == 0 && Coarsening.Count == 0)
+                NoRefinement = true;
+
             return (!NoRefinement);
         }
 
