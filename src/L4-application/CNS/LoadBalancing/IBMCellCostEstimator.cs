@@ -78,7 +78,7 @@ namespace CNS.LoadBalancing {
                 new int[] { 10, 100, 1 });
         }
 
-        public static IEnumerable<Func<IApplication<AppControl>, int, ICellCostEstimator>> GetMultiBalanceConstrainedBasedEstimators() {
+        public static IEnumerable<Func<IApplication<AppControl>, int, ICellCostEstimator>> GetMultiBalanceConstraintsBasedEstimators() {
             int noOfCellTypes = 3; // Fluid + Cut + Void
             for (int i = 0; i < noOfCellTypes; i++) {
                 int temp = i; // Avoid delegate creation from capturing variable $i
