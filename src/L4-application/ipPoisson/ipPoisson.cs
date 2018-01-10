@@ -439,7 +439,9 @@ namespace ipPoisson {
                             Precond = new Schwarz() {
                                 m_MaxIterations = 1,
                                 CoarseSolver = new GenericRestriction() {
-                                    CoarserLevelSolver = new DirectSolver()
+                                    CoarserLevelSolver = new DirectSolver() {
+                                        WhichSolver = DirectSolver._whichSolver.PARDISO
+                                    }
                                 },
                                 m_BlockingStrategy = new Schwarz.MultigridBlocks() {
                                     Depth = 2,
