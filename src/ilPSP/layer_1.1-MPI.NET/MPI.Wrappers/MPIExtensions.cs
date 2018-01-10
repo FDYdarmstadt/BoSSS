@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -498,8 +499,10 @@ namespace MPI.Wrappers {
         /// Wrapper around <see cref="IMPIdriver.Gatherv(IntPtr, int, MPI_Datatype, IntPtr, IntPtr, IntPtr, MPI_Datatype, int, MPI_Comm)"/>
         /// </summary>
         static public int[] MPIGatherv(this int[] send, int[] recvcounts, int root, MPI_Comm comm) {
-            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int size);
-            int[] result = new int[recvcounts.Sum()];
+            csMPI.Raw.Comm_Size(comm, out int size);
+            csMPI.Raw.Comm_Rank(comm, out int rank);
+
+            int[] result = rank == root ? new int[recvcounts.Sum()] : null;
 
             unsafe {
                 int* displs = stackalloc int[size];
@@ -507,7 +510,9 @@ namespace MPI.Wrappers {
                     displs[i] = displs[i - 1] + recvcounts[i - 1];
                 }
 
-                fixed (int* pSend = &send[0], pRcvcounts = &recvcounts[0], pResult = &result[0]) {
+                fixed (int* pSend = &send[0], pRcvcounts = &recvcounts[0], pResult = result) {
+                    Debug.Assert((rank == root) != (pResult == null));
+
                     csMPI.Raw.Gatherv(
                         (IntPtr)pSend,
                         send.Length,
@@ -538,8 +543,9 @@ namespace MPI.Wrappers {
         /// Wrapper around <see cref="IMPIdriver.Gatherv(IntPtr, int, MPI_Datatype, IntPtr, IntPtr, IntPtr, MPI_Datatype, int, MPI_Comm)"/>
         /// </summary>
         static public double[] MPIGatherv(this double[] send, int[] recvcounts, int root, MPI_Comm comm) {
-            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int size);
-            double[] result = new double[recvcounts.Sum()];
+            csMPI.Raw.Comm_Size(comm, out int size);
+            csMPI.Raw.Comm_Rank(comm, out int rank);
+            double[] result = rank == root ? new double[recvcounts.Sum()] : null;
 
             unsafe {
                 int* displs = stackalloc int[size];
@@ -547,22 +553,25 @@ namespace MPI.Wrappers {
                     displs[i] = displs[i - 1] + recvcounts[i - 1];
                 }
 
-                fixed (int*  pRcvcounts = &recvcounts[0] ) {
-                    fixed (double* pSend = &send[0], pResult = &result[0]) {
+                fixed (int*  pRcvcounts = &recvcounts[0]) {
+                    fixed (double* pSend = &send[0], pResult = result) {
+                        Debug.Assert((rank == root) != (pResult == null));
+
                         csMPI.Raw.Gatherv(
                             (IntPtr)pSend,
                             send.Length,
-                            csMPI.Raw._DATATYPE.INT,
+                            csMPI.Raw._DATATYPE.DOUBLE,
                             (IntPtr)pResult,
                             (IntPtr)pRcvcounts,
                             (IntPtr)displs,
-                            csMPI.Raw._DATATYPE.INT,
+                            csMPI.Raw._DATATYPE.DOUBLE,
                             root,
                             comm);
                     }
                 }
             }
 
+           
             return result;
         }
 
@@ -580,8 +589,8 @@ namespace MPI.Wrappers {
         /// Wrapper around <see cref="IMPIdriver.Scatterv(IntPtr, IntPtr, IntPtr, MPI_Datatype, IntPtr, int, MPI_Datatype, int, MPI_Comm)"/>.
         /// </summary>
         static public int[] MPIScatterv(this int[] send, int[] sendcounts, int root, MPI_Comm comm) {
-            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int size);
-            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rank);
+            csMPI.Raw.Comm_Size(comm, out int size);
+            csMPI.Raw.Comm_Rank(comm, out int rank);
             int[] result = new int[sendcounts[rank]];
 
             unsafe {
@@ -589,13 +598,18 @@ namespace MPI.Wrappers {
                 for (int i = 1; i < size; i++) {
                     displs[i] = displs[i - 1] + sendcounts[i - 1];
                 }
-
-                if (send == null || send.Length == 0) {
-                    // Dummy to avoid null pointer exception
-                    send = new int[1];
+                if(rank == root) {
+                    if(send.Length < displs[size - 1] + sendcounts[size - 1])
+                        throw new ArgumentException("Mismatch between send counts and send buffer size.");
                 }
 
-                fixed (int* pSend = &send[0], pSendcounts = &sendcounts[0], pResult = &result[0]) {
+
+                //if (send == null || send.Length == 0) {
+                //    // Dummy to avoid null pointer exception
+                //    send = new int[1];
+                //}
+
+                fixed (int* pSend = send, pSendcounts = &sendcounts[0], pResult = &result[0]) {
                     csMPI.Raw.Scatterv(
                         (IntPtr)pSend,
                         (IntPtr)pSendcounts,
@@ -626,8 +640,8 @@ namespace MPI.Wrappers {
         /// Wrapper around <see cref="IMPIdriver.Scatterv(IntPtr, IntPtr, IntPtr, MPI_Datatype, IntPtr, int, MPI_Datatype, int, MPI_Comm)"/>.
         /// </summary>
         static public double[] MPIScatterv(this double[] send, int[] sendcounts, int root, MPI_Comm comm) {
-            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int size);
-            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rank);
+            csMPI.Raw.Comm_Size(comm, out int size);
+            csMPI.Raw.Comm_Rank(comm, out int rank);
             double[] result = new double[sendcounts[rank]];
 
             unsafe
@@ -635,23 +649,28 @@ namespace MPI.Wrappers {
                 int* displs = stackalloc int[size];
                 for (int i = 1; i < size; i++) {
                     displs[i] = displs[i - 1] + sendcounts[i - 1];
+                    //sum += sendcounts[i];
+                }
+                if(rank == root) {
+                    if(send.Length < displs[size - 1] + sendcounts[size - 1])
+                        throw new ArgumentException("Mismatch between send counts and send buffer size.");
                 }
 
-                if (send == null || send.Length == 0) {
-                    // Dummy to avoid null pointer exception
-                    send = new double[1];
-                }
+                //if (send == null || send.Length == 0) {
+                //    // Dummy to avoid null pointer exception
+                //    send = new double[1];
+                //}
 
                 fixed (int* pSendcounts = &sendcounts[0]) {
-                    fixed (double* pSend = &send[0], pResult = &result[0]) {
+                    fixed (double* pSend = send, pResult = &result[0]) {
                         csMPI.Raw.Scatterv(
                             (IntPtr)pSend,
                             (IntPtr)pSendcounts,
                             (IntPtr)displs,
-                            csMPI.Raw._DATATYPE.INT,
+                            csMPI.Raw._DATATYPE.DOUBLE,
                             (IntPtr)pResult,
                             sendcounts[rank],
-                            csMPI.Raw._DATATYPE.INT,
+                            csMPI.Raw._DATATYPE.DOUBLE,
                             root,
                             comm);
                     }
