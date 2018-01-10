@@ -633,7 +633,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     if(m_ImplStParams.m_IterationCounter <= 0)// only push tracker in the first iter
                         m_LsTrk.PushStacks();
                     MoveLevelSetAndRelatedStuff(locCurSt,
-                        m_ImplStParams.m_CurrentPhystime, m_ImplStParams.m_CurrentDt * m_ImplStParams.m_RelTime, 1.0,
+                        m_ImplStParams.m_CurrentPhystime, m_ImplStParams.m_CurrentDt * m_ImplStParams.m_RelTime, IterUnderrelax,
                         m_ImplStParams.m_Mass, m_ImplStParams.m_k);
 
                     // note that we need to update the agglomeration
@@ -771,6 +771,13 @@ namespace BoSSS.Solution.XdgTimestepping {
             m_ImplStParams.m_IterationCounter++;
         }
 
+
+        protected override void LevelSetIterationStep(DGField[] locCurSt) {
+            throw new NotImplementedException();
+        }
+
+
+
         private void RKstageExplicit(double PhysTime, double dt, double[][] k, int s, BlockMsrMatrix[] Mass, CoordinateVector u0, double ActualLevSetRelTime, double[] RK_as, double RelTime) {
             Debug.Assert(s <= m_RKscheme.Stages);
             for(int i = 0; i < s; i++) {
@@ -799,8 +806,10 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                     // move level-set:
                     if (Math.Abs(ActualLevSetRelTime - RelTime) > 1.0e-14) {
+
                         this.m_LsTrk.PushStacks();
-                        this.MoveLevelSetAndRelatedStuff(u0.Mapping.Fields.ToArray(), PhysTime, dt * RelTime, 1.0, Mass, k);
+                        this.MoveLevelSetAndRelatedStuff(u0.Mapping.Fields.ToArray(), PhysTime, dt * RelTime, IterUnderrelax, Mass, k);
+
                         this.UpdateAgglom(false);
                         BlockMsrMatrix PM, SM;
                         UpdateMassMatrix(out PM, out SM);
