@@ -21,7 +21,7 @@ using System.Text;
 using BoSSS.Solution.Control;
 using BoSSS.Foundation;
 
-namespace ipPoisson {
+namespace BoSSS.Application.ipPoisson {
     
     /// <summary>
     /// Control object for the ipPoisson solver.
