@@ -46,7 +46,6 @@ namespace CNS.LoadBalancing {
 
             int[] cellToPerformanceClassMap = new int[program.Grid.NoOfUpdateCells];
             for (int i = 0; i < ltsTimeStepper.CurrentClustering.NumberOfClusters; i++) {
-                int noOfTimesteps = ltsTimeStepper.NumberOfLocalTimeSteps[i];
                 foreach (Chunk chunk in ltsTimeStepper.CurrentClustering.Clusters[i].VolumeMask) {
                     foreach (int cell in chunk.Elements) {
                         cellToPerformanceClassMap[cell] = i;
