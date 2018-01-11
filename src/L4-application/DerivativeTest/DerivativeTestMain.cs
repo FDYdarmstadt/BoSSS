@@ -172,7 +172,7 @@ namespace BoSSS.Application.DerivativeTest {
         /// <summary>
         /// Switch for the test-case, see implementation of <see cref="CreateOrLoadGrid"/>.
         /// </summary>
-        public static int GRID_CASE = 16;
+        public static int GRID_CASE = 12;
 
         /// <summary>
         /// Grid/mesh file to use, see implementation of <see cref="CreateOrLoadGrid"/>.
@@ -192,7 +192,7 @@ namespace BoSSS.Application.DerivativeTest {
             // ==============
 
 
-            for (int i = 16; i <= 16; i++) {
+            for (int i = 12; i <= 12; i++) {
                 BoSSS.Solution.Application._Main(args, true, null, delegate () {
                     var R = new DerivativeTestMain();
                     GRID_CASE = i;

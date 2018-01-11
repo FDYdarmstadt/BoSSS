@@ -407,7 +407,7 @@ namespace BoSSS.Solution.Multigrid {
 
             Console.WriteLine("Error Krylov:   " + errstep);
 
-            while (kinn < restart_limit && errstep.MPISum() > GMRESConvCrit) {
+            while (kinn < restart_limit && errstep > GMRESConvCrit) {
                 kinn++;
 
                 step = GMRES(SolutionVec, currentX, f0, step, out errstep);
