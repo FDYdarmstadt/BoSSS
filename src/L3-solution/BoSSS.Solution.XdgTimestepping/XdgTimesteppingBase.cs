@@ -518,16 +518,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                             m_LinearSolver = Config_linearSolver,
                             m_SessionPath = SessionPath,
                             ConvCrit = Config_SolverConvergenceCriterion,
-                            UnderRelax = Config_UnderRelax,
-                            CoupledIteration = this.LevelSetIterationStep
+                            UnderRelax = Config_UnderRelax,                         
                         };
-
-                        if (Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative && nonlinSolver.GetType() == typeof(FixpointIterator))
-                        {
-                            //((FixpointIterator)nonlinSolver).CoupledIteration = this.LevelSetIterationStep;
-                            ((FixpointIterator)nonlinSolver).CoupledIteration_Converged = this.LevelSetConvergenceReached;
-                        }
-
                         break;
 
                     case NonlinearSolverMethod.Newton:
@@ -724,7 +716,5 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </param>
         abstract protected void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, DGField[] argCurSt);
 
-
-        abstract protected void LevelSetIterationStep(DGField[] locCurSt);
     }
 }

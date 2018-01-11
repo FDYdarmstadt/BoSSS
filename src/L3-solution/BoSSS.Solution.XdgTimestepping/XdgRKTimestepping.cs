@@ -772,9 +772,9 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
 
-        protected override void LevelSetIterationStep(DGField[] locCurSt) {
-            throw new NotImplementedException();
-        }
+        //protected override void TriggerLevelSetUpdate() {
+        //    throw new NotImplementedException();
+        //}
 
 
 
