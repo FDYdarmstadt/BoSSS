@@ -59,15 +59,7 @@ namespace BoSSS.Foundation.Grid {
             bool NoRefinement = true;
             int[] DesiredLevel = new int[oldJ];
             for (int j = 0; j < oldJ; j++) {
-                /*
-                double GradMag = Refined_MagGrad_u.GetMeanValue(j);
 
-                int DesiredLevel_j = 0;
-                if(GradMag > 0.6)
-                    DesiredLevel_j = 1;
-                if(GradMag > 0.81)
-                    DesiredLevel_j = 2;
-                */
                 int CurrentLevel_j = CurrentGrid.Cells.GetCell(j).RefinementLevel;
                 int DesiredLevel_j = LevelIndicator(j, CurrentLevel_j);
 
