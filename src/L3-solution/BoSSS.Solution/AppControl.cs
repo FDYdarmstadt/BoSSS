@@ -34,8 +34,12 @@ namespace BoSSS.Solution.Control {
     [Serializable]
     public class AppControl {
 
-
-        public abstract Application<T> GetSolver<T>() where T : AppControl;
+        /// <summary>
+        /// Returns an instance of the Solver, to support the workflow-manager framework;
+        /// </summary>
+        virtual public object GetSolverInstance() {
+            throw new NotImplementedException();
+        }
 
         /// <summary>
         /// The generating code as text representation
