@@ -116,7 +116,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         CellsToRefineBitmask[jCell] = true;
 
                         int[] Neighs, dummy;
-                        this.GetCellNeighbours(jCell, GetCellNeighbours_Mode.ViaVertices, out Neighs, out dummy);
+                        this.GetCellNeighbours(jCell, GetCellNeighbours_Mode.ViaEdges, out Neighs, out dummy);
 
                         foreach(int jNeigh in Neighs) {
                             AdaptNeighborsBitmask[jNeigh] = true;
