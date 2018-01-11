@@ -183,6 +183,18 @@
       <Project>{8E6D8F23-623F-4204-B4AB-A088C0CD83AA}</Project>
       <Name>ilPSP</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.Grid\BoSSS.Foundation.Grid.csproj">
+      <Project>{13585226-5046-494d-947c-b97479566081}</Project>
+      <Name>BoSSS.Foundation.Grid</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.XDG\BoSSS.Foundation.XDG.csproj">
+      <Project>{9a8cdc1f-64f7-441e-849d-66f2c56600f2}</Project>
+      <Name>BoSSS.Foundation.XDG</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.ASCIIExport\BoSSS.Solution.ASCIIExport.csproj">
+      <Project>{ed2e6c6e-1517-4aad-b3c6-1b56c5cd9828}</Project>
+      <Name>BoSSS.Solution.ASCIIExport</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Utils\MiniBatchProcessor\MiniBatchProcessor.csproj">
       <Project>{db8a3a70-dbf2-48e7-824c-0829db2f8e1b}</Project>
       <Name>MiniBatchProcessor</Name>
@@ -226,6 +238,10 @@
     <ProjectReference Include="..\IBM_Solver\IBM_Solver.csproj">
       <Project>{12970f63-547f-4be6-9af9-2f3eeb00a877}</Project>
       <Name>IBM_Solver</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ipPoisson\ipPoisson.csproj">
+      <Project>{09cce864-9bae-4660-aff9-f3f3414b6173}</Project>
+      <Name>ipPoisson</Name>
     </ProjectReference>
     <ProjectReference Include="..\PlotGenerator\BoSSS.PlotGenerator.csproj">
       <Project>{383DE201-6871-437E-93C6-DDD41694BBAF}</Project>

@@ -84,6 +84,7 @@ namespace BoSSS.Application.BoSSSpad {
             if ((m_CurrentProject == null) || (!m_CurrentProject.Equals(ProjectName)))
                 InvalidateCaches();
             m_CurrentProject = ProjectName;
+            Console.WriteLine("Project name is set to '{0}'.", ProjectName);
         }
 
         DateTime m_Sessions_CacheTime;
