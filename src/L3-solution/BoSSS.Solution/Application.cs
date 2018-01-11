@@ -55,6 +55,12 @@ namespace BoSSS.Solution {
         /// Dummy-implementation of the <see cref="AppControl"/>-class.
         /// </summary>
         public class EmptyAppControl : AppControl {
+
+            
+            public override object GetSolverInstance() {
+                throw new NotSupportedException();
+            }
+        
         }
     }
 
