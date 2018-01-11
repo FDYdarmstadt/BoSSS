@@ -56,11 +56,13 @@ namespace BoSSS.Solution {
         /// </summary>
         public class EmptyAppControl : AppControl {
 
-            
-            public override object GetSolverInstance() {
+            /// <summary>
+            /// nix supported.
+            /// </summary>
+            public override Type GetSolverType() {
                 throw new NotSupportedException();
             }
-        
+
         }
     }
 

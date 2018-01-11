@@ -31,7 +31,7 @@ namespace BoSSS.Application.SipPoisson.Tests {
             bool dummy;
             ilPSP.Environment.Bootstrap(
                 new string[0],
-                BoSSS.Solution.Application<ippControl>.GetBoSSSInstallDir(),
+                BoSSS.Solution.Application<SipControl>.GetBoSSSInstallDir(),
                 out dummy);
         }
 
@@ -44,8 +44,8 @@ namespace BoSSS.Application.SipPoisson.Tests {
         [Test]
         public static void TestCartesian() {
             
-            ipPoisson.Program p = null;
-            Application<ippControl>._Main(new string[] {
+            SipPoisson.SipPoissonMain p = null;
+            Application<SipControl>._Main(new string[] {
                     "--control", "cs:ipPoisson.ippHardcodedControl.TestCartesian1()"
                 },
                 false,
@@ -69,14 +69,14 @@ namespace BoSSS.Application.SipPoisson.Tests {
         [Test]
         public static void TestCurved() {
         
-            ipPoisson.Program p = null;
-            Application<ippControl>._Main(new string[] {
+            SipPoissonMain p = null;
+            Application<SipControl>._Main(new string[] {
                     "--control", "cs:ipPoisson.ippHardcodedControl.TestCurved()"
                 },
                 false,
                 "",
                 delegate() {
-                    p = new ipPoisson.Program();
+                    p = new SipPoissonMain();
                     return p;
                 });
 
