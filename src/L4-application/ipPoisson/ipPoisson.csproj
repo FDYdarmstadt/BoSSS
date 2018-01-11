@@ -64,10 +64,10 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="ippHardcodedControl.cs" />
-    <Compile Include="ippControl.cs" />
+    <Compile Include="SipHardcodedControl.cs" />
+    <Compile Include="SipControl.cs" />
     <Compile Include="Tests\TestProgram.cs" />
-    <Compile Include="ipPoisson.cs" />
+    <Compile Include="SipPoissonMain.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

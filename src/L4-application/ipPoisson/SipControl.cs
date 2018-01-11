@@ -21,12 +21,17 @@ using System.Text;
 using BoSSS.Solution.Control;
 using BoSSS.Foundation;
 
-namespace BoSSS.Application.ipPoisson {
+namespace BoSSS.Application.SipPoisson {
     
     /// <summary>
     /// Control object for the ipPoisson solver.
     /// </summary>
-    public class ippControl : AppControl {
+    public class SipControl : AppControl {
+
+        public override Type GetSolverType() {
+            return typeof(SipPoissonMain);
+        }
+
 
         /// <summary>
         /// Function which determines which part of the domain boundary is of Dirichlet type (true)
