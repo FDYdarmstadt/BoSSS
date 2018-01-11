@@ -21,7 +21,7 @@ using BoSSS.Solution;
 using MPI.Wrappers;
 using NUnit.Framework;
 
-namespace ipPoisson.Tests {
+namespace BoSSS.Application.SipPoisson.Tests {
 
     [TestFixture]
     class TestProgram {
@@ -51,7 +51,7 @@ namespace ipPoisson.Tests {
                 false,
                 "",
                 delegate() {
-                    p = new Program();
+                    p = new SipPoissonMain();
                     return p;
                 });
 

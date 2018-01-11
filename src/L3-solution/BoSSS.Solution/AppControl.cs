@@ -35,9 +35,9 @@ namespace BoSSS.Solution.Control {
     public class AppControl {
 
         /// <summary>
-        /// Returns an instance of the Solver, to support the workflow-manager framework;
+        /// Returns the type of the solver main class;
         /// </summary>
-        virtual public object GetSolverInstance() {
+        virtual public Type GetSolverType() {
             throw new NotImplementedException();
         }
 
