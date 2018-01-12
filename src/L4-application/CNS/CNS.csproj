@@ -98,6 +98,7 @@
     <Compile Include="LoadBalancing\LTSCellClassifier.cs" />
     <Compile Include="LoadBalancing\ArtificialViscosityCellCostEstimator.cs" />
     <Compile Include="LoadBalancing\LTSCellCostEstimator.cs" />
+    <Compile Include="LoadBalancing\RandomCellClassifier.cs" />
     <Compile Include="ShockCapturing\ArtificialViscosityCFLConstraint.cs" />
     <Compile Include="IBM\IBMFieldSet.cs" />
     <Compile Include="IBM\IBMMassMatrixFactory.cs" />

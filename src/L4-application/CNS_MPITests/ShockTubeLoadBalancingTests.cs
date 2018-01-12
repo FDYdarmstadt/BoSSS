@@ -195,6 +195,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             c.AddVariable(Variables.Energy, dgDegree);
             c.AddVariable(Variables.Velocity.xComponent, dgDegree);
             c.AddVariable(Variables.Pressure, dgDegree);
+            c.AddVariable(Variables.Rank, 0);
 
             c.GridFunc = delegate {
                 double xMin = 0.0;
@@ -306,7 +307,9 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             CNSControl loadBalControl = refControl.CloneAs();
             loadBalControl.DynamicLoadBalancing_Period = REBALANCING_PERIOD;
             loadBalControl.DynamicLoadBalancing_CellClassifier = new RandomCellClassifier(2);
+            //loadBalControl.DynamicLoadBalancing_CellClassifier = new ArtificialViscosityCellClassifier();
             loadBalControl.DynamicLoadBalancing_CellCostEstimatorFactories.Add((p, i) => new StaticCellCostEstimator(new[] { 1, 10 }));
+            //loadBalControl.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(ArtificialViscosityCellCostEstimator.GetMultiBalanceConstraintsBasedEstimators());
             loadBalControl.DynamicLoadBalancing_ImbalanceThreshold = 0.01;
 
 
