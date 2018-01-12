@@ -14,12 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
 using BoSSS.Platform.LinAlg;
-using BoSSS.Platform.Utils.Geom;
+using BoSSS.Solution;
 using BoSSS.Solution.GridImport;
 using BoSSS.Solution.Queries;
 using CNS.Convection;
@@ -966,27 +965,27 @@ namespace CNS {
             return c;
         }
 
-        public static CNSControl ShockTube(string dbPath = null, int dgDegree = 2, int numOfCellsX = 50, int numOfCellsY = 1, double sensorLimit = 1e-3, bool true1D = false, bool saveToDb = false) {
+        public static CNSControl ShockTube(int dgDegree = 2, int numOfCellsX = 50, int numOfCellsY = 1, double sensorLimit = 1e-3, bool true1D = false) {
 
             CNSControl c = new CNSControl();
 
-            // Load balancing
-            //c.DynamicLoadBalancing_CellCostEstimatorFactory = delegate (IApplication<AppControl> app, int performanceClassCount) {
-            //    if (performanceClassCount != 2) {
-            //        throw new ConfigurationException();
-            //    }
+            // Load balancing based on LTS
+            //c.DynamicLoadBalancing_CellClassifier = new LTSCellClassifier();
+            //c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(LTSCellCostEstimator.Factory(c.NumberOfSubGrids));
 
-            //    int[] performanceClassToCostMap = new int[] { 1, 10 };
-            //    return new StaticCellCostEstimator(performanceClassToCostMap);
-            //};
-            //c.DynamicLoadBalancing_ImbalanceThreshold = 0.1;
-            //c.DynamicLoadBalancing_Period = 10;
+            // Load balancing based on AV
+            c.DynamicLoadBalancing_CellClassifier = new ArtificialViscosityCellClassifier();
+            c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange((prog, i) => new StaticCellCostEstimator(new[] { 1, 10 }));
+            //c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(ArtificialViscosityCellCostEstimator.GetStaticCostBasedEstimator(new int[] { 1, 10 }));
+            //c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(ArtificialViscosityCellCostEstimator.MultipleBalanceConstraintsFactory(new int[] { 1, 10 }));
 
-            dbPath = @"c:\bosss_db\";
-            //dbPath = @"e:\bosss_db\GridOfTomorrow\";
-            //dbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db\";
-            c.DbPath = dbPath;
-            c.savetodb = dbPath != null && saveToDb;
+            c.DynamicLoadBalancing_ImbalanceThreshold = 0.1;
+            c.DynamicLoadBalancing_Period = 5;
+            c.GridPartType = GridPartType.METIS;
+
+            c.DbPath = @"c:\bosss_db\";
+            //c.DbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db\";
+            c.savetodb = c.DbPath != null;
             c.saveperiod = 10;
             c.PrintInterval = 1;
 
@@ -995,26 +994,21 @@ namespace CNS {
             double yMin = 0;
             double yMax = 1;
 
-            bool AV = true;
-
-            if (AV) {
-                c.ActiveOperators = Operators.Convection | Operators.ArtificialViscosity;
-            } else {
-                c.ActiveOperators = Operators.Convection;
-            }
+            c.ActiveOperators = Operators.Convection;
             c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
 
             // Shock-capturing
+            bool AV = true;
             double epsilon0 = 1.0;
             double kappa = 0.5;
-
             if (AV) {
+                c.ActiveOperators |= Operators.ArtificialViscosity;
                 Variable sensorVariable = Variables.Density;
                 c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
                 c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 2);
             }
 
-            // Runge-Kutta schemes
+            // Runge-Kutta
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 1;
 
@@ -1025,12 +1019,11 @@ namespace CNS {
             // (A)LTS
             //c.ExplicitScheme = ExplicitSchemes.LTS;
             //c.ExplicitOrder = 3;
-            //c.NumberOfSubGrids = 1;
-            //c.ReclusteringInterval = 1;
+            //c.NumberOfSubGrids = 3;
+            //c.ReclusteringInterval = c.DynamicLoadBalancing_Period;
             //c.FluxCorrection = false;
 
             c.EquationOfState = IdealGas.Air;
-
             c.MachNumber = 1.0 / Math.Sqrt(c.EquationOfState.HeatCapacityRatio);
             c.ReynoldsNumber = 1.0;
             c.PrandtlNumber = 0.71;
@@ -1043,7 +1036,7 @@ namespace CNS {
             c.AddVariable(Variables.Entropy, dgDegree);
             c.AddVariable(Variables.LocalMachNumber, dgDegree);
             c.AddVariable(Variables.Rank, 0);
-            if (true1D == false) {
+            if (!true1D) {
                 c.AddVariable(Variables.Momentum.yComponent, dgDegree);
                 c.AddVariable(Variables.Velocity.yComponent, dgDegree);
                 if (AV) {
@@ -1065,12 +1058,9 @@ namespace CNS {
 
             c.GridFunc = delegate {
                 double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
-
                 if (true1D) {
                     var grid = Grid1D.LineGrid(xNodes, periodic: false);
-                    // Boundary conditions
                     grid.EdgeTagNames.Add(1, "AdiabaticSlipWall");
-
                     grid.DefineEdgeTags(delegate (double[] _X) {
                         return 1;
                     });
@@ -1078,9 +1068,7 @@ namespace CNS {
                 } else {
                     double[] yNodes = GenericBlas.Linspace(yMin, yMax, numOfCellsY + 1);
                     var grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
-                    // Boundary conditions
                     grid.EdgeTagNames.Add(1, "AdiabaticSlipWall");
-
                     grid.DefineEdgeTags(delegate (double[] _X) {
                         return 1;
                     });
@@ -1094,6 +1082,7 @@ namespace CNS {
                 return a[0] * b[1] - a[1] * b[0];
             }
 
+            #region Smoothing of initial condition
             // Normal vector of initial shock
             Vector2D normalVector = new Vector2D(1, 0);
 
@@ -1119,6 +1108,7 @@ namespace CNS {
 
                 return (Math.Tanh(distance / maxDistance) + 1.0) * 0.5;
             };
+            #endregion
 
             Func<double, double> Jump = (x => x <= 0.5 ? 0 : 1);
 
@@ -1140,16 +1130,16 @@ namespace CNS {
             // Time config
             c.dtMin = 0.0;
             c.dtMax = 1.0;
-            //c.dtFixed = 1.0e-3;
-            c.CFLFraction = 0.3;
-            c.Endtime = 0.25;
+            c.CFLFraction = 0.1;
+            c.Endtime = 0.1;
             c.NoOfTimesteps = int.MaxValue;
 
             c.ProjectName = "Shock tube";
             if (true1D) {
                 c.SessionName = String.Format("Shock tube, 1D, dgDegree = {0}, noOfCellsX = {1}, sensorLimit = {2:0.00E-00}", dgDegree, numOfCellsX, sensorLimit);
             } else {
-                c.SessionName = String.Format("Shock tube, 2D, dgDegree = {0}, noOfCellsX = {1}, noOfCellsX = {2}, sensorLimit = {3:0.00E-00}, CFLFraction = {4:0.00E-00}, ALTS {5}/{6}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids);
+                //c.SessionName = String.Format("Shock tube, 2D, dgDegree = {0}, noOfCellsX = {1}, noOfCellsX = {2}, sensorLimit = {3:0.00E-00}, CFLFraction = {4:0.00E-00}, ALTS {5}/{6}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids);
+                c.SessionName = String.Format("Shock tube, Test");
             }
 
             return c;
@@ -1172,21 +1162,17 @@ namespace CNS {
             double yMin = 0;
             double yMax = 1;
 
-            bool AV = false;
+            bool AV = true;
 
-            //########################################
             c.DomainType = DomainTypes.StaticImmersedBoundary;
-
             c.LevelSetFunction = delegate (double[] X, double t) {
-                return X[1] + 10;
+                return X[1] - 0.1;
             };
             c.LevelSetBoundaryTag = "AdiabaticSlipWall";
-
             c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             c.LevelSetQuadratureOrder = 6;
             c.AgglomerationThreshold = 0.3;
             c.AddVariable(IBMVariables.LevelSet, 1);
-            //#########################################
 
             if (AV) {
                 c.ActiveOperators = Operators.Convection | Operators.ArtificialViscosity;
@@ -1891,33 +1877,33 @@ namespace CNS {
             return c;
         }
 
-        public static CNSControl DoubleMachReflection(string dbPath = null, int dgDegree = 2, int numOfCellsX = 400, int numOfCellsY = 100, double xMax = 4, double sensorLimit = 1e-3) {
+        public static CNSControl DoubleMachReflection(string dbPath = null, int dgDegree = 0, int numOfCellsX = 400, int numOfCellsY = 100, double xMax = 4, double sensorLimit = 1e-3) {
             CNSControl c = new CNSControl();
 
-            //dbPath = @"e:\bosss_db\GridOfTomorrow";
-            string dbPath2 = @"\\dc1\userspace\stange\HiWi_database\tests";
+            dbPath = @"c:\bosss_db\";
+            //string dbPath2 = @"\\dc1\userspace\stange\HiWi_database\tests";
             //string dbPath2 = @"/work/scratch/ws35kire/work_db";
             //string dbPath2 = @"/home/ws35kire/test_db";
-            c.DbPath = dbPath2;
-            c.savetodb = true; //dbPath != null;
-            c.saveperiod = 100;
-            c.PrintInterval = 10;
+            c.DbPath = dbPath;
+            c.savetodb = dbPath != null;
+            c.saveperiod = 1;
+            c.PrintInterval = 1;
 
-            //c.ExplicitScheme = ExplicitSchemes.RungeKutta;
-            //c.ExplicitOrder = 1;
-            c.ExplicitScheme = ExplicitSchemes.LTS;
+            c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 1;
-            c.NumberOfSubGrids = 3;
-            c.ReclusteringInterval = 5;
-            c.FluxCorrection = false;
+            //c.ExplicitScheme = ExplicitSchemes.LTS;
+            //c.ExplicitOrder = 1;
+            //c.NumberOfSubGrids = 3;
+            //c.ReclusteringInterval = 5;
+            //c.FluxCorrection = false;
 
             // Add one balance constraint for each subgrid
-            c.DynamicLoadBalancing_CellClassifier = new LTSCellClassifier();
-            c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(LTSCellCostEstimator.Factory(c.NumberOfSubGrids));
-            c.DynamicLoadBalancing_ImbalanceThreshold = 0.1;
-            c.DynamicLoadBalancing_Period = 5;
+            //c.DynamicLoadBalancing_CellClassifier = new LTSCellClassifier();
+            //c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(LTSCellCostEstimator.Factory(c.NumberOfSubGrids));
+            //c.DynamicLoadBalancing_ImbalanceThreshold = 0.1;
+            //c.DynamicLoadBalancing_Period = 5;
 
-            bool AV = true;
+            bool AV = false;
 
             c.GridPartType = GridPartType.ParMETIS;
             //c.GridPartType = GridPartType.none;
@@ -1970,13 +1956,15 @@ namespace CNS {
             c.AddVariable(Variables.Viscosity, dgDegree);
             c.AddVariable(Variables.LocalMachNumber, dgDegree);
             c.AddVariable(Variables.Rank, 0);
-            c.AddVariable(Variables.Schlieren, dgDegree - 1);
+            if (dgDegree >= 1) {
+                c.AddVariable(Variables.Schlieren, dgDegree - 1);
+            }
             if (AV) {
                 c.AddVariable(Variables.ShockSensor, dgDegree);
                 c.AddVariable(Variables.ArtificialViscosity, 2);
             }
 
-            // LTS variables
+            // Time stepping variables
             c.AddVariable(Variables.CFL, 0);
             c.AddVariable(Variables.CFLConvective, 0);
             if (AV) {
@@ -2044,7 +2032,7 @@ namespace CNS {
 
             Func<double, double> SmoothJump = delegate (double distance) {
                 // smoothing should be in the range of h/p
-                double maxDistance = 4.0 * cellSize / Math.Max(dgDegree, 1);
+                double maxDistance = 2.0 * cellSize / Math.Max(dgDegree, 1);
 
                 return (Math.Tanh(distance / maxDistance) + 1.0) * 0.5;
             };
@@ -2081,15 +2069,11 @@ namespace CNS {
             c.dtMax = 1.0;
             c.Endtime = 0.25;
             //c.dtFixed = 1.0e-6;
-            //c.CFLFraction = 0.5; // altes Setting fuer Rechnungen auf Lichtenberg
-            c.CFLFraction = 0.05;
+            c.CFLFraction = 0.5;
             c.NoOfTimesteps = int.MaxValue;
 
             c.ProjectName = "Double Mach reflection";
-            c.SessionName = String.Format("DMR_withDLB, dgDegree = {0}, numOfCellsX = {1}, numOfCellsY = {2}, sensorLimit = {3:0.00E-00}, CFLFraction = {4:0.00E-00}, ALTS {5}/{6}, lamdaMax = {7}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, lambdaMax);
-            //c.Tags.Add("Double Mach reflection");
-            //c.Tags.Add("Artificial viscosity");
-            //c.Tags.Add("Adaptive local time stepping");
+            c.SessionName = String.Format("DMR smooth jump, dgDegree = {0}, numOfCellsX = {1}, numOfCellsY = {2}, sensorLimit = {3:0.00E-00}, CFLFraction = {4:0.00E-00}, ALTS {5}/{6}, lamdaMax = {7}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, lambdaMax);
 
             return c;
         }
@@ -2110,8 +2094,8 @@ namespace CNS {
             c.DynamicLoadBalancing_CellClassifier = new IBMCellClassifier();
             c.DynamicLoadBalancing_Period = 0;
             c.DynamicLoadBalancing_RedistributeAtStartup = true;
-            c.DynamicLoadBalancing_CellCostEstimatorFactories.Add(IBMCellCostEstimator.GetStaticCostBasedEstimator());
-            //c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(IBMCellCostEstimator.GetMultiBalanceConstraintedBasedEstimators());
+            //c.DynamicLoadBalancing_CellCostEstimatorFactories.Add(IBMCellCostEstimator.GetStaticCostBasedEstimator());
+            c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(IBMCellCostEstimator.GetMultiBalanceConstraintsBasedEstimators());
 
             double xMin = 0.0;
             double xMax = 0.5;
