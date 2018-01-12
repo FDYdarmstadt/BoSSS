@@ -72,7 +72,6 @@ namespace CNS.LoadBalancing {
             }
 
             EstimatedLocalCost = cellToCostMap.Sum();
-            //Debugger.Break();
         }
 
         /// <summary>
@@ -86,9 +85,8 @@ namespace CNS.LoadBalancing {
 
         /// <summary>
         /// Create two <see cref="ArtificialViscosityCellCostEstimator"/> for non-AV and AV cells
-        /// with converse costs: (1, 10) and (10, 1)
-        /// Here: Costs should not matter --> could also be (1, 100) and (100, 1), but it DOES matter, why???
-        /// Is this the correct procedure from Bjoern?
+        /// with converse costs: (1, 10) and (10, 1), cell costs do not matter in this case
+        /// (can be arbitrary)
         /// </summary>
         /// <returns></returns>
         public static IEnumerable<Func<IApplication<AppControl>, int, ICellCostEstimator>> GetMultiBalanceConstraintsBasedEstimators() {
