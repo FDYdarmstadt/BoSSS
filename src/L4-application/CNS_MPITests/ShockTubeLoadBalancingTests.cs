@@ -177,7 +177,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             CNSControl c = new CNSControl();
             c.DbPath = null;
             //c.DbPath = @"c:\bosss_db\";
-            //c.savetodb = true;
+            c.savetodb = false;
 
             c.ActiveOperators = Operators.Convection;
             c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
