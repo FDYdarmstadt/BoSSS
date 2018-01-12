@@ -975,18 +975,19 @@ namespace CNS {
 
             // Load balancing based on AV
             c.DynamicLoadBalancing_CellClassifier = new ArtificialViscosityCellClassifier();
-            c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange((prog, i) => new StaticCellCostEstimator(new[] { 1, 10 }));
-            //c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(ArtificialViscosityCellCostEstimator.GetStaticCostBasedEstimator(new int[] { 1, 10 }));
-            //c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(ArtificialViscosityCellCostEstimator.MultipleBalanceConstraintsFactory(new int[] { 1, 10 }));
+            c.DynamicLoadBalancing_CellCostEstimatorFactories.Add((p, i) => new StaticCellCostEstimator(new[] { 1, 10 }));
+            c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(ArtificialViscosityCellCostEstimator.GetStaticCostBasedEstimator());
+            c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(ArtificialViscosityCellCostEstimator.GetMultiBalanceConstraintsBasedEstimators());
 
-            c.DynamicLoadBalancing_ImbalanceThreshold = 0.1;
+            c.DynamicLoadBalancing_ImbalanceThreshold = 0.01;
             c.DynamicLoadBalancing_Period = 5;
-            c.GridPartType = GridPartType.METIS;
+
+            c.GridPartType = GridPartType.ParMETIS;
 
             c.DbPath = @"c:\bosss_db\";
             //c.DbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db\";
             c.savetodb = c.DbPath != null;
-            c.saveperiod = 10;
+            c.saveperiod = 100;
             c.PrintInterval = 1;
 
             double xMin = 0;
@@ -1091,7 +1092,7 @@ namespace CNS {
             r.Normalize();
 
             // Distance from a point X to the initial shock
-            double[] p = new double[] { 0.5, 0.0 };
+            double[] point = new double[] { 0.5, 0.0 };
 
             double DistanceFromPointToLine(double[] X, double[] pointOnLine, double[] directionVector) {
                 double[] X_minus_pointOnLine = new double[] { X[0] - pointOnLine[0], X[1] - pointOnLine[1] };
@@ -1118,8 +1119,8 @@ namespace CNS {
             double pressureLeft = 1.0;
             double pressureRight = 0.1;
 
-            //c.InitialValues_Evaluators.Add(Variables.Density, X => densityLeft - SmoothJump(DistanceFromPointToLine(X, p, r)) * (densityLeft - densityRight));
-            //c.InitialValues_Evaluators.Add(Variables.Pressure, X => pressureLeft - SmoothJump(DistanceFromPointToLine(X, p, r)) * (pressureLeft - pressureRight));
+            //c.InitialValues_Evaluators.Add(Variables.Density, X => densityLeft - SmoothJump(DistanceFromPointToLine(X, point, r)) * (densityLeft - densityRight));
+            //c.InitialValues_Evaluators.Add(Variables.Pressure, X => pressureLeft - SmoothJump(DistanceFromPointToLine(X, point, r)) * (pressureLeft - pressureRight));
             c.InitialValues_Evaluators.Add(Variables.Density, X => densityLeft - Jump(X[0]) * (densityLeft - densityRight));
             c.InitialValues_Evaluators.Add(Variables.Pressure, X => pressureLeft - Jump(X[0]) * (pressureLeft - pressureRight));
             c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => 0.0);
