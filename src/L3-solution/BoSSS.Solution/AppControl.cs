@@ -35,6 +35,13 @@ namespace BoSSS.Solution.Control {
     public class AppControl {
 
         /// <summary>
+        /// Returns the type of the solver main class;
+        /// </summary>
+        virtual public Type GetSolverType() {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
         /// The generating code as text representation
         /// </summary>
         public string ControlFileText {
@@ -514,6 +521,12 @@ namespace BoSSS.Solution.Control {
         /// Dynamic load balancing is suppressed if the relative computation imbalance is below this value.
         /// </summary>
         public double DynamicLoadBalancing_ImbalanceThreshold = 0.12;
+
+
+        /// <summary>
+        /// switch for activating adaptive mesh refinement
+        /// </summary>
+        public bool AdaptiveMeshRefinement = false;
 
 
         /// <summary>

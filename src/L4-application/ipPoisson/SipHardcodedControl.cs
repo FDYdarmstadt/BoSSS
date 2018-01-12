@@ -25,18 +25,18 @@ using ilPSP.Utils;
 using ilPSP;
 using BoSSS.Foundation.Grid.RefElements;
 
-namespace ipPoisson {
+namespace BoSSS.Application.SipPoisson {
 
     /// <summary>
     /// predefined control-objects
     /// </summary>
-    static public class ippHardcodedControl {
+    static public class SipHardcodedControl {
 
         /// <summary>
         /// Test on a curved grid.
         /// </summary>
-        public static ippControl TestCurved() {
-            var R = new ippControl();
+        public static SipControl TestCurved() {
+            var R = new SipControl();
             R.ProjectName = "ipPoison/curved";
             R.savetodb = false;
 
@@ -86,8 +86,8 @@ namespace ipPoisson {
         /// <summary>
         /// Test on a Cartesian grid, with an exact polynomial solution.
         /// </summary>
-        public static ippControl TestCartesian1(int xRes = 32, double xStretch = 1.0, int yRes = 16, double yStretch = 1.01, int pDG = 2) {
-            var RR = new ippControl();
+        public static SipControl TestCartesian1(int xRes = 32, double xStretch = 1.0, int yRes = 16, double yStretch = 1.01, int pDG = 2) {
+            var RR = new SipControl();
             RR.ProjectName = "ipPoison/cartesian";
             RR.savetodb = false;
 
@@ -129,8 +129,8 @@ namespace ipPoisson {
         /// <summary>
         /// Test on a Cartesian grid, with an exact polynomial solution.
         /// </summary>
-        public static ippControl TestCartesian3D(int xRes = 32, double xStretch = 1.0, int yRes = 16, double yStretch = 1.0, int zRes = 16, double zStretch = 1.0) {
-            var R = new ippControl();
+        public static SipControl TestCartesian3D(int xRes = 32, double xStretch = 1.0, int yRes = 16, double yStretch = 1.0, int zRes = 16, double zStretch = 1.0) {
+            var R = new SipControl();
             R.ProjectName = "ipPoison/cartesian";
             R.savetodb = false;
 
@@ -177,7 +177,7 @@ namespace ipPoisson {
         /// <param name="solver_name">
         /// Name of solver to use.
         /// </param>
-        public static ippControl TestCartesian2(int[] Res, double[] Stretch = null, string solver_name = "softpcg+schwarz", int deg = 3) {
+        public static SipControl TestCartesian2(int[] Res, double[] Stretch = null, string solver_name = "softpcg+schwarz+directcoarse", int deg = 3) {
             if(Res.Length != 2 && Res.Length != 3)
                 throw new ArgumentOutOfRangeException();
             if(Stretch == null) {
@@ -188,7 +188,7 @@ namespace ipPoisson {
                     throw new ArgumentException();
             }
 
-            var R = new ippControl();
+            var R = new SipControl();
             R.ProjectName = "ipPoison/cartesian";
             R.savetodb = false;
 
@@ -245,7 +245,7 @@ namespace ipPoisson {
         /// <summary>
         /// Poisson Equation on a (-1,1)x(-1,1), Dirichlet everywhere
         /// </summary>
-        public static ippControl Square(int xRes = 21, int yRes = 16, int deg = 5) {
+        public static SipControl Square(int xRes = 21, int yRes = 16, int deg = 5) {
 
             //Func<double[], double> exRhs = X => 2 * X[0] * X[0] + 2 * X[1] * X[1] - 4;
             //Func<double[], double> exSol = X => (1.0 - X[0] * X[0]) * (1.0 - X[1] * X[1]);
@@ -257,7 +257,7 @@ namespace ipPoisson {
             Func<double[], double> exRhs = X => (Math.PI * Math.PI * 0.5 * Math.Cos(X[0] * Math.PI * 0.5) * Math.Cos(X[1] * Math.PI * 0.5)); // == - /\ exSol
 
 
-            var R = new ippControl();
+            var R = new SipControl();
             R.ProjectName = "ipPoison/square";
             R.savetodb = false;
             //R.DbPath = "D:\\BoSSS-db";

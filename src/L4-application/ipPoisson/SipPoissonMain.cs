@@ -38,9 +38,12 @@ using NUnit.Framework;
 using BoSSS.Solution.Multigrid;
 using ilPSP.Connectors.Matlab;
 
-namespace ipPoisson {
+namespace BoSSS.Application.SipPoisson {
 
-    class Program : Application<ippControl> {
+    /// <summary>
+    /// Benchmark application, solves a Poisson problem using the symmetric interior penalty (SIP) method.
+    /// </summary>
+    public class SipPoissonMain : Application<SipControl> {
 
 #pragma warning disable 649
         /// <summary>
@@ -50,7 +53,7 @@ namespace ipPoisson {
         protected SinglePhaseField T;
 
         /// <summary>
-        /// exact solution, to determine L2-Error, see also <see cref="ippControl.ExactSolution_provided"/>.
+        /// exact solution, to determine L2-Error, see also <see cref="SipControl.ExactSolution_provided"/>.
         /// </summary>
         [InstantiateFromControlFile("Tex", "Tex", IOListOption.Never)]
         protected SinglePhaseField Tex;
@@ -72,7 +75,7 @@ namespace ipPoisson {
             //BatchmodeConnector.MatlabExecuteable = "C:\\cygwin\\bin\\bash.exe";
             
             _Main(args, false, "", delegate() {
-                Program p = new Program();
+                SipPoissonMain p = new SipPoissonMain();
 
                 Console.WriteLine("ipPoisson: " + ilPSP.Environment.MPIEnv.MPI_Rank + " of " + ilPSP.Environment.MPIEnv.MPI_Size
                     + " on compute node '" + ilPSP.Environment.MPIEnv.Hostname + "';");
@@ -96,8 +99,6 @@ namespace ipPoisson {
 
             for (int i = 0; i < n; i++)
                 nodes[i] = linnodes2[i] * (1 - a) + (1.0 - Math.Cos(linnodes[i])) * a;
-
-            
 
             for (int i = 0; i < n; i++)
                 nodes[i] = nodes[i] * (r - l) + l;
@@ -439,7 +440,9 @@ namespace ipPoisson {
                             Precond = new Schwarz() {
                                 m_MaxIterations = 1,
                                 CoarseSolver = new GenericRestriction() {
-                                    CoarserLevelSolver = new DirectSolver()
+                                    CoarserLevelSolver = new DirectSolver() {
+                                        WhichSolver = DirectSolver._whichSolver.PARDISO
+                                    }
                                 },
                                 m_BlockingStrategy = new Schwarz.MultigridBlocks() {
                                     Depth = 2,
@@ -637,14 +640,14 @@ namespace ipPoisson {
     /// </summary>
     class ipFlux : BoSSS.Solution.NSECommon.ipLaplace {
 
-        public ipFlux(double penalty_const, MultidimensionalArray cj, ippControl __ctrl)
+        public ipFlux(double penalty_const, MultidimensionalArray cj, SipControl __ctrl)
             : base(penalty_const, cj, "T") //
         {
             ctrl = __ctrl;
         }
 
 
-        ippControl ctrl;
+        SipControl ctrl;
 
         protected override double g_Diri(ref CommonParamsBnd inp) {
             double v = ctrl.g_Diri(inp);
