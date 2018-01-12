@@ -16,28 +16,95 @@ limitations under the License.
 
 using BoSSS.Solution;
 using BoSSS.Solution.Control;
+using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Diagnostics;
+using System.Linq;
 
 namespace CNS.LoadBalancing {
 
-    public class ArtificialViscosityCellCostEstimator : StaticCellCostEstimator {
+    /// <summary>
+    /// A cell cost estimator based on aritificial viscosity
+    /// </summary>
+    public class ArtificialViscosityCellCostEstimator : ICellCostEstimator {
 
-        public ArtificialViscosityCellCostEstimator(int[] performanceClassToCostMap) : base(performanceClassToCostMap) {
-            if (performanceClassToCostMap.Length != 2) {
-                throw new ConfigurationException("There are more than two performance classes");
+        private int[] cellToCostMap;
+
+        private int performanceClass;
+
+        /// <summary>
+        /// <see cref="ICellCostEstimator"/>
+        /// </summary>
+        public int CurrentPerformanceClassCount {
+            get;
+            private set;
+        }
+
+        /// <summary>
+        /// <see cref="ICellCostEstimator"/>
+        /// </summary>
+        public double EstimatedLocalCost {
+            get;
+            private set;
+        }
+
+        /// <summary>
+        /// A cell cost estimator based on aritificial viscosity
+        /// Performance class 0: Cells without AV
+        /// Performance class 1: Cells with AV
+        /// </summary>
+        public ArtificialViscosityCellCostEstimator(int performanceClass) {
+            this.performanceClass = performanceClass;
+        }
+
+        public void UpdateEstimates(int performanceClassCount, int[] cellToPerformanceClassMap) {
+            CurrentPerformanceClassCount = performanceClassCount;
+
+            // One balance constraint per cluster
+            cellToCostMap = new int[cellToPerformanceClassMap.Length];
+            cellToCostMap.SetAll(1);
+            for (int j = 0; j < cellToPerformanceClassMap.Length; j++) {
+                if (cellToPerformanceClassMap[j] == this.performanceClass) {
+                    cellToCostMap[j] = 10;
+                }
+            }
+
+            EstimatedLocalCost = cellToCostMap.Sum();
+            //Debugger.Break();
+        }
+
+        /// <summary>
+        /// AV cells are ten times more expensive than non-AV cells
+        /// </summary>
+        /// <returns></returns>
+        public static Func<IApplication<AppControl>, int, ICellCostEstimator> GetStaticCostBasedEstimator() {
+            return (p, i) => new StaticCellCostEstimator(
+                new int[] { 1, 10 });
+        }
+
+        /// <summary>
+        /// Create two <see cref="ArtificialViscosityCellCostEstimator"/> for non-AV and AV cells
+        /// with converse costs: (1, 10) and (10, 1)
+        /// Here: Costs should not matter --> could also be (1, 100) and (100, 1), but it DOES matter, why???
+        /// Is this the correct procedure from Bjoern?
+        /// </summary>
+        /// <returns></returns>
+        public static IEnumerable<Func<IApplication<AppControl>, int, ICellCostEstimator>> GetMultiBalanceConstraintsBasedEstimators() {
+            int noOfPerformancesClasses = 2; // Cells with AV + cells without AV
+            for (int i = 0; i < noOfPerformancesClasses; i++) {
+                int temp = i; // Avoid delegate creation from capturing variable $i
+                yield return (app, classCount) => new ArtificialViscosityCellCostEstimator(temp);
             }
         }
 
-        public static IEnumerable<Func<IApplication<AppControl>, int, ICellCostEstimator>> GetStaticCostBasedEstimator(int[] performanceClassToCostMap) {
-            yield return (app, classCount) => new ArtificialViscosityCellCostEstimator(performanceClassToCostMap);
-        }
-
-        public static IEnumerable<Func<IApplication<AppControl>, int, ICellCostEstimator>> MultipleBalanceConstraintsFactory(int[] performanceClassToCostMap) {
-            yield return (app, classCount) => new ArtificialViscosityCellCostEstimator(performanceClassToCostMap);
-            int[] temp = new int[] { performanceClassToCostMap[1], performanceClassToCostMap[0] };
-            yield return (app, classCount) => new ArtificialViscosityCellCostEstimator(temp);
+        /// <summary>
+        /// <see cref="ICellCostEstimator"/>
+        /// </summary>
+        /// <returns></returns>
+        public int[] GetEstimatedCellCosts() {
+            return cellToCostMap;
         }
     }
 }
