@@ -351,9 +351,9 @@ namespace CNS {
         /// See <see cref="ICellClassifier"/>
         /// </summary>
         /// <param name="NoOfClasses"></param>
-        /// <param name="CellPerfomanceClasses"></param>
-        protected override void GetCellPerformanceClasses(out int NoOfClasses, out int[] CellPerfomanceClasses) {
-            (NoOfClasses, CellPerfomanceClasses) = Control.DynamicLoadBalancing_CellClassifier.ClassifyCells(this);
+        /// <param name="cellToPerformanceClassMap"></param>
+        protected override void GetCellPerformanceClasses(out int NoOfClasses, out int[] cellToPerformanceClassMap) {
+            (NoOfClasses, cellToPerformanceClassMap) = Control.DynamicLoadBalancing_CellClassifier.ClassifyCells(this);
         }
 
         /// <summary>
