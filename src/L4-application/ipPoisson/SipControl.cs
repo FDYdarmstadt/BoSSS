@@ -26,28 +26,31 @@ namespace BoSSS.Application.SipPoisson {
     /// <summary>
     /// Control object for the ipPoisson solver.
     /// </summary>
+    [Serializable]
     public class SipControl : AppControl {
 
+        /// <summary>
+        /// Type of <see cref="SipPoissonMain"/>.
+        /// </summary>
         public override Type GetSolverType() {
             return typeof(SipPoissonMain);
         }
+        
+        ///// <summary>
+        ///// Function which determines which part of the domain boundary is of Dirichlet type (true)
+        ///// and which part of Neumann type (false).
+        ///// </summary>
+        //public Func<CommonParamsBnd,bool> IsDirichlet;
 
+        ///// <summary>
+        ///// Dirichlet boundary value
+        ///// </summary>
+        //public Func<CommonParamsBnd,double> g_Diri;
 
-        /// <summary>
-        /// Function which determines which part of the domain boundary is of Dirichlet type (true)
-        /// and which part of Neumann type (false).
-        /// </summary>
-        public Func<CommonParamsBnd,bool> IsDirichlet;
-
-        /// <summary>
-        /// Dirichlet boundary value
-        /// </summary>
-        public Func<CommonParamsBnd,double> g_Diri;
-
-        /// <summary>
-        /// Neumann boundary value
-        /// </summary>
-        public Func<CommonParamsBnd, double> g_Neum;
+        ///// <summary>
+        ///// Neumann boundary value
+        ///// </summary>
+        //public Func<CommonParamsBnd, double> g_Neum;
         
         /// <summary>
         /// Multiplyer for the penalty parameter, should be around 1.0.
