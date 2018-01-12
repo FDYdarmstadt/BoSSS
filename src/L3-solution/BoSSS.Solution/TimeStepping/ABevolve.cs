@@ -246,14 +246,14 @@ namespace BoSSS.Solution.Timestepping {
 
         /// <summary>
         /// Computes the new intermediate DGCoordinates. 
-        /// Important: It does not change the DGCoordinates <see cref="ExplicitEuler.DGCoordinates"/>.
+        /// Important: It does not change the DGCoordinates <see cref="ExplicitEuler.CurrentState"/>.
         /// </summary>
         /// <param name="completeChangeRate">Complete ChangeRate of a cluster for one sub-step</param>
         /// <returns>intermediate DGCoordinates as array</returns>
         protected virtual double[] ComputesUpdatedDGCoordinates(double[] completeChangeRate) {
             // Standard case: Just add completeChangeRate to DGCoordinates as array
             double[] upDGC = new double[Mapping.LocalLength];
-            DGCoordinates.CopyTo(upDGC, 0);
+            CurrentState.CopyTo(upDGC, 0);
             upDGC = OrderValuesBySgrd(upDGC);
             BLAS.daxpy(upDGC.Length, -1, OrderValuesBySgrd(completeChangeRate), 1, upDGC, 1);
             return upDGC;

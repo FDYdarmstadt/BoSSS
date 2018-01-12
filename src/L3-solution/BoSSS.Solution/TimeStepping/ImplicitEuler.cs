@@ -85,10 +85,10 @@ namespace BoSSS.Solution.Timestepping {
         /// <summary>
         /// Solves the linear system (diag(1/<paramref name="dt"/>) +
         /// <em>M</em>) * x =
-        /// <see cref="ImplicitTimeStepper.DGCoordinates"/> /
+        /// <see cref="ImplicitTimeStepper.CurrentState"/> /
         /// <paramref name="dt"/> -
         /// <see cref="ImplicitTimeStepper.m_AffineOffset1"/> and writes the
-        /// result to <see cref="ImplicitTimeStepper.DGCoordinates"/>.
+        /// result to <see cref="ImplicitTimeStepper.CurrentState"/>.
         /// </summary>
         /// <param name="dt">The length of the timestep</param>
         protected override void PerformTimeStep(double dt) {
@@ -108,11 +108,11 @@ namespace BoSSS.Solution.Timestepping {
                 BLAS.dscal(n, -1.0, rhs, 1);
 
                 for (int i = 0; i < n; i++) {
-                    rhs[i] += diag[i] * DGCoordinates[i];
+                    rhs[i] += diag[i] * CurrentState[i];
                 }
 
                 tr.Info("Calling solver");
-                LastSolverResult = m_Solver.Solve<double[], CoordinateVector, double[]>(1.0, diag, DGCoordinates, rhs);
+                LastSolverResult = m_Solver.Solve<double[], CoordinateVector, double[]>(1.0, diag, CurrentState, rhs);
 
             }
         }

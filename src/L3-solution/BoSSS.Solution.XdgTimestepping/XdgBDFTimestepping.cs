@@ -35,29 +35,10 @@ using MPI.Wrappers;
 namespace BoSSS.Solution.XdgTimestepping {
 
     /// <summary>
-    /// switch for the initialization of the <see cref="XdgBDFTimestepping"/> 
-    /// </summary>
-    public enum TimestepperInit {
-
-        /// Initialization from a single timestep, i.e. if this time-stepper should use BDF4,
-        /// it starts with BDF1, BDF2, BDF3 in the first, second and third time-step.
-        SingleInit,
-
-        /// same initialization for SingleInit, but the first timesteps 
-        /// are computed with a smaller timestepsize
-        IncrementInit,
-
-        /// Initialization for a multi-step method, e.g. BDF4 requires 4 timesteps.
-        /// can be used if an analytic solution is known or simulation is restarted form another session
-        MultiInit
-    }
-
-    /// <summary>
     /// Implicit time-stepping using Backward-Differentiation-Formulas (BDF),
     /// specialized for XDG applications.
     /// </summary>
     public class XdgBDFTimestepping : XdgTimesteppingBase {
-
         /// <summary>
         /// Constructor;
         /// </summary>
@@ -141,22 +122,8 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             base.CommonConfigurationChecks();
 
-            switch (BDForder) {
-                case -1:
-                m_TSCchain = new BDFSchemeCoeffs[] { BDFSchemeCoeffs.CrankNicolson() };
-                break;
+            m_TSCchain = BDFCommon.GetChain(BDForder);
 
-                case 0:
-                m_TSCchain = new BDFSchemeCoeffs[] { BDFSchemeCoeffs.ExplicitEuler() };
-                break;
-
-                default:
-                m_TSCchain = new BDFSchemeCoeffs[BDForder];
-                for (int i = BDForder; i >= 1; i--) {
-                    m_TSCchain[BDForder - i] = BDFSchemeCoeffs.BDF(i);
-                }
-                break;
-            }
             m_LsTrk = LsTrk;
 
             int S = m_TSCchain[0].S;

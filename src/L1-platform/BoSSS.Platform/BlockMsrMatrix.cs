@@ -2182,7 +2182,10 @@ namespace ilPSP.LinSolvers {
             ComPatternValid = true;
         }
 
-
+        /// <summary>
+        /// 'Sp'arse 'M'atrix/'V'ector 'M'ultiplication;<br/>
+        /// Performs the calculation
+        /// <paramref name="acc"/> = <paramref name="acc"/>*<paramref name="beta"/> + this*<paramref name="a"/>*<paramref name="alpha"/>;
         public void SpMV<VectorType1, VectorType2>(double alpha, VectorType1 a, double beta, VectorType2 acc)
             where VectorType1 : IList<double>
             where VectorType2 : IList<double> //

@@ -162,17 +162,17 @@ namespace CNS.IBM {
 
         protected override double[] ComputesUpdatedDGCoordinates(double[] completeChangeRate) {
             double[] y0 = new double[Mapping.LocalLength];
-            DGCoordinates.CopyTo(y0, 0);
-            DGCoordinates.axpy<double[]>(completeChangeRate, -1);
+            CurrentState.CopyTo(y0, 0);
+            CurrentState.axpy<double[]>(completeChangeRate, -1);
 
             // Speciality for IBM: Do the extrapolation
-            speciesMap.Agglomerator.Extrapolate(DGCoordinates.Mapping);
+            speciesMap.Agglomerator.Extrapolate(CurrentState.Mapping);
 
-            double[] upDGC = DGCoordinates.ToArray();
+            double[] upDGC = CurrentState.ToArray();
             upDGC = OrderValuesBySgrd(upDGC);
             // DGCoordinates should be untouched after calling this method
-            DGCoordinates.Clear();
-            DGCoordinates.CopyFrom(y0, 0);
+            CurrentState.Clear();
+            CurrentState.CopyFrom(y0, 0);
 
             return upDGC;
         }

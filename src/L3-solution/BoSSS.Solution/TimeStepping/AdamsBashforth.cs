@@ -158,7 +158,7 @@ namespace BoSSS.Solution.Timestepping {
                     }
 
                     // perform time step
-                    DGCoordinates.axpy<double[]>(CompleteChangeRate, -1);
+                    CurrentState.axpy<double[]>(CompleteChangeRate, -1);
                     m_Time += dt;
 
 
