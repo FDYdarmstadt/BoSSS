@@ -35,6 +35,7 @@ using ilPSP;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
@@ -975,13 +976,14 @@ namespace CNS {
             //c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(LTSCellCostEstimator.Factory(c.NumberOfSubGrids));
 
             // Load balancing based on AV
-            c.DynamicLoadBalancing_CellClassifier = new ArtificialViscosityCellClassifier();
-            c.DynamicLoadBalancing_CellCostEstimatorFactories.Add((p, i) => new StaticCellCostEstimator(new[] { 1, 10 }));
-            c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(ArtificialViscosityCellCostEstimator.GetStaticCostBasedEstimator());
-            c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(ArtificialViscosityCellCostEstimator.GetMultiBalanceConstraintsBasedEstimators());
+            //c.DynamicLoadBalancing_CellClassifier = new ArtificialViscosityCellClassifier();
+            //c.DynamicLoadBalancing_CellCostEstimatorFactories.Add((p, i) => new StaticCellCostEstimator(new[] { 1, 10 }));
+            ////c.DynamicLoadBalancing_CellCostEstimatorFactories.Add((p, i) => new StaticCellCostEstimator(new[] { 10, 1 }));
+            ////c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(ArtificialViscosityCellCostEstimator.GetStaticCostBasedEstimator());
+            ////c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(ArtificialViscosityCellCostEstimator.GetMultiBalanceConstraintsBasedEstimators());
 
-            c.DynamicLoadBalancing_ImbalanceThreshold = 0.01;
-            c.DynamicLoadBalancing_Period = 5;
+            //c.DynamicLoadBalancing_ImbalanceThreshold = 0.01;
+            //c.DynamicLoadBalancing_Period = 5;
 
             c.GridPartType = GridPartType.ParMETIS;
 
@@ -1146,6 +1148,135 @@ namespace CNS {
 
             return c;
         }
+
+        public static CNSControl ShockTubeFromTest() {
+
+            int dgDegree = 2;
+            ExplicitSchemes explicitScheme = ExplicitSchemes.RungeKutta;
+            int explicitOrder = 1;
+            int noOfCells = 50;
+            double gridStretching = 0.0;
+
+            bool twoD = true;
+
+            double densityLeft = 1.0;
+            double velocityLeft = 0.0;
+            double pressureLeft = 1.0;
+            double densityRight = 0.125;
+            double velocityRight = 0.0;
+            double pressureRight = 0.1;
+            double discontinuityPosition = 0.5;
+
+            CNSControl c = new CNSControl();
+            //c.DbPath = null;
+            c.DbPath = @"c:\bosss_db\";
+            c.savetodb = true;
+
+            c.ActiveOperators = Operators.Convection;
+            c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
+
+            c.EquationOfState = IdealGas.Air;
+            c.MachNumber = 1.0 / Math.Sqrt(c.EquationOfState.HeatCapacityRatio);
+            c.ReynoldsNumber = 1.0;
+            c.PrandtlNumber = 0.71;
+
+            c.ExplicitScheme = explicitScheme;
+            c.ExplicitOrder = explicitOrder;
+
+            c.AddVariable(Variables.Density, dgDegree);
+            c.AddVariable(Variables.Momentum.xComponent, dgDegree);
+            c.AddVariable(Variables.Energy, dgDegree);
+            c.AddVariable(Variables.Velocity.xComponent, dgDegree);
+            c.AddVariable(Variables.Pressure, dgDegree);
+            c.AddVariable(Variables.Rank, 0);
+
+            c.GridFunc = delegate {
+                double xMin = 0.0;
+                double xMax = 1.0;
+                double yMin = 0.0;
+                double yMax = 1.0;
+
+                double[] xNodes;
+                double[] yNodes;
+                if (gridStretching > 0.0) {
+                    xNodes = Grid1D.TanhSpacing(xMin, xMax, noOfCells + 1, gridStretching, true);
+                    yNodes = Grid1D.TanhSpacing(yMin, yMax, 1 + 1, gridStretching, true);
+                } else {
+                    xNodes = GenericBlas.Linspace(xMin, xMax, noOfCells + 1);
+                    yNodes = GenericBlas.Linspace(yMin, yMax, 1 + 1);
+                }
+
+                GridCommons grid;
+                if (twoD) {
+                    grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
+                } else {
+                    grid = Grid1D.LineGrid(xNodes, periodic: false);
+                }
+
+                // Boundary conditions
+                grid.EdgeTagNames.Add(1, "AdiabaticSlipWall");
+                grid.DefineEdgeTags(delegate (double[] _X) {
+                    return 1;
+                });
+                return grid;
+            };
+            c.AddBoundaryCondition("AdiabaticSlipWall");
+
+            Material material = new Material(c);
+            StateVector stateLeft = StateVector.FromPrimitiveQuantities(
+                material, densityLeft, new Vector3D(velocityLeft, 0.0, 0.0), pressureLeft);
+            StateVector stateRight = StateVector.FromPrimitiveQuantities(
+                material, densityRight, new Vector3D(velocityRight, 0.0, 0.0), pressureRight);
+
+            c.InitialValues_Evaluators.Add(
+                    Variables.Density,
+                    X => stateLeft.Density + (stateRight.Density - stateLeft.Density) * (X[0] - discontinuityPosition).Heaviside());
+            c.InitialValues_Evaluators.Add(
+                Variables.Velocity.xComponent,
+                X => stateLeft.Velocity.x + (stateRight.Velocity.x - stateLeft.Velocity.x) * (X[0] - discontinuityPosition).Heaviside());
+            c.InitialValues_Evaluators.Add(
+                Variables.Pressure,
+                X => stateLeft.Pressure + (stateRight.Pressure - stateLeft.Pressure) * (X[0] - discontinuityPosition).Heaviside());
+            if (twoD) {
+                c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => 0);
+            }
+
+            c.dtMin = 0.0;
+            c.dtMax = 1.0;
+            //c.dtFixed = 1.0e-6;
+            c.CFLFraction = 0.1;
+            c.Endtime = 0.2;
+            c.NoOfTimesteps = int.MaxValue;
+
+            // Use METIS since ParMETIS is not installed on build server
+            c.GridPartType = GridPartType.ParMETIS;
+
+            Variable sensorVariable = Variables.Density;
+            double sensorLimit = 1e-3;
+            double epsilon0 = 1.0;
+            double kappa = 0.5;
+            double endTime = 0.1;
+
+            if (twoD) {
+                c.AddVariable(Variables.ArtificialViscosity, 2);
+            } else {
+                c.AddVariable(Variables.ArtificialViscosity, 1);
+            }
+            c.ActiveOperators |= Operators.ArtificialViscosity;
+            c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+            c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 2);
+            c.Endtime = endTime;
+
+            c.DynamicLoadBalancing_Period = 5;
+            //c.DynamicLoadBalancing_CellClassifier = new RandomCellClassifier(2);
+            c.DynamicLoadBalancing_CellClassifier = new ArtificialViscosityCellClassifier();
+            //c.DynamicLoadBalancing_CellCostEstimatorFactories.Add((p, i) => new StaticCellCostEstimator(new[] { 1, 10 }));
+            c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(ArtificialViscosityCellCostEstimator.GetMultiBalanceConstraintsBasedEstimators());
+            c.DynamicLoadBalancing_ImbalanceThreshold = 0.01;
+
+            return c;
+        }
+
 
         public static IBMControl IBMShockTube(string dbPath = null, int dgDegree = 2, int numOfCellsX = 50, int numOfCellsY = 1, double sensorLimit = 1e-3, bool true1D = false, bool saveToDb = true) {
 
@@ -2008,8 +2139,8 @@ namespace CNS {
                 };
 
             } else {
-                c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid(sessionID), -1); 
-		        c.GridGuid = new Guid(gridID); 
+                c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid(sessionID), -1);
+                c.GridGuid = new Guid(gridID);
             }
 
             Func<double[], double, double> DistanceToLine = delegate (double[] X, double t) {
@@ -2066,8 +2197,7 @@ namespace CNS {
             //c.InitialValues_Evaluators.Add(Variables.Momentum.xComponent, X => 57.157 - Jump(X[0] - (0.1 + (X[1] / 1.732))) * (57.157 - 0.0));
             //c.InitialValues_Evaluators.Add(Variables.Momentum.yComponent, X => -33.0 - Jump(X[0] - (0.1 + (X[1] / 1.732))) * (-33 - 0.0));
             //c.InitialValues_Evaluators.Add(Variables.Energy, X => 563.544 - Jump(X[0] - (0.1 + (X[1] / 1.732))) * (563.544 - 2.5));
-            if (!restart) 
-            {
+            if (!restart) {
                 c.InitialValues_Evaluators.Add(Variables.Density, X => 8.0 - SmoothJump(DistanceToLine(X, 0)) * (8.0 - 1.4));
                 c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => 8.25 * Math.Sin(Math.PI / 3) - SmoothJump(DistanceToLine(X, 0)) * (8.25 * Math.Sin(Math.PI / 3) - 0.0));
                 c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => -8.25 * Math.Cos(Math.PI / 3) - SmoothJump(DistanceToLine(X, 0)) * (-8.25 * Math.Cos(Math.PI / 3) - 0.0));
