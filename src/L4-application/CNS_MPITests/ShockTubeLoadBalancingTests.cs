@@ -51,8 +51,8 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             //TestRebalancingForDG0WithRK1();
             //TestRealancingForDG0WithAB1();
             //TestRebalancingForDG0WithLTS1SingleSubGrid();
-            TestRebalancingForDG0WithLTS1TwoSubGrids();
-            //TestRebalancingForDG2WithRK1AndAV();
+            //TestRebalancingForDG0WithLTS1TwoSubGrids();
+            TestRebalancingForDG2WithRK1AndAV();
             //TestRebalancingForDG2WithAB1AndAV();
             TearDown();
         }
@@ -306,7 +306,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             loadBalSolver.Init(loadBalControl, commandLineOptions);
             loadBalSolver.RunSolverMode();
 
-            // To be able to compare errors without using the databse, we to 
+            // To be able to compare errors without using the database, we need to 
             // agree on a single grid partitioning in the end -> use ref
             Console.WriteLine("Transfering load balancing data to reference grid");
             var refPartitioning = new int[loadBalSolver.GridData.Cells.NoOfLocalUpdatedCells];

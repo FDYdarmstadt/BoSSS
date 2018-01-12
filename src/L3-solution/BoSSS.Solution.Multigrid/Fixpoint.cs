@@ -37,7 +37,8 @@ namespace BoSSS.Solution.Multigrid {
     public class FixpointIterator : NonlinearSolver {
 
 
-        public FixpointIterator(AssembleMatrixDel __AssembleMatrix, IEnumerable<AggregationGridBasis[]> __AggBasisSeq, MultigridOperator.ChangeOfBasisConfig[][] __MultigridOperatorConfig) 
+        public FixpointIterator(AssembleMatrixDel __AssembleMatrix, IEnumerable<AggregationGridBasis[]> __AggBasisSeq, 
+            MultigridOperator.ChangeOfBasisConfig[][] __MultigridOperatorConfig)
             : base(__AssembleMatrix, __AggBasisSeq, __MultigridOperatorConfig) //
         {
         }
@@ -55,9 +56,18 @@ namespace BoSSS.Solution.Multigrid {
         public double UnderRelax = 1.0;
 
 
-        public delegate bool ConvergenceReached(double Residual_Solver);
+        ///// <summary>
+        ///// delays the evaluation of the coupled instance (e.g. Level-set) during update
+        ///// </summary>
+        //public event Action DelayCoupledIteration;
 
-        public ConvergenceReached LastIteration_Converged;
+        /// <summary>
+        /// delegate for checking the convergence criteria of the coupled iteration
+        /// </summary>
+        /// <returns></returns>
+        public delegate bool CoupledConvergenceReached();
+
+        public CoupledConvergenceReached CoupledIteration_Converged;
 
 
         override public void SolverDriver<S>(CoordinateVector SolutionVec, S RHS) {
@@ -70,25 +80,26 @@ namespace BoSSS.Solution.Multigrid {
             double[] Correction = new double[Solution.Length];
             double ResidualNorm = Residual.L2NormPow2().MPISum().Sqrt();
             int NoOfIterations = 0;
-            if(m_LinearSolver.GetType()== typeof(SoftGMRES))
-            ((SoftGMRES)m_LinearSolver).m_SessionPath = m_SessionPath;
+            if (m_LinearSolver.GetType() == typeof(SoftGMRES))
+                ((SoftGMRES)m_LinearSolver).m_SessionPath = m_SessionPath;
 
             OnIterationCallback(NoOfIterations, Solution.CloneAs(), Residual.CloneAs(), this.CurrentLin);
-            
-            if (LastIteration_Converged == null)
-                LastIteration_Converged = delegate (double ResNorm) {
-                    return (ResNorm < ConvCrit);
+
+            if (CoupledIteration_Converged == null)
+                CoupledIteration_Converged = delegate () {
+                    return true;
                 };
 
             // iterate...
             // ==========
-            while ((!LastIteration_Converged(ResidualNorm) && NoOfIterations < MaxIter) || (NoOfIterations < MinIter)) {
+            //int NoOfMainIterations = 0;
+            while ((!(ResidualNorm < ConvCrit && CoupledIteration_Converged()) && NoOfIterations < MaxIter) || (NoOfIterations < MinIter)) {
                 NoOfIterations++;
 
                 //DirectSolver ds = new DirectSolver();
                 //ds.Init(this.CurrentLin);
                 //double L2_Res = Residual.L2Norm();
-                this.m_LinearSolver.Init(this.CurrentLin); 
+                this.m_LinearSolver.Init(this.CurrentLin);
                 Correction.ClearEntries();
                 if (Correction.Length != Residual.Length)
                     Correction = new double[Residual.Length];
@@ -110,7 +121,10 @@ namespace BoSSS.Solution.Multigrid {
                 ResidualNorm = Residual.L2NormPow2().MPISum().Sqrt();
                 OnIterationCallback(NoOfIterations, Solution.CloneAs(), Residual.CloneAs(), this.CurrentLin);
             }
-          
+
         }
+
     }
+
+
 }
