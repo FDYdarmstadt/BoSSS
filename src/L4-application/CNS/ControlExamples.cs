@@ -16,6 +16,7 @@ limitations under the License.
 
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution;
@@ -1878,12 +1879,13 @@ namespace CNS {
             return c;
         }
 
-        public static CNSControl DoubleMachReflection(string dbPath = null, int dgDegree = 0, int numOfCellsX = 400, int numOfCellsY = 100, double xMax = 4, double sensorLimit = 1e-3) {
+        public static CNSControl DoubleMachReflection(string dbPath = null, int dgDegree = 2, int numOfCellsX = 400, int numOfCellsY = 100, double xMax = 4, double sensorLimit = 1e-3, bool restart = false, string sessionID = null, string gridID = null) {
             CNSControl c = new CNSControl();
 
-            dbPath = @"c:\bosss_db\";
-            //string dbPath2 = @"\\dc1\userspace\stange\HiWi_database\tests";
-            //string dbPath2 = @"/work/scratch/ws35kire/work_db";
+            sessionID = "92f2ab7e-ad5b-4c0c-8156-a7087c5fe521";
+            gridID = "0d2de41a-34f3-4c94-bb5b-5c29199fd92f";
+
+            string dbPath2 = @"/work/scratch/ws35kire/work_db";
             //string dbPath2 = @"/home/ws35kire/test_db";
             c.DbPath = dbPath;
             c.savetodb = dbPath != null;
@@ -1902,7 +1904,7 @@ namespace CNS {
             //c.DynamicLoadBalancing_CellClassifier = new LTSCellClassifier();
             //c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(LTSCellCostEstimator.Factory(c.NumberOfSubGrids));
             //c.DynamicLoadBalancing_ImbalanceThreshold = 0.1;
-            //c.DynamicLoadBalancing_Period = 5;
+            c.DynamicLoadBalancing_Period = 50;
 
             bool AV = false;
 
@@ -1974,36 +1976,41 @@ namespace CNS {
             if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS)) {
                 c.AddVariable(Variables.LTSClusters, 0);
             }
+            if (!restart) {
+                c.GridFunc = delegate {
+                    double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
+                    double[] yNodes = GenericBlas.Linspace(yMin, yMax, numOfCellsY + 1);
+                    var grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
 
-            c.GridFunc = delegate {
-                double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
-                double[] yNodes = GenericBlas.Linspace(yMin, yMax, numOfCellsY + 1);
-                var grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
+                    grid.EdgeTagNames.Add(1, "SupersonicInlet");
+                    grid.EdgeTagNames.Add(2, "SupersonicOutlet");
+                    grid.EdgeTagNames.Add(3, "AdiabaticSlipWall");
 
-                grid.EdgeTagNames.Add(1, "SupersonicInlet");
-                grid.EdgeTagNames.Add(2, "SupersonicOutlet");
-                grid.EdgeTagNames.Add(3, "AdiabaticSlipWall");
-
-                grid.DefineEdgeTags(delegate (double[] X) {
-                    if (Math.Abs(X[1]) < 1e-14) {// unten
-                        if (X[0] < xWall) {// unten (links)
+                    grid.DefineEdgeTags(delegate (double[] X) {
+                        if (Math.Abs(X[1]) < 1e-14) {// unten
+                            if (X[0] < xWall) {// unten (links)
+                                return 1;
+                            } else {// unten (Rest)
+                                return 3;
+                            }
+                        } else if (Math.Abs(X[1] - (yMax - yMin)) < 1e-14) {// oben
                             return 1;
-                        } else {// unten (Rest)
-                            return 3;
+                        } else if (Math.Abs(X[0]) < 1e-14) { // links
+                            return 1;
+                        } else if (Math.Abs(X[0] - (xMax - xMin)) < 1e-14) {// rechts
+                            return 2;
+                        } else {
+                            throw new System.Exception("bla");
                         }
-                    } else if (Math.Abs(X[1] - (yMax - yMin)) < 1e-14) {// oben
-                        return 1;
-                    } else if (Math.Abs(X[0]) < 1e-14) { // links
-                        return 1;
-                    } else if (Math.Abs(X[0] - (xMax - xMin)) < 1e-14) {// rechts
-                        return 2;
-                    } else {
-                        throw new System.Exception("bla");
-                    }
-                });
+                    });
 
-                return grid;
-            };
+                    return grid;
+                };
+
+            } else {
+                c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid(sessionID), -1); 
+		        c.GridGuid = new Guid(gridID); 
+            }
 
             Func<double[], double, double> DistanceToLine = delegate (double[] X, double t) {
                 // direction vector
@@ -2059,11 +2066,13 @@ namespace CNS {
             //c.InitialValues_Evaluators.Add(Variables.Momentum.xComponent, X => 57.157 - Jump(X[0] - (0.1 + (X[1] / 1.732))) * (57.157 - 0.0));
             //c.InitialValues_Evaluators.Add(Variables.Momentum.yComponent, X => -33.0 - Jump(X[0] - (0.1 + (X[1] / 1.732))) * (-33 - 0.0));
             //c.InitialValues_Evaluators.Add(Variables.Energy, X => 563.544 - Jump(X[0] - (0.1 + (X[1] / 1.732))) * (563.544 - 2.5));
-
-            c.InitialValues_Evaluators.Add(Variables.Density, X => 8.0 - SmoothJump(DistanceToLine(X, 0)) * (8.0 - 1.4));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => 8.25 * Math.Sin(Math.PI / 3) - SmoothJump(DistanceToLine(X, 0)) * (8.25 * Math.Sin(Math.PI / 3) - 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => -8.25 * Math.Cos(Math.PI / 3) - SmoothJump(DistanceToLine(X, 0)) * (-8.25 * Math.Cos(Math.PI / 3) - 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Pressure, X => 116.5 - SmoothJump(DistanceToLine(X, 0)) * (116.5 - 1.0));
+            if (!restart) 
+            {
+                c.InitialValues_Evaluators.Add(Variables.Density, X => 8.0 - SmoothJump(DistanceToLine(X, 0)) * (8.0 - 1.4));
+                c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => 8.25 * Math.Sin(Math.PI / 3) - SmoothJump(DistanceToLine(X, 0)) * (8.25 * Math.Sin(Math.PI / 3) - 0.0));
+                c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => -8.25 * Math.Cos(Math.PI / 3) - SmoothJump(DistanceToLine(X, 0)) * (-8.25 * Math.Cos(Math.PI / 3) - 0.0));
+                c.InitialValues_Evaluators.Add(Variables.Pressure, X => 116.5 - SmoothJump(DistanceToLine(X, 0)) * (116.5 - 1.0));
+            }
 
             // Time config
             c.dtMin = 0.0;
@@ -2297,8 +2306,8 @@ namespace CNS {
 
             c.DbPath = dbPath;
             c.savetodb = dbPath != null;
-            c.saveperiod = 50;
-            c.PrintInterval = 50;
+            c.saveperiod = saves;
+            c.PrintInterval = saves;
 
             c.GridPartType = GridPartType.ParMETIS;
 
