@@ -108,16 +108,19 @@ namespace BoSSS.Solution.TimeStepping {
 
         private CoordinateVector[] Stack_u;
 
-        public BDFTimestepper(SpatialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters, int BDForder, Func<ISparseSolver> solver, bool DelayInit) {
+        public BDFTimestepper(SpatialOperator spatialOp, IEnumerable<DGField> UnknownFields, IEnumerable<DGField> ParameterFields, int BDForder, Func<ISparseSolver> solver, bool DelayInit) {
             using (new ilPSP.Tracing.FuncTrace()) {
 
                 // verify input
                 // ============
-                TimeStepperCommon.VerifyInput(spatialOp, Fieldsmap, Parameters);
+                
 
-                this.Mapping = Fieldsmap;
-                this.ParameterMapping = Parameters;
-                CurrentState = new CoordinateVector(Mapping);
+                this.Mapping = new CoordinateMapping(UnknownFields.ToArray());
+                this.ParameterMapping = new CoordinateMapping(ParameterFields.ToArray());
+                TimeStepperCommon.VerifyInput(spatialOp, Mapping, ParameterMapping);
+
+                CurrentState = new CoordinateVector(UnknownFields.ToArray());
+                //CurrentState.AccV(1.0,Mapping.Fields.)
 
                 Operator = spatialOp;
 
@@ -156,7 +159,7 @@ namespace BoSSS.Solution.TimeStepping {
             //----------------------------
             Stack_u = new CoordinateVector[StackLength];
             for (int i = 0; i < StackLength; i++) {
-                Stack_u[i] = new CoordinateVector(Mapping.ToArray());
+                Stack_u[i] = new CoordinateVector(Mapping.Fields.Select(dgf => dgf.CloneAs()).ToArray());
             }
             Stack_u[0].Clear();
             Stack_u[0].AccV(1.0, CurrentState);
@@ -183,7 +186,7 @@ namespace BoSSS.Solution.TimeStepping {
                 Debug.Assert(Stack_OpAffine[0].L2Norm() == 0);
 
                 Tsc = TSCchain.Last();
-                ComputeOperatorMatrix();
+                UpdateOperatorMatrix();
 
             }
         }
@@ -221,17 +224,18 @@ namespace BoSSS.Solution.TimeStepping {
         }
 
 
-        void ComputeOperatorMatrix() {
-            
+        void UpdateOperatorMatrix() {
+            Stack_OpMatrix[1].Clear();
+            Stack_OpAffine[1].Clear();
 
             // Assemble matrix and affine offset
             Operator.ComputeMatrixEx(
                 Mapping, ParameterMapping, Mapping,
-                Stack_OpMatrix[0], Stack_OpAffine[0],
+                Stack_OpMatrix[1], Stack_OpAffine[1],
                 false
                 );
 
-            Debug.Assert(Stack_OpMatrix[0].InfNorm() > 0);
+            Debug.Assert(Stack_OpMatrix[1].InfNorm() > 0);
             //Debug.Assert(Stack_OpAffine[0].L2Norm() > 0);
 
         }
@@ -266,27 +270,33 @@ namespace BoSSS.Solution.TimeStepping {
             Debug.Assert(Smax == TSCchain.Length);
             Tsc = TSCchain[Smax - PopulatedStackDepth];
 
-            ComputeOperatorMatrix();
+            UpdateOperatorMatrix();
 
 
 
 
 
             //Implicit Part of RHS
-            SystemMatrix.Acc(Tsc.theta1, Stack_OpMatrix[0]);
-            SystemAffine.AccV(Tsc.theta1, Stack_OpAffine[0]);
+            SystemMatrix.Acc(Tsc.theta1, Stack_OpMatrix[1]);
+            SystemAffine.AccV(Tsc.theta1, Stack_OpAffine[1]);
+
+
 
             //Implicit Part of LHS
             SystemMatrix.AccEyeSp(1 / dt);
 
             // Explicit part of RHS
-            Stack_OpMatrix[1].SpMV(Tsc.theta0, Stack_u[1], 1.0, SystemAffine);
-            SystemAffine.AccV(Tsc.theta0, Stack_OpAffine[1]);
+            Stack_OpMatrix[1].SpMV(Tsc.theta0, CurrentState, 1.0, SystemAffine);
+            SystemAffine.AccV(Tsc.theta0, Stack_OpAffine[0]);
 
             //Explicit parts of LHS
             for (int i = 0;  i< Tsc.beta.Length; i++) {
-                SystemAffine.AccV(Tsc.beta[i], Stack_u[i]);
+                SystemAffine.AccV(Tsc.beta[i]*1/dt, Stack_u[i]);
             }
+
+            Debug.Assert(SystemMatrix.InfNorm() > 0);
+            Debug.Assert(SystemAffine.L2Norm() > 0);
+
         }
 
         public void FinishTimeStep() {
@@ -295,9 +305,9 @@ namespace BoSSS.Solution.TimeStepping {
 
         private void PushStacks() {
             //increase the Stack length up to the maximum Value
-            PopulatedStackDepth++;
-            if (PopulatedStackDepth > TSCchain[0].S) {
-                PopulatedStackDepth = TSCchain[0].S;
+            
+            if (PopulatedStackDepth < TSCchain[0].S) {
+                PopulatedStackDepth++;
             }
             
             // Push Operator-Part
@@ -305,9 +315,9 @@ namespace BoSSS.Solution.TimeStepping {
             Stack_OpAffine[1] = Stack_OpAffine[0].CloneAs();
             
             // Push Unknowns
-            for (int i = 1; i< Stack_u.Length; i++) {
+            for (int i = Stack_u.Length-1; i == 1; i--) {
                 Stack_u[i].Clear();
-                Stack_u[i].Acc(1.0, Stack_u[i - 1]);
+                Stack_u[i].Acc(1.0, Stack_u[i + 1]);
             }
             Stack_u[0].Clear();
             Stack_u[0].Acc(1.0, CurrentState);
