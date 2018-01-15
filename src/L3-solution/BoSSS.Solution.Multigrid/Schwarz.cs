@@ -596,11 +596,11 @@ namespace BoSSS.Solution.Multigrid {
                         Blocks.Add(Block);
                     }
 #endif
-                    blockSolvers[iPart] = new PARDISOSolver() {
-                        CacheFactorization = true
-                    };
+                    //blockSolvers[iPart] = new PARDISOSolver() {
+                    //    CacheFactorization = true
+                    //};
                     //blockSolvers[iPart] = new FullDirectSolver();
-                    //blockSolvers[iPart] = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
+                    blockSolvers[iPart] = new ilPSP.LinSolvers.MUMPS.MUMPSSolver(MPI:false);
                     blockSolvers[iPart].DefineMatrix(Block);
                 }
 
