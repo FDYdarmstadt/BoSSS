@@ -102,36 +102,38 @@ namespace BoSSS.Solution.TimeStepping {
         /// <remarks>
         /// The Matrix of the system is stored within the sparse solver;
         /// </remarks>
-        protected Func<ISparseSolver> solver;
+        protected Func<ISparseSolver> SolverFactory;
         private BlockMsrMatrix[] Stack_OpMatrix;
         private double[][] Stack_OpAffine;
 
         private CoordinateVector[] Stack_u;
 
-        public BDFTimestepper(SpatialOperator spatialOp, IEnumerable<DGField> UnknownFields, IEnumerable<DGField> ParameterFields, int BDForder, Func<ISparseSolver> solver, bool DelayInit) {
+        public BDFTimestepper(SpatialOperator spatialOp, IEnumerable<DGField> UnknownFields, IEnumerable<DGField> ParameterFields, int BDForder, Func<ISparseSolver> SolverFactory, bool DelayInit) {
             using (new ilPSP.Tracing.FuncTrace()) {
-
-                // verify input
-                // ============
-                
 
                 this.Mapping = new CoordinateMapping(UnknownFields.ToArray());
                 this.ParameterMapping = new CoordinateMapping(ParameterFields.ToArray());
+
+                // verify input
+                // ============
                 TimeStepperCommon.VerifyInput(spatialOp, Mapping, ParameterMapping);
 
+                // Initialize
                 CurrentState = new CoordinateVector(UnknownFields.ToArray());
-                //CurrentState.AccV(1.0,Mapping.Fields.)
-
                 Operator = spatialOp;
+                this.SolverFactory = SolverFactory;
 
-                this.solver = solver;
 
                 // Initialize Matrix
                 SpatialMatrix = new BlockMsrMatrix(Mapping);
-                
+
                 TSCchain = BDFCommon.GetChain(BDForder);
                 int S = TSCchain[0].S;
                 Debug.Assert(S == TSCchain.Length);
+
+                // Set coarsest BDF-Scheme to CrankNicholson, since this is more accurate than Implicit Euler
+                Console.WriteLine("Warning! - 1st Initialization Step set to Crank-Nicholson!");
+                TSCchain[S-1] = BDFSchemeCoeffs.CrankNicolson();
 
                 InitStacks(Mapping, S);
 
@@ -144,6 +146,11 @@ namespace BoSSS.Solution.TimeStepping {
             }
         }
 
+        /// <summary>
+        /// Initilializes the Stack for the Unknown u and the Operator Matrix and Affine Part
+        /// </summary>
+        /// <param name="Mapping"></param>
+        /// <param name="StackLength"></param>
         private void InitStacks(CoordinateMapping Mapping, int StackLength) {
             // operator matrix - stack
             // -----------------------
@@ -151,8 +158,8 @@ namespace BoSSS.Solution.TimeStepping {
             Stack_OpMatrix = new BlockMsrMatrix[2]; // only required for Crank.Nic. and Expl. Euler,
             Stack_OpAffine = new double[2][]; //      in this case 'theta0' is unequal 0.0.
 
-            Stack_OpMatrix[0] = new BlockMsrMatrix(Mapping);
-            Stack_OpAffine[0] = new double[Mapping.LocalLength];
+            Stack_OpMatrix[1] = new BlockMsrMatrix(Mapping);
+            Stack_OpAffine[1] = new double[Mapping.LocalLength];
 
 
             // Stack for the unknown field
@@ -163,6 +170,9 @@ namespace BoSSS.Solution.TimeStepping {
             }
             Stack_u[0].Clear();
             Stack_u[0].AccV(1.0, CurrentState);
+            
+            // Initialize the Operator Matrix for TimeStep 0, i.e. Calculate it and Push it to its Position
+            UpdateOperatorMatrix();
             PushStacks();
         }
 
@@ -186,7 +196,9 @@ namespace BoSSS.Solution.TimeStepping {
                 Debug.Assert(Stack_OpAffine[0].L2Norm() == 0);
 
                 Tsc = TSCchain.Last();
-                UpdateOperatorMatrix();
+
+                
+
 
             }
         }
@@ -201,6 +213,8 @@ namespace BoSSS.Solution.TimeStepping {
         /// <param name="dt"></param>
         /// <param name="SetTimestep"></param>
         public void MultiInit(double physTime, int TimestepNo, double dt, Action<int, double, DGField[]> SetTimestep) {
+            //the code below has not been tested or debugged, yet
+            throw new NotImplementedException("Not yet tested");
             using (new FuncTrace()) {
                 if (dt <= 0)
                     throw new ArgumentOutOfRangeException();
@@ -236,8 +250,6 @@ namespace BoSSS.Solution.TimeStepping {
                 );
 
             Debug.Assert(Stack_OpMatrix[1].InfNorm() > 0);
-            //Debug.Assert(Stack_OpAffine[0].L2Norm() > 0);
-
         }
 
         public double Time {
@@ -245,6 +257,12 @@ namespace BoSSS.Solution.TimeStepping {
             private set;
         }
 
+        /// <summary>
+        /// Performs a single BDF Timestep
+        /// This does NOT include any nonlinear iterations
+        /// </summary>
+        /// <param name="dt"></param>
+        /// <returns></returns>
         public double Perform(double dt) {
             if (dt <= 0)
                 throw new ArgumentOutOfRangeException();
@@ -252,7 +270,7 @@ namespace BoSSS.Solution.TimeStepping {
             double[] RHS;
             BlockMsrMatrix myMatrix;
             AssembleMatrix(dt, out myMatrix, out RHS);
-            using (var slv = solver()) {
+            using (var slv = SolverFactory()) {
                 slv.DefineMatrix(myMatrix);
                 slv.Solve(CurrentState, RHS);
                 slv.Dispose();
@@ -286,8 +304,8 @@ namespace BoSSS.Solution.TimeStepping {
             SystemMatrix.AccEyeSp(1 / dt);
 
             // Explicit part of RHS
-            Stack_OpMatrix[1].SpMV(Tsc.theta0, CurrentState, 1.0, SystemAffine);
-            SystemAffine.AccV(Tsc.theta0, Stack_OpAffine[0]);
+            Stack_OpMatrix[0].SpMV(-Tsc.theta0, CurrentState, 1.0, SystemAffine);
+            SystemAffine.AccV(-Tsc.theta0, Stack_OpAffine[0]);
 
             //Explicit parts of LHS
             for (int i = 0;  i< Tsc.beta.Length; i++) {
@@ -311,13 +329,13 @@ namespace BoSSS.Solution.TimeStepping {
             }
             
             // Push Operator-Part
-            Stack_OpMatrix[1] = Stack_OpMatrix[0].CloneAs();
-            Stack_OpAffine[1] = Stack_OpAffine[0].CloneAs();
+            Stack_OpMatrix[0] = Stack_OpMatrix[1].CloneAs();
+            Stack_OpAffine[0] = Stack_OpAffine[1].CloneAs();
             
             // Push Unknowns
             for (int i = Stack_u.Length-1; i == 1; i--) {
                 Stack_u[i].Clear();
-                Stack_u[i].Acc(1.0, Stack_u[i + 1]);
+                Stack_u[i].Acc(1.0, Stack_u[i - 1]);
             }
             Stack_u[0].Clear();
             Stack_u[0].Acc(1.0, CurrentState);
