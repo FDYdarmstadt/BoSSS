@@ -21,6 +21,7 @@ using System.Linq;
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Quadrature;
+using BoSSS.Solution.TimeStepping;
 using ilPSP;
 using ilPSP.LinSolvers;
 using ilPSP.Utils;
@@ -66,7 +67,7 @@ namespace BoSSS.Solution.Timestepping {
         /// in <see cref="Mapping"/> (see
         /// <see cref="BoSSS.Foundation.CoordinateMapping.Fields"/>).
         /// </summary>
-        public CoordinateVector DGCoordinates {
+        public CoordinateVector CurrentState {
             get;
             private set;
         }
@@ -144,23 +145,11 @@ namespace BoSSS.Solution.Timestepping {
 
                 // verify input
                 // ============
-
-                if (!spatialOp.ContainsNonlinear && !(spatialOp.ContainsLinear()))
-                    throw new ArgumentException("spatial differential operator seems to contain no components.", "spatialOp");
-                if (spatialOp.DomainVar.Count != spatialOp.CodomainVar.Count)
-                    throw new ArgumentException("spatial differential operator must have the same number of domain and codomain variables.", "spatialOp");
-                if (Fieldsmap.Fields.Count != spatialOp.CodomainVar.Count)
-                    throw new ArgumentException("the number of fields in the coordinate mapping must be equal to the number of domain/codomain variables of the spatial differential operator", "fields");
-                if (Parameters == null) {
-                    if (spatialOp.ParameterVar.Count != 0)
-                        throw new ArgumentException("the number of fields in the parameter mapping must be equal to the number of parameter variables of the spatial differential operator", "Parameters");
-                } else {
-                    if (Parameters.Fields.Count != spatialOp.ParameterVar.Count)
-                        throw new ArgumentException("the number of fields in the parameter mapping must be equal to the number of parameter variables of the spatial differential operator", "Parameters");
-                }
+                TimeStepperCommon.VerifyInput(spatialOp, Fieldsmap, Parameters);
+                
 
                 Mapping = Fieldsmap;
-                DGCoordinates = new CoordinateVector(Mapping);
+                CurrentState = new CoordinateVector(Mapping);
                 ParameterMapping = Parameters;
                 IList<DGField> ParameterFields =
                     (ParameterMapping == null) ? (new DGField[0]) : ParameterMapping.Fields;
@@ -303,7 +292,7 @@ namespace BoSSS.Solution.Timestepping {
                 }
                 double[] k = new double[Mapping.LocalLength];
                 ComputeChangeRate(k, m_Time, 0);
-                DGCoordinates.axpy<double[]>(k, -dt);
+                CurrentState.axpy<double[]>(k, -dt);
 
                 ApplyFilter(dt);
 
@@ -348,7 +337,7 @@ namespace BoSSS.Solution.Timestepping {
         /// </summary>
         protected void ApplyFilter(double dt) {
             if (OnAfterFieldUpdate != null) {
-                OnAfterFieldUpdate(m_Time + dt, this.DGCoordinates.Mapping);
+                OnAfterFieldUpdate(m_Time + dt, this.CurrentState.Mapping);
             }
         }
 
