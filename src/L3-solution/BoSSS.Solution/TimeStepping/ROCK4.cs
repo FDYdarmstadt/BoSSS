@@ -39,7 +39,7 @@ namespace BoSSS.Solution.Timestepping {
         /// ctor.
         /// </summary>
         public ROCK4(SpatialOperator op, CoordinateVector V, CoordinateMapping ParamFields) {
-            this.DGCoordinates = V;
+            this.CurrentState = V;
             this.OpEv = op.GetEvaluatorEx(this.Mapping, 
                 ParamFields != null ? ParamFields.Fields : new DGField[0], 
                 this.Mapping);
@@ -79,7 +79,7 @@ namespace BoSSS.Solution.Timestepping {
             
             double hp = this.Timestep;
 
-            double[] Phi = this.DGCoordinates.ToArray();
+            double[] Phi = this.CurrentState.ToArray();
 
             int mdeg = 1;
             this.cnt++;
@@ -99,7 +99,7 @@ namespace BoSSS.Solution.Timestepping {
             this.PrevTimestep = hp;
             this.Time += h;
 
-            this.DGCoordinates.CopyFrom(Phi, 0);
+            this.CurrentState.CopyFrom(Phi, 0);
             return h;
              
         }
@@ -155,8 +155,8 @@ namespace BoSSS.Solution.Timestepping {
             //% SPZ=reshape(SPZ,Np,K);
             //[RhsHem] = Rock4_Rhs(Phi,SPZ);
             //RhsHem=RhsHem(:);
-            this.DGCoordinates.Clear();
-            this.DGCoordinates.Acc(1.0, Phi);
+            this.CurrentState.Clear();
+            this.CurrentState.Acc(1.0, Phi);
             this.OpEv.Evaluate(-1.0*alpha, beta, Fode);
             Fode.CheckForNanOrInfV(true, true, true);
             this.nfevals++;
@@ -384,7 +384,7 @@ namespace BoSSS.Solution.Timestepping {
                 this.PrevTimestep = this.Timestep;
 
 
-            double[] PhiOld = this.DGCoordinates.ToArray(); // backup of current state
+            double[] PhiOld = this.CurrentState.ToArray(); // backup of current state
             double[] Phi;
             double h = Math.Min(this.Timestep, dtMax);
             double hp = this.PrevTimestep;
@@ -482,7 +482,7 @@ namespace BoSSS.Solution.Timestepping {
             this.PrevTimestep = hp;
             this.Time += h;
 
-            this.DGCoordinates.CopyFrom(Phi, 0);
+            this.CurrentState.CopyFrom(Phi, 0);
 
 
             return hp;
@@ -627,13 +627,13 @@ namespace BoSSS.Solution.Timestepping {
         /// mapping for the DG fields on which this time integrator acts on.
         /// </summary>
         public CoordinateMapping Mapping {
-            get { return DGCoordinates.Mapping; }
+            get { return CurrentState.Mapping; }
         }
 
         /// <summary>
         /// DG coordinate vector of the DG fields on which this time integrator acts on.
         /// </summary>
-        public CoordinateVector DGCoordinates {
+        public CoordinateVector CurrentState {
             get;
             private set;
         }

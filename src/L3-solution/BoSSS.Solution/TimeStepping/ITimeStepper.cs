@@ -42,16 +42,18 @@ namespace BoSSS.Solution {
         double Perform(double dt);
 
         /// <summary>
-        /// the mapping of the coordinate vector
+        /// The mapping <see cref="CoordinateMapping"/> of the coordinate vector
         /// </summary>
         CoordinateMapping Mapping {
             get;
         }
 
         /// <summary>
-        /// 
+        /// The DG coordinates of the <see cref="BoSSS.Foundation.DGField"/>'s
+        /// in <see cref="Mapping"/> (see
+        /// <see cref="BoSSS.Foundation.CoordinateMapping.Fields"/>).
         /// </summary>
-        CoordinateVector DGCoordinates {
+        CoordinateVector CurrentState {
             get;
         }
     }

@@ -252,7 +252,7 @@ namespace BoSSS.Solution.Timestepping {
                     k[i] = new double[Mapping.LocalLength];
 
                 double[] y0 = new double[Mapping.LocalLength];
-                DGCoordinates.CopyTo(y0, 0);
+                CurrentState.CopyTo(y0, 0);
 
                 // logging
                 tr.Info("Runge-Kutta Scheme with " + m_Scheme.Stages + " stages.");
@@ -270,15 +270,15 @@ namespace BoSSS.Solution.Timestepping {
                 }
 
                 // next timestep
-                DGCoordinates.Clear();
-                DGCoordinates.CopyFrom(y0, 0);
+                CurrentState.Clear();
+                CurrentState.CopyFrom(y0, 0);
                 Array.Clear(y0, 0, y0.Length);
                 for (int s = 0; s < m_Scheme.Stages; s++) {
                     if (m_Scheme.b[s] != 0.0) {
                         BLAS.daxpy(y0.Length, -m_Scheme.b[s] * dt, k[s], 1, y0, 1);
                     }
                 }
-                DGCoordinates.axpy<double[]>(y0, 1.0);
+                CurrentState.axpy<double[]>(y0, 1.0);
                 base.ApplyFilter(dt);
 
                 m_Time = time0 + dt;
@@ -295,12 +295,12 @@ namespace BoSSS.Solution.Timestepping {
         /// <param name="k">The current change rate</param>
         /// <param name="dt">The size of the timestep</param>
         protected virtual void PerformStage(double[] y0, int s, double[][] k, double dt) {
-            DGCoordinates.Clear();
-            DGCoordinates.axpy<double[]>(y0, 1.0);
+            CurrentState.Clear();
+            CurrentState.axpy<double[]>(y0, 1.0);
             double relTime = 0;
             for (int r = 0; r < s; r++) {
                 if (m_Scheme.a[s, r] != 0.0) {
-                    DGCoordinates.axpy<double[]>(k[r], -dt * m_Scheme.a[s, r]);
+                    CurrentState.axpy<double[]>(k[r], -dt * m_Scheme.a[s, r]);
                     relTime += dt * m_Scheme.a[s, r];
                 }
             }

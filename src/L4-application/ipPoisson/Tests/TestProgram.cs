@@ -43,24 +43,30 @@ namespace BoSSS.Application.SipPoisson.Tests {
 
         [Test]
         public static void TestCartesian() {
-            
-            SipPoisson.SipPoissonMain p = null;
-            Application<SipControl>._Main(new string[] {
-                    "--control", "cs:ipPoisson.ippHardcodedControl.TestCartesian1()"
-                },
-                false,
-                "",
-                delegate() {
-                    p = new SipPoissonMain();
-                    return p;
-                });
+
+            using(SipPoisson.SipPoissonMain p = new SipPoissonMain()) {
+                var ctrl = SipHardcodedControl.TestCartesian1();
+                p.Init(ctrl);
+                p.RunSolverMode();
 
 
-            double err = (double)p.QueryHandler.QueryResults["SolL2err"];
-            double thres = 5.0e-9;
+                //Application<SipControl>._Main(new string[] {
+                //        "--control", "cs:ipPoisson.ippHardcodedControl.TestCartesian1()"
+                //    },
+                //    false,
+                //    "",
+                //    delegate() {
+                //        p = new SipPoissonMain();
+                //        return p;
+                //    });
 
-            Console.WriteLine("L2 Error of solution: " + err + " (threshold is " + thres + ")");
-            Assert.LessOrEqual(err, thres);
+
+                double err = (double)p.QueryHandler.QueryResults["SolL2err"];
+                double thres = 5.0e-9;
+
+                Console.WriteLine("L2 Error of solution: " + err + " (threshold is " + thres + ")");
+                Assert.LessOrEqual(err, thres);
+            }
          
         }
 
@@ -68,23 +74,27 @@ namespace BoSSS.Application.SipPoisson.Tests {
 
         [Test]
         public static void TestCurved() {
-        
-            SipPoissonMain p = null;
-            Application<SipControl>._Main(new string[] {
-                    "--control", "cs:ipPoisson.ippHardcodedControl.TestCurved()"
-                },
-                false,
-                "",
-                delegate() {
-                    p = new SipPoissonMain();
-                    return p;
-                });
 
-            double err = (double)p.QueryHandler.QueryResults["SolL2err"];
-            double thres = 2.0e-3;
+            using(SipPoissonMain p = new SipPoissonMain()) {
+                var ctrl = SipHardcodedControl.TestCurved();
+                p.Init(ctrl);
+                p.RunSolverMode();
+                //Application<SipControl>._Main(new string[] {
+                //        "--control", "cs:ipPoisson.ippHardcodedControl.TestCurved()"
+                //    },
+                //    false,
+                //    "",
+                //    delegate() {
+                //        p = new SipPoissonMain();
+                //        return p;
+                //    });
 
-            Console.WriteLine("L2 Error of solution: " + err + " (threshold is " + thres + ")");
-            Assert.LessOrEqual(err, thres);
+                double err = (double)p.QueryHandler.QueryResults["SolL2err"];
+                double thres = 2.0e-3;
+
+                Console.WriteLine("L2 Error of solution: " + err + " (threshold is " + thres + ")");
+                Assert.LessOrEqual(err, thres);
+            }
         }
     }
 }

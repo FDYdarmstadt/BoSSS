@@ -112,14 +112,14 @@ namespace BoSSS.Solution.Timestepping {
         /// <summary>
         /// Solves the linear system (diag(1/<paramref name="dt"/>) +
         /// <em>M</em> / 2) * x =
-        /// <see cref="ImplicitTimeStepper.DGCoordinates"/> /
+        /// <see cref="ImplicitTimeStepper.CurrentState"/> /
         /// <paramref name="dt"/> -
         /// <em>M</em> * 
-        /// <see cref="ImplicitTimeStepper.DGCoordinates"/> / 2 -
+        /// <see cref="ImplicitTimeStepper.CurrentState"/> / 2 -
         /// 0.5*(<see cref="ImplicitTimeStepper.m_AffineOffset1"/> +
         /// <see cref="m_AffineOffset0"/> )
         /// and writes the
-        /// result do <see cref="ImplicitTimeStepper.DGCoordinates"/>.
+        /// result do <see cref="ImplicitTimeStepper.CurrentState"/>.
         /// </summary>
         /// <param name="dt">The length of the timestep</param>
         protected override void PerformTimeStep(double dt) {
@@ -150,16 +150,16 @@ namespace BoSSS.Solution.Timestepping {
                 if (m_Theta != 1.0) {
                     // if m_Theta == 0.0, this has no effect and is a waste of comp. power
                     ISparseMatrix eM = m_Solver.GetMatrix();
-                    eM.SpMV<CoordinateVector, double[]>(-(1.0 - m_Theta) / m_Theta, DGCoordinates, 1.0, rhs);
+                    eM.SpMV<CoordinateVector, double[]>(-(1.0 - m_Theta) / m_Theta, CurrentState, 1.0, rhs);
                 }
 
                 for (int i = 0; i < n; i++) {
-                    rhs[i] += diag[i] * DGCoordinates[i];
+                    rhs[i] += diag[i] * CurrentState[i];
                     // fraglich
                 }
 
                 tr.Info("Calling solver");
-                LastSolverResult = m_Solver.Solve<double[], CoordinateVector, double[]>(1.0, diag, DGCoordinates, rhs);
+                LastSolverResult = m_Solver.Solve<double[], CoordinateVector, double[]>(1.0, diag, CurrentState, rhs);
                 tr.Info("no. of iterations: " + LastSolverResult.NoOfIterations);
                 tr.Info("converged? : " + LastSolverResult.Converged);
                 tr.Info("Pure solver runtime: " + LastSolverResult.RunTime.TotalSeconds + " sec.");
