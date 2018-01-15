@@ -22,6 +22,7 @@ using BoSSS.Solution.Queries;
 using CNS;
 using CNS.Convection;
 using CNS.EquationSystem;
+using CNS.LoadBalancing;
 using CNS.MaterialProperty;
 using CNS.ShockCapturing;
 using CNS.Tests;
@@ -46,13 +47,15 @@ namespace CNS_MPITests.Tests.LoadBalancing {
 
         private static int REBALANCING_PERIOD = 5;
 
+        private static bool twoD = false;
+
         public static void Main(string[] args) {
             SetUp();
             //TestRebalancingForDG0WithRK1();
             //TestRealancingForDG0WithAB1();
             //TestRebalancingForDG0WithLTS1SingleSubGrid();
-            TestRebalancingForDG0WithLTS1TwoSubGrids();
-            //TestRebalancingForDG2WithRK1AndAV();
+            //TestRebalancingForDG0WithLTS1TwoSubGrids();
+            TestRebalancingForDG2WithRK1AndAV();
             //TestRebalancingForDG2WithAB1AndAV();
             TearDown();
         }
@@ -173,6 +176,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
 
             CNSControl c = new CNSControl();
             c.DbPath = null;
+            //c.DbPath = @"c:\bosss_db\";
             c.savetodb = false;
 
             c.ActiveOperators = Operators.Convection;
@@ -191,18 +195,30 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             c.AddVariable(Variables.Energy, dgDegree);
             c.AddVariable(Variables.Velocity.xComponent, dgDegree);
             c.AddVariable(Variables.Pressure, dgDegree);
+            c.AddVariable(Variables.Rank, 0);
 
             c.GridFunc = delegate {
                 double xMin = 0.0;
                 double xMax = 1.0;
+                double yMin = 0.0;
+                double yMax = 1.0;
 
                 double[] xNodes;
+                double[] yNodes;
                 if (gridStretching > 0.0) {
                     xNodes = Grid1D.TanhSpacing(xMin, xMax, noOfCells + 1, gridStretching, true);
+                    yNodes = Grid1D.TanhSpacing(yMin, yMax, 1 + 1, gridStretching, true);
                 } else {
                     xNodes = GenericBlas.Linspace(xMin, xMax, noOfCells + 1);
+                    yNodes = GenericBlas.Linspace(yMin, yMax, 1 + 1);
                 }
-                var grid = Grid1D.LineGrid(xNodes, periodic: false);
+
+                GridCommons grid;
+                if (twoD) {
+                    grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
+                } else {
+                    grid = Grid1D.LineGrid(xNodes, periodic: false);
+                }
 
                 // Boundary conditions
                 grid.EdgeTagNames.Add(1, "AdiabaticSlipWall");
@@ -228,19 +244,24 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             c.InitialValues_Evaluators.Add(
                 Variables.Pressure,
                 X => stateLeft.Pressure + (stateRight.Pressure - stateLeft.Pressure) * (X[0] - discontinuityPosition).Heaviside());
+            if (twoD) {
+                c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => 0);
+            }
 
-            var riemannSolver = new ExactRiemannSolver(stateLeft, stateRight, new Vector3D(1.0, 0.0, 0.0));
-            riemannSolver.GetStarRegionValues(out double pStar, out double uStar);
+            if (!twoD) {
+                var riemannSolver = new ExactRiemannSolver(stateLeft, stateRight, new Vector3D(1.0, 0.0, 0.0));
+                riemannSolver.GetStarRegionValues(out double pStar, out double uStar);
 
-            c.Queries.Add("L2ErrorDensity", QueryLibrary.L2Error(
-                Variables.Density,
-                (X, t) => riemannSolver.GetState(pStar, uStar, X[0] - discontinuityPosition, t).Density));
-            c.Queries.Add("L2ErrorVelocity", QueryLibrary.L2Error(
-                Variables.Velocity.xComponent,
-                (X, t) => riemannSolver.GetState(pStar, uStar, X[0] - discontinuityPosition, t).Velocity.x));
-            c.Queries.Add("L2ErrorPressure", QueryLibrary.L2Error(
-                Variables.Pressure,
-                (X, t) => riemannSolver.GetState(pStar, uStar, X[0] - discontinuityPosition, t).Pressure));
+                c.Queries.Add("L2ErrorDensity", QueryLibrary.L2Error(
+                    Variables.Density,
+                    (X, t) => riemannSolver.GetState(pStar, uStar, X[0] - discontinuityPosition, t).Density));
+                c.Queries.Add("L2ErrorVelocity", QueryLibrary.L2Error(
+                    Variables.Velocity.xComponent,
+                    (X, t) => riemannSolver.GetState(pStar, uStar, X[0] - discontinuityPosition, t).Velocity.x));
+                c.Queries.Add("L2ErrorPressure", QueryLibrary.L2Error(
+                    Variables.Pressure,
+                    (X, t) => riemannSolver.GetState(pStar, uStar, X[0] - discontinuityPosition, t).Pressure));
+            }
 
             c.dtMin = 0.0;
             c.dtMax = 1.0;
@@ -266,7 +287,11 @@ namespace CNS_MPITests.Tests.LoadBalancing {
                 dgDegree: dgDegree,
                 explicitScheme: explicitScheme,
                 explicitOrder: explicitOrder);
-            c.AddVariable(Variables.ArtificialViscosity, 1);
+            if (twoD) {
+                c.AddVariable(Variables.ArtificialViscosity, 2);
+            } else {
+                c.AddVariable(Variables.ArtificialViscosity, 1);
+            }
             c.ActiveOperators |= Operators.ArtificialViscosity;
             c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
             c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 2);
@@ -282,7 +307,9 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             CNSControl loadBalControl = refControl.CloneAs();
             loadBalControl.DynamicLoadBalancing_Period = REBALANCING_PERIOD;
             loadBalControl.DynamicLoadBalancing_CellClassifier = new RandomCellClassifier(2);
+            //loadBalControl.DynamicLoadBalancing_CellClassifier = new ArtificialViscosityCellClassifier();
             loadBalControl.DynamicLoadBalancing_CellCostEstimatorFactories.Add((p, i) => new StaticCellCostEstimator(new[] { 1, 10 }));
+            //loadBalControl.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(ArtificialViscosityCellCostEstimator.GetMultiBalanceConstraintsBasedEstimators());
             loadBalControl.DynamicLoadBalancing_ImbalanceThreshold = 0.01;
 
 
@@ -306,7 +333,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             loadBalSolver.Init(loadBalControl, commandLineOptions);
             loadBalSolver.RunSolverMode();
 
-            // To be able to compare errors without using the databse, we to 
+            // To be able to compare errors without using the database, we need to 
             // agree on a single grid partitioning in the end -> use ref
             Console.WriteLine("Transfering load balancing data to reference grid");
             var refPartitioning = new int[loadBalSolver.GridData.Cells.NoOfLocalUpdatedCells];
@@ -322,7 +349,9 @@ namespace CNS_MPITests.Tests.LoadBalancing {
                 refPartitioning,
                 refSolver.GridData.CurrentGlobalIdPermutation);
 
-            CompareErrors(refSolver.WorkingSet, loadBalSolver.WorkingSet, differenceThreshold);
+            if (!twoD) {
+                CompareErrors(refSolver.WorkingSet, loadBalSolver.WorkingSet, differenceThreshold);
+            }
         }
 
         /// <summary>

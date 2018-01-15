@@ -2194,8 +2194,8 @@ namespace BoSSS.Solution {
                 || MPISize <= 1)
                 return null;
 
-            GetCellPerformanceClasses(out int performanceClassCount, out int[] performanceClasses);
-            if (performanceClasses.Length != this.Grid.CellPartitioning.LocalLength) {
+            GetCellPerformanceClasses(out int performanceClassCount, out int[] cellToPerformanceClassMap);
+            if (cellToPerformanceClassMap.Length != this.Grid.CellPartitioning.LocalLength) {
                 throw new ApplicationException();
             }
 
@@ -2212,7 +2212,7 @@ namespace BoSSS.Solution {
             return m_Balancer.GetNewPartitioning(
                 this,
                 performanceClassCount,
-                performanceClasses,
+                cellToPerformanceClassMap,
                 TimeStepNo,
                 m_GridPartitioningType,
                 m_GridPartitioningOptions,
