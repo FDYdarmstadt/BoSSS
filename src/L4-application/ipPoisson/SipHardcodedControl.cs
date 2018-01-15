@@ -48,16 +48,16 @@ namespace BoSSS.Application.SipPoisson {
 
             R.GridFunc = delegate() {
                 var grd = Grid2D.CurvedSquareGrid(GenericBlas.Linspace(1, 2, 3), GenericBlas.Linspace(0, 1, 11), CellType.Square_9, true);
+                grd.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
+                grd.DefineEdgeTags(X => 1);
                 return grd;
             };
 
-            R.IsDirichlet = delegate(CommonParamsBnd inp) {
-                return true;
-            };
-            R.g_Diri = delegate(CommonParamsBnd inp) {
-                double x = inp.X[0], y = inp.X[1];
-                return Math.Sqrt(x * x + y * y);
-            };
+            R.AddBoundaryCondition(BoundaryType.Dirichlet.ToString(), "T",
+                 delegate (double[] X) {
+                     double x = X[0], y = X[1];
+                     return Math.Sqrt(x * x + y * y);
+                 });
 
             R.solver_name = null;
 
@@ -102,20 +102,23 @@ namespace BoSSS.Application.SipPoisson {
                 double[] yNodes = CreateNodes(yRes, yStretch, -1, +1);
 
                 var grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
-                //Console.WriteLine("Achtung: Dreieck-gitter.");
-                //var grd = Grid2D.UnstructuredTriangleGrid(xNodes, yNodes);
+                grd.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
+                grd.EdgeTagNames.Add(2, BoundaryType.Neumann.ToString());
+                grd.DefineEdgeTags(delegate (double[] X) {
+                    byte ret;
+                    if(Math.Abs(X[0] - 0.0) <= 1.0e-6)
+                        ret = 1;
+                    else
+                        ret = 2;
+                    return ret;
+                });
+                
                 return grd;
             };
 
-            RR.IsDirichlet = delegate(CommonParamsBnd inp) {
-                return (Math.Abs(inp.X[0] - 0.0) <= 1.0e-6);
-            };
-            RR.g_Diri = delegate(CommonParamsBnd inp) {
-                return 0.0;
-            };
-            RR.g_Neum = delegate(CommonParamsBnd inp) {
-                return 0.0;
-            };
+
+            RR.AddBoundaryCondition(BoundaryType.Dirichlet.ToString());
+            RR.AddBoundaryCondition(BoundaryType.Neumann.ToString());
 
             //RR.solver_name = "direct";
             RR.solver_name = null;
@@ -146,18 +149,22 @@ namespace BoSSS.Application.SipPoisson {
                 double[] zNodes = CreateNodes(zRes, zStretch, -1, +1);
 
                 var grd = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
+                grd.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
+                grd.EdgeTagNames.Add(2, BoundaryType.Neumann.ToString());
+                grd.DefineEdgeTags(delegate (double[] X) {
+                    byte ret;
+                    if(Math.Abs(X[0] - 0.0) <= 1.0e-6)
+                        ret = 1;
+                    else
+                        ret = 2;
+                    return ret;
+                });
+
                 return grd;
             };
-
-            R.IsDirichlet = delegate(CommonParamsBnd inp) {
-                return (Math.Abs(inp.X[0] - 0.0) <= 1.0e-6);
-            };
-            R.g_Diri = delegate(CommonParamsBnd inp) {
-                return 0.0;
-            };
-            R.g_Neum = delegate(CommonParamsBnd inp) {
-                return 0.0;
-            };
+            
+            R.AddBoundaryCondition(BoundaryType.Dirichlet.ToString());
+            R.AddBoundaryCondition(BoundaryType.Neumann.ToString());
 
             R.solver_name = null;
 
@@ -200,39 +207,55 @@ namespace BoSSS.Application.SipPoisson {
             R.NoOfMultigridLevels = 3;
 
             R.GridFunc = delegate() {
+                GridCommons grd = null;
                 if(Res.Length == 2) {
                     double[] xNodes = CreateNodes(Res[0], Stretch[0], 0, 10);
                     double[] yNodes = CreateNodes(Res[1], Stretch[1], -1, +1);
 
-                    var grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
-                    return grd;
+                    grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
                 } else if(Res.Length == 3) {
                     double[] xNodes = CreateNodes(Res[0], Stretch[0], 0, 10);
                     double[] yNodes = CreateNodes(Res[1], Stretch[1], -1, +1);
                     double[] zNodes = CreateNodes(Res[2], Stretch[2], -1, +1);
 
-                    var grd = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
-                    return grd;
+                    grd = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
                 } else {
                     throw new NotSupportedException();
                 }
+                grd.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
+                grd.EdgeTagNames.Add(2, BoundaryType.Neumann.ToString());
+                grd.DefineEdgeTags(delegate (double[] X) {
+                    byte ret;
+                    if(Math.Abs(X[0] - 0.0) <= 1.0e-6)
+                        ret = 1;
+                    else
+                        ret = 2;
+                    return ret;
+                });
+
+                return grd;
             };
 
-            R.IsDirichlet = delegate(CommonParamsBnd inp) {
-                return (Math.Abs(inp.X[0] - 0.0) <= 1.0e-6);
-            };
-            R.g_Diri = delegate(CommonParamsBnd inp) {
-                return 0.0;
-            };
-            R.g_Neum = delegate(CommonParamsBnd inp) {
-                if(Math.Abs(inp.X[1] - 1.0) < 1.0e-8 || Math.Abs(inp.X[1] + 1.0) < 1.0e-8)
-                    return 0;
+           
 
-                if(inp.X.Length > 2 && (Math.Abs(inp.X[2] - 1.0) < 1.0e-8 || Math.Abs(inp.X[2] + 1.0) < 1.0e-8))
-                    return 0;
 
-                return Math.Cos(10.0);
-            };
+             R.AddBoundaryCondition(BoundaryType.Dirichlet.ToString(), "T",
+                 delegate (double[] X) {
+                     double x = X[0], y = X[1];
+                     return 0.0;
+                 });
+
+            R.AddBoundaryCondition(BoundaryType.Neumann.ToString(), "T",
+                 delegate (double[] X) {
+                     if(Math.Abs(X[1] - 1.0) < 1.0e-8 || Math.Abs(X[1] + 1.0) < 1.0e-8)
+                         return 0;
+
+                     if(X.Length > 2 && (Math.Abs(X[2] - 1.0) < 1.0e-8 || Math.Abs(X[2] + 1.0) < 1.0e-8))
+                         return 0;
+
+                     return Math.Cos(10.0);
+                 });
+
 
             R.solver_name = solver_name;
 
@@ -272,33 +295,18 @@ namespace BoSSS.Application.SipPoisson {
                 double[] xNodes = GenericBlas.Linspace(-1,1,xRes);
                 double[] yNodes = GenericBlas.Linspace(-1,1,yRes);
                 var grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
+
+                grd.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
+                grd.DefineEdgeTags(delegate (double[] X) {
+                    byte ret = 1;
+                    return ret;
+                });
+
+
                 return grd;
             };
 
-            R.IsDirichlet = delegate(CommonParamsBnd inp) {
-                double x = inp.X[0];
-                double y = inp.X[1];
-
-                return true;
-                //return !((Math.Abs(y - 1) < 1.0e-8) || (Math.Abs(x - 1) < 1.0e-8)); 
-            };
-            R.g_Diri = delegate(CommonParamsBnd inp) {
-                return exSol(inp.X);
-            };
-            R.g_Neum = delegate(CommonParamsBnd inp) {
-                double x = inp.X[0];
-                double y = inp.X[1];
-
-                // y == 1
-                if (Math.Abs(y - 1) < 1.0e-8)
-                    return 0.5 * Math.PI * Math.Cos(0.5 * x * Math.PI);
-
-                // x == 1
-                if (Math.Abs(x - 1) < 1.0e-8)
-                    return 0.5 * Math.PI * Math.Cos(0.5 * y * Math.PI);
-
-                return double.NaN;
-            };
+            R.AddBoundaryCondition(BoundaryType.Dirichlet.ToString(), "T", exSol);
 
             R.solver_name = null;
             R.NoOfSolverRuns = 1;
