@@ -249,7 +249,7 @@ namespace BoSSS.Solution.TimeStepping {
                 false
                 );
 
-            Debug.Assert(Stack_OpMatrix[1].InfNorm() > 0);
+            //Debug.Assert(Stack_OpMatrix[1].InfNorm() > 0);
         }
 
         public double Time {

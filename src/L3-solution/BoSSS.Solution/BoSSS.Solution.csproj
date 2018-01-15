@@ -69,7 +69,7 @@
     <Compile Include="AppControl.cs" />
     <Compile Include="Application.cs" />
     <Compile Include="ArrayHelper.cs" />
-    <Compile Include="TimeStepping\BDFSchemeCoeffs.cs" />
+    <Compile Include="TimeStepping\BDFCommon.cs" />
     <Compile Include="BoundaryConditionMap.cs" />
     <Compile Include="Kmeans.cs" />
     <Compile Include="ControlOptionRequirementAttribute.cs" />
