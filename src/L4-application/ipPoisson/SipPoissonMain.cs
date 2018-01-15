@@ -114,35 +114,44 @@ namespace BoSSS.Application.SipPoisson {
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
             using(FuncTrace tr = new FuncTrace()) {
 
-                
-                // assemble system, create matrix
-                // ------------------------------
 
-                var volQrSch = new CellQuadratureScheme(true, CellMask.GetFullMask(this.GridData));
-                var edgQrSch = new EdgeQuadratureScheme(true, EdgeMask.GetFullMask(this.GridData));
+                // create operator
+                // ---------------
+                SpatialOperator LapaceIp;
+                {
 
-                double D = this.GridData.SpatialDimension;
-                double penalty_base = (T.Basis.Degree + 1) * (T.Basis.Degree + D) / D;
-                double penalty_factor = base.Control.penalty_poisson;
+                    double D = this.GridData.SpatialDimension;
+                    double penalty_base = (T.Basis.Degree + 1) * (T.Basis.Degree + D) / D;
+                    double penalty_factor = base.Control.penalty_poisson;
+
+                    BoundaryCondMap<BoundaryType> PoissonBcMap = new BoundaryCondMap<BoundaryType>(this.GridData, this.Control.BoundaryValues, "T");
+
+                    LapaceIp = new SpatialOperator(1, 1, QuadOrderFunc.SumOfMaxDegrees(), "T", "T");
+                    var flux = new ipFlux(penalty_base * base.Control.penalty_poisson, this.GridData.Cells.cj, PoissonBcMap);
+                    LapaceIp.EquationComponents["T"].Add(flux);
+
+                    LapaceIp.Commit();
+                }
+
+                // Create Matrices
+                // ===============
 
                 {
-                    // equation assembly
-                    // -----------------
-                    tr.Info("creating sparse system...");
-                    Console.WriteLine("creating sparse system for {0} DOF's ...", T.Mapping.Ntotal);
+                    // time measurement for matrix assembly
                     Stopwatch stw = new Stopwatch();
                     stw.Start();
 
-                    SpatialOperator LapaceIp = new SpatialOperator(1, 1,QuadOrderFunc.SumOfMaxDegrees(), "T", "T");
-                    var flux = new ipFlux(penalty_base * base.Control.penalty_poisson, this.GridData.Cells.cj, base.Control);
-                    LapaceIp.EquationComponents["T"].Add(flux);
+                    // console
+                    Console.WriteLine("creating sparse system for {0} DOF's ...", T.Mapping.Ntotal);
 
-
-                    LapaceIp.Commit();
+                    // quadrature domain
+                    var volQrSch = new CellQuadratureScheme(true, CellMask.GetFullMask(this.GridData));
+                    var edgQrSch = new EdgeQuadratureScheme(true, EdgeMask.GetFullMask(this.GridData));
 
 #if DEBUG
+                    // in DEBUG mode, we compare 'MsrMatrix' (old, reference implementation) and 'BlockMsrMatrix' (new standard)
                     var RefLaplaceMtx = new MsrMatrix(T.Mapping);
-#endif                    
+#endif
                     LaplaceMtx = new BlockMsrMatrix(T.Mapping);
                     LaplaceAffine = new double[T.Mapping.LocalLength];
 
@@ -161,18 +170,20 @@ namespace BoSSS.Application.SipPoisson {
                     Console.WriteLine("Matrix comparison error: " + err + ", matrix norm is: " + infNrm);
                     Assert.Less(err, infNrm * 1e-10, "MsrMatrix2 comparison failed.");
 #endif
-                    //int q = LaplaceMtx._GetTotalNoOfNonZeros();
-                    //tr.Info("finished: Number of non-zeros: " + q);
                     stw.Stop();
                     Console.WriteLine("done {0} sec.", stw.Elapsed.TotalSeconds);
-
-
-                    //double condNo = LaplaceMtx.condest(BatchmodeConnector.Flavor.Octave);
-                    //Console.WriteLine("condition number: {0:0.####E-00} ",condNo);
                 }
+
+
+                //double condNo = LaplaceMtx.condest(BatchmodeConnector.Flavor.Octave);
+                //Console.WriteLine("condition number: {0:0.####E-00} ",condNo);
+
             }
         }
 
+        /// <summary>
+        /// Deprecated utility, writes matrices for spectral element method.
+        /// </summary>
         public void WriteSEMMatrices() {
             int kSEM; // nodes per edge
 
@@ -640,26 +651,38 @@ namespace BoSSS.Application.SipPoisson {
     /// </summary>
     class ipFlux : BoSSS.Solution.NSECommon.ipLaplace {
 
-        public ipFlux(double penalty_const, MultidimensionalArray cj, SipControl __ctrl)
+        public ipFlux(double penalty_const, MultidimensionalArray cj, BoundaryCondMap<BoundaryType> __boundaryCondMap)
             : base(penalty_const, cj, "T") //
         {
-            ctrl = __ctrl;
+            m_boundaryCondMap = __boundaryCondMap;
+            m_bndFunc = m_boundaryCondMap.bndFunction["T"];
         }
 
-
-        SipControl ctrl;
+        BoundaryCondMap<BoundaryType> m_boundaryCondMap;
+        Func<double[], double, double>[] m_bndFunc;
 
         protected override double g_Diri(ref CommonParamsBnd inp) {
-            double v = ctrl.g_Diri(inp);
+            double v = m_bndFunc[inp.EdgeTag](inp.X, inp.time);
             return v;
         }
 
         protected override double g_Neum(ref CommonParamsBnd inp) {
-            return ctrl.g_Neum(inp);
+            double v = m_bndFunc[inp.EdgeTag](inp.X, inp.time);
+            return v;
         }
         
         protected override bool IsDirichlet(ref CommonParamsBnd inp) {
-            return ctrl.IsDirichlet(inp);
+            BoundaryType edgeType = m_boundaryCondMap.EdgeTag2Type[inp.EdgeTag];
+            switch(edgeType) {
+                case BoundaryType.Dirichlet:
+                return true;
+
+                case BoundaryType.Neumann:
+                return false;
+
+                default:
+                throw new NotImplementedException();
+            }
         }
     }
 
