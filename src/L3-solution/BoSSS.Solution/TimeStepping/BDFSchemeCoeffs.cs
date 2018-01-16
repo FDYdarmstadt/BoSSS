@@ -183,7 +183,7 @@ namespace BoSSS.Solution.Timestepping {
     /// <summary>
     /// switch for the initialization of BDF-Schemes
     /// </summary>
-    public enum TimestepperInit {
+    public enum TimeStepperInit {
 
         /// Initialization from a single timestep, i.e. if this time-stepper should use BDF4,
         /// it starts with BDF1, BDF2, BDF3 in the first, second and third time-step.

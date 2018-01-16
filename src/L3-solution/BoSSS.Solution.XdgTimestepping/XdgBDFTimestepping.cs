@@ -414,7 +414,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 InitTimestepping(true);
 
-                if (Timestepper_Init == TimestepperInit.IncrementInit) {
+                if (Timestepper_Init == TimeStepperInit.IncrementInit) {
                     if (incrementTimesteps <= 1)
                         throw new ArgumentOutOfRangeException("incrementInit needs a number of increment timesteps larger than 1");
 
@@ -773,7 +773,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
 
-        public TimestepperInit Timestepper_Init;
+        public TimeStepperInit Timestepper_Init;
 
         /// <summary>
         /// In case of a delayed initialization of <see cref="XdgBDFTimestepping"/>  
@@ -785,14 +785,14 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <param name="SetTimestep">application specific action to set the previous timesteps for MultiInit, different actions for SetInitial and LoadRestart</param>
         public void DelayedTimestepperInit(double phystime, int TimestepNo, double dt, Action<int, double, DGField[]> SetTimestep) {
 
-            if (Timestepper_Init == TimestepperInit.MultiInit) {
+            if (Timestepper_Init == TimeStepperInit.MultiInit) {
                 MultiInit(phystime, TimestepNo, dt, SetTimestep); 
             } else {
                 SingleInit();
             }
 
             // no increment solve for SinlgeInit and MultiInit!!!
-            if (Timestepper_Init != TimestepperInit.IncrementInit)
+            if (Timestepper_Init != TimeStepperInit.IncrementInit)
                 incrementTimesteps = 1;
 
         }
