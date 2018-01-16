@@ -1722,6 +1722,7 @@ namespace BoSSS.Foundation.IO {
                 }
             }
             int numberMethods = methods.Length;
+            string[] methodCalls = new string[numberMethods];
 
             // Initialise variables
             int numberSessions = sessions.Count();
@@ -1762,12 +1763,19 @@ namespace BoSSS.Foundation.IO {
                         if (exclusive) {
                             tempTime[k] = value.FindChildren(methods[k]).Select(s => s.TimeExclusive.TotalSeconds).Max();
                             if (i == idx) {
-                                tempFractions[k] = value.FindChildren(methods[k]).Select(s => s.ExclusiveTimeFractionOfRoot).Max();
+                                double maxValue = value.FindChildren(methods[k]).Select(s => s.ExclusiveTimeFractionOfRoot).Max();
+                                int maxIndex = value.FindChildren(methods[k]).Select(s => s.ExclusiveTimeFractionOfRoot).ToList().IndexOf(maxValue);
+                                tempFractions[k] = maxValue;
+                                MethodCallRecord test2 = value.FindChildren(methods[k]).Pick(maxIndex);
+                                methodCalls[k] = test2.ParrentCall.Name;
                             }
                         } else {
                             tempTime[k] = value.FindChildren(methods[k]).Select(s => s.TimeSpentInMethod.TotalSeconds).Max();
                             if (i == idx) {
-                                tempFractions[k] = value.FindChildren(methods[k]).Select(s => s.TimeFractionOfRoot).Max();
+                                double maxValue = value.FindChildren(methods[k]).Select(s => s.TimeFractionOfRoot).Max();
+                                int maxIndex = value.FindChildren(methods[k]).Select(s => s.TimeFractionOfRoot).ToList().IndexOf(maxValue);
+                                tempFractions[k] = maxValue;
+                                methodCalls[k] = value.FindChildren(methods[k]).Pick(maxIndex).Root.Name;
                             }
                         }
                         // Only save execution time if it is the highest value of all processor times
@@ -1830,7 +1838,7 @@ namespace BoSSS.Foundation.IO {
             Console.WriteLine("============================");
             for (int i = 0; i < numberMethods; i++) {
                 Console.WriteLine("Rank " + i + ": " + methods2[i]);
-                Console.WriteLine("\t Time fraction of root: " + fractions2[i].ToString("p3"));
+                Console.WriteLine("\t Time fraction of root: " + fractions2[i].ToString("p3") + "\t in " + methodCalls[i]);
             }
             Console.WriteLine("\n Sorted by worst scaling");
             Console.WriteLine("============================");
@@ -1846,7 +1854,7 @@ namespace BoSSS.Foundation.IO {
         /// Plots circularity and rise velocity over time if a  "BenchmarkQuantities_RisingBubble.txt" exists.
         /// </summary>
         /// <param name="sess"></param> List of sessions to be evaluated
-        public static void PlotCircularityAndRiseVelocity(this IEnumerable<ISessionInfo> sess) {
+        public static void EvalRisingBubble(this IEnumerable<ISessionInfo> sess) {
             int numberSessions = sess.Count();
             double[][] times = new double[numberSessions][];
             double[][] circularities = new double[numberSessions][];
