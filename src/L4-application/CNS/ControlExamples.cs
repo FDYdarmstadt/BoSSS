@@ -1171,6 +1171,7 @@ namespace CNS {
             //c.DbPath = null;
             c.DbPath = @"c:\bosss_db\";
             c.savetodb = true;
+            c.saveperiod = 100;
 
             c.ActiveOperators = Operators.Convection;
             c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
@@ -1190,36 +1191,42 @@ namespace CNS {
             c.AddVariable(Variables.Pressure, dgDegree);
             c.AddVariable(Variables.Rank, 0);
 
-            c.GridFunc = delegate {
-                double xMin = 0.0;
-                double xMax = 1.0;
-                double yMin = 0.0;
-                double yMax = 1.0;
+            //c.GridFunc = delegate {
+            //    double xMin = 0.0;
+            //    double xMax = 1.0;
+            //    double yMin = 0.0;
+            //    double yMax = 1.0;
 
-                double[] xNodes;
-                double[] yNodes;
-                if (gridStretching > 0.0) {
-                    xNodes = Grid1D.TanhSpacing(xMin, xMax, noOfCells + 1, gridStretching, true);
-                    yNodes = Grid1D.TanhSpacing(yMin, yMax, 1 + 1, gridStretching, true);
-                } else {
-                    xNodes = GenericBlas.Linspace(xMin, xMax, noOfCells + 1);
-                    yNodes = GenericBlas.Linspace(yMin, yMax, 1 + 1);
-                }
+            //    double[] xNodes;
+            //    double[] yNodes;
+            //    if (gridStretching > 0.0) {
+            //        xNodes = Grid1D.TanhSpacing(xMin, xMax, noOfCells + 1, gridStretching, true);
+            //        yNodes = Grid1D.TanhSpacing(yMin, yMax, 1 + 1, gridStretching, true);
+            //    } else {
+            //        xNodes = GenericBlas.Linspace(xMin, xMax, noOfCells + 1);
+            //        yNodes = GenericBlas.Linspace(yMin, yMax, 1 + 1);
+            //    }
 
-                GridCommons grid;
-                if (twoD) {
-                    grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
-                } else {
-                    grid = Grid1D.LineGrid(xNodes, periodic: false);
-                }
+            //    GridCommons grid;
+            //    if (twoD) {
+            //        grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
+            //    } else {
+            //        grid = Grid1D.LineGrid(xNodes, periodic: false);
+            //    }
 
-                // Boundary conditions
-                grid.EdgeTagNames.Add(1, "AdiabaticSlipWall");
-                grid.DefineEdgeTags(delegate (double[] _X) {
-                    return 1;
-                });
-                return grid;
-            };
+            //    // Boundary conditions
+            //    grid.EdgeTagNames.Add(1, "AdiabaticSlipWall");
+            //    grid.DefineEdgeTags(delegate (double[] _X) {
+            //        return 1;
+            //    });
+            //    return grid;
+            //};
+
+            //var databaseDriver = new DatabaseDriver(null);
+            //c.GridFunc = databaseDriver.LoadGrid(new Guid("054136fc - 839d - 451f - b0a8 - 6b8504682f63"), new DatabaseInfo(c.DbPath));
+
+            c.GridGuid = new Guid("054136fc-839d-451f-b0a8-6b8504682f63");
+
             c.AddBoundaryCondition("AdiabaticSlipWall");
 
             Material material = new Material(c);
@@ -1270,8 +1277,9 @@ namespace CNS {
             c.DynamicLoadBalancing_Period = 5;
             //c.DynamicLoadBalancing_CellClassifier = new RandomCellClassifier(2);
             c.DynamicLoadBalancing_CellClassifier = new ArtificialViscosityCellClassifier();
-            //c.DynamicLoadBalancing_CellCostEstimatorFactories.Add((p, i) => new StaticCellCostEstimator(new[] { 1, 10 }));
-            c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(ArtificialViscosityCellCostEstimator.GetMultiBalanceConstraintsBasedEstimators());
+            c.DynamicLoadBalancing_CellCostEstimatorFactories.Add((p, i) => new StaticCellCostEstimator(new[] { 1, 10 }));
+            //c.DynamicLoadBalancing_CellCostEstimatorFactories.Add(ArtificialViscosityCellCostEstimator.GetStaticCostBasedEstimator());
+            //c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(ArtificialViscosityCellCostEstimator.GetMultiBalanceConstraintsBasedEstimators());
             c.DynamicLoadBalancing_ImbalanceThreshold = 0.01;
 
             return c;
