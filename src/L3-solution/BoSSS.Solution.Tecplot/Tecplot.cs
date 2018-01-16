@@ -87,9 +87,12 @@ namespace BoSSS.Solution.Tecplot {
                     // write a name for field without identification
                     stw.Write("unknown_" + unknowncnt);
                     unknowncnt++;
-                } else if ((id.Contains(" ") || id.Contains("\t") || id.Contains("\n") || id.Contains("\r"))) {
-                    // remove whitespaces
+                } else if ((id.Contains(" ") || id.Contains("\t") || id.Contains("\n") || id.Contains("\r") || id.Contains("(") || id.Contains(")"))) {
+                    if (id.Contains(" ") || id.Contains("(") || id.Contains(")")) {
+                        throw new Exception("A field identification contains white space or parentheses, please change the name of this field");
+                    }
 
+                    // remove whitespaces
                     string[] subStrg = id.Split(new char[] { ' ', '\t', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
 
                     string idNew = "";
