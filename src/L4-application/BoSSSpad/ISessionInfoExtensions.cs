@@ -1761,9 +1761,9 @@ namespace BoSSS.Foundation.IO {
                             value = mcr[j];
                         }
                         if (exclusive) {
-                            tempTime[k] = value.FindChildren(methods[k]).OrderByDescending(s => s.TimeExclusive.TotalSeconds).Pick(occurence).TimeExclusive.TotalSeconds;
+                            tempTime[k] = value.FindChildren(methods[k]).OrderByDescending(s => s.TimeExclusive.TotalSeconds).Pick(occurence-1).TimeExclusive.TotalSeconds;
                             if (i == idx) {
-                                double maxValue = value.FindChildren(methods[k]).OrderByDescending(s => s.ExclusiveTimeFractionOfRoot).Pick(occurence).ExclusiveTimeFractionOfRoot;
+                                double maxValue = value.FindChildren(methods[k]).OrderByDescending(s => s.ExclusiveTimeFractionOfRoot).Pick(occurence-1).ExclusiveTimeFractionOfRoot;
                                 int maxIndex = value.FindChildren(methods[k]).Select(s => s.ExclusiveTimeFractionOfRoot).ToList().IndexOf(maxValue);
                                 tempFractions[k] = maxValue;
                                 MethodCallRecord correctCall = value.FindChildren(methods[k]).Pick(maxIndex);
@@ -1772,9 +1772,9 @@ namespace BoSSS.Foundation.IO {
                                 
                             }
                         } else {
-                            tempTime[k] = value.FindChildren(methods[k]).OrderByDescending(s => s.TimeSpentInMethod.TotalSeconds).Pick(occurence).TimeSpentInMethod.TotalSeconds;
+                            tempTime[k] = value.FindChildren(methods[k]).OrderByDescending(s => s.TimeSpentInMethod.TotalSeconds).Pick(occurence-1).TimeSpentInMethod.TotalSeconds;
                             if (i == idx) {
-                                double maxValue = value.FindChildren(methods[k]).OrderByDescending(s => s.TimeFractionOfRoot).Pick(occurence).TimeFractionOfRoot;
+                                double maxValue = value.FindChildren(methods[k]).OrderByDescending(s => s.TimeFractionOfRoot).Pick(occurence-1).TimeFractionOfRoot;
                                 int maxIndex = value.FindChildren(methods[k]).Select(s => s.TimeFractionOfRoot).ToList().IndexOf(maxValue);
                                 tempFractions[k] = maxValue;
                                 MethodCallRecord correctCall = value.FindChildren(methods[k]).Pick(maxIndex);
