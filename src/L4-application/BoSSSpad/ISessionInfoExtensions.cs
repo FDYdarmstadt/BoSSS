@@ -1714,7 +1714,6 @@ namespace BoSSS.Foundation.IO {
                 } else {
                     mostExpensive = mcr[0].CompleteCollectiveReport().OrderByDescending(cr => cr.ExclusiveTimeFractionOfRoot);
                 }
-                //var mostExpensive = mcr[0].FindChild(mainMethod).CompleteCollectiveReport().OrderByDescending(cr => cr.ExclusiveTimeFractionOfRoot);
 
                 methods = new string[maxNumberMethods];
                 for (int i = 0; i < maxNumberMethods; i++) {
@@ -1755,27 +1754,32 @@ namespace BoSSS.Foundation.IO {
                         // Get execution time of current method for current processor
                         double[] tempTime = new double[numberMethods];
                         double[] tempFractions = new double[numberMethods];
+                        int occurence = methods.Take(k+1).Where(x => x.Equals(methods[k])).Count();
 
                         value = mcr[j].FindChild(mainMethod);
                         if (value == null) {
                             value = mcr[j];
                         }
                         if (exclusive) {
-                            tempTime[k] = value.FindChildren(methods[k]).Select(s => s.TimeExclusive.TotalSeconds).Max();
+                            tempTime[k] = value.FindChildren(methods[k]).OrderByDescending(s => s.TimeExclusive.TotalSeconds).Pick(occurence).TimeExclusive.TotalSeconds;
                             if (i == idx) {
-                                double maxValue = value.FindChildren(methods[k]).Select(s => s.ExclusiveTimeFractionOfRoot).Max();
+                                double maxValue = value.FindChildren(methods[k]).OrderByDescending(s => s.ExclusiveTimeFractionOfRoot).Pick(occurence).ExclusiveTimeFractionOfRoot;
                                 int maxIndex = value.FindChildren(methods[k]).Select(s => s.ExclusiveTimeFractionOfRoot).ToList().IndexOf(maxValue);
                                 tempFractions[k] = maxValue;
-                                MethodCallRecord test2 = value.FindChildren(methods[k]).Pick(maxIndex);
-                                methodCalls[k] = test2.ParrentCall.Name;
+                                MethodCallRecord correctCall = value.FindChildren(methods[k]).Pick(maxIndex);
+                                IEnumerable<MethodCallRecord> neighbourCalls = value.FindChildren(methods[k]).Except(correctCall);
+                                methodCalls[k] = getUniqueParentName(correctCall, neighbourCalls);
+                                
                             }
                         } else {
-                            tempTime[k] = value.FindChildren(methods[k]).Select(s => s.TimeSpentInMethod.TotalSeconds).Max();
+                            tempTime[k] = value.FindChildren(methods[k]).OrderByDescending(s => s.TimeSpentInMethod.TotalSeconds).Pick(occurence).TimeSpentInMethod.TotalSeconds;
                             if (i == idx) {
-                                double maxValue = value.FindChildren(methods[k]).Select(s => s.TimeFractionOfRoot).Max();
+                                double maxValue = value.FindChildren(methods[k]).OrderByDescending(s => s.TimeFractionOfRoot).Pick(occurence).TimeFractionOfRoot;
                                 int maxIndex = value.FindChildren(methods[k]).Select(s => s.TimeFractionOfRoot).ToList().IndexOf(maxValue);
                                 tempFractions[k] = maxValue;
-                                methodCalls[k] = value.FindChildren(methods[k]).Pick(maxIndex).Root.Name;
+                                MethodCallRecord correctCall = value.FindChildren(methods[k]).Pick(maxIndex);
+                                IEnumerable<MethodCallRecord> neighbourCalls = value.FindChildren(methods[k]).Except(correctCall);
+                                methodCalls[k] = getUniqueParentName(correctCall, neighbourCalls);
                             }
                         }
                         // Only save execution time if it is the highest value of all processor times
@@ -1848,6 +1852,22 @@ namespace BoSSS.Foundation.IO {
             }
 
             return data;
+        }
+
+
+        private static string getUniqueParentName(MethodCallRecord correctCall, IEnumerable<MethodCallRecord> neighbourCalls) {
+            while (neighbourCalls.Count() > 0) {
+                foreach (MethodCallRecord m in neighbourCalls) {
+                    if (m.ParrentCall.Name != correctCall.ParrentCall.Name) {
+                        neighbourCalls = neighbourCalls.Except(m);
+                    }
+                }
+                correctCall = correctCall.ParrentCall;
+                if (neighbourCalls == null) {
+                    neighbourCalls = neighbourCalls.Select(c => c.ParrentCall);
+                }
+            }
+            return correctCall.Name;
         }
 
         /// <summary>
