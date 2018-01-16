@@ -113,6 +113,9 @@ namespace BoSSS.Application.BoSSSpad {
             eval.ReferenceAssembly(typeof(CNS.Program).Assembly);
             eval.ReferenceAssembly(typeof(IBM_Solver.IBM_SolverMain).Assembly);
 
+            eval.ReferenceAssembly(typeof(KontiHelical.HelicalMain).Assembly);
+
+
             eval.Compile(
                 "using System;" + Console.Out.NewLine +
                 "using System.Collections.Generic;" + Console.Out.NewLine +
