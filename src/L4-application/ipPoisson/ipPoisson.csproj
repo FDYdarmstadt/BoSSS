@@ -6,7 +6,7 @@
     <ProjectGuid>{09CCE864-9BAE-4660-AFF9-F3F3414B6173}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>ipPoisson</RootNamespace>
+    <RootNamespace>BoSSS.Application.SipPoisson</RootNamespace>
     <AssemblyName>ipPoisson</AssemblyName>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
@@ -64,6 +64,7 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="BoundaryType.cs" />
     <Compile Include="SipHardcodedControl.cs" />
     <Compile Include="SipControl.cs" />
     <Compile Include="Tests\TestProgram.cs" />

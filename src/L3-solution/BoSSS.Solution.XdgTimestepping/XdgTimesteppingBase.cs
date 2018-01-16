@@ -529,7 +529,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                             this.MultigridBasis,
                             this.Config_MultigridOperator)
                         {
-                            maxKrylovDim = 1000,
+                            maxKrylovDim = 30,
                             MaxIter = Config_MaxIterations,
                             MinIter = Config_MinIterations,
                             ApproxJac = Newton.ApproxInvJacobianOptions.GMRES,

@@ -30,7 +30,7 @@ namespace BoSSS.Solution.Timestepping {
     /// <see cref="BoSSS.Foundation.SpatialOperator"/> F(x) =
     /// <em>M</em>*x + <see cref="m_AffineOffset1"/> which is required for
     /// the execution of the timestep. In this class, x is given by
-    /// <see cref="DGCoordinates"/>
+    /// <see cref="CurrentState"/>
     /// </summary>
     public abstract class ImplicitTimeStepper : ITimeStepper, IDisposable {
 
@@ -198,7 +198,7 @@ namespace BoSSS.Solution.Timestepping {
 
         /// <summary>
         /// Implement this method in any subclass in order to carry out the
-        /// timestep (that is, by updating <see cref="DGCoordinates"/>).
+        /// timestep (that is, by updating <see cref="CurrentState"/>).
         /// </summary>
         /// <param name="dt"></param>
         abstract protected void PerformTimeStep(double dt);
@@ -321,7 +321,7 @@ namespace BoSSS.Solution.Timestepping {
 
         /// <summary>
         /// sets <see cref="Mapping"/> to <paramref name="m"/>
-        /// and creates a new <see cref="DGCoordinates"/> - mapping;
+        /// and creates a new <see cref="CurrentState"/> - mapping;
         /// </summary>
         /// <param name="m"></param>
         protected void SetMapping(CoordinateMapping m) {
@@ -345,7 +345,7 @@ namespace BoSSS.Solution.Timestepping {
         /// <see cref="Mapping"/> (see
         /// <see cref="BoSSS.Foundation.CoordinateMapping.Fields"/>)
         /// </summary>
-        public CoordinateVector DGCoordinates {
+        public CoordinateVector CurrentState {
             get { return m_DGCoordinates; }
         }
 
