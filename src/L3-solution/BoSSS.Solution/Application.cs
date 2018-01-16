@@ -1833,6 +1833,9 @@ namespace BoSSS.Solution {
                     // no mesh adaptation, but (maybe) grid redistribution (load balancing)
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+                    
+
+
 
                     // init / determine if partition has changed / check Partitioning
                     // ==============================================================
@@ -1974,10 +1977,25 @@ namespace BoSSS.Solution {
 
                     GridData oldGridData = this.GridData;
                     GridCommons oldGrid = oldGridData.Grid;
+                    Guid oldGridId = oldGrid.ID;
                     Permutation tau;
                     GridUpdateDataVault_Adapt remshDat = new GridUpdateDataVault_Adapt(oldGridData, this.LsTrk);
                     BackupData(oldGridData, this.LsTrk, remshDat, out tau);
+                    
+                    // save new grid to database
+                    // ==========================
 
+                    if (!passiveIo) {
+
+                        if (newGrid.GridGuid == null || newGrid.GridGuid.Equals(Guid.Empty))
+                            throw new ApplicationException();
+                        if(newGrid.GridGuid.Equals(oldGridId))
+                            throw new ApplicationException();
+                        if(DatabaseDriver.GridExists(newGrid.GridGuid))
+                            throw new ApplicationException();
+
+                        DatabaseDriver.SaveGrid(newGrid);
+                    }
 
                     // check for grid redistribution
                     // =============================
