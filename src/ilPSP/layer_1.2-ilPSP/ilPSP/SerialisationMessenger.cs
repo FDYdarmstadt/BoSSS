@@ -86,7 +86,7 @@ namespace ilPSP.Utils {
                 if (m_Rank == 0)
                     m_MyTagOffset = myTag;
 
-                csMPI.Raw.Bcast((IntPtr)(&myTag), 1, csMPI.Raw._DATATYPE.INT, 0, csMPI.Raw._COMM.WORLD);
+                csMPI.Raw.Bcast((IntPtr)(&myTag), 1, csMPI.Raw._DATATYPE.INT, 0, m_MPI_comm);
 
                 if (m_Rank > 0)
                     m_MyTagOffset = myTag;
@@ -351,7 +351,7 @@ namespace ilPSP.Utils {
             csMPI.Raw.Issend(Marshal.UnsafeAddrOfPinnedArrayElement(m_SendObjectSizes, TargetProc),
                           4, csMPI.Raw._DATATYPE.BYTE,
                           TargetProc, TagBufferSize + m_MyTagOffset,
-                          csMPI.Raw._COMM.WORLD,
+                          m_MPI_comm,
                           out m_Requests[TargetProc]);
 
             // send buffer content
@@ -363,7 +363,7 @@ namespace ilPSP.Utils {
             csMPI.Raw.Issend(Marshal.UnsafeAddrOfPinnedArrayElement(Buffer, 0),
                           (int) ms.Position, csMPI.Raw._DATATYPE.BYTE,
                           TargetProc, TagBufferContent + m_MyTagOffset,
-                          csMPI.Raw._COMM.WORLD,
+                          m_MPI_comm,
                           out m_Requests[m_Size + TargetProc]);
         }
 
@@ -457,7 +457,7 @@ namespace ilPSP.Utils {
                     csMPI.Raw.Irecv(Marshal.UnsafeAddrOfPinnedArrayElement(m_ReceiveObjectSizes,p),
                                  4, csMPI.Raw._DATATYPE.BYTE,
                                  p, TagBufferSize + m_MyTagOffset,
-                                 csMPI.Raw._COMM.WORLD,
+                                 m_MPI_comm,
                                  out m_Requests[2*m_Size + p]);
                 }
             }
@@ -572,7 +572,7 @@ namespace ilPSP.Utils {
                     csMPI.Raw.Irecv(pin.AddrOfPinnedObject(),
                                  m_ReceiveObjectSizes[proc], csMPI.Raw._DATATYPE.BYTE,
                                  proc, TagBufferContent + m_MyTagOffset,
-                                 csMPI.Raw._COMM.WORLD,
+                                 m_MPI_comm,
                                  out m_Requests[size * 3 + proc]);
                 } else if (index >= size * 3 && index < size * 4) {
                     // ++++++++++++++++++++++++++++++++++++++++
