@@ -1694,7 +1694,7 @@ namespace BoSSS.Foundation.IO {
 
 
             // Change maxNumberMethods to how many methods you want considered if no  methods specified
-            int maxNumberMethods = 10;
+            int maxNumberMethods = 8;
             double[] fraction = new double[maxNumberMethods];
             int idx = sessions.IndexOfMax(s => s.ComputeNodeNames.Count());
 
@@ -1845,7 +1845,7 @@ namespace BoSSS.Foundation.IO {
             Console.WriteLine("\n Most expensive functions");
             Console.WriteLine("============================");
             for (int i = 0; i < numberMethods; i++) {
-                Console.WriteLine("Rank " + i + ": " + methods2[i] + "\t in \t"+ methodCalls2[i]);
+                Console.WriteLine("Rank " + i + ": " + methods2[i] + " in "+ methodCalls2[i]);
                 Console.WriteLine("\t Time fraction of root: " + fractions2[i].ToString("p3")+ "\n");
             }
             Console.WriteLine("\n Sorted by worst scaling");
