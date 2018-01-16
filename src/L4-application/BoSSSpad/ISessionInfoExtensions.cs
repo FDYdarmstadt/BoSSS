@@ -1798,6 +1798,7 @@ namespace BoSSS.Foundation.IO {
 
             KeyValuePair<string, double>[] methodRegressionPair = new KeyValuePair<string, double>[numberMethods];
             KeyValuePair<string, double>[] methodFractionPair = new KeyValuePair<string, double>[numberMethods];
+            KeyValuePair<string, double>[] callsFractionPair = new KeyValuePair<string, double>[numberMethods];
             // Create DataSets and ideal curves
             for (int i = 0; i < numberMethods; i++) {
                 // Calculation of ideal curves
@@ -1826,15 +1827,18 @@ namespace BoSSS.Foundation.IO {
                 data[i + numberMethods] = new DataSet(dataRowsSpeedup);
                 methodRegressionPair[i] = new KeyValuePair<string, double>(methods[i], Math.Min(data.Skip(numberMethods).Pick(i).Regression().Pick(0).Value, data.Skip(numberMethods).Pick(i).Regression().Pick(1).Value));
                 methodFractionPair[i] = new KeyValuePair<string, double>(methods[i], fraction[i]);
+                callsFractionPair[i] = new KeyValuePair<string, double>(methodCalls[i], fraction[i]);
             }
 
             // Use slope of actual speedup curve to sort methods and DataSets by "worst scaling"
             methodRegressionPair = methodRegressionPair.OrderBy(t => t.Value).ToArray();
             methodFractionPair = methodFractionPair.OrderByDescending(t => t.Value).ToArray();
+            callsFractionPair = callsFractionPair.OrderByDescending(t => t.Value).ToArray();
             double[] regressions = methodRegressionPair.Select(s => s.Value).ToArray();
             double[] regressions2 = regressions;
             string[] methods2 = methodFractionPair.Select(s => s.Key).ToArray();
             double[] fractions2 = methodFractionPair.Select(s => s.Value).ToArray();
+            string[] methodCalls2 = callsFractionPair.Select(s => s.Key).ToArray();
             string[] sortedMethods = methodRegressionPair.Select(s => s.Key).ToArray();
 
             // Write out the most expensive functions and the worst scaling functions
@@ -1842,7 +1846,7 @@ namespace BoSSS.Foundation.IO {
             Console.WriteLine("============================");
             for (int i = 0; i < numberMethods; i++) {
                 Console.WriteLine("Rank " + i + ": " + methods2[i]);
-                Console.WriteLine("\t Time fraction of root: " + fractions2[i].ToString("p3") + "\t in " + methodCalls[i]);
+                Console.WriteLine("\t Time fraction of root: " + fractions2[i].ToString("p3") + "\t in " + methodCalls2[i]);
             }
             Console.WriteLine("\n Sorted by worst scaling");
             Console.WriteLine("============================");
@@ -1863,7 +1867,7 @@ namespace BoSSS.Foundation.IO {
                     }
                 }
                 correctCall = correctCall.ParrentCall;
-                if (neighbourCalls == null) {
+                if (neighbourCalls != null) {
                     neighbourCalls = neighbourCalls.Select(c => c.ParrentCall);
                 }
             }
