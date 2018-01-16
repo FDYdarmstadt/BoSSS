@@ -55,7 +55,7 @@ namespace ilPSP.Tracing {
         /// <summary>
         /// the method which called this method
         /// </summary>
-        internal MethodCallRecord ParrentCall;
+        public MethodCallRecord ParrentCall;
 
         /// <summary>
         /// all traces sub-calls
