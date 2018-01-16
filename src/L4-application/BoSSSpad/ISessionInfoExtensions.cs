@@ -1677,12 +1677,10 @@ namespace BoSSS.Foundation.IO {
         /// <returns>
         /// Returns an array of DataSets, where the first half contains the convergence data for every method and the second half the speedup data.
         /// </returns>
-        public static DataSet[] EvaluatePerformance(this IEnumerable<ISessionInfo> sessions, string[] methods = null, bool exclusive = true, string solver = "IBM_Solver")
-        {
+        public static DataSet[] EvaluatePerformance(this IEnumerable<ISessionInfo> sessions, string[] methods = null, bool exclusive = true, string solver = "IBM_Solver") {
             string path = sessions.Pick(0).Database.Path;
             string mainMethod;
-            switch(solver)
-            {
+            switch (solver) {
                 case "IBM_Solver":
                     mainMethod = "BoSSS.Application.IBM_Solver.IBM_SolverMain.RunSolverOneStep";
                     break;
@@ -1692,7 +1690,7 @@ namespace BoSSS.Foundation.IO {
                 default:
                     throw new ApplicationException("Main method not defined for this solver yet");
             }
-            
+
 
 
             // Change maxNumberMethods to how many methods you want considered if no  methods specified
@@ -1701,8 +1699,7 @@ namespace BoSSS.Foundation.IO {
             int idx = sessions.IndexOfMax(s => s.ComputeNodeNames.Count());
 
             // Find methods if none given
-            if (methods == null)
-            {
+            if (methods == null) {
                 var temp_fs = new FileStream[1];
                 BinaryFormatter fmt = new BinaryFormatter();
                 MethodCallRecord[] mcr = new MethodCallRecord[1];
@@ -1712,32 +1709,29 @@ namespace BoSSS.Foundation.IO {
 
                 var findMainMethod = mcr[0].FindChild(mainMethod);
                 IOrderedEnumerable<CollectionReport> mostExpensive;
-                if (findMainMethod!= null)
-                {
-                     mostExpensive = findMainMethod.CompleteCollectiveReport().OrderByDescending(cr => cr.ExclusiveTimeFractionOfRoot);
-                } else
-                {
-                     mostExpensive = mcr[0].CompleteCollectiveReport().OrderByDescending(cr => cr.ExclusiveTimeFractionOfRoot);
+                if (findMainMethod != null) {
+                    mostExpensive = findMainMethod.CompleteCollectiveReport().OrderByDescending(cr => cr.ExclusiveTimeFractionOfRoot);
+                } else {
+                    mostExpensive = mcr[0].CompleteCollectiveReport().OrderByDescending(cr => cr.ExclusiveTimeFractionOfRoot);
                 }
                 //var mostExpensive = mcr[0].FindChild(mainMethod).CompleteCollectiveReport().OrderByDescending(cr => cr.ExclusiveTimeFractionOfRoot);
 
                 methods = new string[maxNumberMethods];
-                for (int i = 0; i < maxNumberMethods; i++)
-                {
+                for (int i = 0; i < maxNumberMethods; i++) {
                     methods[i] = mostExpensive.Pick(i).Name;
                 }
             }
             int numberMethods = methods.Length;
+            string[] methodCalls = new string[numberMethods];
 
             // Initialise variables
             int numberSessions = sessions.Count();
-            DataSet[] data = new DataSet[2*numberMethods];
+            DataSet[] data = new DataSet[2 * numberMethods];
             double[][] times = new double[numberSessions][];
             int[] processors = new int[numberSessions];
 
             // Iterate over sessions
-            for (int i = 0; i < numberSessions; i++)
-            {
+            for (int i = 0; i < numberSessions; i++) {
                 // Get number of processors and save for later
                 int fileCount = (from file in Directory.EnumerateFiles(@path + "\\sessions\\" + sessions.Pick(i).ID, "profiling_bin.*", SearchOption.AllDirectories)
                                  select file).Count();
@@ -1751,45 +1745,44 @@ namespace BoSSS.Foundation.IO {
                 double[] maxTime = new double[numberMethods];
 
                 // Iterate over MPIs
-                for (int j = 0; j < numberProcessors; j++)
-                {
+                for (int j = 0; j < numberProcessors; j++) {
                     // read profiling_bin of current processor
                     temp_fs[j] = new FileStream(@path + "\\sessions\\" + sessions.Pick(i).ID + "\\profiling_bin." + j + ".txt", FileMode.Open);
                     MethodCallRecord value;
                     mcr[j] = ((MethodCallRecord)fmt.Deserialize(temp_fs[j]));
                     // Iterate over methods
-                    for (int k = 0; k < numberMethods; k++)
-                    {
+                    for (int k = 0; k < numberMethods; k++) {
                         // Get execution time of current method for current processor
                         double[] tempTime = new double[numberMethods];
                         double[] tempFractions = new double[numberMethods];
-                        
+
                         value = mcr[j].FindChild(mainMethod);
-                        if (value ==null)
-                        {
+                        if (value == null) {
                             value = mcr[j];
                         }
-                        if (exclusive)
-                        {
+                        if (exclusive) {
                             tempTime[k] = value.FindChildren(methods[k]).Select(s => s.TimeExclusive.TotalSeconds).Max();
-                            if (i == idx)
-                            {
-                                tempFractions[k] = value.FindChildren(methods[k]).Select(s => s.ExclusiveTimeFractionOfRoot).Max();
+                            if (i == idx) {
+                                double maxValue = value.FindChildren(methods[k]).Select(s => s.ExclusiveTimeFractionOfRoot).Max();
+                                int maxIndex = value.FindChildren(methods[k]).Select(s => s.ExclusiveTimeFractionOfRoot).ToList().IndexOf(maxValue);
+                                tempFractions[k] = maxValue;
+                                MethodCallRecord test2 = value.FindChildren(methods[k]).Pick(maxIndex);
+                                methodCalls[k] = test2.ParrentCall.Name;
                             }
-                        } else { 
+                        } else {
                             tempTime[k] = value.FindChildren(methods[k]).Select(s => s.TimeSpentInMethod.TotalSeconds).Max();
-                            if (i == idx)
-                            {
-                                tempFractions[k] = value.FindChildren(methods[k]).Select(s => s.TimeFractionOfRoot).Max();
+                            if (i == idx) {
+                                double maxValue = value.FindChildren(methods[k]).Select(s => s.TimeFractionOfRoot).Max();
+                                int maxIndex = value.FindChildren(methods[k]).Select(s => s.TimeFractionOfRoot).ToList().IndexOf(maxValue);
+                                tempFractions[k] = maxValue;
+                                methodCalls[k] = value.FindChildren(methods[k]).Pick(maxIndex).Root.Name;
                             }
                         }
                         // Only save execution time if it is the highest value of all processor times
-                        if (tempTime[k] > maxTime[k])
-                        {
+                        if (tempTime[k] > maxTime[k]) {
                             maxTime[k] = tempTime[k];
                         }
-                        if (tempFractions[k] > fraction[k])
-                        {
+                        if (tempFractions[k] > fraction[k]) {
                             fraction[k] = tempFractions[k];
                         }
                     }
@@ -1802,14 +1795,12 @@ namespace BoSSS.Foundation.IO {
             KeyValuePair<string, double>[] methodRegressionPair = new KeyValuePair<string, double>[numberMethods];
             KeyValuePair<string, double>[] methodFractionPair = new KeyValuePair<string, double>[numberMethods];
             // Create DataSets and ideal curves
-            for (int i = 0; i < numberMethods; i++)
-            {
+            for (int i = 0; i < numberMethods; i++) {
                 // Calculation of ideal curves
                 double[] ideal = new double[numberSessions];
                 double[] idealSpeedUp = new double[numberSessions];
                 double startIdeal = times.Pick(0)[i];
-                for (int j = 0; j < numberSessions; j++)
-                {
+                for (int j = 0; j < numberSessions; j++) {
                     ideal[j] = Math.Pow(0.5, j) * startIdeal;
                     idealSpeedUp[j] = processors[j];
                 }
@@ -1828,7 +1819,7 @@ namespace BoSSS.Foundation.IO {
 
                 // Create DataSets from DataRows
                 data[i] = new DataSet(dataRowsConvergence);
-                data[i+numberMethods] = new DataSet(dataRowsSpeedup);
+                data[i + numberMethods] = new DataSet(dataRowsSpeedup);
                 methodRegressionPair[i] = new KeyValuePair<string, double>(methods[i], Math.Min(data.Skip(numberMethods).Pick(i).Regression().Pick(0).Value, data.Skip(numberMethods).Pick(i).Regression().Pick(1).Value));
                 methodFractionPair[i] = new KeyValuePair<string, double>(methods[i], fraction[i]);
             }
@@ -1842,23 +1833,87 @@ namespace BoSSS.Foundation.IO {
             double[] fractions2 = methodFractionPair.Select(s => s.Value).ToArray();
             string[] sortedMethods = methodRegressionPair.Select(s => s.Key).ToArray();
 
-           // Write out the most expensive functions and the worst scaling functions
+            // Write out the most expensive functions and the worst scaling functions
             Console.WriteLine("\n Most expensive functions");
             Console.WriteLine("============================");
-            for (int i = 0; i < numberMethods; i++)
-            {
+            for (int i = 0; i < numberMethods; i++) {
                 Console.WriteLine("Rank " + i + ": " + methods2[i]);
-                Console.WriteLine("\t Time fraction of root: " + fractions2[i].ToString("p3"));
+                Console.WriteLine("\t Time fraction of root: " + fractions2[i].ToString("p3") + "\t in " + methodCalls[i]);
             }
             Console.WriteLine("\n Sorted by worst scaling");
             Console.WriteLine("============================");
-            for (int i = 0; i < numberMethods; i++)
-            {
+            for (int i = 0; i < numberMethods; i++) {
                 Console.WriteLine("Rank " + i + ": " + sortedMethods[i]);
                 Console.WriteLine("\t speedup slope: " + regressions[i].ToString("N3"));
             }
 
             return data;
+        }
+
+        /// <summary>
+        /// Plots circularity and rise velocity over time if a  "BenchmarkQuantities_RisingBubble.txt" exists.
+        /// </summary>
+        /// <param name="sess"></param> List of sessions to be evaluated
+        public static void EvalRisingBubble(this IEnumerable<ISessionInfo> sess) {
+            int numberSessions = sess.Count();
+            double[][] times = new double[numberSessions][];
+            double[][] circularities = new double[numberSessions][];
+            double[][] riseVelocities = new double[numberSessions][];
+
+            // Read all data
+            for (int j = 0; j < numberSessions; j++) {
+                string path = @sess.Pick(j).Database.Path + "\\sessions\\" + sess.Pick(j).ID + "\\BenchmarkQuantities_RisingBubble.txt";
+                string[] lines = File.ReadAllLines(path);
+                double[] time = new double[lines.Length - 1];
+                double[] circularity = new double[lines.Length - 1];
+                double[] riseVelocity = new double[lines.Length - 1];
+
+                for (int i = 0; i < lines.Length - 1; i++) {
+                    time[i] = Convert.ToDouble(lines[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[1]);
+                    circularity[i] = Convert.ToDouble(lines[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[4]);
+                    riseVelocity[i] = Convert.ToDouble(lines[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[5]);
+                }
+                times[j] = time;
+                circularities[j] = circularity;
+                riseVelocities[j] = riseVelocity;
+
+            }
+            // Build DataSets
+            KeyValuePair<string, double[][]>[] dataRowsCircularity = new KeyValuePair<string, double[][]>[numberSessions];
+            KeyValuePair<string, double[][]>[] dataRowsRiseVelocity = new KeyValuePair<string, double[][]>[numberSessions];
+            for (int i = 0; i < numberSessions; i++) {
+                dataRowsCircularity[i] = new KeyValuePair<string, double[][]>(sess.Pick(i).Name, new double[][] { times[i], circularities[i] });
+                dataRowsRiseVelocity[i] = new KeyValuePair<string, double[][]>(sess.Pick(i).Name, new double[][] { times[i], riseVelocities[i] });
+            }
+            DataSet Time_Circularity = new DataSet(dataRowsCircularity);
+            DataSet Time_riseVelocity = new DataSet(dataRowsRiseVelocity);
+
+            // Plot circularity
+            int lineColor = 0;
+            PlotFormat format = new PlotFormat(lineColor: ((LineColors)(++lineColor)));
+            Gnuplot gp = new Gnuplot(baseLineFormat: format);
+            gp.SetXLabel("Time");
+            gp.SetYLabel("Circularity");
+            gp.Cmd("set grid xtics ytics");
+            foreach (var group in Time_Circularity.dataGroups) {
+                gp.PlotXY(group.Abscissas, group.Values, group.Name.Split('.').Last(),
+                    new PlotFormat(lineColor: ((LineColors)(++lineColor))));
+            }
+            gp.WriteDeferredPlotCommands();
+            gp.Execute();
+
+            // Plot rise velocity
+            lineColor = 0;
+            Gnuplot gp2 = new Gnuplot(baseLineFormat: format);
+            gp2.SetXLabel("Time");
+            gp2.SetYLabel("Rise velocity");
+            gp2.Cmd("set grid xtics ytics");
+            foreach (var group in Time_riseVelocity.dataGroups) {
+                gp2.PlotXY(group.Abscissas, group.Values, group.Name.Split('.').Last(),
+                    new PlotFormat(lineColor: ((LineColors)(++lineColor))));
+            }
+            gp2.WriteDeferredPlotCommands();
+            gp2.Execute();
         }
     }
 }
