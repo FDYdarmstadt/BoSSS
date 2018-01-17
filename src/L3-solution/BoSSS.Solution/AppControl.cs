@@ -93,7 +93,7 @@ namespace BoSSS.Solution.Control {
         /// Polynomial degree of ther DG field; if negative, the application tries to determine a degree by itself.
         /// </param>
         public void AddFieldOption(string DGFieldName, int Degree = -1, FieldOpts.SaveToDBOpt SaveOpt = FieldOpts.SaveToDBOpt.TRUE) {
-            FieldOptions.Add("VelocityX", new FieldOpts() {
+            FieldOptions.Add(DGFieldName, new FieldOpts() {
                 Degree = Degree,
                 SaveToDB = SaveOpt
             });
