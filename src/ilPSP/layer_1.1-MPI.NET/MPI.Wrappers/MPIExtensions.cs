@@ -569,33 +569,33 @@ namespace MPI.Wrappers {
         }
 
         /// <summary>
-        /// Gathers all long[] send Arrays on all MPI-processes, at which every jth block of data is from the jth process.
+        /// Gathers all ulong[] send Arrays on all MPI-processes, at which every jth block of data is from the jth process.
         /// </summary>
-        static public long[] MPIAllGatherv(this long[] send, int[] recvcounts) {
+        static public ulong[] MPIAllGatherv(this ulong[] send, int[] recvcounts) {
             return send.Long_MPIAllGatherv(recvcounts, csMPI.Raw._COMM.WORLD);
         }
         /// <summary>
         /// Gathers all send Arrays on all MPI-processes, at which every jth block of data is from the jth process.
         /// </summary>
-        static private long[] Long_MPIAllGatherv(this long[] send, int[] m_recvcounts, MPI_Comm comm) {
+        static private ulong[] Long_MPIAllGatherv(this ulong[] send, int[] m_recvcounts, MPI_Comm comm) {
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int size);
-            long[] result = new long[m_recvcounts.Sum()];
+            ulong[] result = new ulong[m_recvcounts.Sum()];
 
             unsafe {
                 int* displs = stackalloc int[size];
                 for (int i = 1; i < size; i++) {
                     displs[i] = displs[i - 1] + m_recvcounts[i - 1];
                 }
-                fixed (long* pResult = &result[0], pSend = &send[0]) {
+                fixed (ulong* pResult = &result[0], pSend = &send[0]) {
                     fixed (int* pRcvcounts = &m_recvcounts[0]) {
                         csMPI.Raw.Allgatherv(
                             (IntPtr)pSend,
                             send.Length,
-                            csMPI.Raw._DATATYPE.LONG_LONG,
+                            csMPI.Raw._DATATYPE.UNSIGNED_LONG_LONG,
                             (IntPtr)pResult,
                             (IntPtr)pRcvcounts,
                             (IntPtr)displs,
-                            csMPI.Raw._DATATYPE.LONG_LONG,
+                            csMPI.Raw._DATATYPE.UNSIGNED_LONG_LONG,
                             comm);
                     }
                 }
