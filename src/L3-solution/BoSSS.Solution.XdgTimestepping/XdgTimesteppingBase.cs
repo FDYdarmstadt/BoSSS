@@ -228,6 +228,8 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         public double Config_SolverConvergenceCriterion = 1.0e-8;
 
+        public double Config_GMRESConvergenceCriterion = 1.0e-8;
+
         public double Config_LevelSetConvergenceCriterion = 1.0e-6;
 
         /// <summary>
@@ -529,12 +531,12 @@ namespace BoSSS.Solution.XdgTimestepping {
                             this.MultigridBasis,
                             this.Config_MultigridOperator)
                         {
-                            maxKrylovDim = 1000,
+                            maxKrylovDim = 100,
                             MaxIter = Config_MaxIterations,
                             MinIter = Config_MinIterations,
                             ApproxJac = Newton.ApproxInvJacobianOptions.GMRES,
                             Precond = Config_linearSolver,
-                            GMRESConvCrit = Config_SolverConvergenceCriterion,
+                            GMRESConvCrit = Config_GMRESConvergenceCriterion,
                             ConvCrit = Config_SolverConvergenceCriterion,
                             m_SessionPath = SessionPath,
                         };
