@@ -41,7 +41,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// performs <see cref="DGField.CheckForNanOrInf"/> for each component;
         /// </summary>
-        public long CheckForNanOrInf(bool CheckForInf, bool CheckForNan, bool ExceptionIfFound) {
+        public long CheckForNanOrInf(bool CheckForInf=true, bool CheckForNan=true, bool ExceptionIfFound=true) {
             long ret = -1;
             foreach (DGField f in this.m_Components) {
                 ret = f.CheckForNanOrInf(CheckForInf, CheckForNan, ExceptionIfFound);
