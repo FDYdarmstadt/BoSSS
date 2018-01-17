@@ -22,8 +22,6 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Solution.Timestepping {
 
-
-
     /// <summary>
     /// Coefficients for Backward-Differentiation-Formulas (BDF) and Crank-Nicolson.
     /// </summary>
