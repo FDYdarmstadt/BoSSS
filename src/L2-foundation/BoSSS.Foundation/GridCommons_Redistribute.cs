@@ -16,7 +16,10 @@ limitations under the License.
 
 using BoSSS.Foundation.Comm;
 using BoSSS.Foundation.IO;
+using BoSSS.Platform.Utils.Geom;
+using ilPSP;
 using ilPSP.Kraypis;
+using ilPSP.HilbertCurve;
 using ilPSP.Tracing;
 using ilPSP.Utils;
 using MPI.Wrappers;
@@ -142,6 +145,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
             }
         }
+
         /// <summary>
         /// Computes a grid partitioning (which cell should be on which processor)
         /// using the serial METIS library -- work is only done on MPi rank 0.
@@ -745,6 +749,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
         }
 
+        /*
         public int[] ComputePartitionHilbert(int[] cellCosts = null) {
             // Step 1: Compute some global indexing pattern for all cells
             // according to space-filling curve
@@ -777,7 +782,113 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
 
             return partitioning;
+        }*/
+
+        BoundingBox GetGridBoundingBox() {
+            int D = this.SpatialDimension;
+            var BB = new BoundingBox(D);
+
+            int J0 = this.CellPartitioning.i0;
+            int JE = this.CellPartitioning.iE;
+            for (int j = J0; j < JE; j++) {
+                Cell Cj = this.Cells[j - J0];
+                BB.AddPoints(Cj.TransformationParams);
+            }
+
+            BB.Min = BB.Min.MPIMin();
+            BB.Max = BB.Max.MPIMax();
+
+            return BB;
         }
+
+        /// <summary>
+        /// Computes a grid partitioning (which cell should be on which processor) based on a Hilbertcurve of maximum order (nBit=63).
+        /// </summary>
+        public int[] ComputePartitionHilbert(int[] cellCosts = null) {
+
+            int D = this.SpatialDimension;
+            var GlobalBB = this.GetGridBoundingBox();
+
+            int J0 = this.CellPartitioning.i0;
+            int JE = this.CellPartitioning.iE;
+
+            ulong[] discreteCenter = new ulong[D];
+            ulong[] local_HilbertIndex = new ulong[JE - J0];
+            int[] local_CellIndex = new int[JE - J0];
+
+            for (int j = J0; j < JE; j++) {
+                Cell Cj = this.Cells[j - J0];
+                int NoOfNodes = Cj.TransformationParams.NoOfRows;
+                for (int d = 0; d < D; d++) {
+                    double center = 0;
+                    for (int k = 0; k < NoOfNodes; k++) {
+                        center += Cj.TransformationParams[k, d];
+                    }
+                    
+                    center = center / ((double)NoOfNodes); // ''center of gravity'' for coordinate direction 'd'
+                    double centerTrf = (center - GlobalBB.Min[d]) * (1.0 / (GlobalBB.Max[d] - GlobalBB.Min[d])) * Math.Pow(2,32);
+                    //double centerTrf = (center - GlobalBB.Min[d]) * (1.0 / (GlobalBB.Max[d] - GlobalBB.Min[d])) * ((double)long.MaxValue);
+                    centerTrf = Math.Round(centerTrf);
+                    if (centerTrf < 0)
+                        centerTrf = 0;
+                    if (centerTrf > ulong.MaxValue)
+                        centerTrf = ulong.MaxValue;
+                    discreteCenter[d] = (ulong)centerTrf;
+                    
+                }
+                ulong iH = HilbertCurve.hilbert_c2i(32, discreteCenter);
+                local_HilbertIndex[j - J0] = iH;// perhabs better to use new Tuple<long, int>(iH, j);
+                local_CellIndex[j - J0] = j;
+                
+            }
+
+            int[] CellsPerRank = new int[this.Size];
+            for (int r = 0; r < CellsPerRank.Length; r++)
+                CellsPerRank[r] = this.CellPartitioning.GetLocalLength(r);
+            //int[] sizeof_Recvbuffer = new int[1];
+            //sizeof_Recvbuffer[0]=this.NumberOfCells;
+
+            //Gather all local computed Hilbert_Indices
+            int[] CellIndex = local_CellIndex.MPIAllGatherv(CellsPerRank);
+            ulong[] HilbertIndex = local_HilbertIndex.MPIAllGatherv(CellsPerRank);
+            Debugger.Break();
+            Array.Sort(HilbertIndex, CellIndex);
+            Debugger.Break();
+
+            // Distribution of MPI-Rank along the Hilbertcurve
+            int numberofcells = this.NumberOfCells;
+            int numproc = this.Size;
+
+            int[] RankIndex = new int[numberofcells];
+            int[] buckets = new int[numproc];
+
+            int counter = numberofcells%numproc;
+            int base_size = numberofcells / numproc;
+            
+            for (int i = 0; i < buckets.Length; i++)
+                buckets[i] = base_size;
+            while (counter != 0) {
+                counter -= 1;
+                buckets[counter] += 1;
+            }
+            for (int m = 0, n = 0; m < numproc; m++) {
+                for (int i = 0; i < buckets[m]; i++, n++) {
+                    RankIndex[n] = m;
+                }
+            }
+
+            Debugger.Break();
+            //Extract Rank-Array for local Process
+            Array.Sort(CellIndex, RankIndex);
+            int[] local_Rank_RedistributionList = new int[JE - J0];
+            for (int j = 0; j < JE - J0; j++) {
+                local_Rank_RedistributionList[j] = RankIndex[J0 + j];
+            }
+            Debugger.Break();
+            return local_Rank_RedistributionList;
+        }
+
+
 
         private bool CheckPartitioning(Master cm, int[] nodesPart) {
 
