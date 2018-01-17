@@ -49,8 +49,23 @@ namespace BoSSS.Application.IBM_Solver {
         /// </summary>
         public DoNotTouchParameters AdvancedDiscretizationOptions = new DoNotTouchParameters();
 
+        /// <summary>
+        /// Sets the DG polynomial degree 
+        /// </summary>
+        /// <param name="k">Degree for velociy; pressure  will be one order lower.</param>
+        public override void SetDGdegree(int k) {
+            if(k < 1)
+                throw new ArgumentOutOfRangeException("DG polynomial degree must be at least 1.");
 
-        
+            base.FieldOptions.Clear();
+
+            this.AddFieldOption("VelocityX", k);
+            this.AddFieldOption("VelocityY", k);
+            this.AddFieldOption("Pressure", k- 1);
+            this.AddFieldOption("PhiDG", 2);
+            this.AddFieldOption("Phi", 2);
+        }
+
         /// <summary>
         /// If iterative saddle-point solvers like GMRES or Orthonormalization are used, the maximum number of basis vectors
         /// that are used to construct the accelerated solution.

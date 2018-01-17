@@ -94,7 +94,7 @@ namespace BoSSS.Foundation.IO {
         /// <param name="database"></param>
         /// <param name="grd"></param>
         /// <returns></returns>
-        public static Guid SaveGrid(this IDatabaseInfo database, Grid.Classic.GridCommons grd) {
+        public static Guid SaveGrid(this IDatabaseInfo database, ref Grid.Classic.GridCommons grd) {
             bool found;
             Guid GridGuid = database.Controller.DBDriver.SaveGridIfUnique(ref grd, out found, database);
             if (found)
