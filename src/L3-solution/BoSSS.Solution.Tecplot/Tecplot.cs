@@ -87,13 +87,13 @@ namespace BoSSS.Solution.Tecplot {
                     // write a name for field without identification
                     stw.Write("unknown_" + unknowncnt);
                     unknowncnt++;
-                } else if ((id.Contains(" ") || id.Contains("\t") || id.Contains("\n") || id.Contains("\r") || id.Contains("(") || id.Contains(")"))) {
-                    if (id.Contains(" ") || id.Contains("(") || id.Contains(")")) {
-                        throw new Exception("A field identification contains white space or parentheses, please change the name of this field");
-                    }
-
+                } else if (id.Contains(" ") || id.Contains("(") || id.Contains(")")) {
+                    throw new Exception("A field identification contains white space or parentheses, please change the name of this field");
+                } else if (id.Contains("\t") || id.Contains("\n") || id.Contains("\r")) {
                     // remove whitespaces
-                    string[] subStrg = id.Split(new char[] { ' ', '\t', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+                    //string[] subStrg = id.Split(new char[] { ' ', '\t', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+
+                    string[] subStrg = id.Split(new char[] { '\t', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
 
                     string idNew = "";
                     for (int __i = 0; __i < subStrg.Length; __i++) {
@@ -280,7 +280,7 @@ namespace BoSSS.Solution.Tecplot {
                         }
                         tecnod110(permutedConnectivity);
                     } else {
-                        int[, ,] permutedConnectivity = new int[NoOfCells, subdivisionsPerCell, permutationTable.Length];
+                        int[,,] permutedConnectivity = new int[NoOfCells, subdivisionsPerCell, permutationTable.Length];
                         for (int j = 0; j < NoOfCells; j++) {
                             for (int jj = 0; jj < subdivisionsPerCell; jj++) {
                                 for (int i = 0; i < permutationTable.Length; i++) {
@@ -596,7 +596,7 @@ namespace BoSSS.Solution.Tecplot {
         /// </param>
         /// <returns>0 if successful, -1 if unsuccessful.</returns>
         [DllImport("tecio")]
-        private static unsafe extern int tecnod110(int[, ,] nodelist);
+        private static unsafe extern int tecnod110(int[,,] nodelist);
 
         /// <summary>
         /// Writes an array of node data to the binary data file. This is the
