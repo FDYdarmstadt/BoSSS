@@ -1419,7 +1419,7 @@ namespace BoSSS.Solution {
                     return null;
 
                 ITimestepInfo tsi;
-                Exception e = null;
+                //Exception e = null;
                 try {
                     tsi = this.DatabaseDriver.SaveTimestep(
                         t,
@@ -1428,17 +1428,41 @@ namespace BoSSS.Solution {
                         this.GridData,
                         this.IOFields);
                 } catch (Exception ee) {
-                    Console.WriteLine(ee.GetType().Name + " on rank " + this.MPIRank + " saveing timestep " + timestepno + ": " + ee.Message);
+                    Console.Error.WriteLine(ee.GetType().Name + " on rank " + this.MPIRank + " saving time-step " + timestepno + ": " + ee.Message);
+                    Console.Error.WriteLine(ee.StackTrace);
+                    //tsi = null;
+                    //e = ee;
+
+                    if(ContinueOnIOError) {
+                        Console.WriteLine("Ignoring IO error: " + DateTime.Now);
+
+                    } else {
+                        throw ee;
+                    }
+
                     tsi = null;
-                    e = ee;
                 }
 
-                e.ExceptionBcast();
+                // e.ExceptionBcast();
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
                 return tsi;
             }
         }
+
+        /// <summary>
+        /// Calculation is not stopped if an I/O exception is thrown in <see cref="SaveToDatabase(TimestepNumber, double)"/>,
+        /// see also <see cref="AppControl.ContinueOnIoError"/>.
+        /// </summary>
+        protected virtual bool ContinueOnIOError {
+            get {
+                if(this.Control != null)
+                    return this.Control.ContinueOnIoError;
+                else
+                    return true;
+            }
+        }
+
 
         /// <summary>
         /// Loads all fields in <see cref="m_IOFields"/> from the database
