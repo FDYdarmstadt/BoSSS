@@ -678,5 +678,10 @@ namespace BoSSS.Solution.Control {
             }
         }
 
+        /// <summary>
+        /// Calculation is not stopped if an I/O exception is thrown in <see cref="Application{T}.SaveToDatabase(TimestepNumber, double)"/>.
+        /// </summary>
+        public bool ContinueOnIoError = true;
+
     }
 }
