@@ -1172,7 +1172,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         {
 
             double ResidualNorm = currentRes.L2NormPow2().MPISum().Sqrt();
-
+            //Console.WriteLine("ResidualNorm in CoupledIterationCallback is {0}", ResidualNorm);
             // delay the update of the level-set until the flow solver converged
             if (ResidualNorm >= this.Config_SolverConvergenceCriterion) { 
                 this.CoupledIteration = false;
