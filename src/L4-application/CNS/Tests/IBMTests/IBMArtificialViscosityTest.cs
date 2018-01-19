@@ -70,7 +70,7 @@ namespace CNS.Tests.IBMTests {
 
             c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             c.LevelSetQuadratureOrder = 6;
-            c.AgglomerationThreshold = 0.2;
+            c.AgglomerationThreshold = 0.2; // Using this agglomeration threshold, no cells are agglomerated (all cells are true cut cells)
             c.AddVariable(IBMVariables.LevelSet, 1);
 
             bool AV = true;
@@ -236,7 +236,7 @@ namespace CNS.Tests.IBMTests {
             return solver.QueryHandler.QueryResults;
         }
 
-        // Wprks only if AV projection is off
+        // Works only if AV projection is off (really? I don't think so)
         [Test]
         public static void IBMAVTest() {
             CheckErrorThresholds(
