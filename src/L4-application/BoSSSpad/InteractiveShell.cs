@@ -213,8 +213,8 @@ namespace BoSSS.Application.BoSSSpad {
             if (AssemblyCode == null) {
                 throw new ApplicationException("Unable to find code of " + SearchedAssembly.FullName);
             } else {
-                Console.WriteLine("Found code:");
-                Console.WriteLine(AssemblyCode);
+                //Console.WriteLine("Found code:");
+                //Console.WriteLine(AssemblyCode);
             }
 
             var fo = new Solution.Control.Formula(f.Method.DeclaringType.Name + "." + f.Method.Name, timedep, AssemblyCode);

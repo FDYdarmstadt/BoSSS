@@ -28,19 +28,7 @@ namespace BoSSS.Solution {
     /// <summary>
     /// Public interface of all applications.
     /// </summary>
-    /// <typeparam name="T">
-    /// Type of the control file object
-    /// </typeparam>
-    public interface IApplication<out T> : IDisposable
-        where T : AppControl, new() {
-
-        /// <summary>
-        /// User configuration input.
-        /// </summary>
-        T Control {
-            get;
-        }
-
+    public interface IApplication : IDisposable {
         /// <summary>
         /// Information about the currently active session.
         /// </summary>
@@ -49,7 +37,7 @@ namespace BoSSS.Solution {
         }
 
         /// <summary>
-        /// interface to the database driver
+        /// Interface to the database driver
         /// </summary>
         IDatabaseDriver DatabaseDriver {
             get;
@@ -110,5 +98,32 @@ namespace BoSSS.Solution {
         ResidualLogger ResLogger {
             get;
         }
+
+        /// <summary>
+        /// User configuration input.
+        /// </summary>
+        AppControl ControlBase {
+            get;
+        }
+    }
+
+
+    /// <summary>
+    /// Public interface of all applications.
+    /// </summary>
+    /// <typeparam name="T">
+    /// Type of the control file object
+    /// </typeparam>
+    public interface IApplication<out T> : IApplication
+        where T : AppControl, new() {
+
+        /// <summary>
+        /// User configuration input.
+        /// </summary>
+        T Control {
+            get;
+        }
+
+        
     }
 }

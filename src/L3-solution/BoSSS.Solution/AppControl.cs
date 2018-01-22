@@ -290,7 +290,7 @@ namespace BoSSS.Solution.Control {
         }
 
         /// <summary>
-        /// Adds a time-dependent boundary condition.
+        /// Adds a boundary condition, represented as formula text, e.g. <c>(X,t) => Math.Sin(X[1] + t*0.2)</c>.
         /// </summary>
         /// <param name="EdgeTagName">Name of the boundary condition</param>
         /// <param name="fieldname">Name of the field for which the boundary condition is valid</param>
@@ -308,6 +308,25 @@ namespace BoSSS.Solution.Control {
                 throw new ArgumentException(string.Format("Boundary condition for field '{0}' and edge tag name '{1}' already specified.", EdgeTagName, fieldname));
 
             this.BoundaryValues[EdgeTagName].Values.Add(fieldname, new Formula(FormulaText, TimeDependent));
+        }
+
+        /// <summary>
+        /// Adds a boundary condition, represented by a general <see cref="IBoundaryAndInitialData"/>-object.
+        /// </summary>
+        /// <param name="EdgeTagName">Name of the boundary condition</param>
+        /// <param name="fieldname">Name of the field for which the boundary condition is valid</param>
+        /// <param name="data">
+        /// General provider of initial/boundary data; In order to support full functionality (job management, etc.),
+        /// the object must be serializeable.
+        /// </param>
+        public void AddBoundaryCondition(string EdgeTagName, string fieldname, IBoundaryAndInitialData data) {
+            if(!this.BoundaryValues.ContainsKey(EdgeTagName))
+                this.BoundaryValues.Add(EdgeTagName, new BoundaryValueCollection());
+
+            if(this.BoundaryValues[EdgeTagName].Evaluators.ContainsKey(fieldname))
+                throw new ArgumentException(string.Format("Boundary condition for field '{0}' and edge tag name '{1}' already specified.", EdgeTagName, fieldname));
+
+            this.BoundaryValues[EdgeTagName].Values.Add(fieldname, data);
         }
 
         [NonSerialized]
