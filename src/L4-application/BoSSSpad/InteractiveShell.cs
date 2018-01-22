@@ -147,7 +147,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         /// <param name="dbDir"></param>
         /// <returns></returns>
-       static  public IDatabaseInfo OpenOrCreateDatabase(string dbDir) {
+        static public IDatabaseInfo OpenOrCreateDatabase(string dbDir) {
             if(Directory.Exists(dbDir)) {
                 if (!DatabaseUtils.IsValidBoSSSDatabase(dbDir)) {
                     throw new ArgumentException("Directory '" + dbDir + "' exists, but is not a valid BoSSS database.");

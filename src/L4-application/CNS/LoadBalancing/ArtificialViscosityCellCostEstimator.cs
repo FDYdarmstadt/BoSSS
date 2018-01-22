@@ -19,43 +19,44 @@ using BoSSS.Solution.Control;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
+using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CNS.LoadBalancing {
 
-    public class IBMCellCostEstimator : ICellCostEstimator {
+    /// <summary>
+    /// A cell cost estimator based on aritificial viscosity
+    /// </summary>
+    public class ArtificialViscosityCellCostEstimator : ICellCostEstimator {
 
         private int[] cellToCostMap;
 
-        private int selectedCellType;
+        private int performanceClass;
 
         /// <summary>
-        /// 
+        /// <see cref="ICellCostEstimator"/>
         /// </summary>
-        /// <param name="selectedCellType">
-        /// See <see cref="IBMCellClassifier"/>:
-        /// 0: Fluid
-        /// 1: Cut
-        /// 2: Void
-        /// </param>
-        public IBMCellCostEstimator(int selectedCellType) {
-            this.selectedCellType = selectedCellType;
-        }
-
-        public double EstimatedLocalCost {
-            get;
-            private set;
-        }
-
         public int CurrentPerformanceClassCount {
             get;
             private set;
         }
 
-        public int[] GetEstimatedCellCosts() {
-            return cellToCostMap;
+        /// <summary>
+        /// <see cref="ICellCostEstimator"/>
+        /// </summary>
+        public double EstimatedLocalCost {
+            get;
+            private set;
+        }
+
+        /// <summary>
+        /// A cell cost estimator based on aritificial viscosity
+        /// Performance class 0: Cells without AV
+        /// Performance class 1: Cells with AV
+        /// </summary>
+        public ArtificialViscosityCellCostEstimator(int performanceClass) {
+            this.performanceClass = performanceClass;
         }
 
         public void UpdateEstimates(int performanceClassCount, int[] cellToPerformanceClassMap) {
@@ -65,7 +66,7 @@ namespace CNS.LoadBalancing {
             cellToCostMap = new int[cellToPerformanceClassMap.Length];
             cellToCostMap.SetAll(1);
             for (int j = 0; j < cellToPerformanceClassMap.Length; j++) {
-                if (cellToPerformanceClassMap[j] == selectedCellType) {
+                if (cellToPerformanceClassMap[j] == this.performanceClass) {
                     cellToCostMap[j] = 10;
                 }
             }
@@ -73,17 +74,35 @@ namespace CNS.LoadBalancing {
             EstimatedLocalCost = cellToCostMap.Sum();
         }
 
+        /// <summary>
+        /// AV cells are ten times more expensive than non-AV cells
+        /// </summary>
+        /// <returns></returns>
         public static Func<IApplication<AppControl>, int, ICellCostEstimator> GetStaticCostBasedEstimator() {
             return (p, i) => new StaticCellCostEstimator(
-                new int[] { 10, 100, 1 });
+                new int[] { 1, 10 });
         }
 
+        /// <summary>
+        /// Create two <see cref="ArtificialViscosityCellCostEstimator"/> for non-AV and AV cells
+        /// with converse costs: (1, 10) and (10, 1), cell costs do not matter in this case
+        /// (can be arbitrary)
+        /// </summary>
+        /// <returns></returns>
         public static IEnumerable<Func<IApplication<AppControl>, int, ICellCostEstimator>> GetMultiBalanceConstraintsBasedEstimators() {
-            int noOfCellTypes = 3; // Fluid + Cut + Void
-            for (int i = 0; i < noOfCellTypes; i++) {
+            int noOfPerformancesClasses = 2; // Cells with AV + cells without AV
+            for (int i = 0; i < noOfPerformancesClasses; i++) {
                 int temp = i; // Avoid delegate creation from capturing variable $i
-                yield return (app, classCount) => new IBMCellCostEstimator(temp);
+                yield return (app, classCount) => new ArtificialViscosityCellCostEstimator(temp);
             }
+        }
+
+        /// <summary>
+        /// <see cref="ICellCostEstimator"/>
+        /// </summary>
+        /// <returns></returns>
+        public int[] GetEstimatedCellCosts() {
+            return cellToCostMap;
         }
     }
 }

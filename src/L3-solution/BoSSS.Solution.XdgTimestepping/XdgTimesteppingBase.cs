@@ -520,10 +520,15 @@ namespace BoSSS.Solution.XdgTimestepping {
                             m_LinearSolver = Config_linearSolver,
                             m_SessionPath = SessionPath,
                             ConvCrit = Config_SolverConvergenceCriterion,
-                            UnderRelax = Config_UnderRelax,                         
+                            UnderRelax = Config_UnderRelax,    
                         };
-                        break;
 
+                        if (this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
+                            ((FixpointIterator)nonlinSolver).CoupledIteration_Converged = LevelSetConvergenceReached;
+                        }
+
+                        break;
+                         
                     case NonlinearSolverMethod.Newton:
 
                         nonlinSolver = new Newton(
@@ -531,7 +536,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                             this.MultigridBasis,
                             this.Config_MultigridOperator)
                         {
-                            maxKrylovDim = 100,
+                            maxKrylovDim = 30,
                             MaxIter = Config_MaxIterations,
                             MinIter = Config_MinIterations,
                             ApproxJac = Newton.ApproxInvJacobianOptions.GMRES,
@@ -595,7 +600,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// If true, the residual will we transformed back to the original XDG basis (before agglomeration and block preconditioning)
         /// before the L2-norm is computed.
         /// </summary>
-        public bool m_TransformedResi = true;
+        public bool m_TransformedResi = false;
 
         public double m_LastLevelSetResidual;
 

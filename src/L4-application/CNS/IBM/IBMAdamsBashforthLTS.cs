@@ -195,7 +195,7 @@ namespace CNS.IBM {
 
             dt = base.Perform(dt);
 
-            speciesMap.Agglomerator.Extrapolate(DGCoordinates.Mapping);
+            speciesMap.Agglomerator.Extrapolate(CurrentState.Mapping);
             return dt;
         }
 

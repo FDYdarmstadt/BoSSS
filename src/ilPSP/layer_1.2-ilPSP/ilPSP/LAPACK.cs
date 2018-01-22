@@ -45,12 +45,11 @@ namespace ilPSP.Utils {
         // workaround for .NET bug:
         // https://connect.microsoft.com/VisualStudio/feedback/details/635365/runtimehelpers-initializearray-fails-on-64b-framework
         static PlatformID[] Helper() {
-            PlatformID[] p = new PlatformID[5];
+            PlatformID[] p = new PlatformID[4];
             p[0] = PlatformID.Win32NT;
             p[1] = PlatformID.Unix;
             p[2] = PlatformID.Unix;
             p[3] = PlatformID.Unix;
-            p[4] = PlatformID.Unix;
             return p;
         }
 
@@ -59,11 +58,11 @@ namespace ilPSP.Utils {
         /// ctor
         /// </summary>
         public LAPACK() :
-            base(new string[] { "libacml_dll.dll", "libacml.so*", "libacml.so", "liblapack.so*", "liblapack.so" },
-                 new string[5][][],
-                 new GetNameMangling[] { DynLibLoader.CAPITAL_LETTERS, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore },
+            base(new string[] { "libacml_dll.dll", "libacml.so", "liblapack.so", "libopenblas.so" },
+                 new string[4][][],
+                 new GetNameMangling[] { DynLibLoader.CAPITAL_LETTERS, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore },
                  Helper(),
-                 new int[] { -1, -1, -1, -1, -1 }) {
+                 new int[] { -1, -1, -1, -1 }) {
         }
 
 #pragma warning disable        649

@@ -71,6 +71,7 @@
     <Compile Include="DoubleExtensions.cs" />
     <Compile Include="DuplicatingTextWriter.cs" />
     <Compile Include="Environment.cs" />
+    <Compile Include="HilbertCurve.cs" />
     <Compile Include="IBlockPartitioning.cs" />
     <Compile Include="IBlockPartitioning_Extension.cs" />
     <Compile Include="ICloneableExtensions.cs" />
