@@ -22,22 +22,15 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Solution.Timestepping {
 
-
-
     /// <summary>
     /// Coefficients for Backward-Differentiation-Formulas (BDF) and Crank-Nicolson.
     /// </summary>
-    public class BDFSchemeCoeffs {
+    public struct BDFSchemeCoeffs {
                
-
-        /// <summary>
-        /// Empty constructor.
-        /// </summary>
-        public BDFSchemeCoeffs() {
-        }
-
         /// <summary>
         /// Returns a Backward-Differentiation-Formula of order <paramref name="i"/>.
+        /// Naming of the Variables for this Scheme:
+        /// 1/dt * (u[1] - \sum_{k=0}^{k=i-1} beta[k] * u_[-k] ) = theta[0]*Op( u[0] ) + theta[1]*Op(u[1])
         /// </summary>
         static public BDFSchemeCoeffs BDF(int i) {
             BDFSchemeCoeffs R = new BDFSchemeCoeffs();
@@ -149,4 +142,58 @@ namespace BoSSS.Solution.Timestepping {
             }
         }
     }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public static class BDFCommon {
+
+        /// <summary>
+        /// Initilizes a Chain of BDF-Schemes starting from ImplicitEuler up to the desired order,
+        /// this is required e.g. when starting a simulation.
+        /// Then the first step is done by implicit Euler, the second step by BDF2 and so forth
+        /// </summary>
+        /// <param name="BDForder"></param>
+        /// <returns>An Array of BDSchemes from implicit euler, entry[i] up to the desired order, entry[0]</returns>
+        public static BDFSchemeCoeffs[] GetChain(int BDForder) {
+            BDFSchemeCoeffs[] SchemeChain;
+            switch (BDForder) {
+                case -1:
+                    SchemeChain = new BDFSchemeCoeffs[] { BDFSchemeCoeffs.CrankNicolson() };
+                    break;
+
+                case 0:
+                    SchemeChain = new BDFSchemeCoeffs[] { BDFSchemeCoeffs.ExplicitEuler() };
+                    break;
+
+                default:
+                    SchemeChain = new BDFSchemeCoeffs[BDForder];
+                    for (int i = BDForder; i >= 1; i--) {
+                        SchemeChain[BDForder - i] = BDFSchemeCoeffs.BDF(i);
+                    }
+                    break;
+            }
+            return SchemeChain;
+        }
+
+    }
+
+    /// <summary>
+    /// switch for the initialization of BDF-Schemes
+    /// </summary>
+    public enum TimeStepperInit {
+
+        /// Initialization from a single timestep, i.e. if this time-stepper should use BDF4,
+        /// it starts with BDF1, BDF2, BDF3 in the first, second and third time-step.
+        SingleInit,
+
+        /// same initialization for SingleInit, but the first timesteps 
+        /// are computed with a smaller timestepsize
+        IncrementInit,
+
+        /// Initialization for a multi-step method, e.g. BDF4 requires 4 timesteps.
+        /// can be used if an analytic solution is known or simulation is restarted form another session
+        MultiInit
+    }
+
 }

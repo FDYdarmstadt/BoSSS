@@ -109,7 +109,7 @@ namespace BoSSS.Application.BoSSSpad {
             eval.ReferenceAssembly(typeof(Mono.CSharp.Evaluator).Assembly);
             eval.ReferenceAssembly(typeof(CNS.Program).Assembly);
             eval.ReferenceAssembly(typeof(IBM_Solver.IBM_SolverMain).Assembly);
-            eval.ReferenceAssembly(typeof(BoSSS.Application.ipPoisson.ippControl).Assembly);
+            eval.ReferenceAssembly(typeof(BoSSS.Application.SipPoisson.SipPoissonMain).Assembly);
 
             eval.Compile(
                 "using System;" + Console.Out.NewLine +

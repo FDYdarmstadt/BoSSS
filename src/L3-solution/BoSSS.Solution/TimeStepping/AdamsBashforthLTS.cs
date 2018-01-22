@@ -248,7 +248,7 @@ namespace BoSSS.Solution.Timestepping {
 
                     // Saves the results at t_n
                     double[] y0 = new double[Mapping.LocalLength];
-                    DGCoordinates.CopyTo(y0, 0);
+                    CurrentState.CopyTo(y0, 0);
 
                     double time0 = m_Time;
                     double time1 = m_Time + dt;
@@ -299,7 +299,7 @@ namespace BoSSS.Solution.Timestepping {
                                         foreach (DGField f in Mapping.Fields) {
                                             for (int n = 0; n < f.Basis.GetLength(cell); n++) {
                                                 int coordinateIndex = Mapping.LocalUniqueCoordinateIndex(f, cell, n);
-                                                DGCoordinates[coordinateIndex] = historyDGC_Q[id].Last()[coordinateIndex];
+                                                CurrentState[coordinateIndex] = historyDGC_Q[id].Last()[coordinateIndex];
                                             }
                                         }
                                     }
@@ -308,7 +308,7 @@ namespace BoSSS.Solution.Timestepping {
                                 Dictionary<int, double> myDic = InterpolateBoundaryValues(historyDGC_Q, id, ABevolver[id].Time);
 
                                 foreach (KeyValuePair<int, double> kvp in myDic) {
-                                    DGCoordinates[kvp.Key] = kvp.Value;
+                                    CurrentState[kvp.Key] = kvp.Value;
                                 }
 
                                 ABevolver[id].Perform(localDt);
@@ -340,9 +340,9 @@ namespace BoSSS.Solution.Timestepping {
                     // Finalize step
                     // Use unmodified values in history of DGCoordinates (DGCoordinates could have been modified by
                     // InterpolateBoundaryValues, should be resetted afterwards) 
-                    DGCoordinates.Clear();
+                    CurrentState.Clear();
                     for (int id = 0; id < historyDGC_Q.Length; id++) {
-                        DGCoordinates.axpy<double[]>(historyDGC_Q[id].Last(), 1);
+                        CurrentState.axpy<double[]>(historyDGC_Q[id].Last(), 1);
                     }
 
                     // Update time
@@ -381,7 +381,7 @@ namespace BoSSS.Solution.Timestepping {
 
                     dt = RungeKuttaScheme.Perform(dt);
 
-                    DGCoordinates.CopyTo(upDGC, 0);
+                    CurrentState.CopyTo(upDGC, 0);
 
                     // Saves ChangeRateHistory for AB LTS
                     // Only entries for the specific cluster
