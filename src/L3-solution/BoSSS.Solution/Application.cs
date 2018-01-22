@@ -75,7 +75,7 @@ namespace BoSSS.Solution {
     /// offers a convenient way to start a BoSSS application with minimal
     /// effort.
     /// </summary>
-    public abstract class Application<T> : IDisposable, IApplication<T>
+    public abstract class Application<T> : IDisposable, IApplication
         where T : AppControl, new() {
 
         /// <summary>
@@ -101,6 +101,16 @@ namespace BoSSS.Solution {
             get;
             private set;
         }
+
+        /// <summary>
+        /// See <see cref="Control"/>.
+        /// </summary>
+        public AppControl ControlBase {
+            get {
+                return Control;
+            }
+        }
+
 
         /// <summary>
         /// <see cref="QueryHandler"/>
