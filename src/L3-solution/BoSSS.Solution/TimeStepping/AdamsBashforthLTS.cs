@@ -210,7 +210,9 @@ namespace BoSSS.Solution.Timestepping {
                             RaiseOnBeforeComputechangeRate(Time, dt);
 
                             Clusterer.Clustering oldClustering = CurrentClustering;
-
+#if DEBUG
+                            Console.WriteLine("BUILD NEW CLUSTERING FOR TESTING");
+#endif
                             // Necessary in order to use the number of sub-grids specified by the user for the reclustering in each time step
                             // Otherwise the value could be changed by the constructor of the parent class (AdamsBashforthLTS.cs) --> CreateSubGrids()
                             CurrentClustering = clusterer.CreateClustering(numberOfClustersInitial, this.SubGrid);
@@ -646,7 +648,8 @@ namespace BoSSS.Solution.Timestepping {
                 if (hasChanged) {
                     Console.WriteLine("CHANGE OF SUBSTEPS");
                     for (int i = 0; i < CurrentClustering.NumberOfClusters; i++) {
-                        Console.WriteLine("id=" + i + " -> sub-steps=" + NumberOfLocalTimeSteps[i] + " and elements=" + CurrentClustering.Clusters[i].GlobalNoOfCells);
+                        //Console.WriteLine("id=" + i + " -> sub-steps=" + NumberOfLocalTimeSteps[i] + " and elements=" + CurrentClustering.Clusters[i].GlobalNoOfCells);
+                        Console.WriteLine("id=" + i + " -> sub-steps=" + NumberOfLocalTimeSteps[i]);
                     }
                 }
 #endif
@@ -708,28 +711,28 @@ namespace BoSSS.Solution.Timestepping {
             List<SubGrid> newClusters = new List<SubGrid>();
 
             for (int i = 0; i < clustering.NumberOfClusters; i++) {
-
                 if (i < clustering.NumberOfClusters - 1 && numOfSubSteps[i] == numOfSubSteps[i + 1]) {
                     // Combine both sub-grids and remove the previous one
                     SubGrid combinedSubGrid = new SubGrid(clustering.Clusters[i].VolumeMask.Union(clustering.Clusters[i + 1].VolumeMask));
                     newClusters.Add(combinedSubGrid);
-                    Debug.WriteLine("CalculateNumberOfLocalTS: Clustering leads to sub-grids which are too similar, i.e. they have the same number of local time steps. They are combined.");
+#if DEBUG
+                    Console.WriteLine("CalculateNumberOfLocalTS: Clustering leads to sub-grids which are too similar, i.e. they have the same number of local time steps. They are combined.");
+#endif
                     NumberOfLocalTimeSteps.Add(numOfSubSteps[i]);
-
                     i++;
                 } else {
                     newClusters.Add(clustering.Clusters[i]);
                     NumberOfLocalTimeSteps.Add(numOfSubSteps[i]);
+#if DEBUG
+                    // Console output only in last pass
+                    if (i == clustering.NumberOfClusters - 1) {
+                        for (int j = 0; j < newClusters.Count; j++) {
+                            Console.WriteLine("id=" + j + " -> sub-steps=" + NumberOfLocalTimeSteps[j] + " and elements=" + newClusters[j].GlobalNoOfCells);
+                        }
+                    }
+#endif
                 }
             }
-
-#if DEBUG
-            Console.WriteLine("COMBINING CLUSTERS");
-            for (int i = 0; i < newClusters.Count; i++) {
-                Console.WriteLine("id=" + i + " -> sub-steps=" + NumberOfLocalTimeSteps[i] + " and elements=" + newClusters[i].GlobalNoOfCells);
-            }
-#endif
-
             return new Clusterer.Clustering(newClusters, clustering.SubGrid);
         }
 
