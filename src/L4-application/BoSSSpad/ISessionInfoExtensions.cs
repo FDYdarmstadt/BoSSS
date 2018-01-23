@@ -1778,12 +1778,15 @@ namespace BoSSS.Foundation.IO {
                         } else {
                             tempTime[k] = value.FindChildren(methods[k]).OrderByDescending(s => s.TimeSpentInMethod.TotalSeconds).Pick(occurence-1).TimeSpentInMethod.TotalSeconds;
                             if (i == idx) {
-                                double maxValue = value.FindChildren(methods[k]).OrderByDescending(s => s.TimeFractionOfRoot).Pick(occurence-1).TimeFractionOfRoot;
-                                int maxIndex = value.FindChildren(methods[k]).Select(s => s.TimeFractionOfRoot).ToList().IndexOf(maxValue);
+                                IEnumerable<MethodCallRecord> calls = value.FindChildren(methods[k]).OrderByDescending(s => s.TimeFractionOfRoot);
+                                double maxValue = calls.Pick(occurence-1).TimeFractionOfRoot;
+                                int maxIndex = calls.Select(s => s.TimeFractionOfRoot).ToList().IndexOf(maxValue);
                                 tempFractions[k] = maxValue;
-                                MethodCallRecord correctCall = value.FindChildren(methods[k]).OrderByDescending(s => s.ExclusiveTimeFractionOfRoot).Pick(maxIndex);
-                                IEnumerable<MethodCallRecord> neighbourCalls = value.FindChildren(methods[k]).Except(correctCall);
-                                methodCalls[k] = getUniqueParentName(correctCall, neighbourCalls);
+                                MethodCallRecord correctCall = calls.Pick(maxIndex);
+                                IEnumerable<MethodCallRecord> neighbourCalls =calls.Except(correctCall);
+                                if (maxValue > fraction[k]) {
+                                    methodCalls[k] = getUniqueParentName(correctCall, neighbourCalls) + " (" + occurence + "/" + calls.Count() + ")";
+                                }
                             }
                         }
                         // Only save execution time if it is the highest value of all processor times
@@ -1829,9 +1832,9 @@ namespace BoSSS.Foundation.IO {
                 KeyValuePair<string, double[][]>[] dataRowsSpeedup = new KeyValuePair<string, double[][]>[2];
                 double[] doubleProcessors = processors.Select(Convert.ToDouble).ToArray();
 
-                dataRowsConvergence[0] = new KeyValuePair<string, double[][]>(methods[i], new double[][] { doubleProcessors, times.Select(s => s[i]).ToArray() });
+                dataRowsConvergence[0] = new KeyValuePair<string, double[][]>(methods[i] + " (" + methodCalls[i].Split('(').Last(), new double[][] { doubleProcessors, times.Select(s => s[i]).ToArray() });
                 dataRowsConvergence[1] = new KeyValuePair<string, double[][]>("ideal", new double[][] { doubleProcessors, ideal });
-                dataRowsSpeedup[0] = new KeyValuePair<string, double[][]>(methods[i], new double[][] { doubleProcessors, speedUpTimes });
+                dataRowsSpeedup[0] = new KeyValuePair<string, double[][]>(methods[i] + " (" + methodCalls[i].Split('(').Last(), new double[][] { doubleProcessors, speedUpTimes });
                 dataRowsSpeedup[1] = new KeyValuePair<string, double[][]>("ideal", new double[][] { doubleProcessors, idealSpeedUp });
 
                 // Create DataSets from DataRows
@@ -1857,8 +1860,8 @@ namespace BoSSS.Foundation.IO {
             Console.WriteLine("\n Most expensive functions");
             Console.WriteLine("============================");
             for (int i = 0; i < numberMethods; i++) {
-                Console.WriteLine("Rank " + i + ": " + methods2[i]);
-                Console.WriteLine("\t Time fraction of root: " + fractions2[i].ToString("p3") + "\t in " + methodCalls2[i]);
+                Console.WriteLine("Rank " + i + ": " + methods2[i] + " (" + methodCalls2[i].Split('(').Last());
+                Console.WriteLine("\t Time fraction of root: " + fractions2[i].ToString("p3") + "\t in " + methodCalls2[i].Split('(').First());
             }
             Console.WriteLine("\n Sorted by worst scaling");
             Console.WriteLine("============================");
