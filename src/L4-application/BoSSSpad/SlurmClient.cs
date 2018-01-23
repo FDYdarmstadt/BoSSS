@@ -192,7 +192,7 @@ namespace BoSSS.Application.BoSSSpad {
                 sw.WriteLine("#SBATCH -o "+jobpath_unix + "/stdout.txt"); 
                 sw.WriteLine("#SBATCH -e " + jobpath_unix + "/stderr.txt");
                 sw.WriteLine("#SBATCH -t " + executiontime);
-                sw.WriteLine("#SBATCH --mem-per-cpu=1750");
+                sw.WriteLine("#SBATCH --mem-per-cpu=5000");
                 sw.WriteLine("#SBATCH -n " + MPIcores);
                 //sw.WriteLine("#SBATCH --mail-user= " + usermail);
                 sw.WriteLine("#SBATCH -C avx");
