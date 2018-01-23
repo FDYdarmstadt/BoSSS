@@ -28,34 +28,29 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+namespace BoSSS.Application.IBM_Solver {
+    public class HardcodedPrecTest {
 
-namespace BoSSS.Application.IBM_Solver
-{
-    public class HardcodedPrecTest
-    {
-
-        static public IBM_Control PrecTest3DChannel(int k, int cells_x, int cells_yz)
-        {
+        static public IBM_Control PrecTest3DChannel(int k, int cells_x, int cells_yz, int Procs) {
             IBM_Control C = new IBM_Control();
 
             // basic database options
             // ======================
             C.savetodb = true;
-            C.DbPath = @"\\dc1\userspace\stange\\HiWi_database\tests";
+            C.DbPath = @"/home/oe11okuz/BoSSS_DB/Lichtenberg_DB";
 
             //string restartSession = "727da287-1b6a-463e-b7c9-7cc19093b5b3";
             //string restartGrid = "3f8f3445-46f1-47ed-ac0e-8f0260f64d8f";
 
             C.DynamicLoadBalancing_Period = 1;
-            C.DynamicLoadBalancing_CellCostEstimatorFactories.Add(delegate (IApplication<AppControl> app, int noOfPerformanceClasses)
-            {
+            C.DynamicLoadBalancing_CellCostEstimatorFactories.Add(delegate (IApplication<AppControl> app, int noOfPerformanceClasses) {
                 Console.WriteLine("i was called");
                 int[] map = new int[] { 1, 5, 100 };
                 return new StaticCellCostEstimator(map);
             });
 
             // Assign correct names
-            C.SessionName = "Channel_" + k + "_" + cells_x + "x" + cells_yz + "yz";
+            C.SessionName = "Channel_" + k + "_" + cells_x + "x" + cells_yz + "_" + Procs + "Procs_4Deeep";
 
             C.saveperiod = 1;
             //C.SessionName = "Sphere_k" + k + "_h" + h+"Re100";
@@ -64,33 +59,27 @@ namespace BoSSS.Application.IBM_Solver
             C.Tags.Add("Prec Test");
 
             // Create Fields
-            C.FieldOptions.Add("VelocityX", new FieldOpts()
-            {
+            C.FieldOptions.Add("VelocityX", new FieldOpts() {
                 Degree = k,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            C.FieldOptions.Add("VelocityY", new FieldOpts()
-            {
+            C.FieldOptions.Add("VelocityY", new FieldOpts() {
                 Degree = k,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            C.FieldOptions.Add("VelocityZ", new FieldOpts()
-            {
+            C.FieldOptions.Add("VelocityZ", new FieldOpts() {
                 Degree = k,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            C.FieldOptions.Add("Pressure", new FieldOpts()
-            {
+            C.FieldOptions.Add("Pressure", new FieldOpts() {
                 Degree = k - 1,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            C.FieldOptions.Add("PhiDG", new FieldOpts()
-            {
+            C.FieldOptions.Add("PhiDG", new FieldOpts() {
                 Degree = 2,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            C.FieldOptions.Add("Phi", new FieldOpts()
-            {
+            C.FieldOptions.Add("Phi", new FieldOpts() {
                 Degree = 2,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
@@ -98,8 +87,7 @@ namespace BoSSS.Application.IBM_Solver
             #region Creates grid () and sets BC
             //// Create Grid
             Console.WriteLine("...generating grid");
-            C.GridFunc = delegate
-            {
+            C.GridFunc = delegate {
 
                 // x-direction
                 var _xNodes = GenericBlas.Linspace(-0.5, 1.5, cells_x + 1);
@@ -117,39 +105,38 @@ namespace BoSSS.Application.IBM_Solver
                 grd.EdgeTagNames.Add(2, "Wall");
                 grd.EdgeTagNames.Add(3, "Pressure_Outlet");
 
-                grd.DefineEdgeTags(delegate (double[] _X)
-        {
-            var X = _X;
-            double x = X[0];
-            double y = X[1];
-            double z = X[2];
+                grd.DefineEdgeTags(delegate (double[] _X) {
+                    var X = _X;
+                    double x = X[0];
+                    double y = X[1];
+                    double z = X[2];
 
-            if (Math.Abs(x - (-0.5)) < 1.0e-6)
-                // inlet
-                return 1;
+                    if (Math.Abs(x - (-0.5)) < 1.0e-6)
+                        // inlet
+                        return 1;
 
-            if (Math.Abs(x - (1.5)) < 1.0e-6)
-                // outlet
-                return 3;
+                    if (Math.Abs(x - (1.5)) < 1.0e-6)
+                        // outlet
+                        return 3;
 
-            if (Math.Abs(y - (-0.5)) < 1.0e-6)
-                // left
-                return 2;
+                    if (Math.Abs(y - (-0.5)) < 1.0e-6)
+                        // left
+                        return 2;
 
-            if (Math.Abs(y - (0.5)) < 1.0e-6)
-                // right
-                return 2;
+                    if (Math.Abs(y - (0.5)) < 1.0e-6)
+                        // right
+                        return 2;
 
-            if (Math.Abs(z - (-0.5)) < 1.0e-6)
-                // top left
-                return 2;
+                    if (Math.Abs(z - (-0.5)) < 1.0e-6)
+                        // top left
+                        return 2;
 
-            if (Math.Abs(z - (0.5)) < 1.0e-6)
-                // top right
-                return 2;
+                    if (Math.Abs(z - (0.5)) < 1.0e-6)
+                        // top right
+                        return 2;
 
-            throw new ArgumentOutOfRangeException();
-        });
+                    throw new ArgumentOutOfRangeException();
+                });
 
                 return grd;
             };
@@ -187,7 +174,7 @@ namespace BoSSS.Application.IBM_Solver
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
             C.MaxKrylovDim = 1000;
-            C.MaxSolverIterations = 50;
+            C.MaxSolverIterations = 1;
             C.Solver_ConvergenceCriterion = 1E-5;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
             C.NonlinearMethod = Solution.XdgTimestepping.NonlinearSolverMethod.Newton;
@@ -206,26 +193,34 @@ namespace BoSSS.Application.IBM_Solver
             //    SchurOpt = SchurPrecond.SchurOptions.SIMPLE
             //};
 
+            //C.LinearSolver = new Schwarz() {
+            //    m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
+            //        NoOfParts = Procs,
+            //    },
+            //    Overlap = 1
+            //};
+
+            //C.LinearSolver = new ClassicMultigrid() {
+            //    CoarserLevelSolver = new DirectSolver() {
+            //        WhichSolver = DirectSolver._whichSolver.MUMPS
+
+            //    },
+            //};
+
             C.LinearSolver = new Schwarz() {
-                m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                    NoOfParts = 4,
+                m_BlockingStrategy = new Schwarz.MultigridBlocks() {
+                    Depth = 4,
                 },
-                //CoarseSolver = new DirectSolver() {
-                //    WhichSolver = DirectSolver._whichSolver.MUMPS
-                //},
-                Overlap = 1
+                CoarseSolver = new ClassicMultigrid() {
+                    CoarserLevelSolver = new ClassicMultigrid() {
+                        CoarserLevelSolver = new ClassicMultigrid() {
+                            CoarserLevelSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS },
+                        },
+                    },
+                },
+                Overlap = 1,
             };
 
-
-            //C.LinearSolver = new Schwarz() {
-            //    m_BlockingStrategy = new Schwarz.MultigridBlocks() {
-            //        Depth = 2,
-            //    },
-            //    //CoarseSolver = new DirectSolver() {
-            //    //    WhichSolver = DirectSolver._whichSolver.MUMPS
-            //    //},
-            //    Overlap = 0
-            //};
 
 
 
@@ -246,7 +241,7 @@ namespace BoSSS.Application.IBM_Solver
             C.dtMin = dt;
             C.Endtime = 10000000;
             C.NoOfTimesteps = 1;
-            C.NoOfMultigridLevels = 3;
+            C.NoOfMultigridLevels = 5;
 
             return C;
         }
