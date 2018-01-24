@@ -30,6 +30,13 @@ namespace BoSSS.Application.SipPoisson {
     public class SipControl : AppControl {
 
         /// <summary>
+        /// Ctor.
+        /// </summary>
+        public SipControl() : base() {
+            base.NoOfMultigridLevels = 1;
+        }
+
+        /// <summary>
         /// Type of <see cref="SipPoissonMain"/>.
         /// </summary>
         public override Type GetSolverType() {
@@ -44,6 +51,7 @@ namespace BoSSS.Application.SipPoisson {
                 throw new ArgumentOutOfRangeException("Symmetric interior penalty requires a DG degree of at least 1.");
             base.FieldOptions.Clear();
             base.AddFieldOption("T", p);
+            base.AddFieldOption("Tex", p * 2, FieldOpts.SaveToDBOpt.unspecified); // exact solution: degree times 2
         }
 
         /// <summary>

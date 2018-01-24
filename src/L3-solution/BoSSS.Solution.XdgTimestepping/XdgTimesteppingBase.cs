@@ -228,6 +228,8 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         public double Config_SolverConvergenceCriterion = 1.0e-8;
 
+        public double Config_GMRESConvergenceCriterion = 1.0e-8;
+
         public double Config_LevelSetConvergenceCriterion = 1.0e-6;
 
         /// <summary>
@@ -534,12 +536,12 @@ namespace BoSSS.Solution.XdgTimestepping {
                             this.MultigridBasis,
                             this.Config_MultigridOperator)
                         {
-                            maxKrylovDim = 30,
+                            maxKrylovDim = 100,
                             MaxIter = Config_MaxIterations,
                             MinIter = Config_MinIterations,
                             ApproxJac = Newton.ApproxInvJacobianOptions.GMRES,
                             Precond = Config_linearSolver,
-                            GMRESConvCrit = Config_SolverConvergenceCriterion,
+                            GMRESConvCrit = Config_GMRESConvergenceCriterion,
                             ConvCrit = Config_SolverConvergenceCriterion,
                             m_SessionPath = SessionPath,
                         };
@@ -647,7 +649,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                         double L2Res = 0.0;
 
                         foreach (int idx in VarIdx[i])
-                            L2Res += currentRes[idx].Pow2();
+                            L2Res += currentRes[idx-Mgop.Mapping.i0].Pow2();
                         L2Res = L2Res.MPISum().Sqrt(); // would be better to do the MPISum for all L2Res together,
                                                        //                                but this implementation is anyway inefficient....
 

@@ -790,6 +790,21 @@ namespace BoSSS.Solution.NSECommon {
         public const string StressYY = "StressYY";
 
         /// <summary>
+        /// XX Tensor component of the extra stress tensor as parameter
+        /// </summary>
+        public const string StressXXP = "StressXXP";
+
+        /// <summary>
+        /// XY Tensor component of the extra stress tensor as parameter
+        /// </summary>
+        public const string StressXYP = "StressXYP";
+
+        /// <summary>
+        /// YY Tensor component of the extra stress tensor as parameter
+        /// </summary>
+        public const string StressYYP = "StressYYP";
+
+        /// <summary>
         /// Extra stress tensor
         /// </summary>
         /// <param name="row">
