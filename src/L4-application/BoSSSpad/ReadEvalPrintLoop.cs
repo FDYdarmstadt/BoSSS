@@ -355,6 +355,7 @@ namespace BoSSS.Application.BoSSSpad {
                     e.GetType(),
                     e.Message));
                 InteractiveShell.LastError = e;
+                AssemblyProduced = null;
             }
 #endif
             return result;
