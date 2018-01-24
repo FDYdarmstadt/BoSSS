@@ -21,32 +21,62 @@ using System.Text;
 using BoSSS.Solution.Control;
 using BoSSS.Foundation;
 
-namespace ipPoisson {
+namespace BoSSS.Application.SipPoisson {
     
     /// <summary>
     /// Control object for the ipPoisson solver.
     /// </summary>
-    public class ippControl : AppControl {
+    [Serializable]
+    public class SipControl : AppControl {
 
         /// <summary>
-        /// Function which determines which part of the domain boundary is of Dirichlet type (true)
-        /// and which part of Neumann type (false).
+        /// Type of <see cref="SipPoissonMain"/>.
         /// </summary>
-        public Func<CommonParamsBnd,bool> IsDirichlet;
+        public override Type GetSolverType() {
+            return typeof(SipPoissonMain);
+        }
 
         /// <summary>
-        /// Dirichlet boundary value
+        /// Re-sets all <see cref="AppControl.FieldOptions"/>
         /// </summary>
-        public Func<CommonParamsBnd,double> g_Diri;
+        public override void SetDGdegree(int p) {
+            if(p < 1)
+                throw new ArgumentOutOfRangeException("Symmetric interior penalty requires a DG degree of at least 1.");
+            base.FieldOptions.Clear();
+            base.AddFieldOption("T", p);
+        }
 
         /// <summary>
-        /// Neumann boundary value
+        /// 
         /// </summary>
-        public Func<CommonParamsBnd, double> g_Neum;
-        
+        public override void Verify() {
+            base.Verify();
+
+
+
+        }
+
+
+        ///// <summary>
+        ///// Function which determines which part of the domain boundary is of Dirichlet type (true)
+        ///// and which part of Neumann type (false).
+        ///// </summary>
+        //public Func<CommonParamsBnd,bool> IsDirichlet;
+
+        ///// <summary>
+        ///// Dirichlet boundary value
+        ///// </summary>
+        //public Func<CommonParamsBnd,double> g_Diri;
+
+        ///// <summary>
+        ///// Neumann boundary value
+        ///// </summary>
+        //public Func<CommonParamsBnd, double> g_Neum;
+
         /// <summary>
         /// Multiplyer for the penalty parameter, should be around 1.0.
         /// </summary>
+        [BoSSS.Solution.Control.ExclusiveLowerBound(0.0)]
         public double penalty_poisson = 1.3;
 
         /// <summary>
@@ -57,6 +87,7 @@ namespace ipPoisson {
         /// <summary>
         /// run the solver more than once, e.g. for more reliable timing-results.
         /// </summary>
+        [BoSSS.Solution.Control.InclusiveLowerBound(1.0)]
         public int NoOfSolverRuns = 2;
 
         /// <summary>

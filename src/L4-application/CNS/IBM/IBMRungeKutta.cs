@@ -131,10 +131,10 @@ namespace CNS.IBM {
             IBMMassMatrixFactory massMatrixFactory = speciesMap.GetMassMatrixFactory(Mapping);
             BlockMsrMatrix nonAgglomeratedMassMatrix = massMatrixFactory.NonAgglomeratedMassMatrix;
 
-            IBMUtility.SubMatrixSpMV(nonAgglomeratedMassMatrix, 1.0, DGCoordinates, 0.0, DGCoordinates, cutCells);  // eq. (39)
-            speciesMap.Agglomerator.ManipulateRHS(DGCoordinates, Mapping);  // eq. (39)
-            IBMUtility.SubMatrixSpMV(massMatrixFactory.InverseMassMatrix, 1.0, DGCoordinates, 0.0, DGCoordinates, cutAndTargetCells);   // eq. (39)
-            speciesMap.Agglomerator.Extrapolate(DGCoordinates.Mapping); // eq. (41)
+            IBMUtility.SubMatrixSpMV(nonAgglomeratedMassMatrix, 1.0, CurrentState, 0.0, CurrentState, cutCells);  // eq. (39)
+            speciesMap.Agglomerator.ManipulateRHS(CurrentState, Mapping);  // eq. (39)
+            IBMUtility.SubMatrixSpMV(massMatrixFactory.InverseMassMatrix, 1.0, CurrentState, 0.0, CurrentState, cutAndTargetCells);   // eq. (39)
+            speciesMap.Agglomerator.Extrapolate(CurrentState.Mapping); // eq. (41)
         }
     }
 }

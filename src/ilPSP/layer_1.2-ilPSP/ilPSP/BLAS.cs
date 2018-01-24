@@ -775,7 +775,7 @@ namespace ilPSP.Utils {
         /// ctor
         /// </summary>
         public UnsafeDBLAS() :
-            base(new string[] { "libacml_dll.dll", "libacml.so", "libatlas.so", "libblas.so*", "libblas.so" },
+            base(new string[] { "libacml_dll.dll", "libacml.so", "libatlas.so", "libblas.so", "libopenblas.so" },
                   new string[5][][], 
                   new GetNameMangling[] { DynLibLoader.CAPITAL_LETTERS, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore },
                   Helper(), //new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix, PlatformID.Unix, PlatformID.Unix, PlatformID.Unix },

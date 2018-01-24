@@ -192,7 +192,7 @@ namespace BoSSS.Solution.Timestepping {
 
         /// <summary>
         /// Explicit Euler - Rule, Order 1, 2 Stages, for testing purpose;
-        /// Equivalent of doing explicit Euler two tines with the half time-step;
+        /// Equivalent of doing explicit Euler two times with the half time-step;
         /// </summary>
         public static RungeKuttaScheme ExplicitEuler2 {
 

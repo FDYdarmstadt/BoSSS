@@ -25,6 +25,9 @@ using System.Reflection;
 using BoSSS.Platform;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
+using System.IO;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Bson;
 
 namespace BoSSS.Solution.Control {
 
@@ -33,6 +36,13 @@ namespace BoSSS.Solution.Control {
     /// </summary>
     [Serializable]
     public class AppControl {
+
+        /// <summary>
+        /// Returns the type of the solver main class;
+        /// </summary>
+        virtual public Type GetSolverType() {
+            throw new NotImplementedException();
+        }
 
         /// <summary>
         /// The generating code as text representation
@@ -83,34 +93,80 @@ namespace BoSSS.Solution.Control {
         /// Polynomial degree of ther DG field; if negative, the application tries to determine a degree by itself.
         /// </param>
         public void AddFieldOption(string DGFieldName, int Degree = -1, FieldOpts.SaveToDBOpt SaveOpt = FieldOpts.SaveToDBOpt.TRUE) {
-            FieldOptions.Add("VelocityX", new FieldOpts() {
+            FieldOptions.Add(DGFieldName, new FieldOpts() {
                 Degree = Degree,
                 SaveToDB = SaveOpt
             });
         }
 
         /// <summary>
-        /// Checks that all control file options satisfy the conditions
-        /// specified in the corresponding
-        /// <see cref="ControlOptionRequirementAttribute"/>s. Override this
-        /// method to implement more complicated checks that e.g. depend on the
-        /// values of other attributes. For example, one could verify that an
-        /// LBB-condition is fulfilled.
+        /// Utility function for easier user interaction, (should) set all reasonable <see cref="FieldOptions"/>
+        /// </summary>
+        public virtual void SetDGdegree(int p) {
+            throw new NotImplementedException();
+        }
+
+
+
+        /// <summary>
+        /// General checking of the control object.
+        /// - all control file options satisfy the conditions
+        ///   specified in the corresponding
+        ///   <see cref="ControlOptionRequirementAttribute"/>s. 
+        /// - a grid is set
+        /// - Override this
+        ///   method to implement more complicated checks that e.g. depend on the
+        ///   values of other attributes. For example, one could verify that an
+        ///   LBB-condition is fulfilled.
         /// </summary>
         public virtual void Verify() {
-            Type currentType = this.GetType();
-            List<Type> types = new List<Type>() { currentType };
-            while (currentType.BaseType != null) {
-                currentType = currentType.BaseType;
-                types.Add(currentType);
+            List<string> Problems = new List<string>();
+
+            // parameter bounds
+            // ================
+            {
+                Type currentType = this.GetType();
+                List<Type> types = new List<Type>() { currentType };
+                while(currentType.BaseType != null) {
+                    currentType = currentType.BaseType;
+                    types.Add(currentType);
+                }
+
+                foreach(Type type in types) {
+                    foreach(FieldInfo field in type.GetFields()) {
+                        object value = field.GetValue(this);
+                        foreach(var attribute in field.GetCustomAttributes<ControlOptionRequirementAttribute>()) {
+                            string errMsg = attribute.Verify(field.Name, value);
+                            if(errMsg != null) {
+                                Problems.Add(errMsg);
+                            }
+                        }
+                    }
+                }
             }
 
-            foreach (Type type in types) {
-                foreach (FieldInfo field in type.GetFields()) {
-                    object value = field.GetValue(this);
-                    foreach (var attribute in field.GetCustomAttributes<ControlOptionRequirementAttribute>()) {
-                        attribute.Verify(field.Name, value);
+            // check grid
+            // ==========
+            {
+                if(this.GridFunc == null
+                    && (this.GridGuid == null || this.GridGuid == Guid.Empty)) {
+                    Problems.Add("No Grid specified.");
+                }
+            }
+
+            // throw exception
+            // ===============
+
+            if(Problems.Count > 0) {
+                using(var stw = new StringWriter()) {
+                    stw.WriteLine("Found {0} problem(s) in control object:");
+                    for(int i = 0; i < Problems.Count; i++) {
+                        stw.WriteLine(" #{0}: {1}", i, Problems[i]);
                     }
+
+                    string Error = stw.ToString();
+                    Console.WriteLine(Error);
+                    throw new Exception(Error);
                 }
             }
         }
@@ -156,13 +212,14 @@ namespace BoSSS.Solution.Control {
             /// Adding delegates directly to this dictionary is possible for backward compatibility reasons,
             /// although this limits some functionality - e.g. the control object is usually not serializeable anymore.
             /// </remarks>
+            [JsonIgnore]
             public IDictionary<string, Func<double[], double, double>> Evaluators {
                 get {
-                    if (m_BoundaryValues_Evaluators == null)
+                    if(m_BoundaryValues_Evaluators == null)
                         m_BoundaryValues_Evaluators = new Dictionary<string, Func<double[], double, double>>();
 
-                    foreach (string name in m_BoundaryValues.Keys) {
-                        if (!m_BoundaryValues_Evaluators.ContainsKey(name)) {
+                    foreach(string name in m_BoundaryValues.Keys) {
+                        if(!m_BoundaryValues_Evaluators.ContainsKey(name)) {
                             m_BoundaryValues_Evaluators.Add(name, m_BoundaryValues[name].Evaluate);
                         }
                     }
@@ -175,6 +232,7 @@ namespace BoSSS.Solution.Control {
             /// - key: a name for the boundary value, e.g. 'VelocityX'<br/>
             /// - value: some function that maps a space coordinate to some function value, i.e.  \f$ (\vec{x},t) \mapsto f(\vec{x},t)\f$ 
             /// </summary>
+            [JsonIgnore]
             public IDictionary<string, IBoundaryAndInitialData> Values {
                 get {
                     return m_BoundaryValues;
@@ -198,7 +256,7 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         /// <param name="EdgeTagName">Name of the boundary condition</param>
         public void AddBoundaryCondition(string EdgeTagName) {
-            if (!this.BoundaryValues.ContainsKey(EdgeTagName))
+            if(!this.BoundaryValues.ContainsKey(EdgeTagName))
                 this.BoundaryValues.Add(EdgeTagName, new BoundaryValueCollection());
 
         }
@@ -210,10 +268,10 @@ namespace BoSSS.Solution.Control {
         /// <param name="fieldname">Name of the field for which the boundary condition is valid</param>
         /// <param name="value">Function of the boundary condition</param>
         public void AddBoundaryCondition(string EdgeTagName, string fieldname, Func<double[], double, double> value) {
-            if (!this.BoundaryValues.ContainsKey(EdgeTagName))
+            if(!this.BoundaryValues.ContainsKey(EdgeTagName))
                 this.BoundaryValues.Add(EdgeTagName, new BoundaryValueCollection());
 
-            if (this.BoundaryValues[EdgeTagName].Evaluators.ContainsKey(fieldname)
+            if(this.BoundaryValues[EdgeTagName].Evaluators.ContainsKey(fieldname)
                 //||  this.BoundaryValues[EdgeTagName].TimedepBoundaryValues.ContainsKey(fieldname) 
                 )
                 throw new ArgumentException(string.Format("Boundary condition for field '{0}' and edge tag name '{1}' already specified.", EdgeTagName, fieldname));
@@ -243,10 +301,10 @@ namespace BoSSS.Solution.Control {
         /// Whether the formula in <paramref name="FormulaText"/> is time-dependent or not, see <see cref="Formula"/>.
         /// </param>
         public void AddBoundaryCondition(string EdgeTagName, string fieldname, string FormulaText, bool TimeDependent) {
-            if (!this.BoundaryValues.ContainsKey(EdgeTagName))
+            if(!this.BoundaryValues.ContainsKey(EdgeTagName))
                 this.BoundaryValues.Add(EdgeTagName, new BoundaryValueCollection());
 
-            if (this.BoundaryValues[EdgeTagName].Evaluators.ContainsKey(fieldname))
+            if(this.BoundaryValues[EdgeTagName].Evaluators.ContainsKey(fieldname))
                 throw new ArgumentException(string.Format("Boundary condition for field '{0}' and edge tag name '{1}' already specified.", EdgeTagName, fieldname));
 
             this.BoundaryValues[EdgeTagName].Values.Add(fieldname, new Formula(FormulaText, TimeDependent));
@@ -264,13 +322,14 @@ namespace BoSSS.Solution.Control {
         /// Adding delegates directly to this dictionary is possible for backward compatibility reasons,
         /// although this limits some functionality - e.g. the control object is usually not serializeable anymore.
         /// </remarks>
+        [JsonIgnore]
         public IDictionary<string, Func<double[], double>> InitialValues_Evaluators {
             get {
-                if (m_InitialValues_Evaluators == null)
+                if(m_InitialValues_Evaluators == null)
                     m_InitialValues_Evaluators = new Dictionary<string, Func<double[], double>>();
 
-                foreach (string name in InitialValues.Keys) {
-                    if (!m_InitialValues_Evaluators.ContainsKey(name)) {
+                foreach(string name in InitialValues.Keys) {
+                    if(!m_InitialValues_Evaluators.ContainsKey(name)) {
                         m_InitialValues_Evaluators.Add(name, X => InitialValues[name].Evaluate(X, 0.0));
                     }
                 }
@@ -285,6 +344,7 @@ namespace BoSSS.Solution.Control {
         /// - key: identification of the DG field, see <see cref="BoSSS.Foundation.DGField.Identification"/>.
         /// - value: data or mathematical expression which is projected at application startup.
         /// </summary>
+        [JsonIgnore]
         public IDictionary<string, IBoundaryAndInitialData> InitialValues {
             get {
                 return m_InitialValues;
@@ -306,6 +366,7 @@ namespace BoSSS.Solution.Control {
         /// the simulation
         /// </summary>
         [NonSerialized]
+        [JsonIgnore]
         public readonly IDictionary<string, Query> Queries = new Dictionary<string, Query>();
 
         /// <summary>
@@ -328,6 +389,16 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         [NonSerialized]
         public Func<GridCommons> GridFunc;
+
+        /// <summary>
+        /// Sets <see cref="GridGuid"/>
+        /// </summary>
+        /// <param name="grd"></param>
+        public void SetGrid(IGridInfo grd) {
+            this.GridGuid = grd.ID;
+            //this.DbPath = grd.Database.Path;
+        }
+
 
         /// <summary>
         /// Algorithm for grid partitioning.
@@ -399,9 +470,10 @@ namespace BoSSS.Solution.Control {
         /// <summary>
         /// Sets/Gets a fixed time-step size.
         /// </summary>
+        [JsonIgnore]
         public double dtFixed {
             get {
-                if (dtMin != dtMax) {
+                if(dtMin != dtMax) {
                     return double.NaN;
                 }
                 return dtMin;
@@ -416,7 +488,7 @@ namespace BoSSS.Solution.Control {
         /// Checks if a fixed time-step size has been set and returns this value.
         /// </summary>
         public double GetFixedTimestep() {
-            if (dtMin != dtMax) {
+            if(dtMin != dtMax) {
                 throw new ApplicationException("Fixed time-step required; minimum and maximum time-step size must be set to same value.");
             }
             return dtMin;
@@ -462,6 +534,14 @@ namespace BoSSS.Solution.Control {
         /// File system path to database.
         /// </summary>
         public string DbPath = null;
+
+        /// <summary>
+        /// Sets <see cref="DbPath"/>.
+        /// </summary>
+        public void SetDatabase(IDatabaseInfo dbi) {
+            DbPath = dbi.Path;
+        }
+
 
 
         /// <summary>
@@ -517,9 +597,91 @@ namespace BoSSS.Solution.Control {
 
 
         /// <summary>
+        /// switch for activating adaptive mesh refinement
+        /// </summary>
+        public bool AdaptiveMeshRefinement = false;
+
+
+        /// <summary>
         /// Actual type of cut cell quadrature to use; If no XDG, is used, resp. no cut cells are present,
         /// this setting has no effect.
         /// </summary>
         public XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
+
+        /// <summary>
+        /// Used for control objects in work-flow management, 
+        /// Converts object to a serializable text.
+        /// </summary>
+        public byte[] Serialize() {
+            JsonSerializer formatter = new JsonSerializer() {
+                NullValueHandling = NullValueHandling.Ignore,
+                TypeNameHandling = TypeNameHandling.Auto,
+                ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
+                ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
+                
+            };
+
+            /*
+            using(var tw = new StringWriter()) {
+                using(JsonWriter writer = new JsonTextWriter(tw)) {  // Alternative: binary writer: BsonWriter
+                    formatter.Serialize(writer, this);
+                }
+
+                string Ret = tw.ToString();
+                return Ret;
+            }
+            */
+
+             using(var ms = new MemoryStream()) {
+                using(JsonWriter writer = new BsonWriter(ms)) {  // Alternative: binary writer: BsonWriter
+                    formatter.Serialize(writer, this);
+                }
+
+                byte[] buffer = ms.GetBuffer();
+                return buffer;
+            }
+
+        }
+
+        /// <summary>
+        /// Used for control objects in work-flow management, 
+        /// re-loads  an object from memory.
+        /// </summary>
+        public static AppControl Deserialize(byte[] buffer /* string Str*/, Type ControlObjectType) {
+            JsonSerializer formatter = new JsonSerializer() {
+                NullValueHandling = NullValueHandling.Ignore,
+                TypeNameHandling = TypeNameHandling.Auto,
+                ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
+                ReferenceLoopHandling = ReferenceLoopHandling.Serialize
+            };
+
+            /*
+            using(var tr = new StringReader(Str)) {
+                using(JsonReader reader = new JsonTextReader(tr)) {
+                    var obj = formatter.Deserialize(reader);
+
+                    AppControl ctrl = (AppControl)obj;
+                    return ctrl;
+                }
+              
+            }
+            */
+            
+            using(var ms = new MemoryStream(buffer)) {
+                using(JsonReader reader = new BsonReader(ms)) {
+                    var obj = formatter.Deserialize(reader, ControlObjectType);
+
+                    AppControl ctrl = (AppControl)obj;
+                    return ctrl;
+                }
+              
+            }
+        }
+
+        /// <summary>
+        /// Calculation is not stopped if an I/O exception is thrown in <see cref="Application{T}.SaveToDatabase(TimestepNumber, double)"/>.
+        /// </summary>
+        public bool ContinueOnIoError = true;
+
     }
 }
