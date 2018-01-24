@@ -29,10 +29,13 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
     class AdaptiveMeshRefinementTestMain : BoSSS.Solution.Application {
         
         static void Main(string[] args) {
-            BoSSS.Solution.Application._Main(
-                args,
-                true,
-                () => new AdaptiveMeshRefinementTestMain());
+            //BoSSS.Solution.Application._Main(
+            //    args,
+            //    true,
+            //    () => new AdaptiveMeshRefinementTestMain());
+            AllUpTest.SetUp();
+            AllUpTest.RuntimeCostDynamicBalanceTest(2);
+            AllUpTest.TestFixtureTearDown();
         }
 
         protected override GridCommons CreateOrLoadGrid() {
