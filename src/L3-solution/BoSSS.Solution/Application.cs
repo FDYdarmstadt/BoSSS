@@ -58,6 +58,14 @@ namespace BoSSS.Solution {
         public class EmptyAppControl : AppControl {
 
             /// <summary>
+            /// Ctor.
+            /// </summary>
+            public EmptyAppControl() {
+                base.savetodb = false;
+            }
+
+
+            /// <summary>
             /// nix supported.
             /// </summary>
             public override Type GetSolverType() {
