@@ -967,7 +967,7 @@ namespace CNS {
             return c;
         }
 
-        public static CNSControl ShockTube(int dgDegree = 2, int numOfCellsX = 50, int numOfCellsY = 1, double sensorLimit = 1e-3, bool true1D = false) {
+        public static CNSControl ShockTube(int dgDegree = 2, int numOfCellsX = 50, int numOfCellsY = 10, double sensorLimit = 1e-3, bool true1D = false) {
 
             CNSControl c = new CNSControl();
 
@@ -990,7 +990,7 @@ namespace CNS {
             c.DbPath = @"c:\bosss_db\";
             //c.DbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db\";
             c.savetodb = c.DbPath != null;
-            c.saveperiod = 100;
+            c.saveperiod = 1;
             c.PrintInterval = 1;
 
             double xMin = 0;
@@ -1009,6 +1009,7 @@ namespace CNS {
                 c.ActiveOperators |= Operators.ArtificialViscosity;
                 Variable sensorVariable = Variables.Density;
                 c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+                c.AddVariable(Variables.ShockSensor, 0);
                 c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 2);
             }
 
@@ -1136,7 +1137,7 @@ namespace CNS {
             c.dtMax = 1.0;
             c.CFLFraction = 0.1;
             c.Endtime = 0.1;
-            c.NoOfTimesteps = int.MaxValue;
+            c.NoOfTimesteps = 200;
 
             c.ProjectName = "Shock tube";
             if (true1D) {
@@ -1286,15 +1287,13 @@ namespace CNS {
         }
 
 
-        public static IBMControl IBMShockTube(string dbPath = null, int dgDegree = 2, int numOfCellsX = 50, int numOfCellsY = 1, double sensorLimit = 1e-3, bool true1D = false, bool saveToDb = true) {
+        public static IBMControl IBMShockTube(string dbPath = null, int dgDegree = 2, int numOfCellsX = 50, int numOfCellsY = 10, double sensorLimit = 1e-3, bool true1D = false) {
 
             IBMControl c = new IBMControl();
 
             //dbPath = @"c:\bosss_db\";
-            //dbPath = @"e:\bosss_db\GridOfTomorrow\";
-            //dbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db\";
             c.DbPath = dbPath;
-            c.savetodb = dbPath != null && saveToDb;
+            c.savetodb = dbPath != null;
             c.saveperiod = 1;
             c.PrintInterval = 1;
 
@@ -1307,12 +1306,12 @@ namespace CNS {
 
             c.DomainType = DomainTypes.StaticImmersedBoundary;
             c.LevelSetFunction = delegate (double[] X, double t) {
-                return X[1] - 0.1;
+                return X[1] - 0.06;
             };
             c.LevelSetBoundaryTag = "AdiabaticSlipWall";
             c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             c.LevelSetQuadratureOrder = 6;
-            c.AgglomerationThreshold = 0.3;
+            c.AgglomerationThreshold = 0.2;
             c.AddVariable(IBMVariables.LevelSet, 1);
 
             if (AV) {
@@ -1329,23 +1328,24 @@ namespace CNS {
             if (AV) {
                 Variable sensorVariable = Variables.Density;
                 c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+                c.AddVariable(Variables.ShockSensor, 0);
                 c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 2);
             }
 
             // Runge-Kutta schemes
-            c.ExplicitScheme = ExplicitSchemes.RungeKutta;
-            c.ExplicitOrder = 1;
+            //c.ExplicitScheme = ExplicitSchemes.RungeKutta;
+            //c.ExplicitOrder = 1;
 
             //Adams-Bashforth
             //c.ExplicitScheme = ExplicitSchemes.AdamsBashforth;
             //c.ExplicitOrder = 3;
 
             // (A)LTS
-            //c.ExplicitScheme = ExplicitSchemes.LTS;
-            //c.ExplicitOrder = 3;
-            //c.NumberOfSubGrids = 1;
-            //c.ReclusteringInterval = 1;
-            //c.FluxCorrection = false;
+            c.ExplicitScheme = ExplicitSchemes.LTS;
+            c.ExplicitOrder = 1;
+            c.NumberOfSubGrids = 3;
+            c.ReclusteringInterval = 1;
+            c.FluxCorrection = false;
 
             c.EquationOfState = IdealGas.Air;
 
@@ -1458,8 +1458,8 @@ namespace CNS {
             // Time config
             c.dtMin = 0.0;
             c.dtMax = 1.0;
-            //c.dtFixed = 1.0e-3;
             c.CFLFraction = 0.3;
+            //c.dtFixed = 1e-4;
             c.Endtime = 0.25;
             c.NoOfTimesteps = int.MaxValue;
 
@@ -2105,7 +2105,7 @@ namespace CNS {
                 c.AddVariable(Variables.Schlieren, dgDegree - 1);
             }
             if (AV) {
-                c.AddVariable(Variables.ShockSensor, dgDegree);
+                c.AddVariable(Variables.ShockSensor, 0);
                 c.AddVariable(Variables.ArtificialViscosity, 2);
             }
 
@@ -2339,7 +2339,7 @@ namespace CNS {
             }
 
             if (AV) {
-                c.AddVariable(Variables.ShockSensor, dgDegree);
+                c.AddVariable(Variables.ShockSensor, 0);
                 c.AddVariable(Variables.ArtificialViscosity, 2);
             }
 
@@ -2845,7 +2845,7 @@ namespace CNS {
                 c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(
                     c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
 
-                c.AddVariable(Variables.ShockSensor, dgDegree);
+                c.AddVariable(Variables.ShockSensor, 0);
                 c.AddVariable(Variables.ArtificialViscosity, 2);
 
                 c.Tags.Add("Artificial viscosity");
@@ -3013,7 +3013,7 @@ namespace CNS {
                 c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(
                     c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
 
-                c.AddVariable(Variables.ShockSensor, dgDegree);
+                c.AddVariable(Variables.ShockSensor, 0);
                 c.AddVariable(Variables.ArtificialViscosity, 3);
 
                 c.Tags.Add("Artificial viscosity");
