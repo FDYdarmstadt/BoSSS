@@ -56,9 +56,9 @@
     <UseVSHostingProcess>true</UseVSHostingProcess>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="ABevolve.cs" />
-    <Compile Include="AdamsBashforth.cs" />
-    <Compile Include="AdamsBashforthLTS.cs" />
+    <Compile Include="TimeStepping\ABevolve.cs" />
+    <Compile Include="TimeStepping\AdamsBashforth.cs" />
+    <Compile Include="TimeStepping\AdamsBashforthLTS.cs" />
     <Compile Include="Clustering.cs" />
     <Compile Include="LoadBalancing\GridUpdateDataVaultBase.cs" />
     <Compile Include="LoadBalancing\CellCostEstimatorLibrary.cs" />
@@ -69,7 +69,7 @@
     <Compile Include="AppControl.cs" />
     <Compile Include="Application.cs" />
     <Compile Include="ArrayHelper.cs" />
-    <Compile Include="BDFSchemeCoeffs.cs" />
+    <Compile Include="TimeStepping\BDFCommon.cs" />
     <Compile Include="BoundaryConditionMap.cs" />
     <Compile Include="Kmeans.cs" />
     <Compile Include="ControlOptionRequirementAttribute.cs" />
@@ -90,13 +90,14 @@
     <Compile Include="NonVectorizedScalarFunction.cs" />
     <Compile Include="OperatorMatrixPermute.cs" />
     <Compile Include="QueryHandler.cs" />
-    <Compile Include="CrankNicolson.cs" />
+    <Compile Include="TimeStepping\BDFTimestepper.cs" />
+    <Compile Include="TimeStepping\CrankNicolson.cs" />
     <Compile Include="DualValueFlux.cs" />
-    <Compile Include="ExplicitEuler.cs" />
-    <Compile Include="ImplicitEuler.cs" />
-    <Compile Include="ImplicitTimeStepper.cs" />
+    <Compile Include="TimeStepping\ExplicitEuler.cs" />
+    <Compile Include="TimeStepping\ImplicitEuler.cs" />
+    <Compile Include="TimeStepping\ImplicitTimeStepper.cs" />
     <Compile Include="Instruction.cs" />
-    <Compile Include="ITimeStepper.cs" />
+    <Compile Include="TimeStepping\ITimeStepper.cs" />
     <Compile Include="LexicalError.cs" />
     <Compile Include="LinearDerivativeSource.cs" />
     <Compile Include="LinearDualValueFlux.cs" />
@@ -112,13 +113,14 @@
     <Compile Include="Query.cs" />
     <Compile Include="LoadBalancing\GridUpdateDataVault_Adapt.cs" />
     <Compile Include="ResidualLogger.cs" />
-    <Compile Include="ROCK4.cs" />
-    <Compile Include="ROCK4_parameters.cs" />
-    <Compile Include="RungeKutta.cs" />
-    <Compile Include="RungeKuttaScheme.cs" />
+    <Compile Include="TimeStepping\ROCK4.cs" />
+    <Compile Include="TimeStepping\ROCK4_parameters.cs" />
+    <Compile Include="TimeStepping\RungeKutta.cs" />
+    <Compile Include="TimeStepping\RungeKuttaScheme.cs" />
     <Compile Include="Spline.cs" />
     <Compile Include="SyntaxError.cs" />
     <Compile Include="TimeStepConstraint.cs" />
+    <Compile Include="TimeStepping\TimeStepperCommon.cs" />
     <Compile Include="Tokenizer.cs" />
     <Compile Include="VariableHistory.cs" />
   </ItemGroup>

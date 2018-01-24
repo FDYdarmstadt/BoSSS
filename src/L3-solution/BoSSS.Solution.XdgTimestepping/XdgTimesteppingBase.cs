@@ -218,9 +218,17 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         /// <summary>
+        /// in case of coupledIterative the fratro for underrelaxing the level set movement 
+        /// </summary>
+        public double IterUnderrelax = 1.0;
+
+
+        /// <summary>
         /// Convergence criterion if a nonlinear solver has to be used.
         /// </summary>
         public double Config_SolverConvergenceCriterion = 1.0e-8;
+
+        public double Config_GMRESConvergenceCriterion = 1.0e-8;
 
         public double Config_LevelSetConvergenceCriterion = 1.0e-6;
 
@@ -477,7 +485,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         /// <param name="nonlinSolver"></param>
         /// <param name="linearSolver"></param>
-        protected string GetSolver(out NonlinearSolver nonlinSolver, out ISolverSmootherTemplate linearSolver) {
+        protected virtual string GetSolver(out NonlinearSolver nonlinSolver, out ISolverSmootherTemplate linearSolver) {
             nonlinSolver = null;
             linearSolver = null;
 
@@ -499,86 +507,51 @@ namespace BoSSS.Solution.XdgTimestepping {
                 // the nonlinear solvers:
                 // +++++++++++++++++++++++++++++++++++++++++++++
 
-                if (Config_LevelSetHandling != LevelSetHandling.Coupled_Iterative) {
-                    switch (Config_NonlinearSolver) {
-                        case NonlinearSolverMethod.Picard:
+                switch (Config_NonlinearSolver) {
+                    case NonlinearSolverMethod.Picard:
 
-                            nonlinSolver = new FixpointIterator(
-                                this.AssembleMatrixCallback,
-                                this.MultigridBasis,
-                                this.Config_MultigridOperator) {
-                                MaxIter = Config_MaxIterations,
-                                MinIter = Config_MinIterations,
-                                m_LinearSolver = Config_linearSolver,
-                                m_SessionPath = SessionPath,
-                                ConvCrit = Config_SolverConvergenceCriterion,
-                        UnderRelax = Config_UnderRelax
-                            };
-                            break;
-
-                        case NonlinearSolverMethod.Newton:
-
-                            nonlinSolver = new Newton(
-                                this.AssembleMatrixCallback,
-                                this.MultigridBasis,
-                                this.Config_MultigridOperator) {
-                                maxKrylovDim = 1000,
-                                MaxIter = Config_MaxIterations,
-                                MinIter = Config_MinIterations,
-                                ApproxJac = Newton.ApproxInvJacobianOptions.GMRES,
-                                Precond = Config_linearSolver,
-                                GMRESConvCrit = Config_SolverConvergenceCriterion,
-                                ConvCrit = Config_SolverConvergenceCriterion,
-                                m_SessionPath = SessionPath,
-                            };
-                            break;
-
-                        default:
-
-                            throw new NotImplementedException();
-                    }
-                }
-                else {
-                    switch (Config_NonlinearSolver) {
-                        case NonlinearSolverMethod.Picard:
-
-                            nonlinSolver = new FixpointIterator(
+                        nonlinSolver = new FixpointIterator(
                             this.AssembleMatrixCallback,
                             this.MultigridBasis,
-                            this.Config_MultigridOperator) {
-                                MaxIter = Config_MaxIterations,
-                                MinIter = Config_MinIterations,
-                                m_LinearSolver = Config_linearSolver,
-                                ConvCrit = Config_SolverConvergenceCriterion,
-                                LastIteration_Converged = LevelSetConvergenceReached,
-                            };
-                            break;
+                            this.Config_MultigridOperator)
+                        {
+                            MaxIter = Config_MaxIterations,
+                            MinIter = Config_MinIterations,
+                            m_LinearSolver = Config_linearSolver,
+                            m_SessionPath = SessionPath,
+                            ConvCrit = Config_SolverConvergenceCriterion,
+                            UnderRelax = Config_UnderRelax,    
+                        };
 
-                        case NonlinearSolverMethod.Newton:
+                        if (this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
+                            ((FixpointIterator)nonlinSolver).CoupledIteration_Converged = LevelSetConvergenceReached;
+                        }
 
-                            nonlinSolver = new Newton(
-                                this.AssembleMatrixCallback,
-                                this.MultigridBasis,
-                                this.Config_MultigridOperator) {
-                                maxKrylovDim = 1000,
-                                MaxIter = Config_MaxIterations,
-                                MinIter = Config_MinIterations,
-                                ApproxJac = Newton.ApproxInvJacobianOptions.GMRES,
-                                Precond = Config_linearSolver,
-                                GMRESConvCrit = Config_SolverConvergenceCriterion,
-                                ConvCrit = Config_SolverConvergenceCriterion,
-                                m_SessionPath = SessionPath,
-                            };
-                            break;
+                        break;
+                         
+                    case NonlinearSolverMethod.Newton:
 
-                        default:
+                        nonlinSolver = new Newton(
+                            this.AssembleMatrixCallback,
+                            this.MultigridBasis,
+                            this.Config_MultigridOperator)
+                        {
+                            maxKrylovDim = 100,
+                            MaxIter = Config_MaxIterations,
+                            MinIter = Config_MinIterations,
+                            ApproxJac = Newton.ApproxInvJacobianOptions.GMRES,
+                            Precond = Config_linearSolver,
+                            GMRESConvCrit = Config_GMRESConvergenceCriterion,
+                            ConvCrit = Config_SolverConvergenceCriterion,
+                            m_SessionPath = SessionPath,
+                        };
+                        break;
 
-                            throw new NotImplementedException();
-                    }
+                    default:
+                        throw new NotImplementedException();
                 }
-
-            }
-            else {
+               
+            } else {
 
                 // +++++++++++++++++++++++++++++++++++++++++++++
                 // the linear solvers:
@@ -627,13 +600,13 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// If true, the residual will we transformed back to the original XDG basis (before agglomeration and block preconditioning)
         /// before the L2-norm is computed.
         /// </summary>
-        public bool m_TransformedResi = true;
+        public bool m_TransformedResi = false;
 
         public double m_LastLevelSetResidual;
 
-        protected bool LevelSetConvergenceReached(double Residual_Solver) {
+        protected bool LevelSetConvergenceReached() {
 
-            return (Residual_Solver < Config_SolverConvergenceCriterion && m_LastLevelSetResidual < Config_LevelSetConvergenceCriterion);
+            return (m_LastLevelSetResidual < Config_LevelSetConvergenceCriterion);
         }
 
         /// <summary>
@@ -749,5 +722,6 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// required for block-precond.
         /// </param>
         abstract protected void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, DGField[] argCurSt);
+
     }
 }

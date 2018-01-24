@@ -596,11 +596,11 @@ namespace BoSSS.Solution.Multigrid {
                         Blocks.Add(Block);
                     }
 #endif
-                    blockSolvers[iPart] = new PARDISOSolver() {
-                        CacheFactorization = true
-                    };
+                    //blockSolvers[iPart] = new PARDISOSolver() {
+                    //    CacheFactorization = true
+                    //};
                     //blockSolvers[iPart] = new FullDirectSolver();
-                    //blockSolvers[iPart] = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
+                    blockSolvers[iPart] = new ilPSP.LinSolvers.MUMPS.MUMPSSolver(MPI:false);
                     blockSolvers[iPart].DefineMatrix(Block);
                 }
 
@@ -939,7 +939,7 @@ namespace BoSSS.Solution.Multigrid {
 
                 if (CoarseSolver != null) {
                     var XC = X.ToArray().CloneAs();
-                    double[] bc = new double[m_MgOp.CoarserLevel.Mapping.TotalLength];// = Res.CloneAs();
+                    double[] bc = new double[m_MgOp.CoarserLevel.Mapping.LocalLength];// = Res.CloneAs();
                     m_MgOp.CoarserLevel.Restrict(Res.CloneAs(), bc);
                     double[] xc = new double[bc.Length];                  
                     CoarseSolver.Solve(xc, bc);

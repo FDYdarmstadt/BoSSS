@@ -170,10 +170,10 @@ namespace BoSSS.Application.IBM_Solver {
         /// </summary>
         protected CoordinateVector CurrentSolution {
             get {
-                if(m_CurrentSolution == null) {
+                if (m_CurrentSolution == null) {
                     m_CurrentSolution = new CoordinateVector(ArrayTools.Cat(this.Velocity, this.Pressure));
                 } else {
-                    for(int d = 0; d < base.GridData.SpatialDimension; d++) {
+                    for (int d = 0; d < base.GridData.SpatialDimension; d++) {
                         Debug.Assert(object.ReferenceEquals(m_CurrentSolution.Mapping.Fields[d], this.Velocity[d]));
                     }
                 }
@@ -190,7 +190,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// </summary>
         CoordinateVector CurrentResidual {
             get {
-                if(m_CurrentResidual == null) {
+                if (m_CurrentResidual == null) {
                     m_CurrentResidual = new CoordinateVector(ArrayTools.Cat(ResidualMomentum, ResidualContinuity));
                 }
                 return m_CurrentResidual;
@@ -209,7 +209,7 @@ namespace BoSSS.Application.IBM_Solver {
 
         protected bool U0MeanRequired = false;
 
-       
+
         protected XSpatialOperator IBM_Op;
 
         public string SessionPath;
@@ -235,7 +235,7 @@ namespace BoSSS.Application.IBM_Solver {
             // create operator
             // =================================
 
-            if(IBM_Op == null) {
+            if (IBM_Op == null) {
 
                 string[] CodNameSelected = new string[0];
                 string[] DomNameSelected = new string[0];
@@ -262,14 +262,14 @@ namespace BoSSS.Application.IBM_Solver {
                 var DomName = ArrayTools.Cat(VariableNames.VelocityVector(D), VariableNames.Pressure);
 
                 // selected part:
-                if(IBM_Op_config.CodBlocks[0])
+                if (IBM_Op_config.CodBlocks[0])
                     CodNameSelected = ArrayTools.Cat(CodNameSelected, CodName.GetSubVector(0, D));
-                if(IBM_Op_config.CodBlocks[1])
+                if (IBM_Op_config.CodBlocks[1])
                     CodNameSelected = ArrayTools.Cat(CodNameSelected, CodName.GetSubVector(D, 1));
 
-                if(IBM_Op_config.DomBlocks[0])
+                if (IBM_Op_config.DomBlocks[0])
                     DomNameSelected = ArrayTools.Cat(DomNameSelected, DomName.GetSubVector(0, D));
-                if(IBM_Op_config.DomBlocks[1])
+                if (IBM_Op_config.DomBlocks[1])
                     DomNameSelected = ArrayTools.Cat(DomNameSelected, DomName.GetSubVector(D, 1));
 
                 IBM_Op = new XSpatialOperator(DomNameSelected, Params, CodNameSelected,
@@ -280,8 +280,8 @@ namespace BoSSS.Application.IBM_Solver {
                 // =================
 
                 // convective part:
-                if(IBM_Op_config.convection) {
-                    for(int d = 0; d < D; d++) {
+                if (IBM_Op_config.convection) {
+                    for (int d = 0; d < D; d++) {
 
                         var comps = IBM_Op.EquationComponents[CodName[d]];
 
@@ -306,8 +306,8 @@ namespace BoSSS.Application.IBM_Solver {
                 }
 
                 // pressure part:
-                if(IBM_Op_config.PressureGradient) {
-                    for(int d = 0; d < D; d++) {
+                if (IBM_Op_config.PressureGradient) {
+                    for (int d = 0; d < D; d++) {
                         var comps = IBM_Op.EquationComponents[CodName[d]];
                         var pres = new PressureGradientLin_d(d, BcMap);
                         //var pres = new Solution.XNSECommon.Operator.Pressure.PressureInBulk(d, BcMap, 1, 1);
@@ -319,7 +319,7 @@ namespace BoSSS.Application.IBM_Solver {
 
 
                         // if periodic boundary conditions are applied a fixed pressure gradient drives the flow
-                        if(this.Control.FixedStreamwisePeriodicBC) {
+                        if (this.Control.FixedStreamwisePeriodicBC) {
                             var presSource = new SrcPressureGradientLin_d(this.Control.SrcPressureGrad[d]);
                             comps.Add(presSource);
                         }
@@ -327,8 +327,8 @@ namespace BoSSS.Application.IBM_Solver {
                 }
 
                 // viscous part:
-                if(IBM_Op_config.Viscous) {
-                    for(int d = 0; d < D; d++) {
+                if (IBM_Op_config.Viscous) {
+                    for (int d = 0; d < D; d++) {
                         var comps = IBM_Op.EquationComponents[CodName[d]];
                         double _D = D;
                         double penalty_mul = this.Control.AdvancedDiscretizationOptions.PenaltySafety;
@@ -355,8 +355,8 @@ namespace BoSSS.Application.IBM_Solver {
 
                 // Continuum equation
                 // ==================
-                if(IBM_Op_config.continuity) {
-                    for(int d = 0; d < D; d++) {
+                if (IBM_Op_config.continuity) {
+                    for (int d = 0; d < D; d++) {
 
                         //var src = new Solution.XNSECommon.Operator.Continuity.DivergenceInBulk_Volume(d, D, 1, 0, 1, false);
                         var src = new Divergence_DerivativeSource(d, D);
@@ -392,25 +392,25 @@ namespace BoSSS.Application.IBM_Solver {
             var Unknowns = ArrayTools.Cat(this.Velocity, this.Pressure);
             var Residual = ArrayTools.Cat(this.ResidualMomentum, this.ResidualContinuity);
 
-            if(L == null) {
+            if (L == null) {
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++
                 // Creation of time-integrator (initial, no balancing)
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                if(m_BDF_Timestepper == null) {
+                if (m_BDF_Timestepper == null) {
                     LevelSetHandling lsh = LevelSetHandling.None;
                     SpatialOperatorType SpatialOp = SpatialOperatorType.LinearTimeDependent;
 
-                    if(this.Control.PhysicalParameters.IncludeConvection) {
+                    if (this.Control.PhysicalParameters.IncludeConvection) {
                         SpatialOp = SpatialOperatorType.Nonlinear;
                     }
 
                     int bdfOrder;
-                    if(this.Control.Timestepper_Scheme == IBM_Control.TimesteppingScheme.CrankNicolson)
+                    if (this.Control.Timestepper_Scheme == IBM_Control.TimesteppingScheme.CrankNicolson)
                         bdfOrder = -1;
-                    else if(this.Control.Timestepper_Scheme == IBM_Control.TimesteppingScheme.ImplicitEuler)
+                    else if (this.Control.Timestepper_Scheme == IBM_Control.TimesteppingScheme.ImplicitEuler)
                         bdfOrder = 1;
-                    else if(this.Control.Timestepper_Scheme.ToString().StartsWith("BDF"))
+                    else if (this.Control.Timestepper_Scheme.ToString().StartsWith("BDF"))
                         bdfOrder = Convert.ToInt32(this.Control.Timestepper_Scheme.ToString().Substring(3));
                     else
                         throw new NotImplementedException("todo");
@@ -418,7 +418,7 @@ namespace BoSSS.Application.IBM_Solver {
                     m_BDF_Timestepper = new XdgBDFTimestepping(
                         Unknowns, Residual,
                         LsTrk, true,
-                        DelComputeOperatorMatrix, DelUpdateLevelset, 
+                        DelComputeOperatorMatrix, DelUpdateLevelset,
                         bdfOrder,
                         lsh,
                         MassMatrixShapeandDependence.IsNonIdentity,
@@ -467,12 +467,12 @@ namespace BoSSS.Application.IBM_Solver {
             int D = this.LsTrk.GridDat.SpatialDimension;
             var U0 = new VectorField<SinglePhaseField>(CurrentState.Take(D).Select(F => (SinglePhaseField)F).ToArray());
             SinglePhaseField[] U0_U0mean;
-            if(this.U0MeanRequired) {
+            if (this.U0MeanRequired) {
                 Basis U0meanBasis = new Basis(GridData, 0);
                 VectorField<SinglePhaseField> U0mean = new VectorField<SinglePhaseField>(D, U0meanBasis, "U0mean_", SinglePhaseField.Factory);
                 U0mean.Clear();
 
-                if(this.Control.PhysicalParameters.IncludeConvection)
+                if (this.Control.PhysicalParameters.IncludeConvection)
                     ComputeAverageU(U0, U0mean);
 
                 U0_U0mean = ArrayTools.Cat<SinglePhaseField>(U0, U0mean);
@@ -494,7 +494,7 @@ namespace BoSSS.Application.IBM_Solver {
             m_LenScales = null;
 
 #if DEBUG
-            if(DelComputeOperatorMatrix_CallCounter == 1) {
+            if (DelComputeOperatorMatrix_CallCounter == 1) {
                 int[] Uidx = SaddlePointProblemMapping.GetSubvectorIndices(true, D.ForLoop(i => i));
                 int[] Pidx = SaddlePointProblemMapping.GetSubvectorIndices(true, D);
                 CoordinateMapping Umap = this.Velocity.Mapping;
@@ -511,7 +511,7 @@ namespace BoSSS.Application.IBM_Solver {
                 double ErrInfAbs = Err.InfNorm();
                 double denom = Math.Max(pGradT.InfNorm(), Math.Max(pGrad.InfNorm(), divVel.InfNorm()));
                 double ErrInfRel = ErrInfAbs / denom;
-                if(ErrInfRel >= 1e-8)
+                if (ErrInfRel >= 1e-8)
                     throw new ArithmeticException("Stokes discretization error: | div + grad^t |oo is high; absolute: " + ErrInfAbs + ", relative: " + ErrInfRel + " (denominator: " + denom + ")");
                 //Console.WriteLine("Stokes discretization error: | div - grad ^ t |oo is high; absolute: " + ErrInfAbs + ", relative: " + ErrInfRel + " (denom: " + denom + ")");
             }
@@ -521,7 +521,7 @@ namespace BoSSS.Application.IBM_Solver {
             OpAffine.CheckForNanOrInfV();
 
             // Set Pressure Reference Point
-            if(!this.BcMap.DirichletPressureBoundary) {
+            if (!this.BcMap.DirichletPressureBoundary) {
                 IBMSolverUtils.SetPressureReferencePoint(
                     CurrentSolution.Mapping,
                     this.GridData.SpatialDimension,
@@ -552,7 +552,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// Depending on settings <see cref="IBM_Control.Option_Timestepper"/>, computs either one timestep or a steady-state solution.
         /// </summary>
         protected override double RunSolverOneStep(int TimestepInt, double phystime, double dt) {
-            using(new FuncTrace()) {
+            using (new FuncTrace()) {
                 TimestepNumber TimestepNo = new TimestepNumber(TimestepInt, 0);
                 int D = this.GridData.SpatialDimension;
 
@@ -572,11 +572,11 @@ namespace BoSSS.Application.IBM_Solver {
                 this.ComputeL2Error();
 
                 #region Get Drag and Lift Coefficiant
-                if(phystime == 0) {
-                    if((base.MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty)) {
+                if (phystime == 0) {
+                    if ((base.MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty)) {
                         Log_DragAndLift = base.DatabaseDriver.FsDriver.GetNewLog("PhysicalData", CurrentSessionInfo.ID);
                         string firstline;
-                        if(this.GridData.SpatialDimension == 3) {
+                        if (this.GridData.SpatialDimension == 3) {
                             firstline = String.Format("{0}\t{1}\t{2}\t{3}\t{4}", "#Timestep", "#Time", "x-Force", "y-Force", "z-Force");
                         } else {
                             firstline = String.Format("{0}\t{1}\t{2}\t{3}", "#Timestep", "#Time", "x-Force", "y-Force");
@@ -589,9 +589,9 @@ namespace BoSSS.Application.IBM_Solver {
                 //oldtorque = torque;
                 torque = IBMSolverUtils.GetTorque(Velocity, Pressure, this.LsTrk, this.Control.PhysicalParameters.mu_A, this.Control.particleRadius);
 
-                if((base.MPIRank == 0) && (Log_DragAndLift != null)) {
+                if ((base.MPIRank == 0) && (Log_DragAndLift != null)) {
                     string line;
-                    if(this.GridData.SpatialDimension == 3) {
+                    if (this.GridData.SpatialDimension == 3) {
                         line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}", TimestepNo, phystime, force[0], force[1], force[2]);
                     } else {
                         line = String.Format("{0}\t{1}\t{2}\t{3}", TimestepNo, phystime, force[0], force[1]);
@@ -602,7 +602,7 @@ namespace BoSSS.Application.IBM_Solver {
 
                 Console.WriteLine("x-Force:   {0}", force[0]);
                 Console.WriteLine("y-Force:   {0}", force[1]);
-                if(this.GridData.SpatialDimension == 3)
+                if (this.GridData.SpatialDimension == 3)
                     Console.WriteLine("z-Force:   {0}", force[2]);
                 Console.WriteLine("Torqe:   {0}", torque);
                 Console.WriteLine();
@@ -649,7 +649,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// <returns></returns>
         protected double ComputePenalty(double penalty, int jCellIn, int jCellOut, MultidimensionalArray cj) {
             double muFactor; // the WTF factor
-            if(jCellOut >= 0)
+            if (jCellOut >= 0)
                 muFactor = 1.0;
             else
                 //muFactor = Math.Max(1, 0) / this.Control.PhysicalParameters.mu_A; // Hardcoded for single phase flows
@@ -666,7 +666,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// <param name="U0"></param>
         /// <param name="U0mean"></param>
         private void ComputeAverageU(VectorField<SinglePhaseField> U0, VectorField<SinglePhaseField> U0mean) {
-            using(FuncTrace ft = new FuncTrace()) {
+            using (FuncTrace ft = new FuncTrace()) {
                 var CC = this.LsTrk.Regions.GetCutCellMask();
                 int D = this.LsTrk.GridDat.SpatialDimension;
                 double minvol = Math.Pow(this.LsTrk.GridDat.Cells.h_minGlobal, D);
@@ -675,7 +675,7 @@ namespace BoSSS.Application.IBM_Solver {
 
                 //var qh = new XQuadSchemeHelper(LsTrk, momentFittingVariant, this.FluidSpecies);
                 var qh = LsTrk.GetXDGSpaceMetrics(this.FluidSpecies, QuadDegree, 1).XQuadSchemeHelper;
-                foreach(var Spc in this.FluidSpecies) { // loop over species...
+                foreach (var Spc in this.FluidSpecies) { // loop over species...
                     //var Spc = this.LsTrk.GetSpeciesId("B"); {
                     // shadow fields
                     var U0_Spc = U0.ToArray();
@@ -683,7 +683,7 @@ namespace BoSSS.Application.IBM_Solver {
 
 
                     // normal cells:
-                    for(int d = 0; d < D; d++) {
+                    for (int d = 0; d < D; d++) {
                         U0mean_Spc[d].AccLaidBack(1.0, U0_Spc[d], this.LsTrk.Regions.GetSpeciesMask(Spc));
                     }
 
@@ -697,21 +697,21 @@ namespace BoSSS.Application.IBM_Solver {
                         rule,
                         delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
                             EvalResult.Clear();
-                            for(int d = 0; d < D; d++)
+                            for (int d = 0; d < D; d++)
                                 U0_Spc[d].Evaluate(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, d));
                             var Vol = EvalResult.ExtractSubArrayShallow(-1, -1, D);
                             Vol.SetAll(1.0);
                         },
                         delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                            for(int i = 0; i < Length; i++) {
+                            for (int i = 0; i < Length; i++) {
                                 int jCell = i + i0;
 
                                 double Volume = ResultsOfIntegration[i, D];
-                                if(Math.Abs(Volume) < minvol * 1.0e-12) {
+                                if (Math.Abs(Volume) < minvol * 1.0e-12) {
                                     // keep current value
                                     // since the volume of species 'Spc' in cell 'jCell' is 0.0, the value in this cell should have no effect
                                 } else {
-                                    for(int d = 0; d < D; d++) {
+                                    for (int d = 0; d < D; d++) {
                                         double IntVal = ResultsOfIntegration[i, d];
                                         U0mean_Spc[d].SetMeanValue(jCell, IntVal / Volume);
                                     }
@@ -728,13 +728,13 @@ namespace BoSSS.Application.IBM_Solver {
 
 
                     VectorField<SinglePhaseField> U0mean_check = new VectorField<SinglePhaseField>(D, new Basis(LsTrk.GridDat, 0), SinglePhaseField.Factory);
-                    for(int d = 0; d < D; d++) {
+                    for (int d = 0; d < D; d++) {
                         U0mean_check[d].ProjectField(1.0, U0[d].Evaluate,
                             new CellQuadratureScheme(false, Uncut).AddFixedOrderRules(LsTrk.GridDat, U0[d].Basis.Degree + 1));
                     }
 
-                    foreach(var _Spc in this.LsTrk.SpeciesIdS) { // loop over species...
-                        for(int d = 0; d < D; d++) {
+                    foreach (var _Spc in this.LsTrk.SpeciesIdS) { // loop over species...
+                        for (int d = 0; d < D; d++) {
                             U0mean_check[d].AccLaidBack(-1.0, U0mean[d]);
                         }
                     }
@@ -761,10 +761,10 @@ namespace BoSSS.Application.IBM_Solver {
         /// DG field instantiation.
         /// </summary>
         protected override void CreateFields() {
-            using(new FuncTrace()) {
+            using (new FuncTrace()) {
                 base.CreateFields();
                 base.LsTrk = this.LevsetTracker;
-                if(Control.CutCellQuadratureType != this.LevsetTracker.CutCellQuadratureType)
+                if (Control.CutCellQuadratureType != this.LevsetTracker.CutCellQuadratureType)
                     throw new ApplicationException();
                 //if (this.Control.LevelSetSmoothing) {
                 //    SmoothedLevelSet = new SpecFemField(new SpecFemBasis((GridData)LevSet.GridDat, LevSet.Basis.Degree + 1));
@@ -777,7 +777,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// </summary>
         protected override void SetInitial() {
             // Set particle radius for exact circle integration
-            if(this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.ExactCircle)
+            if (this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.ExactCircle)
                 BoSSS.Foundation.XDG.Quadrature.HMF.ExactCircleLevelSetIntegration.RADIUS = new double[] { this.Control.particleRadius };
             Console.WriteLine("Total number of cells:    {0}", Grid.Cells.Count().MPISum());
             Console.WriteLine("Total number of DOFs:     {0}", CurrentSolution.Count().MPISum());
@@ -785,7 +785,7 @@ namespace BoSSS.Application.IBM_Solver {
 
             double LevsetMin, LevsetMax;
             this.LevSet.GetExtremalValues(out LevsetMin, out LevsetMax);
-            if(LevsetMax == 0.0 && LevsetMin == 0.0) {
+            if (LevsetMax == 0.0 && LevsetMin == 0.0) {
                 // User probably does not want to use Levelset, but forgot to set it.
                 LevSet.AccConstant(-1.0);
             }
@@ -817,12 +817,12 @@ namespace BoSSS.Application.IBM_Solver {
         }
 
         private void After_SetInitialOrLoadRestart() {
-            using(new FuncTrace()) {
+            using (new FuncTrace()) {
                 int D = this.GridData.SpatialDimension;
 
                 this.DGLevSet.Current.Clear();
                 this.DGLevSet.Current.AccLaidBack(1.0, this.LevSet);
-                if(this.Control.LevelSetSmoothing) {
+                if (this.Control.LevelSetSmoothing) {
                     //SpecFemSmoothing.Execute(this.DGLevSet.Current, this.LevSet, this.SmoothedLevelSet);
                     throw new NotImplementedException("todo");
                 }
@@ -844,7 +844,7 @@ namespace BoSSS.Application.IBM_Solver {
             // XDG Timestepper initialization
             // =========================================
 
-            if(this.Control.Timestepper_Init == IBM_Control.TimestepperInit.MultiInit) {
+            if (this.Control.Timestepper_Init == IBM_Control.TimestepperInit.MultiInit) {
                 //int CallCount = 0;
 
 
@@ -856,7 +856,7 @@ namespace BoSSS.Application.IBM_Solver {
                         Console.WriteLine("Timestep index {0}, time {1} ", TimestepIndex, time);
 
                         ITimestepInfo tsi_toLoad;
-                        if(TimestepIndex < 0) {
+                        if (TimestepIndex < 0) {
                             throw new ArgumentOutOfRangeException("Not enough Timesteps to restart with desired Timestepper");
                         } else {
                             ISessionInfo reloadSession = GetDatabase().Controller.GetSessionInfo(this.CurrentSessionInfo.RestartedFrom);
@@ -877,14 +877,14 @@ namespace BoSSS.Application.IBM_Solver {
                         // --------
                         int D = this.LsTrk.GridDat.SpatialDimension;
 
-                        for(int d = 0; d < D; d++) {
+                        for (int d = 0; d < D; d++) {
                             St[d] = this.Velocity[d].CloneAs();
                         }
                         St[D] = this.Pressure.CloneAs();
 
                     });
             } else {
-                if(m_BDF_Timestepper != null)
+                if (m_BDF_Timestepper != null)
                     m_BDF_Timestepper.SingleInit();
             }
         }
@@ -899,7 +899,7 @@ namespace BoSSS.Application.IBM_Solver {
                 int pPrs = this.Pressure.Basis.Degree;
                 int D = this.GridData.SpatialDimension;
 
-                if(this.Control.VelocityBlockPrecondMode != MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite
+                if (this.Control.VelocityBlockPrecondMode != MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite
                     && this.Control.VelocityBlockPrecondMode != MultigridOperator.Mode.IdMass_DropIndefinite) {
                     throw new NotSupportedException("Invalid option for block-preconditioning of momentum equation: " + this.Control.VelocityBlockPrecondMode
                         + ". Valid options are " + MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite + " and " + MultigridOperator.Mode.IdMass_DropIndefinite + ".");
@@ -911,11 +911,11 @@ namespace BoSSS.Application.IBM_Solver {
                 // it is not necessary to have exactly as many configurations as actual multigrid levels:
                 // the last configuration enty will be used for all higher level
                 MultigridOperator.ChangeOfBasisConfig[][] configs = new MultigridOperator.ChangeOfBasisConfig[3][];
-                for(int iLevel = 0; iLevel < configs.Length; iLevel++) {
+                for (int iLevel = 0; iLevel < configs.Length; iLevel++) {
                     configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 1];
 
                     // configurations for velocity
-                    for(int d = 0; d < D; d++) {
+                    for (int d = 0; d < D; d++) {
                         configs[iLevel][d] = new MultigridOperator.ChangeOfBasisConfig() {
                             Degree = Math.Max(1, pVel - iLevel),
                             mode = this.Control.VelocityBlockPrecondMode,
@@ -939,7 +939,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// L2 norm of current solution against <see cref="IBM_Control.ExSol_Velocity"/> resp. <see cref="IBM_Control.ExSol_Pressure"/>.
         /// </summary>
         protected void ComputeL2Error() {
-            if(this.Control.ExSol_Velocity_Evaluator == null && this.Control.ExSol_Pressure_Evaluator == null)
+            if (this.Control.ExSol_Velocity_Evaluator == null && this.Control.ExSol_Pressure_Evaluator == null)
                 // nothing to do
                 return;
 
@@ -954,10 +954,10 @@ namespace BoSSS.Application.IBM_Solver {
 
             //var SchemeHelper = new XQuadSchemeHelper(LsTrk, momentFittingVariant, LsTrk.GetSpeciesId("A"));
             var SchemeHelper = LsTrk.GetXDGSpaceMetrics(FluidSpecies, order, 1).XQuadSchemeHelper;
-            
+
             // Velocity error
             // ==============
-            if(this.Control.ExSol_Velocity_Evaluator != null) {
+            if (this.Control.ExSol_Velocity_Evaluator != null) {
                 double[] L2Error = new double[D];
 
                 var spId = this.FluidSpecies.Single();
@@ -966,7 +966,7 @@ namespace BoSSS.Application.IBM_Solver {
                 var scheme = SchemeHelper.GetVolumeQuadScheme(spId);
 
 
-                for(int d = 0; d < D; d++) {
+                for (int d = 0; d < D; d++) {
                     L2Error[d] = this.Velocity[d].L2Error(this.Control.ExSol_Velocity_Evaluator[d].Vectorize(0.0), order, scheme);
                     base.QueryHandler.ValueQuery("L2err_" + VariableNames.Velocity_d(d), L2Error[d], true);
                 }
@@ -975,11 +975,11 @@ namespace BoSSS.Application.IBM_Solver {
 
             // pressure error
             // ==============
-            if(this.Control.ExSol_Pressure_Evaluator != null) {
+            if (this.Control.ExSol_Pressure_Evaluator != null) {
 
                 // pass 1: mean value of pressure difference
                 double DiffInt = 0;
-                foreach(var spId in FluidSpecies) {
+                foreach (var spId in FluidSpecies) {
 
                     string spc = this.LsTrk.GetSpeciesName(spId);
                     var scheme = SchemeHelper.GetVolumeQuadScheme(spId);
@@ -995,7 +995,7 @@ namespace BoSSS.Application.IBM_Solver {
                 double L2Error = 0;
                 Dictionary<string, double> L2Error_Species = new Dictionary<string, double>();
 
-                foreach(var spId in this.FluidSpecies) {
+                foreach (var spId in this.FluidSpecies) {
 
                     //SpeciesId spId = this.LsTrk.GetSpeciesId(spc);
                     string spc = this.LsTrk.GetSpeciesName(spId);
@@ -1025,9 +1025,9 @@ namespace BoSSS.Application.IBM_Solver {
             NoOfClasses = 3;
             int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
             CellPerfomanceClasses = new int[J];
-            foreach(int j in LsTrk.Regions.GetSpeciesMask("A").ItemEnum)
+            foreach (int j in LsTrk.Regions.GetSpeciesMask("A").ItemEnum)
                 CellPerfomanceClasses[j] = 1;
-            foreach(int j in LsTrk.Regions.GetCutCellMask().ItemEnum)
+            foreach (int j in LsTrk.Regions.GetCutCellMask().ItemEnum)
                 CellPerfomanceClasses[j] = 2;
         }
 
@@ -1092,6 +1092,88 @@ namespace BoSSS.Application.IBM_Solver {
             //     Log_DragAndLift.WriteLine(restartLine);
             // }
 
+        }
+
+        bool debug = false;
+
+        /// <summary>
+        /// Very primitive refinement indicator, works on a LevelSet criterion.
+        /// </summary>
+        int LevelIndicator(int j, int CurrentLevel) {
+            var LevSetCells = LsTrk.Regions.GetCutCellMask();
+            var LevSetNeighbours = LsTrk.Regions.GetNearFieldMask(1);
+
+            int DesiredLevel_j = 0;
+
+            if (!debug) {
+                if (LevSetCells.Contains(j))
+                    DesiredLevel_j = 1;
+            } else {
+                if (LevSetCells.Contains(j) || LevSetNeighbours.Contains(j))
+                    DesiredLevel_j = 1;
+            }
+
+            return DesiredLevel_j;
+        }
+
+        protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
+
+            if (this.Control.AdaptiveMeshRefinement) {
+
+                //if (TimestepNo > 3 && TimestepNo % 3 != 0) {
+                //    newGrid = null;
+                //    old2NewGrid = null;
+                //    return;
+                //}
+
+                // Check grid changes
+                // ==================
+
+                CellMask CutCells = LsTrk.Regions.GetCutCellMask();
+                CellMask CutCellNeighbors = LsTrk.Regions.GetNearFieldMask(1);
+                var CutCellArray = CutCells.ItemEnum.ToArray();
+                var CutCellNeighborsArray = CutCellNeighbors.ItemEnum.ToArray();
+                var AllCells = CutCellArray.Concat(CutCellNeighborsArray).ToArray();
+
+                var NoCoarseningcells = new CellMask(this.GridData, AllCells);
+
+                bool AnyChange = GridRefinementController.ComputeGridChange(this.GridData, NoCoarseningcells, LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+                int NoOfCellsToRefine = 0;
+                int NoOfCellsToCoarsen = 0;
+                if (AnyChange) {
+                    int[] glb = (new int[] {
+                    CellsToRefineList.Count,
+                    Coarsening.Sum(L => L.Length),
+                }).MPISum();
+                    NoOfCellsToRefine = glb[0];
+                    NoOfCellsToCoarsen = glb[1];
+                }
+                int oldJ = this.GridData.CellPartitioning.TotalLength;
+
+                // Update Grid
+                // ===========
+
+                if (AnyChange) {
+
+                    Console.WriteLine("       Refining " + NoOfCellsToRefine + " of " + oldJ + " cells");
+                    Console.WriteLine("       Coarsening " + NoOfCellsToCoarsen + " of " + oldJ + " cells");
+
+                    newGrid = this.GridData.Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
+
+                } else {
+
+                    Console.WriteLine("No changes in Grid");
+                    newGrid = null;
+                    old2NewGrid = null;
+                }
+
+                debug = true;
+
+            } else {
+
+                newGrid = null;
+                old2NewGrid = null;
+            }
         }
 
     }

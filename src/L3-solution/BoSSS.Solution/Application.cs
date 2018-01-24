@@ -55,6 +55,14 @@ namespace BoSSS.Solution {
         /// Dummy-implementation of the <see cref="AppControl"/>-class.
         /// </summary>
         public class EmptyAppControl : AppControl {
+
+            /// <summary>
+            /// nix supported.
+            /// </summary>
+            public override Type GetSolverType() {
+                throw new NotSupportedException();
+            }
+
         }
     }
 
@@ -1411,7 +1419,7 @@ namespace BoSSS.Solution {
                     return null;
 
                 ITimestepInfo tsi;
-                Exception e = null;
+                //Exception e = null;
                 try {
                     tsi = this.DatabaseDriver.SaveTimestep(
                         t,
@@ -1420,17 +1428,41 @@ namespace BoSSS.Solution {
                         this.GridData,
                         this.IOFields);
                 } catch (Exception ee) {
-                    Console.WriteLine(ee.GetType().Name + " on rank " + this.MPIRank + " saveing timestep " + timestepno + ": " + ee.Message);
+                    Console.Error.WriteLine(ee.GetType().Name + " on rank " + this.MPIRank + " saving time-step " + timestepno + ": " + ee.Message);
+                    Console.Error.WriteLine(ee.StackTrace);
+                    //tsi = null;
+                    //e = ee;
+
+                    if(ContinueOnIOError) {
+                        Console.WriteLine("Ignoring IO error: " + DateTime.Now);
+
+                    } else {
+                        throw ee;
+                    }
+
                     tsi = null;
-                    e = ee;
                 }
 
-                e.ExceptionBcast();
+                // e.ExceptionBcast();
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
                 return tsi;
             }
         }
+
+        /// <summary>
+        /// Calculation is not stopped if an I/O exception is thrown in <see cref="SaveToDatabase(TimestepNumber, double)"/>,
+        /// see also <see cref="AppControl.ContinueOnIoError"/>.
+        /// </summary>
+        protected virtual bool ContinueOnIOError {
+            get {
+                if(this.Control != null)
+                    return this.Control.ContinueOnIoError;
+                else
+                    return true;
+            }
+        }
+
 
         /// <summary>
         /// Loads all fields in <see cref="m_IOFields"/> from the database
@@ -1825,6 +1857,9 @@ namespace BoSSS.Solution {
                     // no mesh adaptation, but (maybe) grid redistribution (load balancing)
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+                    
+
+
 
                     // init / determine if partition has changed / check Partitioning
                     // ==============================================================
@@ -1966,10 +2001,25 @@ namespace BoSSS.Solution {
 
                     GridData oldGridData = this.GridData;
                     GridCommons oldGrid = oldGridData.Grid;
+                    Guid oldGridId = oldGrid.ID;
                     Permutation tau;
                     GridUpdateDataVault_Adapt remshDat = new GridUpdateDataVault_Adapt(oldGridData, this.LsTrk);
                     BackupData(oldGridData, this.LsTrk, remshDat, out tau);
+                    
+                    // save new grid to database
+                    // ==========================
 
+                    if (!passiveIo) {
+
+                        if (newGrid.GridGuid == null || newGrid.GridGuid.Equals(Guid.Empty))
+                            throw new ApplicationException();
+                        if(newGrid.GridGuid.Equals(oldGridId))
+                            throw new ApplicationException();
+                        if(DatabaseDriver.GridExists(newGrid.GridGuid))
+                            throw new ApplicationException();
+
+                        DatabaseDriver.SaveGrid(newGrid);
+                    }
 
                     // check for grid redistribution
                     // =============================
@@ -2186,8 +2236,8 @@ namespace BoSSS.Solution {
                 || MPISize <= 1)
                 return null;
 
-            GetCellPerformanceClasses(out int performanceClassCount, out int[] performanceClasses);
-            if (performanceClasses.Length != this.Grid.CellPartitioning.LocalLength) {
+            GetCellPerformanceClasses(out int performanceClassCount, out int[] cellToPerformanceClassMap);
+            if (cellToPerformanceClassMap.Length != this.Grid.CellPartitioning.LocalLength) {
                 throw new ApplicationException();
             }
 
@@ -2204,7 +2254,7 @@ namespace BoSSS.Solution {
             return m_Balancer.GetNewPartitioning(
                 this,
                 performanceClassCount,
-                performanceClasses,
+                cellToPerformanceClassMap,
                 TimeStepNo,
                 m_GridPartitioningType,
                 m_GridPartitioningOptions,

@@ -144,9 +144,9 @@ namespace BoSSS.Application.BoSSSpad {
             string prepend = String.Format("- {0}:", libraryName).PadRight(23);
             Console.Write(prepend);
 
-            Console.ForegroundColor = ConsoleColor.Green;
+            //Console.ForegroundColor = ConsoleColor.Green;
             Console.Write("Good", prepend, fileName, path);
-            Console.ResetColor();
+            //Console.ResetColor();
 
             Console.WriteLine(" (using {0} from {1})", fileName, path);
         }
@@ -164,9 +164,9 @@ namespace BoSSS.Application.BoSSSpad {
             string prepend = String.Format("- {0}:", libraryName).PadRight(23);
             Console.Write(prepend);
 
-            Console.ForegroundColor = isOptional ? ConsoleColor.Yellow : ConsoleColor.Red;
+            //Console.ForegroundColor = isOptional ? ConsoleColor.Yellow : ConsoleColor.Red;
             Console.Write("Failed");
-            Console.ResetColor();
+            //Console.ResetColor();
 
             Console.WriteLine(" (detailed error messages have been written {0})", LOG_FILE_NAME);
             WriteToErrorLog(libraryName, detailedMessage);

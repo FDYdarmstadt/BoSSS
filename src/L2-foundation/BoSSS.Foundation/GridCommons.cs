@@ -1261,7 +1261,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         public void CompressGlobalID(IList<long> AdditionalGlobalIdsToTransform = default(long[])) {
             List<int> oldGlobalID = new List<int>();
             List<int> oldCellFaceTagIDs = new List<int>();
-            
+
             int J = this.Cells.Length;
 
 
@@ -1308,8 +1308,12 @@ namespace BoSSS.Foundation.Grid.Classic {
                 if (Cj.CellFaceTags != null) {
                     int L = Cj.CellFaceTags.Length;
                     for (int l = 0; l < L; l++) {
-                        Debug.Assert(Cj.CellFaceTags[l].NeighCell_GlobalID == oldCellFaceTagIDs[c2]);
-                        Cj.CellFaceTags[l].NeighCell_GlobalID = newCellFaceTagIDs[c2];
+                        if (Cj.CellFaceTags[l].EdgeTag > 0 && Cj.CellFaceTags[l].EdgeTag < GridCommons.FIRST_PERIODIC_BC_TAG) {
+                            Cj.CellFaceTags[l].NeighCell_GlobalID = long.MinValue;
+                        } else {
+                            Debug.Assert(Cj.CellFaceTags[l].NeighCell_GlobalID == oldCellFaceTagIDs[c2]);
+                            Cj.CellFaceTags[l].NeighCell_GlobalID = newCellFaceTagIDs[c2];
+                        }
                         c2++;
                     }
                 }

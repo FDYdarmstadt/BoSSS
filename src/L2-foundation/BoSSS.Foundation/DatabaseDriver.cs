@@ -330,48 +330,58 @@ namespace BoSSS.Foundation.IO {
         /// on all MPI processes.
         /// </param>
         public void SaveVector<T>(IList<T> vector, Guid id) {
-            using (new FuncTrace()) {
-                if (m_fsDriver == null)
+            using(new FuncTrace()) {
+                if(m_fsDriver == null)
                     throw new NotSupportedException("Can't save data when not connected to database.");
 
 #if DEBUG
                 // never trust the user
                 Guid id0 = id.MPIBroadcast(0);
-                if (id0 != id) {
+                if(id0 != id) {
                     throw new ArgumentException(
                         "Guid differs at least on one MPI process.",
                         nameof(id));
                 }
 #endif
+                Exception e = null;
+                try {
 
-                // save parts
-                using (Stream s = m_fsDriver.GetDistVectorDataStream(true, id, MyRank))
-                using (var s2 = GetJsonWriter(new GZipStream(s, CompressionMode.Compress))) {
-                    // Use a tuple since the Json format expects one object per
-                    // file (with some tricks, we could avoid this, but it's
-                    // not really worth the effort)
-                    var tuple = new Tuple<DistributedVectorHeader, IList<T>>(null, vector);
+                    // save parts
+                    using(Stream s = m_fsDriver.GetDistVectorDataStream(true, id, MyRank)) {
+                        using(var s2 = GetJsonWriter(new GZipStream(s, CompressionMode.Compress))) {
+                            // Use a tuple since the Json format expects one object per
+                            // file (with some tricks, we could avoid this, but it's
+                            // not really worth the effort)
+                            var tuple = new Tuple<DistributedVectorHeader, IList<T>>(null, vector);
 
-                    // save header (only proc 0)
-                    // =========================
-                    var _part = (new Partitioning(vector.Count));
-                    if (MyRank == 0) {
-                        DistributedVectorHeader header = new DistributedVectorHeader();
-                        header.m_Guid = id;
-                        header.UseGzip = !DebugSerialization;
-                        long[] part = new long[_part.MpiSize + 1];
-                        for (int i = 0; i < _part.MpiSize; i++) {
-                            part[i + 1] = part[i] + _part.GetLocalLength(i);
+                            // save header (only proc 0)
+                            // =========================
+                            var _part = (new Partitioning(vector.Count));
+                            if(MyRank == 0) {
+                                DistributedVectorHeader header = new DistributedVectorHeader();
+                                header.m_Guid = id;
+                                header.UseGzip = !DebugSerialization;
+                                long[] part = new long[_part.MpiSize + 1];
+                                for(int i = 0; i < _part.MpiSize; i++) {
+                                    part[i + 1] = part[i] + _part.GetLocalLength(i);
+                                }
+                                header.Partitioning = part;
+                                tuple = new Tuple<DistributedVectorHeader, IList<T>>(header, vector);
+                            }
+
+                            m_Formatter.Serialize(s2, tuple);
+
+                            s2.Close();
+                            s.Close();
                         }
-                        header.Partitioning = part;
-                        tuple = new Tuple<DistributedVectorHeader, IList<T>>(header, vector);
                     }
-
-                    m_Formatter.Serialize(s2, tuple);
-
-                    s2.Close();
-                    s.Close();
+                } catch(Exception ee) {
+                    Console.Error.WriteLine(ee.GetType().Name + " on rank " + this.MyRank + " saving vector " + id + ": " + ee.Message);
+                    Console.Error.WriteLine(ee.StackTrace);
+                    e = ee;
                 }
+
+                e.ExceptionBcast();
             }
         }
 
@@ -1144,22 +1154,37 @@ namespace BoSSS.Foundation.IO {
                 // Save state object 
                 // =================
                 TimestepInfo tsi = null;
+                Exception e = null;
                 if (MyRank == 0) {
-                    tsi = new TimestepInfo(physTime, currentSession, TimestepNo, fields, VectorGuid);
-                    using (var s = FsDriver.GetTimestepStream(true, tsi.ID))
-                    using (var writer = GetJsonWriter(s)) {
-                        m_Formatter.Serialize(writer, tsi);
-                        writer.Close();
-                        s.Close();
+                    try {
+                        tsi = new TimestepInfo(physTime, currentSession, TimestepNo, fields, VectorGuid);
+                        using(var s = FsDriver.GetTimestepStream(true, tsi.ID))
+                        using(var writer = GetJsonWriter(s)) {
+                            m_Formatter.Serialize(writer, tsi);
+                            writer.Close();
+                            s.Close();
+                        }
+                    } catch (Exception ee) {
+                        e = ee;
+                        Console.Error.WriteLine(ee.GetType().Name + " on rank " + MyRank + " saving time-step " + TimestepNo + ": " + ee.Message);
+                        Console.Error.WriteLine(ee.StackTrace);
                     }
                 }
+                e.ExceptionBcast();
                 tsi = tsi.MPIBroadcast(0);
 
                 // return
                 // ======
                 if (MyRank == 0) {
-                    currentSession.LogTimeStep(tsi.ID);
+                    try {
+                        currentSession.LogTimeStep(tsi.ID);
+                    } catch (Exception ee) {
+                        e = ee;
+                        Console.Error.WriteLine(ee.GetType().Name + " on rank " + MyRank + " saving time-step " + TimestepNo + ": " + ee.Message);
+                        Console.Error.WriteLine(ee.StackTrace);
+                    }
                 }
+                e.ExceptionBcast();
 
                 tsi.Database = currentSession.Database;
                 return tsi;
