@@ -53,6 +53,7 @@ namespace BoSSS.Application.BoSSSpad {
             job.NumberOfMPIProcs = NumberOfMPIProcs;
             job.SetControlObject(ctrl);
             job.Activate(BatchSys);
+            
             return job;
         }
 
