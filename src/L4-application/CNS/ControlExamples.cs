@@ -3136,7 +3136,7 @@ namespace CNS {
             return c;
         }
 
-        public static CNSControl ShockTube_PredefinedGrid(string dbPath = null, int dgDegree = 2, int numOfCellsX = 10, int numOfCellsY = 1, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = true) {
+        public static CNSControl ShockTube_PredefinedGrid(string dbPath = null, int dgDegree = 2, int numOfCellsX = 10, int numOfCellsY = 10, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = true) {
 
             CNSControl c = new CNSControl();
 
@@ -3160,7 +3160,7 @@ namespace CNS {
             c.GridPartType = GridPartType.Predefined;
             c.GridPartOptions = "hallo";
 
-            bool AV = false;
+            bool AV = true;
 
             double xMin = 0;
             double xMax = 1;
@@ -3168,11 +3168,12 @@ namespace CNS {
             double yMax = 1;
 
             // (A)LTS
-            c.ExplicitScheme = ExplicitSchemes.LTS;
+            //c.ExplicitScheme = ExplicitSchemes.LTS;
+            c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 1;
-            c.NumberOfSubGrids = 1;
-            c.ReclusteringInterval = 0;
-            c.FluxCorrection = false;
+            //c.NumberOfSubGrids = 1;
+            //c.ReclusteringInterval = 0;
+            //c.FluxCorrection = false;
 
             // Add one balance constraint for each subgrid
             //c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(LTSCellCostEstimator.Factory(c.NumberOfSubGrids));
@@ -3245,10 +3246,12 @@ namespace CNS {
                 double y = X[1];
 
                 int rank;
-                if (x < 0.8) {
+                if (x < 0.2) {
                     rank = 0;
-                } else {
+                } else if (x<0.5){
                     rank = 1;
+                } else {
+                    rank = 2;
                 }
 
                 return rank;
@@ -3323,13 +3326,13 @@ namespace CNS {
             //c.dtFixed = 1.0e-3;
             c.CFLFraction = 0.3;
             c.Endtime = 0.25;
-            c.NoOfTimesteps = int.MaxValue;
+            c.NoOfTimesteps = 20;
 
             c.ProjectName = "Shock tube";
             if (true1D) {
                 c.SessionName = String.Format("Shock tube, 1D, dgDegree = {0}, noOfCellsX = {1}, sensorLimit = {2:0.00E-00}", dgDegree, numOfCellsX, sensorLimit);
             } else {
-                c.SessionName = String.Format("Shock tube, 2D, dgDegree = {0}, noOfCellsX = {1}, noOfCellsX = {2}, sensorLimit = {3:0.00E-00}, CFLFraction = {4:0.00E-00}, ALTS {5}/{6}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids);
+                c.SessionName = String.Format("Shock tube, 2D, dgDegree = {0}, noOfCellsX = {1}, noOfCellsX = {2}, sensorLimit = {3:0.00E-00}, CFLFraction = {4:0.00E-00}, ALTS {5}/{6}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids );
             }
             //c.Tags.Add("Shock tube");
             //c.Tags.Add("Artificial viscosity");
@@ -3345,7 +3348,7 @@ namespace CNS {
             //dbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db\";
             c.DbPath = dbPath;
             c.savetodb = dbPath != null && saveToDb;
-            c.saveperiod = 1;
+            c.saveperiod = 10;
             c.PrintInterval = 1;
 
             // Add one balance constraint for each subgrid
@@ -3358,8 +3361,9 @@ namespace CNS {
             //Debugger.Launch();
 
             c.GridPartType = GridPartType.Hilbert;
+            //c.GridPartType = GridPartType.ParMETIS;
 
-            bool AV = false;
+            bool AV = true;
 
             double xMin = 0;
             double xMax = 1;
@@ -3367,11 +3371,12 @@ namespace CNS {
             double yMax = 1;
 
             // (A)LTS
-            c.ExplicitScheme = ExplicitSchemes.LTS;
+            //c.ExplicitScheme = ExplicitSchemes.LTS;
+            c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 1;
-            c.NumberOfSubGrids = 1;
-            c.ReclusteringInterval = 0;
-            c.FluxCorrection = false;
+            //c.NumberOfSubGrids = 1;
+            //c.ReclusteringInterval = 0;
+            //c.FluxCorrection = false;
 
             // Add one balance constraint for each subgrid
             //c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(LTSCellCostEstimator.Factory(c.NumberOfSubGrids));
@@ -3494,10 +3499,10 @@ namespace CNS {
             //        return 0.1;
             //    }
             //});
-            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => 0.0);
-            if (true1D == false) {
-                c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => 0.0);
-            }
+            //c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => 0.0);
+            //if (true1D == false) {
+            //    c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => 0.0);
+            //}
 
             // Time config
             c.dtMin = 0.0;
@@ -3511,11 +3516,11 @@ namespace CNS {
             if (true1D) {
                 c.SessionName = String.Format("Shock tube, 1D, dgDegree = {0}, noOfCellsX = {1}, sensorLimit = {2:0.00E-00}", dgDegree, numOfCellsX, sensorLimit);
             } else {
-                c.SessionName = String.Format("Shock tube, 2D, dgDegree = {0}, noOfCellsX = {1}, noOfCellsX = {2}, sensorLimit = {3:0.00E-00}, CFLFraction = {4:0.00E-00}, ALTS {5}/{6}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids);
+                c.SessionName = String.Format("Shock tube, 2D, dgDegree = {0}, noOfCellsX = {1}, noOfCellsX = {2}, sensorLimit = {3:0.00E-00}, CFLFraction = {4:0.00E-00}, ALTS {5}/{6}, GridPartType {7}, NoOfCores {8}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.GridPartType, ilPSP.Environment.MPIEnv.MPI_Size);
             }
             //c.Tags.Add("Shock tube");
             //c.Tags.Add("Artificial viscosity");
-            Debugger.Launch();
+            //Debugger.Launch();
             c.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(SessionID), -1);
             c.GridGuid = new Guid(GridID);
             return c;
