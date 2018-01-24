@@ -163,6 +163,10 @@
       <Project>{af092a39-7916-4a59-a2b4-5820fbd33b63}</Project>
       <Name>KontiHelical</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\..\..\internal\src\private-die\L4-application\PosissonScalar3CylinderCoords\PosissonScalar3CylinderCoords.csproj">
+      <Project>{fa23f11c-c4c1-4374-a528-cda05d4f7d96}</Project>
+      <Name>PosissonScalar3CylinderCoords</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\ilPSP\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj">
       <Project>{dd9bf776-38ca-4fc9-8f42-5ed700bde7ad}</Project>
       <Name>MPI.Wrappers</Name>

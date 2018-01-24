@@ -114,6 +114,7 @@ namespace BoSSS.Application.BoSSSpad {
             eval.ReferenceAssembly(typeof(IBM_Solver.IBM_SolverMain).Assembly);
 
             eval.ReferenceAssembly(typeof(KontiHelical.HelicalMain).Assembly);
+            eval.ReferenceAssembly(typeof(PosissonScalar3CylinderCoords.PoissonScalar3CCMain).Assembly);
 
 
             eval.Compile(
