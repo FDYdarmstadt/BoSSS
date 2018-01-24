@@ -102,7 +102,7 @@ namespace BoSSS.Application.DerivativeTest {
             Quadrature_Bulksize.CHUNK_DATA_LIMIT = bulksize_limit;
             BoSSS.Foundation.Caching.Cache.MaxMem = cache_size;
 
-            BoSSS.Solution.Application._Main(new string[0], true, null, delegate() {
+            BoSSS.Solution.Application._Main(new string[0], true, delegate() {
                 p = new DerivativeTestMain();
                 return p;
             });
