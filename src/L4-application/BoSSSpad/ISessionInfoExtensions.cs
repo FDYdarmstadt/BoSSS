@@ -1620,9 +1620,9 @@ namespace BoSSS.Foundation.IO {
         /// <param name="methods"> Array of methods to be evaluated. If methods == null, the 10 most expensive methods will be taken. </param>
         /// <param name="exclusive"> Boolean that defines if exclusive or inclusive times will be calculated. Methods will still be chosen by exclusive times. </param>
         /// <param name="solver"> String that indicates the solver. Up to now only implemented for IBM_Solver and CNS. </param>
-        public static void EvaluatePerformanceAndPlot(this IEnumerable<ISessionInfo> sessions, string[] methods = null, bool exclusive = true, string solver = "IBM_Solver")
+        public static void EvaluatePerformanceAndPlot(this IEnumerable<ISessionInfo> sessions, string[] methods = null, bool exclusive = true, string solver = "IBM_Solver", bool weakScaling = false)
         {
-            DataSet[] data = sessions.EvaluatePerformance(methods,exclusive,solver);
+            DataSet[] data = sessions.EvaluatePerformance(methods,exclusive,solver,weakScaling);
             int numberDataSets = data.Length;
             int numberSessions = sessions.Count();
 
@@ -1815,17 +1815,21 @@ namespace BoSSS.Foundation.IO {
                 for (int j = 0; j < numberSessions; j++) {
                     if (weakScaling) {
                         ideal[j] = startIdeal;
-                        idealSpeedUp[j] = 1;
+                        idealSpeedUp[j] = 0;
                     } else {
                         ideal[j] = Math.Pow(0.5, j) * startIdeal;
                         idealSpeedUp[j] = processors[j];
                     }
                 }
+
+                double[] speedUpTimes = new double[numberSessions];
+
                 var timeArray = times.Select(t => t.Pick(i));
                 if (weakScaling) {
+                    speedUpTimes = timeArray.Select(x =>( x - startIdeal ) / startIdeal).ToArray();
                 } else {
+                    speedUpTimes = timeArray.Select(x => startIdeal * processors[0] / x).ToArray();
                 }
-                double[] speedUpTimes = timeArray.Select(x => startIdeal * processors[0] / x).ToArray();
 
                 // Create DataRows for convergence and speedup with actual and ideal curve
                 KeyValuePair<string, double[][]>[] dataRowsConvergence = new KeyValuePair<string, double[][]>[2];
@@ -1846,7 +1850,11 @@ namespace BoSSS.Foundation.IO {
             }
 
             // Use slope of actual speedup curve to sort methods and DataSets by "worst scaling"
-            methodRegressionPair = methodRegressionPair.OrderBy(t => t.Value).ToArray();
+            if (weakScaling) {
+                methodRegressionPair = methodRegressionPair.OrderByDescending(t => t.Value).ToArray();
+            } else {
+                methodRegressionPair = methodRegressionPair.OrderBy(t => t.Value).ToArray();
+            }
             methodFractionPair = methodFractionPair.OrderByDescending(t => t.Value).ToArray();
             callsFractionPair = callsFractionPair.OrderByDescending(t => t.Value).ToArray();
             double[] regressions = methodRegressionPair.Select(s => s.Value).ToArray();
@@ -1862,6 +1870,11 @@ namespace BoSSS.Foundation.IO {
             for (int i = 0; i < numberMethods; i++) {
                 Console.WriteLine("Rank " + i + ": " + methods2[i] + " (" + methodCalls2[i].Split('(').Last());
                 Console.WriteLine("\t Time fraction of root: " + fractions2[i].ToString("p3") + "\t in " + methodCalls2[i].Split('(').First());
+            }
+            if (weakScaling) {
+                Console.WriteLine("\n ======= WEAK SCALING ========");
+            } else {
+                Console.WriteLine("\n ======= STRONG SCALING ========");
             }
             Console.WriteLine("\n Sorted by worst scaling");
             Console.WriteLine("============================");
