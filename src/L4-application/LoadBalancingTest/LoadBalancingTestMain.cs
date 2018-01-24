@@ -287,7 +287,7 @@ namespace BoSSS.Application.LoadBalancingTest {
         }
 
 
-        internal Func<IApplication<AppControl>, int, ICellCostEstimator> cellCostEstimatorFactory = CellCostEstimatorLibrary.OperatorAssemblyAndCutCellQuadrules;
+        internal Func<IApplication, int, ICellCostEstimator> cellCostEstimatorFactory = CellCostEstimatorLibrary.OperatorAssemblyAndCutCellQuadrules;
 
 
         /// <summary>
@@ -313,7 +313,7 @@ namespace BoSSS.Application.LoadBalancingTest {
 
             if (balancer == null) {
                 balancer = new LoadBalancer(
-                    new List<Func<IApplication<AppControl>, int, ICellCostEstimator>>() { cellCostEstimatorFactory }
+                    new List<Func<IApplication, int, ICellCostEstimator>>() { cellCostEstimatorFactory }
                     );
             }
 

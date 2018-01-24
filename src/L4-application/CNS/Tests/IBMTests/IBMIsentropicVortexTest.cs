@@ -34,13 +34,6 @@ namespace CNS.Tests.IBMTests {
     [TestFixture]
     public class IBMIsentropicVortexTest : TestProgram<IBMControl> {
 
-        //private static CommandLineOptions args = new Application<IBMControl>.CommandLineOptions() {
-        //    delPlt = true,
-        //    ImmediatePlotPeriod = 1,
-        //    SuperSampling = 2
-        //};
-
-        private static CommandLineOptions args = null;
 
         ///// <summary>
         ///// Alternative entry point of this assembly that allows to perform
@@ -66,7 +59,7 @@ namespace CNS.Tests.IBMTests {
         [Test]
         public static void IBMVortexOneStepGaussAndStokesNoAgglomerationTest() {
             Program<IBMControl> p = new IBMIsentropicVortexTest();
-            p.Init(ControlNoAgglomeration(), args);
+            p.Init(ControlNoAgglomeration());
             p.RunSolverMode();
 
             CheckErrorThresholds(
@@ -98,7 +91,7 @@ namespace CNS.Tests.IBMTests {
         [Test]
         public static void IBMVortexClassicAgglomerationTest() {
             Program<IBMControl> p = new IBMIsentropicVortexTest();
-            p.Init(ControlRusanovAgglomeration(), args);
+            p.Init(ControlRusanovAgglomeration());
             p.RunSolverMode();
 
             CheckErrorThresholds(
@@ -130,7 +123,7 @@ namespace CNS.Tests.IBMTests {
         [Test]
         public static void IBMVortexClassicHLLCAgglomerationTest() {
             Program<IBMControl> p = new IBMIsentropicVortexTest();
-            p.Init(ControlHLLCAgglomeration(), args);
+            p.Init(ControlHLLCAgglomeration());
             p.RunSolverMode();
 
             CheckErrorThresholds(
@@ -163,7 +156,7 @@ namespace CNS.Tests.IBMTests {
         [Test]
         public static void IBMVortexClassicOptimizedHLLCAgglomerationTest() {
             Program<IBMControl> p = new IBMIsentropicVortexTest();
-            p.Init(ControlOptimizedHLLCAgglomeration(), args);
+            p.Init(ControlOptimizedHLLCAgglomeration());
             p.RunSolverMode();
 
             CheckErrorThresholds(
@@ -196,7 +189,7 @@ namespace CNS.Tests.IBMTests {
         [Test]
         public static void IBMVortexLocalTimeSteppingTest() {
             Program<IBMControl> p = new IBMIsentropicVortexTest();
-            p.Init(ControlLocalTimeStepping(), args);
+            p.Init(ControlLocalTimeStepping());
             p.RunSolverMode();
 
             CheckErrorThresholds(
@@ -232,7 +225,7 @@ namespace CNS.Tests.IBMTests {
         [Test]
         public static void IBMVortexCutNextToCutNoAgglomerationTest() {
             Program<IBMControl> p = new IBMIsentropicVortexTest();
-            p.Init(ControlCutNextToCutNoAgglomeration(), args);
+            p.Init(ControlCutNextToCutNoAgglomeration());
             p.RunSolverMode();
             
             CheckErrorThresholds(

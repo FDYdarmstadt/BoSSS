@@ -49,7 +49,6 @@ namespace CNS {
             Application<CNSControl>._Main(
                 args,
                 false,
-                "BoSSS.Foundation,BoSSS.Solution.Application,CNS",
                 () => new Program());
         }
     }

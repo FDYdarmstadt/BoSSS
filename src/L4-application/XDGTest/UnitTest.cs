@@ -33,7 +33,7 @@ namespace BoSSS.Application.XDGTest {
         [Test]
         public static void AllUp() {
             XDGTestMain p = null;
-            BoSSS.Solution.Application._Main(new string[] { /*"--delplt", "--implt", "1", "-u4"*/}, true, "", delegate() {
+            BoSSS.Solution.Application._Main(new string[] { /*"--delplt", "--implt", "1", "-u4"*/}, true, delegate() {
                 p = new XDGTestMain();
                 return p;
             });

@@ -538,6 +538,22 @@ namespace BoSSS.Solution.Control {
 
 
         /// <summary>
+        /// Immediate plot period: This variable controls immediate
+        /// plotting, i.e. plotting during the solver run.
+        /// A positive value indicates that
+        /// <see cref="Application{T}.PlotCurrentState(double, TimestepNumber, int)"/>"/> will be called every
+        /// <see cref="ImmediatePlotPeriod"/>-th time-step.
+        /// A negative value turns immediate plotting off;
+        /// </summary>
+        public int ImmediatePlotPeriod = -1;
+
+        /// <summary>
+        /// Super sampling: This option controls whether a finer grid
+        /// resolution shall be used in the plots created if <see cref="ImmediatePlotPeriod"/> is set positive.
+        /// </summary>
+        public int SuperSampling = 0;
+
+        /// <summary>
         /// true if information should be written to the database, false
         /// if "passive io" (only reading grids, <see cref="BoSSS.Foundation.IO.IFileSystemDriver"/>)
         /// should be used;
@@ -597,8 +613,8 @@ namespace BoSSS.Solution.Control {
         /// <summary>
         /// A method that creates a new estimator for the runtime cost of individual cells
         /// </summary>
-        public List<Func<IApplication<AppControl>, int, ICellCostEstimator>> DynamicLoadBalancing_CellCostEstimatorFactories =
-            new List<Func<IApplication<AppControl>, int, ICellCostEstimator>>();
+        public List<Func<IApplication, int, ICellCostEstimator>> DynamicLoadBalancing_CellCostEstimatorFactories =
+            new List<Func<IApplication, int, ICellCostEstimator>>();
 
         /// <summary>
         /// Number of time-steps, after which dynamic load balancing is performed; if negative, dynamic load balancing is turned off.
