@@ -404,5 +404,13 @@ namespace CNS {
 
             return clone;
         }
+
+
+        /// <summary>
+        /// To launch CNS.
+        /// </summary>
+        public override Type GetSolverType() {
+            return typeof(CNS.Program);
+        }
     }
 }
