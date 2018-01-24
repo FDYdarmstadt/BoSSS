@@ -600,12 +600,19 @@ namespace BoSSS.Solution {
         /// Initializes the environment of the application
         /// </summary>
         /// <param name="control">
-        /// new-style control object
+        /// control object
         /// </param>
-        /// <param name="TracingNamespaces">
-        /// Tracing namespaces, if not controlled by the control file
+        public virtual void Init(AppControl control) {
+            this.Init((T)control);
+        }
+
+
+        /// <summary>
+        /// Initializes the environment of the application
+        /// </summary>
+        /// <param name="control">
+        /// control object
         /// </param>
-        /// <param name="opt">Command line options</param>
         public virtual void Init(T control) {
             this.Control = control;
 

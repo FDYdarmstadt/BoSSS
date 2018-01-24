@@ -33,7 +33,6 @@ namespace BoSSS.Application.LoadBalancingTest {
             BoSSS.Solution.Application._Main(
                 args,
                 true,
-                null,
                 () => new LoadBalancingTestMain());
         }
 

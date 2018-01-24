@@ -56,7 +56,6 @@ namespace BoSSS.Application.LoadBalancingTest {
             BoSSS.Solution.Application._Main(
                 new string[0],
                 true,
-                null,
                 delegate () {
                     p = new LoadBalancingTestMain();
                     p.DynamicBalance = true;

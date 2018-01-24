@@ -250,7 +250,7 @@ namespace CNS.Tests.IBMTests {
         [Test]
         public static void IBMVortexCutNextToCutAgglomerationTest() {
             Program<IBMControl> p = new IBMIsentropicVortexTest();
-            p.Init(ControlCutNextToCutAgglomeration(), args);
+            p.Init(ControlCutNextToCutAgglomeration());
             p.RunSolverMode();
 
             CheckErrorThresholds(
