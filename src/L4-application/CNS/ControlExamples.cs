@@ -1082,9 +1082,9 @@ namespace CNS {
 
             c.AddBoundaryCondition("AdiabaticSlipWall");
 
-            double crossProduct2D(double[] a, double[] b) {
-                return a[0] * b[1] - a[1] * b[0];
-            }
+            //double crossProduct2D(double[] a, double[] b) {
+            //    return a[0] * b[1] - a[1] * b[0];
+            //}
 
             #region Smoothing of initial condition
             // Normal vector of initial shock
@@ -1097,12 +1097,12 @@ namespace CNS {
             // Distance from a point X to the initial shock
             double[] point = new double[] { 0.5, 0.0 };
 
-            double DistanceFromPointToLine(double[] X, double[] pointOnLine, double[] directionVector) {
-                double[] X_minus_pointOnLine = new double[] { X[0] - pointOnLine[0], X[1] - pointOnLine[1] };
-                double distance = crossProduct2D(directionVector, X_minus_pointOnLine) / Math.Sqrt(Math.Pow(directionVector[0], 2) + Math.Pow(directionVector[1], 2));
+            //double DistanceFromPointToLine(double[] X, double[] pointOnLine, double[] directionVector) {
+            //    double[] X_minus_pointOnLine = new double[] { X[0] - pointOnLine[0], X[1] - pointOnLine[1] };
+            //    double distance = crossProduct2D(directionVector, X_minus_pointOnLine) / Math.Sqrt(Math.Pow(directionVector[0], 2) + Math.Pow(directionVector[1], 2));
 
-                return distance;
-            }
+            //    return distance;
+            //}
 
             double cellSize = Math.Min((xMax - xMin) / numOfCellsX, (yMax - yMin) / numOfCellsY);
 
@@ -1154,8 +1154,8 @@ namespace CNS {
             int dgDegree = 2;
             ExplicitSchemes explicitScheme = ExplicitSchemes.RungeKutta;
             int explicitOrder = 1;
-            int noOfCells = 50;
-            double gridStretching = 0.0;
+            //int noOfCells = 50;
+            //double gridStretching = 0.0;
 
             bool twoD = true;
 
@@ -1408,9 +1408,9 @@ namespace CNS {
 
             c.AddBoundaryCondition("AdiabaticSlipWall");
 
-            double crossProduct2D(double[] a, double[] b) {
-                return a[0] * b[1] - a[1] * b[0];
-            }
+            //double crossProduct2D(double[] a, double[] b) {
+            //    return a[0] * b[1] - a[1] * b[0];
+            //}
 
             // Normal vector of initial shock
             Vector2D normalVector = new Vector2D(1, 0);
@@ -1422,12 +1422,12 @@ namespace CNS {
             // Distance from a point X to the initial shock
             double[] p = new double[] { 0.5, 0.0 };
 
-            double DistanceFromPointToLine(double[] X, double[] pointOnLine, double[] directionVector) {
-                double[] X_minus_pointOnLine = new double[] { X[0] - pointOnLine[0], X[1] - pointOnLine[1] };
-                double distance = crossProduct2D(directionVector, X_minus_pointOnLine) / Math.Sqrt(Math.Pow(directionVector[0], 2) + Math.Pow(directionVector[1], 2));
+            //double DistanceFromPointToLine(double[] X, double[] pointOnLine, double[] directionVector) {
+            //    double[] X_minus_pointOnLine = new double[] { X[0] - pointOnLine[0], X[1] - pointOnLine[1] };
+            //    double distance = crossProduct2D(directionVector, X_minus_pointOnLine) / Math.Sqrt(Math.Pow(directionVector[0], 2) + Math.Pow(directionVector[1], 2));
 
-                return distance;
-            }
+            //    return distance;
+            //}
 
             double cellSize = Math.Min((xMax - xMin) / numOfCellsX, (yMax - yMin) / numOfCellsY);
 
@@ -2018,40 +2018,44 @@ namespace CNS {
             return c;
         }
 
-        public static CNSControl DoubleMachReflection(string dbPath = null, int dgDegree = 2, int numOfCellsX = 400, int numOfCellsY = 100, double xMax = 4, double sensorLimit = 1e-3, bool restart = false, string sessionID = null, string gridID = null) {
+        public static CNSControl DoubleMachReflection(string dbPath = null, int dgDegree = 2, int numOfCellsX = 400, int numOfCellsY = 100, double sensorLimit = 1e-3, bool restart = false, string sessionID = null, string gridID = null) {
             CNSControl c = new CNSControl();
 
-            sessionID = "92f2ab7e-ad5b-4c0c-8156-a7087c5fe521";
-            gridID = "0d2de41a-34f3-4c94-bb5b-5c29199fd92f";
-
-            string dbPath2 = @"/work/scratch/ws35kire/work_db";
+            //sessionID = "92f2ab7e-ad5b-4c0c-8156-a7087c5fe521";
+            //gridID = "0d2de41a-34f3-4c94-bb5b-5c29199fd92f";
+            //string dbPath2 = @"/work/scratch/ws35kire/work_db";
             //string dbPath2 = @"/home/ws35kire/test_db";
+
+            //dbPath = @"c:\bosss_db";
             c.DbPath = dbPath;
             c.savetodb = dbPath != null;
             c.saveperiod = 1;
             c.PrintInterval = 1;
 
+            // Runge-Kutta
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 1;
+
+            // Local time stepping
             //c.ExplicitScheme = ExplicitSchemes.LTS;
             //c.ExplicitOrder = 1;
             //c.NumberOfSubGrids = 3;
             //c.ReclusteringInterval = 5;
             //c.FluxCorrection = false;
 
-            // Add one balance constraint for each subgrid
+            // Dynamic load balacing
             //c.DynamicLoadBalancing_CellClassifier = new LTSCellClassifier();
             //c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(LTSCellCostEstimator.Factory(c.NumberOfSubGrids));
             //c.DynamicLoadBalancing_ImbalanceThreshold = 0.1;
-            c.DynamicLoadBalancing_Period = 50;
+            //c.DynamicLoadBalancing_Period = 50;
 
-            bool AV = false;
+            bool AV = true;
 
             c.GridPartType = GridPartType.ParMETIS;
             //c.GridPartType = GridPartType.none;
 
             double xMin = 0;
-            //double xMax = 1;
+            double xMax = 4;
             double yMin = 0;
             double yMax = 1;
 
@@ -2079,7 +2083,6 @@ namespace CNS {
                 c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
                 c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax);
             }
-
 
             c.EquationOfState = IdealGas.Air;
             c.MachNumber = 1.0 / Math.Sqrt(c.EquationOfState.HeatCapacityRatio);
@@ -2120,6 +2123,7 @@ namespace CNS {
                     double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
                     double[] yNodes = GenericBlas.Linspace(yMin, yMax, numOfCellsY + 1);
                     var grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
+                    //var grid = Grid2D.UnstructuredTriangleGrid(xNodes, yNodes);
 
                     grid.EdgeTagNames.Add(1, "SupersonicInlet");
                     grid.EdgeTagNames.Add(2, "SupersonicOutlet");
@@ -2217,11 +2221,11 @@ namespace CNS {
             c.dtMax = 1.0;
             c.Endtime = 0.25;
             //c.dtFixed = 1.0e-6;
-            c.CFLFraction = 0.5;
+            c.CFLFraction = 0.3;
             c.NoOfTimesteps = int.MaxValue;
 
             c.ProjectName = "Double Mach reflection";
-            c.SessionName = String.Format("DMR smooth jump, dgDegree = {0}, numOfCellsX = {1}, numOfCellsY = {2}, sensorLimit = {3:0.00E-00}, CFLFraction = {4:0.00E-00}, ALTS {5}/{6}, lamdaMax = {7}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, lambdaMax);
+            c.SessionName = String.Format("DMR, dgDegree = {0}, numOfCellsX = {1}, numOfCellsY = {2}, sensorLimit = {3:0.00E-00}, CFLFraction = {4:0.00E-00}, ALTS {5}/{6}, lamdaMax = {7}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, lambdaMax);
 
             return c;
         }
@@ -3332,7 +3336,7 @@ namespace CNS {
 
             return c;
         }
-        public static CNSControl ShockTube_HilbertTest(string SessionID="8d63fe4f-ab2b-42aa-a65b-d23af96b5bea", string GridID="5f71f888-ae79-4c9e-ab19-d1853edf88bc", string dbPath = null, int dgDegree = 2, int numOfCellsX = 10, int numOfCellsY = 1, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = true) {
+        public static CNSControl ShockTube_HilbertTest(string SessionID = "8d63fe4f-ab2b-42aa-a65b-d23af96b5bea", string GridID = "5f71f888-ae79-4c9e-ab19-d1853edf88bc", string dbPath = null, int dgDegree = 2, int numOfCellsX = 10, int numOfCellsY = 1, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = true) {
 
             CNSControl c = new CNSControl();
 
@@ -3357,10 +3361,10 @@ namespace CNS {
 
             bool AV = false;
 
-            double xMin = 0;
-            double xMax = 1;
-            double yMin = 0;
-            double yMax = 1;
+            //double xMin = 0;
+            //double xMax = 1;
+            //double yMin = 0;
+            //double yMax = 1;
 
             // (A)LTS
             c.ExplicitScheme = ExplicitSchemes.LTS;
