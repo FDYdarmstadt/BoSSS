@@ -39,7 +39,7 @@ namespace ALTSTests {
     /// </summary>
     class Program : Application {
         static void Main(string[] args) {
-            Application._Main(args, true, "", delegate () {
+            Application._Main(args, true, delegate () {
                 Program p = new Program();
                 p.m_GridPartitioningType = BoSSS.Foundation.Grid.GridPartType.none;
                 return p;

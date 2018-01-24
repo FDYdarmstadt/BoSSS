@@ -47,7 +47,7 @@ namespace NSE_SIMPLE {
         [Test]
         public static void IncompressibleSteadyPoiseuilleFlowTest() {
             NSE_SIMPLEMain p = null;
-            Application<SIMPLEControl>._Main(new string[] { "-c cs:NSE_SIMPLE.Incompressible.ControlExamples.PoiseuilleFlow()" }, false, "", delegate () {
+            Application<SIMPLEControl>._Main(new string[] { "-c cs:NSE_SIMPLE.Incompressible.ControlExamples.PoiseuilleFlow()" }, false, delegate () {
                 p = new NSE_SIMPLEMain();
                 return p;
             });
@@ -77,7 +77,7 @@ namespace NSE_SIMPLE {
         [Test]
         public static void IncompressibleUnsteadyTaylorVortexTest() {
             NSE_SIMPLEMain p = null;
-            Application<SIMPLEControl>._Main(new string[] { "-c cs:NSE_SIMPLE.Incompressible.ControlExamples.UnsteadyTaylorVortex()" }, false, "", delegate () {
+            Application<SIMPLEControl>._Main(new string[] { "-c cs:NSE_SIMPLE.Incompressible.ControlExamples.UnsteadyTaylorVortex()" }, false, delegate () {
                 p = new NSE_SIMPLEMain();
                 return p;
             });
@@ -107,7 +107,7 @@ namespace NSE_SIMPLE {
         [Test]
         public static void MultiphaseUnsteadyWaveTest() {
             NSE_SIMPLEMain p = null;
-            Application<SIMPLEControl>._Main(new string[] { "-c cs:NSE_SIMPLE.Multiphase.ControlExamples.UnsteadyMultiphaseWave()" }, false, "", delegate () {
+            Application<SIMPLEControl>._Main(new string[] { "-c cs:NSE_SIMPLE.Multiphase.ControlExamples.UnsteadyMultiphaseWave()" }, false, delegate () {
                 p = new NSE_SIMPLEMain();
                 return p;
             });
@@ -142,7 +142,7 @@ namespace NSE_SIMPLE {
         [Test]
         public static void LowMachSteadyCouetteWithTemperatureGradientTest() {
             NSE_SIMPLEMain p = null;
-            Application<SIMPLEControl>._Main(new string[] { "-c cs:NSE_SIMPLE.LowMach.ControlExamples.SteadyCouetteFlowWithTemperatureGradient()" }, false, "", delegate () {
+            Application<SIMPLEControl>._Main(new string[] { "-c cs:NSE_SIMPLE.LowMach.ControlExamples.SteadyCouetteFlowWithTemperatureGradient()" }, false, delegate () {
                 p = new NSE_SIMPLEMain();
                 return p;
             });

@@ -32,7 +32,6 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             BoSSS.Solution.Application._Main(
                 args,
                 true,
-                null,
                 () => new AdaptiveMeshRefinementTestMain());
         }
 

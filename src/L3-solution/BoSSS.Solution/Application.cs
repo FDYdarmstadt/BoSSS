@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
 using BoSSS.Foundation;
 using BoSSS.Foundation.Comm;
 using BoSSS.Foundation.Grid;
@@ -75,7 +76,7 @@ namespace BoSSS.Solution {
     /// offers a convenient way to start a BoSSS application with minimal
     /// effort.
     /// </summary>
-    public abstract class Application<T> : IDisposable, IApplication
+    public abstract class Application<T> : IDisposable, IApplication, IApplication<T>
         where T : AppControl, new() {
 
         /// <summary>
@@ -153,93 +154,12 @@ namespace BoSSS.Solution {
         /// </summary>
         protected string m_GridPartitioningOptions = "";
 
-        /// <summary>
-        /// see <see cref="m_opt"/>;
-        /// </summary>
-        [Serializable]
-        public sealed class CommandLineOptions {
-
-            /// <summary>
-            /// case number for parameter study
-            /// </summary>
-            [Option("p", "pstudy_case", HelpText = "case number for parameter study; if not specified, or non-positive, all runs are done in the same process")]
-            public int PstudyCase = -666;
-
-            /// <summary>
-            /// path to control file
-            /// </summary>
-            [Option("c", "control", HelpText = "path to control file", MutuallyExclusiveSet = "control,session")]
-            public string ControlfilePath = null;
-
-            /// <summary>
-            /// tags which will be added to the session information.
-            /// </summary>
-            [Option("t", "tags", HelpText = "tags which will be added to the session information when saved in the database, separated by comma (',').")]
-            public string TagsToAdd = null;
-
-            /// <summary>
-            /// help
-            /// </summary>
-            [HelpOption(HelpText = "Displays this help screen.")]
-            public string GetUsage() {
-                var help = new HelpText("BoSSS");
-                help.AdditionalNewLineAfterOption = true;
-                help.Copyright = new CopyrightInfo("Fachgebiet fuer Stroemungsdynamik, TU Darmstadt", 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016);
-                //help.AddPreOptionsLine("This is free software. You may redistribute copies of it under the terms of");
-                //help.AddPreOptionsLine("the MIT License <http://www.opensource.org/licenses/mit-license.php>.");
-                //help.AddPreOptionsLine("Usage: SampleApp -rMyData.in -wMyData.out --calculate");
-                //help.AddPreOptionsLine(string.Format("       SampleApp -rMyData.in -i -j{0} file0.def file1.def", 9.7));
-                //help.AddPreOptionsLine("       SampleApp -rMath.xml -wReport.bin -o *;/;+;-");
-                help.AddPreOptionsLine("Bla, Bla, Bla");
-                help.AddOptions(this);
-
-                return help;
-            }
-
-            /// <summary>
-            /// Immediate plot period: This variable controls immediate
-            /// plotting, i.e. plotting during the solver run.<br/>
-            /// A positive value indicates that
-            /// <see cref="Application{T}.PlotCurrentState(double, TimestepNumber, int)"/>"/> will be called every
-            /// <see cref="ImmediatePlotPeriod"/>-th time-step;<br/>
-            /// A negative value turns immediate plotting off;
-            /// </summary>
-            [Option("i", "implt", HelpText = "Period (in number of timesteps) for immediate plot output.")]
-            public int ImmediatePlotPeriod = -1;
-
-            /// <summary>
-            /// Super sampling: This option controls whether a finer grid
-            /// resolution shall be used in the plots created via --implt.
-            /// </summary>
-            [Option("u", "supersampling", HelpText = "Super sampling (recursive cell divisions) for --implt output")]
-            public int SuperSampling = 0;
-
-            /// <summary>
-            /// deletion of plot files
-            /// </summary>
-            [Option("d", "delplt", HelpText = "if set, all *plt files are deleted from the output directory.")]
-            public bool delPlt = false;
-
-            /// <summary>
-            /// Override for the project name in the control file (<see cref="AppControl.ProjectName"/>), resp. the 
-            /// session information (<see cref="ISessionInfo.ProjectName"/>).
-            /// </summary>
-            [Option("P", "prjnmn", HelpText = "overrides the project name.")]
-            public string ProjectName = null;
 
 
-            /// <summary>
-            /// Optional name for a computation, override to <see cref="AppControl.SessionName"/>.
-            /// </summary>
-            [Option("n", "sesnmn", HelpText = "optional name for the compute session.")]
-            public string SessionName = null;
-
-        }
-
-        /// <summary>
-        /// options parsed form command line
-        /// </summary>
-        protected CommandLineOptions m_opt;
+        ///// <summary>
+        ///// options parsed form command line
+        ///// </summary>
+        //protected CommandLineOptions m_opt;
 
         /// <summary>
         /// searches for the User- or Machine-environment variable 'BOSSS_INSTALL'
@@ -345,7 +265,6 @@ namespace BoSSS.Solution {
         public static void _Main(
             string[] args,
             bool noControlFile,
-            string TracingNamespaces,
             Func<Application<T>> ApplicationFactory) {
 
             CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
@@ -399,10 +318,15 @@ namespace BoSSS.Solution {
             }
             opt = opt.MPIBroadcast(0, MPI.Wrappers.csMPI.Raw._COMM.WORLD);
 
+            // Delete old plots if requested
+            if (opt.delPlt) {
+                DeleteOldPlotFiles();
+            }
+
+
             // load control file
             T ctrlV2 = null;
             T[] ctrlV2_ParameterStudy = null;
-            Mode mode = Mode.Solver;
             if (!noControlFile) {
                 if (opt.ControlfilePath.IsNullOrEmpty()) {
                     throw new Exception("No control file specified.");
@@ -438,13 +362,11 @@ namespace BoSSS.Solution {
 
                     if (controlObj is T) {
                         ctrlV2 = (T)controlObj;
-                        mode = Mode.Solver;
                         ctrlV2.ControlFileText = opt.ControlfilePath;
                     } else if (controlObj is IEnumerable<T>) {
                         ctrlV2_ParameterStudy = ((IEnumerable<T>)controlObj).ToArray();
                         foreach (var c in ctrlV2_ParameterStudy)
                             c.ControlFileText = opt.ControlfilePath;
-                        mode = Mode.ParameterStudy;
                     } else {
                         throw new ApplicationException(string.Format(
                         "Invalid control instruction: unable to cast the result of type {0} to type {1}",
@@ -542,13 +464,13 @@ namespace BoSSS.Solution {
 
                     if (controlObj is T) {
                         ctrlV2 = (T)controlObj;
-                        mode = Mode.Solver;
+                        
                         ctrlV2.ControlFileText = ctrlfileContent;
                     } else if (controlObj is IEnumerable<T>) {
                         ctrlV2_ParameterStudy = ((IEnumerable<T>)controlObj).ToArray();
                         foreach (var c in ctrlV2_ParameterStudy)
                             c.ControlFileText = ctrlfileContent;
-                        mode = Mode.ParameterStudy;
+                        
                     } else {
                         throw new ApplicationException(string.Format(
                         "Invalid control instruction: unable to cast the last result of the control file/cs-script of type {0} to type {1} or IEnumerable<{1}>",
@@ -568,11 +490,10 @@ namespace BoSSS.Solution {
 
                     if (controlObj is T) {
                         ctrlV2 = (T)controlObj;
-                        mode = Mode.Solver;
+                        
                     } else if (controlObj is IEnumerable<T>) {
                         ctrlV2_ParameterStudy = ((IEnumerable<T>)controlObj).ToArray();
-                        foreach (var c in ctrlV2_ParameterStudy)
-                            mode = Mode.ParameterStudy;
+
                     } else {
                         throw new ApplicationException(string.Format(
                         "Invalid control instruction: unable to cast the last result of the control file/cs-script of type {0} to type {1}",
@@ -583,58 +504,86 @@ namespace BoSSS.Solution {
                 } else {
                     throw new ArgumentException("unable to interpret: " + opt);
                 }
+            } else {
+                ctrlV2 = new T();
             }
 
-            AppEntry(TracingNamespaces, ApplicationFactory, opt, ctrlV2, ctrlV2_ParameterStudy, mode);
+            AppEntry(ApplicationFactory, opt, ctrlV2, ctrlV2_ParameterStudy);
 
             FinalizeMPI();
         }
 
-        private static void AppEntry(
-            string TracingNamespaces,
-            Func<Application<T>> ApplicationFactory,
-            CommandLineOptions opt, T ctrlV2, T[] ctrlV2_ParameterStudy, Mode mode) {
-            // run application
-            if (ctrlV2_ParameterStudy != null || ctrlV2 != null) {
-                // let's do what the control file tells us
-                // +++++++++++++++++++++++++++++++++++++++
-
-                // run application
-                switch (mode) {
-                    case Mode.ParameterStudy: {
-                            if (ctrlV2_ParameterStudy != null) {
-                                ParameterStudyModeV2(opt, ctrlV2_ParameterStudy, ApplicationFactory);
-                            } else {
-                                throw new ApplicationException();
-                            }
-                            break;
-                        }
-
-                    case Mode.Solver: {
-                            Application<T> app = ApplicationFactory();
-                            app.Init(ctrlV2, opt, TracingNamespaces);
-                            app.RunSolverMode();
-                            app.ByeInt(true);
-                            app.Bye();
-                            app.ProfilingLog();
-                            app.Dispose();
-                            break;
-                        }
-
-                    default:
-                        throw new NotImplementedException("missing implementation.");
+        /// <summary>
+        /// On process rank 0, deletes all plot files in the current directory
+        /// </summary>
+        public static void DeleteOldPlotFiles() {
+            if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
+                var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
+                Console.Write("rm");
+                foreach (var pltFile in dir.GetFiles("*.plt").Concat(dir.GetFiles("*.curve"))) {
+                    Console.Write(" " + pltFile.Name);
+                    pltFile.Delete();
                 }
-            } else {
-                // no control file -> just run the app
-                // +++++++++++++++++++++++++++++++++++
+                Console.WriteLine(";");
+            }
+        }
+
+        private static void AppEntry(
+            Func<Application<T>> ApplicationFactory,
+            CommandLineOptions opt, T ctrlV2, T[] ctrlV2_ParameterStudy) {
+
+            if (opt == null)
+                throw new ArgumentNullException();
+
+            // run application
+            // ===============
+            if (ctrlV2_ParameterStudy != null) {
+
+                ParameterStudyModeV2(opt, ctrlV2_ParameterStudy, ApplicationFactory);
+            } else if (ctrlV2 != null) {
+
+
+                // control file overrides from command line
+                // ----------------------------------------
+
+                // load control file, parse args
+                if (opt.ProjectName != null)
+                    ctrlV2.ProjectName = opt.ProjectName;
+                if (opt.SessionName != null)
+                    ctrlV2.SessionName = opt.SessionName;
+
+                if(opt.ImmediatePlotPeriod != null) {
+                    ctrlV2.ImmediatePlotPeriod = opt.ImmediatePlotPeriod.Value;
+                }
+                if(opt.SuperSampling != null) {
+                    ctrlV2.SuperSampling = opt.SuperSampling.Value;
+                }
+
+                // ad-hoc added tags (added by command-line option)
+                if (opt != null && (opt.TagsToAdd != null && opt.TagsToAdd.Length > 0)) {
+                    string[] AdHocTags;
+                    AdHocTags = opt.TagsToAdd.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                    ctrlV2.Tags.AddRange(AdHocTags);
+                } 
+
+                // run app
+                // -------
 
                 Application<T> app = ApplicationFactory();
-                app.Init(ctrlV2, opt, TracingNamespaces);
+
+                app.Init(ctrlV2);
                 app.RunSolverMode();
                 app.ByeInt(true);
                 app.Bye();
                 app.ProfilingLog();
                 app.Dispose();
+                
+
+            } else {
+                // no control file 
+               
+
+                throw new ArgumentException();
             }
         }
 
@@ -657,52 +606,15 @@ namespace BoSSS.Solution {
         /// Tracing namespaces, if not controlled by the control file
         /// </param>
         /// <param name="opt">Command line options</param>
-        public virtual void Init(T control, CommandLineOptions opt = null, string TracingNamespaces = null) {
+        public virtual void Init(T control) {
+            this.Control = control;
+
 
             // set . as decimal separator:
             // ===========================
             CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
             CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 
-            // define tracing namespaces
-            // =========================
-            if (TracingNamespaces == null)
-                TracingNamespaces = "";
-
-            // load control file, parse args
-            // =============================
-            if (opt == null)
-                opt = new CommandLineOptions(); // use default values
-            m_opt = opt;
-            Tracer.NamespacesToLog = TracingNamespaces.Split(
-                new char[] { ',', ' ', '\n', '\t', '\r' },
-                StringSplitOptions.RemoveEmptyEntries);
-            this.Control = control;
-            if (opt != null && opt.ProjectName != null)
-                this.Control.ProjectName = opt.ProjectName;
-            if (opt != null && opt.SessionName != null)
-                this.Control.SessionName = opt.SessionName;
-
-            // ad-hoc added tags (added by command-line option)
-            // ================================================
-            string[] AdHocTags;
-            if (opt != null && (opt.TagsToAdd != null && opt.TagsToAdd.Length > 0)) {
-                AdHocTags = opt.TagsToAdd.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-            } else {
-                AdHocTags = new string[0];
-            }
-
-            // Delete old plots if requested
-            // =============================
-            if (opt.delPlt && ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
-                var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
-                Console.Write("rm");
-                foreach (var pltFile in dir.GetFiles("*.plt").Concat(dir.GetFiles("*.curve"))) {
-                    Console.Write(" " + pltFile.Name);
-                    pltFile.Delete();
-                }
-                Console.WriteLine(";");
-            }
 
             // set a few switches
             // ==================
@@ -723,8 +635,6 @@ namespace BoSSS.Solution {
                 if (this.Control.saveperiod > 0) {
                     this.SavePeriod = this.Control.saveperiod;
                 }
-
-                this.Control.Tags.AddRange(AdHocTags);
             }
         }
 
@@ -1021,10 +931,8 @@ namespace BoSSS.Solution {
             if (this.Control != null) {
                 this.passiveIo = !this.Control.savetodb;
 
-                if (this.Control.TracingNamespaces != null)
-                    Tracer.NamespacesToLog = this.Control.TracingNamespaces.Split(
-                        new char[] { ',' },
-                        StringSplitOptions.RemoveEmptyEntries);
+                if (this.Control.TracingNamespaces != null) 
+                    Tracer.SetTracingNamespaces(this.Control.TracingNamespaces);
             }
 
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
@@ -1708,6 +1616,9 @@ namespace BoSSS.Solution {
         /// </summary>
         protected Boolean TerminationKey = false;
 
+        
+
+
         /// <summary>
         /// Runs the application in the "solver"-mode. This method makes
         /// multiple calls to <see cref="RunSolverOneStep"/> method. The
@@ -1763,8 +1674,8 @@ namespace BoSSS.Solution {
                 }
 
                 SaveToDatabase(i0, physTime); // save the initial value
-                if (m_opt.ImmediatePlotPeriod > 0)
-                    PlotCurrentState(physTime, i0, m_opt.SuperSampling);
+                if (this.Control.ImmediatePlotPeriod > 0)
+                    PlotCurrentState(physTime, i0, this.Control.SuperSampling);
 
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
@@ -1795,8 +1706,8 @@ namespace BoSSS.Solution {
                         SaveToDatabase(i, physTime);
                         this.ProfilingLog();
                     }
-                    if (m_opt.ImmediatePlotPeriod > 0 && i % m_opt.ImmediatePlotPeriod == 0)
-                        PlotCurrentState(physTime, i, m_opt.SuperSampling);
+                    if (this.Control.ImmediatePlotPeriod > 0 && i % this.Control.ImmediatePlotPeriod == 0)
+                        PlotCurrentState(physTime, i, this.Control.SuperSampling);
                 }
                 i--;
 
@@ -2254,8 +2165,8 @@ namespace BoSSS.Solution {
             if (m_Balancer == null) {
                 var estimatorFactories = Control.DynamicLoadBalancing_CellCostEstimatorFactories;
                 if (estimatorFactories.IsNullOrEmpty()) {
-                    estimatorFactories = new List<Func<IApplication<AppControl>, int, ICellCostEstimator>>() {
-                        CellCostEstimatorLibrary.AllCellsAreEqual
+                    estimatorFactories = new List<Func<IApplication, int, ICellCostEstimator>>() {
+                        //CellCostEstimatorLibrary.AllCellsAreEqual
                     };
                 }
                 m_Balancer = new LoadBalancer(estimatorFactories);
@@ -2411,7 +2322,7 @@ namespace BoSSS.Solution {
 #else
                     try {
 #endif
-                        app.Init(_control, opt, _control.TracingNamespaces);
+                        app.Init(_control);
                         afterInit = watch.ElapsedTicks;
                         app.RunSolverMode();
                         CorrectlyTerminated = true;
@@ -3210,6 +3121,7 @@ namespace BoSSS.Solution {
         }
     }
 
+    /*
     /// <summary>
     /// Application mode - solving, plotting, 
     /// </summary>
@@ -3225,5 +3137,6 @@ namespace BoSSS.Solution {
         /// </summary>
         ParameterStudy,
     }
+    */
 }
 

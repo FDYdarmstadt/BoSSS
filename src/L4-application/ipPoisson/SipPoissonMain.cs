@@ -74,7 +74,7 @@ namespace BoSSS.Application.SipPoisson {
             //BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
             //BatchmodeConnector.MatlabExecuteable = "C:\\cygwin\\bin\\bash.exe";
             
-            _Main(args, false, "", delegate() {
+            _Main(args, false, delegate() {
                 SipPoissonMain p = new SipPoissonMain();
 
                 Console.WriteLine("ipPoisson: " + ilPSP.Environment.MPIEnv.MPI_Rank + " of " + ilPSP.Environment.MPIEnv.MPI_Size

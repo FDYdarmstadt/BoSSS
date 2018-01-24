@@ -58,7 +58,6 @@ namespace BoSSS.Application.ZwoLsTest {
             BoSSS.Solution.Application._Main(
                 args,
                 true,
-                null,
                 () => new ZwoLsTestMain() { DEGREE = 1, THRESHOLD = 0.3d });
         }
 

@@ -51,7 +51,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         /// Les main routine.
         /// </summary>
         static void Main(string[] args) {
-            BoSSS.Solution.Application<XdgTimesteppingTestControl>._Main(args, false, null, delegate () {
+            BoSSS.Solution.Application<XdgTimesteppingTestControl>._Main(args, false, delegate () {
                 return new XdgTimesteppingMain();
             });
 
