@@ -259,7 +259,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             // ------------------------------------------
 
             XdgTimesteppingMain p = new XdgTimesteppingMain();
-            p.Init(ctrl, ops);
+            p.Init(ctrl);
             p.RunSolverMode();
 
             // evaluate/check

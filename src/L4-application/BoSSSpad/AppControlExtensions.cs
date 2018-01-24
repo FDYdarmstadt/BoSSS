@@ -26,13 +26,10 @@ namespace BoSSS.Application.BoSSSpad {
             var solverClass = ctrl.GetSolverType();
             object solver = Activator.CreateInstance(solverClass);
 
-            //var app = (BoSSS.Solution.Application)solver;
+            var app = (BoSSS.Solution.IApplication)solver;
 
-            //IApplication<AppControl> app2 = (IApplication<AppControl>)app;
-            //
-            //app2.Init(ctrl, null);
-
-            IApplication app = (IApplication)solver;
+            app.Init(ctrl);
+            app.RunSolverMode();
 
             var S = app.CurrentSessionInfo;
             ((IDisposable)solver).Dispose();
