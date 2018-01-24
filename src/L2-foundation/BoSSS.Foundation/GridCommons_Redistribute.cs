@@ -851,9 +851,9 @@ namespace BoSSS.Foundation.Grid.Classic {
             //Gather all local computed Hilbert_Indices
             int[] CellIndex = local_CellIndex.MPIAllGatherv(CellsPerRank);
             ulong[] HilbertIndex = local_HilbertIndex.MPIAllGatherv(CellsPerRank);
-            Debugger.Break();
+            //Debugger.Break();
             Array.Sort(HilbertIndex, CellIndex);
-            Debugger.Break();
+            //Debugger.Break();
 
             // Distribution of MPI-Rank along the Hilbertcurve
             int numberofcells = this.NumberOfCells;
@@ -877,14 +877,14 @@ namespace BoSSS.Foundation.Grid.Classic {
                 }
             }
 
-            Debugger.Break();
+            //Debugger.Break();
             //Extract Rank-Array for local Process
             Array.Sort(CellIndex, RankIndex);
             int[] local_Rank_RedistributionList = new int[JE - J0];
             for (int j = 0; j < JE - J0; j++) {
                 local_Rank_RedistributionList[j] = RankIndex[J0 + j];
             }
-            Debugger.Break();
+            //Debugger.Break();
             return local_Rank_RedistributionList;
         }
 
