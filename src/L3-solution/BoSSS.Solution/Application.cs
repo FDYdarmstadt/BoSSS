@@ -611,18 +611,8 @@ namespace BoSSS.Solution {
         /// control object
         /// </param>
         public virtual void Init(AppControl control) {
-            this.Init((T)control);
-        }
-
-
-        /// <summary>
-        /// Initializes the environment of the application
-        /// </summary>
-        /// <param name="control">
-        /// control object
-        /// </param>
-        public virtual void Init(T control) {
-            this.Control = control;
+           
+            this.Control = (T)control;
 
 
             // set . as decimal separator:
@@ -1689,7 +1679,7 @@ namespace BoSSS.Solution {
                 }
 
                 SaveToDatabase(i0, physTime); // save the initial value
-                if (this.Control.ImmediatePlotPeriod > 0)
+                if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
                     PlotCurrentState(physTime, i0, this.Control.SuperSampling);
 
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
@@ -1721,7 +1711,7 @@ namespace BoSSS.Solution {
                         SaveToDatabase(i, physTime);
                         this.ProfilingLog();
                     }
-                    if (this.Control.ImmediatePlotPeriod > 0 && i % this.Control.ImmediatePlotPeriod == 0)
+                    if (this.Control != null && this.Control.ImmediatePlotPeriod > 0 && i % this.Control.ImmediatePlotPeriod == 0)
                         PlotCurrentState(physTime, i, this.Control.SuperSampling);
                 }
                 i--;
@@ -2229,7 +2219,7 @@ namespace BoSSS.Solution {
         public const string SESSIONNAME_KEY = "SessionName";
 
         /// <summary>
-        /// Called before application finishes.
+        /// Called before application finishes (internal Bye)
         /// </summary>
         void ByeInt(bool CorrectlyTerminated) {
             // remove the 'NotTerminated' tag from the session info
