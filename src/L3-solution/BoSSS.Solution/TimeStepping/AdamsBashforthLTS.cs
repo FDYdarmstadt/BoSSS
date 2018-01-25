@@ -116,6 +116,8 @@ namespace BoSSS.Solution.Timestepping {
             protected set;
         }
 
+        protected const int maxDiffOfSubSteps = int.MaxValue;
+
         //################# Hack for saving to database in every (A)LTS sub-step
         private Action<TimestepNumber, double> saveToDBCallback;
         //################# Hack for saving to database in every (A)LTS sub-step
@@ -615,41 +617,36 @@ namespace BoSSS.Solution.Timestepping {
                             "Could not determine stable time-step size in sub-grid " + i + ". This indicates illegal values in some cells.");
                     }
 
-                    // restrict timesteps
+                    // Restrict timesteps
                     dt = Math.Min(dt, TimeStepConstraints.First().Endtime - Time);
                     dt = Math.Min(Math.Max(dt, TimeStepConstraints.First().dtMin), TimeStepConstraints.First().dtMax);
 
                     localDts[i] = dt;
                 }
 
-#if DEBUG
+                int[] newNumOfSubSteps = new int[CurrentClustering.NumberOfClusters];
                 bool hasChanged = false;
-#endif
                 for (int i = 0; i < CurrentClustering.NumberOfClusters; i++) {
-                    double fraction = localDts[0] / localDts[i];
-                    //Accounting for roundoff errors
-                    double eps = 1.0e-1;
-                    int subSteps;
-                    if (fraction > Math.Floor(fraction) + eps) {
-                        subSteps = (int)Math.Ceiling(fraction);
-                    } else {
-                        subSteps = (int)Math.Floor(fraction);
-                    }
-
-                    if (NumberOfLocalTimeSteps[i] != subSteps) {
-#if DEBUG
+                    newNumOfSubSteps[i] = RoundToInt(localDts[0] / localDts[i]);    // eps was 1.0e-1 
+                    if (newNumOfSubSteps[i] != NumberOfLocalTimeSteps[i]) {
+                        NumberOfLocalTimeSteps[i] = newNumOfSubSteps[i];
                         hasChanged = true;
-#endif
-                        NumberOfLocalTimeSteps[i] = subSteps;
                     }
                 }
 
+                //NumberOfLocalTimeSteps = RestrictNumberOfSubSteps(NumberOfLocalTimeSteps);
 #if DEBUG
                 if (hasChanged) {
                     Console.WriteLine("CHANGE OF SUBSTEPS");
                     for (int i = 0; i < CurrentClustering.NumberOfClusters; i++) {
                         //Console.WriteLine("id=" + i + " -> sub-steps=" + NumberOfLocalTimeSteps[i] + " and elements=" + CurrentClustering.Clusters[i].GlobalNoOfCells);
                         Console.WriteLine("id=" + i + " -> sub-steps=" + NumberOfLocalTimeSteps[i]);
+                    }
+                }
+
+                for (int i = 1; i < NumberOfLocalTimeSteps.Count; i++) {
+                    if (NumberOfLocalTimeSteps[i] - NumberOfLocalTimeSteps[i - 1] > maxDiffOfSubSteps) {
+                        throw new Exception("LTS: Number of sub steps differs too much!");
                     }
                 }
 #endif
@@ -695,18 +692,10 @@ namespace BoSSS.Solution.Timestepping {
 
             int[] numOfSubSteps = new int[clustering.NumberOfClusters];
             for (int i = 0; i < numOfSubSteps.Length; i++) {
-                double fraction = rcvHmin[0] / rcvHmin[i];
-                // Accounting for roundoff errors
-                double eps = 1.0e-2;
-                int subSteps;
-                if (fraction > Math.Floor(fraction) + eps) {
-                    subSteps = (int)Math.Ceiling(fraction);
-                } else {
-                    subSteps = (int)Math.Floor(fraction);
-                }
-
-                numOfSubSteps[i] = subSteps;
+                numOfSubSteps[i] = RoundToInt(rcvHmin[0] / rcvHmin[i]); // eps was 1.0e-2
             }
+
+            //numOfSubSteps = RestrictNumberOfSubSteps(numOfSubSteps.ToList()).ToArray();
 
             List<SubGrid> newClusters = new List<SubGrid>();
 
@@ -959,6 +948,37 @@ namespace BoSSS.Solution.Timestepping {
                 ABevolver[i].ResetTime(m_Time, timestepNumber);
                 ABevolver[i].OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforeComputechangeRate(t1, t2);
             }
+        }
+
+        protected int RoundToInt(double number) {
+            // Accounting for roundoff errors
+            double eps = 1.0e-2;
+            int result;
+            if (number > Math.Floor(number) + eps) {
+                result = (int)Math.Ceiling(number);
+            } else {
+                result = (int)Math.Floor(number);
+            }
+            return result;
+        }
+
+        protected List<int> RestrictNumberOfSubSteps(List<int> numOfSubSteps) {
+            List<int> result = numOfSubSteps;
+
+            if (result.Last() > maxDiffOfSubSteps) {
+                result[0] = numOfSubSteps.Last() - maxDiffOfSubSteps;
+                result[result.Count - 1] = numOfSubSteps.Last();
+                //for (int i = 1; i < clustering.NumberOfClusters; i++) {
+                //    numOfSubSteps[i] = numOfSubSteps.First() + maxDiffOfSubsteps / (clustering.NumberOfClusters - 1) * i;
+                //}
+                for (int i = 1; i < (result.Count - 1); i++) {  // Leave numOfSubSteps.First() and numOfSubSteps.Last() untouched
+                    if (numOfSubSteps[i] < result[i - 1]) {
+                        result[i] = result[i - 1];
+                    }
+                }
+            }
+
+            return result;
         }
     }
 }
