@@ -20,6 +20,7 @@ using System.Linq;
 using System.Collections;
 using NUnit.Framework;
 using MPI.Wrappers;
+using BoSSS.Solution.Control;
 
 namespace BoSSS.Application.AdaptiveMeshRefinementTest { 
 
@@ -106,6 +107,13 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             Refined_Grad_u = this.Grad_u;
             Refined_MagGrad_u = this.MagGrad_u;
             */
+        }
+
+   
+
+        public override void Init(AppControl control) {
+            control.NoOfMultigridLevels = 1;
+            base.Init(control);
         }
 
 
