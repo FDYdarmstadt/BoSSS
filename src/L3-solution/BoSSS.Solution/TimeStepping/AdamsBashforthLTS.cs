@@ -156,8 +156,9 @@ namespace BoSSS.Solution.Timestepping {
 
             clusterer = new Clusterer(this.gridData, this.TimeStepConstraints);
             CurrentClustering = clusterer.CreateClustering(numOfClusters, this.SubGrid);    // Might remove clusters when their centres are too close
-            CurrentClustering = CalculateNumberOfLocalTS(CurrentClustering); // Might remove clusters when time step sizes are too similar
-            //(CurrentClustering, NumberOfLocalTimeSteps) = clusterer.CreateAdvancedClustering(CurrentClustering);
+            //CurrentClustering = CalculateNumberOfLocalTS(CurrentClustering); // Might remove clusters when time step sizes are too similar
+            NumberOfLocalTimeSteps.Clear();
+            (CurrentClustering, NumberOfLocalTimeSteps) = clusterer.CreateAdvancedClustering(CurrentClustering); // Might remove clusters when time step sizes are too similar
 
             ABevolver = new ABevolve[CurrentClustering.NumberOfClusters];
 
@@ -219,9 +220,10 @@ namespace BoSSS.Solution.Timestepping {
                             // Necessary in order to use the number of sub-grids specified by the user for the reclustering in each time step
                             // Otherwise the value could be changed by the constructor of the parent class (AdamsBashforthLTS.cs) --> CreateSubGrids()
                             CurrentClustering = clusterer.CreateClustering(numberOfClustersInitial, this.SubGrid);
+                            //CurrentClustering = CalculateNumberOfLocalTS(CurrentClustering); // Might remove sub-grids when time step sizes are too similar
+                            NumberOfLocalTimeSteps.Clear();
+                            (CurrentClustering, NumberOfLocalTimeSteps) = clusterer.CreateAdvancedClustering(CurrentClustering); // Might remove sub-grids when time step sizes are too similar
 
-                            CurrentClustering = CalculateNumberOfLocalTS(CurrentClustering); // Might remove sub-grids when time step sizes are too similar
-                            //(CurrentClustering, NumberOfLocalTimeSteps) = clusterer.CreateAdvancedClustering(CurrentClustering); // Might remove sub-grids when time step sizes are too similar
                             reclustered = clusterer.CheckForNewClustering(oldClustering, CurrentClustering);
 
                             // After the intitial phase, activate adaptive mode for all ABevolve objects
@@ -996,6 +998,6 @@ namespace BoSSS.Solution.Timestepping {
             }
 
             return result;
-        }       
+        }
     }
 }

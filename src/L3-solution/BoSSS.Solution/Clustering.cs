@@ -250,6 +250,8 @@ namespace BoSSS.Solution.Utils {
 
             List<SubGrid> newClusters = new List<SubGrid>();
 
+            List<int> result = new List<int>();
+
             for (int i = 0; i < clustering.NumberOfClusters; i++) {
                 if (i < clustering.NumberOfClusters - 1 && numOfSubSteps[i] == numOfSubSteps[i + 1]) {
                     // Combine both sub-grids and remove the previous one
@@ -258,11 +260,11 @@ namespace BoSSS.Solution.Utils {
 #if DEBUG
                     Console.WriteLine("CalculateNumberOfLocalTS: Clustering leads to sub-grids which are too similar, i.e. they have the same number of local time steps. They are combined.");
 #endif
-                    //NumberOfLocalTimeSteps.Add(numOfSubSteps[i]);
+                    result.Add(numOfSubSteps[i]);
                     i++;
                 } else {
                     newClusters.Add(clustering.Clusters[i]);
-                    //NumberOfLocalTimeSteps.Add(numOfSubSteps[i]);
+                    result.Add(numOfSubSteps[i]);
 #if DEBUG
                     // Console output only in last pass
                     if (i == clustering.NumberOfClusters - 1) {
@@ -273,7 +275,7 @@ namespace BoSSS.Solution.Utils {
 #endif
                 }
             }
-            return (new Clustering(newClusters, clustering.SubGrid), numOfSubSteps.ToList());
+            return (new Clustering(newClusters, clustering.SubGrid), result);
         }
 
         public double[] CalculateTimeStepSizePerCluster(Clusterer.Clustering clustering, IList<TimeStepConstraint> timeStepConstraints, double time) {
