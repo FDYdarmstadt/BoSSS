@@ -157,6 +157,7 @@ namespace BoSSS.Solution.Timestepping {
             clusterer = new Clusterer(this.gridData, this.TimeStepConstraints);
             CurrentClustering = clusterer.CreateClustering(numOfClusters, this.SubGrid);    // Might remove clusters when their centres are too close
             CurrentClustering = CalculateNumberOfLocalTS(CurrentClustering); // Might remove clusters when time step sizes are too similar
+            //(CurrentClustering, NumberOfLocalTimeSteps) = clusterer.CreateAdvancedClustering(CurrentClustering);
 
             ABevolver = new ABevolve[CurrentClustering.NumberOfClusters];
 
@@ -220,6 +221,7 @@ namespace BoSSS.Solution.Timestepping {
                             CurrentClustering = clusterer.CreateClustering(numberOfClustersInitial, this.SubGrid);
 
                             CurrentClustering = CalculateNumberOfLocalTS(CurrentClustering); // Might remove sub-grids when time step sizes are too similar
+                            //(CurrentClustering, NumberOfLocalTimeSteps) = clusterer.CreateAdvancedClustering(CurrentClustering); // Might remove sub-grids when time step sizes are too similar
                             reclustered = clusterer.CheckForNewClustering(oldClustering, CurrentClustering);
 
                             // After the intitial phase, activate adaptive mode for all ABevolve objects
@@ -247,6 +249,9 @@ namespace BoSSS.Solution.Timestepping {
                     if (TimeStepConstraints != null) {
                         dt = CalculateTimeStep();
                     }
+
+                    //double[] timeStepSizes = clusterer.CalculateTimeStepSizePerCluster(CurrentClustering, TimeStepConstraints, Time);
+                    //int[] numberOfSubSteps = CalculateNumberOfSubsteps(timeStepSizes);
 
                     double[,] CorrectionMatrix = new double[CurrentClustering.NumberOfClusters, CurrentClustering.NumberOfClusters];
 
@@ -603,6 +608,10 @@ namespace BoSSS.Solution.Timestepping {
         /// <returns>the largest stable timestep</returns>
         protected override double CalculateTimeStep() {
             if (TimeStepConstraints.First().dtMin != TimeStepConstraints.First().dtMax) {
+                // New
+                //double[] localDts = clusterer.CalculateTimeStepSizePerCluster(CurrentClustering, TimeStepConstraints, Time);
+
+                // Old
                 double[] localDts = new double[CurrentClustering.NumberOfClusters];
                 for (int i = 0; i < CurrentClustering.NumberOfClusters; i++) {
                     // Use "harmonic sum" of step - sizes, see
@@ -627,7 +636,7 @@ namespace BoSSS.Solution.Timestepping {
                 int[] newNumOfSubSteps = new int[CurrentClustering.NumberOfClusters];
                 bool hasChanged = false;
                 for (int i = 0; i < CurrentClustering.NumberOfClusters; i++) {
-                    newNumOfSubSteps[i] = RoundToInt(localDts[0] / localDts[i]);    // eps was 1.0e-1 
+                    newNumOfSubSteps[i] = RoundToInt(localDts[0] / localDts[i], 1.0e-1);    // eps was 1.0e-1 
                     if (newNumOfSubSteps[i] != NumberOfLocalTimeSteps[i]) {
                         NumberOfLocalTimeSteps[i] = newNumOfSubSteps[i];
                         hasChanged = true;
@@ -692,7 +701,7 @@ namespace BoSSS.Solution.Timestepping {
 
             int[] numOfSubSteps = new int[clustering.NumberOfClusters];
             for (int i = 0; i < numOfSubSteps.Length; i++) {
-                numOfSubSteps[i] = RoundToInt(rcvHmin[0] / rcvHmin[i]); // eps was 1.0e-2
+                numOfSubSteps[i] = RoundToInt(rcvHmin[0] / rcvHmin[i], 1.0e-2); // eps was 1.0e-2
             }
 
             //numOfSubSteps = RestrictNumberOfSubSteps(numOfSubSteps.ToList()).ToArray();
@@ -950,9 +959,8 @@ namespace BoSSS.Solution.Timestepping {
             }
         }
 
-        protected int RoundToInt(double number) {
+        private int RoundToInt(double number, double eps) {
             // Accounting for roundoff errors
-            double eps = 1.0e-2;
             int result;
             if (number > Math.Floor(number) + eps) {
                 result = (int)Math.Ceiling(number);
@@ -961,7 +969,6 @@ namespace BoSSS.Solution.Timestepping {
             }
             return result;
         }
-
         protected List<int> RestrictNumberOfSubSteps(List<int> numOfSubSteps) {
             List<int> result = numOfSubSteps;
 
@@ -980,5 +987,15 @@ namespace BoSSS.Solution.Timestepping {
 
             return result;
         }
+
+        private int[] CalculateNumberOfSubsteps(double[] timeStepSizes) {
+            int[] result = new int[timeStepSizes.Length];
+
+            for (int i = 0; i < timeStepSizes.Length; i++) {
+                result[i] = RoundToInt(timeStepSizes[0] / timeStepSizes[i], 1.0e-1);    // eps was 1.0e-1 
+            }
+
+            return result;
+        }       
     }
 }

@@ -84,6 +84,7 @@ namespace CNS.IBM {
 #endif
             CurrentClustering = clusterer.CreateClustering(control.NumberOfSubGrids, speciesMap.SubGrid);
             CurrentClustering = CalculateNumberOfLocalTS(CurrentClustering); // Might remove sub-grids when time step sizes are too similar
+            //(CurrentClustering, NumberOfLocalTimeSteps) = clusterer.CreateAdvancedClustering(CurrentClustering); // Might remove sub-grids when time step sizes are too similar
 
             ABevolver = new IBMABevolve[CurrentClustering.NumberOfClusters];
 
