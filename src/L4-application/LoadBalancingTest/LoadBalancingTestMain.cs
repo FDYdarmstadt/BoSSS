@@ -46,8 +46,7 @@ namespace BoSSS.Application.LoadBalancingTest {
             var grd = Grid2D.Cartesian2DGrid(nodes, nodes);
             return grd;
         }
-
-        
+              
 
         XDGField u;
         XDGField uResidual;
