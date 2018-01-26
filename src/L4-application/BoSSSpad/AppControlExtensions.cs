@@ -13,14 +13,14 @@ namespace BoSSS.Application.BoSSSpad {
     /// </summary>
     public static class AppControlExtensions {
 
-        //public static void Verify_(this AppControl ctrl, bool TestForSerilaization = true) {
-        //    var AllProblems = new List<string>();
-
-        //    if(ctrl.GridFunc != null) 
-
-        //}
-
-
+        /// <summary>
+        /// Runs the solver described by the control object <paramref name="ctrl"/> in the current process.
+        /// The method blocks until the solver is finished.
+        /// </summary>
+        /// <param name="ctrl"></param>
+        /// <returns>
+        /// The Session information after the solver is finished.
+        /// </returns>
         public static SessionInfo Run(this AppControl ctrl) {
 
             var solverClass = ctrl.GetSolverType();
@@ -37,6 +37,25 @@ namespace BoSSS.Application.BoSSSpad {
             return S;
         }
 
+        /// <summary>
+        /// Runs the solver described by the control object <paramref name="ctrl"/> on a batch system.
+        /// The method returns immediately.
+        /// </summary>
+        /// <param name="ctrl"></param>
+        /// <param name="BatchSys"></param>
+        /// <param name="NumberOfMPIProcs"></param>
+        /// <returns></returns>
+        public static Job RunBatch(this AppControl ctrl, BatchProcessorClient BatchSys, int NumberOfMPIProcs = 1) {
+            ctrl.ProjectName = InteractiveShell.WorkflowMgm.CurrentProject;
+
+            Type solverClass = ctrl.GetSolverType();
+            Job job = new Job("byCmdLine_Local", solverClass);
+            job.NumberOfMPIProcs = NumberOfMPIProcs;
+            job.SetControlObject(ctrl);
+            job.Activate(BatchSys);
+            
+            return job;
+        }
 
     }
 }

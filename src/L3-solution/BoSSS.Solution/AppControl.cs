@@ -148,10 +148,10 @@ namespace BoSSS.Solution.Control {
             // check grid
             // ==========
             {
-                if(this.GridFunc == null
-                    && (this.GridGuid == null || this.GridGuid == Guid.Empty)) {
-                    Problems.Add("No Grid specified.");
-                }
+                //if(this.GridFunc == null
+                //    && (this.GridGuid == null || this.GridGuid == Guid.Empty)) {
+                //    Problems.Add("No Grid specified.");
+                //}
             }
 
             // throw exception

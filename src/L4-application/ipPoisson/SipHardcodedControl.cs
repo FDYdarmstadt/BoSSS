@@ -236,10 +236,7 @@ namespace BoSSS.Application.SipPoisson {
                 return grd;
             };
 
-           
-
-
-             R.AddBoundaryCondition(BoundaryType.Dirichlet.ToString(), "T",
+            R.AddBoundaryCondition(BoundaryType.Dirichlet.ToString(), "T",
                  delegate (double[] X) {
                      double x = X[0], y = X[1];
                      return 0.0;

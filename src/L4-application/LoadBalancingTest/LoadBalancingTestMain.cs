@@ -43,6 +43,11 @@ namespace BoSSS.Application.LoadBalancingTest {
             return grd;
         }
 
+        public override void Init(AppControl control) {
+            control.NoOfMultigridLevels = 1;
+            base.Init(control);
+        }
+
         XDGField u;
         XDGField uResidual;
         XDGField uEx;
