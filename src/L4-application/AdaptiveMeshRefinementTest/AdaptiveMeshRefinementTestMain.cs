@@ -46,8 +46,13 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             //double[] yNodes = GenericBlas.Linspace(-1, 1, 2);
 
             var grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
-            base.m_GridPartitioningType = GridPartType.none;
             return grd;
+        }
+
+        public override void Init(BoSSS.Solution.Control.AppControl control) {
+            control.GridPartType = BoSSS.Foundation.Grid.GridPartType.none;
+            control.NoOfMultigridLevels = 1;
+            base.Init(control);
         }
 
         SinglePhaseField TestData;
@@ -111,10 +116,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
 
    
 
-        public override void Init(AppControl control) {
-            control.NoOfMultigridLevels = 1;
-            base.Init(control);
-        }
+       
 
 
         /// <summary>
