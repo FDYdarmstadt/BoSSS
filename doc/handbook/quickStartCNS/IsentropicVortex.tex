@@ -181,43 +181,16 @@ c.MachNumber
 \BoSSScmd{
 /// \subsection{Run a simulation}
 /// We adjusted our input values and now we can run a simulation.
-/// In the interactive mode, we now have to create an instance of our solver
-var solver = new Program();
+/// In the interactive mode, we can simply execute \code{Run()} on the control
+/// object, which will execute the solver:
+c.PrintInterval = 5;\newline 
+var SI          = c.Run();
  }
 \BoSSSexe
 \BoSSScmd{
-/// initialize the solver with our control object \verb|c|
-solver.Init(c);
- }
-\BoSSSexe
-\BoSSScmdSilent{
-/// BoSSScmdSilent BoSSSexeSilent
-c.PrintInterval = 5;
- }
-\BoSSSexeSilent
-\BoSSScmd{
-/// and finally start the simulation by calling
-solver.RunSolverMode();
- }
-\BoSSSexe
-\BoSSScmd{
-/// We can see that we needed 30 timesteps to advect the vortex.
-/// The output can be specified by 
-c.PrintInterval
- }
-\BoSSSexe
-\BoSSScmd{
-/// Finally, we release the memory occupied by the solver:
-solver.Dispose();
- }
-\BoSSSexe
-\BoSSScmd{
-solver.CurrentSessionInfo
- }
-\BoSSSexe
-\BoSSScmd{
-/// We suggest to use larger intervalls, when you run simulations which
-/// require lots of timesteps.
+/// The \code{Run()} command finally returns a session info, which carries some
+/// basic information on the solver run (mainly where ist was stored).
+SI;
  }
 \BoSSSexe
 \BoSSScmd{
