@@ -278,7 +278,7 @@ namespace BoSSS.Solution.Utils {
             return (new Clustering(newClusters, clustering.SubGrid), result);
         }
 
-        public double[] CalculateTimeStepSizePerCluster(Clusterer.Clustering clustering, IList<TimeStepConstraint> timeStepConstraints, double time) {
+        public double[] CalculateTimeStepSizes(Clusterer.Clustering clustering, IList<TimeStepConstraint> timeStepConstraints, double time) {
             double[] localDts = new double[clustering.NumberOfClusters];
             for (int i = 0; i < clustering.NumberOfClusters; i++) {
                 // Use "harmonic sum" of step - sizes, see
@@ -301,23 +301,6 @@ namespace BoSSS.Solution.Utils {
             }
 
             return localDts;
-
-            //NumberOfLocalTimeSteps = RestrictNumberOfSubSteps(NumberOfLocalTimeSteps);
-            //#if DEBUG
-            //                if (hasChanged) {
-            //                    Console.WriteLine("CHANGE OF SUBSTEPS");
-            //                    for (int i = 0; i < CurrentClustering.NumberOfClusters; i++) {
-            //                        //Console.WriteLine("id=" + i + " -> sub-steps=" + NumberOfLocalTimeSteps[i] + " and elements=" + CurrentClustering.Clusters[i].GlobalNoOfCells);
-            //                        Console.WriteLine("id=" + i + " -> sub-steps=" + NumberOfLocalTimeSteps[i]);
-            //                    }
-            //                }
-
-            //                for (int i = 1; i < NumberOfLocalTimeSteps.Count; i++) {
-            //                    if (NumberOfLocalTimeSteps[i] - NumberOfLocalTimeSteps[i - 1] > maxDiffOfSubSteps) {
-            //                        throw new Exception("LTS: Number of sub steps differs too much!");
-            //                    }
-            //                }
-            //#endif
         }
 
         private int RoundToInt(double number, double eps) {
@@ -329,6 +312,16 @@ namespace BoSSS.Solution.Utils {
                 result = (int)Math.Floor(number);
             }
             return result;
+        }
+
+        public int[] CalculateSubSteps(double[] timeStepSizes) {
+            int[] subSteps = new int[timeStepSizes.Length];
+
+            for (int i = 0; i < timeStepSizes.Length; i++) {
+                subSteps[i] = RoundToInt(timeStepSizes[0] / timeStepSizes[i], 1.0e-1);    // eps was 1.0e-1 
+            }
+
+            return subSteps;
         }
     }
 }
