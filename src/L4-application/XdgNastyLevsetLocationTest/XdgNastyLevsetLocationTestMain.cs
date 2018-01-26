@@ -52,7 +52,6 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
         static void Main(string[] args) {
             BoSSS.Solution.Application._Main(args, true, delegate() {
                 var p = new XdgNastyLevsetLocationTest();
-                p.m_GridPartitioningType = GridPartType.METIS;
                 return p;
             });
         }
