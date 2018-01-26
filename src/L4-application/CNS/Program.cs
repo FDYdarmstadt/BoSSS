@@ -32,6 +32,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 
 namespace CNS {
 
@@ -50,6 +51,8 @@ namespace CNS {
                 args,
                 false,
                 () => new Program());
+
+            Thread.Sleep(100 * 1000);
         }
     }
 
