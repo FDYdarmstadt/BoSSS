@@ -74,17 +74,12 @@ namespace CNS.IBM {
 
             cutCells = speciesMap.Tracker.Regions.GetCutCellMask();
             cutAndTargetCells = cutCells.Union(speciesMap.Agglomerator.AggInfo.TargetCells);
-
-            // Normal LTS constructor
-            NumberOfLocalTimeSteps = new List<int>(control.NumberOfSubGrids);
-
-            clusterer = new Clusterer(this.gridData, this.TimeStepConstraints);
 #if DEBUG
             Console.WriteLine("This is IBM ALTS Ctor");
 #endif
+            // Normal LTS constructor
+            clusterer = new Clusterer(this.gridData, this.TimeStepConstraints);
             CurrentClustering = clusterer.CreateClustering(control.NumberOfSubGrids, speciesMap.SubGrid);
-            //CurrentClustering = CalculateNumberOfLocalTS(CurrentClustering); // Might remove sub-grids when time step sizes are too similar
-            NumberOfLocalTimeSteps.Clear();
             (CurrentClustering, NumberOfLocalTimeSteps) = clusterer.CreateAdvancedClustering(CurrentClustering); // Might remove sub-grids when time step sizes are too similar
 
             ABevolver = new IBMABevolve[CurrentClustering.NumberOfClusters];
