@@ -474,6 +474,9 @@ namespace BoSSS.Application.BoSSSpad {
             if (isSubmitted && !(isFailed || wasSuccessful) && (R == null))
                 return JobStatus.PendingInExecutionQueue;
 
+            if (isSubmitted == false && isRunning == false && wasSuccessful == false && isFailed == false && (RR.Length <= 0))
+                return JobStatus.PreActivation;
+
             if (isFailed || (R == null || R.Tags.Contains(BoSSS.Solution.Application.NOT_TERMINATED_TAG)))
                 return JobStatus.Failed;
 

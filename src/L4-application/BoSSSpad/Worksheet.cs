@@ -17,6 +17,7 @@ limitations under the License.
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Threading;
@@ -488,10 +489,21 @@ namespace BoSSS.Application.BoSSSpad {
         ///// </summary>
         //string TeXlinkFilename;
 
+        Document m_currentDocument;
+
         /// <summary>
         /// the Document
         /// </summary>
-        Document currentDocument;
+        Document currentDocument {
+            get {
+                Debug.Assert(ReferenceEquals(InteractiveShell.CurrentDoc, m_currentDocument));
+                return m_currentDocument;
+            }
+            set {
+                InteractiveShell.CurrentDoc = value;
+                m_currentDocument = value;
+            }
+        }
 
         /// <summary>
         /// C#-Commands which should be executed.
@@ -820,7 +832,9 @@ namespace BoSSS.Application.BoSSSpad {
                     // ++++++++++++++++++++
                     List<string> dummy;
                     this.DocumentPath = fileName;
-                    LatexIO.SplitTexFile(fileName, out dummy, out this.currentDocument);
+                    Document d;
+                    LatexIO.SplitTexFile(fileName, out dummy, out d);
+                    this.currentDocument = d;
 
                     //this.TeXlinkFilename = fileName;
                     //this.MenuItem_Bws2Tex.Enabled = true;

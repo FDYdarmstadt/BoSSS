@@ -38,13 +38,9 @@ namespace CNS_MPITests.Tests.LoadBalancing {
 
     public class ShockTubeLoadBalancingTests : TestProgram<CNSControl> {
 
-        //private static CommandLineOptions commandLineOptions = new Application<CNSControl>.CommandLineOptions() {
-        //    delPlt = true,
-        //    ImmediatePlotPeriod = 1
-        //};
 
-        private static CommandLineOptions commandLineOptions = null;
 
+        
         private static int REBALANCING_PERIOD = 5;
 
         private static bool twoD = false;
@@ -325,12 +321,12 @@ namespace CNS_MPITests.Tests.LoadBalancing {
 
             Console.WriteLine("Run WITHOUT load balancing");
             var refSolver = new ShockTubeLoadBalancingTests();
-            refSolver.Init(refControl, commandLineOptions);
+            refSolver.Init(refControl);
             refSolver.RunSolverMode();
 
             Console.WriteLine("Run WITH load balancing");
             var loadBalSolver = new ShockTubeLoadBalancingTests();
-            loadBalSolver.Init(loadBalControl, commandLineOptions);
+            loadBalSolver.Init(loadBalControl);
             loadBalSolver.RunSolverMode();
 
             // To be able to compare errors without using the database, we need to 

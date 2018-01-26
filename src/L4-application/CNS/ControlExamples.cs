@@ -1083,9 +1083,9 @@ namespace CNS {
 
             c.AddBoundaryCondition("AdiabaticSlipWall");
 
-            double crossProduct2D(double[] a, double[] b) {
-                return a[0] * b[1] - a[1] * b[0];
-            }
+            //double crossProduct2D(double[] a, double[] b) {
+            //    return a[0] * b[1] - a[1] * b[0];
+            //}
 
             #region Smoothing of initial condition
             // Normal vector of initial shock
@@ -1098,12 +1098,12 @@ namespace CNS {
             // Distance from a point X to the initial shock
             double[] point = new double[] { 0.5, 0.0 };
 
-            double DistanceFromPointToLine(double[] X, double[] pointOnLine, double[] directionVector) {
-                double[] X_minus_pointOnLine = new double[] { X[0] - pointOnLine[0], X[1] - pointOnLine[1] };
-                double distance = crossProduct2D(directionVector, X_minus_pointOnLine) / Math.Sqrt(Math.Pow(directionVector[0], 2) + Math.Pow(directionVector[1], 2));
+            //double DistanceFromPointToLine(double[] X, double[] pointOnLine, double[] directionVector) {
+            //    double[] X_minus_pointOnLine = new double[] { X[0] - pointOnLine[0], X[1] - pointOnLine[1] };
+            //    double distance = crossProduct2D(directionVector, X_minus_pointOnLine) / Math.Sqrt(Math.Pow(directionVector[0], 2) + Math.Pow(directionVector[1], 2));
 
-                return distance;
-            }
+            //    return distance;
+            //}
 
             double cellSize = Math.Min((xMax - xMin) / numOfCellsX, (yMax - yMin) / numOfCellsY);
 
@@ -1155,8 +1155,8 @@ namespace CNS {
             int dgDegree = 2;
             ExplicitSchemes explicitScheme = ExplicitSchemes.RungeKutta;
             int explicitOrder = 1;
-            int noOfCells = 50;
-            double gridStretching = 0.0;
+            //int noOfCells = 50;
+            //double gridStretching = 0.0;
 
             bool twoD = true;
 
@@ -1408,9 +1408,9 @@ namespace CNS {
 
             c.AddBoundaryCondition("AdiabaticSlipWall");
 
-            double crossProduct2D(double[] a, double[] b) {
-                return a[0] * b[1] - a[1] * b[0];
-            }
+            //double crossProduct2D(double[] a, double[] b) {
+            //    return a[0] * b[1] - a[1] * b[0];
+            //}
 
             // Normal vector of initial shock
             Vector2D normalVector = new Vector2D(1, 0);
@@ -1422,12 +1422,12 @@ namespace CNS {
             // Distance from a point X to the initial shock
             double[] p = new double[] { 0.5, 0.0 };
 
-            double DistanceFromPointToLine(double[] X, double[] pointOnLine, double[] directionVector) {
-                double[] X_minus_pointOnLine = new double[] { X[0] - pointOnLine[0], X[1] - pointOnLine[1] };
-                double distance = crossProduct2D(directionVector, X_minus_pointOnLine) / Math.Sqrt(Math.Pow(directionVector[0], 2) + Math.Pow(directionVector[1], 2));
+            //double DistanceFromPointToLine(double[] X, double[] pointOnLine, double[] directionVector) {
+            //    double[] X_minus_pointOnLine = new double[] { X[0] - pointOnLine[0], X[1] - pointOnLine[1] };
+            //    double distance = crossProduct2D(directionVector, X_minus_pointOnLine) / Math.Sqrt(Math.Pow(directionVector[0], 2) + Math.Pow(directionVector[1], 2));
 
-                return distance;
-            }
+            //    return distance;
+            //}
 
             double cellSize = Math.Min((xMax - xMin) / numOfCellsX, (yMax - yMin) / numOfCellsY);
 
@@ -3365,10 +3365,10 @@ namespace CNS {
 
             bool AV = true;
 
-            double xMin = 0;
-            double xMax = 1;
-            double yMin = 0;
-            double yMax = 1;
+            //double xMin = 0;
+            //double xMax = 1;
+            //double yMin = 0;
+            //double yMax = 1;
 
             // (A)LTS
             //c.ExplicitScheme = ExplicitSchemes.LTS;

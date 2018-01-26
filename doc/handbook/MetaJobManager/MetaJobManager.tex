@@ -103,7 +103,9 @@ MiniBatchProcessor.Server.StartIfNotRunning(false);
  }
 \BoSSSexe
 \BoSSScmd{
-/// In this tutorial, we use the workflow management tools to simulate compressible flows, thus we first have to load the namespaces of the CNS solver
+/// In this tutorial, we use the workflow management tools to simulate 
+/// compressible flows, thus we first have to load the namespaces of 
+/// the CNS solver.
 using CNS;
  }
 \BoSSSexe
@@ -162,11 +164,20 @@ oneJob\_Local.Activate(myBatch);
  }
 \BoSSSexe
 \BoSSScmd{
+oneJob\_Local.BatchProcessorIdentifierToken;
+ }
+\BoSSSexe
+\BoSSScmd{
 /// All jobs can be listed using the workflow management:
  }
 \BoSSSexe
 \BoSSScmd{
 WorkflowMgm.AllJobs
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Check the present job status:
+oneJob\_Local.Status;
  }
 \BoSSSexe
 \BoSSScmd{

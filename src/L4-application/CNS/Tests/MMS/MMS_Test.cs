@@ -34,7 +34,6 @@ namespace CNS.Tests.MMS {
             Application<CNSControl>._Main(
                 new string[] { @"-c cs:CNS.Tests.MMS.MMS_unsteady.Gassner2DStudy_conserved(3,3)" },
                 false,
-                "",
                 delegate () {
                     p = new MMS_Test();
                     return p;

@@ -1677,7 +1677,7 @@ namespace BoSSS.Foundation.IO {
         /// <returns>
         /// Returns an array of DataSets, where the first half contains the convergence data for every method and the second half the speedup data.
         /// </returns>
-        public static DataSet[] EvaluatePerformance(this IEnumerable<ISessionInfo> sessions, string[] methods = null, bool exclusive = true, string solver = "IBM_Solver") {
+        public static DataSet[] EvaluatePerformance(this IEnumerable<ISessionInfo> sessions, string[] methods = null, bool exclusive = true, string solver = "IBM_Solver", bool weakScaling = false) {
             string path = sessions.Pick(0).Database.Path;
             string mainMethod;
             switch (solver) {
@@ -1709,6 +1709,7 @@ namespace BoSSS.Foundation.IO {
 
                 var findMainMethod = mcr[0].FindChild(mainMethod);
                 IOrderedEnumerable<CollectionReport> mostExpensive;
+                
                 if (findMainMethod != null) {
                     mostExpensive = findMainMethod.CompleteCollectiveReport().OrderByDescending(cr => cr.ExclusiveTimeFractionOfRoot);
                 } else {
@@ -1763,23 +1764,29 @@ namespace BoSSS.Foundation.IO {
                         if (exclusive) {
                             tempTime[k] = value.FindChildren(methods[k]).OrderByDescending(s => s.TimeExclusive.TotalSeconds).Pick(occurence-1).TimeExclusive.TotalSeconds;
                             if (i == idx) {
-                                double maxValue = value.FindChildren(methods[k]).OrderByDescending(s => s.ExclusiveTimeFractionOfRoot).Pick(occurence-1).ExclusiveTimeFractionOfRoot;
-                                int maxIndex = value.FindChildren(methods[k]).Select(s => s.ExclusiveTimeFractionOfRoot).ToList().IndexOf(maxValue);
+                                IEnumerable<MethodCallRecord> calls = value.FindChildren(methods[k]).OrderByDescending(s => s.ExclusiveTimeFractionOfRoot);
+                                double maxValue = calls.Pick(occurence-1).ExclusiveTimeFractionOfRoot;
+                                int maxIndex = calls.Select(s => s.ExclusiveTimeFractionOfRoot).ToList().IndexOf(maxValue);
                                 tempFractions[k] = maxValue;
-                                MethodCallRecord correctCall = value.FindChildren(methods[k]).Pick(maxIndex);
-                                IEnumerable<MethodCallRecord> neighbourCalls = value.FindChildren(methods[k]).Except(correctCall);
-                                methodCalls[k] = getUniqueParentName(correctCall, neighbourCalls);
+                                MethodCallRecord correctCall = calls.Pick(maxIndex);
+                                IEnumerable<MethodCallRecord> neighbourCalls = calls.Except(correctCall);
+                                if (maxValue > fraction[k]) {
+                                    methodCalls[k] = getUniqueParentName(correctCall, neighbourCalls) + " (" + occurence + "/" + calls.Count() + ")";
+                                }
                                 
                             }
                         } else {
                             tempTime[k] = value.FindChildren(methods[k]).OrderByDescending(s => s.TimeSpentInMethod.TotalSeconds).Pick(occurence-1).TimeSpentInMethod.TotalSeconds;
                             if (i == idx) {
-                                double maxValue = value.FindChildren(methods[k]).OrderByDescending(s => s.TimeFractionOfRoot).Pick(occurence-1).TimeFractionOfRoot;
-                                int maxIndex = value.FindChildren(methods[k]).Select(s => s.TimeFractionOfRoot).ToList().IndexOf(maxValue);
+                                IEnumerable<MethodCallRecord> calls = value.FindChildren(methods[k]).OrderByDescending(s => s.TimeFractionOfRoot);
+                                double maxValue = calls.Pick(occurence-1).TimeFractionOfRoot;
+                                int maxIndex = calls.Select(s => s.TimeFractionOfRoot).ToList().IndexOf(maxValue);
                                 tempFractions[k] = maxValue;
-                                MethodCallRecord correctCall = value.FindChildren(methods[k]).Pick(maxIndex);
-                                IEnumerable<MethodCallRecord> neighbourCalls = value.FindChildren(methods[k]).Except(correctCall);
-                                methodCalls[k] = getUniqueParentName(correctCall, neighbourCalls);
+                                MethodCallRecord correctCall = calls.Pick(maxIndex);
+                                IEnumerable<MethodCallRecord> neighbourCalls =calls.Except(correctCall);
+                                if (maxValue > fraction[k]) {
+                                    methodCalls[k] = getUniqueParentName(correctCall, neighbourCalls) + " (" + occurence + "/" + calls.Count() + ")";
+                                }
                             }
                         }
                         // Only save execution time if it is the highest value of all processor times
@@ -1806,10 +1813,18 @@ namespace BoSSS.Foundation.IO {
                 double[] idealSpeedUp = new double[numberSessions];
                 double startIdeal = times.Pick(0)[i];
                 for (int j = 0; j < numberSessions; j++) {
-                    ideal[j] = Math.Pow(0.5, j) * startIdeal;
-                    idealSpeedUp[j] = processors[j];
+                    if (weakScaling) {
+                        ideal[j] = startIdeal;
+                        idealSpeedUp[j] = 1;
+                    } else {
+                        ideal[j] = Math.Pow(0.5, j) * startIdeal;
+                        idealSpeedUp[j] = processors[j];
+                    }
                 }
                 var timeArray = times.Select(t => t.Pick(i));
+                if (weakScaling) {
+                } else {
+                }
                 double[] speedUpTimes = timeArray.Select(x => startIdeal * processors[0] / x).ToArray();
 
                 // Create DataRows for convergence and speedup with actual and ideal curve
@@ -1817,9 +1832,9 @@ namespace BoSSS.Foundation.IO {
                 KeyValuePair<string, double[][]>[] dataRowsSpeedup = new KeyValuePair<string, double[][]>[2];
                 double[] doubleProcessors = processors.Select(Convert.ToDouble).ToArray();
 
-                dataRowsConvergence[0] = new KeyValuePair<string, double[][]>(methods[i], new double[][] { doubleProcessors, times.Select(s => s[i]).ToArray() });
+                dataRowsConvergence[0] = new KeyValuePair<string, double[][]>(methods[i] + " (" + methodCalls[i].Split('(').Last(), new double[][] { doubleProcessors, times.Select(s => s[i]).ToArray() });
                 dataRowsConvergence[1] = new KeyValuePair<string, double[][]>("ideal", new double[][] { doubleProcessors, ideal });
-                dataRowsSpeedup[0] = new KeyValuePair<string, double[][]>(methods[i], new double[][] { doubleProcessors, speedUpTimes });
+                dataRowsSpeedup[0] = new KeyValuePair<string, double[][]>(methods[i] + " (" + methodCalls[i].Split('(').Last(), new double[][] { doubleProcessors, speedUpTimes });
                 dataRowsSpeedup[1] = new KeyValuePair<string, double[][]>("ideal", new double[][] { doubleProcessors, idealSpeedUp });
 
                 // Create DataSets from DataRows
@@ -1845,8 +1860,8 @@ namespace BoSSS.Foundation.IO {
             Console.WriteLine("\n Most expensive functions");
             Console.WriteLine("============================");
             for (int i = 0; i < numberMethods; i++) {
-                Console.WriteLine("Rank " + i + ": " + methods2[i] + " in "+ methodCalls2[i]);
-                Console.WriteLine("\t Time fraction of root: " + fractions2[i].ToString("p3")+ "\n");
+                Console.WriteLine("Rank " + i + ": " + methods2[i] + " (" + methodCalls2[i].Split('(').Last());
+                Console.WriteLine("\t Time fraction of root: " + fractions2[i].ToString("p3") + "\t in " + methodCalls2[i].Split('(').First());
             }
             Console.WriteLine("\n Sorted by worst scaling");
             Console.WriteLine("============================");
@@ -1857,6 +1872,7 @@ namespace BoSSS.Foundation.IO {
 
             return data;
         }
+
 
 
         private static string getUniqueParentName(MethodCallRecord correctCall, IEnumerable<MethodCallRecord> neighbourCalls) {

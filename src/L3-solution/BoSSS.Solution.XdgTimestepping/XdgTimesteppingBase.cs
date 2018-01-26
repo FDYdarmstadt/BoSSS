@@ -649,7 +649,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                         double L2Res = 0.0;
 
                         foreach (int idx in VarIdx[i])
-                            L2Res += currentRes[idx].Pow2();
+                            L2Res += currentRes[idx-Mgop.Mapping.i0].Pow2();
                         L2Res = L2Res.MPISum().Sqrt(); // would be better to do the MPISum for all L2Res together,
                                                        //                                but this implementation is anyway inefficient....
 

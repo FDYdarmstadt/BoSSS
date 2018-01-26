@@ -30,7 +30,6 @@ namespace ALTSTests {
             Application._Main(
                 args,
                 true,
-                "",
                 () => new NUnitTests());
         }
 
@@ -53,7 +52,6 @@ namespace ALTSTests {
             Application._Main(
                 new string[0],
                 true,
-                "",
                 delegate () {
                     test = new NUnitTests() {
                         ABOrder = order,

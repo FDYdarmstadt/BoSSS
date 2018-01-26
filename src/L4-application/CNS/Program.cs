@@ -32,6 +32,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 
 namespace CNS {
 
@@ -49,8 +50,9 @@ namespace CNS {
             Application<CNSControl>._Main(
                 args,
                 false,
-                "BoSSS.Foundation,BoSSS.Solution.Application,CNS",
                 () => new Program());
+
+            Thread.Sleep(100 * 1000);
         }
     }
 
