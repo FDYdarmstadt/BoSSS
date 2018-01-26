@@ -265,14 +265,14 @@ namespace BoSSS.Solution.Utils {
                 } else {
                     newClusters.Add(clustering.Clusters[i]);
                     result.Add(numOfSubSteps[i]);
-#if DEBUG
-                    // Console output only in last pass
-                    if (i == clustering.NumberOfClusters - 1) {
-                        for (int j = 0; j < newClusters.Count; j++) {
-                            Console.WriteLine("id=" + j + " -> sub-steps=" + NumberOfLocalTimeSteps[j] + " and elements=" + newClusters[j].GlobalNoOfCells);
-                        }
-                    }
-#endif
+//#if DEBUG
+//                    // Console output only in last pass
+//                    if (i == clustering.NumberOfClusters - 1) {
+//                        for (int j = 0; j < newClusters.Count; j++) {
+//                            Console.WriteLine("id=" + j + " -> sub-steps=" + NumberOfLocalTimeSteps[j] + " and elements=" + newClusters[j].GlobalNoOfCells);
+//                        }
+//                    }
+//#endif
                 }
             }
             return (new Clustering(newClusters, clustering.SubGrid), result);
