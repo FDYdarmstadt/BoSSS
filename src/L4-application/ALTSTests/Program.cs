@@ -28,6 +28,7 @@ using BoSSS.Solution.Utils;
 using ilPSP;
 using System.Collections.Generic;
 using System.Diagnostics;
+using BoSSS.Solution.Control;
 
 namespace ALTSTests {
     /// <summary>
@@ -41,10 +42,16 @@ namespace ALTSTests {
         static void Main(string[] args) {
             Application._Main(args, true, delegate () {
                 Program p = new Program();
-                p.m_GridPartitioningType = BoSSS.Foundation.Grid.GridPartType.none;
+                //p.m_GridPartitioningType = BoSSS.Foundation.Grid.GridPartType.none;
                 return p;
             });
         }
+
+        public override void Init(AppControl control) {
+            control.GridPartType = BoSSS.Foundation.Grid.GridPartType.none;
+            base.Init(control);
+        }
+
 
         // Settings
         int dgDegree = 0;

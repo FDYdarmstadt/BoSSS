@@ -36,17 +36,18 @@ namespace BoSSS.Application.LoadBalancingTest {
                 () => new LoadBalancingTestMain());
         }
 
+        public override void Init(BoSSS.Solution.Control.AppControl control) {
+            control.GridPartType = BoSSS.Foundation.Grid.GridPartType.none;
+            base.Init(control);
+        }
+
         protected override GridCommons CreateOrLoadGrid() {
             double[] nodes = GenericBlas.Linspace(-5, 5, 21);
             var grd = Grid2D.Cartesian2DGrid(nodes, nodes);
-            base.m_GridPartitioningType = GridPartType.none;
             return grd;
         }
 
-        public override void Init(AppControl control) {
-            control.NoOfMultigridLevels = 1;
-            base.Init(control);
-        }
+        
 
         XDGField u;
         XDGField uResidual;

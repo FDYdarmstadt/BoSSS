@@ -149,18 +149,18 @@ namespace BoSSS.Solution {
             }
         }
 
-        /// <summary>
-        /// Specify the type of grid partitioning, in multiprocessor-mode;
-        /// if a control file is used, this value is set during the <see cref="InitMPI"/>-call;
-        /// So, for overriding the control file, it must be set after 
-        /// calling <see cref="InitMPI"/>;
-        /// </summary>
-        protected GridPartType m_GridPartitioningType = Foundation.Grid.GridPartType.METIS;
+        ///// <summary>
+        ///// Specify the type of grid partitioning, in multiprocessor-mode;
+        ///// if a control file is used, this value is set during the <see cref="InitMPI"/>-call;
+        ///// So, for overriding the control file, it must be set after 
+        ///// calling <see cref="InitMPI"/>;
+        ///// </summary>
+        //protected GridPartType m_GridPartitioningType = Foundation.Grid.GridPartType.METIS;
 
-        /// <summary>
-        /// Additional options for Grid Partitioning, see <see cref="m_GridPartitioningType"/>;
-        /// </summary>
-        protected string m_GridPartitioningOptions = "";
+        ///// <summary>
+        ///// Additional options for Grid Partitioning, see <see cref="m_GridPartitioningType"/>;
+        ///// </summary>
+        //protected string m_GridPartitioningOptions = "";
 
 
 
@@ -626,8 +626,7 @@ namespace BoSSS.Solution {
             if (this.Control != null) {
                 this.Control.Verify();
 
-                this.m_GridPartitioningType = this.Control.GridPartType;
-                this.m_GridPartitioningOptions = this.Control.GridPartOptions;
+               
 
                 if (this.Control.NoOfTimesteps >= 0) {
                     this.NoOfTimesteps = this.Control.NoOfTimesteps;
@@ -1037,7 +1036,7 @@ namespace BoSSS.Solution {
                 // kernel setup
                 //====================
                 //RedistributeGrid();
-                Grid.Redistribute(DatabaseDriver, m_GridPartitioningType, m_GridPartitioningOptions);
+                Grid.Redistribute(DatabaseDriver, Control.GridPartType, Control.GridPartOptions);
                 if (!passiveIo && !DatabaseDriver.GridExists(Grid.GridGuid)) {
 
                     //DatabaseDriver.SaveGrid(Grid);
@@ -2182,8 +2181,8 @@ namespace BoSSS.Solution {
                 performanceClassCount,
                 cellToPerformanceClassMap,
                 TimeStepNo,
-                m_GridPartitioningType,
-                m_GridPartitioningOptions,
+                Control.GridPartType, 
+                Control.GridPartOptions,
                 Control != null ? Control.DynamicLoadBalancing_ImbalanceThreshold : 0.12,
                 Control != null ? Control.DynamicLoadBalancing_Period : 5,
                 redistributeAtStartup: Control.DynamicLoadBalancing_RedistributeAtStartup);

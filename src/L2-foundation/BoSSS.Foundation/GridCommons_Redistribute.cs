@@ -168,6 +168,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                 int size = this.Size;
                 int rank = this.MyRank;
 
+                Debugger.Launch();
+
                 if (size == 1) {
                     return new int[NoOfUpdateCells];
                 }
