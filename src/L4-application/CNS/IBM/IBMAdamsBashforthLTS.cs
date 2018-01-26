@@ -83,8 +83,9 @@ namespace CNS.IBM {
             Console.WriteLine("This is IBM ALTS Ctor");
 #endif
             CurrentClustering = clusterer.CreateClustering(control.NumberOfSubGrids, speciesMap.SubGrid);
-            CurrentClustering = CalculateNumberOfLocalTS(CurrentClustering); // Might remove sub-grids when time step sizes are too similar
-            //(CurrentClustering, NumberOfLocalTimeSteps) = clusterer.CreateAdvancedClustering(CurrentClustering); // Might remove sub-grids when time step sizes are too similar
+            //CurrentClustering = CalculateNumberOfLocalTS(CurrentClustering); // Might remove sub-grids when time step sizes are too similar
+            NumberOfLocalTimeSteps.Clear();
+            (CurrentClustering, NumberOfLocalTimeSteps) = clusterer.CreateAdvancedClustering(CurrentClustering); // Might remove sub-grids when time step sizes are too similar
 
             ABevolver = new IBMABevolve[CurrentClustering.NumberOfClusters];
 
