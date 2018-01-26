@@ -20,6 +20,7 @@ using System.IO;
 using BoSSS.Foundation.IO;
 using Mono.CSharp;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -170,5 +171,55 @@ namespace BoSSS.Application.BoSSSpad {
             return dbi;
         }
 
+        static internal Document CurrentDoc = null;
+
+        /// <summary>
+        /// Extracts the source code of some function, which can be used as an initial value or boundary condition.
+        /// </summary>
+        /// <param name="f">
+        /// Must be the reference to a static method of a static class.
+        /// </param>
+        static public BoSSS.Solution.Control.Formula GetFormulaObject(Func<double[], double> f) {
+            return GetFormulaObject(f, false);
+        }
+
+        /// <summary>
+        /// Extracts the source code of some function, which can be used as an initial value or boundary condition.
+        /// </summary>
+        /// <param name="f">
+        /// Must be the reference to a static method of a static class.
+        /// </param>
+        static public BoSSS.Solution.Control.Formula GetFormulaObject(Func<double[], double, double> f) {
+            return GetFormulaObject(f, true);
+        }
+
+        private static Solution.Control.Formula GetFormulaObject(System.Delegate f, bool timedep) {
+            if (CurrentDoc == null) {
+                throw new NotSupportedException("Only supported when a bws-document is present (GUI or batch mode).");
+            }
+            if (f == null)
+                throw new ArgumentNullException();
+            Assembly SearchedAssembly = f.Method.DeclaringType.Assembly;
+
+            if (SearchedAssembly == null)
+                throw new ApplicationException("Unable to find some assembly for delegate.");
+
+            string AssemblyCode = null;
+            foreach (var entry in CurrentDoc.CommandAndResult) {
+                if (SearchedAssembly.Equals(entry.AssemblyProduced)) {
+                    AssemblyCode = entry.Command;
+                }
+            }
+            if (AssemblyCode == null) {
+                throw new ApplicationException("Unable to find code of " + SearchedAssembly.FullName);
+            } else {
+                //Console.WriteLine("Found code:");
+                //Console.WriteLine(AssemblyCode);
+            }
+
+            var fo = new Solution.Control.Formula(f.Method.DeclaringType.Name + "." + f.Method.Name, timedep, AssemblyCode);
+
+            return fo;
+        }
     }
 }

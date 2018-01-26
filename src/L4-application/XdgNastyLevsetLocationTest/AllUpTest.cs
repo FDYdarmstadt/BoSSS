@@ -54,7 +54,7 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
 
                     tst.ResetTest();
 
-                    BoSSS.Solution.Application._Main(new string[0], true, null, delegate() {
+                    BoSSS.Solution.Application._Main(new string[0], true, delegate() {
                         p = new XdgNastyLevsetLocationTest();
                         p.test = tst;
                         p.momentFittingVariant = variant;

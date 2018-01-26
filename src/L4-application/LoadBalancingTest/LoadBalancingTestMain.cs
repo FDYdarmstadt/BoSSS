@@ -33,7 +33,6 @@ namespace BoSSS.Application.LoadBalancingTest {
             BoSSS.Solution.Application._Main(
                 args,
                 true,
-                null,
                 () => new LoadBalancingTestMain());
         }
 
@@ -42,6 +41,11 @@ namespace BoSSS.Application.LoadBalancingTest {
             var grd = Grid2D.Cartesian2DGrid(nodes, nodes);
             base.m_GridPartitioningType = GridPartType.none;
             return grd;
+        }
+
+        public override void Init(AppControl control) {
+            control.NoOfMultigridLevels = 1;
+            base.Init(control);
         }
 
         XDGField u;
@@ -287,7 +291,7 @@ namespace BoSSS.Application.LoadBalancingTest {
         }
 
 
-        internal Func<IApplication<AppControl>, int, ICellCostEstimator> cellCostEstimatorFactory = CellCostEstimatorLibrary.OperatorAssemblyAndCutCellQuadrules;
+        internal Func<IApplication, int, ICellCostEstimator> cellCostEstimatorFactory = CellCostEstimatorLibrary.OperatorAssemblyAndCutCellQuadrules;
 
 
         /// <summary>
@@ -313,7 +317,7 @@ namespace BoSSS.Application.LoadBalancingTest {
 
             if (balancer == null) {
                 balancer = new LoadBalancer(
-                    new List<Func<IApplication<AppControl>, int, ICellCostEstimator>>() { cellCostEstimatorFactory }
+                    new List<Func<IApplication, int, ICellCostEstimator>>() { cellCostEstimatorFactory }
                     );
             }
 

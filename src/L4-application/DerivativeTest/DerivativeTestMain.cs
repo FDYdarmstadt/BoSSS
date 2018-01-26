@@ -83,7 +83,7 @@ namespace BoSSS.Application.DerivativeTest {
             Quadrature_Bulksize.CHUNK_DATA_LIMIT = bulksize_limit;
             BoSSS.Foundation.Caching.Cache.MaxMem = cache_size;
 
-            BoSSS.Solution.Application._Main(new string[0], true, null, delegate () {
+            BoSSS.Solution.Application._Main(new string[0], true, delegate () {
                 p = new DerivativeTestMain();
                 return p;
             });
@@ -102,7 +102,7 @@ namespace BoSSS.Application.DerivativeTest {
             Quadrature_Bulksize.CHUNK_DATA_LIMIT = bulksize_limit;
             BoSSS.Foundation.Caching.Cache.MaxMem = cache_size;
 
-            BoSSS.Solution.Application._Main(new string[0], true, null, delegate() {
+            BoSSS.Solution.Application._Main(new string[0], true, delegate() {
                 p = new DerivativeTestMain();
                 return p;
             });
@@ -153,7 +153,7 @@ namespace BoSSS.Application.DerivativeTest {
             if (CHUNK_DATA_LIMIT_bkup < 1)
                 throw new ApplicationException();
 
-            BoSSS.Solution.Application._Main(new string[0], true, null, delegate () {
+            BoSSS.Solution.Application._Main(new string[0], true, delegate () {
                 p = new DerivativeTestMain();
                 return p;
             });
@@ -193,7 +193,7 @@ namespace BoSSS.Application.DerivativeTest {
 
 
             for (int i = 12; i <= 12; i++) {
-                BoSSS.Solution.Application._Main(args, true, null, delegate () {
+                BoSSS.Solution.Application._Main(args, true,  delegate () {
                     var R = new DerivativeTestMain();
                     GRID_CASE = i;
                     return R;

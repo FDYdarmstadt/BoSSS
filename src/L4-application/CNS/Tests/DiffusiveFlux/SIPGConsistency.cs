@@ -95,7 +95,6 @@ namespace CNS.Tests.DiffusiveFlux {
             Application<CNSControl>._Main(
                 new string[] { controlFile },
                 false,
-                "",
                 delegate() {
                     prog = new SIPGConsistency();
                     prog.noOfCells = numOfCells;
@@ -130,7 +129,6 @@ namespace CNS.Tests.DiffusiveFlux {
             Application<CNSControl>._Main(
                 new string[] { controlFile },
                 false,
-                "",
                 delegate () {
                     prog = new SIPGConsistency();
                     prog.noOfCells = numOfCells;

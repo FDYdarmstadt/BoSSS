@@ -57,7 +57,6 @@ namespace CNS.Tests.Ringleb {
             Application<RinglebControl>._Main(
                 new string[] { @"-c cs:CNS.Tests.Ringleb.ControlFiles.RinglebIdealGasTest()" },
                 false,
-                "",
                 delegate() {
                     p = new RinglebTest();
                     return p;
@@ -92,7 +91,6 @@ namespace CNS.Tests.Ringleb {
             Application<RinglebControl>._Main(
                 new string[] { @"-c cs:CNS.Tests.Ringleb.ControlFiles.RinglebStiffenedGasTest()" },
                 false,
-                "",
                 delegate() {
                     p = new RinglebTest();
                     return p;

@@ -37,11 +37,7 @@ namespace CNS.Tests.ArtificialViscosity {
     /// </summary>
     public class ArtificialViscosityShockTubeTests : TestProgram<CNSControl> {
 
-        private static CommandLineOptions commandLineOptions = null;
-        //private static CommandLineOptions commandLineOptions = new CommandLineOptions() {
-        //    delPlt = true,
-        //    ImmediatePlotPeriod = 1
-        //};
+      
 
         //public static void Main(string[] args) {
         //    SetUp();
@@ -71,7 +67,7 @@ namespace CNS.Tests.ArtificialViscosity {
             c.ProjectDescription = "Toro 2009, p. 129, table 4.1, test 1";
 
             var solver = new Program();
-            solver.Init(c, commandLineOptions);
+            solver.Init(c);
             solver.RunSolverMode();
 
             return solver.QueryHandler.QueryResults;

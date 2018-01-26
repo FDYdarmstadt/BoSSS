@@ -148,10 +148,10 @@ namespace BoSSS.Solution.Control {
             // check grid
             // ==========
             {
-                if(this.GridFunc == null
-                    && (this.GridGuid == null || this.GridGuid == Guid.Empty)) {
-                    Problems.Add("No Grid specified.");
-                }
+                //if(this.GridFunc == null
+                //    && (this.GridGuid == null || this.GridGuid == Guid.Empty)) {
+                //    Problems.Add("No Grid specified.");
+                //}
             }
 
             // throw exception
@@ -290,7 +290,7 @@ namespace BoSSS.Solution.Control {
         }
 
         /// <summary>
-        /// Adds a time-dependent boundary condition.
+        /// Adds a boundary condition, represented as formula text, e.g. <c>(X,t) => Math.Sin(X[1] + t*0.2)</c>.
         /// </summary>
         /// <param name="EdgeTagName">Name of the boundary condition</param>
         /// <param name="fieldname">Name of the field for which the boundary condition is valid</param>
@@ -308,6 +308,25 @@ namespace BoSSS.Solution.Control {
                 throw new ArgumentException(string.Format("Boundary condition for field '{0}' and edge tag name '{1}' already specified.", EdgeTagName, fieldname));
 
             this.BoundaryValues[EdgeTagName].Values.Add(fieldname, new Formula(FormulaText, TimeDependent));
+        }
+
+        /// <summary>
+        /// Adds a boundary condition, represented by a general <see cref="IBoundaryAndInitialData"/>-object.
+        /// </summary>
+        /// <param name="EdgeTagName">Name of the boundary condition</param>
+        /// <param name="fieldname">Name of the field for which the boundary condition is valid</param>
+        /// <param name="data">
+        /// General provider of initial/boundary data; In order to support full functionality (job management, etc.),
+        /// the object must be serializeable.
+        /// </param>
+        public void AddBoundaryCondition(string EdgeTagName, string fieldname, IBoundaryAndInitialData data) {
+            if(!this.BoundaryValues.ContainsKey(EdgeTagName))
+                this.BoundaryValues.Add(EdgeTagName, new BoundaryValueCollection());
+
+            if(this.BoundaryValues[EdgeTagName].Evaluators.ContainsKey(fieldname))
+                throw new ArgumentException(string.Format("Boundary condition for field '{0}' and edge tag name '{1}' already specified.", EdgeTagName, fieldname));
+
+            this.BoundaryValues[EdgeTagName].Values.Add(fieldname, data);
         }
 
         [NonSerialized]
@@ -519,6 +538,22 @@ namespace BoSSS.Solution.Control {
 
 
         /// <summary>
+        /// Immediate plot period: This variable controls immediate
+        /// plotting, i.e. plotting during the solver run.
+        /// A positive value indicates that
+        /// <see cref="Application{T}.PlotCurrentState(double, TimestepNumber, int)"/>"/> will be called every
+        /// <see cref="ImmediatePlotPeriod"/>-th time-step.
+        /// A negative value turns immediate plotting off;
+        /// </summary>
+        public int ImmediatePlotPeriod = -1;
+
+        /// <summary>
+        /// Super sampling: This option controls whether a finer grid
+        /// resolution shall be used in the plots created if <see cref="ImmediatePlotPeriod"/> is set positive.
+        /// </summary>
+        public int SuperSampling = 0;
+
+        /// <summary>
         /// true if information should be written to the database, false
         /// if "passive io" (only reading grids, <see cref="BoSSS.Foundation.IO.IFileSystemDriver"/>)
         /// should be used;
@@ -578,8 +613,8 @@ namespace BoSSS.Solution.Control {
         /// <summary>
         /// A method that creates a new estimator for the runtime cost of individual cells
         /// </summary>
-        public List<Func<IApplication<AppControl>, int, ICellCostEstimator>> DynamicLoadBalancing_CellCostEstimatorFactories =
-            new List<Func<IApplication<AppControl>, int, ICellCostEstimator>>();
+        public List<Func<IApplication, int, ICellCostEstimator>> DynamicLoadBalancing_CellCostEstimatorFactories =
+            new List<Func<IApplication, int, ICellCostEstimator>>();
 
         /// <summary>
         /// Number of time-steps, after which dynamic load balancing is performed; if negative, dynamic load balancing is turned off.

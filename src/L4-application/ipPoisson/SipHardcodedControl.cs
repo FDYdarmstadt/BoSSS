@@ -92,7 +92,7 @@ namespace BoSSS.Application.SipPoisson {
             RR.savetodb = false;
 
             RR.FieldOptions.Add("T", new FieldOpts() { Degree = pDG, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            RR.FieldOptions.Add("Tex", new FieldOpts() { Degree = pDG});
+            RR.FieldOptions.Add("Tex", new FieldOpts() { Degree = pDG * 2 });
             RR.InitialValues_Evaluators.Add("RHS", X => 1.0);
             RR.InitialValues_Evaluators.Add("Tex", X => (0.5 * X[0].Pow2() - 10 * X[0]));
             RR.ExactSolution_provided = true;
@@ -200,7 +200,7 @@ namespace BoSSS.Application.SipPoisson {
             R.savetodb = false;
 
             R.FieldOptions.Add("T", new FieldOpts() { Degree = deg, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            R.FieldOptions.Add("Tex", new FieldOpts() { Degree = deg });
+            R.FieldOptions.Add("Tex", new FieldOpts() { Degree = deg*2 });
             R.InitialValues_Evaluators.Add("RHS", X => -Math.Sin(X[0]));
             R.InitialValues_Evaluators.Add("Tex", X => Math.Sin(X[0]));
             R.ExactSolution_provided = true;
@@ -236,10 +236,7 @@ namespace BoSSS.Application.SipPoisson {
                 return grd;
             };
 
-           
-
-
-             R.AddBoundaryCondition(BoundaryType.Dirichlet.ToString(), "T",
+            R.AddBoundaryCondition(BoundaryType.Dirichlet.ToString(), "T",
                  delegate (double[] X) {
                      double x = X[0], y = X[1];
                      return 0.0;
