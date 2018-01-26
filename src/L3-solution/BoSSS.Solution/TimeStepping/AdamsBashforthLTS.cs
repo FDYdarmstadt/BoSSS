@@ -611,29 +611,29 @@ namespace BoSSS.Solution.Timestepping {
         protected override double CalculateTimeStep() {
             if (TimeStepConstraints.First().dtMin != TimeStepConstraints.First().dtMax) {
                 // New
-                //double[] localDts = clusterer.CalculateTimeStepSizePerCluster(CurrentClustering, TimeStepConstraints, Time);
+                double[] localDts = clusterer.CalculateTimeStepSizePerCluster(CurrentClustering, TimeStepConstraints, Time);
 
                 // Old
-                double[] localDts = new double[CurrentClustering.NumberOfClusters];
-                for (int i = 0; i < CurrentClustering.NumberOfClusters; i++) {
-                    // Use "harmonic sum" of step - sizes, see
-                    // WatkinsAsthanaJameson2016 for the reasoning
-                    double dt = 1.0 / TimeStepConstraints.Sum(
-                            c => 1.0 / c.GetGloballyAdmissibleStepSize(CurrentClustering.Clusters[i]));
-                    if (dt == 0.0) {
-                        throw new ArgumentException(
-                            "Time-step size is exactly zero.");
-                    } else if (double.IsNaN(dt)) {
-                        throw new ArgumentException(
-                            "Could not determine stable time-step size in sub-grid " + i + ". This indicates illegal values in some cells.");
-                    }
+                //double[] localDts = new double[CurrentClustering.NumberOfClusters];
+                //for (int i = 0; i < CurrentClustering.NumberOfClusters; i++) {
+                //    // Use "harmonic sum" of step - sizes, see
+                //    // WatkinsAsthanaJameson2016 for the reasoning
+                //    double dt = 1.0 / TimeStepConstraints.Sum(
+                //            c => 1.0 / c.GetGloballyAdmissibleStepSize(CurrentClustering.Clusters[i]));
+                //    if (dt == 0.0) {
+                //        throw new ArgumentException(
+                //            "Time-step size is exactly zero.");
+                //    } else if (double.IsNaN(dt)) {
+                //        throw new ArgumentException(
+                //            "Could not determine stable time-step size in sub-grid " + i + ". This indicates illegal values in some cells.");
+                //    }
 
-                    // Restrict timesteps
-                    dt = Math.Min(dt, TimeStepConstraints.First().Endtime - Time);
-                    dt = Math.Min(Math.Max(dt, TimeStepConstraints.First().dtMin), TimeStepConstraints.First().dtMax);
+                //    // Restrict timesteps
+                //    dt = Math.Min(dt, TimeStepConstraints.First().Endtime - Time);
+                //    dt = Math.Min(Math.Max(dt, TimeStepConstraints.First().dtMin), TimeStepConstraints.First().dtMax);
 
-                    localDts[i] = dt;
-                }
+                //    localDts[i] = dt;
+                //}
 
                 int[] newNumOfSubSteps = new int[CurrentClustering.NumberOfClusters];
                 bool hasChanged = false;
@@ -675,66 +675,66 @@ namespace BoSSS.Solution.Timestepping {
         /// <summary>
         /// Calculates the number of sub-steps for each sub-grid
         /// </summary>
-        protected Clusterer.Clustering CalculateNumberOfLocalTS(Clusterer.Clustering clustering) {
-            NumberOfLocalTimeSteps.Clear();
+//        protected Clusterer.Clustering CalculateNumberOfLocalTS(Clusterer.Clustering clustering) {
+//            NumberOfLocalTimeSteps.Clear();
 
-            double[] sendHmin = new double[clustering.NumberOfClusters];
-            double[] rcvHmin = new double[clustering.NumberOfClusters];
+//            double[] sendHmin = new double[clustering.NumberOfClusters];
+//            double[] rcvHmin = new double[clustering.NumberOfClusters];
 
-            MultidimensionalArray cellMetric = clusterer.GetStableTimestepSize(clustering.SubGrid);
-            for (int i = 0; i < clustering.NumberOfClusters; i++) {
-                double h_min = double.MaxValue;
-                CellMask volumeMask = clustering.Clusters[i].VolumeMask;
-                foreach (Chunk c in volumeMask) {
-                    int JE = c.JE;
-                    for (int j = c.i0; j < JE; j++) {
-                        h_min = Math.Min(cellMetric[clustering.SubGrid.LocalCellIndex2SubgridIndex[j]], h_min);
-                    }
-                }
-                sendHmin[i] = h_min;
-            }
+//            MultidimensionalArray cellMetric = clusterer.GetStableTimestepSize(clustering.SubGrid);
+//            for (int i = 0; i < clustering.NumberOfClusters; i++) {
+//                double h_min = double.MaxValue;
+//                CellMask volumeMask = clustering.Clusters[i].VolumeMask;
+//                foreach (Chunk c in volumeMask) {
+//                    int JE = c.JE;
+//                    for (int j = c.i0; j < JE; j++) {
+//                        h_min = Math.Min(cellMetric[clustering.SubGrid.LocalCellIndex2SubgridIndex[j]], h_min);
+//                    }
+//                }
+//                sendHmin[i] = h_min;
+//            }
 
-            // MPI to ensure that each processor has the local time step sizes
-            unsafe {
-                fixed (double* pSend = sendHmin, pRcv = rcvHmin) {
-                    csMPI.Raw.Allreduce((IntPtr)(pSend), (IntPtr)(pRcv), clustering.NumberOfClusters, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._OP.MIN, csMPI.Raw._COMM.WORLD);
-                }
-            }
+//            // MPI to ensure that each processor has the local time step sizes
+//            unsafe {
+//                fixed (double* pSend = sendHmin, pRcv = rcvHmin) {
+//                    csMPI.Raw.Allreduce((IntPtr)(pSend), (IntPtr)(pRcv), clustering.NumberOfClusters, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._OP.MIN, csMPI.Raw._COMM.WORLD);
+//                }
+//            }
 
-            int[] numOfSubSteps = new int[clustering.NumberOfClusters];
-            for (int i = 0; i < numOfSubSteps.Length; i++) {
-                numOfSubSteps[i] = RoundToInt(rcvHmin[0] / rcvHmin[i], 1.0e-2); // eps was 1.0e-2
-            }
+//            int[] numOfSubSteps = new int[clustering.NumberOfClusters];
+//            for (int i = 0; i < numOfSubSteps.Length; i++) {
+//                numOfSubSteps[i] = RoundToInt(rcvHmin[0] / rcvHmin[i], 1.0e-2); // eps was 1.0e-2
+//            }
 
-            //numOfSubSteps = RestrictNumberOfSubSteps(numOfSubSteps.ToList()).ToArray();
+//            //numOfSubSteps = RestrictNumberOfSubSteps(numOfSubSteps.ToList()).ToArray();
 
-            List<SubGrid> newClusters = new List<SubGrid>();
+//            List<SubGrid> newClusters = new List<SubGrid>();
 
-            for (int i = 0; i < clustering.NumberOfClusters; i++) {
-                if (i < clustering.NumberOfClusters - 1 && numOfSubSteps[i] == numOfSubSteps[i + 1]) {
-                    // Combine both sub-grids and remove the previous one
-                    SubGrid combinedSubGrid = new SubGrid(clustering.Clusters[i].VolumeMask.Union(clustering.Clusters[i + 1].VolumeMask));
-                    newClusters.Add(combinedSubGrid);
-#if DEBUG
-                    Console.WriteLine("CalculateNumberOfLocalTS: Clustering leads to sub-grids which are too similar, i.e. they have the same number of local time steps. They are combined.");
-#endif
-                    NumberOfLocalTimeSteps.Add(numOfSubSteps[i]);
-                    i++;
-                } else {
-                    newClusters.Add(clustering.Clusters[i]);
-                    NumberOfLocalTimeSteps.Add(numOfSubSteps[i]);
-#if DEBUG
-                    // Console output only in last pass
-                    if (i == clustering.NumberOfClusters - 1) {
-                        for (int j = 0; j < newClusters.Count; j++) {
-                            Console.WriteLine("id=" + j + " -> sub-steps=" + NumberOfLocalTimeSteps[j] + " and elements=" + newClusters[j].GlobalNoOfCells);
-                        }
-                    }
-#endif
-                }
-            }
-            return new Clusterer.Clustering(newClusters, clustering.SubGrid);
-        }
+//            for (int i = 0; i < clustering.NumberOfClusters; i++) {
+//                if (i < clustering.NumberOfClusters - 1 && numOfSubSteps[i] == numOfSubSteps[i + 1]) {
+//                    // Combine both sub-grids and remove the previous one
+//                    SubGrid combinedSubGrid = new SubGrid(clustering.Clusters[i].VolumeMask.Union(clustering.Clusters[i + 1].VolumeMask));
+//                    newClusters.Add(combinedSubGrid);
+//#if DEBUG
+//                    Console.WriteLine("CalculateNumberOfLocalTS: Clustering leads to sub-grids which are too similar, i.e. they have the same number of local time steps. They are combined.");
+//#endif
+//                    NumberOfLocalTimeSteps.Add(numOfSubSteps[i]);
+//                    i++;
+//                } else {
+//                    newClusters.Add(clustering.Clusters[i]);
+//                    NumberOfLocalTimeSteps.Add(numOfSubSteps[i]);
+//#if DEBUG
+//                    // Console output only in last pass
+//                    if (i == clustering.NumberOfClusters - 1) {
+//                        for (int j = 0; j < newClusters.Count; j++) {
+//                            Console.WriteLine("id=" + j + " -> sub-steps=" + NumberOfLocalTimeSteps[j] + " and elements=" + newClusters[j].GlobalNoOfCells);
+//                        }
+//                    }
+//#endif
+//                }
+//            }
+//            return new Clusterer.Clustering(newClusters, clustering.SubGrid);
+//        }
 
         /// <summary>
         /// Interpolates the boundary elements for sub-grid of "id"
@@ -971,6 +971,7 @@ namespace BoSSS.Solution.Timestepping {
             }
             return result;
         }
+
         protected List<int> RestrictNumberOfSubSteps(List<int> numOfSubSteps) {
             List<int> result = numOfSubSteps;
 
