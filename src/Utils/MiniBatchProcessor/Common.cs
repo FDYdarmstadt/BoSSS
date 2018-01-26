@@ -75,12 +75,14 @@ namespace MiniBatchProcessor {
         ///// </summary>
         //public const string FINISHED_DIR = "finished";
 
-        private static void ReadDir(string RelDir, List<Tuple<JobData, JobStatus>> R, JobStatus s) {
+        private static void ReadDir(string RelDir, List<Tuple<JobData, JobStatus>> R, JobStatus s0) {
             string dir = Path.Combine(config.BatchInstructionDir, RelDir);
 
             foreach (var fName in Directory.GetFiles(dir, "*")) {
                 int id;
                 bool IsInt = Int32.TryParse(Path.GetFileName(fName), out id);
+
+                JobStatus s = s0;
 
                 if (!IsInt)
                     continue;
