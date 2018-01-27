@@ -49,7 +49,7 @@ namespace BoSSS.Application.BoSSSpad {
             ctrl.ProjectName = InteractiveShell.WorkflowMgm.CurrentProject;
 
             Type solverClass = ctrl.GetSolverType();
-            Job job = new Job("byCmdLine_Local", solverClass);
+            Job job = new Job(ctrl.SessionName , solverClass);
             job.NumberOfMPIProcs = NumberOfMPIProcs;
             job.SetControlObject(ctrl);
             job.Activate(BatchSys);

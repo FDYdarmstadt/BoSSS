@@ -27,14 +27,26 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         classic_cg = 2,
 
-        exp_direct,
+        /// <summary>
+        /// Direct solver from new solver framework (causes some overhead in comparison to <see cref="classic_pardiso"/>).
+        /// </summary>
+        exp_direct = 3,
 
 
-        exp_softpcg_mg,
+        /// <summary>
+        /// Conjugate gradient, with multi-grid preconditioner.
+        /// </summary>
+        exp_softpcg_mg = 4,
 
 
-        exp_softpcg_schwarz,
+        /// <summary>
+        /// Conjugate gradient, with additive Schwarz preconditioner.
+        /// </summary>
+        exp_softpcg_schwarz = 5,
 
-        exp_softpcg_schwarz_directcoarse
+        /// <summary>
+        /// Conjugate gradient, with additive Schwarz preconditioner, including a coarse-grid solver.
+        /// </summary>
+        exp_softpcg_schwarz_directcoarse = 6
     }
 }
