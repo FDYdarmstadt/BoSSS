@@ -59,7 +59,6 @@ namespace BoSSS.Application.SipPoisson {
                      return Math.Sqrt(x * x + y * y);
                  });
 
-            R.solver_name = null;
 
             return R;
         }
@@ -120,8 +119,6 @@ namespace BoSSS.Application.SipPoisson {
             RR.AddBoundaryCondition(BoundaryType.Dirichlet.ToString());
             RR.AddBoundaryCondition(BoundaryType.Neumann.ToString());
 
-            //RR.solver_name = "direct";
-            RR.solver_name = null;
 
             RR.GridPartType = BoSSS.Foundation.Grid.GridPartType.none;
 
@@ -166,7 +163,6 @@ namespace BoSSS.Application.SipPoisson {
             R.AddBoundaryCondition(BoundaryType.Dirichlet.ToString());
             R.AddBoundaryCondition(BoundaryType.Neumann.ToString());
 
-            R.solver_name = null;
 
             return R;
         }
@@ -184,7 +180,7 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="solver_name">
         /// Name of solver to use.
         /// </param>
-        public static SipControl TestCartesian2(int[] Res, double[] Stretch = null, string solver_name = "softpcg+schwarz+directcoarse", int deg = 3) {
+        public static SipControl TestCartesian2(int[] Res, double[] Stretch = null, SolverCodes solver_name = SolverCodes.exp_softpcg_schwarz_directcoarse, int deg = 3) {
             if(Res.Length != 2 && Res.Length != 3)
                 throw new ArgumentOutOfRangeException();
             if(Stretch == null) {
@@ -305,7 +301,6 @@ namespace BoSSS.Application.SipPoisson {
 
             R.AddBoundaryCondition(BoundaryType.Dirichlet.ToString(), "T", exSol);
 
-            R.solver_name = null;
             R.NoOfSolverRuns = 1;
 
             return R;
