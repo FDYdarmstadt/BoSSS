@@ -611,8 +611,11 @@ namespace BoSSS.Solution {
         /// control object
         /// </param>
         public virtual void Init(AppControl control) {
-           
-            this.Control = (T)control;
+            if (control != null) {
+                this.Control = (T)control;
+            } else {
+                this.Control = new T();
+            }
 
 
             // set . as decimal separator:
@@ -1782,15 +1785,10 @@ namespace BoSSS.Solution {
                     // no mesh adaptation, but (maybe) grid redistribution (load balancing)
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                    
-
-
-
                     // init / determine if partition has changed / check Partitioning
                     // ==============================================================
 
                     //int[] NewPartition = ComputeNewCellDistribution(TimeStepNo, physTime);
-
 
 
                     int[] NewPartition = fixedPartition ?? ComputeNewCellDistribution(TimeStepNo, physTime);
