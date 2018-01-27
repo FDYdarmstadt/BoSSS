@@ -47,8 +47,7 @@ namespace BoSSS.Application.LoadBalancingTest {
             this.Control.NoOfMultigridLevels = 1; // required for XDG-BDF timestepper
             return grd;
         }
-
-        
+              
 
         XDGField u;
         XDGField uResidual;
