@@ -60,13 +60,8 @@ namespace BoSSS.Application.Matrix_MPItest {
         internal XDGusage m_UseXdg;
         internal int m_DGorder = 2;
 
-        public override void Init(BoSSS.Solution.Control.AppControl control) {
-            control.GridPartType = BoSSS.Foundation.Grid.GridPartType.METIS;
-            base.Init(control);
-        }
-
         protected override GridCommons CreateOrLoadGrid() {
-            
+            base.Control.GridPartType = BoSSS.Foundation.Grid.GridPartType.METIS;
             var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-3, 3, 13), GenericBlas.Linspace(-3, 3, 13));
             //var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-3, 3, 8), GenericBlas.Linspace(-3, 3, 2));
             //Console.WriteLine("testcode");
