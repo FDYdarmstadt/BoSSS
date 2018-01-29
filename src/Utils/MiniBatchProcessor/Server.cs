@@ -322,12 +322,6 @@ namespace MiniBatchProcessor {
                 }
 
 
-                // see if there are available processors
-                if (AvailableProcs <= 0) {
-                    Thread.Sleep(10000);
-                    continue;
-                }
-
                 // see if any of the running jobs is finished
                 for (int i = 0; i < Running.Count; i++) {
                     var TT = Running[i];
@@ -337,6 +331,12 @@ namespace MiniBatchProcessor {
                         AvailableProcs += TT.Item2.data.NoOfProcs;
                         i--;
                     }
+                }
+
+                // see if there are available processors
+                if (AvailableProcs <= 0) {
+                    Thread.Sleep(10000);
+                    continue;
                 }
 
                 var NextJobs = ClientAndServer.Queue.ToArray();
@@ -430,7 +430,7 @@ namespace MiniBatchProcessor {
                 psi.RedirectStandardOutput = true;
                 psi.RedirectStandardError = true;
 
-                Server.LogMessage(string.Format("starting: {0} {1}", psi.FileName, psi.Arguments));
+                Server.LogMessage(string.Format("starting job #{2}, '{3}': {0} {1}", psi.FileName, psi.Arguments, data.ID, data.Name));
 
 
 
@@ -479,7 +479,7 @@ namespace MiniBatchProcessor {
                             }
 
                             success = (p.ExitCode == 0);
-                            Server.LogMessage(string.Format("finished " + psi.FileName + " " + psi.Arguments));
+                            Server.LogMessage(string.Format("finished job #" + data.ID + "."));
 
                             using (var exit = new StreamWriter(Path.Combine(WorkDir, data.ID.ToString() + "_exit.txt"))) {
                                 exit.WriteLine(p.ExitCode);
