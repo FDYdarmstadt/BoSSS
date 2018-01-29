@@ -360,8 +360,6 @@ namespace BoSSS.Application.BoSSSpad {
         /// Gnuplot plotting, automatic choice of gnuplot driver depending on
         /// the current value of <see cref="UseCairoLatex"/>.
         /// </summary>
-        /// <param name="gp"></param>
-        /// <returns></returns>
         public static object PlotNow(this Gnuplot gp) {
 
             if (UseCairoLatex) {
@@ -370,5 +368,78 @@ namespace BoSSS.Application.BoSSSpad {
                 return gp.PlotGIF();
             }
         }
+
+        /// <summary>
+        /// Gnuplot plotting, automatic choice of gnuplot driver depending on
+        /// the current value of <see cref="UseCairoLatex"/>.
+        /// </summary>
+        public static object PlotNow(this Plot2Ddata _2DData) {
+            using (Gnuplot gp = _2DData.ToGnuplot()) {
+
+                if (UseCairoLatex) {
+                    return gp.PlotCairolatex();
+                } else {
+                    return gp.PlotGIF();
+                }
+            }
+        }
+
+
+
+        /// <summary>
+        /// Converts <see cref="Plot2Ddata"/> into an alive Gnuplot object.
+        /// </summary>
+        public static Gnuplot ToGnuplot(this Plot2Ddata _2DData) {
+            Gnuplot gp = new Gnuplot();
+            
+            if (_2DData.LogX) {
+                gp.Cmd("set logscale x");
+            } else {
+                //gp.Cmd("unset logscale x");
+            }
+
+            if (_2DData.LogY) {
+                gp.Cmd("set logscale y");
+            } else {
+                //gp.Cmd("unset logscale y");
+            }
+
+            if((_2DData.XrangeMax != null) != (_2DData.XrangeMin != null)) {
+                throw new ArgumentException("X range minimum and maximum must be set either both or none.");
+            }
+            if((_2DData.YrangeMax != null) != (_2DData.YrangeMin != null)) {
+                throw new ArgumentException("Y range minimum and maximum must be set either both or none.");
+            }
+
+            if(_2DData.XrangeMin != null) {
+                if (_2DData.XrangeMin.Value >= _2DData.XrangeMax.Value)
+                    throw new ArgumentException("X range maximum must be grater than minimum.");
+
+                gp.SetXRange(_2DData.XrangeMin.Value, _2DData.XrangeMax.Value);
+            }
+
+            if (_2DData.YrangeMin != null) {
+                if (_2DData.YrangeMin.Value >= _2DData.YrangeMax.Value)
+                    throw new ArgumentException("Y range maximum must be grater than minimum.");
+
+                gp.SetYRange(_2DData.YrangeMin.Value, _2DData.YrangeMax.Value);
+            }
+
+            if(_2DData.Xlabel != null) {
+                gp.SetXLabel(_2DData.Xlabel);
+            }
+            if(_2DData.Ylabel != null) {
+                gp.SetYLabel(_2DData.Ylabel);
+            }
+
+            
+            foreach (var xyData in _2DData.dataGroups) {
+                gp.PlotXY(xyData.Abscissas, xyData.Values, xyData.Name, xyData.Format);
+            }
+
+
+            return gp;
+        }
+
     }
 }

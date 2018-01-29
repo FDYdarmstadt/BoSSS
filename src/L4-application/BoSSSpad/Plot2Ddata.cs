@@ -64,13 +64,13 @@ namespace BoSSS.Application.BoSSSpad {
             /// The points of evaluation, i.e. x-values
             /// </summary>
             [DataMember]
-            public readonly double[] Abscissas;
+            public double[] Abscissas;
 
             /// <summary>
             /// The values at the <see cref="Abscissas"/>, i.e. y-values
             /// </summary>
             [DataMember]
-            public readonly double[] Values;
+            public double[] Values;
 
             /// <summary>
             /// Constructs a data group.
@@ -97,6 +97,19 @@ namespace BoSSS.Application.BoSSSpad {
                 this.Values = values;
             }
 
+            /// <summary>
+            /// Constructs a data group.
+            /// </summary>
+            /// <param name="name">
+            /// The name of the group
+            /// </param>
+            public XYvalues(string name) {
+
+                this.Name = name;
+                this.Abscissas = new double[0];
+                this.Values = new double[0];
+            }
+
             #region ICloneable Members
 
             /// <summary>
@@ -107,10 +120,7 @@ namespace BoSSS.Application.BoSSSpad {
                     this.Name.CloneAs(),
                     this.Abscissas.CloneAs(),
                     this.Values.CloneAs()) {
-                    Color = this.Color,
-                    Dash = this.Dash,
-                    PointType = this.PointType,
-                    Style = this.Style
+                    Format = this.Format.CloneAs()
                 };
             }
 
@@ -146,23 +156,52 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// y-range minimum, optional 
         /// </summary>
+        [DataMember]
         public double? XrangeMin = null;
 
         /// <summary>
         /// x-range maximum, optional 
         /// </summary>
+        [DataMember]
         public double? XrangeMax = null;
 
         /// <summary>
         /// y-range minimum, optional 
         /// </summary>
+        [DataMember]
         public double? YrangeMin = null;
 
         /// <summary>
         /// y-range maximum, optional 
         /// </summary>
+        [DataMember]
         public double? YrangeMax = null;
+
+        /// <summary>
+        /// Label for X-axis
+        /// </summary>
+        [DataMember]
+        public string Xlabel = null;
+
+        /// <summary>
+        /// Label for secondary X-Axis
+        /// </summary>
+        [DataMember]
+        public string X2label = null;
+
+        /// <summary>
+        /// Label for Y-Axis
+        /// </summary>
+        [DataMember]
+        public string Ylabel = null;
+
+        /// <summary>
+        /// Label for secondary Y-Axis
+        /// </summary>
+        [DataMember]
+        public string Y2label = null;
         
+
         /// <summary>
         /// Constructs a new, empty plot.
         /// </summary>

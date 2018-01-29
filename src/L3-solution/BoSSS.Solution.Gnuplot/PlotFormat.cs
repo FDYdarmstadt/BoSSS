@@ -28,7 +28,7 @@ namespace BoSSS.Solution.Gnuplot {
     /// </summary>
     [Serializable]
     [DataContract]
-    public class PlotFormat {
+    public class PlotFormat : ICloneable {
 
         static bool ContainsRemove(ref string f, string token) {
             token = token.ToLowerInvariant();
@@ -290,6 +290,21 @@ namespace BoSSS.Solution.Gnuplot {
         /// </summary>
         public PlotFormat WithStyle(Styles style) {
             return new PlotFormat(baseLineFormat: this, Style: style);
+        }
+
+        /// <summary>
+        /// cloning
+        /// </summary>
+        /// <returns></returns>
+        public object Clone() {
+            return new PlotFormat() {
+                dashType = this.dashType,
+                lineColor = this.lineColor,
+                lineWidth = this.lineWidth,
+                pointSize = this.PointSize,
+                pointType = this.pointType,
+                _Style = this.Style
+            };
         }
     }
 }
