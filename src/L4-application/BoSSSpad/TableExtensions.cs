@@ -266,7 +266,7 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
-        /// Extracts rows by a selctor.
+        /// Extracts rows by a selector.
         /// </summary>
         /// <param name="Tab">The original table.</param>
         /// <param name="Selector">
@@ -514,7 +514,17 @@ namespace BoSSS.Application.BoSSSpad {
                         txt.WriteLine();
                 }
             }
+        }
+
+
+        public static Plot2Ddata ToPlot(this DataTable table, string ColName_ForXValues, string ColName_ForYValues, , Func<int, IDictionary<string, object>, string> GroupSelector, bool IgnoreOnException = true) {
+            Plot2Ddata ret = new Plot2Ddata()
 
         }
+
+        public static Plot2Ddata[,] ToMultiplot() {
+
+        }
+
     }
 }

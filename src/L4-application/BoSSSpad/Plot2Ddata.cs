@@ -23,34 +23,53 @@ using System.Text;
 using BoSSS.Platform;
 using BoSSS.Solution.Gnuplot;
 using ilPSP;
+using System.Runtime.Serialization;
 
 namespace BoSSS.Application.BoSSSpad {
 
     /// <summary>
-    /// A type representing multiple sets of abscissas with the corresponding
-    /// sets of values.
+    /// A type representing multiple sets of abscissas with the corresponding sets of values.
     /// </summary>
-    public struct Plot2Ddata {
+    [Serializable]
+    [DataContract]
+    public class Plot2Ddata {
 
         /// <summary>
-        /// Represents a single set of abscissas with the corresponding set of
-        /// values
+        /// Represents a single set of abscissas with the corresponding set of values.
         /// </summary>
-        public struct XYvalues : ICloneable {
+        [Serializable]
+        [DataContract]
+        public class XYvalues : ICloneable {
 
             /// <summary>
-            /// The name of the group
+            /// Gnuplot Style to use.
             /// </summary>
-            public readonly string Name;
+            public BoSSS.Solution.Gnuplot.PlotFormat Format = new PlotFormat() {
+                PointType = PointTypes.Circle,
+                DashType = DashTypes.Solid,
+                LineColor = LineColors.Black,
+                LineWidth = 1,
+                PointSize = 3,
+                Style = Styles.LinesPoints
+            };
+
+
+            /// <summary>
+            /// The name of the group, i.e. the name which may show up in the legend.
+            /// </summary>
+            [DataMember]
+            public string Name;
 
             /// <summary>
             /// The points of evaluation, i.e. x-values
             /// </summary>
+            [DataMember]
             public readonly double[] Abscissas;
 
             /// <summary>
             /// The values at the <see cref="Abscissas"/>, i.e. y-values
             /// </summary>
+            [DataMember]
             public readonly double[] Values;
 
             /// <summary>
@@ -80,11 +99,19 @@ namespace BoSSS.Application.BoSSSpad {
 
             #region ICloneable Members
 
+            /// <summary>
+            /// Clone
+            /// </summary>
             public object Clone() {
                 return new XYvalues(
                     this.Name.CloneAs(),
                     this.Abscissas.CloneAs(),
-                    this.Values.CloneAs());
+                    this.Values.CloneAs()) {
+                    Color = this.Color,
+                    Dash = this.Dash,
+                    PointType = this.PointType,
+                    Style = this.Style
+                };
             }
 
             #endregion
@@ -100,22 +127,47 @@ namespace BoSSS.Application.BoSSSpad {
         /// This will be done on the fly during
         /// the post-processing of the data
         /// </remarks>
-        public readonly XYvalues[] dataGroups;
+        [DataMember]
+        public XYvalues[] dataGroups;
 
         /// <summary>
         /// Indicates whether the abscissas should be scaled logarithmically.
         /// </summary>
-        public bool LogX {
-            get;
-            private set;
-        }
+        [DataMember]
+        public bool LogX;
 
         /// <summary>
         /// Indicates whether the values should be scaled logarithmically.
         /// </summary>
-        public bool LogY {
-            get;
-            private set;
+        [DataMember]
+        public bool LogY;
+
+
+        /// <summary>
+        /// y-range minimum, optional 
+        /// </summary>
+        public double? XrangeMin = null;
+
+        /// <summary>
+        /// x-range maximum, optional 
+        /// </summary>
+        public double? XrangeMax = null;
+
+        /// <summary>
+        /// y-range minimum, optional 
+        /// </summary>
+        public double? YrangeMin = null;
+
+        /// <summary>
+        /// y-range maximum, optional 
+        /// </summary>
+        public double? YrangeMax = null;
+        
+        /// <summary>
+        /// Constructs a new, empty plot.
+        /// </summary>
+        public Plot2Ddata() {
+            this.dataGroups = new XYvalues[0];
         }
 
         /// <summary>
