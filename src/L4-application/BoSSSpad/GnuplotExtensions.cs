@@ -432,9 +432,15 @@ namespace BoSSS.Application.BoSSSpad {
                 gp.SetYLabel(_2DData.Ylabel);
             }
 
+            if(_2DData.X2label != null) {
+                gp.SetX2Label(_2DData.X2label);
+            }
+            if(_2DData.Y2label != null) {
+                gp.SetYLabel(_2DData.Y2label);
+            }
             
             foreach (var xyData in _2DData.dataGroups) {
-                gp.PlotXY(xyData.Abscissas, xyData.Values, xyData.Name, xyData.Format);
+                gp.PlotXY(xyData.Abscissas, xyData.Values, xyData.Name, xyData.Format, useX2: xyData.UseX2, useY2: xyData.UseY2);
             }
 
 

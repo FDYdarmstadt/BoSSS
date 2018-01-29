@@ -63,24 +63,30 @@ Func<double[],double> g2 = (X => Math.Abs(Math.Sin(X[0])));          \newline
  }
 \BoSSSexe
 \BoSSScmd{
+/// We define equidistant sampling points...
 double[] x = GenericBlas.Linspace(0, 2.0*Math.PI, 1000);
  }
 \BoSSSexe
 \BoSSScmd{
-var gp0 = new Gnuplot();
+/// ...and compute the function values. In the loop, we have to convert the scalar \code{x[i]} into an array
+/// with one element, since \code{g1} has to be feed with arrays.
+double[] g1\_values = new double[x.Length];\newline 
+for(int i = 0; i < x.Length; i++) \{\newline 
+\btab g1\_values[i] = g1(new[] \{ x[i]\} );\newline 
+\}
  }
 \BoSSSexe
 \BoSSScmd{
-gp0.PlotXY(x, g1, "g1", new PlotFormat(lineColor: (LineColors)(1)));          \newline 
-\btab // plot is deferred until 'PlotNow()' is called
+/// Instead of loops, we can also use Linq-functions:
+double[] g2\_values = x.Select(x => g2(new []\{ x \})).ToArray();
  }
 \BoSSSexe
 \BoSSScmd{
-gp0.PlotXY(x, g2, "g2", new PlotFormat(lineColor: (LineColors)(2)));
- }
-\BoSSSexe
-\BoSSScmd{
-gp0.PlotNow();  // executes all gnuplot-commands
+/// For now, we are using the simple plotting interface, which supports
+/// Matlab-Style format specifiers and color names. (More advanced plots
+/// can be produced with \code{Plot2Ddata} and/or \code{Gnuplot} classes)
+Plot(X1:x, Y1:g1\_values, Name1:"function g1", Format1:"--red",\newline 
+\btab  X2:x, Y2:g2\_values, Name2:"function g2", Format2:"-.blue");
  }
 \BoSSSexe
 \BoSSScmd{
@@ -111,7 +117,7 @@ Grid1.NumberOfCells;
 \BoSSScmd{
 var gdata1 = new GridData(Grid1);
  }
-\BoSSSexeSilent
+\BoSSSexe
 \BoSSScmd{
 /// \subsection{Projection onto the DG space}
 /// At this point, we are able to create the so-called \emph{DG fields} to approximate \code{g1}
@@ -236,26 +242,9 @@ for(int i = 0; i < cell0.Length; i++) \{         \newline
  }
 \BoSSSexe
 \BoSSScmd{
-var gp3 = new Gnuplot();
- }
-\BoSSSexe
-\BoSSScmd{
-gp3.PlotY(cell1, "disc. cell", new PlotFormat(lineColor: (LineColors)(1),          \newline 
-\btab  Style:Styles.LinesPoints, pointType: (PointTypes)(1)));
- }
-\BoSSSexe
-\BoSSScmd{
-gp3.PlotY(cell0, "cell 0", new PlotFormat(lineColor: (LineColors)(2),          \newline 
-\btab  Style:Styles.LinesPoints, pointType: (PointTypes)(2)));
- }
-\BoSSSexe
-\BoSSScmd{
-gp3.PlotY(cell2, "cell 2", new PlotFormat(lineColor: (LineColors)(3),          \newline 
-\btab  Style:Styles.LinesPoints, pointType: (PointTypes)(3)));
- }
-\BoSSSexe
-\BoSSScmd{
-gp3.PlotNow();
+Plot(X1:null, Y1:cell1, Name1:"disc. cell", Format1:"*-magenta",\newline 
+\btab  X2:null, Y2:cell0, Name2:"cell0",      Format2:"o-blue",\newline 
+\btab  X3:null, Y3:cell2, Name3:"cell2",      Format3:"o-red");
  }
 \BoSSSexe
 \BoSSScmd{
@@ -274,41 +263,10 @@ double[] cell0 = g2\_grid2\_p8.Coordinates.GetRow(0)         \newline
  }
 \BoSSSexe
 \BoSSScmd{
-double[] cell0 = g2\_grid2\_p8.Coordinates.GetRow(0)          \newline 
-\btab .Select(d => Math.Log10(Math.Abs(d))).ToArray();
- }
-\BoSSSexe
-\BoSSScmd{
-double[] cell1 = g2\_grid2\_p8.Coordinates.GetRow(1)         \newline 
-\btab .Select(d => Math.Log10(Math.Abs(d))).ToArray();
- }
-\BoSSSexe
-\BoSSScmd{
-double[] cell2 = g2\_grid2\_p8.Coordinates.GetRow(2)         \newline 
-\btab .Select(d => Math.Log10(Math.Abs(d))).ToArray();
- }
-\BoSSSexe
-\BoSSScmd{
-var gp4 = new Gnuplot();
- }
-\BoSSSexe
-\BoSSScmd{
-gp4.PlotY(cell1, "g2, disc. cell", new PlotFormat(lineColor: (LineColors) (1),         \newline 
-\btab Style:Styles.LinesPoints, pointType: (PointTypes)(1)));
- }
-\BoSSSexe
-\BoSSScmd{
-gp4.PlotY(cell0, "g2, cell 0", new PlotFormat(lineColor: (LineColors) (2),         \newline 
-\btab Style:Styles.LinesPoints, pointType: (PointTypes)(2)));
- }
-\BoSSSexe
-\BoSSScmd{
-gp4.PlotY(cell2, "g2, cell 2", new PlotFormat(lineColor: (LineColors) (3),         \newline 
-\btab Style:Styles.LinesPoints, pointType: (PointTypes)(3)));
- }
-\BoSSSexe
-\BoSSScmd{
-gp4.PlotNow();
+Plot(X1:null, Y1:cell1, Name1:"disc. cell", Format1:"*-magenta",\newline 
+\btab  X2:null, Y2:cell0, Name2:"cell0",      Format2:"o-blue",\newline 
+\btab  X3:null, Y3:cell2, Name3:"cell2",      Format3:"o-red",\newline 
+\btab  logY:true);
  }
 \BoSSSexe
 \BoSSScmd{
@@ -351,8 +309,8 @@ for(int i = 0; i < 2; i++) \{ // loop over the resolution sequence         \newl
 \btab for(int p = 0; p <= 4; p++) \{ // loop over polynomial orders         \newline 
 \btab \btab for(int k = 0; k < ResSeq[i].Length; k++) \{ // loop over different resolutions        \newline 
  \newline 
-\btab \btab \btab Console.WriteLine("Performing Resolution \{0\}"+         \newline 
-\btab \btab \btab ", polynomial order \{1\} ... ", ResSeq[i][k], p);         \newline 
+\btab \btab \btab Console.Write("polynomial order \{1\}"+         \newline 
+\btab \btab \btab ",\textbackslash tResolution \{0\}... ", ResSeq[i][k], p);         \newline 
  \newline 
 \btab \btab \btab var grid  = Grid1D.LineGrid(GenericBlas.Linspace(0,         \newline 
 \btab \btab \btab 2.0*Math.PI, ResSeq[i][k] + 1));           \newline 
@@ -366,7 +324,7 @@ for(int i = 0; i < 2; i++) \{ // loop over the resolution sequence         \newl
  \newline 
 \btab \btab \btab Errors[i,p,k] = g2\_h.L2Error(g2);         \newline 
  \newline 
-\btab \btab \btab Console.WriteLine("done: L2 error is \{0\}.", Errors[i,p,k]);         \newline 
+\btab \btab \btab Console.WriteLine("\textbackslash tdone: L2 error is \{0:0.###e-00\}.", Errors[i,p,k]);         \newline 
 \btab \btab \}         \newline 
 \btab \}         \newline 
  \}
@@ -386,50 +344,44 @@ Assert.LessOrEqual(Errors[0,3,0],1E-03);
  }
 \BoSSSexe
 \BoSSScmd{
-/// We set up the plot for the grids which have the kink at the cell boundary:
+/// We plot the error for the grids which have the kink at the cell boundary,
+/// there we reach spectral convergence:
  }
 \BoSSSexe
 \BoSSScmd{
-var gp6 = new Gnuplot();         \newline 
-gp6.Cmd("set logscale x");         \newline 
-gp6.Cmd("set logscale y");         \newline 
-int cnt = 1;         \newline 
-for(int p = 0; p <=4; p++) \{         \newline 
-\btab  gp6.PlotXY(ResSeq[0].Select(J => Math.PI*2.0/J),         \newline 
-\btab \btab \btab \btab Errors.ExtractSubArrayShallow(0,p,-1).To1DArray(),         \newline 
-\btab \btab \btab \btab "grid" + 1 + ",p" + p,         \newline 
-\btab \btab \btab \btab new PlotFormat(lineColor: (LineColors)(cnt),          \newline 
-\btab \btab \btab \btab Style:Styles.LinesPoints, pointType: (PointTypes)(cnt)));         \newline 
-\btab cnt = cnt + 1;         \newline 
- \}
+var hValues = ResSeq[0].Select(J => Math.PI*2.0/J);\newline 
+Plot(X1:hValues, Y1:Errors.ExtractSubArrayShallow(0,0,-1).To1DArray(),\newline 
+\btab  Name1:"grid1,p0", Format1:"o-red",\newline 
+\btab  X2:hValues, Y2:Errors.ExtractSubArrayShallow(0,1,-1).To1DArray(),\newline 
+\btab  Name2:"grid1,p0", Format2:"o-blue",\newline 
+\btab  X3:hValues, Y3:Errors.ExtractSubArrayShallow(0,2,-1).To1DArray(),\newline 
+\btab  Name3:"grid1,p0", Format3:"o-green",\newline 
+\btab  X4:hValues, Y4:Errors.ExtractSubArrayShallow(0,3,-1).To1DArray(),\newline 
+\btab  Name4:"grid1,p0", Format4:"o-magenta",\newline 
+\btab  X5:hValues, Y5:Errors.ExtractSubArrayShallow(0,4,-1).To1DArray(),\newline 
+\btab  Name5:"grid1,p0", Format5:"o-orange",\newline 
+\btab  logX:true, logY:true);
  }
 \BoSSSexe
 \BoSSScmd{
-gp6.PlotNow();
+/// Now we plot the error for the grids which have the kink within a cell;
+/// due to the low regularity, the convergence of the DG method
+/// degenerates:
  }
 \BoSSSexe
 \BoSSScmd{
-/// We set up the plot for the grids which have the kink within a cell:
- }
-\BoSSSexe
-\BoSSScmd{
-var gp7 = new Gnuplot();         \newline 
-gp7.Cmd("set logscale x");         \newline 
-gp7.Cmd("set logscale y");         \newline 
-int cnt = 1;         \newline 
-cnt     = 1;         \newline 
-for(int p = 0; p <=4; p++) \{         \newline 
-\btab gp7.PlotXY( ResSeq[1].Select(J => Math.PI*2.0/J),         \newline 
-\btab \btab \btab \btab Errors.ExtractSubArrayShallow(1,p,-1).To1DArray(),         \newline 
-\btab \btab \btab \btab "grid" + 2 + ",p" + p,          \newline 
-\btab \btab \btab \btab new PlotFormat(lineColor: (LineColors)(cnt),          \newline 
-\btab \btab \btab \btab Style:Styles.LinesPoints, pointType: (PointTypes)(cnt)));         \newline 
-\btab cnt = cnt + 1;         \newline 
-\}
- }
-\BoSSSexe
-\BoSSScmd{
-gp7.PlotNow();
+var hValues = ResSeq[0].Select(J => Math.PI*2.0/J);\newline 
+Plot(X1:hValues, Y1:Errors.ExtractSubArrayShallow(1,0,-1).To1DArray(),\newline 
+\btab  Name1:"grid1,p0", Format1:"o-red",\newline 
+\btab  X2:hValues, Y2:Errors.ExtractSubArrayShallow(1,1,-1).To1DArray(),\newline 
+\btab  Name2:"grid1,p0", Format2:"o-blue",\newline 
+\btab  X3:hValues, Y3:Errors.ExtractSubArrayShallow(1,2,-1).To1DArray(),\newline 
+\btab  Name3:"grid1,p0", Format3:"o-green",\newline 
+\btab  X4:hValues, Y4:Errors.ExtractSubArrayShallow(1,3,-1).To1DArray(),\newline 
+\btab  Name4:"grid1,p0", Format4:"o-magenta",\newline 
+\btab  X5:hValues, Y5:Errors.ExtractSubArrayShallow(1,4,-1).To1DArray(),\newline 
+\btab  Name5:"grid1,p0", Format5:"o-orange",\newline 
+\btab  logX:true, logY:true);
  }
 \BoSSSexe
 \BoSSScmd{

@@ -61,6 +61,18 @@ namespace BoSSS.Application.BoSSSpad {
             public string Name;
 
             /// <summary>
+            /// Use secondary X axis (can have another range as primary one).
+            /// </summary>
+            [DataMember]
+            public bool UseX2 = false;
+
+            /// <summary>
+            /// Use secondary Y axis (can have another range as primary one).
+            /// </summary>
+            [DataMember]
+            public bool UseY2 = false;
+
+            /// <summary>
             /// The points of evaluation, i.e. x-values
             /// </summary>
             [DataMember]

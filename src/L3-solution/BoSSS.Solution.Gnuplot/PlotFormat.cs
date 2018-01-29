@@ -30,12 +30,14 @@ namespace BoSSS.Solution.Gnuplot {
     [DataContract]
     public class PlotFormat : ICloneable {
 
-        static bool ContainsRemove(ref string f, string token) {
+        static bool ContainsRemove(ref string f, string token, ref bool any) {
             token = token.ToLowerInvariant();
             bool ret = f.Contains(token);
 
-            if(ret)
+            if (ret) {
                 f = f.Replace(token, "");
+                any = true;
+            }
 
             return ret;
         }
@@ -47,57 +49,69 @@ namespace BoSSS.Solution.Gnuplot {
             //linestyle
             FormatString = FormatString.ToLowerInvariant();
 
-            if (ContainsRemove(ref FormatString, "Black"))
+            bool anyColor = false;
+            if (ContainsRemove(ref FormatString, "Black", ref anyColor))
                 this.LineColor = LineColors.Black;
-            if (ContainsRemove(ref FormatString, "Red"))
+            if (ContainsRemove(ref FormatString, "Red", ref anyColor))
                 this.LineColor = LineColors.Red;
-            if (ContainsRemove(ref FormatString, "Green"))
+            if (ContainsRemove(ref FormatString, "Green", ref anyColor))
                 this.LineColor = LineColors.Green;
-            if (ContainsRemove(ref FormatString, "Blue"))
+            if (ContainsRemove(ref FormatString, "Blue", ref anyColor))
                 this.LineColor = LineColors.Blue;
-            if (ContainsRemove(ref FormatString, "Yellow"))
+            if (ContainsRemove(ref FormatString, "Yellow", ref anyColor))
                 this.LineColor = LineColors.Yellow;
-            if (ContainsRemove(ref FormatString, "Magenta"))
+            if (ContainsRemove(ref FormatString, "Magenta", ref anyColor))
                 this.LineColor = LineColors.Magenta;
 
-            if (ContainsRemove(ref FormatString, "k"))
+            if (ContainsRemove(ref FormatString, "k", ref anyColor))
                 this.LineColor = LineColors.Black;
-            if (ContainsRemove(ref FormatString, "r"))
+            if (ContainsRemove(ref FormatString, "r", ref anyColor))
                 this.LineColor = LineColors.Red;
-            if (ContainsRemove(ref FormatString, "g"))
+            if (ContainsRemove(ref FormatString, "g", ref anyColor))
                 this.LineColor = LineColors.Green;
-            if (ContainsRemove(ref FormatString, "b"))
+            if (ContainsRemove(ref FormatString, "b", ref anyColor))
                 this.LineColor = LineColors.Blue;
-            if (ContainsRemove(ref FormatString, "y"))
+            if (ContainsRemove(ref FormatString, "y", ref anyColor))
                 this.LineColor = LineColors.Yellow;
-            if (ContainsRemove(ref FormatString, "m"))
+            if (ContainsRemove(ref FormatString, "m", ref anyColor))
                 this.LineColor = LineColors.Magenta;
 
 
-
-            if (ContainsRemove(ref FormatString, "--"))
+            bool anyLine = false;
+            if (ContainsRemove(ref FormatString, "--", ref anyLine))
                 this.DashType = DashTypes.Dashed;
-            if (ContainsRemove(ref FormatString, ":"))
+            if (ContainsRemove(ref FormatString, ":", ref anyLine))
                 this.DashType = DashTypes.Dotted;
-            if (ContainsRemove(ref FormatString, "-."))
+            if (ContainsRemove(ref FormatString, "-.", ref anyLine))
                 this.DashType = DashTypes.DotDashed;
-            if (ContainsRemove(ref FormatString, "-"))
+            if (ContainsRemove(ref FormatString, "-", ref anyLine))
                 this.DashType = DashTypes.Solid;
 
-            if (ContainsRemove(ref FormatString, "+"))
+            bool AnySymb = false;
+            if (ContainsRemove(ref FormatString, "+", ref AnySymb)) 
                 this.PointType = PointTypes.Plus;
-            if (ContainsRemove(ref FormatString, "o"))
+            if (ContainsRemove(ref FormatString, "o", ref AnySymb))
                 this.PointType = PointTypes.OpenCircle;
-            if (ContainsRemove(ref FormatString, "*"))
+            if (ContainsRemove(ref FormatString, "*", ref AnySymb))
                 this.PointType = PointTypes.Asterisk;
-            if (ContainsRemove(ref FormatString, "x"))
+            if (ContainsRemove(ref FormatString, "x", ref AnySymb))
                 this.PointType = PointTypes.Times;
-            if (ContainsRemove(ref FormatString, "s"))
+            if (ContainsRemove(ref FormatString, "s", ref AnySymb))
                 this.PointType = PointTypes.OpenBox;
-            if (ContainsRemove(ref FormatString, "^"))
+            if (ContainsRemove(ref FormatString, "^", ref AnySymb))
                 this.PointType = PointTypes.OpenLowerTriangle;
-            if (ContainsRemove(ref FormatString, "^"))
+            if (ContainsRemove(ref FormatString, "^", ref AnySymb))
                 this.PointType = PointTypes.LowerTriangle;
+
+            if(anyLine == true) {
+                if (AnySymb)
+                    this.Style = Styles.LinesPoints;
+                else
+                    this.Style = Styles.Lines;
+            } else {
+                if (AnySymb)
+                    this.Style = Styles.Points;
+            }
 
         }
 
