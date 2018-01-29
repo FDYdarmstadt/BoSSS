@@ -134,9 +134,7 @@ namespace BoSSS.Application.Matrix_MPItest {
                 // create the test data
                 // ====================
 
-                BoSSS.Solution.Application.CommandLineOptions opts = null;
-                //opts = new BoSSS.Solution.Application.CommandLineOptions();
-                solver.Init(null, opts);
+                solver.Init(null);
                 solver.RunSolverMode();
 
                 Stopwatch stw = new Stopwatch();
@@ -338,9 +336,8 @@ namespace BoSSS.Application.Matrix_MPItest {
                 // create the test data
                 // ====================
 
-                BoSSS.Solution.Application.CommandLineOptions opts = null;
-                //opts = new BoSSS.Solution.Application.CommandLineOptions();
-                solver.Init(null, opts);
+
+                solver.Init(null);
                 solver.RunSolverMode();
 
                 Stopwatch stw = new Stopwatch();
@@ -543,9 +540,7 @@ namespace BoSSS.Application.Matrix_MPItest {
                 // create the test data
                 // ====================
 
-                BoSSS.Solution.Application.CommandLineOptions opts = null;
-                //opts = new BoSSS.Solution.Application.CommandLineOptions();
-                solver.Init(null, opts);
+                solver.Init(null);
                 solver.RunSolverMode();
 
                 Stopwatch stw = new Stopwatch();

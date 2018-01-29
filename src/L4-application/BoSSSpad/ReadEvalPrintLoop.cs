@@ -55,6 +55,8 @@ namespace BoSSS.Application.BoSSSpad {
             get;
             private set;
         }
+             
+
 
         /// <summary>
         /// Creates the evaluator using <see cref="InteractiveShell"/> as
@@ -92,26 +94,24 @@ namespace BoSSS.Application.BoSSSpad {
             eval.ReferenceAssembly(typeof(NUnit.Framework.Assert).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.PlotGenerator.PlotApplication).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.Platform.Utils.Geom.BoundingBox).Assembly);
-            eval.ReferenceAssembly(Assembly.Load("BoSSS.Foundation"));
-            eval.ReferenceAssembly(Assembly.Load("BoSSS.Foundation.XDG"));
-            eval.ReferenceAssembly(Assembly.Load("BoSSS.Foundation.Grid"));
-            eval.ReferenceAssembly(Assembly.Load("BoSSS.Solution"));
-            eval.ReferenceAssembly(Assembly.Load("BoSSS.Solution.Gnuplot"));
-			eval.ReferenceAssembly(Assembly.Load("BoSSS.Solution.GridImport"));
-            eval.ReferenceAssembly(Assembly.Load("BoSSS.Solution.Statistic"));
-            eval.ReferenceAssembly(Assembly.Load("BoSSS.Solution.Tecplot"));
-            eval.ReferenceAssembly(Assembly.Load("BoSSS.Solution.ASCIIExport"));
+            eval.ReferenceAssembly(typeof(BoSSS.Foundation.Basis).Assembly);
+            eval.ReferenceAssembly(typeof(BoSSS.Foundation.XDG.XDGField).Assembly);
+            eval.ReferenceAssembly(typeof(BoSSS.Foundation.Grid.Classic.Grid1D).Assembly);
+            eval.ReferenceAssembly(typeof(BoSSS.Solution.Application).Assembly);
+            eval.ReferenceAssembly(typeof(BoSSS.Solution.Gnuplot.Gnuplot).Assembly);
+			eval.ReferenceAssembly(typeof(BoSSS.Solution.GridImport.Cgns).Assembly);
+            eval.ReferenceAssembly(typeof(BoSSS.Solution.Statistic.CellLocalization).Assembly);
+            eval.ReferenceAssembly(typeof(BoSSS.Solution.Tecplot.Tecplot).Assembly);
+            eval.ReferenceAssembly(typeof(BoSSS.Solution.ASCIIExport.CurveExportDriver).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.Solution.Multigrid.MultigridOperator).Assembly);
-            eval.ReferenceAssembly(Assembly.Load("BoSSSpad"));
-            eval.ReferenceAssembly(Assembly.Load("Renci.SshNet"));
-            eval.ReferenceAssembly(Assembly.Load("MiniBatchProcessor"));
-
-            // Dunno why this only works this way...
+            eval.ReferenceAssembly(typeof(BoSSSpad.BoSSSpadMain).Assembly);
+            eval.ReferenceAssembly(typeof(Renci.SshNet.SftpClient).Assembly);
+            eval.ReferenceAssembly(typeof(MiniBatchProcessor.Client).Assembly);
             eval.ReferenceAssembly(typeof(System.Numerics.Complex).Assembly);
-            eval.ReferenceAssembly(Assembly.Load("Mono.CSharp"));
-
+            eval.ReferenceAssembly(typeof(Mono.CSharp.Evaluator).Assembly);
             eval.ReferenceAssembly(typeof(CNS.Program).Assembly);
             eval.ReferenceAssembly(typeof(IBM_Solver.IBM_SolverMain).Assembly);
+            eval.ReferenceAssembly(typeof(BoSSS.Application.SipPoisson.SipPoissonMain).Assembly);
 
             eval.ReferenceAssembly(typeof(KontiHelical.HelicalMain).Assembly);
             eval.ReferenceAssembly(typeof(PosissonScalar3CylinderCoords.PoissonScalar3CCMain).Assembly);
@@ -226,7 +226,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// Executes the REPL (Read-Eval-Print-Loop) until terminated.
         /// </summary>
         public static void REPL() {
-            EvalPrint("restart");
+            EvalPrint("restart", out var dummy1);
 
             CommandLineReader reader = GetCommandLineReader();
 
@@ -238,7 +238,7 @@ namespace BoSSS.Application.BoSSSpad {
                     break;
                 }
 
-                EvalPrint(line);
+                EvalPrint(line, out var dummy2);
             }
         }
 
@@ -270,7 +270,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// the 'EP' of <see cref="REPL"/>
         /// </summary>
-        public static object EvalPrint(string line) {
+        public static object EvalPrint(string line, out Assembly AssemblyProduced) {
             
             string lineWithoutWhite = line.TrimStart(new char[] { ' ', '\t', '\r', '\n' }).TrimEnd(new char[] { ' ', '\t', '\r', '\n' });
             if (lineWithoutWhite == "restart" || lineWithoutWhite == "restart;") {
@@ -290,11 +290,13 @@ namespace BoSSS.Application.BoSSSpad {
                     eval = new SafeEvaluator(() => Startup(runcommands));
                 }
 #endif
+                AssemblyProduced = null;
                 return null;
             }
 
             if (eval == null) {
                 Console.Error.WriteLine("C# evaluator not initialized: use 'restart'.");
+                AssemblyProduced = null;
                 return null;
             }
 
@@ -305,6 +307,8 @@ namespace BoSSS.Application.BoSSSpad {
 #endif
 
             string ans = eval.Evaluator.Evaluate(line, out result, out result_set);
+            AssemblyProduced = eval.LatestAssembly;
+            
             if (result_set) {
                 InteractiveShell.ans = result;
             }
@@ -355,6 +359,7 @@ namespace BoSSS.Application.BoSSSpad {
                     e.GetType(),
                     e.Message));
                 InteractiveShell.LastError = e;
+                AssemblyProduced = null;
             }
 #endif
             return result;

@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -228,6 +229,53 @@ namespace MPI.Wrappers {
         }
 
         /// <summary>
+        /// equal to <see cref="MPIMax(double[],MPI_Comm)"/>, acting on the
+        /// WORLD-communicator
+        /// </summary>
+        static public double[] MPIMax(this double[] i) {
+            return MPIMax(i, csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// returns the maximum of each entry of <paramref name="i"/> on all MPI-processes in the
+        /// <paramref name="comm"/>--communicator.
+        /// </summary>
+        static public double[] MPIMax(this double[] i, MPI_Comm comm) {
+            double[] R = new double[i.Length];
+            unsafe {
+                fixed (double* loc = i, glob = R) {
+                    csMPI.Raw.Allreduce(((IntPtr)(loc)), ((IntPtr)(glob)), i.Length, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._OP.MAX, comm);
+                }
+            }
+            return R;
+        }
+
+        /// <summary>
+        /// equal to <see cref="MPIMin(double[],MPI_Comm)"/>, acting on the
+        /// WORLD-communicator
+        /// </summary>
+        static public double[] MPIMin(this double[] i) {
+            return MPIMin(i, csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// returns the minimum of each entry of <paramref name="i"/> on all MPI-processes in the
+        /// <paramref name="comm"/>--communicator.
+        /// </summary>
+        static public double[] MPIMin(this double[] i, MPI_Comm comm) {
+            double[] R = new double[i.Length];
+            unsafe {
+                fixed (double* loc = i, glob = R) {
+                    csMPI.Raw.Allreduce(((IntPtr)(loc)), ((IntPtr)(glob)), i.Length, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._OP.MIN, comm);
+                }
+            }
+            return R;
+        }
+
+
+
+
+        /// <summary>
         /// equal to <see cref="MPIMax(int[],MPI_Comm)"/>, acting on the
         /// WORLD-communicator
         /// </summary>
@@ -348,7 +396,7 @@ namespace MPI.Wrappers {
         }
 
         /// <summary>
-        /// returns the sum of <paramref name="i"/> on all MPI-processes in the
+        /// returns the minimum of <paramref name="i"/> on all MPI-processes in the
         /// <paramref name="comm"/>--communicator.
         /// </summary>
         static public double MPIMin(this double i, MPI_Comm comm) {
@@ -389,7 +437,7 @@ namespace MPI.Wrappers {
         }
 
         /// <summary>
-        /// returns the sum of <paramref name="i"/> on all MPI-processes in the
+        /// returns the minimum of <paramref name="i"/> on all MPI-processes in the
         /// <paramref name="comm"/>--communicator.
         /// </summary>
         static public int MPIMin(this int i, MPI_Comm comm) {
@@ -416,7 +464,7 @@ namespace MPI.Wrappers {
         }
 
         /// <summary>
-        /// returns the sum of <paramref name="i"/> on all MPI-processes in the
+        /// returns the maximum of <paramref name="i"/> on all MPI-processes in the
         /// <paramref name="comm"/>--communicator.
         /// </summary>
         static public int MPIMax(this int i, MPI_Comm comm) {
@@ -485,21 +533,102 @@ namespace MPI.Wrappers {
         }
 
         /// <summary>
-        /// Wrapper around <see cref="IMPIdriver.Gatherv(IntPtr, int, MPI_Datatype, IntPtr, IntPtr, IntPtr, MPI_Datatype, int, MPI_Comm)"/>
+        /// Gathers all int[] send Arrays on all MPI-processes, at which every jth block of data is from the jth process.
         /// </summary>
-        static public int[] MPIGatherv(this int[] send, int[] recvcounts) {
+        static public int[] MPIAllGatherv(this int[] send, int[] recvcounts) {
+            return send.Int_MPIAllGatherv(recvcounts, csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// Gathers all send Arrays on all MPI-processes, at which every jth block of data is from the jth process.
+        /// </summary>
+        static private int[] Int_MPIAllGatherv(this int[] send, int[] m_recvcounts, MPI_Comm comm) {
+            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int size);
+            int[] result = new int[m_recvcounts.Sum()];
+
+            unsafe {
+                int* displs = stackalloc int[size];
+                for (int i = 1; i < size; i++) {
+                    displs[i] = displs[i - 1] + m_recvcounts[i - 1];
+                }
+                fixed (int* pResult = &result[0], pSend = &send[0]) {
+                    fixed (int* pRcvcounts = &m_recvcounts[0]) {
+                        csMPI.Raw.Allgatherv(
+                            (IntPtr)pSend,
+                            send.Length,
+                            csMPI.Raw._DATATYPE.INT,
+                            (IntPtr)pResult,
+                            (IntPtr)pRcvcounts,
+                            (IntPtr)displs,
+                            csMPI.Raw._DATATYPE.INT,
+                            comm);
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Gathers all ulong[] send Arrays on all MPI-processes, at which every jth block of data is from the jth process.
+        /// </summary>
+        static public ulong[] MPIAllGatherv(this ulong[] send, int[] recvcounts) {
+            return send.Long_MPIAllGatherv(recvcounts, csMPI.Raw._COMM.WORLD);
+        }
+        /// <summary>
+        /// Gathers all send Arrays on all MPI-processes, at which every jth block of data is from the jth process.
+        /// </summary>
+        static private ulong[] Long_MPIAllGatherv(this ulong[] send, int[] m_recvcounts, MPI_Comm comm) {
+            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int size);
+            ulong[] result = new ulong[m_recvcounts.Sum()];
+
+            unsafe {
+                int* displs = stackalloc int[size];
+                for (int i = 1; i < size; i++) {
+                    displs[i] = displs[i - 1] + m_recvcounts[i - 1];
+                }
+                fixed (ulong* pResult = &result[0], pSend = &send[0]) {
+                    fixed (int* pRcvcounts = &m_recvcounts[0]) {
+                        csMPI.Raw.Allgatherv(
+                            (IntPtr)pSend,
+                            send.Length,
+                            csMPI.Raw._DATATYPE.UNSIGNED_LONG_LONG,
+                            (IntPtr)pResult,
+                            (IntPtr)pRcvcounts,
+                            (IntPtr)displs,
+                            csMPI.Raw._DATATYPE.UNSIGNED_LONG_LONG,
+                            comm);
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// MPI-process with rank 0 gathers this int[] of all MPI-processes in the
+        /// <paramref name="comm"/>-communicator with variable length. The length of the gathered int[] is specified by <paramref name="recvcount"/>
+        /// </summary>
+        /// <param name="recvcount">
+        /// Length of the receive buffer
+        /// </param>
+        static public int[] MPIGatherv(this int[] send, int[] recvcount) {
             return send.MPIGatherv(
-                recvcounts,
+                recvcount,
                 root: 0,
                 comm: csMPI.Raw._COMM.WORLD);
         }
 
+
         /// <summary>
-        /// Wrapper around <see cref="IMPIdriver.Gatherv(IntPtr, int, MPI_Datatype, IntPtr, IntPtr, IntPtr, MPI_Datatype, int, MPI_Comm)"/>
+        /// MPI-process with rank <paramref name="root"/> gathers this int[] of all MPI-processes in the
+        /// <paramref name="comm"/>-communicator with variable length. The length of the gathered int[] is specified by <paramref name="recvcount"/>
         /// </summary>
         static public int[] MPIGatherv(this int[] send, int[] recvcounts, int root, MPI_Comm comm) {
-            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int size);
-            int[] result = new int[recvcounts.Sum()];
+            csMPI.Raw.Comm_Size(comm, out int size);
+            csMPI.Raw.Comm_Rank(comm, out int rank);
+
+            int[] result = rank == root ? new int[recvcounts.Sum()] : null;
 
             unsafe {
                 int* displs = stackalloc int[size];
@@ -507,7 +636,9 @@ namespace MPI.Wrappers {
                     displs[i] = displs[i - 1] + recvcounts[i - 1];
                 }
 
-                fixed (int* pSend = &send[0], pRcvcounts = &recvcounts[0], pResult = &result[0]) {
+                fixed (int* pSend = &send[0], pRcvcounts = &recvcounts[0], pResult = result) {
+                    Debug.Assert((rank == root) != (pResult == null));
+
                     csMPI.Raw.Gatherv(
                         (IntPtr)pSend,
                         send.Length,
@@ -518,6 +649,54 @@ namespace MPI.Wrappers {
                         csMPI.Raw._DATATYPE.INT,
                         root,
                         comm);
+                }
+            }
+
+            return result;
+        }
+        /// <summary>
+        /// MPI-process with rank 0 gathers this long[] of all MPI-processes in the
+        /// <paramref name="comm"/>-communicator with variable length. The length of the gathered long[] is specified by <paramref name="recvcount"/>
+        /// </summary>
+        /// <param name="recvcount">
+        /// Length of the receive buffer
+        /// </param>
+        static public long[] MPIGatherv(this long[] send, int[] recvcount) {
+            return send.MPIGatherv(
+                recvcount,
+                root: 0,
+                comm: csMPI.Raw._COMM.WORLD);
+        }
+        /// <summary>
+        /// MPI-process with rank <paramref name="root"/> gathers this long[] of all MPI-processes in the
+        /// <paramref name="comm"/>-communicator with variable length. The length of the gathered long[] is specified by <paramref name="recvcount"/>
+        /// </summary>
+        /// <param name="recvcount">
+        /// Length of the receive buffer
+        /// </param>
+        static public long[] MPIGatherv(this long[] send, int[] recvcount, int root, MPI_Comm comm) {
+            csMPI.Raw.Comm_Size(comm, out int size);
+            long[] result = new long[recvcount.Sum()];
+
+            unsafe {
+                int* displs = stackalloc int[size];
+                for (int i = 1; i < size; i++) {
+                    displs[i] = displs[i - 1] + recvcount[i - 1];
+                }
+                //LONG_LONG for long of 64 bits in size
+                fixed (long* pSend = &send[0], pResult = &result[0]) {
+                    fixed (int* pRcvcounts = &recvcount[0]) {
+                        csMPI.Raw.Gatherv(
+                            (IntPtr)pSend,
+                            send.Length,
+                            csMPI.Raw._DATATYPE.LONG_LONG,
+                            (IntPtr)pResult,
+                            (IntPtr)pRcvcounts,
+                            (IntPtr)displs,
+                            csMPI.Raw._DATATYPE.LONG_LONG,
+                            root,
+                            comm);
+                    }
                 }
             }
 
@@ -538,8 +717,10 @@ namespace MPI.Wrappers {
         /// Wrapper around <see cref="IMPIdriver.Gatherv(IntPtr, int, MPI_Datatype, IntPtr, IntPtr, IntPtr, MPI_Datatype, int, MPI_Comm)"/>
         /// </summary>
         static public double[] MPIGatherv(this double[] send, int[] recvcounts, int root, MPI_Comm comm) {
-            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int size);
-            double[] result = new double[recvcounts.Sum()];
+            csMPI.Raw.Comm_Size(comm, out int size);
+            csMPI.Raw.Comm_Rank(comm, out int rank);
+
+            double[] result = rank == root ? new double[recvcounts.Sum()] : null;
 
             unsafe {
                 int* displs = stackalloc int[size];
@@ -547,22 +728,25 @@ namespace MPI.Wrappers {
                     displs[i] = displs[i - 1] + recvcounts[i - 1];
                 }
 
-                fixed (int*  pRcvcounts = &recvcounts[0] ) {
-                    fixed (double* pSend = &send[0], pResult = &result[0]) {
+                fixed (int*  pRcvcounts = &recvcounts[0]) {
+                    fixed (double* pSend = &send[0], pResult = result) {
+                        Debug.Assert((rank == root) != (pResult == null));
+
                         csMPI.Raw.Gatherv(
                             (IntPtr)pSend,
                             send.Length,
-                            csMPI.Raw._DATATYPE.INT,
+                            csMPI.Raw._DATATYPE.DOUBLE,
                             (IntPtr)pResult,
                             (IntPtr)pRcvcounts,
                             (IntPtr)displs,
-                            csMPI.Raw._DATATYPE.INT,
+                            csMPI.Raw._DATATYPE.DOUBLE,
                             root,
                             comm);
                     }
                 }
             }
 
+           
             return result;
         }
 
@@ -580,8 +764,8 @@ namespace MPI.Wrappers {
         /// Wrapper around <see cref="IMPIdriver.Scatterv(IntPtr, IntPtr, IntPtr, MPI_Datatype, IntPtr, int, MPI_Datatype, int, MPI_Comm)"/>.
         /// </summary>
         static public int[] MPIScatterv(this int[] send, int[] sendcounts, int root, MPI_Comm comm) {
-            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int size);
-            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rank);
+            csMPI.Raw.Comm_Size(comm, out int size);
+            csMPI.Raw.Comm_Rank(comm, out int rank);
             int[] result = new int[sendcounts[rank]];
 
             unsafe {
@@ -589,13 +773,18 @@ namespace MPI.Wrappers {
                 for (int i = 1; i < size; i++) {
                     displs[i] = displs[i - 1] + sendcounts[i - 1];
                 }
-
-                if (send == null || send.Length == 0) {
-                    // Dummy to avoid null pointer exception
-                    send = new int[1];
+                if(rank == root) {
+                    if(send.Length < displs[size - 1] + sendcounts[size - 1])
+                        throw new ArgumentException("Mismatch between send counts and send buffer size.");
                 }
 
-                fixed (int* pSend = &send[0], pSendcounts = &sendcounts[0], pResult = &result[0]) {
+
+                //if (send == null || send.Length == 0) {
+                //    // Dummy to avoid null pointer exception
+                //    send = new int[1];
+                //}
+
+                fixed (int* pSend = send, pSendcounts = &sendcounts[0], pResult = &result[0]) {
                     csMPI.Raw.Scatterv(
                         (IntPtr)pSend,
                         (IntPtr)pSendcounts,
@@ -626,8 +815,8 @@ namespace MPI.Wrappers {
         /// Wrapper around <see cref="IMPIdriver.Scatterv(IntPtr, IntPtr, IntPtr, MPI_Datatype, IntPtr, int, MPI_Datatype, int, MPI_Comm)"/>.
         /// </summary>
         static public double[] MPIScatterv(this double[] send, int[] sendcounts, int root, MPI_Comm comm) {
-            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int size);
-            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rank);
+            csMPI.Raw.Comm_Size(comm, out int size);
+            csMPI.Raw.Comm_Rank(comm, out int rank);
             double[] result = new double[sendcounts[rank]];
 
             unsafe
@@ -635,23 +824,28 @@ namespace MPI.Wrappers {
                 int* displs = stackalloc int[size];
                 for (int i = 1; i < size; i++) {
                     displs[i] = displs[i - 1] + sendcounts[i - 1];
+                    //sum += sendcounts[i];
+                }
+                if(rank == root) {
+                    if(send.Length < displs[size - 1] + sendcounts[size - 1])
+                        throw new ArgumentException("Mismatch between send counts and send buffer size.");
                 }
 
-                if (send == null || send.Length == 0) {
-                    // Dummy to avoid null pointer exception
-                    send = new double[1];
-                }
+                //if (send == null || send.Length == 0) {
+                //    // Dummy to avoid null pointer exception
+                //    send = new double[1];
+                //}
 
                 fixed (int* pSendcounts = &sendcounts[0]) {
-                    fixed (double* pSend = &send[0], pResult = &result[0]) {
+                    fixed (double* pSend = send, pResult = &result[0]) {
                         csMPI.Raw.Scatterv(
                             (IntPtr)pSend,
                             (IntPtr)pSendcounts,
                             (IntPtr)displs,
-                            csMPI.Raw._DATATYPE.INT,
+                            csMPI.Raw._DATATYPE.DOUBLE,
                             (IntPtr)pResult,
                             sendcounts[rank],
-                            csMPI.Raw._DATATYPE.INT,
+                            csMPI.Raw._DATATYPE.DOUBLE,
                             root,
                             comm);
                     }

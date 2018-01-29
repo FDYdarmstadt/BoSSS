@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Foundation.IO;
+using ilPSP;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
@@ -238,17 +239,30 @@ namespace BoSSS.Application.BoSSSpad {
         /// set so far.
         /// </summary>
         public void SetControlObject(BoSSS.Solution.Control.AppControl ctrl) {
+            // serialize control object
+            // ========================
             byte[] buffer;
-            using (var ms = new MemoryStream()) {
+            using(var ms = new MemoryStream()) {
                 var bf = new BinaryFormatter();
                 bf.Serialize(ms, ctrl);
                 buffer = ms.GetBuffer();
             }
 
+            //using(var ms = new MemoryStream(buffer.CloneAs())) {
+            //}
+
+            //ctrl.Verify();
+            //byte[] buffer  = ctrl.Serialize();
+            //var ctrl_check = BoSSS.Solution.Control.AppControl.Deserialize(buffer, ctrl.GetType());
+            //ctrl_check.Verify();
+            //byte[] buffer = Encoding.UTF8.GetBytes(ControlString);
+
             AdditionalDeploymentFiles.Add(new Tuple<byte[], string>(buffer, "control.obj"));
 
+            // Project & Session Name
+            // ======================
             string PrjName = InteractiveShell.WorkflowMgm.CurrentProject;
-            if (string.IsNullOrWhiteSpace(PrjName)) {
+            if(string.IsNullOrWhiteSpace(PrjName)) {
                 throw new NotSupportedException("Project management not initialized - set project name (try e.g. 'WorkflowMgm.CurrentProject = \"BlaBla\"').");
             }
 
@@ -258,9 +272,11 @@ namespace BoSSS.Application.BoSSSpad {
                 "--sesnmn", this.Name
             };
 
-            for (int i = 0; i < args.Length; i++) {
+            for(int i = 0; i < args.Length; i++) {
                 m_EnvironmentVars.Add("BOSSS_ARG_" + i, args[i]);
             }
+
+            // 
         }
 
         /// <summary>
@@ -457,6 +473,9 @@ namespace BoSSS.Application.BoSSSpad {
 
             if (isSubmitted && !(isFailed || wasSuccessful) && (R == null))
                 return JobStatus.PendingInExecutionQueue;
+
+            if (isSubmitted == false && isRunning == false && wasSuccessful == false && isFailed == false && (RR.Length <= 0))
+                return JobStatus.PreActivation;
 
             if (isFailed || (R == null || R.Tags.Contains(BoSSS.Solution.Application.NOT_TERMINATED_TAG)))
                 return JobStatus.Failed;

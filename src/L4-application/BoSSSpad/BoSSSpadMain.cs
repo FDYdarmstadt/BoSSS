@@ -126,93 +126,92 @@ namespace BoSSS.Application.BoSSSpad {
 
             switch (mode) {
                 case Modes.Worksheet:
-                    var ws = new Worksheet(fileToOpen);
-                    ws.Shown += Worksheet.OnShown; // Workaround for wrong word-wrap on start-up of the application
-                    System.Windows.Forms.Application.Run(ws);
+                var ws = new Worksheet(fileToOpen);
+                ws.Shown += Worksheet.OnShown; // Workaround for wrong word-wrap on start-up of the application
+                System.Windows.Forms.Application.Run(ws);
 
-                    ws.m_ExecutorOfCommandQueue_RegularTermination = false;
-                    Thread.Sleep(800);
+                ws.m_ExecutorOfCommandQueue_RegularTermination = false;
+                Thread.Sleep(800);
 
+                if (ws.m_ExecutorOfCommandQueue.IsAlive) {
+                    // hardcore
+                    Thread.Sleep(5000);
                     if (ws.m_ExecutorOfCommandQueue.IsAlive) {
-                        // hardcore
-                        Thread.Sleep(5000);
-                        if (ws.m_ExecutorOfCommandQueue.IsAlive) {
-                            ws.m_ExecutorOfCommandQueue.Abort();
-                        }
+                        ws.m_ExecutorOfCommandQueue.Abort();
                     }
-                    break;
+                }
+                break;
 
                 case Modes.Console:
-                    ReadEvalPrintLoop.REPL();
-                    break;
+                ReadEvalPrintLoop.REPL();
+                break;
 
                 case Modes.Check:
-                    InstallationChecker.CheckSetup();
-                    break;
+                InstallationChecker.CheckSetup();
+                break;
 
                 case Modes.Batch:
                 case Modes.TexBatch:
-                    Document doc;
-                    if (fileToOpen.ToLowerInvariant().EndsWith(".tex")) {
-                        List<string> dummy;
-                        LatexIO.SplitTexFile(fileToOpen, out dummy, out doc);
-                    }
-                    else {
-                        doc = Document.Deserialize(fileToOpen);
-                    }
-                    string OutDir = Path.GetDirectoryName(fileToOpen);
-                    string DocNam = Path.GetFileNameWithoutExtension(fileToOpen) + ".texbatch";
+                Document doc;
+                if (fileToOpen.ToLowerInvariant().EndsWith(".tex")) {
+                    List<string> dummy;
+                    LatexIO.SplitTexFile(fileToOpen, out dummy, out doc);
+                } else {
+                    doc = Document.Deserialize(fileToOpen);
+                }
+                string OutDir = Path.GetDirectoryName(fileToOpen);
+                string DocNam = Path.GetFileNameWithoutExtension(fileToOpen) + ".texbatch";
+                InteractiveShell.CurrentDoc = doc;
 
-                    // Which text boxes should be removed before 'restart' occurs
-                    int f = 0;
-                    if (mode == Modes.TexBatch) {
+                // Which text boxes should be removed before 'restart' occurs
+                int f = 0;
+                if (mode == Modes.TexBatch) {
 
-                        // bws was produced by Latex - some string replacements are necessary
-                        for (int iEntry = 0; iEntry < doc.CommandAndResult.Count; iEntry++) {
-                            var Entry = doc.CommandAndResult[iEntry];
+                    // bws was produced by Latex - some string replacements are necessary
+                    for (int iEntry = 0; iEntry < doc.CommandAndResult.Count; iEntry++) {
+                        var Entry = doc.CommandAndResult[iEntry];
 
-                            // Check whether there are boxes before restart
-                            if (Entry.Command.Equals("restart") || Entry.Command.Equals("restart;")) {
-                                f = iEntry;
-                            }
-
-                            Entry.Command = LatexIO.Tex2Bws(Entry.Command);
+                        // Check whether there are boxes before restart
+                        if (Entry.Command.Equals("restart") || Entry.Command.Equals("restart;")) {
+                            f = iEntry;
                         }
 
-                        GnuplotExtensions.UseCairoLatex = true;
+                        Entry.Command = LatexIO.Tex2Bws(Entry.Command);
                     }
 
-                    // All boxes before 'restart' should not be counted as error
-                    int count = 0;
-                    foreach (Document.Tuple dt in doc.CommandAndResult) {
-                        Console.WriteLine(dt.Command);
-                        bool success = dt.Evaluate();
+                    GnuplotExtensions.UseCairoLatex = true;
+                }
 
-                        if (!success && count>=f)
-                            errCount++;
+                // All boxes before 'restart' should not be counted as error
+                int count = 0;
+                foreach (Document.Tuple dt in doc.CommandAndResult) {
+                    Console.WriteLine(dt.Command);
+                    bool success = dt.Evaluate();
 
-                        Console.WriteLine(Document.ResultStartMarker);
-                        Console.WriteLine(dt.InterpreterTextOutput);
-                        Console.WriteLine(Document.ResultEndMarker);
+                    if (!success && count >= f)
+                        errCount++;
 
-                        count++;
+                    Console.WriteLine(Document.ResultStartMarker);
+                    Console.WriteLine(dt.InterpreterTextOutput);
+                    Console.WriteLine(Document.ResultEndMarker);
+
+                    count++;
+                }
+
+                if (mode == Modes.TexBatch) {
+                    LatexIO.Save_Texbatch(OutDir, DocNam, doc);
+                } else {
+                    if (fileToOpen.EndsWith(".tex")) {
+
+                    } else {
+                        doc.Serialize(fileToOpen);
                     }
-
-                    if (mode == Modes.TexBatch) {
-                        LatexIO.Save_Texbatch(OutDir, DocNam, doc);
-                    }
-                    else {
-                        if (fileToOpen.EndsWith(".tex")) {
-
-                        }
-                        else {
-                            doc.Serialize(fileToOpen);
-                        }
-                    }
-                    break;
+                }
+                InteractiveShell.CurrentDoc = null;
+                break;
 
                 default:
-                    throw new NotImplementedException();
+                throw new NotImplementedException();
             }
 
             if (mpiInitialized)

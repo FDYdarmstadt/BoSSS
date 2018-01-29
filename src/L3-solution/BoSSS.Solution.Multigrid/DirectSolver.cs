@@ -27,7 +27,7 @@ using BoSSS.Platform;
 using System.IO;
 using ilPSP.Tracing;
 using ilPSP.Connectors.Matlab;
-
+using System.Diagnostics;
 
 namespace BoSSS.Solution.Multigrid {
 
@@ -118,7 +118,7 @@ namespace BoSSS.Solution.Multigrid {
                     break;
 
                 case _whichSolver.MUMPS:
-                    solver = new MUMPSSolver();
+                    solver = new MUMPSSolver(MPI:true);
                     break;
 
                 case _whichSolver.Matlab:
@@ -153,6 +153,7 @@ namespace BoSSS.Solution.Multigrid {
                     //Console.WriteLine("done.");
                 }
 
+                
                 m_ThisLevelIterations++;
 
                 if (Residual != null) {

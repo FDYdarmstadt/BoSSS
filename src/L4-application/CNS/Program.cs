@@ -32,6 +32,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 
 namespace CNS {
 
@@ -49,8 +50,9 @@ namespace CNS {
             Application<CNSControl>._Main(
                 args,
                 false,
-                "BoSSS.Foundation,BoSSS.Solution.Application,CNS",
                 () => new Program());
+
+            Thread.Sleep(100 * 1000);
         }
     }
 
@@ -351,9 +353,9 @@ namespace CNS {
         /// See <see cref="ICellClassifier"/>
         /// </summary>
         /// <param name="NoOfClasses"></param>
-        /// <param name="CellPerfomanceClasses"></param>
-        protected override void GetCellPerformanceClasses(out int NoOfClasses, out int[] CellPerfomanceClasses) {
-            (NoOfClasses, CellPerfomanceClasses) = Control.DynamicLoadBalancing_CellClassifier.ClassifyCells(this);
+        /// <param name="cellToPerformanceClassMap"></param>
+        protected override void GetCellPerformanceClasses(out int NoOfClasses, out int[] cellToPerformanceClassMap) {
+            (NoOfClasses, cellToPerformanceClassMap) = Control.DynamicLoadBalancing_CellClassifier.ClassifyCells(this);
         }
 
         /// <summary>
