@@ -38,9 +38,12 @@ using NUnit.Framework;
 using BoSSS.Solution.Multigrid;
 using ilPSP.Connectors.Matlab;
 
-namespace ipPoisson {
+namespace BoSSS.Application.SipPoisson {
 
-    class Program : Application<ippControl> {
+    /// <summary>
+    /// Benchmark application, solves a Poisson problem using the symmetric interior penalty (SIP) method.
+    /// </summary>
+    public class SipPoissonMain : Application<SipControl> {
 
 #pragma warning disable 649
         /// <summary>
@@ -50,7 +53,7 @@ namespace ipPoisson {
         protected SinglePhaseField T;
 
         /// <summary>
-        /// exact solution, to determine L2-Error, see also <see cref="ippControl.ExactSolution_provided"/>.
+        /// exact solution, to determine L2-Error, see also <see cref="SipControl.ExactSolution_provided"/>.
         /// </summary>
         [InstantiateFromControlFile("Tex", "Tex", IOListOption.Never)]
         protected SinglePhaseField Tex;
@@ -70,9 +73,9 @@ namespace ipPoisson {
 
             //BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
             //BatchmodeConnector.MatlabExecuteable = "C:\\cygwin\\bin\\bash.exe";
-            
-            _Main(args, false, "", delegate() {
-                Program p = new Program();
+
+            _Main(args, false, delegate () {
+                SipPoissonMain p = new SipPoissonMain();
 
                 Console.WriteLine("ipPoisson: " + ilPSP.Environment.MPIEnv.MPI_Rank + " of " + ilPSP.Environment.MPIEnv.MPI_Size
                     + " on compute node '" + ilPSP.Environment.MPIEnv.Hostname + "';");
@@ -81,7 +84,7 @@ namespace ipPoisson {
         }
 
         /// <summary>
-        /// 1D grid that can be blended between linear- and Cosine-spacing
+        /// 1D Nodes which can be blended between linear- and Cosine-spacing
         /// </summary>
         /// <param name="l"></param>
         /// <param name="r"></param>
@@ -89,17 +92,15 @@ namespace ipPoisson {
         /// 0.0 = full linear;</param>
         /// <param name="n">number of nodes</param>
         /// <returns></returns>
-        private double[] CosLinSpaceing(double l, double r, double a, int n) {
+        static double[] CosLinSpaceing(double l, double r, double a, int n) {
             double[] linnodes = GenericBlas.Linspace(0, Math.PI * 0.5, n);
             double[] linnodes2 = GenericBlas.Linspace(0, 1, n);
             double[] nodes = new double[n];
 
-            for (int i = 0; i < n; i++)
+            for(int i = 0; i < n; i++)
                 nodes[i] = linnodes2[i] * (1 - a) + (1.0 - Math.Cos(linnodes[i])) * a;
 
-            
-
-            for (int i = 0; i < n; i++)
+            for(int i = 0; i < n; i++)
                 nodes[i] = nodes[i] * (r - l) + l;
             return nodes;
 
@@ -113,35 +114,44 @@ namespace ipPoisson {
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
             using(FuncTrace tr = new FuncTrace()) {
 
-                
-                // assemble system, create matrix
-                // ------------------------------
 
-                var volQrSch = new CellQuadratureScheme(true, CellMask.GetFullMask(this.GridData));
-                var edgQrSch = new EdgeQuadratureScheme(true, EdgeMask.GetFullMask(this.GridData));
+                // create operator
+                // ---------------
+                SpatialOperator LapaceIp;
+                {
 
-                double D = this.GridData.SpatialDimension;
-                double penalty_base = (T.Basis.Degree + 1) * (T.Basis.Degree + D) / D;
-                double penalty_factor = base.Control.penalty_poisson;
+                    double D = this.GridData.SpatialDimension;
+                    double penalty_base = (T.Basis.Degree + 1) * (T.Basis.Degree + D) / D;
+                    double penalty_factor = base.Control.penalty_poisson;
+
+                    BoundaryCondMap<BoundaryType> PoissonBcMap = new BoundaryCondMap<BoundaryType>(this.GridData, this.Control.BoundaryValues, "T");
+
+                    LapaceIp = new SpatialOperator(1, 1, QuadOrderFunc.SumOfMaxDegrees(), "T", "T");
+                    var flux = new ipFlux(penalty_base * base.Control.penalty_poisson, this.GridData.Cells.cj, PoissonBcMap);
+                    LapaceIp.EquationComponents["T"].Add(flux);
+
+                    LapaceIp.Commit();
+                }
+
+                // Create Matrices
+                // ===============
 
                 {
-                    // equation assembly
-                    // -----------------
-                    tr.Info("creating sparse system...");
-                    Console.WriteLine("creating sparse system for {0} DOF's ...", T.Mapping.Ntotal);
+                    // time measurement for matrix assembly
                     Stopwatch stw = new Stopwatch();
                     stw.Start();
 
-                    SpatialOperator LapaceIp = new SpatialOperator(1, 1,QuadOrderFunc.SumOfMaxDegrees(), "T", "T");
-                    var flux = new ipFlux(penalty_base * base.Control.penalty_poisson, this.GridData.Cells.cj, base.Control);
-                    LapaceIp.EquationComponents["T"].Add(flux);
+                    // console
+                    Console.WriteLine("creating sparse system for {0} DOF's ...", T.Mapping.Ntotal);
 
-
-                    LapaceIp.Commit();
+                    // quadrature domain
+                    var volQrSch = new CellQuadratureScheme(true, CellMask.GetFullMask(this.GridData));
+                    var edgQrSch = new EdgeQuadratureScheme(true, EdgeMask.GetFullMask(this.GridData));
 
 #if DEBUG
+                    // in DEBUG mode, we compare 'MsrMatrix' (old, reference implementation) and 'BlockMsrMatrix' (new standard)
                     var RefLaplaceMtx = new MsrMatrix(T.Mapping);
-#endif                    
+#endif
                     LaplaceMtx = new BlockMsrMatrix(T.Mapping);
                     LaplaceAffine = new double[T.Mapping.LocalLength];
 
@@ -160,25 +170,27 @@ namespace ipPoisson {
                     Console.WriteLine("Matrix comparison error: " + err + ", matrix norm is: " + infNrm);
                     Assert.Less(err, infNrm * 1e-10, "MsrMatrix2 comparison failed.");
 #endif
-                    //int q = LaplaceMtx._GetTotalNoOfNonZeros();
-                    //tr.Info("finished: Number of non-zeros: " + q);
                     stw.Stop();
                     Console.WriteLine("done {0} sec.", stw.Elapsed.TotalSeconds);
-
-
-                    //double condNo = LaplaceMtx.condest(BatchmodeConnector.Flavor.Octave);
-                    //Console.WriteLine("condition number: {0:0.####E-00} ",condNo);
                 }
+
+
+                //double condNo = LaplaceMtx.condest(BatchmodeConnector.Flavor.Octave);
+                //Console.WriteLine("condition number: {0:0.####E-00} ",condNo);
+
             }
         }
 
+        /// <summary>
+        /// Deprecated utility, writes matrices for spectral element method.
+        /// </summary>
         public void WriteSEMMatrices() {
             int kSEM; // nodes per edge
 
-            if (this.Grid.RefElements[0] is Triangle) {
+            if(this.Grid.RefElements[0] is Triangle) {
                 kSEM = this.T.Basis.Degree + 1;
-            } else if (this.Grid.RefElements[0] is Square) {
-                switch (this.T.Basis.Degree) {
+            } else if(this.Grid.RefElements[0] is Square) {
+                switch(this.T.Basis.Degree) {
                     case 2: kSEM = 2; break;
                     case 3: kSEM = 2; break;
                     case 4: kSEM = 3; break;
@@ -189,7 +201,7 @@ namespace ipPoisson {
             } else {
                 throw new NotImplementedException();
             }
-            
+
             SpecFemBasis SEM_basis = new SpecFemBasis(this.GridData, kSEM);
 
             SEM_basis.CellNodes[0].SaveToTextFile("NODES_SEM" + kSEM + ".txt");
@@ -207,7 +219,7 @@ namespace ipPoisson {
             {
                 var TEST = this.T.CloneAs();
                 TEST.Clear();
-                TEST.ProjectField((_2D)((x, y) => x*y));
+                TEST.ProjectField((_2D)((x, y) => x * y));
 
                 int J = this.GridData.Cells.NoOfCells;
                 int N = SEM_basis.NodesPerCell[0];
@@ -264,17 +276,17 @@ namespace ipPoisson {
         }
 
 
-      
+
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             using(new FuncTrace()) {
                 //this.WriteSEMMatrices();
-                
+
                 base.NoOfTimesteps = -1;
                 if(TimestepNo > 1)
                     throw new ApplicationException("steady-state-equation.");
 
                 base.TerminationKey = true;
-                                
+
                 // call solver
                 // -----------
                 double mintime, maxtime;
@@ -282,11 +294,17 @@ namespace ipPoisson {
                 int NoOfIterations;
 
 
-                if(base.Control.solver_name == null) {
+                switch(base.Control.solver_name) {
+
+                    case SolverCodes.classic_cg:
+                    case SolverCodes.classic_mumps:
+                    case SolverCodes.classic_pardiso:
                     ClassicSolve(out mintime, out maxtime, out converged, out NoOfIterations);
-                    
-                } else {
+                    break;
+
+                    default:
                     ExperimentalSolve(out mintime, out maxtime, out converged, out NoOfIterations);
+                    break;
                 }
 
                 Console.WriteLine("finished; " + NoOfIterations + " iterations.");
@@ -356,19 +374,30 @@ namespace ipPoisson {
             Console.WriteLine("  pos. def.: " + isPosDef);
             */
 
-            
+
             // create sparse solver
             // --------------------
             ISparseSolver ipSolver;
-            {
+            switch(base.Control.solver_name) {
+                case SolverCodes.classic_pardiso:
                 ipSolver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
+                break;
 
-                //ipSolver = new ilPSP.LinSolvers.monkey.CG();
-                //((ilPSP.LinSolvers.monkey.CG)ipSolver).MaxIterations = 50000;
-                //((ilPSP.LinSolvers.monkey.CG)ipSolver).Tolerance = 1.0e-10;
-                                
-                ipSolver.DefineMatrix(LaplaceMtx);
+                case SolverCodes.classic_mumps:
+                ipSolver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
+                break;
+
+                case SolverCodes.classic_cg:
+                ipSolver = new ilPSP.LinSolvers.monkey.CG() {
+                    MaxIterations = 1000000,
+                    Tolerance = 1.0e-10
+                };
+                break;
+
+                default:
+                throw new ArgumentException();
             }
+            ipSolver.DefineMatrix(LaplaceMtx);
 
             // call solver
             // -----------
@@ -404,11 +433,11 @@ namespace ipPoisson {
 
         List<DGField> MGColoring = new List<DGField>();
 
-        
+
         private void ExperimentalSolve(out double mintime, out double maxtime, out bool Converged, out int NoOfIter) {
             int p = this.T.Basis.Degree;
             var MgSeq = this.MultigridSequence;
-            AggregationGridBasis[][] AggBasis = MgSeq.Select(aggGrid => new AggregationGridBasis[] { new AggregationGridBasis(this.T.Basis, aggGrid)}).ToArray();
+            AggregationGridBasis[][] AggBasis = MgSeq.Select(aggGrid => new AggregationGridBasis[] { new AggregationGridBasis(this.T.Basis, aggGrid) }).ToArray();
 
             Console.WriteLine("Setting up multigrid operator...");
             var mgsetup = new Stopwatch();
@@ -425,160 +454,98 @@ namespace ipPoisson {
             Stopwatch stw = new Stopwatch();
 
             ISolverSmootherTemplate solver;
-            {
-                string solverName = base.Control.solver_name.ToLower();
-                switch(solverName) {
-                    case "direct":
-                        solver = new DirectSolver();
-                        break;
+            switch(base.Control.solver_name) {
+                case SolverCodes.exp_direct:
+                solver = new DirectSolver() {
+                    WhichSolver = DirectSolver._whichSolver.PARDISO
+                };
 
-                    case "softpcg+schwarz+directcoarse":
-                        solver = new SoftPCG() {
-                            m_MaxIterations = 50000,
-                            m_Tolerance = 1.0e-10,
-                            Precond = new Schwarz() {
-                                m_MaxIterations = 1,
-                                CoarseSolver = new GenericRestriction() {
-                                    CoarserLevelSolver = new DirectSolver()
-                                },
-                                m_BlockingStrategy = new Schwarz.MultigridBlocks() {
-                                    Depth = 2,
-                                },
-                                Overlap = 1
+                break;
+
+                case SolverCodes.exp_softpcg_schwarz_directcoarse:
+                solver = new SoftPCG() {
+                    m_MaxIterations = 50000,
+                    m_Tolerance = 1.0e-10,
+                    Precond = new Schwarz() {
+                        m_MaxIterations = 1,
+                        CoarseSolver = new GenericRestriction() {
+                            CoarserLevelSolver = new DirectSolver() {
+                                WhichSolver = DirectSolver._whichSolver.PARDISO
                             }
-                        };
-                        break;
+                        },
+                        m_BlockingStrategy = new Schwarz.MultigridBlocks() {
+                            Depth = 2,
+                        },
+                        Overlap = 1
+                    }
+                };
+                break;
 
-                    case "softpcg+schwarz":
-                        solver = new SoftPCG() {
-                            m_MaxIterations = 50000,
-                            m_Tolerance = 1.0e-10,
-                            Precond = new Schwarz() {
-                                m_MaxIterations = 1,
-                                CoarseSolver = null,
-                                m_BlockingStrategy = new Schwarz.MultigridBlocks() {
-                                    Depth = 2,
-                                },
-                                Overlap = 1
-                            }
-                        };
-                        break;
+                case SolverCodes.exp_softpcg_schwarz:
+                solver = new SoftPCG() {
+                    m_MaxIterations = 50000,
+                    m_Tolerance = 1.0e-10,
+                    Precond = new Schwarz() {
+                        m_MaxIterations = 1,
+                        CoarseSolver = null,
+                        m_BlockingStrategy = new Schwarz.MultigridBlocks() {
+                            Depth = 2,
+                        },
+                        Overlap = 1
+                    }
+                };
+                break;
 
-                    case "softpcg":
-                        solver = new SoftPCG() {
-                            m_MaxIterations = 50000,
-                            m_Tolerance = 1.0e-10
-                            //Precond = new BlockJacobi() { NoOfIterations = 1, omega = 1 }
-                        };
-                        break;
-
-
-                    case "softpcg+direct":
-                        solver = new SoftPCG() {
-                            m_MaxIterations = 5000,
-                            m_Tolerance = 1.0e-10,
-                            Precond = new DirectSolver()
-                        };
-                        break;
-
-                    //case "MultigridPCG":
-                    //    solver = SoftPCG.InitMultigridChain(MultigridMap,
-                    //        (i, pcg) => {
-                    //            if(i == 0) {
-                    //                pcg.m_MaxIterations = 50000;
-                    //                pcg.m_Tolerance = 1.0e-10;
-                    //            } else {
-                    //                pcg.m_MaxIterations = 1;
-                    //                pcg.m_MinIterations = 1;
-                    //                pcg.m_Tolerance = 0;
-                    //            }
-                    //        },
-                    //        () => new DirectSolver());
-                    //    break;
-
-                    case "softpcg+mg1":
-                        solver = new SoftPCG() {
-                            m_MaxIterations = 2000,
-                            m_Tolerance = 1.0e-10,
-                            Precond = ClassicMultigrid.InitMultigridChain(MultigridOp,
-                                i => new BlockJacobi() { NoOfIterations = 5, omega = 0.6 },
-                                i => new BlockJacobi() { NoOfIterations = 5, omega = 0.6 },
-                                (i, mg) => {
-                                    mg.Gamma = 1;
-                                    mg.m_MaxIterations = 1;
-                                },
-                                () => new DirectSolver())
-                        };
-                        break;
-                    case "softpcg+mg2":
-                        solver = new SoftPCG() {
-                            m_MaxIterations = 2000,
-                            m_Tolerance = 1.0e-10,
-                            Precond = ClassicMultigrid.InitMultigridChain(MultigridOp,
-                                i => new Schwarz() {
-                                    m_MaxIterations = 1,
-                                    CoarseSolver = null,
-                                    m_BlockingStrategy = new Schwarz.MultigridBlocks() {
-                                        Depth = 2,
-                                    },
-                                    Overlap = 0
-                                },
-                                i => new Schwarz() {
-                                    m_MaxIterations = 1,
-                                    CoarseSolver = null,
-                                    m_BlockingStrategy = new Schwarz.MultigridBlocks() {
-                                        Depth = 2,
-                                    },
-                                    Overlap = 0
-                                },
-                                (i, mg) => {
-                                    mg.Gamma = 1;
-                                    mg.m_MaxIterations = 1;
-                                },
-                                () => new DirectSolver())
-                        };
-                        break;
-
-                    case "softpcg+blockjacobi":
-
-                        solver = new SoftPCG() {
-                            m_MaxIterations = 50000,
-                            m_Tolerance = 1.0e-10,
-                            Precond = new Jacobi() { NoOfIterations = 1, omega = 1 }
-                        };
-                        break;
-
-                    case "classicmg":
-                        solver = ClassicMultigrid.InitMultigridChain(MultigridOp,
-                            i => new BlockJacobi() { NoOfIterations = 20, omega = 0.4 },
-                            i => new BlockJacobi() { NoOfIterations = 20, omega = 0.4 },
-                            (i, mg) => {
-                                mg.m_MaxIterations = i == 0 ? 10000 : 1;
-                                mg.m_Tolerance = i == 0 ? 1.0e-10 : 1;
+                case SolverCodes.exp_softpcg_mg:
+                solver = new SoftPCG() {
+                    m_MaxIterations = 2000,
+                    m_Tolerance = 1.0e-10,
+                    Precond = ClassicMultigrid.InitMultigridChain(MultigridOp,
+                        i => new Schwarz() {
+                            m_MaxIterations = 1,
+                            CoarseSolver = null,
+                            m_BlockingStrategy = new Schwarz.MultigridBlocks() {
+                                Depth = 2,
                             },
-                            () => new DirectSolver());
+                            Overlap = 0
+                        },
+                        i => new Schwarz() {
+                            m_MaxIterations = 1,
+                            CoarseSolver = null,
+                            m_BlockingStrategy = new Schwarz.MultigridBlocks() {
+                                Depth = 2,
+                            },
+                            Overlap = 0
+                        },
+                        (i, mg) => {
+                            mg.Gamma = 1;
+                            mg.m_MaxIterations = 1;
+                        },
+                        () => new DirectSolver())
+                };
+                break;
 
-                        break;
 
-                    default:
-                        throw new ApplicationException("unknown solver: " + solverName);
-                }
-
-                if(solver is ISolverWithCallback) {
-                    ((ISolverWithCallback)solver).IterationCallback = delegate(int iter, double[] xI, double[] rI, MultigridOperator mgOp) {
-                        double l2_RES = rI.L2NormPow2().MPISum().Sqrt();
-
-                        double[] xRef = new double[xI.Length];
-                        MultigridOp.TransformSolInto(T.CoordinateVector, xRef);
-
-                        double l2_ERR =  GenericBlas.L2DistPow2(xI, xRef).MPISum().Sqrt();
-                        Console.WriteLine("Iter: {0}\tRes: {1:0.##E-00}\tErr: {2:0.##E-00}\tRunt: {3:0.##E-00}", iter, l2_RES, l2_ERR, stw.Elapsed.TotalSeconds);
-                        //Tjac.CoordinatesAsVector.SetV(xI);
-                        //Residual.CoordinatesAsVector.SetV(rI);
-                        //PlotCurrentState(iter, new TimestepNumber(iter), 3);
-                    }; 
-                }
+                default:
+                throw new ApplicationException("unknown solver: " + this.Control.solver_name);
             }
+
+
+            if(solver is ISolverWithCallback) {
+                ((ISolverWithCallback)solver).IterationCallback = delegate (int iter, double[] xI, double[] rI, MultigridOperator mgOp) {
+                    double l2_RES = rI.L2NormPow2().MPISum().Sqrt();
+
+                    double[] xRef = new double[xI.Length];
+                    MultigridOp.TransformSolInto(T.CoordinateVector, xRef);
+
+                    double l2_ERR = GenericBlas.L2DistPow2(xI, xRef).MPISum().Sqrt();
+                    Console.WriteLine("Iter: {0}\tRes: {1:0.##E-00}\tErr: {2:0.##E-00}\tRunt: {3:0.##E-00}", iter, l2_RES, l2_ERR, stw.Elapsed.TotalSeconds);
+                    //Tjac.CoordinatesAsVector.SetV(xI);
+                    //Residual.CoordinatesAsVector.SetV(rI);
+                    //PlotCurrentState(iter, new TimestepNumber(iter), 3);
+                };
+            }
+
 
 
             solver.Init(MultigridOp);
@@ -598,7 +565,7 @@ namespace ipPoisson {
                 // solver.Solve(T2, RHSvec);
                 MultigridOp.UseSolver(solver, T2, RHSvec);
                 stw.Stop();
-                
+
                 mintime = Math.Min(stw.Elapsed.TotalSeconds, mintime);
                 maxtime = Math.Max(stw.Elapsed.TotalSeconds, maxtime);
 
@@ -637,26 +604,38 @@ namespace ipPoisson {
     /// </summary>
     class ipFlux : BoSSS.Solution.NSECommon.ipLaplace {
 
-        public ipFlux(double penalty_const, MultidimensionalArray cj, ippControl __ctrl)
+        public ipFlux(double penalty_const, MultidimensionalArray cj, BoundaryCondMap<BoundaryType> __boundaryCondMap)
             : base(penalty_const, cj, "T") //
         {
-            ctrl = __ctrl;
+            m_boundaryCondMap = __boundaryCondMap;
+            m_bndFunc = m_boundaryCondMap.bndFunction["T"];
         }
 
-
-        ippControl ctrl;
+        BoundaryCondMap<BoundaryType> m_boundaryCondMap;
+        Func<double[], double, double>[] m_bndFunc;
 
         protected override double g_Diri(ref CommonParamsBnd inp) {
-            double v = ctrl.g_Diri(inp);
+            double v = m_bndFunc[inp.EdgeTag](inp.X, inp.time);
             return v;
         }
 
         protected override double g_Neum(ref CommonParamsBnd inp) {
-            return ctrl.g_Neum(inp);
+            double v = m_bndFunc[inp.EdgeTag](inp.X, inp.time);
+            return v;
         }
         
         protected override bool IsDirichlet(ref CommonParamsBnd inp) {
-            return ctrl.IsDirichlet(inp);
+            BoundaryType edgeType = m_boundaryCondMap.EdgeTag2Type[inp.EdgeTag];
+            switch(edgeType) {
+                case BoundaryType.Dirichlet:
+                return true;
+
+                case BoundaryType.Neumann:
+                return false;
+
+                default:
+                throw new NotImplementedException();
+            }
         }
     }
 

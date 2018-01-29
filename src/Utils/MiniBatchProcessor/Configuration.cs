@@ -37,9 +37,8 @@ namespace MiniBatchProcessor {
             BatchInstructionDir = Path.Combine(BoSSSuserDir, "batch");
 
             foreach (var dir in new string[] {
-                Path.Combine(BatchInstructionDir, ClientAndServer.FINISHED_DIR),
-                Path.Combine(BatchInstructionDir, ClientAndServer.QUEUE_DIR),
-                Path.Combine(BatchInstructionDir, ClientAndServer.WORK_DIR)
+                Path.Combine(BatchInstructionDir, ClientAndServer.WORK_FINISHED_DIR),
+                Path.Combine(BatchInstructionDir, ClientAndServer.QUEUE_DIR)
             }) {
                 if (!Directory.Exists(dir))
                     Directory.CreateDirectory(dir);

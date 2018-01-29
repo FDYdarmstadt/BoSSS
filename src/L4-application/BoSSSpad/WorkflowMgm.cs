@@ -84,6 +84,7 @@ namespace BoSSS.Application.BoSSSpad {
             if ((m_CurrentProject == null) || (!m_CurrentProject.Equals(ProjectName)))
                 InvalidateCaches();
             m_CurrentProject = ProjectName;
+            Console.WriteLine("Project name is set to '{0}'.", ProjectName);
         }
 
         DateTime m_Sessions_CacheTime;
@@ -201,9 +202,14 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="TimeOutSeconds">
         /// If positive, this method should terminate at latest after approximately this time period.
         /// </param>
-        public void BlockUntilAllJobsTerminate(double TimeOutSeconds = -1) {
+        /// <param name="PollingIntervallSeconds">
+        /// Seconds to wait before checking the jobs status again; should be in the order of seconds, not to overload the IO.
+        /// </param>
+        public void BlockUntilAllJobsTerminate(double TimeOutSeconds = -1, double PollingIntervallSeconds = 2) {
             DateTime start = DateTime.Now;
             while(true) {
+                Thread.Sleep((int)PollingIntervallSeconds);
+
                 if(TimeOutSeconds > 0) {
                     double RuntimeSoFar = (DateTime.Now - start).TotalSeconds;
                     if(RuntimeSoFar > TimeOutSeconds) {

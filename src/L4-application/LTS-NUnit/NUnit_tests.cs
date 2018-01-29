@@ -31,7 +31,6 @@ namespace LTS_NUnit {
             Application._Main(
                 args,
                 true,
-                "",
                 () => new NUnit_tests());
         }
 
@@ -56,7 +55,6 @@ namespace LTS_NUnit {
             Application._Main(
                 new string[0],
                 true,
-                "",
                 delegate () {
                     test = new Program() {
                         dt_input = dt,
@@ -94,7 +92,6 @@ namespace LTS_NUnit {
             Application._Main(
                 new string[0],
                 true,
-                "",
                 delegate () {
                     test = new Program() {
                         dt_input = dt,
@@ -132,7 +129,6 @@ namespace LTS_NUnit {
             Application._Main(
                 new string[0],
                 true,
-                "",
                 delegate () {
                     test = new Program() {
                         dt_input = dt,
@@ -170,7 +166,6 @@ namespace LTS_NUnit {
             Application._Main(
                 new string[0],
                 true,
-                "",
                 delegate () {
                     test = new Program() {
                         dt_input = dt,
@@ -207,7 +202,6 @@ namespace LTS_NUnit {
             Application._Main(
                 new string[0],
                 true,
-                "",
                 delegate () {
                     test = new Program() {
                         dt_input = dt,

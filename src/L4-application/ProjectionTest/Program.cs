@@ -46,7 +46,7 @@ namespace ProjectionTest {
         private int aspectRatio;
 
         public static void Main(string[] args) {
-            BoSSS.Solution.Application._Main(args, true, null, () => new Program());
+            BoSSS.Solution.Application._Main(args, true, () => new Program());
         }
 
         protected override GridCommons CreateOrLoadGrid() {

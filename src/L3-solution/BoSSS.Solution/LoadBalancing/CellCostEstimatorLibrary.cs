@@ -22,20 +22,20 @@ namespace BoSSS.Solution {
 
     public static class CellCostEstimatorLibrary {
 
-        public static Func<IApplication<AppControl>, int, ICellCostEstimator> AllCellsAreEqual = delegate (IApplication<AppControl> app, int performanceClassCount) {
+        public static Func<IApplication, int, ICellCostEstimator> AllCellsAreEqual = delegate (IApplication app, int performanceClassCount) {
             int[] performanceClassToCostMap = new int[performanceClassCount];
             performanceClassToCostMap.SetAll(1);
             return new StaticCellCostEstimator(performanceClassToCostMap);
         };
 
-        public static RuntimeCellCostEstimator MeasureCostOfExplicitOperatorEvaluation(IApplication<AppControl> app, int noOfPerformanceClasses) {
+        public static RuntimeCellCostEstimator MeasureCostOfExplicitOperatorEvaluation(IApplication app, int noOfPerformanceClasses) {
             return new RuntimeCellCostEstimator(new string[][] {
                 new[] { "*RunSolverOneStep*", "Volume_Integration_NonLin" },
                 new[] { "*RunSolverOneStep*", "Edge_Integration_NonLin" },
             });
         }
 
-        public static RuntimeCellCostEstimator OperatorAssemblyAndCutCellQuadrules(IApplication<AppControl> app, int noOfPerformanceClasses) {
+        public static RuntimeCellCostEstimator OperatorAssemblyAndCutCellQuadrules(IApplication app, int noOfPerformanceClasses) {
             return new RuntimeCellCostEstimator(new string[][] {
                 new[] { "*RunSolverOneStep*", "*LevelSetComboRuleFactory2.GetQuadRuleSet_Internal*" },
                 new[] { "*RunSolverOneStep*", "*Edge_Integration*" },

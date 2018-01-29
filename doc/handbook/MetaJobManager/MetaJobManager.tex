@@ -103,7 +103,9 @@ MiniBatchProcessor.Server.StartIfNotRunning(false);
  }
 \BoSSSexe
 \BoSSScmd{
-/// In this tutorial, we use the workflow management tools to simulate compressible flows, thus we first have to load the namespaces of the CNS solver
+/// In this tutorial, we use the workflow management tools to simulate 
+/// compressible flows, thus we first have to load the namespaces of 
+/// the CNS solver.
 using CNS;
  }
 \BoSSSexe
@@ -162,11 +164,20 @@ oneJob\_Local.Activate(myBatch);
  }
 \BoSSSexe
 \BoSSScmd{
+oneJob\_Local.BatchProcessorIdentifierToken;
+ }
+\BoSSSexe
+\BoSSScmd{
 /// All jobs can be listed using the workflow management:
  }
 \BoSSSexe
 \BoSSScmd{
 WorkflowMgm.AllJobs
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Check the present job status:
+oneJob\_Local.Status;
  }
 \BoSSSexe
 \BoSSScmd{
@@ -205,266 +216,4 @@ Sloc;
 oneJob\_Local.Status;
  }
 \BoSSSexe
-\BoSSScmd{
-/// % ==================================================================
-/// \section{Accessing the session table}
-/// % ==================================================================
- }
-\BoSSSexe
-\BoSSScmd{
-/// We can access all sessions related to the project via the session table:
- }
-\BoSSSexe
-\BoSSScmd{
-var Table = WorkflowMgm.SessionTable;
- }
-\BoSSSexe
-\BoSSScmd{
-/// The size of the table, resp. the number of columns is usually 
-/// quite extensive, ...
- }
-\BoSSSexe
-\BoSSScmd{
-Table.GetColumnNames().Length;
- }
-\BoSSSexe
-\BoSSScmd{
-Table.GetColumnNames().Take(12);
- }
-\BoSSSexe
-\BoSSScmd{
-/// ... therefore we use some utility function to extract a sub set of columns:
- }
-\BoSSSexe
-\BoSSScmd{
-Table.ExtractColumns("SessionName", "DGdegree:rho", "L2ErrorDensity").Print();
- }
-\BoSSSexe
-\BoSSScmd{
- % 
- }
-\BoSSSexe
-\BoSSScmd{
- % 
- }
-\BoSSSexe
-\BoSSScmd{
-/// % ==================================================================
-/// \section{Further Reading: Setting up a simulation on a remote machine via Control Objects}
-/// % ==================================================================
- }
-\BoSSSexe
-\BoSSScmd{
-/// Here, we use the workflow management tools to simulate compressible flows \emph{with} immersed boundaries, thus we first have to load the namespaces of the CNS and IBM solver:
-//using BoSSS.Application.IBM\_Solver;
- }
-\BoSSSexe
-\BoSSScmd{
-//Type solver2 = typeof(IBM\_SolverMain);\newline 
-//solver2.Assembly.Location;
- }
-\BoSSSexe
-\BoSSScmdSilent{
-/// BoSSScmdSilent BoSSSexeSilent
-/// first, do some cleanup
-//if(System.IO.Directory.Exists(@"C:\textbackslash tmp\textbackslash TutorialNetworkDb\_db"))\newline 
-//    System.IO.Directory.Delete(@"C:\textbackslash tmp\textbackslash TutorialNetworkDb\_db",true);
- }
-\BoSSSexeSilent
-\BoSSScmd{
-/// For this tutorial, we use a local drive to simulate the network database:\newline 
-//var myNetworkDb = OpenOrCreateDatabase(@"C:\textbackslash tmp\textbackslash TutorialNetworkDb\_db");\newline 
-/// When using a real network drive, the path to the drive would be given as: 
-//var myNetworkDb = OpenOrCreateDatabase(@"\textbackslash \textbackslash \textbackslash $server\textbackslash $ \textbackslash \textbackslash $path\_to\_database\textbackslash $");
- }
-\BoSSSexe
-\BoSSScmd{
-/// Again, we fake the network capabilities:
-//var myHPC = myBatch;  \newline 
-/// For a Microsoft HPC-Server this would read:
-//var myHPC   = new MsHPC2012Client(@"\textbackslash \textbackslash dc1\textbackslash scratch\textbackslash hpcdeploy", \newline 
-//                          "hpccluster",\newline 
-//                          ComputeNodes: new[] \{"hpccluster", "pcmit30"\});  \newline 
-///   Remark: the Ms HPC client is deactivated  
-///   because it does not work on the build server which creates this  
-///   documentation.
- }
-\BoSSSexe
-\BoSSScmd{
-/// For the second job, we use a control object. The advantage of the control  
-/// object is that it can be completely constructed (or modified) within
-/// \BoSSSpad, without the need of an external file.
-/// In order to shorten things, we start with a predefined control object
-/// and modify it.
-//var StartupObject\_Network = HardcodedControl.ChannelFlow();
- }
-\BoSSSexe
-\BoSSScmd{
-/// E.g., we can mofify individual members:
-//StartupObject\_Network.DbPath              = myNetworkDb.Path;\newline 
-//StartupObject\_Network.NoOfTimesteps       = 2;\newline 
-//StartupObject\_Network.MaxSolverIterations = 35;\newline 
-//StartupObject\_Network.savetodb            = true;
- }
-\BoSSSexe
-\BoSSScmd{
-/// The only technical problems are formulas and expressions used e.g. to set
-/// initial values or queries; those objects cannot be serialized, i.e.
-/// stored in a file since they are live code. (If we work with
-/// control objects, \BoSSSpad ~tries to save them as a file, so they can later
-/// be loaded by the solver.)
- }
-\BoSSSexe
-\BoSSScmd{
-/// E.g. the following would not work:
-//StartupObject\_Network.InitialValues\_Evaluators["VelocityX"] = X => 0.5;\newline 
-/// The reason is that the expression {\tt X => 0.5} is only valid within
-/// this \BoSSSpad ~document and cannot be saved in a file and loaded again
-/// due to technical restrictions of .NET resp. C\#.
-///
-/// In order to make this work, we have to use a \emph{text} representation of
-/// our initial values.
- }
-\BoSSSexe
-\BoSSScmd{
-/// But first, we clear the entries from the predefined object:
-//StartupObject\_Network.InitialValues\_Evaluators.Clear();\newline 
-//StartupObject\_Network.Queries.Clear();
- }
-\BoSSSexe
-\BoSSScmd{
-/// Especially for more complex flows, the mathematical form of the solution,
-/// resp. the initial value is rather complicated. 
-/// Therefore, one could use a couple of auxilliary definitions:
- }
-\BoSSSexe
-\BoSSScmd{
-//string CommonCode = @"\newline 
-//    Random r = new Random();\newline 
-//    Func<double[],double> Noise = delegate(double[] X) \{\newline 
-//        double y          = X[1];\newline 
-//        double NoiseScale = (1 - y*y);\newline 
-//        return r.NextDouble()*NoiseScale;\newline 
-//    \};\newline 
-//";
- }
-\BoSSSexe
-\BoSSScmd{
-/// Using the additional code defined above, we are able to set 
-/// the initial values...
-//StartupObject\_Network.InitialValues.Clear();\newline 
-//StartupObject\_Network.InitialValues.Add("VelocityX", \newline 
-//    new Formula("X => Noise(X)*(1 - X[1]*X[1])", false, CommonCode));\newline 
-//StartupObject\_Network.InitialValues.Add("VelocityY", \newline 
-//    new Formula("X => 0.0", false));
- }
-\BoSSSexe
-\BoSSScmd{
-/// ... as well as the boundary conditions for the control object:
-//StartupObject\_Network.BoundaryValues.Clear();\newline 
-//StartupObject\_Network.AddBoundaryCondition("Velocity\_inlet");\newline 
-//StartupObject\_Network.AddBoundaryCondition("Pressure\_Outlet");\newline 
-//StartupObject\_Network.AddBoundaryCondition("Wall\_bottom");\newline 
-//StartupObject\_Network.AddBoundaryCondition("Wall\_top");\newline 
-//StartupObject\_Network.BoundaryValues["Velocity\_inlet"].Values.Add(\newline 
-//        "VelocityX",\newline 
-//        new Formula("X => (1 - X[1]*X[1])", false));
- }
-\BoSSSexe
-\BoSSScmd{
-/// The same holds for the grid: we cannot use a delegate to construct the 
-/// grid. Instead, we have to store the grid (including boundary
-/// conditions) in the database.
- }
-\BoSSSexe
-\BoSSScmd{
-//StartupObject\_Network.GridFunc = null;
- }
-\BoSSSexe
-\BoSSScmd{
-//var xNodes = GenericBlas.Linspace(0, 10, 101);\newline 
-//var yNodes = GenericBlas.Linspace(-1, 1, 21);\newline 
-//var Grid   = Grid2D.Cartesian2DGrid(xNodes, yNodes);
- }
-\BoSSSexe
-\BoSSScmd{
-//Grid.EdgeTagNames.Add(1, "Velocity\_inlet");\newline 
-//Grid.EdgeTagNames.Add(4, "Pressure\_Outlet");\newline 
-//Grid.EdgeTagNames.Add(2, "Wall\_bottom");\newline 
-//Grid.EdgeTagNames.Add(3, "Wall\_top");
- }
-\BoSSSexe
-\BoSSScmd{
-//Grid.DefineEdgeTags(delegate (double[] \_X) \{\newline 
-//    var X    = \_X;\newline 
-//    double x = X[0];\newline 
-//    double y = X[1];\newline 
-// \newline 
-//    if (Math.Abs(y - (-1)) < 1.0e-6)\newline 
-//       // bottom\newline 
-//       return 2;\newline 
-// \newline 
-//    if (Math.Abs(y - (+1)) < 1.0e-6)\newline 
-//       // top\newline 
-//       return 3;\newline 
-// \newline 
-//    if (Math.Abs(x - (0)) < 1.0e-6)\newline 
-//       // left\newline 
-//       return 1;\newline 
-// \newline 
-//    if (Math.Abs(x - (10)) < 1.0e-6)\newline 
-//       // right\newline 
-//       return 4;\newline 
-//    throw new Exception();\newline 
-//\});
- }
-\BoSSSexe
-\BoSSScmd{
-//Grid;
- }
-\BoSSSexe
-\BoSSScmd{
-//bool found;\newline 
-//Guid GridGuid = myNetworkDb.SaveGrid(Grid);
- }
-\BoSSSexe
-\BoSSScmd{
-//StartupObject\_Network.GridGuid = GridGuid;
- }
-\BoSSSexe
-\BoSSScmd{
-//var oneJob\_Network = new Job("byCmdLine\_HPC", solver2);
- }
-\BoSSSexe
-\BoSSScmd{
-//oneJob\_Network.SetControlObject(StartupObject\_Network);\newline 
-//oneJob\_Network.Activate(myHPC);
- }
-\BoSSSexe
-\BoSSScmd{
-/// We can e.g. obtain the status of the job:
-//oneJob\_Network.Status;
- }
-\BoSSSexe
-\BoSSScmd{
-/// Again, we block until both of our jobs have finished:
-//WorkflowMgm.BlockUntilAllJobsTerminate(360);
- }
-\BoSSSexe
-\BoSSScmd{
-/// We can also obtain the session which was stored during the execution of the 
-/// job:
-//var Snet = oneJob\_Network.LatestSession;\newline 
-//Snet;
- }
-\BoSSSexe
-\BoSSScmdSilent{
-/// BoSSScmdSilent BoSSSexeSilent
-//if(System.IO.Directory.Exists(myNetworkDb.Path))\{\newline 
-//    DatabaseUtils.DeleteDatabase(myNetworkDb.Path);\newline 
-//\}\newline 
-//if(System.IO.Directory.Exists(myLocalDb.Path))\newline 
-//    DatabaseUtils.DeleteDatabase(myLocalDb.Path);\newline 
-//MiniBatchProcessor.Server.SendTerminationSignal();
- }
-\BoSSSexeSilent
+
