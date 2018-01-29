@@ -30,7 +30,11 @@ namespace BoSSS.Solution.Gnuplot {
     /// </summary>
     public static class Plot2dGrid_ext {
 
-
+        /// <summary>
+        /// Utility/Debug function, plots numbers at specific coordinates.
+        /// </summary>
+        /// <param name="X"></param>
+        /// <param name="filename"></param>
         public static void PlotCoordinateLabels(this MultidimensionalArray X, string filename) {
             using (var gp = new Gnuplot()) {
                 int L = X.NoOfRows;
