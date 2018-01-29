@@ -30,13 +30,13 @@ namespace BoSSS.Application.BoSSSpad {
     /// A type representing multiple sets of abscissas with the corresponding
     /// sets of values.
     /// </summary>
-    public struct DataSet {
+    public struct Plot2Ddata {
 
         /// <summary>
         /// Represents a single set of abscissas with the corresponding set of
         /// values
         /// </summary>
-        public struct DataGroup : ICloneable {
+        public struct XYvalues : ICloneable {
 
             /// <summary>
             /// The name of the group
@@ -67,7 +67,7 @@ namespace BoSSS.Application.BoSSSpad {
             /// that the length must be equal to the length of
             /// <paramref name="abscissas"/>.
             /// </param>
-            public DataGroup(string name, double[] abscissas, double[] values) {
+            public XYvalues(string name, double[] abscissas, double[] values) {
                 if (abscissas.Length != values.Length) {
                     throw new ArgumentException(
                         "Number of x and y values must be identical within each group");
@@ -81,7 +81,7 @@ namespace BoSSS.Application.BoSSSpad {
             #region ICloneable Members
 
             public object Clone() {
-                return new DataGroup(
+                return new XYvalues(
                     this.Name.CloneAs(),
                     this.Abscissas.CloneAs(),
                     this.Values.CloneAs());
@@ -100,7 +100,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// This will be done on the fly during
         /// the post-processing of the data
         /// </remarks>
-        public readonly DataGroup[] dataGroups;
+        public readonly XYvalues[] dataGroups;
 
         /// <summary>
         /// Indicates whether the abscissas should be scaled logarithmically.
@@ -119,7 +119,7 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
-        /// Constructs a new, lightweight <see cref="DataSet"/> for the given
+        /// Constructs a new, lightweight <see cref="Plot2Ddata"/> for the given
         /// data.
         /// </summary>
         /// <param name="dataRows">
@@ -128,16 +128,16 @@ namespace BoSSS.Application.BoSSSpad {
         /// index corresponds to the values at these abscissas (a.k.a. the
         /// y-values).
         /// </param>
-        public DataSet(params KeyValuePair<string, double[][]>[] dataRows)
+        public Plot2Ddata(params KeyValuePair<string, double[][]>[] dataRows)
             : this() {
             this.dataGroups = dataRows.
-                Select(p => new DataGroup(p.Key, p.Value[0], p.Value[1])).
+                Select(p => new XYvalues(p.Key, p.Value[0], p.Value[1])).
                 OrderBy(p => p.Name).
                 ToArray();
         }
 
         /// <summary>
-        /// Constructs a new, lightweight <see cref="DataSet"/> for a single set
+        /// Constructs a new, lightweight <see cref="Plot2Ddata"/> for a single set
         /// of values.
         /// </summary>
         /// <param name="xyPairs">
@@ -148,10 +148,10 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="groupKey">
         /// An optional name of the given row.
         /// </param>
-        public DataSet(IEnumerable<KeyValuePair<double, double>> xyPairs, string groupKey = "unnamed")
+        public Plot2Ddata(IEnumerable<KeyValuePair<double, double>> xyPairs, string groupKey = "unnamed")
             : this() {
-            this.dataGroups = new DataGroup[] {
-                new DataGroup(
+            this.dataGroups = new XYvalues[] {
+                new XYvalues(
                     groupKey,
                     xyPairs.Select(p => p.Key).ToArray(),
                     xyPairs.Select(p => p.Value).ToArray())
@@ -159,7 +159,7 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
-        /// Constructs a new, lightweight <see cref="DataSet"/> for a single set
+        /// Constructs a new, lightweight <see cref="Plot2Ddata"/> for a single set
         /// of values.
         /// </summary>
         /// <param name="abscissas">
@@ -172,10 +172,10 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="groupKey">
         /// An optional name of the given row.
         /// </param>
-        public DataSet(IEnumerable<double> abscissas, IEnumerable<double> values, string groupKey = "unnamed")
+        public Plot2Ddata(IEnumerable<double> abscissas, IEnumerable<double> values, string groupKey = "unnamed")
             : this() {
-            this.dataGroups = new DataGroup[] {
-                new DataGroup(groupKey, abscissas.ToArray(), values.ToArray())
+            this.dataGroups = new XYvalues[] {
+                new XYvalues(groupKey, abscissas.ToArray(), values.ToArray())
             };
         }
 
@@ -185,7 +185,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="originalSet">
         /// Object to be copied from.
         /// </param>
-        private DataSet(DataSet originalSet)
+        private Plot2Ddata(Plot2Ddata originalSet)
             : this() {
             this.dataGroups = originalSet.dataGroups;
             this.LogX = originalSet.LogX;
@@ -199,7 +199,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// The data groups (see <see cref="dataGroups"/>) to be included in
         /// the new object
         /// </param>
-        private DataSet(params DataGroup[] groups) : this() {
+        private Plot2Ddata(params XYvalues[] groups) : this() {
             this.dataGroups = groups.OrderBy(p => p.Name).ToArray();
         }
 
@@ -210,8 +210,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// <returns>
         /// A copy of this object where <see cref="LogX"/> equals true.
         /// </returns>
-        public DataSet WithLogX() {
-            var set = new DataSet(this);
+        public Plot2Ddata WithLogX() {
+            var set = new Plot2Ddata(this);
             set.LogX = true;
             return set;
         }
@@ -223,8 +223,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// <returns>
         /// A copy of this object where <see cref="LogY"/> equals true.
         /// </returns>
-        public DataSet WithLogY() {
-            var set = new DataSet(this);
+        public Plot2Ddata WithLogY() {
+            var set = new Plot2Ddata(this);
             set.LogY = true;
             return set;
         }
@@ -241,14 +241,14 @@ namespace BoSSS.Application.BoSSSpad {
         /// A data set containing all data in this object and
         /// <paramref name="other"/>
         /// </returns>
-        public DataSet Merge(DataSet other) {
+        public Plot2Ddata Merge(Plot2Ddata other) {
             if (this.LogX != other.LogX || this.LogY != other.LogY) {
                 throw new Exception("Data sets have incompatible logarithmic scaling options");
             }
 
-            IList<DataGroup> mergedGroups = new List<DataGroup>(this.dataGroups.Length + other.dataGroups.Length);
+            IList<XYvalues> mergedGroups = new List<XYvalues>(this.dataGroups.Length + other.dataGroups.Length);
             mergedGroups.AddRange(this.dataGroups.Select(g => g.CloneAs()));
-            foreach (DataGroup otherGroup in other.dataGroups) {
+            foreach (XYvalues otherGroup in other.dataGroups) {
                 if (this.dataGroups.Any(g => g.Name == otherGroup.Name)) {
                     throw new NotSupportedException(String.Format(
                         "Group key '{0}' exists in both data sets. This is not supported.",
@@ -258,7 +258,7 @@ namespace BoSSS.Application.BoSSSpad {
                 mergedGroups.Add(otherGroup.CloneAs());
             }
 
-            DataSet result = new DataSet(mergedGroups.ToArray());
+            Plot2Ddata result = new Plot2Ddata(mergedGroups.ToArray());
             result.LogX = this.LogX;
             result.LogY = this.LogY;
             return result;
@@ -276,8 +276,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// A data set containing all data corresponding to the groups with
         /// names in  <paramref name="groupNames"/>
         /// </returns>
-        public DataSet Extract(params string[] groupNames) {
-            return new DataSet(dataGroups.
+        public Plot2Ddata Extract(params string[] groupNames) {
+            return new Plot2Ddata(dataGroups.
                 Where(g => groupNames.Contains(g.Name)).
                 Select(g => g.CloneAs()).
                 ToArray());
@@ -294,8 +294,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// A data set containing all data within this object, except of groups
         /// whose names are listed in <paramref name="groupNames"/>
         /// </returns>
-        public DataSet Without(params string[] groupNames) {
-            return new DataSet(dataGroups.
+        public Plot2Ddata Without(params string[] groupNames) {
+            return new Plot2Ddata(dataGroups.
                 Where(g => !groupNames.Contains(g.Name)).
                 Select(g => g.CloneAs()).
                 ToArray());
