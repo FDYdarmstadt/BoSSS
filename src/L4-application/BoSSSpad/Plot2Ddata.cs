@@ -28,7 +28,11 @@ using System.Runtime.Serialization;
 namespace BoSSS.Application.BoSSSpad {
 
     /// <summary>
-    /// A type representing multiple sets of abscissas with the corresponding sets of values.
+    /// The high-level gnuplot interface; contains 
+    /// - sets of abscissas with the corresponding sets of values (<see cref="dataGroups"/>)
+    /// - plot formatting options
+    /// After all data values are set, transformed to a <see cref="Gnuplot"/> object ('low-level Gnuplot')
+    /// by <see cref="GnuplotExtensions.ToGnuplot(Plot2Ddata, GnuplotPageLayout)"/>.
     /// </summary>
     [Serializable]
     [DataContract]
@@ -53,7 +57,7 @@ namespace BoSSS.Application.BoSSSpad {
                 Style = Styles.LinesPoints
             };
 
-
+            
             /// <summary>
             /// The name of the group, i.e. the name which may show up in the legend.
             /// </summary>
@@ -166,6 +170,18 @@ namespace BoSSS.Application.BoSSSpad {
 
 
         /// <summary>
+        /// Indicates whether the secondary abscissas should be scaled logarithmically.
+        /// </summary>
+        [DataMember]
+        public bool LogX2;
+
+        /// <summary>
+        /// Indicates whether the secondary values axis  should be scaled logarithmically.
+        /// </summary>
+        [DataMember]
+        public bool LogY2;
+
+        /// <summary>
         /// y-range minimum, optional 
         /// </summary>
         [DataMember]
@@ -212,7 +228,91 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         [DataMember]
         public string Y2label = null;
-        
+
+        /// <summary>
+        /// Se title of the plot.
+        /// </summary>
+        [DataMember]
+        public string Title = null;
+
+        /// <summary>
+        /// Turn the legend (the key, in gnuplot terms) on or off.
+        /// </summary>
+        [DataMember]
+        public bool ShowLegend = true;
+
+
+        /// <summary>
+        /// Numbers on the primary x-axis
+        /// </summary>
+        [DataMember]
+        public bool ShowXtics = true;
+
+        /// <summary>
+        /// Numbers on the secondary x-axis
+        /// </summary>
+        [DataMember]
+        public bool ShowX2tics = false;
+
+        /// <summary>
+        /// Numbers on the primary y-axis
+        /// </summary>
+        [DataMember]
+        public bool ShowYtics = true;
+
+        /// <summary>
+        /// Numbers on the secondary y-axis
+        /// </summary>
+        [DataMember]
+        public bool ShowY2tics = false;
+
+        /// <summary>
+        /// Modification the dash type (<see cref="PlotFormat.DashType"/>).
+        /// </summary>
+        public void ModDashType(string[] SubKey, DashTypes[] DashType) {
+            if(SubKey.Length != DashType.Length) {
+                throw new ArgumentException();
+            }
+
+            foreach (var g in dataGroups) {
+                for (int i = 0; i < SubKey.Length; i++) {
+                    if (g.Name.Contains(SubKey[i]))
+                        g.Format.DashType = DashType[i];
+                }
+            }
+        }
+
+        /// <summary>
+        /// Modification the dash type (<see cref="PlotFormat.DashType"/>).
+        /// </summary>
+        public void ModDashType(string SubKey, DashTypes DashType) {
+            this.ModDashType(new[] { SubKey }, new[] { DashType });
+        }
+
+        /// <summary>
+        /// Modification the point type (<see cref="PlotFormat.PointType"/>).
+        /// </summary>
+        public void ModPointType(string[] SubKey, PointTypes[] PointType) {
+            if(SubKey.Length != PointType.Length) {
+                throw new ArgumentException();
+            }
+
+            foreach (var g in dataGroups) {
+                for (int i = 0; i < SubKey.Length; i++) {
+                    if (g.Name.Contains(SubKey[i]))
+                        g.Format.PointType = PointType[i];
+                }
+            }
+        }
+
+        /// <summary>
+        /// Modification the point type (<see cref="PlotFormat.PointType"/>).
+        /// </summary>
+        public void ModPointType(string SubKey, PointTypes PointType) {
+            this.ModPointType(new[] { SubKey }, new[] { PointType });
+        }
+
+
 
         /// <summary>
         /// Constructs a new, empty plot.
@@ -445,31 +545,7 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
-        /// <summary>
-        /// Visualizes the stored data using gnuplot.
-        /// </summary>
-        public void Plot() {
-            Gnuplot gp = new Gnuplot();
-            gp.SetXLabel("x");
-            gp.SetYLabel("y");
-            gp.Cmd("set terminal wxt noraise");
-            if (LogX) {
-                gp.Cmd("set logscale x");
-                gp.Cmd("set format x \"10^{%L}\"");
-            }
-            if (LogY) {
-                gp.Cmd("set logscale y");
-                gp.Cmd("set format y \"10^{%L}\"");
-            }
-            gp.Cmd("set grid xtics ytics");
 
-            int lineColor = 0;
-            foreach (var group in dataGroups) {
-                gp.PlotXY(group.Abscissas, group.Values, group.Name,  
-                    new PlotFormat(lineColor:((LineColors)( ++lineColor)), pointType: ((PointTypes)4), pointSize:1.5, Style: Styles.LinesPoints));
-            }
-            gp.Execute();
-        }
 
         /// <summary>
         /// Saves a tabular summary of the stored data to a text file
@@ -511,30 +587,6 @@ namespace BoSSS.Application.BoSSSpad {
                 foreach (var item in regressionData) {
                     stw.WriteLine(item.Key + "\t" + item.Value);
                 }
-                stw.Close();
-            }
-        }
-
-        /// <summary>
-        /// Saves a gnuplot file that can be used to plot the data represented
-        /// by this data set
-        /// </summary>
-        /// <param name="path">
-        /// Path to the gnuplot file
-        /// </param>
-        public void SaveGnuplotFile(string path) {
-            using (StreamWriter stw = new StreamWriter(path)) {
-                if (LogX) {
-                    stw.WriteLine("set logscale x");
-                    stw.WriteLine("set format x \"10^{%L}\"");
-                }
-                if (LogY) {
-                    stw.WriteLine("set logscale y");
-                    stw.WriteLine("set format y \"10^{%L}\"");
-                }
-                stw.WriteLine("plot for [IDX=0:{0}] \"-\" using 1:2 with lines title columnheader(1)", dataGroups.Length - 1);
-                stw.Write(this.ToString(true));
-                stw.WriteLine("pause -1");
                 stw.Close();
             }
         }

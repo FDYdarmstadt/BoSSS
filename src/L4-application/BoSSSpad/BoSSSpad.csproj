@@ -118,6 +118,7 @@
     <Compile Include="ExportInstruction.cs" />
     <Compile Include="CommandLineReader.cs" />
     <Compile Include="GnuplotExtensions.cs" />
+    <Compile Include="GnuplotPageLayout.cs" />
     <Compile Include="GridExportInstruction.cs" />
     <Compile Include="IEnumerableExtensions.cs" />
     <Compile Include="IDatabaseInfoExtensions.cs" />

@@ -588,5 +588,85 @@ namespace BoSSS.Application.BoSSSpad {
             // ======
             return ret;
         }
+
+
+
+        /// <summary>
+        /// Creates an xy-plot form a table
+        /// </summary>
+        /// <param name="Tab"></param>
+        /// <param name="ColName_ForXValues">
+        /// Column name, where the values for the x-axis are taken.
+        /// </param>
+        /// <param name="ColName_ForYValues"></param>
+        /// <param name="ColName_GroupSelection">
+        /// Selects, which table row will end up in which graph, resp. data group (<see cref="Plot2Ddata.dataGroups"/>).
+        /// </param>
+        /// <returns></returns>
+        public static Plot2Ddata ToPlot(this DataTable Tab, 
+            string ColName_ForXValues, string ColName_ForYValues, 
+            params string[] ColName_GroupSelection) {
+            
+
+            Plot2Ddata ret = new Plot2Ddata();
+
+            // loop over table rows
+            // ====================
+            string[] ColNames = Tab.GetColumnNames();
+            int L = Tab.Rows.Count;
+            int J = Tab.Columns.Count;
+            for (int i = 0; i < L; i++) {
+                DataRow orgRow = Tab.Rows[i];
+                Dictionary<string, object> orgRowAsDict = new Dictionary<string, object>();
+                foreach (string ColName in ColNames) {
+                    object obj_ColName = orgRow[ColName];
+                    if (obj_ColName == DBNull.Value) {
+                        orgRowAsDict.Add(ColName, null);
+                    } else {
+                        orgRowAsDict.Add(ColName, obj_ColName);
+                    }
+                }
+
+                string groupName = "";
+                try {
+                    //groupName = GroupSelector(i, orgRowAsDict);
+
+                    for(int iS = 0; iS < ColName_GroupSelection.Length; iS++) {
+                        groupName += ColName_GroupSelection[iS] + orgRow[ColName_GroupSelection[iS]].ToString();
+                        if(iS < ColName_GroupSelection.Length - 1)
+                            groupName += "--";
+                    }
+
+                } catch (Exception e) {
+                    Console.WriteLine("Exception in the selection test of row {0}: {1}, Message: {2}.", i, e.GetType().Name, e.Message);
+                    groupName = null;
+                }
+
+                if (groupName != null) {
+                    double xValue = Convert.ToDouble(orgRowAsDict[ColName_ForXValues]);
+                    double yValue = Convert.ToDouble(orgRowAsDict[ColName_ForYValues]);
+
+                    Plot2Ddata.XYvalues xyGroup = Array.Find(ret.dataGroups, xyG => xyG.Name.Equals(groupName));
+                    if(xyGroup == null) {
+                        xyGroup = new Plot2Ddata.XYvalues(groupName);
+                        ArrayTools.AddToArray(xyGroup, ref ret.dataGroups);
+                    }
+
+                    ArrayTools.AddToArray(xValue, ref xyGroup.Abscissas);
+                    ArrayTools.AddToArray(yValue, ref xyGroup.Values);
+                }
+            }
+
+            // sort data
+            // =========
+            foreach(var xyGroup in ret.dataGroups) {
+                Array.Sort(xyGroup.Abscissas, xyGroup.Values);
+            }
+
+
+            // return
+            // ======
+            return ret;
+        }
     }
 }
