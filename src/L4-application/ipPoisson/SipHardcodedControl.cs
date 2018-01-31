@@ -183,7 +183,7 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="solver_name">
         /// Name of solver to use.
         /// </param>
-        public static SipControl TestCartesian2(int Res, int Dim, SolverCodes solver_name = SolverCodes.classic_cg, int deg = 2) {
+        public static SipControl TestCartesian2(int Res, int Dim, SolverCodes solver_name = SolverCodes.exp_softpcg_schwarz_directcoarse, int deg = 2) {
             if(Dim != 2 && Dim != 3)
                 throw new ArgumentOutOfRangeException();
             
