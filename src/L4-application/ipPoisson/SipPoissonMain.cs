@@ -152,12 +152,14 @@ namespace BoSSS.Application.SipPoisson {
                     // in DEBUG mode, we compare 'MsrMatrix' (old, reference implementation) and 'BlockMsrMatrix' (new standard)
                     var RefLaplaceMtx = new MsrMatrix(T.Mapping);
 #endif
-                    LaplaceMtx = new BlockMsrMatrix(T.Mapping);
-                    LaplaceAffine = new double[T.Mapping.LocalLength];
+                    using (new BlockTrace("SipMatrixAssembly", tr)) {
+                        LaplaceMtx = new BlockMsrMatrix(T.Mapping);
+                        LaplaceAffine = new double[T.Mapping.LocalLength];
 
-                    LapaceIp.ComputeMatrixEx(T.Mapping, null, T.Mapping,
-                                             LaplaceMtx, LaplaceAffine,
-                                             volQuadScheme: volQrSch, edgeQuadScheme: edgQrSch);
+                        LapaceIp.ComputeMatrixEx(T.Mapping, null, T.Mapping,
+                                                 LaplaceMtx, LaplaceAffine,
+                                                 volQuadScheme: volQrSch, edgeQuadScheme: edgQrSch);
+                    }
 #if DEBUG
                     LaplaceAffine.ClearEntries();
                     LapaceIp.ComputeMatrixEx(T.Mapping, null, T.Mapping,
@@ -366,7 +368,8 @@ namespace BoSSS.Application.SipPoisson {
                     case SolverCodes.classic_cg:
                     ipSolver = new ilPSP.LinSolvers.monkey.CG() {
                         MaxIterations = 1000000,
-                        Tolerance = 1.0e-10
+                        Tolerance = 1.0e-10,
+                        DevType = ilPSP.LinSolvers.monkey.DeviceType.Cuda
                     };
                     break;
 
@@ -440,7 +443,12 @@ namespace BoSSS.Application.SipPoisson {
                     solver = new DirectSolver() {
                         WhichSolver = DirectSolver._whichSolver.PARDISO
                     };
+                    break;
 
+                    case SolverCodes.exp_direct_lapack:
+                    solver = new DirectSolver() {
+                        WhichSolver = DirectSolver._whichSolver.Lapack
+                    };
                     break;
 
                     case SolverCodes.exp_softpcg_schwarz_directcoarse:
@@ -513,7 +521,7 @@ namespace BoSSS.Application.SipPoisson {
 
 
                 if (solver is ISolverWithCallback) {
-                    /*
+                    
                     ((ISolverWithCallback)solver).IterationCallback = delegate (int iter, double[] xI, double[] rI, MultigridOperator mgOp) {
                         double l2_RES = rI.L2NormPow2().MPISum().Sqrt();
 
@@ -526,7 +534,7 @@ namespace BoSSS.Application.SipPoisson {
                         //Residual.CoordinatesAsVector.SetV(rI);
                         //PlotCurrentState(iter, new TimestepNumber(iter), 3);
                     };
-                    */
+                    
                 }
 
 

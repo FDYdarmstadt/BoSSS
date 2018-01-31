@@ -647,16 +647,15 @@ namespace ilPSP.LinSolvers {
         /// null on all MPI processes, except on rank 0;
         /// </returns>
         static public MultidimensionalArray ToFullMatrixOnProc0(this IMutableMatrixEx tis) {
-            int Rank, Size;
-            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out Size);
-            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out Rank);
-
+            var comm = tis.MPI_Comm;
+            int Rank = tis.RowPartitioning.MpiRank;
+            int Size = tis.RowPartitioning.MpiSize;
 
             double[,] ret = null;
             if (Rank == 0)
                 ret = new double[tis.NoOfRows, tis.NoOfCols];
 
-            SerialisationMessenger sms = new SerialisationMessenger(csMPI.Raw._COMM.WORLD);
+            SerialisationMessenger sms = new SerialisationMessenger(comm);
 
             if (Rank > 0)
                 sms.SetCommPath(0);
