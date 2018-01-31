@@ -35,7 +35,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// The keys and queries (see <see cref="ISessionInfo.KeysAndQueries"/>) of all sessions in an enumeration
         /// <paramref name="sessions"/> in one table.
         /// </summary>
-        public static DataTable GetSessionTable(this IEnumerable<ISessionInfo> sessions) {
+        public static DataTable GetSessionTable(this IEnumerable<ISessionInfo> sessions, Tuple<string, Func<ISessionInfo, object>>[] AdditionalColums) {
 
             Dictionary<string, object[]> Ret = new Dictionary<string, object[]>();
 
@@ -43,10 +43,24 @@ namespace BoSSS.Application.BoSSSpad {
                 var SS = sessions.ElementAt(iSess);
                 var kq = SS.KeysAndQueries.ToList();
 
+                // add additional columns
                 kq.Add(new KeyValuePair<string, object>("Session", SS));
                 kq.Add(new KeyValuePair<string, object>("RegularTerminated", !SS.Tags.Contains(BoSSS.Solution.Application.NOT_TERMINATED_TAG)));
 
+                if(AdditionalColums != null) {
+                    foreach(var t in AdditionalColums) {
+                        object val;
+                        try {
+                            val = t.Item2(SS);
+                        } catch(Exception) {
+                            val = null;
+                        }
+                        kq.Add(new KeyValuePair<string, object>(t.Item1, val));
+                    }
+                }
 
+
+                // convert to table
                 foreach (var kv in kq) {
                     string ColumnName = kv.Key;
                     object ValueInCol = kv.Value;

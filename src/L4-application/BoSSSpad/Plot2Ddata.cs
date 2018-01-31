@@ -28,7 +28,7 @@ using System.Runtime.Serialization;
 namespace BoSSS.Application.BoSSSpad {
 
     /// <summary>
-    /// The high-level gnuplot interface; contains 
+    /// The high-level Gnuplot interface; contains 
     /// - sets of abscissas with the corresponding sets of values (<see cref="dataGroups"/>)
     /// - plot formatting options
     /// After all data values are set, transformed to a <see cref="Gnuplot"/> object ('low-level Gnuplot')
@@ -289,6 +289,28 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         [DataMember]
         public bool ShowY2tics = false;
+
+
+        /// <summary>
+        /// Optional Gnuplot left margin, units are character heights or widths.
+        /// </summary>
+        public double? lmargin = null;
+
+        /// <summary>
+        /// Optional Gnuplot right margin, units are character heights or widths.
+        /// </summary>
+        public double? rmargin = null;
+
+        /// <summary>
+        /// Optional Gnuplot top margin, units are character heights or widths.
+        /// </summary>
+        public double? tmargin = null;
+
+        /// <summary>
+        /// Optional Gnuplot bottom margin, units are character heights or widths.
+        /// </summary>
+        public double? bmargin = null;
+
 
         /// <summary>
         /// Modification the dash type (<see cref="PlotFormat.DashType"/>).
@@ -910,23 +932,13 @@ namespace BoSSS.Application.BoSSSpad {
             // labels, title, legend...
             // ========================
             {
-                if (this.Xlabel != null) {
-                    gp.SetXLabel(this.Xlabel);
-                }
-                if (this.Ylabel != null) {
-                    gp.SetYLabel(this.Ylabel);
-                }
+                gp.SetXLabel(this.Xlabel);
+                gp.SetYLabel(this.Ylabel);
+                gp.SetX2Label(this.X2label);
+                gp.SetY2Label(this.Y2label);
 
-                if (this.X2label != null) {
-                    gp.SetX2Label(this.X2label);
-                }
-                if (this.Y2label != null) {
-                    gp.SetYLabel(this.Y2label);
-                }
-
-                if (this.Title != null) {
-                    gp.SetTitle(this.Title);
-                }
+                gp.SetTitle(this.Title);
+                
 
                 if (this.ShowLegend) {
                     gp.Cmd("unset key");
@@ -947,7 +959,7 @@ namespace BoSSS.Application.BoSSSpad {
                     else
                         gp.Cmd("set xtics ");
                 } else {
-                    gp.Cmd("unset xtics");
+                    gp.Cmd("set xtics format \" \" "); // shows ticks/marks, but hides numbers
                 }
 
                 if (this.ShowX2tics) {
@@ -956,7 +968,7 @@ namespace BoSSS.Application.BoSSSpad {
                     else
                         gp.Cmd("set x2tics ");
                 } else {
-                    gp.Cmd("unset x2tics");
+                    gp.Cmd("set x2tics format \" \" "); // shows ticks/marks, but hides numbers
                 }
 
                 if (this.ShowYtics) {
@@ -965,18 +977,50 @@ namespace BoSSS.Application.BoSSSpad {
                     else
                         gp.Cmd("set ytics ");
                 } else {
-                    gp.Cmd("unset ytics");
+                    gp.Cmd("set ytics format \" \" "); // shows ticks/marks, but hides numbers
                 }
 
                 if (this.ShowY2tics) {
-                    if (this.LogX2)
+                    if (this.LogY2)
                         gp.Cmd("set y2tics format \"$10^{%T}$\" ");
                     else
                         gp.Cmd("set y2tics ");
                 } else {
-                    gp.Cmd("unset y2tics");
+                    //gp.Cmd("unset y2tics");
+                    gp.Cmd("set y2tics format \" \" "); // shows ticks/marks, but hides numbers
                 }
             }
+
+            // =======
+            // margins
+            // =======
+            {
+                if(lmargin != null) {
+                    gp.Cmd("set lmargin " + this.lmargin.Value.ToStringDot());
+                } else {
+                    gp.Cmd("unset lmargin ");
+                }
+
+                if (rmargin != null) {
+                    gp.Cmd("set rmargin " + this.rmargin.Value.ToStringDot());
+                } else {
+                    gp.Cmd("unset rmargin ");
+                }
+
+                if(tmargin != null) {
+                    gp.Cmd("set tmargin " + this.tmargin.Value.ToStringDot());
+                } else {
+                    gp.Cmd("unset tmargin ");
+                }
+
+                if(bmargin != null) {
+                    gp.Cmd("set bmargin " + this.bmargin.Value.ToStringDot());
+                } else {
+                    gp.Cmd("unset bmargin ");
+                }
+
+            }
+
 
             // =================
             // finally, plotting
