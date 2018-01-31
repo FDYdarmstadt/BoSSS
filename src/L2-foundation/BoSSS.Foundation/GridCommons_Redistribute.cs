@@ -802,7 +802,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         }
 
         /// <summary>
-        /// Computes a grid partitioning (which cell should be on which processor) based on a Hilbertcurve of maximum order (nBit=63).
+        /// Computes a grid partitioning (which cell should be on which processor) based on a Hilbertcurve of maximum order (nBit=32).
         /// </summary>
         public int[] ComputePartitionHilbert(int[] cellCosts = null) {
 
