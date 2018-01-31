@@ -950,7 +950,9 @@ namespace BoSSS.Solution.Gnuplot {
         /// <param name="iRow"></param>
         /// <param name="jCol"></param>
         /// <param name="title"></param>
-        public void SetSubPlot(int iRow, int jCol, string title = null) {
+        /// <param name="xGaps">additional gap, in percent</param>
+        /// <param name="yGaps">additional gap, in percent</param>
+        public void SetSubPlot(int iRow, int jCol, string title = null, double xGaps = 0.01, double yGaps = 0.01) {
             if (iRow < 0 || iRow >= this.MultiplotRows)
                 throw new IndexOutOfRangeException();
             if (jCol < 0 || jCol >= this.MultiplotCols)
@@ -960,6 +962,11 @@ namespace BoSSS.Solution.Gnuplot {
             double ySubSize = (1.0 / this.MultiplotRows);
             double XOrigin = (jCol) * xSubSize;
             double YOrigin = (this.MultiplotRows - iRow - 1) * ySubSize;
+
+            XOrigin += xGaps * xSubSize;
+            YOrigin += yGaps * ySubSize;
+            xSubSize *= 1.0 - 2 * xGaps;
+            ySubSize *= 1.0 - 2 * yGaps;
 
             this.Cmd("set size {0},{1}", xSubSize.ToStringDot(), ySubSize.ToStringDot());
             this.Cmd("set origin {0},{1}", XOrigin.ToStringDot(), YOrigin.ToStringDot());
