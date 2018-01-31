@@ -23,35 +23,70 @@ using System.Text;
 using BoSSS.Platform;
 using BoSSS.Solution.Gnuplot;
 using ilPSP;
+using System.Runtime.Serialization;
 
 namespace BoSSS.Application.BoSSSpad {
 
     /// <summary>
-    /// A type representing multiple sets of abscissas with the corresponding
-    /// sets of values.
+    /// The high-level gnuplot interface; contains 
+    /// - sets of abscissas with the corresponding sets of values (<see cref="dataGroups"/>)
+    /// - plot formatting options
+    /// After all data values are set, transformed to a <see cref="Gnuplot"/> object ('low-level Gnuplot')
+    /// by <see cref="GnuplotExtensions.ToGnuplot(Plot2Ddata, GnuplotPageLayout)"/>.
     /// </summary>
-    public struct DataSet {
+    [Serializable]
+    [DataContract]
+    public class Plot2Ddata {
 
         /// <summary>
-        /// Represents a single set of abscissas with the corresponding set of
-        /// values
+        /// Represents a single set of abscissas with the corresponding set of values.
         /// </summary>
-        public struct DataGroup : ICloneable {
+        [Serializable]
+        [DataContract]
+        public class XYvalues : ICloneable {
 
             /// <summary>
-            /// The name of the group
+            /// Gnuplot Style to use.
             /// </summary>
-            public readonly string Name;
+            public BoSSS.Solution.Gnuplot.PlotFormat Format = new PlotFormat() {
+                PointType = PointTypes.Circle,
+                DashType = DashTypes.Solid,
+                LineColor = LineColors.Black,
+                LineWidth = 1,
+                PointSize = 3,
+                Style = Styles.LinesPoints
+            };
+
+            
+            /// <summary>
+            /// The name of the group, i.e. the name which may show up in the legend.
+            /// </summary>
+            [DataMember]
+            public string Name;
+
+            /// <summary>
+            /// Use secondary X axis (can have another range as primary one).
+            /// </summary>
+            [DataMember]
+            public bool UseX2 = false;
+
+            /// <summary>
+            /// Use secondary Y axis (can have another range as primary one).
+            /// </summary>
+            [DataMember]
+            public bool UseY2 = false;
 
             /// <summary>
             /// The points of evaluation, i.e. x-values
             /// </summary>
-            public readonly double[] Abscissas;
+            [DataMember]
+            public double[] Abscissas;
 
             /// <summary>
             /// The values at the <see cref="Abscissas"/>, i.e. y-values
             /// </summary>
-            public readonly double[] Values;
+            [DataMember]
+            public double[] Values;
 
             /// <summary>
             /// Constructs a data group.
@@ -67,7 +102,7 @@ namespace BoSSS.Application.BoSSSpad {
             /// that the length must be equal to the length of
             /// <paramref name="abscissas"/>.
             /// </param>
-            public DataGroup(string name, double[] abscissas, double[] values) {
+            public XYvalues(string name, double[] abscissas, double[] values) {
                 if (abscissas.Length != values.Length) {
                     throw new ArgumentException(
                         "Number of x and y values must be identical within each group");
@@ -78,13 +113,31 @@ namespace BoSSS.Application.BoSSSpad {
                 this.Values = values;
             }
 
+            /// <summary>
+            /// Constructs a data group.
+            /// </summary>
+            /// <param name="name">
+            /// The name of the group
+            /// </param>
+            public XYvalues(string name) {
+
+                this.Name = name;
+                this.Abscissas = new double[0];
+                this.Values = new double[0];
+            }
+
             #region ICloneable Members
 
+            /// <summary>
+            /// Clone
+            /// </summary>
             public object Clone() {
-                return new DataGroup(
+                return new XYvalues(
                     this.Name.CloneAs(),
                     this.Abscissas.CloneAs(),
-                    this.Values.CloneAs());
+                    this.Values.CloneAs()) {
+                    Format = this.Format.CloneAs()
+                };
             }
 
             #endregion
@@ -100,26 +153,176 @@ namespace BoSSS.Application.BoSSSpad {
         /// This will be done on the fly during
         /// the post-processing of the data
         /// </remarks>
-        public readonly DataGroup[] dataGroups;
+        [DataMember]
+        public XYvalues[] dataGroups;
 
         /// <summary>
         /// Indicates whether the abscissas should be scaled logarithmically.
         /// </summary>
-        public bool LogX {
-            get;
-            private set;
-        }
+        [DataMember]
+        public bool LogX;
 
         /// <summary>
         /// Indicates whether the values should be scaled logarithmically.
         /// </summary>
-        public bool LogY {
-            get;
-            private set;
+        [DataMember]
+        public bool LogY;
+
+
+        /// <summary>
+        /// Indicates whether the secondary abscissas should be scaled logarithmically.
+        /// </summary>
+        [DataMember]
+        public bool LogX2;
+
+        /// <summary>
+        /// Indicates whether the secondary values axis  should be scaled logarithmically.
+        /// </summary>
+        [DataMember]
+        public bool LogY2;
+
+        /// <summary>
+        /// y-range minimum, optional 
+        /// </summary>
+        [DataMember]
+        public double? XrangeMin = null;
+
+        /// <summary>
+        /// x-range maximum, optional 
+        /// </summary>
+        [DataMember]
+        public double? XrangeMax = null;
+
+        /// <summary>
+        /// y-range minimum, optional 
+        /// </summary>
+        [DataMember]
+        public double? YrangeMin = null;
+
+        /// <summary>
+        /// y-range maximum, optional 
+        /// </summary>
+        [DataMember]
+        public double? YrangeMax = null;
+
+        /// <summary>
+        /// Label for X-axis
+        /// </summary>
+        [DataMember]
+        public string Xlabel = null;
+
+        /// <summary>
+        /// Label for secondary X-Axis
+        /// </summary>
+        [DataMember]
+        public string X2label = null;
+
+        /// <summary>
+        /// Label for Y-Axis
+        /// </summary>
+        [DataMember]
+        public string Ylabel = null;
+
+        /// <summary>
+        /// Label for secondary Y-Axis
+        /// </summary>
+        [DataMember]
+        public string Y2label = null;
+
+        /// <summary>
+        /// Se title of the plot.
+        /// </summary>
+        [DataMember]
+        public string Title = null;
+
+        /// <summary>
+        /// Turn the legend (the key, in gnuplot terms) on or off.
+        /// </summary>
+        [DataMember]
+        public bool ShowLegend = true;
+
+
+        /// <summary>
+        /// Numbers on the primary x-axis
+        /// </summary>
+        [DataMember]
+        public bool ShowXtics = true;
+
+        /// <summary>
+        /// Numbers on the secondary x-axis
+        /// </summary>
+        [DataMember]
+        public bool ShowX2tics = false;
+
+        /// <summary>
+        /// Numbers on the primary y-axis
+        /// </summary>
+        [DataMember]
+        public bool ShowYtics = true;
+
+        /// <summary>
+        /// Numbers on the secondary y-axis
+        /// </summary>
+        [DataMember]
+        public bool ShowY2tics = false;
+
+        /// <summary>
+        /// Modification the dash type (<see cref="PlotFormat.DashType"/>).
+        /// </summary>
+        public void ModDashType(string[] SubKey, DashTypes[] DashType) {
+            if(SubKey.Length != DashType.Length) {
+                throw new ArgumentException();
+            }
+
+            foreach (var g in dataGroups) {
+                for (int i = 0; i < SubKey.Length; i++) {
+                    if (g.Name.Contains(SubKey[i]))
+                        g.Format.DashType = DashType[i];
+                }
+            }
         }
 
         /// <summary>
-        /// Constructs a new, lightweight <see cref="DataSet"/> for the given
+        /// Modification the dash type (<see cref="PlotFormat.DashType"/>).
+        /// </summary>
+        public void ModDashType(string SubKey, DashTypes DashType) {
+            this.ModDashType(new[] { SubKey }, new[] { DashType });
+        }
+
+        /// <summary>
+        /// Modification the point type (<see cref="PlotFormat.PointType"/>).
+        /// </summary>
+        public void ModPointType(string[] SubKey, PointTypes[] PointType) {
+            if(SubKey.Length != PointType.Length) {
+                throw new ArgumentException();
+            }
+
+            foreach (var g in dataGroups) {
+                for (int i = 0; i < SubKey.Length; i++) {
+                    if (g.Name.Contains(SubKey[i]))
+                        g.Format.PointType = PointType[i];
+                }
+            }
+        }
+
+        /// <summary>
+        /// Modification the point type (<see cref="PlotFormat.PointType"/>).
+        /// </summary>
+        public void ModPointType(string SubKey, PointTypes PointType) {
+            this.ModPointType(new[] { SubKey }, new[] { PointType });
+        }
+
+
+
+        /// <summary>
+        /// Constructs a new, empty plot.
+        /// </summary>
+        public Plot2Ddata() {
+            this.dataGroups = new XYvalues[0];
+        }
+
+        /// <summary>
+        /// Constructs a new, lightweight <see cref="Plot2Ddata"/> for the given
         /// data.
         /// </summary>
         /// <param name="dataRows">
@@ -128,16 +331,16 @@ namespace BoSSS.Application.BoSSSpad {
         /// index corresponds to the values at these abscissas (a.k.a. the
         /// y-values).
         /// </param>
-        public DataSet(params KeyValuePair<string, double[][]>[] dataRows)
+        public Plot2Ddata(params KeyValuePair<string, double[][]>[] dataRows)
             : this() {
             this.dataGroups = dataRows.
-                Select(p => new DataGroup(p.Key, p.Value[0], p.Value[1])).
+                Select(p => new XYvalues(p.Key, p.Value[0], p.Value[1])).
                 OrderBy(p => p.Name).
                 ToArray();
         }
 
         /// <summary>
-        /// Constructs a new, lightweight <see cref="DataSet"/> for a single set
+        /// Constructs a new, lightweight <see cref="Plot2Ddata"/> for a single set
         /// of values.
         /// </summary>
         /// <param name="xyPairs">
@@ -148,10 +351,10 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="groupKey">
         /// An optional name of the given row.
         /// </param>
-        public DataSet(IEnumerable<KeyValuePair<double, double>> xyPairs, string groupKey = "unnamed")
+        public Plot2Ddata(IEnumerable<KeyValuePair<double, double>> xyPairs, string groupKey = "unnamed")
             : this() {
-            this.dataGroups = new DataGroup[] {
-                new DataGroup(
+            this.dataGroups = new XYvalues[] {
+                new XYvalues(
                     groupKey,
                     xyPairs.Select(p => p.Key).ToArray(),
                     xyPairs.Select(p => p.Value).ToArray())
@@ -159,7 +362,7 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
-        /// Constructs a new, lightweight <see cref="DataSet"/> for a single set
+        /// Constructs a new, lightweight <see cref="Plot2Ddata"/> for a single set
         /// of values.
         /// </summary>
         /// <param name="abscissas">
@@ -172,10 +375,10 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="groupKey">
         /// An optional name of the given row.
         /// </param>
-        public DataSet(IEnumerable<double> abscissas, IEnumerable<double> values, string groupKey = "unnamed")
+        public Plot2Ddata(IEnumerable<double> abscissas, IEnumerable<double> values, string groupKey = "unnamed")
             : this() {
-            this.dataGroups = new DataGroup[] {
-                new DataGroup(groupKey, abscissas.ToArray(), values.ToArray())
+            this.dataGroups = new XYvalues[] {
+                new XYvalues(groupKey, abscissas.ToArray(), values.ToArray())
             };
         }
 
@@ -185,7 +388,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="originalSet">
         /// Object to be copied from.
         /// </param>
-        private DataSet(DataSet originalSet)
+        private Plot2Ddata(Plot2Ddata originalSet)
             : this() {
             this.dataGroups = originalSet.dataGroups;
             this.LogX = originalSet.LogX;
@@ -199,7 +402,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// The data groups (see <see cref="dataGroups"/>) to be included in
         /// the new object
         /// </param>
-        private DataSet(params DataGroup[] groups) : this() {
+        private Plot2Ddata(params XYvalues[] groups) : this() {
             this.dataGroups = groups.OrderBy(p => p.Name).ToArray();
         }
 
@@ -210,8 +413,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// <returns>
         /// A copy of this object where <see cref="LogX"/> equals true.
         /// </returns>
-        public DataSet WithLogX() {
-            var set = new DataSet(this);
+        public Plot2Ddata WithLogX() {
+            var set = new Plot2Ddata(this);
             set.LogX = true;
             return set;
         }
@@ -223,8 +426,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// <returns>
         /// A copy of this object where <see cref="LogY"/> equals true.
         /// </returns>
-        public DataSet WithLogY() {
-            var set = new DataSet(this);
+        public Plot2Ddata WithLogY() {
+            var set = new Plot2Ddata(this);
             set.LogY = true;
             return set;
         }
@@ -241,14 +444,14 @@ namespace BoSSS.Application.BoSSSpad {
         /// A data set containing all data in this object and
         /// <paramref name="other"/>
         /// </returns>
-        public DataSet Merge(DataSet other) {
+        public Plot2Ddata Merge(Plot2Ddata other) {
             if (this.LogX != other.LogX || this.LogY != other.LogY) {
                 throw new Exception("Data sets have incompatible logarithmic scaling options");
             }
 
-            IList<DataGroup> mergedGroups = new List<DataGroup>(this.dataGroups.Length + other.dataGroups.Length);
+            IList<XYvalues> mergedGroups = new List<XYvalues>(this.dataGroups.Length + other.dataGroups.Length);
             mergedGroups.AddRange(this.dataGroups.Select(g => g.CloneAs()));
-            foreach (DataGroup otherGroup in other.dataGroups) {
+            foreach (XYvalues otherGroup in other.dataGroups) {
                 if (this.dataGroups.Any(g => g.Name == otherGroup.Name)) {
                     throw new NotSupportedException(String.Format(
                         "Group key '{0}' exists in both data sets. This is not supported.",
@@ -258,7 +461,7 @@ namespace BoSSS.Application.BoSSSpad {
                 mergedGroups.Add(otherGroup.CloneAs());
             }
 
-            DataSet result = new DataSet(mergedGroups.ToArray());
+            Plot2Ddata result = new Plot2Ddata(mergedGroups.ToArray());
             result.LogX = this.LogX;
             result.LogY = this.LogY;
             return result;
@@ -276,8 +479,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// A data set containing all data corresponding to the groups with
         /// names in  <paramref name="groupNames"/>
         /// </returns>
-        public DataSet Extract(params string[] groupNames) {
-            return new DataSet(dataGroups.
+        public Plot2Ddata Extract(params string[] groupNames) {
+            return new Plot2Ddata(dataGroups.
                 Where(g => groupNames.Contains(g.Name)).
                 Select(g => g.CloneAs()).
                 ToArray());
@@ -294,8 +497,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// A data set containing all data within this object, except of groups
         /// whose names are listed in <paramref name="groupNames"/>
         /// </returns>
-        public DataSet Without(params string[] groupNames) {
-            return new DataSet(dataGroups.
+        public Plot2Ddata Without(params string[] groupNames) {
+            return new Plot2Ddata(dataGroups.
                 Where(g => !groupNames.Contains(g.Name)).
                 Select(g => g.CloneAs()).
                 ToArray());
@@ -342,31 +545,7 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
-        /// <summary>
-        /// Visualizes the stored data using gnuplot.
-        /// </summary>
-        public void Plot() {
-            Gnuplot gp = new Gnuplot();
-            gp.SetXLabel("x");
-            gp.SetYLabel("y");
-            gp.Cmd("set terminal wxt noraise");
-            if (LogX) {
-                gp.Cmd("set logscale x");
-                gp.Cmd("set format x \"10^{%L}\"");
-            }
-            if (LogY) {
-                gp.Cmd("set logscale y");
-                gp.Cmd("set format y \"10^{%L}\"");
-            }
-            gp.Cmd("set grid xtics ytics");
 
-            int lineColor = 0;
-            foreach (var group in dataGroups) {
-                gp.PlotXY(group.Abscissas, group.Values, group.Name,  
-                    new PlotFormat(lineColor:((LineColors)( ++lineColor)), pointType: ((PointTypes)4), pointSize:1.5, Style: Styles.LinesPoints));
-            }
-            gp.Execute();
-        }
 
         /// <summary>
         /// Saves a tabular summary of the stored data to a text file
@@ -408,30 +587,6 @@ namespace BoSSS.Application.BoSSSpad {
                 foreach (var item in regressionData) {
                     stw.WriteLine(item.Key + "\t" + item.Value);
                 }
-                stw.Close();
-            }
-        }
-
-        /// <summary>
-        /// Saves a gnuplot file that can be used to plot the data represented
-        /// by this data set
-        /// </summary>
-        /// <param name="path">
-        /// Path to the gnuplot file
-        /// </param>
-        public void SaveGnuplotFile(string path) {
-            using (StreamWriter stw = new StreamWriter(path)) {
-                if (LogX) {
-                    stw.WriteLine("set logscale x");
-                    stw.WriteLine("set format x \"10^{%L}\"");
-                }
-                if (LogY) {
-                    stw.WriteLine("set logscale y");
-                    stw.WriteLine("set format y \"10^{%L}\"");
-                }
-                stw.WriteLine("plot for [IDX=0:{0}] \"-\" using 1:2 with lines title columnheader(1)", dataGroups.Length - 1);
-                stw.Write(this.ToString(true));
-                stw.WriteLine("pause -1");
                 stw.Close();
             }
         }

@@ -176,12 +176,13 @@ namespace MiniBatchProcessor {
             ServerMutexS.WriteLine("one instance of the batch processor per computer/user is running.");
             ServerMutexS.Flush();
 
-            // see if there are any zombies left in the 'working' directory
-            foreach (var J in ClientAndServer.Working) {
-                MoveWorkingToFinished(J);
-            }
+            //// see if there are any zombies left in the 'working' directory
+            //foreach (var J in ClientAndServer.Working) {
+            //    MoveWorkingToFinished(J);
+            //}
         }
 
+        /*
         static void MoveWorkingToFinished(JobData J) {
             string BaseDir = ClientAndServer.config.BatchInstructionDir;
             foreach (string nmn in new string[] { J.ID.ToString(), J.ID.ToString() + "_exit.txt" }) {
@@ -207,12 +208,13 @@ namespace MiniBatchProcessor {
                 }
             }
         }
+        */
 
         static void MoveQueueToWorking(JobData J) {
             string BaseDir = ClientAndServer.config.BatchInstructionDir;
             foreach (string nmn in new string[] { J.ID.ToString() }) {
                 var Src = Path.Combine(BaseDir, ClientAndServer.QUEUE_DIR, nmn);
-                var Dst = Path.Combine(BaseDir, ClientAndServer.WORK_DIR, nmn);
+                var Dst = Path.Combine(BaseDir, ClientAndServer.WORK_FINISHED_DIR, nmn);
 
                 if (File.Exists(Src)) {
                     int ReTryCount = 0;
@@ -320,21 +322,21 @@ namespace MiniBatchProcessor {
                 }
 
 
-                // see if there are available processors
-                if (AvailableProcs <= 0) {
-                    Thread.Sleep(10000);
-                    continue;
-                }
-
                 // see if any of the running jobs is finished
                 for (int i = 0; i < Running.Count; i++) {
                     var TT = Running[i];
                     if (TT.Item1.IsAlive == false) {
                         Running.RemoveAt(i);
-                        MoveWorkingToFinished(TT.Item2.data);
+                        //MoveWorkingToFinished(TT.Item2.data);
                         AvailableProcs += TT.Item2.data.NoOfProcs;
                         i--;
                     }
+                }
+
+                // see if there are available processors
+                if (AvailableProcs <= 0) {
+                    Thread.Sleep(10000);
+                    continue;
                 }
 
                 var NextJobs = ClientAndServer.Queue.ToArray();
@@ -366,7 +368,7 @@ namespace MiniBatchProcessor {
                 {
                     ProcessThread task = new ProcessThread() {
                         data = NextJobs[0],
-                        WorkDir = Path.Combine(ClientAndServer.config.BatchInstructionDir, ClientAndServer.WORK_DIR)
+                        WorkDir = Path.Combine(ClientAndServer.config.BatchInstructionDir, ClientAndServer.WORK_FINISHED_DIR)
                     };
                     Thread th = new Thread(task.Run);
                     th.Priority = ThreadPriority.Lowest;
@@ -428,14 +430,14 @@ namespace MiniBatchProcessor {
                 psi.RedirectStandardOutput = true;
                 psi.RedirectStandardError = true;
 
-                Server.LogMessage(string.Format("starting: {0} {1}", psi.FileName, psi.Arguments));
+                Server.LogMessage(string.Format("starting job #{2}, '{3}': {0} {1}", psi.FileName, psi.Arguments, data.ID, data.Name));
 
 
 
                 // note: we create the stdout and stderr file on the output-directory to have a 
                 //       constant path of these files for all times.
-                string stdout_file = Path.Combine(WorkDir, "..", ClientAndServer.FINISHED_DIR, data.ID.ToString() + "_out.txt");
-                string stderr_file = Path.Combine(WorkDir, "..", ClientAndServer.FINISHED_DIR, data.ID.ToString() + "_err.txt");
+                string stdout_file = Path.Combine(WorkDir, "..", ClientAndServer.WORK_FINISHED_DIR, data.ID.ToString() + "_out.txt");
+                string stderr_file = Path.Combine(WorkDir, "..", ClientAndServer.WORK_FINISHED_DIR, data.ID.ToString() + "_err.txt");
 
 
                 using (FileStream stdoutStream = new FileStream(stdout_file, FileMode.Create, FileAccess.Write, FileShare.Read),
@@ -477,7 +479,7 @@ namespace MiniBatchProcessor {
                             }
 
                             success = (p.ExitCode == 0);
-                            Server.LogMessage(string.Format("finished " + psi.FileName + " " + psi.Arguments));
+                            Server.LogMessage(string.Format("finished job #" + data.ID + "."));
 
                             using (var exit = new StreamWriter(Path.Combine(WorkDir, data.ID.ToString() + "_exit.txt"))) {
                                 exit.WriteLine(p.ExitCode);

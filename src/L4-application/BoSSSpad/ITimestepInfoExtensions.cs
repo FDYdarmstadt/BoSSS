@@ -219,7 +219,7 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
-        /// Converts a list of time-steps into a <see cref="DataSet"/>
+        /// Converts a list of time-steps into a <see cref="Plot2Ddata"/>
         /// </summary>
         /// <param name="timesteps">
         /// A list of time-steps
@@ -231,10 +231,10 @@ namespace BoSSS.Application.BoSSSpad {
         /// Selector for the relevant data at the data points.
         /// </param>
         /// <returns>
-        /// A new <see cref="DataSet"/> filled with the data extracted via
+        /// A new <see cref="Plot2Ddata"/> filled with the data extracted via
         /// <paramref name="xSelector"/> and <paramref name="ySelector"/>
         /// </returns>
-        public static DataSet ToDataSet(this IEnumerable<ITimestepInfo> timesteps, Func<ITimestepInfo, double> xSelector, Func<ITimestepInfo, double> ySelector) {
+        public static Plot2Ddata ToDataSet(this IEnumerable<ITimestepInfo> timesteps, Func<ITimestepInfo, double> xSelector, Func<ITimestepInfo, double> ySelector) {
             List<double> xValues = new List<double>(timesteps.Count());
             List<double> yValues = new List<double>(xValues.Count);
 
@@ -253,11 +253,11 @@ namespace BoSSS.Application.BoSSSpad {
                 }
             }
 
-            return new DataSet(xValues, yValues);
+            return new Plot2Ddata(xValues, yValues);
         }
 
         /// <summary>
-        /// Converts a list of time-steps into a <see cref="DataSet"/> while
+        /// Converts a list of time-steps into a <see cref="Plot2Ddata"/> while
         /// grouping the results using <paramref name="groupKeySelector"/>.
         /// </summary>
         /// <param name="timesteps">
@@ -273,11 +273,11 @@ namespace BoSSS.Application.BoSSSpad {
         /// A function defining a group id for each key-value pair
         /// </param>
         /// <returns>
-        /// A new <see cref="DataSet"/> filled with the data extracted via
+        /// A new <see cref="Plot2Ddata"/> filled with the data extracted via
         /// <paramref name="xSelector"/> and <paramref name="ySelector"/>,
         /// grouped by means of <paramref name="groupKeySelector"/>
         /// </returns>
-        public static DataSet ToDataSet(this IEnumerable<ITimestepInfo> timesteps, Func<ITimestepInfo, double> xSelector, Func<ITimestepInfo, double> ySelector, Func<ITimestepInfo, string> groupKeySelector) {
+        public static Plot2Ddata ToDataSet(this IEnumerable<ITimestepInfo> timesteps, Func<ITimestepInfo, double> xSelector, Func<ITimestepInfo, double> ySelector, Func<ITimestepInfo, string> groupKeySelector) {
             var OrderedTimeSteps = timesteps.
                 Select(t => new KeyValuePair<double, ITimestepInfo>(xSelector(t), t)).
                 OrderBy(p => p.Key).
@@ -312,11 +312,11 @@ namespace BoSSS.Application.BoSSSpad {
                 }
             }
 
-            return new DataSet(data.ToArray());
+            return new Plot2Ddata(data.ToArray());
         }
 
         /// <summary>
-        /// Converts a list of time-steps into a <see cref="DataSet"/> based on
+        /// Converts a list of time-steps into a <see cref="Plot2Ddata"/> based on
         /// the results a query named <paramref name="queryName"/>.
         /// </summary>
         /// <param name="timesteps">
@@ -329,18 +329,18 @@ namespace BoSSS.Application.BoSSSpad {
         /// Name of the query whose results will be used as error measure.
         /// </param>
         /// <returns>
-        /// A new <see cref="DataSet"/> filled with the data extracted via
+        /// A new <see cref="Plot2Ddata"/> filled with the data extracted via
         /// <paramref name="xSelector"/> and the results of the query named
         /// <paramref name="queryName"/>.
         /// </returns>
-        public static DataSet ToDataSet(this IEnumerable<ITimestepInfo> timesteps, Func<ITimestepInfo, double> xSelector, string queryName) {
+        public static Plot2Ddata ToDataSet(this IEnumerable<ITimestepInfo> timesteps, Func<ITimestepInfo, double> xSelector, string queryName) {
             return timesteps.ToDataSet(
                 xSelector,
                 t => t.Session.QueryResults()[queryName]);
         }
 
         /// <summary>
-        /// Converts a list of time-steps into a <see cref="DataSet"/> while
+        /// Converts a list of time-steps into a <see cref="Plot2Ddata"/> while
         /// grouping the results using the DG degree of the field identified
         /// by <paramref name="groupingFieldName"/>.
         /// </summary>
@@ -358,12 +358,12 @@ namespace BoSSS.Application.BoSSSpad {
         /// whose DG degree will be used as a grouping function.
         /// </param>
         /// <returns>
-        /// A new <see cref="DataSet"/> filled with the data extracted via
+        /// A new <see cref="Plot2Ddata"/> filled with the data extracted via
         /// <paramref name="xSelector"/> and <paramref name="ySelector"/>,
         /// grouped by means of the DG degree of the field named
         /// <paramref name="groupingFieldName"/>
         /// </returns>
-        public static DataSet ToDataSet(this IEnumerable<ITimestepInfo> timesteps, Func<ITimestepInfo, double> xSelector, Func<ITimestepInfo, double> ySelector, string groupingFieldName) {
+        public static Plot2Ddata ToDataSet(this IEnumerable<ITimestepInfo> timesteps, Func<ITimestepInfo, double> xSelector, Func<ITimestepInfo, double> ySelector, string groupingFieldName) {
             return timesteps.ToDataSet(
                 xSelector,
                 ySelector,
@@ -371,7 +371,7 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
-        /// Converts a list of time-steps into a <see cref="DataSet"/> based on
+        /// Converts a list of time-steps into a <see cref="Plot2Ddata"/> based on
         /// the results of a query named <paramref name="queryName"/>, while
         /// grouping the results using <paramref name="groupKeySelector"/>.
         /// </summary>
@@ -388,12 +388,12 @@ namespace BoSSS.Application.BoSSSpad {
         /// A function defining a group id for each key-value pair
         /// </param>
         /// <returns>
-        /// A new <see cref="DataSet"/> filled with the data extracted via
+        /// A new <see cref="Plot2Ddata"/> filled with the data extracted via
         /// <paramref name="xSelector"/> and the results of the query named
         /// <paramref name="queryName"/>, grouped by means of
         /// <paramref name="groupKeySelector"/>
         /// </returns>
-        public static DataSet ToDataSet(this IEnumerable<ITimestepInfo> timesteps, Func<ITimestepInfo, double> xSelector, string queryName, Func<ITimestepInfo, string> groupKeySelector) {
+        public static Plot2Ddata ToDataSet(this IEnumerable<ITimestepInfo> timesteps, Func<ITimestepInfo, double> xSelector, string queryName, Func<ITimestepInfo, string> groupKeySelector) {
             return timesteps.ToDataSet(
                 xSelector,
                 t => t.Session.QueryResults()[queryName],
@@ -401,7 +401,7 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
-        /// Converts a list of time-steps into a <see cref="DataSet"/> based on
+        /// Converts a list of time-steps into a <see cref="Plot2Ddata"/> based on
         /// the results a query named <paramref name="queryName"/>, while
         /// grouping the results using the DG degree of the field identified
         /// by <paramref name="groupingFieldName"/>.
@@ -420,12 +420,12 @@ namespace BoSSS.Application.BoSSSpad {
         /// whose DG degree will be used as a grouping function.
         /// </param>
         /// <returns>
-        /// A new <see cref="DataSet"/> filled with the data extracted via
+        /// A new <see cref="Plot2Ddata"/> filled with the data extracted via
         /// <paramref name="xSelector"/> and the results of the query named
         /// <paramref name="queryName"/>, grouped by means of the DG degree of
         /// the field named <paramref name="groupingFieldName"/>
         /// </returns>
-        public static DataSet ToDataSet(this IEnumerable<ITimestepInfo> timesteps, Func<ITimestepInfo, double> xSelector, string queryName, string groupingFieldName) {
+        public static Plot2Ddata ToDataSet(this IEnumerable<ITimestepInfo> timesteps, Func<ITimestepInfo, double> xSelector, string queryName, string groupingFieldName) {
             return timesteps.ToDataSet(
                 xSelector,
                 t => t.Session.QueryResults()[queryName],
@@ -447,12 +447,12 @@ namespace BoSSS.Application.BoSSSpad {
         /// <see cref="ITimestepInfo"/>.
         /// </param>
         /// <returns>
-        /// A <see cref="DataSet"/> where the abscissas are given by the
+        /// A <see cref="Plot2Ddata"/> where the abscissas are given by the
         /// logarithm of <see cref="IGridInfoExtensions.GetMeshSize"/> and the
         /// values are determined via the logarithm of
         /// <paramref name="errorFunctional"/>.
         /// </returns>
-        public static DataSet ToGridConvergenceData(this IEnumerable<ITimestepInfo> timesteps, Func<ITimestepInfo, double> errorFunctional) {
+        public static Plot2Ddata ToGridConvergenceData(this IEnumerable<ITimestepInfo> timesteps, Func<ITimestepInfo, double> errorFunctional) {
             return timesteps.ToDataSet(t => t.Grid.GetMeshSize(), errorFunctional).WithLogX().WithLogY();
         }
 
@@ -475,13 +475,13 @@ namespace BoSSS.Application.BoSSSpad {
         /// A grouping function.
         /// </param>
         /// <returns>
-        /// A <see cref="DataSet"/> where the abscissas are given by the
+        /// A <see cref="Plot2Ddata"/> where the abscissas are given by the
         /// logarithm of <see cref="IGridInfoExtensions.GetMeshSize"/> and the
         /// values are determined via the logarithm of
         /// <paramref name="errorFunctional"/>, grouped by means of
         /// <paramref name="groupKeySelector"/>
         /// </returns>
-        public static DataSet ToGridConvergenceData(this IEnumerable<ITimestepInfo> timesteps, Func<ITimestepInfo, double> errorFunctional, Func<ITimestepInfo, string> groupKeySelector) {
+        public static Plot2Ddata ToGridConvergenceData(this IEnumerable<ITimestepInfo> timesteps, Func<ITimestepInfo, double> errorFunctional, Func<ITimestepInfo, string> groupKeySelector) {
             return timesteps.ToDataSet(t => t.Grid.GetMeshSize(), errorFunctional, groupKeySelector).WithLogX().WithLogY();
         }
 
@@ -505,14 +505,14 @@ namespace BoSSS.Application.BoSSSpad {
         /// group key.
         /// </param>
         /// <returns>
-        /// A <see cref="DataSet"/> where the abscissas are given by the
+        /// A <see cref="Plot2Ddata"/> where the abscissas are given by the
         /// logarithm of <see cref="IGridInfoExtensions.GetMeshSize"/>, the
         /// values are determined via the logarithm of
         /// <paramref name="errorFunctional"/> and the results are grouped with
         /// respect to the DG degree of a field named
         /// <paramref name="groupingFieldName"/>.
         /// </returns>
-        public static DataSet ToGridConvergenceData(this IEnumerable<ITimestepInfo> timesteps, Func<ITimestepInfo, double> errorFunctional, string groupingFieldName) {
+        public static Plot2Ddata ToGridConvergenceData(this IEnumerable<ITimestepInfo> timesteps, Func<ITimestepInfo, double> errorFunctional, string groupingFieldName) {
             return timesteps.ToDataSet(t => t.Grid.GetMeshSize(), errorFunctional, groupingFieldName).WithLogX().WithLogY();
         }
 
@@ -528,12 +528,12 @@ namespace BoSSS.Application.BoSSSpad {
         /// The name of a query whose results will be used an error measure.
         /// </param>
         /// <returns>
-        /// A <see cref="DataSet"/> where the abscissas are given by the
+        /// A <see cref="Plot2Ddata"/> where the abscissas are given by the
         /// logarithm of <see cref="IGridInfoExtensions.GetMeshSize"/> and the
         /// values are determined via the logarithm of the results of a query
         /// named <paramref name="queryName"/>.
         /// </returns>
-        public static DataSet ToGridConvergenceData(this IEnumerable<ITimestepInfo> timesteps, string queryName) {
+        public static Plot2Ddata ToGridConvergenceData(this IEnumerable<ITimestepInfo> timesteps, string queryName) {
             return timesteps.ToDataSet(t => t.Grid.GetMeshSize(), queryName).WithLogX().WithLogY();
         }
 
@@ -555,14 +555,14 @@ namespace BoSSS.Application.BoSSSpad {
         /// whose DG degree will be used as a grouping function.
         /// </param>
         /// <returns>
-        /// A <see cref="DataSet"/> where the abscissas are given by the
+        /// A <see cref="Plot2Ddata"/> where the abscissas are given by the
         /// logarithm of <see cref="IGridInfoExtensions.GetMeshSize"/>, the
         /// values are determined via the logarithm of the results of a query
         /// named <paramref name="queryName"/> and the results are grouped with
         /// respect to the DG degree of a field named
         /// <paramref name="groupingFieldName"/>.
         /// </returns>
-        public static DataSet ToGridConvergenceData(this IEnumerable<ITimestepInfo> timesteps, string queryName, string groupingFieldName) {
+        public static Plot2Ddata ToGridConvergenceData(this IEnumerable<ITimestepInfo> timesteps, string queryName, string groupingFieldName) {
             return timesteps.ToDataSet(t => t.Grid.GetMeshSize(), queryName, groupingFieldName).WithLogX().WithLogY();
         }
 
@@ -582,13 +582,13 @@ namespace BoSSS.Application.BoSSSpad {
         /// A grouping function.
         /// </param>
         /// <returns>
-        /// A <see cref="DataSet"/> where the abscissas are given by the
+        /// A <see cref="Plot2Ddata"/> where the abscissas are given by the
         /// logarithm of <see cref="IGridInfoExtensions.GetMeshSize"/> and the
         /// values are determined via the logarithm of the results of a query
         /// named <paramref name="queryName"/>, grouped by means of
         /// <paramref name="groupKeySelector"/>
         /// </returns>
-        public static DataSet ToGridConvergenceData(this IEnumerable<ITimestepInfo> timesteps, string queryName, Func<ITimestepInfo, string> groupKeySelector) {
+        public static Plot2Ddata ToGridConvergenceData(this IEnumerable<ITimestepInfo> timesteps, string queryName, Func<ITimestepInfo, string> groupKeySelector) {
             return timesteps.ToDataSet(t => t.Grid.GetMeshSize(), queryName, groupKeySelector).WithLogX().WithLogY();
         }
 
@@ -605,12 +605,12 @@ namespace BoSSS.Application.BoSSSpad {
         /// <see cref="ITimestepInfo"/>.
         /// </param>
         /// <returns>
-        /// A <see cref="DataSet"/> where the abscissas are given by the
+        /// A <see cref="Plot2Ddata"/> where the abscissas are given by the
         /// logarithm of <see cref="ITimestepInfoExtensions.GetTimeStepSize"/>
         /// and the values are determined via the logarithm of
         /// <paramref name="errorFunctional"/>.
         /// </returns>
-        public static DataSet ToTimeConvergenceData(this IEnumerable<ITimestepInfo> timesteps, Func<ITimestepInfo, double> errorFunctional) {
+        public static Plot2Ddata ToTimeConvergenceData(this IEnumerable<ITimestepInfo> timesteps, Func<ITimestepInfo, double> errorFunctional) {
             return timesteps.
                 ToDataSet(t => t.GetTimeStepSize(), errorFunctional, t => t.GridID.ToString()).
                 WithLogX().
@@ -629,12 +629,12 @@ namespace BoSSS.Application.BoSSSpad {
         /// The name of a query whose results will be used as an error measure.
         /// </param>
         /// <returns>
-        /// A <see cref="DataSet"/> where the abscissas are given by the
+        /// A <see cref="Plot2Ddata"/> where the abscissas are given by the
         /// logarithm of <see cref="ITimestepInfoExtensions.GetTimeStepSize"/>
         /// and the values are determined via the logarithm of the results of a
         /// query named <paramref name="queryName"/>
         /// </returns>
-        public static DataSet ToTimeConvergenceData(this IEnumerable<ITimestepInfo> timesteps, string queryName) {
+        public static Plot2Ddata ToTimeConvergenceData(this IEnumerable<ITimestepInfo> timesteps, string queryName) {
             return timesteps.
                 ToDataSet(
                     t => t.GetTimeStepSize(),
@@ -669,7 +669,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// estimated error of zero (by definition) and is thus excluded from
         /// the result.
         /// </returns>
-        public static DataSet ToEstimatedGridConvergenceData(this IEnumerable<ITimestepInfo> timesteps, string fieldName) {
+        public static Plot2Ddata ToEstimatedGridConvergenceData(this IEnumerable<ITimestepInfo> timesteps, string fieldName) {
             Dictionary<string, double[][]> dataGroups = new Dictionary<string, double[][]>();
             foreach (var group in timesteps.GroupBy(t => t.Fields.Find(fieldName).Basis.Degree)) {
                 double[] resolution;
@@ -687,7 +687,7 @@ namespace BoSSS.Application.BoSSSpad {
                 dataGroups.Add(group.Key.ToString(), resolutionsAndErrors);
             }
 
-            return new DataSet(dataGroups.ToArray()).WithLogX().WithLogY();
+            return new Plot2Ddata(dataGroups.ToArray()).WithLogX().WithLogY();
         }
 
         /// <summary>

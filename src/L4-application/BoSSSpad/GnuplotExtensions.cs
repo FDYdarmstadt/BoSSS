@@ -29,7 +29,7 @@ namespace BoSSS.Application.BoSSSpad {
     /// Spice up Gnuplot.
     /// </summary>
     public static class GnuplotExtensions {
-
+        
         /// <summary>
         /// Plot to a gif file ('set terminal gif').
         /// </summary>
@@ -60,7 +60,10 @@ namespace BoSSS.Application.BoSSSpad {
             // return image
             var fi = (new FileInfo(OutfileName));
             if (fi.Exists && fi.Length > 0) {
-                return Image.FromFile(OutfileName);
+                byte[] IOMmem = File.ReadAllBytes(OutfileName);
+                File.Delete(OutfileName);
+                return Image.FromStream(new MemoryStream(IOMmem));
+                //return Image.FromFile(OutfileName); // it seems, the image object does not work anymore when the file is deleted
             } else {
                 Console.WriteLine("Gnuplot output file empty or non-existent.");
                 return null;
@@ -177,6 +180,7 @@ namespace BoSSS.Application.BoSSSpad {
 
 
                     stw.WriteLine(@"\documentclass{article}");
+                    //stw.WriteLine(@"\documentclass[preview]{standalone}");
 
                     if (!this.PdfLatex)
                         stw.WriteLine(@"\usepackage[dvips]{graphicx}");
@@ -191,13 +195,14 @@ namespace BoSSS.Application.BoSSSpad {
                     //stw.WriteLine(@"\usepackage{cmbright}");
                                         
                     stw.WriteLine(@"\begin{document}");
+                    stw.WriteLine(@"\pagenumbering{gobble}"); // surpress page number
                     stw.WriteLine(@"\begin{figure}");
                     stw.WriteLine(@"\begin{center}");
                     stw.WriteLine("\\input{{{0}}}", GraphicsFile);
                     stw.WriteLine(@"\end{center}");
                     stw.WriteLine(@"\rule{0cm}{1.1cm}");
                     stw.WriteLine(@"\caption{");
-                    stw.WriteLine(@"ToDo");
+                    stw.WriteLine(@"\LaTeX figure caption goes here.");
                     stw.WriteLine(@"}");
                     stw.WriteLine(@"\end{figure}");
 
@@ -254,6 +259,82 @@ namespace BoSSS.Application.BoSSSpad {
                         Console.WriteLine("'" + DvipsExe + "' exited with: " + p.ExitCode);
                         return;
                     }
+                }
+            }
+
+
+            /// <summary>
+            /// Compiles the Latex document (to pdf or eps, depending on <see cref="CairolatexContainer.PdfLatex"/>),
+            /// and converts the output to a png image, which can be previewed in BoSSSpad.
+            /// </summary>
+            public Image Preview(bool trimPage = true, int dpi = 200) {
+                if (dpi < 10 || dpi > 10000)
+                    throw new ArgumentOutOfRangeException();
+                
+                // get a temporary directory
+                // =========================
+                DirectoryInfo WorkingDirectory;
+                {
+                    var rnd = new Random();
+                    bool Exists = false;
+                    do {
+                        var tempPath = Path.GetTempPath();
+                        var tempDir = rnd.Next().ToString();
+                        WorkingDirectory = new DirectoryInfo(Path.Combine(tempPath, tempDir));
+                        Exists = WorkingDirectory.Exists;
+                        if (!Exists) {
+                            WorkingDirectory.Create();
+                        }
+                    } while (Exists == true);
+                }
+
+
+                // write data & compile
+                // ====================
+                string mainTexFile = Path.Combine(WorkingDirectory.FullName, "main.tex");
+                WriteMinimalCompileableExample(mainTexFile, PerformLatexCompilation: true);
+
+
+
+                // try to read an image
+                // ====================
+                if(this.PdfLatex) {
+                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    // Pdf Output: using 'imagemagick' for conversion to a png
+                    // magick.exe -verbose -density 300  main.pdf -trim PNG:main.png
+                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                    string mainPdfFile = Path.ChangeExtension(mainTexFile, ".pdf");
+                    if (!File.Exists(mainPdfFile))
+                        throw new IOException("Unable to find PDF output.");
+
+                    string mainPngFile = Path.ChangeExtension(mainTexFile, ".png");
+                    
+
+                    string ImageMagikTool = "magick.exe";
+
+                    ProcessStartInfo psi = new ProcessStartInfo();
+                    psi.WorkingDirectory = WorkingDirectory.FullName;
+                    psi.Arguments = string.Format(" -verbose -density {3} {0} {2} PNG:{1}", Path.GetFileName(mainPdfFile), Path.GetFileName(mainPngFile), trimPage ? "-trim" : "", dpi);
+                    psi.FileName = ImageMagikTool;
+                    
+                    var p = new Process();
+                    p.StartInfo = psi;
+                    p.Start();
+                    p.WaitForExit();
+
+                    if (p.ExitCode != 0 || !File.Exists(mainPngFile)) {
+                        Console.WriteLine("Unable to convert to png, '" + ImageMagikTool + "' exited with: " + p.ExitCode);
+                        return null;
+                    }
+
+
+                    byte[] IOMmem = File.ReadAllBytes(mainPngFile);
+                    //File.Delete(mainPngFile);
+                    return Image.FromStream(new MemoryStream(IOMmem));
+
+                } else {
+                    throw new NotImplementedException("Todo: implement conversion using 'dvipng' tool.");
                 }
             }
         }
@@ -360,8 +441,6 @@ namespace BoSSS.Application.BoSSSpad {
         /// Gnuplot plotting, automatic choice of gnuplot driver depending on
         /// the current value of <see cref="UseCairoLatex"/>.
         /// </summary>
-        /// <param name="gp"></param>
-        /// <returns></returns>
         public static object PlotNow(this Gnuplot gp) {
 
             if (UseCairoLatex) {
@@ -370,5 +449,149 @@ namespace BoSSS.Application.BoSSSpad {
                 return gp.PlotGIF();
             }
         }
+
+        /// <summary>
+        /// Gnuplot plotting, automatic choice of gnuplot driver depending on
+        /// the current value of <see cref="UseCairoLatex"/>.
+        /// </summary>
+        public static object PlotNow(this Plot2Ddata _2DData) {
+            using (Gnuplot gp = _2DData.ToGnuplot()) {
+
+                if (UseCairoLatex) {
+                    return gp.PlotCairolatex();
+                } else {
+                    return gp.PlotGIF();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Converts <see cref="Plot2Ddata"/> into an alive Gnuplot object.
+        /// </summary>
+        public static Gnuplot ToGnuplot(this Plot2Ddata _2DData, GnuplotPageLayout layout = null) {
+            if (layout != null)
+                throw new NotImplementedException("todo");
+
+            Gnuplot gp = new Gnuplot();
+            
+            if (_2DData.LogX) {
+                gp.Cmd("set logscale x");
+            } else {
+                gp.Cmd("unset logscale x");
+            }
+
+            if (_2DData.LogY) {
+                gp.Cmd("set logscale y");
+            } else {
+                gp.Cmd("unset logscale y");
+            }
+
+            if (_2DData.LogX2) {
+                gp.Cmd("set logscale x2");
+            } else {
+                gp.Cmd("unset logscale x2");
+            }
+
+            if (_2DData.LogY2) {
+                gp.Cmd("set logscale y2");
+            } else {
+                gp.Cmd("unset logscale y2");
+            }
+
+            if((_2DData.XrangeMax != null) != (_2DData.XrangeMin != null)) {
+                throw new ArgumentException("X range minimum and maximum must be set either both or none.");
+            }
+            if((_2DData.YrangeMax != null) != (_2DData.YrangeMin != null)) {
+                throw new ArgumentException("Y range minimum and maximum must be set either both or none.");
+            }
+
+            if(_2DData.XrangeMin != null) {
+                if (_2DData.XrangeMin.Value >= _2DData.XrangeMax.Value)
+                    throw new ArgumentException("X range maximum must be grater than minimum.");
+
+                gp.SetXRange(_2DData.XrangeMin.Value, _2DData.XrangeMax.Value);
+            } else {
+                gp.SetXAutorange();
+            }
+
+            if (_2DData.YrangeMin != null) {
+                if (_2DData.YrangeMin.Value >= _2DData.YrangeMax.Value)
+                    throw new ArgumentException("Y range maximum must be grater than minimum.");
+
+                gp.SetYRange(_2DData.YrangeMin.Value, _2DData.YrangeMax.Value);
+            } else {
+                gp.SetYAutorange();
+            }
+
+            if(_2DData.Xlabel != null) {
+                gp.SetXLabel(_2DData.Xlabel);
+            }
+            if(_2DData.Ylabel != null) {
+                gp.SetYLabel(_2DData.Ylabel);
+            }
+
+            if(_2DData.X2label != null) {
+                gp.SetX2Label(_2DData.X2label);
+            }
+            if(_2DData.Y2label != null) {
+                gp.SetYLabel(_2DData.Y2label);
+            }
+
+            if(_2DData.Title != null) {
+                gp.SetTitle(_2DData.Title);
+            }
+
+            if(_2DData.ShowLegend) {
+                gp.Cmd("unset key");
+                //gp.Cmd("set key at 5e-1,10e-8 vertical maxrows {0} ", );
+                gp.Cmd("set key outside right vertical maxrows {0} ", _2DData.dataGroups.Length);
+            } else {
+                gp.Cmd("set key off");
+            }
+
+            if(_2DData.ShowXtics) {
+                if(_2DData.LogX)
+                    gp.Cmd("set xtics format \"$10^{%T}$\" ");
+                else 
+                    gp.Cmd("set xtics ");
+            } else {
+                gp.Cmd("unset xtics");
+            }
+
+            if(_2DData.ShowX2tics) {
+                if(_2DData.LogX2)
+                    gp.Cmd("set x2tics format \"$10^{%T}$\" ");
+                else 
+                    gp.Cmd("set x2tics ");
+            } else {
+                gp.Cmd("unset x2tics");
+            }
+
+            if(_2DData.ShowYtics) {
+                if(_2DData.LogY)
+                    gp.Cmd("set ytics format \"$10^{%T}$\" ");
+                else 
+                    gp.Cmd("set ytics ");
+            } else {
+                gp.Cmd("unset ytics");
+            }
+
+            if(_2DData.ShowY2tics) {
+                if(_2DData.LogX2)
+                    gp.Cmd("set y2tics format \"$10^{%T}$\" ");
+                else 
+                    gp.Cmd("set y2tics ");
+            } else {
+                gp.Cmd("unset y2tics");
+            }
+                        
+            foreach (var xyData in _2DData.dataGroups) {
+                gp.PlotXY(xyData.Abscissas, xyData.Values, xyData.Name, xyData.Format, useX2: xyData.UseX2, useY2: xyData.UseY2);
+            }
+
+
+            return gp;
+        }
+
     }
 }

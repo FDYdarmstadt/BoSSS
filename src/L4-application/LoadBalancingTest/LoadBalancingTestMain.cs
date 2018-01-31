@@ -33,16 +33,21 @@ namespace BoSSS.Application.LoadBalancingTest {
             BoSSS.Solution.Application._Main(
                 args,
                 true,
-                null,
                 () => new LoadBalancingTestMain());
+        }
+
+        public override void Init(BoSSS.Solution.Control.AppControl control) {
+            control.GridPartType = BoSSS.Foundation.Grid.GridPartType.none;
+            base.Init(control);
         }
 
         protected override GridCommons CreateOrLoadGrid() {
             double[] nodes = GenericBlas.Linspace(-5, 5, 21);
             var grd = Grid2D.Cartesian2DGrid(nodes, nodes);
-            base.m_GridPartitioningType = GridPartType.none;
+            this.Control.NoOfMultigridLevels = 1; // required for XDG-BDF timestepper
             return grd;
         }
+              
 
         XDGField u;
         XDGField uResidual;
@@ -287,7 +292,7 @@ namespace BoSSS.Application.LoadBalancingTest {
         }
 
 
-        internal Func<IApplication<AppControl>, int, ICellCostEstimator> cellCostEstimatorFactory = CellCostEstimatorLibrary.OperatorAssemblyAndCutCellQuadrules;
+        internal Func<IApplication, int, ICellCostEstimator> cellCostEstimatorFactory = CellCostEstimatorLibrary.OperatorAssemblyAndCutCellQuadrules;
 
 
         /// <summary>
@@ -313,7 +318,7 @@ namespace BoSSS.Application.LoadBalancingTest {
 
             if (balancer == null) {
                 balancer = new LoadBalancer(
-                    new List<Func<IApplication<AppControl>, int, ICellCostEstimator>>() { cellCostEstimatorFactory }
+                    new List<Func<IApplication, int, ICellCostEstimator>>() { cellCostEstimatorFactory }
                     );
             }
 

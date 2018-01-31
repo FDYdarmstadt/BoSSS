@@ -62,6 +62,10 @@ namespace BoSSS.Solution.Control {
             Compile();
         }
 
+       
+
+
+
         [DataMember]
         bool m_TimeDep;
 
@@ -76,8 +80,6 @@ namespace BoSSS.Solution.Control {
 
         [NonSerialized]
         Func<double[], double> m_X__Del;
-
-
 
         void Compile() {
             if (m_Xt_Del == null && m_X__Del == null) {
@@ -131,18 +133,20 @@ namespace BoSSS.Solution.Control {
                     }
 
                     object formula;
-                    try {
-                        string Prefix = m_TimeDep ? "Func<double[], double, double>" : "Func<double[], double>";
-                        Prefix = Prefix + " myfunc = ";
-                        object result;
-                        bool result_set;
-                        string ans = eval.Evaluate(Prefix + m_Code + ";", out result, out result_set);
-                        formula = eval.Evaluate("myfunc;");
-                    } catch (Exception e) {
-                        throw new AggregateException(e.GetType().Name + " during the interpretation of code snippet '"
-                            + m_Code + "'" + err.NewLine + "Error(s): " + err.NewLine + err.ToString(),
-                            e);
-                    }
+                    {
+                        try {
+                            string Prefix = m_TimeDep ? "Func<double[], double, double>" : "Func<double[], double>";
+                            Prefix = Prefix + " myfunc = ";
+                            object result;
+                            bool result_set;
+                            string ans = eval.Evaluate(Prefix + m_Code + ";", out result, out result_set);
+                            formula = eval.Evaluate("myfunc;");
+                        } catch (Exception e) {
+                            throw new AggregateException(e.GetType().Name + " during the interpretation of code snippet '"
+                                + m_Code + "'" + err.NewLine + "Error(s): " + err.NewLine + err.ToString(),
+                                e);
+                        }
+                    } 
 
                     if (formula != null && cmpCont.Report.Errors == 0) {
                         if (formula is Func<double[], double, double>) {
@@ -154,9 +158,9 @@ namespace BoSSS.Solution.Control {
                             m_X__Del = (Func<double[], double>)formula;
                             return;
                         }
-                    }
 
-                    throw new ArgumentException("Unable to cast result of code snippet '" + m_Code + " to a valid expression (Func<double[],double,double> or Func<double[],double>)." + err.NewLine + "Error(s): " + err.NewLine + err.ToString());
+                        throw new ArgumentException("Unable to cast result of code snippet '" + m_Code + " to a valid expression (Func<double[],double,double> or Func<double[],double>)." + err.NewLine + "Error(s): " + err.NewLine + err.ToString());
+                    }
                 }
             }
         }

@@ -335,6 +335,14 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
+        /// <summary>
+        /// If true, the batch system should try not to run any other jobs in parallel on the assigned compute nodes.
+        /// </summary>
+        public bool UseComputeNodesExclusive {
+            get;
+            set;
+        }
+
 
         /// <summary>
         /// Returns the session which is the result of this job.
@@ -473,6 +481,9 @@ namespace BoSSS.Application.BoSSSpad {
 
             if (isSubmitted && !(isFailed || wasSuccessful) && (R == null))
                 return JobStatus.PendingInExecutionQueue;
+
+            if (isSubmitted == false && isRunning == false && wasSuccessful == false && isFailed == false && (RR.Length <= 0))
+                return JobStatus.PreActivation;
 
             if (isFailed || (R == null || R.Tags.Contains(BoSSS.Solution.Application.NOT_TERMINATED_TAG)))
                 return JobStatus.Failed;
