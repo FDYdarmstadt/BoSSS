@@ -60,19 +60,14 @@ namespace BoSSS.Solution.Utils {
         /// </summary>
         private IGridData gridData;
 
-        /// <summary>
-        /// The time step constraints that the Clustering is based on
-        /// </summary>
-        private IList<TimeStepConstraint> timeStepConstraints;
+        private const int maxDiffOfSubSteps = 50;
 
         /// <summary>
         /// Constructor for the grid clustering
         /// </summary>
         /// <param name="gridData">Information about the grid</param>
-        /// <param name="timeStepConstraints">Time step constraings used as cell metric for the clustering</param>
-        public Clusterer(IGridData gridData, IList<TimeStepConstraint> timeStepConstraints) {
+        public Clusterer(IGridData gridData) {
             this.gridData = gridData;
-            this.timeStepConstraints = timeStepConstraints;
         }
 
         /// <summary>
@@ -80,7 +75,7 @@ namespace BoSSS.Solution.Utils {
         /// </summary>     
         /// <param name="numOfClusters">Number of clusters</param>
         /// <returns>A list of sub-grids</returns>
-        public Clustering CreateClustering(int numOfClusters, SubGrid subGrid = null) {
+        public Clustering CreateClustering(int numOfClusters, IList<TimeStepConstraint> timeStepConstraints, SubGrid subGrid = null) {
             if (subGrid == null) {
                 subGrid = new SubGrid(CellMask.GetFullMask(gridData));
             }
@@ -89,7 +84,7 @@ namespace BoSSS.Solution.Utils {
             // e.g., the fluid cells in an IBM simulation
             int numOfCells = subGrid.LocalNoOfCells;
 
-            MultidimensionalArray cellMetric = GetStableTimestepSize(subGrid);
+            MultidimensionalArray cellMetric = GetStableTimestepSize(subGrid, timeStepConstraints);
             MultidimensionalArray means = CreateInitialMeans(cellMetric, numOfClusters);
             Kmeans Kmean = new Kmeans(cellMetric.To1DArray(), numOfClusters, means.To1DArray());
 
@@ -206,22 +201,22 @@ namespace BoSSS.Solution.Utils {
         /// Returns a cell metric value in every cell
         /// </summary>
         /// <returns>Cell metric as <see cref="MultidimensionalArray"/></returns>
-        public MultidimensionalArray GetStableTimestepSize(SubGrid subGrid) {
+        public MultidimensionalArray GetStableTimestepSize(SubGrid subGrid, IList<TimeStepConstraint> timeStepConstraints) {
             MultidimensionalArray cellMetric = MultidimensionalArray.Create(subGrid.LocalNoOfCells);
 
             for (int subGridCell = 0; subGridCell < subGrid.LocalNoOfCells; subGridCell++) {
                 int localCellIndex = subGrid.SubgridIndex2LocalCellIndex[subGridCell];
-                cellMetric[subGridCell] = this.timeStepConstraints.Min(c => c.GetLocalStepSize(localCellIndex, 1));
+                cellMetric[subGridCell] = timeStepConstraints.Min(c => c.GetLocalStepSize(localCellIndex, 1));
             }
 
             return cellMetric;
         }
 
-        public (Clustering, List<int>) CreateAdvancedClustering(Clustering clustering) {
+        public (Clustering, List<int>) CreateAdvancedClustering(Clustering clustering, IList<TimeStepConstraint> timeStepConstraints) {
             double[] sendHmin = new double[clustering.NumberOfClusters];
             double[] rcvHmin = new double[clustering.NumberOfClusters];
 
-            MultidimensionalArray cellMetric = GetStableTimestepSize(clustering.SubGrid);
+            MultidimensionalArray cellMetric = GetStableTimestepSize(clustering.SubGrid, timeStepConstraints);
             for (int i = 0; i < clustering.NumberOfClusters; i++) {
                 double h_min = double.MaxValue;
                 CellMask volumeMask = clustering.Clusters[i].VolumeMask;
@@ -249,8 +244,7 @@ namespace BoSSS.Solution.Utils {
             //numOfSubSteps = RestrictNumberOfSubSteps(numOfSubSteps.ToList()).ToArray();
 
             List<SubGrid> newClusters = new List<SubGrid>();
-
-            List<int> result = new List<int>();
+            List<int> subSteps = new List<int>();
 
             for (int i = 0; i < clustering.NumberOfClusters; i++) {
                 if (i < clustering.NumberOfClusters - 1 && numOfSubSteps[i] == numOfSubSteps[i + 1]) {
@@ -260,26 +254,27 @@ namespace BoSSS.Solution.Utils {
 #if DEBUG
                     Console.WriteLine("CalculateNumberOfLocalTS: Clustering leads to sub-grids which are too similar, i.e. they have the same number of local time steps. They are combined.");
 #endif
-                    result.Add(numOfSubSteps[i]);
+                    subSteps.Add(numOfSubSteps[i]);
                     i++;
                 } else {
                     newClusters.Add(clustering.Clusters[i]);
-                    result.Add(numOfSubSteps[i]);
-//#if DEBUG
-//                    // Console output only in last pass
-//                    if (i == clustering.NumberOfClusters - 1) {
-//                        for (int j = 0; j < newClusters.Count; j++) {
-//                            Console.WriteLine("id=" + j + " -> sub-steps=" + NumberOfLocalTimeSteps[j] + " and elements=" + newClusters[j].GlobalNoOfCells);
-//                        }
-//                    }
-//#endif
+                    subSteps.Add(numOfSubSteps[i]);
+                    //#if DEBUG
+                    //                    // Console output only in last pass
+                    //                    if (i == clustering.NumberOfClusters - 1) {
+                    //                        for (int j = 0; j < newClusters.Count; j++) {
+                    //                            Console.WriteLine("id=" + j + " -> sub-steps=" + NumberOfLocalTimeSteps[j] + " and elements=" + newClusters[j].GlobalNoOfCells);
+                    //                        }
+                    //                    }
+                    //#endif
                 }
             }
-            return (new Clustering(newClusters, clustering.SubGrid), result);
+            return (new Clustering(newClusters, clustering.SubGrid), subSteps);
         }
 
-        public double[] CalculateTimeStepSizes(Clusterer.Clustering clustering, IList<TimeStepConstraint> timeStepConstraints, double time) {
+        public double[] CalculateHarmonicSumTimeStepSizes(Clustering clustering, double time, IList<TimeStepConstraint> timeStepConstraints) {
             double[] localDts = new double[clustering.NumberOfClusters];
+
             for (int i = 0; i < clustering.NumberOfClusters; i++) {
                 // Use "harmonic sum" of step - sizes, see
                 // WatkinsAsthanaJameson2016 for the reasoning
@@ -322,6 +317,25 @@ namespace BoSSS.Solution.Utils {
             }
 
             return subSteps;
+        }
+
+        public List<int> RestrictNumberOfSubSteps(List<int> numOfSubSteps) {
+            List<int> result = numOfSubSteps;
+
+            if (result.Last() > maxDiffOfSubSteps) {
+                result[0] = numOfSubSteps.Last() - maxDiffOfSubSteps;
+                result[result.Count - 1] = numOfSubSteps.Last();
+                //for (int i = 1; i < clustering.NumberOfClusters; i++) {
+                //    numOfSubSteps[i] = numOfSubSteps.First() + maxDiffOfSubsteps / (clustering.NumberOfClusters - 1) * i;
+                //}
+                for (int i = 1; i < (result.Count - 1); i++) {  // Leave numOfSubSteps.First() and numOfSubSteps.Last() untouched
+                    if (numOfSubSteps[i] < result[i - 1]) {
+                        result[i] = result[i - 1];
+                    }
+                }
+            }
+
+            return result;
         }
     }
 }

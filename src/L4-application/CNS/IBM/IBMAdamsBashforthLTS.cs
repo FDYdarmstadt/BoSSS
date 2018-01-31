@@ -78,9 +78,9 @@ namespace CNS.IBM {
             Console.WriteLine("This is IBM ALTS Ctor");
 #endif
             // Normal LTS constructor
-            clusterer = new Clusterer(this.gridData, this.TimeStepConstraints);
-            CurrentClustering = clusterer.CreateClustering(control.NumberOfSubGrids, speciesMap.SubGrid);
-            (CurrentClustering, NumberOfLocalTimeSteps) = clusterer.CreateAdvancedClustering(CurrentClustering); // Might remove sub-grids when time step sizes are too similar
+            clusterer = new Clusterer(this.gridData);
+            CurrentClustering = clusterer.CreateClustering(control.NumberOfSubGrids, this.TimeStepConstraints, speciesMap.SubGrid);
+            (CurrentClustering, NumberOfLocalTimeSteps) = clusterer.CreateAdvancedClustering(CurrentClustering, this.TimeStepConstraints); // Might remove sub-grids when time step sizes are too similar
 
             ABevolver = new IBMABevolve[CurrentClustering.NumberOfClusters];
 
