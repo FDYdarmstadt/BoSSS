@@ -114,8 +114,6 @@ namespace BoSSS.Solution.Timestepping {
             protected set;
         }
 
-        protected const int maxDiffOfSubSteps = int.MaxValue;
-
         //################# Hack for saving to database in every (A)LTS sub-step
         private Action<TimestepNumber, double> saveToDBCallback;
         //################# Hack for saving to database in every (A)LTS sub-step
@@ -150,9 +148,9 @@ namespace BoSSS.Solution.Timestepping {
             this.gridData = Fieldsmap.Fields.First().GridDat;
             this.fluxCorrection = fluxCorrection;
 
-            clusterer = new Clusterer(this.gridData, this.TimeStepConstraints);
-            CurrentClustering = clusterer.CreateClustering(numOfClusters, this.SubGrid);    // Might remove clusters when their centres are too close
-            (CurrentClustering, NumberOfLocalTimeSteps) = clusterer.CreateAdvancedClustering(CurrentClustering); // Might remove clusters when time step sizes are too similar
+            clusterer = new Clusterer(this.gridData);
+            CurrentClustering = clusterer.CreateClustering(numOfClusters, this.TimeStepConstraints, this.SubGrid);    // Might remove clusters when their centres are too close
+            (CurrentClustering, NumberOfLocalTimeSteps) = clusterer.CreateAdvancedClustering(CurrentClustering, this.TimeStepConstraints); // Might remove clusters when time step sizes are too similar
 
             ABevolver = new ABevolve[CurrentClustering.NumberOfClusters];
 
@@ -213,8 +211,8 @@ namespace BoSSS.Solution.Timestepping {
 #endif
                             // Necessary in order to use the number of sub-grids specified by the user for the reclustering in each time step
                             // Otherwise the value could be changed by the constructor of the parent class (AdamsBashforthLTS.cs) --> CreateSubGrids()
-                            CurrentClustering = clusterer.CreateClustering(numberOfClustersInitial, this.SubGrid);
-                            (CurrentClustering, NumberOfLocalTimeSteps) = clusterer.CreateAdvancedClustering(CurrentClustering); // Might remove sub-grids when time step sizes are too similar
+                            CurrentClustering = clusterer.CreateClustering(numberOfClustersInitial, this.TimeStepConstraints, this.SubGrid);
+                            (CurrentClustering, NumberOfLocalTimeSteps) = clusterer.CreateAdvancedClustering(CurrentClustering, this.TimeStepConstraints); // Might remove sub-grids when time step sizes are too similar
 
                             reclustered = clusterer.CheckForNewClustering(oldClustering, CurrentClustering);
 
@@ -243,7 +241,7 @@ namespace BoSSS.Solution.Timestepping {
                     if (TimeStepConstraints != null) {
                         dt = CalculateTimeStep();
                         if (TimeStepConstraints.First().dtMin != TimeStepConstraints.First().dtMax) {
-                            double[] timeStepSizes = clusterer.CalculateTimeStepSizes(CurrentClustering, TimeStepConstraints, Time);
+                            double[] timeStepSizes = clusterer.CalculateHarmonicSumTimeStepSizes(CurrentClustering, Time, TimeStepConstraints);
                             int[] subSteps = clusterer.CalculateSubSteps(timeStepSizes);
                             NumberOfLocalTimeSteps = subSteps.ToList();
                         }
@@ -604,7 +602,7 @@ namespace BoSSS.Solution.Timestepping {
         /// <returns>the largest stable timestep</returns>
         protected override double CalculateTimeStep() {
             if (TimeStepConstraints.First().dtMin != TimeStepConstraints.First().dtMax) {
-                double[] localDts = clusterer.CalculateTimeStepSizes(CurrentClustering, TimeStepConstraints, Time);
+                double[] localDts = clusterer.CalculateHarmonicSumTimeStepSizes(CurrentClustering, Time, TimeStepConstraints);
 //#if DEBUG
 //                if (hasChanged) {
 //                    Console.WriteLine("CHANGE OF SUBSTEPS");
@@ -852,25 +850,6 @@ namespace BoSSS.Solution.Timestepping {
                 ABevolver[i].ResetTime(m_Time, timestepNumber);
                 ABevolver[i].OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforeComputechangeRate(t1, t2);
             }
-        }
-
-        protected List<int> RestrictNumberOfSubSteps(List<int> numOfSubSteps) {
-            List<int> result = numOfSubSteps;
-
-            if (result.Last() > maxDiffOfSubSteps) {
-                result[0] = numOfSubSteps.Last() - maxDiffOfSubSteps;
-                result[result.Count - 1] = numOfSubSteps.Last();
-                //for (int i = 1; i < clustering.NumberOfClusters; i++) {
-                //    numOfSubSteps[i] = numOfSubSteps.First() + maxDiffOfSubsteps / (clustering.NumberOfClusters - 1) * i;
-                //}
-                for (int i = 1; i < (result.Count - 1); i++) {  // Leave numOfSubSteps.First() and numOfSubSteps.Last() untouched
-                    if (numOfSubSteps[i] < result[i - 1]) {
-                        result[i] = result[i - 1];
-                    }
-                }
-            }
-
-            return result;
         }
     }
 }
