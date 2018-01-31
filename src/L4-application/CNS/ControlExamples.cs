@@ -3136,7 +3136,7 @@ namespace CNS {
             return c;
         }
 
-        public static CNSControl ShockTube_PredefinedGrid(string dbPath = null, int dgDegree = 2, int numOfCellsX = 10, int numOfCellsY = 10, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = true) {
+        public static CNSControl ShockTube_PredefinedGrid(string dbPath = null, int dgDegree = 0, int numOfCellsX = 4, int numOfCellsY = 4, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = true) {
 
             CNSControl c = new CNSControl();
 
@@ -3145,7 +3145,7 @@ namespace CNS {
             //dbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db\";
             c.DbPath = dbPath;
             c.savetodb = dbPath != null && saveToDb;
-            c.saveperiod = 1;
+            c.saveperiod = 1000;
             c.PrintInterval = 1;
 
             // Add one balance constraint for each subgrid
@@ -3160,7 +3160,7 @@ namespace CNS {
             c.GridPartType = GridPartType.Predefined;
             c.GridPartOptions = "hallo";
 
-            bool AV = true;
+            bool AV = false;
 
             double xMin = 0;
             double xMax = 1;
@@ -3246,12 +3246,14 @@ namespace CNS {
                 double y = X[1];
 
                 int rank;
-                if (x < 0.2) {
+                if (x < 0.25) {
                     rank = 0;
-                } else if (x<0.5){
+                } else if (x < 0.5) {
                     rank = 1;
-                } else {
+                } else if (x < 0.75) {
                     rank = 2;
+                } else {
+                    rank = 3;
                 }
 
                 return rank;
@@ -3326,13 +3328,13 @@ namespace CNS {
             //c.dtFixed = 1.0e-3;
             c.CFLFraction = 0.3;
             c.Endtime = 0.25;
-            c.NoOfTimesteps = 20;
+            c.NoOfTimesteps = 1;
 
             c.ProjectName = "Shock tube";
             if (true1D) {
                 c.SessionName = String.Format("Shock tube, 1D, dgDegree = {0}, noOfCellsX = {1}, sensorLimit = {2:0.00E-00}", dgDegree, numOfCellsX, sensorLimit);
             } else {
-                c.SessionName = String.Format("Shock tube, 2D, dgDegree = {0}, noOfCellsX = {1}, noOfCellsX = {2}, sensorLimit = {3:0.00E-00}, CFLFraction = {4:0.00E-00}, ALTS {5}/{6}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids );
+                c.SessionName = String.Format("Shock tube, 2D, dgDegree = {0}, noOfCellsX = {1}, noOfCellsY = {2}, sensorLimit = {3:0.00E-00}, CFLFraction = {4:0.00E-00}, ALTS {5}/{6}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids );
             }
             //c.Tags.Add("Shock tube");
             //c.Tags.Add("Artificial viscosity");
