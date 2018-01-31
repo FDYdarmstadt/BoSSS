@@ -35,7 +35,7 @@ namespace LTS_NUnit {
     /// </summary>
     class Program : Application {
         static void Main(string[] args) {
-            Application._Main(args, true, "", delegate () {
+            Application._Main(args, true, delegate () {
                 return new Program();
             });
         }

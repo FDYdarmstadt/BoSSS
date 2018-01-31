@@ -77,19 +77,12 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             ctrl.TimeSteppingScheme = tsc;
             ctrl.InterfaceMode = InterfaceMode.MovingInterface;
 
-            BoSSS.Solution.Application<XdgTimesteppingTestControl>.CommandLineOptions ops = null;
-            //Console.WriteLine("remove me VVVV");
-            //ops = new BoSSS.Solution.Application<XdgTimesteppingTestControl>.CommandLineOptions() {
-            //    delPlt = true,
-            //    ImmediatePlotPeriod = 1,
-            //    SuperSampling = 5
-            //};
-
+            
             // run
             // ------------------------------------------
 
             XdgTimesteppingMain p = new XdgTimesteppingMain();
-            p.Init(ctrl, ops);
+            p.Init(ctrl);
             p.RunSolverMode();
 
             // evaluate/check
@@ -136,20 +129,13 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             ctrl.TimeSteppingScheme = tsc;
             ctrl.InterfaceMode = InterfaceMode.MovingInterface;
 
-            BoSSS.Solution.Application<XdgTimesteppingTestControl>.CommandLineOptions ops = null;
-            //ops = new BoSSS.Solution.Application<XdgTimesteppingTestControl>.CommandLineOptions() {
-            //    delPlt = true,
-            //    ImmediatePlotPeriod = 1,
-            //    SuperSampling = 3
-            //};
-
-            // */
+            
 
             // run
             // ------------------------------------------
 
             XdgTimesteppingMain p = new XdgTimesteppingMain();
-            p.Init(ctrl, ops);
+            p.Init(ctrl);
             p.RunSolverMode();
 
             // evaluate/check
@@ -192,22 +178,13 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             ctrl.TimeSteppingScheme = tsc;
             ctrl.InterfaceMode = InterfaceMode.Splitting;
 
-            BoSSS.Solution.Application<XdgTimesteppingTestControl>.CommandLineOptions ops = null;
-
-            //Console.WriteLine("Remove blow    VVVV");
-            //ops = new BoSSS.Solution.Application<XdgTimesteppingTestControl>.CommandLineOptions() {
-            //    delPlt = true,
-            //    ImmediatePlotPeriod = 1,
-            //    SuperSampling = 5
-            //};
-
-            //*/
+            
 
             // run
             // ------------------------------------------
 
             XdgTimesteppingMain p = new XdgTimesteppingMain();
-            p.Init(ctrl, ops);
+            p.Init(ctrl);
             p.RunSolverMode();
 
             // evaluate/check
@@ -276,19 +253,13 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             ctrl.dtFixed = TimestepSize;
             ctrl.Endtime = ctrl.dtFixed * ctrl.NoOfTimesteps;
             
-            BoSSS.Solution.Application<XdgTimesteppingTestControl>.CommandLineOptions ops = null;
-            //Console.WriteLine("Please remove me");
-            //ops = new BoSSS.Solution.Application<XdgTimesteppingTestControl>.CommandLineOptions() {
-            //    delPlt = true,
-            //    ImmediatePlotPeriod = 1,
-            //    SuperSampling = 3
-            //};
+            
 
             // run
             // ------------------------------------------
 
             XdgTimesteppingMain p = new XdgTimesteppingMain();
-            p.Init(ctrl, ops);
+            p.Init(ctrl);
             p.RunSolverMode();
 
             // evaluate/check

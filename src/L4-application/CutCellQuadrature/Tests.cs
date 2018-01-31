@@ -47,7 +47,7 @@ namespace CutCellQuadrature {
             testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
             Program app = new Program(testCase);
-            app.Init(null, new CommandLineOptions(), "");
+            app.Init(null);
             app.SetUpEnvironment();
             app.SetInitial();
 
@@ -79,7 +79,7 @@ namespace CutCellQuadrature {
                 testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
                 Program app = new Program(testCase);
-                app.Init(null, new CommandLineOptions(), "");
+                app.Init(null);
                 app.SetUpEnvironment();
                 app.SetInitial();
                 testCase.ProceedToNextShift();
@@ -116,7 +116,7 @@ namespace CutCellQuadrature {
             testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
             Program app = new Program(testCase);
-            app.Init(null, new CommandLineOptions(), "");
+            app.Init(null);
             app.SetUpEnvironment();
             app.SetInitial();
 
@@ -148,7 +148,7 @@ namespace CutCellQuadrature {
                 testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
                 Program app = new Program(testCase);
-                app.Init(null, new CommandLineOptions(), "");
+                app.Init(null);
                 app.SetUpEnvironment();
                 app.SetInitial();
                 testCase.ProceedToNextShift();
@@ -186,7 +186,7 @@ namespace CutCellQuadrature {
             testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
             Program app = new Program(testCase);
-            app.Init(null, new CommandLineOptions(), "");
+            app.Init(null);
             app.SetUpEnvironment();
             app.SetInitial();
 
@@ -218,7 +218,7 @@ namespace CutCellQuadrature {
                 testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
                 Program app = new Program(testCase);
-                app.Init(null, new CommandLineOptions(), "");
+                app.Init(null);
                 app.SetUpEnvironment();
                 app.SetInitial();
                 testCase.ProceedToNextShift();
@@ -255,7 +255,7 @@ namespace CutCellQuadrature {
             testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
             Program app = new Program(testCase);
-            app.Init(null, new CommandLineOptions(), "");
+            app.Init(null);
             app.SetUpEnvironment();
             app.SetInitial();
 
@@ -288,7 +288,7 @@ namespace CutCellQuadrature {
                 testCase.ScaleShifts(0.5 * testCase.GridSpacing);
 
                 Program app = new Program(testCase);
-                app.Init(null, new CommandLineOptions(), "");
+                app.Init(null);
                 app.SetUpEnvironment();
                 app.SetInitial();
                 testCase.ProceedToNextShift();

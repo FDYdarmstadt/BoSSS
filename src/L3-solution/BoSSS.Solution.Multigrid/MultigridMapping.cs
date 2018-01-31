@@ -404,17 +404,12 @@ namespace BoSSS.Solution.Multigrid {
         }
 
         /// <summary>
-        /// returns global unique indices which correlate to a certain sub-set of the mapping <paramref name="map"/>'s basises (<see cref="UnsetteledCoordinateMapping.BasisS"/>).
+        /// Returns global unique indices which correlate to a certain sub-set of this mapping's 
+        /// basises (<see cref="UnsetteledCoordinateMapping.BasisS"/>).
         /// </summary>
         /// <param name="Fields">
-        /// indices into <see cref="BasisS"/>
+        /// Indices into <see cref="BasisS"/>
         /// </param>
-        /// <param name="includeExternal">
-        /// true, if indices which correlate to external cells should be included; false if not.
-        /// </param>
-        /// <param name="map">
-        /// </param>
-        /// <returns>a list of global (over all MPI processes) unique indices.</returns>
         public int[] GetSubvectorIndices(params int[] Fields) {
             ilPSP.MPICollectiveWatchDog.Watch();
             var map = this.ProblemMapping;
@@ -433,11 +428,15 @@ namespace BoSSS.Solution.Multigrid {
             }
             var ag = this.AggGrid;
             int JAGG = ag.iLogicalCells.NoOfLocalUpdatedCells;
-            Partitioning p = new Partitioning(JAGG);
             List<int> R = new List<int>();
+            Partitioning p = new Partitioning(JAGG);
             int j0_aggCell = p.i0;
 
             if(this.MaximalLength == this.MinimalLength) {
+                // ++++++++++++++++++++++++++++++
+                // case: constant length per cell
+                // ++++++++++++++++++++++++++++++
+
 
                 Debug.Assert(this.m_DgDegree.Length == this.AggBasis.Length);
                 int[] DofVar = new int[this.m_DgDegree.Length];
@@ -454,7 +453,7 @@ namespace BoSSS.Solution.Multigrid {
                 }
                 
 
-                for(int jAgg = 0; jAgg < JAGG; jAgg++) {
+                for(int jAgg = 0; jAgg < JAGG; jAgg++) { // loop over aggregate cells
 
                     for(int i = 0; i < Fields.Length; i++) {
                         int iField = Fields[i];
@@ -473,39 +472,49 @@ namespace BoSSS.Solution.Multigrid {
                     }
                 }
             } else {
+                // ++++++++++++++++++++++++++++++
+                // case: variable length per cell
+                // ++++++++++++++++++++++++++++++
+
                 int Nofields = this.m_DgDegree.Length;
 
-                int[] Nfld = new int[Nofields];
-                int[] Ofst = new int[Nofields];
+                //int[] Nfld = new int[Nofields];
+                //int[] Ofst = new int[Nofields];
 
-                int i0 = this.Partitioning.i0;
+                int i0Proc = this.Partitioning.i0;
 
                 for(int jAgg = 0; jAgg < JAGG; jAgg++) {
 
-                    for(int ifld = 0; ifld < Nofields; ifld++) {
-                        int pField = this.m_DgDegree[ifld];
-                        Nfld[ifld] = this.AggBasis[ifld].GetLength(jAgg, pField);
-                        if(ifld > 0)
-                            Ofst[ifld] = Ofst[ifld - 1] + Nfld[ifld - 1];
-                    }
-                    int Ncell = Ofst[Nofields - 1] + Nfld[Nofields - 1];
+                    //for(int ifld = 0; ifld < Nofields; ifld++) {
+                    //    int pField = this.m_DgDegree[ifld];
+                    //    Nfld[ifld] = this.AggBasis[ifld].GetLength(jAgg, pField);
+                    //    if(ifld > 0)
+                    //        Ofst[ifld] = Ofst[ifld - 1] + Nfld[ifld - 1];
+                    //}
+                    //int Ncell = Ofst[Nofields - 1] + Nfld[Nofields - 1];
                         
 
                     for(int i = 0; i < Fields.Length; i++) {
                         int iField = Fields[i];
                         int pField = this.m_DgDegree[iField];
+                        int Nfld = this.AggBasis[iField].GetLength(jAgg, pField);
 
-                        int N_iField = Nfld[iField];
-                        int N0 = Ofst[iField];
 
-                        for(int n = 0; n < N_iField; n++) {
-                            int iX = i0 + n + N0;
+                        
+
+                        //int N_iField = Nfld[iField];
+                        //int N0 = Ofst[iField];
+
+                        int i0Loc = this.LocalUniqueIndex(iField, jAgg, 0);
+
+                        for(int n = 0; n < Nfld; n++) {
+                            int iX = i0Proc + i0Loc + n;
                             R.Add(iX);
                             Debug.Assert(this.Partitioning.IsInLocalRange(iX));
-                            Debug.Assert(iX - j0_aggCell == this.LocalUniqueIndex(iField, jAgg, n));
+                            Debug.Assert(iX - i0Proc == this.LocalUniqueIndex(iField, jAgg, n));
                         }
                     }
-                    i0 += Ncell;
+                    
                 }
             }
             
@@ -514,10 +523,10 @@ namespace BoSSS.Solution.Multigrid {
 
 
         /// <summary>
-        /// returns global unique indices which correlate to a certain sub-set of the mapping <paramref name="map"/>'s basises (<see cref="UnsetteledCoordinateMapping.BasisS"/>).
+        /// Returns global unique indices which correlate to a certain species and basises.
         /// </summary>
         /// <param name="Fields">
-        /// indices into <see cref="BasisS"/>
+        /// Indices into <see cref="BasisS"/>
         /// </param>
         /// <param name="map">
         /// </param>

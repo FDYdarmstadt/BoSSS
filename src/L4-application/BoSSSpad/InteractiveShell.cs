@@ -20,6 +20,8 @@ using System.IO;
 using BoSSS.Foundation.IO;
 using Mono.CSharp;
 using System.Collections.Generic;
+using System.Reflection;
+using BoSSS.Solution.Gnuplot;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -168,6 +170,91 @@ namespace BoSSS.Application.BoSSSpad {
             databases = mod_databases.ToArray();
 
             return dbi;
+        }
+
+        static internal Document CurrentDoc = null;
+
+        /// <summary>
+        /// Extracts the source code of some function, which can be used as an initial value or boundary condition.
+        /// </summary>
+        /// <param name="f">
+        /// Must be the reference to a static method of a static class.
+        /// </param>
+        static public BoSSS.Solution.Control.Formula GetFormulaObject(Func<double[], double> f) {
+            return GetFormulaObject(f, false);
+        }
+
+        /// <summary>
+        /// Extracts the source code of some function, which can be used as an initial value or boundary condition.
+        /// </summary>
+        /// <param name="f">
+        /// Must be the reference to a static method of a static class.
+        /// </param>
+        static public BoSSS.Solution.Control.Formula GetFormulaObject(Func<double[], double, double> f) {
+            return GetFormulaObject(f, true);
+        }
+
+        private static Solution.Control.Formula GetFormulaObject(System.Delegate f, bool timedep) {
+            if (CurrentDoc == null) {
+                throw new NotSupportedException("Only supported when a bws-document is present (GUI or batch mode).");
+            }
+            if (f == null)
+                throw new ArgumentNullException();
+            Assembly SearchedAssembly = f.Method.DeclaringType.Assembly;
+
+            if (SearchedAssembly == null)
+                throw new ApplicationException("Unable to find some assembly for delegate.");
+
+            string AssemblyCode = null;
+            foreach (var entry in CurrentDoc.CommandAndResult) {
+                if (SearchedAssembly.Equals(entry.AssemblyProduced)) {
+                    AssemblyCode = entry.Command;
+                }
+            }
+            if (AssemblyCode == null) {
+                throw new ApplicationException("Unable to find code of " + SearchedAssembly.FullName);
+            } else {
+                //Console.WriteLine("Found code:");
+                //Console.WriteLine(AssemblyCode);
+            }
+
+            var fo = new Solution.Control.Formula(f.Method.DeclaringType.Name + "." + f.Method.Name, timedep, AssemblyCode);
+
+            return fo;
+        }
+
+        /// <summary>
+        /// Simple plotting interface
+        /// </summary>
+        /// <returns>Output of <see cref="GnuplotExtensions.PlotNow(Gnuplot)"/></returns>
+        static public object Plot(IEnumerable<double> X1, IEnumerable<double> Y1, string Name1 = null, string Format1 = null,
+            IEnumerable<double> X2 = null, IEnumerable<double> Y2 = null, string Name2 = null, string Format2 = null,
+            IEnumerable<double> X3 = null, IEnumerable<double> Y3 = null, string Name3 = null, string Format3 = null,
+            IEnumerable<double> X4 = null, IEnumerable<double> Y4 = null, string Name4 = null, string Format4 = null,
+            IEnumerable<double> X5 = null, IEnumerable<double> Y5 = null, string Name5 = null, string Format5 = null,
+            IEnumerable<double> X6 = null, IEnumerable<double> Y6 = null, string Name6 = null, string Format6 = null,
+            IEnumerable<double> X7 = null, IEnumerable<double> Y7 = null, string Name7 = null, string Format7 = null,
+            bool logX = false, bool logY = false) {
+
+            using(var gp = new Gnuplot()) {
+                               
+
+                IEnumerable<double>[] Xs = new[] { X1, X2, X3, X4, X5, X6, X7 };
+                IEnumerable<double>[] Ys = new[] { Y1, Y2, Y3, Y4, Y5, Y6, Y7 };
+                string[] Ns = new string[] { Name1, Name2, Name3, Name4, Name5, Name6, Name7 };
+                string[] Fs = new string[] { Format1, Format2, Format3, Format4, Format5, Format6, Format7 };
+
+                for(int i = 0; i < 7; i++) {
+                    if(Ys[i] != null) {
+                        var f1 = new PlotFormat();
+                        if (Fs[i] != null)
+                            f1.FromString(Fs[i]);
+                        gp.PlotXY(Xs[i], Ys[i], title: Ns[i], format: f1, logX:logX, logY:logY);
+                    }
+                }
+
+                return gp.PlotNow();
+            }
         }
 
     }

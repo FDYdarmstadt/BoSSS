@@ -67,6 +67,7 @@
     <Compile Include="BoundaryType.cs" />
     <Compile Include="SipHardcodedControl.cs" />
     <Compile Include="SipControl.cs" />
+    <Compile Include="SolverCodes.cs" />
     <Compile Include="Tests\TestProgram.cs" />
     <Compile Include="SipPoissonMain.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -116,6 +117,10 @@
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.HYPRE\ilPSP.LinSolvers.HYPRE.csproj">
       <Project>{332083B9-C7FD-4B04-95EC-B0C729B21883}</Project>
       <Name>ilPSP.LinSolvers.HYPRE</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.MUMPS\ilPSP.LinSolvers.MUMPS.csproj">
+      <Project>{757e59f0-53bf-4c0d-87b3-3329161cb148}</Project>
+      <Name>ilPSP.LinSolvers.MUMPS</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.PARDISO\ilPSP.LinSolvers.PARDISO.csproj">
       <Project>{DB9CA35D-9980-462A-85CC-CB33DCFD5A28}</Project>
