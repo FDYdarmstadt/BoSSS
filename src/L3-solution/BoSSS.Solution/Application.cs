@@ -34,6 +34,7 @@ using log4net;
 using Mono.CSharp;
 using MPI.Wrappers;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Bson;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -148,27 +149,7 @@ namespace BoSSS.Solution {
                 return m_queryHandler;
             }
         }
-
-        ///// <summary>
-        ///// Specify the type of grid partitioning, in multiprocessor-mode;
-        ///// if a control file is used, this value is set during the <see cref="InitMPI"/>-call;
-        ///// So, for overriding the control file, it must be set after 
-        ///// calling <see cref="InitMPI"/>;
-        ///// </summary>
-        //protected GridPartType m_GridPartitioningType = Foundation.Grid.GridPartType.METIS;
-
-        ///// <summary>
-        ///// Additional options for Grid Partitioning, see <see cref="m_GridPartitioningType"/>;
-        ///// </summary>
-        //protected string m_GridPartitioningOptions = "";
-
-
-
-        ///// <summary>
-        ///// options parsed form command line
-        ///// </summary>
-        //protected CommandLineOptions m_opt;
-
+        
         /// <summary>
         /// searches for the User- or Machine-environment variable 'BOSSS_INSTALL'
         /// and verifies the existence of this directory.
@@ -2243,19 +2224,32 @@ namespace BoSSS.Solution {
         protected virtual void ProfilingLog() {
             var R = Tracer.Root;
 
-            Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_bin");
-            BinaryFormatter bf = new BinaryFormatter();
-            bf.Serialize(stream, R);
-            stream.Flush();
-            stream.Close();
-            stream.Dispose();
+            using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_bin")) {
+                //BinaryFormatter bf = new BinaryFormatter();
+                //bf.Serialize(stream, R);
 
-            stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_summary");
-            StreamWriter stw = new StreamWriter(stream);
-            this.WriteProfilingReport(stw, R);
-            stw.Flush();
-            stream.Flush();
-            stw.Close();
+                var str = R.Serialize();
+                using (StreamWriter stw = new StreamWriter(stream)) {
+                    stw.Write(str);
+                    stw.Flush();
+                }
+                //stream.Flush();
+                //stream.Close();
+
+
+                MethodCallRecord R2 = MethodCallRecord.Deserialize(str);
+
+
+            }
+
+            using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_summary")) {
+                using (StreamWriter stw = new StreamWriter(stream)) {
+                    WriteProfilingReport(stw, R);
+                    stw.Flush();
+                    stream.Flush();
+                    stw.Close();
+                }
+            }
         }
 
         /// <summary>
@@ -2874,7 +2868,7 @@ namespace BoSSS.Solution {
         /// <summary>
         /// creates a human-readable performance report from the profiling information stored in <see cref="Tracer.Root"/>.
         /// </summary>
-        protected void WriteProfilingReport(TextWriter wrt, MethodCallRecord Root) {
+        public static void WriteProfilingReport(TextWriter wrt, MethodCallRecord Root) {
             wrt.WriteLine();
             wrt.WriteLine("Common Suspects:");
             wrt.WriteLine("================");
