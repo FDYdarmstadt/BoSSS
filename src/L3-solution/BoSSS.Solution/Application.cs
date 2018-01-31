@@ -1052,14 +1052,11 @@ namespace BoSSS.Solution {
 
                 GridData = new GridData(Grid);
 
-                if (this.Control == null || this.Control.NoOfMultigridLevels > 0)
+                if (this.Control == null || this.Control.NoOfMultigridLevels > 0) {
                     this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
-                else
+                } else {
                     this.MultigridSequence = new AggregationGrid[0];
-
-
-
-
+                }
 
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
@@ -1097,6 +1094,7 @@ namespace BoSSS.Solution {
                         m_queryHandler.AddQuery(queryIdPair.Key, queryIdPair.Value);
                     }
                 }
+                this.QueryHandler.ValueQuery("UsedNoOfMultigridLevels", this.MultigridSequence.Length, true);
 
                 //save session information
                 //========================
@@ -2046,6 +2044,8 @@ namespace BoSSS.Solution {
                     // re-create solvers, blablabla
                     CreateEquationsAndSolvers(remshDat);
                 }
+
+                this.QueryHandler.ValueQuery("UsedNoOfMultigridLevels", this.MultigridSequence.Length, true);
             }
         }
 

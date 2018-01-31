@@ -206,6 +206,30 @@ namespace BoSSS.Application.BoSSSpad {
         public double? YrangeMax = null;
 
         /// <summary>
+        /// y-range (secondary axis) minimum, optional 
+        /// </summary>
+        [DataMember]
+        public double? Y2rangeMin = null;
+
+        /// <summary>
+        /// y-range (secondary axis) maximum, optional 
+        /// </summary>
+        [DataMember]
+        public double? Y2rangeMax = null;
+
+        /// <summary>
+        /// x-range (secondary axis) minimum, optional 
+        /// </summary>
+        [DataMember]
+        public double? X2rangeMin = null;
+
+        /// <summary>
+        /// x-range (secondary axis) maximum, optional 
+        /// </summary>
+        [DataMember]
+        public double? X2rangeMax = null;
+
+        /// <summary>
         /// Label for X-axis
         /// </summary>
         [DataMember]
@@ -287,6 +311,29 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public void ModDashType(string SubKey, DashTypes DashType) {
             this.ModDashType(new[] { SubKey }, new[] { DashType });
+        }
+
+        /// <summary>
+        /// Modification the line color (<see cref="PlotFormat.LineColor"/>).
+        /// </summary>
+        public void ModLineColor(string SubKey, LineColors LineColor) {
+            this.ModLineColor(new[] { SubKey }, new[] { LineColor });
+        }
+
+        /// <summary>
+        /// Modification the line color (<see cref="PlotFormat.LineColor"/>).
+        /// </summary>
+        public void ModLineColor(string[] SubKey, LineColors[] LineColor) {
+            if(SubKey.Length != LineColor.Length) {
+                throw new ArgumentException();
+            }
+
+            foreach (var g in dataGroups) {
+                for (int i = 0; i < SubKey.Length; i++) {
+                    if (g.Name.Contains(SubKey[i]))
+                        g.Format.LineColor = LineColor[i];
+                }
+            }
         }
 
         /// <summary>
@@ -730,5 +777,218 @@ namespace BoSSS.Application.BoSSSpad {
                 }
             }
         }
+
+        static void MySwap<T>(ref T o1, ref T o2) {
+            T t = o1;
+            o1 = o2;
+            o2 = t;
+        }
+
+        /// <summary>
+        /// swaps all settings and graphs from primary to secondary Y-axis ('y to y2'), and vice-versa 
+        /// </summary>
+        public void SwapYaxes() {
+            MySwap(ref this.Ylabel, ref this.Y2label);
+            MySwap(ref this.YrangeMin, ref this.Y2rangeMin);
+            MySwap(ref this.YrangeMax, ref this.Y2rangeMax);
+            MySwap(ref this.LogY, ref this.LogY2);
+            MySwap(ref this.ShowYtics, ref this.ShowY2tics);
+
+            foreach(var xy in this.dataGroups) {
+                xy.UseY2 = !xy.UseY2;
+            }
+        }
+
+        /// <summary>
+        /// swaps all settings and graphs from primary to secondary X-axis ('x to x2'), and vice-versa 
+        /// </summary>
+        public void SwapXaxes() {
+            MySwap(ref this.Xlabel, ref this.X2label);
+            MySwap(ref this.XrangeMin, ref this.X2rangeMin);
+            MySwap(ref this.XrangeMax, ref this.X2rangeMax);
+            MySwap(ref this.LogX, ref this.LogX2);
+            MySwap(ref this.ShowXtics, ref this.ShowX2tics);
+
+            foreach(var xy in this.dataGroups) {
+                xy.UseX2 = !xy.UseX2;
+            }
+        }
+
+
+        /// <summary>
+        /// Writes plot commands to a gnuplot object.
+        /// </summary>
+        public void ToGnuplot(Gnuplot gp) {
+
+            // ============
+            // log settings
+            // ============
+            {
+                if (this.LogX) {
+                    gp.Cmd("set logscale x");
+                } else {
+                    gp.Cmd("unset logscale x");
+                }
+
+                if (this.LogY) {
+                    gp.Cmd("set logscale y");
+                } else {
+                    gp.Cmd("unset logscale y");
+                }
+
+                if (this.LogX2) {
+                    gp.Cmd("set logscale x2");
+                } else {
+                    gp.Cmd("unset logscale x2");
+                }
+
+                if (this.LogY2) {
+                    gp.Cmd("set logscale y2");
+                } else {
+                    gp.Cmd("unset logscale y2");
+                }
+            }
+
+            // ==========
+            // axis range 
+            // ==========
+
+            {
+                if ((this.XrangeMax != null) != (this.XrangeMin != null)) {
+                    throw new ArgumentException("X range minimum and maximum must be set either both or none.");
+                }
+                if ((this.YrangeMax != null) != (this.YrangeMin != null)) {
+                    throw new ArgumentException("Y range minimum and maximum must be set either both or none.");
+                }
+
+                if (this.XrangeMin != null) {
+                    if (this.XrangeMin.Value >= this.XrangeMax.Value)
+                        throw new ArgumentException("X range maximum must be grater than minimum.");
+
+                    gp.SetXRange(this.XrangeMin.Value, this.XrangeMax.Value);
+                } else {
+                    gp.SetXAutorange();
+                }
+
+                if (this.YrangeMin != null) {
+                    if (this.YrangeMin.Value >= this.YrangeMax.Value)
+                        throw new ArgumentException("Y range maximum must be grater than minimum.");
+
+                    gp.SetYRange(this.YrangeMin.Value, this.YrangeMax.Value);
+                } else {
+                    gp.SetYAutorange();
+                }
+
+
+                if ((this.X2rangeMax != null) != (this.X2rangeMin != null)) {
+                    throw new ArgumentException("X2 range minimum and maximum must be set either both or none.");
+                }
+                if ((this.Y2rangeMax != null) != (this.Y2rangeMin != null)) {
+                    throw new ArgumentException("Y2 range minimum and maximum must be set either both or none.");
+                }
+
+                if (this.X2rangeMin != null) {
+                    if (this.X2rangeMin.Value >= this.X2rangeMax.Value)
+                        throw new ArgumentException("X range maximum must be grater than minimum.");
+
+                    gp.SetX2Range(this.X2rangeMin.Value, this.X2rangeMax.Value);
+                } else {
+                    gp.SetX2Autorange();
+                }
+
+                if (this.Y2rangeMin != null) {
+                    if (this.Y2rangeMin.Value >= this.Y2rangeMax.Value)
+                        throw new ArgumentException("Y2 range maximum must be grater than minimum.");
+
+                    gp.SetY2Range(this.Y2rangeMin.Value, this.Y2rangeMax.Value);
+                } else {
+                    gp.SetY2Autorange();
+                }
+            }
+
+            // ========================
+            // labels, title, legend...
+            // ========================
+            {
+                if (this.Xlabel != null) {
+                    gp.SetXLabel(this.Xlabel);
+                }
+                if (this.Ylabel != null) {
+                    gp.SetYLabel(this.Ylabel);
+                }
+
+                if (this.X2label != null) {
+                    gp.SetX2Label(this.X2label);
+                }
+                if (this.Y2label != null) {
+                    gp.SetYLabel(this.Y2label);
+                }
+
+                if (this.Title != null) {
+                    gp.SetTitle(this.Title);
+                }
+
+                if (this.ShowLegend) {
+                    gp.Cmd("unset key");
+                    //gp.Cmd("set key at 5e-1,10e-8 vertical maxrows {0} ", );
+                    gp.Cmd("set key outside right vertical maxrows {0} ", this.dataGroups.Length);
+                } else {
+                    gp.Cmd("set key off");
+                }
+            }
+
+            // ====
+            // tics
+            // ====
+            {
+                if (this.ShowXtics) {
+                    if (this.LogX)
+                        gp.Cmd("set xtics format \"$10^{%T}$\" ");
+                    else
+                        gp.Cmd("set xtics ");
+                } else {
+                    gp.Cmd("unset xtics");
+                }
+
+                if (this.ShowX2tics) {
+                    if (this.LogX2)
+                        gp.Cmd("set x2tics format \"$10^{%T}$\" ");
+                    else
+                        gp.Cmd("set x2tics ");
+                } else {
+                    gp.Cmd("unset x2tics");
+                }
+
+                if (this.ShowYtics) {
+                    if (this.LogY)
+                        gp.Cmd("set ytics format \"$10^{%T}$\" ");
+                    else
+                        gp.Cmd("set ytics ");
+                } else {
+                    gp.Cmd("unset ytics");
+                }
+
+                if (this.ShowY2tics) {
+                    if (this.LogX2)
+                        gp.Cmd("set y2tics format \"$10^{%T}$\" ");
+                    else
+                        gp.Cmd("set y2tics ");
+                } else {
+                    gp.Cmd("unset y2tics");
+                }
+            }
+
+            // =================
+            // finally, plotting
+            // =================
+            {
+                foreach (var xyData in this.dataGroups) {
+                    gp.PlotXY(xyData.Abscissas, xyData.Values, xyData.Name, xyData.Format, useX2: xyData.UseX2, useY2: xyData.UseY2, deferred: true);
+                }
+
+                gp.WriteDeferredPlotCommands();
+            }
+        }
+
     }
 }

@@ -979,6 +979,13 @@ namespace BoSSS.Solution.Gnuplot {
         /// <summary>
         /// Guess what
         /// </summary>
+        public void SetX2Autorange() {
+            Cmd("set autoscale x2");
+        }
+
+        /// <summary>
+        /// Guess what
+        /// </summary>
         /// <param name="label"></param>
         public void SetXLabel(string label) {
             if (label != null) {
@@ -1017,10 +1024,33 @@ namespace BoSSS.Solution.Gnuplot {
         }
 
         /// <summary>
+        /// Defines the desired range of the x-axis
+        /// </summary>
+        /// <param name="min"></param>
+        /// <param name="max"></param>
+        public void SetX2Range(double min, double max) {
+            using (StringWriter stw = new StringWriter()) {
+                stw.Write("set x2range [");
+                stw.Write(min.ToString(nfoi));
+                stw.Write(":");
+                stw.Write(max.ToString(nfoi));
+                stw.Write("]");
+                Cmd(stw.ToString());
+            }
+        }
+
+        /// <summary>
         /// Guess what
         /// </summary>
         public void SetYAutorange() {
             Cmd("set autoscale y");
+        }
+
+        /// <summary>
+        /// Guess what
+        /// </summary>
+        public void SetY2Autorange() {
+            Cmd("set autoscale y2");
         }
 
         /// <summary>
