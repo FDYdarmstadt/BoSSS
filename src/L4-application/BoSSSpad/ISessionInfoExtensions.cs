@@ -1024,7 +1024,7 @@ namespace BoSSS.Foundation.IO {
         /// <returns>
         /// The properly initialized configuration object
         /// </returns>
-        public static T GetConfig<T>(this ISessionInfo session)
+        public static T GetControl<T>(this ISessionInfo session)
             where T : AppControl {
             string sessionDir = DatabaseDriver.GetSessionDirectory(session);
             string path = Path.Combine(sessionDir, "Control.txt");
@@ -1662,6 +1662,7 @@ namespace BoSSS.Foundation.IO {
             Console.WriteLine("...Evaluation done");
         }
 
+        /*
         /// <summary>
         /// Calls EvaluatePerformance and plots the DataSets.
         /// </summary>
@@ -1671,7 +1672,7 @@ namespace BoSSS.Foundation.IO {
         /// <param name="solver"> String that indicates the solver. Up to now only implemented for IBM_Solver and CNS. </param>
         public static void EvaluatePerformanceAndPlot(this IEnumerable<ISessionInfo> sessions, string[] methods = null, bool exclusive = true, string solver = "IBM_Solver")
         {
-            Plot2Ddata[] data = sessions.EvaluatePerformance(methods,exclusive,solver);
+            Plot2Ddata[] data = sessions.EvaluatePerformance(methods,exclusive);
             int numberDataSets = data.Length;
             int numberSessions = sessions.Count();
 
@@ -1714,6 +1715,7 @@ namespace BoSSS.Foundation.IO {
                 gp.Execute();
             }
         }
+        */
 
         /// <summary>
         /// Calculates performance times from profiling_bins for each session for specified methods. Writes out a table of the most expensive and (of those) worst scaling functions. 
@@ -1722,23 +1724,23 @@ namespace BoSSS.Foundation.IO {
         /// <param name="sessions"> List of sessions of the same problem but different MPIs </param>
         /// <param name="methods"> Array of methods to be evaluated. If methods == null, the 10 most expensive methods will be taken. </param>
         /// <param name="exclusive"> Boolean that defines if exclusive or inclusive times will be calculated. Methods will still be chosen by exclusive times. </param>
-        /// <param name="solver"> String that indicates the solver. Up to now only implemented for IBM_Solver and CNS. </param>
         /// <returns>
         /// Returns an array of DataSets, where the first half contains the convergence data for every method and the second half the speedup data.
         /// </returns>
-        public static Plot2Ddata[] EvaluatePerformance(this IEnumerable<ISessionInfo> sessions, string[] methods = null, bool exclusive = true, string solver = "IBM_Solver", bool weakScaling = false) {
+        public static Plot2Ddata[] EvaluatePerformance(this IEnumerable<ISessionInfo> sessions, string[] methods = null, bool exclusive = true/*, string solver = "IBM_Solver",*/, bool weakScaling = false) {
+        // <param name="solver"> String that indicates the solver. Up to now only implemented for IBM_Solver and CNS. </param>
             string path = sessions.Pick(0).Database.Path;
-            string mainMethod;
-            switch (solver) {
-                case "IBM_Solver":
-                    mainMethod = "BoSSS.Application.IBM_Solver.IBM_SolverMain.RunSolverOneStep";
-                    break;
-                case "CNS":
-                    mainMethod = "CNS.Program`1.RunSolverOneStep";
-                    break;
-                default:
-                    throw new ApplicationException("Main method not defined for this solver yet");
-            }
+            string mainMethod = "*.RunSolverOneStep"; // use wildcard!
+            //switch (solver) {
+            //    case "IBM_Solver":
+            //        mainMethod = "BoSSS.Application.IBM_Solver.IBM_SolverMain.RunSolverOneStep";
+            //        break;
+            //    case "CNS":
+            //        mainMethod = "CNS.Program`1.RunSolverOneStep";
+            //        break;
+            //    default:
+            //        throw new ApplicationException("Main method not defined for this solver yet");
+            //}
 
 
 
