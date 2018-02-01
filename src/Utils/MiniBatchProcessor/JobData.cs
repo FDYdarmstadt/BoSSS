@@ -59,7 +59,13 @@ namespace MiniBatchProcessor {
         public int NoOfProcs;
 
         /// <summary>
-        /// Third line in the job file, program to execute
+        /// Third line in job file,
+        /// run no other jobs while this is in progress.
+        /// </summary>
+        public bool UseComputeNodesExclusive;
+
+        /// <summary>
+        /// Fourth line in the job file, program to execute
         /// </summary>
         public string exefile;
 
@@ -102,6 +108,7 @@ namespace MiniBatchProcessor {
                             J.ExeDir = null;
                         }
                         J.NoOfProcs = Convert.ToInt32(fStr.ReadLine());
+                        J.UseComputeNodesExclusive = Convert.ToBoolean(fStr.ReadLine());
                         J.exefile = fStr.ReadLine();
 
                         int NoOfArgs = int.Parse(fStr.ReadLine());
@@ -152,6 +159,7 @@ namespace MiniBatchProcessor {
                         fStr.WriteLine(Name);
                         fStr.WriteLine(ExeDir != null ? ExeDir : "");
                         fStr.WriteLine(NoOfProcs);
+                        fStr.WriteLine(UseComputeNodesExclusive);
                         fStr.WriteLine(exefile);
 
                         fStr.WriteLine(this.Arguments.Length);

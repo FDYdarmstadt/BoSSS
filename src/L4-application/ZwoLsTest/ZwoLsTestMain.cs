@@ -74,9 +74,14 @@ namespace BoSSS.Application.ZwoLsTest {
                 Debug.Assert(jCell + j0 == grd.Cells[jCell].GlobalID);
             }
 
-            base.m_GridPartitioningType = GridPartType.none;
             return grd;
         }
+
+        public override void Init(BoSSS.Solution.Control.AppControl control) {
+            control.GridPartType = BoSSS.Foundation.Grid.GridPartType.none;
+            base.Init(control);
+        }
+
 
         LevelSet Phi0;
 

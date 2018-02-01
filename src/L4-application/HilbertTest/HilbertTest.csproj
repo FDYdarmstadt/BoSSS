@@ -1,18 +1,20 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{D4FADB7C-0B11-4F41-A97A-146DC1F7034E}</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <ProjectGuid>{EE2730DA-2C52-459C-B6B8-5B4093B229A0}</ProjectGuid>
+    <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>BoSSS.Solution.Gnuplot</RootNamespace>
-    <AssemblyName>BoSSS.Solution.Gnuplot</AssemblyName>
+    <RootNamespace>HilbertTest</RootNamespace>
+    <AssemblyName>HilbertTest</AssemblyName>
     <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -20,51 +22,53 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Prefer32Bit>false</Prefer32Bit>
     <UseVSHostingProcess>true</UseVSHostingProcess>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <DocumentationFile>bin\Release\BoSSS.Solution.Gnuplot.XML</DocumentationFile>
-    <UseVSHostingProcess>true</UseVSHostingProcess>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DocumentationFile>bin\Release\HilbertTest.xml</DocumentationFile>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Gnuplot.cs" />
-    <Compile Include="LineColors.cs" />
-    <Compile Include="DashTypes.cs" />
-    <Compile Include="PlotFormat.cs" />
-    <Compile Include="Plot2dGrid_ext.cs" />
-    <Compile Include="Styles.cs" />
-    <Compile Include="PointTypes.cs" />
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="nunit.framework">
+      <HintPath>..\..\..\libs\NUnit-2.6.0.12051\bin\framework\nunit.framework.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\libs\Newtonsoft.Json60r4\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Runtime.Serialization" />
+    <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\ilPSP\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj">
+      <Project>{DD9BF776-38CA-4FC9-8F42-5ED700BDE7AD}</Project>
+      <Name>MPI.Wrappers</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj">
-      <Project>{8e6d8f23-623f-4204-b4ab-a088c0cd83aa}</Project>
+      <Project>{8E6D8F23-623F-4204-B4AB-A088C0CD83AA}</Project>
       <Name>ilPSP</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\L1-platform\BoSSS.Platform\BoSSS.Platform.csproj">
-      <Project>{B7D5F7C7-EA9F-4506-AB69-C3CD2AA8C938}</Project>
-      <Name>BoSSS.Platform</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj">
-      <Project>{17A60FBA-20B4-451D-98E1-8D742F368569}</Project>
-      <Name>BoSSS.Foundation</Name>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution\BoSSS.Solution.csproj">
+      <Project>{DF7F5ABD-E606-41CD-BEEF-31A95D136DEA}</Project>
+      <Name>BoSSS.Solution</Name>
     </ProjectReference>
   </ItemGroup>
-  <!--Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" /-->
+  <ItemGroup>
+    <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
