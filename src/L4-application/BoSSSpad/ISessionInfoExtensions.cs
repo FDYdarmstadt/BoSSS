@@ -344,6 +344,55 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
+        /// Loads the profiling information for a session
+        /// </summary>
+        /// <param name="session"></param>
+        /// <returns>
+        /// An array of profiling trees, one for each MPI rank; th index into the returned arry corresponds with the MPI rank.
+        /// </returns>
+        public static MethodCallRecord[] GetProfiling(this ISessionInfo session) {
+            // find
+            string sessDir = DatabaseDriver.GetSessionDirectory(session);
+            string[] TextFils = Directory.GetFiles(sessDir, "profiling_bin.*.txt");
+            if (TextFils.Count() <= 0)
+                throw new IOException("Unable to find profiling information.");
+
+            // sort according to process rank
+            int[] Ranks = new int[TextFils.Length];
+            for (int i = 0; i < Ranks.Length; i++) {
+                var parts = TextFils[i].Split(new string[] { "profiling_bin.", ".txt" }, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length <= 0)
+                    throw new IOException("Unable to determine file rank from path '" + parts[i] + "'.");
+                Ranks[i] = int.Parse(parts.Last());
+                if (Ranks[i] < 0)
+                    throw new IOException("Unable to determine file rank from path '" + parts[i] + "'.");
+            }
+
+            int MPISize = session.ComputeNodeNames.Count;
+            if(MPISize != Ranks.Max() + 1) {
+                Console.WriteLine("WARNING: mismatch between number of MPI ranks (" + MPISize + ") for session and max rank of profiling information (" + (Ranks.Max() + 1) + ").");
+            }
+
+            // load 
+            var R = new MethodCallRecord[Ranks.Max() + 1];
+            for(int i = 0; i < Ranks.Length; i++) {
+                int rnk = Ranks[i];
+
+                var f = TextFils[i];
+                var JSON = File.ReadAllText(f);
+                var mcr = MethodCallRecord.Deserialize(JSON);
+
+                if (R[rnk] != null)
+                    throw new IOException("It seems profiling info was written more than once for MPI rank " + rnk + ".");
+
+                R[rnk] = mcr;
+            }
+
+            // return
+            return R;
+        }
+
+        /// <summary>
         /// Reads tabulated text files.
         /// </summary>
         /// <param name="session">
