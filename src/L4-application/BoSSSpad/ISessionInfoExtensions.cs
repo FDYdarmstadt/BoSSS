@@ -1669,7 +1669,7 @@ namespace BoSSS.Foundation.IO {
         /// <param name="methods"> Array of methods to be evaluated. If methods == null, the 10 most expensive methods will be taken. </param>
         /// <param name="exclusive"> Boolean that defines if exclusive or inclusive times will be calculated. Methods will still be chosen by exclusive times. </param>
         /// <param name="solver"> String that indicates the solver. Up to now only implemented for IBM_Solver and CNS. </param>
-        public static void EvaluatePerformanceAndPlot(this IEnumerable<ISessionInfo> sessions, string[] methods = null, bool exclusive = true, string solver = "IBM_Solver")
+        public static void EvaluatePerformanceAndPlot(this IEnumerable<ISessionInfo> sessions, string[] methods = null, bool exclusive = true, string solver = "IBM_Solver", bool weakScaling = false)
         {
             Plot2Ddata[] data = sessions.EvaluatePerformance(methods,exclusive,solver);
             int numberDataSets = data.Length;
@@ -1747,15 +1747,10 @@ namespace BoSSS.Foundation.IO {
             double[] fraction = new double[maxNumberMethods];
             int idx = sessions.IndexOfMax(s => s.ComputeNodeNames.Count());
 
+            var mcr = sessions.Pick(idx).GetProfiling();
+
             // Find methods if none given
             if (methods == null) {
-                //var temp_fs = new FileStream[1];
-                //BinaryFormatter fmt = new BinaryFormatter();
-                //MethodCallRecord[] mcr = new MethodCallRecord[1];
-                //temp_fs[0] = new FileStream(@path + "\\sessions\\" + sessions.Pick(idx).ID + "\\profiling_bin.0.txt", FileMode.Open);
-                //mcr[0] = (MethodCallRecord)fmt.Deserialize(temp_fs[0]);
-                //temp_fs[0].Close();
-                var mcr = sessions.Pick(idx).GetProfiling();
                 
                 var findMainMethod = mcr[0].FindChild(mainMethod);
                 IOrderedEnumerable<CollectionReport> mostExpensive;
@@ -1788,18 +1783,11 @@ namespace BoSSS.Foundation.IO {
                 int numberProcessors = fileCount;
                 processors[i] = numberProcessors;
 
-                var temp_fs = new FileStream[numberProcessors];
-                BinaryFormatter fmt = new BinaryFormatter();
-                MethodCallRecord[] mcr = new MethodCallRecord[numberProcessors];
-
                 double[] maxTime = new double[numberMethods];
 
                 // Iterate over MPIs
                 for (int j = 0; j < numberProcessors; j++) {
-                    // read profiling_bin of current processor
-                    temp_fs[j] = new FileStream(@path + "\\sessions\\" + sessions.Pick(i).ID + "\\profiling_bin." + j + ".txt", FileMode.Open);
                     MethodCallRecord value;
-                    mcr[j] = ((MethodCallRecord)fmt.Deserialize(temp_fs[j]));
                     // Iterate over methods
                     for (int k = 0; k < numberMethods; k++) {
                         // Get execution time of current method for current processor
@@ -1847,7 +1835,6 @@ namespace BoSSS.Foundation.IO {
                             fraction[k] = tempFractions[k];
                         }
                     }
-                    temp_fs[j].Close();
                 }
                 times[i] = maxTime;
             }
@@ -1865,17 +1852,21 @@ namespace BoSSS.Foundation.IO {
                 for (int j = 0; j < numberSessions; j++) {
                     if (weakScaling) {
                         ideal[j] = startIdeal;
-                        idealSpeedUp[j] = 1;
+                        idealSpeedUp[j] = 0;
                     } else {
                         ideal[j] = Math.Pow(0.5, j) * startIdeal;
                         idealSpeedUp[j] = processors[j];
                     }
                 }
+
+                double[] speedUpTimes = new double[numberSessions];
+
                 var timeArray = times.Select(t => t.Pick(i));
                 if (weakScaling) {
+                    speedUpTimes = timeArray.Select(x =>( x - startIdeal ) / startIdeal).ToArray();
                 } else {
+                    speedUpTimes = timeArray.Select(x => startIdeal * processors[0] / x).ToArray();
                 }
-                double[] speedUpTimes = timeArray.Select(x => startIdeal * processors[0] / x).ToArray();
 
                 // Create DataRows for convergence and speedup with actual and ideal curve
                 KeyValuePair<string, double[][]>[] dataRowsConvergence = new KeyValuePair<string, double[][]>[2];
@@ -1896,7 +1887,11 @@ namespace BoSSS.Foundation.IO {
             }
 
             // Use slope of actual speedup curve to sort methods and DataSets by "worst scaling"
-            methodRegressionPair = methodRegressionPair.OrderBy(t => t.Value).ToArray();
+            if (weakScaling) {
+                methodRegressionPair = methodRegressionPair.OrderByDescending(t => t.Value).ToArray();
+            } else {
+                methodRegressionPair = methodRegressionPair.OrderBy(t => t.Value).ToArray();
+            }
             methodFractionPair = methodFractionPair.OrderByDescending(t => t.Value).ToArray();
             callsFractionPair = callsFractionPair.OrderByDescending(t => t.Value).ToArray();
             double[] regressions = methodRegressionPair.Select(s => s.Value).ToArray();
@@ -1912,6 +1907,11 @@ namespace BoSSS.Foundation.IO {
             for (int i = 0; i < numberMethods; i++) {
                 Console.WriteLine("Rank " + i + ": " + methods2[i] + " (" + methodCalls2[i].Split('(').Last());
                 Console.WriteLine("\t Time fraction of root: " + fractions2[i].ToString("p3") + "\t in " + methodCalls2[i].Split('(').First());
+            }
+            if (weakScaling) {
+                Console.WriteLine("\n ======= WEAK SCALING ========");
+            } else {
+                Console.WriteLine("\n ======= STRONG SCALING ========");
             }
             Console.WriteLine("\n Sorted by worst scaling");
             Console.WriteLine("============================");
