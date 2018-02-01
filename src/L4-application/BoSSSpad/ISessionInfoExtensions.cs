@@ -348,7 +348,7 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         /// <param name="session"></param>
         /// <returns>
-        /// An array of profiling trees, one for each MPI rank; th index into the returned arry corresponds with the MPI rank.
+        /// An array of profiling trees, one for each MPI rank; th index into the returned array corresponds with the MPI rank.
         /// </returns>
         public static MethodCallRecord[] GetProfiling(this ISessionInfo session) {
             // find
