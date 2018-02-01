@@ -206,7 +206,8 @@ namespace BoSSS.Application.BoSSSpad {
                 ExeDir = myJob.DeploymentDirectory,
                 exefile = Path.GetFileName(myJob.EntryAssembly.Location),
                 Arguments = myJob.CommandLineArguments,
-                EnvVars = myJob.EnvironmentVars.Select(kv => new Tuple<string, string>(kv.Key, kv.Value)).ToArray()
+                EnvVars = myJob.EnvironmentVars.Select(kv => new Tuple<string, string>(kv.Key, kv.Value)).ToArray(),
+                UseComputeNodesExclusive = myJob.UseComputeNodesExclusive
             };
 
             int id = MiniBatchProcessor.Client.SubmitJob(JD);

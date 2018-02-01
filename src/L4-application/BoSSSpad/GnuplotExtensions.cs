@@ -451,7 +451,7 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
-        /// Gnuplot plotting, automatic choice of gnuplot driver depending on
+        /// Gnuplot plotting (single plot), automatic choice of gnuplot driver depending on
         /// the current value of <see cref="UseCairoLatex"/>.
         /// </summary>
         public static object PlotNow(this Plot2Ddata _2DData) {
@@ -466,6 +466,22 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
+        /// Gnuplot plotting (multiplot), automatic choice of gnuplot driver depending on
+        /// the current value of <see cref="UseCairoLatex"/>.
+        /// </summary>
+        public static object PlotNow(this Plot2Ddata[,] _2DData) {
+            using (Gnuplot gp = _2DData.ToGnuplot()) {
+
+                if (UseCairoLatex) {
+                    return gp.PlotCairolatex();
+                } else {
+                    return gp.PlotGIF();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Single plot window:
         /// Converts <see cref="Plot2Ddata"/> into an alive Gnuplot object.
         /// </summary>
         public static Gnuplot ToGnuplot(this Plot2Ddata _2DData, GnuplotPageLayout layout = null) {
@@ -473,123 +489,39 @@ namespace BoSSS.Application.BoSSSpad {
                 throw new NotImplementedException("todo");
 
             Gnuplot gp = new Gnuplot();
-            
-            if (_2DData.LogX) {
-                gp.Cmd("set logscale x");
-            } else {
-                gp.Cmd("unset logscale x");
-            }
 
-            if (_2DData.LogY) {
-                gp.Cmd("set logscale y");
-            } else {
-                gp.Cmd("unset logscale y");
-            }
+            _2DData.ToGnuplot(gp);
+            return gp;
+        }
 
-            if (_2DData.LogX2) {
-                gp.Cmd("set logscale x2");
-            } else {
-                gp.Cmd("unset logscale x2");
-            }
+        /// <summary>
+        /// Multiple plot windows:
+        /// Converts <see cref="Plot2Ddata"/> into an alive Gnuplot object.
+        /// </summary>
+        public static Gnuplot ToGnuplot(this Plot2Ddata[,] _2DData, GnuplotPageLayout layout = null) {
+            if (layout != null)
+                throw new NotImplementedException("todo");
+            if (_2DData.GetLowerBound(0) != 0)
+                throw new ArgumentException();
+            if (_2DData.GetLowerBound(1) != 0)
+                throw new ArgumentException();
+            if (_2DData.GetLength(0) <= 0)
+                throw new ArgumentException();
+            if (_2DData.GetLength(1) <= 0)
+                throw new ArgumentException();
 
-            if (_2DData.LogY2) {
-                gp.Cmd("set logscale y2");
-            } else {
-                gp.Cmd("unset logscale y2");
-            }
+            Gnuplot gp = new Gnuplot();
 
-            if((_2DData.XrangeMax != null) != (_2DData.XrangeMin != null)) {
-                throw new ArgumentException("X range minimum and maximum must be set either both or none.");
-            }
-            if((_2DData.YrangeMax != null) != (_2DData.YrangeMin != null)) {
-                throw new ArgumentException("Y range minimum and maximum must be set either both or none.");
-            }
+            gp.SetMultiplot(_2DData.GetLength(0), _2DData.GetLength(1));
 
-            if(_2DData.XrangeMin != null) {
-                if (_2DData.XrangeMin.Value >= _2DData.XrangeMax.Value)
-                    throw new ArgumentException("X range maximum must be grater than minimum.");
-
-                gp.SetXRange(_2DData.XrangeMin.Value, _2DData.XrangeMax.Value);
-            } else {
-                gp.SetXAutorange();
+            for (int iRow = 0; iRow < _2DData.GetLength(0); iRow++) {
+                for (int iCol = 0; iCol < _2DData.GetLength(1); iCol++) {
+                    if (_2DData[iRow, iCol] != null) {
+                        gp.SetSubPlot(iRow, iCol);
+                        _2DData[iRow, iCol].ToGnuplot(gp);
+                    }
+                }
             }
-
-            if (_2DData.YrangeMin != null) {
-                if (_2DData.YrangeMin.Value >= _2DData.YrangeMax.Value)
-                    throw new ArgumentException("Y range maximum must be grater than minimum.");
-
-                gp.SetYRange(_2DData.YrangeMin.Value, _2DData.YrangeMax.Value);
-            } else {
-                gp.SetYAutorange();
-            }
-
-            if(_2DData.Xlabel != null) {
-                gp.SetXLabel(_2DData.Xlabel);
-            }
-            if(_2DData.Ylabel != null) {
-                gp.SetYLabel(_2DData.Ylabel);
-            }
-
-            if(_2DData.X2label != null) {
-                gp.SetX2Label(_2DData.X2label);
-            }
-            if(_2DData.Y2label != null) {
-                gp.SetYLabel(_2DData.Y2label);
-            }
-
-            if(_2DData.Title != null) {
-                gp.SetTitle(_2DData.Title);
-            }
-
-            if(_2DData.ShowLegend) {
-                gp.Cmd("unset key");
-                //gp.Cmd("set key at 5e-1,10e-8 vertical maxrows {0} ", );
-                gp.Cmd("set key outside right vertical maxrows {0} ", _2DData.dataGroups.Length);
-            } else {
-                gp.Cmd("set key off");
-            }
-
-            if(_2DData.ShowXtics) {
-                if(_2DData.LogX)
-                    gp.Cmd("set xtics format \"$10^{%T}$\" ");
-                else 
-                    gp.Cmd("set xtics ");
-            } else {
-                gp.Cmd("unset xtics");
-            }
-
-            if(_2DData.ShowX2tics) {
-                if(_2DData.LogX2)
-                    gp.Cmd("set x2tics format \"$10^{%T}$\" ");
-                else 
-                    gp.Cmd("set x2tics ");
-            } else {
-                gp.Cmd("unset x2tics");
-            }
-
-            if(_2DData.ShowYtics) {
-                if(_2DData.LogY)
-                    gp.Cmd("set ytics format \"$10^{%T}$\" ");
-                else 
-                    gp.Cmd("set ytics ");
-            } else {
-                gp.Cmd("unset ytics");
-            }
-
-            if(_2DData.ShowY2tics) {
-                if(_2DData.LogX2)
-                    gp.Cmd("set y2tics format \"$10^{%T}$\" ");
-                else 
-                    gp.Cmd("set y2tics ");
-            } else {
-                gp.Cmd("unset y2tics");
-            }
-                        
-            foreach (var xyData in _2DData.dataGroups) {
-                gp.PlotXY(xyData.Abscissas, xyData.Values, xyData.Name, xyData.Format, useX2: xyData.UseX2, useY2: xyData.UseY2);
-            }
-
-
             return gp;
         }
 

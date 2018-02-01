@@ -668,7 +668,7 @@ namespace BoSSS.Solution.Control {
             */
 
              using(var ms = new MemoryStream()) {
-                using(JsonWriter writer = new BsonWriter(ms)) {  // Alternative: binary writer: BsonWriter
+                using(JsonWriter writer = new BsonWriter(ms)) {  // Alternative: binary writer: JsonTextWriter
                     formatter.Serialize(writer, this);
                 }
 

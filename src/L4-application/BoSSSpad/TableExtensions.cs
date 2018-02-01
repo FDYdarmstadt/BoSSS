@@ -35,7 +35,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// The keys and queries (see <see cref="ISessionInfo.KeysAndQueries"/>) of all sessions in an enumeration
         /// <paramref name="sessions"/> in one table.
         /// </summary>
-        public static DataTable GetSessionTable(this IEnumerable<ISessionInfo> sessions) {
+        public static DataTable GetSessionTable(this IEnumerable<ISessionInfo> sessions, Tuple<string, Func<ISessionInfo, object>>[] AdditionalColums) {
 
             Dictionary<string, object[]> Ret = new Dictionary<string, object[]>();
 
@@ -43,10 +43,24 @@ namespace BoSSS.Application.BoSSSpad {
                 var SS = sessions.ElementAt(iSess);
                 var kq = SS.KeysAndQueries.ToList();
 
+                // add additional columns
                 kq.Add(new KeyValuePair<string, object>("Session", SS));
                 kq.Add(new KeyValuePair<string, object>("RegularTerminated", !SS.Tags.Contains(BoSSS.Solution.Application.NOT_TERMINATED_TAG)));
 
+                if(AdditionalColums != null) {
+                    foreach(var t in AdditionalColums) {
+                        object val;
+                        try {
+                            val = t.Item2(SS);
+                        } catch(Exception) {
+                            val = null;
+                        }
+                        kq.Add(new KeyValuePair<string, object>(t.Item1, val));
+                    }
+                }
 
+
+                // convert to table
                 foreach (var kv in kq) {
                     string ColumnName = kv.Key;
                     object ValueInCol = kv.Value;
@@ -525,14 +539,33 @@ namespace BoSSS.Application.BoSSSpad {
         /// Column name, where the values for the x-axis are taken.
         /// </param>
         /// <param name="ColName_ForYValues"></param>
-        /// <param name="GroupSelector">
+        /// <param name="RowSelector">
         /// Selects, which table row will end up in which graph, resp. data group (<see cref="Plot2Ddata.dataGroups"/>).
-        /// If it evaluates to null, or if an exception is thrown, the respective data row will not be included in any graph.
+        /// If the returned name is null, or if an exception is thrown, the respective data row will not be included in any graph.
+        /// </param>
+        /// <returns></returns>
+        public static Plot2Ddata ToPlot(this DataTable Tab,
+            string ColName_ForXValues, string ColName_ForYValues,
+            PlotRowSelector RowSelector) {
+            return Tab.ToPlot(
+                delegate (int iRow, IDictionary<string, object> Row, out string GraphName, out BoSSS.Solution.Gnuplot.PlotFormat GraphFormat, out double xValue, out double yValue) {
+                    RowSelector(iRow, Row, out GraphName, out GraphFormat);
+                    xValue = Convert.ToDouble(Row[ColName_ForXValues]);
+                    yValue = Convert.ToDouble(Row[ColName_ForYValues]);
+                });
+        }
+
+        /// <summary>
+        /// Creates an xy-plot form a table
+        /// </summary>
+        /// <param name="Tab"></param>
+        /// <param name="RowSelector">
+        /// Selects, which table row will end up in which graph, resp. data group (<see cref="Plot2Ddata.dataGroups"/>).
+        /// If the returned name is null, or if an exception is thrown, the respective data row will not be included in any graph.
         /// </param>
         /// <returns></returns>
         public static Plot2Ddata ToPlot(this DataTable Tab, 
-            string ColName_ForXValues, string ColName_ForYValues, 
-            Func<int, IDictionary<string, object>, string> GroupSelector) {
+            PlotRowSelectorEx RowSelector) {
             
 
             Plot2Ddata ret = new Plot2Ddata();
@@ -555,16 +588,22 @@ namespace BoSSS.Application.BoSSSpad {
                 }
 
                 string groupName;
+                Solution.Gnuplot.PlotFormat graphFormat;
+                double xValue;
+                double yValue;
                 try {
-                    groupName = GroupSelector(i, orgRowAsDict);
+                    RowSelector(i, orgRowAsDict, out groupName, out graphFormat, out xValue, out yValue);
                 } catch (Exception e) {
                     Console.WriteLine("Exception in the selection test of row {0}: {1}, Message: {2}.", i, e.GetType().Name, e.Message);
                     groupName = null;
+                    graphFormat = null;
+                    xValue = 0.0;
+                    yValue = 0.0;
                 }
 
                 if (groupName != null) {
-                    double xValue = Convert.ToDouble(orgRowAsDict[ColName_ForXValues]);
-                    double yValue = Convert.ToDouble(orgRowAsDict[ColName_ForYValues]);
+                    //double xValue = Convert.ToDouble(orgRowAsDict[ColName_ForXValues]);
+                    //double yValue = Convert.ToDouble(orgRowAsDict[ColName_ForYValues]);
 
                     Plot2Ddata.XYvalues xyGroup = Array.Find(ret.dataGroups, xyG => xyG.Name.Equals(groupName));
                     if(xyGroup == null) {
@@ -574,6 +613,8 @@ namespace BoSSS.Application.BoSSSpad {
 
                     ArrayTools.AddToArray(xValue, ref xyGroup.Abscissas);
                     ArrayTools.AddToArray(yValue, ref xyGroup.Values);
+
+                    xyGroup.Format = graphFormat;
                 }
             }
 
@@ -669,4 +710,46 @@ namespace BoSSS.Application.BoSSSpad {
             return ret;
         }
     }
+
+    /// <summary>
+    /// Used by <see cref="TableExtensions.ToPlot(DataTable, string, string, PlotRowSelector)"/>, to select data rows which are put into a plot.
+    /// </summary>
+    /// <param name="iRow">
+    /// Row index.
+    /// </param>
+    /// <param name="Row">
+    /// One row of the data table, 
+    /// </param>
+    /// <param name="GraphName">
+    /// On exit, the name of the graph; rows with the same name will be in one graph.
+    /// *if null, the respective row is ignored.*
+    /// </param>
+    /// <param name="GraphFormat">
+    /// Symbol, Color, dash type, etc.
+    /// </param>
+    public delegate void PlotRowSelector(int iRow, IDictionary<string, object> Row, out string GraphName, out BoSSS.Solution.Gnuplot.PlotFormat GraphFormat);
+    
+    /// <summary>
+    /// Used by <see cref="TableExtensions.ToPlot(DataTable, PlotRowSelectorEx)"/>, to select data rows which are put into a plot.
+    /// </summary>
+    /// <param name="iRow">
+    /// Row index.
+    /// </param>
+    /// <param name="Row">
+    /// One row of the data table, 
+    /// </param>
+    /// <param name="GraphName">
+    /// On exit, the name of the graph; rows with the same name will be in one graph.
+    /// *if null, the respective row is ignored.*
+    /// </param>
+    /// <param name="GraphFormat">
+    /// Symbol, Color, dash type, etc.
+    /// </param>
+    /// <param name="xValue">
+    /// On exit, the x-value for the graph.
+    /// </param>
+    /// <param name="yValue">
+    /// On exit, the y-value for the graph.
+    /// </param>
+    public delegate void PlotRowSelectorEx(int iRow, IDictionary<string, object> Row, out string GraphName, out BoSSS.Solution.Gnuplot.PlotFormat GraphFormat, out double xValue, out double yValue);
 }

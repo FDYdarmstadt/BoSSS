@@ -172,25 +172,21 @@ namespace BoSSS.Application.SipPoisson {
         /// Test on a Cartesian grid, with a sinusodial solution.
         /// </summary>
         /// <param name="Res">
-        /// Grid resolution, 2 entries for 2D test, 3 entries for 3D test.
+        /// Grid resolution
         /// </param>
-        /// <param name="Stretch">
-        /// Grid stretching factors.
+        /// <param name="Dim">
+        /// spatial dimension
+        /// </param>
+        /// <param name="deg">
+        /// polynomial degree
         /// </param>
         /// <param name="solver_name">
         /// Name of solver to use.
         /// </param>
-        public static SipControl TestCartesian2(int[] Res, double[] Stretch = null, SolverCodes solver_name = SolverCodes.classic_mumps, int deg = 3) {
-            if(Res.Length != 2 && Res.Length != 3)
+        public static SipControl TestCartesian2(int Res, int Dim, SolverCodes solver_name = SolverCodes.exp_softpcg_schwarz_directcoarse, int deg = 2) {
+            if(Dim != 2 && Dim != 3)
                 throw new ArgumentOutOfRangeException();
-            if(Stretch == null) {
-                Stretch = new double[Res.Length];
-                Stretch.SetAll(1.0);
-            } else {
-                if(Res.Length != Stretch.Length)
-                    throw new ArgumentException();
-            }
-
+            
             var R = new SipControl();
             R.ProjectName = "ipPoison/cartesian";
             R.savetodb = false;
@@ -204,15 +200,15 @@ namespace BoSSS.Application.SipPoisson {
 
             R.GridFunc = delegate() {
                 GridCommons grd = null;
-                if(Res.Length == 2) {
-                    double[] xNodes = CreateNodes(Res[0], Stretch[0], 0, 10);
-                    double[] yNodes = CreateNodes(Res[1], Stretch[1], -1, +1);
-
+                if(Dim == 2) {
+                    double[] xNodes = GenericBlas.Linspace(0, 10, Res*5 + 1);
+                    double[] yNodes = GenericBlas.SinLinSpacing(-1, +1, 0.6, Res + 1);
+                    
                     grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
-                } else if(Res.Length == 3) {
-                    double[] xNodes = CreateNodes(Res[0], Stretch[0], 0, 10);
-                    double[] yNodes = CreateNodes(Res[1], Stretch[1], -1, +1);
-                    double[] zNodes = CreateNodes(Res[2], Stretch[2], -1, +1);
+                } else if(Dim == 3) {
+                    double[] xNodes = GenericBlas.Linspace(0, 10, Res*5 + 1);
+                    double[] yNodes = GenericBlas.SinLinSpacing(-1, +1, 0.6, Res + 1);
+                    double[] zNodes = GenericBlas.SinLinSpacing(-1, +1, 0.6, Res + 1);
 
                     grd = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
                 } else {
@@ -252,7 +248,7 @@ namespace BoSSS.Application.SipPoisson {
 
             R.solver_name = solver_name;
 
-            R.NoOfMultigridLevels = 3;
+            R.NoOfMultigridLevels = int.MaxValue;
 
             return R;
         }
