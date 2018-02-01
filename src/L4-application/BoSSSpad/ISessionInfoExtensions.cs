@@ -1747,15 +1747,10 @@ namespace BoSSS.Foundation.IO {
             double[] fraction = new double[maxNumberMethods];
             int idx = sessions.IndexOfMax(s => s.ComputeNodeNames.Count());
 
+            var mcr = sessions.Pick(idx).GetProfiling();
+
             // Find methods if none given
             if (methods == null) {
-                //var temp_fs = new FileStream[1];
-                //BinaryFormatter fmt = new BinaryFormatter();
-                //MethodCallRecord[] mcr = new MethodCallRecord[1];
-                //temp_fs[0] = new FileStream(@path + "\\sessions\\" + sessions.Pick(idx).ID + "\\profiling_bin.0.txt", FileMode.Open);
-                //mcr[0] = (MethodCallRecord)fmt.Deserialize(temp_fs[0]);
-                //temp_fs[0].Close();
-                var mcr = sessions.Pick(idx).GetProfiling();
                 
                 var findMainMethod = mcr[0].FindChild(mainMethod);
                 IOrderedEnumerable<CollectionReport> mostExpensive;
@@ -1788,18 +1783,11 @@ namespace BoSSS.Foundation.IO {
                 int numberProcessors = fileCount;
                 processors[i] = numberProcessors;
 
-                var temp_fs = new FileStream[numberProcessors];
-                BinaryFormatter fmt = new BinaryFormatter();
-                MethodCallRecord[] mcr = new MethodCallRecord[numberProcessors];
-
                 double[] maxTime = new double[numberMethods];
 
                 // Iterate over MPIs
                 for (int j = 0; j < numberProcessors; j++) {
-                    // read profiling_bin of current processor
-                    temp_fs[j] = new FileStream(@path + "\\sessions\\" + sessions.Pick(i).ID + "\\profiling_bin." + j + ".txt", FileMode.Open);
                     MethodCallRecord value;
-                    mcr[j] = ((MethodCallRecord)fmt.Deserialize(temp_fs[j]));
                     // Iterate over methods
                     for (int k = 0; k < numberMethods; k++) {
                         // Get execution time of current method for current processor
@@ -1847,7 +1835,6 @@ namespace BoSSS.Foundation.IO {
                             fraction[k] = tempFractions[k];
                         }
                     }
-                    temp_fs[j].Close();
                 }
                 times[i] = maxTime;
             }
