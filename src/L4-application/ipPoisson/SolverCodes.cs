@@ -34,6 +34,11 @@ namespace BoSSS.Application.SipPoisson {
 
 
         /// <summary>
+        /// Direct solver from new solver framework, using a dense LU decomposition from Lapack.
+        /// </summary>
+        exp_direct_lapack = 7,
+
+        /// <summary>
         /// Conjugate gradient, with multi-grid preconditioner.
         /// </summary>
         exp_softpcg_mg = 4,
