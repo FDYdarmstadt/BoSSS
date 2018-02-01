@@ -241,22 +241,10 @@ namespace BoSSS.Application.BoSSSpad {
         public void SetControlObject(BoSSS.Solution.Control.AppControl ctrl) {
             // serialize control object
             // ========================
-            byte[] buffer;
-            using(var ms = new MemoryStream()) {
-                var bf = new BinaryFormatter();
-                bf.Serialize(ms, ctrl);
-                buffer = ms.GetBuffer();
-            }
 
-            //using(var ms = new MemoryStream(buffer.CloneAs())) {
-            //}
-
-            //ctrl.Verify();
-            //byte[] buffer  = ctrl.Serialize();
-            //var ctrl_check = BoSSS.Solution.Control.AppControl.Deserialize(buffer, ctrl.GetType());
-            //ctrl_check.Verify();
-            //byte[] buffer = Encoding.UTF8.GetBytes(ControlString);
-
+            ctrl.ExtensiveVerify();
+            string JSON = ctrl.Serialize();
+            byte[] buffer = Encoding.UTF8.GetBytes(JSON);
             AdditionalDeploymentFiles.Add(new Tuple<byte[], string>(buffer, "control.obj"));
 
             // Project & Session Name

@@ -195,8 +195,11 @@ namespace BoSSS.Solution {
             // - exclude mscorlib (does not even appear on Windows, but makes problems using mono)
 
             for (int i = 0; i < stackTrace.FrameCount; i++) {
-                Assembly entryAssembly = stackTrace.GetFrame(i).GetMethod().DeclaringType.Assembly;
-                GetAllAssembliesRecursive(entryAssembly, allAssis);
+                Type Tüpe = stackTrace.GetFrame(i).GetMethod().DeclaringType;
+                if (Tüpe != null) {
+                    Assembly entryAssembly = Tüpe.Assembly;
+                    GetAllAssembliesRecursive(entryAssembly, allAssis);
+                }
             }
 
             return allAssis.Where(a => !a.FullName.StartsWith("mscorlib"));
@@ -468,26 +471,31 @@ namespace BoSSS.Solution {
                     }
                 } else if (opt.ControlfilePath.ToLower().EndsWith(".obj")) {
                     // +++++++++++++++++++++
-                    // binary control object
+                    // control object
                     // +++++++++++++++++++++
 
-                    object controlObj = null;
-                    using (var fs = new FileStream(opt.ControlfilePath, FileMode.Open, FileAccess.Read, FileShare.Read)) {
-                        var bf = new BinaryFormatter();
-                        controlObj = bf.Deserialize(fs);
-                    }
+                    string JSON = File.ReadAllText(opt.ControlfilePath);
+                    object controlObj = AppControl.Deserialize(JSON, typeof(T));
+                    //using (var fs = new FileStream(opt.ControlfilePath, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+                    //    var bf = new BinaryFormatter();
+                    //    controlObj = bf.Deserialize(fs);
+                    //}
 
-                    if (controlObj is T) {
-                        ctrlV2 = (T)controlObj;
-                        
-                    } else if (controlObj is IEnumerable<T>) {
-                        ctrlV2_ParameterStudy = ((IEnumerable<T>)controlObj).ToArray();
+                    ctrlV2 = AppControl.Deserialize(File.ReadAllText(opt.ControlfilePath), typeof(T)) as T;
 
-                    } else {
+                    //if (controlObj is T) {
+                    //    ctrlV2 = (T)controlObj;
+
+                    //} else if (controlObj is IEnumerable<T>) {
+                    //    ctrlV2_ParameterStudy = ((IEnumerable<T>)controlObj).ToArray();
+
+                    //} 
+
+                    if(ctrlV2 == null) {
                         throw new ApplicationException(string.Format(
-                        "Invalid control instruction: unable to cast the last result of the control file/cs-script of type {0} to type {1}",
-                        controlObj.GetType().FullName,
-                        typeof(T).FullName));
+                            "Invalid control instruction: unable to cast the last result of the control file/cs-script of type {0} to type {1}",
+                            controlObj.GetType().FullName,
+                            typeof(T).FullName));
                     }
 
                 } else {
@@ -755,9 +763,9 @@ namespace BoSSS.Solution {
 
 
         /// <summary>
-        /// Generates key/value pairs to identify sessions.
+        /// Generates key/value pairs from control objects to identify sessions.
         /// </summary>
-        static void FindKeys(IDictionary<string, object> Keys, AppControl ctrl) {
+        public static void FindKeys(IDictionary<string, object> Keys, AppControl ctrl) {
 
             foreach (var fldOpt in ctrl.FieldOptions) {
                 string KeyName = "DGdegree:" + fldOpt.Key;
