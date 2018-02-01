@@ -1,5 +1,6 @@
 restart
 **************
+
   Database Explorer v2
   ____________________
 
@@ -337,12 +338,6 @@ setting up: J20480_k6_classic_cg
 ==============
 //tempDB.Sessions.Where(s => s.Name.Contains("pardiso") && s.Name.Contains("J320")).ForEach(si => si.Delete(true));
 **************
-Session a801b199-492f-41d9-b9e6-e9ad97efa34a deleted.
-Session e5993fa5-9379-4c22-83d5-1ef5b9176069 deleted.
-Session a1fb95f7-1018-4033-bf51-401fde7a1439 deleted.
-Session 0754467f-9ba7-4d73-a69a-1e182bce997e deleted.
-Session 06230ee0-c51d-4bba-900c-5da2369fb84f deleted.
-
 ==============
 foreach(var ctrl in controls) {
     Console.WriteLine(" Submitting: " + ctrl.SessionName); 
@@ -350,459 +345,261 @@ foreach(var ctrl in controls) {
 }
 **************
  Submitting: J40_k2_classic_pardiso
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = 52efbf07-f8b5-4840-9fd9-7abfffd44c04; 01/30/2018 23:51:59 Name = J40_k2_classic_pardiso }
 No further action.
  Submitting: J320_k2_classic_pardiso
-ctor private
-ctor private
-ctor private
-Job is marked as success by job manager, but no session info in database is found; performing new deployment and submission.
+Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
 Deploying executables and additional files ...
-Deployment directory: D:\tmp\fk_deploy\ipPoisson2018Feb01_18-25-51
+Deployment directory: D:\tmp\fk_deploy\ipPoisson2018Feb01_18-55-38
 Source directory: C:\Users\florian\Documents\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
    copied: ipPoisson.exe BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll Renci.SshNet.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
 deployment finished.
  Submitting: J2560_k2_classic_pardiso
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = f395fe2c-4ace-46a8-aec4-f956d369e7cf; 01/30/2018 23:52:59 Name = J2560_k2_classic_pardiso }
 No further action.
  Submitting: J20480_k2_classic_pardiso
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = 907d6400-baa3-423d-a584-56b4b8d30adb; 01/30/2018 23:53:29 Name = J20480_k2_classic_pardiso }
 No further action.
  Submitting: J163840_k2_classic_pardiso
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = a39903be-a881-47ca-aa91-d6ecf82ba085; 01/31/2018 12:44:31 Name = J163840_k2_classic_pardiso }
 No further action.
  Submitting: J40_k3_classic_pardiso
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = ee0fbe91-8de5-40db-8a3b-0211e3df5836; 01/30/2018 23:56:09 Name = J40_k3_classic_pardiso }
 No further action.
  Submitting: J320_k3_classic_pardiso
-ctor private
-ctor private
-ctor private
-Job is marked as success by job manager, but no session info in database is found; performing new deployment and submission.
+Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
 Deploying executables and additional files ...
-Deployment directory: D:\tmp\fk_deploy\ipPoisson2018Feb01_18-25-52
+Deployment directory: D:\tmp\fk_deploy\ipPoisson2018Feb01_18-55-39
 Source directory: C:\Users\florian\Documents\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
    copied: ipPoisson.exe BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll Renci.SshNet.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
 deployment finished.
  Submitting: J2560_k3_classic_pardiso
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = 9b356c12-0d70-4c0e-a582-c8b30af0621e; 01/30/2018 23:57:09 Name = J2560_k3_classic_pardiso }
 No further action.
  Submitting: J20480_k3_classic_pardiso
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = 2ffe3f8e-fa04-4814-b145-f84cfb94f2d1; 01/30/2018 23:57:49 Name = J20480_k3_classic_pardiso }
 No further action.
  Submitting: J163840_k3_classic_pardiso
-ctor private
-ctor private
-ctor private
 Job is failed 1 times, maximum number of tries reached, no further action.
  Submitting: J40_k4_classic_pardiso
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = a57dfe47-9330-4218-bf80-2a7a5a69a2e2; 01/31/2018 00:14:21 Name = J40_k4_classic_pardiso }
 No further action.
  Submitting: J320_k4_classic_pardiso
-ctor private
-ctor private
-ctor private
-Job is marked as success by job manager, but no session info in database is found; performing new deployment and submission.
+Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
 Deploying executables and additional files ...
-Deployment directory: D:\tmp\fk_deploy\ipPoisson2018Feb01_18-25-52-1
+Deployment directory: D:\tmp\fk_deploy\ipPoisson2018Feb01_18-55-40
 Source directory: C:\Users\florian\Documents\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
    copied: ipPoisson.exe BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll Renci.SshNet.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
 deployment finished.
  Submitting: J2560_k4_classic_pardiso
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = fa0c98b5-9907-4bbc-8916-db2a211168b7; 01/31/2018 00:15:20 Name = J2560_k4_classic_pardiso }
 No further action.
  Submitting: J20480_k4_classic_pardiso
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = 8dd627ee-1ceb-44c4-becd-1dbc821efc25; 01/31/2018 00:17:01 Name = J20480_k4_classic_pardiso }
 No further action.
  Submitting: J40_k5_classic_pardiso
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = 0fc9b54c-38da-4d91-9cbc-3e3537fe36cf; 01/31/2018 00:20:22 Name = J40_k5_classic_pardiso }
 No further action.
  Submitting: J320_k5_classic_pardiso
-ctor private
-ctor private
-ctor private
-Job is marked as success by job manager, but no session info in database is found; performing new deployment and submission.
+Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
 Deploying executables and additional files ...
-Deployment directory: D:\tmp\fk_deploy\ipPoisson2018Feb01_18-25-52-2
+Deployment directory: D:\tmp\fk_deploy\ipPoisson2018Feb01_18-55-40-1
 Source directory: C:\Users\florian\Documents\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
    copied: ipPoisson.exe BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll Renci.SshNet.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
 deployment finished.
  Submitting: J2560_k5_classic_pardiso
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = 97ee0a70-8c45-47b5-9a35-ac772bcef084; 01/31/2018 00:21:31 Name = J2560_k5_classic_pardiso }
 No further action.
  Submitting: J20480_k5_classic_pardiso
-ctor private
-ctor private
-ctor private
 Job is failed 1 times, maximum number of tries reached, no further action.
  Submitting: J40_k6_classic_pardiso
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = 23e481df-cc66-4fe3-b708-93816d2cb3a6; 01/31/2018 00:29:51 Name = J40_k6_classic_pardiso }
 No further action.
  Submitting: J320_k6_classic_pardiso
-ctor private
-ctor private
-ctor private
-Job is marked as success by job manager, but no session info in database is found; performing new deployment and submission.
+Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
 Deploying executables and additional files ...
-Deployment directory: D:\tmp\fk_deploy\ipPoisson2018Feb01_18-25-52-3
+Deployment directory: D:\tmp\fk_deploy\ipPoisson2018Feb01_18-55-40-2
 Source directory: C:\Users\florian\Documents\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
    copied: ipPoisson.exe BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll Renci.SshNet.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
 deployment finished.
  Submitting: J2560_k6_classic_pardiso
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = 6ff46ba1-5855-48ee-8156-813f93cadc4f; 01/31/2018 00:31:11 Name = J2560_k6_classic_pardiso }
 No further action.
  Submitting: J20480_k6_classic_pardiso
-ctor private
-ctor private
-ctor private
 Job is failed 1 times, maximum number of tries reached, no further action.
  Submitting: J40_k2_classic_mumps
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = 0bce3a0b-60bb-4b9f-9b4d-021f5cac0f73; 01/31/2018 00:54:43 Name = J40_k2_classic_mumps }
 No further action.
  Submitting: J320_k2_classic_mumps
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = 2a54467f-97c8-491b-a119-6735fc40397b; 01/31/2018 00:55:13 Name = J320_k2_classic_mumps }
 No further action.
  Submitting: J2560_k2_classic_mumps
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = 62f81b6f-3f6e-4aa3-9861-4bfc3de5fb98; 01/31/2018 00:55:43 Name = J2560_k2_classic_mumps }
 No further action.
  Submitting: J20480_k2_classic_mumps
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = 3c81af04-22d4-4a60-8b87-271e0f10c6ac; 01/31/2018 00:56:13 Name = J20480_k2_classic_mumps }
 No further action.
  Submitting: J163840_k2_classic_mumps
-ctor private
-ctor private
-ctor private
 Job is failed 1 times, maximum number of tries reached, no further action.
  Submitting: J40_k3_classic_mumps
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = 05416f4f-fff2-4b9c-97b3-68e7522b9fa6; 01/31/2018 00:58:34 Name = J40_k3_classic_mumps }
 No further action.
  Submitting: J320_k3_classic_mumps
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = d5e0534f-3a59-4f1d-afd4-eaace425f975; 01/31/2018 00:59:04 Name = J320_k3_classic_mumps }
 No further action.
  Submitting: J2560_k3_classic_mumps
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = 9293bc2f-257e-48bb-9c9a-f9e8784e12eb; 01/31/2018 00:59:34 Name = J2560_k3_classic_mumps }
 No further action.
  Submitting: J20480_k3_classic_mumps
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = 2e036d86-b61e-47b6-a676-226d98e92f1a; 01/31/2018 01:00:24 Name = J20480_k3_classic_mumps }
 No further action.
  Submitting: J163840_k3_classic_mumps
-ctor private
-ctor private
-ctor private
 Job is failed 1 times, maximum number of tries reached, no further action.
  Submitting: J40_k4_classic_mumps
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = 73e71af1-8fc3-40df-8fac-f0c21287b0dc; 01/31/2018 01:09:24 Name = J40_k4_classic_mumps }
 No further action.
  Submitting: J320_k4_classic_mumps
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = 1ac6869e-6281-4116-acfc-7be024787e96; 01/31/2018 01:09:55 Name = J320_k4_classic_mumps }
 No further action.
  Submitting: J2560_k4_classic_mumps
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = 8df6b05f-cadd-4b11-9ea9-b3cdb87ad1e2; 01/31/2018 01:10:25 Name = J2560_k4_classic_mumps }
 No further action.
  Submitting: J20480_k4_classic_mumps
-ctor private
-ctor private
-ctor private
 Job is failed 1 times, maximum number of tries reached, no further action.
  Submitting: J40_k5_classic_mumps
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = b7fb55b6-4332-4fcb-a52e-408e22caf0fc; 01/31/2018 01:15:24 Name = J40_k5_classic_mumps }
 No further action.
  Submitting: J320_k5_classic_mumps
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = ea1e43ee-e791-47f9-9cec-3f045dbb9035; 01/31/2018 01:15:54 Name = J320_k5_classic_mumps }
 No further action.
  Submitting: J2560_k5_classic_mumps
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = eb6f3a9e-15a3-4959-9f29-da615468d1ba; 01/31/2018 01:16:34 Name = J2560_k5_classic_mumps }
 No further action.
  Submitting: J20480_k5_classic_mumps
-ctor private
-ctor private
-ctor private
 Job is failed 1 times, maximum number of tries reached, no further action.
  Submitting: J40_k6_classic_mumps
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = 3fada262-0fcd-430f-9dc3-90752c1320e0; 01/31/2018 01:24:45 Name = J40_k6_classic_mumps }
 No further action.
  Submitting: J320_k6_classic_mumps
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = e39ad2ba-f84f-4ac4-b3c3-ab6f777a6e6f; 01/31/2018 01:25:16 Name = J320_k6_classic_mumps }
 No further action.
  Submitting: J2560_k6_classic_mumps
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = 4a5683b2-3cd8-4d0b-966b-643e2c106146; 01/31/2018 01:26:15 Name = J2560_k6_classic_mumps }
 No further action.
  Submitting: J20480_k6_classic_mumps
-ctor private
-ctor private
-ctor private
 Job is failed 1 times, maximum number of tries reached, no further action.
  Submitting: J40_k2_classic_cg
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = d658f353-98f8-459f-9020-8f5c6fb608e8; 01/31/2018 01:48:46 Name = J40_k2_classic_cg }
 No further action.
  Submitting: J320_k2_classic_cg
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = c1fbd8fe-f2ab-472f-824b-f1962791f229; 01/31/2018 01:49:16 Name = J320_k2_classic_cg }
 No further action.
  Submitting: J2560_k2_classic_cg
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = b200faf5-ad01-43b0-8ce5-29ee23cfcf0e; 01/31/2018 01:49:47 Name = J2560_k2_classic_cg }
 No further action.
  Submitting: J20480_k2_classic_cg
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = ecdb9030-793a-4eba-a61d-f110ecf83443; 01/31/2018 01:50:17 Name = J20480_k2_classic_cg }
 No further action.
  Submitting: J163840_k2_classic_cg
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = 25676a1e-167d-462c-8348-6a22ca285401; 01/31/2018 13:01:01 Name = J163840_k2_classic_cg }
 No further action.
  Submitting: J40_k3_classic_cg
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = 63d8164c-f54b-4cb7-a3fc-6416ae9721a5; 01/31/2018 01:51:06 Name = J40_k3_classic_cg }
 No further action.
  Submitting: J320_k3_classic_cg
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = 8c7fcede-5303-455e-bcba-c1bf23d31068; 01/31/2018 01:51:37 Name = J320_k3_classic_cg }
 No further action.
  Submitting: J2560_k3_classic_cg
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = ac67baba-14a6-405f-b153-456b58758472; 01/31/2018 01:52:07 Name = J2560_k3_classic_cg }
 No further action.
  Submitting: J20480_k3_classic_cg
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = 1d226c1d-ed29-4fef-835f-6f8127b5657d; 01/31/2018 01:52:46 Name = J20480_k3_classic_cg }
 No further action.
  Submitting: J163840_k3_classic_cg
-ctor private
-ctor private
-ctor private
 Job is failed 1 times, maximum number of tries reached, no further action.
  Submitting: J40_k4_classic_cg
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = 2bb237fb-deb4-45a6-a725-a55cace34b85; 01/31/2018 01:54:46 Name = J40_k4_classic_cg }
 No further action.
  Submitting: J320_k4_classic_cg
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = d689361f-541e-41b9-81fb-24ec026eef37; 01/31/2018 01:55:16 Name = J320_k4_classic_cg }
 No further action.
  Submitting: J2560_k4_classic_cg
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = b8096c23-8934-4230-a012-2b4d162fd5d3; 01/31/2018 01:55:47 Name = J2560_k4_classic_cg }
 No further action.
  Submitting: J20480_k4_classic_cg
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = fcc14151-8222-45bd-bee9-bfbe5fcc4f70; 01/31/2018 01:56:47 Name = J20480_k4_classic_cg }
 No further action.
  Submitting: J40_k5_classic_cg
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = 9e2860d2-2fa1-4d39-bed6-fe10daa74f08; 01/31/2018 02:02:27 Name = J40_k5_classic_cg }
 No further action.
  Submitting: J320_k5_classic_cg
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = ab4ce522-56b6-452e-924a-bd3f11cfb1fb; 01/31/2018 02:10:38 Name = J320_k5_classic_cg }
 No further action.
  Submitting: J2560_k5_classic_cg
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = 3c406b3d-db51-45ac-9e0d-b55edf8d24e9; 01/31/2018 02:32:39 Name = J2560_k5_classic_cg }
 No further action.
  Submitting: J20480_k5_classic_cg
-ctor private
-ctor private
-ctor private
 Job is failed 1 times, maximum number of tries reached, no further action.
  Submitting: J40_k6_classic_cg
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = a3134f85-5bb4-4ca0-8a80-7ad6742743e7; 01/31/2018 04:59:16 Name = J40_k6_classic_cg }
 No further action.
  Submitting: J320_k6_classic_cg
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = edcdb194-b961-4c7d-a232-7ca33b45d8aa; 01/31/2018 05:09:07 Name = J320_k6_classic_cg }
 No further action.
  Submitting: J2560_k6_classic_cg
-ctor private
-ctor private
-ctor private
 Job was successful (according to job manager), latest session related to job is:
 { Guid = 46477a75-8677-48e1-9222-d5751a204d8e; 01/31/2018 06:00:47 Name = J2560_k6_classic_cg }
 No further action.
  Submitting: J20480_k6_classic_cg
-ctor private
-ctor private
-ctor private
 Job is failed 1 times, maximum number of tries reached, no further action.
 
 ==============
@@ -812,25 +609,25 @@ WorkflowMgm.AllJobs.Select(kv => kv.Key + ": \t" + kv.Value.Status);
 **************
 List of 66 instances of String {
   0: J40_k2_classic_pardiso: 	FinishedSuccessful
-  1: J320_k2_classic_pardiso: 	Failed
+  1: J320_k2_classic_pardiso: 	InProgress
   2: J2560_k2_classic_pardiso: 	FinishedSuccessful
   3: J20480_k2_classic_pardiso: 	FinishedSuccessful
   4: J163840_k2_classic_pardiso: 	FinishedSuccessful
   5: J40_k3_classic_pardiso: 	FinishedSuccessful
-  6: J320_k3_classic_pardiso: 	Failed
+  6: J320_k3_classic_pardiso: 	PendingInExecutionQueue
   7: J2560_k3_classic_pardiso: 	FinishedSuccessful
   8: J20480_k3_classic_pardiso: 	FinishedSuccessful
   9: J163840_k3_classic_pardiso: 	Failed
   10: J40_k4_classic_pardiso: 	FinishedSuccessful
-  11: J320_k4_classic_pardiso: 	Failed
+  11: J320_k4_classic_pardiso: 	PendingInExecutionQueue
   12: J2560_k4_classic_pardiso: 	FinishedSuccessful
   13: J20480_k4_classic_pardiso: 	FinishedSuccessful
   14: J40_k5_classic_pardiso: 	FinishedSuccessful
-  15: J320_k5_classic_pardiso: 	Failed
+  15: J320_k5_classic_pardiso: 	PendingInExecutionQueue
   16: J2560_k5_classic_pardiso: 	FinishedSuccessful
   17: J20480_k5_classic_pardiso: 	Failed
   18: J40_k6_classic_pardiso: 	FinishedSuccessful
-  19: J320_k6_classic_pardiso: 	Failed
+  19: J320_k6_classic_pardiso: 	PendingInExecutionQueue
   20: J2560_k6_classic_pardiso: 	FinishedSuccessful
   21: J20480_k6_classic_pardiso: 	Failed
   22: J40_k2_classic_mumps: 	FinishedSuccessful
@@ -885,6 +682,8 @@ List of 66 instances of String {
 WorkflowMgm.SessionTable.Rows.Count;
 **************
 67
+==============
+**************
 ==============
 **************
 ==============
