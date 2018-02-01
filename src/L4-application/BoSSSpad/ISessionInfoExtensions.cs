@@ -1749,13 +1749,14 @@ namespace BoSSS.Foundation.IO {
 
             // Find methods if none given
             if (methods == null) {
-                var temp_fs = new FileStream[1];
-                BinaryFormatter fmt = new BinaryFormatter();
-                MethodCallRecord[] mcr = new MethodCallRecord[1];
-                temp_fs[0] = new FileStream(@path + "\\sessions\\" + sessions.Pick(idx).ID + "\\profiling_bin.0.txt", FileMode.Open);
-                mcr[0] = (MethodCallRecord)fmt.Deserialize(temp_fs[0]);
-                temp_fs[0].Close();
-
+                //var temp_fs = new FileStream[1];
+                //BinaryFormatter fmt = new BinaryFormatter();
+                //MethodCallRecord[] mcr = new MethodCallRecord[1];
+                //temp_fs[0] = new FileStream(@path + "\\sessions\\" + sessions.Pick(idx).ID + "\\profiling_bin.0.txt", FileMode.Open);
+                //mcr[0] = (MethodCallRecord)fmt.Deserialize(temp_fs[0]);
+                //temp_fs[0].Close();
+                var mcr = sessions.Pick(idx).GetProfiling();
+                
                 var findMainMethod = mcr[0].FindChild(mainMethod);
                 IOrderedEnumerable<CollectionReport> mostExpensive;
                 
