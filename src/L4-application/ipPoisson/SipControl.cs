@@ -90,7 +90,7 @@ namespace BoSSS.Application.SipPoisson {
         /// <summary>
         /// string identifying the solver variant
         /// </summary>
-        public string solver_name = "direct";
+        public SolverCodes solver_name = SolverCodes.classic_pardiso;
         
         /// <summary>
         /// run the solver more than once, e.g. for more reliable timing-results.

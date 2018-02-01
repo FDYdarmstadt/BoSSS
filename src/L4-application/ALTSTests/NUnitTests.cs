@@ -57,7 +57,6 @@ namespace ALTSTests {
                         ABOrder = order,
                         numOfSubgrids = subGrids,
                     };
-                    test.m_GridPartitioningType = BoSSS.Foundation.Grid.GridPartType.none;
                     return test;
                 });
 

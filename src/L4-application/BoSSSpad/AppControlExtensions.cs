@@ -44,13 +44,15 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="ctrl"></param>
         /// <param name="BatchSys"></param>
         /// <param name="NumberOfMPIProcs"></param>
+        /// <param name="UseComputeNodesExclusive"></param>
         /// <returns></returns>
-        public static Job RunBatch(this AppControl ctrl, BatchProcessorClient BatchSys, int NumberOfMPIProcs = 1) {
+        public static Job RunBatch(this AppControl ctrl, BatchProcessorClient BatchSys, int NumberOfMPIProcs = 1, bool UseComputeNodesExclusive = false) {
             ctrl.ProjectName = InteractiveShell.WorkflowMgm.CurrentProject;
 
             Type solverClass = ctrl.GetSolverType();
-            Job job = new Job("byCmdLine_Local", solverClass);
+            Job job = new Job(ctrl.SessionName , solverClass);
             job.NumberOfMPIProcs = NumberOfMPIProcs;
+            job.UseComputeNodesExclusive = UseComputeNodesExclusive;
             job.SetControlObject(ctrl);
             job.Activate(BatchSys);
             

@@ -133,7 +133,8 @@ namespace ilPSP.LinSolvers.MUMPS {
                     r.Converged = true;
                     r.NoOfIterations = 1;
                     Stopwatch st = new Stopwatch();
-                    st.Reset();                  
+                    st.Reset();
+                    st.Start();
 
                     double[] gath_x, gath_b;
                     GatherOnProc0(_x, _rhs, out gath_x, out gath_b);

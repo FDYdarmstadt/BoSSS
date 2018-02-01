@@ -300,6 +300,7 @@ namespace MiniBatchProcessor {
             // =============
 
             int AvailableProcs = ClientAndServer.config.MaxProcessors;
+            bool ExclusiveUse = false;
 
             var Running = new List<Tuple<Thread, ProcessThread>>();
             bool keepRunning = true;
@@ -321,13 +322,6 @@ namespace MiniBatchProcessor {
                     return;
                 }
 
-
-                // see if there are available processors
-                if (AvailableProcs <= 0) {
-                    Thread.Sleep(10000);
-                    continue;
-                }
-
                 // see if any of the running jobs is finished
                 for (int i = 0; i < Running.Count; i++) {
                     var TT = Running[i];
@@ -335,8 +329,15 @@ namespace MiniBatchProcessor {
                         Running.RemoveAt(i);
                         //MoveWorkingToFinished(TT.Item2.data);
                         AvailableProcs += TT.Item2.data.NoOfProcs;
+                        ExclusiveUse = false;
                         i--;
                     }
+                }
+
+                // see if there are available processors
+                if (AvailableProcs <= 0 || ExclusiveUse) {
+                    Thread.Sleep(10000);
+                    continue;
                 }
 
                 var NextJobs = ClientAndServer.Queue.ToArray();
@@ -347,7 +348,7 @@ namespace MiniBatchProcessor {
                 // sleep if there is nothing to do
                 if (NextJobs.Count() <= 0) {
                     LogMessage(string.Format("No more jobs in queue. Running: {0}, Avail. procs.: {1}.", Running.Count, AvailableProcs));
-                    Thread.Sleep(5000);
+                    Thread.Sleep(10000);
                     continue;
                 }
 
@@ -357,7 +358,9 @@ namespace MiniBatchProcessor {
                 if (ClientAndServer.config.BackFilling) {
                     throw new NotImplementedException("todo");
                 } else {
-                    if (NextJobs[0].NoOfProcs > AvailableProcs) {
+                    if ((NextJobs[0].NoOfProcs > AvailableProcs)
+                        || (NextJobs[0].UseComputeNodesExclusive && AvailableProcs < ClientAndServer.config.MaxProcessors)
+                        || (ExclusiveUse == true)) {
                         LogMessage(string.Format(": Not enough available processors for job #{0} - start is delayed.", NextJobs[0].ID));
                         Thread.Sleep(10000);
                         continue;
@@ -374,6 +377,7 @@ namespace MiniBatchProcessor {
                     th.Priority = ThreadPriority.Lowest;
                     Running.Add(new Tuple<Thread, ProcessThread>(th, task));
                     AvailableProcs -= task.data.NoOfProcs;
+                    ExclusiveUse = task.data.UseComputeNodesExclusive;
                     MoveQueueToWorking(NextJobs[0]);
 
                     th.Start();
@@ -430,7 +434,7 @@ namespace MiniBatchProcessor {
                 psi.RedirectStandardOutput = true;
                 psi.RedirectStandardError = true;
 
-                Server.LogMessage(string.Format("starting: {0} {1}", psi.FileName, psi.Arguments));
+                Server.LogMessage(string.Format("starting job #{2}, '{3}': {0} {1}", psi.FileName, psi.Arguments, data.ID, data.Name));
 
 
 
@@ -479,7 +483,7 @@ namespace MiniBatchProcessor {
                             }
 
                             success = (p.ExitCode == 0);
-                            Server.LogMessage(string.Format("finished " + psi.FileName + " " + psi.Arguments));
+                            Server.LogMessage(string.Format("finished job #" + data.ID + "."));
 
                             using (var exit = new StreamWriter(Path.Combine(WorkDir, data.ID.ToString() + "_exit.txt"))) {
                                 exit.WriteLine(p.ExitCode);

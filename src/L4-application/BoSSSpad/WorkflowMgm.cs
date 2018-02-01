@@ -176,7 +176,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public DataTable SessionTable {
             get {
-                return this.Sessions.GetSessionTable();
+                return this.Sessions.GetSessionTable(null);
             }
         }
 
