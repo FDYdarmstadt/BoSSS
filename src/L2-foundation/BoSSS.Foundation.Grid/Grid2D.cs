@@ -1689,6 +1689,74 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
         }
 
+
+
+        public static Grid2D HelicalHangingNodes(double rmin, double rmax, double ximin, double ximax, int NoOfRnodes, int NoOfXinodes, CellType type = CellType.Square_Linear) {
+       
+            Grid2D grid = new Grid2D(Square.Instance);
+
+
+            // create all cells on process 0
+            // (can be redistributed later on)
+            // ++++++++++++++++++++++++++++++++++
+            List<Cell> AllCells = new List<Cell>();
+            int PtCount = 0;
+
+            // Reference element nodes
+            // =======================
+            var Kref = grid.RefElements.Single(KK => KK.GetType() == typeof(Square));
+            NodeSet InterpolationNodes = Kref.GetInterpolationNodes(type);
+            int NoOfNodes = InterpolationNodes.NoOfNodes;
+
+
+
+            double[] rNodes = GenericBlas.Linspace(rmin, rmax, NoOfRnodes);
+            double[] xiNodes = GenericBlas.Linspace(ximin, ximax, NoOfXinodes);
+
+            // Allocate GlobalID's (umschreiben)
+            long[,] CenterSection_Gid = new long[NoOfRnodes - 1, NoOfXinodes - 1];
+            long cnt = 0;
+            for (int iX = 0; iX < (NoOfRnodes - 1); iX++) {
+                for (int iY = 0; iY < (NoOfXinodes - 1); iY++) {
+                    CenterSection_Gid[iX, iY] = cnt;
+                    cnt++;
+                }
+            }
+
+            for (int iX = 0; iX < (NoOfRnodes - 1); iX++) {
+                for (int iY = 0; iY < (NoOfXinodes - 1); iY++) {
+
+                    // create cell
+                    Cell Cj = new Cell();
+                    Cj.GlobalID = CenterSection_Gid[iX, iY];
+                    Cj.Type = type;
+                    AllCells.Add(Cj);
+
+                    // physical coordinates
+                    Cj.TransformationParams = MultidimensionalArray.Create(NoOfNodes, 2);
+
+                    double x0 = rNodes[iX];
+                    double x1 = rNodes[iX + 1];
+                    double y0 = xiNodes[iY];
+                    double y1 = xiNodes[iY + 1];
+
+                    for (int k = 0; k < NoOfNodes; k++) {
+                        double x = 0.5 * (x1 - x0) * InterpolationNodes[k, 0] + 0.5 * (x1 + x0);
+                        double y = 0.5 * (y1 - y0) * InterpolationNodes[k, 1] + 0.5 * (y1 + y0);
+                        Cj.TransformationParams[k, 0] = x;
+                        Cj.TransformationParams[k, 1] = y;
+                    }
+
+                    // node indices (neighborship via cell face tags
+                    Cj.NodeIndices = new int[] { PtCount, PtCount + 1, PtCount + 2, PtCount + 3 };
+                    PtCount += 4;
+                }
+            }
+
+
+
+                    return grid;
+        }
     }
 
 
