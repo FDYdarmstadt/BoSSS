@@ -85,12 +85,12 @@ namespace BoSSS.Solution {
             get;
         }
 
-        /// <summary>
-        /// New 'table' to log query results
-        /// </summary>
-        QueryResultTable QueryResultTable {
-            get;
-        }
+        ///// <summary>
+        ///// New 'table' to log query results
+        ///// </summary>
+        //QueryResultTable QueryResultTable {
+        //    get;
+        //}
 
         /// <summary>
         /// the residual logger for this context

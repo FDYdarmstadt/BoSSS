@@ -29,6 +29,9 @@ using System.IO;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Bson;
 using System.Runtime.Serialization;
+using MPI.Wrappers;
+using Mono.CSharp;
+using System.Diagnostics;
 
 namespace BoSSS.Solution.Control {
 
@@ -681,6 +684,12 @@ namespace BoSSS.Solution.Control {
         public XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
 
         /// <summary>
+        /// Calculation is not stopped if an I/O exception is thrown in <see cref="Application{T}.SaveToDatabase(TimestepNumber, double)"/>.
+        /// </summary>
+        [DataMember]
+        public bool ContinueOnIoError = true;
+
+        /// <summary>
         /// Used for control objects in work-flow management, 
         /// Converts object to a serializable text.
         /// </summary>
@@ -695,6 +704,7 @@ namespace BoSSS.Solution.Control {
 
             
             using(var tw = new StringWriter()) {
+                tw.WriteLine(this.GetType().AssemblyQualifiedName);
                 using(JsonWriter writer = new JsonTextWriter(tw)) {  // Alternative: binary writer: BsonWriter
                     formatter.Serialize(writer, this);
                 }
@@ -719,7 +729,7 @@ namespace BoSSS.Solution.Control {
         /// Used for control objects in work-flow management, 
         /// re-loads  an object from memory.
         /// </summary>
-        public static AppControl Deserialize(string Str, Type ControlObjectType) {
+        public static AppControl Deserialize(string Str) {
             JsonSerializer formatter = new JsonSerializer() {
                 NullValueHandling = NullValueHandling.Ignore,
                 TypeNameHandling = TypeNameHandling.Auto,
@@ -729,6 +739,8 @@ namespace BoSSS.Solution.Control {
 
             
             using(var tr = new StringReader(Str)) {
+                string typeName = tr.ReadLine();
+                Type ControlObjectType = Type.GetType(typeName);
                 using(JsonReader reader = new JsonTextReader(tr)) {
                     var obj = formatter.Deserialize(reader, ControlObjectType);
 
@@ -752,10 +764,7 @@ namespace BoSSS.Solution.Control {
             */
         }
 
-        /// <summary>
-        /// Calculation is not stopped if an I/O exception is thrown in <see cref="Application{T}.SaveToDatabase(TimestepNumber, double)"/>.
-        /// </summary>
-        public bool ContinueOnIoError = true;
+  
 
     }
 }

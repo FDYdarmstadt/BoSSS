@@ -64,7 +64,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// Verifies a control object, especially if it is suitable for serialization.
         /// </summary>
         /// <param name="ctrl"></param>
-        public static void ExtensiveVerify(this AppControl ctrl) {
+        public static void VerifyEx(this AppControl ctrl) {
 
             // call basic verification
             ctrl.Verify();
@@ -77,7 +77,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             // try serialization/deserialization
             string JSON = ctrl.Serialize();
-            AppControl ctrlBack = AppControl.Deserialize(JSON, ctrl.GetType());
+            AppControl ctrlBack = AppControl.Deserialize(JSON);//, ctrl.GetType());
             ctrlBack.Verify();
 
             // compare original and de-serialized object
