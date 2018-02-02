@@ -30,7 +30,8 @@ Opening existing database 'D:\tmp\fk_temp_db'.
 ==============
 MiniBatchProcessor.Server.StartIfNotRunning();
 **************
-Mini batch processor is already running.
+Starting mini batch processor in external process...
+Started mini batch processor on local machine, process id is 9856.
 
 ==============
 // ===================
@@ -205,8 +206,8 @@ int[] PolyDegS = new int[] {2, 3, 4, 5, 6};
 SolverCodes[] solver_nameS = new SolverCodes[] {
     SolverCodes.classic_pardiso, 
     SolverCodes.classic_mumps, 
-    SolverCodes.classic_cg
-//    SolverCodes.exp_direct, 
+    SolverCodes.classic_cg,
+//    SolverCodes.exp_direct 
 //    SolverCodes.exp_softpcg_schwarz,
 //    SolverCodes.exp_softpcg_schwarz_directcoarse,
 //    SolverCodes.exp_direct_lapack
@@ -349,12 +350,9 @@ Job was successful (according to job manager), latest session related to job is:
 { Guid = 52efbf07-f8b5-4840-9fd9-7abfffd44c04; 01/30/2018 23:51:59 Name = J40_k2_classic_pardiso }
 No further action.
  Submitting: J320_k2_classic_pardiso
-Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
-Deploying executables and additional files ...
-Deployment directory: D:\tmp\fk_deploy\ipPoisson2018Feb01_18-55-38
-Source directory: C:\Users\florian\Documents\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-   copied: ipPoisson.exe BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll Renci.SshNet.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
-deployment finished.
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = 3a05edc4-f502-441f-8ca5-50d1191a29ad; 02/02/2018 20:31:45 Name = J320_k2_classic_pardiso }
+No further action.
  Submitting: J2560_k2_classic_pardiso
 Job was successful (according to job manager), latest session related to job is:
 { Guid = f395fe2c-4ace-46a8-aec4-f956d369e7cf; 01/30/2018 23:52:59 Name = J2560_k2_classic_pardiso }
@@ -372,12 +370,9 @@ Job was successful (according to job manager), latest session related to job is:
 { Guid = ee0fbe91-8de5-40db-8a3b-0211e3df5836; 01/30/2018 23:56:09 Name = J40_k3_classic_pardiso }
 No further action.
  Submitting: J320_k3_classic_pardiso
-Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
-Deploying executables and additional files ...
-Deployment directory: D:\tmp\fk_deploy\ipPoisson2018Feb01_18-55-39
-Source directory: C:\Users\florian\Documents\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-   copied: ipPoisson.exe BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll Renci.SshNet.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
-deployment finished.
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = b0e48a85-ebe7-4dca-aedf-2c490ac5dd38; 02/02/2018 20:32:15 Name = J320_k3_classic_pardiso }
+No further action.
  Submitting: J2560_k3_classic_pardiso
 Job was successful (according to job manager), latest session related to job is:
 { Guid = 9b356c12-0d70-4c0e-a582-c8b30af0621e; 01/30/2018 23:57:09 Name = J2560_k3_classic_pardiso }
@@ -393,12 +388,9 @@ Job was successful (according to job manager), latest session related to job is:
 { Guid = a57dfe47-9330-4218-bf80-2a7a5a69a2e2; 01/31/2018 00:14:21 Name = J40_k4_classic_pardiso }
 No further action.
  Submitting: J320_k4_classic_pardiso
-Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
-Deploying executables and additional files ...
-Deployment directory: D:\tmp\fk_deploy\ipPoisson2018Feb01_18-55-40
-Source directory: C:\Users\florian\Documents\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-   copied: ipPoisson.exe BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll Renci.SshNet.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
-deployment finished.
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = 1cdf44eb-b9aa-4ed2-aedf-68049d66ffd9; 02/02/2018 20:32:45 Name = J320_k4_classic_pardiso }
+No further action.
  Submitting: J2560_k4_classic_pardiso
 Job was successful (according to job manager), latest session related to job is:
 { Guid = fa0c98b5-9907-4bbc-8916-db2a211168b7; 01/31/2018 00:15:20 Name = J2560_k4_classic_pardiso }
@@ -412,12 +404,9 @@ Job was successful (according to job manager), latest session related to job is:
 { Guid = 0fc9b54c-38da-4d91-9cbc-3e3537fe36cf; 01/31/2018 00:20:22 Name = J40_k5_classic_pardiso }
 No further action.
  Submitting: J320_k5_classic_pardiso
-Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
-Deploying executables and additional files ...
-Deployment directory: D:\tmp\fk_deploy\ipPoisson2018Feb01_18-55-40-1
-Source directory: C:\Users\florian\Documents\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-   copied: ipPoisson.exe BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll Renci.SshNet.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
-deployment finished.
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = 4e73a100-17fe-4fb4-8a8a-1268b0518733; 02/02/2018 20:33:15 Name = J320_k5_classic_pardiso }
+No further action.
  Submitting: J2560_k5_classic_pardiso
 Job was successful (according to job manager), latest session related to job is:
 { Guid = 97ee0a70-8c45-47b5-9a35-ac772bcef084; 01/31/2018 00:21:31 Name = J2560_k5_classic_pardiso }
@@ -429,12 +418,9 @@ Job was successful (according to job manager), latest session related to job is:
 { Guid = 23e481df-cc66-4fe3-b708-93816d2cb3a6; 01/31/2018 00:29:51 Name = J40_k6_classic_pardiso }
 No further action.
  Submitting: J320_k6_classic_pardiso
-Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
-Deploying executables and additional files ...
-Deployment directory: D:\tmp\fk_deploy\ipPoisson2018Feb01_18-55-40-2
-Source directory: C:\Users\florian\Documents\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-   copied: ipPoisson.exe BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll Renci.SshNet.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
-deployment finished.
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = 8bfd3d24-6c30-4dd0-9d13-ed8c7f324e66; 02/02/2018 20:33:55 Name = J320_k6_classic_pardiso }
+No further action.
  Submitting: J2560_k6_classic_pardiso
 Job was successful (according to job manager), latest session related to job is:
 { Guid = 6ff46ba1-5855-48ee-8156-813f93cadc4f; 01/31/2018 00:31:11 Name = J2560_k6_classic_pardiso }
@@ -609,25 +595,25 @@ WorkflowMgm.AllJobs.Select(kv => kv.Key + ": \t" + kv.Value.Status);
 **************
 List of 66 instances of String {
   0: J40_k2_classic_pardiso: 	FinishedSuccessful
-  1: J320_k2_classic_pardiso: 	InProgress
+  1: J320_k2_classic_pardiso: 	FinishedSuccessful
   2: J2560_k2_classic_pardiso: 	FinishedSuccessful
   3: J20480_k2_classic_pardiso: 	FinishedSuccessful
   4: J163840_k2_classic_pardiso: 	FinishedSuccessful
   5: J40_k3_classic_pardiso: 	FinishedSuccessful
-  6: J320_k3_classic_pardiso: 	PendingInExecutionQueue
+  6: J320_k3_classic_pardiso: 	FinishedSuccessful
   7: J2560_k3_classic_pardiso: 	FinishedSuccessful
   8: J20480_k3_classic_pardiso: 	FinishedSuccessful
   9: J163840_k3_classic_pardiso: 	Failed
   10: J40_k4_classic_pardiso: 	FinishedSuccessful
-  11: J320_k4_classic_pardiso: 	PendingInExecutionQueue
+  11: J320_k4_classic_pardiso: 	FinishedSuccessful
   12: J2560_k4_classic_pardiso: 	FinishedSuccessful
   13: J20480_k4_classic_pardiso: 	FinishedSuccessful
   14: J40_k5_classic_pardiso: 	FinishedSuccessful
-  15: J320_k5_classic_pardiso: 	PendingInExecutionQueue
+  15: J320_k5_classic_pardiso: 	FinishedSuccessful
   16: J2560_k5_classic_pardiso: 	FinishedSuccessful
   17: J20480_k5_classic_pardiso: 	Failed
   18: J40_k6_classic_pardiso: 	FinishedSuccessful
-  19: J320_k6_classic_pardiso: 	PendingInExecutionQueue
+  19: J320_k6_classic_pardiso: 	FinishedSuccessful
   20: J2560_k6_classic_pardiso: 	FinishedSuccessful
   21: J20480_k6_classic_pardiso: 	Failed
   22: J40_k2_classic_mumps: 	FinishedSuccessful
@@ -681,7 +667,184 @@ List of 66 instances of String {
 ==============
 WorkflowMgm.SessionTable.Rows.Count;
 **************
-67
+82
+==============
+**************
+==============
+**************
+==============
+// =====================================
+// Session table
+// =====================================
+**************
+==============
+static class AddCols {
+    static public object MatrixAssemblyTime(ISessionInfo SI) {
+        var mcr = SI.GetProfiling()[0];
+        var ndS = mcr.FindChildren("SipMatrixAssembly");
+        var nd  = ndS.ElementAt(0);
+        return nd.TimeSpentInMethod.TotalSeconds;
+
+    }
+    
+}
+**************
+==============
+WorkflowMgm.AdditionalSessionTableColums.Clear();
+WorkflowMgm.AdditionalSessionTableColums.Add(
+"MatrixAssemblyTime", AddCols.MatrixAssemblyTime);
+**************
+==============
+var tab = WorkflowMgm.SessionTable;
+**************
+==============
+//tab.TableName = "Oida";
+**************
+==============
+//tab.WriteXml("C:\\tmp\\table.xml");
+**************
+==============
+tab.GetColumnNames();
+**************
+List of 46 instances of String {
+  0: SessionName
+  1: DGdegree:T
+  2: DGdegree:Tex
+  3: Bndtype:Dirichlet
+  4: Bndtype:Neumann
+  5: GeneratedFromCode
+  6: ControlFileText_Index
+  7: dtFixed
+  8: NoOfMultigridLevels
+  9: penalty_poisson
+  10: solver_name
+  11: NoOfSolverRuns
+  12: ExactSolution_provided
+  13: GridPartType
+  14: ProjectName
+  15: NoOfTimesteps
+  16: Endtime
+  17: saveperiod
+  18: dtMin
+  19: dtMax
+  20: CompMode
+  21: ImmediatePlotPeriod
+  22: SuperSampling
+  23: savetodb
+  24: logFileDirectory
+  25: Paramstudy_ContinueOnError
+  26: DynamicLoadBalancing_RedistributeAtStartup
+  27: DynamicLoadBalancing_Period
+  28: DynamicLoadBalancing_ImbalanceThreshold
+  29: AdaptiveMeshRefinement
+  30: CutCellQuadratureType
+  31: ContinueOnIoError
+  32: Grid:NoOfCells
+  33: Grid:hMax
+  34: Grid:hMin
+  35: Session
+  36: RegularTerminated
+  37: MatrixAssemblyTime
+  38: UsedNoOfMultigridLevels
+  39: minSolRunT
+  40: maxSolRunT
+  41: Conv
+  42: NoIter
+  43: NoOfCells
+  44: DOFs
+  45: BlockSize
+}
+==============
+var SubTab = tab.ExtractColumns("RegularTerminated", "DGdegree:T", "MatrixAssemblyTime");
+**************
+==============
+SubTab.Print();
+**************
+    RegularTerminated DGdegree:T MatrixAssemblyTime 
+0:  False             3          NULL               
+1:  True              3          18.295137          
+2:  True              3          2.7371655          
+3:  True              3          0.8290398          
+4:  True              3          0.5920365          
+5:  True              2          49.6788903         
+6:  True              2          6.5800222          
+7:  True              2          1.3030438          
+8:  True              2          0.6292161          
+9:  True              2          0.5430512          
+10: True              6          10.2056062         
+11: True              5          3.6460797          
+12: True              4          1.4499861          
+13: True              3          0.8142377          
+14: True              2          0.6458237          
+15: False             3          NULL               
+16: True              2          NULL               
+17: False             3          NULL               
+18: False             2          NULL               
+19: False             3          NULL               
+20: True              2          NULL               
+21: False             6          NULL               
+22: True              6          NULL               
+23: True              6          NULL               
+24: True              6          NULL               
+25: False             5          NULL               
+26: True              5          NULL               
+27: True              5          NULL               
+28: True              5          NULL               
+29: True              4          NULL               
+30: True              4          NULL               
+31: True              4          NULL               
+32: True              4          NULL               
+33: True              3          NULL               
+34: True              3          NULL               
+35: True              3          NULL               
+36: True              3          NULL               
+37: True              2          NULL               
+38: True              2          NULL               
+39: True              2          NULL               
+40: True              2          NULL               
+41: False             6          NULL               
+42: True              6          NULL               
+43: True              6          NULL               
+44: True              6          NULL               
+45: False             5          NULL               
+46: True              5          NULL               
+47: True              5          NULL               
+48: True              5          NULL               
+49: False             4          NULL               
+50: True              4          NULL               
+51: True              4          NULL               
+52: True              4          NULL               
+53: True              3          NULL               
+54: True              3          NULL               
+55: True              3          NULL               
+56: True              3          NULL               
+57: True              2          NULL               
+58: True              2          NULL               
+59: True              2          NULL               
+60: True              2          NULL               
+61: False             6          NULL               
+62: True              6          NULL               
+63: True              6          NULL               
+64: False             5          NULL               
+65: True              5          NULL               
+66: True              5          NULL               
+67: True              4          NULL               
+68: True              4          NULL               
+69: True              4          NULL               
+70: True              3          NULL               
+71: True              3          NULL               
+72: True              3          NULL               
+73: True              2          NULL               
+74: True              2          NULL               
+75: True              2          NULL               
+76: True              3          NULL               
+77: True              2          NULL               
+78: True              3          NULL               
+79: True              2          NULL               
+80: False             2          NULL               
+81: False             3          NULL               
+==============
+**************
 ==============
 **************
 ==============

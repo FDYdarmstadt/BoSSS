@@ -32,50 +32,52 @@ Opening existing database 'D:\tmp\fk_temp_db'.
 ==============
 WorkflowMgm.SessionTable.GetColumnNames();
 **************
-List of 43 instances of String {
+List of 45 instances of String {
   0: SessionName
   1: DGdegree:T
   2: DGdegree:Tex
   3: Bndtype:Dirichlet
   4: Bndtype:Neumann
-  5: dtFixed
-  6: NoOfMultigridLevels
-  7: penalty_poisson
-  8: solver_name
-  9: NoOfSolverRuns
-  10: ExactSolution_provided
-  11: GridPartType
-  12: ProjectName
-  13: NoOfTimesteps
-  14: Endtime
-  15: saveperiod
-  16: dtMin
-  17: dtMax
-  18: CompMode
-  19: ImmediatePlotPeriod
-  20: SuperSampling
-  21: savetodb
-  22: logFileDirectory
-  23: Paramstudy_ContinueOnError
-  24: DynamicLoadBalancing_RedistributeAtStartup
-  25: DynamicLoadBalancing_Period
-  26: DynamicLoadBalancing_ImbalanceThreshold
-  27: AdaptiveMeshRefinement
-  28: CutCellQuadratureType
-  29: ContinueOnIoError
-  30: Grid:NoOfCells
-  31: Grid:hMax
-  32: Grid:hMin
-  33: UsedNoOfMultigridLevels
-  34: minSolRunT
-  35: maxSolRunT
-  36: Conv
-  37: NoIter
-  38: NoOfCells
-  39: DOFs
-  40: BlockSize
-  41: Session
-  42: RegularTerminated
+  5: GeneratedFromCode
+  6: ControlFileText_Index
+  7: dtFixed
+  8: NoOfMultigridLevels
+  9: penalty_poisson
+  10: solver_name
+  11: NoOfSolverRuns
+  12: ExactSolution_provided
+  13: GridPartType
+  14: ProjectName
+  15: NoOfTimesteps
+  16: Endtime
+  17: saveperiod
+  18: dtMin
+  19: dtMax
+  20: CompMode
+  21: ImmediatePlotPeriod
+  22: SuperSampling
+  23: savetodb
+  24: logFileDirectory
+  25: Paramstudy_ContinueOnError
+  26: DynamicLoadBalancing_RedistributeAtStartup
+  27: DynamicLoadBalancing_Period
+  28: DynamicLoadBalancing_ImbalanceThreshold
+  29: AdaptiveMeshRefinement
+  30: CutCellQuadratureType
+  31: ContinueOnIoError
+  32: Grid:NoOfCells
+  33: Grid:hMax
+  34: Grid:hMin
+  35: Session
+  36: RegularTerminated
+  37: UsedNoOfMultigridLevels
+  38: minSolRunT
+  39: maxSolRunT
+  40: Conv
+  41: NoIter
+  42: NoOfCells
+  43: DOFs
+  44: BlockSize
 }
 ==============
 var SubTab_1 = WorkflowMgm.SessionTable.ExtractColumns("DGdegree:T", "Grid:NoOfCells", "solver_name", "DOFs", "minSolRunT", "maxSolRunT", "NoIter", "Conv", "RegularTerminated");
@@ -90,57 +92,65 @@ var SubTab = SubTab_1.ExtractRows(delegate(int i, IDictionary<string,object> row
 SubTab.Print();
 **************
     DGdegree:T Grid:NoOfCells solver_name DOFs    minSolRunT  maxSolRunT  NoIter Conv RegularTerminated 
-0:  6          320            0           26880   7.0427737   7.4237379   1      1    True              
-1:  5          320            0           17920   2.5464266   2.6633257   1      1    True              
-2:  4          320            0           11200   0.8913315   0.9990874   1      1    True              
-3:  3          320            0           6400    0.3232437   0.4228114   1      1    True              
-4:  2          320            0           3200    0.0863802   0.3024429   1      1    True              
-5:  2          163840         2           1638400 52.1191614  52.2078826  6364   1    True              
-6:  4          20480          2           716800  79.2762248  79.3159898  6550   1    True              
-7:  4          2560           2           89600   4.7661487   4.7827978   2777   1    True              
-8:  4          320            2           11200   0.4063721   0.4315301   1129   1    True              
-9:  4          40             2           1400    0.1017392   0.1467253   442    1    True              
-10: 3          20480          2           409600  20.5670768  20.5828078  4496   1    True              
-11: 3          2560           2           51200   1.4128504   1.4770409   1907   1    True              
-12: 3          320            2           6400    0.188596    0.226396    772    1    True              
-13: 3          40             2           800     0.0554063   0.1030974   282    1    True              
-14: 2          20480          2           204800  3.3484205   3.3933564   2834   1    True              
-15: 2          2560           2           25600   0.3635454   0.4008203   1209   1    True              
-16: 2          320            2           3200    0.0930494   0.1289767   488    1    True              
-17: 2          40             2           400     0.0300314   0.069585    140    1    True              
-18: 6          2560           1           215040  309.0160683 310.168468  1      1    True              
-19: 6          320            1           26880   10.9285249  11.0252954  1      1    True              
-20: 6          40             1           3360    0.2176497   0.2381427   1      1    True              
-21: 5          2560           1           143360  99.9565818  101.6222717 1      1    True              
-22: 5          320            1           17920   4.1333074   4.2888166   1      1    True              
-23: 5          40             1           2240    0.0898083   0.0909635   1      1    True              
-24: 4          2560           1           89600   26.3633732  26.5831369  1      1    True              
-25: 4          320            1           11200   1.2207308   1.227546    1      1    True              
-26: 4          40             1           1400    0.029743    0.0854211   1      1    True              
-27: 3          20480          1           409600  242.6439168 243.0862851 1      1    True              
-28: 3          2560           1           51200   7.0109432   7.1546289   1      1    True              
-29: 3          320            1           6400    0.4149952   0.4240334   1      1    True              
-30: 3          40             1           800     0.0130627   0.0351609   1      1    True              
-31: 2          20480          1           204800  46.3075623  46.5139476  1      1    True              
-32: 2          2560           1           25600   1.5280948   1.5659212   1      1    True              
-33: 2          320            1           3200    0.0442264   0.062788    1      1    True              
-34: 2          40             1           400     0.0036322   0.0435425   1      1    True              
-35: 6          2560           0           215040  344.8825203 345.9041878 1      1    True              
-36: 6          40             0           3360    0.3406199   0.460534    1      1    True              
-37: 5          2560           0           143360  108.6526829 108.6534426 1      1    True              
-38: 5          40             0           2240    0.1639026   0.2790131   1      1    True              
-39: 4          2560           0           89600   29.095991   29.7360778  1      1    True              
-40: 4          40             0           1400    0.0604208   0.193336    1      1    True              
-41: 3          20480          0           409600  464.9720118 475.8218817 1      1    True              
-42: 3          2560           0           51200   6.2259657   6.4669901   1      1    True              
-43: 3          40             0           800     0.024444    0.1487611   1      1    True              
-44: 2          20480          0           204800  58.7884026  59.4603266  1      1    True              
-45: 2          2560           0           25600   1.5580864   1.7271004   1      1    True              
-46: 2          40             0           400     0.0088426   0.3545052   1      1    True              
-47: 3          40             7           800     2.5738004   2.9323329   1      1    True              
-48: 2          40             7           400     0.8117808   1.059191    1      1    True              
-49: 3          320            7           6400    48.1847497  52.0817427  1      1    True              
-50: 2          320            7           3200    9.6189564   9.7075811   1      1    True              
+0:  3          20480          0           409600  494.21951   494.9861195 1      1    True              
+1:  3          2560           0           51200   6.6344096   6.8387429   1      1    True              
+2:  3          320            0           6400    0.3097598   0.4555012   1      1    True              
+3:  3          40             0           800     0.0244495   0.1618547   1      1    True              
+4:  2          20480          0           204800  64.6324114  64.6787276  1      1    True              
+5:  2          2560           0           25600   1.6988331   1.820482    1      1    True              
+6:  2          320            0           3200    0.0886739   0.2294114   1      1    True              
+7:  2          40             0           400     0.0073461   0.1447948   1      1    True              
+8:  6          320            0           26880   7.3551583   7.509196    1      1    True              
+9:  5          320            0           17920   2.7617928   2.8880695   1      1    True              
+10: 4          320            0           11200   0.9386579   1.0991877   1      1    True              
+11: 3          320            0           6400    0.305347    0.4267376   1      1    True              
+12: 2          320            0           3200    0.0874117   0.2781498   1      1    True              
+13: 2          163840         2           1638400 52.1191614  52.2078826  6364   1    True              
+14: 4          20480          2           716800  79.2762248  79.3159898  6550   1    True              
+15: 4          2560           2           89600   4.7661487   4.7827978   2777   1    True              
+16: 4          320            2           11200   0.4063721   0.4315301   1129   1    True              
+17: 4          40             2           1400    0.1017392   0.1467253   442    1    True              
+18: 3          20480          2           409600  20.5670768  20.5828078  4496   1    True              
+19: 3          2560           2           51200   1.4128504   1.4770409   1907   1    True              
+20: 3          320            2           6400    0.188596    0.226396    772    1    True              
+21: 3          40             2           800     0.0554063   0.1030974   282    1    True              
+22: 2          20480          2           204800  3.3484205   3.3933564   2834   1    True              
+23: 2          2560           2           25600   0.3635454   0.4008203   1209   1    True              
+24: 2          320            2           3200    0.0930494   0.1289767   488    1    True              
+25: 2          40             2           400     0.0300314   0.069585    140    1    True              
+26: 6          2560           1           215040  309.0160683 310.168468  1      1    True              
+27: 6          320            1           26880   10.9285249  11.0252954  1      1    True              
+28: 6          40             1           3360    0.2176497   0.2381427   1      1    True              
+29: 5          2560           1           143360  99.9565818  101.6222717 1      1    True              
+30: 5          320            1           17920   4.1333074   4.2888166   1      1    True              
+31: 5          40             1           2240    0.0898083   0.0909635   1      1    True              
+32: 4          2560           1           89600   26.3633732  26.5831369  1      1    True              
+33: 4          320            1           11200   1.2207308   1.227546    1      1    True              
+34: 4          40             1           1400    0.029743    0.0854211   1      1    True              
+35: 3          20480          1           409600  242.6439168 243.0862851 1      1    True              
+36: 3          2560           1           51200   7.0109432   7.1546289   1      1    True              
+37: 3          320            1           6400    0.4149952   0.4240334   1      1    True              
+38: 3          40             1           800     0.0130627   0.0351609   1      1    True              
+39: 2          20480          1           204800  46.3075623  46.5139476  1      1    True              
+40: 2          2560           1           25600   1.5280948   1.5659212   1      1    True              
+41: 2          320            1           3200    0.0442264   0.062788    1      1    True              
+42: 2          40             1           400     0.0036322   0.0435425   1      1    True              
+43: 6          2560           0           215040  344.8825203 345.9041878 1      1    True              
+44: 6          40             0           3360    0.3406199   0.460534    1      1    True              
+45: 5          2560           0           143360  108.6526829 108.6534426 1      1    True              
+46: 5          40             0           2240    0.1639026   0.2790131   1      1    True              
+47: 4          2560           0           89600   29.095991   29.7360778  1      1    True              
+48: 4          40             0           1400    0.0604208   0.193336    1      1    True              
+49: 3          20480          0           409600  464.9720118 475.8218817 1      1    True              
+50: 3          2560           0           51200   6.2259657   6.4669901   1      1    True              
+51: 3          40             0           800     0.024444    0.1487611   1      1    True              
+52: 2          20480          0           204800  58.7884026  59.4603266  1      1    True              
+53: 2          2560           0           25600   1.5580864   1.7271004   1      1    True              
+54: 2          40             0           400     0.0088426   0.3545052   1      1    True              
+55: 3          40             7           800     2.5738004   2.9323329   1      1    True              
+56: 2          40             7           400     0.8117808   1.059191    1      1    True              
+57: 3          320            7           6400    48.1847497  52.0817427  1      1    True              
+58: 2          320            7           3200    9.6189564   9.7075811   1      1    True              
 ==============
 **************
 ==============
@@ -371,6 +381,8 @@ multiplots.ToGnuplot().PlotCairolatex().Preview();
 **************
 Using gnuplot: C:\Program Files (x86)\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 System.Drawing.Bitmap
+==============
+**************
 ==============
 **************
 ==============
