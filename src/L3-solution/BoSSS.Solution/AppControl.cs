@@ -28,6 +28,7 @@ using BoSSS.Foundation.XDG;
 using System.IO;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Bson;
+using System.Runtime.Serialization;
 
 namespace BoSSS.Solution.Control {
 
@@ -35,6 +36,7 @@ namespace BoSSS.Solution.Control {
     /// Version 2 of the Application control
     /// </summary>
     [Serializable]
+    [DataContract]
     public class AppControl {
 
         /// <summary>
@@ -47,6 +49,7 @@ namespace BoSSS.Solution.Control {
         /// <summary>
         /// The generating code as text representation
         /// </summary>
+        [DataMember]
         public string ControlFileText {
             get;
             internal set;
@@ -81,6 +84,7 @@ namespace BoSSS.Solution.Control {
         ///  - key: string, the field identification string
         ///  - value: options for the DG field
         /// </summary>
+        [DataMember]
         public IDictionary<string, FieldOpts> FieldOptions {
             get;
             private set;
@@ -176,12 +180,14 @@ namespace BoSSS.Solution.Control {
         /// see <see cref="Evaluators"/>
         /// </summary>
         [Serializable]
+        [DataContract]
         sealed public class BoundaryValueCollection {
 
             /// <summary>
             /// optional string to encode the type of the boundary
             /// condition (Neumann or Dirichlet b.c., ...)
             /// </summary>
+            [DataMember]
             public string type;
 
             /// <summary>
@@ -196,11 +202,13 @@ namespace BoSSS.Solution.Control {
             /// Unfortunately, we cannot serialize delegates.
             /// </summary>
             [NonSerialized]
+            [JsonIgnore]
             Dictionary<string, Func<double[], double, double>> m_BoundaryValues_Evaluators;
 
             /// <summary>
             /// Serializeable representation of boundary data.
             /// </summary>
+            [DataMember]
             Dictionary<string, IBoundaryAndInitialData> m_BoundaryValues;
 
             /// <summary>
@@ -246,6 +254,7 @@ namespace BoSSS.Solution.Control {
         /// key: edge tag names <see cref="GridCommons.EdgeTagNames"/><br/>
         /// value: boundary values for various fields.
         /// </summary>
+        [DataMember]
         public IDictionary<string, BoundaryValueCollection> BoundaryValues {
             get;
             private set;
@@ -356,6 +365,7 @@ namespace BoSSS.Solution.Control {
             }
         }
 
+        [DataMember]
         Dictionary<string, IBoundaryAndInitialData> m_InitialValues;
 
         /// <summary>
@@ -392,6 +402,7 @@ namespace BoSSS.Solution.Control {
         /// Saves restart Information: GUID of the restarted session and the time-step
         /// If empty, no restart is done.
         /// </summary>
+        [DataMember]
         public Tuple<Guid, TimestepNumber> RestartInfo;
 
         /// <summary>
@@ -399,6 +410,7 @@ namespace BoSSS.Solution.Control {
         /// The use of this member is exclusive with <see cref="GridFunc"/>, i.e. 
         /// this member may only be set unequal to null if <see cref="GridFunc"/> is null.
         /// </summary>
+        [DataMember]
         public Guid GridGuid;
 
         /// <summary>
@@ -407,6 +419,7 @@ namespace BoSSS.Solution.Control {
         /// this member may only be set unequal to null if <see cref="GridGuid"/> is null.
         /// </summary>
         [NonSerialized]
+        [JsonIgnore]
         public Func<GridCommons> GridFunc;
 
         /// <summary>
@@ -422,17 +435,20 @@ namespace BoSSS.Solution.Control {
         /// <summary>
         /// Algorithm for grid partitioning.
         /// </summary>
+        [DataMember]
         public GridPartType GridPartType = GridPartType.METIS;
 
         /// <summary>
         /// grid partitioning options
         /// </summary>
+        [DataMember]
         public string GridPartOptions;
 
         /// <summary>
         /// tags/keywords to describe a solver run, to aid sorting/search for specific 
         /// solver runs in the database.
         /// </summary>
+        [DataMember]
         public ICollection<string> Tags {
             get;
             private set;
@@ -441,16 +457,19 @@ namespace BoSSS.Solution.Control {
         /// <summary>
         /// Optional session name (for better identification).
         /// </summary>
+        [DataMember]
         public string SessionName;
 
         /// <summary>
         /// Mandatory project name.
         /// </summary>
+        [DataMember]
         public string ProjectName;
 
         /// <summary>
         /// optional project description.
         /// </summary>
+        [DataMember]
         public string ProjectDescription;
 
         /// <summary>
@@ -462,11 +481,13 @@ namespace BoSSS.Solution.Control {
         /// <summary>
         /// physical time at which the solver terminates;
         /// </summary>
+        [DataMember]
         public double Endtime = double.MaxValue;
 
         /// <summary>
         /// interval in which "restart files" should be written to the database
         /// </summary>
+        [DataMember]
         public int saveperiod = 1;
 
         /// <summary>
@@ -475,6 +496,7 @@ namespace BoSSS.Solution.Control {
         /// <remarks>
         /// A negative value indicates that this is not initialized;
         /// </remarks>
+        [DataMember]
         public double dtMin = -1;
 
         /// <summary>
@@ -534,6 +556,7 @@ namespace BoSSS.Solution.Control {
         /// <summary>
         /// For solvers which support both, stationary as well as transient simulations, the corresponding switch.
         /// </summary>
+        [DataMember]
         public _CompMode CompMode;
 
 
@@ -545,12 +568,14 @@ namespace BoSSS.Solution.Control {
         /// <see cref="ImmediatePlotPeriod"/>-th time-step.
         /// A negative value turns immediate plotting off;
         /// </summary>
+        [DataMember]
         public int ImmediatePlotPeriod = -1;
 
         /// <summary>
         /// Super sampling: This option controls whether a finer grid
         /// resolution shall be used in the plots created if <see cref="ImmediatePlotPeriod"/> is set positive.
         /// </summary>
+        [DataMember]
         public int SuperSampling = 0;
 
         /// <summary>
@@ -558,16 +583,19 @@ namespace BoSSS.Solution.Control {
         /// if "passive io" (only reading grids, <see cref="BoSSS.Foundation.IO.IFileSystemDriver"/>)
         /// should be used;
         /// </summary>
+        [DataMember]
         public bool savetodb = true;
 
         /// <summary>
         /// minimum tracer level priority that is written to the trace file
         /// </summary>
+        [DataMember]
         public string TracingNamespaces = null;
 
         /// <summary>
         /// File system path to database.
         /// </summary>
+        [DataMember]
         public string DbPath = null;
 
         /// <summary>
@@ -576,12 +604,12 @@ namespace BoSSS.Solution.Control {
         public void SetDatabase(IDatabaseInfo dbi) {
             DbPath = dbi.Path;
         }
-
-
+        
 
         /// <summary>
         /// location where the result files of a parameter study should be saved
         /// </summary>
+        [DataMember]
         public string logFileDirectory = ".";
 
         /// <summary>
@@ -589,16 +617,19 @@ namespace BoSSS.Solution.Control {
         /// of the study, which should be described by an enumeration of
         ///  parameter - name/value - pairs.
         /// </summary>
+        [DataMember]
         public IEnumerable<Tuple<string, object>> Paramstudy_CaseIdentification = null;
 
         /// <summary>
         /// Continue parameter study if one case (aka. sessions or run) throws an exception.
         /// </summary>
+        [DataMember]
         public bool Paramstudy_ContinueOnError = true;
 
         /// <summary>
         /// Number of aggregation multi-grid levels, <see cref="Application{T}.MultigridLevels"/>.
         /// </summary>
+        [DataMember]
         public int NoOfMultigridLevels {
             get;
             set;
@@ -608,17 +639,20 @@ namespace BoSSS.Solution.Control {
         /// If true, a redistribution will be attempted BEFORE the first
         /// time-step starts
         /// </summary>
+        [DataMember]
         public bool DynamicLoadBalancing_RedistributeAtStartup = false;
 
         /// <summary>
         /// A method that creates a new estimator for the runtime cost of individual cells
         /// </summary>
+        [JsonIgnore]
         public List<Func<IApplication, int, ICellCostEstimator>> DynamicLoadBalancing_CellCostEstimatorFactories =
             new List<Func<IApplication, int, ICellCostEstimator>>();
 
         /// <summary>
         /// Number of time-steps, after which dynamic load balancing is performed; if negative, dynamic load balancing is turned off.
         /// </summary>
+        [DataMember]
         public int DynamicLoadBalancing_Period = -1;
 
         /// <summary>
@@ -628,12 +662,14 @@ namespace BoSSS.Solution.Control {
         /// \f]
         /// Dynamic load balancing is suppressed if the relative computation imbalance is below this value.
         /// </summary>
+        [DataMember]
         public double DynamicLoadBalancing_ImbalanceThreshold = 0.12;
 
 
         /// <summary>
         /// switch for activating adaptive mesh refinement
         /// </summary>
+        [DataMember]
         public bool AdaptiveMeshRefinement = false;
 
 
@@ -641,22 +677,23 @@ namespace BoSSS.Solution.Control {
         /// Actual type of cut cell quadrature to use; If no XDG, is used, resp. no cut cells are present,
         /// this setting has no effect.
         /// </summary>
+        [DataMember]
         public XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
 
         /// <summary>
         /// Used for control objects in work-flow management, 
         /// Converts object to a serializable text.
         /// </summary>
-        public byte[] Serialize() {
+        public string Serialize() {
             JsonSerializer formatter = new JsonSerializer() {
                 NullValueHandling = NullValueHandling.Ignore,
                 TypeNameHandling = TypeNameHandling.Auto,
                 ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
-                ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
+                ReferenceLoopHandling = ReferenceLoopHandling.Error,
                 
             };
 
-            /*
+            
             using(var tw = new StringWriter()) {
                 using(JsonWriter writer = new JsonTextWriter(tw)) {  // Alternative: binary writer: BsonWriter
                     formatter.Serialize(writer, this);
@@ -665,43 +702,44 @@ namespace BoSSS.Solution.Control {
                 string Ret = tw.ToString();
                 return Ret;
             }
-            */
-
-             using(var ms = new MemoryStream()) {
-                using(JsonWriter writer = new BsonWriter(ms)) {  // Alternative: binary writer: BsonWriter
+            
+            /*
+            using(var ms = new MemoryStream()) {
+                using(JsonWriter writer = new BsonWriter(ms)) {  // Alternative: binary writer: JsonTextWriter
                     formatter.Serialize(writer, this);
                 }
 
                 byte[] buffer = ms.GetBuffer();
                 return buffer;
             }
-
+            */
         }
 
         /// <summary>
         /// Used for control objects in work-flow management, 
         /// re-loads  an object from memory.
         /// </summary>
-        public static AppControl Deserialize(byte[] buffer /* string Str*/, Type ControlObjectType) {
+        public static AppControl Deserialize(string Str, Type ControlObjectType) {
             JsonSerializer formatter = new JsonSerializer() {
                 NullValueHandling = NullValueHandling.Ignore,
                 TypeNameHandling = TypeNameHandling.Auto,
                 ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
-                ReferenceLoopHandling = ReferenceLoopHandling.Serialize
+                ReferenceLoopHandling = ReferenceLoopHandling.Error
             };
 
-            /*
+            
             using(var tr = new StringReader(Str)) {
                 using(JsonReader reader = new JsonTextReader(tr)) {
-                    var obj = formatter.Deserialize(reader);
+                    var obj = formatter.Deserialize(reader, ControlObjectType);
 
                     AppControl ctrl = (AppControl)obj;
                     return ctrl;
                 }
               
             }
-            */
             
+            
+            /*
             using(var ms = new MemoryStream(buffer)) {
                 using(JsonReader reader = new BsonReader(ms)) {
                     var obj = formatter.Deserialize(reader, ControlObjectType);
@@ -711,6 +749,7 @@ namespace BoSSS.Solution.Control {
                 }
               
             }
+            */
         }
 
         /// <summary>

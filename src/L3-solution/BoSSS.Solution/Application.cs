@@ -34,6 +34,7 @@ using log4net;
 using Mono.CSharp;
 using MPI.Wrappers;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Bson;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -148,27 +149,7 @@ namespace BoSSS.Solution {
                 return m_queryHandler;
             }
         }
-
-        ///// <summary>
-        ///// Specify the type of grid partitioning, in multiprocessor-mode;
-        ///// if a control file is used, this value is set during the <see cref="InitMPI"/>-call;
-        ///// So, for overriding the control file, it must be set after 
-        ///// calling <see cref="InitMPI"/>;
-        ///// </summary>
-        //protected GridPartType m_GridPartitioningType = Foundation.Grid.GridPartType.METIS;
-
-        ///// <summary>
-        ///// Additional options for Grid Partitioning, see <see cref="m_GridPartitioningType"/>;
-        ///// </summary>
-        //protected string m_GridPartitioningOptions = "";
-
-
-
-        ///// <summary>
-        ///// options parsed form command line
-        ///// </summary>
-        //protected CommandLineOptions m_opt;
-
+        
         /// <summary>
         /// searches for the User- or Machine-environment variable 'BOSSS_INSTALL'
         /// and verifies the existence of this directory.
@@ -214,8 +195,11 @@ namespace BoSSS.Solution {
             // - exclude mscorlib (does not even appear on Windows, but makes problems using mono)
 
             for (int i = 0; i < stackTrace.FrameCount; i++) {
-                Assembly entryAssembly = stackTrace.GetFrame(i).GetMethod().DeclaringType.Assembly;
-                GetAllAssembliesRecursive(entryAssembly, allAssis);
+                Type Tüpe = stackTrace.GetFrame(i).GetMethod().DeclaringType;
+                if (Tüpe != null) {
+                    Assembly entryAssembly = Tüpe.Assembly;
+                    GetAllAssembliesRecursive(entryAssembly, allAssis);
+                }
             }
 
             return allAssis.Where(a => !a.FullName.StartsWith("mscorlib"));
@@ -487,26 +471,31 @@ namespace BoSSS.Solution {
                     }
                 } else if (opt.ControlfilePath.ToLower().EndsWith(".obj")) {
                     // +++++++++++++++++++++
-                    // binary control object
+                    // control object
                     // +++++++++++++++++++++
 
-                    object controlObj = null;
-                    using (var fs = new FileStream(opt.ControlfilePath, FileMode.Open, FileAccess.Read, FileShare.Read)) {
-                        var bf = new BinaryFormatter();
-                        controlObj = bf.Deserialize(fs);
-                    }
+                    string JSON = File.ReadAllText(opt.ControlfilePath);
+                    object controlObj = AppControl.Deserialize(JSON, typeof(T));
+                    //using (var fs = new FileStream(opt.ControlfilePath, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+                    //    var bf = new BinaryFormatter();
+                    //    controlObj = bf.Deserialize(fs);
+                    //}
 
-                    if (controlObj is T) {
-                        ctrlV2 = (T)controlObj;
-                        
-                    } else if (controlObj is IEnumerable<T>) {
-                        ctrlV2_ParameterStudy = ((IEnumerable<T>)controlObj).ToArray();
+                    ctrlV2 = AppControl.Deserialize(File.ReadAllText(opt.ControlfilePath), typeof(T)) as T;
 
-                    } else {
+                    //if (controlObj is T) {
+                    //    ctrlV2 = (T)controlObj;
+
+                    //} else if (controlObj is IEnumerable<T>) {
+                    //    ctrlV2_ParameterStudy = ((IEnumerable<T>)controlObj).ToArray();
+
+                    //} 
+
+                    if(ctrlV2 == null) {
                         throw new ApplicationException(string.Format(
-                        "Invalid control instruction: unable to cast the last result of the control file/cs-script of type {0} to type {1}",
-                        controlObj.GetType().FullName,
-                        typeof(T).FullName));
+                            "Invalid control instruction: unable to cast the last result of the control file/cs-script of type {0} to type {1}",
+                            controlObj.GetType().FullName,
+                            typeof(T).FullName));
                     }
 
                 } else {
@@ -774,9 +763,9 @@ namespace BoSSS.Solution {
 
 
         /// <summary>
-        /// Generates key/value pairs to identify sessions.
+        /// Generates key/value pairs from control objects to identify sessions.
         /// </summary>
-        static void FindKeys(IDictionary<string, object> Keys, AppControl ctrl) {
+        public static void FindKeys(IDictionary<string, object> Keys, AppControl ctrl) {
 
             foreach (var fldOpt in ctrl.FieldOptions) {
                 string KeyName = "DGdegree:" + fldOpt.Key;
@@ -1052,14 +1041,11 @@ namespace BoSSS.Solution {
 
                 GridData = new GridData(Grid);
 
-                if (this.Control == null || this.Control.NoOfMultigridLevels > 0)
+                if (this.Control == null || this.Control.NoOfMultigridLevels > 0) {
                     this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
-                else
+                } else {
                     this.MultigridSequence = new AggregationGrid[0];
-
-
-
-
+                }
 
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
@@ -1097,6 +1083,7 @@ namespace BoSSS.Solution {
                         m_queryHandler.AddQuery(queryIdPair.Key, queryIdPair.Value);
                     }
                 }
+                this.QueryHandler.ValueQuery("UsedNoOfMultigridLevels", this.MultigridSequence.Length, true);
 
                 //save session information
                 //========================
@@ -2046,6 +2033,8 @@ namespace BoSSS.Solution {
                     // re-create solvers, blablabla
                     CreateEquationsAndSolvers(remshDat);
                 }
+
+                this.QueryHandler.ValueQuery("UsedNoOfMultigridLevels", this.MultigridSequence.Length, true);
             }
         }
 
@@ -2243,19 +2232,32 @@ namespace BoSSS.Solution {
         protected virtual void ProfilingLog() {
             var R = Tracer.Root;
 
-            Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_bin");
-            BinaryFormatter bf = new BinaryFormatter();
-            bf.Serialize(stream, R);
-            stream.Flush();
-            stream.Close();
-            stream.Dispose();
+            using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_bin")) {
+                //BinaryFormatter bf = new BinaryFormatter();
+                //bf.Serialize(stream, R);
 
-            stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_summary");
-            StreamWriter stw = new StreamWriter(stream);
-            this.WriteProfilingReport(stw, R);
-            stw.Flush();
-            stream.Flush();
-            stw.Close();
+                var str = R.Serialize();
+                using (StreamWriter stw = new StreamWriter(stream)) {
+                    stw.Write(str);
+                    stw.Flush();
+                }
+                //stream.Flush();
+                //stream.Close();
+
+
+                MethodCallRecord R2 = MethodCallRecord.Deserialize(str);
+
+
+            }
+
+            using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_summary")) {
+                using (StreamWriter stw = new StreamWriter(stream)) {
+                    WriteProfilingReport(stw, R);
+                    stw.Flush();
+                    stream.Flush();
+                    stw.Close();
+                }
+            }
         }
 
         /// <summary>
@@ -2874,7 +2876,7 @@ namespace BoSSS.Solution {
         /// <summary>
         /// creates a human-readable performance report from the profiling information stored in <see cref="Tracer.Root"/>.
         /// </summary>
-        protected void WriteProfilingReport(TextWriter wrt, MethodCallRecord Root) {
+        public static void WriteProfilingReport(TextWriter wrt, MethodCallRecord Root) {
             wrt.WriteLine();
             wrt.WriteLine("Common Suspects:");
             wrt.WriteLine("================");

@@ -54,6 +54,11 @@ namespace BoSSS.Solution.Multigrid {
             MUMPS,
 
             /// <summary>
+            /// Using <see cref="IMatrixExtensions.Solve{T}(T, double[], double[])"/>
+            /// </summary>
+            Lapack,
+
+            /// <summary>
             /// MATLAB 'backslash' solver, see <see cref="ilPSP.Connectors.Matlab.Extensions.SolveMATLAB{T1, T2}(IMutableMatrixEx, T1, T2, string)"/> 
             /// </summary>
             Matlab
@@ -108,25 +113,71 @@ namespace BoSSS.Solution.Multigrid {
             }
         }
 
+        class DenseSolverWrapper :  ISparseSolver {
+
+            MultidimensionalArray FullMatrix;
+
+            public void DefineMatrix(IMutableMatrixEx M) {
+                FullMatrix = M.ToFullMatrixOnProc0();
+            }
+
+            public void Dispose() {
+                FullMatrix = null;
+            }
+
+            public SolverResult Solve<Tunknowns, Trhs>(Tunknowns x, Trhs rhs)
+                where Tunknowns : IList<double>
+                where Trhs : IList<double> {
+                var StartTime = DateTime.Now;
+
+                double[] Int_x = x as double[];
+                bool writeBack = false;
+                if (Int_x == null) {
+                    Int_x = new double[x.Count];
+                    writeBack = true;
+                }
+
+                double[] Int_rhs = rhs as double[];
+                if (Int_rhs == null)
+                    Int_rhs = rhs.ToArray();
+                
+                FullMatrix.Solve(Int_x, Int_rhs);
+
+                if (writeBack)
+                    x.SetV(Int_x);
+
+                return new SolverResult() {
+                    Converged = true,
+                    NoOfIterations = 1,
+                    RunTime = DateTime.Now - StartTime
+                };
+            }
+        }
+
+
 
         ISparseSolver GetSolver(IMutableMatrixEx Mtx) {
             ISparseSolver solver;
             switch (WhichSolver) {
                 case _whichSolver.PARDISO:
-                    solver = new PARDISOSolver();
-                    ((PARDISOSolver)solver).CacheFactorization = true;
-                    break;
+                solver = new PARDISOSolver();
+                ((PARDISOSolver)solver).CacheFactorization = true;
+                break;
 
                 case _whichSolver.MUMPS:
-                    solver = new MUMPSSolver(MPI:true);
-                    break;
+                solver = new MUMPSSolver(MPI: true);
+                break;
 
                 case _whichSolver.Matlab:
-                    solver = new MatlabSolverWrapper();
-                    break;
+                solver = new MatlabSolverWrapper();
+                break;
+
+                case _whichSolver.Lapack:
+                solver = new DenseSolverWrapper();
+                break;
 
                 default:
-                    throw new NotImplementedException();
+                throw new NotImplementedException();
 
             }
 
