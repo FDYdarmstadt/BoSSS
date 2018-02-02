@@ -29,7 +29,7 @@ namespace CNS.Tests {
         /// </summary>
         /// <param name="table"></param>
         /// <param name="spatialDimension"></param>
-        public static void CheckConvergenceRates(QueryResultTable table, int spatialDimension) {
+        public static void CheckConvergenceRates(BoSSS.Foundation.IO.ISessionInfo table, int spatialDimension) {
             double eps = 0.12;
 
             foreach (var pair in ExtractOrders(table, "densityError", "dgDegree")) {
@@ -72,8 +72,8 @@ namespace CNS.Tests {
             }
         }
 
-        private static IEnumerable<KeyValuePair<int, double>> ExtractOrders(QueryResultTable table, string errorKey, string degreeKey) {
-            return table[errorKey].
+        private static IEnumerable<KeyValuePair<int, double>> ExtractOrders(BoSSS.Foundation.IO.ISessionInfo table, string errorKey, string degreeKey) {
+            return table.KeysAndQueries[errorKey].
                 GroupBy(keyResultPair => (int)keyResultPair.Key[degreeKey]).
                 Select(g => new KeyValuePair<int, double>(g.Key,
                     Regression(g.OrderBy(v => (int)v.Key["divisions"]).Select(v => (double)v.Value))));

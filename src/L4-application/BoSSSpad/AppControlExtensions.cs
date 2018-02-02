@@ -76,8 +76,20 @@ namespace BoSSS.Application.BoSSSpad {
                 throw new ArgumentException("'DynamicLoadBalancing_CellCostEstimatorFactories' is not supported - cannot be serialized.");
 
             // try serialization/deserialization
-            string JSON = ctrl.Serialize();
-            AppControl ctrlBack = AppControl.Deserialize(JSON);//, ctrl.GetType());
+            AppControl ctrlBack;
+            if (ctrl.GeneratedFromCode) {
+                string code = ctrl.ControlFileText;
+                
+                AppControl.FromCode(code, ctrl.GetType(), out AppControl c, out AppControl[] cS);
+                if(cS != null) {
+                    ctrlBack = cS[ctrl.ControlFileText_Index];
+                } else {
+                    ctrlBack = c;
+                }
+            } else {
+                string JSON = ctrl.Serialize();
+                ctrlBack = AppControl.Deserialize(JSON);//, ctrl.GetType());
+            }
             ctrlBack.Verify();
 
             // compare original and de-serialized object

@@ -415,103 +415,43 @@ namespace BoSSS.Solution {
         }
 
         /// <summary>
-        /// Loads a control oblect, resp. a series of control objects (in the case of a parameter study)
+        /// Loads a control object, resp. a series of control objects (in the case of a parameter study)
         /// form a C#-script.
         /// </summary>
         /// <param name="ctrlfileContent">the script.</param>
-        /// <param name="ctrlV2">output, for a singe control object.</param>
-        /// <param name="ctrlV2_ParameterStudy">output, for a series of control objects.</param>
-        static public void ControlObjFromCode(string ctrlfileContent, out T ctrlV2, out T[] ctrlV2_ParameterStudy) {
+        /// <param name="ctrl">output, for a singe control object.</param>
+        /// <param name="ctrl_ParameterStudy">output, for a series of control objects.</param>
+        static void ControlObjFromCode(string ctrlfileContent, out T ctrl, out T[] ctrl_ParameterStudy) {
+            //object controlObj = ControlObjFromCode(ctrlfileContent, typeof(T));
+            AppControl.FromCode(ctrlfileContent, typeof(T), out AppControl _ctrl, out AppControl[] _ctrl_ParamStudy);
 
+            Debug.Assert((_ctrl == null) != (_ctrl_ParamStudy == null));
 
-            var Settings = new CompilerSettings();
-#if DEBUG
-            Settings.Optimize = false;
-#else
-            Settings.Optimize = false;
-#endif
-            CompilerContext cmpCont = new CompilerContext(Settings, new ConsoleReportPrinter());
-            Evaluator eval = new Evaluator(cmpCont);
-            eval.InteractiveBaseClass = typeof(T);
+            if (_ctrl != null) {
+                ctrl = (T)_ctrl;
 
-            // Start from entry assembly and _not_
-            // - don't use typeof(T).Assembly since T might be located different assembly than the control file
-            // - don't use Assembly.GetEntryAssembly() as it is undefined if called by Nunit
-            StackTrace stackTrace = new StackTrace();
-            Assembly entryAssembly = stackTrace.GetFrame(1).GetMethod().DeclaringType.Assembly;
-            var allAssis = Application.GetAllAssemblies();
-            foreach (var assi in allAssis) {
-                eval.ReferenceAssembly(assi);
-            }
+                ctrl_ParameterStudy = null;
+            } else if (_ctrl_ParamStudy != null) {
+                //ctrl_ParameterStudy = ((IEnumerable<T>)controlObj).ToArray();
+                //foreach (var c in ctrl_ParameterStudy)
+                //    c.ControlFileText = ctrlfileContent;
 
-            object controlObj = null;
-
-            StringReader strR = new StringReader(ctrlfileContent);
-
-            bool result_set = false;
-            string incompleteStatement = null;
-            int lineno = 0;
-            for (string line = strR.ReadLine(); line != null; line = strR.ReadLine()) {
-                lineno++;
-
-                // Remove any trailing multiline delimiters (for
-                // compatibility with older control files)
-                line = line.TrimEnd().TrimEnd('\\');
-
-                string statement;
-                if (incompleteStatement == null) {
-                    statement = line;
-                } else {
-                    statement = incompleteStatement + "\n" + line;
+                ctrl_ParameterStudy = new T[_ctrl_ParamStudy.Length];
+                for(int i = 0; i < ctrl_ParameterStudy.Length; i++) {
+                    ctrl_ParameterStudy[i] = (T)(_ctrl_ParamStudy[i]);
                 }
 
-                try {
-                    incompleteStatement = eval.Evaluate(statement, out controlObj, out result_set);
-                } catch (Exception e) {
-                    string message = String.Format(
-                        "'{0}' during the interpretation of control file code, line {1}",
-                        e.GetType().Name,
-                        lineno);
-                    throw new AggregateException(message, e);
-                }
-
-                if (cmpCont.Report.Errors > 0) {
-                    throw new ApplicationException(
-                        "Syntax error in control file line " + lineno + ": \n" + statement);
-                }
-            }
-
-            if (incompleteStatement != null) {
-                throw new ApplicationException(String.Format(
-                    "Reached end of control file before statement starting with '{0}' was complete",
-                    incompleteStatement.Substring(0, Math.Min(incompleteStatement.Length, 20))));
-            }
-
-            if (controlObj == null) {
-                throw new ApplicationException(
-                    "Unable to create a control object from cs-script file.");
-            }
-
-            if (controlObj is T) {
-                ctrlV2 = (T)controlObj;
-
-                ctrlV2.ControlFileText = ctrlfileContent;
-
-                ctrlV2_ParameterStudy = null;
-            } else if (controlObj is IEnumerable<T>) {
-                ctrlV2_ParameterStudy = ((IEnumerable<T>)controlObj).ToArray();
-                foreach (var c in ctrlV2_ParameterStudy)
-                    c.ControlFileText = ctrlfileContent;
-
-                ctrlV2 = null;
+                ctrl = null;
             } else {
-                throw new ApplicationException(string.Format(
-                "Invalid control instruction: unable to cast the last result of the control file/cs-script of type {0} to type {1} or IEnumerable<{1}>",
-                controlObj.GetType().FullName,
-                typeof(T).FullName));
+                //throw new ApplicationException(string.Format(
+                //"Invalid control instruction: unable to cast the last result of the control file/cs-script of type {0} to type {1} or IEnumerable<{1}>",
+                //controlObj.GetType().FullName,
+                //typeof(T).FullName));
+                throw new ApplicationException();
             }
         }
 
+    
 
 
         private static void AppEntry(
@@ -969,23 +909,37 @@ namespace BoSSS.Solution {
                     && (!this.CurrentSessionInfo.ID.Equals(Guid.Empty));
 
                 if (DoDbLogging && this.Control != null) {
-                    TextWriter tw = DatabaseDriver.FsDriver.GetNewLog("Control", this.CurrentSessionInfo.ID);
-                    if (this.Control.ControlFileText != null)
-                        tw.WriteLine(this.Control.ControlFileText);
-                    else
-                        tw.WriteLine("// (no string representation of control object available.)");
-                    tw.WriteLine();
-                    tw.WriteLine("///////////////////////////////////////////");
-                    tw.WriteLine("// SUMMARY");
-                    tw.WriteLine("///////////////////////////////////////////");
-                    tw.Write("//");
-                    try {
-                        PrintObject(tw, this.Control, "  ");
-                    } catch (Exception exc) {
-                        tw.Flush();
-                        tw.WriteLine("//" + exc.GetType().FullName + ": '" + exc.Message);
+                    //TextWriter tw = DatabaseDriver.FsDriver.GetNewLog("Control", this.CurrentSessionInfo.ID);
+                    //if (this.Control.ControlFileText != null)
+                    //    tw.WriteLine(this.Control.ControlFileText);
+                    //else
+                    //    tw.WriteLine("// (no string representation of control object available.)");
+                    //tw.WriteLine();
+                    //tw.WriteLine("///////////////////////////////////////////");
+                    //tw.WriteLine("// SUMMARY");
+                    //tw.WriteLine("///////////////////////////////////////////");
+                    //tw.Write("//");
+                    //try {
+                    //    PrintObject(tw, this.Control, "  ");
+                    //} catch (Exception exc) {
+                    //    tw.Flush();
+                    //    tw.WriteLine("//" + exc.GetType().FullName + ": '" + exc.Message);
+                    //}
+                    //tw.Close();
+
+                    if(this.Control.GeneratedFromCode) {
+                        using (var tw = DatabaseDriver.FsDriver.GetNewLog("Control-script", this.CurrentSessionInfo.ID)) {
+                            tw.WriteLine("//" + this.Control.GetType().AssemblyQualifiedName);
+                            tw.Write(this.Control.ControlFileText);
+                            tw.Close();
+                        }
+                    } else {
+                        using (var tw = DatabaseDriver.FsDriver.GetNewLog("Control-obj", this.CurrentSessionInfo.ID)) {
+                            tw.Write(this.Control.Serialize());
+                            tw.Close();
+                        }
                     }
-                    tw.Close();
+
 
 
                     Dictionary<string, object> KV = new Dictionary<string, object>();
