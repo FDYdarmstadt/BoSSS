@@ -127,19 +127,19 @@ namespace BoSSS.Solution {
         /// </summary>
         protected QueryHandler m_queryHandler;
 
-        ///// <summary>
-        ///// New 'table' to log query results
-        ///// </summary>
-        //private QueryResultTable m_QueryResultTable = new QueryResultTable();
+        /// <summary>
+        /// New 'table' to log query results
+        /// </summary>
+        private QueryResultTable m_QueryResultTable = new QueryResultTable();
 
-        ///// <summary>
-        ///// New 'table' to log query results
-        ///// </summary>
-        //public QueryResultTable QueryResultTable {
-        //    get {
-        //        return m_QueryResultTable;
-        //    }
-        //}
+        /// <summary>
+        /// New 'table' to log query results (and other things that the application is doing)
+        /// </summary>
+        public QueryResultTable QueryResultTable {
+            get {
+                return m_QueryResultTable;
+            }
+        }
 
         /// <summary>
         /// The query handler holding all queries to be performed during a run.
@@ -450,8 +450,6 @@ namespace BoSSS.Solution {
                 throw new ApplicationException();
             }
         }
-
-    
 
 
         private static void AppEntry(
@@ -1382,7 +1380,7 @@ namespace BoSSS.Solution {
         /// </summary>
         protected virtual void SetInitial() {
             using (var tr = new FuncTrace()) {
-                //this.QueryResultTable.UpdateKey("Timestep", ((int)0));
+                this.QueryResultTable.UpdateKey("Timestep", ((int)0));
 
                 if (this.Control == null) {
                     tr.Info("no control - file loaded; don't do anything;");
@@ -1632,7 +1630,7 @@ namespace BoSSS.Solution {
                 for (i = i0.MajorNumber + 1; (i <= i0.MajorNumber + (long)NoOfTimesteps) && EndTime - physTime > 1.0E-10 && !TerminationKey; i++) {
                     tr.Info("performing timestep " + i + ", physical time = " + physTime);
                     this.MpiRedistributeAndMeshAdapt(i, physTime);
-                    //this.QueryResultTable.UpdateKey("Timestep", ((int)i));
+                    this.QueryResultTable.UpdateKey("Timestep", ((int)i));
                     double dt = RunSolverOneStep(i, physTime, -1);
                     tr.Info("simulated time: " + dt + " timeunits.");
                     tr.LogMemoryStat();
@@ -1658,7 +1656,7 @@ namespace BoSSS.Solution {
                 // or current directory)
                 m_queryHandler.EvaluateQueries(this.m_RegisteredFields.Union(m_IOFields), physTime);
                 foreach (var kv in m_queryHandler.QueryResults) {
-                    //QueryResultTable.LogValue(kv.Key, kv.Value);
+                    QueryResultTable.LogValue(kv.Key, kv.Value);
                     if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey(kv.Key))
                         this.CurrentSessionInfo.KeysAndQueries.Add(kv.Key, kv.Value);
                 }
@@ -2176,21 +2174,11 @@ namespace BoSSS.Solution {
             var R = Tracer.Root;
 
             using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_bin")) {
-                //BinaryFormatter bf = new BinaryFormatter();
-                //bf.Serialize(stream, R);
-
                 var str = R.Serialize();
                 using (StreamWriter stw = new StreamWriter(stream)) {
                     stw.Write(str);
                     stw.Flush();
                 }
-                //stream.Flush();
-                //stream.Close();
-
-
-                MethodCallRecord R2 = MethodCallRecord.Deserialize(str);
-
-
             }
 
             using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_summary")) {
@@ -2216,8 +2204,8 @@ namespace BoSSS.Solution {
         static void ParameterStudyModeV2(CommandLineOptions opt, IEnumerable<T> cases, Func<Application<T>> ApplicationFactory) {
 
             TextWriter log = null;
-            //QueryResultTable nlog = new QueryResultTable();
-            //Stream nlog_stream = null;
+            QueryResultTable nlog = new QueryResultTable();
+            Stream nlog_stream = null;
 
             if (opt.PstudyCase >= 0
                 && opt.PstudyCase < 0 || opt.PstudyCase >= cases.Count()) {
@@ -2253,16 +2241,16 @@ namespace BoSSS.Solution {
 
                 // in solver mode
                 Console.WriteLine("Parameter study: Starting run " + (iPstudy) + " of " + numberOfRuns + " (zero-based-index).");
-                //nlog.CurrentKeyHistory.Clear();
-                //nlog.UpdateKey("pstudy_case", (iPstudy));
-                //foreach (var blabla in _control.Paramstudy_CaseIdentification) {
-                //    nlog.UpdateKey(blabla.Item1, blabla.Item2);
-                //}
+                nlog.CurrentKeyHistory.Clear();
+                nlog.UpdateKey("pstudy_case", (iPstudy));
+                foreach (var blabla in _control.Paramstudy_CaseIdentification) {
+                    nlog.UpdateKey(blabla.Item1, blabla.Item2);
+                }
 
 
                 using (Application<T> app = ApplicationFactory()) {
                     long afterInit = 0;
-                    //app.m_QueryResultTable = nlog;
+                    app.m_QueryResultTable = nlog;
                     bool CorrectlyTerminated = false;
 #if DEBUG
                     {
@@ -2273,15 +2261,15 @@ namespace BoSSS.Solution {
                         afterInit = watch.ElapsedTicks;
                         app.RunSolverMode();
                         CorrectlyTerminated = true;
-                        //nlog.LogValue("pstudy_case_successful", true);
-                        //nlog.LogValue("GrdRes:NumberOfCells", app.Grid.CellPartitioning.TotalLength);
-                        //nlog.LogValue("GrdRes:h_min", app.GridData.Cells.h_minGlobal);
-                        //nlog.LogValue("GrdRes:h_max", app.GridData.Cells.h_maxGlobal);
+                        nlog.LogValue("pstudy_case_successful", true);
+                        nlog.LogValue("GrdRes:NumberOfCells", app.Grid.CellPartitioning.TotalLength);
+                        nlog.LogValue("GrdRes:h_min", app.GridData.Cells.h_minGlobal);
+                        nlog.LogValue("GrdRes:h_max", app.GridData.Cells.h_maxGlobal);
 #if DEBUG
                     }
 #else
                     } catch (Exception e) {
-                        //nlog.LogValue("pstudy_case_successful", false);
+                        nlog.LogValue("pstudy_case_successful", false);
                         if (_control.Paramstudy_ContinueOnError) {
                             Console.WriteLine("WARNING: Run" + (iPstudy) + "failed with message '{0}'", e.Message);
                             failCount++;
@@ -2297,18 +2285,18 @@ namespace BoSSS.Solution {
                     // because $m_IOFields would undefined before)
                     if (log == null) {
                         log = InitParameterStudyLog(app.m_IOFields, app, 
-                            //out nlog_stream, 
+                            out nlog_stream, 
                             opt.PstudyCase > 0 ? iPstudy : -1);
                     }
 
                     double InitTime = (double)afterInit / (double)Stopwatch.Frequency;
                     double solverTime = (double)(watch.ElapsedTicks - afterInit) / (double)Stopwatch.Frequency;
-                    //nlog.LogValue("InitTime(sec)", InitTime);
-                    //nlog.LogValue("solverTime(sec)", solverTime);
-                    //nlog.LogValue("SessionGuid", app.DatabaseDriver.FsDriver == null ? Guid.Empty : app.CurrentSessionInfo.ID);
-                    //foreach (var kv in app.QueryHandler.QueryResults) { // Assume queries have already been evaluated
-                    //    nlog.LogValue(kv.Key, kv.Value);
-                    //}
+                    nlog.LogValue("InitTime(sec)", InitTime);
+                    nlog.LogValue("solverTime(sec)", solverTime);
+                    nlog.LogValue("SessionGuid", app.DatabaseDriver.FsDriver == null ? Guid.Empty : app.CurrentSessionInfo.ID);
+                    foreach (var kv in app.QueryHandler.QueryResults) { // Assume queries have already been evaluated
+                        nlog.LogValue(kv.Key, kv.Value);
+                    }
 
                     // Log only exists on rank 0
                     if (log != null) {
@@ -2334,27 +2322,27 @@ namespace BoSSS.Solution {
                         log.WriteLine();
                         log.Flush();
 
-                        //if (nlog_stream != null) {
-                        //    nlog_stream.Position = 0; // we can only write the whole table, so we have to overwrite the so-far-written stuff
-                            //var w = new StreamWriter(nlog_stream);
-                            //nlog.WriteToStream(w);
-                            //w.Flush();
-                        //}
+                        if (nlog_stream != null) {
+                            nlog_stream.Position = 0; // we can only write the whole table, so we have to overwrite the so-far-written stuff
+                            var w = new StreamWriter(nlog_stream);
+                            nlog.WriteToStream(w);
+                            w.Flush();
+                        }
                     }
 
-                    //// log to session directory
-                    //if (app.MPIRank == 0 && !app.CurrentSessionInfo.ID.Equals(Guid.Empty)) {
-                    //    var nlog_stream_session = app.DatabaseDriver.GetNewLogStream(
-                    //        app.CurrentSessionInfo, "ParameterStudy.case-" + iPstudy);
-                    //    try {
-                    //        var w = new StreamWriter(nlog_stream_session);
-                    //        nlog.WriteToStream(w, RowFilter: nlog.CurrentKeyHistory);
-                    //        w.Flush();
-                    //    } finally {
-                    //        nlog_stream_session.Flush();
-                    //        nlog_stream_session.Close();
-                    //    }
-                    //}
+                    // log to session directory
+                    if (app.MPIRank == 0 && !app.CurrentSessionInfo.ID.Equals(Guid.Empty)) {
+                        var nlog_stream_session = app.DatabaseDriver.GetNewLogStream(
+                            app.CurrentSessionInfo, "ParameterStudy.case-" + iPstudy);
+                        try {
+                            var w = new StreamWriter(nlog_stream_session);
+                            nlog.WriteToStream(w, RowFilter: nlog.CurrentKeyHistory);
+                            w.Flush();
+                        } finally {
+                            nlog_stream_session.Flush();
+                            nlog_stream_session.Close();
+                        }
+                    }
 
                     // finalize
                     app.ByeInt(CorrectlyTerminated);
@@ -2385,11 +2373,11 @@ namespace BoSSS.Solution {
 
         static private StreamWriter InitParameterStudyLog(
             ICollection<DGField> ioFields, Application<T> app,
-            //out Stream BinIOStream, 
+            out Stream BinIOStream, 
             int counter) {
             // Only do something on rank 0
             if (ilPSP.Environment.MPIEnv.MPI_Rank != 0) {
-                //BinIOStream = null;
+                BinIOStream = null;
                 return null;
             }
 
@@ -2407,14 +2395,14 @@ namespace BoSSS.Solution {
                 string nextName = baseName;
                 int i = 1;
 
-                //BinIOStream = null;
+                BinIOStream = null;
                 while (log == null) {
                     string pathToFile = Path.Combine(basePath, nextName + ".txt");
                     if (!(File.Exists(pathToFile))) {
                         try {
                             var fs = new FileStream(pathToFile, FileMode.CreateNew, FileAccess.Write);
                             log = new StreamWriter(fs);
-                            //BinIOStream = new FileStream(Path.Combine(basePath, nextName + ".table"), FileMode.CreateNew, FileAccess.Write);
+                            BinIOStream = new FileStream(Path.Combine(basePath, nextName + ".table"), FileMode.CreateNew, FileAccess.Write);
                         } catch (Exception) {
                             log = null;
                         }
