@@ -242,7 +242,7 @@ namespace BoSSS.Application.BoSSSpad {
             // serialize control object
             // ========================
 
-            ctrl.ExtensiveVerify();
+            ctrl.VerifyEx();
             string JSON = ctrl.Serialize();
             byte[] buffer = Encoding.UTF8.GetBytes(JSON);
             AdditionalDeploymentFiles.Add(new Tuple<byte[], string>(buffer, "control.obj"));

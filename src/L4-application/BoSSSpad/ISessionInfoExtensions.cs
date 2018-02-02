@@ -1025,7 +1025,9 @@ namespace BoSSS.Foundation.IO {
         /// The properly initialized configuration object
         /// </returns>
         public static T GetControl<T>(this ISessionInfo session)
-            where T : AppControl {
+            where T : AppControl, new() //
+        {
+        
             string sessionDir = DatabaseDriver.GetSessionDirectory(session);
             string path = Path.Combine(sessionDir, "Control.txt");
 
@@ -1039,93 +1041,29 @@ namespace BoSSS.Foundation.IO {
                 // return an empty string instead of a control object
                 ctrlfileContent = rd.ReadToEnd().TrimEnd();
             }
+                       
 
-            // Create separate evaluator since we
-            // - cannot access the main one from here
-            // - we don't want potential side effects on the main one
-            CompilerContext cmpCont = new CompilerContext(
-                new CompilerSettings(), new ConsoleReportPrinter());
-            Evaluator eval = new Evaluator(cmpCont);
-            eval.InteractiveBaseClass = typeof(T);
+            Solution.Application<T>.ControlObjFromCode(ctrlfileContent, out T ctrl, out T[] ctrl_paramstudy);
 
-            var allAssis = BoSSS.Solution.Application.GetAllAssemblies().ToArray();
-            foreach (var assi in allAssis) {
-                eval.ReferenceAssembly(assi);
-            }
-
-            // Evaluate control file content line by line
-            object controlObj = null;
-            StringReader reader = new StringReader(ctrlfileContent);
-            bool result_set = false;
-            string multiline = null;
-            int lineno = 0;
-            for (string line = reader.ReadLine(); line != null; line = reader.ReadLine()) {
-                line = line.TrimEnd();
-                lineno++;
-
-                if (line.EndsWith("\\")) {
-                    if (multiline == null)
-                        multiline = "";
-
-                    multiline += " " + line.Substring(0, line.Length - 1);
-                } else {
-                    string completeline;
-                    if (multiline == null) {
-                        completeline = line;
-                    } else {
-                        completeline = multiline + " " + line;
-                        multiline = null;
-                    }
-
-                    string schurli = null;
-                    try {
-                        object oldControlObject = controlObj;
-                        schurli = eval.Evaluate(completeline, out controlObj, out result_set);
-                        if (controlObj == null) {
-                            controlObj = oldControlObject;
-                        }
-                    } catch (Exception e) {
-                        throw new AggregateException(String.Format(
-                            "{0} during the interpretation of control file '{1}' line {2};",
-                            e.GetType().Name,
-                            path,
-                            lineno),
-                            e);
-                    }
-
-                    if (cmpCont.Report.Errors > 0) {
-                        throw new Exception(String.Format(
-                            "Syntax error in control file line {0}: \n{1}",
-                            lineno,
-                            completeline));
-                    }
-                }
-            }
-
-            if (controlObj == null) {
-                throw new Exception(
-                    "Unable to create a control object from cs-script file '" + path + "'.");
-            }
-
-            if (controlObj is T) {
-                return (T)controlObj;
-            } else if (controlObj is IEnumerable<T>) {
+            if (ctrl != null) {
+                return ctrl;
+            } else if (ctrl_paramstudy != null) {
                 // We did a parameter study -> extract the correct control object from the list
                 int.TryParse(session.KeysAndQueries["id:pstudy_case"].ToString(), out int parameterStudyCase);
 
-                IEnumerable<T> objectList = (IEnumerable<T>)controlObj;
-                if (parameterStudyCase < 1 || parameterStudyCase > objectList.Count()) {
+                if (parameterStudyCase < 0 || parameterStudyCase >= ctrl_paramstudy.Count()) {
                     throw new Exception(
                         "Parameter study case index out of range. This should not have happened.");
                 }
 
-                return objectList.ElementAt(parameterStudyCase - 1);
+                return ctrl_paramstudy.ElementAt(parameterStudyCase);
             } else {
-                throw new Exception(string.Format(
-                    "Invalid control instruction: unable to cast the last"
-                        + " result of the control file/cs-script of type {0} to type {1}",
-                    controlObj.GetType().FullName,
-                    typeof(T).FullName));
+                //throw new Exception(string.Format(
+                //    "Invalid control instruction: unable to cast the last"
+                //        + " result of the control file/cs-script of type {0} to type {1}",
+                //    controlObj.GetType().FullName,
+                //    typeof(T).FullName));
+                throw new NotSupportedException("unknown state.");
             }
 
         }
