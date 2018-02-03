@@ -20,12 +20,15 @@ using System.Linq;
 using System.Text;
 using BoSSS.Solution.Control;
 using BoSSS.Foundation;
+using System.Runtime.Serialization;
 
 namespace BoSSS.Application.SipPoisson {
     
+
     /// <summary>
     /// Control object for the ipPoisson solver.
     /// </summary>
+    [DataContract]
     [Serializable]
     public class SipControl : AppControl {
 
@@ -64,43 +67,31 @@ namespace BoSSS.Application.SipPoisson {
 
         }
 
-
-        ///// <summary>
-        ///// Function which determines which part of the domain boundary is of Dirichlet type (true)
-        ///// and which part of Neumann type (false).
-        ///// </summary>
-        //public Func<CommonParamsBnd,bool> IsDirichlet;
-
-        ///// <summary>
-        ///// Dirichlet boundary value
-        ///// </summary>
-        //public Func<CommonParamsBnd,double> g_Diri;
-
-        ///// <summary>
-        ///// Neumann boundary value
-        ///// </summary>
-        //public Func<CommonParamsBnd, double> g_Neum;
-
+       
         /// <summary>
         /// Multiplyer for the penalty parameter, should be around 1.0.
         /// </summary>
+        [DataMember]
         [BoSSS.Solution.Control.ExclusiveLowerBound(0.0)]
         public double penalty_poisson = 1.3;
 
         /// <summary>
         /// string identifying the solver variant
         /// </summary>
+        [DataMember]
         public SolverCodes solver_name = SolverCodes.classic_pardiso;
         
         /// <summary>
         /// run the solver more than once, e.g. for more reliable timing-results.
         /// </summary>
+        [DataMember]
         [BoSSS.Solution.Control.InclusiveLowerBound(1.0)]
         public int NoOfSolverRuns = 2;
 
         /// <summary>
         /// True, if an exact solution -- in order to determine the error -- is provides.
         /// </summary>
+        [DataMember]
         public bool ExactSolution_provided = false;
     }
 }

@@ -818,7 +818,7 @@ namespace BoSSS.Solution {
                         if (KeyName.Length <= 0)
                             txt = mi.Name;
                         else
-                            txt = KeyName + "/" + mi.Name;
+                            txt = KeyName + "." + mi.Name;
                         FindKeysRecursive(Keys, Val, RecursionDepth + 1, txt);
 
                         //PrintObject(txt, piVal, spaces + "  ");
