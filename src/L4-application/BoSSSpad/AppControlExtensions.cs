@@ -146,7 +146,7 @@ namespace BoSSS.Application.BoSSSpad {
             var D1 = new Dictionary<string, object>();
             var D2 = new Dictionary<string, object>();
             BoSSS.Solution.Application.FindKeys(D1, ctrl);
-            BoSSS.Solution.Application.FindKeys(D2, ctrl);
+            BoSSS.Solution.Application.FindKeys(D2, ctrlBack);
             foreach(var kv1 in D1) {
                 string name = kv1.Key;
                 var o1 = kv1.Value;
