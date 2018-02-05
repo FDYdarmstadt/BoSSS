@@ -921,6 +921,7 @@ namespace BoSSS.Solution.Control {
                         c.ControlFileText = ctrlfileContent;
                         c.GeneratedFromCode = true;
                         c.ControlFileText_Index = i;
+                        _ctrl_ParameterStudy.Add(c);
                         i++;
                     }
 
