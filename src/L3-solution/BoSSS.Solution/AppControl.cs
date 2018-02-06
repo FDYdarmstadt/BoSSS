@@ -719,10 +719,10 @@ namespace BoSSS.Solution.Control {
                 TypeNameHandling = TypeNameHandling.Auto,
                 ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
                 ReferenceLoopHandling = ReferenceLoopHandling.Error,
-                
+                Formatting = Formatting.Indented
+//                ObjectCreationHandling = ObjectCreationHandling.
             };
-
-            
+                        
             using(var tw = new StringWriter()) {
                 tw.WriteLine(this.GetType().AssemblyQualifiedName);
                 using(JsonWriter writer = new JsonTextWriter(tw)) {  // Alternative: binary writer: BsonWriter

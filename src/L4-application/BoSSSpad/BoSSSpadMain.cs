@@ -17,6 +17,7 @@ limitations under the License.
 using BoSSS.Foundation.IO;
 using BoSSS.Platform;
 using MPI.Wrappers;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -65,8 +66,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// application entry point
         /// </summary>
         [STAThread]
-        public static int Main(string[] args)
-        {
+        public static int Main(string[] args) { 
+            
             int errCount = 0;
 
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;

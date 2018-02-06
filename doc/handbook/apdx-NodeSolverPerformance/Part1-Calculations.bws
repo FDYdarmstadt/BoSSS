@@ -28,10 +28,8 @@ Opening existing database 'D:\tmp\fk_temp_db'.
  var myBatch = new MiniBatchProcessorClient(@"D:\tmp\fk_deploy");
 **************
 ==============
-MiniBatchProcessor.Server.StartIfNotRunning();
+//MiniBatchProcessor.Server.StartIfNotRunning();
 **************
-Mini batch processor is already running.
-
 ==============
 // ===================
 // Utility definitions
@@ -400,13 +398,17 @@ Job was successful (according to job manager), latest session related to job is:
 { Guid = 158381d1-8646-4b64-a94f-fa893a749124; 02/05/2018 07:06:58 Name = J320_k2_exp_softpcg_schwarz }
 No further action.
  Submitting: J2560_k2_exp_softpcg_schwarz
-Job has been started (according to job manager), latest known session is:
+Job was successful (according to job manager), latest session related to job is:
 { Guid = 4a5fafae-7f96-4f88-8beb-83d41eacf77e; 02/05/2018 07:08:47 Name = J2560_k2_exp_softpcg_schwarz }
 No further action.
  Submitting: J20480_k2_exp_softpcg_schwarz
-Job submitted, waiting for launch - no further action.
+Job has been started (according to job manager), latest known session is:
+{ Guid = 9d732da9-6f84-42a4-b8e1-ec91fa01f144; 02/05/2018 07:34:28 Name = J20480_k2_exp_softpcg_schwarz }
+No further action.
  Submitting: J163840_k2_exp_softpcg_schwarz
-Job submitted, waiting for launch - no further action.
+Job has been started (according to job manager), latest known session is:
+{ Guid = d124fc3c-c0f0-4c20-b85b-2622956d9e92; 02/06/2018 06:05:36 Name = J163840_k2_exp_softpcg_schwarz }
+No further action.
  Submitting: J40_k3_exp_softpcg_schwarz
 Job submitted, waiting for launch - no further action.
  Submitting: J320_k3_exp_softpcg_schwarz
@@ -446,9 +448,9 @@ List of 30 instances of String {
   19: J163840_k3_exp_direct: 	Failed
   20: J40_k2_exp_softpcg_schwarz: 	FinishedSuccessful
   21: J320_k2_exp_softpcg_schwarz: 	FinishedSuccessful
-  22: J2560_k2_exp_softpcg_schwarz: 	InProgress
-  23: J20480_k2_exp_softpcg_schwarz: 	PendingInExecutionQueue
-  24: J163840_k2_exp_softpcg_schwarz: 	PendingInExecutionQueue
+  22: J2560_k2_exp_softpcg_schwarz: 	FinishedSuccessful
+  23: J20480_k2_exp_softpcg_schwarz: 	InProgress
+  24: J163840_k2_exp_softpcg_schwarz: 	InProgress
   25: J40_k3_exp_softpcg_schwarz: 	PendingInExecutionQueue
   26: J320_k3_exp_softpcg_schwarz: 	PendingInExecutionQueue
   27: J2560_k3_exp_softpcg_schwarz: 	PendingInExecutionQueue
@@ -461,7 +463,7 @@ List of 30 instances of String {
 ==============
 WorkflowMgm.SessionTable.Rows.Count;
 **************
-91
+93
 ==============
 **************
 ==============
@@ -562,7 +564,7 @@ SessTab.TableName = "SolverRuns--" + now.Year + "-" + now.Month;
 using System.IO;
 **************
 ==============
-string docpath = Path.Combine(CurrentDocDir, SessTab.TableName + ".xml")
+string docpath = Path.Combine(CurrentDocDir, SessTab.TableName + ".xml");
 **************
 ==============
 SessTab.WriteXml(docpath);
@@ -579,24 +581,53 @@ SessTab.WriteXml(docpath);
 //SessTab.Print();
 **************
 ==============
-SessTab.GetColumn<object>("DGdegree:T")[0].GetType();
+SessTab.GetColumnTypes().Take(7);
 **************
-System.Int64
+List of 7 instances of Type {
+  0: System.String
+  1: System.Int64
+  2: System.Int64
+  3: System.String
+  4: System.String
+  5: System.Boolean
+  6: System.Int64
+}
 ==============
 tempDB.Sessions.ElementAt(0).KeysAndQueries["DGdegree:T"].GetType();
 **************
 System.Int64
 ==============
-using System.Data;
+//using System.Data;
 **************
 ==============
-var SessTab_Test = new System.Data.DataTable();
-SessTab_Test.ReadXml(docpath);
+//var SessTab_Test = new System.Data.DataTable();
+//SessTab_Test.ReadXml(docpath);
 **************
-(2,14): error CS1061: Type `System.Data.DataTable' does not contain a definition for `LoadXml' and no extension method `LoadXml' of type `System.Data.DataTable' could be found. Are you missing an assembly reference?
-C:\WINDOWS\Microsoft.Net\assembly\GAC_64\System.Data\v4.0_4.0.0.0__b77a5c561934e089\System.Data.dll (Location of the symbol related to previous error)
-No. of errors|warnings: 1|0.
-
+==============
+**************
+==============
+string txt = SessTab.Serialize();
+**************
+==============
+System.IO.File.WriteAllText(Path.Combine(CurrentDocDir, "oida.txt"), txt);
+**************
+==============
+var SessTab2 = TableExtensions.Deserialize(txt);
+**************
+==============
+SessTab2.GetColumnTypes().Take(7);
+**************
+List of 7 instances of Type {
+  0: System.String
+  1: System.Int64
+  2: System.Int64
+  3: System.String
+  4: System.String
+  5: System.Boolean
+  6: System.Int64
+}
+==============
+**************
 ==============
 **************
 ==============

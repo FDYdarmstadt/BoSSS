@@ -16,6 +16,7 @@ limitations under the License.
 
 using BoSSS.Foundation.IO;
 using ilPSP.Utils;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -183,6 +184,156 @@ namespace BoSSS.Application.BoSSSpad {
                 }
 
                 R.Rows.Add(row);
+            }
+
+            return R;
+        }
+
+
+        /// <summary>
+        /// The inverse of <see cref="ToDataTable(IDictionary{string, object[]})"/>
+        /// </summary>
+        /// <param name="tab"></param>
+        /// <returns>
+        /// Table as dictionary:
+        ///  - keys: column names
+        ///  - values: each column of the table; all column-arrays are expected to have the same length.
+        /// </returns>
+        public static IDictionary<string,object[]> ToDictionary(this DataTable tab) {
+            Dictionary<string, object[]> R = new Dictionary<string, object[]>();
+
+            string[] ColNames = tab.GetColumnNames();
+            foreach(string ColNmn in ColNames) {
+                object[] col = tab.GetColumn<object>(ColNmn);
+
+                R.Add(ColNmn, col);
+            }
+
+            return R;
+        }
+
+
+
+        /// <summary>
+        /// Serializes an entire table into a string.
+        /// </summary>
+        public static string Serialize(this DataTable tab) {
+            JsonSerializer formatter = new JsonSerializer() {
+                TypeNameHandling = TypeNameHandling.All,
+                Formatting = Formatting.Indented,
+                ReferenceLoopHandling = ReferenceLoopHandling.Error,
+                NullValueHandling = NullValueHandling.Ignore,
+                ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor
+            };
+                
+            string[] ColNameS = tab.GetColumnNames();
+            Array[] Cols = ColNameS.Select(name => tab.GetColumn(name)).ToArray();
+
+            var intermedTable = new Tuple<string[], Array[]>(ColNameS, Cols);
+
+            using(var tw = new StringWriter()) {
+                //tw.WriteLine(this.GetType().AssemblyQualifiedName);
+                using(JsonWriter writer = new JsonTextWriter(tw)) {  // Alternative: binary writer: BsonWriter
+                    formatter.Serialize(writer, intermedTable);
+                }
+
+                string Ret = tw.ToString();
+                return Ret;
+            }
+        }
+        
+        /// <summary>
+        /// De-serializes an entire table into a string.
+        /// </summary>
+        public static DataTable Deserialize(string data) {
+
+            // part 1: load data
+            // =================
+
+            Tuple<string[], Array[]> intermedTable;
+            {
+                JsonSerializer formatter = new JsonSerializer() {
+                    TypeNameHandling = TypeNameHandling.All,
+                    Formatting = Formatting.Indented,
+                    ReferenceLoopHandling = ReferenceLoopHandling.Error,
+                    NullValueHandling = NullValueHandling.Ignore,
+                    ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor
+                };
+
+
+
+                using (var tr = new StringReader(data)) {
+                    using (JsonReader reader = new JsonTextReader(tr)) {
+                        intermedTable = formatter.Deserialize<Tuple<string[], Array[]>>(reader);
+                    }
+                }
+            }
+
+            // part 2: convert & return
+            // ========================
+            {
+
+                DataTable R = new DataTable();
+
+                if (intermedTable.Item1.Length != intermedTable.Item2.Length)
+                    throw new IOException();
+                int NoOfCol = intermedTable.Item1.Length;
+
+                int L = 0;
+                for(int iCol = 0; iCol < NoOfCol; iCol++) {
+                    string name = intermedTable.Item1[iCol];
+                    Array colData = intermedTable.Item2[iCol];
+                    if(iCol == 0) {
+                        L = colData.Length;
+                    } else {
+                        if(L != colData.Length) {
+                            throw new IOException();
+                        }
+                    }
+
+
+                    // Create column and add to the DataTable.
+                    DataColumn column = new DataColumn();
+                    column.DataType = colData.GetType().GetElementType();
+                    column.ColumnName = name;
+                    column.Caption = name;
+                    column.ReadOnly = false;
+                    column.Unique = false;
+                    column.DefaultValue = null;
+
+                    R.Columns.Add(column);
+                }
+
+                for (int i = 0; i < L; i++) { // loop over rows
+                    DataRow row = R.NewRow();
+                    for (int iCol = 0; iCol < NoOfCol; iCol++) { // loop over columns
+                        object dataItem = intermedTable.Item2[iCol].GetValue(i);
+                        string name = intermedTable.Item1[iCol];
+                        
+                        row[name] = dataItem != null ? dataItem : DBNull.Value;
+
+                    }
+                    R.Rows.Add(row);
+                }
+                return R;
+            }
+
+        }
+
+
+        /// <summary>
+        /// Extracts one column from a table, and tries to convert the content into type <typeparamref name="T"/>.
+        /// </summary>
+        public static Array GetColumn(this DataTable tab, string ColName) {
+            DataColumn col = tab.Columns[ColName];
+            Type colType = col.DataType;
+
+            object[] ColContent = tab.GetColumn<object>(ColName);
+            int L = ColContent.Length;
+            Array R = Array.CreateInstance(colType, L);
+
+            for(int i = 0; i < L; i++) {
+                R.SetValue(ColContent[i], i);
             }
 
             return R;
