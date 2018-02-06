@@ -88,6 +88,7 @@ namespace BoSSS.Application.BoSSSpad {
 
 
             // Assembly References
+            eval.ReferenceAssembly(typeof(System.Data.DataTable).Assembly); // required for session tables
             eval.ReferenceAssembly(typeof(ilPSP.Environment).Assembly);
             eval.ReferenceAssembly(typeof(ilPSP.LinSolvers.SimpleSolversInterface).Assembly);
             eval.ReferenceAssembly(typeof(BatchmodeConnector).Assembly); // Do it this cause connector is not referenced anywhere else, i.e. the assembly will often be missing otherwise
@@ -113,9 +114,12 @@ namespace BoSSS.Application.BoSSSpad {
             eval.ReferenceAssembly(typeof(IBM_Solver.IBM_SolverMain).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.Application.SipPoisson.SipPoissonMain).Assembly);
 
+<<<<<<< HEAD
             eval.ReferenceAssembly(typeof(KontiHelical.HelicalMain).Assembly);
             eval.ReferenceAssembly(typeof(PosissonScalar3CylinderCoords.PoissonScalar3CCMain).Assembly);
 
+=======
+>>>>>>> 49d09f68f0344f06dc581f6a72e92f1d34d51f03
 
             eval.Compile(
                 "using System;" + Console.Out.NewLine +

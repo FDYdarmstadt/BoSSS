@@ -57,6 +57,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="CommandLineOptions.cs" />
+    <Compile Include="QueryResultTable.cs" />
     <Compile Include="TimeStepping\ABevolve.cs" />
     <Compile Include="TimeStepping\AdamsBashforth.cs" />
     <Compile Include="TimeStepping\AdamsBashforthLTS.cs" />
@@ -87,7 +88,6 @@
     <Compile Include="LinearizedFlux.cs" />
     <Compile Include="LoadBalancing\GridUpdateDataVault_LoadBal.cs" />
     <Compile Include="LoadBalancing\StaticCellCostEstimator.cs" />
-    <Compile Include="QueryResultTable.cs" />
     <Compile Include="NonVectorizedScalarFunction.cs" />
     <Compile Include="OperatorMatrixPermute.cs" />
     <Compile Include="QueryHandler.cs" />

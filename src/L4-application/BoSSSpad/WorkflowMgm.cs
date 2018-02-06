@@ -176,9 +176,24 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public DataTable SessionTable {
             get {
-                return this.Sessions.GetSessionTable(null);
+                var adiColi = AdditionalSessionTableColums.Select(kv => new Tuple<string, Func<ISessionInfo, object>>(kv.Key, kv.Value)).ToArray();
+                return this.Sessions.GetSessionTable(adiColi);
             }
         }
+
+        Dictionary<string, Func<ISessionInfo, object>> m_AdditionalSessionTableColums = new Dictionary<string, Func<ISessionInfo, object>>();
+
+        /// <summary>
+        /// Custom, user-defined columns for the session table (<see cref="SessionTable"/>).
+        /// - keys: column name
+        /// - values: functions which map the session info to a column value.
+        /// </summary>
+        public IDictionary<string, Func<ISessionInfo, object>> AdditionalSessionTableColums {
+            get {
+                return m_AdditionalSessionTableColums;
+            }
+        }
+
 
 
         Dictionary<string, Job> m_AllJobs = new Dictionary<string, Job>();
