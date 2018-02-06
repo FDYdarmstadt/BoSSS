@@ -520,6 +520,10 @@ namespace BoSSS.Solution.XdgTimestepping {
                             ConvCrit = Config_SolverConvergenceCriterion,
                             UnderRelax = Config_UnderRelax,                         
                         };
+
+                        if (this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative)
+                            ((FixpointIterator)nonlinSolver).CoupledIteration_Converged = LevelSetConvergenceReached;
+
                         break;
 
                     case NonlinearSolverMethod.Newton:
