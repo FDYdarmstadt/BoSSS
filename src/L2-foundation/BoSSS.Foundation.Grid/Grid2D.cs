@@ -1726,7 +1726,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// <param name=""></param>
         /// <returns></returns>
         public static Grid2D HelicalHangingNodes(double rmin, double rmax, double ximin, double ximax, int NoOfRnodes, int NoOfXinodes0,
-            int NoOfXiRefinements = 4, int XiRefinementGrades = 2) {
+            int NoOfXiRefinements, int XiRefinementGrades) {
 
             Grid2D grid = new Grid2D(Square.Instance);
 
