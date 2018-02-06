@@ -47,6 +47,7 @@ namespace CNS {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
+
             Application<CNSControl>._Main(
                 args,
                 false,

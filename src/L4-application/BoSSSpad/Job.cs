@@ -211,6 +211,7 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
+        /*
         /// <summary>
         /// Specifies command line arguments for application startup; overrides any startup arguments (<see cref="CommandLineArguments"/>)
         /// set so far.
@@ -233,6 +234,8 @@ namespace BoSSS.Application.BoSSSpad {
                 m_EnvironmentVars.Add("BOSSS_ARG_" + i, args[i]);
             }
         }
+        */
+
 
         /// <summary>
         /// Specifies the control object for application startup; overrides any startup arguments (<see cref="CommandLineArguments"/>)
@@ -242,10 +245,19 @@ namespace BoSSS.Application.BoSSSpad {
             // serialize control object
             // ========================
 
-            ctrl.ExtensiveVerify();
-            string JSON = ctrl.Serialize();
-            byte[] buffer = Encoding.UTF8.GetBytes(JSON);
-            AdditionalDeploymentFiles.Add(new Tuple<byte[], string>(buffer, "control.obj"));
+            ctrl.VerifyEx();
+            string ControlName, text;
+            int index = -1;
+            if (ctrl.GeneratedFromCode) {
+                text = ctrl.ControlFileText;
+                ControlName = "control.cs";
+                index = ctrl.ControlFileText_Index;
+            } else {
+                text = ctrl.Serialize();
+                ControlName = "control.obj";
+            }
+            byte[] buffer = Encoding.UTF8.GetBytes(text);
+            AdditionalDeploymentFiles.Add(new Tuple<byte[], string>(buffer, ControlName));
 
             // Project & Session Name
             // ======================
@@ -259,6 +271,10 @@ namespace BoSSS.Application.BoSSSpad {
                 "--prjnmn", PrjName,
                 "--sesnmn", this.Name
             };
+            if(index >= 0) {
+                ArrayTools.Cat(args, "--pstudy_case", index.ToString());
+            }
+
 
             for(int i = 0; i < args.Length; i++) {
                 m_EnvironmentVars.Add("BOSSS_ARG_" + i, args[i]);
@@ -267,6 +283,7 @@ namespace BoSSS.Application.BoSSSpad {
             // 
         }
 
+        /*
         /// <summary>
         /// Specifies command line arguments for application startup; overrides any startup arguments (<see cref="CommandLineArguments"/>)
         /// set so far.
@@ -275,6 +292,8 @@ namespace BoSSS.Application.BoSSSpad {
             File.ReadAllText(FileName);
             SetControlCode(File.ReadAllText(FileName));
         }
+        */
+
 
         string[] m_CommandLineArguments = new string[0];
 
