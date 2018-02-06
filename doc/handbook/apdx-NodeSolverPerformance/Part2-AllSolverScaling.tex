@@ -1,0 +1,283 @@
+\BoSSScmd{
+restart
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+using BoSSS.Application.SipPoisson;
+ }
+\BoSSSexe
+\BoSSScmd{
+WorkflowMgm.Init("PoissonSolverPerformance");
+ }
+\BoSSSexe
+\BoSSScmd{
+var tempDB = OpenOrCreateDatabase("D:\textbackslash \textbackslash tmp\textbackslash \textbackslash fk\_temp\_db");
+ }
+\BoSSSexe
+\BoSSScmd{
+// ====================\newline 
+// Evaluation, plotting\newline 
+// ====================
+ }
+\BoSSSexe
+\BoSSScmd{
+WorkflowMgm.SessionTable.GetColumnNames();
+ }
+\BoSSSexe
+\BoSSScmd{
+var SubTab\_1 = WorkflowMgm.SessionTable.ExtractColumns("DGdegree:T", "Grid:NoOfCells", "solver\_name", "DOFs", "minSolRunT", "maxSolRunT", "NoIter", "Conv", "RegularTerminated");
+ }
+\BoSSSexe
+\BoSSScmd{
+var SubTab = SubTab\_1.ExtractRows(delegate(int i, IDictionary<string,object> row) \{\newline 
+\btab return (Convert.ToBoolean(row["RegularTerminated"]) == true)\newline 
+\btab \btab   && (Convert.ToInt32(row["Conv"]) != 0);\newline 
+\btab \});
+ }
+\BoSSSexe
+\BoSSScmd{
+SubTab.Print();
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+//SubTab.GetColumn<double>("minSolRunT");
+ }
+\BoSSSexe
+\BoSSScmd{
+//var SubTab\_k23 = SubTab.ExtractRows((iRow,Row) => Convert.ToInt64(Row["DGdegree:T"])==2 || Convert.ToInt64(Row["DGdegree:T"])==3);
+ }
+\BoSSSexe
+\BoSSScmd{
+//var SubTab\_k45 = SubTab.ExtractRows((iRow,Row) => Convert.ToInt64(Row["DGdegree:T"])==4 || Convert.ToInt64(Row["DGdegree:T"])==5);
+ }
+\BoSSSexe
+\BoSSScmd{
+//var SubTab\_k6 = SubTab.ExtractRows((iRow,Row) => Convert.ToInt64(Row["DGdegree:T"])==6);
+ }
+\BoSSSexe
+\BoSSScmd{
+//SubTab.GetColumnTypes();
+ }
+\BoSSSexe
+\BoSSScmd{
+//var RuntimePlot = SubTab.ToPlot("DOFs", "minSolRunT", \newline 
+//    (iRow,Row) => (System.Enum.ToObject(typeof(SolverCodes),Row["solver\_name"])).ToString() + "k" + Row["DGdegree:T"]);
+ }
+\BoSSSexe
+\BoSSScmd{
+var RuntimePlot = SubTab.ToPlot("DOFs", "minSolRunT", // column for x- and y\newline 
+\btab \btab \btab \btab \btab \btab "solver\_name", "DGdegree:T"); // column for group
+ }
+\BoSSSexe
+\BoSSScmd{
+//SubTab.ToCSVFile("C:\textbackslash \textbackslash tmp\textbackslash \textbackslash table.csv");
+ }
+\BoSSSexe
+\BoSSScmd{
+//RuntimePlot.dataGroups.Select(grp => grp.Name);
+ }
+\BoSSSexe
+\BoSSScmd{
+RuntimePlot.LogX   = true;\newline 
+RuntimePlot.LogY   = true;\newline 
+RuntimePlot.Xlabel = "Degrees of freedom";\newline 
+RuntimePlot.Ylabel = "Runtime [sec]";\newline 
+RuntimePlot.Title  = "Solver performance -- 3D Poisson problem";\newline 
+ \newline 
+RuntimePlot.ModPointType("name0", PointTypes.Circle); // Pardiso\newline 
+RuntimePlot.ModPointType("name1", PointTypes.UpperTriangle); // Mumps\newline 
+RuntimePlot.ModPointType("name2", PointTypes.Diamond); // CG\newline 
+RuntimePlot.ModPointType("name5", PointTypes.Box); // Schwarz\newline 
+RuntimePlot.ModPointType("name7", PointTypes.LowerTriangle); // LAPACK\newline 
+RuntimePlot.ModDashType("T2", DashTypes.Dashed); // poly. order 2\newline 
+RuntimePlot.ModDashType("T3", DashTypes.DotDashed); // poly. order 3\newline 
+RuntimePlot.ModDashType("T4", DashTypes.DotDotDashed); // poly. order 4\newline 
+RuntimePlot.ModDashType("T5", DashTypes.Solid); // poly. order 5\newline 
+RuntimePlot.ModDashType("T6", DashTypes.Dotted); // poly. order 6\newline 
+RuntimePlot.ModLineColor("T2", LineColors.Blue);\newline 
+RuntimePlot.ModLineColor("T3", LineColors.Red);\newline 
+RuntimePlot.ModLineColor("T4", LineColors.Magenta);\newline 
+RuntimePlot.ModLineColor("T5", LineColors.Orange);\newline 
+RuntimePlot.ModLineColor("T6", LineColors.Green);\newline 
+ \newline 
+foreach(var xyGroup in RuntimePlot.dataGroups) \{\newline 
+\btab xyGroup.Format.LineWidth = 2;\newline 
+\btab xyGroup.Format.PointSize = 1.0;\newline 
+\}\newline 
+ \newline 
+foreach(Plot2Ddata.XYvalues graph in RuntimePlot.dataGroups) \{\newline 
+ \newline 
+\btab string ret = "";\newline 
+\btab if(graph.Name.Contains("name0")) \{\newline 
+\btab \btab ret += "Pardiso, ";\newline 
+\btab \} else if(graph.Name.Contains("name1")) \{\newline 
+\btab \btab ret += "Mumps, ";\newline 
+\btab \} else if(graph.Name.Contains("name2")) \{\newline 
+\btab \btab Console.WriteLine("cg");\newline 
+\btab \btab ret += "Cnj Gr, ";\newline 
+\btab \} else if(graph.Name.Contains("name5")) \{\newline 
+\btab \btab ret += "Add Swz, ";\newline 
+\btab \} else if(graph.Name.Contains("name7")) \{\newline 
+\btab \btab Console.WriteLine("lapack");\newline 
+\btab \btab ret += "LAPACK, ";\newline 
+\btab \} \newline 
+\btab if(graph.Name.Contains("T2")) \{\newline 
+\btab \btab ret += "$ k = 2 $";\newline 
+\btab \} else if(graph.Name.Contains("T3")) \{\newline 
+\btab \btab ret += "$ k = 3 $";\newline 
+\btab \} else if(graph.Name.Contains("T4")) \{\newline 
+\btab \btab ret += "$ k = 4 $";\newline 
+\btab \} else if(graph.Name.Contains("T5")) \{\newline 
+\btab \btab ret += "$ k = 5 $";\newline 
+\btab \} else if(graph.Name.Contains("T6")) \{\newline 
+\btab \btab ret += "$ k = 6 $";\newline 
+\btab \}\newline 
+ \newline 
+\btab graph.Name = ret;\newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+//RuntimePlot.PlotNow();
+ }
+\BoSSSexe
+\BoSSScmd{
+var cl = RuntimePlot.ToGnuplot().PlotCairolatex();\newline 
+cl.Preview(trimPage:true);
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+//cl.WriteMinimalCompileableExample("C:\textbackslash \textbackslash tmp\textbackslash \textbackslash mini.tex");
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+Plot2Ddata[,] multiplots = new Plot2Ddata[3,2];\newline 
+int pDegree = 2;\newline 
+for(int iRow = 0; iRow < 3; iRow++) \{\newline 
+//var RuntimePlot = SubTab.ToPlot("DOFs", "minSolRunT", // column for x- and y\newline 
+//                        "solver\_name", "DGdegree:T"); // column for group\newline 
+for(int iCol = 0; iCol < 2; iCol++) \{\newline 
+\btab if(pDegree > 6)\newline 
+\btab \btab continue;\newline 
+ \newline 
+\btab multiplots[iRow,iCol] = SubTab.ToPlot("DOFs", "minSolRunT", // column for x- and y\newline 
+\btab    delegate (int iTabRow, \newline 
+\btab \btab \btab \btab  IDictionary<string, object> Row, \newline 
+\btab \btab \btab \btab  out string Nmn, \newline 
+\btab \btab \btab \btab  out PlotFormat Fmt) \{ \newline 
+\btab \btab    // - - - - - - - - - - - - - - - - - - - - - - - - \newline 
+\btab \btab    // PlotRowSelector:\newline 
+\btab \btab    // selects, which table row goes to which graph,\newline 
+\btab \btab    // and the respective color  \newline 
+\btab \btab    // - - - - - - - - - - - - - - - - - - - - - - - - \newline 
+\btab \btab    int k = Convert.ToInt32(Row["DGdegree:T"]);\newline 
+\btab \btab    if(k != pDegree) \{\newline 
+\btab \btab \btab \btab // degree does not match -> not in this plot\newline 
+\btab \btab \btab \btab Nmn = null;\newline 
+\btab \btab \btab \btab Fmt = null;\newline 
+\btab \btab \btab \btab return;\newline 
+\btab \btab    \}\newline 
+ \newline 
+\btab \btab    SolverCodes solver\_name = (SolverCodes) Convert.ToInt32(Row["solver\_name"]);\newline 
+\btab \btab    Fmt                     = new PlotFormat();\newline 
+\btab \btab    switch(solver\_name) \{\newline 
+\btab \btab    case SolverCodes.classic\_pardiso: \newline 
+\btab \btab \btab    Nmn           = "Pardiso"; \newline 
+\btab \btab \btab    Fmt.PointType = PointTypes.Circle;\newline 
+\btab \btab \btab    Fmt.DashType  = DashTypes.Dotted;\newline 
+\btab \btab \btab    break;\newline 
+\btab \btab    case SolverCodes.classic\_mumps: \newline 
+\btab \btab \btab    Nmn           = "Mumps"; \newline 
+\btab \btab \btab    Fmt.PointType = PointTypes.UpperTriangle;\newline 
+\btab \btab \btab    Fmt.DashType  = DashTypes.Dotted;\newline 
+\btab \btab \btab    break;\newline 
+\btab \btab    case SolverCodes.classic\_cg: \newline 
+\btab \btab \btab    Nmn           = "CG"; \newline 
+\btab \btab \btab    Fmt.PointType = PointTypes.Diamond;\newline 
+\btab \btab \btab    break;\newline 
+\btab \btab    case SolverCodes.exp\_direct: \newline 
+\btab \btab \btab    Nmn = "Pardiso & Blk PC"; \newline 
+\btab \btab \btab    break;\newline 
+\btab \btab    case SolverCodes.exp\_softpcg\_schwarz: \newline 
+\btab \btab \btab    Nmn = "Add Swz"; \newline 
+\btab \btab \btab    break;\newline 
+\btab \btab    case SolverCodes.exp\_softpcg\_schwarz\_directcoarse : \newline 
+\btab \btab \btab    Nmn = "Add Swz w Coarse"; \newline 
+\btab \btab \btab    break;\newline 
+\btab \btab    case SolverCodes.exp\_direct\_lapack: \newline 
+\btab \btab \btab    Nmn           = "LAPACK"; \newline 
+\btab \btab \btab    Fmt.PointType = PointTypes.LowerTriangle;\newline 
+\btab \btab \btab    break;\newline 
+\btab \btab    default: \newline 
+\btab \btab \btab    Nmn = "unknown"; \newline 
+\btab \btab \btab    break;\newline 
+\btab \btab    \} \newline 
+\btab \btab    Fmt.PointSize = 0.5;\newline 
+\btab \btab    Fmt.Style     = Styles.LinesPoints;\newline 
+\btab \btab    Fmt.LineColor = LineColors.Black;\newline 
+\btab    \});\newline 
+ \newline 
+\btab string Title = string.Format("$k = \{0\}$", pDegree);\newline 
+\btab multiplots[iRow,iCol].Ylabel = Title;\newline 
+\btab multiplots[iRow,iCol].LogX = true;\newline 
+\btab multiplots[iRow,iCol].LogY = true;\newline 
+ \newline 
+\btab multiplots[iRow,iCol].YrangeMin = 1e-3;\newline 
+\btab multiplots[iRow,iCol].YrangeMax = 1e+4;\newline 
+ \newline 
+\btab multiplots[iRow,iCol].ShowLegend = iRow == 2;\newline 
+ \newline 
+\btab if(iCol == 1) \{\newline 
+\btab \btab multiplots[iRow,iCol].SwapYaxes();\newline 
+\btab \btab multiplots[iRow,iCol].lmargin = 1;\newline 
+\btab \btab multiplots[iRow,iCol].rmargin = 10;\newline 
+\btab \} else \{\newline 
+\btab \btab multiplots[iRow,iCol].lmargin = 10;\newline 
+\btab \btab multiplots[iRow,iCol].rmargin = 1;\newline 
+\btab \}\newline 
+\btab multiplots[iRow,iCol].tmargin = 1;\newline 
+\btab multiplots[iRow,iCol].bmargin = 1;\newline 
+\btab if(iRow == 0) \{\newline 
+\btab \btab multiplots[iRow,iCol].SwapXaxes();\newline 
+\btab \}\newline 
+\btab if(iRow == 1 && iCol == 0) \{  \newline 
+\btab \btab multiplots[iRow,iCol].ShowXtics = false;\newline 
+\btab \}\newline 
+\btab pDegree++;\newline 
+\}                        \newline 
+\}\newline 
+multiplots.PlotNow();
+ }
+\BoSSSexe
+\BoSSScmd{
+multiplots.ToGnuplot().PlotCairolatex().WriteMinimalCompileableExample("D:\textbackslash \textbackslash tmp\textbackslash \textbackslash multi.tex");
+ }
+\BoSSSexe
+\BoSSScmd{
+multiplots.ToGnuplot().PlotCairolatex().Preview();
+ }
+\BoSSSexe

@@ -474,6 +474,11 @@ WorkflowMgm.SessionTable.Rows.Count;
 // =====================================
 **************
 ==============
+// -------------------------------
+// Additional/user-defined columns
+// -------------------------------
+**************
+==============
 static class AddCols {
     static public object SipMatrixAssembly_time(ISessionInfo SI) {
         var mcr = SI.GetProfiling()[0];
@@ -514,39 +519,16 @@ WorkflowMgm.AdditionalSessionTableColums.Add(
     "Solver_Run_time", AddCols.Solver_Run_time);
 **************
 ==============
-//var SI = tempDB.Sessions.Single(si => si.Name == "J40_k2_exp_softpcg_schwarz_directcoarse");
-**************
-==============
-//SI;
-**************
-==============
-//Console.WriteLine(AddCols.SipMatrixAssembly_time(SI));
-//Console.WriteLine(AddCols.Aggregation_basis_init_time(SI));
-//Console.WriteLine(AddCols.Solver_Init_time(SI));
-//Console.WriteLine(AddCols.Solver_Run_time(SI));
-**************
-==============
-//var mcr = SI.GetProfiling()[0];
-**************
-==============
-//SI.KeysAndQueries;
-**************
-==============
-//var rsos = mcr.FindChildren("*RunSolverOneStep*").ElementAt(0);
-**************
-==============
-//rsos.Calls;
-**************
-==============
+// --------------------------
+// Save Session table in file
+// --------------------------
 **************
 ==============
 var SessTab = WorkflowMgm.SessionTable;
 **************
 ==============
-**************
-==============
-**************
-==============
+// The Session column can't be serialized,
+// we have to remove it
 List<string> AllCols = SessTab.GetColumnNames().ToList();
 AllCols.Remove("Session");
 **************
@@ -555,84 +537,15 @@ True
 SessTab = SessTab.ExtractColumns(AllCols.ToArray());
 **************
 ==============
-var now = DateTime.Now;
+// Filename
+var now           = DateTime.Now;
+SessTab.TableName = "SolverRuns--" + now.Year + "-" + now.Month + "-" + now.Day;
+string docpath    = Path.Combine(CurrentDocDir, SessTab.TableName + ".json");
 **************
 ==============
-SessTab.TableName = "SolverRuns--" + now.Year + "-" + now.Month;
-**************
-==============
-using System.IO;
-**************
-==============
-string docpath = Path.Combine(CurrentDocDir, SessTab.TableName + ".xml");
-**************
-==============
-SessTab.WriteXml(docpath);
-**************
-==============
-//tab.GetColumnNames();
-**************
-==============
-//var SubTab = tab.ExtractColumns( "solver_name", "DGdegree:T", "DOFs",
-//"RegularTerminated", "Conv", 
-//"SipMatrixAssembly_time", "Aggregation_basis_init_time", "Solver_Init_time", "Solver_Run_time", "minSolRunT", "maxSolRunT");
-**************
-==============
-//SessTab.Print();
-**************
-==============
-SessTab.GetColumnTypes().Take(7);
-**************
-List of 7 instances of Type {
-  0: System.String
-  1: System.Int64
-  2: System.Int64
-  3: System.String
-  4: System.String
-  5: System.Boolean
-  6: System.Int64
-}
-==============
-tempDB.Sessions.ElementAt(0).KeysAndQueries["DGdegree:T"].GetType();
-**************
-System.Int64
-==============
-//using System.Data;
-**************
-==============
-//var SessTab_Test = new System.Data.DataTable();
-//SessTab_Test.ReadXml(docpath);
-**************
-==============
-**************
-==============
-string txt = SessTab.Serialize();
-**************
-==============
-System.IO.File.WriteAllText(Path.Combine(CurrentDocDir, "oida.txt"), txt);
-**************
-==============
-var SessTab2 = TableExtensions.Deserialize(txt);
-**************
-==============
-SessTab2.GetColumnTypes().Take(7);
-**************
-List of 7 instances of Type {
-  0: System.String
-  1: System.Int64
-  2: System.Int64
-  3: System.String
-  4: System.String
-  5: System.Boolean
-  6: System.Int64
-}
-==============
-**************
-==============
-**************
-==============
-**************
-==============
+// save session table as file: this can be stored in our git 
+// repository
+SessTab.SaveToFile(docpath);
 **************
 ==============
 **************
