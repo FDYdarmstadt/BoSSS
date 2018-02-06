@@ -456,6 +456,7 @@ namespace BoSSS.Application.BoSSSpad {
             }
             set {
                 this.m_DocumentPath = value;
+                InteractiveShell._CurrentDocFile = value;
             }
         }
 
