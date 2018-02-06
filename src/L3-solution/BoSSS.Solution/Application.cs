@@ -1028,6 +1028,7 @@ namespace BoSSS.Solution {
                 // kernel setup
                 //====================
                 //RedistributeGrid();
+
                 Grid.Redistribute(DatabaseDriver, Control.GridPartType, Control.GridPartOptions);
                 if (!passiveIo && !DatabaseDriver.GridExists(Grid.GridGuid)) {
 
