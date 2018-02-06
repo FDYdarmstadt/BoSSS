@@ -322,6 +322,22 @@ namespace BoSSS.Application.BoSSSpad {
 
 
         /// <summary>
+        /// Stores Table in JSON-File
+        /// </summary>
+        static public void SaveToFile(this DataTable tab, string filePath) {
+            string s = tab.Serialize();
+            File.WriteAllText(filePath, s);
+        }
+
+        /// <summary>
+        /// Stores Table in JSON-File
+        /// </summary>
+        static public DataTable LoadFromFile(string filePath) {
+            string s = File.ReadAllText(filePath);
+            return Deserialize(s);
+        }
+        
+        /// <summary>
         /// Extracts one column from a table, and tries to convert the content into type <typeparamref name="T"/>.
         /// </summary>
         public static Array GetColumn(this DataTable tab, string ColName) {
