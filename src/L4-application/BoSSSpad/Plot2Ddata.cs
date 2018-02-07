@@ -265,6 +265,12 @@ namespace BoSSS.Application.BoSSSpad {
         [DataMember]
         public bool ShowLegend = true;
 
+        /// <summary>
+        /// Position of legend, in graph coordinates (e.g. for a log-range, with values from 10 to 1000, this may be 10000 to print the legend rigth from the plot).
+        /// </summary>
+        [DataMember]
+        public double[] LegendPosition = null;
+
 
         /// <summary>
         /// Numbers on the primary x-axis
@@ -842,6 +848,36 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public void ToGnuplot(Gnuplot gp) {
 
+            // =======
+            // margins
+            // =======
+            {
+                if(lmargin != null) {
+                    gp.Cmd("set lmargin {0:0.####e-00}", this.lmargin.Value);
+                } else {
+                    gp.Cmd("unset lmargin ");
+                }
+
+                if (rmargin != null) {
+                    gp.Cmd("set rmargin {0:0.####e-00}", this.rmargin.Value);
+                } else {
+                    gp.Cmd("unset rmargin ");
+                }
+
+                if(tmargin != null) {
+                    gp.Cmd("set tmargin {0:0.####e-00}", this.tmargin.Value);
+                } else {
+                    gp.Cmd("unset tmargin ");
+                }
+
+                if(bmargin != null) {
+                    gp.Cmd("set bmargin {0:0.####e-00}", this.bmargin.Value);
+                } else {
+                    gp.Cmd("unset bmargin ");
+                }
+
+            }
+
             // ============
             // log settings
             // ============
@@ -942,8 +978,12 @@ namespace BoSSS.Application.BoSSSpad {
 
                 if (this.ShowLegend) {
                     gp.Cmd("unset key");
-                    //gp.Cmd("set key at 5e-1,10e-8 vertical maxrows {0} ", );
-                    gp.Cmd("set key outside right vertical maxrows {0} ", this.dataGroups.Length);
+
+                    if (this.LegendPosition != null) {
+                        gp.Cmd("set key at {1:0.####e-00},{2:0.####e-00} vertical maxrows {0} ", this.dataGroups.Length, this.LegendPosition[0], this.LegendPosition[1]);
+                    } else {
+                        gp.Cmd("set key outside right vertical maxrows {0} ", this.dataGroups.Length);
+                    }
                 } else {
                     gp.Cmd("set key off");
                 }
@@ -991,35 +1031,7 @@ namespace BoSSS.Application.BoSSSpad {
                 }
             }
 
-            // =======
-            // margins
-            // =======
-            {
-                if(lmargin != null) {
-                    gp.Cmd("set lmargin " + this.lmargin.Value.ToStringDot());
-                } else {
-                    gp.Cmd("unset lmargin ");
-                }
-
-                if (rmargin != null) {
-                    gp.Cmd("set rmargin " + this.rmargin.Value.ToStringDot());
-                } else {
-                    gp.Cmd("unset rmargin ");
-                }
-
-                if(tmargin != null) {
-                    gp.Cmd("set tmargin " + this.tmargin.Value.ToStringDot());
-                } else {
-                    gp.Cmd("unset tmargin ");
-                }
-
-                if(bmargin != null) {
-                    gp.Cmd("set bmargin " + this.bmargin.Value.ToStringDot());
-                } else {
-                    gp.Cmd("unset bmargin ");
-                }
-
-            }
+          
 
 
             // =================

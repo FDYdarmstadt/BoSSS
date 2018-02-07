@@ -213,7 +213,7 @@ for(int iCol = 0; iCol < 2; iCol++) \{\newline
 \btab \btab \btab    break;\newline 
 \btab \btab    case SolverCodes.exp\_direct: \newline 
 \btab \btab \btab    Fmt.PointType = PointTypes.OpenBox;\newline 
-\btab \btab \btab    Nmn           = "Pardiso & Blk PC"; \newline 
+\btab \btab \btab    Nmn           = "Pardiso w Blk PC"; \newline 
 \btab \btab \btab    break;\newline 
 \btab \btab    case SolverCodes.exp\_softpcg\_schwarz: \newline 
 \btab \btab \btab    Nmn           = "Add Swz"; \newline 
@@ -245,8 +245,19 @@ for(int iCol = 0; iCol < 2; iCol++) \{\newline
  \newline 
 \btab multiplots[iRow,iCol].YrangeMin = 1e-3;\newline 
 \btab multiplots[iRow,iCol].YrangeMax = 1e+4;\newline 
+\btab multiplots[iRow,iCol].XrangeMin = 1e2;\newline 
+\btab multiplots[iRow,iCol].XrangeMax = 1e7;\newline 
+\btab multiplots[iRow,iCol].Y2rangeMin = 1e-3;\newline 
+\btab multiplots[iRow,iCol].Y2rangeMax = 1e+4;\newline 
+\btab multiplots[iRow,iCol].X2rangeMin = 1e2;\newline 
+\btab multiplots[iRow,iCol].X2rangeMax = 1e7;\newline 
  \newline 
-\btab multiplots[iRow,iCol].ShowLegend = iRow == 2;\newline 
+\btab if(iRow == 2) \{\newline 
+\btab \btab multiplots[iRow,iCol].ShowLegend = true;\newline 
+\btab \btab multiplots[iRow,iCol].LegendPosition = new double[] \{1e12,1e4\};\newline 
+\btab \} else \{\newline 
+\btab \btab multiplots[iRow,iCol].ShowLegend = false;\newline 
+\btab \}\newline 
  \newline 
 \btab if(iCol == 1) \{\newline 
 \btab \btab multiplots[iRow,iCol].SwapYaxes();\newline 
@@ -267,18 +278,35 @@ for(int iCol = 0; iCol < 2; iCol++) \{\newline
 \btab pDegree++;\newline 
 \}                        \newline 
 \}\newline 
-//multiplots.PlotNow();
+//multiplots.PlotNow();\newline 
+multiplots.AddDummyPlotsForLegend(2,0);
  }
 \BoSSSexe
 \BoSSScmd{
-var CL = multiplots.ToGnuplot().PlotCairolatex();
+ % 
  }
 \BoSSSexe
 \BoSSScmd{
-CL.SaveTo(Path.Combine(CurrentDocDir, "ConstCoeffPoissonScaling.tex"));
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+var CL = multiplots.ToGnuplot().PlotCairolatex(xSize:17, ySize:17);
+ }
+\BoSSSexe
+\BoSSScmd{
+//CL.SaveTo(Path.Combine(CurrentDocDir, "ConstCoeffPoissonScaling.tex"));
  }
 \BoSSSexe
 \BoSSScmd{
 CL.PlotNow();
+ }
+\BoSSSexe
+\BoSSScmd{
+//cmt
  }
 \BoSSSexe
