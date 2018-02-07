@@ -1,17 +1,32 @@
+
+
+
+\BoSSSopen{apdx-NodeSolverPerformance/Part2-AllSolverScaling}
+\graphicspath{{apdx-NodeSolverPerformance/Part2-AllSolverScaling.texbatch/}}
+
+
+
 \BoSSScmd{
 restart
  }
 \BoSSSexeSilent
 \BoSSScmd{
-using BoSSS.Application.SipPoisson;
- }
-\BoSSSexe
-\BoSSScmd{
 WorkflowMgm.Init("PoissonSolverPerformance");
  }
 \BoSSSexe
 \BoSSScmd{
-var tempDB = OpenOrCreateDatabase("D:\textbackslash \textbackslash tmp\textbackslash \textbackslash fk\_temp\_db");
+using System.IO;\newline 
+using BoSSS.Application.SipPoisson;
+ }
+\BoSSSexe
+\BoSSScmd{
+string File     = "SolverRuns--2018-2-6.json";\newline 
+string FilePath = Path.Combine(CurrentDocDir, File);\newline 
+var SessTab     = TableExtensions.LoadFromFile(FilePath);
+ }
+\BoSSSexe
+\BoSSScmd{
+//SessTab.Print();
  }
 \BoSSSexe
 \BoSSScmd{
@@ -21,18 +36,22 @@ var tempDB = OpenOrCreateDatabase("D:\textbackslash \textbackslash tmp\textbacks
  }
 \BoSSSexe
 \BoSSScmd{
-WorkflowMgm.SessionTable.GetColumnNames();
+SessTab.GetColumnNames();
  }
 \BoSSSexe
 \BoSSScmd{
-var SubTab\_1 = WorkflowMgm.SessionTable.ExtractColumns("DGdegree:T", "Grid:NoOfCells", "solver\_name", "DOFs", "minSolRunT", "maxSolRunT", "NoIter", "Conv", "RegularTerminated");
+var SubTab\_1 = SessTab.ExtractColumns("DGdegree:T", "Grid:NoOfCells", "solver\_name", "DOFs", "minSolRunT", "maxSolRunT", "NoIter", "RegularTerminated", "Conv");
  }
 \BoSSSexe
 \BoSSScmd{
-var SubTab = SubTab\_1.ExtractRows(delegate(int i, IDictionary<string,object> row) \{\newline 
+var SubTab\_2 = SubTab\_1.ExtractRows(delegate(int i, IDictionary<string,object> row) \{\newline 
 \btab return (Convert.ToBoolean(row["RegularTerminated"]) == true)\newline 
 \btab \btab   && (Convert.ToInt32(row["Conv"]) != 0);\newline 
 \btab \});
+ }
+\BoSSSexe
+\BoSSScmd{
+var SubTab = SubTab\_2.ExtractColumns("DGdegree:T", "Grid:NoOfCells", "solver\_name", "DOFs", "minSolRunT", "maxSolRunT", "NoIter");
  }
 \BoSSSexe
 \BoSSScmd{
@@ -41,31 +60,6 @@ SubTab.Print();
 \BoSSSexe
 \BoSSScmd{
  % 
- }
-\BoSSSexe
-\BoSSScmd{
-//SubTab.GetColumn<double>("minSolRunT");
- }
-\BoSSSexe
-\BoSSScmd{
-//var SubTab\_k23 = SubTab.ExtractRows((iRow,Row) => Convert.ToInt64(Row["DGdegree:T"])==2 || Convert.ToInt64(Row["DGdegree:T"])==3);
- }
-\BoSSSexe
-\BoSSScmd{
-//var SubTab\_k45 = SubTab.ExtractRows((iRow,Row) => Convert.ToInt64(Row["DGdegree:T"])==4 || Convert.ToInt64(Row["DGdegree:T"])==5);
- }
-\BoSSSexe
-\BoSSScmd{
-//var SubTab\_k6 = SubTab.ExtractRows((iRow,Row) => Convert.ToInt64(Row["DGdegree:T"])==6);
- }
-\BoSSSexe
-\BoSSScmd{
-//SubTab.GetColumnTypes();
- }
-\BoSSSexe
-\BoSSScmd{
-//var RuntimePlot = SubTab.ToPlot("DOFs", "minSolRunT", \newline 
-//    (iRow,Row) => (System.Enum.ToObject(typeof(SolverCodes),Row["solver\_name"])).ToString() + "k" + Row["DGdegree:T"]);
  }
 \BoSSSexe
 \BoSSScmd{
@@ -82,6 +76,7 @@ var RuntimePlot = SubTab.ToPlot("DOFs", "minSolRunT", // column for x- and y\new
  }
 \BoSSSexe
 \BoSSScmd{
+/*\newline 
 RuntimePlot.LogX   = true;\newline 
 RuntimePlot.LogY   = true;\newline 
 RuntimePlot.Xlabel = "Degrees of freedom";\newline 
@@ -117,12 +112,12 @@ foreach(Plot2Ddata.XYvalues graph in RuntimePlot.dataGroups) \{\newline
 \btab \} else if(graph.Name.Contains("name1")) \{\newline 
 \btab \btab ret += "Mumps, ";\newline 
 \btab \} else if(graph.Name.Contains("name2")) \{\newline 
-\btab \btab Console.WriteLine("cg");\newline 
+\btab \btab //Console.WriteLine("cg");\newline 
 \btab \btab ret += "Cnj Gr, ";\newline 
 \btab \} else if(graph.Name.Contains("name5")) \{\newline 
 \btab \btab ret += "Add Swz, ";\newline 
 \btab \} else if(graph.Name.Contains("name7")) \{\newline 
-\btab \btab Console.WriteLine("lapack");\newline 
+\btab \btab //Console.WriteLine("lapack");\newline 
 \btab \btab ret += "LAPACK, ";\newline 
 \btab \} \newline 
 \btab if(graph.Name.Contains("T2")) \{\newline 
@@ -138,7 +133,8 @@ foreach(Plot2Ddata.XYvalues graph in RuntimePlot.dataGroups) \{\newline
 \btab \}\newline 
  \newline 
 \btab graph.Name = ret;\newline 
-\}
+\}\newline 
+*/
  }
 \BoSSSexe
 \BoSSScmd{
@@ -158,12 +154,8 @@ foreach(Plot2Ddata.XYvalues graph in RuntimePlot.dataGroups) \{\newline
  }
 \BoSSSexe
 \BoSSScmd{
-var cl = RuntimePlot.ToGnuplot().PlotCairolatex();\newline 
-cl.Preview(trimPage:true);
- }
-\BoSSSexe
-\BoSSScmd{
- % 
+//var cl = RuntimePlot.ToGnuplot().PlotCairolatex();\newline 
+//cl.Preview(trimPage:true);
  }
 \BoSSSexe
 \BoSSScmd{
@@ -207,35 +199,40 @@ for(int iCol = 0; iCol < 2; iCol++) \{\newline
 \btab \btab    switch(solver\_name) \{\newline 
 \btab \btab    case SolverCodes.classic\_pardiso: \newline 
 \btab \btab \btab    Nmn           = "Pardiso"; \newline 
-\btab \btab \btab    Fmt.PointType = PointTypes.Circle;\newline 
+\btab \btab \btab    Fmt.PointType = PointTypes.OpenCircle;\newline 
 \btab \btab \btab    Fmt.DashType  = DashTypes.Dotted;\newline 
 \btab \btab \btab    break;\newline 
 \btab \btab    case SolverCodes.classic\_mumps: \newline 
 \btab \btab \btab    Nmn           = "Mumps"; \newline 
-\btab \btab \btab    Fmt.PointType = PointTypes.UpperTriangle;\newline 
+\btab \btab \btab    Fmt.PointType = PointTypes.OpenUpperTriangle;\newline 
 \btab \btab \btab    Fmt.DashType  = DashTypes.Dotted;\newline 
 \btab \btab \btab    break;\newline 
 \btab \btab    case SolverCodes.classic\_cg: \newline 
 \btab \btab \btab    Nmn           = "CG"; \newline 
-\btab \btab \btab    Fmt.PointType = PointTypes.Diamond;\newline 
+\btab \btab \btab    Fmt.PointType = PointTypes.Asterisk;\newline 
 \btab \btab \btab    break;\newline 
 \btab \btab    case SolverCodes.exp\_direct: \newline 
-\btab \btab \btab    Nmn = "Pardiso & Blk PC"; \newline 
+\btab \btab \btab    Fmt.PointType = PointTypes.OpenBox;\newline 
+\btab \btab \btab    Nmn           = "Pardiso & Blk PC"; \newline 
 \btab \btab \btab    break;\newline 
 \btab \btab    case SolverCodes.exp\_softpcg\_schwarz: \newline 
-\btab \btab \btab    Nmn = "Add Swz"; \newline 
+\btab \btab \btab    Nmn           = "Add Swz"; \newline 
+\btab \btab \btab    Fmt.PointType = PointTypes.LowerTriangle;\newline 
 \btab \btab \btab    break;\newline 
 \btab \btab    case SolverCodes.exp\_softpcg\_schwarz\_directcoarse : \newline 
-\btab \btab \btab    Nmn = "Add Swz w Coarse"; \newline 
+\btab \btab \btab    Nmn           = "Add Swz w Coarse";\newline 
+\btab \btab \btab    Fmt.PointType = PointTypes.UpperTriangle;\newline 
 \btab \btab \btab    break;\newline 
 \btab \btab    case SolverCodes.exp\_direct\_lapack: \newline 
 \btab \btab \btab    Nmn           = "LAPACK"; \newline 
-\btab \btab \btab    Fmt.PointType = PointTypes.LowerTriangle;\newline 
+\btab \btab \btab    Fmt.PointType = PointTypes.Plus;\newline 
 \btab \btab \btab    break;\newline 
-\btab \btab    default: \newline 
+\btab \btab    default:\newline 
+\btab \btab \btab    Console.WriteLine("unknown: " + solver\_name); \newline 
 \btab \btab \btab    Nmn = "unknown"; \newline 
 \btab \btab \btab    break;\newline 
 \btab \btab    \} \newline 
+\btab \btab    //Console.WriteLine("name is: " + solver\_name); \newline 
 \btab \btab    Fmt.PointSize = 0.5;\newline 
 \btab \btab    Fmt.Style     = Styles.LinesPoints;\newline 
 \btab \btab    Fmt.LineColor = LineColors.Black;\newline 
@@ -270,14 +267,14 @@ for(int iCol = 0; iCol < 2; iCol++) \{\newline
 \btab pDegree++;\newline 
 \}                        \newline 
 \}\newline 
-multiplots.PlotNow();
+//multiplots.PlotNow();
  }
 \BoSSSexe
 \BoSSScmd{
-multiplots.ToGnuplot().PlotCairolatex().WriteMinimalCompileableExample("D:\textbackslash \textbackslash tmp\textbackslash \textbackslash multi.tex");
+//multiplots.ToGnuplot().PlotCairolatex().WriteMinimalCompileableExample("D:\textbackslash \textbackslash tmp\textbackslash \textbackslash multi.tex");
  }
 \BoSSSexe
 \BoSSScmd{
-multiplots.ToGnuplot().PlotCairolatex().Preview();
+multiplots.ToGnuplot().PlotCairolatex().PlotNow();
  }
 \BoSSSexe
