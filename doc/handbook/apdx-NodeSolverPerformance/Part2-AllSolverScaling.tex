@@ -275,10 +275,10 @@ var CL = multiplots.ToGnuplot().PlotCairolatex();
  }
 \BoSSSexe
 \BoSSScmd{
-CL.SaveTo(Path.Combine(CurrentDocDir, "solverScaling.tex"));
+CL.SaveTo(Path.Combine(CurrentDocDir, "ConstCoeffPoissonScaling.tex"));
  }
 \BoSSSexe
 \BoSSScmd{
-multiplots.ToGnuplot().PlotCairolatex().PlotNow();
+CL.PlotNow();
  }
 \BoSSSexe
