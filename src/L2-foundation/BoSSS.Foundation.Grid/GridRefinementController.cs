@@ -70,6 +70,17 @@ namespace BoSSS.Foundation.Grid {
                 }
             }
 
+            //int countL1 = 0;
+            //int countL2 = 0;
+            //for (int j = 0; j < oldJ; j++) {
+            //    if (DesiredLevel[j] == 1)
+            //        countL1++;
+            //    if (DesiredLevel[j] == 2)
+            //        countL2++;
+            //}
+            //Console.WriteLine("Number of refined Cells on level 1 = {0}", countL1);
+            //Console.WriteLine("Number of refined Cells on level 2 = {0}", countL2);
+
             BitArray Ok2Coarsen = new BitArray(oldJ);
             for (int j = 0; j < oldJ; j++) {
                 int ActualLevel_j = CurrentGrid.Cells.GetCell(j).RefinementLevel;
@@ -117,6 +128,7 @@ namespace BoSSS.Foundation.Grid {
             // If any cells which should refined are members of CutCells
             if (CellsToRefineList.Count == 0 && Coarsening.Count == 0)
                 NoRefinement = true;
+
 
             return (!NoRefinement);
         }
@@ -258,8 +270,8 @@ namespace BoSSS.Foundation.Grid {
                 return;
 
             foreach (var jNeigh in gdat.Cells.CellNeighbours[j]) {
-                var cl = gdat.Cells.GetCell(j);
-                if (cl.RefinementLevel < DesiredLevelNeigh) {
+                var cl = gdat.Cells.GetCell(jNeigh);
+                if (cl.RefinementLevel < DesiredLevelNeigh && DesiredLevel[jNeigh] < DesiredLevelNeigh) {
                     DesiredLevel[jNeigh] = DesiredLevelNeigh;
                     RefineNeighboursRecursive(gdat, DesiredLevel, jNeigh, DesiredLevelNeigh - 1);
                 }
