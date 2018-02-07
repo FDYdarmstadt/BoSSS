@@ -271,7 +271,11 @@ for(int iCol = 0; iCol < 2; iCol++) \{\newline
  }
 \BoSSSexe
 \BoSSScmd{
-//multiplots.ToGnuplot().PlotCairolatex().WriteMinimalCompileableExample("D:\textbackslash \textbackslash tmp\textbackslash \textbackslash multi.tex");
+var CL = multiplots.ToGnuplot().PlotCairolatex();
+ }
+\BoSSSexe
+\BoSSScmd{
+CL.SaveTo(Path.Combine(CurrentDocDir, "solverScaling.tex"));
  }
 \BoSSSexe
 \BoSSScmd{
