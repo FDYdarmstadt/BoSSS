@@ -1,0 +1,552 @@
+restart
+**************
+
+  Database Explorer v2
+  ____________________
+
+Databases loaded:
+List of 0 instances of IDatabaseInfo {
+}
+Setting Matlab Connector to Octave...
+
+ Console ready for input. Type 'help' for help.
+
+==============
+using BoSSS.Application.SipPoisson;
+**************
+==============
+WorkflowMgm.Init("PoissonSolverPerformance");
+**************
+Project name is set to 'PoissonSolverPerformance'.
+
+==============
+var tempDB = OpenOrCreateDatabase("D:\\tmp\\fk_temp_db");
+**************
+Opening existing database 'D:\tmp\fk_temp_db'.
+
+==============
+ var myBatch = new MiniBatchProcessorClient(@"D:\tmp\fk_deploy");
+**************
+==============
+//MiniBatchProcessor.Server.StartIfNotRunning();
+**************
+==============
+// ===================
+// Utility definitions
+// ===================
+**************
+==============
+static class Utils {
+    // DOF per cell in 3D
+    public static int Np(int p) {
+        return (p*p*p + 6*p*p + 11*p + 6)/6;
+    }    
+    
+    //Non-equidistant nodes
+    public static double[] SinLinSpacing(double l, double r, double a, int n) {
+        double[] linnodes = GenericBlas.Linspace(-Math.PI * 0.5, Math.PI * 0.5, n);
+        double[] linnodes2 = GenericBlas.Linspace(-1, 1, n);
+        double[] nodes = new double[n];
+
+        for (int i = 0; i < n; i++)
+            //nodes[i] = linnodes2[i] * (1 - a) + (1.0 - Math.Sin(linnodes[i])) * a;
+            nodes[i] = linnodes2[i] * (1 - a) + Math.Sin(linnodes[i])*a;
+
+        for (int i = 0; i < n; i++)
+            nodes[i] = nodes[i] * (r - l)*0.5 + l;
+        return nodes;
+    }
+}
+**************
+==============
+// ===============================
+// Init grids and save to database
+// ===============================
+**************
+==============
+tempDB.Grids;
+**************
+List of 6 instances of IGridInfo {
+  0: { Guid = b185b7b5-caf5-47e0-a19b-e36c3fb19359; Name = PoissonSolverPerformance_J40; Cell Count = 40; Dim = 3 }
+  1: { Guid = a3b8e37f-d0cb-4c2c-b033-c75e962a3a31; Name = PoissonSolverPerformance_J1310720; Cell Count = 1310720; Dim = 3 }
+  2: { Guid = 7f49a48c-a3f4-4874-b7b2-1effa827f74b; Name = PoissonSolverPerformance_J163840; Cell Count = 163840; Dim = 3 }
+  3: { Guid = db9288ba-09ef-45ec-aead-641acc31d741; Name = PoissonSolverPerformance_J20480; Cell Count = 20480; Dim = 3 }
+  4: { Guid = a27dbfca-f6b0-4eee-ad6f-cf0bfdc1610a; Name = PoissonSolverPerformance_J2560; Cell Count = 2560; Dim = 3 }
+  5: { Guid = ff72b866-8921-4289-94a1-69af196e36a2; Name = PoissonSolverPerformance_J320; Cell Count = 320; Dim = 3 }
+}
+==============
+int[] Resolutions_3D = new int[] { 2, 4, 8, 16, 32, 64 };
+IGridInfo[] grids = new IGridInfo[Resolutions_3D.Length];
+for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
+    int Res = Resolutions_3D[cnt];    
+    
+    double[] xNodes = GenericBlas.Linspace(0, 10, Res*5 + 1);
+    double[] yNodes = Utils.SinLinSpacing(-1, +1, 0.6, Res + 1);
+    double[] zNodes = Utils.SinLinSpacing(-1, +1, 0.6, Res + 1);
+    int J = (xNodes.Length - 1)*(yNodes.Length - 1)*(zNodes.Length - 1);
+    
+    string GridName = string.Format(WorkflowMgm.CurrentProject + "_J" + J);
+    
+    grids[cnt] = tempDB.Grids.SingleOrDefault(grd => grd.Name == GridName);
+    
+    if(grids[cnt] == null){
+        Console.WriteLine("Creating grid with " + J + " cells.");
+        
+        GridCommons g;
+        g      = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
+        g.Name = GridName;
+        
+        g.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
+        g.EdgeTagNames.Add(2, BoundaryType.Neumann.ToString());
+    
+        g.DefineEdgeTags(delegate (double[] X) {
+            byte ret;
+            if(Math.Abs(X[0] - 0.0) <= 1.0e-6)
+                ret = 1;
+            else
+                ret = 2;
+            return ret;
+        });
+      
+        tempDB.SaveGrid(ref g);  
+        grids[cnt] = g;
+    } else {
+        Console.WriteLine("Found Grid: " + grids[cnt]);
+        if(grids[cnt].NumberOfCells != J)
+            throw new Exception("J mismatch");
+        
+        if(grids[cnt].SpatialDimension != 3)
+            throw new Exception("D mismatch");
+    }
+    
+}
+**************
+Found Grid: { Guid = b185b7b5-caf5-47e0-a19b-e36c3fb19359; Name = PoissonSolverPerformance_J40; Cell Count = 40; Dim = 3 }
+Found Grid: { Guid = ff72b866-8921-4289-94a1-69af196e36a2; Name = PoissonSolverPerformance_J320; Cell Count = 320; Dim = 3 }
+Found Grid: { Guid = a27dbfca-f6b0-4eee-ad6f-cf0bfdc1610a; Name = PoissonSolverPerformance_J2560; Cell Count = 2560; Dim = 3 }
+Found Grid: { Guid = db9288ba-09ef-45ec-aead-641acc31d741; Name = PoissonSolverPerformance_J20480; Cell Count = 20480; Dim = 3 }
+Found Grid: { Guid = 7f49a48c-a3f4-4874-b7b2-1effa827f74b; Name = PoissonSolverPerformance_J163840; Cell Count = 163840; Dim = 3 }
+Found Grid: { Guid = a3b8e37f-d0cb-4c2c-b033-c75e962a3a31; Name = PoissonSolverPerformance_J1310720; Cell Count = 1310720; Dim = 3 }
+
+==============
+grids;
+**************
+List of 6 instances of IGridInfo {
+  0: { Guid = b185b7b5-caf5-47e0-a19b-e36c3fb19359; Name = PoissonSolverPerformance_J40; Cell Count = 40; Dim = 3 }
+  1: { Guid = ff72b866-8921-4289-94a1-69af196e36a2; Name = PoissonSolverPerformance_J320; Cell Count = 320; Dim = 3 }
+  2: { Guid = a27dbfca-f6b0-4eee-ad6f-cf0bfdc1610a; Name = PoissonSolverPerformance_J2560; Cell Count = 2560; Dim = 3 }
+  3: { Guid = db9288ba-09ef-45ec-aead-641acc31d741; Name = PoissonSolverPerformance_J20480; Cell Count = 20480; Dim = 3 }
+  4: { Guid = 7f49a48c-a3f4-4874-b7b2-1effa827f74b; Name = PoissonSolverPerformance_J163840; Cell Count = 163840; Dim = 3 }
+  5: { Guid = a3b8e37f-d0cb-4c2c-b033-c75e962a3a31; Name = PoissonSolverPerformance_J1310720; Cell Count = 1310720; Dim = 3 }
+}
+==============
+**************
+==============
+// =====================================
+// setup control object for a solver run
+// =====================================
+**************
+==============
+**************
+==============
+// - - - - - - - - - - - - - - - - - - -
+// Initial Values & Boundary conditions
+// - - - - - - - - - - - - - - - - - - -
+**************
+==============
+static class InitialValues {
+    public static double RHS(double[] X) {
+        return -Math.Sin(X[0]);
+    }
+    
+    public static double DirichletBC(double[] X) {
+        return 0.0;
+    }
+    
+    public static double NeumannBC(double[] X) {
+       if(Math.Abs(X[1] - 1.0) < 1.0e-8 || Math.Abs(X[1] + 1.0) < 1.0e-8)
+           return 0;
+       if(X.Length > 2 && (Math.Abs(X[2] - 1.0) < 1.0e-8 || Math.Abs(X[2] + 1.0) < 1.0e-8))
+           return 0;
+
+       return Math.Cos(10.0);
+   }
+}
+**************
+==============
+InitialValues.RHS(new double[]{ 0, 0 });
+**************
+0
+==============
+**************
+==============
+//myCtrl.NoOfMultigridLevels = 3;
+**************
+==============
+//myCtrl.Run();
+**************
+==============
+// - - - - - - - - - - - - -
+// setup of parameter study
+// - - - - - - - - - - - - -
+**************
+==============
+List<SipControl> controls = new List<SipControl>();
+**************
+==============
+// polynomial degrees to test
+//int[] PolyDegS = new int[] {2, 3, 4, 5, 6};
+int[] PolyDegS = new int[] {2, 3}; // reduced options for dev.
+**************
+==============
+// Solvers which we want to instrument:
+SolverCodes[] solver_nameS = new SolverCodes[] {
+//    SolverCodes.classic_pardiso, 
+//    SolverCodes.classic_mumps, 
+//    SolverCodes.classic_cg,
+    SolverCodes.exp_softpcg_schwarz_directcoarse,
+    SolverCodes.exp_direct,
+    SolverCodes.exp_softpcg_schwarz
+//    SolverCodes.exp_direct_lapack
+}; 
+**************
+==============
+// MaxDof for one claculation (we skip fine grids for higher polynomial orders)
+int MaxDof = 5000000;
+**************
+==============
+controls.Clear();
+foreach(SolverCodes solver_name in solver_nameS) {
+foreach(int k in PolyDegS) {
+int iGrd = 0;    
+foreach(IGridInfo grd in grids) {
+    iGrd ++;
+    if(k >= 3 && iGrd > 5)
+        continue; 
+    if(k >= 4 && iGrd > 4)
+        continue; 
+    if(k >= 5 && iGrd > 3)
+        continue; 
+    
+    int Np = Utils.Np(k);
+    int J  = grd.NumberOfCells;
+    if(J*Np > MaxDof)
+        continue;
+    
+    string caseName = string.Format("J{0}_k{1}_{2}", J, k, solver_name);
+    Console.WriteLine("setting up: " + caseName);
+
+    var ctrl = new SipControl();
+    controls.Add(ctrl);
+    
+    ctrl.SessionName = caseName;
+    ctrl.SetDatabase(tempDB);
+    ctrl.SetGrid(grd);
+    ctrl.SetDGdegree(k);
+    ctrl.solver_name         = solver_name;
+    ctrl.NoOfMultigridLevels = 3;
+    
+    ctrl.InitialValues.Add("RHS", GetFormulaObject(InitialValues.RHS));
+    ctrl.AddBoundaryCondition(BoundaryType.Dirichlet.ToString(), "T",
+        GetFormulaObject(InitialValues.DirichletBC));
+    ctrl.AddBoundaryCondition(BoundaryType.Neumann.ToString(), "T",
+        GetFormulaObject(InitialValues.NeumannBC));
+}
+}
+}
+
+**************
+setting up: J40_k2_exp_softpcg_schwarz_directcoarse
+setting up: J320_k2_exp_softpcg_schwarz_directcoarse
+setting up: J2560_k2_exp_softpcg_schwarz_directcoarse
+setting up: J20480_k2_exp_softpcg_schwarz_directcoarse
+setting up: J163840_k2_exp_softpcg_schwarz_directcoarse
+setting up: J40_k3_exp_softpcg_schwarz_directcoarse
+setting up: J320_k3_exp_softpcg_schwarz_directcoarse
+setting up: J2560_k3_exp_softpcg_schwarz_directcoarse
+setting up: J20480_k3_exp_softpcg_schwarz_directcoarse
+setting up: J163840_k3_exp_softpcg_schwarz_directcoarse
+setting up: J40_k2_exp_direct
+setting up: J320_k2_exp_direct
+setting up: J2560_k2_exp_direct
+setting up: J20480_k2_exp_direct
+setting up: J163840_k2_exp_direct
+setting up: J40_k3_exp_direct
+setting up: J320_k3_exp_direct
+setting up: J2560_k3_exp_direct
+setting up: J20480_k3_exp_direct
+setting up: J163840_k3_exp_direct
+setting up: J40_k2_exp_softpcg_schwarz
+setting up: J320_k2_exp_softpcg_schwarz
+setting up: J2560_k2_exp_softpcg_schwarz
+setting up: J20480_k2_exp_softpcg_schwarz
+setting up: J163840_k2_exp_softpcg_schwarz
+setting up: J40_k3_exp_softpcg_schwarz
+setting up: J320_k3_exp_softpcg_schwarz
+setting up: J2560_k3_exp_softpcg_schwarz
+setting up: J20480_k3_exp_softpcg_schwarz
+setting up: J163840_k3_exp_softpcg_schwarz
+
+==============
+// ==========
+// Launch Job
+// ==========
+**************
+==============
+//var job = new Job("zwa", solver);
+**************
+==============
+//myCtrl.GetType();
+**************
+==============
+//job.SetControlObject(myCtrl);
+**************
+==============
+//tempDB.Sessions.Where(s => s.Name.Contains("pardiso") && s.Name.Contains("J320")).ForEach(si => si.Delete(true));
+**************
+==============
+//tempDB.Sessions.Where(s => s.Name.Contains("exp_direct")).ForEach(si => si.Delete());
+**************
+==============
+**************
+==============
+foreach(var ctrl in controls) {
+    Console.WriteLine(" Submitting: " + ctrl.SessionName); 
+    ctrl.RunBatch(myBatch,NumberOfMPIProcs:1,UseComputeNodesExclusive:true); 
+}
+**************
+ Submitting: J40_k2_exp_softpcg_schwarz_directcoarse
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = 92ef5aa6-bae6-4fc1-826a-10a4b3c1f5a5; 02/03/2018 09:21:07 Name = J40_k2_exp_softpcg_schwarz_directcoarse }
+No further action.
+ Submitting: J320_k2_exp_softpcg_schwarz_directcoarse
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = ab8c7fac-b324-41d4-ba1f-5d153a323cf6; 02/03/2018 09:21:37 Name = J320_k2_exp_softpcg_schwarz_directcoarse }
+No further action.
+ Submitting: J2560_k2_exp_softpcg_schwarz_directcoarse
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = c8ddafb9-8112-4afe-9977-e243aef18ac8; 02/03/2018 09:22:37 Name = J2560_k2_exp_softpcg_schwarz_directcoarse }
+No further action.
+ Submitting: J20480_k2_exp_softpcg_schwarz_directcoarse
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = 61c26fa3-b5dc-4794-ad63-fdd48c2c1cc9; 02/03/2018 09:27:47 Name = J20480_k2_exp_softpcg_schwarz_directcoarse }
+No further action.
+ Submitting: J163840_k2_exp_softpcg_schwarz_directcoarse
+Job is failed 1 times, maximum number of tries reached, no further action.
+ Submitting: J40_k3_exp_softpcg_schwarz_directcoarse
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = f10ab4d8-f2be-4b61-b7ae-c917171f61be; 02/03/2018 10:27:47 Name = J40_k3_exp_softpcg_schwarz_directcoarse }
+No further action.
+ Submitting: J320_k3_exp_softpcg_schwarz_directcoarse
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = aee64fee-3bd2-470e-a677-4b108b37cd23; 02/03/2018 10:28:17 Name = J320_k3_exp_softpcg_schwarz_directcoarse }
+No further action.
+ Submitting: J2560_k3_exp_softpcg_schwarz_directcoarse
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = 592e8569-e509-4b72-9172-df4ee1dc359d; 02/03/2018 10:29:28 Name = J2560_k3_exp_softpcg_schwarz_directcoarse }
+No further action.
+ Submitting: J20480_k3_exp_softpcg_schwarz_directcoarse
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = e4f76148-79a9-481d-a85e-db62aee5ff92; 02/03/2018 10:38:18 Name = J20480_k3_exp_softpcg_schwarz_directcoarse }
+No further action.
+ Submitting: J163840_k3_exp_softpcg_schwarz_directcoarse
+Job is failed 1 times, maximum number of tries reached, no further action.
+ Submitting: J40_k2_exp_direct
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = 8a535a4e-98f3-40a7-9f08-7b1d77d5e40d; 02/03/2018 08:32:22 Name = J40_k2_exp_direct }
+No further action.
+ Submitting: J320_k2_exp_direct
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = d26fca40-a252-4677-94e9-6d787862ebdb; 02/03/2018 08:32:51 Name = J320_k2_exp_direct }
+No further action.
+ Submitting: J2560_k2_exp_direct
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = 10648a60-725e-44b8-abd8-50ae62310a97; 02/03/2018 08:33:21 Name = J2560_k2_exp_direct }
+No further action.
+ Submitting: J20480_k2_exp_direct
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = 4716fa29-63a5-4844-92f5-9d47e9a4e080; 02/03/2018 08:34:01 Name = J20480_k2_exp_direct }
+No further action.
+ Submitting: J163840_k2_exp_direct
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = 021cdb10-daf3-48b3-badb-c325f5f13efc; 02/05/2018 06:24:17 Name = J163840_k2_exp_direct }
+No further action.
+ Submitting: J40_k3_exp_direct
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = 6f717581-cff3-4c34-b2af-fb5353d6690b; 02/03/2018 08:37:02 Name = J40_k3_exp_direct }
+No further action.
+ Submitting: J320_k3_exp_direct
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = 7578740c-3883-4dec-89a1-8e09a4e5506b; 02/03/2018 08:37:32 Name = J320_k3_exp_direct }
+No further action.
+ Submitting: J2560_k3_exp_direct
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = 141b3840-cec5-46fa-a075-3fd3a86270ec; 02/03/2018 08:38:03 Name = J2560_k3_exp_direct }
+No further action.
+ Submitting: J20480_k3_exp_direct
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = eee1e783-0e59-4822-9c2a-996c15d170f5; 02/03/2018 08:38:52 Name = J20480_k3_exp_direct }
+No further action.
+ Submitting: J163840_k3_exp_direct
+Job is failed 2 times, maximum number of tries reached, no further action.
+ Submitting: J40_k2_exp_softpcg_schwarz
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = ad16f017-f714-44ab-bde9-05eaa4b98342; 02/05/2018 07:06:28 Name = J40_k2_exp_softpcg_schwarz }
+No further action.
+ Submitting: J320_k2_exp_softpcg_schwarz
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = 158381d1-8646-4b64-a94f-fa893a749124; 02/05/2018 07:06:58 Name = J320_k2_exp_softpcg_schwarz }
+No further action.
+ Submitting: J2560_k2_exp_softpcg_schwarz
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = 4a5fafae-7f96-4f88-8beb-83d41eacf77e; 02/05/2018 07:08:47 Name = J2560_k2_exp_softpcg_schwarz }
+No further action.
+ Submitting: J20480_k2_exp_softpcg_schwarz
+Job has been started (according to job manager), latest known session is:
+{ Guid = 9d732da9-6f84-42a4-b8e1-ec91fa01f144; 02/05/2018 07:34:28 Name = J20480_k2_exp_softpcg_schwarz }
+No further action.
+ Submitting: J163840_k2_exp_softpcg_schwarz
+Job has been started (according to job manager), latest known session is:
+{ Guid = d124fc3c-c0f0-4c20-b85b-2622956d9e92; 02/06/2018 06:05:36 Name = J163840_k2_exp_softpcg_schwarz }
+No further action.
+ Submitting: J40_k3_exp_softpcg_schwarz
+Job submitted, waiting for launch - no further action.
+ Submitting: J320_k3_exp_softpcg_schwarz
+Job submitted, waiting for launch - no further action.
+ Submitting: J2560_k3_exp_softpcg_schwarz
+Job submitted, waiting for launch - no further action.
+ Submitting: J20480_k3_exp_softpcg_schwarz
+Job submitted, waiting for launch - no further action.
+ Submitting: J163840_k3_exp_softpcg_schwarz
+Job submitted, waiting for launch - no further action.
+
+==============
+**************
+==============
+WorkflowMgm.AllJobs.Select(kv => kv.Key + ": \t" + kv.Value.Status);
+**************
+List of 30 instances of String {
+  0: J40_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  1: J320_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  2: J2560_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  3: J20480_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  4: J163840_k2_exp_softpcg_schwarz_directcoarse: 	Failed
+  5: J40_k3_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  6: J320_k3_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  7: J2560_k3_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  8: J20480_k3_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  9: J163840_k3_exp_softpcg_schwarz_directcoarse: 	Failed
+  10: J40_k2_exp_direct: 	FinishedSuccessful
+  11: J320_k2_exp_direct: 	FinishedSuccessful
+  12: J2560_k2_exp_direct: 	FinishedSuccessful
+  13: J20480_k2_exp_direct: 	FinishedSuccessful
+  14: J163840_k2_exp_direct: 	FinishedSuccessful
+  15: J40_k3_exp_direct: 	FinishedSuccessful
+  16: J320_k3_exp_direct: 	FinishedSuccessful
+  17: J2560_k3_exp_direct: 	FinishedSuccessful
+  18: J20480_k3_exp_direct: 	FinishedSuccessful
+  19: J163840_k3_exp_direct: 	Failed
+  20: J40_k2_exp_softpcg_schwarz: 	FinishedSuccessful
+  21: J320_k2_exp_softpcg_schwarz: 	FinishedSuccessful
+  22: J2560_k2_exp_softpcg_schwarz: 	FinishedSuccessful
+  23: J20480_k2_exp_softpcg_schwarz: 	InProgress
+  24: J163840_k2_exp_softpcg_schwarz: 	InProgress
+  25: J40_k3_exp_softpcg_schwarz: 	PendingInExecutionQueue
+  26: J320_k3_exp_softpcg_schwarz: 	PendingInExecutionQueue
+  27: J2560_k3_exp_softpcg_schwarz: 	PendingInExecutionQueue
+  28: J20480_k3_exp_softpcg_schwarz: 	PendingInExecutionQueue
+  29: J163840_k3_exp_softpcg_schwarz: 	PendingInExecutionQueue
+}
+==============
+//WorkflowMgm.AllJobs.ElementAt(9).Value.Stdout;
+**************
+==============
+WorkflowMgm.SessionTable.Rows.Count;
+**************
+93
+==============
+**************
+==============
+**************
+==============
+// =====================================
+// Session table
+// =====================================
+**************
+==============
+// -------------------------------
+// Additional/user-defined columns
+// -------------------------------
+**************
+==============
+static class AddCols {
+    static public object SipMatrixAssembly_time(ISessionInfo SI) {
+        var mcr = SI.GetProfiling()[0];
+        var ndS = mcr.FindChildren("SipMatrixAssembly");
+        var nd  = ndS.ElementAt(0);
+        return nd.TimeSpentInMethod.TotalSeconds  / nd.CallCount;
+    }
+    static public object Aggregation_basis_init_time(ISessionInfo SI) {
+        var mcr = SI.GetProfiling()[0];
+        var ndS = mcr.FindChildren("Aggregation_basis_init");
+        var nd  = ndS.ElementAt(0);
+        return nd.TimeSpentInMethod.TotalSeconds  / nd.CallCount;
+    }
+    static public object Solver_Init_time(ISessionInfo SI) {
+        var mcr = SI.GetProfiling()[0];
+        var ndS = mcr.FindChildren("Solver_Init");
+        var nd  = ndS.ElementAt(0);
+        //Console.WriteLine("Number of nodes: " + ndS.Count() + " cc " + nd.CallCount );
+        return nd.TimeSpentInMethod.TotalSeconds / nd.CallCount;
+    }
+    static public object Solver_Run_time(ISessionInfo SI) {
+        var mcr = SI.GetProfiling()[0];
+        var ndS = mcr.FindChildren("Solver_Run");
+        var nd  = ndS.ElementAt(0);
+        return nd.TimeSpentInMethod.TotalSeconds  / nd.CallCount;
+    }
+}
+**************
+==============
+WorkflowMgm.AdditionalSessionTableColums.Clear();
+WorkflowMgm.AdditionalSessionTableColums.Add(
+    "SipMatrixAssembly_time", AddCols.SipMatrixAssembly_time);
+WorkflowMgm.AdditionalSessionTableColums.Add(
+    "Aggregation_basis_init_time", AddCols.Aggregation_basis_init_time);
+WorkflowMgm.AdditionalSessionTableColums.Add(
+    "Solver_Init_time", AddCols.Solver_Init_time);
+WorkflowMgm.AdditionalSessionTableColums.Add(
+    "Solver_Run_time", AddCols.Solver_Run_time);
+**************
+==============
+// --------------------------
+// Save Session table in file
+// --------------------------
+**************
+==============
+var SessTab = WorkflowMgm.SessionTable;
+**************
+==============
+// The Session column can't be serialized,
+// we have to remove it
+List<string> AllCols = SessTab.GetColumnNames().ToList();
+AllCols.Remove("Session");
+**************
+True
+==============
+SessTab = SessTab.ExtractColumns(AllCols.ToArray());
+**************
+==============
+// Filename
+var now           = DateTime.Now;
+SessTab.TableName = "SolverRuns--" + now.Year + "-" + now.Month + "-" + now.Day;
+string docpath    = Path.Combine(CurrentDocDir, SessTab.TableName + ".json");
+**************
+==============
+// save session table as file: this can be stored in our git 
+// repository
+SessTab.SaveToFile(docpath);
+**************
+==============
+**************
+==============

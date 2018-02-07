@@ -30,7 +30,6 @@ namespace ALTSTests {
             Application._Main(
                 args,
                 true,
-                "",
                 () => new NUnitTests());
         }
 
@@ -53,13 +52,11 @@ namespace ALTSTests {
             Application._Main(
                 new string[0],
                 true,
-                "",
                 delegate () {
                     test = new NUnitTests() {
                         ABOrder = order,
                         numOfSubgrids = subGrids,
                     };
-                    test.m_GridPartitioningType = BoSSS.Foundation.Grid.GridPartType.none;
                     return test;
                 });
 

@@ -35,29 +35,10 @@ using MPI.Wrappers;
 namespace BoSSS.Solution.XdgTimestepping {
 
     /// <summary>
-    /// switch for the initialization of the <see cref="XdgBDFTimestepping"/> 
-    /// </summary>
-    public enum TimestepperInit {
-
-        /// Initialization from a single timestep, i.e. if this time-stepper should use BDF4,
-        /// it starts with BDF1, BDF2, BDF3 in the first, second and third time-step.
-        SingleInit,
-
-        /// same initialization for SingleInit, but the first timesteps 
-        /// are computed with a smaller timestepsize
-        IncrementInit,
-
-        /// Initialization for a multi-step method, e.g. BDF4 requires 4 timesteps.
-        /// can be used if an analytic solution is known or simulation is restarted form another session
-        MultiInit
-    }
-
-    /// <summary>
     /// Implicit time-stepping using Backward-Differentiation-Formulas (BDF),
     /// specialized for XDG applications.
     /// </summary>
     public class XdgBDFTimestepping : XdgTimesteppingBase {
-
         /// <summary>
         /// Constructor;
         /// </summary>
@@ -141,22 +122,8 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             base.CommonConfigurationChecks();
 
-            switch (BDForder) {
-                case -1:
-                m_TSCchain = new BDFSchemeCoeffs[] { BDFSchemeCoeffs.CrankNicolson() };
-                break;
+            m_TSCchain = BDFCommon.GetChain(BDForder);
 
-                case 0:
-                m_TSCchain = new BDFSchemeCoeffs[] { BDFSchemeCoeffs.ExplicitEuler() };
-                break;
-
-                default:
-                m_TSCchain = new BDFSchemeCoeffs[BDForder];
-                for (int i = BDForder; i >= 1; i--) {
-                    m_TSCchain[BDForder - i] = BDFSchemeCoeffs.BDF(i);
-                }
-                break;
-            }
             m_LsTrk = LsTrk;
 
             int S = m_TSCchain[0].S;
@@ -447,7 +414,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 InitTimestepping(true);
 
-                if (Timestepper_Init == TimestepperInit.IncrementInit) {
+                if (Timestepper_Init == TimeStepperInit.IncrementInit) {
                     if (incrementTimesteps <= 1)
                         throw new ArgumentOutOfRangeException("incrementInit needs a number of increment timesteps larger than 1");
 
@@ -806,7 +773,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
 
-        public TimestepperInit Timestepper_Init;
+        public TimeStepperInit Timestepper_Init;
 
         /// <summary>
         /// In case of a delayed initialization of <see cref="XdgBDFTimestepping"/>  
@@ -818,14 +785,14 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <param name="SetTimestep">application specific action to set the previous timesteps for MultiInit, different actions for SetInitial and LoadRestart</param>
         public void DelayedTimestepperInit(double phystime, int TimestepNo, double dt, Action<int, double, DGField[]> SetTimestep) {
 
-            if (Timestepper_Init == TimestepperInit.MultiInit) {
+            if (Timestepper_Init == TimeStepperInit.MultiInit) {
                 MultiInit(phystime, TimestepNo, dt, SetTimestep); 
             } else {
                 SingleInit();
             }
 
             // no increment solve for SinlgeInit and MultiInit!!!
-            if (Timestepper_Init != TimestepperInit.IncrementInit)
+            if (Timestepper_Init != TimeStepperInit.IncrementInit)
                 incrementTimesteps = 1;
 
         }
@@ -1205,7 +1172,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         {
 
             double ResidualNorm = currentRes.L2NormPow2().MPISum().Sqrt();
-
+            //Console.WriteLine("ResidualNorm in CoupledIterationCallback is {0}", ResidualNorm);
             // delay the update of the level-set until the flow solver converged
             if (ResidualNorm >= this.Config_SolverConvergenceCriterion) { 
                 this.CoupledIteration = false;

@@ -66,20 +66,12 @@ restart;
 \BoSSSexeSilent
 \BoSSScmd{
 /// For the interactive mode of the solver in \BoSSSpad{} we have to load several dependencies first:
-using System;\newline 
-using System.Collections.Generic;\newline 
-using BoSSS.Platform;\newline 
-using BoSSS.Solution.Control;\newline 
-using BoSSS.Foundation;\newline 
-using BoSSS.Foundation.Grid;\newline 
 using System.Diagnostics;\newline 
 using BoSSS.Solution.Multigrid;\newline 
-using ilPSP.Utils;\newline 
-using BoSSS.Foundation.Grid.Classic;\newline 
 using BoSSS.Foundation.Grid.RefElements;\newline 
 using BoSSS.Application.IBM\_Solver;
  }
-\BoSSSexeSilent
+\BoSSSexe
 \BoSSScmd{
 /// Now, a new database has to be created or opened by the following command
 var myDb = OpenOrCreateDatabase("C:\textbackslash \textbackslash tmp\textbackslash \textbackslash IBM\_db");
@@ -90,7 +82,7 @@ var myDb = OpenOrCreateDatabase("C:\textbackslash \textbackslash tmp\textbacksla
 Type solver = typeof(IBM\_SolverMain);\newline 
 solver.Assembly.Location;
  }
-\BoSSSexeSilent
+\BoSSSexe
 \BoSSScmd{
 /// Create a new control object for setting up the simulation
 var c = new IBM\_Control();
@@ -114,7 +106,7 @@ int numberOfCellsY = 8;
 \BoSSSexe
 \BoSSScmd{
 /// Basic database options 
-c.DbPath     = myDb.Path;\newline 
+c.SetDatabase(myDb);\newline 
 c.savetodb   = true;\newline 
 c.saveperiod = 1;
  }
@@ -131,27 +123,13 @@ c.Tags.Add("k"+k);
  }
 \BoSSSexe
 \BoSSScmd{
-/// Here, the degree for each field is set (degree \code{k} for velocity, \code{k-1} for pressure). First, \code{Phi} is not going to be used in this simulation but it has to be specified anyways.
-c.FieldOptions.Add("VelocityX", new FieldOpts() \{\newline 
-Degree = k,\newline 
-SaveToDB = FieldOpts.SaveToDBOpt.TRUE\newline 
-\});\newline 
-c.FieldOptions.Add("VelocityY", new FieldOpts() \{\newline 
-Degree = k,\newline 
-SaveToDB = FieldOpts.SaveToDBOpt.TRUE\newline 
-\});\newline 
-c.FieldOptions.Add("Pressure", new FieldOpts() \{\newline 
-Degree = k - 1,\newline 
-SaveToDB = FieldOpts.SaveToDBOpt.TRUE \newline 
-\});\newline 
-c.FieldOptions.Add("PhiDG", new FieldOpts() \{\newline 
-Degree = 2,\newline 
-SaveToDB = FieldOpts.SaveToDBOpt.TRUE\newline 
-\});\newline 
-c.FieldOptions.Add("Phi", new FieldOpts() \{\newline 
-Degree = 2,\newline 
-SaveToDB = FieldOpts.SaveToDBOpt.TRUE\newline 
-\});
+/// Here, the DG polynomial degree is set.
+/// (degree \code{k} for velocity, \code{k-1} for pressure).
+c.SetDGdegree(2);
+ }
+\BoSSSexe
+\BoSSScmd{
+c.FieldOptions;
  }
 \BoSSSexe
 \BoSSScmd{
@@ -184,12 +162,12 @@ et = 3;\newline
 return et;\newline 
 \});
  }
-\BoSSSexeSilent
+\BoSSSexe
 \BoSSScmd{
 /// Return grid info and save
 grid;\newline 
-Guid GridGuid = myDb.SaveGrid(grid);\newline 
-c.GridGuid    = GridGuid;
+myDb.SaveGrid(ref grid);\newline 
+c.SetGrid(grid);
  }
 \BoSSSexe
 \BoSSScmd{

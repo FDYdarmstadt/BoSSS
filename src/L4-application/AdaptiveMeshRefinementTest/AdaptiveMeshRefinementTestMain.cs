@@ -20,6 +20,7 @@ using System.Linq;
 using System.Collections;
 using NUnit.Framework;
 using MPI.Wrappers;
+using BoSSS.Solution.Control;
 
 namespace BoSSS.Application.AdaptiveMeshRefinementTest { 
 
@@ -29,11 +30,13 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
     class AdaptiveMeshRefinementTestMain : BoSSS.Solution.Application {
         
         static void Main(string[] args) {
-            BoSSS.Solution.Application._Main(
-                args,
-                true,
-                null,
-                () => new AdaptiveMeshRefinementTestMain());
+            //BoSSS.Solution.Application._Main(
+            //    args,
+            //    true,
+            //    () => new AdaptiveMeshRefinementTestMain());
+            AllUpTest.SetUp();
+            AllUpTest.RuntimeCostDynamicBalanceTest(2);
+            AllUpTest.TestFixtureTearDown();
         }
 
         protected override GridCommons CreateOrLoadGrid() {
@@ -43,8 +46,13 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             //double[] yNodes = GenericBlas.Linspace(-1, 1, 2);
 
             var grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
-            base.m_GridPartitioningType = GridPartType.none;
             return grd;
+        }
+
+        public override void Init(BoSSS.Solution.Control.AppControl control) {
+            control.GridPartType = BoSSS.Foundation.Grid.GridPartType.none;
+            control.NoOfMultigridLevels = 1;
+            base.Init(control);
         }
 
         SinglePhaseField TestData;
@@ -105,6 +113,10 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             Refined_MagGrad_u = this.MagGrad_u;
             */
         }
+
+   
+
+       
 
 
         /// <summary>

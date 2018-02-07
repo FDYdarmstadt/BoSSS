@@ -108,7 +108,7 @@ namespace BoSSS.Application.ScalarTransport {
             MPI.Wrappers.csMPI.Raw.mpiFinalize();
             */
 
-            BoSSS.Solution.Application._Main(args, true, "BoSSS.Application,BoSSS.Solution,BoSSS.Foundation", delegate() {
+            BoSSS.Solution.Application._Main(args, true, delegate() {
                 return new ScalarTransportMain();
             });
         }

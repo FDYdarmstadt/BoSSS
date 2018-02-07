@@ -47,82 +47,97 @@ namespace BoSSS.Application.IBM_Solver {
         [Test]
         public static void TestNSECylinder_stationary() {
 
-            IBM_SolverMain p = null;
-            Application<IBM_Control>._Main(new string[] {
-                "--control","cs:BoSSS.Application.IBM_Solver.HardcodedTestExamples.IBMCylinderFlow(k:2)","--delplt"
-            }, false, "", delegate () {
-                p = new IBM_SolverMain();
-                return p;
-            });
+            using (IBM_SolverMain p = new IBM_SolverMain()) {
+            //    Application<IBM_Control>._Main(new string[] {
+            //    "--control","cs:BoSSS.Application.IBM_Solver.HardcodedTestExamples.IBMCylinderFlow(k:2)","--delplt"
+            //}, false, delegate () {
+            //    p = new IBM_SolverMain();
+            //    return p;
+            //});
+
+                var ctrl = BoSSS.Application.IBM_Solver.HardcodedTestExamples.IBMCylinderFlow(k: 2);
+                p.Init(ctrl);
+                p.RunSolverMode();
 
 
-            double C_Drag_Sol = 5.58;
-            double C_Lift_Sol = 0.0107;
-            double C_Drag = (double)p.QueryHandler.QueryResults["C_Drag"];
-            double C_Lift = (double)p.QueryHandler.QueryResults["C_Lift"];
+                double C_Drag_Sol = 5.58;
+                double C_Lift_Sol = 0.0107;
+                double C_Drag = (double)p.QueryHandler.QueryResults["C_Drag"];
+                double C_Lift = (double)p.QueryHandler.QueryResults["C_Lift"];
 
-            double diff_Drag = Math.Abs(C_Drag - C_Drag_Sol);
-            double diff_Lift = Math.Abs(C_Lift - C_Lift_Sol);
+                double diff_Drag = Math.Abs(C_Drag - C_Drag_Sol);
+                double diff_Lift = Math.Abs(C_Lift - C_Lift_Sol);
 
-            Console.WriteLine(" Drag difference: {0:0.####E+00}, ok ? {1}, less or equal {2:0.####E+00}.", diff_Drag, (bool)(diff_Drag < 0.01), 0.01);
-            Console.WriteLine(" Lift difference: {0:0.####E+00}, ok ? {1}, less or equal {2:0.####E+00}.", diff_Lift, (bool)(diff_Lift < 0.001), 0.001);
+                Console.WriteLine(" Drag difference: {0:0.####E+00}, ok ? {1}, less or equal {2:0.####E+00}.", diff_Drag, (bool)(diff_Drag < 0.01), 0.01);
+                Console.WriteLine(" Lift difference: {0:0.####E+00}, ok ? {1}, less or equal {2:0.####E+00}.", diff_Lift, (bool)(diff_Lift < 0.001), 0.001);
 
-            Assert.LessOrEqual(diff_Drag, 0.01, "Drag coefficient seems wrong.");
-            Assert.LessOrEqual(diff_Lift, 0.001, "Lift coefficient seems wrong.");
+                Assert.LessOrEqual(diff_Drag, 0.01, "Drag coefficient seems wrong.");
+                Assert.LessOrEqual(diff_Lift, 0.001, "Lift coefficient seems wrong.");
+            }
         }
 
         [Test]
         public static void TestChannel() {
 
 
-            IBM_SolverMain p = null;
-            Application<IBM_Control>._Main(new string[] {
-                "--control","cs:BoSSS.Application.IBM_Solver.HardcodedTestExamples.ChannelFlow(k:2,pardiso:true)","--delplt"
-            }, false, "", delegate () {
-                p = new IBM_SolverMain();
-                return p;
-            });
+            using (IBM_SolverMain p = new IBM_SolverMain()) {
+            //    Application<IBM_Control>._Main(new string[] {
+            //    "--control","cs:BoSSS.Application.IBM_Solver.HardcodedTestExamples.ChannelFlow(k:2,pardiso:true)","--delplt"
+            //}, false, delegate () {
+            //    p = new IBM_SolverMain();
+            //    return p;
+            //});
+                var ctrl = BoSSS.Application.IBM_Solver.HardcodedTestExamples.ChannelFlow(k: 2, pardiso: true);
+                p.Init(ctrl);
+                p.RunSolverMode();
 
-            double L2VelX = (double)p.QueryHandler.QueryResults["L2err_VelocityX"];
 
-            Assert.LessOrEqual(L2VelX, 1E-8, "L2 Error of VelocityX seems wrong");
+                double L2VelX = (double)p.QueryHandler.QueryResults["L2err_VelocityX"];
 
+                Assert.LessOrEqual(L2VelX, 1E-8, "L2 Error of VelocityX seems wrong");
+            }
         }
 
         [Test]
         public static void TestChannel_MUMPS() {
 
-            IBM_SolverMain p = null;
+            using (IBM_SolverMain p = new IBM_SolverMain()) {
 
-            Application<IBM_Control>._Main(new string[] {
-                "--control","cs:BoSSS.Application.IBM_Solver.HardcodedTestExamples.ChannelFlow(k:2,pardiso:false)","--delplt"
-            }, false, "", delegate () {
-                p = new IBM_SolverMain();
-                return p;
-            });
+            //    Application<IBM_Control>._Main(new string[] {
+            //    "--control","cs:BoSSS.Application.IBM_Solver.HardcodedTestExamples.ChannelFlow(k:2,pardiso:false)","--delplt"
+            //}, false, "", delegate () {
+            //    p = new IBM_SolverMain();
+            //    return p;
+            //});
 
+                var ctrl = BoSSS.Application.IBM_Solver.HardcodedTestExamples.ChannelFlow(k: 2, pardiso: false);
+                p.Init(ctrl);
+                p.RunSolverMode();
 
+                double L2VelX = (double)p.QueryHandler.QueryResults["L2err_VelocityX"];
 
-            double L2VelX = (double)p.QueryHandler.QueryResults["L2err_VelocityX"];
-
-            Assert.LessOrEqual(L2VelX, 1E-8, "L2 Error of VelocityX seems wrong");
-
+                Assert.LessOrEqual(L2VelX, 1E-8, "L2 Error of VelocityX seems wrong");
+            }
         }
 
         [Test]
         public static void TestChannel_periodic() {
 
-            IBM_SolverMain p = null;
-            Application<IBM_Control>._Main(new string[] {
-                "--control","cs:BoSSS.Application.IBM_Solver.HardcodedTestExamples.ChannelFlow(k:2,periodic:true,pardiso:true)","--delplt"
-            }, false, "", delegate () {
-                p = new IBM_SolverMain();
-                return p;
-            });
+            using (IBM_SolverMain p = new IBM_SolverMain()) {
+                //    Application<IBM_Control>._Main(new string[] {
+                //    "--control","cs:BoSSS.Application.IBM_Solver.HardcodedTestExamples.ChannelFlow(k:2,periodic:true,pardiso:true)","--delplt"
+                //}, false, "", delegate () {
+                //    p = new IBM_SolverMain();
+                //    return p;
+                //});
+                var ctrl = BoSSS.Application.IBM_Solver.HardcodedTestExamples.ChannelFlow(k: 2, periodic: true, pardiso: true);
+                p.Init(ctrl);
+                p.RunSolverMode();
 
-            double L2VelX = (double)p.QueryHandler.QueryResults["L2err_VelocityX"];
+                double L2VelX = (double)p.QueryHandler.QueryResults["L2err_VelocityX"];
 
-            Assert.LessOrEqual(L2VelX, 1E-8, "L2 Error of VelocityX seems wrong");
+                Assert.LessOrEqual(L2VelX, 1E-8, "L2 Error of VelocityX seems wrong");
+            }
         }
     }
 

@@ -133,11 +133,10 @@ namespace CutCellQuadrature {
         static void Main(string[] args) {
             InitMPI(args);
 
-            CommandLineOptions opt = new CommandLineOptions();
             foreach (var testCase in testCases) {
 
                 Program app = new Program(testCase);
-                app.Init(null, opt, "");
+                app.Init(null);
                 //app.Init(null, opt, "BoSSS.Platform, BoSSS.Foundation, BoSSS.Foundation.Grid, BoSSS.Foundation.XDG, BoSSS.Solution, CutCellQuadrature");
                 app.RunSolverMode();
                 app.ProfilingLog();

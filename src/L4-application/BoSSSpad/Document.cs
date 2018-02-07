@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Reflection;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -55,6 +56,12 @@ namespace BoSSS.Application.BoSSSpad {
             public object Result;
 
             /// <summary>
+            /// 
+            /// </summary>
+            [NonSerialized]
+            public Assembly AssemblyProduced;
+
+            /// <summary>
             /// Evaluates this command and updated <see cref="InterpreterTextOutput"/>.
             /// </summary>
             public bool Evaluate() {
@@ -68,7 +75,7 @@ namespace BoSSS.Application.BoSSSpad {
                 ilPSP.Environment.StdErr.WriterS.Add(stw);
 
                 if (this.Command != null && this.Command.Length > 0) {
-                    this.Result = ReadEvalPrintLoop.EvalPrint(this.Command);
+                    this.Result = ReadEvalPrintLoop.EvalPrint(this.Command, out AssemblyProduced);
                 } else {
                     this.Result = null;
                 }
