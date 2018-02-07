@@ -481,6 +481,19 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
+        /// Gnuplot plotting (multiplot), automatic choice of gnuplot driver depending on
+        /// the current value of <see cref="UseCairoLatex"/>.
+        /// </summary>
+        public static object PlotNow(this CairolatexContainer cl) {
+
+            if (UseCairoLatex) {
+                return cl;
+            } else {
+                return cl.Preview();
+            }
+        }
+
+        /// <summary>
         /// Single plot window:
         /// Converts <see cref="Plot2Ddata"/> into an alive Gnuplot object.
         /// </summary>

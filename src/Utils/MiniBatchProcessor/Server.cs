@@ -483,7 +483,7 @@ namespace MiniBatchProcessor {
                             }
 
                             success = (p.ExitCode == 0);
-                            Server.LogMessage(string.Format("finished job #" + data.ID + "."));
+                            Server.LogMessage(string.Format("finished job #" + data.ID + ", exit code " + p.ExitCode + "."));
 
                             using (var exit = new StreamWriter(Path.Combine(WorkDir, data.ID.ToString() + "_exit.txt"))) {
                                 exit.WriteLine(p.ExitCode);

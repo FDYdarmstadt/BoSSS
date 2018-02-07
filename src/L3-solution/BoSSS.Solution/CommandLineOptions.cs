@@ -17,7 +17,7 @@ namespace BoSSS.Solution {
             /// <summary>
             /// Case number for parameter study
             /// </summary>
-            [Option("p", "pstudy_case", HelpText = "case number for parameter study; if not specified, or non-positive, all runs are done in the same process")]
+            [Option("p", "pstudy_case", HelpText = "case number for parameter study; if not specified, or smaller than zero, all runs are done in the same process")]
             public int PstudyCase = -666;
 
             /// <summary>

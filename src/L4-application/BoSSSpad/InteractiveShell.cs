@@ -223,6 +223,37 @@ namespace BoSSS.Application.BoSSSpad {
             return fo;
         }
 
+        static internal string _CurrentDocFile = null;
+
+        /// <summary>
+        /// Path of the current file.
+        /// </summary>
+        static public string CurrentDocFile {
+            get {
+                if(_CurrentDocFile == null) {
+                    Console.WriteLine("No current document/not saved yet.");
+                    return null;
+                }
+
+                if(!File.Exists(_CurrentDocFile)) {
+                    Console.WriteLine("Document path '{0}' seems non-existent.", _CurrentDocFile);
+                }
+
+                return _CurrentDocFile;
+            }
+        }
+
+        /// <summary>
+        /// Directory where the current file is stored.
+        /// </summary>
+        static public string CurrentDocDir {
+            get {
+                string f = CurrentDocFile;
+                if (f == null)
+                    return null;
+                return Path.GetDirectoryName(f);
+            }
+        }
         /// <summary>
         /// Simple plotting interface
         /// </summary>
