@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using System;
+using System.Runtime.Serialization;
 
 namespace BoSSS.Solution.Control {
 
@@ -22,11 +23,13 @@ namespace BoSSS.Solution.Control {
     /// Options for DG fields
     /// </summary>
     [Serializable]
+    [DataContract]
     public class FieldOpts {
 
         /// <summary>
         /// DG polynomial degree; below zero denotes not specified.
         /// </summary>
+        [DataMember]
         public int Degree = -1;
 
         /// <summary>
@@ -52,6 +55,31 @@ namespace BoSSS.Solution.Control {
         /// <summary>
         /// field state should be saved in control file
         /// </summary>
+        [DataMember]
         public SaveToDBOpt SaveToDB = SaveToDBOpt.unspecified;
+
+        /// <summary>
+        /// %
+        /// </summary>
+        public override bool Equals(object obj) {
+            FieldOpts f = obj as FieldOpts;
+            if (f == null)
+                return false;
+
+            if (Degree != f.Degree)
+                return false;
+            if (SaveToDB != f.SaveToDB)
+                return false;
+
+            return true;
+        }
+
+        /// <summary>
+        /// %
+        /// </summary>
+        public override int GetHashCode() {
+            return Degree;
+        }
+
     }
 }
