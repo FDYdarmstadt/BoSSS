@@ -46,11 +46,9 @@ This work is licensed under a Creative Commons Attribution-NonCommercial-ShareAl
 % ################################################################################
 
 
-% ********************************************************************************
-% ********************************************************************************
+% ################################################################################
 \chapter{Aim and focus of the \BoSSS{} code}
-% ********************************************************************************
-% ********************************************************************************
+% ################################################################################
 
 \BoSSS{} (Bounded Support Spectral Solver) is a flexible framework for the 
 development, evaluation and application of numerical discretization schemes based on the 
@@ -100,8 +98,6 @@ The intention of \BoSSS{} is to bridge this gap: although it is slightly more di
 than MATLAB,
 %(general orientation of a new user in a new framework, C\# language is more complex than MATLAB scripts)
 it offers higher performance and complete MPI parallelism.
-Application-specific HPC codes will still have the edge on performance, however one purpose of this
-proposal is also to close that gap as much as possible.
 }
 \label{fig:BoSSS-Philosophy-2}
 \end{figure}
@@ -203,12 +199,10 @@ Incompressible multiphase simulation of a rising bubble.
 
 
 
-% ********************************************************************************
-% ********************************************************************************
+% ################################################################################
 \chapter{Core concepts}
 \label{sec:coreConcepts}
-% ********************************************************************************
-% ********************************************************************************
+% ################################################################################
 
 This chapter covers certain issues in the design philosophy of the code, that are essential for its use. 
 These are important to understand for both users as well as developers.
@@ -614,25 +608,22 @@ When Mono is used, the equivalent to {\tt msbuild} is {\tt xbuild}. Both tools h
 % ################################################################################
 % ################################################################################
 
-% ********************************************************************************
-\chapter{Compressible Navier-Stokes (CNS) Solver }
-
-
-% ********************************************************************************
 % ################################################################################
+\chapter{Compressible Navier-Stokes (CNS) Solver }
 \label{CNS}
+% ################################################################################
 \import{./quickStartCNS/}{IsentropicVortex.tex}
 
-% ********************************************************************************
+% ################################################################################
 \chapter{Workflow management and meta job scheduler}
 \label{sec:WorkflowMgm}
+% ################################################################################
 \import{./MetaJobManager/}{MetaJobManager.tex}
 
-
+% ################################################################################
 \chapter{Incompressible Navier-Stokes Solver}
 \label{IBM}
 % ################################################################################
-
 \import{./quickStartIBM/}{channel.tex}
 
 % ################################################################################
@@ -644,41 +635,37 @@ When Mono is used, the equivalent to {\tt msbuild} is {\tt xbuild}. Both tools h
 % ################################################################################
 % ################################################################################
 
-% ********************************************************************************
-% ********************************************************************************
+% ################################################################################
 \chapter{Interface for Matlab using the BatchmodeConnector}
-% ********************************************************************************
-% ********************************************************************************
 \label{Matlab}
+% ################################################################################
 \import{./shortTutorialMatlab/}{tutorialMatlab.tex}
 
-% ********************************************************************************
-% ********************************************************************************
+% ################################################################################
 \chapter{Grid instantiation, $L^2$-projection and convergence}
-% ********************************************************************************
-% ********************************************************************************
 \label{GridInstantiation}
+% ################################################################################
 \import{./tutorial2/}{uebung2tutorial.tex}
 
 
 % ################################################################################
 \chapter{Defining a Spatial Operator and using explicit time integration}
-% ################################################################################
 \label{SpatialOperator}
+% ################################################################################
 \import{./tutorial4/}{tutorial4.tex}
 
 
-% ********************************************************************************
+% ################################################################################
 \chapter{Numerical flux and convergence study}
-% ********************************************************************************
 \label{NumFlux}
+% ################################################################################
 \import{./tutorial5/}{uebung5tutorial.tex}
 
 
-% ********************************************************************************
+% ################################################################################
 \chapter{Scalar convection and stability of explicit timesteppers}
-% ********************************************************************************
 \label{ScalarAdvection}
+% ################################################################################
 \import{./tutorial6/}{tutorial6.tex}
 
 %\chapter{Exporting data}
@@ -689,37 +676,120 @@ When Mono is used, the equivalent to {\tt msbuild} is {\tt xbuild}. Both tools h
 
 
 
-% ********************************************************************************
+% ################################################################################
 \chapter{Poisson equation using the Symmetric Interior Penalty method}
-% ********************************************************************************
-% ********************************************************************************
 % ################################################################################
 \label{sec:SIP}
 \import{./tutorial9-SIP/}{sip.tex}
 
-% ********************************************************************************
+% ################################################################################
 \chapter{Poisson equation as a System}
-% ********************************************************************************
 \label{sec:PoissonAsASystem}
+% ################################################################################
 \import{./tutorial10-PoissonSystem/}{Poisson.tex}
 
-% ********************************************************************************
+% ################################################################################
 \chapter{Stokes equation}
-% ********************************************************************************
 \label{sec:Stokes}
+% ################################################################################
 \import{./tutorial11-Stokes/}{StokesEq.tex}
 
 
 
+% ################################################################################
+% ################################################################################
+% ################################################################################
 \part{Appendix}
 \appendix
+% ################################################################################
+% ################################################################################
+% ################################################################################
 
-% ********************************************************************************
-% ********************************************************************************
+% ################################################################################
+\chapter{Single Node Performance}
+\label{sec:SingleNodePerformance}
+% ################################################################################
+This section covers basic performance tests, i.e. how specific algorithms scale 
+with grid resolution or with polynomial degree, on a \emph{single compute node}.
+
+% --------------------------------------------------------------------------------
+\section{Solver Performance - Poisson problems}
+\label{sec:SolverPerformancePoisson}
+% --------------------------------------------------------------------------------
+Three different groups of solvers are compared:
+\begin{itemize}
+\item
+Direct Solvers: directs sparse methods, such as PARDISO\footnote{
+\url{http://www.pardiso-project.org/}}
+and MUMPS\footnote{
+\url{http://mumps.enseeiht.fr/}}
+are compared.
+Their performance also serves as a comparative baseline.
+
+\item
+Iterative Algorithms without preconditioning, resp. low-impact, generic preconditioning:
+This includes solver libraries such as \code{monkey} (BoSSS-specific, supports GPU)
+as well as 
+HYPRE\footnote{
+\url{https://computation.llnl.gov/projects/hypre-scalable-linear-solvers-multigrid-methods}}
+(native library, used via wrappers).
+
+\item
+Iterative Algorithms with \ac{dg}-specific preconditioners, such as aggregation multigrid
+and multi-level additive Schwarz
+\end{itemize}
+
+\subsection{Problems with Constant Diffusion Coefficient}
+\label{sec:ConstantDiffusionCoefficient}
+The problem
+\begin{equation}
+\left\{ \begin{array} {rclll}
+- \Delta T   & = & g_{\domain}                      
+             & \text{in}\ \Omega = (0,10) \times (-1,1) \times (-1,1)  &  \\
+% ----
+         T   & = & g_D = 0                             
+             & \text{on}\ \Gamma_D = \{ (x,y,z) \in \real^3; \ x = 0 \}
+             & \text{Dirichlet-boundary} \\
+% ----
+\nabla T \cdot \vec{n}_{\partial \domain} & = & g_N 
+             & \text{on}\ \Gamma_N = \partial \Omega \setminus \Gamma_D
+             & \text{Neumann-boundary}
+\end{array} \right.
+\label{eq:ContantCoeffPoissonBenchmark}
+\end{equation}
+is investigated on a non-uniform, Cartesian grid
+(equidistant in $z$, sinus-spacing in $x$ and $y$ direction).
+The large $\Gamma_N$ makes the problem harder for non-preconditioned
+iterative methods. See Figure \ref{fig:ConstantCoeffRuntimes} for results.
+
+\graphicspath{{./apdx-NodeSolverPerformance/}}
+
+\begin{figure}[!h]
+\begin{center}
+\input{./apdx-NodeSolverPerformance/ConstCoeffPoissonScaling.tex}
+\end{center}
+\caption{
+Solver runtime vs. degrees-of-freedom, for different polynomial degrees $k$,
+for problem/Equation (\ref{eq:ContantCoeffPoissonBenchmark}).
+}
+\label{fig:ConstantCoeffRuntimes}
+\end{figure}
+
+
+
+
+% ################################################################################
+\chapter{Parallel Performance and Scaling}
+\label{sec:ParallelPerformance}
+% ################################################################################
+
+On its way...
+
+
+% ################################################################################
 \chapter{BoSSSpad command reference}
 \label{sec:BoSSSpadReference}
-% ********************************************************************************
-% ********************************************************************************
+% ################################################################################
 
 % Change some settings so reference looks nice
 \renewcommand{\ttdefault}{pcr} % Using Courier, so we can have bold typewriter font
@@ -732,11 +802,9 @@ When Mono is used, the equivalent to {\tt msbuild} is {\tt xbuild}. Both tools h
 \input{../notes/0030-BoSSSPad_Command_Overview/content.tex}
 
 
-% ********************************************************************************
-% ********************************************************************************
+% ################################################################################
 \chapter{Further reading}
-% ********************************************************************************
-% ********************************************************************************
+% ################################################################################
 
 \printbibliography[heading=subbibliography,title={Bibliography}]
 

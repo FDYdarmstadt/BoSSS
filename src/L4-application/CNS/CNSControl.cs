@@ -399,10 +399,18 @@ namespace CNS {
             clone.CustomEnergySources = new List<Func<ISpeciesMap, INonlinearSource>>();
             clone.CustomEnergySources.AddRange(this.CustomEnergySources);
 
-            clone.DynamicLoadBalancing_CellCostEstimatorFactories = new List<Func<IApplication<AppControl>, int, ICellCostEstimator>>();
+            clone.DynamicLoadBalancing_CellCostEstimatorFactories = new List<Func<IApplication, int, ICellCostEstimator>>();
             clone.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(this.DynamicLoadBalancing_CellCostEstimatorFactories);
 
             return clone;
+        }
+
+
+        /// <summary>
+        /// To launch CNS.
+        /// </summary>
+        public override Type GetSolverType() {
+            return typeof(CNS.Program);
         }
     }
 }

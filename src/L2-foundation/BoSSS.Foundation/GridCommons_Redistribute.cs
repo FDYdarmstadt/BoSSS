@@ -16,7 +16,10 @@ limitations under the License.
 
 using BoSSS.Foundation.Comm;
 using BoSSS.Foundation.IO;
+using BoSSS.Platform.Utils.Geom;
+using ilPSP;
 using ilPSP.Kraypis;
+using ilPSP.HilbertCurve;
 using ilPSP.Tracing;
 using ilPSP.Utils;
 using MPI.Wrappers;
@@ -43,105 +46,143 @@ namespace BoSSS.Foundation.Grid.Classic {
                 csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
                 csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
 
+                if (size <= 0)
+                    return;
+
                 //// invalid from now on
                 //m_GlobalId2CellIndexMap = null;
 
                 int[] part;
                 switch (method) {
-                    case GridPartType.METIS:
-                        if (size > 1) {
-                            int.TryParse(PartOptions, out int noOfPartitioningsToChooseFrom);
-                            noOfPartitioningsToChooseFrom = Math.Max(1, noOfPartitioningsToChooseFrom);
-                            part = ComputePartitionMETIS(noOfPartitioningsToChooseFrom: noOfPartitioningsToChooseFrom);
-                            RedistributeGrid(part);
-                        }
-                        break;
-
-
-                    case GridPartType.ParMETIS:
-                        if (size > 1) {
-                            int.TryParse(PartOptions, out int noOfRefinements);
-
-                            part = ComputePartitionParMETIS();
-                            RedistributeGrid(part);
-
-                            for (int i = 0; i < noOfRefinements; i++) {
-                                part = ComputePartitionParMETIS(refineCurrentPartitioning: true);
-                                RedistributeGrid(part);
-                            }
-                        }
-                        break;
-
-                    case GridPartType.Hilbert:
-                        part = ComputePartitionHilbert();
+                    case GridPartType.METIS: {
+                        int.TryParse(PartOptions, out int noOfPartitioningsToChooseFrom);
+                        noOfPartitioningsToChooseFrom = Math.Max(1, noOfPartitioningsToChooseFrom);
+                        part = ComputePartitionMETIS(noOfPartitioningsToChooseFrom: noOfPartitioningsToChooseFrom);
+#if DEBUG
+                        CheckPartitioning(part);
+#endif
                         RedistributeGrid(part);
                         break;
-
-                    case GridPartType.none:
-                        break;
-
-                    case GridPartType.Predefined:
-                        if (size > 1) {
-                            if (PartOptions == null || PartOptions.Length <= 0)
-                                //throw new ArgumentException("'" + GridPartType.Predefined.ToString() + "' requires, as an option, the name of the Partition.", "PartOptions");
-                                PartOptions = size.ToString();
-
-                            if (!m_PredefinedGridPartitioning.ContainsKey(PartOptions)) {
-                                StringWriter stw = new StringWriter();
-                                for (int i = 0; i < m_PredefinedGridPartitioning.Count; i++) {
-                                    stw.Write("'" + m_PredefinedGridPartitioning.Keys[i] + "'");
-                                    if (i < (m_PredefinedGridPartitioning.Count - 1))
-                                        stw.Write(", ");
-                                }
-
-                                throw new ArgumentException("Grid Partitioning with name '" + PartOptions + "' is unknown; known are: " + stw.ToString() + ";");
-                            }
-
-                            Console.WriteLine("redistribution according to " + PartOptions);
-
-                            var partHelp = m_PredefinedGridPartitioning[PartOptions];
-                            part = partHelp.CellToRankMap;
-                            if (part == null) {
-                                var cp = this.CellPartitioning;
-                                part = iom.LoadVector<int>(partHelp.Guid, ref cp).ToArray();
-                            }
-
-                            int Min = int.MinValue;
-                            int Max = int.MaxValue;
-                            {
-                                int LocMin = 0;
-                                int LocMax = 0;
-                                for (int j = part.Length - 1; j >= 0; j--) {
-                                    LocMin = Math.Min(LocMin, part[j]);
-                                    LocMax = Math.Max(LocMax, part[j]);
-                                }
-
-                                unsafe {
-                                    csMPI.Raw.Allreduce((IntPtr)(&LocMin), (IntPtr)(&Min), 1, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.MIN, csMPI.Raw._COMM.WORLD);
-                                    csMPI.Raw.Allreduce((IntPtr)(&LocMax), (IntPtr)(&Max), 1, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.MAX, csMPI.Raw._COMM.WORLD);
-                                }
-                            }
-                            if (Min < 0) {
-                                throw new ApplicationException("illegal predefined partition: minimum processor ranks is " + Min + ";");
-                            }
-                            if (Max >= size) {
-                                throw new ApplicationException("predefined partition not usable: specifies " + (Max + 1) + " processors, but currently running on " + size + " processors.");
-                            }
+                    }
 
 
+                    case GridPartType.ParMETIS: {
+                        int.TryParse(PartOptions, out int noOfRefinements);
+
+                        part = ComputePartitionParMETIS();
+#if DEBUG
+                        CheckPartitioning(part);
+#endif
+                        RedistributeGrid(part);
+
+                        for (int i = 0; i < noOfRefinements; i++) {
+                            part = ComputePartitionParMETIS(refineCurrentPartitioning: true);
+#if DEBUG
+                            CheckPartitioning(part);
+#endif
                             RedistributeGrid(part);
                         }
                         break;
+                    }
+
+                    case GridPartType.Hilbert: {
+                        part = ComputePartitionHilbert();
+#if DEBUG
+                        CheckPartitioning(part);
+#endif
+                        break;
+                    }
+
+                    case GridPartType.none:
+                    break;
+
+                    case GridPartType.Predefined: {
+                        if (PartOptions == null || PartOptions.Length <= 0)
+                            //throw new ArgumentException("'" + GridPartType.Predefined.ToString() + "' requires, as an option, the name of the Partition.", "PartOptions");
+                            PartOptions = size.ToString();
+
+                        if (!m_PredefinedGridPartitioning.ContainsKey(PartOptions)) {
+                            StringWriter stw = new StringWriter();
+                            for (int i = 0; i < m_PredefinedGridPartitioning.Count; i++) {
+                                stw.Write("'" + m_PredefinedGridPartitioning.Keys[i] + "'");
+                                if (i < (m_PredefinedGridPartitioning.Count - 1))
+                                    stw.Write(", ");
+                            }
+
+                            throw new ArgumentException("Grid Partitioning with name '" + PartOptions + "' is unknown; known are: " + stw.ToString() + ";");
+                        }
+
+                        Console.WriteLine("redistribution according to " + PartOptions);
+
+                        var partHelp = m_PredefinedGridPartitioning[PartOptions];
+                        part = partHelp.CellToRankMap;
+                        if (part == null) {
+                            var cp = this.CellPartitioning;
+                            part = iom.LoadVector<int>(partHelp.Guid, ref cp).ToArray();
+                        }
+
+ #if DEBUG
+                        CheckPartitioning(part);
+#endif
+                        RedistributeGrid(part);
+                    }
+                    break;
 
 
                     default:
-                        throw new NotImplementedException();
+                    throw new NotImplementedException();
                 }
-
-                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-
             }
         }
+
+        private static void CheckPartitioning(int[] part) {
+             int MpiRank, MpiSize;
+             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out MpiRank);
+             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out MpiSize);
+
+
+            int LocMin = 0;
+            int LocMax = 0;
+            for (int j = part.Length - 1; j >= 0; j--) {
+                LocMin = Math.Min(LocMin, part[j]);
+                LocMax = Math.Max(LocMax, part[j]);
+            }
+
+            int[] MinMax = (new int[] { -LocMin, LocMax }).MPIMax();
+            int Min = -MinMax[0];
+            int Max = MinMax[1];
+
+            if (Min < 0) {
+                throw new ApplicationException("Illegal MPI grid partition: minimum processor ranks is " + Min + ";");
+            }
+            if (Max >= MpiSize) {
+                throw new ApplicationException("MPI grid partition not usable: specifies " + (Max + 1) + " processors, but currently running on " + MpiSize + " processors.");
+            }
+
+            int[] CellsPerRank = new int[MpiSize];
+            for(int i = 0; i < part.Length; i++) {
+                CellsPerRank[part[i]]++;
+            }
+            CellsPerRank = CellsPerRank.MPISum();
+
+            List<int> Problems = new List<int>();
+            for (int rnk = 0; rnk < MpiSize; rnk++) {
+                if (CellsPerRank[rnk] == 0) {
+                    Problems.Add(rnk);
+                }
+            }
+
+            if (Problems.Count > 0) {
+                using (var str = new StringWriter()) {
+                    foreach (int r in Problems) {
+                        str.Write(r);
+                        str.Write(" ");
+                    }
+                    throw new ApplicationException("Illegal MPI partition: zero cells on MPI ranks: " + str.ToString());
+                }
+            }
+        }
+
         /// <summary>
         /// Computes a grid partitioning (which cell should be on which processor)
         /// using the serial METIS library -- work is only done on MPi rank 0.
@@ -163,6 +204,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             using (new FuncTrace()) {
                 int size = this.Size;
                 int rank = this.MyRank;
+
 
                 if (size == 1) {
                     return new int[NoOfUpdateCells];
@@ -745,6 +787,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
         }
 
+        /*
         public int[] ComputePartitionHilbert(int[] cellCosts = null) {
             // Step 1: Compute some global indexing pattern for all cells
             // according to space-filling curve
@@ -777,7 +820,113 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
 
             return partitioning;
+        }*/
+
+        BoundingBox GetGridBoundingBox() {
+            int D = this.SpatialDimension;
+            var BB = new BoundingBox(D);
+
+            int J0 = this.CellPartitioning.i0;
+            int JE = this.CellPartitioning.iE;
+            for (int j = J0; j < JE; j++) {
+                Cell Cj = this.Cells[j - J0];
+                BB.AddPoints(Cj.TransformationParams);
+            }
+
+            BB.Min = BB.Min.MPIMin();
+            BB.Max = BB.Max.MPIMax();
+
+            return BB;
         }
+
+        /// <summary>
+        /// Computes a grid partitioning (which cell should be on which processor) based on a Hilbertcurve of maximum order (nBit=32).
+        /// </summary>
+        public int[] ComputePartitionHilbert(int[] cellCosts = null) {
+
+            int D = this.SpatialDimension;
+            var GlobalBB = this.GetGridBoundingBox();
+
+            int J0 = this.CellPartitioning.i0;
+            int JE = this.CellPartitioning.iE;
+
+            ulong[] discreteCenter = new ulong[D];
+            ulong[] local_HilbertIndex = new ulong[JE - J0];
+            int[] local_CellIndex = new int[JE - J0];
+
+            for (int j = J0; j < JE; j++) {
+                Cell Cj = this.Cells[j - J0];
+                int NoOfNodes = Cj.TransformationParams.NoOfRows;
+                for (int d = 0; d < D; d++) {
+                    double center = 0;
+                    for (int k = 0; k < NoOfNodes; k++) {
+                        center += Cj.TransformationParams[k, d];
+                    }
+                    
+                    center = center / ((double)NoOfNodes); // ''center of gravity'' for coordinate direction 'd'
+                    double centerTrf = (center - GlobalBB.Min[d]) * (1.0 / (GlobalBB.Max[d] - GlobalBB.Min[d])) * Math.Pow(2,32);
+                    //double centerTrf = (center - GlobalBB.Min[d]) * (1.0 / (GlobalBB.Max[d] - GlobalBB.Min[d])) * ((double)long.MaxValue);
+                    centerTrf = Math.Round(centerTrf);
+                    if (centerTrf < 0)
+                        centerTrf = 0;
+                    if (centerTrf > ulong.MaxValue)
+                        centerTrf = ulong.MaxValue;
+                    discreteCenter[d] = (ulong)centerTrf;
+                    
+                }
+                ulong iH = HilbertCurve.hilbert_c2i(32, discreteCenter);
+                local_HilbertIndex[j - J0] = iH;// perhabs better to use new Tuple<long, int>(iH, j);
+                local_CellIndex[j - J0] = j;
+                
+            }
+
+            int[] CellsPerRank = new int[this.Size];
+            for (int r = 0; r < CellsPerRank.Length; r++)
+                CellsPerRank[r] = this.CellPartitioning.GetLocalLength(r);
+            //int[] sizeof_Recvbuffer = new int[1];
+            //sizeof_Recvbuffer[0]=this.NumberOfCells;
+
+            //Gather all local computed Hilbert_Indices
+            int[] CellIndex = local_CellIndex.MPIAllGatherv(CellsPerRank);
+            ulong[] HilbertIndex = local_HilbertIndex.MPIAllGatherv(CellsPerRank);
+            //Debugger.Break();
+            Array.Sort(HilbertIndex, CellIndex);
+            //Debugger.Break();
+
+            // Distribution of MPI-Rank along the Hilbertcurve
+            int numberofcells = this.NumberOfCells;
+            int numproc = this.Size;
+
+            int[] RankIndex = new int[numberofcells];
+            int[] buckets = new int[numproc];
+
+            int counter = numberofcells%numproc;
+            int base_size = numberofcells / numproc;
+            
+            for (int i = 0; i < buckets.Length; i++)
+                buckets[i] = base_size;
+            while (counter != 0) {
+                counter -= 1;
+                buckets[counter] += 1;
+            }
+            for (int m = 0, n = 0; m < numproc; m++) {
+                for (int i = 0; i < buckets[m]; i++, n++) {
+                    RankIndex[n] = m;
+                }
+            }
+
+            //Debugger.Break();
+            //Extract Rank-Array for local Process
+            Array.Sort(CellIndex, RankIndex);
+            int[] local_Rank_RedistributionList = new int[JE - J0];
+            for (int j = 0; j < JE - J0; j++) {
+                local_Rank_RedistributionList[j] = RankIndex[J0 + j];
+            }
+            //Debugger.Break();
+            return local_Rank_RedistributionList;
+        }
+
+
 
         private bool CheckPartitioning(Master cm, int[] nodesPart) {
 
@@ -811,6 +960,8 @@ namespace BoSSS.Foundation.Grid.Classic {
             int MyRank;
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out MyRank);
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out Size);
+
+            CheckPartitioning(part);
 
             // partition is no longer valid anymore!
             m_CellPartitioning = null;

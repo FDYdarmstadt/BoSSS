@@ -789,7 +789,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             var Diff = V1G.CloneAs();
                             Diff.Acc(-1.0, V2G);
                             var err = Diff.L2Norm()/RelScale;
-                            Debug.Assert(err <= 1.0e-10 || Edge.IsPeriodic);
+                            Debug.Assert(err <= 1.0e-8 || Edge.IsPeriodic);
 
 #endif
                         }

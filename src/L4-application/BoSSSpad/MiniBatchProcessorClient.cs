@@ -34,7 +34,6 @@ namespace BoSSS.Application.BoSSSpad {
         /// Path to standard output file, if present - otherwise null.
         /// </summary>
         public override string GetStdoutFile(Job myJob) {
-            string FullName = GetFullJobName(myJob);
             var AllProblems = FilterJobData(myJob);
 
             if (AllProblems.Length > 0) {
@@ -48,7 +47,6 @@ namespace BoSSS.Application.BoSSSpad {
         /// Path to standard error file, if present - otherwise null.
         /// </summary>
         public override string GetStderrFile(Job myJob) {
-            string FullName = GetFullJobName(myJob);
             var AllProblems = FilterJobData(myJob);
 
             if (AllProblems.Length > 0) {
@@ -99,11 +97,21 @@ namespace BoSSS.Application.BoSSSpad {
         /// See <see cref="BatchProcessorClient.EvaluateStatus(Job, out int, out bool, out bool, out bool, out string)"/>.  
         /// </summary>
         public override void EvaluateStatus(Job myJob, out int SubmitCount, out bool isRunning, out bool wasSuccessful, out bool isFailed, out string DeployDir) {
+            if (!object.ReferenceEquals(this, myJob.AssignedBatchProc))
+                throw new ArgumentException("Why you ask me?");
             string FullName = GetFullJobName(myJob);
             MiniBatchProcessor.JobData[] AllProblems = FilterJobData(myJob);
-
+            MiniBatchProcessor.JobData JD = null;
+            if (AllProblems.Length > 0) {
+                if (myJob.BatchProcessorIdentifierToken == null) {
+                    JD = AllProblems.ElementAtMax(jd => jd.SubmitTime);
+                } else {
+                    int idSearch = (int)(myJob.BatchProcessorIdentifierToken);
+                    JD = AllProblems.SingleOrDefault(jobDat => jobDat.ID == idSearch);
+                }
+            }
             SubmitCount = AllProblems.Length;
-            if (AllProblems.Length == 0) {
+            if (AllProblems.Length <= 0 || JD == null) {
                 // we know nothing
                 isRunning = false;
                 isFailed = false;
@@ -111,12 +119,7 @@ namespace BoSSS.Application.BoSSSpad {
                 DeployDir = null;
                 return;
             }
-
-            //if (AllProblems.Length > 1) {
-            //    throw new ApplicationException("Found " + AllProblems.Length + " jobs with the name '" + FullName + "' in the MiniBatchProcessor. Unable to determine.");
-            //}
-
-            var JD = AllProblems.ElementAtMax(MiniJob => MiniJob.SubmitTime); ;
+                
             int ExitCode;
             var mbpStatus = MiniBatchProcessor.ClientAndServer.GetStatusFromID(JD.ID, out ExitCode);
             DeployDir = JD.ExeDir;
@@ -161,18 +164,29 @@ namespace BoSSS.Application.BoSSSpad {
         private MiniBatchProcessor.JobData[] FilterJobData(Job myJob) {
             string FullName = GetFullJobName(myJob);
             var all = new List<MiniBatchProcessor.JobData>();
+            int idSearch = -1;
+            if(myJob.BatchProcessorIdentifierToken != null) {
+                try {
+                    idSearch = (int)myJob.BatchProcessorIdentifierToken;
+                } catch(Exception) {
+
+                }
+            }
+
             //var All = MiniBatchProcessor.ClientAndServer.AllJobs.Where(mbpJob => mbpJob.Name.Equals(FullName)).ToArray();
             foreach(var mbpJob in MiniBatchProcessor.ClientAndServer.AllJobs) {
                 if (!mbpJob.Name.Equals(FullName))
                     continue;
 
-                if(myJob.BatchProcessorIdentifierToken != null) {
-                    
+                if(idSearch >= 0) {
+                    if (mbpJob.ID != idSearch)
+                        continue;
                 }
 
                 all.Add(mbpJob);
             }
-            return all.ToArray();
+
+            return all.OrderByDescending(job => job.SubmitTime).ToArray();
         }
 
 
@@ -181,7 +195,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public override object Submit(Job myJob) {
             string FullName = GetFullJobName(myJob);
-            var AllProblems = FilterJobData(myJob);
+            //var AllProblems = FilterJobData(myJob);
             //if (AllProblems.Length > 0) {
             //    throw new ApplicationException("There are already " + AllProblems.Length + " jobs with the name '" + FullName + "' in the MiniBatchProcessor. Since the job name must be unique, we cannot submit - try another project name.");
             //}
@@ -192,7 +206,8 @@ namespace BoSSS.Application.BoSSSpad {
                 ExeDir = myJob.DeploymentDirectory,
                 exefile = Path.GetFileName(myJob.EntryAssembly.Location),
                 Arguments = myJob.CommandLineArguments,
-                EnvVars = myJob.EnvironmentVars.Select(kv => new Tuple<string, string>(kv.Key, kv.Value)).ToArray()
+                EnvVars = myJob.EnvironmentVars.Select(kv => new Tuple<string, string>(kv.Key, kv.Value)).ToArray(),
+                UseComputeNodesExclusive = myJob.UseComputeNodesExclusive
             };
 
             int id = MiniBatchProcessor.Client.SubmitJob(JD);

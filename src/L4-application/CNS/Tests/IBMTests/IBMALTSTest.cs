@@ -207,7 +207,7 @@ namespace CNS.Tests.IBMTests {
             c.SessionName = String.Format("IBM ALTS test (contact discontinuity), levelSetPosition={0}, ALTS {1}/{2}", levelSetPosition, explicitOrder, numOfClusters);
 
             var solver = new Program();
-            solver.Init(c, null);
+            solver.Init(c);
             solver.RunSolverMode();
 
             return solver.QueryHandler.QueryResults;

@@ -51,9 +51,8 @@ namespace BoSSS.Application.IBM_Solver {
         /// Application entry point.
         /// </summary>
         static void Main(string[] args) {
-            BoSSS.Solution.Application<IBM_Control>._Main(args, false, "BoSSS.Solution.MultiphaseZoo", delegate () {
+            BoSSS.Solution.Application<IBM_Control>._Main(args, false, delegate () {
                 var p = new IBM_SolverMain();
-                p.m_GridPartitioningType = GridPartType.METIS;
                 return p;
             });
             //Console.ReadKey();

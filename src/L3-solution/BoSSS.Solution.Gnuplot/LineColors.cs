@@ -41,10 +41,10 @@ namespace BoSSS.Solution.Gnuplot {
         /// </summary>
         Magenta = 4,
 
-        /// <summary>
-        /// 
-        /// </summary>
-        LightBlue = 5,
+        ///// <summary>
+        ///// 
+        ///// </summary>
+        //LightBlue = 5,
 
         /// <summary>
         /// 
