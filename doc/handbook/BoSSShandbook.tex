@@ -98,8 +98,6 @@ The intention of \BoSSS{} is to bridge this gap: although it is slightly more di
 than MATLAB,
 %(general orientation of a new user in a new framework, C\# language is more complex than MATLAB scripts)
 it offers higher performance and complete MPI parallelism.
-Application-specific HPC codes will still have the edge on performance, however one purpose of this
-proposal is also to close that gap as much as possible.
 }
 \label{fig:BoSSS-Philosophy-2}
 \end{figure}
@@ -614,19 +612,19 @@ When Mono is used, the equivalent to {\tt msbuild} is {\tt xbuild}. Both tools h
 \chapter{Compressible Navier-Stokes (CNS) Solver }
 \label{CNS}
 % ################################################################################
-\import{./quickStartCNS/}{IsentropicVortex.tex}
+%\import{./quickStartCNS/}{IsentropicVortex.tex}
 
 % ################################################################################
 \chapter{Workflow management and meta job scheduler}
 \label{sec:WorkflowMgm}
 % ################################################################################
-\import{./MetaJobManager/}{MetaJobManager.tex}
+%\import{./MetaJobManager/}{MetaJobManager.tex}
 
 % ################################################################################
 \chapter{Incompressible Navier-Stokes Solver}
 \label{IBM}
 % ################################################################################
-\import{./quickStartIBM/}{channel.tex}
+%\import{./quickStartIBM/}{channel.tex}
 
 % ################################################################################
 % ################################################################################
@@ -641,39 +639,39 @@ When Mono is used, the equivalent to {\tt msbuild} is {\tt xbuild}. Both tools h
 \chapter{Interface for Matlab using the BatchmodeConnector}
 \label{Matlab}
 % ################################################################################
-\import{./shortTutorialMatlab/}{tutorialMatlab.tex}
+%\import{./shortTutorialMatlab/}{tutorialMatlab.tex}
 
 % ################################################################################
 \chapter{Grid instantiation, $L^2$-projection and convergence}
 \label{GridInstantiation}
 % ################################################################################
-\import{./tutorial2/}{uebung2tutorial.tex}
+%\import{./tutorial2/}{uebung2tutorial.tex}
 
 
 % ################################################################################
 \chapter{Defining a Spatial Operator and using explicit time integration}
 \label{SpatialOperator}
 % ################################################################################
-\import{./tutorial4/}{tutorial4.tex}
+%\import{./tutorial4/}{tutorial4.tex}
 
 
 % ################################################################################
 \chapter{Numerical flux and convergence study}
 \label{NumFlux}
 % ################################################################################
-\import{./tutorial5/}{uebung5tutorial.tex}
+%\import{./tutorial5/}{uebung5tutorial.tex}
 
 
 % ################################################################################
 \chapter{Scalar convection and stability of explicit timesteppers}
 \label{ScalarAdvection}
 % ################################################################################
-\import{./tutorial6/}{tutorial6.tex}
+%\import{./tutorial6/}{tutorial6.tex}
 
-%\chapter{Exporting data}
-%\chapter{Working with masks and subgrids}
-%\chapter{Hyperbolic systems}
-%\chapter{Second order operators, implicit}
+%%\chapter{Exporting data}
+%%\chapter{Working with masks and subgrids}
+%%\chapter{Hyperbolic systems}
+%%\chapter{Second order operators, implicit}
 
 
 
@@ -682,19 +680,19 @@ When Mono is used, the equivalent to {\tt msbuild} is {\tt xbuild}. Both tools h
 \chapter{Poisson equation using the Symmetric Interior Penalty method}
 % ################################################################################
 \label{sec:SIP}
-\import{./tutorial9-SIP/}{sip.tex}
+%\import{./tutorial9-SIP/}{sip.tex}
 
 % ################################################################################
 \chapter{Poisson equation as a System}
 \label{sec:PoissonAsASystem}
 % ################################################################################
-\import{./tutorial10-PoissonSystem/}{Poisson.tex}
+%\import{./tutorial10-PoissonSystem/}{Poisson.tex}
 
 % ################################################################################
 \chapter{Stokes equation}
 \label{sec:Stokes}
 % ################################################################################
-\import{./tutorial11-Stokes/}{StokesEq.tex}
+%\import{./tutorial11-Stokes/}{StokesEq.tex}
 
 
 
@@ -743,7 +741,39 @@ and multi-level additive Schwarz
 
 \subsection{Problems with Constant Diffusion Coefficient}
 \label{sec:ConstantDiffusionCoefficient}
+The problem
+\begin{equation}
+\left\{ \begin{array} {rclll}
+- \Delta T   & = & g_{\domain}                      
+             & \text{in}\ \Omega = (0,10) \times (-1,1) \times (-1,1)  &  \\
+% ----
+         T   & = & g_D = 0                             
+             & \text{on}\ \Gamma_D = \{ (x,y,z) \in \real^3; \ x = 0 \}
+             & \text{Dirichlet-boundary} \\
+% ----
+\nabla T \cdot \vec{n}_{\partial \domain} & = & g_N 
+             & \text{on}\ \Gamma_N = \partial \Omega \setminus \Gamma_D
+             & \text{Neumann-boundary}
+\end{array} \right.
+\label{eq:ContantCoeffPoissonBenchmark}
+\end{equation}
+is investigated on a non-uniform, Cartesian grid
+(equidistant in $z$, sinus-spacing in $x$ and $y$ direction).
+The large $\Gamma_N$ makes the problem harder for non-preconditioned
+iterative methods. See Figure \ref{fig:ConstantCoeffRuntimes} for results.
 
+\graphicspath{{./apdx-NodeSolverPerformance/}}
+
+\begin{figure}[!h]
+\begin{center}
+\input{./apdx-NodeSolverPerformance/ConstCoeffPoissonScaling.tex}
+\end{center}
+\caption{
+Solver runtime vs. degrees-of-freedom, for different polynomial degrees $k$,
+for problem/Equation (\ref{eq:ContantCoeffPoissonBenchmark}).
+}
+\label{fig:ConstantCoeffRuntimes}
+\end{figure}
 
 
 
