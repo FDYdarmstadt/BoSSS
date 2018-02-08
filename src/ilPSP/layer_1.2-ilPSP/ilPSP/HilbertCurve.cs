@@ -62,12 +62,14 @@ namespace ilPSP.HilbertCurve {
         }
 
         static void CheckCoords(int nBits, ulong[] coord) {
+            int nDims=coord.Length;
+            if (nDims < 1)
+                throw new ArgumentNullException();
             if (nBits < 1)
                 throw new ArgumentOutOfRangeException();
-            if (nBits > 32)
+            if (nBits*nDims > 64)   //64=8*sizeof(ulong)
                 throw new ArgumentOutOfRangeException();
             ulong CoordMax = (ulong)1 << (nBits);
-            int nDims = coord.Length;
             for (int d = nDims - 1; d >= 0; d--) {
                 if (coord[d] < 0)
                     throw new ArgumentOutOfRangeException();
