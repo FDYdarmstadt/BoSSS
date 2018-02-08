@@ -52,8 +52,6 @@ namespace CNS {
                 args,
                 false,
                 () => new Program());
-
-            Thread.Sleep(100 * 1000);
         }
     }
 
