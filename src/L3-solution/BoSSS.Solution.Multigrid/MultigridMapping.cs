@@ -30,6 +30,7 @@ using System.Numerics;
 using System.Diagnostics;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.Aggregation;
+using ilPSP.Tracing;
 
 namespace BoSSS.Solution.Multigrid {
 
@@ -368,22 +369,22 @@ namespace BoSSS.Solution.Multigrid {
         /// 
         /// </summary>
         public BlockMsrMatrix FromOtherLevelMatrix(MultigridMapping otherLevel) {
+            using (new FuncTrace()) {
+                BlockMsrMatrix PrlgMtx;
+                {
+                    PrlgMtx = new BlockMsrMatrix(otherLevel, otherLevel.ProblemMapping);
+                    for (int ifld = 0; ifld < otherLevel.AggBasis.Length; ifld++)
+                        otherLevel.AggBasis[ifld].GetRestrictionMatrix(PrlgMtx, otherLevel, ifld);  // prolongate from the other level to the full grid
+                    PrlgMtx = PrlgMtx.Transpose();
+                }
 
-            BlockMsrMatrix PrlgMtx;
-            {
-                PrlgMtx = new BlockMsrMatrix(otherLevel, otherLevel.ProblemMapping);
-                for(int ifld = 0; ifld < otherLevel.AggBasis.Length; ifld++)
-                    otherLevel.AggBasis[ifld].GetRestrictionMatrix(PrlgMtx, otherLevel, ifld);  // prolongate from the other level to the full grid
-                PrlgMtx = PrlgMtx.Transpose();
-            }
-
-            BlockMsrMatrix RestMtx;
-            {
-                RestMtx = new BlockMsrMatrix(this, this.ProblemMapping);
-                for(int ifld = 0; ifld < this.AggBasis.Length; ifld++)
-                    this.AggBasis[ifld].GetRestrictionMatrix(RestMtx, this, ifld);  //     ... and restrict to this level          
-            }
-            var result = BlockMsrMatrix.Multiply(RestMtx, PrlgMtx);
+                BlockMsrMatrix RestMtx;
+                {
+                    RestMtx = new BlockMsrMatrix(this, this.ProblemMapping);
+                    for (int ifld = 0; ifld < this.AggBasis.Length; ifld++)
+                        this.AggBasis[ifld].GetRestrictionMatrix(RestMtx, this, ifld);  //     ... and restrict to this level          
+                }
+                var result = BlockMsrMatrix.Multiply(RestMtx, PrlgMtx);
 #if DEBUG
             {
                 var resultT = result.Transpose();
@@ -400,7 +401,8 @@ namespace BoSSS.Solution.Multigrid {
                 //Console.WriteLine("Id norm {0} ", ShouldBeID_Norm);
             }
 #endif
-            return result;
+                return result;
+            }
         }
 
         /// <summary>

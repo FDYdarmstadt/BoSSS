@@ -185,10 +185,14 @@ namespace BoSSS.Solution.Multigrid {
 
                 List<int> IndefRows = new List<int>();
                 
-
+                
                 // compute preconditioner matrices
                 // ===============================
-                using (new BlockTrace("compute-pc", tr)) {
+                using (var bt = new BlockTrace("compute-pc", tr)) {
+                    Stopwatch stw_Data = new Stopwatch(); stw_Data.Reset();
+                    Stopwatch stw_Comp = new Stopwatch(); stw_Comp.Reset();
+
+
                     LeftPreCond = new BlockMsrMatrix(OpMatrix._RowPartitioning, OpMatrix._ColPartitioning);
                     RightPreCond = new BlockMsrMatrix(OpMatrix._RowPartitioning, OpMatrix._ColPartitioning);
                     RightPreCondInv = new BlockMsrMatrix(OpMatrix._RowPartitioning, OpMatrix._ColPartitioning);
@@ -255,12 +259,14 @@ namespace BoSSS.Solution.Multigrid {
                                     }
                                 }
                             }
-                            
+
                             // extract blocks from operator and mass matrix
                             // --------------------------------------------
-                                                       
+
+                            stw_Data.Start();
                             ExtractBlock(jCell, basis, Degrees, conf, E, _i0s, true, MassMatrix, ref MassBlock[i]);
                             ExtractBlock(jCell, basis, Degrees, conf, E, _i0s, true, OpMatrix, ref OperatorBlock[i]);
+                            stw_Data.Stop();
                             double MassBlkNrm = MassBlock[i].InfNorm();
                             double OperatorBlkNrm = OperatorBlock[i].InfNorm();
                             int NN = MassBlock[i].NoOfRows;
@@ -295,8 +301,8 @@ namespace BoSSS.Solution.Multigrid {
                             // compute precond
                             // ---------------
 
-                            
 
+                            stw_Comp.Start();
                             int Rank;
                             PCleftBlock[i].Clear();
                             PCrightBlock[i].Clear();
@@ -306,16 +312,17 @@ namespace BoSSS.Solution.Multigrid {
                             } else {
                                 Debug.Assert(idr == null); 
                             }
+                            stw_Comp.Stop();
+
                             // write block back
                             // ----------------
-
+                            stw_Data.Start();
                             ExtractBlock(jCell, basis, Degrees, conf, E, _i0s, false, LeftPreCond, ref PCleftBlock[i]);
                             ExtractBlock(jCell, basis, Degrees, conf, E, _i0s, false, RightPreCond, ref PCrightBlock[i]);
 
 
                             // inverse precond-matrix
                             // ----------------------
-
                             // right-inverse: (required for transforming solution guess)
                             if(PCrightBlock_inv[i] == null || PCrightBlock_inv[i].NoOfRows != NN) {
                                 PCrightBlock_inv[i] = MultidimensionalArray.Create(NN, NN);
@@ -335,8 +342,13 @@ namespace BoSSS.Solution.Multigrid {
                             else
                                 RankDefInvert(PCleftBlock[i], PCleftBlock_inv[i]);
                             ExtractBlock(jCell, basis, Degrees, conf, E, _i0s, false, LeftPreCondInv, ref PCleftBlock_inv[i]);
+
+                            stw_Data.Stop();
                         }
                     }
+
+                    bt.LogDummyblock(stw_Data.Elapsed.Ticks, "Change_of_Basis_data_copy");
+                    bt.LogDummyblock(stw_Comp.Elapsed.Ticks, "Change_of_Basis_compute");
                 }
 
 
