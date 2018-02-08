@@ -59,7 +59,7 @@ namespace CNS.Tests.IBMTests {
                 Tuple.Create("L2ErrorYMomentum", 1.96659822231024E-06 + 1E-14),
                 Tuple.Create("L2ErrorEnergy", 1.77274964265508E-06 + 1E-14),
                 Tuple.Create("L2ErrorEntropy", 0.097256032622296 + 1E-14));
-
+            
             Debug.Assert(GetTimeStepNumber(solver) == 19973, "Did more or less timesteps than specified! Is the time step size still the same?");
         }
 

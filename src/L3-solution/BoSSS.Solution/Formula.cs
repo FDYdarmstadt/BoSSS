@@ -42,6 +42,14 @@ namespace BoSSS.Solution.Control {
     public class Formula : IBoundaryAndInitialData {
 
         /// <summary>
+        /// Empty ctor for de-serialization.
+        /// </summary>
+        private Formula() {
+            //Console.WriteLine("ctor private");
+        }
+
+
+        /// <summary>
         /// Constructor.
         /// </summary>
         /// <param name="code">
@@ -183,6 +191,30 @@ namespace BoSSS.Solution.Control {
                 throw new ApplicationException();
             }
         }
+        
+        /// <summary>
+        /// %
+        /// </summary>
+        public override bool Equals(object obj) {
+            Formula f = obj as Formula;
+            if (f == null)
+                return false;
 
+            if (this.m_TimeDep != f.m_TimeDep)
+                return false;
+            if (!m_Code.Equals(f.m_Code))
+                return false;
+            if (!this.m_AdditionalPrefixCode.Equals(f.m_AdditionalPrefixCode))
+                return false;
+
+            return true;
+        }
+
+        /// <summary>
+        /// %
+        /// </summary>
+        public override int GetHashCode() {
+            return m_Code.GetHashCode();
+        }
     }
 }
