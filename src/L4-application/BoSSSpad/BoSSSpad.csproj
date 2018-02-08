@@ -133,6 +133,7 @@
     <Compile Include="MsHPC2012Client.cs" />
     <Compile Include="ObjectExtensions.cs" />
     <Compile Include="InstallationChecker.cs" />
+    <Compile Include="Plot2DdataExtensions.cs" />
     <Compile Include="ReadEvalPrintLoop.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ResidualForm.cs">

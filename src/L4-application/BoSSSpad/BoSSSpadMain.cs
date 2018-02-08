@@ -163,6 +163,7 @@ namespace BoSSS.Application.BoSSSpad {
                 string OutDir = Path.GetDirectoryName(fileToOpen);
                 string DocNam = Path.GetFileNameWithoutExtension(fileToOpen) + ".texbatch";
                 InteractiveShell.CurrentDoc = doc;
+                InteractiveShell._CurrentDocFile = (new FileInfo(fileToOpen)).FullName;
 
                 // Which text boxes should be removed before 'restart' occurs
                 int f = 0;
