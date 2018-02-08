@@ -853,9 +853,13 @@ namespace BoSSS.Solution {
 
             if (this.Control != null) {
                 this.passiveIo = !this.Control.savetodb;
+                if (this.DatabaseDriver.FsDriver is NullFileSystemDriver)
+                    this.passiveIo = true;
 
                 if (this.Control.TracingNamespaces != null) 
                     Tracer.SetTracingNamespaces(this.Control.TracingNamespaces);
+            } else {
+                this.passiveIo = true;
             }
 
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
