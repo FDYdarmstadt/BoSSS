@@ -180,9 +180,23 @@ namespace BoSSS.PlotGenerator {
 
                 
                 WriteMessage(process, processCount, "Loading timestep ... (" + (i+1) + " of " + TotCnt + ")");
-                var fields = DBDriver.LoadFields(ts, this.GridDat, this.m_config.FieldNames);
-
+                var fields = DBDriver.LoadFields(ts, this.GridDat, this.m_config.FieldNames).ToList();
                 WriteMessage(process, processCount, "Loaded timestep " + timestepNo + ". Plotting...");
+
+                {
+                    Console.WriteLine("computing vorticity...");
+                    DGField velX = fields.Single(f => f.Identification == "VelocityX");
+                    DGField velY = fields.Single(f => f.Identification == "VelocityY");
+
+                    DGField vortZ = velX.CloneAs();
+                    vortZ.Identification = "Vorticity";
+                    vortZ.Clear();
+                    vortZ.DerivativeByFlux(1.0, velY, 0);
+                    vortZ.DerivativeByFlux(-1.0, velX, 1);
+                    Console.WriteLine("done.");
+
+                    fields.Add(vortZ);
+                }
                 PlotCurrentState(fields, physTime, timestepNo);
 
                 double perc = Math.Round(100.0 * (double)(i+1) / (double)TotCnt, 1);
