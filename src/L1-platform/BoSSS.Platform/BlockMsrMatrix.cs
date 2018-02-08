@@ -1236,7 +1236,6 @@ namespace ilPSP.LinSolvers {
 
         }
 
-
         /// <summary>
         /// Accumulates <paramref name="Block"/>*<paramref name="alpha"/> to this matrix,
         /// at the row/column offset <paramref name="i0"/> resp. <paramref name="j0"/>.
@@ -1246,6 +1245,20 @@ namespace ilPSP.LinSolvers {
         /// <param name="alpha">Scaling factor for the accumulation operation.</param>
         /// <param name="Block">Block to accumulate.</param>
         public void AccBlock(int i0, int j0, double alpha, MultidimensionalArray Block) {
+            this.AccBlock(i0, j0, alpha, Block, 1.0);
+        }
+
+
+        /// <summary>
+        /// Accumulates <paramref name="Block"/>*<paramref name="alpha"/> to this matrix,
+        /// at the row/column offset <paramref name="i0"/> resp. <paramref name="j0"/>.
+        /// </summary>
+        /// <param name="i0">Row offset.</param>
+        /// <param name="j0">Column offset.</param>
+        /// <param name="alpha">Scaling factor for the accumulation operation.</param>
+        /// <param name="Block">Block to accumulate.</param>
+        /// <param name="beta">Scaling applied to this matrix before accumulation</param>
+        public void AccBlock(int i0, int j0, double alpha, MultidimensionalArray Block, double beta) {
             if (Block.Dimension != 2)
                 throw new ArgumentException("Expecting a 2D array.");
             int I = Block.NoOfRows;
@@ -1291,7 +1304,7 @@ namespace ilPSP.LinSolvers {
                                 bTouch[(i + iw) * J + j + jw] = true;
 #endif
                                 int StorageIdx = Offset + (iSblk + iw) * CI + (jSblk + jw) * CJ;
-                                Storage[StorageIdx] += alpha * Block[i + iw, j + jw];
+                                Storage[StorageIdx] = Storage[StorageIdx]*beta + alpha * Block[i + iw, j + jw];
                             }
                         }
                     } else {
