@@ -28,10 +28,8 @@ Opening existing database 'D:\tmp\fk_temp_db'.
  var myBatch = new MiniBatchProcessorClient(@"D:\tmp\fk_deploy");
 **************
 ==============
-MiniBatchProcessor.Server.StartIfNotRunning();
+//MiniBatchProcessor.Server.StartIfNotRunning();
 **************
-Mini batch processor is already running.
-
 ==============
 // ===================
 // Utility definitions
@@ -197,18 +195,18 @@ List<SipControl> controls = new List<SipControl>();
 **************
 ==============
 // polynomial degrees to test
-int[] PolyDegS = new int[] {2, 3, 4, 5, 6};
-//int[] PolyDegS = new int[] {2, 3}; // reduced options for dev.
+//int[] PolyDegS = new int[] {2, 3, 4, 5, 6};
+int[] PolyDegS = new int[] {2, 3}; // reduced options for dev.
 **************
 ==============
 // Solvers which we want to instrument:
 SolverCodes[] solver_nameS = new SolverCodes[] {
-    SolverCodes.classic_pardiso, 
-    SolverCodes.classic_mumps, 
-    SolverCodes.classic_cg
-//    SolverCodes.exp_direct, 
-//    SolverCodes.exp_softpcg_schwarz,
-//    SolverCodes.exp_softpcg_schwarz_directcoarse,
+//    SolverCodes.classic_pardiso, 
+//    SolverCodes.classic_mumps, 
+//    SolverCodes.classic_cg,
+    SolverCodes.exp_softpcg_schwarz_directcoarse,
+    SolverCodes.exp_direct,
+    SolverCodes.exp_softpcg_schwarz
 //    SolverCodes.exp_direct_lapack
 }; 
 **************
@@ -223,8 +221,12 @@ foreach(int k in PolyDegS) {
 int iGrd = 0;    
 foreach(IGridInfo grd in grids) {
     iGrd ++;
-    //if(iGrd > 4)
-    //    continue; // reduced options for development
+    if(k >= 3 && iGrd > 5)
+        continue; 
+    if(k >= 4 && iGrd > 4)
+        continue; 
+    if(k >= 5 && iGrd > 3)
+        continue; 
     
     int Np = Utils.Np(k);
     int J  = grd.NumberOfCells;
@@ -254,72 +256,36 @@ foreach(IGridInfo grd in grids) {
 }
 
 **************
-setting up: J40_k2_classic_pardiso
-setting up: J320_k2_classic_pardiso
-setting up: J2560_k2_classic_pardiso
-setting up: J20480_k2_classic_pardiso
-setting up: J163840_k2_classic_pardiso
-setting up: J40_k3_classic_pardiso
-setting up: J320_k3_classic_pardiso
-setting up: J2560_k3_classic_pardiso
-setting up: J20480_k3_classic_pardiso
-setting up: J163840_k3_classic_pardiso
-setting up: J40_k4_classic_pardiso
-setting up: J320_k4_classic_pardiso
-setting up: J2560_k4_classic_pardiso
-setting up: J20480_k4_classic_pardiso
-setting up: J40_k5_classic_pardiso
-setting up: J320_k5_classic_pardiso
-setting up: J2560_k5_classic_pardiso
-setting up: J20480_k5_classic_pardiso
-setting up: J40_k6_classic_pardiso
-setting up: J320_k6_classic_pardiso
-setting up: J2560_k6_classic_pardiso
-setting up: J20480_k6_classic_pardiso
-setting up: J40_k2_classic_mumps
-setting up: J320_k2_classic_mumps
-setting up: J2560_k2_classic_mumps
-setting up: J20480_k2_classic_mumps
-setting up: J163840_k2_classic_mumps
-setting up: J40_k3_classic_mumps
-setting up: J320_k3_classic_mumps
-setting up: J2560_k3_classic_mumps
-setting up: J20480_k3_classic_mumps
-setting up: J163840_k3_classic_mumps
-setting up: J40_k4_classic_mumps
-setting up: J320_k4_classic_mumps
-setting up: J2560_k4_classic_mumps
-setting up: J20480_k4_classic_mumps
-setting up: J40_k5_classic_mumps
-setting up: J320_k5_classic_mumps
-setting up: J2560_k5_classic_mumps
-setting up: J20480_k5_classic_mumps
-setting up: J40_k6_classic_mumps
-setting up: J320_k6_classic_mumps
-setting up: J2560_k6_classic_mumps
-setting up: J20480_k6_classic_mumps
-setting up: J40_k2_classic_cg
-setting up: J320_k2_classic_cg
-setting up: J2560_k2_classic_cg
-setting up: J20480_k2_classic_cg
-setting up: J163840_k2_classic_cg
-setting up: J40_k3_classic_cg
-setting up: J320_k3_classic_cg
-setting up: J2560_k3_classic_cg
-setting up: J20480_k3_classic_cg
-setting up: J163840_k3_classic_cg
-setting up: J40_k4_classic_cg
-setting up: J320_k4_classic_cg
-setting up: J2560_k4_classic_cg
-setting up: J20480_k4_classic_cg
-setting up: J40_k5_classic_cg
-setting up: J320_k5_classic_cg
-setting up: J2560_k5_classic_cg
-setting up: J20480_k5_classic_cg
-setting up: J40_k6_classic_cg
-setting up: J320_k6_classic_cg
-setting up: J2560_k6_classic_cg
-setting up: J20480_k6_classic_cg
+setting up: J40_k2_exp_softpcg_schwarz_directcoarse
+setting up: J320_k2_exp_softpcg_schwarz_directcoarse
+setting up: J2560_k2_exp_softpcg_schwarz_directcoarse
+setting up: J20480_k2_exp_softpcg_schwarz_directcoarse
+setting up: J163840_k2_exp_softpcg_schwarz_directcoarse
+setting up: J40_k3_exp_softpcg_schwarz_directcoarse
+setting up: J320_k3_exp_softpcg_schwarz_directcoarse
+setting up: J2560_k3_exp_softpcg_schwarz_directcoarse
+setting up: J20480_k3_exp_softpcg_schwarz_directcoarse
+setting up: J163840_k3_exp_softpcg_schwarz_directcoarse
+setting up: J40_k2_exp_direct
+setting up: J320_k2_exp_direct
+setting up: J2560_k2_exp_direct
+setting up: J20480_k2_exp_direct
+setting up: J163840_k2_exp_direct
+setting up: J40_k3_exp_direct
+setting up: J320_k3_exp_direct
+setting up: J2560_k3_exp_direct
+setting up: J20480_k3_exp_direct
+setting up: J163840_k3_exp_direct
+setting up: J40_k2_exp_softpcg_schwarz
+setting up: J320_k2_exp_softpcg_schwarz
+setting up: J2560_k2_exp_softpcg_schwarz
+setting up: J20480_k2_exp_softpcg_schwarz
+setting up: J163840_k2_exp_softpcg_schwarz
+setting up: J40_k3_exp_softpcg_schwarz
+setting up: J320_k3_exp_softpcg_schwarz
+setting up: J2560_k3_exp_softpcg_schwarz
+setting up: J20480_k3_exp_softpcg_schwarz
+setting up: J163840_k3_exp_softpcg_schwarz
 
 ==============
 // ==========
@@ -339,341 +305,157 @@ setting up: J20480_k6_classic_cg
 //tempDB.Sessions.Where(s => s.Name.Contains("pardiso") && s.Name.Contains("J320")).ForEach(si => si.Delete(true));
 **************
 ==============
+//tempDB.Sessions.Where(s => s.Name.Contains("exp_direct")).ForEach(si => si.Delete());
+**************
+==============
+**************
+==============
 foreach(var ctrl in controls) {
     Console.WriteLine(" Submitting: " + ctrl.SessionName); 
     ctrl.RunBatch(myBatch,NumberOfMPIProcs:1,UseComputeNodesExclusive:true); 
 }
 **************
- Submitting: J40_k2_classic_pardiso
+ Submitting: J40_k2_exp_softpcg_schwarz_directcoarse
 Job was successful (according to job manager), latest session related to job is:
-{ Guid = 52efbf07-f8b5-4840-9fd9-7abfffd44c04; 01/30/2018 23:51:59 Name = J40_k2_classic_pardiso }
+{ Guid = 92ef5aa6-bae6-4fc1-826a-10a4b3c1f5a5; 02/03/2018 09:21:07 Name = J40_k2_exp_softpcg_schwarz_directcoarse }
 No further action.
- Submitting: J320_k2_classic_pardiso
-Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
-Deploying executables and additional files ...
-Deployment directory: D:\tmp\fk_deploy\ipPoisson2018Feb01_18-55-38
-Source directory: C:\Users\florian\Documents\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-   copied: ipPoisson.exe BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll Renci.SshNet.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
-deployment finished.
- Submitting: J2560_k2_classic_pardiso
+ Submitting: J320_k2_exp_softpcg_schwarz_directcoarse
 Job was successful (according to job manager), latest session related to job is:
-{ Guid = f395fe2c-4ace-46a8-aec4-f956d369e7cf; 01/30/2018 23:52:59 Name = J2560_k2_classic_pardiso }
+{ Guid = ab8c7fac-b324-41d4-ba1f-5d153a323cf6; 02/03/2018 09:21:37 Name = J320_k2_exp_softpcg_schwarz_directcoarse }
 No further action.
- Submitting: J20480_k2_classic_pardiso
+ Submitting: J2560_k2_exp_softpcg_schwarz_directcoarse
 Job was successful (according to job manager), latest session related to job is:
-{ Guid = 907d6400-baa3-423d-a584-56b4b8d30adb; 01/30/2018 23:53:29 Name = J20480_k2_classic_pardiso }
+{ Guid = c8ddafb9-8112-4afe-9977-e243aef18ac8; 02/03/2018 09:22:37 Name = J2560_k2_exp_softpcg_schwarz_directcoarse }
 No further action.
- Submitting: J163840_k2_classic_pardiso
+ Submitting: J20480_k2_exp_softpcg_schwarz_directcoarse
 Job was successful (according to job manager), latest session related to job is:
-{ Guid = a39903be-a881-47ca-aa91-d6ecf82ba085; 01/31/2018 12:44:31 Name = J163840_k2_classic_pardiso }
+{ Guid = 61c26fa3-b5dc-4794-ad63-fdd48c2c1cc9; 02/03/2018 09:27:47 Name = J20480_k2_exp_softpcg_schwarz_directcoarse }
 No further action.
- Submitting: J40_k3_classic_pardiso
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = ee0fbe91-8de5-40db-8a3b-0211e3df5836; 01/30/2018 23:56:09 Name = J40_k3_classic_pardiso }
-No further action.
- Submitting: J320_k3_classic_pardiso
-Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
-Deploying executables and additional files ...
-Deployment directory: D:\tmp\fk_deploy\ipPoisson2018Feb01_18-55-39
-Source directory: C:\Users\florian\Documents\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-   copied: ipPoisson.exe BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll Renci.SshNet.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
-deployment finished.
- Submitting: J2560_k3_classic_pardiso
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = 9b356c12-0d70-4c0e-a582-c8b30af0621e; 01/30/2018 23:57:09 Name = J2560_k3_classic_pardiso }
-No further action.
- Submitting: J20480_k3_classic_pardiso
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = 2ffe3f8e-fa04-4814-b145-f84cfb94f2d1; 01/30/2018 23:57:49 Name = J20480_k3_classic_pardiso }
-No further action.
- Submitting: J163840_k3_classic_pardiso
+ Submitting: J163840_k2_exp_softpcg_schwarz_directcoarse
 Job is failed 1 times, maximum number of tries reached, no further action.
- Submitting: J40_k4_classic_pardiso
+ Submitting: J40_k3_exp_softpcg_schwarz_directcoarse
 Job was successful (according to job manager), latest session related to job is:
-{ Guid = a57dfe47-9330-4218-bf80-2a7a5a69a2e2; 01/31/2018 00:14:21 Name = J40_k4_classic_pardiso }
+{ Guid = f10ab4d8-f2be-4b61-b7ae-c917171f61be; 02/03/2018 10:27:47 Name = J40_k3_exp_softpcg_schwarz_directcoarse }
 No further action.
- Submitting: J320_k4_classic_pardiso
-Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
-Deploying executables and additional files ...
-Deployment directory: D:\tmp\fk_deploy\ipPoisson2018Feb01_18-55-40
-Source directory: C:\Users\florian\Documents\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-   copied: ipPoisson.exe BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll Renci.SshNet.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
-deployment finished.
- Submitting: J2560_k4_classic_pardiso
+ Submitting: J320_k3_exp_softpcg_schwarz_directcoarse
 Job was successful (according to job manager), latest session related to job is:
-{ Guid = fa0c98b5-9907-4bbc-8916-db2a211168b7; 01/31/2018 00:15:20 Name = J2560_k4_classic_pardiso }
+{ Guid = aee64fee-3bd2-470e-a677-4b108b37cd23; 02/03/2018 10:28:17 Name = J320_k3_exp_softpcg_schwarz_directcoarse }
 No further action.
- Submitting: J20480_k4_classic_pardiso
+ Submitting: J2560_k3_exp_softpcg_schwarz_directcoarse
 Job was successful (according to job manager), latest session related to job is:
-{ Guid = 8dd627ee-1ceb-44c4-becd-1dbc821efc25; 01/31/2018 00:17:01 Name = J20480_k4_classic_pardiso }
+{ Guid = 592e8569-e509-4b72-9172-df4ee1dc359d; 02/03/2018 10:29:28 Name = J2560_k3_exp_softpcg_schwarz_directcoarse }
 No further action.
- Submitting: J40_k5_classic_pardiso
+ Submitting: J20480_k3_exp_softpcg_schwarz_directcoarse
 Job was successful (according to job manager), latest session related to job is:
-{ Guid = 0fc9b54c-38da-4d91-9cbc-3e3537fe36cf; 01/31/2018 00:20:22 Name = J40_k5_classic_pardiso }
+{ Guid = e4f76148-79a9-481d-a85e-db62aee5ff92; 02/03/2018 10:38:18 Name = J20480_k3_exp_softpcg_schwarz_directcoarse }
 No further action.
- Submitting: J320_k5_classic_pardiso
-Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
-Deploying executables and additional files ...
-Deployment directory: D:\tmp\fk_deploy\ipPoisson2018Feb01_18-55-40-1
-Source directory: C:\Users\florian\Documents\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-   copied: ipPoisson.exe BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll Renci.SshNet.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
-deployment finished.
- Submitting: J2560_k5_classic_pardiso
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = 97ee0a70-8c45-47b5-9a35-ac772bcef084; 01/31/2018 00:21:31 Name = J2560_k5_classic_pardiso }
-No further action.
- Submitting: J20480_k5_classic_pardiso
+ Submitting: J163840_k3_exp_softpcg_schwarz_directcoarse
 Job is failed 1 times, maximum number of tries reached, no further action.
- Submitting: J40_k6_classic_pardiso
+ Submitting: J40_k2_exp_direct
 Job was successful (according to job manager), latest session related to job is:
-{ Guid = 23e481df-cc66-4fe3-b708-93816d2cb3a6; 01/31/2018 00:29:51 Name = J40_k6_classic_pardiso }
+{ Guid = 8a535a4e-98f3-40a7-9f08-7b1d77d5e40d; 02/03/2018 08:32:22 Name = J40_k2_exp_direct }
 No further action.
- Submitting: J320_k6_classic_pardiso
-Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
-Deploying executables and additional files ...
-Deployment directory: D:\tmp\fk_deploy\ipPoisson2018Feb01_18-55-40-2
-Source directory: C:\Users\florian\Documents\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
-   copied: ipPoisson.exe BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll Renci.SshNet.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
-deployment finished.
- Submitting: J2560_k6_classic_pardiso
+ Submitting: J320_k2_exp_direct
 Job was successful (according to job manager), latest session related to job is:
-{ Guid = 6ff46ba1-5855-48ee-8156-813f93cadc4f; 01/31/2018 00:31:11 Name = J2560_k6_classic_pardiso }
+{ Guid = d26fca40-a252-4677-94e9-6d787862ebdb; 02/03/2018 08:32:51 Name = J320_k2_exp_direct }
 No further action.
- Submitting: J20480_k6_classic_pardiso
-Job is failed 1 times, maximum number of tries reached, no further action.
- Submitting: J40_k2_classic_mumps
+ Submitting: J2560_k2_exp_direct
 Job was successful (according to job manager), latest session related to job is:
-{ Guid = 0bce3a0b-60bb-4b9f-9b4d-021f5cac0f73; 01/31/2018 00:54:43 Name = J40_k2_classic_mumps }
+{ Guid = 10648a60-725e-44b8-abd8-50ae62310a97; 02/03/2018 08:33:21 Name = J2560_k2_exp_direct }
 No further action.
- Submitting: J320_k2_classic_mumps
+ Submitting: J20480_k2_exp_direct
 Job was successful (according to job manager), latest session related to job is:
-{ Guid = 2a54467f-97c8-491b-a119-6735fc40397b; 01/31/2018 00:55:13 Name = J320_k2_classic_mumps }
+{ Guid = 4716fa29-63a5-4844-92f5-9d47e9a4e080; 02/03/2018 08:34:01 Name = J20480_k2_exp_direct }
 No further action.
- Submitting: J2560_k2_classic_mumps
+ Submitting: J163840_k2_exp_direct
 Job was successful (according to job manager), latest session related to job is:
-{ Guid = 62f81b6f-3f6e-4aa3-9861-4bfc3de5fb98; 01/31/2018 00:55:43 Name = J2560_k2_classic_mumps }
+{ Guid = 021cdb10-daf3-48b3-badb-c325f5f13efc; 02/05/2018 06:24:17 Name = J163840_k2_exp_direct }
 No further action.
- Submitting: J20480_k2_classic_mumps
+ Submitting: J40_k3_exp_direct
 Job was successful (according to job manager), latest session related to job is:
-{ Guid = 3c81af04-22d4-4a60-8b87-271e0f10c6ac; 01/31/2018 00:56:13 Name = J20480_k2_classic_mumps }
+{ Guid = 6f717581-cff3-4c34-b2af-fb5353d6690b; 02/03/2018 08:37:02 Name = J40_k3_exp_direct }
 No further action.
- Submitting: J163840_k2_classic_mumps
-Job is failed 1 times, maximum number of tries reached, no further action.
- Submitting: J40_k3_classic_mumps
+ Submitting: J320_k3_exp_direct
 Job was successful (according to job manager), latest session related to job is:
-{ Guid = 05416f4f-fff2-4b9c-97b3-68e7522b9fa6; 01/31/2018 00:58:34 Name = J40_k3_classic_mumps }
+{ Guid = 7578740c-3883-4dec-89a1-8e09a4e5506b; 02/03/2018 08:37:32 Name = J320_k3_exp_direct }
 No further action.
- Submitting: J320_k3_classic_mumps
+ Submitting: J2560_k3_exp_direct
 Job was successful (according to job manager), latest session related to job is:
-{ Guid = d5e0534f-3a59-4f1d-afd4-eaace425f975; 01/31/2018 00:59:04 Name = J320_k3_classic_mumps }
+{ Guid = 141b3840-cec5-46fa-a075-3fd3a86270ec; 02/03/2018 08:38:03 Name = J2560_k3_exp_direct }
 No further action.
- Submitting: J2560_k3_classic_mumps
+ Submitting: J20480_k3_exp_direct
 Job was successful (according to job manager), latest session related to job is:
-{ Guid = 9293bc2f-257e-48bb-9c9a-f9e8784e12eb; 01/31/2018 00:59:34 Name = J2560_k3_classic_mumps }
+{ Guid = eee1e783-0e59-4822-9c2a-996c15d170f5; 02/03/2018 08:38:52 Name = J20480_k3_exp_direct }
 No further action.
- Submitting: J20480_k3_classic_mumps
+ Submitting: J163840_k3_exp_direct
+Job is failed 2 times, maximum number of tries reached, no further action.
+ Submitting: J40_k2_exp_softpcg_schwarz
 Job was successful (according to job manager), latest session related to job is:
-{ Guid = 2e036d86-b61e-47b6-a676-226d98e92f1a; 01/31/2018 01:00:24 Name = J20480_k3_classic_mumps }
+{ Guid = ad16f017-f714-44ab-bde9-05eaa4b98342; 02/05/2018 07:06:28 Name = J40_k2_exp_softpcg_schwarz }
 No further action.
- Submitting: J163840_k3_classic_mumps
-Job is failed 1 times, maximum number of tries reached, no further action.
- Submitting: J40_k4_classic_mumps
+ Submitting: J320_k2_exp_softpcg_schwarz
 Job was successful (according to job manager), latest session related to job is:
-{ Guid = 73e71af1-8fc3-40df-8fac-f0c21287b0dc; 01/31/2018 01:09:24 Name = J40_k4_classic_mumps }
+{ Guid = 158381d1-8646-4b64-a94f-fa893a749124; 02/05/2018 07:06:58 Name = J320_k2_exp_softpcg_schwarz }
 No further action.
- Submitting: J320_k4_classic_mumps
+ Submitting: J2560_k2_exp_softpcg_schwarz
 Job was successful (according to job manager), latest session related to job is:
-{ Guid = 1ac6869e-6281-4116-acfc-7be024787e96; 01/31/2018 01:09:55 Name = J320_k4_classic_mumps }
+{ Guid = 4a5fafae-7f96-4f88-8beb-83d41eacf77e; 02/05/2018 07:08:47 Name = J2560_k2_exp_softpcg_schwarz }
 No further action.
- Submitting: J2560_k4_classic_mumps
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = 8df6b05f-cadd-4b11-9ea9-b3cdb87ad1e2; 01/31/2018 01:10:25 Name = J2560_k4_classic_mumps }
+ Submitting: J20480_k2_exp_softpcg_schwarz
+Job has been started (according to job manager), latest known session is:
+{ Guid = 9d732da9-6f84-42a4-b8e1-ec91fa01f144; 02/05/2018 07:34:28 Name = J20480_k2_exp_softpcg_schwarz }
 No further action.
- Submitting: J20480_k4_classic_mumps
-Job is failed 1 times, maximum number of tries reached, no further action.
- Submitting: J40_k5_classic_mumps
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = b7fb55b6-4332-4fcb-a52e-408e22caf0fc; 01/31/2018 01:15:24 Name = J40_k5_classic_mumps }
+ Submitting: J163840_k2_exp_softpcg_schwarz
+Job has been started (according to job manager), latest known session is:
+{ Guid = d124fc3c-c0f0-4c20-b85b-2622956d9e92; 02/06/2018 06:05:36 Name = J163840_k2_exp_softpcg_schwarz }
 No further action.
- Submitting: J320_k5_classic_mumps
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = ea1e43ee-e791-47f9-9cec-3f045dbb9035; 01/31/2018 01:15:54 Name = J320_k5_classic_mumps }
-No further action.
- Submitting: J2560_k5_classic_mumps
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = eb6f3a9e-15a3-4959-9f29-da615468d1ba; 01/31/2018 01:16:34 Name = J2560_k5_classic_mumps }
-No further action.
- Submitting: J20480_k5_classic_mumps
-Job is failed 1 times, maximum number of tries reached, no further action.
- Submitting: J40_k6_classic_mumps
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = 3fada262-0fcd-430f-9dc3-90752c1320e0; 01/31/2018 01:24:45 Name = J40_k6_classic_mumps }
-No further action.
- Submitting: J320_k6_classic_mumps
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = e39ad2ba-f84f-4ac4-b3c3-ab6f777a6e6f; 01/31/2018 01:25:16 Name = J320_k6_classic_mumps }
-No further action.
- Submitting: J2560_k6_classic_mumps
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = 4a5683b2-3cd8-4d0b-966b-643e2c106146; 01/31/2018 01:26:15 Name = J2560_k6_classic_mumps }
-No further action.
- Submitting: J20480_k6_classic_mumps
-Job is failed 1 times, maximum number of tries reached, no further action.
- Submitting: J40_k2_classic_cg
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = d658f353-98f8-459f-9020-8f5c6fb608e8; 01/31/2018 01:48:46 Name = J40_k2_classic_cg }
-No further action.
- Submitting: J320_k2_classic_cg
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = c1fbd8fe-f2ab-472f-824b-f1962791f229; 01/31/2018 01:49:16 Name = J320_k2_classic_cg }
-No further action.
- Submitting: J2560_k2_classic_cg
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = b200faf5-ad01-43b0-8ce5-29ee23cfcf0e; 01/31/2018 01:49:47 Name = J2560_k2_classic_cg }
-No further action.
- Submitting: J20480_k2_classic_cg
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = ecdb9030-793a-4eba-a61d-f110ecf83443; 01/31/2018 01:50:17 Name = J20480_k2_classic_cg }
-No further action.
- Submitting: J163840_k2_classic_cg
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = 25676a1e-167d-462c-8348-6a22ca285401; 01/31/2018 13:01:01 Name = J163840_k2_classic_cg }
-No further action.
- Submitting: J40_k3_classic_cg
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = 63d8164c-f54b-4cb7-a3fc-6416ae9721a5; 01/31/2018 01:51:06 Name = J40_k3_classic_cg }
-No further action.
- Submitting: J320_k3_classic_cg
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = 8c7fcede-5303-455e-bcba-c1bf23d31068; 01/31/2018 01:51:37 Name = J320_k3_classic_cg }
-No further action.
- Submitting: J2560_k3_classic_cg
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = ac67baba-14a6-405f-b153-456b58758472; 01/31/2018 01:52:07 Name = J2560_k3_classic_cg }
-No further action.
- Submitting: J20480_k3_classic_cg
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = 1d226c1d-ed29-4fef-835f-6f8127b5657d; 01/31/2018 01:52:46 Name = J20480_k3_classic_cg }
-No further action.
- Submitting: J163840_k3_classic_cg
-Job is failed 1 times, maximum number of tries reached, no further action.
- Submitting: J40_k4_classic_cg
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = 2bb237fb-deb4-45a6-a725-a55cace34b85; 01/31/2018 01:54:46 Name = J40_k4_classic_cg }
-No further action.
- Submitting: J320_k4_classic_cg
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = d689361f-541e-41b9-81fb-24ec026eef37; 01/31/2018 01:55:16 Name = J320_k4_classic_cg }
-No further action.
- Submitting: J2560_k4_classic_cg
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = b8096c23-8934-4230-a012-2b4d162fd5d3; 01/31/2018 01:55:47 Name = J2560_k4_classic_cg }
-No further action.
- Submitting: J20480_k4_classic_cg
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = fcc14151-8222-45bd-bee9-bfbe5fcc4f70; 01/31/2018 01:56:47 Name = J20480_k4_classic_cg }
-No further action.
- Submitting: J40_k5_classic_cg
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = 9e2860d2-2fa1-4d39-bed6-fe10daa74f08; 01/31/2018 02:02:27 Name = J40_k5_classic_cg }
-No further action.
- Submitting: J320_k5_classic_cg
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = ab4ce522-56b6-452e-924a-bd3f11cfb1fb; 01/31/2018 02:10:38 Name = J320_k5_classic_cg }
-No further action.
- Submitting: J2560_k5_classic_cg
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = 3c406b3d-db51-45ac-9e0d-b55edf8d24e9; 01/31/2018 02:32:39 Name = J2560_k5_classic_cg }
-No further action.
- Submitting: J20480_k5_classic_cg
-Job is failed 1 times, maximum number of tries reached, no further action.
- Submitting: J40_k6_classic_cg
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = a3134f85-5bb4-4ca0-8a80-7ad6742743e7; 01/31/2018 04:59:16 Name = J40_k6_classic_cg }
-No further action.
- Submitting: J320_k6_classic_cg
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = edcdb194-b961-4c7d-a232-7ca33b45d8aa; 01/31/2018 05:09:07 Name = J320_k6_classic_cg }
-No further action.
- Submitting: J2560_k6_classic_cg
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = 46477a75-8677-48e1-9222-d5751a204d8e; 01/31/2018 06:00:47 Name = J2560_k6_classic_cg }
-No further action.
- Submitting: J20480_k6_classic_cg
-Job is failed 1 times, maximum number of tries reached, no further action.
+ Submitting: J40_k3_exp_softpcg_schwarz
+Job submitted, waiting for launch - no further action.
+ Submitting: J320_k3_exp_softpcg_schwarz
+Job submitted, waiting for launch - no further action.
+ Submitting: J2560_k3_exp_softpcg_schwarz
+Job submitted, waiting for launch - no further action.
+ Submitting: J20480_k3_exp_softpcg_schwarz
+Job submitted, waiting for launch - no further action.
+ Submitting: J163840_k3_exp_softpcg_schwarz
+Job submitted, waiting for launch - no further action.
 
 ==============
 **************
 ==============
 WorkflowMgm.AllJobs.Select(kv => kv.Key + ": \t" + kv.Value.Status);
 **************
-List of 66 instances of String {
-  0: J40_k2_classic_pardiso: 	FinishedSuccessful
-  1: J320_k2_classic_pardiso: 	InProgress
-  2: J2560_k2_classic_pardiso: 	FinishedSuccessful
-  3: J20480_k2_classic_pardiso: 	FinishedSuccessful
-  4: J163840_k2_classic_pardiso: 	FinishedSuccessful
-  5: J40_k3_classic_pardiso: 	FinishedSuccessful
-  6: J320_k3_classic_pardiso: 	PendingInExecutionQueue
-  7: J2560_k3_classic_pardiso: 	FinishedSuccessful
-  8: J20480_k3_classic_pardiso: 	FinishedSuccessful
-  9: J163840_k3_classic_pardiso: 	Failed
-  10: J40_k4_classic_pardiso: 	FinishedSuccessful
-  11: J320_k4_classic_pardiso: 	PendingInExecutionQueue
-  12: J2560_k4_classic_pardiso: 	FinishedSuccessful
-  13: J20480_k4_classic_pardiso: 	FinishedSuccessful
-  14: J40_k5_classic_pardiso: 	FinishedSuccessful
-  15: J320_k5_classic_pardiso: 	PendingInExecutionQueue
-  16: J2560_k5_classic_pardiso: 	FinishedSuccessful
-  17: J20480_k5_classic_pardiso: 	Failed
-  18: J40_k6_classic_pardiso: 	FinishedSuccessful
-  19: J320_k6_classic_pardiso: 	PendingInExecutionQueue
-  20: J2560_k6_classic_pardiso: 	FinishedSuccessful
-  21: J20480_k6_classic_pardiso: 	Failed
-  22: J40_k2_classic_mumps: 	FinishedSuccessful
-  23: J320_k2_classic_mumps: 	FinishedSuccessful
-  24: J2560_k2_classic_mumps: 	FinishedSuccessful
-  25: J20480_k2_classic_mumps: 	FinishedSuccessful
-  26: J163840_k2_classic_mumps: 	Failed
-  27: J40_k3_classic_mumps: 	FinishedSuccessful
-  28: J320_k3_classic_mumps: 	FinishedSuccessful
-  29: J2560_k3_classic_mumps: 	FinishedSuccessful
-  30: J20480_k3_classic_mumps: 	FinishedSuccessful
-  31: J163840_k3_classic_mumps: 	Failed
-  32: J40_k4_classic_mumps: 	FinishedSuccessful
-  33: J320_k4_classic_mumps: 	FinishedSuccessful
-  34: J2560_k4_classic_mumps: 	FinishedSuccessful
-  35: J20480_k4_classic_mumps: 	Failed
-  36: J40_k5_classic_mumps: 	FinishedSuccessful
-  37: J320_k5_classic_mumps: 	FinishedSuccessful
-  38: J2560_k5_classic_mumps: 	FinishedSuccessful
-  39: J20480_k5_classic_mumps: 	Failed
-  40: J40_k6_classic_mumps: 	FinishedSuccessful
-  41: J320_k6_classic_mumps: 	FinishedSuccessful
-  42: J2560_k6_classic_mumps: 	FinishedSuccessful
-  43: J20480_k6_classic_mumps: 	Failed
-  44: J40_k2_classic_cg: 	FinishedSuccessful
-  45: J320_k2_classic_cg: 	FinishedSuccessful
-  46: J2560_k2_classic_cg: 	FinishedSuccessful
-  47: J20480_k2_classic_cg: 	FinishedSuccessful
-  48: J163840_k2_classic_cg: 	FinishedSuccessful
-  49: J40_k3_classic_cg: 	FinishedSuccessful
-  50: J320_k3_classic_cg: 	FinishedSuccessful
-  51: J2560_k3_classic_cg: 	FinishedSuccessful
-  52: J20480_k3_classic_cg: 	FinishedSuccessful
-  53: J163840_k3_classic_cg: 	Failed
-  54: J40_k4_classic_cg: 	FinishedSuccessful
-  55: J320_k4_classic_cg: 	FinishedSuccessful
-  56: J2560_k4_classic_cg: 	FinishedSuccessful
-  57: J20480_k4_classic_cg: 	FinishedSuccessful
-  58: J40_k5_classic_cg: 	FinishedSuccessful
-  59: J320_k5_classic_cg: 	FinishedSuccessful
-  60: J2560_k5_classic_cg: 	FinishedSuccessful
-  61: J20480_k5_classic_cg: 	Failed
-  62: J40_k6_classic_cg: 	FinishedSuccessful
-  63: J320_k6_classic_cg: 	FinishedSuccessful
-  64: J2560_k6_classic_cg: 	FinishedSuccessful
-  65: J20480_k6_classic_cg: 	Failed
+List of 30 instances of String {
+  0: J40_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  1: J320_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  2: J2560_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  3: J20480_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  4: J163840_k2_exp_softpcg_schwarz_directcoarse: 	Failed
+  5: J40_k3_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  6: J320_k3_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  7: J2560_k3_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  8: J20480_k3_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  9: J163840_k3_exp_softpcg_schwarz_directcoarse: 	Failed
+  10: J40_k2_exp_direct: 	FinishedSuccessful
+  11: J320_k2_exp_direct: 	FinishedSuccessful
+  12: J2560_k2_exp_direct: 	FinishedSuccessful
+  13: J20480_k2_exp_direct: 	FinishedSuccessful
+  14: J163840_k2_exp_direct: 	FinishedSuccessful
+  15: J40_k3_exp_direct: 	FinishedSuccessful
+  16: J320_k3_exp_direct: 	FinishedSuccessful
+  17: J2560_k3_exp_direct: 	FinishedSuccessful
+  18: J20480_k3_exp_direct: 	FinishedSuccessful
+  19: J163840_k3_exp_direct: 	Failed
+  20: J40_k2_exp_softpcg_schwarz: 	FinishedSuccessful
+  21: J320_k2_exp_softpcg_schwarz: 	FinishedSuccessful
+  22: J2560_k2_exp_softpcg_schwarz: 	FinishedSuccessful
+  23: J20480_k2_exp_softpcg_schwarz: 	InProgress
+  24: J163840_k2_exp_softpcg_schwarz: 	InProgress
+  25: J40_k3_exp_softpcg_schwarz: 	PendingInExecutionQueue
+  26: J320_k3_exp_softpcg_schwarz: 	PendingInExecutionQueue
+  27: J2560_k3_exp_softpcg_schwarz: 	PendingInExecutionQueue
+  28: J20480_k3_exp_softpcg_schwarz: 	PendingInExecutionQueue
+  29: J163840_k3_exp_softpcg_schwarz: 	PendingInExecutionQueue
 }
 ==============
 //WorkflowMgm.AllJobs.ElementAt(9).Value.Stdout;
@@ -681,7 +463,169 @@ List of 66 instances of String {
 ==============
 WorkflowMgm.SessionTable.Rows.Count;
 **************
-67
+93
+==============
+**************
+==============
+**************
+==============
+// =====================================
+// Session table
+// =====================================
+**************
+==============
+static class AddCols {
+    static public object SipMatrixAssembly_time(ISessionInfo SI) {
+        var mcr = SI.GetProfiling()[0];
+        var ndS = mcr.FindChildren("SipMatrixAssembly");
+        var nd  = ndS.ElementAt(0);
+        return nd.TimeSpentInMethod.TotalSeconds  / nd.CallCount;
+    }
+    static public object Aggregation_basis_init_time(ISessionInfo SI) {
+        var mcr = SI.GetProfiling()[0];
+        var ndS = mcr.FindChildren("Aggregation_basis_init");
+        var nd  = ndS.ElementAt(0);
+        return nd.TimeSpentInMethod.TotalSeconds  / nd.CallCount;
+    }
+    static public object Solver_Init_time(ISessionInfo SI) {
+        var mcr = SI.GetProfiling()[0];
+        var ndS = mcr.FindChildren("Solver_Init");
+        var nd  = ndS.ElementAt(0);
+        //Console.WriteLine("Number of nodes: " + ndS.Count() + " cc " + nd.CallCount );
+        return nd.TimeSpentInMethod.TotalSeconds / nd.CallCount;
+    }
+    static public object Solver_Run_time(ISessionInfo SI) {
+        var mcr = SI.GetProfiling()[0];
+        var ndS = mcr.FindChildren("Solver_Run");
+        var nd  = ndS.ElementAt(0);
+        return nd.TimeSpentInMethod.TotalSeconds  / nd.CallCount;
+    }
+}
+**************
+==============
+WorkflowMgm.AdditionalSessionTableColums.Clear();
+WorkflowMgm.AdditionalSessionTableColums.Add(
+    "SipMatrixAssembly_time", AddCols.SipMatrixAssembly_time);
+WorkflowMgm.AdditionalSessionTableColums.Add(
+    "Aggregation_basis_init_time", AddCols.Aggregation_basis_init_time);
+WorkflowMgm.AdditionalSessionTableColums.Add(
+    "Solver_Init_time", AddCols.Solver_Init_time);
+WorkflowMgm.AdditionalSessionTableColums.Add(
+    "Solver_Run_time", AddCols.Solver_Run_time);
+**************
+==============
+//var SI = tempDB.Sessions.Single(si => si.Name == "J40_k2_exp_softpcg_schwarz_directcoarse");
+**************
+==============
+//SI;
+**************
+==============
+//Console.WriteLine(AddCols.SipMatrixAssembly_time(SI));
+//Console.WriteLine(AddCols.Aggregation_basis_init_time(SI));
+//Console.WriteLine(AddCols.Solver_Init_time(SI));
+//Console.WriteLine(AddCols.Solver_Run_time(SI));
+**************
+==============
+//var mcr = SI.GetProfiling()[0];
+**************
+==============
+//SI.KeysAndQueries;
+**************
+==============
+//var rsos = mcr.FindChildren("*RunSolverOneStep*").ElementAt(0);
+**************
+==============
+//rsos.Calls;
+**************
+==============
+**************
+==============
+var SessTab = WorkflowMgm.SessionTable;
+**************
+==============
+**************
+==============
+**************
+==============
+List<string> AllCols = SessTab.GetColumnNames().ToList();
+AllCols.Remove("Session");
+**************
+True
+==============
+SessTab = SessTab.ExtractColumns(AllCols.ToArray());
+**************
+==============
+var now = DateTime.Now;
+**************
+==============
+SessTab.TableName = "SolverRuns--" + now.Year + "-" + now.Month;
+**************
+==============
+using System.IO;
+**************
+==============
+string docpath = Path.Combine(CurrentDocDir, SessTab.TableName + ".xml");
+**************
+==============
+SessTab.WriteXml(docpath);
+**************
+==============
+//tab.GetColumnNames();
+**************
+==============
+//var SubTab = tab.ExtractColumns( "solver_name", "DGdegree:T", "DOFs",
+//"RegularTerminated", "Conv", 
+//"SipMatrixAssembly_time", "Aggregation_basis_init_time", "Solver_Init_time", "Solver_Run_time", "minSolRunT", "maxSolRunT");
+**************
+==============
+//SessTab.Print();
+**************
+==============
+SessTab.GetColumnTypes().Take(7);
+**************
+List of 7 instances of Type {
+  0: System.String
+  1: System.Int64
+  2: System.Int64
+  3: System.String
+  4: System.String
+  5: System.Boolean
+  6: System.Int64
+}
+==============
+tempDB.Sessions.ElementAt(0).KeysAndQueries["DGdegree:T"].GetType();
+**************
+System.Int64
+==============
+//using System.Data;
+**************
+==============
+//var SessTab_Test = new System.Data.DataTable();
+//SessTab_Test.ReadXml(docpath);
+**************
+==============
+**************
+==============
+string txt = SessTab.Serialize();
+**************
+==============
+System.IO.File.WriteAllText(Path.Combine(CurrentDocDir, "oida.txt"), txt);
+**************
+==============
+var SessTab2 = TableExtensions.Deserialize(txt);
+**************
+==============
+SessTab2.GetColumnTypes().Take(7);
+**************
+List of 7 instances of Type {
+  0: System.String
+  1: System.Int64
+  2: System.Int64
+  3: System.String
+  4: System.String
+  5: System.Boolean
+  6: System.Int64
+}
 ==============
 **************
 ==============

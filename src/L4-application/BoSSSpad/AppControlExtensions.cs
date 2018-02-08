@@ -64,7 +64,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// Verifies a control object, especially if it is suitable for serialization.
         /// </summary>
         /// <param name="ctrl"></param>
-        public static void ExtensiveVerify(this AppControl ctrl) {
+        public static void VerifyEx(this AppControl ctrl) {
 
             // call basic verification
             ctrl.Verify();
@@ -76,8 +76,20 @@ namespace BoSSS.Application.BoSSSpad {
                 throw new ArgumentException("'DynamicLoadBalancing_CellCostEstimatorFactories' is not supported - cannot be serialized.");
 
             // try serialization/deserialization
-            string JSON = ctrl.Serialize();
-            AppControl ctrlBack = AppControl.Deserialize(JSON, ctrl.GetType());
+            AppControl ctrlBack;
+            if (ctrl.GeneratedFromCode) {
+                string code = ctrl.ControlFileText;
+                
+                AppControl.FromCode(code, ctrl.GetType(), out AppControl c, out AppControl[] cS);
+                if(cS != null) {
+                    ctrlBack = cS[ctrl.ControlFileText_Index];
+                } else {
+                    ctrlBack = c;
+                }
+            } else {
+                string JSON = ctrl.Serialize();
+                ctrlBack = AppControl.Deserialize(JSON);//, ctrl.GetType());
+            }
             ctrlBack.Verify();
 
             // compare original and de-serialized object
@@ -134,7 +146,7 @@ namespace BoSSS.Application.BoSSSpad {
             var D1 = new Dictionary<string, object>();
             var D2 = new Dictionary<string, object>();
             BoSSS.Solution.Application.FindKeys(D1, ctrl);
-            BoSSS.Solution.Application.FindKeys(D2, ctrl);
+            BoSSS.Solution.Application.FindKeys(D2, ctrlBack);
             foreach(var kv1 in D1) {
                 string name = kv1.Key;
                 var o1 = kv1.Value;
