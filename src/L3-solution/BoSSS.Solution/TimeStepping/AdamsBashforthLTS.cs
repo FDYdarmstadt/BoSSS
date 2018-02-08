@@ -214,12 +214,12 @@ namespace BoSSS.Solution.Timestepping {
                             // Necessary in order to use the number of sub-grids specified by the user for the reclustering in each time step
                             // Otherwise the value could be changed by the constructor of the parent class (AdamsBashforthLTS.cs) --> CreateSubGrids()
                             Clusterer.Clustering newClustering = clusterer.CreateClustering(numberOfClustersInitial, this.TimeStepConstraints, this.SubGrid);
-                            List<int> newNumberofLocalTimeSteps;
-                            (newClustering, newNumberofLocalTimeSteps) = clusterer.CreateAdvancedClustering(newClustering, this.TimeStepConstraints); // Might remove sub-grids when time step sizes are too similar
+                            List<int> newNumberOfLocalTimeSteps;
+                            (newClustering, newNumberOfLocalTimeSteps) = clusterer.CreateAdvancedClustering(newClustering, this.TimeStepConstraints); // Might remove sub-grids when time step sizes are too similar
                             reclustered = clusterer.CheckForNewClustering(CurrentClustering, newClustering);
 
                             //CurrentClustering = newClustering;
-                            NumberOfLocalTimeSteps = newNumberofLocalTimeSteps;
+                            NumberOfLocalTimeSteps = newNumberOfLocalTimeSteps;
 
                             // After the intitial phase, activate adaptive mode for all ABevolve objects
                             foreach (ABevolve abE in ABevolver) {
@@ -231,7 +231,7 @@ namespace BoSSS.Solution.Timestepping {
                                 Console.WriteLine("### RECLUSTERING ###");
 #endif
                                 CurrentClustering = newClustering;
-                                NumberOfLocalTimeSteps = newNumberofLocalTimeSteps;
+                                NumberOfLocalTimeSteps = newNumberOfLocalTimeSteps;
                                 ShortenHistories(ABevolver);
                                 ABevolve[] oldABevolver = ABevolver;
                                 CreateNewABevolver();

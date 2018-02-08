@@ -231,7 +231,7 @@ namespace BoSSS.Solution.Utils {
                 foreach (Chunk c in volumeMask) {
                     int JE = c.JE;
                     for (int j = c.i0; j < JE; j++) {
-                        h_min = Math.Min(cellMetric[clustering.SubGrid.LocalCellIndex2SubgridIndex[j]], h_min);
+                        h_min = Math.Min(cellMetric[clustering.SubGrid.LocalCellIndex2SubgridIndex[j]], h_min); // Get smallest time step size for every cluster
                     }
                 }
                 sendHmin[i] = h_min;
