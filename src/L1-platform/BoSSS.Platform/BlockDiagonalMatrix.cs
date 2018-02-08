@@ -287,13 +287,26 @@ namespace BoSSS.Platform {
         }
 
         /// <summary>
+        /// Accumulates <paramref name="Block"/>*<paramref name="alpha"/> to this matrix,
+        /// at the row/column offset <paramref name="i0"/> resp. <paramref name="j0"/>.
+        /// </summary>
+        /// <param name="i0">Row offset.</param>
+        /// <param name="j0">Column offset.</param>
+        /// <param name="alpha">Scaling factor for the accumulation operation.</param>
+        /// <param name="Block">Block to accumulate.</param>
+        public void AccBlock(int i0, int j0, double alpha, MultidimensionalArray Block) {
+            this.AccBlock(i0, j0, alpha, Block, 1.0);
+        }
+        
+        /// <summary>
         /// Accumulates a block of entries to this matrix.
         /// </summary>
         /// <param name="i0">Row index offset.</param>
         /// <param name="j0">Column index offset.</param>
         /// <param name="alpha">Scaling factor for the accumulation.</param>
         /// <param name="Block">Block to add.</param>
-        public void AccBlock(int i0, int j0, double alpha, MultidimensionalArray Block) {
+        /// <param param name="beta">pre-scaling</param>
+        public void AccBlock(int i0, int j0, double alpha, MultidimensionalArray Block, double beta) {
             if (Block.Dimension != 2)
                 throw new ArgumentException();
             int I = Block.NoOfRows;
@@ -301,7 +314,7 @@ namespace BoSSS.Platform {
 
             for (int i = 0; i < I; i++)
                 for (int j = 0; j < J; j++)
-                    this[i0 + i, j0 + j] += alpha * Block[i, j];
+                    this[i0 + i, j0 + j] = this[i0 + i, j0 + j]*beta + alpha * Block[i, j];
         }
 
         /// <summary>
