@@ -133,7 +133,7 @@ namespace BoSSS.Solution {
         private QueryResultTable m_QueryResultTable = new QueryResultTable();
 
         /// <summary>
-        /// New 'table' to log query results
+        /// New 'table' to log query results (and other things that the application is doing)
         /// </summary>
         public QueryResultTable QueryResultTable {
             get {
@@ -195,8 +195,11 @@ namespace BoSSS.Solution {
             // - exclude mscorlib (does not even appear on Windows, but makes problems using mono)
 
             for (int i = 0; i < stackTrace.FrameCount; i++) {
-                Assembly entryAssembly = stackTrace.GetFrame(i).GetMethod().DeclaringType.Assembly;
-                GetAllAssembliesRecursive(entryAssembly, allAssis);
+                Type Tüpe = stackTrace.GetFrame(i).GetMethod().DeclaringType;
+                if (Tüpe != null) {
+                    Assembly entryAssembly = Tüpe.Assembly;
+                    GetAllAssembliesRecursive(entryAssembly, allAssis);
+                }
             }
 
             return allAssis.Where(a => !a.FullName.StartsWith("mscorlib"));
@@ -326,42 +329,14 @@ namespace BoSSS.Solution {
                     // C#-instruction provided as argument 
                     // usually redicts to some pre-compiled static function
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++
-                    CompilerContext cmpCont = new CompilerContext(new CompilerSettings(), new ConsoleReportPrinter());
-                    Evaluator eval = new Evaluator(cmpCont);
-                    eval.InteractiveBaseClass = typeof(T);
-
-                    foreach (var assi in GetAllAssemblies()) {
-                        eval.ReferenceAssembly(assi);
-                    }
+                 
 
                     var StringwithoutPrefix = opt.ControlfilePath.Substring(3);
 
-                    object controlObj = null;
-                    try {
-                        controlObj = eval.Evaluate(StringwithoutPrefix);
-                    } catch (Exception e) {
-                        throw new AggregateException(e.GetType().Name + " during the interpretation of control statement '"
-                            + StringwithoutPrefix + "'",
-                            e);
-                    }
+                  
 
-                    if (controlObj == null) {
-                        throw new ApplicationException("Unable to create a control object from user string: '" + StringwithoutPrefix + "'.");
-                    }
+                    ControlObjFromCode(StringwithoutPrefix, out ctrlV2, out ctrlV2_ParameterStudy);
 
-                    if (controlObj is T) {
-                        ctrlV2 = (T)controlObj;
-                        ctrlV2.ControlFileText = opt.ControlfilePath;
-                    } else if (controlObj is IEnumerable<T>) {
-                        ctrlV2_ParameterStudy = ((IEnumerable<T>)controlObj).ToArray();
-                        foreach (var c in ctrlV2_ParameterStudy)
-                            c.ControlFileText = opt.ControlfilePath;
-                    } else {
-                        throw new ApplicationException(string.Format(
-                        "Invalid control instruction: unable to cast the result of type {0} to type {1}",
-                        controlObj.GetType().FullName,
-                        typeof(T).FullName));
-                    }
                 } else if (opt.ControlfilePath.ToLower().EndsWith(".cs")) {
                     // +++++++++
                     // C#-script
@@ -380,114 +355,36 @@ namespace BoSSS.Solution {
                     }
 
                     ctrlfileContent = ctrlfileContent.MPIBroadcast(0, csMPI.Raw._COMM.WORLD);
+                    
+                    ControlObjFromCode(ctrlfileContent, out ctrlV2, out ctrlV2_ParameterStudy);
 
-                    var Settings = new CompilerSettings();
-#if DEBUG
-                    Settings.Optimize = false;
-#else
-                    Settings.Optimize = false;
-#endif
-                    CompilerContext cmpCont = new CompilerContext(Settings, new ConsoleReportPrinter());
-                    Evaluator eval = new Evaluator(cmpCont);
-                    eval.InteractiveBaseClass = typeof(T);
-
-                    // Start from entry assembly and _not_
-                    // - don't use typeof(T).Assembly since T might be located different assembly than the control file
-                    // - don't use Assembly.GetEntryAssembly() as it is undefined if called by Nunit
-                    StackTrace stackTrace = new StackTrace();
-                    Assembly entryAssembly = stackTrace.GetFrame(1).GetMethod().DeclaringType.Assembly;
-                    var allAssis = GetAllAssemblies();
-                    foreach (var assi in allAssis) {
-                        eval.ReferenceAssembly(assi);
-                    }
-
-                    object controlObj = null;
-
-                    StringReader strR = new StringReader(ctrlfileContent);
-
-                    bool result_set = false;
-                    string incompleteStatement = null;
-                    int lineno = 0;
-                    for (string line = strR.ReadLine(); line != null; line = strR.ReadLine()) {
-                        lineno++;
-
-                        // Remove any trailing multiline delimiters (for
-                        // compatibility with older control files)
-                        line = line.TrimEnd().TrimEnd('\\');
-
-                        string statement;
-                        if (incompleteStatement == null) {
-                            statement = line;
-                        } else {
-                            statement = incompleteStatement + "\n" + line;
-                        }
-
-                        try {
-                            incompleteStatement = eval.Evaluate(statement, out controlObj, out result_set);
-                        } catch (Exception e) {
-                            string message = String.Format(
-                                "'{0}' during the interpretation of control file '{1}' line {2}",
-                                e.GetType().Name,
-                                opt.ControlfilePath,
-                                lineno);
-                            throw new AggregateException(message, e);
-                        }
-
-                        if (cmpCont.Report.Errors > 0) {
-                            throw new ApplicationException(
-                                "Syntax error in control file line " + lineno + ": \n" + statement);
-                        }
-                    }
-
-                    if (incompleteStatement != null) {
-                        throw new ApplicationException(String.Format(
-                            "Reached end of control file '{0}' before statement starting with '{1}' was complete",
-                            opt.ControlfilePath,
-                            incompleteStatement.Substring(0, Math.Min(incompleteStatement.Length, 20))));
-                    }
-
-                    if (controlObj == null) {
-                        throw new ApplicationException(
-                            "Unable to create a control object from cs-script file '" + opt.ControlfilePath + "'.");
-                    }
-
-                    if (controlObj is T) {
-                        ctrlV2 = (T)controlObj;
-                        
-                        ctrlV2.ControlFileText = ctrlfileContent;
-                    } else if (controlObj is IEnumerable<T>) {
-                        ctrlV2_ParameterStudy = ((IEnumerable<T>)controlObj).ToArray();
-                        foreach (var c in ctrlV2_ParameterStudy)
-                            c.ControlFileText = ctrlfileContent;
-                        
-                    } else {
-                        throw new ApplicationException(string.Format(
-                        "Invalid control instruction: unable to cast the last result of the control file/cs-script of type {0} to type {1} or IEnumerable<{1}>",
-                        controlObj.GetType().FullName,
-                        typeof(T).FullName));
-                    }
                 } else if (opt.ControlfilePath.ToLower().EndsWith(".obj")) {
                     // +++++++++++++++++++++
-                    // binary control object
+                    // control object
                     // +++++++++++++++++++++
 
-                    object controlObj = null;
-                    using (var fs = new FileStream(opt.ControlfilePath, FileMode.Open, FileAccess.Read, FileShare.Read)) {
-                        var bf = new BinaryFormatter();
-                        controlObj = bf.Deserialize(fs);
-                    }
+                    string JSON = File.ReadAllText(opt.ControlfilePath);
+                    object controlObj = AppControl.Deserialize(JSON);//, typeof(T));
+                    //using (var fs = new FileStream(opt.ControlfilePath, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+                    //    var bf = new BinaryFormatter();
+                    //    controlObj = bf.Deserialize(fs);
+                    //}
 
-                    if (controlObj is T) {
-                        ctrlV2 = (T)controlObj;
-                        
-                    } else if (controlObj is IEnumerable<T>) {
-                        ctrlV2_ParameterStudy = ((IEnumerable<T>)controlObj).ToArray();
+                    ctrlV2 = controlObj as T;
 
-                    } else {
+                    //if (controlObj is T) {
+                    //    ctrlV2 = (T)controlObj;
+
+                    //} else if (controlObj is IEnumerable<T>) {
+                    //    ctrlV2_ParameterStudy = ((IEnumerable<T>)controlObj).ToArray();
+
+                    //} 
+
+                    if(ctrlV2 == null) {
                         throw new ApplicationException(string.Format(
-                        "Invalid control instruction: unable to cast the last result of the control file/cs-script of type {0} to type {1}",
-                        controlObj.GetType().FullName,
-                        typeof(T).FullName));
+                            "Invalid control instruction: unable to cast the last result of the control file/cs-script of type {0} to type {1}",
+                            controlObj.GetType().FullName,
+                            typeof(T).FullName));
                     }
 
                 } else {
@@ -516,6 +413,44 @@ namespace BoSSS.Solution {
                 Console.WriteLine(";");
             }
         }
+
+        /// <summary>
+        /// Loads a control object, resp. a series of control objects (in the case of a parameter study)
+        /// form a C#-script.
+        /// </summary>
+        /// <param name="ctrlfileContent">the script.</param>
+        /// <param name="ctrl">output, for a singe control object.</param>
+        /// <param name="ctrl_ParameterStudy">output, for a series of control objects.</param>
+        static void ControlObjFromCode(string ctrlfileContent, out T ctrl, out T[] ctrl_ParameterStudy) {
+            //object controlObj = ControlObjFromCode(ctrlfileContent, typeof(T));
+            AppControl.FromCode(ctrlfileContent, typeof(T), out AppControl _ctrl, out AppControl[] _ctrl_ParamStudy);
+
+            Debug.Assert((_ctrl == null) != (_ctrl_ParamStudy == null));
+
+            if (_ctrl != null) {
+                ctrl = (T)_ctrl;
+
+                ctrl_ParameterStudy = null;
+            } else if (_ctrl_ParamStudy != null) {
+                //ctrl_ParameterStudy = ((IEnumerable<T>)controlObj).ToArray();
+                //foreach (var c in ctrl_ParameterStudy)
+                //    c.ControlFileText = ctrlfileContent;
+
+                ctrl_ParameterStudy = new T[_ctrl_ParamStudy.Length];
+                for(int i = 0; i < ctrl_ParameterStudy.Length; i++) {
+                    ctrl_ParameterStudy[i] = (T)(_ctrl_ParamStudy[i]);
+                }
+
+                ctrl = null;
+            } else {
+                //throw new ApplicationException(string.Format(
+                //"Invalid control instruction: unable to cast the last result of the control file/cs-script of type {0} to type {1} or IEnumerable<{1}>",
+                //controlObj.GetType().FullName,
+                //typeof(T).FullName));
+                throw new ApplicationException();
+            }
+        }
+
 
         private static void AppEntry(
             Func<Application<T>> ApplicationFactory,
@@ -755,9 +690,9 @@ namespace BoSSS.Solution {
 
 
         /// <summary>
-        /// Generates key/value pairs to identify sessions.
+        /// Generates key/value pairs from control objects to identify sessions.
         /// </summary>
-        static void FindKeys(IDictionary<string, object> Keys, AppControl ctrl) {
+        public static void FindKeys(IDictionary<string, object> Keys, AppControl ctrl) {
 
             foreach (var fldOpt in ctrl.FieldOptions) {
                 string KeyName = "DGdegree:" + fldOpt.Key;
@@ -883,7 +818,7 @@ namespace BoSSS.Solution {
                         if (KeyName.Length <= 0)
                             txt = mi.Name;
                         else
-                            txt = KeyName + "/" + mi.Name;
+                            txt = KeyName + "." + mi.Name;
                         FindKeysRecursive(Keys, Val, RecursionDepth + 1, txt);
 
                         //PrintObject(txt, piVal, spaces + "  ");
@@ -972,23 +907,37 @@ namespace BoSSS.Solution {
                     && (!this.CurrentSessionInfo.ID.Equals(Guid.Empty));
 
                 if (DoDbLogging && this.Control != null) {
-                    TextWriter tw = DatabaseDriver.FsDriver.GetNewLog("Control", this.CurrentSessionInfo.ID);
-                    if (this.Control.ControlFileText != null)
-                        tw.WriteLine(this.Control.ControlFileText);
-                    else
-                        tw.WriteLine("// (no string representation of control object available.)");
-                    tw.WriteLine();
-                    tw.WriteLine("///////////////////////////////////////////");
-                    tw.WriteLine("// SUMMARY");
-                    tw.WriteLine("///////////////////////////////////////////");
-                    tw.Write("//");
-                    try {
-                        PrintObject(tw, this.Control, "  ");
-                    } catch (Exception exc) {
-                        tw.Flush();
-                        tw.WriteLine("//" + exc.GetType().FullName + ": '" + exc.Message);
+                    //TextWriter tw = DatabaseDriver.FsDriver.GetNewLog("Control", this.CurrentSessionInfo.ID);
+                    //if (this.Control.ControlFileText != null)
+                    //    tw.WriteLine(this.Control.ControlFileText);
+                    //else
+                    //    tw.WriteLine("// (no string representation of control object available.)");
+                    //tw.WriteLine();
+                    //tw.WriteLine("///////////////////////////////////////////");
+                    //tw.WriteLine("// SUMMARY");
+                    //tw.WriteLine("///////////////////////////////////////////");
+                    //tw.Write("//");
+                    //try {
+                    //    PrintObject(tw, this.Control, "  ");
+                    //} catch (Exception exc) {
+                    //    tw.Flush();
+                    //    tw.WriteLine("//" + exc.GetType().FullName + ": '" + exc.Message);
+                    //}
+                    //tw.Close();
+
+                    if(this.Control.GeneratedFromCode) {
+                        using (var tw = DatabaseDriver.FsDriver.GetNewLog("Control-script", this.CurrentSessionInfo.ID)) {
+                            tw.WriteLine("//" + this.Control.GetType().AssemblyQualifiedName);
+                            tw.Write(this.Control.ControlFileText);
+                            tw.Close();
+                        }
+                    } else {
+                        using (var tw = DatabaseDriver.FsDriver.GetNewLog("Control-obj", this.CurrentSessionInfo.ID)) {
+                            tw.Write(this.Control.Serialize());
+                            tw.Close();
+                        }
                     }
-                    tw.Close();
+
 
 
                     Dictionary<string, object> KV = new Dictionary<string, object>();
@@ -2225,21 +2174,11 @@ namespace BoSSS.Solution {
             var R = Tracer.Root;
 
             using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_bin")) {
-                //BinaryFormatter bf = new BinaryFormatter();
-                //bf.Serialize(stream, R);
-
                 var str = R.Serialize();
                 using (StreamWriter stw = new StreamWriter(stream)) {
                     stw.Write(str);
                     stw.Flush();
                 }
-                //stream.Flush();
-                //stream.Close();
-
-
-                MethodCallRecord R2 = MethodCallRecord.Deserialize(str);
-
-
             }
 
             using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_summary")) {
@@ -2269,20 +2208,20 @@ namespace BoSSS.Solution {
             Stream nlog_stream = null;
 
             if (opt.PstudyCase >= 0
-                && opt.PstudyCase < 1 || opt.PstudyCase > cases.Count()) {
-                throw new IndexOutOfRangeException(string.Format("Argument 'pstudy_case' out of range: expected to be in {0} to {1} (both including).", 1, cases.Count()));
+                && opt.PstudyCase < 0 || opt.PstudyCase >= cases.Count()) {
+                throw new IndexOutOfRangeException(string.Format("Argument 'pstudy_case' out of range: expected to be in {0} to {1} (both including).", 0, cases.Count() - 1));
             }
 
             int failCount = 0;
             int numberOfRuns = cases.Count();
 
-            for (int iPstudy = 1; iPstudy <= numberOfRuns; iPstudy++) {
+            for (int iPstudy = 0; iPstudy < numberOfRuns; iPstudy++) {
                 // Run only one case in this process if requested
                 if (opt.PstudyCase > 0 && opt.PstudyCase != iPstudy) {
                     continue;
                 }
 
-                var _control = cases.ElementAt(iPstudy - 1);
+                var _control = cases.ElementAt(iPstudy);
 
                 // add the case index to the 'Paramstudy_CaseIdentification'
                 {
@@ -2301,7 +2240,7 @@ namespace BoSSS.Solution {
                 // If everything went fine, this should start the application
 
                 // in solver mode
-                Console.WriteLine("Parameter study: Starting run " + (iPstudy) + " of " + numberOfRuns);
+                Console.WriteLine("Parameter study: Starting run " + (iPstudy) + " of " + numberOfRuns + " (zero-based-index).");
                 nlog.CurrentKeyHistory.Clear();
                 nlog.UpdateKey("pstudy_case", (iPstudy));
                 foreach (var blabla in _control.Paramstudy_CaseIdentification) {
@@ -2345,7 +2284,9 @@ namespace BoSSS.Solution {
                     // Create log during first iteration (happens at this point
                     // because $m_IOFields would undefined before)
                     if (log == null) {
-                        log = InitParameterStudyLog(app.m_IOFields, app, out nlog_stream, opt.PstudyCase > 0 ? iPstudy : -1);
+                        log = InitParameterStudyLog(app.m_IOFields, app, 
+                            out nlog_stream, 
+                            opt.PstudyCase > 0 ? iPstudy : -1);
                     }
 
                     double InitTime = (double)afterInit / (double)Stopwatch.Frequency;
@@ -2428,215 +2369,12 @@ namespace BoSSS.Solution {
                 log.Close();
             }
         }
-
-        /*
-        /// <summary>
-        /// Runs this application in parameter study mode which means that it
-        /// casts a sequence of runs (using different sessions!) with different
-        /// sets of parameters (as specified in the control file). See
-        /// <see cref="AppControl.ParameterStudyConfig"/> for more information on how
-        /// this works.
-        /// </summary>
-        /// <param name="xmlControl">
-        /// the string that contains the control file
-        /// </param>
-        /// <param name="opt">%</param>
-        /// <param name="_control">
-        /// parsing result of the original control file
-        /// </param>
-        /// <param name="ApplicationFactory">%</param>
-        static void ParameterStudyMode(CommandLineOptions opt, XmlDocument xmlControl, AppControl _control, Func<Application<T>> ApplicationFactory) {
-            if (opt.ControlfilePath == null || opt.ControlfilePath == "") {
-                throw new ApplicationException(
-                    "Parameter studies are currently only supported when using a control file");
-            }
-
-            // Prepare part of the control file common to all runs
-            XmlDocument controlFile = null;
-            if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
-                controlFile = (XmlDocument)xmlControl.Clone();
-                XmlNode runMode = controlFile.SelectSingleNode("/BoSSSControl/Base/run/@mode");
-                runMode.InnerText = "solver";
-            }
-
-            TextWriter log = null;
-            QueryResultTable nlog = new QueryResultTable();
-            Stream nlog_stream = null;
-
-            // Loop over all parameter combinations and do the runs
-            List<Dictionary<string, string>> AllSettingCombinations =
-                _control.confParameterStudy.GetParameterCombinationsList();
-            int numberOfRuns = AllSettingCombinations.Count;
-
-            int failCount = 0;
-            for (int i = 0; i < numberOfRuns; i++) {
-
-                // Run only one case in this process if requested
-                if (opt.PstudyCase > 0 && opt.PstudyCase != i + 1) {
-                    continue;
-                }
-
-                Dictionary<string, string> settingCombination = AllSettingCombinations[i];
-
-                // Set all configuration options
-                AppControl modControl = null;
-                if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
-                    foreach (KeyValuePair<string, string> parametSetting in settingCombination) {
-                        string xpath = "BoSSSControl/"
-                            + _control.confParameterStudy.ParameterPathes[parametSetting.Key];
-                        // Extract node referenced by $xpath
-                        XmlNodeList nodes = controlFile.SelectNodes(xpath);
-                        if (nodes.Count > 1) {
-                            throw new ApplicationException("The path \"" + xpath + "\" is ambiguous (i.e. found multiple control file options matching this path)");
-                        } else if (nodes.Count == 0) {
-                            throw new ApplicationException("Could not find control file option with path \"" + xpath + "\"");
-                        }
-                        XmlNode node = nodes.Item(0);
-
-                        // Overwrite the existing value
-                        if (node.ChildNodes.Count > 1) {
-                            throw new ApplicationException("The node referenced by\"" + xpath + "\" must either be an attribute or a leaf node (i.e. must not contain any child nodes)");
-                        }
-                        node.InnerText = parametSetting.Value;
-                    }
-
-                    // Re-Parse modified configuration file
-                    modControl = new AppControl(controlFile.InnerXml);
-                } else {
-                    modControl = new AppControl(""); // argument is ignored on ranks higher than 0
-                }
-
-                Stopwatch watch = new Stopwatch();
-                watch.Start();
-
-                // Modify session info
-                modControl.confBase.Description += "; run " + (i + 1) + " of " + numberOfRuns;
-
-                // If everything went fine, this should start the application
-                // in solver mode
-                Console.WriteLine();
-                Console.WriteLine();
-                Console.WriteLine("Parameter study: Starting run " + (i + 1) + " of " + numberOfRuns);
-
-                nlog.UpdateKey("pstudy_case", (i + 1));
-                foreach (string parameterName in _control.confParameterStudy.ParameterPathes.Keys) {
-                    nlog.UpdateKey(parameterName, settingCombination[parameterName]);
-                }
-
-                using (Application<T> app = ApplicationFactory()) {
-                    long afterInit = 0;
-                    app.m_QueryResultTable = nlog;
-                    bool paast = false;
-        #if DEBUG
-                    {
-        #else
-                    try {
-        #endif
-                        //app.Init(modControl, default(T), opt, modControl.confSolver.TracingNamespaces);
-                        throw new NotSupportedException
-                        afterInit = watch.ElapsedTicks;
-                        app.RunSolverMode();
-                        paast = true;
-                        nlog.LogValue("pstudy_case_successful", true);
-        #if DEBUG
-                    }
-        #else
-                    } catch (Exception e) {
-                        nlog.LogValue("pstudy_case_successful", false);
-                        if (_control.confParameterStudy.ContinueOnError) {
-                            Console.WriteLine("WARNING: Run" + (i + 1) + "failed with message '{0}'", e.Message);
-                            failCount++;
-                        } else {
-                            throw;
-                        }
-                    }
-        #endif
-                    watch.Stop();
-
-
-                    // Create log during first iteration (happens at this point
-                    // because $m_IOFields would undefined before)
-                    if (log == null) {
-                        log = InitParameterStudyLog(app.m_IOFields, app, out nlog_stream, opt.PstudyCase);
-                    }
-
-                    double InitTime = (double)afterInit / (double)Stopwatch.Frequency;
-                    double solverTime = (double)(watch.ElapsedTicks - afterInit) / (double)Stopwatch.Frequency;
-                    nlog.LogValue("InitTime(sec)", InitTime);
-                    nlog.LogValue("solverTime(sec)", solverTime);
-                    nlog.LogValue("SessionGuid", app.DatabaseDriver.FsDriver == null ? Guid.Empty : app.CurrentSessionInfo.ID);
-                    foreach (var kv in app.QueryHandler.QueryResults) { // Assume queries have already been evaluated
-                        nlog.LogValue(kv.Key, kv.Value);
-                    }
-
-                    // Log only exists on rank 0
-                    if (log != null) {
-
-
-                        // Feed the log
-                        if (app.DatabaseDriver.FsDriver == null) {
-                            WriteToLog(log, Guid.Empty.ToString(), 40);
-                        } else {
-                            WriteToLog(log, app.CurrentSessionInfo.ID.ToString(), 40);
-                        }
-                        WriteToLog(log, InitTime);
-                        WriteToLog(log, solverTime);
-
-                        foreach (string parameterName in _control.confParameterStudy.ParameterPathes.Keys) {
-                            WriteToLog(log, settingCombination[parameterName]);
-                        }
-
-                        // Assume queries have already been evaluated
-                        foreach (var kv in app.QueryHandler.QueryResults) {
-                            WriteToLog(log, (double)kv.Value);
-                        }
-
-                        log.WriteLine();
-                        log.Flush();
-
-
-                        //nlog.WriteToStream(
-                    }
-
-                    //// Log only exists on rank 0
-                    //if(nlog_stream 
-
-                    app.ByeInt(paast);
-                    app.Bye();
-                    app.ProfilingLog();
-                    app.Dispose();
-                }
-
-
-                System.GC.Collect();
-            }
-
-            string failedRunsWarning = string.Format(
-                "WARNING: {0} run(s) failed during execution. See program output for more information.",
-                failCount);
-            if (failCount > 0) {
-                Console.WriteLine(failedRunsWarning);
-            }
-
-            if (log != null) {
-                if (failCount > 0) {
-                    log.WriteLine(failedRunsWarning);
-                }
-                log.Close();
-            }
-
-            if (nlog_stream != null) {
-                var w = new StreamWriter(nlog_stream);
-                nlog.WriteToStream(w);
-                w.Flush();
-                nlog_stream.Close();
-            }
-
-        }
-        */
+        
 
         static private StreamWriter InitParameterStudyLog(
-            ICollection<DGField> ioFields, Application<T> app, out Stream BinIOStream, int counter) {
+            ICollection<DGField> ioFields, Application<T> app,
+            out Stream BinIOStream, 
+            int counter) {
             // Only do something on rank 0
             if (ilPSP.Environment.MPIEnv.MPI_Rank != 0) {
                 BinIOStream = null;
