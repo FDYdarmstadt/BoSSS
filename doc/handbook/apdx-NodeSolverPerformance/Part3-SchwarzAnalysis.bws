@@ -21,9 +21,10 @@ using System.IO;
 using BoSSS.Application.SipPoisson;
 **************
 ==============
-string File     = "SolverRuns--2018-2-6.json";
-string FilePath = Path.Combine(CurrentDocDir, File);
-var SessTab     = TableExtensions.LoadFromFile(FilePath);
+string dateString = "2018-2-8";
+string File       = "SolverRuns--" + dateString + ".json";
+string FilePath   = Path.Combine(CurrentDocDir, File);
+var SessTab       = TableExtensions.LoadFromFile(FilePath);
 **************
 ==============
 //SessTab.Print();
@@ -76,19 +77,19 @@ List of 48 instances of String {
   32: Grid:NoOfCells
   33: Grid:hMax
   34: Grid:hMin
-  35: RegularTerminated
-  36: SipMatrixAssembly_time
-  37: Aggregation_basis_init_time
-  38: Solver_Init_time
-  39: Solver_Run_time
-  40: UsedNoOfMultigridLevels
-  41: minSolRunT
-  42: maxSolRunT
-  43: Conv
-  44: NoIter
-  45: NoOfCells
-  46: DOFs
-  47: BlockSize
+  35: UsedNoOfMultigridLevels
+  36: minSolRunT
+  37: maxSolRunT
+  38: Conv
+  39: NoIter
+  40: NoOfCells
+  41: DOFs
+  42: BlockSize
+  43: RegularTerminated
+  44: SipMatrixAssembly_time
+  45: Aggregation_basis_init_time
+  46: Solver_Init_time
+  47: Solver_Run_time
 }
 ==============
 //var SubTab_1 = SessTab.ExtractColumns("DGdegree:T", "Grid:NoOfCells", "solver_name", "DOFs", "minSolRunT", "maxSolRunT", "NoIter", "RegularTerminated", "Conv");
@@ -108,19 +109,18 @@ var SubTab = SubTab_1.ExtractColumns("DGdegree:T", "Grid:NoOfCells", "solver_nam
 ==============
 SubTab.Print();
 **************
-    DGdegree:T Grid:NoOfCells solver_name DOFs   minSolRunT   maxSolRunT   UsedNoOfMultigridLevels SipMatrixAssembly_time Aggregation_basis_init_time Solver_Init_time Solver_Run_time 
-0:  2          2560           5           25600  749.3842617  750.960602   3                       1.3581869              5.6785293                   21.3580158       728.80093615    
-1:  2          320            5           3200   39.0187606   39.0274362   3                       0.6901283              0.7779678                   1.06727205       37.94337105     
-2:  2          40             5           400    1.4043004    1.9798036    3                       0.5587462              0.1304635                   0.20593605       1.47307745      
-3:  4          320            6           11200  48.5526923   48.79002     3                       1.763744               1.8449802                   5.9825669        42.6755369      
-4:  3          20480          6           409600 3119.0259638 3119.6286065 3                       18.6311803             58.178452                   842.03487225     2277.25407725   
-5:  3          2560           6           51200  245.2860004  246.3602341  3                       2.7700627              6.6694681                   31.6810547       214.12573505    
-6:  3          320            6           6400   21.2594124   21.9387208   3                       0.8152356              0.8601324                   2.271845         19.3147228      
-7:  3          40             6           800    2.1147681    2.6991653    3                       0.5672934              0.149033                    0.4001519        1.99422075      
-8:  2          20480          6           204800 1753.2468032 1754.0907922 3                       6.9229863              49.6398377                  874.52493765     879.1165623     
-9:  2          2560           6           25600  135.3783461  136.0122966  3                       1.5098064              5.694886                    22.98714955      112.6941565     
-10: 2          320            6           3200   12.1247134   12.6192361   3                       0.6226494              0.7068864                   1.19776265       11.16311455     
-11: 2          40             6           400    1.544439     2.1024224    3                       0.5509319              0.1293719                   0.27315895       1.53964005      
+    DGdegree:T Grid:NoOfCells solver_name DOFs   minSolRunT  maxSolRunT  UsedNoOfMultigridLevels SipMatrixAssembly_time Aggregation_basis_init_time Solver_Init_time Solver_Run_time 
+0:  3          20480          6           409600 390.3218718 393.5016035 17                      17.7667034             669.5929173                 63.21979115      328.65436955    
+1:  3          2560           6           51200  27.210639   27.6054704  13                      2.7357368              56.3735972                  7.78967205       19.60290185     
+2:  3          320            6           6400   4.707644    5.2670534   10                      0.8089003              5.1424521                   1.1017856        3.87265025      
+3:  3          40             6           800    2.5469665   2.8956922   7                       0.5618062              0.4292369                   0.3244349        2.3841398       
+4:  2          20480          6           204800 94.6536695  94.7905943  17                      6.4902633              545.7509009                 17.28302395      77.41473495     
+5:  2          2560           6           25600  9.6737434   9.8025789   13                      1.4462802              48.617592                   2.3691387        7.3557623       
+6:  2          320            6           3200   3.061871    3.525212    10                      0.6250326              4.1457639                   0.45723825       2.8248578       
+7:  2          40             6           400    2.4709977   2.8666587   7                       0.5400817              0.3679988                   0.2583267        2.3991332       
+8:  2          2560           5           25600  749.3842617 750.960602  3                       1.3581869              5.6785293                   21.3580158       728.80093615    
+9:  2          320            5           3200   39.0187606  39.0274362  3                       0.6901283              0.7779678                   1.06727205       37.94337105     
+10: 2          40             5           400    1.4043004   1.9798036   3                       0.5587462              0.1304635                   0.20593605       1.47307745      
 ==============
 **************
 ==============
@@ -128,13 +128,6 @@ SubTab.Print();
 ==============
 **************
 ==============
-**************
-==============
-//RuntimePlot.PlotNow();
-**************
-==============
-//var cl = RuntimePlot.ToGnuplot().PlotCairolatex();
-//cl.Preview(trimPage:true);
 **************
 ==============
 //cl.WriteMinimalCompileableExample("C:\\tmp\\mini.tex");
@@ -249,34 +242,33 @@ for(int iRow = 0; iRow < 2; iRow++) {
     
     pDegree++;                       
 }
-multiplots.PlotNow();
-
+//multiplots.PlotNow();
+var CL = multiplots.ToGnuplot().PlotCairolatex(xSize:16, ySize:12);
+CL.PlotNow();
 **************
 Using gnuplot: C:\Program Files (x86)\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 System.Drawing.Bitmap
 ==============
 **************
 ==============
+CL.SaveTo(Path.Combine(CurrentDocDir, "ConstCoeffPoisson_Schwarz.tex"));
+**************
+==============
+CL.WriteMinimalCompileableExample("C:\\tmp\\Schwarz" + dateString + ".tex");
 **************
 ==============
 **************
 ==============
-//var CL = multiplots.ToGnuplot().PlotCairolatex(xSize:16, ySize:12);
-**************
-(1,11): error CS0103: The name `multiplots' does not exist in the current context
-No. of errors|warnings: 1|0.
-
-==============
-//CL.SaveTo(Path.Combine(CurrentDocDir, "ConstCoeffPoissonScaling.tex"));
 **************
 ==============
-CL.PlotNow();
 **************
-(1,2): error CS0103: The name `CL' does not exist in the current context
-No. of errors|warnings: 1|0.
-
 ==============
-//cmt
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

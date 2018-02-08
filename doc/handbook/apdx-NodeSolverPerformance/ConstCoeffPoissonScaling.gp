@@ -28,7 +28,7 @@ set ytics format "$10^{%T}$"
 set y2tics format " " 
 set termoption dashed
 set termoption dashed
-plot "ConstCoeffPoissonScaling_data_0.csv" title "Add Swz" axes x2y1  with linespoints linecolor  "black" dashtype 1 linewidth 1 pointtype 9 pointsize 0.5, "ConstCoeffPoissonScaling_data_1.csv" title "Pardiso w Blk PC" axes x2y1  with linespoints linecolor  "black" dashtype 1 linewidth 1 pointtype 4 pointsize 0.5, "ConstCoeffPoissonScaling_data_2.csv" title "Add Swz w Coarse" axes x2y1  with linespoints linecolor  "black" dashtype 1 linewidth 1 pointtype 11 pointsize 0.5, "ConstCoeffPoissonScaling_data_3.csv" title "Pardiso" axes x2y1  with linespoints linecolor  "black" dashtype 3 linewidth 1 pointtype 6 pointsize 0.5, "ConstCoeffPoissonScaling_data_4.csv" title "CG" axes x2y1  with linespoints linecolor  "black" dashtype 1 linewidth 1 pointtype 3 pointsize 0.5, "ConstCoeffPoissonScaling_data_5.csv" title "Mumps" axes x2y1  with linespoints linecolor  "black" dashtype 3 linewidth 1 pointtype 10 pointsize 0.5
+plot "ConstCoeffPoissonScaling_data_0.csv" title "Add Swz w Coarse" axes x2y1  with linespoints linecolor  "black" dashtype 1 linewidth 1 pointtype 11 pointsize 0.5, "ConstCoeffPoissonScaling_data_1.csv" title "Add Swz" axes x2y1  with linespoints linecolor  "black" dashtype 1 linewidth 1 pointtype 9 pointsize 0.5, "ConstCoeffPoissonScaling_data_2.csv" title "Pardiso w Blk PC" axes x2y1  with linespoints linecolor  "black" dashtype 1 linewidth 1 pointtype 4 pointsize 0.5, "ConstCoeffPoissonScaling_data_3.csv" title "Pardiso" axes x2y1  with linespoints linecolor  "black" dashtype 3 linewidth 1 pointtype 6 pointsize 0.5, "ConstCoeffPoissonScaling_data_4.csv" title "CG" axes x2y1  with linespoints linecolor  "black" dashtype 1 linewidth 1 pointtype 3 pointsize 0.5, "ConstCoeffPoissonScaling_data_5.csv" title "Mumps" axes x2y1  with linespoints linecolor  "black" dashtype 3 linewidth 1 pointtype 10 pointsize 0.5
 set size 0.49,0.326666666666667
 set origin 0.505,0.67
 set lmargin 1e00
@@ -82,7 +82,7 @@ set ytics format "$10^{%T}$"
 set y2tics format " " 
 set termoption dashed
 set termoption dashed
-plot "ConstCoeffPoissonScaling_data_10.csv" title "Add Swz w Coarse" with linespoints linecolor  "black" dashtype 1 linewidth 1 pointtype 11 pointsize 0.5, "ConstCoeffPoissonScaling_data_11.csv" title "Pardiso" with linespoints linecolor  "black" dashtype 3 linewidth 1 pointtype 6 pointsize 0.5, "ConstCoeffPoissonScaling_data_12.csv" title "CG" with linespoints linecolor  "black" dashtype 1 linewidth 1 pointtype 3 pointsize 0.5, "ConstCoeffPoissonScaling_data_13.csv" title "Mumps" with linespoints linecolor  "black" dashtype 3 linewidth 1 pointtype 10 pointsize 0.5
+plot "ConstCoeffPoissonScaling_data_10.csv" title "Pardiso" with linespoints linecolor  "black" dashtype 3 linewidth 1 pointtype 6 pointsize 0.5, "ConstCoeffPoissonScaling_data_11.csv" title "CG" with linespoints linecolor  "black" dashtype 1 linewidth 1 pointtype 3 pointsize 0.5, "ConstCoeffPoissonScaling_data_12.csv" title "Mumps" with linespoints linecolor  "black" dashtype 3 linewidth 1 pointtype 10 pointsize 0.5
 set size 0.49,0.326666666666667
 set origin 0.505,0.336666666666667
 set lmargin 1e00
@@ -109,7 +109,7 @@ set ytics format " "
 set y2tics format "$10^{%T}$" 
 set termoption dashed
 set termoption dashed
-plot "ConstCoeffPoissonScaling_data_14.csv" title "Pardiso" axes x1y2  with linespoints linecolor  "black" dashtype 3 linewidth 1 pointtype 6 pointsize 0.5, "ConstCoeffPoissonScaling_data_15.csv" title "Mumps" axes x1y2  with linespoints linecolor  "black" dashtype 3 linewidth 1 pointtype 10 pointsize 0.5
+plot "ConstCoeffPoissonScaling_data_13.csv" title "Pardiso" axes x1y2  with linespoints linecolor  "black" dashtype 3 linewidth 1 pointtype 6 pointsize 0.5, "ConstCoeffPoissonScaling_data_14.csv" title "Mumps" axes x1y2  with linespoints linecolor  "black" dashtype 3 linewidth 1 pointtype 10 pointsize 0.5
 set size 0.49,0.326666666666667
 set origin 0.005,0.00333333333333333
 set lmargin 1e01
@@ -137,7 +137,7 @@ set ytics format "$10^{%T}$"
 set y2tics format " " 
 set termoption dashed
 set termoption dashed
-plot "ConstCoeffPoissonScaling_data_16.csv" title "Pardiso" with linespoints linecolor  "black" dashtype 3 linewidth 1 pointtype 6 pointsize 0.5, "ConstCoeffPoissonScaling_data_17.csv" title "Mumps" with linespoints linecolor  "black" dashtype 3 linewidth 1 pointtype 10 pointsize 0.5, "ConstCoeffPoissonScaling_data_18.csv" title "Add Swz" with linespoints linecolor  "black" dashtype 1 linewidth 1 pointtype 9 pointsize 0.5, "ConstCoeffPoissonScaling_data_19.csv" title "Pardiso w Blk PC" with linespoints linecolor  "black" dashtype 1 linewidth 1 pointtype 4 pointsize 0.5, "ConstCoeffPoissonScaling_data_20.csv" title "Add Swz w Coarse" with linespoints linecolor  "black" dashtype 1 linewidth 1 pointtype 11 pointsize 0.5, "ConstCoeffPoissonScaling_data_21.csv" title "CG" with linespoints linecolor  "black" dashtype 1 linewidth 1 pointtype 3 pointsize 0.5
+plot "ConstCoeffPoissonScaling_data_15.csv" title "Pardiso" with linespoints linecolor  "black" dashtype 3 linewidth 1 pointtype 6 pointsize 0.5, "ConstCoeffPoissonScaling_data_16.csv" title "Mumps" with linespoints linecolor  "black" dashtype 3 linewidth 1 pointtype 10 pointsize 0.5, "ConstCoeffPoissonScaling_data_17.csv" title "Add Swz w Coarse" with linespoints linecolor  "black" dashtype 1 linewidth 1 pointtype 11 pointsize 0.5, "ConstCoeffPoissonScaling_data_18.csv" title "Add Swz" with linespoints linecolor  "black" dashtype 1 linewidth 1 pointtype 9 pointsize 0.5, "ConstCoeffPoissonScaling_data_19.csv" title "Pardiso w Blk PC" with linespoints linecolor  "black" dashtype 1 linewidth 1 pointtype 4 pointsize 0.5, "ConstCoeffPoissonScaling_data_20.csv" title "CG" with linespoints linecolor  "black" dashtype 1 linewidth 1 pointtype 3 pointsize 0.5
 
 
 exit
