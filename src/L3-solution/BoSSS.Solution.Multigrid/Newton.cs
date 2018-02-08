@@ -226,6 +226,7 @@ namespace BoSSS.Solution.Multigrid {
         public double[] GMRES(CoordinateVector SolutionVec, double[] currentX, double[] f0, double[] xinit, out double errstep) {
             using (var tr = new FuncTrace()) {
                 int n = f0.Length;
+                 
                 int reorth = 3; // Orthogonalization method -> 1: Brown/Hindmarsh condition, 3: Always reorthogonalize
 
                 // RHS of the linear equation system 
@@ -589,7 +590,7 @@ namespace BoSSS.Solution.Multigrid {
                 zz[i] = 1;
                 temp = dirder(SolutionVec, currentX, zz, f0);
                 for (int j = 0; j < n; j++) {
-                    jac[j, i] = temp[i];
+                    jac[j, i] = temp[j];
                 }
             }
 
