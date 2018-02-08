@@ -1013,121 +1013,57 @@ namespace BoSSS.Foundation.IO {
         /// corresponding solver assembly to be able to use solver-specific
         /// sub-classes of <see cref="AppControl"/>.
         /// </summary>
-        /// <typeparam name="T">
-        /// The type of the control object to be instantiated. The type
-        /// <see cref="AppControl"/> should work in all cases, but will not
-        /// give access to solver-specific configuration options.
-        /// </typeparam>
         /// <param name="session">
         /// The session whose configuration file should be loaded
         /// </param>
         /// <returns>
         /// The properly initialized configuration object
         /// </returns>
-        public static T GetControl<T>(this ISessionInfo session)
-            where T : AppControl {
+        /// <param name="t">
+        /// Optional type of the control object to be instantiated. The type
+        /// <see cref="AppControl"/> should work in all cases, but will not
+        /// give access to solver-specific configuration options.
+        /// </param>
+        public static AppControl GetControl(this ISessionInfo session, Type t = null) {
+        
             string sessionDir = DatabaseDriver.GetSessionDirectory(session);
-            string path = Path.Combine(sessionDir, "Control.txt");
+            string path_script = Path.Combine(sessionDir, "Control-script.txt");
+            string path_obj = Path.Combine(sessionDir, "Control-obj.txt");
 
-            if (!File.Exists(path)) {
-                throw new IOException("Could not find Control.txt");
-            }
+            if (File.Exists(path_obj)) {
+                string ctrlfileContent = File.ReadAllText(path_obj);
 
-            string ctrlfileContent = "";
-            using (StreamReader rd = new StreamReader(path)) {
-                // Trim trailing empty lines since they would
-                // return an empty string instead of a control object
-                ctrlfileContent = rd.ReadToEnd().TrimEnd();
-            }
+                return AppControl.Deserialize(ctrlfileContent);
 
-            // Create separate evaluator since we
-            // - cannot access the main one from here
-            // - we don't want potential side effects on the main one
-            CompilerContext cmpCont = new CompilerContext(
-                new CompilerSettings(), new ConsoleReportPrinter());
-            Evaluator eval = new Evaluator(cmpCont);
-            eval.InteractiveBaseClass = typeof(T);
+            } else if (File.Exists(path_script)) {
 
-            var allAssis = BoSSS.Solution.Application.GetAllAssemblies().ToArray();
-            foreach (var assi in allAssis) {
-                eval.ReferenceAssembly(assi);
-            }
+                string ctrlfileContent = File.ReadAllText(path_script);
 
-            // Evaluate control file content line by line
-            object controlObj = null;
-            StringReader reader = new StringReader(ctrlfileContent);
-            bool result_set = false;
-            string multiline = null;
-            int lineno = 0;
-            for (string line = reader.ReadLine(); line != null; line = reader.ReadLine()) {
-                line = line.TrimEnd();
-                lineno++;
+                AppControl.FromCode(ctrlfileContent, t, out AppControl ctrl, out AppControl[] ctrl_paramstudy);
 
-                if (line.EndsWith("\\")) {
-                    if (multiline == null)
-                        multiline = "";
+                if (ctrl != null) {
+                    return ctrl;
+                } else if (ctrl_paramstudy != null) {
+                    // We did a parameter study -> extract the correct control object from the list
+                    int.TryParse(session.KeysAndQueries["id:pstudy_case"].ToString(), out int parameterStudyCase);
 
-                    multiline += " " + line.Substring(0, line.Length - 1);
+                    if (parameterStudyCase < 0 || parameterStudyCase >= ctrl_paramstudy.Count()) {
+                        throw new Exception(
+                            "Parameter study case index out of range. This should not have happened.");
+                    }
+
+                    return ctrl_paramstudy.ElementAt(parameterStudyCase);
                 } else {
-                    string completeline;
-                    if (multiline == null) {
-                        completeline = line;
-                    } else {
-                        completeline = multiline + " " + line;
-                        multiline = null;
-                    }
-
-                    string schurli = null;
-                    try {
-                        object oldControlObject = controlObj;
-                        schurli = eval.Evaluate(completeline, out controlObj, out result_set);
-                        if (controlObj == null) {
-                            controlObj = oldControlObject;
-                        }
-                    } catch (Exception e) {
-                        throw new AggregateException(String.Format(
-                            "{0} during the interpretation of control file '{1}' line {2};",
-                            e.GetType().Name,
-                            path,
-                            lineno),
-                            e);
-                    }
-
-                    if (cmpCont.Report.Errors > 0) {
-                        throw new Exception(String.Format(
-                            "Syntax error in control file line {0}: \n{1}",
-                            lineno,
-                            completeline));
-                    }
+                    //throw new Exception(string.Format(
+                    //    "Invalid control instruction: unable to cast the last"
+                    //        + " result of the control file/cs-script of type {0} to type {1}",
+                    //    controlObj.GetType().FullName,
+                    //    typeof(T).FullName));
+                    throw new NotSupportedException("unknown state.");
                 }
-            }
-
-            if (controlObj == null) {
-                throw new Exception(
-                    "Unable to create a control object from cs-script file '" + path + "'.");
-            }
-
-            if (controlObj is T) {
-                return (T)controlObj;
-            } else if (controlObj is IEnumerable<T>) {
-                // We did a parameter study -> extract the correct control object from the list
-                int.TryParse(session.KeysAndQueries["id:pstudy_case"].ToString(), out int parameterStudyCase);
-
-                IEnumerable<T> objectList = (IEnumerable<T>)controlObj;
-                if (parameterStudyCase < 1 || parameterStudyCase > objectList.Count()) {
-                    throw new Exception(
-                        "Parameter study case index out of range. This should not have happened.");
-                }
-
-                return objectList.ElementAt(parameterStudyCase - 1);
             } else {
-                throw new Exception(string.Format(
-                    "Invalid control instruction: unable to cast the last"
-                        + " result of the control file/cs-script of type {0} to type {1}",
-                    controlObj.GetType().FullName,
-                    typeof(T).FullName));
+                throw new IOException("Unable to find control object (" + path_obj + ") or control script (" + path_script + ").");
             }
-
         }
 
         /// <summary>
