@@ -1,0 +1,283 @@
+restart
+**************
+
+  Database Explorer v2
+  ____________________
+
+Databases loaded:
+List of 0 instances of IDatabaseInfo {
+}
+Setting Matlab Connector to Octave...
+
+ Console ready for input. Type 'help' for help.
+
+==============
+WorkflowMgm.Init("PoissonSolverPerformance");
+**************
+Project name is set to 'PoissonSolverPerformance'.
+
+==============
+using System.IO;
+using BoSSS.Application.SipPoisson;
+**************
+==============
+string File     = "SolverRuns--2018-2-6.json";
+string FilePath = Path.Combine(CurrentDocDir, File);
+var SessTab     = TableExtensions.LoadFromFile(FilePath);
+**************
+==============
+//SessTab.Print();
+**************
+==============
+((int) SolverCodes.exp_softpcg_schwarz_directcoarse);
+**************
+6
+==============
+// ====================
+// Evaluation, plotting
+// ====================
+**************
+==============
+SessTab.GetColumnNames();
+**************
+List of 48 instances of String {
+  0: SessionName
+  1: DGdegree:T
+  2: DGdegree:Tex
+  3: Bndtype:Dirichlet
+  4: Bndtype:Neumann
+  5: GeneratedFromCode
+  6: ControlFileText_Index
+  7: dtFixed
+  8: NoOfMultigridLevels
+  9: penalty_poisson
+  10: solver_name
+  11: NoOfSolverRuns
+  12: ExactSolution_provided
+  13: GridPartType
+  14: ProjectName
+  15: NoOfTimesteps
+  16: Endtime
+  17: saveperiod
+  18: dtMin
+  19: dtMax
+  20: CompMode
+  21: ImmediatePlotPeriod
+  22: SuperSampling
+  23: savetodb
+  24: logFileDirectory
+  25: Paramstudy_ContinueOnError
+  26: DynamicLoadBalancing_RedistributeAtStartup
+  27: DynamicLoadBalancing_Period
+  28: DynamicLoadBalancing_ImbalanceThreshold
+  29: AdaptiveMeshRefinement
+  30: CutCellQuadratureType
+  31: ContinueOnIoError
+  32: Grid:NoOfCells
+  33: Grid:hMax
+  34: Grid:hMin
+  35: RegularTerminated
+  36: SipMatrixAssembly_time
+  37: Aggregation_basis_init_time
+  38: Solver_Init_time
+  39: Solver_Run_time
+  40: UsedNoOfMultigridLevels
+  41: minSolRunT
+  42: maxSolRunT
+  43: Conv
+  44: NoIter
+  45: NoOfCells
+  46: DOFs
+  47: BlockSize
+}
+==============
+//var SubTab_1 = SessTab.ExtractColumns("DGdegree:T", "Grid:NoOfCells", "solver_name", "DOFs", "minSolRunT", "maxSolRunT", "NoIter", "RegularTerminated", "Conv");
+**************
+==============
+var SubTab_1 = SessTab.ExtractRows(delegate(int i, IDictionary<string,object> row) {
+    return (  (Convert.ToInt32(row["solver_name"]) ==  ((int) SolverCodes.exp_softpcg_schwarz_directcoarse))
+          || (Convert.ToInt32(row["solver_name"]) ==  ((int) SolverCodes.exp_softpcg_schwarz)))
+          && (Convert.ToInt32(row["Conv"]) != 0);
+    });
+**************
+==============
+var SubTab = SubTab_1.ExtractColumns("DGdegree:T", "Grid:NoOfCells", "solver_name", "DOFs", 
+              "minSolRunT", "maxSolRunT", "UsedNoOfMultigridLevels",
+              "SipMatrixAssembly_time", "Aggregation_basis_init_time", "Solver_Init_time", "Solver_Run_time");
+**************
+==============
+SubTab.Print();
+**************
+    DGdegree:T Grid:NoOfCells solver_name DOFs   minSolRunT   maxSolRunT   UsedNoOfMultigridLevels SipMatrixAssembly_time Aggregation_basis_init_time Solver_Init_time Solver_Run_time 
+0:  2          2560           5           25600  749.3842617  750.960602   3                       1.3581869              5.6785293                   21.3580158       728.80093615    
+1:  2          320            5           3200   39.0187606   39.0274362   3                       0.6901283              0.7779678                   1.06727205       37.94337105     
+2:  2          40             5           400    1.4043004    1.9798036    3                       0.5587462              0.1304635                   0.20593605       1.47307745      
+3:  4          320            6           11200  48.5526923   48.79002     3                       1.763744               1.8449802                   5.9825669        42.6755369      
+4:  3          20480          6           409600 3119.0259638 3119.6286065 3                       18.6311803             58.178452                   842.03487225     2277.25407725   
+5:  3          2560           6           51200  245.2860004  246.3602341  3                       2.7700627              6.6694681                   31.6810547       214.12573505    
+6:  3          320            6           6400   21.2594124   21.9387208   3                       0.8152356              0.8601324                   2.271845         19.3147228      
+7:  3          40             6           800    2.1147681    2.6991653    3                       0.5672934              0.149033                    0.4001519        1.99422075      
+8:  2          20480          6           204800 1753.2468032 1754.0907922 3                       6.9229863              49.6398377                  874.52493765     879.1165623     
+9:  2          2560           6           25600  135.3783461  136.0122966  3                       1.5098064              5.694886                    22.98714955      112.6941565     
+10: 2          320            6           3200   12.1247134   12.6192361   3                       0.6226494              0.7068864                   1.19776265       11.16311455     
+11: 2          40             6           400    1.544439     2.1024224    3                       0.5509319              0.1293719                   0.27315895       1.53964005      
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+//RuntimePlot.PlotNow();
+**************
+==============
+//var cl = RuntimePlot.ToGnuplot().PlotCairolatex();
+//cl.Preview(trimPage:true);
+**************
+==============
+//cl.WriteMinimalCompileableExample("C:\\tmp\\mini.tex");
+**************
+==============
+**************
+==============
+Plot2Ddata[,] multiplots = new Plot2Ddata[2,1];
+int pDegree = 2;
+for(int iRow = 0; iRow < 2; iRow++) {
+ 
+    multiplots[iRow,0] = SubTab.ToPlot(
+       delegate (int iSweep, int iTabRow, 
+                 IDictionary<string, object> Row, 
+                 out string Nmn, 
+                 out PlotFormat Fmt,
+                 out double xValue, out double yValue) { 
+           // - - - - - - - - - - - - - - - - - - - - - - - - 
+           // PlotRowSelector:
+           // selects, which table row goes to which graph,
+           // and the respective color  
+           // - - - - - - - - - - - - - - - - - - - - - - - - 
+           int k = Convert.ToInt32(Row["DGdegree:T"]);
+           SolverCodes solver_name = (SolverCodes) Convert.ToInt32(Row["solver_name"]);
+           
+           if(k != pDegree || solver_name != SolverCodes.exp_softpcg_schwarz_directcoarse) {
+                // degree does not match -> not in this plot
+                Nmn    = null;
+                Fmt    = null;
+                xValue = 0;
+                yValue = 0;
+                return;
+           }
+           
+           double mtxAssi  = Convert.ToDouble(Row["SipMatrixAssembly_time"]);
+           double aggBinit = Convert.ToDouble(Row["Aggregation_basis_init_time"]);
+           double slvInit  = Convert.ToDouble(Row["Solver_Init_time"]);
+           double slvRun   = Convert.ToDouble(Row["Solver_Run_time"]);
+           double dofs     = Convert.ToDouble(Row["DOFs"]);
+           
+           Fmt           = new PlotFormat();
+           Fmt.PointType = PointTypes.OpenCircle;
+           Fmt.PointSize = 0.5;
+           Fmt.Style     = Styles.LinesPoints;
+           Fmt.LineColor = LineColors.Black;
+           
+           xValue = dofs;
+           
+           switch(iSweep) {
+               case 0:
+               yValue       = slvRun;
+               Nmn          = "Slv Iter";
+               Fmt.DashType = DashTypes.Dotted;
+               break;
+               
+               case 1:
+               yValue       = slvRun + slvInit;
+               Nmn          = "Slv Init";
+               Fmt.DashType = DashTypes.Dashed;
+               break;
+               
+               case 2:
+               yValue       = slvRun + slvInit + aggBinit;
+               Nmn          = "Agg Init";
+               Fmt.DashType = DashTypes.DotDashed;
+               break;
+               
+               case 3:
+               yValue       = slvRun + slvInit + aggBinit + mtxAssi;
+               Nmn          = "Mtx ass";
+               Fmt.DashType = DashTypes.DotDotDashed;
+               break;
+               
+               default:
+               throw new NotImplementedException();
+           }
+       },
+       4 // 4 sweeps over table
+       );
+ 
+    string Title = string.Format("$k = {0}$", pDegree);
+    multiplots[iRow,0].Ylabel = Title;
+    multiplots[iRow,0].LogX = true;
+    multiplots[iRow,0].LogY = true;
+ 
+    multiplots[iRow,0].YrangeMin = 1;
+    multiplots[iRow,0].YrangeMax = 1e+4;
+    //multiplots[iRow,iCol].XrangeMin = 1e2;
+    //multiplots[iRow,iCol].XrangeMax = 1e7;
+    //multiplots[iRow,iCol].Y2rangeMin = 1e-3;
+    //multiplots[iRow,iCol].Y2rangeMax = 1e+4;
+    //multiplots[iRow,iCol].X2rangeMin = 1e2;
+    //multiplots[iRow,iCol].X2rangeMax = 1e7;
+ 
+    //if(iRow == 2) {
+    //    multiplots[iRow,iCol].ShowLegend = true;
+    //    multiplots[iRow,iCol].LegendPosition = new double[] {1e12,1e4};
+    //} else {
+    //    multiplots[iRow,iCol].ShowLegend = false;
+    //}
+ 
+    //if(iCol == 1) {
+    //    multiplots[iRow,iCol].SwapYaxes();
+    //    multiplots[iRow,iCol].lmargin = 1;
+    //    multiplots[iRow,iCol].rmargin = 10;
+    //} else {
+    //    multiplots[iRow,iCol].lmargin = 10;
+    //    multiplots[iRow,iCol].rmargin = 1;
+    //}
+    //multiplots[iRow,iCol].tmargin = 1;
+    //multiplots[iRow,iCol].bmargin = 1;
+    
+    pDegree++;                       
+}
+multiplots.PlotNow();
+
+**************
+Using gnuplot: C:\Program Files (x86)\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+System.Drawing.Bitmap
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+//var CL = multiplots.ToGnuplot().PlotCairolatex(xSize:16, ySize:12);
+**************
+(1,11): error CS0103: The name `multiplots' does not exist in the current context
+No. of errors|warnings: 1|0.
+
+==============
+//CL.SaveTo(Path.Combine(CurrentDocDir, "ConstCoeffPoissonScaling.tex"));
+**************
+==============
+CL.PlotNow();
+**************
+(1,2): error CS0103: The name `CL' does not exist in the current context
+No. of errors|warnings: 1|0.
+
+==============
+//cmt
+**************
+==============
+**************
+==============
