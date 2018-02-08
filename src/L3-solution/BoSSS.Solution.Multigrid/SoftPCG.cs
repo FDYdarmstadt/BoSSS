@@ -51,8 +51,7 @@ namespace BoSSS.Solution.Multigrid {
 
 
         BlockMsrMatrix m_Matrix;
-        ilPSP.LinSolvers.monkey.MatrixBase m_OptMatrix;
-
+        
         public double m_Tolerance = 1.0e-10;
         public int m_MaxIterations = 10000;
         public int m_MinIterations = 5;
@@ -104,7 +103,7 @@ namespace BoSSS.Solution.Multigrid {
                 // compute P0, R0
                 // ==============
                 GenericBlas.dswap(L, x, 1, P, 1);
-                m_OptMatrix.SpMV(-1.0, P, 1.0, R);
+                m_Matrix.SpMV(-1.0, P, 1.0, R);
                 if (IterationCallback != null) {
                     IterationCallback(NoOfIterations, P.CloneAs(), R.CloneAs(), this.m_MgOp);
                 }
@@ -198,7 +197,7 @@ namespace BoSSS.Solution.Multigrid {
                 if (!M.ColPartition.EqualsPartition(MgMap.Partitioning))
                     throw new ArgumentException("Column partitioning mismatch.");
                 this.m_Matrix = M;
-                m_OptMatrix = new ilPSP.LinSolvers.monkey.CPU.RefMatrix(M.ToMsrMatrix());
+                //m_OptMatrix = new ilPSP.LinSolvers.monkey.CPU.RefMatrix(M.ToMsrMatrix());
                 if (Precond != null)
                     Precond.Init(op);
             }
