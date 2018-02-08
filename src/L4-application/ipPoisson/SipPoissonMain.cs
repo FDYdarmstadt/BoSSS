@@ -358,7 +358,9 @@ namespace BoSSS.Application.SipPoisson {
                 ISparseSolver ipSolver;
                 switch (base.Control.solver_name) {
                     case SolverCodes.classic_pardiso:
-                    ipSolver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
+                    ipSolver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver() {
+                        CacheFactorization = true
+                    };
                     break;
 
                     case SolverCodes.classic_mumps:
@@ -463,14 +465,17 @@ namespace BoSSS.Application.SipPoisson {
                             Precond = new Schwarz() {
                                 m_MaxIterations = 1,
                                 CoarseSolver = new GenericRestriction() {
-                                    CoarserLevelSolver = new DirectSolver() {
-                                        WhichSolver = DirectSolver._whichSolver.PARDISO
+                                    CoarserLevelSolver = new GenericRestriction() {
+                                        CoarserLevelSolver = new DirectSolver() {
+                                            WhichSolver = DirectSolver._whichSolver.PARDISO
+                                        }
                                     }
                                 },
-                                m_BlockingStrategy = new Schwarz.MultigridBlocks() {
-                                    Depth = 2,
+                                m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
+                                    NoOfParts = 8
                                 },
-                                Overlap = 1
+                                Overlap = 1,
+                                
                             }
                         };
                         break;
@@ -524,7 +529,7 @@ namespace BoSSS.Application.SipPoisson {
                         throw new ApplicationException("unknown solver: " + this.Control.solver_name);
                     }
 
-
+                    
                     if (solver is ISolverWithCallback) {
 
                         ((ISolverWithCallback)solver).IterationCallback = delegate (int iter, double[] xI, double[] rI, MultigridOperator mgOp) {
@@ -541,7 +546,7 @@ namespace BoSSS.Application.SipPoisson {
                         };
 
                     }
-
+                    
 
                     using (new BlockTrace("Solver_Init", tr )) {
                         solver.Init(MultigridOp);

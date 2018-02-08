@@ -54,8 +54,8 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         /// <param name="code">
         /// C#-code which represents the mathematical formula,
-        ///  - if <paramref name="TimeDep"/> is true, a `Func<double[], double, double>`, representing an expression \f$ (\vec{x},t) \mapsto f(\vec{x},t) \f$
-        ///  - if <paramref name="TimeDep"/> is false, a `Func<double[], double>`, representing an expression \f$ (\vec{x}) \mapsto f(\vec{x}) \f$
+        ///  - if <paramref name="TimeDep"/> is true, a <see cref="Func{Space, Time, val}"/>, representing an expression \f$ (\vec{x},t) \mapsto f(\vec{x},t) \f$
+        ///  - if <paramref name="TimeDep"/> is false, a <see cref="Func{Space, val}"/>, representing an expression \f$ (\vec{x}) \mapsto f(\vec{x}) \f$
         /// </param>
         /// <param name="AdditionalPrefixCode">
         /// Optional, additional C#-statements, e.g. auxiliary definitions, which is entered before <paramref name="code"/>.
@@ -71,9 +71,6 @@ namespace BoSSS.Solution.Control {
         }
 
        
-
-
-
         [DataMember]
         bool m_TimeDep;
 

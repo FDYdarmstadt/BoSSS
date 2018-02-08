@@ -182,6 +182,17 @@ namespace ilPSP.Tracing {
             Watch.Start();
         }
 
+        /// <summary>
+        /// logs an 'inclusive' block;
+        /// </summary>
+        public MethodCallRecord LogDummyblock(long ticks, string name) {
+            if(!Tracer.InstrumentationSwitch)
+                return new MethodCallRecord(null, "dummy");
+            else 
+                return Tracer.LogDummyblock(ticks, name);
+        }
+
+
         #region IDisposable Members
 
         /// <summary>
@@ -361,6 +372,7 @@ namespace ilPSP.Tracing {
 
         }
 
+        /*
         /// <summary>
         /// logs an 'inclusive' block (see <see cref="MethodCallRecord.IgnoreForExclusive"/> );
         /// </summary>
@@ -370,6 +382,7 @@ namespace ilPSP.Tracing {
             else 
                 return Tracer.LogDummyblock(ticks, name);
         }
+        */
     }
 
     /// <summary>
