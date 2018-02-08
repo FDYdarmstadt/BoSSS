@@ -715,11 +715,12 @@ namespace BoSSS.Application.BoSSSpad {
             string ColName_ForXValues, string ColName_ForYValues,
             PlotRowSelector RowSelector) {
             return Tab.ToPlot(
-                delegate (int iRow, IDictionary<string, object> Row, out string GraphName, out BoSSS.Solution.Gnuplot.PlotFormat GraphFormat, out double xValue, out double yValue) {
+                delegate (int iSweep, int iRow, IDictionary<string, object> Row, out string GraphName, out BoSSS.Solution.Gnuplot.PlotFormat GraphFormat, out double xValue, out double yValue) {
                     RowSelector(iRow, Row, out GraphName, out GraphFormat);
                     xValue = Convert.ToDouble(Row[ColName_ForXValues]);
                     yValue = Convert.ToDouble(Row[ColName_ForYValues]);
-                });
+                },
+                1);
         }
 
         /// <summary>
@@ -730,64 +731,70 @@ namespace BoSSS.Application.BoSSSpad {
         /// Selects, which table row will end up in which graph, resp. data group (<see cref="Plot2Ddata.dataGroups"/>).
         /// If the returned name is null, or if an exception is thrown, the respective data row will not be included in any graph.
         /// </param>
+        /// <param name="NoOfSweeps">
+        /// To sweep over the table multiple times, e.g. for selecting more than one value per row.
+        /// </param>
         /// <returns></returns>
-        public static Plot2Ddata ToPlot(this DataTable Tab, 
-            PlotRowSelectorEx RowSelector) {
-            
+        public static Plot2Ddata ToPlot(this DataTable Tab,
+            PlotRowSelectorEx RowSelector, int NoOfSweeps) {
+
 
             Plot2Ddata ret = new Plot2Ddata();
 
+
             // loop over table rows
             // ====================
-            string[] ColNames = Tab.GetColumnNames();
-            int L = Tab.Rows.Count;
-            int J = Tab.Columns.Count;
-            for (int i = 0; i < L; i++) {
-                DataRow orgRow = Tab.Rows[i];
-                Dictionary<string, object> orgRowAsDict = new Dictionary<string, object>();
-                foreach (string ColName in ColNames) {
-                    object obj_ColName = orgRow[ColName];
-                    if (obj_ColName == DBNull.Value) {
-                        orgRowAsDict.Add(ColName, null);
-                    } else {
-                        orgRowAsDict.Add(ColName, obj_ColName);
-                    }
-                }
-
-                string groupName;
-                Solution.Gnuplot.PlotFormat graphFormat;
-                double xValue;
-                double yValue;
-                try {
-                    RowSelector(i, orgRowAsDict, out groupName, out graphFormat, out xValue, out yValue);
-                } catch (Exception e) {
-                    Console.WriteLine("Exception in the selection test of row {0}: {1}, Message: {2}.", i, e.GetType().Name, e.Message);
-                    groupName = null;
-                    graphFormat = null;
-                    xValue = 0.0;
-                    yValue = 0.0;
-                }
-
-                if (groupName != null) {
-                    //double xValue = Convert.ToDouble(orgRowAsDict[ColName_ForXValues]);
-                    //double yValue = Convert.ToDouble(orgRowAsDict[ColName_ForYValues]);
-
-                    Plot2Ddata.XYvalues xyGroup = Array.Find(ret.dataGroups, xyG => xyG.Name.Equals(groupName));
-                    if(xyGroup == null) {
-                        xyGroup = new Plot2Ddata.XYvalues(groupName);
-                        ArrayTools.AddToArray(xyGroup, ref ret.dataGroups);
+            for (int iSweep = 0; iSweep < NoOfSweeps; iSweep++) {
+                string[] ColNames = Tab.GetColumnNames();
+                int L = Tab.Rows.Count;
+                int J = Tab.Columns.Count;
+                for (int i = 0; i < L; i++) {
+                    DataRow orgRow = Tab.Rows[i];
+                    Dictionary<string, object> orgRowAsDict = new Dictionary<string, object>();
+                    foreach (string ColName in ColNames) {
+                        object obj_ColName = orgRow[ColName];
+                        if (obj_ColName == DBNull.Value) {
+                            orgRowAsDict.Add(ColName, null);
+                        } else {
+                            orgRowAsDict.Add(ColName, obj_ColName);
+                        }
                     }
 
-                    ArrayTools.AddToArray(xValue, ref xyGroup.Abscissas);
-                    ArrayTools.AddToArray(yValue, ref xyGroup.Values);
+                    string groupName;
+                    Solution.Gnuplot.PlotFormat graphFormat;
+                    double xValue;
+                    double yValue;
+                    try {
+                        RowSelector(iSweep, i, orgRowAsDict, out groupName, out graphFormat, out xValue, out yValue);
+                    } catch (Exception e) {
+                        Console.WriteLine("Exception in the selection test of row {0}: {1}, Message: {2}.", i, e.GetType().Name, e.Message);
+                        groupName = null;
+                        graphFormat = null;
+                        xValue = 0.0;
+                        yValue = 0.0;
+                    }
 
-                    xyGroup.Format = graphFormat;
+                    if (groupName != null) {
+                        //double xValue = Convert.ToDouble(orgRowAsDict[ColName_ForXValues]);
+                        //double yValue = Convert.ToDouble(orgRowAsDict[ColName_ForYValues]);
+
+                        Plot2Ddata.XYvalues xyGroup = Array.Find(ret.dataGroups, xyG => xyG.Name.Equals(groupName));
+                        if (xyGroup == null) {
+                            xyGroup = new Plot2Ddata.XYvalues(groupName);
+                            ArrayTools.AddToArray(xyGroup, ref ret.dataGroups);
+                        }
+
+                        ArrayTools.AddToArray(xValue, ref xyGroup.Abscissas);
+                        ArrayTools.AddToArray(yValue, ref xyGroup.Values);
+
+                        xyGroup.Format = graphFormat;
+                    }
                 }
             }
 
             // sort data
             // =========
-            foreach(var xyGroup in ret.dataGroups) {
+            foreach (var xyGroup in ret.dataGroups) {
                 Array.Sort(xyGroup.Abscissas, xyGroup.Values);
             }
 
@@ -897,8 +904,11 @@ namespace BoSSS.Application.BoSSSpad {
     public delegate void PlotRowSelector(int iRow, IDictionary<string, object> Row, out string GraphName, out BoSSS.Solution.Gnuplot.PlotFormat GraphFormat);
     
     /// <summary>
-    /// Used by <see cref="TableExtensions.ToPlot(DataTable, PlotRowSelectorEx)"/>, to select data rows which are put into a plot.
+    /// Used by <see cref="TableExtensions.ToPlot(DataTable, PlotRowSelectorEx, int)"/>, to select data rows which are put into a plot.
     /// </summary>
+    /// <param name="iPass">
+    /// If we sweep over the table multiple times, the sweep index.
+    /// </param>
     /// <param name="iRow">
     /// Row index.
     /// </param>
@@ -918,5 +928,5 @@ namespace BoSSS.Application.BoSSSpad {
     /// <param name="yValue">
     /// On exit, the y-value for the graph.
     /// </param>
-    public delegate void PlotRowSelectorEx(int iRow, IDictionary<string, object> Row, out string GraphName, out BoSSS.Solution.Gnuplot.PlotFormat GraphFormat, out double xValue, out double yValue);
+    public delegate void PlotRowSelectorEx(int iPass, int iRow, IDictionary<string, object> Row, out string GraphName, out BoSSS.Solution.Gnuplot.PlotFormat GraphFormat, out double xValue, out double yValue);
 }
