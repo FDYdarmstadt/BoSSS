@@ -40,7 +40,7 @@ namespace BoSSS.Solution.Multigrid {
             /// a list of variable indices -- given by mapping <see cref="map"/> -- onto which this configuartion item applies.
             /// </summary>
             public int[] VarIndex;
-            
+
             /// <summary>
             /// DG polynomial degree of respective variables on respective multigrid level
             /// </summary>
@@ -85,13 +85,13 @@ namespace BoSSS.Solution.Multigrid {
             /// Symmetric equilibration of the diagonal matrix block;
             /// </summary>
             DiagBlockEquilib,
-            
+
             /// <summary>
             /// Like <see cref="DiagBlockEquilib"/>, but only the 
             /// symmetric part of the diagonal block is used for equilibration; i.e. this works only for un-symmetric matrices.
             /// </summary>
             SymPart_DiagBlockEquilib,
-            
+
             /// <summary>
             /// multiplies from the left with the inverse of the operator matrix diagonal block.
             /// </summary>
@@ -119,8 +119,8 @@ namespace BoSSS.Solution.Multigrid {
             get {
                 VerifyConfig();
                 int[] R = new int[this.BaseGridProblemMapping.BasisS.Count()];
-                foreach(var c in m_Config) {
-                    foreach(var iVar in c.VarIndex) {
+                foreach (var c in m_Config) {
+                    foreach (var iVar in c.VarIndex) {
                         R[iVar] = c.Degree;
                     }
                 }
@@ -131,17 +131,17 @@ namespace BoSSS.Solution.Multigrid {
 
         void VerifyConfig() {
             bool[] Touch = new bool[this.BaseGridProblemMapping.BasisS.Count()];
-            foreach(var c in m_Config) {
-                foreach(var iVar in c.VarIndex) {
-                    if(Touch[iVar] == true) {
+            foreach (var c in m_Config) {
+                foreach (var iVar in c.VarIndex) {
+                    if (Touch[iVar] == true) {
                         throw new ArgumentException("Variable #" + iVar + " is specified (at least) twice.");
                     }
                     Touch[iVar] = true;
                 }
             }
 
-            for(int iVar = 0; iVar < Touch.Length; iVar++) {
-                if(Touch[iVar] == false) {
+            for (int iVar = 0; iVar < Touch.Length; iVar++) {
+                if (Touch[iVar] == false) {
                     throw new ArgumentException("No configuration specified for variable #" + iVar + ".");
                 }
             }
@@ -171,7 +171,7 @@ namespace BoSSS.Solution.Multigrid {
         /// List of indefinite row indices.
         /// </returns>
         int[] ComputeChangeOfBasis(BlockMsrMatrix OpMatrix, BlockMsrMatrix MassMatrix, out BlockMsrMatrix LeftPreCond, out BlockMsrMatrix RightPreCond, out BlockMsrMatrix LeftPreCondInv, out BlockMsrMatrix RightPreCondInv) {
-            using(var tr = new FuncTrace()) {
+            using (var tr = new FuncTrace()) {
                 // test arguments
                 // ==============
                 VerifyConfig();
@@ -184,8 +184,8 @@ namespace BoSSS.Solution.Multigrid {
                 int[] Degrees = this.Mapping.DgDegree;
 
                 List<int> IndefRows = new List<int>();
-                
-                
+
+
                 // compute preconditioner matrices
                 // ===============================
                 using (var bt = new BlockTrace("compute-pc", tr)) {
@@ -201,7 +201,7 @@ namespace BoSSS.Solution.Multigrid {
                     RightPreCond.AccEyeSp(1.0);
                     LeftPreCondInv.AccEyeSp(1.0);
                     RightPreCondInv.AccEyeSp(1.0);
-                    
+
 
                     int LL = this.m_Config.Length;
                     MultidimensionalArray[] MassBlock = new MultidimensionalArray[LL];
@@ -213,14 +213,14 @@ namespace BoSSS.Solution.Multigrid {
                     MultidimensionalArray[] PCrightBlock = new MultidimensionalArray[LL];
                     int[][] __i0s = new int[LL][];
 
-                    for(int i = 0; i < LL; i++) {
+                    for (int i = 0; i < LL; i++) {
                         var conf = m_Config[i];
                         __i0s[i] = new int[conf.VarIndex.Length];
                     }
 
                     int J = this.Mapping.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
                     int i0 = this.Mapping.Partitioning.i0;
-                    for(int jCell = 0; jCell < J; jCell++) { // loop over cells...
+                    for (int jCell = 0; jCell < J; jCell++) { // loop over cells...
                         //ReducedRegionCode rrc;
                         //int NoOfSpc = LsTrk.GetNoOfSpecies(jCell, out rrc);
 
@@ -230,7 +230,7 @@ namespace BoSSS.Solution.Multigrid {
 
                         for (int i = 0; i < LL; i++) { // for each configuration item...
                             var conf = m_Config[i];
-                            
+
                             int E = conf.VarIndex.Length;
                             int[] _i0s = __i0s[i];
                             AggregationGridBasis basis = null;
@@ -250,11 +250,11 @@ namespace BoSSS.Solution.Multigrid {
                                 continue;
 
                             for (int e = 0; e < E; e++) {
-                                _i0s[e] =  this.Mapping.LocalUniqueIndex(conf.VarIndex[e], jCell, 0) + i0;
-                                if(e == 0) {
+                                _i0s[e] = this.Mapping.LocalUniqueIndex(conf.VarIndex[e], jCell, 0) + i0;
+                                if (e == 0) {
                                     basis = basisS[conf.VarIndex[e]];
                                 } else {
-                                    if(!object.ReferenceEquals(basis, basisS[conf.VarIndex[e]])) {
+                                    if (!object.ReferenceEquals(basis, basisS[conf.VarIndex[e]])) {
                                         throw new NotSupportedException("All variables in a configuration item must share the same basis.");
                                     }
                                 }
@@ -289,12 +289,12 @@ namespace BoSSS.Solution.Multigrid {
                             // mem alloc
                             // ---------
 
-                            if(PCleftBlock[i] == null || PCleftBlock[i].NoOfRows != NN) {
+                            if (PCleftBlock[i] == null || PCleftBlock[i].NoOfRows != NN) {
                                 PCleftBlock[i] = MultidimensionalArray.Create(NN, NN);
                             }
-                            if(PCrightBlock[i] == null || PCrightBlock[i].NoOfRows != NN) {
+                            if (PCrightBlock[i] == null || PCrightBlock[i].NoOfRows != NN) {
                                 PCrightBlock[i] = MultidimensionalArray.Create(NN, NN);
-                            } if(work[i] == null || work[i].NoOfRows != NN) {
+                            } if (work[i] == null || work[i].NoOfRows != NN) {
                                 work[i] = MultidimensionalArray.Create(NN, NN);
                             }
 
@@ -310,7 +310,7 @@ namespace BoSSS.Solution.Multigrid {
                             if (Rank != NN) {
                                 IndefRows.AddRange(ConvertRowIndices(jCell, basis, Degrees, conf, E, _i0s, idr));
                             } else {
-                                Debug.Assert(idr == null); 
+                                Debug.Assert(idr == null);
                             }
                             stw_Comp.Stop();
 
@@ -324,20 +324,20 @@ namespace BoSSS.Solution.Multigrid {
                             // inverse precond-matrix
                             // ----------------------
                             // right-inverse: (required for transforming solution guess)
-                            if(PCrightBlock_inv[i] == null || PCrightBlock_inv[i].NoOfRows != NN) {
+                            if (PCrightBlock_inv[i] == null || PCrightBlock_inv[i].NoOfRows != NN) {
                                 PCrightBlock_inv[i] = MultidimensionalArray.Create(NN, NN);
                             }
-                            if(Rank == NN)
+                            if (Rank == NN)
                                 PCrightBlock[i].InvertTo(PCrightBlock_inv[i]);
                             else
                                 RankDefInvert(PCrightBlock[i], PCrightBlock_inv[i]);
                             ExtractBlock(jCell, basis, Degrees, conf, E, _i0s, false, RightPreCondInv, ref PCrightBlock_inv[i]);
-                                                        
+
                             // left-inverse: (required for analysis purposes, to transform residuals back onto original grid)
-                            if(PCleftBlock_inv[i] == null || PCleftBlock_inv[i].NoOfRows != NN) {
+                            if (PCleftBlock_inv[i] == null || PCleftBlock_inv[i].NoOfRows != NN) {
                                 PCleftBlock_inv[i] = MultidimensionalArray.Create(NN, NN);
                             }
-                            if(Rank == NN)
+                            if (Rank == NN)
                                 PCleftBlock[i].InvertTo(PCleftBlock_inv[i]);
                             else
                                 RankDefInvert(PCleftBlock[i], PCleftBlock_inv[i]);
@@ -357,33 +357,50 @@ namespace BoSSS.Solution.Multigrid {
         }
 
 
-        private static void ExtractBlock(int jCell, 
+        private static void ExtractBlock(int jCell,
             AggregationGridBasis basis, int[] Degrees,
-            ChangeOfBasisConfig conf, 
-            int E, int[] _i0s, bool Sp2Full, 
-            IMutableMatrixEx MtxSp, ref MultidimensionalArray MtxFl) {
-            
+            ChangeOfBasisConfig conf,
+            int E, int[] _i0s, bool Sp2Full,
+            BlockMsrMatrix MtxSp, ref MultidimensionalArray MtxFl) {
+
             int NN = conf.VarIndex.Sum(iVar => basis.GetLength(jCell, Degrees[iVar]));
-            if(MtxFl == null || MtxFl.NoOfRows != NN) {
+            if (MtxFl == null || MtxFl.NoOfRows != NN) {
+                Debug.Assert(Sp2Full == true);
                 MtxFl = MultidimensionalArray.Create(NN, NN);
+            } else {
+                if (Sp2Full) {
+                    MtxFl.Clear();
+                }
+            }
+
+            if(!Sp2Full) {
+                Debug.Assert(MtxSp != null);
             }
 
 
             int i0Rowloc = 0;
-            for(int eRow = 0; eRow < E; eRow++) { // loop over variables in configuration
+            for (int eRow = 0; eRow < E; eRow++) { // loop over variables in configuration
                 int i0Row = _i0s[eRow];
                 int iVarRow = conf.VarIndex[eRow];
-                
+
                 int NRow = basis.GetLength(jCell, Degrees[iVarRow]);
 
                 int i0Colloc = 0;
-                for(int eCol = 0; eCol < E; eCol++) { // loop over variables in configuration
+                for (int eCol = 0; eCol < E; eCol++) { // loop over variables in configuration
 
                     int i0Col = _i0s[eCol];
                     int iVarCol = conf.VarIndex[eCol];
-                    
+
                     int NCol = basis.GetLength(jCell, Degrees[iVarCol]);
 
+                    MultidimensionalArray MtxFl_blk;
+                    if (i0Rowloc == 0 && NRow == MtxFl.GetLength(0) && i0Colloc == 0 && NCol == MtxFl.GetLength(1)) {
+                        MtxFl_blk = MtxFl;
+                    } else {
+                        MtxFl_blk = MtxFl.ExtractSubArrayShallow(new[] { i0Rowloc, i0Colloc }, new[] { i0Rowloc + NRow - 1, i0Colloc + NCol - 1 });
+                    }
+
+                    /*
                     for(int n_row = 0; n_row < NRow; n_row++) { // row loop...
                         for(int n_col = 0; n_col < NCol; n_col++) { // column loop...
                             if(Sp2Full) {
@@ -395,6 +412,37 @@ namespace BoSSS.Solution.Multigrid {
                             }
                         }
                     }
+                    */
+
+                    if (Sp2Full) {
+                        if (MtxSp != null) {
+                            MtxSp.ReadBlock(i0Row, i0Col, MtxFl_blk);
+                        } else {
+                            MtxFl_blk.AccEye(1.0);
+                        }
+
+                    } else {
+#if DEBUG
+                        Debug.Assert(MtxSp != null);
+                        //for (int n_row = 0; n_row < NRow; n_row++) { // row loop...
+                        //    for (int n_col = 0; n_col < NCol; n_col++) { // column loop...
+                        //        Debug.Assert(MtxSp[n_row + i0Row, n_col + i0Col] == 0.0);
+                        //    }
+                        //}            
+#endif
+                        MtxSp.AccBlock(i0Row, i0Col, 1.0, MtxFl_blk, 0.0);
+                    }
+#if DEBUG
+
+                    for(int n_row = 0; n_row < NRow; n_row++) { // row loop...
+                        for(int n_col = 0; n_col < NCol; n_col++) { // column loop...
+                            Debug.Assert(MtxFl[n_row + i0Rowloc, n_col + i0Colloc] == ((MtxSp != null) ? ( MtxSp[n_row + i0Row, n_col + i0Col]) : (n_col == n_row ? 1.0 : 0.0)));
+                        }
+                    }
+
+#endif
+
+
                     i0Colloc += NCol;
                 }
                 i0Rowloc += NRow;
