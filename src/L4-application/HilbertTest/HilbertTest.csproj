@@ -38,6 +38,10 @@
     <DocumentationFile>bin\Release\HilbertTest.xml</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>
+    </StartupObject>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -46,7 +50,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Program.cs" />
+    <Compile Include="HilbertTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -57,13 +61,65 @@
       <Project>{DD9BF776-38CA-4FC9-8F42-5ED700BDE7AD}</Project>
       <Name>MPI.Wrappers</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.MUMPS\ilPSP.LinSolvers.MUMPS.csproj">
+      <Project>{757e59f0-53bf-4c0d-87b3-3329161cb148}</Project>
+      <Name>ilPSP.LinSolvers.MUMPS</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.PARDISO\ilPSP.LinSolvers.PARDISO.csproj">
+      <Project>{db9ca35d-9980-462a-85cc-cb33dcfd5a28}</Project>
+      <Name>ilPSP.LinSolvers.PARDISO</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers\ilPSP.LinSolvers.csproj">
+      <Project>{45eff2bd-0bcc-4aea-9e87-7d86d6423b0c}</Project>
+      <Name>ilPSP.LinSolvers</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj">
       <Project>{8E6D8F23-623F-4204-B4AB-A088C0CD83AA}</Project>
       <Name>ilPSP</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\L1-platform\BoSSS.Platform\BoSSS.Platform.csproj">
+      <Project>{b7d5f7c7-ea9f-4506-ab69-c3cd2aa8c938}</Project>
+      <Name>BoSSS.Platform</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.Grid\BoSSS.Foundation.Grid.csproj">
+      <Project>{13585226-5046-494d-947c-b97479566081}</Project>
+      <Name>BoSSS.Foundation.Grid</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.XDG\BoSSS.Foundation.XDG.csproj">
+      <Project>{9a8cdc1f-64f7-441e-849d-66f2c56600f2}</Project>
+      <Name>BoSSS.Foundation.XDG</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj">
+      <Project>{17a60fba-20b4-451d-98e1-8d742f368569}</Project>
+      <Name>BoSSS.Foundation</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.ASCIIExport\BoSSS.Solution.ASCIIExport.csproj">
+      <Project>{ed2e6c6e-1517-4aad-b3c6-1b56c5cd9828}</Project>
+      <Name>BoSSS.Solution.ASCIIExport</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Gnuplot\BoSSS.Solution.Gnuplot.csproj">
+      <Project>{d4fadb7c-0b11-4f41-a97a-146dc1f7034e}</Project>
+      <Name>BoSSS.Solution.Gnuplot</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.NSECommon\BoSSS.Solution.NSECommon.csproj">
+      <Project>{e56b9ce4-14dc-4256-a337-46e5d298b722}</Project>
+      <Name>BoSSS.Solution.NSECommon</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Tecplot\BoSSS.Solution.Tecplot.csproj">
+      <Project>{d0546422-ec92-4964-82e9-8ee819a2f786}</Project>
+      <Name>BoSSS.Solution.Tecplot</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XdgTimestepping\BoSSS.Solution.XdgTimestepping.csproj">
+      <Project>{d8a961c8-75a9-4ecd-8627-c598697e7318}</Project>
+      <Name>BoSSS.Solution.XdgTimestepping</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution\BoSSS.Solution.csproj">
       <Project>{DF7F5ABD-E606-41CD-BEEF-31A95D136DEA}</Project>
       <Name>BoSSS.Solution</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\CNS\CNS.csproj">
+      <Project>{8bd7843e-8191-40b3-b208-75ec766a99fd}</Project>
+      <Name>CNS</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
