@@ -90,6 +90,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 #if DEBUG
                         CheckPartitioning(part);
 #endif
+                        RedistributeGrid(part);
                         break;
                     }
 
@@ -872,7 +873,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     if (centerTrf > ulong.MaxValue)
                         centerTrf = ulong.MaxValue;
                     discreteCenter[d] = (ulong)centerTrf;
-                    
+                    //Debugger.Break();
                 }
                 ulong iH = HilbertCurve.hilbert_c2i(32, discreteCenter);
                 local_HilbertIndex[j - J0] = iH;// perhabs better to use new Tuple<long, int>(iH, j);
@@ -894,6 +895,8 @@ namespace BoSSS.Foundation.Grid.Classic {
             //Debugger.Break();
 
             // Distribution of MPI-Rank along the Hilbertcurve
+            // if "numberofcells / numproc" is a floating point number, i.e. the distribution is uneven
+            // some processes get more cells then the even distribution; starting with rank=0 (rank++)
             int numberofcells = this.NumberOfCells;
             int numproc = this.Size;
 
