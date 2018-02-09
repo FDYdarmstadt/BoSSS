@@ -472,7 +472,7 @@ namespace BoSSS.Application.SipPoisson {
                                     }
                                 },
                                 m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                                    NoOfParts = 8
+                                    NoOfPartsPerProcess = 8
                                 },
                                 Overlap = 1,
                                 
