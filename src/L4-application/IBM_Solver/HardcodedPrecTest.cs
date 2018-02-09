@@ -256,7 +256,7 @@ namespace BoSSS.Application.IBM_Solver {
         }
 
 
-        static public IBM_Control PrecTest3DChannelDegenhardt(int precNo, int k, int cells_x, int cells_yz, int re, int ASparts = 5, int ASDepth = 2, int MGLevels = 3, int maxKrDim = 1000, int saveToDB = 1) {
+        static public IBM_Control PrecTest3DChannelDegenhardt(int precNo, int k, int cells_x, int cells_yz, int re, int ASparts = 5, int ASDepth = 2, int MGLevels = 3, int maxKrDim = 1000, int saveToDB = 1, int proc = 1) {
             IBM_Control C = new IBM_Control();
             bool name_newton = true;
 
@@ -285,7 +285,7 @@ namespace BoSSS.Application.IBM_Solver {
 
             // Assign correct names
             if (name_newton) {
-                C.SessionName = "Newton_Channel_prec" + precNo + "_k" + k + "_x" + cells_x + "_yz" + cells_yz + "_re" + re + "_asp" + ASparts + "_asd" + ASDepth + "_mgl" + MGLevels + "_kr" + maxKrDim;
+                C.SessionName = "StrongScaling_Channel_prec" + precNo + "_proc" + proc + "_k" + k + "_x" + cells_x + "_yz" + cells_yz + "_re" + re + "_asp" + ASparts + "_asd" + ASDepth + "_mgl" + MGLevels + "_kr" + maxKrDim;
                 C.ProjectDescription = "Newton_Sphere_k_prec" + precNo + "_k" + k + "_x" + cells_x + "_yz" + cells_yz + "_re" + re + "_asp" + ASparts + "_asd" + ASDepth + "_mgl" + MGLevels + "_kr" + maxKrDim;
 
             } else {
@@ -431,7 +431,9 @@ namespace BoSSS.Application.IBM_Solver {
             C.LevelSetSmoothing = false;
             //C.MaxKrylovDim = 1000;
             C.MaxKrylovDim = maxKrDim;
-            C.MaxSolverIterations = 50;
+            //C.MaxSolverIterations = 50;
+            C.MaxSolverIterations = 1;
+            C.MinSolverIterations = 1;
             // C.MaxSolverIterations = 10000;
             C.Solver_ConvergenceCriterion = 1E-5;
             //C.Solver_ConvergenceCriterion = 1E-6;
@@ -484,6 +486,26 @@ namespace BoSSS.Application.IBM_Solver {
                             },
                             CoarseSolver = new DirectSolver() {
                                 WhichSolver = DirectSolver._whichSolver.MUMPS
+                            },
+                            Overlap = 1
+                        };
+                        break;
+                    }
+                case 5: {
+                        C.NoOfMultigridLevels = 5;
+                        Prec = new Schwarz() {
+                            m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
+                                //NoOfParts = 5,
+                                NoOfParts = ASparts,
+                            },
+                            CoarseSolver = new ClassicMultigrid() {
+                                CoarserLevelSolver = new ClassicMultigrid() {
+                                    CoarserLevelSolver = new ClassicMultigrid() {
+                                        CoarserLevelSolver = new DirectSolver() {
+                                            WhichSolver = DirectSolver._whichSolver.MUMPS
+                                        },
+                                    },
+                                },
                             },
                             Overlap = 1
                         };
