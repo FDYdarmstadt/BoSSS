@@ -480,6 +480,9 @@ namespace BoSSS.Application.SipPoisson {
                     Console.WriteLine("done. (" + mgsetup.Elapsed + ")");
 
 
+                    Console.WriteLine("Setting up solver...");
+                    var solverSetup = new Stopwatch();
+                    solverSetup.Start();
                     ISolverSmootherTemplate solver;
                     switch (base.Control.solver_name) {
                         case SolverCodes.exp_direct:
@@ -587,7 +590,12 @@ namespace BoSSS.Application.SipPoisson {
                     using (new BlockTrace("Solver_Init", tr )) {
                         solver.Init(MultigridOp);
                     }
+                    solverSetup.Stop();
+                    Console.WriteLine("done. (" + solverSetup.Elapsed + ")");
 
+                    Console.WriteLine("Running solver...");
+                    var solverIteration = new Stopwatch();
+                    solverIteration.Start();
                     double[] T2 = this.T.CoordinateVector.ToArray();
                     using (new BlockTrace("Solver_Run", tr)) {
                         solver.ResetStat();
@@ -595,11 +603,15 @@ namespace BoSSS.Application.SipPoisson {
                         var RHSvec = RHS.CoordinateVector.ToArray();
                         BLAS.daxpy(RHSvec.Length, -1.0, this.LaplaceAffine, 1, RHSvec, 1);
                         MultigridOp.UseSolver(solver, T2, RHSvec);
+                        Console.WriteLine("T2 norm: " + T2.L2Norm()); ;
+                        Console.WriteLine("T2 Dist: " + GenericBlas.L2Dist(T2, Tex.CoordinateVector));
                         T.CoordinateVector.SetV(T2);
                     }
+                    solverIteration.Stop();
+                    Console.WriteLine("done. (" + solverIteration.Elapsed + ")");
+
 
                     // time measurement, statistics
-                    T.CoordinateVector.SetV(T2);
                     stw.Stop();
                     mintime = Math.Min(stw.Elapsed.TotalSeconds, mintime);
                     maxtime = Math.Max(stw.Elapsed.TotalSeconds, maxtime);

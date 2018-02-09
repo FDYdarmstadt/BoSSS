@@ -183,7 +183,7 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="solver_name">
         /// Name of solver to use.
         /// </param>
-        public static SipControl TestCartesian2(int Res, int Dim, SolverCodes solver_name = SolverCodes.exp_softpcg_schwarz_directcoarse, int deg = 3) {
+        public static SipControl TestCartesian2(int Res, int Dim, SolverCodes solver_name = SolverCodes.classic_mumps, int deg = 3) {
             if(Dim != 2 && Dim != 3)
                 throw new ArgumentOutOfRangeException();
             
@@ -231,18 +231,25 @@ namespace BoSSS.Application.SipPoisson {
             R.AddBoundaryCondition(BoundaryType.Dirichlet.ToString(), "T",
                  delegate (double[] X) {
                      double x = X[0], y = X[1];
-                     return 0.0;
+
+                     if(Math.Abs(X[0] - (0.0)) < 1.0e-8)
+                         return 0.0;
+
+                     throw new ArgumentOutOfRangeException();
                  });
 
             R.AddBoundaryCondition(BoundaryType.Neumann.ToString(), "T",
                  delegate (double[] X) {
-                     if(Math.Abs(X[1] - 1.0) < 1.0e-8 || Math.Abs(X[1] + 1.0) < 1.0e-8)
+                     if(Math.Abs(X[1] - 1.0) < 1.0e-8 || Math.Abs(X[1] + 1.0) < 1.0e-8) // y = -1, y = +1
                          return 0;
 
-                     if(X.Length > 2 && (Math.Abs(X[2] - 1.0) < 1.0e-8 || Math.Abs(X[2] + 1.0) < 1.0e-8))
+                     if(X.Length > 2 && (Math.Abs(X[2] - 1.0) < 1.0e-8 || Math.Abs(X[2] + 1.0) < 1.0e-8)) // z = -1, z = +1
                          return 0;
 
-                     return Math.Cos(10.0);
+                     if(Math.Abs(X[0] - (+10.0)) < 1.0e-8)
+                         return Math.Cos(10.0);
+
+                     throw new ArgumentOutOfRangeException();
                  });
 
 
