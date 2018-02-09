@@ -105,7 +105,9 @@ namespace BoSSS.Solution.Utils {
             int counter = numOfClusters;
             for (int i = 0; i < numOfClusters; i++) {
                 if (noOfCellsPerCluster[i] == 0) {
-                    System.Console.WriteLine("Sub-grid/Cluster " + (i + 1) + ", with mean value " + Kmean.Means[i] + ", is empty and not used anymore!");
+#if DEBUG
+                    Console.WriteLine("Sub-grid/Cluster " + (i + 1) + ", with mean value " + Kmean.Means[i] + ", is empty and not used anymore!");
+#endif
                     counter--;
                 }
             }
@@ -131,6 +133,12 @@ namespace BoSSS.Solution.Utils {
                     clusters.Add(new SubGrid(new CellMask(gridData, ba)));
                 }
             }
+
+#if DEBUG
+            for (int i = 0; i < clusters.Count; i++) {
+                Console.WriteLine("CreateClustering: id=" + i + " -> elements=" + clusters[i].GlobalNoOfCells);
+            }
+#endif
 
             return new Clustering(clusters, subGrid);
         }
@@ -171,7 +179,6 @@ namespace BoSSS.Solution.Utils {
         /// <summary>
         /// Checks for changes between two clusterings
         /// </summary>
-        /// <param name="oldClustering">A clustering which should be compared to</param>
         /// <returns>True, if clustering has changed. False, if clustering has not changed.</returns>
         public bool CheckForNewClustering(Clustering oldClustering, Clustering newClustering) {
             bool localResult = false;   // false = no reclustering needed
@@ -206,7 +213,8 @@ namespace BoSSS.Solution.Utils {
 
             for (int subGridCell = 0; subGridCell < subGrid.LocalNoOfCells; subGridCell++) {
                 int localCellIndex = subGrid.SubgridIndex2LocalCellIndex[subGridCell];
-                cellMetric[subGridCell] = timeStepConstraints.Min(c => c.GetLocalStepSize(localCellIndex, 1));
+                cellMetric[subGridCell] = timeStepConstraints.Min(c => c.GetLocalStepSize(localCellIndex, 1));    // clustering based on smallest time step constraint
+                //cellMetric[subGridCell] = 1.0 / timeStepConstraints.Sum(c => 1.0 / c.GetLocalStepSize(localCellIndex, 1));  // clustering based on harmonic sum of time step constraints
             }
 
             return cellMetric;
@@ -223,7 +231,7 @@ namespace BoSSS.Solution.Utils {
                 foreach (Chunk c in volumeMask) {
                     int JE = c.JE;
                     for (int j = c.i0; j < JE; j++) {
-                        h_min = Math.Min(cellMetric[clustering.SubGrid.LocalCellIndex2SubgridIndex[j]], h_min);
+                        h_min = Math.Min(cellMetric[clustering.SubGrid.LocalCellIndex2SubgridIndex[j]], h_min); // Get smallest time step size for every cluster
                     }
                 }
                 sendHmin[i] = h_min;
@@ -254,23 +262,22 @@ namespace BoSSS.Solution.Utils {
                     SubGrid combinedSubGrid = new SubGrid(clustering.Clusters[i].VolumeMask.Union(clustering.Clusters[i + 1].VolumeMask));
                     newClusters.Add(combinedSubGrid);
 #if DEBUG
-                    Console.WriteLine("CalculateNumberOfLocalTS: Clustering leads to sub-grids which are too similar, i.e. they have the same number of local time steps. They are combined.");
+                    Console.WriteLine("CreateAdvancedClustering: Clustering leads to sub-grids which are too similar, i.e. they have the same number of local time steps. They are combined.");
 #endif
                     newSubSteps.Add(numOfSubSteps[i]);
                     i++;
                 } else {
                     newClusters.Add(clustering.Clusters[i]);
                     newSubSteps.Add(numOfSubSteps[i]);
-                    //#if DEBUG
-                    //                    // Console output only in last pass
-                    //                    if (i == clustering.NumberOfClusters - 1) {
-                    //                        for (int j = 0; j < newClusters.Count; j++) {
-                    //                            Console.WriteLine("id=" + j + " -> sub-steps=" + NumberOfLocalTimeSteps[j] + " and elements=" + newClusters[j].GlobalNoOfCells);
-                    //                        }
-                    //                    }
-                    //#endif
                 }
             }
+
+#if DEBUG
+            for (int i = 0; i < newClusters.Count; i++) {
+                Console.WriteLine("CreateAdvancedClustering: id=" + i + " -> sub-steps=" + newSubSteps[i] + " and elements=" + newClusters[i].GlobalNoOfCells);
+            }
+#endif
+
             return (new Clustering(newClusters, clustering.SubGrid), newSubSteps);
         }
 
