@@ -213,41 +213,32 @@ namespace BoSSS.Solution.Utils {
 
             for (int subGridCell = 0; subGridCell < subGrid.LocalNoOfCells; subGridCell++) {
                 int localCellIndex = subGrid.SubgridIndex2LocalCellIndex[subGridCell];
-                cellMetric[subGridCell] = timeStepConstraints.Min(c => c.GetLocalStepSize(localCellIndex, 1));    // clustering based on smallest time step constraint
-                //cellMetric[subGridCell] = 1.0 / timeStepConstraints.Sum(c => 1.0 / c.GetLocalStepSize(localCellIndex, 1));  // clustering based on harmonic sum of time step constraints
+                cellMetric[subGridCell] = timeStepConstraints.Min(c => c.GetLocalStepSize(localCellIndex, 1));    // cell metric based on smallest time step constraint
+                //cellMetric[subGridCell] = 1.0 / timeStepConstraints.Sum(c => 1.0 / c.GetLocalStepSize(localCellIndex, 1));  // cell metric based on harmonic sum of time step constraints
             }
 
             return cellMetric;
         }
 
-        public (Clustering, List<int>) CreateAdvancedClustering(Clustering clustering, IList<TimeStepConstraint> timeStepConstraints, bool restrict = false) {
-            double[] sendHmin = new double[clustering.NumberOfClusters];
-            double[] rcvHmin = new double[clustering.NumberOfClusters];
+        public (Clustering, List<int>) CreateAdvancedClustering(Clustering clustering, IList<TimeStepConstraint> timeStepConstraints, double time, bool restrict = false) {
 
-            MultidimensionalArray cellMetric = GetStableTimestepSize(clustering.SubGrid, timeStepConstraints);
-            for (int i = 0; i < clustering.NumberOfClusters; i++) {
-                double h_min = double.MaxValue;
-                CellMask volumeMask = clustering.Clusters[i].VolumeMask;
-                foreach (Chunk c in volumeMask) {
-                    int JE = c.JE;
-                    for (int j = c.i0; j < JE; j++) {
-                        h_min = Math.Min(cellMetric[clustering.SubGrid.LocalCellIndex2SubgridIndex[j]], h_min); // Get smallest time step size for every cluster
-                    }
-                }
-                sendHmin[i] = h_min;
-            }
+            double[] clusterDts = GetSmallestTimeStepConstraintPerCluster(clustering, timeStepConstraints);
 
-            // MPI to ensure that each processor has the local time step sizes
-            unsafe {
-                fixed (double* pSend = sendHmin, pRcv = rcvHmin) {
-                    csMPI.Raw.Allreduce((IntPtr)(pSend), (IntPtr)(pRcv), clustering.NumberOfClusters, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._OP.MIN, csMPI.Raw._COMM.WORLD);
-                }
-            }
+            //int[] numOfSubSteps = new int[clustering.NumberOfClusters];
+            //for (int i = 0; i < numOfSubSteps.Length; i++) {
+            //    numOfSubSteps[i] = RoundToInt(clusterDts[0] / clusterDts[i], 1.0e-2); // eps was 1.0e-2
+            //}
+            int[] numOfSubSteps = CalculateSubSteps(clusterDts, 1.0e-2);
 
-            int[] numOfSubSteps = new int[clustering.NumberOfClusters];
-            for (int i = 0; i < numOfSubSteps.Length; i++) {
-                numOfSubSteps[i] = RoundToInt(rcvHmin[0] / rcvHmin[i], 1.0e-2); // eps was 1.0e-2
-            }
+            //double[] bla = CalculateHarmonicSumTimeStepSizes(clustering, time, timeStepConstraints);
+            //int[] bla2 = CalculateSubSteps(bla);
+
+            //double[] diff = new double[rcvHmin.Length];
+            //double[] diffSubSteps = new double[rcvHmin.Length];
+            //for (int i = 0; i < rcvHmin.Length; i++) {
+            //    diff[i] = rcvHmin[i] - bla[i];
+            //    diffSubSteps[i] = numOfSubSteps[i] - bla2[i];
+            //}
 
             if (restrict) {
                 numOfSubSteps = RestrictSubSteps(numOfSubSteps);
@@ -274,14 +265,14 @@ namespace BoSSS.Solution.Utils {
 
 #if DEBUG
             for (int i = 0; i < newClusters.Count; i++) {
-                Console.WriteLine("CreateAdvancedClustering: id=" + i + " -> sub-steps=" + newSubSteps[i] + " and elements=" + newClusters[i].GlobalNoOfCells);
+                Console.WriteLine("CreateAdvancedClustering:\t id=" + i + " -> sub-steps=" + newSubSteps[i] + " and elements=" + newClusters[i].GlobalNoOfCells);
             }
 #endif
 
             return (new Clustering(newClusters, clustering.SubGrid), newSubSteps);
         }
 
-        public double[] CalculateHarmonicSumTimeStepSizes(Clustering clustering, double time, IList<TimeStepConstraint> timeStepConstraints) {
+        public double[] GetHarmonicSumTimeStepSizesPerCluster(Clustering clustering, double time, IList<TimeStepConstraint> timeStepConstraints) {
             double[] localDts = new double[clustering.NumberOfClusters];
 
             for (int i = 0; i < clustering.NumberOfClusters; i++) {
@@ -318,11 +309,11 @@ namespace BoSSS.Solution.Utils {
             return result;
         }
 
-        public int[] CalculateSubSteps(double[] timeStepSizes, bool restrict = false) {
+        public int[] CalculateSubSteps(double[] timeStepSizes, double eps = 1.0e-1, bool restrict = false) {
             int[] subSteps = new int[timeStepSizes.Length];
 
             for (int i = 0; i < timeStepSizes.Length; i++) {
-                subSteps[i] = RoundToInt(timeStepSizes[0] / timeStepSizes[i], 1.0e-1);    // eps was 1.0e-1 
+                subSteps[i] = RoundToInt(timeStepSizes[0] / timeStepSizes[i], eps);    // eps was 1.0e-1 
             }
 
             if (restrict) {
@@ -350,5 +341,40 @@ namespace BoSSS.Solution.Utils {
 
             return result;
         }
+
+        private double[] GetSmallestTimeStepConstraintPerCluster(Clustering clustering, IList<TimeStepConstraint> timeStepConstraints) {
+            // Get smallest time step size of every cluster --> loop over all clusters
+            // Currently: CFLFraction is not taken into account
+            double[] sendHmin = new double[clustering.NumberOfClusters];
+            double[] rcvHmin = new double[clustering.NumberOfClusters];
+
+            MultidimensionalArray cellMetric = GetStableTimestepSize(clustering.SubGrid, timeStepConstraints);
+            for (int i = 0; i < clustering.NumberOfClusters; i++) {
+                double h_min = double.MaxValue;
+                CellMask volumeMask = clustering.Clusters[i].VolumeMask;
+                foreach (Chunk c in volumeMask) {
+                    int JE = c.JE;
+                    for (int j = c.i0; j < JE; j++) {
+                        h_min = Math.Min(cellMetric[clustering.SubGrid.LocalCellIndex2SubgridIndex[j]], h_min);
+                    }
+                }
+                sendHmin[i] = h_min;
+            }
+
+            // MPI Allreduce necessary to exchange the smallest time step size of each cluster on each processor
+            unsafe {
+                fixed (double* pSend = sendHmin, pRcv = rcvHmin) {
+                    csMPI.Raw.Allreduce((IntPtr)(pSend), (IntPtr)(pRcv), clustering.NumberOfClusters, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._OP.MIN, csMPI.Raw._COMM.WORLD);
+                }
+            }
+
+            // Take CFLFraction into account for testing
+            //for (int i = 0; i < rcvHmin.Length; i++) {
+            //    rcvHmin[i] *= 0.3;
+            //}
+
+            return rcvHmin;
+        }
+
     }
 }

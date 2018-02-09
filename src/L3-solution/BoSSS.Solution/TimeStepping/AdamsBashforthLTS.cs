@@ -160,7 +160,7 @@ namespace BoSSS.Solution.Timestepping {
 
             clusterer = new Clusterer(this.gridData);
             CurrentClustering = clusterer.CreateClustering(numOfClusters, this.TimeStepConstraints, this.SubGrid);    // Might remove clusters when their centres are too close
-            (CurrentClustering, NumberOfLocalTimeSteps) = clusterer.CreateAdvancedClustering(CurrentClustering, this.TimeStepConstraints); // Might remove clusters when time step sizes are too similar
+            (CurrentClustering, NumberOfLocalTimeSteps) = clusterer.CreateAdvancedClustering(CurrentClustering, this.TimeStepConstraints, Time); // Might remove clusters when time step sizes are too similar
 
             ABevolver = new ABevolve[CurrentClustering.NumberOfClusters];
 
@@ -215,7 +215,7 @@ namespace BoSSS.Solution.Timestepping {
                             // Otherwise the value could be changed by the constructor of the parent class (AdamsBashforthLTS.cs) --> CreateSubGrids()
                             Clusterer.Clustering newClustering = clusterer.CreateClustering(numberOfClustersInitial, this.TimeStepConstraints, this.SubGrid);
                             List<int> newNumberOfLocalTimeSteps;
-                            (newClustering, newNumberOfLocalTimeSteps) = clusterer.CreateAdvancedClustering(newClustering, this.TimeStepConstraints); // Might remove sub-grids when time step sizes are too similar
+                            (newClustering, newNumberOfLocalTimeSteps) = clusterer.CreateAdvancedClustering(newClustering, this.TimeStepConstraints, Time); // Might remove sub-grids when time step sizes are too similar
                             reclustered = clusterer.CheckForNewClustering(CurrentClustering, newClustering);
 
                             //CurrentClustering = newClustering;
@@ -242,14 +242,22 @@ namespace BoSSS.Solution.Timestepping {
                         }
                     }
 
+                    List<int> temp;
+
                     // Number of substeps could have changed
                     if (TimeStepConstraints != null) {
                         dt = CalculateTimeStep();
                         if (TimeStepConstraints.First().dtMin != TimeStepConstraints.First().dtMax) {
-                            double[] timeStepSizes = clusterer.CalculateHarmonicSumTimeStepSizes(CurrentClustering, Time, TimeStepConstraints);
+                            double[] timeStepSizes = clusterer.GetHarmonicSumTimeStepSizesPerCluster(CurrentClustering, Time, TimeStepConstraints);
                             // The number of sub steps is initially set when creating the clustering and only changed if no fixed dt is specified
                             // This is the only position where the member property this.NumberOfLocalTimeSteps is changed
-                            this.NumberOfLocalTimeSteps = clusterer.CalculateSubSteps(timeStepSizes).ToList();
+                            temp = clusterer.CalculateSubSteps(timeStepSizes).ToList();
+//#if DEBUG
+//                            for (int i = 0; i < temp.Count; i++) {
+//                                Console.WriteLine("Perform(dt):\t\t\t id=" + i + " -> sub-steps=" + temp[i] + " and elements=" + CurrentClustering.Clusters[i].GlobalNoOfCells);
+//                            }
+//#endif
+                            this.NumberOfLocalTimeSteps = temp;
                         }
                     }
 
@@ -608,7 +616,7 @@ namespace BoSSS.Solution.Timestepping {
         /// <returns>the largest stable timestep</returns>
         protected override double CalculateTimeStep() {
             if (TimeStepConstraints.First().dtMin != TimeStepConstraints.First().dtMax) {
-                double[] localDts = clusterer.CalculateHarmonicSumTimeStepSizes(CurrentClustering, Time, TimeStepConstraints);
+                double[] localDts = clusterer.GetHarmonicSumTimeStepSizesPerCluster(CurrentClustering, Time, TimeStepConstraints);
                 //#if DEBUG
                 //                if (hasChanged) {
                 //                    Console.WriteLine("CHANGE OF SUBSTEPS");
