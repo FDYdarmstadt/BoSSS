@@ -106,6 +106,20 @@ namespace BoSSS.Application.SipPoisson {
 
         }
 
+        protected override void SetInitial() {
+            base.SetInitial();
+
+            // mg coloring
+            int iLevel = 0;
+            foreach (var MgL in this.MultigridSequence) {
+                SinglePhaseField c = new SinglePhaseField(new Basis(this.GridData, 0), "MgLevel_" + iLevel);
+                Foundation.Grid.Aggregation.CoarseningAlgorithms.ColorDGField(MgL, c);
+                this.MGColoring.Add(c);
+                iLevel++;
+            }
+
+
+        }
 
 
         BlockMsrMatrix LaplaceMtx;
@@ -114,9 +128,12 @@ namespace BoSSS.Application.SipPoisson {
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
             using (FuncTrace tr = new FuncTrace()) {
 
+                
+
+
 
                 // create operator
-                // ---------------
+                // ===============
                 SpatialOperator LapaceIp;
                 {
 
@@ -410,6 +427,30 @@ namespace BoSSS.Application.SipPoisson {
         List<DGField> MGColoring = new List<DGField>();
 
 
+        MultigridOperator.ChangeOfBasisConfig[][] MgConfig {
+            get {
+                int p = this.T.Basis.Degree;
+                int NoOfLevels = this.MultigridSequence.Length;
+                var config = new MultigridOperator.ChangeOfBasisConfig[NoOfLevels][];
+
+                for (int iLevel = 0; iLevel < NoOfLevels; iLevel++) {
+
+                    config[iLevel] = new MultigridOperator.ChangeOfBasisConfig[] {
+                        new MultigridOperator.ChangeOfBasisConfig() {
+                            VarIndex = new int[] {0},
+                            mode = MultigridOperator.Mode.DiagBlockEquilib,
+                            Degree = Math.Max(2, p - iLevel)
+                        }
+                    };
+
+                }
+
+                return config;
+            }
+
+        }
+
+
         private void ExperimentalSolve(out double mintime, out double maxtime, out bool Converged, out int NoOfIter) {
             using (var tr = new FuncTrace()) {
                 int p = this.T.Basis.Degree;
@@ -434,12 +475,7 @@ namespace BoSSS.Application.SipPoisson {
                     Console.WriteLine("Setting up multigrid operator...");
                     var mgsetup = new Stopwatch();
                     mgsetup.Start();
-                    var MultigridOp = new MultigridOperator(AggBasis, this.T.Mapping, this.LaplaceMtx, null,
-                        new MultigridOperator.ChangeOfBasisConfig[][] {
-                    new MultigridOperator.ChangeOfBasisConfig[] {
-                        new MultigridOperator.ChangeOfBasisConfig() { VarIndex = new int[] {0}, mode = MultigridOperator.Mode.DiagBlockEquilib, Degree = p }
-                    }
-                        });
+                    var MultigridOp = new MultigridOperator(AggBasis, this.T.Mapping, this.LaplaceMtx, null, MgConfig);
                     mgsetup.Stop();
                     Console.WriteLine("done. (" + mgsetup.Elapsed + ")");
 
@@ -585,8 +621,8 @@ namespace BoSSS.Application.SipPoisson {
 
 
         protected override void PlotCurrentState(double phystime, TimestepNumber timestepNo, int superSampling = 0) {
-            BoSSS.Solution.Tecplot.Tecplot.PlotFields(new DGField[] { T, Tex, RHS }, "poisson_grid" + timestepNo, phystime, 0);
-            BoSSS.Solution.Tecplot.Tecplot.PlotFields(ArrayTools.Cat(new DGField[] { T, Tex, RHS }, this.MGColoring), "poisson" + timestepNo, phystime, superSampling);
+            BoSSS.Solution.Tecplot.Tecplot.PlotFields(new DGField[] { T, Tex, RHS }, "poisson" + timestepNo, phystime, superSampling);
+            BoSSS.Solution.Tecplot.Tecplot.PlotFields(ArrayTools.Cat(new DGField[] { T, Tex, RHS }, this.MGColoring), "poisson_grid" + timestepNo, phystime, 0);
         }
     
     }
