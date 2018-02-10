@@ -2231,7 +2231,11 @@ namespace BoSSS.Solution {
 
                 // add the case index to the 'Paramstudy_CaseIdentification'
                 {
-                    var idl = _control.Paramstudy_CaseIdentification.ToList();
+                    List<Tuple<string, object>> idl;
+                    if (_control.Paramstudy_CaseIdentification != null)
+                        idl = _control.Paramstudy_CaseIdentification.ToList();
+                    else
+                        idl = new List<Tuple<string, object>>();
                     Tuple<string, object> caseId = new Tuple<string, object>("pstudy_case", iPstudy);
                     if (!idl.Contains(caseId, ((Func<Tuple<string, object>, Tuple<string, object>, bool>)((a, b) => a.Item1.Equals(b.Item1))).ToEqualityComparer())) {
                         idl.Add(caseId);
