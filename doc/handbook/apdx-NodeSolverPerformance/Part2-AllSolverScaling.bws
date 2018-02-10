@@ -1,6 +1,5 @@
 restart
 **************
-
   Database Explorer v2
   ____________________
 
@@ -21,7 +20,7 @@ using System.IO;
 using BoSSS.Application.SipPoisson;
 **************
 ==============
-string dateString = "2018-2-8";
+string dateString = "2018-2-10";
 string File       = "SolverRuns--" + dateString + ".json";
 string FilePath   = Path.Combine(CurrentDocDir, File);
 var SessTab       = TableExtensions.LoadFromFile(FilePath);
@@ -316,9 +315,13 @@ for(int iCol = 0; iCol < 2; iCol++) {
                Nmn           = "Add Swz"; 
                Fmt.PointType = PointTypes.LowerTriangle;
                break;
-           case SolverCodes.exp_softpcg_schwarz_directcoarse : 
+           case SolverCodes.exp_softpcg_schwarz_directcoarse: 
                Nmn           = "Add Swz w Coarse";
                Fmt.PointType = PointTypes.UpperTriangle;
+               break;
+           case SoverCodes.exp_softpcg_mg:
+               Nmn           = "Mult Gr w Blk Jac"
+               Fmt.PointType = PointTypes.Box;
                break;
            case SolverCodes.exp_direct_lapack: 
                Nmn           = "LAPACK"; 
@@ -398,6 +401,8 @@ CL.PlotNow();
 System.Drawing.Bitmap
 ==============
 //CL.WriteMinimalCompileableExample("C:\\tmp\\AllSolvers" + dateString + ".tex");
+**************
+==============
 **************
 ==============
 **************

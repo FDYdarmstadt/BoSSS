@@ -34,6 +34,10 @@ var SessTab       = TableExtensions.LoadFromFile(FilePath);
 **************
 6
 ==============
+((int) SolverCodes.exp_softpcg_mg);
+**************
+4
+==============
 // ====================
 // Evaluation, plotting
 // ====================
@@ -97,7 +101,8 @@ List of 48 instances of String {
 ==============
 var SubTab_1 = SessTab.ExtractRows(delegate(int i, IDictionary<string,object> row) {
     return (  (Convert.ToInt32(row["solver_name"]) ==  ((int) SolverCodes.exp_softpcg_schwarz_directcoarse))
-          || (Convert.ToInt32(row["solver_name"]) ==  ((int) SolverCodes.exp_softpcg_schwarz)))
+          || (Convert.ToInt32(row["solver_name"]) ==  ((int) SolverCodes.exp_softpcg_schwarz))
+          || (Convert.ToInt32(row["solver_name"]) ==  ((int) SolverCodes.exp_softpcg_mg)))
           && (Convert.ToInt32(row["Conv"]) != 0);
     });
 **************
@@ -128,6 +133,10 @@ SubTab.Print();
 ==============
 **************
 ==============
+var Solvers = new SolverCodes[] {
+SolverCodes.exp_softpcg_schwarz_directcoarse,
+SolverCodes.exp_softpcg_mg
+};
 **************
 ==============
 //cl.WriteMinimalCompileableExample("C:\\tmp\\mini.tex");
@@ -135,7 +144,10 @@ SubTab.Print();
 ==============
 **************
 ==============
+Plot2Ddata[][,] AllMultiplots = new Plot2Ddata[Solvers.Length][,];
+for(int iPlot = 0; iPlot < 1; iPlot++) {
 Plot2Ddata[,] multiplots = new Plot2Ddata[2,1];
+AllMultiplots[iPlot] = multiplots;
 int pDegree = 2;
 for(int iRow = 0; iRow < 2; iRow++) {
  
@@ -153,7 +165,8 @@ for(int iRow = 0; iRow < 2; iRow++) {
            int k = Convert.ToInt32(Row["DGdegree:T"]);
            SolverCodes solver_name = (SolverCodes) Convert.ToInt32(Row["solver_name"]);
            
-           if(k != pDegree || solver_name != SolverCodes.exp_softpcg_schwarz_directcoarse) {
+           if(    k != pDegree 
+               || solver_name != Solvers[iPlot]) {
                 // degree does not match -> not in this plot
                 Nmn    = null;
                 Fmt    = null;
@@ -242,19 +255,21 @@ for(int iRow = 0; iRow < 2; iRow++) {
     
     pDegree++;                       
 }
-//multiplots.PlotNow();
-var CL = multiplots.ToGnuplot().PlotCairolatex(xSize:16, ySize:12);
+}
+**************
+==============
+var CL = AllMultiplots[0].ToGnuplot().PlotCairolatex(xSize:16, ySize:12);
 CL.PlotNow();
 **************
 Using gnuplot: C:\Program Files (x86)\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 System.Drawing.Bitmap
 ==============
-**************
-==============
 CL.SaveTo(Path.Combine(CurrentDocDir, "ConstCoeffPoisson_Schwarz.tex"));
 **************
 ==============
 CL.WriteMinimalCompileableExample("C:\\tmp\\Schwarz" + dateString + ".tex");
+**************
+==============
 **************
 ==============
 **************
