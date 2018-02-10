@@ -1918,7 +1918,8 @@ namespace BoSSS.Solution {
                         oldGridData = null;
 
                         if (this.Control == null || this.Control.NoOfMultigridLevels > 0)
-                            this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
+                            this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, 
+                                MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
                         else
                             this.MultigridSequence = new AggregationGrid[0];
 

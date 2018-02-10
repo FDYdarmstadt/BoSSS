@@ -563,26 +563,35 @@ namespace BoSSS.Application.SipPoisson {
                         };
                         break;
 
+                        case SolverCodes.exp_softpcg_schwarz_multilevel:
+                        solver = MultilevelSchwarz(MultigridOp);
+                        break;
+
 
                         default:
                         throw new ApplicationException("unknown solver: " + this.Control.solver_name);
                     }
 
-                    
+                    T.Clear();
+                    T.AccLaidBack(1.0, Tex);
+                    ConvergenceObserver CO = new ConvergenceObserver(MultigridOp, null, T.CoordinateVector.ToArray());
+                    CO.TecplotOut = "oasch";
                     if (solver is ISolverWithCallback) {
 
-                        ((ISolverWithCallback)solver).IterationCallback = delegate (int iter, double[] xI, double[] rI, MultigridOperator mgOp) {
-                            double l2_RES = rI.L2NormPow2().MPISum().Sqrt();
+                        //((ISolverWithCallback)solver).IterationCallback = delegate (int iter, double[] xI, double[] rI, MultigridOperator mgOp) {
+                        //    double l2_RES = rI.L2NormPow2().MPISum().Sqrt();
 
-                            double[] xRef = new double[xI.Length];
-                            MultigridOp.TransformSolInto(T.CoordinateVector, xRef);
+                        //    double[] xRef = new double[xI.Length];
+                        //    MultigridOp.TransformSolInto(T.CoordinateVector, xRef);
 
-                            double l2_ERR = GenericBlas.L2DistPow2(xI, xRef).MPISum().Sqrt();
-                            Console.WriteLine("Iter: {0}\tRes: {1:0.##E-00}\tErr: {2:0.##E-00}\tRunt: {3:0.##E-00}", iter, l2_RES, l2_ERR, stw.Elapsed.TotalSeconds);
-                            //Tjac.CoordinatesAsVector.SetV(xI);
-                            //Residual.CoordinatesAsVector.SetV(rI);
-                            //PlotCurrentState(iter, new TimestepNumber(iter), 3);
-                        };
+                        //    double l2_ERR = GenericBlas.L2DistPow2(xI, xRef).MPISum().Sqrt();
+                        //    Console.WriteLine("Iter: {0}\tRes: {1:0.##E-00}\tErr: {2:0.##E-00}\tRunt: {3:0.##E-00}", iter, l2_RES, l2_ERR, stw.Elapsed.TotalSeconds);
+                        //    //Tjac.CoordinatesAsVector.SetV(xI);
+                        //    //Residual.CoordinatesAsVector.SetV(rI);
+                        //    //PlotCurrentState(iter, new TimestepNumber(iter), 3);
+                        //};
+
+                        ((ISolverWithCallback)solver).IterationCallback = CO.IterationCallback;
 
                     }
                     
@@ -611,15 +620,84 @@ namespace BoSSS.Application.SipPoisson {
                     Console.WriteLine("done. (" + solverIteration.Elapsed + ")");
 
 
+
                     // time measurement, statistics
                     stw.Stop();
                     mintime = Math.Min(stw.Elapsed.TotalSeconds, mintime);
                     maxtime = Math.Max(stw.Elapsed.TotalSeconds, maxtime);
                     Converged = solver.Converged;
                     NoOfIter = solver.ThisLevelIterations;
+
+
+                    CO.PlotTrend(true, true, true);
+                    
                 }
             }
         }
+
+        /// <summary>
+        /// Ist Schuss in die Ofen....
+        /// </summary>
+        ISolverSmootherTemplate MultilevelSchwarz(MultigridOperator op) {
+            var solver = new SoftPCG() {
+                m_MaxIterations = 500,
+                m_Tolerance = 1.0e-10
+            };
+
+            int DirectKickIn = 1000;
+
+
+            MultigridOperator Current = op;
+            ISolverSmootherTemplate[] SchwarzChain = new ISolverSmootherTemplate[base.MultigridSequence.Length];
+            for(int iLevel = 0; iLevel < base.MultigridSequence.Length; iLevel++) {
+                int SysSize = Current.Mapping.TotalLength;
+                int NoOfBlocks = (int) Math.Ceiling(((double)SysSize) / ((double)DirectKickIn));
+
+                bool useDirect = false;
+                useDirect |= (SysSize < DirectKickIn);
+                useDirect |= iLevel == base.MultigridSequence.Length - 1;
+                useDirect |= NoOfBlocks.MPISum() <= 1;
+                
+                if (useDirect) {
+                    SchwarzChain[iLevel] = new DirectSolver() {
+                        WhichSolver = DirectSolver._whichSolver.PARDISO
+                    };
+                } else {
+                    
+
+                    SchwarzChain[iLevel] = new Schwarz() {
+                        m_MaxIterations = 1,
+                        m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
+                            NoOfParts = NoOfBlocks
+                        },
+                        Overlap = 1,
+                        CoarseSolverIsMultiplicative = true
+                    };
+
+                }
+
+                if(iLevel > 0) {
+                    ((Schwarz)(SchwarzChain[iLevel - 1])).CoarseSolver = new GenericRestriction() {
+                        CoarserLevelSolver = SchwarzChain[iLevel]
+                    };
+                }
+
+                if (useDirect)
+                    break;
+
+
+                Current = Current.CoarserLevel;
+
+            }
+
+
+            solver.Precond = SchwarzChain[0];
+
+            
+            return solver;
+        }
+
+
 
         protected override void Bye() {
             object SolL2err;
