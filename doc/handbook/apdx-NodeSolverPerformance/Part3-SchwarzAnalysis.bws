@@ -287,10 +287,12 @@ CL.PlotNow();
 Using gnuplot: C:\Program Files (x86)\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 System.Drawing.Bitmap
 ==============
-CL.SaveTo(Path.Combine(CurrentDocDir, "ConstCoeffPoisson_Schwarz.tex"));
+CL.WriteMinimalCompileableExample(
+    Path.Combine(CurrentDocDir, "plots", "MainConstCoeffPoisson_Schwarz.tex"),
+    "ConstCoeffPoisson_Schwarz.tex");
 **************
 ==============
-CL.WriteMinimalCompileableExample("C:\\tmp\\Schwarz" + dateString + ".tex");
+//CL.WriteMinimalCompileableExample("C:\\tmp\\Schwarz" + dateString + ".tex");
 **************
 ==============
 **************
@@ -303,10 +305,15 @@ CL.PlotNow();
 Using gnuplot: C:\Program Files (x86)\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 System.Drawing.Bitmap
 ==============
-CL.SaveTo(Path.Combine(CurrentDocDir, "ConstCoeffPoisson_MG.tex"));
+CL.WriteMinimalCompileableExample(
+    Path.Combine(CurrentDocDir, "plots", "MainConstCoeffPoisson_MG.tex"),
+    "ConstCoeffPoisson_MG.tex");
 **************
 ==============
-CL.WriteMinimalCompileableExample("C:\\tmp\\MG" + dateString + ".tex");
+**************
+==============
+**************
+==============
 **************
 ==============
 **************
