@@ -21,7 +21,7 @@ using System.IO;
 using BoSSS.Application.SipPoisson;
 **************
 ==============
-string dateString = "2018-2-8";
+string dateString = "2018-2-10";
 string File       = "SolverRuns--" + dateString + ".json";
 string FilePath   = Path.Combine(CurrentDocDir, File);
 var SessTab       = TableExtensions.LoadFromFile(FilePath);
@@ -115,17 +115,25 @@ var SubTab = SubTab_1.ExtractColumns("DGdegree:T", "Grid:NoOfCells", "solver_nam
 SubTab.Print();
 **************
     DGdegree:T Grid:NoOfCells solver_name DOFs   minSolRunT  maxSolRunT  UsedNoOfMultigridLevels SipMatrixAssembly_time Aggregation_basis_init_time Solver_Init_time Solver_Run_time 
-0:  3          20480          6           409600 390.3218718 393.5016035 17                      17.7667034             669.5929173                 63.21979115      328.65436955    
-1:  3          2560           6           51200  27.210639   27.6054704  13                      2.7357368              56.3735972                  7.78967205       19.60290185     
-2:  3          320            6           6400   4.707644    5.2670534   10                      0.8089003              5.1424521                   1.1017856        3.87265025      
-3:  3          40             6           800    2.5469665   2.8956922   7                       0.5618062              0.4292369                   0.3244349        2.3841398       
-4:  2          20480          6           204800 94.6536695  94.7905943  17                      6.4902633              545.7509009                 17.28302395      77.41473495     
-5:  2          2560           6           25600  9.6737434   9.8025789   13                      1.4462802              48.617592                   2.3691387        7.3557623       
-6:  2          320            6           3200   3.061871    3.525212    10                      0.6250326              4.1457639                   0.45723825       2.8248578       
-7:  2          40             6           400    2.4709977   2.8666587   7                       0.5400817              0.3679988                   0.2583267        2.3991332       
-8:  2          2560           5           25600  749.3842617 750.960602  3                       1.3581869              5.6785293                   21.3580158       728.80093615    
-9:  2          320            5           3200   39.0187606  39.0274362  3                       0.6901283              0.7779678                   1.06727205       37.94337105     
-10: 2          40             5           400    1.4043004   1.9798036   3                       0.5587462              0.1304635                   0.20593605       1.47307745      
+0:  3          20480          4           409600 421.6741997 422.5177228 17                      18.7681991             700.9967411                 35.43172775      386.62792745    
+1:  3          2560           4           51200  37.9708965  39.885677   13                      2.9498911              61.7016825                  4.0008148        34.907579       
+2:  3          320            4           6400   5.4027531   5.7121607   10                      0.9056809              5.7735466                   0.60705695       4.9323502       
+3:  3          40             4           800    0.2284069   0.5570804   7                       0.5905805              0.508937                    0.09434835       0.2816406       
+4:  2          20480          4           204800 148.3721679 153.2123022 17                      6.8393303              572.5032557                 14.88305495      135.88196125    
+5:  2          2560           4           25600  16.301376   16.8450085  13                      1.3462241              47.0030984                  1.70188615       14.8525236      
+6:  2          320            4           3200   1.9368268   2.2983545   10                      0.6940239              4.3053677                   0.25104215       1.84973075      
+7:  2          40             4           400    0.1205641   0.4586133   7                       0.6255514              0.3895446                   0.07440095       0.19780185      
+8:  3          20480          6           409600 390.3218718 393.5016035 17                      17.7667034             669.5929173                 63.21979115      328.65436955    
+9:  3          2560           6           51200  27.210639   27.6054704  13                      2.7357368              56.3735972                  7.78967205       19.60290185     
+10: 3          320            6           6400   4.707644    5.2670534   10                      0.8089003              5.1424521                   1.1017856        3.87265025      
+11: 3          40             6           800    2.5469665   2.8956922   7                       0.5618062              0.4292369                   0.3244349        2.3841398       
+12: 2          20480          6           204800 94.6536695  94.7905943  17                      6.4902633              545.7509009                 17.28302395      77.41473495     
+13: 2          2560           6           25600  9.6737434   9.8025789   13                      1.4462802              48.617592                   2.3691387        7.3557623       
+14: 2          320            6           3200   3.061871    3.525212    10                      0.6250326              4.1457639                   0.45723825       2.8248578       
+15: 2          40             6           400    2.4709977   2.8666587   7                       0.5400817              0.3679988                   0.2583267        2.3991332       
+16: 2          2560           5           25600  749.3842617 750.960602  3                       1.3581869              5.6785293                   21.3580158       728.80093615    
+17: 2          320            5           3200   39.0187606  39.0274362  3                       0.6901283              0.7779678                   1.06727205       37.94337105     
+18: 2          40             5           400    1.4043004   1.9798036   3                       0.5587462              0.1304635                   0.20593605       1.47307745      
 ==============
 **************
 ==============
@@ -144,8 +152,8 @@ SolverCodes.exp_softpcg_mg
 ==============
 **************
 ==============
-Plot2Ddata[][,] AllMultiplots = new Plot2Ddata[Solvers.Length][,];
-for(int iPlot = 0; iPlot < 1; iPlot++) {
+Plot2Ddata[][,] AllMultiplots = new Plot2Ddata[2][,];
+for(int iPlot = 0; iPlot < AllMultiplots.Length; iPlot++) {
 Plot2Ddata[,] multiplots = new Plot2Ddata[2,1];
 AllMultiplots[iPlot] = multiplots;
 int pDegree = 2;
@@ -181,11 +189,14 @@ for(int iRow = 0; iRow < 2; iRow++) {
            double slvRun   = Convert.ToDouble(Row["Solver_Run_time"]);
            double dofs     = Convert.ToDouble(Row["DOFs"]);
            
+           if(aggBinit > 700)
+           Console.Write("aggBinit/slvRun = " + aggBinit + "/" + slvRun);
+           
            Fmt           = new PlotFormat();
-           Fmt.PointType = PointTypes.OpenCircle;
            Fmt.PointSize = 0.5;
            Fmt.Style     = Styles.LinesPoints;
            Fmt.LineColor = LineColors.Black;
+           Fmt.LineWidth = 2;
            
            xValue = dofs;
            
@@ -194,29 +205,36 @@ for(int iRow = 0; iRow < 2; iRow++) {
                yValue       = slvRun;
                Nmn          = "Slv Iter";
                Fmt.DashType = DashTypes.Dotted;
+               Fmt.PointType = PointTypes.OpenCircle;
                break;
                
                case 1:
-               yValue       = slvRun + slvInit;
-               Nmn          = "Slv Init";
-               Fmt.DashType = DashTypes.Dashed;
+               yValue        = slvInit;
+               Nmn           = "Slv Init";
+               Fmt.DashType  = DashTypes.Dashed;
+               Fmt.PointType = PointTypes.OpenBox;
                break;
                
                case 2:
-               yValue       = slvRun + slvInit + aggBinit;
-               Nmn          = "Agg Init";
-               Fmt.DashType = DashTypes.DotDashed;
+               yValue        = aggBinit;
+               Nmn           = "Agg Init";
+               Fmt.DashType  = DashTypes.DotDashed;
+               Fmt.PointType = PointTypes.OpenDiamond;
                break;
                
                case 3:
-               yValue       = slvRun + slvInit + aggBinit + mtxAssi;
-               Nmn          = "Mtx ass";
-               Fmt.DashType = DashTypes.DotDotDashed;
+               yValue        = mtxAssi;
+               Nmn           = "Mtx ass";
+               Fmt.DashType  = DashTypes.DotDotDashed;
+               Fmt.PointType = PointTypes.OpenUpperTriangle;
                break;
                
                default:
                throw new NotImplementedException();
            }
+           
+           if(aggBinit > 700)
+           Console.WriteLine("\t + case: {0} + yValue = {1}", iSweep, yValue);
        },
        4 // 4 sweeps over table
        );
@@ -257,6 +275,11 @@ for(int iRow = 0; iRow < 2; iRow++) {
 }
 }
 **************
+aggBinit/slvRun = 700.9967411/386.62792745	 + case: 0 + yValue = 386.62792745
+aggBinit/slvRun = 700.9967411/386.62792745	 + case: 1 + yValue = 35.43172775
+aggBinit/slvRun = 700.9967411/386.62792745	 + case: 2 + yValue = 700.9967411
+aggBinit/slvRun = 700.9967411/386.62792745	 + case: 3 + yValue = 18.7681991
+
 ==============
 var CL = AllMultiplots[0].ToGnuplot().PlotCairolatex(xSize:16, ySize:12);
 CL.PlotNow();
@@ -274,8 +297,16 @@ CL.WriteMinimalCompileableExample("C:\\tmp\\Schwarz" + dateString + ".tex");
 ==============
 **************
 ==============
+var CL = AllMultiplots[1].ToGnuplot().PlotCairolatex(xSize:16, ySize:12);
+CL.PlotNow();
+**************
+Using gnuplot: C:\Program Files (x86)\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+System.Drawing.Bitmap
+==============
+CL.SaveTo(Path.Combine(CurrentDocDir, "ConstCoeffPoisson_MG.tex"));
 **************
 ==============
+CL.WriteMinimalCompileableExample("C:\\tmp\\MG" + dateString + ".tex");
 **************
 ==============
 **************
