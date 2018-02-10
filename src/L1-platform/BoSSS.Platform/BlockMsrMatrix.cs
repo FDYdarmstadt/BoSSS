@@ -4573,9 +4573,9 @@ namespace ilPSP.LinSolvers {
             //MsrMatrix _B = B.ToMsrMatrix();
             //MsrMatrix _C_b4 = C.ToMsrMatrix();
 
-            //__Multiply(C, A, B);
+            __Multiply(C, A, B);
 
-            //C.VerifyDataStructure("Multiply_Cout");
+            C.VerifyDataStructure("Multiply_Cout");
 
             //MsrMatrix _C_af = C.ToMsrMatrix();
             //MsrMatrix AB = MsrMatrix.Multiply(_A, _B);

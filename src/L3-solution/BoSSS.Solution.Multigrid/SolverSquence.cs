@@ -105,9 +105,8 @@ namespace BoSSS.Solution.Multigrid {
             //
 
             int N = xl.Count;
-            int NN = m_MgOperator.CoarserLevel.Mapping.LocalLength; // RestrictionOperator.RowPartitioning.LocalLength;
-            double[] rl = new double[N];
-            double[] rlp1 = new double[NN];
+            double[] ri = new double[N];
+            double[] C = new double[N];
 
             if (this.IterationCallback != null) {
                 var _bl = bl.ToArray();
@@ -149,7 +148,16 @@ namespace BoSSS.Solution.Multigrid {
                 //    PostSmoother.Solve(xl, bl);
 
                 for(int i = 0; i < this.SolverChain.Length; i++) {
-                    this.SolverChain[i].Solve(xl, bl);
+
+                    // compute residual 
+                    Residual(ri, xl, bl);
+
+                    // compute correction
+                    C.Clear();
+                    this.SolverChain[i].Solve(C, ri);
+
+                    // update x
+                    xl.AccV(1.0, C);
                 }
 
 
