@@ -56,10 +56,15 @@ namespace BoSSS.Solution.Multigrid {
             /// - content: local cell indices which form the respective additive-Schwarz block (<see cref="MultigridOperator."/>
             /// </returns>
             abstract internal IEnumerable<List<int>> GetBlocking(MultigridOperator op);
+
+            /// <summary>
+            /// Number of blocs returned by <see cref="GetBlocking(MultigridOperator)"/>
+            /// </summary>
+            internal abstract int GetNoOfBlocks(MultigridOperator op);
         }
 
         /// <summary>
-        /// Additive-Schwarz blocks which are fromed from coarser multigrid-levels.
+        /// Additive-Schwarz blocks which are formed from coarser multigrid-levels.
         /// </summary>
         public class MultigridBlocks : BlockingStrategy {
 
@@ -129,6 +134,15 @@ namespace BoSSS.Solution.Multigrid {
 
                 return Blocks;
             }
+
+            /// <summary>
+            /// %
+            /// </summary>
+            internal override int GetNoOfBlocks(MultigridOperator op) {
+                return GetBlocking(op).Count();
+            }
+
+
 
             void CollectBlock(List<int> output, List<AggregationGrid> blockLevelS, int RecDepth, int[] CoarseCell) {
 
@@ -227,6 +241,14 @@ namespace BoSSS.Solution.Multigrid {
                     return _Blocks;
                 }
             }
+
+
+            /// <summary>
+            /// %
+            /// </summary>
+            internal override int GetNoOfBlocks(MultigridOperator op) {
+                return NoOfParts;
+            }
         }
 
 
@@ -264,6 +286,34 @@ namespace BoSSS.Solution.Multigrid {
 
         public void Init(MultigridOperator op) {
             using (new FuncTrace()) {
+                if (m_MgOp != null) {
+                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    // someone is trying to re-use this solver: see if the settings permit that
+                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                    if (op.LevelIndex != m_MgOp.LevelIndex)
+                        throw new ArgumentException("Re-use on different level not possible.");
+                    if (!this.MtxFull._RowPartitioning.EqualsPartition(op.OperatorMatrix._RowPartitioning))
+                        throw new ArgumentException("Matrix has changed, unable to re-use");
+                    if (!this.MtxFull._ColPartitioning.EqualsPartition(op.OperatorMatrix._ColPartitioning))
+                        throw new ArgumentException("Matrix has changed, unable to re-use");
+#if DEBUG
+                    if (!object.ReferenceEquals(this.MtxFull, op.OperatorMatrix)) {
+                        BlockMsrMatrix Check = this.MtxFull.CloneAs();
+                        Check.Acc(-1.0, op.OperatorMatrix);
+                        if (Check.InfNorm() != 0.0) {
+                            throw new ArgumentException("Matrix has changed, unable to re-use");
+                        }
+                    }
+#endif
+                    if(this.m_BlockingStrategy.GetNoOfBlocks(op) != this.blockSolvers.Count()) {
+                        throw new ArgumentException("Blocking, unable to re-use");
+                    }
+
+
+                    return;
+                }
+
                 var Mop = op.OperatorMatrix;
                 var MgMap = op.Mapping;
                 this.m_MgOp = op;
@@ -659,7 +709,7 @@ namespace BoSSS.Solution.Multigrid {
                 }
 
 
-                this.MtxFull = new ilPSP.LinSolvers.monkey.CPU.RefMatrix(Mop.ToMsrMatrix());
+                this.MtxFull = Mop;
 
                 if (CoarseSolver != null) {
                     CoarseSolver.Init(op.CoarserLevel);
@@ -825,7 +875,7 @@ namespace BoSSS.Solution.Multigrid {
         }
         */
 
-        ilPSP.LinSolvers.monkey.MatrixBase MtxFull;
+        BlockMsrMatrix MtxFull;
 
 
         ISparseSolver[] blockSolvers;

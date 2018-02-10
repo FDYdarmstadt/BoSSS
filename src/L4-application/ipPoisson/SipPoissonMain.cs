@@ -439,7 +439,7 @@ namespace BoSSS.Application.SipPoisson {
                         new MultigridOperator.ChangeOfBasisConfig() {
                             VarIndex = new int[] {0},
                             mode = MultigridOperator.Mode.DiagBlockEquilib,
-                            Degree = Math.Max(2, p - iLevel)
+                            Degree = Math.Max(1, p - iLevel)
                         }
                     };
 
@@ -669,7 +669,7 @@ namespace BoSSS.Application.SipPoisson {
 
                     MultigridChain[iLevel] = MgLevel;
 
-                    Schwarz swz = new Schwarz() {
+                    Schwarz swz1 = new Schwarz() {
                         m_MaxIterations = 1,
                         CoarseSolver = null,
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
@@ -678,16 +678,16 @@ namespace BoSSS.Application.SipPoisson {
                         Overlap = 0 // overlap does **NOT** seem to help
                     };
 
-                    /*
-                    Schwarz postSmoother = new Schwarz() {
-                        m_MaxIterations = 1,
-                        CoarseSolver = null,
-                        m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                            NoOfParts = NoOfBlocks + 1
-                        },
-                        Overlap = 1
-                    };
-                    */
+                    
+                    //Schwarz swz2 = new Schwarz() {
+                    //    m_MaxIterations = 1,
+                    //    CoarseSolver = null,
+                    //    m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
+                    //        NoOfParts = NoOfBlocks
+                    //    },
+                    //    Overlap = 0
+                    //};
+                    
                     
                     SoftPCG pcg1 = new SoftPCG() {
                         m_MinIterations = 5,
@@ -700,12 +700,19 @@ namespace BoSSS.Application.SipPoisson {
                     };
                     //*/
 
+                    var pre = new SolverSquence() {
+                        SolverChain = new ISolverSmootherTemplate[] { swz1, pcg1 }
+                    };
+                    var pst = new SolverSquence() {
+                        SolverChain = new ISolverSmootherTemplate[] { swz1, pcg2 }
+                    };
                     
 
 
 
-                    MgLevel.PreSmoother = swz;
-                    MgLevel.PostSmoother = pcg1;
+
+                    MgLevel.PreSmoother = pre;
+                    MgLevel.PostSmoother = pst;
                     
                 }
 
