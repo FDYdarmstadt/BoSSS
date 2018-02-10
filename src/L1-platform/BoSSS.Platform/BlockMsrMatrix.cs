@@ -4563,29 +4563,31 @@ namespace ilPSP.LinSolvers {
         /// <param name="B">Right operand.</param>
         public static void Multiply(BlockMsrMatrix C, BlockMsrMatrix A, BlockMsrMatrix B) {
 #if DEBUG
-            A.VerifyDataStructure("Multiply_A");
-            B.VerifyDataStructure("Multiply_B");
-            C.VerifyDataStructure("Multiply_C");
+            // Deactivated by Florian, 10feb2018
+            // testcode was in here for more than a year, no complaints, should be fine
+            //A.VerifyDataStructure("Multiply_A");
+            //B.VerifyDataStructure("Multiply_B");
+            //C.VerifyDataStructure("Multiply_C");
 
-            MsrMatrix _A = A.ToMsrMatrix();
-            MsrMatrix _B = B.ToMsrMatrix();
-            MsrMatrix _C_b4 = C.ToMsrMatrix();
+            //MsrMatrix _A = A.ToMsrMatrix();
+            //MsrMatrix _B = B.ToMsrMatrix();
+            //MsrMatrix _C_b4 = C.ToMsrMatrix();
 
-            __Multiply(C, A, B);
+            //__Multiply(C, A, B);
 
-            C.VerifyDataStructure("Multiply_Cout");
+            //C.VerifyDataStructure("Multiply_Cout");
 
-            MsrMatrix _C_af = C.ToMsrMatrix();
-            MsrMatrix AB = MsrMatrix.Multiply(_A, _B);
-            double ABnorm = AB.InfNorm();
-            _C_af.Acc(-1.0, _C_b4);
-            _C_af.Acc(-1.0, AB);
+            //MsrMatrix _C_af = C.ToMsrMatrix();
+            //MsrMatrix AB = MsrMatrix.Multiply(_A, _B);
+            //double ABnorm = AB.InfNorm();
+            //_C_af.Acc(-1.0, _C_b4);
+            //_C_af.Acc(-1.0, AB);
 
-            double ErrAbs = _C_af.InfNorm();
-            double ErrRel = ABnorm > double.Epsilon ? ErrAbs / ABnorm : ErrAbs;
-            //Console.WriteLine("SpMM check: " + ErrRel);
-            if (ErrRel > 1.0e-8 || double.IsNaN(ErrRel) || double.IsInfinity(ErrRel))
-                throw new ArithmeticException("Error in multiply");
+            //double ErrAbs = _C_af.InfNorm();
+            //double ErrRel = ABnorm > double.Epsilon ? ErrAbs / ABnorm : ErrAbs;
+            ////Console.WriteLine("SpMM check: " + ErrRel);
+            //if (ErrRel > 1.0e-8 || double.IsNaN(ErrRel) || double.IsInfinity(ErrRel))
+            //    throw new ArithmeticException("Error in multiply");
 #else
             __Multiply(C, A, B);
 #endif
