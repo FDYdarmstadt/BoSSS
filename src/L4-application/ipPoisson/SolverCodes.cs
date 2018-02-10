@@ -54,10 +54,7 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         exp_softpcg_schwarz_directcoarse = 6,
 
-        /// <summary>
-        /// Conjugate Gradient, using multiple levels of Schwarz preconditioners.
-        /// </summary>
-        exp_softpcg_schwarz_multilevel = 8
+      
 
 
     }

@@ -535,35 +535,32 @@ namespace BoSSS.Application.SipPoisson {
                         break;
 
                         case SolverCodes.exp_softpcg_mg:
-                        solver = new SoftPCG() {
-                            m_MaxIterations = 2000,
-                            m_Tolerance = 1.0e-10,
-                            Precond = ClassicMultigrid.InitMultigridChain(MultigridOp,
-                                i => new Schwarz() {
-                                    m_MaxIterations = 1,
-                                    CoarseSolver = null,
-                                    m_BlockingStrategy = new Schwarz.MultigridBlocks() {
-                                        Depth = 2,
-                                    },
-                                    Overlap = 0
-                                },
-                                i => new Schwarz() {
-                                    m_MaxIterations = 1,
-                                    CoarseSolver = null,
-                                    m_BlockingStrategy = new Schwarz.MultigridBlocks() {
-                                        Depth = 2,
-                                    },
-                                    Overlap = 0
-                                },
-                                (i, mg) => {
-                                    mg.Gamma = 1;
-                                    mg.m_MaxIterations = 1;
-                                },
-                                () => new DirectSolver())
-                        };
-                        break;
-
-                        case SolverCodes.exp_softpcg_schwarz_multilevel:
+                        //solver = new SoftPCG() {
+                        //    m_MaxIterations = 2000,
+                        //    m_Tolerance = 1.0e-10,
+                        //    Precond = ClassicMultigrid.InitMultigridChain(MultigridOp,
+                        //        i => new Schwarz() {
+                        //            m_MaxIterations = 1,
+                        //            CoarseSolver = null,
+                        //            m_BlockingStrategy = new Schwarz.MultigridBlocks() {
+                        //                Depth = Math.Min(2, MgSeq.Length - i - 1)
+                        //            },
+                        //            Overlap = 0
+                        //        },
+                        //        i => new Schwarz() {
+                        //            m_MaxIterations = 1,
+                        //            CoarseSolver = null,
+                        //            m_BlockingStrategy = new Schwarz.MultigridBlocks() {
+                        //                Depth = Math.Min(2, MgSeq.Length - i - 1)
+                        //            },
+                        //            Overlap = 0
+                        //        },
+                        //        (i, mg) => {
+                        //            mg.Gamma = 1;
+                        //            mg.m_MaxIterations = 1;
+                        //        },
+                        //        () => new DirectSolver())
+                        //};
                         solver = MultilevelSchwarz(MultigridOp);
                         break;
 
@@ -574,25 +571,27 @@ namespace BoSSS.Application.SipPoisson {
 
                     T.Clear();
                     T.AccLaidBack(1.0, Tex);
-                    ConvergenceObserver CO = new ConvergenceObserver(MultigridOp, null, T.CoordinateVector.ToArray());
-                    CO.TecplotOut = "oasch";
+                    ConvergenceObserver CO = null;
+                    //CO = new ConvergenceObserver(MultigridOp, null, T.CoordinateVector.ToArray());
+                    //CO.TecplotOut = "oasch";
                     if (solver is ISolverWithCallback) {
 
-                        //((ISolverWithCallback)solver).IterationCallback = delegate (int iter, double[] xI, double[] rI, MultigridOperator mgOp) {
-                        //    double l2_RES = rI.L2NormPow2().MPISum().Sqrt();
+                        if (CO == null) {
+                            ((ISolverWithCallback)solver).IterationCallback = delegate (int iter, double[] xI, double[] rI, MultigridOperator mgOp) {
+                                double l2_RES = rI.L2NormPow2().MPISum().Sqrt();
 
-                        //    double[] xRef = new double[xI.Length];
-                        //    MultigridOp.TransformSolInto(T.CoordinateVector, xRef);
+                                double[] xRef = new double[xI.Length];
+                                MultigridOp.TransformSolInto(T.CoordinateVector, xRef);
 
-                        //    double l2_ERR = GenericBlas.L2DistPow2(xI, xRef).MPISum().Sqrt();
-                        //    Console.WriteLine("Iter: {0}\tRes: {1:0.##E-00}\tErr: {2:0.##E-00}\tRunt: {3:0.##E-00}", iter, l2_RES, l2_ERR, stw.Elapsed.TotalSeconds);
-                        //    //Tjac.CoordinatesAsVector.SetV(xI);
-                        //    //Residual.CoordinatesAsVector.SetV(rI);
-                        //    //PlotCurrentState(iter, new TimestepNumber(iter), 3);
-                        //};
-
-                        ((ISolverWithCallback)solver).IterationCallback = CO.IterationCallback;
-
+                                double l2_ERR = GenericBlas.L2DistPow2(xI, xRef).MPISum().Sqrt();
+                                Console.WriteLine("Iter: {0}\tRes: {1:0.##E-00}\tErr: {2:0.##E-00}\tRunt: {3:0.##E-00}", iter, l2_RES, l2_ERR, stw.Elapsed.TotalSeconds);
+                                //Tjac.CoordinatesAsVector.SetV(xI);
+                                //Residual.CoordinatesAsVector.SetV(rI);
+                                //PlotCurrentState(iter, new TimestepNumber(iter), 3);
+                            };
+                        } else {
+                            ((ISolverWithCallback)solver).IterationCallback = CO.IterationCallback;
+                        }
                     }
                     
 
@@ -612,8 +611,6 @@ namespace BoSSS.Application.SipPoisson {
                         var RHSvec = RHS.CoordinateVector.ToArray();
                         BLAS.daxpy(RHSvec.Length, -1.0, this.LaplaceAffine, 1, RHSvec, 1);
                         MultigridOp.UseSolver(solver, T2, RHSvec);
-                        Console.WriteLine("T2 norm: " + T2.L2Norm()); ;
-                        Console.WriteLine("T2 Dist: " + GenericBlas.L2Dist(T2, Tex.CoordinateVector));
                         T.CoordinateVector.SetV(T2);
                     }
                     solverIteration.Stop();
@@ -628,8 +625,8 @@ namespace BoSSS.Application.SipPoisson {
                     Converged = solver.Converged;
                     NoOfIter = solver.ThisLevelIterations;
 
-
-                    CO.PlotTrend(true, true, true);
+                    if(CO != null)
+                        CO.PlotTrend(true, true, true);
                     
                 }
             }
@@ -648,7 +645,7 @@ namespace BoSSS.Application.SipPoisson {
 
 
             MultigridOperator Current = op;
-            ISolverSmootherTemplate[] SchwarzChain = new ISolverSmootherTemplate[base.MultigridSequence.Length];
+            ISolverSmootherTemplate[] MultigridChain = new ISolverSmootherTemplate[base.MultigridSequence.Length];
             for(int iLevel = 0; iLevel < base.MultigridSequence.Length; iLevel++) {
                 int SysSize = Current.Mapping.TotalLength;
                 int NoOfBlocks = (int) Math.Ceiling(((double)SysSize) / ((double)DirectKickIn));
@@ -659,27 +656,61 @@ namespace BoSSS.Application.SipPoisson {
                 useDirect |= NoOfBlocks.MPISum() <= 1;
                 
                 if (useDirect) {
-                    SchwarzChain[iLevel] = new DirectSolver() {
+                    MultigridChain[iLevel] = new DirectSolver() {
                         WhichSolver = DirectSolver._whichSolver.PARDISO
                     };
                 } else {
-                    
 
-                    SchwarzChain[iLevel] = new Schwarz() {
+                    ClassicMultigrid MgLevel = new ClassicMultigrid() {
                         m_MaxIterations = 1,
+                        m_Tolerance = 0.0 // termination controlled by top level PCG
+                    };
+
+
+                    MultigridChain[iLevel] = MgLevel;
+
+                    Schwarz swz = new Schwarz() {
+                        m_MaxIterations = 1,
+                        CoarseSolver = null,
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                             NoOfParts = NoOfBlocks
                         },
-                        Overlap = 1,
-                        CoarseSolverIsMultiplicative = true
+                        Overlap = 0 // overlap does **NOT** seem to help
                     };
 
+                    /*
+                    Schwarz postSmoother = new Schwarz() {
+                        m_MaxIterations = 1,
+                        CoarseSolver = null,
+                        m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
+                            NoOfParts = NoOfBlocks + 1
+                        },
+                        Overlap = 1
+                    };
+                    */
+                    
+                    SoftPCG pcg1 = new SoftPCG() {
+                        m_MinIterations = 5,
+                        m_MaxIterations = 5
+                    };
+
+                    SoftPCG pcg2 = new SoftPCG() {
+                        m_MinIterations = 5,
+                        m_MaxIterations = 5
+                    };
+                    //*/
+
+                    
+
+
+
+                    MgLevel.PreSmoother = swz;
+                    MgLevel.PostSmoother = pcg1;
+                    
                 }
 
                 if(iLevel > 0) {
-                    ((Schwarz)(SchwarzChain[iLevel - 1])).CoarseSolver = new GenericRestriction() {
-                        CoarserLevelSolver = SchwarzChain[iLevel]
-                    };
+                    ((ClassicMultigrid)(MultigridChain[iLevel - 1])).CoarserLevelSolver = MultigridChain[iLevel];
                 }
 
                 if (useDirect)
@@ -691,7 +722,7 @@ namespace BoSSS.Application.SipPoisson {
             }
 
 
-            solver.Precond = SchwarzChain[0];
+            solver.Precond = MultigridChain[0];
 
             
             return solver;
