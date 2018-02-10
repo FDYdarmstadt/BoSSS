@@ -167,6 +167,7 @@ namespace BoSSS.Application.BoSSSpad {
             public void WriteMinimalCompileableExample(string MinimalExampleFilePath, string GraphicsFile = null, bool PerformLatexCompilation = true) {
                 string outDir = Path.GetDirectoryName(MinimalExampleFilePath);
                 string fileName = Path.GetFileNameWithoutExtension(MinimalExampleFilePath);
+                GraphicsFile = Path.GetFileName(GraphicsFile);
                 if(GraphicsFile.IsEmptyOrWhite())
                     GraphicsFile = "cairolatex.tex";
 

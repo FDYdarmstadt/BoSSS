@@ -471,174 +471,174 @@ namespace BoSSS.Application.SipPoisson {
                 Console.WriteLine("done. (" + mgBasis.Elapsed.TotalSeconds + " sec)");
 
 
-                foreach (int sz in new int[] { 1000, 2000, 5000, 10000, 20000 }) {
-                    base.Control.TargetBlockSize = sz;
-                    
-                    for (int irun = 0; irun < base.Control.NoOfSolverRuns; irun++) {
-                        Stopwatch stw = new Stopwatch();
-                        stw.Reset();
-                        stw.Start();
+                //foreach (int sz in new int[] { 1000, 2000, 5000, 10000, 20000 }) {
+                //    base.Control.TargetBlockSize = sz;
 
-                        Console.WriteLine("Setting up multigrid operator...");
-                        var mgsetup = new Stopwatch();
-                        mgsetup.Start();
-                        var MultigridOp = new MultigridOperator(AggBasis, this.T.Mapping, this.LaplaceMtx, null, MgConfig);
-                        mgsetup.Stop();
-                        Console.WriteLine("done. (" + mgsetup.Elapsed.TotalSeconds + " sec)");
+                for (int irun = 0; irun < base.Control.NoOfSolverRuns; irun++) {
+                    Stopwatch stw = new Stopwatch();
+                    stw.Reset();
+                    stw.Start();
+
+                    Console.WriteLine("Setting up multigrid operator...");
+                    var mgsetup = new Stopwatch();
+                    mgsetup.Start();
+                    var MultigridOp = new MultigridOperator(AggBasis, this.T.Mapping, this.LaplaceMtx, null, MgConfig);
+                    mgsetup.Stop();
+                    Console.WriteLine("done. (" + mgsetup.Elapsed.TotalSeconds + " sec)");
 
 
-                        Console.WriteLine("Setting up solver...");
-                        var solverSetup = new Stopwatch();
-                        solverSetup.Start();
-                        ISolverSmootherTemplate solver;
-                        switch (base.Control.solver_name) {
-                            case SolverCodes.exp_direct:
-                            solver = new DirectSolver() {
-                                WhichSolver = DirectSolver._whichSolver.PARDISO
-                            };
-                            break;
+                    Console.WriteLine("Setting up solver...");
+                    var solverSetup = new Stopwatch();
+                    solverSetup.Start();
+                    ISolverSmootherTemplate solver;
+                    switch (base.Control.solver_name) {
+                        case SolverCodes.exp_direct:
+                        solver = new DirectSolver() {
+                            WhichSolver = DirectSolver._whichSolver.PARDISO
+                        };
+                        break;
 
-                            case SolverCodes.exp_direct_lapack:
-                            solver = new DirectSolver() {
-                                WhichSolver = DirectSolver._whichSolver.Lapack
-                            };
-                            break;
+                        case SolverCodes.exp_direct_lapack:
+                        solver = new DirectSolver() {
+                            WhichSolver = DirectSolver._whichSolver.Lapack
+                        };
+                        break;
 
-                            case SolverCodes.exp_softpcg_schwarz_directcoarse:
-                            solver = new SoftPCG() {
-                                m_MaxIterations = 50000,
-                                m_Tolerance = 1.0e-10,
-                                Precond = new Schwarz() {
-                                    m_MaxIterations = 1,
-                                    CoarseSolver = new GenericRestriction() {
-                                        CoarserLevelSolver = new GenericRestriction() {
-                                            CoarserLevelSolver = new DirectSolver() {
-                                                WhichSolver = DirectSolver._whichSolver.PARDISO
-                                            }
+                        case SolverCodes.exp_softpcg_schwarz_directcoarse:
+                        solver = new SoftPCG() {
+                            m_MaxIterations = 50000,
+                            m_Tolerance = 1.0e-10,
+                            Precond = new Schwarz() {
+                                m_MaxIterations = 1,
+                                CoarseSolver = new GenericRestriction() {
+                                    CoarserLevelSolver = new GenericRestriction() {
+                                        CoarserLevelSolver = new DirectSolver() {
+                                            WhichSolver = DirectSolver._whichSolver.PARDISO
                                         }
-                                    },
-                                    m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                                        NoOfParts = 8
-                                    },
-                                    Overlap = 1,
+                                    }
+                                },
+                                m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
+                                    NoOfParts = 8
+                                },
+                                Overlap = 1,
 
-                                }
-                            };
-                            break;
-
-                            case SolverCodes.exp_softpcg_schwarz:
-                            solver = new SoftPCG() {
-                                m_MaxIterations = 50000,
-                                m_Tolerance = 1.0e-10,
-                                Precond = new Schwarz() {
-                                    m_MaxIterations = 1,
-                                    CoarseSolver = null,
-                                    m_BlockingStrategy = new Schwarz.MultigridBlocks() {
-                                        Depth = 2,
-                                    },
-                                    Overlap = 1
-                                }
-                            };
-                            break;
-
-                            case SolverCodes.exp_softpcg_mg:
-                            //solver = new SoftPCG() {
-                            //    m_MaxIterations = 2000,
-                            //    m_Tolerance = 1.0e-10,
-                            //    Precond = ClassicMultigrid.InitMultigridChain(MultigridOp,
-                            //        i => new Schwarz() {
-                            //            m_MaxIterations = 1,
-                            //            CoarseSolver = null,
-                            //            m_BlockingStrategy = new Schwarz.MultigridBlocks() {
-                            //                Depth = Math.Min(2, MgSeq.Length - i - 1)
-                            //            },
-                            //            Overlap = 0
-                            //        },
-                            //        i => new Schwarz() {
-                            //            m_MaxIterations = 1,
-                            //            CoarseSolver = null,
-                            //            m_BlockingStrategy = new Schwarz.MultigridBlocks() {
-                            //                Depth = Math.Min(2, MgSeq.Length - i - 1)
-                            //            },
-                            //            Overlap = 0
-                            //        },
-                            //        (i, mg) => {
-                            //            mg.Gamma = 1;
-                            //            mg.m_MaxIterations = 1;
-                            //        },
-                            //        () => new DirectSolver())
-                            //};
-                            solver = MultilevelSchwarz(MultigridOp);
-                            break;
-
-
-                            default:
-                            throw new ApplicationException("unknown solver: " + this.Control.solver_name);
-                        }
-
-                        T.Clear();
-                        T.AccLaidBack(1.0, Tex);
-                        ConvergenceObserver CO = null;
-                        //CO = new ConvergenceObserver(MultigridOp, null, T.CoordinateVector.ToArray());
-                        //CO.TecplotOut = "oasch";
-                        if (solver is ISolverWithCallback) {
-
-                            if (CO == null) {
-                                ((ISolverWithCallback)solver).IterationCallback = delegate (int iter, double[] xI, double[] rI, MultigridOperator mgOp) {
-                                    double l2_RES = rI.L2NormPow2().MPISum().Sqrt();
-
-                                    double[] xRef = new double[xI.Length];
-                                    MultigridOp.TransformSolInto(T.CoordinateVector, xRef);
-
-                                    double l2_ERR = GenericBlas.L2DistPow2(xI, xRef).MPISum().Sqrt();
-                                    Console.WriteLine("Iter: {0}\tRes: {1:0.##E-00}\tErr: {2:0.##E-00}\tRunt: {3:0.##E-00}", iter, l2_RES, l2_ERR, stw.Elapsed.TotalSeconds);
-                                    //Tjac.CoordinatesAsVector.SetV(xI);
-                                    //Residual.CoordinatesAsVector.SetV(rI);
-                                    //PlotCurrentState(iter, new TimestepNumber(iter), 3);
-                                };
-                            } else {
-                                ((ISolverWithCallback)solver).IterationCallback = CO.IterationCallback;
                             }
-                        }
+                        };
+                        break;
+
+                        case SolverCodes.exp_softpcg_schwarz:
+                        solver = new SoftPCG() {
+                            m_MaxIterations = 50000,
+                            m_Tolerance = 1.0e-10,
+                            Precond = new Schwarz() {
+                                m_MaxIterations = 1,
+                                CoarseSolver = null,
+                                m_BlockingStrategy = new Schwarz.MultigridBlocks() {
+                                    Depth = 2,
+                                },
+                                Overlap = 1
+                            }
+                        };
+                        break;
+
+                        case SolverCodes.exp_softpcg_mg:
+                        //solver = new SoftPCG() {
+                        //    m_MaxIterations = 2000,
+                        //    m_Tolerance = 1.0e-10,
+                        //    Precond = ClassicMultigrid.InitMultigridChain(MultigridOp,
+                        //        i => new Schwarz() {
+                        //            m_MaxIterations = 1,
+                        //            CoarseSolver = null,
+                        //            m_BlockingStrategy = new Schwarz.MultigridBlocks() {
+                        //                Depth = Math.Min(2, MgSeq.Length - i - 1)
+                        //            },
+                        //            Overlap = 0
+                        //        },
+                        //        i => new Schwarz() {
+                        //            m_MaxIterations = 1,
+                        //            CoarseSolver = null,
+                        //            m_BlockingStrategy = new Schwarz.MultigridBlocks() {
+                        //                Depth = Math.Min(2, MgSeq.Length - i - 1)
+                        //            },
+                        //            Overlap = 0
+                        //        },
+                        //        (i, mg) => {
+                        //            mg.Gamma = 1;
+                        //            mg.m_MaxIterations = 1;
+                        //        },
+                        //        () => new DirectSolver())
+                        //};
+                        solver = MultilevelSchwarz(MultigridOp);
+                        break;
 
 
-                        using (new BlockTrace("Solver_Init", tr)) {
-                            solver.Init(MultigridOp);
-                        }
-                        solverSetup.Stop();
-                        Console.WriteLine("done. (" + solverSetup.Elapsed.TotalSeconds + " sec)");
-
-                        Console.WriteLine("Running solver...");
-                        var solverIteration = new Stopwatch();
-                        solverIteration.Start();
-                        double[] T2 = this.T.CoordinateVector.ToArray();
-                        using (new BlockTrace("Solver_Run", tr)) {
-                            solver.ResetStat();
-                            T2.Clear();
-                            var RHSvec = RHS.CoordinateVector.ToArray();
-                            BLAS.daxpy(RHSvec.Length, -1.0, this.LaplaceAffine, 1, RHSvec, 1);
-                            MultigridOp.UseSolver(solver, T2, RHSvec);
-                            T.CoordinateVector.SetV(T2);
-                        }
-                        solverIteration.Stop();
-                        Console.WriteLine("done. (" + solverIteration.Elapsed.TotalSeconds + " sec)");
-
-
-
-                        // time measurement, statistics
-                        stw.Stop();
-                        mintime = Math.Min(stw.Elapsed.TotalSeconds, mintime);
-                        maxtime = Math.Max(stw.Elapsed.TotalSeconds, maxtime);
-                        Converged = solver.Converged;
-                        NoOfIter = solver.ThisLevelIterations;
-
-                        if (CO != null)
-                            CO.PlotTrend(true, true, true);
-
+                        default:
+                        throw new ApplicationException("unknown solver: " + this.Control.solver_name);
                     }
+
+                    T.Clear();
+                    T.AccLaidBack(1.0, Tex);
+                    ConvergenceObserver CO = null;
+                    //CO = new ConvergenceObserver(MultigridOp, null, T.CoordinateVector.ToArray());
+                    //CO.TecplotOut = "oasch";
+                    if (solver is ISolverWithCallback) {
+
+                        if (CO == null) {
+                            ((ISolverWithCallback)solver).IterationCallback = delegate (int iter, double[] xI, double[] rI, MultigridOperator mgOp) {
+                                double l2_RES = rI.L2NormPow2().MPISum().Sqrt();
+
+                                double[] xRef = new double[xI.Length];
+                                MultigridOp.TransformSolInto(T.CoordinateVector, xRef);
+
+                                double l2_ERR = GenericBlas.L2DistPow2(xI, xRef).MPISum().Sqrt();
+                                Console.WriteLine("Iter: {0}\tRes: {1:0.##E-00}\tErr: {2:0.##E-00}\tRunt: {3:0.##E-00}", iter, l2_RES, l2_ERR, stw.Elapsed.TotalSeconds);
+                                //Tjac.CoordinatesAsVector.SetV(xI);
+                                //Residual.CoordinatesAsVector.SetV(rI);
+                                //PlotCurrentState(iter, new TimestepNumber(iter), 3);
+                            };
+                        } else {
+                            ((ISolverWithCallback)solver).IterationCallback = CO.IterationCallback;
+                        }
+                    }
+
+
+                    using (new BlockTrace("Solver_Init", tr)) {
+                        solver.Init(MultigridOp);
+                    }
+                    solverSetup.Stop();
+                    Console.WriteLine("done. (" + solverSetup.Elapsed.TotalSeconds + " sec)");
+
+                    Console.WriteLine("Running solver...");
+                    var solverIteration = new Stopwatch();
+                    solverIteration.Start();
+                    double[] T2 = this.T.CoordinateVector.ToArray();
+                    using (new BlockTrace("Solver_Run", tr)) {
+                        solver.ResetStat();
+                        T2.Clear();
+                        var RHSvec = RHS.CoordinateVector.ToArray();
+                        BLAS.daxpy(RHSvec.Length, -1.0, this.LaplaceAffine, 1, RHSvec, 1);
+                        MultigridOp.UseSolver(solver, T2, RHSvec);
+                        T.CoordinateVector.SetV(T2);
+                    }
+                    solverIteration.Stop();
+                    Console.WriteLine("done. (" + solverIteration.Elapsed.TotalSeconds + " sec)");
+
+
+
+                    // time measurement, statistics
+                    stw.Stop();
+                    mintime = Math.Min(stw.Elapsed.TotalSeconds, mintime);
+                    maxtime = Math.Max(stw.Elapsed.TotalSeconds, maxtime);
+                    Converged = solver.Converged;
+                    NoOfIter = solver.ThisLevelIterations;
+
+                    if (CO != null)
+                        CO.PlotTrend(true, true, true);
+
                 }
             }
         }
+
         /// <summary>
         /// Ganz ok.
         /// </summary>
@@ -648,6 +648,7 @@ namespace BoSSS.Application.SipPoisson {
                 m_Tolerance = 1.0e-10
             };
 
+            // my tests show that the ideal block size may be around 10'000
             int DirectKickIn = base.Control.TargetBlockSize;
 
 

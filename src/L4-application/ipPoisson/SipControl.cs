@@ -83,7 +83,8 @@ namespace BoSSS.Application.SipPoisson {
 
 
         /// <summary>
-        /// If any blocking is used (Schwarz, block Jacobi), a target for the block size
+        /// If any blocking is used (Schwarz, block Jacobi), a target for the block size.
+        /// Tests show that the ideal block size may be around 10000, but this may depend on computer, DG polynomial order, etc.
         /// </summary>
         [DataMember]
         [BoSSS.Solution.Control.ExclusiveLowerBound(99.0)]
