@@ -173,7 +173,7 @@ namespace BoSSS.Solution.Multigrid {
             /// <summary>
             /// Number of parts/additive Schwarz blocks on current MPI process.
             /// </summary>
-            public int NoOfParts = 4;
+            public int NoOfPartsPerProcess = 4;
 
             internal override IEnumerable<List<int>> GetBlocking(MultigridOperator op) {
                 var MgMap = op.Mapping;
@@ -209,7 +209,7 @@ namespace BoSSS.Solution.Multigrid {
 
                 int[] part = new int[JComp];
                 {
-                    if (NoOfParts > 1) {
+                    if (NoOfPartsPerProcess > 1) {
                         int ncon = 1;
                         int edgecut = 0;
                         int[] options = null; //new int[] { 0, 0, 0, 0, 0 };
@@ -220,7 +220,7 @@ namespace BoSSS.Solution.Multigrid {
                             null,
                             null,
                             null,
-                            ref NoOfParts,
+                            ref NoOfPartsPerProcess,
                             null,
                             null,
                             options,
@@ -232,7 +232,7 @@ namespace BoSSS.Solution.Multigrid {
                 }
 
                 {
-                    var _Blocks = NoOfParts.ForLoop(i => new List<int>((int)Math.Ceiling(1.1 * JComp / NoOfParts)));
+                    var _Blocks = NoOfPartsPerProcess.ForLoop(i => new List<int>((int)Math.Ceiling(1.1 * JComp / NoOfPartsPerProcess)));
                     for (int j = 0; j < JComp; j++) {
                         _Blocks[part[j]].Add(j);
 

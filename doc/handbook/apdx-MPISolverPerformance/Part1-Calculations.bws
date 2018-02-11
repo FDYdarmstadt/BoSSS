@@ -1,0 +1,667 @@
+restart
+**************
+
+  Database Explorer v2
+  ____________________
+
+Databases loaded:
+List of 10 instances of IDatabaseInfo {
+  0: { Session Count = 19; Grid Count = 3; Path = \\dc1\userspace\stange\HiWi_database\OscillatingCylinder }
+  1: { Session Count = 84; Grid Count = 24; Path = \\dc1\userspace\stange\HiWi_database\ParticleUnderGravity }
+  2: { Session Count = 35; Grid Count = 11; Path = \\dc1\userspace\stange\HiWi_database\IBMPaper }
+  3: { Session Count = 5; Grid Count = 10; Path = z:\Stange\HiWi\database }
+  4: { Session Count = 11; Grid Count = 11; Path = \\dc1\userspace\stange\HiWi_database\tests }
+  5: { Session Count = 376; Grid Count = 17; Path = \\dc1\userspace\stange\HiWi_database\PerformanceTests }
+  6: { Session Count = 9; Grid Count = 1; Path = P:\lichtenberg_db }
+  7: { Session Count = 10; Grid Count = 9; Path = P:\test_db }
+  8: { Session Count = 30; Grid Count = 27; Path = W:\work_db }
+  9: { Session Count = 114; Grid Count = 131; Path = Z:\Stange\HiWi\performance_db }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+using BoSSS.Application.IBM_Solver;
+using BoSSS.Foundation.Grid.RefElements;
+using BoSSS.Solution.Multigrid;
+using System.Text;
+using System.Threading.Tasks;
+**************
+==============
+WorkflowMgm.Init("MPISolverPerformance");
+**************
+Project name is set to 'MPISolverPerformance'.
+
+==============
+var tempDB = OpenOrCreateDatabase("D:\\tmp\\fk_temp_db");
+**************
+System.IO.DirectoryNotFoundException occurred: Could not find a part of the path 'D:\tmp\fk_temp_db'.. Type 'LastError' for details.
+
+==============
+ var myBatch = new SlurmClient(@"L:\SLURM","lcluster4.hrz.tu-darmstadt.de","ws35kire");
+**************
+Please enter your password...
+******
+Connecting to lcluster4.hrz.tu-darmstadt.de...
+
+Renci.SshNet.Common.SshAuthenticationException occurred: Permission denied (password).. Type 'LastError' for details.
+
+==============
+MiniBatchProcessor.Server.StartIfNotRunning();
+**************
+Mini batch processor is already running.
+
+==============
+// ==========
+// Parameters
+// ==========
+**************
+==============
+IBM_Control.SolverOptions[] precs = new IBM_Control.SolverOptions[] { IBM_Control.SolverOptions.NewtonGmresSchur, IBM_Control.SolverOptions.NewtonGmresSwzMG };
+int[] ks = new int[] {2,3};
+int cells_x  = 64;
+int cells_yz = 22;
+int re       = 100; 
+int ASparts  = 5; 
+int ASDepth  = 2;
+int MGLevels = 3;
+int maxKrDim = 1000;
+int saveToDB = 1;
+int[] procs    = new int[] {8,16,32,64};
+**************
+==============
+// ================================
+// Control file function: 3D sphere 
+// ================================
+**************
+==============
+public class HardcodedPrecTest {
+     static public IBM_Control PrecTest3DSphere(IBM_Control.SolverOptions prec, int k, int cells_x, int cells_yz, int re, int ASparts = 5, int ASDepth = 2, int MGLevels = 3, int maxKrDim = 1000, int saveToDB = 1) {
+            IBM_Control C = new IBM_Control();
+            bool name_newton = true;
+
+            // basic database options
+            // ======================
+            if (saveToDB == 1) {
+                C.savetodb = true;
+            } else {
+                C.savetodb = false;
+            }
+            //C.savetodb = saveToDB;
+            //C.savetodb = true;
+            C.DbPath = @"/work/scratch/ws35kire/performance_db";
+            //C.DbPath = @"\\dc1\scratch\Stange\\HiWi\performance_db";
+
+
+            C.DynamicLoadBalancing_Period = 1;
+
+            // Assign correct names
+            if (name_newton) {
+                C.SessionName        = "Sphere_prec" + prec.ToString() + "_k" + k + "_x" + cells_x + "_yz" + cells_yz + "_re" + re + "_asp" + ASparts + "_asd" + ASDepth + "_mgl" + MGLevels + "_kr" + maxKrDim;
+                C.ProjectDescription = "Newton_Sphere_k_prec" + prec.ToString() + "_k" + k + "_x" + cells_x + "_yz" + cells_yz + "_re" + re + "_asp" + ASparts + "_asd" + ASDepth + "_mgl" + MGLevels + "_kr" + maxKrDim;
+
+            } else {
+                C.SessionName        = "Sphere_prec" + prec.ToString() + "_k" + k + "_x" + cells_x + "_yz" + cells_yz + "_re" + re + "_asp" + ASparts + "_asd" + ASDepth + "_mgl" + MGLevels + "_kr" + maxKrDim;
+                C.ProjectDescription = "Sphere_k_prec" + prec.ToString() + "_k" + k + "_x" + cells_x + "_yz" + cells_yz + "_re" + re + "_asp" + ASparts + "_asd" + ASDepth + "_mgl" + MGLevels + "_kr" + maxKrDim;
+
+            }
+
+            C.saveperiod  = 1;
+            C.ProjectName = "3DChannel";
+            C.Tags.Add("Prec param study");
+
+            // Create Fields
+            C.FieldOptions.Add("VelocityX", new FieldOpts() {
+                Degree = k,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("VelocityY", new FieldOpts() {
+                Degree = k,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("VelocityZ", new FieldOpts() {
+                Degree = k,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Pressure", new FieldOpts() {
+                Degree = k - 1,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("PhiDG", new FieldOpts() {
+                Degree = 2,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Phi", new FieldOpts() {
+                Degree = 2,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+
+            #region Creates grid () and sets BC
+            //// Create Grid
+            Console.WriteLine("...generating grid");
+            C.GridFunc = delegate {
+
+            // x-direction
+            var _xNodes = GenericBlas.Linspace(-0.5, 1.5, cells_x + 1);
+
+            // y-direction
+            var _yNodes = GenericBlas.Linspace(-0.5, 0.5, cells_yz + 1);
+
+            // z-direction
+            var _zNodes = GenericBlas.Linspace(-0.5, 0.5, cells_yz + 1);
+
+            // Cut Out
+            var grd = Grid3D.Cartesian3DGrid(_xNodes, _yNodes, _zNodes, false, true, false, CellType.Cube_Linear);
+
+            grd.EdgeTagNames.Add(1, "Velocity_inlet");
+            grd.EdgeTagNames.Add(2, "Wall");
+            grd.EdgeTagNames.Add(3, "Pressure_Outlet");
+
+            grd.DefineEdgeTags(delegate (double[] _X)
+            {
+                var X = _X;
+                double x = X[0];
+                double y = X[1];
+                double z = X[2];
+
+                if (Math.Abs(x - (-0.5)) < 1.0e-6)
+                    // inlet
+                    return 1;
+
+                if (Math.Abs(x - (1.5)) < 1.0e-6)
+                    // outlet
+                    return 3;
+
+                if (Math.Abs(y - (-0.5)) < 1.0e-6)
+                    // left
+                    return 2;
+
+                if (Math.Abs(y - (0.5)) < 1.0e-6)
+                    // right
+                    return 2;
+
+                if (Math.Abs(z - (-0.5)) < 1.0e-6)
+                    // top left
+                    return 2;
+
+                if (Math.Abs(z - (0.5)) < 1.0e-6)
+                    // top right
+                    return 2;
+
+                throw new ArgumentOutOfRangeException();
+            });
+
+            return grd;
+        };
+
+        #endregion
+
+
+
+        // Set Initial Conditions
+        C.InitialValues_Evaluators.Add("VelocityX", X => 0);
+        C.InitialValues_Evaluators.Add("VelocityY", X => 0);
+        C.InitialValues_Evaluators.Add("VelocityZ", X => 0);
+        C.InitialValues_Evaluators.Add("Pressure", X => 0);
+
+        // Because its a sphere
+
+        C.particleRadius = 0.1;
+        C.InitialValues_Evaluators.Add("Phi", X => -(X[0]).Pow2() + -(X[1]).Pow2() + -(X[2]).Pow2() + C.particleRadius.Pow2());
+        //C.InitialValues_Evaluators.Add("Phi", X => -1);
+
+        Console.WriteLine("...starting calculation of Preconditioning test with 3D Channel");
+        if (name_newton) {
+            Console.WriteLine("Newton_Channel_k_prec" + prec.ToString() + "_k" + k + "_x" + cells_x + "_yz" + cells_yz + "_re" + re + "_asp" + ASparts + "_asd" + ASDepth + "_mgl" + MGLevels + "_kr" + maxKrDim);
+
+        } else {
+            Console.WriteLine("Sphere_k_prec" + prec.ToString() + "_k" + k + "_x" + cells_x + "_yz" + cells_yz + "_re" + re + "_asp" + ASparts + "_asd" + ASDepth + "_mgl" + MGLevels + "_kr" + maxKrDim);
+
+        }
+
+        // Physical values
+        C.PhysicalParameters.rho_A = 1;
+        // 1/Re
+        //C.PhysicalParameters.mu_A = 1.0 / 10.0;
+        C.PhysicalParameters.mu_A = 0.2 / re;
+
+        //C.PhysicalParameters.mu_A = 1.0 / re;
+
+        // Boundary conditions
+        C.AddBoundaryCondition("Velocity_inlet", "VelocityX", (X, t) => 1 - 4 * (X[2] * X[2]));
+        C.AddBoundaryCondition("Velocity_inlet", "VelocityY", (X, t) => 0);
+        C.AddBoundaryCondition("Wall");
+        C.AddBoundaryCondition("Pressure_Outlet");
+
+
+        // misc. solver options
+        // ====================
+        C.PhysicalParameters.IncludeConvection = true;
+        C.AdvancedDiscretizationOptions.PenaltySafety = 4;
+        C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
+        C.LevelSetSmoothing = false;
+        //C.MaxKrylovDim = 1000;
+        C.MaxKrylovDim = maxKrDim;
+        //C.MaxSolverIterations = 50;
+        C.MaxSolverIterations = 1;
+        C.MinSolverIterations = 1;
+        // C.MaxSolverIterations = 10000;
+        C.Solver_ConvergenceCriterion = 1E-5;
+        //C.Solver_ConvergenceCriterion = 1E-6;
+        C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
+        C.NonlinearMethod          = BoSSS.Solution.XdgTimestepping.NonlinearSolverMethod.Newton;
+
+        // Choosing the Preconditioner
+        ISolverSmootherTemplate Prec;
+        int precNo;
+        C.solver = prec;
+
+
+        if (prec == IBM_Control.SolverOptions.NewtonGmresSchur) {
+            precNo   = 1;
+            }
+        else if (prec == IBM_Control.SolverOptions.NewtonGmresSwzMG) { 
+            precNo = 4;
+            }
+        else precNo = 6;
+
+        switch (precNo) {
+            case 0: {
+                    Prec = null;
+                    break;
+                }
+            case 1: {
+                    Prec = new SchurPrecond() {
+                        SchurOpt = SchurPrecond.SchurOptions.decoupledApprox
+                    };
+                    break;
+                }
+            case 2: {
+                    Prec = new SchurPrecond() {
+                        SchurOpt = SchurPrecond.SchurOptions.SIMPLE
+                    };
+                    break;
+                }
+            case 3: {
+                    Prec = new Schwarz() {
+                        m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
+                            //NoOfParts = 5,
+                            NoOfParts = ASparts,
+                        },
+                        CoarseSolver = new DirectSolver() {
+                            WhichSolver = DirectSolver._whichSolver.MUMPS
+                        },
+                        Overlap = 1
+                    };
+                    C.NoOfMultigridLevels = 2;
+                    break;
+                }
+            case 4: {
+                    //C.NoOfMultigridLevels = 3;
+                    C.NoOfMultigridLevels = MGLevels;
+                    Prec = new Schwarz() {
+                        m_BlockingStrategy = new Schwarz.MultigridBlocks() {
+                            //Depth = 2,
+                            Depth = ASDepth,
+                        },
+                        CoarseSolver = new DirectSolver() {
+                            WhichSolver = DirectSolver._whichSolver.MUMPS
+                        },
+                        Overlap = 1
+                    };
+                    break;
+                }
+            case 5: {
+                    C.NoOfMultigridLevels = 5;
+                    Prec = new Schwarz() {
+                        m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
+                            //NoOfParts = 5,
+                            NoOfParts = ASparts,
+                        },
+                        CoarseSolver = new ClassicMultigrid() {
+                            CoarserLevelSolver = new ClassicMultigrid() {
+                                CoarserLevelSolver = new ClassicMultigrid() {
+                                    CoarserLevelSolver = new DirectSolver() {
+                                        WhichSolver = DirectSolver._whichSolver.MUMPS
+                                    },
+                                },
+                            },
+                        },
+                        Overlap = 1
+                    };
+                    break;
+                }
+            default: {
+                    Prec = new SchurPrecond() {
+                        SchurOpt = SchurPrecond.SchurOptions.decoupledApprox
+                    };
+                    break;
+                }
+
+        }
+
+        //Prec = new SchurPrecond()
+        //{
+        //    SchurOpt = SchurPrecond.SchurOptions.decoupledApprox
+        //};
+
+        //Prec = new SchurPrecond()
+        //{
+        //    SchurOpt = SchurPrecond.SchurOptions.SIMPLE
+        //};
+
+        //Prec = new Schwarz()
+        //{
+        //    m_BlockingStrategy = new Schwarz.METISBlockingStrategy()
+        //    {
+        //        NoOfParts = 5,
+        //    },
+        //    CoarseSolver = new DirectSolver()
+        //    {
+        //        WhichSolver = DirectSolver._whichSolver.MUMPS
+        //    },
+        //    overlap = 1
+        //};
+
+
+        //C.NoOfMultigridLevels = 3;
+        //Prec = new Schwarz()
+        //{
+        //    m_BlockingStrategy = new Schwarz.MultigridBlocks()
+        //    {
+        //        Depth = 2,
+        //    },
+        //    CoarseSolver = new DirectSolver()
+        //    {
+        //        WhichSolver = DirectSolver._whichSolver.MUMPS
+        //    },
+        //    overlap = 1
+        //};
+
+        // For Newton
+        C.LinearSolver = Prec;
+
+        ////For Picard
+        //C.LinearSolver = new SoftGMRES()
+        //{
+        //    MaxKrylovDim = C.MaxKrylovDim,
+        //    Precond = Prec,
+        //    m_Tolerance = 1E-6,
+        //    m_MaxIterations = 50
+        //};
+
+     
+
+        // Timestepping
+        // ============
+        C.Timestepper_Scheme = IBM_Control.TimesteppingScheme.BDF2;
+        double dt            = 1E20;
+        C.dtFixed            = dt;
+        C.dtMax              = dt;
+        C.dtMin              = dt;
+        C.Endtime            = 10000000;
+        C.NoOfTimesteps      = 1;
+
+
+        return C;
+     }
+}
+**************
+(175,53): error CS0234: The type or namespace name `XdgTimestepping' does not exist in the namespace `BoSSS.Solution'. Are you missing an assembly reference?
+No. of errors|warnings: 1|0.
+
+==============
+LastError
+**************
+==============
+// =====================================
+// setup control object for a solver run
+// =====================================
+**************
+==============
+**************
+==============
+// - - - - - - - - - - - - -
+// setup of parameter study
+// - - - - - - - - - - - - -
+**************
+==============
+List<IBMControl> controls = new List<IBMControl>();
+**************
+==============
+controls.Clear();
+foreach(IBMControl.Solver prec in precs) {
+foreach(int k in ks) {
+
+var ctrl = PrecTest3DSphere(prec, k, cells_x, cells_yz, re, ASparts, ASDepth, MGLevels, maxKrDim, saveToDB);
+    controls.Add(ctrl);
+}
+}
+
+
+**************
+setting up: J40_k2_exp_softpcg_schwarz_directcoarse
+setting up: J320_k2_exp_softpcg_schwarz_directcoarse
+setting up: J2560_k2_exp_softpcg_schwarz_directcoarse
+setting up: J20480_k2_exp_softpcg_schwarz_directcoarse
+setting up: J40_k3_exp_softpcg_schwarz_directcoarse
+setting up: J320_k3_exp_softpcg_schwarz_directcoarse
+setting up: J2560_k3_exp_softpcg_schwarz_directcoarse
+setting up: J20480_k3_exp_softpcg_schwarz_directcoarse
+
+==============
+// ==========
+// Launch Job
+// ==========
+**************
+==============
+//var job = new Job("zwa", solver);
+**************
+==============
+//myCtrl.GetType();
+**************
+==============
+//job.SetControlObject(myCtrl);
+**************
+==============
+//tempDB.Sessions.Where(s => s.Name.Contains("softpcg_schwarz_directcoarse")).ForEach(si => si.Delete(true));
+**************
+==============
+//tempDB.Sessions.Where(s => s.Name.Contains("exp_direct")).ForEach(si => si.Delete());
+**************
+==============
+**************
+==============
+foreach(int proc in procs){
+foreach(var ctrl in controls) {
+    Console.WriteLine(" Submitting: " + ctrl.SessionName + "_MPIs" + proc); 
+    ctrl.ProjectName = InteractiveShell.WorkflowMgm.CurrentProject;
+
+            Type solverClass             = ctrl.GetSolverType();
+            Job job                      = new Job(string.Format(ctrl.SessionName + "_MPIs" + proc), solverClass);
+            job.NumberOfMPIProcs         = proc;
+            job.UseComputeNodesExclusive = true;
+            job.ExecutionTime            = "23:59:59";
+            job.SetControlObject(ctrl);
+            job.Activate(myBatch);
+    //ctrl.RunBatch(myBatch,NumberOfMPIProcs:proc,UseComputeNodesExclusive:true); 
+}
+}
+**************
+ Submitting: J40_k2_exp_softpcg_schwarz_directcoarse
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = 59a21600-3665-4f07-a22b-1eae6aa762ef; 02/08/2018 07:32:42 Name = J40_k2_exp_softpcg_schwarz_directcoarse }
+No further action.
+ Submitting: J320_k2_exp_softpcg_schwarz_directcoarse
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = a41f34c6-fdd4-4b67-bc8d-3bc9950c72d2; 02/08/2018 07:33:12 Name = J320_k2_exp_softpcg_schwarz_directcoarse }
+No further action.
+ Submitting: J2560_k2_exp_softpcg_schwarz_directcoarse
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = c9d35030-95a1-4fb2-90ea-6d5c9511e058; 02/08/2018 07:33:52 Name = J2560_k2_exp_softpcg_schwarz_directcoarse }
+No further action.
+ Submitting: J20480_k2_exp_softpcg_schwarz_directcoarse
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = cb29be72-c5eb-48ac-9e1c-e6933b0633da; 02/08/2018 07:35:32 Name = J20480_k2_exp_softpcg_schwarz_directcoarse }
+No further action.
+ Submitting: J40_k3_exp_softpcg_schwarz_directcoarse
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = 0233d74d-de55-471e-b830-3735a41a51e9; 02/08/2018 07:48:32 Name = J40_k3_exp_softpcg_schwarz_directcoarse }
+No further action.
+ Submitting: J320_k3_exp_softpcg_schwarz_directcoarse
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = 25ffef16-29a6-4eb6-ad26-cf4f7105c260; 02/08/2018 07:49:02 Name = J320_k3_exp_softpcg_schwarz_directcoarse }
+No further action.
+ Submitting: J2560_k3_exp_softpcg_schwarz_directcoarse
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = c9f6daa9-dc66-4341-b068-f4ea6d72d6f2; 02/08/2018 07:49:42 Name = J2560_k3_exp_softpcg_schwarz_directcoarse }
+No further action.
+ Submitting: J20480_k3_exp_softpcg_schwarz_directcoarse
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = 1d711fe4-7557-4aeb-852a-7951b323a399; 02/08/2018 07:52:02 Name = J20480_k3_exp_softpcg_schwarz_directcoarse }
+No further action.
+
+==============
+**************
+==============
+WorkflowMgm.AllJobs.Select(kv => kv.Key + ": \t" + kv.Value.Status);
+**************
+List of 8 instances of String {
+  0: J40_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  1: J320_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  2: J2560_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  3: J20480_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  4: J40_k3_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  5: J320_k3_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  6: J2560_k3_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  7: J20480_k3_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+}
+==============
+//WorkflowMgm.AllJobs.ElementAt(9).Value.Stdout;
+**************
+==============
+//WorkflowMgm.AllJobs.ElementAt(0).Value.Stdout;
+**************
+==============
+WorkflowMgm.SessionTable.Rows.Count;
+**************
+89
+==============
+**************
+==============
+**************
+==============
+// =====================================
+// Session table
+// =====================================
+**************
+==============
+// -------------------------------
+// Additional/user-defined columns
+// -------------------------------
+**************
+==============
+static class AddCols {
+    private double getMaxTime(ISessionInfo SI, string method, bool exclusive) {
+         double maxTime = 0.0;
+var mcr = SI.GetProfiling();
+                // Iterate over MPIs
+                for (int j = 0; j < mcr.Count(); j++) {
+                    MethodCallRecord value;
+                    // Iterate over methods
+                        // Get execution time of current method for current processor
+                        double tempTime;
+                        double tempFractions;
+                        int occurence        = 1;
+
+                        value = mcr[j].FindChild(mainMethod);
+                        if (value == null) {
+                            value = mcr[j];
+                        }
+                        if (exclusive) {
+                            tempTime = value.FindChildren(method).OrderByDescending(s => s.TimeExclusive.TotalSeconds).Pick(occurence-1).TimeExclusive.TotalSeconds;
+                                IEnumerable<MethodCallRecord> calls = value.FindChildren(method).OrderByDescending(s => s.ExclusiveTimeFractionOfRoot);
+                                double maxValue = calls.Pick(occurence-1).ExclusiveTimeFractionOfRoot;
+                                int maxIndex    = calls.Select(s => s.ExclusiveTimeFractionOfRoot).ToList().IndexOf(maxValue);
+                                tempFractions   = maxValue;
+                                
+                            
+                        } else {
+                             tempTime = value.FindChildren(method).OrderByDescending(s => s.TimeSpentInMethod.TotalSeconds).Pick(occurence-1).TimeSpentInMethod.TotalSeconds;
+                                IEnumerable<MethodCallRecord> calls = value.FindChildren(method).OrderByDescending(s => s.TimeFractionOfRoot);
+                                double maxValue = calls.Pick(occurence-1).TimeFractionOfRoot;
+                                int maxIndex    = calls.Select(s => s.TimeFractionOfRoot).ToList().IndexOf(maxValue);
+                                tempFractions   = maxValue;
+                        }
+                        // Only save execution time if it is the highest value of all processor times
+                        if (tempTime > maxTime) {
+                            maxTime = tempTime;
+                        }
+                    }
+                    return maxTime;
+    }
+    
+    static public object RunSolverOneStep_excl(ISessionInfo SI) {
+        return SI.getMaxTime("BoSSS.Application.IBM_Solver.IBM_SolverMain.RunSolverOneStep",true);
+    }
+    static public object MPIs(ISessionInfo SI) {
+        return SI.ComputeNodeNames.Count();
+    }
+}
+**************
+==============
+WorkflowMgm.AdditionalSessionTableColums.Clear();
+WorkflowMgm.AdditionalSessionTableColums.Add(
+    "RunSolverOneStep_excl", AddCols.RunSolverOneStep_excl);
+WorkflowMgm.AdditionalSessionTableColums.Add(
+    "MPIs", AddCols.MPIs);
+**************
+==============
+// --------------------------
+// Save Session table in file
+// --------------------------
+**************
+==============
+var SessTab = WorkflowMgm.SessionTable;
+**************
+==============
+// The Session column can't be serialized,
+// we have to remove it
+List<string> AllCols = SessTab.GetColumnNames().ToList();
+AllCols.Remove("Session");
+**************
+True
+==============
+SessTab = SessTab.ExtractColumns(AllCols.ToArray());
+**************
+==============
+using System.IO;
+**************
+==============
+// Filename
+var now           = DateTime.Now;
+SessTab.TableName = "SolverRuns--" + now.Year + "-" + now.Month + "-" + now.Day;
+string docpath    = Path.Combine(CurrentDocDir, SessTab.TableName + ".json");
+**************
+==============
+// save session table as file: this can be stored in our git 
+// repository
+SessTab.SaveToFile(docpath);
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
