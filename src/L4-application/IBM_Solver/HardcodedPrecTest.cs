@@ -496,7 +496,7 @@ namespace BoSSS.Application.IBM_Solver {
                         Prec = new Schwarz() {
                             m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                                 //NoOfParts = 5,
-                                NoOfParts = ASparts,
+                                NoOfPartsPerProcess = ASparts,
                             },
                             CoarseSolver = new ClassicMultigrid() {
                                 CoarserLevelSolver = new ClassicMultigrid() {

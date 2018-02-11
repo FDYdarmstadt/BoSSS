@@ -681,7 +681,7 @@ namespace BoSSS.Application.SipPoisson {
                         m_MaxIterations = 1,
                         CoarseSolver = null,
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                            NoOfParts = NoOfBlocks
+                            NoOfPartsPerProcess = NoOfBlocks
                         },
                         Overlap = 0 // overlap does **NOT** seem to help
                     };

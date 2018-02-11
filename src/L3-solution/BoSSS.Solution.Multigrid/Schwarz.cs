@@ -247,7 +247,7 @@ namespace BoSSS.Solution.Multigrid {
             /// %
             /// </summary>
             internal override int GetNoOfBlocks(MultigridOperator op) {
-                return NoOfParts;
+                return NoOfPartsPerProcess;
             }
         }
 
