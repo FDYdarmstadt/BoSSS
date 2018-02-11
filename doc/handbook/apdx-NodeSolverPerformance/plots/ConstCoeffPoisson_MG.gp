@@ -13,7 +13,7 @@ set logscale y
 unset logscale x2
 unset logscale y2
 set autoscale x
-set yrange [1:10000]
+set yrange [0.1:10000]
 set autoscale x2
 set autoscale y2
 unset xlabel
@@ -43,7 +43,7 @@ set logscale y
 unset logscale x2
 unset logscale y2
 set autoscale x
-set yrange [1:10000]
+set yrange [0.1:10000]
 set autoscale x2
 set autoscale y2
 unset xlabel
