@@ -82,7 +82,7 @@ set ytics format "$10^{%T}$"
 set y2tics format " " 
 set termoption dashed
 set termoption dashed
-plot "ConstCoeffPoissonScaling_data_12.csv" title "Pardiso" with linespoints linecolor  "black" dashtype 3 linewidth 1 pointtype 6 pointsize 0.5, "ConstCoeffPoissonScaling_data_13.csv" title "CG" with linespoints linecolor  "black" dashtype 1 linewidth 1 pointtype 3 pointsize 0.5, "ConstCoeffPoissonScaling_data_14.csv" title "Mumps" with linespoints linecolor  "black" dashtype 3 linewidth 1 pointtype 10 pointsize 0.5
+plot "ConstCoeffPoissonScaling_data_12.csv" title "Mult Gr w Blk Jac" with linespoints linecolor  "black" dashtype 1 linewidth 1 pointtype 5 pointsize 0.5, "ConstCoeffPoissonScaling_data_13.csv" title "Pardiso" with linespoints linecolor  "black" dashtype 3 linewidth 1 pointtype 6 pointsize 0.5, "ConstCoeffPoissonScaling_data_14.csv" title "CG" with linespoints linecolor  "black" dashtype 1 linewidth 1 pointtype 3 pointsize 0.5, "ConstCoeffPoissonScaling_data_15.csv" title "Mumps" with linespoints linecolor  "black" dashtype 3 linewidth 1 pointtype 10 pointsize 0.5
 set size 0.49,0.326666666666667
 set origin 0.505,0.336666666666667
 set lmargin 1e00
@@ -109,7 +109,7 @@ set ytics format " "
 set y2tics format "$10^{%T}$" 
 set termoption dashed
 set termoption dashed
-plot "ConstCoeffPoissonScaling_data_15.csv" title "Pardiso" axes x1y2  with linespoints linecolor  "black" dashtype 3 linewidth 1 pointtype 6 pointsize 0.5, "ConstCoeffPoissonScaling_data_16.csv" title "Mumps" axes x1y2  with linespoints linecolor  "black" dashtype 3 linewidth 1 pointtype 10 pointsize 0.5
+plot "ConstCoeffPoissonScaling_data_16.csv" title "Pardiso" axes x1y2  with linespoints linecolor  "black" dashtype 3 linewidth 1 pointtype 6 pointsize 0.5, "ConstCoeffPoissonScaling_data_17.csv" title "Mumps" axes x1y2  with linespoints linecolor  "black" dashtype 3 linewidth 1 pointtype 10 pointsize 0.5
 set size 0.49,0.326666666666667
 set origin 0.005,0.00333333333333333
 set lmargin 1e01
@@ -137,7 +137,7 @@ set ytics format "$10^{%T}$"
 set y2tics format " " 
 set termoption dashed
 set termoption dashed
-plot "ConstCoeffPoissonScaling_data_17.csv" title "Pardiso" with linespoints linecolor  "black" dashtype 3 linewidth 1 pointtype 6 pointsize 0.5, "ConstCoeffPoissonScaling_data_18.csv" title "Mumps" with linespoints linecolor  "black" dashtype 3 linewidth 1 pointtype 10 pointsize 0.5, "ConstCoeffPoissonScaling_data_19.csv" title "Mult Gr w Blk Jac" with linespoints linecolor  "black" dashtype 1 linewidth 1 pointtype 5 pointsize 0.5, "ConstCoeffPoissonScaling_data_20.csv" title "Add Swz w Coarse" with linespoints linecolor  "black" dashtype 1 linewidth 1 pointtype 11 pointsize 0.5, "ConstCoeffPoissonScaling_data_21.csv" title "Add Swz" with linespoints linecolor  "black" dashtype 1 linewidth 1 pointtype 9 pointsize 0.5, "ConstCoeffPoissonScaling_data_22.csv" title "Pardiso w Blk PC" with linespoints linecolor  "black" dashtype 1 linewidth 1 pointtype 4 pointsize 0.5, "ConstCoeffPoissonScaling_data_23.csv" title "CG" with linespoints linecolor  "black" dashtype 1 linewidth 1 pointtype 3 pointsize 0.5
+plot "ConstCoeffPoissonScaling_data_18.csv" title "Pardiso" with linespoints linecolor  "black" dashtype 3 linewidth 1 pointtype 6 pointsize 0.5, "ConstCoeffPoissonScaling_data_19.csv" title "Mumps" with linespoints linecolor  "black" dashtype 3 linewidth 1 pointtype 10 pointsize 0.5, "ConstCoeffPoissonScaling_data_20.csv" title "Mult Gr w Blk Jac" with linespoints linecolor  "black" dashtype 1 linewidth 1 pointtype 5 pointsize 0.5, "ConstCoeffPoissonScaling_data_21.csv" title "Add Swz w Coarse" with linespoints linecolor  "black" dashtype 1 linewidth 1 pointtype 11 pointsize 0.5, "ConstCoeffPoissonScaling_data_22.csv" title "Add Swz" with linespoints linecolor  "black" dashtype 1 linewidth 1 pointtype 9 pointsize 0.5, "ConstCoeffPoissonScaling_data_23.csv" title "Pardiso w Blk PC" with linespoints linecolor  "black" dashtype 1 linewidth 1 pointtype 4 pointsize 0.5, "ConstCoeffPoissonScaling_data_24.csv" title "CG" with linespoints linecolor  "black" dashtype 1 linewidth 1 pointtype 3 pointsize 0.5
 
 
 exit
