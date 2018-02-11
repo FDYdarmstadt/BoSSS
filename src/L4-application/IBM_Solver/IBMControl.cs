@@ -235,5 +235,16 @@ namespace BoSSS.Application.IBM_Solver {
         /// 
         /// </summary>
         public TimestepperInit Timestepper_Init = TimestepperInit.SingleInit;
+
+        public SolverOptions solver = SolverOptions.NewtonGmresSchur;
+
+        public enum SolverOptions {
+
+            NewtonGmresSchur = 0,
+
+            NewtonGmresSwzMG = 1,
+
+            NewtonGmresSimple = 2
+        }
     }
 }
