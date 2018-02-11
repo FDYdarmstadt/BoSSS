@@ -2203,39 +2203,39 @@ namespace ilPSP.LinSolvers {
             where VectorType1 : IList<double>
             where VectorType2 : IList<double> //
         {
-#if DEBUG
-            this.VerifyDataStructure("SpMV");
+//#if DEBUG
+//            this.VerifyDataStructure("SpMV");
             
-            double aNorm = a.L2NormPow2().MPISum(this.MPI_Comm).Sqrt();
-            double accNorm = acc.L2NormPow2().MPISum(this.MPI_Comm).Sqrt();
+//            double aNorm = a.L2NormPow2().MPISum(this.MPI_Comm).Sqrt();
+//            double accNorm = acc.L2NormPow2().MPISum(this.MPI_Comm).Sqrt();
 
-            var T = this.ToMsrMatrix();
-            double[] accB4 = acc.ToArray();
-            double[] aB4 = a.ToArray();
+//            var T = this.ToMsrMatrix();
+//            double[] accB4 = acc.ToArray();
+//            double[] aB4 = a.ToArray();
 
-            double[] accB4B4 = acc.ToArray();
+//            double[] accB4B4 = acc.ToArray();
 
-            T.SpMVpara(alpha, a, beta, acc);
+//            T.SpMVpara(alpha, a, beta, acc);
 
           
-            this.__SpMV(alpha, aB4, beta, accB4);
+//            this.__SpMV(alpha, aB4, beta, accB4);
 
-            double aErr = GenericBlas.L2DistPow2(aB4, a).MPISum(this.MPI_Comm).Sqrt();
-            double accErr = GenericBlas.L2DistPow2(accB4, acc).MPISum(this.MPI_Comm).Sqrt();
+//            double aErr = GenericBlas.L2DistPow2(aB4, a).MPISum(this.MPI_Comm).Sqrt();
+//            double accErr = GenericBlas.L2DistPow2(accB4, acc).MPISum(this.MPI_Comm).Sqrt();
 
-            double compNorm = T.InfNorm() * Math.Max(aNorm, accNorm);
-            compNorm = Math.Max(Math.Sqrt(double.Epsilon), compNorm);
-            double aErr_rel = aErr / compNorm;
-            double accErr_rel = accErr / compNorm;
-            if (aErr_rel > 1.0e-8 || double.IsInfinity(aErr_rel) || double.IsNaN(aErr_rel))
-                throw new ArithmeticException("SpMV error");
-            if (accErr_rel > 1.0e-8 || double.IsInfinity(accErr_rel) || double.IsNaN(accErr_rel)) {
-                throw new ArithmeticException("SpMV error");
-            }
+//            double compNorm = T.InfNorm() * Math.Max(aNorm, accNorm);
+//            compNorm = Math.Max(Math.Sqrt(double.Epsilon), compNorm);
+//            double aErr_rel = aErr / compNorm;
+//            double accErr_rel = accErr / compNorm;
+//            if (aErr_rel > 1.0e-8 || double.IsInfinity(aErr_rel) || double.IsNaN(aErr_rel))
+//                throw new ArithmeticException("SpMV error");
+//            if (accErr_rel > 1.0e-8 || double.IsInfinity(accErr_rel) || double.IsNaN(accErr_rel)) {
+//                throw new ArithmeticException("SpMV error");
+//            }
             
-#else
+//#else
             this.__SpMV(alpha, a, beta, acc);
-#endif
+//#endif
         }
 
         /// <summary>
@@ -2398,10 +2398,9 @@ namespace ilPSP.LinSolvers {
                                         Debug.Assert((MembnkIdx >= 0) == (InMembnk >= 0));
 
                                         if (InMembnk >= 0) {
-                                            double[] RawMem;
                                             int Offset, CI, CJ;
                                             bool isDense;
-                                            m_Membanks[MembnkIdx].GetFastBlockAccessInfo(out RawMem, out Offset, out CI, out CJ, out isDense, InMembnk);
+                                            m_Membanks[MembnkIdx].GetFastBlockAccessInfo(out double[] RawMem, out Offset, out CI, out CJ, out isDense, InMembnk);
                                            
                                             int I = RowLenSblk[iSblkRow];
                                             int J = ColLenSblk[jSblkCol];
