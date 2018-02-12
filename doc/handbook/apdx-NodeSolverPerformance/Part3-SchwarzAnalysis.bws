@@ -5,9 +5,9 @@ restart
   ____________________
 
 Databases loaded:
-List of 0 instances of IDatabaseInfo {
+List of 1 instances of IDatabaseInfo {
+  0: { Session Count = 30; Grid Count = 9; Path = \\dc1\userspace\degenhardt\bosss_db }
 }
-Setting Matlab Connector to Octave...
 
  Console ready for input. Type 'help' for help.
 
@@ -173,6 +173,7 @@ for(int iRow = 0; iRow < 2; iRow++) {
            Fmt.PointSize = 0.5;
            Fmt.Style     = Styles.LinesPoints;
            Fmt.LineColor = LineColors.Black;
+           Fmt.LineWidth = 3;
            
            xValue = dofs;
            
@@ -246,15 +247,17 @@ for(int iRow = 0; iRow < 2; iRow++) {
 var CL = multiplots.ToGnuplot().PlotCairolatex(xSize:16, ySize:12);
 CL.PlotNow();
 **************
-Using gnuplot: C:\Program Files (x86)\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+Using gnuplot: C:\Program Files\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 System.Drawing.Bitmap
 ==============
 **************
 ==============
-CL.SaveTo(Path.Combine(CurrentDocDir, "ConstCoeffPoisson_Schwarz.tex"));
+//CL.SaveTo(Path.Combine(CurrentDocDir, "ConstCoeffPoisson_Schwarz.tex"));
 **************
 ==============
-CL.WriteMinimalCompileableExample("C:\\tmp\\Schwarz" + dateString + ".tex");
+//CL.WriteMinimalCompileableExample("C:\\tmp\\Schwarz" + dateString + ".tex");
+**************
+==============
 **************
 ==============
 **************
