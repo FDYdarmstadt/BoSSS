@@ -115,6 +115,13 @@ namespace BoSSS.Solution.Gnuplot {
 
         }
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        public PlotFormat(string fmt)  : this(){
+            this.FromString(fmt);
+        }
+        
                
         /// <summary>
         /// Constructor

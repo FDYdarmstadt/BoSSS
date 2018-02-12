@@ -119,8 +119,7 @@ namespace ilPSP.Tracing {
         /// all traces sub-calls
         /// </summary>
         [DataMember]
-        public Dictionary<string, MethodCallRecord> Calls =
-            new Dictionary<string, MethodCallRecord>();
+        public Dictionary<string, MethodCallRecord> Calls = new Dictionary<string, MethodCallRecord>();
 
         /// <summary>
         /// Adds a new entry to <see cref="Calls"/> (if <paramref name="_name"/> does not exist), otherwise 
@@ -513,10 +512,12 @@ namespace ilPSP.Tracing {
         /// </summary>
         override public string ToString() {
             List<string> calledBy = new List<string>();
+            List<int> calledByCnt = new List<int>();
             foreach (var mcr in this.AllCalls) {
                 if (mcr.ParrentCall != null) {
                     if (!calledBy.Contains(mcr.ParrentCall.Name)) {
                         calledBy.Add(mcr.ParrentCall.Name);
+                        calledByCnt.Add(mcr.CallCount);
                     }
                 }
             }
@@ -536,6 +537,8 @@ namespace ilPSP.Tracing {
             stw.Write("'");
             for (int i = 0; i < calledBy.Count; i++) {
                 stw.Write(calledBy[i]);
+                stw.Write("*");
+                stw.Write(calledByCnt[i]);
                 if (i < calledBy.Count - 1)
                     stw.Write(",");
                 else

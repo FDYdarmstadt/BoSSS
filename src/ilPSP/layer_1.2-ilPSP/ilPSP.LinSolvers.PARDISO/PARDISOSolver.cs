@@ -47,6 +47,9 @@ namespace ilPSP.LinSolvers.PARDISO {
         //public static Stopwatch Inner = new Stopwatch();
         //public static Stopwatch InitAndSolve = new Stopwatch();
         //public static Stopwatch SingleCalls = new Stopwatch();
+        public static Stopwatch Phase_11 = new Stopwatch();
+        public static Stopwatch Phase_22 = new Stopwatch();
+        public static Stopwatch Phase_33 = new Stopwatch();
 
 
         /// <summary>
@@ -676,10 +679,11 @@ namespace ilPSP.LinSolvers.PARDISO {
                                         iparm[59] = 0; // in-core (1 == out-of-core)
 
                                         //Console.Write("calling pardiso, phase 11... ");
+                                        Phase_11.Start();
                                         wrapper.PARDISO(pt, &maxfct, &mnum, &mtype, &phase,
                                                           &n, a, ia, ja, &idum, &nrhs,
                                                           iparm, &msglvl, &ddum, &ddum, &error, dparam);
-
+                                        Phase_11.Stop();
                                         //Console.WriteLine("11: IPARAM(22) = {0}, IPARAM(23) = {1}", iparm[21], iparm[22]);
 
                                         if (error != 0) {
@@ -696,11 +700,11 @@ namespace ilPSP.LinSolvers.PARDISO {
                                         /* -------------------------------------------------------------------- */
                                         phase = 22;
 
-
+                                        Phase_22.Start();
                                         wrapper.PARDISO(pt, &maxfct, &mnum, &mtype, &phase,
                                                           &n, a, ia, ja, &idum, &nrhs,
                                                           iparm, &msglvl, &ddum, &ddum, &error, dparam);
-
+                                        Phase_22.Stop();
                                         if (error != 0) {
                                             // some error occured: release mem, dispose objects...
                                             PARDISODispose();
@@ -718,10 +722,11 @@ namespace ilPSP.LinSolvers.PARDISO {
                                     iparm[7] = 1;       /* Max numbers of iterative refinement steps. */
 
                                     //m_foo.mkl_serv_mkl_set_num_threads(num_procs);
+                                    Phase_33.Start();
                                     wrapper.PARDISO(pt, &maxfct, &mnum, &mtype, &phase,
                                                       &n, a, ia, ja, &idum, &nrhs,
                                                       iparm, &msglvl, b, x, &error, dparam);
-
+                                    Phase_33.Stop();
                                     if (error != 0) {
                                         // some error occured: release mem, dispose objects...
                                         PARDISODispose();
