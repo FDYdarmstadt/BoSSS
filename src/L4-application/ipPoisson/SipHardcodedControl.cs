@@ -257,7 +257,6 @@ namespace BoSSS.Application.SipPoisson {
 
 
             R.solver_name = solver_name;
-
             
 
             return R;

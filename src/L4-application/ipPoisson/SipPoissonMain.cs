@@ -542,35 +542,13 @@ namespace BoSSS.Application.SipPoisson {
                         break;
 
                         case SolverCodes.exp_softpcg_mg:
-                        //solver = new SoftPCG() {
-                        //    m_MaxIterations = 2000,
-                        //    m_Tolerance = 1.0e-10,
-                        //    Precond = ClassicMultigrid.InitMultigridChain(MultigridOp,
-                        //        i => new Schwarz() {
-                        //            m_MaxIterations = 1,
-                        //            CoarseSolver = null,
-                        //            m_BlockingStrategy = new Schwarz.MultigridBlocks() {
-                        //                Depth = Math.Min(2, MgSeq.Length - i - 1)
-                        //            },
-                        //            Overlap = 0
-                        //        },
-                        //        i => new Schwarz() {
-                        //            m_MaxIterations = 1,
-                        //            CoarseSolver = null,
-                        //            m_BlockingStrategy = new Schwarz.MultigridBlocks() {
-                        //                Depth = Math.Min(2, MgSeq.Length - i - 1)
-                        //            },
-                        //            Overlap = 0
-                        //        },
-                        //        (i, mg) => {
-                        //            mg.Gamma = 1;
-                        //            mg.m_MaxIterations = 1;
-                        //        },
-                        //        () => new DirectSolver())
-                        //};
                         solver = MultilevelSchwarz(MultigridOp);
                         break;
 
+
+                        case SolverCodes.exp_Kcycle_schwarz:
+                        solver = KcycleMultiSchwarz(MultigridOp);
+                        break;
 
                         default:
                         throw new ApplicationException("unknown solver: " + this.Control.solver_name);
@@ -623,7 +601,7 @@ namespace BoSSS.Application.SipPoisson {
                     solverIteration.Stop();
                     Console.WriteLine("done. (" + solverIteration.Elapsed.TotalSeconds + " sec)");
 
-
+                    
 
                     // time measurement, statistics
                     stw.Stop();
@@ -640,6 +618,113 @@ namespace BoSSS.Application.SipPoisson {
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        ISolverSmootherTemplate KcycleMultiSchwarz(MultigridOperator op) {
+            var solver = new OrthonormalizationScheme() {
+                MaxIter = 500,
+                Tolerance = 1.0e-10,
+                
+            };
+
+            // my tests show that the ideal block size may be around 10'000
+            int DirectKickIn = base.Control.TargetBlockSize;
+
+
+            MultigridOperator Current = op;
+            var PrecondChain = new List<ISolverSmootherTemplate>();
+            for(int iLevel = 0; iLevel < base.MultigridSequence.Length; iLevel++) {
+                int SysSize = Current.Mapping.TotalLength;
+                int NoOfBlocks = (int) Math.Ceiling(((double)SysSize) / ((double)DirectKickIn));
+
+                bool useDirect = false;
+                useDirect |= (SysSize < DirectKickIn);
+                useDirect |= iLevel == base.MultigridSequence.Length - 1;
+                useDirect |= NoOfBlocks.MPISum() <= 1;
+
+
+                ISolverSmootherTemplate levelSolver;
+                if (useDirect) {
+                    levelSolver = new DirectSolver() {
+                        WhichSolver = DirectSolver._whichSolver.PARDISO,
+                        TestSolution = false
+                    };
+                } else {
+                                        
+                    Schwarz swz1 = new Schwarz() {
+                        m_MaxIterations = 1,
+                        CoarseSolver = null,
+                        m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
+                            NoOfPartsPerProcess = NoOfBlocks
+                        },
+                        Overlap = 2 // overlap seems to help
+                    };
+
+                    SoftPCG pcg1 = new SoftPCG() {
+                        m_MinIterations = 5,
+                        m_MaxIterations = 5
+                    };
+
+                    //*/
+
+                    var pre = new SolverSquence() {
+                        SolverChain = new ISolverSmootherTemplate[] { swz1, pcg1 }
+                    };
+
+                    levelSolver = swz1;
+                }
+
+                if(iLevel > 0) {
+
+                    GenericRestriction[] R = new GenericRestriction[iLevel];
+                    for(int ir = 0; ir < R.Length; ir++) {
+                        R[ir] = new GenericRestriction();
+                        if (ir >= 1)
+                            R[ir - 1].CoarserLevelSolver = R[ir];
+                    }
+                    R[iLevel - 1].CoarserLevelSolver = levelSolver;
+                    PrecondChain.Add(R[0]);
+
+                } else {
+                    PrecondChain.Add(levelSolver);
+                }
+
+
+                if (useDirect) {
+                    Console.WriteLine("Kswz: using {0} levels, lowest level DOF is {1}, target size is {2}.", iLevel + 1, SysSize, DirectKickIn);
+                    break;
+                }
+
+
+
+                Current = Current.CoarserLevel;
+
+            }
+
+            
+            if (PrecondChain.Count > 1) {
+                /*
+                // construct a V-cycle
+                for (int i = PrecondChain.Count - 2; i>= 0; i--) {
+                    PrecondChain.Add(PrecondChain[i]);
+                }
+                */
+
+                var tmp = PrecondChain.ToArray();
+                for(int i = 0; i < PrecondChain.Count; i++) {
+                    PrecondChain[i] = tmp[PrecondChain.Count - 1 - i];
+                }
+            }
+            
+
+
+            solver.PrecondS = PrecondChain.ToArray();
+            solver.MaxKrylovDim = solver.PrecondS.Length * 4;
+            
+            return solver;
+        }
+
+        /// <summary>
         /// Ganz ok.
         /// </summary>
         ISolverSmootherTemplate MultilevelSchwarz(MultigridOperator op) {
@@ -647,6 +732,15 @@ namespace BoSSS.Application.SipPoisson {
                 m_MaxIterations = 500,
                 m_Tolerance = 1.0e-10
             };
+            //var solver = new OrthonormalizationScheme() {
+            //    MaxIter = 500,
+            //    Tolerance = 1.0e-10,
+            //};
+            //var solver = new SoftGMRES() {
+            //    m_MaxIterations = 500,
+            //    m_Tolerance = 1.0e-10,
+
+            //};
 
             // my tests show that the ideal block size may be around 10'000
             int DirectKickIn = base.Control.TargetBlockSize;
@@ -742,7 +836,7 @@ namespace BoSSS.Application.SipPoisson {
 
 
             solver.Precond = MultigridChain[0];
-
+            //solver.PrecondS = new[] { MultigridChain[0] };
             
             return solver;
         }
