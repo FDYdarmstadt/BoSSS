@@ -162,7 +162,7 @@ namespace BoSSS.Solution.Multigrid {
                 case _whichSolver.PARDISO:
                 solver = new PARDISOSolver();
                 ((PARDISOSolver)solver).CacheFactorization = true;
-                ((PARDISOSolver)solver).UseDoublePrecision = false;
+                ((PARDISOSolver)solver).UseDoublePrecision = true;
                 break;
 
                 case _whichSolver.MUMPS:

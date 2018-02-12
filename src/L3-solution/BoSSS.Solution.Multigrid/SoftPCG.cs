@@ -49,8 +49,6 @@ namespace BoSSS.Solution.Multigrid {
             }
         }
 
-
-        BlockMsrMatrix m_Matrix;
         
         public double m_Tolerance = 1.0e-10;
         public int m_MaxIterations = 10000;
@@ -185,6 +183,9 @@ namespace BoSSS.Solution.Multigrid {
         }
 
         MultigridOperator m_MgOp;
+        //ilPSP.LinSolvers.monkey.CPU.RefMatrix m_Matrix;
+        BlockMsrMatrix m_Matrix;
+
 
         public void Init(MultigridOperator op) {
             using (new FuncTrace()) {
@@ -196,8 +197,42 @@ namespace BoSSS.Solution.Multigrid {
                     throw new ArgumentException("Row partitioning mismatch.");
                 if (!M.ColPartition.EqualsPartition(MgMap.Partitioning))
                     throw new ArgumentException("Column partitioning mismatch.");
+
                 this.m_Matrix = M;
-                //m_OptMatrix = new ilPSP.LinSolvers.monkey.CPU.RefMatrix(M.ToMsrMatrix());
+                /*
+                int n = m_Matrix.RowPartitioning.LocalLength;
+                if(n > 50000) {
+                    var _Matrix = new ilPSP.LinSolvers.monkey.CPU.RefMatrix(M.ToMsrMatrix());
+
+                    double[] xTest = new double[n];
+                    double[] bTest = new double[n];
+                    Random r = new Random(123);
+                    for(int i = 0; i < n; i++) {
+                        xTest[i] = r.NextDouble();
+                        bTest[i] = r.NextDouble();
+                    }
+
+
+                    double[] b1 = bTest.CloneAs();
+                    double[] x1 = bTest.CloneAs();
+                    Stopwatch monkey = new Stopwatch();
+                    monkey.Start();
+                    for (int i = 0; i < 100; i++)
+                        _Matrix.SpMV(1.0, x1, -0.1, b1);
+                    monkey.Stop();
+
+                    double[] b2 = bTest.CloneAs();
+                    double[] x2 = bTest.CloneAs();
+                    Stopwatch block = new Stopwatch();
+                    block.Start();
+                    for (int i = 0; i < 100; i++)
+                        m_Matrix.SpMV(1.0, x1, -0.1, b1);
+                    block.Stop();
+
+                    Console.WriteLine("SPMV monkey:    " + monkey.Elapsed.TotalSeconds);
+                    Console.WriteLine("SPMV block MSR: " + block.Elapsed.TotalSeconds);
+                }
+                */
                 if (Precond != null)
                     Precond.Init(op);
             }
