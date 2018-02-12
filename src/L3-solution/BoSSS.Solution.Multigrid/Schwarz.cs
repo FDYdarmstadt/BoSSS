@@ -644,12 +644,13 @@ namespace BoSSS.Solution.Multigrid {
                             ExternalRowsTemp.AccSubMatrixTo(1.0, Block, l1, targRows, bi, default(int[]), biE, extTargCols);
                         }
 #if DEBUG
-                        if (m_MatlabParalellizationCheck != null) {
+                        if (m_MatlabParalellizationCheck) {
                             Blocks.Add(Block);
                         }
 #endif
                         blockSolvers[iPart] = new PARDISOSolver() {
-                            CacheFactorization = true
+                            CacheFactorization = true,
+                            UseDoublePrecision = false
                         };
                         //blockSolvers[iPart] = new FullDirectSolver();
                         //blockSolvers[iPart] = new ilPSP.LinSolvers.MUMPS.MUMPSSolver(MPI: false);

@@ -178,6 +178,12 @@ namespace ilPSP.LinSolvers.PARDISO {
         }
 
         /// <summary>
+        /// Use double (8 byte) or single (4 byte) fp numbers.
+        /// </summary>
+        public bool UseDoublePrecision = true;
+
+
+        /// <summary>
         /// solves the equation system 
         /// M*<paramref name="x"/>=<paramref name="rhs"/>,
         /// where M denotes the 
@@ -545,7 +551,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                     {
                         fixed (double* dparam = m_PardInt.m_dparam)
                         {
-                            fixed (double* a = m_PardisoMatrix.a, x = _x, b = _b)
+                            fixed (double* pa = m_PardisoMatrix.a, px = _x, pb = _b)
                             {
                                 fixed (int* ia = m_PardisoMatrix.ia, ja = m_PardisoMatrix.ja, iparm = m_PardInt.m_parm, __pt = m_PardInt.m_pt)
                                 {
@@ -571,6 +577,31 @@ namespace ilPSP.LinSolvers.PARDISO {
 
                                     double ddum;              /* Double dummy */
                                     int idum;              /* Integer dummy. */
+
+
+                                    double* a, b, x;
+                                    if (UseDoublePrecision) {
+                                        a = pa;
+                                        b = pb;
+                                        x = px;
+                                    } else {
+                                        int len_a = m_PardisoMatrix.a.Length;
+                                        a = (double*)Marshal.AllocHGlobal(len_a * sizeof(float));
+                                        b = (double*)Marshal.AllocHGlobal(n * sizeof(float));
+                                        x = (double*)Marshal.AllocHGlobal(n * sizeof(float));
+
+                                        float* aS = (float*)a;
+                                        float* bS = (float*)b;
+                                        float* xS = (float*)x;
+                                        for (int i = 0; i < len_a; i++) {
+                                            aS[i] = (float)(pa[i]);
+                                        }
+                                        for (int i = 0; i < n; i++) {
+                                            bS[i] = (float)(pb[i]);
+                                            xS[i] = (float)(px[i]);
+                                        }
+                                    }
+
 
                                     if (!m_PardInt.m_PardisoInitialized) {
 
@@ -606,6 +637,9 @@ namespace ilPSP.LinSolvers.PARDISO {
 
                                         //Console.WriteLine("init: IPARAM(22) = {0}, IPARAM(23) = {1}", iparm[21], iparm[22]);
 
+                                        iparm[27] = this.UseDoublePrecision ? 0 : 1; // set single or double precision
+                                        
+
 
                                         maxfct = 1;         /* Maximum number of numerical factorizations.  */
                                         mnum = 1;         /* Which factorization to use. */
@@ -619,7 +653,8 @@ namespace ilPSP.LinSolvers.PARDISO {
                                         /*     all memory that is necessary for the factorization.              */
                                         /* -------------------------------------------------------------------- */
                                         phase = 11;
-                                        iparm[59] = 0;
+                                        iparm[59] = 0; // in-core (1 == out-of-core)
+                                        
                                         //Console.Write("calling pardiso, phase 11... ");
                                         wrapper.PARDISO(pt, &maxfct, &mnum, &mtype, &phase,
                                                           &n, a, ia, ja, &idum, &nrhs,
@@ -674,7 +709,24 @@ namespace ilPSP.LinSolvers.PARDISO {
                                         return false;
                                     }
 
+                                    if(UseDoublePrecision) {
+
+                                    } else {
+                                        float* bS = (float*)b;
+                                        float* xS = (float*)x;
+                                        for (int i = 0; i < n; i++) {
+                                            pb[i] = (bS[i]);
+                                            px[i] = (xS[i]);
+                                        }
+
+                                        Marshal.FreeHGlobal((IntPtr)a);
+                                        Marshal.FreeHGlobal((IntPtr)b);
+                                        Marshal.FreeHGlobal((IntPtr)x);
+                                    }
+
                                     //Console.Write("\nSolve completed ... ");
+
+                                
 
                                 }
                             }

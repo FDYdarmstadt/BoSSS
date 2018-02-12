@@ -665,7 +665,8 @@ namespace BoSSS.Application.SipPoisson {
                 
                 if (useDirect) {
                     MultigridChain[iLevel] = new DirectSolver() {
-                        WhichSolver = DirectSolver._whichSolver.PARDISO
+                        WhichSolver = DirectSolver._whichSolver.PARDISO,
+                        TestSolution = false
                     };
                 } else {
 

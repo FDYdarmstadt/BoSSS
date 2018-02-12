@@ -162,6 +162,7 @@ namespace BoSSS.Solution.Multigrid {
                 case _whichSolver.PARDISO:
                 solver = new PARDISOSolver();
                 ((PARDISOSolver)solver).CacheFactorization = true;
+                ((PARDISOSolver)solver).UseDoublePrecision = false;
                 break;
 
                 case _whichSolver.MUMPS:
@@ -188,6 +189,11 @@ namespace BoSSS.Solution.Multigrid {
 
         BlockMsrMatrix m_Mtx;
         int IterCnt = 1;
+
+
+        /// <summary>
+        /// %
+        /// </summary>
         public void Solve<U, V>(U X, V B)
             where U : IList<double>
             where V : IList<double> //
@@ -255,13 +261,18 @@ namespace BoSSS.Solution.Multigrid {
 
         int m_ThisLevelIterations;
 
+        bool m_TestSolution = true;
+
         /// <summary>
         /// If set to true, the solution returned by the direct solver is tested by computing the residual norm.
-        /// Currently, this is hard-coded to be true, since the direct solvers seem unreliable.
+        /// Currently, the default is true, since the direct solvers seem unreliable.
         /// </summary>
         public bool TestSolution {
             get {
-                return true; 
+                return m_TestSolution; 
+            }
+            set {
+                m_TestSolution = value;
             }
         }
 
