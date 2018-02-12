@@ -350,7 +350,13 @@ for(int iCol = 0; iCol < 2; iCol++) {
            Fmt.PointSize = 0.5;
            Fmt.Style     = Styles.LinesPoints;
            Fmt.LineColor = LineColors.Black;
+           Fmt.LineWidth = 3;
        });
+    double[] dof = new[]{1e3,1e6};
+    double[] linT = dof.Select(x => x*0.001).ToArray();
+    var linP = new Plot2Ddata.XYvalues("linear", dof, linT);
+    linP.Format.FromString("- black");
+    ArrayTools.AddToArray(linP, ref multiplots[iRow,iCol].dataGroups);
  
     string Title = string.Format("$k = {0}$", pDegree);
     multiplots[iRow,iCol].Ylabel = Title;
@@ -417,6 +423,8 @@ System.Drawing.Bitmap
 CL.WriteMinimalCompileableExample(
    Path.Combine(CurrentDocDir, "plots", "MainConstCoeffPoissonScaling.tex"),
    "ConstCoeffPoissonScaling.tex");
+**************
+==============
 **************
 ==============
 **************
