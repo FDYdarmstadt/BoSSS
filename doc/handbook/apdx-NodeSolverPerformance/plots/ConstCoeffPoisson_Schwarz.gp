@@ -13,7 +13,7 @@ set logscale y
 unset logscale x2
 unset logscale y2
 set autoscale x
-set yrange [1:10000]
+set yrange [0.1:10000]
 set autoscale x2
 set autoscale y2
 unset xlabel
@@ -31,7 +31,7 @@ set termoption dashed
 set termoption dashed
 set termoption dashed
 set termoption dashed
-plot "ConstCoeffPoisson_Schwarz_data_0.csv" title "Slv Iter" with linespoints linecolor  "black" dashtype 3 linewidth 1 pointtype 6 pointsize 0.5, "ConstCoeffPoisson_Schwarz_data_1.csv" title "Slv Init" with linespoints linecolor  "black" dashtype 2 linewidth 1 pointtype 6 pointsize 0.5, "ConstCoeffPoisson_Schwarz_data_2.csv" title "Agg Init" with linespoints linecolor  "black" dashtype 4 linewidth 1 pointtype 6 pointsize 0.5, "ConstCoeffPoisson_Schwarz_data_3.csv" title "Mtx ass" with linespoints linecolor  "black" dashtype 5 linewidth 1 pointtype 6 pointsize 0.5
+plot "ConstCoeffPoisson_Schwarz_data_0.csv" title "Slv Iter" with linespoints linecolor  "black" dashtype 3 linewidth 2 pointtype 6 pointsize 0.5, "ConstCoeffPoisson_Schwarz_data_1.csv" title "Slv Init" with linespoints linecolor  "black" dashtype 2 linewidth 2 pointtype 4 pointsize 0.5, "ConstCoeffPoisson_Schwarz_data_2.csv" title "Agg Init" with linespoints linecolor  "black" dashtype 4 linewidth 2 pointtype 12 pointsize 0.5, "ConstCoeffPoisson_Schwarz_data_3.csv" title "Mtx ass" with linespoints linecolor  "black" dashtype 5 linewidth 2 pointtype 10 pointsize 0.5
 set size 0.98,0.49
 set origin 0.01,0.005
 unset lmargin 
@@ -43,7 +43,7 @@ set logscale y
 unset logscale x2
 unset logscale y2
 set autoscale x
-set yrange [1:10000]
+set yrange [0.1:10000]
 set autoscale x2
 set autoscale y2
 unset xlabel
@@ -61,7 +61,7 @@ set termoption dashed
 set termoption dashed
 set termoption dashed
 set termoption dashed
-plot "ConstCoeffPoisson_Schwarz_data_4.csv" title "Slv Iter" with linespoints linecolor  "black" dashtype 3 linewidth 1 pointtype 6 pointsize 0.5, "ConstCoeffPoisson_Schwarz_data_5.csv" title "Slv Init" with linespoints linecolor  "black" dashtype 2 linewidth 1 pointtype 6 pointsize 0.5, "ConstCoeffPoisson_Schwarz_data_6.csv" title "Agg Init" with linespoints linecolor  "black" dashtype 4 linewidth 1 pointtype 6 pointsize 0.5, "ConstCoeffPoisson_Schwarz_data_7.csv" title "Mtx ass" with linespoints linecolor  "black" dashtype 5 linewidth 1 pointtype 6 pointsize 0.5
+plot "ConstCoeffPoisson_Schwarz_data_4.csv" title "Slv Iter" with linespoints linecolor  "black" dashtype 3 linewidth 2 pointtype 6 pointsize 0.5, "ConstCoeffPoisson_Schwarz_data_5.csv" title "Slv Init" with linespoints linecolor  "black" dashtype 2 linewidth 2 pointtype 4 pointsize 0.5, "ConstCoeffPoisson_Schwarz_data_6.csv" title "Agg Init" with linespoints linecolor  "black" dashtype 4 linewidth 2 pointtype 12 pointsize 0.5, "ConstCoeffPoisson_Schwarz_data_7.csv" title "Mtx ass" with linespoints linecolor  "black" dashtype 5 linewidth 2 pointtype 10 pointsize 0.5
 
 
 exit
