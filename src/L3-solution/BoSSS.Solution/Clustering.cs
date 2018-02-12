@@ -49,9 +49,14 @@ namespace BoSSS.Solution.Utils {
                 private set;
             }
 
-            public Clustering(List<SubGrid> clusters, SubGrid subGrid) {
+            public List<int> SubStepsInitial {
+                get;
+            }
+
+            public Clustering(List<SubGrid> clusters, SubGrid subGrid, List<int> subSteps = null) {
                 this.Clusters = clusters;
                 this.SubGrid = subGrid;
+                this.SubStepsInitial = subSteps;
             }
         }
 
@@ -133,13 +138,11 @@ namespace BoSSS.Solution.Utils {
                     clusters.Add(new SubGrid(new CellMask(gridData, ba)));
                 }
             }
-
 #if DEBUG
             for (int i = 0; i < clusters.Count; i++) {
                 Console.WriteLine("CreateClustering: id=" + i + " -> elements=" + clusters[i].GlobalNoOfCells);
             }
 #endif
-
             return new Clustering(clusters, subGrid);
         }
 
@@ -213,36 +216,17 @@ namespace BoSSS.Solution.Utils {
 
             for (int subGridCell = 0; subGridCell < subGrid.LocalNoOfCells; subGridCell++) {
                 int localCellIndex = subGrid.SubgridIndex2LocalCellIndex[subGridCell];
-                cellMetric[subGridCell] = timeStepConstraints.Min(c => c.GetLocalStepSize(localCellIndex, 1));    // cell metric based on smallest time step constraint
-                //cellMetric[subGridCell] = 1.0 / timeStepConstraints.Sum(c => 1.0 / c.GetLocalStepSize(localCellIndex, 1));  // cell metric based on harmonic sum of time step constraints
+                //cellMetric[subGridCell] = timeStepConstraints.Min(c => c.GetLocalStepSize(localCellIndex, 1));    // cell metric based on smallest time step constraint
+                cellMetric[subGridCell] = 1.0 / timeStepConstraints.Sum(c => 1.0 / c.GetLocalStepSize(localCellIndex, 1));  // cell metric based on harmonic sum of time step constraints
             }
 
             return cellMetric;
         }
 
-        public (Clustering, List<int>) CreateAdvancedClustering(Clustering clustering, IList<TimeStepConstraint> timeStepConstraints, double time, bool restrict = false) {
+        public Clustering TuneClustering(Clustering clustering, IList<TimeStepConstraint> timeStepConstraints, bool restrict = false) {
 
             double[] clusterDts = GetSmallestTimeStepConstraintPerCluster(clustering, timeStepConstraints);
-
-            //int[] numOfSubSteps = new int[clustering.NumberOfClusters];
-            //for (int i = 0; i < numOfSubSteps.Length; i++) {
-            //    numOfSubSteps[i] = RoundToInt(clusterDts[0] / clusterDts[i], 1.0e-2); // eps was 1.0e-2
-            //}
-            int[] numOfSubSteps = CalculateSubSteps(clusterDts, 1.0e-2);
-
-            //double[] bla = CalculateHarmonicSumTimeStepSizes(clustering, time, timeStepConstraints);
-            //int[] bla2 = CalculateSubSteps(bla);
-
-            //double[] diff = new double[rcvHmin.Length];
-            //double[] diffSubSteps = new double[rcvHmin.Length];
-            //for (int i = 0; i < rcvHmin.Length; i++) {
-            //    diff[i] = rcvHmin[i] - bla[i];
-            //    diffSubSteps[i] = numOfSubSteps[i] - bla2[i];
-            //}
-
-            if (restrict) {
-                numOfSubSteps = RestrictSubSteps(numOfSubSteps);
-            }
+            List<int> numOfSubSteps = CalculateSubSteps(clusterDts, 1.0e-2);
 
             List<SubGrid> newClusters = new List<SubGrid>();
             List<int> newSubSteps = new List<int>();
@@ -253,7 +237,7 @@ namespace BoSSS.Solution.Utils {
                     SubGrid combinedSubGrid = new SubGrid(clustering.Clusters[i].VolumeMask.Union(clustering.Clusters[i + 1].VolumeMask));
                     newClusters.Add(combinedSubGrid);
 #if DEBUG
-                    Console.WriteLine("CreateAdvancedClustering: Clustering leads to sub-grids which are too similar, i.e. they have the same number of local time steps. They are combined.");
+                    Console.WriteLine("TuneClustering: Clustering leads to sub-grids which are too similar, i.e. they have the same number of local time steps. They are combined.");
 #endif
                     newSubSteps.Add(numOfSubSteps[i]);
                     i++;
@@ -262,14 +246,12 @@ namespace BoSSS.Solution.Utils {
                     newSubSteps.Add(numOfSubSteps[i]);
                 }
             }
-
 #if DEBUG
             for (int i = 0; i < newClusters.Count; i++) {
-                Console.WriteLine("CreateAdvancedClustering:\t id=" + i + " -> sub-steps=" + newSubSteps[i] + " and elements=" + newClusters[i].GlobalNoOfCells);
+                Console.WriteLine("TuneClustering:\t id=" + i + " -> sub-steps=" + newSubSteps[i] + " and elements=" + newClusters[i].GlobalNoOfCells);
             }
 #endif
-
-            return (new Clustering(newClusters, clustering.SubGrid), newSubSteps);
+            return new Clustering(newClusters, clustering.SubGrid, newSubSteps);
         }
 
         public double[] GetHarmonicSumTimeStepSizesPerCluster(Clustering clustering, double time, IList<TimeStepConstraint> timeStepConstraints) {
@@ -296,50 +278,6 @@ namespace BoSSS.Solution.Utils {
             }
 
             return localDts;
-        }
-
-        private int RoundToInt(double number, double eps) {
-            // Accounting for roundoff errors
-            int result;
-            if (number > Math.Floor(number) + eps) {
-                result = (int)Math.Ceiling(number);
-            } else {
-                result = (int)Math.Floor(number);
-            }
-            return result;
-        }
-
-        public int[] CalculateSubSteps(double[] timeStepSizes, double eps = 1.0e-1, bool restrict = false) {
-            int[] subSteps = new int[timeStepSizes.Length];
-
-            for (int i = 0; i < timeStepSizes.Length; i++) {
-                subSteps[i] = RoundToInt(timeStepSizes[0] / timeStepSizes[i], eps);    // eps was 1.0e-1 
-            }
-
-            if (restrict) {
-                subSteps = RestrictSubSteps(subSteps);
-            }
-
-            return subSteps;
-        }
-
-        public int[] RestrictSubSteps(int[] subSteps) {
-            int[] result = subSteps;
-
-            if (result.Last() > maxDiffOfSubSteps) {
-                result[0] = subSteps.Last() - maxDiffOfSubSteps;
-                result[result.Length - 1] = subSteps.Last();
-                //for (int i = 1; i < clustering.NumberOfClusters; i++) {
-                //    numOfSubSteps[i] = numOfSubSteps.First() + maxDiffOfSubsteps / (clustering.NumberOfClusters - 1) * i;
-                //}
-                for (int i = 1; i < (result.Length - 1); i++) {  // Leave numOfSubSteps.First() and numOfSubSteps.Last() untouched
-                    if (subSteps[i] < result[i - 1]) {
-                        result[i] = result[i - 1];
-                    }
-                }
-            }
-
-            return result;
         }
 
         private double[] GetSmallestTimeStepConstraintPerCluster(Clustering clustering, IList<TimeStepConstraint> timeStepConstraints) {
@@ -376,5 +314,52 @@ namespace BoSSS.Solution.Utils {
             return rcvHmin;
         }
 
+        public List<int> CalculateSubSteps(double[] timeStepSizes, double eps = 1.0e-1, bool restrict = false) {
+            List<int> subSteps = new List<int>();
+
+            for (int i = 0; i < timeStepSizes.Length; i++) {
+                subSteps.Add(RoundToInt(timeStepSizes[0] / timeStepSizes[i], eps));    // eps was 1.0e-1 
+            }
+
+            if (subSteps.Last() > 50) {
+                throw new Exception("More than 50 sub-steps");
+            }
+
+            if (restrict) {
+                subSteps = RestrictSubSteps(subSteps);
+            }
+
+            return subSteps;
+        }
+
+        private int RoundToInt(double number, double eps) {
+            // Accounting for roundoff errors
+            int result;
+            if (number > Math.Floor(number) + eps) {
+                result = (int)Math.Ceiling(number);
+            } else {
+                result = (int)Math.Floor(number);
+            }
+            return result;
+        }
+
+        private List<int> RestrictSubSteps(List<int> subSteps) {
+            List<int> result = subSteps;
+
+            if (result.Last() > maxDiffOfSubSteps) {
+                result[0] = subSteps.Last() - maxDiffOfSubSteps;
+                result[result.Count - 1] = subSteps.Last();
+                //for (int i = 1; i < clustering.NumberOfClusters; i++) {
+                //    numOfSubSteps[i] = numOfSubSteps.First() + maxDiffOfSubsteps / (clustering.NumberOfClusters - 1) * i;
+                //}
+                for (int i = 1; i < (result.Count - 1); i++) {  // Leave numOfSubSteps.First() and numOfSubSteps.Last() untouched
+                    if (subSteps[i] < result[i - 1]) {
+                        result[i] = result[i - 1];
+                    }
+                }
+            }
+
+            return result;
+        }
     }
 }
