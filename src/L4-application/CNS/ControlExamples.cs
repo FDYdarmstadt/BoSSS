@@ -990,7 +990,7 @@ namespace CNS {
             c.DbPath = @"c:\bosss_db\";
             //c.DbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db\";
             c.savetodb = c.DbPath != null;
-            c.saveperiod = 1;
+            c.saveperiod = 10;
             c.PrintInterval = 1;
 
             double xMin = 0;
@@ -1014,19 +1014,20 @@ namespace CNS {
             }
 
             // Runge-Kutta
-            c.ExplicitScheme = ExplicitSchemes.RungeKutta;
-            c.ExplicitOrder = 1;
+            //c.ExplicitScheme = ExplicitSchemes.RungeKutta;
+            //c.ExplicitOrder = 1;
 
             //Adams-Bashforth
             //c.ExplicitScheme = ExplicitSchemes.AdamsBashforth;
             //c.ExplicitOrder = 3;
 
             // (A)LTS
-            //c.ExplicitScheme = ExplicitSchemes.LTS;
-            //c.ExplicitOrder = 3;
-            //c.NumberOfSubGrids = 3;
+            c.ExplicitScheme = ExplicitSchemes.LTS;
+            c.ExplicitOrder = 3;
+            c.NumberOfSubGrids = 3;
             //c.ReclusteringInterval = c.DynamicLoadBalancing_Period;
-            //c.FluxCorrection = false;
+            c.ReclusteringInterval = 1;
+            c.FluxCorrection = false;
 
             c.EquationOfState = IdealGas.Air;
             c.MachNumber = 1.0 / Math.Sqrt(c.EquationOfState.HeatCapacityRatio);
@@ -1136,8 +1137,9 @@ namespace CNS {
             c.dtMin = 0.0;
             c.dtMax = 1.0;
             c.CFLFraction = 0.1;
-            c.Endtime = 0.1;
-            c.NoOfTimesteps = 200;
+            c.Endtime = 0.25;
+            //c.dtFixed = 1e-6;
+            c.NoOfTimesteps = int.MaxValue;
 
             c.ProjectName = "Shock tube";
             if (true1D) {
