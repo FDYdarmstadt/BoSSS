@@ -2028,22 +2028,22 @@ namespace CNS {
             //string dbPath2 = @"/work/scratch/ws35kire/work_db";
             //string dbPath2 = @"/home/ws35kire/test_db";
 
-            //dbPath = @"c:\bosss_db";
+            dbPath = @"c:\bosss_db";
             c.DbPath = dbPath;
             c.savetodb = dbPath != null;
-            c.saveperiod = 1;
+            c.saveperiod = 10;
             c.PrintInterval = 1;
 
             // Runge-Kutta
-            c.ExplicitScheme = ExplicitSchemes.RungeKutta;
-            c.ExplicitOrder = 1;
+            //c.ExplicitScheme = ExplicitSchemes.RungeKutta;
+            //c.ExplicitOrder = 1;
 
             // Local time stepping
-            //c.ExplicitScheme = ExplicitSchemes.LTS;
-            //c.ExplicitOrder = 1;
-            //c.NumberOfSubGrids = 3;
-            //c.ReclusteringInterval = 5;
-            //c.FluxCorrection = false;
+            c.ExplicitScheme = ExplicitSchemes.LTS;
+            c.ExplicitOrder = 1;
+            c.NumberOfSubGrids = 3;
+            c.ReclusteringInterval = 1;
+            c.FluxCorrection = false;
 
             // Dynamic load balacing
             //c.DynamicLoadBalancing_CellClassifier = new LTSCellClassifier();
