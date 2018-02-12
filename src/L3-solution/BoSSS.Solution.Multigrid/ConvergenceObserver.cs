@@ -242,7 +242,7 @@ namespace BoSSS.Solution.Multigrid {
             }
 
 
-            Tecplot.Tecplot.PlotFields(DecompFields, plotName, 0.0, 4);
+            Tecplot.Tecplot.PlotFields(DecompFields, plotName, 0.0, 3);
         }
 
 

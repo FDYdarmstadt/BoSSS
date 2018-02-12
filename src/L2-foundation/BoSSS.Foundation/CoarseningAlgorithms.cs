@@ -66,7 +66,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                     //}
                     //AggregationGrid grid = gridS.Last();
 
-                    AggregationGrid grid = Coarsen(aggGrids.Last(), (int)(Math.Pow(2, D)));
+                    AggregationGrid grid = Coarsen(aggGrids.Last(), (int)(Math.Pow(2, 1)));
 
 
                     if ((grid.iLogicalCells.NoOfLocalUpdatedCells.MPISum() >= aggGrids.Last().iLogicalCells.NoOfLocalUpdatedCells.MPISum()))

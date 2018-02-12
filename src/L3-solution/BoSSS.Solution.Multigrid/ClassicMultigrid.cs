@@ -224,7 +224,6 @@ namespace BoSSS.Solution.Multigrid {
         bool m_converged = false;
         int NoOfIterations = 0;
 
-        public Action<double[]> Schasi;
 
         /// <summary>
         /// the multigrid iterations for a linear problem
@@ -253,8 +252,6 @@ namespace BoSSS.Solution.Multigrid {
                 var DGBasis = m_MgOperator.BaseGridProblemMapping.BasisS[0];
                 //XDGField ResB4Jacobi = new XDGField((XDGBasis)DGBasis, "Resi_B4Jacobi");
                 //m_MgOperator.TransformRhsFrom(ResB4Jacobi.CoordinatesAsVector, bl);
-                if(Schasi != null) 
-                    Schasi(bl.ToArray());
 
                 if(PreSmoother != null)
                     PreSmoother.Solve(xl, bl); // Vorglättung
@@ -262,8 +259,6 @@ namespace BoSSS.Solution.Multigrid {
 
                 //var ResAftJacobi = new XDGField((XDGBasis)DGBasis, "Resi_afJacobi");
                 //m_MgOperator.TransformRhsFrom(ResAftJacobi.CoordinatesAsVector, rl);
-                if(Schasi != null)
-                    Schasi(rl);
 
                 //Tecplot.Tecplot.PlotFields(new DGField[] { ResB4Jacobi, ResAftJacobi }, DGBasis.GridDat, "Resi", "Resi", 0, 4);
 
