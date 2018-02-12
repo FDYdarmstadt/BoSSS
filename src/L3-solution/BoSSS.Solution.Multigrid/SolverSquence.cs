@@ -26,7 +26,8 @@ namespace BoSSS.Solution.Multigrid {
             // ============
 
             this.m_MgOperator = op;
-            OpMatrix = op.OperatorMatrix;
+            //OpMatrix = op.OperatorMatrix;
+            OpMatrix = new ilPSP.LinSolvers.monkey.CPU.RefMatrix(op.OperatorMatrix.ToMsrMatrix());
             var MgMap = op.Mapping;
 
             if(!OpMatrix.RowPartitioning.EqualsPartition(MgMap.Partitioning))
@@ -43,7 +44,8 @@ namespace BoSSS.Solution.Multigrid {
             }
         }
 
-        BlockMsrMatrix OpMatrix;
+        ilPSP.LinSolvers.monkey.CPU.RefMatrix OpMatrix;
+        //BlockMsrMatrix OpMatrix;
 
         /// <summary>
         /// A list of solvers which is used sequentially, after each other.

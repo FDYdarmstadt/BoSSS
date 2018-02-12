@@ -54,6 +54,11 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         exp_softpcg_schwarz_directcoarse = 6,
 
+        /// <summary>
+        /// Multiple levels of additive Schwarz, in a Krylov multi-grid cycle.
+        /// </summary>
+        exp_Kcycle_schwarz = 8,
+
       
 
 
