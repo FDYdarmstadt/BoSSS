@@ -168,24 +168,7 @@ namespace BoSSS.Application.SipPoisson {
         }
 
 
-        /// <summary>
-        /// %
-        /// </summary>
-        public static SipControl[] TestCartesian2_Pstudy(int Res = 8, int Dim = 3, SolverCodes solver_name = SolverCodes.exp_softpcg_mg, int deg = 3) {
-
-            var R = new List<SipControl>();
-            foreach(int sz in new int[] { 1000,2000,5000,10000 }) {
-                var C = TestCartesian2(Res, Dim, solver_name, deg);
-
-                C.TargetBlockSize = sz;
-
-
-                R.Add(C);
-            }
-
-
-            return R.ToArray();
-        }
+     
 
 
         /// <summary>
