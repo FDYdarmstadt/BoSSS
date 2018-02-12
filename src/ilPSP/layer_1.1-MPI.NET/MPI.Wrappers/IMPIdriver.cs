@@ -48,10 +48,16 @@ namespace MPI.Wrappers {
             get;
         }
 
+        /// <summary>
+        /// Combining data on one processor
+        /// </summary>
         void Gatherv(IntPtr sendbuf, int sendcount, MPI_Datatype sendtype,
                      IntPtr recvbuf, IntPtr recvcounts, IntPtr displs, MPI_Datatype recvtype,
                      int root, MPI_Comm comm);
-
+        
+        /// <summary>
+        /// Sending data from one processor to many
+        /// </summary>
         void Scatterv(IntPtr sendbuf, IntPtr sendcounts, IntPtr displs, MPI_Datatype sendtype,
                       IntPtr recvbuf, int recvcount, MPI_Datatype recvtype,
                       int root, MPI_Comm comm);

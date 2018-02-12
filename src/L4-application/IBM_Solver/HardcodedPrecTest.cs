@@ -36,18 +36,26 @@ namespace BoSSS.Application.IBM_Solver {
 
             // basic database options
             // ======================
-            C.savetodb = true;
-            C.DbPath = @"/home/oe11okuz/BoSSS_DB/Lichtenberg_DB";
+            C.savetodb = false;
+            //C.DbPath = @"/home/oe11okuz/BoSSS_DB/Lichtenberg_DB";
+            //C.DbPath = @"P:\BoSSS_DBs\Bug";
 
             //string restartSession = "727da287-1b6a-463e-b7c9-7cc19093b5b3";
             //string restartGrid = "3f8f3445-46f1-47ed-ac0e-8f0260f64d8f";
 
-            C.DynamicLoadBalancing_Period = 1;
-            C.DynamicLoadBalancing_CellCostEstimatorFactories.Add(delegate (IApplication app, int noOfPerformanceClasses) {
-                Console.WriteLine("i was called");
-                int[] map = new int[] { 1, 5, 100 };
-                return new StaticCellCostEstimator(map);
-            });
+            //C.DynamicLoadBalancing_Period = 1;
+            //C.DynamicLoadBalancing_CellCostEstimatorFactories.Add(delegate (IApplication app, int noOfPerformanceClasses) {
+            //    Console.WriteLine("i was called");
+            //    int[] map = new int[] { 1, 5, 100 };
+            //    return new StaticCellCostEstimator(map);
+            //});
+            C.DynamicLoadBalancing_RedistributeAtStartup = false;
+
+            //c.DynamicLoadBalancing_CellClassifier = new IndifferentCellClassifier();
+            C.DynamicLoadBalancing_CellCostEstimatorFactories.Add((p, i) => new StaticCellCostEstimator(new[] { 1}));
+            //c.DynamicLoadBalancing_CellCostEstimatorFactories.Add((p, i) => new StaticCellCostEstimator(new[] { 10, 1 }));
+            //c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(ArtificialViscosityCellCostEstimator.GetStaticCostBasedEstimator());
+            //c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(ArtificialViscosityCellCostEstimator.GetMultiBalanceConstraintsBasedEstimators());
 
             // Assign correct names
             C.SessionName = "Channel_" + k + "_" + cells_x + "x" + cells_yz + "_" + Procs + "Procs_4Deeep";
@@ -146,7 +154,7 @@ namespace BoSSS.Application.IBM_Solver {
 
 
             // Set Initial Conditions
-            C.InitialValues_Evaluators.Add("VelocityX", X => 0);
+            C.InitialValues_Evaluators.Add("VelocityX", X => 1 - 4 * (X[2] * X[2]));
             C.InitialValues_Evaluators.Add("VelocityY", X => 0);
             C.InitialValues_Evaluators.Add("VelocityZ", X => 0);
             C.InitialValues_Evaluators.Add("Pressure", X => 0);
@@ -207,9 +215,10 @@ namespace BoSSS.Application.IBM_Solver {
             //    },
             //};
 
+
             C.LinearSolver = new Schwarz() {
-                m_BlockingStrategy = new Schwarz.MultigridBlocks() {
-                    Depth = 4,
+                m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
+                    NoOfPartsPerProcess = 20,
                 },
                 CoarseSolver = new ClassicMultigrid() {
                     CoarserLevelSolver = new ClassicMultigrid() {
@@ -241,13 +250,13 @@ namespace BoSSS.Application.IBM_Solver {
             C.dtMin = dt;
             C.Endtime = 10000000;
             C.NoOfTimesteps = 1;
-            C.NoOfMultigridLevels = 5;
+            C.NoOfMultigridLevels = 7;
 
             return C;
         }
 
 
-        static public IBM_Control PrecTest3DChannelDegenhardt(int precNo, int k, int cells_x, int cells_yz, int re, int ASparts = 5, int ASDepth = 2, int MGLevels = 3, int maxKrDim = 1000, int saveToDB = 1) {
+        static public IBM_Control PrecTest3DChannelDegenhardt(int precNo, int k, int cells_x, int cells_yz, int re, int ASparts = 5, int ASDepth = 2, int MGLevels = 3, int maxKrDim = 1000, int saveToDB = 1, int proc = 1) {
             IBM_Control C = new IBM_Control();
             bool name_newton = true;
 
@@ -259,8 +268,8 @@ namespace BoSSS.Application.IBM_Solver {
                 C.savetodb = false;
             }
             //C.savetodb = saveToDB;
-            //C.savetodb = true;
-            C.DbPath = @"/work/scratch/ws35kire/performance_db";
+            C.savetodb = true;
+            C.DbPath = @"/home/oe11okuz/BoSSS_DB/Lichtenberg_DB"; ;
             //C.DbPath = @"\\dc1\scratch\Stange\\HiWi\performance_db";
 
 
@@ -276,7 +285,7 @@ namespace BoSSS.Application.IBM_Solver {
 
             // Assign correct names
             if (name_newton) {
-                C.SessionName = "Newton_Channel_prec" + precNo + "_k" + k + "_x" + cells_x + "_yz" + cells_yz + "_re" + re + "_asp" + ASparts + "_asd" + ASDepth + "_mgl" + MGLevels + "_kr" + maxKrDim;
+                C.SessionName = "StrongScaling_Channel_prec" + precNo + "_proc" + proc + "_k" + k + "_x" + cells_x + "_yz" + cells_yz + "_re" + re + "_asp" + ASparts + "_asd" + ASDepth + "_mgl" + MGLevels + "_kr" + maxKrDim;
                 C.ProjectDescription = "Newton_Sphere_k_prec" + precNo + "_k" + k + "_x" + cells_x + "_yz" + cells_yz + "_re" + re + "_asp" + ASparts + "_asd" + ASDepth + "_mgl" + MGLevels + "_kr" + maxKrDim;
 
             } else {
@@ -422,7 +431,9 @@ namespace BoSSS.Application.IBM_Solver {
             C.LevelSetSmoothing = false;
             //C.MaxKrylovDim = 1000;
             C.MaxKrylovDim = maxKrDim;
-            C.MaxSolverIterations = 50;
+            //C.MaxSolverIterations = 50;
+            C.MaxSolverIterations = 1;
+            C.MinSolverIterations = 1;
             // C.MaxSolverIterations = 10000;
             C.Solver_ConvergenceCriterion = 1E-5;
             //C.Solver_ConvergenceCriterion = 1E-6;
@@ -455,7 +466,7 @@ namespace BoSSS.Application.IBM_Solver {
                         Prec = new Schwarz() {
                             m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                                 //NoOfParts = 5,
-                                NoOfParts = ASparts,
+                                NoOfPartsPerProcess = ASparts,
                             },
                             CoarseSolver = new DirectSolver() {
                                 WhichSolver = DirectSolver._whichSolver.MUMPS
@@ -475,6 +486,26 @@ namespace BoSSS.Application.IBM_Solver {
                             },
                             CoarseSolver = new DirectSolver() {
                                 WhichSolver = DirectSolver._whichSolver.MUMPS
+                            },
+                            Overlap = 1
+                        };
+                        break;
+                    }
+                case 5: {
+                        C.NoOfMultigridLevels = 5;
+                        Prec = new Schwarz() {
+                            m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
+                                //NoOfParts = 5,
+                                NoOfPartsPerProcess = ASparts,
+                            },
+                            CoarseSolver = new ClassicMultigrid() {
+                                CoarserLevelSolver = new ClassicMultigrid() {
+                                    CoarserLevelSolver = new ClassicMultigrid() {
+                                        CoarserLevelSolver = new DirectSolver() {
+                                            WhichSolver = DirectSolver._whichSolver.MUMPS
+                                        },
+                                    },
+                                },
                             },
                             Overlap = 1
                         };
