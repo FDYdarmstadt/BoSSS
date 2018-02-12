@@ -228,6 +228,9 @@ namespace BoSSS.Solution.Timestepping {
                             double[] timeStepSizes = clusterer.GetHarmonicSumTimeStepSizesPerCluster(CurrentClustering, Time, TimeStepConstraints);
                             numberOfLocalTimeSteps = clusterer.CalculateSubSteps(timeStepSizes);
                         } else {    // dtFixed is set
+                            if (adaptive) {
+                                throw new Exception("Does dtFixed for ALTS runs make sense? Still thinking about...");
+                            }
                             //double[] timeStepSizes = clusterer.GetHarmonicSumTimeStepSizesPerCluster(CurrentClustering, Time, TimeStepConstraints);
                             numberOfLocalTimeSteps = CurrentClustering.SubStepsInitial;
                         }
