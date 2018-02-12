@@ -201,7 +201,7 @@ for(int iRow = 0; iRow < 2; iRow++) {
            Fmt.PointSize = 0.5;
            Fmt.Style     = Styles.LinesPoints;
            Fmt.LineColor = LineColors.Black;
-           Fmt.LineWidth = 2;
+           Fmt.LineWidth = 3;
            
            xValue = dofs;
            
@@ -251,6 +251,12 @@ for(int iRow = 0; iRow < 2; iRow++) {
  
     multiplots[iRow,0].YrangeMin = 0.1;
     multiplots[iRow,0].YrangeMax = 1e+4;
+    
+    double[] dof = new[]{1e3,1e6};
+    double[] linT = dof.Select(x => x*0.001).ToArray();
+    var linP = new Plot2Ddata.XYvalues("linear", dof, linT);
+    linP.Format.FromString("- black");
+    ArrayTools.AddToArray(linP, ref multiplots[iRow,0].dataGroups);
     //multiplots[iRow,iCol].XrangeMin = 1e2;
     //multiplots[iRow,iCol].XrangeMax = 1e7;
     //multiplots[iRow,iCol].Y2rangeMin = 1e-3;
@@ -317,6 +323,8 @@ System.Drawing.Bitmap
 CL.WriteMinimalCompileableExample(
     Path.Combine(CurrentDocDir, "plots", "MainConstCoeffPoisson_MG.tex"),
     "ConstCoeffPoisson_MG.tex");
+**************
+==============
 **************
 ==============
 **************
