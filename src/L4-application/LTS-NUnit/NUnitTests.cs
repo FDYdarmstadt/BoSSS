@@ -25,13 +25,13 @@ namespace LTS_NUnit {
     /// NUNIT test class for LTS
     /// </summary>
     [TestFixture]
-    class NUnit_tests : Program {
+    class NUnitTests : Program {
 
         public static void Main(string[] args) {
             Application._Main(
                 args,
                 true,
-                () => new NUnit_tests());
+                () => new NUnitTests());
         }
 
         [TestFixtureSetUp]

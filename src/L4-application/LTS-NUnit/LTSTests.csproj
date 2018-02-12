@@ -49,7 +49,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="NUnit_tests.cs" />
+    <Compile Include="NUnitTests.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ScalarTransportFlux.cs" />
