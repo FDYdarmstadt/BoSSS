@@ -3136,7 +3136,7 @@ namespace CNS {
             return c;
         }
 
-        public static CNSControl ShockTube_PredefinedGrid(string dbPath = null, int dgDegree = 0, int numOfCellsX = 4, int numOfCellsY = 4, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = true) {
+        public static CNSControl ShockTube_PredefinedGrid(string dbPath = null, int dgDegree = 0, int numOfCellsX = 3, int numOfCellsY = 3, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = true) {
 
             CNSControl c = new CNSControl();
 
@@ -3246,11 +3246,11 @@ namespace CNS {
                 double y = X[1];
 
                 int rank;
-                if (x < 0.25) {
+                if ((x < 0.3) && (y < 0.3)) {
                     rank = 0;
-                } else if (x < 0.5) {
+                } else if ((x < 0.3) && (y < 0.6)) {
                     rank = 1;
-                } else if (x < 0.75) {
+                } else if ((x < 0.6) && (y < 0.6)) {
                     rank = 2;
                 } else {
                     rank = 3;
@@ -3336,15 +3336,11 @@ namespace CNS {
             } else {
                 c.SessionName = String.Format("Shock tube, 2D, dgDegree = {0}, noOfCellsX = {1}, noOfCellsY = {2}, sensorLimit = {3:0.00E-00}, CFLFraction = {4:0.00E-00}, ALTS {5}/{6}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids );
             }
-            //c.Tags.Add("Shock tube");
-            //c.Tags.Add("Artificial viscosity");
-
             return c;
         }
-        public static CNSControl ShockTube_HilbertTest(string SessionID = "8d63fe4f-ab2b-42aa-a65b-d23af96b5bea", string GridID = "5f71f888-ae79-4c9e-ab19-d1853edf88bc", string dbPath = null, int dgDegree = 2, int numOfCellsX = 10, int numOfCellsY = 1, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = true) {
+        public static CNSControl ShockTube_HilbertTest(string SessionID = "8fa48051-a1aa-4864-97bc-620212ac166f", string GridID = "71e1c7c4-c3c8-404e-ac75-234fdba422c0", string dbPath = null, int dgDegree = 0, int numOfCellsX = 3, int numOfCellsY = 3, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = true) {
 
             CNSControl c = new CNSControl();
-
             dbPath = @"D:\Weber\BoSSS\test_db";
             //dbPath = @"e:\bosss_db\GridOfTomorrow\";
             //dbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db\";
@@ -3365,7 +3361,7 @@ namespace CNS {
             c.GridPartType = GridPartType.Hilbert;
             //c.GridPartType = GridPartType.ParMETIS;
 
-            bool AV = true;
+            bool AV = false;
 
             //double xMin = 0;
             //double xMax = 1;
@@ -3525,6 +3521,7 @@ namespace CNS {
             //Debugger.Launch();
             c.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(SessionID), -1);
             c.GridGuid = new Guid(GridID);
+
             return c;
         }
 
