@@ -30,6 +30,7 @@ using System.Numerics;
 using System.Diagnostics;
 using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.Grid.Aggregation;
+using ilPSP.Tracing;
 
 namespace BoSSS.Solution.Multigrid {
 
@@ -232,70 +233,69 @@ namespace BoSSS.Solution.Multigrid {
         /// <param name="bl">the right-hand-side of the problem</param>
         public void Solve<U, V>(U xl, V bl)
             where U : IList<double>
-            where V : IList<double> 
-        {
-            //
+            where V : IList<double> {
+            using (new FuncTrace()) {
 
-            int N = xl.Count;
-            int NN = m_MgOperator.CoarserLevel.Mapping.LocalLength; // RestrictionOperator.RowPartitioning.LocalLength;
-            double[] rl = new double[N];
-            double[] rlp1 = new double[NN];
+                int N = xl.Count;
+                int NN = m_MgOperator.CoarserLevel.Mapping.LocalLength; // RestrictionOperator.RowPartitioning.LocalLength;
+                double[] rl = new double[N];
+                double[] rlp1 = new double[NN];
 
-            if(this.IterationCallback != null) {
-                var _bl = bl.ToArray();
-                this.OpMatrix.SpMV(-1.0, xl, 1.0, _bl);
-                this.IterationCallback(0, xl.ToArray(), _bl, this.m_MgOperator);
-            }
-
-            for(int iIter = 0; iIter < this.m_MaxIterations; iIter++) {
-
-                var DGBasis = m_MgOperator.BaseGridProblemMapping.BasisS[0];
-                //XDGField ResB4Jacobi = new XDGField((XDGBasis)DGBasis, "Resi_B4Jacobi");
-                //m_MgOperator.TransformRhsFrom(ResB4Jacobi.CoordinatesAsVector, bl);
-
-                if(PreSmoother != null)
-                    PreSmoother.Solve(xl, bl); // Vorglättung
-                Residual(rl, xl, bl); // Residual on this level
-
-                //var ResAftJacobi = new XDGField((XDGBasis)DGBasis, "Resi_afJacobi");
-                //m_MgOperator.TransformRhsFrom(ResAftJacobi.CoordinatesAsVector, rl);
-
-                //Tecplot.Tecplot.PlotFields(new DGField[] { ResB4Jacobi, ResAftJacobi }, DGBasis.GridDat, "Resi", "Resi", 0, 4);
-
-                if(this.m_Tolerance > 0) {
-                    double ResNorm = bl.L2NormPow2().MPISum().Sqrt();
-                    if(ResNorm < this.m_Tolerance) {
-                        m_converged = true;
-                        return;
-                    }
-                }
-                this.NoOfIterations++;
-
-                this.m_MgOperator.CoarserLevel.Restrict(rl, rlp1);
-
-                // Berechnung der Grobgitterkorrektur
-                double[] vlp1 = new double[NN];
-
-                for(int j = 0; j < m_Gamma; j++) {
-                    this.CoarserLevelSolver.Solve(vlp1, rlp1);
-                }
-
-                // Prolongation der Grobgitterkorrektur
-                this.m_MgOperator.CoarserLevel.Prolongate(1.0, xl, 1.0, vlp1);
-
-                
-                // Nachglättung
-                if(PostSmoother != null)
-                    PostSmoother.Solve(xl, bl);
-
-                if(this.IterationCallback != null) {
+                if (this.IterationCallback != null) {
                     var _bl = bl.ToArray();
                     this.OpMatrix.SpMV(-1.0, xl, 1.0, _bl);
-                    this.IterationCallback(iIter + 1, xl.ToArray(), _bl, this.m_MgOperator);
+                    this.IterationCallback(0, xl.ToArray(), _bl, this.m_MgOperator);
+                }
+
+                for (int iIter = 0; iIter < this.m_MaxIterations; iIter++) {
+
+                    var DGBasis = m_MgOperator.BaseGridProblemMapping.BasisS[0];
+                    //XDGField ResB4Jacobi = new XDGField((XDGBasis)DGBasis, "Resi_B4Jacobi");
+                    //m_MgOperator.TransformRhsFrom(ResB4Jacobi.CoordinatesAsVector, bl);
+
+                    if (PreSmoother != null)
+                        PreSmoother.Solve(xl, bl); // Vorglättung
+                    Residual(rl, xl, bl); // Residual on this level
+
+                    //var ResAftJacobi = new XDGField((XDGBasis)DGBasis, "Resi_afJacobi");
+                    //m_MgOperator.TransformRhsFrom(ResAftJacobi.CoordinatesAsVector, rl);
+
+                    //Tecplot.Tecplot.PlotFields(new DGField[] { ResB4Jacobi, ResAftJacobi }, DGBasis.GridDat, "Resi", "Resi", 0, 4);
+
+                    if (this.m_Tolerance > 0) {
+                        double ResNorm = bl.L2NormPow2().MPISum().Sqrt();
+                        if (ResNorm < this.m_Tolerance) {
+                            m_converged = true;
+                            return;
+                        }
+                    }
+                    this.NoOfIterations++;
+
+                    this.m_MgOperator.CoarserLevel.Restrict(rl, rlp1);
+
+                    // Berechnung der Grobgitterkorrektur
+                    double[] vlp1 = new double[NN];
+
+                    for (int j = 0; j < m_Gamma; j++) {
+                        this.CoarserLevelSolver.Solve(vlp1, rlp1);
+                    }
+
+                    // Prolongation der Grobgitterkorrektur
+                    this.m_MgOperator.CoarserLevel.Prolongate(1.0, xl, 1.0, vlp1);
+
+
+                    // Nachglättung
+                    if (PostSmoother != null)
+                        PostSmoother.Solve(xl, bl);
+
+                    if (this.IterationCallback != null) {
+                        var _bl = bl.ToArray();
+                        this.OpMatrix.SpMV(-1.0, xl, 1.0, _bl);
+                        this.IterationCallback(iIter + 1, xl.ToArray(), _bl, this.m_MgOperator);
+                    }
                 }
             }
         }
-
 
         public int IterationsInNested {
             get {

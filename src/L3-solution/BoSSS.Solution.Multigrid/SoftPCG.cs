@@ -29,6 +29,9 @@ using BoSSS.Foundation;
 using ilPSP.Tracing;
 
 namespace BoSSS.Solution.Multigrid {
+    /// <summary>
+    /// Pre-conditioned (<see cref="Precond"/>) conjugate gradient algorithm.
+    /// </summary>
     public class SoftPCG : ISolverSmootherTemplate, ISolverWithCallback {
 
         static public ISolverSmootherTemplate InitMultigridChain(MultigridOperator MgOp,
@@ -183,8 +186,8 @@ namespace BoSSS.Solution.Multigrid {
         }
 
         MultigridOperator m_MgOp;
-        //ilPSP.LinSolvers.monkey.CPU.RefMatrix m_Matrix;
-        BlockMsrMatrix m_Matrix;
+        ilPSP.LinSolvers.monkey.CPU.RefMatrix m_Matrix; // im Moment schneller, ca 5X
+        //BlockMsrMatrix m_Matrix;
 
 
         public void Init(MultigridOperator op) {
@@ -198,7 +201,8 @@ namespace BoSSS.Solution.Multigrid {
                 if (!M.ColPartition.EqualsPartition(MgMap.Partitioning))
                     throw new ArgumentException("Column partitioning mismatch.");
 
-                this.m_Matrix = M;
+                //this.m_Matrix = M;
+                this.m_Matrix = new ilPSP.LinSolvers.monkey.CPU.RefMatrix(M.ToMsrMatrix());
                 /*
                 int n = m_Matrix.RowPartitioning.LocalLength;
                 if(n > 50000) {

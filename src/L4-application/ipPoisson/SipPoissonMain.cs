@@ -376,7 +376,8 @@ namespace BoSSS.Application.SipPoisson {
                 switch (base.Control.solver_name) {
                     case SolverCodes.classic_pardiso:
                     ipSolver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver() {
-                        CacheFactorization = true
+                        CacheFactorization = true,
+                        UseDoublePrecision = true
                     };
                     break;
 
@@ -419,6 +420,11 @@ namespace BoSSS.Application.SipPoisson {
 
                 Converged = solRes.Converged;
                 NoOfIter = solRes.NoOfIterations;
+
+                Console.WriteLine("Pardiso phase 11: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_11.Elapsed.TotalSeconds);
+                Console.WriteLine("Pardiso phase 22: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_22.Elapsed.TotalSeconds);
+                Console.WriteLine("Pardiso phase 33: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_33.Elapsed.TotalSeconds);
+
 
                 ipSolver.Dispose();
             }
@@ -601,7 +607,9 @@ namespace BoSSS.Application.SipPoisson {
                     solverIteration.Stop();
                     Console.WriteLine("done. (" + solverIteration.Elapsed.TotalSeconds + " sec)");
 
-                    
+                    Console.WriteLine("Pardiso phase 11: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_11.Elapsed.TotalSeconds);
+                    Console.WriteLine("Pardiso phase 22: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_22.Elapsed.TotalSeconds);
+                    Console.WriteLine("Pardiso phase 33: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_33.Elapsed.TotalSeconds);
 
                     // time measurement, statistics
                     stw.Stop();
@@ -809,14 +817,16 @@ namespace BoSSS.Application.SipPoisson {
                     var pst = new SolverSquence() {
                         SolverChain = new ISolverSmootherTemplate[] { swz1, pcg2 }
                     };
-                    
 
 
 
-
-                    MgLevel.PreSmoother = pre;
-                    MgLevel.PostSmoother = pst;
-                    
+                    if (iLevel > 0) {
+                        MgLevel.PreSmoother = pre;
+                        MgLevel.PostSmoother = pst;
+                    } else {
+                        MgLevel.PreSmoother = pcg1;
+                        MgLevel.PostSmoother = pcg2;
+                    }
                 }
 
                 if(iLevel > 0) {
