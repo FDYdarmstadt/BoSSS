@@ -43,8 +43,14 @@ namespace BoSSS.Application.IBM_Solver {
         /// </summary>
         classic_pardiso = 2,
 
+        /// <summary>
+        /// Schwarz method with METIS blocking and direct solver for coarse solve
+        /// </summary>
         exp_schwarz_directcoarse = 3,
 
+        /// <summary>
+        /// Schwarz method with Multigridblocking on the coarsest level and coarse solve
+        /// </summary>
         exp_schwarz_Kcycle_directcoarse = 4,    
 
         /// <summary>

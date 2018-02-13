@@ -237,6 +237,8 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         public int Config_MaxIterations = 1000;
 
+        public int Config_MaxKrylovDim = 30;
+
         /// <summary>
         /// Under relaxation factor for iterative solver.
         /// </summary>
@@ -536,7 +538,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                             this.MultigridBasis,
                             this.Config_MultigridOperator)
                         {
-                            maxKrylovDim = 100,
+                            maxKrylovDim = Config_MaxKrylovDim,
                             MaxIter = Config_MaxIterations,
                             MinIter = Config_MinIterations,
                             ApproxJac = Newton.ApproxInvJacobianOptions.GMRES,

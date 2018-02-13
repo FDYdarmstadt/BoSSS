@@ -443,7 +443,7 @@ namespace BoSSS.Application.IBM_Solver {
                     m_BDF_Timestepper.Config_MinIterations = this.Control.MinSolverIterations;
                     m_BDF_Timestepper.SessionPath = SessionPath;
 
-                    SolverChooser.ChooseSolver(this.Control.NonlinearSolve, this.Control.LinearSolve, ref m_BDF_Timestepper);
+                    SolverChooser.ChooseSolver(this.Control, ref m_BDF_Timestepper);
 
                 }
 
