@@ -120,7 +120,7 @@
     <Compile Include="TimeStepping\RungeKuttaScheme.cs" />
     <Compile Include="Spline.cs" />
     <Compile Include="SyntaxError.cs" />
-    <Compile Include="TimeStepConstraint.cs" />
+    <Compile Include="TimeStepping\TimeStepConstraint.cs" />
     <Compile Include="TimeStepping\TimeStepperCommon.cs" />
     <Compile Include="Tokenizer.cs" />
     <Compile Include="VariableHistory.cs" />
