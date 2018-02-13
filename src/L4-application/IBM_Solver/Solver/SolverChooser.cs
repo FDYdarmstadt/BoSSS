@@ -10,15 +10,15 @@ namespace BoSSS.Application.IBM_Solver {
     class SolverChooser {
 
         /// <summary>
-        /// Choose solver depending on configurations made in the control file
+        /// Choose solver depending on configurations made in the control file.
         /// </summary>
         /// <param name="nonlinSol"></param>
         /// <param name="linSol"></param>
         /// <param name="Timestepper"></param>
-        public static void ChooseSolver(NonlinearSolverCodes nonlinSol, LinearSolverCodes linSol, ref XdgBDFTimestepping Timestepper) {
+        public static void ChooseSolver(IBM_Control Control, ref XdgBDFTimestepping Timestepper) {
 
             // Set nonlinear Solver
-            switch (nonlinSol) {
+            switch (Control.NonlinearSolve) {
                 case NonlinearSolverCodes.NewtonGMRES:
                     Timestepper.Config_NonlinearSolver = NonlinearSolverMethod.Newton;
                     break;
@@ -31,7 +31,7 @@ namespace BoSSS.Application.IBM_Solver {
 
             }
 
-            switch (linSol) {
+            switch (Control.LinearSolve) {
                 case LinearSolverCodes.automatic:
                     AutomaticChoice();
                     break;
@@ -49,10 +49,20 @@ namespace BoSSS.Application.IBM_Solver {
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                             NoOfPartsPerProcess = 1,
                         },
+                        Overlap = 1,
                         CoarseSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS }
                     };
                     break;
 
+                case LinearSolverCodes.exp_schwarz_Kcycle_directcoarse:
+                    Timestepper.Config_linearSolver = new Schwarz() {
+                        m_BlockingStrategy = new Schwarz.MultigridBlocks() {
+                            Depth = Control.NoOfMultigridLevels
+                        },
+                        Overlap = 1,
+                        CoarseSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS },
+                    };
+                    break;
 
                 default:
                     throw new NotImplementedException("Linear solver option not available");

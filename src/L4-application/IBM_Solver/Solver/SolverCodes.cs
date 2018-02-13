@@ -33,14 +33,23 @@ namespace BoSSS.Application.IBM_Solver {
         /// </summary>
         automatic = 0,
 
+        /// <summary>
+        /// Direct solver (<see cref="ilPSP.LinSolvers.MUMPS"/>) without any pre-processing of the matrix.
+        /// </summary>
         classic_mumps = 1,
 
+        /// <summary>
+        /// Direct solver (<see cref="ilPSP.LinSolvers.PARDISO.PARDISOSolver"/>) without any pre-processing of the matrix.
+        /// </summary>
         classic_pardiso = 2,
 
         exp_schwarz_directcoarse = 3,
 
         exp_schwarz_Kcycle_directcoarse = 4,    
 
+        /// <summary>
+        /// GMRES without any preconditioning
+        /// </summary>
         exp_softgmres = 5,
 
         exp_softgmres_schwarz_directcoarse = 6,
