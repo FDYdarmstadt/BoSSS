@@ -211,13 +211,6 @@ namespace BoSSS.Application.IBM_Solver {
         /// </summary>
         public double[] SrcPressureGrad;
 
-
-        /// <summary>
-        /// Which direct solver should be used.
-        /// </summary>
-        public DirectSolver._whichSolver whichSolver = DirectSolver._whichSolver.PARDISO;
-
-
         public enum TimestepperInit {
 
             SingleInit,
@@ -227,24 +220,11 @@ namespace BoSSS.Application.IBM_Solver {
             MultiInit
         }
 
-        public ISolverSmootherTemplate LinearSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS };
-
-        public NonlinearSolverMethod NonlinearMethod = NonlinearSolverMethod.Picard;
-
-        /// <summary>
-        /// 
-        /// </summary>
         public TimestepperInit Timestepper_Init = TimestepperInit.SingleInit;
 
-        public SolverOptions solver = SolverOptions.NewtonGmresSchur;
+        public NonlinearSolverCodes NonlinearSolve = NonlinearSolverCodes.Picard;
 
-        public enum SolverOptions {
+        public LinearSolverCodes LinearSolve = LinearSolverCodes.classic_mumps;
 
-            NewtonGmresSchur = 0,
-
-            NewtonGmresSwzMG = 1,
-
-            NewtonGmresSimple = 2
-        }
     }
 }
