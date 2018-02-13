@@ -65,7 +65,7 @@ namespace BoSSS.Solution.Utils {
         /// </summary>
         private IGridData gridData;
 
-        private const int maxDiffOfSubSteps = 50;
+        private const int maxNumOfSubSteps = 50;
 
         /// <summary>
         /// Constructor for the grid clustering
@@ -223,10 +223,11 @@ namespace BoSSS.Solution.Utils {
             return cellMetric;
         }
 
-        public Clustering TuneClustering(Clustering clustering, IList<TimeStepConstraint> timeStepConstraints, bool restrict = false) {
+        public Clustering TuneClustering(Clustering clustering, double time, IList<TimeStepConstraint> timeStepConstraints, bool restrict = false) {
 
             double[] clusterDts = GetSmallestTimeStepConstraintPerCluster(clustering, timeStepConstraints);
-            List<int> numOfSubSteps = CalculateSubSteps(clusterDts, 1.0e-2);
+            //double[] clusterDts = GetHarmonicSumTimeStepSizesPerCluster(clustering, time, timeStepConstraints);
+            List<int> numOfSubSteps = CalculateSubSteps(clusterDts, 1.0e-2, false);
 
             List<SubGrid> newClusters = new List<SubGrid>();
             List<int> newSubSteps = new List<int>();
@@ -251,6 +252,11 @@ namespace BoSSS.Solution.Utils {
                 Console.WriteLine("TuneClustering:\t id=" + i + " -> sub-steps=" + newSubSteps[i] + " and elements=" + newClusters[i].GlobalNoOfCells);
             }
 #endif
+            //Clustering tempClustering = new Clustering(newClusters, clustering.SubGrid);
+            //double[] blaTimeStepSizes = GetSmallestTimeStepConstraintPerCluster(new Clustering(newClusters, clustering.SubGrid), timeStepConstraints);
+            //List<int> blaNumOfSubSteps = CalculateSubSteps(blaTimeStepSizes, 1.0e-2);
+
+            //newSubSteps = blaNumOfSubSteps;
             return new Clustering(newClusters, clustering.SubGrid, newSubSteps);
         }
 
@@ -321,42 +327,39 @@ namespace BoSSS.Solution.Utils {
                 subSteps.Add(RoundToInt(timeStepSizes[0] / timeStepSizes[i], eps));    // eps was 1.0e-1 
             }
 
-            if (subSteps.Last() > 50) {
-                throw new Exception("More than 50 sub-steps");
-            }
-
-            if (restrict) {
+            if (restrict && subSteps.Last() > maxNumOfSubSteps) {
+                //throw new NotImplementedException("Restriction of sub-steps is still missing");
                 subSteps = RestrictSubSteps(subSteps);
             }
 
             return subSteps;
         }
 
+        private List<int> RestrictSubSteps(List<int> subSteps) {
+            List<int> result = subSteps;
+
+            result[0] = (int)Math.Ceiling((subSteps.Last() / (double)maxNumOfSubSteps));
+            result[result.Count - 1] = subSteps.Last();
+            //for (int i = 1; i < clustering.NumberOfClusters; i++) {
+            //    numOfSubSteps[i] = numOfSubSteps.First() + maxDiffOfSubsteps / (clustering.NumberOfClusters - 1) * i;
+            //}
+            for (int i = 1; i < (result.Count - 1); i++) {  // Leave first and last entry untouched
+                if (subSteps[i] < result[i - 1]) {
+                    result[i] = result[i - 1];
+                }
+            }
+
+            return result;
+        }
+
         private int RoundToInt(double number, double eps) {
             // Accounting for roundoff errors
             int result;
+
             if (number > Math.Floor(number) + eps) {
                 result = (int)Math.Ceiling(number);
             } else {
                 result = (int)Math.Floor(number);
-            }
-            return result;
-        }
-
-        private List<int> RestrictSubSteps(List<int> subSteps) {
-            List<int> result = subSteps;
-
-            if (result.Last() > maxDiffOfSubSteps) {
-                result[0] = subSteps.Last() - maxDiffOfSubSteps;
-                result[result.Count - 1] = subSteps.Last();
-                //for (int i = 1; i < clustering.NumberOfClusters; i++) {
-                //    numOfSubSteps[i] = numOfSubSteps.First() + maxDiffOfSubsteps / (clustering.NumberOfClusters - 1) * i;
-                //}
-                for (int i = 1; i < (result.Count - 1); i++) {  // Leave numOfSubSteps.First() and numOfSubSteps.Last() untouched
-                    if (subSteps[i] < result[i - 1]) {
-                        result[i] = result[i - 1];
-                    }
-                }
             }
 
             return result;

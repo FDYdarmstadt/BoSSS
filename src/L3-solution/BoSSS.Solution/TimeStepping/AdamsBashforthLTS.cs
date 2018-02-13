@@ -141,7 +141,7 @@ namespace BoSSS.Solution.Timestepping {
 
             clusterer = new Clusterer(this.gridData);
             CurrentClustering = clusterer.CreateClustering(numOfClusters, this.TimeStepConstraints, this.SubGrid);    // Might remove clusters when their centres are too close
-            CurrentClustering = clusterer.TuneClustering(CurrentClustering, this.TimeStepConstraints); // Might remove clusters when their time step sizes are too similar
+            CurrentClustering = clusterer.TuneClustering(CurrentClustering, Time, this.TimeStepConstraints); // Might remove clusters when their time step sizes are too similar
 
             ABevolver = new ABevolve[CurrentClustering.NumberOfClusters];
 
@@ -195,7 +195,7 @@ namespace BoSSS.Solution.Timestepping {
                             // Necessary in order to use the number of sub-grids specified by the user for the reclustering in each time step
                             // Otherwise the value could be changed by the constructor of the parent class (AdamsBashforthLTS.cs) --> CreateSubGrids()
                             Clusterer.Clustering newClustering = clusterer.CreateClustering(numberOfClustersInitial, this.TimeStepConstraints, this.SubGrid);
-                            newClustering = clusterer.TuneClustering(newClustering, this.TimeStepConstraints); // Might remove sub-grids when their time step sizes are too similar
+                            newClustering = clusterer.TuneClustering(newClustering, Time, this.TimeStepConstraints); // Might remove sub-grids when their time step sizes are too similar
                             reclustered = clusterer.CheckForNewClustering(CurrentClustering, newClustering);
 
                             // After the intitial phase, activate adaptive mode for all ABevolve objects
@@ -227,10 +227,11 @@ namespace BoSSS.Solution.Timestepping {
                         if (TimeStepConstraints.First().dtMin != TimeStepConstraints.First().dtMax) {
                             double[] timeStepSizes = clusterer.GetHarmonicSumTimeStepSizesPerCluster(CurrentClustering, Time, TimeStepConstraints);
                             numberOfLocalTimeSteps = clusterer.CalculateSubSteps(timeStepSizes);
+                            //dt /= numberOfLocalTimeSteps[0];
                         } else {    // dtFixed is set
-                            if (adaptive) {
-                                throw new Exception("Does dtFixed for ALTS runs make sense? Still thinking about...");
-                            }
+                            //if (adaptive) {
+                            //    throw new Exception("Does dtFixed for ALTS runs make sense? Still thinking about...");
+                            //}
                             //double[] timeStepSizes = clusterer.GetHarmonicSumTimeStepSizesPerCluster(CurrentClustering, Time, TimeStepConstraints);
                             numberOfLocalTimeSteps = CurrentClustering.SubStepsInitial;
                         }
