@@ -20,7 +20,7 @@ using System.Threading;
 using BoSSS.Solution;
 using NUnit.Framework;
 
-namespace LTS_NUnit {
+namespace LTSTests {
     /// <summary>
     /// NUNIT test class for LTS
     /// </summary>
