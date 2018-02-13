@@ -17,6 +17,12 @@ namespace BoSSS.Application.IBM_Solver {
         /// <param name="Timestepper"></param>
         public static void ChooseSolver(IBM_Control Control, ref XdgBDFTimestepping Timestepper) {
 
+            // Set several solver options for Timestepper
+            Timestepper.Config_SolverConvergenceCriterion = Control.Solver_ConvergenceCriterion;
+            Timestepper.Config_MaxIterations = Control.MaxSolverIterations;
+            Timestepper.Config_MinIterations = Control.MinSolverIterations;
+            Timestepper.Config_MaxKrylovDim = Control.MaxKrylovDim;
+
             // Set nonlinear Solver
             switch (Control.NonlinearSolve) {
                 case NonlinearSolverCodes.NewtonGMRES:
@@ -27,9 +33,8 @@ namespace BoSSS.Application.IBM_Solver {
                     break;
                 default:
                     throw new NotImplementedException("Nonlinear solver option not available");
-
-
             }
+
 
             switch (Control.LinearSolve) {
                 case LinearSolverCodes.automatic:
@@ -61,6 +66,12 @@ namespace BoSSS.Application.IBM_Solver {
                         },
                         Overlap = 1,
                         CoarseSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS },
+                    };
+                    break;
+
+                case LinearSolverCodes.exp_softgmres:
+                    Timestepper.Config_linearSolver = new SoftGMRES() {
+                        MaxKrylovDim = Timestepper.Config_MaxKrylovDim,                       
                     };
                     break;
 

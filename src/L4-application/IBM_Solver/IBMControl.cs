@@ -70,7 +70,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// If iterative saddle-point solvers like GMRES or Orthonormalization are used, the maximum number of basis vectors
         /// that are used to construct the accelerated solution.
         /// </summary>
-        public int MaxKrylovDim = 100;
+        public int MaxKrylovDim = 30;
 
         /// <summary>
         /// If iterative solvers are used, the maximum number of iterations.
