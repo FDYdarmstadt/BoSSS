@@ -32,7 +32,9 @@ using BoSSS.Foundation.Grid.Classic;
 namespace BoSSS.Solution.Multigrid {
 
 
- 
+    /// <summary>
+    /// DG basis on an aggregation grid (<see cref="AggregationGrid"/>).
+    /// </summary>
     public class AggregationGridBasis {
 
 
@@ -46,91 +48,94 @@ namespace BoSSS.Solution.Multigrid {
             }
         }
 
+
+        public AggregationGridBasis ParentBasis {
+            get;
+            private set;
+        }
+
+
         /// <summary>
         /// Constructor.
         /// </summary>
         /// <param name="b">DG basis on original grid</param>
         /// <param name="ag"></param>
-        public AggregationGridBasis(Basis b, AggregationGrid ag) {
+        public AggregationGridBasis(Basis b, AggregationGridBasis parentBasis, AggregationGrid ag) {
             using (new FuncTrace()) {
                 if (!object.ReferenceEquals(b.GridDat, GetGridData(ag)))
                     throw new ArgumentException("mismatch in grid data object.");
                 this.DGBasis = b;
                 this.AggGrid = ag;
-                int N = b.Length;
 
-                int JAGG = ag.iLogicalCells.NoOfLocalUpdatedCells;
-                CompositeBasis = new MultidimensionalArray[JAGG];
+                if(!object.ReferenceEquals(ag.ParentGrid, parentBasis.AggGrid))
+                    throw new ArgumentException("mismatch in parent grid.");
 
-                for (int jAgg = 0; jAgg < JAGG; jAgg++) { // loop over agglomerated cells...
-                    var compCell = ag.iLogicalCells.AggregateCellToParts[jAgg];
+                ParentBasis = parentBasis;
 
-
-                    if (compCell.Length == 1) {
-                        CompositeBasis[jAgg] = MultidimensionalArray.Create(1, N, N);
-                        for (int n = 0; n < N; n++) {
-                            CompositeBasis[jAgg][0, n, n] = 1.0;
-                        }
-
-                    } else {
-                        // compute extrapolation basis
-                        // ===========================
-
-                        int I = compCell.Length - 1;
-                        int[,] CellPairs = new int[I, 2];
-
-                        for (int i = 0; i < I; i++) {
-                            CellPairs[i, 0] = compCell[0];
-                            CellPairs[i, 1] = compCell[i + 1];
-                        }
-                        var ExpolMtx = MultidimensionalArray.Create(I + 1, N, N);
-                        b.GetExtrapolationMatrices(CellPairs, ExpolMtx.ExtractSubArrayShallow(new int[] { 1, 0, 0 }, new int[] { I, N - 1, N - 1 }));
-                        for (int n = 0; n < N; n++) {
-                            ExpolMtx[0, n, n] = 1.0;
-                        }
-
-                        // compute mass matrix
-                        // ===================
-
-                        var MassMatrix = MultidimensionalArray.Create(N, N);
-                        MassMatrix.Multiply(1.0, ExpolMtx, ExpolMtx, 0.0, "lm", "kim", "kil");
-
-
-                        // change to orthonormal basis
-                        // ===========================
-                        MultidimensionalArray B = MultidimensionalArray.Create(N, N);
-                        MassMatrix.SymmetricLDLInversion(B, default(double[]));
-
-
-                        CompositeBasis[jAgg] = MultidimensionalArray.Create(ExpolMtx.Lengths);
-                        CompositeBasis[jAgg].Multiply(1.0, ExpolMtx, B, 0.0, "imn", "imk", "kn");
-
-                        // check
-                        // =====
-#if DEBUG
-                        MassMatrix.Clear();
-                        for (int k = 0; k <= I; k++) {
-                            for (int l = 0; l < N; l++) { // over rows of mass matrix ...
-                                for (int m = 0; m < N; m++) { // over columns of mass matrix ...
-
-                                    double mass_lm = 0.0;
-
-                                    for (int i = 0; i < N; i++) {
-                                        mass_lm += CompositeBasis[jAgg][k, i, m] * CompositeBasis[jAgg][k, i, l];
-                                    }
-
-                                    MassMatrix[l, m] += mass_lm;
-                                }
-                            }
-                        }
-
-                        MassMatrix.AccEye(-1.0);
-                        Debug.Assert(MassMatrix.InfNorm() < 1.0e-9);
-#endif
-                    }
-                }
+                SetupProlongationOperator();
             }
         }
+
+        MultidimensionalArray[] m_ProlongationOperator;
+
+
+        /// <summary>
+        /// Prolongation operator to finer grid level
+        /// - array index: aggregate cell index; 
+        /// - 1st index into <see cref="MultidimensionalArray"/>: index within aggregation basis, correlates with 2nd index into <see cref="AggregationGrid.jCellCoarse2jCellFine"/>
+        /// - 2nd index into <see cref="MultidimensionalArray"/>: row
+        /// - 3rd index into <see cref="MultidimensionalArray"/>: column
+        /// - content: local cell index into the original grid, see <see cref="Foundation.Grid.ILogicalCellData.AggregateCellToParts"/>
+        /// </summary>
+        public MultidimensionalArray[] ProlongationOperator {
+            get {
+                return m_ProlongationOperator;
+            }
+        }
+
+
+        void SetupProlongationOperator() {
+            int Jagg = this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
+
+            if(object.ReferenceEquals(AggGrid.ParentGrid, AggGrid.AncestorGrid)) {
+                // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                // top level - aggregation grid will just be lots of Id's - we should not store them
+                // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#if DEBUG
+                // we assume that the top level of the aggregation grid is equal to the ancestor grid.
+                // (maybe there is a different MPI partition)
+
+                var topAgg = AggGrid.iLogicalCells;
+                
+                Debug.Assert(AggGrid.CellPartitioning.TotalLength == AggGrid.AncestorGrid.CellPartitioning.TotalLength);
+
+                for(int j = 0; j < topAgg.NoOfLocalUpdatedCells; j++) {
+                    Debug.Assert(topAgg.AggregateCellToParts[j].Length == 1);
+                }
+#endif
+            } else {
+                // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                // some other level
+                // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                m_ProlongationOperator = new MultidimensionalArray[Jagg];
+
+                for(int j = 0; j < Jagg; j++) { // loop over aggregate cells
+
+
+
+                    eterytrytryu
+
+                }
+            }
+
+
+            //m_ProlongationOperator = new MultidimensionalArray
+
+
+        }
+
+
 
         /// <summary>
         /// restricts/projects a vector from the full grid (<see cref="BoSSS.Foundation.Grid.Classic.GridData"/>)
@@ -354,15 +359,107 @@ namespace BoSSS.Solution.Multigrid {
         }
 
         /// <summary>
-        /// The projector in the L2 Norm, from the 
-        /// space defined by the basis <see cref="DGBasis"/>, onto the 
-        /// the DG space on the aggregate grid.
+        /// The projector in the L2 Norm, from the space defined by the basis <see cref="DGBasis"/> on the original,
+        /// onto the DG space on the aggregate grid.
         /// - array index: aggregate cell index; 
-        /// - 1st index:  
-        /// - 2nd index: 
-        /// - 3rd index:
+        /// - 1st index into <see cref="MultidimensionalArray"/>: index within aggregation basis 
+        /// - 2nd index into <see cref="MultidimensionalArray"/>: row
+        /// - 3rd index into <see cref="MultidimensionalArray"/>: column
+        /// - content: local cell index into the original grid, see <see cref="Foundation.Grid.ILogicalCellData.AggregateCellToParts"/>
         /// </summary>
-        public MultidimensionalArray[] CompositeBasis;
+        public MultidimensionalArray[] CompositeBasis {
+            get {
+                if(m_CompositeBasis == null) {
+                    SetupCompositeBasis();
+                }
+                return m_CompositeBasis;
+            }
+        }
+        
+        MultidimensionalArray[] m_CompositeBasis;
+
+        void SetupCompositeBasis() {
+            using(new FuncTrace()) {
+                Basis b = this.DGBasis;
+                AggregationGrid ag = this.AggGrid;
+                Debug.Assert(object.ReferenceEquals(b.GridDat, GetGridData(ag)));
+                int N = b.Length;
+                
+
+                int JAGG = ag.iLogicalCells.NoOfLocalUpdatedCells;
+                m_CompositeBasis = new MultidimensionalArray[JAGG];
+
+                for(int jAgg = 0; jAgg < JAGG; jAgg++) { // loop over agglomerated cells...
+                    var compCell = ag.iLogicalCells.AggregateCellToParts[jAgg];
+
+
+                    if(compCell.Length == 1) {
+                        m_CompositeBasis[jAgg] = MultidimensionalArray.Create(1, N, N);
+                        for(int n = 0; n < N; n++) {
+                            m_CompositeBasis[jAgg][0, n, n] = 1.0;
+                        }
+
+                    } else {
+                        // compute extrapolation basis
+                        // ===========================
+
+                        int I = compCell.Length - 1;
+                        int[,] CellPairs = new int[I, 2];
+
+                        for(int i = 0; i < I; i++) {
+                            CellPairs[i, 0] = compCell[0];
+                            CellPairs[i, 1] = compCell[i + 1];
+                        }
+                        var ExpolMtx = MultidimensionalArray.Create(I + 1, N, N);
+                        b.GetExtrapolationMatrices(CellPairs, ExpolMtx.ExtractSubArrayShallow(new int[] { 1, 0, 0 }, new int[] { I, N - 1, N - 1 }));
+                        for(int n = 0; n < N; n++) {
+                            ExpolMtx[0, n, n] = 1.0;
+                        }
+
+                        // compute mass matrix
+                        // ===================
+
+                        var MassMatrix = MultidimensionalArray.Create(N, N); // intermediate mass matrix
+                        MassMatrix.Multiply(1.0, ExpolMtx, ExpolMtx, 0.0, "lm", "kim", "kil");
+
+
+                        // change to orthonormal basis
+                        // ===========================
+                        MultidimensionalArray B = MultidimensionalArray.Create(N, N);
+                        MassMatrix.SymmetricLDLInversion(B, default(double[]));
+
+
+                        m_CompositeBasis[jAgg] = MultidimensionalArray.Create(ExpolMtx.Lengths);
+                        m_CompositeBasis[jAgg].Multiply(1.0, ExpolMtx, B, 0.0, "imn", "imk", "kn");
+
+                        // check
+                        // =====
+#if DEBUG
+                        MassMatrix.Clear();
+                        for(int k = 0; k <= I; k++) {
+                            for(int l = 0; l < N; l++) { // over rows of mass matrix ...
+                                for(int m = 0; m < N; m++) { // over columns of mass matrix ...
+
+                                    double mass_lm = 0.0;
+
+                                    for(int i = 0; i < N; i++) {
+                                        mass_lm += m_CompositeBasis[jAgg][k, i, m] * m_CompositeBasis[jAgg][k, i, l];
+                                    }
+
+                                    MassMatrix[l, m] += mass_lm;
+                                }
+                            }
+                        }
+
+                        MassMatrix.AccEye(-1.0);
+                        Debug.Assert(MassMatrix.InfNorm() < 1.0e-9);
+#endif
+                    }
+                }
+            }
+        }
+
+
 
 
         /// <summary>

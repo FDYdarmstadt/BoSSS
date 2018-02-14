@@ -117,6 +117,7 @@ namespace BoSSS.Foundation {
                     Len = 1
                 });
                 
+                // we project the basis function from 'jCell1' onto 'jCell0'
 
                 CellQuadrature.GetQuadrature(new int[2] { N, N }, m_Context,
                     (new CellQuadratureScheme(true, cellMask)).Compile(m_Context, this.Degree*2), // integrate over target cell
