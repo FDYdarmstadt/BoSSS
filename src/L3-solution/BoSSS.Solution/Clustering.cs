@@ -225,9 +225,9 @@ namespace BoSSS.Solution.Utils {
 
         public Clustering TuneClustering(Clustering clustering, double time, IList<TimeStepConstraint> timeStepConstraints, bool restrict = false) {
 
-            double[] clusterDts = GetSmallestTimeStepConstraintPerCluster(clustering, timeStepConstraints);
+            (double[] clusterDts, List<int> numOfSubSteps) = GetPerCluster_dtMin_SubSteps(clustering, timeStepConstraints, 1.0e-2, restrict);
             //double[] clusterDts = GetHarmonicSumTimeStepSizesPerCluster(clustering, time, timeStepConstraints);
-            List<int> numOfSubSteps = CalculateSubSteps(clusterDts, 1.0e-2, false);
+            //List<int> numOfSubSteps = CalculateSubSteps(clusterDts, 1.0e-2, true);
 
             List<SubGrid> newClusters = new List<SubGrid>();
             List<int> newSubSteps = new List<int>();
@@ -253,14 +253,13 @@ namespace BoSSS.Solution.Utils {
             }
 #endif
             //Clustering tempClustering = new Clustering(newClusters, clustering.SubGrid);
-            //double[] blaTimeStepSizes = GetSmallestTimeStepConstraintPerCluster(new Clustering(newClusters, clustering.SubGrid), timeStepConstraints);
-            //List<int> blaNumOfSubSteps = CalculateSubSteps(blaTimeStepSizes, 1.0e-2);
+            //(double[] blaTimeStepSizes, List<int> blaNumOfSubSteps) = GetPerCluster_dtMin_SubSteps(new Clustering(newClusters, clustering.SubGrid), timeStepConstraints, 1.0e-2, restrict);
 
             //newSubSteps = blaNumOfSubSteps;
             return new Clustering(newClusters, clustering.SubGrid, newSubSteps);
         }
 
-        public double[] GetHarmonicSumTimeStepSizesPerCluster(Clustering clustering, double time, IList<TimeStepConstraint> timeStepConstraints) {
+        public (double[], List<int>) GetPerCluster_dtHarmonicSum_SubSteps(Clustering clustering, double time, IList<TimeStepConstraint> timeStepConstraints, double eps, bool restrict = false) {
             double[] localDts = new double[clustering.NumberOfClusters];
 
             for (int i = 0; i < clustering.NumberOfClusters; i++) {
@@ -283,10 +282,12 @@ namespace BoSSS.Solution.Utils {
                 localDts[i] = dt;
             }
 
-            return localDts;
+            List<int> result = CalculateSubSteps(localDts, eps, restrict);
+
+            return (localDts, result);
         }
 
-        private double[] GetSmallestTimeStepConstraintPerCluster(Clustering clustering, IList<TimeStepConstraint> timeStepConstraints) {
+        private (double[], List<int>) GetPerCluster_dtMin_SubSteps(Clustering clustering, IList<TimeStepConstraint> timeStepConstraints, double eps, bool restrict = false) {
             // Get smallest time step size of every cluster --> loop over all clusters
             // Currently: CFLFraction is not taken into account
             double[] sendHmin = new double[clustering.NumberOfClusters];
@@ -317,7 +318,9 @@ namespace BoSSS.Solution.Utils {
             //    rcvHmin[i] *= 0.3;
             //}
 
-            return rcvHmin;
+            List<int> result = CalculateSubSteps(rcvHmin, eps, restrict);
+
+            return (rcvHmin, result);
         }
 
         public List<int> CalculateSubSteps(double[] timeStepSizes, double eps = 1.0e-1, bool restrict = false) {
