@@ -141,7 +141,7 @@ namespace BoSSS.Solution.Timestepping {
 
             clusterer = new Clusterer(this.gridData);
             CurrentClustering = clusterer.CreateClustering(numOfClusters, this.TimeStepConstraints, this.SubGrid);    // Might remove clusters when their centres are too close
-            CurrentClustering = clusterer.TuneClustering(CurrentClustering, Time, this.TimeStepConstraints); // Might remove clusters when their time step sizes are too similar
+            CurrentClustering = clusterer.TuneClustering(CurrentClustering, Time, this.TimeStepConstraints, restrict: false); // Might remove clusters when their time step sizes are too similar
 
             ABevolver = new ABevolve[CurrentClustering.NumberOfClusters];
 
@@ -219,14 +219,14 @@ namespace BoSSS.Solution.Timestepping {
                     }
 
                     List<int> numberOfLocalTimeSteps = new List<int>();
+                    double[] timeStepSizes;
 
                     // Set the number of sub steps (is calculated in every time step, regardless of whether a reclustering has been performed or not)
                     if (TimeStepConstraints != null) {
                         dt = CalculateTimeStep();
                         // If no dtFixed is set
                         if (TimeStepConstraints.First().dtMin != TimeStepConstraints.First().dtMax) {
-                            double[] timeStepSizes = clusterer.GetHarmonicSumTimeStepSizesPerCluster(CurrentClustering, Time, TimeStepConstraints);
-                            numberOfLocalTimeSteps = clusterer.CalculateSubSteps(timeStepSizes);
+                            (timeStepSizes, numberOfLocalTimeSteps) = clusterer.GetPerCluster_dtHarmonicSum_SubSteps(CurrentClustering, Time, TimeStepConstraints, 1.0e-1, restrict: false);
                             //dt /= numberOfLocalTimeSteps[0];
                         } else {    // dtFixed is set
                             //if (adaptive) {
@@ -596,7 +596,8 @@ namespace BoSSS.Solution.Timestepping {
         /// <returns>the largest stable timestep</returns>
         protected override double CalculateTimeStep() {
             if (TimeStepConstraints.First().dtMin != TimeStepConstraints.First().dtMax) {
-                double[] localDts = clusterer.GetHarmonicSumTimeStepSizesPerCluster(CurrentClustering, Time, TimeStepConstraints);
+                var result = clusterer.GetPerCluster_dtHarmonicSum_SubSteps(CurrentClustering, Time, TimeStepConstraints, eps: 1.0e-1, restrict: false);
+                double[] localDts = result.Item1;
                 return localDts[0];
             } else {
                 double dt = TimeStepConstraints.First().dtMin;
