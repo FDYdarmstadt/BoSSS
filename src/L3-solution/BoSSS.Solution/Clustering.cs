@@ -231,7 +231,8 @@ namespace BoSSS.Solution.Utils {
 
         public Clustering TuneClustering(Clustering clustering, double time, IList<TimeStepConstraint> timeStepConstraints) {
             // Calculate cluster time step sizes and sub-steps
-            (double[] clusterDts, List<int> numOfSubSteps) = GetPerCluster_dtMin_SubSteps(clustering, timeStepConstraints, 1.0e-2);
+            var result = GetPerCluster_dtMin_SubSteps(clustering, timeStepConstraints, 1.0e-2);
+            List<int> numOfSubSteps = result.Item2;
 
             // Combine clusters with same number of sub-steps
             List<SubGrid> newClusters = new List<SubGrid>();
@@ -257,12 +258,6 @@ namespace BoSSS.Solution.Utils {
                 Console.WriteLine("TuneClustering:\t id=" + i + " -> sub-steps=" + newSubSteps[i] + " and elements=" + newClusters[i].GlobalNoOfCells);
             }
 #endif
-            // Restrict number of sub-steps
-            if (clustering.RestrictDtsAndSubSteps && newSubSteps.Last() > maxNumOfSubSteps) {
-                var result = RestrictDtsAndSubSteps(clusterDts, newSubSteps);
-                newSubSteps = result.Item2;
-            }
-
             return new Clustering(newClusters, clustering.SubGrid, clustering.RestrictDtsAndSubSteps, newSubSteps);
         }
 
@@ -350,7 +345,7 @@ namespace BoSSS.Solution.Utils {
 
         private (double[], List<int>) RestrictDtsAndSubSteps(double[] clusterDts, List<int> subSteps) {
             // Restrict sub-steps
-            List<int> restrictedSubSteps = subSteps;
+            List<int> restrictedSubSteps = new List<int>(subSteps);
             restrictedSubSteps[0] = (int)Math.Ceiling((subSteps.Last() / (double)maxNumOfSubSteps));
             restrictedSubSteps[restrictedSubSteps.Count - 1] = subSteps.Last();
 
@@ -363,7 +358,7 @@ namespace BoSSS.Solution.Utils {
             // Restrict cluster time step sizes
             double[] restrictedClusterDts = new double[restrictedSubSteps.Count];
             for (int i = 0; i < restrictedClusterDts.Length; i++) {
-                restrictedClusterDts[i] = clusterDts[i] / restrictedSubSteps[i];
+                restrictedClusterDts[i] = clusterDts[0] / restrictedSubSteps[i];
             }
 
             return (restrictedClusterDts, restrictedSubSteps);

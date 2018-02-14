@@ -219,23 +219,23 @@ namespace BoSSS.Solution.Timestepping {
                     }
 
                     List<int> numberOfLocalTimeSteps = new List<int>();
-                    double[] timeStepSizes;
 
                     // Set the number of sub steps (is calculated in every time step, regardless of whether a reclustering has been performed or not)
                     if (TimeStepConstraints != null) {
                         dt = CalculateTimeStep();
                         // If no dtFixed is set
                         if (TimeStepConstraints.First().dtMin != TimeStepConstraints.First().dtMax) {
-                            (timeStepSizes, numberOfLocalTimeSteps) = clusterer.GetPerCluster_dtHarmonicSum_SubSteps(CurrentClustering, Time, TimeStepConstraints, 1.0e-1);
-                            //dt /= numberOfLocalTimeSteps[0];
+                            var result = clusterer.GetPerCluster_dtHarmonicSum_SubSteps(CurrentClustering, Time, TimeStepConstraints, 1.0e-1);
+                            numberOfLocalTimeSteps = result.Item2;
                         } else {    // dtFixed is set
                             //if (adaptive) {
                             //    throw new Exception("Does dtFixed for ALTS runs make sense? Still thinking about...");
                             //}
-                            //double[] timeStepSizes = clusterer.GetHarmonicSumTimeStepSizesPerCluster(CurrentClustering, Time, TimeStepConstraints);
                             numberOfLocalTimeSteps = CurrentClustering.SubStepsInitial;
                         }
                     }
+
+                    double dt_LargestCluster = dt / numberOfLocalTimeSteps[0];
 #if DEBUG
                     for (int i = 0; i < numberOfLocalTimeSteps.Count; i++) {
                         Console.WriteLine("Perform(dt):\t id=" + i + " -> sub-steps=" + numberOfLocalTimeSteps[i] + " and elements=" + CurrentClustering.Clusters[i].GlobalNoOfCells);
@@ -248,7 +248,7 @@ namespace BoSSS.Solution.Timestepping {
                     CurrentState.CopyTo(y0, 0);
 
                     double time0 = m_Time;
-                    double time1 = m_Time + dt;
+                    double time1 = m_Time + dt_LargestCluster;
 
                     TimestepNumber subTimestep = new TimestepNumber(timestepNumber - 1);
 
@@ -343,7 +343,7 @@ namespace BoSSS.Solution.Timestepping {
                     }
 
                     // Update time
-                    m_Time = time0 + dt;
+                    m_Time = time0 + dt_LargestCluster;
 
                 } else {
 
