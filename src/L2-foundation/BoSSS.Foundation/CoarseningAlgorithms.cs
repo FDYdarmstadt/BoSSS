@@ -179,9 +179,9 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                                 Debug.Assert(j < Jloc);
                                 Debug.Assert(UsedCellMarker[j] == true);
                                 foreach(int jNeigh in Neighbourship[j]) {
-                                    if (UsedCellMarker[jNeigh] == true)
-                                        continue;
                                     if (jNeigh >= Jloc)
+                                        continue;
+                                    if (UsedCellMarker[jNeigh] == true)
                                         continue;
                                     Debug.Assert(aggCell.Contains(jNeigh) == false); // for all cells which are already in 'aggCell', the marker should be true
                                     if (!NeighCandidates.Contains(jNeigh))
