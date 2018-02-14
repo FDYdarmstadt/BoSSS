@@ -133,6 +133,8 @@ namespace BoSSS.Solution.Multigrid {
                     }
                     else if (ApproxJac == ApproxInvJacobianOptions.DirectSolver) {
                         CurrentJac = diffjac(SolutionVec, x, f0);
+                        CurrentJac.SaveToTextFileSparse("Jacobi");
+                        CurrentLin.OperatorMatrix.SaveToTextFileSparse("OpMatrix");
                         var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
                         solver.DefineMatrix(CurrentJac);
                         step.ClearEntries();
@@ -590,7 +592,7 @@ namespace BoSSS.Solution.Multigrid {
                 zz[i] = 1;
                 temp = dirder(SolutionVec, currentX, zz, f0);
                 for (int j = 0; j < n; j++) {
-                    jac[j, i] = temp[j];
+                        jac[j, i] = temp[j];
                 }
             }
 
