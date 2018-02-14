@@ -37,6 +37,13 @@ namespace BoSSS.Application.IBM_Solver {
             base.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
         }
 
+        /// <summary>
+        /// Type of <see cref="IBM_SolverMain"/>.
+        /// </summary>
+        public override Type GetSolverType() {
+            return typeof(IBM_SolverMain);
+        }
+
         ///// <summary>
         ///// Expert options regarding the level set solver.
         ///// </summary>
