@@ -20,12 +20,14 @@ using BoSSS.Solution.Control;
 using BoSSS.Solution.Multigrid;
 using BoSSS.Solution.XdgTimestepping;
 using System.Linq;
+using System.Runtime.Serialization;
 
 namespace BoSSS.Application.IBM_Solver {
 
     /// <summary>
     /// 
     /// </summary>
+    [DataContract]
     [Serializable]
     public class IBM_Control : AppControl {
 
@@ -54,6 +56,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// <summary>
         /// Expert options regarding the spatial discretization.
         /// </summary>
+        [DataMember]
         public DoNotTouchParameters AdvancedDiscretizationOptions = new DoNotTouchParameters();
 
         /// <summary>
@@ -77,21 +80,25 @@ namespace BoSSS.Application.IBM_Solver {
         /// If iterative saddle-point solvers like GMRES or Orthonormalization are used, the maximum number of basis vectors
         /// that are used to construct the accelerated solution.
         /// </summary>
+        [DataMember]
         public int MaxKrylovDim = 30;
 
         /// <summary>
         /// If iterative solvers are used, the maximum number of iterations.
         /// </summary>
+        [DataMember]
         public int MaxSolverIterations = 2000;
 
         /// <summary>
         /// If iterative solvers are used, the maximum number of iterations.
         /// </summary>
+        [DataMember]
         public int MinSolverIterations = 2;
 
         /// <summary>
         /// Convergence criterion for linear/nonlinear solver.
         /// </summary>
+        [DataMember]
         public double Solver_ConvergenceCriterion = 1.0e-8;
 
         /// <summary>
@@ -164,6 +171,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// <summary>
         /// Viscosity, density and surface tension. Note phase A is fluid and phase B particle.
         /// </summary>
+        [DataMember]
         public PhysicalParameters PhysicalParameters = new PhysicalParameters()
         {
             IncludeConvection = true,
@@ -174,6 +182,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// <summary>
         /// Radius of the circular particle immersed in the fluid
         /// </summary>
+        [DataMember]
         public double particleRadius;
 
         public double MeshFactor;
@@ -206,6 +215,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// <summary>
         /// See <see cref="TimesteppingScheme"/>
         /// </summary>
+        [DataMember]
         public TimesteppingScheme Timestepper_Scheme;
 
         /// <summary>
@@ -216,6 +226,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// <summary>
         /// Fixed SrcPressureGradient which should be used if periodic BC are applied
         /// </summary>
+        [DataMember]
         public double[] SrcPressureGrad;
 
         public enum TimestepperInit {
@@ -227,10 +238,13 @@ namespace BoSSS.Application.IBM_Solver {
             MultiInit
         }
 
+        [DataMember]
         public TimestepperInit Timestepper_Init = TimestepperInit.SingleInit;
 
+        [DataMember]
         public NonlinearSolverCodes NonlinearSolve = NonlinearSolverCodes.Picard;
 
+        [DataMember]
         public LinearSolverCodes LinearSolve = LinearSolverCodes.classic_mumps;
 
     }

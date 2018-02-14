@@ -499,6 +499,7 @@ namespace BoSSS.Solution.Control {
         /// number of time-steps that the solver should perform;
         /// A negative value indicates that this value is not set within the control file;
         /// </summary>
+        [DataMember]
         public int NoOfTimesteps = -1;
 
         /// <summary>
@@ -534,7 +535,8 @@ namespace BoSSS.Solution.Control {
         /// <summary>
         /// Sets/Gets a fixed time-step size.
         /// </summary>
-        [JsonIgnore]
+        //[JsonIgnore]  
+        [DataMember]
         public double dtFixed {
             get {
                 if(dtMin != dtMax) {
