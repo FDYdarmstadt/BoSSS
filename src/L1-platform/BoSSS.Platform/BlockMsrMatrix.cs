@@ -4984,7 +4984,7 @@ namespace ilPSP.LinSolvers {
                     if (tempBuf_Length >= 0) {
                         Marshal.FreeHGlobal(tempBuf);
                     }
-                }
+                } // end of local multiplication...
 
 
                 // receive external blocks & perform multiplication
