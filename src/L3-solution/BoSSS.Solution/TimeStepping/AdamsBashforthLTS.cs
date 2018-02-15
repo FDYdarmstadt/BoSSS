@@ -140,7 +140,7 @@ namespace BoSSS.Solution.Timestepping {
             this.fluxCorrection = fluxCorrection;
 
             clusterer = new Clusterer(this.gridData);
-            CurrentClustering = clusterer.CreateClustering(numOfClusters, this.TimeStepConstraints, this.SubGrid);    // Might remove clusters when their centres are too close
+            CurrentClustering = clusterer.CreateClustering(numOfClusters, this.TimeStepConstraints, false, this.SubGrid);    // Might remove clusters when their centres are too close
             CurrentClustering = clusterer.TuneClustering(CurrentClustering, Time, this.TimeStepConstraints); // Might remove clusters when their time step sizes are too similar
 
             ABevolver = new ABevolve[CurrentClustering.NumberOfClusters];
@@ -194,7 +194,7 @@ namespace BoSSS.Solution.Timestepping {
 #endif
                             // Necessary in order to use the number of sub-grids specified by the user for the reclustering in each time step
                             // Otherwise the value could be changed by the constructor of the parent class (AdamsBashforthLTS.cs) --> CreateSubGrids()
-                            Clusterer.Clustering newClustering = clusterer.CreateClustering(numberOfClustersInitial, this.TimeStepConstraints, this.SubGrid);
+                            Clusterer.Clustering newClustering = clusterer.CreateClustering(numberOfClustersInitial, this.TimeStepConstraints, CurrentClustering.RestrictDtsAndSubSteps, this.SubGrid);
                             newClustering = clusterer.TuneClustering(newClustering, Time, this.TimeStepConstraints); // Might remove sub-grids when their time step sizes are too similar
                             reclustered = clusterer.CheckForNewClustering(CurrentClustering, newClustering);
 
@@ -225,17 +225,17 @@ namespace BoSSS.Solution.Timestepping {
                         dt = CalculateTimeStep();
                         // If no dtFixed is set
                         if (TimeStepConstraints.First().dtMin != TimeStepConstraints.First().dtMax) {
-                            double[] timeStepSizes = clusterer.GetHarmonicSumTimeStepSizesPerCluster(CurrentClustering, Time, TimeStepConstraints);
-                            numberOfLocalTimeSteps = clusterer.CalculateSubSteps(timeStepSizes);
-                            //dt /= numberOfLocalTimeSteps[0];
+                            var result = clusterer.GetPerCluster_dtHarmonicSum_SubSteps(CurrentClustering, Time, TimeStepConstraints, 1.0e-1);
+                            numberOfLocalTimeSteps = result.Item2;
                         } else {    // dtFixed is set
                             //if (adaptive) {
                             //    throw new Exception("Does dtFixed for ALTS runs make sense? Still thinking about...");
                             //}
-                            //double[] timeStepSizes = clusterer.GetHarmonicSumTimeStepSizesPerCluster(CurrentClustering, Time, TimeStepConstraints);
                             numberOfLocalTimeSteps = CurrentClustering.SubStepsInitial;
                         }
                     }
+
+                    double dt_LargestCluster = dt / numberOfLocalTimeSteps[0];
 #if DEBUG
                     for (int i = 0; i < numberOfLocalTimeSteps.Count; i++) {
                         Console.WriteLine("Perform(dt):\t id=" + i + " -> sub-steps=" + numberOfLocalTimeSteps[i] + " and elements=" + CurrentClustering.Clusters[i].GlobalNoOfCells);
@@ -248,7 +248,7 @@ namespace BoSSS.Solution.Timestepping {
                     CurrentState.CopyTo(y0, 0);
 
                     double time0 = m_Time;
-                    double time1 = m_Time + dt;
+                    double time1 = m_Time + dt_LargestCluster;
 
                     TimestepNumber subTimestep = new TimestepNumber(timestepNumber - 1);
 
@@ -343,7 +343,7 @@ namespace BoSSS.Solution.Timestepping {
                     }
 
                     // Update time
-                    m_Time = time0 + dt;
+                    m_Time = time0 + dt_LargestCluster;
 
                 } else {
 
@@ -596,7 +596,8 @@ namespace BoSSS.Solution.Timestepping {
         /// <returns>the largest stable timestep</returns>
         protected override double CalculateTimeStep() {
             if (TimeStepConstraints.First().dtMin != TimeStepConstraints.First().dtMax) {
-                double[] localDts = clusterer.GetHarmonicSumTimeStepSizesPerCluster(CurrentClustering, Time, TimeStepConstraints);
+                var result = clusterer.GetPerCluster_dtHarmonicSum_SubSteps(CurrentClustering, Time, TimeStepConstraints, eps: 1.0e-1);
+                double[] localDts = result.Item1;
                 return localDts[0];
             } else {
                 double dt = TimeStepConstraints.First().dtMin;
