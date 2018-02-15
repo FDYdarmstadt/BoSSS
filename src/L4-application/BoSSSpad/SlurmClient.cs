@@ -140,7 +140,7 @@ namespace BoSSS.Application.BoSSSpad {
             string sbatchCmd = " sbatch " + path + "\\batch.sh";
 
             // Otherwise it didn´t work
-            System.Threading.Thread.Sleep(5000);
+            System.Threading.Thread.Sleep(10000);
 
             // Convert from Windows to Unix and submit job
             Console.WriteLine();
