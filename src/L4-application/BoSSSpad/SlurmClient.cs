@@ -132,7 +132,6 @@ namespace BoSSS.Application.BoSSSpad {
             // load users .bashrc with all dependencies
             buildSlurmScript(myJob, new string[] { "source " + "/home/" + m_Username + "/.bashrc"});
 
-
             string path = "\\home\\" + m_Username + myJob.DeploymentDirectory.Substring(2);
             // Converting script to unix format
             string convertCmd = " dos2unix " + path + "\\batch.sh";
@@ -149,6 +148,8 @@ namespace BoSSS.Application.BoSSSpad {
             Console.WriteLine(result1.Error);
             var result2 = SSHConnection.RunCommand(sbatchCmd.Replace("\\", "/"));
             Console.WriteLine(result2.Result);
+
+            
 
             // Hardcoded extract of JobID
             myJob.EnvironmentVars.Add("JobID", result2.Result.Substring(20, 7));
@@ -180,7 +181,14 @@ namespace BoSSS.Application.BoSSSpad {
                 str.Write(" ");
                 str.Write(myJob.EnvironmentVars["BOSSS_ARG_" + 0]);
                 str.Write(" ");
-                str.Write(quote + myJob.EnvironmentVars["BOSSS_ARG_" + 1] + quote);
+
+                // How the controlfile is handled (serialized or compiled at runtime)
+                if (myJob.EnvironmentVars["BOSSS_ARG_1"].Equals("control.obj")) {
+                    str.Write(jobpath_unix + "/" + myJob.EnvironmentVars["BOSSS_ARG_1"]);
+                } else {
+                    str.Write(quote + myJob.EnvironmentVars["BOSSS_ARG_" + 1] + quote);
+                }
+
                 startupstring = str.ToString();
             }
 
