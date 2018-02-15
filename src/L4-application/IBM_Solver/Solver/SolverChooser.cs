@@ -62,10 +62,14 @@ namespace BoSSS.Application.IBM_Solver {
                 case LinearSolverCodes.exp_schwarz_Kcycle_directcoarse:
                     Timestepper.Config_linearSolver = new Schwarz() {
                         m_BlockingStrategy = new Schwarz.MultigridBlocks() {
-                            Depth = Control.NoOfMultigridLevels
+                            Depth = Control.NoOfMultigridLevels-1
                         },
                         Overlap = 1,
-                        CoarseSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS },
+                        CoarseSolver = new ClassicMultigrid() {
+                            CoarserLevelSolver= new ClassicMultigrid() {
+                                CoarserLevelSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS}
+                            }
+                        }
                     };
                     break;
 
