@@ -28,6 +28,8 @@ using BoSSS.Foundation.XDG;
 using ilPSP.Tracing;
 using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Quadrature;
 
 namespace BoSSS.Solution.Multigrid {
 
@@ -36,6 +38,165 @@ namespace BoSSS.Solution.Multigrid {
     /// DG basis on an aggregation grid (<see cref="AggregationGrid"/>).
     /// </summary>
     public class AggregationGridBasis {
+
+        public static void CreateSequence(IEnumerable<AggregationGrid> _agSeq, Basis dgBasis) {
+            // check input
+            // -----------
+            AggregationGrid[] agSeq = _agSeq.ToArray();
+            if (agSeq.Length <= 0)
+                throw new ArgumentException();
+            if (!object.ReferenceEquals(agSeq[0].ParentGrid, agSeq[0].AncestorGrid))
+                throw new ArgumentException("Parent and Ancestor of 0th grid level must be equal.");
+            GridData baseGrid = (GridData)(agSeq[0].AncestorGrid);
+            
+            for(int iLevel = 0; iLevel < agSeq.Length; iLevel++) {
+                if (agSeq[iLevel].MgLevel != iLevel)
+                    throw new ArgumentException("Grid levels must be provided in order.");
+                if (!object.ReferenceEquals(agSeq[iLevel].AncestorGrid, baseGrid))
+                    throw new ArgumentException("Mismatch in ancestor grid.");
+                if(iLevel > 0) {
+                    if(!object.ReferenceEquals(agSeq[iLevel].ParentGrid, agSeq[iLevel - 1])) {
+                        throw new ArgumentException("Mismatch in parent grid at level " + iLevel + ".");
+                    }
+                }
+            }
+
+            if (baseGrid.CellPartitioning.TotalLength != agSeq[0].CellPartitioning.TotalLength)
+                throw new ArgumentException("Mismatch in number of cells for level 0.");
+
+            if (!object.ReferenceEquals(baseGrid, dgBasis.GridDat))
+                throw new ArgumentException("Mismatch between DG basis grid and multi-grid ancestor.");
+
+            // Project Bounding-Box basis
+            // --------------------------
+            var BB = baseGrid.GlobalBoundingBox;
+            int Jbase = baseGrid.Cells.NoOfLocalUpdatedCells;
+            int p = dgBasis.Degree;
+            int Np = dgBasis.Length;
+            PolynomialList polyList = dgBasis.Polynomials[0];
+
+            MultidimensionalArray a = MultidimensionalArray.Create(Jbase, Np, Np);
+            {
+                CellQuadrature.GetQuadrature(new int[2] { Np, Np }, baseGrid,
+                    (new CellQuadratureScheme()).Compile(baseGrid, p * 2),
+                    delegate (int j0, int Length, QuadRule QR, MultidimensionalArray _EvalResult) {
+                        NodeSet nodes = QR.Nodes;
+                        int D = nodes.SpatialDimension;
+                        NodeSet GlobalNodes = new NodeSet(baseGrid.Grid.RefElements[0], Length * nodes.NoOfNodes, D);
+                        baseGrid.TransformLocal2Global(nodes, j0, Length, GlobalNodes.ResizeShallow(Length, nodes.NoOfNodes, D));
+
+                        for (int d = 0; d < D; d++) {
+                            var Cd = GlobalNodes.ExtractSubArrayShallow(d, -1);
+                            Cd.Scale(2 * (BB.Max[d] - BB.Min[d]));
+                            Cd.AccConstant((BB.Max[d] + BB.Min[d]) / (BB.Min[d] - BB.Max[d]));
+                        }
+#if DEBUG
+                    Debug.Assert(GlobalNodes.Min() >= -1.00001);
+                        Debug.Assert(GlobalNodes.Max() <= +1.00001);
+#endif
+                    GlobalNodes.LockForever();
+
+                        var BasisValues = dgBasis.CellEval(nodes, j0, Length);
+                        var PolyVals = MultidimensionalArray.Create(GlobalNodes.NoOfNodes, Np);
+                        polyList.Evaluate(GlobalNodes, PolyVals);
+                        PolyVals = PolyVals.ResizeShallow(Length, nodes.NoOfNodes, Np);
+
+                        _EvalResult.Multiply(1.0, BasisValues, PolyVals, 0.0, "jknm", "jkn", "jkm");
+                    },
+                    delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) { // _SaveIntegrationResults:
+                    a.ExtractSubArrayShallow(new[] { i0, 0, 0 }, new[] { i0 + Length - 1, Np - 1, Np - 1 }).Acc(1.0, ResultsOfIntegration);
+                    }).Execute();
+            }
+
+            // Compute intermediate mass matrix of bounding box basis
+            // ------------------------------------------------------
+            MultidimensionalArray Mass_Level = MultidimensionalArray.Create(Jbase, Np, Np);
+            Mass_Level.Multiply(1.0, a, a, 0.0, "jlk", "jnl", "jnk");
+
+            // Orthonormalize and create injection operator
+            // --------------------------------------------
+
+            MultidimensionalArray B_prevLevel, B_Level;
+
+            // level 0
+            int Jagg = agSeq[0].iLogicalCells.NoOfLocalUpdatedCells;
+            B_Level = MultidimensionalArray.Create(Jagg, Np, Np);
+            int[][] Ag2Pt = agSeq[0].iLogicalCells.AggregateCellToParts;
+            for(int j = 0; j < Jagg; j++) {
+                int jGeom;
+                 if(Ag2Pt == null || Ag2Pt[j] == null) {
+                    jGeom = j;
+                } else {
+                    if (Ag2Pt[j].Length != 1)
+                        throw new ArgumentException();
+                    jGeom = Ag2Pt[j][0];
+                }
+                if (jGeom != j)
+                    throw new NotSupportedException("todo");
+
+                a.ExtractSubArrayShallow(jGeom, -1, -1).InvertTo(B_Level.ExtractSubArrayShallow(j, -1, -1));
+            }
+
+            MultidimensionalArray[][] Injectors = new MultidimensionalArray[agSeq.Length][];
+
+
+            // all other levels
+            MultidimensionalArray Mass_prevLevel;
+            for(int iLevel = 1; iLevel < agSeq.Length; iLevel++) { // loop over levels...
+                B_prevLevel = B_Level;
+                Jagg = agSeq[iLevel].iLogicalCells.NoOfLocalUpdatedCells;
+                Ag2Pt = agSeq[iLevel].iLogicalCells.AggregateCellToParts;
+                int[][] C2F = agSeq[iLevel].jCellCoarse2jCellFine;
+
+                var Injectors_iLevel = new MultidimensionalArray[Jagg];
+                Injectors[iLevel] = Injectors_iLevel;
+
+                B_Level = MultidimensionalArray.Create(Jagg, Np, Np);
+                Mass_prevLevel = Mass_Level;
+                Mass_Level = MultidimensionalArray.Create(Jagg, Np, Np);
+                for (int j = 0; j < Jagg; j++) { // loop over aggregate cells
+
+                    var Mass_j = Mass_Level.ExtractSubArrayShallow(j, -1, -1);
+                    foreach (int jF in C2F[j]) { // loop over aggregated cells
+                        Mass_j.Acc(1.0, Mass_prevLevel.ExtractSubArrayShallow(jF, -1, -1));
+                    }
+
+                    // perform ortho-normalization:
+                    var B_Level_j = B_Level.ExtractSubArrayShallow(j, -1, -1);
+                    Mass_j.SymmetricLDLInversion(B_Level_j, default(double[]));
+#if DEBUG
+                    // assert that B_Level_j is upper-triangular
+                    for(int n = 0; n < Np; n++) {
+                        for(int m = n + 1; m < Np; m++) {
+                            Debug.Assert(B_Level_j[n, m] == 0.0);
+                        }
+                    }
+#endif
+                    // invert 'B' from previous level
+                    var invB_prevLevel = MultidimensionalArray.Create(B_prevLevel.Lengths);
+                    for(int jP = 0; jP < B_prevLevel.GetLength(0); jP++) {
+                        B_prevLevel.ExtractSubArrayShallow(jP, -1, -1).InvertTo(invB_prevLevel.ExtractSubArrayShallow(jP, -1, -1));
+                    }
+                    
+                    // create injector
+                    Injectors_iLevel[j] = MultidimensionalArray.Create(C2F[j].Length, Np, Np);
+                    for (int l = 0; l < C2F[j].Length; l++) { // loop over aggregated cells
+                        int jF = C2F[j][l];
+
+                        var Inj_jl = Injectors_iLevel[j].ExtractSubArrayShallow(l, -1, -1);
+                        var invB = invB_prevLevel.ExtractSubArrayShallow(jF, -1, -1);
+                        Inj_jl.Multiply(1.0, invB, B_Level_j, 0.0, "nm", "nk", "km");
+                    }
+                }
+            }
+
+            // create basis sequence
+            // ---------------------
+
+
+        }
+
+
 
 
         static GridData GetGridData(AggregationGrid ag) {
@@ -124,7 +285,7 @@ namespace BoSSS.Solution.Multigrid {
 
 
 
-                    eterytrytryu
+                    
 
                 }
             }
