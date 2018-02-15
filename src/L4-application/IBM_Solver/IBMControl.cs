@@ -63,15 +63,16 @@ namespace BoSSS.Application.IBM_Solver {
         /// Sets the DG polynomial degree 
         /// </summary>
         /// <param name="k">Degree for velociy; pressure  will be one order lower.</param>
-        public override void SetDGdegree(int k) {
-            if(k < 1)
+        public override void SetDGdegree(int k, int D = 2) {
+            if (k < 1)
                 throw new ArgumentOutOfRangeException("DG polynomial degree must be at least 1.");
 
             base.FieldOptions.Clear();
-
             this.AddFieldOption("VelocityX", k);
             this.AddFieldOption("VelocityY", k);
-            this.AddFieldOption("Pressure", k- 1);
+            if (D == 3)
+                this.AddFieldOption("VelocityZ", k);
+            this.AddFieldOption("Pressure", k - 1);
             this.AddFieldOption("PhiDG", 2);
             this.AddFieldOption("Phi", 2);
         }
@@ -122,8 +123,8 @@ namespace BoSSS.Application.IBM_Solver {
         public Func<double[], double, double>[] ExSol_Velocity_Evaluator {
             get {
                 if (m_ExSol_Velocity_Evaluator == null) {
-                    if(ExSol_Velocity!= null) {
-                        m_ExSol_Velocity_Evaluator = ExSol_Velocity.Select< IBoundaryAndInitialData, Func<double[], double, double>>( a => a.Evaluate).ToArray();
+                    if (ExSol_Velocity != null) {
+                        m_ExSol_Velocity_Evaluator = ExSol_Velocity.Select<IBoundaryAndInitialData, Func<double[], double, double>>(a => a.Evaluate).ToArray();
                     }
                 }
                 return m_ExSol_Velocity_Evaluator;
@@ -151,7 +152,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// </summary>
         public Func<double[], double, double> ExSol_Pressure_Evaluator {
             get {
-                if(m_ExSol_Pressure_Evaluator == null) {
+                if (m_ExSol_Pressure_Evaluator == null) {
                     if (ExSol_Pressure != null)
                         m_ExSol_Pressure_Evaluator = ExSol_Pressure.Evaluate;
                 }
@@ -172,8 +173,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// Viscosity, density and surface tension. Note phase A is fluid and phase B particle.
         /// </summary>
         [DataMember]
-        public PhysicalParameters PhysicalParameters = new PhysicalParameters()
-        {
+        public PhysicalParameters PhysicalParameters = new PhysicalParameters() {
             IncludeConvection = true,
             rho_A = 1,
             mu_A = 1,

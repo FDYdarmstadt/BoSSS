@@ -129,7 +129,7 @@ namespace BoSSS.Solution.Control {
         /// <summary>
         /// Utility function for easier user interaction, (should) set all reasonable <see cref="FieldOptions"/>
         /// </summary>
-        public virtual void SetDGdegree(int p) {
+        public virtual void SetDGdegree(int p,int D) {
             throw new NotImplementedException();
         }
 
