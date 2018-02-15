@@ -1,5 +1,6 @@
 restart
 **************
+
   Database Explorer v2
   ____________________
 
@@ -39,7 +40,15 @@ using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Solution.Multigrid;
 using System.Text;
 using System.Threading.Tasks;
+using ilPSP.Tracing;
 **************
+(1,2): warning CS0105: The using directive for `BoSSS.Application.IBM_Solver' appeared previously in this namespace
+(2,1): warning CS0105: The using directive for `BoSSS.Foundation.Grid.RefElements' appeared previously in this namespace
+(3,1): warning CS0105: The using directive for `BoSSS.Solution.Multigrid' appeared previously in this namespace
+(4,1): warning CS0105: The using directive for `System.Text' appeared previously in this namespace
+(5,1): warning CS0105: The using directive for `System.Threading.Tasks' appeared previously in this namespace
+No. of errors|warnings: 0|5.
+
 ==============
 WorkflowMgm.Init("MPISolverPerformance");
 **************
@@ -48,7 +57,7 @@ Project name is set to 'MPISolverPerformance'.
 ==============
 var WinTempDB = OpenOrCreateDatabase("L:\\tmp\\temp_db");
 **************
-Opening existing database 'L:\tmp\temp_db'.
+Creating database 'L:\tmp\temp_db'.
 
 ==============
 //Console.WriteLine("Please type in your Username");
@@ -57,6 +66,7 @@ Opening existing database 'L:\tmp\temp_db'.
 ==============
 var myBatch = new SlurmClient(@"L:\SLURM","lcluster4.hrz.tu-darmstadt.de","oe11okuz");
 **************
+
 Please enter your password...
 *************
 Connecting to lcluster4.hrz.tu-darmstadt.de...
@@ -84,8 +94,8 @@ LinearSolverCodes[] linSolvers = new LinearSolverCodes[] {
     //LinearSolverCodes.exp_schwarz_Kcycle_directcoarse
 };
 int[] ks = new int[] {2,3};
-int cells_x  = 64;
-int cells_yz = 22;
+int cells_x  = 4;
+int cells_yz = 4;
 int re       = 100; 
 int ASparts  = 5; 
 int ASDepth  = 2;
@@ -147,8 +157,7 @@ grd.DefineEdgeTags(delegate (double[] _X) {
                 });
 WinTempDB.SaveGrid(ref grd);
 **************
-An equivalent grid is already present in the database -- the grid will not be saved.
-514c3f21-8acb-4cc4-8a06-207a13652e4f
+e0c124aa-f56b-4b2b-839e-5ced263e957e
 ==============
 **************
 ==============
@@ -317,7 +326,7 @@ Loading session 29bb56dc-ff23-42a5-ae9a-ae9fb4d59257 failed with message 'Die Da
 Loading session ccb25d9a-d7c4-4d1d-98b2-93be839f4fe0 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\ccb25d9a-d7c4-4d1d-98b2-93be839f4fe0\Session.info" konnte nicht gefunden werden.'
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: L:\SLURM\IBM_Solver2018Feb14_16-13-21
+Deployment directory: L:\SLURM\IBM_Solver2018Feb15_14-29-33
 Source directory: C:\BoSSS-experimental\public\src\L4-application\BoSSSpad\bin\Release
    copied: IBM_Solver.exe BoSSS.Solution.XdgTimestepping.dll BoSSS.Foundation.XDG.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll Renci.SshNet.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll MathNet.Numerics.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.dll CommandLine.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
 deployment finished.
@@ -326,9 +335,9 @@ Modules: loading acml/5.3.1
 Modules: loading gcc/4.9.4
 Modules: loading intel/2016u4
 Modules: loading openmpi/intel/1.10.7/2018
-dos2unix: converting file /home/oe11okuz/SLURM/IBM_Solver2018Feb14_16-13-21/batch.sh to Unix format ...
+dos2unix: converting file /home/oe11okuz/SLURM/IBM_Solver2018Feb15_14-29-33/batch.sh to Unix format ...
 
-Submitted batch job 5951525
+Submitted batch job 5977555
 [1;37m[I][0m Selected project: project00464
 [1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
 
@@ -338,15 +347,21 @@ Submitted batch job 5951525
 ==============
 WorkflowMgm.AllJobs.Select(kv => kv.Key + ": \t" + kv.Value.Status);
 **************
-List of 8 instances of String {
-  0: J40_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
-  1: J320_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
-  2: J2560_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
-  3: J20480_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
-  4: J40_k3_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
-  5: J320_k3_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
-  6: J2560_k3_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
-  7: J20480_k3_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+Loading session d7ab7826-1ae0-4c06-a735-8a40369c0b1a failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\d7ab7826-1ae0-4c06-a735-8a40369c0b1a\Session.info" konnte nicht gefunden werden.'
+Loading session 7dfbfff1-438f-42ca-aed4-999f9e864ec4 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\7dfbfff1-438f-42ca-aed4-999f9e864ec4\Session.info" konnte nicht gefunden werden.'
+Loading session 9e5bb878-0703-40f5-95df-a19001f2c1b5 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\9e5bb878-0703-40f5-95df-a19001f2c1b5\Session.info" konnte nicht gefunden werden.'
+Loading session 367124ed-0d70-4bf7-8027-52f8a3bd072c failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\367124ed-0d70-4bf7-8027-52f8a3bd072c\Session.info" konnte nicht gefunden werden.'
+Loading session b796d3b4-b645-439d-ad8b-b42bcaec306d failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\b796d3b4-b645-439d-ad8b-b42bcaec306d\Session.info" konnte nicht gefunden werden.'
+Loading session 672d147a-8d3b-4b9a-a597-28f72a4b9bc2 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\672d147a-8d3b-4b9a-a597-28f72a4b9bc2\Session.info" konnte nicht gefunden werden.'
+Loading session c27d5ea3-9613-4bed-8943-4cc2a3cc8ba5 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\c27d5ea3-9613-4bed-8943-4cc2a3cc8ba5\Session.info" konnte nicht gefunden werden.'
+Loading session a080db01-8fe8-4b42-927b-c997931d4b3a failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\a080db01-8fe8-4b42-927b-c997931d4b3a\Session.info" konnte nicht gefunden werden.'
+Loading session 321103b1-b62f-42b8-88f2-60a3b66af1b1 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\321103b1-b62f-42b8-88f2-60a3b66af1b1\Session.info" konnte nicht gefunden werden.'
+Loading session 25e225e7-706e-4909-9f1f-4e3b339c7727 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\25e225e7-706e-4909-9f1f-4e3b339c7727\Session.info" konnte nicht gefunden werden.'
+Loading session b4ea3e83-46f0-461f-a02b-18eade823966 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\b4ea3e83-46f0-461f-a02b-18eade823966\Session.info" konnte nicht gefunden werden.'
+Loading session 29bb56dc-ff23-42a5-ae9a-ae9fb4d59257 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\29bb56dc-ff23-42a5-ae9a-ae9fb4d59257\Session.info" konnte nicht gefunden werden.'
+Loading session ccb25d9a-d7c4-4d1d-98b2-93be839f4fe0 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\ccb25d9a-d7c4-4d1d-98b2-93be839f4fe0\Session.info" konnte nicht gefunden werden.'
+List of 1 instances of String {
+  0: Sphere_Flow: 	FinishedSuccessful
 }
 ==============
 //WorkflowMgm.AllJobs.ElementAt(9).Value.Stdout;
@@ -357,7 +372,7 @@ List of 8 instances of String {
 ==============
 WorkflowMgm.SessionTable.Rows.Count;
 **************
-89
+0
 ==============
 // =====================================
 // Session table
@@ -370,9 +385,9 @@ WorkflowMgm.SessionTable.Rows.Count;
 **************
 ==============
 static class AddCols {
-    private double getMaxTime(ISessionInfo SI, string method, bool exclusive) {
+     static public double getMaxTime(ISessionInfo SI, string method, bool exclusive) {
          double maxTime = 0.0;
-var mcr = SI.GetProfiling();
+         var mcr        = SI.GetProfiling();
                 // Iterate over MPIs
                 for (int j = 0; j < mcr.Count(); j++) {
                     MethodCallRecord value;
@@ -382,7 +397,7 @@ var mcr = SI.GetProfiling();
                         double tempFractions;
                         int occurence        = 1;
 
-                        value = mcr[j].FindChild(mainMethod);
+                        value = mcr[j].FindChild(method);
                         if (value == null) {
                             value = mcr[j];
                         }
@@ -409,13 +424,18 @@ var mcr = SI.GetProfiling();
     }
     
     static public object RunSolverOneStep_excl(ISessionInfo SI) {
-        return SI.getMaxTime("BoSSS.Application.IBM_Solver.IBM_SolverMain.RunSolverOneStep",true);
+        return getMaxTime(SI,"BoSSS.Application.IBM_Solver.IBM_SolverMain.RunSolverOneStep",true);
     }
     static public object MPIs(ISessionInfo SI) {
         return SI.ComputeNodeNames.Count();
     }
 }
 **************
+(11,32): warning CS0219: The variable `tempFractions' is assigned but its value is never used
+(22,37): warning CS0219: The variable `maxIndex' is assigned but its value is never used
+(29,37): warning CS0219: The variable `maxIndex' is assigned but its value is never used
+No. of errors|warnings: 0|3.
+
 ==============
 WorkflowMgm.AdditionalSessionTableColums.Clear();
 WorkflowMgm.AdditionalSessionTableColums.Add(
@@ -431,6 +451,20 @@ WorkflowMgm.AdditionalSessionTableColums.Add(
 ==============
 var SessTab = WorkflowMgm.SessionTable;
 **************
+Loading session d7ab7826-1ae0-4c06-a735-8a40369c0b1a failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\d7ab7826-1ae0-4c06-a735-8a40369c0b1a\Session.info" konnte nicht gefunden werden.'
+Loading session 7dfbfff1-438f-42ca-aed4-999f9e864ec4 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\7dfbfff1-438f-42ca-aed4-999f9e864ec4\Session.info" konnte nicht gefunden werden.'
+Loading session 9e5bb878-0703-40f5-95df-a19001f2c1b5 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\9e5bb878-0703-40f5-95df-a19001f2c1b5\Session.info" konnte nicht gefunden werden.'
+Loading session 367124ed-0d70-4bf7-8027-52f8a3bd072c failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\367124ed-0d70-4bf7-8027-52f8a3bd072c\Session.info" konnte nicht gefunden werden.'
+Loading session b796d3b4-b645-439d-ad8b-b42bcaec306d failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\b796d3b4-b645-439d-ad8b-b42bcaec306d\Session.info" konnte nicht gefunden werden.'
+Loading session 672d147a-8d3b-4b9a-a597-28f72a4b9bc2 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\672d147a-8d3b-4b9a-a597-28f72a4b9bc2\Session.info" konnte nicht gefunden werden.'
+Loading session c27d5ea3-9613-4bed-8943-4cc2a3cc8ba5 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\c27d5ea3-9613-4bed-8943-4cc2a3cc8ba5\Session.info" konnte nicht gefunden werden.'
+Loading session a080db01-8fe8-4b42-927b-c997931d4b3a failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\a080db01-8fe8-4b42-927b-c997931d4b3a\Session.info" konnte nicht gefunden werden.'
+Loading session 321103b1-b62f-42b8-88f2-60a3b66af1b1 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\321103b1-b62f-42b8-88f2-60a3b66af1b1\Session.info" konnte nicht gefunden werden.'
+Loading session 25e225e7-706e-4909-9f1f-4e3b339c7727 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\25e225e7-706e-4909-9f1f-4e3b339c7727\Session.info" konnte nicht gefunden werden.'
+Loading session b4ea3e83-46f0-461f-a02b-18eade823966 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\b4ea3e83-46f0-461f-a02b-18eade823966\Session.info" konnte nicht gefunden werden.'
+Loading session 29bb56dc-ff23-42a5-ae9a-ae9fb4d59257 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\29bb56dc-ff23-42a5-ae9a-ae9fb4d59257\Session.info" konnte nicht gefunden werden.'
+Loading session ccb25d9a-d7c4-4d1d-98b2-93be839f4fe0 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\ccb25d9a-d7c4-4d1d-98b2-93be839f4fe0\Session.info" konnte nicht gefunden werden.'
+
 ==============
 // The Session column can't be serialized,
 // we have to remove it
@@ -454,46 +488,6 @@ string docpath    = Path.Combine(CurrentDocDir, SessTab.TableName + ".json");
 // save session table as file: this can be stored in our git 
 // repository
 SessTab.SaveToFile(docpath);
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
 **************
 ==============
 **************
