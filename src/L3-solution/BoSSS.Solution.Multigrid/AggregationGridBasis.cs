@@ -118,12 +118,12 @@ namespace BoSSS.Solution.Multigrid {
 
                         for (int d = 0; d < D; d++) {
                             var Cd = GlobalNodes.ExtractSubArrayShallow(-1, d);
-                            //Cd.Scale(2 / (BB.Max[d] - BB.Min[d]));
-                            //Cd.AccConstant((BB.Max[d] + BB.Min[d]) / (BB.Min[d] - BB.Max[d]));
+                            Cd.Scale(2 / (BB.Max[d] - BB.Min[d]));
+                            Cd.AccConstant((BB.Max[d] + BB.Min[d]) / (BB.Min[d] - BB.Max[d]));
                         }
 #if DEBUG
-                    //Debug.Assert(GlobalNodes.Min() >= -1.00001);
-                    //Debug.Assert(GlobalNodes.Max() <= +1.00001);
+                    Debug.Assert(GlobalNodes.Min() >= -1.00001);
+                    Debug.Assert(GlobalNodes.Max() <= +1.00001);
 #endif
                     GlobalNodes.LockForever();
 
