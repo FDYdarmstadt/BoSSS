@@ -59,7 +59,12 @@ namespace BoSSS.Application.MultigridTest {
 
             for (int p = 0; p <= 3; p++) { // loop over polynomial degrees...
                 var uMapping = new UnsetteledCoordinateMapping(new Basis(grid, p));
-                var MgMapSeq = MgSeq.Select(aggGrid => new MultigridMapping(uMapping, new AggregationGridBasis[] { new AggregationGridBasis(uMapping.BasisS[0], aggGrid) }, new int[] { p })).ToArray();
+
+                var MgMapSeq = new MultigridMapping[MgSeq.Length];
+                var BasisSeq = AggregationGridBasis.CreateSequence(MgSeq, uMapping.BasisS);
+                for (int iLevel = 0; iLevel < MgSeq.Length; iLevel++) {
+                    MgMapSeq[iLevel] = new MultigridMapping(uMapping, BasisSeq[iLevel], new int[] { p }); 
+                }
                 MultigrigMap.Add(p, MgMapSeq);
             }
 
@@ -122,7 +127,7 @@ namespace BoSSS.Application.MultigridTest {
 
 
         /// <summary>
-        /// tests if the prolongation of an arbitrary resticted vector has jumps (which it should not have).
+        /// Tests if the prolongation of a random vector on a coarse grid has jumps (which it should not have).
         /// </summary>
         [Test]
         public static void ProlongationTest([Values(1, 2, 3)] int p) {
@@ -319,12 +324,10 @@ namespace BoSSS.Application.MultigridTest {
             Basis B1 = new Basis(grid, 0), B2 = new Basis(grid, 2);
             var Map = new UnsetteledCoordinateMapping(B1, B2);
 
-            var Lev0Basis = new AggregationGridBasis(B2, TestProgram.MgSeq[0]);
-            var Lev1Basis = new AggregationGridBasis(B2, TestProgram.MgSeq[1]);
+            AggregationGridBasis[][] aB = AggregationGridBasis.CreateSequence(TestProgram.MgSeq.Take(2), new Basis[] { B1, B2 });
 
-
-            var Lev0 = new MultigridMapping(Map, new AggregationGridBasis[] { Lev0Basis, Lev0Basis }, new int[] { B1.Degree, B2.Degree });
-            var Lev1 = new MultigridMapping(Map, new AggregationGridBasis[] { Lev1Basis, Lev1Basis }, new int[] { B1.Degree, B2.Degree });
+            var Lev0 = new MultigridMapping(Map, aB[0], new int[] { B1.Degree, B2.Degree });
+            var Lev1 = new MultigridMapping(Map, aB[1], new int[] { B1.Degree, B2.Degree });
 
 
             int[] I0col = Lev0.GetSubvectorIndices(new int[] { 0 });
@@ -431,11 +434,12 @@ namespace BoSSS.Application.MultigridTest {
                 // XDG Aggregation BasiseS
                 // =======================
 
-                XAggB = MgSeq.Select(agGrd => new XdgAggregationBasis[] { new XdgAggregationBasis(uTest.Basis, agGrd) }).ToArray();
+                //XAggB = MgSeq.Select(agGrd => new XdgAggregationBasis[] { new XdgAggregationBasis(uTest.Basis, agGrd) }).ToArray();
+                XAggB = new XdgAggregationBasis[MgSeq.Length][];
+                var _XAggB = AggregationGridBasis.CreateSequence(MgSeq, uTest.Mapping.BasisS);
                 for (int iLevel = 0; iLevel < XAggB.Length; iLevel++) {
-                    var xab = XAggB[iLevel];
-                    Debug.Assert(xab.Length == 1);
-                    xab[0].Update(agg);
+                    XAggB[iLevel] = new[] { (XdgAggregationBasis)(_XAggB[iLevel][0]) };
+                    XAggB[iLevel][0].Update(agg);
                 }
 
                 // Multigrid Operator
