@@ -118,12 +118,12 @@ namespace BoSSS.Solution.Multigrid {
 
                         for (int d = 0; d < D; d++) {
                             var Cd = GlobalNodes.ExtractSubArrayShallow(-1, d);
-                            Cd.Scale(2 / (BB.Max[d] - BB.Min[d]));
-                            Cd.AccConstant((BB.Max[d] + BB.Min[d]) / (BB.Min[d] - BB.Max[d]));
+                            //Cd.Scale(2 / (BB.Max[d] - BB.Min[d]));
+                            //Cd.AccConstant((BB.Max[d] + BB.Min[d]) / (BB.Min[d] - BB.Max[d]));
                         }
 #if DEBUG
-                    Debug.Assert(GlobalNodes.Min() >= -1.00001);
-                        Debug.Assert(GlobalNodes.Max() <= +1.00001);
+                    //Debug.Assert(GlobalNodes.Min() >= -1.00001);
+                    //Debug.Assert(GlobalNodes.Max() <= +1.00001);
 #endif
                     GlobalNodes.LockForever();
 
@@ -587,6 +587,9 @@ namespace BoSSS.Solution.Multigrid {
         /// - 3rd index into <see cref="MultidimensionalArray"/>: column
         /// - content: local cell index into the original grid, see <see cref="Foundation.Grid.ILogicalCellData.AggregateCellToParts"/>
         /// </summary>
+        /// <remarks>
+        /// This method does not scale linear with problem size, its only here for reference/testing purpose.
+        /// </remarks>
         public MultidimensionalArray[] CompositeBasis {
             get {
                 if(m_CompositeBasis == null) {
@@ -600,44 +603,64 @@ namespace BoSSS.Solution.Multigrid {
             AggregationGrid ag = this.AggGrid;
             var compCell = ag.iLogicalCells.AggregateCellToParts[_jAgg];
             int thisMgLevel = ag.MgLevel;
-            int Np = this.DGBasis.Degree;
+            int Np = this.DGBasis.Length;
 
             var R = MultidimensionalArray.Create(compCell.Length, Np, Np);
+            for(int i = 0; i < compCell.Length; i++) {
+                for(int n = 0; n < Np; n++) {
+                    R[i, n, n] = 1.0;
+                }
+            }
+
+#if DEBUG
+            bool[] btouch = new bool[compCell.Length];
+#endif
 
             int[] AggIndex = new int[] { _jAgg };
-            AggregationGrid mgLevel = ag;
-            for (int mgLevelIdx = thisMgLevel; mgLevelIdx >= 0; mgLevelIdx--) {
-
+            AggregationGridBasis basisLevel = this;
+            for (int mgLevelIdx = thisMgLevel; mgLevelIdx > 0; mgLevelIdx--) {
+                AggregationGrid mgLevel = basisLevel.AggGrid;
+#if DEBUG
+                btouch.Clear();
+#endif
 
                 foreach (int jAgg in AggIndex) {
-                    MultidimensionalArray Inj_j;
-                    if (mgLevelIdx > 0) {
-                        Inj_j = this.InjectionOperator[jAgg].CloneAs();
-                    } else {
-                        Inj_j = MultidimensionalArray.Create(1, Np, Np);
-                        for (int n = 0; n < Np; n++) {
-                            m_CompositeBasis[jAgg][0, n, n] = 1.0;
-                        }
-                    }
-
-                    int[] jFine = mgLevel.jCellFine2jCellCoarse;
-                    Debug.Assert(jFine.Length == Inj_j.GetLength(0));
-
-                    for(int iSrc = 0; iSrc < jFine.Length; iSrc++) { // loop over finer level cells
-                        int jAgg_fine = jFine[iSrc];
-
-                        int[] OrgCells = mgLevel.Fi
+                    //MultidimensionalArray Inj_j;
+                    //if (mgLevelIdx > 0) {
+                    var Inj_j = basisLevel.InjectionOperator[jAgg];
+                    //} else {
+                    //    Inj_j = MultidimensionalArray.Create(1, Np, Np);
+                    //    for (int n = 0; n < Np; n++) {
+                    //        m_CompositeBasis[jAgg][0, n, n] = 1.0;
+                    //    }
+                    //}
 
 
-                        foreach (int j in compCell_jAgg) {
+                    int[] FineAgg = mgLevel.jCellCoarse2jCellFine[jAgg];
+                    Debug.Assert(FineAgg.Length == Inj_j.GetLength(0));
+
+                    for(int iSrc = 0; iSrc < FineAgg.Length; iSrc++) { // loop over finer level cells
+                        int jAgg_fine = FineAgg[iSrc];
+                        // Inj_j[iSrc,-,-] is injector 
+                        //   from cell 'jAgg' on level 'mgLevelIdx'      (coarse level)
+                        //   to cell 'jAgg_fine' on level 'mgLevelIdx - 1' (fine level)
+
+                        var Inj_j_iSrc = Inj_j.ExtractSubArrayShallow(iSrc, -1, -1);
+
+                        int[] TargCells = mgLevel.ParentGrid.iLogicalCells.AggregateCellToParts[jAgg_fine];
+                        
+                        foreach (int j in TargCells) {
                             int iTarg = Array.IndexOf(compCell, j);
                             if (iTarg < 0)
                                 throw new ApplicationException("error in alg");
+#if DEBUG
+                            if(btouch[iTarg] == true)
+                                throw new ApplicationException();
+                            btouch[iTarg] = true;
+#endif
+                            var R_iTarg = R.ExtractSubArrayShallow(iTarg, -1, -1);
 
-
-
-
-
+                            R_iTarg.Multiply(1.0, Inj_j_iSrc, R_iTarg.CloneAs(), 0.0, "nm", "nk", "km");
                         }
                     }
                 }
@@ -645,7 +668,8 @@ namespace BoSSS.Solution.Multigrid {
 
                 // Rekursions-Scheisse:
                 // - - - - - - - - - - -
-                if (mgLevelIdx > 0) {
+                //if (mgLevelIdx > 0) {
+                { 
                     List<int> nextAggIndex = new List<int>();
                     foreach(int jAgg in AggIndex) {
                         int[] NextLevel = mgLevel.jCellCoarse2jCellFine[jAgg];
@@ -657,11 +681,12 @@ namespace BoSSS.Solution.Multigrid {
                         nextAggIndex.AddRange(NextLevel);
                     }
                     AggIndex = nextAggIndex.ToArray();
-                    mgLevel = (AggregationGrid)(mgLevel.ParentGrid);
-                } else {
-                    AggIndex = null;
-                    mgLevel = null;
-                }
+                    basisLevel = basisLevel.ParentBasis;
+                } 
+                //else {
+                //    AggIndex = null;
+                //    mgLevel = null;
+                //}
             }
 
             return R;
@@ -682,6 +707,10 @@ namespace BoSSS.Solution.Multigrid {
                 m_CompositeBasis = new MultidimensionalArray[JAGG];
 
                 for(int jAgg = 0; jAgg < JAGG; jAgg++) { // loop over agglomerated cells...
+
+                    m_CompositeBasis[jAgg] = CA(jAgg);
+
+                    /*
                     var compCell = ag.iLogicalCells.AggregateCellToParts[jAgg];
                     
                     if(compCell.Length == 1) {
@@ -748,6 +777,7 @@ namespace BoSSS.Solution.Multigrid {
                         Debug.Assert(MassMatrix.InfNorm() < 1.0e-9);
 #endif
                     }
+                    //*/
                 }
             }
         }
