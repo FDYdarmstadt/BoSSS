@@ -637,7 +637,7 @@ namespace BoSSS.Application.MultigridTest {
             if (AggregationThreshold < 0.1 && p >= 3 && mode == MultigridOperator.Mode.IdMass)
                 // this test combination is not supposed to work:
                 // without agglomeration, for high p, the mass matrix may be indefinite in small cut-cells
-                // => Cholesky decomposition on mass matrix fails, i.e. 'mode == IdMass' cannot succseed.
+                // => Cholesky decomposition on mass matrix fails, i.e. 'mode == IdMass' cannot succeed.
                 return;
 
 
@@ -653,7 +653,7 @@ namespace BoSSS.Application.MultigridTest {
                 var Itself = mgop.Mapping.FromOtherLevelMatrix(mgop.Mapping);
                 Itself.AccEyeSp(-1.0);
                 double Itslef_Norm = Itself.InfNorm();
-                //Console.WriteLine("Level {0}, Restriction onto itself {1}", mgm.LevelIndex, Itslef_Norm);
+                Console.WriteLine("Level {0}, Restriction onto itself {1}", mgop.Mapping.AggGrid.MgLevel, Itslef_Norm);
                 Assert.LessOrEqual(Itslef_Norm, 1.0e-8);
             }
 
