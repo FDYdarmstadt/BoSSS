@@ -39,9 +39,40 @@ namespace BoSSS.Solution.Multigrid {
     /// </summary>
     public class AggregationGridBasis {
 
-        public static void CreateSequence(IEnumerable<AggregationGrid> _agSeq, Basis dgBasis) {
+
+
+        public static AggregationGridBasis[][] CreateSequence(IEnumerable<AggregationGrid> _agSeq, IEnumerable<Basis> dgBasisS) {
+
             // check input
             // -----------
+
+            Basis maxDgBasis = null;
+            XDGBasis maxXdgBasis = null;
+            bool[] UseX = new bool[dgBasisS.Count()];
+            bool AnyX = false, AnyNonX = false;
+            for(int iBs = 0; iBs < dgBasisS.Count(); iBs++) {
+                Basis b = dgBasisS.ElementAt(iBs);
+                if(!object.ReferenceEquals(_agSeq.First().AncestorGrid, b.GridDat))
+                    throw new ArgumentException("Mismatch between DG basis grid and multi-grid ancestor.");
+
+                if(b is XDGBasis) {
+                    var xb = b as XDGBasis;
+                    if(maxDgBasis == null || b.Degree > maxDgBasis.Degree) {
+                        maxDgBasis = xb.NonX_Basis;
+                    }
+                    if(maxXdgBasis == null || b.Degree > maxXdgBasis.Degree) {
+                        maxXdgBasis = xb;
+                    }
+                    UseX[iBs] = true;
+                    AnyX = true;
+                } else {
+                    if(maxDgBasis == null || b.Degree > maxDgBasis.Degree) {
+                        maxDgBasis = b;
+                    }
+                    AnyNonX = true;
+                }
+            }
+
             AggregationGrid[] agSeq = _agSeq.ToArray();
             if (agSeq.Length <= 0)
                 throw new ArgumentException();
@@ -64,16 +95,16 @@ namespace BoSSS.Solution.Multigrid {
             if (baseGrid.CellPartitioning.TotalLength != agSeq[0].CellPartitioning.TotalLength)
                 throw new ArgumentException("Mismatch in number of cells for level 0.");
 
-            if (!object.ReferenceEquals(baseGrid, dgBasis.GridDat))
+            if (!object.ReferenceEquals(baseGrid, maxDgBasis.GridDat))
                 throw new ArgumentException("Mismatch between DG basis grid and multi-grid ancestor.");
 
             // Project Bounding-Box basis
             // --------------------------
             var BB = baseGrid.GlobalBoundingBox;
             int Jbase = baseGrid.Cells.NoOfLocalUpdatedCells;
-            int p = dgBasis.Degree;
-            int Np = dgBasis.Length;
-            PolynomialList polyList = dgBasis.Polynomials[0];
+            int p = maxDgBasis.Degree;
+            int Np = maxDgBasis.Length;
+            PolynomialList polyList = maxDgBasis.Polynomials[0];
 
             MultidimensionalArray a = MultidimensionalArray.Create(Jbase, Np, Np);
             {
@@ -86,8 +117,8 @@ namespace BoSSS.Solution.Multigrid {
                         baseGrid.TransformLocal2Global(nodes, j0, Length, GlobalNodes.ResizeShallow(Length, nodes.NoOfNodes, D));
 
                         for (int d = 0; d < D; d++) {
-                            var Cd = GlobalNodes.ExtractSubArrayShallow(d, -1);
-                            Cd.Scale(2 * (BB.Max[d] - BB.Min[d]));
+                            var Cd = GlobalNodes.ExtractSubArrayShallow(-1, d);
+                            Cd.Scale(2 / (BB.Max[d] - BB.Min[d]));
                             Cd.AccConstant((BB.Max[d] + BB.Min[d]) / (BB.Min[d] - BB.Max[d]));
                         }
 #if DEBUG
@@ -96,7 +127,7 @@ namespace BoSSS.Solution.Multigrid {
 #endif
                     GlobalNodes.LockForever();
 
-                        var BasisValues = dgBasis.CellEval(nodes, j0, Length);
+                        var BasisValues = maxDgBasis.CellEval(nodes, j0, Length);
                         var PolyVals = MultidimensionalArray.Create(GlobalNodes.NoOfNodes, Np);
                         polyList.Evaluate(GlobalNodes, PolyVals);
                         PolyVals = PolyVals.ResizeShallow(Length, nodes.NoOfNodes, Np);
@@ -168,7 +199,7 @@ namespace BoSSS.Solution.Multigrid {
                     // assert that B_Level_j is upper-triangular
                     for(int n = 0; n < Np; n++) {
                         for(int m = n + 1; m < Np; m++) {
-                            Debug.Assert(B_Level_j[n, m] == 0.0);
+                            Debug.Assert(B_Level_j[m, n] == 0.0);
                         }
                     }
 #endif
@@ -192,8 +223,22 @@ namespace BoSSS.Solution.Multigrid {
 
             // create basis sequence
             // ---------------------
+            {
+                AggregationGridBasis[][] ret = new AggregationGridBasis[agSeq.Length][];
+                AggregationGridBasis[] Abs = new AggregationGridBasis[agSeq.Length];
+                XdgAggregationBasis[] XAbs = new XdgAggregationBasis[agSeq.Length];
+                for (int iLevel = 0; iLevel < agSeq.Length; iLevel++) {
+                    if (AnyNonX)
+                        Abs[iLevel] = new AggregationGridBasis(maxDgBasis, iLevel > 0 ? Abs[iLevel - 1] : null, agSeq[iLevel], Injectors[iLevel]);
+                    if (AnyX)
+                        XAbs[iLevel] = new XdgAggregationBasis(maxXdgBasis, iLevel > 0 ? XAbs[iLevel - 1] : null, agSeq[iLevel], Injectors[iLevel]);
 
-
+                    ret[iLevel] = new AggregationGridBasis[UseX.Length];
+                    for (int i = 0; i < UseX.Length; i++)
+                        ret[iLevel][i] = UseX[i] ? XAbs[iLevel] : Abs[iLevel];
+                }
+                return ret;
+            }
         }
 
 
@@ -221,40 +266,54 @@ namespace BoSSS.Solution.Multigrid {
         /// </summary>
         /// <param name="b">DG basis on original grid</param>
         /// <param name="ag"></param>
-        public AggregationGridBasis(Basis b, AggregationGridBasis parentBasis, AggregationGrid ag) {
+        /// <param name="Injection">injection operator</param>
+        protected AggregationGridBasis(Basis b, AggregationGridBasis parentBasis, AggregationGrid ag, MultidimensionalArray[] Injection) {
             using (new FuncTrace()) {
                 if (!object.ReferenceEquals(b.GridDat, GetGridData(ag)))
                     throw new ArgumentException("mismatch in grid data object.");
                 this.DGBasis = b;
                 this.AggGrid = ag;
 
-                if(!object.ReferenceEquals(ag.ParentGrid, parentBasis.AggGrid))
-                    throw new ArgumentException("mismatch in parent grid.");
+                if (parentBasis != null) {
+                    if (!object.ReferenceEquals(ag.ParentGrid, parentBasis.AggGrid))
+                        throw new ArgumentException("mismatch in parent grid.");
+                } else {
+                    if (ag.MgLevel != 0)
+                        throw new ArgumentException();
+
+                }
 
                 ParentBasis = parentBasis;
+#if DEBUG
+                if (ag.MgLevel != 0) {
+                    if (Injection.Length != ag.iLogicalCells.NoOfLocalUpdatedCells)
+                        throw new ArgumentException();
+                }
+#endif
+                m_InjectionOperator = Injection;
 
-                SetupProlongationOperator();
+                //SetupProlongationOperator();
             }
         }
 
-        MultidimensionalArray[] m_ProlongationOperator;
+        MultidimensionalArray[] m_InjectionOperator;
 
 
         /// <summary>
-        /// Prolongation operator to finer grid level
+        /// Injection/prolongation operator to finer grid level
         /// - array index: aggregate cell index; 
         /// - 1st index into <see cref="MultidimensionalArray"/>: index within aggregation basis, correlates with 2nd index into <see cref="AggregationGrid.jCellCoarse2jCellFine"/>
         /// - 2nd index into <see cref="MultidimensionalArray"/>: row
         /// - 3rd index into <see cref="MultidimensionalArray"/>: column
         /// - content: local cell index into the original grid, see <see cref="Foundation.Grid.ILogicalCellData.AggregateCellToParts"/>
         /// </summary>
-        public MultidimensionalArray[] ProlongationOperator {
+        public MultidimensionalArray[] InjectionOperator {
             get {
-                return m_ProlongationOperator;
+                return m_InjectionOperator;
             }
         }
 
-
+        /*
         void SetupProlongationOperator() {
             int Jagg = this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
 
@@ -295,7 +354,7 @@ namespace BoSSS.Solution.Multigrid {
 
 
         }
-
+        */
 
 
         /// <summary>
@@ -537,6 +596,78 @@ namespace BoSSS.Solution.Multigrid {
             }
         }
         
+        MultidimensionalArray CA(int _jAgg) {
+            AggregationGrid ag = this.AggGrid;
+            var compCell = ag.iLogicalCells.AggregateCellToParts[_jAgg];
+            int thisMgLevel = ag.MgLevel;
+            int Np = this.DGBasis.Degree;
+
+            var R = MultidimensionalArray.Create(compCell.Length, Np, Np);
+
+            int[] AggIndex = new int[] { _jAgg };
+            AggregationGrid mgLevel = ag;
+            for (int mgLevelIdx = thisMgLevel; mgLevelIdx >= 0; mgLevelIdx--) {
+
+
+                foreach (int jAgg in AggIndex) {
+                    MultidimensionalArray Inj_j;
+                    if (mgLevelIdx > 0) {
+                        Inj_j = this.InjectionOperator[jAgg].CloneAs();
+                    } else {
+                        Inj_j = MultidimensionalArray.Create(1, Np, Np);
+                        for (int n = 0; n < Np; n++) {
+                            m_CompositeBasis[jAgg][0, n, n] = 1.0;
+                        }
+                    }
+
+                    int[] jFine = mgLevel.jCellFine2jCellCoarse;
+                    Debug.Assert(jFine.Length == Inj_j.GetLength(0));
+
+                    for(int iSrc = 0; iSrc < jFine.Length; iSrc++) { // loop over finer level cells
+                        int jAgg_fine = jFine[iSrc];
+
+                        int[] OrgCells = mgLevel.Fi
+
+
+                        foreach (int j in compCell_jAgg) {
+                            int iTarg = Array.IndexOf(compCell, j);
+                            if (iTarg < 0)
+                                throw new ApplicationException("error in alg");
+
+
+
+
+
+                        }
+                    }
+                }
+
+
+                // Rekursions-Scheisse:
+                // - - - - - - - - - - -
+                if (mgLevelIdx > 0) {
+                    List<int> nextAggIndex = new List<int>();
+                    foreach(int jAgg in AggIndex) {
+                        int[] NextLevel = mgLevel.jCellCoarse2jCellFine[jAgg];
+#if DEBUG
+                        foreach(int i in NextLevel) {
+                            Debug.Assert(nextAggIndex.Contains(i) == false);
+                        }
+#endif
+                        nextAggIndex.AddRange(NextLevel);
+                    }
+                    AggIndex = nextAggIndex.ToArray();
+                    mgLevel = (AggregationGrid)(mgLevel.ParentGrid);
+                } else {
+                    AggIndex = null;
+                    mgLevel = null;
+                }
+            }
+
+            return R;
+        }
+
+
         MultidimensionalArray[] m_CompositeBasis;
 
         void SetupCompositeBasis() {
@@ -552,9 +683,10 @@ namespace BoSSS.Solution.Multigrid {
 
                 for(int jAgg = 0; jAgg < JAGG; jAgg++) { // loop over agglomerated cells...
                     var compCell = ag.iLogicalCells.AggregateCellToParts[jAgg];
-
-
+                    
                     if(compCell.Length == 1) {
+                        Debug.Assert(AggGrid.MgLevel == 0);
+
                         m_CompositeBasis[jAgg] = MultidimensionalArray.Create(1, N, N);
                         for(int n = 0; n < N; n++) {
                             m_CompositeBasis[jAgg][0, n, n] = 1.0;
