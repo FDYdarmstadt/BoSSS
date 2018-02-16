@@ -123,7 +123,7 @@ namespace BoSSS.Solution.Timestepping {
         /// <param name="reclusteringInterval">Interval for potential reclustering</param>
         /// <param name="saveToDBCallback">Hack for plotting all sub-steps</param>
         /// <remarks>Uses the k-Mean clustering, see <see cref="BoSSS.Solution.Utils.Kmeans"/>, to generate the element groups</remarks>
-        public AdamsBashforthLTS(SpatialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters, int order, int numOfClusters, IList<TimeStepConstraint> timeStepConstraints = null, SubGrid subGrid = null, bool fluxCorrection = true, int reclusteringInterval = 0, Action<TimestepNumber, double> saveToDBCallback = null, int initialTimestepNumber = 1)
+        public AdamsBashforthLTS(SpatialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters, int order, int numOfClusters, IList<TimeStepConstraint> timeStepConstraints = null, SubGrid subGrid = null, bool fluxCorrection = true, int reclusteringInterval = 0, Action<TimestepNumber, double> saveToDBCallback = null, int initialTimestepNumber = 1, int maxNumOfSubSteps = 0)
             : base(spatialOp, Fieldsmap, Parameters, order, timeStepConstraints, subGrid) {
 
             if (reclusteringInterval != 0) {
@@ -139,8 +139,8 @@ namespace BoSSS.Solution.Timestepping {
             this.gridData = Fieldsmap.Fields.First().GridDat;
             this.fluxCorrection = fluxCorrection;
 
-            clusterer = new Clusterer(this.gridData);
-            CurrentClustering = clusterer.CreateClustering(numOfClusters, this.TimeStepConstraints, false, this.SubGrid);    // Might remove clusters when their centres are too close
+            clusterer = new Clusterer(this.gridData, maxNumOfSubSteps);
+            CurrentClustering = clusterer.CreateClustering(numOfClusters, this.TimeStepConstraints, this.SubGrid);    // Might remove clusters when their centres are too close
             CurrentClustering = clusterer.TuneClustering(CurrentClustering, Time, this.TimeStepConstraints); // Might remove clusters when their time step sizes are too similar
 
             ABevolver = new ABevolve[CurrentClustering.NumberOfClusters];
@@ -194,7 +194,7 @@ namespace BoSSS.Solution.Timestepping {
 #endif
                             // Necessary in order to use the number of sub-grids specified by the user for the reclustering in each time step
                             // Otherwise the value could be changed by the constructor of the parent class (AdamsBashforthLTS.cs) --> CreateSubGrids()
-                            Clusterer.Clustering newClustering = clusterer.CreateClustering(numberOfClustersInitial, this.TimeStepConstraints, CurrentClustering.RestrictDtsAndSubSteps, this.SubGrid);
+                            Clusterer.Clustering newClustering = clusterer.CreateClustering(numberOfClustersInitial, this.TimeStepConstraints, this.SubGrid);
                             newClustering = clusterer.TuneClustering(newClustering, Time, this.TimeStepConstraints); // Might remove sub-grids when their time step sizes are too similar
                             reclustered = clusterer.CheckForNewClustering(CurrentClustering, newClustering);
 
@@ -223,14 +223,14 @@ namespace BoSSS.Solution.Timestepping {
 
                     // Set the number of sub steps (is calculated in every time step, regardless of whether a reclustering has been performed or not)
                     if (TimeStepConstraints != null) {
-                        dt = CalculateTimeStep();
+                        //dt = CalculateTimeStep();
                         // If no dtFixed is set
                         if (TimeStepConstraints.First().dtMin != TimeStepConstraints.First().dtMax) {
                             (clusterDts, numberOfLocalTimeSteps) = clusterer.GetPerCluster_dtHarmonicSum_SubSteps(CurrentClustering, Time, TimeStepConstraints, eps: 1.0e-1);
+                            dt = clusterDts[0];
                         } else {    // dtFixed is set
-                            //if (adaptive) {
-                            //    throw new Exception("Does dtFixed for ALTS runs make sense? Still thinking about...");
-                            //}
+                            // Not nice, but working
+                            dt = CalculateTimeStep();
                             numberOfLocalTimeSteps = CurrentClustering.SubStepsInitial;
                             for (int i = 0; i < numberOfLocalTimeSteps.Count; i++) {
                                 clusterDts[i] = dt / numberOfLocalTimeSteps[i];
@@ -242,11 +242,20 @@ namespace BoSSS.Solution.Timestepping {
                         Console.WriteLine("Perform(dt):\t id=" + i + " -> sub-steps=" + numberOfLocalTimeSteps[i] + " and elements=" + CurrentClustering.Clusters[i].GlobalNoOfCells);
                     }
 
-                    if (numberOfLocalTimeSteps.Last() > 50) {
-                        throw new Exception("Number of local time steps is larger than 50!");
+                    if (numberOfLocalTimeSteps.Last() > clusterer.MaxSubSteps && clusterer.Restrict) {
+                        throw new Exception("Number of local time steps is larger than 50! Restriction failed!");
                     }
 #endif
                     double[,] CorrectionMatrix = new double[CurrentClustering.NumberOfClusters, CurrentClustering.NumberOfClusters];
+
+                    // Test code
+                    //double[] bla = new double[numberOfLocalTimeSteps.Count];
+                    //for (int i = 0; i < bla.Length; i++) {
+                    //    bla[i] = dt / numberOfLocalTimeSteps[i];
+                    //    if (bla[i] != clusterDts[i]) {
+                    //        throw new Exception("clusterDts wrong");
+                    //    }
+                    //}
 
                     // Saves the results at t_n
                     double[] y0 = new double[Mapping.LocalLength];
@@ -262,11 +271,11 @@ namespace BoSSS.Solution.Timestepping {
                     for (int i = 0; i < ABevolver.Length; i++) {
                         //localABevolve[i].completeBndFluxes.Clear();
                         //if (localABevolve[i].completeBndFluxes.Any(x => x != 0.0)) Console.WriteLine("Not all Bnd fluxes were used in correction step!!!");
-                        ABevolver[i].Perform(dt / numberOfLocalTimeSteps[i]);
+                        ABevolver[i].Perform(clusterDts[i]);
                     }
 
                     // After evolving each cell update the time with dt_min
-                    m_Time = m_Time + dt / numberOfLocalTimeSteps[CurrentClustering.NumberOfClusters - 1];
+                    m_Time = m_Time + clusterDts.Last();
 
                     if (saveToDBCallback != null) {
                         subTimestep = subTimestep.NextIteration();
@@ -292,8 +301,6 @@ namespace BoSSS.Solution.Timestepping {
                         for (int id = 1; id < CurrentClustering.NumberOfClusters; id++) {
                             //Evolve Condition: Is "ABevolve.Time" at "AB_LTS.Time"?
                             if ((ABevolver[id].Time - m_Time) < 1e-10) {
-                                double localDt = dt / numberOfLocalTimeSteps[id];
-
                                 foreach (Chunk chunk in CurrentClustering.Clusters[id].VolumeMask) {
                                     foreach (int cell in chunk.Elements) {
                                         // f == each field
@@ -313,7 +320,7 @@ namespace BoSSS.Solution.Timestepping {
                                     CurrentState[kvp.Key] = kvp.Value;
                                 }
 
-                                ABevolver[id].Perform(localDt);
+                                ABevolver[id].Perform(clusterDts[id]);
 
                                 m_Time = ABevolver.Min(s => s.Time);
 
