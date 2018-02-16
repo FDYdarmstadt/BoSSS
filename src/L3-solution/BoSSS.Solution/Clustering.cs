@@ -361,10 +361,20 @@ namespace BoSSS.Solution.Utils {
                 restrictedClusterDts[i] = clusterDts[0] / restrictedSubSteps[i];
             }
 
-            return (restrictedClusterDts, restrictedSubSteps);
+            List<int> newSubSteps = new List<int>();
+            for (int i = 0; i < restrictedClusterDts.Length; i++) {
+                newSubSteps.Add((int)Math.Ceiling(restrictedClusterDts[0] / restrictedClusterDts[i]));
+            }
+#if DEBUG
+            Console.WriteLine("### RESTRICTION OF SUB-STEPS ###");
+            for (int i = 0; i < restrictedClusterDts.Length; i++) {
+                Console.WriteLine("RestrictDtsAndSubSteps:\t id=" + i + " -> sub-steps=" + newSubSteps[i]);
+            }
+#endif
+            return (restrictedClusterDts, newSubSteps);
         }
 
-        private int RoundToInt(double number, double eps) {
+        public int RoundToInt(double number, double eps) {
             // Accounting for roundoff errors
             int result;
 
