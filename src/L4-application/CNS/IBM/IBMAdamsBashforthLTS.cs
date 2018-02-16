@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -23,15 +22,9 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
-using BoSSS.Foundation.XDG.Quadrature.HMF;
-using BoSSS.Platform;
 using BoSSS.Solution;
 using BoSSS.Solution.Timestepping;
-using ilPSP.Utils;
-using MPI.Wrappers;
-using ilPSP;
 using BoSSS.Solution.Utils;
-using BoSSS.Foundation.IO;
 
 namespace CNS.IBM {
 
