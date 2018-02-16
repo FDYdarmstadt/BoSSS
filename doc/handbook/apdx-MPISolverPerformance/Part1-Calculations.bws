@@ -1,6 +1,5 @@
 restart
 **************
-
   Database Explorer v2
   ____________________
 
@@ -48,25 +47,22 @@ WorkflowMgm.Init("MPISolverPerformance");
 Project name is set to 'MPISolverPerformance'.
 
 ==============
-var WinTempDB = OpenOrCreateDatabase("L:\\tmp\\temp_db");
+var WinTempDB = OpenOrCreateDatabase("L:\\SLURM\\temp_db");
 **************
-Opening existing database 'L:\tmp\temp_db'.
+Creating database 'L:\SLURM\temp_db'.
 
 ==============
 //Console.WriteLine("Please type in your Username");
 //var Username = Console.ReadLine();
 **************
 ==============
-var myBatch = new SlurmClient(@"L:\SLURM","lcluster4.hrz.tu-darmstadt.de","oe11okuz");
+//var myBatch = new SlurmClient(@"L:\SLURM","lcluster4.hrz.tu-darmstadt.de","oe11okuz");
 **************
-
-Please enter your password...
-*************
-Connecting to lcluster4.hrz.tu-darmstadt.de...
-
-
 ==============
-//MiniBatchProcessor.Server.StartIfNotRunning();
+var myBatch = new MiniBatchProcessorClient(@"L:\tmp\");
+**************
+==============
+MiniBatchProcessor.Server.StartIfNotRunning();
 **************
 ==============
 static class Utils {
@@ -84,18 +80,14 @@ static class Utils {
 ==============
 LinearSolverCodes[] linSolvers = new LinearSolverCodes[] {
     LinearSolverCodes.exp_schwarz_directcoarse,
-    LinearSolverCodes.exp_schwarz_Kcycle_directcoarse
+    LinearSolverCodes.exp_schwarz_Kcycle_directcoarse,
 };
 int[] ks = new int[] {2,3};
-int cells_x  = 64;
-int cells_yz = 22;
+int cells_x  = 16;
+int cells_yz = 4;
 int re       = 100; 
-int ASparts  = 5; 
-int ASDepth  = 2;
-int MGLevels = 4;
-int maxKrDim = 30;
 int saveToDB = 1;
-int[] procs    = new int[] {4,8,16,32,64};
+int[] procs    = new int[] {1,2,4};
 **************
 ==============
 // ===============================
@@ -150,7 +142,7 @@ grd.DefineEdgeTags(delegate (double[] _X) {
                 });
 WinTempDB.SaveGrid(ref grd);
 **************
-7bb2a314-27fa-492f-b94a-54b1f7bbaf10
+c496832e-cd3a-40e9-94bd-2d135853a228
 ==============
 **************
 ==============
@@ -182,14 +174,14 @@ List<IBM_Control> controls = new List<IBM_Control>();
 ==============
 controls.Clear();
 foreach(LinearSolverCodes linSolverName in linSolvers){ 
-    var C = new IBM_Control();
-    controls.Add(C);
+var C = new IBM_Control();
+controls.Add(C);
 
 // basic database options
 // ======================
 
 C.savetodb                    = true;
-C.DbPath                      = @"/home/oe11okuz/tmp/temp_db";
+C.DbPath                      = @"/home/oe11okuz/SLURM/temp_db";
 C.DynamicLoadBalancing_Period = 1;
 
 // Assign correct names
@@ -242,7 +234,7 @@ C.InitialValues.Add("Phi", GetFormulaObject(InitialValues.Phi));
         C.AdvancedDiscretizationOptions.PenaltySafety              = 4;
         C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
         C.LevelSetSmoothing                                        = false;
-        C.MaxKrylovDim                                             = maxKrDim;
+        C.MaxKrylovDim                                             = 30;
         C.MaxSolverIterations                                      = 50;
         C.MinSolverIterations                                      = 50;
         // C.MaxSolverIterations = 10000;
@@ -260,35 +252,15 @@ C.InitialValues.Add("Phi", GetFormulaObject(InitialValues.Phi));
         // ============
         C.Timestepper_Scheme = IBM_Control.TimesteppingScheme.BDF2;
         //C.dtFixed            = 1E20;
-        C.dtMax              = 1E20;
-        C.dtMin              = 1E20;
-        C.Endtime            = 10000000;
-        C.NoOfTimesteps      = 1;
+        C.dtMax               = 1E20;
+        C.dtMin               = 1E20;
+        C.Endtime             = 10000000;
+        C.NoOfTimesteps       = 1;
+        C.NoOfMultigridLevels = 2;
         }
 **************
 ==============
 LastError
-**************
-System.ArgumentOutOfRangeException: startIndex darf nicht länger als die Länge der Zeichenfolge sein.
-Parametername: startIndex
-   bei System.String.Substring(Int32 startIndex, Int32 length)
-   bei BoSSS.Application.BoSSSpad.SlurmClient.Submit(Job myJob) in C:\BoSSS-experimental\public\src\L4-application\BoSSSpad\SlurmClient.cs:Zeile 155.
-   bei BoSSS.Application.BoSSSpad.Job.Activate(BatchProcessorClient bpc) in C:\BoSSS-experimental\public\src\L4-application\BoSSSpad\Job.cs:Zeile 618.
-   bei BoSSS.Application.BoSSSpad.AppControlExtensions.RunBatch(AppControl ctrl, BatchProcessorClient BatchSys, Int32 NumberOfMPIProcs, Boolean UseComputeNodesExclusive, String executionTime) in C:\BoSSS-experimental\public\src\L4-application\BoSSSpad\AppControlExtensions.cs:Zeile 61.
-   bei <InteractiveExpressionClass>.Host(Object& $retval)
-   bei Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
-   bei BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in C:\BoSSS-experimental\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:Zeile 307.
-==============
-// =====================================
-// setup control object for a solver run
-// =====================================
-**************
-==============
-**************
-==============
-// - - - - - - - - - - - - -
-// setup of parameter study
-// - - - - - - - - - - - - -
 **************
 ==============
 // ==========
@@ -296,34 +268,33 @@ Parametername: startIndex
 // ==========
 **************
 ==============
-//var job = new Job("zwa", solver);
-**************
-==============
-//myCtrl.GetType();
-**************
-==============
-//job.SetControlObject(myCtrl);
-**************
-==============
-//tempDB.Sessions.Where(s => s.Name.Contains("softpcg_schwarz_directcoarse")).ForEach(si => si.Delete(true));
-**************
-==============
-//tempDB.Sessions.Where(s => s.Name.Contains("exp_direct")).ForEach(si => si.Delete());
-**************
-==============
 **************
 ==============
 foreach(var ctrl in controls) {
+    var tmpName = ctrl.SessionName;
 foreach(int proc in procs){
-    ctrl.SessionName = ctrl.SessionName+"_Procs"+proc;
+    ctrl.SessionName = tmpName+"_Procs"+proc;
     Console.WriteLine(" Submitting: " + ctrl.SessionName);
     ctrl.RunBatch(myBatch,NumberOfMPIProcs:proc,UseComputeNodesExclusive:true,executionTime:"12:00:00");  
 }}
 **************
- Submitting: Sphere_Flow_exp_schwarz_directcoarse_Procs4_Procs4
+ Submitting: Sphere_Flow_exp_schwarz_directcoarse_Procs2
+Loading session d7ab7826-1ae0-4c06-a735-8a40369c0b1a failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\d7ab7826-1ae0-4c06-a735-8a40369c0b1a\Session.info" konnte nicht gefunden werden.'
+Loading session 7dfbfff1-438f-42ca-aed4-999f9e864ec4 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\7dfbfff1-438f-42ca-aed4-999f9e864ec4\Session.info" konnte nicht gefunden werden.'
+Loading session 9e5bb878-0703-40f5-95df-a19001f2c1b5 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\9e5bb878-0703-40f5-95df-a19001f2c1b5\Session.info" konnte nicht gefunden werden.'
+Loading session 367124ed-0d70-4bf7-8027-52f8a3bd072c failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\367124ed-0d70-4bf7-8027-52f8a3bd072c\Session.info" konnte nicht gefunden werden.'
+Loading session b796d3b4-b645-439d-ad8b-b42bcaec306d failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\b796d3b4-b645-439d-ad8b-b42bcaec306d\Session.info" konnte nicht gefunden werden.'
+Loading session 672d147a-8d3b-4b9a-a597-28f72a4b9bc2 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\672d147a-8d3b-4b9a-a597-28f72a4b9bc2\Session.info" konnte nicht gefunden werden.'
+Loading session c27d5ea3-9613-4bed-8943-4cc2a3cc8ba5 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\c27d5ea3-9613-4bed-8943-4cc2a3cc8ba5\Session.info" konnte nicht gefunden werden.'
+Loading session a080db01-8fe8-4b42-927b-c997931d4b3a failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\a080db01-8fe8-4b42-927b-c997931d4b3a\Session.info" konnte nicht gefunden werden.'
+Loading session 321103b1-b62f-42b8-88f2-60a3b66af1b1 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\321103b1-b62f-42b8-88f2-60a3b66af1b1\Session.info" konnte nicht gefunden werden.'
+Loading session 25e225e7-706e-4909-9f1f-4e3b339c7727 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\25e225e7-706e-4909-9f1f-4e3b339c7727\Session.info" konnte nicht gefunden werden.'
+Loading session b4ea3e83-46f0-461f-a02b-18eade823966 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\b4ea3e83-46f0-461f-a02b-18eade823966\Session.info" konnte nicht gefunden werden.'
+Loading session 29bb56dc-ff23-42a5-ae9a-ae9fb4d59257 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\29bb56dc-ff23-42a5-ae9a-ae9fb4d59257\Session.info" konnte nicht gefunden werden.'
+Loading session ccb25d9a-d7c4-4d1d-98b2-93be839f4fe0 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\ccb25d9a-d7c4-4d1d-98b2-93be839f4fe0\Session.info" konnte nicht gefunden werden.'
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: L:\SLURM\IBM_Solver2018Feb15_16-03-43
+Deployment directory: L:\SLURM\IBM_Solver2018Feb16_08-45-32
 Source directory: C:\BoSSS-experimental\public\src\L4-application\BoSSSpad\bin\Release
    copied: IBM_Solver.exe BoSSS.Solution.XdgTimestepping.dll BoSSS.Foundation.XDG.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll Renci.SshNet.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll MathNet.Numerics.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.dll CommandLine.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
 deployment finished.
@@ -332,12 +303,12 @@ Modules: loading acml/5.3.1
 Modules: loading gcc/4.9.4
 Modules: loading intel/2016u4
 Modules: loading openmpi/intel/1.10.7/2018
-dos2unix: /home/oe11okuz/SLURM/IBM_Solver2018Feb15_16-03-43/batch.sh: No such file or directory
-dos2unix: Skipping /home/oe11okuz/SLURM/IBM_Solver2018Feb15_16-03-43/batch.sh, not a regular file.
+dos2unix: converting file /home/oe11okuz/SLURM/IBM_Solver2018Feb16_08-45-32/batch.sh to Unix format ...
 
+Submitted batch job 5981504
+[1;37m[I][0m Selected project: project00464
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
 
-System.ArgumentOutOfRangeException occurred: startIndex darf nicht länger als die Länge der Zeichenfolge sein.
-Parametername: startIndex. Type 'LastError' for details.
 
 ==============
 **************
@@ -421,23 +392,23 @@ static class AddCols {
                     return maxTime;
     }
     
-    static public object RunSolverOneStep_excl(ISessionInfo SI) {
-        return getMaxTime(SI,"BoSSS.Application.IBM_Solver.IBM_SolverMain.RunSolverOneStep",true);
+    static public object SlvIterTime(ISessionInfo SI) {
+        return getMaxTime(SI,"Slv Iter",true);
+    }
+      static public object SlvInitTime(ISessionInfo SI) {
+        return getMaxTime(SI,"Slv Init",true);
     }
     static public object MPIs(ISessionInfo SI) {
         return SI.ComputeNodeNames.Count();
     }
 }
 **************
-(11,32): warning CS0219: The variable `tempFractions' is assigned but its value is never used
-(22,37): warning CS0219: The variable `maxIndex' is assigned but its value is never used
-(29,37): warning CS0219: The variable `maxIndex' is assigned but its value is never used
-No. of errors|warnings: 0|3.
-
 ==============
 WorkflowMgm.AdditionalSessionTableColums.Clear();
 WorkflowMgm.AdditionalSessionTableColums.Add(
-    "RunSolverOneStep_excl", AddCols.RunSolverOneStep_excl);
+    "SlvIter_excl", AddCols.SlvIterTime);
+WorkflowMgm.AdditionalSessionTableColums.Add(
+    "SlvInit_excl", AddCols.SlvInitTime);
 WorkflowMgm.AdditionalSessionTableColums.Add(
     "Processors", AddCols.MPIs);
 **************
@@ -486,6 +457,34 @@ string docpath    = Path.Combine(CurrentDocDir, SessTab.TableName + ".json");
 // save session table as file: this can be stored in our git 
 // repository
 SessTab.SaveToFile(docpath);
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************
