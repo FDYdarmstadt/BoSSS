@@ -49,7 +49,11 @@ namespace BoSSS.Application.IBM_Solver {
                     Timestepper.Config_linearSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.PARDISO };
                     break;
 
-                case LinearSolverCodes.exp_schwarz_directcoarse:
+                case LinearSolverCodes.exp_schwarz_directcoarse_overlap:
+
+                    if (Control.NoOfMultigridLevels < 2)
+                        throw new ApplicationException("At least 2 Multigridlevels are required");
+
                     Timestepper.Config_linearSolver = new Schwarz() {
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                             NoOfPartsPerProcess = 1,
@@ -59,23 +63,51 @@ namespace BoSSS.Application.IBM_Solver {
                     };
                     break;
 
+                case LinearSolverCodes.exp_schwarz_directcoarse:
+
+                    if (Control.NoOfMultigridLevels < 2)
+                        throw new ApplicationException("At least 2 Multigridlevels are required");
+
+                    Timestepper.Config_linearSolver = new Schwarz() {
+                        m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
+                            NoOfPartsPerProcess = 1,
+                        },
+                        Overlap = 0,
+                        CoarseSolver = DetermineMGSquence(Control.NoOfMultigridLevels - 2)
+                    };
+                    break;
+
                 case LinearSolverCodes.exp_schwarz_Kcycle_directcoarse:
+
+                    if (Control.NoOfMultigridLevels < 2)
+                        throw new ApplicationException("At least 2 Multigridlevels are required");
+
                     Timestepper.Config_linearSolver = new Schwarz() {
                         m_BlockingStrategy = new Schwarz.MultigridBlocks() {
-                            Depth = Control.NoOfMultigridLevels-1
+                            Depth = Control.NoOfMultigridLevels - 1
+                        },
+                        Overlap = 0,
+                        CoarseSolver = DetermineMGSquence(Control.NoOfMultigridLevels - 2)
+                    };
+                    break;
+
+                case LinearSolverCodes.exp_schwarz_Kcycle_directcoarse_overlap:
+
+                    if (Control.NoOfMultigridLevels < 2)
+                        throw new ApplicationException("At least 2 Multigridlevels are required");
+
+                    Timestepper.Config_linearSolver = new Schwarz() {
+                        m_BlockingStrategy = new Schwarz.MultigridBlocks() {
+                            Depth = Control.NoOfMultigridLevels - 1
                         },
                         Overlap = 1,
-                        CoarseSolver = new ClassicMultigrid() {
-                            CoarserLevelSolver= new ClassicMultigrid() {
-                                CoarserLevelSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS}
-                            }
-                        }
+                        CoarseSolver = DetermineMGSquence(Control.NoOfMultigridLevels-2)
                     };
                     break;
 
                 case LinearSolverCodes.exp_softgmres:
                     Timestepper.Config_linearSolver = new SoftGMRES() {
-                        MaxKrylovDim = Timestepper.Config_MaxKrylovDim,                       
+                        MaxKrylovDim = Timestepper.Config_MaxKrylovDim,
                     };
                     break;
 
@@ -89,6 +121,22 @@ namespace BoSSS.Application.IBM_Solver {
         /// </summary>
         static void AutomaticChoice() {
             throw new NotImplementedException("Option currently not available");
+        }
+
+        /// <summary>
+        /// Determines a solver sequence depending on MGlevels
+        /// </summary>
+        /// <param name="MGlevels"></param>
+        /// <param name="CoarsestSolver"></param>
+        /// <returns></returns>
+        static ISolverSmootherTemplate DetermineMGSquence(int MGlevels) {
+            ISolverSmootherTemplate solver;
+            if (MGlevels > 0) {
+                solver = new ClassicMultigrid() { CoarserLevelSolver = DetermineMGSquence(MGlevels - 1) };
+            } else {
+                solver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS };
+            }
+            return solver;
         }
     }
 }
