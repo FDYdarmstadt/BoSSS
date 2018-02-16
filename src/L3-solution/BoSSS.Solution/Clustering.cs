@@ -58,11 +58,19 @@ namespace BoSSS.Solution.Utils {
                 private set;
             }
 
-            public Clustering(List<SubGrid> clusters, SubGrid subGrid, bool restrictDtsAndSubSteps, List<int> subStepsInitial = null) {
+            public int MaxSubSteps {
+                get;
+                private set;
+            }
+
+            public Clustering(List<SubGrid> clusters, SubGrid subGrid, bool restrictDtsAndSubSteps, List<int> subStepsInitial = null, int maxSubSteps = 50) {
                 this.Clusters = clusters;
                 this.SubGrid = subGrid;
                 this.RestrictDtsAndSubSteps = restrictDtsAndSubSteps;
                 this.SubStepsInitial = subStepsInitial;
+                if (this.RestrictDtsAndSubSteps) {
+                    this.MaxSubSteps = 50;
+                }
             }
         }
 
@@ -70,8 +78,6 @@ namespace BoSSS.Solution.Utils {
         /// Information about the grid
         /// </summary>
         private IGridData gridData;
-
-        private const int maxNumOfSubSteps = 50;
 
         /// <summary>
         /// Constructor for the grid clustering
@@ -286,8 +292,12 @@ namespace BoSSS.Solution.Utils {
 
             List<int> subSteps = CalculateSubSteps(clusterDts, eps);
 
-            if (subSteps.Last() > maxNumOfSubSteps && clustering.RestrictDtsAndSubSteps) {
-                (clusterDts, subSteps) = RestrictDtsAndSubSteps(clusterDts, subSteps);
+            for (int i = 0; i < clusterDts.Length; i++) {
+                clusterDts[i] = clusterDts[0] / subSteps[i];
+            }
+
+            if (subSteps.Last() > clustering.MaxSubSteps && clustering.RestrictDtsAndSubSteps) {
+                (clusterDts, subSteps) = RestrictDtsAndSubSteps(clusterDts, subSteps, clustering.MaxSubSteps);
             }
 
             return (clusterDts, subSteps);
@@ -326,8 +336,8 @@ namespace BoSSS.Solution.Utils {
 
             List<int> subSteps = CalculateSubSteps(rcvDtMin, eps);
 
-            if (subSteps.Last() > maxNumOfSubSteps && clustering.RestrictDtsAndSubSteps) {
-                (rcvDtMin, subSteps) = RestrictDtsAndSubSteps(rcvDtMin, subSteps);
+            if (subSteps.Last() > clustering.MaxSubSteps && clustering.RestrictDtsAndSubSteps) {
+                (rcvDtMin, subSteps) = RestrictDtsAndSubSteps(rcvDtMin, subSteps, clustering.MaxSubSteps);
             }
 
             return (rcvDtMin, subSteps);
@@ -343,10 +353,10 @@ namespace BoSSS.Solution.Utils {
             return subSteps;
         }
 
-        private (double[], List<int>) RestrictDtsAndSubSteps(double[] clusterDts, List<int> subSteps) {
+        private (double[], List<int>) RestrictDtsAndSubSteps(double[] clusterDts, List<int> subSteps, int maxSubSteps) {
             // Restrict sub-steps
             List<int> restrictedSubSteps = new List<int>(subSteps);
-            restrictedSubSteps[0] = (int)Math.Ceiling((subSteps.Last() / (double)maxNumOfSubSteps));
+            restrictedSubSteps[0] = (int)Math.Ceiling((subSteps.Last() / (double)maxSubSteps));
             restrictedSubSteps[restrictedSubSteps.Count - 1] = subSteps.Last();
 
             for (int i = 1; i < (restrictedSubSteps.Count - 1); i++) {  // Leave first and last entry untouched
