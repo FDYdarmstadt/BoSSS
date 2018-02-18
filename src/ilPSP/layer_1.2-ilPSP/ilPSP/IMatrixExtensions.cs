@@ -982,6 +982,62 @@ namespace ilPSP {
             return R;
         }
 
+
+        /// <summary>
+        /// Inversion of an upper or lower triangular matrix.
+        /// </summary>
+        /// <param name="Mtx">input</param>
+        /// <param name="B">output; will be overwritten</param>
+        /// <param name="Upper">If true, upper triangular invert; otherwise, lower.</param>
+        static public void TriangularInvert<T1, T2>(this T1 Mtx, T2 B, bool Upper = true)
+            where T1 : IMatrix
+            where T2 : IMatrix //
+        {
+
+            if (Mtx.NoOfCols != Mtx.NoOfRows)
+                throw new NotSupportedException("must be symmetrical");
+            if (B.NoOfRows != Mtx.NoOfRows || B.NoOfCols != Mtx.NoOfCols)
+                throw new ArgumentOutOfRangeException("output matrix must have the same size as this matrix.");
+            int N = Mtx.NoOfCols;
+
+#if DEBUG
+            MultidimensionalArray MtxClone = MultidimensionalArray.Create(Mtx.NoOfRows, Mtx.NoOfCols);
+            MtxClone.SetMatrix(Mtx);
+#endif
+
+            unsafe
+            {
+                int i0;
+                double[] _B_entries = TempBuffer.GetTempBuffer(out i0, B.NoOfCols * B.NoOfRows);
+                fixed (double* B_entries = _B_entries) {
+                    CopyToUnsafeBuffer(Mtx, B_entries, true);
+
+
+                    // clear lower triangular part 
+                    for (int i = 0; i < N; i++) // loop over rows
+                        for (int j = 0; j < i; j++) // loop over lower-triangular columns
+                            B_entries[i + j * N] = 0.0;
+
+                    int UPLO = Upper ? 'U' : 'L';
+                    int DIAG = 'N'; // not unit-triangular
+                    int info;
+                    LAPACK.F77_LAPACK.DTRTRI_(ref UPLO, ref DIAG, ref N, B_entries, ref N, out info);
+
+                    CopyFromUnsafeBuffer(B, B_entries, true);
+
+                    if (info != 0) {
+                        TempBuffer.FreeTempBuffer(i0);
+                        throw new ArithmeticException("LAPACK DTRTRI (triangular inversion) returned info " + info);
+                    }
+
+
+                }
+                TempBuffer.FreeTempBuffer(i0);
+            }
+        }
+
+
+
         /// <summary>
         /// experimental LDL inversion/factorisation
         /// </summary>
