@@ -143,6 +143,8 @@ namespace BoSSS.Solution.Multigrid {
             // ------------------------------------------------------
             MultidimensionalArray Mass_Level = MultidimensionalArray.Create(Jbase, Np, Np);
             Mass_Level.Multiply(1.0, a, a, 0.0, "jlk", "jnl", "jnk");
+            //a.ResizeShallow(Jbase * Np, Np).SaveToTextFile("c:\\tmp\\a.txt");
+            //Mass_Level.ResizeShallow(Jbase * Np, Np).SaveToTextFile("c:\\tmp\\mass.txt");
 
             // Orthonormalize and create injection operator
             // --------------------------------------------
@@ -165,16 +167,19 @@ namespace BoSSS.Solution.Multigrid {
                 if (jGeom != j)
                     throw new NotSupportedException("todo");
 
-                a.ExtractSubArrayShallow(jGeom, -1, -1).InvertTo(B_Level.ExtractSubArrayShallow(j, -1, -1));
+                //a.ExtractSubArrayShallow(jGeom, -1, -1).InvertTo(B_Level.ExtractSubArrayShallow(j, -1, -1));
+                a.ExtractSubArrayShallow(jGeom, -1, -1).TriangularInvert(B_Level.ExtractSubArrayShallow(j, -1, -1));
             }
 
             MultidimensionalArray[][] Injectors = new MultidimensionalArray[agSeq.Length][];
-
+            var a_Level = a;
 
             // all other levels
-            MultidimensionalArray Mass_prevLevel;
+            MultidimensionalArray Mass_prevLevel, a_prevLevel;
             for(int iLevel = 1; iLevel < agSeq.Length; iLevel++) { // loop over levels...
                 B_prevLevel = B_Level;
+                a_prevLevel = a_Level;
+                Mass_prevLevel = Mass_Level;
                 Jagg = agSeq[iLevel].iLogicalCells.NoOfLocalUpdatedCells;
                 Ag2Pt = agSeq[iLevel].iLogicalCells.AggregateCellToParts;
                 int[][] C2F = agSeq[iLevel].jCellCoarse2jCellFine;
@@ -182,24 +187,57 @@ namespace BoSSS.Solution.Multigrid {
                 var Injectors_iLevel = new MultidimensionalArray[Jagg];
                 Injectors[iLevel] = Injectors_iLevel;
 
+                a_Level = MultidimensionalArray.Create(Jagg, Np, Np);
                 B_Level = MultidimensionalArray.Create(Jagg, Np, Np);
-                Mass_prevLevel = Mass_Level;
                 Mass_Level = MultidimensionalArray.Create(Jagg, Np, Np);
                 for (int j = 0; j < Jagg; j++) { // loop over aggregate cells
 
                     var Mass_j = Mass_Level.ExtractSubArrayShallow(j, -1, -1);
+                    var a_j = a_Level.ExtractSubArrayShallow(j, -1, -1);
                     foreach (int jF in C2F[j]) { // loop over aggregated cells
                         Mass_j.Acc(1.0, Mass_prevLevel.ExtractSubArrayShallow(jF, -1, -1));
+                        a_j.Acc(1.0, a_prevLevel.ExtractSubArrayShallow(jF, -1, -1));
                     }
+
+                    for(int l = 0; l < Np; l++) {
+                        for(int k = 0; k < Np; k++) {
+                            double Mlk = Mass_j[l, k];
+                            double acc = 0.0;
+                            for(int n = 0; n < Np; n++) {
+                                acc += a_j[n, l] * a_j[n, k];
+                            }
+
+                            double diff = Math.Abs(acc - Mlk);
+                            Debug.Assert(diff < 1.0e-3);
+                        }
+                    }
+
+
 
                     // perform ortho-normalization:
                     var B_Level_j = B_Level.ExtractSubArrayShallow(j, -1, -1);
-                    Mass_j.SymmetricLDLInversion(B_Level_j, default(double[]));
+                    var B_Level_j_check = MultidimensionalArray.Create(Np, Np);
+                    Mass_j.SymmetricLDLInversion(B_Level_j_check, default(double[]));
+                    a_j.TriangularInvert(B_Level_j, true);
 #if DEBUG
-                    // assert that B_Level_j is upper-triangular
-                    for(int n = 0; n < Np; n++) {
-                        for(int m = n + 1; m < Np; m++) {
-                            Debug.Assert(B_Level_j[m, n] == 0.0);
+                    {
+                        var C1 = B_Level_j_check.CloneAs();
+                        var C2 = B_Level_j_check.CloneAs();
+
+                        C1.Acc(-1.0, B_Level_j);
+                        C2.Acc(+1.0, B_Level_j);
+
+                        double C1_norm = C1.InfNorm();
+                        double C2_norm = C2.InfNorm();
+
+
+                        //Debug.Assert(C1_norm < 1.0e-3 || C2_norm < 1.0e-3);
+
+                        // assert that B_Level_j is upper-triangular
+                        for (int n = 0; n < Np; n++) {
+                            for (int m = n + 1; m < Np; m++) {
+                                Debug.Assert(B_Level_j[m, n] == 0.0);
+                            }
                         }
                     }
 #endif
