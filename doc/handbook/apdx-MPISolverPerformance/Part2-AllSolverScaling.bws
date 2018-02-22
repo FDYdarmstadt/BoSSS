@@ -30,10 +30,6 @@ using System.IO;
 using BoSSS.Application.IBM_Solver;
 using System.Data;
 **************
-(1,2): warning CS0105: The using directive for `System.IO' appeared previously in this namespace
-(2,1): warning CS0105: The using directive for `BoSSS.Application.IBM_Solver' appeared previously in this namespace
-No. of errors|warnings: 0|2.
-
 ==============
 string dateString = "2018-2-16";
 string File       = "SolverRuns--" + dateString + ".json";
@@ -125,26 +121,48 @@ var SubTab_1 = SessTab.ExtractColumns("Processors","SlvIter_excl","SlvInit_excl"
 ==============
 SubTab_1.Print();
 **************
-   Processors SlvIter_excl SlvInit_excl LinearSolve DGdegree:VelocityX RegularTerminated SlvIter_speedup SlvInit_speedup 
-0: 4          0.0445547    0.0415388    5           1                  True              0.011138675     0.0103847       
-1: 2          0.0584902    0.0338874    5           1                  True              0.0292451       0.0169437       
-2: 1          0.0339203    0.0328089    5           1                  True              0.0339203       0.0328089       
-3: 4          0.1130421    0.0386554    3           1                  True              0.028260525     0.00966385      
-4: 2          0.0399982    0.0338559    3           1                  True              0.0199991       0.01692795      
-5: 1          0.0364285    0.0302649    3           1                  True              0.0364285       0.0302649       
+   Processors SlvIter_excl SlvInit_excl LinearSolve DGdegree:VelocityX RegularTerminated 
+0: 4          0.0445547    0.0415388    5           1                  True              
+1: 2          0.0584902    0.0338874    5           1                  True              
+2: 1          0.0339203    0.0328089    5           1                  True              
+3: 4          0.1130421    0.0386554    3           1                  True              
+4: 2          0.0399982    0.0338559    3           1                  True              
+5: 1          0.0364285    0.0302649    3           1                  True              
 ==============
 // Calculation of speedup times 
-int[] procs = ((int[])SubTab_1.GetColumn("Processors"));
+List<KeyValuePair<string, int>> procs = new List<KeyValuePair<string, int>>{};// ((int[])SubTab_1.GetColumn("Processors"));
 double[] slviter = ((double[])SubTab_1.GetColumn("SlvIter_excl"));
 double[] slvinit = ((double[])SubTab_1.GetColumn("SlvInit_excl"));
-double[] slviterSpeedup = new double[procs.Length];
-double[] slvinitSpeedup = new double[procs.Length];
+double[] slviterSpeedup = new double[slviter.Length];
+double[] slvinitSpeedup = new double[slviter.Length];
 
-for(int i = 0; i<procs.Length; i++){
-    slviterSpeedup[i] = slviter[i]/procs[i];
-    slvinitSpeedup[i] = slvinit[i]/procs[i];    
+for(int i = 0; i<slviter.Length; i++){
+    long[] solve = ((long[])SubTab_1.GetColumn("LinearSolve"));
+    string str = solve.Select(s => Convert.ToString(s)).ToArray()[i];
+    int val    = ((int[])SubTab_1.GetColumn("Processors"))[i];
+
+    procs.Add(new KeyValuePair<string,int>(str,val));
+    
+   // slviterSpeedup[i] = slviter[i]/procs[i];
+   // slvinitSpeedup[i] = slvinit[i]/procs[i];    
 }
+for(int i = 0; i < slviter.Length; i++){
+    List<KeyValuePair<string, int>> procsCut = procs.FindAll(s => s.Key == procs[i].Key);
+    var min = procsCut.Select(s => s.Value).Min();
+    int idx = procsCut.FindIndex(s => s.Value == min);
+    slviterSpeedup[i] = (slviter[i]-slviter[idx])/procs.Pick(idx).Value;
+    slvinitSpeedup[i] = (slvinit[i]-slvinit[idx])/procs.Pick(idx).Value;
+    
+}    
 **************
+List of 6 instances of Double {
+  0: 0.0106344
+  1: 0.0245699
+  2: 0
+  3: 0.0791218
+  4: 0.0060779
+  5: 0.0025082
+}
 ==============
 // Add columns to DataTable
 SubTab_1.Columns.Add("SlvIter_speedup",typeof(double));
@@ -275,9 +293,9 @@ Plot2Ddata[,] speedupsplots = new Plot2Ddata[2,1];
 plotSlvIter.Title = "Speedup";
 //plotSlvInit.Title  = "SlvInit excl";
 //plotSlvIter.Xlabel = "Processors";
-plotSlvIter.Ylabel  = "Time per processor [s]";
+plotSlvIter.Ylabel  = "Speedup";
 plotSlvInit.Xlabel  = "Processors";
-plotSlvInit.Ylabel  = "Time per processor [s]";
+plotSlvInit.Ylabel  = "Speedup";
 plotSlvIter.Y2label = "SlvIter excl";
 plotSlvInit.Y2label = "SlvInit excl";
 
