@@ -166,7 +166,7 @@ namespace BoSSS.Solution.Multigrid {
                 break;
 
                 case _whichSolver.MUMPS:
-                solver = new MUMPSSolver(MPI: true);
+                solver = new MUMPSSolver();
                 break;
 
                 case _whichSolver.Matlab:
