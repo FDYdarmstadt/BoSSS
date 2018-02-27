@@ -5,23 +5,46 @@ restart
   ____________________
 
 Databases loaded:
-List of 0 instances of IDatabaseInfo {
+List of 24 instances of IDatabaseInfo {
+  0: { Session Count = 0; Grid Count = 2; Path = p:\BoSSS_DBs\Kovasznay }
+  1: { Session Count = 1; Grid Count = 1; Path = p:\BoSSS_DBs\ChannelFlow }
+  2: { Session Count = 0; Grid Count = 0; Path = p:\BoSSS_DBs\RectangularCylinder }
+  3: { Session Count = 0; Grid Count = 0; Path = p:\BoSSS_DBs\Cylinder3D }
+  4: { Session Count = 6; Grid Count = 1; Path = p:\BoSSS_DBs\MPI_Test }
+  5: { Session Count = 0; Grid Count = 0; Path = p:\BoSSS_DBs\3DSolverPerformance }
+  6: { Session Count = 2; Grid Count = 2; Path = P:\BoSSS_DBs\nonIBM_cylinder }
+  7: { Session Count = 12; Grid Count = 1; Path = P:\BoSSS_DBs\osciCylinder }
+  8: { Session Count = 0; Grid Count = 0; Path = P:\BoSSS_DBs\osciCylinder_new }
+  9: { Session Count = 21; Grid Count = 25; Path = P:\BoSSS_DBs\ImmersedBoundary }
+  10: { Session Count = 8; Grid Count = 44; Path = P:\BoSSS_DBs\ParticleInShearFlow\ }
+  11: { Session Count = 16; Grid Count = 46; Path = P:\BoSSS_DBs\ParticleUnderGravity }
+  12: { Session Count = 8; Grid Count = 31; Path = P:\BoSSS_DBs\fixedCylinder }
+  13: { Session Count = 0; Grid Count = 0; Path = P:\BoSSS_DBs\Paper_OsciCylinder }
+  14: { Session Count = 43; Grid Count = 45; Path = P:\BoSSS_DBs\IBMPaper }
+  15: { Session Count = 28; Grid Count = 15; Path = P:\BoSSS_DBs\Paper_IBM2D }
+  16: { Session Count = 38; Grid Count = 22; Path = P:\BoSSS_DBs\Paper_CellAgglo01_Penalty4 }
+  17: { Session Count = 38; Grid Count = 31; Path = P:\BoSSS_DBs\Sphere3D }
+  18: { Session Count = 22; Grid Count = 10; Path = P:\BoSSS_DBs\Performance }
+  19: { Session Count = 24; Grid Count = 14; Path = P:\BoSSS_DBs\PaperRevision }
+  20: { Session Count = 0; Grid Count = 0; Path = P:\Lichtenberg_DB }
+  21: { Session Count = 2; Grid Count = 354; Path = P:\BoSSS_DBs\Bug }
+  22: { Session Count = 51; Grid Count = 96; Path = L:\BoSSS_DB\Lichtenberg_DB }
+  23: { Session Count = 510; Grid Count = 729; Path = Y:\fdy-publication-data\Thesis\2017\Degenhardt\performance_db }
 }
-Setting Matlab Connector to Octave...
 
  Console ready for input. Type 'help' for help.
 
 ==============
-WorkflowMgm.Init("PoissonSolverPerformance");
+WorkflowMgm.Init("SphereSolverPerformance");
 **************
-Project name is set to 'PoissonSolverPerformance'.
+Project name is set to 'SphereSolverPerformance'.
 
 ==============
 using System.IO;
 using BoSSS.Application.SipPoisson;
 **************
 ==============
-string dateString = "2018-2-8";
+string dateString = "2018-2-15";
 string File       = "SolverRuns--" + dateString + ".json";
 string FilePath   = Path.Combine(CurrentDocDir, File);
 var SessTab       = TableExtensions.LoadFromFile(FilePath);
@@ -37,58 +60,75 @@ var SessTab       = TableExtensions.LoadFromFile(FilePath);
 ==============
 SessTab.GetColumnNames();
 **************
-List of 48 instances of String {
+List of 65 instances of String {
   0: SessionName
-  1: DGdegree:T
-  2: DGdegree:Tex
-  3: Bndtype:Dirichlet
-  4: Bndtype:Neumann
-  5: GeneratedFromCode
-  6: ControlFileText_Index
-  7: dtFixed
-  8: NoOfMultigridLevels
-  9: penalty_poisson
-  10: solver_name
-  11: NoOfSolverRuns
-  12: ExactSolution_provided
-  13: GridPartType
-  14: ProjectName
-  15: NoOfTimesteps
-  16: Endtime
-  17: saveperiod
-  18: dtMin
-  19: dtMax
-  20: CompMode
-  21: ImmediatePlotPeriod
-  22: SuperSampling
-  23: savetodb
-  24: logFileDirectory
-  25: Paramstudy_ContinueOnError
-  26: DynamicLoadBalancing_RedistributeAtStartup
-  27: DynamicLoadBalancing_Period
-  28: DynamicLoadBalancing_ImbalanceThreshold
-  29: AdaptiveMeshRefinement
-  30: CutCellQuadratureType
-  31: ContinueOnIoError
-  32: Grid:NoOfCells
-  33: Grid:hMax
-  34: Grid:hMin
-  35: UsedNoOfMultigridLevels
-  36: minSolRunT
-  37: maxSolRunT
-  38: Conv
-  39: NoIter
-  40: NoOfCells
-  41: DOFs
-  42: BlockSize
-  43: RegularTerminated
-  44: SipMatrixAssembly_time
-  45: Aggregation_basis_init_time
-  46: Solver_Init_time
-  47: Solver_Run_time
+  1: DGdegree:VelocityX
+  2: DGdegree:VelocityY
+  3: DGdegree:VelocityZ
+  4: DGdegree:Pressure
+  5: DGdegree:PhiDG
+  6: DGdegree:Phi
+  7: Bndtype:Velocity_inlet
+  8: Bndtype:Wall
+  9: Bndtype:Pressure_Outlet
+  10: GeneratedFromCode
+  11: ControlFileText_Index
+  12: dtFixed
+  13: NoOfMultigridLevels
+  14: AdvancedDiscretizationOptions.ContiSign
+  15: AdvancedDiscretizationOptions.RescaleConti
+  16: AdvancedDiscretizationOptions.LFFA
+  17: AdvancedDiscretizationOptions.LFFB
+  18: AdvancedDiscretizationOptions.PenaltySafety
+  19: AdvancedDiscretizationOptions.CellAgglomerationThreshold
+  20: MaxKrylovDim
+  21: MaxSolverIterations
+  22: MinSolverIterations
+  23: Solver_ConvergenceCriterion
+  24: VelocityBlockPrecondMode
+  25: LevelSetSmoothing
+  26: PhysicalParameters.IncludeConvection
+  27: PhysicalParameters.rho_A
+  28: PhysicalParameters.mu_A
+  29: PhysicalParameters.Material
+  30: particleRadius
+  31: MeshFactor
+  32: Timestepper_Scheme
+  33: FixedStreamwisePeriodicBC
+  34: Timestepper_Init
+  35: NonlinearSolve
+  36: LinearSolve
+  37: GridPartType
+  38: ProjectName
+  39: NoOfTimesteps
+  40: Endtime
+  41: saveperiod
+  42: dtMin
+  43: dtMax
+  44: CompMode
+  45: ImmediatePlotPeriod
+  46: SuperSampling
+  47: savetodb
+  48: logFileDirectory
+  49: Paramstudy_ContinueOnError
+  50: DynamicLoadBalancing_RedistributeAtStartup
+  51: DynamicLoadBalancing_Period
+  52: DynamicLoadBalancing_ImbalanceThreshold
+  53: AdaptiveMeshRefinement
+  54: CutCellQuadratureType
+  55: ContinueOnIoError
+  56: Grid:NoOfCells
+  57: Grid:hMax
+  58: Grid:hMin
+  59: UsedNoOfMultigridLevels
+  60: C_Drag
+  61: C_Lift
+  62: RegularTerminated
+  63: RunSolverOneStep_excl
+  64: MPIs
 }
 ==============
-var SubTab_1 = SessTab.ExtractColumns("DGdegree:T", "Grid:NoOfCells", "solver_name", "DOFs", "minSolRunT", "maxSolRunT", "NoIter", "RegularTerminated", "Conv");
+var SubTab_1 = SessTab.ExtractColumns("MPIs", "RunSolverOneStep_excl","LinearSolve","DGdegree:VelocityX");
 **************
 ==============
 var SubTab_2 = SubTab_1.ExtractRows(delegate(int i, IDictionary<string,object> row) {
@@ -96,85 +136,23 @@ var SubTab_2 = SubTab_1.ExtractRows(delegate(int i, IDictionary<string,object> r
           && (Convert.ToInt32(row["Conv"]) != 0);
     });
 **************
+Exception in the selection test of row 0: KeyNotFoundException, Message: Der angegebene Schlüssel war nicht im Wörterbuch angegeben..
+
 ==============
 var SubTab = SubTab_2.ExtractColumns("DGdegree:T", "Grid:NoOfCells", "solver_name", "DOFs", "minSolRunT", "maxSolRunT", "NoIter");
 **************
+System.ArgumentException occurred: Column "DGdegree:T" does not exist.. Type 'LastError' for details.
+
 ==============
-SubTab.Print();
+SubTab_1.Print();
 **************
-    DGdegree:T Grid:NoOfCells solver_name DOFs    minSolRunT  maxSolRunT  NoIter 
-0:  3          20480          6           409600  390.3218718 393.5016035 20     
-1:  3          2560           6           51200   27.210639   27.6054704  21     
-2:  3          320            6           6400    4.707644    5.2670534   23     
-3:  3          40             6           800     2.5469665   2.8956922   24     
-4:  2          20480          6           204800  94.6536695  94.7905943  23     
-5:  2          2560           6           25600   9.6737434   9.8025789   23     
-6:  2          320            6           3200    3.061871    3.525212    25     
-7:  2          40             6           400     2.4709977   2.8666587   25     
-8:  2          2560           5           25600   749.3842617 750.960602  270    
-9:  2          320            5           3200    39.0187606  39.0274362  115    
-10: 2          40             5           400     1.4043004   1.9798036   32     
-11: 2          163840         3           1638400 205.9214854 207.712435  1      
-12: 3          20480          0           409600  490.1100894 518.7101765 1      
-13: 3          2560           0           51200   6.9900132   7.2164411   1      
-14: 3          320            0           6400    0.3281247   0.4473527   1      
-15: 3          40             0           800     0.0258516   0.1660214   1      
-16: 2          20480          0           204800  66.3348715  66.9722856  1      
-17: 2          2560           0           25600   1.8313964   1.9939942   1      
-18: 2          320            0           3200    0.0933036   0.227141    1      
-19: 2          40             0           400     0.0075192   0.1870387   1      
-20: 6          320            0           26880   7.3551583   7.509196    1      
-21: 5          320            0           17920   2.7617928   2.8880695   1      
-22: 4          320            0           11200   0.9386579   1.0991877   1      
-23: 3          320            0           6400    0.305347    0.4267376   1      
-24: 2          320            0           3200    0.0874117   0.2781498   1      
-25: 2          163840         2           1638400 52.1191614  52.2078826  6364   
-26: 4          20480          2           716800  79.2762248  79.3159898  6550   
-27: 4          2560           2           89600   4.7661487   4.7827978   2777   
-28: 4          320            2           11200   0.4063721   0.4315301   1129   
-29: 4          40             2           1400    0.1017392   0.1467253   442    
-30: 3          20480          2           409600  20.5670768  20.5828078  4496   
-31: 3          2560           2           51200   1.4128504   1.4770409   1907   
-32: 3          320            2           6400    0.188596    0.226396    772    
-33: 3          40             2           800     0.0554063   0.1030974   282    
-34: 2          20480          2           204800  3.3484205   3.3933564   2834   
-35: 2          2560           2           25600   0.3635454   0.4008203   1209   
-36: 2          320            2           3200    0.0930494   0.1289767   488    
-37: 2          40             2           400     0.0300314   0.069585    140    
-38: 6          2560           1           215040  309.0160683 310.168468  1      
-39: 6          320            1           26880   10.9285249  11.0252954  1      
-40: 6          40             1           3360    0.2176497   0.2381427   1      
-41: 5          2560           1           143360  99.9565818  101.6222717 1      
-42: 5          320            1           17920   4.1333074   4.2888166   1      
-43: 5          40             1           2240    0.0898083   0.0909635   1      
-44: 4          2560           1           89600   26.3633732  26.5831369  1      
-45: 4          320            1           11200   1.2207308   1.227546    1      
-46: 4          40             1           1400    0.029743    0.0854211   1      
-47: 3          20480          1           409600  242.6439168 243.0862851 1      
-48: 3          2560           1           51200   7.0109432   7.1546289   1      
-49: 3          320            1           6400    0.4149952   0.4240334   1      
-50: 3          40             1           800     0.0130627   0.0351609   1      
-51: 2          20480          1           204800  46.3075623  46.5139476  1      
-52: 2          2560           1           25600   1.5280948   1.5659212   1      
-53: 2          320            1           3200    0.0442264   0.062788    1      
-54: 2          40             1           400     0.0036322   0.0435425   1      
-55: 6          2560           0           215040  344.8825203 345.9041878 1      
-56: 6          40             0           3360    0.3406199   0.460534    1      
-57: 5          2560           0           143360  108.6526829 108.6534426 1      
-58: 5          40             0           2240    0.1639026   0.2790131   1      
-59: 4          2560           0           89600   29.095991   29.7360778  1      
-60: 4          40             0           1400    0.0604208   0.193336    1      
-61: 3          20480          0           409600  464.9720118 475.8218817 1      
-62: 3          2560           0           51200   6.2259657   6.4669901   1      
-63: 3          40             0           800     0.024444    0.1487611   1      
-64: 2          20480          0           204800  58.7884026  59.4603266  1      
-65: 2          2560           0           25600   1.5580864   1.7271004   1      
-66: 2          40             0           400     0.0088426   0.3545052   1      
+   MPIs RunSolverOneStep_excl LinearSolve DGdegree:VelocityX 
+0: 1    0.0110273             1           2                  
 ==============
 **************
 ==============
-var RuntimePlot = SubTab.ToPlot("DOFs", "minSolRunT", // column for x- and y
-                        "solver_name", "DGdegree:T"); // column for group
+var RuntimePlot = SubTab_1.ToPlot("MPIs", "RunSolverOneStep_excl", // column for x- and y
+                                  "LinearSolve", "DGdegree:VelocityX"); // column for group
 **************
 ==============
 //SubTab.ToCSVFile("C:\\tmp\\table.csv");
@@ -252,8 +230,13 @@ Incomplete statement - missing closing parentheses?.
 ==============
 **************
 ==============
-//RuntimePlot.PlotNow();
+RuntimePlot.PlotNow();
 **************
+Using gnuplot: C:\Users\krause\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+Gnuplot Error: Warning: empty x range [1:1], adjusting to [0.99:1.01]
+Warning: empty y range [0.0110273:0.0110273], adjusting to [0.010917:0.0111376]
+
+System.Drawing.Bitmap
 ==============
 //var cl = RuntimePlot.ToGnuplot().PlotCairolatex();
 //cl.Preview(trimPage:true);
@@ -398,6 +381,10 @@ CL.PlotNow();
 System.Drawing.Bitmap
 ==============
 //CL.WriteMinimalCompileableExample("C:\\tmp\\AllSolvers" + dateString + ".tex");
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

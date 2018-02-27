@@ -63,6 +63,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// Sets the DG polynomial degree 
         /// </summary>
         /// <param name="k">Degree for velociy; pressure  will be one order lower.</param>
+        /// <param name="D">Spatial Dimension of the computational domain </param>
         public override void SetDGdegree(int k, int D = 2) {
             if (k < 1)
                 throw new ArgumentOutOfRangeException("DG polynomial degree must be at least 1.");
