@@ -1293,10 +1293,10 @@ namespace CNS {
 
             IBMControl c = new IBMControl();
 
-            //dbPath = @"c:\bosss_db\";
+            dbPath = @"c:\bosss_db\";
             c.DbPath = dbPath;
             c.savetodb = dbPath != null;
-            c.saveperiod = 1;
+            c.saveperiod = 10;
             c.PrintInterval = 1;
 
             double xMin = 0;
@@ -1345,10 +1345,10 @@ namespace CNS {
             // (A)LTS
             c.ExplicitScheme = ExplicitSchemes.LTS;
             c.ExplicitOrder = 1;
-            c.NumberOfSubGrids = 3;
-            c.ReclusteringInterval = 1;
-            c.maxNumOfSubSteps = 50;
-            c.FluxCorrection = false;
+            c.NumberOfSubGrids = 1;
+            //c.ReclusteringInterval = 1;
+            //c.maxNumOfSubSteps = 50;
+            //c.FluxCorrection = true;
 
             c.EquationOfState = IdealGas.Air;
 
