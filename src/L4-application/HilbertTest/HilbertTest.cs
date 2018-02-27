@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Platform.LinAlg;
@@ -112,6 +113,10 @@ namespace HilbertTest {
             solver.Init(control);
             solver.RunSolverMode();
             bool result = true;
+
+            //c.AddVariable(Variables.LTSClusters)
+            //var bla = solver.Control.VariableFields.Values;
+            // LTSClusters rausziehen
 
             int Jloc = solver.GridData.CellPartitioning.LocalLength;
             for (int j = 0; j < Jloc; j++) {
