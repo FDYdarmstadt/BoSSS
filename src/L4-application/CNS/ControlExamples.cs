@@ -1347,6 +1347,7 @@ namespace CNS {
             c.ExplicitOrder = 1;
             c.NumberOfSubGrids = 3;
             c.ReclusteringInterval = 1;
+            c.maxNumOfSubSteps = 50;
             c.FluxCorrection = false;
 
             c.EquationOfState = IdealGas.Air;
