@@ -40,12 +40,10 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// </summary>
         /// <param name="GridDat">original grid</param>
         /// <param name="MaxDepth">maximum number of refinements</param>
-        /// <param name="skip">A negative number is mapped to some default behavior.</param>
         /// <returns></returns>
-        public static AggregationGrid[] CreateSequence(GridData GridDat, int MaxDepth = -1, int skip = -1) {
+        public static AggregationGrid[] CreateSequence(GridData GridDat, int MaxDepth = -1) {
             using(new FuncTrace()) {
                 int D = GridDat.SpatialDimension;
-                skip = skip > 0 ? skip : D;
                 MaxDepth = MaxDepth >= 0 ? MaxDepth : int.MaxValue;
                 //int cutoff = MaxDepth < 0 ? int.MaxValue : MaxDepth * skip;
 
@@ -59,10 +57,17 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                     if( aggGrids.Count >= MaxDepth)
                         break;
 
-                    AggregationGrid grid = aggGrids.Last();
+                    //AggregationGrid[] gridS = new[] { aggGrids.Last() };
                     //for (int iSkip = 0; iSkip < Math.Max(1, skip); iSkip++) {
-                        grid = Coarsen(grid);
+                    //    Debug.Assert(gridS.Length == iSkip + 1);
+                    //    gridS = Coarsen(gridS);
+                    //    Debug.Assert(gridS.Length == iSkip + 2);
+                    //    Debug.Assert(object.ReferenceEquals(gridS[0], aggGrids.Last()));
                     //}
+                    //AggregationGrid grid = gridS.Last();
+
+                    AggregationGrid grid = Coarsen(aggGrids.Last(), (int)(Math.Pow(2, 1)));
+
 
                     if ((grid.iLogicalCells.NoOfLocalUpdatedCells.MPISum() >= aggGrids.Last().iLogicalCells.NoOfLocalUpdatedCells.MPISum()))
                         // no more refinement possible
@@ -72,12 +77,11 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 
 
 #if DEBUG
-                    int iLevel = aggGrids.Count - 2;
+                    int iLevel = aggGrids.Count - 2; // index of fine level (finer == low index)
                     int JFine = aggGrids[iLevel].iLogicalCells.NoOfCells;
                     int JCoarse = aggGrids[iLevel + 1].iLogicalCells.NoOfCells;
                     Debug.Assert(aggGrids[iLevel + 1].iLogicalCells.NoOfCells == (aggGrids[iLevel + 1].iLogicalCells.NoOfLocalUpdatedCells + aggGrids[iLevel + 1].iLogicalCells.NoOfExternalCells));
-
-
+                    
                     // test that the coarse grid has significantly less cells than the fine grid.
                     double dJfine = aggGrids[iLevel].iLogicalCells.NoOfLocalUpdatedCells;
                     double dJcoarse = aggGrids[iLevel + 1].iLogicalCells.NoOfLocalUpdatedCells;
@@ -135,87 +139,108 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// <summary>
         /// coarsens level <paramref name="ag"/>
         /// </summary>
-        public static AggregationGrid Coarsen(IGridData ag) {
+        public static AggregationGrid Coarsen(IGridData ag, int AggCellCount) {
             using(new FuncTrace()) {
-                int J = ag.iLogicalCells.NoOfLocalUpdatedCells;
+                int Jloc = ag.iLogicalCells.NoOfLocalUpdatedCells;
                 int D = ag.SpatialDimension;
+                if (AggCellCount < 2)
+                    throw new ArgumentOutOfRangeException();
+
 
                 // sort cells of parent grid by size:
                 // we want to aggregate the smallest cells at first.
-                int[] Perm = J.ForLoop(j => j).OrderBy(j => ag.iLogicalCells.GetCellVolume(j)).ToArray();
+                int[] Perm = Jloc.ForLoop(j => j).OrderBy(j => ag.iLogicalCells.GetCellVolume(j)).ToArray();
 
-                BitArray UsedCellMarker = new BitArray(J);
+                BitArray UsedCellMarker = new BitArray(Jloc);
                 
                 List<int[]> Coarsened_ComositeCells = new List<int[]>();
-                //List<double> Coarsened_CompositeVolume = new List<double>();
-                //List<BoundingBox> Coarsened_CompositeCellBB = new List<BoundingBox>();
-                int[] Parent2Child = new int[J];
-                List<int[]> child2Parrent = new List<int[]>();
-
+                
+                //
+                List<int> aggCell = new List<int>();
+                List<int> NeighCandidates = new List<int>();
                 
                 // loop over aggregated cells of parent grid...
                 int[][] Neighbourship = ag.iLogicalCells.CellNeighbours;
-                for(int i = 0; i < J; i++) {
-                    int jCell = Perm[i];
+                for(int i = 0; i < Jloc; i++) {
+                    int jCell = Perm[i]; // pick next cell
                     Debug.Assert(Neighbourship[jCell].Contains(jCell) == false);
-                    if(!UsedCellMarker[jCell]) {
+                    if (!UsedCellMarker[jCell]) { // if the cell is not already agglomerated to another cell
 
-                        // list of all neighbor cells which were not already aggregated to some other cell:
-                        int[] UnusedNeighs = Neighbourship[jCell].Where(j => j < J && !UsedCellMarker[j]).ToArray();
-                        int NN = UnusedNeighs.Length;
+                        aggCell.Clear();
+                        aggCell.Add(jCell);
+                        UsedCellMarker[jCell] = true;
 
-                        if(NN > 0) {
-                            double[] sizes = new double[NN];
-                            BoundingBox[] aggBB = new BoundingBox[NN];
-                            double[] aggBBaspect = new double[NN];
-                            for(int iNeig = 0; iNeig < NN; iNeig++) {
-                                int jCellNeigh = UnusedNeighs[iNeig];
+                        for (int iPass = 1; iPass < AggCellCount; iPass++) {
 
-                                aggBB[iNeig] = new BoundingBox(D); //ag.CompositeCellBB[jCell].CloneAs();
-                                ag.iLogicalCells.GetCellBoundingBox(jCell, aggBB[iNeig]);
 
-                                BoundingBox NeighBB = new BoundingBox(D);
-                                ag.iLogicalCells.GetCellBoundingBox(jCellNeigh, NeighBB);
-
-                                aggBB[iNeig].AddBB(NeighBB);
-                                sizes[iNeig] = ag.iLogicalCells.GetCellVolume(jCell) + ag.iLogicalCells.GetCellVolume(jCellNeigh);
-                                aggBBaspect[iNeig] = aggBB[iNeig].AspectRatio;
+                            // list of all neighbor cells which were not already aggregated to some other cell:
+                            NeighCandidates.Clear();
+                            foreach(int j in aggCell) {
+                                Debug.Assert(j < Jloc);
+                                Debug.Assert(UsedCellMarker[j] == true);
+                                foreach(int jNeigh in Neighbourship[j]) {
+                                    if (jNeigh >= Jloc)
+                                        continue;
+                                    if (UsedCellMarker[jNeigh] == true)
+                                        continue;
+                                    Debug.Assert(aggCell.Contains(jNeigh) == false); // for all cells which are already in 'aggCell', the marker should be true
+                                    if (!NeighCandidates.Contains(jNeigh))
+                                        NeighCandidates.Add(jNeigh);
+                                }
                             }
 
-                            double[] RelSizes = sizes.CloneAs(); RelSizes.ScaleV(1.0 / sizes.Max());
-                            double[] RelAspects = aggBBaspect.CloneAs(); RelAspects.ScaleV(1.0 / aggBBaspect.Max());
 
-                            double[] Quality = new double[NN];
-                            Quality.AccV(0.7, RelSizes);
-                            Quality.AccV(0.3, RelAspects);
+                            int NN = NeighCandidates.Count;
 
-                            int iChoice = Quality.IndexOfMin(q => q);
-                            int jNeigChoice = UnusedNeighs[iChoice];
+                            if (NN > 0) {
+                                double[] sizes = new double[NN];
+                                BoundingBox[] aggBB = new BoundingBox[NN];
+                                double[] aggBBaspect = new double[NN];
+                                for (int iNeig = 0; iNeig < NN; iNeig++) { // loop over all candidates...
+                                    int jCellNeigh = NeighCandidates[iNeig];
 
-                            //int[] CCC = ArrayTools.Cat(ag.AggregateCells[jCell], ag.AggregateCells[jNeigChoice]);
-                            int[] CCC = new int[] { jCell, jNeigChoice };
-                            Coarsened_ComositeCells.Add(CCC);
-                            //Coarsened_CompositeCellBB.Add(aggBB[iChoice]);
-                            //Coarsened_CompositeVolume.Add(sizes[iChoice]);
-                            Debug.Assert(jCell != jNeigChoice);
-                            child2Parrent.Add(new int[] { jCell, jNeigChoice });
-                            Parent2Child[jCell] = Coarsened_ComositeCells.Count - 1;
-                            Parent2Child[jNeigChoice] = Coarsened_ComositeCells.Count - 1;
+                                    aggBB[iNeig] = new BoundingBox(D); //ag.CompositeCellBB[jCell].CloneAs();
+                                    ag.iLogicalCells.GetCellBoundingBox(jCell, aggBB[iNeig]);
 
+                                    BoundingBox NeighBB = new BoundingBox(D);
+                                    ag.iLogicalCells.GetCellBoundingBox(jCellNeigh, NeighBB);
 
-                            UsedCellMarker[jNeigChoice] = true;
-                            UsedCellMarker[jCell] = true;
-                        } else {
-                            // No neighbour available => unable to coarsen
+                                    aggBB[iNeig].AddBB(NeighBB);
+                                    sizes[iNeig] = ag.iLogicalCells.GetCellVolume(jCell) + ag.iLogicalCells.GetCellVolume(jCellNeigh);
+                                    aggBBaspect[iNeig] = aggBB[iNeig].AspectRatio;
+                                }
 
-                            Coarsened_ComositeCells.Add(new int[] { jCell });
-                            //Coarsened_ComositeCells.Add(ag.AggregateCells[jCell]);
-                            //Coarsened_CompositeCellBB.Add(ag.CompositeCellBB[jCell].CloneAs());
-                            //Coarsened_CompositeVolume.Add(ag.CompositeVolume[jCell]);
-                            child2Parrent.Add(new int[] { jCell });
-                            Parent2Child[jCell] = Coarsened_ComositeCells.Count - 1;
+                                double[] RelSizes = sizes.CloneAs(); RelSizes.ScaleV(1.0 / sizes.Max());
+                                double[] RelAspects = aggBBaspect.CloneAs(); RelAspects.ScaleV(1.0 / aggBBaspect.Max());
 
-                            UsedCellMarker[jCell] = true;
+                                double[] Quality = new double[NN];
+                                Quality.AccV(0.7, RelSizes);
+                                Quality.AccV(0.3, RelAspects);
+
+                                int iChoice = Quality.IndexOfMin(q => q);
+                                int jNeigChoice = NeighCandidates[iChoice];
+
+                                Debug.Assert(aggCell.Contains(jNeigChoice) == false);
+                                aggCell.Add(jNeigChoice);
+                                UsedCellMarker[jNeigChoice] = true;
+                            } else {
+                                // No neighbour available => unable to coarsen
+                                break;
+                            }
+                        }
+
+                        // add agglom cell
+                        {
+                            int[] aggCell_Fix = aggCell.ToArray();
+#if DEBUG
+                            foreach(int j in aggCell_Fix) {
+                                Debug.Assert(j >= 0);
+                                Debug.Assert(j < Jloc);
+                                Debug.Assert(UsedCellMarker[j] == true);
+                            }
+
+#endif
+                            Coarsened_ComositeCells.Add(aggCell_Fix);
                         }
                     } else {
                         // cell already done.

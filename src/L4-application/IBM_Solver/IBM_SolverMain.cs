@@ -228,7 +228,17 @@ namespace BoSSS.Application.IBM_Solver {
 
         protected XdgBDFTimestepping m_BDF_Timestepper;
 
+        SinglePhaseField[] MGColoring;
+
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
+
+            //// Write out Multigrid Levels
+            //this.MGColoring = new SinglePhaseField[base.MultigridSequence.Length];
+            //for (int iLevel = 0; iLevel < base.MultigridSequence.Length; iLevel++) {
+            //    this.MGColoring[iLevel] = new SinglePhaseField(new Basis(this.GridData, 0), "MGColoring_level_" + iLevel);
+            //    base.MultigridSequence[iLevel].ColorDGField(this.MGColoring[iLevel]);
+            //}
+            //Tecplot.PlotFields(MGColoring, "MultigridLevels", 0, 0);
 
             // =================================
             // create operator
@@ -428,12 +438,13 @@ namespace BoSSS.Application.IBM_Solver {
                         this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold, false);
                     m_BDF_Timestepper.m_ResLogger = base.ResLogger;
                     m_BDF_Timestepper.m_ResidualNames = ArrayTools.Cat(this.ResidualMomentum.Select(f => f.Identification), this.ResidualContinuity.Identification);
-                    m_BDF_Timestepper.Config_linearSolver = this.Control.LinearSolver;
                     m_BDF_Timestepper.Config_SolverConvergenceCriterion = this.Control.Solver_ConvergenceCriterion;
                     m_BDF_Timestepper.Config_MaxIterations = this.Control.MaxSolverIterations;
                     m_BDF_Timestepper.Config_MinIterations = this.Control.MinSolverIterations;
-                    m_BDF_Timestepper.Config_NonlinearSolver = this.Control.NonlinearMethod;
                     m_BDF_Timestepper.SessionPath = SessionPath;
+
+                    SolverChooser.ChooseSolver(this.Control, ref m_BDF_Timestepper);
+
                 }
 
             } else {
@@ -570,7 +581,7 @@ namespace BoSSS.Application.IBM_Solver {
                 // ===============================
                 this.ComputeL2Error();
 
-                #region Get Drag and Lift Coefficiant
+#region Get Drag and Lift Coefficiant
                 if (phystime == 0) {
                     if ((base.MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty)) {
                         Log_DragAndLift = base.DatabaseDriver.FsDriver.GetNewLog("PhysicalData", CurrentSessionInfo.ID);
@@ -610,7 +621,7 @@ namespace BoSSS.Application.IBM_Solver {
                 // Save for NUnit Test
                 base.QueryHandler.ValueQuery("C_Drag", 2 * force[0], true); // Only for Diameter 1 (TestCase NSE stationary)
                 base.QueryHandler.ValueQuery("C_Lift", 2 * force[1], true); // Only for Diameter 1 (TestCase NSE stationary)
-                #endregion
+#endregion
 
                 return dt;
             }

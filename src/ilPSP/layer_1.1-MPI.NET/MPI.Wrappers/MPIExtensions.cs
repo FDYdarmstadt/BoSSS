@@ -766,7 +766,7 @@ namespace MPI.Wrappers {
         static public int[] MPIScatterv(this int[] send, int[] sendcounts, int root, MPI_Comm comm) {
             csMPI.Raw.Comm_Size(comm, out int size);
             csMPI.Raw.Comm_Rank(comm, out int rank);
-            int[] result = new int[sendcounts[rank]];
+            int[] result = new int[Math.Max(1, sendcounts[rank])];
 
             unsafe {
                 int* displs = stackalloc int[size];
@@ -796,6 +796,12 @@ namespace MPI.Wrappers {
                         root,
                         comm);
                 }
+            }
+
+            if (result.Length != sendcounts[rank]) {
+                Debug.Assert(result.Length == 1);
+                Debug.Assert(sendcounts[rank] == 0);
+                Array.Resize(ref result, 0);
             }
 
             return result;

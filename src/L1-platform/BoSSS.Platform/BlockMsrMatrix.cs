@@ -1236,7 +1236,6 @@ namespace ilPSP.LinSolvers {
 
         }
 
-
         /// <summary>
         /// Accumulates <paramref name="Block"/>*<paramref name="alpha"/> to this matrix,
         /// at the row/column offset <paramref name="i0"/> resp. <paramref name="j0"/>.
@@ -1246,6 +1245,20 @@ namespace ilPSP.LinSolvers {
         /// <param name="alpha">Scaling factor for the accumulation operation.</param>
         /// <param name="Block">Block to accumulate.</param>
         public void AccBlock(int i0, int j0, double alpha, MultidimensionalArray Block) {
+            this.AccBlock(i0, j0, alpha, Block, 1.0);
+        }
+
+
+        /// <summary>
+        /// Accumulates <paramref name="Block"/>*<paramref name="alpha"/> to this matrix,
+        /// at the row/column offset <paramref name="i0"/> resp. <paramref name="j0"/>.
+        /// </summary>
+        /// <param name="i0">Row offset.</param>
+        /// <param name="j0">Column offset.</param>
+        /// <param name="alpha">Scaling factor for the accumulation operation.</param>
+        /// <param name="Block">Block to accumulate.</param>
+        /// <param name="beta">Scaling applied to this matrix before accumulation</param>
+        public void AccBlock(int i0, int j0, double alpha, MultidimensionalArray Block, double beta) {
             if (Block.Dimension != 2)
                 throw new ArgumentException("Expecting a 2D array.");
             int I = Block.NoOfRows;
@@ -1291,7 +1304,7 @@ namespace ilPSP.LinSolvers {
                                 bTouch[(i + iw) * J + j + jw] = true;
 #endif
                                 int StorageIdx = Offset + (iSblk + iw) * CI + (jSblk + jw) * CJ;
-                                Storage[StorageIdx] += alpha * Block[i + iw, j + jw];
+                                Storage[StorageIdx] = Storage[StorageIdx]*beta + alpha * Block[i + iw, j + jw];
                             }
                         }
                     } else {
@@ -2190,39 +2203,39 @@ namespace ilPSP.LinSolvers {
             where VectorType1 : IList<double>
             where VectorType2 : IList<double> //
         {
-#if DEBUG
-            this.VerifyDataStructure("SpMV");
+//#if DEBUG
+//            this.VerifyDataStructure("SpMV");
             
-            double aNorm = a.L2NormPow2().MPISum(this.MPI_Comm).Sqrt();
-            double accNorm = acc.L2NormPow2().MPISum(this.MPI_Comm).Sqrt();
+//            double aNorm = a.L2NormPow2().MPISum(this.MPI_Comm).Sqrt();
+//            double accNorm = acc.L2NormPow2().MPISum(this.MPI_Comm).Sqrt();
 
-            var T = this.ToMsrMatrix();
-            double[] accB4 = acc.ToArray();
-            double[] aB4 = a.ToArray();
+//            var T = this.ToMsrMatrix();
+//            double[] accB4 = acc.ToArray();
+//            double[] aB4 = a.ToArray();
 
-            double[] accB4B4 = acc.ToArray();
+//            double[] accB4B4 = acc.ToArray();
 
-            T.SpMVpara(alpha, a, beta, acc);
+//            T.SpMVpara(alpha, a, beta, acc);
 
           
-            this.__SpMV(alpha, aB4, beta, accB4);
+//            this.__SpMV(alpha, aB4, beta, accB4);
 
-            double aErr = GenericBlas.L2DistPow2(aB4, a).MPISum(this.MPI_Comm).Sqrt();
-            double accErr = GenericBlas.L2DistPow2(accB4, acc).MPISum(this.MPI_Comm).Sqrt();
+//            double aErr = GenericBlas.L2DistPow2(aB4, a).MPISum(this.MPI_Comm).Sqrt();
+//            double accErr = GenericBlas.L2DistPow2(accB4, acc).MPISum(this.MPI_Comm).Sqrt();
 
-            double compNorm = T.InfNorm() * Math.Max(aNorm, accNorm);
-            compNorm = Math.Max(Math.Sqrt(double.Epsilon), compNorm);
-            double aErr_rel = aErr / compNorm;
-            double accErr_rel = accErr / compNorm;
-            if (aErr_rel > 1.0e-8 || double.IsInfinity(aErr_rel) || double.IsNaN(aErr_rel))
-                throw new ArithmeticException("SpMV error");
-            if (accErr_rel > 1.0e-8 || double.IsInfinity(accErr_rel) || double.IsNaN(accErr_rel)) {
-                throw new ArithmeticException("SpMV error");
-            }
+//            double compNorm = T.InfNorm() * Math.Max(aNorm, accNorm);
+//            compNorm = Math.Max(Math.Sqrt(double.Epsilon), compNorm);
+//            double aErr_rel = aErr / compNorm;
+//            double accErr_rel = accErr / compNorm;
+//            if (aErr_rel > 1.0e-8 || double.IsInfinity(aErr_rel) || double.IsNaN(aErr_rel))
+//                throw new ArithmeticException("SpMV error");
+//            if (accErr_rel > 1.0e-8 || double.IsInfinity(accErr_rel) || double.IsNaN(accErr_rel)) {
+//                throw new ArithmeticException("SpMV error");
+//            }
             
-#else
+//#else
             this.__SpMV(alpha, a, beta, acc);
-#endif
+//#endif
         }
 
         /// <summary>
@@ -2385,10 +2398,9 @@ namespace ilPSP.LinSolvers {
                                         Debug.Assert((MembnkIdx >= 0) == (InMembnk >= 0));
 
                                         if (InMembnk >= 0) {
-                                            double[] RawMem;
                                             int Offset, CI, CJ;
                                             bool isDense;
-                                            m_Membanks[MembnkIdx].GetFastBlockAccessInfo(out RawMem, out Offset, out CI, out CJ, out isDense, InMembnk);
+                                            m_Membanks[MembnkIdx].GetFastBlockAccessInfo(out double[] RawMem, out Offset, out CI, out CJ, out isDense, InMembnk);
                                            
                                             int I = RowLenSblk[iSblkRow];
                                             int J = ColLenSblk[jSblkCol];
@@ -4550,29 +4562,31 @@ namespace ilPSP.LinSolvers {
         /// <param name="B">Right operand.</param>
         public static void Multiply(BlockMsrMatrix C, BlockMsrMatrix A, BlockMsrMatrix B) {
 #if DEBUG
-            A.VerifyDataStructure("Multiply_A");
-            B.VerifyDataStructure("Multiply_B");
-            C.VerifyDataStructure("Multiply_C");
+            // Deactivated by Florian, 10feb2018
+            // testcode was in here for more than a year, no complaints, should be fine
+            //A.VerifyDataStructure("Multiply_A");
+            //B.VerifyDataStructure("Multiply_B");
+            //C.VerifyDataStructure("Multiply_C");
 
-            MsrMatrix _A = A.ToMsrMatrix();
-            MsrMatrix _B = B.ToMsrMatrix();
-            MsrMatrix _C_b4 = C.ToMsrMatrix();
+            //MsrMatrix _A = A.ToMsrMatrix();
+            //MsrMatrix _B = B.ToMsrMatrix();
+            //MsrMatrix _C_b4 = C.ToMsrMatrix();
 
             __Multiply(C, A, B);
 
             C.VerifyDataStructure("Multiply_Cout");
 
-            MsrMatrix _C_af = C.ToMsrMatrix();
-            MsrMatrix AB = MsrMatrix.Multiply(_A, _B);
-            double ABnorm = AB.InfNorm();
-            _C_af.Acc(-1.0, _C_b4);
-            _C_af.Acc(-1.0, AB);
+            //MsrMatrix _C_af = C.ToMsrMatrix();
+            //MsrMatrix AB = MsrMatrix.Multiply(_A, _B);
+            //double ABnorm = AB.InfNorm();
+            //_C_af.Acc(-1.0, _C_b4);
+            //_C_af.Acc(-1.0, AB);
 
-            double ErrAbs = _C_af.InfNorm();
-            double ErrRel = ABnorm > double.Epsilon ? ErrAbs / ABnorm : ErrAbs;
-            //Console.WriteLine("SpMM check: " + ErrRel);
-            if (ErrRel > 1.0e-8 || double.IsNaN(ErrRel) || double.IsInfinity(ErrRel))
-                throw new ArithmeticException("Error in multiply");
+            //double ErrAbs = _C_af.InfNorm();
+            //double ErrRel = ABnorm > double.Epsilon ? ErrAbs / ABnorm : ErrAbs;
+            ////Console.WriteLine("SpMM check: " + ErrRel);
+            //if (ErrRel > 1.0e-8 || double.IsNaN(ErrRel) || double.IsInfinity(ErrRel))
+            //    throw new ArithmeticException("Error in multiply");
 #else
             __Multiply(C, A, B);
 #endif
@@ -4970,7 +4984,7 @@ namespace ilPSP.LinSolvers {
                     if (tempBuf_Length >= 0) {
                         Marshal.FreeHGlobal(tempBuf);
                     }
-                }
+                } // end of local multiplication...
 
 
                 // receive external blocks & perform multiplication

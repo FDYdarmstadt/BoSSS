@@ -55,90 +55,91 @@ namespace BoSSS.Foundation.Grid.Classic {
                 int[] part;
                 switch (method) {
                     case GridPartType.METIS: {
-                        int.TryParse(PartOptions, out int noOfPartitioningsToChooseFrom);
-                        noOfPartitioningsToChooseFrom = Math.Max(1, noOfPartitioningsToChooseFrom);
-                        part = ComputePartitionMETIS(noOfPartitioningsToChooseFrom: noOfPartitioningsToChooseFrom);
+                            int.TryParse(PartOptions, out int noOfPartitioningsToChooseFrom);
+                            noOfPartitioningsToChooseFrom = Math.Max(1, noOfPartitioningsToChooseFrom);
+                            part = ComputePartitionMETIS(noOfPartitioningsToChooseFrom: noOfPartitioningsToChooseFrom);
 #if DEBUG
-                        CheckPartitioning(part);
+                            CheckPartitioning(part);
 #endif
-                        RedistributeGrid(part);
-                        break;
-                    }
+                            RedistributeGrid(part);
+                            break;
+                        }
 
 
                     case GridPartType.ParMETIS: {
-                        int.TryParse(PartOptions, out int noOfRefinements);
+                            int.TryParse(PartOptions, out int noOfRefinements);
 
-                        part = ComputePartitionParMETIS();
+                            part = ComputePartitionParMETIS();
 #if DEBUG
-                        CheckPartitioning(part);
+                            CheckPartitioning(part);
 #endif
-                        RedistributeGrid(part);
+                            RedistributeGrid(part);
 
-                        for (int i = 0; i < noOfRefinements; i++) {
-                            part = ComputePartitionParMETIS(refineCurrentPartitioning: true);
+                            for (int i = 0; i < noOfRefinements; i++) {
+                                part = ComputePartitionParMETIS(refineCurrentPartitioning: true);
+#if DEBUG
+                                CheckPartitioning(part);
+#endif
+                                RedistributeGrid(part);
+                            }
+                            break;
+                        }
+
+                    case GridPartType.Hilbert: {
+                            part = ComputePartitionHilbert();
+#if DEBUG
+                            CheckPartitioning(part);
+#endif
+                            RedistributeGrid(part);
+                            break;
+                        }
+
+                    case GridPartType.none:
+                        break;
+
+                    case GridPartType.Predefined: {
+                            if (PartOptions == null || PartOptions.Length <= 0)
+                                //throw new ArgumentException("'" + GridPartType.Predefined.ToString() + "' requires, as an option, the name of the Partition.", "PartOptions");
+                                PartOptions = size.ToString();
+
+                            if (!m_PredefinedGridPartitioning.ContainsKey(PartOptions)) {
+                                StringWriter stw = new StringWriter();
+                                for (int i = 0; i < m_PredefinedGridPartitioning.Count; i++) {
+                                    stw.Write("'" + m_PredefinedGridPartitioning.Keys[i] + "'");
+                                    if (i < (m_PredefinedGridPartitioning.Count - 1))
+                                        stw.Write(", ");
+                                }
+
+                                throw new ArgumentException("Grid Partitioning with name '" + PartOptions + "' is unknown; known are: " + stw.ToString() + ";");
+                            }
+
+                            Console.WriteLine("redistribution according to " + PartOptions);
+
+                            var partHelp = m_PredefinedGridPartitioning[PartOptions];
+                            part = partHelp.CellToRankMap;
+                            if (part == null) {
+                                var cp = this.CellPartitioning;
+                                part = iom.LoadVector<int>(partHelp.Guid, ref cp).ToArray();
+                            }
+
 #if DEBUG
                             CheckPartitioning(part);
 #endif
                             RedistributeGrid(part);
                         }
                         break;
-                    }
-
-                    case GridPartType.Hilbert: {
-                        part = ComputePartitionHilbert();
-#if DEBUG
-                        CheckPartitioning(part);
-#endif
-                        break;
-                    }
-
-                    case GridPartType.none:
-                    break;
-
-                    case GridPartType.Predefined: {
-                        if (PartOptions == null || PartOptions.Length <= 0)
-                            //throw new ArgumentException("'" + GridPartType.Predefined.ToString() + "' requires, as an option, the name of the Partition.", "PartOptions");
-                            PartOptions = size.ToString();
-
-                        if (!m_PredefinedGridPartitioning.ContainsKey(PartOptions)) {
-                            StringWriter stw = new StringWriter();
-                            for (int i = 0; i < m_PredefinedGridPartitioning.Count; i++) {
-                                stw.Write("'" + m_PredefinedGridPartitioning.Keys[i] + "'");
-                                if (i < (m_PredefinedGridPartitioning.Count - 1))
-                                    stw.Write(", ");
-                            }
-
-                            throw new ArgumentException("Grid Partitioning with name '" + PartOptions + "' is unknown; known are: " + stw.ToString() + ";");
-                        }
-
-                        Console.WriteLine("redistribution according to " + PartOptions);
-
-                        var partHelp = m_PredefinedGridPartitioning[PartOptions];
-                        part = partHelp.CellToRankMap;
-                        if (part == null) {
-                            var cp = this.CellPartitioning;
-                            part = iom.LoadVector<int>(partHelp.Guid, ref cp).ToArray();
-                        }
-
- #if DEBUG
-                        CheckPartitioning(part);
-#endif
-                        RedistributeGrid(part);
-                    }
-                    break;
 
 
                     default:
-                    throw new NotImplementedException();
+                        throw new NotImplementedException();
                 }
             }
         }
 
         private static void CheckPartitioning(int[] part) {
-             int MpiRank, MpiSize;
-             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out MpiRank);
-             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out MpiSize);
+            int MpiRank, MpiSize;
+            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out MpiRank);
+            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out MpiSize);
 
 
             int LocMin = 0;
@@ -160,7 +161,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
 
             int[] CellsPerRank = new int[MpiSize];
-            for(int i = 0; i < part.Length; i++) {
+            for (int i = 0; i < part.Length; i++) {
                 CellsPerRank[part[i]]++;
             }
             CellsPerRank = CellsPerRank.MPISum();
@@ -842,88 +843,137 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// <summary>
         /// Computes a grid partitioning (which cell should be on which processor) based on a Hilbertcurve of maximum order (nBit=32).
         /// </summary>
-        public int[] ComputePartitionHilbert(int[] cellCosts = null) {
+        public int[] ComputePartitionHilbert(IList<int[]> localcellCosts = null) {
 
-            int D = this.SpatialDimension;
-            var GlobalBB = this.GetGridBoundingBox();
+            if (this.Size > 1) {
+                int D = this.SpatialDimension;
+                var GlobalBB = this.GetGridBoundingBox();
 
-            int J0 = this.CellPartitioning.i0;
-            int JE = this.CellPartitioning.iE;
+                int J0 = this.CellPartitioning.i0;
+                int JE = this.CellPartitioning.iE;
 
-            ulong[] discreteCenter = new ulong[D];
-            ulong[] local_HilbertIndex = new ulong[JE - J0];
-            int[] local_CellIndex = new int[JE - J0];
+                ulong[] discreteCenter = new ulong[D];
+                ulong[] local_HilbertIndex = new ulong[JE - J0];
+                int[] local_CellIndex = new int[JE - J0];
 
-            for (int j = J0; j < JE; j++) {
-                Cell Cj = this.Cells[j - J0];
-                int NoOfNodes = Cj.TransformationParams.NoOfRows;
-                for (int d = 0; d < D; d++) {
-                    double center = 0;
-                    for (int k = 0; k < NoOfNodes; k++) {
-                        center += Cj.TransformationParams[k, d];
+                for (int j = J0; j < JE; j++) {
+                    Cell Cj = this.Cells[j - J0];
+                    int NoOfNodes = Cj.TransformationParams.NoOfRows;
+                    for (int d = 0; d < D; d++) {
+                        double center = 0;
+                        for (int k = 0; k < NoOfNodes; k++) {
+                            center += Cj.TransformationParams[k, d];
+                        }
+
+                        center = center / ((double)NoOfNodes); // ''center of gravity'' for coordinate direction 'd'
+                        double centerTrf = (center - GlobalBB.Min[d]) * (1.0 / (GlobalBB.Max[d] - GlobalBB.Min[d])) * Math.Pow(2, 32);
+                        //double centerTrf = (center - GlobalBB.Min[d]) * (1.0 / (GlobalBB.Max[d] - GlobalBB.Min[d])) * ((double)long.MaxValue);
+                        centerTrf = Math.Round(centerTrf);
+                        if (centerTrf < 0)
+                            centerTrf = 0;
+                        if (centerTrf > ulong.MaxValue)
+                            centerTrf = ulong.MaxValue;
+                        discreteCenter[d] = (ulong)centerTrf;
+                        //Debugger.Break();
                     }
-                    
-                    center = center / ((double)NoOfNodes); // ''center of gravity'' for coordinate direction 'd'
-                    double centerTrf = (center - GlobalBB.Min[d]) * (1.0 / (GlobalBB.Max[d] - GlobalBB.Min[d])) * Math.Pow(2,32);
-                    //double centerTrf = (center - GlobalBB.Min[d]) * (1.0 / (GlobalBB.Max[d] - GlobalBB.Min[d])) * ((double)long.MaxValue);
-                    centerTrf = Math.Round(centerTrf);
-                    if (centerTrf < 0)
-                        centerTrf = 0;
-                    if (centerTrf > ulong.MaxValue)
-                        centerTrf = ulong.MaxValue;
-                    discreteCenter[d] = (ulong)centerTrf;
-                    
+                    ulong iH = HilbertCurve.hilbert_c2i(32, discreteCenter);
+                    local_HilbertIndex[j - J0] = iH;// perhabs better to use new Tuple<long, int>(iH, j);
+                    local_CellIndex[j - J0] = j;
                 }
-                ulong iH = HilbertCurve.hilbert_c2i(32, discreteCenter);
-                local_HilbertIndex[j - J0] = iH;// perhabs better to use new Tuple<long, int>(iH, j);
-                local_CellIndex[j - J0] = j;
-                
-            }
 
-            int[] CellsPerRank = new int[this.Size];
-            for (int r = 0; r < CellsPerRank.Length; r++)
-                CellsPerRank[r] = this.CellPartitioning.GetLocalLength(r);
-            //int[] sizeof_Recvbuffer = new int[1];
-            //sizeof_Recvbuffer[0]=this.NumberOfCells;
+                int[] CellsPerRank = new int[this.Size];
+                for (int r = 0; r < CellsPerRank.Length; r++)
+                    CellsPerRank[r] = this.CellPartitioning.GetLocalLength(r);
+                //int[] sizeof_Recvbuffer = new int[1];
+                //sizeof_Recvbuffer[0]=this.NumberOfCells;
 
-            //Gather all local computed Hilbert_Indices
-            int[] CellIndex = local_CellIndex.MPIAllGatherv(CellsPerRank);
-            ulong[] HilbertIndex = local_HilbertIndex.MPIAllGatherv(CellsPerRank);
-            //Debugger.Break();
-            Array.Sort(HilbertIndex, CellIndex);
-            //Debugger.Break();
+                //Gather all local computed Hilbert_Indices
+                int[] CellIndex = local_CellIndex.MPIAllGatherv(CellsPerRank);
+                ulong[] HilbertIndex = local_HilbertIndex.MPIAllGatherv(CellsPerRank);
+                //Debugger.Break();
+                ulong[] HilbertIndex_tmp = HilbertIndex.CloneAs<ulong[]>();
+                Array.Sort(HilbertIndex, CellIndex);
+                //Debugger.Break();
 
-            // Distribution of MPI-Rank along the Hilbertcurve
-            int numberofcells = this.NumberOfCells;
-            int numproc = this.Size;
+                //Distribution of MPI-Rank along Hilbertcurve considering multiple Constraints with equal weight
+                //Assuming: Constraintmap only contains two types = (1, a number>1); Constraints do not overlap
+                int numberofcells = this.NumberOfCells;
 
-            int[] RankIndex = new int[numberofcells];
-            int[] buckets = new int[numproc];
+                int numproc = this.Size;
+                int[] cellCostsflatened = new int[numberofcells];
+                int[] RankIndex = new int[numberofcells];
+                List<int[]> cellCosts = new List<int[]>();
 
-            int counter = numberofcells%numproc;
-            int base_size = numberofcells / numproc;
-            
-            for (int i = 0; i < buckets.Length; i++)
-                buckets[i] = base_size;
-            while (counter != 0) {
-                counter -= 1;
-                buckets[counter] += 1;
-            }
-            for (int m = 0, n = 0; m < numproc; m++) {
-                for (int i = 0; i < buckets[m]; i++, n++) {
-                    RankIndex[n] = m;
+                //catch case localcellsCosts is empty
+                if (localcellCosts == null) {
+                    // Cell weights null causes problems with ParMETIS
+                    cellCosts = new List<int[]>() { new int[numberofcells] };
+                    cellCosts.Single().SetAll(10);
+                } else {
+                    foreach (int[] cellCostmap in localcellCosts) {
+                        cellCosts.Add(cellCostmap.MPIAllGatherv(CellsPerRank));
+                    }
                 }
-            }
 
-            //Debugger.Break();
-            //Extract Rank-Array for local Process
-            Array.Sort(CellIndex, RankIndex);
-            int[] local_Rank_RedistributionList = new int[JE - J0];
-            for (int j = 0; j < JE - J0; j++) {
-                local_Rank_RedistributionList[j] = RankIndex[J0 + j];
+                Debug.Assert(cellCosts.Count >= 1);
+                int[,] buckets = new int[numproc, cellCosts.Count];
+                int[] CellsPerField = new int[cellCosts.Count];
+                int CheckCount = 0;
+
+                //unite all constraints in cellCostsflatened
+                for (int k = 0; k < cellCosts.Count; k++) {
+                    int CountTargetCells = 0;
+                    for (int i = 0; i < cellCosts.ElementAt(k).Length; i++) {
+                        if (cellCosts.ElementAt(k)[i] > 1) {
+                            CountTargetCells++;
+                            cellCostsflatened[i] = k;
+                        }
+                    }
+                    CellsPerField[k] = CountTargetCells;
+                    CheckCount += CountTargetCells;
+                }
+
+                if (CheckCount != numberofcells)
+                    throw new ArgumentException("There are unmasked Cells in cellCosts");
+                Array.Sort(HilbertIndex_tmp, cellCostsflatened); //Would be better to unify with Array.Sort(HilbertIndex, CellIndex)
+
+                //fill buckets, buckets contain number of cells to distribute per rank
+                for (int field = 0; field < CellsPerField.Length; field++) {
+
+                    int counter = CellsPerField[field] % numproc;
+                    int base_size = CellsPerField[field] / numproc; //sauberer: Math.Methode hierfür finden
+                    for (int tRank = 0; tRank < buckets.GetLength(0); tRank++)
+                        buckets[tRank, field] = base_size;
+                    // Distribution of rest, if distribution is uneven
+                    while (counter != 0) {
+                        counter--;
+                        buckets[counter, field]++;
+                    }
+                }
+
+                //Go through HilbertCurve and map cell->rank
+                int rank = 0;
+                for (int cell = 0; cell < cellCostsflatened.Length;) {
+                    if (buckets[rank, cellCostsflatened[cell]] != 0) {
+                        buckets[rank, cellCostsflatened[cell]]--;
+                        RankIndex[cell] = rank;
+                        cell++;
+                    } else {
+                        rank = (rank + 1) % (numproc);
+                    }
+                }
+
+                //Extract Rank-Array for local Process
+                Array.Sort(CellIndex, RankIndex);
+                int[] local_Rank_RedistributionList = new int[JE - J0];
+                for (int j = 0; j < JE - J0; j++) {
+                    local_Rank_RedistributionList[j] = RankIndex[J0 + j];
+                }
+                return local_Rank_RedistributionList;
+            } else {
+                int[] local_Rank_RedistributionList = new int[NoOfUpdateCells];
+                return local_Rank_RedistributionList;
             }
-            //Debugger.Break();
-            return local_Rank_RedistributionList;
         }
 
 

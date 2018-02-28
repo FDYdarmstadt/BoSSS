@@ -187,9 +187,9 @@ namespace BoSSS.Application.IBM_Solver {
             C.SrcPressureGrad = new double[] { -0.1, 0 };
 
             if (pardiso) {
-                C.whichSolver = DirectSolver._whichSolver.PARDISO;
+                C.LinearSolve = LinearSolverCodes.classic_pardiso;
             } else {
-                C.whichSolver = DirectSolver._whichSolver.MUMPS;
+                C.LinearSolve = LinearSolverCodes.classic_mumps;
             }
             C.Timestepper_Scheme = IBM_Control.TimesteppingScheme.ImplicitEuler;
             double dt = 1E20;

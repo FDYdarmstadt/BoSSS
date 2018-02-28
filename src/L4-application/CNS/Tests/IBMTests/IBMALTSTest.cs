@@ -217,81 +217,126 @@ namespace CNS.Tests.IBMTests {
         public static void IBMALTSTest1_4_pos1() {
             CheckErrorThresholds(
                 SetupIBMALTSTest(levelSetPosition: 0.25, explicitOrder: 1, numOfClusters: 4),
-                Tuple.Create("L2NormDensity", 6.790071864462E+001 + 1e-10),
-                Tuple.Create("L2NormVelocityX", 1.788854382000E+000 + 1e-10),
-                Tuple.Create("L2NormPressure", 8.944271909999E-001 + 1e-10));
+                // Before changing Refactoring (changing LTS cell metric to harmonic sum, etc.)
+                //Tuple.Create("L2NormDensity", 6.790071864462E+001 + 1e-10),
+                //Tuple.Create("L2NormVelocityX", 1.788854382000E+000 + 1e-10),
+                //Tuple.Create("L2NormPressure", 8.944271909999E-001 + 1e-10));
+
+                Tuple.Create("L2NormDensity", 67.8886911607585 + 1e-10),
+                Tuple.Create("L2NormVelocityX", 1.78885438199984 + 1e-10),
+                Tuple.Create("L2NormPressure", 0.894427190999888 + 1e-10));
         }
 
         [Test]
         public static void IBMALTSTest1_4_pos2() {
             CheckErrorThresholds(
                 SetupIBMALTSTest(levelSetPosition: 0.26, explicitOrder: 1, numOfClusters: 4),
-                Tuple.Create("L2NormDensity", 6.789970849048E+001 + 1e-10),
-                Tuple.Create("L2NormVelocityX", 1.788854382000E+000 + 1e-10),
-                Tuple.Create("L2NormPressure", 8.944271909999E-001 + 1e-10));
+                // Before changing Refactoring (changing LTS cell metric to harmonic sum, etc.)
+                //Tuple.Create("L2NormDensity", 6.789970849048E+001 + 1e-10),
+                //Tuple.Create("L2NormVelocityX", 1.788854382000E+000 + 1e-10),
+                //Tuple.Create("L2NormPressure", 8.944271909999E-001 + 1e-10));
+
+                Tuple.Create("L2NormDensity", 67.8886901090685 + 1e-10),
+                Tuple.Create("L2NormVelocityX", 1.78885438199984 + 1e-10),
+                Tuple.Create("L2NormPressure", 0.894427190999926 + 1e-10));
         }
 
         [Test]
         public static void IBMALTSTest1_4_pos3() {
             CheckErrorThresholds(
                 SetupIBMALTSTest(levelSetPosition: 0.281, explicitOrder: 1, numOfClusters: 4),
-                Tuple.Create("L2NormDensity", 6.7910701220794E+001 + 1e-10),
-                Tuple.Create("L2NormVelocityX", 1.7888543819998E+000 + 1e-10),
-                Tuple.Create("L2NormPressure", 8.9442719099990E-001 + 1e-10));
+                // Before changing Refactoring (changing LTS cell metric to harmonic sum, etc.)
+                //Tuple.Create("L2NormDensity", 6.7910701220794E+001 + 1e-10),
+                //Tuple.Create("L2NormVelocityX", 1.7888543819998E+000 + 1e-10),
+                //Tuple.Create("L2NormPressure", 8.9442719099990E-001 + 1e-10));
+
+                Tuple.Create("L2NormDensity", 67.9107012207936 + 1e-10),
+                Tuple.Create("L2NormVelocityX", 1.78885438199984 + 1e-10),
+                Tuple.Create("L2NormPressure", 0.894427190999841 + 1e-10));
         }
 
         [Test]
         public static void IBMALTSTest2_4_pos1() {
             CheckErrorThresholds(
                 SetupIBMALTSTest(levelSetPosition: 0.25, explicitOrder: 2, numOfClusters: 4),
-                Tuple.Create("L2NormDensity", 6.7854990740138E+001 + 1e-10),
-                Tuple.Create("L2NormVelocityX", 1.7888543819998E+000 + 1e-10),
-                Tuple.Create("L2NormPressure", 8.9442719099983E-001 + 1e-10));
+                // Before changing Refactoring (changing LTS cell metric to harmonic sum, etc.)
+                //Tuple.Create("L2NormDensity", 6.7854990740138E+001 + 1e-10),
+                //Tuple.Create("L2NormVelocityX", 1.7888543819998E+000 + 1e-10),
+                //Tuple.Create("L2NormPressure", 8.9442719099983E-001 + 1e-10));
+
+                Tuple.Create("L2NormDensity", 67.8549628200074 + 1e-10),
+                Tuple.Create("L2NormVelocityX", 1.78885438199984 + 1e-10),
+                Tuple.Create("L2NormPressure", 0.89442719099987 + 1e-10));
         }
 
         [Test]
         public static void IBMALTSTest2_4_pos2() {
             CheckErrorThresholds(
                 SetupIBMALTSTest(levelSetPosition: 0.26, explicitOrder: 2, numOfClusters: 4),
-                Tuple.Create("L2NormDensity", 6.7854990029491E+001 + 1e-10),
-                Tuple.Create("L2NormVelocityX", 1.7888543819998E+000 + 1e-10),
-                Tuple.Create("L2NormPressure", 8.9442719099985E-001 + 1e-10));
+                // Before changing Refactoring (changing LTS cell metric to harmonic sum, etc.)
+                //Tuple.Create("L2NormDensity", 6.7854990029491E+001 + 1e-10),
+                //Tuple.Create("L2NormVelocityX", 1.7888543819998E+000 + 1e-10),
+                //Tuple.Create("L2NormPressure", 8.9442719099985E-001 + 1e-10));
+
+                Tuple.Create("L2NormDensity", 67.8549628340993 + 1e-10),
+                Tuple.Create("L2NormVelocityX", 1.78885438199984 + 1e-10),
+                Tuple.Create("L2NormPressure", 0.894427190999876 + 1e-10));
         }
 
         [Test]
         public static void IBMALTSTest2_4_pos3() {
             CheckErrorThresholds(
                 SetupIBMALTSTest(levelSetPosition: 0.281, explicitOrder: 2, numOfClusters: 4),
-                Tuple.Create("L2NormDensity", 6.7855060368734E+001 + 1e-10),
-                Tuple.Create("L2NormVelocityX", 1.7888543819998E+000 + 1e-10),
-                Tuple.Create("L2NormPressure", 8.9442719099979E-001 + 1e-10));
+                // Before changing Refactoring (changing LTS cell metric to harmonic sum, etc.)
+                //Tuple.Create("L2NormDensity", 6.7855060368734E+001 + 1e-10),
+                //Tuple.Create("L2NormVelocityX", 1.7888543819998E+000 + 1e-10),
+                //Tuple.Create("L2NormPressure", 8.9442719099979E-001 + 1e-10));
+
+                Tuple.Create("L2NormDensity", 67.8550603687334 + 1e-10),
+                Tuple.Create("L2NormVelocityX", 1.78885438199984 + 1e-10),
+                Tuple.Create("L2NormPressure", 0.894427190999821 + 1e-10));
         }
 
         [Test]
         public static void IBMALTSTest3_4_pos1() {
             CheckErrorThresholds(
                 SetupIBMALTSTest(levelSetPosition: 0.25, explicitOrder: 3, numOfClusters: 4),
-                Tuple.Create("L2NormDensity", 6.78549517081183E+001 + 1e-10),
-                Tuple.Create("L2NormVelocityX", 1.7888543819999E+000 + 1e-10),
-                Tuple.Create("L2NormPressure", 8.9442719099992E-001 + 1e-10));
+                // Before changing Refactoring (changing LTS cell metric to harmonic sum, etc.)
+                //Tuple.Create("L2NormDensity", 6.78549517081183E+001 + 1e-10),
+                //Tuple.Create("L2NormVelocityX", 1.7888543819999E+000 + 1e-10),
+                //Tuple.Create("L2NormPressure", 8.9442719099992E-001 + 1e-10));
+
+                Tuple.Create("L2NormDensity", 67.854951708117 + 1e-10),
+                Tuple.Create("L2NormVelocityX", 1.78885438199983 + 1e-10),
+                Tuple.Create("L2NormPressure", 0.894427190999939 + 1e-10));
         }
 
         [Test]
         public static void IBMALTSTest3_4_pos2() {
             CheckErrorThresholds(
                 SetupIBMALTSTest(levelSetPosition: 0.26, explicitOrder: 3, numOfClusters: 4),
-                Tuple.Create("L2NormDensity", 6.8549517077093E+001 + 1e-10),
-                Tuple.Create("L2NormVelocityX", 1.7888543819998E+000 + 1e-10),
-                Tuple.Create("L2NormPressure", 8.9442719100004E-001 + 1e-10));
+                // Before changing Refactoring (changing LTS cell metric to harmonic sum, etc.)
+                //Tuple.Create("L2NormDensity", 6.8549517077093E+001 + 1e-10),
+                //Tuple.Create("L2NormVelocityX", 1.7888543819998E+000 + 1e-10),
+                //Tuple.Create("L2NormPressure", 8.9442719100004E-001 + 1e-10));
+
+                Tuple.Create("L2NormDensity", 67.8549517077073 + 1e-10),
+                Tuple.Create("L2NormVelocityX", 1.78885438199983 + 1e-10),
+                Tuple.Create("L2NormPressure", 0.894427191000102 + 1e-10));
         }
 
         [Test]
         public static void IBMALTSTest3_4_pos3() {
             CheckErrorThresholds(
                 SetupIBMALTSTest(levelSetPosition: 0.281, explicitOrder: 3, numOfClusters: 4),
-                Tuple.Create("L2NormDensity", 6.7854937242731E+001 + 1e-10),
-                Tuple.Create("L2NormVelocityX", 1.7888543819999E+000 + 1e-10),
-                Tuple.Create("L2NormPressure", 8.9442719099989E-001 + 1e-10));
+                // Before changing Refactoring (changing LTS cell metric to harmonic sum, etc.)
+                //Tuple.Create("L2NormDensity", 6.7854937242731E+001 + 1e-10),
+                //Tuple.Create("L2NormVelocityX", 1.7888543819999E+000 + 1e-10),
+                //Tuple.Create("L2NormPressure", 8.9442719099989E-001 + 1e-10));
+
+                Tuple.Create("L2NormDensity", 67.8549372427292 + 1e-10),
+                Tuple.Create("L2NormVelocityX", 1.7888543819997 + 1e-10),
+                Tuple.Create("L2NormPressure", 0.894427190999389 + 1e-10));
         }
     }
 }
