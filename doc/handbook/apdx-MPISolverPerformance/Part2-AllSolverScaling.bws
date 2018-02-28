@@ -121,13 +121,13 @@ var SubTab_1 = SessTab.ExtractColumns("Processors","SlvIter_excl","SlvInit_excl"
 ==============
 SubTab_1.Print();
 **************
-   Processors SlvIter_excl SlvInit_excl LinearSolve DGdegree:VelocityX RegularTerminated 
-0: 4          0.0445547    0.0415388    5           1                  True              
-1: 2          0.0584902    0.0338874    5           1                  True              
-2: 1          0.0339203    0.0328089    5           1                  True              
-3: 4          0.1130421    0.0386554    3           1                  True              
-4: 2          0.0399982    0.0338559    3           1                  True              
-5: 1          0.0364285    0.0302649    3           1                  True              
+   Processors SlvIter_excl SlvInit_excl LinearSolve DGdegree:VelocityX RegularTerminated SlvIter_speedup SlvInit_speedup 
+0: 4          0.0445547    0.0415388    5           1                  True              0.0106344       0.0087299       
+1: 2          0.0584902    0.0338874    5           1                  True              0.0245699       0.0010785       
+2: 1          0.0339203    0.0328089    5           1                  True              0               0               
+3: 4          0.1130421    0.0386554    3           1                  True              0.0766136       0.0083905       
+4: 2          0.0399982    0.0338559    3           1                  True              0.0035697       0.003591        
+5: 1          0.0364285    0.0302649    3           1                  True              0               0               
 ==============
 // Calculation of speedup times 
 List<KeyValuePair<string, int>> procs = new List<KeyValuePair<string, int>>{};// ((int[])SubTab_1.GetColumn("Processors"));
@@ -149,20 +149,12 @@ for(int i = 0; i<slviter.Length; i++){
 for(int i = 0; i < slviter.Length; i++){
     List<KeyValuePair<string, int>> procsCut = procs.FindAll(s => s.Key == procs[i].Key);
     var min = procsCut.Select(s => s.Value).Min();
-    int idx = procsCut.FindIndex(s => s.Value == min);
+    int idx = procs.FindIndex(s => (s.Value == min) && (s.Key == procs[i].Key));
     slviterSpeedup[i] = (slviter[i]-slviter[idx])/procs.Pick(idx).Value;
     slvinitSpeedup[i] = (slvinit[i]-slvinit[idx])/procs.Pick(idx).Value;
     
 }    
 **************
-List of 6 instances of Double {
-  0: 0.0106344
-  1: 0.0245699
-  2: 0
-  3: 0.0791218
-  4: 0.0060779
-  5: 0.0025082
-}
 ==============
 // Add columns to DataTable
 SubTab_1.Columns.Add("SlvIter_speedup",typeof(double));
@@ -337,6 +329,10 @@ System.ComponentModel.Win32Exception occurred: The system cannot find the file s
 
 ==============
 //CL.WriteMinimalCompileableExample("C:\\tmp\\AllSolvers" + dateString + ".tex");
+**************
+==============
+**************
+==============
 **************
 ==============
 **************
