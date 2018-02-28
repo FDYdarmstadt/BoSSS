@@ -995,7 +995,8 @@ namespace ilPSP {
         /// </param>
         static public void SymmetricLDLInversion<T1, T2>(this T1 Mtx, T2 B, double[] Diag)
             where T1 : IMatrix
-            where T2 : IMatrix {
+            where T2 : IMatrix //
+        {
 
             if (Mtx.NoOfCols != Mtx.NoOfRows)
                 throw new NotSupportedException("must be symmetrical");

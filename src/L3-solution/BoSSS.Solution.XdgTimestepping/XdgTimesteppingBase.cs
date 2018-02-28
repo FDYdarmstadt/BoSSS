@@ -121,7 +121,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Newtons method coupled with GMRES as default. Convergeces quadratically but needs a good approximation. Preconditioning of the Newton-GMRES is set to LinearSolver.
         /// </summary>
-        Newton = 1,
+        Newton = 1
     }
 
     /// <summary>
@@ -236,6 +236,8 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Maximum number of iterations for an iterative solver (linear or nonlinear).
         /// </summary>
         public int Config_MaxIterations = 1000;
+
+        public int Config_MaxKrylovDim = 30;
 
         /// <summary>
         /// Under relaxation factor for iterative solver.
@@ -536,7 +538,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                             this.MultigridBasis,
                             this.Config_MultigridOperator)
                         {
-                            maxKrylovDim = 100,
+                            maxKrylovDim = Config_MaxKrylovDim,
                             MaxIter = Config_MaxIterations,
                             MinIter = Config_MinIterations,
                             ApproxJac = Newton.ApproxInvJacobianOptions.GMRES,

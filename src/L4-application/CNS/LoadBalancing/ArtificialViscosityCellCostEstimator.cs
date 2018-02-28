@@ -78,9 +78,12 @@ namespace CNS.LoadBalancing {
         /// AV cells are ten times more expensive than non-AV cells
         /// </summary>
         /// <returns></returns>
-        public static Func<IApplication<AppControl>, int, ICellCostEstimator> GetStaticCostBasedEstimator() {
+        public static Func<IApplication, int, ICellCostEstimator> GetStaticCostBasedEstimator() {
             return (p, i) => new StaticCellCostEstimator(
                 new int[] { 1, 10 });
+            //return delegate (IApplication<AppControl> p, int i) {
+            //    return new StaticCellCostEstimator(new int[] { 1, 10 });
+            //};
         }
 
         /// <summary>
@@ -89,7 +92,7 @@ namespace CNS.LoadBalancing {
         /// (can be arbitrary)
         /// </summary>
         /// <returns></returns>
-        public static IEnumerable<Func<IApplication<AppControl>, int, ICellCostEstimator>> GetMultiBalanceConstraintsBasedEstimators() {
+        public static IEnumerable<Func<IApplication, int, ICellCostEstimator>> GetMultiBalanceConstraintsBasedEstimators() {
             int noOfPerformancesClasses = 2; // Cells with AV + cells without AV
             for (int i = 0; i < noOfPerformancesClasses; i++) {
                 int temp = i; // Avoid delegate creation from capturing variable $i

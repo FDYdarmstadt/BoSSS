@@ -399,13 +399,10 @@ namespace BoSSS.Application.IBM_Solver {
             // Timestepping
             // ============
 
-            if (pardiso)
-            {
-                C.whichSolver = DirectSolver._whichSolver.PARDISO;
-            }
-            else
-            {
-                C.whichSolver = DirectSolver._whichSolver.MUMPS;
+            if (pardiso) {
+                C.LinearSolve = LinearSolverCodes.classic_pardiso;
+            } else {
+                C.LinearSolve = LinearSolverCodes.classic_mumps;
             }
             //C.whichSolver = DirectSolver._whichSolver.MUMPS;
             C.Timestepper_Scheme = IBM_Control.TimesteppingScheme.BDF2;
@@ -747,11 +744,11 @@ namespace BoSSS.Application.IBM_Solver {
 
             if (pardiso)
             {
-                C.whichSolver = DirectSolver._whichSolver.PARDISO;
+                C.LinearSolve = LinearSolverCodes.classic_pardiso;
             }
             else
             {
-                C.whichSolver = DirectSolver._whichSolver.MUMPS;
+                C.LinearSolve = LinearSolverCodes.classic_mumps;
             }
             // Timestepping
             // ============

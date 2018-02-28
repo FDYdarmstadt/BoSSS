@@ -1598,7 +1598,7 @@ namespace BoSSS.Foundation.IO {
             Console.WriteLine("...Evaluation done");
         }
 
-        /*
+        
         /// <summary>
         /// Calls EvaluatePerformance and plots the DataSets.
         /// </summary>
@@ -1608,7 +1608,7 @@ namespace BoSSS.Foundation.IO {
         /// <param name="solver"> String that indicates the solver. Up to now only implemented for IBM_Solver and CNS. </param>
         public static void EvaluatePerformanceAndPlot(this IEnumerable<ISessionInfo> sessions, string[] methods = null, bool exclusive = true, string solver = "IBM_Solver", bool weakScaling = false)
         {
-            Plot2Ddata[] data = sessions.EvaluatePerformance(methods,exclusive);
+            Plot2Ddata[] data = sessions.EvaluatePerformance(methods,exclusive,weakScaling);
             int numberDataSets = data.Length;
             int numberSessions = sessions.Count();
 
@@ -1651,7 +1651,7 @@ namespace BoSSS.Foundation.IO {
                 gp.Execute();
             }
         }
-        */
+        
 
         /// <summary>
         /// Calculates performance times from profiling_bins for each session for specified methods. Writes out a table of the most expensive and (of those) worst scaling functions. 
