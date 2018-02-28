@@ -48,7 +48,7 @@ namespace BoSSS.Foundation.Grid {
         /// Output, clusters of cells (identified by local cell indices) which can be combined into coarser cells.
         /// </param>
         /// <param name="CutCells">
-        /// If not null, a mask of cells in which coarsening is forbidden (usually cut-calls);
+        /// If not null, a mask of cells in which coarsening is forbidden (usually cut-cells);
         /// </param>
         /// <returns>
         /// True if any refinement or coarsening of the current grid should be performed; otherwise false.
@@ -69,17 +69,6 @@ namespace BoSSS.Foundation.Grid {
                     RefineNeighboursRecursive(CurrentGrid, DesiredLevel, j, DesiredLevel_j - 1);
                 }
             }
-
-            //int countL1 = 0;
-            //int countL2 = 0;
-            //for (int j = 0; j < oldJ; j++) {
-            //    if (DesiredLevel[j] == 1)
-            //        countL1++;
-            //    if (DesiredLevel[j] == 2)
-            //        countL2++;
-            //}
-            //Console.WriteLine("Number of refined Cells on level 1 = {0}", countL1);
-            //Console.WriteLine("Number of refined Cells on level 2 = {0}", countL2);
 
             BitArray Ok2Coarsen = new BitArray(oldJ);
             for (int j = 0; j < oldJ; j++) {
@@ -120,7 +109,7 @@ namespace BoSSS.Foundation.Grid {
                     int ActualLevel_j = CurrentGrid.Cells.GetCell(j).RefinementLevel;
                     int DesiredLevel_j = DesiredLevel[j];
 
-                    if (ActualLevel_j < DesiredLevel_j)
+                    if (ActualLevel_j < DesiredLevel_j) 
                         CellsToRefineList.Add(j);
                 }
             }
