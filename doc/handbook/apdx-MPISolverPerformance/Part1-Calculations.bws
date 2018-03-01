@@ -33,7 +33,7 @@ WorkflowMgm.Init("MPISolverPerformance");
 Project name is set to 'MPISolverPerformance'.
 
 ==============
-var WinTempDB = OpenOrCreateDatabase("W:\\performance_db");
+var WinTempDB = OpenOrCreateDatabase(@"L:\SLURM\temp_db");
 **************
 Opening existing database 'W:\performance_db'.
 
@@ -42,7 +42,7 @@ Opening existing database 'W:\performance_db'.
 //var Username = Console.ReadLine();
 **************
 ==============
-var myBatch = new SlurmClient(@"L:\SLURM","lcluster4.hrz.tu-darmstadt.de","ws35kire");
+var myBatch = new SlurmClient(@"L:\SLURM","lcluster2.hrz.tu-darmstadt.de","oe11okuz");
 **************
 Please enter your password...
 ************
@@ -176,7 +176,7 @@ controls.Add(C);
 
 C.savetodb                    = true;
 //C.DbPath                      = "P:\\tmp\\temp_db";
-C.DbPath                      = @"/work/scratch/ws35kire/performance_db";
+C.DbPath                      = @"/home/oe11okuz/SLURM/temp_db";
 C.DynamicLoadBalancing_Period = 1;
 
 // Assign correct names
@@ -186,7 +186,7 @@ C.SessionName = "Sphere_Flow_"+linSolverName;
 C.saveperiod  = 1;
 C.ProjectName = "3DChannel";
 C.Tags.Add("Prec param study");
-C.SetDGdegree(1,3);
+C.SetDGdegree(2);
 C.SetGrid(grd);
            
 
@@ -521,6 +521,10 @@ string docpath    = Path.Combine(CurrentDocDir, SessTab.TableName + ".json");
 // save session table as file: this can be stored in our git 
 // repository
 SessTab.SaveToFile(docpath);
+**************
+==============
+**************
+==============
 **************
 ==============
 **************
