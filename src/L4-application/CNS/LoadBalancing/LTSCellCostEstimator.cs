@@ -63,7 +63,7 @@ namespace CNS.LoadBalancing {
             EstimatedLocalCost = cellToCostMap.Sum();
         }
 
-        public static IEnumerable<Func<IApplication<AppControl>, int, ICellCostEstimator>> Factory(int numberOfClusters) {
+        public static IEnumerable<Func<IApplication, int, ICellCostEstimator>> Factory(int numberOfClusters) {
             for (int i = 0; i < numberOfClusters; i++) {
                 int temp = i; // Avoid delegate creation from capturing variable $i
                 yield return (app, classCount) => new LTSCellCostEstimator(temp);

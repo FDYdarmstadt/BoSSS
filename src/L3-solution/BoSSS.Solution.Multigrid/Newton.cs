@@ -92,7 +92,9 @@ namespace BoSSS.Solution.Multigrid {
                 double alpha = 1E-4, sigma0 = 0.1, sigma1 = 0.5, maxarm = 20, gamma = 0.9;
 
                 // Eval_F0 
-                base.Init(SolutionVec, RHS, out x, out f0);
+                using (new BlockTrace("Slv Init", tr)) {
+                    base.Init(SolutionVec, RHS, out x, out f0);
+                };
 
                 Console.WriteLine("Residual base.init:   " + f0.L2NormPow2().MPISum().Sqrt());
 
@@ -118,94 +120,96 @@ namespace BoSSS.Solution.Multigrid {
 
                 OnIterationCallback(itc, x.CloneAs(), f0.CloneAs(), this.CurrentLin);
 
-                while (fnorm > ConvCrit && itc < MaxIter) {
-                    rat = fnorm / fNormo;
-                    fNormo = fnorm;
-                    itc++;
+                using (new BlockTrace("Slv Iter", tr)) {
+                    while (fnorm > ConvCrit && itc < MaxIter) {
+                        rat = fnorm / fNormo;
+                        fNormo = fnorm;
+                        itc++;
 
-                    // How should the inverse of the Jacobian be approximated?
-                    if (ApproxJac == ApproxInvJacobianOptions.GMRES) {
-                        CurrentJac = new MsrMatrix(x.Length);
-                        if (Precond != null) {
-                            Precond.Init(CurrentLin);
+                        // How should the inverse of the Jacobian be approximated?
+                        if (ApproxJac == ApproxInvJacobianOptions.GMRES) {
+                            CurrentJac = new MsrMatrix(x.Length);
+                            if (Precond != null) {
+                                Precond.Init(CurrentLin);
+                            }
+                            step = Krylov(SolutionVec, x, f0, out errstep);
+                        } else if (ApproxJac == ApproxInvJacobianOptions.DirectSolver) {
+                            CurrentJac = diffjac(SolutionVec, x, f0);
+                            CurrentJac.SaveToTextFileSparse("Jacobi");
+                            CurrentLin.OperatorMatrix.SaveToTextFileSparse("OpMatrix");
+                            var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
+                            solver.DefineMatrix(CurrentJac);
+                            step.ClearEntries();
+                            solver.Solve(step, f0);
+                        } else {
+                            throw new NotImplementedException("Your approximation option for the jacobian seems not to be existent.");
                         }
-                        step = Krylov(SolutionVec, x, f0, out errstep);
-                    }
-                    else if (ApproxJac == ApproxInvJacobianOptions.DirectSolver) {
-                        CurrentJac = diffjac(SolutionVec, x, f0);
-                        var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
-                        solver.DefineMatrix(CurrentJac);
-                        step.ClearEntries();
-                        solver.Solve(step, f0);
-                    }
-                    else {
-                        throw new NotImplementedException("Your approximation option for the jacobian seems not to be existent.");
-                    }
 
-                    // Start line search
-                    xOld = x;
-                    double lambda = 1;
-                    double lamm = 1;
-                    double lamc = lambda;
-                    double iarm = 0;
-                    xt = x.CloneAs();
-                    xt.AccV(lambda, step);
-                    this.CurrentLin.TransformSolFrom(SolutionVec, xt);
-                    EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);
-                    var nft = ft.L2NormPow2().MPISum().Sqrt(); var nf0 = f0.L2NormPow2().MPISum().Sqrt(); var ff0 = nf0 * nf0; var ffc = nft * nft; var ffm = nft * nft;
-
-                    // Control of the the step size
-                    while (nft >= (1 - alpha * lambda) * nf0 && iarm < maxStep) {
-
-                        // Line search starts here
-
-                        if (iarm == 0)
-                            lambda = sigma1 * lambda;
-                        else
-                            lambda = parab3p(lamc, lamm, ff0, ffc, ffm);
-
-                        // Update x;
+                        // Start line search
+                        xOld = x;
+                        double lambda = 1;
+                        double lamm = 1;
+                        double lamc = lambda;
+                        double iarm = 0;
                         xt = x.CloneAs();
                         xt.AccV(lambda, step);
-                        lamm = lamc;
-                        lamc = lambda;
-
                         this.CurrentLin.TransformSolFrom(SolutionVec, xt);
-
                         EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);
+                        var nft = ft.L2NormPow2().MPISum().Sqrt(); var nf0 = f0.L2NormPow2().MPISum().Sqrt(); var ff0 = nf0 * nf0; var ffc = nft * nft; var ffm = nft * nft;
 
-                        nft = ft.L2NormPow2().MPISum().Sqrt();
-                        ffm = ffc;
-                        ffc = nft * nft;
-                        iarm++;
+                        // Control of the the step size
+                        while (nft >= (1 - alpha * lambda) * nf0 && iarm < maxStep) {
+
+                            // Line search starts here
+
+                            if (iarm == 0)
+                                lambda = sigma1 * lambda;
+                            else
+                                lambda = parab3p(lamc, lamm, ff0, ffc, ffm);
+
+                            // Update x;
+                            xt = x.CloneAs();
+                            xt.AccV(lambda, step);
+                            lamm = lamc;
+                            lamc = lambda;
+
+                            this.CurrentLin.TransformSolFrom(SolutionVec, xt);
+
+                            EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);
+
+                            nft = ft.L2NormPow2().MPISum().Sqrt();
+                            ffm = ffc;
+                            ffc = nft * nft;
+                            iarm++;
 
 #if DEBUG
-                        Console.WriteLine("Step size:  " + lambda + "with Residuum:  " + nft);
+                            Console.WriteLine("Step size:  " + lambda + "with Residuum:  " + nft);
 #endif
+                        }
+                        // transform solution back to 'original domain'
+                        // to perform the linearization at the new point...
+                        // (and for Level-Set-Updates ...)
+                        this.CurrentLin.TransformSolFrom(SolutionVec, xt);
+
+                        // update linearization
+                        base.Update(SolutionVec.Mapping.Fields, ref xt);
+
+                        // residual evaluation & callback
+                        base.EvalResidual(xt, ref ft);
+
+                        // EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);
+
+                        //base.Init(SolutionVec, RHS, out x, out f0);
+
+                        fnorm = ft.L2NormPow2().MPISum().Sqrt();
+
+                        x = xt;
+                        f0 = ft.CloneAs();
+
+                        OnIterationCallback(itc, x.CloneAs(), f0.CloneAs(), this.CurrentLin);
+
+
                     }
-                    // transform solution back to 'original domain'
-                    // to perform the linearization at the new point...
-                    // (and for Level-Set-Updates ...)
-                    this.CurrentLin.TransformSolFrom(SolutionVec, xt);
-
-                    // update linearization
-                    base.Update(SolutionVec.Mapping.Fields, ref xt);
-
-                    // residual evaluation & callback
-                    base.EvalResidual(xt, ref ft);
-
-                    // EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);
-
-                    //base.Init(SolutionVec, RHS, out x, out f0);
-
-                    fnorm = ft.L2NormPow2().MPISum().Sqrt();
-
-                    x = xt;
-                    f0 = ft.CloneAs();
-
-                    OnIterationCallback(itc, x.CloneAs(), f0.CloneAs(), this.CurrentLin);
-
-
                 }
 
                 SolutionVec = m_SolutionVec;
@@ -226,6 +230,7 @@ namespace BoSSS.Solution.Multigrid {
         public double[] GMRES(CoordinateVector SolutionVec, double[] currentX, double[] f0, double[] xinit, out double errstep) {
             using (var tr = new FuncTrace()) {
                 int n = f0.Length;
+
                 int reorth = 3; // Orthogonalization method -> 1: Brown/Hindmarsh condition, 3: Always reorthogonalize
 
                 // RHS of the linear equation system 
@@ -404,7 +409,6 @@ namespace BoSSS.Solution.Multigrid {
             //this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, SolutionVec.Mapping.Fields.ToArray());
             double[] step = GMRES(SolutionVec, currentX, f0, new double[currentX.Length], out errstep);
             int kinn = 0;
-
             Console.WriteLine("Error Krylov:   " + errstep);
 
             while (kinn < restart_limit && errstep > GMRESConvCrit) {
@@ -516,13 +520,11 @@ namespace BoSSS.Solution.Multigrid {
             if (b == 0.0) {
                 c = 1.0;
                 s = 0.0;
-            }
-            else if (Math.Abs(b) > Math.Abs(a)) {
+            } else if (Math.Abs(b) > Math.Abs(a)) {
                 temp = a / b;
                 s = 1.0 / Math.Sqrt(1.0 + temp * temp);
                 c = temp * s;
-            }
-            else {
+            } else {
                 temp = b / a;
                 c = 1.0 / Math.Sqrt(1.0 + temp * temp);
                 s = temp * c;
@@ -589,7 +591,7 @@ namespace BoSSS.Solution.Multigrid {
                 zz[i] = 1;
                 temp = dirder(SolutionVec, currentX, zz, f0);
                 for (int j = 0; j < n; j++) {
-                    jac[j, i] = temp[i];
+                    jac[j, i] = temp[j];
                 }
             }
 
@@ -658,8 +660,7 @@ namespace BoSSS.Solution.Multigrid {
                         }
                     }
 
-                }
-                else {
+                } else {
                     // send my part to P0
                     unsafe {
                         fixed (double* pb = &__b[0]) {
@@ -670,8 +671,7 @@ namespace BoSSS.Solution.Multigrid {
                     _x = null;
                     _b = null;
                 }
-            }
-            else {
+            } else {
                 _x = __x;
                 _b = __b;
             }
@@ -707,8 +707,7 @@ namespace BoSSS.Solution.Multigrid {
                         }
                     }
 
-                }
-                else {
+                } else {
                     unsafe {
                         fixed (double* px = &__x[0]) {
                             MPI_Status _st;
@@ -716,8 +715,7 @@ namespace BoSSS.Solution.Multigrid {
                         }
                     }
                 }
-            }
-            else {
+            } else {
                 if (!object.ReferenceEquals(__x, _x)) {
                     int L = __x.Length;
                     if (__x.Length != _x.Length)

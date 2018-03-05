@@ -59,7 +59,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MPITest", "L4-application\M
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CutCellQuadrature", "L4-application\CutCellQuadrature\CutCellQuadrature.csproj", "{6E696838-EE09-459F-B5B0-7EE0D709C3D6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LTS-NUnit", "L4-application\LTS-NUnit\LTS-NUnit.csproj", "{FE748C89-3989-4742-811B-80F8B924FD35}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LTSTests", "L4-application\LTSTests\LTSTests.csproj", "{FE748C89-3989-4742-811B-80F8B924FD35}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ipViscosity", "L4-application\ipViscosity\ipViscosity.csproj", "{09CCE864-9BAE-4660-A123-F3F3414B6173}"
 EndProject

@@ -20,7 +20,7 @@ using BoSSS.Platform.LinAlg;
 using BoSSS.Foundation;
 using System.Collections.Generic;
 
-namespace LTS_NUnit {
+namespace LTSTests {
     /// <summary>
     /// Flux implementation for the LTS NUnit-test
     /// </summary>

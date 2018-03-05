@@ -115,6 +115,13 @@ namespace BoSSS.Solution.Gnuplot {
 
         }
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        public PlotFormat(string fmt)  : this(){
+            this.FromString(fmt);
+        }
+        
                
         /// <summary>
         /// Constructor
@@ -320,5 +327,38 @@ namespace BoSSS.Solution.Gnuplot {
                 _Style = this.Style
             };
         }
+
+        /// <summary>
+        /// %
+        /// </summary>
+        public override bool Equals(object obj) {
+            PlotFormat o = obj as PlotFormat;
+            if (o == null)
+                return false;
+
+            if (o.dashType != this.dashType)
+                return false;
+            if (o.lineColor != this.lineColor)
+                return false;
+            if (o.lineWidth != this.lineWidth)
+                return false;
+            if (o.pointSize != this.pointSize)
+                return false;
+            if (o.pointType != this.pointType)
+                return false;
+            if (o._Style != this._Style)
+                return false;
+
+
+            return true;
+        }
+
+        /// <summary>
+        /// %
+        /// </summary>
+        public override int GetHashCode() {
+            return ((int)lineColor) + ((int)lineWidth) * 7 + ((int)pointType) * 13;
+        }
+
     }
 }

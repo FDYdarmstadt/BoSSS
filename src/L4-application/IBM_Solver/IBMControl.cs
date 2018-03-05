@@ -20,12 +20,14 @@ using BoSSS.Solution.Control;
 using BoSSS.Solution.Multigrid;
 using BoSSS.Solution.XdgTimestepping;
 using System.Linq;
+using System.Runtime.Serialization;
 
 namespace BoSSS.Application.IBM_Solver {
 
     /// <summary>
     /// 
     /// </summary>
+    [DataContract]
     [Serializable]
     public class IBM_Control : AppControl {
 
@@ -35,6 +37,13 @@ namespace BoSSS.Application.IBM_Solver {
         public IBM_Control() {
             base.NoOfMultigridLevels = 1;
             base.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
+        }
+
+        /// <summary>
+        /// Type of <see cref="IBM_SolverMain"/>.
+        /// </summary>
+        public override Type GetSolverType() {
+            return typeof(IBM_SolverMain);
         }
 
         ///// <summary>
@@ -47,21 +56,24 @@ namespace BoSSS.Application.IBM_Solver {
         /// <summary>
         /// Expert options regarding the spatial discretization.
         /// </summary>
+        [DataMember]
         public DoNotTouchParameters AdvancedDiscretizationOptions = new DoNotTouchParameters();
 
         /// <summary>
         /// Sets the DG polynomial degree 
         /// </summary>
         /// <param name="k">Degree for velociy; pressure  will be one order lower.</param>
-        public override void SetDGdegree(int k) {
-            if(k < 1)
+        /// <param name="D">Spatial Dimension of the computational domain </param>
+        public override void SetDGdegree(int k, int D = 2) {
+            if (k < 1)
                 throw new ArgumentOutOfRangeException("DG polynomial degree must be at least 1.");
 
             base.FieldOptions.Clear();
-
             this.AddFieldOption("VelocityX", k);
             this.AddFieldOption("VelocityY", k);
-            this.AddFieldOption("Pressure", k- 1);
+            if (D == 3)
+                this.AddFieldOption("VelocityZ", k);
+            this.AddFieldOption("Pressure", k - 1);
             this.AddFieldOption("PhiDG", 2);
             this.AddFieldOption("Phi", 2);
         }
@@ -70,21 +82,25 @@ namespace BoSSS.Application.IBM_Solver {
         /// If iterative saddle-point solvers like GMRES or Orthonormalization are used, the maximum number of basis vectors
         /// that are used to construct the accelerated solution.
         /// </summary>
-        public int MaxKrylovDim = 100;
+        [DataMember]
+        public int MaxKrylovDim = 30;
 
         /// <summary>
         /// If iterative solvers are used, the maximum number of iterations.
         /// </summary>
+        [DataMember]
         public int MaxSolverIterations = 2000;
 
         /// <summary>
         /// If iterative solvers are used, the maximum number of iterations.
         /// </summary>
+        [DataMember]
         public int MinSolverIterations = 2;
 
         /// <summary>
         /// Convergence criterion for linear/nonlinear solver.
         /// </summary>
+        [DataMember]
         public double Solver_ConvergenceCriterion = 1.0e-8;
 
         /// <summary>
@@ -108,8 +124,8 @@ namespace BoSSS.Application.IBM_Solver {
         public Func<double[], double, double>[] ExSol_Velocity_Evaluator {
             get {
                 if (m_ExSol_Velocity_Evaluator == null) {
-                    if(ExSol_Velocity!= null) {
-                        m_ExSol_Velocity_Evaluator = ExSol_Velocity.Select< IBoundaryAndInitialData, Func<double[], double, double>>( a => a.Evaluate).ToArray();
+                    if (ExSol_Velocity != null) {
+                        m_ExSol_Velocity_Evaluator = ExSol_Velocity.Select<IBoundaryAndInitialData, Func<double[], double, double>>(a => a.Evaluate).ToArray();
                     }
                 }
                 return m_ExSol_Velocity_Evaluator;
@@ -137,7 +153,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// </summary>
         public Func<double[], double, double> ExSol_Pressure_Evaluator {
             get {
-                if(m_ExSol_Pressure_Evaluator == null) {
+                if (m_ExSol_Pressure_Evaluator == null) {
                     if (ExSol_Pressure != null)
                         m_ExSol_Pressure_Evaluator = ExSol_Pressure.Evaluate;
                 }
@@ -157,8 +173,8 @@ namespace BoSSS.Application.IBM_Solver {
         /// <summary>
         /// Viscosity, density and surface tension. Note phase A is fluid and phase B particle.
         /// </summary>
-        public PhysicalParameters PhysicalParameters = new PhysicalParameters()
-        {
+        [DataMember]
+        public PhysicalParameters PhysicalParameters = new PhysicalParameters() {
             IncludeConvection = true,
             rho_A = 1,
             mu_A = 1,
@@ -167,6 +183,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// <summary>
         /// Radius of the circular particle immersed in the fluid
         /// </summary>
+        [DataMember]
         public double particleRadius;
 
         public double MeshFactor;
@@ -199,6 +216,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// <summary>
         /// See <see cref="TimesteppingScheme"/>
         /// </summary>
+        [DataMember]
         public TimesteppingScheme Timestepper_Scheme;
 
         /// <summary>
@@ -209,14 +227,8 @@ namespace BoSSS.Application.IBM_Solver {
         /// <summary>
         /// Fixed SrcPressureGradient which should be used if periodic BC are applied
         /// </summary>
+        [DataMember]
         public double[] SrcPressureGrad;
-
-
-        /// <summary>
-        /// Which direct solver should be used.
-        /// </summary>
-        public DirectSolver._whichSolver whichSolver = DirectSolver._whichSolver.PARDISO;
-
 
         public enum TimestepperInit {
 
@@ -227,13 +239,14 @@ namespace BoSSS.Application.IBM_Solver {
             MultiInit
         }
 
-        public ISolverSmootherTemplate LinearSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS };
-
-        public NonlinearSolverMethod NonlinearMethod = NonlinearSolverMethod.Picard;
-
-        /// <summary>
-        /// 
-        /// </summary>
+        [DataMember]
         public TimestepperInit Timestepper_Init = TimestepperInit.SingleInit;
+
+        [DataMember]
+        public NonlinearSolverCodes NonlinearSolve = NonlinearSolverCodes.Picard;
+
+        [DataMember]
+        public LinearSolverCodes LinearSolve = LinearSolverCodes.classic_mumps;
+
     }
 }

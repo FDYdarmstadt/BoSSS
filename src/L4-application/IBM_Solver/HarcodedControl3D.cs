@@ -621,7 +621,6 @@ namespace BoSSS.Application.IBM_Solver {
             C.PhysicalParameters.IncludeConvection = true;
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
-            C.whichSolver = DirectSolver._whichSolver.MUMPS;
             C.LevelSetSmoothing = false;
             C.MaxKrylovDim = 20;
             C.MaxSolverIterations = 50;
