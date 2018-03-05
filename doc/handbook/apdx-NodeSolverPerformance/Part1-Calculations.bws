@@ -28,8 +28,10 @@ Opening existing database 'D:\tmp\fk_temp_db'.
  var myBatch = new MiniBatchProcessorClient(@"D:\tmp\fk_deploy");
 **************
 ==============
-//MiniBatchProcessor.Server.StartIfNotRunning();
+MiniBatchProcessor.Server.StartIfNotRunning();
 **************
+Mini batch processor is already running.
+
 ==============
 // ===================
 // Utility definitions
@@ -204,10 +206,11 @@ SolverCodes[] solver_nameS = new SolverCodes[] {
 //    SolverCodes.classic_pardiso, 
 //    SolverCodes.classic_mumps, 
 //    SolverCodes.classic_cg,
-    SolverCodes.exp_softpcg_schwarz_directcoarse,
-    SolverCodes.exp_direct,
-    SolverCodes.exp_softpcg_schwarz
+//    SolverCodes.exp_softpcg_schwarz_directcoarse,
+//    SolverCodes.exp_direct,
+//    SolverCodes.exp_softpcg_schwarz
 //    SolverCodes.exp_direct_lapack
+      SolverCodes.exp_softpcg_mg
 }; 
 **************
 ==============
@@ -221,6 +224,8 @@ foreach(int k in PolyDegS) {
 int iGrd = 0;    
 foreach(IGridInfo grd in grids) {
     iGrd ++;
+    if(iGrd > 4)
+        continue; 
     if(k >= 3 && iGrd > 5)
         continue; 
     if(k >= 4 && iGrd > 4)
@@ -244,7 +249,7 @@ foreach(IGridInfo grd in grids) {
     ctrl.SetGrid(grd);
     ctrl.SetDGdegree(k);
     ctrl.solver_name         = solver_name;
-    ctrl.NoOfMultigridLevels = 3;
+    ctrl.NoOfMultigridLevels = int.MaxValue;
     
     ctrl.InitialValues.Add("RHS", GetFormulaObject(InitialValues.RHS));
     ctrl.AddBoundaryCondition(BoundaryType.Dirichlet.ToString(), "T",
@@ -256,36 +261,14 @@ foreach(IGridInfo grd in grids) {
 }
 
 **************
-setting up: J40_k2_exp_softpcg_schwarz_directcoarse
-setting up: J320_k2_exp_softpcg_schwarz_directcoarse
-setting up: J2560_k2_exp_softpcg_schwarz_directcoarse
-setting up: J20480_k2_exp_softpcg_schwarz_directcoarse
-setting up: J163840_k2_exp_softpcg_schwarz_directcoarse
-setting up: J40_k3_exp_softpcg_schwarz_directcoarse
-setting up: J320_k3_exp_softpcg_schwarz_directcoarse
-setting up: J2560_k3_exp_softpcg_schwarz_directcoarse
-setting up: J20480_k3_exp_softpcg_schwarz_directcoarse
-setting up: J163840_k3_exp_softpcg_schwarz_directcoarse
-setting up: J40_k2_exp_direct
-setting up: J320_k2_exp_direct
-setting up: J2560_k2_exp_direct
-setting up: J20480_k2_exp_direct
-setting up: J163840_k2_exp_direct
-setting up: J40_k3_exp_direct
-setting up: J320_k3_exp_direct
-setting up: J2560_k3_exp_direct
-setting up: J20480_k3_exp_direct
-setting up: J163840_k3_exp_direct
-setting up: J40_k2_exp_softpcg_schwarz
-setting up: J320_k2_exp_softpcg_schwarz
-setting up: J2560_k2_exp_softpcg_schwarz
-setting up: J20480_k2_exp_softpcg_schwarz
-setting up: J163840_k2_exp_softpcg_schwarz
-setting up: J40_k3_exp_softpcg_schwarz
-setting up: J320_k3_exp_softpcg_schwarz
-setting up: J2560_k3_exp_softpcg_schwarz
-setting up: J20480_k3_exp_softpcg_schwarz
-setting up: J163840_k3_exp_softpcg_schwarz
+setting up: J40_k2_exp_softpcg_mg
+setting up: J320_k2_exp_softpcg_mg
+setting up: J2560_k2_exp_softpcg_mg
+setting up: J20480_k2_exp_softpcg_mg
+setting up: J40_k3_exp_softpcg_mg
+setting up: J320_k3_exp_softpcg_mg
+setting up: J2560_k3_exp_softpcg_mg
+setting up: J20480_k3_exp_softpcg_mg
 
 ==============
 // ==========
@@ -302,7 +285,7 @@ setting up: J163840_k3_exp_softpcg_schwarz
 //job.SetControlObject(myCtrl);
 **************
 ==============
-//tempDB.Sessions.Where(s => s.Name.Contains("pardiso") && s.Name.Contains("J320")).ForEach(si => si.Delete(true));
+//tempDB.Sessions.Where(s => s.Name.Contains("softpcg_schwarz_directcoarse")).ForEach(si => si.Delete(true));
 **************
 ==============
 //tempDB.Sessions.Where(s => s.Name.Contains("exp_direct")).ForEach(si => si.Delete());
@@ -315,155 +298,64 @@ foreach(var ctrl in controls) {
     ctrl.RunBatch(myBatch,NumberOfMPIProcs:1,UseComputeNodesExclusive:true); 
 }
 **************
- Submitting: J40_k2_exp_softpcg_schwarz_directcoarse
+ Submitting: J40_k2_exp_softpcg_mg
 Job was successful (according to job manager), latest session related to job is:
-{ Guid = 92ef5aa6-bae6-4fc1-826a-10a4b3c1f5a5; 02/03/2018 09:21:07 Name = J40_k2_exp_softpcg_schwarz_directcoarse }
+{ Guid = 4009d30a-b7f6-4eb1-b7a7-07526d8f1552; 02/10/2018 12:51:21 Name = J40_k2_exp_softpcg_mg }
 No further action.
- Submitting: J320_k2_exp_softpcg_schwarz_directcoarse
+ Submitting: J320_k2_exp_softpcg_mg
 Job was successful (according to job manager), latest session related to job is:
-{ Guid = ab8c7fac-b324-41d4-ba1f-5d153a323cf6; 02/03/2018 09:21:37 Name = J320_k2_exp_softpcg_schwarz_directcoarse }
+{ Guid = bb0611d7-fc2d-406b-9fbf-1abb9ea3ad88; 02/10/2018 12:51:51 Name = J320_k2_exp_softpcg_mg }
 No further action.
- Submitting: J2560_k2_exp_softpcg_schwarz_directcoarse
+ Submitting: J2560_k2_exp_softpcg_mg
 Job was successful (according to job manager), latest session related to job is:
-{ Guid = c8ddafb9-8112-4afe-9977-e243aef18ac8; 02/03/2018 09:22:37 Name = J2560_k2_exp_softpcg_schwarz_directcoarse }
+{ Guid = 4056795d-6844-4c7c-bd82-e28a6c8bf880; 02/10/2018 12:52:31 Name = J2560_k2_exp_softpcg_mg }
 No further action.
- Submitting: J20480_k2_exp_softpcg_schwarz_directcoarse
+ Submitting: J20480_k2_exp_softpcg_mg
 Job was successful (according to job manager), latest session related to job is:
-{ Guid = 61c26fa3-b5dc-4794-ad63-fdd48c2c1cc9; 02/03/2018 09:27:47 Name = J20480_k2_exp_softpcg_schwarz_directcoarse }
+{ Guid = d1c83c95-8ef7-4d00-9443-f70688071903; 02/10/2018 12:54:21 Name = J20480_k2_exp_softpcg_mg }
 No further action.
- Submitting: J163840_k2_exp_softpcg_schwarz_directcoarse
-Job is failed 1 times, maximum number of tries reached, no further action.
- Submitting: J40_k3_exp_softpcg_schwarz_directcoarse
+ Submitting: J40_k3_exp_softpcg_mg
 Job was successful (according to job manager), latest session related to job is:
-{ Guid = f10ab4d8-f2be-4b61-b7ae-c917171f61be; 02/03/2018 10:27:47 Name = J40_k3_exp_softpcg_schwarz_directcoarse }
+{ Guid = 9c8d0a4a-957f-4e30-8dac-16e639d0f84c; 02/10/2018 13:09:41 Name = J40_k3_exp_softpcg_mg }
 No further action.
- Submitting: J320_k3_exp_softpcg_schwarz_directcoarse
+ Submitting: J320_k3_exp_softpcg_mg
 Job was successful (according to job manager), latest session related to job is:
-{ Guid = aee64fee-3bd2-470e-a677-4b108b37cd23; 02/03/2018 10:28:17 Name = J320_k3_exp_softpcg_schwarz_directcoarse }
+{ Guid = 9e8b4b9f-e749-435a-94c6-ef2be172c017; 02/10/2018 13:10:12 Name = J320_k3_exp_softpcg_mg }
 No further action.
- Submitting: J2560_k3_exp_softpcg_schwarz_directcoarse
+ Submitting: J2560_k3_exp_softpcg_mg
 Job was successful (according to job manager), latest session related to job is:
-{ Guid = 592e8569-e509-4b72-9172-df4ee1dc359d; 02/03/2018 10:29:28 Name = J2560_k3_exp_softpcg_schwarz_directcoarse }
+{ Guid = b7b10af8-6398-4637-a207-df86bb0b8fc7; 02/10/2018 13:11:02 Name = J2560_k3_exp_softpcg_mg }
 No further action.
- Submitting: J20480_k3_exp_softpcg_schwarz_directcoarse
+ Submitting: J20480_k3_exp_softpcg_mg
 Job was successful (according to job manager), latest session related to job is:
-{ Guid = e4f76148-79a9-481d-a85e-db62aee5ff92; 02/03/2018 10:38:18 Name = J20480_k3_exp_softpcg_schwarz_directcoarse }
+{ Guid = 07f5bf10-3738-472c-87fc-310a10d22863; 02/10/2018 13:13:51 Name = J20480_k3_exp_softpcg_mg }
 No further action.
- Submitting: J163840_k3_exp_softpcg_schwarz_directcoarse
-Job is failed 1 times, maximum number of tries reached, no further action.
- Submitting: J40_k2_exp_direct
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = 8a535a4e-98f3-40a7-9f08-7b1d77d5e40d; 02/03/2018 08:32:22 Name = J40_k2_exp_direct }
-No further action.
- Submitting: J320_k2_exp_direct
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = d26fca40-a252-4677-94e9-6d787862ebdb; 02/03/2018 08:32:51 Name = J320_k2_exp_direct }
-No further action.
- Submitting: J2560_k2_exp_direct
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = 10648a60-725e-44b8-abd8-50ae62310a97; 02/03/2018 08:33:21 Name = J2560_k2_exp_direct }
-No further action.
- Submitting: J20480_k2_exp_direct
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = 4716fa29-63a5-4844-92f5-9d47e9a4e080; 02/03/2018 08:34:01 Name = J20480_k2_exp_direct }
-No further action.
- Submitting: J163840_k2_exp_direct
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = 021cdb10-daf3-48b3-badb-c325f5f13efc; 02/05/2018 06:24:17 Name = J163840_k2_exp_direct }
-No further action.
- Submitting: J40_k3_exp_direct
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = 6f717581-cff3-4c34-b2af-fb5353d6690b; 02/03/2018 08:37:02 Name = J40_k3_exp_direct }
-No further action.
- Submitting: J320_k3_exp_direct
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = 7578740c-3883-4dec-89a1-8e09a4e5506b; 02/03/2018 08:37:32 Name = J320_k3_exp_direct }
-No further action.
- Submitting: J2560_k3_exp_direct
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = 141b3840-cec5-46fa-a075-3fd3a86270ec; 02/03/2018 08:38:03 Name = J2560_k3_exp_direct }
-No further action.
- Submitting: J20480_k3_exp_direct
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = eee1e783-0e59-4822-9c2a-996c15d170f5; 02/03/2018 08:38:52 Name = J20480_k3_exp_direct }
-No further action.
- Submitting: J163840_k3_exp_direct
-Job is failed 2 times, maximum number of tries reached, no further action.
- Submitting: J40_k2_exp_softpcg_schwarz
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = ad16f017-f714-44ab-bde9-05eaa4b98342; 02/05/2018 07:06:28 Name = J40_k2_exp_softpcg_schwarz }
-No further action.
- Submitting: J320_k2_exp_softpcg_schwarz
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = 158381d1-8646-4b64-a94f-fa893a749124; 02/05/2018 07:06:58 Name = J320_k2_exp_softpcg_schwarz }
-No further action.
- Submitting: J2560_k2_exp_softpcg_schwarz
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = 4a5fafae-7f96-4f88-8beb-83d41eacf77e; 02/05/2018 07:08:47 Name = J2560_k2_exp_softpcg_schwarz }
-No further action.
- Submitting: J20480_k2_exp_softpcg_schwarz
-Job has been started (according to job manager), latest known session is:
-{ Guid = 9d732da9-6f84-42a4-b8e1-ec91fa01f144; 02/05/2018 07:34:28 Name = J20480_k2_exp_softpcg_schwarz }
-No further action.
- Submitting: J163840_k2_exp_softpcg_schwarz
-Job has been started (according to job manager), latest known session is:
-{ Guid = d124fc3c-c0f0-4c20-b85b-2622956d9e92; 02/06/2018 06:05:36 Name = J163840_k2_exp_softpcg_schwarz }
-No further action.
- Submitting: J40_k3_exp_softpcg_schwarz
-Job submitted, waiting for launch - no further action.
- Submitting: J320_k3_exp_softpcg_schwarz
-Job submitted, waiting for launch - no further action.
- Submitting: J2560_k3_exp_softpcg_schwarz
-Job submitted, waiting for launch - no further action.
- Submitting: J20480_k3_exp_softpcg_schwarz
-Job submitted, waiting for launch - no further action.
- Submitting: J163840_k3_exp_softpcg_schwarz
-Job submitted, waiting for launch - no further action.
 
 ==============
 **************
 ==============
 WorkflowMgm.AllJobs.Select(kv => kv.Key + ": \t" + kv.Value.Status);
 **************
-List of 30 instances of String {
-  0: J40_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
-  1: J320_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
-  2: J2560_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
-  3: J20480_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
-  4: J163840_k2_exp_softpcg_schwarz_directcoarse: 	Failed
-  5: J40_k3_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
-  6: J320_k3_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
-  7: J2560_k3_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
-  8: J20480_k3_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
-  9: J163840_k3_exp_softpcg_schwarz_directcoarse: 	Failed
-  10: J40_k2_exp_direct: 	FinishedSuccessful
-  11: J320_k2_exp_direct: 	FinishedSuccessful
-  12: J2560_k2_exp_direct: 	FinishedSuccessful
-  13: J20480_k2_exp_direct: 	FinishedSuccessful
-  14: J163840_k2_exp_direct: 	FinishedSuccessful
-  15: J40_k3_exp_direct: 	FinishedSuccessful
-  16: J320_k3_exp_direct: 	FinishedSuccessful
-  17: J2560_k3_exp_direct: 	FinishedSuccessful
-  18: J20480_k3_exp_direct: 	FinishedSuccessful
-  19: J163840_k3_exp_direct: 	Failed
-  20: J40_k2_exp_softpcg_schwarz: 	FinishedSuccessful
-  21: J320_k2_exp_softpcg_schwarz: 	FinishedSuccessful
-  22: J2560_k2_exp_softpcg_schwarz: 	FinishedSuccessful
-  23: J20480_k2_exp_softpcg_schwarz: 	InProgress
-  24: J163840_k2_exp_softpcg_schwarz: 	InProgress
-  25: J40_k3_exp_softpcg_schwarz: 	PendingInExecutionQueue
-  26: J320_k3_exp_softpcg_schwarz: 	PendingInExecutionQueue
-  27: J2560_k3_exp_softpcg_schwarz: 	PendingInExecutionQueue
-  28: J20480_k3_exp_softpcg_schwarz: 	PendingInExecutionQueue
-  29: J163840_k3_exp_softpcg_schwarz: 	PendingInExecutionQueue
+List of 8 instances of String {
+  0: J40_k2_exp_softpcg_mg: 	FinishedSuccessful
+  1: J320_k2_exp_softpcg_mg: 	FinishedSuccessful
+  2: J2560_k2_exp_softpcg_mg: 	FinishedSuccessful
+  3: J20480_k2_exp_softpcg_mg: 	FinishedSuccessful
+  4: J40_k3_exp_softpcg_mg: 	FinishedSuccessful
+  5: J320_k3_exp_softpcg_mg: 	FinishedSuccessful
+  6: J2560_k3_exp_softpcg_mg: 	FinishedSuccessful
+  7: J20480_k3_exp_softpcg_mg: 	FinishedSuccessful
 }
 ==============
 //WorkflowMgm.AllJobs.ElementAt(9).Value.Stdout;
 **************
 ==============
+//WorkflowMgm.AllJobs.ElementAt(0).Value.Stdout;
+**************
+==============
 WorkflowMgm.SessionTable.Rows.Count;
 **************
-93
+97
 ==============
 **************
 ==============
@@ -472,6 +364,11 @@ WorkflowMgm.SessionTable.Rows.Count;
 // =====================================
 // Session table
 // =====================================
+**************
+==============
+// -------------------------------
+// Additional/user-defined columns
+// -------------------------------
 **************
 ==============
 static class AddCols {
@@ -514,39 +411,16 @@ WorkflowMgm.AdditionalSessionTableColums.Add(
     "Solver_Run_time", AddCols.Solver_Run_time);
 **************
 ==============
-//var SI = tempDB.Sessions.Single(si => si.Name == "J40_k2_exp_softpcg_schwarz_directcoarse");
-**************
-==============
-//SI;
-**************
-==============
-//Console.WriteLine(AddCols.SipMatrixAssembly_time(SI));
-//Console.WriteLine(AddCols.Aggregation_basis_init_time(SI));
-//Console.WriteLine(AddCols.Solver_Init_time(SI));
-//Console.WriteLine(AddCols.Solver_Run_time(SI));
-**************
-==============
-//var mcr = SI.GetProfiling()[0];
-**************
-==============
-//SI.KeysAndQueries;
-**************
-==============
-//var rsos = mcr.FindChildren("*RunSolverOneStep*").ElementAt(0);
-**************
-==============
-//rsos.Calls;
-**************
-==============
+// --------------------------
+// Save Session table in file
+// --------------------------
 **************
 ==============
 var SessTab = WorkflowMgm.SessionTable;
 **************
 ==============
-**************
-==============
-**************
-==============
+// The Session column can't be serialized,
+// we have to remove it
 List<string> AllCols = SessTab.GetColumnNames().ToList();
 AllCols.Remove("Session");
 **************
@@ -555,77 +429,19 @@ True
 SessTab = SessTab.ExtractColumns(AllCols.ToArray());
 **************
 ==============
-var now = DateTime.Now;
-**************
-==============
-SessTab.TableName = "SolverRuns--" + now.Year + "-" + now.Month;
-**************
-==============
 using System.IO;
 **************
 ==============
-string docpath = Path.Combine(CurrentDocDir, SessTab.TableName + ".xml");
+// Filename
+var now           = DateTime.Now;
+SessTab.TableName = "SolverRuns--" + now.Year + "-" + now.Month + "-" + now.Day;
+string docpath    = Path.Combine(CurrentDocDir, SessTab.TableName + ".json");
 **************
 ==============
-SessTab.WriteXml(docpath);
+// save session table as file: this can be stored in our git 
+// repository
+SessTab.SaveToFile(docpath);
 **************
-==============
-//tab.GetColumnNames();
-**************
-==============
-//var SubTab = tab.ExtractColumns( "solver_name", "DGdegree:T", "DOFs",
-//"RegularTerminated", "Conv", 
-//"SipMatrixAssembly_time", "Aggregation_basis_init_time", "Solver_Init_time", "Solver_Run_time", "minSolRunT", "maxSolRunT");
-**************
-==============
-//SessTab.Print();
-**************
-==============
-SessTab.GetColumnTypes().Take(7);
-**************
-List of 7 instances of Type {
-  0: System.String
-  1: System.Int64
-  2: System.Int64
-  3: System.String
-  4: System.String
-  5: System.Boolean
-  6: System.Int64
-}
-==============
-tempDB.Sessions.ElementAt(0).KeysAndQueries["DGdegree:T"].GetType();
-**************
-System.Int64
-==============
-//using System.Data;
-**************
-==============
-//var SessTab_Test = new System.Data.DataTable();
-//SessTab_Test.ReadXml(docpath);
-**************
-==============
-**************
-==============
-string txt = SessTab.Serialize();
-**************
-==============
-System.IO.File.WriteAllText(Path.Combine(CurrentDocDir, "oida.txt"), txt);
-**************
-==============
-var SessTab2 = TableExtensions.Deserialize(txt);
-**************
-==============
-SessTab2.GetColumnTypes().Take(7);
-**************
-List of 7 instances of Type {
-  0: System.String
-  1: System.Int64
-  2: System.Int64
-  3: System.String
-  4: System.String
-  5: System.Boolean
-  6: System.Int64
-}
 ==============
 **************
 ==============

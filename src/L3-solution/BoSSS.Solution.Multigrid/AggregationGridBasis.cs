@@ -46,7 +46,11 @@ namespace BoSSS.Solution.Multigrid {
             }
         }
 
-
+        /// <summary>
+        /// Constructor.
+        /// </summary>
+        /// <param name="b">DG basis on original grid</param>
+        /// <param name="ag"></param>
         public AggregationGridBasis(Basis b, AggregationGrid ag) {
             using (new FuncTrace()) {
                 if (!object.ReferenceEquals(b.GridDat, GetGridData(ag)))
@@ -293,33 +297,7 @@ namespace BoSSS.Solution.Multigrid {
             }
         }
 
-        /*
-        public MsrMatrix FromOtherLevelMatrix(MultigridMapping otherLevel, MultigridMapping thisLevel) {
-            if(!object.ReferenceEquals(thisLevel.AggBasis, this))
-                throw new ArgumentException();
-            var PrlgMtx = otherLevel.AggBasis[7777].GetRestrictionMatrix(otherLevel).Transpose(); // prolongate from the other level to the full grid
-            var RestMtx = this.GetRestrictionMatrix(thisLevel);  //                         ... and restrict to this level            
-            var result = MsrMatrix.Multiply(RestMtx, PrlgMtx);
-#if DEBUG
-            {
-                var resultT = result.Transpose();
-                MsrMatrix ShoudBeId;
-                if(result.RowPartitioning.TotalLength < result.ColPartition.TotalLength)
-                    ShoudBeId = MsrMatrix.Multiply(result, resultT);
-                else
-                    ShoudBeId = MsrMatrix.Multiply(resultT, result);
-
-                ShoudBeId.AccEyeSp(-1.0);
-
-                double ShouldBeID_Norm = ShoudBeId.InfNorm();
-                Debug.Assert(ShouldBeID_Norm < 1.0e-8);
-                //Console.WriteLine("Id norm {0} ", ShouldBeID_Norm);
-            }
-#endif
-            return result;
-        }
-        */
-
+        
         public AggregationGrid AggGrid {
             get;
             private set;
@@ -378,12 +356,11 @@ namespace BoSSS.Solution.Multigrid {
         /// <summary>
         /// The projector in the L2 Norm, from the 
         /// space defined by the basis <see cref="DGBasis"/>, onto the 
-        /// the DG space on the aggregate grid.<br/>
-        /// array index: aggregate cell index; <br/>
-        /// For each <see cref="MultidimensionalArray"/>:<br/>
-        /// 1st index:  
-        /// 2nd index: 
-        /// 3rd index:
+        /// the DG space on the aggregate grid.
+        /// - array index: aggregate cell index; 
+        /// - 1st index:  
+        /// - 2nd index: 
+        /// - 3rd index:
         /// </summary>
         public MultidimensionalArray[] CompositeBasis;
 

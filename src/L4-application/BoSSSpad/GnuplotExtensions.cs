@@ -167,6 +167,7 @@ namespace BoSSS.Application.BoSSSpad {
             public void WriteMinimalCompileableExample(string MinimalExampleFilePath, string GraphicsFile = null, bool PerformLatexCompilation = true) {
                 string outDir = Path.GetDirectoryName(MinimalExampleFilePath);
                 string fileName = Path.GetFileNameWithoutExtension(MinimalExampleFilePath);
+                GraphicsFile = Path.GetFileName(GraphicsFile);
                 if(GraphicsFile.IsEmptyOrWhite())
                     GraphicsFile = "cairolatex.tex";
 
@@ -477,6 +478,19 @@ namespace BoSSS.Application.BoSSSpad {
                 } else {
                     return gp.PlotGIF();
                 }
+            }
+        }
+
+        /// <summary>
+        /// Gnuplot plotting (multiplot), automatic choice of gnuplot driver depending on
+        /// the current value of <see cref="UseCairoLatex"/>.
+        /// </summary>
+        public static object PlotNow(this CairolatexContainer cl) {
+
+            if (UseCairoLatex) {
+                return cl;
+            } else {
+                return cl.Preview();
             }
         }
 

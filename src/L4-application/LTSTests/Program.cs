@@ -28,7 +28,7 @@ using BoSSS.Foundation.Grid.RefElements;
 using System.Diagnostics;
 using System.Collections.Generic;
 
-namespace LTS_NUnit {
+namespace LTSTests {
     /// <summary>
     /// NUnit test project for the implementation of LTS:
     /// The scalar transport equation of the BoSSS Tutorial is used to test LTS.

@@ -1,0 +1,395 @@
+restart
+**************
+
+  Database Explorer v2
+  ____________________
+
+Databases loaded:
+List of 24 instances of IDatabaseInfo {
+  0: { Session Count = 0; Grid Count = 2; Path = p:\BoSSS_DBs\Kovasznay }
+  1: { Session Count = 1; Grid Count = 1; Path = p:\BoSSS_DBs\ChannelFlow }
+  2: { Session Count = 0; Grid Count = 0; Path = p:\BoSSS_DBs\RectangularCylinder }
+  3: { Session Count = 0; Grid Count = 0; Path = p:\BoSSS_DBs\Cylinder3D }
+  4: { Session Count = 6; Grid Count = 1; Path = p:\BoSSS_DBs\MPI_Test }
+  5: { Session Count = 0; Grid Count = 0; Path = p:\BoSSS_DBs\3DSolverPerformance }
+  6: { Session Count = 2; Grid Count = 2; Path = P:\BoSSS_DBs\nonIBM_cylinder }
+  7: { Session Count = 12; Grid Count = 1; Path = P:\BoSSS_DBs\osciCylinder }
+  8: { Session Count = 0; Grid Count = 0; Path = P:\BoSSS_DBs\osciCylinder_new }
+  9: { Session Count = 21; Grid Count = 25; Path = P:\BoSSS_DBs\ImmersedBoundary }
+  10: { Session Count = 8; Grid Count = 44; Path = P:\BoSSS_DBs\ParticleInShearFlow\ }
+  11: { Session Count = 16; Grid Count = 46; Path = P:\BoSSS_DBs\ParticleUnderGravity }
+  12: { Session Count = 8; Grid Count = 31; Path = P:\BoSSS_DBs\fixedCylinder }
+  13: { Session Count = 0; Grid Count = 0; Path = P:\BoSSS_DBs\Paper_OsciCylinder }
+  14: { Session Count = 43; Grid Count = 45; Path = P:\BoSSS_DBs\IBMPaper }
+  15: { Session Count = 28; Grid Count = 15; Path = P:\BoSSS_DBs\Paper_IBM2D }
+  16: { Session Count = 38; Grid Count = 22; Path = P:\BoSSS_DBs\Paper_CellAgglo01_Penalty4 }
+  17: { Session Count = 38; Grid Count = 31; Path = P:\BoSSS_DBs\Sphere3D }
+  18: { Session Count = 22; Grid Count = 10; Path = P:\BoSSS_DBs\Performance }
+  19: { Session Count = 24; Grid Count = 14; Path = P:\BoSSS_DBs\PaperRevision }
+  20: { Session Count = 0; Grid Count = 0; Path = P:\Lichtenberg_DB }
+  21: { Session Count = 2; Grid Count = 354; Path = P:\BoSSS_DBs\Bug }
+  22: { Session Count = 51; Grid Count = 96; Path = L:\BoSSS_DB\Lichtenberg_DB }
+  23: { Session Count = 510; Grid Count = 729; Path = Y:\fdy-publication-data\Thesis\2017\Degenhardt\performance_db }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+WorkflowMgm.Init("SphereSolverPerformance");
+**************
+Project name is set to 'SphereSolverPerformance'.
+
+==============
+using System.IO;
+using BoSSS.Application.SipPoisson;
+**************
+==============
+string dateString = "2018-2-15";
+string File       = "SolverRuns--" + dateString + ".json";
+string FilePath   = Path.Combine(CurrentDocDir, File);
+var SessTab       = TableExtensions.LoadFromFile(FilePath);
+**************
+==============
+//SessTab.Print();
+**************
+==============
+// ====================
+// Evaluation, plotting
+// ====================
+**************
+==============
+SessTab.GetColumnNames();
+**************
+List of 65 instances of String {
+  0: SessionName
+  1: DGdegree:VelocityX
+  2: DGdegree:VelocityY
+  3: DGdegree:VelocityZ
+  4: DGdegree:Pressure
+  5: DGdegree:PhiDG
+  6: DGdegree:Phi
+  7: Bndtype:Velocity_inlet
+  8: Bndtype:Wall
+  9: Bndtype:Pressure_Outlet
+  10: GeneratedFromCode
+  11: ControlFileText_Index
+  12: dtFixed
+  13: NoOfMultigridLevels
+  14: AdvancedDiscretizationOptions.ContiSign
+  15: AdvancedDiscretizationOptions.RescaleConti
+  16: AdvancedDiscretizationOptions.LFFA
+  17: AdvancedDiscretizationOptions.LFFB
+  18: AdvancedDiscretizationOptions.PenaltySafety
+  19: AdvancedDiscretizationOptions.CellAgglomerationThreshold
+  20: MaxKrylovDim
+  21: MaxSolverIterations
+  22: MinSolverIterations
+  23: Solver_ConvergenceCriterion
+  24: VelocityBlockPrecondMode
+  25: LevelSetSmoothing
+  26: PhysicalParameters.IncludeConvection
+  27: PhysicalParameters.rho_A
+  28: PhysicalParameters.mu_A
+  29: PhysicalParameters.Material
+  30: particleRadius
+  31: MeshFactor
+  32: Timestepper_Scheme
+  33: FixedStreamwisePeriodicBC
+  34: Timestepper_Init
+  35: NonlinearSolve
+  36: LinearSolve
+  37: GridPartType
+  38: ProjectName
+  39: NoOfTimesteps
+  40: Endtime
+  41: saveperiod
+  42: dtMin
+  43: dtMax
+  44: CompMode
+  45: ImmediatePlotPeriod
+  46: SuperSampling
+  47: savetodb
+  48: logFileDirectory
+  49: Paramstudy_ContinueOnError
+  50: DynamicLoadBalancing_RedistributeAtStartup
+  51: DynamicLoadBalancing_Period
+  52: DynamicLoadBalancing_ImbalanceThreshold
+  53: AdaptiveMeshRefinement
+  54: CutCellQuadratureType
+  55: ContinueOnIoError
+  56: Grid:NoOfCells
+  57: Grid:hMax
+  58: Grid:hMin
+  59: UsedNoOfMultigridLevels
+  60: C_Drag
+  61: C_Lift
+  62: RegularTerminated
+  63: RunSolverOneStep_excl
+  64: MPIs
+}
+==============
+var SubTab_1 = SessTab.ExtractColumns("MPIs", "RunSolverOneStep_excl","LinearSolve","DGdegree:VelocityX");
+**************
+==============
+var SubTab_2 = SubTab_1.ExtractRows(delegate(int i, IDictionary<string,object> row) {
+    return (Convert.ToBoolean(row["RegularTerminated"]) == true)
+          && (Convert.ToInt32(row["Conv"]) != 0);
+    });
+**************
+Exception in the selection test of row 0: KeyNotFoundException, Message: Der angegebene Schlüssel war nicht im Wörterbuch angegeben..
+
+==============
+var SubTab = SubTab_2.ExtractColumns("DGdegree:T", "Grid:NoOfCells", "solver_name", "DOFs", "minSolRunT", "maxSolRunT", "NoIter");
+**************
+System.ArgumentException occurred: Column "DGdegree:T" does not exist.. Type 'LastError' for details.
+
+==============
+SubTab_1.Print();
+**************
+   MPIs RunSolverOneStep_excl LinearSolve DGdegree:VelocityX 
+0: 1    0.0110273             1           2                  
+==============
+**************
+==============
+var RuntimePlot = SubTab_1.ToPlot("MPIs", "RunSolverOneStep_excl", // column for x- and y
+                                  "LinearSolve", "DGdegree:VelocityX"); // column for group
+**************
+==============
+//SubTab.ToCSVFile("C:\\tmp\\table.csv");
+**************
+==============
+//RuntimePlot.dataGroups.Select(grp => grp.Name);
+**************
+==============
+/*
+RuntimePlot.LogX   = true;
+RuntimePlot.LogY   = true;
+RuntimePlot.Xlabel = "Degrees of freedom";
+RuntimePlot.Ylabel = "Runtime [sec]";
+RuntimePlot.Title  = "Solver performance -- 3D Poisson problem";
+ 
+RuntimePlot.ModPointType("name0", PointTypes.Circle); // Pardiso
+RuntimePlot.ModPointType("name1", PointTypes.UpperTriangle); // Mumps
+RuntimePlot.ModPointType("name2", PointTypes.Diamond); // CG
+RuntimePlot.ModPointType("name5", PointTypes.Box); // Schwarz
+RuntimePlot.ModPointType("name7", PointTypes.LowerTriangle); // LAPACK
+RuntimePlot.ModDashType("T2", DashTypes.Dashed); // poly. order 2
+RuntimePlot.ModDashType("T3", DashTypes.DotDashed); // poly. order 3
+RuntimePlot.ModDashType("T4", DashTypes.DotDotDashed); // poly. order 4
+RuntimePlot.ModDashType("T5", DashTypes.Solid); // poly. order 5
+RuntimePlot.ModDashType("T6", DashTypes.Dotted); // poly. order 6
+RuntimePlot.ModLineColor("T2", LineColors.Blue);
+RuntimePlot.ModLineColor("T3", LineColors.Red);
+RuntimePlot.ModLineColor("T4", LineColors.Magenta);
+RuntimePlot.ModLineColor("T5", LineColors.Orange);
+RuntimePlot.ModLineColor("T6", LineColors.Green);
+ 
+foreach(var xyGroup in RuntimePlot.dataGroups) {
+    xyGroup.Format.LineWidth = 2;
+    xyGroup.Format.PointSize = 1.0;
+}
+ 
+foreach(Plot2Ddata.XYvalues graph in RuntimePlot.dataGroups) {
+ 
+    string ret = "";
+    if(graph.Name.Contains("name0")) {
+        ret += "Pardiso, ";
+    } else if(graph.Name.Contains("name1")) {
+        ret += "Mumps, ";
+    } else if(graph.Name.Contains("name2")) {
+        //Console.WriteLine("cg");
+        ret += "Cnj Gr, ";
+    } else if(graph.Name.Contains("name5")) {
+        ret += "Add Swz, ";
+    } else if(graph.Name.Contains("name7")) {
+        //Console.WriteLine("lapack");
+        ret += "LAPACK, ";
+    } 
+    if(graph.Name.Contains("T2")) {
+        ret += "$ k = 2 $";
+    } else if(graph.Name.Contains("T3")) {
+        ret += "$ k = 3 $";
+    } else if(graph.Name.Contains("T4")) {
+        ret += "$ k = 4 $";
+    } else if(graph.Name.Contains("T5")) {
+        ret += "$ k = 5 $";
+    } else if(graph.Name.Contains("T6")) {
+        ret += "$ k = 6 $";
+    }
+ 
+    graph.Name = ret;
+}
+*/
+**************
+Incomplete statement - missing closing parentheses?.
+
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+RuntimePlot.PlotNow();
+**************
+Using gnuplot: C:\Users\krause\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+Gnuplot Error: Warning: empty x range [1:1], adjusting to [0.99:1.01]
+Warning: empty y range [0.0110273:0.0110273], adjusting to [0.010917:0.0111376]
+
+System.Drawing.Bitmap
+==============
+//var cl = RuntimePlot.ToGnuplot().PlotCairolatex();
+//cl.Preview(trimPage:true);
+**************
+==============
+//cl.WriteMinimalCompileableExample("C:\\tmp\\mini.tex");
+**************
+==============
+**************
+==============
+Plot2Ddata[,] multiplots = new Plot2Ddata[3,2];
+int pDegree = 2;
+for(int iRow = 0; iRow < 3; iRow++) {
+//var RuntimePlot = SubTab.ToPlot("DOFs", "minSolRunT", // column for x- and y
+//                        "solver_name", "DGdegree:T"); // column for group
+for(int iCol = 0; iCol < 2; iCol++) {
+    if(pDegree > 6)
+        continue;
+ 
+    multiplots[iRow,iCol] = SubTab.ToPlot("DOFs", "minSolRunT", // column for x- and y
+       delegate (int iTabRow, 
+                 IDictionary<string, object> Row, 
+                 out string Nmn, 
+                 out PlotFormat Fmt) { 
+           // - - - - - - - - - - - - - - - - - - - - - - - - 
+           // PlotRowSelector:
+           // selects, which table row goes to which graph,
+           // and the respective color  
+           // - - - - - - - - - - - - - - - - - - - - - - - - 
+           int k = Convert.ToInt32(Row["DGdegree:T"]);
+           if(k != pDegree) {
+                // degree does not match -> not in this plot
+                Nmn = null;
+                Fmt = null;
+                return;
+           }
+ 
+           SolverCodes solver_name = (SolverCodes) Convert.ToInt32(Row["solver_name"]);
+           Fmt                     = new PlotFormat();
+           switch(solver_name) {
+           case SolverCodes.classic_pardiso: 
+               Nmn           = "Pardiso"; 
+               Fmt.PointType = PointTypes.OpenCircle;
+               Fmt.DashType  = DashTypes.Dotted;
+               break;
+           case SolverCodes.classic_mumps: 
+               Nmn           = "Mumps"; 
+               Fmt.PointType = PointTypes.OpenUpperTriangle;
+               Fmt.DashType  = DashTypes.Dotted;
+               break;
+           case SolverCodes.classic_cg: 
+               Nmn           = "CG"; 
+               Fmt.PointType = PointTypes.Asterisk;
+               break;
+           case SolverCodes.exp_direct: 
+               Fmt.PointType = PointTypes.OpenBox;
+               Nmn           = "Pardiso w Blk PC"; 
+               break;
+           case SolverCodes.exp_softpcg_schwarz: 
+               Nmn           = "Add Swz"; 
+               Fmt.PointType = PointTypes.LowerTriangle;
+               break;
+           case SolverCodes.exp_softpcg_schwarz_directcoarse : 
+               Nmn           = "Add Swz w Coarse";
+               Fmt.PointType = PointTypes.UpperTriangle;
+               break;
+           case SolverCodes.exp_direct_lapack: 
+               Nmn           = "LAPACK"; 
+               Fmt.PointType = PointTypes.Plus;
+               break;
+           default:
+               Console.WriteLine("unknown: " + solver_name); 
+               Nmn = "unknown"; 
+               break;
+           } 
+           //Console.WriteLine("name is: " + solver_name); 
+           Fmt.PointSize = 0.5;
+           Fmt.Style     = Styles.LinesPoints;
+           Fmt.LineColor = LineColors.Black;
+       });
+ 
+    string Title = string.Format("$k = {0}$", pDegree);
+    multiplots[iRow,iCol].Ylabel = Title;
+    multiplots[iRow,iCol].LogX = true;
+    multiplots[iRow,iCol].LogY = true;
+ 
+    multiplots[iRow,iCol].YrangeMin = 1e-3;
+    multiplots[iRow,iCol].YrangeMax = 1e+4;
+    multiplots[iRow,iCol].XrangeMin = 1e2;
+    multiplots[iRow,iCol].XrangeMax = 1e7;
+    multiplots[iRow,iCol].Y2rangeMin = 1e-3;
+    multiplots[iRow,iCol].Y2rangeMax = 1e+4;
+    multiplots[iRow,iCol].X2rangeMin = 1e2;
+    multiplots[iRow,iCol].X2rangeMax = 1e7;
+ 
+    if(iRow == 2) {
+        multiplots[iRow,iCol].ShowLegend = true;
+        multiplots[iRow,iCol].LegendPosition = new double[] {1e12,1e4};
+    } else {
+        multiplots[iRow,iCol].ShowLegend = false;
+    }
+ 
+    if(iCol == 1) {
+        multiplots[iRow,iCol].SwapYaxes();
+        multiplots[iRow,iCol].lmargin = 1;
+        multiplots[iRow,iCol].rmargin = 10;
+    } else {
+        multiplots[iRow,iCol].lmargin = 10;
+        multiplots[iRow,iCol].rmargin = 1;
+    }
+    multiplots[iRow,iCol].tmargin = 1;
+    multiplots[iRow,iCol].bmargin = 1;
+    if(iRow == 0) {
+        multiplots[iRow,iCol].SwapXaxes();
+    }
+    if(iRow == 1 && iCol == 0) {  
+        multiplots[iRow,iCol].ShowXtics = false;
+    }
+    pDegree++;
+}                        
+}
+//multiplots.PlotNow();
+multiplots.AddDummyPlotsForLegend(2,0);
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+var CL = multiplots.ToGnuplot().PlotCairolatex(xSize:17, ySize:17);
+**************
+Using gnuplot: C:\Program Files (x86)\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+CL.SaveTo(Path.Combine(CurrentDocDir, "ConstCoeffPoissonScaling.tex"));
+**************
+==============
+CL.PlotNow();
+**************
+System.Drawing.Bitmap
+==============
+//CL.WriteMinimalCompileableExample("C:\\tmp\\AllSolvers" + dateString + ".tex");
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

@@ -56,10 +56,15 @@ namespace BoSSS.Solution.Multigrid {
             /// - content: local cell indices which form the respective additive-Schwarz block (<see cref="MultigridOperator."/>
             /// </returns>
             abstract internal IEnumerable<List<int>> GetBlocking(MultigridOperator op);
+
+            /// <summary>
+            /// Number of blocs returned by <see cref="GetBlocking(MultigridOperator)"/>
+            /// </summary>
+            internal abstract int GetNoOfBlocks(MultigridOperator op);
         }
 
         /// <summary>
-        /// Additive-Schwarz blocks which are fromed from coarser multigrid-levels.
+        /// Additive-Schwarz blocks which are formed from coarser multigrid-levels.
         /// </summary>
         public class MultigridBlocks : BlockingStrategy {
 
@@ -130,6 +135,15 @@ namespace BoSSS.Solution.Multigrid {
                 return Blocks;
             }
 
+            /// <summary>
+            /// %
+            /// </summary>
+            internal override int GetNoOfBlocks(MultigridOperator op) {
+                return GetBlocking(op).Count();
+            }
+
+
+
             void CollectBlock(List<int> output, List<AggregationGrid> blockLevelS, int RecDepth, int[] CoarseCell) {
 
                 if (RecDepth == blockLevelS.Count - 2) {
@@ -159,7 +173,7 @@ namespace BoSSS.Solution.Multigrid {
             /// <summary>
             /// Number of parts/additive Schwarz blocks on current MPI process.
             /// </summary>
-            public int NoOfParts = 4;
+            public int NoOfPartsPerProcess = 4;
 
             internal override IEnumerable<List<int>> GetBlocking(MultigridOperator op) {
                 var MgMap = op.Mapping;
@@ -195,7 +209,7 @@ namespace BoSSS.Solution.Multigrid {
 
                 int[] part = new int[JComp];
                 {
-                    if (NoOfParts > 1) {
+                    if (NoOfPartsPerProcess > 1) {
                         int ncon = 1;
                         int edgecut = 0;
                         int[] options = null; //new int[] { 0, 0, 0, 0, 0 };
@@ -206,7 +220,7 @@ namespace BoSSS.Solution.Multigrid {
                             null,
                             null,
                             null,
-                            ref NoOfParts,
+                            ref NoOfPartsPerProcess,
                             null,
                             null,
                             options,
@@ -218,7 +232,7 @@ namespace BoSSS.Solution.Multigrid {
                 }
 
                 {
-                    var _Blocks = NoOfParts.ForLoop(i => new List<int>((int)Math.Ceiling(1.1 * JComp / NoOfParts)));
+                    var _Blocks = NoOfPartsPerProcess.ForLoop(i => new List<int>((int)Math.Ceiling(1.1 * JComp / NoOfPartsPerProcess)));
                     for (int j = 0; j < JComp; j++) {
                         _Blocks[part[j]].Add(j);
 
@@ -226,6 +240,14 @@ namespace BoSSS.Solution.Multigrid {
 
                     return _Blocks;
                 }
+            }
+
+
+            /// <summary>
+            /// %
+            /// </summary>
+            internal override int GetNoOfBlocks(MultigridOperator op) {
+                return NoOfPartsPerProcess;
             }
         }
 
@@ -264,6 +286,34 @@ namespace BoSSS.Solution.Multigrid {
 
         public void Init(MultigridOperator op) {
             using (new FuncTrace()) {
+                if (m_MgOp != null) {
+                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    // someone is trying to re-use this solver: see if the settings permit that
+                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                    if (op.LevelIndex != m_MgOp.LevelIndex)
+                        throw new ArgumentException("Re-use on different level not possible.");
+                    if (!this.MtxFull._RowPartitioning.EqualsPartition(op.OperatorMatrix._RowPartitioning))
+                        throw new ArgumentException("Matrix has changed, unable to re-use");
+                    if (!this.MtxFull._ColPartitioning.EqualsPartition(op.OperatorMatrix._ColPartitioning))
+                        throw new ArgumentException("Matrix has changed, unable to re-use");
+#if DEBUG
+                    if (!object.ReferenceEquals(this.MtxFull, op.OperatorMatrix)) {
+                        BlockMsrMatrix Check = this.MtxFull.CloneAs();
+                        Check.Acc(-1.0, op.OperatorMatrix);
+                        if (Check.InfNorm() != 0.0) {
+                            throw new ArgumentException("Matrix has changed, unable to re-use");
+                        }
+                    }
+#endif
+                    if(this.m_BlockingStrategy.GetNoOfBlocks(op) != this.blockSolvers.Count()) {
+                        throw new ArgumentException("Blocking, unable to re-use");
+                    }
+
+
+                    return;
+                }
+
                 var Mop = op.OperatorMatrix;
                 var MgMap = op.Mapping;
                 this.m_MgOp = op;
@@ -594,15 +644,16 @@ namespace BoSSS.Solution.Multigrid {
                             ExternalRowsTemp.AccSubMatrixTo(1.0, Block, l1, targRows, bi, default(int[]), biE, extTargCols);
                         }
 #if DEBUG
-                        if (m_MatlabParalellizationCheck != null) {
+                        if (m_MatlabParalellizationCheck) {
                             Blocks.Add(Block);
                         }
 #endif
-                        //blockSolvers[iPart] = new PARDISOSolver() {
-                        //    CacheFactorization = true
-                        //};
+                        blockSolvers[iPart] = new PARDISOSolver() {
+                            CacheFactorization = true,
+                            UseDoublePrecision = false
+                        };
                         //blockSolvers[iPart] = new FullDirectSolver();
-                        blockSolvers[iPart] = new ilPSP.LinSolvers.MUMPS.MUMPSSolver(MPI: false);
+                        //blockSolvers[iPart] = new ilPSP.LinSolvers.MUMPS.MUMPSSolver(MPI: false);
                         blockSolvers[iPart].DefineMatrix(Block);
                     }
 
@@ -659,7 +710,7 @@ namespace BoSSS.Solution.Multigrid {
                 }
 
 
-                this.MtxFull = new ilPSP.LinSolvers.monkey.CPU.RefMatrix(Mop.ToMsrMatrix());
+                this.MtxFull = Mop;
 
                 if (CoarseSolver != null) {
                     CoarseSolver.Init(op.CoarserLevel);
@@ -825,7 +876,7 @@ namespace BoSSS.Solution.Multigrid {
         }
         */
 
-        ilPSP.LinSolvers.monkey.MatrixBase MtxFull;
+        BlockMsrMatrix MtxFull;
 
 
         ISparseSolver[] blockSolvers;
@@ -906,7 +957,7 @@ namespace BoSSS.Solution.Multigrid {
             where U : IList<double>
             where V : IList<double> //
         {
-            using (new FuncTrace()) {
+            using (var tr = new FuncTrace()) {
                 int NoParts = this.BlockIndices_Local.Length;
 
                 // --------
@@ -950,19 +1001,21 @@ namespace BoSSS.Solution.Multigrid {
                     if (IterationCallback != null)
                         IterationCallback(iIter, X.ToArray(), Res.CloneAs(), this.m_MgOp);
 
-                    if (CoarseSolver != null) {
-                        var XC = X.ToArray().CloneAs();
-                        double[] bc = new double[m_MgOp.CoarserLevel.Mapping.LocalLength];// = Res.CloneAs();
-                        m_MgOp.CoarserLevel.Restrict(Res.CloneAs(), bc);
-                        double[] xc = new double[bc.Length];
-                        CoarseSolver.Solve(xc, bc);
-                        //SingleFilter(xc);
-                        m_MgOp.CoarserLevel.Prolongate(1, XC, 1, xc);
-                        X.AccV(1.0, XC);
+                    using (new BlockTrace("coarse_solve_level" + this.m_MgOp.LevelIndex, tr)) {
+                        if (CoarseSolver != null) {
+                            var XC = X.ToArray().CloneAs();
+                            double[] bc = new double[m_MgOp.CoarserLevel.Mapping.LocalLength];// = Res.CloneAs();
+                            m_MgOp.CoarserLevel.Restrict(Res.CloneAs(), bc);
+                            double[] xc = new double[bc.Length];
+                            CoarseSolver.Solve(xc, bc);
+                            //SingleFilter(xc);
+                            m_MgOp.CoarserLevel.Prolongate(1, XC, 1, xc);
+                            X.AccV(1.0, XC);
 
-                        if (CoarseSolverIsMultiplicative) {
-                            Res.SetV(B);
-                            this.MtxFull.SpMV(-1.0, X, 1.0, Res);
+                            if (CoarseSolverIsMultiplicative) {
+                                Res.SetV(B);
+                                this.MtxFull.SpMV(-1.0, X, 1.0, Res);
+                            }
                         }
                     }
 
@@ -971,28 +1024,30 @@ namespace BoSSS.Solution.Multigrid {
                         ResExchange.TransceiveFinish(0.0);
                     }
 
-                    for (int iPart = 0; iPart < NoParts; iPart++) {
-                        int[] ci = BlockIndices_Local[iPart];
-                        int[] ciE = BlockIndices_External[iPart];
-                        int L = ci.Length;
-                        if (ciE != null)
-                            L += ciE.Length;
+                    using (new BlockTrace("block_solve_level" + this.m_MgOp.LevelIndex, tr)) {
+                        for (int iPart = 0; iPart < NoParts; iPart++) {
+                            int[] ci = BlockIndices_Local[iPart];
+                            int[] ciE = BlockIndices_External[iPart];
+                            int L = ci.Length;
+                            if (ciE != null)
+                                L += ciE.Length;
 
-                        double[] bi = new double[L];
-                        double[] xi = new double[L];
+                            double[] bi = new double[L];
+                            double[] xi = new double[L];
 
-                        // extract block part of residual
-                        bi.AccV(1.0, Res, default(int[]), ci);
-                        if (ciE != null && ciE.Length > 0)
-                            bi.AccV(1.0, ResExchange.Vector_Ext, default(int[]), ciE, acc_index_shift: ci.Length, b_index_shift: (-LocLength));
+                            // extract block part of residual
+                            bi.AccV(1.0, Res, default(int[]), ci);
+                            if (ciE != null && ciE.Length > 0)
+                                bi.AccV(1.0, ResExchange.Vector_Ext, default(int[]), ciE, acc_index_shift: ci.Length, b_index_shift: (-LocLength));
 
-                        blockSolvers[iPart].Solve(xi, bi);
-                        //SingleFilter(xi);
+                            blockSolvers[iPart].Solve(xi, bi);
+                            //SingleFilter(xi);
 
-                        // accumulate block solution 'xi' to global solution 'X'
-                        X.AccV(1.0, xi, ci, default(int[]));
-                        if (ciE != null && ciE.Length > 0)
-                            XExchange.Vector_Ext.AccV(1.0, xi, ciE, default(int[]), acc_index_shift: (-LocLength), b_index_shift: ci.Length);
+                            // accumulate block solution 'xi' to global solution 'X'
+                            X.AccV(1.0, xi, ci, default(int[]));
+                            if (ciE != null && ciE.Length > 0)
+                                XExchange.Vector_Ext.AccV(1.0, xi, ciE, default(int[]), acc_index_shift: (-LocLength), b_index_shift: ci.Length);
+                        }
                     }
 
                     if (Overlap > 0) {
