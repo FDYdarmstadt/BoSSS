@@ -1,20 +1,35 @@
 restart
 **************
+
   Database Explorer v2
   ____________________
 
 Databases loaded:
-List of 10 instances of IDatabaseInfo {
-  0: { Session Count = 19; Grid Count = 3; Path = \\dc1\userspace\stange\HiWi_database\OscillatingCylinder }
-  1: { Session Count = 84; Grid Count = 24; Path = \\dc1\userspace\stange\HiWi_database\ParticleUnderGravity }
-  2: { Session Count = 35; Grid Count = 11; Path = \\dc1\userspace\stange\HiWi_database\IBMPaper }
-  3: { Session Count = 5; Grid Count = 10; Path = z:\Stange\HiWi\database }
-  4: { Session Count = 11; Grid Count = 11; Path = \\dc1\userspace\stange\HiWi_database\tests }
-  5: { Session Count = 376; Grid Count = 17; Path = \\dc1\userspace\stange\HiWi_database\PerformanceTests }
-  6: { Session Count = 9; Grid Count = 1; Path = P:\lichtenberg_db }
-  7: { Session Count = 10; Grid Count = 9; Path = P:\test_db }
-  8: { Session Count = 30; Grid Count = 11; Path = W:\work_db }
-  9: { Session Count = 114; Grid Count = 131; Path = Z:\Stange\HiWi\performance_db }
+List of 24 instances of IDatabaseInfo {
+  0: { Session Count = 0; Grid Count = 2; Path = p:\BoSSS_DBs\Kovasznay }
+  1: { Session Count = 1; Grid Count = 1; Path = p:\BoSSS_DBs\ChannelFlow }
+  2: { Session Count = 0; Grid Count = 0; Path = p:\BoSSS_DBs\RectangularCylinder }
+  3: { Session Count = 0; Grid Count = 0; Path = p:\BoSSS_DBs\Cylinder3D }
+  4: { Session Count = 6; Grid Count = 1; Path = p:\BoSSS_DBs\MPI_Test }
+  5: { Session Count = 0; Grid Count = 0; Path = p:\BoSSS_DBs\3DSolverPerformance }
+  6: { Session Count = 2; Grid Count = 2; Path = P:\BoSSS_DBs\nonIBM_cylinder }
+  7: { Session Count = 12; Grid Count = 1; Path = P:\BoSSS_DBs\osciCylinder }
+  8: { Session Count = 0; Grid Count = 0; Path = P:\BoSSS_DBs\osciCylinder_new }
+  9: { Session Count = 21; Grid Count = 25; Path = P:\BoSSS_DBs\ImmersedBoundary }
+  10: { Session Count = 8; Grid Count = 44; Path = P:\BoSSS_DBs\ParticleInShearFlow\ }
+  11: { Session Count = 16; Grid Count = 46; Path = P:\BoSSS_DBs\ParticleUnderGravity }
+  12: { Session Count = 8; Grid Count = 31; Path = P:\BoSSS_DBs\fixedCylinder }
+  13: { Session Count = 0; Grid Count = 0; Path = P:\BoSSS_DBs\Paper_OsciCylinder }
+  14: { Session Count = 43; Grid Count = 45; Path = P:\BoSSS_DBs\IBMPaper }
+  15: { Session Count = 28; Grid Count = 15; Path = P:\BoSSS_DBs\Paper_IBM2D }
+  16: { Session Count = 38; Grid Count = 22; Path = P:\BoSSS_DBs\Paper_CellAgglo01_Penalty4 }
+  17: { Session Count = 38; Grid Count = 31; Path = P:\BoSSS_DBs\Sphere3D }
+  18: { Session Count = 22; Grid Count = 10; Path = P:\BoSSS_DBs\Performance }
+  19: { Session Count = 24; Grid Count = 14; Path = P:\BoSSS_DBs\PaperRevision }
+  20: { Session Count = 0; Grid Count = 0; Path = P:\Lichtenberg_DB }
+  21: { Session Count = 2; Grid Count = 354; Path = P:\BoSSS_DBs\Bug }
+  22: { Session Count = 53; Grid Count = 96; Path = L:\BoSSS_DB\Lichtenberg_DB }
+  23: { Session Count = 510; Grid Count = 729; Path = Y:\fdy-publication-data\Thesis\2017\Degenhardt\performance_db }
 }
 
  Console ready for input. Type 'help' for help.
@@ -33,9 +48,10 @@ WorkflowMgm.Init("MPISolverPerformance");
 Project name is set to 'MPISolverPerformance'.
 
 ==============
-var WinTempDB = OpenOrCreateDatabase(@"L:\SLURM\temp_db");
+//var WinTempDB = OpenOrCreateDatabase(@"L:\SLURM\temp_db");
+var LinuxTempDB = OpenOrCreateDatabase(@"L:\BoSSS_DB\Lichtenberg_DB");
 **************
-Opening existing database 'W:\performance_db'.
+Opening existing database 'L:\BoSSS_DB\Lichtenberg_DB'.
 
 ==============
 //Console.WriteLine("Please type in your Username");
@@ -44,9 +60,10 @@ Opening existing database 'W:\performance_db'.
 ==============
 var myBatch = new SlurmClient(@"L:\SLURM","lcluster2.hrz.tu-darmstadt.de","oe11okuz");
 **************
+
 Please enter your password...
-************
-Connecting to lcluster4.hrz.tu-darmstadt.de...
+*************
+Connecting to lcluster2.hrz.tu-darmstadt.de...
 
 
 ==============
@@ -70,14 +87,14 @@ static class Utils {
 **************
 ==============
 LinearSolverCodes[] linSolvers = new LinearSolverCodes[] {
-    LinearSolverCodes.exp_schwarz_directcoarse,
-    LinearSolverCodes.exp_schwarz_Kcycle_directcoarse,
+    //LinearSolverCodes.exp_schwarz_directcoarse,
+    //LinearSolverCodes.exp_schwarz_Kcycle_directcoarse,
     LinearSolverCodes.exp_schwarz_directcoarse_overlap,
     LinearSolverCodes.exp_schwarz_Kcycle_directcoarse_overlap,
 };
 int[] ks = new int[] {2,3};
 int cells_x  = 64;
-int cells_yz = 32;
+int cells_yz = 16;
 int re       = 100; 
 int saveToDB = 1;
 int[] procs    = new int[] {8,16,32,64};
@@ -133,10 +150,10 @@ grd.DefineEdgeTags(delegate (double[] _X) {
                         
                         return ret;
                 });
-WinTempDB.SaveGrid(ref grd);
+LinuxTempDB.SaveGrid(ref grd);
 **************
 An equivalent grid is already present in the database -- the grid will not be saved.
-78a831dd-e43d-4f65-8ffc-ebc26acc7767
+38d8f0c8-fb97-46f1-9132-5e0ddad05b90
 ==============
 **************
 ==============
@@ -176,7 +193,7 @@ controls.Add(C);
 
 C.savetodb                    = true;
 //C.DbPath                      = "P:\\tmp\\temp_db";
-C.DbPath                      = @"/home/oe11okuz/SLURM/temp_db";
+C.DbPath                      = @"/home/oe11okuz/BoSSS_DB/Lichtenberg_DB";
 C.DynamicLoadBalancing_Period = 1;
 
 // Assign correct names
@@ -186,7 +203,7 @@ C.SessionName = "Sphere_Flow_"+linSolverName;
 C.saveperiod  = 1;
 C.ProjectName = "3DChannel";
 C.Tags.Add("Prec param study");
-C.SetDGdegree(2);
+C.SetDGdegree(2,3);
 C.SetGrid(grd);
            
 
@@ -251,9 +268,12 @@ C.InitialValues.Add("Phi", GetFormulaObject(InitialValues.Phi));
         C.dtMin               = 1E20;
         C.Endtime             = 10000000;
         C.NoOfTimesteps       = 1;
-        C.NoOfMultigridLevels = 4;
+        C.NoOfMultigridLevels = 2;
         }
 **************
+(15,47): error CS1010: Newline in constant
+No. of errors|warnings: 1|0.
+
 ==============
 LastError
 **************
@@ -268,112 +288,9 @@ foreach(var ctrl in controls) {
 foreach(int proc in procs){
     ctrl.SessionName = tmpName+"_Proc"+proc;
     Console.WriteLine(" Submitting: " + ctrl.SessionName);
-    ctrl.RunBatch(myBatch,NumberOfMPIProcs:proc,UseComputeNodesExclusive:false,executionTime:"12:00:00");  
+    ctrl.RunBatch(myBatch,NumberOfMPIProcs:proc,UseComputeNodesExclusive:false,executionTime:"18:00:00");  
 }}
 **************
- Submitting: Sphere_Flow_exp_schwarz_directcoarse_Proc8
-Loading session ce999914-bdcf-48b3-9cc5-0039bc358444 failed with message 'Could not find file 'Z:\Stange\HiWi\performance_db\sessions\ce999914-bdcf-48b3-9cc5-0039bc358444\Session.info'.'
-Loading session 2b44b571-310d-451d-96ca-fe8441107965 failed with message 'Could not find file 'W:\performance_db\sessions\2b44b571-310d-451d-96ca-fe8441107965\Session.info'.'
-Job is failed, retrying (Submitted 0 times so far); performing new deployment and submission.
-Deploying executables and additional files ...
-Deployment directory: L:\SLURM\IBM_Solver2018Feb21_15-40-34
-Source directory: C:\BoSSS_Code\root\public\src\L4-application\BoSSSpad\bin\Release
-   copied: IBM_Solver.exe BoSSS.Solution.XdgTimestepping.dll BoSSS.Foundation.XDG.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll Renci.SshNet.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll MathNet.Numerics.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.dll CommandLine.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
-deployment finished.
-
-/home/ws35kire/.bashrc: line 17: bind: warning: line editing not enabled
-/home/ws35kire/.bashrc: line 18: bind: warning: line editing not enabled
-Modules: loading acml/5.3.1
-Modules: loading gcc/4.9.4
-Modules: loading intel/2016u4
-Modules: loading openmpi/intel/1.10.7/2018
-dos2unix: converting file /home/ws35kire/SLURM/IBM_Solver2018Feb21_15-40-34/batch.sh to Unix format ...
-
-Submitted batch job 6029742
-[1;37m[I][0m Selected project: project00464
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: Sphere_Flow_exp_schwarz_Kcycle_directcoarse_Proc8
-Job is failed, retrying (Submitted 0 times so far); performing new deployment and submission.
-Deploying executables and additional files ...
-Deployment directory: L:\SLURM\IBM_Solver2018Feb21_15-41-22
-Source directory: C:\BoSSS_Code\root\public\src\L4-application\BoSSSpad\bin\Release
-   copied: IBM_Solver.exe BoSSS.Solution.XdgTimestepping.dll BoSSS.Foundation.XDG.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll Renci.SshNet.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll MathNet.Numerics.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.dll CommandLine.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
-deployment finished.
-
-/home/ws35kire/.bashrc: line 17: bind: warning: line editing not enabled
-/home/ws35kire/.bashrc: line 18: bind: warning: line editing not enabled
-Modules: loading acml/5.3.1
-Modules: loading gcc/4.9.4
-Modules: loading intel/2016u4
-Modules: loading openmpi/intel/1.10.7/2018
-dos2unix: converting file /home/ws35kire/SLURM/IBM_Solver2018Feb21_15-41-22/batch.sh to Unix format ...
-
-Submitted batch job 6029743
-[1;37m[I][0m Selected project: project00464
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: Sphere_Flow_exp_schwarz_directcoarse_overlap_Proc8
-Job is failed, retrying (Submitted 0 times so far); performing new deployment and submission.
-Deploying executables and additional files ...
-Deployment directory: L:\SLURM\IBM_Solver2018Feb21_15-42-10
-Source directory: C:\BoSSS_Code\root\public\src\L4-application\BoSSSpad\bin\Release
-   copied: IBM_Solver.exe BoSSS.Solution.XdgTimestepping.dll BoSSS.Foundation.XDG.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll Renci.SshNet.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll MathNet.Numerics.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.dll CommandLine.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
-deployment finished.
-
-/home/ws35kire/.bashrc: line 17: bind: warning: line editing not enabled
-/home/ws35kire/.bashrc: line 18: bind: warning: line editing not enabled
-Modules: loading acml/5.3.1
-Modules: loading gcc/4.9.4
-Modules: loading intel/2016u4
-Modules: loading openmpi/intel/1.10.7/2018
-dos2unix: converting file /home/ws35kire/SLURM/IBM_Solver2018Feb21_15-42-10/batch.sh to Unix format ...
-
-Submitted batch job 6029744
-[1;37m[I][0m Selected project: project00464
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: Sphere_Flow_exp_schwarz_Kcycle_directcoarse_overlap_Proc8
-Job is failed, retrying (Submitted 0 times so far); performing new deployment and submission.
-Deploying executables and additional files ...
-Deployment directory: L:\SLURM\IBM_Solver2018Feb21_15-42-56
-Source directory: C:\BoSSS_Code\root\public\src\L4-application\BoSSSpad\bin\Release
-   copied: IBM_Solver.exe BoSSS.Solution.XdgTimestepping.dll BoSSS.Foundation.XDG.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll Renci.SshNet.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll MathNet.Numerics.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.dll CommandLine.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
-deployment finished.
-
-/home/ws35kire/.bashrc: line 17: bind: warning: line editing not enabled
-/home/ws35kire/.bashrc: line 18: bind: warning: line editing not enabled
-Modules: loading acml/5.3.1
-Modules: loading gcc/4.9.4
-Modules: loading intel/2016u4
-Modules: loading openmpi/intel/1.10.7/2018
-dos2unix: converting file /home/ws35kire/SLURM/IBM_Solver2018Feb21_15-42-56/batch.sh to Unix format ...
-
-Submitted batch job 6029746
-[1;37m[I][0m Selected project: project00464
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
- Submitting: Sphere_Flow_classic_pardiso_Proc8
-Job is failed, retrying (Submitted 0 times so far); performing new deployment and submission.
-Deploying executables and additional files ...
-Deployment directory: L:\SLURM\IBM_Solver2018Feb21_15-43-42
-Source directory: C:\BoSSS_Code\root\public\src\L4-application\BoSSSpad\bin\Release
-   copied: IBM_Solver.exe BoSSS.Solution.XdgTimestepping.dll BoSSS.Foundation.XDG.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll Renci.SshNet.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll MathNet.Numerics.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.dll CommandLine.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
-deployment finished.
-
-/home/ws35kire/.bashrc: line 17: bind: warning: line editing not enabled
-/home/ws35kire/.bashrc: line 18: bind: warning: line editing not enabled
-Modules: loading acml/5.3.1
-Modules: loading gcc/4.9.4
-Modules: loading intel/2016u4
-Modules: loading openmpi/intel/1.10.7/2018
-dos2unix: converting file /home/ws35kire/SLURM/IBM_Solver2018Feb21_15-43-42/batch.sh to Unix format ...
-
-Submitted batch job 6029748
-[1;37m[I][0m Selected project: project00464
-[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
-
-
 ==============
 **************
 ==============
@@ -521,6 +438,26 @@ string docpath    = Path.Combine(CurrentDocDir, SessTab.TableName + ".json");
 // save session table as file: this can be stored in our git 
 // repository
 SessTab.SaveToFile(docpath);
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************
