@@ -1749,10 +1749,15 @@ namespace BoSSS.Foundation.Grid.Classic {
                 var Kref = grid.RefElements.Single(KK => KK.GetType() == typeof(Square));
                 NodeSet InterpolationNodes = Kref.GetInterpolationNodes(CellType.Square_Linear);
                 int NoOfNodes = InterpolationNodes.NoOfNodes;
-                
+
 
                 double[] rNodes = GenericBlas.Linspace(rmin, rmax, NoOfRnodes);
-                
+
+                //double[] rNodes = new double[NoOfRnodes];
+                //double[] rNodesFunc = GenericBlas.Linspace(0, Math.PI / 2.0, NoOfRnodes);
+                //for (int i=0; i<NoOfRnodes; i++) {
+                //    rNodes[i] = Math.Sin(rNodesFunc[i]);
+                //}
 
                 // Allocate GlobalID's (umschreiben)
                 long[][] CellGid = new long[NoOfRnodes - 1][];
