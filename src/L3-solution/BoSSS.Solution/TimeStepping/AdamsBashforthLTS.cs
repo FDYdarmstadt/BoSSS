@@ -105,7 +105,12 @@ namespace BoSSS.Solution.Timestepping {
             protected set;
         }
 
-        protected bool reclustered;
+        private bool reclusteredByGridRedist = false;
+
+        public void SetReclusteredByGridRedist (bool result) {
+            this.reclusteredByGridRedist = result;
+        }
+
 
         //################# Hack for saving to database in every (A)LTS sub-step
         private Action<TimestepNumber, double> saveToDBCallback;
@@ -187,7 +192,9 @@ namespace BoSSS.Solution.Timestepping {
 
                 if (ABevolver[0].HistoryChangeRate.Count >= order - 1) {
 
-                    TryNewClustering(dt);
+                    if (!reclusteredByGridRedist) {
+                        TryNewClustering(dt);
+                    }
 
                     List<int> numberOfLocalTimeSteps = new List<int>();
                     double[] clusterDts = new double[CurrentClustering.NumberOfClusters];
@@ -815,9 +822,10 @@ namespace BoSSS.Solution.Timestepping {
             }
         }
 
-        public void TryNewClustering(double dt) {
+        public bool TryNewClustering(double dt) {
+            bool reclustered = false;
+
             if (ABevolver[0].HistoryChangeRate.Count >= order - 1) {
-                this.reclustered = false;
                 if (adaptive) {
                     if (timestepNumber % reclusteringInterval == 0) {
                         // Fix for update problem of artificial viscosity
@@ -829,14 +837,14 @@ namespace BoSSS.Solution.Timestepping {
                         // Otherwise the value could be changed by the constructor of the parent class (AdamsBashforthLTS.cs) --> CreateSubGrids()
                         Clusterer.Clustering newClustering = clusterer.CreateClustering(numberOfClustersInitial, this.TimeStepConstraints, this.SubGrid);
                         newClustering = clusterer.TuneClustering(newClustering, Time, this.TimeStepConstraints); // Might remove sub-grids when their time step sizes are too similar
-                        this.reclustered = clusterer.CheckForNewClustering(CurrentClustering, newClustering);
+                        reclustered = clusterer.CheckForNewClustering(CurrentClustering, newClustering);
 
                         // After the intitial phase, activate adaptive mode for all ABevolve objects
                         foreach (ABevolve abE in ABevolver) {
                             abE.adaptive = true;
                         }
 
-                        if (this.reclustered) {
+                        if (reclustered) {
 #if DEBUG
                                 Console.WriteLine("### RECLUSTERING ###");
 #endif
@@ -851,6 +859,8 @@ namespace BoSSS.Solution.Timestepping {
                     }
                 }
             }
+
+            return reclustered;
         }
     }
 }
