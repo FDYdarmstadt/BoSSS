@@ -1,6 +1,5 @@
 restart
 **************
-
   Database Explorer v2
   ____________________
 
@@ -60,7 +59,6 @@ Opening existing database 'L:\BoSSS_DB\Lichtenberg_DB'.
 ==============
 var myBatch = new SlurmClient(@"L:\SLURM","lcluster2.hrz.tu-darmstadt.de","oe11okuz");
 **************
-
 Please enter your password...
 *************
 Connecting to lcluster2.hrz.tu-darmstadt.de...
@@ -288,7 +286,7 @@ foreach(var ctrl in controls) {
 foreach(int proc in procs){
     ctrl.SessionName = tmpName+"_Proc"+proc;
     Console.WriteLine(" Submitting: " + ctrl.SessionName);
-    ctrl.RunBatch(myBatch,NumberOfMPIProcs:proc,UseComputeNodesExclusive:false,executionTime:"18:00:00");  
+    ctrl.RunBatch(myBatch,NumberOfMPIProcs:proc,UseComputeNodesExclusive:false,executionTime:"24:00:00");  
 }}
 **************
 ==============
@@ -438,6 +436,8 @@ string docpath    = Path.Combine(CurrentDocDir, SessTab.TableName + ".json");
 // save session table as file: this can be stored in our git 
 // repository
 SessTab.SaveToFile(docpath);
+**************
+==============
 **************
 ==============
 **************
