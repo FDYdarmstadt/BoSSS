@@ -126,8 +126,8 @@ namespace BoSSS.Solution {
                 return null;
             }
 
-            if (gridPartType != (GridPartType.ParMETIS | GridPartType.Hilbert) && cellCosts.Count > 1) {
-                throw new NotImplementedException("Multiple balance constraints only supported using ParMETIS for now");
+            if (gridPartType != GridPartType.ParMETIS && gridPartType != GridPartType.Hilbert && cellCosts.Count > 1) {
+                throw new NotImplementedException("Multiple balance constraints only supported using ParMETIS or Hilbert for now");
             }
 
             int[] result;
