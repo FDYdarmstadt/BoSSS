@@ -137,10 +137,7 @@ namespace BoSSS.Application.BoSSSpad {
             string convertCmd = " dos2unix " + path + "\\batch.sh";
 
             // Submitting script to sbatch system
-            string sbatchCmd = " sbatch " + path + "\\batch.sh";
-
-            // Otherwise it didn´t work
-            System.Threading.Thread.Sleep(10000);
+            string sbatchCmd = " sbatch " + path + "\\batch.sh";       
 
             // Convert from Windows to Unix and submit job
             Console.WriteLine();
@@ -149,7 +146,11 @@ namespace BoSSS.Application.BoSSSpad {
             var result2 = SSHConnection.RunCommand(sbatchCmd.Replace("\\", "/"));
             Console.WriteLine(result2.Result);
 
-            
+            // Otherwise it didn´t work because uploading speed at Lichtenberg is to slow
+
+            while (result2.Result == "") {
+                System.Threading.Thread.Sleep(10000);
+            }
 
             // Hardcoded extract of JobID
             myJob.EnvironmentVars.Add("JobID", result2.Result.Substring(20, 7));
