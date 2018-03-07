@@ -121,13 +121,13 @@ var SubTab_1 = SessTab.ExtractColumns("Processors","SlvIter_excl","SlvInit_excl"
 ==============
 SubTab_1.Print();
 **************
-   Processors SlvIter_excl SlvInit_excl LinearSolve DGdegree:VelocityX RegularTerminated SlvIter_speedup SlvInit_speedup 
-0: 4          0.0445547    0.0415388    5           1                  True              0.0106344       0.0087299       
-1: 2          0.0584902    0.0338874    5           1                  True              0.0245699       0.0010785       
-2: 1          0.0339203    0.0328089    5           1                  True              0               0               
-3: 4          0.1130421    0.0386554    3           1                  True              0.0766136       0.0083905       
-4: 2          0.0399982    0.0338559    3           1                  True              0.0035697       0.003591        
-5: 1          0.0364285    0.0302649    3           1                  True              0               0               
+   Processors SlvIter_excl SlvInit_excl LinearSolve DGdegree:VelocityX RegularTerminated 
+0: 4          0.0445547    0.0415388    5           1                  True              
+1: 2          0.0584902    0.0338874    5           1                  True              
+2: 1          0.0339203    0.0328089    5           1                  True              
+3: 4          0.1130421    0.0386554    3           1                  True              
+4: 2          0.0399982    0.0338559    3           1                  True              
+5: 1          0.0364285    0.0302649    3           1                  True              
 ==============
 // Calculation of speedup times 
 List<KeyValuePair<string, int>> procs = new List<KeyValuePair<string, int>>{};// ((int[])SubTab_1.GetColumn("Processors"));
@@ -146,12 +146,15 @@ for(int i = 0; i<slviter.Length; i++){
    // slviterSpeedup[i] = slviter[i]/procs[i];
    // slvinitSpeedup[i] = slvinit[i]/procs[i];    
 }
+int min;
+int max;
 for(int i = 0; i < slviter.Length; i++){
     List<KeyValuePair<string, int>> procsCut = procs.FindAll(s => s.Key == procs[i].Key);
-    var min = procsCut.Select(s => s.Value).Min();
+     min = procsCut.Select(s => s.Value).Min();
+     max = procsCut.Select(s => s.Value).Max();
     int idx = procs.FindIndex(s => (s.Value == min) && (s.Key == procs[i].Key));
-    slviterSpeedup[i] = (slviter[i]-slviter[idx])/procs.Pick(idx).Value;
-    slvinitSpeedup[i] = (slvinit[i]-slvinit[idx])/procs.Pick(idx).Value;
+    slviterSpeedup[i] = (slviter[idx]*procs.Pick(idx).Value)/slviter[i];
+    slvinitSpeedup[i] = (slvinit[idx]*procs.Pick(idx).Value)/slvinit[i];
     
 }    
 **************
@@ -209,30 +212,37 @@ static public void getFormat(int iTabRow,IDictionary<string, object> Row,
            case LinearSolverCodes.classic_pardiso: 
                Nmn           = "Pardiso"; 
                Fmt.PointType = PointTypes.Asterisk;
+               Fmt.DashType  = DashTypes.Dashed;
                break;
            case LinearSolverCodes.exp_schwarz_directcoarse: 
                Nmn           = "Swz w Coarse"; 
                Fmt.PointType = PointTypes.UpperTriangle;
+               Fmt.DashType  = DashTypes.DotDashed;
                break;
            case LinearSolverCodes.exp_schwarz_Kcycle_directcoarse_overlap: 
                Nmn           = "Swz Kcycle w Coarse Overlap"; 
                Fmt.PointType = PointTypes.Plus;
+               Fmt.DashType  = DashTypes.Dashed;
                break;
            case LinearSolverCodes.exp_schwarz_directcoarse_overlap: 
                Nmn           = "Swz w Coarse Overlap"; 
                Fmt.PointType = PointTypes.OpenBox;
+               Fmt.DashType  = DashTypes.Dotted;
                break;
            case LinearSolverCodes.exp_schwarz_Kcycle_directcoarse: 
                Nmn           = "Swz Kcycle w Coarse"; 
                Fmt.PointType = PointTypes.LowerTriangle;
+               Fmt.DashType  = DashTypes.DotDotDashed;
                break;
            case LinearSolverCodes.exp_softgmres: 
                Nmn           = "SoftGMRES"; 
-               Fmt.PointType = PointTypes.OpenBox;
+               Fmt.PointType = PointTypes.Box;
+               Fmt.DashType  = DashTypes.Dotted;
                break;
            case LinearSolverCodes.exp_softgmres_schwarz_directcoarse: 
                Nmn           = "SoftGMRES Swz w Coarse"; 
-               Fmt.PointType = PointTypes.LowerTriangle;
+               Fmt.PointType = PointTypes.OpenCircle;
+               Fmt.DashType  = DashTypes.Dashed;
                break;
            default:
                Console.WriteLine("unknown: " + solver_name); 
@@ -242,8 +252,8 @@ static public void getFormat(int iTabRow,IDictionary<string, object> Row,
            //Console.WriteLine("name is: " + solver_name); 
            Fmt.PointSize = 0.5;
            Fmt.Style     = Styles.LinesPoints;
-               Fmt.LineColor = ((LineColors)(solver_name));
-          // Fmt.LineColor = LineColors.Black;
+           Fmt.LineColor = LineColors.Black;
+           Fmt.LineWidth = 3;
        }
 }
 **************
@@ -262,6 +272,13 @@ plotSlvInit.Ylabel  = "Time [s]";
 plotSlvIter.Y2label = "SlvIter excl";
 plotSlvInit.Y2label = "SlvInit excl";
 
+
+plotSlvIter.LegendPosition = new double[] {max/2,max*1.3};
+plotSlvIter.XrangeMin = 1;
+plotSlvIter.XrangeMax = max;
+plotSlvInit.XrangeMin = 1;
+plotSlvInit.XrangeMax = max;
+
 plotSlvInit.ShowLegend     = false;
 plotSlvIter.LegendPosition = new double[] {2.5,0.1};
 
@@ -276,7 +293,6 @@ multiplots.PlotNow()
 Using gnuplot: C:\BoSSSinstall\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 System.Drawing.Bitmap
 ==============
-// ToDo: plot speedup columns
 var plotSlvIter = SubTab_1.ToPlot("Processors", "SlvIter_speedup", // column for x- and y
                                   Formats.getFormat); // column for group
 var plotSlvInit = SubTab_1.ToPlot("Processors", "SlvInit_speedup", // column for x- and y
@@ -292,13 +308,28 @@ plotSlvIter.Y2label = "SlvIter excl";
 plotSlvInit.Y2label = "SlvInit excl";
 
 plotSlvInit.ShowLegend     = false;
-plotSlvIter.LegendPosition = new double[] {2.5,0.1};
+plotSlvIter.LegendPosition = new double[] {max/2,max*1.3};
+plotSlvIter.XrangeMin      = 1;
+plotSlvIter.XrangeMax      = max;
+plotSlvInit.XrangeMin      = 1;
+plotSlvInit.XrangeMax      = max;
+
+//plotSlvInit.Cmd("set xtics 1");
 
 speedupsplots[0,0] = plotSlvIter;
 speedupsplots[1,0] = plotSlvInit;
 
+// Add ideal
+double[] dof = new[]{1.0,2.0,4.0,8.0,16.0,32.0,64.0,128.0};
+double[] linT = dof.Select(x => x).ToArray();
+var ideal = new Plot2Ddata.XYvalues("Ideal", dof, linT);
+ideal.Format.FromString("- black");
+ideal.Format.LineWidth = 3;
+ArrayTools.AddToArray(ideal, ref speedupsplots[0,0].dataGroups);
+ArrayTools.AddToArray(ideal, ref speedupsplots[1,0].dataGroups);
 
     speedupsplots[0,0].bmargin = 1;
+    speedupsplots[0,0].tmargin = 4;
     speedupsplots[1,0].tmargin = 1;
 speedupsplots.PlotNow()
 **************
@@ -329,6 +360,8 @@ System.ComponentModel.Win32Exception occurred: The system cannot find the file s
 
 ==============
 //CL.WriteMinimalCompileableExample("C:\\tmp\\AllSolvers" + dateString + ".tex");
+**************
+==============
 **************
 ==============
 **************
