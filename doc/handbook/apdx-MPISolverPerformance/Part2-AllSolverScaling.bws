@@ -212,30 +212,37 @@ static public void getFormat(int iTabRow,IDictionary<string, object> Row,
            case LinearSolverCodes.classic_pardiso: 
                Nmn           = "Pardiso"; 
                Fmt.PointType = PointTypes.Asterisk;
+               Fmt.DashType  = DashTypes.Dashed;
                break;
            case LinearSolverCodes.exp_schwarz_directcoarse: 
                Nmn           = "Swz w Coarse"; 
                Fmt.PointType = PointTypes.UpperTriangle;
+               Fmt.DashType  = DashTypes.DotDashed;
                break;
            case LinearSolverCodes.exp_schwarz_Kcycle_directcoarse_overlap: 
                Nmn           = "Swz Kcycle w Coarse Overlap"; 
                Fmt.PointType = PointTypes.Plus;
+               Fmt.DashType  = DashTypes.Dashed;
                break;
            case LinearSolverCodes.exp_schwarz_directcoarse_overlap: 
                Nmn           = "Swz w Coarse Overlap"; 
                Fmt.PointType = PointTypes.OpenBox;
+               Fmt.DashType  = DashTypes.Dotted;
                break;
            case LinearSolverCodes.exp_schwarz_Kcycle_directcoarse: 
                Nmn           = "Swz Kcycle w Coarse"; 
                Fmt.PointType = PointTypes.LowerTriangle;
+               Fmt.DashType  = DashTypes.DotDotDashed;
                break;
            case LinearSolverCodes.exp_softgmres: 
                Nmn           = "SoftGMRES"; 
                Fmt.PointType = PointTypes.Box;
+               Fmt.DashType  = DashTypes.Dotted;
                break;
            case LinearSolverCodes.exp_softgmres_schwarz_directcoarse: 
                Nmn           = "SoftGMRES Swz w Coarse"; 
                Fmt.PointType = PointTypes.OpenCircle;
+               Fmt.DashType  = DashTypes.Dashed;
                break;
            default:
                Console.WriteLine("unknown: " + solver_name); 
@@ -317,6 +324,7 @@ double[] dof = new[]{1.0,2.0,4.0,8.0,16.0,32.0,64.0,128.0};
 double[] linT = dof.Select(x => x).ToArray();
 var ideal = new Plot2Ddata.XYvalues("Ideal", dof, linT);
 ideal.Format.FromString("- black");
+ideal.Format.LineWidth = 3;
 ArrayTools.AddToArray(ideal, ref speedupsplots[0,0].dataGroups);
 ArrayTools.AddToArray(ideal, ref speedupsplots[1,0].dataGroups);
 
