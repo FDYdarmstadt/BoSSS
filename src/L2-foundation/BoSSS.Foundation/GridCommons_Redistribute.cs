@@ -823,7 +823,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             return partitioning;
         }*/
 
-        BoundingBox GetGridBoundingBox() {
+        private BoundingBox GetGridBoundingBox() {
             int D = this.SpatialDimension;
             var BB = new BoundingBox(D);
 
@@ -963,6 +963,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                     }
                 }
 
+                this.HilbertSortedRanks = RankIndex.CloneAs<int[]>();
+
                 //Extract Rank-Array for local Process
                 Array.Sort(CellIndex, RankIndex);
                 int[] local_Rank_RedistributionList = new int[JE - J0];
@@ -976,7 +978,11 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
         }
 
+        private int[] HilbertSortedRanks;
 
+        public int[] GetHilbertSortedRanks() {
+            return this.HilbertSortedRanks;
+        }
 
         private bool CheckPartitioning(Master cm, int[] nodesPart) {
 

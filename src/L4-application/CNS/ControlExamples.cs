@@ -987,7 +987,7 @@ namespace CNS {
 
             c.GridPartType = GridPartType.ParMETIS;
 
-            c.DbPath = @"c:\bosss_db\";
+            //c.DbPath = @"c:\bosss_db\";
             //c.DbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db\";
             c.savetodb = c.DbPath != null;
             c.saveperiod = 10;
@@ -1136,9 +1136,9 @@ namespace CNS {
             // Time config
             c.dtMin = 0.0;
             c.dtMax = 1.0;
-            c.CFLFraction = 0.1;
+            //c.CFLFraction = 0.1;
             c.Endtime = 0.25;
-            //c.dtFixed = 1e-6;
+            c.dtFixed = 1e-6;
             c.NoOfTimesteps = int.MaxValue;
 
             c.ProjectName = "Shock tube";
@@ -2233,7 +2233,7 @@ namespace CNS {
             return c;
         }
 
-        public static IBMControl IBMDoubleMachReflection(string dbPath = null, int dgDegree = 2, int numOfCellsX = 50, int numOfCellsY = 50, double sensorLimit = 1e-3) {
+        public static IBMControl IBMDoubleMachReflection(string dbPath = null, int dgDegree = 2, int numOfCellsX = 600, int numOfCellsY = 420, double sensorLimit = 1e-4) {
             IBMControl c = new IBMControl();
 
             //dbPath = @"c:\bosss_db";
@@ -2253,9 +2253,9 @@ namespace CNS {
             c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(IBMCellCostEstimator.GetMultiBalanceConstraintsBasedEstimators());
 
             double xMin = 0.0;
-            double xMax = 0.5;
+            double xMax = 4.0;
             double yMin = 0.0;
-            double yMax = 0.5;
+            double yMax = 2.8;
 
             // Start of the bottom wall, x = 1/6 = 0.166666, (Woodward and Colella 1984)
             // Practical choice: Should be on a cell boundary, because the boundary condition changes from
@@ -2423,13 +2423,13 @@ namespace CNS {
             // Time config
             c.dtMin = 0.0;
             c.dtMax = 1.0;
-            c.Endtime = 0.05;
+            c.Endtime = 0.2;
             //c.dtFixed = 1.0e-6;
             c.CFLFraction = 0.3;
-            c.NoOfTimesteps = 2;
+            c.NoOfTimesteps = int.MaxValue;
 
             c.ProjectName = "IBM double Mach reflection";
-            c.SessionName = String.Format("IBM DMR LOAD BAL, dgDegree = {0}, numOfCellsX = {1}, numOfCellsY = {2}, sensorLimit = {3:0.00E-00}, CFLFraction = {4:0.00E-00}, ALTS {5}/{6}, lamdaMax = {7}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, lambdaMax);
+            c.SessionName = String.Format("IBM DMR, dgDegree = {0}, numOfCellsX = {1}, numOfCellsY = {2}, sensorLimit = {3:0.00E-00}, CFLFraction = {4:0.00E-00}, ALTS {5}/{6}, lamdaMax = {7}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, lambdaMax);
 
             return c;
         }
@@ -3139,7 +3139,7 @@ namespace CNS {
             return c;
         }
 
-        public static CNSControl ShockTube_PredefinedGrid(string dbPath = null, int dgDegree = 0, int numOfCellsX = 3, int numOfCellsY = 3, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = true) {
+        public static CNSControl ShockTube_PredefinedGrid(string dbPath = null, int dgDegree = 0, int numOfCellsX = 4, int numOfCellsY = 4, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = true) {
 
             CNSControl c = new CNSControl();
 
@@ -3148,7 +3148,7 @@ namespace CNS {
             //dbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db\";
             c.DbPath = dbPath;
             c.savetodb = dbPath != null && saveToDb;
-            c.saveperiod = 1000;
+            c.saveperiod = 10000;
             c.PrintInterval = 1;
 
             // Add one balance constraint for each subgrid
@@ -3341,7 +3341,7 @@ namespace CNS {
             }
             return c;
         }
-        public static CNSControl ShockTube_HilbertTest(string SessionID = "8fa48051-a1aa-4864-97bc-620212ac166f", string GridID = "71e1c7c4-c3c8-404e-ac75-234fdba422c0", string dbPath = null, int dgDegree = 2, int numOfCellsX = 100, int numOfCellsY = 10, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = true) {
+        public static CNSControl ShockTube_HilbertTest(string SessionID = null, string GridID = null, string dbPath = null, int dgDegree = 0, int numOfCellsX = 5, int numOfCellsY = 4, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = true) {
 
             CNSControl c = new CNSControl();
             dbPath = @"D:\Weber\BoSSS\test_db";
@@ -3349,7 +3349,7 @@ namespace CNS {
             //dbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db\";
             c.DbPath = dbPath;
             c.savetodb = dbPath != null && saveToDb;
-            c.saveperiod = 10;
+            c.saveperiod = 1;
             c.PrintInterval = 1;
 
             //Debugger.Launch();
@@ -3357,10 +3357,10 @@ namespace CNS {
             c.GridPartType = GridPartType.Hilbert;
             //c.GridPartType = GridPartType.ParMETIS;
 
-            bool AV = true;
+            bool AV = false;
 
             double xMin = 0;
-            double xMax = 2;
+            double xMax = 1;
             double yMin = 0;
             double yMax = 1;
 
@@ -3368,17 +3368,17 @@ namespace CNS {
             c.ExplicitScheme = ExplicitSchemes.LTS;
             //c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 1;
-            c.NumberOfSubGrids = 3;
-            c.ReclusteringInterval = 10;
+            c.NumberOfSubGrids = 2;
+            c.ReclusteringInterval = 1;
             c.FluxCorrection = false;
 
             // Add one balance constraint for each subgrid
             c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(LTSCellCostEstimator.Factory(c.NumberOfSubGrids));
             c.DynamicLoadBalancing_ImbalanceThreshold = 0.1;
-            c.DynamicLoadBalancing_Period = 10;
+            c.DynamicLoadBalancing_Period = 1;
             c.DynamicLoadBalancing_CellClassifier = new LTSCellClassifier();
 
-            c.AddVariable(Variables.LTSClusters, 0);
+            //c.AddVariable(Variables.LTSClusters, 0);
 
             //c.DynamicLoadBalancing_CellCostEstimatorFactories.Add(ArtificialViscosityCellCostEstimator.GetStaticCostBasedEstimator());
             //////c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(ArtificialViscosityCellCostEstimator.GetMultiBalanceConstraintsBasedEstimators());

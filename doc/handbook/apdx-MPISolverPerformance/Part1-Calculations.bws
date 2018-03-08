@@ -27,7 +27,7 @@ List of 24 instances of IDatabaseInfo {
   19: { Session Count = 24; Grid Count = 14; Path = P:\BoSSS_DBs\PaperRevision }
   20: { Session Count = 0; Grid Count = 0; Path = P:\Lichtenberg_DB }
   21: { Session Count = 2; Grid Count = 354; Path = P:\BoSSS_DBs\Bug }
-  22: { Session Count = 51; Grid Count = 96; Path = L:\BoSSS_DB\Lichtenberg_DB }
+  22: { Session Count = 53; Grid Count = 96; Path = L:\BoSSS_DB\Lichtenberg_DB }
   23: { Session Count = 510; Grid Count = 729; Path = Y:\fdy-publication-data\Thesis\2017\Degenhardt\performance_db }
 }
 
@@ -47,22 +47,28 @@ WorkflowMgm.Init("MPISolverPerformance");
 Project name is set to 'MPISolverPerformance'.
 
 ==============
-var WinTempDB = OpenOrCreateDatabase("P:\\tmp\\temp_db");
+//var WinTempDB = OpenOrCreateDatabase(@"L:\SLURM\temp_db");
+var LinuxTempDB = OpenOrCreateDatabase(@"L:\BoSSS_DB\Lichtenberg_DB");
 **************
-Creating database 'L:\SLURM\temp_db'.
+Opening existing database 'L:\BoSSS_DB\Lichtenberg_DB'.
 
 ==============
 //Console.WriteLine("Please type in your Username");
 //var Username = Console.ReadLine();
 **************
 ==============
-//var myBatch = new SlurmClient(@"L:\SLURM","lcluster4.hrz.tu-darmstadt.de","oe11okuz");
+var myBatch = new SlurmClient(@"L:\SLURM","lcluster2.hrz.tu-darmstadt.de","oe11okuz");
+**************
+Please enter your password...
+*************
+Connecting to lcluster2.hrz.tu-darmstadt.de...
+
+
+==============
+//var myBatch = new MiniBatchProcessorClient(@"P:\tmp\");
 **************
 ==============
-var myBatch = new MiniBatchProcessorClient(@"P:\tmp\");
-**************
-==============
-MiniBatchProcessor.Server.StartIfNotRunning();
+//MiniBatchProcessor.Server.StartIfNotRunning();
 **************
 ==============
 static class Utils {
@@ -79,15 +85,17 @@ static class Utils {
 **************
 ==============
 LinearSolverCodes[] linSolvers = new LinearSolverCodes[] {
-    LinearSolverCodes.exp_schwarz_directcoarse,
-    LinearSolverCodes.exp_schwarz_Kcycle_directcoarse,
+    //LinearSolverCodes.exp_schwarz_directcoarse,
+    //LinearSolverCodes.exp_schwarz_Kcycle_directcoarse,
+    LinearSolverCodes.exp_schwarz_directcoarse_overlap,
+    LinearSolverCodes.exp_schwarz_Kcycle_directcoarse_overlap,
 };
 int[] ks = new int[] {2,3};
-int cells_x  = 8;
-int cells_yz = 4;
+int cells_x  = 64;
+int cells_yz = 16;
 int re       = 100; 
 int saveToDB = 1;
-int[] procs    = new int[] {1,2,4};
+int[] procs    = new int[] {8,16,32,64};
 **************
 ==============
 // ===============================
@@ -140,9 +148,10 @@ grd.DefineEdgeTags(delegate (double[] _X) {
                         
                         return ret;
                 });
-WinTempDB.SaveGrid(ref grd);
+LinuxTempDB.SaveGrid(ref grd);
 **************
-c496832e-cd3a-40e9-94bd-2d135853a228
+An equivalent grid is already present in the database -- the grid will not be saved.
+38d8f0c8-fb97-46f1-9132-5e0ddad05b90
 ==============
 **************
 ==============
@@ -181,7 +190,8 @@ controls.Add(C);
 // ======================
 
 C.savetodb                    = true;
-C.DbPath                      = "P:\\tmp\\temp_db";
+//C.DbPath                      = "P:\\tmp\\temp_db";
+C.DbPath                      = @"/home/oe11okuz/BoSSS_DB/Lichtenberg_DB";
 C.DynamicLoadBalancing_Period = 1;
 
 // Assign correct names
@@ -191,7 +201,7 @@ C.SessionName = "Sphere_Flow_"+linSolverName;
 C.saveperiod  = 1;
 C.ProjectName = "3DChannel";
 C.Tags.Add("Prec param study");
-C.SetDGdegree(1,3);
+C.SetDGdegree(2,3);
 C.SetGrid(grd);
            
 
@@ -259,6 +269,9 @@ C.InitialValues.Add("Phi", GetFormulaObject(InitialValues.Phi));
         C.NoOfMultigridLevels = 2;
         }
 **************
+(15,47): error CS1010: Newline in constant
+No. of errors|warnings: 1|0.
+
 ==============
 LastError
 **************
@@ -271,9 +284,9 @@ LastError
 foreach(var ctrl in controls) {
     var tmpName = ctrl.SessionName;
 foreach(int proc in procs){
-    ctrl.SessionName = tmpName+"_Procs"+proc;
+    ctrl.SessionName = tmpName+"_Proc"+proc;
     Console.WriteLine(" Submitting: " + ctrl.SessionName);
-    ctrl.RunBatch(myBatch,NumberOfMPIProcs:proc,UseComputeNodesExclusive:false,executionTime:"12:00:00");  
+    ctrl.RunBatch(myBatch,NumberOfMPIProcs:proc,UseComputeNodesExclusive:false,executionTime:"24:00:00");  
 }}
 **************
 ==============
@@ -423,6 +436,42 @@ string docpath    = Path.Combine(CurrentDocDir, SessTab.TableName + ".json");
 // save session table as file: this can be stored in our git 
 // repository
 SessTab.SaveToFile(docpath);
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

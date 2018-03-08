@@ -139,17 +139,25 @@ namespace BoSSS.Application.BoSSSpad {
             // Submitting script to sbatch system
             string sbatchCmd = " sbatch " + path + "\\batch.sh";
 
-            // Otherwise it didn´t work
-            System.Threading.Thread.Sleep(10000);
-
             // Convert from Windows to Unix and submit job
             Console.WriteLine();
             var result1 = SSHConnection.RunCommand(convertCmd.Replace("\\", "/"));
-            Console.WriteLine(result1.Error);
             var result2 = SSHConnection.RunCommand(sbatchCmd.Replace("\\", "/"));
-            Console.WriteLine(result2.Result);
 
-            
+            // Otherwise it didn´t work because uploading speed at some clusters is too slow
+            if (result1.Error == "" || result2.Result == "") {
+                Console.Write("Waiting for file transfer to finish");
+                while (result1.Error == "" || result2.Result == "") {
+                    Console.Write(".");
+                    System.Threading.Thread.Sleep(10000);
+                    result1 = SSHConnection.RunCommand(convertCmd.Replace("\\", "/"));
+                    result2 = SSHConnection.RunCommand(sbatchCmd.Replace("\\", "/"));
+                }
+                Console.WriteLine();
+            }
+
+            Console.WriteLine(result1.Error);
+            Console.WriteLine(result2.Result);
 
             // Hardcoded extract of JobID
             myJob.EnvironmentVars.Add("JobID", result2.Result.Substring(20, 7));
