@@ -1750,14 +1750,85 @@ namespace BoSSS.Foundation.Grid.Classic {
                 NodeSet InterpolationNodes = Kref.GetInterpolationNodes(CellType.Square_Linear);
                 int NoOfNodes = InterpolationNodes.NoOfNodes;
 
+                
+                //Case A
+                //======
+                //double[] rNodes = GenericBlas.Linspace(rmin, rmax, NoOfRnodes);
 
-                double[] rNodes = GenericBlas.Linspace(rmin, rmax, NoOfRnodes);
-
+                //Case B
+                //======
                 //double[] rNodes = new double[NoOfRnodes];
                 //double[] rNodesFunc = GenericBlas.Linspace(0, Math.PI / 2.0, NoOfRnodes);
                 //for (int i=0; i<NoOfRnodes; i++) {
                 //    rNodes[i] = Math.Sin(rNodesFunc[i]);
                 //}
+
+                //Case C
+                //======
+                // Compute cell length in r direction hr
+                double[] hrArray = new double[NoOfRnodes-1];
+
+                List<double> hrList = new List<double>();
+                
+                for (int i=0; i < NoOfXiRefinements; i++) {
+                    double hr = ximax / (NoOfXinodes0 * Math.Pow(XiRefinementGrades, i));
+                    hrList.Add(hr);
+                }
+
+
+                //for (int k=0; k < NoOfRnodes-1; k++) {
+                //    if (k < NoOfXiRefinements) {
+                //        hrArray[k] = ximax / (NoOfXinodes0 * Math.Pow(XiRefinementGrades, k));
+                //    }
+                //    else {
+                //        //hrArray[k] = ximax / (NoOfXinodes0 * Math.Pow(XiRefinementGrades, NoOfXiRefinements-1));
+                //    }
+                //}
+                double hrFinest = ximax / (NoOfXinodes0 * Math.Pow(XiRefinementGrades, NoOfXiRefinements - 1));
+                double sum = hrList.Sum();
+                double numberOfMissingCells = Math.Round((1.0 - sum) / hrFinest)+1;
+
+                //for (int j = 0; j < (int)numberOfMissingCells; j++) {
+                //    hrList.Add(hrFinest);
+                //}
+                while (sum <= 1.0){
+                    hrList.Add(hrFinest);
+                    sum += hrFinest;
+                }
+
+                Debug.Assert(hrList.Sum() < 1.1);
+
+
+                List<double> rNodesList = new List<double>();
+                rNodesList.Add(rmin);
+
+                double[] rNodesTemp = new double[hrList.Count()+1];
+                rNodesTemp[0] = rmin;
+                for (int i = 1; i < hrList.Count() + 1; i++) {
+                    rNodesTemp[i] = rNodesTemp[i-1] + hrList[i-1];
+                    if (rNodesTemp[i] <= rmax) {
+
+                        rNodesList.Add(rNodesTemp[i]);
+                    }
+                    else {
+                        //
+                    }
+                }
+                
+
+
+                rNodesList.Add(rmax);
+                NoOfRnodes = rNodesList.Count();
+
+                // if there is a thin cell on the right boundary edge
+                if (rmax - rNodesList.Last() < 0.5 * hrList.Last()) {
+                    rNodesList.RemoveAt(rNodesList.Count()-2);
+                    NoOfRnodes--;
+                }
+
+                double[] rNodes = rNodesList.ToArray();
+
+
 
                 // Allocate GlobalID's (umschreiben)
                 long[][] CellGid = new long[NoOfRnodes - 1][];
