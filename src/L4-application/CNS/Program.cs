@@ -20,6 +20,7 @@ using BoSSS.Foundation.IO;
 using BoSSS.Solution;
 using BoSSS.Solution.ASCIIExport;
 using BoSSS.Solution.Tecplot;
+using BoSSS.Solution.Timestepping;
 using CNS.Boundary;
 using CNS.EquationSystem;
 using CNS.IBM;
@@ -169,7 +170,7 @@ namespace CNS {
         /// </summary>
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase gridUpdateData) {
             FullOperator = operatorFactory.GetJoinedOperator();
-            
+
             TimeStepper = Control.ExplicitScheme.Instantiate(
                 Control,
                 operatorFactory,
@@ -191,7 +192,7 @@ namespace CNS {
                 this,
                 Control,
                 FullOperator.ToSpatialOperator(WorkingSet)).ToArray();
-            
+
             WorkingSet.UpdateDerivedVariables(this, SpeciesMap.SubGrid.VolumeMask);
         }
 
@@ -354,6 +355,12 @@ namespace CNS {
         /// <param name="NoOfClasses"></param>
         /// <param name="cellToPerformanceClassMap"></param>
         protected override void GetCellPerformanceClasses(out int NoOfClasses, out int[] cellToPerformanceClassMap) {
+            // Update clustering before cell redistribution when LTS is being used
+            if (TimeStepper is AdamsBashforthLTS ABLTSTimeStepper) {
+                bool reclustered = ABLTSTimeStepper.TryNewClustering(dt: -1);
+                ABLTSTimeStepper.SetReclusteredByGridRedist(reclustered);
+            }
+
             (NoOfClasses, cellToPerformanceClassMap) = Control.DynamicLoadBalancing_CellClassifier.ClassifyCells(this);
         }
 
