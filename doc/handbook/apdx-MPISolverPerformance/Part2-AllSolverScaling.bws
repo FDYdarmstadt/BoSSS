@@ -308,7 +308,7 @@ plotSlvIter.Y2label = "SlvIter excl";
 plotSlvInit.Y2label = "SlvInit excl";
 
 plotSlvInit.ShowLegend     = false;
-plotSlvIter.LegendPosition = new double[] {max/2,max*1.3};
+plotSlvIter.LegendPosition = new double[] {max/1.8,max*0.9};
 plotSlvIter.XrangeMin      = 1;
 plotSlvIter.XrangeMax      = max;
 plotSlvInit.XrangeMin      = 1;
@@ -336,12 +336,6 @@ speedupsplots.PlotNow()
 Using gnuplot: C:\BoSSSinstall\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 System.Drawing.Bitmap
 ==============
-**************
-==============
-**************
-==============
-**************
-==============
 var CL  = multiplots.ToGnuplot().PlotCairolatex(xSize:17, ySize:17);
 var CL2 = speedupsplots.ToGnuplot().PlotCairolatex(xSize:17, ySize:17);
 **************
@@ -360,31 +354,5 @@ System.ComponentModel.Win32Exception occurred: The system cannot find the file s
 
 ==============
 //CL.WriteMinimalCompileableExample("C:\\tmp\\AllSolvers" + dateString + ".tex");
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
 **************
 ==============
