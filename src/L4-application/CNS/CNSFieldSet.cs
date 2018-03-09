@@ -244,6 +244,40 @@ namespace CNS {
             foreach (var pair in DerivedFields) {
                 pair.Key.UpdateFunction(pair.Value, cellMask, program);
             }
+
+            // Test
+            //double sensorNorm = program.WorkingSet.DerivedFields[Variables.ShockSensor].L2Norm();
+            //double AVNorm = program.WorkingSet.DerivedFields[Variables.ArtificialViscosity].L2Norm();
+            //Console.WriteLine("\r\nThis is UpdateDerivedVariables");
+            //Console.WriteLine("SensorNeu: {0}", sensorNorm);
+            //Console.WriteLine("AVNeu: {0}", AVNorm);
+        }
+
+        /// <summary>
+        /// Updates the sensor value
+        /// <see cref="ShockCapturing.IShockSensor.UpdateSensorValues(CNSFieldSet, ISpeciesMap, CellMask)"/>
+        /// and the artificial viscosity value <see cref="Variables.ArtificialViscosity"/> in every cell
+        /// </summary>
+        /// <param name="program"></param>
+        /// <param name="cellMask"></param>
+        public void UpdateShockCapturingVariables(IProgram<CNSControl> program, CellMask cellMask) {
+            // Update sensor
+            program.Control.ShockSensor.UpdateSensorValues(program.WorkingSet, program.SpeciesMap, cellMask);
+
+            // Update sensor variable (not necessary as only needed for IO)
+            var sensorField = program.WorkingSet.DerivedFields[Variables.ShockSensor];
+            Variables.ShockSensor.UpdateFunction(sensorField, program.SpeciesMap.SubGrid.VolumeMask, program);
+
+            // Update artificial viscosity variable
+            var avField = program.WorkingSet.DerivedFields[Variables.ArtificialViscosity];
+            Variables.ArtificialViscosity.UpdateFunction(avField, program.SpeciesMap.SubGrid.VolumeMask, program);
+
+            // Test
+            //double sensorNorm = program.WorkingSet.DerivedFields[Variables.ShockSensor].L2Norm();
+            //double AVNorm = program.WorkingSet.DerivedFields[Variables.ArtificialViscosity].L2Norm();
+            //Console.WriteLine("\r\nThis is UpdateShockCapturingVariables");
+            //Console.WriteLine("SensorNeu: {0}", sensorNorm);
+            //Console.WriteLine("AVNeu: {0}", AVNorm);
         }
 
         #region ICloneable Members
