@@ -1796,7 +1796,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     sum += hrFinest;
                 }
 
-                Debug.Assert(hrList.Sum() < 1.1);
+                //Debug.Assert(hrList.Sum() < 1.1);
 
 
                 List<double> rNodesList = new List<double>();
@@ -1822,7 +1822,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                 // if there is a thin cell on the right boundary edge
                 if (rmax - rNodesList.Last() < 0.5 * hrList.Last()) {
-                    rNodesList.RemoveAt(rNodesList.Count()-2);
+                    rNodesList.RemoveAt(rNodesList.Count() - 2);
                     NoOfRnodes--;
                 }
 
