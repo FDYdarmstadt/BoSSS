@@ -218,7 +218,7 @@ namespace CNS.Tests.ArtificialViscosity {
             c.AddVariable(Variables.Entropy, dgDegree);
             c.AddVariable(Variables.Viscosity, dgDegree);
             c.AddVariable(Variables.ArtificialViscosity, 1);
-            //c.AddVariable(Variables.Sensor, dgDegree);
+            c.AddVariable(Variables.ShockSensor, 0);
             c.AddVariable(Variables.LocalMachNumber, dgDegree);
             if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS)) {
                 c.AddVariable(Variables.LTSClusters, 0);
