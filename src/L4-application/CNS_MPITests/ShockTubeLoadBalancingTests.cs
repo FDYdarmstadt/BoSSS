@@ -290,6 +290,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             }
             c.ActiveOperators |= Operators.ArtificialViscosity;
             c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+            c.AddVariable(Variables.ShockSensor, 0);
             c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 2);
             c.Endtime = endTime;
 
