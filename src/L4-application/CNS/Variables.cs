@@ -437,6 +437,8 @@ namespace CNS {
             "sensor",
             VariableTypes.Other,
             delegate (DGField s, CellMask cellMask, IProgram<CNSControl> program) {
+                s.Clear();  // Just to be sure that we get new values only
+
                 IShockSensor sensor = program.Control.ShockSensor;
                 foreach (Chunk chunk in cellMask) {
                     foreach (int cell in chunk.Elements) {
