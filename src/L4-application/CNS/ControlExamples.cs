@@ -3341,10 +3341,10 @@ namespace CNS {
             }
             return c;
         }
-        public static CNSControl ShockTube_HilbertTest(string SessionID = null, string GridID = null, string dbPath = null, int dgDegree = 0, int numOfCellsX = 5, int numOfCellsY = 4, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = true) {
+        public static CNSControl ShockTube_HilbertTest(string SessionID = null, string GridID = null, string dbPath = null, int dgDegree = 0, int numOfCellsX = 100, int numOfCellsY = 100, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = false) {
 
             CNSControl c = new CNSControl();
-            dbPath = @"D:\Weber\BoSSS\test_db";
+            //dbPath = @"D:\Weber\BoSSS\test_db";
             //dbPath = @"e:\bosss_db\GridOfTomorrow\";
             //dbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db\";
             c.DbPath = dbPath;
@@ -3505,7 +3505,7 @@ namespace CNS {
             //c.dtFixed = 1.0e-3;
             c.CFLFraction = 0.3;
             c.Endtime = 0.25;
-            c.NoOfTimesteps = int.MaxValue;
+            c.NoOfTimesteps = 10;
 
             c.ProjectName = "Shock tube";
             if (true1D) {
