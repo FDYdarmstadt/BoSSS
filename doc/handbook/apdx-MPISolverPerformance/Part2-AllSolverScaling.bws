@@ -37,9 +37,6 @@ string FilePath   = Path.Combine(CurrentDocDir, File);
 var SessTab       = TableExtensions.LoadFromFile(FilePath);
 **************
 ==============
-//SessTab.Print();
-**************
-==============
 // ====================
 // Evaluation, plotting
 // ====================
@@ -130,7 +127,7 @@ SubTab_1.Print();
 5: 1          0.0364285    0.0302649    3           1                  True              
 ==============
 // Calculation of speedup times 
-List<KeyValuePair<string, int>> procs = new List<KeyValuePair<string, int>>{};// ((int[])SubTab_1.GetColumn("Processors"));
+List<KeyValuePair<string, int>> procs = new List<KeyValuePair<string, int>>{};
 double[] slviter = ((double[])SubTab_1.GetColumn("SlvIter_excl"));
 double[] slvinit = ((double[])SubTab_1.GetColumn("SlvInit_excl"));
 double[] slviterSpeedup = new double[slviter.Length];
@@ -142,16 +139,19 @@ for(int i = 0; i<slviter.Length; i++){
     int val    = ((int[])SubTab_1.GetColumn("Processors"))[i];
 
     procs.Add(new KeyValuePair<string,int>(str,val));
-    
-   // slviterSpeedup[i] = slviter[i]/procs[i];
-   // slvinitSpeedup[i] = slvinit[i]/procs[i];    
+      
 }
 int min;
-int max;
+int max = 0;
 for(int i = 0; i < slviter.Length; i++){
     List<KeyValuePair<string, int>> procsCut = procs.FindAll(s => s.Key == procs[i].Key);
-     min = procsCut.Select(s => s.Value).Min();
-     max = procsCut.Select(s => s.Value).Max();
+    
+    int tempMax;
+    min     = procsCut.Select(s => s.Value).Min();
+    tempMax = procsCut.Select(s => s.Value).Max();
+    if(tempMax>max){
+        max = tempMax;
+    }
     int idx = procs.FindIndex(s => (s.Value == min) && (s.Key == procs[i].Key));
     slviterSpeedup[i] = (slviter[idx]*procs.Pick(idx).Value)/slviter[i];
     slvinitSpeedup[i] = (slvinit[idx]*procs.Pick(idx).Value)/slvinit[i];
@@ -170,19 +170,6 @@ foreach (DataRow row in SubTab_1.Rows) {
 }
 **************
 SlvInit_speedup
-==============
-//SubTab.ToCSVFile("C:\\tmp\\table.csv");
-**************
-==============
-//RuntimePlot.dataGroups.Select(grp => grp.Name);
-**************
-==============
-//var cl = RuntimePlot.ToGnuplot().PlotCairolatex();
-//cl.Preview(trimPage:true);
-**************
-==============
-//cl.WriteMinimalCompileableExample("C:\\tmp\\mini.tex");
-**************
 ==============
 static public class Formats {
 static public void getFormat(int iTabRow,IDictionary<string, object> Row, 
@@ -249,7 +236,6 @@ static public void getFormat(int iTabRow,IDictionary<string, object> Row,
                Nmn = "unknown"; 
                break;
            } 
-           //Console.WriteLine("name is: " + solver_name); 
            Fmt.PointSize = 0.5;
            Fmt.Style     = Styles.LinesPoints;
            Fmt.LineColor = LineColors.Black;
@@ -263,9 +249,7 @@ var plotSlvIter = SubTab_1.ToPlot("Processors", "SlvIter_excl", // column for x-
 var plotSlvInit = SubTab_1.ToPlot("Processors", "SlvInit_excl", // column for x- and y
                                   Formats.getFormat); // column for group
 Plot2Ddata[,] multiplots = new Plot2Ddata[2,1];
-plotSlvIter.Title = "Exclusive times";
-//plotSlvInit.Title  = "SlvInit excl";
-//plotSlvIter.Xlabel = "Processors";
+plotSlvIter.Title   = "Exclusive times";
 plotSlvIter.Ylabel  = "Time [s]";
 plotSlvInit.Xlabel  = "Processors";
 plotSlvInit.Ylabel  = "Time [s]";
@@ -273,21 +257,17 @@ plotSlvIter.Y2label = "SlvIter excl";
 plotSlvInit.Y2label = "SlvInit excl";
 
 
-plotSlvIter.LegendPosition = new double[] {max/2,max*1.3};
 plotSlvIter.XrangeMin = 1;
 plotSlvIter.XrangeMax = max;
 plotSlvInit.XrangeMin = 1;
 plotSlvInit.XrangeMax = max;
 
-plotSlvInit.ShowLegend     = false;
-plotSlvIter.LegendPosition = new double[] {2.5,0.1};
-
 multiplots[0,0] = plotSlvIter;
 multiplots[1,0] = plotSlvInit;
 
 
-    multiplots[0,0].bmargin = 1;
-    multiplots[1,0].tmargin = 1;
+multiplots[0,0].bmargin = 1;
+multiplots[1,0].tmargin = 1;
 multiplots.PlotNow()
 **************
 Using gnuplot: C:\BoSSSinstall\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
@@ -298,23 +278,17 @@ var plotSlvIter = SubTab_1.ToPlot("Processors", "SlvIter_speedup", // column for
 var plotSlvInit = SubTab_1.ToPlot("Processors", "SlvInit_speedup", // column for x- and y
                                   Formats.getFormat); // column for group
 Plot2Ddata[,] speedupsplots = new Plot2Ddata[2,1];
-plotSlvIter.Title = "Speedup";
-//plotSlvInit.Title  = "SlvInit excl";
-//plotSlvIter.Xlabel = "Processors";
+plotSlvIter.Title   = "Speedup";
 plotSlvIter.Ylabel  = "Speedup";
 plotSlvInit.Xlabel  = "Processors";
 plotSlvInit.Ylabel  = "Speedup";
 plotSlvIter.Y2label = "SlvIter excl";
 plotSlvInit.Y2label = "SlvInit excl";
 
-plotSlvInit.ShowLegend     = false;
-plotSlvIter.LegendPosition = new double[] {max/1.8,max*0.9};
-plotSlvIter.XrangeMin      = 1;
-plotSlvIter.XrangeMax      = max;
-plotSlvInit.XrangeMin      = 1;
-plotSlvInit.XrangeMax      = max;
-
-//plotSlvInit.Cmd("set xtics 1");
+plotSlvIter.XrangeMin = 1;
+plotSlvIter.XrangeMax = max;
+plotSlvInit.XrangeMin = 1;
+plotSlvInit.XrangeMax = max;
 
 speedupsplots[0,0] = plotSlvIter;
 speedupsplots[1,0] = plotSlvInit;
@@ -328,9 +302,9 @@ ideal.Format.LineWidth = 3;
 ArrayTools.AddToArray(ideal, ref speedupsplots[0,0].dataGroups);
 ArrayTools.AddToArray(ideal, ref speedupsplots[1,0].dataGroups);
 
-    speedupsplots[0,0].bmargin = 1;
-    speedupsplots[0,0].tmargin = 4;
-    speedupsplots[1,0].tmargin = 1;
+speedupsplots[0,0].bmargin = 1;
+speedupsplots[0,0].tmargin = 4;
+speedupsplots[1,0].tmargin = 1;
 speedupsplots.PlotNow()
 **************
 Using gnuplot: C:\BoSSSinstall\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
@@ -352,7 +326,4 @@ CL2.PlotNow();
 **************
 System.ComponentModel.Win32Exception occurred: The system cannot find the file specified. Type 'LastError' for details.
 
-==============
-//CL.WriteMinimalCompileableExample("C:\\tmp\\AllSolvers" + dateString + ".tex");
-**************
 ==============
