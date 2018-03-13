@@ -1,5 +1,6 @@
 restart
 **************
+
   Database Explorer v2
   ____________________
 
@@ -22,12 +23,12 @@ List of 24 instances of IDatabaseInfo {
   14: { Session Count = 43; Grid Count = 45; Path = P:\BoSSS_DBs\IBMPaper }
   15: { Session Count = 28; Grid Count = 15; Path = P:\BoSSS_DBs\Paper_IBM2D }
   16: { Session Count = 38; Grid Count = 22; Path = P:\BoSSS_DBs\Paper_CellAgglo01_Penalty4 }
-  17: { Session Count = 38; Grid Count = 31; Path = P:\BoSSS_DBs\Sphere3D }
+  17: { Session Count = 42; Grid Count = 55; Path = P:\BoSSS_DBs\Sphere3D }
   18: { Session Count = 22; Grid Count = 10; Path = P:\BoSSS_DBs\Performance }
   19: { Session Count = 24; Grid Count = 14; Path = P:\BoSSS_DBs\PaperRevision }
   20: { Session Count = 0; Grid Count = 0; Path = P:\Lichtenberg_DB }
   21: { Session Count = 2; Grid Count = 354; Path = P:\BoSSS_DBs\Bug }
-  22: { Session Count = 53; Grid Count = 96; Path = L:\BoSSS_DB\Lichtenberg_DB }
+  22: { Session Count = 47; Grid Count = 97; Path = L:\BoSSS_DB\Lichtenberg_DB }
   23: { Session Count = 510; Grid Count = 729; Path = Y:\fdy-publication-data\Thesis\2017\Degenhardt\performance_db }
 }
 
@@ -95,8 +96,10 @@ int cells_x  = 64;
 int cells_yz = 16;
 int re       = 100; 
 int saveToDB = 1;
-int[] procs    = new int[] {8,16,32,64};
+int[] procs    = new int[] {8};
 **************
+C# evaluator not initialized: use 'restart'.
+
 ==============
 // ===============================
 // Init grids and save to database
@@ -195,13 +198,13 @@ C.DbPath                      = @"/home/oe11okuz/BoSSS_DB/Lichtenberg_DB";
 C.DynamicLoadBalancing_Period = 1;
 
 // Assign correct names
-C.SessionName = "Sphere_Flow_"+linSolverName;
+C.SessionName = "Sphere_Flow_k1"+linSolverName;
 
 
 C.saveperiod  = 1;
 C.ProjectName = "3DChannel";
 C.Tags.Add("Prec param study");
-C.SetDGdegree(2,3);
+C.SetDGdegree(1,3);
 C.SetGrid(grd);
            
 
@@ -286,7 +289,7 @@ foreach(var ctrl in controls) {
 foreach(int proc in procs){
     ctrl.SessionName = tmpName+"_Proc"+proc;
     Console.WriteLine(" Submitting: " + ctrl.SessionName);
-    ctrl.RunBatch(myBatch,NumberOfMPIProcs:proc,UseComputeNodesExclusive:false,executionTime:"24:00:00");  
+    ctrl.RunBatch(myBatch,NumberOfMPIProcs:proc,UseComputeNodesExclusive:false,executionTime:"16:00:00");  
 }}
 **************
 ==============
@@ -372,16 +375,21 @@ static class AddCols {
     }
     
     static public object SlvIterTime(ISessionInfo SI) {
-        return getMaxTime(SI,"Slv Iter",true);
+        return getMaxTime(SI,"Slv Iter",false);
     }
       static public object SlvInitTime(ISessionInfo SI) {
-        return getMaxTime(SI,"Slv Init",true);
+        return getMaxTime(SI,"Slv Init",false);
     }
     static public object MPIs(ISessionInfo SI) {
         return SI.ComputeNodeNames.Count();
     }
 }
 **************
+(11,32): warning CS0219: The variable `tempFractions' is assigned but its value is never used
+(22,37): warning CS0219: The variable `maxIndex' is assigned but its value is never used
+(29,37): warning CS0219: The variable `maxIndex' is assigned but its value is never used
+No. of errors|warnings: 0|3.
+
 ==============
 WorkflowMgm.AdditionalSessionTableColums.Clear();
 WorkflowMgm.AdditionalSessionTableColums.Add(
@@ -436,90 +444,6 @@ string docpath    = Path.Combine(CurrentDocDir, SessTab.TableName + ".json");
 // save session table as file: this can be stored in our git 
 // repository
 SessTab.SaveToFile(docpath);
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
 **************
 ==============
 **************
