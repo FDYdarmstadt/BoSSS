@@ -59,7 +59,7 @@ namespace BoSSS.Application.IBM_Solver {
                             NoOfPartsPerProcess = 1,
                         },
                         Overlap = 1,
-                        CoarseSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS }
+                        CoarseSolver = DetermineMGSquence(Control.NoOfMultigridLevels - 2)
                     };
                     break;
 
