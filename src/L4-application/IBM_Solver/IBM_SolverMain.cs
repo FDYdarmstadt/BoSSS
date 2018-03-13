@@ -115,6 +115,12 @@ namespace BoSSS.Application.IBM_Solver {
 #pragma warning restore 649
         #endregion
 
+        /// <summary>
+        /// Mpi rank for each computational cell.
+        /// </summary>
+        SinglePhaseField MpiRank;
+
+
         IDictionary<SpeciesId, IEnumerable<double>> Rho {
             get {
                 double rho = this.Control.PhysicalParameters.rho_A;
@@ -239,6 +245,13 @@ namespace BoSSS.Application.IBM_Solver {
             //    base.MultigridSequence[iLevel].ColorDGField(this.MGColoring[iLevel]);
             //}
             //Tecplot.PlotFields(MGColoring, "MultigridLevels", 0, 0);
+
+            // ================================
+            // record MPI rank
+            // ================================
+    
+            this.MpiRank.Clear();
+            this.MpiRank.AccConstant(this.MPIRank);
 
             // =================================
             // create operator
@@ -697,7 +710,7 @@ namespace BoSSS.Application.IBM_Solver {
                         U0mean_Spc[d].AccLaidBack(1.0, U0_Spc[d], this.LsTrk.Regions.GetSpeciesMask(Spc));
                     }
 
-
+                    
                     // cut cells
                     var scheme = qh.GetVolumeQuadScheme(Spc, IntegrationDomain: this.LsTrk.Regions.GetCutCellMask());
 
@@ -764,7 +777,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// Tecplot output.
         /// </summary>
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling) {
-            Tecplot.PlotFields(ArrayTools.Cat<DGField>(this.Velocity, this.Pressure, this.LevSet, this.DGLevSet.Current, this.ResidualMomentum, this.ResidualContinuity), "IBM_Solver" + timestepNo, physTime, superSampling);
+            Tecplot.PlotFields(ArrayTools.Cat<DGField>(this.Velocity, this.Pressure, this.LevSet, this.DGLevSet.Current, this.ResidualMomentum, this.ResidualContinuity, this.MpiRank), "IBM_Solver" + timestepNo, physTime, superSampling);
         }
 
         /// <summary>
@@ -776,9 +789,15 @@ namespace BoSSS.Application.IBM_Solver {
                 base.LsTrk = this.LevsetTracker;
                 if (Control.CutCellQuadratureType != this.LevsetTracker.CutCellQuadratureType)
                     throw new ApplicationException();
+
                 //if (this.Control.LevelSetSmoothing) {
                 //    SmoothedLevelSet = new SpecFemField(new SpecFemBasis((GridData)LevSet.GridDat, LevSet.Basis.Degree + 1));
                 //}
+
+                this.MpiRank = new SinglePhaseField(new Basis(this.GridData, 0), "MPIrank");
+                base.IOFields.Add(this.MpiRank);
+                m_RegisteredFields.Add(this.MpiRank);
+
             }
         }
 
