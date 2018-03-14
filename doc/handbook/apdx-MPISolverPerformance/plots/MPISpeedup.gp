@@ -22,14 +22,15 @@ unset x2label
 set y2label "SlvIter excl"
 set title "Speedup"
 unset key
-set key outside right vertical maxrows 3 
+set key outside right vertical maxrows 4 
 set xtics 
 set x2tics format " " 
 set ytics 
 set y2tics format " " 
 set termoption dashed
 set termoption dashed
-plot "MPISpeedup_data_0.csv" title "Swz w Coarse Overlap" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 4 pointsize 0.5, "MPISpeedup_data_1.csv" title "Swz Kcycle w Coarse Overlap" with linespoints linecolor  "black" dashtype 2 linewidth 3 pointtype 1 pointsize 0.5, "MPISpeedup_data_2.csv" title "Ideal" with lines linecolor  "black" dashtype 1 linewidth 3
+set termoption dashed
+plot "MPISpeedup_data_0.csv" title "Swz w Coarse" with linespoints linecolor  "black" dashtype 4 linewidth 3 pointtype 11 pointsize 0.5, "MPISpeedup_data_1.csv" title "Swz Kcycle w Coarse Overlap" with linespoints linecolor  "black" dashtype 2 linewidth 3 pointtype 1 pointsize 0.5, "MPISpeedup_data_2.csv" title "Swz w Coarse Overlap" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 4 pointsize 0.5, "MPISpeedup_data_3.csv" title "Ideal" with lines linecolor  "black" dashtype 1 linewidth 3
 set size 0.98,0.49
 set origin 0.01,0.005
 unset lmargin 
@@ -50,14 +51,15 @@ unset x2label
 set y2label "SlvInit excl"
 unset title 
 unset key
-set key outside right vertical maxrows 3 
+set key outside right vertical maxrows 4 
 set xtics 
 set x2tics format " " 
 set ytics 
 set y2tics format " " 
 set termoption dashed
 set termoption dashed
-plot "MPISpeedup_data_3.csv" title "Swz w Coarse Overlap" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 4 pointsize 0.5, "MPISpeedup_data_4.csv" title "Swz Kcycle w Coarse Overlap" with linespoints linecolor  "black" dashtype 2 linewidth 3 pointtype 1 pointsize 0.5, "MPISpeedup_data_5.csv" title "Ideal" with lines linecolor  "black" dashtype 1 linewidth 3
+set termoption dashed
+plot "MPISpeedup_data_4.csv" title "Swz w Coarse" with linespoints linecolor  "black" dashtype 4 linewidth 3 pointtype 11 pointsize 0.5, "MPISpeedup_data_5.csv" title "Swz Kcycle w Coarse Overlap" with linespoints linecolor  "black" dashtype 2 linewidth 3 pointtype 1 pointsize 0.5, "MPISpeedup_data_6.csv" title "Swz w Coarse Overlap" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 4 pointsize 0.5, "MPISpeedup_data_7.csv" title "Ideal" with lines linecolor  "black" dashtype 1 linewidth 3
 
 
 exit
