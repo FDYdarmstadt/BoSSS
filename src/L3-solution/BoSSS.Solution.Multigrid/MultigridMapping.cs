@@ -421,8 +421,8 @@ namespace BoSSS.Solution.Multigrid {
                 ShoudBeId.AccEyeSp(-1.0);
 
                 double ShouldBeID_Norm = ShoudBeId.InfNorm();
-                Debug.Assert(ShouldBeID_Norm < 1.0e-8);
-                Console.WriteLine("Id norm {0} ", ShouldBeID_Norm);
+                //Debug.Assert(ShouldBeID_Norm < 1.0e-8);
+                Console.WriteLine("Id norm {0} \t (lvel {1})", ShouldBeID_Norm, this.AggGrid.MgLevel);
             }
 #endif
                 return result;

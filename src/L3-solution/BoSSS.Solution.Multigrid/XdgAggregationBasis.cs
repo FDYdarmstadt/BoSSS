@@ -648,7 +648,7 @@ namespace BoSSS.Solution.Multigrid {
 
                             MultidimensionalArray Trf = base.CompositeBasis[jAgg];
                             
-                            for(int k = 0; k < K; k++) { // loop over the cells wich form the aggregated cell...
+                            for(int k = 0; k < K; k++) { // loop over the cells which form the aggregated cell...
                                 int jCell = AgCell[k];
                                 int i0Full = mgMap.ProblemMapping.GlobalUniqueCoordinateIndex(iF, jCell, 0);
                                 var Block = Trf.ExtractSubArrayShallow(k, -1, -1);

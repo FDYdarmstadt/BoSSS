@@ -167,18 +167,18 @@ namespace BoSSS.Solution.Multigrid {
                 if (jGeom != j)
                     throw new NotSupportedException("todo");
 
-                //a.ExtractSubArrayShallow(jGeom, -1, -1).InvertTo(B_Level.ExtractSubArrayShallow(j, -1, -1));
-                a.ExtractSubArrayShallow(jGeom, -1, -1).TriangularInvert(B_Level.ExtractSubArrayShallow(j, -1, -1));
+                a.ExtractSubArrayShallow(jGeom, -1, -1).InvertTo(B_Level.ExtractSubArrayShallow(j, -1, -1));
+                //a.ExtractSubArrayShallow(jGeom, -1, -1).TriangularInvert(B_Level.ExtractSubArrayShallow(j, -1, -1));
             }
 
             MultidimensionalArray[][] Injectors = new MultidimensionalArray[agSeq.Length][];
-            var a_Level = a;
+            //var a_Level = a;
 
             // all other levels
-            MultidimensionalArray Mass_prevLevel, a_prevLevel;
+            MultidimensionalArray Mass_prevLevel;
             for(int iLevel = 1; iLevel < agSeq.Length; iLevel++) { // loop over levels...
                 B_prevLevel = B_Level;
-                a_prevLevel = a_Level;
+                //a_prevLevel = a_Level;
                 Mass_prevLevel = Mass_Level;
                 Jagg = agSeq[iLevel].iLogicalCells.NoOfLocalUpdatedCells;
                 Ag2Pt = agSeq[iLevel].iLogicalCells.AggregateCellToParts;
@@ -187,51 +187,25 @@ namespace BoSSS.Solution.Multigrid {
                 var Injectors_iLevel = new MultidimensionalArray[Jagg];
                 Injectors[iLevel] = Injectors_iLevel;
 
-                a_Level = MultidimensionalArray.Create(Jagg, Np, Np);
                 B_Level = MultidimensionalArray.Create(Jagg, Np, Np);
                 Mass_Level = MultidimensionalArray.Create(Jagg, Np, Np);
                 for (int j = 0; j < Jagg; j++) { // loop over aggregate cells
 
                     var Mass_j = Mass_Level.ExtractSubArrayShallow(j, -1, -1);
-                    var a_j = a_Level.ExtractSubArrayShallow(j, -1, -1);
                     foreach (int jF in C2F[j]) { // loop over aggregated cells
                         Mass_j.Acc(1.0, Mass_prevLevel.ExtractSubArrayShallow(jF, -1, -1));
-                        a_j.Acc(1.0, a_prevLevel.ExtractSubArrayShallow(jF, -1, -1));
-                    }
-
-                    for(int l = 0; l < Np; l++) {
-                        for(int k = 0; k < Np; k++) {
-                            double Mlk = Mass_j[l, k];
-                            double acc = 0.0;
-                            for(int n = 0; n < Np; n++) {
-                                acc += a_j[n, l] * a_j[n, k];
-                            }
-
-                            double diff = Math.Abs(acc - Mlk);
-                            Debug.Assert(diff < 1.0e-3);
-                        }
+                        //a_j.Acc(1.0, a_prevLevel.ExtractSubArrayShallow(jF, -1, -1));
                     }
 
 
 
                     // perform ortho-normalization:
                     var B_Level_j = B_Level.ExtractSubArrayShallow(j, -1, -1);
-                    var B_Level_j_check = MultidimensionalArray.Create(Np, Np);
-                    Mass_j.SymmetricLDLInversion(B_Level_j_check, default(double[]));
-                    a_j.TriangularInvert(B_Level_j, true);
+                    Mass_j.SymmetricLDLInversion(B_Level_j, default(double[]));
+                    //a_j.TriangularInvert(B_Level_j, true);
 #if DEBUG
                     {
-                        var C1 = B_Level_j_check.CloneAs();
-                        var C2 = B_Level_j_check.CloneAs();
-
-                        C1.Acc(-1.0, B_Level_j);
-                        C2.Acc(+1.0, B_Level_j);
-
-                        double C1_norm = C1.InfNorm();
-                        double C2_norm = C2.InfNorm();
-
-
-                        //Debug.Assert(C1_norm < 1.0e-3 || C2_norm < 1.0e-3);
+                       
 
                         // assert that B_Level_j is upper-triangular
                         for (int n = 0; n < Np; n++) {
@@ -249,14 +223,24 @@ namespace BoSSS.Solution.Multigrid {
                     
                     // create injector
                     Injectors_iLevel[j] = MultidimensionalArray.Create(C2F[j].Length, Np, Np);
-                    for (int l = 0; l < C2F[j].Length; l++) { // loop over aggregated cells
+                    for (int l = 0; l < C2F[j].Length; l++) { // loop fine cells which make up the aggregate cell 
                         int jF = C2F[j][l];
 
                         var Inj_jl = Injectors_iLevel[j].ExtractSubArrayShallow(l, -1, -1);
                         var invB = invB_prevLevel.ExtractSubArrayShallow(jF, -1, -1);
                         Inj_jl.Multiply(1.0, invB, B_Level_j, 0.0, "nm", "nk", "km");
+
+                        //if(Np == 10) {
+                        //    var check = MultidimensionalArray.Create(Np, Np);
+                        //    check.GEMM(1.0, Inj_jl, Inj_jl.Transpose(), 0.0);
+                        //    check.AccEye(-1.0);
+                        //    var bla = check.InfNorm();
+                        //    Console.WriteLine("Check norm: " + bla);
+                        //}
                     }
                 }
+                //if(Np == 10)
+                //    Console.WriteLine("fin level " + iLevel);
             }
 
             // create basis sequence
@@ -556,7 +540,38 @@ namespace BoSSS.Solution.Multigrid {
                         }
                     }
 
+                    //if (ag.MgLevel == 1 && N == 10) {
+                    //    //var check = MultidimensionalArray.Create(N, N);
+                    //    var RRt = Block.GEMM(Block.Transpose());
+                    //    var check = RRt.GEMM(RRt);
+
+                    //    check.AccEye(-1.0);
+                    //    var bla = check.InfNorm();
+                    //    Console.WriteLine("Check norm: " + bla);
+                    //}
+
                 }
+            }
+
+            if (ag.MgLevel == 1 ) {
+                result.SaveToTextFileSparse(@"c:\tmp\rest.txt");
+
+                var result = BlockMsrMatrix.Multiply(rest, rest.Transpose());
+                result.SaveToTextFileSparse(@"c:\tmp\rst.txt");
+
+                var resultT = result.Transpose();
+                BlockMsrMatrix ShoudBeId;
+                if(result.RowPartitioning.TotalLength < result.ColPartition.TotalLength)
+                    ShoudBeId = BlockMsrMatrix.Multiply(result, resultT);
+                else
+                    ShoudBeId = BlockMsrMatrix.Multiply(resultT, result);
+
+                ShoudBeId.AccEyeSp(-1.0);
+
+                double ShouldBeID_Norm = ShoudBeId.InfNorm();
+                //Debug.Assert(ShouldBeID_Norm < 1.0e-8);
+                Console.WriteLine("Id norm {0} \t (lävel {1})", ShouldBeID_Norm, this.AggGrid.MgLevel);
+
             }
         }
 
@@ -699,6 +714,14 @@ namespace BoSSS.Solution.Multigrid {
                             var R_iTarg = R.ExtractSubArrayShallow(iTarg, -1, -1);
 
                             R_iTarg.Multiply(1.0, Inj_j_iSrc, R_iTarg.CloneAs(), 0.0, "nm", "nk", "km");
+
+                            //if (thisMgLevel == 1 && Np == 10) {
+                            //    var check = MultidimensionalArray.Create(Np, Np);
+                            //    check.GEMM(1.0, R_iTarg, R_iTarg.Transpose(), 0.0);
+                            //    check.AccEye(-1.0);
+                            //    var bla = check.InfNorm();
+                            //    Console.WriteLine("Check norm: " + bla);
+                            //}
                         }
                     }
                 }
@@ -746,12 +769,13 @@ namespace BoSSS.Solution.Multigrid {
 
                 for(int jAgg = 0; jAgg < JAGG; jAgg++) { // loop over agglomerated cells...
 
-                    m_CompositeBasis[jAgg] = CA(jAgg);
+                    //m_CompositeBasis[jAgg] = CA(jAgg);
 
-                    /*
+                    
                     var compCell = ag.iLogicalCells.AggregateCellToParts[jAgg];
                     
                     if(compCell.Length == 1) {
+
                         Debug.Assert(AggGrid.MgLevel == 0);
 
                         m_CompositeBasis[jAgg] = MultidimensionalArray.Create(1, N, N);
