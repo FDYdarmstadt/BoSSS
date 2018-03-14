@@ -1,6 +1,5 @@
 restart
 **************
-
   Database Explorer v2
   ____________________
 
@@ -286,8 +285,8 @@ plotSlvIter.Title   = "Exclusive times";
 plotSlvIter.Ylabel  = "Time [s]";
 plotSlvInit.Xlabel  = "Processors";
 plotSlvInit.Ylabel  = "Time [s]";
-plotSlvIter.Y2label = "SlvIter excl";
-plotSlvInit.Y2label = "SlvInit excl";
+plotSlvIter.Y2label = "SlvIter";
+plotSlvInit.Y2label = "SlvInit";
 
 
 plotSlvIter.XrangeMin = 1;
@@ -315,8 +314,8 @@ plotSlvIter.Title   = "Speedup";
 plotSlvIter.Ylabel  = "Speedup";
 plotSlvInit.Xlabel  = "Processors";
 plotSlvInit.Ylabel  = "Speedup";
-plotSlvIter.Y2label = "SlvIter excl";
-plotSlvInit.Y2label = "SlvInit excl";
+plotSlvIter.Y2label = "SlvIter";
+plotSlvInit.Y2label = "SlvInit";
 
 plotSlvIter.XrangeMin = 1;
 plotSlvIter.XrangeMax = max;
@@ -352,8 +351,8 @@ plotPrecSolve.Title      = "Exclusive times";
 plotPrecSolve.Ylabel     = "Time [s]";
 plotNewtonDirder.Xlabel  = "Processors";
 plotNewtonDirder.Ylabel  = "Time [s]";
-plotPrecSolve.Y2label    = "Precondition Solve";
-plotNewtonDirder.Y2label = "Newton Dirder";
+plotPrecSolve.Y2label    = "SolvIter: Precondition Solve";
+plotNewtonDirder.Y2label = "SolIter: Newton Dirder";
 
 
 plotPrecSolve.XrangeMin    = 1;
@@ -381,8 +380,8 @@ plotPrecSolve.Title      = "Speedup";
 plotPrecSolve.Ylabel     = "Speedup";
 plotNewtonDirder.Xlabel  = "Processors";
 plotNewtonDirder.Ylabel  = "Speedup";
-plotPrecSolve.Y2label    = "Precondition Solve";
-plotNewtonDirder.Y2label = "Newton Dirder";
+plotPrecSolve.Y2label    = "SolIter: Precondition Solve";
+plotNewtonDirder.Y2label = "SolIter: Newton Dirder";
 
 plotPrecSolve.XrangeMin = 1;
 plotPrecSolve.XrangeMax = max;
@@ -436,23 +435,28 @@ System.Drawing.Bitmap
 var CL  = multiplots.ToGnuplot().PlotCairolatex(xSize:17, ySize:17);
 var CL2 = speedupsplots.ToGnuplot().PlotCairolatex(xSize:17, ySize:17);
 var CL3 = multiplots2.ToGnuplot().PlotCairolatex(xSize:17, ySize:17);
+var CL$  = speedupsplots2.ToGnuplot().PlotCairolatex(xSize:17, ySize:17);
 **************
-Using gnuplot: C:\Users\krause\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
-Using gnuplot: C:\Users\krause\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
-Using gnuplot: C:\Users\krause\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+C# evaluator not initialized: use 'restart'.
 
 ==============
 CL.SaveTo(Path.Combine(CurrentDocDir+"/plots/", "MPIScalingTimes.tex"));
 CL2.SaveTo(Path.Combine(CurrentDocDir+"/plots/", "MPISpeedup.tex"));
-CL3.SaveTo(Path.Combine(CurrentDocDir+"/plots/", "Additional.tex"));
+CL3.SaveTo(Path.Combine(CurrentDocDir+"/plots/", "Additional_1.tex"));
+Cl4.SaveTo(Path.Combine(CurrentDocDir+"/plots/", "Additional_2.tex"));
 **************
 ==============
 CL.PlotNow();
 CL2.PlotNow();
 CL3.PlotNow();
+CL4.PlotNow();
 **************
 System.ComponentModel.Win32Exception occurred: Das System kann die angegebene Datei nicht finden. Type 'LastError' for details.
 
+==============
+**************
+==============
+**************
 ==============
 **************
 ==============
