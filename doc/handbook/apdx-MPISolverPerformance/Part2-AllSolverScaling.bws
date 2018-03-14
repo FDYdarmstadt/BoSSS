@@ -1,5 +1,6 @@
 restart
 **************
+
   Database Explorer v2
   ____________________
 
@@ -27,7 +28,7 @@ List of 24 instances of IDatabaseInfo {
   19: { Session Count = 24; Grid Count = 14; Path = P:\BoSSS_DBs\PaperRevision }
   20: { Session Count = 0; Grid Count = 0; Path = P:\Lichtenberg_DB }
   21: { Session Count = 2; Grid Count = 354; Path = P:\BoSSS_DBs\Bug }
-  22: { Session Count = 53; Grid Count = 97; Path = L:\BoSSS_DB\Lichtenberg_DB }
+  22: { Session Count = 61; Grid Count = 97; Path = L:\BoSSS_DB\Lichtenberg_DB }
   23: { Session Count = 510; Grid Count = 729; Path = Y:\fdy-publication-data\Thesis\2017\Degenhardt\performance_db }
 }
 
@@ -128,24 +129,24 @@ List of 68 instances of String {
   67: Processors
 }
 ==============
-var SubTab_1 = SessTab.ExtractColumns("Processors","SlvIter_excl","SlvInit_excl","PrecSolve","NewtonDirder","LinearSolve","NoOfMultigridLevels","DGdegree:VelocityX","RegularTerminated");
+var SubTab_1 = SessTab.ExtractColumns("Processors","SlvIter_excl","SlvInit_excl","PrecSolve","NewtonDirder","NonlinearSolve","LinearSolve","NoOfMultigridLevels","DGdegree:VelocityX","RegularTerminated");
 **************
 ==============
 SubTab_1.Print();
 **************
-    Processors SlvIter_excl  SlvInit_excl PrecSolve     NewtonDirder  LinearSolve NoOfMultigridLevels DGdegree:VelocityX RegularTerminated 
-0:  8          59582.6186127 38.4114806   30469.5271651 27866.3211947 3           2                   1                  True              
-1:  32         28494.0504275 16.6483007   11128.330949  16861.1074662 3           2                   1                  True              
-2:  64         30854.4396128 14.8030589   14618.6184927 15449.8886054 3           2                   1                  True              
-3:  16         26403.8379533 11.6372309   14640.3035067 11050.6477496 3           2                   1                  True              
-4:  8          0             0            0             0             6           2                   1                  False             
-5:  8          56870.6996634 29.0321476   31290.9062739 25203.9152301 4           2                   1                  True              
-6:  64         26893.6911212 15.0154471   10946.3283928 15644.3939505 6           2                   1                  True              
-7:  64         23084.8021692 15.0523163   8754.7196044  13923.180615  4           2                   1                  True              
-8:  32         33173.2038997 16.5633298   14932.7252671 17374.9938962 6           2                   1                  True              
-9:  32         26521.6818432 26.6087619   10662.3151975 15040.3679929 4           2                   1                  True              
-10: 16         26104.6686354 11.7101604   13459.5464705 11570.64994   6           2                   1                  True              
-11: 16         28316.3646156 11.6296095   18052.4565893 9696.9521095  4           2                   1                  True              
+    Processors SlvIter_excl  SlvInit_excl PrecSolve     NewtonDirder  NonlinearSolve LinearSolve NoOfMultigridLevels DGdegree:VelocityX RegularTerminated 
+0:  8          59582.6186127 38.4114806   30469.5271651 27866.3211947 0              3           2                   1                  True              
+1:  32         28494.0504275 16.6483007   11128.330949  16861.1074662 0              3           2                   1                  True              
+2:  64         30854.4396128 14.8030589   14618.6184927 15449.8886054 0              3           2                   1                  True              
+3:  16         26403.8379533 11.6372309   14640.3035067 11050.6477496 0              3           2                   1                  True              
+4:  8          0             0            0             0             0              6           2                   1                  False             
+5:  8          56870.6996634 29.0321476   31290.9062739 25203.9152301 0              4           2                   1                  True              
+6:  64         26893.6911212 15.0154471   10946.3283928 15644.3939505 0              6           2                   1                  True              
+7:  64         23084.8021692 15.0523163   8754.7196044  13923.180615  0              4           2                   1                  True              
+8:  32         33173.2038997 16.5633298   14932.7252671 17374.9938962 0              6           2                   1                  True              
+9:  32         26521.6818432 26.6087619   10662.3151975 15040.3679929 0              4           2                   1                  True              
+10: 16         26104.6686354 11.7101604   13459.5464705 11570.64994   0              6           2                   1                  True              
+11: 16         28316.3646156 11.6296095   18052.4565893 9696.9521095  0              4           2                   1                  True              
 ==============
 // Calculation of speedup times 
 List<KeyValuePair<string, int>> procs = new List<KeyValuePair<string, int>>{};
@@ -210,55 +211,68 @@ static public void getFormat(int iTabRow,IDictionary<string, object> Row,
            // and the respective color  
            // - - - - - - - - - - - - - - - - - - - - - - - - 
          
- 
+           NonlinearSolverCodes Nonlin_solver_name = (NonlinearSolverCodes) Convert.ToInt32(Row["NonlinearSolve"]);
            LinearSolverCodes solver_name = (LinearSolverCodes) Convert.ToInt32(Row["LinearSolve"]);
            int MGLevels                  = Convert.ToInt32(Row["NoOfMultigridLevels"]);
            Fmt                           = new PlotFormat();
+           
+           switch(Nonlin_solver_name) {
+           case NonlinearSolverCodes.Picard: 
+               Nmn = "Picard "; 
+               break;  
+           case NonlinearSolverCodes.NewtonGMRES: 
+               Nmn = "NewtonGmres "; 
+               break;          
+           default:
+               Console.WriteLine("unknown: " + Nonlin_solver_name); 
+               Nmn = "unknown"; 
+               break;
+           } 
 
           
            switch(solver_name) {
            case LinearSolverCodes.automatic: 
-               Nmn           = "Automatic"; 
+               Nmn           = Nmn+"Automatic"; 
                Fmt.PointType = PointTypes.OpenCircle;
                Fmt.DashType  = DashTypes.Dotted;
                break;
            case LinearSolverCodes.classic_mumps: 
-               Nmn           = "Mumps"; 
+               Nmn           = Nmn+"Mumps"; 
                Fmt.PointType = PointTypes.OpenUpperTriangle;
                Fmt.DashType  = DashTypes.Dotted;
                break;
            case LinearSolverCodes.classic_pardiso: 
-               Nmn           = "Pardiso"; 
+               Nmn           = Nmn+"Pardiso"; 
                Fmt.PointType = PointTypes.Asterisk;
                Fmt.DashType  = DashTypes.Dashed;
                break;
            case LinearSolverCodes.exp_schwarz_directcoarse: 
-               Nmn           = "Swz w Coarse"; 
+               Nmn           = Nmn+"Swz w Coarse"; 
                Fmt.PointType = PointTypes.UpperTriangle;
                Fmt.DashType  = DashTypes.DotDashed;
                break;
            case LinearSolverCodes.exp_schwarz_Kcycle_directcoarse_overlap: 
-               Nmn           = "Swz Kcycle w Coarse Overlap"; 
+               Nmn           = Nmn+"Swz Kcycle w Coarse Overlap"; 
                Fmt.PointType = PointTypes.Plus;
                Fmt.DashType  = DashTypes.Dashed;
                break;
            case LinearSolverCodes.exp_schwarz_directcoarse_overlap: 
-               Nmn           = "Swz w Coarse Overlap"; 
+               Nmn           = Nmn+"Swz w Coarse Overlap"; 
                Fmt.PointType = PointTypes.OpenBox;
                Fmt.DashType  = DashTypes.Dotted;
                break;
            case LinearSolverCodes.exp_schwarz_Kcycle_directcoarse: 
-               Nmn           = "Swz Kcycle w Coarse"; 
+               Nmn           = Nmn+"Swz Kcycle w Coarse"; 
                Fmt.PointType = PointTypes.LowerTriangle;
                Fmt.DashType  = DashTypes.DotDotDashed;
                break;
            case LinearSolverCodes.exp_softgmres: 
-               Nmn           = "SoftGMRES"; 
+               Nmn           = Nmn+"SoftGMRES"; 
                Fmt.PointType = PointTypes.Box;
                Fmt.DashType  = DashTypes.Dotted;
                break;
            case LinearSolverCodes.exp_softgmres_schwarz_directcoarse: 
-               Nmn           = "SoftGMRES Swz w Coarse"; 
+               Nmn           = Nmn+"SoftGMRES Swz w Coarse"; 
                Fmt.PointType = PointTypes.OpenCircle;
                Fmt.DashType  = DashTypes.Dashed;
                break;
@@ -405,45 +419,24 @@ speedupsplots2[0,0].tmargin = 4;
 speedupsplots2[1,0].tmargin = 1;
 speedupsplots2.PlotNow()
 **************
-Exception in the selection test of row 0: KeyNotFoundException, Message: Der angegebene Schlüssel war nicht im Wörterbuch angegeben..
-Exception in the selection test of row 1: KeyNotFoundException, Message: Der angegebene Schlüssel war nicht im Wörterbuch angegeben..
-Exception in the selection test of row 2: KeyNotFoundException, Message: Der angegebene Schlüssel war nicht im Wörterbuch angegeben..
-Exception in the selection test of row 3: KeyNotFoundException, Message: Der angegebene Schlüssel war nicht im Wörterbuch angegeben..
-Exception in the selection test of row 4: KeyNotFoundException, Message: Der angegebene Schlüssel war nicht im Wörterbuch angegeben..
-Exception in the selection test of row 5: KeyNotFoundException, Message: Der angegebene Schlüssel war nicht im Wörterbuch angegeben..
-Exception in the selection test of row 6: KeyNotFoundException, Message: Der angegebene Schlüssel war nicht im Wörterbuch angegeben..
-Exception in the selection test of row 7: KeyNotFoundException, Message: Der angegebene Schlüssel war nicht im Wörterbuch angegeben..
-Exception in the selection test of row 8: KeyNotFoundException, Message: Der angegebene Schlüssel war nicht im Wörterbuch angegeben..
-Exception in the selection test of row 9: KeyNotFoundException, Message: Der angegebene Schlüssel war nicht im Wörterbuch angegeben..
-Exception in the selection test of row 10: KeyNotFoundException, Message: Der angegebene Schlüssel war nicht im Wörterbuch angegeben..
-Exception in the selection test of row 11: KeyNotFoundException, Message: Der angegebene Schlüssel war nicht im Wörterbuch angegeben..
-Exception in the selection test of row 0: KeyNotFoundException, Message: Der angegebene Schlüssel war nicht im Wörterbuch angegeben..
-Exception in the selection test of row 1: KeyNotFoundException, Message: Der angegebene Schlüssel war nicht im Wörterbuch angegeben..
-Exception in the selection test of row 2: KeyNotFoundException, Message: Der angegebene Schlüssel war nicht im Wörterbuch angegeben..
-Exception in the selection test of row 3: KeyNotFoundException, Message: Der angegebene Schlüssel war nicht im Wörterbuch angegeben..
-Exception in the selection test of row 4: KeyNotFoundException, Message: Der angegebene Schlüssel war nicht im Wörterbuch angegeben..
-Exception in the selection test of row 5: KeyNotFoundException, Message: Der angegebene Schlüssel war nicht im Wörterbuch angegeben..
-Exception in the selection test of row 6: KeyNotFoundException, Message: Der angegebene Schlüssel war nicht im Wörterbuch angegeben..
-Exception in the selection test of row 7: KeyNotFoundException, Message: Der angegebene Schlüssel war nicht im Wörterbuch angegeben..
-Exception in the selection test of row 8: KeyNotFoundException, Message: Der angegebene Schlüssel war nicht im Wörterbuch angegeben..
-Exception in the selection test of row 9: KeyNotFoundException, Message: Der angegebene Schlüssel war nicht im Wörterbuch angegeben..
-Exception in the selection test of row 10: KeyNotFoundException, Message: Der angegebene Schlüssel war nicht im Wörterbuch angegeben..
-Exception in the selection test of row 11: KeyNotFoundException, Message: Der angegebene Schlüssel war nicht im Wörterbuch angegeben..
 Using gnuplot: C:\Users\krause\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 System.Drawing.Bitmap
 ==============
 var CL  = multiplots.ToGnuplot().PlotCairolatex(xSize:17, ySize:17);
 var CL2 = speedupsplots.ToGnuplot().PlotCairolatex(xSize:17, ySize:17);
 var CL3 = multiplots2.ToGnuplot().PlotCairolatex(xSize:17, ySize:17);
-var CL$  = speedupsplots2.ToGnuplot().PlotCairolatex(xSize:17, ySize:17);
+var CL4 = speedupsplots2.ToGnuplot().PlotCairolatex(xSize:17, ySize:17);
 **************
-C# evaluator not initialized: use 'restart'.
+Using gnuplot: C:\Users\krause\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+Using gnuplot: C:\Users\krause\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+Using gnuplot: C:\Users\krause\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+Using gnuplot: C:\Users\krause\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 
 ==============
 CL.SaveTo(Path.Combine(CurrentDocDir+"/plots/", "MPIScalingTimes.tex"));
 CL2.SaveTo(Path.Combine(CurrentDocDir+"/plots/", "MPISpeedup.tex"));
 CL3.SaveTo(Path.Combine(CurrentDocDir+"/plots/", "Additional_1.tex"));
-Cl4.SaveTo(Path.Combine(CurrentDocDir+"/plots/", "Additional_2.tex"));
+CL4.SaveTo(Path.Combine(CurrentDocDir+"/plots/", "Additional_2.tex"));
 **************
 ==============
 CL.PlotNow();
@@ -453,6 +446,10 @@ CL4.PlotNow();
 **************
 System.ComponentModel.Win32Exception occurred: Das System kann die angegebene Datei nicht finden. Type 'LastError' for details.
 
+==============
+**************
+==============
+**************
 ==============
 **************
 ==============
