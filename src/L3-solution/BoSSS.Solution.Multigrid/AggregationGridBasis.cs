@@ -40,7 +40,7 @@ namespace BoSSS.Solution.Multigrid {
     public class AggregationGridBasis {
 
 
-
+        /*
         public static AggregationGridBasis[][] CreateSequence(IEnumerable<AggregationGrid> _agSeq, IEnumerable<Basis> dgBasisS) {
 
             // check input
@@ -229,18 +229,8 @@ namespace BoSSS.Solution.Multigrid {
                         var Inj_jl = Injectors_iLevel[j].ExtractSubArrayShallow(l, -1, -1);
                         var invB = invB_prevLevel.ExtractSubArrayShallow(jF, -1, -1);
                         Inj_jl.Multiply(1.0, invB, B_Level_j, 0.0, "nm", "nk", "km");
-
-                        //if(Np == 10) {
-                        //    var check = MultidimensionalArray.Create(Np, Np);
-                        //    check.GEMM(1.0, Inj_jl, Inj_jl.Transpose(), 0.0);
-                        //    check.AccEye(-1.0);
-                        //    var bla = check.InfNorm();
-                        //    Console.WriteLine("Check norm: " + bla);
-                        //}
                     }
                 }
-                //if(Np == 10)
-                //    Console.WriteLine("fin level " + iLevel);
             }
 
             // create basis sequence
@@ -262,8 +252,183 @@ namespace BoSSS.Solution.Multigrid {
                 return ret;
             }
         }
+        */
 
 
+
+        public static AggregationGridBasis[][] CreateSequence(IEnumerable<AggregationGrid> _agSeq, IEnumerable<Basis> dgBasisS) {
+
+            // check input
+            // -----------
+
+            Basis maxDgBasis = null;
+            XDGBasis maxXdgBasis = null;
+            bool[] UseX = new bool[dgBasisS.Count()];
+            bool AnyX = false, AnyNonX = false;
+            for(int iBs = 0; iBs < dgBasisS.Count(); iBs++) {
+                Basis b = dgBasisS.ElementAt(iBs);
+                if(!object.ReferenceEquals(_agSeq.First().AncestorGrid, b.GridDat))
+                    throw new ArgumentException("Mismatch between DG basis grid and multi-grid ancestor.");
+
+                if(b is XDGBasis) {
+                    var xb = b as XDGBasis;
+                    if(maxDgBasis == null || b.Degree > maxDgBasis.Degree) {
+                        maxDgBasis = xb.NonX_Basis;
+                    }
+                    if(maxXdgBasis == null || b.Degree > maxXdgBasis.Degree) {
+                        maxXdgBasis = xb;
+                    }
+                    UseX[iBs] = true;
+                    AnyX = true;
+                } else {
+                    if(maxDgBasis == null || b.Degree > maxDgBasis.Degree) {
+                        maxDgBasis = b;
+                    }
+                    AnyNonX = true;
+                }
+            }
+
+            AggregationGrid[] agSeq = _agSeq.ToArray();
+            if (agSeq.Length <= 0)
+                throw new ArgumentException();
+            if (!object.ReferenceEquals(agSeq[0].ParentGrid, agSeq[0].AncestorGrid))
+                throw new ArgumentException("Parent and Ancestor of 0th grid level must be equal.");
+            GridData baseGrid = (GridData)(agSeq[0].AncestorGrid);
+            
+            for(int iLevel = 0; iLevel < agSeq.Length; iLevel++) {
+                if (agSeq[iLevel].MgLevel != iLevel)
+                    throw new ArgumentException("Grid levels must be provided in order.");
+                if (!object.ReferenceEquals(agSeq[iLevel].AncestorGrid, baseGrid))
+                    throw new ArgumentException("Mismatch in ancestor grid.");
+                if(iLevel > 0) {
+                    if(!object.ReferenceEquals(agSeq[iLevel].ParentGrid, agSeq[iLevel - 1])) {
+                        throw new ArgumentException("Mismatch in parent grid at level " + iLevel + ".");
+                    }
+                }
+            }
+
+            if (baseGrid.CellPartitioning.TotalLength != agSeq[0].CellPartitioning.TotalLength)
+                throw new ArgumentException("Mismatch in number of cells for level 0.");
+
+            if (!object.ReferenceEquals(baseGrid, maxDgBasis.GridDat))
+                throw new ArgumentException("Mismatch between DG basis grid and multi-grid ancestor.");
+
+            // Project Bounding-Box basis
+            // --------------------------
+            var BB = baseGrid.GlobalBoundingBox;
+            int Jbase = baseGrid.Cells.NoOfLocalUpdatedCells;
+            int p = maxDgBasis.Degree;
+            int Np = maxDgBasis.Length;
+            PolynomialList polyList = maxDgBasis.Polynomials[0];
+
+
+
+
+            
+            
+
+            // -----------------------------------------------------------------------------------
+            // injectors to upper level
+            // - 1st index: level index; 0-th entry will always be null.
+            // - 2nd index: aggregation cell index
+            // For each multidimensional array:
+            // - 1st index: enumeration of parts of upper level
+            // - 2nd index: row index
+            // - 3rd index: column index
+            MultidimensionalArray[][] Injectors = new MultidimensionalArray[agSeq.Length][];
+            // -----------------------------------------------------------------------------------
+
+            // level 0
+            int Jagg = agSeq[0].iLogicalCells.NoOfLocalUpdatedCells;
+            int[][] Ag2Pt = agSeq[0].iLogicalCells.AggregateCellToParts;
+            for(int j = 0; j < Jagg; j++) {
+                int jGeom;
+                 if(Ag2Pt == null || Ag2Pt[j] == null) {
+                    jGeom = j;
+                } else {
+                    if (Ag2Pt[j].Length != 1)
+                        throw new ArgumentException();
+                    jGeom = Ag2Pt[j][0];
+                }
+                if (jGeom != j)
+                    throw new NotSupportedException("todo");
+
+                
+            }
+
+            // all other levels
+            for(int iLevel = 1; iLevel < agSeq.Length; iLevel++) { // loop over levels...
+                B_prevLevel = B_Level;
+                //a_prevLevel = a_Level;
+                Mass_prevLevel = Mass_Level;
+                Jagg = agSeq[iLevel].iLogicalCells.NoOfLocalUpdatedCells;
+                Ag2Pt = agSeq[iLevel].iLogicalCells.AggregateCellToParts;
+                int[][] C2F = agSeq[iLevel].jCellCoarse2jCellFine;
+
+                var Injectors_iLevel = new MultidimensionalArray[Jagg];
+                Injectors[iLevel] = Injectors_iLevel;
+
+                B_Level = MultidimensionalArray.Create(Jagg, Np, Np);
+                Mass_Level = MultidimensionalArray.Create(Jagg, Np, Np);
+                for (int j = 0; j < Jagg; j++) { // loop over aggregate cells
+
+                    var Mass_j = Mass_Level.ExtractSubArrayShallow(j, -1, -1);
+                    foreach (int jF in C2F[j]) { // loop over aggregated cells
+                        Mass_j.Acc(1.0, Mass_prevLevel.ExtractSubArrayShallow(jF, -1, -1));
+                        //a_j.Acc(1.0, a_prevLevel.ExtractSubArrayShallow(jF, -1, -1));
+                    }
+
+
+
+                    // perform ortho-normalization:
+                    var B_Level_j = B_Level.ExtractSubArrayShallow(j, -1, -1);
+                    Mass_j.SymmetricLDLInversion(B_Level_j, default(double[]));
+                    //a_j.TriangularInvert(B_Level_j, true);
+#if DEBUG
+                    {
+                       
+
+                        // assert that B_Level_j is upper-triangular
+                        for (int n = 0; n < Np; n++) {
+                            for (int m = n + 1; m < Np; m++) {
+                                Debug.Assert(B_Level_j[m, n] == 0.0);
+                            }
+                        }
+                    }
+#endif
+                    // invert 'B' from previous level
+                    var invB_prevLevel = MultidimensionalArray.Create(B_prevLevel.Lengths);
+                    for(int jP = 0; jP < B_prevLevel.GetLength(0); jP++) {
+                        B_prevLevel.ExtractSubArrayShallow(jP, -1, -1).InvertTo(invB_prevLevel.ExtractSubArrayShallow(jP, -1, -1));
+                    }
+                    
+                    // create injector
+                    Injectors_iLevel[j] = MultidimensionalArray.Create(C2F[j].Length, Np, Np);
+                    for (int l = 0; l < C2F[j].Length; l++) { // loop fine cells which make up the aggregate cell 
+                        todo
+                    }
+                }
+            }
+
+            // create basis sequence
+            // ---------------------
+            {
+                AggregationGridBasis[][] ret = new AggregationGridBasis[agSeq.Length][];
+                AggregationGridBasis[] Abs = new AggregationGridBasis[agSeq.Length];
+                XdgAggregationBasis[] XAbs = new XdgAggregationBasis[agSeq.Length];
+                for (int iLevel = 0; iLevel < agSeq.Length; iLevel++) {
+                    if (AnyNonX)
+                        Abs[iLevel] = new AggregationGridBasis(maxDgBasis, iLevel > 0 ? Abs[iLevel - 1] : null, agSeq[iLevel], Injectors[iLevel]);
+                    if (AnyX)
+                        XAbs[iLevel] = new XdgAggregationBasis(maxXdgBasis, iLevel > 0 ? XAbs[iLevel - 1] : null, agSeq[iLevel], Injectors[iLevel]);
+
+                    ret[iLevel] = new AggregationGridBasis[UseX.Length];
+                    for (int i = 0; i < UseX.Length; i++)
+                        ret[iLevel][i] = UseX[i] ? XAbs[iLevel] : Abs[iLevel];
+                }
+                return ret;
+            }
+        }
 
 
         static GridData GetGridData(AggregationGrid ag) {
@@ -554,11 +719,9 @@ namespace BoSSS.Solution.Multigrid {
             }
 
             if (ag.MgLevel == 1 ) {
-                result.SaveToTextFileSparse(@"c:\tmp\rest.txt");
-
+                
                 var result = BlockMsrMatrix.Multiply(rest, rest.Transpose());
-                result.SaveToTextFileSparse(@"c:\tmp\rst.txt");
-
+                
                 var resultT = result.Transpose();
                 BlockMsrMatrix ShoudBeId;
                 if(result.RowPartitioning.TotalLength < result.ColPartition.TotalLength)
@@ -769,9 +932,9 @@ namespace BoSSS.Solution.Multigrid {
 
                 for(int jAgg = 0; jAgg < JAGG; jAgg++) { // loop over agglomerated cells...
 
-                    //m_CompositeBasis[jAgg] = CA(jAgg);
+                    m_CompositeBasis[jAgg] = CA(jAgg);
 
-                    
+                    /*
                     var compCell = ag.iLogicalCells.AggregateCellToParts[jAgg];
                     
                     if(compCell.Length == 1) {
