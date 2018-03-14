@@ -1,4 +1,4 @@
-set output 'MPIScalingTimes.tex'
+set output 'Additional_1.tex'
 set terminal cairolatex  pdf   size 17cm,17cm
 set multiplot
 set size 1,0.5
@@ -19,7 +19,7 @@ set autoscale y2
 unset xlabel
 set ylabel "Time [s]"
 unset x2label
-set y2label "SlvIter excl"
+set y2label "Precondition Solve"
 set title "Exclusive times"
 unset key
 set key outside right vertical maxrows 3 
@@ -30,7 +30,7 @@ set y2tics format " "
 set termoption dashed
 set termoption dashed
 set termoption dashed
-plot "MPIScalingTimes_data_0.csv" title "Swz w Coarse" with linespoints linecolor  "black" dashtype 4 linewidth 3 pointtype 11 pointsize 0.5, "MPIScalingTimes_data_1.csv" title "Swz Kcycle w Coarse Overlap" with linespoints linecolor  "black" dashtype 2 linewidth 3 pointtype 1 pointsize 0.5, "MPIScalingTimes_data_2.csv" title "Swz w Coarse Overlap" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 4 pointsize 0.5
+plot "Additional_1_data_0.csv" title "Swz w Coarse" with linespoints linecolor  "black" dashtype 4 linewidth 3 pointtype 11 pointsize 0.5, "Additional_1_data_1.csv" title "Swz Kcycle w Coarse Overlap" with linespoints linecolor  "black" dashtype 2 linewidth 3 pointtype 1 pointsize 0.5, "Additional_1_data_2.csv" title "Swz w Coarse Overlap" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 4 pointsize 0.5
 set size 0.98,0.49
 set origin 0.01,0.005
 unset lmargin 
@@ -48,7 +48,7 @@ set autoscale y2
 set xlabel "Processors"
 set ylabel "Time [s]"
 unset x2label
-set y2label "SlvInit excl"
+set y2label "Newton Dirder"
 unset title 
 unset key
 set key outside right vertical maxrows 3 
@@ -59,7 +59,7 @@ set y2tics format " "
 set termoption dashed
 set termoption dashed
 set termoption dashed
-plot "MPIScalingTimes_data_3.csv" title "Swz w Coarse" with linespoints linecolor  "black" dashtype 4 linewidth 3 pointtype 11 pointsize 0.5, "MPIScalingTimes_data_4.csv" title "Swz Kcycle w Coarse Overlap" with linespoints linecolor  "black" dashtype 2 linewidth 3 pointtype 1 pointsize 0.5, "MPIScalingTimes_data_5.csv" title "Swz w Coarse Overlap" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 4 pointsize 0.5
+plot "Additional_1_data_3.csv" title "Swz w Coarse" with linespoints linecolor  "black" dashtype 4 linewidth 3 pointtype 11 pointsize 0.5, "Additional_1_data_4.csv" title "Swz Kcycle w Coarse Overlap" with linespoints linecolor  "black" dashtype 2 linewidth 3 pointtype 1 pointsize 0.5, "Additional_1_data_5.csv" title "Swz w Coarse Overlap" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 4 pointsize 0.5
 
 
 exit
