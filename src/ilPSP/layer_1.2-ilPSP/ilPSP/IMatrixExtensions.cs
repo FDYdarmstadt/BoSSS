@@ -596,6 +596,7 @@ namespace ilPSP {
             return GEMM(GEMM(A, B), C);
         }
 
+        static MultidimensionalArray.MultiplyProgram GEMM_Prog = MultidimensionalArray.MultiplyProgram.Compile("ij", "ik", "kj");
 
         /// <summary>
         /// General matrix/matrix multiplication:
@@ -618,7 +619,7 @@ namespace ilPSP {
                 MultidimensionalArray _B = B as MultidimensionalArray;
                 MultidimensionalArray _M = M as MultidimensionalArray;
 
-                _M.Multiply(alpha, _A, _B, beta, "ij", "ik", "kj");
+                _M.Multiply(alpha, _A, _B, beta, ref GEMM_Prog);
             } else {
 
                 int K = A.NoOfCols;
