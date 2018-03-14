@@ -28,7 +28,7 @@ List of 24 instances of IDatabaseInfo {
   19: { Session Count = 24; Grid Count = 14; Path = P:\BoSSS_DBs\PaperRevision }
   20: { Session Count = 0; Grid Count = 0; Path = P:\Lichtenberg_DB }
   21: { Session Count = 2; Grid Count = 354; Path = P:\BoSSS_DBs\Bug }
-  22: { Session Count = 52; Grid Count = 97; Path = L:\BoSSS_DB\Lichtenberg_DB }
+  22: { Session Count = 53; Grid Count = 97; Path = L:\BoSSS_DB\Lichtenberg_DB }
   23: { Session Count = 510; Grid Count = 729; Path = Y:\fdy-publication-data\Thesis\2017\Degenhardt\performance_db }
 }
 
@@ -129,24 +129,24 @@ List of 68 instances of String {
   67: Processors
 }
 ==============
-var SubTab_1 = SessTab.ExtractColumns("Processors","SlvIter_excl","SlvInit_excl","PrecSolve","NewtonDirder","LinearSolve","DGdegree:VelocityX","RegularTerminated");
+var SubTab_1 = SessTab.ExtractColumns("Processors","SlvIter_excl","SlvInit_excl","PrecSolve","NewtonDirder","LinearSolve","NoOfMultigridLevels","DGdegree:VelocityX","RegularTerminated");
 **************
 ==============
 SubTab_1.Print();
 **************
-    Processors SlvIter_excl  SlvInit_excl PrecSolve     NewtonDirder  LinearSolve DGdegree:VelocityX RegularTerminated 
-0:  8          59582.6186127 38.4114806   30469.5271651 27866.3211947 3           1                  True              
-1:  32         28494.0504275 16.6483007   11128.330949  16861.1074662 3           1                  True              
-2:  64         30854.4396128 14.8030589   14618.6184927 15449.8886054 3           1                  True              
-3:  16         26403.8379533 11.6372309   14640.3035067 11050.6477496 3           1                  True              
-4:  8          0             0            0             0             6           1                  False             
-5:  8          56870.6996634 29.0321476   31290.9062739 25203.9152301 4           1                  True              
-6:  64         26893.6911212 15.0154471   10946.3283928 15644.3939505 6           1                  True              
-7:  64         23084.8021692 15.0523163   8754.7196044  13923.180615  4           1                  True              
-8:  32         33173.2038997 16.5633298   14932.7252671 17374.9938962 6           1                  True              
-9:  32         26521.6818432 26.6087619   10662.3151975 15040.3679929 4           1                  True              
-10: 16         26104.6686354 11.7101604   13459.5464705 11570.64994   6           1                  True              
-11: 16         28316.3646156 11.6296095   18052.4565893 9696.9521095  4           1                  True              
+    Processors SlvIter_excl  SlvInit_excl PrecSolve     NewtonDirder  LinearSolve NoOfMultigridLevels DGdegree:VelocityX RegularTerminated 
+0:  8          59582.6186127 38.4114806   30469.5271651 27866.3211947 3           2                   1                  True              
+1:  32         28494.0504275 16.6483007   11128.330949  16861.1074662 3           2                   1                  True              
+2:  64         30854.4396128 14.8030589   14618.6184927 15449.8886054 3           2                   1                  True              
+3:  16         26403.8379533 11.6372309   14640.3035067 11050.6477496 3           2                   1                  True              
+4:  8          0             0            0             0             6           2                   1                  False             
+5:  8          56870.6996634 29.0321476   31290.9062739 25203.9152301 4           2                   1                  True              
+6:  64         26893.6911212 15.0154471   10946.3283928 15644.3939505 6           2                   1                  True              
+7:  64         23084.8021692 15.0523163   8754.7196044  13923.180615  4           2                   1                  True              
+8:  32         33173.2038997 16.5633298   14932.7252671 17374.9938962 6           2                   1                  True              
+9:  32         26521.6818432 26.6087619   10662.3151975 15040.3679929 4           2                   1                  True              
+10: 16         26104.6686354 11.7101604   13459.5464705 11570.64994   6           2                   1                  True              
+11: 16         28316.3646156 11.6296095   18052.4565893 9696.9521095  4           2                   1                  True              
 ==============
 // Calculation of speedup times 
 List<KeyValuePair<string, int>> procs = new List<KeyValuePair<string, int>>{};
@@ -200,8 +200,7 @@ foreach (DataRow row in SubTab_1.Rows) {
     i++;
 }
 **************
-System.Data.DuplicateNameException occurred: Eine Spalte names 'SlvIter_speedup' gehört bereits zu dieser DataTable.. Type 'LastError' for details.
-
+NewtonDirder_speedup
 ==============
 static public class Formats {
 static public void getFormat(int iTabRow,IDictionary<string, object> Row, 
@@ -214,6 +213,7 @@ static public void getFormat(int iTabRow,IDictionary<string, object> Row,
          
  
            LinearSolverCodes solver_name = (LinearSolverCodes) Convert.ToInt32(Row["LinearSolve"]);
+           int MGLevels                  = Convert.ToInt32(Row["NoOfMultigridLevels"]);
            Fmt                           = new PlotFormat();
 
           
@@ -268,6 +268,7 @@ static public void getFormat(int iTabRow,IDictionary<string, object> Row,
                Nmn = "unknown"; 
                break;
            } 
+           Nmn           = Nmn+" MGLevels"+MGLevels;
            Fmt.PointSize = 0.5;
            Fmt.Style     = Styles.LinesPoints;
            Fmt.LineColor = LineColors.Black;
@@ -452,6 +453,10 @@ CL3.PlotNow();
 **************
 System.ComponentModel.Win32Exception occurred: Das System kann die angegebene Datei nicht finden. Type 'LastError' for details.
 
+==============
+**************
+==============
+**************
 ==============
 **************
 ==============
