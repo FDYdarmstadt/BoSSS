@@ -22,12 +22,12 @@ List of 24 instances of IDatabaseInfo {
   14: { Session Count = 43; Grid Count = 45; Path = P:\BoSSS_DBs\IBMPaper }
   15: { Session Count = 28; Grid Count = 15; Path = P:\BoSSS_DBs\Paper_IBM2D }
   16: { Session Count = 38; Grid Count = 22; Path = P:\BoSSS_DBs\Paper_CellAgglo01_Penalty4 }
-  17: { Session Count = 42; Grid Count = 55; Path = P:\BoSSS_DBs\Sphere3D }
+  17: { Session Count = 43; Grid Count = 55; Path = P:\BoSSS_DBs\Sphere3D }
   18: { Session Count = 22; Grid Count = 10; Path = P:\BoSSS_DBs\Performance }
   19: { Session Count = 24; Grid Count = 14; Path = P:\BoSSS_DBs\PaperRevision }
   20: { Session Count = 0; Grid Count = 0; Path = P:\Lichtenberg_DB }
   21: { Session Count = 2; Grid Count = 354; Path = P:\BoSSS_DBs\Bug }
-  22: { Session Count = 52; Grid Count = 97; Path = L:\BoSSS_DB\Lichtenberg_DB }
+  22: { Session Count = 57; Grid Count = 97; Path = L:\BoSSS_DB\Lichtenberg_DB }
   23: { Session Count = 510; Grid Count = 729; Path = Y:\fdy-publication-data\Thesis\2017\Degenhardt\performance_db }
 }
 
@@ -87,15 +87,16 @@ static class Utils {
 LinearSolverCodes[] linSolvers = new LinearSolverCodes[] {
     //LinearSolverCodes.exp_schwarz_directcoarse,
     //LinearSolverCodes.exp_schwarz_Kcycle_directcoarse,
-    //LinearSolverCodes.exp_schwarz_directcoarse_overlap,
-    LinearSolverCodes.exp_schwarz_Kcycle_directcoarse_overlap,
+    LinearSolverCodes.exp_schwarz_directcoarse_overlap,
+    //LinearSolverCodes.exp_schwarz_Kcycle_directcoarse_overlap,
+    //LinearSolverCodes.exp_softgmres_schwarz_Kcycle_directcoarse_overlap
 };
 int[] ks = new int[] {2,3};
 int cells_x  = 64;
 int cells_yz = 16;
 int re       = 100; 
 int saveToDB = 1;
-int[] procs    = new int[] {8,16,32,64};
+int[] procs    = new int[] {8};
 **************
 C# evaluator not initialized: use 'restart'.
 
@@ -401,6 +402,10 @@ WorkflowMgm.AdditionalSessionTableColums.Add(
     "SlvIter_excl", AddCols.SlvIterTime);
 WorkflowMgm.AdditionalSessionTableColums.Add(
     "SlvInit_excl", AddCols.SlvInitTime);
+    WorkflowMgm.AdditionalSessionTableColums.Add(
+    "PrecSolve", AddCols.SchwarzSolve);
+    WorkflowMgm.AdditionalSessionTableColums.Add(
+    "NewtonDirder", AddCols.NewtonDirder);
 WorkflowMgm.AdditionalSessionTableColums.Add(
     "Processors", AddCols.MPIs);
 **************
@@ -449,6 +454,20 @@ string docpath    = Path.Combine(CurrentDocDir, SessTab.TableName + ".json");
 // save session table as file: this can be stored in our git 
 // repository
 SessTab.SaveToFile(docpath);
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************
