@@ -237,7 +237,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         public int Config_MaxIterations = 1000;
 
-        public int Config_MaxKrylovDim = 30;
+        public int Config_MaxKrylovDim = 100;
 
         /// <summary>
         /// Under relaxation factor for iterative solver.
