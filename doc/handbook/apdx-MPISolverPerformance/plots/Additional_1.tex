@@ -1,0 +1,235 @@
+% GNUPLOT: LaTeX picture with Postscript
+\begingroup
+  \makeatletter
+  \providecommand\color[2][]{%
+    \GenericError{(gnuplot) \space\space\space\@spaces}{%
+      Package color not loaded in conjunction with
+      terminal option `colourtext'%
+    }{See the gnuplot documentation for explanation.%
+    }{Either use 'blacktext' in gnuplot or load the package
+      color.sty in LaTeX.}%
+    \renewcommand\color[2][]{}%
+  }%
+  \providecommand\includegraphics[2][]{%
+    \GenericError{(gnuplot) \space\space\space\@spaces}{%
+      Package graphicx or graphics not loaded%
+    }{See the gnuplot documentation for explanation.%
+    }{The gnuplot epslatex terminal needs graphicx.sty or graphics.sty.}%
+    \renewcommand\includegraphics[2][]{}%
+  }%
+  \providecommand\rotatebox[2]{#2}%
+  \@ifundefined{ifGPcolor}{%
+    \newif\ifGPcolor
+    \GPcolortrue
+  }{}%
+  \@ifundefined{ifGPblacktext}{%
+    \newif\ifGPblacktext
+    \GPblacktexttrue
+  }{}%
+  % define a \g@addto@macro without @ in the name:
+  \let\gplgaddtomacro\g@addto@macro
+  % define empty templates for all commands taking text:
+  \gdef\gplbacktext{}%
+  \gdef\gplfronttext{}%
+  \makeatother
+  \ifGPblacktext
+    % no textcolor at all
+    \def\colorrgb#1{}%
+    \def\colorgray#1{}%
+  \else
+    % gray or color?
+    \ifGPcolor
+      \def\colorrgb#1{\color[rgb]{#1}}%
+      \def\colorgray#1{\color[gray]{#1}}%
+      \expandafter\def\csname LTw\endcsname{\color{white}}%
+      \expandafter\def\csname LTb\endcsname{\color{black}}%
+      \expandafter\def\csname LTa\endcsname{\color{black}}%
+      \expandafter\def\csname LT0\endcsname{\color[rgb]{1,0,0}}%
+      \expandafter\def\csname LT1\endcsname{\color[rgb]{0,1,0}}%
+      \expandafter\def\csname LT2\endcsname{\color[rgb]{0,0,1}}%
+      \expandafter\def\csname LT3\endcsname{\color[rgb]{1,0,1}}%
+      \expandafter\def\csname LT4\endcsname{\color[rgb]{0,1,1}}%
+      \expandafter\def\csname LT5\endcsname{\color[rgb]{1,1,0}}%
+      \expandafter\def\csname LT6\endcsname{\color[rgb]{0,0,0}}%
+      \expandafter\def\csname LT7\endcsname{\color[rgb]{1,0.3,0}}%
+      \expandafter\def\csname LT8\endcsname{\color[rgb]{0.5,0.5,0.5}}%
+    \else
+      % gray
+      \def\colorrgb#1{\color{black}}%
+      \def\colorgray#1{\color[gray]{#1}}%
+      \expandafter\def\csname LTw\endcsname{\color{white}}%
+      \expandafter\def\csname LTb\endcsname{\color{black}}%
+      \expandafter\def\csname LTa\endcsname{\color{black}}%
+      \expandafter\def\csname LT0\endcsname{\color{black}}%
+      \expandafter\def\csname LT1\endcsname{\color{black}}%
+      \expandafter\def\csname LT2\endcsname{\color{black}}%
+      \expandafter\def\csname LT3\endcsname{\color{black}}%
+      \expandafter\def\csname LT4\endcsname{\color{black}}%
+      \expandafter\def\csname LT5\endcsname{\color{black}}%
+      \expandafter\def\csname LT6\endcsname{\color{black}}%
+      \expandafter\def\csname LT7\endcsname{\color{black}}%
+      \expandafter\def\csname LT8\endcsname{\color{black}}%
+    \fi
+  \fi
+    \setlength{\unitlength}{0.0500bp}%
+    \ifx\gptboxheight\undefined%
+      \newlength{\gptboxheight}%
+      \newlength{\gptboxwidth}%
+      \newsavebox{\gptboxtext}%
+    \fi%
+    \setlength{\fboxrule}{0.5pt}%
+    \setlength{\fboxsep}{1pt}%
+\begin{picture}(9620.00,9620.00)%
+    \gplgaddtomacro\gplbacktext{%
+      \csname LTb\endcsname%
+      \put(938,5037){\makebox(0,0)[r]{\strut{}$0$}}%
+      \csname LTb\endcsname%
+      \put(938,5582){\makebox(0,0)[r]{\strut{}$5000$}}%
+      \csname LTb\endcsname%
+      \put(938,6128){\makebox(0,0)[r]{\strut{}$10000$}}%
+      \csname LTb\endcsname%
+      \put(938,6673){\makebox(0,0)[r]{\strut{}$15000$}}%
+      \csname LTb\endcsname%
+      \put(938,7219){\makebox(0,0)[r]{\strut{}$20000$}}%
+      \csname LTb\endcsname%
+      \put(938,7764){\makebox(0,0)[r]{\strut{}$25000$}}%
+      \csname LTb\endcsname%
+      \put(938,8310){\makebox(0,0)[r]{\strut{}$30000$}}%
+      \csname LTb\endcsname%
+      \put(938,8855){\makebox(0,0)[r]{\strut{}$35000$}}%
+      \csname LTb\endcsname%
+      \put(1502,4858){\makebox(0,0){\strut{}$10$}}%
+      \csname LTb\endcsname%
+      \put(2015,4858){\makebox(0,0){\strut{}$20$}}%
+      \csname LTb\endcsname%
+      \put(2529,4858){\makebox(0,0){\strut{}$30$}}%
+      \csname LTb\endcsname%
+      \put(3042,4858){\makebox(0,0){\strut{}$40$}}%
+      \csname LTb\endcsname%
+      \put(3555,4858){\makebox(0,0){\strut{}$50$}}%
+      \csname LTb\endcsname%
+      \put(4069,4858){\makebox(0,0){\strut{}$60$}}%
+      \csname LTb\endcsname%
+      \put(4376,5037){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(4376,5582){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(4376,6128){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(4376,6673){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(4376,7219){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(4376,7764){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(4376,8310){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(4376,8855){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(1040,9034){\makebox(0,0){\strut{} }}%
+      \csname LTb\endcsname%
+      \put(1502,9034){\makebox(0,0){\strut{} }}%
+      \csname LTb\endcsname%
+      \put(1964,9034){\makebox(0,0){\strut{} }}%
+      \csname LTb\endcsname%
+      \put(2426,9034){\makebox(0,0){\strut{} }}%
+      \csname LTb\endcsname%
+      \put(2888,9034){\makebox(0,0){\strut{} }}%
+      \csname LTb\endcsname%
+      \put(3350,9034){\makebox(0,0){\strut{} }}%
+      \csname LTb\endcsname%
+      \put(3812,9034){\makebox(0,0){\strut{} }}%
+      \csname LTb\endcsname%
+      \put(4274,9034){\makebox(0,0){\strut{} }}%
+    }%
+    \gplgaddtomacro\gplfronttext{%
+      \csname LTb\endcsname%
+      \put(236,6946){\rotatebox{-270}{\makebox(0,0){\strut{}Time [s]}}}%
+      \csname LTb\endcsname%
+      \put(4668,6946){\rotatebox{-270}{\makebox(0,0){\strut{}SolvIter: Precondition Solve}}}%
+      \csname LTb\endcsname%
+      \put(2657,9482){\makebox(0,0){\strut{}Exclusive times}}%
+      \csname LTb\endcsname%
+      \put(8737,8765){\makebox(0,0)[r]{\strut{}Swz w Coarse MGLevels2}}%
+      \csname LTb\endcsname%
+      \put(8737,8586){\makebox(0,0)[r]{\strut{}Swz Kcycle w Coarse Overlap MGLevels2}}%
+      \csname LTb\endcsname%
+      \put(8737,8407){\makebox(0,0)[r]{\strut{}Swz w Coarse Overlap MGLevels2}}%
+    }%
+    \gplgaddtomacro\gplbacktext{%
+      \csname LTb\endcsname%
+      \put(938,620){\makebox(0,0)[r]{\strut{}$0$}}%
+      \csname LTb\endcsname%
+      \put(938,1280){\makebox(0,0)[r]{\strut{}$5000$}}%
+      \csname LTb\endcsname%
+      \put(938,1941){\makebox(0,0)[r]{\strut{}$10000$}}%
+      \csname LTb\endcsname%
+      \put(938,2601){\makebox(0,0)[r]{\strut{}$15000$}}%
+      \csname LTb\endcsname%
+      \put(938,3261){\makebox(0,0)[r]{\strut{}$20000$}}%
+      \csname LTb\endcsname%
+      \put(938,3922){\makebox(0,0)[r]{\strut{}$25000$}}%
+      \csname LTb\endcsname%
+      \put(938,4582){\makebox(0,0)[r]{\strut{}$30000$}}%
+      \csname LTb\endcsname%
+      \put(1502,441){\makebox(0,0){\strut{}$10$}}%
+      \csname LTb\endcsname%
+      \put(2015,441){\makebox(0,0){\strut{}$20$}}%
+      \csname LTb\endcsname%
+      \put(2529,441){\makebox(0,0){\strut{}$30$}}%
+      \csname LTb\endcsname%
+      \put(3042,441){\makebox(0,0){\strut{}$40$}}%
+      \csname LTb\endcsname%
+      \put(3555,441){\makebox(0,0){\strut{}$50$}}%
+      \csname LTb\endcsname%
+      \put(4069,441){\makebox(0,0){\strut{}$60$}}%
+      \csname LTb\endcsname%
+      \put(4376,620){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(4376,1280){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(4376,1941){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(4376,2601){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(4376,3261){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(4376,3922){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(4376,4582){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(1040,4761){\makebox(0,0){\strut{} }}%
+      \csname LTb\endcsname%
+      \put(1502,4761){\makebox(0,0){\strut{} }}%
+      \csname LTb\endcsname%
+      \put(1964,4761){\makebox(0,0){\strut{} }}%
+      \csname LTb\endcsname%
+      \put(2426,4761){\makebox(0,0){\strut{} }}%
+      \csname LTb\endcsname%
+      \put(2888,4761){\makebox(0,0){\strut{} }}%
+      \csname LTb\endcsname%
+      \put(3350,4761){\makebox(0,0){\strut{} }}%
+      \csname LTb\endcsname%
+      \put(3812,4761){\makebox(0,0){\strut{} }}%
+      \csname LTb\endcsname%
+      \put(4274,4761){\makebox(0,0){\strut{} }}%
+    }%
+    \gplgaddtomacro\gplfronttext{%
+      \csname LTb\endcsname%
+      \put(236,2601){\rotatebox{-270}{\makebox(0,0){\strut{}Time [s]}}}%
+      \csname LTb\endcsname%
+      \put(4668,2601){\rotatebox{-270}{\makebox(0,0){\strut{}SolIter: Newton Dirder}}}%
+      \csname LTb\endcsname%
+      \put(2657,173){\makebox(0,0){\strut{}Processors}}%
+      \csname LTb\endcsname%
+      \put(8737,4492){\makebox(0,0)[r]{\strut{}Swz w Coarse MGLevels2}}%
+      \csname LTb\endcsname%
+      \put(8737,4313){\makebox(0,0)[r]{\strut{}Swz Kcycle w Coarse Overlap MGLevels2}}%
+      \csname LTb\endcsname%
+      \put(8737,4134){\makebox(0,0)[r]{\strut{}Swz w Coarse Overlap MGLevels2}}%
+    }%
+    \gplbacktext
+    \put(0,0){\includegraphics{Additional_1}}%
+    \gplfronttext
+  \end{picture}%
+\endgroup
