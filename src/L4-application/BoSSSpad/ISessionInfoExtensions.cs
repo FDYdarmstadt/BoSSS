@@ -1715,6 +1715,10 @@ namespace BoSSS.Foundation.IO {
 
             // Iterate over sessions
             for (int i = 0; i < numberSessions; i++) {
+
+                // was missing
+                mcr = sessions.Pick(i).GetProfiling();
+
                 // Get number of processors and save for later
                 int fileCount = (from file in Directory.EnumerateFiles(@path + "\\sessions\\" + sessions.Pick(i).ID, "profiling_bin.*", SearchOption.AllDirectories)
                                  select file).Count();
