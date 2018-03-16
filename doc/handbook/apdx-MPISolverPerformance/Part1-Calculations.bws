@@ -96,7 +96,7 @@ int cells_x  = 64;
 int cells_yz = 16;
 int re       = 100; 
 int saveToDB = 1;
-int[] procs    = new int[] {8};
+int[] procs    = new int[] {8,16,32,64};
 **************
 C# evaluator not initialized: use 'restart'.
 
@@ -454,6 +454,8 @@ string docpath    = Path.Combine(CurrentDocDir, SessTab.TableName + ".json");
 // save session table as file: this can be stored in our git 
 // repository
 SessTab.SaveToFile(docpath);
+**************
+==============
 **************
 ==============
 **************
