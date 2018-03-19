@@ -40,10 +40,9 @@ namespace BoSSS.Application.XDGTest {
     class XDGTestMain : BoSSS.Solution.Application {
         static void Main(string[] args) {
             
-            BoSSS.Solution.Application._Main(args, true, "", delegate() {
+            BoSSS.Solution.Application._Main(args, true, delegate() {
                 var p = new XDGTestMain();
                 //p.passiveIo = true;
-                p.m_GridPartitioningType = GridPartType.METIS;
                 return p;
             });
         }

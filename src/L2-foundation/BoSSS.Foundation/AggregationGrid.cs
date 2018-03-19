@@ -75,13 +75,13 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// Constructor.
         /// </summary>
         /// <param name="pGrid">
-        /// Parrent grid.
+        /// Parent grid.
         /// </param>
         /// <param name="AggregationCells">
         /// Coarse cells which build up the fine cells.
         /// - 1st index: coarse (i.e. this) grid cell index
         /// - 2nd index: enumeration
-        /// - content: local cell index into the parrent grid <paramref name="pGrid"/>.
+        /// - content: local cell index into the parent grid <paramref name="pGrid"/>.
         /// </param>
         public AggregationGrid(IGridData pGrid, int[][] AggregationCells) {
             ParentGrid = pGrid;

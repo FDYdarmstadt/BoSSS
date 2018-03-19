@@ -66,27 +66,35 @@ namespace MiniBatchProcessor {
         public const string QUEUE_DIR = "queue";
 
         /// <summary>
-        /// Directory for jobs which are currently in progress.
+        /// Directory for jobs which are currently in progress, and finished ones.
         /// </summary>
-        public const string WORK_DIR = "work";
+        public const string WORK_FINISHED_DIR = "work";
 
-        /// <summary>
-        /// Directory for finished jobs.
-        /// </summary>
-        public const string FINISHED_DIR = "finished";
+        ///// <summary>
+        ///// Directory for finished jobs.
+        ///// </summary>
+        //public const string FINISHED_DIR = "finished";
 
-        private static void ReadDir(string RelDir, List<Tuple<JobData, JobStatus>> R, JobStatus s) {
+        private static void ReadDir(string RelDir, List<Tuple<JobData, JobStatus>> R, JobStatus s0) {
             string dir = Path.Combine(config.BatchInstructionDir, RelDir);
 
             foreach (var fName in Directory.GetFiles(dir, "*")) {
                 int id;
                 bool IsInt = Int32.TryParse(Path.GetFileName(fName), out id);
 
+                JobStatus s = s0;
+
                 if (!IsInt)
                     continue;
 
                 var J = JobData.FromFile(Path.Combine(dir, fName));
 
+                if(s == JobStatus.Working) {
+                    string exit_token = J.ID.ToString() + "_exit.txt";
+                    if(File.Exists(Path.Combine(dir, exit_token)))
+                        s = JobStatus.Finished;
+                }
+                
                 if (J == null)
                     continue;
 
@@ -98,8 +106,9 @@ namespace MiniBatchProcessor {
         static void UpdateLists() {
             var AllJobsNew = new List<Tuple<JobData, JobStatus>>();
             ReadDir(QUEUE_DIR, AllJobsNew, JobStatus.Queued);
-            ReadDir(WORK_DIR, AllJobsNew, JobStatus.Working);
-            ReadDir(FINISHED_DIR, AllJobsNew, JobStatus.Finished);
+            //ReadDir(WORK_DIR, AllJobsNew, JobStatus.Working);
+            //ReadDir(FINISHED_DIR, AllJobsNew, JobStatus.Finished);
+            ReadDir(WORK_FINISHED_DIR, AllJobsNew, JobStatus.Working);
 
             for(int i = 0; i < AllJobsNew.Count; i++) {
                 var Ja = AllJobsNew[i];
@@ -146,7 +155,7 @@ namespace MiniBatchProcessor {
 
                     if(jd.Item2 == JobStatus.Finished) {
                         try {
-                            string ExitCodeFile = Path.Combine(ClientAndServer.config.BatchInstructionDir, FINISHED_DIR, JobId.ToString() + "_exit.txt");
+                            string ExitCodeFile = Path.Combine(ClientAndServer.config.BatchInstructionDir, WORK_FINISHED_DIR, JobId.ToString() + "_exit.txt");
                             using (var exit = new StreamReader(ExitCodeFile)) {
                                 ExitCode = int.Parse(exit.ReadLine());
                             }

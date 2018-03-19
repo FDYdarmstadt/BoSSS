@@ -20,14 +20,24 @@ using System.Linq;
 using System.Text;
 using BoSSS.Solution.Control;
 using BoSSS.Foundation;
+using System.Runtime.Serialization;
 
 namespace BoSSS.Application.SipPoisson {
     
+
     /// <summary>
     /// Control object for the ipPoisson solver.
     /// </summary>
+    [DataContract]
     [Serializable]
     public class SipControl : AppControl {
+
+        /// <summary>
+        /// Ctor.
+        /// </summary>
+        public SipControl() : base() {
+            base.NoOfMultigridLevels = 1;
+        }
 
         /// <summary>
         /// Type of <see cref="SipPoissonMain"/>.
@@ -39,11 +49,12 @@ namespace BoSSS.Application.SipPoisson {
         /// <summary>
         /// Re-sets all <see cref="AppControl.FieldOptions"/>
         /// </summary>
-        public override void SetDGdegree(int p) {
+        public override void SetDGdegree(int p,int D=2) {
             if(p < 1)
                 throw new ArgumentOutOfRangeException("Symmetric interior penalty requires a DG degree of at least 1.");
             base.FieldOptions.Clear();
             base.AddFieldOption("T", p);
+            base.AddFieldOption("Tex", p * 2, FieldOpts.SaveToDBOpt.unspecified); // exact solution: degree times 2
         }
 
         /// <summary>
@@ -56,43 +67,40 @@ namespace BoSSS.Application.SipPoisson {
 
         }
 
-
-        ///// <summary>
-        ///// Function which determines which part of the domain boundary is of Dirichlet type (true)
-        ///// and which part of Neumann type (false).
-        ///// </summary>
-        //public Func<CommonParamsBnd,bool> IsDirichlet;
-
-        ///// <summary>
-        ///// Dirichlet boundary value
-        ///// </summary>
-        //public Func<CommonParamsBnd,double> g_Diri;
-
-        ///// <summary>
-        ///// Neumann boundary value
-        ///// </summary>
-        //public Func<CommonParamsBnd, double> g_Neum;
-
+       
         /// <summary>
         /// Multiplyer for the penalty parameter, should be around 1.0.
         /// </summary>
+        [DataMember]
         [BoSSS.Solution.Control.ExclusiveLowerBound(0.0)]
         public double penalty_poisson = 1.3;
 
         /// <summary>
         /// string identifying the solver variant
         /// </summary>
-        public string solver_name = "direct";
+        [DataMember]
+        public SolverCodes solver_name = SolverCodes.classic_pardiso;
+
+
+        /// <summary>
+        /// If any blocking is used (Schwarz, block Jacobi), a target for the block size.
+        /// Tests show that the ideal block size may be around 10000, but this may depend on computer, DG polynomial order, etc.
+        /// </summary>
+        [DataMember]
+        [BoSSS.Solution.Control.ExclusiveLowerBound(99.0)]
+        public int TargetBlockSize = 10000;
         
         /// <summary>
         /// run the solver more than once, e.g. for more reliable timing-results.
         /// </summary>
+        [DataMember]
         [BoSSS.Solution.Control.InclusiveLowerBound(1.0)]
-        public int NoOfSolverRuns = 2;
+        public int NoOfSolverRuns = 1;
 
         /// <summary>
         /// True, if an exact solution -- in order to determine the error -- is provides.
         /// </summary>
+        [DataMember]
         public bool ExactSolution_provided = false;
     }
 }

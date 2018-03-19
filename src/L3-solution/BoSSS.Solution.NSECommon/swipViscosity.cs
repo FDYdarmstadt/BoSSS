@@ -271,8 +271,6 @@ namespace BoSSS.Solution.NSECommon {
         /// interior penalty method, K. Shahbazi, J. of Comp. Phys. 205 (2004) 401-407,
         /// look at formula (7) in cited paper
         /// </summary>
-        /// <param name="inp"></param>
-        /// <returns></returns>
         virtual protected double penalty(int jCellIn, int jCellOut) {
             double mu;
             if (m_ComputePenalty != null)

@@ -344,6 +344,55 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
+        /// Loads the profiling information for a session
+        /// </summary>
+        /// <param name="session"></param>
+        /// <returns>
+        /// An array of profiling trees, one for each MPI rank; th index into the returned array corresponds with the MPI rank.
+        /// </returns>
+        public static MethodCallRecord[] GetProfiling(this ISessionInfo session) {
+            // find
+            string sessDir = DatabaseDriver.GetSessionDirectory(session);
+            string[] TextFils = Directory.GetFiles(sessDir, "profiling_bin.*.txt");
+            if (TextFils.Count() <= 0)
+                throw new IOException("Unable to find profiling information.");
+
+            // sort according to process rank
+            int[] Ranks = new int[TextFils.Length];
+            for (int i = 0; i < Ranks.Length; i++) {
+                var parts = TextFils[i].Split(new string[] { "profiling_bin.", ".txt" }, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length <= 0)
+                    throw new IOException("Unable to determine file rank from path '" + parts[i] + "'.");
+                Ranks[i] = int.Parse(parts.Last());
+                if (Ranks[i] < 0)
+                    throw new IOException("Unable to determine file rank from path '" + parts[i] + "'.");
+            }
+
+            int MPISize = session.ComputeNodeNames.Count;
+            if(MPISize != Ranks.Max() + 1) {
+                Console.WriteLine("WARNING: mismatch between number of MPI ranks (" + MPISize + ") for session and max rank of profiling information (" + (Ranks.Max() + 1) + ").");
+            }
+
+            // load 
+            var R = new MethodCallRecord[Ranks.Max() + 1];
+            for(int i = 0; i < Ranks.Length; i++) {
+                int rnk = Ranks[i];
+
+                var f = TextFils[i];
+                var JSON = File.ReadAllText(f);
+                var mcr = MethodCallRecord.Deserialize(JSON);
+
+                if (R[rnk] != null)
+                    throw new IOException("It seems profiling info was written more than once for MPI rank " + rnk + ".");
+
+                R[rnk] = mcr;
+            }
+
+            // return
+            return R;
+        }
+
+        /// <summary>
         /// Reads tabulated text files.
         /// </summary>
         /// <param name="session">
@@ -566,7 +615,7 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
-        /// Converts a list of sessions into a <see cref="DataSet"/> based on
+        /// Converts a list of sessions into a <see cref="Plot2Ddata"/> based on
         /// the information stored in the last time-step of the given
         /// <paramref name="sessions"/>.
         /// </summary>
@@ -580,15 +629,15 @@ namespace BoSSS.Foundation.IO {
         /// Selector for the relevant data at the data points.
         /// </param>
         /// <returns>
-        /// A new <see cref="DataSet"/> filled with the data extracted via
+        /// A new <see cref="Plot2Ddata"/> filled with the data extracted via
         /// <paramref name="xSelector"/> and <paramref name="ySelector"/>
         /// </returns>
-        public static DataSet ToDataSet(this IEnumerable<ISessionInfo> sessions, Func<ITimestepInfo, double> xSelector, Func<ITimestepInfo, double> ySelector) {
+        public static Plot2Ddata ToDataSet(this IEnumerable<ISessionInfo> sessions, Func<ITimestepInfo, double> xSelector, Func<ITimestepInfo, double> ySelector) {
             return sessions.Select(s => s.Timesteps.Last()).ToDataSet(xSelector, ySelector);
         }
 
         /// <summary>
-        /// Converts a list of sessions into a <see cref="DataSet"/> based on
+        /// Converts a list of sessions into a <see cref="Plot2Ddata"/> based on
         /// the information stored in the last time-step of the given
         /// <paramref name="sessions"/>, while grouping the results using
         /// <paramref name="groupKeySelector"/>.
@@ -606,15 +655,15 @@ namespace BoSSS.Foundation.IO {
         /// A function defining a group id to each key-value pair
         /// </param>
         /// <returns>
-        /// A new <see cref="DataSet"/> filled with the data extracted via
+        /// A new <see cref="Plot2Ddata"/> filled with the data extracted via
         /// <paramref name="xSelector"/> and <paramref name="ySelector"/>
         /// </returns>
-        public static DataSet ToDataSet(this IEnumerable<ISessionInfo> sessions, Func<ITimestepInfo, double> xSelector, Func<ITimestepInfo, double> ySelector, Func<ITimestepInfo, string> groupKeySelector) {
+        public static Plot2Ddata ToDataSet(this IEnumerable<ISessionInfo> sessions, Func<ITimestepInfo, double> xSelector, Func<ITimestepInfo, double> ySelector, Func<ITimestepInfo, string> groupKeySelector) {
             return sessions.Select(s => s.Timesteps.Last()).ToDataSet(xSelector, ySelector, groupKeySelector);
         }
 
         /// <summary>
-        /// Converts a list of sessions into a <see cref="DataSet"/> based on
+        /// Converts a list of sessions into a <see cref="Plot2Ddata"/> based on
         /// the information stored in the last time-step of the given
         /// <paramref name="sessions"/> and the results of a query named
         /// <paramref name="queryName"/>.
@@ -629,16 +678,16 @@ namespace BoSSS.Foundation.IO {
         /// Name of the query whose results will be used as error measure.
         /// </param>
         /// <returns>
-        /// A new <see cref="DataSet"/> filled with the data extracted via
+        /// A new <see cref="Plot2Ddata"/> filled with the data extracted via
         /// <paramref name="xSelector"/> and the results of the query named
         /// <paramref name="queryName"/>.
         /// </returns>
-        public static DataSet ToDataSet(this IEnumerable<ISessionInfo> sessions, Func<ITimestepInfo, double> xSelector, string queryName) {
+        public static Plot2Ddata ToDataSet(this IEnumerable<ISessionInfo> sessions, Func<ITimestepInfo, double> xSelector, string queryName) {
             return sessions.Select(s => s.Timesteps.Last()).ToDataSet(xSelector, queryName);
         }
 
         /// <summary>
-        /// Converts a list of sessions into a <see cref="DataSet"/> based on
+        /// Converts a list of sessions into a <see cref="Plot2Ddata"/> based on
         /// the information stored in the last time-step of the given
         /// <paramref name="sessions"/>, while grouping the results using the
         /// DG degree of the field identified by
@@ -658,15 +707,15 @@ namespace BoSSS.Foundation.IO {
         /// whose DG degree will be used as a grouping function.
         /// </param>
         /// <returns>
-        /// A new <see cref="DataSet"/> filled with the data extracted via
+        /// A new <see cref="Plot2Ddata"/> filled with the data extracted via
         /// <paramref name="xSelector"/> and <paramref name="ySelector"/>
         /// </returns>
-        public static DataSet ToDataSet(this IEnumerable<ISessionInfo> sessions, Func<ITimestepInfo, double> xSelector, Func<ITimestepInfo, double> ySelector, string groupFieldName) {
+        public static Plot2Ddata ToDataSet(this IEnumerable<ISessionInfo> sessions, Func<ITimestepInfo, double> xSelector, Func<ITimestepInfo, double> ySelector, string groupFieldName) {
             return sessions.Select(s => s.Timesteps.Last()).ToDataSet(xSelector, ySelector, groupFieldName);
         }
 
         /// <summary>
-        /// Converts a list of sessions into a <see cref="DataSet"/> based on
+        /// Converts a list of sessions into a <see cref="Plot2Ddata"/> based on
         /// the information stored in the last time-step of the given
         /// <paramref name="sessions"/> and the results of a query named
         /// <paramref name="queryName"/>, while grouping the results using
@@ -685,17 +734,17 @@ namespace BoSSS.Foundation.IO {
         /// A function defining a group id for each key-value pair
         /// </param>
         /// <returns>
-        /// A new <see cref="DataSet"/> filled with the data extracted via
+        /// A new <see cref="Plot2Ddata"/> filled with the data extracted via
         /// <paramref name="xSelector"/> and the results of the query named
         /// <paramref name="queryName"/>, grouped by means of
         /// <paramref name="groupKeySelector"/>
         /// </returns>
-        public static DataSet ToDataSet(this IEnumerable<ISessionInfo> sessions, Func<ITimestepInfo, double> xSelector, string queryName, Func<ITimestepInfo, string> groupKeySelector) {
+        public static Plot2Ddata ToDataSet(this IEnumerable<ISessionInfo> sessions, Func<ITimestepInfo, double> xSelector, string queryName, Func<ITimestepInfo, string> groupKeySelector) {
             return sessions.Select(s => s.Timesteps.Last()).ToDataSet(xSelector, queryName, groupKeySelector);
         }
 
         /// <summary>
-        /// Converts a list of sessions into a <see cref="DataSet"/> based on
+        /// Converts a list of sessions into a <see cref="Plot2Ddata"/> based on
         /// the information stored in the last time-step of the given
         /// <paramref name="sessions"/> and the results of a query named
         /// <paramref name="queryName"/>, while grouping the results using the
@@ -716,12 +765,12 @@ namespace BoSSS.Foundation.IO {
         /// whose DG degree will be used as a grouping function.
         /// </param>
         /// <returns>
-        /// A new <see cref="DataSet"/> filled with the data extracted via
+        /// A new <see cref="Plot2Ddata"/> filled with the data extracted via
         /// <paramref name="xSelector"/> and the results of the query named
         /// <paramref name="queryName"/>, grouped by means of the DG degree of
         /// the field named <paramref name="groupingFieldName"/>
         /// </returns>
-        public static DataSet ToDataSet(this IEnumerable<ISessionInfo> sessions, Func<ITimestepInfo, double> xSelector, string queryName, string groupingFieldName) {
+        public static Plot2Ddata ToDataSet(this IEnumerable<ISessionInfo> sessions, Func<ITimestepInfo, double> xSelector, string queryName, string groupingFieldName) {
             return sessions.Select(s => s.Timesteps.Last()).ToDataSet(xSelector, queryName, groupingFieldName);
         }
 
@@ -740,12 +789,12 @@ namespace BoSSS.Foundation.IO {
         /// <see cref="ITimestepInfo"/>.
         /// </param>
         /// <returns>
-        /// A <see cref="DataSet"/> where the abscissas are given by the
+        /// A <see cref="Plot2Ddata"/> where the abscissas are given by the
         /// logarithm of <see cref="IGridInfoExtensions.GetMeshSize"/> and the
         /// values are determined via the logarithm of
         /// <paramref name="errorFunctional"/>.
         /// </returns>
-        public static DataSet ToGridConvergenceData(this IEnumerable<ISessionInfo> sessions, Func<ITimestepInfo, double> errorFunctional) {
+        public static Plot2Ddata ToGridConvergenceData(this IEnumerable<ISessionInfo> sessions, Func<ITimestepInfo, double> errorFunctional) {
             return sessions.Select(s => s.Timesteps.Last()).ToGridConvergenceData(errorFunctional);
         }
 
@@ -768,13 +817,13 @@ namespace BoSSS.Foundation.IO {
         /// A grouping function.
         /// </param>
         /// <returns>
-        /// A <see cref="DataSet"/> where the abscissas are given by the
+        /// A <see cref="Plot2Ddata"/> where the abscissas are given by the
         /// logarithm of <see cref="IGridInfoExtensions.GetMeshSize"/> and the
         /// values are determined via the logarithm of
         /// <paramref name="errorFunctional"/>, grouped by means of
         /// <paramref name="groupKeySelector"/>
         /// </returns>
-        public static DataSet ToGridConvergenceData(this IEnumerable<ISessionInfo> sessions, Func<ITimestepInfo, double> errorFunctional, Func<ITimestepInfo, string> groupKeySelector) {
+        public static Plot2Ddata ToGridConvergenceData(this IEnumerable<ISessionInfo> sessions, Func<ITimestepInfo, double> errorFunctional, Func<ITimestepInfo, string> groupKeySelector) {
             return sessions.Select(s => s.Timesteps.Last()).ToGridConvergenceData(errorFunctional, groupKeySelector);
         }
 
@@ -798,14 +847,14 @@ namespace BoSSS.Foundation.IO {
         /// group key.
         /// </param>
         /// <returns>
-        /// A <see cref="DataSet"/> where the abscissas are given by the
+        /// A <see cref="Plot2Ddata"/> where the abscissas are given by the
         /// logarithm of <see cref="IGridInfoExtensions.GetMeshSize"/>, the
         /// values are determined via the logarithm of
         /// <paramref name="errorFunctional"/> and the results are grouped with
         /// respect to the DG degree of a field named
         /// <paramref name="groupFieldName"/>.
         /// </returns>
-        public static DataSet ToGridConvergenceData(this IEnumerable<ISessionInfo> sessions, Func<ITimestepInfo, double> errorFunctional, string groupFieldName) {
+        public static Plot2Ddata ToGridConvergenceData(this IEnumerable<ISessionInfo> sessions, Func<ITimestepInfo, double> errorFunctional, string groupFieldName) {
             return sessions.Select(s => s.Timesteps.Last()).ToGridConvergenceData(errorFunctional, groupFieldName);
         }
 
@@ -821,12 +870,12 @@ namespace BoSSS.Foundation.IO {
         /// The name of a query whose results will be used an error measure.
         /// </param>
         /// <returns>
-        /// A <see cref="DataSet"/> where the abscissas are given by the
+        /// A <see cref="Plot2Ddata"/> where the abscissas are given by the
         /// logarithm of <see cref="IGridInfoExtensions.GetMeshSize"/> and the
         /// values are determined via the logarithm of the results of a query
         /// named <paramref name="queryName"/>.
         /// </returns>
-        public static DataSet ToGridConvergenceData(this IEnumerable<ISessionInfo> sessions, string queryName) {
+        public static Plot2Ddata ToGridConvergenceData(this IEnumerable<ISessionInfo> sessions, string queryName) {
             return sessions.Select(s => s.Timesteps.Last()).ToGridConvergenceData(queryName);
         }
 
@@ -848,14 +897,14 @@ namespace BoSSS.Foundation.IO {
         /// whose DG degree will be used as a grouping function.
         /// </param>
         /// <returns>
-        /// A <see cref="DataSet"/> where the abscissas are given by the
+        /// A <see cref="Plot2Ddata"/> where the abscissas are given by the
         /// logarithm of <see cref="IGridInfoExtensions.GetMeshSize"/>, the
         /// values are determined via the logarithm of the results of a query
         /// named <paramref name="queryName"/> and the results are grouped with
         /// respect to the DG degree of a field named
         /// <paramref name="groupingFieldName"/>.
         /// </returns>
-        public static DataSet ToGridConvergenceData(this IEnumerable<ISessionInfo> sessions, string queryName, string groupingFieldName) {
+        public static Plot2Ddata ToGridConvergenceData(this IEnumerable<ISessionInfo> sessions, string queryName, string groupingFieldName) {
             return sessions.Select(s => s.Timesteps.Last()).ToGridConvergenceData(queryName, groupingFieldName);
         }
 
@@ -875,13 +924,13 @@ namespace BoSSS.Foundation.IO {
         /// A grouping function.
         /// </param>
         /// <returns>
-        /// A <see cref="DataSet"/> where the abscissas are given by the
+        /// A <see cref="Plot2Ddata"/> where the abscissas are given by the
         /// logarithm of <see cref="IGridInfoExtensions.GetMeshSize"/> and the
         /// values are determined via the logarithm of the results of a query
         /// named <paramref name="queryName"/>, grouped by means of
         /// <paramref name="groupKeySelector"/>
         /// </returns>
-        public static DataSet ToGridConvergenceData(this IEnumerable<ISessionInfo> sessions, string queryName, Func<ITimestepInfo, string> groupKeySelector) {
+        public static Plot2Ddata ToGridConvergenceData(this IEnumerable<ISessionInfo> sessions, string queryName, Func<ITimestepInfo, string> groupKeySelector) {
             return sessions.Select(s => s.Timesteps.Last()).ToGridConvergenceData(queryName, groupKeySelector);
         }
 
@@ -898,12 +947,12 @@ namespace BoSSS.Foundation.IO {
         /// <see cref="ITimestepInfo"/>.
         /// </param>
         /// <returns>
-        /// A <see cref="DataSet"/> where the abscissas are given by the
+        /// A <see cref="Plot2Ddata"/> where the abscissas are given by the
         /// logarithm of <see cref="ITimestepInfoExtensions.GetTimeStepSize"/>
         /// and the values are determined via the logarithm of
         /// <paramref name="errorFunctional"/>.
         /// </returns>
-        public static DataSet ToTimeConvergenceData(this IEnumerable<ISessionInfo> sessions, Func<ITimestepInfo, double> errorFunctional) {
+        public static Plot2Ddata ToTimeConvergenceData(this IEnumerable<ISessionInfo> sessions, Func<ITimestepInfo, double> errorFunctional) {
             return sessions.Select(s => s.Timesteps.Last()).ToTimeConvergenceData(errorFunctional);
         }
 
@@ -919,12 +968,12 @@ namespace BoSSS.Foundation.IO {
         /// The name of a query whose results will be used as an error measure.
         /// </param>
         /// <returns>
-        /// A <see cref="DataSet"/> where the abscissas are given by the
+        /// A <see cref="Plot2Ddata"/> where the abscissas are given by the
         /// logarithm of <see cref="ITimestepInfoExtensions.GetTimeStepSize"/>
         /// and the values are determined via the logarithm of the results of a
         /// query named <paramref name="queryName"/>
         /// </returns>
-        public static DataSet ToTimeConvergenceData(this IEnumerable<ISessionInfo> sessions, string queryName) {
+        public static Plot2Ddata ToTimeConvergenceData(this IEnumerable<ISessionInfo> sessions, string queryName) {
             return sessions.Select(s => s.Timesteps.Last()).ToTimeConvergenceData(queryName);
         }
 
@@ -953,7 +1002,7 @@ namespace BoSSS.Foundation.IO {
         /// estimated error of zero (by definition) and is thus excluded from
         /// the result.
         /// </returns>
-        public static DataSet ToEstimatedGridConvergenceData(this IEnumerable<ISessionInfo> sessions, string fieldName) {
+        public static Plot2Ddata ToEstimatedGridConvergenceData(this IEnumerable<ISessionInfo> sessions, string fieldName) {
             return sessions.Select(s => s.Timesteps.Last()).ToEstimatedGridConvergenceData(fieldName);
         }
 
@@ -964,121 +1013,57 @@ namespace BoSSS.Foundation.IO {
         /// corresponding solver assembly to be able to use solver-specific
         /// sub-classes of <see cref="AppControl"/>.
         /// </summary>
-        /// <typeparam name="T">
-        /// The type of the control object to be instantiated. The type
-        /// <see cref="AppControl"/> should work in all cases, but will not
-        /// give access to solver-specific configuration options.
-        /// </typeparam>
         /// <param name="session">
         /// The session whose configuration file should be loaded
         /// </param>
         /// <returns>
         /// The properly initialized configuration object
         /// </returns>
-        public static T GetConfig<T>(this ISessionInfo session)
-            where T : AppControl {
+        /// <param name="t">
+        /// Optional type of the control object to be instantiated. The type
+        /// <see cref="AppControl"/> should work in all cases, but will not
+        /// give access to solver-specific configuration options.
+        /// </param>
+        public static AppControl GetControl(this ISessionInfo session, Type t = null) {
+        
             string sessionDir = DatabaseDriver.GetSessionDirectory(session);
-            string path = Path.Combine(sessionDir, "Control.txt");
+            string path_script = Path.Combine(sessionDir, "Control-script.txt");
+            string path_obj = Path.Combine(sessionDir, "Control-obj.txt");
 
-            if (!File.Exists(path)) {
-                throw new IOException("Could not find Control.txt");
-            }
+            if (File.Exists(path_obj)) {
+                string ctrlfileContent = File.ReadAllText(path_obj);
 
-            string ctrlfileContent = "";
-            using (StreamReader rd = new StreamReader(path)) {
-                // Trim trailing empty lines since they would
-                // return an empty string instead of a control object
-                ctrlfileContent = rd.ReadToEnd().TrimEnd();
-            }
+                return AppControl.Deserialize(ctrlfileContent);
 
-            // Create separate evaluator since we
-            // - cannot access the main one from here
-            // - we don't want potential side effects on the main one
-            CompilerContext cmpCont = new CompilerContext(
-                new CompilerSettings(), new ConsoleReportPrinter());
-            Evaluator eval = new Evaluator(cmpCont);
-            eval.InteractiveBaseClass = typeof(T);
+            } else if (File.Exists(path_script)) {
 
-            var allAssis = BoSSS.Solution.Application.GetAllAssemblies().ToArray();
-            foreach (var assi in allAssis) {
-                eval.ReferenceAssembly(assi);
-            }
+                string ctrlfileContent = File.ReadAllText(path_script);
 
-            // Evaluate control file content line by line
-            object controlObj = null;
-            StringReader reader = new StringReader(ctrlfileContent);
-            bool result_set = false;
-            string multiline = null;
-            int lineno = 0;
-            for (string line = reader.ReadLine(); line != null; line = reader.ReadLine()) {
-                line = line.TrimEnd();
-                lineno++;
+                AppControl.FromCode(ctrlfileContent, t, out AppControl ctrl, out AppControl[] ctrl_paramstudy);
 
-                if (line.EndsWith("\\")) {
-                    if (multiline == null)
-                        multiline = "";
+                if (ctrl != null) {
+                    return ctrl;
+                } else if (ctrl_paramstudy != null) {
+                    // We did a parameter study -> extract the correct control object from the list
+                    int.TryParse(session.KeysAndQueries["id:pstudy_case"].ToString(), out int parameterStudyCase);
 
-                    multiline += " " + line.Substring(0, line.Length - 1);
+                    if (parameterStudyCase < 0 || parameterStudyCase >= ctrl_paramstudy.Count()) {
+                        throw new Exception(
+                            "Parameter study case index out of range. This should not have happened.");
+                    }
+
+                    return ctrl_paramstudy.ElementAt(parameterStudyCase);
                 } else {
-                    string completeline;
-                    if (multiline == null) {
-                        completeline = line;
-                    } else {
-                        completeline = multiline + " " + line;
-                        multiline = null;
-                    }
-
-                    string schurli = null;
-                    try {
-                        object oldControlObject = controlObj;
-                        schurli = eval.Evaluate(completeline, out controlObj, out result_set);
-                        if (controlObj == null) {
-                            controlObj = oldControlObject;
-                        }
-                    } catch (Exception e) {
-                        throw new AggregateException(String.Format(
-                            "{0} during the interpretation of control file '{1}' line {2};",
-                            e.GetType().Name,
-                            path,
-                            lineno),
-                            e);
-                    }
-
-                    if (cmpCont.Report.Errors > 0) {
-                        throw new Exception(String.Format(
-                            "Syntax error in control file line {0}: \n{1}",
-                            lineno,
-                            completeline));
-                    }
+                    //throw new Exception(string.Format(
+                    //    "Invalid control instruction: unable to cast the last"
+                    //        + " result of the control file/cs-script of type {0} to type {1}",
+                    //    controlObj.GetType().FullName,
+                    //    typeof(T).FullName));
+                    throw new NotSupportedException("unknown state.");
                 }
-            }
-
-            if (controlObj == null) {
-                throw new Exception(
-                    "Unable to create a control object from cs-script file '" + path + "'.");
-            }
-
-            if (controlObj is T) {
-                return (T)controlObj;
-            } else if (controlObj is IEnumerable<T>) {
-                // We did a parameter study -> extract the correct control object from the list
-                int.TryParse(session.KeysAndQueries["id:pstudy_case"].ToString(), out int parameterStudyCase);
-
-                IEnumerable<T> objectList = (IEnumerable<T>)controlObj;
-                if (parameterStudyCase < 1 || parameterStudyCase > objectList.Count()) {
-                    throw new Exception(
-                        "Parameter study case index out of range. This should not have happened.");
-                }
-
-                return objectList.ElementAt(parameterStudyCase - 1);
             } else {
-                throw new Exception(string.Format(
-                    "Invalid control instruction: unable to cast the last"
-                        + " result of the control file/cs-script of type {0} to type {1}",
-                    controlObj.GetType().FullName,
-                    typeof(T).FullName));
+                throw new IOException("Unable to find control object (" + path_obj + ") or control script (" + path_script + ").");
             }
-
         }
 
         /// <summary>
@@ -1219,12 +1204,12 @@ namespace BoSSS.Foundation.IO {
         /// <see cref="GetAverageCPUTimePerTimestep"/> with a logarithmic
         /// scaling for both axes.
         /// </returns>
-        public static DataSet ToPerformanceData(this IEnumerable<ISessionInfo> sessions, Func<ISessionInfo, string> groupKeySelector = null, int firstIndex = -1, int lastIndex = -1) {
+        public static Plot2Ddata ToPerformanceData(this IEnumerable<ISessionInfo> sessions, Func<ISessionInfo, string> groupKeySelector = null, int firstIndex = -1, int lastIndex = -1) {
             if (groupKeySelector == null) {
                 groupKeySelector = (s => "allGroups");
             }
 
-            return new DataSet(sessions.GroupBy(s => groupKeySelector(s)).
+            return new Plot2Ddata(sessions.GroupBy(s => groupKeySelector(s)).
                 Select(g => new KeyValuePair<string, double[][]>(
                     g.Key,
                     new double[][] {
@@ -1258,7 +1243,7 @@ namespace BoSSS.Foundation.IO {
         /// <paramref name="sessions"/>. This data set automatically contains
         /// a data row displaying the optimal speed-up.
         /// </returns>
-        public static DataSet ToSpeedUpData(this IEnumerable<ISessionInfo> sessions, Func<ISessionInfo, string> groupKeySelector = null, int firstIndex = -1, int lastIndex = -1) {
+        public static Plot2Ddata ToSpeedUpData(this IEnumerable<ISessionInfo> sessions, Func<ISessionInfo, string> groupKeySelector = null, int firstIndex = -1, int lastIndex = -1) {
             var sortedSessions = sessions.OrderBy(s => s.ComputeNodeNames.Count());
             double minNodes = sortedSessions.First().ComputeNodeNames.Count();
             double minTime = sortedSessions.First().GetAverageComputingTimePerTimestep();
@@ -1282,7 +1267,7 @@ namespace BoSSS.Foundation.IO {
                         g.Select(s => s.ComputeNodeNames.Count() / minNodes).ToArray()
                     }));
 
-            return new DataSet(data.Concat(idealData).ToArray()).WithLogX().WithLogY();
+            return new Plot2Ddata(data.Concat(idealData).ToArray()).WithLogX().WithLogY();
         }
 
         /// <summary>
@@ -1310,7 +1295,7 @@ namespace BoSSS.Foundation.IO {
         /// respect to the run using the fewest processes within
         /// <paramref name="sessions"/>.
         /// </returns>
-        public static DataSet ToEfficiencyData(this IEnumerable<ISessionInfo> sessions, Func<ISessionInfo, string> groupKeySelector = null, int firstIndex = -1, int lastIndex = -1) {
+        public static Plot2Ddata ToEfficiencyData(this IEnumerable<ISessionInfo> sessions, Func<ISessionInfo, string> groupKeySelector = null, int firstIndex = -1, int lastIndex = -1) {
             var sortedSessions = sessions.OrderBy(s => s.ComputeNodeNames.Count());
             double minNodes = sortedSessions.First().ComputeNodeNames.Count();
             double minTime = sortedSessions.First().GetAverageComputingTimePerTimestep();
@@ -1323,7 +1308,7 @@ namespace BoSSS.Foundation.IO {
                 groupKeySelector = (s => "allGroups");
             }
 
-            return new DataSet(sortedSessions.GroupBy(s => groupKeySelector(s)).
+            return new Plot2Ddata(sortedSessions.GroupBy(s => groupKeySelector(s)).
                 Select(g => new KeyValuePair<string, double[][]>(
                     g.Key,
                     new double[][] {
@@ -1613,6 +1598,7 @@ namespace BoSSS.Foundation.IO {
             Console.WriteLine("...Evaluation done");
         }
 
+        
         /// <summary>
         /// Calls EvaluatePerformance and plots the DataSets.
         /// </summary>
@@ -1620,9 +1606,9 @@ namespace BoSSS.Foundation.IO {
         /// <param name="methods"> Array of methods to be evaluated. If methods == null, the 10 most expensive methods will be taken. </param>
         /// <param name="exclusive"> Boolean that defines if exclusive or inclusive times will be calculated. Methods will still be chosen by exclusive times. </param>
         /// <param name="solver"> String that indicates the solver. Up to now only implemented for IBM_Solver and CNS. </param>
-        public static void EvaluatePerformanceAndPlot(this IEnumerable<ISessionInfo> sessions, string[] methods = null, bool exclusive = true, string solver = "IBM_Solver")
+        public static void EvaluatePerformanceAndPlot(this IEnumerable<ISessionInfo> sessions, string[] methods = null, bool exclusive = true, string solver = "IBM_Solver", bool weakScaling = false)
         {
-            DataSet[] data = sessions.EvaluatePerformance(methods,exclusive,solver);
+            Plot2Ddata[] data = sessions.EvaluatePerformance(methods,exclusive,weakScaling);
             int numberDataSets = data.Length;
             int numberSessions = sessions.Count();
 
@@ -1665,6 +1651,7 @@ namespace BoSSS.Foundation.IO {
                 gp.Execute();
             }
         }
+        
 
         /// <summary>
         /// Calculates performance times from profiling_bins for each session for specified methods. Writes out a table of the most expensive and (of those) worst scaling functions. 
@@ -1673,23 +1660,23 @@ namespace BoSSS.Foundation.IO {
         /// <param name="sessions"> List of sessions of the same problem but different MPIs </param>
         /// <param name="methods"> Array of methods to be evaluated. If methods == null, the 10 most expensive methods will be taken. </param>
         /// <param name="exclusive"> Boolean that defines if exclusive or inclusive times will be calculated. Methods will still be chosen by exclusive times. </param>
-        /// <param name="solver"> String that indicates the solver. Up to now only implemented for IBM_Solver and CNS. </param>
         /// <returns>
         /// Returns an array of DataSets, where the first half contains the convergence data for every method and the second half the speedup data.
         /// </returns>
-        public static DataSet[] EvaluatePerformance(this IEnumerable<ISessionInfo> sessions, string[] methods = null, bool exclusive = true, string solver = "IBM_Solver") {
+        public static Plot2Ddata[] EvaluatePerformance(this IEnumerable<ISessionInfo> sessions, string[] methods = null, bool exclusive = true/*, string solver = "IBM_Solver",*/, bool weakScaling = false) {
+        // <param name="solver"> String that indicates the solver. Up to now only implemented for IBM_Solver and CNS. </param>
             string path = sessions.Pick(0).Database.Path;
-            string mainMethod;
-            switch (solver) {
-                case "IBM_Solver":
-                    mainMethod = "BoSSS.Application.IBM_Solver.IBM_SolverMain.RunSolverOneStep";
-                    break;
-                case "CNS":
-                    mainMethod = "CNS.Program`1.RunSolverOneStep";
-                    break;
-                default:
-                    throw new ApplicationException("Main method not defined for this solver yet");
-            }
+            string mainMethod = "*.RunSolverOneStep"; // use wildcard!
+            //switch (solver) {
+            //    case "IBM_Solver":
+            //        mainMethod = "BoSSS.Application.IBM_Solver.IBM_SolverMain.RunSolverOneStep";
+            //        break;
+            //    case "CNS":
+            //        mainMethod = "CNS.Program`1.RunSolverOneStep";
+            //        break;
+            //    default:
+            //        throw new ApplicationException("Main method not defined for this solver yet");
+            //}
 
 
 
@@ -1698,17 +1685,14 @@ namespace BoSSS.Foundation.IO {
             double[] fraction = new double[maxNumberMethods];
             int idx = sessions.IndexOfMax(s => s.ComputeNodeNames.Count());
 
+            var mcr = sessions.Pick(idx).GetProfiling();
+
             // Find methods if none given
             if (methods == null) {
-                var temp_fs = new FileStream[1];
-                BinaryFormatter fmt = new BinaryFormatter();
-                MethodCallRecord[] mcr = new MethodCallRecord[1];
-                temp_fs[0] = new FileStream(@path + "\\sessions\\" + sessions.Pick(idx).ID + "\\profiling_bin.0.txt", FileMode.Open);
-                mcr[0] = (MethodCallRecord)fmt.Deserialize(temp_fs[0]);
-                temp_fs[0].Close();
-
+                
                 var findMainMethod = mcr[0].FindChild(mainMethod);
                 IOrderedEnumerable<CollectionReport> mostExpensive;
+                
                 if (findMainMethod != null) {
                     mostExpensive = findMainMethod.CompleteCollectiveReport().OrderByDescending(cr => cr.ExclusiveTimeFractionOfRoot);
                 } else {
@@ -1725,7 +1709,7 @@ namespace BoSSS.Foundation.IO {
 
             // Initialise variables
             int numberSessions = sessions.Count();
-            DataSet[] data = new DataSet[2 * numberMethods];
+            Plot2Ddata[] data = new Plot2Ddata[2 * numberMethods];
             double[][] times = new double[numberSessions][];
             int[] processors = new int[numberSessions];
 
@@ -1737,18 +1721,11 @@ namespace BoSSS.Foundation.IO {
                 int numberProcessors = fileCount;
                 processors[i] = numberProcessors;
 
-                var temp_fs = new FileStream[numberProcessors];
-                BinaryFormatter fmt = new BinaryFormatter();
-                MethodCallRecord[] mcr = new MethodCallRecord[numberProcessors];
-
                 double[] maxTime = new double[numberMethods];
 
                 // Iterate over MPIs
                 for (int j = 0; j < numberProcessors; j++) {
-                    // read profiling_bin of current processor
-                    temp_fs[j] = new FileStream(@path + "\\sessions\\" + sessions.Pick(i).ID + "\\profiling_bin." + j + ".txt", FileMode.Open);
                     MethodCallRecord value;
-                    mcr[j] = ((MethodCallRecord)fmt.Deserialize(temp_fs[j]));
                     // Iterate over methods
                     for (int k = 0; k < numberMethods; k++) {
                         // Get execution time of current method for current processor
@@ -1763,23 +1740,29 @@ namespace BoSSS.Foundation.IO {
                         if (exclusive) {
                             tempTime[k] = value.FindChildren(methods[k]).OrderByDescending(s => s.TimeExclusive.TotalSeconds).Pick(occurence-1).TimeExclusive.TotalSeconds;
                             if (i == idx) {
-                                double maxValue = value.FindChildren(methods[k]).OrderByDescending(s => s.ExclusiveTimeFractionOfRoot).Pick(occurence-1).ExclusiveTimeFractionOfRoot;
-                                int maxIndex = value.FindChildren(methods[k]).Select(s => s.ExclusiveTimeFractionOfRoot).ToList().IndexOf(maxValue);
+                                IEnumerable<MethodCallRecord> calls = value.FindChildren(methods[k]).OrderByDescending(s => s.ExclusiveTimeFractionOfRoot);
+                                double maxValue = calls.Pick(occurence-1).ExclusiveTimeFractionOfRoot;
+                                int maxIndex = calls.Select(s => s.ExclusiveTimeFractionOfRoot).ToList().IndexOf(maxValue);
                                 tempFractions[k] = maxValue;
-                                MethodCallRecord correctCall = value.FindChildren(methods[k]).Pick(maxIndex);
-                                IEnumerable<MethodCallRecord> neighbourCalls = value.FindChildren(methods[k]).Except(correctCall);
-                                methodCalls[k] = getUniqueParentName(correctCall, neighbourCalls);
+                                MethodCallRecord correctCall = calls.Pick(maxIndex);
+                                IEnumerable<MethodCallRecord> neighbourCalls = calls.Except(correctCall);
+                                if (maxValue > fraction[k]) {
+                                    methodCalls[k] = getUniqueParentName(correctCall, neighbourCalls) + " (" + occurence + "/" + calls.Count() + ")";
+                                }
                                 
                             }
                         } else {
                             tempTime[k] = value.FindChildren(methods[k]).OrderByDescending(s => s.TimeSpentInMethod.TotalSeconds).Pick(occurence-1).TimeSpentInMethod.TotalSeconds;
                             if (i == idx) {
-                                double maxValue = value.FindChildren(methods[k]).OrderByDescending(s => s.TimeFractionOfRoot).Pick(occurence-1).TimeFractionOfRoot;
-                                int maxIndex = value.FindChildren(methods[k]).Select(s => s.TimeFractionOfRoot).ToList().IndexOf(maxValue);
+                                IEnumerable<MethodCallRecord> calls = value.FindChildren(methods[k]).OrderByDescending(s => s.TimeFractionOfRoot);
+                                double maxValue = calls.Pick(occurence-1).TimeFractionOfRoot;
+                                int maxIndex = calls.Select(s => s.TimeFractionOfRoot).ToList().IndexOf(maxValue);
                                 tempFractions[k] = maxValue;
-                                MethodCallRecord correctCall = value.FindChildren(methods[k]).Pick(maxIndex);
-                                IEnumerable<MethodCallRecord> neighbourCalls = value.FindChildren(methods[k]).Except(correctCall);
-                                methodCalls[k] = getUniqueParentName(correctCall, neighbourCalls);
+                                MethodCallRecord correctCall = calls.Pick(maxIndex);
+                                IEnumerable<MethodCallRecord> neighbourCalls =calls.Except(correctCall);
+                                if (maxValue > fraction[k]) {
+                                    methodCalls[k] = getUniqueParentName(correctCall, neighbourCalls) + " (" + occurence + "/" + calls.Count() + ")";
+                                }
                             }
                         }
                         // Only save execution time if it is the highest value of all processor times
@@ -1790,7 +1773,6 @@ namespace BoSSS.Foundation.IO {
                             fraction[k] = tempFractions[k];
                         }
                     }
-                    temp_fs[j].Close();
                 }
                 times[i] = maxTime;
             }
@@ -1806,32 +1788,48 @@ namespace BoSSS.Foundation.IO {
                 double[] idealSpeedUp = new double[numberSessions];
                 double startIdeal = times.Pick(0)[i];
                 for (int j = 0; j < numberSessions; j++) {
-                    ideal[j] = Math.Pow(0.5, j) * startIdeal;
-                    idealSpeedUp[j] = processors[j];
+                    if (weakScaling) {
+                        ideal[j] = startIdeal;
+                        idealSpeedUp[j] = 0;
+                    } else {
+                        ideal[j] = Math.Pow(0.5, j) * startIdeal;
+                        idealSpeedUp[j] = processors[j];
+                    }
                 }
+
+                double[] speedUpTimes = new double[numberSessions];
+
                 var timeArray = times.Select(t => t.Pick(i));
-                double[] speedUpTimes = timeArray.Select(x => startIdeal * processors[0] / x).ToArray();
+                if (weakScaling) {
+                    speedUpTimes = timeArray.Select(x =>( x - startIdeal ) / startIdeal).ToArray();
+                } else {
+                    speedUpTimes = timeArray.Select(x => startIdeal * processors[0] / x).ToArray();
+                }
 
                 // Create DataRows for convergence and speedup with actual and ideal curve
                 KeyValuePair<string, double[][]>[] dataRowsConvergence = new KeyValuePair<string, double[][]>[2];
                 KeyValuePair<string, double[][]>[] dataRowsSpeedup = new KeyValuePair<string, double[][]>[2];
                 double[] doubleProcessors = processors.Select(Convert.ToDouble).ToArray();
 
-                dataRowsConvergence[0] = new KeyValuePair<string, double[][]>(methods[i], new double[][] { doubleProcessors, times.Select(s => s[i]).ToArray() });
+                dataRowsConvergence[0] = new KeyValuePair<string, double[][]>(methods[i] + " (" + methodCalls[i].Split('(').Last(), new double[][] { doubleProcessors, times.Select(s => s[i]).ToArray() });
                 dataRowsConvergence[1] = new KeyValuePair<string, double[][]>("ideal", new double[][] { doubleProcessors, ideal });
-                dataRowsSpeedup[0] = new KeyValuePair<string, double[][]>(methods[i], new double[][] { doubleProcessors, speedUpTimes });
+                dataRowsSpeedup[0] = new KeyValuePair<string, double[][]>(methods[i] + " (" + methodCalls[i].Split('(').Last(), new double[][] { doubleProcessors, speedUpTimes });
                 dataRowsSpeedup[1] = new KeyValuePair<string, double[][]>("ideal", new double[][] { doubleProcessors, idealSpeedUp });
 
                 // Create DataSets from DataRows
-                data[i] = new DataSet(dataRowsConvergence);
-                data[i + numberMethods] = new DataSet(dataRowsSpeedup);
+                data[i] = new Plot2Ddata(dataRowsConvergence);
+                data[i + numberMethods] = new Plot2Ddata(dataRowsSpeedup);
                 methodRegressionPair[i] = new KeyValuePair<string, double>(methods[i], Math.Min(data.Skip(numberMethods).Pick(i).Regression().Pick(0).Value, data.Skip(numberMethods).Pick(i).Regression().Pick(1).Value));
                 methodFractionPair[i] = new KeyValuePair<string, double>(methods[i], fraction[i]);
                 callsFractionPair[i] = new KeyValuePair<string, double>(methodCalls[i], fraction[i]);
             }
 
             // Use slope of actual speedup curve to sort methods and DataSets by "worst scaling"
-            methodRegressionPair = methodRegressionPair.OrderBy(t => t.Value).ToArray();
+            if (weakScaling) {
+                methodRegressionPair = methodRegressionPair.OrderByDescending(t => t.Value).ToArray();
+            } else {
+                methodRegressionPair = methodRegressionPair.OrderBy(t => t.Value).ToArray();
+            }
             methodFractionPair = methodFractionPair.OrderByDescending(t => t.Value).ToArray();
             callsFractionPair = callsFractionPair.OrderByDescending(t => t.Value).ToArray();
             double[] regressions = methodRegressionPair.Select(s => s.Value).ToArray();
@@ -1845,8 +1843,13 @@ namespace BoSSS.Foundation.IO {
             Console.WriteLine("\n Most expensive functions");
             Console.WriteLine("============================");
             for (int i = 0; i < numberMethods; i++) {
-                Console.WriteLine("Rank " + i + ": " + methods2[i] + " in "+ methodCalls2[i]);
-                Console.WriteLine("\t Time fraction of root: " + fractions2[i].ToString("p3")+ "\n");
+                Console.WriteLine("Rank " + i + ": " + methods2[i] + " (" + methodCalls2[i].Split('(').Last());
+                Console.WriteLine("\t Time fraction of root: " + fractions2[i].ToString("p3") + "\t in " + methodCalls2[i].Split('(').First());
+            }
+            if (weakScaling) {
+                Console.WriteLine("\n ======= WEAK SCALING ========");
+            } else {
+                Console.WriteLine("\n ======= STRONG SCALING ========");
             }
             Console.WriteLine("\n Sorted by worst scaling");
             Console.WriteLine("============================");
@@ -1857,6 +1860,7 @@ namespace BoSSS.Foundation.IO {
 
             return data;
         }
+
 
 
         private static string getUniqueParentName(MethodCallRecord correctCall, IEnumerable<MethodCallRecord> neighbourCalls) {
@@ -1909,8 +1913,8 @@ namespace BoSSS.Foundation.IO {
                 dataRowsCircularity[i] = new KeyValuePair<string, double[][]>(sess.Pick(i).Name, new double[][] { times[i], circularities[i] });
                 dataRowsRiseVelocity[i] = new KeyValuePair<string, double[][]>(sess.Pick(i).Name, new double[][] { times[i], riseVelocities[i] });
             }
-            DataSet Time_Circularity = new DataSet(dataRowsCircularity);
-            DataSet Time_riseVelocity = new DataSet(dataRowsRiseVelocity);
+            Plot2Ddata Time_Circularity = new Plot2Ddata(dataRowsCircularity);
+            Plot2Ddata Time_riseVelocity = new Plot2Ddata(dataRowsRiseVelocity);
 
             // Plot circularity
             int lineColor = 0;

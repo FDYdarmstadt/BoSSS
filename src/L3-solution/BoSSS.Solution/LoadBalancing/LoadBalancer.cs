@@ -37,7 +37,7 @@ namespace BoSSS.Solution {
         /// A factory used to update
         /// <see cref="CurrentCellCostEstimators"/> if required
         /// </summary>
-        private List<Func<IApplication<AppControl>, int, ICellCostEstimator>> cellCostEstimatorFactories;
+        private List<Func<IApplication, int, ICellCostEstimator>> cellCostEstimatorFactories;
 
         /// <summary>
         /// A set of models that estimates the costs of different cells
@@ -57,7 +57,7 @@ namespace BoSSS.Solution {
         /// <summary>
         /// Constructor.
         /// </summary>
-        public LoadBalancer(List<Func<IApplication<AppControl>, int, ICellCostEstimator>> cellCostEstimatorFactories) {
+        public LoadBalancer(List<Func<IApplication, int, ICellCostEstimator>> cellCostEstimatorFactories) {
             this.cellCostEstimatorFactories = cellCostEstimatorFactories;
             this.CurrentCellCostEstimators = new ICellCostEstimator[cellCostEstimatorFactories.Count];
         }
@@ -78,7 +78,7 @@ namespace BoSSS.Solution {
         /// See <see cref="Control.AppControl.DynamicLoadBalancing_Period"/>.
         /// </param>
         /// <returns></returns>
-        public int[] GetNewPartitioning(IApplication<AppControl> app, int performanceClassCount, int[] cellToPerformanceClassMap, int TimestepNo, GridPartType gridPartType, string PartOptions, double imbalanceThreshold, int Period, bool redistributeAtStartup) {
+        public int[] GetNewPartitioning(IApplication app, int performanceClassCount, int[] cellToPerformanceClassMap, int TimestepNo, GridPartType gridPartType, string PartOptions, double imbalanceThreshold, int Period, bool redistributeAtStartup) {
             // Create new model if number of cell classes has changed
             for (int i = 0; i < cellCostEstimatorFactories.Count; i++) {
                 if (CurrentCellCostEstimators[i] == null

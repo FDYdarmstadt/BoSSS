@@ -1218,7 +1218,7 @@ namespace BoSSS.Application.IBM_Solver {
 
 
             C.DynamicLoadBalancing_Period = 1;
-            C.DynamicLoadBalancing_CellCostEstimatorFactories.Add(delegate (IApplication<AppControl> app, int noOfPerformanceClasses) {
+            C.DynamicLoadBalancing_CellCostEstimatorFactories.Add(delegate (IApplication app, int noOfPerformanceClasses) {
                 Console.WriteLine("i was called");
                 int[] map = new int[] { 1, 5, 100 };
                 return new StaticCellCostEstimator(map);
@@ -1345,7 +1345,7 @@ namespace BoSSS.Application.IBM_Solver {
 
 
             C.DynamicLoadBalancing_Period = 1;
-            C.DynamicLoadBalancing_CellCostEstimatorFactories.Add(delegate (IApplication<AppControl> app, int noOfPerformanceClasses) {
+            C.DynamicLoadBalancing_CellCostEstimatorFactories.Add(delegate (IApplication app, int noOfPerformanceClasses) {
                 Console.WriteLine("i was called");
                 int[] map = new int[] { 1, 5, 100 };
                 return new StaticCellCostEstimator(map);
@@ -1510,13 +1510,13 @@ namespace BoSSS.Application.IBM_Solver {
             //};
 
 
-            C.LinearSolver = new SoftGMRES()
-            {
-                MaxKrylovDim = C.MaxKrylovDim,
-                Precond = Prec,
-                m_Tolerance = 1E-6,
-                m_MaxIterations = 50
-            };
+            //C.LinearSolver = new SoftGMRES()
+            //{
+            //    MaxKrylovDim = C.MaxKrylovDim,
+            //    Precond = Prec,
+            //    m_Tolerance = 1E-6,
+            //    m_MaxIterations = 50
+            //};
 
 
             C.AddBoundaryCondition("Velocity_inlet", "VelocityX", X => -4*X[1]*(X[1]+4));
