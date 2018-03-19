@@ -653,7 +653,7 @@ namespace BoSSS.Solution.Multigrid {
                             UseDoublePrecision = false
                         };
                         //blockSolvers[iPart] = new FullDirectSolver();
-                        //blockSolvers[iPart] = new ilPSP.LinSolvers.MUMPS.MUMPSSolver(MPI: false);
+                        //blockSolvers[iPart] = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
                         blockSolvers[iPart].DefineMatrix(Block);
                     }
 
