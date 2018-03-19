@@ -239,6 +239,11 @@ namespace CNS {
 
                 Exception e = null;
                 try {
+                    // Hack for updating the time step number for local time stepping runs
+                    // Better: Use a global TimeStepInfo object defined in the interface class ITimeStepper
+                    if (TimeStepper is AdamsBashforthLTS ABLTS) {
+                        ABLTS.UpdateTimeStepNumber(TimestepNo);
+                    }
                     dt = TimeStepper.Perform(dt);
                 } catch (Exception ee) {
                     e = ee;
