@@ -175,7 +175,6 @@ namespace CNS {
                         reclusteringInterval: control.ReclusteringInterval,
                         fluxCorrection: control.FluxCorrection,
                         saveToDBCallback: program.SaveToDatabase,
-                        initialTimestepNumber: program.TimestepNumber,
                         maxNumOfSubSteps: control.maxNumOfSubSteps);
                     break;
 
