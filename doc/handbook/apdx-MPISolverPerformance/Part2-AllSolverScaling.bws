@@ -44,7 +44,7 @@ using BoSSS.Application.IBM_Solver;
 using System.Data;
 **************
 ==============
-string dateString = "2018-3-16";
+string dateString = "2018-3-19";
 string File       = "SolverRuns--" + dateString + ".json";
 string FilePath   = Path.Combine(CurrentDocDir, File);
 var SessTab       = TableExtensions.LoadFromFile(FilePath);
@@ -445,6 +445,8 @@ CL4.PlotNow();
 **************
 System.ComponentModel.Win32Exception occurred: Das System kann die angegebene Datei nicht finden. Type 'LastError' for details.
 
+==============
+**************
 ==============
 **************
 ==============

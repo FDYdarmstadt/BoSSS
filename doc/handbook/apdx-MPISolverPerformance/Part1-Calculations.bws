@@ -1,5 +1,6 @@
 restart
 **************
+
   Database Explorer v2
   ____________________
 
@@ -324,7 +325,7 @@ Loading session 28a03143-5f6b-4aef-a8a3-315ef6864317 failed with message 'Die Da
 Loading session 74ec7fde-4918-46b3-a338-1be68019539b failed with message 'Die Datei "P:\BoSSS_DBs\Sphere3D\sessions\74ec7fde-4918-46b3-a338-1be68019539b\Session.info" konnte nicht gefunden werden.'
 Loading session acc112ec-3547-4f6d-ae72-4f4ccc8e9744 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\acc112ec-3547-4f6d-ae72-4f4ccc8e9744\Session.info" konnte nicht gefunden werden.'
 Loading session 883fdea1-e03e-401e-b8b7-dc67324257e0 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\883fdea1-e03e-401e-b8b7-dc67324257e0\Session.info" konnte nicht gefunden werden.'
-21
+22
 ==============
 // =====================================
 // Session table
@@ -435,7 +436,29 @@ var SubTab_1 = SessTab.ExtractColumns("Processors","SlvIter_excl","SlvInit_excl"
 ==============
 SubTab_1.Print();
 **************
-System.Data.DataColumnCollection
+    Processors SlvIter_excl SlvInit_excl PrecSolve NewtonDirder NonlinearSolve LinearSolve NoOfMultigridLevels DGdegree:VelocityX RegularTerminated 
+0:  8          NULL         NULL         NULL      NULL         0              4           4                   1                  True              
+1:  8          NULL         NULL         NULL      NULL         0              4           3                   1                  True              
+2:  32         NULL         NULL         NULL      NULL         0              4           4                   1                  True              
+3:  64         NULL         NULL         NULL      NULL         0              4           4                   1                  True              
+4:  16         NULL         NULL         NULL      NULL         0              4           4                   1                  True              
+5:  64         NULL         NULL         NULL      NULL         0              4           3                   1                  True              
+6:  32         NULL         NULL         NULL      NULL         0              4           3                   1                  True              
+7:  16         NULL         NULL         NULL      NULL         0              4           3                   1                  True              
+8:  32         NULL         NULL         NULL      NULL         0              6           3                   1                  True              
+9:  64         NULL         NULL         NULL      NULL         0              6           3                   1                  True              
+10: 16         NULL         NULL         NULL      NULL         0              6           3                   1                  True              
+11: 8          NULL         NULL         NULL      NULL         0              3           2                   1                  True              
+12: 32         NULL         NULL         NULL      NULL         0              3           2                   1                  True              
+13: 64         NULL         NULL         NULL      NULL         0              3           2                   1                  True              
+14: 16         NULL         NULL         NULL      NULL         0              3           2                   1                  True              
+15: 8          NULL         NULL         NULL      NULL         0              4           2                   1                  True              
+16: 64         NULL         NULL         NULL      NULL         0              6           2                   1                  True              
+17: 64         NULL         NULL         NULL      NULL         0              4           2                   1                  True              
+18: 32         NULL         NULL         NULL      NULL         0              6           2                   1                  True              
+19: 32         NULL         NULL         NULL      NULL         0              4           2                   1                  True              
+20: 16         NULL         NULL         NULL      NULL         0              6           2                   1                  True              
+21: 16         NULL         NULL         NULL      NULL         0              4           2                   1                  True              
 ==============
 using System.IO;
 **************
@@ -449,6 +472,10 @@ string docpath    = Path.Combine(CurrentDocDir, SessTab.TableName + ".json");
 // save session table as file: this can be stored in our git 
 // repository
 SessTab.SaveToFile(docpath);
+**************
+==============
+**************
+==============
 **************
 ==============
 **************
