@@ -22,12 +22,12 @@ List of 24 instances of IDatabaseInfo {
   14: { Session Count = 43; Grid Count = 45; Path = P:\BoSSS_DBs\IBMPaper }
   15: { Session Count = 28; Grid Count = 15; Path = P:\BoSSS_DBs\Paper_IBM2D }
   16: { Session Count = 38; Grid Count = 22; Path = P:\BoSSS_DBs\Paper_CellAgglo01_Penalty4 }
-  17: { Session Count = 38; Grid Count = 31; Path = P:\BoSSS_DBs\Sphere3D }
+  17: { Session Count = 42; Grid Count = 55; Path = P:\BoSSS_DBs\Sphere3D }
   18: { Session Count = 22; Grid Count = 10; Path = P:\BoSSS_DBs\Performance }
   19: { Session Count = 24; Grid Count = 14; Path = P:\BoSSS_DBs\PaperRevision }
   20: { Session Count = 0; Grid Count = 0; Path = P:\Lichtenberg_DB }
   21: { Session Count = 2; Grid Count = 354; Path = P:\BoSSS_DBs\Bug }
-  22: { Session Count = 53; Grid Count = 96; Path = L:\BoSSS_DB\Lichtenberg_DB }
+  22: { Session Count = 52; Grid Count = 97; Path = L:\BoSSS_DB\Lichtenberg_DB }
   23: { Session Count = 510; Grid Count = 729; Path = Y:\fdy-publication-data\Thesis\2017\Degenhardt\performance_db }
 }
 
@@ -87,7 +87,7 @@ static class Utils {
 LinearSolverCodes[] linSolvers = new LinearSolverCodes[] {
     //LinearSolverCodes.exp_schwarz_directcoarse,
     //LinearSolverCodes.exp_schwarz_Kcycle_directcoarse,
-    LinearSolverCodes.exp_schwarz_directcoarse_overlap,
+    //LinearSolverCodes.exp_schwarz_directcoarse_overlap,
     LinearSolverCodes.exp_schwarz_Kcycle_directcoarse_overlap,
 };
 int[] ks = new int[] {2,3};
@@ -97,6 +97,8 @@ int re       = 100;
 int saveToDB = 1;
 int[] procs    = new int[] {8,16,32,64};
 **************
+C# evaluator not initialized: use 'restart'.
+
 ==============
 // ===============================
 // Init grids and save to database
@@ -194,14 +196,10 @@ C.savetodb                    = true;
 C.DbPath                      = @"/home/oe11okuz/BoSSS_DB/Lichtenberg_DB";
 C.DynamicLoadBalancing_Period = 1;
 
-// Assign correct names
-C.SessionName = "Sphere_Flow_"+linSolverName;
-
-
 C.saveperiod  = 1;
 C.ProjectName = "3DChannel";
 C.Tags.Add("Prec param study");
-C.SetDGdegree(2,3);
+C.SetDGdegree(1,3);
 C.SetGrid(grd);
            
 
@@ -266,7 +264,10 @@ C.InitialValues.Add("Phi", GetFormulaObject(InitialValues.Phi));
         C.dtMin               = 1E20;
         C.Endtime             = 10000000;
         C.NoOfTimesteps       = 1;
-        C.NoOfMultigridLevels = 2;
+        C.NoOfMultigridLevels = 3;
+        
+        // Assign correct names
+        C.SessionName = "Sphere_Flow_k1"+linSolverName+"_MGLevels"+C.NoOfMultigridLevels;
         }
 **************
 (15,47): error CS1010: Newline in constant
@@ -286,7 +287,7 @@ foreach(var ctrl in controls) {
 foreach(int proc in procs){
     ctrl.SessionName = tmpName+"_Proc"+proc;
     Console.WriteLine(" Submitting: " + ctrl.SessionName);
-    ctrl.RunBatch(myBatch,NumberOfMPIProcs:proc,UseComputeNodesExclusive:false,executionTime:"24:00:00");  
+    ctrl.RunBatch(myBatch,NumberOfMPIProcs:proc,UseComputeNodesExclusive:true,executionTime:"20:00:00");  
 }}
 **************
 ==============
@@ -372,16 +373,28 @@ static class AddCols {
     }
     
     static public object SlvIterTime(ISessionInfo SI) {
-        return getMaxTime(SI,"Slv Iter",true);
+        return getMaxTime(SI,"Slv Iter",false);
     }
-      static public object SlvInitTime(ISessionInfo SI) {
-        return getMaxTime(SI,"Slv Init",true);
+    static public object SlvInitTime(ISessionInfo SI) {
+        return getMaxTime(SI,"Slv Init",false);
+    }
+    static public object SchwarzSolve(ISessionInfo SI) {
+        return getMaxTime(SI,"BoSSS.Solution.Multigrid.Schwarz.Solve",false);
+    }
+    static public object NewtonDirder(ISessionInfo SI) {
+        return getMaxTime(SI,"BoSSS.Solution.Multigrid.Newton.dirder",false);
     }
     static public object MPIs(ISessionInfo SI) {
         return SI.ComputeNodeNames.Count();
     }
 }
 **************
+(46,26): error CS0111: A member `AddCols.SlvInitTime(BoSSS.Foundation.IO.ISessionInfo)' is already defined. Rename this member or use different parameter types
+(43,26): (Location of the symbol related to previous error)
+(49,26): error CS0111: A member `AddCols.SlvInitTime(BoSSS.Foundation.IO.ISessionInfo)' is already defined. Rename this member or use different parameter types
+(46,26): (Location of the symbol related to previous error)
+No. of errors|warnings: 2|0.
+
 ==============
 WorkflowMgm.AdditionalSessionTableColums.Clear();
 WorkflowMgm.AdditionalSessionTableColums.Add(
@@ -436,72 +449,6 @@ string docpath    = Path.Combine(CurrentDocDir, SessTab.TableName + ".json");
 // save session table as file: this can be stored in our git 
 // repository
 SessTab.SaveToFile(docpath);
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
 **************
 ==============
 **************
