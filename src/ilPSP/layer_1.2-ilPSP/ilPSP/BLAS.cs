@@ -239,6 +239,38 @@ namespace ilPSP.Utils {
         }
 
         /// <summary>
+        /// Nodes between two points, compressed at both ends
+        /// </summary>
+        /// <param name="l">lower limit.</param>
+        /// <param name="r">upper limit.</param>
+        /// <param name="a">scaling between linear ans sinus-mapping</param>
+        /// <param name="n">number of nodes</param>
+        /// <returns></returns>
+        public static double[] SinLinSpacing(double l, double r, double a, int n) {
+            if (a < 0)
+                throw new ArgumentOutOfRangeException();
+            if (a > 1)
+                throw new ArgumentOutOfRangeException();
+            if (l >= r)
+                throw new ArgumentOutOfRangeException();
+
+            double[] linnodes = GenericBlas.Linspace(-Math.PI * 0.5, Math.PI * 0.5, n);
+            double[] linnodes2 = GenericBlas.Linspace(-1, 1, n);
+            double[] nodes = new double[n];
+
+            for (int i = 0; i < n; i++)
+                //nodes[i] = linnodes2[i] * (1 - a) + (1.0 - Math.Sin(linnodes[i])) * a;
+                nodes[i] = linnodes2[i] * (1 - a) + Math.Sin(linnodes[i]) * a;
+
+            for (int i = 0; i < n; i++) {
+                nodes[i] = nodes[i] * (r - l) * 0.5 + (r + l) * 0.5;
+                //Debug.Assert(nodes[i] >= l);
+                //Debug.Assert(nodes[i] <= r);
+            }
+            return nodes;
+        }
+
+        /// <summary>
         /// generic dswap
         /// </summary>
         static public void dswap<U, V>(int N, U DX, int INCX, V DY, int INCY) 

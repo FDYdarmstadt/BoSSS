@@ -14,10 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text.RegularExpressions;
 
 namespace ilPSP.Tracing {
@@ -26,6 +28,7 @@ namespace ilPSP.Tracing {
     /// Accumulator for the total time spend in some traced method;
     /// </summary>
     [Serializable]
+    [DataContract]
     public class MethodCallRecord {
 
         /// <summary>
@@ -37,8 +40,62 @@ namespace ilPSP.Tracing {
         }
 
         /// <summary>
+        /// Serializes this object and its childs into a JSON string.
+        /// </summary>
+        public string Serialize() {
+            JsonSerializer formatter = new JsonSerializer() {
+                NullValueHandling = NullValueHandling.Ignore,
+                TypeNameHandling = TypeNameHandling.Auto,
+                ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
+                ReferenceLoopHandling = ReferenceLoopHandling.Error
+            };
+
+            using (var wrt = new StringWriter()) {
+                using (JsonWriter writer = new JsonTextWriter(wrt)) {  // Alternative: binary writer: JsonTextWriter
+                    formatter.Serialize(writer, this);
+                }
+
+                return wrt.ToString();
+            }
+
+        }
+
+        /// <summary>
+        /// De-Serializes from a JSON string.
+        /// </summary>
+        public static MethodCallRecord Deserialize(string JsonString) {
+            JsonSerializer formatter = new JsonSerializer() {
+                NullValueHandling = NullValueHandling.Ignore,
+                TypeNameHandling = TypeNameHandling.Auto,
+                ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
+                ReferenceLoopHandling = ReferenceLoopHandling.Error
+            };
+
+            using (var rd = new StringReader(JsonString)) {
+                MethodCallRecord mcr;
+                using (JsonReader reader = new JsonTextReader(rd)) {  // Alternative: binary writer: JsonTextWriter
+                    mcr = formatter.Deserialize<MethodCallRecord>(reader);
+                }
+
+                mcr.FixParrentRecursive();
+
+                return mcr;
+            }
+        }
+
+        void FixParrentRecursive() {
+            foreach(var ch in this.Calls.Values) {
+                ch.ParrentCall = this;
+                ch.FixParrentRecursive();
+            }
+        }
+
+
+
+        /// <summary>
         /// method name
         /// </summary>
+        [DataMember]
         public string Name {
             get;
             private set;
@@ -55,13 +112,14 @@ namespace ilPSP.Tracing {
         /// <summary>
         /// the method which called this method
         /// </summary>
+        [JsonIgnore]
         public MethodCallRecord ParrentCall;
 
         /// <summary>
         /// all traces sub-calls
         /// </summary>
-        public Dictionary<string, MethodCallRecord> Calls =
-            new Dictionary<string, MethodCallRecord>();
+        [DataMember]
+        public Dictionary<string, MethodCallRecord> Calls = new Dictionary<string, MethodCallRecord>();
 
         /// <summary>
         /// Adds a new entry to <see cref="Calls"/> (if <paramref name="_name"/> does not exist), otherwise 
@@ -84,11 +142,13 @@ namespace ilPSP.Tracing {
         /// <summary>
         /// Accumulated time in method.
         /// </summary>
+        [DataMember]
         internal long m_TicksSpentInMethod = 0;
 
         /// <summary>
         /// Accumulated time in method.
         /// </summary>
+        [JsonIgnore]
         public long TicksSpentInMethod {
             get {
                 return m_TicksSpentInMethod;
@@ -99,6 +159,7 @@ namespace ilPSP.Tracing {
         /// <summary>
         /// Accumulated, total time spend in method (inclusive child calls).
         /// </summary>
+        [JsonIgnore]
         public TimeSpan TimeSpentInMethod {
             get {
                 return new TimeSpan(m_TicksSpentInMethod);
@@ -109,6 +170,7 @@ namespace ilPSP.Tracing {
         /// <summary>
         /// time spent in traced child calls
         /// </summary>
+        [JsonIgnore]
         public long TicksSpentInChildCalls {
             get {
                 long r = 0;
@@ -124,6 +186,7 @@ namespace ilPSP.Tracing {
         /// <summary>
         /// Accumulated, total time spend in method (inclusive child calls).
         /// </summary>
+        [JsonIgnore]
         public TimeSpan TimeSpentInChildCalls {
             get {
                 return new TimeSpan(TicksSpentInChildCalls);
@@ -133,6 +196,7 @@ namespace ilPSP.Tracing {
         /// <summary>
         /// Time spent the method itself, exclusive of child calls.
         /// </summary>
+        [JsonIgnore]
         public long TicksExclusive {
             get {
                 return this.m_TicksSpentInMethod - TicksSpentInChildCalls;
@@ -142,6 +206,7 @@ namespace ilPSP.Tracing {
         /// <summary>
         /// Time spent the method itself, exclusive of child calls.
         /// </summary>
+        [JsonIgnore]
         public TimeSpan TimeExclusive {
             get {
                 return new TimeSpan(TicksExclusive);
@@ -151,6 +216,7 @@ namespace ilPSP.Tracing {
         /// <summary>
         /// time spend in this method, relative to the <see cref="Root"/>;
         /// </summary>
+        [JsonIgnore]
         public double TimeFractionOfRoot {
             get {
                 double rT = (double)(this.m_TicksSpentInMethod);
@@ -162,6 +228,7 @@ namespace ilPSP.Tracing {
         /// <summary>
         /// time spend in this method, relative to the <see cref="Root"/>;
         /// </summary>
+        [JsonIgnore]
         public double ExclusiveTimeFractionOfRoot {
             get {
                 double rT = (double)(this.TicksExclusive);
@@ -173,6 +240,7 @@ namespace ilPSP.Tracing {
         /// <summary>
         /// how often the method was called
         /// </summary>
+        [DataMember]
         public int CallCount = 0;
 
         private static Regex WildcardToRegex(string pattern) {
@@ -184,6 +252,7 @@ namespace ilPSP.Tracing {
         /// <summary>
         /// root of the <see cref="MethodCallRecord"/>-tree, equal to <see cref="Tracer.Root"/>
         /// </summary>
+        [JsonIgnore]
         public MethodCallRecord Root {
             get {
                 if (this.ParrentCall == null) {
@@ -443,10 +512,12 @@ namespace ilPSP.Tracing {
         /// </summary>
         override public string ToString() {
             List<string> calledBy = new List<string>();
+            List<int> calledByCnt = new List<int>();
             foreach (var mcr in this.AllCalls) {
                 if (mcr.ParrentCall != null) {
                     if (!calledBy.Contains(mcr.ParrentCall.Name)) {
                         calledBy.Add(mcr.ParrentCall.Name);
+                        calledByCnt.Add(mcr.CallCount);
                     }
                 }
             }
@@ -466,6 +537,8 @@ namespace ilPSP.Tracing {
             stw.Write("'");
             for (int i = 0; i < calledBy.Count; i++) {
                 stw.Write(calledBy[i]);
+                stw.Write("*");
+                stw.Write(calledByCnt[i]);
                 if (i < calledBy.Count - 1)
                     stw.Write(",");
                 else

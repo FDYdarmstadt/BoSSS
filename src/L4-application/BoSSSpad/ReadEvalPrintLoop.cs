@@ -55,6 +55,8 @@ namespace BoSSS.Application.BoSSSpad {
             get;
             private set;
         }
+             
+
 
         /// <summary>
         /// Creates the evaluator using <see cref="InteractiveShell"/> as
@@ -86,6 +88,7 @@ namespace BoSSS.Application.BoSSSpad {
 
 
             // Assembly References
+            eval.ReferenceAssembly(typeof(System.Data.DataTable).Assembly); // required for session tables
             eval.ReferenceAssembly(typeof(ilPSP.Environment).Assembly);
             eval.ReferenceAssembly(typeof(ilPSP.LinSolvers.SimpleSolversInterface).Assembly);
             eval.ReferenceAssembly(typeof(BatchmodeConnector).Assembly); // Do it this cause connector is not referenced anywhere else, i.e. the assembly will often be missing otherwise
@@ -110,6 +113,7 @@ namespace BoSSS.Application.BoSSSpad {
             eval.ReferenceAssembly(typeof(CNS.Program).Assembly);
             eval.ReferenceAssembly(typeof(IBM_Solver.IBM_SolverMain).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.Application.SipPoisson.SipPoissonMain).Assembly);
+
 
             eval.Compile(
                 "using System;" + Console.Out.NewLine +
@@ -220,7 +224,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// Executes the REPL (Read-Eval-Print-Loop) until terminated.
         /// </summary>
         public static void REPL() {
-            EvalPrint("restart");
+            EvalPrint("restart", out var dummy1);
 
             CommandLineReader reader = GetCommandLineReader();
 
@@ -232,7 +236,7 @@ namespace BoSSS.Application.BoSSSpad {
                     break;
                 }
 
-                EvalPrint(line);
+                EvalPrint(line, out var dummy2);
             }
         }
 
@@ -264,7 +268,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// the 'EP' of <see cref="REPL"/>
         /// </summary>
-        public static object EvalPrint(string line) {
+        public static object EvalPrint(string line, out Assembly AssemblyProduced) {
             
             string lineWithoutWhite = line.TrimStart(new char[] { ' ', '\t', '\r', '\n' }).TrimEnd(new char[] { ' ', '\t', '\r', '\n' });
             if (lineWithoutWhite == "restart" || lineWithoutWhite == "restart;") {
@@ -284,11 +288,13 @@ namespace BoSSS.Application.BoSSSpad {
                     eval = new SafeEvaluator(() => Startup(runcommands));
                 }
 #endif
+                AssemblyProduced = null;
                 return null;
             }
 
             if (eval == null) {
                 Console.Error.WriteLine("C# evaluator not initialized: use 'restart'.");
+                AssemblyProduced = null;
                 return null;
             }
 
@@ -299,6 +305,8 @@ namespace BoSSS.Application.BoSSSpad {
 #endif
 
             string ans = eval.Evaluator.Evaluate(line, out result, out result_set);
+            AssemblyProduced = eval.LatestAssembly;
+            
             if (result_set) {
                 InteractiveShell.ans = result;
             }
@@ -349,6 +357,7 @@ namespace BoSSS.Application.BoSSSpad {
                     e.GetType(),
                     e.Message));
                 InteractiveShell.LastError = e;
+                AssemblyProduced = null;
             }
 #endif
             return result;

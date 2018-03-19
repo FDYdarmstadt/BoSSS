@@ -47,7 +47,6 @@ namespace BoSSS.Application.ZwoLsTest {
             BoSSS.Solution.Application._Main(
                 new string[0],
                 true,
-                null,
                 delegate() {
                     p = new ZwoLsTestMain();
                     p.THRESHOLD = AggTresh;

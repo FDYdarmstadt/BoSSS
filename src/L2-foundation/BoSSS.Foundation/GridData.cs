@@ -132,8 +132,9 @@ namespace BoSSS.Foundation.Grid.Classic {
                 CheckEdgeTagNames();
                 Grid.CheckGridForNANorINF();
                 Grid.CheckCellTypes();
-                if(m_Grid.NoOfUpdateCells <= 0)
-                    throw new ApplicationException("grid contains no cells on processor " + MpiRank + ";");
+                int myRank = this.MpiRank;
+                if (m_Grid.NoOfUpdateCells <= 0)
+                    throw new ApplicationException("grid contains no cells on processor " + myRank + ";");
 
                 // start init
                 // ----------

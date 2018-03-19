@@ -35,7 +35,6 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             BoSSS.Solution.Application._Main(
                 new string[0],
                 true,
-                null,
                 delegate () {
                     p = new AdaptiveMeshRefinementTestMain();
                     p.DEGREE = DGdegree;

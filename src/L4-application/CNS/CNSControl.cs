@@ -220,7 +220,7 @@ namespace CNS {
         /// equal to LTS
         [InclusiveLowerBound(1)]
         public int NumberOfSubGrids = 1;
-        
+
         /// <summary>
         /// The amount of time steps after which a reclustering is performed if <see cref="ExplicitSchemes.LTS"/>
         /// is used in adaptive mode (<see cref="ReclusteringInterval"/> != 0).
@@ -379,6 +379,12 @@ namespace CNS {
         public ICellClassifier DynamicLoadBalancing_CellClassifier = new IndifferentCellClassifier();
 
         /// <summary>
+        /// The maximum number of sub-steps in the smallest cluster in a LTS clustering
+        /// </summary>
+        [InclusiveLowerBound(0)]
+        public int maxNumOfSubSteps = 0;
+
+        /// <summary>
         /// Clones this object, but beware: I'm not sure (yet) that I've
         /// covered all cases
         /// </summary>
@@ -399,10 +405,17 @@ namespace CNS {
             clone.CustomEnergySources = new List<Func<ISpeciesMap, INonlinearSource>>();
             clone.CustomEnergySources.AddRange(this.CustomEnergySources);
 
-            clone.DynamicLoadBalancing_CellCostEstimatorFactories = new List<Func<IApplication<AppControl>, int, ICellCostEstimator>>();
+            clone.DynamicLoadBalancing_CellCostEstimatorFactories = new List<Func<IApplication, int, ICellCostEstimator>>();
             clone.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(this.DynamicLoadBalancing_CellCostEstimatorFactories);
 
             return clone;
+        }
+
+        /// <summary>
+        /// To launch CNS.
+        /// </summary>
+        public override Type GetSolverType() {
+            return typeof(CNS.Program);
         }
     }
 }

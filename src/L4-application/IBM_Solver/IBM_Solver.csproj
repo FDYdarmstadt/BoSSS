@@ -74,6 +74,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ApproxPredictor.cs" />
+    <Compile Include="Solver\SolverChooser.cs" />
+    <Compile Include="Solver\SolverCodes.cs" />
     <Compile Include="HardcodedPrecTest.cs" />
     <Compile Include="HardcodedPerformance.cs" />
     <Compile Include="HarcodedControl3D.cs" />

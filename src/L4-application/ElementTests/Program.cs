@@ -44,7 +44,7 @@ namespace BoSSS.Application.ElementTests {
                 RefElement.ExchangeFormats.GambitNeutral };
 
         public static void Main(string[] args) {
-            BoSSS.Solution.Application._Main(args, true, null, delegate() {
+            BoSSS.Solution.Application._Main(args, true, delegate() {
                 return new ListElementsMain();
             });
         }

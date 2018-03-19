@@ -54,6 +54,11 @@ namespace BoSSS.Solution.Multigrid {
             MUMPS,
 
             /// <summary>
+            /// Using <see cref="IMatrixExtensions.Solve{T}(T, double[], double[])"/>
+            /// </summary>
+            Lapack,
+
+            /// <summary>
             /// MATLAB 'backslash' solver, see <see cref="ilPSP.Connectors.Matlab.Extensions.SolveMATLAB{T1, T2}(IMutableMatrixEx, T1, T2, string)"/> 
             /// </summary>
             Matlab
@@ -108,25 +113,72 @@ namespace BoSSS.Solution.Multigrid {
             }
         }
 
+        class DenseSolverWrapper :  ISparseSolver {
+
+            MultidimensionalArray FullMatrix;
+
+            public void DefineMatrix(IMutableMatrixEx M) {
+                FullMatrix = M.ToFullMatrixOnProc0();
+            }
+
+            public void Dispose() {
+                FullMatrix = null;
+            }
+
+            public SolverResult Solve<Tunknowns, Trhs>(Tunknowns x, Trhs rhs)
+                where Tunknowns : IList<double>
+                where Trhs : IList<double> {
+                var StartTime = DateTime.Now;
+
+                double[] Int_x = x as double[];
+                bool writeBack = false;
+                if (Int_x == null) {
+                    Int_x = new double[x.Count];
+                    writeBack = true;
+                }
+
+                double[] Int_rhs = rhs as double[];
+                if (Int_rhs == null)
+                    Int_rhs = rhs.ToArray();
+                
+                FullMatrix.Solve(Int_x, Int_rhs);
+
+                if (writeBack)
+                    x.SetV(Int_x);
+
+                return new SolverResult() {
+                    Converged = true,
+                    NoOfIterations = 1,
+                    RunTime = DateTime.Now - StartTime
+                };
+            }
+        }
+
+
 
         ISparseSolver GetSolver(IMutableMatrixEx Mtx) {
             ISparseSolver solver;
             switch (WhichSolver) {
                 case _whichSolver.PARDISO:
-                    solver = new PARDISOSolver();
-                    ((PARDISOSolver)solver).CacheFactorization = true;
-                    break;
+                solver = new PARDISOSolver();
+                ((PARDISOSolver)solver).CacheFactorization = true;
+                ((PARDISOSolver)solver).UseDoublePrecision = true;
+                break;
 
                 case _whichSolver.MUMPS:
-                    solver = new MUMPSSolver();
-                    break;
+                solver = new MUMPSSolver(MPI: true);
+                break;
 
                 case _whichSolver.Matlab:
-                    solver = new MatlabSolverWrapper();
-                    break;
+                solver = new MatlabSolverWrapper();
+                break;
+
+                case _whichSolver.Lapack:
+                solver = new DenseSolverWrapper();
+                break;
 
                 default:
-                    throw new NotImplementedException();
+                throw new NotImplementedException();
 
             }
 
@@ -137,6 +189,11 @@ namespace BoSSS.Solution.Multigrid {
 
         BlockMsrMatrix m_Mtx;
         int IterCnt = 1;
+
+
+        /// <summary>
+        /// %
+        /// </summary>
         public void Solve<U, V>(U X, V B)
             where U : IList<double>
             where V : IList<double> //
@@ -204,13 +261,18 @@ namespace BoSSS.Solution.Multigrid {
 
         int m_ThisLevelIterations;
 
+        bool m_TestSolution = true;
+
         /// <summary>
         /// If set to true, the solution returned by the direct solver is tested by computing the residual norm.
-        /// Currently, this is hard-coded to be true, since the direct solvers seem unreliable.
+        /// Currently, the default is true, since the direct solvers seem unreliable.
         /// </summary>
         public bool TestSolution {
             get {
-                return true; 
+                return m_TestSolution; 
+            }
+            set {
+                m_TestSolution = value;
             }
         }
 

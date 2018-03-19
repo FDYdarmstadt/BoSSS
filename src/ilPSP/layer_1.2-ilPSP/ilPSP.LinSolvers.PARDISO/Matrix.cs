@@ -47,10 +47,16 @@ namespace ilPSP.LinSolvers.PARDISO {
         public int[] ja;
         
         /// <summary>
-        /// PARDISO parameter: matrix values
+        /// PARDISO parameter: matrix values, when using double precision (<see cref="PARDISOSolver.UseDoublePrecision"/>)
         /// Attention: FORTRAN indexing: starts at 1! only initialized on MPI processor rank 0.
         /// </summary>
-        public double[] a;
+        public double[] a_D;
+
+        /// <summary>
+        /// PARDISO parameter: matrix values, when using double precision (<see cref="PARDISOSolver.UseDoublePrecision"/>)
+        /// Attention: FORTRAN indexing: starts at 1! only initialized on MPI processor rank 0.
+        /// </summary>
+        public float[] a_S;
 
 
         public bool Symmetric = false;
@@ -60,18 +66,17 @@ namespace ilPSP.LinSolvers.PARDISO {
         /// <summary>
         /// initializes this matrix as a copy of the matrix <paramref name="M"/>.
         /// </summary>
-        /// <param name="M"></param>
-        public Matrix(IMutableMatrixEx M)  {
+        public Matrix(IMutableMatrixEx M, bool UseDoublePrecision) {
             if (M.RowPartitioning.IsMutable)
                 throw new NotSupportedException();
             if (M.ColPartition.IsMutable)
                 throw new NotSupportedException();
 
             if (M.NoOfCols != M.NoOfRows)
-                throw new ArgumentException("Matrix must be quadratic.","M");
+                throw new ArgumentException("Matrix must be quadratic.", "M");
             this.Symmetric = (M is MsrMatrix) && ((MsrMatrix)M).AssumeSymmetric;
             RowPart = M.RowPartitioning;
-            
+
             int size = M.RowPartitioning.MpiSize, rank = M.RowPartitioning.MpiRank;
             Debug.Assert(M.RowPartitioning.MpiRank == M.ColPartition.MpiRank);
             Debug.Assert(M.RowPartitioning.MpiSize == M.ColPartition.MpiSize);
@@ -101,7 +106,10 @@ namespace ilPSP.LinSolvers.PARDISO {
                 int cnt = 0;
                 ia = new int[n + 1];
                 ja = new int[len];
-                a = new double[len];
+                if (UseDoublePrecision)
+                    a_D = new double[len];
+                else
+                    a_S = new float[len];
                 for (int i = 0; i < Nrows; i++) {
                     ia[i] = cnt + 1; // fortran indexing
                     int iRow = M.RowPartitioning.i0 + i;
@@ -112,7 +120,10 @@ namespace ilPSP.LinSolvers.PARDISO {
                     if (Symmetric && diagelem == 0) {
                         // in the symmetric case, we always need to provide the diagonal element
                         ja[cnt] = iRow + 1; // fortran indexing
-                        a[cnt] = 0.0;
+                        if (UseDoublePrecision)
+                            a_D[cnt] = 0.0;
+                        else
+                            a_S[cnt] = 0.0f;
                         cnt++;
                     }
                     for (int j = 0; j < LR; j++) {
@@ -124,7 +135,10 @@ namespace ilPSP.LinSolvers.PARDISO {
                                 continue;
                             } else {
                                 ja[cnt] = col[j] + 1; // fortran indexing
-                                a[cnt] = val[j];
+                                if (UseDoublePrecision)
+                                    a_D[cnt] = val[j];
+                                else
+                                    a_S[cnt] = (float)(val[j]);
                                 cnt++;
                             }
                         }
@@ -144,7 +158,7 @@ namespace ilPSP.LinSolvers.PARDISO {
 
                 // Number of elements, start indices for index pointers
                 // ====================================================
-                                
+
                 int len_loc;
                 if (Symmetric)
                     // number of entries is:
@@ -158,29 +172,38 @@ namespace ilPSP.LinSolvers.PARDISO {
                 if (part.TotalLength > int.MaxValue)
                     throw new ApplicationException("too many matrix entries for PARDISO - more than maximum 32-bit signed integer");
 
-                
+
                 // local matrix assembly
                 // =====================
                 int n_loc = M.RowPartitioning.LocalLength;
                 int[] ia_loc = new int[n_loc];
                 int[] ja_loc = new int[len_loc];
-                double[] a_loc = new double[len_loc];
+                double[] a_loc_D = null;
+                float[] a_loc_S = null;
+                if (UseDoublePrecision) {
+                    a_loc_D = new double[len_loc];
+                } else {
+                    a_loc_S = new float[len_loc];
+                }
                 {
 
                     int cnt = 0;
                     int i0 = (int)part.i0;
-                    
+
                     for (int i = 0; i < n_loc; i++) {
                         ia_loc[i] = cnt + 1 + i0; // fortran indexing
                         int iRow = i + (int)M.RowPartitioning.i0;
 
                         LR = M.GetRow(iRow, ref col, ref val);
-                        
+
                         double diagelem = M[iRow, iRow];
                         if (Symmetric && diagelem == 0) {
                             // in the symmetric case, we always need to provide the diagonal element
                             ja_loc[cnt] = iRow + 1; // fortran indexing
-                            a_loc[cnt] = 0.0;
+                            if (UseDoublePrecision)
+                                a_loc_D[cnt] = 0.0;
+                            else
+                                a_loc_S[cnt] = 0.0f;
                             cnt++;
                         }
                         for (int j = 0; j < LR; j++) {
@@ -192,7 +215,10 @@ namespace ilPSP.LinSolvers.PARDISO {
                                     continue;
                                 } else {
                                     ja_loc[cnt] = col[j] + 1; // fortran indexing
-                                    a_loc[cnt] = val[j];
+                                    if (UseDoublePrecision)
+                                        a_loc_D[cnt] = val[j];
+                                    else
+                                        a_loc_S[cnt] = (float)val[j];
                                     cnt++;
                                 }
                             }
@@ -213,56 +239,93 @@ namespace ilPSP.LinSolvers.PARDISO {
                     // process 0: collect data from other processors
                     // +++++++++++++++++++++++++++++++++++++++++++++
 
-                    this.ia = new int[M.RowPartitioning.TotalLength + 1];
+                    this.ia = new int[M.RowPartitioning.TotalLength + 1]; 
                     this.ja = new int[part.TotalLength];
-                    this.a = new double[part.TotalLength];
-                    
-                    Array.Copy(ia_loc, 0, this.ia, 0, ia_loc.Length);
-                    Array.Copy(ja_loc, 0, this.ja, 0, ja_loc.Length);
-                    Array.Copy(a_loc, 0, this.a, 0, a_loc.Length);
+                    if (UseDoublePrecision)
+                        this.a_D = new double[part.TotalLength];
+                    else
+                        this.a_S = new float[part.TotalLength];
+                }
 
 
-                    unsafe { 
-                        fixed (int* pia = &this.ia[0], pja = &this.ja[0]) {
-                            fixed (double* pa = &this.a[0]) {
+                unsafe
+                {
+                    unsafe
+                    {
+                        int* displs = stackalloc int[size];
+                        int* recvcounts = stackalloc int[size];
+                        for (int i = 0; i < size; i++) {
+                            recvcounts[i] = part.GetLocalLength(i);
+                            displs[i] = part.GetI0Offest(i);
+                        }
 
-                                for (int rcv_rank = 1; rcv_rank < size; rcv_rank++) {
-                                    MPI_Status status;
-                                    csMPI.Raw.Recv((IntPtr)(pa + part.GetI0Offest(rcv_rank)), part.GetLocalLength(rcv_rank), csMPI.Raw._DATATYPE.DOUBLE, rcv_rank, 321555 + rcv_rank, m_comm, out status);
-                                    csMPI.Raw.Recv((IntPtr)(pja + part.GetI0Offest(rcv_rank)), part.GetLocalLength(rcv_rank), csMPI.Raw._DATATYPE.INT, rcv_rank, 32155 + rcv_rank, m_comm, out status);
-                                    csMPI.Raw.Recv((IntPtr)(pia + M.RowPartitioning.GetI0Offest(rcv_rank)), M.RowPartitioning.GetLocalLength(rcv_rank), csMPI.Raw._DATATYPE.INT, rcv_rank, 3215 + rcv_rank, m_comm, out status);
-                                }
+                        
+                        fixed (void* pa_loc_D = a_loc_D, pa_D = a_D, pa_loc_S = a_loc_S, pa_S = a_S) {
+                            if (UseDoublePrecision) {
+                                csMPI.Raw.Gatherv(
+                                    (IntPtr)pa_loc_D,
+                                    a_loc_D.Length,
+                                    csMPI.Raw._DATATYPE.DOUBLE,
+                                    (IntPtr)pa_D,
+                                    (IntPtr)recvcounts,
+                                    (IntPtr)displs,
+                                    csMPI.Raw._DATATYPE.DOUBLE,
+                                    0,
+                                    m_comm);
+                            } else {
+                                csMPI.Raw.Gatherv(
+                                    (IntPtr)pa_loc_S,
+                                    a_loc_S.Length,
+                                    csMPI.Raw._DATATYPE.FLOAT,
+                                    (IntPtr)pa_S,
+                                    (IntPtr)recvcounts,
+                                    (IntPtr)displs,
+                                    csMPI.Raw._DATATYPE.FLOAT,
+                                    0,
+                                    m_comm);
                             }
                         }
-                    }
 
-                    this.ia[M.RowPartitioning.TotalLength] = (int)part.TotalLength + 1;
-                    
-                } else {
+                        fixed(void* pja_loc = ja_loc, pja = ja) {
+                            csMPI.Raw.Gatherv(
+                                    (IntPtr)pja_loc,
+                                    ja_loc.Length,
+                                    csMPI.Raw._DATATYPE.DOUBLE,
+                                    (IntPtr)pja,
+                                    (IntPtr)recvcounts,
+                                    (IntPtr)displs,
+                                    csMPI.Raw._DATATYPE.DOUBLE,
+                                    0,
+                                    m_comm);
+                        }
 
-                    // send data to process 0
-                    // ++++++++++++++++++++++
+                        for (int i = 0; i < size; i++) {
+                            displs[i] = M.RowPartitioning.GetI0Offest(i);
+                            recvcounts[i] = M.RowPartitioning.GetLocalLength(i);
+                        }
 
-                    unsafe {
-                        fixed (void* pia = &ia_loc[0], pja = &ja_loc[0], pa = &a_loc[0]) {
-
-                            csMPI.Raw.Send((IntPtr)pa, a_loc.Length, csMPI.Raw._DATATYPE.DOUBLE, 0, 321555 + rank, m_comm);
-                            csMPI.Raw.Send((IntPtr)pja, ja_loc.Length, csMPI.Raw._DATATYPE.INT, 0, 32155 + rank, m_comm);
-                            csMPI.Raw.Send((IntPtr)pia, ia_loc.Length, csMPI.Raw._DATATYPE.INT, 0, 3215 + rank, m_comm);
+                        fixed(void* pia_loc = ia_loc, pia = ia) {
+                            csMPI.Raw.Gatherv(
+                                    (IntPtr)pia_loc,
+                                    ia_loc.Length,
+                                    csMPI.Raw._DATATYPE.DOUBLE,
+                                    (IntPtr)pia,
+                                    (IntPtr)recvcounts,
+                                    (IntPtr)displs,
+                                    csMPI.Raw._DATATYPE.DOUBLE,
+                                    0,
+                                    m_comm);
                         }
                     }
                 }
 
-                ia_loc = null; ja_loc = null; a_loc = null;
+                if(rank == 0)
+                    this.ia[M.RowPartitioning.TotalLength] = (int)part.TotalLength + 1;
+
+
+                ia_loc = null; ja_loc = null; a_loc_S = null; a_loc_D = null;
                 GC.Collect();
             }
-
-            //if(rank == 0) {
-            //    Console.WriteLine("PARDISO.Matrix: Number of nonzeros: " + this.a.Length);
-            //    Console.WriteLine("PARDISO.Matrix: sum of entries: " + this.a.Sum());
-            //}
-
-            //SaveToTextFile("C:\\tmp\\pard.txt");
         }
 
 
@@ -306,8 +369,10 @@ namespace ilPSP.LinSolvers.PARDISO {
                     }
 
                     // Enforce use of . as decimal separator in scientific format
-                    writer.Write(separator + a[cnt].ToString(
-                        "E", System.Globalization.CultureInfo.InvariantCulture).PadLeft(14));
+                    if(a_D != null)
+                        writer.Write(separator + a_D[cnt].ToString("E", System.Globalization.CultureInfo.InvariantCulture).PadLeft(14));
+                    else
+                        writer.Write(separator + a_S[cnt].ToString("E", System.Globalization.CultureInfo.InvariantCulture).PadLeft(14));
                     currentColumn = ja[cnt]-1;
                     cnt++;
                     separator = "\t";

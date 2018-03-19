@@ -29,6 +29,8 @@ namespace ilPSP.Tracing {
 
         //static ILog Logger = LogManager.GetLogger(typeof(Tracer));
 
+
+
         /// <summary>
         /// a list of all namespaces for which <see cref="FuncTrace"/> should perform tracing/logging;
         /// </summary>
@@ -46,6 +48,19 @@ namespace ilPSP.Tracing {
                 if (NameSpaceList == null)
                     throw new ArgumentNullException();
                 m_NamespacesToLog = NameSpaceList;
+            }
+        }
+
+        /// <summary>
+        /// Setting <see cref="NamespacesToLog"/>.
+        /// </summary>
+        public static void SetTracingNamespaces(string TracingNamespaces) {
+            if (TracingNamespaces == null) {
+                Tracer.NamespacesToLog = new string[0];
+            } else {
+                Tracer.NamespacesToLog = TracingNamespaces.Split(
+                    new char[] { ',', ' ', '\n', '\t', '\r' },
+                    StringSplitOptions.RemoveEmptyEntries);
             }
         }
 
@@ -166,6 +181,17 @@ namespace ilPSP.Tracing {
             Watch = new Stopwatch();
             Watch.Start();
         }
+
+        /// <summary>
+        /// logs an 'inclusive' block;
+        /// </summary>
+        public MethodCallRecord LogDummyblock(long ticks, string name) {
+            if(!Tracer.InstrumentationSwitch)
+                return new MethodCallRecord(null, "dummy");
+            else 
+                return Tracer.LogDummyblock(ticks, name);
+        }
+
 
         #region IDisposable Members
 
@@ -346,6 +372,7 @@ namespace ilPSP.Tracing {
 
         }
 
+        /*
         /// <summary>
         /// logs an 'inclusive' block (see <see cref="MethodCallRecord.IgnoreForExclusive"/> );
         /// </summary>
@@ -355,6 +382,7 @@ namespace ilPSP.Tracing {
             else 
                 return Tracer.LogDummyblock(ticks, name);
         }
+        */
     }
 
     /// <summary>

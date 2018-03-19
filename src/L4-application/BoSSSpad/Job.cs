@@ -211,6 +211,7 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
+        /*
         /// <summary>
         /// Specifies command line arguments for application startup; overrides any startup arguments (<see cref="CommandLineArguments"/>)
         /// set so far.
@@ -233,6 +234,8 @@ namespace BoSSS.Application.BoSSSpad {
                 m_EnvironmentVars.Add("BOSSS_ARG_" + i, args[i]);
             }
         }
+        */
+
 
         /// <summary>
         /// Specifies the control object for application startup; overrides any startup arguments (<see cref="CommandLineArguments"/>)
@@ -241,23 +244,20 @@ namespace BoSSS.Application.BoSSSpad {
         public void SetControlObject(BoSSS.Solution.Control.AppControl ctrl) {
             // serialize control object
             // ========================
-            byte[] buffer;
-            using(var ms = new MemoryStream()) {
-                var bf = new BinaryFormatter();
-                bf.Serialize(ms, ctrl);
-                buffer = ms.GetBuffer();
+
+            ctrl.VerifyEx();
+            string ControlName, text;
+            int index = -1;
+            if (ctrl.GeneratedFromCode) {
+                text = ctrl.ControlFileText;
+                ControlName = "control.cs";
+                index = ctrl.ControlFileText_Index;
+            } else {
+                text = ctrl.Serialize();
+                ControlName = "control.obj";
             }
-
-            //using(var ms = new MemoryStream(buffer.CloneAs())) {
-            //}
-
-            //ctrl.Verify();
-            //byte[] buffer  = ctrl.Serialize();
-            //var ctrl_check = BoSSS.Solution.Control.AppControl.Deserialize(buffer, ctrl.GetType());
-            //ctrl_check.Verify();
-            //byte[] buffer = Encoding.UTF8.GetBytes(ControlString);
-
-            AdditionalDeploymentFiles.Add(new Tuple<byte[], string>(buffer, "control.obj"));
+            byte[] buffer = Encoding.UTF8.GetBytes(text);
+            AdditionalDeploymentFiles.Add(new Tuple<byte[], string>(buffer, ControlName));
 
             // Project & Session Name
             // ======================
@@ -271,6 +271,10 @@ namespace BoSSS.Application.BoSSSpad {
                 "--prjnmn", PrjName,
                 "--sesnmn", this.Name
             };
+            if(index >= 0) {
+                ArrayTools.Cat(args, "--pstudy_case", index.ToString());
+            }
+
 
             for(int i = 0; i < args.Length; i++) {
                 m_EnvironmentVars.Add("BOSSS_ARG_" + i, args[i]);
@@ -279,6 +283,7 @@ namespace BoSSS.Application.BoSSSpad {
             // 
         }
 
+        /*
         /// <summary>
         /// Specifies command line arguments for application startup; overrides any startup arguments (<see cref="CommandLineArguments"/>)
         /// set so far.
@@ -287,6 +292,8 @@ namespace BoSSS.Application.BoSSSpad {
             File.ReadAllText(FileName);
             SetControlCode(File.ReadAllText(FileName));
         }
+        */
+
 
         string[] m_CommandLineArguments = new string[0];
 
@@ -333,6 +340,14 @@ namespace BoSSS.Application.BoSSSpad {
                     throw new NotSupportedException("Job is activated - no further change of parameters is possible.");
                 m_NumberOfMPIProcs = value;
             }
+        }
+
+        /// <summary>
+        /// If true, the batch system should try not to run any other jobs in parallel on the assigned compute nodes.
+        /// </summary>
+        public bool UseComputeNodesExclusive {
+            get;
+            set;
         }
 
 
@@ -473,6 +488,9 @@ namespace BoSSS.Application.BoSSSpad {
 
             if (isSubmitted && !(isFailed || wasSuccessful) && (R == null))
                 return JobStatus.PendingInExecutionQueue;
+
+            if (isSubmitted == false && isRunning == false && wasSuccessful == false && isFailed == false && (RR.Length <= 0))
+                return JobStatus.PreActivation;
 
             if (isFailed || (R == null || R.Tags.Contains(BoSSS.Solution.Application.NOT_TERMINATED_TAG)))
                 return JobStatus.Failed;

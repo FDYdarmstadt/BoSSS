@@ -176,9 +176,24 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public DataTable SessionTable {
             get {
-                return this.Sessions.GetSessionTable();
+                var adiColi = AdditionalSessionTableColums.Select(kv => new Tuple<string, Func<ISessionInfo, object>>(kv.Key, kv.Value)).ToArray();
+                return this.Sessions.GetSessionTable(adiColi);
             }
         }
+
+        Dictionary<string, Func<ISessionInfo, object>> m_AdditionalSessionTableColums = new Dictionary<string, Func<ISessionInfo, object>>();
+
+        /// <summary>
+        /// Custom, user-defined columns for the session table (<see cref="SessionTable"/>).
+        /// - keys: column name
+        /// - values: functions which map the session info to a column value.
+        /// </summary>
+        public IDictionary<string, Func<ISessionInfo, object>> AdditionalSessionTableColums {
+            get {
+                return m_AdditionalSessionTableColums;
+            }
+        }
+
 
 
         Dictionary<string, Job> m_AllJobs = new Dictionary<string, Job>();
@@ -202,9 +217,14 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="TimeOutSeconds">
         /// If positive, this method should terminate at latest after approximately this time period.
         /// </param>
-        public void BlockUntilAllJobsTerminate(double TimeOutSeconds = -1) {
+        /// <param name="PollingIntervallSeconds">
+        /// Seconds to wait before checking the jobs status again; should be in the order of seconds, not to overload the IO.
+        /// </param>
+        public void BlockUntilAllJobsTerminate(double TimeOutSeconds = -1, double PollingIntervallSeconds = 2) {
             DateTime start = DateTime.Now;
             while(true) {
+                Thread.Sleep((int)PollingIntervallSeconds);
+
                 if(TimeOutSeconds > 0) {
                     double RuntimeSoFar = (DateTime.Now - start).TotalSeconds;
                     if(RuntimeSoFar > TimeOutSeconds) {

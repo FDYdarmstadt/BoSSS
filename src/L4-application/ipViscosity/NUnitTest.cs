@@ -53,7 +53,7 @@ namespace BoSSS.Application.ipViscosity {
             [Values(0, 1)] int iSol
             ) {
             ipViscosityMain p = null;
-            BoSSS.Solution.Application._Main(new string[0], true, "", delegate() {
+            BoSSS.Solution.Application._Main(new string[0], true, delegate() {
                 p = new ipViscosityMain();
                 p.mode = TestMode.CheckResidual;
                 p.solution = solutions[iSol];
@@ -76,7 +76,7 @@ namespace BoSSS.Application.ipViscosity {
             [Values(2,3,4)] int deg
             ) {
             ipViscosityMain p = null;
-            BoSSS.Solution.Application._Main(new string[0], true, "", delegate() {
+            BoSSS.Solution.Application._Main(new string[0], true, delegate() {
                 p = new ipViscosityMain();
                 p.mode = TestMode.Solve;
                 p.solution = solutions[iSol];

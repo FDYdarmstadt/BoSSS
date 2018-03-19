@@ -175,7 +175,8 @@ namespace CNS {
                         reclusteringInterval: control.ReclusteringInterval,
                         fluxCorrection: control.FluxCorrection,
                         saveToDBCallback: program.SaveToDatabase,
-                        initialTimestepNumber: program.TimestepNumber);
+                        initialTimestepNumber: program.TimestepNumber,
+                        maxNumOfSubSteps: control.maxNumOfSubSteps);
                     break;
 
                 case ExplicitSchemes.LTS:
@@ -188,7 +189,8 @@ namespace CNS {
                         ibmControl,
                         equationSystem.GetJoinedOperator().CFLConstraints,
                         reclusteringInterval: control.ReclusteringInterval,
-                        fluxCorrection: control.FluxCorrection);
+                        fluxCorrection: control.FluxCorrection,
+                        maxNumOfSubSteps: control.maxNumOfSubSteps);
                     break;
 
                 case ExplicitSchemes.Rock4 when control.DomainType == DomainTypes.Standard:

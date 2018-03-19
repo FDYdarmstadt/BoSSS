@@ -52,7 +52,7 @@ namespace BoSSS.Application.SpecFEM {
 
             SpecFEMMain p = null;
 
-            BoSSS.Solution.Application._Main(new string[0], true, null, delegate () {
+            BoSSS.Solution.Application._Main(new string[0], true, delegate () {
                 p = new SpecFEMMain();
                 p.m_periodicX = perX;
                 p.m_periodicY = perY;
