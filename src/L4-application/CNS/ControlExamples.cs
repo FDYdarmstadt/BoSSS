@@ -987,10 +987,10 @@ namespace CNS {
 
             c.GridPartType = GridPartType.ParMETIS;
 
-            //c.DbPath = @"c:\bosss_db\";
+            c.DbPath = @"c:\bosss_db\";
             //c.DbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db\";
             c.savetodb = c.DbPath != null;
-            c.saveperiod = 10;
+            c.saveperiod = 100;
             c.PrintInterval = 1;
 
             double xMin = 0;
@@ -1014,20 +1014,20 @@ namespace CNS {
             }
 
             // Runge-Kutta
-            //c.ExplicitScheme = ExplicitSchemes.RungeKutta;
-            //c.ExplicitOrder = 1;
+            c.ExplicitScheme = ExplicitSchemes.RungeKutta;
+            c.ExplicitOrder = 1;
 
             //Adams-Bashforth
             //c.ExplicitScheme = ExplicitSchemes.AdamsBashforth;
             //c.ExplicitOrder = 3;
 
             // (A)LTS
-            c.ExplicitScheme = ExplicitSchemes.LTS;
-            c.ExplicitOrder = 3;
-            c.NumberOfSubGrids = 3;
-            //c.ReclusteringInterval = c.DynamicLoadBalancing_Period;
-            c.ReclusteringInterval = 1;
-            c.FluxCorrection = false;
+            //c.ExplicitScheme = ExplicitSchemes.LTS;
+            //c.ExplicitOrder = 3;
+            //c.NumberOfSubGrids = 3;
+            ////c.ReclusteringInterval = c.DynamicLoadBalancing_Period;
+            //c.ReclusteringInterval = 1;
+            //c.FluxCorrection = false;
 
             c.EquationOfState = IdealGas.Air;
             c.MachNumber = 1.0 / Math.Sqrt(c.EquationOfState.HeatCapacityRatio);
@@ -1136,9 +1136,9 @@ namespace CNS {
             // Time config
             c.dtMin = 0.0;
             c.dtMax = 1.0;
-            //c.CFLFraction = 0.1;
-            c.Endtime = 0.25;
-            c.dtFixed = 1e-6;
+            c.CFLFraction = 0.1;
+            c.Endtime = 0.01;
+            //c.dtFixed = 1e-6;
             c.NoOfTimesteps = int.MaxValue;
 
             c.ProjectName = "Shock tube";
@@ -1334,18 +1334,18 @@ namespace CNS {
                 c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 2);
             }
 
-            // Runge-Kutta schemes
-            //c.ExplicitScheme = ExplicitSchemes.RungeKutta;
-            //c.ExplicitOrder = 1;
+            // Runge-Kutta schemes (Explicit Euler)
+            c.ExplicitScheme = ExplicitSchemes.RungeKutta;
+            c.ExplicitOrder = 1;
 
             //Adams-Bashforth
             //c.ExplicitScheme = ExplicitSchemes.AdamsBashforth;
             //c.ExplicitOrder = 3;
 
             // (A)LTS
-            c.ExplicitScheme = ExplicitSchemes.LTS;
-            c.ExplicitOrder = 1;
-            c.NumberOfSubGrids = 1;
+            //c.ExplicitScheme = ExplicitSchemes.LTS;
+            //c.ExplicitOrder = 1;
+            //c.NumberOfSubGrids = 1;
             //c.ReclusteringInterval = 1;
             //c.maxNumOfSubSteps = 50;
             //c.FluxCorrection = true;
@@ -1461,9 +1461,9 @@ namespace CNS {
             // Time config
             c.dtMin = 0.0;
             c.dtMax = 1.0;
-            c.CFLFraction = 0.3;
+            c.CFLFraction = 0.1;
             //c.dtFixed = 1e-4;
-            c.Endtime = 0.25;
+            c.Endtime = 0.001;
             c.NoOfTimesteps = int.MaxValue;
 
             c.ProjectName = "Shock tube";
