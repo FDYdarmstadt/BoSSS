@@ -141,6 +141,8 @@ namespace BoSSS.Solution.TimeStepping {
         public BDFTimestepper(SpatialOperator spatialOp, IEnumerable<DGField> UnknownFields, IEnumerable<DGField> ParameterFields, int BDForder, Func<ISparseSolver> SolverFactory, bool DelayInit, SubGrid subGrid = null) {
             using (new ilPSP.Tracing.FuncTrace()) {
 
+                if (spatialOp.ContainsNonlinear) { throw new NotImplementedException("No Inversion of Nonlinear Operators implemented, yet."); };
+
                 if (DelayInit) throw new NotImplementedException();
                 if (subGrid != null) throw new NotImplementedException();
 
@@ -307,7 +309,7 @@ namespace BoSSS.Solution.TimeStepping {
             double[] RHS;
             BlockMsrMatrix myMatrix;
             AssembleMatrix(dt, out myMatrix, out RHS);
-            using (var slv = SolverFactory()) {
+            using (var slv = SolverFactory()  ) {
                 slv.DefineMatrix(myMatrix);
                 slv.Solve(CurrentState, RHS);
                 slv.Dispose();
