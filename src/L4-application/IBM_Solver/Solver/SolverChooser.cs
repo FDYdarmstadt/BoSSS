@@ -38,7 +38,7 @@ namespace BoSSS.Application.IBM_Solver {
 
             switch (Control.LinearSolve) {
                 case LinearSolverCodes.automatic:
-                    AutomaticChoice(Control,Timestepper);
+                    AutomaticChoice(Control, Timestepper);
                     break;
 
                 case LinearSolverCodes.classic_mumps:
@@ -113,7 +113,7 @@ namespace BoSSS.Application.IBM_Solver {
 
                 case LinearSolverCodes.exp_softgmres_schwarz_Kcycle_directcoarse_overlap:
                     Timestepper.Config_linearSolver = new SoftGMRES() {
-                        MaxKrylovDim = Timestepper.Config_MaxKrylovDim, 
+                        MaxKrylovDim = Timestepper.Config_MaxKrylovDim,
                         Precond = new Schwarz() {
                             m_BlockingStrategy = new Schwarz.MultigridBlocks() {
                                 Depth = Control.NoOfMultigridLevels - 1
@@ -133,13 +133,55 @@ namespace BoSSS.Application.IBM_Solver {
         /// Automatic choice of linear solver depending on problem size, immersed boundary, polynomial degree, etc.
         /// </summary>
         static void AutomaticChoice(IBM_Control Control, XdgBDFTimestepping Timestepper) {
-            throw new NotImplementedException("Option currently not available");
+            // throw new NotImplementedException("Option currently not available");  
 
-            // Detecting MPI Size
-            MPI.Wrappers.csMPI.Raw.Comm_Size(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out int size);
-            //Timestepper.MultigridSequence[0].
+            int pV = Control.FieldOptions["VelocityX"].Degree;
+            int pP = Control.FieldOptions["Pressure"].Degree;
+
+            // Detecting variables for solver determination 
+            var D = Timestepper.MultigridSequence[0].SpatialDimension;
+            var cellsLoc = Timestepper.MultigridSequence[0].CellPartitioning.LocalLength;
+            var cellsGlo = Timestepper.MultigridSequence[0].CellPartitioning.TotalLength;
+
+
+            var size = Timestepper.MultigridSequence[0].CellPartitioning.MpiSize;
+
 
             // Spatial Dimension
+            switch (D) {
+                case 1: break;
+                    throw new NotImplementedException("Currently not implemented for " + D + " Dimensions");
+                    break;
+
+                case 2:
+                    throw new NotImplementedException("Currently not implemented for " + D + " Dimensions");
+                    break;
+
+                case 3:
+                    var dofsPerCell3D = (3*(pV * pV * pV + 6 * pV * pV + 11 * pV + 6) / 6+1* (pP * pP * pP + 6 * pP * pP + 11 * pP + 6) / 6);
+                    var dofsLoc = dofsPerCell3D * cellsLoc;
+                    var dofsGlo = dofsPerCell3D * cellsGlo;
+
+                    if (dofsGlo > 10000) {
+
+                        if (Control.NoOfMultigridLevels < 2)
+                            throw new ApplicationException("At least 2 Multigridlevels are required");
+
+                        Timestepper.Config_linearSolver = new Schwarz() {
+                            m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
+                                NoOfPartsPerProcess = (int)Math.Ceiling(cellsLoc / 6500.0),
+                            },
+                            Overlap = 1,
+                            CoarseSolver = DetermineMGSquence(Control.NoOfMultigridLevels - 2)
+                        };
+                    } else {
+                        Timestepper.Config_linearSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS };
+                    }
+                    break;
+
+                default:
+                    throw new NotImplementedException("Currently not implemented for " + D + " Dimensions");
+            }
 
             //Timestepper.
 
