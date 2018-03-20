@@ -1,21 +1,34 @@
 restart
 **************
-
   Database Explorer v2
   ____________________
 
 Databases loaded:
-List of 10 instances of IDatabaseInfo {
-  0: { Session Count = 19; Grid Count = 3; Path = \\dc1\userspace\stange\HiWi_database\OscillatingCylinder }
-  1: { Session Count = 84; Grid Count = 24; Path = \\dc1\userspace\stange\HiWi_database\ParticleUnderGravity }
-  2: { Session Count = 35; Grid Count = 11; Path = \\dc1\userspace\stange\HiWi_database\IBMPaper }
-  3: { Session Count = 5; Grid Count = 10; Path = z:\Stange\HiWi\database }
-  4: { Session Count = 11; Grid Count = 11; Path = \\dc1\userspace\stange\HiWi_database\tests }
-  5: { Session Count = 376; Grid Count = 17; Path = \\dc1\userspace\stange\HiWi_database\PerformanceTests }
-  6: { Session Count = 9; Grid Count = 1; Path = P:\lichtenberg_db }
-  7: { Session Count = 10; Grid Count = 9; Path = P:\test_db }
-  8: { Session Count = 30; Grid Count = 11; Path = W:\work_db }
-  9: { Session Count = 114; Grid Count = 131; Path = Z:\Stange\HiWi\performance_db }
+List of 24 instances of IDatabaseInfo {
+  0: { Session Count = 0; Grid Count = 2; Path = p:\BoSSS_DBs\Kovasznay }
+  1: { Session Count = 1; Grid Count = 1; Path = p:\BoSSS_DBs\ChannelFlow }
+  2: { Session Count = 0; Grid Count = 0; Path = p:\BoSSS_DBs\RectangularCylinder }
+  3: { Session Count = 0; Grid Count = 0; Path = p:\BoSSS_DBs\Cylinder3D }
+  4: { Session Count = 6; Grid Count = 1; Path = p:\BoSSS_DBs\MPI_Test }
+  5: { Session Count = 0; Grid Count = 0; Path = p:\BoSSS_DBs\3DSolverPerformance }
+  6: { Session Count = 2; Grid Count = 2; Path = P:\BoSSS_DBs\nonIBM_cylinder }
+  7: { Session Count = 12; Grid Count = 1; Path = P:\BoSSS_DBs\osciCylinder }
+  8: { Session Count = 0; Grid Count = 0; Path = P:\BoSSS_DBs\osciCylinder_new }
+  9: { Session Count = 21; Grid Count = 25; Path = P:\BoSSS_DBs\ImmersedBoundary }
+  10: { Session Count = 8; Grid Count = 44; Path = P:\BoSSS_DBs\ParticleInShearFlow\ }
+  11: { Session Count = 16; Grid Count = 46; Path = P:\BoSSS_DBs\ParticleUnderGravity }
+  12: { Session Count = 8; Grid Count = 31; Path = P:\BoSSS_DBs\fixedCylinder }
+  13: { Session Count = 0; Grid Count = 0; Path = P:\BoSSS_DBs\Paper_OsciCylinder }
+  14: { Session Count = 43; Grid Count = 45; Path = P:\BoSSS_DBs\IBMPaper }
+  15: { Session Count = 28; Grid Count = 15; Path = P:\BoSSS_DBs\Paper_IBM2D }
+  16: { Session Count = 38; Grid Count = 22; Path = P:\BoSSS_DBs\Paper_CellAgglo01_Penalty4 }
+  17: { Session Count = 43; Grid Count = 55; Path = P:\BoSSS_DBs\Sphere3D }
+  18: { Session Count = 22; Grid Count = 10; Path = P:\BoSSS_DBs\Performance }
+  19: { Session Count = 24; Grid Count = 14; Path = P:\BoSSS_DBs\PaperRevision }
+  20: { Session Count = 0; Grid Count = 0; Path = P:\Lichtenberg_DB }
+  21: { Session Count = 2; Grid Count = 354; Path = P:\BoSSS_DBs\Bug }
+  22: { Session Count = 64; Grid Count = 97; Path = L:\BoSSS_DB\Lichtenberg_DB }
+  23: { Session Count = 510; Grid Count = 729; Path = Y:\fdy-publication-data\Thesis\2017\Degenhardt\performance_db }
 }
 
  Console ready for input. Type 'help' for help.
@@ -31,13 +44,10 @@ using BoSSS.Application.IBM_Solver;
 using System.Data;
 **************
 ==============
-string dateString = "2018-2-16";
+string dateString = "2018-3-19";
 string File       = "SolverRuns--" + dateString + ".json";
 string FilePath   = Path.Combine(CurrentDocDir, File);
 var SessTab       = TableExtensions.LoadFromFile(FilePath);
-**************
-==============
-//SessTab.Print();
 **************
 ==============
 // ====================
@@ -47,7 +57,7 @@ var SessTab       = TableExtensions.LoadFromFile(FilePath);
 ==============
 SessTab.GetColumnNames();
 **************
-List of 66 instances of String {
+List of 68 instances of String {
   0: SessionName
   1: DGdegree:VelocityX
   2: DGdegree:VelocityY
@@ -113,28 +123,40 @@ List of 66 instances of String {
   62: RegularTerminated
   63: SlvIter_excl
   64: SlvInit_excl
-  65: Processors
+  65: PrecSolve
+  66: NewtonDirder
+  67: Processors
 }
 ==============
-var SubTab_1 = SessTab.ExtractColumns("Processors","SlvIter_excl","SlvInit_excl","LinearSolve","DGdegree:VelocityX","RegularTerminated");
+var SubTab_1 = SessTab.ExtractColumns("Processors","SlvIter_excl","SlvInit_excl","PrecSolve","NewtonDirder","NonlinearSolve","LinearSolve","NoOfMultigridLevels","DGdegree:VelocityX","RegularTerminated");
 **************
 ==============
 SubTab_1.Print();
 **************
-   Processors SlvIter_excl SlvInit_excl LinearSolve DGdegree:VelocityX RegularTerminated 
-0: 4          0.0445547    0.0415388    5           1                  True              
-1: 2          0.0584902    0.0338874    5           1                  True              
-2: 1          0.0339203    0.0328089    5           1                  True              
-3: 4          0.1130421    0.0386554    3           1                  True              
-4: 2          0.0399982    0.0338559    3           1                  True              
-5: 1          0.0364285    0.0302649    3           1                  True              
+    Processors SlvIter_excl  SlvInit_excl PrecSolve     NewtonDirder  NonlinearSolve LinearSolve NoOfMultigridLevels DGdegree:VelocityX RegularTerminated 
+0:  8          59582.6186127 38.4114806   30469.5271651 27866.3211947 0              3           2                   1                  True              
+1:  32         28494.0504275 16.6483007   11128.330949  16861.1074662 0              3           2                   1                  True              
+2:  64         30854.4396128 14.8030589   14618.6184927 15449.8886054 0              3           2                   1                  True              
+3:  16         26403.8379533 11.6372309   14640.3035067 11050.6477496 0              3           2                   1                  True              
+4:  8          0             0            0             0             0              6           2                   1                  False             
+5:  8          56870.6996634 29.0321476   31290.9062739 25203.9152301 0              4           2                   1                  True              
+6:  64         26893.6911212 15.0154471   10946.3283928 15644.3939505 0              6           2                   1                  True              
+7:  64         23084.8021692 15.0523163   8754.7196044  13923.180615  0              4           2                   1                  True              
+8:  32         33173.2038997 16.5633298   14932.7252671 17374.9938962 0              6           2                   1                  True              
+9:  32         26521.6818432 26.6087619   10662.3151975 15040.3679929 0              4           2                   1                  True              
+10: 16         26104.6686354 11.7101604   13459.5464705 11570.64994   0              6           2                   1                  True              
+11: 16         28316.3646156 11.6296095   18052.4565893 9696.9521095  0              4           2                   1                  True              
 ==============
 // Calculation of speedup times 
-List<KeyValuePair<string, int>> procs = new List<KeyValuePair<string, int>>{};// ((int[])SubTab_1.GetColumn("Processors"));
+List<KeyValuePair<string, int>> procs = new List<KeyValuePair<string, int>>{};
 double[] slviter = ((double[])SubTab_1.GetColumn("SlvIter_excl"));
 double[] slvinit = ((double[])SubTab_1.GetColumn("SlvInit_excl"));
+double[] PrecSolve = ((double[])SubTab_1.GetColumn("PrecSolve"));
+double[] NewtonDirder = ((double[])SubTab_1.GetColumn("NewtonDirder"));
 double[] slviterSpeedup = new double[slviter.Length];
 double[] slvinitSpeedup = new double[slviter.Length];
+double[] PrecSolveSpeedup = new double[slviter.Length];
+double[] NewtonDirderSpeedup = new double[slviter.Length];
 
 for(int i = 0; i<slviter.Length; i++){
     long[] solve = ((long[])SubTab_1.GetColumn("LinearSolve"));
@@ -142,47 +164,42 @@ for(int i = 0; i<slviter.Length; i++){
     int val    = ((int[])SubTab_1.GetColumn("Processors"))[i];
 
     procs.Add(new KeyValuePair<string,int>(str,val));
-    
-   // slviterSpeedup[i] = slviter[i]/procs[i];
-   // slvinitSpeedup[i] = slvinit[i]/procs[i];    
+      
 }
 int min;
-int max;
+int max = 0;
 for(int i = 0; i < slviter.Length; i++){
     List<KeyValuePair<string, int>> procsCut = procs.FindAll(s => s.Key == procs[i].Key);
-     min = procsCut.Select(s => s.Value).Min();
-     max = procsCut.Select(s => s.Value).Max();
+    
+    int tempMax;
+    min     = procsCut.Select(s => s.Value).Min();
+    tempMax = procsCut.Select(s => s.Value).Max();
+    if(tempMax>max){
+        max = tempMax;
+    }
     int idx = procs.FindIndex(s => (s.Value == min) && (s.Key == procs[i].Key));
     slviterSpeedup[i] = (slviter[idx]*procs.Pick(idx).Value)/slviter[i];
     slvinitSpeedup[i] = (slvinit[idx]*procs.Pick(idx).Value)/slvinit[i];
-    
+    PrecSolveSpeedup[i] = (PrecSolve[idx]*procs.Pick(idx).Value)/PrecSolve[i];
+    NewtonDirderSpeedup[i] = (NewtonDirder[idx]*procs.Pick(idx).Value)/NewtonDirder[i];
 }    
 **************
 ==============
 // Add columns to DataTable
 SubTab_1.Columns.Add("SlvIter_speedup",typeof(double));
 SubTab_1.Columns.Add("SlvInit_speedup",typeof(double));
+SubTab_1.Columns.Add("PrecSolve_speedup",typeof(double));
+SubTab_1.Columns.Add("NewtonDirder_speedup",typeof(double));
 int i = 0;
 foreach (DataRow row in SubTab_1.Rows) {
     row["SlvIter_speedup"] = slviterSpeedup[i];
     row["SlvInit_speedup"] = slvinitSpeedup[i];
+    row["PrecSolve_speedup"] = PrecSolveSpeedup[i];
+    row["NewtonDirder_speedup"] = NewtonDirderSpeedup[i];
     i++;
 }
 **************
-SlvInit_speedup
-==============
-//SubTab.ToCSVFile("C:\\tmp\\table.csv");
-**************
-==============
-//RuntimePlot.dataGroups.Select(grp => grp.Name);
-**************
-==============
-//var cl = RuntimePlot.ToGnuplot().PlotCairolatex();
-//cl.Preview(trimPage:true);
-**************
-==============
-//cl.WriteMinimalCompileableExample("C:\\tmp\\mini.tex");
-**************
+NewtonDirder_speedup
 ==============
 static public class Formats {
 static public void getFormat(int iTabRow,IDictionary<string, object> Row, 
@@ -193,54 +210,68 @@ static public void getFormat(int iTabRow,IDictionary<string, object> Row,
            // and the respective color  
            // - - - - - - - - - - - - - - - - - - - - - - - - 
          
- 
+           NonlinearSolverCodes Nonlin_solver_name = (NonlinearSolverCodes) Convert.ToInt32(Row["NonlinearSolve"]);
            LinearSolverCodes solver_name = (LinearSolverCodes) Convert.ToInt32(Row["LinearSolve"]);
+           int MGLevels                  = Convert.ToInt32(Row["NoOfMultigridLevels"]);
            Fmt                           = new PlotFormat();
+           
+           switch(Nonlin_solver_name) {
+           case NonlinearSolverCodes.Picard: 
+               Nmn = "Picard "; 
+               break;  
+           case NonlinearSolverCodes.NewtonGMRES: 
+               Nmn = "NewtonGmres "; 
+               break;          
+           default:
+               Console.WriteLine("unknown: " + Nonlin_solver_name); 
+               Nmn = "unknown"; 
+               break;
+           } 
 
           
            switch(solver_name) {
            case LinearSolverCodes.automatic: 
-               Nmn           = "Automatic"; 
+               Nmn           = Nmn+"Automatic"; 
                Fmt.PointType = PointTypes.OpenCircle;
                Fmt.DashType  = DashTypes.Dotted;
                break;
            case LinearSolverCodes.classic_mumps: 
-               Nmn           = "Mumps"; 
+               Nmn           = Nmn+"Mumps"; 
                Fmt.PointType = PointTypes.OpenUpperTriangle;
                Fmt.DashType  = DashTypes.Dotted;
                break;
            case LinearSolverCodes.classic_pardiso: 
-               Nmn           = "Pardiso"; 
+               Nmn           = Nmn+"Pardiso"; 
                Fmt.PointType = PointTypes.Asterisk;
                Fmt.DashType  = DashTypes.Dashed;
                break;
            case LinearSolverCodes.exp_schwarz_directcoarse: 
-               Nmn           = "Swz w Coarse"; 
+               Nmn           = Nmn+"Swz w Coarse"; 
                Fmt.PointType = PointTypes.UpperTriangle;
                Fmt.DashType  = DashTypes.DotDashed;
                break;
            case LinearSolverCodes.exp_schwarz_Kcycle_directcoarse_overlap: 
-               Nmn           = "Swz Kcycle w Coarse Overlap"; 
+               Nmn           = Nmn+"Swz Kcycle w Coarse Overlap"; 
                Fmt.PointType = PointTypes.Plus;
                Fmt.DashType  = DashTypes.Dashed;
                break;
            case LinearSolverCodes.exp_schwarz_directcoarse_overlap: 
-               Nmn           = "Swz w Coarse Overlap"; 
+               Nmn           = Nmn+"Swz w Coarse Overlap"; 
                Fmt.PointType = PointTypes.OpenBox;
                Fmt.DashType  = DashTypes.Dotted;
                break;
            case LinearSolverCodes.exp_schwarz_Kcycle_directcoarse: 
-               Nmn           = "Swz Kcycle w Coarse"; 
+               Nmn           = Nmn+"Swz Kcycle w Coarse"; 
                Fmt.PointType = PointTypes.LowerTriangle;
                Fmt.DashType  = DashTypes.DotDotDashed;
                break;
            case LinearSolverCodes.exp_softgmres: 
-               Nmn           = "SoftGMRES"; 
+               Nmn           = Nmn+"SoftGMRES"; 
                Fmt.PointType = PointTypes.Box;
                Fmt.DashType  = DashTypes.Dotted;
                break;
            case LinearSolverCodes.exp_softgmres_schwarz_directcoarse: 
-               Nmn           = "SoftGMRES Swz w Coarse"; 
+               Nmn           = Nmn+"SoftGMRES Swz w Coarse"; 
                Fmt.PointType = PointTypes.OpenCircle;
                Fmt.DashType  = DashTypes.Dashed;
                break;
@@ -249,7 +280,7 @@ static public void getFormat(int iTabRow,IDictionary<string, object> Row,
                Nmn = "unknown"; 
                break;
            } 
-           //Console.WriteLine("name is: " + solver_name); 
+           Nmn           = Nmn+" MGLevels"+MGLevels;
            Fmt.PointSize = 0.5;
            Fmt.Style     = Styles.LinesPoints;
            Fmt.LineColor = LineColors.Black;
@@ -263,34 +294,28 @@ var plotSlvIter = SubTab_1.ToPlot("Processors", "SlvIter_excl", // column for x-
 var plotSlvInit = SubTab_1.ToPlot("Processors", "SlvInit_excl", // column for x- and y
                                   Formats.getFormat); // column for group
 Plot2Ddata[,] multiplots = new Plot2Ddata[2,1];
-plotSlvIter.Title = "Exclusive times";
-//plotSlvInit.Title  = "SlvInit excl";
-//plotSlvIter.Xlabel = "Processors";
+plotSlvIter.Title   = "Exclusive times";
 plotSlvIter.Ylabel  = "Time [s]";
 plotSlvInit.Xlabel  = "Processors";
 plotSlvInit.Ylabel  = "Time [s]";
-plotSlvIter.Y2label = "SlvIter excl";
-plotSlvInit.Y2label = "SlvInit excl";
+plotSlvIter.Y2label = "SlvIter";
+plotSlvInit.Y2label = "SlvInit";
 
 
-plotSlvIter.LegendPosition = new double[] {max/2,max*1.3};
 plotSlvIter.XrangeMin = 1;
 plotSlvIter.XrangeMax = max;
 plotSlvInit.XrangeMin = 1;
 plotSlvInit.XrangeMax = max;
 
-plotSlvInit.ShowLegend     = false;
-plotSlvIter.LegendPosition = new double[] {2.5,0.1};
-
 multiplots[0,0] = plotSlvIter;
 multiplots[1,0] = plotSlvInit;
 
 
-    multiplots[0,0].bmargin = 1;
-    multiplots[1,0].tmargin = 1;
+multiplots[0,0].bmargin = 1;
+multiplots[1,0].tmargin = 1;
 multiplots.PlotNow()
 **************
-Using gnuplot: C:\BoSSSinstall\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+Using gnuplot: C:\Users\krause\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 System.Drawing.Bitmap
 ==============
 var plotSlvIter = SubTab_1.ToPlot("Processors", "SlvIter_speedup", // column for x- and y
@@ -298,23 +323,17 @@ var plotSlvIter = SubTab_1.ToPlot("Processors", "SlvIter_speedup", // column for
 var plotSlvInit = SubTab_1.ToPlot("Processors", "SlvInit_speedup", // column for x- and y
                                   Formats.getFormat); // column for group
 Plot2Ddata[,] speedupsplots = new Plot2Ddata[2,1];
-plotSlvIter.Title = "Speedup";
-//plotSlvInit.Title  = "SlvInit excl";
-//plotSlvIter.Xlabel = "Processors";
+plotSlvIter.Title   = "Speedup";
 plotSlvIter.Ylabel  = "Speedup";
 plotSlvInit.Xlabel  = "Processors";
 plotSlvInit.Ylabel  = "Speedup";
-plotSlvIter.Y2label = "SlvIter excl";
-plotSlvInit.Y2label = "SlvInit excl";
+plotSlvIter.Y2label = "SlvIter";
+plotSlvInit.Y2label = "SlvInit";
 
-plotSlvInit.ShowLegend     = false;
-plotSlvIter.LegendPosition = new double[] {max/2,max*1.3};
-plotSlvIter.XrangeMin      = 1;
-plotSlvIter.XrangeMax      = max;
-plotSlvInit.XrangeMin      = 1;
-plotSlvInit.XrangeMax      = max;
-
-//plotSlvInit.Cmd("set xtics 1");
+plotSlvIter.XrangeMin = 1;
+plotSlvIter.XrangeMax = max;
+plotSlvInit.XrangeMin = 1;
+plotSlvInit.XrangeMax = max;
 
 speedupsplots[0,0] = plotSlvIter;
 speedupsplots[1,0] = plotSlvInit;
@@ -328,39 +347,104 @@ ideal.Format.LineWidth = 3;
 ArrayTools.AddToArray(ideal, ref speedupsplots[0,0].dataGroups);
 ArrayTools.AddToArray(ideal, ref speedupsplots[1,0].dataGroups);
 
-    speedupsplots[0,0].bmargin = 1;
-    speedupsplots[0,0].tmargin = 4;
-    speedupsplots[1,0].tmargin = 1;
+speedupsplots[0,0].bmargin = 1;
+speedupsplots[0,0].tmargin = 4;
+speedupsplots[1,0].tmargin = 1;
 speedupsplots.PlotNow()
 **************
-Using gnuplot: C:\BoSSSinstall\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+Using gnuplot: C:\Users\krause\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 System.Drawing.Bitmap
 ==============
+var plotPrecSolve = SubTab_1.ToPlot("Processors", "PrecSolve", // column for x- and y
+                                  Formats.getFormat); // column for group
+var plotNewtonDirder = SubTab_1.ToPlot("Processors", "NewtonDirder", // column for x- and y
+                                  Formats.getFormat); // column for group
+Plot2Ddata[,] multiplots2 = new Plot2Ddata[2,1];
+plotPrecSolve.Title      = "Exclusive times";
+plotPrecSolve.Ylabel     = "Time [s]";
+plotNewtonDirder.Xlabel  = "Processors";
+plotNewtonDirder.Ylabel  = "Time [s]";
+plotPrecSolve.Y2label    = "SolvIter: Precondition Solve";
+plotNewtonDirder.Y2label = "SolIter: Newton Dirder";
+
+
+plotPrecSolve.XrangeMin    = 1;
+plotPrecSolve.XrangeMax    = max;
+plotNewtonDirder.XrangeMin = 1;
+plotNewtonDirder.XrangeMax = max;
+
+multiplots2[0,0] = plotPrecSolve;
+multiplots2[1,0] = plotNewtonDirder;
+
+
+multiplots2[0,0].bmargin = 1;
+multiplots2[1,0].tmargin = 1;
+multiplots2.PlotNow()
 **************
+Using gnuplot: C:\Users\krause\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+System.Drawing.Bitmap
 ==============
+var plotPrecSolve = SubTab_1.ToPlot("Processors", "PrecSolve_speedup", // column for x- and y
+                                  Formats.getFormat); // column for group
+var plotNewtonDirder = SubTab_1.ToPlot("Processors", "NewtonDirder_speedup", // column for x- and y
+                                  Formats.getFormat); // column for group
+Plot2Ddata[,] speedupsplots2 = new Plot2Ddata[2,1];
+plotPrecSolve.Title      = "Speedup";
+plotPrecSolve.Ylabel     = "Speedup";
+plotNewtonDirder.Xlabel  = "Processors";
+plotNewtonDirder.Ylabel  = "Speedup";
+plotPrecSolve.Y2label    = "SolIter: Precondition Solve";
+plotNewtonDirder.Y2label = "SolIter: Newton Dirder";
+
+plotPrecSolve.XrangeMin = 1;
+plotPrecSolve.XrangeMax = max;
+plotNewtonDirder.XrangeMin = 1;
+plotNewtonDirder.XrangeMax = max;
+
+speedupsplots2[0,0] = plotPrecSolve;
+speedupsplots2[1,0] = plotNewtonDirder;
+
+// Add ideal
+double[] dof = new[]{1.0,2.0,4.0,8.0,16.0,32.0,64.0,128.0};
+double[] linT = dof.Select(x => x).ToArray();
+var ideal = new Plot2Ddata.XYvalues("Ideal", dof, linT);
+ideal.Format.FromString("- black");
+ideal.Format.LineWidth = 3;
+ArrayTools.AddToArray(ideal, ref speedupsplots2[0,0].dataGroups);
+ArrayTools.AddToArray(ideal, ref speedupsplots2[1,0].dataGroups);
+
+speedupsplots2[0,0].bmargin = 1;
+speedupsplots2[0,0].tmargin = 4;
+speedupsplots2[1,0].tmargin = 1;
+speedupsplots2.PlotNow()
 **************
-==============
-**************
+Using gnuplot: C:\Users\krause\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+System.Drawing.Bitmap
 ==============
 var CL  = multiplots.ToGnuplot().PlotCairolatex(xSize:17, ySize:17);
 var CL2 = speedupsplots.ToGnuplot().PlotCairolatex(xSize:17, ySize:17);
+var CL3 = multiplots2.ToGnuplot().PlotCairolatex(xSize:17, ySize:17);
+var CL4 = speedupsplots2.ToGnuplot().PlotCairolatex(xSize:17, ySize:17);
 **************
-Using gnuplot: C:\BoSSSinstall\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
-Using gnuplot: C:\BoSSSinstall\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+Using gnuplot: C:\Users\krause\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+Using gnuplot: C:\Users\krause\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+Using gnuplot: C:\Users\krause\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+Using gnuplot: C:\Users\krause\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 
 ==============
-CL.SaveTo(Path.Combine(CurrentDocDir, "MPIScalingTimes.tex"));
-CL2.SaveTo(Path.Combine(CurrentDocDir, "MPISpeedup.tex"));
+CL.SaveTo(Path.Combine(CurrentDocDir+"/plots/", "MPIScalingTimes.tex"));
+CL2.SaveTo(Path.Combine(CurrentDocDir+"/plots/", "MPISpeedup.tex"));
+CL3.SaveTo(Path.Combine(CurrentDocDir+"/plots/", "Additional_1.tex"));
+CL4.SaveTo(Path.Combine(CurrentDocDir+"/plots/", "Additional_2.tex"));
 **************
 ==============
 CL.PlotNow();
 CL2.PlotNow();
+CL3.PlotNow();
+CL4.PlotNow();
 **************
-System.ComponentModel.Win32Exception occurred: The system cannot find the file specified. Type 'LastError' for details.
+System.ComponentModel.Win32Exception occurred: Das System kann die angegebene Datei nicht finden. Type 'LastError' for details.
 
-==============
-//CL.WriteMinimalCompileableExample("C:\\tmp\\AllSolvers" + dateString + ".tex");
-**************
 ==============
 **************
 ==============
