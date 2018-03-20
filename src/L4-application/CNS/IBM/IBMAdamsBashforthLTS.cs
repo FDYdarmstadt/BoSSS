@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -23,15 +22,9 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
-using BoSSS.Foundation.XDG.Quadrature.HMF;
-using BoSSS.Platform;
 using BoSSS.Solution;
 using BoSSS.Solution.Timestepping;
-using ilPSP.Utils;
-using MPI.Wrappers;
-using ilPSP;
 using BoSSS.Solution.Utils;
-using BoSSS.Foundation.IO;
 
 namespace CNS.IBM {
 
@@ -55,7 +48,7 @@ namespace CNS.IBM {
 
         private IBMControl control;
 
-        public IBMAdamsBashforthLTS(SpatialOperator standardOperator, SpatialOperator boundaryOperator, CoordinateMapping fieldsMap, CoordinateMapping boundaryParameterMap, ISpeciesMap ibmSpeciesMap, IBMControl control, IList<TimeStepConstraint> timeStepConstraints, int reclusteringInterval, bool fluxCorrection)
+        public IBMAdamsBashforthLTS(SpatialOperator standardOperator, SpatialOperator boundaryOperator, CoordinateMapping fieldsMap, CoordinateMapping boundaryParameterMap, ISpeciesMap ibmSpeciesMap, IBMControl control, IList<TimeStepConstraint> timeStepConstraints, int reclusteringInterval, bool fluxCorrection, int maxNumOfSubSteps = 0)
             : base(standardOperator, fieldsMap, boundaryParameterMap, control.ExplicitOrder, control.NumberOfSubGrids, true, timeStepConstraints, reclusteringInterval: reclusteringInterval, fluxCorrection: fluxCorrection, subGrid: ibmSpeciesMap.SubGrid) {
 
             this.speciesMap = ibmSpeciesMap as ImmersedSpeciesMap;
@@ -78,7 +71,7 @@ namespace CNS.IBM {
             Console.WriteLine("This is IBM ALTS Ctor");
 #endif
             // Normal LTS constructor
-            clusterer = new Clusterer(this.gridData);
+            clusterer = new Clusterer(this.gridData, maxNumOfSubSteps);
             CurrentClustering = clusterer.CreateClustering(control.NumberOfSubGrids, this.TimeStepConstraints, speciesMap.SubGrid);
             CurrentClustering = clusterer.TuneClustering(CurrentClustering, Time, this.TimeStepConstraints); // Might remove sub-grids when time step sizes are too similar
 
@@ -198,7 +191,7 @@ namespace CNS.IBM {
 
             for (int i = 0; i < ABevolver.Length; i++) {
                 ABevolver[i] = new IBMABevolve(standardOperator, boundaryOperator, fieldsMap, boundaryParameterMap, speciesMap, control.ExplicitOrder, control.LevelSetQuadratureOrder, control.CutCellQuadratureType, sgrd: CurrentClustering.Clusters[i], adaptive: this.adaptive);
-                ABevolver[i].ResetTime(m_Time, timestepNumber);
+                ABevolver[i].ResetTime(m_Time, TimeInfo.TimeStepNumber);
                 ABevolver[i].OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforeComputechangeRate(t1, t2);
             }
         }

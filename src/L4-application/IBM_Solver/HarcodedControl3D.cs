@@ -308,12 +308,10 @@ namespace BoSSS.Application.IBM_Solver {
 
             // basic database options
             // ======================
-
             C.DbPath = @"\\dc1\userspace\krause\BoSSS_DBs\Sphere3D";
             C.savetodb = true;
-            C.ProjectName = "Sphere3D_NavierStokes";
-            C.SessionName = "Sphere3D_NavierStokes_k" + k + "_Re300";
-            C.ProjectDescription = "Sphere";
+            C.ProjectName = "Sphere3D";
+            C.SessionName = "Sphere3D_" + k + "_Re350";
             C.Tags.Add("with immersed boundary method");
 
             // Create Fields
@@ -342,10 +340,13 @@ namespace BoSSS.Application.IBM_Solver {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
 
+            C.AdaptiveMeshRefinement = false;
+
+            //C.GridPartType = GridPartType.Hilbert;
 
             // Load Grid
-            //Console.WriteLine("...loading grid");
-            C.GridGuid = new Guid("9aca8eed-e98a-4dca-8024-e02edc4d3edc");
+            Console.WriteLine("...loading grid");
+            C.GridGuid = new Guid("c04b0a83-9f78-4780-96db-48fd63f3ba50");
 
             //#region Creates grid () and sets BC
             ////// Create Grid
@@ -406,22 +407,24 @@ namespace BoSSS.Application.IBM_Solver {
             //};
             //#endregion
 
-            
+
             // Create Grid with HANGING NODES
             //Console.WriteLine("...generating grid");
             //C.GridFunc = delegate {
 
             //    // Box1
-            //    var box1_p1 = new double[3] { -10, -10, -10 };
-            //    var box1_p2 = new double[3] { 30, 10, 10 };
-            //    var box1 = new GridCommons.GridBox(box1_p1, box1_p2, 10 * h, 5 * h, 5 * h);
+            //    var box1_p1 = new double[3] { -2, -3, -3 };
+            //    var box1_p2 = new double[3] { 10, 3, 3 };
+            //    var box1 = new GridCommons.GridBox(box1_p1, box1_p2, 12 * h, 6 * h, 6 * h);
 
             //    // Box2
-            //    var box2_p1 = new double[3] { -5, -5, -5 };
-            //    var box2_p2 = new double[3] { 10, 5, 5 };
-            //    var box2 = new GridCommons.GridBox(box2_p1, box2_p2, 10 * (h + 2), 6 * (h + 2), 6 * (h + 2));
+            //    var box2_p1 = new double[3] { -1.5, -1, -1 };
+            //    var box2_p2 = new double[3] { 10, 1, 1 };
+            //    var box2 = new GridCommons.GridBox(box2_p1, box2_p2, 10 * (h + 3), 4 * (h + 3), 4 * (h + 3));
 
             //    // Cut Out
+            //    //var box1 = new GridCommons.GridBox(box1_p1, box1_p2, 10, 5, 5);
+            //    //var box2 = new GridCommons.GridBox(box2_p1, box2_p2, 10, 5, 5);
             //    var grd = Grid3D.HangingNodes3D(false, false, false, box1, box2);
 
             //    grd.EdgeTagNames.Add(1, "Velocity_inlet");
@@ -434,27 +437,27 @@ namespace BoSSS.Application.IBM_Solver {
             //        double y = X[1];
             //        double z = X[2];
 
-            //        if (Math.Abs(x - (-10)) < 1.0e-6)
+            //        if (Math.Abs(x - (-2)) < 1.0e-6)
             //            // inlet
             //            return 1;
 
-            //        if (Math.Abs(x - (30)) < 1.0e-6)
+            //        if (Math.Abs(x - (10)) < 1.0e-6)
             //            // outlet
             //            return 2;
 
-            //        if (Math.Abs(y - (-10)) < 1.0e-6)
+            //        if (Math.Abs(y - (-3)) < 1.0e-6)
             //            // left
             //            return 2;
 
-            //        if (Math.Abs(y - (10)) < 1.0e-6)
+            //        if (Math.Abs(y - (3)) < 1.0e-6)
             //            // right
             //            return 2;
 
-            //        if (Math.Abs(z - (-10)) < 1.0e-6)
+            //        if (Math.Abs(z - (-3)) < 1.0e-6)
             //            // top left
             //            return 2;
 
-            //        if (Math.Abs(z - (10)) < 1.0e-6)
+            //        if (Math.Abs(z - (3)) < 1.0e-6)
             //            // top right
             //            return 2;
 
@@ -466,8 +469,8 @@ namespace BoSSS.Application.IBM_Solver {
             //    return grd;
             //};
 
-            Console.WriteLine("Loading Grid...");
-            C.GridGuid = new Guid("9aca8eed-e98a-4dca-8024-e02edc4d3edc");
+            //Console.WriteLine("Loading Grid...");
+            //C.GridGuid = new Guid("9aca8eed-e98a-4dca-8024-e02edc4d3edc");
             //C.GridGuid = new Guid("099cffa4-238d-42ad-8fbd-85228bfc6b1e");
 
             #region Creates grid (17710 Cells) and sets BC
@@ -577,39 +580,39 @@ namespace BoSSS.Application.IBM_Solver {
             // Initial Solution
 
             // Physical values
-            C.particleRadius = 2.5;
+            C.particleRadius = 0.5;
             C.PhysicalParameters.rho_A = 1;
             //C.PhysicalParameters.mu_A = (2 * C.particleRadius) / 100;
-            C.PhysicalParameters.mu_A = (2.0 * C.particleRadius*10.0) / 300.0;
+            C.PhysicalParameters.mu_A = (2.0 * C.particleRadius * 1.0) / 100;
 
             // Boundary conditions
-            C.AddBoundaryCondition("Velocity_inlet", "VelocityX", (X, t) => 10);
+            C.AddBoundaryCondition("Velocity_inlet", "VelocityX", (X, t) => 1);
             C.AddBoundaryCondition("Velocity_inlet", "VelocityY", (X, t) => 0);
             C.AddBoundaryCondition("Velocity_inlet", "VelocityZ", (X, t) => 0);
             // C.AddBoundaryCondition("Wall");
             C.AddBoundaryCondition("Pressure_Outlet");
 
             // Set Initial Conditions
-            C.InitialValues_Evaluators.Add("VelocityX", X => 10);
+            C.InitialValues_Evaluators.Add("VelocityX", X => 1);
             //C.InitialValues_Evaluators.Add("VelocityY", X => 5);
-            C.InitialValues_Evaluators.Add("VelocityZ", X => 5);
+            C.InitialValues_Evaluators.Add("VelocityZ", X => 0);
             C.InitialValues_Evaluators.Add("Pressure", X => 0);
             C.InitialValues_Evaluators.Add("Phi", X => -(X[0]).Pow2() + -(X[1]).Pow2() + -(X[2]).Pow2() + C.particleRadius.Pow2());
 
-            C.InitialValues_Evaluators.Add("VelocityY", delegate (double[] X) {
-                double x = X[0];
-                double y = X[1];
-                double z = X[2];
+            //C.InitialValues_Evaluators.Add("VelocityY", delegate (double[] X) {
+            //    double x = X[0];
+            //    double y = X[1];
+            //    double z = X[2];
 
-                double R = Math.Sqrt((x + 4).Pow2() + y.Pow2()+z.Pow2());
+            //    double R = Math.Sqrt((x + 4).Pow2() + y.Pow2()+z.Pow2());
 
-                double yVel = 0;
+            //    double yVel = 0;
 
-                if (R < 3) {
-                    yVel = 5;
-                }
-                return yVel;
-            });
+            //    if (R < 3) {
+            //        yVel = 5;
+            //    }
+            //    return yVel;
+            //});
             //C.InitialValues_Evaluators.Add("Phi", X => -(X[0]).Pow2() + -(X[1]).Pow2() + C.particleRadius.Pow2());
             //C.InitialValues_Evaluators.Add("Phi", X => -1);
 
@@ -622,21 +625,368 @@ namespace BoSSS.Application.IBM_Solver {
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
-            C.MaxKrylovDim = 20;
+            C.MaxKrylovDim = 30;
             C.MaxSolverIterations = 50;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
+            C.NonlinearSolve = NonlinearSolverCodes.NewtonGMRES;
+            C.LinearSolve = LinearSolverCodes.exp_schwarz_Kcycle_directcoarse_overlap;
+            C.Solver_ConvergenceCriterion = 1E-6;
+            C.NoOfMultigridLevels = 3;
 
             // Timestepping
             // ============
 
 
             C.Timestepper_Scheme = IBM_Control.TimesteppingScheme.BDF2;
-            double dt = 0.01;
+            double dt = 1E20;
             C.dtFixed = dt;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 100000;
-            C.NoOfTimesteps = 100000000;
+            C.NoOfTimesteps = 1;
+
+            return C;
+        }
+
+        static public IBM_Control MittalSphereFlow(int k = 2, int h = 1) {
+            IBM_Control C = new IBM_Control();
+
+            // basic database options
+            // ======================
+            C.DbPath = @"\\dc1\userspace\krause\BoSSS_DBs\Sphere3D";
+            C.savetodb = false;
+            C.ProjectName = "Sphere3D";
+            C.SessionName = "Sphere3D_" + k + "_Re100";
+            C.Tags.Add("with immersed boundary method");
+
+            // Create Fields
+            C.FieldOptions.Add("VelocityX", new FieldOpts() {
+                Degree = k,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("VelocityY", new FieldOpts() {
+                Degree = k,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("VelocityZ", new FieldOpts() {
+                Degree = k,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Pressure", new FieldOpts() {
+                Degree = k - 1,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("PhiDG", new FieldOpts() {
+                Degree = 2,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Phi", new FieldOpts() {
+                Degree = 2,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+
+            C.AdaptiveMeshRefinement = false;
+
+            // Load Grid
+            Console.WriteLine("...loading grid");
+            C.GridGuid = new Guid("202033c5-7c2a-4c29-aaea-86d7a2f7a8a3");
+
+            //#region Creates grid () and sets BC
+            ////// Create Grid
+            //Console.WriteLine("...generating grid");
+            //C.GridFunc = delegate {
+
+            //    // x-direction
+            //    var _xNodes = GenericBlas.Linspace(-10, 30, (10 * h) + 1);
+
+            //    // y-direction
+            //    var _yNodes = GenericBlas.Linspace(-10, 10, (5 * h) + 1);
+
+            //    // z-direction
+            //    var _zNodes = GenericBlas.Linspace(-10, 10, (5 * h) + 1);
+
+            //    // Cut Out
+            //    var grd = Grid3D.Cartesian3DGrid(_xNodes, _yNodes, _zNodes, false, false, false, CellType.Cube_Linear);
+
+            //    grd.EdgeTagNames.Add(1, "Velocity_inlet");
+            //    grd.EdgeTagNames.Add(2, "Pressure_Outlet");
+
+            //    grd.DefineEdgeTags(delegate (double[] _X) {
+            //        var X = _X;
+            //        double x = X[0];
+            //        double y = X[1];
+            //        double z = X[2];
+
+            //        if (Math.Abs(x - (-10)) < 1.0e-6)
+            //            // inlet
+            //            return 1;
+
+            //        if (Math.Abs(x - (30)) < 1.0e-6)
+            //            // outlet
+            //            return 2;
+
+            //        if (Math.Abs(y - (-10)) < 1.0e-6)
+            //            // left
+            //            return 2;
+
+            //        if (Math.Abs(y - (10)) < 1.0e-6)
+            //            // right
+            //            return 2;
+
+            //        if (Math.Abs(z - (-10)) < 1.0e-6)
+            //            // top left
+            //            return 2;
+
+            //        if (Math.Abs(z - (10)) < 1.0e-6)
+            //            // top right
+            //            return 2;
+
+            //        throw new ArgumentOutOfRangeException();
+            //    });
+
+            //    Console.WriteLine("Cells:    {0}", grd.NumberOfCells);
+
+            //    return grd;
+            //};
+            //#endregion
+
+
+            // Create Grid with HANGING NODES
+            //Console.WriteLine("...generating grid");
+            //C.GridFunc = delegate {
+
+            //    // Box1
+            //    var box1_p1 = new double[3] { -6, -7.5, -7.5 };
+            //    var box1_p2 = new double[3] { 10, 7.5, 7.5 };
+            //    var box1 = new GridCommons.GridBox(box1_p1, box1_p2, 16 * h, 15 * h, 15 * h);
+
+            //    // Box2
+            //    var box2_p1 = new double[3] { -2.5, -1.5, -1.5 };
+            //    var box2_p2 = new double[3] { 7.5, 1.5, 1.5 };
+            //    var box2 = new GridCommons.GridBox(box2_p1, box2_p2, 10 * (h + 3), 4 * (h + 3), 4 * (h + 3));
+
+            //    // Cut Out
+            //    //var box1 = new GridCommons.GridBox(box1_p1, box1_p2, 10, 5, 5);
+            //    //var box2 = new GridCommons.GridBox(box2_p1, box2_p2, 10, 5, 5);
+            //    var grd = Grid3D.HangingNodes3D(false, false, false, box1, box2);
+
+            //    grd.EdgeTagNames.Add(1, "Velocity_inlet");
+            //    grd.EdgeTagNames.Add(2, "Pressure_Outlet");
+            //    //grd.EdgeTagNames.Add(3, "Wall");
+
+            //    grd.DefineEdgeTags(delegate (double[] _X) {
+            //        var X = _X;
+            //        double x = X[0];
+            //        double y = X[1];
+            //        double z = X[2];
+
+            //        if (Math.Abs(x - (-6)) < 1.0e-6)
+            //            // inlet
+            //            return 1;
+
+            //        if (Math.Abs(x - (10)) < 1.0e-6)
+            //            // outlet
+            //            return 2;
+
+            //        if (Math.Abs(y - (-7.5)) < 1.0e-6)
+            //            // left
+            //            return 2;
+
+            //        if (Math.Abs(y - (7.5)) < 1.0e-6)
+            //            // right
+            //            return 2;
+
+            //        if (Math.Abs(z - (-7.5)) < 1.0e-6)
+            //            // top left
+            //            return 2;
+
+            //        if (Math.Abs(z - (7.5)) < 1.0e-6)
+            //            // top right
+            //            return 2;
+
+            //        throw new ArgumentOutOfRangeException();
+            //    });
+
+            //    Console.WriteLine("Cells:    {0}", grd.NumberOfCells);
+
+            //    return grd;
+            //};
+
+            //Console.WriteLine("Loading Grid...");
+            //C.GridGuid = new Guid("9aca8eed-e98a-4dca-8024-e02edc4d3edc");
+            //C.GridGuid = new Guid("099cffa4-238d-42ad-8fbd-85228bfc6b1e");
+
+            #region Creates grid (17710 Cells) and sets BC
+            //// Create Grid
+            //Console.WriteLine("...generating grid");
+            //C.GridFunc = delegate {
+
+            //    // x-direction
+            //    var _xNodes1 = Grid1D.ExponentialSpaceing(-9.5, -3, 11, 0.98);
+            //    _xNodes1 = _xNodes1.GetSubVector(0, (_xNodes1.Length - 1));
+            //    var _xNodes2 = Grid1D.ExponentialSpaceing(-3, -1, 9, 0.95);
+            //    _xNodes2 = _xNodes2.GetSubVector(0, (_xNodes2.Length - 1));
+            //    var _xNodes3 = Grid1D.ExponentialSpaceing(-1, 0, 8, 1);
+            //    _xNodes3 = _xNodes3.GetSubVector(0, (_xNodes3.Length - 1));
+            //    var _xNodes4 = Grid1D.ExponentialSpaceing(0, 2, 9, 1.05);
+            //    _xNodes4 = _xNodes4.GetSubVector(0, (_xNodes4.Length - 1));
+            //    var _xNodes5 = Grid1D.ExponentialSpaceing(2, 8.5, 16, 1.02);
+            //    _xNodes5 = _xNodes5.GetSubVector(0, (_xNodes5.Length - 1));
+            //    var _xNodes6 = Grid1D.ExponentialSpaceing(8.5, 12.5, 5, 1);
+
+            //    var _xNodes = ArrayTools.Cat(_xNodes1, _xNodes2, _xNodes3, _xNodes4, _xNodes5, _xNodes6);
+
+            //    // y-direction
+            //    var _yNodes1 = Grid1D.ExponentialSpaceing(-9, -2.5, 8, 0.91);
+            //    _yNodes1 = _yNodes1.GetSubVector(0, (_yNodes1.Length - 1));
+            //    var _yNodes2 = Grid1D.ExponentialSpaceing(-2.5, -0.5, 8, 0.95);
+            //    _yNodes2 = _yNodes2.GetSubVector(0, (_yNodes2.Length - 1));
+            //    var _yNodes3 = Grid1D.ExponentialSpaceing(-0.5, 0.5, 8, 1.0);
+            //    _yNodes3 = _yNodes3.GetSubVector(0, (_yNodes3.Length - 1));
+            //    var _yNodes4 = Grid1D.ExponentialSpaceing(0.5, 2.5, 8, 1.05);
+            //    _yNodes4 = _yNodes4.GetSubVector(0, (_yNodes4.Length - 1));
+            //    var _yNodes5 = Grid1D.ExponentialSpaceing(2.5, 9, 8, 1.1);
+
+            //    var _yNodes = ArrayTools.Cat(_yNodes1, _yNodes2, _yNodes3, _yNodes4, _yNodes5);
+
+            //    // z-direction
+            //    var _zNodes = GenericBlas.Linspace(-3, 3, 11);
+
+            //    // Cut Out
+            //    double[] CutOutPoint1 = new double[3];
+            //    CutOutPoint1[0] = -1;
+            //    CutOutPoint1[1] = -0.5;
+            //    CutOutPoint1[2] = -3;
+
+            //    double[] CutOutPoint2 = new double[3];
+            //    CutOutPoint2[0] = 0;
+            //    CutOutPoint2[1] = 0.5;
+            //    CutOutPoint2[2] = 3;
+
+            //    var CutOut = new BoundingBox(3);
+            //    CutOut.AddPoint(CutOutPoint1);
+            //    CutOut.AddPoint(CutOutPoint2);
+
+            //    var grd = Grid3D.Cartesian3DGrid(_xNodes, _yNodes, _zNodes, false, false, true, CellType.Cube_Linear, CutOut);
+
+            //    grd.EdgeTagNames.Add(1, "Velocity_inlet");
+            //    grd.EdgeTagNames.Add(2, "Pressure_Outlet");
+            //    grd.EdgeTagNames.Add(3, "Wall");
+
+            //    grd.DefineEdgeTags(delegate (double[] _X) {
+            //        var X = _X;
+            //        double x = X[0];
+            //        double y = X[1];
+            //        double z = X[2];
+
+            //        if (Math.Abs(x - (-9.5)) < 1.0e-6)
+            //            // inlet
+            //            return 1;
+
+            //        if (Math.Abs(x - (12.5)) < 1.0e-6)
+            //            // outlet
+            //            return 2;
+
+            //        if (Math.Abs(z - (-3)) < 1.0e-6)
+            //            // left
+            //            return 2;
+
+            //        if (Math.Abs(z - (3)) < 1.0e-6)
+            //            // right
+            //            return 2;
+
+            //        if (Math.Abs(x - (-1)) < 1.0e-6)
+            //            // Cube front
+            //            return 3;
+
+            //        if (Math.Abs(x - (0)) < 1.0e-6)
+            //            // cube back
+            //            return 3;
+
+            //        if (Math.Abs(y - (-0.5)) < 1.0e-6)
+            //            // cube left
+            //            return 3;
+
+            //        if (Math.Abs(y - (0.5)) < 1.0e-6)
+            //            // cube right
+            //            return 3;
+
+            //        throw new ArgumentOutOfRangeException();
+            //    });
+
+            //    return grd;
+            //};
+            #endregion
+
+            Console.WriteLine("...starting calculation of Sphere3D");
+
+            // Initial Solution
+
+            // Physical values
+            C.particleRadius = 0.5;
+            C.PhysicalParameters.rho_A = 1;
+            //C.PhysicalParameters.mu_A = (2 * C.particleRadius) / 100;
+            C.PhysicalParameters.mu_A = (2.0 * C.particleRadius*1.0) / 100;
+
+            // Boundary conditions
+            C.AddBoundaryCondition("Velocity_inlet", "VelocityX", (X, t) => 1);
+            C.AddBoundaryCondition("Velocity_inlet", "VelocityY", (X, t) => 0);
+            C.AddBoundaryCondition("Velocity_inlet", "VelocityZ", (X, t) => 0);
+            // C.AddBoundaryCondition("Wall");
+            C.AddBoundaryCondition("Pressure_Outlet");
+
+            // Set Initial Conditions
+            C.InitialValues_Evaluators.Add("VelocityX", X => 1);
+            //C.InitialValues_Evaluators.Add("VelocityY", X => 5);
+            C.InitialValues_Evaluators.Add("VelocityZ", X => 0);
+            C.InitialValues_Evaluators.Add("Pressure", X => 0);
+            C.InitialValues_Evaluators.Add("Phi", X => -(X[0]).Pow2() + -(X[1]).Pow2() + -(X[2]).Pow2() + C.particleRadius.Pow2());
+
+            //C.InitialValues_Evaluators.Add("VelocityY", delegate (double[] X) {
+            //    double x = X[0];
+            //    double y = X[1];
+            //    double z = X[2];
+
+            //    double R = Math.Sqrt((x + 4).Pow2() + y.Pow2()+z.Pow2());
+
+            //    double yVel = 0;
+
+            //    if (R < 3) {
+            //        yVel = 5;
+            //    }
+            //    return yVel;
+            //});
+            //C.InitialValues_Evaluators.Add("Phi", X => -(X[0]).Pow2() + -(X[1]).Pow2() + C.particleRadius.Pow2());
+            //C.InitialValues_Evaluators.Add("Phi", X => -1);
+
+
+
+
+            // misc. solver options
+            // ====================
+            C.PhysicalParameters.IncludeConvection = true;
+            C.AdvancedDiscretizationOptions.PenaltySafety = 4;
+            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
+            C.LevelSetSmoothing = false;
+            C.MaxKrylovDim = 30;
+            C.MaxSolverIterations = 50;
+            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
+            C.NonlinearSolve = NonlinearSolverCodes.NewtonGMRES;
+            C.LinearSolve = LinearSolverCodes.exp_schwarz_Kcycle_directcoarse_overlap;
+            C.Solver_ConvergenceCriterion = 1E-6;
+            C.NoOfMultigridLevels = 3;
+
+            // Timestepping
+            // ============
+
+
+            C.Timestepper_Scheme = IBM_Control.TimesteppingScheme.BDF2;
+            double dt = 1E20;
+            C.dtFixed = dt;
+            C.dtMax = dt;
+            C.dtMin = dt;
+            C.Endtime = 100000;
+            C.NoOfTimesteps = 1;
 
             return C;
         }

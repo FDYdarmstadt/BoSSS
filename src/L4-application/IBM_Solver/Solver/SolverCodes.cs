@@ -49,16 +49,30 @@ namespace BoSSS.Application.IBM_Solver {
         exp_schwarz_directcoarse = 3,
 
         /// <summary>
+        /// Schwarz method with METIS blocking and direct solver for coarse solve with an overlap of 1
+        /// </summary>
+        exp_schwarz_directcoarse_overlap = 4,
+
+        /// <summary>
         /// Schwarz method with Multigridblocking on the coarsest level and coarse solve
         /// </summary>
-        exp_schwarz_Kcycle_directcoarse = 4,    
+        exp_schwarz_Kcycle_directcoarse = 5,
+
+        /// <summary>
+        /// Schwarz method with Multigridblocking on the coarsest level and coarse solve with an overlap of 1
+        /// </summary>
+        exp_schwarz_Kcycle_directcoarse_overlap = 6,
 
         /// <summary>
         /// GMRES without any preconditioning
         /// </summary>
-        exp_softgmres = 5,
+        exp_softgmres = 7,
 
-        exp_softgmres_schwarz_directcoarse = 6,
+        exp_softgmres_schwarz_directcoarse = 8,
+
+        exp_softgmres_schwarz_Kcycle_directcoarse_overlap = 9,
+
+
 
     }
 

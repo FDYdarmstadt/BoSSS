@@ -20,6 +20,7 @@ using BoSSS.Foundation.IO;
 using BoSSS.Solution;
 using BoSSS.Solution.ASCIIExport;
 using BoSSS.Solution.Tecplot;
+using BoSSS.Solution.Timestepping;
 using CNS.Boundary;
 using CNS.EquationSystem;
 using CNS.IBM;
@@ -169,7 +170,7 @@ namespace CNS {
         /// </summary>
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase gridUpdateData) {
             FullOperator = operatorFactory.GetJoinedOperator();
-            
+
             TimeStepper = Control.ExplicitScheme.Instantiate(
                 Control,
                 operatorFactory,
@@ -191,7 +192,7 @@ namespace CNS {
                 this,
                 Control,
                 FullOperator.ToSpatialOperator(WorkingSet)).ToArray();
-            
+
             WorkingSet.UpdateDerivedVariables(this, SpeciesMap.SubGrid.VolumeMask);
         }
 
@@ -227,6 +228,19 @@ namespace CNS {
                     Console.Write("Starting time step #" + TimestepNo + "...");
                 }
 
+                // Update shock-capturing variables before performing a time step
+                // as the time step constraints (could) depend on artificial viscosity.
+                // If not doing so, the artificial viscosity values from the previous
+                // time step are taken (unless UpdateDerivedVariables has been called by
+                // SavetoDatabase which depends on the saveperiod specified in the control file). 
+                if (this.Control.ArtificialViscosityLaw != null) {
+                    WorkingSet.UpdateShockCapturingVariables(this, SpeciesMap.SubGrid.VolumeMask);
+                }
+
+                // Create TimeInformation object in order to make information available for
+                // the time stepper
+                TimeStepper.UpdateTimeInfo(new TimeInformation(TimestepNo, phystime, dt));
+
                 Exception e = null;
                 try {
                     dt = TimeStepper.Perform(dt);
@@ -236,7 +250,7 @@ namespace CNS {
                 e.ExceptionBcast();
 
                 if (TimestepNo % printInterval == 0) {
-                    Console.WriteLine(" done. PhysTime: {0:0.#######E-00}, dt: {1:0.###E-00}", phystime, dt);
+                    Console.WriteLine(" done. PhysTime: {0:0.#######E-00}, dt: {1:0.#######E-00}", phystime, dt);
                 }
 
                 IDictionary<string, double> residuals = residualLoggers.LogTimeStep(TimestepNo, dt, phystime);
@@ -354,6 +368,12 @@ namespace CNS {
         /// <param name="NoOfClasses"></param>
         /// <param name="cellToPerformanceClassMap"></param>
         protected override void GetCellPerformanceClasses(out int NoOfClasses, out int[] cellToPerformanceClassMap) {
+            // Update clustering before cell redistribution when LTS is being used
+            if (TimeStepper is AdamsBashforthLTS ABLTSTimeStepper) {
+                bool reclustered = ABLTSTimeStepper.TryNewClustering(dt: -1);
+                ABLTSTimeStepper.SetReclusteredByGridRedist(reclustered);
+            }
+
             (NoOfClasses, cellToPerformanceClassMap) = Control.DynamicLoadBalancing_CellClassifier.ClassifyCells(this);
         }
 
