@@ -135,19 +135,19 @@ namespace BoSSS.Application.IBM_Solver {
         static void AutomaticChoice(IBM_Control Control, XdgBDFTimestepping Timestepper) {
             throw new NotImplementedException("Option currently not available");
 
-            if (Control.NoOfMultigridLevels < 2)
-                throw new ApplicationException("At least 2 Multigridlevels are required");
+            // Detecting MPI Size
+            MPI.Wrappers.csMPI.Raw.Comm_Size(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out int size);
+            //Timestepper.MultigridSequence[0].
 
-            Timestepper.Config_linearSolver = new Schwarz() {
-                m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                    NoOfPartsPerProcess = 1,
-                },
-                Overlap = 1,
-                CoarseSolver = DetermineMGSquence(Control.NoOfMultigridLevels - 2)
-            };
+            // Spatial Dimension
 
-            // Block Solve 3D ca. 6000 DoFs per Process
-            // Coarse Solve ca. 5000 bis 10000 DoFs.C.
+            //Timestepper.
+
+            // Wenn Gesamtproblem in 2D < 100000 DoFs -> Direct Solver
+            // Wenn Gesamtproblem in 3D < 10000 DoFs -> Direct Solver 
+
+            // Block Solve 3D ca. 6000 DoFs per Process -> Adjust Blocks per Process
+            // Coarse Solve ca. 5000 bis 10000 DoFs. -> Adjust Multigrid Levels
 
         }
 
