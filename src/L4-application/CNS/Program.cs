@@ -183,7 +183,7 @@ namespace CNS {
             TimeStepper.ResetTime(StartTime, TimestepNumber);
 
             // Update time information (needed for LTS runs)
-            TimeStepper.UpdateTimeInfo(new TimeInformation(TimestepNumber, 0, -1));
+            TimeStepper.UpdateTimeInfo(new TimeInformation(TimestepNumber, StartTime, -1));
 
             // Configure residual handling
             if (gridUpdateData == null) {
