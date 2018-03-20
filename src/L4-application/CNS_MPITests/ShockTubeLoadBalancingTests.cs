@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Platform.LinAlg;
@@ -40,7 +41,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
 
 
 
-        
+
         private static int REBALANCING_PERIOD = 5;
 
         private static bool twoD = false;
@@ -290,6 +291,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             }
             c.ActiveOperators |= Operators.ArtificialViscosity;
             c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+            c.AddVariable(Variables.ShockSensor, 0);
             c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 2);
             c.Endtime = endTime;
 
@@ -328,6 +330,23 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             var loadBalSolver = new ShockTubeLoadBalancingTests();
             loadBalSolver.Init(loadBalControl);
             loadBalSolver.RunSolverMode();
+
+            //bool result = true;
+            //string[] varname = { "Desity", "x-Momentum", "Energy" };
+            //for (int i = 0; i < 3; i++) {
+            //    List<DGField> listOfDGFields_RepON = (List<DGField>)loadBalSolver.IOFields;
+            //    DGField variableRepON = listOfDGFields_RepON[i];
+            //    double L2NormRepON = variableRepON.L2Norm();
+            //    List<DGField> listOfDGFields_RepOFF = (List<DGField>)refSolver.IOFields;
+            //    DGField vriableRepOFF = listOfDGFields_RepOFF[i];
+            //    double L2NormRepOFF = vriableRepOFF.L2Norm();
+
+            //    Console.WriteLine("{0}-L2Norm Rep ON: {1}", varname[i], L2NormRepON);
+            //    Console.WriteLine("{0}-L2Norm Rep OFF: {1}", varname[i], L2NormRepOFF);
+            //    bool normequal = (L2NormRepON - L2NormRepOFF <= 1e-14);
+            //    result &= normequal;
+            //    Console.WriteLine("{0}-L2Norm equal: {1}", varname[i], normequal);
+            //}
 
             // To be able to compare errors without using the database, we need to 
             // agree on a single grid partitioning in the end -> use ref
