@@ -351,7 +351,10 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// The sequence of aggregation grids, on which multi grid solvers work.
         /// </summary>
-        protected AggregationGrid[] MultigridSequence;
+        public AggregationGrid[] MultigridSequence {
+            get;
+            protected set;
+        }
 
         /// <summary>
         /// The aggregation grid basis.
