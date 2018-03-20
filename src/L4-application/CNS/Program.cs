@@ -182,6 +182,9 @@ namespace CNS {
             // Resets simulation time after a restart
             TimeStepper.ResetTime(StartTime, TimestepNumber);
 
+            // Update time information (needed for LTS runs)
+            TimeStepper.UpdateTimeInfo(new TimeInformation(TimestepNumber, 0, -1));
+
             // Configure residual handling
             if (gridUpdateData == null) {
                 // Do not change these settings upon repartitioning
