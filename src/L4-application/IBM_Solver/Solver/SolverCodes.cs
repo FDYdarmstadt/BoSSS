@@ -72,6 +72,8 @@ namespace BoSSS.Application.IBM_Solver {
 
         exp_softgmres_schwarz_Kcycle_directcoarse_overlap = 9,
 
+        exp_softgmres_schwarz_directcoarse_overlap = 10,
+
 
 
     }
