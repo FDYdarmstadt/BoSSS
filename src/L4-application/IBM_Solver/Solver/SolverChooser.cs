@@ -108,12 +108,14 @@ namespace BoSSS.Application.IBM_Solver {
                 case LinearSolverCodes.exp_softgmres:
                     Timestepper.Config_linearSolver = new SoftGMRES() {
                         MaxKrylovDim = Timestepper.Config_MaxKrylovDim,
+                        m_Tolerance = Timestepper.Config_SolverConvergenceCriterion,
                     };
                     break;
 
                 case LinearSolverCodes.exp_softgmres_schwarz_Kcycle_directcoarse_overlap:
                     Timestepper.Config_linearSolver = new SoftGMRES() {
                         MaxKrylovDim = Timestepper.Config_MaxKrylovDim,
+                        m_Tolerance = Timestepper.Config_SolverConvergenceCriterion,
                         Precond = new Schwarz() {
                             m_BlockingStrategy = new Schwarz.MultigridBlocks() {
                                 Depth = Control.NoOfMultigridLevels - 1
@@ -129,6 +131,7 @@ namespace BoSSS.Application.IBM_Solver {
                         throw new ApplicationException("At least 2 Multigridlevels are required");
                     Timestepper.Config_linearSolver = new SoftGMRES() {
                         MaxKrylovDim = Timestepper.Config_MaxKrylovDim,
+                        m_Tolerance = Timestepper.Config_SolverConvergenceCriterion,
                         Precond = new Schwarz() {
                             m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                                 NoOfPartsPerProcess = 1,
@@ -225,8 +228,9 @@ namespace BoSSS.Application.IBM_Solver {
                             if (Control.NoOfMultigridLevels < 2)
                                 throw new ApplicationException("At least 2 Multigridlevels are required");
 
-                            Timestepper.Config_linearSolver = new SoftGMRES() {
+                            Timestepper.Config_linearSolver = new SoftGMRES() {                               
                                 MaxKrylovDim = Timestepper.Config_MaxKrylovDim,
+                                m_Tolerance = Timestepper.Config_SolverConvergenceCriterion,
                                 Precond = new Schwarz() {
                                     m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                                         NoOfPartsPerProcess = (int)Math.Ceiling(cellsLoc / 6500.0),
