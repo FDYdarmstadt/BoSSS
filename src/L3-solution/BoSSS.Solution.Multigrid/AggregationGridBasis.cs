@@ -323,10 +323,6 @@ namespace BoSSS.Solution.Multigrid {
 
 
 
-
-            
-            
-
             // -----------------------------------------------------------------------------------
             // injectors to upper level
             // - 1st index: level index; 0-th entry will always be null.
@@ -338,75 +334,203 @@ namespace BoSSS.Solution.Multigrid {
             MultidimensionalArray[][] Injectors = new MultidimensionalArray[agSeq.Length][];
             // -----------------------------------------------------------------------------------
 
-            // level 0
-            int Jagg = agSeq[0].iLogicalCells.NoOfLocalUpdatedCells;
-            int[][] Ag2Pt = agSeq[0].iLogicalCells.AggregateCellToParts;
-            for(int j = 0; j < Jagg; j++) {
-                int jGeom;
-                 if(Ag2Pt == null || Ag2Pt[j] == null) {
-                    jGeom = j;
-                } else {
-                    if (Ag2Pt[j].Length != 1)
-                        throw new ArgumentException();
-                    jGeom = Ag2Pt[j][0];
-                }
-                if (jGeom != j)
-                    throw new NotSupportedException("todo");
+            MultidimensionalArray InjectorsBase = MultidimensionalArray.Create(Jbase, Np, Np);
+            bool[] InjectorsBaseReady = new bool[Jbase];
 
-                
+            // level 0
+            {
+                int Jagg = agSeq[0].iLogicalCells.NoOfLocalUpdatedCells;
+                int[][] Ag2Pt = agSeq[0].iLogicalCells.AggregateCellToParts;
+                Debug.Assert(Jagg == Jbase);
+
+                for (int j = 0; j < Jagg; j++) {
+                    int jGeom;
+                    if (Ag2Pt == null || Ag2Pt[j] == null) {
+                        jGeom = j;
+                    } else {
+                        if (Ag2Pt[j].Length != 1)
+                            throw new ArgumentException();
+                        jGeom = Ag2Pt[j][0];
+                    }
+                    if (jGeom != j)
+                        throw new NotSupportedException("todo");
+
+                    InjectorsBase.ExtractSubArrayShallow(j, -1, -1).AccEye(1.0);
+                    InjectorsBaseReady[j] = true;
+                }
             }
 
-            // all other levels
-            for(int iLevel = 1; iLevel < agSeq.Length; iLevel++) { // loop over levels...
-                B_prevLevel = B_Level;
-                //a_prevLevel = a_Level;
-                Mass_prevLevel = Mass_Level;
-                Jagg = agSeq[iLevel].iLogicalCells.NoOfLocalUpdatedCells;
-                Ag2Pt = agSeq[iLevel].iLogicalCells.AggregateCellToParts;
+
+            // level 1
+            MultidimensionalArray ortho_Level;
+            if(agSeq.Length >= 2) {
+                int iLevel = 1;
+
+                int Jagg = agSeq[iLevel].iLogicalCells.NoOfLocalUpdatedCells;
+                int[][] Ag2Pt = agSeq[iLevel].iLogicalCells.AggregateCellToParts;
                 int[][] C2F = agSeq[iLevel].jCellCoarse2jCellFine;
+
+                Debug.Assert(Ag2Pt.Length == Jagg);
+                Debug.Assert(C2F.Length == Jagg);
 
                 var Injectors_iLevel = new MultidimensionalArray[Jagg];
                 Injectors[iLevel] = Injectors_iLevel;
 
-                B_Level = MultidimensionalArray.Create(Jagg, Np, Np);
-                Mass_Level = MultidimensionalArray.Create(Jagg, Np, Np);
+                ortho_Level = MultidimensionalArray.Create(Jagg, Np, Np);
+                
+                for (int j = 0; j < Jagg; j++) { // loop over aggregate cells
+                    Debug.Assert(ArrayTools.ListEquals(Ag2Pt[j], C2F[j]));
+
+                    int[] compCell = Ag2Pt[j];
+
+                    int I = compCell.Length;
+
+                    // compute extrapolation
+                    int[,] CellPairs = new int[I - 1, 2];
+                    for (int i = 0; i < I - 1; i++) {
+                        CellPairs[i, 0] = compCell[0];
+                        CellPairs[i, 1] = compCell[i + 1];
+                    }
+                    var ExpolMtx = MultidimensionalArray.Create(I, Np, Np);
+                    maxDgBasis.GetExtrapolationMatrices(CellPairs, ExpolMtx.ExtractSubArrayShallow(new int[] { 1, 0, 0 }, new int[] { I - 1, Np - 1, Np - 1 }));
+                    for (int n = 0; n < Np; n++) {
+                        ExpolMtx[0, n, n] = 1.0;
+                    }
+
+                    // Compute intermediate mass matrix
+                    var MMtemp = MultidimensionalArray.Create(Np, Np);
+                    MMtemp.Multiply(1.0, ExpolMtx, ExpolMtx, 0.0, "nm", "iln", "ilm");
+
+                    // orthonormalize
+                    MultidimensionalArray ortho = ortho_Level.ExtractSubArrayShallow(j, -1, -1);
+                    MMtemp.SymmetricLDLInversion(ortho, null);
+                    Injectors_iLevel[j] = MultidimensionalArray.Create(I, Np, Np);
+                    Injectors_iLevel[j].Multiply(1.0, ExpolMtx, ortho, 0.0, "inm", "ink", "km");
+
+
+                    // base level injector
+                    var injBase = InjectorsBase.ExtractSubArrayShallow(compCell[0], -1, -1);
+                    injBase.Set(Injectors_iLevel[j].ExtractSubArrayShallow(0, -1, -1));
+                    Debug.Assert(InjectorsBaseReady[compCell[0]]);
+
+                    for(int i = 1; i < I; i++) {
+                        InjectorsBaseReady[compCell[i]] = false;
+                    }
+
+#if DEBUG
+                    //{
+                    //    // assert that Injector is upper-triangular
+                    //    for (int n = 0; n < Np; n++) {
+                    //        for (int m = n + 1; m < Np; m++) {
+                    //            Debug.Assert(B_Level_j[m, n] == 0.0);
+                    //        }
+                    //    }
+#endif
+                    
+                } 
+            } else {
+                ortho_Level = null;
+            }
+
+
+            // all other levels
+            MultidimensionalArray ortho_PrevLevel;
+            for (int iLevel = 2; iLevel < agSeq.Length; iLevel++) { // loop over levels...
+                int Jagg = agSeq[iLevel].iLogicalCells.NoOfLocalUpdatedCells;
+                int[][] Ag2Pt = agSeq[iLevel].iLogicalCells.AggregateCellToParts;
+                int[][] Ag2Pt_Fine = agSeq[iLevel - 1].iLogicalCells.AggregateCellToParts;
+                int[][] C2F = agSeq[iLevel].jCellCoarse2jCellFine;
+
+                Debug.Assert(Ag2Pt.Length == Jagg);
+                Debug.Assert(C2F.Length == Jagg);
+
+                var Injectors_iLevel = new MultidimensionalArray[Jagg];
+                Injectors[iLevel] = Injectors_iLevel;
+
+                ortho_PrevLevel = ortho_Level;
+                ortho_Level = MultidimensionalArray.Create(Jagg, Np, Np);
+
                 for (int j = 0; j < Jagg; j++) { // loop over aggregate cells
 
-                    var Mass_j = Mass_Level.ExtractSubArrayShallow(j, -1, -1);
-                    foreach (int jF in C2F[j]) { // loop over aggregated cells
-                        Mass_j.Acc(1.0, Mass_prevLevel.ExtractSubArrayShallow(jF, -1, -1));
-                        //a_j.Acc(1.0, a_prevLevel.ExtractSubArrayShallow(jF, -1, -1));
-                    }
+                    // find cell pairs
+                    int[] compCell = C2F[j];
+                    int I = compCell.Length;
 
+                    int[] BaseCells = new int[I];
+                    for (int i = 0; i < I; i++) {
+                        int jFine = compCell[i];
+                        int[] jBaseS = Ag2Pt_Fine[jFine];
+                        int II = jBaseS.Length;
 
-
-                    // perform ortho-normalization:
-                    var B_Level_j = B_Level.ExtractSubArrayShallow(j, -1, -1);
-                    Mass_j.SymmetricLDLInversion(B_Level_j, default(double[]));
-                    //a_j.TriangularInvert(B_Level_j, true);
-#if DEBUG
-                    {
-                       
-
-                        // assert that B_Level_j is upper-triangular
-                        for (int n = 0; n < Np; n++) {
-                            for (int m = n + 1; m < Np; m++) {
-                                Debug.Assert(B_Level_j[m, n] == 0.0);
+                        BaseCells[i] = -1;
+                        for (int ii = 0; ii < II; ii++) {
+                            int jBase = jBaseS[ii];
+                            if (InjectorsBaseReady[jBase]) {
+                                BaseCells[i] = jBase;
+                                break;
                             }
                         }
+                        if (BaseCells[i] < 0)
+                            throw new ApplicationException("Error in algorithm/data structure.");
                     }
+                    int[,] CellPairs = new int[I - 1, 2];
+                    for (int i = 0; i < I - 1; i++) {
+                        CellPairs[i, 0] = BaseCells[0];
+                        CellPairs[i, 1] = BaseCells[i + 1];
+                    }
+
+                    // compute extrapolation (with respect to base grid)
+                    var ExpolMtxBase = MultidimensionalArray.Create(I, Np, Np);
+                    maxDgBasis.GetExtrapolationMatrices(CellPairs, ExpolMtxBase.ExtractSubArrayShallow(new int[] { 1, 0, 0 }, new int[] { I - 1, Np - 1, Np - 1 }));
+                    for (int n = 0; n < Np; n++) {
+                        ExpolMtxBase[0, n, n] = 1.0;
+                    }
+
+                    // compute extrapolation (with respect to finer level)
+                    var ExpolMtx = MultidimensionalArray.Create(I, Np, Np);
+                    var inv_injBase_i = MultidimensionalArray.Create(Np, Np);
+                    for (int i = 0; i < I; i++) {
+                        var ExpolMtxBase_i = ExpolMtxBase.ExtractSubArrayShallow(i, -1, -1);
+                        var ExpolMtx_i = ExpolMtx.ExtractSubArrayShallow(i, -1, -1);
+                        var injBase_i = InjectorsBase.ExtractSubArrayShallow(BaseCells[i], -1, -1);
+                        Debug.Assert(InjectorsBaseReady[BaseCells[i]] == true);
+                        Debug.Assert(injBase_i.InfNorm() > 0);
+
+                        injBase_i.TriangularInvert(inv_injBase_i);
+                        Debug.Assert(inv_injBase_i.InfNorm() > 0);
+
+
+                        ExpolMtx_i.GEMM(1.0, inv_injBase_i, ExpolMtxBase_i, 0.0);
+                        Debug.Assert(ExpolMtx_i.InfNorm() > 0);
+
+                    }
+
+                    // Compute intermediate mass matrix
+                    var MMtemp = MultidimensionalArray.Create(Np, Np);
+                    MMtemp.Multiply(1.0, ExpolMtx, ExpolMtx, 0.0, "nm", "iln", "ilm");
+
+                    // orthonormalize
+                    MultidimensionalArray ortho = MultidimensionalArray.Create(Np, Np);
+                    MMtemp.SymmetricLDLInversion(ortho, null);
+                    Injectors_iLevel[j] = MultidimensionalArray.Create(I, Np, Np);
+                    Injectors_iLevel[j].Multiply(1.0, ExpolMtx, ortho, 0.0, "inm", "ink", "km");
+
+                    // record injector to base grid
+                    int jKeep = BaseCells[0];
+                    var injBase_jKeep = InjectorsBase.ExtractSubArrayShallow(jKeep, -1, -1);
+                    var injBase_jKeep_prev = injBase_jKeep.CloneAs();
+                    var injLevel = Injectors_iLevel[j].ExtractSubArrayShallow(0, -1, -1);
+                    injBase_jKeep.GEMM(1.0, injBase_jKeep_prev, injLevel, 0.0);
+
+                    for (int i = 1; i < I; i++) {
+                        int jDump = BaseCells[i];
+                        Debug.Assert(InjectorsBaseReady[jDump] == true);
+                        InjectorsBaseReady[jDump] = false;
+#if DEBUG
+                        InjectorsBase.ExtractSubArrayShallow(jDump, -1, -1).Clear();
 #endif
-                    // invert 'B' from previous level
-                    var invB_prevLevel = MultidimensionalArray.Create(B_prevLevel.Lengths);
-                    for(int jP = 0; jP < B_prevLevel.GetLength(0); jP++) {
-                        B_prevLevel.ExtractSubArrayShallow(jP, -1, -1).InvertTo(invB_prevLevel.ExtractSubArrayShallow(jP, -1, -1));
                     }
-                    
-                    // create injector
-                    Injectors_iLevel[j] = MultidimensionalArray.Create(C2F[j].Length, Np, Np);
-                    for (int l = 0; l < C2F[j].Length; l++) { // loop fine cells which make up the aggregate cell 
-                        todo
-                    }
+
                 }
             }
 
@@ -429,6 +553,8 @@ namespace BoSSS.Solution.Multigrid {
                 return ret;
             }
         }
+
+
 
 
         static GridData GetGridData(AggregationGrid ag) {
@@ -932,9 +1058,9 @@ namespace BoSSS.Solution.Multigrid {
 
                 for(int jAgg = 0; jAgg < JAGG; jAgg++) { // loop over agglomerated cells...
 
-                    m_CompositeBasis[jAgg] = CA(jAgg);
+                    //m_CompositeBasis[jAgg] = CA(jAgg);
 
-                    /*
+                    
                     var compCell = ag.iLogicalCells.AggregateCellToParts[jAgg];
                     
                     if(compCell.Length == 1) {
