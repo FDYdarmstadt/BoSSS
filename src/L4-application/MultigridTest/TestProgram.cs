@@ -310,8 +310,8 @@ namespace BoSSS.Application.MultigridTest {
             double PrlgErrNorm = GenericBlas.L2Dist(PrlgVec2, PrlgVec);
             double LostInfNorm = GenericBlas.L2Dist(OrigVec, PrlgVec2);
             //Console.WriteLine("Rest. matrix test: {0}, Prolong. matrix test {1}, Lost info {2}", RestErrNorm, PrlgErrNorm, LostInfNorm);
-            Debug.Assert(RestErrNorm < 1.0e-10);
-            Debug.Assert(PrlgErrNorm < 1.0e-10);
+            Assert.IsTrue(RestErrNorm < 1.0e-10);
+            Assert.IsTrue(PrlgErrNorm < 1.0e-10);
             
             // restriction onto level itself
             BlockMsrMatrix RestMtx = currentLevelMap.FromOtherLevelMatrix(currentLevelMap);
@@ -319,7 +319,7 @@ namespace BoSSS.Application.MultigridTest {
             ShldBeEye.AccEyeSp(-1.0);
             double errNorm = ShldBeEye.InfNorm();
             Console.WriteLine("Id norm {0} \t (level {1})", errNorm, currentLevelMap.AggGrid.MgLevel);
-            //Debug.Assert(ShouldBeID_Norm < 1.0e-8);
+            Assert.IsTrue(errNorm < 1.0e-8);
 
 
             // recursion
@@ -358,10 +358,10 @@ namespace BoSSS.Application.MultigridTest {
             MsrMatrix Rest11 = new MsrMatrix(I1row.Length, I1col.Length, 1, 1);
             RestMtx.WriteSubMatrixTo(Rest11, I1row, default(int[]), I1col, default(int[]));
 
-            Debug.Assert(Rest10.InfNorm() == 0.0);
-            Debug.Assert(Rest01.InfNorm() == 0.0);
-            Debug.Assert(Rest00.InfNorm() != 0.0);
-            Debug.Assert(Rest11.InfNorm() != 0.0);
+            Assert.IsTrue(Rest10.InfNorm() == 0.0);
+            Assert.IsTrue(Rest01.InfNorm() == 0.0);
+            Assert.IsTrue(Rest00.InfNorm() != 0.0);
+            Assert.IsTrue(Rest11.InfNorm() != 0.0);
 
 
         }
@@ -754,8 +754,8 @@ namespace BoSSS.Application.MultigridTest {
             int Lfin = mgMap.LocalLength;
             int Lcrs = mgOp.CoarserLevel.Mapping.LocalLength;
 
-            Debug.Assert(FineIn.Length == Lfin);
-            Debug.Assert(FineOut.Length == Lfin);
+            Assert.IsTrue(FineIn.Length == Lfin);
+            Assert.IsTrue(FineOut.Length == Lfin);
 
             double[] Coarse1 = new double[Lcrs];
             double[] Coarse2 = new double[Lcrs];
