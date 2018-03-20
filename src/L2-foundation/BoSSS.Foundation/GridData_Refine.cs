@@ -44,11 +44,6 @@ namespace BoSSS.Foundation.Grid.Classic {
                 GridCommons oldGrid = this.m_Grid;
                 GridCommons newGrid = new GridCommons(oldGrid.RefElements, oldGrid.EdgeRefElements);
 
-                // Dirty hack for edge tags
-                newGrid.EdgeTagNames.Clear();
-                for (int i = 0; i < oldGrid.EdgeTagNames.Count; i++) {
-                    newGrid.EdgeTagNames.Add(oldGrid.EdgeTagNames.ElementAt(i));
-                }
 
                 Old2New = new GridCorrelation();
                                 
@@ -78,9 +73,9 @@ namespace BoSSS.Foundation.Grid.Classic {
                     Debug.Assert(ArrayTools.ListEquals(KrefS_SubdivLeaves[iKref], KrefS_SubDiv[iKref].Children[0].GetLevel(), (a, b) => object.ReferenceEquals(a, b)));
                     KrefS_Faces2Subdiv[iKref] = new int[Kref.NoOfFaces][];
 
-                    KrefS_SubdivConnections[iKref] = new Tuple<int, int>[KrefS[iKref].NoOfFaces, KrefS[iKref].NoOfFaces];
+                    KrefS_SubdivConnections[iKref] = new Tuple<int, int>[KrefS_SubdivLeaves[iKref].Length, KrefS[iKref].NoOfFaces];
                     for(int iSubdiv = 0; iSubdiv < KrefS_SubdivConnections[iKref].GetLength(0); iSubdiv++) { // loop over subdivision elements
-                        for(int iFace = 0; iFace < KrefS_SubdivConnections[iKref].GetLength(0); iFace++) { // loop over faces of subdivision elements
+                        for(int iFace = 0; iFace < KrefS_SubdivConnections[iKref].GetLength(1); iFace++) { // loop over faces of subdivision elements
                             var t = KrefS_SubdivLeaves[iKref][iSubdiv].GetNeighbor(iFace);
                             if(t.Item1 < 0) {
                                 // at the boundary of the subdivision
@@ -580,7 +575,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 for(int i = 0; i < cl.CellFaceTags.Length; i++) {
                                     long ngid = cl.CellFaceTags[i].NeighCell_GlobalID;
                                     if (ngid >= 0)
-                                    Debug.Assert(markers[ngid] == true);
+                                        Debug.Assert(markers[ngid] == true);
                                 }
                             }
                         }

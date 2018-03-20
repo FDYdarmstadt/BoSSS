@@ -5,7 +5,7 @@ restart
   ____________________
 
 Databases loaded:
-List of 24 instances of IDatabaseInfo {
+List of 23 instances of IDatabaseInfo {
   0: { Session Count = 0; Grid Count = 2; Path = p:\BoSSS_DBs\Kovasznay }
   1: { Session Count = 1; Grid Count = 1; Path = p:\BoSSS_DBs\ChannelFlow }
   2: { Session Count = 0; Grid Count = 0; Path = p:\BoSSS_DBs\RectangularCylinder }
@@ -23,13 +23,12 @@ List of 24 instances of IDatabaseInfo {
   14: { Session Count = 43; Grid Count = 45; Path = P:\BoSSS_DBs\IBMPaper }
   15: { Session Count = 28; Grid Count = 15; Path = P:\BoSSS_DBs\Paper_IBM2D }
   16: { Session Count = 38; Grid Count = 22; Path = P:\BoSSS_DBs\Paper_CellAgglo01_Penalty4 }
-  17: { Session Count = 38; Grid Count = 31; Path = P:\BoSSS_DBs\Sphere3D }
+  17: { Session Count = 45; Grid Count = 55; Path = P:\BoSSS_DBs\Sphere3D }
   18: { Session Count = 22; Grid Count = 10; Path = P:\BoSSS_DBs\Performance }
   19: { Session Count = 24; Grid Count = 14; Path = P:\BoSSS_DBs\PaperRevision }
   20: { Session Count = 0; Grid Count = 0; Path = P:\Lichtenberg_DB }
   21: { Session Count = 2; Grid Count = 354; Path = P:\BoSSS_DBs\Bug }
-  22: { Session Count = 51; Grid Count = 96; Path = L:\BoSSS_DB\Lichtenberg_DB }
-  23: { Session Count = 510; Grid Count = 729; Path = Y:\fdy-publication-data\Thesis\2017\Degenhardt\performance_db }
+  22: { Session Count = 71; Grid Count = 97; Path = L:\BoSSS_DB\Lichtenberg_DB }
 }
 
  Console ready for input. Type 'help' for help.
@@ -40,6 +39,7 @@ using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Solution.Multigrid;
 using System.Text;
 using System.Threading.Tasks;
+using ilPSP.Tracing;
 **************
 ==============
 WorkflowMgm.Init("MPISolverPerformance");
@@ -47,198 +47,180 @@ WorkflowMgm.Init("MPISolverPerformance");
 Project name is set to 'MPISolverPerformance'.
 
 ==============
-var WinTempDB = OpenOrCreateDatabase("L:\\tmp\\temp_db");
+//var WinTempDB = OpenOrCreateDatabase(@"L:\SLURM\temp_db");
+var LinuxTempDB = OpenOrCreateDatabase(@"L:\BoSSS_DB\Lichtenberg_DB");
 **************
-Opening existing database 'L:\tmp\temp_db'.
+Opening existing database 'L:\BoSSS_DB\Lichtenberg_DB'.
 
 ==============
-Console.WriteLine("Please type in your Username");
-var Username = Console.ReadLine();
+//Console.WriteLine("Please type in your Username");
+//var Username = Console.ReadLine();
 **************
-Please type in your Username
-
 ==============
-var myBatch = new SlurmClient(@"L:\SLURM","lcluster4.hrz.tu-darmstadt.de",Username);
+var myBatch = new SlurmClient(@"L:\SLURM","lcluster2.hrz.tu-darmstadt.de","oe11okuz");
 **************
-
 Please enter your password...
 *************
-Connecting to lcluster4.hrz.tu-darmstadt.de...
+Connecting to lcluster2.hrz.tu-darmstadt.de...
 
 
 ==============
-MiniBatchProcessor.Server.StartIfNotRunning();
+//var myBatch = new MiniBatchProcessorClient(@"P:\tmp\");
 **************
-Starting mini batch processor in external process...
-Started mini batch processor on local machine, process id is 11848.
-
+==============
+//MiniBatchProcessor.Server.StartIfNotRunning();
+**************
+==============
+static class Utils {
+    // DOF per cell in 3D
+    public static int Np(int p) {
+        return (p*p*p + 6*p*p + 11*p + 6)/6;
+    }
+}
+**************
 ==============
 // ==========
 // Parameters
 // ==========
 **************
 ==============
-IBM_Control.SolverOptions[] precs = new IBM_Control.SolverOptions[] { IBM_Control.SolverOptions.NewtonGmresSwzMG };
+LinearSolverCodes[] linSolvers = new LinearSolverCodes[] {
+    //LinearSolverCodes.exp_schwarz_directcoarse,
+    //LinearSolverCodes.exp_schwarz_Kcycle_directcoarse,
+    LinearSolverCodes.exp_schwarz_directcoarse_overlap,
+    //LinearSolverCodes.exp_schwarz_Kcycle_directcoarse_overlap,
+    //LinearSolverCodes.exp_softgmres_schwarz_Kcycle_directcoarse_overlap
+};
 int[] ks = new int[] {2,3};
 int cells_x  = 64;
-int cells_yz = 22;
+int cells_yz = 16;
 int re       = 100; 
-int ASparts  = 5; 
-int ASDepth  = 2;
-int MGLevels = 3;
-int maxKrDim = 30;
 int saveToDB = 1;
-int[] procs    = new int[] {8,16,32,64};
+int[] procs    = new int[] {64,128,256,512};
 **************
-(1,14): error CS0426: The nested type `SolverOptions' does not exist in the type `BoSSS.Application.IBM_Solver.IBM_Control'
-No. of errors|warnings: 1|0.
+C# evaluator not initialized: use 'restart'.
 
 ==============
-// ================================
-// Control file function: 3D sphere 
-// ================================
+// ===============================
+// Init grids and save to database
+// ===============================
 **************
 ==============
-public class HardcodedPeformanceSphere {
-     static public IBM_Control 3DSphere(IBM_Control.SolverOptions prec, int k, int cells_x, int cells_yz, int re, int ASparts = 5, int ASDepth = 2, int MGLevels = 3, int maxKrDim = 1000, int saveToDB = 1) {
-            IBM_Control C = new IBM_Control();
-            bool name_newton = true;
+// x-direction
+var _xNodes = GenericBlas.Linspace(-0.5, 1.5, cells_x + 1);
+// y-direction
+var _yNodes = GenericBlas.Linspace(-0.5, 0.5, cells_yz + 1);
+// z-direction
+var _zNodes = GenericBlas.Linspace(-0.5, 0.5, cells_yz + 1);
+// Generate Grid
+GridCommons grd; 
+grd = Grid3D.Cartesian3DGrid(_xNodes, _yNodes, _zNodes, false, true, false, CellType.Cube_Linear);
+grd.EdgeTagNames.Add(1, "Velocity_inlet");
+grd.EdgeTagNames.Add(2, "Wall");
+grd.EdgeTagNames.Add(3, "Pressure_Outlet");
+grd.DefineEdgeTags(delegate (double[] _X) {
+                    var X    = _X;
+                    double x = X[0];
+                    double y = X[1];
+                    double z = X[2];
+                    byte ret = 0;
 
-            // basic database options
-            // ======================
-            if (saveToDB == 1) {
-                C.savetodb = true;
-            } else {
-                C.savetodb = false;
-            }
+                    if (Math.Abs(x - (-0.5)) < 1.0e-6)
+                        // inlet
+                        ret = 1;
 
-            C.DbPath = @"/home/oe11okuz/tmp/temp_db";
+                    if (Math.Abs(x - (1.5)) < 1.0e-6)
+                        // outlet
+                        ret = 3;
 
-            C.DynamicLoadBalancing_Period = 1;
+                    if (Math.Abs(y - (-0.5)) < 1.0e-6)
+                        // left
+                        ret = 2;
 
-            // Assign correct names
-            if (name_newton) {
-                C.SessionName        = "Sphere_prec" + prec.ToString() + "_k" + k + "_x" + cells_x + "_yz" + cells_yz + "_re" + re + "_asp" + ASparts + "_asd" + ASDepth + "_mgl" + MGLevels + "_kr" + maxKrDim;
-                C.ProjectDescription = "Newton_Sphere_k_prec" + prec.ToString() + "_k" + k + "_x" + cells_x + "_yz" + cells_yz + "_re" + re + "_asp" + ASparts + "_asd" + ASDepth + "_mgl" + MGLevels + "_kr" + maxKrDim;
+                    if (Math.Abs(y - (0.5)) < 1.0e-6)
+                        // right
+                        ret = 2;
 
-            } else {
-                C.SessionName        = "Sphere_prec" + prec.ToString() + "_k" + k + "_x" + cells_x + "_yz" + cells_yz + "_re" + re + "_asp" + ASparts + "_asd" + ASDepth + "_mgl" + MGLevels + "_kr" + maxKrDim;
-                C.ProjectDescription = "Sphere_k_prec" + prec.ToString() + "_k" + k + "_x" + cells_x + "_yz" + cells_yz + "_re" + re + "_asp" + ASparts + "_asd" + ASDepth + "_mgl" + MGLevels + "_kr" + maxKrDim;
+                    if (Math.Abs(z - (-0.5)) < 1.0e-6)
+                        // top left
+                        ret = 2;
 
-            }
+                    if (Math.Abs(z - (0.5)) < 1.0e-6)
+                        // top right
+                        ret = 2;
+                        
+                        return ret;
+                });
+LinuxTempDB.SaveGrid(ref grd);
+**************
+An equivalent grid is already present in the database -- the grid will not be saved.
+38d8f0c8-fb97-46f1-9132-5e0ddad05b90
+==============
+**************
+==============
+// =====================================
+// setup control object for a solver run
+// =====================================
+**************
+==============
+// - - - - - - - - - - - - - - - - - - -
+// Initial Values & Boundary conditions
+// - - - - - - - - - - - - - - - - - - -
+**************
+==============
+static class InitialValues {
+    public static double ZERO(double[] X) {
+        return 0.0;
+    }
+    public static double Phi(double[] X) {
+        return -(X[0]).Pow2() + -(X[1]).Pow2() + -(X[2]).Pow2() + (0.1).Pow2();   
+    }
+    public static double VelocityInlet(double[] X) {
+        return 1 - 4 * (X[2] * X[2]);
+    }
+}
+**************
+==============
+List<IBM_Control> controls = new List<IBM_Control>();
+**************
+==============
+controls.Clear();
+foreach(LinearSolverCodes linSolverName in linSolvers){ 
+var C = new IBM_Control();
+controls.Add(C);
 
-            C.saveperiod  = 1;
-            C.ProjectName = "3DChannel";
-            C.Tags.Add("Prec param study");
+// basic database options
+// ======================
 
-            // Create Fields
-            C.FieldOptions.Add("VelocityX", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("VelocityY", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("VelocityZ", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Pressure", new FieldOpts() {
-                Degree = k - 1,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("PhiDG", new FieldOpts() {
-                Degree = 2,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Phi", new FieldOpts() {
-                Degree = 2,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
+C.savetodb                    = true;
+//C.DbPath                      = "P:\\tmp\\temp_db";
+C.DbPath                      = @"/home/oe11okuz/BoSSS_DB/Lichtenberg_DB";
+C.DynamicLoadBalancing_Period = 1;
 
-            #region Creates grid () and sets BC
-            //// Create Grid
-            Console.WriteLine("...generating grid");
-            C.GridFunc = delegate {
+C.saveperiod  = 1;
+C.ProjectName = "3DChannel";
+C.Tags.Add("Prec param study");
+C.SetDGdegree(2,3);
+C.SetGrid(grd);
+           
 
-            // x-direction
-            var _xNodes = GenericBlas.Linspace(-0.5, 1.5, cells_x + 1);
-
-            // y-direction
-            var _yNodes = GenericBlas.Linspace(-0.5, 0.5, cells_yz + 1);
-
-            // z-direction
-            var _zNodes = GenericBlas.Linspace(-0.5, 0.5, cells_yz + 1);
-
-            // Cut Out
-            var grd = Grid3D.Cartesian3DGrid(_xNodes, _yNodes, _zNodes, false, true, false, CellType.Cube_Linear);
-
-            grd.EdgeTagNames.Add(1, "Velocity_inlet");
-            grd.EdgeTagNames.Add(2, "Wall");
-            grd.EdgeTagNames.Add(3, "Pressure_Outlet");
-
-            grd.DefineEdgeTags(delegate (double[] _X)
-            {
-                var X = _X;
-                double x = X[0];
-                double y = X[1];
-                double z = X[2];
-
-                if (Math.Abs(x - (-0.5)) < 1.0e-6)
-                    // inlet
-                    return 1;
-
-                if (Math.Abs(x - (1.5)) < 1.0e-6)
-                    // outlet
-                    return 3;
-
-                if (Math.Abs(y - (-0.5)) < 1.0e-6)
-                    // left
-                    return 2;
-
-                if (Math.Abs(y - (0.5)) < 1.0e-6)
-                    // right
-                    return 2;
-
-                if (Math.Abs(z - (-0.5)) < 1.0e-6)
-                    // top left
-                    return 2;
-
-                if (Math.Abs(z - (0.5)) < 1.0e-6)
-                    // top right
-                    return 2;
-
-                throw new ArgumentOutOfRangeException();
-            });
-
-            return grd;
-        };
-
-        #endregion
-
-
-
-        // Set Initial Conditions
-        C.InitialValues_Evaluators.Add("VelocityX", X => 0);
-        C.InitialValues_Evaluators.Add("VelocityY", X => 0);
-        C.InitialValues_Evaluators.Add("VelocityZ", X => 0);
-        C.InitialValues_Evaluators.Add("Pressure", X => 0);
+C.InitialValues.Add("VelocityX", GetFormulaObject(InitialValues.ZERO));
+C.InitialValues.Add("VelocityY", GetFormulaObject(InitialValues.ZERO));
+C.InitialValues.Add("VelocityZ", GetFormulaObject(InitialValues.ZERO));
+C.InitialValues.Add("Pressure", GetFormulaObject(InitialValues.ZERO));
+C.InitialValues.Add("Phi", GetFormulaObject(InitialValues.Phi));
+        
+// Set Initial Conditions
+   //     C.InitialValues_Evaluators.Add("VelocityX", X => 0);
+     //   C.InitialValues_Evaluators.Add("VelocityY", X => 0);
+       // C.InitialValues_Evaluators.Add("VelocityZ", X => 0);
+        //C.InitialValues_Evaluators.Add("Pressure", X => 0);
 
         // Because its a sphere
 
         C.particleRadius = 0.1;
-        C.InitialValues_Evaluators.Add("Phi", X => -(X[0]).Pow2() + -(X[1]).Pow2() + -(X[2]).Pow2() + C.particleRadius.Pow2());
-        //C.InitialValues_Evaluators.Add("Phi", X => -1);
-
-        Console.WriteLine("...starting calculation of Preconditioning test with 3D Channel");
-        if (name_newton) {
-            Console.WriteLine("Newton_Channel_k_prec" + prec.ToString() + "_k" + k + "_x" + cells_x + "_yz" + cells_yz + "_re" + re + "_asp" + ASparts + "_asd" + ASDepth + "_mgl" + MGLevels + "_kr" + maxKrDim);
-
-        } else {
-            Console.WriteLine("Sphere_k_prec" + prec.ToString() + "_k" + k + "_x" + cells_x + "_yz" + cells_yz + "_re" + re + "_asp" + ASparts + "_asd" + ASDepth + "_mgl" + MGLevels + "_kr" + maxKrDim);
-
-        }
+        //C.InitialValues_Evaluators.Add("Phi", X => -(X[0]).Pow2() + -(X[1]).Pow2() + -(X[2]).Pow2() + C.particleRadius.Pow2());
+        //C.InitialValues_Evaluators.Add("Phi", X => -1);   
 
         // Physical values
         C.PhysicalParameters.rho_A = 1;
@@ -249,8 +231,8 @@ public class HardcodedPeformanceSphere {
         //C.PhysicalParameters.mu_A = 1.0 / re;
 
         // Boundary conditions
-        C.AddBoundaryCondition("Velocity_inlet", "VelocityX", (X, t) => 1 - 4 * (X[2] * X[2]));
-        C.AddBoundaryCondition("Velocity_inlet", "VelocityY", (X, t) => 0);
+        C.AddBoundaryCondition("Velocity_inlet", "VelocityX", GetFormulaObject(InitialValues.VelocityInlet));
+        C.AddBoundaryCondition("Velocity_inlet", "VelocityY", GetFormulaObject(InitialValues.ZERO));
         C.AddBoundaryCondition("Wall");
         C.AddBoundaryCondition("Pressure_Outlet");
 
@@ -261,218 +243,74 @@ public class HardcodedPeformanceSphere {
         C.AdvancedDiscretizationOptions.PenaltySafety              = 4;
         C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
         C.LevelSetSmoothing                                        = false;
-        C.MaxKrylovDim                                             = maxKrDim;
+        C.MaxKrylovDim                                             = 30;
         C.MaxSolverIterations                                      = 50;
         C.MinSolverIterations                                      = 50;
         // C.MaxSolverIterations = 10000;
         C.Solver_ConvergenceCriterion = 1E-5;
         //C.Solver_ConvergenceCriterion = 1E-6;
         C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-        C.NonlinearMethod          = BoSSS.Solution.XdgTimestepping.NonlinearSolverMethod.Newton;
+        
+            // Solver configuration
+            C.NonlinearSolve = NonlinearSolverCodes.NewtonGMRES;
+            C.LinearSolve    = linSolverName;
 
-        // Choosing the Preconditioner
-        ISolverSmootherTemplate Prec;
-        int precNo;
-        C.solver = prec;
-
-
-        if (prec == IBM_Control.SolverOptions.NewtonGmresSchur) {
-            precNo   = 1;
-            }
-        else if (prec == IBM_Control.SolverOptions.NewtonGmresSwzMG) { 
-            precNo = 4;
-            }
-        else precNo = 6;
-
-        switch (precNo) {
-            case 0: {
-                    Prec = null;
-                    break;
-                }
-            case 1: {
-                    Prec = new SchurPrecond() {
-                        SchurOpt = SchurPrecond.SchurOptions.decoupledApprox
-                    };
-                    break;
-                }
-            case 2: {
-                    Prec = new SchurPrecond() {
-                        SchurOpt = SchurPrecond.SchurOptions.SIMPLE
-                    };
-                    break;
-                }
-            case 3: {
-                    Prec = new Schwarz() {
-                        m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                            //NoOfParts = 5,
-                            NoOfParts = ASparts,
-                        },
-                        CoarseSolver = new DirectSolver() {
-                            WhichSolver = DirectSolver._whichSolver.MUMPS
-                        },
-                        Overlap = 1
-                    };
-                    C.NoOfMultigridLevels = 2;
-                    break;
-                }
-            case 4: {
-                    //C.NoOfMultigridLevels = 3;
-                    C.NoOfMultigridLevels = MGLevels;
-                    Prec = new Schwarz() {
-                        m_BlockingStrategy = new Schwarz.MultigridBlocks() {
-                            //Depth = 2,
-                            Depth = ASDepth,
-                        },
-                        CoarseSolver = new DirectSolver() {
-                            WhichSolver = DirectSolver._whichSolver.MUMPS
-                        },
-                        Overlap = 1
-                    };
-                    break;
-                }
-            case 5: {
-                    C.NoOfMultigridLevels = 5;
-                    Prec = new Schwarz() {
-                        m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                            //NoOfParts = 5,
-                            NoOfParts = ASparts,
-                        },
-                        CoarseSolver = new ClassicMultigrid() {
-                            CoarserLevelSolver = new ClassicMultigrid() {
-                                CoarserLevelSolver = new ClassicMultigrid() {
-                                    CoarserLevelSolver = new DirectSolver() {
-                                        WhichSolver = DirectSolver._whichSolver.MUMPS
-                                    },
-                                },
-                            },
-                        },
-                        Overlap = 1
-                    };
-                    break;
-                }
-            default: {
-                    Prec = new SchurPrecond() {
-                        SchurOpt = SchurPrecond.SchurOptions.decoupledApprox
-                    };
-                    break;
-                }
-
-        }
-
-        // For Newton
-        C.LinearSolver = Prec;  
+        
 
         // Timestepping
         // ============
         C.Timestepper_Scheme = IBM_Control.TimesteppingScheme.BDF2;
-        double dt            = 1E20;
-        C.dtFixed            = dt;
-        C.dtMax              = dt;
-        C.dtMin              = dt;
-        C.Endtime            = 10000000;
-        C.NoOfTimesteps      = 1;
-
-
-        return C;
-     }
-}
+        //C.dtFixed            = 1E20;
+        C.dtMax               = 1E20;
+        C.dtMin               = 1E20;
+        C.Endtime             = 10000000;
+        C.NoOfTimesteps       = 1;
+        C.NoOfMultigridLevels = 4;
+        
+        // Assign correct names
+        C.SessionName = "Sphere_Flow_k2"+linSolverName+"_MGLevels"+C.NoOfMultigridLevels;
+        }
 **************
-(2,33): error CS1519: Unexpected symbol `3' in class, struct, or interface member declaration
-(2,34): error CS1520: Class, struct, or interface method must have a return type
-No. of errors|warnings: 2|0.
+(15,47): error CS1010: Newline in constant
+No. of errors|warnings: 1|0.
 
 ==============
 LastError
 **************
-==============
-// =====================================
-// setup control object for a solver run
-// =====================================
-**************
-==============
-**************
-==============
-// - - - - - - - - - - - - -
-// setup of parameter study
-// - - - - - - - - - - - - -
-**************
-==============
-List<IBMControl> controls = new List<IBMControl>();
-**************
-==============
-controls.Clear();
-foreach(IBMControl.Solver prec in precs) {
-foreach(int k in ks) {
-
-var ctrl = PrecTest3DSphere(prec, k, cells_x, cells_yz, re, ASparts, ASDepth, MGLevels, maxKrDim, saveToDB);
-    controls.Add(ctrl);
-}
-}
-
-
-**************
-setting up: J40_k2_exp_softpcg_schwarz_directcoarse
-setting up: J320_k2_exp_softpcg_schwarz_directcoarse
-setting up: J2560_k2_exp_softpcg_schwarz_directcoarse
-setting up: J20480_k2_exp_softpcg_schwarz_directcoarse
-setting up: J40_k3_exp_softpcg_schwarz_directcoarse
-setting up: J320_k3_exp_softpcg_schwarz_directcoarse
-setting up: J2560_k3_exp_softpcg_schwarz_directcoarse
-setting up: J20480_k3_exp_softpcg_schwarz_directcoarse
-
 ==============
 // ==========
 // Launch Job
 // ==========
 **************
 ==============
-//var job = new Job("zwa", solver);
-**************
-==============
-//myCtrl.GetType();
-**************
-==============
-//job.SetControlObject(myCtrl);
-**************
-==============
-//tempDB.Sessions.Where(s => s.Name.Contains("softpcg_schwarz_directcoarse")).ForEach(si => si.Delete(true));
-**************
-==============
-//tempDB.Sessions.Where(s => s.Name.Contains("exp_direct")).ForEach(si => si.Delete());
-**************
-==============
-**************
-==============
-foreach(int proc in procs){
 foreach(var ctrl in controls) {
-    Console.WriteLine(" Submitting: " + ctrl.SessionName + "_MPIs" + proc); 
-    ctrl.ProjectName = InteractiveShell.WorkflowMgm.CurrentProject;
-
-            Type solverClass             = ctrl.GetSolverType();
-            Job job                      = new Job(string.Format(ctrl.SessionName + "_MPIs" + proc), solverClass);
-            job.NumberOfMPIProcs         = proc;
-            job.UseComputeNodesExclusive = true;
-            job.ExecutionTime            = "05:00:00";
-            job.SetControlObject(ctrl);
-            job.Activate(myBatch);
-    //ctrl.RunBatch(myBatch,NumberOfMPIProcs:proc,UseComputeNodesExclusive:true); 
-}
-}
+    var tmpName = ctrl.SessionName;
+foreach(int proc in procs){
+    ctrl.SessionName = tmpName+"_Proc"+proc;
+    Console.WriteLine(" Submitting: " + ctrl.SessionName);
+    ctrl.RunBatch(myBatch,NumberOfMPIProcs:proc,UseComputeNodesExclusive:true,executionTime:"24:00:00");  
+}}
 **************
 ==============
 **************
 ==============
 WorkflowMgm.AllJobs.Select(kv => kv.Key + ": \t" + kv.Value.Status);
 **************
-List of 8 instances of String {
-  0: J40_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
-  1: J320_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
-  2: J2560_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
-  3: J20480_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
-  4: J40_k3_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
-  5: J320_k3_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
-  6: J2560_k3_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
-  7: J20480_k3_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+Loading session d7ab7826-1ae0-4c06-a735-8a40369c0b1a failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\d7ab7826-1ae0-4c06-a735-8a40369c0b1a\Session.info" konnte nicht gefunden werden.'
+Loading session 7dfbfff1-438f-42ca-aed4-999f9e864ec4 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\7dfbfff1-438f-42ca-aed4-999f9e864ec4\Session.info" konnte nicht gefunden werden.'
+Loading session 9e5bb878-0703-40f5-95df-a19001f2c1b5 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\9e5bb878-0703-40f5-95df-a19001f2c1b5\Session.info" konnte nicht gefunden werden.'
+Loading session 367124ed-0d70-4bf7-8027-52f8a3bd072c failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\367124ed-0d70-4bf7-8027-52f8a3bd072c\Session.info" konnte nicht gefunden werden.'
+Loading session b796d3b4-b645-439d-ad8b-b42bcaec306d failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\b796d3b4-b645-439d-ad8b-b42bcaec306d\Session.info" konnte nicht gefunden werden.'
+Loading session 672d147a-8d3b-4b9a-a597-28f72a4b9bc2 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\672d147a-8d3b-4b9a-a597-28f72a4b9bc2\Session.info" konnte nicht gefunden werden.'
+Loading session c27d5ea3-9613-4bed-8943-4cc2a3cc8ba5 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\c27d5ea3-9613-4bed-8943-4cc2a3cc8ba5\Session.info" konnte nicht gefunden werden.'
+Loading session a080db01-8fe8-4b42-927b-c997931d4b3a failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\a080db01-8fe8-4b42-927b-c997931d4b3a\Session.info" konnte nicht gefunden werden.'
+Loading session 321103b1-b62f-42b8-88f2-60a3b66af1b1 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\321103b1-b62f-42b8-88f2-60a3b66af1b1\Session.info" konnte nicht gefunden werden.'
+Loading session 25e225e7-706e-4909-9f1f-4e3b339c7727 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\25e225e7-706e-4909-9f1f-4e3b339c7727\Session.info" konnte nicht gefunden werden.'
+Loading session b4ea3e83-46f0-461f-a02b-18eade823966 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\b4ea3e83-46f0-461f-a02b-18eade823966\Session.info" konnte nicht gefunden werden.'
+Loading session 29bb56dc-ff23-42a5-ae9a-ae9fb4d59257 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\29bb56dc-ff23-42a5-ae9a-ae9fb4d59257\Session.info" konnte nicht gefunden werden.'
+Loading session ccb25d9a-d7c4-4d1d-98b2-93be839f4fe0 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\ccb25d9a-d7c4-4d1d-98b2-93be839f4fe0\Session.info" konnte nicht gefunden werden.'
+List of 1 instances of String {
+  0: Sphere_Flow: 	FinishedSuccessful
 }
 ==============
 //WorkflowMgm.AllJobs.ElementAt(9).Value.Stdout;
@@ -483,7 +321,11 @@ List of 8 instances of String {
 ==============
 WorkflowMgm.SessionTable.Rows.Count;
 **************
-89
+Loading session 28a03143-5f6b-4aef-a8a3-315ef6864317 failed with message 'Die Datei "P:\BoSSS_DBs\Sphere3D\sessions\28a03143-5f6b-4aef-a8a3-315ef6864317\Session.info" konnte nicht gefunden werden.'
+Loading session 74ec7fde-4918-46b3-a338-1be68019539b failed with message 'Die Datei "P:\BoSSS_DBs\Sphere3D\sessions\74ec7fde-4918-46b3-a338-1be68019539b\Session.info" konnte nicht gefunden werden.'
+Loading session acc112ec-3547-4f6d-ae72-4f4ccc8e9744 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\acc112ec-3547-4f6d-ae72-4f4ccc8e9744\Session.info" konnte nicht gefunden werden.'
+Loading session 883fdea1-e03e-401e-b8b7-dc67324257e0 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\883fdea1-e03e-401e-b8b7-dc67324257e0\Session.info" konnte nicht gefunden werden.'
+22
 ==============
 // =====================================
 // Session table
@@ -496,9 +338,9 @@ WorkflowMgm.SessionTable.Rows.Count;
 **************
 ==============
 static class AddCols {
-    private double getMaxTime(ISessionInfo SI, string method, bool exclusive) {
+     static public double getMaxTime(ISessionInfo SI, string method, bool exclusive) {
          double maxTime = 0.0;
-var mcr = SI.GetProfiling();
+         var mcr        = SI.GetProfiling();
                 // Iterate over MPIs
                 for (int j = 0; j < mcr.Count(); j++) {
                     MethodCallRecord value;
@@ -508,7 +350,7 @@ var mcr = SI.GetProfiling();
                         double tempFractions;
                         int occurence        = 1;
 
-                        value = mcr[j].FindChild(mainMethod);
+                        value = mcr[j].FindChild(method);
                         if (value == null) {
                             value = mcr[j];
                         }
@@ -534,20 +376,40 @@ var mcr = SI.GetProfiling();
                     return maxTime;
     }
     
-    static public object RunSolverOneStep_excl(ISessionInfo SI) {
-        return SI.getMaxTime("BoSSS.Application.IBM_Solver.IBM_SolverMain.RunSolverOneStep",true);
+    static public object SlvIterTime(ISessionInfo SI) {
+        return getMaxTime(SI,"Slv Iter",false);
+    }
+    static public object SlvInitTime(ISessionInfo SI) {
+        return getMaxTime(SI,"Slv Init",false);
+    }
+    static public object SchwarzSolve(ISessionInfo SI) {
+        return getMaxTime(SI,"BoSSS.Solution.Multigrid.Schwarz.Solve",false);
+    }
+    static public object NewtonDirder(ISessionInfo SI) {
+        return getMaxTime(SI,"BoSSS.Solution.Multigrid.Newton.dirder",false);
     }
     static public object MPIs(ISessionInfo SI) {
         return SI.ComputeNodeNames.Count();
     }
 }
 **************
+(11,32): warning CS0219: The variable `tempFractions' is assigned but its value is never used
+(22,37): warning CS0219: The variable `maxIndex' is assigned but its value is never used
+(29,37): warning CS0219: The variable `maxIndex' is assigned but its value is never used
+No. of errors|warnings: 0|3.
+
 ==============
 WorkflowMgm.AdditionalSessionTableColums.Clear();
 WorkflowMgm.AdditionalSessionTableColums.Add(
-    "RunSolverOneStep_excl", AddCols.RunSolverOneStep_excl);
+    "SlvIter_excl", AddCols.SlvIterTime);
 WorkflowMgm.AdditionalSessionTableColums.Add(
-    "MPIs", AddCols.MPIs);
+    "SlvInit_excl", AddCols.SlvInitTime);
+    WorkflowMgm.AdditionalSessionTableColums.Add(
+    "PrecSolve", AddCols.SchwarzSolve);
+    WorkflowMgm.AdditionalSessionTableColums.Add(
+    "NewtonDirder", AddCols.NewtonDirder);
+WorkflowMgm.AdditionalSessionTableColums.Add(
+    "Processors", AddCols.MPIs);
 **************
 ==============
 // --------------------------
@@ -568,6 +430,36 @@ True
 SessTab = SessTab.ExtractColumns(AllCols.ToArray());
 **************
 ==============
+//Checking if table contains all information
+var SubTab_1 = SessTab.ExtractColumns("Processors","SlvIter_excl","SlvInit_excl","PrecSolve","NewtonDirder","NonlinearSolve","LinearSolve","NoOfMultigridLevels","DGdegree:VelocityX","RegularTerminated");
+**************
+==============
+SubTab_1.Print();
+**************
+    Processors SlvIter_excl SlvInit_excl PrecSolve NewtonDirder NonlinearSolve LinearSolve NoOfMultigridLevels DGdegree:VelocityX RegularTerminated 
+0:  8          NULL         NULL         NULL      NULL         0              4           4                   1                  True              
+1:  8          NULL         NULL         NULL      NULL         0              4           3                   1                  True              
+2:  32         NULL         NULL         NULL      NULL         0              4           4                   1                  True              
+3:  64         NULL         NULL         NULL      NULL         0              4           4                   1                  True              
+4:  16         NULL         NULL         NULL      NULL         0              4           4                   1                  True              
+5:  64         NULL         NULL         NULL      NULL         0              4           3                   1                  True              
+6:  32         NULL         NULL         NULL      NULL         0              4           3                   1                  True              
+7:  16         NULL         NULL         NULL      NULL         0              4           3                   1                  True              
+8:  32         NULL         NULL         NULL      NULL         0              6           3                   1                  True              
+9:  64         NULL         NULL         NULL      NULL         0              6           3                   1                  True              
+10: 16         NULL         NULL         NULL      NULL         0              6           3                   1                  True              
+11: 8          NULL         NULL         NULL      NULL         0              3           2                   1                  True              
+12: 32         NULL         NULL         NULL      NULL         0              3           2                   1                  True              
+13: 64         NULL         NULL         NULL      NULL         0              3           2                   1                  True              
+14: 16         NULL         NULL         NULL      NULL         0              3           2                   1                  True              
+15: 8          NULL         NULL         NULL      NULL         0              4           2                   1                  True              
+16: 64         NULL         NULL         NULL      NULL         0              6           2                   1                  True              
+17: 64         NULL         NULL         NULL      NULL         0              4           2                   1                  True              
+18: 32         NULL         NULL         NULL      NULL         0              6           2                   1                  True              
+19: 32         NULL         NULL         NULL      NULL         0              4           2                   1                  True              
+20: 16         NULL         NULL         NULL      NULL         0              6           2                   1                  True              
+21: 16         NULL         NULL         NULL      NULL         0              4           2                   1                  True              
+==============
 using System.IO;
 **************
 ==============
@@ -580,6 +472,36 @@ string docpath    = Path.Combine(CurrentDocDir, SessTab.TableName + ".json");
 // save session table as file: this can be stored in our git 
 // repository
 SessTab.SaveToFile(docpath);
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

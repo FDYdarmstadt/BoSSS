@@ -228,8 +228,6 @@ namespace BoSSS.Application.IBM_Solver {
 
         protected XdgBDFTimestepping m_BDF_Timestepper;
 
-        SinglePhaseField[] MGColoring;
-
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
 
             //// Write out Multigrid Levels
@@ -299,7 +297,7 @@ namespace BoSSS.Application.IBM_Solver {
                         //IBM_Op.OnIntegratingBulk += ConvBulk.SetParameter;
                         comps.Add(ConvBulk); // bulk component
 
-                        var ConvIB = new BoSSS.Solution.NSECommon.Operator.Convection.ConvectionAtIB(d, D, LsTrk, this.Control.AdvancedDiscretizationOptions.LFFA, BcMap,
+                        var ConvIB = new BoSSS.Solution.NSECommon.Operator.Convection.ConvectionAtIB(d, D,LsTrk  , this.Control.AdvancedDiscretizationOptions.LFFA, BcMap,
                             new Func<double, double>[] {
                                 delegate (double time) { return 0; },
                                 delegate (double time) { return 0; }
@@ -495,7 +493,7 @@ namespace BoSSS.Application.IBM_Solver {
             m_LenScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
 
             // create matrix and affine vector:
-            IBM_Op.ComputeMatrixEx(LsTrk,
+             IBM_Op.ComputeMatrixEx(LsTrk,
                 Mapping, Params, Mapping,
                 OpMatrix, OpAffine, false, phystime, true,
                 AgglomeratedCellLengthScales,
@@ -558,6 +556,8 @@ namespace BoSSS.Application.IBM_Solver {
         protected double torque = new double();
         protected double oldtorque = new double();
 
+        SinglePhaseField blocking = null;
+
         /// <summary>
         /// Depending on settings <see cref="IBM_Control.Option_Timestepper"/>, computs either one timestep or a steady-state solution.
         /// </summary>
@@ -568,7 +568,7 @@ namespace BoSSS.Application.IBM_Solver {
 
                 base.ResLogger.TimeStep = TimestepInt;
 
-                dt = base.GetFixedTimestep();
+                dt = base.GetFixedTimestep();                       
 
                 Console.WriteLine("Instationary solve, timestep #{0}, dt = {1} ...", TimestepNo, dt);
 
@@ -786,6 +786,16 @@ namespace BoSSS.Application.IBM_Solver {
         /// Setting initial values.
         /// </summary>
         protected override void SetInitial() {
+
+            if (false) {
+                DGField mpiRank = new SinglePhaseField(new Basis(GridData, 0), "rank");
+                m_IOFields.Add(mpiRank);
+
+                for (int j = 0; j < GridData.Cells.NoOfLocalUpdatedCells; j++) {
+                    mpiRank.SetMeanValue(j, DatabaseDriver.MyRank);
+                }
+            }
+
             // Set particle radius for exact circle integration
             if (this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.ExactCircle)
                 BoSSS.Foundation.XDG.Quadrature.HMF.ExactCircleLevelSetIntegration.RADIUS = new double[] { this.Control.particleRadius };
@@ -858,7 +868,7 @@ namespace BoSSS.Application.IBM_Solver {
                 //int CallCount = 0;
 
 
-                throw new ApplicationException("Does not work at the moment. Contact Martin Smuda for Help");
+           //     throw new ApplicationException("Does not work at the moment. Contact Martin Smuda for Help");
 
                 m_BDF_Timestepper.MultiInit(Time, TimestepNo.MajorNumber, this.Control.GetFixedTimestep(),
                     delegate (int TimestepIndex, double time, DGField[] St) {
@@ -1042,69 +1052,68 @@ namespace BoSSS.Application.IBM_Solver {
         }
 
         public override void PostRestart(double time, TimestepNumber timestep) {
-            // // Find path to PhysicalData.txt
-            // var fsDriver = this.DatabaseDriver.FsDriver;
-            // string pathToOldSessionDir = System.IO.Path.Combine(
-            //     fsDriver.BasePath, "sessions", this.CurrentSessionInfo.RestartedFrom.ToString());
-            // string pathToPhysicalData = System.IO.Path.Combine(pathToOldSessionDir, "PhysicalData.txt");
-            // string[] records = File.ReadAllLines(pathToPhysicalData);
+            // Find path to PhysicalData.txt
+            var fsDriver = this.DatabaseDriver.FsDriver;
+            string pathToOldSessionDir = System.IO.Path.Combine(
+                fsDriver.BasePath, "sessions", this.CurrentSessionInfo.RestartedFrom.ToString());
+            string pathToPhysicalData = System.IO.Path.Combine(pathToOldSessionDir, "PhysicalData.txt");
+            string[] records = File.ReadAllLines(pathToPhysicalData);
 
-            // string line1 = File.ReadLines(pathToPhysicalData).Skip(1).Take(1).First();
-            // string line2 = File.ReadLines(pathToPhysicalData).Skip(2).Take(1).First();
-            // string[] fields_line1 = line1.Split('\t');
-            // string[] fields_line2 = line2.Split('\t');
+            string line1 = File.ReadLines(pathToPhysicalData).Skip(1).Take(1).First();
+            string line2 = File.ReadLines(pathToPhysicalData).Skip(2).Take(1).First();
+            string[] fields_line1 = line1.Split('\t');
+            string[] fields_line2 = line2.Split('\t');
+
+            double dt = Convert.ToDouble(fields_line2[1]) - Convert.ToDouble(fields_line1[1]);
+
+            int idx_restartLine = Convert.ToInt32(time / dt + 1.0);
+            string restartLine = File.ReadLines(pathToPhysicalData).Skip(idx_restartLine - 1).Take(1).First();
+            double[] values = Array.ConvertAll<string, double>(restartLine.Split('\t'), double.Parse);
+
+            /* string restartLine = "";
+             // Calculcation of dt 
+             var physicalData = File.ReadLines(pathToPhysicalData);
+             int count = 0;
+             foreach (string line in physicalData)
+             {
+                 string[] fields = line.Split('\t');
+                 restartLine = line;
+                 if (count != 0) { 
+                 if (Convert.ToDouble(fields[1]) > time)
+                 {
+                     break;
+                 }
+             }
+             count++;
+             }
+
 
             // double dt = Convert.ToDouble(fields_line2[1]) - Convert.ToDouble(fields_line1[1]);
 
+             // Using dt to find line of restart time
             // int idx_restartLine = Convert.ToInt32(time / dt + 1.0);
-            // string restartLine = File.ReadLines(pathToPhysicalData).Skip(idx_restartLine - 1).Take(1).First();
-            // double[] values = Array.ConvertAll<string, double>(restartLine.Split('\t'), double.Parse);
+             //string restartLine = File.ReadLines(pathToPhysicalData).Skip(idx_restartLine - 1).Take(1).First();
+             double[] values = Array.ConvertAll<string, double>(restartLine.Split('\t'), double.Parse);*/
 
-            ///* string restartLine = "";
-            // // Calculcation of dt 
-            // var physicalData = File.ReadLines(pathToPhysicalData);
-            // int count = 0;
-            // foreach (string line in physicalData)
-            // {
-            //     string[] fields = line.Split('\t');
-            //     restartLine = line;
-            //     if (count != 0) { 
-            //     if (Convert.ToDouble(fields[1]) > time)
-            //     {
-            //         break;
-            //     }
-            // }
-            // count++;
-            // }
-
-
-            //// double dt = Convert.ToDouble(fields_line2[1]) - Convert.ToDouble(fields_line1[1]);
-
-            // // Using dt to find line of restart time
-            //// int idx_restartLine = Convert.ToInt32(time / dt + 1.0);
-            // //string restartLine = File.ReadLines(pathToPhysicalData).Skip(idx_restartLine - 1).Take(1).First();
-            // double[] values = Array.ConvertAll<string, double>(restartLine.Split('\t'), double.Parse);*/
-
-            // // Adding PhysicalData.txt
-            // if ((base.MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty))
-            // {
-            //     Log_DragAndLift = base.DatabaseDriver.FsDriver.GetNewLog("PhysicalData", CurrentSessionInfo.ID);
-            //     string firstline;
-            //     if (this.GridData.SpatialDimension == 3)
-            //     {
-            //         firstline = String.Format("{0}\t{1}\t{2}\t{3}\t{4}", "#Timestep", "#Time", "x-Force", "y-Force", "z-Force");
-            //     }
-            //     else
-            //     {
-            //         firstline = String.Format("{0}\t{1}\t{2}\t{3}", "#Timestep", "#Time", "x-Force", "y-Force");
-            //     }
-            //     Log_DragAndLift.WriteLine(firstline);
-            //     Log_DragAndLift.WriteLine(restartLine);
-            // }
+            // Adding PhysicalData.txt
+            if ((base.MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty)) {
+                Log_DragAndLift = base.DatabaseDriver.FsDriver.GetNewLog("PhysicalData", CurrentSessionInfo.ID);
+                string firstline;
+                if (this.GridData.SpatialDimension == 3) {
+                    firstline = String.Format("{0}\t{1}\t{2}\t{3}\t{4}", "#Timestep", "#Time", "x-Force", "y-Force", "z-Force");
+                } else {
+                    firstline = String.Format("{0}\t{1}\t{2}\t{3}", "#Timestep", "#Time", "x-Force", "y-Force");
+                }
+                Log_DragAndLift.WriteLine(firstline);
+                Log_DragAndLift.WriteLine(restartLine);
+            }
 
         }
 
-        bool debug = false;
+        /// <summary>
+        /// Attention: SENSITIVE TO LEVEL INDICATOR
+        /// </summary>
+        bool debug = true;
 
         /// <summary>
         /// Very primitive refinement indicator, works on a LevelSet criterion.
@@ -1112,7 +1121,7 @@ namespace BoSSS.Application.IBM_Solver {
         int LevelIndicator(int j, int CurrentLevel) {
             var LevSetCells = LsTrk.Regions.GetCutCellMask();
             var LevSetNeighbours = LsTrk.Regions.GetNearFieldMask(1);
-
+            
             int DesiredLevel_j = 0;
 
             if (!debug) {
@@ -1170,6 +1179,11 @@ namespace BoSSS.Application.IBM_Solver {
 
                     newGrid = this.GridData.Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
 
+
+                    Console.WriteLine("Save adaptive Mesh...");
+                    Console.WriteLine("GridGUID:   " + newGrid.GridGuid);
+                    DatabaseDriver.SaveGrid(newGrid);
+                    Console.WriteLine("...done");
                 } else {
 
                     Console.WriteLine("No changes in Grid");
@@ -1177,7 +1191,7 @@ namespace BoSSS.Application.IBM_Solver {
                     old2NewGrid = null;
                 }
 
-                debug = true;
+                debug = false;
 
             } else {
 

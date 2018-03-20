@@ -132,7 +132,6 @@ namespace BoSSS.Application.BoSSSpad {
             // load users .bashrc with all dependencies
             buildSlurmScript(myJob, new string[] { "source " + "/home/" + m_Username + "/.bashrc"});
 
-
             string path = "\\home\\" + m_Username + myJob.DeploymentDirectory.Substring(2);
             // Converting script to unix format
             string convertCmd = " dos2unix " + path + "\\batch.sh";
@@ -140,14 +139,24 @@ namespace BoSSS.Application.BoSSSpad {
             // Submitting script to sbatch system
             string sbatchCmd = " sbatch " + path + "\\batch.sh";
 
-            // Otherwise it didn´t work
-            System.Threading.Thread.Sleep(5000);
-
             // Convert from Windows to Unix and submit job
             Console.WriteLine();
             var result1 = SSHConnection.RunCommand(convertCmd.Replace("\\", "/"));
-            Console.WriteLine(result1.Error);
             var result2 = SSHConnection.RunCommand(sbatchCmd.Replace("\\", "/"));
+
+            // Otherwise it didn´t work because uploading speed at some clusters is too slow
+            if (result1.Error == "" || result2.Result == "") {
+                Console.Write("Waiting for file transfer to finish");
+                while (result1.Error == "" || result2.Result == "") {
+                    Console.Write(".");
+                    System.Threading.Thread.Sleep(10000);
+                    result1 = SSHConnection.RunCommand(convertCmd.Replace("\\", "/"));
+                    result2 = SSHConnection.RunCommand(sbatchCmd.Replace("\\", "/"));
+                }
+                Console.WriteLine();
+            }
+
+            Console.WriteLine(result1.Error);
             Console.WriteLine(result2.Result);
 
             // Hardcoded extract of JobID
@@ -180,7 +189,14 @@ namespace BoSSS.Application.BoSSSpad {
                 str.Write(" ");
                 str.Write(myJob.EnvironmentVars["BOSSS_ARG_" + 0]);
                 str.Write(" ");
-                str.Write(quote + myJob.EnvironmentVars["BOSSS_ARG_" + 1] + quote);
+
+                // How the controlfile is handled (serialized or compiled at runtime)
+                if (myJob.EnvironmentVars["BOSSS_ARG_1"].Equals("control.obj")) {
+                    str.Write(jobpath_unix + "/" + myJob.EnvironmentVars["BOSSS_ARG_1"]);
+                } else {
+                    str.Write(quote + myJob.EnvironmentVars["BOSSS_ARG_" + 1] + quote);
+                }
+
                 startupstring = str.ToString();
             }
 

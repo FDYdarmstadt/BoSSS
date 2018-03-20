@@ -129,7 +129,7 @@ namespace BoSSS.Solution.Control {
         /// <summary>
         /// Utility function for easier user interaction, (should) set all reasonable <see cref="FieldOptions"/>
         /// </summary>
-        public virtual void SetDGdegree(int p) {
+        public virtual void SetDGdegree(int p,int D) {
             throw new NotImplementedException();
         }
 
@@ -499,6 +499,7 @@ namespace BoSSS.Solution.Control {
         /// number of time-steps that the solver should perform;
         /// A negative value indicates that this value is not set within the control file;
         /// </summary>
+        [DataMember]
         public int NoOfTimesteps = -1;
 
         /// <summary>
@@ -534,7 +535,8 @@ namespace BoSSS.Solution.Control {
         /// <summary>
         /// Sets/Gets a fixed time-step size.
         /// </summary>
-        [JsonIgnore]
+        //[JsonIgnore]  
+        [DataMember]
         public double dtFixed {
             get {
                 if(dtMin != dtMax) {
