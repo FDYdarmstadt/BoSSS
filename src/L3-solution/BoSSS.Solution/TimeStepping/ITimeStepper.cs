@@ -24,14 +24,14 @@ namespace BoSSS.Solution {
     public interface ITimeStepper {
 
         /// <summary>
-        /// current simulation time
+        /// Current simulation time
         /// </summary>
         double Time {
             get;
         }
 
         /// <summary>
-        /// set <see cref="Time"/> to <paramref name="NewTime"/>
+        /// Set <see cref="Time"/> to <paramref name="NewTime"/>
         /// </summary>
         void ResetTime(double NewTime, int timestepNumber);
 
@@ -56,5 +56,19 @@ namespace BoSSS.Solution {
         CoordinateVector CurrentState {
             get;
         }
+
+        /// <summary>
+        /// The time information, <see cref="TimeInformation"/>
+        /// </summary>
+        TimeInformation TimeInfo {
+            get;
+        }
+
+        /// <summary>
+        /// Update function for the time information
+        /// Should be called in RunSolverOneStep
+        /// </summary>
+        /// <param name="timeInfo"></param>
+        void UpdateTimeInfo(TimeInformation timeInfo);
     }
 }

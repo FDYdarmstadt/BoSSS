@@ -345,5 +345,14 @@ namespace BoSSS.Solution.TimeStepping {
         public void ResetTime(double NewTime, int timestepNumber) {
             Time = NewTime;
         }
+
+        public TimeInformation TimeInfo {
+            get;
+            protected set;
+        }
+
+        public void UpdateTimeInfo(TimeInformation timeInfo) {
+            this.TimeInfo = timeInfo;
+        }
     }
 }
