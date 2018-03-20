@@ -1034,10 +1034,11 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
 
                 int iEdge = -1;
+                int _inOut = -1;
                 {
                     // finding the edge: this code is provisory
 
-                    int _inOut = -1;
+                    //int _inOut = -1;
                     foreach (int em in cell2Edge_j) {
                         int _iedge = Math.Abs(em) - 1;
                         _inOut = em > 0 ? 0 : 1;
@@ -1049,18 +1050,35 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     }
                     if (iEdge < 0)
                         throw new ApplicationException();
-                    if (!EdgeData.IsEdgeConformal(iEdge, _inOut))
-                        throw new NotSupportedException("hanging nodes not supported");
+                    //if (!EdgeData.IsEdgeConformal(iEdge, _inOut))
+                    //    throw new NotSupportedException("hanging nodes not supported");
                     if (!EdgeData.IsEdgeAffineLinear(iEdge))
                         throw new NotSupportedException("no curved element support yet.");
                 }
 
-                for (int l = 0; l < roots.Length; l++) {
-                    PtMeas_weights.Add(1.0/scalings[iEdge]);
+                //for (int l = 0; l < roots.Length; l++) {
+                //    PtMeas_weights.Add(1.0 / scalings[iEdge]);
+                //}
+
+                if (!EdgeData.IsEdgeConformal(iEdge, _inOut)) {
+                    // compute new scaling for non-conforming edges
+
+                    double scaling = EdgeData.GetSqrtGramianForNonConformEdge(iEdge, _inOut);
+
+                    for (int l = 0; l < roots.Length; l++) {
+                        PtMeas_weights.Add(1.0 / scaling);
+                    }
+
+                } else {
+                    // use standard scaling of the edges
+                    for (int l = 0; l < roots.Length; l++) {
+                        PtMeas_weights.Add(1.0 / scalings[iEdge]);
+                    }
                 }
             }
             return PtMeas_weights;
         }
+
 
         static private double[] FilterRoots(double[] roots, double tol) {
             if (roots.Length <= 1) {
