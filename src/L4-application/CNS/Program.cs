@@ -237,13 +237,12 @@ namespace CNS {
                     WorkingSet.UpdateShockCapturingVariables(this, SpeciesMap.SubGrid.VolumeMask);
                 }
 
+                // Create TimeInformation object in order to make information available for
+                // the time stepper
+                TimeStepper.UpdateTimeInfo(new TimeInformation(TimestepNo, phystime, dt));
+
                 Exception e = null;
                 try {
-                    // Hack for updating the time step number for local time stepping runs
-                    // Better: Use a global TimeStepInfo object defined in the interface class ITimeStepper
-                    if (TimeStepper is AdamsBashforthLTS ABLTS) {
-                        ABLTS.UpdateTimeStepNumber(TimestepNo);
-                    }
                     dt = TimeStepper.Perform(dt);
                 } catch (Exception ee) {
                     e = ee;
