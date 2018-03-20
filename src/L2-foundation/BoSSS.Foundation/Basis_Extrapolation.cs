@@ -46,7 +46,7 @@ namespace BoSSS.Foundation {
         /// \f[ 
         /// \phi_{j n} (\vec{x}) = p_n (\vec{x}) \vec{1}_{K_j} (\vec{x})
         /// \textrm{ and }
-        /// \phi_{j m} (\vec{x}) = q_m (\vec{x}) \vec{1}_{K_i} (\vec{x})
+        /// \phi_{i m} (\vec{x}) = q_m (\vec{x}) \vec{1}_{K_i} (\vec{x})
         /// \f]
         /// where \f$ \vec{1}_X \f$ denotes the characteristic function for set \f$ X \f$
         /// and \f$ p_n\f$  and \f$ p_m\f$  are polynomials.
