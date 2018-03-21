@@ -140,7 +140,9 @@ namespace BoSSS.Solution.Timestepping {
             this.gridData = Fieldsmap.Fields.First().GridDat;
             this.fluxCorrection = fluxCorrection;
 
-            Console.WriteLine("This AB LTS Ctor");
+#if DEBUG
+            Console.WriteLine("This is AB LTS Ctor");
+#endif
 
             clusterer = new Clusterer(this.gridData, maxNumOfSubSteps);
             CurrentClustering = clusterer.CreateClustering(numOfClusters, this.TimeStepConstraints, this.SubGrid);    // Might remove clusters when their centres are too close
@@ -836,9 +838,9 @@ namespace BoSSS.Solution.Timestepping {
                         }
 
                         if (reclustered) {
-#if DEBUG
+
                             Console.WriteLine("### RECLUSTERING ###");
-#endif
+
                             CurrentClustering = newClustering;
                             ShortenHistories(ABevolver);
                             ABevolve[] oldABevolver = ABevolver;
