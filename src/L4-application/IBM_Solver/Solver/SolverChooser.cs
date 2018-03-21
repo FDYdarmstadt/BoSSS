@@ -150,11 +150,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// <summary>
         /// Automatic choice of linear solver depending on problem size, immersed boundary, polynomial degree, etc.
         /// </summary>
-        static void AutomaticChoice(IBM_Control Control, XdgBDFTimestepping Timestepper) {
-
-
-
-            // throw new NotImplementedException("Option currently not available");  
+        static void AutomaticChoice(IBM_Control Control, XdgBDFTimestepping Timestepper) {  
 
             int pV = Control.FieldOptions["VelocityX"].Degree;
             int pP = Control.FieldOptions["Pressure"].Degree;
@@ -193,7 +189,7 @@ namespace BoSSS.Application.IBM_Solver {
 
                             Timestepper.Config_linearSolver = new Schwarz() {
                                 m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                                    NoOfPartsPerProcess = (int)Math.Ceiling(cellsLoc / 6500.0),
+                                    NoOfPartsPerProcess = (int)Math.Ceiling(dofsLoc / 6500.0),
                                 },
                                 Overlap = 1,
                                 CoarseSolver = DetermineMGSquence(Control.NoOfMultigridLevels - 2)
@@ -233,7 +229,7 @@ namespace BoSSS.Application.IBM_Solver {
                                 m_Tolerance = Timestepper.Config_SolverConvergenceCriterion,
                                 Precond = new Schwarz() {
                                     m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                                        NoOfPartsPerProcess = (int)Math.Ceiling(cellsLoc / 6500.0),
+                                        NoOfPartsPerProcess = (int)Math.Ceiling(dofsLoc / 6500.0),
                                     },
                                     Overlap = 1,
                                     CoarseSolver = DetermineMGSquence(Control.NoOfMultigridLevels - 2)
