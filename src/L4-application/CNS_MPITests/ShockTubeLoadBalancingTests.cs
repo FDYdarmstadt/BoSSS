@@ -39,21 +39,20 @@ namespace CNS_MPITests.Tests.LoadBalancing {
 
     public class ShockTubeLoadBalancingTests : TestProgram<CNSControl> {
 
-
-
-
         private static int REBALANCING_PERIOD = 5;
 
         private static bool twoD = false;
 
         public static void Main(string[] args) {
             SetUp();
+            //System.Threading.Thread.Sleep(10000);
             //TestRebalancingForDG0WithRK1();
             //TestRealancingForDG0WithAB1();
+            //TestRebalancingForDG2WithRK1AndAV();
+            //TestRebalancingForDG2WithAB1AndAV();
             //TestRebalancingForDG0WithLTS1SingleSubGrid();
             //TestRebalancingForDG0WithLTS1TwoSubGrids();
-            TestRebalancingForDG2WithRK1AndAV();
-            //TestRebalancingForDG2WithAB1AndAV();
+            TestRebalancingForDG2WithLTS1TwoSubGridsAndAV();
             TearDown();
         }
 
@@ -104,7 +103,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
         /// the following reason: the reclustering delivers different results
         /// before and after load bal
         /// </summary>
-        //[Test]
+        [Test]
         public static void TestRebalancingForDG0WithLTS1TwoSubGrids() {
             int dgDegree = 0;
             ExplicitSchemes explicitScheme = ExplicitSchemes.LTS;
@@ -123,8 +122,8 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             // recluster after rebalancing (at least, it makes life much easier)
             control.ReclusteringInterval = REBALANCING_PERIOD;
 
-            control.NoOfTimesteps = 5;
-            control.dtFixed = 1.5e-3;
+            //control.NoOfTimesteps = 5;
+            //control.dtFixed = 1.5e-3;
 
             CheckRunsProduceSameResults(control);
         }
@@ -157,9 +156,27 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             CheckRunsProduceSameResults(control);
         }
 
-        //[Test]
-        public static void TestRebalancingForDG2WithLTS1AndAV() {
-            throw new NotImplementedException("to do");
+        [Test]
+        public static void TestRebalancingForDG2WithLTS1TwoSubGridsAndAV() {
+            int dgDegree = 2;
+            ExplicitSchemes explicitScheme = ExplicitSchemes.LTS;
+            int explicitOrder = 1;
+            int noOfSubgrids = 2;
+
+            var control = ShockTubeToro1WithAVTemplate(
+                dgDegree: dgDegree,
+                explicitScheme: explicitScheme,
+                explicitOrder: explicitOrder);
+            control.NumberOfSubGrids = noOfSubgrids;
+
+            // MUST be the same as rebalancing period since LTS scheme MUST
+            // recluster after rebalancing (at least, it makes life much easier)
+            control.ReclusteringInterval = REBALANCING_PERIOD;
+
+            //control.NoOfTimesteps = 5;
+            //control.dtFixed = 1.5e-3;
+
+            CheckRunsProduceSameResults(control);
         }
 
         private static CNSControl ShockTubeToro1Template(int dgDegree, ExplicitSchemes explicitScheme, int explicitOrder, int noOfCells = 50, double gridStretching = 0.0) {
@@ -310,12 +327,10 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             //loadBalControl.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(ArtificialViscosityCellCostEstimator.GetMultiBalanceConstraintsBasedEstimators());
             loadBalControl.DynamicLoadBalancing_ImbalanceThreshold = 0.01;
 
-
             //// TEST ONLY SUCCEEDS IF THESE LINES ARE IN
             //loadBalControl.DynamicLoadBalancing_CellClassifier = new IndifferentCellClassifier();
             //loadBalControl.DynamicLoadBalancing_CellCostEstimatorFactories.Clear();
             //loadBalControl.DynamicLoadBalancing_CellCostEstimatorFactories.Add(CellCostEstimatorLibrary.AllCellsAreEqual);
-
 
             Debug.Assert(loadBalControl.DynamicLoadBalancing_Period > 0);
             Debug.Assert(loadBalControl.DynamicLoadBalancing_CellClassifier != null);
@@ -326,27 +341,10 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             refSolver.Init(refControl);
             refSolver.RunSolverMode();
 
-            Console.WriteLine("Run WITH load balancing");
+            Console.WriteLine("\nRun WITH load balancing");
             var loadBalSolver = new ShockTubeLoadBalancingTests();
             loadBalSolver.Init(loadBalControl);
             loadBalSolver.RunSolverMode();
-
-            //bool result = true;
-            //string[] varname = { "Desity", "x-Momentum", "Energy" };
-            //for (int i = 0; i < 3; i++) {
-            //    List<DGField> listOfDGFields_RepON = (List<DGField>)loadBalSolver.IOFields;
-            //    DGField variableRepON = listOfDGFields_RepON[i];
-            //    double L2NormRepON = variableRepON.L2Norm();
-            //    List<DGField> listOfDGFields_RepOFF = (List<DGField>)refSolver.IOFields;
-            //    DGField vriableRepOFF = listOfDGFields_RepOFF[i];
-            //    double L2NormRepOFF = vriableRepOFF.L2Norm();
-
-            //    Console.WriteLine("{0}-L2Norm Rep ON: {1}", varname[i], L2NormRepON);
-            //    Console.WriteLine("{0}-L2Norm Rep OFF: {1}", varname[i], L2NormRepOFF);
-            //    bool normequal = (L2NormRepON - L2NormRepOFF <= 1e-14);
-            //    result &= normequal;
-            //    Console.WriteLine("{0}-L2Norm equal: {1}", varname[i], normequal);
-            //}
 
             // To be able to compare errors without using the database, we need to 
             // agree on a single grid partitioning in the end -> use ref
@@ -364,9 +362,10 @@ namespace CNS_MPITests.Tests.LoadBalancing {
                 refPartitioning,
                 refSolver.GridData.CurrentGlobalIdPermutation);
 
-            if (!twoD) {
-                CompareErrors(refSolver.WorkingSet, loadBalSolver.WorkingSet, differenceThreshold);
-            }
+            //if (!twoD) {
+            //    CompareErrors(refSolver.WorkingSet, loadBalSolver.WorkingSet, differenceThreshold);
+            //}
+            CompareNorms(refSolver, loadBalSolver, differenceThreshold);
         }
 
         /// <summary>
@@ -414,7 +413,38 @@ namespace CNS_MPITests.Tests.LoadBalancing {
         }
 
         /// <summary>
+        /// Can be used independent on the grid and the grid partitioning
+        /// in constrast to <see cref="CompareErrors(CNSFieldSet, CNSFieldSet, double)"/>
         /// </summary>
+        /// <param name="loadBalSolver"></param>
+        /// <param name="refSolver"></param>
+        /// <param name="differenceThreshold"></param>
+        private static void CompareNorms(IProgram<CNSControl> loadBalSolver, IProgram<CNSControl> refSolver, double differenceThreshold) {
+            List<Action> assertions = new List<Action>();
+            string[] varName = { "Density", "x-Momentum", "Energy" };
+
+            for (int i = 0; i < 3; i++) {
+                List<DGField> listOfDGFields_RepON = (List<DGField>)loadBalSolver.IOFields;
+                DGField variableRepON = listOfDGFields_RepON[i];
+                double L2NormRepON = variableRepON.L2Norm();
+
+                List<DGField> listOfDGFields_RepOFF = (List<DGField>)refSolver.IOFields;
+                DGField variableRepOFF = listOfDGFields_RepOFF[i];
+                double L2NormRepOFF = variableRepOFF.L2Norm();
+
+                double difference = Math.Abs(L2NormRepON - L2NormRepOFF);
+
+                //Console.WriteLine("{0}-L2Norm Rep ON: {1}", varName[i], L2NormRepON);
+                //Console.WriteLine("{0}-L2Norm Rep OFF: {1}", varName[i], L2NormRepOFF);
+
+                string message = String.Format("Difference in {0}-L2Norms is {1} (Threshold is {2})", varName[i], difference, differenceThreshold);
+                Console.WriteLine(message);
+                assertions.Add(() => Assert.IsTrue(difference < differenceThreshold, message));
+            }
+
+            assertions.ForEach(a => a());
+        }
+
         [TestFixtureTearDown]
         public static void TearDown() {
             csMPI.Raw.mpiFinalize();
