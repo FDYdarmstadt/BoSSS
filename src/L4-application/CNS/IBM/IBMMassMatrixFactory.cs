@@ -30,7 +30,7 @@ namespace CNS.IBM {
     /// Wrapper around <see cref="MassMatrixFactory"/> that ensures that the
     /// mass matrix is also invertible in void cells
     /// </summary>
-    public class IBMMassMatrixFactory : IObserver<LevelSetTracker.LevelSetRegionsInfo> {
+    public class IBMMassMatrixFactory : IObserver<LevelSetTracker.LevelSetRegions> {
 
         /// <summary>
         /// 
@@ -42,14 +42,18 @@ namespace CNS.IBM {
         /// </summary>
         public readonly ImmersedSpeciesMap SpeciesMap;
 
+        string m_FluidSpeciesName;
+
+        int m_quadOrder;
+
         /// <summary>
-        /// 
+        /// ctor.
         /// </summary>
-        /// <param name="speciesMap"></param>
-        /// <param name="mapping"></param>
-        public IBMMassMatrixFactory(ImmersedSpeciesMap speciesMap, CoordinateMapping mapping) {
+        public IBMMassMatrixFactory(ImmersedSpeciesMap speciesMap, CoordinateMapping mapping, string fluidSpeciesName, int quadOrder) {
             this.Mapping = mapping;
             this.SpeciesMap = speciesMap;
+            this.m_FluidSpeciesName = fluidSpeciesName;
+            this.m_quadOrder = quadOrder;
             speciesMap.Tracker.Subscribe(this);
         }
 
@@ -62,9 +66,10 @@ namespace CNS.IBM {
             get {
                 if (baseFactory == null) {
                     Basis maxBasis = Mapping.BasisS.ElementAtMax(b => b.Degree);
-                    baseFactory = new MassMatrixFactory(
-                        maxBasis,
-                        SpeciesMap.QuadSchemeHelper.CellAgglomeration);
+                    var metrics = this.SpeciesMap.Tracker.GetXDGSpaceMetrics(
+                        new SpeciesId[] { this.SpeciesMap.Tracker.GetSpeciesId(m_FluidSpeciesName) },
+                        m_quadOrder, 1);
+                    baseFactory = metrics.MassMatrixFactory;
                 }
                 return baseFactory;
             }
@@ -82,7 +87,8 @@ namespace CNS.IBM {
             get {
                 if (massMatrix == null) {
                     massMatrix = BaseFactory.GetMassMatrix(Mapping, false);
-                    
+                    SpeciesMap.Agglomerator.ManipulateMatrixAndRHS(massMatrix, default(double[]), Mapping, Mapping);
+
                     // Make void part 0 instead of -1
                     CellMask fluidCells = SpeciesMap.SubGrid.VolumeMask;
                     foreach (Chunk chunk in fluidCells.Complement()) {
@@ -114,7 +120,7 @@ namespace CNS.IBM {
         public BlockMsrMatrix InverseMassMatrix {
             get {
                 if (inverseMassMatrix == null) {
-                    inverseMassMatrix = MassMatrix.InvertBlocks(ignoreEmptyBlocks: true, Subblocks:true, SymmetricalInversion:true, OnlyDiagonal:true);
+                    inverseMassMatrix = MassMatrix.InvertBlocks(ignoreEmptyBlocks: true, Subblocks: true, SymmetricalInversion: true, OnlyDiagonal: true);
                 }
 
                 return inverseMassMatrix;
@@ -122,7 +128,7 @@ namespace CNS.IBM {
         }
 
         BlockMsrMatrix nonAgglomeratedMassMatrix;
-        
+
         public BlockMsrMatrix NonAgglomeratedMassMatrix {
             get {
                 if (nonAgglomeratedMassMatrix == null) {
@@ -131,8 +137,7 @@ namespace CNS.IBM {
                         Mapping,
                         new Dictionary<SpeciesId, IEnumerable<double>>() {
                             { speciesId, Enumerable.Repeat(1.0, Mapping.NoOfVariables) } },
-                        inverse: false,
-                        VariableAgglomerationSwitch: new bool[Mapping.Fields.Count]);
+                        inverse: false);
 
                     // Make void part 0 instead of -1
                     CellMask fluidCells = SpeciesMap.SubGrid.VolumeMask;
@@ -158,8 +163,8 @@ namespace CNS.IBM {
         /// Discards all saved mass matrices
         /// </summary>
         /// <param name="value"></param>
-        public void OnNext(LevelSetTracker.LevelSetRegionsInfo value) {
-            this.baseFactory = null;
+        public void OnNext(LevelSetTracker.LevelSetRegions value) {
+            //this.baseFactory = null;
             this.nonAgglomeratedMassMatrix = null;
             this.massMatrix = null;
             this.inverseMassMatrix = null;

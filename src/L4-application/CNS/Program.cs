@@ -20,6 +20,7 @@ using BoSSS.Foundation.IO;
 using BoSSS.Solution;
 using BoSSS.Solution.ASCIIExport;
 using BoSSS.Solution.Tecplot;
+using BoSSS.Solution.Timestepping;
 using CNS.Boundary;
 using CNS.EquationSystem;
 using CNS.IBM;
@@ -32,6 +33,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 
 namespace CNS {
 
@@ -46,10 +48,10 @@ namespace CNS {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
+
             Application<CNSControl>._Main(
                 args,
                 false,
-                "BoSSS.Foundation,BoSSS.Solution.Application,CNS",
                 () => new Program());
         }
     }
@@ -113,7 +115,15 @@ namespace CNS {
         /// <summary>
         /// Simulation time after restart (needed for time stepping)
         /// </summary>
-        protected double startTime = 0.0;
+        protected double StartTime = 0.0;
+
+        /// <summary>
+        /// Simulation timestep restart (needed for time stepping)
+        /// </summary>
+        public int TimestepNumber {
+            get;
+            protected set;
+        }
 
         /// <summary>
         /// Standard constructor, <see cref="Application"/>
@@ -158,9 +168,9 @@ namespace CNS {
         /// <see cref="CNSControl.DomainType"/>. Additionally, it creates
         /// the associated time stepper
         /// </summary>
-        protected override void CreateEquationsAndSolvers(GridUpdateData loadBalancingData) {
+        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase gridUpdateData) {
             FullOperator = operatorFactory.GetJoinedOperator();
-            
+
             TimeStepper = Control.ExplicitScheme.Instantiate(
                 Control,
                 operatorFactory,
@@ -170,10 +180,13 @@ namespace CNS {
                 this);
 
             // Resets simulation time after a restart
-            TimeStepper.ResetTime(startTime);
+            TimeStepper.ResetTime(StartTime, TimestepNumber);
+
+            // Update time information (needed for LTS runs)
+            TimeStepper.UpdateTimeInfo(new TimeInformation(TimestepNumber, StartTime, -1));
 
             // Configure residual handling
-            if (loadBalancingData == null) {
+            if (gridUpdateData == null) {
                 // Do not change these settings upon repartitioning
                 ResLogger.WriteResidualsToTextFile = true;
                 ResLogger.WriteResidualsToConsole = false;
@@ -182,7 +195,7 @@ namespace CNS {
                 this,
                 Control,
                 FullOperator.ToSpatialOperator(WorkingSet)).ToArray();
-            
+
             WorkingSet.UpdateDerivedVariables(this, SpeciesMap.SubGrid.VolumeMask);
         }
 
@@ -218,17 +231,29 @@ namespace CNS {
                     Console.Write("Starting time step #" + TimestepNo + "...");
                 }
 
+                // Update shock-capturing variables before performing a time step
+                // as the time step constraints (could) depend on artificial viscosity.
+                // If not doing so, the artificial viscosity values from the previous
+                // time step are taken (unless UpdateDerivedVariables has been called by
+                // SavetoDatabase which depends on the saveperiod specified in the control file). 
+                if (this.Control.ArtificialViscosityLaw != null) {
+                    WorkingSet.UpdateShockCapturingVariables(this, SpeciesMap.SubGrid.VolumeMask);
+                }
+
+                // Create TimeInformation object in order to make information available for
+                // the time stepper
+                TimeStepper.UpdateTimeInfo(new TimeInformation(TimestepNo, phystime, dt));
+
                 Exception e = null;
                 try {
+                    dt = TimeStepper.Perform(dt);
                 } catch (Exception ee) {
                     e = ee;
                 }
                 e.ExceptionBcast();
 
-                dt = TimeStepper.Perform(dt);
-
                 if (TimestepNo % printInterval == 0) {
-                    Console.WriteLine(" done. PhysTime: {0:0.#######E-00}, dt: {1:0.###E-00}", phystime, dt);
+                    Console.WriteLine(" done. PhysTime: {0:0.#######E-00}, dt: {1:0.#######E-00}", phystime, dt);
                 }
 
                 IDictionary<string, double> residuals = residualLoggers.LogTimeStep(TimestepNo, dt, phystime);
@@ -318,8 +343,8 @@ namespace CNS {
         /// Sets the simulation time of the restart (needed for time stepping)
         /// and recomputes all derived variables
         /// </summary>
-        public override void PostRestart(double time) {
-            this.startTime = time;
+        public override void PostRestart(double time, TimestepNumber timestep) {
+            this.StartTime = time;
 
             if (SpeciesMap is ImmersedSpeciesMap ibmMap) {
                 LsTrk = ibmMap.Tracker;
@@ -344,9 +369,15 @@ namespace CNS {
         /// See <see cref="ICellClassifier"/>
         /// </summary>
         /// <param name="NoOfClasses"></param>
-        /// <param name="CellPerfomanceClasses"></param>
-        protected override void GetCellPerformanceClasses(out int NoOfClasses, out int[] CellPerfomanceClasses) {
-            (NoOfClasses, CellPerfomanceClasses) = Control.DynamicLoadBalancing_CellClassifier.ClassifyCells(this);
+        /// <param name="cellToPerformanceClassMap"></param>
+        protected override void GetCellPerformanceClasses(out int NoOfClasses, out int[] cellToPerformanceClassMap) {
+            // Update clustering before cell redistribution when LTS is being used
+            if (TimeStepper is AdamsBashforthLTS ABLTSTimeStepper) {
+                bool reclustered = ABLTSTimeStepper.TryNewClustering(dt: -1);
+                ABLTSTimeStepper.SetReclusteredByGridRedist(reclustered);
+            }
+
+            (NoOfClasses, cellToPerformanceClassMap) = Control.DynamicLoadBalancing_CellClassifier.ClassifyCells(this);
         }
 
         /// <summary>

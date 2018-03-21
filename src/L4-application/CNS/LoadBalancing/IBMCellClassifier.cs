@@ -40,12 +40,12 @@ namespace CNS.LoadBalancing {
             int[] cellToPerformanceClassMap = new int[program.Grid.NoOfUpdateCells];
 
             // Cut cells are "1"
-            foreach (int j in speciesMap.Tracker._Regions.GetCutCellMask().ItemEnum) {
+            foreach (int j in speciesMap.Tracker.Regions.GetCutCellMask().ItemEnum) {
                 cellToPerformanceClassMap[j] = 1;
             }
 
             // Void cells are "2"
-            foreach (int j in speciesMap.Tracker._Regions.GetSpeciesMask(ibmControl.VoidSpeciesName).ItemEnum) {
+            foreach (int j in speciesMap.Tracker.Regions.GetSpeciesMask(ibmControl.VoidSpeciesName).ItemEnum) {
                 cellToPerformanceClassMap[j] = 2;
             }
 

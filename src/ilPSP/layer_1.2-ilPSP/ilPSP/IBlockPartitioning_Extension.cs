@@ -63,7 +63,7 @@ namespace ilPSP {
         /// </summary>
         /// <param name="B"></param>
         /// <param name="SubvectorIdx">
-        /// Indices that should be in the result.
+        /// Indices into <paramref name="B"/> that should be in the result.
         /// </param>
         /// <param name="comm"></param>
         /// <param name="FrameBlockSize">

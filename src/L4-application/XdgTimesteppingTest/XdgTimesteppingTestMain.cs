@@ -51,12 +51,15 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         /// Les main routine.
         /// </summary>
         static void Main(string[] args) {
-            BoSSS.Solution.Application<XdgTimesteppingTestControl>._Main(args, false, null, delegate () {
+            BoSSS.Solution.Application<XdgTimesteppingTestControl>._Main(args, false, delegate () {
                 return new XdgTimesteppingMain();
             });
-            
+
+            //Console.WriteLine("Remember to remove me.");
             //TestProgram.Init();
-            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder(TimeSteppingScheme.ImplicitEuler, 0.2d, 8);
+            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder(TimeSteppingScheme.BDF2, 0.2d, 8);
+            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestBurgers_HighOrder(0, 0.08d, "bdf", 8);
+            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestBurgers_HighOrder(2, 0.08d, "bdf", 8);
             //TestProgram.Cleanup();
         }
 #pragma warning disable 649
@@ -79,9 +82,6 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         [InstantiateFromControlFile("rhs", "u", IOListOption.ControlFileDetermined)]
         XDGField rhs;
 
-        [InstantiateFromControlFile("residual", "u", IOListOption.ControlFileDetermined)]
-        XDGField residual;
-
         SinglePhaseField CutMarker;
 
         SinglePhaseField NearMarker;
@@ -93,6 +93,8 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             base.CreateFields();
             base.LsTrk = MyLsTrk;
             this.u.UpdateBehaviour = BehaveUnder_LevSetMoovement.AutoExtrapolate;
+            if(Control.CutCellQuadratureType != base.LsTrk.CutCellQuadratureType)
+                throw new ApplicationException();
 
             CutMarker = new SinglePhaseField(new Basis(this.GridData, 0), "CutMarker");
             NearMarker = new SinglePhaseField(new Basis(this.GridData, 0), "NearMarker");
@@ -102,14 +104,16 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             base.RegisterField(DOFMarker, IOListOption.Always);
         }
 
+        //static int PlotCont = 1;
+
         void UpdateMarkerFields() {
             CutMarker.Clear();
             NearMarker.Clear();
             DOFMarker.Clear();
-            foreach (int j in this.LsTrk._Regions.GetCutCellMask4LevSet(0).ItemEnum) {
+            foreach (int j in this.LsTrk.Regions.GetCutCellMask4LevSet(0).ItemEnum) {
                 CutMarker.SetMeanValue(j, 1);
             }
-            foreach (int j in this.LsTrk._Regions.GetNearFieldMask(1).ItemEnum) {
+            foreach (int j in this.LsTrk.Regions.GetNearFieldMask(1).ItemEnum) {
                 NearMarker.SetMeanValue(j, 1);
             }
             int J = this.GridData.Cells.NoOfLocalUpdatedCells;
@@ -117,6 +121,37 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 DOFMarker.SetMeanValue(j, this.u.Basis.GetLength(j));
             }
 
+            /*
+            Tecplot.PlotFields(new DGField[] { CutMarker, NearMarker }, "Markers-" + PlotCont + ".csv", 0.0, 1);
+            LsTrk.Regions.GetCutCellMask().SaveToTextFile("Cut-" + PlotCont + ".csv", false);
+            LsTrk.Regions.GetSpeciesMask("A").SaveToTextFile("SpcA-" + PlotCont + ".csv", false);
+            LsTrk.Regions.GetSpeciesMask("B").SaveToTextFile("SpcB-" + PlotCont + ".csv", false);
+
+            int qOrd = this.LinearQuadratureDegree;
+            var sch = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), qOrd, 1).XQuadSchemeHelper;
+            
+            var schCut = sch.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+            var RuleCut = schCut.SaveCompile(this.GridData, qOrd);
+            ICompositeQuadRule_Ext.SumOfWeightsToTextFileVolume(RuleCut, this.GridData, "CutRule-" + PlotCont + ".csv");
+
+            var schB = sch.GetVolumeQuadScheme(LsTrk.GetSpeciesId("B"));
+            var RuleB = schB.SaveCompile(this.GridData, qOrd);
+            ICompositeQuadRule_Ext.SumOfWeightsToTextFileVolume(RuleB, this.GridData, "B_Rule-" + PlotCont + ".csv");
+
+            var schA = sch.GetVolumeQuadScheme(LsTrk.GetSpeciesId("A"));
+            var RuleA = schA.SaveCompile(this.GridData, qOrd);
+            ICompositeQuadRule_Ext.SumOfWeightsToTextFileVolume(RuleA, this.GridData, "A_Rule-" + PlotCont + ".csv");
+
+            var eschB = sch.GetEdgeQuadScheme(LsTrk.GetSpeciesId("B"));
+            var ERuleB = eschB.SaveCompile(this.GridData, qOrd);
+            ICompositeQuadRule_Ext.SumOfWeightsToTextFileEdge(ERuleB, this.GridData, "Be_Rule-" + PlotCont + ".csv");
+
+            var eschA = sch.GetEdgeQuadScheme(LsTrk.GetSpeciesId("A"));
+            var ERuleA = eschA.SaveCompile(this.GridData, qOrd);
+            ICompositeQuadRule_Ext.SumOfWeightsToTextFileEdge(ERuleA, this.GridData, "Ae_Rule-" + PlotCont + ".csv");
+
+            PlotCont++;
+            */
         }
 
         protected override void SetInitial() {
@@ -141,7 +176,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                         this.Phi.ProjectField(X => this.Control.Phi(X, Time));
 
                         // HMF hacks
-                        if ((this.Control.CircleRadius != null) != (this.Control.HMF == XQuadFactoryHelper.MomentFittingVariants.ExactCircle))
+                        if ((this.Control.CircleRadius != null) != (this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.ExactCircle))
                             throw new ApplicationException("Illegal HMF configuration.");
                         if (this.Control.CircleRadius != null) {
                             ExactCircleLevelSetIntegration.RADIUS = new double[] { this.Control.CircleRadius(Time) };
@@ -196,7 +231,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             }
         }
 
-        protected override void CreateEquationsAndSolvers(GridUpdateData L) {
+        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
             if (Operator != null)
                 return;
 
@@ -217,7 +252,9 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 throw new NotImplementedException();
             }
 
+            int quadOrder;
             if (this.Control.Eq == Equation.ScalarTransport) {
+                quadOrder = this.LinearQuadratureDegree; 
 
                 Func<double[], double, double>[] uBnd = new Func<double[], double, double>[this.Grid.EdgeTagNames.Keys.Max() + 1];
                 for (int iEdgeTag = 1; iEdgeTag < uBnd.Length; iEdgeTag++) {
@@ -229,12 +266,14 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                     }
                 }
 
-                Operator = new XSpatialOperator(1, 2, 1, (A, B, C) => this.LinearQuadratureDegree, "u", "Vx", "Vy", "Cod1");
+                Operator = new XSpatialOperator(1, 2, 1, (A, B, C) => quadOrder, "u", "Vx", "Vy", "Cod1");
                 Operator.EquationComponents["Cod1"].Add(new TranportFlux_Bulk() { Inflow = uBnd });
                 Operator.EquationComponents["Cod1"].Add(new TransportFlux_Interface(this.LsTrk, S));
                 Operator.Commit();
             } else if (this.Control.Eq == Equation.HeatEq) {
-                Operator = new XSpatialOperator(1, 0, 1, (A, B, C) => this.LinearQuadratureDegree, "u", "Cod1");
+                quadOrder = this.LinearQuadratureDegree;
+
+                Operator = new XSpatialOperator(1, 0, 1, (A, B, C) => quadOrder, "u", "Cod1");
 
                 var bulkFlx = new HeatFlux_Bulk() { m_muA = this.Control.muA, m_muB = this.Control.muB, m_rhsA = this.Control.rhsA, m_rhsB = this.Control.rhsB };
                 var intfFlx = new HeatFlux_Interface(this.LsTrk, S) { m_muA = this.Control.muA, m_muB = this.Control.muB };
@@ -245,7 +284,9 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 Operator.Commit();
 
             } else if (this.Control.Eq == Equation.Burgers) {
-                Operator = new XSpatialOperator(1, 1, 1, (A, B, C) => this.NonlinearQuadratureDegree, "u", "u0", "Cod1");
+                quadOrder = this.NonlinearQuadratureDegree;
+
+                Operator = new XSpatialOperator(1, 1, 1, (A, B, C) => quadOrder, "u", "u0", "Cod1");
                 Operator.EquationComponents["Cod1"].Add(new BurgersFlux_Bulk() { Direction = this.Control.BurgersDirection, Inflow = this.Control.u_Ex });
                 Operator.EquationComponents["Cod1"].Add(new BurgersFlux_Interface(this.LsTrk, S, this.Control.BurgersDirection));
                 Operator.Commit();
@@ -303,28 +344,30 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
             if (bdfOrder > -1000) {
                 m_BDF_Timestepper = new XdgBDFTimestepping(new DGField[] { this.u }, new DGField[] { this.Residual }, LsTrk, true,
-                    DelComputeOperatorMatrix, DelUpdateLevelset, DelUpdateCutCellMetrics,
+                    DelComputeOperatorMatrix, DelUpdateLevelset,
                     bdfOrder,
                     lsh,
                     MassMatrixShapeandDependence.IsTimeDependent,
                     SpatialOperatorType.LinearTimeDependent,
                     MassScale,
                     null, base.MultigridSequence,
+                    this.LsTrk.SpeciesIdS.ToArray(), quadOrder,
                     this.Control.AgglomerationThreshold, false);
             } else {
                 m_RK_Timestepper = new XdgRKTimestepping(new DGField[] { this.u }, new DGField[] { this.Residual }, LsTrk,
-                    DelComputeOperatorMatrix, DelUpdateLevelset, DelUpdateCutCellMetrics,
+                    DelComputeOperatorMatrix, DelUpdateLevelset,
                     rksch,
                     lsh,
                     MassMatrixShapeandDependence.IsTimeDependent,
                     SpatialOperatorType.LinearTimeDependent,
                     MassScale,
                     null, base.MultigridSequence,
+                    this.LsTrk.SpeciesIdS.ToArray(), quadOrder,
                     this.Control.AgglomerationThreshold, false);
             }
         }
 
-        void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, MultiphaseCellAgglomerator CurrentAgg, double phystime) {
+        void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime) {
 
             DGField[] Params = null;
             if (this.Control.Eq == Equation.ScalarTransport)
@@ -339,11 +382,11 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             // compute operator
             Debug.Assert(OpMtx.InfNorm() == 0.0);
             Debug.Assert(OpAffine.L2Norm() == 0.0);
-            Operator.ComputeMatrixEx(CurrentAgg.Tracker,
+            Operator.ComputeMatrixEx(this.LsTrk,
                 Mapping, Params, Mapping,
                 OpMtx, OpAffine, false, phystime, true,
-                this.Control.HMF, CurrentAgg.CellLengthScales,
-                CurrentAgg.SpeciesList.ToArray());
+                AgglomeratedCellLengthScales,
+                AgglomeratedCellLengthScales.Keys.ToArray());
         }
 
         
@@ -353,10 +396,6 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             LevsetEvo(phystime, dt, null);
 
             return 0.0;
-        }
-
-        CutCellMetrics DelUpdateCutCellMetrics() {
-            return new CutCellMetrics(this.Control.HMF, this.LinearQuadratureDegree, this.LsTrk, this.LsTrk.SpeciesIdS.ToArray());
         }
 
         IDictionary<SpeciesId, IEnumerable<double>> MassScale {
@@ -386,11 +425,11 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             if ((m_BDF_Timestepper == null) == (m_RK_Timestepper == null))
                 throw new ApplicationException();
 
-            if (m_BDF_Timestepper != null)
+            if(m_BDF_Timestepper != null) {
                 m_BDF_Timestepper.Solve(phystime, dt);
-            else
+            } else {
                 m_RK_Timestepper.Solve(phystime, dt);
-
+            }
 
             // return
             // ------
@@ -398,6 +437,8 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             if (TimestepNo == this.Control.NoOfTimesteps) {
                 this.ComputeL2Error(phystime + dt);
             }
+
+            Console.WriteLine();
 
             return dt;
 
@@ -413,7 +454,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 UpdateMarkerFields();
 
                 // HMF hacks
-                if ((this.Control.CircleRadius != null) != (this.Control.HMF == XQuadFactoryHelper.MomentFittingVariants.ExactCircle))
+                if ((this.Control.CircleRadius != null) != (this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.ExactCircle))
                     throw new ApplicationException("Illegal HMF configuration.");
                 if (this.Control.CircleRadius != null) {
                     ExactCircleLevelSetIntegration.RADIUS = new double[] { this.Control.CircleRadius(phystime + dt) };
@@ -426,15 +467,15 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         void ComputeL2Error(double PhysTime) {
             Console.WriteLine("Phystime = " + PhysTime);
 
-            if ((this.Control.CircleRadius != null) != (this.Control.HMF == XQuadFactoryHelper.MomentFittingVariants.ExactCircle))
+            if ((this.Control.CircleRadius != null) != (this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.ExactCircle))
                 throw new ApplicationException("Illegal HMF configuration.");
             if (this.Control.CircleRadius != null) {
                 ExactCircleLevelSetIntegration.RADIUS = new double[] { this.Control.CircleRadius(PhysTime) };
             }
 
-            XQuadSchemeHelper schH = new XQuadSchemeHelper(this.LsTrk, this.Control.HMF, this.LsTrk.SpeciesIdS.ToArray());
             int order = Math.Max(this.u.Basis.Degree * 3, 3);
-
+            XQuadSchemeHelper schH = LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), order).XQuadSchemeHelper;
+            
             var uNum_A = this.u.GetSpeciesShadowField("A");
             var uNum_B = this.u.GetSpeciesShadowField("B");
 
@@ -445,7 +486,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             Func<double[], double, double> uJmp_Ex = ((X, t) => this.Control.uA_Ex(X, t) - this.Control.uB_Ex(X, t));
 
             SinglePhaseField uNumJump = new SinglePhaseField(uNum_A.Basis, "Jump");
-            var CC = LsTrk._Regions.GetCutCellMask();
+            var CC = LsTrk.Regions.GetCutCellMask();
             uNumJump.Acc(+1.0, uNum_A, CC);
             uNumJump.Acc(-1.0, uNum_B, CC);
             double JmpL2Err = uNumJump.L2Error(uJmp_Ex.Vectorize(PhysTime), order, schH.GetLevelSetquadScheme(0, CC));
@@ -461,8 +502,8 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
             double uA_min, uA_max, uB_min, uB_max;
             int dummy1, dummy2;
-            uNum_A.GetExtremalValues(out uA_min, out uA_max, out dummy1, out dummy2, this.LsTrk._Regions.GetSpeciesMask("A"));
-            uNum_B.GetExtremalValues(out uB_min, out uB_max, out dummy1, out dummy2, this.LsTrk._Regions.GetSpeciesMask("B"));
+            uNum_A.GetExtremalValues(out uA_min, out uA_max, out dummy1, out dummy2, this.LsTrk.Regions.GetSpeciesMask("A"));
+            uNum_B.GetExtremalValues(out uB_min, out uB_max, out dummy1, out dummy2, this.LsTrk.Regions.GetSpeciesMask("B"));
 
             base.QueryHandler.ValueQuery("uA_Min", uA_min);
             base.QueryHandler.ValueQuery("uA_Max", uA_max);
@@ -472,7 +513,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         }
 
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int susamp) {
-            var Fields = new DGField[] { this.Phi, this.u, this.rhs, this.residual, this.V[0], this.V[1], this.CutMarker, this.DOFMarker, this.NearMarker };
+            var Fields = new DGField[] { this.Phi, this.u, this.rhs, this.Residual, this.V[0], this.V[1], this.CutMarker, this.DOFMarker, this.NearMarker };
             Tecplot.PlotFields(Fields, "XdgTimesteppingTest" + timestepNo.ToString(), physTime, susamp);           
         }
 

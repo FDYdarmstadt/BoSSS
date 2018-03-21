@@ -13,6 +13,7 @@ using ilPSP;
 using ilPSP.LinSolvers;
 using ilPSP.Tracing;
 using ilPSP.Utils;
+using MPI.Wrappers;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
@@ -32,16 +33,21 @@ namespace BoSSS.Application.LoadBalancingTest {
             BoSSS.Solution.Application._Main(
                 args,
                 true,
-                null,
                 () => new LoadBalancingTestMain());
+        }
+
+        public override void Init(BoSSS.Solution.Control.AppControl control) {
+            control.GridPartType = BoSSS.Foundation.Grid.GridPartType.none;
+            base.Init(control);
         }
 
         protected override GridCommons CreateOrLoadGrid() {
             double[] nodes = GenericBlas.Linspace(-5, 5, 21);
             var grd = Grid2D.Cartesian2DGrid(nodes, nodes);
-            base.m_GridPartitioningType = GridPartType.none;
+            this.Control.NoOfMultigridLevels = 1; // required for XDG-BDF timestepper
             return grd;
         }
+              
 
         XDGField u;
         XDGField uResidual;
@@ -56,7 +62,7 @@ namespace BoSSS.Application.LoadBalancingTest {
 
         protected override void CreateFields() {
             LevSet = new LevelSet(new Basis(this.GridData, 2), "LevelSet");
-            base.LsTrk = new LevelSetTracker(this.GridData, 1, new string[] { "A", "B" }, LevSet);
+            base.LsTrk = new LevelSetTracker(this.GridData, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, 1, new string[] { "A", "B" }, LevSet);
 
             var xBasis = new XDGBasis(base.LsTrk, DEGREE);
             u = new XDGField(xBasis, "u");
@@ -85,8 +91,7 @@ namespace BoSSS.Application.LoadBalancingTest {
         /// </summary>
         internal int DEGREE = 3;
 
-        internal Func<IApplication<AppControl>, int, ICellCostEstimator> cellCostEstimatorFactory = CellCostEstimatorLibrary.AllCellsAreEqual;
-
+        
         /// <summary>
         /// Cell Agglomeration threshold
         /// </summary>
@@ -125,8 +130,8 @@ namespace BoSSS.Application.LoadBalancingTest {
             // markieren, wo ueberhaupt A und B sind
             Amarker.Clear();
             Bmarker.Clear();
-            Amarker.AccConstant(+1.0, LsTrk._Regions.GetSpeciesSubGrid("A").VolumeMask);
-            Bmarker.AccConstant(1.0, LsTrk._Regions.GetSpeciesSubGrid("B").VolumeMask);
+            Amarker.AccConstant(+1.0, LsTrk.Regions.GetSpeciesSubGrid("A").VolumeMask);
+            Bmarker.AccConstant(1.0, LsTrk.Regions.GetSpeciesSubGrid("B").VolumeMask);
 
             // MPI rank
             MPICellRank.Clear();
@@ -148,10 +153,15 @@ namespace BoSSS.Application.LoadBalancingTest {
         /// </summary>
         XSpatialOperator Op;
 
+        /// <summary>
+        /// The BDF time integrator - makes load balancing challenging.
+        /// </summary>
         XdgBDFTimestepping TimeIntegration;
 
-        protected override void CreateEquationsAndSolvers(GridUpdateData L) {
-            Op = new XSpatialOperator(1, 0, 1, QuadOrderFunc.SumOfMaxDegrees(RoundUp: true), "u", "c1");
+        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
+            int quadorder = this.u.Basis.Degree * 2 + 1;
+
+            Op = new XSpatialOperator(1, 0, 1, (A, B, C) => quadorder, "u", "c1");
 
             var blkFlux = new DxFlux(this.LsTrk, alpha_A, alpha_B);
             Op.EquationComponents["c1"].Add(blkFlux); // Flux in Bulk Phase;
@@ -164,7 +174,7 @@ namespace BoSSS.Application.LoadBalancingTest {
                 TimeIntegration = new XdgBDFTimestepping(
                     new DGField[] { u }, new DGField[] { uResidual }, base.LsTrk,
                     true,
-                    DelComputeOperatorMatrix, DelUpdateLevelset, DelUpdateCutCellMetrics,
+                    DelComputeOperatorMatrix, DelUpdateLevelset,
                     3, // BDF3
                        //-1, // Crank-Nicolson
                        //0, // Explicit Euler
@@ -174,6 +184,8 @@ namespace BoSSS.Application.LoadBalancingTest {
                     MassScale,
                     MultigridOperatorConfig,
                     this.MultigridSequence,
+                    this.LsTrk.SpeciesIdS.ToArray(),
+                    quadorder,
                     this.THRESHOLD,
                     true);
             } else {
@@ -220,17 +232,10 @@ namespace BoSSS.Application.LoadBalancingTest {
             }
         }
 
-        CutCellMetrics DelUpdateCutCellMetrics() {
-            return new CutCellMetrics(
-                HMF,
-                this.Op.QuadOrderFunction(new int[] { u.Basis.Degree }, new int[0], new int[] { uResidual.Basis.Degree }),
-                this.LsTrk,
-                this.LsTrk.SpeciesIdS.ToArray());
-        }
 
         const XQuadFactoryHelper.MomentFittingVariants HMF = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
 
-        protected virtual void DelComputeOperatorMatrix(BlockMsrMatrix OpMatrix, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, MultiphaseCellAgglomerator Agglomerator, double phystime) {
+        protected virtual void DelComputeOperatorMatrix(BlockMsrMatrix OpMatrix, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime) {
             OpMatrix.Clear();
             OpAffine.ClearEntries();
 
@@ -239,11 +244,11 @@ namespace BoSSS.Application.LoadBalancingTest {
                 OpMatrix, OpAffine, false,
                 phystime,
                 false,
-                XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes,
                 base.LsTrk.SpeciesIdS.ToArray());
         }
 
-        public override void DataBackupBeforeBalancing(GridUpdateData L) {
+        public override void DataBackupBeforeBalancing(GridUpdateDataVaultBase L) {
+         
             TimeIntegration.DataBackupBeforeBalancing(L);
         }
 
@@ -274,6 +279,22 @@ namespace BoSSS.Application.LoadBalancingTest {
             }
         }
 
+        int m_NoOfReparts = 0;
+
+        /// <summary>
+        /// Check is load-balancing was actually tested.
+        /// </summary>
+        protected override void Bye() {
+            if(MPISize > 1) {
+                int TotalNoOfReparts = m_NoOfReparts.MPISum();
+                Assert.Greater(TotalNoOfReparts, 0, "Load-balancing was not tested at all.");
+            }
+        }
+
+
+        internal Func<IApplication, int, ICellCostEstimator> cellCostEstimatorFactory = CellCostEstimatorLibrary.OperatorAssemblyAndCutCellQuadrules;
+
+
         /// <summary>
         /// A dummy routine in order to test cell dynamic load balancing 
         /// (**not** a good balancing, but triggers redistribution).
@@ -282,18 +303,26 @@ namespace BoSSS.Application.LoadBalancingTest {
             if (!DynamicBalance || MPISize <= 1)
                 return null;
 
+            //if(MPIRank == 0)
+            //    Debugger.Launch();
             int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
-
+            int[] NewPart;
+            
             int[] PerformanceClasses = new int[J];
-            var CC = this.LsTrk._Regions.GetCutCellMask();
-            foreach (int j in CC.ItemEnum)
+            var CC = this.LsTrk.Regions.GetCutCellMask();
+            foreach(int j in CC.ItemEnum) {
                 PerformanceClasses[j] = 1;
+            }
+            int NoCutCells = CC.NoOfItemsLocally.MPISum();
+            Console.WriteLine("Number of cut cells: " + NoCutCells);
 
             if (balancer == null) {
-                balancer = new LoadBalancer(new List<Func<IApplication<AppControl>, int, ICellCostEstimator>>() { cellCostEstimatorFactory });
+                balancer = new LoadBalancer(
+                    new List<Func<IApplication, int, ICellCostEstimator>>() { cellCostEstimatorFactory }
+                    );
             }
 
-            return balancer.GetNewPartitioning(
+            NewPart = balancer.GetNewPartitioning(
                 this,
                 2,
                 PerformanceClasses,
@@ -301,11 +330,15 @@ namespace BoSSS.Application.LoadBalancingTest {
                 GridPartType.none,
                 "",
                 imbalanceThreshold: 0.0,
-                Period: 3);
+                Period: 3,
+                redistributeAtStartup: false);
+
+            
 
             /*
+
             if (MPISize == 4 && TimeStepNo > 5) {
-                int[] Part = new int[J];
+                NewPart = new int[J];
 
                 double speed = this.GridData.Cells.h_maxGlobal / 0.3;
                 for (int j = 0; j < J; j++) {
@@ -316,12 +349,12 @@ namespace BoSSS.Application.LoadBalancingTest {
                     int px = x < Math.Min(physTime * speed, 2) ? 0 : 1;
                     int py = y < 0 ? 0 : 1;
 
-                    Part[j] = px * 2 + py;
+                    NewPart[j] = px * 2 + py;
                 }
 
-                return Part;
+                //return Part;
             } else if (MPISize == 2) {
-                int[] Part = new int[J];
+                NewPart = new int[J];
 
                 double speed = this.GridData.Cells.h_maxGlobal / 0.3;
 
@@ -333,18 +366,30 @@ namespace BoSSS.Application.LoadBalancingTest {
                     int px = x < Math.Min(physTime * speed, 2) ? 0 : 1;
                     int py = y < 0 ? 0 : 1;
 
-                    Part[j] = px;
+                    NewPart[j] = px;
                 }
 
                 //return null;
-                return Part;
+                //return Part;
             } else if (MPISize == 1) {
-                int[] Part = new int[J];
-                return Part;
+                
+                return null;
             } else {
                 return null;
             }
-            */
+
+            //*/
+
+
+            if(NewPart != null) {
+                int myRank = this.MPIRank;
+                foreach(int tr in NewPart) {
+                    if(tr != myRank)
+                        m_NoOfReparts++;
+                }
+            }
+            
+            return NewPart;
         }
 
         LoadBalancer balancer;

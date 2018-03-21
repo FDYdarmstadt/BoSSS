@@ -42,20 +42,20 @@ namespace ilPSP.LinSolvers.MUMPS {
         /// </summary>
         /// <param name="verbose"></param>
         /// <param name="MPI"></param>
-        public MUMPSSolver(bool verbose = false, bool MPI = true) {
+        public MUMPSSolver(bool verbose = false) {
             this.verbose = verbose;
-            if (MPI == true) {
-                this.m_MPI_Comm = csMPI.Raw._COMM.WORLD;
-            } else {
-                this.m_MPI_Comm = csMPI.Raw._COMM.SELF;
-            }
+            //if (MPI == true) {
+            //    this.m_MPI_Comm = csMPI.Raw._COMM.WORLD;
+            //} else {
+            //    this.m_MPI_Comm = csMPI.Raw._COMM.SELF;
+            //}
             
         }
 
         public void DefineMatrix(IMutableMatrixEx M) {
             m_MumpsMatrix = new Matrix(M);
             m_OrgMatrix = M;
-
+            this.m_MPI_Comm = m_OrgMatrix.MPI_Comm;
         }
 
         public SolverResult Solve<Tunknowns, Trhs>(Tunknowns x, Trhs rhs)
@@ -133,7 +133,8 @@ namespace ilPSP.LinSolvers.MUMPS {
                     r.Converged = true;
                     r.NoOfIterations = 1;
                     Stopwatch st = new Stopwatch();
-                    st.Reset();                  
+                    st.Reset();
+                    st.Start();
 
                     double[] gath_x, gath_b;
                     GatherOnProc0(_x, _rhs, out gath_x, out gath_b);

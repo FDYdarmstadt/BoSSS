@@ -70,7 +70,7 @@ namespace BoSSS.Solution {
         /// </summary>
         /// <param name="estimator"></param>
         /// <returns>
-        /// A number betweeen 0 and 1 which represents an estimate of the load
+        /// A number between 0 and 1 which represents an estimate of the load
         /// imbalance in percent
         /// </returns>
         public static double ImbalanceEstimate(this ICellCostEstimator estimator) {

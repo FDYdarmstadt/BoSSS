@@ -39,6 +39,15 @@ namespace CutCellQuadrature {
 
         private double offsetY;
 
+        public Object Clone() {
+            return new AnalyticEllipseLevelSet(this.gridData) {
+                offsetX = this.offsetX,
+                offsetY = this.offsetY,
+                xMajor = this.xMajor,
+                yMajor = this.yMajor
+            };
+        }
+
         public AnalyticEllipseLevelSet(GridData gridData) {
             this.gridData = gridData;
         }

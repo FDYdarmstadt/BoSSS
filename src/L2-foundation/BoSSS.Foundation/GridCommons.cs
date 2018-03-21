@@ -152,9 +152,17 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// </summary>
         /// <param name="EdgeTagFunc"></param>
         public void DefineEdgeTags(Func<double[], byte> EdgeTagFunc) {
+            
+            int Jloc = this.Cells.Length;
+            int minJloc = Jloc.MPIMin();
+            if (minJloc <= 0) {
+                // redist is necessary
+                this.Redistribute(null, GridPartType.METIS, null);
+            }
+
+            
             var GrdDatTmp = new GridData(this);
 
-            //int J = NoOfUpdateCells;
             int D = SpatialDimension;
 
             double[] x = new double[D];
@@ -693,7 +701,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
             // ----------------
             m_EdgeRefElements = new RefElement[m_ClassNameOfEdgeRefElement.Length];
-            for (int i = 0; i < m_RefElements.Length; i++) {
+            for (int i = 0; i < m_EdgeRefElements.Length; i++) {
                 Type type = GetRefElementType(m_ClassNameOfEdgeRefElement[i]);
                 PropertyInfo inst = type.GetProperty("Instance", BindingFlags.Static | BindingFlags.Public);
                 m_EdgeRefElements[i] = (RefElement)(inst.GetValue(null, null));
@@ -1261,7 +1269,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         public void CompressGlobalID(IList<long> AdditionalGlobalIdsToTransform = default(long[])) {
             List<int> oldGlobalID = new List<int>();
             List<int> oldCellFaceTagIDs = new List<int>();
-            
+
             int J = this.Cells.Length;
 
 
@@ -1308,8 +1316,12 @@ namespace BoSSS.Foundation.Grid.Classic {
                 if (Cj.CellFaceTags != null) {
                     int L = Cj.CellFaceTags.Length;
                     for (int l = 0; l < L; l++) {
-                        Debug.Assert(Cj.CellFaceTags[l].NeighCell_GlobalID == oldCellFaceTagIDs[c2]);
-                        Cj.CellFaceTags[l].NeighCell_GlobalID = newCellFaceTagIDs[c2];
+                        if (Cj.CellFaceTags[l].EdgeTag > 0 && Cj.CellFaceTags[l].EdgeTag < GridCommons.FIRST_PERIODIC_BC_TAG) {
+                            Cj.CellFaceTags[l].NeighCell_GlobalID = long.MinValue;
+                        } else {
+                            Debug.Assert(Cj.CellFaceTags[l].NeighCell_GlobalID == oldCellFaceTagIDs[c2]);
+                            Cj.CellFaceTags[l].NeighCell_GlobalID = newCellFaceTagIDs[c2];
+                        }
                         c2++;
                     }
                 }

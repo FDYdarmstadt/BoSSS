@@ -141,7 +141,7 @@ namespace BoSSS.Solution.Template {
             throw new NotImplementedException();
         }
 
-        protected override void CreateEquationsAndSolvers(LoadBalancingData L) {
+        protected override void CreateEquationsAndSolvers(GridUpdateData L) {
             throw new NotImplementedException();
         }
 

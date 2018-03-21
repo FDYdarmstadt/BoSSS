@@ -61,11 +61,10 @@ namespace BoSSS.Application.Matrix_MPItest {
         internal int m_DGorder = 2;
 
         protected override GridCommons CreateOrLoadGrid() {
-            
+            base.Control.GridPartType = BoSSS.Foundation.Grid.GridPartType.METIS;
             var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-3, 3, 13), GenericBlas.Linspace(-3, 3, 13));
             //var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-3, 3, 8), GenericBlas.Linspace(-3, 3, 2));
             //Console.WriteLine("testcode");
-            base.m_GridPartitioningType = GridPartType.METIS;
 
             return grd;
         }
@@ -96,7 +95,7 @@ namespace BoSSS.Application.Matrix_MPItest {
         protected override void CreateFields() {
             Phi = new LevelSet(new Basis(this.GridData, 2), "Phi");
    
-            LsTrk = new LevelSetTracker(this.GridData, 1, new string[] { "A", "B" }, Phi);
+            LsTrk = new LevelSetTracker(this.GridData, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, 1, new string[] { "A", "B" }, Phi);
 
             if (m_DGorder < 1)
                 throw new ArgumentException();
@@ -151,7 +150,7 @@ namespace BoSSS.Application.Matrix_MPItest {
         XSpatialOperator Op;
         int m_quadOrder;
 
-        protected override void CreateEquationsAndSolvers(GridUpdateData L) {
+        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
             m_quadOrder = u1.Basis.Degree * 2;
 
             Op = new XSpatialOperator(2, 0, 2, (A, B, c) => m_quadOrder, "u1", "u2", "c1", "c2");
@@ -190,21 +189,22 @@ namespace BoSSS.Application.Matrix_MPItest {
             MultiphaseCellAgglomerator Agg;
 
             // Agglomerator setup
-            Agg = new MultiphaseCellAgglomerator(new CutCellMetrics(MomentFittingVariant, m_quadOrder, LsTrk, LsTrk.GetSpeciesId("B")), this.THRESHOLD, false);
+            //Agg = new MultiphaseCellAgglomerator(new CutCellMetrics(MomentFittingVariant, m_quadOrder, LsTrk, LsTrk.GetSpeciesId("B")), this.THRESHOLD, false);
+            Agg = LsTrk.GetAgglomerator(new SpeciesId[] { LsTrk.GetSpeciesId("B") }, m_quadOrder, __AgglomerationTreshold: this.THRESHOLD);
             Console.WriteLine("Inter-Process agglomeration? " + Agg.GetAgglomerator(LsTrk.GetSpeciesId("B")).AggInfo.InterProcessAgglomeration);
             
             // operator matrix assembly
             Op.ComputeMatrixEx(LsTrk,
                 ProblemMapping, null, ProblemMapping,
                 OperatorMatrix, Affine, false, 0.0, true,
-                MomentFittingVariant, Agg.CellLengthScales,
+                Agg.CellLengthScales,
                 LsTrk.SpeciesIdS.ToArray());
             Agg.ManipulateMatrixAndRHS(OperatorMatrix, Affine, this.ProblemMapping, this.ProblemMapping);
 
             Op.ComputeMatrixEx(LsTrk,
                 ProblemMapping, null, ProblemMapping,
                 AltOperatorMatrix, Affine, false, 0.0, true,
-                MomentFittingVariant, Agg.CellLengthScales,
+                Agg.CellLengthScales,
                 LsTrk.SpeciesIdS.ToArray());
             Agg.ManipulateMatrixAndRHS(AltOperatorMatrix, Affine, this.ProblemMapping, this.ProblemMapping);
 

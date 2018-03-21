@@ -33,7 +33,7 @@ namespace BoSSS.Application.XDGTest {
         [Test]
         public static void AllUp() {
             XDGTestMain p = null;
-            BoSSS.Solution.Application._Main(new string[0], true, "", delegate() {
+            BoSSS.Solution.Application._Main(new string[] { /*"--delplt", "--implt", "1", "-u4"*/}, true, delegate() {
                 p = new XDGTestMain();
                 return p;
             });
@@ -43,7 +43,7 @@ namespace BoSSS.Application.XDGTest {
             double thres = 1.0e-10;
 
             Console.WriteLine("L2 Error of solution: " + err + " (threshold is " + thres + ")");
-            Assert.IsTrue(err < thres);
+            Assert.LessOrEqual(err, thres);
         }
     }
 

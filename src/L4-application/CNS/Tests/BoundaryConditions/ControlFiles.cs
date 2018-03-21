@@ -170,7 +170,7 @@ namespace CNS.Tests.BoundaryConditions {
                 c.ProjectName += "_supersonicAll";
             }
 
-            return templates;
+            return templates.ToArray();
         }
 
         /// <summary>

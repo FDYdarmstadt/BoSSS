@@ -78,7 +78,7 @@ namespace CNS.IBM {
 
         private void BuildEvaluatorsAndMasks() {
             CellMask fluidCells = speciesMap.SubGrid.VolumeMask;
-            cutCells = speciesMap.Tracker._Regions.GetCutCellMask();
+            cutCells = speciesMap.Tracker.Regions.GetCutCellMask();
             cutAndTargetCells = cutCells.Union(speciesMap.Agglomerator.AggInfo.TargetCells);
 
             IBMControl control = speciesMap.Control;
@@ -129,20 +129,19 @@ namespace CNS.IBM {
                     Mapping,
                     new Dictionary<SpeciesId, IEnumerable<double>>() {
                         { speciesId, Enumerable.Repeat(1.0, Mapping.NoOfVariables) } },
-                    inverse: false,
-                    VariableAgglomerationSwitch: new bool[Mapping.Fields.Count]);
+                    inverse: false);
 
-                IBMUtility.SubMatrixSpMV(nonAgglomeratedMassMatrix, 1.0, DGCoordinates, 0.0, DGCoordinates, cutCells);
-                speciesMap.Agglomerator.ManipulateRHS(DGCoordinates, Mapping);
-                IBMUtility.SubMatrixSpMV(massMatrixFactory.InverseMassMatrix, 1.0, DGCoordinates, 0.0, DGCoordinates, cutAndTargetCells);
-                speciesMap.Agglomerator.Extrapolate(DGCoordinates.Mapping);
+                IBMUtility.SubMatrixSpMV(nonAgglomeratedMassMatrix, 1.0, CurrentState, 0.0, CurrentState, cutCells);
+                speciesMap.Agglomerator.ManipulateRHS(CurrentState, Mapping);
+                IBMUtility.SubMatrixSpMV(massMatrixFactory.InverseMassMatrix, 1.0, CurrentState, 0.0, CurrentState, cutAndTargetCells);
+                speciesMap.Agglomerator.Extrapolate(CurrentState.Mapping);
 
                 //Broadcast to RungeKutta ???
             }
 
             dt = base.Perform(dt);
 
-            speciesMap.Agglomerator.Extrapolate(DGCoordinates.Mapping);
+            speciesMap.Agglomerator.Extrapolate(CurrentState.Mapping);
             return dt;
         }
 

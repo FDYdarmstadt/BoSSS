@@ -100,11 +100,11 @@ namespace CNS.Diffusion {
                 // 1) IBM optimized (ignores nodes in the void part of a cell, only applies to constant viscosity gases)
                 case ImmersedSpeciesMap ibmMap when material.ViscosityLaw is ConstantViscosity: {
                         MultidimensionalArray levelSetValues =
-                            ibmMap.Tracker.GetLevSetValues(0, base.EvaluationPoints[iKref], i0, Length);
+                            ibmMap.Tracker.DataHistories[0].Current.GetLevSetValues(base.EvaluationPoints[iKref], i0, Length);
 
                         SpeciesId species = ibmMap.Tracker.GetSpeciesId(ibmMap.Control.FluidSpeciesName);
                         //var hMin = speciesMap.QuadSchemeHelper.CellAgglomeration.CellLengthScales[species];
-                        var volFrac = ibmMap.QuadSchemeHelper.CellAgglomeration.CellVolumeFrac[species];
+                        var volFrac = ibmMap.CellAgglomeration.CellVolumeFrac[species];
 
                         double nu = 1.0 / config.ReynoldsNumber;
                         for (int i = 0; i < Length; i++) {
@@ -136,11 +136,11 @@ namespace CNS.Diffusion {
                 // 2) IBM generic (ignores nodes in the void part of a cell)
                 case ImmersedSpeciesMap ibmMap: {
                         MultidimensionalArray levelSetValues =
-                            ibmMap.Tracker.GetLevSetValues(0, base.EvaluationPoints[iKref], i0, Length);
+                            ibmMap.Tracker.DataHistories[0].Current.GetLevSetValues(base.EvaluationPoints[iKref], i0, Length);
 
                         SpeciesId species = ibmMap.Tracker.GetSpeciesId(ibmMap.Control.FluidSpeciesName);
                         //var hMin = speciesMap.QuadSchemeHelper.CellAgglomeration.CellLengthScales[species];
-                        var volFrac = ibmMap.QuadSchemeHelper.CellAgglomeration.CellVolumeFrac[species];
+                        var volFrac = ibmMap.CellAgglomeration.CellVolumeFrac[species];
 
                         for (int i = 0; i < Length; i++) {
                             int cell = i0 + i;

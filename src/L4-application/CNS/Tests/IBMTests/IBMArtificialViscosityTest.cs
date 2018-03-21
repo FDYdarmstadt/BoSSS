@@ -68,9 +68,9 @@ namespace CNS.Tests.IBMTests {
             };
             c.LevelSetBoundaryTag = "AdiabaticSlipWall";
 
-            c.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             c.LevelSetQuadratureOrder = 6;
-            c.AgglomerationThreshold = 0.2;
+            c.AgglomerationThreshold = 0.2; // Using this agglomeration threshold, no cells are agglomerated (all cells are true cut cells)
             c.AddVariable(IBMVariables.LevelSet, 1);
 
             bool AV = true;
@@ -223,27 +223,50 @@ namespace CNS.Tests.IBMTests {
             return c;
         }
 
-        private static Dictionary<string, object> SetupIBMAVTest() {
+        private static Dictionary<string, object> SetupIBMAVTest_NoAgglomeration() {
             IBMControl c = IBMAVTestContactDiscontinuity();
 
             c.ProjectName = "IBM artificial viscosity tests";
-            c.SessionName = String.Format("IBM artificial viscosity test (contact discontinuity)");
+            c.SessionName = String.Format("IBM artificial viscosity test (contact discontinuity), no cut cells are agglomerated");
 
             var solver = new Program();
-            solver.Init(c, null);
+            solver.Init(c);
             solver.RunSolverMode();
 
             return solver.QueryHandler.QueryResults;
         }
 
-        // Wprks only if AV projection is off
+        private static Dictionary<string, object> SetupIBMAVTest_Agglomeration() {
+            IBMControl c = IBMAVTestContactDiscontinuity();
+
+            c.ProjectName = "IBM artificial viscosity tests";
+            c.SessionName = String.Format("IBM artificial viscosity test (contact discontinuity), all cut cells are agglomerated");
+            c.AgglomerationThreshold = 0.99;
+
+            var solver = new Program();
+            solver.Init(c);
+            solver.RunSolverMode();
+
+            return solver.QueryHandler.QueryResults;
+        }
+
+        // Works only if AV projection is off (really? I don't think so)
         [Test]
-        public static void IBMAVTest() {
+        public static void IBMAVTest_NoAgglomeration() {
             CheckErrorThresholds(
-                SetupIBMAVTest(),
+                SetupIBMAVTest_NoAgglomeration(),
                 Tuple.Create("L2NormDensity", 53.8771980076417000 + 1e-10),
                 Tuple.Create("L2NormVelocityX", 1.5491933384829700 + 1e-10),
                 Tuple.Create("L2NormPressure", 0.7745966692416890 + 1e-10));
+        }
+
+        [Test]
+        public static void IBMAVTest_Agglomeration() {
+            CheckErrorThresholds(
+                SetupIBMAVTest_Agglomeration(),
+                Tuple.Create("L2NormDensity", 53.8773088665331 + 1e-10),
+                Tuple.Create("L2NormVelocityX", 1.54919333848297 + 1e-10),
+                Tuple.Create("L2NormPressure", 0.774596669241494 + 1e-10));
         }
     }
 }

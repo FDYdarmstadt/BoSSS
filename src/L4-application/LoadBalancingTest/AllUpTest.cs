@@ -23,7 +23,7 @@ namespace BoSSS.Application.LoadBalancingTest {
                 BoSSS.Solution.Application.GetBoSSSInstallDir(),
                 out MpiInit);
         }
-
+        /*
         /// <summary>
         /// Da Test!
         /// </summary>
@@ -39,10 +39,11 @@ namespace BoSSS.Application.LoadBalancingTest {
                     p = new LoadBalancingTestMain();
                     p.DynamicBalance = false;
                     p.DEGREE = DGdegree;
-                    p.cellCostEstimatorFactory = CellCostEstimatorLibrary.MeasureCostOfWhateverFlorianThinksIsRelevantButIDontUnderstand;
+                    p.cellCostEstimatorFactory = CellCostEstimatorLibrary.OperatorAssemblyAndCutCellQuadrules;
                     return p;
                 });
         }
+        */
 
         /// <summary>
         /// Da Test!
@@ -55,16 +56,16 @@ namespace BoSSS.Application.LoadBalancingTest {
             BoSSS.Solution.Application._Main(
                 new string[0],
                 true,
-                null,
                 delegate () {
                     p = new LoadBalancingTestMain();
                     p.DynamicBalance = true;
                     p.DEGREE = DGdegree;
-                    p.cellCostEstimatorFactory = CellCostEstimatorLibrary.MeasureCostOfWhateverFlorianThinksIsRelevantButIDontUnderstand;
+                    p.cellCostEstimatorFactory = CellCostEstimatorLibrary.OperatorAssemblyAndCutCellQuadrules;
                     return p;
                 });
         }
 
+        /*
         /// <summary>
         /// Da Test!
         /// </summary>
@@ -95,7 +96,7 @@ namespace BoSSS.Application.LoadBalancingTest {
                     return p;
                 });
         }
-
+        */
         /// <summary>
         /// MPI shutdown.
         /// </summary>
