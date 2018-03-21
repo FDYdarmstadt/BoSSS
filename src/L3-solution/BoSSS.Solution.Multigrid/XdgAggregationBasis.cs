@@ -113,17 +113,17 @@ namespace BoSSS.Solution.Multigrid {
                                 }
                             }
 #if DEBUG
-                        {
-                            bool NonEmpty = false;
-                            for(int k = 0; k < K; k++) {
-                                if(sim[iSpc_agg, k] >= 0) {
-                                    NonEmpty = true;
-                                    break;
+                            {
+                                bool NonEmpty = false;
+                                for(int k = 0; k < K; k++) {
+                                    if(sim[iSpc_agg, k] >= 0) {
+                                        NonEmpty = true;
+                                        break;
+                                    }
                                 }
+                                Debug.Assert(NonEmpty); // there should be at least one non-empty base cell (for species 'iSpc_agg')
+                                //                         in aggregate cell 'jagg'
                             }
-                            Debug.Assert(NonEmpty); // there should be at least one non-empty base cell (for species 'iSpc_agg')
-                            //                         in aggregate cell 'jagg'
-                        }
 #endif
 
                             if(this.XCompositeBasis[jagg] == null || (this.XCompositeBasis[jagg].Length != NoOfSpc_jagg))
