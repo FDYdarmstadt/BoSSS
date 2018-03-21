@@ -20,6 +20,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using BoSSS.Foundation;
+using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.Timestepping;
 using ilPSP;
@@ -29,6 +31,11 @@ using ilPSP.Utils;
 
 
 namespace BoSSS.Solution.TimeStepping {
+    
+    /// <summary>
+    /// Implicit Timestepping for General Spatial Operators
+    /// also supports implicit and Explicit Euler and Crank-Nicholson
+    /// </summary>
     public class BDFTimestepper : ITimeStepper {
         /// <summary>
         /// The spatial operator this time stepper is based on
@@ -108,8 +115,36 @@ namespace BoSSS.Solution.TimeStepping {
 
         private CoordinateVector[] Stack_u;
 
-        public BDFTimestepper(SpatialOperator spatialOp, IEnumerable<DGField> UnknownFields, IEnumerable<DGField> ParameterFields, int BDForder, Func<ISparseSolver> SolverFactory, bool DelayInit) {
+        SubGrid subGrid;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="spatialOp">
+        /// The Spatial Discretization,
+        /// also supports nonconstant operators,
+        /// which are linear in the unknown variable
+        /// </param>
+        /// <param name="UnknownFields"></param>
+        /// <param name="ParameterFields"></param>
+        /// <param name="BDForder">
+        /// The Temporal Discretization Order
+        /// >=1 : BDF-Scheme
+        /// 0: Explicit Euler
+        /// -1: Crank-Nicholson
+        /// </param>
+        /// <param name="SolverFactory">
+        /// The Linear solver for the resulting systems
+        /// </param>
+        /// <param name="DelayInit">TODO: Delayed Initialization for restarts etc.</param>
+        /// <param name="subGrid">TODO: Perform Time-Marching only on Substep</param>
+        public BDFTimestepper(SpatialOperator spatialOp, IEnumerable<DGField> UnknownFields, IEnumerable<DGField> ParameterFields, int BDForder, Func<ISparseSolver> SolverFactory, bool DelayInit, SubGrid subGrid = null) {
             using (new ilPSP.Tracing.FuncTrace()) {
+
+                if (spatialOp.ContainsNonlinear) { throw new NotImplementedException("No Inversion of Nonlinear Operators implemented, yet."); };
+
+                if (DelayInit) throw new NotImplementedException();
+                if (subGrid != null) throw new NotImplementedException();
 
                 this.Mapping = new CoordinateMapping(UnknownFields.ToArray());
                 this.ParameterMapping = new CoordinateMapping(ParameterFields.ToArray());
@@ -123,6 +158,7 @@ namespace BoSSS.Solution.TimeStepping {
                 Operator = spatialOp;
                 this.SolverFactory = SolverFactory;
 
+                this.subGrid = subGrid;
 
                 // Initialize Matrix
                 SpatialMatrix = new BlockMsrMatrix(Mapping);
@@ -147,7 +183,7 @@ namespace BoSSS.Solution.TimeStepping {
         }
 
         /// <summary>
-        /// Initilializes the Stack for the Unknown u and the Operator Matrix and Affine Part
+        /// Initilializes the History-stack for the Unknown u and the Operator Matrix and Affine Part
         /// </summary>
         /// <param name="Mapping"></param>
         /// <param name="StackLength"></param>
@@ -246,7 +282,10 @@ namespace BoSSS.Solution.TimeStepping {
             Operator.ComputeMatrixEx(
                 Mapping, ParameterMapping, Mapping,
                 Stack_OpMatrix[1], Stack_OpAffine[1],
-                false
+                false,
+                 0.0,
+                 new EdgeQuadratureScheme(true, subGrid?.AllEdgesMask),
+                 new CellQuadratureScheme(true, subGrid?.VolumeMask)
                 );
 
             //Debug.Assert(Stack_OpMatrix[1].InfNorm() > 0);
@@ -270,7 +309,7 @@ namespace BoSSS.Solution.TimeStepping {
             double[] RHS;
             BlockMsrMatrix myMatrix;
             AssembleMatrix(dt, out myMatrix, out RHS);
-            using (var slv = SolverFactory()) {
+            using (var slv = SolverFactory()  ) {
                 slv.DefineMatrix(myMatrix);
                 slv.Solve(CurrentState, RHS);
                 slv.Dispose();
@@ -315,6 +354,17 @@ namespace BoSSS.Solution.TimeStepping {
             Debug.Assert(SystemMatrix.InfNorm() > 0);
             Debug.Assert(SystemAffine.L2Norm() > 0);
 
+            if (subGrid != null) {
+                int[] SubVecIdx = Mapping.GetSubvectorIndices(subGrid, true, new int[] { 0 });
+                int L = SubVecIdx.Length;
+
+                for (int i=0; i < L; i++) {
+                    SystemMatrix.ClearRow(SubVecIdx[i]);
+                    SystemMatrix[SubVecIdx[i], SubVecIdx[i]] = 1;
+                    SystemAffine[SubVecIdx[i]] = 0;
+                } 
+            }
+
         }
 
 
@@ -344,6 +394,15 @@ namespace BoSSS.Solution.TimeStepping {
 
         public void ResetTime(double NewTime, int timestepNumber) {
             Time = NewTime;
+        }
+
+        public TimeInformation TimeInfo {
+            get;
+            protected set;
+        }
+
+        public void UpdateTimeInfo(TimeInformation timeInfo) {
+            this.TimeInfo = timeInfo;
         }
     }
 }
