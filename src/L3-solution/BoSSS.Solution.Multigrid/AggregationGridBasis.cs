@@ -41,6 +41,9 @@ namespace BoSSS.Solution.Multigrid {
 
 
         /*
+         * old version, inaccurate
+         * 
+         * 
         public static AggregationGridBasis[][] CreateSequence(IEnumerable<AggregationGrid> _agSeq, IEnumerable<Basis> dgBasisS) {
 
             // check input
@@ -255,7 +258,18 @@ namespace BoSSS.Solution.Multigrid {
         */
 
 
-
+        /// <summary>
+        /// Creation of a sequence of aggregation basis objects.
+        /// </summary>
+        /// <param name="_agSeq"></param>
+        /// Sequence of aggregation grids.
+        /// <param name="dgBasisS">
+        /// List of DG basis objects on base grid.
+        /// </param>
+        /// <returns>
+        /// - 1st index: correlates with grid level, i.e. with <paramref name="_agSeq"/>.
+        /// - 2nd index: correlates with DG basis, <paramref name="dgBasisS"/>.
+        /// </returns>
         public static AggregationGridBasis[][] CreateSequence(IEnumerable<AggregationGrid> _agSeq, IEnumerable<Basis> dgBasisS) {
 
             // check input
@@ -541,10 +555,12 @@ namespace BoSSS.Solution.Multigrid {
                 AggregationGridBasis[] Abs = new AggregationGridBasis[agSeq.Length];
                 XdgAggregationBasis[] XAbs = new XdgAggregationBasis[agSeq.Length];
                 for (int iLevel = 0; iLevel < agSeq.Length; iLevel++) {
-                    if (AnyNonX)
+                    if (AnyNonX) {
                         Abs[iLevel] = new AggregationGridBasis(maxDgBasis, iLevel > 0 ? Abs[iLevel - 1] : null, agSeq[iLevel], Injectors[iLevel]);
-                    if (AnyX)
+                    }
+                    if (AnyX) {
                         XAbs[iLevel] = new XdgAggregationBasis(maxXdgBasis, iLevel > 0 ? XAbs[iLevel - 1] : null, agSeq[iLevel], Injectors[iLevel]);
+                    }
 
                     ret[iLevel] = new AggregationGridBasis[UseX.Length];
                     for (int i = 0; i < UseX.Length; i++)
