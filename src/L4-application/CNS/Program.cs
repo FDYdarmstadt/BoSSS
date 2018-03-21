@@ -345,6 +345,7 @@ namespace CNS {
         /// </summary>
         public override void PostRestart(double time, TimestepNumber timestep) {
             this.StartTime = time;
+            this.TimestepNumber = timestep.MajorNumber;
 
             if (SpeciesMap is ImmersedSpeciesMap ibmMap) {
                 LsTrk = ibmMap.Tracker;
@@ -370,9 +371,12 @@ namespace CNS {
         /// </summary>
         /// <param name="NoOfClasses"></param>
         /// <param name="cellToPerformanceClassMap"></param>
-        protected override void GetCellPerformanceClasses(out int NoOfClasses, out int[] cellToPerformanceClassMap) {
+        /// <param name="TimeStepNo"></param>
+        /// <param name="physTime"></param>
+        protected override void GetCellPerformanceClasses(out int NoOfClasses, out int[] cellToPerformanceClassMap, int TimeStepNo, double physTime) {
             // Update clustering before cell redistribution when LTS is being used
             if (TimeStepper is AdamsBashforthLTS ABLTSTimeStepper) {
+                ABLTSTimeStepper.UpdateTimeInfo(new TimeInformation(TimeStepNo, physTime, -1));
                 bool reclustered = ABLTSTimeStepper.TryNewClustering(dt: -1);
                 ABLTSTimeStepper.SetReclusteredByGridRedist(reclustered);
             }

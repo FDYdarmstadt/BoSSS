@@ -149,7 +149,7 @@ namespace BoSSS.Solution {
                 return m_queryHandler;
             }
         }
-        
+
         /// <summary>
         /// searches for the User- or Machine-environment variable 'BOSSS_INSTALL'
         /// and verifies the existence of this directory.
@@ -329,11 +329,11 @@ namespace BoSSS.Solution {
                     // C#-instruction provided as argument 
                     // usually redicts to some pre-compiled static function
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++
-                 
+
 
                     var StringwithoutPrefix = opt.ControlfilePath.Substring(3);
 
-                  
+
 
                     ControlObjFromCode(StringwithoutPrefix, out ctrlV2, out ctrlV2_ParameterStudy);
 
@@ -355,7 +355,7 @@ namespace BoSSS.Solution {
                     }
 
                     ctrlfileContent = ctrlfileContent.MPIBroadcast(0, csMPI.Raw._COMM.WORLD);
-                    
+
                     ControlObjFromCode(ctrlfileContent, out ctrlV2, out ctrlV2_ParameterStudy);
 
                 } else if (opt.ControlfilePath.ToLower().EndsWith(".obj")) {
@@ -380,7 +380,7 @@ namespace BoSSS.Solution {
 
                     //} 
 
-                    if(ctrlV2 == null) {
+                    if (ctrlV2 == null) {
                         throw new ApplicationException(string.Format(
                             "Invalid control instruction: unable to cast the last result of the control file/cs-script of type {0} to type {1}",
                             controlObj.GetType().FullName,
@@ -437,7 +437,7 @@ namespace BoSSS.Solution {
                 //    c.ControlFileText = ctrlfileContent;
 
                 ctrl_ParameterStudy = new T[_ctrl_ParamStudy.Length];
-                for(int i = 0; i < ctrl_ParameterStudy.Length; i++) {
+                for (int i = 0; i < ctrl_ParameterStudy.Length; i++) {
                     ctrl_ParameterStudy[i] = (T)(_ctrl_ParamStudy[i]);
                 }
 
@@ -476,10 +476,10 @@ namespace BoSSS.Solution {
                 if (opt.SessionName != null)
                     ctrlV2.SessionName = opt.SessionName;
 
-                if(opt.ImmediatePlotPeriod != null) {
+                if (opt.ImmediatePlotPeriod != null) {
                     ctrlV2.ImmediatePlotPeriod = opt.ImmediatePlotPeriod.Value;
                 }
-                if(opt.SuperSampling != null) {
+                if (opt.SuperSampling != null) {
                     ctrlV2.SuperSampling = opt.SuperSampling.Value;
                 }
 
@@ -488,7 +488,7 @@ namespace BoSSS.Solution {
                     string[] AdHocTags;
                     AdHocTags = opt.TagsToAdd.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
                     ctrlV2.Tags.AddRange(AdHocTags);
-                } 
+                }
 
                 // run app
                 // -------
@@ -501,11 +501,11 @@ namespace BoSSS.Solution {
                 app.Bye();
                 app.ProfilingLog();
                 app.Dispose();
-                
+
 
             } else {
                 // no control file 
-               
+
 
                 throw new ArgumentException();
             }
@@ -545,7 +545,7 @@ namespace BoSSS.Solution {
             if (this.Control != null) {
                 this.Control.Verify();
 
-               
+
 
                 if (this.Control.NoOfTimesteps >= 0) {
                     this.NoOfTimesteps = this.Control.NoOfTimesteps;
@@ -856,7 +856,7 @@ namespace BoSSS.Solution {
                 if (this.DatabaseDriver.FsDriver is NullFileSystemDriver)
                     this.passiveIo = true;
 
-                if (this.Control.TracingNamespaces != null) 
+                if (this.Control.TracingNamespaces != null)
                     Tracer.SetTracingNamespaces(this.Control.TracingNamespaces);
             } else {
                 this.passiveIo = true;
@@ -929,7 +929,7 @@ namespace BoSSS.Solution {
                     //}
                     //tw.Close();
 
-                    if(this.Control.GeneratedFromCode) {
+                    if (this.Control.GeneratedFromCode) {
                         using (var tw = DatabaseDriver.FsDriver.GetNewLog("Control-script", this.CurrentSessionInfo.ID)) {
                             tw.WriteLine("//" + this.Control.GetType().AssemblyQualifiedName);
                             tw.Write(this.Control.ControlFileText);
@@ -1291,7 +1291,7 @@ namespace BoSSS.Solution {
                     //tsi = null;
                     //e = ee;
 
-                    if(ContinueOnIOError) {
+                    if (ContinueOnIOError) {
                         Console.WriteLine("Ignoring IO error: " + DateTime.Now);
 
                     } else {
@@ -1314,7 +1314,7 @@ namespace BoSSS.Solution {
         /// </summary>
         protected virtual bool ContinueOnIOError {
             get {
-                if(this.Control != null)
+                if (this.Control != null)
                     return this.Control.ContinueOnIoError;
                 else
                     return true;
@@ -1556,7 +1556,7 @@ namespace BoSSS.Solution {
         /// </summary>
         protected Boolean TerminationKey = false;
 
-        
+
 
 
         /// <summary>
@@ -1861,7 +1861,7 @@ namespace BoSSS.Solution {
                     Permutation tau;
                     GridUpdateDataVault_Adapt remshDat = new GridUpdateDataVault_Adapt(oldGridData, this.LsTrk);
                     BackupData(oldGridData, this.LsTrk, remshDat, out tau);
-                    
+
                     // save new grid to database
                     // ==========================
 
@@ -1869,9 +1869,9 @@ namespace BoSSS.Solution {
 
                         if (newGrid.GridGuid == null || newGrid.GridGuid.Equals(Guid.Empty))
                             throw new ApplicationException();
-                        if(newGrid.GridGuid.Equals(oldGridId))
+                        if (newGrid.GridGuid.Equals(oldGridId))
                             throw new ApplicationException();
-                        if(DatabaseDriver.GridExists(newGrid.GridGuid))
+                        if (DatabaseDriver.GridExists(newGrid.GridGuid))
                             throw new ApplicationException();
 
                         DatabaseDriver.SaveGrid(newGrid);
@@ -1918,7 +1918,7 @@ namespace BoSSS.Solution {
                         oldGridData = null;
 
                         if (this.Control == null || this.Control.NoOfMultigridLevels > 0)
-                            this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, 
+                            this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData,
                                 MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
                         else
                             this.MultigridSequence = new AggregationGrid[0];
@@ -2092,10 +2092,12 @@ namespace BoSSS.Solution {
         protected virtual int[] ComputeNewCellDistribution(int TimeStepNo, double physTime) {
             if (Control == null
                 || (Control.DynamicLoadBalancing_Period < 0 && !Control.DynamicLoadBalancing_RedistributeAtStartup)
-                || MPISize <= 1)
+                || MPISize <= 1) {
                 return null;
+            }
 
-            GetCellPerformanceClasses(out int performanceClassCount, out int[] cellToPerformanceClassMap);
+            // Should only be called when needed
+            GetCellPerformanceClasses(out int performanceClassCount, out int[] cellToPerformanceClassMap, TimeStepNo, physTime);
             if (cellToPerformanceClassMap.Length != this.Grid.CellPartitioning.LocalLength) {
                 throw new ApplicationException();
             }
@@ -2115,7 +2117,7 @@ namespace BoSSS.Solution {
                 performanceClassCount,
                 cellToPerformanceClassMap,
                 TimeStepNo,
-                Control.GridPartType, 
+                Control.GridPartType,
                 Control.GridPartOptions,
                 Control != null ? Control.DynamicLoadBalancing_ImbalanceThreshold : 0.12,
                 Control != null ? Control.DynamicLoadBalancing_Period : 5,
@@ -2131,7 +2133,9 @@ namespace BoSSS.Solution {
         /// <param name="CellPerfomanceClasses">
         /// Performance classes for the Cut-Cell-Balancer.
         /// </param>
-        virtual protected void GetCellPerformanceClasses(out int NoOfClasses, out int[] CellPerfomanceClasses) {
+        /// <param name="TimeStepNo"></param>
+        /// <param name="physTime"></param>
+        virtual protected void GetCellPerformanceClasses(out int NoOfClasses, out int[] CellPerfomanceClasses, int TimeStepNo, double physTime) {
             throw new NotImplementedException("Must be implemented by user (if he wants to use load balancing).");
         }
 
@@ -2294,8 +2298,8 @@ namespace BoSSS.Solution {
                     // Create log during first iteration (happens at this point
                     // because $m_IOFields would undefined before)
                     if (log == null) {
-                        log = InitParameterStudyLog(app.m_IOFields, app, 
-                            out nlog_stream, 
+                        log = InitParameterStudyLog(app.m_IOFields, app,
+                            out nlog_stream,
                             opt.PstudyCase > 0 ? iPstudy : -1);
                     }
 
@@ -2379,11 +2383,11 @@ namespace BoSSS.Solution {
                 log.Close();
             }
         }
-        
+
 
         static private StreamWriter InitParameterStudyLog(
             ICollection<DGField> ioFields, Application<T> app,
-            out Stream BinIOStream, 
+            out Stream BinIOStream,
             int counter) {
             // Only do something on rank 0
             if (ilPSP.Environment.MPIEnv.MPI_Rank != 0) {
