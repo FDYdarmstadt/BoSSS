@@ -176,7 +176,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             //control.NoOfTimesteps = 5;
             //control.dtFixed = 1.5e-3;
 
-            CheckRunsProduceSameResults(control);
+            CheckRunsProduceSameResults(control, hilbert: true);
         }
 
         private static CNSControl ShockTubeToro1Template(int dgDegree, ExplicitSchemes explicitScheme, int explicitOrder, int noOfCells = 50, double gridStretching = 0.0) {
@@ -315,7 +315,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             return c;
         }
 
-        private static void CheckRunsProduceSameResults(CNSControl refControl, double differenceThreshold = 1e-16) {
+        private static void CheckRunsProduceSameResults(CNSControl refControl, double differenceThreshold = 1e-15, bool hilbert = false) {
             Debug.Assert(refControl.DynamicLoadBalancing_Period <= 0);
             Debug.Assert(refControl.DynamicLoadBalancing_CellCostEstimatorFactories.Count == 0);
 
@@ -346,26 +346,34 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             loadBalSolver.Init(loadBalControl);
             loadBalSolver.RunSolverMode();
 
+            ShockTubeLoadBalancingTests loadBalSolverHilbert = null;
+            if (hilbert) {
+                Console.WriteLine("\nRun WITH load balancing (Hilbert)");
+                loadBalSolverHilbert = new ShockTubeLoadBalancingTests();
+                loadBalSolverHilbert.Init(loadBalControl);
+                loadBalSolverHilbert.RunSolverMode();
+            }
+
             // To be able to compare errors without using the database, we need to 
             // agree on a single grid partitioning in the end -> use ref
-            Console.WriteLine("Transfering load balancing data to reference grid");
-            var refPartitioning = new int[loadBalSolver.GridData.Cells.NoOfLocalUpdatedCells];
-            for (int i = 0; i < refSolver.GridData.CellPartitioning.TotalLength; i++) {
-                int localIndex = loadBalSolver.GridData.CellPartitioning.TransformIndexToLocal(i);
-                if (localIndex >= 0 && localIndex < loadBalSolver.GridData.Cells.NoOfLocalUpdatedCells) {
-                    refPartitioning[localIndex] = refSolver.GridData.CellPartitioning.FindProcess(i);
-                }
-            }
-            loadBalSolver.MpiRedistributeAndMeshAdapt(
-                int.MinValue,
-                double.MinValue,
-                refPartitioning,
-                refSolver.GridData.CurrentGlobalIdPermutation);
+            //Console.WriteLine("Transfering load balancing data to reference grid");
+            //var refPartitioning = new int[loadBalSolver.GridData.Cells.NoOfLocalUpdatedCells];
+            //for (int i = 0; i < refSolver.GridData.CellPartitioning.TotalLength; i++) {
+            //    int localIndex = loadBalSolver.GridData.CellPartitioning.TransformIndexToLocal(i);
+            //    if (localIndex >= 0 && localIndex < loadBalSolver.GridData.Cells.NoOfLocalUpdatedCells) {
+            //        refPartitioning[localIndex] = refSolver.GridData.CellPartitioning.FindProcess(i);
+            //    }
+            //}
+            //loadBalSolver.MpiRedistributeAndMeshAdapt(
+            //    int.MinValue,
+            //    double.MinValue,
+            //    refPartitioning,
+            //    refSolver.GridData.CurrentGlobalIdPermutation);
 
             //if (!twoD) {
             //    CompareErrors(refSolver.WorkingSet, loadBalSolver.WorkingSet, differenceThreshold);
             //}
-            CompareNorms(refSolver, loadBalSolver, differenceThreshold);
+            CompareNorms(refSolver, loadBalSolver, differenceThreshold, loadBalSolverHilbert);
         }
 
         /// <summary>
@@ -419,7 +427,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
         /// <param name="loadBalSolver"></param>
         /// <param name="refSolver"></param>
         /// <param name="differenceThreshold"></param>
-        private static void CompareNorms(IProgram<CNSControl> loadBalSolver, IProgram<CNSControl> refSolver, double differenceThreshold) {
+        private static void CompareNorms(IProgram<CNSControl> loadBalSolver, IProgram<CNSControl> refSolver, double differenceThreshold, IProgram<CNSControl> hilbertSolver = null) {
             List<Action> assertions = new List<Action>();
             string[] varName = { "Density", "x-Momentum", "Energy" };
 
@@ -440,6 +448,20 @@ namespace CNS_MPITests.Tests.LoadBalancing {
                 string message = String.Format("Difference in {0}-L2Norms is {1} (Threshold is {2})", varName[i], difference, differenceThreshold);
                 Console.WriteLine(message);
                 assertions.Add(() => Assert.IsTrue(difference < differenceThreshold, message));
+
+                // Duplicated code...
+                double differenceHilbert;
+                if (hilbertSolver != null) {
+                    List<DGField> listOfDGFields_Hilbert = (List<DGField>)hilbertSolver.IOFields;
+                    DGField variableHilbert = listOfDGFields_Hilbert[i];
+                    double L2NormHilbert = variableHilbert.L2Norm();
+
+                    differenceHilbert = Math.Abs(L2NormHilbert - L2NormRepOFF);
+
+                    string messageHilbert = String.Format("Difference in {0}-L2Norms is {1} (Threshold is {2})", varName[i], differenceHilbert, differenceThreshold);
+                    Console.WriteLine(messageHilbert);
+                    assertions.Add(() => Assert.IsTrue(differenceHilbert < differenceThreshold, messageHilbert));
+                }
             }
 
             assertions.ForEach(a => a());
