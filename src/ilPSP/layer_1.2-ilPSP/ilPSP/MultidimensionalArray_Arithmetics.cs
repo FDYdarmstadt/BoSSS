@@ -516,10 +516,10 @@ namespace ilPSP {
                     throw new ArgumentException("Wrong dimension of array A.");
                 if(B.Dimension != DB)
                     throw new ArgumentException("Wrong dimension of array B.");
-                if(object.ReferenceEquals(T, A))
-                    throw new ArgumentException("Result must be different from A.");
-                if(object.ReferenceEquals(T, B))
-                    throw new ArgumentException("Result must be different from B.");
+                //if(object.ReferenceEquals(T, A))
+                //    throw new ArgumentException("Result must be different from A.");
+                //if(object.ReferenceEquals(T, B))
+                //    throw new ArgumentException("Result must be different from B.");
 
               
                 for(int i = 0; i < RunACount; i++) {
