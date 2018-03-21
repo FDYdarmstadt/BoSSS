@@ -92,7 +92,7 @@ namespace CNS.Tests.IBMTests {
             // NEXT STEP: SET THIS BOOL TO FALSE AND JUST USE IN POSITIVE SUB_VOLUME;
             // THEN TRY BOUNDING BOX APPROACH?
             // WHY THE HELL DOES THIS CONFIGURATION FAIL!??!?!?!?
-            c.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
             c.SurfaceHMF_ProjectNodesToLevelSet = false;
             c.SurfaceHMF_RestrictNodes = true;
             c.SurfaceHMF_UseGaussNodes = false;
@@ -108,7 +108,7 @@ namespace CNS.Tests.IBMTests {
             //c.DbPath = @"/home/kraemer/GaussianBump/dbev2/";
             c.savetodb = true;
             c.saveperiod = 20000;
-            c.ProjectName = "BoxHMF=" + c.MomentFittingVariant + "_Ma=0.5_(" + 2 * noOfCells + "x" + noOfCells + ")_CFL=" + c.CFLFraction + "_lsQuadOrder=" + c.LevelSetQuadratureOrder + "_p=" + dgDegree + "_agg=" + c.AgglomerationThreshold + "_epsX=" + epsilonX + "_epsY=" + epsilonY;
+            c.ProjectName = "BoxHMF=" + c.CutCellQuadratureType + "_Ma=0.5_(" + 2 * noOfCells + "x" + noOfCells + ")_CFL=" + c.CFLFraction + "_lsQuadOrder=" + c.LevelSetQuadratureOrder + "_p=" + dgDegree + "_agg=" + c.AgglomerationThreshold + "_epsX=" + epsilonX + "_epsY=" + epsilonY;
             c.ProjectDescription = "GaussianBump with Ma=0.5";
             c.Tags.Add("Gaussian Bump");
             c.Tags.Add("IBM Test");
@@ -397,7 +397,7 @@ namespace CNS.Tests.IBMTests {
             //IBM Settings
             c.LevelSetBoundaryTag = "adiabaticSlipWall";
             c.LevelSetQuadratureOrder = 2 * lsDegree;
-            c.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
             c.AgglomerationThreshold = 0.3;
 
             // Primary Variables

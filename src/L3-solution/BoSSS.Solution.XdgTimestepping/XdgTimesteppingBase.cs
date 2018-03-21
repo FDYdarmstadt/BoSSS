@@ -43,9 +43,11 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// Corresponds with row and columns of <paramref name="OpMtx"/>, resp. with <paramref name="OpAffine"/>.
     /// </param>
     /// <param name="CurrentState"></param>
-    /// <param name="CurrentAgg"></param>
+    /// <param name="AgglomeratedCellLengthScales">
+    /// Length scale *of agglomerated grid* for each cell, e.g. to set penalty parameters. 
+    /// </param>
     /// <param name="time"></param>
-    public delegate void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, MultiphaseCellAgglomerator CurrentAgg, double time);
+    public delegate void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time);
 
     /// <summary>
     /// Callback-template for level-set updates.
@@ -68,10 +70,10 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// </returns>
     public delegate double DelUpdateLevelset(DGField[] CurrentState, double time, double dt, double UnderRelax, bool incremental);
 
-    /// <summary>
-    /// Callback-template for to obtain cut-cell metrics.
-    /// </summary>
-    public delegate CutCellMetrics DelUpdateCutCellMetrics();
+    ///// <summary>
+    ///// Callback-template for to obtain cut-cell metrics.
+    ///// </summary>
+    //public delegate CutCellMetrics DelUpdateCutCellMetrics();
 
     /// <summary>
     /// Callback-template for pushing the level-set in case of increment timestepping
@@ -119,7 +121,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Newtons method coupled with GMRES as default. Convergeces quadratically but needs a good approximation. Preconditioning of the Newton-GMRES is set to LinearSolver.
         /// </summary>
-        Newton = 1,
+        Newton = 1
     }
 
     /// <summary>
@@ -202,7 +204,9 @@ namespace BoSSS.Solution.XdgTimestepping {
             protected set;
         }
 
-
+        /// <summary>
+        /// How the interface motion should be integrated
+        /// </summary>
         public LevelSetHandling Config_LevelSetHandling {
             get;
             protected set;
@@ -212,6 +216,12 @@ namespace BoSSS.Solution.XdgTimestepping {
             get;
             set;
         }
+
+        /// <summary>
+        /// in case of coupledIterative the fratro for underrelaxing the level set movement 
+        /// </summary>
+        public double IterUnderrelax = 1.0;
+
 
         /// <summary>
         /// Convergence criterion if a nonlinear solver has to be used.
@@ -224,6 +234,13 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Maximum number of iterations for an iterative solver (linear or nonlinear).
         /// </summary>
         public int Config_MaxIterations = 1000;
+
+        public int Config_MaxKrylovDim = 30;
+
+        /// <summary>
+        /// Under relaxation factor for iterative solver.
+        /// </summary>
+        public double Config_UnderRelax = 1.0;
 
         /// <summary>
         /// Session path for writing in database
@@ -247,6 +264,24 @@ namespace BoSSS.Solution.XdgTimestepping {
             get;
             protected set;
         }
+
+        /// <summary>
+        /// Species to compute, must be a subset of <see cref="LevelSetTracker.SpeciesIdS"/>
+        /// </summary>
+        public SpeciesId[] Config_SpeciesToCompute {
+            get;
+            protected set;
+        }
+
+        /// <summary>
+        /// Quadrature order on cut cells.
+        /// </summary>
+        public int Config_CutCellQuadratureOrder {
+            get;
+            protected set;
+        }
+
+
 
         /// <summary>
         /// Whether the operator is linear, nonlinear.
@@ -273,13 +308,13 @@ namespace BoSSS.Solution.XdgTimestepping {
             protected set;
         }
 
-        /// <summary>
-        /// Callback routine to update the cut-cell metrics.
-        /// </summary>
-        public DelUpdateCutCellMetrics UpdateCutCellMetrics {
-            get;
-            protected set;
-        }
+        ///// <summary>
+        ///// Callback routine to update the cut-cell metrics.
+        ///// </summary>
+        //public DelUpdateCutCellMetrics UpdateCutCellMetrics {
+        //    get;
+        //    protected set;
+        //}
 
         /// <summary>
         /// As usual the threshold for cell agglomeration.
@@ -319,18 +354,11 @@ namespace BoSSS.Solution.XdgTimestepping {
         protected AggregationGrid[] MultigridSequence;
 
         /// <summary>
-        /// The aggregation grid basis.
+        /// The aggregation grid basis, initialized by <see cref="InitMultigrid(DGField[], bool)"/>
         ///  - 1st index: grid level
         ///  - 2nd index: variable
         /// </summary>
         protected AggregationGridBasis[][] MultigridBasis;
-
-        /*
-        /// <summary>
-        /// The XDG aggregation grid basis, for each multi grid level, which must be updated after each level set update.
-        /// </summary>
-        protected XdgAggregationBasis[] m_XdgAggregationBasis;
-        */
 
         /// <summary>
         /// Last solver residuals.
@@ -340,84 +368,22 @@ namespace BoSSS.Solution.XdgTimestepping {
             protected set;
         }
 
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="ProblemMapping"></param>
-        /// <param name="MultigridSequence"></param>
-        /// <param name="useX">
-        /// Create an XDG aggregation basis even if <paramref name="ProblemMapping"/> only contains DG basis.
-        /// </param>
-        /// <returns></returns>
-        public static AggregationGridBasis[][] CreateAggregationGridBasis(UnsetteledCoordinateMapping ProblemMapping, LevelSetTracker _LsTrk, AggregationGrid[] MultigridSequence, bool useX) {
-
-            Debug.Assert(object.ReferenceEquals(_LsTrk.GridDat, ProblemMapping.GridDat));
-            Basis[] BasisS = ProblemMapping.BasisS.ToArray();
-            Debug.Assert(BasisS.Where(b => !object.ReferenceEquals(b.GridDat, _LsTrk.GridDat)).Count() == 0);
-            AggregationGridBasis[][] MultigridBasis = new AggregationGridBasis[MultigridSequence.Length][];
-
-
-
-            XDGBasis maxXDGbasis = null;
-            Basis maxDGbasis = null;
-            foreach (var b in BasisS) {
-                if (b is XDGBasis) {
-                    XDGBasis xb = (XDGBasis)b;
-                    if (maxXDGbasis == null || maxXDGbasis.Degree < xb.Degree)
-                        maxXDGbasis = xb;
-                }
-                else {
-                    if (maxDGbasis == null || maxDGbasis.Degree < b.Degree)
-                        maxDGbasis = b;
-                }
-            }
-
-            if (useX) {
-                if (maxDGbasis != null) {
-                    if (maxXDGbasis == null || maxXDGbasis.Degree < maxDGbasis.Degree) {
-                        maxXDGbasis = new XDGBasis(_LsTrk, maxDGbasis.Degree);
-                    }
-                }
-            }
-
-
-            XdgAggregationBasis[] mgXdgB;
-            if (maxXDGbasis != null)
-                mgXdgB = MultigridSequence.Select(aggGrd => new XdgAggregationBasis(maxXDGbasis, aggGrd)).ToArray();
-            else
-                mgXdgB = null;
-
-
-            AggregationGridBasis[] mgDgB;
-            if (maxDGbasis != null)
-                mgDgB = MultigridSequence.Select(aggGrd => new AggregationGridBasis(maxDGbasis, aggGrd)).ToArray();
-            else
-                mgDgB = null;
-
-            for (int iLevel = 0; iLevel < MultigridSequence.Length; iLevel++) {
-                MultigridBasis[iLevel] = new AggregationGridBasis[BasisS.Length];
-                for (int r = 0; r < BasisS.Length; r++) {
-                    if (BasisS[r] is XDGBasis || useX)
-                        MultigridBasis[iLevel][r] = mgXdgB[iLevel];
-                    else
-                        MultigridBasis[iLevel][r] = mgDgB[iLevel];
-                }
-            }
-
-            return MultigridBasis;
-        }
-
+        
 
         /// <summary>
         /// Initialization of the solver/preconditioner.
         /// </summary>
         protected void InitMultigrid(DGField[] Fields, bool useX) {
-            this.MultigridBasis = CreateAggregationGridBasis(
-                new UnsetteledCoordinateMapping(Fields.Select(f => f.Basis).ToArray()),
-                this.m_LsTrk,
-                this.MultigridSequence,
-                useX);
+            Basis[] bs;
+            if(useX) {
+                bs = new Basis[Fields.Length];
+                for (int i = 0; i < bs.Length; i++)
+                    bs[i] = new XDGBasis(m_LsTrk, Fields[i].Basis.Degree);
+            } else {
+                bs = Fields.Select(f => f.Basis).ToArray();
+            }
+
+            this.MultigridBasis = AggregationGridBasis.CreateSequence(this.MultigridSequence, bs);
         }
 
         /// <summary>
@@ -426,12 +392,31 @@ namespace BoSSS.Solution.XdgTimestepping {
         protected MultiphaseCellAgglomerator m_CurrentAgglomeration;
 
         /// <summary>
+        /// Agglomerated length scales, input for <see cref="ComputeOperatorMatrix"/>.
+        /// </summary>
+        protected Dictionary<SpeciesId, MultidimensionalArray> GetAgglomeratedLengthScales() {
+            if(m_CurrentAgglomeration != null) {
+                //
+                // agglomerated length scales are available from 
+                //
+                return m_CurrentAgglomeration.CellLengthScales;
+            } else {
+                //
+                // 'Notlösung' -- no actual agglomeration available - use length scales form a temporary agglomerator.
+                //
+                var agg = this.m_LsTrk.GetAgglomerator(this.Config_SpeciesToCompute, this.Config_CutCellQuadratureOrder, this.Config_AgglomerationThreshold);
+                return agg.CellLengthScales;
+            }
+        }
+
+
+        /// <summary>
         /// Returns either a solver for the Navier-Stokes or the Stokes system.
         /// E.g. for testing purposes, one might also use a nonlinear solver on a Stokes system.
         /// </summary>
         /// <param name="nonlinSolver"></param>
         /// <param name="linearSolver"></param>
-        protected string GetSolver(out NonlinearSolver nonlinSolver, out ISolverSmootherTemplate linearSolver) {
+        protected virtual string GetSolver(out NonlinearSolver nonlinSolver, out ISolverSmootherTemplate linearSolver) {
             nonlinSolver = null;
             linearSolver = null;
 
@@ -453,85 +438,51 @@ namespace BoSSS.Solution.XdgTimestepping {
                 // the nonlinear solvers:
                 // +++++++++++++++++++++++++++++++++++++++++++++
 
-                if (Config_LevelSetHandling != LevelSetHandling.Coupled_Iterative) {
-                    switch (Config_NonlinearSolver) {
-                        case NonlinearSolverMethod.Picard:
+                switch (Config_NonlinearSolver) {
+                    case NonlinearSolverMethod.Picard:
 
-                            nonlinSolver = new FixpointIterator(
-                                this.AssembleMatrixCallback,
-                                this.MultigridBasis,
-                                this.Config_MultigridOperator) {
-                                MaxIter = Config_MaxIterations,
-                                MinIter = Config_MinIterations,
-                                m_LinearSolver = Config_linearSolver,
-                                m_SessionPath = SessionPath,
-                                ConvCrit = Config_SolverConvergenceCriterion,
-                            };
-                            break;
-
-                        case NonlinearSolverMethod.Newton:
-
-                            nonlinSolver = new Newton(
-                                this.AssembleMatrixCallback,
-                                this.MultigridBasis,
-                                this.Config_MultigridOperator) {
-                                maxKrylovDim = 1000,
-                                MaxIter = Config_MaxIterations,
-                                MinIter = Config_MinIterations,
-                                ApproxJac = Newton.ApproxInvJacobianOptions.GMRES,
-                                Precond = Config_linearSolver,
-                                GMRESConvCrit = Config_SolverConvergenceCriterion,
-                                ConvCrit = Config_SolverConvergenceCriterion,
-                                m_SessionPath = SessionPath,
-                            };
-                            break;
-
-                        default:
-
-                            throw new NotImplementedException();
-                    }
-                }
-                else {
-                    switch (Config_NonlinearSolver) {
-                        case NonlinearSolverMethod.Picard:
-
-                            nonlinSolver = new FixpointIterator(
+                        nonlinSolver = new FixpointIterator(
                             this.AssembleMatrixCallback,
                             this.MultigridBasis,
-                            this.Config_MultigridOperator) {
-                                MaxIter = Config_MaxIterations,
-                                MinIter = Config_MinIterations,
-                                m_LinearSolver = Config_linearSolver,
-                                ConvCrit = Config_SolverConvergenceCriterion,
-                                LastIteration_Converged = LevelSetConvergenceReached,
-                            };
-                            break;
+                            this.Config_MultigridOperator)
+                        {
+                            MaxIter = Config_MaxIterations,
+                            MinIter = Config_MinIterations,
+                            m_LinearSolver = Config_linearSolver,
+                            m_SessionPath = SessionPath,
+                            ConvCrit = Config_SolverConvergenceCriterion,
+                            UnderRelax = Config_UnderRelax,    
+                        };
 
-                        case NonlinearSolverMethod.Newton:
+                        if (this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
+                            ((FixpointIterator)nonlinSolver).CoupledIteration_Converged = LevelSetConvergenceReached;
+                        }
 
-                            nonlinSolver = new Newton(
-                                this.AssembleMatrixCallback,
-                                this.MultigridBasis,
-                                this.Config_MultigridOperator) {
-                                maxKrylovDim = 1000,
-                                MaxIter = Config_MaxIterations,
-                                MinIter = Config_MinIterations,
-                                ApproxJac = Newton.ApproxInvJacobianOptions.GMRES,
-                                Precond = Config_linearSolver,
-                                GMRESConvCrit = Config_SolverConvergenceCriterion,
-                                ConvCrit = Config_SolverConvergenceCriterion,
-                                m_SessionPath = SessionPath,
-                            };
-                            break;
+                        break;
+                         
+                    case NonlinearSolverMethod.Newton:
 
-                        default:
+                        nonlinSolver = new Newton(
+                            this.AssembleMatrixCallback,
+                            this.MultigridBasis,
+                            this.Config_MultigridOperator)
+                        {
+                            maxKrylovDim = Config_MaxKrylovDim,
+                            MaxIter = Config_MaxIterations,
+                            MinIter = Config_MinIterations,
+                            ApproxJac = Newton.ApproxInvJacobianOptions.GMRES,
+                            Precond = Config_linearSolver,
+                            GMRESConvCrit = Config_SolverConvergenceCriterion,
+                            ConvCrit = Config_SolverConvergenceCriterion,
+                            m_SessionPath = SessionPath,
+                        };
+                        break;
 
-                            throw new NotImplementedException();
-                    }
+                    default:
+                        throw new NotImplementedException();
                 }
-
-            }
-            else {
+               
+            } else {
 
                 // +++++++++++++++++++++++++++++++++++++++++++++
                 // the linear solvers:
@@ -580,13 +531,13 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// If true, the residual will we transformed back to the original XDG basis (before agglomeration and block preconditioning)
         /// before the L2-norm is computed.
         /// </summary>
-        public bool m_TransformedResi = true;
+        public bool m_TransformedResi = false;
 
         public double m_LastLevelSetResidual;
 
-        protected bool LevelSetConvergenceReached(double Residual_Solver) {
+        protected bool LevelSetConvergenceReached() {
 
-            return (Residual_Solver < Config_SolverConvergenceCriterion && m_LastLevelSetResidual < Config_LevelSetConvergenceCriterion);
+            return (m_LastLevelSetResidual < Config_LevelSetConvergenceCriterion);
         }
 
         /// <summary>
@@ -629,7 +580,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                         double L2Res = 0.0;
 
                         foreach (int idx in VarIdx[i])
-                            L2Res += currentRes[idx].Pow2();
+                            L2Res += currentRes[idx-Mgop.Mapping.i0].Pow2();
                         L2Res = L2Res.MPISum().Sqrt(); // would be better to do the MPISum for all L2Res together,
                                                        //                                but this implementation is anyway inefficient....
 
@@ -702,5 +653,6 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// required for block-precond.
         /// </param>
         abstract protected void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, DGField[] argCurSt);
+
     }
 }

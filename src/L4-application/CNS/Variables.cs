@@ -437,6 +437,8 @@ namespace CNS {
             "sensor",
             VariableTypes.Other,
             delegate (DGField s, CellMask cellMask, IProgram<CNSControl> program) {
+                s.Clear();  // Just to be sure that we get new values only
+
                 IShockSensor sensor = program.Control.ShockSensor;
                 foreach (Chunk chunk in cellMask) {
                     foreach (int cell in chunk.Elements) {
@@ -465,6 +467,34 @@ namespace CNS {
                         foreach (Chunk chunk in currentCluster.VolumeMask) {
                             foreach (int cell in chunk.Elements) {
                                 ClusterVisualizationField.SetMeanValue(cell, i);
+                            }
+                        }
+                    }
+                }
+            });
+
+        /// <summary>
+        /// The so-called Schlieren variables is based on the magnitude of the density gradient
+        /// </summary>
+        public static readonly DerivedVariable Schlieren = new DerivedVariable(
+            "schlieren",
+            VariableTypes.Other,
+            delegate (DGField schlierenField, CellMask cellMask, IProgram<CNSControl> program) {
+                schlierenField.Clear();
+
+                // Calculate the magnitude of the density gradient
+                SinglePhaseField derivative = new SinglePhaseField(schlierenField.Basis, "derivative");
+                int D = program.GridData.SpatialDimension;
+
+                for (int d = 0; d < D; d++) {
+                    derivative.Derivative(1.0, program.WorkingSet.Density, d);
+                    foreach (Chunk chunk in cellMask) {
+                        foreach (int cell in chunk.Elements) {
+                            double updateValue = schlierenField.GetMeanValue(cell) + Math.Pow(derivative.GetMeanValue(cell), 2);
+                            if (d == (D - 1)) {
+                                schlierenField.SetMeanValue(cell, Math.Sqrt(updateValue));
+                            } else {
+                                schlierenField.SetMeanValue(cell, updateValue);
                             }
                         }
                     }

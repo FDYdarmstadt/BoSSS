@@ -33,28 +33,33 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
     public class LineAndPointQuadratureFactory {
 
-        public LineAndPointQuadratureFactory(LevelSetTracker tracker, RefElement Kref, int levSetIndex, bool SupportPointrule, LineSegment.IRootFindingAlgorithm rootFindingAlgorithm = null) {
-            this.tracker = tracker;
+        public LineAndPointQuadratureFactory(RefElement Kref, 
+            LevelSetTracker.LevelSetData levelSetData, 
+            bool SupportPointrule, LineSegment.IRootFindingAlgorithm rootFindingAlgorithm = null) {
             this.m_RefElement = Kref;
             this.Tolerance = 1e-13;
-            this.LevelSetIndex = levSetIndex;
+            this.LevelSetData = levelSetData;
             this.SupportPointrule = SupportPointrule;
             this.RootFindingAlgorithm = rootFindingAlgorithm ?? new LineSegment.SafeGuardedNewtonMethod(this.Tolerance*0.1);
-            this.referenceLineSegments = GetReferenceLineSegments(out this.segmentSorting, this.m_RefElement, this.RootFindingAlgorithm, this.tracker, this.LevelSetIndex);
+            this.referenceLineSegments = GetReferenceLineSegments(out this.segmentSorting, this.m_RefElement, this.RootFindingAlgorithm, levelSetData, this.LevelSetIndex);
            
 
-            if (this.tracker.GridDat.Grid.SpatialDimension != 2)
+            if (this.LevelSetData.GridDat.Grid.SpatialDimension != 2)
                 throw new NotSupportedException();
 
-            this.iKref = this.tracker.GridDat.Grid.RefElements.IndexOf(this.m_RefElement, (A, B) => object.ReferenceEquals(A, B));
+            this.iKref = this.LevelSetData.GridDat.Grid.RefElements.IndexOf(this.m_RefElement, (A, B) => object.ReferenceEquals(A, B));
             if (this.iKref < 0)
                 throw new ArgumentException("Reference element cannot be found in the provided grid.");
 
-            if (levSetIndex >= tracker.LevelSets.Count) {
-                throw new ArgumentOutOfRangeException("Please specify a valid index for the level set function");
-            }
+            
 
-            this.MaxGrid = this.tracker.GridDat.Cells.GetCells4Refelement(this.iKref).Intersect(tracker._Regions.GetCutCellMask4LevSet(this.LevelSetIndex));
+            this.MaxGrid = this.LevelSetData.GridDat.Cells.GetCells4Refelement(this.iKref).Intersect(LevelSetData.Region.GetCutCellMask4LevSet(this.LevelSetIndex));
+        }
+
+        int LevelSetIndex {
+            get {
+                return LevelSetData.LevelSetIndex;
+            }
         }
 
         /// <summary>
@@ -87,17 +92,17 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         RefElement m_RefElement;
 
         /// <summary>
-        /// index of the respective level-set
+        ///Node-wise evaluation of the level-set field.
         /// </summary>
-        protected int LevelSetIndex;
+        protected LevelSetTracker.LevelSetData LevelSetData;
 
         bool SupportPointrule;
 
 
-        /// <summary>
-        /// the awesome level set tracker
-        /// </summary>
-        protected LevelSetTracker tracker;
+        ///// <summary>
+        ///// the awesome level set tracker
+        ///// </summary>
+        //protected LevelSetTracker tracker;
 
         abstract internal class QRF : IQuadRuleFactory<CellBoundaryQuadRule> {
             internal LineAndPointQuadratureFactory m_Owner;
@@ -125,10 +130,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
 
             private ChunkRulePair<CellBoundaryQuadRule> GetUncutRule(int jCell, int order) {
-                int iLs = this.m_Owner.LevelSetIndex;
-                var Lstrk = this.m_Owner.tracker;
-                int iDist = LevelSetTracker.DecodeLevelSetDist(Lstrk._Regions.m_LevSetRegions[jCell], iLs);
-                if (Lstrk.GridDat.Cells.GetRefElementIndex(jCell) != m_Owner.iKref)
+                int iLs = this.m_Owner.LevelSetData.LevelSetIndex;
+                int iDist = LevelSetTracker.DecodeLevelSetDist(this.m_Owner.LevelSetData.Region.m_LevSetRegions[jCell], iLs);
+                if ( this.m_Owner.LevelSetData.GridDat.Cells.GetRefElementIndex(jCell) != m_Owner.iKref)
                     throw new ArgumentException("illegal cell mask.");
                 if (iDist > 0)
                     return new ChunkRulePair<CellBoundaryQuadRule>(Chunk.GetSingleElementChunk(jCell), GetPosRule(order));
@@ -251,7 +255,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 : base() {
                 base.m_Owner = o;
                 base.Rules = o.m_LineMeasure;
-                int D = o.tracker.GridDat.SpatialDimension;
+                int D = o.LevelSetData.GridDat.SpatialDimension;
                 this.empty = CellBoundaryQuadRule.CreateEmpty(o.m_RefElement, 1, D, o.referenceLineSegments.Length);
                 this.empty.Nodes.LockForever();
             }
@@ -277,7 +281,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         }
 
         public IQuadRuleFactory<CellBoundaryQuadRule> GetLineFactory() {
-            int D = this.tracker.GridDat.SpatialDimension;
+            int D = this.LevelSetData.GridDat.SpatialDimension;
             return new LineQRF(this);
         }
 
@@ -287,7 +291,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 : base() {
                 base.m_Owner = o;
                 base.Rules = o.m_PointMeasure;
-                int D = o.tracker.GridDat.SpatialDimension;
+                int D = o.LevelSetData.GridDat.SpatialDimension;
                 if (D != 2)
                     throw new NotSupportedException("the point measure is only supported in 2D");
                 this.empty = CellBoundaryQuadRule.CreateEmpty(o.m_RefElement, 1, D, o.referenceLineSegments.Length);
@@ -332,17 +336,17 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
         void GetQuadRuleSet_Internal(int order) {
             var mask = this.MaxGrid;
-            int D = tracker.GridDat.SpatialDimension;
-            var _Cells = tracker.GridDat.Cells;
-            var scalings = tracker.GridDat.Edges.SqrtGramian;
-            var cell2Edge = tracker.GridDat.Cells.Cells2Edges;
+            var grdDat = this.LevelSetData.GridDat;
+            int D = grdDat.SpatialDimension;
+            var _Cells = grdDat.Cells;
+            var scalings = grdDat.Edges.SqrtGramian;
+            var cell2Edge = grdDat.Cells.Cells2Edges;
             //var edge2Cell = tracker.GridDat.Edges.CellIndices;
             //var FaceIdx = tracker.GridDat.Edges.FaceIndices;
-            var EdgeData = tracker.GridDat.Edges;
+            var EdgeData = grdDat.Edges;
             int levSetIndex = this.LevelSetIndex;
             var Vertices = this.m_RefElement.Vertices;
             var iKref = this.iKref;
-            var grdDat = this.tracker.GridDat;
             double[] EdgeToVolumeTransformationDeterminants = this.m_RefElement.FaceTrafoGramianSqrt;
             QuadRule baseRule = lineSimplex.GetQuadratureRule(order);
             double baseRuleWeightSum = baseRule.Weights.Sum();
@@ -413,7 +417,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     int TotalNoOfRoots = 0;
                     for (int e = 0; e < referenceLineSegments.Length; e++) {
                         LineSegment referenceSegment = referenceLineSegments[e];
-                        double[] roots = referenceSegment.GetRoots(tracker.LevelSets[levSetIndex], jCell, iKref);
+                        double[] roots = referenceSegment.GetRoots(LevelSetData.LevelSet, jCell, iKref);
                         _roots[e] = FilterRoots(roots, rootFilterTol);
                         TotalNoOfRoots += _roots[e].Length;
                     }
@@ -452,7 +456,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
 
                                 //bool center = false;
-                                MultidimensionalArray levelSetValue = tracker.GetLevSetValues(levSetIndex, _point, jCell, 1);
+                                MultidimensionalArray levelSetValue = LevelSetData.GetLevSetValues(_point, jCell, 1);
                                 if (levelSetValue[0, 0] <= -Tolerance) {
                                     continue;
                                 }
@@ -859,7 +863,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                     Innerproducts[e] = new double[K];
 
                                     if (K > 0) {
-                                        LevSetNormals[e] = this.tracker.GetLevelSetReferenceNormals(levSetIndex, Nodes_e, jCell, 1);
+                                        LevSetNormals[e] = this.LevelSetData.GetLevelSetReferenceNormals(Nodes_e, jCell, 1);
                                         var LevSetNormals_e = LevSetNormals[e];
 
 
@@ -1030,10 +1034,11 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
 
                 int iEdge = -1;
+                int _inOut = -1;
                 {
                     // finding the edge: this code is provisory
 
-                    int _inOut = -1;
+                    //int _inOut = -1;
                     foreach (int em in cell2Edge_j) {
                         int _iedge = Math.Abs(em) - 1;
                         _inOut = em > 0 ? 0 : 1;
@@ -1045,18 +1050,35 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     }
                     if (iEdge < 0)
                         throw new ApplicationException();
-                    if (!EdgeData.IsEdgeConformal(iEdge, _inOut))
-                        throw new NotSupportedException("hanging nodes not supported");
+                    //if (!EdgeData.IsEdgeConformal(iEdge, _inOut))
+                    //    throw new NotSupportedException("hanging nodes not supported");
                     if (!EdgeData.IsEdgeAffineLinear(iEdge))
                         throw new NotSupportedException("no curved element support yet.");
                 }
 
-                for (int l = 0; l < roots.Length; l++) {
-                    PtMeas_weights.Add(1.0/scalings[iEdge]);
+                //for (int l = 0; l < roots.Length; l++) {
+                //    PtMeas_weights.Add(1.0 / scalings[iEdge]);
+                //}
+
+                if (!EdgeData.IsEdgeConformal(iEdge, _inOut)) {
+                    // compute new scaling for non-conforming edges
+
+                    double scaling = EdgeData.GetSqrtGramianForNonConformEdge(iEdge, _inOut);
+
+                    for (int l = 0; l < roots.Length; l++) {
+                        PtMeas_weights.Add(1.0 / scaling);
+                    }
+
+                } else {
+                    // use standard scaling of the edges
+                    for (int l = 0; l < roots.Length; l++) {
+                        PtMeas_weights.Add(1.0 / scalings[iEdge]);
+                    }
                 }
             }
             return PtMeas_weights;
         }
+
 
         static private double[] FilterRoots(double[] roots, double tol) {
             if (roots.Length <= 1) {
@@ -1082,7 +1104,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         }
 
 
-        static private LineSegment[] GetReferenceLineSegments(out int[] segmentSort, RefElement Simplex, LineSegment.IRootFindingAlgorithm RootFindingAlgorithm, LevelSetTracker tracker, int LevelSetIndex) {
+        static private LineSegment[] GetReferenceLineSegments(out int[] segmentSort, RefElement Simplex, LineSegment.IRootFindingAlgorithm RootFindingAlgorithm, LevelSetTracker.LevelSetData levelSetData, int LevelSetIndex) {
             Stack<RefElement> simplexHierarchy = new Stack<RefElement>();
             RefElement currentSimplex = Simplex;
             int spatialDimension = Simplex.SpatialDimension;
@@ -1149,12 +1171,12 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                 if (!lineSegments.Contains(newSegment)) {
                     lineSegments.Add(newSegment);
-                    tracker.Subscribe(newSegment);
+                    //tracker.Subscribe(newSegment);
                 }
             }
 
             foreach (LineSegment segment in lineSegments) {
-                LevelSet levelSetField = tracker.LevelSets[LevelSetIndex] as LevelSet;
+                LevelSet levelSetField = levelSetData.LevelSet as LevelSet;
                 if (levelSetField != null) {
                     segment.ProjectBasisPolynomials(levelSetField.Basis);
                 }
@@ -1197,7 +1219,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                             if (segment.iVertexEnd == Soll_iVtxStart) {
                                 var si = segment.Inverse;
-                                tracker.Subscribe(si);
+                                //tracker.Subscribe(si);
                                 sotierung.Add(-j);
                                 NoOfhits++;
                             }

@@ -75,7 +75,7 @@ namespace CNS.IBM {
             
             dt = base.Perform(dt);  // eq. (42)
             
-            speciesMap.Agglomerator.Extrapolate(DGCoordinates.Mapping); // eq. (43)
+            speciesMap.Agglomerator.Extrapolate(CurrentState.Mapping); // eq. (43)
 
             return dt;
         }
@@ -93,7 +93,7 @@ namespace CNS.IBM {
         /// <param name="dt"></param>
         protected override void PerformStage(double[] y0, int s, double[][] k, double dt) {
             base.PerformStage(y0, s, k, dt);
-            speciesMap.Agglomerator.Extrapolate(DGCoordinates.Mapping);
+            speciesMap.Agglomerator.Extrapolate(CurrentState.Mapping);
         }
 
         /// <summary>

@@ -38,7 +38,7 @@ namespace QuadratureAndProjectionTest {
                 Application.InitMPI(new string[0]);
                 MPIInialized = true;
             }
-            Init(null, m_opt, "");
+            Init(null);
             SetUpEnvironment();
         }
 
@@ -61,7 +61,7 @@ namespace QuadratureAndProjectionTest {
             return test.GetSingleCellGrid();
         }
 
-        protected override void CreateEquationsAndSolvers(GridUpdateData L) {
+        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
         }
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {

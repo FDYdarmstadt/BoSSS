@@ -34,6 +34,15 @@ namespace BoSSS.Application.IBM_Solver {
     /// </summary>
     public class HardcodedControl {
 
+        /// <summary>
+        /// Initializes a channel flow.
+        /// </summary>
+        /// <param name="k">DG polynomial degree</param>
+        /// <param name="periodic"></param>
+        /// <param name="xCells"></param>
+        /// <param name="yCells"></param>
+        /// <param name="dbpath"></param>
+        /// <returns></returns>
         static public IBM_Control ChannelFlow(int k = 2, bool periodic = false, int xCells = 10, int yCells = 10, string dbpath = null) {
             IBM_Control C = new IBM_Control();
 
@@ -65,26 +74,7 @@ namespace BoSSS.Application.IBM_Solver {
 
 
             // Create Fields
-            C.FieldOptions.Add("VelocityX", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("VelocityY", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Pressure", new FieldOpts() {
-                Degree = k - 1,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("PhiDG", new FieldOpts() {
-                Degree = 2,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Phi", new FieldOpts() {
-                Degree = 2,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
+            C.SetDGdegree(k);
 
             // Create Grid
             C.GridFunc = delegate {
@@ -1218,7 +1208,7 @@ namespace BoSSS.Application.IBM_Solver {
 
 
             C.DynamicLoadBalancing_Period = 1;
-            C.DynamicLoadBalancing_CellCostEstimatorFactories.Add(delegate (IApplication<AppControl> app, int noOfPerformanceClasses) {
+            C.DynamicLoadBalancing_CellCostEstimatorFactories.Add(delegate (IApplication app, int noOfPerformanceClasses) {
                 Console.WriteLine("i was called");
                 int[] map = new int[] { 1, 5, 100 };
                 return new StaticCellCostEstimator(map);
@@ -1345,7 +1335,7 @@ namespace BoSSS.Application.IBM_Solver {
 
 
             C.DynamicLoadBalancing_Period = 1;
-            C.DynamicLoadBalancing_CellCostEstimatorFactories.Add(delegate (IApplication<AppControl> app, int noOfPerformanceClasses) {
+            C.DynamicLoadBalancing_CellCostEstimatorFactories.Add(delegate (IApplication app, int noOfPerformanceClasses) {
                 Console.WriteLine("i was called");
                 int[] map = new int[] { 1, 5, 100 };
                 return new StaticCellCostEstimator(map);
@@ -1510,13 +1500,13 @@ namespace BoSSS.Application.IBM_Solver {
             //};
 
 
-            C.LinearSolver = new SoftGMRES()
-            {
-                MaxKrylovDim = C.MaxKrylovDim,
-                Precond = Prec,
-                m_Tolerance = 1E-6,
-                m_MaxIterations = 50
-            };
+            //C.LinearSolver = new SoftGMRES()
+            //{
+            //    MaxKrylovDim = C.MaxKrylovDim,
+            //    Precond = Prec,
+            //    m_Tolerance = 1E-6,
+            //    m_MaxIterations = 50
+            //};
 
 
             C.AddBoundaryCondition("Velocity_inlet", "VelocityX", X => -4*X[1]*(X[1]+4));

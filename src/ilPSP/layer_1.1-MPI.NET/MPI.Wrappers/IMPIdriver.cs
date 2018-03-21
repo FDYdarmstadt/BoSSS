@@ -48,10 +48,16 @@ namespace MPI.Wrappers {
             get;
         }
 
+        /// <summary>
+        /// Combining data on one processor
+        /// </summary>
         void Gatherv(IntPtr sendbuf, int sendcount, MPI_Datatype sendtype,
                      IntPtr recvbuf, IntPtr recvcounts, IntPtr displs, MPI_Datatype recvtype,
                      int root, MPI_Comm comm);
-
+        
+        /// <summary>
+        /// Sending data from one processor to many
+        /// </summary>
         void Scatterv(IntPtr sendbuf, IntPtr sendcounts, IntPtr displs, MPI_Datatype sendtype,
                       IntPtr recvbuf, int recvcount, MPI_Datatype recvtype,
                       int root, MPI_Comm comm);
@@ -62,13 +68,6 @@ namespace MPI.Wrappers {
         /// of data sent from the j-th process is received by every process and
         /// placed in the j-th block of the buffer <paramref name="recvbuf"/>.
         /// </summary>
-        /// <param name="sendbuf"></param>
-        /// <param name="sendcount"></param>
-        /// <param name="sendtype"></param>
-        /// <param name="recvbuf"></param>
-        /// <param name="recvcount"></param>
-        /// <param name="recvtype"></param>
-        /// <param name="comm"></param>
         void Allgather(IntPtr sendbuf, int sendcount, MPI_Datatype sendtype, IntPtr recvbuf, int recvcount, MPI_Datatype recvtype, MPI_Comm comm);
 
         /// <summary>
@@ -78,14 +77,6 @@ namespace MPI.Wrappers {
         /// placed in the j-th block of the buffer <paramref name="recvbuf"/>.
         /// These blocks need not all be the same size.
         /// </summary>
-        /// <param name="sendbuf"></param>
-        /// <param name="sendcount"></param>
-        /// <param name="sendtype"></param>
-        /// <param name="recvbuf"></param>
-        /// <param name="recvcounts"></param>
-        /// <param name="displs"></param>
-        /// <param name="recvtype"></param>
-        /// <param name="comm"></param>
         void Allgatherv(IntPtr sendbuf, int sendcount, MPI_Datatype sendtype, IntPtr recvbuf, IntPtr recvcounts, IntPtr displs, MPI_Datatype recvtype, MPI_Comm comm);
 
         /// <summary>

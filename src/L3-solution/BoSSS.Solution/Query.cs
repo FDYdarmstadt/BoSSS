@@ -203,7 +203,7 @@ namespace BoSSS.Solution.Queries {
         /// <param name="fieldName">
         /// The name of the field to be evaluated
         /// </param>
-        /// <param name="timestepNumber"></param>
+        /// <param name="timestepNumber">
         /// The time-step containing the reference field
         /// </param>
         /// <returns>

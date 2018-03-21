@@ -30,7 +30,7 @@ namespace CNS.IBM {
     /// A species map for a single species that is embedded into domain, i.e.
     /// that encloses and/or is enclosed by a void domain. 
     /// </summary>
-    public class ImmersedSpeciesMap : ISpeciesMap, IObserver<LevelSetTracker.LevelSetRegionsInfo> {
+    public class ImmersedSpeciesMap : ISpeciesMap, IObserver<LevelSetTracker.LevelSetRegions> {
 
         /// <summary>
         /// The material/fluid of the represented, immersed fluid.
@@ -45,8 +45,14 @@ namespace CNS.IBM {
             private set;
         }
 
-        bool firstCall = true;
+        /// <summary>
+        /// Hack required by <see cref="Tracker"/>
+        /// </summary>
+        private bool firstCall = true;
 
+        /// <summary>
+        /// Backing field for <see cref="Tracker"/>
+        /// </summary>
         private LevelSetTracker tracker;
 
         /// <summary>
@@ -55,11 +61,14 @@ namespace CNS.IBM {
         /// </summary>
         public LevelSetTracker Tracker {
             get {
+                tracker.IncreaseHistoryLength(1);
                 if (firstCall) {
                     // This IS necessary... don't ask me why, though
+                    // to have one previous state available, so all the incremental updates work
                     tracker.UpdateTracker();
-                    tracker.UpdateTracker();
+                    tracker.PushStacks();
                 }
+
                 firstCall = false;
                 return tracker;
             }
@@ -69,20 +78,17 @@ namespace CNS.IBM {
         }
 
         /// <summary>
-        /// Backing field for <see cref="QuadSchemeHelper"/>
+        /// Backing fields for <see cref="CellAgglomeration"/>
         /// </summary>
-        private XQuadSchemeHelper quadSchemeHelper;
-
-        private CutCellMetrics lastCutCellMetrics;
+        private MultiphaseCellAgglomerator cellAgglomeration;
 
         /// <summary>
-        /// Quadrature scheme helper for the integration over the species with
-        /// name <see cref="IBMControl.FluidSpeciesName"/>
+        /// Current cell agglomeration.
         /// </summary>
-        public XQuadSchemeHelper QuadSchemeHelper {
+        public MultiphaseCellAgglomerator CellAgglomeration {
             get {
-                if (quadSchemeHelper == null) {
-                    if (Control.MomentFittingVariant == XQuadFactoryHelper.MomentFittingVariants.Classic) {
+                if (cellAgglomeration == null) {
+                    if (Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Classic) {
                         BoSSS.Foundation.XDG.Quadrature.HMF.LevelSetSurfaceQuadRuleFactory.UseNodesOnLevset =
                             Control.SurfaceHMF_ProjectNodesToLevelSet;
                         BoSSS.Foundation.XDG.Quadrature.HMF.LevelSetSurfaceQuadRuleFactory.RestrictNodes =
@@ -97,38 +103,26 @@ namespace CNS.IBM {
                         BoSSS.Foundation.XDG.Quadrature.HMF.LevelSetVolumeQuadRuleFactory.UseGaussNodes =
                             Control.VolumeHMF_UseGaussNodes;
                     }
-
-                    SpeciesId[] species = new SpeciesId[] {
-                        Tracker.GetSpeciesId(Control.FluidSpeciesName)
-                    };
-
-                    CutCellMetrics cutCellMetrics = new CutCellMetrics(
-                        Control.MomentFittingVariant, Control.LevelSetQuadratureOrder, Tracker, species);
-
+                    
                     bool agglomerateNewbornAndDeceased = true;
-                    var oldCCM = new CutCellMetrics[] { lastCutCellMetrics };
                     var oldAggThreshold = new double[] { Control.AgglomerationThreshold };
-                    if (lastCutCellMetrics == null) {
+                    if (Tracker.PopulatedHistoryLength <= 0) {
                         agglomerateNewbornAndDeceased = false;
-                        lastCutCellMetrics = cutCellMetrics;
                         oldAggThreshold = null;
-                        oldCCM = null;
                     }
-                    MultiphaseCellAgglomerator agglomerator = new MultiphaseCellAgglomerator(
-                        cutCellMetrics,
+
+                    cellAgglomeration = Tracker.GetAgglomerator(
+                        new SpeciesId[] { Tracker.GetSpeciesId(Control.FluidSpeciesName) },
+                        Control.LevelSetQuadratureOrder,
                         Control.AgglomerationThreshold,
-                        AgglomerateNewborn: agglomerateNewbornAndDeceased, AgglomerateDecased: agglomerateNewbornAndDeceased,
-                        oldCcm: oldCCM,
-                        oldTs__AgglomerationTreshold: oldAggThreshold
-                        );
+                        AgglomerateNewborn: agglomerateNewbornAndDeceased,
+                        AgglomerateDecased: agglomerateNewbornAndDeceased,
+                        oldTs__AgglomerationTreshold: oldAggThreshold);
 
-
-                    lastCutCellMetrics = cutCellMetrics;
-
-                    var speciesAgglomerator = agglomerator.GetAgglomerator(
+                    var speciesAgglomerator = cellAgglomeration.GetAgglomerator(
                         Tracker.GetSpeciesId(Control.FluidSpeciesName));
-                    if (Control.PrintAgglomerationInfo) {
 
+                    if (Control.PrintAgglomerationInfo) {
                         bool stdoutOnlyOnRank0 = ilPSP.Environment.StdoutOnlyOnRank0;
                         ilPSP.Environment.StdoutOnlyOnRank0 = false;
                         Console.WriteLine(
@@ -149,11 +143,23 @@ namespace CNS.IBM {
 
                         speciesAgglomerator.PlotAgglomerationPairs(fileName, includeDummyPointIfEmpty: true);
                     }
-
-                    quadSchemeHelper = new XQuadSchemeHelper(agglomerator);
                 }
 
-                return quadSchemeHelper;
+                return cellAgglomeration;
+            }
+        }
+
+        /// <summary>
+        /// Quadrature scheme helper for the integration over the species with
+        /// name <see cref="IBMControl.FluidSpeciesName"/>
+        /// </summary>
+        public XQuadSchemeHelper QuadSchemeHelper {
+            get {
+                SpeciesId[] species = new SpeciesId[] {
+                    Tracker.GetSpeciesId(Control.FluidSpeciesName)
+                };
+
+                return Tracker.GetXDGSpaceMetrics(species, Control.LevelSetQuadratureOrder, 1).XQuadSchemeHelper;
             }
         }
 
@@ -162,7 +168,7 @@ namespace CNS.IBM {
         /// </summary>
         public CellAgglomerator Agglomerator {
             get {
-                return QuadSchemeHelper.CellAgglomeration.GetAgglomerator(
+                return this.CellAgglomeration.GetAgglomerator(
                     Tracker.GetSpeciesId(Control.FluidSpeciesName));
             }
         }
@@ -180,6 +186,7 @@ namespace CNS.IBM {
 
             this.tracker = new LevelSetTracker(
                 (GridData)levelSet.GridDat,
+                Control.CutCellQuadratureType,
                 0,
                 new string[] { Control.VoidSpeciesName, Control.FluidSpeciesName },
                 levelSet);
@@ -194,7 +201,7 @@ namespace CNS.IBM {
         /// <returns></returns>
         public IBMMassMatrixFactory GetMassMatrixFactory(CoordinateMapping mapping) {
             if (MassMatrixFactory == null || !mapping.Equals(MassMatrixFactory.Mapping)) {
-                MassMatrixFactory = new IBMMassMatrixFactory(this, mapping);
+                MassMatrixFactory = new IBMMassMatrixFactory(this, mapping, Control.FluidSpeciesName, Control.LevelSetQuadratureOrder);
             }
             return MassMatrixFactory;
         }
@@ -229,21 +236,21 @@ namespace CNS.IBM {
         /// </summary>
         public SubGrid SubGrid {
             get {
-                return Tracker._Regions.GetSpeciesSubGrid(Control.FluidSpeciesName);
+                return Tracker.Regions.GetSpeciesSubGrid(Control.FluidSpeciesName);
             }
         }
 
         #endregion
 
-        #region IObservable<<evelSetData> Members
+        #region IObservable<LevelSetData> Members
 
         /// <summary>
         /// Discards old quadrature information
         /// </summary>
         /// <param name="value"></param>
-        public void OnNext(LevelSetTracker.LevelSetRegionsInfo value) {
-            this.quadSchemeHelper = null;
+        public void OnNext(LevelSetTracker.LevelSetRegions value) {
             this.MassMatrixFactory = null;
+            this.cellAgglomeration = null;
         }
 
         /// <summary>

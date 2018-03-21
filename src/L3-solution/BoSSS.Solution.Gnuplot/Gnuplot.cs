@@ -85,6 +85,7 @@ namespace BoSSS.Solution.Gnuplot {
         public Gnuplot(string AlternativeGnuplotPath = null, PlotFormat baseLineFormat = default(PlotFormat)) {
             this.m_baseLineFormat = baseLineFormat;
             m_sGNUPlotFileName = GetGnuplotPath(AlternativeGnuplotPath);
+            Console.WriteLine("Using gnuplot: " + m_sGNUPlotFileName);
         }
 
         /// <summary>
@@ -155,6 +156,11 @@ namespace BoSSS.Solution.Gnuplot {
             m_TempFiles.Clear();
         }
 
+        /// <summary>
+        /// Path to Gnuplot executable.
+        /// </summary>
+        /// <param name="alternativeGnuplotPath">Alternative search path, can be null.</param>
+        /// <returns></returns>
         public static string GetGnuplotPath(string alternativeGnuplotPath = null) {
             string path = GetProgramPath("gnuplot.exe", alternativeGnuplotPath); // Windows gnuplot
             if (path == null)
@@ -406,7 +412,9 @@ namespace BoSSS.Solution.Gnuplot {
         /// <param name="title"></param>
         /// <param name="format"></param>
         /// <param name="deferred"></param>
-        public void PlotEquation(String equation, String title = null, PlotFormat format = null, bool deferred = true) {
+        /// <param name="useY2"></param>
+        /// <param name="useX2"></param>
+        public void PlotEquation(String equation, String title = null, PlotFormat format = null, bool deferred = true, bool useX2 = false, bool useY2 = false) {
             using (StringWriter stw = new StringWriter()) {
                 if (deferred) {
                     // nop
@@ -417,7 +425,7 @@ namespace BoSSS.Solution.Gnuplot {
                 stw.Write("plot ");
                 stw.Write(equation);
                 stw.Write(" ");
-                stw.Write(Format2D(title, format));
+                stw.Write(Format2D(title, format, useX2, useY2));
 
                 if (deferred) {
                     this.m_DeferredPlotCommands.Add(stw.ToString());
@@ -508,7 +516,7 @@ namespace BoSSS.Solution.Gnuplot {
         /// plots the affine-linear function y = x * <paramref name="slope"/> + <paramref name="intercept"/>
         /// </summary>
         public void PlotSlope(
-            double slope, double intercept, string title = null, PlotFormat format = null, bool deferred = true) {
+            double slope, double intercept, string title = null, PlotFormat format = null, bool deferred = true, bool useX2 = false, bool useY2 = false) {
 
             using (StringWriter stringWriter = new StringWriter()) {
                 if (deferred) {
@@ -522,7 +530,7 @@ namespace BoSSS.Solution.Gnuplot {
                 stringWriter.Write("*x + ");
                 stringWriter.Write((intercept).ToString(nfoi));
                 stringWriter.Write(" ) ");
-                stringWriter.Write(Format2D(title, format));
+                stringWriter.Write(Format2D(title, format, useX2, useY2));
 
                 if (deferred) {
                     this.m_DeferredPlotCommands.Add(stringWriter.ToString());
@@ -537,7 +545,7 @@ namespace BoSSS.Solution.Gnuplot {
         /// \f$ y = x ^ <paramref name="expo"/> * <paramref name="C"/> \f$
         /// </summary>
         public void PlotPow(double expo, double C, string title = null,
-             PlotFormat format = null, bool deferred = true) {
+             PlotFormat format = null, bool deferred = true, bool useX2 = false, bool useY2 = false) {
             using (StringWriter stringWriter = new StringWriter()) {
                 if (deferred) {
                     // nop
@@ -550,7 +558,7 @@ namespace BoSSS.Solution.Gnuplot {
                 stringWriter.Write(")*x**( ");
                 stringWriter.Write((expo).ToString(nfoi));
                 stringWriter.Write(" ) ) ");
-                stringWriter.Write(Format2D(title, format));
+                stringWriter.Write(Format2D(title, format, useX2, useY2));
 
 
                 if (deferred) {
@@ -604,7 +612,7 @@ namespace BoSSS.Solution.Gnuplot {
 
         }
 
-        private string Format2D(string title, PlotFormat format) {
+        private string Format2D(string title, PlotFormat format, bool useX2, bool useY2) {
             if (format == null)
                 format = new PlotFormat(this.m_baseLineFormat);
 
@@ -616,10 +624,24 @@ namespace BoSSS.Solution.Gnuplot {
                 } else {
                     stringWriter.Write(" notitle");
                 }
+                if(useX2 || useY2) {
+                    stringWriter.Write(" axes ");
+                    stringWriter.Write(useX2 ? "x2" : "x1");
+                    stringWriter.Write(useY2 ? "y2" : "y1");
+                    stringWriter.Write(" ");
+                }
+
                 stringWriter.Write(" with ");
                 stringWriter.Write(format.Style.ToString().ToLower());
 
-                stringWriter.Write(" linecolor  " + (int)format.LineColor);
+                string LineColorString;
+                if(Enum.IsDefined(typeof(LineColors), format.LineColor)) {
+                    LineColorString = "\"" + format.LineColor.ToString().ToLowerInvariant() + "\"";
+                } else {
+                    LineColorString = format.LineColor.ToString();
+                }
+
+                stringWriter.Write(" linecolor  " + LineColorString);
                 switch (format.Style) {
                     case Styles.Lines:
                     case Styles.LinesPoints:
@@ -646,7 +668,7 @@ namespace BoSSS.Solution.Gnuplot {
 
         /// <summary>
         /// Plots <paramref name="y"/> using
-        /// <see cref="PlotXY(IEnumerable{double}, IEnumerable{double}, string, PlotFormat, bool)"/>
+        /// <see cref="PlotXY(IEnumerable{double}, IEnumerable{double}, string, PlotFormat, bool, bool?, bool?, bool, bool)"/>
         /// where the x-axis data is deduced from <paramref name="y"/>
         /// </summary>
         /// <param name="y"></param>
@@ -678,7 +700,13 @@ namespace BoSSS.Solution.Gnuplot {
         /// <param name="logY">
         /// Analogous to <paramref name="logY"/>.
         /// </param>
-        public void PlotXY(IEnumerable<double> x, IEnumerable<double> y, string title = null, PlotFormat format = null, bool deferred = true, bool? logX = null, bool? logY = null) {
+        /// <param name="useX2">
+        /// Use secondary x axis
+        /// </param>
+        /// <param name="useY2">
+        /// Use secondary y axis
+        /// </param>
+        public void PlotXY(IEnumerable<double> x, IEnumerable<double> y, string title = null, PlotFormat format = null, bool deferred = true, bool? logX = null, bool? logY = null, bool useX2 = false, bool useY2 = false) {
             using (StringWriter stringWriter = new StringWriter()) {
                 string s2 = null;
 
@@ -720,20 +748,20 @@ namespace BoSSS.Solution.Gnuplot {
                 stringWriter.Write("\"");
                 stringWriter.Write(s2);
                 stringWriter.Write("\" ");
-                stringWriter.Write(Format2D(title, format));
+                stringWriter.Write(Format2D(title, format, useX2, useY2));
 
                 if (logX != null) {
-                    if (logX ?? false)
-                        Cmd("set logscale x");
+                    if (logX.Value == true)
+                        Cmd("set logscale x" + (useX2 ? "2" : ""));
                     else
-                        Cmd("unset logscale x");
+                        Cmd("unset logscale x"  + (useX2 ? "2" : ""));
                 }
 
                 if (logY != null) {
-                    if (logY ?? false)
-                        Cmd("set logscale y");
+                    if (logY.Value == true)
+                        Cmd("set logscale y" + (useY2 ? "2" : ""));
                     else
-                        Cmd("unset logscale y");
+                        Cmd("unset logscale y" + (useY2 ? "2" : ""));
                 }
 
 
@@ -828,11 +856,7 @@ namespace BoSSS.Solution.Gnuplot {
         /// <summary>
         /// Plots data stored in a file called <paramref name="fileName"/>
         /// </summary>
-        /// <param name="fileName"></param>
-        /// <param name="title"></param>
-        /// <param name="format"></param>
-        /// <param name="deferred"></param>
-        public void PlotDataFile(string fileName, string title = null, PlotFormat format = null, bool deferred = true) {
+        public void PlotDataFile(string fileName, string title = null, PlotFormat format = null, bool deferred = true, bool useX2 = false, bool useY2 = false) {
             using (StringWriter stringWriter = new StringWriter()) {
                 if (!deferred) {
                     stringWriter.Write("plot ");
@@ -842,7 +866,7 @@ namespace BoSSS.Solution.Gnuplot {
                 stringWriter.Write(
                     fileName.Replace(Path.DirectorySeparatorChar, '/'));
                 stringWriter.Write("\" ");
-                stringWriter.Write(Format2D(title, format));
+                stringWriter.Write(Format2D(title, format, useX2, useY2));
 
                 if (deferred) {
                     m_DeferredPlotCommands.Add(stringWriter.ToString());
@@ -926,7 +950,9 @@ namespace BoSSS.Solution.Gnuplot {
         /// <param name="iRow"></param>
         /// <param name="jCol"></param>
         /// <param name="title"></param>
-        public void SetSubPlot(int iRow, int jCol, string title = null) {
+        /// <param name="xGaps">additional gap, in percent</param>
+        /// <param name="yGaps">additional gap, in percent</param>
+        public void SetSubPlot(int iRow, int jCol, string title = null, double xGaps = 0.01, double yGaps = 0.01) {
             if (iRow < 0 || iRow >= this.MultiplotRows)
                 throw new IndexOutOfRangeException();
             if (jCol < 0 || jCol >= this.MultiplotCols)
@@ -936,6 +962,11 @@ namespace BoSSS.Solution.Gnuplot {
             double ySubSize = (1.0 / this.MultiplotRows);
             double XOrigin = (jCol) * xSubSize;
             double YOrigin = (this.MultiplotRows - iRow - 1) * ySubSize;
+
+            XOrigin += xGaps * xSubSize;
+            YOrigin += yGaps * ySubSize;
+            xSubSize *= 1.0 - 2 * xGaps;
+            ySubSize *= 1.0 - 2 * yGaps;
 
             this.Cmd("set size {0},{1}", xSubSize.ToStringDot(), ySubSize.ToStringDot());
             this.Cmd("set origin {0},{1}", XOrigin.ToStringDot(), YOrigin.ToStringDot());
@@ -955,12 +986,31 @@ namespace BoSSS.Solution.Gnuplot {
         /// <summary>
         /// Guess what
         /// </summary>
+        public void SetX2Autorange() {
+            Cmd("set autoscale x2");
+        }
+
+        /// <summary>
+        /// Guess what
+        /// </summary>
         /// <param name="label"></param>
         public void SetXLabel(string label) {
             if (label != null) {
                 Cmd("set xlabel \"" + label + "\"");
             } else {
                 Cmd("unset xlabel");
+            }
+        }
+
+        /// <summary>
+        /// Guess what
+        /// </summary>
+        /// <param name="label"></param>
+        public void SetX2Label(string label) {
+            if (label != null) {
+                Cmd("set x2label \"" + label + "\"");
+            } else {
+                Cmd("unset x2label");
             }
         }
 
@@ -981,10 +1031,33 @@ namespace BoSSS.Solution.Gnuplot {
         }
 
         /// <summary>
+        /// Defines the desired range of the x-axis
+        /// </summary>
+        /// <param name="min"></param>
+        /// <param name="max"></param>
+        public void SetX2Range(double min, double max) {
+            using (StringWriter stw = new StringWriter()) {
+                stw.Write("set x2range [");
+                stw.Write(min.ToString(nfoi));
+                stw.Write(":");
+                stw.Write(max.ToString(nfoi));
+                stw.Write("]");
+                Cmd(stw.ToString());
+            }
+        }
+
+        /// <summary>
         /// Guess what
         /// </summary>
         public void SetYAutorange() {
             Cmd("set autoscale y");
+        }
+
+        /// <summary>
+        /// Guess what
+        /// </summary>
+        public void SetY2Autorange() {
+            Cmd("set autoscale y2");
         }
 
         /// <summary>
@@ -1005,6 +1078,27 @@ namespace BoSSS.Solution.Gnuplot {
                 Cmd("set ylabel \"" + label + "\"" + offset);
             } else {
                 Cmd("unset ylabel");
+            }
+        }
+
+        /// <summary>
+        /// Guess what
+        /// </summary>
+        /// <param name="label"></param>
+        /// <param name="xOffset"></param>
+        /// <param name="yOffset"></param>
+        public void SetY2Label(string label, double xOffset = 0, double yOffset = 0) {
+            if (label != null) {
+                string offset;
+                if (xOffset != 0.0 || yOffset != 0.0) {
+                    offset = " offset " + xOffset.ToStringDot() + "," + yOffset.ToStringDot();
+                } else {
+                    offset = "";
+                }
+
+                Cmd("set y2label \"" + label + "\"" + offset);
+            } else {
+                Cmd("unset y2label");
             }
         }
 

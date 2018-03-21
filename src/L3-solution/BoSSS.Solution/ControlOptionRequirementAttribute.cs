@@ -28,9 +28,13 @@ namespace BoSSS.Solution.Control {
         /// Override this method by implementing a check on the <paramref name="obj"/>
         /// which is the current value of the property <paramref name="propertyName"/>
         /// </summary>
-        /// <param name="propertyName"></param>
+        /// <param name="propertyName">name used in error message</param>
         /// <param name="obj"></param>
-        abstract internal void Verify(string propertyName, object obj);
+        /// <returns>
+        /// - null, if everything is ok with <paramref name="obj"/>
+        /// - An error message, otherwise.
+        /// </returns>
+        abstract internal string Verify(string propertyName, object obj);
     }
 
     /// <summary>
@@ -38,10 +42,12 @@ namespace BoSSS.Solution.Control {
     /// </summary>
     public class NotNullAttribute : ControlOptionRequirementAttribute {
 
-        internal override void Verify(string propertyName, object obj) {
+        internal override string Verify(string propertyName, object obj) {
             if (obj == null) {
-                throw new Exception(String.Format(
-                    "Control file property '{0}' must not be null", propertyName));
+                return String.Format(
+                    "Control file property '{0}' must not be null", propertyName);
+            } else {
+                return null;
             }
         }
     }
@@ -74,13 +80,15 @@ namespace BoSSS.Solution.Control {
             : base(lowerBound) {
         }
 
-        internal override void Verify(string propertyName, object obj) {
+        internal override string Verify(string propertyName, object obj) {
             double value = Convert.ToDouble(obj);
 
             if (value < m_Bound) {
-                throw new Exception("For the property '" + propertyName
+                return "For the property '" + propertyName
                     + "' a value of " + value + " is found in the control-file, but by definition it has got a lower bound (inclusive) of "
-                    + m_Bound + ".");
+                    + m_Bound + ".";
+            } else {
+                return null;
             }
         }
     }
@@ -100,13 +108,15 @@ namespace BoSSS.Solution.Control {
             : base(lowerBound) {
         }
 
-        internal override void Verify(string propertyName, object obj) {
+        internal override string Verify(string propertyName, object obj) {
             double value = Convert.ToDouble(obj);
 
             if (value <= m_Bound) {
-                throw new Exception("For the property '" + propertyName
+                return "For the property '" + propertyName
                     + "' a value of " + value + " is found in the control-file, but by definition it has got a lower bound (exclusive) of "
-                    + m_Bound + ".");
+                    + m_Bound + ".";
+            } else {
+                return null;
             }
         }
     }
@@ -123,13 +133,15 @@ namespace BoSSS.Solution.Control {
             : base(upperBound) {
         }
 
-        internal override void Verify(string propertyName, object obj) {
+        internal override string Verify(string propertyName, object obj) {
             double val = Convert.ToDouble(obj);
 
             if (val > m_Bound) {
-                throw new Exception("For the property '" + propertyName
+                return "For the property '" + propertyName
                     + "' a value of " + val + " is found in the control-file, but by definition it has got a upper bound (inclusive) of "
-                    + m_Bound + ".");
+                    + m_Bound + ".";
+            } else {
+                return null;
             }
         }
     }
@@ -140,13 +152,15 @@ namespace BoSSS.Solution.Control {
             : base(upperBound) {
         }
 
-        internal override void Verify(string propertyName, object obj) {
+        internal override string Verify(string propertyName, object obj) {
             double val = Convert.ToDouble(obj);
 
             if (val >= m_Bound) {
-                throw new Exception("For the property '" + propertyName
+                return "For the property '" + propertyName
                     + "' a value of " + val + " is found in the control-file, but by definition it has got a upper bound (exclusive) of "
-                    + m_Bound + ".");
+                    + m_Bound + ".";
+            } else {
+                return null;
             }
         }
     }

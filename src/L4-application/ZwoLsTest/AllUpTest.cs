@@ -15,12 +15,13 @@ limitations under the License.
 */
 
 using ilPSP;
+using MPI.Wrappers;
 using NUnit.Framework;
 
 namespace BoSSS.Application.ZwoLsTest {
 
     [TestFixture]
-    public class AllUpTest {
+    static public class AllUpTest {
 
         [TestFixtureSetUp]
         public static void SetUp() {
@@ -29,6 +30,11 @@ namespace BoSSS.Application.ZwoLsTest {
                 new string[0],
                 BoSSS.Solution.Application.GetBoSSSInstallDir(),
                 out MpiInit);
+        }
+
+        [TestFixtureTearDown]
+        public static void Teardown() {
+            csMPI.Raw.mpiFinalize();
         }
 
         [Test]
@@ -41,7 +47,6 @@ namespace BoSSS.Application.ZwoLsTest {
             BoSSS.Solution.Application._Main(
                 new string[0],
                 true,
-                null,
                 delegate() {
                     p = new ZwoLsTestMain();
                     p.THRESHOLD = AggTresh;

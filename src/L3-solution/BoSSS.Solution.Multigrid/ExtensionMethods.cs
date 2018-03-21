@@ -30,7 +30,7 @@ namespace BoSSS.Solution.Multigrid {
     static public class ExtensionMethods {
 
         /// <summary>
-        /// Updates the XDG component of an aggregation basis according to the new aggomeration.
+        /// Updates the XDG component of an aggregation basis according to the new agglomeration.
         /// </summary>
         public static void UpdateXdgAggregationBasis(this AggregationGridBasis[][] MultigridBasis, MultiphaseCellAgglomerator CurrentAgglomeration) {
 

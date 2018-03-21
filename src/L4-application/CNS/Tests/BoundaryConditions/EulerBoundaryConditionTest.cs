@@ -37,12 +37,11 @@ namespace CNS.Tests.BoundaryConditions {
             Application<CNSControl>._Main(
                 new string[] { @"-c cs:CNS.Tests.BoundaryConditions.ControlFiles.EulerSupersonicInlet1D()" },
                 false,
-                "",
                 delegate () {
                     p = new EulerBoundaryConditionTest();
                     return p;
                 });
-
+            
             TestUtils.CheckConvergenceRates(p.QueryResultTable, p.Grid.SpatialDimension);
         }
 
@@ -55,7 +54,6 @@ namespace CNS.Tests.BoundaryConditions {
             Application<CNSControl>._Main(
                 new string[] { @"-c cs:CNS.Tests.BoundaryConditions.ControlFiles.EulerSubsonicOutlet1D()" },
                 false,
-                "",
                 delegate () {
                     p = new EulerBoundaryConditionTest();
                     return p;
@@ -73,7 +71,6 @@ namespace CNS.Tests.BoundaryConditions {
             Application<CNSControl>._Main(
                 new string[] { @"-c cs:CNS.Tests.BoundaryConditions.ControlFiles.EulerSubsonicInlet1D()" },
                 false,
-                "",
                 delegate () {
                     p = new EulerBoundaryConditionTest();
                     return p;
@@ -91,7 +88,6 @@ namespace CNS.Tests.BoundaryConditions {
             Application<CNSControl>._Main(
                 new string[] { @"-c cs:CNS.Tests.BoundaryConditions.ControlFiles.EulerSubsonicInletAndOutlet1D()" },
                 false,
-                "",
                 delegate () {
                     p = new EulerBoundaryConditionTest();
                     return p;
@@ -109,7 +105,6 @@ namespace CNS.Tests.BoundaryConditions {
             Application<CNSControl>._Main(
                 new string[] { @"-c cs:CNS.Tests.BoundaryConditions.ControlFiles.EulerSubsonicPressureInletTest1D()" },
                 false,
-                "",
                 delegate () {
                     p = new EulerBoundaryConditionTest();
                     return p;
@@ -127,7 +122,6 @@ namespace CNS.Tests.BoundaryConditions {
             Application<CNSControl>._Main(
                 new string[] { @"-c cs:CNS.Tests.BoundaryConditions.ControlFiles.EulerSubsonicPressureInletAndOutletTest1D()" },
                 false,
-                "",
                 delegate () {
                     p = new EulerBoundaryConditionTest();
                     return p;

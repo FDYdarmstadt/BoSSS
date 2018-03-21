@@ -42,12 +42,16 @@ namespace ilPSP.LinSolvers.PARDISO {
         /// ctor
         /// </summary>
         public PARDISOSolver() {
-            MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
-            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
-            //if (rank == 0)
-            //    Debugger.Launch();
         }
-        
+
+        //public static Stopwatch Inner = new Stopwatch();
+        //public static Stopwatch InitAndSolve = new Stopwatch();
+        //public static Stopwatch SingleCalls = new Stopwatch();
+        public static Stopwatch Phase_11 = new Stopwatch();
+        public static Stopwatch Phase_22 = new Stopwatch();
+        public static Stopwatch Phase_33 = new Stopwatch();
+
+
         /// <summary>
         /// interface to native PARDISO library
         /// </summary>
@@ -97,6 +101,16 @@ namespace ilPSP.LinSolvers.PARDISO {
         /// PARDISO matrix
         /// </summary>
         Matrix m_PardisoMatrix;
+
+
+        /// <summary>
+        /// Communicator on which the solver is defined.
+        /// </summary>
+        public MPI_Comm MpiComm {
+            get {
+                return m_OrgMatrix.MPI_Comm;
+            }
+        }
         
         /// <summary>
         /// converts <paramref name="M"/> into suitable structures for PARDISO;
@@ -105,8 +119,9 @@ namespace ilPSP.LinSolvers.PARDISO {
         public void DefineMatrix(IMutableMatrixEx M) {
             if (m_OrgMatrix != null)
                 throw new ApplicationException("matrix is already defined. 'DefineMatrix'-method can be invoked only once in the lifetime of this object.");
-
+            m_MpiRank = M.RowPartitioning.MpiRank;
             m_OrgMatrix = M;
+            MPICollectiveWatchDog.Watch(this.MpiComm);
         }
 
         Version m_Version = Version.MKL;
@@ -170,6 +185,23 @@ namespace ilPSP.LinSolvers.PARDISO {
             set { }
         }
 
+        bool m_UseDoublePrecision = true;
+
+        /// <summary>
+        /// Use double (8 byte) or single (4 byte) fp numbers.
+        /// </summary>
+        public bool UseDoublePrecision {
+            get {
+                return m_UseDoublePrecision;
+            }
+            set {
+                //if (!value)
+                //    throw new ApplicationException("blocked for user protection.");
+                m_UseDoublePrecision = value;
+            }
+        }
+
+
         /// <summary>
         /// solves the equation system 
         /// M*<paramref name="x"/>=<paramref name="rhs"/>,
@@ -214,7 +246,8 @@ namespace ilPSP.LinSolvers.PARDISO {
         public SolverResult Solve<Tdiag, Tunknowns, Trhs>(double Scale, Tdiag d, Tunknowns x, Trhs rhs)
             where Tdiag : System.Collections.Generic.IList<double>
             where Tunknowns : System.Collections.Generic.IList<double>
-            where Trhs : System.Collections.Generic.IList<double> {
+            where Trhs : System.Collections.Generic.IList<double> // 
+        {
 
             //
             using (var tr = new FuncTrace()) {
@@ -246,6 +279,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                     for (int i = 0; i < L; i++) _rhs[i] = rhs[i];
                 }
 
+                
                 // define matrix
                 // =============
 
@@ -275,7 +309,7 @@ namespace ilPSP.LinSolvers.PARDISO {
 
                 // call solver
                 // ===========
-
+                
                 SolverResult r = new SolverResult();
                 using(new BlockTrace("CALL SOLVER", tr)) {
                     r.Converged = true;
@@ -286,7 +320,8 @@ namespace ilPSP.LinSolvers.PARDISO {
 
                     double[] gath_x, gath_b;
                     GatherOnProc0(_x, _rhs, out gath_x, out gath_b);
-
+                    Debug.Assert(m_MpiRank == 0 || gath_x == null);
+                    Debug.Assert(m_MpiRank == 0 || gath_b == null);
 
                     r.NoOfIterations = 1;
                     r.Converged = PARDISOInitAndSolve(Mtx, gath_x, gath_b);
@@ -295,21 +330,22 @@ namespace ilPSP.LinSolvers.PARDISO {
                         PARDISODispose();
                     }
 
-                    csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+                    csMPI.Raw.Barrier(MpiComm);
                     unsafe {
                         bool snd = r.Converged;
-                        csMPI.Raw.Bcast((IntPtr)(&snd), 1, csMPI.Raw._DATATYPE.BYTE, 0, csMPI.Raw._COMM.WORLD);
+                        csMPI.Raw.Bcast((IntPtr)(&snd), 1, csMPI.Raw._DATATYPE.BYTE, 0, MpiComm);
                         r.Converged = snd;
                     }
 
-                    ScatterFromProc0(_x, gath_x);
+                    ScatterFromProc0(gath_x, _x);
 
-                    csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+                    csMPI.Raw.Barrier(MpiComm);
 
                     // write back / return
                     if(x.GetType() != typeof(double[])) {
                         int NN = m_OrgMatrix.RowPartitioning.LocalLength;
-                        for(int i = 0; i < NN; i++) x[i] = _x[i];
+                        for(int i = 0; i < NN; i++)
+                            x[i] = _x[i];
                     }
 
                     // measure time
@@ -406,46 +442,65 @@ namespace ilPSP.LinSolvers.PARDISO {
         /// <summary>
         /// Scatters solution vector from process 0 to other MPI processors.
         /// </summary>
-        /// <param name="__x">
+        /// <param name="P0__x_IN">
         /// input; long vector on proc 0
         /// </param>
-        /// <param name="_x">
+        /// <param name="Px_x_OUT">
         /// output;
         /// </param>
-        private void ScatterFromProc0(double[] __x, double[] _x) {
+        private void ScatterFromProc0(double[] P0__x_IN, double[] Px_x_OUT) {
             int size, rank;
-            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
-            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
+            csMPI.Raw.Comm_Size(this.MpiComm, out size);
+            csMPI.Raw.Comm_Rank(this.MpiComm, out rank);
+            Debug.Assert(size == m_OrgMatrix.RowPartitioning.MpiSize);
+            Debug.Assert(size == m_OrgMatrix.ColPartition.MpiSize);
+            Debug.Assert(rank == m_OrgMatrix.RowPartitioning.MpiRank);
+            Debug.Assert(rank == m_OrgMatrix.ColPartition.MpiRank);
 
+            if(rank == 0)
+                Debug.Assert(P0__x_IN.Length == m_OrgMatrix.RowPartitioning.TotalLength);
+            else
+                Debug.Assert(P0__x_IN == null);
+            Debug.Assert(Px_x_OUT.Length == m_OrgMatrix.RowPartitioning.LocalLength);
+            
             if (size > 1) {
                 // distribute solution to other processors
                 // +++++++++++++++++++++++++++++++++++++++
 
-                if (rank == 0) {
-                    Array.Copy(_x, 0, __x, 0, m_OrgMatrix.RowPartitioning.LocalLength);
-
-                    unsafe {
-                        fixed (double* px = &_x[0]) {
-                            for (int targ_rank = 1; targ_rank < size; targ_rank++) {
-                                csMPI.Raw.Send((IntPtr)(px + m_OrgMatrix.RowPartitioning.GetI0Offest(targ_rank)), m_OrgMatrix.RowPartitioning.GetLocalLength(targ_rank), csMPI.Raw._DATATYPE.DOUBLE, targ_rank, 4444 + targ_rank, csMPI.Raw._COMM.WORLD);
-                            }
-                        }
-                    }
-
-                } else {
-                    unsafe {
-                        fixed (double* px = &__x[0]) {
-                            MPI_Status _st;
-                            csMPI.Raw.Recv((IntPtr)px, m_OrgMatrix.RowPartitioning.LocalLength, csMPI.Raw._DATATYPE.DOUBLE, 0, 4444 + rank, csMPI.Raw._COMM.WORLD, out _st);
-                        }
-                    }
+                int[] SendCounts = new int[size];
+                int[] Displ = new int[size];
+                for(int r = 0; r < size; r++) {
+                    SendCounts[r] = m_OrgMatrix.RowPartitioning.GetLocalLength(r);
+                    Displ[r] = m_OrgMatrix.RowPartitioning.GetI0Offest(r);
                 }
+
+
+                unsafe
+                {
+                    fixed(int* pSendCounts = SendCounts, pDispl = Displ) {
+                        fixed (double* pSend = P0__x_IN, pRecv = Px_x_OUT) {
+                            csMPI.Raw.Scatterv(
+                            (IntPtr)pSend,
+                            (IntPtr)pSendCounts,
+                            (IntPtr)pDispl,
+                            csMPI.Raw._DATATYPE.DOUBLE,
+                            (IntPtr)pRecv,
+                            SendCounts[rank],
+                            csMPI.Raw._DATATYPE.DOUBLE,
+                            0,
+                            this.MpiComm);
+                        }
+                    }
+
+                }
+
+
             } else {
-                if (!object.ReferenceEquals(__x, _x)) {
-                    int L = __x.Length;
-                    if (__x.Length != _x.Length)
+                if (!object.ReferenceEquals(P0__x_IN, Px_x_OUT)) {
+                    int L = P0__x_IN.Length;
+                    if (P0__x_IN.Length != Px_x_OUT.Length)
                         throw new ApplicationException("internal error.");
-                    Array.Copy(__x, _x, L);
+                    Array.Copy(P0__x_IN, Px_x_OUT, L);
                 }
 
             }
@@ -454,48 +509,41 @@ namespace ilPSP.LinSolvers.PARDISO {
         /// <summary>
         /// Gathers RHS and solution vector on process 0 for more than one MPI process.
         /// </summary>
-        /// <param name="__b">local part of rhs</param>
-        /// <param name="__x">local part of solution/initial guess</param>
-        /// <param name="_x">gathered rhs</param>
-        /// <param name="_b">gathered solution vectors</param>
-        private void GatherOnProc0( double[] __x, double[] __b, out double[] _x, out double[] _b) {
+        /// <param name="bIN">local part of rhs</param>
+        /// <param name="xIN">local part of solution/initial guess</param>
+        /// <param name="gath_x_OUT">gathered rhs</param>
+        /// <param name="gath_b_OUT">gathered solution vectors</param>
+        private void GatherOnProc0( double[] xIN, double[] bIN, out double[] gath_x_OUT, out double[] gath_b_OUT) {
             int size, rank;
-            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
-            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
+            csMPI.Raw.Comm_Size(this.MpiComm, out size);
+            csMPI.Raw.Comm_Rank(this.MpiComm, out rank);
+            Debug.Assert(size == m_OrgMatrix.RowPartitioning.MpiSize);
+            Debug.Assert(size == m_OrgMatrix.ColPartition.MpiSize);
+            Debug.Assert(rank == m_OrgMatrix.RowPartitioning.MpiRank);
+            Debug.Assert(rank == m_OrgMatrix.ColPartition.MpiRank);
+
+
+            // This is bad style: 
+            // Driver for the driver for the driver...
 
             if (size > 1) {
                 // gather rhs on processor 0
                 // +++++++++++++++++++++++++
 
-                if (rank == 0) {
-                    _x = new double[m_OrgMatrix.RowPartitioning.TotalLength];
-                    _b = new double[m_OrgMatrix.RowPartitioning.TotalLength];
-
-                    Array.Copy(__b, 0, _b, 0, m_OrgMatrix.RowPartitioning.LocalLength);
-
-                    unsafe {
-                        fixed (double* pb = &_b[0]) {
-                            for (int rcv_rank = 1; rcv_rank < size; rcv_rank++) {
-                                MPI_Status stat;
-                                csMPI.Raw.Recv((IntPtr)(pb + m_OrgMatrix.RowPartitioning.GetI0Offest(rcv_rank)), m_OrgMatrix.RowPartitioning.GetLocalLength(rcv_rank), csMPI.Raw._DATATYPE.DOUBLE, rcv_rank, 342346 + rcv_rank, csMPI.Raw._COMM.WORLD, out stat);
-                            }
-                        }
-                    }
-
-                } else {
-                    // send my part to P0
-                    unsafe {
-                        fixed (double* pb = &__b[0]) {
-                            csMPI.Raw.Send((IntPtr)pb, m_OrgMatrix.RowPartitioning.LocalLength, csMPI.Raw._DATATYPE.DOUBLE, 0, 342346 + rank, csMPI.Raw._COMM.WORLD);
-                        }
-                    }
-
-                    _x = null;
-                    _b = null;
+                int[] RcvCounts = new int[size];
+                for(int r = 0; r < size; r++) {
+                    RcvCounts[r] = m_OrgMatrix.RowPartitioning.GetLocalLength(r);
                 }
+
+                gath_x_OUT = MPIExtensions.MPIGatherv(xIN, RcvCounts, 0, this.MpiComm);
+                gath_b_OUT = MPIExtensions.MPIGatherv(bIN, RcvCounts, 0, this.MpiComm);
+
+                Debug.Assert((rank == 0) != (gath_x_OUT == null));
+                Debug.Assert((rank == 0) || (gath_b_OUT == null));
+
             } else {
-                _x = __x;
-                _b = __b;
+                gath_x_OUT = xIN;
+                gath_b_OUT = bIN;
             }
 
         }
@@ -505,27 +553,31 @@ namespace ilPSP.LinSolvers.PARDISO {
         /// </summary>
         bool PARDISOInitAndSolve(IMutableMatrixEx Mtx, double[] _x, double[] _b) {
             using (new FuncTrace()) {
+                //InitAndSolve.Start();
+
 
                 if (m_PardisoMatrix == null)
-                    m_PardisoMatrix = new Matrix(Mtx);
+                    m_PardisoMatrix = new Matrix(Mtx, this.UseDoublePrecision);
 
 
                 int rank;
-                csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
+                csMPI.Raw.Comm_Rank(MpiComm, out rank);
                 if (rank == 0) {
 #if DEBUG
-                    double[] aClone = (double[])m_PardisoMatrix.a.Clone();
-                    int[] iaClone = (int[])m_PardisoMatrix.ia.Clone();
-                    int[] jaClone = (int[])m_PardisoMatrix.ja.Clone();
+                    double[] a_DClone = null;
+                    float[] a_SClone = null;
+                    if(UseDoublePrecision)
+                        a_DClone = m_PardisoMatrix.a_D.CloneAs();
+                    else
+                        a_SClone = m_PardisoMatrix.a_S.CloneAs();
+                    int[] iaClone = m_PardisoMatrix.ia.CloneAs();
+                    int[] jaClone = m_PardisoMatrix.ja.CloneAs();
 #endif
                     unsafe
                     {
-                        fixed (double* dparam = m_PardInt.m_dparam)
-                        {
-                            fixed (double* a = m_PardisoMatrix.a, x = _x, b = _b)
-                            {
-                                fixed (int* ia = m_PardisoMatrix.ia, ja = m_PardisoMatrix.ja, iparm = m_PardInt.m_parm, __pt = m_PardInt.m_pt)
-                                {
+                        fixed (float* pa_S = m_PardisoMatrix.a_S) {
+                            fixed (double* pa_D = m_PardisoMatrix.a_D, px = _x, pb = _b, dparam = m_PardInt.m_dparam) {
+                                fixed (int* ia = m_PardisoMatrix.ia, ja = m_PardisoMatrix.ja, iparm = m_PardInt.m_parm, __pt = m_PardInt.m_pt) {
                                     int n = m_PardisoMatrix.n;
                                     //int nnz = ia[n];
                                     int mtype = GetMType();
@@ -548,6 +600,31 @@ namespace ilPSP.LinSolvers.PARDISO {
 
                                     double ddum;              /* Double dummy */
                                     int idum;              /* Integer dummy. */
+
+
+                                    double* a, b, x;
+                                    if (UseDoublePrecision) {
+                                        a = pa_D;
+                                        b = pb;
+                                        x = px;
+                                    } else {
+                                        a = (double*)pa_S;
+
+                                        b = (double*)Marshal.AllocHGlobal(n * sizeof(float));
+                                        x = (double*)Marshal.AllocHGlobal(n * sizeof(float));
+
+                                        float* bS = (float*)b;
+                                        float* xS = (float*)x;
+                                        
+                                        for (int i = 0; i < n; i++) {
+                                            bS[i] = (float)(pb[i]);
+                                            xS[i] = (float)(px[i]);
+                                        }
+                                        //SingleCalls.Start();
+
+                                    }
+                                    //Inner.Start();
+
 
                                     if (!m_PardInt.m_PardisoInitialized) {
 
@@ -583,6 +660,9 @@ namespace ilPSP.LinSolvers.PARDISO {
 
                                         //Console.WriteLine("init: IPARAM(22) = {0}, IPARAM(23) = {1}", iparm[21], iparm[22]);
 
+                                        iparm[27] = this.UseDoublePrecision ? 0 : 1; // set single or double precision
+
+
 
                                         maxfct = 1;         /* Maximum number of numerical factorizations.  */
                                         mnum = 1;         /* Which factorization to use. */
@@ -596,12 +676,14 @@ namespace ilPSP.LinSolvers.PARDISO {
                                         /*     all memory that is necessary for the factorization.              */
                                         /* -------------------------------------------------------------------- */
                                         phase = 11;
-                                        iparm[59] = 0;
+                                        iparm[59] = 0; // in-core (1 == out-of-core)
+
                                         //Console.Write("calling pardiso, phase 11... ");
+                                        Phase_11.Start();
                                         wrapper.PARDISO(pt, &maxfct, &mnum, &mtype, &phase,
                                                           &n, a, ia, ja, &idum, &nrhs,
                                                           iparm, &msglvl, &ddum, &ddum, &error, dparam);
-
+                                        Phase_11.Stop();
                                         //Console.WriteLine("11: IPARAM(22) = {0}, IPARAM(23) = {1}", iparm[21], iparm[22]);
 
                                         if (error != 0) {
@@ -618,18 +700,18 @@ namespace ilPSP.LinSolvers.PARDISO {
                                         /* -------------------------------------------------------------------- */
                                         phase = 22;
 
-
+                                        Phase_22.Start();
                                         wrapper.PARDISO(pt, &maxfct, &mnum, &mtype, &phase,
                                                           &n, a, ia, ja, &idum, &nrhs,
                                                           iparm, &msglvl, &ddum, &ddum, &error, dparam);
-                                        //Console.WriteLine("22: IPARAM(22) = {0}, IPARAM(23) = {1}", iparm[21], iparm[22]);
-
+                                        Phase_22.Stop();
                                         if (error != 0) {
+                                            // some error occured: release mem, dispose objects...
                                             PARDISODispose();
                                             Console.WriteLine("PARDISO ERROR: " + wrapper.PARDISOerror2string(error));
+                                            //InitAndSolve.Stop();
                                             return false;
                                         }
-                                        //Console.Write("\nFactorization completed ...\n ");
                                     }
 
                                     /* -------------------------------------------------------------------- */
@@ -637,28 +719,46 @@ namespace ilPSP.LinSolvers.PARDISO {
                                     /* -------------------------------------------------------------------- */
                                     phase = 33;
 
-                                    iparm[7] = 1;       /* Max numbers of iterative refinement steps. */
+                                    iparm[7] = 0;       /* Max numbers of iterative refinement steps, 0 == auto */
 
                                     //m_foo.mkl_serv_mkl_set_num_threads(num_procs);
+                                    Phase_33.Start();
                                     wrapper.PARDISO(pt, &maxfct, &mnum, &mtype, &phase,
                                                       &n, a, ia, ja, &idum, &nrhs,
                                                       iparm, &msglvl, b, x, &error, dparam);
-                                    //Console.WriteLine("33: IPARAM(22) = {0}, IPARAM(23) = {1}", iparm[21], iparm[22]);
-
+                                    Phase_33.Stop();
                                     if (error != 0) {
+                                        // some error occurred: release mem, dispose objects...
                                         PARDISODispose();
                                         Console.WriteLine("PARDISO ERROR: " + wrapper.PARDISOerror2string(error));
+                                        //InitAndSolve.Stop();
                                         return false;
                                     }
 
-                                    //Console.Write("\nSolve completed ... ");
+                                    //Inner.Stop();
+                                    if (UseDoublePrecision) {
 
+                                    } else {
+                                        //SingleCalls.Stop();
+                                        float* bS = (float*)b;
+                                        float* xS = (float*)x;
+                                        for (int i = 0; i < n; i++) {
+                                            pb[i] = (bS[i]);
+                                            px[i] = (xS[i]);
+                                        }
+
+                                        Marshal.FreeHGlobal((IntPtr)b);
+                                        Marshal.FreeHGlobal((IntPtr)x);
+                                    }
                                 }
                             }
                         }
                     }
 #if DEBUG
-                    Debug.Assert(ArrayTools.ListEquals<double>(aClone, m_PardisoMatrix.a), "PARDISO changed the matrix.");
+                    if(UseDoublePrecision)
+                        Debug.Assert(ArrayTools.ListEquals<double>(a_DClone, m_PardisoMatrix.a_D), "PARDISO changed the matrix.");
+                    else
+                        Debug.Assert(ArrayTools.ListEquals<float>(a_SClone, m_PardisoMatrix.a_S), "PARDISO changed the matrix.");
                     Debug.Assert(ArrayTools.ListEquals<int>(iaClone, m_PardisoMatrix.ia), "PARDISO changed the matrix.");
                     Debug.Assert(ArrayTools.ListEquals<int>(jaClone, m_PardisoMatrix.ja), "PARDISO changed the matrix.");
 #endif
@@ -667,11 +767,12 @@ namespace ilPSP.LinSolvers.PARDISO {
 
 
                 m_PardInt.m_PardisoInitialized = true;
+                //InitAndSolve.Stop();
                 return true;
             }
         }
 
-        int rank = -1;
+        int m_MpiRank = -1;
 
         /// <summary>
         /// disposal of things cached by Pardiso
@@ -680,7 +781,7 @@ namespace ilPSP.LinSolvers.PARDISO {
            //if (!m_PardInt.m_PardisoInitialized)
            //    throw new ApplicationException("Pardiso is not initialized");
 
-            if (rank == 0) {
+            if (m_MpiRank == 0) {
                 if (m_PardisoMatrix != null) {
                     unsafe {
                         fixed (double* dparam = m_PardInt.m_dparam) {
