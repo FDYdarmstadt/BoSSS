@@ -366,6 +366,30 @@ namespace BoSSS.Solution.Multigrid {
         }
 
         /// <summary>
+        /// Injection operator to finer grid level.
+        /// </summary>
+        public BlockMsrMatrix GetInjectionOperator(MultigridMapping finerLevel) {
+            if(!object.ReferenceEquals(finerLevel.AggGrid, this.AggGrid.ParentGrid))
+                throw new ArgumentException("only injection to next level is supported.");
+            if(finerLevel.AggBasis.Length != this.AggBasis.Length) {
+                throw new ArgumentException("");
+            }
+            int NoOfVar = this.AggBasis.Length;
+
+            for(int iVar = 0; iVar< NoOfVar; iVar++) {
+
+            }
+
+            BlockMsrMatrix INJ = new BlockMsrMatrix(finerLevel, this);
+
+            
+
+            return INJ;
+        }
+
+
+
+        /// <summary>
         /// 
         /// </summary>
         public BlockMsrMatrix FromOtherLevelMatrix(MultigridMapping otherLevel) {
@@ -397,8 +421,8 @@ namespace BoSSS.Solution.Multigrid {
                 ShoudBeId.AccEyeSp(-1.0);
 
                 double ShouldBeID_Norm = ShoudBeId.InfNorm();
-                Debug.Assert(ShouldBeID_Norm < 1.0e-8);
-                //Console.WriteLine("Id norm {0} ", ShouldBeID_Norm);
+                //Debug.Assert(ShouldBeID_Norm < 1.0e-8);
+                Console.WriteLine("Id norm {0} \t (lvel {1})", ShouldBeID_Norm, this.AggGrid.MgLevel);
             }
 #endif
                 return result;
