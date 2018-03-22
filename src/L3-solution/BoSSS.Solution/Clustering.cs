@@ -151,7 +151,7 @@ namespace BoSSS.Solution.Utils {
             }
 #if DEBUG
             for (int i = 0; i < clusters.Count; i++) {
-                Console.WriteLine("CreateClustering: id=" + i + " -> elements=" + clusters[i].GlobalNoOfCells);
+                Console.WriteLine("CreateClustering:\t id=" + i + " -> elements=" + clusters[i].GlobalNoOfCells);
             }
 #endif
             return new Clustering(clusters, subGrid);
@@ -260,7 +260,7 @@ namespace BoSSS.Solution.Utils {
             }
 #if DEBUG
             for (int i = 0; i < newClusters.Count; i++) {
-                Console.WriteLine("TuneClustering:\t id=" + i + " -> sub-steps=" + newSubSteps[i] + " and elements=" + newClusters[i].GlobalNoOfCells);
+                Console.WriteLine("TuneClustering:\t\t id=" + i + " -> sub-steps=" + newSubSteps[i] + " and elements=" + newClusters[i].GlobalNoOfCells);
             }
 #endif
             return new Clustering(newClusters, clustering.SubGrid, newSubSteps);
