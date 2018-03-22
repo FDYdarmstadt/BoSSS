@@ -141,7 +141,7 @@ namespace BoSSS.Solution.Timestepping {
             this.fluxCorrection = fluxCorrection;
 
 #if DEBUG
-            Console.WriteLine("This is AB LTS Ctor");
+            Console.WriteLine("### This is ABLTS ctor ###");
 #endif
 
             clusterer = new Clusterer(this.gridData, maxNumOfSubSteps);
@@ -214,8 +214,9 @@ namespace BoSSS.Solution.Timestepping {
                     }
 #if DEBUG
                     for (int i = 0; i < numberOfLocalTimeSteps.Count; i++) {
-                        Console.WriteLine("Perform(dt):\t\t id={0} -> sub-steps={1} and elements={2} and dt={3:0.#######E-00}", i, numberOfLocalTimeSteps[i], CurrentClustering.Clusters[i].GlobalNoOfCells, clusterDts[i]);
+                        Console.WriteLine("Perform(dt):\t\t id={0} -> sub-steps={1}\telements={2}\tdt={3:0.#######E-00}", i, numberOfLocalTimeSteps[i], CurrentClustering.Clusters[i].GlobalNoOfCells, clusterDts[i]);
                     }
+                    Console.WriteLine("-------------------------------------------------------------------------------------------");
 
                     if (numberOfLocalTimeSteps.Last() > clusterer.MaxSubSteps && clusterer.Restrict) {
                         throw new Exception(String.Format("Number of local time steps is larger than {0}! Restriction failed!", clusterer.MaxSubSteps));
@@ -824,13 +825,19 @@ namespace BoSSS.Solution.Timestepping {
                         // Fix for update problem of artificial viscosity
                         RaiseOnBeforeComputechangeRate(Time, dt);
 #if DEBUG
-                        Console.WriteLine("\n### BUILD NEW CLUSTERING FOR TESTING ###");
+                        Console.WriteLine("\n-------------------------------------------------------------------------------------------");
+                        Console.WriteLine("### BUILD NEW CLUSTERING FOR TESTING ###");
 #endif
                         // Necessary in order to use the number of sub-grids specified by the user for the reclustering in each time step
                         // Otherwise the value could be changed by the constructor of the parent class (AdamsBashforthLTS.cs) --> CreateSubGrids()
                         Clusterer.Clustering newClustering = clusterer.CreateClustering(numberOfClustersInitial, this.TimeStepConstraints, this.SubGrid);
                         newClustering = clusterer.TuneClustering(newClustering, Time, this.TimeStepConstraints); // Might remove sub-grids when their time step sizes are too similar
                         reclustered = clusterer.CheckForNewClustering(CurrentClustering, newClustering);
+
+#if DEBUG
+                        //Console.WriteLine("########################################");
+                        Console.WriteLine("-------------------------------------------------------------------------------------------");
+#endif
 
                         // After the intitial phase, activate adaptive mode for all ABevolve objects
                         foreach (ABevolve abE in ABevolver) {
