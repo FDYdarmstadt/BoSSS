@@ -249,7 +249,7 @@ namespace BoSSS.Solution.Utils {
                     SubGrid combinedSubGrid = new SubGrid(clustering.Clusters[i].VolumeMask.Union(clustering.Clusters[i + 1].VolumeMask));
                     newClusters.Add(combinedSubGrid);
 #if DEBUG
-                    Console.WriteLine("TuneClustering: Clustering leads to sub-grids which are too similar, i.e. they have the same number of local time steps. They are combined.");
+                    Console.WriteLine("TuneClustering: Clustering leads to clusters which are too similar. They are combined.");
 #endif
                     newSubSteps.Add(numOfSubSteps[i]);
                     i++;
