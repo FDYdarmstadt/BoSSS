@@ -296,7 +296,16 @@ namespace BoSSS.Solution.Utils {
             }
 
             if (subSteps.Last() > this.MaxSubSteps && this.Restrict) {
+#if DEBUG
+                List<int> oldSubSteps = subSteps;
+#endif
                 (clusterDts, subSteps) = RestrictDtsAndSubSteps(clusterDts, subSteps);
+#if DEBUG
+                Console.WriteLine("### RESTRICTION OF SUB-STEPS ### (harmonic sum)");
+                for (int i = 0; i < subSteps.Count; i++) {
+                    Console.WriteLine("RestrictDtsAndSubSteps:\t id={0} -> sub-steps={1} -> {2}", i, oldSubSteps[i], subSteps[i]);
+                }
+#endif
             }
 
             return (clusterDts, subSteps);
@@ -336,7 +345,16 @@ namespace BoSSS.Solution.Utils {
             List<int> subSteps = CalculateSubSteps(rcvDtMin, eps);
 
             if (subSteps.Last() > this.MaxSubSteps && this.Restrict) {
+#if DEBUG
+                List<int> oldSubSteps = subSteps;
+#endif
                 (rcvDtMin, subSteps) = RestrictDtsAndSubSteps(rcvDtMin, subSteps);
+#if DEBUG
+                Console.WriteLine("### RESTRICTION OF SUB-STEPS ### (dt min)");
+                for (int i = 0; i < subSteps.Count; i++) {
+                    Console.WriteLine("RestrictDtsAndSubSteps:\t id={0} -> sub-steps={1} -> {2}", i, oldSubSteps[i], subSteps[i]);
+                }
+#endif
             }
 
             return (rcvDtMin, subSteps);
@@ -374,12 +392,7 @@ namespace BoSSS.Solution.Utils {
             for (int i = 0; i < restrictedClusterDts.Length; i++) {
                 newSubSteps.Add((int)Math.Ceiling(restrictedClusterDts[0] / restrictedClusterDts[i]));
             }
-#if DEBUG
-            Console.WriteLine("### RESTRICTION OF SUB-STEPS ###");
-            for (int i = 0; i < restrictedClusterDts.Length; i++) {
-                Console.WriteLine("RestrictDtsAndSubSteps:\t id=" + i + " -> sub-steps=" + newSubSteps[i]);
-            }
-#endif
+
             return (restrictedClusterDts, newSubSteps);
         }
 
