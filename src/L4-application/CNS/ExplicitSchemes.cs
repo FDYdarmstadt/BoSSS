@@ -175,7 +175,6 @@ namespace CNS {
                         reclusteringInterval: control.ReclusteringInterval,
                         fluxCorrection: control.FluxCorrection,
                         saveToDBCallback: program.SaveToDatabase,
-                        initialTimestepNumber: program.TimestepNumber,
                         maxNumOfSubSteps: control.maxNumOfSubSteps);
                     break;
 
@@ -235,12 +234,21 @@ namespace CNS {
                 }
 
                 explicitEulerBasedTimestepper.OnBeforeComputeChangeRate += delegate (double absTime, double relTime) {
+                    // Note: Only shock sensor is updated, _NOT_ the corresponding variable
                     program.Control.ShockSensor.UpdateSensorValues(
                         program.WorkingSet,
                         program.SpeciesMap,
                         explicitEulerBasedTimestepper.SubGrid.VolumeMask);
+                    // Note: When being called, artificial viscosity is updated in the _ENTIRE_ (fluid) domain
                     var avField = program.WorkingSet.DerivedFields[Variables.ArtificialViscosity];
                     Variables.ArtificialViscosity.UpdateFunction(avField, program.SpeciesMap.SubGrid.VolumeMask, program);
+
+                    // Test
+                    //double sensorNorm = program.WorkingSet.DerivedFields[Variables.ShockSensor].L2Norm();
+                    //double avNorm = program.WorkingSet.DerivedFields[Variables.ArtificialViscosity].L2Norm();
+                    //Console.WriteLine("\r\nThis is OnBeforeComputeChangeRate");
+                    //Console.WriteLine("SensorNeu: {0}", sensorNorm);
+                    //Console.WriteLine("AVNeu: {0}", avNorm);
                 };
             }
 
