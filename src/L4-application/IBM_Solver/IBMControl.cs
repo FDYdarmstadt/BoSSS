@@ -62,17 +62,14 @@ namespace BoSSS.Application.IBM_Solver {
         /// <summary>
         /// Sets the DG polynomial degree 
         /// </summary>
-        /// <param name="k">Degree for velociy; pressure  will be one order lower.</param>
+        /// <param name="k">Degree for velocity; pressure  will be one order lower.</param>
         /// <param name="D">Spatial Dimension of the computational domain </param>
-        public override void SetDGdegree(int k, int D = 2) {
+        public override void SetDGdegree(int k) {
             if (k < 1)
                 throw new ArgumentOutOfRangeException("DG polynomial degree must be at least 1.");
 
             base.FieldOptions.Clear();
-            this.AddFieldOption("VelocityX", k);
-            this.AddFieldOption("VelocityY", k);
-            if (D == 3)
-                this.AddFieldOption("VelocityZ", k);
+            this.AddFieldOption("Velocity*", k);
             this.AddFieldOption("Pressure", k - 1);
             this.AddFieldOption("PhiDG", 2);
             this.AddFieldOption("Phi", 2);

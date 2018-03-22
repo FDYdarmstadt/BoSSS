@@ -41,7 +41,7 @@ namespace CNS.Tests.BoundaryConditions {
                     p = new EulerBoundaryConditionTest();
                     return p;
                 });
-
+            
             TestUtils.CheckConvergenceRates(p.QueryResultTable, p.Grid.SpatialDimension);
         }
 
