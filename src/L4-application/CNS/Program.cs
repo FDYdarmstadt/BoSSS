@@ -228,8 +228,22 @@ namespace CNS {
                     Console.Write("Starting time step #" + TimestepNo + "...");
                 }
 
+                // Update shock-capturing variables before performing a time step
+                // as the time step constraints (could) depend on artificial viscosity.
+                // If not doing so, the artificial viscosity values from the previous
+                // time step are taken (unless UpdateDerivedVariables has been called by
+                // SavetoDatabase which depends on the saveperiod specified in the control file). 
+                if (this.Control.ArtificialViscosityLaw != null) {
+                    WorkingSet.UpdateShockCapturingVariables(this, SpeciesMap.SubGrid.VolumeMask);
+                }
+
                 Exception e = null;
                 try {
+                    // Hack for updating the time step number for local time stepping runs
+                    // Better: Use a global TimeStepInfo object defined in the interface class ITimeStepper
+                    if (TimeStepper is AdamsBashforthLTS ABLTS) {
+                        ABLTS.UpdateTimeStepNumber(TimestepNo);
+                    }
                     dt = TimeStepper.Perform(dt);
                 } catch (Exception ee) {
                     e = ee;
@@ -237,7 +251,7 @@ namespace CNS {
                 e.ExceptionBcast();
 
                 if (TimestepNo % printInterval == 0) {
-                    Console.WriteLine(" done. PhysTime: {0:0.#######E-00}, dt: {1:0.###E-00}", phystime, dt);
+                    Console.WriteLine(" done. PhysTime: {0:0.#######E-00}, dt: {1:0.#######E-00}", phystime, dt);
                 }
 
                 IDictionary<string, double> residuals = residualLoggers.LogTimeStep(TimestepNo, dt, phystime);
