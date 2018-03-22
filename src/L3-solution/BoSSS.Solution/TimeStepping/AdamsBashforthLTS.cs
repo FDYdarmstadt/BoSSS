@@ -214,11 +214,11 @@ namespace BoSSS.Solution.Timestepping {
                     }
 #if DEBUG
                     for (int i = 0; i < numberOfLocalTimeSteps.Count; i++) {
-                        Console.WriteLine("Perform(dt):\t id=" + i + " -> sub-steps=" + numberOfLocalTimeSteps[i] + " and elements=" + CurrentClustering.Clusters[i].GlobalNoOfCells);
+                        Console.WriteLine("Perform(dt):\t\t id={0} -> sub-steps={1} and elements={2} and dt={3:0.#######E-00}", i, numberOfLocalTimeSteps[i], CurrentClustering.Clusters[i].GlobalNoOfCells, clusterDts[i]);
                     }
 
                     if (numberOfLocalTimeSteps.Last() > clusterer.MaxSubSteps && clusterer.Restrict) {
-                        throw new Exception("Number of local time steps is larger than 50! Restriction failed!");
+                        throw new Exception(String.Format("Number of local time steps is larger than {0}! Restriction failed!", clusterer.MaxSubSteps));
                     }
 #endif
                     double[,] CorrectionMatrix = new double[CurrentClustering.NumberOfClusters, CurrentClustering.NumberOfClusters];
