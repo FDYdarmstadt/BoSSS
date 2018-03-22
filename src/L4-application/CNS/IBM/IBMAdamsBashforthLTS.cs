@@ -68,7 +68,7 @@ namespace CNS.IBM {
             cutCells = speciesMap.Tracker.Regions.GetCutCellMask();
             cutAndTargetCells = cutCells.Union(speciesMap.Agglomerator.AggInfo.TargetCells);
 #if DEBUG
-            Console.WriteLine("This is IBM ALTS Ctor");
+            Console.WriteLine("### This is IBM ABLTS ctor ###");
 #endif
             // Normal LTS constructor
             clusterer = new Clusterer(this.gridData, maxNumOfSubSteps);
