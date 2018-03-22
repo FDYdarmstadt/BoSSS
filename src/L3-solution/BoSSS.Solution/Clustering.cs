@@ -298,12 +298,13 @@ namespace BoSSS.Solution.Utils {
             if (subSteps.Last() > this.MaxSubSteps && this.Restrict) {
 #if DEBUG
                 List<int> oldSubSteps = subSteps;
+                double[] oldClusterDts = clusterDts;
 #endif
                 (clusterDts, subSteps) = RestrictDtsAndSubSteps(clusterDts, subSteps);
 #if DEBUG
-                Console.WriteLine("### RESTRICTION OF SUB-STEPS ### (harmonic sum)");
+                Console.WriteLine("### RESTRICTION OF SUB-STEPS ### (dt min)");
                 for (int i = 0; i < subSteps.Count; i++) {
-                    Console.WriteLine("RestrictDtsAndSubSteps:\t id={0} -> sub-steps={1} -> {2}", i, oldSubSteps[i], subSteps[i]);
+                    Console.WriteLine("RestrictDtsAndSubSteps:\t id={0} -> sub-steps={1}\tdt={2:0.#######E-00} -> substeps={3}\tdt={4:0.#######E-00}", i, oldSubSteps[i], oldClusterDts[i], subSteps[i], clusterDts[i]);
                 }
 #endif
             }
@@ -347,12 +348,13 @@ namespace BoSSS.Solution.Utils {
             if (subSteps.Last() > this.MaxSubSteps && this.Restrict) {
 #if DEBUG
                 List<int> oldSubSteps = subSteps;
+                double[] oldRcvDtMin = rcvDtMin;
 #endif
                 (rcvDtMin, subSteps) = RestrictDtsAndSubSteps(rcvDtMin, subSteps);
 #if DEBUG
                 Console.WriteLine("### RESTRICTION OF SUB-STEPS ### (dt min)");
                 for (int i = 0; i < subSteps.Count; i++) {
-                    Console.WriteLine("RestrictDtsAndSubSteps:\t id={0} -> sub-steps={1} -> {2}", i, oldSubSteps[i], subSteps[i]);
+                    Console.WriteLine("RestrictDtsAndSubSteps:\t id={0} -> sub-steps={1}\tdt={2:0.#######E-00} -> substeps={3}\tdt={4:0.#######E-00}", i, oldSubSteps[i], oldRcvDtMin[i], subSteps[i], rcvDtMin[i]);
                 }
 #endif
             }
