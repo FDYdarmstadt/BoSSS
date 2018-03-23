@@ -186,7 +186,7 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="solver_name">
         /// Name of solver to use.
         /// </param>
-        public static SipControl TestCartesian2(int Res, int Dim, SolverCodes solver_name = SolverCodes.exp_softpcg_mg, int deg = 3) {
+        public static SipControl TestCartesian2(int Res, int Dim, SolverCodes solver_name = SolverCodes.exp_softpcg_schwarz_directcoarse, int deg = 3) {
             if(Dim != 2 && Dim != 3)
                 throw new ArgumentOutOfRangeException();
             
@@ -200,6 +200,8 @@ namespace BoSSS.Application.SipPoisson {
             R.InitialValues_Evaluators.Add("Tex", X => Math.Sin(X[0]));
             R.ExactSolution_provided = true;
             R.NoOfMultigridLevels = int.MaxValue;
+            R.solver_name = solver_name;
+            //R.TargetBlockSize = 100;
 
             R.GridFunc = delegate() {
                 GridCommons grd = null;
@@ -256,7 +258,7 @@ namespace BoSSS.Application.SipPoisson {
                  });
 
 
-            R.solver_name = solver_name;
+
            
             return R;
         }
