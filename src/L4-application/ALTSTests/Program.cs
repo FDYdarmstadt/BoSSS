@@ -213,6 +213,8 @@ namespace ALTSTests {
                     CustomTimestepConstraint.FirstMetricActive = false;
                 }
 
+                timeStepper.UpdateTimeInfo(new TimeInformation(TimestepNo, phystime, dt));
+
                 timeStepper.Perform(dt);
 
                 Console.WriteLine("finished");
