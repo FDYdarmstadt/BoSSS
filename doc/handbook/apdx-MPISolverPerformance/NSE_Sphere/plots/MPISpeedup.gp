@@ -22,7 +22,7 @@ unset x2label
 set y2label "SlvIter"
 set title "Speedup"
 unset key
-set key outside right vertical maxrows 5 
+set key outside right vertical maxrows 6 
 set xtics 
 set x2tics format " " 
 set ytics 
@@ -31,7 +31,8 @@ set termoption dashed
 set termoption dashed
 set termoption dashed
 set termoption dashed
-plot "MPISpeedup_data_0.csv" title "NewtonGmres Swz w Coarse Overlap MGLevels3" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 4 pointsize 0.5, "MPISpeedup_data_1.csv" title "NewtonGmres Swz w Coarse MGLevels2" with linespoints linecolor  "black" dashtype 4 linewidth 3 pointtype 11 pointsize 0.5, "MPISpeedup_data_2.csv" title "NewtonGmres Swz Kcycle w Coarse Overlap MGLevels3" with linespoints linecolor  "black" dashtype 2 linewidth 3 pointtype 1 pointsize 0.5, "MPISpeedup_data_3.csv" title "NewtonGmres Automatic MGLevels3" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 6 pointsize 0.5, "MPISpeedup_data_4.csv" title "Ideal" with lines linecolor  "black" dashtype 1 linewidth 3
+set termoption dashed
+plot "MPISpeedup_data_0.csv" title "Picard SoftGMRES Swz w Coarse Overlap MGLevels3" with linespoints linecolor  "black" dashtype 2 linewidth 3 pointtype 6 pointsize 0.5, "MPISpeedup_data_1.csv" title "NewtonGmres Automatic MGLevels3" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 6 pointsize 0.5, "MPISpeedup_data_2.csv" title "NewtonGmres Swz w Coarse Overlap MGLevels3" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 4 pointsize 0.5, "MPISpeedup_data_3.csv" title "NewtonGmres Swz w Coarse MGLevels2" with linespoints linecolor  "black" dashtype 4 linewidth 3 pointtype 11 pointsize 0.5, "MPISpeedup_data_4.csv" title "NewtonGmres Swz Kcycle w Coarse Overlap MGLevels3" with linespoints linecolor  "black" dashtype 2 linewidth 3 pointtype 1 pointsize 0.5, "MPISpeedup_data_5.csv" title "Ideal" with lines linecolor  "black" dashtype 1 linewidth 3
 set size 0.98,0.49
 set origin 0.01,0.005
 unset lmargin 
@@ -52,7 +53,7 @@ unset x2label
 set y2label "SlvInit"
 unset title 
 unset key
-set key outside right vertical maxrows 5 
+set key outside right vertical maxrows 6 
 set xtics 
 set x2tics format " " 
 set ytics 
@@ -61,7 +62,8 @@ set termoption dashed
 set termoption dashed
 set termoption dashed
 set termoption dashed
-plot "MPISpeedup_data_5.csv" title "NewtonGmres Swz w Coarse Overlap MGLevels3" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 4 pointsize 0.5, "MPISpeedup_data_6.csv" title "NewtonGmres Swz w Coarse MGLevels2" with linespoints linecolor  "black" dashtype 4 linewidth 3 pointtype 11 pointsize 0.5, "MPISpeedup_data_7.csv" title "NewtonGmres Swz Kcycle w Coarse Overlap MGLevels3" with linespoints linecolor  "black" dashtype 2 linewidth 3 pointtype 1 pointsize 0.5, "MPISpeedup_data_8.csv" title "NewtonGmres Automatic MGLevels3" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 6 pointsize 0.5, "MPISpeedup_data_9.csv" title "Ideal" with lines linecolor  "black" dashtype 1 linewidth 3
+set termoption dashed
+plot "MPISpeedup_data_6.csv" title "Picard SoftGMRES Swz w Coarse Overlap MGLevels3" with linespoints linecolor  "black" dashtype 2 linewidth 3 pointtype 6 pointsize 0.5, "MPISpeedup_data_7.csv" title "NewtonGmres Automatic MGLevels3" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 6 pointsize 0.5, "MPISpeedup_data_8.csv" title "NewtonGmres Swz w Coarse Overlap MGLevels3" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 4 pointsize 0.5, "MPISpeedup_data_9.csv" title "NewtonGmres Swz w Coarse MGLevels2" with linespoints linecolor  "black" dashtype 4 linewidth 3 pointtype 11 pointsize 0.5, "MPISpeedup_data_10.csv" title "NewtonGmres Swz Kcycle w Coarse Overlap MGLevels3" with linespoints linecolor  "black" dashtype 2 linewidth 3 pointtype 1 pointsize 0.5, "MPISpeedup_data_11.csv" title "Ideal" with lines linecolor  "black" dashtype 1 linewidth 3
 
 
 exit

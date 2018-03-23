@@ -79,6 +79,8 @@
       {
         "$type": "System.String[], mscorlib",
         "$values": [
+          "Sphere_Flow_k1automatic_MGLevels3_Proc32",
+          "Sphere_Flow_k1automatic_MGLevels3_Proc16",
           "Sphere_Flow_k1exp_schwarz_directcoarse_overlap_MGLevels3_Proc8",
           "Sphere_Flow_k1exp_schwarz_directcoarse_overlap_MGLevels3_Proc32",
           "Sphere_Flow_k1exp_schwarz_directcoarse_overlap_MGLevels3_Proc64",
@@ -90,8 +92,6 @@
           "Sphere_Flow_k1exp_schwarz_Kcycle_directcoarse_overlap_MGLevels3_Proc64",
           "Sphere_Flow_k1exp_schwarz_directcoarse_Proc16",
           "Sphere_Flow_k1exp_schwarz_Kcycle_directcoarse_overlap_MGLevels3_Proc16",
-          "Sphere_Flow_k1automatic_MGLevels3_Proc32",
-          "Sphere_Flow_k1automatic_MGLevels3_Proc16",
           "Sphere_Flow_k1automatic_MGLevels3_Proc8"
         ]
       },
@@ -330,14 +330,14 @@
           3,
           3,
           3,
+          3,
+          3,
           2,
           2,
           2,
           3,
           3,
           2,
-          3,
-          3,
           3,
           3
         ]
@@ -763,19 +763,19 @@
       {
         "$type": "System.Int64[], mscorlib",
         "$values": [
-          4,
-          4,
-          4,
-          4,
-          3,
-          3,
-          3,
-          6,
-          6,
-          3,
-          6,
           0,
           0,
+          4,
+          4,
+          4,
+          4,
+          3,
+          3,
+          3,
+          6,
+          6,
+          3,
+          6,
           0
         ]
       },
@@ -1204,6 +1204,8 @@
           3.0,
           3.0,
           3.0,
+          3.0,
+          3.0,
           2.0,
           2.0,
           2.0,
@@ -1211,14 +1213,14 @@
           3.0,
           2.0,
           3.0,
-          0.0,
-          0.0,
           0.0
         ]
       },
       {
         "$type": "System.Double[], mscorlib",
         "$values": [
+          0.030833435806029326,
+          0.030833433791624267,
           0.030833435831540291,
           0.030833436481457133,
           0.03083344289986123,
@@ -1230,14 +1232,14 @@
           0.03083342589052095,
           0.030833430226802655,
           0.030833431918194786,
-          0.0,
-          0.0,
           0.0
         ]
       },
       {
         "$type": "System.Double[], mscorlib",
         "$values": [
+          -4.0002914114892207E-09,
+          7.0688108968694485E-09,
           -3.0376729302523248E-09,
           -2.4438539794266467E-09,
           9.5307326146822427E-09,
@@ -1249,8 +1251,6 @@
           -9.412196912703466E-10,
           1.3601168794528939E-08,
           4.5160638553407018E-09,
-          0.0,
-          0.0,
           0.0
         ]
       },
@@ -1268,14 +1268,16 @@
           true,
           true,
           true,
-          false,
-          false,
+          true,
+          true,
           false
         ]
       },
       {
         "$type": "System.Double[], mscorlib",
         "$values": [
+          17033.612790799998,
+          15398.918697199999,
           36361.289663999996,
           17135.674200999998,
           17242.8729401,
@@ -1287,14 +1289,14 @@
           24128.287329,
           26403.837953299997,
           18389.7675417,
-          0.0,
-          0.0,
           0.0
         ]
       },
       {
         "$type": "System.Double[], mscorlib",
         "$values": [
+          16.9923173,
+          11.853036,
           28.581417499999997,
           16.8219073,
           15.3131033,
@@ -1306,14 +1308,14 @@
           14.943753099999999,
           11.637230899999999,
           11.7221314,
-          0.0,
-          0.0,
           0.0
         ]
       },
       {
         "$type": "System.Double[], mscorlib",
         "$values": [
+          4857.8282622,
+          7617.2577422999993,
           17559.1503585,
           5001.9888444,
           4613.8503501,
@@ -1325,14 +1327,14 @@
           7184.814568,
           14640.3035067,
           6011.3877311,
-          0.0,
-          0.0,
           0.0
         ]
       },
       {
         "$type": "System.Double[], mscorlib",
         "$values": [
+          11979.7350123,
+          7666.7328862999993,
           18501.6228656,
           11907.073372699999,
           12379.204919799999,
@@ -1344,14 +1346,14 @@
           16756.4244658,
           11050.647749599999,
           12229.702006599999,
-          0.0,
-          0.0,
           0.0
         ]
       },
       {
         "$type": "System.Int32[], mscorlib",
         "$values": [
+          32,
+          16,
           8,
           32,
           64,
@@ -1362,8 +1364,6 @@
           32,
           64,
           16,
-          16,
-          32,
           16,
           8
         ]
