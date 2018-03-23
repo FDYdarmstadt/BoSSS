@@ -23,12 +23,12 @@ List of 23 instances of IDatabaseInfo {
   14: { Session Count = 43; Grid Count = 45; Path = P:\BoSSS_DBs\IBMPaper }
   15: { Session Count = 28; Grid Count = 15; Path = P:\BoSSS_DBs\Paper_IBM2D }
   16: { Session Count = 38; Grid Count = 22; Path = P:\BoSSS_DBs\Paper_CellAgglo01_Penalty4 }
-  17: { Session Count = 46; Grid Count = 55; Path = P:\BoSSS_DBs\Sphere3D }
+  17: { Session Count = 51; Grid Count = 57; Path = P:\BoSSS_DBs\Sphere3D }
   18: { Session Count = 22; Grid Count = 10; Path = P:\BoSSS_DBs\Performance }
   19: { Session Count = 24; Grid Count = 14; Path = P:\BoSSS_DBs\PaperRevision }
   20: { Session Count = 0; Grid Count = 0; Path = P:\Lichtenberg_DB }
   21: { Session Count = 2; Grid Count = 354; Path = P:\BoSSS_DBs\Bug }
-  22: { Session Count = 71; Grid Count = 97; Path = L:\BoSSS_DB\Lichtenberg_DB }
+  22: { Session Count = 98; Grid Count = 97; Path = L:\BoSSS_DB\Lichtenberg_DB }
 }
 
  Console ready for input. Type 'help' for help.
@@ -44,7 +44,7 @@ using BoSSS.Application.IBM_Solver;
 using System.Data;
 **************
 ==============
-string dateString = "2018-3-19";
+string dateString = "2018-3-23";
 string File       = "SolverRuns--" + dateString + ".json";
 string FilePath   = Path.Combine(CurrentDocDir, File);
 var SessTab       = TableExtensions.LoadFromFile(FilePath);
@@ -134,28 +134,25 @@ var SubTab_1 = SessTab.ExtractColumns("Processors","SlvIter_excl","SlvInit_excl"
 SubTab_1.Print();
 **************
     Processors SlvIter_excl  SlvInit_excl PrecSolve     NewtonDirder  NonlinearSolve LinearSolve NoOfMultigridLevels DGdegree:VelocityX RegularTerminated 
-0:  8          36361.289664  28.5814175   17559.1503585 18501.6228656 0              4           4                   1                  True              
-1:  8          32046.3288242 27.9870352   13305.8005924 18366.6796446 0              4           3                   1                  True              
-2:  32         15139.050539  16.5418631   3677.3299825  11199.1819662 0              4           4                   1                  True              
-3:  64         14731.0953118 14.8490639   3117.4989286  11226.6405286 0              4           4                   1                  True              
-4:  16         13293.2834385 25.0906694   5742.9899176  7295.2137133  0              4           4                   1                  True              
-5:  64         17242.8729401 15.3131033   4613.8503501  12379.2049198 0              4           3                   1                  True              
-6:  32         17135.674201  16.8219073   5001.9888444  11907.0733727 0              4           3                   1                  True              
-7:  16         15169.7242624 11.7201694   7677.6241863  7376.7337719  0              4           3                   1                  True              
-8:  32         24219.1701465 16.8081343   6069.4109347  17963.4451384 0              6           3                   1                  True              
-9:  64         24128.287329  14.9437531   7184.814568   16756.4244658 0              6           3                   1                  True              
-10: 16         18389.7675417 11.7221314   6011.3877311  12229.7020066 0              6           3                   1                  True              
-11: 8          59582.6186127 38.4114806   30469.5271651 27866.3211947 0              3           2                   1                  True              
+0:  8          52598.6108364 28.7071169   51645.03839   0             1              10          3                   1                  True              
+1:  16         25282.9103817 11.6718351   24911.2242752 0             1              10          3                   1                  True              
+2:  32         17952.3970824 16.8290194   17453.9230057 0             1              10          3                   1                  True              
+3:  64         16971.5946471 14.9670887   16427.605066  0             1              10          3                   1                  True              
+4:  64         19419.4050667 16.1884357   7164.4471993  11979.9091692 0              0           3                   1                  True              
+5:  8          36447.3835162 29.2242825   17138.2598894 19010.4977671 0              0           3                   1                  True              
+6:  32         17033.6127908 16.9923173   4857.8282622  11979.7350123 0              0           3                   1                  True              
+7:  16         15398.9186972 11.853036    7617.2577423  7666.7328863  0              0           3                   1                  True              
+8:  8          36361.289664  28.5814175   17559.1503585 18501.6228656 0              4           3                   1                  True              
+9:  32         17135.674201  16.8219073   5001.9888444  11907.0733727 0              4           3                   1                  True              
+10: 64         17242.8729401 15.3131033   4613.8503501  12379.2049198 0              4           3                   1                  True              
+11: 16         15169.7242624 11.7201694   7677.6241863  7376.7337719  0              4           3                   1                  True              
 12: 32         28494.0504275 16.6483007   11128.330949  16861.1074662 0              3           2                   1                  True              
 13: 64         30854.4396128 14.8030589   14618.6184927 15449.8886054 0              3           2                   1                  True              
-14: 16         26403.8379533 11.6372309   14640.3035067 11050.6477496 0              3           2                   1                  True              
-15: 8          56870.6996634 29.0321476   31290.9062739 25203.9152301 0              4           2                   1                  True              
-16: 64         26893.6911212 15.0154471   10946.3283928 15644.3939505 0              6           2                   1                  True              
-17: 64         23084.8021692 15.0523163   8754.7196044  13923.180615  0              4           2                   1                  True              
-18: 32         33173.2038997 16.5633298   14932.7252671 17374.9938962 0              6           2                   1                  True              
-19: 32         26521.6818432 26.6087619   10662.3151975 15040.3679929 0              4           2                   1                  True              
-20: 16         26104.6686354 11.7101604   13459.5464705 11570.64994   0              6           2                   1                  True              
-21: 16         28316.3646156 11.6296095   18052.4565893 9696.9521095  0              4           2                   1                  True              
+14: 8          59582.6186127 38.4114806   30469.5271651 27866.3211947 0              3           2                   1                  True              
+15: 32         24219.1701465 16.8081343   6069.4109347  17963.4451384 0              6           3                   1                  True              
+16: 64         24128.287329  14.9437531   7184.814568   16756.4244658 0              6           3                   1                  True              
+17: 16         26403.8379533 11.6372309   14640.3035067 11050.6477496 0              3           2                   1                  True              
+18: 16         18389.7675417 11.7221314   6011.3877311  12229.7020066 0              6           3                   1                  True              
 ==============
 // Calculation of speedup times 
 List<KeyValuePair<string, int>> procs = new List<KeyValuePair<string, int>>{};
@@ -285,9 +282,14 @@ static public void getFormat(int iTabRow,IDictionary<string, object> Row,
                Fmt.PointType = PointTypes.OpenCircle;
                Fmt.DashType  = DashTypes.Dashed;
                break;
+          case LinearSolverCodes.exp_softgmres_schwarz_directcoarse_overlap: 
+               Nmn           = Nmn+"SoftGMRES Swz w Coarse"; 
+               Fmt.PointType = PointTypes.OpenCircle;
+               Fmt.DashType  = DashTypes.Dashed;
+               break;
            default:
                Console.WriteLine("unknown: " + solver_name); 
-               Nmn = "unknown"; 
+               Nmn = Nmn+"unknown"; 
                break;
            } 
            Nmn           = Nmn+" MGLevels"+MGLevels;
@@ -325,6 +327,14 @@ multiplots[0,0].bmargin = 1;
 multiplots[1,0].tmargin = 1;
 multiplots.PlotNow()
 **************
+unknown: exp_softgmres_schwarz_directcoarse_overlap
+unknown: exp_softgmres_schwarz_directcoarse_overlap
+unknown: exp_softgmres_schwarz_directcoarse_overlap
+unknown: exp_softgmres_schwarz_directcoarse_overlap
+unknown: exp_softgmres_schwarz_directcoarse_overlap
+unknown: exp_softgmres_schwarz_directcoarse_overlap
+unknown: exp_softgmres_schwarz_directcoarse_overlap
+unknown: exp_softgmres_schwarz_directcoarse_overlap
 Using gnuplot: C:\Users\krause\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 System.Drawing.Bitmap
 ==============
@@ -362,6 +372,14 @@ speedupsplots[0,0].tmargin = 4;
 speedupsplots[1,0].tmargin = 1;
 speedupsplots.PlotNow()
 **************
+unknown: exp_softgmres_schwarz_directcoarse_overlap
+unknown: exp_softgmres_schwarz_directcoarse_overlap
+unknown: exp_softgmres_schwarz_directcoarse_overlap
+unknown: exp_softgmres_schwarz_directcoarse_overlap
+unknown: exp_softgmres_schwarz_directcoarse_overlap
+unknown: exp_softgmres_schwarz_directcoarse_overlap
+unknown: exp_softgmres_schwarz_directcoarse_overlap
+unknown: exp_softgmres_schwarz_directcoarse_overlap
 Using gnuplot: C:\Users\krause\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 System.Drawing.Bitmap
 ==============
@@ -391,6 +409,14 @@ multiplots2[0,0].bmargin = 1;
 multiplots2[1,0].tmargin = 1;
 multiplots2.PlotNow()
 **************
+unknown: exp_softgmres_schwarz_directcoarse_overlap
+unknown: exp_softgmres_schwarz_directcoarse_overlap
+unknown: exp_softgmres_schwarz_directcoarse_overlap
+unknown: exp_softgmres_schwarz_directcoarse_overlap
+unknown: exp_softgmres_schwarz_directcoarse_overlap
+unknown: exp_softgmres_schwarz_directcoarse_overlap
+unknown: exp_softgmres_schwarz_directcoarse_overlap
+unknown: exp_softgmres_schwarz_directcoarse_overlap
 Using gnuplot: C:\Users\krause\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 System.Drawing.Bitmap
 ==============
@@ -428,6 +454,14 @@ speedupsplots2[0,0].tmargin = 4;
 speedupsplots2[1,0].tmargin = 1;
 speedupsplots2.PlotNow()
 **************
+unknown: exp_softgmres_schwarz_directcoarse_overlap
+unknown: exp_softgmres_schwarz_directcoarse_overlap
+unknown: exp_softgmres_schwarz_directcoarse_overlap
+unknown: exp_softgmres_schwarz_directcoarse_overlap
+unknown: exp_softgmres_schwarz_directcoarse_overlap
+unknown: exp_softgmres_schwarz_directcoarse_overlap
+unknown: exp_softgmres_schwarz_directcoarse_overlap
+unknown: exp_softgmres_schwarz_directcoarse_overlap
 Using gnuplot: C:\Users\krause\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 System.Drawing.Bitmap
 ==============
@@ -464,6 +498,12 @@ System.ComponentModel.Win32Exception (0x80004005): Das System kann die angegeben
    bei <InteractiveExpressionClass>.Host(Object& $retval)
    bei Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
    bei BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in C:\BoSSS-experimental\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:Zeile 307.
+==============
+**************
+==============
+**************
+==============
+**************
 ==============
 **************
 ==============

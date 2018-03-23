@@ -12,7 +12,7 @@ unset logscale x
 unset logscale y
 unset logscale x2
 unset logscale y2
-set xrange [1:16]
+set xrange [1:64]
 set autoscale y
 set autoscale x2
 set autoscale y2
