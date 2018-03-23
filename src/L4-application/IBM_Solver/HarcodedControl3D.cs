@@ -991,6 +991,181 @@ namespace BoSSS.Application.IBM_Solver {
             return C;
         }
 
+        static public IBM_Control Simple3DTest(int k = 2, int h = 1) {
+            IBM_Control C = new IBM_Control();
+
+            // basic database options
+            // ======================
+            C.DbPath = @"\\dc1\userspace\krause\BoSSS_DBs\Sphere3D";
+            C.savetodb = false;
+            C.ProjectName = "Sphere3D";
+            C.SessionName = "Sphere3D_" + k + "_Re350";
+            C.Tags.Add("with immersed boundary method");
+
+            // Create Fields
+            C.FieldOptions.Add("VelocityX", new FieldOpts() {
+                Degree = k,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("VelocityY", new FieldOpts() {
+                Degree = k,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("VelocityZ", new FieldOpts() {
+                Degree = k,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Pressure", new FieldOpts() {
+                Degree = k - 1,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("PhiDG", new FieldOpts() {
+                Degree = 2,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Phi", new FieldOpts() {
+                Degree = 2,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+
+            C.AdaptiveMeshRefinement = false;
+
+            //C.GridPartType = GridPartType.Hilbert;
+
+
+            //#region Creates grid () and sets BC
+            //// Create Grid
+            Console.WriteLine("...generating grid");
+            C.GridFunc = delegate {
+
+                // x-direction
+                var _xNodes = GenericBlas.Linspace(-1, 1, (3 * h) + 1);
+
+                // y-direction
+                var _yNodes = GenericBlas.Linspace(-1, 1, (3 * h) + 1);
+
+                // z-direction
+                var _zNodes = GenericBlas.Linspace(-1, 1, (3 * h) + 1);
+
+                // Cut Out
+                var grd = Grid3D.Cartesian3DGrid(_xNodes, _yNodes, _zNodes, false, false, false, CellType.Cube_Linear);
+
+                grd.EdgeTagNames.Add(1, "Velocity_inlet");
+                grd.EdgeTagNames.Add(2, "Pressure_Outlet");
+
+                grd.DefineEdgeTags(delegate (double[] _X) {
+                    var X = _X;
+                    double x = X[0];
+                    double y = X[1];
+                    double z = X[2];
+
+                    if (Math.Abs(x - (-1)) < 1.0e-6)
+                        // inlet
+                        return 1;
+
+                    if (Math.Abs(x - (1)) < 1.0e-6)
+                        // outlet
+                        return 2;
+
+                    if (Math.Abs(y - (-1)) < 1.0e-6)
+                        // left
+                        return 2;
+
+                    if (Math.Abs(y - (1)) < 1.0e-6)
+                        // right
+                        return 2;
+
+                    if (Math.Abs(z - (-1)) < 1.0e-6)
+                        // top left
+                        return 2;
+
+                    if (Math.Abs(z - (1)) < 1.0e-6)
+                        // top right
+                        return 2;
+
+                    throw new ArgumentOutOfRangeException();
+                });
+
+                Console.WriteLine("Cells:    {0}", grd.NumberOfCells);
+
+                return grd;
+            };
+
+            // Create Grid
+
+            Console.WriteLine("...starting calculation of Sphere3D");
+
+            // Initial Solution
+
+            // Physical values
+            C.particleRadius = 0.5;
+            C.PhysicalParameters.rho_A = 1;
+            //C.PhysicalParameters.mu_A = (2 * C.particleRadius) / 100;
+            C.PhysicalParameters.mu_A = (2.0 * C.particleRadius * 1.0) / 100;
+
+            // Boundary conditions
+            C.AddBoundaryCondition("Velocity_inlet", "VelocityX", (X, t) => 1);
+            C.AddBoundaryCondition("Velocity_inlet", "VelocityY", (X, t) => 0);
+            C.AddBoundaryCondition("Velocity_inlet", "VelocityZ", (X, t) => 0);
+            // C.AddBoundaryCondition("Wall");
+            C.AddBoundaryCondition("Pressure_Outlet");
+
+            // Set Initial Conditions
+            C.InitialValues_Evaluators.Add("VelocityX", X => 1);
+            //C.InitialValues_Evaluators.Add("VelocityY", X => 5);
+            C.InitialValues_Evaluators.Add("VelocityZ", X => 0);
+            C.InitialValues_Evaluators.Add("Pressure", X => 0);
+            C.InitialValues_Evaluators.Add("Phi", X => -(X[0]).Pow2() + -(X[1]).Pow2() + -(X[2]).Pow2() + C.particleRadius.Pow2());
+
+            //C.InitialValues_Evaluators.Add("VelocityY", delegate (double[] X) {
+            //    double x = X[0];
+            //    double y = X[1];
+            //    double z = X[2];
+
+            //    double R = Math.Sqrt((x + 4).Pow2() + y.Pow2()+z.Pow2());
+
+            //    double yVel = 0;
+
+            //    if (R < 3) {
+            //        yVel = 5;
+            //    }
+            //    return yVel;
+            //});
+            //C.InitialValues_Evaluators.Add("Phi", X => -(X[0]).Pow2() + -(X[1]).Pow2() + C.particleRadius.Pow2());
+            //C.InitialValues_Evaluators.Add("Phi", X => -1);
+
+
+
+
+            // misc. solver options
+            // ====================
+            C.PhysicalParameters.IncludeConvection = true;
+            C.AdvancedDiscretizationOptions.PenaltySafety = 4;
+            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
+            C.LevelSetSmoothing = false;
+            C.MaxKrylovDim = 1000;
+            C.MaxSolverIterations = 50;
+            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
+            C.NonlinearSolve = NonlinearSolverCodes.Picard;
+            C.LinearSolve = LinearSolverCodes.exp_softgmres_schwarz_directcoarse_overlap;
+            C.Solver_ConvergenceCriterion = 1E-6;
+            C.NoOfMultigridLevels = 2;
+
+            // Timestepping
+            // ============
+
+
+            C.Timestepper_Scheme = IBM_Control.TimesteppingScheme.BDF2;
+            double dt = 1E20;
+            C.dtFixed = dt;
+            C.dtMax = dt;
+            C.dtMin = dt;
+            C.Endtime = 100000;
+            C.NoOfTimesteps = 1;
+
+            return C;
+        }
+
     }
 }
 
