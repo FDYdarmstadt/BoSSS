@@ -28,7 +28,7 @@ namespace BoSSS.Foundation.XDG {
         /// ctor.
         /// </summary>
         internal XDGSpaceMetrics(LevelSetTracker lsTrk, XQuadFactoryHelper qfHelper, int __quadorder, SpeciesId[] speciesIds, int HistoyIndex) {
-            using(new FuncTrace()) {
+            using(new FuncTrace("XDGSpaceMetrics.ctor")) {
                 // ----
                 // init 
                 // ----
