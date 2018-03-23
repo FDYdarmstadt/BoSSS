@@ -932,15 +932,25 @@ namespace BoSSS.Solution.Multigrid {
         }
         
         public virtual int GetLength(int jCell, int p) {
+            GetNp();
+
+            return m_Lengths[p];
+        }
+
+        /// <summary>
+        /// Returns a mapping form polynomial degree to DOF per cell.
+        /// </summary>
+        /// <returns></returns>
+        public int[] GetNp() {
             if(m_Lengths == null) {
                 m_Lengths = new int[this.DGBasis.Degree + 1];
                 for(int pp = 0; pp < m_Lengths.Length; pp++) {
                     m_Lengths[pp] = this.DGBasis.Polynomials[0].Where(poly => poly.AbsoluteDegree <= pp).Count();
                 }
             }
-
-            return m_Lengths[p];
+            return m_Lengths.CloneAs();
         }
+
 
         /// <summary>
         /// Local vector-space dimension.
@@ -1089,14 +1099,13 @@ namespace BoSSS.Solution.Multigrid {
 
                 for(int jAgg = 0; jAgg < JAGG; jAgg++) { // loop over agglomerated cells...
 
-                    //m_CompositeBasis[jAgg] = CA(jAgg);
+                    m_CompositeBasis[jAgg] = CA(jAgg);
 
-                    
+                    /*
                     var compCell = ag.iLogicalCells.AggregateCellToParts[jAgg];
                     
                     if(compCell.Length == 1) {
 
-                        Debug.Assert(AggGrid.MgLevel == 0);
 
                         m_CompositeBasis[jAgg] = MultidimensionalArray.Create(1, N, N);
                         for(int n = 0; n < N; n++) {

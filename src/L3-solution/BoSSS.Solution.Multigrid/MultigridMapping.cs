@@ -31,6 +31,7 @@ using System.Diagnostics;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.Aggregation;
 using ilPSP.Tracing;
+using BoSSS.Foundation.XDG;
 
 namespace BoSSS.Solution.Multigrid {
 
@@ -406,8 +407,28 @@ namespace BoSSS.Solution.Multigrid {
                     useX[iVar] = this.AggBasis[iVar] is XdgAggregationBasis;
                     if (useX[iVar] != (finerLevel.AggBasis[iVar] is XdgAggregationBasis))
                         throw new ArgumentException("XDG / DG mismatch between this and finer level for " + iVar + "-th variable.");
-
                 }
+
+                XdgAggregationBasis XB = null;
+                XdgAggregationBasis XBf = null;
+                int[][,] spcIdxMap = null;
+                SpeciesId[][] spc = null;
+                //SpeciesId[][] spcf = null;
+                for(int iVar = 0; iVar < NoOfVar; iVar++) {
+                    if(useX[iVar]) {
+                        XB = (XdgAggregationBasis)(B[iVar]);
+                        XBf = (XdgAggregationBasis)(finerLevel.AggBasis[iVar]);
+                        spcIdxMap = XB.SpeciesIndexMapping;
+                        spc = XB.AggCellsSpecies;
+                        //spcf = XBf.AggCellsSpecies;
+                        break;
+                    }
+                }
+
+                int[] Np = this.AggBasis[0].GetNp();
+                int[] Np_fine = finerLevel.AggBasis[0].GetNp();
+                
+
 
                 // create matrix
                 // =============
@@ -428,25 +449,71 @@ namespace BoSSS.Solution.Multigrid {
                         MultidimensionalArray Inj_iVar_jc = InjOp[iVar][jc];
                         Debug.Assert(Inj_iVar_jc.GetLength(0) == I);
 
+                        bool useX_iVar = false;
                         if(useX[iVar]) {
-                            throw new NotImplementedException("todo");
+                            if (spcIdxMap[jc] != null)
+                                useX_iVar = true;
+                        }
 
+
+                        if(useX_iVar) {
+                            //throw new NotImplementedException("todo");
+                            
+                            int NoOfSpc = XB.GetNoOfSpecies(jc);
+                            int Np_col = Np[DgDeg];
+                            Debug.Assert(Np_col*NoOfSpc == B[iVar].GetLength(jc, DgDeg));
+
+                            for(int iSpc = 0; iSpc < NoOfSpc; iSpc++) { // loop over species
+                                SpeciesId spc_jc_i = spc[jc][iSpc];
+
+                                int Col0 = this.LocalUniqueIndex(iVar, jc, Np_col*iSpc);
+
+
+                                for (int i = 0; i < I; i++) { // loop over finer cells
+                                    int jf = AggCell[i];
+
+                                    int iSpc_Row = XBf.GetSpeciesIndex(jf, spc_jc_i);
+                                    if(iSpc_Row < 0) {
+                                        // nothing to do
+                                        continue;
+                                    }
+
+                                    int Np_row = Np_fine[DgDegF];
+                                    Debug.Assert(Np_row*XBf.GetNoOfSpecies(jf)  == finerLevel.AggBasis[iVar].GetLength(jf, DgDegF));
+
+                                    int Row0 = finerLevel.LocalUniqueIndex(iVar, jf, Np_row*iSpc_Row);
+
+                                    //if(Row0 <= 12 &&  12 < Row0 + Np_row) {
+                                    //    if(Col0 <= 3 && 3 < Col0 + Np_col) {
+                                    //        Debugger.Break();
+                                    //    }
+                                    //}
+                                    PrlgMtx.AccBlock(Row0, Col0, 1.0, Inj_iVar_jc.ExtractSubArrayShallow(new[] { i, 0, 0 }, new[] { i - 1, Np_row - 1, Np_col - 1 }));
+                                }
+                            }
+                            
                         } else {
                             // ++++++++++++++++++
                             // standard DG branch
                             // ++++++++++++++++++
 
-                            int Np_col = B[iVar].GetLength(jc, DgDeg);
+                            int Np_col = Np[DgDeg];
+                            Debug.Assert(Np_col == B[iVar].GetLength(jc, DgDeg));
                             int Col0 = this.LocalUniqueIndex(iVar, jc, 0);
 
                             for(int i = 0; i < I; i++) { // loop over finer cells
                                 int jf = AggCell[i];
-                                int Np_row = B[iVar].GetLength(jc, DgDegF);
+                                int Np_row = Np_fine[DgDegF];
+                                Debug.Assert(Np_row == finerLevel.AggBasis[iVar].GetLength(jf, DgDegF));
 
                                 int Row0 = finerLevel.LocalUniqueIndex(iVar, jf, 0);
 
                                 PrlgMtx.AccBlock(Row0, Col0, 1.0, Inj_iVar_jc.ExtractSubArrayShallow(new[] { i, 0, 0 }, new[] { i - 1, Np_row - 1, Np_col - 1 }));
-
+                                //if(Row0 <= 12 &&  12 < Row0 + Np_row) {
+                                //        if(Col0 <= 3 && 3 < Col0 + Np_col) {
+                                //            Debugger.Break();
+                                //        }
+                                //    }
                             }
                         }
                     }

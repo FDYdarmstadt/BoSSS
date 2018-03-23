@@ -64,6 +64,7 @@
   <ItemGroup>
     <Compile Include="BaseVariableDensity\VariableDensitySIMPLEControl.cs" />
     <Compile Include="Base\01_VariableSet\BaseVariableSet.cs" />
+    <Compile Include="Base\02_Operators\swipViscosityTerm1_variante.cs" />
     <Compile Include="Incompressible\00_ControlFiles\ControlExamples.cs" />
     <Compile Include="LowMach\00_ControlFiles\ControlExamples.cs" />
     <Compile Include="LowMach\LowMachSIMPLEControl.cs" />
