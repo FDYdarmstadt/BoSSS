@@ -339,9 +339,9 @@ namespace BoSSS.Foundation.XDG {
                 }
 
                 if (OnlyAffine == false) {
-                    if (!Matrix.RowPartitioning.Equals(CodomainMap))
+                    if (!Matrix.RowPartitioning.EqualsPartition(CodomainMap))
                         throw new ArgumentException("wrong number of columns in matrix.", "Matrix");
-                    if (!Matrix.ColPartition.Equals(DomainMap))
+                    if (!Matrix.ColPartition.EqualsPartition(DomainMap))
                         throw new ArgumentException("wrong number of rows in matrix.", "Matrix");
                 }
 
@@ -388,17 +388,6 @@ namespace BoSSS.Foundation.XDG {
                 var SchemeHelper = lsTrk.GetXDGSpaceMetrics(ReqSpecies, order, 1).XQuadSchemeHelper;// new XQuadSchemeHelper(lsTrk, momentFittingVariant, ReqSpecies);
                 #endregion
 
-                #region mass matrix factory
-                // -------------------
-                var allBases = DomainMap.BasisS.Union(CodomainMap.BasisS);
-                Basis maxBasis = allBases.First();
-                foreach (var b in allBases) {
-                    if (b.Degree > maxBasis.Degree)
-                        maxBasis = b;
-                }
-
-                //mass = new MassMatrixFactory(maxBasis, agg, momentFittingVariant, order, lsTrk);
-                #endregion
 
                 // build matrix, bulk
                 // ---------------------
