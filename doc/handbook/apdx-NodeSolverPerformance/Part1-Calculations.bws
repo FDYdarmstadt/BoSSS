@@ -30,7 +30,8 @@ Opening existing database 'D:\tmp\fk_temp_db'.
 ==============
 MiniBatchProcessor.Server.StartIfNotRunning();
 **************
-Mini batch processor is already running.
+Starting mini batch processor in external process...
+Started mini batch processor on local machine, process id is 12352.
 
 ==============
 // ===================
@@ -198,7 +199,7 @@ List<SipControl> controls = new List<SipControl>();
 ==============
 // polynomial degrees to test
 //int[] PolyDegS = new int[] {2, 3, 4, 5, 6};
-int[] PolyDegS = new int[] {2, 3}; // reduced options for dev.
+int[] PolyDegS = new int[] {2}; // reduced options for dev.
 **************
 ==============
 // Solvers which we want to instrument:
@@ -206,7 +207,7 @@ SolverCodes[] solver_nameS = new SolverCodes[] {
 //    SolverCodes.classic_pardiso, 
 //    SolverCodes.classic_mumps, 
 //    SolverCodes.classic_cg,
-//    SolverCodes.exp_softpcg_schwarz_directcoarse,
+      SolverCodes.exp_softpcg_schwarz_directcoarse,
 //    SolverCodes.exp_direct,
 //    SolverCodes.exp_softpcg_schwarz
 //    SolverCodes.exp_direct_lapack
@@ -224,14 +225,12 @@ foreach(int k in PolyDegS) {
 int iGrd = 0;    
 foreach(IGridInfo grd in grids) {
     iGrd ++;
-    if(iGrd > 4)
-        continue; 
-    if(k >= 3 && iGrd > 5)
-        continue; 
-    if(k >= 4 && iGrd > 4)
-        continue; 
-    if(k >= 5 && iGrd > 3)
-        continue; 
+    //if(k >= 3 && iGrd > 6)
+    //    continue; 
+    //if(k >= 4 && iGrd > 5)
+    //    continue; 
+    //if(k >= 5 && iGrd > 4)
+    //    continue; 
     
     int Np = Utils.Np(k);
     int J  = grd.NumberOfCells;
@@ -261,14 +260,16 @@ foreach(IGridInfo grd in grids) {
 }
 
 **************
+setting up: J40_k2_exp_softpcg_schwarz_directcoarse
+setting up: J320_k2_exp_softpcg_schwarz_directcoarse
+setting up: J2560_k2_exp_softpcg_schwarz_directcoarse
+setting up: J20480_k2_exp_softpcg_schwarz_directcoarse
+setting up: J163840_k2_exp_softpcg_schwarz_directcoarse
 setting up: J40_k2_exp_softpcg_mg
 setting up: J320_k2_exp_softpcg_mg
 setting up: J2560_k2_exp_softpcg_mg
 setting up: J20480_k2_exp_softpcg_mg
-setting up: J40_k3_exp_softpcg_mg
-setting up: J320_k3_exp_softpcg_mg
-setting up: J2560_k3_exp_softpcg_mg
-setting up: J20480_k3_exp_softpcg_mg
+setting up: J163840_k2_exp_softpcg_mg
 
 ==============
 // ==========
@@ -285,7 +286,7 @@ setting up: J20480_k3_exp_softpcg_mg
 //job.SetControlObject(myCtrl);
 **************
 ==============
-//tempDB.Sessions.Where(s => s.Name.Contains("softpcg_schwarz_directcoarse")).ForEach(si => si.Delete(true));
+//tempDB.Sessions.Where(s => s.Name.Contains("softpcg") && s.Name.Contains("k2") && s.Name.Contains("mg"));//.ForEach(si => si.Delete(true));
 **************
 ==============
 //tempDB.Sessions.Where(s => s.Name.Contains("exp_direct")).ForEach(si => si.Delete());
@@ -298,37 +299,46 @@ foreach(var ctrl in controls) {
     ctrl.RunBatch(myBatch,NumberOfMPIProcs:1,UseComputeNodesExclusive:true); 
 }
 **************
+ Submitting: J40_k2_exp_softpcg_schwarz_directcoarse
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = c6c86ad8-1cbe-4dfb-b3c9-f86c80cfcf43; 03/23/2018 12:56:43 Name = J40_k2_exp_softpcg_schwarz_directcoarse }
+No further action.
+ Submitting: J320_k2_exp_softpcg_schwarz_directcoarse
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = aafc90b9-09bb-44b3-9f12-6da3d63d191a; 03/23/2018 12:57:14 Name = J320_k2_exp_softpcg_schwarz_directcoarse }
+No further action.
+ Submitting: J2560_k2_exp_softpcg_schwarz_directcoarse
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = 626aa661-d412-4554-bfcc-165d118a00e6; 03/23/2018 12:57:45 Name = J2560_k2_exp_softpcg_schwarz_directcoarse }
+No further action.
+ Submitting: J20480_k2_exp_softpcg_schwarz_directcoarse
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = be9af85d-35ee-4bd3-869a-d382eae1120b; 03/23/2018 12:58:24 Name = J20480_k2_exp_softpcg_schwarz_directcoarse }
+No further action.
+ Submitting: J163840_k2_exp_softpcg_schwarz_directcoarse
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = f5b0e8dd-4d8b-40a6-9a6b-5f3152b444b6; 03/23/2018 13:00:04 Name = J163840_k2_exp_softpcg_schwarz_directcoarse }
+No further action.
  Submitting: J40_k2_exp_softpcg_mg
 Job was successful (according to job manager), latest session related to job is:
-{ Guid = 4009d30a-b7f6-4eb1-b7a7-07526d8f1552; 02/10/2018 12:51:21 Name = J40_k2_exp_softpcg_mg }
+{ Guid = 143ecb65-6399-4a81-b7b4-e250e83d8461; 03/23/2018 12:34:37 Name = J40_k2_exp_softpcg_mg }
 No further action.
  Submitting: J320_k2_exp_softpcg_mg
 Job was successful (according to job manager), latest session related to job is:
-{ Guid = bb0611d7-fc2d-406b-9fbf-1abb9ea3ad88; 02/10/2018 12:51:51 Name = J320_k2_exp_softpcg_mg }
+{ Guid = 36d50272-328b-4475-bc8a-2dfd4880a26a; 03/23/2018 12:35:07 Name = J320_k2_exp_softpcg_mg }
 No further action.
  Submitting: J2560_k2_exp_softpcg_mg
+
 Job was successful (according to job manager), latest session related to job is:
-{ Guid = 4056795d-6844-4c7c-bd82-e28a6c8bf880; 02/10/2018 12:52:31 Name = J2560_k2_exp_softpcg_mg }
+{ Guid = 209a5ec1-ee55-4c5f-8723-cd5cdbfbc644; 03/26/2018 08:39:04 Name = J2560_k2_exp_softpcg_mg }
 No further action.
  Submitting: J20480_k2_exp_softpcg_mg
 Job was successful (according to job manager), latest session related to job is:
-{ Guid = d1c83c95-8ef7-4d00-9443-f70688071903; 02/10/2018 12:54:21 Name = J20480_k2_exp_softpcg_mg }
+{ Guid = 319b314e-e799-4352-b906-8d9cb039c5cc; 03/26/2018 08:39:44 Name = J20480_k2_exp_softpcg_mg }
 No further action.
- Submitting: J40_k3_exp_softpcg_mg
+ Submitting: J163840_k2_exp_softpcg_mg
 Job was successful (according to job manager), latest session related to job is:
-{ Guid = 9c8d0a4a-957f-4e30-8dac-16e639d0f84c; 02/10/2018 13:09:41 Name = J40_k3_exp_softpcg_mg }
-No further action.
- Submitting: J320_k3_exp_softpcg_mg
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = 9e8b4b9f-e749-435a-94c6-ef2be172c017; 02/10/2018 13:10:12 Name = J320_k3_exp_softpcg_mg }
-No further action.
- Submitting: J2560_k3_exp_softpcg_mg
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = b7b10af8-6398-4637-a207-df86bb0b8fc7; 02/10/2018 13:11:02 Name = J2560_k3_exp_softpcg_mg }
-No further action.
- Submitting: J20480_k3_exp_softpcg_mg
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = 07f5bf10-3738-472c-87fc-310a10d22863; 02/10/2018 13:13:51 Name = J20480_k3_exp_softpcg_mg }
+{ Guid = da78c65e-3dc7-493b-b427-cdaca6e159c0; 03/23/2018 13:41:37 Name = J163840_k2_exp_softpcg_mg }
 No further action.
 
 ==============
@@ -336,15 +346,17 @@ No further action.
 ==============
 WorkflowMgm.AllJobs.Select(kv => kv.Key + ": \t" + kv.Value.Status);
 **************
-List of 8 instances of String {
-  0: J40_k2_exp_softpcg_mg: 	FinishedSuccessful
-  1: J320_k2_exp_softpcg_mg: 	FinishedSuccessful
-  2: J2560_k2_exp_softpcg_mg: 	FinishedSuccessful
-  3: J20480_k2_exp_softpcg_mg: 	FinishedSuccessful
-  4: J40_k3_exp_softpcg_mg: 	FinishedSuccessful
-  5: J320_k3_exp_softpcg_mg: 	FinishedSuccessful
-  6: J2560_k3_exp_softpcg_mg: 	FinishedSuccessful
-  7: J20480_k3_exp_softpcg_mg: 	FinishedSuccessful
+List of 10 instances of String {
+  0: J40_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  1: J320_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  2: J2560_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  3: J20480_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  4: J163840_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  5: J40_k2_exp_softpcg_mg: 	FinishedSuccessful
+  6: J320_k2_exp_softpcg_mg: 	FinishedSuccessful
+  7: J2560_k2_exp_softpcg_mg: 	FinishedSuccessful
+  8: J20480_k2_exp_softpcg_mg: 	FinishedSuccessful
+  9: J163840_k2_exp_softpcg_mg: 	FinishedSuccessful
 }
 ==============
 //WorkflowMgm.AllJobs.ElementAt(9).Value.Stdout;
@@ -355,7 +367,7 @@ List of 8 instances of String {
 ==============
 WorkflowMgm.SessionTable.Rows.Count;
 **************
-97
+96
 ==============
 **************
 ==============
@@ -441,6 +453,16 @@ string docpath    = Path.Combine(CurrentDocDir, SessTab.TableName + ".json");
 // save session table as file: this can be stored in our git 
 // repository
 SessTab.SaveToFile(docpath);
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************
