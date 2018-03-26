@@ -60,9 +60,9 @@ namespace BoSSS.Application.MultigridTest {
                     TestProgram.ProlongationTest(p);
                     //TestProgram.PolynomialRestAndPrlgTest(p);
                     //XDG_MatrixPolynomialRestAndPrlgTest_2
-                    TestProgram.RestictionMatrixTest(p);
+                    //TestProgram.RestictionMatrixTest(p);
                     //TestProgram.XDG_PolynomialRestAndPrlgTest(p, 0.3, w);
-                    //TestProgram.XDG_MatrixPolynomialRestAndPrlgTest(p, 0.3, w);
+                    TestProgram.XDG_MatrixPolynomialRestAndPrlgTest_2(p, 0.3);
                     //TestProgram.XDG_MatrixPolynomialRestAndPrlgTest_2(p, 0.3, w, MultigridOperator.Mode.IdMass);
                     //TestProgram.XDG_ProlongationTest(0, 0.0, w, MultigridOperator.Mode.IdMass);
                 }
