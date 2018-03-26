@@ -695,7 +695,7 @@ namespace BoSSS.Application.MultigridTest {
                 double err = GenericBlas.L2Dist(vecCoarse, vecCoarse_check);
                 double Ref = Math.Max(vecCoarse.L2Norm(), vecCoarse_check.L2Norm());
                 Console.WriteLine("Restriction/prolongation error: " + err/Ref);
-
+                Assert.LessOrEqual(err / Ref, 1.0e-8);
             }
 
             
