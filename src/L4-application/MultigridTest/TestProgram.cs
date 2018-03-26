@@ -643,7 +643,6 @@ namespace BoSSS.Application.MultigridTest {
         /// tests the matrix
         /// version of the restriction and prolongation operator.
         /// </summary>
-        [Test]
         public static void XDG_MatrixPolynomialRestAndPrlgTest_2(
             [Values(0, 1, 2, 3)] int p,
             [Values(0.0, 0.3)] double AggregationThreshold,
