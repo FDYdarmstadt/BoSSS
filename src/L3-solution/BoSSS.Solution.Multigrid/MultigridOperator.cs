@@ -135,6 +135,9 @@ namespace BoSSS.Solution.Multigrid {
                     //                var __RestOperator = __PrlgOperator.Transpose();
                     //#endif
 
+                    //__PrlgOperator.SaveToTextFileSparse("P2.txt");
+
+
                     if (this.FinerLevel.RightChangeOfBasis_Inverse != null)
                         RawProlongation = BlockMsrMatrix.Multiply(this.FinerLevel.RightChangeOfBasis_Inverse, __PrlgOperator);
                     else

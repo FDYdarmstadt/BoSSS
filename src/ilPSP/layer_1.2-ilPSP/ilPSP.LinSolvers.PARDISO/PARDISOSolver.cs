@@ -719,7 +719,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                                     /* -------------------------------------------------------------------- */
                                     phase = 33;
 
-                                    iparm[7] = 1;       /* Max numbers of iterative refinement steps. */
+                                    iparm[7] = 0;       /* Max numbers of iterative refinement steps, 0 == auto */
 
                                     //m_foo.mkl_serv_mkl_set_num_threads(num_procs);
                                     Phase_33.Start();
@@ -728,7 +728,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                                                       iparm, &msglvl, b, x, &error, dparam);
                                     Phase_33.Stop();
                                     if (error != 0) {
-                                        // some error occured: release mem, dispose objects...
+                                        // some error occurred: release mem, dispose objects...
                                         PARDISODispose();
                                         Console.WriteLine("PARDISO ERROR: " + wrapper.PARDISOerror2string(error));
                                         //InitAndSolve.Stop();

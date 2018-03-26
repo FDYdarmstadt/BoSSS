@@ -177,7 +177,7 @@ namespace BoSSS.Solution {
                 csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
                 csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
                 if (rank == 0) {
-                    Console.WriteLine("BoSSS: running with " + size + " MPI processes.");
+                    Console.WriteLine("BoSSS: Running with " + size + " MPI process(es)");
                 }
             }
         }
