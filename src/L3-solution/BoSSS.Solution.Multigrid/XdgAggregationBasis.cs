@@ -32,13 +32,31 @@ using BoSSS.Foundation.Grid.Aggregation;
 namespace BoSSS.Solution.Multigrid {
     public class XdgAggregationBasis : AggregationGridBasis {
 
+        /// <summary>
+        /// XDG basis on original grid
+        /// </summary>
         public XDGBasis XDGBasis {
             get;
             private set;
         }
 
-        public XdgAggregationBasis(XDGBasis xb, AggregationGrid ag)
-            : base(xb.NonX_Basis, ag) //
+        /// <summary>
+        /// ctor.
+        /// </summary>
+        /// <param name="xb">
+        /// XDG basis on original grid
+        /// </param>
+        /// <param name="parentBasis">
+        /// basis on parent grid
+        /// </param>
+        /// <param name="ag">
+        /// aggregation grid level.
+        /// </param>
+        /// <param name="inj">
+        /// injection operators.
+        /// </param>
+        internal XdgAggregationBasis(XDGBasis xb, XdgAggregationBasis parentBasis, AggregationGrid ag, MultidimensionalArray[] inj)
+            : base(xb.NonX_Basis, parentBasis, ag, inj) //
         {
             using(new FuncTrace()) {
                 this.XDGBasis = xb;
@@ -625,12 +643,12 @@ namespace BoSSS.Solution.Multigrid {
 
 
                             // default branch:
-                            // use restiction/prolongation from un-cut basis
+                            // use restriction/prolongation from un-cut basis
                             // +++++++++++++++++++++++++++++++++++++++++++++
 
                             MultidimensionalArray Trf = base.CompositeBasis[jAgg];
                             
-                            for(int k = 0; k < K; k++) { // loop over the cells wich form the aggregated cell...
+                            for(int k = 0; k < K; k++) { // loop over the cells which form the aggregated cell...
                                 int jCell = AgCell[k];
                                 int i0Full = mgMap.ProblemMapping.GlobalUniqueCoordinateIndex(iF, jCell, 0);
                                 var Block = Trf.ExtractSubArrayShallow(k, -1, -1);

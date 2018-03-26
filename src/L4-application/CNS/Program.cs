@@ -228,6 +228,9 @@ namespace CNS {
             using (var ht = new FuncTrace()) {
                 int printInterval = Control.PrintInterval;
                 if (DatabaseDriver.MyRank == 0 && TimestepNo % printInterval == 0) {
+#if DEBUG
+                    Console.WriteLine();
+#endif
                     Console.Write("Starting time step #" + TimestepNo + "...");
                 }
 
