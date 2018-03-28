@@ -22,6 +22,7 @@ using BoSSS.Foundation.SpecFEM;
 using BoSSS.Solution;
 using BoSSS.Solution.Timestepping;
 using CNS.Convection;
+using CNS.IBM;
 using CNS.ShockCapturing;
 using ilPSP;
 using System;
@@ -175,17 +176,23 @@ namespace CNS {
         public static readonly DerivedVariable CFL = new DerivedVariable(
             "cfl",
             VariableTypes.Other,
-            delegate (DGField cfl, CellMask cellMask, IProgram<CNSControl> P) {
-                if (P.FullOperator == null) {
+            delegate (DGField cfl, CellMask cellMask, IProgram<CNSControl> program) {
+                // CFL sizes cannnot be plotted for the initial step, as the operator does not exist yet
+                if (program.FullOperator == null) {
                     return;
                 }
 
                 // Query each cell individually so we get local results
-                for (int i = 0; i < P.Grid.NoOfUpdateCells; i++) {
+                //foreach (Chunk chunk in cellMask) {
+                //    for (int i = 0; i < chunk.Len; i++) {
+                //        int cell = chunk.i0 + i;
+
+                for (int i = 0; i < program.Grid.NoOfUpdateCells; i++) {
                     // Use "harmonic sum" of individual step sizes - see ExplicitEuler
-                    double localCFL = 1.0 / P.FullOperator.CFLConstraints.Sum(c => 1.0 / c.GetLocalStepSize(i, 1));
+                    double localCFL = 1.0 / program.FullOperator.CFLConstraints.Sum(c => 1.0 / c.GetLocalStepSize(i, 1));
                     cfl.SetMeanValue(i, localCFL);
                 }
+                //}
             });
 
         /// <summary>
@@ -194,18 +201,23 @@ namespace CNS {
         public static readonly DerivedVariable CFLConvective = new DerivedVariable(
             "cflConvective",
             VariableTypes.Other,
-            delegate (DGField cfl, CellMask cellMask, IProgram<CNSControl> P) {
-                if (P.FullOperator == null) {
+            delegate (DGField cfl, CellMask cellMask, IProgram<CNSControl> program) {
+                // CFL sizes cannnot be plotted for the initial step, as the operator does not exist yet
+                if (program.FullOperator == null) {
                     return;
                 }
 
-                // Query each cell individually so we get local results
-                TimeStepConstraint cflConstraint = P.FullOperator.CFLConstraints.OfType<ConvectiveCFLConstraint>().Single();
+                TimeStepConstraint cflConstraint = program.FullOperator.CFLConstraints.OfType<ConvectiveCFLConstraint>().Single();
 
-                for (int i = 0; i < P.Grid.NoOfUpdateCells; i++) {
+                // Query each cell individually so we get local results
+                //foreach (Chunk chunk in cellMask) {
+                //for (int i = 0; i < chunk.Len; i++) {
+                //        int cell = chunk.i0 + i;
+                for (int i = 0; i < program.Grid.NoOfUpdateCells; i++) {
                     double localCFL = cflConstraint.GetLocalStepSize(i, 1);
                     cfl.SetMeanValue(i, localCFL);
                 }
+                //}
             });
 
         /// <summary>
@@ -214,18 +226,23 @@ namespace CNS {
         public static readonly DerivedVariable CFLArtificialViscosity = new DerivedVariable(
             "cflArtificialViscosity",
             VariableTypes.Other,
-            delegate (DGField cfl, CellMask cellMask, IProgram<CNSControl> P) {
-                if (P.FullOperator == null) {
+            delegate (DGField cfl, CellMask cellMask, IProgram<CNSControl> program) {
+                // CFL sizes cannnot be plotted for the initial step, as the operator does not exist yet
+                if (program.FullOperator == null) {
                     return;
                 }
 
-                // Query each cell individually so we get local results
-                TimeStepConstraint cflConstraint = P.FullOperator.CFLConstraints.OfType<ArtificialViscosityCFLConstraint>().Single();
+                TimeStepConstraint cflConstraint = program.FullOperator.CFLConstraints.OfType<ArtificialViscosityCFLConstraint>().Single();
 
-                for (int i = 0; i < P.Grid.NoOfUpdateCells; i++) {
+                // Query each cell individually so we get local results
+                //foreach (Chunk chunk in cellMask) {
+                //    for (int i = 0; i < chunk.Len; i++) {
+                //int cell = chunk.i0 + i;
+                for (int i = 0; i < program.Grid.NoOfUpdateCells; i++) {
                     double localCFL = cflConstraint.GetLocalStepSize(i, 1);
                     cfl.SetMeanValue(i, localCFL);
                 }
+                //}
             });
 
         /// <summary>
