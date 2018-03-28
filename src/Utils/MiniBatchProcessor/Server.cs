@@ -176,10 +176,17 @@ namespace MiniBatchProcessor {
             ServerMutexS.WriteLine("one instance of the batch processor per computer/user is running.");
             ServerMutexS.Flush();
 
-            //// see if there are any zombies left in the 'working' directory
-            //foreach (var J in ClientAndServer.Working) {
-            //    MoveWorkingToFinished(J);
-            //}
+            // see if there are any zombies left in the 'working' directory
+            foreach (var J in ClientAndServer.Working) {
+                //MoveWorkingToFinished(J);
+                string exitTokenPath = Path.Combine(
+                    ClientAndServer.config.BatchInstructionDir,
+                    ClientAndServer.WORK_FINISHED_DIR,
+                    J.ID.ToString() + "_exit.txt");
+                if(!File.Exists(exitTokenPath)) {
+                    File.WriteAllText(exitTokenPath, "-9876");
+                }
+            }
         }
 
         /*
@@ -485,7 +492,10 @@ namespace MiniBatchProcessor {
                             success = (p.ExitCode == 0);
                             Server.LogMessage(string.Format("finished job #" + data.ID + ", exit code " + p.ExitCode + "."));
 
-                            using (var exit = new StreamWriter(Path.Combine(WorkDir, data.ID.ToString() + "_exit.txt"))) {
+                            using (var exit = new StreamWriter(Path.Combine(
+                                ClientAndServer.config.BatchInstructionDir,
+                                ClientAndServer.WORK_FINISHED_DIR,
+                                data.ID.ToString() + "_exit.txt"))) {
                                 exit.WriteLine(p.ExitCode);
                                 exit.Flush();
                             }
