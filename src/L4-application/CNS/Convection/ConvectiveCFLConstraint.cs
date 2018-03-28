@@ -102,12 +102,15 @@ namespace CNS.Convection {
                             // Overwrite metric; it's a clone anyway!
                             hmin[cell] = hminCut[cell];
                         }
+                        Debug.Assert(hmin.Storage.All(d => double.IsNaN(d) == false), "Hmin is NaN");
 
                         for (int i = 0; i < Length; i++) {
                             int cell = i0 + i;
                             double hminlocal = hmin[cell];
 
                             for (int node = 0; node < noOfNodesPerCell; node++) {
+                                double cflhere = double.MaxValue;
+
                                 if (levelSetValues[i, node].Sign() != (double)ibmMap.Control.FluidSpeciesSign) {
                                     continue;
                                 }
@@ -126,7 +129,7 @@ namespace CNS.Convection {
                                 double sos = Math.Sqrt((gamma - 1.0) * (energy - kineticEnergy) / density) / Ma;
 
                                 double flowSpeed = Math.Sqrt(momentumSquared) / density;
-                                double cflhere = hminlocal / (flowSpeed + sos);
+                                cflhere = hminlocal / (flowSpeed + sos);
 
 #if DEBUG
                                 if (double.IsNaN(cflhere)) {
@@ -166,12 +169,13 @@ namespace CNS.Convection {
                             hmin[cell] = hminCut[cell];
                         }
 
-
                         for (int i = 0; i < Length; i++) {
                             int cell = i0 + i;
                             double hminlocal = hmin[cell];
 
                             for (int node = 0; node < noOfNodesPerCell; node++) {
+                                double cflhere = double.MaxValue;
+
                                 if (levelSetValues[i, node].Sign() != (double)ibmMap.Control.FluidSpeciesSign) {
                                     continue;
                                 }
@@ -183,7 +187,7 @@ namespace CNS.Convection {
 
                                 StateVector state = new StateVector(
                                     material, densityValues[i, node], momentum, energyValues[i, node]);
-                                double cflhere = hminlocal / (state.Velocity.Abs() + state.SpeedOfSound);
+                                cflhere = hminlocal / (state.Velocity.Abs() + state.SpeedOfSound);
 
 #if DEBUG
                                 if (double.IsNaN(cflhere)) {
@@ -203,6 +207,8 @@ namespace CNS.Convection {
                         int cell = i0 + i;
 
                         for (int node = 0; node < noOfNodesPerCell; node++) {
+                            double cflhere = double.MaxValue;
+
                             double momentumSquared = 0.0;
                             for (int d = 0; d < D; d++) {
                                 momentumSquared += momentumValues[d][i, node] * momentumValues[d][i, node];
@@ -217,7 +223,7 @@ namespace CNS.Convection {
                             double sos = Math.Sqrt((gamma - 1.0) * (energy - kineticEnergy) / density) / Ma;
 
                             double flowSpeed = Math.Sqrt(momentumSquared) / density;
-                            double cflhere = hmin[cell] / (flowSpeed + sos);
+                            cflhere = hmin[cell] / (flowSpeed + sos);
 
 #if DEBUG
                             if (double.IsNaN(cflhere)) {
@@ -248,6 +254,8 @@ namespace CNS.Convection {
                             int cell = i0 + i;
 
                             for (int node = 0; node < noOfNodesPerCell; node++) {
+                                double cflhere = double.MaxValue;
+
                                 Vector3D momentum = new Vector3D();
                                 for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
                                     momentum[d] = momentumValues[d][i, node];
@@ -255,7 +263,7 @@ namespace CNS.Convection {
 
                                 StateVector state = new StateVector(
                                     material, densityValues[i, node], momentum, energyValues[i, node]);
-                                double cflhere = hmin[cell] /
+                                cflhere = hmin[cell] /
                                     (state.Velocity.Abs() + material.EquationOfState.GetSpeedOfSound(state));
 
 #if DEBUG
@@ -271,8 +279,14 @@ namespace CNS.Convection {
                     break;
             }
 
-            int twoNPlusOne = 2 * workingSet.ConservativeVariables.Max(f => f.Basis.Degree) + 1;
-            return cfl / twoNPlusOne;
+            //Debug.Assert(cfl < 1, "CFL > 1. Does this make sense?");
+
+            if (cfl == double.MaxValue) {
+                return cfl;
+            } else {
+                int twoNPlusOne = 2 * workingSet.ConservativeVariables.Max(f => f.Basis.Degree) + 1;
+                return cfl / twoNPlusOne;
+            }
         }
     }
 }
