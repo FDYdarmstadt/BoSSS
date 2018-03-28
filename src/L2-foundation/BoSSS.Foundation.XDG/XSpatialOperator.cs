@@ -65,8 +65,9 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// ctor, see <see cref="SpatialOperator.SpatialOperator(IList{string},IList{string},IList{string},Func{int[],int[],int[],int})"/>
         /// </summary>
-        public XSpatialOperator(IList<string> domVar, IList<string> paramVar, IList<string> codVar, Func<int[], int[], int[], int> QuadOrderFunc)
+        public XSpatialOperator(IList<string> domVar, IList<string> paramVar, IList<string> codVar, Func<int[], int[], int[], int> QuadOrderFunc, bool cacheQuadRules = false)
             : base(domVar, paramVar, codVar, QuadOrderFunc) {
+            m_cacheQuadRules = cacheQuadRules;
             ConstructorCommon();
         }
 
@@ -251,14 +252,14 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public void ComputeMatrixEx<M, V>(LevelSetTracker lsTrk,
             UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap,
-            M Matrix, V AffineOffset, bool OnlyAffine, double time, bool MPIParameterExchange, 
+            M Matrix, V AffineOffset, bool OnlyAffine, double time, bool MPIParameterExchange,
             params SpeciesId[] whichSpc)
             where M : IMutableMatrixEx
             where V : IList<double> {
             this.ComputeMatrixEx<M, V>(lsTrk,
                DomainMap, Parameters, CodomainMap,
                Matrix, AffineOffset,
-               OnlyAffine, time, MPIParameterExchange, subGrid:null,whichSpc:whichSpc
+               OnlyAffine, time, MPIParameterExchange, subGrid: null, whichSpc: whichSpc
                );
         }
 
@@ -267,19 +268,19 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public void ComputeMatrixEx<M, V>(LevelSetTracker lsTrk,
             UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap,
-            M Matrix, V AffineOffset, bool OnlyAffine, 
-            double time, 
-            bool MPIParameterExchange, 
+            M Matrix, V AffineOffset, bool OnlyAffine,
+            double time,
+            bool MPIParameterExchange,
             SubGrid subGrid, params SpeciesId[] whichSpc)
             where M : IMutableMatrixEx
             where V : IList<double>  //
         {
 
-//<<<<<<< HEAD
+            //<<<<<<< HEAD
             int order = this.GetOrderFromQuadOrderFunction(DomainMap, Parameters, CodomainMap);
             MultiphaseCellAgglomerator dummy = lsTrk.GetAgglomerator(whichSpc, order, 0.0);
             //MultiphaseCellAgglomerator dummy = new MultiphaseCellAgglomerator(new CutCellMetrics(momentFittingVariant, order, lsTrk, whichSpc), 0.0, false);
-//>>>>>>> root/master
+            //>>>>>>> root/master
 
             var bla = new Dictionary<SpeciesId, QrSchemPair>();
             foreach (var sp in whichSpc)
@@ -288,7 +289,7 @@ namespace BoSSS.Foundation.XDG {
             this.ComputeMatrixEx<M, V>(lsTrk,
                 DomainMap, Parameters, CodomainMap,
                 Matrix, AffineOffset,
-                OnlyAffine, time, MPIParameterExchange, bla, 
+                OnlyAffine, time, MPIParameterExchange, bla,
                 dummy.CellLengthScales, subGrid);
 
             Debug.Assert(dummy.TotalNumberOfAgglomerations <= 0, "internal error");
@@ -296,6 +297,12 @@ namespace BoSSS.Foundation.XDG {
         }
 
         static bool ruleDiagnosis = false;
+
+        // For caching Quadrature Rules if level-set is not moved
+        internal bool m_cacheQuadRules;
+        internal ICompositeQuadRule<QuadRule> edgeRuleCached;
+        internal ICompositeQuadRule<QuadRule> volRuleCached;
+        internal ICompositeQuadRule<QuadRule> ruleCached;
 
         /// <summary>
         /// computation of operator matrix, currently only two species are supported
@@ -316,7 +323,7 @@ namespace BoSSS.Foundation.XDG {
                 } else {
                     GridDat = SubGrid.GridData;
                 }
-                
+
 
                 #region Check Input Arguments
                 // --------------------------------
@@ -439,25 +446,39 @@ namespace BoSSS.Foundation.XDG {
                         ICompositeQuadRule<QuadRule> volRule;
                         EdgeQuadratureScheme edgeScheme;
                         CellQuadratureScheme cellScheme;
+
+
+
                         using (new BlockTrace("QuadRule-compilation", tr)) {
 
-                            var qrSchemes = SpeciesSchemes[SpeciesId];
+                            if (m_cacheQuadRules == true && (edgeRuleCached == null || volRuleCached == null)) {
 
-                            bool AssembleOnFullGrid = (SubGrid == null);
-                            if (qrSchemes.EdgeScheme == null) {
-                                edgeScheme = SchemeHelper.GetEdgeQuadScheme(SpeciesId, AssembleOnFullGrid, SubGridEdgeMask);
+                                var qrSchemes = SpeciesSchemes[SpeciesId];
+
+                                bool AssembleOnFullGrid = (SubGrid == null);
+                                if (qrSchemes.EdgeScheme == null) {
+                                    edgeScheme = SchemeHelper.GetEdgeQuadScheme(SpeciesId, AssembleOnFullGrid, SubGridEdgeMask);
+                                } else {
+                                    //edgeScheme = qrSchemes.EdgeScheme;
+                                    throw new NotSupportedException();
+                                }
+                                edgeRule = edgeScheme.Compile(GridDat, order);
+                                if (qrSchemes.CellScheme == null) {
+                                    cellScheme = SchemeHelper.GetVolumeQuadScheme(SpeciesId, AssembleOnFullGrid, SubGridCellMask);
+                                } else {
+                                    //cellScheme = qrSchemes.CellScheme;
+                                    throw new NotSupportedException();
+                                }
+                                volRule = cellScheme.Compile(GridDat, order);
+
+                                if (m_cacheQuadRules == true) {
+                                    edgeRuleCached = edgeRule;
+                                    volRuleCached = volRule;
+                                }
                             } else {
-                                //edgeScheme = qrSchemes.EdgeScheme;
-                                throw new NotSupportedException();
+                                edgeRule = edgeRuleCached;
+                                volRule = volRuleCached;
                             }
-                            edgeRule = edgeScheme.Compile(GridDat, order);
-                            if (qrSchemes.CellScheme == null) {
-                                cellScheme = SchemeHelper.GetVolumeQuadScheme(SpeciesId, AssembleOnFullGrid, SubGridCellMask);
-                            } else {
-                                //cellScheme = qrSchemes.CellScheme;
-                                throw new NotSupportedException();
-                            }
-                            volRule = cellScheme.Compile(GridDat, order);
                         }
 
                         if (ruleDiagnosis) {
@@ -610,24 +631,34 @@ namespace BoSSS.Foundation.XDG {
                                     //if (IntegrationDom.NoOfItemsLocally > 0) {
 
                                     ICompositeQuadRule<QuadRule> rule;
-                                        using (new BlockTrace("QuadRule-compilation", tr)) {
+
+                                    using (new BlockTrace("QuadRule-compilation", tr)) {
+                                        if (ruleCached == null) {
                                             CellQuadratureScheme SurfIntegration = SchemeHelper.GetLevelSetquadScheme(iLevSet, IntegrationDom);
                                             rule = SurfIntegration.Compile(GridDat, order);
 
                                             if (ruleDiagnosis) {
                                                 rule.SumOfWeightsToTextFileVolume(GridDat, string.Format("Levset_{0}.csv", iLevSet));
                                             }
+
+                                            if (m_cacheQuadRules == true) {
+                                                ruleCached = rule;
+                                            }
+                                        } else {
+                                            rule = ruleCached;
                                         }
 
-                                        var MtxBuilder = new LECQuadratureLevelSet<M, V>(GridDat,
-                                                this,
-                                                OnlyAffine ? default(M) : Matrix, AffineOffset,
-                                                CodomainMap, Parameters, DomainMap,
-                                                lsTrk, iLevSet, new SpeciesId[] { SpeciesA, SpeciesB },
-                                                rule,
-                                                CellLengthScales);
-                                        MtxBuilder.time = time;
-                                        MtxBuilder.Execute();
+                                    }
+
+                                    var MtxBuilder = new LECQuadratureLevelSet<M, V>(GridDat,
+                                            this,
+                                            OnlyAffine ? default(M) : Matrix, AffineOffset,
+                                            CodomainMap, Parameters, DomainMap,
+                                            lsTrk, iLevSet, new SpeciesId[] { SpeciesA, SpeciesB },
+                                            rule,
+                                            CellLengthScales);
+                                    MtxBuilder.time = time;
+                                    MtxBuilder.Execute();
 
 
 
@@ -834,7 +865,7 @@ namespace BoSSS.Foundation.XDG {
             /// Not Implemented.
             /// </summary>
             public void Clear() {
-                throw new NotImplementedException(); 
+                throw new NotImplementedException();
             }
 
             /// <summary>
