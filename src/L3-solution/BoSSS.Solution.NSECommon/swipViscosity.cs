@@ -618,6 +618,8 @@ namespace BoSSS.Solution.NSECommon {
         }
     }
 
+
+
     /// <summary>
     /// Solver mode for Swip2 and Swip3 terms.
     /// </summary>
