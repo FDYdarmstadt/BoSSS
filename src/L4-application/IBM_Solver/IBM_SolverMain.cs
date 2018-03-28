@@ -281,7 +281,7 @@ namespace BoSSS.Application.IBM_Solver {
 
                 IBM_Op = new XSpatialOperator(DomNameSelected, Params, CodNameSelected,
                     (A, B, C) => this.HMForder
-                    );
+                    ,cacheQuadRules:true);
 
                 // Momentum equation
                 // =================
