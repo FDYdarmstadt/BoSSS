@@ -185,7 +185,7 @@ namespace CNS {
                 // Query each cell individually so we get local results
                 for (int i = 0; i < program.Grid.NoOfUpdateCells; i++) {
                     // Use "harmonic sum" of individual step sizes - see ExplicitEuler
-                    double localCFL = 1.0 / program.FullOperator.CFLConstraints.Sum(c => 1.0 / c.GetLocalStepSize(i, 1));
+                    double localCFL = 1.0 / program.FullOperator.CFLConstraints.Sum(c => 1.0 / (program.Control.CFLFraction * c.GetLocalStepSize(i, 1)));
                     cfl.SetMeanValue(i, localCFL);
                 }
             });
@@ -206,7 +206,7 @@ namespace CNS {
 
                 // Query each cell individually so we get local results
                 for (int i = 0; i < program.Grid.NoOfUpdateCells; i++) {
-                    double localCFL = cflConstraint.GetLocalStepSize(i, 1);
+                    double localCFL = program.Control.CFLFraction * cflConstraint.GetLocalStepSize(i, 1);
                     cfl.SetMeanValue(i, localCFL);
                 }
             });
@@ -227,7 +227,7 @@ namespace CNS {
 
                 // Query each cell individually so we get local results
                 for (int i = 0; i < program.Grid.NoOfUpdateCells; i++) {
-                    double localCFL = cflConstraint.GetLocalStepSize(i, 1);
+                    double localCFL = program.Control.CFLFraction * cflConstraint.GetLocalStepSize(i, 1);
                     cfl.SetMeanValue(i, localCFL);
                 }
             });
