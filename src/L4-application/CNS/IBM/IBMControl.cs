@@ -29,7 +29,7 @@ namespace CNS.IBM {
     public class IBMControl : CNSControl {
 
         public IBMControl() : base() {
-            if (this.DynamicLoadBalancing_CellCostEstimatorFactories == null) {
+            if (this.DynamicLoadBalancing_CellCostEstimatorFactories.Count == 0) {
                 Console.WriteLine("Warning: Auto-adding default estimator factory for IBM. Is this what you want?");
                 this.DynamicLoadBalancing_CellCostEstimatorFactories.Add(delegate (IApplication app, int performanceClassCount) {
                     if (performanceClassCount != 3) {
