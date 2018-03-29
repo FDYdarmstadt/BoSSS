@@ -183,16 +183,11 @@ namespace CNS {
                 }
 
                 // Query each cell individually so we get local results
-                //foreach (Chunk chunk in cellMask) {
-                //    for (int i = 0; i < chunk.Len; i++) {
-                //        int cell = chunk.i0 + i;
-
                 for (int i = 0; i < program.Grid.NoOfUpdateCells; i++) {
                     // Use "harmonic sum" of individual step sizes - see ExplicitEuler
                     double localCFL = 1.0 / program.FullOperator.CFLConstraints.Sum(c => 1.0 / c.GetLocalStepSize(i, 1));
                     cfl.SetMeanValue(i, localCFL);
                 }
-                //}
             });
 
         /// <summary>
@@ -210,14 +205,10 @@ namespace CNS {
                 TimeStepConstraint cflConstraint = program.FullOperator.CFLConstraints.OfType<ConvectiveCFLConstraint>().Single();
 
                 // Query each cell individually so we get local results
-                //foreach (Chunk chunk in cellMask) {
-                //for (int i = 0; i < chunk.Len; i++) {
-                //        int cell = chunk.i0 + i;
                 for (int i = 0; i < program.Grid.NoOfUpdateCells; i++) {
                     double localCFL = cflConstraint.GetLocalStepSize(i, 1);
                     cfl.SetMeanValue(i, localCFL);
                 }
-                //}
             });
 
         /// <summary>
@@ -235,14 +226,10 @@ namespace CNS {
                 TimeStepConstraint cflConstraint = program.FullOperator.CFLConstraints.OfType<ArtificialViscosityCFLConstraint>().Single();
 
                 // Query each cell individually so we get local results
-                //foreach (Chunk chunk in cellMask) {
-                //    for (int i = 0; i < chunk.Len; i++) {
-                //int cell = chunk.i0 + i;
                 for (int i = 0; i < program.Grid.NoOfUpdateCells; i++) {
                     double localCFL = cflConstraint.GetLocalStepSize(i, 1);
                     cfl.SetMeanValue(i, localCFL);
                 }
-                //}
             });
 
         /// <summary>
