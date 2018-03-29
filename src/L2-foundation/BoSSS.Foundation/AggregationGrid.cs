@@ -53,6 +53,19 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         }
 
         /// <summary>
+        /// Multi-grid level index.
+        /// </summary>
+        public int MgLevel {
+            get {
+                if(ParentGrid is AggregationGrid) {
+                    return ((AggregationGrid)ParentGrid).MgLevel + 1;
+                } else {
+                    return 0;
+                }
+            }
+        }
+
+        /// <summary>
         /// The spatial dimension, induced from the parent grid (<see cref="ParentGrid"/>).
         /// </summary>
         public int SpatialDimension {

@@ -32,13 +32,31 @@ using BoSSS.Foundation.Grid.Aggregation;
 namespace BoSSS.Solution.Multigrid {
     public class XdgAggregationBasis : AggregationGridBasis {
 
+        /// <summary>
+        /// XDG basis on original grid
+        /// </summary>
         public XDGBasis XDGBasis {
             get;
             private set;
         }
 
-        public XdgAggregationBasis(XDGBasis xb, AggregationGrid ag)
-            : base(xb.NonX_Basis, ag) //
+        /// <summary>
+        /// ctor.
+        /// </summary>
+        /// <param name="xb">
+        /// XDG basis on original grid
+        /// </param>
+        /// <param name="parentBasis">
+        /// basis on parent grid
+        /// </param>
+        /// <param name="ag">
+        /// aggregation grid level.
+        /// </param>
+        /// <param name="inj">
+        /// injection operators.
+        /// </param>
+        internal XdgAggregationBasis(XDGBasis xb, XdgAggregationBasis parentBasis, AggregationGrid ag, MultidimensionalArray[] inj)
+            : base(xb.NonX_Basis, parentBasis, ag, inj) //
         {
             using(new FuncTrace()) {
                 this.XDGBasis = xb;
@@ -95,17 +113,17 @@ namespace BoSSS.Solution.Multigrid {
                                 }
                             }
 #if DEBUG
-                        {
-                            bool NonEmpty = false;
-                            for(int k = 0; k < K; k++) {
-                                if(sim[iSpc_agg, k] >= 0) {
-                                    NonEmpty = true;
-                                    break;
+                            {
+                                bool NonEmpty = false;
+                                for(int k = 0; k < K; k++) {
+                                    if(sim[iSpc_agg, k] >= 0) {
+                                        NonEmpty = true;
+                                        break;
+                                    }
                                 }
+                                Debug.Assert(NonEmpty); // there should be at least one non-empty base cell (for species 'iSpc_agg')
+                                //                         in aggregate cell 'jagg'
                             }
-                            Debug.Assert(NonEmpty); // there should be at least one non-empty base cell (for species 'iSpc_agg')
-                            //                         in aggregate cell 'jagg'
-                        }
 #endif
 
                             if(this.XCompositeBasis[jagg] == null || (this.XCompositeBasis[jagg].Length != NoOfSpc_jagg))
@@ -154,6 +172,7 @@ namespace BoSSS.Solution.Multigrid {
 
         /// <summary>
         /// All used species.
+        /// Index: enumeration over species.
         /// </summary>
         public SpeciesId[] UsedSpecies {
             get;
@@ -184,6 +203,9 @@ namespace BoSSS.Solution.Multigrid {
 
             if(AggCellsSpecies == null)
                 AggCellsSpecies = new SpeciesId[JAGG][];
+            //if (CoarseToFineSpeciesIndex == null && agg.MgLevel > 0)
+            //    CoarseToFineSpeciesIndex = new int[JAGG][,];
+
 
             Dictionary<SpeciesId,BitArray> agglomeratedCells = new Dictionary<SpeciesId, BitArray>();
             foreach(var SpId in Agglomerator.SpeciesList) {
@@ -223,10 +245,11 @@ namespace BoSSS.Solution.Multigrid {
                     this.NoOfSpecies[jagg] = 1;
                     //this.XCompositeBasis[jagg] = null;
                     this.AggCellsSpecies[jagg] = null;
+                    //this.CoarseToFineSpeciesIndex[jagg] = null;
                 } else {
                     //LsTrk.ContainesSpecies
 
-                    int w = 0;
+                    int w = 0; // counter for found species
                     
                     if(this.SpeciesIndexMapping[jagg] == null || this.SpeciesIndexMapping[jagg].GetLength(0) != w) {
                         this.SpeciesIndexMapping[jagg] = new int[0, compCell.Length];
@@ -250,13 +273,14 @@ namespace BoSSS.Solution.Multigrid {
                                 bool bfound = false;
 
                                 int z;
-                                for(z = 0; z < w; z++) {
+                                for(z = 0; z < w; z++) { // loop over species found so far...
                                     if(allPresentSpecies[z] == spId) {
                                         bfound = true;
                                         break;
                                     }
                                 }
                                 if(!bfound) {
+                                    // species not found -> add to list
                                     allPresentSpecies[w] = spId;
                                     z = w;
                                     w++;
@@ -314,7 +338,7 @@ namespace BoSSS.Solution.Multigrid {
         /// If (<see cref="SpeciesIndexMapping"/>[j] == null), this indicates that 
         /// the single-phase implementation in underlying class should be used.
         /// </remarks>
-        int[][,] SpeciesIndexMapping;
+        internal int[][,] SpeciesIndexMapping;
 
 
         /// <summary>
@@ -322,7 +346,10 @@ namespace BoSSS.Solution.Multigrid {
         ///  - 1st index: aggregate cell index.
         ///  - 2nd index: species index in the composite/aggregate cell.
         /// </summary>
-        SpeciesId[][] AggCellsSpecies;
+        internal SpeciesId[][] AggCellsSpecies;
+
+
+        //int[][,] CoarseToFineSpeciesIndex;
 
 
         /// <summary>
@@ -625,12 +652,12 @@ namespace BoSSS.Solution.Multigrid {
 
 
                             // default branch:
-                            // use restiction/prolongation from un-cut basis
+                            // use restriction/prolongation from un-cut basis
                             // +++++++++++++++++++++++++++++++++++++++++++++
 
                             MultidimensionalArray Trf = base.CompositeBasis[jAgg];
                             
-                            for(int k = 0; k < K; k++) { // loop over the cells wich form the aggregated cell...
+                            for(int k = 0; k < K; k++) { // loop over the cells which form the aggregated cell...
                                 int jCell = AgCell[k];
                                 int i0Full = mgMap.ProblemMapping.GlobalUniqueCoordinateIndex(iF, jCell, 0);
                                 var Block = Trf.ExtractSubArrayShallow(k, -1, -1);
@@ -654,7 +681,7 @@ namespace BoSSS.Solution.Multigrid {
                             else
                                 Trf = this.XCompositeBasis[jAgg][iSpc_Agg];
                             
-                            for(int k = 0; k < K; k++) { // loop over the cells wich form the aggregated cell...
+                            for(int k = 0; k < K; k++) { // loop over the cells which form the aggregated cell...
                                 int jCell = AgCell[k];
                                 int iSpcBase = sim[iSpc_Agg, k];
 

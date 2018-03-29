@@ -34,6 +34,15 @@ namespace BoSSS.Application.IBM_Solver {
     /// </summary>
     public class HardcodedControl {
 
+        /// <summary>
+        /// Initializes a channel flow.
+        /// </summary>
+        /// <param name="k">DG polynomial degree</param>
+        /// <param name="periodic"></param>
+        /// <param name="xCells"></param>
+        /// <param name="yCells"></param>
+        /// <param name="dbpath"></param>
+        /// <returns></returns>
         static public IBM_Control ChannelFlow(int k = 2, bool periodic = false, int xCells = 10, int yCells = 10, string dbpath = null) {
             IBM_Control C = new IBM_Control();
 
@@ -65,26 +74,7 @@ namespace BoSSS.Application.IBM_Solver {
 
 
             // Create Fields
-            C.FieldOptions.Add("VelocityX", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("VelocityY", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Pressure", new FieldOpts() {
-                Degree = k - 1,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("PhiDG", new FieldOpts() {
-                Degree = 2,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Phi", new FieldOpts() {
-                Degree = 2,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
+            C.SetDGdegree(k);
 
             // Create Grid
             C.GridFunc = delegate {

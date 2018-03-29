@@ -1,10 +1,11 @@
 restart
 **************
+
   Database Explorer v2
   ____________________
 
 Databases loaded:
-List of 24 instances of IDatabaseInfo {
+List of 23 instances of IDatabaseInfo {
   0: { Session Count = 0; Grid Count = 2; Path = p:\BoSSS_DBs\Kovasznay }
   1: { Session Count = 1; Grid Count = 1; Path = p:\BoSSS_DBs\ChannelFlow }
   2: { Session Count = 0; Grid Count = 0; Path = p:\BoSSS_DBs\RectangularCylinder }
@@ -22,13 +23,12 @@ List of 24 instances of IDatabaseInfo {
   14: { Session Count = 43; Grid Count = 45; Path = P:\BoSSS_DBs\IBMPaper }
   15: { Session Count = 28; Grid Count = 15; Path = P:\BoSSS_DBs\Paper_IBM2D }
   16: { Session Count = 38; Grid Count = 22; Path = P:\BoSSS_DBs\Paper_CellAgglo01_Penalty4 }
-  17: { Session Count = 42; Grid Count = 55; Path = P:\BoSSS_DBs\Sphere3D }
+  17: { Session Count = 45; Grid Count = 55; Path = P:\BoSSS_DBs\Sphere3D }
   18: { Session Count = 22; Grid Count = 10; Path = P:\BoSSS_DBs\Performance }
   19: { Session Count = 24; Grid Count = 14; Path = P:\BoSSS_DBs\PaperRevision }
   20: { Session Count = 0; Grid Count = 0; Path = P:\Lichtenberg_DB }
   21: { Session Count = 2; Grid Count = 354; Path = P:\BoSSS_DBs\Bug }
-  22: { Session Count = 52; Grid Count = 97; Path = L:\BoSSS_DB\Lichtenberg_DB }
-  23: { Session Count = 510; Grid Count = 729; Path = Y:\fdy-publication-data\Thesis\2017\Degenhardt\performance_db }
+  22: { Session Count = 71; Grid Count = 97; Path = L:\BoSSS_DB\Lichtenberg_DB }
 }
 
  Console ready for input. Type 'help' for help.
@@ -87,15 +87,16 @@ static class Utils {
 LinearSolverCodes[] linSolvers = new LinearSolverCodes[] {
     //LinearSolverCodes.exp_schwarz_directcoarse,
     //LinearSolverCodes.exp_schwarz_Kcycle_directcoarse,
-    //LinearSolverCodes.exp_schwarz_directcoarse_overlap,
-    LinearSolverCodes.exp_schwarz_Kcycle_directcoarse_overlap,
+    LinearSolverCodes.exp_schwarz_directcoarse_overlap,
+    //LinearSolverCodes.exp_schwarz_Kcycle_directcoarse_overlap,
+    //LinearSolverCodes.exp_softgmres_schwarz_Kcycle_directcoarse_overlap
 };
 int[] ks = new int[] {2,3};
 int cells_x  = 64;
 int cells_yz = 16;
 int re       = 100; 
 int saveToDB = 1;
-int[] procs    = new int[] {8,16,32,64};
+int[] procs    = new int[] {64,128,256,512};
 **************
 C# evaluator not initialized: use 'restart'.
 
@@ -199,7 +200,7 @@ C.DynamicLoadBalancing_Period = 1;
 C.saveperiod  = 1;
 C.ProjectName = "3DChannel";
 C.Tags.Add("Prec param study");
-C.SetDGdegree(1,3);
+C.SetDGdegree(2,3);
 C.SetGrid(grd);
            
 
@@ -264,10 +265,10 @@ C.InitialValues.Add("Phi", GetFormulaObject(InitialValues.Phi));
         C.dtMin               = 1E20;
         C.Endtime             = 10000000;
         C.NoOfTimesteps       = 1;
-        C.NoOfMultigridLevels = 3;
+        C.NoOfMultigridLevels = 4;
         
         // Assign correct names
-        C.SessionName = "Sphere_Flow_k1"+linSolverName+"_MGLevels"+C.NoOfMultigridLevels;
+        C.SessionName = "Sphere_Flow_k2"+linSolverName+"_MGLevels"+C.NoOfMultigridLevels;
         }
 **************
 (15,47): error CS1010: Newline in constant
@@ -287,7 +288,7 @@ foreach(var ctrl in controls) {
 foreach(int proc in procs){
     ctrl.SessionName = tmpName+"_Proc"+proc;
     Console.WriteLine(" Submitting: " + ctrl.SessionName);
-    ctrl.RunBatch(myBatch,NumberOfMPIProcs:proc,UseComputeNodesExclusive:true,executionTime:"20:00:00");  
+    ctrl.RunBatch(myBatch,NumberOfMPIProcs:proc,UseComputeNodesExclusive:true,executionTime:"24:00:00");  
 }}
 **************
 ==============
@@ -320,8 +321,11 @@ List of 1 instances of String {
 ==============
 WorkflowMgm.SessionTable.Rows.Count;
 **************
-Workflow management not initialized yet - call Init(...)!
-0
+Loading session 28a03143-5f6b-4aef-a8a3-315ef6864317 failed with message 'Die Datei "P:\BoSSS_DBs\Sphere3D\sessions\28a03143-5f6b-4aef-a8a3-315ef6864317\Session.info" konnte nicht gefunden werden.'
+Loading session 74ec7fde-4918-46b3-a338-1be68019539b failed with message 'Die Datei "P:\BoSSS_DBs\Sphere3D\sessions\74ec7fde-4918-46b3-a338-1be68019539b\Session.info" konnte nicht gefunden werden.'
+Loading session acc112ec-3547-4f6d-ae72-4f4ccc8e9744 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\acc112ec-3547-4f6d-ae72-4f4ccc8e9744\Session.info" konnte nicht gefunden werden.'
+Loading session 883fdea1-e03e-401e-b8b7-dc67324257e0 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\883fdea1-e03e-401e-b8b7-dc67324257e0\Session.info" konnte nicht gefunden werden.'
+22
 ==============
 // =====================================
 // Session table
@@ -389,11 +393,10 @@ static class AddCols {
     }
 }
 **************
-(46,26): error CS0111: A member `AddCols.SlvInitTime(BoSSS.Foundation.IO.ISessionInfo)' is already defined. Rename this member or use different parameter types
-(43,26): (Location of the symbol related to previous error)
-(49,26): error CS0111: A member `AddCols.SlvInitTime(BoSSS.Foundation.IO.ISessionInfo)' is already defined. Rename this member or use different parameter types
-(46,26): (Location of the symbol related to previous error)
-No. of errors|warnings: 2|0.
+(11,32): warning CS0219: The variable `tempFractions' is assigned but its value is never used
+(22,37): warning CS0219: The variable `maxIndex' is assigned but its value is never used
+(29,37): warning CS0219: The variable `maxIndex' is assigned but its value is never used
+No. of errors|warnings: 0|3.
 
 ==============
 WorkflowMgm.AdditionalSessionTableColums.Clear();
@@ -401,6 +404,10 @@ WorkflowMgm.AdditionalSessionTableColums.Add(
     "SlvIter_excl", AddCols.SlvIterTime);
 WorkflowMgm.AdditionalSessionTableColums.Add(
     "SlvInit_excl", AddCols.SlvInitTime);
+    WorkflowMgm.AdditionalSessionTableColums.Add(
+    "PrecSolve", AddCols.SchwarzSolve);
+    WorkflowMgm.AdditionalSessionTableColums.Add(
+    "NewtonDirder", AddCols.NewtonDirder);
 WorkflowMgm.AdditionalSessionTableColums.Add(
     "Processors", AddCols.MPIs);
 **************
@@ -412,20 +419,6 @@ WorkflowMgm.AdditionalSessionTableColums.Add(
 ==============
 var SessTab = WorkflowMgm.SessionTable;
 **************
-Loading session d7ab7826-1ae0-4c06-a735-8a40369c0b1a failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\d7ab7826-1ae0-4c06-a735-8a40369c0b1a\Session.info" konnte nicht gefunden werden.'
-Loading session 7dfbfff1-438f-42ca-aed4-999f9e864ec4 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\7dfbfff1-438f-42ca-aed4-999f9e864ec4\Session.info" konnte nicht gefunden werden.'
-Loading session 9e5bb878-0703-40f5-95df-a19001f2c1b5 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\9e5bb878-0703-40f5-95df-a19001f2c1b5\Session.info" konnte nicht gefunden werden.'
-Loading session 367124ed-0d70-4bf7-8027-52f8a3bd072c failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\367124ed-0d70-4bf7-8027-52f8a3bd072c\Session.info" konnte nicht gefunden werden.'
-Loading session b796d3b4-b645-439d-ad8b-b42bcaec306d failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\b796d3b4-b645-439d-ad8b-b42bcaec306d\Session.info" konnte nicht gefunden werden.'
-Loading session 672d147a-8d3b-4b9a-a597-28f72a4b9bc2 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\672d147a-8d3b-4b9a-a597-28f72a4b9bc2\Session.info" konnte nicht gefunden werden.'
-Loading session c27d5ea3-9613-4bed-8943-4cc2a3cc8ba5 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\c27d5ea3-9613-4bed-8943-4cc2a3cc8ba5\Session.info" konnte nicht gefunden werden.'
-Loading session a080db01-8fe8-4b42-927b-c997931d4b3a failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\a080db01-8fe8-4b42-927b-c997931d4b3a\Session.info" konnte nicht gefunden werden.'
-Loading session 321103b1-b62f-42b8-88f2-60a3b66af1b1 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\321103b1-b62f-42b8-88f2-60a3b66af1b1\Session.info" konnte nicht gefunden werden.'
-Loading session 25e225e7-706e-4909-9f1f-4e3b339c7727 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\25e225e7-706e-4909-9f1f-4e3b339c7727\Session.info" konnte nicht gefunden werden.'
-Loading session b4ea3e83-46f0-461f-a02b-18eade823966 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\b4ea3e83-46f0-461f-a02b-18eade823966\Session.info" konnte nicht gefunden werden.'
-Loading session 29bb56dc-ff23-42a5-ae9a-ae9fb4d59257 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\29bb56dc-ff23-42a5-ae9a-ae9fb4d59257\Session.info" konnte nicht gefunden werden.'
-Loading session ccb25d9a-d7c4-4d1d-98b2-93be839f4fe0 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\ccb25d9a-d7c4-4d1d-98b2-93be839f4fe0\Session.info" konnte nicht gefunden werden.'
-
 ==============
 // The Session column can't be serialized,
 // we have to remove it
@@ -436,6 +429,36 @@ True
 ==============
 SessTab = SessTab.ExtractColumns(AllCols.ToArray());
 **************
+==============
+//Checking if table contains all information
+var SubTab_1 = SessTab.ExtractColumns("Processors","SlvIter_excl","SlvInit_excl","PrecSolve","NewtonDirder","NonlinearSolve","LinearSolve","NoOfMultigridLevels","DGdegree:VelocityX","RegularTerminated");
+**************
+==============
+SubTab_1.Print();
+**************
+    Processors SlvIter_excl SlvInit_excl PrecSolve NewtonDirder NonlinearSolve LinearSolve NoOfMultigridLevels DGdegree:VelocityX RegularTerminated 
+0:  8          NULL         NULL         NULL      NULL         0              4           4                   1                  True              
+1:  8          NULL         NULL         NULL      NULL         0              4           3                   1                  True              
+2:  32         NULL         NULL         NULL      NULL         0              4           4                   1                  True              
+3:  64         NULL         NULL         NULL      NULL         0              4           4                   1                  True              
+4:  16         NULL         NULL         NULL      NULL         0              4           4                   1                  True              
+5:  64         NULL         NULL         NULL      NULL         0              4           3                   1                  True              
+6:  32         NULL         NULL         NULL      NULL         0              4           3                   1                  True              
+7:  16         NULL         NULL         NULL      NULL         0              4           3                   1                  True              
+8:  32         NULL         NULL         NULL      NULL         0              6           3                   1                  True              
+9:  64         NULL         NULL         NULL      NULL         0              6           3                   1                  True              
+10: 16         NULL         NULL         NULL      NULL         0              6           3                   1                  True              
+11: 8          NULL         NULL         NULL      NULL         0              3           2                   1                  True              
+12: 32         NULL         NULL         NULL      NULL         0              3           2                   1                  True              
+13: 64         NULL         NULL         NULL      NULL         0              3           2                   1                  True              
+14: 16         NULL         NULL         NULL      NULL         0              3           2                   1                  True              
+15: 8          NULL         NULL         NULL      NULL         0              4           2                   1                  True              
+16: 64         NULL         NULL         NULL      NULL         0              6           2                   1                  True              
+17: 64         NULL         NULL         NULL      NULL         0              4           2                   1                  True              
+18: 32         NULL         NULL         NULL      NULL         0              6           2                   1                  True              
+19: 32         NULL         NULL         NULL      NULL         0              4           2                   1                  True              
+20: 16         NULL         NULL         NULL      NULL         0              6           2                   1                  True              
+21: 16         NULL         NULL         NULL      NULL         0              4           2                   1                  True              
 ==============
 using System.IO;
 **************
@@ -449,6 +472,36 @@ string docpath    = Path.Combine(CurrentDocDir, SessTab.TableName + ".json");
 // save session table as file: this can be stored in our git 
 // repository
 SessTab.SaveToFile(docpath);
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

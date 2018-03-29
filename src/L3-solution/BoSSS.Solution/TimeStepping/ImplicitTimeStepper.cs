@@ -349,6 +349,15 @@ namespace BoSSS.Solution.Timestepping {
             get { return m_DGCoordinates; }
         }
 
+        public TimeInformation TimeInfo {
+            get;
+            protected set;
+        }
+
+        public void UpdateTimeInfo(TimeInformation timeInfo) {
+            this.TimeInfo = timeInfo;
+        }
+
         #endregion
 
         #region IDisposable Member

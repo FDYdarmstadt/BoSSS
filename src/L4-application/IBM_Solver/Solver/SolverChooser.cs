@@ -38,7 +38,7 @@ namespace BoSSS.Application.IBM_Solver {
 
             switch (Control.LinearSolve) {
                 case LinearSolverCodes.automatic:
-                    AutomaticChoice();
+                    AutomaticChoice(Control,Timestepper);
                     break;
 
                 case LinearSolverCodes.classic_mumps:
@@ -101,13 +101,26 @@ namespace BoSSS.Application.IBM_Solver {
                             Depth = Control.NoOfMultigridLevels - 1
                         },
                         Overlap = 1,
-                        CoarseSolver = DetermineMGSquence(Control.NoOfMultigridLevels-2)
+                        CoarseSolver = DetermineMGSquence(Control.NoOfMultigridLevels - 2)
                     };
                     break;
 
                 case LinearSolverCodes.exp_softgmres:
                     Timestepper.Config_linearSolver = new SoftGMRES() {
                         MaxKrylovDim = Timestepper.Config_MaxKrylovDim,
+                    };
+                    break;
+
+                case LinearSolverCodes.exp_softgmres_schwarz_Kcycle_directcoarse_overlap:
+                    Timestepper.Config_linearSolver = new SoftGMRES() {
+                        MaxKrylovDim = Timestepper.Config_MaxKrylovDim, 
+                        Precond = new Schwarz() {
+                            m_BlockingStrategy = new Schwarz.MultigridBlocks() {
+                                Depth = Control.NoOfMultigridLevels - 1
+                            },
+                            Overlap = 1,
+                            CoarseSolver = DetermineMGSquence(Control.NoOfMultigridLevels - 2)
+                        },
                     };
                     break;
 
@@ -119,8 +132,23 @@ namespace BoSSS.Application.IBM_Solver {
         /// <summary>
         /// Automatic choice of linear solver depending on problem size, immersed boundary, polynomial degree, etc.
         /// </summary>
-        static void AutomaticChoice() {
+        static void AutomaticChoice(IBM_Control Control, XdgBDFTimestepping Timestepper) {
             throw new NotImplementedException("Option currently not available");
+
+            // Detecting MPI Size
+            MPI.Wrappers.csMPI.Raw.Comm_Size(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out int size);
+            //Timestepper.MultigridSequence[0].
+
+            // Spatial Dimension
+
+            //Timestepper.
+
+            // Wenn Gesamtproblem in 2D < 100000 DoFs -> Direct Solver
+            // Wenn Gesamtproblem in 3D < 10000 DoFs -> Direct Solver 
+
+            // Block Solve 3D ca. 6000 DoFs per Process -> Adjust Blocks per Process
+            // Coarse Solve ca. 5000 bis 10000 DoFs. -> Adjust Multigrid Levels
+
         }
 
         /// <summary>
