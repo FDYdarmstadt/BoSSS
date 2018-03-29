@@ -23,6 +23,10 @@ namespace BoSSS.Application.IBM_Solver {
             Timestepper.Config_MinIterations = Control.MinSolverIterations;
             Timestepper.Config_MaxKrylovDim = Control.MaxKrylovDim;
 
+            // Set to pseudo Picard if the Stokes equations should be solved
+            if (Control.PhysicalParameters.IncludeConvection == false)
+                Control.NonlinearSolve = NonlinearSolverCodes.Picard;
+
             // Set nonlinear Solver
             switch (Control.NonlinearSolve) {
                 case NonlinearSolverCodes.NewtonGMRES:
@@ -34,7 +38,6 @@ namespace BoSSS.Application.IBM_Solver {
                 default:
                     throw new NotImplementedException("Nonlinear solver option not available");
             }
-
 
             switch (Control.LinearSolve) {
                 case LinearSolverCodes.automatic:
@@ -228,7 +231,7 @@ namespace BoSSS.Application.IBM_Solver {
                                 MaxKrylovDim = Timestepper.Config_MaxKrylovDim,
                                 m_Tolerance = Timestepper.Config_SolverConvergenceCriterion,
                                 Precond = new Schwarz() {
-                                    m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
+                                    m_BlockingStrategy = new Schwarz.SimpleBlocking() {
                                         NoOfPartsPerProcess = (int)Math.Ceiling(dofsLoc / 6500.0),
                                     },
                                     Overlap = 1,
