@@ -235,7 +235,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         public int Config_MaxIterations = 1000;
 
-        public int Config_MaxKrylovDim = 30;
+        public int Config_MaxKrylovDim = 100;
 
         /// <summary>
         /// Under relaxation factor for iterative solver.
@@ -531,7 +531,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// If true, the residual will we transformed back to the original XDG basis (before agglomeration and block preconditioning)
         /// before the L2-norm is computed.
         /// </summary>
-        public bool m_TransformedResi = false;
+        public bool m_TransformedResi = true;
 
         public double m_LastLevelSetResidual;
 
