@@ -21,6 +21,7 @@ using MPI.Wrappers;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace BoSSS.Solution.Utils {
@@ -121,9 +122,9 @@ namespace BoSSS.Solution.Utils {
             int counter = numOfClusters;
             for (int i = 0; i < numOfClusters; i++) {
                 if (noOfCellsPerCluster[i] == 0) {
-#if DEBUG
+                    //#if DEBUG
                     Console.WriteLine("Sub-grid/Cluster " + (i + 1) + ", with mean value " + Kmean.Means[i] + ", is empty and not used anymore!");
-#endif
+                    //#endif
                     counter--;
                 }
             }
@@ -149,11 +150,12 @@ namespace BoSSS.Solution.Utils {
                     clusters.Add(new SubGrid(new CellMask(gridData, ba)));
                 }
             }
-#if DEBUG
+            //#if DEBUG
             for (int i = 0; i < clusters.Count; i++) {
                 Console.WriteLine("CreateClustering:\t id=" + i + " ->\t\telements=" + clusters[i].GlobalNoOfCells);
             }
-#endif
+            //#endif
+
             return new Clustering(clusters, subGrid);
         }
 
@@ -171,6 +173,10 @@ namespace BoSSS.Solution.Utils {
 
             double h_min = cellMetric.Min();
             double h_max = cellMetric.Max();
+            if (h_max == double.MaxValue) {// Occurs for cells that are no REAL fluid cells (void cells, that are considered as fluid cells by the IBM tracker)
+                h_max = FindSecondLargestElement(cellMetric.To1DArray());
+            }
+
             //Console.WriteLine("Clustering: Create tanh spaced means");
 
             // Getting global h_min and h_max
@@ -228,7 +234,17 @@ namespace BoSSS.Solution.Utils {
             for (int subGridCell = 0; subGridCell < subGrid.LocalNoOfCells; subGridCell++) {
                 int localCellIndex = subGrid.SubgridIndex2LocalCellIndex[subGridCell];
                 //cellMetric[subGridCell] = timeStepConstraints.Min(c => c.GetLocalStepSize(localCellIndex, 1));    // cell metric based on smallest time step constraint
-                cellMetric[subGridCell] = 1.0 / timeStepConstraints.Sum(c => 1.0 / c.GetLocalStepSize(localCellIndex, 1));  // cell metric based on harmonic sum of time step constraints
+                //cellMetric[subGridCell] = 1.0 / timeStepConstraints.Sum(c => 1.0 / c.GetLocalStepSize(localCellIndex, 1));  // cell metric based on harmonic sum of time step constraints
+
+                List<double> result = new List<double>();
+                foreach (TimeStepConstraint constraint in timeStepConstraints) {
+                    result.Add(constraint.GetLocalStepSize(localCellIndex, 1));
+                }
+                if (result.All(c => c == double.MaxValue)) {
+                    cellMetric[subGridCell] = double.MaxValue;
+                } else {
+                    cellMetric[subGridCell] = 1.0 / result.Sum(c => 1.0 / c);  // cell metric based on harmonic sum of time step constraints
+                }
             }
 
             return cellMetric;
@@ -237,32 +253,33 @@ namespace BoSSS.Solution.Utils {
         public Clustering TuneClustering(Clustering clustering, double time, IList<TimeStepConstraint> timeStepConstraints) {
             // Calculate cluster time step sizes and sub-steps
             var result = GetPerCluster_dtMin_SubSteps(clustering, timeStepConstraints, 1.0e-2);
-            List<int> numOfSubSteps = result.Item2;
+            List<int> subSteps = result.Item2;
 
             // Combine clusters with same number of sub-steps
             List<SubGrid> newClusters = new List<SubGrid>();
             List<int> newSubSteps = new List<int>();
 
             for (int i = 0; i < clustering.NumberOfClusters; i++) {
-                if (i < clustering.NumberOfClusters - 1 && numOfSubSteps[i] == numOfSubSteps[i + 1]) {
+                if (i < clustering.NumberOfClusters - 1 && subSteps[i] == subSteps[i + 1]) {
                     // Combine both clusters and remove the previous one
                     SubGrid combinedSubGrid = new SubGrid(clustering.Clusters[i].VolumeMask.Union(clustering.Clusters[i + 1].VolumeMask));
                     newClusters.Add(combinedSubGrid);
-#if DEBUG
+                    //#if DEBUG
                     Console.WriteLine("TuneClustering: Clustering leads to clusters which are too similar. They are combined.");
-#endif
-                    newSubSteps.Add(numOfSubSteps[i]);
+                    //#endif
+                    newSubSteps.Add(subSteps[i]);
                     i++;
                 } else {
                     newClusters.Add(clustering.Clusters[i]);
-                    newSubSteps.Add(numOfSubSteps[i]);
+                    newSubSteps.Add(subSteps[i]);
                 }
             }
-#if DEBUG
+            //#if DEBUG
             for (int i = 0; i < newClusters.Count; i++) {
                 Console.WriteLine("TuneClustering:\t\t id=" + i + " -> sub-steps=" + newSubSteps[i] + "\telements=" + newClusters[i].GlobalNoOfCells);
             }
-#endif
+            //#endif
+
             return new Clustering(newClusters, clustering.SubGrid, newSubSteps);
         }
 
@@ -296,17 +313,17 @@ namespace BoSSS.Solution.Utils {
             }
 
             if (subSteps.Last() > this.MaxSubSteps && this.Restrict) {
-#if DEBUG
+                //#if DEBUG
                 List<int> oldSubSteps = subSteps;
                 double[] oldClusterDts = clusterDts;
-#endif
+                //#endif
                 (clusterDts, subSteps) = RestrictDtsAndSubSteps(clusterDts, subSteps);
-#if DEBUG
+                //#if DEBUG
                 Console.WriteLine("### RESTRICTION OF SUB-STEPS ### (dt min)");
                 for (int i = 0; i < subSteps.Count; i++) {
                     Console.WriteLine("RestrictDtsAndSubSteps:\t id={0} -> sub-steps={1}\tdt={2:0.#######E-00} -> substeps={3}\tdt={4:0.#######E-00}", i, oldSubSteps[i], oldClusterDts[i], subSteps[i], clusterDts[i]);
                 }
-#endif
+                //#endif
             }
 
             return (clusterDts, subSteps);
@@ -346,17 +363,17 @@ namespace BoSSS.Solution.Utils {
             List<int> subSteps = CalculateSubSteps(rcvDtMin, eps);
 
             if (subSteps.Last() > this.MaxSubSteps && this.Restrict) {
-#if DEBUG
+                //#if DEBUG
                 List<int> oldSubSteps = subSteps;
                 double[] oldRcvDtMin = rcvDtMin;
-#endif
+                //#endif
                 (rcvDtMin, subSteps) = RestrictDtsAndSubSteps(rcvDtMin, subSteps);
-#if DEBUG
+                //#if DEBUG
                 Console.WriteLine("### RESTRICTION OF SUB-STEPS ### (dt min)");
                 for (int i = 0; i < subSteps.Count; i++) {
                     Console.WriteLine("RestrictDtsAndSubSteps:\t id={0} -> sub-steps={1}\tdt={2:0.#######E-00} -> substeps={3}\tdt={4:0.#######E-00}", i, oldSubSteps[i], oldRcvDtMin[i], subSteps[i], rcvDtMin[i]);
                 }
-#endif
+                //#endif
             }
 
             return (rcvDtMin, subSteps);
@@ -366,7 +383,9 @@ namespace BoSSS.Solution.Utils {
             List<int> subSteps = new List<int>();
 
             for (int i = 0; i < timeStepSizes.Length; i++) {
-                subSteps.Add(RoundToInt(timeStepSizes[0] / timeStepSizes[i], eps));    // eps was 1.0e-1 
+                int result = RoundToInt(timeStepSizes[0] / timeStepSizes[i], eps);  // eps was 1.0e-1 
+                Debug.Assert(result > 1e4 || result <= 0, String.Format("Number of sub-steps in cluster {0} is {1}. Does this make sense?", i, result));
+                subSteps.Add(result);
             }
 
             return subSteps;
@@ -409,6 +428,23 @@ namespace BoSSS.Solution.Utils {
             }
 
             return result;
+        }
+
+        private double FindSecondLargestElement(double[] inputElements) {
+            Array.Sort(inputElements);
+            Array.Reverse(inputElements);
+
+            double largest = double.MinValue;
+            double second = double.MinValue;
+            for (int i = 0; i < inputElements.Length; i++)
+                if (inputElements[i] > largest) {
+                    second = largest;
+                    largest = inputElements[i];
+                } else if (inputElements[i] > second) {
+                    second = inputElements[i];
+                }
+
+            return second;
         }
     }
 }
