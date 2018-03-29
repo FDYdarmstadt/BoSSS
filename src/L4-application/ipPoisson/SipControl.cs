@@ -49,7 +49,7 @@ namespace BoSSS.Application.SipPoisson {
         /// <summary>
         /// Re-sets all <see cref="AppControl.FieldOptions"/>
         /// </summary>
-        public override void SetDGdegree(int p,int D=2) {
+        public override void SetDGdegree(int p) {
             if(p < 1)
                 throw new ArgumentOutOfRangeException("Symmetric interior penalty requires a DG degree of at least 1.");
             base.FieldOptions.Clear();

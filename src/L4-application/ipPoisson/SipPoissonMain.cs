@@ -471,7 +471,7 @@ namespace BoSSS.Application.SipPoisson {
                 mgBasis.Start();
                 AggregationGridBasis[][] AggBasis;
                 using (new BlockTrace("Aggregation_basis_init", tr)) {
-                    AggBasis = MgSeq.Select(aggGrid => new AggregationGridBasis[] { new AggregationGridBasis(this.T.Basis, aggGrid) }).ToArray();
+                    AggBasis = AggregationGridBasis.CreateSequence(MgSeq, new Basis[] { this.T.Basis }); 
                 }
                 mgBasis.Stop();
                 Console.WriteLine("done. (" + mgBasis.Elapsed.TotalSeconds + " sec)");

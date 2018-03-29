@@ -117,7 +117,7 @@ namespace BoSSS.Solution.Control {
         /// Adds an entry to <see cref="FieldOptions"/>.
         /// </summary>
         /// <param name="Degree">
-        /// Polynomial degree of ther DG field; if negative, the application tries to determine a degree by itself.
+        /// Polynomial degree of the DG field; if negative, the application choses a default value.
         /// </param>
         public void AddFieldOption(string DGFieldName, int Degree = -1, FieldOpts.SaveToDBOpt SaveOpt = FieldOpts.SaveToDBOpt.TRUE) {
             FieldOptions.Add(DGFieldName, new FieldOpts() {
@@ -129,7 +129,7 @@ namespace BoSSS.Solution.Control {
         /// <summary>
         /// Utility function for easier user interaction, (should) set all reasonable <see cref="FieldOptions"/>
         /// </summary>
-        public virtual void SetDGdegree(int p,int D) {
+        public virtual void SetDGdegree(int p) {
             throw new NotImplementedException();
         }
 

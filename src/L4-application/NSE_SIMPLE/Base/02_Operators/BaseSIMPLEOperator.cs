@@ -22,6 +22,7 @@ using ilPSP;
 using ilPSP.LinSolvers;
 using ilPSP.Tracing;
 using BoSSS.Foundation.Grid.Classic;
+using System.Diagnostics;
 
 namespace NSE_SIMPLE {
 
@@ -58,7 +59,7 @@ namespace NSE_SIMPLE {
             }
         }
 
-        bool m_OnlyBoundaryEdges;        
+        bool m_OnlyBoundaryEdges;
 
         /// <summary>
         /// Ctor
@@ -101,32 +102,35 @@ namespace NSE_SIMPLE {
         /// </param>
         protected SIMPLEOperator(UnsetteledCoordinateMapping RowMapping, UnsetteledCoordinateMapping ColMapping, SinglePhaseField[] ParameterFields,
             SolverConfiguration SolverConf, bool IsConstant, int ArgumentIndex = -1, int SpatialDirection = -1,
-            bool OnlyAffine = false, bool OnlyBoundaryEdges = true, int MaxUsePerIterMatrix = 1, int MaxUsePerIterAffine = 1) {
-                
-                m_RowMapping = RowMapping;
-                m_ColMapping = ColMapping;
+            bool OnlyAffine = false, bool OnlyBoundaryEdges = true, int MaxUsePerIterMatrix = 1, int MaxUsePerIterAffine = 1) //
+            {
 
-                m_ParameterFields = ParameterFields;
+            m_RowMapping = RowMapping;
+            m_ColMapping = ColMapping;
 
-                m_IsConstant = IsConstant;
-                m_OnlyAffine = OnlyAffine;
-                m_OnlyBoundaryEdges = OnlyBoundaryEdges;
+            m_ParameterFields = ParameterFields;
 
-                m_MaxUsePerIterMatrix = MaxUsePerIterMatrix;
-                m_MaxUsePerIterAffine = MaxUsePerIterAffine;
+            m_IsConstant = IsConstant;
+            m_OnlyAffine = OnlyAffine;
+            m_OnlyBoundaryEdges = OnlyBoundaryEdges;
 
-                // Get SpatialOperator
-                m_SpatialOperator = GetSpatialOperator(SolverConf, ArgumentIndex, SpatialDirection);
+            m_MaxUsePerIterMatrix = MaxUsePerIterMatrix;
+            m_MaxUsePerIterAffine = MaxUsePerIterAffine;
 
-                // Initialize and compute matrix of this operator
-                if (!m_OnlyAffine) {
-                    m_OperatorMatrix = new MsrMatrix(m_RowMapping, m_ColMapping);
-                    ComputeMatrix();
-                }                
+            // Get SpatialOperator
+            m_SpatialOperator = GetSpatialOperator(SolverConf, ArgumentIndex, SpatialDirection);
+            Debug.Assert(m_SpatialOperator.DomainVar.Count == ColMapping.BasisS.Count);
+            Debug.Assert(m_SpatialOperator.CodomainVar.Count == RowMapping.BasisS.Count);
 
-                // Initialize and compute affine part of this operator
-                m_OperatorAffine = new double[m_RowMapping.LocalLength];
-                ComputeAffine();
+            // Initialize and compute matrix of this operator
+            if (!m_OnlyAffine) {
+                m_OperatorMatrix = new MsrMatrix(m_RowMapping, m_ColMapping);
+                ComputeMatrix();
+            }
+
+            // Initialize and compute affine part of this operator
+            m_OperatorAffine = new double[m_RowMapping.LocalLength];
+            ComputeAffine();
         }
 
         SpatialOperator m_SpatialOperator;        

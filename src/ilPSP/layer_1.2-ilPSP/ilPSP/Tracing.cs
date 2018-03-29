@@ -264,22 +264,23 @@ namespace ilPSP.Tracing {
             }
         }
 
-        /// <summary>
+        // <summary>
         /// ctor: logs the 'enter' - message
         /// </summary>
         public FuncTrace(string UserName) : base() {
-            if (!Tracer.InstrumentationSwitch)
+            if(!Tracer.InstrumentationSwitch)
                 return;
+
+            _name = UserName;
 
             Type callingType = null;
             {
                 StackFrame fr = new StackFrame(1, true);
 
                 _MethodBase m = fr.GetMethod();
-                _name = m.DeclaringType.FullName + "." + UserName;
                 callingType = m.DeclaringType;
             }
-            Tracer.Push_MethodCallRecord(_name);
+            Tracer.Push_MethodCallRecord(UserName);
 
             for (int i = Tracer.m_NamespacesToLog.Length - 1; i >= 0; i--) {
                 if (_name.StartsWith(Tracer.m_NamespacesToLog[i])) {

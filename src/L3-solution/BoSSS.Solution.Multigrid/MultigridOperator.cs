@@ -120,20 +120,21 @@ namespace BoSSS.Solution.Multigrid {
                     RawRestriction = null;
                     RawProlongation = null;
                 } else {
-                    var __PrlgOperator = this.FinerLevel.Mapping.FromOtherLevelMatrix(this.Mapping);
+//#if DEBUG
+//                    var __PrlgOperator_Check = this.FinerLevel.Mapping.FromOtherLevelMatrix(this.Mapping);
+//#endif
+                    var __PrlgOperator = this.Mapping.GetProlongationOperator(this.FinerLevel.Mapping);
                     Debug.Assert(__PrlgOperator.RowPartitioning.LocalLength == this.FinerLevel.Mapping.LocalLength);
                     Debug.Assert(__PrlgOperator.ColPartition.LocalLength == this.Mapping.LocalLength);
-                    //#if DEBUG
-                    //                var __RestOperator = this.Mapping.AggBasis.FromOtherLevelMatrix(this.FinerLevel.Mapping, this.Mapping);
-                    //                {
-                    //                    var __RestOperator2 = __PrlgOperator.Transpose();
-                    //                    __RestOperator2.Acc(-1.0, __RestOperator);
-                    //                    double dingsNorm = __RestOperator2.InfNorm();
-                    //                    Debug.Assert(dingsNorm <= 1.0e-10);
-                    //                }
-                    //#else 
-                    //                var __RestOperator = __PrlgOperator.Transpose();
-                    //#endif
+//#if DEBUG
+//                    var __Err = __PrlgOperator_Check.CloneAs();
+//                    __Err.Acc(-1.0, __PrlgOperator);
+//                    double ErrNorm = __Err.InfNorm();
+//                    Console.WriteLine("Error norm: " + ErrNorm);
+//                    double Ref = Math.Max(__PrlgOperator.InfNorm(), __PrlgOperator_Check.InfNorm());
+//                    //Debug.Assert(ErrNorm < Ref*1.0e-8);  
+//#endif
+
 
                     if (this.FinerLevel.RightChangeOfBasis_Inverse != null)
                         RawProlongation = BlockMsrMatrix.Multiply(this.FinerLevel.RightChangeOfBasis_Inverse, __PrlgOperator);

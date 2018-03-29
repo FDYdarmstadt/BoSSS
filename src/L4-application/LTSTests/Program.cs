@@ -149,14 +149,21 @@ namespace LTSTests {
                     dt = dt_input;
                     //if (TimestepNo < 3)
                     //    dt /= 3;
-                    if (EndTime - phystime < dt)
+                    if (EndTime - phystime < dt) {
                         dt = EndTime - phystime;
+                    }
                 }
-                if (TimestepNo % 100 == 0)
+
+                if (TimestepNo % 100 == 0) {
                     Console.Write("Timestep " + TimestepNo + " ...");
+                }
+
+                timeStepper.UpdateTimeInfo(new TimeInformation(TimestepNo, phystime, dt));
                 timeStepper.Perform(dt);
-                if (TimestepNo % 100 == 0)
+
+                if (TimestepNo % 100 == 0) {
                     Console.WriteLine("finished");
+                }
 
                 // Plot and print L2 Error Norm
                 if (EndTime - phystime - dt < 1E-10) {
