@@ -60,27 +60,6 @@ namespace NSE_SIMPLE.Multiphase {
 
             // Auxiliary fields
             c.FieldOptions.Add(
-                "VelocityX*",
-                new FieldOpts() { Degree = 3, SaveToDB = FieldOpts.SaveToDBOpt.FALSE });
-            c.FieldOptions.Add(
-                "VelocityY*",
-                new FieldOpts() { Degree = 3, SaveToDB = FieldOpts.SaveToDBOpt.FALSE });
-            c.FieldOptions.Add(
-                "VelocityX'",
-                new FieldOpts() { Degree = 3, SaveToDB = FieldOpts.SaveToDBOpt.FALSE });
-            c.FieldOptions.Add(
-                "VelocityY'",
-                new FieldOpts() { Degree = 3, SaveToDB = FieldOpts.SaveToDBOpt.FALSE });
-            c.FieldOptions.Add(
-                "VelocityXRes",
-                new FieldOpts() { Degree = 3, SaveToDB = FieldOpts.SaveToDBOpt.FALSE });
-            c.FieldOptions.Add(
-                "VelocityYRes",
-                new FieldOpts() { Degree = 3, SaveToDB = FieldOpts.SaveToDBOpt.FALSE });
-            c.FieldOptions.Add(
-                "Pressure'",
-                new FieldOpts() { Degree = 2, SaveToDB = FieldOpts.SaveToDBOpt.FALSE });
-            c.FieldOptions.Add(
                 "DivB4",
                 new FieldOpts() { Degree = 2, SaveToDB = FieldOpts.SaveToDBOpt.FALSE });
             c.FieldOptions.Add(

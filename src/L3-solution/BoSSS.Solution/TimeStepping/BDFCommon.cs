@@ -154,7 +154,11 @@ namespace BoSSS.Solution.Timestepping {
         /// Then the first step is done by implicit Euler, the second step by BDF2 and so forth
         /// </summary>
         /// <param name="BDForder"></param>
-        /// <returns>An Array of BDSchemes from implicit euler, entry[i] up to the desired order, entry[0]</returns>
+        /// <returns>An Array of BDSchemes from implicit euler, entry[i] up to the desired order, entry[0]
+        /// Hack:
+        /// 0 = Explicit Euler
+        /// -1 = Crank-Nicholson
+        /// </returns>
         public static BDFSchemeCoeffs[] GetChain(int BDForder) {
             BDFSchemeCoeffs[] SchemeChain;
             switch (BDForder) {

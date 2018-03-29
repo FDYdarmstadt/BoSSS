@@ -182,6 +182,9 @@ namespace CNS {
             // Resets simulation time after a restart
             TimeStepper.ResetTime(StartTime, TimestepNumber);
 
+            // Update time information (needed for LTS runs)
+            TimeStepper.UpdateTimeInfo(new TimeInformation(TimestepNumber, StartTime, -1));
+
             // Configure residual handling
             if (gridUpdateData == null) {
                 // Do not change these settings upon repartitioning
@@ -225,6 +228,9 @@ namespace CNS {
             using (var ht = new FuncTrace()) {
                 int printInterval = Control.PrintInterval;
                 if (DatabaseDriver.MyRank == 0 && TimestepNo % printInterval == 0) {
+#if DEBUG
+                    Console.WriteLine();
+#endif
                     Console.Write("Starting time step #" + TimestepNo + "...");
                 }
 
@@ -237,13 +243,12 @@ namespace CNS {
                     WorkingSet.UpdateShockCapturingVariables(this, SpeciesMap.SubGrid.VolumeMask);
                 }
 
+                // Create TimeInformation object in order to make information available for
+                // the time stepper
+                TimeStepper.UpdateTimeInfo(new TimeInformation(TimestepNo, phystime, dt));
+
                 Exception e = null;
                 try {
-                    // Hack for updating the time step number for local time stepping runs
-                    // Better: Use a global TimeStepInfo object defined in the interface class ITimeStepper
-                    if (TimeStepper is AdamsBashforthLTS ABLTS) {
-                        ABLTS.UpdateTimeStepNumber(TimestepNo);
-                    }
                     dt = TimeStepper.Perform(dt);
                 } catch (Exception ee) {
                     e = ee;
@@ -343,6 +348,7 @@ namespace CNS {
         /// </summary>
         public override void PostRestart(double time, TimestepNumber timestep) {
             this.StartTime = time;
+            this.TimestepNumber = timestep.MajorNumber;
 
             if (SpeciesMap is ImmersedSpeciesMap ibmMap) {
                 LsTrk = ibmMap.Tracker;
@@ -368,9 +374,12 @@ namespace CNS {
         /// </summary>
         /// <param name="NoOfClasses"></param>
         /// <param name="cellToPerformanceClassMap"></param>
-        protected override void GetCellPerformanceClasses(out int NoOfClasses, out int[] cellToPerformanceClassMap) {
+        /// <param name="TimeStepNo"></param>
+        /// <param name="physTime"></param>
+        protected override void GetCellPerformanceClasses(out int NoOfClasses, out int[] cellToPerformanceClassMap, int TimeStepNo, double physTime) {
             // Update clustering before cell redistribution when LTS is being used
             if (TimeStepper is AdamsBashforthLTS ABLTSTimeStepper) {
+                ABLTSTimeStepper.UpdateTimeInfo(new TimeInformation(TimeStepNo, physTime, -1));
                 bool reclustered = ABLTSTimeStepper.TryNewClustering(dt: -1);
                 ABLTSTimeStepper.SetReclusteredByGridRedist(reclustered);
             }

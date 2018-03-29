@@ -187,6 +187,41 @@ namespace ilPSP {
             }
         }
 
+
+        /// <summary>
+        /// Adds the constant <paramref name="a"/> to all entries.
+        /// </summary>
+        public void AccConstant(double a) {
+            if (m_LockedForever)
+                throw new ApplicationException("illegal call - object is locked.");
+            
+
+            // Standard versions
+            switch(this.Dimension) {
+                case 2: {
+                    int L0 = this.GetLength(0);
+                    int L1 = this.GetLength(1);
+
+                    for(int i0 = 0; i0 < L0; i0++)
+                        for(int i1 = 0; i1 < L1; i1++) {
+                            int ind_this = this.Index(i0, i1);
+                            
+                            this.m_Storage[ind_this] += a;
+                        }
+                    return;
+                }
+
+                default: {
+                    
+                    ApplyAll(delegate(int[] idx, ref double entry) {
+                        
+                        entry += a;
+                    });
+                    return;
+                }
+            }
+        }
+
         /// <summary>
         /// accumulates <paramref name="x"/>*<paramref name="alpha"/>
         /// to a sub-section of this array.
@@ -481,6 +516,10 @@ namespace ilPSP {
                     throw new ArgumentException("Wrong dimension of array A.");
                 if(B.Dimension != DB)
                     throw new ArgumentException("Wrong dimension of array B.");
+                //if(object.ReferenceEquals(T, A))
+                //    throw new ArgumentException("Result must be different from A.");
+                //if(object.ReferenceEquals(T, B))
+                //    throw new ArgumentException("Result must be different from B.");
 
               
                 for(int i = 0; i < RunACount; i++) {

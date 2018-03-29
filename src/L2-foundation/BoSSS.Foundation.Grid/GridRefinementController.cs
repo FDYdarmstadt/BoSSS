@@ -48,7 +48,7 @@ namespace BoSSS.Foundation.Grid {
         /// Output, clusters of cells (identified by local cell indices) which can be combined into coarser cells.
         /// </param>
         /// <param name="CutCells">
-        /// If not null, a mask of cells in which coarsening is forbidden (usually cut-calls);
+        /// If not null, a mask of cells in which coarsening is forbidden (usually cut-cells);
         /// </param>
         /// <returns>
         /// True if any refinement or coarsening of the current grid should be performed; otherwise false.
@@ -109,7 +109,7 @@ namespace BoSSS.Foundation.Grid {
                     int ActualLevel_j = CurrentGrid.Cells.GetCell(j).RefinementLevel;
                     int DesiredLevel_j = DesiredLevel[j];
 
-                    if (ActualLevel_j < DesiredLevel_j)
+                    if (ActualLevel_j < DesiredLevel_j) 
                         CellsToRefineList.Add(j);
                 }
             }
@@ -117,6 +117,7 @@ namespace BoSSS.Foundation.Grid {
             // If any cells which should refined are members of CutCells
             if (CellsToRefineList.Count == 0 && Coarsening.Count == 0)
                 NoRefinement = true;
+
 
             return (!NoRefinement);
         }
@@ -258,8 +259,8 @@ namespace BoSSS.Foundation.Grid {
                 return;
 
             foreach (var jNeigh in gdat.Cells.CellNeighbours[j]) {
-                var cl = gdat.Cells.GetCell(j);
-                if (cl.RefinementLevel < DesiredLevelNeigh) {
+                var cl = gdat.Cells.GetCell(jNeigh);
+                if (cl.RefinementLevel < DesiredLevelNeigh && DesiredLevel[jNeigh] < DesiredLevelNeigh) {
                     DesiredLevel[jNeigh] = DesiredLevelNeigh;
                     RefineNeighboursRecursive(gdat, DesiredLevel, jNeigh, DesiredLevelNeigh - 1);
                 }

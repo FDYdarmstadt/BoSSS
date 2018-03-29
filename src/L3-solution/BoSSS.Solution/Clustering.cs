@@ -151,7 +151,7 @@ namespace BoSSS.Solution.Utils {
             }
 #if DEBUG
             for (int i = 0; i < clusters.Count; i++) {
-                Console.WriteLine("CreateClustering: id=" + i + " -> elements=" + clusters[i].GlobalNoOfCells);
+                Console.WriteLine("CreateClustering:\t id=" + i + " ->\t\telements=" + clusters[i].GlobalNoOfCells);
             }
 #endif
             return new Clustering(clusters, subGrid);
@@ -249,7 +249,7 @@ namespace BoSSS.Solution.Utils {
                     SubGrid combinedSubGrid = new SubGrid(clustering.Clusters[i].VolumeMask.Union(clustering.Clusters[i + 1].VolumeMask));
                     newClusters.Add(combinedSubGrid);
 #if DEBUG
-                    Console.WriteLine("TuneClustering: Clustering leads to sub-grids which are too similar, i.e. they have the same number of local time steps. They are combined.");
+                    Console.WriteLine("TuneClustering: Clustering leads to clusters which are too similar. They are combined.");
 #endif
                     newSubSteps.Add(numOfSubSteps[i]);
                     i++;
@@ -260,7 +260,7 @@ namespace BoSSS.Solution.Utils {
             }
 #if DEBUG
             for (int i = 0; i < newClusters.Count; i++) {
-                Console.WriteLine("TuneClustering:\t id=" + i + " -> sub-steps=" + newSubSteps[i] + " and elements=" + newClusters[i].GlobalNoOfCells);
+                Console.WriteLine("TuneClustering:\t\t id=" + i + " -> sub-steps=" + newSubSteps[i] + "\telements=" + newClusters[i].GlobalNoOfCells);
             }
 #endif
             return new Clustering(newClusters, clustering.SubGrid, newSubSteps);
@@ -296,7 +296,17 @@ namespace BoSSS.Solution.Utils {
             }
 
             if (subSteps.Last() > this.MaxSubSteps && this.Restrict) {
+#if DEBUG
+                List<int> oldSubSteps = subSteps;
+                double[] oldClusterDts = clusterDts;
+#endif
                 (clusterDts, subSteps) = RestrictDtsAndSubSteps(clusterDts, subSteps);
+#if DEBUG
+                Console.WriteLine("### RESTRICTION OF SUB-STEPS ### (dt min)");
+                for (int i = 0; i < subSteps.Count; i++) {
+                    Console.WriteLine("RestrictDtsAndSubSteps:\t id={0} -> sub-steps={1}\tdt={2:0.#######E-00} -> substeps={3}\tdt={4:0.#######E-00}", i, oldSubSteps[i], oldClusterDts[i], subSteps[i], clusterDts[i]);
+                }
+#endif
             }
 
             return (clusterDts, subSteps);
@@ -336,7 +346,17 @@ namespace BoSSS.Solution.Utils {
             List<int> subSteps = CalculateSubSteps(rcvDtMin, eps);
 
             if (subSteps.Last() > this.MaxSubSteps && this.Restrict) {
+#if DEBUG
+                List<int> oldSubSteps = subSteps;
+                double[] oldRcvDtMin = rcvDtMin;
+#endif
                 (rcvDtMin, subSteps) = RestrictDtsAndSubSteps(rcvDtMin, subSteps);
+#if DEBUG
+                Console.WriteLine("### RESTRICTION OF SUB-STEPS ### (dt min)");
+                for (int i = 0; i < subSteps.Count; i++) {
+                    Console.WriteLine("RestrictDtsAndSubSteps:\t id={0} -> sub-steps={1}\tdt={2:0.#######E-00} -> substeps={3}\tdt={4:0.#######E-00}", i, oldSubSteps[i], oldRcvDtMin[i], subSteps[i], rcvDtMin[i]);
+                }
+#endif
             }
 
             return (rcvDtMin, subSteps);
@@ -374,12 +394,7 @@ namespace BoSSS.Solution.Utils {
             for (int i = 0; i < restrictedClusterDts.Length; i++) {
                 newSubSteps.Add((int)Math.Ceiling(restrictedClusterDts[0] / restrictedClusterDts[i]));
             }
-#if DEBUG
-            Console.WriteLine("### RESTRICTION OF SUB-STEPS ###");
-            for (int i = 0; i < restrictedClusterDts.Length; i++) {
-                Console.WriteLine("RestrictDtsAndSubSteps:\t id=" + i + " -> sub-steps=" + newSubSteps[i]);
-            }
-#endif
+
             return (restrictedClusterDts, newSubSteps);
         }
 
