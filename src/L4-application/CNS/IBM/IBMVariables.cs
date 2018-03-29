@@ -131,6 +131,28 @@ namespace CNS.IBM {
                 }
             });
 
+        public static readonly DerivedVariable FluidCellsWithoutSourceCells = new DerivedVariable(
+            "fluidCellsWithoutSourceCells",
+            VariableTypes.Other,
+            delegate (DGField fluidCellWithoutSourceCellField, CellMask cellMask, IProgram<CNSControl> program) {
+                fluidCellWithoutSourceCellField.Clear();
+
+                IBMControl control = program.Control as IBMControl;
+                if (control == null) {
+                    throw new Exception(
+                        "cutCellsWithoutSourceCells can only be computed in immersed boundary runs");
+                }
+
+                ImmersedSpeciesMap ibmSpeciesMap = program.SpeciesMap as ImmersedSpeciesMap;
+                CellMask cutCellMask = cellMask.Except(ibmSpeciesMap.Agglomerator.AggInfo.SourceCells);
+
+                foreach (Chunk chunk in cutCellMask) {
+                    foreach (int cell in chunk.Elements) {
+                        fluidCellWithoutSourceCellField.SetMeanValue(cell, 1);
+                    }
+                }
+    });
+
         public static readonly DerivedVariable SourceCells = new DerivedVariable(
             "sourceCells",
             VariableTypes.Other,
