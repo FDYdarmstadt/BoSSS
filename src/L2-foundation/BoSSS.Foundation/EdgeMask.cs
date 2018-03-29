@@ -23,6 +23,7 @@ using System.IO;
 using ilPSP;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.RefElements;
+using System.Diagnostics;
 
 namespace BoSSS.Foundation.Grid {
 
@@ -44,6 +45,46 @@ namespace BoSSS.Foundation.Grid {
             if (mask.Length != grddat.iLogicalEdges.Count)
                 throw new ArgumentException();
         }
+
+        static BitArray MaskFromSelector(IGridData grddat, Func<double[], bool> GeomSelector) {
+            int NoOfEdges = grddat.iLogicalEdges.Count;
+            BitArray mask = new BitArray(NoOfEdges);
+            int D = grddat.SpatialDimension;
+
+            for(int i = 0; i < NoOfEdges; i++) {
+                int iEref = grddat.iGeomEdges.GetRefElementIndex(i);
+                var Eref = grddat.iGeomEdges.EdgeRefElements[iEref];
+                NodeSet Center = Eref.Center;
+
+                MultidimensionalArray GlobalCoord = grddat.GlobalNodes.GetValue_EdgeSV(Center, i, 1);
+                double[] X = new double[D];
+                Debug.Assert(GlobalCoord.Dimension == 3);
+                Debug.Assert(GlobalCoord.GetLength(0) == 1);
+                Debug.Assert(GlobalCoord.GetLength(0) == 1);
+                Debug.Assert(GlobalCoord.GetLength(0) == D);
+
+                for(int d = 0; d < D; d++) {
+                    X[d] = GlobalCoord[0, 0, d];
+                }
+
+                mask[i] = GeomSelector(X);
+            }
+
+            return mask;
+        }
+
+
+        /// <summary>
+        /// ctor
+        /// </summary>
+        /// <param name="grddat"></param>
+        /// <param name="GeomSelector">
+        /// Retuns true, if the edge with given center coordinate should be in the mask, otherwise false.
+        /// </param>
+        public EdgeMask(IGridData grddat, Func<double[], bool> GeomSelector) :
+            base(grddat, MaskFromSelector(grddat, GeomSelector)) {
+        }
+
 
         /// <summary>
         /// ctor

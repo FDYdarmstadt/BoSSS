@@ -1041,7 +1041,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// - non-cut fluid cells are 1
         /// - cut cells are 2
         /// </summary>
-        protected override void GetCellPerformanceClasses(out int NoOfClasses, out int[] CellPerfomanceClasses) {
+        protected override void GetCellPerformanceClasses(out int NoOfClasses, out int[] CellPerfomanceClasses, int TimeStepNo, double physTime) {
             NoOfClasses = 3;
             int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
             CellPerfomanceClasses = new int[J];

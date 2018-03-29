@@ -400,19 +400,19 @@ namespace BoSSS.Solution.NSECommon {
             
         }
 
-        public override IList<string> ArgumentOrdering
-        {
-            get
-            {
-                return new string[] { VariableNames.Velocity_d(m_iComp) };
-            }
-        }
+        //public override IList<string> ArgumentOrdering
+        //{
+        //    get
+        //    {
+        //        return new string[] { VariableNames.Velocity_d(m_iComp) };
+        //    }
+        //}
 
         public override double VolumeForm(ref Foundation.CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             double acc = 0;
             for (int d = 0; d < cpv.D; d++)
-                acc -= GradU[0, d] * GradV[d] * Viscosity(cpv.Parameters) * base.m_alpha;
-                //acc -= GradU[m_iComp, d] * GradV[d] * Viscosity(cpv.Parameters) * base.m_alpha;
+                //acc -= GradU[0, d] * GradV[d] * Viscosity(cpv.Parameters) * base.m_alpha;
+                acc -= GradU[m_iComp, d] * GradV[d] * Viscosity(cpv.Parameters) * base.m_alpha;
             return -acc;
         }
 
@@ -430,16 +430,16 @@ namespace BoSSS.Solution.NSECommon {
                 case ViscosityImplementation.H: //
                 {
                         for (int d = 0; d < inp.D; d++) {
-                            Acc += 0.5 * (muA * _Grad_uA[0, d] + muB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normale[d];  // consistency term
-                            Acc += 0.5 * (muA * _Grad_vA[d] + muB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normale[d];  // symmetry term
-                            //Acc += 0.5 * (muA * _Grad_uA[m_iComp, d] + muB * _Grad_uB[m_iComp, d]) * (_vA - _vB) * inp.Normale[d];  // consistency term
-                            //Acc += 0.5 * (muA * _Grad_vA[d] + muB * _Grad_vB[d]) * (_uA[m_iComp] - _uB[m_iComp]) * inp.Normale[d];  // symmetry term
+                            //Acc += 0.5 * (muA * _Grad_uA[0, d] + muB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normale[d];  // consistency term
+                            //Acc += 0.5 * (muA * _Grad_vA[d] + muB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normale[d];  // symmetry term
+                            Acc += 0.5 * (muA * _Grad_uA[m_iComp, d] + muB * _Grad_uB[m_iComp, d]) * (_vA - _vB) * inp.Normale[d];  // consistency term
+                            Acc += 0.5 * (muA * _Grad_vA[d] + muB * _Grad_vB[d]) * (_uA[m_iComp] - _uB[m_iComp]) * inp.Normale[d];  // symmetry term
                         }
                         Acc *= base.m_alpha;
 
                         double muMax = (Math.Abs(muA) > Math.Abs(muB)) ? muA : muB;
-                        Acc -= (_uA[0] - _uB[0]) * (_vA - _vB) * pnlty * muMax; // penalty term
-                        //Acc -= (_uA[m_iComp] - _uB[m_iComp]) * (_vA - _vB) * pnlty * muMax; // penalty term
+                        //Acc -= (_uA[0] - _uB[0]) * (_vA - _vB) * pnlty * muMax; // penalty term
+                        Acc -= (_uA[m_iComp] - _uB[m_iComp]) * (_vA - _vB) * pnlty * muMax; // penalty term
 
                         return -Acc;
             
@@ -448,16 +448,16 @@ namespace BoSSS.Solution.NSECommon {
                 case ViscosityImplementation.SWIP: //
                 {
                         for (int d = 0; d < inp.D; d++) {
-                            Acc += (muB * muA * _Grad_uA[0, d] + muA * muB * _Grad_uB[0, d]) / (muA + muB) * (_vA - _vB) * inp.Normale[d];  // consistency term
-                            Acc += (muB * muA * _Grad_vA[d] + muA * muB * _Grad_vB[d]) / (muA + muB) * (_uA[0] - _uB[0]) * inp.Normale[d];  // symmetry term
-                            //Acc += (muB * muA * _Grad_uA[m_iComp, d] + muA * muB * _Grad_uB[m_iComp, d]) / (muA + muB) * (_vA - _vB) * inp.Normale[d];  // consistency term
-                            //Acc += (muB * muA * _Grad_vA[d] + muA * muB * _Grad_vB[d]) / (muA + muB) * (_uA[m_iComp] - _uB[m_iComp]) * inp.Normale[d];  // symmetry term
+                            //Acc += (muB * muA * _Grad_uA[0, d] + muA * muB * _Grad_uB[0, d]) / (muA + muB) * (_vA - _vB) * inp.Normale[d];  // consistency term
+                            //Acc += (muB * muA * _Grad_vA[d] + muA * muB * _Grad_vB[d]) / (muA + muB) * (_uA[0] - _uB[0]) * inp.Normale[d];  // symmetry term
+                            Acc += (muB * muA * _Grad_uA[m_iComp, d] + muA * muB * _Grad_uB[m_iComp, d]) / (muA + muB) * (_vA - _vB) * inp.Normale[d];  // consistency term
+                            Acc += (muB * muA * _Grad_vA[d] + muA * muB * _Grad_vB[d]) / (muA + muB) * (_uA[m_iComp] - _uB[m_iComp]) * inp.Normale[d];  // symmetry term
                         }
                         Acc *= base.m_alpha;
-                        Acc -= (_uA[0] - _uB[0]) * (_vA - _vB) * pnlty * (2 * muA * muB) / (muA + muB); // penalty term
-                        //Acc -= (_uA[m_iComp] - _uB[m_iComp]) * (_vA - _vB) * pnlty * (2 * muA * muB) / (muA + muB); // penalty term
+                        //Acc -= (_uA[0] - _uB[0]) * (_vA - _vB) * pnlty * (2 * muA * muB) / (muA + muB); // penalty term
+                        Acc -= (_uA[m_iComp] - _uB[m_iComp]) * (_vA - _vB) * pnlty * (2 * muA * muB) / (muA + muB); // penalty term
 
-                    return -Acc;
+                        return -Acc;
                 }
                 default:
                 throw new NotImplementedException();
@@ -501,15 +501,15 @@ namespace BoSSS.Solution.NSECommon {
                             case ViscosityImplementation.SWIP: {
                                     for (int d = 0; d < inp.D; d++) {
                                         double nd = inp.Normale[d];
-                                        Acc += (muA * _Grad_uA[0, d]) * (_vA) * nd;
-                                        Acc += (muA * _Grad_vA[d]) * (_uA[0] - g_D) * nd;
-                                        //Acc += (muA * _Grad_uA[m_iComp, d]) * (_vA) * nd;
-                                        //Acc += (muA * _Grad_vA[d]) * (_uA[m_iComp] - g_D) * nd;
+                                        //Acc += (muA * _Grad_uA[0, d]) * (_vA) * nd;
+                                        //Acc += (muA * _Grad_vA[d]) * (_uA[0] - g_D) * nd;
+                                        Acc += (muA * _Grad_uA[m_iComp, d]) * (_vA) * nd;
+                                        Acc += (muA * _Grad_vA[d]) * (_uA[m_iComp] - g_D) * nd;
                                     }
                                     Acc *= base.m_alpha;
 
-                                    Acc -= muA * (_uA[0] - g_D) * (_vA - 0) * pnlty;
-                                    //Acc -= muA * (_uA[m_iComp] - g_D) * (_vA - 0) * pnlty;
+                                    //Acc -= muA * (_uA[0] - g_D) * (_vA - 0) * pnlty;
+                                    Acc -= muA * (_uA[m_iComp] - g_D) * (_vA - 0) * pnlty;
                                     break;
                                 }
                             default:
@@ -518,62 +518,53 @@ namespace BoSSS.Solution.NSECommon {
                         }
                         break;
                     }
-                case IncompressibleBcType.FreeSlip: {
-                        switch (base.m_implMode) {
-                            case ViscosityImplementation.H:
-                            case ViscosityImplementation.SWIP: { 
-                                    // consistency
-                                    for (int d = 0; d < inp.D; d++) {
-                                        Acc += (inp.Normale[m_iComp] * muA * _Grad_uA[0, d] * inp.Normale[d]) * (_vA * inp.Normale[m_iComp]) * base.m_alpha;
-                                    }
-                                    
-                                    // penalty
-                                    Acc -= muA * (_uA[0] - 0) * inp.Normale[m_iComp] * inp.Normale[m_iComp] * (_vA - 0) * pnlty;
-
-                                    break;
-                            }
-                            default:
-                                throw new NotImplementedException();
-                        }
-                        break;
-                    }
+                case IncompressibleBcType.FreeSlip:
                 case IncompressibleBcType.NavierSlip_Linear: {
-
-                        double[,] P = new double[inp.D, inp.D];
-                        for (int d1 = 0; d1 < inp.D; d1++) {
-                            for (int d2 = 0; d2 < inp.D; d2++) {
-                                double nn = inp.Normale[d1] * inp.Normale[d2];
-                                if (d1 == d2) {
-                                    P[d1, d2] = 1 - nn;
-                                } else {
-                                    P[d1, d2] = -nn;
-                                }
-                            }
-                        }
-
-                        double g_D = base.g_Diri(inp.X, inp.time, inp.EdgeTag, m_iComp);
                         switch (base.m_implMode) {
                             case ViscosityImplementation.H:
                             case ViscosityImplementation.SWIP: {
-                                    for (int d = 0; d < inp.D; d++) {
-                                        // consistency
-                                        Acc += muA * (inp.Normale[m_iComp] * _Grad_uA[0, d] * inp.Normale[d]) * (_vA * inp.Normale[m_iComp]);
-                                        // symmetry
-                                        Acc += muA * (inp.Normale[m_iComp] * _Grad_vA[d] * inp.Normale[d]) * (_uA[0] - g_D) * inp.Normale[m_iComp];
+
+                                    int D = inp.D;
+                                    double g_D;
+
+                                    for (int dN = 0; dN < D; dN++) {
+                                        g_D = base.g_Diri(inp.X, inp.time, inp.EdgeTag, dN);
+
+                                        for (int dD = 0; dD < D; dD++) {
+                                            // consistency
+                                            Acc += muA * (inp.Normale[dN] * _Grad_uA[dN, dD] * inp.Normale[dD]) * (_vA * inp.Normale[m_iComp]) * base.m_alpha; 
+                                            // symmetry
+                                            Acc += muA * (inp.Normale[m_iComp] * _Grad_vA[dD] * inp.Normale[dD]) * (_uA[dN] - g_D) * inp.Normale[dN] * base.m_alpha;
+                                        }
+
+                                        // penalty
+                                        Acc -= muA * ((_uA[dN] - g_D) * inp.Normale[dN]) * ((_vA - 0) * inp.Normale[m_iComp]) * pnlty;
                                     }
-                                    Acc *= base.m_alpha;
-                                    // penalty
-                                    Acc -= muA * ((_uA[0] - g_D) * inp.Normale[m_iComp]) * ((_vA - 0) * inp.Normale[m_iComp]) * pnlty;
 
-                                    // tangential dissipation force term
-                                    Acc -= (m_beta * P[0, m_iComp] * (_uA[0] - g_D)) * (P[0, m_iComp] * _vA) * base.m_alpha;
+                                    if (edgType == IncompressibleBcType.NavierSlip_Linear && m_beta > 0.0) {
 
-                                    //for (int d = 0; d < inp.D; d++) {
-                                    //    // no-penetration term
-                                    //    Acc += (inp.Normale[m_iComp] * muA * _Grad_uA[0, d] * inp.Normale[d]) * (_vA * inp.Normale[m_iComp]) * base.m_alpha;
-                                    //    // tangential dissipation force term
-                                    //    Acc -= (m_beta * P[0, d] * (_uA[0] - g_D)) * (P[0, d] * _vA) * base.m_alpha;
-                                    //}
+                                        double[,] P = new double[D, D];
+                                        for (int d1 = 0; d1 < D; d1++) {
+                                            for (int d2 = 0; d2 < D; d2++) {
+                                                double nn = inp.Normale[d1] * inp.Normale[d2];
+                                                if (d1 == d2) {
+                                                    P[d1, d2] = 1 - nn;
+                                                } else {
+                                                    P[d1, d2] = -nn;
+                                                }
+                                            }
+                                        }
+
+                                        // tangential dissipation force term
+                                        for (int d1 = 0; d1 < D; d1++) {
+                                            for (int d2 = 0; d2 < D; d2++) {
+                                                g_D = base.g_Diri(inp.X, inp.time, inp.EdgeTag, d2);
+                                                Acc -= (m_beta * P[d1, d2] * (_uA[d2] - g_D)) * (P[d1, m_iComp] * _vA) * base.m_alpha;
+                                            }
+                                        }
+
+                                    }
+
                                     break;
                                 }
                             default:
@@ -608,8 +599,8 @@ namespace BoSSS.Solution.NSECommon {
                             case ViscosityImplementation.H:
                             case ViscosityImplementation.SWIP: {
                                     for (int d = 0; d < inp.D; d++) {
-                                        Acc += (muA * _Grad_uA[0, d]) * (_vA) * inp.Normale[d];
-                                        //Acc += (muA * _Grad_uA[m_iComp, d]) * (_vA) * inp.Normale[d];
+                                        //Acc += (muA * _Grad_uA[0, d]) * (_vA) * inp.Normale[d];
+                                        Acc += (muA * _Grad_uA[m_iComp, d]) * (_vA) * inp.Normale[d];
                                     }
                                     Acc *= base.m_alpha;
                                     break;
@@ -626,6 +617,8 @@ namespace BoSSS.Solution.NSECommon {
             return -Acc;
         }
     }
+
+
 
     /// <summary>
     /// Solver mode for Swip2 and Swip3 terms.
@@ -788,61 +781,35 @@ namespace BoSSS.Solution.NSECommon {
                         }
                         break;
                     }
-                case IncompressibleBcType.FreeSlip: {
-                        switch (m_implMode) {
-                            case ViscosityImplementation.H:
-                            case ViscosityImplementation.SWIP: {
-                                    for (int d1 = 0; d1 < inp.D; d1++) {
-                                        for (int d2 = 0; d2 < inp.D; d2++) {
-                                            // consistency
-                                            Acc += (muA * _Grad_uA[d2, d1]) * (_vA) * inp.Normale[d1] * inp.Normale[d2] * inp.Normale[m_iComp];
-                                        }
-                                    }
-                                    Acc *= base.m_alpha;
-
-                                    // penalty
-                                    for (int d = 0; d < inp.D; d++) {
-                                        Acc -= muA * (_uA[d] - 0) * inp.Normale[d] * (_vA - 0) * pnlty * inp.Normale[m_iComp];
-                                    }
-                                    break;
-                                }
-                            default:
-                                throw new NotImplementedException();
-                        }
-                        break;
-                    }
+                case IncompressibleBcType.FreeSlip:
                 case IncompressibleBcType.NavierSlip_Linear: {
-                        double g_D = this.g_Diri(inp.X, inp.time, inp.EdgeTag, base.m_iComp);
                         switch (m_implMode) {
                             case ViscosityImplementation.H:
                             case ViscosityImplementation.SWIP: {
-                                    for (int i = 0; i < inp.D; i++) {
-                                        // consistency
-                                        Acc += muA * (inp.Normale[i] * _Grad_uA[i, m_iComp] * inp.Normale[m_iComp]) * (_vA) * inp.Normale[m_iComp];
-                                        // symmetry
-                                        switch (ViscSolverMode) {
-                                            case ViscositySolverMode.FullyCoupled:
-                                                Acc += muA * (inp.Normale[i] * _Grad_vA[i] * inp.Normale[m_iComp]) * (_uA[i] - g_D) * inp.Normale[m_iComp];
-                                                break;
-                                            case ViscositySolverMode.Segregated:
-                                                if (i == m_iComp)
-                                                    Acc += muA * (inp.Normale[i] * _Grad_vA[i] * inp.Normale[m_iComp]) * (_uA[i] - g_D) * inp.Normale[m_iComp];
-                                                break;
-                                            default:
-                                                throw new NotImplementedException();
+
+                                    int D = inp.D;
+                                    double g_D;
+
+                                    for (int dN = 0; dN < D; dN++) {
+                                        for (int dD = 0; dD < D; dD++) {
+                                            // consistency
+                                            Acc += muA * (inp.Normale[dN] * _Grad_uA[dD, dN] * inp.Normale[dD]) * (_vA * inp.Normale[m_iComp]) * base.m_alpha;
+                                            // symmetry
+                                            switch (ViscSolverMode) {
+                                                case ViscositySolverMode.FullyCoupled:
+                                                    g_D = this.g_Diri(inp.X, inp.time, inp.EdgeTag, dD);
+                                                    Acc += muA * (inp.Normale[dN] * _Grad_vA[dN] * inp.Normale[m_iComp]) * (_uA[dD] - g_D) * inp.Normale[dD] * base.m_alpha;
+                                                    break;
+                                                case ViscositySolverMode.Segregated:
+                                                default:
+                                                    throw new NotImplementedException();
+                                            }
                                         }
+                                        g_D = this.g_Diri(inp.X, inp.time, inp.EdgeTag, dN);
+                                        // penalty
+                                        Acc -= muA * ((_uA[dN] - g_D) * inp.Normale[dN]) * ((_vA - 0) * inp.Normale[m_iComp]) * pnlty;
                                     }
-                                    Acc *= base.m_alpha;
 
-                                    // penalty
-                                    Acc -= muA * ((_uA[m_iComp] - 0) * inp.Normale[m_iComp]) * ((_vA - 0) * inp.Normale[m_iComp]) * pnlty;
-
-                                    //for (int d1 = 0; d1 < inp.D; d1++) {
-                                    //    for (int d2 = 0; d2 < inp.D; d2++) {
-                                    //        // no-penetration term
-                                    //        Acc += (inp.Normale[d2] * muA * _Grad_uA[d2, d1] * inp.Normale[d1]) * (_vA * inp.Normale[m_iComp]) * base.m_alpha;
-                                    //    }
-                                    //}
                                     break;
                                 }
                             default:

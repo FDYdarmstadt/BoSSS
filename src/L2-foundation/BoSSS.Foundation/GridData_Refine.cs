@@ -44,11 +44,6 @@ namespace BoSSS.Foundation.Grid.Classic {
                 GridCommons oldGrid = this.m_Grid;
                 GridCommons newGrid = new GridCommons(oldGrid.RefElements, oldGrid.EdgeRefElements);
 
-                // Dirty hack for edge tags
-                newGrid.EdgeTagNames.Clear();
-                for (int i = 0; i < oldGrid.EdgeTagNames.Count; i++) {
-                    newGrid.EdgeTagNames.Add(oldGrid.EdgeTagNames.ElementAt(i));
-                }
 
                 Old2New = new GridCorrelation();
                                 
@@ -580,7 +575,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 for(int i = 0; i < cl.CellFaceTags.Length; i++) {
                                     long ngid = cl.CellFaceTags[i].NeighCell_GlobalID;
                                     if (ngid >= 0)
-                                    Debug.Assert(markers[ngid] == true);
+                                        Debug.Assert(markers[ngid] == true);
                                 }
                             }
                         }

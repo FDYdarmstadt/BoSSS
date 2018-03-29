@@ -117,6 +117,13 @@ namespace BoSSS.Solution.Utils {
         /// <summary>
         /// Scalar function conversion.
         /// </summary>
+        public static Func<double[], double> Convert_x2X(this Func<double, double> f) {
+            return (double[] X) => f(X[0]);
+        }
+
+        /// <summary>
+        /// Scalar function conversion.
+        /// </summary>
         public static Func<double[],double> Convert_xy2X(this _2D f) {
             return (double[] X) => f(X[0], X[1]);
         }
