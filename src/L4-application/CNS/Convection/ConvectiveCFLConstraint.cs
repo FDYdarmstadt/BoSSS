@@ -96,13 +96,20 @@ namespace CNS.Convection {
                         MultidimensionalArray hminCut = ibmMap.CellAgglomeration.CellLengthScales[species];
 
                         CellMask cutCellsThatAreNotSourceCells = ibmMap.Tracker.Regions.GetCutCellMask().Except(ibmMap.Agglomerator.AggInfo.SourceCells);
-                        foreach (int cell in cutCellsThatAreNotSourceCells.ItemEnum) {
-                            hmin[cell] = hminCut[cell];
-                        }
+                        //foreach (int cell in cutCellsThatAreNotSourceCells.ItemEnum) {
+                        //    hmin[cell] = hminCut[cell];
+                        //}
 
                         for (int i = 0; i < Length; i++) {
                             int cell = i0 + i;
-                            double hminLocal = hmin[cell];
+
+                            //double hminLocal = hmin[cell];
+                            double hminLocal = double.NaN;
+                            if (cutCellsThatAreNotSourceCells.ItemEnum.Contains(cell)) {
+                                hminLocal = hminCut[cell];
+                            } else {
+                                hminLocal = hmin[cell];
+                            }
                             Debug.Assert(double.IsNaN(hminLocal) == false, "Hmin is NaN");
                             Debug.Assert(double.IsInfinity(hminLocal) == false, "Hmin is Inf");
 
@@ -161,13 +168,19 @@ namespace CNS.Convection {
                         MultidimensionalArray hminCut = ibmMap.CellAgglomeration.CellLengthScales[species];
 
                         CellMask cutCellsThatAreNotSourceCells = ibmMap.Tracker.Regions.GetCutCellMask().Except(ibmMap.Agglomerator.AggInfo.SourceCells);
-                        foreach (int cell in cutCellsThatAreNotSourceCells.ItemEnum) {
-                            hmin[cell] = hminCut[cell];
-                        }
+                        //foreach (int cell in cutCellsThatAreNotSourceCells.ItemEnum) {
+                        //    hmin[cell] = hminCut[cell];
+                        //}
 
                         for (int i = 0; i < Length; i++) {
                             int cell = i0 + i;
-                            double hminLocal = hmin[cell];
+                            double hminLocal = double.NaN;
+                            if (cutCellsThatAreNotSourceCells.ItemEnum.Contains(cell)) {
+                                hminLocal = hminCut[cell];
+                            } else {
+                                hminLocal = hmin[cell];
+                            }
+                            //double hminLocal = hmin[cell];
                             Debug.Assert(double.IsNaN(hminLocal) == false, "Hmin is NaN");
                             Debug.Assert(double.IsInfinity(hminLocal) == false, "Hmin is Inf");
 
