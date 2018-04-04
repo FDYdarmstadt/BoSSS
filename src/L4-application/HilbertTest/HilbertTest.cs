@@ -41,7 +41,9 @@ namespace HilbertTest {
     public class HilbertTest : TestProgram<CNSControl> {
 
         public static void Main(string[] args) {
-            //Debugger.Launch();
+#if Debug
+            System.Threading.Thread.Sleep(5000);
+#endif
             SetUp();
             Test();
             Cleanup();
@@ -69,18 +71,20 @@ namespace HilbertTest {
             Assert.IsTrue(gridunevenresult, "Distribution pattern along HilbertCurve is corrupted");
 
             //Testing Partition with Constraints (LTS), even distribution among processes
+            //The testresult is also valid for other Constrainttypes, e.g. AV, but harder to test
             bool gridevendynamic = TestingGridDistributionDynamic();
             Assert.IsTrue(gridevendynamic, "Dynamic Distribution along HilbertCurve is corrupted");
 
-            //Testing Partition with Constraints (AV), even distribution among processes
+            //Comparing simulations with&without Repartitioning while LTS-Reclustering on
+            bool RepNoEffectonResult=TestingReclusteringIndependency();
+            Assert.IsTrue(RepNoEffectonResult, "Repartitioning effects result!");
         }
 
         static private bool TestingGridDistributionEven() {
             //string dbPath = @"D:\Weber\BoSSS\test_db";
             string dbPath = @"..\..\Tests.zip";
             //TestCase: 4x4 grid, AV=false, dgdegree=0, Timestepping=RK1
-            //CNSControl control = ShockTube_PartTest(dbPath,"4c87b1e0-b16a-4c76-ba09-47eebba66132", "fbb0b791-00b3-4da4-9768-e1fbde3c9183");
-            CNSControl control = ShockTube_PartTest(dbPath, "c944043e-6bb6-4adf-86e7-2332ae09b2d0", "8651986c-15a5-46eb-b3ca-28acfb7537d1", 4, 4);
+            CNSControl control = ShockTube_PartTest(dbPath, "7ac582f5-8913-439b-9f2b-9fbf96141d76", "b7793aee-44b6-44c7-91e7-5debd7f44c3b", 4, 4);
 
             var solver = new HilbertTest();
             solver.Init(control);
@@ -114,7 +118,7 @@ namespace HilbertTest {
         static private bool TestingGridDistributionUneven() {
             string dbPath = @"..\..\Tests.zip";
             //TestCase: 3x3 grid, AV=false, dgdegree=0, Timestepping=RK1
-            CNSControl control = ShockTube_PartTest(dbPath, "8fa48051-a1aa-4864-97bc-620212ac166f", "71e1c7c4-c3c8-404e-ac75-234fdba422c0", 3, 3);
+            CNSControl control = ShockTube_PartTest(dbPath, "ccb23f25-04e9-467a-b667-bb3d642b6447", "9b24a2e6-2ce5-4de2-bd08-37a930f0df06", 3, 3);
             var solver = new HilbertTest();
             solver.Init(control);
             solver.RunSolverMode();
@@ -146,9 +150,9 @@ namespace HilbertTest {
         }
 
         static private bool TestingGridDistributionDynamic() {
-            string dbPath = @"..\..\Tests.zip";
+            //string dbPath = @"D:\Weber\BoSSS\test_db";
             //TestCase: 5x4 grid, AV=false, dgdegree=0, Timestepping=LTS
-            CNSControl control = ShockTube_PartTest_Dynamic(dbPath, 5, 4);
+            CNSControl control = ShockTube_PartTest_Dynamic(null, 5, 4,1,2,true,1);
             var solver = new HilbertTest();
             solver.Init(control);
             solver.RunSolverMode();
@@ -156,8 +160,11 @@ namespace HilbertTest {
 
             List<DGField> listOfDGFields = (List<DGField>)solver.IOFields;
             DGField field = listOfDGFields[12];
+            int D = field.GridDat.SpatialDimension;
 
-            var BB = new BoSSS.Platform.Utils.Geom.BoundingBox(field.GridDat.SpatialDimension);
+            //intention:Checking if BoundaryBox of LTSCluster==1 is as expected
+            //Therefore Computing BoundaryBox of LTSCluster==1
+            var BB = new BoSSS.Platform.Utils.Geom.BoundingBox(D);
             for (int i = 0; i < field.GridDat.iLogicalCells.NoOfLocalUpdatedCells; i++) {
 
                 if (field.GetMeanValue(i) == 1) {
@@ -167,20 +174,91 @@ namespace HilbertTest {
             }
             BB.Max = BB.Max.MPIMax();
             BB.Min = BB.Min.MPIMin();
-            for (int i = 0; i < field.GridDat.SpatialDimension; i++) {
+            for (int i = 0; i < D; i++) {
                 BB.Max[i] = Math.Round(BB.Max[i] * 100) / 100;
                 BB.Min[i] = Math.Round(BB.Min[i] * 100) / 100;
             }
             double[] MaxRef = { 0.6, 1 };
             double[] MinRef = { 0, 0 };
-            int[] checkLTS = {0,0,0,1,1,1,1,1,2,2,3,3,0,0,2,2,2,3,3,3};
+            
             if (ItemsAreEqual(BB.Max, MaxRef) && ItemsAreEqual(BB.Min, MinRef)) {
-                result = ItemsAreEqual(solver.Grid.GetHilbertSortedRanks(),checkLTS);
-                Console.WriteLine("Test Grid Distribution Dynamic LTS");
-                Console.WriteLine("Process{0}: {1}", solver.MPIRank, result);
+                //Comparing checkLTS to Distribution along HilbertCurve of Testcase
+                int[] checkLTS = { 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 3, 3, 0, 0, 2, 2, 2, 3, 3, 3 };
+                //result = ItemsAreEqual(solver.Grid.GetHilbertSortedRanks(),checkLTS);
+                int J0 = solver.GridData.CellPartitioning.i0;
+                int JE = solver.GridData.CellPartitioning.iE;
+
+                ulong[] discreteCenter = new ulong[D];
+                ulong[] local_HilbertIndex = new ulong[JE - J0];
+                int[] local_RankIndex = new int[JE - J0];
+
+                for (int j = J0; j < JE; j++) {
+                    Cell Cj = solver.Grid.Cells[j - J0];
+                    int NoOfNodes = Cj.TransformationParams.NoOfRows;
+                    for (int d = 0; d < D; d++) {
+                        double center = 0;
+                        for (int k = 0; k < NoOfNodes; k++) {
+                            center += Cj.TransformationParams[k, d];
+                        }
+
+                        center = center / ((double)NoOfNodes);
+                        double centerTrf = center * Math.Pow(2, 32);
+                        
+                        centerTrf = Math.Round(centerTrf);
+                        if (centerTrf < 0)
+                            centerTrf = 0;
+                        if (centerTrf > ulong.MaxValue)
+                            centerTrf = ulong.MaxValue;
+                        discreteCenter[d] = (ulong)centerTrf;
+            
+                    }
+                    ulong iH = ilPSP.HilbertCurve.HilbertCurve.hilbert_c2i(32, discreteCenter);
+                    local_HilbertIndex[j - J0] = iH;
+                    local_RankIndex[j - J0] = solver.MPIRank;
+                }
+                int[] CellsPerRank = { 5, 5, 5, 5 };
+                ulong[] HilbertIndex = local_HilbertIndex.MPIAllGatherv(CellsPerRank);
+                int[] RankIndex = local_RankIndex.MPIAllGatherv(CellsPerRank);
+                Array.Sort(HilbertIndex, RankIndex);
+                result = ItemsAreEqual(RankIndex,checkLTS);
             } else {
+                //catching error caused by changes to LTS-Clustering
                 Console.WriteLine("Unexpected result for LTS Clusters! Computation of LTS Clusters changed. Test aborted.");
                 result = false;
+            }
+            Console.WriteLine("Test Grid Distribution Dynamic LTS");
+            Console.WriteLine("Testresult: {0}", result);
+            return result;
+        }
+
+        static private bool TestingReclusteringIndependency() {
+            //string dbPath = @"D:\Weber\BoSSS\test_db";
+            string dbPath = null;
+            //TestCase: 5x4 grid, AV=false, dgdegree=0, Timestepping=LTS&RK
+            CNSControl ctrRepON = ShockTube_PartTest_Dynamic(dbPath, 5, 4, int.MaxValue, 2, true,5);
+            CNSControl ctrRepOFF = ShockTube_PartTest_Dynamic(dbPath, 5, 4, int.MaxValue, 2, false,5);
+            var solverRepON = new HilbertTest();
+            var solverRepOFF = new HilbertTest();
+            solverRepON.Init(ctrRepON);
+            solverRepON.RunSolverMode();
+            solverRepOFF.Init(ctrRepOFF);
+            solverRepOFF.RunSolverMode();
+
+            bool result = true;
+            string[] varname = { "Desity", "x-Momentum", "y-Momentum", "Energy" };
+            for (int i = 0; i < 4; i++) {
+                List<DGField> listOfDGFields_RepON = (List<DGField>)solverRepON.IOFields;
+                DGField variableRepON = listOfDGFields_RepON[i];
+                double L2NormRepON = variableRepON.L2Norm();
+                List<DGField> listOfDGFields_RepOFF = (List<DGField>)solverRepOFF.IOFields;
+                DGField vriableRepOFF= listOfDGFields_RepOFF[i];
+                double L2NormRepOFF = vriableRepOFF.L2Norm();
+
+                Console.WriteLine("{0}-L2Norm Rep ON: {1}", varname[i],L2NormRepON);
+                Console.WriteLine("{0}-L2Norm Rep OFF: {1}", varname[i], L2NormRepOFF);
+                bool normequal=(Math.Abs(L2NormRepON - L2NormRepOFF) <= 1e-14);
+                result &= normequal;
+                Console.WriteLine("{0}-L2Norm equal: {1}", varname[i],normequal);
             }
             return result;
         }
@@ -272,19 +350,13 @@ namespace HilbertTest {
             c.DbPath = dbPath;
             c.savetodb = dbPath != null && saveToDb;
 
+            c.DynamicLoadBalancing_RedistributeAtStartup = true;
             c.GridPartType = GridPartType.Hilbert;
 
             bool AV = false;
 
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 1;
-
-            
-
-
-
-
-
 
             if (AV) {
                 c.ActiveOperators = Operators.Convection | Operators.ArtificialViscosity;
@@ -312,11 +384,6 @@ namespace HilbertTest {
             c.AddVariable(Variables.Density, dgDegree);
             c.AddVariable(Variables.Momentum.xComponent, dgDegree);
             c.AddVariable(Variables.Energy, dgDegree);
-            c.AddVariable(Variables.Velocity.xComponent, dgDegree);
-            c.AddVariable(Variables.Pressure, dgDegree);
-            c.AddVariable(Variables.Entropy, dgDegree);
-            c.AddVariable(Variables.LocalMachNumber, dgDegree);
-            c.AddVariable(Variables.Rank, 0);
             if (true1D == false) {
                 c.AddVariable(Variables.Momentum.yComponent, dgDegree);
                 c.AddVariable(Variables.Velocity.yComponent, dgDegree);
@@ -328,6 +395,12 @@ namespace HilbertTest {
                     c.AddVariable(Variables.ArtificialViscosity, 1);
                 }
             }
+            c.AddVariable(Variables.Velocity.xComponent, dgDegree);
+            c.AddVariable(Variables.Pressure, dgDegree);
+            c.AddVariable(Variables.Entropy, dgDegree);
+            c.AddVariable(Variables.LocalMachNumber, dgDegree);
+            c.AddVariable(Variables.Rank, 0);
+            
             c.AddVariable(Variables.CFL, 0);
             c.AddVariable(Variables.CFLConvective, 0);
             if (AV) {
@@ -359,7 +432,7 @@ namespace HilbertTest {
 
         }
 
-        private static CNSControl ShockTube_PartTest_Dynamic(string dbPath, int numOfCellsX, int numOfCellsY) {
+        private static CNSControl ShockTube_PartTest_Dynamic(string dbPath, int numOfCellsX, int numOfCellsY, int NoOfTimesteps ,int NumberOfSubGrids, bool Repart, int RecInt) {
             CNSControl c = new CNSControl();
 
             int dgDegree = 0;
@@ -374,7 +447,6 @@ namespace HilbertTest {
 
             bool AV = false;
 
-
             double xMin = 0;
             double xMax = 1;
             double yMin = 0;
@@ -383,17 +455,18 @@ namespace HilbertTest {
             c.ExplicitScheme = ExplicitSchemes.LTS;
             c.ExplicitOrder = 1;
 
-            c.NumberOfSubGrids = 2;
-            c.ReclusteringInterval = 1;
+            c.NumberOfSubGrids = NumberOfSubGrids;
+            c.ReclusteringInterval = RecInt;
             c.FluxCorrection = false;
 
-            // Add one balance constraint for each subgrid
-            c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(LTSCellCostEstimator.Factory(c.NumberOfSubGrids));
-            c.DynamicLoadBalancing_ImbalanceThreshold = 0.1;
-            c.DynamicLoadBalancing_Period = 1;
-            c.DynamicLoadBalancing_CellClassifier = new LTSCellClassifier();
-           
-
+            if (Repart) {
+                // Add one balance constraint for each subgrid
+                c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(LTSCellCostEstimator.Factory(c.NumberOfSubGrids));
+                c.DynamicLoadBalancing_ImbalanceThreshold = 0.1;
+                c.DynamicLoadBalancing_Period = c.ReclusteringInterval;
+                c.DynamicLoadBalancing_CellClassifier = new LTSCellClassifier(); 
+            }
+            
             c.GridFunc = delegate {
                 double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
 
@@ -481,11 +554,6 @@ namespace HilbertTest {
             c.AddVariable(Variables.Density, dgDegree);
             c.AddVariable(Variables.Momentum.xComponent, dgDegree);
             c.AddVariable(Variables.Energy, dgDegree);
-            c.AddVariable(Variables.Velocity.xComponent, dgDegree);
-            c.AddVariable(Variables.Pressure, dgDegree);
-            c.AddVariable(Variables.Entropy, dgDegree);
-            c.AddVariable(Variables.LocalMachNumber, dgDegree);
-            c.AddVariable(Variables.Rank, 0);
             if (true1D == false) {
                 c.AddVariable(Variables.Momentum.yComponent, dgDegree);
                 c.AddVariable(Variables.Velocity.yComponent, dgDegree);
@@ -497,6 +565,12 @@ namespace HilbertTest {
                     c.AddVariable(Variables.ArtificialViscosity, 1);
                 }
             }
+            c.AddVariable(Variables.Velocity.xComponent, dgDegree);
+            c.AddVariable(Variables.Pressure, dgDegree);
+            c.AddVariable(Variables.Entropy, dgDegree);
+            c.AddVariable(Variables.LocalMachNumber, dgDegree);
+            c.AddVariable(Variables.Rank, 0);
+
             c.AddVariable(Variables.CFL, 0);
             c.AddVariable(Variables.CFLConvective, 0);
             if (AV) {
@@ -512,14 +586,15 @@ namespace HilbertTest {
             c.dtMax = 1.0;
             c.CFLFraction = 0.3;
             c.Endtime = 0.25;
-            c.NoOfTimesteps = 1;
+            //c.dtFixed = 1.5e-3;
+            c.NoOfTimesteps = NoOfTimesteps;
 
 
-            c.ProjectName = "Shock tube";
+            c.ProjectName = String.Format("Shock tube {0} Repartitioning", (Repart ? "with" : "without"));
             if (true1D) {
-                c.SessionName = String.Format("Shock tube, 1D, dgDegree = {0}, noOfCellsX = {1}, sensorLimit = {2:0.00E-00}", dgDegree, numOfCellsX, sensorLimit);
+                c.SessionName = String.Format("{3}, 1D, dgDegree = {0}, noOfCellsX = {1}, sensorLimit = {2:0.00E-00}", dgDegree, numOfCellsX, sensorLimit, c.ProjectName);
             } else {
-                c.SessionName = String.Format("Shock tube, 2D, dgDegree = {0}, noOfCellsX = {1}, noOfCellsX = {2}, sensorLimit = {3:0.00E-00}, CFLFraction = {4:0.00E-00}, ALTS {5}/{6}, GridPartType {7}, NoOfCores {8}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.GridPartType, ilPSP.Environment.MPIEnv.MPI_Size);
+                c.SessionName = String.Format("{9}, 2D, dgDegree = {0}, noOfCellsX = {1}, noOfCellsX = {2}, sensorLimit = {3:0.00E-00}, CFLFraction = {4:0.00E-00}, ALTS {5}/{6}, GridPartType {7}, NoOfCores {8}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.GridPartType, ilPSP.Environment.MPIEnv.MPI_Size, c.ProjectName);
             }
             return c;
 

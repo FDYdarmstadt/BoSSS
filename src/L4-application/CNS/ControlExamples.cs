@@ -3139,16 +3139,16 @@ namespace CNS {
             return c;
         }
 
-        public static CNSControl ShockTube_PredefinedGrid(string dbPath = null, int dgDegree = 0, int numOfCellsX = 4, int numOfCellsY = 4, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = true) {
+        public static CNSControl ShockTube_PredefinedGrid(string dbPath, int numOfCellsX=3, int numOfCellsY=3, int dgDegree = 0, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = true) {
 
             CNSControl c = new CNSControl();
 
-            dbPath = @"D:\Weber\BoSSS\test_db";
+            //dbPath = @"D:\Weber\BoSSS\test_db";
             //dbPath = @"e:\bosss_db\GridOfTomorrow\";
             //dbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db\";
             c.DbPath = dbPath;
             c.savetodb = dbPath != null && saveToDb;
-            c.saveperiod = 10000;
+            c.saveperiod = int.MaxValue;
             c.PrintInterval = 1;
 
             // Add one balance constraint for each subgrid
@@ -3341,7 +3341,7 @@ namespace CNS {
             }
             return c;
         }
-        public static CNSControl ShockTube_HilbertTest(string dbPath, int GPType, int dgDegree, int ExplOrder, int RecInt, int numOfCellsX, int numOfCellsY, bool LTSON, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = true, string SessionID = null, string GridID = null) {
+        public static CNSControl ShockTube_HilbertTest(string dbPath, int GPType, int dgDegree, int ExplOrder, int RecInt, int numOfCellsX, int numOfCellsY, bool LTSON, int AVratio, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = true, string SessionID = null, string GridID = null) {
 
             CNSControl c = new CNSControl();
             //dbPath = @"D:\Weber\BoSSS\test_db";
@@ -3349,13 +3349,19 @@ namespace CNS {
             //dbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db\";
             c.DbPath = dbPath;
             c.savetodb = dbPath != null && saveToDb;
-            c.saveperiod = RecInt;
+            c.saveperiod = int.MaxValue;
             c.PrintInterval = 1;
 
             //Debugger.Launch();
 
+            bool AV = false;
+            if (dgDegree > 0) {
+                AV = true;
+            }
+            //bool AV = true;
+
             if (LTSON) {
-                // (A)LTS
+                //LTS-Timestepping
                 c.ExplicitScheme = ExplicitSchemes.LTS;
                 c.ExplicitOrder = ExplOrder;
                 c.NumberOfSubGrids = 3;
@@ -3365,10 +3371,29 @@ namespace CNS {
                 // Add one balance constraint for each subgrid
                 c.DynamicLoadBalancing_CellClassifier = new LTSCellClassifier();
                 c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(LTSCellCostEstimator.Factory(c.NumberOfSubGrids));
-                c.DynamicLoadBalancing_ImbalanceThreshold = 0.1;
+                c.DynamicLoadBalancing_ImbalanceThreshold = 0.0;
                 c.DynamicLoadBalancing_Period = RecInt;
+            } else if (!LTSON && AV && AVratio != 0) {
+                //AV-Loadbalancing
+                c.ExplicitScheme = ExplicitSchemes.RungeKutta;
+                c.ExplicitOrder = ExplOrder;
+                c.NumberOfSubGrids = 2;
+                c.ReclusteringInterval = RecInt;
+                c.FluxCorrection = false;
 
+                // Add one balance constraint for each subgrid
+                c.DynamicLoadBalancing_CellClassifier = new ArtificialViscosityCellClassifier();
+                if (AVratio > 1) {
+                    //direct cost mapping (one map with two values: 1 and AVratio)
+                    c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(ArtificialViscosityCellCostEstimator.GetStaticCostBasedEstimator(AVratio));
+                } else {
+                    //cluster constraint (2 maps: neutral and AV)
+                    c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(ArtificialViscosityCellCostEstimator.GetMultiBalanceConstraintsBasedEstimators());
+                }
+                c.DynamicLoadBalancing_ImbalanceThreshold = 0.0;
+                c.DynamicLoadBalancing_Period = RecInt;
             } else {
+                //Explicit Timestepping
                 c.ExplicitScheme = ExplicitSchemes.RungeKutta;
                 c.ExplicitOrder = ExplOrder;
             }
@@ -3381,13 +3406,14 @@ namespace CNS {
                     c.GridPartType = GridPartType.ParMETIS;
                     break;
                 case 2:
-                    c.GridPartType = GridPartType.Hilbert;
+                    if (AVratio > 1) {
+                        c.GridPartType = GridPartType.directHilbert;
+                        Console.WriteLine("directHilbert is executed");
+                    } else {
+                        c.GridPartType = GridPartType.Hilbert;
+                        Console.WriteLine("Hilbert with Clusters is executed");
+                    }
                     break;
-            }
-
-            bool AV = false;
-            if (dgDegree > 0) {
-                AV = true;
             }
 
             double xMin = 0;
@@ -3506,7 +3532,7 @@ namespace CNS {
             //c.dtFixed = 1.0e-3;
             c.CFLFraction = 0.1;
             c.Endtime = 0.25;
-            c.NoOfTimesteps = 100;
+            c.NoOfTimesteps = 1000;
 
             c.ProjectName = "Shock tube";
             if (true1D) {
@@ -3517,29 +3543,56 @@ namespace CNS {
 
             return c;
         }
-        public static CNSControl DoubleMachReflection_HilbertTest(string dbPath, int GPType, int dgDegree, int ExplOrder, int RecInt, int numOfCellsX, int numOfCellsY, bool LTSON, double sensorLimit = 1e-3, bool restart = false, string sessionID = null, string gridID = null) {
+        public static CNSControl DoubleMachReflection_HilbertTest(string dbPath, int GPType, int dgDegree, int ExplOrder, int RecInt, int numOfCellsX, int numOfCellsY, bool LTSON, int AVratio,double sensorLimit = 1e-3, bool restart = false, string sessionID = null, string gridID = null) {
             CNSControl c = new CNSControl();
 
+            //dbPath = @"D:\Weber\BoSSS\test_db";
             c.DbPath = dbPath;
             c.savetodb = dbPath != null;
-            c.saveperiod = RecInt;
+            c.saveperiod = int.MaxValue;
             c.PrintInterval = 1;
 
+            bool AV = false;
+            if (dgDegree > 0) {
+                AV = true;
+            }
+            //bool AV = true;
+
             if (LTSON) {
-                // Local time stepping
+                //Load is balanced according to LTS
                 c.ExplicitScheme = ExplicitSchemes.LTS;
                 c.ExplicitOrder = ExplOrder;
                 c.NumberOfSubGrids = 3;
                 c.ReclusteringInterval = RecInt;
                 c.FluxCorrection = false;
 
-                // Dynamic load balacing
+                // Add one balance constraint for each subgrid
                 c.DynamicLoadBalancing_CellClassifier = new LTSCellClassifier();
                 c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(LTSCellCostEstimator.Factory(c.NumberOfSubGrids));
-                c.DynamicLoadBalancing_ImbalanceThreshold = 0.1;
-                c.DynamicLoadBalancing_Period = c.ReclusteringInterval;
+                c.DynamicLoadBalancing_ImbalanceThreshold = 0.0;
+                c.DynamicLoadBalancing_Period = RecInt;
+
+            } else if (!LTSON && AV && AVratio!=0) {
+                //Load is balanced according to AV
+                c.ExplicitScheme = ExplicitSchemes.RungeKutta;
+                c.ExplicitOrder = ExplOrder;
+                c.NumberOfSubGrids = 2;
+                c.ReclusteringInterval = RecInt;
+                c.FluxCorrection = false;
+
+                //AV constraintmap is added
+                c.DynamicLoadBalancing_CellClassifier = new ArtificialViscosityCellClassifier();
+                if (AVratio > 1) {
+                    //direct cost mapping (one map with two values: 1 and AVratio)
+                    c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(ArtificialViscosityCellCostEstimator.GetStaticCostBasedEstimator(AVratio));
+                } else {
+                    //cluster constraint (2 maps: neutral and AV)
+                    c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(ArtificialViscosityCellCostEstimator.GetMultiBalanceConstraintsBasedEstimators());
+                }
+                c.DynamicLoadBalancing_ImbalanceThreshold = 0.0;
+                c.DynamicLoadBalancing_Period = RecInt;
             } else {
-                // Runge-Kutta
+                //Explicit Timestepping
                 c.ExplicitScheme = ExplicitSchemes.RungeKutta;
                 c.ExplicitOrder = ExplOrder;
             }
@@ -3552,13 +3605,14 @@ namespace CNS {
                     c.GridPartType = GridPartType.ParMETIS;
                     break;
                 case 2:
-                    c.GridPartType = GridPartType.Hilbert;
+                    if (AVratio > 1) {
+                        c.GridPartType = GridPartType.directHilbert;
+                        Console.WriteLine("directHilbert is executed");
+                    } else {
+                        c.GridPartType = GridPartType.Hilbert;
+                        Console.WriteLine("Hilbert with Clusters is executed");
+                    }
                     break;
-            }
-
-            bool AV = false;
-            if (dgDegree > 0) {
-                AV = true;
             }
 
             double xMin = 0;
@@ -3729,7 +3783,7 @@ namespace CNS {
             c.Endtime = 0.25;
             //c.dtFixed = 1.0e-6;
             c.CFLFraction = 0.3;
-            c.NoOfTimesteps = 100;
+            c.NoOfTimesteps = 1000;
 
             c.ProjectName = "Double Mach reflection";
             c.SessionName = String.Format("DMR, dgDegree = {0}, numOfCellsX = {1}, numOfCellsY = {2}, sensorLimit = {3:0.00E-00}, CFLFraction = {4:0.00E-00}, ALTS {5}/{6}, lamdaMax = {7}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, lambdaMax);

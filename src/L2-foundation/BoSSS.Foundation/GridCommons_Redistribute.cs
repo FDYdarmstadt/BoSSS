@@ -94,6 +94,15 @@ namespace BoSSS.Foundation.Grid.Classic {
                             break;
                         }
 
+                    case GridPartType.directHilbert: {
+                            part = ComputePartitionHilbert();
+#if DEBUG
+                            CheckPartitioning(part);
+#endif
+                            RedistributeGrid(part);
+                            break;
+                        }
+
                     case GridPartType.none:
                         break;
 
@@ -841,68 +850,65 @@ namespace BoSSS.Foundation.Grid.Classic {
         }
 
         /// <summary>
-        /// Computes a grid partitioning (which cell should be on which processor) based on a Hilbertcurve of maximum order (nBit=32).
+        /// Computes a grid partitioning (which cell should be on which processor) based on a Hilbertcurve of maximum order (64 bit=>nBit*nDim).
         /// </summary>
-        public int[] ComputePartitionHilbert(IList<int[]> localcellCosts = null) {
+        public int[] ComputePartitionHilbert(IList<int[]> localcellCosts = null, int Functype=0) {
+#if DEBUG
+            System.Threading.Thread.Sleep(5000);
+#endif
+            //Functype: Constraint mapping (0) or direct Costmapping (1)
+            //Notice: Functype=1 will lead to bad behavior, when using Clusters
 
             if (this.Size > 1) {
-                int D = this.SpatialDimension;
-                var GlobalBB = this.GetGridBoundingBox();
+                        int D = this.SpatialDimension;
+                        var GlobalBB = this.GetGridBoundingBox();
 
-                int J0 = this.CellPartitioning.i0;
-                int JE = this.CellPartitioning.iE;
+                        int J0 = this.CellPartitioning.i0;
+                        int JE = this.CellPartitioning.iE;
 
-                ulong[] discreteCenter = new ulong[D];
-                ulong[] local_HilbertIndex = new ulong[JE - J0];
-                int[] local_CellIndex = new int[JE - J0];
+                        ulong[] discreteCenter = new ulong[D];
+                        ulong[] local_HilbertIndex = new ulong[JE - J0];
+                        int[] local_CellIndex = new int[JE - J0];
 
-                for (int j = J0; j < JE; j++) {
-                    Cell Cj = this.Cells[j - J0];
-                    int NoOfNodes = Cj.TransformationParams.NoOfRows;
-                    for (int d = 0; d < D; d++) {
-                        double center = 0;
-                        for (int k = 0; k < NoOfNodes; k++) {
-                            center += Cj.TransformationParams[k, d];
+                        for (int j = J0; j < JE; j++) {
+                            Cell Cj = this.Cells[j - J0];
+                            int NoOfNodes = Cj.TransformationParams.NoOfRows;
+                            for (int d = 0; d < D; d++) {
+                                double center = 0;
+                                for (int k = 0; k < NoOfNodes; k++) {
+                                    center += Cj.TransformationParams[k, d];
+                                }
+
+                                center = center / ((double)NoOfNodes); // ''center of gravity'' for coordinate direction 'd'
+                                double centerTrf = (center - GlobalBB.Min[d]) * (1.0 / (GlobalBB.Max[d] - GlobalBB.Min[d])) * Math.Pow(2, 64 / D);
+                                //double centerTrf = (center - GlobalBB.Min[d]) * (1.0 / (GlobalBB.Max[d] - GlobalBB.Min[d])) * ((double)long.MaxValue);
+                                centerTrf = Math.Round(centerTrf);
+                                if (centerTrf < 0)
+                                    centerTrf = 0;
+                                if (centerTrf > ulong.MaxValue)
+                                    centerTrf = ulong.MaxValue;
+                                discreteCenter[d] = (ulong)centerTrf;
+                                //Debugger.Break();
+                            }
+                            ulong iH = HilbertCurve.hilbert_c2i(64 / D, discreteCenter);
+                            local_HilbertIndex[j - J0] = iH;
+                            local_CellIndex[j - J0] = j;
                         }
 
-                        center = center / ((double)NoOfNodes); // ''center of gravity'' for coordinate direction 'd'
-                        double centerTrf = (center - GlobalBB.Min[d]) * (1.0 / (GlobalBB.Max[d] - GlobalBB.Min[d])) * Math.Pow(2, 32);
-                        //double centerTrf = (center - GlobalBB.Min[d]) * (1.0 / (GlobalBB.Max[d] - GlobalBB.Min[d])) * ((double)long.MaxValue);
-                        centerTrf = Math.Round(centerTrf);
-                        if (centerTrf < 0)
-                            centerTrf = 0;
-                        if (centerTrf > ulong.MaxValue)
-                            centerTrf = ulong.MaxValue;
-                        discreteCenter[d] = (ulong)centerTrf;
-                        //Debugger.Break();
-                    }
-                    ulong iH = HilbertCurve.hilbert_c2i(32, discreteCenter);
-                    local_HilbertIndex[j - J0] = iH;// perhabs better to use new Tuple<long, int>(iH, j);
-                    local_CellIndex[j - J0] = j;
-                }
+                        //Gather all local computed Hilbert_Indices
+                        int[] CellsPerRank = new int[this.Size];
+                        for (int r = 0; r < CellsPerRank.Length; r++)
+                            CellsPerRank[r] = this.CellPartitioning.GetLocalLength(r);
+                        int[] CellIndex = local_CellIndex.MPIAllGatherv(CellsPerRank);
+                        ulong[] HilbertIndex = local_HilbertIndex.MPIAllGatherv(CellsPerRank);
+                        ulong[] HilbertIndex_tmp = HilbertIndex.CloneAs<ulong[]>();
+                        Array.Sort(HilbertIndex, CellIndex);
 
-                int[] CellsPerRank = new int[this.Size];
-                for (int r = 0; r < CellsPerRank.Length; r++)
-                    CellsPerRank[r] = this.CellPartitioning.GetLocalLength(r);
-                //int[] sizeof_Recvbuffer = new int[1];
-                //sizeof_Recvbuffer[0]=this.NumberOfCells;
-
-                //Gather all local computed Hilbert_Indices
-                int[] CellIndex = local_CellIndex.MPIAllGatherv(CellsPerRank);
-                ulong[] HilbertIndex = local_HilbertIndex.MPIAllGatherv(CellsPerRank);
-                //Debugger.Break();
-                ulong[] HilbertIndex_tmp = HilbertIndex.CloneAs<ulong[]>();
-                Array.Sort(HilbertIndex, CellIndex);
-                //Debugger.Break();
-
-                //Distribution of MPI-Rank along Hilbertcurve considering multiple Constraints with equal weight
-                //Assuming: Constraintmap only contains two types = (1, a number>1); Constraints do not overlap
                 int numberofcells = this.NumberOfCells;
-
-                int numproc = this.Size;
-                int[] cellCostsflatened = new int[numberofcells];
                 int[] RankIndex = new int[numberofcells];
                 List<int[]> cellCosts = new List<int[]>();
+                int numproc = this.Size;
+                int[] cellCostsflatened = new int[numberofcells];
 
                 //catch case localcellsCosts is empty
                 if (localcellCosts == null) {
@@ -915,55 +921,80 @@ namespace BoSSS.Foundation.Grid.Classic {
                     }
                 }
 
-                Debug.Assert(cellCosts.Count >= 1);
-                int[,] buckets = new int[numproc, cellCosts.Count];
-                int[] CellsPerField = new int[cellCosts.Count];
-                int CheckCount = 0;
+                switch (Functype) {
+                    case 0:
+                        //Distribution of MPI-Rank along Hilbertcurve considering multiple Constraints with equal weight
+                        //Assuming: Constraintmap only contains two types = (1, a number>1); Constraints do not overlap
+                        Debug.Assert(cellCosts.Count >= 1);
+                        int[,] buckets = new int[numproc, cellCosts.Count];
+                        int[] CellsPerField = new int[cellCosts.Count];
+                        int CheckCount = 0;
 
-                //unite all constraints in cellCostsflatened
-                for (int k = 0; k < cellCosts.Count; k++) {
-                    int CountTargetCells = 0;
-                    for (int i = 0; i < cellCosts.ElementAt(k).Length; i++) {
-                        if (cellCosts.ElementAt(k)[i] > 1) {
-                            CountTargetCells++;
-                            cellCostsflatened[i] = k;
+                        //unite all constraints in cellCostsflatened
+                        for (int k = 0; k < cellCosts.Count; k++) {
+                            int CountTargetCells = 0;
+                            for (int i = 0; i < cellCosts.ElementAt(k).Length; i++) {
+                                if (cellCosts.ElementAt(k)[i] > 1) {
+                                    CountTargetCells++;
+                                    cellCostsflatened[i] = k;
+                                }
+                            }
+                            CellsPerField[k] = CountTargetCells;
+                            CheckCount += CountTargetCells;
                         }
-                    }
-                    CellsPerField[k] = CountTargetCells;
-                    CheckCount += CountTargetCells;
+
+                        if (CheckCount != numberofcells)
+                            throw new ArgumentException("There are unmasked Cells in cellCosts");
+                        Array.Sort(HilbertIndex_tmp, cellCostsflatened); //Would be better to unify with Array.Sort(HilbertIndex, CellIndex)
+
+                        //fill buckets, buckets contain number of cells to distribute per rank
+                        for (int field = 0; field < CellsPerField.Length; field++) {
+                            int counter = CellsPerField[field] % numproc;
+                            int base_size = CellsPerField[field] / numproc; //sauberer: Math.Methode hierfür finden
+                            for (int tRank = 0; tRank < buckets.GetLength(0); tRank++)
+                                buckets[tRank, field] = base_size;
+                            // Distribution of rest, if distribution is uneven
+                            while (counter != 0) {
+                                counter--;
+                                buckets[counter, field]++;
+                            }
+                        }
+
+                        //Go through HilbertCurve and map cell->rank
+                        int rank = 0;
+                        for (int cell = 0; cell < cellCostsflatened.Length;) {
+                            if (buckets[rank, cellCostsflatened[cell]] != 0) {
+                                buckets[rank, cellCostsflatened[cell]]--;
+                                RankIndex[cell] = rank;
+                                cell++;
+                            } else {
+                                rank = (rank + 1) % (numproc);
+                            }
+                        }
+                        break;
+                    case 1:
+                        if (cellCosts.Count > 1)
+                            throw new ArgumentOutOfRangeException("Only one CellCost map allowed for directHilbert! Select Hilbert if you want to use Clusters!");
+                        int CellCostSum = 0;
+                        for (int cell = 0; cell < cellCosts[0].Length; cell++)
+                            CellCostSum += cellCosts[0][cell];
+                        int CostPerRank = CellCostSum / numproc;
+                        Debug.Assert(CostPerRank > 0);
+                        int MPIrank = 0;
+                        int CostCount = 0;
+                        for (int cell = 0; cell < numberofcells; cell++) {
+                            RankIndex[cell] = MPIrank;
+                            CostCount += cellCosts[0][cell];
+                            if (CostCount > CostPerRank) {
+                                MPIrank++;
+                                CostCount = 0;
+                            }
+                        }
+                        Debug.Assert(MPIrank <= numproc-1);
+                        break;
+                    default:
+                        throw new NotImplementedException();
                 }
-
-                if (CheckCount != numberofcells)
-                    throw new ArgumentException("There are unmasked Cells in cellCosts");
-                Array.Sort(HilbertIndex_tmp, cellCostsflatened); //Would be better to unify with Array.Sort(HilbertIndex, CellIndex)
-
-                //fill buckets, buckets contain number of cells to distribute per rank
-                for (int field = 0; field < CellsPerField.Length; field++) {
-
-                    int counter = CellsPerField[field] % numproc;
-                    int base_size = CellsPerField[field] / numproc; //sauberer: Math.Methode hierfür finden
-                    for (int tRank = 0; tRank < buckets.GetLength(0); tRank++)
-                        buckets[tRank, field] = base_size;
-                    // Distribution of rest, if distribution is uneven
-                    while (counter != 0) {
-                        counter--;
-                        buckets[counter, field]++;
-                    }
-                }
-
-                //Go through HilbertCurve and map cell->rank
-                int rank = 0;
-                for (int cell = 0; cell < cellCostsflatened.Length;) {
-                    if (buckets[rank, cellCostsflatened[cell]] != 0) {
-                        buckets[rank, cellCostsflatened[cell]]--;
-                        RankIndex[cell] = rank;
-                        cell++;
-                    } else {
-                        rank = (rank + 1) % (numproc);
-                    }
-                }
-
-                this.HilbertSortedRanks = RankIndex.CloneAs<int[]>();
 
                 //Extract Rank-Array for local Process
                 Array.Sort(CellIndex, RankIndex);
@@ -976,12 +1007,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 int[] local_Rank_RedistributionList = new int[NoOfUpdateCells];
                 return local_Rank_RedistributionList;
             }
-        }
-
-        private int[] HilbertSortedRanks;
-
-        public int[] GetHilbertSortedRanks() {
-            return this.HilbertSortedRanks;
+            
         }
 
         private bool CheckPartitioning(Master cm, int[] nodesPart) {
