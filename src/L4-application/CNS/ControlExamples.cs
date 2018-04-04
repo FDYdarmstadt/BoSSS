@@ -1293,10 +1293,10 @@ namespace CNS {
 
             IBMControl c = new IBMControl();
 
-            dbPath = @"c:\bosss_db\";
+            //dbPath = @"c:\bosss_db\";
             c.DbPath = dbPath;
             c.savetodb = dbPath != null;
-            c.saveperiod = 100;
+            c.saveperiod = 1;
             c.PrintInterval = 1;
 
             double xMin = 0;
@@ -1308,7 +1308,7 @@ namespace CNS {
 
             c.DomainType = DomainTypes.StaticImmersedBoundary;
             c.LevelSetFunction = delegate (double[] X, double t) {
-                return X[1] - 0.06;
+                return X[1] - 0.16;
             };
             c.LevelSetBoundaryTag = "AdiabaticSlipWall";
             c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
@@ -1316,6 +1316,12 @@ namespace CNS {
             //c.AgglomerationThreshold = 0.2;
             c.AgglomerationThreshold = 0.9;
             c.AddVariable(IBMVariables.LevelSet, 1);
+
+            c.AddVariable(IBMVariables.FluidCells, 1);
+            c.AddVariable(IBMVariables.FluidCellsWithoutSourceCells, 1);
+            c.AddVariable(IBMVariables.CutCells, 1);
+            c.AddVariable(IBMVariables.CutCellsWithoutSourceCells, 1);
+            c.AddVariable(IBMVariables.SourceCells, 1);
 
             if (AV) {
                 c.ActiveOperators = Operators.Convection | Operators.ArtificialViscosity;
@@ -2237,21 +2243,15 @@ namespace CNS {
         public static IBMControl IBMDoubleMachReflection(string dbPath = null, int dgDegree = 2, int numOfCellsX = 200, int numOfCellsY = 140, double sensorLimit = 1e-4) {
             IBMControl c = new IBMControl();
 
-            //dbPath = @"c:\bosss_db";
+            dbPath = @"c:\bosss_db";
             //dbPath = @"\\dc1\userspace\geisenhofer\bosss_db";
             //dbPath = @"/work/scratch/yp19ysog/bosss_db_lb_scratch";
             c.DbPath = dbPath;
             c.savetodb = dbPath != null;
-            c.saveperiod = 100;
+            c.saveperiod = 1;
             c.PrintInterval = 1;
 
             c.DomainType = DomainTypes.StaticImmersedBoundary;
-
-            //c.DynamicLoadBalancing_CellClassifier = new IBMCellClassifier();
-            //c.DynamicLoadBalancing_Period = 0;
-            //c.DynamicLoadBalancing_RedistributeAtStartup = true;
-            ////c.DynamicLoadBalancing_CellCostEstimatorFactories.Add(IBMCellCostEstimator.GetStaticCostBasedEstimator());
-            //c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(IBMCellCostEstimator.GetMultiBalanceConstraintsBasedEstimators());
 
             double xMin = 0.0;
             double xMax = 2.0;
@@ -2312,9 +2312,10 @@ namespace CNS {
             c.AddVariable(IBMVariables.LevelSet, 2);
 
             c.AddVariable(IBMVariables.FluidCells, 1);
+            c.AddVariable(IBMVariables.FluidCellsWithoutSourceCells, 1);
             c.AddVariable(IBMVariables.CutCells, 1);
             c.AddVariable(IBMVariables.CutCellsWithoutSourceCells, 1);
-            //c.AddVariable(IBMVariables.VoidCells, 1);
+            c.AddVariable(IBMVariables.SourceCells, 1);
 
             bool AV = true;
 
@@ -2330,7 +2331,13 @@ namespace CNS {
             c.maxNumOfSubSteps = 50;
             c.FluxCorrection = false;
 
-            c.GridPartType = GridPartType.ParMETIS;
+            c.DynamicLoadBalancing_CellClassifier = new LTSCellClassifier();
+            c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(LTSCellCostEstimator.Factory(c.NumberOfSubGrids));
+            c.DynamicLoadBalancing_ImbalanceThreshold = 0.1;
+            c.DynamicLoadBalancing_Period = c.ReclusteringInterval;
+            c.DynamicLoadBalancing_RedistributeAtStartup = true;
+
+            c.GridPartType = GridPartType.Hilbert;
             //c.GridPartType = GridPartType.none;
 
             double cellSize = Math.Min((xMax - xMin) / numOfCellsX, (yMax - yMin) / numOfCellsY);
@@ -2368,9 +2375,9 @@ namespace CNS {
             c.AddVariable(Variables.Velocity.yComponent, dgDegree);
             c.AddVariable(Variables.Pressure, dgDegree);
 
-            c.AddVariable(Variables.Entropy, dgDegree);
-            c.AddVariable(Variables.Viscosity, dgDegree);
-            c.AddVariable(Variables.LocalMachNumber, dgDegree);
+            //c.AddVariable(Variables.Entropy, dgDegree);
+            //c.AddVariable(Variables.Viscosity, dgDegree);
+            //c.AddVariable(Variables.LocalMachNumber, dgDegree);
             c.AddVariable(Variables.Rank, 0);
             if (dgDegree >= 1) {
                 c.AddVariable(Variables.Schlieren, dgDegree - 1);
@@ -2457,13 +2464,13 @@ namespace CNS {
             // Time config
             c.dtMin = 0.0;
             c.dtMax = 1.0;
-            c.Endtime = 0.2;
+            c.Endtime = 0.1;
             //c.dtFixed = 1.0e-6;
             c.CFLFraction = 0.1;
-            c.NoOfTimesteps = int.MaxValue;
+            c.NoOfTimesteps = 10;
 
             c.ProjectName = "IBM double Mach reflection";
-            c.SessionName = String.Format("IBM DMR, p={0}, {1}x{2} cells, aggloThresh={3}, s0={4:0.0E-00}, CFLFrac={5}, ALTS {6}/{7}/{8}({9})", dgDegree, numOfCellsX, numOfCellsY, c.AgglomerationThreshold, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps);
+            c.SessionName = String.Format("IBM DMR, p={0}, {1}x{2} cells, agg={3}, s0={4:0.0E-00}, CFLFrac={5}, ALTS {6}/{7}/{8}({9}), Part={10}/{11}({12})", dgDegree, numOfCellsX, numOfCellsY, c.AgglomerationThreshold, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps, c.GridPartType.ToString(), c.DynamicLoadBalancing_Period, c.DynamicLoadBalancing_ImbalanceThreshold);
 
             return c;
         }
