@@ -79,6 +79,13 @@ namespace BoSSS.Solution.Multigrid {
 
         public string m_SessionPath;
 
+
+        bool solveVelocity = true;
+
+        double VelocitySolver_ConvergenceCriterion = 1e-5;
+
+        double StressSolver_ConvergenceCriterion = 1e-5;
+
         public override void SolverDriver<S>(CoordinateVector SolutionVec, S RHS) {
 
             using (var tr = new FuncTrace()) {
@@ -119,6 +126,14 @@ namespace BoSSS.Solution.Multigrid {
                 Console.WriteLine("Start residuum for nonlinear iteration:  " + fnorm);
 
                 OnIterationCallback(itc, x.CloneAs(), f0.CloneAs(), this.CurrentLin);
+
+                //int[] Velocity_idx = SolutionVec.Mapping.GetSubvectorIndices(false, 0, 1, 2);
+                //int[] Stresses_idx = SolutionVec.Mapping.GetSubvectorIndices(false, 3, 4, 5);
+
+                //int[] Velocity_fields = new int[] { 0, 1, 2 };
+                //int[] Stress_fields = new int[] { 3, 4, 5 };
+
+                //int NoCoupledIterations = 1;
 
                 using (new BlockTrace("Slv Iter", tr)) {
                     while (fnorm > ConvCrit && itc < MaxIter) {
@@ -304,6 +319,26 @@ namespace BoSSS.Solution.Multigrid {
                             throw new NotImplementedException("Your approximation option for the jacobian seems not to be existent.");
                         }
 
+                        //if (itc > NoCoupledIterations)
+                        //{
+                        //    if (solveVelocity)
+                        //    {
+                        //        Console.WriteLine("stress correction = 0");
+                        //        foreach (int idx in Stresses_idx)
+                        //        {
+                        //            step[idx] = 0.0;
+                        //        }
+                        //    }
+                        //    else
+                        //    {
+                        //        Console.WriteLine("velocity correction = 0");
+                        //        foreach (int idx in Velocity_idx)
+                        //        {
+                        //            step[idx] = 0.0;
+                        //        }
+                        //    }
+                        //}
+
                         // Start line search
                         xOld = x;
                         double lambda = 1;
@@ -364,6 +399,40 @@ namespace BoSSS.Solution.Multigrid {
 
                         x = xt;
                         f0 = ft.CloneAs();
+
+                        //if (itc > NoCoupledIterations)
+                        //{
+
+                        //    double coupledL2Res = 0.0;
+                        //    if (solveVelocity)
+                        //    {
+                        //        foreach (int idx in Velocity_idx)
+                        //        {
+                        //            coupledL2Res += f0[idx].Pow2();
+                        //        }
+                        //    }
+                        //    else
+                        //    {
+                        //        foreach (int idx in Stresses_idx)
+                        //        {
+                        //            coupledL2Res += f0[idx].Pow2();
+                        //        }
+                        //    }
+                        //    coupledL2Res = coupledL2Res.Sqrt();
+
+                        //    Console.WriteLine("coupled residual = {0}", coupledL2Res);
+
+                        //    if (solveVelocity && coupledL2Res < this.VelocitySolver_ConvergenceCriterion)
+                        //    {
+                        //        Console.WriteLine("SolveVelocity = false");
+                        //        this.solveVelocity = false;
+                        //    }
+                        //    else if (!solveVelocity && coupledL2Res < this.StressSolver_ConvergenceCriterion)
+                        //    {
+                        //        Console.WriteLine("SolveVelocity = true");
+                        //        this.solveVelocity = true;
+                        //    }
+                        //}
 
                         OnIterationCallback(itc, x.CloneAs(), f0.CloneAs(), this.CurrentLin);
 
