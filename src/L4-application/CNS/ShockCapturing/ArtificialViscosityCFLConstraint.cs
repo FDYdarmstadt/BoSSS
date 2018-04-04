@@ -92,28 +92,23 @@ namespace CNS.ShockCapturing {
                         for (int i = 0; i < Length; i++) {
                             int cell = i0 + i;
                             double hminlocal = hMinArray[cell];
+                            double nu = artificialViscosity.GetMeanValue(cell) / config.ReynoldsNumber;
+                            Debug.Assert(!double.IsNaN(nu), "IBM ArtificialViscosityCFLConstraint: nu is NaN");
 
+                            bool setCFL = false;
                             for (int node = 0; node < noOfNodesPerCell; node++) {
-                                double cflhere = double.MaxValue;
-
                                 if (levelSetValues[i, node].Sign() != (double)ibmMap.Control.FluidSpeciesSign) {
                                     continue;
+                                } else if (setCFL == false) {
+                                    setCFL = true;
                                 }
+                            }
 
-                                double nu = artificialViscosity.GetMeanValue(cell) / config.ReynoldsNumber;
-                                Debug.Assert(!double.IsNaN(nu), "IBMArtificialViscosityCFLConstraint: nu is NaN!");
+                            if (nu != 0 && setCFL) {
+                                double cflCell = hminlocal * hminlocal / scaling / nu;
+                                Debug.Assert(!double.IsNaN(cflCell), "Could not determine CFL number");
 
-                                if (nu != 0) {
-                                    cflhere = hminlocal * hminlocal / scaling / nu;
-                                }
-
-#if DEBUG
-                                if (double.IsNaN(cflhere)) {
-                                    throw new Exception("Could not determine CFL number");
-                                }
-#endif
-
-                                cfl = Math.Min(cfl, cflhere);
+                                cfl = Math.Min(cfl, cflCell);
                             }
                         }
                     }
@@ -123,24 +118,14 @@ namespace CNS.ShockCapturing {
                         for (int i = 0; i < Length; i++) {
                             int cell = i0 + i;
                             double hminlocal = gridData.Cells.h_min[cell];
+                            double nu = artificialViscosity.GetMeanValue(cell) / config.ReynoldsNumber;
+                            Debug.Assert(!double.IsNaN(nu), "ArtificialViscosityCFLConstraint: nu is NaN");
 
-                            for (int node = 0; node < noOfNodesPerCell; node++) {
-                                double cflhere = double.MaxValue;
+                            if (nu != 0) {
+                                double cflCell = hminlocal * hminlocal / scaling / nu;
+                                Debug.Assert(!double.IsNaN(cflCell), "Could not determine CFL number");
 
-                                double nu = artificialViscosity.GetMeanValue(cell) / config.ReynoldsNumber;
-                                Debug.Assert(!double.IsNaN(nu), "ArtificialViscosityCFLConstraint: nu is NaN!");
-
-                                if (nu != 0) {
-                                    cflhere = double.MaxValue;
-                                }
-
-#if DEBUG
-                                if (double.IsNaN(cflhere)) {
-                                    throw new Exception("Could not determine CFL number");
-                                }
-#endif
-
-                                cfl = Math.Min(cfl, cflhere);
+                                cfl = Math.Min(cfl, cflCell);
                             }
                         }
                     }
