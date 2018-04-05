@@ -41,8 +41,6 @@ namespace CNS_MPITests.Tests.LoadBalancing {
 
         private static int REBALANCING_PERIOD = 5;
 
-        private static bool twoD = false;
-
         public static void Main(string[] args) {
             SetUp();
             //System.Threading.Thread.Sleep(10000);
@@ -179,7 +177,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             CheckRunsProduceSameResults(control, hilbert: true);
         }
 
-        private static CNSControl ShockTubeToro1Template(int dgDegree, ExplicitSchemes explicitScheme, int explicitOrder, int noOfCells = 50, double gridStretching = 0.0) {
+        private static CNSControl ShockTubeToro1Template(int dgDegree, ExplicitSchemes explicitScheme, int explicitOrder, int noOfCells = 50, double gridStretching = 0.0, bool twoD = false) {
             double densityLeft = 1.0;
             double velocityLeft = 0.0;
             double pressureLeft = 1.0;
@@ -290,7 +288,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             return c;
         }
 
-        private static CNSControl ShockTubeToro1WithAVTemplate(int dgDegree, ExplicitSchemes explicitScheme, int explicitOrder, int noOfCells = 50) {
+        private static CNSControl ShockTubeToro1WithAVTemplate(int dgDegree, ExplicitSchemes explicitScheme, int explicitOrder, int noOfCells = 50, bool twoD = false) {
             Variable sensorVariable = Variables.Density;
             double sensorLimit = 1e-3;
             double epsilon0 = 1.0;
