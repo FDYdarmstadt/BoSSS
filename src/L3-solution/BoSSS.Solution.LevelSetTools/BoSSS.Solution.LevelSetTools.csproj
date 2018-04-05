@@ -1,0 +1,193 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{9EE2FCAD-E8A4-4F14-B932-D1A4904D715D}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>BoSSS.Solution.LevelSetTools</RootNamespace>
+    <AssemblyName>BoSSS.Solution.LevelSetTools</AssemblyName>
+    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+    <UseVSHostingProcess>true</UseVSHostingProcess>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <UseVSHostingProcess>true</UseVSHostingProcess>
+    <Prefer32Bit>false</Prefer32Bit>
+    <DocumentationFile>bin\Release\BoSSS.Solution.LevelSetTools.XML</DocumentationFile>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Numerics" />
+    <Reference Include="MathNet.Numerics">
+      <HintPath>..\..\..\libs\MathNet.Numerics-2.6.0.29\MathNet.Numerics.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Advection\ExtensionVelocityBDFMover.cs" />
+    <Compile Include="Advection\ExtensionVelocityScalar.cs" />
+    <Compile Include="Advection\LevelSetAdvectionFluxes.cs" />
+    <Compile Include="Advection\PrescribedVectorExtVel.cs" />
+    <Compile Include="Advection\ScalarExtUpdate.cs" />
+    <Compile Include="Advection\VectorExtVelAdvection.cs" />
+    <Compile Include="Advection\ScalarExtVelAdvection.cs" />
+    <Compile Include="ContinuityProjection.cs" />
+    <Compile Include="EllipticExtVel\DensityWeightedExtVel.cs" />
+    <Compile Include="EllipticExtVel\Extender.cs" />
+    <Compile Include="EllipticExtVel\EllipticExtVelControl.cs" />
+    <Compile Include="EllipticExtVel\ScalarVelocity.cs" />
+    <Compile Include="EllipticExtVel\SingleComponent.cs" />
+    <Compile Include="EllipticExtVel\EllipticExtVelLaplace.cs" />
+    <Compile Include="EllipticReInit\RHSForm.cs" />
+    <Compile Include="EllipticReInit\UpwindingRHS.cs" />
+    <Compile Include="EllipticReInit\UpwindingLHS.cs" />
+    <Compile Include="ExtVelSolver_Geometric.cs" />
+    <Compile Include="EllipticReInit\EllipticReInit.cs" />
+    <Compile Include="EllipticReInit\EllipticReInitInterface.cs" />
+    <Compile Include="EllipticReInit\CentralDifferencesRHS.cs" />
+    <Compile Include="EllipticReInit\CentralDifferencesLHS.cs" />
+    <Compile Include="ClosestPointFinder.cs" />
+    <Compile Include="ExtVelSolver_PDEbased.cs" />
+    <Compile Include="FastMarching\GlobalMarcher\CellMarcher.cs" />
+    <Compile Include="FastMarching\GenericFastMarcher\IFastMarchingQueue.cs" />
+    <Compile Include="FastMarching\GenericFastMarcher\IMarchingNode.cs" />
+    <Compile Include="FastMarching\GenericFastMarcher\BinaryHeap.cs" />
+    <Compile Include="FastMarching\GenericFastMarcher\Fastmarcher.cs" />
+    <Compile Include="FastMarching\GenericFastMarcher\IBoundedPriorityQueue.cs" />
+    <Compile Include="FastMarching\GenericFastMarcher\MarchingHeap.cs" />
+    <Compile Include="FastMarching\GlobalMarcher\MarchingCell.cs" />
+    <Compile Include="FastMarching\LocalMarcher\ILocalSolver.cs" />
+    <Compile Include="FastMarching\LocalMarcher\Eikonal.cs" />
+    <Compile Include="FastMarching\LocalMarcher\LocalMarcher_2DStructured.cs" />
+    <Compile Include="FastMarching\LocalMarcher\Node.cs" />
+    <Compile Include="FastMarching\LocalMarcher\Position.cs" />
+    <Compile Include="FastMarching\PlotTools.cs" />
+    <Compile Include="FourierLevelSet\FourierLevSetBase.cs" />
+    <Compile Include="FourierLevelSet\FourierLevSetControl.cs" />
+    <Compile Include="FourierLevelSet\FourierLevSetTimestepper.cs" />
+    <Compile Include="FourierLevelSet\PlanarFourierLevSet.cs" />
+    <Compile Include="FourierLevelSet\PolarFourierLevSet.cs" />
+    <Compile Include="GradientModule.cs" />
+    <Compile Include="FastMarching\LocalSolver_Elliptic.cs" />
+    <Compile Include="FastMarching\LocalSolver_Geometric.cs" />
+    <Compile Include="FastMarching\LocalSolver_Iterative.cs" />
+    <Compile Include="FastMarching\NarrowMarchingBand.cs" />
+    <Compile Include="EllipticReInit\EllipticReinitControl.cs" />
+    <Compile Include="Advection\ILevelSetAdvection.cs" />
+    <Compile Include="JumpPenalization.cs" />
+    <Compile Include="Advection\ScalarVelocityAdvection.cs" />
+    <Compile Include="FastMarching\FastMarchReinit.cs" />
+    <Compile Include="Advection\NonconservativeAdvection.cs" />
+    <Compile Include="ReInitialization.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TestCases\Flower.cs" />
+    <Compile Include="TestCases\RotationFieldClipped.cs" />
+    <Compile Include="TestCases\Torus.cs" />
+    <Compile Include="TestCases\ZalesaksDisk.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.Connectors.Matlab\ilPSP.Connectors.Matlab.csproj">
+      <Project>{6886ABB3-CE89-4537-9F2A-25F926D1840B}</Project>
+      <Name>ilPSP.Connectors.Matlab</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.HYPRE\ilPSP.LinSolvers.HYPRE.csproj">
+      <Project>{332083b9-c7fd-4b04-95ec-b0c729b21883}</Project>
+      <Name>ilPSP.LinSolvers.HYPRE</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.monkey\ilPSP.LinSolvers.monkey.csproj">
+      <Project>{B18AEDC3-C7A5-4DA6-ABD3-E981B002ADDE}</Project>
+      <Name>ilPSP.LinSolvers.monkey</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.MUMPS\ilPSP.LinSolvers.MUMPS.csproj">
+      <Project>{757e59f0-53bf-4c0d-87b3-3329161cb148}</Project>
+      <Name>ilPSP.LinSolvers.MUMPS</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.PARDISO\ilPSP.LinSolvers.PARDISO.csproj">
+      <Project>{DB9CA35D-9980-462A-85CC-CB33DCFD5A28}</Project>
+      <Name>ilPSP.LinSolvers.PARDISO</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers\ilPSP.LinSolvers.csproj">
+      <Project>{45eff2bd-0bcc-4aea-9e87-7d86d6423b0c}</Project>
+      <Name>ilPSP.LinSolvers</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L1-platform\BoSSS.Platform\BoSSS.Platform.csproj">
+      <Project>{B7D5F7C7-EA9F-4506-AB69-C3CD2AA8C938}</Project>
+      <Name>BoSSS.Platform</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.Grid\BoSSS.Foundation.Grid.csproj">
+      <Project>{13585226-5046-494D-947C-B97479566081}</Project>
+      <Name>BoSSS.Foundation.Grid</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.SpecFEM\BoSSS.Foundation.SpecFEM.csproj">
+      <Project>{9D01688E-9372-4185-ADCF-D64D47F3A44A}</Project>
+      <Name>BoSSS.Foundation.SpecFEM</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.XDG\BoSSS.Foundation.XDG.csproj">
+      <Project>{9A8CDC1F-64F7-441E-849D-66F2C56600F2}</Project>
+      <Name>BoSSS.Foundation.XDG</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Multigrid\BoSSS.Solution.Multigrid.csproj">
+      <Project>{EFE8C307-09BC-4F58-B991-6EF8FD6D5EFF}</Project>
+      <Name>BoSSS.Solution.Multigrid</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Statistic\BoSSS.Solution.Statistic.csproj">
+      <Project>{45BCA5F9-27E7-43C0-B021-4312BF442C7D}</Project>
+      <Name>BoSSS.Solution.Statistic</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution\BoSSS.Solution.csproj">
+      <Project>{DF7F5ABD-E606-41CD-BEEF-31A95D136DEA}</Project>
+      <Name>BoSSS.Solution</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.NSECommon\BoSSS.Solution.NSECommon.csproj">
+      <Project>{E56B9CE4-14DC-4256-A337-46E5D298B722}</Project>
+      <Name>BoSSS.Solution.NSECommon</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Tecplot\BoSSS.Solution.Tecplot.csproj">
+      <Project>{D0546422-EC92-4964-82E9-8EE819A2F786}</Project>
+      <Name>BoSSS.Solution.Tecplot</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ilPSP\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj">
+      <Project>{DD9BF776-38CA-4FC9-8F42-5ED700BDE7AD}</Project>
+      <Name>MPI.Wrappers</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj">
+      <Project>{8E6D8F23-623F-4204-B4AB-A088C0CD83AA}</Project>
+      <Name>ilPSP</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj">
+      <Project>{17A60FBA-20B4-451D-98E1-8D742F368569}</Project>
+      <Name>BoSSS.Foundation</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
