@@ -290,11 +290,11 @@ namespace ilPSP.LinSolvers.PARDISO {
                             csMPI.Raw.Gatherv(
                                     (IntPtr)pja_loc,
                                     ja_loc.Length,
-                                    csMPI.Raw._DATATYPE.DOUBLE,
+                                    csMPI.Raw._DATATYPE.INT,
                                     (IntPtr)pja,
                                     (IntPtr)recvcounts,
                                     (IntPtr)displs,
-                                    csMPI.Raw._DATATYPE.DOUBLE,
+                                    csMPI.Raw._DATATYPE.INT,
                                     0,
                                     m_comm);
                         }
@@ -308,11 +308,11 @@ namespace ilPSP.LinSolvers.PARDISO {
                             csMPI.Raw.Gatherv(
                                     (IntPtr)pia_loc,
                                     ia_loc.Length,
-                                    csMPI.Raw._DATATYPE.DOUBLE,
+                                    csMPI.Raw._DATATYPE.INT,
                                     (IntPtr)pia,
                                     (IntPtr)recvcounts,
                                     (IntPtr)displs,
-                                    csMPI.Raw._DATATYPE.DOUBLE,
+                                    csMPI.Raw._DATATYPE.INT,
                                     0,
                                     m_comm);
                         }
