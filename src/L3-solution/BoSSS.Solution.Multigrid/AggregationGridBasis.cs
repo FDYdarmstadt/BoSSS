@@ -384,8 +384,8 @@ namespace BoSSS.Solution.Multigrid {
                 int[][] Ag2Pt = agSeq[iLevel].iLogicalCells.AggregateCellToParts;
                 int[][] C2F = agSeq[iLevel].jCellCoarse2jCellFine;
 
-                Debug.Assert(Ag2Pt.Length == Jagg);
-                Debug.Assert(C2F.Length == Jagg);
+                Debug.Assert(Ag2Pt.Length >= Jagg);
+                Debug.Assert(C2F.Length >= Jagg);
 
                 var Injectors_iLevel = new MultidimensionalArray[Jagg];
                 Injectors[iLevel] = Injectors_iLevel;
@@ -458,8 +458,8 @@ namespace BoSSS.Solution.Multigrid {
                 int[][] Ag2Pt_Fine = agSeq[iLevel - 1].iLogicalCells.AggregateCellToParts;
                 int[][] C2F = agSeq[iLevel].jCellCoarse2jCellFine;
 
-                Debug.Assert(Ag2Pt.Length == Jagg);
-                Debug.Assert(C2F.Length == Jagg);
+                Debug.Assert(Ag2Pt.Length >= Jagg);
+                Debug.Assert(C2F.Length >= Jagg);
 
                 var Injectors_iLevel = new MultidimensionalArray[Jagg];
                 Injectors[iLevel] = Injectors_iLevel;
