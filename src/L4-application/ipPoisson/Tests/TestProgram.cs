@@ -102,7 +102,11 @@ namespace BoSSS.Application.SipPoisson.Tests {
         public static void TestSolver() {
 
             using(SipPoisson.SipPoissonMain p = new SipPoissonMain()) {
+#if DEBUG
+                var ctrl = SipHardcodedControl.TestCartesian2(1, 3, SolverCodes.exp_softpcg_mg, 2);
+#else
                 var ctrl = SipHardcodedControl.TestCartesian2(8, 3, SolverCodes.exp_softpcg_mg, 3);
+#endif
                 p.Init(ctrl);
                 p.RunSolverMode();
 
