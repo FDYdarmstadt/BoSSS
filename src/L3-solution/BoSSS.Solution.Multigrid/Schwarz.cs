@@ -192,10 +192,11 @@ namespace BoSSS.Solution.Multigrid {
                     int[] neigh_j = ag.iLogicalCells.CellNeighbours[j];
                     foreach (int jNeigh in neigh_j) {
                         //adjncy.AddRange(neigh_j);
-                        if (jNeigh < JComp)
+                        if (jNeigh < JComp) {
                             adjncy.Add(jNeigh);
-                        else
-                            Console.WriteLine("Skipping external cell");
+                        } else {
+                            //Console.WriteLine("Skipping external cell");
+                        }
                     }
                     xadj[j + 1] = xadj[j] + neigh_j.Length;
                 }

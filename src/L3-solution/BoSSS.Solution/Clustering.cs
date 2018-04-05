@@ -384,7 +384,7 @@ namespace BoSSS.Solution.Utils {
 
             for (int i = 0; i < timeStepSizes.Length; i++) {
                 int result = RoundToInt(timeStepSizes[0] / timeStepSizes[i], eps);  // eps was 1.0e-1 
-                Debug.Assert(result > 1e4 || result <= 0, String.Format("Number of sub-steps in cluster {0} is {1}. Does this make sense?", i, result));
+                Debug.Assert(result > 0 || result < 1e4, String.Format("Number of sub-steps in cluster {0} is {1}. Does this make sense?", i, result));
                 subSteps.Add(result);
             }
 
