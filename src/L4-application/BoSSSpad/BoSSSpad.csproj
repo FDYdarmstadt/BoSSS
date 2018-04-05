@@ -163,15 +163,15 @@
     <None Include="app.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\internal\src\experimental\L3-solution\BoSSS.Solution.LevelSetTools\BoSSS.Solution.LevelSetTools.csproj">
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.LevelSetTools\BoSSS.Solution.LevelSetTools.csproj">
       <Project>{9ee2fcad-e8a4-4f14-b932-d1a4904d715d}</Project>
       <Name>BoSSS.Solution.LevelSetTools</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\internal\src\experimental\L3-solution\BoSSS.Solution.XNSECommon\BoSSS.Solution.XNSECommon.csproj">
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XNSECommon\BoSSS.Solution.XNSECommon.csproj">
       <Project>{0d8f577e-316d-4362-816b-9f610c5eb4a5}</Project>
       <Name>BoSSS.Solution.XNSECommon</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\internal\src\experimental\L4-application\XNSE_Solver\XNSE_Solver.csproj">
+    <ProjectReference Include="..\XNSE_Solver\XNSE_Solver.csproj">
       <Project>{3d867374-bf9a-475e-8f5c-e1c067605b9c}</Project>
       <Name>XNSE_Solver</Name>
     </ProjectReference>
