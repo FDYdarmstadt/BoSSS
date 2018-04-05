@@ -17,12 +17,14 @@ limitations under the License.
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.XDG;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution;
 using BoSSS.Solution.Queries;
 using CNS;
 using CNS.Convection;
 using CNS.EquationSystem;
+using CNS.IBM;
 using CNS.LoadBalancing;
 using CNS.MaterialProperty;
 using CNS.ShockCapturing;
@@ -50,7 +52,8 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             //TestRebalancingForDG2WithAB1AndAV();
             //TestRebalancingForDG0WithLTS1SingleSubGrid();
             //TestRebalancingForDG0WithLTS1TwoSubGrids();
-            TestRebalancingForDG2WithLTS1TwoSubGridsAndAV();
+            //TestRebalancingForDG2WithLTS1TwoSubGridsAndAV();
+            TestRebalancingForDG2WithRK1AndAV_IBM_AggOff();
             TearDown();
         }
 
@@ -69,7 +72,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
         }
 
         [Test]
-        public static void TestRealancingForDG0WithAB1() {
+        public static void TestRebalancingForDG0WithAB1() {
             int dgDegree = 0;
             ExplicitSchemes explicitScheme = ExplicitSchemes.AdamsBashforth;
             int explicitOrder = 1;
@@ -175,6 +178,60 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             //control.dtFixed = 1.5e-3;
 
             CheckRunsProduceSameResults(control, hilbert: true);
+        }
+
+        [Test]
+        public static void TestRebalancingForDG2WithRK1AndAV_IBM_AggOn() {
+            int dgDegree = 2;
+            ExplicitSchemes explicitScheme = ExplicitSchemes.RungeKutta;
+            int explicitOrder = 1;
+
+            IBMControl control = ShockTubeToro1WithIBMAndAVTemplate(
+                dgDegree: dgDegree,
+                explicitScheme: explicitScheme,
+                explicitOrder: explicitOrder);
+
+            control.AgglomerationThreshold = 0.9;
+
+            // MUST be the same as rebalancing period since LTS scheme MUST
+            // recluster after rebalancing (at least, it makes life much easier)
+            //control.ReclusteringInterval = REBALANCING_PERIOD;
+
+            //control.NumberOfSubGrids = 3;
+            //control.maxNumOfSubSteps = 10;
+            //control.FluxCorrection = false;
+
+            Console.WriteLine("TestRebalancingForDG2WithRK1AndAV_IBM_AggOn");
+            CheckRunsProduceSameResults(control, hilbert: true);
+        }
+
+        [Test]
+        public static void TestRebalancingForDG2WithRK1AndAV_IBM_AggOff() {
+            int dgDegree = 2;
+            ExplicitSchemes explicitScheme = ExplicitSchemes.RungeKutta;
+            int explicitOrder = 1;
+
+            IBMControl control = ShockTubeToro1WithIBMAndAVTemplate(
+                dgDegree: dgDegree,
+                explicitScheme: explicitScheme,
+                explicitOrder: explicitOrder);
+
+            control.AgglomerationThreshold = 0.1;
+
+            // MUST be the same as rebalancing period since LTS scheme MUST
+            // recluster after rebalancing (at least, it makes life much easier)
+            //control.ReclusteringInterval = REBALANCING_PERIOD;
+
+            //control.NumberOfSubGrids = 3;
+            //control.maxNumOfSubSteps = 10;
+            //control.FluxCorrection = false;
+
+            Console.WriteLine("TestRebalancingForDG2WithRK1AndAV_IBM_AggOff");
+            // Threshold is set to 2e1-3, since METIS results for density are worse compared to Hilbert
+            // Could be influenced by the handling of cut-cells along processor boundaries, communication plays
+            // a more important role for non-agglomerated cut-cells in the IBM-case as for non-IBM simulations, etc.
+            // Anyway, this does not seem to be a real problem.
+            CheckRunsProduceSameResults(control, differenceThreshold: 2e-13, hilbert: true);
         }
 
         private static CNSControl ShockTubeToro1Template(int dgDegree, ExplicitSchemes explicitScheme, int explicitOrder, int noOfCells = 50, double gridStretching = 0.0, bool twoD = false) {
@@ -298,7 +355,8 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             var c = ShockTubeToro1Template(
                 dgDegree: dgDegree,
                 explicitScheme: explicitScheme,
-                explicitOrder: explicitOrder);
+                explicitOrder: explicitOrder,
+                twoD: twoD);
             if (twoD) {
                 c.AddVariable(Variables.ArtificialViscosity, 2);
             } else {
@@ -309,6 +367,149 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             c.AddVariable(Variables.ShockSensor, 0);
             c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 2);
             c.Endtime = endTime;
+
+            return c;
+        }
+
+        private static IBMControl ShockTubeToro1WithIBMAndAVTemplate(int dgDegree, ExplicitSchemes explicitScheme, int explicitOrder, int noOfCellsX = 50, int noOfCellsY = 10) {
+            IBMControl c = new IBMControl();
+
+            c.DbPath = null;
+            //c.DbPath = @"c:\bosss_db\";
+            c.savetodb = false;
+
+            c.saveperiod = 1;
+            c.PrintInterval = 1;
+
+            double xMin = 0;
+            double xMax = 1;
+            double yMin = 0;
+            double yMax = 1;
+
+            bool AV = true;
+
+            c.DomainType = DomainTypes.StaticImmersedBoundary;
+            c.LevelSetFunction = delegate (double[] X, double t) {
+                return X[1] - 0.16;
+            };
+            c.LevelSetBoundaryTag = "AdiabaticSlipWall";
+            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            c.LevelSetQuadratureOrder = 6;
+            c.AgglomerationThreshold = 0.3;
+            c.AddVariable(IBMVariables.LevelSet, 1);
+
+            //c.AddVariable(IBMVariables.FluidCells, 1);
+            //c.AddVariable(IBMVariables.FluidCellsWithoutSourceCells, 1);
+            //c.AddVariable(IBMVariables.CutCells, 1);
+            //c.AddVariable(IBMVariables.CutCellsWithoutSourceCells, 1);
+            //c.AddVariable(IBMVariables.SourceCells, 1);
+
+            if (AV) {
+                c.ActiveOperators = Operators.Convection | Operators.ArtificialViscosity;
+            } else {
+                c.ActiveOperators = Operators.Convection;
+            }
+            c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
+
+            // Shock-capturing
+            double sensorLimit = 1e-3;
+            double epsilon0 = 1.0;
+            double kappa = 0.5;
+
+            if (AV) {
+                Variable sensorVariable = Variables.Density;
+                c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+                c.AddVariable(Variables.ShockSensor, 0);
+                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 2);
+            }
+
+            c.ExplicitScheme = explicitScheme;
+            c.ExplicitOrder = explicitOrder;
+
+            c.EquationOfState = IdealGas.Air;
+
+            c.MachNumber = 1.0 / Math.Sqrt(c.EquationOfState.HeatCapacityRatio);
+            c.ReynoldsNumber = 1.0;
+            c.PrandtlNumber = 0.71;
+
+            c.AddVariable(Variables.Density, dgDegree);
+            c.AddVariable(Variables.Momentum.xComponent, dgDegree);
+            c.AddVariable(Variables.Momentum.yComponent, dgDegree);
+            c.AddVariable(Variables.Energy, dgDegree);
+            c.AddVariable(Variables.Velocity.xComponent, dgDegree);
+            c.AddVariable(Variables.Velocity.yComponent, dgDegree);
+            c.AddVariable(Variables.Pressure, dgDegree);
+            c.AddVariable(Variables.Rank, 0);
+
+            if (AV) {
+                c.AddVariable(Variables.ArtificialViscosity, 2);
+                c.AddVariable(Variables.CFLArtificialViscosity, 0);
+            }
+            c.AddVariable(Variables.CFL, 0);
+            c.AddVariable(Variables.CFLConvective, 0);
+
+            if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS)) {
+                c.AddVariable(Variables.LTSClusters, 0);
+            }
+
+            c.GridFunc = delegate {
+                double[] xNodes = GenericBlas.Linspace(xMin, xMax, noOfCellsX + 1);
+                double[] yNodes = GenericBlas.Linspace(yMin, yMax, noOfCellsY + 1);
+                var grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
+                // Boundary conditions
+                grid.EdgeTagNames.Add(1, "AdiabaticSlipWall");
+
+                grid.DefineEdgeTags(delegate (double[] _X) {
+                    return 1;
+                });
+                return grid;
+            };
+
+            c.AddBoundaryCondition("AdiabaticSlipWall");
+
+            // Normal vector of initial shock
+            Vector2D normalVector = new Vector2D(1, 0);
+
+            // Direction vector of initial shock
+            Vector2D r = new Vector2D(normalVector.y, -normalVector.x);
+            r.Normalize();
+
+            // Distance from a point X to the initial shock
+            double[] p = new double[] { 0.5, 0.0 };
+
+            double cellSize = Math.Min((xMax - xMin) / noOfCellsX, (yMax - yMin) / noOfCellsY);
+
+            Func<double, double> SmoothJump = delegate (double distance) {
+                // smoothing should be in the range of h/p
+                double maxDistance = 4.0 * cellSize / Math.Max(dgDegree, 1);
+
+                return (Math.Tanh(distance / maxDistance) + 1.0) * 0.5;
+            };
+
+            Func<double, double> Jump = (x => x <= 0.5 ? 0 : 1);
+
+            // Initial conditions
+            double densityLeft = 1.0;
+            double densityRight = 0.125;
+            double pressureLeft = 1.0;
+            double pressureRight = 0.1;
+
+            //c.InitialValues_Evaluators.Add(Variables.Density, X => densityLeft - SmoothJump(DistanceFromPointToLine(X, p, r)) * (densityLeft - densityRight));
+            //c.InitialValues_Evaluators.Add(Variables.Pressure, X => pressureLeft - SmoothJump(DistanceFromPointToLine(X, p, r)) * (pressureLeft - pressureRight));
+            c.InitialValues_Evaluators.Add(Variables.Density, X => densityLeft - Jump(X[0]) * (densityLeft - densityRight));
+            c.InitialValues_Evaluators.Add(Variables.Pressure, X => pressureLeft - Jump(X[0]) * (pressureLeft - pressureRight));
+            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => 0.0);
+            c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => 0.0);
+
+            // Time config
+            c.dtMin = 0.0;
+            c.dtMax = 1.0;
+            c.CFLFraction = 0.1;
+            c.Endtime = 0.001;
+            c.NoOfTimesteps = int.MaxValue;
+
+            c.ProjectName = "Shock tube";
+            c.SessionName = String.Format("IBM shock tube, p={0}, {1}x{2} cells, aggloThresh={3}, s0={4:0.0E-00}, CFLFrac={5}, ALTS {6}/{7}/{8}({9})", dgDegree, noOfCellsX, noOfCellsY, c.AgglomerationThreshold, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps);
 
             return c;
         }
@@ -443,7 +644,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
                 //Console.WriteLine("{0}-L2Norm Rep ON: {1}", varName[i], L2NormRepON);
                 //Console.WriteLine("{0}-L2Norm Rep OFF: {1}", varName[i], L2NormRepOFF);
 
-                string message = String.Format("Difference in {0}-L2Norms is {1} (Threshold is {2})", varName[i], difference, differenceThreshold);
+                string message = String.Format("METIS: Difference in {0} norm is {1} (Threshold is {2})", varName[i], difference, differenceThreshold);
                 Console.WriteLine(message);
                 assertions.Add(() => Assert.IsTrue(difference < differenceThreshold, message));
 
@@ -456,7 +657,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
 
                     differenceHilbert = Math.Abs(L2NormHilbert - L2NormRepOFF);
 
-                    string messageHilbert = String.Format("Difference in {0}-L2Norms is {1} (Threshold is {2})", varName[i], differenceHilbert, differenceThreshold);
+                    string messageHilbert = String.Format("Hilbert: Difference in {0} norm is {1} (Threshold is {2})", varName[i], differenceHilbert, differenceThreshold);
                     Console.WriteLine(messageHilbert);
                     assertions.Add(() => Assert.IsTrue(differenceHilbert < differenceThreshold, messageHilbert));
                 }
