@@ -96,5 +96,35 @@ namespace BoSSS.Application.SipPoisson.Tests {
                 Assert.LessOrEqual(err, thres);
             }
         }
+
+
+        [Test]
+        public static void TestSolver() {
+
+            using(SipPoisson.SipPoissonMain p = new SipPoissonMain()) {
+                var ctrl = SipHardcodedControl.TestCartesian2(8, 3, SolverCodes.exp_softpcg_mg, 3);
+                p.Init(ctrl);
+                p.RunSolverMode();
+
+
+                //Application<SipControl>._Main(new string[] {
+                //        "--control", "cs:ipPoisson.ippHardcodedControl.TestCartesian1()"
+                //    },
+                //    false,
+                //    "",
+                //    delegate() {
+                //        p = new SipPoissonMain();
+                //        return p;
+                //    });
+
+
+                double err = (double)p.QueryHandler.QueryResults["SolL2err"];
+                double thres = 5.0e-9;
+
+                Console.WriteLine("L2 Error of solution: " + err + " (threshold is " + thres + ")");
+                Assert.LessOrEqual(err, thres);
+            }
+         
+        }
     }
 }
