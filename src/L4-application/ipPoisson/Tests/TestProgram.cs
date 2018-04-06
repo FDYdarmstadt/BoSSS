@@ -24,7 +24,7 @@ using NUnit.Framework;
 namespace BoSSS.Application.SipPoisson.Tests {
 
     [TestFixture]
-    class TestProgram {
+    static class TestProgram {
 
         [TestFixtureSetUp]
         public static void Init() {
@@ -99,14 +99,20 @@ namespace BoSSS.Application.SipPoisson.Tests {
 
 
         [Test]
-        public static void TestSolver() {
+        public static void TestSolver(
+#if DEBUG            
+            [Values(2)]int dgDeg,
+            [Values(2)]int res,
+            [Values(3)]int dim
+#else
+            [Values(3)]int dgDeg,
+            [Values(8)]int res,
+            [Values(3)]int dim
+#endif
+            ) {
 
             using(SipPoisson.SipPoissonMain p = new SipPoissonMain()) {
-#if DEBUG
-                var ctrl = SipHardcodedControl.TestCartesian2(1, 3, SolverCodes.exp_softpcg_mg, 2);
-#else
-                var ctrl = SipHardcodedControl.TestCartesian2(8, 3, SolverCodes.exp_softpcg_mg, 3);
-#endif
+                var ctrl = SipHardcodedControl.TestCartesian2(res, dim, SolverCodes.exp_softpcg_mg, dgDeg);
                 p.Init(ctrl);
                 p.RunSolverMode();
 
@@ -123,7 +129,8 @@ namespace BoSSS.Application.SipPoisson.Tests {
 
 
                 double err = (double)p.QueryHandler.QueryResults["SolL2err"];
-                double thres = 5.0e-9;
+                double h = p.GridData.Cells.h_maxGlobal;
+                double thres = 0.01*Math.Pow(h, dgDeg);
 
                 Console.WriteLine("L2 Error of solution: " + err + " (threshold is " + thres + ")");
                 Assert.LessOrEqual(err, thres);

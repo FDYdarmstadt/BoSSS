@@ -124,6 +124,7 @@ namespace BoSSS.Solution.Multigrid {
 //                    var __PrlgOperator_Check = this.FinerLevel.Mapping.FromOtherLevelMatrix(this.Mapping);
 //#endif
                     var __PrlgOperator = this.Mapping.GetProlongationOperator(this.FinerLevel.Mapping);
+                    //var __PrlgOperator = this.FinerLevel.Mapping.FromOtherLevelMatrix(this.Mapping);
                     Debug.Assert(__PrlgOperator.RowPartitioning.LocalLength == this.FinerLevel.Mapping.LocalLength);
                     Debug.Assert(__PrlgOperator.ColPartition.LocalLength == this.Mapping.LocalLength);
 //#if DEBUG

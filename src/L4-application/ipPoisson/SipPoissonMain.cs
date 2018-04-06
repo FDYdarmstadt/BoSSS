@@ -74,6 +74,12 @@ namespace BoSSS.Application.SipPoisson {
             //BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
             //BatchmodeConnector.MatlabExecuteable = "C:\\cygwin\\bin\\bash.exe";
 
+            //Tests.TestProgram.Init();
+            //Tests.TestProgram.TestSolver(2,19,2);
+            //Tests.TestProgram.Cleanup();
+            //return;
+
+
             _Main(args, false, delegate () {
                 SipPoissonMain p = new SipPoissonMain();
 
@@ -125,12 +131,12 @@ namespace BoSSS.Application.SipPoisson {
         BlockMsrMatrix LaplaceMtx;
         double[] LaplaceAffine;
 
+        /// <summary>
+        /// Includes assembly of the matrix.
+        /// </summary>
+        /// <param name="L"></param>
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
             using (FuncTrace tr = new FuncTrace()) {
-
-                
-
-
 
                 // create operator
                 // ===============
