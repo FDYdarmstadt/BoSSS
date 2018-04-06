@@ -99,20 +99,23 @@ namespace BoSSS.Application.SipPoisson.Tests {
 
 
         [Test]
-        public static void TestSolver(
+        public static void TestIterativeSolver(
 #if DEBUG            
             [Values(2)]int dgDeg,
-            [Values(2)]int res,
-            [Values(3)]int dim
+            [Values(40)]int res,
+            [Values(2)]int dim,
+            [Values(SolverCodes.exp_softpcg_schwarz)] SolverCodes solver
 #else
             [Values(3)]int dgDeg,
             [Values(8)]int res,
-            [Values(3)]int dim
+            [Values(3)]int dim,
+            [Values(SolverCodes.exp_softpcg_mg, SolverCodes.exp_softpcg_schwarz, SolverCodes.exp_softpcg_schwarz_directcoarse)] SolverCodes solver
+
 #endif
             ) {
 
             using(SipPoisson.SipPoissonMain p = new SipPoissonMain()) {
-                var ctrl = SipHardcodedControl.TestCartesian2(res, dim, SolverCodes.exp_softpcg_schwarz, dgDeg);
+                var ctrl = SipHardcodedControl.TestCartesian2(res, dim, solver, dgDeg);
                 p.Init(ctrl);
                 p.RunSolverMode();
 
