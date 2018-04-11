@@ -44,6 +44,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
         private static int REBALANCING_PERIOD = 5;
 
         public static void Main(string[] args) {
+            //System.Threading.Thread.Sleep(10000);
             SetUp();
             //System.Threading.Thread.Sleep(10000);
             //TestRebalancingForDG0WithRK1();
@@ -52,8 +53,9 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             //TestRebalancingForDG2WithAB1AndAV();
             //TestRebalancingForDG0WithLTS1SingleSubGrid();
             //TestRebalancingForDG0WithLTS1TwoSubGrids();
-            //TestRebalancingForDG2WithLTS1TwoSubGridsAndAV();
-            TestRebalancingForDG2WithRK1AndAV_IBM_AggOff();
+            TestRebalancingForDG2WithLTS1TwoSubGridsAndAV();
+            //TestRebalancingForDG2WithRK1AndAV_IBM_AggOff();
+            //TestRebalancingForDG2WithLTS1AndAV_IBM_AggOff();
             TearDown();
         }
 
@@ -177,7 +179,8 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             //control.NoOfTimesteps = 5;
             //control.dtFixed = 1.5e-3;
 
-            CheckRunsProduceSameResults(control, hilbert: true);
+            //CheckRunsProduceSameResults(control, hilbert: true);
+            CheckRunsProduceSameResults(control);
         }
 
         [Test]
@@ -193,16 +196,9 @@ namespace CNS_MPITests.Tests.LoadBalancing {
 
             control.AgglomerationThreshold = 0.9;
 
-            // MUST be the same as rebalancing period since LTS scheme MUST
-            // recluster after rebalancing (at least, it makes life much easier)
-            //control.ReclusteringInterval = REBALANCING_PERIOD;
-
-            //control.NumberOfSubGrids = 3;
-            //control.maxNumOfSubSteps = 10;
-            //control.FluxCorrection = false;
-
             Console.WriteLine("TestRebalancingForDG2WithRK1AndAV_IBM_AggOn");
-            CheckRunsProduceSameResults(control, hilbert: true);
+            //CheckRunsProduceSameResults(control, hilbert: true);
+            CheckRunsProduceSameResults(control);
         }
 
         [Test]
@@ -218,20 +214,69 @@ namespace CNS_MPITests.Tests.LoadBalancing {
 
             control.AgglomerationThreshold = 0.1;
 
-            // MUST be the same as rebalancing period since LTS scheme MUST
-            // recluster after rebalancing (at least, it makes life much easier)
-            //control.ReclusteringInterval = REBALANCING_PERIOD;
-
-            //control.NumberOfSubGrids = 3;
-            //control.maxNumOfSubSteps = 10;
-            //control.FluxCorrection = false;
-
             Console.WriteLine("TestRebalancingForDG2WithRK1AndAV_IBM_AggOff");
             // Threshold is set to 2e1-3, since METIS results for density are worse compared to Hilbert
             // Could be influenced by the handling of cut-cells along processor boundaries, communication plays
             // a more important role for non-agglomerated cut-cells in the IBM-case as for non-IBM simulations, etc.
             // Anyway, this does not seem to be a real problem.
-            CheckRunsProduceSameResults(control, differenceThreshold: 2e-13, hilbert: true);
+            //CheckRunsProduceSameResults(control, differenceThreshold: 2e-13, hilbert: true);
+            CheckRunsProduceSameResults(control, differenceThreshold: 2e-13);
+        }
+
+        //[Test]
+        public static void TestRebalancingForDG2WithLTS1AndAV_IBM_AggOn() {
+            int dgDegree = 2;
+            ExplicitSchemes explicitScheme = ExplicitSchemes.LTS;
+            int explicitOrder = 1;
+
+            IBMControl control = ShockTubeToro1WithIBMAndAVTemplate(
+                dgDegree: dgDegree,
+                explicitScheme: explicitScheme,
+                explicitOrder: explicitOrder);
+
+            control.AgglomerationThreshold = 0.9;
+
+            // MUST be the same as rebalancing period since LTS scheme MUST
+            // recluster after rebalancing (at least, it makes life much easier)
+            control.ReclusteringInterval = REBALANCING_PERIOD;
+
+            control.NumberOfSubGrids = 3;
+            control.maxNumOfSubSteps = 10;
+            control.FluxCorrection = false;
+
+            Console.WriteLine("TestRebalancingForDG2WithLTS1AndAV_IBM_AggOn");
+            //CheckRunsProduceSameResults(control, hilbert: true);
+            CheckRunsProduceSameResults(control);
+        }
+
+        //[Test]
+        public static void TestRebalancingForDG2WithLTS1AndAV_IBM_AggOff() {
+            int dgDegree = 2;
+            ExplicitSchemes explicitScheme = ExplicitSchemes.LTS;
+            int explicitOrder = 1;
+
+            IBMControl control = ShockTubeToro1WithIBMAndAVTemplate(
+                dgDegree: dgDegree,
+                explicitScheme: explicitScheme,
+                explicitOrder: explicitOrder);
+
+            control.AgglomerationThreshold = 0.1;
+
+            // MUST be the same as rebalancing period since LTS scheme MUST
+            // recluster after rebalancing (at least, it makes life much easier)
+            control.ReclusteringInterval = REBALANCING_PERIOD;
+
+            control.NumberOfSubGrids = 3;
+            control.maxNumOfSubSteps = 10;
+            control.FluxCorrection = false;
+
+            Console.WriteLine("TestRebalancingForDG2WithLTS1AndAV_IBM_AggOff");
+            // Threshold is set to 2e1-3, since METIS results for density are worse compared to Hilbert
+            // Could be influenced by the handling of cut-cells along processor boundaries, communication plays
+            // a more important role for non-agglomerated cut-cells in the IBM-case as for non-IBM simulations, etc.
+            // Anyway, this does not seem to be a real problem.
+            //CheckRunsProduceSameResults(control, differenceThreshold: 2e-13, hilbert: true);
+            CheckRunsProduceSameResults(control, differenceThreshold: 2e-13);
         }
 
         private static CNSControl ShockTubeToro1Template(int dgDegree, ExplicitSchemes explicitScheme, int explicitOrder, int noOfCells = 50, double gridStretching = 0.0, bool twoD = false) {
@@ -520,11 +565,15 @@ namespace CNS_MPITests.Tests.LoadBalancing {
 
             CNSControl loadBalControl = refControl.CloneAs();
             loadBalControl.DynamicLoadBalancing_Period = REBALANCING_PERIOD;
-            loadBalControl.DynamicLoadBalancing_CellClassifier = new RandomCellClassifier(2);
-            //loadBalControl.DynamicLoadBalancing_CellClassifier = new ArtificialViscosityCellClassifier();
-            loadBalControl.DynamicLoadBalancing_CellCostEstimatorFactories.Add((p, i) => new StaticCellCostEstimator(new[] { 1, 10 }));
-            //loadBalControl.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(ArtificialViscosityCellCostEstimator.GetMultiBalanceConstraintsBasedEstimators());
             loadBalControl.DynamicLoadBalancing_ImbalanceThreshold = 0.01;
+
+            //if (loadBalControl.ExplicitScheme is ExplicitSchemes.LTS) {
+            //    loadBalControl.DynamicLoadBalancing_CellClassifier = new LTSCellClassifier();
+            //    loadBalControl.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(LTSCellCostEstimator.Factory(loadBalControl.NumberOfSubGrids));
+            //} else {
+            loadBalControl.DynamicLoadBalancing_CellClassifier = new RandomCellClassifier(2);
+            loadBalControl.DynamicLoadBalancing_CellCostEstimatorFactories.Add((p, i) => new StaticCellCostEstimator(new[] { 1, 10 }));
+            //}
 
             //// TEST ONLY SUCCEEDS IF THESE LINES ARE IN
             //loadBalControl.DynamicLoadBalancing_CellClassifier = new IndifferentCellClassifier();
@@ -535,23 +584,30 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             Debug.Assert(loadBalControl.DynamicLoadBalancing_CellClassifier != null);
             Debug.Assert(loadBalControl.DynamicLoadBalancing_CellCostEstimatorFactories.Count > 0);
 
+            ShockTubeLoadBalancingTests hilbertSolver = null;
+            List<IProgram<CNSControl>> loadBalSolvers = new List<IProgram<CNSControl>>();
+
+            if (hilbert) {
+                CNSControl hilbertControl = loadBalControl.CloneAs();
+                hilbertControl.GridPartType = GridPartType.Hilbert;
+
+                Console.WriteLine("\nRun WITH load balancing (Hilbert)");
+                hilbertSolver = new ShockTubeLoadBalancingTests();
+                hilbertSolver.Init(hilbertControl);
+                hilbertSolver.RunSolverMode();
+                loadBalSolvers.Add(hilbertSolver);
+            }
+
             Console.WriteLine("Run WITHOUT load balancing");
             var refSolver = new ShockTubeLoadBalancingTests();
             refSolver.Init(refControl);
             refSolver.RunSolverMode();
 
             Console.WriteLine("\nRun WITH load balancing");
-            var loadBalSolver = new ShockTubeLoadBalancingTests();
-            loadBalSolver.Init(loadBalControl);
-            loadBalSolver.RunSolverMode();
-
-            ShockTubeLoadBalancingTests loadBalSolverHilbert = null;
-            if (hilbert) {
-                Console.WriteLine("\nRun WITH load balancing (Hilbert)");
-                loadBalSolverHilbert = new ShockTubeLoadBalancingTests();
-                loadBalSolverHilbert.Init(loadBalControl);
-                loadBalSolverHilbert.RunSolverMode();
-            }
+            var metisSolver = new ShockTubeLoadBalancingTests();
+            metisSolver.Init(loadBalControl);
+            metisSolver.RunSolverMode();
+            loadBalSolvers.Add(metisSolver);
 
             // To be able to compare errors without using the database, we need to 
             // agree on a single grid partitioning in the end -> use ref
@@ -572,7 +628,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             //if (!twoD) {
             //    CompareErrors(refSolver.WorkingSet, loadBalSolver.WorkingSet, differenceThreshold);
             //}
-            CompareNorms(refSolver, loadBalSolver, differenceThreshold, loadBalSolverHilbert);
+            CompareNorms(refSolver, loadBalSolvers, differenceThreshold);
         }
 
         /// <summary>
@@ -626,40 +682,25 @@ namespace CNS_MPITests.Tests.LoadBalancing {
         /// <param name="loadBalSolver"></param>
         /// <param name="refSolver"></param>
         /// <param name="differenceThreshold"></param>
-        private static void CompareNorms(IProgram<CNSControl> loadBalSolver, IProgram<CNSControl> refSolver, double differenceThreshold, IProgram<CNSControl> hilbertSolver = null) {
+        private static void CompareNorms(IProgram<CNSControl> refSolver, IList<IProgram<CNSControl>> loadBalSolvers, double differenceThreshold) {
             List<Action> assertions = new List<Action>();
             string[] varName = { "Density", "x-Momentum", "Energy" };
 
-            for (int i = 0; i < 3; i++) {
-                List<DGField> listOfDGFields_RepON = (List<DGField>)loadBalSolver.IOFields;
-                DGField variableRepON = listOfDGFields_RepON[i];
-                double L2NormRepON = variableRepON.L2Norm();
-
+            for (int i = 0; i < varName.Length; i++) {
                 List<DGField> listOfDGFields_RepOFF = (List<DGField>)refSolver.IOFields;
                 DGField variableRepOFF = listOfDGFields_RepOFF[i];
                 double L2NormRepOFF = variableRepOFF.L2Norm();
 
-                double difference = Math.Abs(L2NormRepON - L2NormRepOFF);
+                for (int j = 0; j < loadBalSolvers.Count; j++) {
+                    List<DGField> listOfDGFields_RepON = (List<DGField>)loadBalSolvers[j].IOFields;
+                    DGField variableRepON = listOfDGFields_RepON[i];
+                    double L2NormRepON = variableRepON.L2Norm();
 
-                //Console.WriteLine("{0}-L2Norm Rep ON: {1}", varName[i], L2NormRepON);
-                //Console.WriteLine("{0}-L2Norm Rep OFF: {1}", varName[i], L2NormRepOFF);
+                    double difference = Math.Abs(L2NormRepON - L2NormRepOFF);
 
-                string message = String.Format("METIS: Difference in {0} norm is {1} (Threshold is {2})", varName[i], difference, differenceThreshold);
-                Console.WriteLine(message);
-                assertions.Add(() => Assert.IsTrue(difference < differenceThreshold, message));
-
-                // Duplicated code...
-                double differenceHilbert;
-                if (hilbertSolver != null) {
-                    List<DGField> listOfDGFields_Hilbert = (List<DGField>)hilbertSolver.IOFields;
-                    DGField variableHilbert = listOfDGFields_Hilbert[i];
-                    double L2NormHilbert = variableHilbert.L2Norm();
-
-                    differenceHilbert = Math.Abs(L2NormHilbert - L2NormRepOFF);
-
-                    string messageHilbert = String.Format("Hilbert: Difference in {0} norm is {1} (Threshold is {2})", varName[i], differenceHilbert, differenceThreshold);
-                    Console.WriteLine(messageHilbert);
-                    assertions.Add(() => Assert.IsTrue(differenceHilbert < differenceThreshold, messageHilbert));
+                    string message = String.Format("{0}: Difference in {1} norm is {2} (Threshold is {3})", loadBalSolvers[j].Control.GridPartType.ToString(), varName[i], difference, differenceThreshold);
+                    Console.WriteLine(message);
+                    assertions.Add(() => Assert.IsTrue(difference < differenceThreshold, message));
                 }
             }
 
