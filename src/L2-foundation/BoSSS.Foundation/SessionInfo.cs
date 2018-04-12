@@ -137,7 +137,7 @@ namespace BoSSS.Foundation.IO {
 
 
         /// <summary>
-        /// the git commit hash of the master HEAD
+        /// the git commit hash of the master branch
         /// </summary>
         public string MasterGitCommit {
             get {
