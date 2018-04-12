@@ -135,6 +135,23 @@ namespace BoSSS.Foundation.IO {
         [DataMember]
         private Guid m_RestartedFrom;
 
+
+        /// <summary>
+        /// the git commit hash of the master HEAD
+        /// </summary>
+        public string MasterGitCommit {
+            get {
+                return m_MasterGitCommit;
+            }
+            set {
+                m_MasterGitCommit = value;
+            }
+        }
+
+        [DataMember]
+        private string m_MasterGitCommit;
+
+
         /// <summary>
         /// A collection of tags for this session.
         /// </summary>
