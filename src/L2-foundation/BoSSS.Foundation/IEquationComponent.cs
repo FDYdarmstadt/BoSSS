@@ -1486,7 +1486,7 @@ namespace BoSSS.Foundation {
     /// \f$ U = (u_0, \ldots, u_{L-1} )\f$  denotes the trial functions (correspond to domain variable, defined by the 
     /// argument ordering <see cref="IEquationComponent.ArgumentOrdering"/>).
     /// </summary>
-    public interface INonlinEdgeform_V : IEdgeForm {
+    public interface INonlinEdgeForm_V : IEdgeForm {
 
         /// <summary>
         /// the values of \f$ {f}^{*}(\ldots)\f$   on interior edges on \f$ \Gamma_{\mathrm{int}}\f$ .
@@ -1521,7 +1521,7 @@ namespace BoSSS.Foundation {
         /// </param>
         void InternalEdge(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout, 
-            MultidimensionalArray fin, MultidimensionalArray fot, bool adiaWall);
+            MultidimensionalArray fin, MultidimensionalArray fot);
 
         /// <summary>
         /// the values of \f$ {f}^\mathrm{in}(\ldots)\f$   on boundary edges on \f$ \partial \Omega\f$ .
@@ -1603,7 +1603,7 @@ namespace BoSSS.Foundation {
         /// </param>
         void InternalEdge(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
-            MultidimensionalArray fIN, MultidimensionalArray fOT, bool adiaWall);
+            MultidimensionalArray fIN, MultidimensionalArray fOT);
 
         /// <summary>
         /// the values of \f$ \vec{f}_{0}(\ldots)\f$   on boundary edges on \f$ \partial \Omega\f$ .

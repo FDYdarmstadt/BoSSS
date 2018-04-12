@@ -20,9 +20,9 @@ namespace CNS.Diffusion {
 
     /// <summary>
     /// Simply a combination of <see cref="INonlinEdgeform_GradV"/>,
-    /// <see cref="INonlinEdgeform_V"/> and
+    /// <see cref="INonlinEdgeForm_V"/> and
     /// <see cref="INonlinVolumeForm_GradV"/>, to make things easier to read
     /// </summary>
-    public interface INonlinear2ndOrderForm : INonlinEdgeform_GradV, INonlinEdgeform_V, INonlinVolumeForm_GradV {
+    public interface INonlinear2ndOrderForm : INonlinEdgeform_GradV, INonlinEdgeForm_V, INonlinVolumeForm_GradV {
     }
 }
