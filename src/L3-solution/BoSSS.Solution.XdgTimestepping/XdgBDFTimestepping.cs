@@ -246,13 +246,10 @@ namespace BoSSS.Solution.XdgTimestepping {
         BlockMsrMatrix m_PrecondMassMatrix;
 
 
-        //public CoordinateVector getSolutionVectorAt(int ti) {
-        //    if(ti < 0 || ti > m_PopulatedStackDepth)
-        //        throw new ArgumentOutOfRangeException();
-
-        //    return m_Stack_u[ti];
-        //}
-
+        /// <summary>
+        /// returns the solution fields (and level-set if necessary) for older stages in case of S > 1
+        /// </summary>
+        /// <returns></returns>
         public ICollection<DGField>[] GetRestartInfos() {
 
             if(m_PopulatedStackDepth < m_TSCchain[0].S)
@@ -260,10 +257,10 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             Debug.Assert(m_PopulatedStackDepth == m_TSCchain[0].S);
 
-            ICollection<DGField>[] restartInfo = new List<DGField>[m_PopulatedStackDepth];
+            ICollection<DGField>[] restartInfo = new List<DGField>[m_PopulatedStackDepth - 1];
 
-            for(int i = 1; i <= m_TSCchain[0].S; i++) {
-                restartInfo[i-1] = new List<DGField>();
+            for(int i = 1; i < m_TSCchain[0].S; i++) {
+                restartInfo[i - 1] = new List<DGField>();
 
                 if(this.Config_LevelSetHandling == LevelSetHandling.Coupled_Once
                     || this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
@@ -274,7 +271,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 DGField[] solFields = m_Stack_u[i].Mapping.Fields.ToArray();
                 foreach(DGField f in solFields) {
-                    restartInfo[i-1].Add(f);
+                    restartInfo[i - 1].Add(f);
                 }
 
             }
