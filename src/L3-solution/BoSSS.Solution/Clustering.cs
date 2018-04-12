@@ -258,17 +258,20 @@ namespace BoSSS.Solution.Utils {
             // Combine clusters with same number of sub-steps
             List<SubGrid> newClusters = new List<SubGrid>();
             List<int> newSubSteps = new List<int>();
+            newClusters.Add(clustering.Clusters.First());
+            newSubSteps.Add(subSteps.First());
 
-            for (int i = 0; i < clustering.NumberOfClusters; i++) {
-                if (i < clustering.NumberOfClusters - 1 && subSteps[i] == subSteps[i + 1]) {
+            for (int i = 1; i < clustering.NumberOfClusters; i++) {
+                if (subSteps[i] == newSubSteps.Last()) {
                     // Combine both clusters and remove the previous one
-                    SubGrid combinedSubGrid = new SubGrid(clustering.Clusters[i].VolumeMask.Union(clustering.Clusters[i + 1].VolumeMask));
+                    SubGrid combinedSubGrid = new SubGrid(newClusters.Last().VolumeMask.Union(clustering.Clusters[i].VolumeMask));
+                    newClusters.RemoveAt(newClusters.Count - 1);    // LATER: Implement this without removing old clusters, just adding, when combination is finished
                     newClusters.Add(combinedSubGrid);
                     //#if DEBUG
                     Console.WriteLine("TuneClustering: Clustering leads to clusters which are too similar. They are combined.");
                     //#endif
-                    newSubSteps.Add(subSteps[i]);
-                    i++;
+                    //newSubSteps.Add(subSteps[i]);
+                    //i++;
                 } else {
                     newClusters.Add(clustering.Clusters[i]);
                     newSubSteps.Add(subSteps[i]);

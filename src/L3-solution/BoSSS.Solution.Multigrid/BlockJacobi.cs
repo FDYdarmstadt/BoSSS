@@ -41,9 +41,9 @@ namespace BoSSS.Solution.Multigrid {
             this.m_MultigridOp = op;
             
 
-            if(!M.RowPartitioning.Equals(MgMap.Partitioning))
+            if(!M.RowPartitioning.EqualsPartition(MgMap.Partitioning))
                 throw new ArgumentException("Row partitioning mismatch.");
-            if(!M.ColPartition.Equals(MgMap.Partitioning))
+            if(!M.ColPartition.EqualsPartition(MgMap.Partitioning))
                 throw new ArgumentException("Column partitioning mismatch.");
 
             Mtx = M;
