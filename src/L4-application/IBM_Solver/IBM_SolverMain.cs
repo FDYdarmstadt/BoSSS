@@ -228,6 +228,8 @@ namespace BoSSS.Application.IBM_Solver {
 
         protected XdgBDFTimestepping m_BDF_Timestepper;
 
+        SinglePhaseField[] MGColoring;
+
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
 
             //// Write out Multigrid Levels
@@ -428,7 +430,7 @@ namespace BoSSS.Application.IBM_Solver {
                         DelComputeOperatorMatrix, DelUpdateLevelset,
                         bdfOrder,
                         lsh,
-                        MassMatrixShapeandDependence.IsNonIdentity,
+                        MassMatrixShapeandDependence.IsTimeDependent,
                         SpatialOp,
                         MassScale,
                         this.MultigridOperatorConfig, base.MultigridSequence,
@@ -801,17 +803,17 @@ namespace BoSSS.Application.IBM_Solver {
                 Console.WriteLine("Using standard CellCostEstimatorFactories");
                 Control.DynamicLoadBalancing_CellCostEstimatorFactories.Add(delegate (IApplication app, int noOfPerformanceClasses) {
                     Console.WriteLine("i was called");
+                    int[] map = new int[] { 1, 1, 10 };
+                    return new StaticCellCostEstimator(map);
+                });
+                Control.DynamicLoadBalancing_CellCostEstimatorFactories.Add(delegate (IApplication app, int noOfPerformanceClasses) {
+                    Console.WriteLine("i was called");
                     int[] map = new int[] { 1, 10, 1 };
                     return new StaticCellCostEstimator(map);
                 });
                 Control.DynamicLoadBalancing_CellCostEstimatorFactories.Add(delegate (IApplication app, int noOfPerformanceClasses) {
                     Console.WriteLine("i was called");
                     int[] map = new int[] { 10, 1, 1 };
-                    return new StaticCellCostEstimator(map);
-                });
-                Control.DynamicLoadBalancing_CellCostEstimatorFactories.Add(delegate (IApplication app, int noOfPerformanceClasses) {
-                    Console.WriteLine("i was called");
-                    int[] map = new int[] { 1, 1, 10 };
                     return new StaticCellCostEstimator(map);
                 });
             }
