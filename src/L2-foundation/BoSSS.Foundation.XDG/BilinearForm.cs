@@ -82,6 +82,10 @@ namespace BoSSS.Foundation.XDG {
             return a - a1;
         }
 
+        public override string ToString() {
+            return this.OrgComponent.GetType().FullName;
+        }
+
         private double GetSourceCoeff(ref double d2, ref CommonParamsLs inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, ref double vA, ref double vB, double[] Grad_vA, double[] Grad_vB) {
             Debug.Assert(this.OrgComponent.LevelSetForm(ref inp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB) == 0.0);
 
