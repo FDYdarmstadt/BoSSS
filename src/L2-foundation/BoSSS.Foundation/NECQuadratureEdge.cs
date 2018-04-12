@@ -87,7 +87,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 m_DualValueFluxes[ti] = new EquationComponentArgMapping<IDualValueFlux>(DiffOp, DiffOp.CodomainVar[ti], DiffOp.DomainVar, DiffOp.ParameterVar, null, null);
             }
 
-            m_EdgeForm_V = DiffOp.GetArgMapping<INonlinEdgeform_V>(true,
+            m_EdgeForm_V = DiffOp.GetArgMapping<INonlinEdgeForm_V>(true,
                 comp => (((comp.BoundaryEdgeTerms | comp.InnerEdgeTerms) & (TermActivationFlags.V | TermActivationFlags.UxV | TermActivationFlags.GradUxV)) != 0),
                 eq => (eq is IEdgeForm ? new NonlinEdgeFormVectorizer((IEdgeForm)eq) : null));
 
@@ -256,7 +256,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         /// <summary>
         /// array index: codomain variable
         /// </summary>
-        EquationComponentArgMapping<INonlinEdgeform_V>[] m_EdgeForm_V;
+        EquationComponentArgMapping<INonlinEdgeForm_V>[] m_EdgeForm_V;
 
 
         /// <summary>
@@ -917,7 +917,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
 //bla 1
                 EvalFlux(m_EdgeForm_V[e], i0, Length, grid, NoOfSec, false, true, this.m_EdgeForm_V_Watches[e],
-                    delegate(INonlinEdgeform_V edgeform, int _jEdge, int _IndexOffset, int _L, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] UinMean, MultidimensionalArray[] UoutMean, MultidimensionalArray[] UinGrad, MultidimensionalArray[] UoutGrad) {
+                    delegate(INonlinEdgeForm_V edgeform, int _jEdge, int _IndexOffset, int _L, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] UinMean, MultidimensionalArray[] UoutMean, MultidimensionalArray[] UinGrad, MultidimensionalArray[] UoutGrad) {
                         EdgeFormParams efp;
                         efp.GridDat = this.GridDat;
                         efp.Len = _L;
@@ -950,9 +950,9 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                         efp.ParameterVars_IN = _Uin.GetSubVector(NoArgs, NoParams);
                         efp.ParameterVars_OUT = _Uout.GetSubVector(NoArgs, NoParams);
 
-                        edgeform.InternalEdge(ref efp, _Uin.GetSubVector(0, NoArgs), _Uout.GetSubVector(0, NoArgs), _UinGrad, _UoutGrad, _FluxValuesIN, _FluxValuesOT, false);
+                        edgeform.InternalEdge(ref efp, _Uin.GetSubVector(0, NoArgs), _Uout.GetSubVector(0, NoArgs), _UinGrad, _UoutGrad, _FluxValuesIN, _FluxValuesOT);
                     },
-                    delegate(INonlinEdgeform_V nonlinFlx, int _jEdge, int _IndexOffset, int _L, int _EdgeTagsOffset, bool flipNormal, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] UinMean, MultidimensionalArray[] UinGrad) {
+                    delegate(INonlinEdgeForm_V nonlinFlx, int _jEdge, int _IndexOffset, int _L, int _EdgeTagsOffset, bool flipNormal, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] UinMean, MultidimensionalArray[] UinGrad) {
                         EdgeFormParams efp;
                         efp.GridDat = this.GridDat;
                         efp.Len = _L;
@@ -1039,7 +1039,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                         efp.ParameterVars_IN = _Uin.GetSubVector(NoArgs, NoParams);
                         efp.ParameterVars_OUT = _Uout.GetSubVector(NoArgs, NoParams);
 
-                        edgeform.InternalEdge(ref efp, _Uin.GetSubVector(0, NoArgs), _Uout.GetSubVector(0, NoArgs), _UinGrad, _UoutGrad, _GradFluxIN, _GradFluxOT, false);
+                        edgeform.InternalEdge(ref efp, _Uin.GetSubVector(0, NoArgs), _Uout.GetSubVector(0, NoArgs), _UinGrad, _UoutGrad, _GradFluxIN, _GradFluxOT);
                     },
                     delegate(INonlinEdgeform_GradV nonlinFlx, int _jEdge, int _IndexOffset, int _L, int _EdgeTagsOffset, bool flipNormal, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] UinMean, MultidimensionalArray[] UinGrad) {
                         EdgeFormParams efp;

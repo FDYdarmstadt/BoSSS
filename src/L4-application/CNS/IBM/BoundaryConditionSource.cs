@@ -369,14 +369,14 @@ namespace CNS.IBM {
         }
 
         /// <summary>
-        /// Passes the given parameters to <see cref="INonlinEdgeform_V.InternalEdge"/>
+        /// Passes the given parameters to <see cref="INonlinEdgeForm_V.InternalEdge"/>
         /// </summary>
         /// <param name="prm"></param>
         /// <param name="U"></param>
         /// <param name="GradU"></param>
         /// <param name="f"></param>
         void INonlinVolumeForm_V.Form(ref VolumFormParams prm, MultidimensionalArray[] U, MultidimensionalArray[] GradU, MultidimensionalArray f) {
-            INonlinEdgeform_V flux = fluxFunction;
+            INonlinEdgeForm_V flux = fluxFunction;
 
             MultidimensionalArray[] UBoundary;
             MultidimensionalArray normals;
@@ -427,7 +427,7 @@ namespace CNS.IBM {
         /// <paramref name="UBoundary"/> and <paramref name="normals"/>, which
         /// are in the form required by
         /// <see cref="INonlinEdgeform_GradV.InternalEdge"/>
-        /// and <see cref="INonlinEdgeform_V.InternalEdge"/>
+        /// and <see cref="INonlinEdgeForm_V.InternalEdge"/>
         /// </summary>
         /// <param name="prm"></param>
         /// <param name="U"></param>

@@ -233,7 +233,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
     }
 
 
-    class NonlinEdgeFormVectorizer : INonlinEdgeform_V, INonlinEdgeform_GradV {
+    class NonlinEdgeFormVectorizer : INonlinEdgeForm_V, INonlinEdgeform_GradV {
 
         public NonlinEdgeFormVectorizer(IEdgeForm __edgeForm) {
             this.BoundaryEdgeTerms = __edgeForm.BoundaryEdgeTerms;
@@ -282,9 +282,9 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             }
         }
 
-        void INonlinEdgeform_V.InternalEdge(ref EdgeFormParams efp, 
+        void INonlinEdgeForm_V.InternalEdge(ref EdgeFormParams efp, 
             MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
-            MultidimensionalArray fin, MultidimensionalArray fot, bool adiaWall) {
+            MultidimensionalArray fin, MultidimensionalArray fot) {
             int L = efp.Len;
             Debug.Assert(fin.GetLength(0) == L);
             Debug.Assert(fot.GetLength(0) == L);
@@ -364,7 +364,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             }
         }
 
-        void INonlinEdgeform_V.BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin, MultidimensionalArray f) {
+        void INonlinEdgeForm_V.BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin, MultidimensionalArray f) {
             int L = efp.Len;
             Debug.Assert(f.GetLength(0) == L);
             int K = f.GetLength(1); // no of nodes per cell
@@ -428,7 +428,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
 
         void INonlinEdgeform_GradV.InternalEdge(ref EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
-            MultidimensionalArray fin, MultidimensionalArray fot, bool adiaWall) {
+            MultidimensionalArray fin, MultidimensionalArray fot) {
             int L = efp.Len;
             Debug.Assert(fin.GetLength(0) == L);
             Debug.Assert(fot.GetLength(0) == L);

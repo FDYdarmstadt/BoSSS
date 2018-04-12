@@ -112,13 +112,13 @@ namespace CNS.Diffusion {
         #endregion
 
         #region INonlineEdgeform_V Members
-        void INonlinEdgeform_V.InternalEdge(ref EdgeFormParams efp,
+        void INonlinEdgeForm_V.InternalEdge(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
             MultidimensionalArray fin, MultidimensionalArray fot, bool adiaWall) {
             //Do nothing
         }
 
-        void INonlinEdgeform_V.BoundaryEdge(ref EdgeFormParams efp,
+        void INonlinEdgeForm_V.BoundaryEdge(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin,
             MultidimensionalArray fin) {
             //Do Nothing
