@@ -153,6 +153,8 @@ namespace CNS.IBM {
         /// agglomerated basis)
         /// </summary>
         protected override void ComputeChangeRate(double[] k, double AbsTime, double RelTime, double[] edgeFluxes = null) {
+            RaiseOnBeforeComputechangeRate(AbsTime, RelTime);
+
             Evaluator.Evaluate(1.0, 0.0, k, AbsTime);
             Debug.Assert(
                 !k.Any(f => double.IsNaN(f)),

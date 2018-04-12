@@ -836,6 +836,27 @@ namespace BoSSS.Solution.NSECommon {
         }
 
         /// <summary>
+        /// Velocity gradient tensor XX component
+        /// </summary>
+        public const string VelocityXGradientX = "VelocityXGradientX";
+
+        /// <summary>
+        /// Velocity gradient tensor XY component
+        /// </summary>
+        public const string VelocityXGradientY = "VelocityXGradientY";
+
+        /// <summary>
+        /// Velocity gradient tensor YX component
+        /// </summary>
+        public const string VelocityYGradientX = "VelocityYGradientX";
+
+        /// <summary>
+        /// Velocity gradient tensor YY component
+        /// </summary>
+        public const string VelocityYGradientY = "VelocityYGradientY";
+
+
+        /// <summary>
         /// Helical 
         /// </summary>
         public const string u = "ur";

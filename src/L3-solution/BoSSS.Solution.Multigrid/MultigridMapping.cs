@@ -438,7 +438,7 @@ namespace BoSSS.Solution.Multigrid {
 
                 int[][] C2F = this.AggGrid.jCellCoarse2jCellFine;
                 int JCoarse = this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
-                Debug.Assert(JCoarse == C2F.Length);
+                //Debug.Assert((JCoarse == C2F.Length) || ());
                 for(int jc = 0; jc < JCoarse; jc++) { // loop over coarse cells...
                     int[] AggCell = C2F[jc];
                     int I = AggCell.Length;
@@ -466,7 +466,7 @@ namespace BoSSS.Solution.Multigrid {
                             for(int iSpc = 0; iSpc < NoOfSpc; iSpc++) { // loop over species
                                 SpeciesId spc_jc_i = spc[jc][iSpc];
 
-                                int Col0 = this.LocalUniqueIndex(iVar, jc, Np_col*iSpc);
+                                int Col0 = this.GlobalUniqueIndex(iVar, jc, Np_col*iSpc);
 
 
                                 for (int i = 0; i < I; i++) { // loop over finer cells
@@ -481,7 +481,7 @@ namespace BoSSS.Solution.Multigrid {
                                     int Np_row = Np_fine[DgDegF];
                                     Debug.Assert(Np_row*XBf.GetNoOfSpecies(jf)  == finerLevel.AggBasis[iVar].GetLength(jf, DgDegF));
 
-                                    int Row0 = finerLevel.LocalUniqueIndex(iVar, jf, Np_row*iSpc_Row);
+                                    int Row0 = finerLevel.GlobalUniqueIndex(iVar, jf, Np_row*iSpc_Row);
 
                                     //if(Row0 <= 12 &&  12 < Row0 + Np_row) {
                                     //    if(Col0 <= 3 && 3 < Col0 + Np_col) {
@@ -499,14 +499,14 @@ namespace BoSSS.Solution.Multigrid {
 
                             int Np_col = Np[DgDeg];
                             Debug.Assert(Np_col == B[iVar].GetLength(jc, DgDeg));
-                            int Col0 = this.LocalUniqueIndex(iVar, jc, 0);
+                            int Col0 = this.GlobalUniqueIndex(iVar, jc, 0);
 
                             for(int i = 0; i < I; i++) { // loop over finer cells
                                 int jf = AggCell[i];
                                 int Np_row = Np_fine[DgDegF];
                                 Debug.Assert(Np_row == finerLevel.AggBasis[iVar].GetLength(jf, DgDegF));
 
-                                int Row0 = finerLevel.LocalUniqueIndex(iVar, jf, 0);
+                                int Row0 = finerLevel.GlobalUniqueIndex(iVar, jf, 0);
 
                                 PrlgMtx.AccBlock(Row0, Col0, 1.0, Inj_iVar_jc.ExtractSubArrayShallow(new[] { i, 0, 0 }, new[] { i - 1, Np_row - 1, Np_col - 1 }));
                                 //if(Row0 <= 12 &&  12 < Row0 + Np_row) {
