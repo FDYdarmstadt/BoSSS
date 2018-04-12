@@ -179,7 +179,7 @@ namespace BoSSS.Solution.XNSECommon {
     /// <summary>
     /// Laplace operator at the interface
     /// </summary>
-    public class XLaplace_Interface : ILevelSetComponent {
+    public class XLaplace_Interface : ILevelSetForm {
 
         public enum Mode {
             SWIP,

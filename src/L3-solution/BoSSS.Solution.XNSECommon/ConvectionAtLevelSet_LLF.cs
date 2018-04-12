@@ -27,7 +27,7 @@ using BoSSS.Foundation;
 
 namespace BoSSS.Solution.XNSECommon.Operator.Convection {
 
-    class ConvectionAtLevelSet_LLF : ILevelSetComponent {
+    class ConvectionAtLevelSet_LLF : ILevelSetForm {
 
         LevelSetTracker m_LsTrk;
 

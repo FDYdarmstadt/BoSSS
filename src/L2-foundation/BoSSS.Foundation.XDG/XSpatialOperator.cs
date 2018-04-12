@@ -578,7 +578,7 @@ namespace BoSSS.Foundation.XDG {
                 ///////////////////
 
                 using (new BlockTrace("surface_integration", tr)) {
-                    if (ContainesComponentType(typeof(ILevelSetComponent))) {
+                    if (ContainesComponentType(typeof(ILevelSetForm))) {
 
 
                         var AllSpc = lsTrk.SpeciesIdS;

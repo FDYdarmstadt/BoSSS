@@ -178,7 +178,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         }
     }
 
-    public class HeatFlux_Interface : ILevelSetComponent {
+    public class HeatFlux_Interface : ILevelSetForm {
 
         LevelSetTracker m_LsTrk;
 

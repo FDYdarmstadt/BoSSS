@@ -96,7 +96,7 @@ namespace BoSSS.Foundation.XDG {
 	}
 
     /// <summary>
-    /// comon input parameters for the abstract functions
+    /// common input parameters for the abstract functions
     /// </summary>
     public struct CommonParamsLs {
 
@@ -146,7 +146,7 @@ namespace BoSSS.Foundation.XDG {
     /// <summary>
     /// An integrand on the level set.
     /// </summary>
-    public interface ILevelSetComponent : IEquationComponent {
+    public interface ILevelSetForm : IEquationComponent {
         
         
         /// <summary>
@@ -174,33 +174,33 @@ namespace BoSSS.Foundation.XDG {
     }
 
 
-    public interface ILinearLevelSetComponent_UxV : ILevelSetComponent {
+    public interface ILevelSetForm_UxV : ILevelSetForm {
        
         void LevelSetForm_UxV(LevSetIntParams inp, MultidimensionalArray Koeff_UxV);
     }
 
-    public interface ILinearLevelSetComponent_GradUxV : ILevelSetComponent {
+    public interface ILevelSetForm_GradUxV : ILevelSetForm {
         void LevelSetForm_GradUxV(LevSetIntParams inp, MultidimensionalArray Koeff_GradUxV);
 
     }
 
-    public interface ILinearLevelSetComponent_UxGradV : ILevelSetComponent {
+    public interface ILevelSetForm_UxGradV : ILevelSetForm {
         void LevelSetForm_UxGradV(LevSetIntParams inp, MultidimensionalArray Koeff_UxGradV);
 
     }
 
-    public interface ILinearLevelSetComponent_GradUxGradV : ILevelSetComponent {
+    public interface ILevelSetForm_GradUxGradV : ILevelSetForm {
         void LevelSetForm_GradUxGradV(LevSetIntParams inp, MultidimensionalArray Koeff_GradUxGradV);
 
     }
 
-    public interface ILinearLevelSetComponent_V : ILevelSetComponent {
+    public interface ILevelSetForm_V : ILevelSetForm {
 
         void LevelSetForm_V(LevSetIntParams inp, MultidimensionalArray Koeff_V);
 
     }
 
-    public interface ILinearLevelSetComponent_GradV : ILevelSetComponent {
+    public interface ILevelSetForm_GradV : ILevelSetForm {
 
         void LevelSetForm_GradV(LevSetIntParams inp, MultidimensionalArray Koeff_GradV);
 

@@ -24,7 +24,7 @@ using BoSSS.Solution.NSECommon;
 
 namespace BoSSS.Solution.XNSECommon.Operator.Pressure {
     
-    public class PressureFormAtLevelSet : ILevelSetComponent {
+    public class PressureFormAtLevelSet : ILevelSetForm {
 
         LevelSetTracker m_LsTrk;
 

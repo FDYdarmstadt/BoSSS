@@ -118,24 +118,24 @@ namespace BoSSS.Foundation.XDG {
             //m_BiLinForms = DiffOp.GetArgMapping<IBilinearForm>(true, Compfilter<IBilinearForm>);
             //m_2ndDerivFlux = DiffOp.GetArgMapping<ILinear2ndDerivativeCouplingFlux>(true, Compfilter<ILinear2ndDerivativeCouplingFlux>);
 
-            m_LsForm_UxV = DiffOp.GetArgMapping<ILinearLevelSetComponent_UxV>(true,
+            m_LsForm_UxV = DiffOp.GetArgMapping<ILevelSetForm_UxV>(true,
                eq => ((eq.LevelSetTerms & TermActivationFlags.UxV) != 0) && Compfilter(eq),
-               eq => (eq is ILevelSetComponent) ? new LinearLevelSetComponentVectorizer(lsTrk,(ILevelSetComponent)eq) : null);
-            m_LsForm_GradUxV = DiffOp.GetArgMapping<ILinearLevelSetComponent_GradUxV>(true,
+               eq => (eq is ILevelSetForm) ? new LinearLevelSetComponentVectorizer(lsTrk,(ILevelSetForm)eq) : null);
+            m_LsForm_GradUxV = DiffOp.GetArgMapping<ILevelSetForm_GradUxV>(true,
                 eq => ((eq.LevelSetTerms & TermActivationFlags.GradUxV) != 0) && Compfilter(eq),
-                eq => (eq is ILevelSetComponent) ? new LinearLevelSetComponentVectorizer(lsTrk, (ILevelSetComponent)eq) : null);
-            m_LsForm_UxGradV = DiffOp.GetArgMapping<ILinearLevelSetComponent_UxGradV>(true,
+                eq => (eq is ILevelSetForm) ? new LinearLevelSetComponentVectorizer(lsTrk, (ILevelSetForm)eq) : null);
+            m_LsForm_UxGradV = DiffOp.GetArgMapping<ILevelSetForm_UxGradV>(true,
                 eq => ((eq.LevelSetTerms & TermActivationFlags.UxGradV) != 0) && Compfilter(eq),
-                eq => (eq is ILevelSetComponent) ? new LinearLevelSetComponentVectorizer(lsTrk, (ILevelSetComponent)eq) : null);
-            m_LsForm_GradUxGradV = DiffOp.GetArgMapping<ILinearLevelSetComponent_GradUxGradV>(true,
+                eq => (eq is ILevelSetForm) ? new LinearLevelSetComponentVectorizer(lsTrk, (ILevelSetForm)eq) : null);
+            m_LsForm_GradUxGradV = DiffOp.GetArgMapping<ILevelSetForm_GradUxGradV>(true,
                 eq => ((eq.LevelSetTerms & TermActivationFlags.GradUxGradV) != 0) && Compfilter(eq),
-                eq => (eq is ILevelSetComponent) ? new LinearLevelSetComponentVectorizer(lsTrk, (ILevelSetComponent)eq) : null);
-            m_LsForm_V = DiffOp.GetArgMapping<ILinearLevelSetComponent_V>(true,
+                eq => (eq is ILevelSetForm) ? new LinearLevelSetComponentVectorizer(lsTrk, (ILevelSetForm)eq) : null);
+            m_LsForm_V = DiffOp.GetArgMapping<ILevelSetForm_V>(true,
                 eq => ((eq.LevelSetTerms & TermActivationFlags.V) != 0 && Compfilter(eq)),
-                eq => (eq is ILevelSetComponent) ? new LinearLevelSetComponentVectorizer(lsTrk, (ILevelSetComponent)eq) : null);
-            m_LsForm_GradV = DiffOp.GetArgMapping<ILinearLevelSetComponent_GradV>(true,
+                eq => (eq is ILevelSetForm) ? new LinearLevelSetComponentVectorizer(lsTrk, (ILevelSetForm)eq) : null);
+            m_LsForm_GradV = DiffOp.GetArgMapping<ILevelSetForm_GradV>(true,
                 eq => ((eq.LevelSetTerms & TermActivationFlags.GradV) != 0) && Compfilter(eq),
-                eq => (eq is ILevelSetComponent) ? new LinearLevelSetComponentVectorizer(lsTrk, (ILevelSetComponent)eq) : null);
+                eq => (eq is ILevelSetForm) ? new LinearLevelSetComponentVectorizer(lsTrk, (ILevelSetForm)eq) : null);
 
             this.m_LsForm_UxV_Watches = this.m_LsForm_UxV.InitStopWatches(0, this);
             this.m_LsForm_GradUxV_Watches = this.m_LsForm_GradUxV.InitStopWatches(0, this);
@@ -163,7 +163,7 @@ namespace BoSSS.Foundation.XDG {
 
         private bool Compfilter(IEquationComponent c) {
 
-            ILevelSetComponent b = (ILevelSetComponent)c;
+            ILevelSetForm b = (ILevelSetForm)c;
             
             if (this.m_LevSetIdx != b.LevelSetIndex)
                 // component is not relevant for this level-set
@@ -229,12 +229,12 @@ namespace BoSSS.Foundation.XDG {
 
         LevelSetTracker m_lsTrk;
 
-        EquationComponentArgMapping<ILinearLevelSetComponent_UxV>[] m_LsForm_UxV;
-        EquationComponentArgMapping<ILinearLevelSetComponent_GradUxV>[] m_LsForm_GradUxV;
-        EquationComponentArgMapping<ILinearLevelSetComponent_UxGradV>[] m_LsForm_UxGradV;
-        EquationComponentArgMapping<ILinearLevelSetComponent_GradUxGradV>[] m_LsForm_GradUxGradV;
-        EquationComponentArgMapping<ILinearLevelSetComponent_V>[] m_LsForm_V;
-        EquationComponentArgMapping<ILinearLevelSetComponent_GradV>[] m_LsForm_GradV;
+        EquationComponentArgMapping<ILevelSetForm_UxV>[] m_LsForm_UxV;
+        EquationComponentArgMapping<ILevelSetForm_GradUxV>[] m_LsForm_GradUxV;
+        EquationComponentArgMapping<ILevelSetForm_UxGradV>[] m_LsForm_UxGradV;
+        EquationComponentArgMapping<ILevelSetForm_GradUxGradV>[] m_LsForm_GradUxGradV;
+        EquationComponentArgMapping<ILevelSetForm_V>[] m_LsForm_V;
+        EquationComponentArgMapping<ILevelSetForm_GradV>[] m_LsForm_GradV;
 
         Stopwatch[][] m_LsForm_UxV_Watches;
         Stopwatch[][] m_LsForm_GradUxV_Watches;
@@ -510,7 +510,7 @@ namespace BoSSS.Foundation.XDG {
                         DELTA,
                         base.CustomTimers[0],
                         this.m_LenScales,
-                        delegate (ILinearLevelSetComponent_UxV _comp, int _gamma, int i, LevSetIntParams inp) {
+                        delegate (ILevelSetForm_UxV _comp, int _gamma, int i, LevSetIntParams inp) {
                             _comp.LevelSetForm_UxV(_inParams, Koeff_UxV[_gamma][i]);
                         });
                 }
@@ -521,7 +521,7 @@ namespace BoSSS.Foundation.XDG {
                         DELTA,
                         base.CustomTimers[0],
                         this.m_LenScales,
-                        delegate (ILinearLevelSetComponent_GradUxV _comp, int _gamma, int i, LevSetIntParams inp) {
+                        delegate (ILevelSetForm_GradUxV _comp, int _gamma, int i, LevSetIntParams inp) {
                             _comp.LevelSetForm_GradUxV(_inParams, Koeff_NablaUxV[_gamma][i]);
                         });
                 }
@@ -532,7 +532,7 @@ namespace BoSSS.Foundation.XDG {
                         DELTA,
                         base.CustomTimers[0],
                         this.m_LenScales,
-                        delegate (ILinearLevelSetComponent_UxGradV _comp, int _gamma, int i, LevSetIntParams inp) {
+                        delegate (ILevelSetForm_UxGradV _comp, int _gamma, int i, LevSetIntParams inp) {
                             _comp.LevelSetForm_UxGradV(_inParams, Koeff_UxNablaV[_gamma][i]);
                         });
                 }
@@ -543,7 +543,7 @@ namespace BoSSS.Foundation.XDG {
                         DELTA,
                         base.CustomTimers[0],
                         this.m_LenScales,
-                        delegate (ILinearLevelSetComponent_GradUxGradV _comp, int _gamma, int i, LevSetIntParams inp) {
+                        delegate (ILevelSetForm_GradUxGradV _comp, int _gamma, int i, LevSetIntParams inp) {
                             _comp.LevelSetForm_GradUxGradV(_inParams, Koeff_NablaUxNablaV[_gamma][i]);
                         });
                 }
@@ -555,7 +555,7 @@ namespace BoSSS.Foundation.XDG {
                         DELTA,
                         base.CustomTimers[0],
                         this.m_LenScales,
-                        delegate (ILinearLevelSetComponent_V _comp, int _gamma, int i, LevSetIntParams inp) {
+                        delegate (ILevelSetForm_V _comp, int _gamma, int i, LevSetIntParams inp) {
                             _comp.LevelSetForm_V(_inParams, Koeff_V[_gamma][i]);
                         });
                 }
@@ -566,7 +566,7 @@ namespace BoSSS.Foundation.XDG {
                         DELTA,
                         base.CustomTimers[0],
                         this.m_LenScales,
-                        delegate (ILinearLevelSetComponent_GradV _comp, int _gamma, int i, LevSetIntParams inp) {
+                        delegate (ILevelSetForm_GradV _comp, int _gamma, int i, LevSetIntParams inp) {
                             _comp.LevelSetForm_GradV(_inParams, Koeff_NablaV[_gamma][i]);
                         });
                 }
@@ -692,7 +692,7 @@ namespace BoSSS.Foundation.XDG {
             int DELTA,
             Stopwatch timer,
             IDictionary<SpeciesId,MultidimensionalArray> LengthScales,
-            CallComponent<T> ComponentFunc) where T : ILevelSetComponent {
+            CallComponent<T> ComponentFunc) where T : ILevelSetForm {
             timer.Start();
             
             

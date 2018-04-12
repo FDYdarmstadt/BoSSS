@@ -27,18 +27,18 @@ namespace BoSSS.Foundation.XDG {
     
 
     class LinearLevelSetComponentVectorizer :  
-        ILinearLevelSetComponent_V, 
-        ILinearLevelSetComponent_GradV, 
-        ILinearLevelSetComponent_GradUxGradV, 
-        ILinearLevelSetComponent_GradUxV, 
-        ILinearLevelSetComponent_UxGradV, 
-        ILinearLevelSetComponent_UxV //
+        ILevelSetForm_V, 
+        ILevelSetForm_GradV, 
+        ILevelSetForm_GradUxGradV, 
+        ILevelSetForm_GradUxV, 
+        ILevelSetForm_UxGradV, 
+        ILevelSetForm_UxV //
     {
 
         /// <summary>
         /// ctor.
         /// </summary>
-        public LinearLevelSetComponentVectorizer(LevelSetTracker lsTrk, ILevelSetComponent _OrgComponent) {
+        public LinearLevelSetComponentVectorizer(LevelSetTracker lsTrk, ILevelSetForm _OrgComponent) {
             this.m_LsTrk = lsTrk;
             this.ArgumentOrdering = _OrgComponent.ArgumentOrdering.ToArray();
             this.ParameterOrdering = _OrgComponent.ParameterOrdering != null ? _OrgComponent.ParameterOrdering.ToArray() : null;
@@ -52,7 +52,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// The original component that is beeing vectorized.
         /// </summary>
-        ILevelSetComponent OrgComponent;
+        ILevelSetForm OrgComponent;
 
 
         LevelSetTracker m_LsTrk;
@@ -132,7 +132,7 @@ namespace BoSSS.Foundation.XDG {
             throw new NotSupportedException("Should not be called.");
         }
 
-        void ILinearLevelSetComponent_UxV.LevelSetForm_UxV(LevSetIntParams inp, MultidimensionalArray Koeff_UxV) {
+        void ILevelSetForm_UxV.LevelSetForm_UxV(LevSetIntParams inp, MultidimensionalArray Koeff_UxV) {
             int j0 = inp.i0;
             int Len = inp.Len;
             int N = inp.X.GetLength(1); // nodes per cell
@@ -216,7 +216,7 @@ namespace BoSSS.Foundation.XDG {
 
         }
 
-        void ILinearLevelSetComponent_UxGradV.LevelSetForm_UxGradV(LevSetIntParams inp, MultidimensionalArray Koeff_UxNablaV) {
+        void ILevelSetForm_UxGradV.LevelSetForm_UxGradV(LevSetIntParams inp, MultidimensionalArray Koeff_UxNablaV) {
             int j0 = inp.i0;
             int Len = inp.Len;
             int N = inp.X.GetLength(1); // nodes per cell
@@ -302,7 +302,7 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        void ILinearLevelSetComponent_GradUxV.LevelSetForm_GradUxV(LevSetIntParams inp, MultidimensionalArray Koeff_NablaUxV) {
+        void ILevelSetForm_GradUxV.LevelSetForm_GradUxV(LevSetIntParams inp, MultidimensionalArray Koeff_NablaUxV) {
             int j0 = inp.i0;
             int Len = inp.Len;
             int N = inp.X.GetLength(1); // nodes per cell
@@ -387,7 +387,7 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        void ILinearLevelSetComponent_GradUxGradV.LevelSetForm_GradUxGradV(LevSetIntParams inp, MultidimensionalArray Koeff_NablaUxNablaV) {
+        void ILevelSetForm_GradUxGradV.LevelSetForm_GradUxGradV(LevSetIntParams inp, MultidimensionalArray Koeff_NablaUxNablaV) {
             int j0 = inp.i0;
             int Len = inp.Len;
             int N = inp.X.GetLength(1); // nodes per cell
@@ -474,7 +474,7 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        void ILinearLevelSetComponent_GradV.LevelSetForm_GradV(LevSetIntParams inp, MultidimensionalArray Koeff_NablaV) {
+        void ILevelSetForm_GradV.LevelSetForm_GradV(LevSetIntParams inp, MultidimensionalArray Koeff_NablaV) {
             int j0 = inp.i0;
             int Len = inp.Len;
             int N = inp.X.GetLength(1); // nodes per cell
@@ -551,7 +551,7 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        void ILinearLevelSetComponent_V.LevelSetForm_V(LevSetIntParams inp, MultidimensionalArray Koeff_V) {
+        void ILevelSetForm_V.LevelSetForm_V(LevSetIntParams inp, MultidimensionalArray Koeff_V) {
             int j0 = inp.i0;
             int Len = inp.Len;
             int N = inp.X.GetLength(1); // nodes per cell

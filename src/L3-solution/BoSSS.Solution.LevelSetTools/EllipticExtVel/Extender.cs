@@ -394,7 +394,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
         /// <param name="LSTrck"></param>
         /// <param name="bcmap">Boundary Conditions for the LevelSet Equations</param>
         /// <param name="Control">various parameters <paramref name="EllipticReinitControl"/></param>
-        public Extender(SinglePhaseField Extension, LevelSetTracker LSTrck, ILevelSetComponent InterfaceFlux, List<DGField> InterfaceParams, VectorField<SinglePhaseField> LevelSetGradient, EllipticExtVelAlgoControl Control) {
+        public Extender(SinglePhaseField Extension, LevelSetTracker LSTrck, ILevelSetForm InterfaceFlux, List<DGField> InterfaceParams, VectorField<SinglePhaseField> LevelSetGradient, EllipticExtVelAlgoControl Control) {
 
             if (InterfaceFlux.ParameterOrdering.Count != InterfaceParams.Count) throw new ArgumentException("Missmatch in Number of Parameters and expected amount in the given flux.");
             this.InterfaceParams = InterfaceParams;
@@ -445,7 +445,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
             Operator_interface = InterfaceFlux.XOperator(QuadOrderFunc.FixedOrder(2 * Extension.Basis.Degree + 2) );
         }
 
-        private void DefineBulkOperator(LevelSetTracker LSTrck, ILevelSetComponent InterfaceFlux, int D, double PenaltyBase) {
+        private void DefineBulkOperator(LevelSetTracker LSTrck, ILevelSetForm InterfaceFlux, int D, double PenaltyBase) {
 
             foreach (Foundation.Grid.RefElements.RefElement r in LevelSetTracker.GridDat.Grid.RefElements) {
                 if (r is Foundation.Grid.RefElements.Triangle && this.Control.FluxVariant == FluxVariant.ValueBased) { throw new NotSupportedException("Level-Set Based flux direction does not work on triangular grids "); }

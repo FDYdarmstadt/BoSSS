@@ -52,7 +52,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
     /// a(u,v) = \alpha \int_{\Gamma} u v   \mathrm{dS}
     /// \f]
     /// </summary>
-    public class DensityWeightedExtVel : ILevelSetComponent {
+    public class DensityWeightedExtVel : ILevelSetForm {
 
         double PenaltyBase;
         LevelSetTracker LSTrk;
