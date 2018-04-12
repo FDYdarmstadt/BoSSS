@@ -1567,7 +1567,7 @@ namespace BoSSS.Foundation {
     /// \f$ U = (u_0, \ldots, u_{L-1} )\f$  denotes the trial functions (correspond to domain variable, defined by the 
     /// argument ordering <see cref="IEquationComponent.ArgumentOrdering"/>).
     /// </summary>
-    public interface INonlinEdgeform_GradV : IEdgeForm {
+    public interface INonlinEdgeForm_GradV : IEdgeForm {
 
         /// <summary>
         /// the values of \f$ \vec{f}^{*}(\ldots)\f$   on interior edges on \f$ \Gamma_{\mathrm{int}}\f$ .

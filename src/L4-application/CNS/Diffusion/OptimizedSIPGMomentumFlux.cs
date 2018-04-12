@@ -162,7 +162,7 @@ namespace CNS.Diffusion {
 
 
         #region INonlineEdgeform_GradV Members
-        void INonlinEdgeform_GradV.InternalEdge(ref EdgeFormParams efp,
+        void INonlinEdgeForm_GradV.InternalEdge(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
             MultidimensionalArray fin, MultidimensionalArray fot) {
             bool adiaWall = this.AdiabaticWall;
@@ -249,7 +249,7 @@ namespace CNS.Diffusion {
             }
         }
 
-        void INonlinEdgeform_GradV.BoundaryEdge(ref EdgeFormParams efp,
+        void INonlinEdgeForm_GradV.BoundaryEdge(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin,
             MultidimensionalArray fin) {
             int NumOfCells = efp.Len;

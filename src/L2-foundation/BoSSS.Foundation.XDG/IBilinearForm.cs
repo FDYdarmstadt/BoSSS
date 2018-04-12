@@ -194,15 +194,19 @@ namespace BoSSS.Foundation.XDG {
 
     }
 
-    public interface ILevelSetForm_V : ILevelSetForm {
+    public interface INonlinLevelSetForm_V : ILevelSetForm {
 
-        void LevelSetForm_V(LevSetIntParams inp, MultidimensionalArray Koeff_V);
+        void LevelSetForm_V(LevSetIntParams inp, 
+            MultidimensionalArray[] uA, MultidimensionalArray[] uB, MultidimensionalArray[,] Grad_uA, MultidimensionalArray[,] Grad_uB,
+            MultidimensionalArray Koeff_V);
 
     }
 
-    public interface ILevelSetForm_GradV : ILevelSetForm {
+    public interface INonlinLevelSetForm_GradV : ILevelSetForm {
 
-        void LevelSetForm_GradV(LevSetIntParams inp, MultidimensionalArray Koeff_GradV);
+        void LevelSetForm_GradV(LevSetIntParams inp, 
+            MultidimensionalArray[] uA, MultidimensionalArray[] uB, MultidimensionalArray[,] Grad_uA, MultidimensionalArray[,] Grad_uB,
+            MultidimensionalArray Koeff_GradV);
 
     }
 

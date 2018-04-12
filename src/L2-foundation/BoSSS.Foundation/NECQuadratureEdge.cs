@@ -91,7 +91,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 comp => (((comp.BoundaryEdgeTerms | comp.InnerEdgeTerms) & (TermActivationFlags.V | TermActivationFlags.UxV | TermActivationFlags.GradUxV)) != 0),
                 eq => (eq is IEdgeForm ? new NonlinEdgeFormVectorizer((IEdgeForm)eq) : null));
 
-            m_EdgeForm_GradV = DiffOp.GetArgMapping<INonlinEdgeform_GradV>(true,
+            m_EdgeForm_GradV = DiffOp.GetArgMapping<INonlinEdgeForm_GradV>(true,
                 comp => (((comp.BoundaryEdgeTerms | comp.InnerEdgeTerms) & (TermActivationFlags.GradV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxGradV)) != 0),
                 eq => (eq is IEdgeForm ? new NonlinEdgeFormVectorizer((IEdgeForm)eq) : null));
 
@@ -251,7 +251,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         /// <summary>
         /// array index: codomain variable
         /// </summary>
-        EquationComponentArgMapping<INonlinEdgeform_GradV>[] m_EdgeForm_GradV;
+        EquationComponentArgMapping<INonlinEdgeForm_GradV>[] m_EdgeForm_GradV;
 
         /// <summary>
         /// array index: codomain variable
@@ -1006,7 +1006,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
                 
                 EvalFlux(m_EdgeForm_GradV[e], i0, Length, grid, NoOfSec, false, true, this.m_EdgeForm_GradV_Watches[e],
-                    delegate(INonlinEdgeform_GradV edgeform, int _jEdge, int _IndexOffset, int _L, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] UinMean, MultidimensionalArray[] UoutMean, MultidimensionalArray[] UinGrad, MultidimensionalArray[] UoutGrad) {
+                    delegate(INonlinEdgeForm_GradV edgeform, int _jEdge, int _IndexOffset, int _L, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] UinMean, MultidimensionalArray[] UoutMean, MultidimensionalArray[] UinGrad, MultidimensionalArray[] UoutGrad) {
                         EdgeFormParams efp;
                         efp.GridDat = this.GridDat;
                         efp.Len = _L;
@@ -1041,7 +1041,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
                         edgeform.InternalEdge(ref efp, _Uin.GetSubVector(0, NoArgs), _Uout.GetSubVector(0, NoArgs), _UinGrad, _UoutGrad, _GradFluxIN, _GradFluxOT);
                     },
-                    delegate(INonlinEdgeform_GradV nonlinFlx, int _jEdge, int _IndexOffset, int _L, int _EdgeTagsOffset, bool flipNormal, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] UinMean, MultidimensionalArray[] UinGrad) {
+                    delegate(INonlinEdgeForm_GradV nonlinFlx, int _jEdge, int _IndexOffset, int _L, int _EdgeTagsOffset, bool flipNormal, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] UinMean, MultidimensionalArray[] UinGrad) {
                         EdgeFormParams efp;
                         efp.GridDat = this.GridDat;
                         efp.Len = _L;
