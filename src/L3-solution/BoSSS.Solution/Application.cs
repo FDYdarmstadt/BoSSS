@@ -1059,6 +1059,9 @@ namespace BoSSS.Solution {
                     CurrentSessionInfo.Tags = this.Control.Tags.ToArray();
                 }
 
+                // set master git commit
+                CurrentSessionInfo.MasterGitCommit = Properties.Resources.MasterGitCommit;
+
                 // set computeNode - names:
                 CurrentSessionInfo.ComputeNodeNames.Clear();
                 for (int r = MPISize - 1; r >= 0; r--)

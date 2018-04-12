@@ -55,6 +55,13 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
+        /// the git commit hash of the master HEAD
+        /// </summary>
+        string MasterGitCommit {
+            get;
+        }
+
+        /// <summary>
         /// A collection of tags for this session.
         /// </summary>
         IEnumerable<string> Tags {
