@@ -26,7 +26,7 @@ namespace BoSSS.Foundation.XDG {
 
     
 
-    class LinearLevelSetComponentVectorizer :  
+    class LinearLevelSetFormVectorizer :  
         ILevelSetForm_V, 
         ILevelSetForm_GradV, 
         ILevelSetForm_GradUxGradV, 
@@ -38,7 +38,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// ctor.
         /// </summary>
-        public LinearLevelSetComponentVectorizer(LevelSetTracker lsTrk, ILevelSetForm _OrgComponent) {
+        public LinearLevelSetFormVectorizer(LevelSetTracker lsTrk, ILevelSetForm _OrgComponent) {
             this.m_LsTrk = lsTrk;
             this.ArgumentOrdering = _OrgComponent.ArgumentOrdering.ToArray();
             this.ParameterOrdering = _OrgComponent.ParameterOrdering != null ? _OrgComponent.ParameterOrdering.ToArray() : null;
