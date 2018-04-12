@@ -213,13 +213,13 @@ namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
     /// <summary>
     /// Extensions
     /// </summary>
-    internal static class EquationComponentArgMapping_Extensions {
+    public static class EquationComponentArgMapping_Extensions {
 
     
         /// <summary>
-        /// Crating performance stopwatches and registering them among <see cref="IQuadrature.CustomTimers"/> (and related).
+        /// Creating performance stopwatches and registering them among <see cref="IQuadrature.CustomTimers"/> (and related).
         /// </summary>
-        static internal Stopwatch[][] InitStopWatches<T>(this EquationComponentArgMapping<T>[] fluxes, int FluxEvalPt, IQuadrature quad)
+        static public Stopwatch[][] InitStopWatches<T>(this EquationComponentArgMapping<T>[] fluxes, int FluxEvalPt, IQuadrature quad)
             where T : IEquationComponent //
         {
             Debug.Assert(quad.CustomTimers.Length == quad.CustomTimers_Names.Length);
