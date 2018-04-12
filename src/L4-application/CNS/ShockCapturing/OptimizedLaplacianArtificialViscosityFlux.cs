@@ -32,6 +32,8 @@ namespace CNS.ShockCapturing {
 
         private string ArgumentName;
 
+        public bool AdiabaticWall { get; set; }
+
         private MultidimensionalArray cellLengthScale;
 
         private double penaltyFactor;
@@ -83,7 +85,7 @@ namespace CNS.ShockCapturing {
         #region INonlineEdgeform_GradV Members
         void INonlinEdgeform_GradV.InternalEdge(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
-            MultidimensionalArray fin, MultidimensionalArray fot, bool adiaWall) {
+            MultidimensionalArray fin, MultidimensionalArray fot) {
             int NumOfCells = efp.Len;
             Debug.Assert(fin.GetLength(0) == NumOfCells);
             Debug.Assert(fot.GetLength(0) == NumOfCells);
@@ -149,9 +151,7 @@ namespace CNS.ShockCapturing {
         #region INonlineEdgeform_V Members
         void INonlinEdgeForm_V.InternalEdge(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
-            MultidimensionalArray fin, MultidimensionalArray fot,
-            bool adiaWall) {
-
+            MultidimensionalArray fin, MultidimensionalArray fot) {
             int NumOfCells = efp.Len;
             Debug.Assert(fin.GetLength(0) == NumOfCells);
             Debug.Assert(fot.GetLength(0) == NumOfCells);

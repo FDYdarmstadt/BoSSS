@@ -35,6 +35,8 @@ namespace CNS.Diffusion {
 
         private IBoundaryConditionMap boundaryMap;
 
+        public bool AdiabaticWall { get; set; }
+
         private GridData gridData;
 
         public OptimizedSIPGDensityFlux(CNSControl config, IBoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, GridData gridData, Func<MultidimensionalArray> cellMetric) {
@@ -102,7 +104,7 @@ namespace CNS.Diffusion {
         #region INonlineEdgeform_GradV Members
 
 
-        void INonlinEdgeform_GradV.InternalEdge(ref EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout, MultidimensionalArray fIN, MultidimensionalArray fOT, bool adiaWall) {
+        void INonlinEdgeform_GradV.InternalEdge(ref EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout, MultidimensionalArray fIN, MultidimensionalArray fOT) {
             //Do nothing
         }
 
@@ -114,7 +116,7 @@ namespace CNS.Diffusion {
         #region INonlineEdgeform_V Members
         void INonlinEdgeForm_V.InternalEdge(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
-            MultidimensionalArray fin, MultidimensionalArray fot, bool adiaWall) {
+            MultidimensionalArray fin, MultidimensionalArray fot) {
             //Do nothing
         }
 
