@@ -28,7 +28,7 @@ using BoSSS.Foundation;
 
 namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
-    public class ViscosityAtLevelSet_FullySymmetric : BoSSS.Foundation.XDG.ILevelSetComponent {
+    public class ViscosityAtLevelSet_FullySymmetric : BoSSS.Foundation.XDG.ILevelSetForm {
 
         LevelSetTracker m_LsTrk;
 

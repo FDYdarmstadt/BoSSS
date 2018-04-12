@@ -37,7 +37,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
     /// a(u,v) = \alpha \int_{\Gamma} u v   \mathrm{dS}
     /// \f]
     /// </summary>
-    class EllipticReInitInterfaceForm : ILevelSetComponent {
+    class EllipticReInitInterfaceForm : ILevelSetForm {
         double PenaltyBase;
         LevelSetTracker LSTrk;
 

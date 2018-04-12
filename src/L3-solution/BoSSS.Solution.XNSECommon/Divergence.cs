@@ -149,7 +149,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
     /// <summary>
     /// velocity jump penalty for the divergence operator, on the level set
     /// </summary>
-    public class DivergenceAtLevelSet : ILevelSetComponent {
+    public class DivergenceAtLevelSet : ILevelSetForm {
 
         LevelSetTracker m_lsTrk;
 

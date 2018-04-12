@@ -54,7 +54,7 @@ namespace BoSSS.Application.LoadBalancingTest {
     /// <summary>
     /// Flux for du/dx at the interface;
     /// </summary>
-    class LevSetFlx : ILevelSetComponent {
+    class LevSetFlx : ILevelSetForm {
 
         LevelSetTracker m_LsTrk;
         double alpha_A;

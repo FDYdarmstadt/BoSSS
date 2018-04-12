@@ -33,7 +33,7 @@ using ilPSP.Utils;
 
 namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
 
-    public class ScalarVelocityInterfaceForm : ILevelSetComponent {
+    public class ScalarVelocityInterfaceForm : ILevelSetForm {
         int D;
         LevelSetTracker LSTrk;
 

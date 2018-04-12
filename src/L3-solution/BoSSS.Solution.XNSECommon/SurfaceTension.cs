@@ -30,7 +30,7 @@ using ilPSP;
 namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
 
-    public class CurvatureBasedSurfaceTension : ILevelSetComponent {
+    public class CurvatureBasedSurfaceTension : ILevelSetForm {
 
         public static double hmin = double.NaN;
 
@@ -251,7 +251,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
     /// <summary>
     /// Represents the artificial surface force (usually only used in manufactured solutions).
     /// </summary>
-    public class SurfaceTension_ArfForceSrc  : ILevelSetComponent {
+    public class SurfaceTension_ArfForceSrc  : ILevelSetForm {
 
         public static double hmin = double.NaN;
 
