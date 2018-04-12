@@ -233,7 +233,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
     }
 
 
-    class NonlinEdgeFormVectorizer : INonlinEdgeForm_V, INonlinEdgeform_GradV {
+    class NonlinEdgeFormVectorizer : INonlinEdgeForm_V, INonlinEdgeForm_GradV {
 
         public NonlinEdgeFormVectorizer(IEdgeForm __edgeForm) {
             this.BoundaryEdgeTerms = __edgeForm.BoundaryEdgeTerms;
@@ -427,7 +427,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         }
 
 
-        void INonlinEdgeform_GradV.InternalEdge(ref EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
+        void INonlinEdgeForm_GradV.InternalEdge(ref EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
             MultidimensionalArray fin, MultidimensionalArray fot) {
             int L = efp.Len;
             Debug.Assert(fin.GetLength(0) == L);
@@ -510,7 +510,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             }
         }
 
-        void INonlinEdgeform_GradV.BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin, MultidimensionalArray f) {
+        void INonlinEdgeForm_GradV.BoundaryEdge(ref EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin, MultidimensionalArray f) {
             int L = efp.Len;
             Debug.Assert(f.GetLength(0) == L);
             int K = f.GetLength(1); // no of nodes per cell

@@ -7,8 +7,8 @@ using ilPSP;
 
 namespace BoSSS.Foundation.XDG {
     class NonlinearLevelSetFormVectorizer :
-        ILevelSetForm_V,
-        ILevelSetForm_GradV //
+        INonlinLevelSetForm_V,
+        INonlinLevelSetForm_GradV //
     {
         /// <summary>
         /// ctor.
@@ -62,16 +62,6 @@ namespace BoSSS.Foundation.XDG {
             private set;
         }
 
-        public double LevelSetForm(ref CommonParamsLs inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-            throw new NotImplementedException();
-        }
-
-        public void LevelSetForm_GradV(LevSetIntParams inp, MultidimensionalArray Koeff_GradV) {
-            throw new NotImplementedException();
-        }
-
-        public void LevelSetForm_V(LevSetIntParams inp, MultidimensionalArray Koeff_V) {
-            throw new NotImplementedException();
-        }
+        
     }
 }

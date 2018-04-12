@@ -83,7 +83,7 @@ namespace CNS.ShockCapturing {
         #endregion
 
         #region INonlineEdgeform_GradV Members
-        void INonlinEdgeform_GradV.InternalEdge(ref EdgeFormParams efp,
+        void INonlinEdgeForm_GradV.InternalEdge(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
             MultidimensionalArray fin, MultidimensionalArray fot) {
             int NumOfCells = efp.Len;
@@ -108,7 +108,7 @@ namespace CNS.ShockCapturing {
             }
         }
 
-        void INonlinEdgeform_GradV.BoundaryEdge(ref EdgeFormParams efp,
+        void INonlinEdgeForm_GradV.BoundaryEdge(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin,
             MultidimensionalArray fin) {
 
