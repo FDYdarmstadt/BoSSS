@@ -24,5 +24,10 @@ namespace CNS.Diffusion {
     /// <see cref="INonlinVolumeForm_GradV"/>, to make things easier to read
     /// </summary>
     public interface INonlinear2ndOrderForm : INonlinEdgeform_GradV, INonlinEdgeForm_V, INonlinVolumeForm_GradV {
+
+        /// <summary>
+        /// Some dirty Hack for adiabatic walls;
+        /// </summary>
+        bool AdiabaticWall { get; set; } //  I'm just cleaning the implementation from an even worse hack committed by Krämer-Eis.
     }
 }

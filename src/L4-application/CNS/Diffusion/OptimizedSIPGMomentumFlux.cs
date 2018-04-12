@@ -44,6 +44,8 @@ namespace CNS.Diffusion {
 
         double penaltyFactor;
 
+        public bool AdiabaticWall { get; set; }
+
         /// <summary>
         /// Dictionary, especially needed adiabatic wall
         /// </summary>
@@ -162,7 +164,8 @@ namespace CNS.Diffusion {
         #region INonlineEdgeform_GradV Members
         void INonlinEdgeform_GradV.InternalEdge(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
-            MultidimensionalArray fin, MultidimensionalArray fot, bool adiaWall) {
+            MultidimensionalArray fin, MultidimensionalArray fot) {
+            bool adiaWall = this.AdiabaticWall;
             int NumOfCells = efp.Len;
             Debug.Assert(fin.GetLength(0) == NumOfCells);
             Debug.Assert(fot.GetLength(0) == NumOfCells);
@@ -336,8 +339,8 @@ namespace CNS.Diffusion {
         #region INonlineEdgeform_V Members
         void INonlinEdgeForm_V.InternalEdge(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
-            MultidimensionalArray fin, MultidimensionalArray fot, bool adiaWall) {
-
+            MultidimensionalArray fin, MultidimensionalArray fot) {
+            bool adiaWall = this.AdiabaticWall;
             int NumOfCells = efp.Len;
             Debug.Assert(fin.GetLength(0) == NumOfCells);
             Debug.Assert(fot.GetLength(0) == NumOfCells);

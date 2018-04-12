@@ -40,6 +40,8 @@ namespace CNS.Diffusion {
 
         private GridData gridDat;
 
+        public bool AdiabaticWall { get; set; }
+
         double penaltyFactor;
         protected Dictionary<byte, bool> edgeTagBool = new Dictionary<byte, bool>();
 
@@ -140,7 +142,8 @@ namespace CNS.Diffusion {
         #region INonlineEdgeform_GradV Members
         void INonlinEdgeform_GradV.InternalEdge(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
-            MultidimensionalArray fin, MultidimensionalArray fot, bool adiaWall) {
+            MultidimensionalArray fin, MultidimensionalArray fot) {
+            bool adiaWall = this.AdiabaticWall;
             int NumOfCells = efp.Len;
             Debug.Assert(fin.GetLength(0) == NumOfCells);
             Debug.Assert(fot.GetLength(0) == NumOfCells);
@@ -313,9 +316,8 @@ namespace CNS.Diffusion {
         #region INonlineEdgeform_V Members
         void INonlinEdgeForm_V.InternalEdge(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
-            MultidimensionalArray fin, MultidimensionalArray fot,
-            bool adiaWall) {
-
+            MultidimensionalArray fin, MultidimensionalArray fot) {
+            bool adiaWall = this.AdiabaticWall;
             int NumOfCells = efp.Len;
             Debug.Assert(fin.GetLength(0) == NumOfCells);
             Debug.Assert(fot.GetLength(0) == NumOfCells);
