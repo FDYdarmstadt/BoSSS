@@ -38,8 +38,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// ctor.
         /// </summary>
-        public LinearLevelSetFormVectorizer(LevelSetTracker lsTrk, ILevelSetForm _OrgComponent) {
-            this.m_LsTrk = lsTrk;
+        public LinearLevelSetFormVectorizer(ILevelSetForm _OrgComponent) {
             this.ArgumentOrdering = _OrgComponent.ArgumentOrdering.ToArray();
             this.ParameterOrdering = _OrgComponent.ParameterOrdering != null ? _OrgComponent.ParameterOrdering.ToArray() : null;
             this.LevelSetIndex = _OrgComponent.LevelSetIndex;
@@ -54,9 +53,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         ILevelSetForm OrgComponent;
 
-
-        LevelSetTracker m_LsTrk;
-
+        
         ///// <summary>
         ///// override this method to implement the bilinear form on the edge.
         ///// </summary>
@@ -138,7 +135,7 @@ namespace BoSSS.Foundation.XDG {
             int N = inp.X.GetLength(1); // nodes per cell
             int D = inp.X.GetLength(2); // spatial dim.
             int NoOfVars = this.ArgumentOrdering.Count;
-            LevelSetTracker lsTrk = m_LsTrk;
+            LevelSetTracker lsTrk = inp.LsTrk;
 
             // check dimension of input array
             Koeff_UxV.CheckLengths(Len, N, NoOfVars, 2, 2);
@@ -168,7 +165,7 @@ namespace BoSSS.Foundation.XDG {
             double vB = 0;
             double[] Grad_vA = new double[D];
             double[] Grad_vB = new double[D];
-            var h_min = this.m_LsTrk.GridDat.Cells.h_min;
+            //var h_min = this.m_LsTrk.GridDat.Cells.h_min;
 
 
             //LevelSetSignCode pos;
@@ -184,19 +181,17 @@ namespace BoSSS.Foundation.XDG {
                     ReducedRegionCode rrc;
                     int NoOf = Reg.GetNoOfSpecies(j + inp.i0, out rrc);
                     Debug.Assert(NoOf == 2);
-                    //int iSpcPos = lsTrk.GetSpeciesIndex(rrc, pos);
-                    //int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, neg);
                     int iSpcPos = lsTrk.GetSpeciesIndex(rrc, posSpc);
                     int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, negSpc);
                     cp.jCell = j + inp.i0;
-                    if (inp.PosCellLengthScale != null)
-                        cp.PosCellLengthScale = inp.PosCellLengthScale[cp.jCell];
-                    else
-                        cp.PosCellLengthScale = double.NaN;
-                    if (inp.NegCellLengthScale != null)
-                        cp.NegCellLengthScale = inp.NegCellLengthScale[cp.jCell];
-                    else
-                        cp.NegCellLengthScale = double.NaN;
+                    //if (inp.PosCellLengthScale != null)
+                    //    cp.PosCellLengthScale = inp.PosCellLengthScale[cp.jCell];
+                    //else
+                    //    cp.PosCellLengthScale = double.NaN;
+                    //if (inp.NegCellLengthScale != null)
+                    //    cp.NegCellLengthScale = inp.NegCellLengthScale[cp.jCell];
+                    //else
+                    //    cp.NegCellLengthScale = double.NaN;
                     
                     for (int n = 0; n < N; n++) { // loop over nodes...
                         inp.Normal.CopyTo(normal, j, n, -1);
@@ -222,7 +217,7 @@ namespace BoSSS.Foundation.XDG {
             int N = inp.X.GetLength(1); // nodes per cell
             int D = inp.X.GetLength(2); // spatial dim.
             int NoOfVars = this.ArgumentOrdering.Count;
-            LevelSetTracker lsTrk = m_LsTrk;
+            LevelSetTracker lsTrk = inp.LsTrk;
 
             // check dimension of input array
             Koeff_UxNablaV.CheckLengths(Len, N, NoOfVars, 2, 2, D);
@@ -252,7 +247,7 @@ namespace BoSSS.Foundation.XDG {
             double vB = 0;
             double[] Grad_vA = new double[D];
             double[] Grad_vB = new double[D];
-            var h_min = this.m_LsTrk.GridDat.Cells.h_min;
+            //var h_min = this.m_LsTrk.GridDat.Cells.h_min;
 
 
             //LevelSetSignCode pos;
@@ -272,14 +267,14 @@ namespace BoSSS.Foundation.XDG {
                     int iSpcPos = lsTrk.GetSpeciesIndex(rrc, posSpc);
                     int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, negSpc);
                     cp.jCell = j + inp.i0;
-                    if (inp.PosCellLengthScale != null)
-                        cp.PosCellLengthScale = inp.PosCellLengthScale[cp.jCell];
-                    else
-                        cp.PosCellLengthScale = double.NaN;
-                    if (inp.NegCellLengthScale != null)
-                        cp.NegCellLengthScale = inp.NegCellLengthScale[cp.jCell];
-                    else
-                        cp.NegCellLengthScale = double.NaN;
+                    //if (inp.PosCellLengthScale != null)
+                    //    cp.PosCellLengthScale = inp.PosCellLengthScale[cp.jCell];
+                    //else
+                    //    cp.PosCellLengthScale = double.NaN;
+                    //if (inp.NegCellLengthScale != null)
+                    //    cp.NegCellLengthScale = inp.NegCellLengthScale[cp.jCell];
+                    //else
+                    //    cp.NegCellLengthScale = double.NaN;
 
                     for (int n = 0; n < N; n++) { // loop over nodes...
                         inp.Normal.CopyTo(normal, j, n, -1);
@@ -308,7 +303,7 @@ namespace BoSSS.Foundation.XDG {
             int N = inp.X.GetLength(1); // nodes per cell
             int D = inp.X.GetLength(2); // spatial dim.
             int NoOfVars = this.ArgumentOrdering.Count;
-            LevelSetTracker lsTrk = m_LsTrk;
+            LevelSetTracker lsTrk = inp.LsTrk;
 
             // check dimension of input array
             Koeff_NablaUxV.CheckLengths(Len, N, NoOfVars, 2, 2, D);
@@ -338,7 +333,7 @@ namespace BoSSS.Foundation.XDG {
             double vB = 0;
             double[] Grad_vA = new double[D];
             double[] Grad_vB = new double[D];
-            var h_min = this.m_LsTrk.GridDat.Cells.h_min;
+            //var h_min = this.m_LsTrk.GridDat.Cells.h_min;
 
 
             //LevelSetSignCode pos;
@@ -358,14 +353,14 @@ namespace BoSSS.Foundation.XDG {
                     int iSpcPos = lsTrk.GetSpeciesIndex(rrc, posSpc);
                     int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, negSpc);
                     cp.jCell = j + inp.i0;
-                    if (inp.PosCellLengthScale != null)
-                        cp.PosCellLengthScale = inp.PosCellLengthScale[cp.jCell];
-                    else
-                        cp.PosCellLengthScale = double.NaN;
-                    if (inp.NegCellLengthScale != null)
-                        cp.NegCellLengthScale = inp.NegCellLengthScale[cp.jCell];
-                    else
-                        cp.NegCellLengthScale = double.NaN;
+                    //if (inp.PosCellLengthScale != null)
+                    //    cp.PosCellLengthScale = inp.PosCellLengthScale[cp.jCell];
+                    //else
+                    //    cp.PosCellLengthScale = double.NaN;
+                    //if (inp.NegCellLengthScale != null)
+                    //    cp.NegCellLengthScale = inp.NegCellLengthScale[cp.jCell];
+                    //else
+                    //    cp.NegCellLengthScale = double.NaN;
 
                     for (int n = 0; n < N; n++) { // loop over nodes...
                         inp.Normal.CopyTo(normal, j, n, -1);
@@ -393,7 +388,7 @@ namespace BoSSS.Foundation.XDG {
             int N = inp.X.GetLength(1); // nodes per cell
             int D = inp.X.GetLength(2); // spatial dim.
             int NoOfVars = this.ArgumentOrdering.Count;
-            LevelSetTracker lsTrk = m_LsTrk;
+            LevelSetTracker lsTrk = inp.LsTrk;
 
             // check dimension of input array
             Koeff_NablaUxNablaV.CheckLengths(Len, N, NoOfVars, 2, 2, D, D);
@@ -423,7 +418,7 @@ namespace BoSSS.Foundation.XDG {
             double vB = 0;
             double[] Grad_vA = new double[D];
             double[] Grad_vB = new double[D];
-            var h_min = this.m_LsTrk.GridDat.Cells.h_min;
+            //var h_min = this.m_LsTrk.GridDat.Cells.h_min;
 
 
             //LevelSetSignCode pos;
@@ -444,14 +439,14 @@ namespace BoSSS.Foundation.XDG {
                     int iSpcPos = lsTrk.GetSpeciesIndex(rrc, posSpc);
                     int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, negSpc);
                     cp.jCell = j + inp.i0;
-                    if (inp.PosCellLengthScale != null)
-                        cp.PosCellLengthScale = inp.PosCellLengthScale[cp.jCell];
-                    else
-                        cp.PosCellLengthScale = double.NaN;
-                    if (inp.NegCellLengthScale != null)
-                        cp.NegCellLengthScale = inp.NegCellLengthScale[cp.jCell];
-                    else
-                        cp.NegCellLengthScale = double.NaN;
+                    //if (inp.PosCellLengthScale != null)
+                    //    cp.PosCellLengthScale = inp.PosCellLengthScale[cp.jCell];
+                    //else
+                    //    cp.PosCellLengthScale = double.NaN;
+                    //if (inp.NegCellLengthScale != null)
+                    //    cp.NegCellLengthScale = inp.NegCellLengthScale[cp.jCell];
+                    //else
+                    //    cp.NegCellLengthScale = double.NaN;
 
                     for (int n = 0; n < N; n++) { // loop over nodes...
                         inp.Normal.CopyTo(normal, j, n, -1);
@@ -480,7 +475,7 @@ namespace BoSSS.Foundation.XDG {
             int N = inp.X.GetLength(1); // nodes per cell
             int D = inp.X.GetLength(2); // spatial dim.
             int NoOfVars = this.ArgumentOrdering.Count;
-            LevelSetTracker lsTrk = m_LsTrk;
+            LevelSetTracker lsTrk = inp.LsTrk;
 
             // check dimension of input array
             Koeff_NablaV.CheckLengths(Len, N, 2, D);
@@ -510,7 +505,7 @@ namespace BoSSS.Foundation.XDG {
             double vB = 0;
             double[] Grad_vA = new double[D];
             double[] Grad_vB = new double[D];
-            var h_min = this.m_LsTrk.GridDat.Cells.h_min;
+            //var h_min = this.m_LsTrk.GridDat.Cells.h_min;
                         
             SpeciesId posSpc = this.PositiveSpecies;
             SpeciesId negSpc = this.NegativeSpecies;
@@ -526,14 +521,14 @@ namespace BoSSS.Foundation.XDG {
                 int iSpcPos = lsTrk.GetSpeciesIndex(rrc, posSpc);
                 int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, negSpc);
                 cp.jCell = j + inp.i0;
-                if (inp.PosCellLengthScale != null)
-                    cp.PosCellLengthScale = inp.PosCellLengthScale[cp.jCell];
-                else
-                    cp.PosCellLengthScale = double.NaN;
-                if (inp.NegCellLengthScale != null)
-                    cp.NegCellLengthScale = inp.NegCellLengthScale[cp.jCell];
-                else
-                    cp.NegCellLengthScale = double.NaN;
+                //if (inp.PosCellLengthScale != null)
+                //    cp.PosCellLengthScale = inp.PosCellLengthScale[cp.jCell];
+                //else
+                //    cp.PosCellLengthScale = double.NaN;
+                //if (inp.NegCellLengthScale != null)
+                //    cp.NegCellLengthScale = inp.NegCellLengthScale[cp.jCell];
+                //else
+                //    cp.NegCellLengthScale = double.NaN;
 
                 for (int n = 0; n < N; n++) { // loop over nodes...
                     inp.Normal.CopyTo(normal, j, n, -1);
@@ -557,7 +552,7 @@ namespace BoSSS.Foundation.XDG {
             int N = inp.X.GetLength(1); // nodes per cell
             int D = inp.X.GetLength(2); // spatial dim.
             int NoOfVars = this.ArgumentOrdering.Count;
-            LevelSetTracker lsTrk = m_LsTrk;
+            LevelSetTracker lsTrk = inp.LsTrk;
 
             // check dimension of input array
             Koeff_V.CheckLengths(Len, N, 2);
@@ -587,7 +582,7 @@ namespace BoSSS.Foundation.XDG {
             double vB = 0;
             double[] Grad_vA = new double[D];
             double[] Grad_vB = new double[D];
-            var h_min = this.m_LsTrk.GridDat.Cells.h_min;
+            //var h_min = this.m_LsTrk.GridDat.Cells.h_min;
 
 
             //LevelSetSignCode pos;
@@ -606,14 +601,14 @@ namespace BoSSS.Foundation.XDG {
                 int iSpcPos = lsTrk.GetSpeciesIndex(rrc, posSpc);
                 int iSpcNeg = lsTrk.GetSpeciesIndex(rrc, negSpc);
                 cp.jCell = j + inp.i0;
-                if (inp.PosCellLengthScale != null)
-                    cp.PosCellLengthScale = inp.PosCellLengthScale[cp.jCell];
-                else
-                    cp.PosCellLengthScale = double.NaN;
-                if (inp.NegCellLengthScale != null)
-                    cp.NegCellLengthScale = inp.NegCellLengthScale[cp.jCell];
-                else
-                    cp.NegCellLengthScale = double.NaN;
+                //if (inp.PosCellLengthScale != null)
+                //    cp.PosCellLengthScale = inp.PosCellLengthScale[cp.jCell];
+                //else
+                //    cp.PosCellLengthScale = double.NaN;
+                //if (inp.NegCellLengthScale != null)
+                //    cp.NegCellLengthScale = inp.NegCellLengthScale[cp.jCell];
+                //else
+                //    cp.NegCellLengthScale = double.NaN;
 
                 for (int n = 0; n < N; n++) { // loop over nodes...
                     inp.Normal.CopyTo(normal, j, n, -1);

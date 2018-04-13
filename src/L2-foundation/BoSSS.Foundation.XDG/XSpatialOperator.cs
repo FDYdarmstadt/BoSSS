@@ -43,8 +43,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         /// <param name="speciesName">name of the species that will be computed.</param>
         /// <param name="SpcId">id of the species that will be computed.</param>
-        /// <param name="LengthScales">Characteristic length scales of cut cells for respective species.</param>
-        public delegate void NowIntegratingBulk(string speciesName, SpeciesId SpcId, MultidimensionalArray LengthScales);
+        public delegate void NowIntegratingBulk(string speciesName, SpeciesId SpcId);
 
 
         /// <summary>
@@ -192,7 +191,6 @@ namespace BoSSS.Foundation.XDG {
         public void ComputeMatrixEx<M, V>(LevelSetTracker lsTrk,
             UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap,
             M Matrix, V AffineOffset, bool OnlyAffine, double time, bool ParameterMPIExchange,
-            IDictionary<SpeciesId, MultidimensionalArray> CellLengthScales,
             SubGrid SubGrid, params SpeciesId[] whichSpc)
             where M : IMutableMatrixEx
             where V : IList<double> {
@@ -205,8 +203,7 @@ namespace BoSSS.Foundation.XDG {
                 lsTrk,
                 DomainMap, Parameters, CodomainMap,
                 Matrix, AffineOffset, OnlyAffine, time,
-                ParameterMPIExchange, SpeciesDictionary, CellLengthScales,
-                //agg, out mass,
+                ParameterMPIExchange, SpeciesDictionary, 
                 SubGrid);
 
         }
@@ -231,7 +228,6 @@ namespace BoSSS.Foundation.XDG {
             UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap,
             M Matrix, V AffineOffset, bool OnlyAffine,
             double time, bool ParameterMPIExchange,
-            IDictionary<SpeciesId, MultidimensionalArray> CellLengthScales,
             params SpeciesId[] whichSpc)
             where M : IMutableMatrixEx
             where V : IList<double> //
@@ -241,11 +237,10 @@ namespace BoSSS.Foundation.XDG {
                 DomainMap, Parameters, CodomainMap,
                 Matrix, AffineOffset, OnlyAffine, time,
                 ParameterMPIExchange,
-                CellLengthScales,
                 null, whichSpc);
         }
 
-
+        /*
         /// <summary>
         /// computation of operator matrix
         /// </summary>
@@ -262,6 +257,7 @@ namespace BoSSS.Foundation.XDG {
                );
         }
 
+        /*
         /// <summary>
         /// computation of operator matrix
         /// </summary>
@@ -274,12 +270,11 @@ namespace BoSSS.Foundation.XDG {
             where M : IMutableMatrixEx
             where V : IList<double>  //
         {
-
-//<<<<<<< HEAD
+#if DEBUG
             int order = this.GetOrderFromQuadOrderFunction(DomainMap, Parameters, CodomainMap);
             MultiphaseCellAgglomerator dummy = lsTrk.GetAgglomerator(whichSpc, order, 0.0);
-            //MultiphaseCellAgglomerator dummy = new MultiphaseCellAgglomerator(new CutCellMetrics(momentFittingVariant, order, lsTrk, whichSpc), 0.0, false);
-//>>>>>>> root/master
+            Debug.Assert(dummy.TotalNumberOfAgglomerations <= 0, "internal error");
+#endif
 
             var bla = new Dictionary<SpeciesId, QrSchemPair>();
             foreach (var sp in whichSpc)
@@ -289,11 +284,9 @@ namespace BoSSS.Foundation.XDG {
                 DomainMap, Parameters, CodomainMap,
                 Matrix, AffineOffset,
                 OnlyAffine, time, MPIParameterExchange, bla, 
-                dummy.CellLengthScales, subGrid);
-
-            Debug.Assert(dummy.TotalNumberOfAgglomerations <= 0, "internal error");
-
+                subGrid);
         }
+        */
 
         static bool ruleDiagnosis = false;
 
@@ -303,7 +296,7 @@ namespace BoSSS.Foundation.XDG {
         public void ComputeMatrixEx<M, V>(LevelSetTracker lsTrk,
             UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap,
             M Matrix, V AffineOffset, bool OnlyAffine, double time, bool MPIParameterExchange,
-            IDictionary<SpeciesId, QrSchemPair> SpeciesSchemes, IDictionary<SpeciesId, MultidimensionalArray> CellLengthScales,
+            IDictionary<SpeciesId, QrSchemPair> SpeciesSchemes,
             SubGrid SubGrid = null)
             where M : IMutableMatrixEx
             where V : IList<double> {
@@ -435,7 +428,7 @@ namespace BoSSS.Foundation.XDG {
 
 
                         if (OnIntegratingBulk != null)
-                            OnIntegratingBulk(lsTrk.GetSpeciesName(SpeciesId), SpeciesId, CellLengthScales[SpeciesId]);
+                            OnIntegratingBulk(lsTrk.GetSpeciesName(SpeciesId), SpeciesId);
 
                         SpeciesFrameMatrix<M> mtx = mtx_spc[iSpecies];
                         var _mtx = Matrix != null ? mtx : default(SpeciesFrameMatrix<M>);
@@ -635,8 +628,7 @@ namespace BoSSS.Foundation.XDG {
                                                 OnlyAffine ? default(M) : Matrix, AffineOffset,
                                                 CodomainMap, Parameters, DomainMap,
                                                 lsTrk, iLevSet, new SpeciesId[] { SpeciesA, SpeciesB },
-                                                rule,
-                                                CellLengthScales);
+                                                rule);
                                         MtxBuilder.time = time;
                                         MtxBuilder.Execute();
 
