@@ -199,6 +199,12 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         BDFSchemeCoeffs[] m_TSCchain;
 
+        public int GetNumberOfStages {
+            get {
+                return m_TSCchain[0].S;
+            }
+        }
+
         /// <summary>
         /// DG coefficient mapping for the test- and trial-space.
         /// </summary>
@@ -238,6 +244,40 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Unscaled, agglomerated mass matrix used by the preconditioner.
         /// </summary>
         BlockMsrMatrix m_PrecondMassMatrix;
+
+
+        /// <summary>
+        /// returns the solution fields (and level-set if necessary) for older stages in case of S > 1
+        /// </summary>
+        /// <returns></returns>
+        public ICollection<DGField>[] GetRestartInfos() {
+
+            if(m_PopulatedStackDepth < m_TSCchain[0].S)
+                return null;
+
+            Debug.Assert(m_PopulatedStackDepth == m_TSCchain[0].S);
+
+            ICollection<DGField>[] restartInfo = new List<DGField>[m_PopulatedStackDepth - 1];
+
+            for(int i = 1; i < m_TSCchain[0].S; i++) {
+                restartInfo[i - 1] = new List<DGField>();
+
+                if(this.Config_LevelSetHandling == LevelSetHandling.Coupled_Once
+                    || this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
+
+                    DGField phiField = (DGField)m_LsTrk.LevelSetHistories[0][1 - i];
+                    restartInfo[i - 1].Add(phiField);
+                }
+
+                DGField[] solFields = m_Stack_u[i].Mapping.Fields.ToArray();
+                foreach(DGField f in solFields) {
+                    restartInfo[i - 1].Add(f);
+                }
+
+            }
+
+            return restartInfo;
+        }     
 
 
         /// <summary>
