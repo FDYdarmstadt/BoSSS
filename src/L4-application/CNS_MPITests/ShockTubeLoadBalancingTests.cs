@@ -50,7 +50,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             SetUp();
             //TestRebalancingForDG0WithRK1();
             //TestRebalancingForDG0WithAB1();
-            //TestRebalancingForDG2WithRK1AndAV();
+            TestRebalancingForDG2WithRK1AndAV();
             //TestRebalancingForDG2WithAB1AndAV();
 
             //TestRebalancingForDG0WithLTS1SingleSubGrid();
@@ -293,6 +293,10 @@ namespace CNS_MPITests.Tests.LoadBalancing {
 
             control.NumberOfSubGrids = 2;
             control.FluxCorrection = false;
+            //control.maxNumOfSubSteps = 10;
+
+            //control.DbPath = @"c:\bosss_db\";
+            //control.savetodb = true;
 
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
             CheckRunsProduceSameResults(control);
@@ -606,6 +610,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             Debug.Assert(refControl.DynamicLoadBalancing_CellCostEstimatorFactories.Count == 0);
 
             CNSControl loadBalControl = refControl.CloneAs();
+            loadBalControl.DynamicLoadBalancing_On = true;
             loadBalControl.DynamicLoadBalancing_Period = REBALANCING_PERIOD;
             loadBalControl.DynamicLoadBalancing_ImbalanceThreshold = 0.01;
 
@@ -622,6 +627,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             //loadBalControl.DynamicLoadBalancing_CellCostEstimatorFactories.Clear();
             //loadBalControl.DynamicLoadBalancing_CellCostEstimatorFactories.Add(CellCostEstimatorLibrary.AllCellsAreEqual);
 
+            Debug.Assert(loadBalControl.DynamicLoadBalancing_On == true);
             Debug.Assert(loadBalControl.DynamicLoadBalancing_Period > 0);
             Debug.Assert(loadBalControl.DynamicLoadBalancing_CellClassifier != null);
             Debug.Assert(loadBalControl.DynamicLoadBalancing_CellCostEstimatorFactories.Count > 0);
@@ -631,7 +637,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
 
             if (hilbert) {
                 CNSControl hilbertControl = loadBalControl.CloneAs();
-                hilbertControl.GridPartType = GridPartType.Hilbert;
+                hilbertControl.GridPartType = GridPartType.directHilbert;
 
                 Console.WriteLine("\nRun WITH load balancing (Hilbert)");
                 hilbertSolver = new ShockTubeLoadBalancingTests();
