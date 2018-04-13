@@ -171,8 +171,11 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             }
 
             public void GetCellBoundingBox(int j, BoundingBox bb) {
+                BoundingBox bbTemp = new BoundingBox(bb.D);
+                bb.Clear();
                 foreach(int jPart in this.AggregateCellToParts[j]) {
-                    m_Owner.m_GeomCellData.GetCellBoundingBox(jPart, bb);
+                    m_Owner.m_GeomCellData.GetCellBoundingBox(jPart, bbTemp);
+                    bb.AddBB(bbTemp);
                 }
             }
 
