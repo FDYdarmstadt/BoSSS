@@ -48,6 +48,7 @@
     <Compile Include="CutCellMetrics.cs" />
     <Compile Include="IEquationComponentExtensionXDG.cs" />
     <Compile Include="LevelSetTracker_Caches.cs" />
+    <Compile Include="NECQuadratureLevelSet.cs" />
     <Compile Include="NonlinearLevelSetFormVectorizer.cs" />
     <Compile Include="Quadrature\AdaptiveSubdivisionStrategy.cs" />
     <Compile Include="LinearLevelSetFormVectorizer.cs" />

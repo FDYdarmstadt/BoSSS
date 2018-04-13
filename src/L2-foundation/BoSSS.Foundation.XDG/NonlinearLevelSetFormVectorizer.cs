@@ -248,11 +248,11 @@ namespace BoSSS.Foundation.XDG {
                     }
                     for (int d = 0; d < D; d++) {
                         _Grad_vA[d] = 1.0;
-                        Koeff_GradV[l, k, iSpcNeg] += OrgComponent.LevelSetForm(ref cp, _uA, _uB, _Grad_uA, _Grad_uB, _vA, _vB, _Grad_vA, _Grad_vB);
+                        Koeff_GradV[l, k, iSpcNeg, d] += OrgComponent.LevelSetForm(ref cp, _uA, _uB, _Grad_uA, _Grad_uB, _vA, _vB, _Grad_vA, _Grad_vB);
                         _Grad_vA[d] = 0.0;
 
                         _Grad_vB[d] = 1.0;
-                        Koeff_GradV[l, k] += OrgComponent.LevelSetForm(ref cp, _uA, _uB, _Grad_uA, _Grad_uB, _vA, _vB, _Grad_vA, _Grad_vB);
+                        Koeff_GradV[l, k, iSpcPos, d] += OrgComponent.LevelSetForm(ref cp, _uA, _uB, _Grad_uA, _Grad_uB, _vA, _vB, _Grad_vA, _Grad_vB);
                         _Grad_vB[d] = 0.0;
                     }
                 }

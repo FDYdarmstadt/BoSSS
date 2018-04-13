@@ -60,7 +60,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             // quadrature object
             // -----------------
 
-            m_Quad = CellQuadrature.GetQuadrature2(new int[] { CodomainMapping.BasisS.Sum(basis => basis.Length) }, context, domNrule,
+            m_Quad = CellQuadrature.GetQuadrature2(new int[] { CodomainMapping.NoOfCoordinatesPerCell }, context, domNrule,
                 this.EvaluateEx,
                 this.SaveIntegrationResults,
                 this.AllocateBuffers);
@@ -179,13 +179,13 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         Basis m_MaxCodBasis;
 
         /// <summary>
-        /// true, if the evaluation of the a domain variable is required. <br/>
+        /// true, if the evaluation of the a domain variable is required. 
         /// index: correlates with domain variables
         /// </summary>
         bool[] m_ValueRequired;
 
         /// <summary>
-        /// true, if the evaluation of the gradient of a domain variable is required. <br/>
+        /// true, if the evaluation of the gradient of a domain variable is required. 
         /// index: correlates with domain variables
         /// </summary>
         bool[] m_GradientRequired;
