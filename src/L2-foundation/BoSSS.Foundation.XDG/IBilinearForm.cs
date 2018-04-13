@@ -62,16 +62,16 @@ namespace BoSSS.Foundation.XDG {
         public MultidimensionalArray[] ParamsNeg;
 
 
-        /// <summary>
-        /// A characteristic length scale for the negative parts of the cut cells, i.e. the respective part of a cut cell where the level-set field is negative.
-        /// </summary>
-        public MultidimensionalArray NegCellLengthScale;
+        ///// <summary>
+        ///// A characteristic length scale for the negative parts of the cut cells, i.e. the respective part of a cut cell where the level-set field is negative.
+        ///// </summary>
+        //public MultidimensionalArray NegCellLengthScale;
 
 
-        /// <summary>
-        /// A characteristic length scale for the positive parts of the cut cells, i.e. the respective part of a cut cell where the level-set field is positive.
-        /// </summary>
-        public MultidimensionalArray PosCellLengthScale;
+        ///// <summary>
+        ///// A characteristic length scale for the positive parts of the cut cells, i.e. the respective part of a cut cell where the level-set field is positive.
+        ///// </summary>
+        //public MultidimensionalArray PosCellLengthScale;
         
 
         /// <summary>
@@ -93,6 +93,11 @@ namespace BoSSS.Foundation.XDG {
         /// Physical time.
         /// </summary>
         public double time;
+
+        /// <summary>
+        /// Access to the level-set tracker.
+        /// </summary>
+        public LevelSetTracker LsTrk;
 	}
 
     /// <summary>
@@ -131,15 +136,15 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public double time;
 
-        /// <summary>
-        /// A characteristic length scale for the negative part of the cut cell, i.e. the respective part of the cut cell where the level-set field is negative.
-        /// </summary>
-        public double NegCellLengthScale;
+        ///// <summary>
+        ///// A characteristic length scale for the negative part of the cut cell, i.e. the respective part of the cut cell where the level-set field is negative.
+        ///// </summary>
+        //public double NegCellLengthScale;
 
-        /// <summary>
-        /// A characteristic length scale for the positive part of the cut cell, i.e. the respective part of the cut cell where the level-set field is positive.
-        /// </summary>
-        public double PosCellLengthScale;
+        ///// <summary>
+        ///// A characteristic length scale for the positive part of the cut cell, i.e. the respective part of the cut cell where the level-set field is positive.
+        ///// </summary>
+        //public double PosCellLengthScale;
     }
 
 
@@ -194,10 +199,25 @@ namespace BoSSS.Foundation.XDG {
 
     }
 
+    public interface ILevelSetForm_V : ILevelSetForm {
+
+        void LevelSetForm_V(LevSetIntParams inp, 
+            MultidimensionalArray Koeff_V);
+
+    }
+
+    public interface ILevelSetForm_GradV : ILevelSetForm {
+
+        void LevelSetForm_GradV(LevSetIntParams inp, 
+            MultidimensionalArray Koeff_GradV);
+
+    }
+
+
     public interface INonlinLevelSetForm_V : ILevelSetForm {
 
         void LevelSetForm_V(LevSetIntParams inp, 
-            MultidimensionalArray[] uA, MultidimensionalArray[] uB, MultidimensionalArray[,] Grad_uA, MultidimensionalArray[,] Grad_uB,
+            MultidimensionalArray[] uA, MultidimensionalArray[] uB, MultidimensionalArray[] Grad_uA, MultidimensionalArray[] Grad_uB,
             MultidimensionalArray Koeff_V);
 
     }
@@ -205,7 +225,7 @@ namespace BoSSS.Foundation.XDG {
     public interface INonlinLevelSetForm_GradV : ILevelSetForm {
 
         void LevelSetForm_GradV(LevSetIntParams inp, 
-            MultidimensionalArray[] uA, MultidimensionalArray[] uB, MultidimensionalArray[,] Grad_uA, MultidimensionalArray[,] Grad_uB,
+            MultidimensionalArray[] uA, MultidimensionalArray[] uB, MultidimensionalArray[] Grad_uA, MultidimensionalArray[] Grad_uB,
             MultidimensionalArray Koeff_GradV);
 
     }

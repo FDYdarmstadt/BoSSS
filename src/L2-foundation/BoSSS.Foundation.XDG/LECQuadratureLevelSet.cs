@@ -54,8 +54,7 @@ namespace BoSSS.Foundation.XDG {
 
         ICollection<SpeciesId> m_SpeciesPair;
 
-        IDictionary<SpeciesId,MultidimensionalArray> m_LenScales;
-
+        
         /// <summary>
         /// ctor.
         /// </summary>
@@ -64,8 +63,7 @@ namespace BoSSS.Foundation.XDG {
                                      M Matrix, V OffsetVec,
                                      UnsetteledCoordinateMapping RowMap, IList<DGField> ParamsMap, UnsetteledCoordinateMapping ColMap,
                                      LevelSetTracker lsTrk, int _iLevSet, ICollection<SpeciesId> SpeciesPair,
-                                     ICompositeQuadRule<QuadRule> domAndRule,
-                                     IDictionary<SpeciesId,MultidimensionalArray> __LenScales) //
+                                     ICompositeQuadRule<QuadRule> domAndRule) //
             : base(new int[] { RowMap.MaxTotalNoOfCoordinatesPerCell, 1 + ((Matrix == null) ? 0 : ColMap.MaxTotalNoOfCoordinatesPerCell) },
                  context,
                  domAndRule) //
@@ -87,9 +85,7 @@ namespace BoSSS.Foundation.XDG {
             m_RowMap = RowMap;
             m_ColMap = ColMap;
             m_Parameters = (ParamsMap != null) ? ParamsMap.ToArray() : new DGField[0];
-            m_LenScales = __LenScales;
-
-            
+                       
             if (m_RowMap.BasisS.Count != DiffOp.CodomainVar.Count)
                 throw new ArgumentException("mismatch between number of codomain variables in spatial operator and row mapping");
             if (m_ColMap.BasisS.Count != DiffOp.DomainVar.Count)
@@ -120,22 +116,22 @@ namespace BoSSS.Foundation.XDG {
 
             m_LsForm_UxV = DiffOp.GetArgMapping<ILevelSetForm_UxV>(true,
                eq => ((eq.LevelSetTerms & TermActivationFlags.UxV) != 0) && Compfilter(eq),
-               eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer(lsTrk,(ILevelSetForm)eq) : null);
+               eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer((ILevelSetForm)eq) : null);
             m_LsForm_GradUxV = DiffOp.GetArgMapping<ILevelSetForm_GradUxV>(true,
                 eq => ((eq.LevelSetTerms & TermActivationFlags.GradUxV) != 0) && Compfilter(eq),
-                eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer(lsTrk, (ILevelSetForm)eq) : null);
+                eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer((ILevelSetForm)eq) : null);
             m_LsForm_UxGradV = DiffOp.GetArgMapping<ILevelSetForm_UxGradV>(true,
                 eq => ((eq.LevelSetTerms & TermActivationFlags.UxGradV) != 0) && Compfilter(eq),
-                eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer(lsTrk, (ILevelSetForm)eq) : null);
+                eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer((ILevelSetForm)eq) : null);
             m_LsForm_GradUxGradV = DiffOp.GetArgMapping<ILevelSetForm_GradUxGradV>(true,
                 eq => ((eq.LevelSetTerms & TermActivationFlags.GradUxGradV) != 0) && Compfilter(eq),
-                eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer(lsTrk, (ILevelSetForm)eq) : null);
+                eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer((ILevelSetForm)eq) : null);
             m_LsForm_V = DiffOp.GetArgMapping<ILevelSetForm_V>(true,
                 eq => ((eq.LevelSetTerms & TermActivationFlags.V) != 0 && Compfilter(eq)),
-                eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer(lsTrk, (ILevelSetForm)eq) : null);
+                eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer((ILevelSetForm)eq) : null);
             m_LsForm_GradV = DiffOp.GetArgMapping<ILevelSetForm_GradV>(true,
                 eq => ((eq.LevelSetTerms & TermActivationFlags.GradV) != 0) && Compfilter(eq),
-                eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer(lsTrk, (ILevelSetForm)eq) : null);
+                eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer((ILevelSetForm)eq) : null);
 
             this.m_LsForm_UxV_Watches = this.m_LsForm_UxV.InitStopWatches(0, this);
             this.m_LsForm_GradUxV_Watches = this.m_LsForm_GradUxV.InitStopWatches(0, this);
@@ -480,6 +476,7 @@ namespace BoSSS.Foundation.XDG {
                 // set Nodes Global
                 _inParams.X = NodesGlobal;
                 _inParams.time = this.time;
+                _inParams.LsTrk = this.m_lsTrk;
                 // set length scales
 
 
@@ -509,7 +506,6 @@ namespace BoSSS.Foundation.XDG {
                         m_ParamFieldValuesPos, m_ParamFieldValuesNeg,
                         DELTA,
                         base.CustomTimers[0],
-                        this.m_LenScales,
                         delegate (ILevelSetForm_UxV _comp, int _gamma, int i, LevSetIntParams inp) {
                             _comp.LevelSetForm_UxV(_inParams, Koeff_UxV[_gamma][i]);
                         });
@@ -520,7 +516,6 @@ namespace BoSSS.Foundation.XDG {
                         m_ParamFieldValuesPos, m_ParamFieldValuesNeg,
                         DELTA,
                         base.CustomTimers[0],
-                        this.m_LenScales,
                         delegate (ILevelSetForm_GradUxV _comp, int _gamma, int i, LevSetIntParams inp) {
                             _comp.LevelSetForm_GradUxV(_inParams, Koeff_NablaUxV[_gamma][i]);
                         });
@@ -531,7 +526,6 @@ namespace BoSSS.Foundation.XDG {
                         m_ParamFieldValuesPos, m_ParamFieldValuesNeg,
                         DELTA,
                         base.CustomTimers[0],
-                        this.m_LenScales,
                         delegate (ILevelSetForm_UxGradV _comp, int _gamma, int i, LevSetIntParams inp) {
                             _comp.LevelSetForm_UxGradV(_inParams, Koeff_UxNablaV[_gamma][i]);
                         });
@@ -542,7 +536,6 @@ namespace BoSSS.Foundation.XDG {
                         m_ParamFieldValuesPos, m_ParamFieldValuesNeg,
                         DELTA,
                         base.CustomTimers[0],
-                        this.m_LenScales,
                         delegate (ILevelSetForm_GradUxGradV _comp, int _gamma, int i, LevSetIntParams inp) {
                             _comp.LevelSetForm_GradUxGradV(_inParams, Koeff_NablaUxNablaV[_gamma][i]);
                         });
@@ -554,7 +547,6 @@ namespace BoSSS.Foundation.XDG {
                         m_ParamFieldValuesPos, m_ParamFieldValuesNeg,
                         DELTA,
                         base.CustomTimers[0],
-                        this.m_LenScales,
                         delegate (ILevelSetForm_V _comp, int _gamma, int i, LevSetIntParams inp) {
                             _comp.LevelSetForm_V(_inParams, Koeff_V[_gamma][i]);
                         });
@@ -565,7 +557,6 @@ namespace BoSSS.Foundation.XDG {
                         m_ParamFieldValuesPos, m_ParamFieldValuesNeg,
                         DELTA,
                         base.CustomTimers[0],
-                        this.m_LenScales,
                         delegate (ILevelSetForm_GradV _comp, int _gamma, int i, LevSetIntParams inp) {
                             _comp.LevelSetForm_GradV(_inParams, Koeff_NablaV[_gamma][i]);
                         });
@@ -691,7 +682,6 @@ namespace BoSSS.Foundation.XDG {
             MultidimensionalArray ParamFieldValuesPos, MultidimensionalArray ParamFieldValuesNeg,
             int DELTA,
             Stopwatch timer,
-            IDictionary<SpeciesId,MultidimensionalArray> LengthScales,
             CallComponent<T> ComponentFunc) where T : ILevelSetForm {
             timer.Start();
             
@@ -699,8 +689,8 @@ namespace BoSSS.Foundation.XDG {
             for (int i = 0; i < bf.m_AllComponentsOfMyType.Length; i++) {  // loop over equation components
                 var comp = bf.m_AllComponentsOfMyType[i];
 
-                LengthScales.TryGetValue(comp.NegativeSpecies, out _inParams.NegCellLengthScale);
-                LengthScales.TryGetValue(comp.PositiveSpecies, out _inParams.PosCellLengthScale);
+                //LengthScales.TryGetValue(comp.NegativeSpecies, out _inParams.NegCellLengthScale);
+                //LengthScales.TryGetValue(comp.PositiveSpecies, out _inParams.PosCellLengthScale);
                 
                 argsPerComp[gamma][i].Clear();
 
