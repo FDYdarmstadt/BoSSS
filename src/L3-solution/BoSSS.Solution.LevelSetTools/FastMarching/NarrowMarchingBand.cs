@@ -257,7 +257,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             }
 
 
-            SubGrid NEARgrid = Tracker.Regions.GetNearFieldSubgrid4LevSet(iLevSet, 1);
+            SubGrid NEARgrid = Tracker.Regions.GetNearFieldSubgrid4LevSet(iLevSet, Tracker.NearRegionWidth);
             CellMask NEAR = NEARgrid.VolumeMask;
 
             SubGrid CCgrid = Tracker.Regions.GetCutCellSubgrid4LevSet(iLevSet);
