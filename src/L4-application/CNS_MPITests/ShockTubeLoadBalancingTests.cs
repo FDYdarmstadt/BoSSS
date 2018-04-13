@@ -50,7 +50,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             SetUp();
             //TestRebalancingForDG0WithRK1();
             //TestRebalancingForDG0WithAB1();
-            TestRebalancingForDG2WithRK1AndAV();
+            //TestRebalancingForDG2WithRK1AndAV();
             //TestRebalancingForDG2WithAB1AndAV();
 
             //TestRebalancingForDG0WithLTS1SingleSubGrid();
@@ -285,7 +285,11 @@ namespace CNS_MPITests.Tests.LoadBalancing {
                 explicitOrder: explicitOrder);
 
             control.AgglomerationThreshold = 0.1;
-            control.Endtime = 0.005;
+            //control.Endtime = 0.005;
+            control.Endtime = 0.002;
+
+            //control.DbPath = @"c:\bosss_db\";
+            //control.savetodb = true;
 
             // MUST be the same as rebalancing period since LTS scheme MUST
             // recluster after rebalancing (at least, it makes life much easier)
@@ -293,10 +297,9 @@ namespace CNS_MPITests.Tests.LoadBalancing {
 
             control.NumberOfSubGrids = 2;
             control.FluxCorrection = false;
-            //control.maxNumOfSubSteps = 10;
+            control.maxNumOfSubSteps = 10;
 
-            //control.DbPath = @"c:\bosss_db\";
-            //control.savetodb = true;
+            control.forceReclustering = true;
 
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
             CheckRunsProduceSameResults(control);
@@ -314,7 +317,11 @@ namespace CNS_MPITests.Tests.LoadBalancing {
                 explicitOrder: explicitOrder);
 
             control.AgglomerationThreshold = 0.9;
-            control.Endtime = 0.005;
+            //control.Endtime = 0.005;
+            control.Endtime = 0.002;
+
+            //control.DbPath = @"c:\bosss_db\";
+            //control.savetodb = true;
 
             // MUST be the same as rebalancing period since LTS scheme MUST
             // recluster after rebalancing (at least, it makes life much easier)
@@ -322,6 +329,9 @@ namespace CNS_MPITests.Tests.LoadBalancing {
 
             control.NumberOfSubGrids = 2;
             control.FluxCorrection = false;
+            control.maxNumOfSubSteps = 10;
+
+            control.forceReclustering = true;
 
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
             CheckRunsProduceSameResults(control);
