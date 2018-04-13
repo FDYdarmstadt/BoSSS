@@ -263,7 +263,7 @@ namespace CNS {
 
                 if (TimestepNo % printInterval == 0) {
                     Console.WriteLine(" done. PhysTime: {0:0.#######E-00}, dt: {1:0.#######E-00}", phystime, dt);
-                    //Console.WriteLine(" done. PhysTime: {0}, dt: {1}", phystime, dt);
+                    //Console.WriteLine(" done. PhysTime: {0}, dt: {1}, currentTime: {2}", phystime, dt, TimeStepper.Time);
                 }
 
                 IDictionary<string, double> residuals = residualLoggers.LogTimeStep(TimestepNo, dt, phystime);
@@ -397,9 +397,20 @@ namespace CNS {
             using (var ht = new FuncTrace()) {
                 // Update clustering before cell redistribution when LTS is being used
                 if (TimeStepper is AdamsBashforthLTS ABLTSTimeStepper) {
+                    if (TimeStepNo % Control.DynamicLoadBalancing_Period != 0) {
+                        throw new Exception("Mismatch between time step number and dynmaic load balacing period!");
+                    }
+
+                    // Just to be sure...
+                    if (this.Control.ArtificialViscosityLaw != null) {
+                        WorkingSet.UpdateShockCapturingVariables(this, SpeciesMap.SubGrid.VolumeMask);
+                    }
+
                     ABLTSTimeStepper.UpdateTimeInfo(new TimeInformation(TimeStepNo, physTime, -1));
-                    bool reclustered = ABLTSTimeStepper.TryNewClustering(dt: -1);
-                    ABLTSTimeStepper.SetReclusteredByGridRedist(reclustered);
+                    // LoadBal and noLoadBalRuns did not match, with this fix, it works --> probably some ABevolver were not updated correctly
+                    bool reclustered = ABLTSTimeStepper.TryNewClustering(dt: -1, calledByMPIRedist: true);
+                    Debug.Assert(reclustered == true);
+                    //ABLTSTimeStepper.SetReclusteredByGridRedist(true);
                 }
 
                 (NoOfClasses, cellToPerformanceClassMap) = Control.DynamicLoadBalancing_CellClassifier.ClassifyCells(this);

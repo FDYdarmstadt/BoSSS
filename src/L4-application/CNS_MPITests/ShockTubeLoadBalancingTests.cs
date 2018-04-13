@@ -285,8 +285,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
                 explicitOrder: explicitOrder);
 
             control.AgglomerationThreshold = 0.1;
-            //control.Endtime = 0.005;
-            control.Endtime = 0.002;
+            control.Endtime = 0.005;
 
             //control.DbPath = @"c:\bosss_db\";
             //control.savetodb = true;
@@ -317,8 +316,8 @@ namespace CNS_MPITests.Tests.LoadBalancing {
                 explicitOrder: explicitOrder);
 
             control.AgglomerationThreshold = 0.9;
-            //control.Endtime = 0.005;
-            control.Endtime = 0.002;
+            control.Endtime = 0.005;
+            //control.Endtime = 0.002;
 
             //control.DbPath = @"c:\bosss_db\";
             //control.savetodb = true;
