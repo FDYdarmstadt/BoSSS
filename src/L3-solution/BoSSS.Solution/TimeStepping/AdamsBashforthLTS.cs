@@ -106,6 +106,7 @@ namespace BoSSS.Solution.Timestepping {
             this.reclusteredByGridRedist = result;
         }
 
+        private bool forceReclustering;
 
         //################# Hack for saving to database in every (A)LTS sub-step
         private Action<TimestepNumber, double> saveToDBCallback;
@@ -125,8 +126,10 @@ namespace BoSSS.Solution.Timestepping {
         /// <param name="reclusteringInterval">Interval for potential reclustering</param>
         /// <param name="saveToDBCallback">Hack for plotting all sub-steps</param>
         /// <remarks>Uses the k-Mean clustering, see <see cref="BoSSS.Solution.Utils.Kmeans"/>, to generate the element groups</remarks>
-        public AdamsBashforthLTS(SpatialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters, int order, int numOfClusters, IList<TimeStepConstraint> timeStepConstraints = null, SubGrid subGrid = null, bool fluxCorrection = true, int reclusteringInterval = 0, Action<TimestepNumber, double> saveToDBCallback = null, int maxNumOfSubSteps = 0)
+        public AdamsBashforthLTS(SpatialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters, int order, int numOfClusters, IList<TimeStepConstraint> timeStepConstraints = null, SubGrid subGrid = null, bool fluxCorrection = true, int reclusteringInterval = 0, Action<TimestepNumber, double> saveToDBCallback = null, int maxNumOfSubSteps = 0, bool forceReclustering = false)
             : base(spatialOp, Fieldsmap, Parameters, order, timeStepConstraints, subGrid) {
+
+            this.forceReclustering = forceReclustering;
 
             if (reclusteringInterval != 0) {
                 numberOfClustersInitial = numOfClusters;
@@ -164,9 +167,10 @@ namespace BoSSS.Solution.Timestepping {
         /// <summary>
         /// Constructor for (A)LTS with IBM
         /// </summary>
-        public AdamsBashforthLTS(SpatialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters, int order, int numOfClusters, bool IBM, IList<TimeStepConstraint> timeStepConstraints = null, SubGrid subGrid = null, bool fluxCorrection = true, int reclusteringInterval = 0)
+        public AdamsBashforthLTS(SpatialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters, int order, int numOfClusters, bool IBM, IList<TimeStepConstraint> timeStepConstraints = null, SubGrid subGrid = null, bool fluxCorrection = true, int reclusteringInterval = 0, bool forceReclustering = false)
             : base(spatialOp, Fieldsmap, Parameters, order, timeStepConstraints, subGrid) {
 
+            this.forceReclustering = forceReclustering;
             this.gridData = Fieldsmap.Fields.First().GridDat;
             this.fluxCorrection = fluxCorrection;
 
@@ -215,6 +219,7 @@ namespace BoSSS.Solution.Timestepping {
                     //#if DEBUG
                     for (int i = 0; i < numberOfLocalTimeSteps.Count; i++) {
                         Console.WriteLine("Perform(dt):\t\t id={0} -> sub-steps={1}\telements={2}\tdt={3:0.#######E-00}", i, numberOfLocalTimeSteps[i], CurrentClustering.Clusters[i].GlobalNoOfCells, clusterDts[i]);
+                        //Console.WriteLine("Perform(dt):\t\t id={0} -> sub-steps={1}\telements={2}\tdt={3}", i, numberOfLocalTimeSteps[i], CurrentClustering.Clusters[i].GlobalNoOfCells, clusterDts[i]);
                     }
                     Console.WriteLine("-------------------------------------------------------------------------------------------");
 
@@ -816,7 +821,7 @@ namespace BoSSS.Solution.Timestepping {
             }
         }
 
-        public bool TryNewClustering(double dt) {
+        public bool TryNewClustering(double dt, bool calledByMPIRedist = false) {
             bool reclustered = false;
 
             if (ABevolver[0].HistoryChangeRate.Count >= order - 1) {
@@ -832,7 +837,12 @@ namespace BoSSS.Solution.Timestepping {
                         // Otherwise the value could be changed by the constructor of the parent class (AdamsBashforthLTS.cs) --> CreateSubGrids()
                         Clusterer.Clustering newClustering = clusterer.CreateClustering(numberOfClustersInitial, this.TimeStepConstraints, this.SubGrid);
                         newClustering = clusterer.TuneClustering(newClustering, Time, this.TimeStepConstraints); // Might remove sub-grids when their time step sizes are too similar
-                        reclustered = clusterer.CheckForNewClustering(CurrentClustering, newClustering);
+
+                        if (calledByMPIRedist || forceReclustering) {
+                            reclustered = true;
+                        } else {
+                            reclustered = clusterer.CheckForNewClustering(CurrentClustering, newClustering);
+                        }
 
                         //#if DEBUG
                         //Console.WriteLine("########################################");
