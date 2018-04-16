@@ -23,12 +23,12 @@ List of 23 instances of IDatabaseInfo {
   14: { Session Count = 43; Grid Count = 45; Path = P:\BoSSS_DBs\IBMPaper }
   15: { Session Count = 28; Grid Count = 15; Path = P:\BoSSS_DBs\Paper_IBM2D }
   16: { Session Count = 38; Grid Count = 22; Path = P:\BoSSS_DBs\Paper_CellAgglo01_Penalty4 }
-  17: { Session Count = 46; Grid Count = 55; Path = P:\BoSSS_DBs\Sphere3D }
+  17: { Session Count = 52; Grid Count = 59; Path = P:\BoSSS_DBs\Sphere3D }
   18: { Session Count = 22; Grid Count = 10; Path = P:\BoSSS_DBs\Performance }
   19: { Session Count = 24; Grid Count = 14; Path = P:\BoSSS_DBs\PaperRevision }
   20: { Session Count = 0; Grid Count = 0; Path = P:\Lichtenberg_DB }
   21: { Session Count = 2; Grid Count = 354; Path = P:\BoSSS_DBs\Bug }
-  22: { Session Count = 99; Grid Count = 97; Path = L:\BoSSS_DB\Lichtenberg_DB }
+  22: { Session Count = 135; Grid Count = 98; Path = L:\BoSSS_DB\Lichtenberg_DB }
 }
 
  Console ready for input. Type 'help' for help.
@@ -44,7 +44,7 @@ using BoSSS.Application.IBM_Solver;
 using System.Data;
 **************
 ==============
-string dateString = "2018-3-21";
+string dateString = "2018-4-16";
 string File       = "SolverRuns--" + dateString + ".json";
 string FilePath   = Path.Combine(CurrentDocDir, File);
 var SessTab       = TableExtensions.LoadFromFile(FilePath);
@@ -57,105 +57,86 @@ var SessTab       = TableExtensions.LoadFromFile(FilePath);
 ==============
 SessTab.GetColumnNames();
 **************
-List of 68 instances of String {
+List of 66 instances of String {
   0: SessionName
-  1: DGdegree:VelocityX
-  2: DGdegree:VelocityY
-  3: DGdegree:VelocityZ
-  4: DGdegree:Pressure
-  5: DGdegree:PhiDG
-  6: DGdegree:Phi
-  7: Bndtype:Velocity_inlet
-  8: Bndtype:Wall
-  9: Bndtype:Pressure_Outlet
-  10: GeneratedFromCode
-  11: ControlFileText_Index
-  12: dtFixed
-  13: NoOfMultigridLevels
-  14: AdvancedDiscretizationOptions.ContiSign
-  15: AdvancedDiscretizationOptions.RescaleConti
-  16: AdvancedDiscretizationOptions.LFFA
-  17: AdvancedDiscretizationOptions.LFFB
-  18: AdvancedDiscretizationOptions.PenaltySafety
-  19: AdvancedDiscretizationOptions.CellAgglomerationThreshold
-  20: MaxKrylovDim
-  21: MaxSolverIterations
-  22: MinSolverIterations
-  23: Solver_ConvergenceCriterion
-  24: VelocityBlockPrecondMode
-  25: LevelSetSmoothing
-  26: PhysicalParameters.IncludeConvection
-  27: PhysicalParameters.rho_A
-  28: PhysicalParameters.mu_A
-  29: PhysicalParameters.Material
-  30: particleRadius
-  31: MeshFactor
-  32: Timestepper_Scheme
-  33: FixedStreamwisePeriodicBC
-  34: Timestepper_Init
-  35: NonlinearSolve
-  36: LinearSolve
-  37: GridPartType
-  38: ProjectName
-  39: NoOfTimesteps
-  40: Endtime
-  41: saveperiod
-  42: dtMin
-  43: dtMax
-  44: CompMode
-  45: ImmediatePlotPeriod
-  46: SuperSampling
-  47: savetodb
-  48: logFileDirectory
-  49: Paramstudy_ContinueOnError
-  50: DynamicLoadBalancing_RedistributeAtStartup
-  51: DynamicLoadBalancing_Period
-  52: DynamicLoadBalancing_ImbalanceThreshold
-  53: AdaptiveMeshRefinement
-  54: CutCellQuadratureType
-  55: ContinueOnIoError
-  56: Grid:NoOfCells
-  57: Grid:hMax
-  58: Grid:hMin
-  59: UsedNoOfMultigridLevels
-  60: C_Drag
-  61: C_Lift
-  62: RegularTerminated
-  63: SlvIter_excl
-  64: SlvInit_excl
-  65: PrecSolve
-  66: NewtonDirder
-  67: Processors
+  1: DGdegree:Velocity*
+  2: DGdegree:Pressure
+  3: DGdegree:PhiDG
+  4: DGdegree:Phi
+  5: Bndtype:Velocity_inlet
+  6: Bndtype:Wall
+  7: Bndtype:Pressure_Outlet
+  8: GeneratedFromCode
+  9: ControlFileText_Index
+  10: dtFixed
+  11: NoOfMultigridLevels
+  12: AdvancedDiscretizationOptions.ContiSign
+  13: AdvancedDiscretizationOptions.RescaleConti
+  14: AdvancedDiscretizationOptions.LFFA
+  15: AdvancedDiscretizationOptions.LFFB
+  16: AdvancedDiscretizationOptions.PenaltySafety
+  17: AdvancedDiscretizationOptions.CellAgglomerationThreshold
+  18: MaxKrylovDim
+  19: MaxSolverIterations
+  20: MinSolverIterations
+  21: Solver_ConvergenceCriterion
+  22: VelocityBlockPrecondMode
+  23: LevelSetSmoothing
+  24: PhysicalParameters.IncludeConvection
+  25: PhysicalParameters.rho_A
+  26: PhysicalParameters.mu_A
+  27: PhysicalParameters.Material
+  28: particleRadius
+  29: MeshFactor
+  30: Timestepper_Scheme
+  31: FixedStreamwisePeriodicBC
+  32: Timestepper_Init
+  33: NonlinearSolve
+  34: LinearSolve
+  35: GridPartType
+  36: ProjectName
+  37: NoOfTimesteps
+  38: Endtime
+  39: saveperiod
+  40: dtMin
+  41: dtMax
+  42: CompMode
+  43: ImmediatePlotPeriod
+  44: SuperSampling
+  45: savetodb
+  46: logFileDirectory
+  47: Paramstudy_ContinueOnError
+  48: DynamicLoadBalancing_RedistributeAtStartup
+  49: DynamicLoadBalancing_Period
+  50: DynamicLoadBalancing_ImbalanceThreshold
+  51: AdaptiveMeshRefinement
+  52: CutCellQuadratureType
+  53: ContinueOnIoError
+  54: Grid:NoOfCells
+  55: Grid:hMax
+  56: Grid:hMin
+  57: UsedNoOfMultigridLevels
+  58: C_Drag
+  59: C_Lift
+  60: RegularTerminated
+  61: SlvIter_excl
+  62: SlvInit_excl
+  63: PrecSolve
+  64: NewtonDirder
+  65: Processors
 }
 ==============
-var SubTab_1 = SessTab.ExtractColumns("Processors","SlvIter_excl","SlvInit_excl","PrecSolve","NewtonDirder","NonlinearSolve","LinearSolve","NoOfMultigridLevels","DGdegree:VelocityX","RegularTerminated");
+var SubTab_1 = SessTab.ExtractColumns("Processors","SlvIter_excl","SlvInit_excl","PrecSolve","NewtonDirder","NonlinearSolve","LinearSolve","NoOfMultigridLevels","DGdegree:Velocity*","RegularTerminated");
 **************
 ==============
 SubTab_1.Print();
 **************
-    Processors SlvIter_excl  SlvInit_excl PrecSolve     NewtonDirder  NonlinearSolve LinearSolve NoOfMultigridLevels DGdegree:VelocityX RegularTerminated 
-0:  8          36361.289664  28.5814175   17559.1503585 18501.6228656 0              4           4                   1                  True              
-1:  8          32046.3288242 27.9870352   13305.8005924 18366.6796446 0              4           3                   1                  True              
-2:  32         15139.050539  16.5418631   3677.3299825  11199.1819662 0              4           4                   1                  True              
-3:  64         14731.0953118 14.8490639   3117.4989286  11226.6405286 0              4           4                   1                  True              
-4:  16         13293.2834385 25.0906694   5742.9899176  7295.2137133  0              4           4                   1                  True              
-5:  64         17242.8729401 15.3131033   4613.8503501  12379.2049198 0              4           3                   1                  True              
-6:  32         17135.674201  16.8219073   5001.9888444  11907.0733727 0              4           3                   1                  True              
-7:  16         15169.7242624 11.7201694   7677.6241863  7376.7337719  0              4           3                   1                  True              
-8:  32         24219.1701465 16.8081343   6069.4109347  17963.4451384 0              6           3                   1                  True              
-9:  64         24128.287329  14.9437531   7184.814568   16756.4244658 0              6           3                   1                  True              
-10: 16         18389.7675417 11.7221314   6011.3877311  12229.7020066 0              6           3                   1                  True              
-11: 8          59582.6186127 38.4114806   30469.5271651 27866.3211947 0              3           2                   1                  True              
-12: 32         28494.0504275 16.6483007   11128.330949  16861.1074662 0              3           2                   1                  True              
-13: 64         30854.4396128 14.8030589   14618.6184927 15449.8886054 0              3           2                   1                  True              
-14: 16         26403.8379533 11.6372309   14640.3035067 11050.6477496 0              3           2                   1                  True              
-15: 8          56870.6996634 29.0321476   31290.9062739 25203.9152301 0              4           2                   1                  True              
-16: 64         26893.6911212 15.0154471   10946.3283928 15644.3939505 0              6           2                   1                  True              
-17: 64         23084.8021692 15.0523163   8754.7196044  13923.180615  0              4           2                   1                  True              
-18: 32         33173.2038997 16.5633298   14932.7252671 17374.9938962 0              6           2                   1                  True              
-19: 32         26521.6818432 26.6087619   10662.3151975 15040.3679929 0              4           2                   1                  True              
-20: 16         26104.6686354 11.7101604   13459.5464705 11570.64994   0              6           2                   1                  True              
-21: 16         28316.3646156 11.6296095   18052.4565893 9696.9521095  0              4           2                   1                  True              
+   Processors SlvIter_excl   SlvInit_excl PrecSolve     NewtonDirder  NonlinearSolve LinearSolve NoOfMultigridLevels DGdegree:Velocity* RegularTerminated 
+0: 256        15570.2573632  7.4560134    0             0             0              4           3                   2                  True              
+1: 128        0              0            0             0             0              4           3                   2                  False             
+2: 16         130819.7311831 0            0             0             0              4           3                   2                  True              
+3: 64         45970.9276584  16.8677696   23477.3478134 22034.2634856 0              4           3                   2                  True              
+4: 32         68767.9969633  0            0             0             0              4           3                   2                  True              
 ==============
 // Calculation of speedup times 
 List<KeyValuePair<string, int>> procs = new List<KeyValuePair<string, int>>{};
@@ -299,30 +280,45 @@ static public void getFormat(int iTabRow,IDictionary<string, object> Row,
 }
 **************
 ==============
-var plotSlvIter = SubTab_1.ToPlot("Processors", "SlvIter_excl", // column for x- and y
+var plotSlvIterTime = SubTab_1.ToPlot("Processors", "SlvIter_excl", // column for x- and y
                                   Formats.getFormat); // column for group
-var plotSlvInit = SubTab_1.ToPlot("Processors", "SlvInit_excl", // column for x- and y
+var plotSlvIterSpeedup = SubTab_1.ToPlot("Processors", "SlvIter_speedup", // column for x- and y
                                   Formats.getFormat); // column for group
+//var plotSlvInit = SubTab_1.ToPlot("Processors", "SlvInit_excl", // column for x- and y
+//                                  Formats.getFormat); // column for group
 Plot2Ddata[,] multiplots = new Plot2Ddata[2,1];
-plotSlvIter.Title   = "Exclusive times";
-plotSlvIter.Ylabel  = "Time [s]";
-plotSlvInit.Xlabel  = "Processors";
-plotSlvInit.Ylabel  = "Time [s]";
-plotSlvIter.Y2label = "SlvIter";
-plotSlvInit.Y2label = "SlvInit";
+//plotSlvIterTime.Title     = "Exclusive times";
+plotSlvIterTime.Ylabel    = "Time [s]";
+plotSlvIterSpeedup.Xlabel = "Processors";
+plotSlvIterSpeedup.Ylabel = "Speedup";
 
 
-plotSlvIter.XrangeMin = 1;
-plotSlvIter.XrangeMax = max;
-plotSlvInit.XrangeMin = 1;
-plotSlvInit.XrangeMax = max;
+plotSlvIterTime.XrangeMin    = 16;
+plotSlvIterTime.XrangeMax    = max;
+plotSlvIterTime.LogX         = true;
+plotSlvIterTime.LogBaseX     = 2;
+plotSlvIterSpeedup.LogX      = true;
+plotSlvIterSpeedup.LogY      = true;
+plotSlvIterSpeedup.LogBaseX  = 2;
+plotSlvIterSpeedup.LogBaseY  = 2;
+plotSlvIterSpeedup.XrangeMin = 16;
+plotSlvIterSpeedup.XrangeMax = max;
 
-multiplots[0,0] = plotSlvIter;
-multiplots[1,0] = plotSlvInit;
+multiplots[0,0] = plotSlvIterTime;
+multiplots[1,0] = plotSlvIterSpeedup;
+
+// Add ideal
+double[] dof = new[]{16.0,32.0,64.0,128.0,256.0};
+double[] linT = dof.Select(x => x).ToArray();
+var ideal = new Plot2Ddata.XYvalues("Ideal", dof, linT);
+ideal.Format.FromString("- black");
+ideal.Format.LineWidth = 3;
+ArrayTools.AddToArray(ideal, ref multiplots[1,0].dataGroups);
 
 
 multiplots[0,0].bmargin = 1;
 multiplots[1,0].tmargin = 1;
+multiplots[0,0].tmargin = 4;
 multiplots.PlotNow()
 **************
 Using gnuplot: C:\Users\krause\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
@@ -464,6 +460,10 @@ System.ComponentModel.Win32Exception (0x80004005): Das System kann die angegeben
    bei <InteractiveExpressionClass>.Host(Object& $retval)
    bei Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
    bei BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in C:\BoSSS-experimental\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:Zeile 307.
+==============
+**************
+==============
+**************
 ==============
 **************
 ==============
