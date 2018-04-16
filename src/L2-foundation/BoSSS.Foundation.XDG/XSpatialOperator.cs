@@ -302,39 +302,39 @@ namespace BoSSS.Foundation.XDG {
             where V : IList<double> {
             //
             MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
-            using (var tr = new FuncTrace()) {
+            using(var tr = new FuncTrace()) {
                 IGridData GridDat;
-                if (SubGrid == null) {
+                if(SubGrid == null) {
                     GridDat = lsTrk.GridDat;
                 } else {
                     GridDat = SubGrid.GridData;
                 }
-                
+
 
                 #region Check Input Arguments
                 // --------------------------------
-                if (!this.IsCommited)
+                if(!this.IsCommited)
                     throw new ApplicationException("operator assembly must be finalized before by calling 'Commit' before this method can be called.");
 
-                if (DomainMap.BasisS.Count != this.DomainVar.Count)
+                if(DomainMap.BasisS.Count != this.DomainVar.Count)
                     throw new ArgumentException("mismatch between specified domain variables and number of DG fields in domain mapping", "DomainMap");
-                if (CodomainMap.BasisS.Count != this.CodomainVar.Count)
+                if(CodomainMap.BasisS.Count != this.CodomainVar.Count)
                     throw new ArgumentException("mismatch between specified codomain variables and number of DG fields in codomain mapping", "CodomainMap");
 
-                if (this.ParameterVar.Count == 0) {
-                    if (Parameters != null && Parameters.Count > 0)
+                if(this.ParameterVar.Count == 0) {
+                    if(Parameters != null && Parameters.Count > 0)
                         throw new ArgumentException("mismatch between specified parameter variables and number of DG fields in parameter mapping", "Parameters");
                 } else {
-                    if (Parameters == null)
+                    if(Parameters == null)
                         throw new ArgumentNullException("Parameters", "parameters must be specified");
-                    if (Parameters.Count != this.ParameterVar.Count)
+                    if(Parameters.Count != this.ParameterVar.Count)
                         throw new ArgumentException("mismatch between specified parameter variables and number of DG fields in parameter mapping", "Parameters");
                 }
 
-                if (OnlyAffine == false) {
-                    if (!Matrix.RowPartitioning.Equals(CodomainMap))
+                if(OnlyAffine == false) {
+                    if(!Matrix.RowPartitioning.Equals(CodomainMap))
                         throw new ArgumentException("wrong number of columns in matrix.", "Matrix");
-                    if (!Matrix.ColPartition.Equals(DomainMap))
+                    if(!Matrix.ColPartition.Equals(DomainMap))
                         throw new ArgumentException("wrong number of rows in matrix.", "Matrix");
                 }
 
@@ -350,15 +350,15 @@ namespace BoSSS.Foundation.XDG {
                 #region MPI exchange of parameter fields
                 // --------------------------------
                 Transceiver trx = null;
-                if (MPIParameterExchange) {
+                if(MPIParameterExchange) {
                     // transceiver is only needed for parameters
-                    if (Parameters != null) {
+                    if(Parameters != null) {
                         List<DGField> p = new List<DGField>();
-                        foreach (DGField ff in Parameters)
-                            if (ff != null)
+                        foreach(DGField ff in Parameters)
+                            if(ff != null)
                                 p.Add(ff);
 
-                        if (p.Count > 0) {
+                        if(p.Count > 0) {
                             trx = new Transceiver(p);
                             trx.TransceiveStartImReturn();
                         }
@@ -385,8 +385,8 @@ namespace BoSSS.Foundation.XDG {
                 // -------------------
                 var allBases = DomainMap.BasisS.Union(CodomainMap.BasisS);
                 Basis maxBasis = allBases.First();
-                foreach (var b in allBases) {
-                    if (b.Degree > maxBasis.Degree)
+                foreach(var b in allBases) {
+                    if(b.Degree > maxBasis.Degree)
                         maxBasis = b;
                 }
 
@@ -397,13 +397,13 @@ namespace BoSSS.Foundation.XDG {
                 // ---------------------
                 //MsrMatrix BulkMatrix = null;
                 //double[] BulkAffineOffset = null;
-                using (new BlockTrace("bulk_integration", tr)) {
+                using(new BlockTrace("bulk_integration", tr)) {
 
                     // create the frame matrices & vectors...
                     // this is an MPI-collective operation, so it must be executed before the program may take different branches...
                     SpeciesFrameMatrix<M>[] mtx_spc = new SpeciesFrameMatrix<M>[ReqSpecies.Length];
                     SpeciesFrameVector<V>[] vec_spc = new SpeciesFrameVector<V>[ReqSpecies.Length];
-                    for (int i = 0; i < ReqSpecies.Length; i++) {
+                    for(int i = 0; i < ReqSpecies.Length; i++) {
                         SpeciesId SpId = ReqSpecies[i];
                         mtx_spc[i] = new SpeciesFrameMatrix<M>(Matrix, lsTrk.Regions, SpId, CodomainMap, DomainMap);
                         vec_spc[i] = (AffineOffset != null) ?
@@ -414,7 +414,7 @@ namespace BoSSS.Foundation.XDG {
                     // Create Masks before the Loops, so it doesn't affect MPI
                     CellMask SubGridCellMask = null;
                     EdgeMask SubGridEdgeMask = null;
-                    if (SubGrid != null) {
+                    if(SubGrid != null) {
                         SubGridCellMask = SubGrid.VolumeMask;
                         /// I don't know why, but this seems to work:
                         SubGridEdgeMask = SubGrid.AllEdgesMask;
@@ -423,11 +423,11 @@ namespace BoSSS.Foundation.XDG {
                     }
 
                     // do the Bulk integration...
-                    foreach (var SpeciesId in ReqSpecies) {
+                    foreach(var SpeciesId in ReqSpecies) {
                         int iSpecies = Array.IndexOf(ReqSpecies, SpeciesId);
 
 
-                        if (OnIntegratingBulk != null)
+                        if(OnIntegratingBulk != null)
                             OnIntegratingBulk(lsTrk.GetSpeciesName(SpeciesId), SpeciesId);
 
                         SpeciesFrameMatrix<M> mtx = mtx_spc[iSpecies];
@@ -443,19 +443,19 @@ namespace BoSSS.Foundation.XDG {
                         ICompositeQuadRule<QuadRule> volRule;
                         EdgeQuadratureScheme edgeScheme;
                         CellQuadratureScheme cellScheme;
-                        using (new BlockTrace("QuadRule-compilation", tr)) {
+                        using(new BlockTrace("QuadRule-compilation", tr)) {
 
                             var qrSchemes = SpeciesSchemes[SpeciesId];
 
                             bool AssembleOnFullGrid = (SubGrid == null);
-                            if (qrSchemes.EdgeScheme == null) {
+                            if(qrSchemes.EdgeScheme == null) {
                                 edgeScheme = SchemeHelper.GetEdgeQuadScheme(SpeciesId, AssembleOnFullGrid, SubGridEdgeMask);
                             } else {
                                 //edgeScheme = qrSchemes.EdgeScheme;
                                 throw new NotSupportedException();
                             }
                             edgeRule = edgeScheme.Compile(GridDat, order);
-                            if (qrSchemes.CellScheme == null) {
+                            if(qrSchemes.CellScheme == null) {
                                 cellScheme = SchemeHelper.GetVolumeQuadScheme(SpeciesId, AssembleOnFullGrid, SubGridCellMask);
                             } else {
                                 //cellScheme = qrSchemes.CellScheme;
@@ -464,23 +464,23 @@ namespace BoSSS.Foundation.XDG {
                             volRule = cellScheme.Compile(GridDat, order);
                         }
 
-                        if (ruleDiagnosis) {
+                        if(ruleDiagnosis) {
                             edgeRule.SumOfWeightsToTextFileEdge(GridDat, string.Format("PhysEdge_{0}.csv", lsTrk.GetSpeciesName(SpeciesId)));
                             volRule.SumOfWeightsToTextFileVolume(GridDat, string.Format("Volume_{0}.csv", lsTrk.GetSpeciesName(SpeciesId)));
                         }
 #if DEBUG
                         // switch the diagnostic output on or off
                         bool SubGridRuleDiagnosis = false;
-                        if (SubGrid == null && SubGridRuleDiagnosis == true) {
+                        if(SubGrid == null && SubGridRuleDiagnosis == true) {
                             Console.WriteLine("Warning SubGrid Rule Diagnosis is Switched on!");
                         }
-                        if (SubGridRuleDiagnosis) {
+                        if(SubGridRuleDiagnosis) {
                             edgeRule.SumOfWeightsToTextFileEdge(GridDat, string.Format("C:\\tmp\\BoSSS_Diagnosis\\PhysEdge_{0}.csv", lsTrk.GetSpeciesName(SpeciesId)));
                             volRule.SumOfWeightsToTextFileVolume(GridDat, string.Format("C:\\tmp\\BoSSS_Diagnosis\\PhysVol_{0}.csv", lsTrk.GetSpeciesName(SpeciesId)));
                         }
 #endif
-                        if (this.TotalNoOfComponents > 0) {
-                            if (trx != null) {
+                        if(this.TotalNoOfComponents > 0) {
+                            if(trx != null) {
                                 trx.TransceiveFinish();
                                 trx = null;
                             }
@@ -491,25 +491,25 @@ namespace BoSSS.Foundation.XDG {
                                 edgeRule, volRule, null, false);
 
 #if DEBUG
-                            if (Matrix != null && OnlyAffine == false)
+                            if(Matrix != null && OnlyAffine == false)
                                 Matrix.CheckForNanOrInfM();
-                            if (AffineOffset != null)
+                            if(AffineOffset != null)
                                 GenericBlas.CheckForNanOrInfV(AffineOffset);
 #endif
                         }
 
 
-                        if (GhostEdgesOperator.TotalNoOfComponents > 0) {
+                        if(GhostEdgesOperator.TotalNoOfComponents > 0) {
                             CellQuadratureScheme nullvolumeScheme = new CellQuadratureScheme(false, CellMask.GetEmptyMask(GridDat));
 
                             EdgeQuadratureScheme ghostEdgeScheme = null;
                             ghostEdgeScheme = SchemeHelper.GetEdgeGhostScheme(SpeciesId, SubGridEdgeMask);
 
-                            if (ruleDiagnosis)
+                            if(ruleDiagnosis)
                                 ghostEdgeScheme.Compile(GridDat, 2).SumOfWeightsToTextFileEdge(GridDat, string.Format("GhostEdge_{0}.csv", lsTrk.GetSpeciesName(SpeciesId)));
 
 
-                            if (trx != null) {
+                            if(trx != null) {
                                 trx.TransceiveFinish();
                                 trx = null;
                             }
@@ -518,23 +518,23 @@ namespace BoSSS.Foundation.XDG {
                                  _mtx, vec, OnlyAffine, time,
                                  edgeQuadScheme: ghostEdgeScheme, volQuadScheme: nullvolumeScheme, SubGridBoundaryMask: null, ParameterMPIExchange: false);
 #if DEBUG
-                            if (Matrix != null && OnlyAffine == false)
+                            if(Matrix != null && OnlyAffine == false)
                                 Matrix.CheckForNanOrInfM();
-                            if (AffineOffset != null)
+                            if(AffineOffset != null)
                                 GenericBlas.CheckForNanOrInfV(AffineOffset);
 #endif
                         }
 
 
 
-                        if (SurfaceElementOperator.TotalNoOfComponents > 0) {
+                        if(SurfaceElementOperator.TotalNoOfComponents > 0) {
                             EdgeQuadratureScheme SurfaceElement_Edge;
                             CellQuadratureScheme SurfaceElement_volume;
 
                             SurfaceElement_Edge = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(SpeciesId);
                             SurfaceElement_volume = SchemeHelper.Get_SurfaceElement_VolumeQuadScheme(SpeciesId);
 
-                            if (trx != null) {
+                            if(trx != null) {
                                 trx.TransceiveFinish();
                                 trx = null;
                             }
@@ -550,9 +550,9 @@ namespace BoSSS.Foundation.XDG {
 
 
 #if DEBUG
-                            if (Matrix != null && OnlyAffine == false)
+                            if(Matrix != null && OnlyAffine == false)
                                 Matrix.CheckForNanOrInfM();
-                            if (AffineOffset != null)
+                            if(AffineOffset != null)
                                 GenericBlas.CheckForNanOrInfV(AffineOffset);
 #endif
                         }
@@ -560,7 +560,7 @@ namespace BoSSS.Foundation.XDG {
 
                     }
 
-                    if (trx != null) {
+                    if(trx != null) {
                         trx.TransceiveFinish();
                         trx = null;
                     }
@@ -570,27 +570,27 @@ namespace BoSSS.Foundation.XDG {
                 // ----------------------
                 ///////////////////
 
-                using (new BlockTrace("surface_integration", tr)) {
-                    if (ContainesComponentType(typeof(ILevelSetForm))) {
+                using(new BlockTrace("surface_integration", tr)) {
+                    if(ContainesComponentType(typeof(ILevelSetForm))) {
 
 
                         var AllSpc = lsTrk.SpeciesIdS;
 
                         // loop over all possible pairs of species
                         // (maybe not very efficient, but this code is already aber so was von far from being efficient.)
-                        for (int iSpcA = 0; iSpcA < AllSpc.Count; iSpcA++) {
+                        for(int iSpcA = 0; iSpcA < AllSpc.Count; iSpcA++) {
                             var SpeciesA = AllSpc[iSpcA];
                             var SpeciesADom = lsTrk.Regions.GetSpeciesMask(SpeciesA);
-                            if (SpeciesADom.NoOfItemsLocally <= 0)
+                            if(SpeciesADom.NoOfItemsLocally <= 0)
                                 continue;
 
                             int _iSpcA = Array.IndexOf(ReqSpecies, SpeciesA);
 
-                            for (int iSpcB = iSpcA + 1; iSpcB < AllSpc.Count; iSpcB++) {
+                            for(int iSpcB = iSpcA + 1; iSpcB < AllSpc.Count; iSpcB++) {
                                 var SpeciesB = AllSpc[iSpcB];
 
                                 int _iSpcB = Array.IndexOf(ReqSpecies, SpeciesB);
-                                if (_iSpcA < 0 && _iSpcB < 0)
+                                if(_iSpcA < 0 && _iSpcB < 0)
                                     continue;
 
                                 var SpeciesBDom = lsTrk.Regions.GetSpeciesMask(SpeciesB);
@@ -605,7 +605,7 @@ namespace BoSSS.Foundation.XDG {
 
                                 // loop over level-sets
                                 int NoOfLs = lsTrk.LevelSets.Count;
-                                for (int iLevSet = 0; iLevSet < NoOfLs; iLevSet++) {
+                                for(int iLevSet = 0; iLevSet < NoOfLs; iLevSet++) {
 
                                     var LsDom = lsTrk.Regions.GetCutCellMask4LevSet(iLevSet);
                                     var IntegrationDom = LsDom.Intersect(SpeciesCommonDom);
@@ -614,31 +614,31 @@ namespace BoSSS.Foundation.XDG {
                                     //if (IntegrationDom.NoOfItemsLocally > 0) {
 
                                     ICompositeQuadRule<QuadRule> rule;
-                                        using (new BlockTrace("QuadRule-compilation", tr)) {
-                                            CellQuadratureScheme SurfIntegration = SchemeHelper.GetLevelSetquadScheme(iLevSet, IntegrationDom);
-                                            rule = SurfIntegration.Compile(GridDat, order);
+                                    using(new BlockTrace("QuadRule-compilation", tr)) {
+                                        CellQuadratureScheme SurfIntegration = SchemeHelper.GetLevelSetquadScheme(iLevSet, IntegrationDom);
+                                        rule = SurfIntegration.Compile(GridDat, order);
 
-                                            if (ruleDiagnosis) {
-                                                rule.SumOfWeightsToTextFileVolume(GridDat, string.Format("Levset_{0}.csv", iLevSet));
-                                            }
+                                        if(ruleDiagnosis) {
+                                            rule.SumOfWeightsToTextFileVolume(GridDat, string.Format("Levset_{0}.csv", iLevSet));
                                         }
+                                    }
 
-                                        var MtxBuilder = new LECQuadratureLevelSet<M, V>(GridDat,
-                                                this,
-                                                OnlyAffine ? default(M) : Matrix, AffineOffset,
-                                                CodomainMap, Parameters, DomainMap,
-                                                lsTrk, iLevSet, new SpeciesId[] { SpeciesA, SpeciesB },
-                                                rule);
-                                        MtxBuilder.time = time;
-                                        MtxBuilder.Execute();
+                                    var MtxBuilder = new LECQuadratureLevelSet<M, V>(GridDat,
+                                            this,
+                                            OnlyAffine ? default(M) : Matrix, AffineOffset,
+                                            CodomainMap, Parameters, DomainMap,
+                                            lsTrk, iLevSet, new Tuple<SpeciesId, SpeciesId>(SpeciesA, SpeciesB),
+                                            rule);
+                                    MtxBuilder.time = time;
+                                    MtxBuilder.Execute();
 
 
 
 #if DEBUG
-                                        if (Matrix != null && OnlyAffine == false)
-                                            Matrix.CheckForNanOrInfM();
-                                        if (AffineOffset != null)
-                                            GenericBlas.CheckForNanOrInfV(AffineOffset);
+                                    if(Matrix != null && OnlyAffine == false)
+                                        Matrix.CheckForNanOrInfM();
+                                    if(AffineOffset != null)
+                                        GenericBlas.CheckForNanOrInfV(AffineOffset);
 #endif
                                     //}
                                 }

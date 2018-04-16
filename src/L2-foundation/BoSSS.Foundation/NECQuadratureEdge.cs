@@ -101,18 +101,18 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             bool[] ValueRequired = new bool[base.m_DomainFields.Length]; // note that m_DomainFields may also contain concatenated parameters.
             bool[] MeanValueRequired = new bool[_DomainFields.Count];
 
-            DetermineReqFields(GradientRequired, this.m_EdgeForm_V,
+            this.m_EdgeForm_V.DetermineReqFields(GradientRequired, 
                 comp => (((comp.BoundaryEdgeTerms | comp.InnerEdgeTerms) & (TermActivationFlags.GradUxGradV | TermActivationFlags.GradUxV)) != 0));
-            DetermineReqFields(GradientRequired, this.m_EdgeForm_GradV,
+            this.m_EdgeForm_GradV.DetermineReqFields(GradientRequired,
                 comp => (((comp.BoundaryEdgeTerms | comp.InnerEdgeTerms) & (TermActivationFlags.GradUxGradV | TermActivationFlags.GradUxV)) != 0));
-            DetermineReqFields(ValueRequired, this.m_EdgeForm_V,
+            this.m_EdgeForm_V.DetermineReqFields(ValueRequired, 
                 comp => (((comp.BoundaryEdgeTerms | comp.InnerEdgeTerms) & (TermActivationFlags.UxGradV | TermActivationFlags.UxV)) != 0));
-            DetermineReqFields(ValueRequired, this.m_EdgeForm_GradV,
+            this.m_EdgeForm_GradV.DetermineReqFields(ValueRequired,
                 comp => (((comp.BoundaryEdgeTerms | comp.InnerEdgeTerms) & (TermActivationFlags.UxGradV | TermActivationFlags.UxV)) != 0));
 
-            DetermineReqFields(ValueRequired, base.m_NonlinFluxes, comp => true);
-            DetermineReqFields(ValueRequired, base.m_NonlinFluxesEx, comp => true);
-            DetermineReqFields(MeanValueRequired, base.m_NonlinFluxesEx, comp => true);
+            base.m_NonlinFluxes.DetermineReqFields(ValueRequired, comp => true);
+            base.m_NonlinFluxesEx.DetermineReqFields(ValueRequired, comp => true);
+            base.m_NonlinFluxesEx.DetermineReqFields(MeanValueRequired, comp => true);
 
             Debug.Assert(_DomainFields.Count <= m_DomainFields.Length); // note that 'm_DomainFields' may contain concatenated parameter fields
             for(int i = _DomainFields.Count; i < m_DomainFields.Length; i++) {
