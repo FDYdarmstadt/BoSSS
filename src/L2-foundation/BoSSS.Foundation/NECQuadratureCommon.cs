@@ -48,24 +48,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             }
         }
 
-        internal static void DetermineReqFields<T>(bool[] ValueRequired, EquationComponentArgMapping<T>[] ecm, Func<T, bool> det) where T : IEquationComponent {
-            int Gamma = ecm.Length;
 
-            for (int gamma = 0; gamma < Gamma; gamma++) {
-                for (int iComp = 0; iComp < ecm[gamma].m_AllComponentsOfMyType.Length; iComp++) {
-                    int NoArgs = ecm[gamma].NoOfArguments[iComp];
-
-                    T comp = ecm[gamma].m_AllComponentsOfMyType[iComp];
-
-                    for (int na = 0; na < NoArgs; na++) {
-                        int iDomField = ecm[gamma].AllToSub[iComp, na];
-
-                        if (det(comp))
-                            ValueRequired[iDomField] = true;
-                    }
-                }
-            }
-        }
+        
 
         /// <summary>
         /// ctor.

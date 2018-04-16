@@ -34,10 +34,11 @@ namespace BoSSS.Foundation.XDG {
     /// </summary>
     internal class LECQuadratureLevelSet<M,V> : BoSSS.Foundation.Quadrature.CellQuadrature  
         where M : IMutableMatrix
-        where V : IList<double> {
+        where V : IList<double> //
+    {
         
         UnsetteledCoordinateMapping m_RowMap;
-                UnsetteledCoordinateMapping m_ColMap;
+        UnsetteledCoordinateMapping m_ColMap;
 
         DGField[] m_Parameters;
 
@@ -52,9 +53,36 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public double time;
 
-        ICollection<SpeciesId> m_SpeciesPair;
+        /// <summary>
+        /// index of the level set to evaluate
+        /// </summary>
+        int m_LevSetIdx;
 
-        
+        LevelSetTracker m_lsTrk;
+
+        /// <summary>
+        /// Negative and positive (with respect to level-set) species.
+        /// </summary>
+        Tuple<SpeciesId,SpeciesId> m_SpeciesPair;
+
+        /// <summary>
+        /// Negative species/Species A
+        /// </summary>
+        SpeciesId SpeciesA {
+            get {
+                return m_SpeciesPair.Item1;
+            }
+        }
+
+        /// <summary>
+        /// Positive species/Species B
+        /// </summary>
+        SpeciesId SpeciesB {
+            get {
+                return m_SpeciesPair.Item2;
+            }
+        }
+                
         /// <summary>
         /// ctor.
         /// </summary>
@@ -62,7 +90,7 @@ namespace BoSSS.Foundation.XDG {
                                      XSpatialOperator DiffOp,
                                      M Matrix, V OffsetVec,
                                      UnsetteledCoordinateMapping RowMap, IList<DGField> ParamsMap, UnsetteledCoordinateMapping ColMap,
-                                     LevelSetTracker lsTrk, int _iLevSet, ICollection<SpeciesId> SpeciesPair,
+                                     LevelSetTracker lsTrk, int _iLevSet, Tuple<SpeciesId,SpeciesId> SpeciesPair,
                                      ICompositeQuadRule<QuadRule> domAndRule) //
             : base(new int[] { RowMap.MaxTotalNoOfCoordinatesPerCell, 1 + ((Matrix == null) ? 0 : ColMap.MaxTotalNoOfCoordinatesPerCell) },
                  context,
@@ -102,10 +130,10 @@ namespace BoSSS.Foundation.XDG {
                 throw new ArgumentException("mismatch between matrix number of columns and column mapping.");
 
             this.m_LevSetIdx = _iLevSet;
+            this.m_SpeciesPair = SpeciesPair;
 
             this.OperatorMatrix = Matrix;
             this.OperatorAffine = OffsetVec;
-            this.m_SpeciesPair = SpeciesPair;
 
             // ------------------------
             // sort equation components
@@ -165,7 +193,7 @@ namespace BoSSS.Foundation.XDG {
                 // component is not relevant for this level-set
                 return false;
 
-            if (!(this.m_SpeciesPair.Contains(b.PositiveSpecies) && this.m_SpeciesPair.Contains(b.NegativeSpecies)))
+            if (!(this.SpeciesA == b.NegativeSpecies && this.SpeciesB == b.PositiveSpecies))
                 // component is not relevant for this level-set
                 return false;
 
@@ -218,12 +246,7 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        /// <summary>
-        /// index of the level set to evaluate
-        /// </summary>
-        int m_LevSetIdx;
-
-        LevelSetTracker m_lsTrk;
+        
 
         EquationComponentArgMapping<ILevelSetForm_UxV>[] m_LsForm_UxV;
         EquationComponentArgMapping<ILevelSetForm_GradUxV>[] m_LsForm_GradUxV;
@@ -375,8 +398,8 @@ namespace BoSSS.Foundation.XDG {
                         // jump in parameter i at level-set: separate evaluation for both sides
                         var xfi = m_Field as XDGField;
 
-                        xfi.GetSpeciesShadowField(m_lsTrk.GetSpeciesIdFromSign(-1)).Evaluate(i0, Len, QuadNodes, bufNeg);
-                        xfi.GetSpeciesShadowField(m_lsTrk.GetSpeciesIdFromSign(+1)).Evaluate(i0, Len, QuadNodes, bufPos);
+                        xfi.GetSpeciesShadowField(this.SpeciesA).Evaluate(i0, Len, QuadNodes, bufNeg);
+                        xfi.GetSpeciesShadowField(this.SpeciesB).Evaluate(i0, Len, QuadNodes, bufPos);
 
                     } else {
                         // no jump at level set: positive and negative limit of parameter i are equal
@@ -426,7 +449,7 @@ namespace BoSSS.Foundation.XDG {
                     ReqV[gamma] = true;
                 }
                 if (Sum_Koeff_NablaV[gamma, 0] != null) {
-                    ReqV[gamma] = true;
+                    ReqGradV[gamma] = true;
                 }
             }
             

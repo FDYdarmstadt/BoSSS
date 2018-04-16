@@ -88,17 +88,17 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 m_ValueRequired[i] = true;
             }
 
-            DetermineReqFields(m_GradientRequired, this.m_NonlinFormV, 
+            this.m_NonlinFormV.DetermineReqFields(m_GradientRequired, 
                 comp => ((comp.VolTerms & (TermActivationFlags.GradUxGradV | TermActivationFlags.GradUxV)) != 0));
-            DetermineReqFields(m_GradientRequired, this.m_NonlinFormGradV, 
+            this.m_NonlinFormGradV.DetermineReqFields(m_GradientRequired, 
                 comp => ((comp.VolTerms & (TermActivationFlags.GradUxGradV | TermActivationFlags.GradUxV)) != 0));
-            DetermineReqFields(m_ValueRequired, this.m_NonlinFormV, 
+            this.m_NonlinFormV.DetermineReqFields(m_ValueRequired, 
                 comp => ((comp.VolTerms & (TermActivationFlags.UxGradV | TermActivationFlags.UxV)) != 0));
-            DetermineReqFields(m_ValueRequired, this.m_NonlinFormGradV, 
+            this.m_NonlinFormGradV.DetermineReqFields(m_ValueRequired,  
                 comp => ((comp.VolTerms & (TermActivationFlags.UxGradV | TermActivationFlags.UxV)) != 0));
-            DetermineReqFields(m_ValueRequired, this.m_NonlinSources, comp => true);
-            DetermineReqFields(m_ValueRequired, base.m_NonlinFluxes, comp => true);
-            DetermineReqFields(m_ValueRequired, base.m_NonlinFluxesEx, comp => true);
+            this.m_NonlinSources.DetermineReqFields(m_ValueRequired, comp => true);
+            base.m_NonlinFluxes.DetermineReqFields(m_ValueRequired, comp => true);
+            base.m_NonlinFluxesEx.DetermineReqFields(m_ValueRequired, comp => true);
 
             // ---------
             // profiling
