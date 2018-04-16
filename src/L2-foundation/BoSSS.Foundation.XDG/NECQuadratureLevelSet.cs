@@ -54,16 +54,16 @@ namespace BoSSS.Foundation.XDG {
 
         ICollection<SpeciesId> m_SpeciesPair;
 
-        
+
         /// <summary>
         /// ctor.
         /// </summary>
         internal NECQuadratureLevelSet(IGridData context,
                                      XSpatialOperator DiffOp,
                                      V OffsetVec,
-                                     IList<DGField> __DomainFields, 
-                                     IList<DGField> __Parameters, 
-                                     UnsetteledCoordinateMapping CodomainMap, 
+                                     IList<DGField> __DomainFields,
+                                     IList<DGField> __Parameters,
+                                     UnsetteledCoordinateMapping CodomainMap,
                                      LevelSetTracker lsTrk, int _iLevSet, ICollection<SpeciesId> SpeciesPair,
                                      ICompositeQuadRule<QuadRule> domAndRule) //
             : base(new int[] { CodomainMap.NoOfCoordinatesPerCell },
@@ -86,20 +86,15 @@ namespace BoSSS.Foundation.XDG {
 
             m_CodomainMap = CodomainMap;
             m_Parameters = (__Parameters != null) ? __Parameters.ToArray() : new DGField[0];
-                       
-            if (m_ColMap.BasisS.Count != DiffOp.DomainVar.Count)
-                throw new ArgumentException("mismatch between number of domain variables in spatial operator and column mapping");
+
             if (m_Parameters.Length != DiffOp.ParameterVar.Count)
                 throw new ArgumentException("mismatch between number of parameter variables in spatial operator and given parameters");
 
-            int Gamma = m_RowMap.BasisS.Count;
             m_lsTrk = lsTrk;
 
 
             this.m_LevSetIdx = _iLevSet;
 
-            this.OperatorMatrix = Matrix;
-            this.OperatorAffine = OffsetVec;
             this.m_SpeciesPair = SpeciesPair;
 
             // ------------------------
@@ -110,12 +105,12 @@ namespace BoSSS.Foundation.XDG {
             //m_2ndDerivFlux = DiffOp.GetArgMapping<ILinear2ndDerivativeCouplingFlux>(true, Compfilter<ILinear2ndDerivativeCouplingFlux>);
 
             m_NonlinLsForm_V = DiffOp.GetArgMapping<INonlinLevelSetForm_V>(true,
-               eq => ((eq.LevelSetTerms & (TermActivationFlags.V |TermActivationFlags.UxV | TermActivationFlags.GradUxV)) != 0) && Compfilter(eq),
+               eq => ((eq.LevelSetTerms & (TermActivationFlags.V | TermActivationFlags.UxV | TermActivationFlags.GradUxV)) != 0) && Compfilter(eq),
                eq => (eq is ILevelSetForm) ? new NonlinearLevelSetFormVectorizer((ILevelSetForm)eq) : null);
             m_NonlinLsForm_GradV = DiffOp.GetArgMapping<INonlinLevelSetForm_GradV>(true,
-                eq => ((eq.LevelSetTerms & (TermActivationFlags.GradV |TermActivationFlags.UxGradV | TermActivationFlags.GradUxGradV)) != 0) && Compfilter(eq),
+                eq => ((eq.LevelSetTerms & (TermActivationFlags.GradV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxGradV)) != 0) && Compfilter(eq),
                 eq => (eq is ILevelSetForm) ? new NonlinearLevelSetFormVectorizer((ILevelSetForm)eq) : null);
-            
+
 
             this.m_NonlinLsForm_V_Watches = this.m_NonlinLsForm_V.InitStopWatches(0, this);
             this.m_NonlinLsForm_GradV_Watches = this.m_NonlinLsForm_GradV.InitStopWatches(0, this);
@@ -124,18 +119,15 @@ namespace BoSSS.Foundation.XDG {
             // alloc
             // -----
 
-            AllocEmpty(m_LsForm_UxV, out Koeff_UxV, out Sum_Koeff_UxV, 5, false);
-            AllocEmpty(m_LsForm_GradUxV, out Koeff_NablaUxV, out Sum_Koeff_NablaUxV, 6, false);
-            AllocEmpty(m_LsForm_UxGradV, out Koeff_UxNablaV, out Sum_Koeff_UxNablaV, 6, false);
-            AllocEmpty(m_LsForm_GradUxGradV, out Koeff_NablaUxNablaV, out Sum_Koeff_NablaUxNablaV, 7, false);
-
-            AllocEmpty(m_LsForm_V, out Koeff_V, out Sum_Koeff_V, 3, true);
-            AllocEmpty(m_LsForm_GradV, out Koeff_NablaV, out Sum_Koeff_NablaV, 4, true);
-
+            int Gamma = m_CodomainMap.NoOfVariables;
+            Koeff_V = new MultidimensionalArray[Gamma];
+            Koeff_GradV = new MultidimensionalArray[Gamma];
+            for (int gamma = 0; gamma < Gamma; gamma++) {
+                Koeff_V[gamma] = new MultidimensionalArray(3);
+                Koeff_GradV[gamma] = new MultidimensionalArray(4);
+            }
         }
-
-
-
+        
 
         private bool Compfilter(IEquationComponent c) {
 
@@ -153,51 +145,6 @@ namespace BoSSS.Foundation.XDG {
             return true;
         }
         
-        void AllocEmpty<T>(EquationComponentArgMapping<T>[] components,
-            out MultidimensionalArray[][] compBuffer, out MultidimensionalArray[,] sumBuffer, int Dim, bool affine)
-            where T : IEquationComponent {
-
-            int Gamma = this.m_RowMap.BasisS.Count; // no of codom vars/test functions
-            if (Gamma != components.Length)
-                throw new ApplicationException("internal error");
-
-            int Delta = this.m_ColMap.BasisS.Count; // no of domain vars/trial functions
-
-            sumBuffer = new MultidimensionalArray[Gamma, affine ? 1 : Delta];
-
-            compBuffer = new MultidimensionalArray[Gamma][];
-            for (int gamma = 0; gamma < Gamma; gamma++) { // loop over codom vars/test functions...
-                var bg = components[gamma];
-                int NoComp = bg.m_AllComponentsOfMyType.Length;
-
-                compBuffer[gamma] = new MultidimensionalArray[NoComp];
-
-                bool[] UsedMarker = new bool[Delta];
-
-                int iComp = -1;
-                foreach (var b in bg.m_AllComponentsOfMyType) { // loop over equation components...
-                    iComp++;
-                    compBuffer[gamma][iComp] = new MultidimensionalArray(Dim);
-                    //usedAtAll = true;
-
-                    int NoOfArgs = b.ArgumentOrdering.Count;
-                    if (affine) {
-                        UsedMarker[0] = true;
-                    } else {
-                        for (int j = 0; j < NoOfArgs; j++) {
-                            int targ = bg.AllToSub[iComp, j];
-                            UsedMarker[targ] = true;
-                        }
-                    }
-                }
-
-                for(int delta = 0; delta < (affine ? 1 : Delta); delta++) {
-                    if (UsedMarker[delta])
-                        sumBuffer[gamma, delta] = new MultidimensionalArray(Dim - (affine ? 0 : 1));
-                }
-            }
-        }
-
         /// <summary>
         /// index of the level set to evaluate
         /// </summary>
@@ -318,8 +265,7 @@ namespace BoSSS.Foundation.XDG {
             NodeSet QuadNodes = QR.Nodes;
             int D = gridData.SpatialDimension;
             int NoOfNodes = QuadNodes.NoOfNodes;
-            int DELTA = m_ColMap.BasisS.Count; // DELTA: number of basis variables, number of domain variables
-            int GAMMA = m_RowMap.BasisS.Count;  // GAMMA: number of codom variables
+            int GAMMA = m_CodomainMap.NoOfVariables;  // GAMMA: number of codom variables
 
 
             // Evaluate Parameter fields
