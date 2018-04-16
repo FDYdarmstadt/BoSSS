@@ -41,7 +41,7 @@ using System.Threading.Tasks;
 using ilPSP.Tracing;
 **************
 ==============
-WorkflowMgm.Init("MPISolverPerformance_SphereComplex");
+WorkflowMgm.Init("MPISolverPerformanceComplex");
 **************
 Project name is set to 'MPISolverPerformance'.
 
@@ -86,17 +86,17 @@ static class Utils {
 LinearSolverCodes[] linSolvers = new LinearSolverCodes[] {
     //LinearSolverCodes.exp_schwarz_directcoarse,
     //LinearSolverCodes.exp_schwarz_Kcycle_directcoarse,
-    //LinearSolverCodes.exp_schwarz_directcoarse_overlap,
+    LinearSolverCodes.exp_schwarz_directcoarse_overlap,
     //LinearSolverCodes.exp_schwarz_Kcycle_directcoarse_overlap,
     //LinearSolverCodes.exp_softgmres_schwarz_Kcycle_directcoarse_overlap
-    LinearSolverCodes.automatic,
+    //LinearSolverCodes.automatic,
 };
 int[] ks = new int[] {2,3};
 int cells_x  = 64;
 int cells_yz = 16;
 int re       = 100; 
 int saveToDB = 1;
-int[] procs    = new int[] {16,32,64,128};
+int[] procs    = new int[] {16,32,64,128,256};
 **************
 C# evaluator not initialized: use 'restart'.
 
@@ -200,7 +200,7 @@ C.DynamicLoadBalancing_Period = 1;
 C.saveperiod  = 1;
 C.ProjectName = "3DChannel";
 C.Tags.Add("Prec param study");
-C.SetDGdegree(2,3);
+C.SetDGdegree(2);
 C.SetGrid(grd);
            
 
@@ -265,7 +265,7 @@ C.InitialValues.Add("Phi", GetFormulaObject(InitialValues.Phi));
         C.dtMin               = 1E20;
         C.Endtime             = 10000000;
         C.NoOfTimesteps       = 1;
-        C.NoOfMultigridLevels = 4;
+        C.NoOfMultigridLevels = 3;
         
         // Assign correct names
         C.SessionName = "Sphere_Flow_k2"+linSolverName+"_MGLevels"+C.NoOfMultigridLevels;
@@ -431,7 +431,7 @@ SessTab = SessTab.ExtractColumns(AllCols.ToArray());
 **************
 ==============
 //Checking if table contains all information
-var SubTab_1 = SessTab.ExtractColumns("Processors","SlvIter_excl","SlvInit_excl","PrecSolve","NewtonDirder","NonlinearSolve","LinearSolve","NoOfMultigridLevels","DGdegree:VelocityX","RegularTerminated");
+var SubTab_1 = SessTab.ExtractColumns("Processors","SlvIter_excl","SlvInit_excl","PrecSolve","NewtonDirder","NonlinearSolve","LinearSolve","NoOfMultigridLevels","DGdegree:Velocity*","RegularTerminated");
 **************
 ==============
 SubTab_1.Print();
@@ -472,6 +472,8 @@ string docpath    = Path.Combine(CurrentDocDir, SessTab.TableName + ".json");
 // save session table as file: this can be stored in our git 
 // repository
 SessTab.SaveToFile(docpath);
+**************
+==============
 **************
 ==============
 **************
