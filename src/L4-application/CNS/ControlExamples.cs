@@ -3405,9 +3405,9 @@ namespace CNS {
         public static CNSControl ShockTube_HilbertTest(int GPType, int dgDegree, int ExplOrder, int RecInt, int numOfCellsX, int numOfCellsY, bool LTSON, int AVratio, int Tsteps, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = true, string SessionID = null, string GridID = null) {
 
             CNSControl c = new CNSControl();
-            //dbPath = @"D:\Weber\BoSSS\test_db";
+            //c.DbPath = @"D:\Weber\BoSSS\test_db";
             //dbPath = @"e:\bosss_db\GridOfTomorrow\";
-            //dbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db\";
+            //c.DbPath = @"\\fdyprime\userspace\weber\db_Speedup_2";
             //c.DbPath = dbPath;
             //c.savetodb = dbPath != null && saveToDb;
 
@@ -3610,10 +3610,9 @@ namespace CNS {
         public static CNSControl DoubleMachReflection_HilbertTest(int GPType, int dgDegree, int ExplOrder, int RecInt, int numOfCellsX, int numOfCellsY, bool LTSON, int AVratio, int Tsteps, double sensorLimit = 1e-3, bool restart = false, string sessionID = null, string gridID = null) {
             CNSControl c = new CNSControl();
 
-            //dbPath = @"D:\Weber\BoSSS\test_db";
-            //c.savetodb = dbPath != null;
-
+            //c.DbPath = @"D:\Weber\BoSSS\test_db";
             c.DbPath = @"/home/yp19ysog/BoSSS_DB";
+            //c.DbPath = @"\\fdyprime\userspace\weber\db_Speedup_2";
             c.savetodb = true;
             c.saveperiod = int.MaxValue;
             c.PrintInterval = 1;
