@@ -1291,9 +1291,13 @@ namespace CNS {
 
         public static IBMControl IBMShockTube(string dbPath = null, int dgDegree = 2, int numOfCellsX = 50, int numOfCellsY = 10, double sensorLimit = 1e-3, bool true1D = false) {
 
+#if DEBUG
+            System.Threading.Thread.Sleep(10000);
+#endif
+
             IBMControl c = new IBMControl();
 
-            //dbPath = @"c:\bosss_db\";
+            dbPath = @"c:\bosss_db\";
             c.DbPath = dbPath;
             c.savetodb = dbPath != null;
             c.saveperiod = 1;
@@ -1304,6 +1308,13 @@ namespace CNS {
             double yMin = 0;
             double yMax = 1;
 
+            c.GridPartType = GridPartType.METIS;
+            //c.DynamicLoadBalancing_On = false;
+            //c.DynamicLoadBalancing_Period = 5;
+            //c.DynamicLoadBalancing_ImbalanceThreshold = 0.01;
+            //c.DynamicLoadBalancing_CellClassifier = new RandomCellClassifier(2);
+            //c.DynamicLoadBalancing_CellCostEstimatorFactories.Add((prog, i) => new StaticCellCostEstimator(new[] { 1, 10 }));
+
             bool AV = true;
 
             c.DomainType = DomainTypes.StaticImmersedBoundary;
@@ -1313,8 +1324,8 @@ namespace CNS {
             c.LevelSetBoundaryTag = "AdiabaticSlipWall";
             c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             c.LevelSetQuadratureOrder = 6;
-            //c.AgglomerationThreshold = 0.2;
-            c.AgglomerationThreshold = 0.9;
+            c.AgglomerationThreshold = 0.1;
+            //c.AgglomerationThreshold = 0.9;
             c.AddVariable(IBMVariables.LevelSet, 1);
 
             c.AddVariable(IBMVariables.FluidCells, 1);
@@ -1347,12 +1358,13 @@ namespace CNS {
 
             //Adams-Bashforth
             //c.ExplicitScheme = ExplicitSchemes.AdamsBashforth;
-            //c.ExplicitOrder = 3;
+            //c.ExplicitOrder = 1;
 
             // (A)LTS
             c.ExplicitScheme = ExplicitSchemes.LTS;
             c.ExplicitOrder = 1;
-            c.NumberOfSubGrids = 3;
+            c.NumberOfSubGrids = 2;
+            //c.ReclusteringInterval = c.DynamicLoadBalancing_Period;
             c.ReclusteringInterval = 5;
             c.maxNumOfSubSteps = 10;
             c.FluxCorrection = false;
@@ -1470,14 +1482,22 @@ namespace CNS {
             c.dtMax = 1.0;
             c.CFLFraction = 0.1;
             //c.dtFixed = 1e-4;
-            c.Endtime = 0.25;
+            c.Endtime = 0.002;
             c.NoOfTimesteps = int.MaxValue;
 
             c.ProjectName = "Shock tube";
+
+            string sessionName;
+            if (c.DynamicLoadBalancing_On) {
+                sessionName = String.Format("IBM shock tube, p={0}, {1}x{2} cells, agg={3}, s0={4:0.0E-00}, CFLFrac={5}, ALTS {6}/{7}/{8}({9}), Part={10}/{11}({12})", dgDegree, numOfCellsX, numOfCellsY, c.AgglomerationThreshold, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps, c.GridPartType.ToString(), c.DynamicLoadBalancing_Period, c.DynamicLoadBalancing_ImbalanceThreshold);
+            } else {
+                sessionName = String.Format("IBM shock tube, p={0}, {1}x{2} cells, agg={3}, s0={4:0.0E-00}, CFLFrac={5}, ALTS {6}/{7}/{8}({9}), Part={10}", dgDegree, numOfCellsX, numOfCellsY, c.AgglomerationThreshold, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps, c.GridPartType.ToString());
+            }             
+
             if (true1D) {
                 c.SessionName = String.Format("IBM shock tube, 1D, dgDegree = {0}, noOfCellsX = {1}, sensorLimit = {2:0.00E-00}", dgDegree, numOfCellsX, sensorLimit);
             } else {
-                c.SessionName = String.Format("IBM shock tube, p={0}, {1}x{2} cells, aggloThresh={3}, s0={4:0.0E-00}, CFLFrac={5}, ALTS {6}/{7}/{8}({9})", dgDegree, numOfCellsX, numOfCellsY, c.AgglomerationThreshold, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps);
+                c.SessionName = sessionName;
             }
 
             return c;
