@@ -80,9 +80,9 @@ namespace ilPSP.HilbertCurve {
 
 
         public static ulong hilbert_c2i(int nBits, ulong[] coord) {
-            CheckCoords(nBits, coord);
             int nDims = coord.Length;
             if (nDims > 1) {
+                CheckCoords(nBits, coord);
                 int nDimsBits = nDims * nBits;
                 ulong index;
                 int d;
