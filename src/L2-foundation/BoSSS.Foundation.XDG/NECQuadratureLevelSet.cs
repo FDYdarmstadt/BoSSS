@@ -34,15 +34,27 @@ namespace BoSSS.Foundation.XDG {
     /// </summary>
     internal class NECQuadratureLevelSet<V> : BoSSS.Foundation.Quadrature.CellQuadrature  
         where V : IList<double> {
-        
-        UnsetteledCoordinateMapping m_CodomainMap;
 
+        /// <summary>
+        /// Result of quadrature, Output storage
+        /// </summary>
+        public V ResultVector;
         
         /// <summary>
-        /// All Domain and Parameter fields (domain first, then parameters) are defined by the operator.
+        /// Mapping of DG-DOF into <see cref="ResultVector"/>
+        /// </summary>
+        UnsetteledCoordinateMapping m_CodomainMap;
+                
+        /// <summary>
+        /// All Domain and Parameter fields (domain first (0 to <see cref="DELTA"/>-1), then parameters) are defined by the operator.
         /// </summary>
         DGField[] m_DomainAndParamFields;
 
+        /// <summary>
+        /// Number of domain fields
+        /// </summary>
+        int DELTA; 
+        
         /// <summary>
         /// Switch, whether the evaluation (the field value) of <see cref="m_DomainAndParamFields"/> is actually necessary.
         /// </summary>
@@ -53,10 +65,11 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         bool[] m_GradientRequired;
         
-
+        /// <summary>
+        /// ye good old level set tracker
+        /// </summary>
         LevelSetTracker m_lsTrk;
         
-
         /// <summary>
         /// Physical time.
         /// </summary>
@@ -66,7 +79,6 @@ namespace BoSSS.Foundation.XDG {
         /// index of the level set to evaluate
         /// </summary>
         int m_LevSetIdx;
-
 
         /// <summary>
         /// Negative and positive (with respect to level-set) species.
@@ -96,7 +108,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         internal NECQuadratureLevelSet(IGridData context,
                                      XSpatialOperator DiffOp,
-                                     V OffsetVec,
+                                     V __ResultVector,
                                      IList<DGField> __DomainFields,
                                      IList<DGField> __Parameters,
                                      UnsetteledCoordinateMapping CodomainMap,
@@ -115,7 +127,7 @@ namespace BoSSS.Foundation.XDG {
             m_lsTrk = lsTrk;
             this.m_LevSetIdx = _iLevSet;
             this.m_SpeciesPair = SpeciesPair;
-
+            this.ResultVector = __ResultVector;
             m_CodomainMap = CodomainMap;
             var _Parameters = (__Parameters != null) ? __Parameters.ToArray() : new DGField[0];
 
@@ -127,7 +139,7 @@ namespace BoSSS.Foundation.XDG {
                 throw new ArgumentException("mismatch between number of codomain variables in spatial operator and given codomain mapping");
 
             m_DomainAndParamFields = ArrayTools.Cat(__DomainFields, _Parameters);
-
+            this.DELTA = __DomainFields.Count;
 
             // ------------------------
             // sort equation components
@@ -327,7 +339,7 @@ namespace BoSSS.Foundation.XDG {
             int D = gridData.SpatialDimension;
             int NoOfNodes = QuadNodes.NoOfNodes;
             int GAMMA = m_CodomainMap.NoOfVariables;  // GAMMA: number of codom variables
-
+           
 
             // Evaluate Domain & Parameter fields
             // --------------------------------
@@ -406,24 +418,19 @@ namespace BoSSS.Foundation.XDG {
                 }
             }
             
-            MultidimensionalArray[] BasisValues; //           index: domain variable/trial function
-            MultidimensionalArray[] BasisGradientValues; //   index: domain variable/trial function
             MultidimensionalArray[] TestValues; //            index: codom variable/test function
             MultidimensionalArray[] TestGradientValues; //    index: codom variable/test function
             int[,] sectionsTest;
             Basis_Eval.Start();
-            EvalBasis(i0, Len, this.m_CodomainMap.BasisS, ReqV, ReqGradV, out TestValues, out TestGradientValues, out sectionsTest, QuadNodes);
+            LECQuadratureLevelSet<IMutableMatrixEx,double[]>
+                .EvalBasis(i0, Len, this.m_CodomainMap.BasisS, ReqV, ReqGradV, out TestValues, out TestGradientValues, out sectionsTest, QuadNodes);
             Basis_Eval.Stop();
 
 
             // Evaluate Integral components
             // ----------------------------
 
-            var _inParams = new BoSSS.Foundation.XDG.LevSetIntParams();
-            _inParams.i0 = i0;
-
-            
-            
+                       
             // loop over codomain variables ...
             for (int gamma = 0; gamma < GAMMA; gamma++) {
 
@@ -431,6 +438,7 @@ namespace BoSSS.Foundation.XDG {
                 // - - - - - - - - - 
 
                 // set Normal's
+                LevSetIntParams _inParams = new LevSetIntParams();
                 _inParams.Normal = Normals;
                 // set Nodes Global
                 _inParams.X = NodesGlobal;
@@ -453,116 +461,69 @@ namespace BoSSS.Foundation.XDG {
                 
                 {
                     EvalComponent(_inParams, gamma, this.m_NonlinLsForm_V[gamma], this.m_NonlinLsForm_V_Watches[gamma],
-                        Koeff_V, 
+                        Koeff_V[gamma], 
                         m_FieldValuesPos, m_FieldValuesNeg, m_FieldGradientValuesPos, m_FieldGradientValuesNeg,
                         DELTA,
-                        base.CustomTimers[0],
-                        delegate (INonlinLevelSetForm_V _comp, int _gamma, int i, LevSetIntParams inp) {
-                            _comp.LevelSetForm_V(_inParams, Koeff_V[_gamma][i]);
+                        Flux_Eval,
+                        delegate (INonlinLevelSetForm_V _comp, LevSetIntParams inp, MultidimensionalArray[] uA, MultidimensionalArray[] uB, MultidimensionalArray[] Grad_uA, MultidimensionalArray[] Grad_uB, MultidimensionalArray SumBuf) {
+                            _comp.LevelSetForm_V(_inParams, uA, uB, Grad_uA, Grad_uB, SumBuf);
                         });
                 }
                 {
                     EvalComponent(_inParams, gamma, this.m_NonlinLsForm_GradV[gamma], this.m_NonlinLsForm_GradV_Watches[gamma],
-                        Koeff_GradV, 
+                        Koeff_GradV[gamma], 
                         m_FieldValuesPos, m_FieldValuesNeg, m_FieldGradientValuesPos, m_FieldGradientValuesNeg,
                         DELTA,
-                        base.CustomTimers[0],
-                        delegate (INonlinLevelSetForm_GradV _comp, int _gamma, int i, LevSetIntParams inp) {
-                            _comp.LevelSetForm_GradV(_inParams, Koeff_NablaV[_gamma][i]);
+                        Flux_Eval,
+                        delegate (INonlinLevelSetForm_GradV _comp, LevSetIntParams inp, MultidimensionalArray[] uA, MultidimensionalArray[] uB, MultidimensionalArray[] Grad_uA, MultidimensionalArray[] Grad_uB, MultidimensionalArray SumBuf) {
+                            _comp.LevelSetForm_GradV(_inParams, uA, uB, Grad_uA, Grad_uB, SumBuf);
                         });
                 }
-            }
-
-            Flux_Eval.Stop();
-            
+            }            
 
             // Summation Loops: multiply with test and trial functions
             // -------------------------------------------------------
 
             int[] offsetCod = new int[GAMMA];
-            CompOffsets(i0, Len, offsetCod, m_RowMap);
+            LECQuadratureLevelSet<IMutableMatrixEx,double[]>.
+                CompOffsets(i0, Len, offsetCod, m_CodomainMap);
 
-            for (int gamma = 0; gamma < GAMMA; gamma++) {
+            for(int gamma = 0; gamma < GAMMA; gamma++) {
                 // Evaluate Integrand
                 // - - - - - - - - - 
 
                 var TestVal = TestValues[gamma];
                 var TestGradVal = TestGradientValues[gamma];
                 int N;
-                if (TestVal != null)
+                if(TestVal != null)
                     N = TestVal.GetLength(2);
-                else if (TestGradVal != null)
+                else if(TestGradVal != null)
                     N = TestGradVal.GetLength(2);
                 else
                     N = 0;
 
-                Loops.Stop();
-
-                // loop over domain variables/basis variables ...
-                for (int delta = 0; (delta < DELTA) && !AffineOnly; delta++) {
-
-                    var BasisVal = BasisValues[delta];
-                    var BasisGradVal = BasisGradientValues[delta];
-                    int M;
-                    if (BasisVal != null)
-                        M = BasisVal.GetLength(2);
-                    else if (BasisGradVal != null)
-                        M = BasisGradVal.GetLength(2);
-                    else
-                        M = 0;
+                Loops.Start();
 
 
-                    // Das Schleifenmonster: ---------------------------------------------
-                    for (int cr = 0; cr < 2; cr++) {  // 
-                        for (int cc = 0; cc < 2; cc++) {
-
-                            int[] extr0 = new int[] { 0, 0, sectionsTest[gamma, cr] * N + offsetCod[gamma], sectionsBasis[delta, cc] * M + 1 + offsetDom[delta] };
-                            int[] extrE = new int[] { Len - 1, NoOfNodes - 1, extr0[2] + N - 1, extr0[3] + M - 1 };
-                            var SubRes = EvalResult.ExtractSubArrayShallow(extr0, extrE);
-
-                            if (Sum_Koeff_UxV[gamma, delta] != null) {
-                                var Sum_Koeff_UxV_CrCc = Sum_Koeff_UxV[gamma, delta].ExtractSubArrayShallow(-1, -1, cr, cc);
-                                SubRes.Multiply(1.0, Sum_Koeff_UxV_CrCc, BasisVal, TestVal, 1.0, "jknm", "jk", "jkm", "jkn");
-                            }
-
-                            if (Sum_Koeff_NablaUxV[gamma, delta] != null) {
-                                var Sum_Koeff_NablaUxV_CrCc = Sum_Koeff_NablaUxV[gamma, delta].ExtractSubArrayShallow(-1, -1, cr, cc, -1);
-                                SubRes.Multiply(1.0, Sum_Koeff_NablaUxV_CrCc, BasisGradVal, TestVal, 1.0, "jknm", "jkd", "jkmd", "jkn");
-                            }
-                            if (Sum_Koeff_UxNablaV[gamma, delta] != null) {
-                                var Sum_Koeff_UxNablaV_CrCc = Sum_Koeff_UxNablaV[gamma, delta].ExtractSubArrayShallow(-1, -1, cr, cc, -1);
-                                SubRes.Multiply(1.0, Sum_Koeff_UxNablaV_CrCc, BasisVal, TestGradVal, 1.0, "jknm", "jkd", "jkm", "jknd");
-                            }
-                            if (Sum_Koeff_NablaUxNablaV[gamma, delta] != null) {
-                                var Sum_Koeff_NablaUxNablaV_CrCc = Sum_Koeff_NablaUxNablaV[gamma, delta].ExtractSubArrayShallow(-1, -1, delta, cr, cc, -1, -1);
-                                SubRes.Multiply(1.0, Sum_Koeff_NablaUxNablaV_CrCc, BasisGradVal, TestGradVal, 1.0, "jknm", "jkde", "jkmd", "jkne");
-                            }
-                        }
-                    }
-                    // --------------------------------------- 
-
-                } // end loop delta
 
                 // affine offset
-                {
 
-                    // Das Schleifenmonster: ---------------------------------------------
-                    for (int cr = 0; cr < 2; cr++) { // 
-                        int[] extr0 = new int[] { 0, 0, sectionsTest[gamma, cr] * N + offsetCod[gamma], 0 };
-                        int[] extrE = new int[] { Len - 1, NoOfNodes - 1, extr0[2] + N - 1, -1 };
-                        var SubRes = EvalResult.ExtractSubArrayShallow(extr0, extrE);
 
-                        if (Sum_Koeff_V[gamma, 0] != null) {
-                            var Sum_Koeff_V_Cr = Sum_Koeff_V[gamma, 0].ExtractSubArrayShallow(-1, -1, cr);
-                            SubRes.Multiply(1.0, Sum_Koeff_V_Cr, TestVal, 1.0, "jkn", "jk", "jkn");
-                        }
-                        if (Sum_Koeff_NablaV[gamma, 0] != null) {
-                            var Sum_Koeff_NablaV_Cr = Sum_Koeff_NablaV[gamma, 0].ExtractSubArrayShallow(-1, -1, cr, -1);
-                            SubRes.Multiply(1.0, Sum_Koeff_NablaV_Cr, TestGradVal, 1.0, "jkn", "jkd", "jknd");
-                        }
+                for(int cr = 0; cr < 2; cr++) { // loop over negative/positive species
+                    int[] extr0 = new int[] { 0, 0, sectionsTest[gamma, cr] * N + offsetCod[gamma] };
+                    int[] extrE = new int[] { Len - 1, NoOfNodes - 1, extr0[2] + N - 1 };
+                    var SubRes = EvalResult.ExtractSubArrayShallow(extr0, extrE);
+
+                    if(Koeff_V[gamma] != null) {
+                        var Sum_Koeff_V_Cr = Koeff_V[gamma].ExtractSubArrayShallow(-1, -1, cr);
+                        SubRes.Multiply(1.0, Sum_Koeff_V_Cr, TestVal, 1.0, "jkn", "jk", "jkn");
                     }
-                    // ---------------------------------------
+                    if(Koeff_GradV[gamma] != null) {
+                        var Sum_Koeff_NablaV_Cr = Koeff_GradV[gamma].ExtractSubArrayShallow(-1, -1, cr, -1);
+                        SubRes.Multiply(1.0, Sum_Koeff_NablaV_Cr, TestGradVal, 1.0, "jkn", "jkd", "jknd");
+                    }
                 }
+
 
                 Loops.Stop();
             }
@@ -570,86 +531,54 @@ namespace BoSSS.Foundation.XDG {
 
 
 
-        delegate void CallComponent<T>(T comp, int gamma, int i, LevSetIntParams _inParams);
 
         static private void EvalComponent<T>(LevSetIntParams _inParams,
             int gamma, EquationComponentArgMapping<T> bf, Stopwatch[] timers,
             MultidimensionalArray SumBuf,
-            int componentIdx,
-            MultidimensionalArray FieldValuesPos, MultidimensionalArray FieldValuesNeg, MultidimensionalArray FieldGradientValuesPos, MultidimensionalArray FieldGradientValuesNeg,
+            MultidimensionalArray[] FieldValuesPos, MultidimensionalArray[] FieldValuesNeg, MultidimensionalArray[] FieldGradientValuesPos, MultidimensionalArray[] FieldGradientValuesNeg,
             int DELTA,
             Stopwatch timer,
-            CallComponent<T> ComponentFunc) where T : ILevelSetForm {
+            Action<T, LevSetIntParams, MultidimensionalArray[], MultidimensionalArray[], MultidimensionalArray[], MultidimensionalArray[], MultidimensionalArray> ComponentFunc) where T : ILevelSetForm {
             timer.Start();
-            
-            
-            for (int i = 0; i < bf.m_AllComponentsOfMyType.Length; i++) {  // loop over equation components
+
+
+            for(int i = 0; i < bf.m_AllComponentsOfMyType.Length; i++) {  // loop over equation components
                 var comp = bf.m_AllComponentsOfMyType[i];
 
-                //LengthScales.TryGetValue(comp.NegativeSpecies, out _inParams.NegCellLengthScale);
-                //LengthScales.TryGetValue(comp.PositiveSpecies, out _inParams.PosCellLengthScale);
-                
-                argsPerComp[gamma][i].Clear();
 
                 int NoOfArgs = bf.NoOfArguments[i];
                 Debug.Assert(NoOfArgs == comp.ArgumentOrdering.Count);
                 int NoOfParams = bf.NoOfParameters[i];
                 Debug.Assert(NoOfParams == ((comp.ParameterOrdering != null) ? comp.ParameterOrdering.Count : 0));
 
+                // map arguments
+                var uA = bf.MapArguments(FieldValuesNeg, comp, true);
+                var uB = bf.MapArguments(FieldValuesPos, comp, true);
+                var Grad_uA = bf.MapArguments(FieldGradientValuesNeg, comp, true);
+                var Grad_uB = bf.MapArguments(FieldGradientValuesPos, comp, true);
 
                 // map parameters
                 _inParams.ParamsPos = new MultidimensionalArray[NoOfParams];
                 _inParams.ParamsNeg = new MultidimensionalArray[NoOfParams];
-                for (int c = 0; c < NoOfParams; c++) {
-                    int targ = bf.AllToSub[i, c + NoOfArgs] - DELTA;
+                for(int c = 0; c < NoOfParams; c++) {
+                    int targ = bf.AllToSub[i, c + NoOfArgs];
                     Debug.Assert(targ >= 0);
-                    _inParams.ParamsPos[c] = FieldValuesPos.ExtractSubArrayShallow(targ, -1, -1);
-                    _inParams.ParamsNeg[c] = FieldValuesNeg.ExtractSubArrayShallow(targ, -1, -1);
+                    _inParams.ParamsPos[c] = FieldValuesPos[targ];
+                    _inParams.ParamsNeg[c] = FieldValuesNeg[targ];
                 }
 
                 // evaluate equation components
                 timers[i].Start();
-                ComponentFunc(comp, gamma, i, _inParams);
+                ComponentFunc(comp, _inParams, uA, uB, Grad_uA, Grad_uB, SumBuf);
                 timers[i].Stop();
 #if DEBUG
-                argsPerComp[gamma][i].CheckForNanOrInf();
+                SumBuf.CheckForNanOrInf();
 #endif
 
             }
             timer.Stop();
         }
-
-        static private void EvalBasis(int i0, int Len, IList<Basis> basisEnum, bool[] ReqB, bool[] ReqGrad, out MultidimensionalArray[] TestValues, out MultidimensionalArray[] TestGradientValues, out int[,] sectionsTest, NodeSet Nodes) {
-            
-            TestGradientValues = new MultidimensionalArray[basisEnum.Count];
-            TestValues = new MultidimensionalArray[basisEnum.Count];
-            sectionsTest = new int[TestValues.Length, 2];
-
-            int i = 0;
-            foreach (var basis in basisEnum) {
-                if (basis is XDGBasis) {
-                    var Xbasis = ((XDGBasis)basis);
-
-                    TestValues[i] = ReqB[i] ? Xbasis.NonX_Basis.CellEval(Nodes, i0, Len) : null;
-                    TestGradientValues[i] = ReqGrad[i] ? Xbasis.NonX_Basis.CellEvalGradient(Nodes, i0, Len) : null;
-
-                    sectionsTest[i, 0] = 0;
-                    sectionsTest[i, 1] = 1;
-                } else {
-                    TestValues[i] = ReqB[i] ? basis.CellEval(Nodes, i0, Len) : null;
-                    TestGradientValues[i] = ReqGrad[i] ? basis.CellEvalGradient(Nodes, i0, Len) : null;
-
-                    sectionsTest[i, 0] = 0;
-                    sectionsTest[i, 1] = 0;
-                }
-                i++;
-            }
-        }
-
-        /// <summary>
-        /// Current residual/operator value
-        /// </summary>
-        private V OperatorValue;
+       
 
 
         /// <summary>
@@ -657,48 +586,29 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         protected override void SaveIntegrationResults(int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
 
-            int Mmax = m_ColMap.MaxTotalNoOfCoordinatesPerCell;
-            int Nmax = m_RowMap.MaxTotalNoOfCoordinatesPerCell;
+            int Nmax = m_CodomainMap.MaxTotalNoOfCoordinatesPerCell;
 
-            int[] _i0 = new int[] { int.MaxValue, 0, 1 };
-            int[] _iE = new int[] { -1, Nmax - 1, _i0[2] + Mmax - 1 };
+            //int[] _i0 = new int[] { int.MaxValue, 0, 1 };
+            //int[] _iE = new int[] { -1, Nmax - 1, _i0[2] + Mmax - 1 };
 
-            int[] _i0aff = new int[] { int.MaxValue, 0, 0 };
-            int[] _iEaff = new int[] { -1, Nmax - 1, -1 };
+            int[] _i0aff = new int[] { int.MaxValue, 0 };
+            int[] _iEaff = new int[] { -1, Nmax - 1 };
 
-            bool saveMtx = this.OperatorMatrix != null;
-            bool saveAff = this.OperatorAffine != null;
 
             // loop over cells...
-            for (int i = 0; i < Length; i++) {
+            for(int i = 0; i < Length; i++) {
                 int jCell = i + i0;
-                int Row0 = m_RowMap.LocalUniqueCoordinateIndex(0, jCell, 0);
-                int Row0_g = m_RowMap.i0 + Row0;
+                int Row0 = m_CodomainMap.LocalUniqueCoordinateIndex(0, jCell, 0);
+                int Row0_g = m_CodomainMap.i0 + Row0;
 
-                if (saveMtx) {
-                    _i0[0] = i;
-                    _iE[0] = -1;
+                _i0aff[0] = i;
+                _iEaff[0] = -1;
 
-                    var BlockRes = ResultsOfIntegration.ExtractSubArrayShallow(_i0, _iE);
+                var BlockRes = ResultsOfIntegration.ExtractSubArrayShallow(_i0aff, _iEaff);
 
-                    int Col0_g = m_ColMap.GlobalUniqueCoordinateIndex(0, jCell, 0);
+                for(int r = BlockRes.GetLength(0) - 1; r >= 0; r--)
+                    ResultVector[Row0 + r] += BlockRes[r];
 
-                    
-                    //for (int r = BlockRes.NoOfRows - 1; r >= 0; r--)
-                    //    for (int c = BlockRes.NoOfCols - 1; c >= 0; c--)
-                    //        OperatorMatrix[Row0_g + r, Col0_g + c] += BlockRes[r, c];
-                    OperatorMatrix.AccBlock(Row0_g, Col0_g, 1.0, BlockRes);
-                }
-
-                if (saveAff) {
-                    _i0aff[0] = i;
-                    _iEaff[0] = -1;
-
-                    var BlockRes = ResultsOfIntegration.ExtractSubArrayShallow(_i0aff, _iEaff);
-
-                    for (int r = BlockRes.GetLength(0) - 1; r >= 0; r--)
-                        OperatorAffine[Row0 + r] += BlockRes[r];
-                }
             }
         }
     }

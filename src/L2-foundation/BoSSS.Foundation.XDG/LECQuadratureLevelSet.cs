@@ -676,7 +676,7 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        static private void CompOffsets(int i0, int L, int[] offset, UnsetteledCoordinateMapping Map) {
+        static internal void CompOffsets(int i0, int L, int[] offset, UnsetteledCoordinateMapping Map) {
             int DELTA = offset.Length;
             Debug.Assert(DELTA == Map.BasisS.Count);
             
@@ -779,11 +779,27 @@ namespace BoSSS.Foundation.XDG {
             timer.Stop();
         }
 
-        static private void EvalBasis(int i0, int Len, IList<Basis> basisEnum, bool[] ReqB, bool[] ReqGrad, out MultidimensionalArray[] TestValues, out MultidimensionalArray[] TestGradientValues, out int[,] sectionsTest, NodeSet Nodes) {
+        /// <summary>
+        /// Evaluation of DG basis and DG basis gradients
+        /// </summary>
+        /// <param name="i0">1st cell to evaluate</param>
+        /// <param name="Len">number of cells to evaluate</param>
+        /// <param name="basisEnum">set of basis objects</param>
+        /// <param name="ReqB">true, if the gradient of the basis is required</param>
+        /// <param name="ReqGrad">true, if the gradient of the basis is required</param>
+        /// <param name="TestValues"></param>
+        /// <param name="TestGradientValues"></param>
+        /// <param name="sectionsTest"></param>
+        /// <param name="Nodes">input, nodes where the basis should be evaluated</param>
+        static internal void EvalBasis(int i0, int Len, IList<Basis> basisEnum, bool[] ReqB, bool[] ReqGrad, out MultidimensionalArray[] TestValues, out MultidimensionalArray[] TestGradientValues, out int[,] sectionsTest, NodeSet Nodes) {
             
             TestGradientValues = new MultidimensionalArray[basisEnum.Count];
             TestValues = new MultidimensionalArray[basisEnum.Count];
             sectionsTest = new int[TestValues.Length, 2];
+
+            Debug.Assert(basisEnum.Count == ReqB.Length);
+            Debug.Assert(basisEnum.Count == ReqGrad.Length);
+
 
             int i = 0;
             foreach (var basis in basisEnum) {
