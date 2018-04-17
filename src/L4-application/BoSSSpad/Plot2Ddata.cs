@@ -57,7 +57,7 @@ namespace BoSSS.Application.BoSSSpad {
                 Style = Styles.LinesPoints
             };
 
-            
+
             /// <summary>
             /// The name of the group, i.e. the name which may show up in the legend.
             /// </summary>
@@ -167,6 +167,18 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         [DataMember]
         public bool LogY;
+
+        /// <summary>
+        /// Logarithmic base of x-axis.
+        /// </summary>
+        [DataMember]
+        public int LogBaseX = 10;
+
+        /// <summary>
+        /// Logarithmic base of y-axis.
+        /// </summary>
+        [DataMember]
+        public int LogBaseY = 10;
 
 
         /// <summary>
@@ -322,7 +334,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// Modification the dash type (<see cref="PlotFormat.DashType"/>).
         /// </summary>
         public void ModDashType(string[] SubKey, DashTypes[] DashType) {
-            if(SubKey.Length != DashType.Length) {
+            if (SubKey.Length != DashType.Length) {
                 throw new ArgumentException();
             }
 
@@ -352,7 +364,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// Modification the line color (<see cref="PlotFormat.LineColor"/>).
         /// </summary>
         public void ModLineColor(string[] SubKey, LineColors[] LineColor) {
-            if(SubKey.Length != LineColor.Length) {
+            if (SubKey.Length != LineColor.Length) {
                 throw new ArgumentException();
             }
 
@@ -368,7 +380,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// Modification the point type (<see cref="PlotFormat.PointType"/>).
         /// </summary>
         public void ModPointType(string[] SubKey, PointTypes[] PointType) {
-            if(SubKey.Length != PointType.Length) {
+            if (SubKey.Length != PointType.Length) {
                 throw new ArgumentException();
             }
 
@@ -649,10 +661,10 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="path">
         /// Path to file
         /// </param>
-        public void SaveTextFileToPublish(string path){
+        public void SaveTextFileToPublish(string path) {
             // writing data
             string pathWithoutExt = System.IO.Path.ChangeExtension(path, null);
-            string newPath = pathWithoutExt+"Data.txt";
+            string newPath = pathWithoutExt + "Data.txt";
             SaveTabular(newPath);
             // writing regression
             newPath = pathWithoutExt + "Rgrs.txt";
@@ -822,7 +834,7 @@ namespace BoSSS.Application.BoSSSpad {
             MySwap(ref this.LogY, ref this.LogY2);
             MySwap(ref this.ShowYtics, ref this.ShowY2tics);
 
-            foreach(var xy in this.dataGroups) {
+            foreach (var xy in this.dataGroups) {
                 xy.UseY2 = !xy.UseY2;
             }
         }
@@ -837,7 +849,7 @@ namespace BoSSS.Application.BoSSSpad {
             MySwap(ref this.LogX, ref this.LogX2);
             MySwap(ref this.ShowXtics, ref this.ShowX2tics);
 
-            foreach(var xy in this.dataGroups) {
+            foreach (var xy in this.dataGroups) {
                 xy.UseX2 = !xy.UseX2;
             }
         }
@@ -852,7 +864,7 @@ namespace BoSSS.Application.BoSSSpad {
             // margins
             // =======
             {
-                if(lmargin != null) {
+                if (lmargin != null) {
                     gp.Cmd("set lmargin {0:0.####e-00}", this.lmargin.Value);
                 } else {
                     gp.Cmd("unset lmargin ");
@@ -864,13 +876,13 @@ namespace BoSSS.Application.BoSSSpad {
                     gp.Cmd("unset rmargin ");
                 }
 
-                if(tmargin != null) {
+                if (tmargin != null) {
                     gp.Cmd("set tmargin {0:0.####e-00}", this.tmargin.Value);
                 } else {
                     gp.Cmd("unset tmargin ");
                 }
 
-                if(bmargin != null) {
+                if (bmargin != null) {
                     gp.Cmd("set bmargin {0:0.####e-00}", this.bmargin.Value);
                 } else {
                     gp.Cmd("unset bmargin ");
@@ -883,25 +895,25 @@ namespace BoSSS.Application.BoSSSpad {
             // ============
             {
                 if (this.LogX) {
-                    gp.Cmd("set logscale x");
+                    gp.Cmd("set logscale x " + this.LogBaseX);
                 } else {
                     gp.Cmd("unset logscale x");
                 }
 
                 if (this.LogY) {
-                    gp.Cmd("set logscale y");
+                    gp.Cmd("set logscale y " + this.LogBaseY);
                 } else {
                     gp.Cmd("unset logscale y");
                 }
 
                 if (this.LogX2) {
-                    gp.Cmd("set logscale x2");
+                    gp.Cmd("set logscale x2 " + this.LogBaseX);
                 } else {
                     gp.Cmd("unset logscale x2");
                 }
 
                 if (this.LogY2) {
-                    gp.Cmd("set logscale y2");
+                    gp.Cmd("set logscale y2 " + this.LogBaseY);
                 } else {
                     gp.Cmd("unset logscale y2");
                 }
@@ -974,7 +986,7 @@ namespace BoSSS.Application.BoSSSpad {
                 gp.SetY2Label(this.Y2label);
 
                 gp.SetTitle(this.Title);
-                
+
 
                 if (this.ShowLegend) {
                     gp.Cmd("unset key");
@@ -995,7 +1007,7 @@ namespace BoSSS.Application.BoSSSpad {
             {
                 if (this.ShowXtics) {
                     if (this.LogX)
-                        gp.Cmd("set xtics format \"$10^{%T}$\" ");
+                        gp.Cmd("set xtics format \"$" + this.LogBaseX + "^{%L}$\" ");
                     else
                         gp.Cmd("set xtics ");
                 } else {
@@ -1004,7 +1016,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                 if (this.ShowX2tics) {
                     if (this.LogX2)
-                        gp.Cmd("set x2tics format \"$10^{%T}$\" ");
+                        gp.Cmd("set x2tics format \"$" + this.LogBaseX + "^{%L}$\" ");
                     else
                         gp.Cmd("set x2tics ");
                 } else {
@@ -1013,7 +1025,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                 if (this.ShowYtics) {
                     if (this.LogY)
-                        gp.Cmd("set ytics format \"$10^{%T}$\" ");
+                        gp.Cmd("set ytics format \"$" + this.LogBaseY + "^{%L}$\" ");
                     else
                         gp.Cmd("set ytics ");
                 } else {
@@ -1022,7 +1034,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                 if (this.ShowY2tics) {
                     if (this.LogY2)
-                        gp.Cmd("set y2tics format \"$10^{%T}$\" ");
+                        gp.Cmd("set y2tics format \"$" + this.LogBaseY + "^{%L}$\" ");
                     else
                         gp.Cmd("set y2tics ");
                 } else {
@@ -1031,7 +1043,7 @@ namespace BoSSS.Application.BoSSSpad {
                 }
             }
 
-          
+
 
 
             // =================
