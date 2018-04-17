@@ -81,42 +81,34 @@ namespace CNS.ShockCapturing {
             int noOfNodesPerCell = base.EvaluationPoints[iKref].NoOfNodes;
             double scaling = Math.Max(4.0 / 3.0, config.EquationOfState.HeatCapacityRatio / config.PrandtlNumber);
             DGField artificialViscosity = workingSet.ParameterFields.Where(c => c.Identification.Equals(Variables.ArtificialViscosity)).Single();
-            var hmin = gridData.Cells.h_min;
-
             double cfl = double.MaxValue;
+
             switch (speciesMap) {
                 case ImmersedSpeciesMap ibmMap: {
                         MultidimensionalArray levelSetValues = ibmMap.Tracker.DataHistories[0].Current.GetLevSetValues(base.EvaluationPoints[iKref], i0, Length);
                         SpeciesId species = ibmMap.Tracker.GetSpeciesId(ibmMap.Control.FluidSpeciesName);
                         var hMinArray = ibmMap.CellAgglomeration.CellLengthScales[species];
-                        
+
                         for (int i = 0; i < Length; i++) {
                             int cell = i0 + i;
+                            double hminlocal = hMinArray[cell];
+                            double nu = artificialViscosity.GetMeanValue(cell) / config.ReynoldsNumber;
+                            Debug.Assert(!double.IsNaN(nu), "IBM ArtificialViscosityCFLConstraint: nu is NaN");
 
+                            bool setCFL = false;
                             for (int node = 0; node < noOfNodesPerCell; node++) {
                                 if (levelSetValues[i, node].Sign() != (double)ibmMap.Control.FluidSpeciesSign) {
                                     continue;
+                                } else if (setCFL == false) {
+                                    setCFL = true;
                                 }
-                                
-                                double hminlocal = hMinArray[cell];
+                            }
 
-                                double nu = artificialViscosity.GetMeanValue(cell) / config.ReynoldsNumber;
-                                Debug.Assert(!double.IsNaN(nu), "IBMArtificialViscosityCFLConstraint: nu is NaN!");
+                            if (nu != 0 && setCFL) {
+                                double cflCell = hminlocal * hminlocal / scaling / nu;
+                                Debug.Assert(!double.IsNaN(cflCell), "Could not determine CFL number");
 
-                                double cflhere;
-                                if (nu == 0) {
-                                    cflhere = double.MaxValue;
-                                } else {
-                                    cflhere = hminlocal * hminlocal / scaling / nu;
-                                }
-
-#if DEBUG
-                                if (double.IsNaN(cflhere)) {
-                                    throw new Exception("Could not determine CFL number");
-                                }
-#endif
-
-                                cfl = Math.Min(cfl, cflhere);
+                                cfl = Math.Min(cfl, cflCell);
                             }
                         }
                     }
@@ -125,30 +117,28 @@ namespace CNS.ShockCapturing {
                 default: {
                         for (int i = 0; i < Length; i++) {
                             int cell = i0 + i;
+                            double hminlocal = gridData.Cells.h_min[cell];
+                            double nu = artificialViscosity.GetMeanValue(cell) / config.ReynoldsNumber;
+                            Debug.Assert(!double.IsNaN(nu), "ArtificialViscosityCFLConstraint: nu is NaN");
 
-                            for (int node = 0; node < noOfNodesPerCell; node++) {
-                                double hminlocal = gridData.Cells.h_min[cell];
+                            if (nu != 0) {
+                                double cflCell = hminlocal * hminlocal / scaling / nu;
+                                Debug.Assert(!double.IsNaN(cflCell), "Could not determine CFL number");
 
-                                double nu = artificialViscosity.GetMeanValue(cell) / config.ReynoldsNumber;
-                                Debug.Assert(!double.IsNaN(nu), "ArtificialViscosityCFLConstraint: nu is NaN!");
-
-                                double cflhere;
-                                if (nu == 0) {
-                                    cflhere = double.MaxValue;
-                                } else {
-                                    cflhere = hminlocal * hminlocal / scaling / nu;
-                                }
-
-                                cfl = Math.Min(cfl, cflhere);
+                                cfl = Math.Min(cfl, cflCell);
                             }
                         }
                     }
                     break;
             }
 
-            int degree = workingSet.ConservativeVariables.Max(f => f.Basis.Degree);
-            int twoNPlusOne = 2 * degree + 1;
-            return cfl * GetBetaMax(degree) / twoNPlusOne / twoNPlusOne / Math.Sqrt(CNSEnvironment.NumberOfDimensions);
+            if (cfl == double.MaxValue) {
+                return cfl;
+            } else {
+                int degree = workingSet.ConservativeVariables.Max(f => f.Basis.Degree);
+                int twoNPlusOne = 2 * degree + 1;
+                return cfl * GetBetaMax(degree) / twoNPlusOne / twoNPlusOne / Math.Sqrt(CNSEnvironment.NumberOfDimensions);
+            }
         }
     }
 }

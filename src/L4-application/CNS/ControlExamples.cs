@@ -1293,10 +1293,10 @@ namespace CNS {
 
             IBMControl c = new IBMControl();
 
-            dbPath = @"c:\bosss_db\";
+            //dbPath = @"c:\bosss_db\";
             c.DbPath = dbPath;
             c.savetodb = dbPath != null;
-            c.saveperiod = 10;
+            c.saveperiod = 1;
             c.PrintInterval = 1;
 
             double xMin = 0;
@@ -1308,13 +1308,20 @@ namespace CNS {
 
             c.DomainType = DomainTypes.StaticImmersedBoundary;
             c.LevelSetFunction = delegate (double[] X, double t) {
-                return X[1] - 0.06;
+                return X[1] - 0.16;
             };
             c.LevelSetBoundaryTag = "AdiabaticSlipWall";
             c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             c.LevelSetQuadratureOrder = 6;
-            c.AgglomerationThreshold = 0.2;
+            //c.AgglomerationThreshold = 0.2;
+            c.AgglomerationThreshold = 0.9;
             c.AddVariable(IBMVariables.LevelSet, 1);
+
+            c.AddVariable(IBMVariables.FluidCells, 1);
+            c.AddVariable(IBMVariables.FluidCellsWithoutSourceCells, 1);
+            c.AddVariable(IBMVariables.CutCells, 1);
+            c.AddVariable(IBMVariables.CutCellsWithoutSourceCells, 1);
+            c.AddVariable(IBMVariables.SourceCells, 1);
 
             if (AV) {
                 c.ActiveOperators = Operators.Convection | Operators.ArtificialViscosity;
@@ -1335,20 +1342,20 @@ namespace CNS {
             }
 
             // Runge-Kutta schemes (Explicit Euler)
-            c.ExplicitScheme = ExplicitSchemes.RungeKutta;
-            c.ExplicitOrder = 1;
+            //c.ExplicitScheme = ExplicitSchemes.RungeKutta;
+            //c.ExplicitOrder = 1;
 
             //Adams-Bashforth
             //c.ExplicitScheme = ExplicitSchemes.AdamsBashforth;
             //c.ExplicitOrder = 3;
 
             // (A)LTS
-            //c.ExplicitScheme = ExplicitSchemes.LTS;
-            //c.ExplicitOrder = 1;
-            //c.NumberOfSubGrids = 1;
-            //c.ReclusteringInterval = 1;
-            //c.maxNumOfSubSteps = 50;
-            //c.FluxCorrection = true;
+            c.ExplicitScheme = ExplicitSchemes.LTS;
+            c.ExplicitOrder = 1;
+            c.NumberOfSubGrids = 3;
+            c.ReclusteringInterval = 5;
+            c.maxNumOfSubSteps = 10;
+            c.FluxCorrection = false;
 
             c.EquationOfState = IdealGas.Air;
 
@@ -1463,14 +1470,14 @@ namespace CNS {
             c.dtMax = 1.0;
             c.CFLFraction = 0.1;
             //c.dtFixed = 1e-4;
-            c.Endtime = 0.001;
+            c.Endtime = 0.25;
             c.NoOfTimesteps = int.MaxValue;
 
             c.ProjectName = "Shock tube";
             if (true1D) {
                 c.SessionName = String.Format("IBM shock tube, 1D, dgDegree = {0}, noOfCellsX = {1}, sensorLimit = {2:0.00E-00}", dgDegree, numOfCellsX, sensorLimit);
             } else {
-                c.SessionName = String.Format("IBM shock tube, 2D, dgDegree = {0}, noOfCellsX = {1}, noOfCellsX = {2}, sensorLimit = {3:0.00E-00}, CFLFraction = {4:0.00E-00}, ALTS {5}/{6}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids);
+                c.SessionName = String.Format("IBM shock tube, p={0}, {1}x{2} cells, aggloThresh={3}, s0={4:0.0E-00}, CFLFrac={5}, ALTS {6}/{7}/{8}({9})", dgDegree, numOfCellsX, numOfCellsY, c.AgglomerationThreshold, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps);
             }
 
             return c;
@@ -2233,10 +2240,10 @@ namespace CNS {
             return c;
         }
 
-        public static IBMControl IBMDoubleMachReflection(string dbPath = null, int dgDegree = 2, int numOfCellsX = 600, int numOfCellsY = 420, double sensorLimit = 1e-4) {
+        public static IBMControl IBMDoubleMachReflection(string dbPath = null, int dgDegree = 2, int numOfCellsX = 200, int numOfCellsY = 140, double sensorLimit = 1e-4) {
             IBMControl c = new IBMControl();
 
-            //dbPath = @"c:\bosss_db";
+            dbPath = @"c:\bosss_db";
             //dbPath = @"\\dc1\userspace\geisenhofer\bosss_db";
             //dbPath = @"/work/scratch/yp19ysog/bosss_db_lb_scratch";
             c.DbPath = dbPath;
@@ -2246,21 +2253,43 @@ namespace CNS {
 
             c.DomainType = DomainTypes.StaticImmersedBoundary;
 
-            c.DynamicLoadBalancing_CellClassifier = new IBMCellClassifier();
-            c.DynamicLoadBalancing_Period = 0;
-            c.DynamicLoadBalancing_RedistributeAtStartup = true;
-            //c.DynamicLoadBalancing_CellCostEstimatorFactories.Add(IBMCellCostEstimator.GetStaticCostBasedEstimator());
-            c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(IBMCellCostEstimator.GetMultiBalanceConstraintsBasedEstimators());
-
             double xMin = 0.0;
-            double xMax = 4.0;
+            double xMax = 2.0;
+
             double yMin = 0.0;
-            double yMax = 2.8;
+            double yMax = 1.4;
+
+            //int smaller = 2;
+            //numOfCellsX /= smaller;
+            //numOfCellsY /= smaller;
+            //xMax = xMax / smaller;
+            //yMax = yMax / smaller;
+
+            // Force cell height to be such that level set only goes through the corner of cells
+            //double cellWidth = (xMax - xMin) / numOfCellsX;
+            //double cellHeight = Math.Tan(60 * Math.PI / 180) * cellWidth;
+            //numOfCellsY = (int)Math.Ceiling((yMax - yMin) / cellHeight);
+            //yMax = yMin + numOfCellsY * cellHeight;
+
+            //numOfCellsX = 20;
+            //numOfCellsY = 5;
+
+            //double xMin = 0.0;
+            //double xMax = 0.2;
+
+            //double yMin = 0.0;
+            //double yMax = 0.05;
 
             // Start of the bottom wall, x = 1/6 = 0.166666, (Woodward and Colella 1984)
             // Practical choice: Should be on a cell boundary, because the boundary condition changes from
             // supersonic inflow to adiabatic wall
             double xWall = 0.16;
+
+            double temp = numOfCellsX / xWall;
+            bool resolutionOk = (temp == Math.Truncate(temp));
+            if (!resolutionOk) {
+                throw new Exception("Number of cells in x-direction is not applicable because of xWall!");
+            }
 
             // Level set
             double angleInDegree = 30;
@@ -2278,24 +2307,37 @@ namespace CNS {
 
             c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             c.LevelSetQuadratureOrder = 6;
-            c.AgglomerationThreshold = 0.9;
+            c.AgglomerationThreshold = 0.3;
             c.SaveAgglomerationPairs = false;
             c.AddVariable(IBMVariables.LevelSet, 2);
+
+            c.AddVariable(IBMVariables.FluidCells, 1);
+            c.AddVariable(IBMVariables.FluidCellsWithoutSourceCells, 1);
+            c.AddVariable(IBMVariables.CutCells, 1);
+            c.AddVariable(IBMVariables.CutCellsWithoutSourceCells, 1);
+            c.AddVariable(IBMVariables.SourceCells, 1);
 
             bool AV = true;
 
             // Runge-Kutta
-            c.ExplicitScheme = ExplicitSchemes.RungeKutta;
-            c.ExplicitOrder = 1;
+            //c.ExplicitScheme = ExplicitSchemes.RungeKutta;
+            //c.ExplicitOrder = 1;
 
             // LTS
-            //c.ExplicitScheme = ExplicitSchemes.LTS;
-            //c.ExplicitOrder = 1;
-            //c.NumberOfSubGrids = 3;
-            //c.ReclusteringInterval = 1;
-            //c.FluxCorrection = false;
+            c.ExplicitScheme = ExplicitSchemes.LTS;
+            c.ExplicitOrder = 1;
+            c.NumberOfSubGrids = 3;
+            c.ReclusteringInterval = 50;
+            c.maxNumOfSubSteps = 50;
+            c.FluxCorrection = false;
 
-            c.GridPartType = GridPartType.ParMETIS;
+            c.DynamicLoadBalancing_CellClassifier = new LTSCellClassifier();
+            c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(LTSCellCostEstimator.Factory(c.NumberOfSubGrids));
+            c.DynamicLoadBalancing_ImbalanceThreshold = 0.1;
+            c.DynamicLoadBalancing_Period = c.ReclusteringInterval;
+            c.DynamicLoadBalancing_RedistributeAtStartup = true;
+
+            c.GridPartType = GridPartType.Hilbert;
             //c.GridPartType = GridPartType.none;
 
             double cellSize = Math.Min((xMax - xMin) / numOfCellsX, (yMax - yMin) / numOfCellsY);
@@ -2333,9 +2375,9 @@ namespace CNS {
             c.AddVariable(Variables.Velocity.yComponent, dgDegree);
             c.AddVariable(Variables.Pressure, dgDegree);
 
-            c.AddVariable(Variables.Entropy, dgDegree);
-            c.AddVariable(Variables.Viscosity, dgDegree);
-            c.AddVariable(Variables.LocalMachNumber, dgDegree);
+            //c.AddVariable(Variables.Entropy, dgDegree);
+            //c.AddVariable(Variables.Viscosity, dgDegree);
+            //c.AddVariable(Variables.LocalMachNumber, dgDegree);
             c.AddVariable(Variables.Rank, 0);
             if (dgDegree >= 1) {
                 c.AddVariable(Variables.Schlieren, dgDegree - 1);
@@ -2396,7 +2438,6 @@ namespace CNS {
                 return xWall + shockSpeed * time;
             };
 
-
             Func<double, double> Jump = (x => x < 0 ? 0 : 1);
 
             Func<double, double> SmoothJump = delegate (double distance) {
@@ -2423,13 +2464,13 @@ namespace CNS {
             // Time config
             c.dtMin = 0.0;
             c.dtMax = 1.0;
-            c.Endtime = 0.2;
+            c.Endtime = 0.1;
             //c.dtFixed = 1.0e-6;
-            c.CFLFraction = 0.3;
-            c.NoOfTimesteps = int.MaxValue;
+            c.CFLFraction = 0.1;
+            c.NoOfTimesteps = 10;
 
             c.ProjectName = "IBM double Mach reflection";
-            c.SessionName = String.Format("IBM DMR, dgDegree = {0}, numOfCellsX = {1}, numOfCellsY = {2}, sensorLimit = {3:0.00E-00}, CFLFraction = {4:0.00E-00}, ALTS {5}/{6}, lamdaMax = {7}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, lambdaMax);
+            c.SessionName = String.Format("IBM DMR, p={0}, {1}x{2} cells, agg={3}, s0={4:0.0E-00}, CFLFrac={5}, ALTS {6}/{7}/{8}({9}), Part={10}/{11}({12})", dgDegree, numOfCellsX, numOfCellsY, c.AgglomerationThreshold, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps, c.GridPartType.ToString(), c.DynamicLoadBalancing_Period, c.DynamicLoadBalancing_ImbalanceThreshold);
 
             return c;
         }
