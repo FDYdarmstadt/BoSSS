@@ -302,7 +302,7 @@ namespace BoSSS.Foundation.XDG {
         internal bool m_cacheQuadRules;
         internal ICompositeQuadRule<QuadRule> edgeRuleCached;
         internal ICompositeQuadRule<QuadRule> volRuleCached;
-        internal ICompositeQuadRule<QuadRule> ruleCached;
+        internal ICompositeQuadRule<QuadRule> surfRuleCached;
 
         /// <summary>
         /// computation of operator matrix, currently only two species are supported
@@ -451,7 +451,7 @@ namespace BoSSS.Foundation.XDG {
 
                         using (new BlockTrace("QuadRule-compilation", tr)) {
 
-                            if (m_cacheQuadRules == true && (edgeRuleCached == null || volRuleCached == null)) {
+                            if (edgeRuleCached == null || volRuleCached == null) {
 
                                 var qrSchemes = SpeciesSchemes[SpeciesId];
 
@@ -633,7 +633,7 @@ namespace BoSSS.Foundation.XDG {
                                     ICompositeQuadRule<QuadRule> rule;
 
                                     using (new BlockTrace("QuadRule-compilation", tr)) {
-                                        if (ruleCached == null) {
+                                        if (surfRuleCached == null) {
                                             CellQuadratureScheme SurfIntegration = SchemeHelper.GetLevelSetquadScheme(iLevSet, IntegrationDom);
                                             rule = SurfIntegration.Compile(GridDat, order);
 
@@ -642,10 +642,10 @@ namespace BoSSS.Foundation.XDG {
                                             }
 
                                             if (m_cacheQuadRules == true) {
-                                                ruleCached = rule;
+                                                surfRuleCached = rule;
                                             }
                                         } else {
-                                            rule = ruleCached;
+                                            rule = surfRuleCached;
                                         }
 
                                     }
