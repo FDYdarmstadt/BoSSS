@@ -1,0 +1,219 @@
+% GNUPLOT: LaTeX picture with Postscript
+\begingroup
+  \makeatletter
+  \providecommand\color[2][]{%
+    \GenericError{(gnuplot) \space\space\space\@spaces}{%
+      Package color not loaded in conjunction with
+      terminal option `colourtext'%
+    }{See the gnuplot documentation for explanation.%
+    }{Either use 'blacktext' in gnuplot or load the package
+      color.sty in LaTeX.}%
+    \renewcommand\color[2][]{}%
+  }%
+  \providecommand\includegraphics[2][]{%
+    \GenericError{(gnuplot) \space\space\space\@spaces}{%
+      Package graphicx or graphics not loaded%
+    }{See the gnuplot documentation for explanation.%
+    }{The gnuplot epslatex terminal needs graphicx.sty or graphics.sty.}%
+    \renewcommand\includegraphics[2][]{}%
+  }%
+  \providecommand\rotatebox[2]{#2}%
+  \@ifundefined{ifGPcolor}{%
+    \newif\ifGPcolor
+    \GPcolortrue
+  }{}%
+  \@ifundefined{ifGPblacktext}{%
+    \newif\ifGPblacktext
+    \GPblacktexttrue
+  }{}%
+  % define a \g@addto@macro without @ in the name:
+  \let\gplgaddtomacro\g@addto@macro
+  % define empty templates for all commands taking text:
+  \gdef\gplbacktext{}%
+  \gdef\gplfronttext{}%
+  \makeatother
+  \ifGPblacktext
+    % no textcolor at all
+    \def\colorrgb#1{}%
+    \def\colorgray#1{}%
+  \else
+    % gray or color?
+    \ifGPcolor
+      \def\colorrgb#1{\color[rgb]{#1}}%
+      \def\colorgray#1{\color[gray]{#1}}%
+      \expandafter\def\csname LTw\endcsname{\color{white}}%
+      \expandafter\def\csname LTb\endcsname{\color{black}}%
+      \expandafter\def\csname LTa\endcsname{\color{black}}%
+      \expandafter\def\csname LT0\endcsname{\color[rgb]{1,0,0}}%
+      \expandafter\def\csname LT1\endcsname{\color[rgb]{0,1,0}}%
+      \expandafter\def\csname LT2\endcsname{\color[rgb]{0,0,1}}%
+      \expandafter\def\csname LT3\endcsname{\color[rgb]{1,0,1}}%
+      \expandafter\def\csname LT4\endcsname{\color[rgb]{0,1,1}}%
+      \expandafter\def\csname LT5\endcsname{\color[rgb]{1,1,0}}%
+      \expandafter\def\csname LT6\endcsname{\color[rgb]{0,0,0}}%
+      \expandafter\def\csname LT7\endcsname{\color[rgb]{1,0.3,0}}%
+      \expandafter\def\csname LT8\endcsname{\color[rgb]{0.5,0.5,0.5}}%
+    \else
+      % gray
+      \def\colorrgb#1{\color{black}}%
+      \def\colorgray#1{\color[gray]{#1}}%
+      \expandafter\def\csname LTw\endcsname{\color{white}}%
+      \expandafter\def\csname LTb\endcsname{\color{black}}%
+      \expandafter\def\csname LTa\endcsname{\color{black}}%
+      \expandafter\def\csname LT0\endcsname{\color{black}}%
+      \expandafter\def\csname LT1\endcsname{\color{black}}%
+      \expandafter\def\csname LT2\endcsname{\color{black}}%
+      \expandafter\def\csname LT3\endcsname{\color{black}}%
+      \expandafter\def\csname LT4\endcsname{\color{black}}%
+      \expandafter\def\csname LT5\endcsname{\color{black}}%
+      \expandafter\def\csname LT6\endcsname{\color{black}}%
+      \expandafter\def\csname LT7\endcsname{\color{black}}%
+      \expandafter\def\csname LT8\endcsname{\color{black}}%
+    \fi
+  \fi
+    \setlength{\unitlength}{0.0500bp}%
+    \ifx\gptboxheight\undefined%
+      \newlength{\gptboxheight}%
+      \newlength{\gptboxwidth}%
+      \newsavebox{\gptboxtext}%
+    \fi%
+    \setlength{\fboxrule}{0.5pt}%
+    \setlength{\fboxsep}{1pt}%
+\begin{picture}(9620.00,9620.00)%
+    \gplgaddtomacro\gplbacktext{%
+      \csname LTb\endcsname%
+      \put(691,5057){\makebox(0,0)[r]{\strut{}$0$}}%
+      \csname LTb\endcsname%
+      \put(691,5801){\makebox(0,0)[r]{\strut{}$50$}}%
+      \csname LTb\endcsname%
+      \put(691,6544){\makebox(0,0)[r]{\strut{}$100$}}%
+      \csname LTb\endcsname%
+      \put(691,7288){\makebox(0,0)[r]{\strut{}$150$}}%
+      \csname LTb\endcsname%
+      \put(691,8031){\makebox(0,0)[r]{\strut{}$200$}}%
+      \csname LTb\endcsname%
+      \put(691,8775){\makebox(0,0)[r]{\strut{}$250$}}%
+      \csname LTb\endcsname%
+      \put(1492,4858){\makebox(0,0){\strut{}$50$}}%
+      \csname LTb\endcsname%
+      \put(2221,4858){\makebox(0,0){\strut{}$100$}}%
+      \csname LTb\endcsname%
+      \put(2949,4858){\makebox(0,0){\strut{}$150$}}%
+      \csname LTb\endcsname%
+      \put(3677,4858){\makebox(0,0){\strut{}$200$}}%
+      \csname LTb\endcsname%
+      \put(4405,4858){\makebox(0,0){\strut{}$250$}}%
+      \csname LTb\endcsname%
+      \put(4580,5057){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(4580,5801){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(4580,6544){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(4580,7288){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(4580,8031){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(4580,8775){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(779,8974){\makebox(0,0){\strut{} }}%
+      \csname LTb\endcsname%
+      \put(1398,8974){\makebox(0,0){\strut{} }}%
+      \csname LTb\endcsname%
+      \put(2017,8974){\makebox(0,0){\strut{} }}%
+      \csname LTb\endcsname%
+      \put(2636,8974){\makebox(0,0){\strut{} }}%
+      \csname LTb\endcsname%
+      \put(3254,8974){\makebox(0,0){\strut{} }}%
+      \csname LTb\endcsname%
+      \put(3873,8974){\makebox(0,0){\strut{} }}%
+      \csname LTb\endcsname%
+      \put(4492,8974){\makebox(0,0){\strut{} }}%
+    }%
+    \gplgaddtomacro\gplfronttext{%
+      \csname LTb\endcsname%
+      \put(239,6916){\rotatebox{-270}{\makebox(0,0){\strut{}Speedup}}}%
+      \csname LTb\endcsname%
+      \put(4854,6916){\rotatebox{-270}{\makebox(0,0){\strut{}SolIter: Precondition Solve}}}%
+      \csname LTb\endcsname%
+      \put(2635,9472){\makebox(0,0){\strut{}Speedup}}%
+      \csname LTb\endcsname%
+      \put(8827,8675){\makebox(0,0)[r]{\strut{}NewtonGmres Swz w Coarse Overlap MGLevels3}}%
+      \csname LTb\endcsname%
+      \put(8827,8476){\makebox(0,0)[r]{\strut{}Ideal}}%
+    }%
+    \gplgaddtomacro\gplbacktext{%
+      \csname LTb\endcsname%
+      \put(691,684){\makebox(0,0)[r]{\strut{}$0$}}%
+      \csname LTb\endcsname%
+      \put(691,1238){\makebox(0,0)[r]{\strut{}$20$}}%
+      \csname LTb\endcsname%
+      \put(691,1792){\makebox(0,0)[r]{\strut{}$40$}}%
+      \csname LTb\endcsname%
+      \put(691,2346){\makebox(0,0)[r]{\strut{}$60$}}%
+      \csname LTb\endcsname%
+      \put(691,2900){\makebox(0,0)[r]{\strut{}$80$}}%
+      \csname LTb\endcsname%
+      \put(691,3454){\makebox(0,0)[r]{\strut{}$100$}}%
+      \csname LTb\endcsname%
+      \put(691,4008){\makebox(0,0)[r]{\strut{}$120$}}%
+      \csname LTb\endcsname%
+      \put(691,4562){\makebox(0,0)[r]{\strut{}$140$}}%
+      \csname LTb\endcsname%
+      \put(1492,485){\makebox(0,0){\strut{}$50$}}%
+      \csname LTb\endcsname%
+      \put(2221,485){\makebox(0,0){\strut{}$100$}}%
+      \csname LTb\endcsname%
+      \put(2949,485){\makebox(0,0){\strut{}$150$}}%
+      \csname LTb\endcsname%
+      \put(3677,485){\makebox(0,0){\strut{}$200$}}%
+      \csname LTb\endcsname%
+      \put(4405,485){\makebox(0,0){\strut{}$250$}}%
+      \csname LTb\endcsname%
+      \put(4580,684){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(4580,1238){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(4580,1792){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(4580,2346){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(4580,2900){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(4580,3454){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(4580,4008){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(4580,4562){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(779,4761){\makebox(0,0){\strut{} }}%
+      \csname LTb\endcsname%
+      \put(1398,4761){\makebox(0,0){\strut{} }}%
+      \csname LTb\endcsname%
+      \put(2017,4761){\makebox(0,0){\strut{} }}%
+      \csname LTb\endcsname%
+      \put(2636,4761){\makebox(0,0){\strut{} }}%
+      \csname LTb\endcsname%
+      \put(3254,4761){\makebox(0,0){\strut{} }}%
+      \csname LTb\endcsname%
+      \put(3873,4761){\makebox(0,0){\strut{} }}%
+      \csname LTb\endcsname%
+      \put(4492,4761){\makebox(0,0){\strut{} }}%
+    }%
+    \gplgaddtomacro\gplfronttext{%
+      \csname LTb\endcsname%
+      \put(239,2623){\rotatebox{-270}{\makebox(0,0){\strut{}Speedup}}}%
+      \csname LTb\endcsname%
+      \put(4854,2623){\rotatebox{-270}{\makebox(0,0){\strut{}SolIter: Newton Dirder}}}%
+      \csname LTb\endcsname%
+      \put(2635,187){\makebox(0,0){\strut{}Processors}}%
+      \csname LTb\endcsname%
+      \put(8827,4462){\makebox(0,0)[r]{\strut{}NewtonGmres Swz w Coarse Overlap MGLevels3}}%
+      \csname LTb\endcsname%
+      \put(8827,4263){\makebox(0,0)[r]{\strut{}Ideal}}%
+    }%
+    \gplbacktext
+    \put(0,0){\includegraphics{Additional_2}}%
+    \gplfronttext
+  \end{picture}%
+\endgroup
