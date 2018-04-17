@@ -22,7 +22,9 @@ using BoSSS.Solution.Control;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace BoSSS.Solution {
 
@@ -421,6 +423,14 @@ namespace BoSSS.Solution {
 
         }
 
+        private static Regex WildcardToRegex(string pattern) {
+            return new Regex("^" + Regex.Escape(pattern).
+            Replace("\\*", ".*").
+            Replace("\\?", ".") + "$");
+        }
+
+
+
         /// <summary>
         /// used by <see cref="CreateFieldsAuto"/>
         /// </summary>
@@ -428,25 +438,29 @@ namespace BoSSS.Solution {
             //AppControl ctrl
             IDictionary<string, FieldOpts> FieldOptions) //
         {
+            
+           var ops = FieldOptions.Where(kv => WildcardToRegex(kv.Key).IsMatch(cName));
+
             int Deg = -1;
             {
                 if (cName == iName) {
 
-                    if (!FieldOptions.ContainsKey(cName))
+
+                    if (ops.Count() != 1)
                         throw new ApplicationException("missing DG polynomial degree specification for field '" + cName + "' in control file;");
 
-                    Deg = (int)FieldOptions[cName].Degree;
+                    Deg = (int)(ops.First().Value.Degree);
 
                     if (Deg < 0)
                         throw new ApplicationException("missing DG polynomial degree specification for field '" + cName + "' in control file;");
                 } else {
                     // polynomial degree of field 'iName' is implied by polynomial degree of field 'cName' in ctrl file
 
-                    if (!FieldOptions.ContainsKey(cName))
+                    if (ops.Count() != 1)
                         throw new ApplicationException("missing DG polynomial degree specification for field '" + cName +
                             "', which implies DG polynomial degree of field '" + iName + "', in control file;");
 
-                    Deg = (int)FieldOptions[cName].Degree;
+                    Deg = (int)(ops.First().Value.Degree);
 
                     if (Deg < 0)
                         throw new ApplicationException("missing DG polynomial degree specification for field '" + cName +

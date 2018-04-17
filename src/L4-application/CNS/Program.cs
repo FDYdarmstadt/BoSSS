@@ -138,9 +138,11 @@ namespace CNS {
         /// </summary>
         /// <returns></returns>
         protected override GridCommons CreateOrLoadGrid() {
-            GridCommons grid = base.CreateOrLoadGrid();
-            CNSEnvironment.Initialize(grid.SpatialDimension);
-            return grid;
+            using (var ht = new FuncTrace()) {
+                GridCommons grid = base.CreateOrLoadGrid();
+                CNSEnvironment.Initialize(grid.SpatialDimension);
+                return grid;
+            }
         }
 
         /// <summary>
@@ -152,15 +154,17 @@ namespace CNS {
         /// method be called by <see cref="Application{T}._Main"/>.
         /// </remarks>
         protected override void CreateFields() {
-            WorkingSet = Control.DomainType.CreateWorkingSet(GridData, Control);
-            SpeciesMap = Control.DomainType.CreateSpeciesMap(WorkingSet, Control, GridData);
+            using (var ht = new FuncTrace()) {
+                WorkingSet = Control.DomainType.CreateWorkingSet(GridData, Control);
+                SpeciesMap = Control.DomainType.CreateSpeciesMap(WorkingSet, Control, GridData);
 
-            BoundaryConditionMap map = GetBoundaryConditionMap();
-            operatorFactory = Control.DomainType.GetOperatorFactory(
-                Control, GridData, map, WorkingSet, SpeciesMap);
+                BoundaryConditionMap map = GetBoundaryConditionMap();
+                operatorFactory = Control.DomainType.GetOperatorFactory(
+                    Control, GridData, map, WorkingSet, SpeciesMap);
 
-            m_IOFields.AddRange(WorkingSet.AllFields);
-            m_RegisteredFields.AddRange(WorkingSet.AllFields);
+                m_IOFields.AddRange(WorkingSet.AllFields);
+                m_RegisteredFields.AddRange(WorkingSet.AllFields);
+            }
         }
 
         /// <summary>
@@ -169,31 +173,36 @@ namespace CNS {
         /// the associated time stepper
         /// </summary>
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase gridUpdateData) {
-            FullOperator = operatorFactory.GetJoinedOperator();
+            using (var ht = new FuncTrace()) {
+                FullOperator = operatorFactory.GetJoinedOperator();
 
-            TimeStepper = Control.ExplicitScheme.Instantiate(
-                Control,
-                operatorFactory,
-                WorkingSet,
-                ParameterMapping,
-                SpeciesMap,
-                this);
+                TimeStepper = Control.ExplicitScheme.Instantiate(
+                    Control,
+                    operatorFactory,
+                    WorkingSet,
+                    ParameterMapping,
+                    SpeciesMap,
+                    this);
 
-            // Resets simulation time after a restart
-            TimeStepper.ResetTime(StartTime, TimestepNumber);
+                // Resets simulation time after a restart
+                TimeStepper.ResetTime(StartTime, TimestepNumber);
 
-            // Configure residual handling
-            if (gridUpdateData == null) {
-                // Do not change these settings upon repartitioning
-                ResLogger.WriteResidualsToTextFile = true;
-                ResLogger.WriteResidualsToConsole = false;
+                // Update time information (needed for LTS runs)
+                TimeStepper.UpdateTimeInfo(new TimeInformation(TimestepNumber, StartTime, -1));
+
+                // Configure residual handling
+                if (gridUpdateData == null) {
+                    // Do not change these settings upon repartitioning
+                    ResLogger.WriteResidualsToTextFile = true;
+                    ResLogger.WriteResidualsToConsole = false;
+                }
+                residualLoggers = Control.ResidualLoggerType.Instantiate(
+                    this,
+                    Control,
+                    FullOperator.ToSpatialOperator(WorkingSet)).ToArray();
+
+                WorkingSet.UpdateDerivedVariables(this, SpeciesMap.SubGrid.VolumeMask);
             }
-            residualLoggers = Control.ResidualLoggerType.Instantiate(
-                this,
-                Control,
-                FullOperator.ToSpatialOperator(WorkingSet)).ToArray();
-
-            WorkingSet.UpdateDerivedVariables(this, SpeciesMap.SubGrid.VolumeMask);
         }
 
         /// <summary>
@@ -225,8 +234,24 @@ namespace CNS {
             using (var ht = new FuncTrace()) {
                 int printInterval = Control.PrintInterval;
                 if (DatabaseDriver.MyRank == 0 && TimestepNo % printInterval == 0) {
+#if DEBUG
+                    Console.WriteLine();
+#endif
                     Console.Write("Starting time step #" + TimestepNo + "...");
                 }
+
+                // Update shock-capturing variables before performing a time step
+                // as the time step constraints (could) depend on artificial viscosity.
+                // If not doing so, the artificial viscosity values from the previous
+                // time step are taken (unless UpdateDerivedVariables has been called by
+                // SavetoDatabase which depends on the saveperiod specified in the control file). 
+                if (this.Control.ArtificialViscosityLaw != null) {
+                    WorkingSet.UpdateShockCapturingVariables(this, SpeciesMap.SubGrid.VolumeMask);
+                }
+
+                // Create TimeInformation object in order to make information available for
+                // the time stepper
+                TimeStepper.UpdateTimeInfo(new TimeInformation(TimestepNo, phystime, dt));
 
                 Exception e = null;
                 try {
@@ -237,7 +262,8 @@ namespace CNS {
                 e.ExceptionBcast();
 
                 if (TimestepNo % printInterval == 0) {
-                    Console.WriteLine(" done. PhysTime: {0:0.#######E-00}, dt: {1:0.###E-00}", phystime, dt);
+                    Console.WriteLine(" done. PhysTime: {0:0.#######E-00}, dt: {1:0.#######E-00}", phystime, dt);
+                    //Console.WriteLine(" done. PhysTime: {0}, dt: {1}", phystime, dt);
                 }
 
                 IDictionary<string, double> residuals = residualLoggers.LogTimeStep(TimestepNo, dt, phystime);
@@ -257,8 +283,10 @@ namespace CNS {
         /// <param name="t"></param>
         /// <returns></returns>
         protected override ITimestepInfo SaveToDatabase(TimestepNumber timestepno, double t) {
-            WorkingSet.UpdateDerivedVariables(this, SpeciesMap.SubGrid.VolumeMask);
-            return base.SaveToDatabase(timestepno, t);
+            using (var ht = new FuncTrace()) {
+                WorkingSet.UpdateDerivedVariables(this, SpeciesMap.SubGrid.VolumeMask);
+                return base.SaveToDatabase(timestepno, t);
+            }
         }
 
         /// <summary>
@@ -305,22 +333,26 @@ namespace CNS {
         /// <param name="timestepNo">The time step</param>
         /// <param name="superSampling"></param>
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
-            if (plotDriver == null) {
-                if (CNSEnvironment.NumberOfDimensions == 1) {
-                    plotDriver = new CurveExportDriver(GridData, true, (uint)superSampling);
-                } else {
-                    plotDriver = new Tecplot(GridData, true, false, (uint)superSampling);
+            using (var ht = new FuncTrace()) {
+                if (plotDriver == null) {
+                    if (CNSEnvironment.NumberOfDimensions == 1) {
+                        plotDriver = new CurveExportDriver(GridData, true, (uint)superSampling);
+                    } else {
+                        plotDriver = new Tecplot(GridData, true, false, (uint)superSampling);
+                    }
                 }
-            }
 
-            plotDriver.PlotFields("CNS-" + timestepNo, physTime, m_IOFields);
+                plotDriver.PlotFields("CNS-" + timestepNo, physTime, m_IOFields);
+            }
         }
 
         /// <summary>
         /// Sets the initial conditions
         /// </summary>
         protected override void SetInitial() {
-            WorkingSet.ProjectInitialValues(SpeciesMap, base.Control.InitialValues_Evaluators);
+            using (var ht = new FuncTrace()) {
+                WorkingSet.ProjectInitialValues(SpeciesMap, base.Control.InitialValues_Evaluators);
+            }
         }
 
         /// <summary>
@@ -328,10 +360,13 @@ namespace CNS {
         /// and recomputes all derived variables
         /// </summary>
         public override void PostRestart(double time, TimestepNumber timestep) {
-            this.StartTime = time;
+            using (var ht = new FuncTrace()) {
+                this.StartTime = time;
+                this.TimestepNumber = timestep.MajorNumber;
 
-            if (SpeciesMap is ImmersedSpeciesMap ibmMap) {
-                LsTrk = ibmMap.Tracker;
+                if (SpeciesMap is ImmersedSpeciesMap ibmMap) {
+                    LsTrk = ibmMap.Tracker;
+                }
             }
         }
 
@@ -342,11 +377,13 @@ namespace CNS {
         /// <param name="physTime"></param>
         /// <returns></returns>
         protected override int[] ComputeNewCellDistribution(int TimeStepNo, double physTime) {
-            if (SpeciesMap is ImmersedSpeciesMap ibmMap) {
-                LsTrk = ibmMap.Tracker;
-            }
+            using (var ht = new FuncTrace()) {
+                if (SpeciesMap is ImmersedSpeciesMap ibmMap) {
+                    LsTrk = ibmMap.Tracker;
+                }
 
-            return base.ComputeNewCellDistribution(TimeStepNo, physTime);
+                return base.ComputeNewCellDistribution(TimeStepNo, physTime);
+            }
         }
 
         /// <summary>
@@ -354,14 +391,19 @@ namespace CNS {
         /// </summary>
         /// <param name="NoOfClasses"></param>
         /// <param name="cellToPerformanceClassMap"></param>
-        protected override void GetCellPerformanceClasses(out int NoOfClasses, out int[] cellToPerformanceClassMap) {
-            // Update clustering before cell redistribution when LTS is being used
-            if (TimeStepper is AdamsBashforthLTS ABLTSTimeStepper) {
-                bool reclustered = ABLTSTimeStepper.TryNewClustering(dt: -1);
-                ABLTSTimeStepper.SetReclusteredByGridRedist(reclustered);
-            }
+        /// <param name="TimeStepNo"></param>
+        /// <param name="physTime"></param>
+        protected override void GetCellPerformanceClasses(out int NoOfClasses, out int[] cellToPerformanceClassMap, int TimeStepNo, double physTime) {
+            using (var ht = new FuncTrace()) {
+                // Update clustering before cell redistribution when LTS is being used
+                if (TimeStepper is AdamsBashforthLTS ABLTSTimeStepper) {
+                    ABLTSTimeStepper.UpdateTimeInfo(new TimeInformation(TimeStepNo, physTime, -1));
+                    bool reclustered = ABLTSTimeStepper.TryNewClustering(dt: -1);
+                    ABLTSTimeStepper.SetReclusteredByGridRedist(reclustered);
+                }
 
-            (NoOfClasses, cellToPerformanceClassMap) = Control.DynamicLoadBalancing_CellClassifier.ClassifyCells(this);
+                (NoOfClasses, cellToPerformanceClassMap) = Control.DynamicLoadBalancing_CellClassifier.ClassifyCells(this);
+            }
         }
 
         /// <summary>

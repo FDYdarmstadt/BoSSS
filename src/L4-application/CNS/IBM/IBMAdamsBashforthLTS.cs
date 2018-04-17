@@ -67,9 +67,9 @@ namespace CNS.IBM {
 
             cutCells = speciesMap.Tracker.Regions.GetCutCellMask();
             cutAndTargetCells = cutCells.Union(speciesMap.Agglomerator.AggInfo.TargetCells);
-#if DEBUG
-            Console.WriteLine("This is IBM ALTS Ctor");
-#endif
+            //#if DEBUG
+            Console.WriteLine("### This is IBM ABLTS ctor ###");
+            //#endif
             // Normal LTS constructor
             clusterer = new Clusterer(this.gridData, maxNumOfSubSteps);
             CurrentClustering = clusterer.CreateClustering(control.NumberOfSubGrids, this.TimeStepConstraints, speciesMap.SubGrid);
@@ -127,6 +127,8 @@ namespace CNS.IBM {
         }
 
         protected override void ComputeChangeRate(double[] k, double AbsTime, double RelTime, double[] edgeFluxes = null) {
+            RaiseOnBeforeComputechangeRate(AbsTime, RelTime);
+
             Evaluator.Evaluate(1.0, 0.0, k, AbsTime, outputBndEdge: edgeFluxes);
             Debug.Assert(
                 !k.Any(f => double.IsNaN(f)),
@@ -191,7 +193,7 @@ namespace CNS.IBM {
 
             for (int i = 0; i < ABevolver.Length; i++) {
                 ABevolver[i] = new IBMABevolve(standardOperator, boundaryOperator, fieldsMap, boundaryParameterMap, speciesMap, control.ExplicitOrder, control.LevelSetQuadratureOrder, control.CutCellQuadratureType, sgrd: CurrentClustering.Clusters[i], adaptive: this.adaptive);
-                ABevolver[i].ResetTime(m_Time, timestepNumber);
+                ABevolver[i].ResetTime(m_Time, TimeInfo.TimeStepNumber);
                 ABevolver[i].OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforeComputechangeRate(t1, t2);
             }
         }
