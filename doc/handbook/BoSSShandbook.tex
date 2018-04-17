@@ -762,11 +762,11 @@ is investigated on a non-uniform, Cartesian grid
 The large $\Gamma_N$ makes the problem harder for non-preconditioned
 iterative methods. See Figure \ref{fig:ConstantCoeffRuntimes} for results.
 
-\graphicspath{{./apdx-NodeSolverPerformance/plots/}}
+\graphicspath{{./apdx-NodeSolverPerformance/PoissonConstCoeff/plots/}}
 
 \begin{figure}[!h]
 \begin{center}
-\input{./apdx-NodeSolverPerformance/plots/ConstCoeffPoissonScaling.tex}
+\input{./apdx-NodeSolverPerformance/PoissonConstCoeff/plots/ConstCoeffPoissonScaling.tex}
 \end{center}
 \caption{
 Solver runtime vs. degrees-of-freedom, for different polynomial degrees $k$,
@@ -774,7 +774,10 @@ for problem/Equation (\ref{eq:ContantCoeffPoissonBenchmark}).
 }
 \label{fig:ConstantCoeffRuntimes}
 \end{figure}
-
+\newpage
+\section{Solver Performance - Navier-Stokes problems}
+\label{sec:SolverPerformanceNSE}
+On the way...
 
 
 
@@ -782,9 +785,69 @@ for problem/Equation (\ref{eq:ContantCoeffPoissonBenchmark}).
 \chapter{Parallel Performance and Scaling}
 \label{sec:ParallelPerformance}
 % ################################################################################
+This section covers basic performance tests, i.e. how specific algorithms scale in parallel with increasing \emph{number of processors}. So far, all calculations for this research were conducted on the Lichtenberg high performance computer of the TU Darmstadt
 
-On its way...
+\section{Parallel Efficiency - Navier-Stokes problems}
+Different solver strategies are conducted to solve the fully coupled incompressible Navier-Stokes equations. At the moment the following strategies can be examined:
+\begin{itemize}
+	\item Linearizsation of the NSE with: Newton(Gmres) or Picard
+	\item Solving the linear problem with a Gmres approach
+	\item Preconditioning with Additive-Schwarz domain decomposition (with coarse solve on the coarsest multigrid level) and direct solver MUMPS for the Blocks
+\end{itemize}
+\subsection{Simple 3D sphere immersed in a fluid flow}
+\label{sec:MPIPerformanceSphere}
+The problem
+\begin{equation}
+\left\{ \begin{array} {rclll}
+\rho_f\Big(\frac{\partial \vec{u}}{\partial t}+ \vec{u} \cdot \nabla \vec{u}\Big) +\nabla p - \mu_f \Delta \vec{u} & = & \vec{f}                   
+& \text{and}\   &  \\
+% ----
+\nabla \cdot \vec{u} & = & 0                             
+& \text{in}\ \Omega = (-5,10) \times (-5,5) \times (-5,5)  & \\
+ \vec{u}_D & = & 0                             
+& \text{on}\ \Gamma_D = \{ (x,y,z) \in \real^3; \ z = -5,5 \} 
+& \text{Dirichlet-boundary}\\
+ \vec{u}_S & = & 0                             
+ & \text{on}\ \Gamma_S = \{ (x,y,z) \in \real^3; \ x^2+y^2+z^2 = 1 \}
+& \text{Dirichlet-boundary} \\
+ p_O & = & 0                             
+& \text{on}\ \Gamma_O = \{ (x,y,z) \in \real^3; \ x = 10 \}
+& \text{Dirichlet-boundary} \\
+% ----
+\vec{u}(x,-5,z) & = & \vec{u}(x,5,z)  
+& \text{on}\ \Gamma_P = \partial \Omega \setminus \Gamma_D \setminus \Gamma_S \setminus \Gamma_O
+& \text{Periodic-boundary}
+\end{array} \right.
+\label{eq:NavierStokesSphereBenchmark}
+\end{equation}
+is investigated on a 64x16x16 cell Cartesian grid. The physical parameters of the fluid are choosen to be $\rho_f=1$ and $\mu_f=0.002$ which renders down to a Reynoldsnumber of 100. The problem basically describes a sphere flow between two plates.
 
+
+\graphicspath{{./apdx-MPISolverPerformance/NSESphere/plots/}}
+
+\begin{figure}[!h]
+	\begin{center}
+		\input{./apdx-MPISolverPerformance/NSESphere/plots/MPIScalingTimes.tex}
+	\end{center}
+	\caption{
+		Solver runtime vs. processors, for polynomial degree $k=1/0$ leading to 212992 DoFs,
+		for problem/Equation (\ref{eq:ContantCoeffPoissonBenchmark}).
+	}
+	\label{fig:Spherek1Time}
+\end{figure}
+
+\graphicspath{{./apdx-MPISolverPerformance/NSESphereComplex/plots/}}
+
+\begin{figure}[!h]
+	\begin{center}
+		\input{./apdx-MPISolverPerformance/NSESphereComplex/plots/MPIScalingTimes.tex}
+	\end{center}
+	\caption{
+		Solver runtime vs. processors, for polynomial degree $k=2/1$ leading to 557056 DoFs,
+		for problem/Equation (\ref{eq:ContantCoeffPoissonBenchmark}).
+	}
+	\label{fig:Spherek1Time}
+\end{figure}
 
 % ################################################################################
 \chapter{BoSSSpad command reference}
