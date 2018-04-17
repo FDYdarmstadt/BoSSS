@@ -66,11 +66,11 @@
     <Compile Include="XdgTimesteppingTestControl.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\internal\src\experimental\L3-solution\BoSSS.Solution.LevelSetTools\BoSSS.Solution.LevelSetTools.csproj">
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.LevelSetTools\BoSSS.Solution.LevelSetTools.csproj">
       <Project>{9ee2fcad-e8a4-4f14-b932-d1a4904d715d}</Project>
       <Name>BoSSS.Solution.LevelSetTools</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\internal\src\experimental\L3-solution\BoSSS.Solution.XNSECommon\BoSSS.Solution.XNSECommon.csproj">
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XNSECommon\BoSSS.Solution.XNSECommon.csproj">
       <Project>{0d8f577e-316d-4362-816b-9f610c5eb4a5}</Project>
       <Name>BoSSS.Solution.XNSECommon</Name>
     </ProjectReference>

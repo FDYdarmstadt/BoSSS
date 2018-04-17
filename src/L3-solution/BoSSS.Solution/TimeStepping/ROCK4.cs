@@ -637,5 +637,14 @@ namespace BoSSS.Solution.Timestepping {
             get;
             private set;
         }
+
+        public TimeInformation TimeInfo {
+            get;
+            protected set;
+        }
+
+        public void UpdateTimeInfo(TimeInformation timeInfo) {
+            this.TimeInfo = timeInfo;
+        }
     }
 }

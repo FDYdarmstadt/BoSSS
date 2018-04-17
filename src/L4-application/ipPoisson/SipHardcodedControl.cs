@@ -200,6 +200,8 @@ namespace BoSSS.Application.SipPoisson {
             R.InitialValues_Evaluators.Add("Tex", X => Math.Sin(X[0]));
             R.ExactSolution_provided = true;
             R.NoOfMultigridLevels = int.MaxValue;
+            R.solver_name = solver_name;
+            //R.TargetBlockSize = 100;
 
             R.GridFunc = delegate() {
                 GridCommons grd = null;
@@ -256,7 +258,7 @@ namespace BoSSS.Application.SipPoisson {
                  });
 
 
-            R.solver_name = solver_name;
+
            
             return R;
         }

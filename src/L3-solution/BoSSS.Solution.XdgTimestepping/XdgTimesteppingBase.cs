@@ -235,7 +235,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         public int Config_MaxIterations = 1000;
 
-        public int Config_MaxKrylovDim = 30;
+        public int Config_MaxKrylovDim = 100;
 
         /// <summary>
         /// Under relaxation factor for iterative solver.
@@ -354,18 +354,11 @@ namespace BoSSS.Solution.XdgTimestepping {
         protected AggregationGrid[] MultigridSequence;
 
         /// <summary>
-        /// The aggregation grid basis.
+        /// The aggregation grid basis, initialized by <see cref="InitMultigrid(DGField[], bool)"/>
         ///  - 1st index: grid level
         ///  - 2nd index: variable
         /// </summary>
         protected AggregationGridBasis[][] MultigridBasis;
-
-        /*
-        /// <summary>
-        /// The XDG aggregation grid basis, for each multi grid level, which must be updated after each level set update.
-        /// </summary>
-        protected XdgAggregationBasis[] m_XdgAggregationBasis;
-        */
 
         /// <summary>
         /// Last solver residuals.
@@ -375,84 +368,22 @@ namespace BoSSS.Solution.XdgTimestepping {
             protected set;
         }
 
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="ProblemMapping"></param>
-        /// <param name="MultigridSequence"></param>
-        /// <param name="useX">
-        /// Create an XDG aggregation basis even if <paramref name="ProblemMapping"/> only contains DG basis.
-        /// </param>
-        /// <returns></returns>
-        public static AggregationGridBasis[][] CreateAggregationGridBasis(UnsetteledCoordinateMapping ProblemMapping, LevelSetTracker _LsTrk, AggregationGrid[] MultigridSequence, bool useX) {
-
-            Debug.Assert(object.ReferenceEquals(_LsTrk.GridDat, ProblemMapping.GridDat));
-            Basis[] BasisS = ProblemMapping.BasisS.ToArray();
-            Debug.Assert(BasisS.Where(b => !object.ReferenceEquals(b.GridDat, _LsTrk.GridDat)).Count() == 0);
-            AggregationGridBasis[][] MultigridBasis = new AggregationGridBasis[MultigridSequence.Length][];
-
-
-
-            XDGBasis maxXDGbasis = null;
-            Basis maxDGbasis = null;
-            foreach (var b in BasisS) {
-                if (b is XDGBasis) {
-                    XDGBasis xb = (XDGBasis)b;
-                    if (maxXDGbasis == null || maxXDGbasis.Degree < xb.Degree)
-                        maxXDGbasis = xb;
-                }
-                else {
-                    if (maxDGbasis == null || maxDGbasis.Degree < b.Degree)
-                        maxDGbasis = b;
-                }
-            }
-
-            if (useX) {
-                if (maxDGbasis != null) {
-                    if (maxXDGbasis == null || maxXDGbasis.Degree < maxDGbasis.Degree) {
-                        maxXDGbasis = new XDGBasis(_LsTrk, maxDGbasis.Degree);
-                    }
-                }
-            }
-
-
-            XdgAggregationBasis[] mgXdgB;
-            if (maxXDGbasis != null)
-                mgXdgB = MultigridSequence.Select(aggGrd => new XdgAggregationBasis(maxXDGbasis, aggGrd)).ToArray();
-            else
-                mgXdgB = null;
-
-
-            AggregationGridBasis[] mgDgB;
-            if (maxDGbasis != null)
-                mgDgB = MultigridSequence.Select(aggGrd => new AggregationGridBasis(maxDGbasis, aggGrd)).ToArray();
-            else
-                mgDgB = null;
-
-            for (int iLevel = 0; iLevel < MultigridSequence.Length; iLevel++) {
-                MultigridBasis[iLevel] = new AggregationGridBasis[BasisS.Length];
-                for (int r = 0; r < BasisS.Length; r++) {
-                    if (BasisS[r] is XDGBasis || useX)
-                        MultigridBasis[iLevel][r] = mgXdgB[iLevel];
-                    else
-                        MultigridBasis[iLevel][r] = mgDgB[iLevel];
-                }
-            }
-
-            return MultigridBasis;
-        }
-
+        
 
         /// <summary>
         /// Initialization of the solver/preconditioner.
         /// </summary>
         protected void InitMultigrid(DGField[] Fields, bool useX) {
-            this.MultigridBasis = CreateAggregationGridBasis(
-                new UnsetteledCoordinateMapping(Fields.Select(f => f.Basis).ToArray()),
-                this.m_LsTrk,
-                this.MultigridSequence,
-                useX);
+            Basis[] bs;
+            if(useX) {
+                bs = new Basis[Fields.Length];
+                for (int i = 0; i < bs.Length; i++)
+                    bs[i] = new XDGBasis(m_LsTrk, Fields[i].Basis.Degree);
+            } else {
+                bs = Fields.Select(f => f.Basis).ToArray();
+            }
+
+            this.MultigridBasis = AggregationGridBasis.CreateSequence(this.MultigridSequence, bs);
         }
 
         /// <summary>
@@ -600,7 +531,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// If true, the residual will we transformed back to the original XDG basis (before agglomeration and block preconditioning)
         /// before the L2-norm is computed.
         /// </summary>
-        public bool m_TransformedResi = false;
+        public bool m_TransformedResi = true;
 
         public double m_LastLevelSetResidual;
 

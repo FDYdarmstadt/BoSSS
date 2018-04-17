@@ -36,10 +36,15 @@ namespace BoSSS.Foundation.Grid {
         Predefined,
 
         /// <summary>
-        /// Partitioning according to space-filling Hilbert curve, ...
+        /// Partitioning according to space-filling Hilbert curve considering Clusters, ...
         /// </summary>
         Hilbert,
-        
+
+        /// <summary>
+        /// Partitioning according to space-filling Hilbert curve, direct Costmapping ...
+        /// </summary>
+        directHilbert,
+
         /// <summary>
         /// leave grid as it is; The first J/P cells will be on first processor, ...
         /// </summary>

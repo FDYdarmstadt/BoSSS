@@ -87,6 +87,18 @@ namespace CNS.LoadBalancing {
         }
 
         /// <summary>
+        /// AV cells are <paramref name="X"/> times more expensive than non-AV cells
+        /// </summary>
+        /// <returns></returns>
+        public static Func<IApplication, int, ICellCostEstimator> GetStaticCostBasedEstimator(int X) {
+            return (p, i) => new StaticCellCostEstimator(
+                new int[] { 1, X });
+            //return delegate (IApplication<AppControl> p, int i) {
+            //    return new StaticCellCostEstimator(new int[] { 1, 10 });
+            //};
+        }
+
+        /// <summary>
         /// Create two <see cref="ArtificialViscosityCellCostEstimator"/> for non-AV and AV cells
         /// with converse costs: (1, 10) and (10, 1), cell costs do not matter in this case
         /// (can be arbitrary)

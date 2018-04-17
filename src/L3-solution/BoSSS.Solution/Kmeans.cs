@@ -18,6 +18,7 @@ using System;
 using ilPSP.Utils;
 using MPI.Wrappers;
 using System.Diagnostics;
+using System.Linq;
 
 namespace BoSSS.Solution.Utils {
 
@@ -57,6 +58,7 @@ namespace BoSSS.Solution.Utils {
         /// <remarks>Works only for one dimensional data entries, e.g., double[] not double[][]</remarks>
         public Kmeans(double[] data, int NumOfCluster, double[] means, int MaxIterations = 100) {
             this.data = data;
+            Debug.Assert(data.All(d => double.IsNaN(d) == false), "Data contains NaN entries");
             this.numOfCluster = NumOfCluster;
             this.maxIerations = MaxIterations;
             this.Means = means;
@@ -101,18 +103,20 @@ namespace BoSSS.Solution.Utils {
             bool change = false;
             double[] distance = new double[numOfCluster];
             for (int i = 0; i < data.Length; i++) {
-                if (!double.IsNaN(data[i])) { //Occurs for void cells in an IBM simulation
+                int clusterIndex;
+                if (data[i] == double.MaxValue) {
+                    clusterIndex = 0;
+                } else {
                     for (int j = 0; j < numOfCluster; j++) {
                         distance[j] = Math.Abs(data[i] - Means[j]);
                     }
-                    int ClusterIndex = GetClusterIndex(distance);
-
-                    if (ClusterIndex != Cell2Cluster[i]) {
-                        Cell2Cluster[i] = ClusterIndex;
-                        change = true;
-                    }
+                    clusterIndex = GetClusterIndex(distance);
                 }
 
+                if (clusterIndex != Cell2Cluster[i]) {
+                    Cell2Cluster[i] = clusterIndex;
+                    change = true;
+                }
             }
 
             // Global update of change
@@ -161,7 +165,7 @@ namespace BoSSS.Solution.Utils {
                 int clusterCount = 0;
                 //ClusterCount[i] = 0;
                 for (int j = 0; j < data.Length; j++) {
-                    if (Cell2Cluster[j] == i) {
+                    if (Cell2Cluster[j] == i && data[j] != double.MaxValue) {
                         clusterSum += data[j];
                         clusterCount++;
                     }

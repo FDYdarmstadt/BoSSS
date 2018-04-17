@@ -85,7 +85,7 @@ namespace NSE_SIMPLE {
             VariableDensitySIMPLEControl varDensConf = SolverConf.Control as VariableDensitySIMPLEControl;
 
             //return (new Viscosity(SolverConf.PenaltyViscMomentum, SolverConf.reynolds, SolverConf.BcMap, SpatialComponent, SolverConf.ConfigVariableDensity.EoS)).Operator();
-            return (new swipViscosity_Term1(SolverConf.PenaltyViscMomentum,
+            return (new swipViscosity_Term1_variante(SolverConf.PenaltyViscMomentum,
                 base.GridData.Cells.cj,
                 SpatialComponent,
                 SolverConf.SpatialDimension,
