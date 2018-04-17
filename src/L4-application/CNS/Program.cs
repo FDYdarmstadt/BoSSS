@@ -263,6 +263,7 @@ namespace CNS {
 
                 if (TimestepNo % printInterval == 0) {
                     Console.WriteLine(" done. PhysTime: {0:0.#######E-00}, dt: {1:0.#######E-00}", phystime, dt);
+                    //Console.WriteLine(" done. PhysTime: {0}, dt: {1}", phystime, dt);
                 }
 
                 IDictionary<string, double> residuals = residualLoggers.LogTimeStep(TimestepNo, dt, phystime);

@@ -71,6 +71,13 @@ namespace BoSSS.Solution.Multigrid {
         public CoupledConvergenceReached CoupledIteration_Converged;
 
 
+        bool solveVelocity = true;
+
+        double VelocitySolver_ConvergenceCriterion = 1e-5;
+
+        double StressSolver_ConvergenceCriterion = 1e-5;
+
+
         override public void SolverDriver<S>(CoordinateVector SolutionVec, S RHS) {
             using (var tr = new FuncTrace()) {
 
@@ -94,6 +101,14 @@ namespace BoSSS.Solution.Multigrid {
                         return true;
                     };
 
+                //int[] Velocity_idx = SolutionVec.Mapping.GetSubvectorIndices(false, 0, 1, 2);
+                //int[] Stresses_idx = SolutionVec.Mapping.GetSubvectorIndices(false, 3, 4, 5);
+
+                //int[] Velocity_fields = new int[] { 0, 1, 2 };
+                //int[] Stress_fields = new int[] { 3, 4, 5 };
+
+                //int NoCoupledIterations = 10;
+
                 // iterate...
                 // ==========
                 //int NoOfMainIterations = 0;
@@ -110,6 +125,26 @@ namespace BoSSS.Solution.Multigrid {
                             Correction = new double[Residual.Length];
                         this.m_LinearSolver.Solve(Correction, Residual);
 
+                        //if (NoOfIterations > NoCoupledIterations)
+                        //{
+                        //    if (solveVelocity)
+                        //    {
+                        //        Console.WriteLine("stress correction = 0");
+                        //        foreach (int idx in Stresses_idx)
+                        //        {
+                        //            Correction[idx] = 0.0;
+                        //        }
+                        //    }
+                        //    else
+                        //    {
+                        //        Console.WriteLine("velocity correction = 0");
+                        //        foreach (int idx in Velocity_idx)
+                        //        {
+                        //            Correction[idx] = 0.0;
+                        //        }
+                        //    }
+                        //}
+
                         // Residual may be invalid from now on...
                         Solution.AccV(UnderRelax, Correction);
 
@@ -124,6 +159,41 @@ namespace BoSSS.Solution.Multigrid {
                         // residual evaluation & callback
                         base.EvalResidual(Solution, ref Residual);
                         ResidualNorm = Residual.L2NormPow2().MPISum().Sqrt();
+
+                        //if (NoOfIterations > NoCoupledIterations)
+                        //{
+
+                        //    double coupledL2Res = 0.0;
+                        //    if (solveVelocity)
+                        //    {
+                        //        foreach (int idx in Velocity_idx)
+                        //        {
+                        //            coupledL2Res += Residual[idx].Pow2();
+                        //        }
+                        //    }
+                        //    else
+                        //    {
+                        //        foreach (int idx in Stresses_idx)
+                        //        {
+                        //            coupledL2Res += Residual[idx].Pow2();
+                        //        }
+                        //    }
+                        //    coupledL2Res = coupledL2Res.Sqrt();
+
+                        //    Console.WriteLine("coupled residual = {0}", coupledL2Res);
+
+                        //    if (solveVelocity && coupledL2Res < this.VelocitySolver_ConvergenceCriterion)
+                        //    {
+                        //        Console.WriteLine("SolveVelocity = false");
+                        //        this.solveVelocity = false;
+                        //    }
+                        //    else if (!solveVelocity && coupledL2Res < this.StressSolver_ConvergenceCriterion)
+                        //    {
+                        //        Console.WriteLine("SolveVelocity = true");
+                        //        this.solveVelocity = true;
+                        //    }
+                        //}
+
                         OnIterationCallback(NoOfIterations, Solution.CloneAs(), Residual.CloneAs(), this.CurrentLin);
                     }
                 }

@@ -852,7 +852,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// <summary>
         /// Computes a grid partitioning (which cell should be on which processor) based on a Hilbertcurve of maximum order (64 bit=>nBit*nDim).
         /// </summary>
-        public int[] ComputePartitionHilbert(IList<int[]> localcellCosts = null, int Functype=0) {
+        public int[] ComputePartitionHilbert(IList<int[]> localcellCosts = null, int Functype = 0) {
 #if DEBUG
             System.Threading.Thread.Sleep(5000);
 #endif
@@ -860,49 +860,49 @@ namespace BoSSS.Foundation.Grid.Classic {
             //Notice: Functype=1 will lead to bad behavior, when using Clusters
 
             if (this.Size > 1) {
-                        int D = this.SpatialDimension;
-                        var GlobalBB = this.GetGridBoundingBox();
+                int D = this.SpatialDimension;
+                var GlobalBB = this.GetGridBoundingBox();
 
-                        int J0 = this.CellPartitioning.i0;
-                        int JE = this.CellPartitioning.iE;
+                int J0 = this.CellPartitioning.i0;
+                int JE = this.CellPartitioning.iE;
 
-                        ulong[] discreteCenter = new ulong[D];
-                        ulong[] local_HilbertIndex = new ulong[JE - J0];
-                        int[] local_CellIndex = new int[JE - J0];
+                ulong[] discreteCenter = new ulong[D];
+                ulong[] local_HilbertIndex = new ulong[JE - J0];
+                int[] local_CellIndex = new int[JE - J0];
 
-                        for (int j = J0; j < JE; j++) {
-                            Cell Cj = this.Cells[j - J0];
-                            int NoOfNodes = Cj.TransformationParams.NoOfRows;
-                            for (int d = 0; d < D; d++) {
-                                double center = 0;
-                                for (int k = 0; k < NoOfNodes; k++) {
-                                    center += Cj.TransformationParams[k, d];
-                                }
-
-                                center = center / ((double)NoOfNodes); // ''center of gravity'' for coordinate direction 'd'
-                                double centerTrf = (center - GlobalBB.Min[d]) * (1.0 / (GlobalBB.Max[d] - GlobalBB.Min[d])) * Math.Pow(2, 64 / D);
-                                //double centerTrf = (center - GlobalBB.Min[d]) * (1.0 / (GlobalBB.Max[d] - GlobalBB.Min[d])) * ((double)long.MaxValue);
-                                centerTrf = Math.Round(centerTrf);
-                                if (centerTrf < 0)
-                                    centerTrf = 0;
-                                if (centerTrf > ulong.MaxValue)
-                                    centerTrf = ulong.MaxValue;
-                                discreteCenter[d] = (ulong)centerTrf;
-                                //Debugger.Break();
-                            }
-                            ulong iH = HilbertCurve.hilbert_c2i(64 / D, discreteCenter);
-                            local_HilbertIndex[j - J0] = iH;
-                            local_CellIndex[j - J0] = j;
+                for (int j = J0; j < JE; j++) {
+                    Cell Cj = this.Cells[j - J0];
+                    int NoOfNodes = Cj.TransformationParams.NoOfRows;
+                    for (int d = 0; d < D; d++) {
+                        double center = 0;
+                        for (int k = 0; k < NoOfNodes; k++) {
+                            center += Cj.TransformationParams[k, d];
                         }
 
-                        //Gather all local computed Hilbert_Indices
-                        int[] CellsPerRank = new int[this.Size];
-                        for (int r = 0; r < CellsPerRank.Length; r++)
-                            CellsPerRank[r] = this.CellPartitioning.GetLocalLength(r);
-                        int[] CellIndex = local_CellIndex.MPIAllGatherv(CellsPerRank);
-                        ulong[] HilbertIndex = local_HilbertIndex.MPIAllGatherv(CellsPerRank);
-                        ulong[] HilbertIndex_tmp = HilbertIndex.CloneAs<ulong[]>();
-                        Array.Sort(HilbertIndex, CellIndex);
+                        center = center / ((double)NoOfNodes); // ''center of gravity'' for coordinate direction 'd'
+                        double centerTrf = (center - GlobalBB.Min[d]) * (1.0 / (GlobalBB.Max[d] - GlobalBB.Min[d])) * Math.Pow(2, 64 / D);
+                        //double centerTrf = (center - GlobalBB.Min[d]) * (1.0 / (GlobalBB.Max[d] - GlobalBB.Min[d])) * ((double)long.MaxValue);
+                        centerTrf = Math.Round(centerTrf);
+                        if (centerTrf < 0)
+                            centerTrf = 0;
+                        if (centerTrf > ulong.MaxValue)
+                            centerTrf = ulong.MaxValue;
+                        discreteCenter[d] = (ulong)centerTrf;
+                        //Debugger.Break();
+                    }
+                    ulong iH = HilbertCurve.hilbert_c2i(64 / D, discreteCenter);
+                    local_HilbertIndex[j - J0] = iH;
+                    local_CellIndex[j - J0] = j;
+                }
+
+                //Gather all local computed Hilbert_Indices
+                int[] CellsPerRank = new int[this.Size];
+                for (int r = 0; r < CellsPerRank.Length; r++)
+                    CellsPerRank[r] = this.CellPartitioning.GetLocalLength(r);
+                int[] CellIndex = local_CellIndex.MPIAllGatherv(CellsPerRank);
+                ulong[] HilbertIndex = local_HilbertIndex.MPIAllGatherv(CellsPerRank);
+                ulong[] HilbertIndex_tmp = HilbertIndex.CloneAs<ulong[]>();
+                Array.Sort(HilbertIndex, CellIndex);
 
                 int numberofcells = this.NumberOfCells;
                 int[] RankIndex = new int[numberofcells];
@@ -990,7 +990,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 CostCount = 0;
                             }
                         }
-                        Debug.Assert(MPIrank <= numproc-1);
+                        Debug.Assert(MPIrank <= numproc - 1);
                         break;
                     default:
                         throw new NotImplementedException();
@@ -1007,7 +1007,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 int[] local_Rank_RedistributionList = new int[NoOfUpdateCells];
                 return local_Rank_RedistributionList;
             }
-            
+
         }
 
         private bool CheckPartitioning(Master cm, int[] nodesPart) {

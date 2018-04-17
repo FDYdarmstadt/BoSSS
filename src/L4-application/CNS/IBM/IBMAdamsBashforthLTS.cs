@@ -67,9 +67,9 @@ namespace CNS.IBM {
 
             cutCells = speciesMap.Tracker.Regions.GetCutCellMask();
             cutAndTargetCells = cutCells.Union(speciesMap.Agglomerator.AggInfo.TargetCells);
-#if DEBUG
+            //#if DEBUG
             Console.WriteLine("### This is IBM ABLTS ctor ###");
-#endif
+            //#endif
             // Normal LTS constructor
             clusterer = new Clusterer(this.gridData, maxNumOfSubSteps);
             CurrentClustering = clusterer.CreateClustering(control.NumberOfSubGrids, this.TimeStepConstraints, speciesMap.SubGrid);
@@ -127,6 +127,8 @@ namespace CNS.IBM {
         }
 
         protected override void ComputeChangeRate(double[] k, double AbsTime, double RelTime, double[] edgeFluxes = null) {
+            RaiseOnBeforeComputechangeRate(AbsTime, RelTime);
+
             Evaluator.Evaluate(1.0, 0.0, k, AbsTime, outputBndEdge: edgeFluxes);
             Debug.Assert(
                 !k.Any(f => double.IsNaN(f)),

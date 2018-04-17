@@ -24,7 +24,7 @@ using NUnit.Framework;
 namespace BoSSS.Application.SipPoisson.Tests {
 
     [TestFixture]
-    class TestProgram {
+    static class TestProgram {
 
         [TestFixtureSetUp]
         public static void Init() {
@@ -95,6 +95,50 @@ namespace BoSSS.Application.SipPoisson.Tests {
                 Console.WriteLine("L2 Error of solution: " + err + " (threshold is " + thres + ")");
                 Assert.LessOrEqual(err, thres);
             }
+        }
+
+
+        [Test]
+        public static void TestIterativeSolver(
+#if DEBUG            
+            [Values(2)]int dgDeg,
+            [Values(40)]int res,
+            [Values(2)]int dim,
+            [Values(SolverCodes.exp_softpcg_schwarz)] SolverCodes solver
+#else
+            [Values(3)]int dgDeg,
+            [Values(8)]int res,
+            [Values(3)]int dim,
+            [Values(SolverCodes.exp_softpcg_mg, SolverCodes.exp_softpcg_schwarz, SolverCodes.exp_softpcg_schwarz_directcoarse)] SolverCodes solver
+
+#endif
+            ) {
+
+            using(SipPoisson.SipPoissonMain p = new SipPoissonMain()) {
+                var ctrl = SipHardcodedControl.TestCartesian2(res, dim, solver, dgDeg);
+                p.Init(ctrl);
+                p.RunSolverMode();
+
+
+                //Application<SipControl>._Main(new string[] {
+                //        "--control", "cs:ipPoisson.ippHardcodedControl.TestCartesian1()"
+                //    },
+                //    false,
+                //    "",
+                //    delegate() {
+                //        p = new SipPoissonMain();
+                //        return p;
+                //    });
+
+
+                double err = (double)p.QueryHandler.QueryResults["SolL2err"];
+                double h = p.GridData.Cells.h_maxGlobal;
+                double thres = 0.01*Math.Pow(h, dgDeg);
+
+                Console.WriteLine("L2 Error of solution: " + err + " (threshold is " + thres + ")");
+                Assert.LessOrEqual(err, thres);
+            }
+         
         }
     }
 }
