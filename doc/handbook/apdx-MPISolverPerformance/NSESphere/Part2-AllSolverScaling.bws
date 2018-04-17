@@ -23,12 +23,12 @@ List of 23 instances of IDatabaseInfo {
   14: { Session Count = 43; Grid Count = 45; Path = P:\BoSSS_DBs\IBMPaper }
   15: { Session Count = 28; Grid Count = 15; Path = P:\BoSSS_DBs\Paper_IBM2D }
   16: { Session Count = 38; Grid Count = 22; Path = P:\BoSSS_DBs\Paper_CellAgglo01_Penalty4 }
-  17: { Session Count = 51; Grid Count = 57; Path = P:\BoSSS_DBs\Sphere3D }
+  17: { Session Count = 52; Grid Count = 59; Path = P:\BoSSS_DBs\Sphere3D }
   18: { Session Count = 22; Grid Count = 10; Path = P:\BoSSS_DBs\Performance }
   19: { Session Count = 24; Grid Count = 14; Path = P:\BoSSS_DBs\PaperRevision }
   20: { Session Count = 0; Grid Count = 0; Path = P:\Lichtenberg_DB }
   21: { Session Count = 2; Grid Count = 354; Path = P:\BoSSS_DBs\Bug }
-  22: { Session Count = 98; Grid Count = 97; Path = L:\BoSSS_DB\Lichtenberg_DB }
+  22: { Session Count = 133; Grid Count = 98; Path = L:\BoSSS_DB\Lichtenberg_DB }
 }
 
  Console ready for input. Type 'help' for help.
@@ -301,40 +301,47 @@ static public void getFormat(int iTabRow,IDictionary<string, object> Row,
 }
 **************
 ==============
-var plotSlvIter = SubTab_1.ToPlot("Processors", "SlvIter_excl", // column for x- and y
+var plotSlvIterTime = SubTab_1.ToPlot("Processors", "SlvIter_excl", // column for x- and y
                                   Formats.getFormat); // column for group
-var plotSlvInit = SubTab_1.ToPlot("Processors", "SlvInit_excl", // column for x- and y
+var plotSlvIterSpeedup = SubTab_1.ToPlot("Processors", "SlvIter_speedup", // column for x- and y
                                   Formats.getFormat); // column for group
+//var plotSlvInit = SubTab_1.ToPlot("Processors", "SlvInit_excl", // column for x- and y
+//                                  Formats.getFormat); // column for group
 Plot2Ddata[,] multiplots = new Plot2Ddata[2,1];
-plotSlvIter.Title   = "Exclusive times";
-plotSlvIter.Ylabel  = "Time [s]";
-plotSlvInit.Xlabel  = "Processors";
-plotSlvInit.Ylabel  = "Time [s]";
-plotSlvIter.Y2label = "SlvIter";
-plotSlvInit.Y2label = "SlvInit";
+//plotSlvIterTime.Title     = "Exclusive times";
+plotSlvIterTime.Ylabel    = "Time [s]";
+plotSlvIterSpeedup.Xlabel = "Processors";
+plotSlvIterSpeedup.Ylabel = "Speedup";
 
 
-plotSlvIter.XrangeMin = 1;
-plotSlvIter.XrangeMax = max;
-plotSlvInit.XrangeMin = 1;
-plotSlvInit.XrangeMax = max;
+plotSlvIterTime.XrangeMin    = 2;
+plotSlvIterTime.XrangeMax    = max;
+plotSlvIterTime.LogX         = true;
+plotSlvIterTime.LogBaseX     = 2;
+plotSlvIterSpeedup.LogX      = true;
+plotSlvIterSpeedup.LogY      = true;
+plotSlvIterSpeedup.LogBaseX  = 2;
+plotSlvIterSpeedup.LogBaseY  = 2;
+plotSlvIterSpeedup.XrangeMin = 2;
+plotSlvIterSpeedup.XrangeMax = max;
 
-multiplots[0,0] = plotSlvIter;
-multiplots[1,0] = plotSlvInit;
+multiplots[0,0] = plotSlvIterTime;
+multiplots[1,0] = plotSlvIterSpeedup;
+
+// Add ideal
+double[] dof = new[]{1.0,2.0,4.0,8.0,16.0,32.0,64.0,128.0};
+double[] linT = dof.Select(x => x).ToArray();
+var ideal = new Plot2Ddata.XYvalues("Ideal", dof, linT);
+ideal.Format.FromString("- black");
+ideal.Format.LineWidth = 3;
+ArrayTools.AddToArray(ideal, ref multiplots[1,0].dataGroups);
 
 
 multiplots[0,0].bmargin = 1;
 multiplots[1,0].tmargin = 1;
+multiplots[0,0].tmargin = 4;
 multiplots.PlotNow()
 **************
-unknown: exp_softgmres_schwarz_directcoarse_overlap
-unknown: exp_softgmres_schwarz_directcoarse_overlap
-unknown: exp_softgmres_schwarz_directcoarse_overlap
-unknown: exp_softgmres_schwarz_directcoarse_overlap
-unknown: exp_softgmres_schwarz_directcoarse_overlap
-unknown: exp_softgmres_schwarz_directcoarse_overlap
-unknown: exp_softgmres_schwarz_directcoarse_overlap
-unknown: exp_softgmres_schwarz_directcoarse_overlap
 Using gnuplot: C:\Users\krause\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 System.Drawing.Bitmap
 ==============
@@ -372,14 +379,6 @@ speedupsplots[0,0].tmargin = 4;
 speedupsplots[1,0].tmargin = 1;
 speedupsplots.PlotNow()
 **************
-unknown: exp_softgmres_schwarz_directcoarse_overlap
-unknown: exp_softgmres_schwarz_directcoarse_overlap
-unknown: exp_softgmres_schwarz_directcoarse_overlap
-unknown: exp_softgmres_schwarz_directcoarse_overlap
-unknown: exp_softgmres_schwarz_directcoarse_overlap
-unknown: exp_softgmres_schwarz_directcoarse_overlap
-unknown: exp_softgmres_schwarz_directcoarse_overlap
-unknown: exp_softgmres_schwarz_directcoarse_overlap
 Using gnuplot: C:\Users\krause\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 System.Drawing.Bitmap
 ==============
@@ -409,14 +408,6 @@ multiplots2[0,0].bmargin = 1;
 multiplots2[1,0].tmargin = 1;
 multiplots2.PlotNow()
 **************
-unknown: exp_softgmres_schwarz_directcoarse_overlap
-unknown: exp_softgmres_schwarz_directcoarse_overlap
-unknown: exp_softgmres_schwarz_directcoarse_overlap
-unknown: exp_softgmres_schwarz_directcoarse_overlap
-unknown: exp_softgmres_schwarz_directcoarse_overlap
-unknown: exp_softgmres_schwarz_directcoarse_overlap
-unknown: exp_softgmres_schwarz_directcoarse_overlap
-unknown: exp_softgmres_schwarz_directcoarse_overlap
 Using gnuplot: C:\Users\krause\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 System.Drawing.Bitmap
 ==============
@@ -454,14 +445,6 @@ speedupsplots2[0,0].tmargin = 4;
 speedupsplots2[1,0].tmargin = 1;
 speedupsplots2.PlotNow()
 **************
-unknown: exp_softgmres_schwarz_directcoarse_overlap
-unknown: exp_softgmres_schwarz_directcoarse_overlap
-unknown: exp_softgmres_schwarz_directcoarse_overlap
-unknown: exp_softgmres_schwarz_directcoarse_overlap
-unknown: exp_softgmres_schwarz_directcoarse_overlap
-unknown: exp_softgmres_schwarz_directcoarse_overlap
-unknown: exp_softgmres_schwarz_directcoarse_overlap
-unknown: exp_softgmres_schwarz_directcoarse_overlap
 Using gnuplot: C:\Users\krause\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 System.Drawing.Bitmap
 ==============
@@ -497,7 +480,15 @@ System.ComponentModel.Win32Exception (0x80004005): Das System kann die angegeben
    bei BoSSS.Application.BoSSSpad.GnuplotExtensions.CairolatexContainer.Preview(Boolean trimPage, Int32 dpi) in C:\BoSSS-experimental\public\src\L4-application\BoSSSpad\GnuplotExtensions.cs:Zeile 325.
    bei <InteractiveExpressionClass>.Host(Object& $retval)
    bei Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
-   bei BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in C:\BoSSS-experimental\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:Zeile 307.
+   bei BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in C:\BoSSS-experimental\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:Zeile 311.
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
 ==============
 **************
 ==============
