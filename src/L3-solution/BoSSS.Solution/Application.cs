@@ -2094,6 +2094,8 @@ namespace BoSSS.Solution {
         /// </returns>
         protected virtual int[] ComputeNewCellDistribution(int TimeStepNo, double physTime) {
             if (Control == null
+                || !Control.DynamicLoadBalancing_On
+                || (TimeStepNo % Control.DynamicLoadBalancing_Period != 0)
                 || (Control.DynamicLoadBalancing_Period < 0 && !Control.DynamicLoadBalancing_RedistributeAtStartup)
                 || MPISize <= 1) {
                 return null;

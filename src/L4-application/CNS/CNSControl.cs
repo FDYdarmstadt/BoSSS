@@ -231,6 +231,12 @@ namespace CNS {
         public int ReclusteringInterval = 0;
 
         /// <summary>
+        /// Forces the local time stepping algorithm to recluster in the
+        /// specified <see cref="ReclusteringInterval"/>
+        /// </summary>
+        public bool forceReclustering = false;
+
+        /// <summary>
         /// Enables/Disables the flux correction to obtain a (non-)conservative
         /// <see cref="ExplicitSchemes.LTS"/> scheme. Not avaiblable for adaptive LTS.
         /// </summary>
