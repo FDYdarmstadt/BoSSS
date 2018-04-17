@@ -287,12 +287,18 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             control.AgglomerationThreshold = 0.1;
             control.Endtime = 0.005;
 
+            //control.DbPath = @"c:\bosss_db\";
+            //control.savetodb = true;
+
             // MUST be the same as rebalancing period since LTS scheme MUST
             // recluster after rebalancing (at least, it makes life much easier)
             control.ReclusteringInterval = REBALANCING_PERIOD;
 
             control.NumberOfSubGrids = 2;
             control.FluxCorrection = false;
+            control.maxNumOfSubSteps = 10;
+
+            control.forceReclustering = true;
 
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
             CheckRunsProduceSameResults(control);
@@ -311,6 +317,10 @@ namespace CNS_MPITests.Tests.LoadBalancing {
 
             control.AgglomerationThreshold = 0.9;
             control.Endtime = 0.005;
+            //control.Endtime = 0.002;
+
+            //control.DbPath = @"c:\bosss_db\";
+            //control.savetodb = true;
 
             // MUST be the same as rebalancing period since LTS scheme MUST
             // recluster after rebalancing (at least, it makes life much easier)
@@ -318,6 +328,9 @@ namespace CNS_MPITests.Tests.LoadBalancing {
 
             control.NumberOfSubGrids = 2;
             control.FluxCorrection = false;
+            control.maxNumOfSubSteps = 10;
+
+            control.forceReclustering = true;
 
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
             CheckRunsProduceSameResults(control);
@@ -606,6 +619,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             Debug.Assert(refControl.DynamicLoadBalancing_CellCostEstimatorFactories.Count == 0);
 
             CNSControl loadBalControl = refControl.CloneAs();
+            loadBalControl.DynamicLoadBalancing_On = true;
             loadBalControl.DynamicLoadBalancing_Period = REBALANCING_PERIOD;
             loadBalControl.DynamicLoadBalancing_ImbalanceThreshold = 0.01;
 
@@ -622,6 +636,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             //loadBalControl.DynamicLoadBalancing_CellCostEstimatorFactories.Clear();
             //loadBalControl.DynamicLoadBalancing_CellCostEstimatorFactories.Add(CellCostEstimatorLibrary.AllCellsAreEqual);
 
+            Debug.Assert(loadBalControl.DynamicLoadBalancing_On == true);
             Debug.Assert(loadBalControl.DynamicLoadBalancing_Period > 0);
             Debug.Assert(loadBalControl.DynamicLoadBalancing_CellClassifier != null);
             Debug.Assert(loadBalControl.DynamicLoadBalancing_CellCostEstimatorFactories.Count > 0);
@@ -631,7 +646,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
 
             if (hilbert) {
                 CNSControl hilbertControl = loadBalControl.CloneAs();
-                hilbertControl.GridPartType = GridPartType.Hilbert;
+                hilbertControl.GridPartType = GridPartType.directHilbert;
 
                 Console.WriteLine("\nRun WITH load balancing (Hilbert)");
                 hilbertSolver = new ShockTubeLoadBalancingTests();

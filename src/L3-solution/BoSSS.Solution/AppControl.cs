@@ -690,6 +690,11 @@ namespace BoSSS.Solution.Control {
         [DataMember]
         public double DynamicLoadBalancing_ImbalanceThreshold = 0.12;
 
+        /// <summary>
+        /// Switch for turning dynamic load balancing on/off
+        /// </summary>
+        [DataMember]
+        public bool DynamicLoadBalancing_On = false;
 
         /// <summary>
         /// switch for activating adaptive mesh refinement
