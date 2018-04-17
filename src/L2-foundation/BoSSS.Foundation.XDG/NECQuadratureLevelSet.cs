@@ -578,8 +578,6 @@ namespace BoSSS.Foundation.XDG {
             }
             timer.Stop();
         }
-       
-
 
         /// <summary>
         /// writes the dammed result of the integration to the sparse matrix
