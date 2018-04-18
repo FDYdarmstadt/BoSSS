@@ -3425,6 +3425,7 @@ namespace CNS {
             //bool AV = true;
 
             if (LTSON) {
+                c.DynamicLoadBalancing_On = true;
                 //LTS-Timestepping
                 c.ExplicitScheme = ExplicitSchemes.LTS;
                 c.ExplicitOrder = ExplOrder;
@@ -3624,6 +3625,7 @@ namespace CNS {
             //bool AV = true;
 
             if (LTSON) {
+                c.DynamicLoadBalancing_On = true;
                 //Load is balanced according to LTS
                 c.ExplicitScheme = ExplicitSchemes.LTS;
                 c.ExplicitOrder = ExplOrder;
