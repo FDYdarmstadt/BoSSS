@@ -1289,7 +1289,7 @@ namespace CNS {
         }
 
 
-        public static IBMControl IBMShockTube(string dbPath = null, int dgDegree = 2, int numOfCellsX = 50, int numOfCellsY = 10, double sensorLimit = 1e-3, bool true1D = false) {
+        public static IBMControl IBMShockTube(int dgDegree = 2, int numOfCellsX = 50, int numOfCellsY = 10, double sensorLimit = 1e-3, bool true1D = false) {
 
 #if DEBUG
             System.Threading.Thread.Sleep(10000);
@@ -1297,7 +1297,7 @@ namespace CNS {
 
             IBMControl c = new IBMControl();
 
-            dbPath = @"c:\bosss_db\";
+            string dbPath = @"c:\bosss_db\";
             c.DbPath = dbPath;
             c.savetodb = dbPath != null;
             c.saveperiod = 1;
