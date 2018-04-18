@@ -28,7 +28,7 @@ List of 24 instances of IDatabaseInfo {
   19: { Session Count = 24; Grid Count = 14; Path = P:\BoSSS_DBs\PaperRevision }
   20: { Session Count = 0; Grid Count = 0; Path = P:\Lichtenberg_DB }
   21: { Session Count = 2; Grid Count = 354; Path = P:\BoSSS_DBs\Bug }
-  22: { Session Count = 14; Grid Count = 7; Path = P:\BoSSS_DBs\NodePerformance }
+  22: { Session Count = 36; Grid Count = 7; Path = P:\BoSSS_DBs\NodePerformance }
   23: { Session Count = 136; Grid Count = 98; Path = L:\BoSSS_DB\Lichtenberg_DB }
 }
 
@@ -87,9 +87,10 @@ LinearSolverCodes[] linSolvers = new LinearSolverCodes[] {
     //LinearSolverCodes.exp_schwarz_Kcycle_directcoarse,
     //LinearSolverCodes.exp_schwarz_directcoarse_overlap,
     //LinearSolverCodes.exp_schwarz_Kcycle_directcoarse_overlap,
-    LinearSolverCodes.exp_softgmres_schwarz_Kcycle_directcoarse_overlap,
-    LinearSolverCodes.exp_softgmres_schwarz_directcoarse_overlap,
+    //LinearSolverCodes.exp_softgmres_schwarz_Kcycle_directcoarse_overlap,
+    //LinearSolverCodes.exp_softgmres_schwarz_directcoarse_overlap,
     //LinearSolverCodes.automatic,
+    LinearSolverCodes.classic_mumps
 };
 int[] ks = new int[] {2,3};
 int re        = 400; 
@@ -103,7 +104,7 @@ int[] procs    = new int[] {1};
 // ===============================
 **************
 ==============
-int[] Resolutions_3D = new int[] {4,5,6,7,8,9,10};
+int[] Resolutions_3D = new int[] {7,10,13,16,18};
 IGridInfo[] grids = new IGridInfo[Resolutions_3D.Length];
 
 for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
@@ -169,20 +170,9 @@ if(grids[cnt].NumberOfCells != J)
 }
 }
 **************
-Creating grid with 64 cells.
-An equivalent grid is already present in the database -- the grid will not be saved.
-Creating grid with 125 cells.
-An equivalent grid is already present in the database -- the grid will not be saved.
-Creating grid with 216 cells.
-An equivalent grid is already present in the database -- the grid will not be saved.
-Creating grid with 343 cells.
-An equivalent grid is already present in the database -- the grid will not be saved.
-Creating grid with 512 cells.
-An equivalent grid is already present in the database -- the grid will not be saved.
-Creating grid with 729 cells.
-An equivalent grid is already present in the database -- the grid will not be saved.
-Creating grid with 1000 cells.
-An equivalent grid is already present in the database -- the grid will not be saved.
+(15,14): error CS0103: The name `WinTempDB' does not exist in the current context
+(55,1): error CS0103: The name `WinTempDB' does not exist in the current context
+No. of errors|warnings: 2|0.
 
 ==============
 **************
@@ -288,13 +278,17 @@ C.InitialValues.Add("Phi", GetFormulaObject(InitialValues.Phi));
         C.dtMin               = 1E20;
         C.Endtime             = 10000000;
         C.NoOfTimesteps       = 1;
-        C.NoOfMultigridLevels = 2;
+        C.NoOfMultigridLevels = 1;
         
         // Assign correct names
         C.SessionName = "DrivenCavity_k2_"+C.NonlinearSolve+"_"+linSolverName+"_J"+grd.NumberOfCells;
         }
 }
 **************
+(63,49): error CS0117: `BoSSS.Application.IBM_Solver.NonlinearSolverCodes' does not contain a definition for `Newton'
+C:\BoSSS-experimental\public\src\L4-application\BoSSSpad\bin\Release\IBM_Solver.exe (Location of the symbol related to previous error)
+No. of errors|warnings: 1|0.
+
 ==============
 LastError
 **************
@@ -312,124 +306,6 @@ foreach(int proc in procs){
     ctrl.RunBatch(myBatch,NumberOfMPIProcs:proc,UseComputeNodesExclusive:true,executionTime:"96:00:00");  
 }}
 **************
- Submitting: DrivenCavity_k2_Picard_exp_softgmres_schwarz_Kcycle_directcoarse_overlap_J64
-Loading session 28a03143-5f6b-4aef-a8a3-315ef6864317 failed with message 'Die Datei "P:\BoSSS_DBs\Sphere3D\sessions\28a03143-5f6b-4aef-a8a3-315ef6864317\Session.info" konnte nicht gefunden werden.'
-Loading session 74ec7fde-4918-46b3-a338-1be68019539b failed with message 'Die Datei "P:\BoSSS_DBs\Sphere3D\sessions\74ec7fde-4918-46b3-a338-1be68019539b\Session.info" konnte nicht gefunden werden.'
-Loading session acc112ec-3547-4f6d-ae72-4f4ccc8e9744 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\acc112ec-3547-4f6d-ae72-4f4ccc8e9744\Session.info" konnte nicht gefunden werden.'
-Loading session 883fdea1-e03e-401e-b8b7-dc67324257e0 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\883fdea1-e03e-401e-b8b7-dc67324257e0\Session.info" konnte nicht gefunden werden.'
-Loading session ed1fcb1f-d1aa-42f0-b4d1-33299563da65 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\ed1fcb1f-d1aa-42f0-b4d1-33299563da65\Session.info" konnte nicht gefunden werden.'
-Job is marked as success by job manager, but no session info in database is found; performing new deployment and submission.
-Deploying executables and additional files ...
-Deployment directory: \\dc1\userspace\krause\cluster\IBM_Solver2018Apr18_14-05-35
-Source directory: C:\BoSSS-experimental\public\src\L4-application\BoSSSpad\bin\Release
-   copied: IBM_Solver.exe BoSSS.Solution.XdgTimestepping.dll BoSSS.Foundation.XDG.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll Renci.SshNet.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll MathNet.Numerics.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.dll CommandLine.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: DrivenCavity_k2_Picard_exp_softgmres_schwarz_Kcycle_directcoarse_overlap_J125
-Job is marked as success by job manager, but no session info in database is found; performing new deployment and submission.
-Deploying executables and additional files ...
-Deployment directory: \\dc1\userspace\krause\cluster\IBM_Solver2018Apr18_14-05-42
-Source directory: C:\BoSSS-experimental\public\src\L4-application\BoSSSpad\bin\Release
-   copied: IBM_Solver.exe BoSSS.Solution.XdgTimestepping.dll BoSSS.Foundation.XDG.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll Renci.SshNet.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll MathNet.Numerics.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.dll CommandLine.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: DrivenCavity_k2_Picard_exp_softgmres_schwarz_Kcycle_directcoarse_overlap_J216
-Job is marked as success by job manager, but no session info in database is found; performing new deployment and submission.
-Deploying executables and additional files ...
-Deployment directory: \\dc1\userspace\krause\cluster\IBM_Solver2018Apr18_14-06-00
-Source directory: C:\BoSSS-experimental\public\src\L4-application\BoSSSpad\bin\Release
-   copied: IBM_Solver.exe BoSSS.Solution.XdgTimestepping.dll BoSSS.Foundation.XDG.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll Renci.SshNet.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll MathNet.Numerics.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.dll CommandLine.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: DrivenCavity_k2_Picard_exp_softgmres_schwarz_Kcycle_directcoarse_overlap_J343
-Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
-Deploying executables and additional files ...
-Deployment directory: \\dc1\userspace\krause\cluster\IBM_Solver2018Apr18_14-06-08
-Source directory: C:\BoSSS-experimental\public\src\L4-application\BoSSSpad\bin\Release
-   copied: IBM_Solver.exe BoSSS.Solution.XdgTimestepping.dll BoSSS.Foundation.XDG.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll Renci.SshNet.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll MathNet.Numerics.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.dll CommandLine.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: DrivenCavity_k2_Picard_exp_softgmres_schwarz_Kcycle_directcoarse_overlap_J512
-Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
-Deploying executables and additional files ...
-Deployment directory: \\dc1\userspace\krause\cluster\IBM_Solver2018Apr18_14-06-18
-Source directory: C:\BoSSS-experimental\public\src\L4-application\BoSSSpad\bin\Release
-   copied: IBM_Solver.exe BoSSS.Solution.XdgTimestepping.dll BoSSS.Foundation.XDG.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll Renci.SshNet.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll MathNet.Numerics.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.dll CommandLine.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: DrivenCavity_k2_Picard_exp_softgmres_schwarz_Kcycle_directcoarse_overlap_J729
-Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
-Deploying executables and additional files ...
-Deployment directory: \\dc1\userspace\krause\cluster\IBM_Solver2018Apr18_14-06-37
-Source directory: C:\BoSSS-experimental\public\src\L4-application\BoSSSpad\bin\Release
-   copied: IBM_Solver.exe BoSSS.Solution.XdgTimestepping.dll BoSSS.Foundation.XDG.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll Renci.SshNet.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll MathNet.Numerics.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.dll CommandLine.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: DrivenCavity_k2_Picard_exp_softgmres_schwarz_Kcycle_directcoarse_overlap_J1000
-Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
-Deploying executables and additional files ...
-Deployment directory: \\dc1\userspace\krause\cluster\IBM_Solver2018Apr18_14-06-57
-Source directory: C:\BoSSS-experimental\public\src\L4-application\BoSSSpad\bin\Release
-   copied: IBM_Solver.exe BoSSS.Solution.XdgTimestepping.dll BoSSS.Foundation.XDG.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll Renci.SshNet.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll MathNet.Numerics.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.dll CommandLine.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: DrivenCavity_k2_Picard_exp_softgmres_schwarz_directcoarse_overlap_J64
-Job is marked as success by job manager, but no session info in database is found; performing new deployment and submission.
-Deploying executables and additional files ...
-Deployment directory: \\dc1\userspace\krause\cluster\IBM_Solver2018Apr18_14-07-07
-Source directory: C:\BoSSS-experimental\public\src\L4-application\BoSSSpad\bin\Release
-   copied: IBM_Solver.exe BoSSS.Solution.XdgTimestepping.dll BoSSS.Foundation.XDG.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll Renci.SshNet.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll MathNet.Numerics.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.dll CommandLine.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: DrivenCavity_k2_Picard_exp_softgmres_schwarz_directcoarse_overlap_J125
-Job is marked as success by job manager, but no session info in database is found; performing new deployment and submission.
-Deploying executables and additional files ...
-Deployment directory: \\dc1\userspace\krause\cluster\IBM_Solver2018Apr18_14-07-20
-Source directory: C:\BoSSS-experimental\public\src\L4-application\BoSSSpad\bin\Release
-   copied: IBM_Solver.exe BoSSS.Solution.XdgTimestepping.dll BoSSS.Foundation.XDG.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll Renci.SshNet.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll MathNet.Numerics.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.dll CommandLine.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: DrivenCavity_k2_Picard_exp_softgmres_schwarz_directcoarse_overlap_J216
-Job is marked as success by job manager, but no session info in database is found; performing new deployment and submission.
-Deploying executables and additional files ...
-Deployment directory: \\dc1\userspace\krause\cluster\IBM_Solver2018Apr18_14-07-33
-Source directory: C:\BoSSS-experimental\public\src\L4-application\BoSSSpad\bin\Release
-   copied: IBM_Solver.exe BoSSS.Solution.XdgTimestepping.dll BoSSS.Foundation.XDG.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll Renci.SshNet.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll MathNet.Numerics.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.dll CommandLine.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: DrivenCavity_k2_Picard_exp_softgmres_schwarz_directcoarse_overlap_J343
-Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
-Deploying executables and additional files ...
-Deployment directory: \\dc1\userspace\krause\cluster\IBM_Solver2018Apr18_14-07-50
-Source directory: C:\BoSSS-experimental\public\src\L4-application\BoSSSpad\bin\Release
-   copied: IBM_Solver.exe BoSSS.Solution.XdgTimestepping.dll BoSSS.Foundation.XDG.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll Renci.SshNet.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll MathNet.Numerics.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.dll CommandLine.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: DrivenCavity_k2_Picard_exp_softgmres_schwarz_directcoarse_overlap_J512
-Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
-Deploying executables and additional files ...
-Deployment directory: \\dc1\userspace\krause\cluster\IBM_Solver2018Apr18_14-08-07
-Source directory: C:\BoSSS-experimental\public\src\L4-application\BoSSSpad\bin\Release
-   copied: IBM_Solver.exe BoSSS.Solution.XdgTimestepping.dll BoSSS.Foundation.XDG.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll Renci.SshNet.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll MathNet.Numerics.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.dll CommandLine.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: DrivenCavity_k2_Picard_exp_softgmres_schwarz_directcoarse_overlap_J729
-Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
-Deploying executables and additional files ...
-Deployment directory: \\dc1\userspace\krause\cluster\IBM_Solver2018Apr18_14-08-34
-Source directory: C:\BoSSS-experimental\public\src\L4-application\BoSSSpad\bin\Release
-   copied: IBM_Solver.exe BoSSS.Solution.XdgTimestepping.dll BoSSS.Foundation.XDG.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll Renci.SshNet.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll MathNet.Numerics.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.dll CommandLine.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
- Submitting: DrivenCavity_k2_Picard_exp_softgmres_schwarz_directcoarse_overlap_J1000
-Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
-Deploying executables and additional files ...
-Deployment directory: \\dc1\userspace\krause\cluster\IBM_Solver2018Apr18_14-08-47
-Source directory: C:\BoSSS-experimental\public\src\L4-application\BoSSSpad\bin\Release
-   copied: IBM_Solver.exe BoSSS.Solution.XdgTimestepping.dll BoSSS.Foundation.XDG.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll Renci.SshNet.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll MathNet.Numerics.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.dll CommandLine.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
-   copied 'amd64' runtime.
-deployment finished.
-
 ==============
 WorkflowMgm.SessionTable.Rows.Count;
 **************
@@ -438,7 +314,7 @@ Loading session 74ec7fde-4918-46b3-a338-1be68019539b failed with message 'Die Da
 Loading session acc112ec-3547-4f6d-ae72-4f4ccc8e9744 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\acc112ec-3547-4f6d-ae72-4f4ccc8e9744\Session.info" konnte nicht gefunden werden.'
 Loading session 883fdea1-e03e-401e-b8b7-dc67324257e0 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\883fdea1-e03e-401e-b8b7-dc67324257e0\Session.info" konnte nicht gefunden werden.'
 Loading session ed1fcb1f-d1aa-42f0-b4d1-33299563da65 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\ed1fcb1f-d1aa-42f0-b4d1-33299563da65\Session.info" konnte nicht gefunden werden.'
-14
+36
 ==============
 // =====================================
 // Session table
@@ -626,21 +502,43 @@ var SubTab_1 = SessTab.ExtractColumns("Grid:NoOfCells","SlvIter_excl","SlvInit_e
 ==============
 SubTab_1.Print();
 **************
-    Grid:NoOfCells SlvIter_excl SlvInit_excl PrecSolve    NewtonDirder NonlinearSolve LinearSolve NoOfMultigridLevels DGdegree:Velocity* RegularTerminated 
-0:  729            3570.7376593 7.8447576    2493.5703214 1011.3012092 0              4           2                   2                  True              
-1:  512            2597.3784414 5.9013537    383.9002881  2164.4447684 0              6           2                   2                  True              
-2:  343            1808.4591779 4.1886806    275.8036966  1505.8021712 0              6           2                   2                  True              
-3:  512            1304.0878681 6.1492073    745.6419878  509.2611623  0              4           2                   2                  True              
-4:  216            853.4104848  2.9685402    134.0219667  702.4732929  0              6           2                   2                  True              
-5:  343            521.6809592  4.3849727    256.8173921  238.1994157  0              4           2                   2                  True              
-6:  125            322.7261362  2.0577132    50.3638173   262.6757845  0              6           2                   2                  True              
-7:  1000           NULL         NULL         NULL         NULL         0              6           2                   2                  False             
-8:  216            190.6361505  3.1354078    64.4373488   109.2989952  0              4           2                   2                  True              
-9:  729            NULL         NULL         NULL         NULL         0              6           2                   2                  False             
-10: 64             66.9455322   1.5908885    10.2234054   51.7496301   0              6           2                   2                  True              
-11: 1000           NULL         NULL         NULL         NULL         0              4           2                   2                  False             
-12: 125            61.4173363   2.3222632    10.1868982   41.4743646   0              4           2                   2                  True              
-13: 64             21.2277844   1.577938     2.5100449    13.58565     0              4           2                   2                  True              
+    Grid:NoOfCells SlvIter_excl  SlvInit_excl PrecSolve    NewtonDirder NonlinearSolve LinearSolve NoOfMultigridLevels DGdegree:Velocity* RegularTerminated 
+0:  729            7519.8560892  8.7957713    7436.2456503 NULL         1              10          2                   2                  True              
+1:  1000           306.9675112   10.5789393   NULL         NULL         1              1           1                   2                  True              
+2:  1000           392.9197575   10.554713    NULL         NULL         0              1           1                   2                  True              
+3:  512            98.4380965    5.8350783    NULL         NULL         1              1           1                   2                  True              
+4:  512            137.6731662   5.948566     NULL         NULL         0              1           1                   2                  True              
+5:  216            25.6626947    3.0825638    NULL         NULL         1              1           1                   2                  True              
+6:  64             6.385035      1.6142689    NULL         NULL         1              1           1                   2                  True              
+7:  216            40.648019     3.0223213    NULL         NULL         0              1           1                   2                  True              
+8:  64             11.2589118    1.6541689    NULL         NULL         0              1           1                   2                  True              
+9:  343            6797.957409   4.4372966    6354.1970893 NULL         1              9           2                   2                  True              
+10: 1000           11711.3627531 10.5509689   1805.8973528 9803.8074105 0              6           2                   2                  True              
+11: 512            2646.0203009  6.0877766    2588.0249003 NULL         1              10          2                   2                  True              
+12: 512            1371.3885855  5.8468561    1270.6434357 NULL         1              9           2                   2                  True              
+13: 343            1082.652114   4.2682475    1045.2789917 NULL         1              10          2                   2                  True              
+14: 729            6954.8206194  8.0104342    1034.1643715 5847.5227339 0              6           2                   2                  True              
+15: 216            521.6938209   3.1422348    483.5014811  NULL         1              9           2                   2                  True              
+16: 216            221.1086935   3.0652849    201.3694903  NULL         1              10          2                   2                  True              
+17: 125            166.4616203   2.2302677    150.9027134  NULL         1              9           2                   2                  True              
+18: 1000           NULL          NULL         NULL         NULL         1              10          2                   2                  False             
+19: 125            37.9515421    2.1576211    28.3293883   NULL         1              10          2                   2                  True              
+20: 64             13.9451688    1.5591926    8.3095822    NULL         1              10          2                   2                  True              
+21: 1000           NULL          NULL         NULL         NULL         1              9           2                   2                  False             
+22: 729            NULL          NULL         NULL         NULL         1              9           2                   2                  False             
+23: 64             42.1654498    1.6026108    35.1357047   NULL         1              9           2                   2                  True              
+24: 1000           6395.0353211  11.0896567   4583.2712855 1715.5338737 0              4           2                   2                  True              
+25: 729            3570.7376593  7.8447576    2493.5703214 1011.3012092 0              4           2                   2                  True              
+26: 512            2597.3784414  5.9013537    383.9002881  2164.4447684 0              6           2                   2                  True              
+27: 343            1808.4591779  4.1886806    275.8036966  1505.8021712 0              6           2                   2                  True              
+28: 512            1304.0878681  6.1492073    745.6419878  509.2611623  0              4           2                   2                  True              
+29: 216            853.4104848   2.9685402    134.0219667  702.4732929  0              6           2                   2                  True              
+30: 343            521.6809592   4.3849727    256.8173921  238.1994157  0              4           2                   2                  True              
+31: 125            322.7261362   2.0577132    50.3638173   262.6757845  0              6           2                   2                  True              
+32: 216            190.6361505   3.1354078    64.4373488   109.2989952  0              4           2                   2                  True              
+33: 64             66.9455322    1.5908885    10.2234054   51.7496301   0              6           2                   2                  True              
+34: 125            61.4173363    2.3222632    10.1868982   41.4743646   0              4           2                   2                  True              
+35: 64             21.2277844    1.577938     2.5100449    13.58565     0              4           2                   2                  True              
 ==============
 using System.IO;
 **************
@@ -654,6 +552,16 @@ string docpath    = Path.Combine(CurrentDocDir, SessTab.TableName + ".json");
 // save session table as file: this can be stored in our git 
 // repository
 SessTab.SaveToFile(docpath);
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************
