@@ -472,7 +472,7 @@ namespace BoSSS.Foundation {
             EdgeMask emEdge = (optionalSubGrid != null) ? optionalSubGrid.AllEdgesMask : null;
             CellMask emVol = (optionalSubGrid != null) ? optionalSubGrid.VolumeMask : null;
 
-            SpatialOperator.Evaluator ev = d_dx.GetEvaluatorEx(
+            var ev = d_dx.GetEvaluatorEx(
                 new CoordinateMapping(f), null, this.Mapping,
                 edgeQrCtx: new Quadrature.EdgeQuadratureScheme(true, emEdge),
                 volQrCtx: new Quadrature.CellQuadratureScheme(true, emVol),

@@ -306,19 +306,22 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
                 for (int f = 0; f < NoOfFields; f++) {
                     //Field fld = m_CodomainBasisS[f];
-
+                    int f_offset = m_MyMap[f];
                     int mE = m_NoOfTestFunctions[f];
-                    for(int m = 0; m < mE; m++) {
 
-                        if(touchCell1)
-                            m_Output[m_CodomainMapping.LocalUniqueCoordinateIndex(f, jCell1, m)] += ResultsOfIntegration[jEdge, MyMap(f, m), 0] * alpha;
+                    for (int m = 0; m < mE; m++) {
+                        int idx = f_offset + m;
+
+                        if (touchCell1) {
+                            m_Output[m_CodomainMapping.LocalUniqueCoordinateIndex(f, jCell1, m)] += ResultsOfIntegration[jEdge, idx, 0] * alpha;
+                        }
 
                         if (touchCell2) {
-                            m_Output[m_CodomainMapping.LocalUniqueCoordinateIndex(f, jCell2, m)] += ResultsOfIntegration[jEdge, MyMap(f, m), 1] * alpha;
+                            m_Output[m_CodomainMapping.LocalUniqueCoordinateIndex(f, jCell2, m)] += ResultsOfIntegration[jEdge, idx, 1] * alpha;
                         }
 
                         if(srgdBndEdge && m==0) {
-                            m_outputBndEdge[NoOfFields*(jEdge + i0)+f] += ResultsOfIntegration[jEdge, MyMap(f, m), side] * alpha;
+                            m_outputBndEdge[NoOfFields*(jEdge + i0)+f] += ResultsOfIntegration[jEdge, idx, side] * alpha;
                         }
                     }
                 }

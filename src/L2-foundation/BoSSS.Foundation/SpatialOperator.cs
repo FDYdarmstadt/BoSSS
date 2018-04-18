@@ -1323,27 +1323,7 @@ namespace BoSSS.Foundation {
             return false;
         }
 
-
-
-        /// <summary>
-        /// constructs a new Instance of <see cref="Evaluator"/>
-        /// </summary>
-        /// <returns></returns>
-        /// <remarks>
-        /// The
-        /// operator assembly must be finalized before by calling <see cref="Commit"/> before this method can be called.
-        /// </remarks>
-        /// <param name="CodomainVarMap">
-        /// used to compute indices into the result vector
-        /// </param>
-        /// <param name="DomainVarMap">
-        /// domain which are evaluated to compute fluxes, ...
-        /// </param>
-        virtual public Evaluator GetEvaluator(IList<DGField> DomainVarMap, UnsetteledCoordinateMapping CodomainVarMap) {
-            return GetEvaluatorEx(DomainVarMap, null, CodomainVarMap);
-        }
-
-
+        
         /// <summary>
         /// constructs a new Instance of <see cref="Evaluator"/>
         /// </summary>
@@ -1376,7 +1356,7 @@ namespace BoSSS.Foundation {
         /// </param>
         /// <param name="sgrd">
         /// </param>
-        public virtual Evaluator GetEvaluatorEx(
+        public virtual IEvaluator GetEvaluatorEx(
             IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
             EdgeQuadratureScheme edgeQrCtx = null,
             CellQuadratureScheme volQrCtx = null,
@@ -1403,25 +1383,9 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// Container for the evaluation of nonlinear fluxes/sources
         /// </summary>
-        public class Evaluator {
+        public class Evaluator : IEvaluator {
 
-            /*
-            /// <summary>
-            /// helper function for the constructor
-            /// </summary>
-            /// <returns>the order of the quadrature to use</returns>
-            [System.Obsolete()]
-            static int FindQuadratureOrder(IList<DGField> domainFields, UnsetteledCoordinateMapping CodomainFields) {
-                int o = 0;
-                foreach (DGField f in domainFields) {
-                    o = Math.Max(o, f.Basis.Degree * 2);
-                }
-                foreach (Basis b in CodomainFields.BasisS) {
-                    o = Math.Max(o, b.Degree * 2);
-                }
-                return o;
-            }
-             */
+           
 
             SpatialOperator m_Owner;
 
@@ -1437,7 +1401,7 @@ namespace BoSSS.Foundation {
             /// <summary>
             /// ctor
             /// </summary>
-            internal Evaluator(
+            protected internal Evaluator(
                 SpatialOperator owner,
                 IList<DGField> DomainVarMap,
                 IList<DGField> ParameterMap,

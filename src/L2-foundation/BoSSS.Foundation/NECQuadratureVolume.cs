@@ -733,8 +733,10 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 int jCell = j + i0;
                 for (int f = 0; f < NoOfFields; f++) {
                     int mE = m_NoOfTestFunctions[f];
+                    int f_offset = m_MyMap[f];
                     for (int m = 0; m < mE; m++) {
-                        m_Output[m_CodomainMapping.LocalUniqueCoordinateIndex(f, jCell, m)] += ResultsOfIntegration[j, MyMap(f, m)] * alpha;
+                        int idx = f_offset + m;
+                        m_Output[m_CodomainMapping.LocalUniqueCoordinateIndex(f, jCell, m)] += ResultsOfIntegration[j, idx] * alpha;
                     }
                 }
             }
