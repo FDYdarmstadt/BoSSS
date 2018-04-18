@@ -184,7 +184,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             control.ReclusteringInterval = REBALANCING_PERIOD;
 
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-            CheckRunsProduceSameResults(control);
+            CheckRunsProduceSameResults(control, hilbert: true);
         }
 
         [Test]
@@ -301,7 +301,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             control.forceReclustering = true;
 
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-            CheckRunsProduceSameResults(control);
+            CheckRunsProduceSameResults(control, hilbert: true);
         }
 
         [Test]
@@ -333,7 +333,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             control.forceReclustering = true;
 
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-            CheckRunsProduceSameResults(control);
+            CheckRunsProduceSameResults(control, hilbert: true);
         }
 
         private static CNSControl ShockTubeToro1Template(int dgDegree, ExplicitSchemes explicitScheme, int explicitOrder, int noOfCells = 50, double gridStretching = 0.0, bool twoD = false) {
