@@ -138,6 +138,27 @@ namespace BoSSS.Foundation.XDG {
             throw new NotImplementedException("todo - situation unklar.");
         }
 
+
+        class XEvaluator : Evaluator {
+            public XEvaluator(
+                XSpatialOperator owner,
+                IList<DGField> DomainVarMap,
+                IList<DGField> ParameterMap,
+                UnsetteledCoordinateMapping CodomainVarMap,
+                EdgeQuadratureScheme edgeQrCtx,
+                CellQuadratureScheme volQrCtx,
+                SubGrid sgrd, 
+                SubGridBoundaryModes subGridBoundaryTreatment
+                
+                ) : base(owner, DomainVarMap, ParameterMap, CodomainVarMap,  {
+
+            }
+
+            
+        }
+
+
+
         /// <summary>
         /// up to now, not implemented.
         /// </summary>
@@ -240,53 +261,7 @@ namespace BoSSS.Foundation.XDG {
                 null, whichSpc);
         }
 
-        /*
-        /// <summary>
-        /// computation of operator matrix
-        /// </summary>
-        public void ComputeMatrixEx<M, V>(LevelSetTracker lsTrk,
-            UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap,
-            M Matrix, V AffineOffset, bool OnlyAffine, double time, bool MPIParameterExchange, 
-            params SpeciesId[] whichSpc)
-            where M : IMutableMatrixEx
-            where V : IList<double> {
-            this.ComputeMatrixEx<M, V>(lsTrk,
-               DomainMap, Parameters, CodomainMap,
-               Matrix, AffineOffset,
-               OnlyAffine, time, MPIParameterExchange, subGrid:null,whichSpc:whichSpc
-               );
-        }
-
-        /*
-        /// <summary>
-        /// computation of operator matrix
-        /// </summary>
-        public void ComputeMatrixEx<M, V>(LevelSetTracker lsTrk,
-            UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap,
-            M Matrix, V AffineOffset, bool OnlyAffine, 
-            double time, 
-            bool MPIParameterExchange, 
-            SubGrid subGrid, params SpeciesId[] whichSpc)
-            where M : IMutableMatrixEx
-            where V : IList<double>  //
-        {
-#if DEBUG
-            int order = this.GetOrderFromQuadOrderFunction(DomainMap, Parameters, CodomainMap);
-            MultiphaseCellAgglomerator dummy = lsTrk.GetAgglomerator(whichSpc, order, 0.0);
-            Debug.Assert(dummy.TotalNumberOfAgglomerations <= 0, "internal error");
-#endif
-
-            var bla = new Dictionary<SpeciesId, QrSchemPair>();
-            foreach (var sp in whichSpc)
-                bla.Add(sp, new QrSchemPair());
-
-            this.ComputeMatrixEx<M, V>(lsTrk,
-                DomainMap, Parameters, CodomainMap,
-                Matrix, AffineOffset,
-                OnlyAffine, time, MPIParameterExchange, bla, 
-                subGrid);
-        }
-        */
+        
 
         static bool ruleDiagnosis = false;
 

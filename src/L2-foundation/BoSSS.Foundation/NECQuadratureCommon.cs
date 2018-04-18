@@ -183,10 +183,11 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
 
         /// <summary>
-        /// used by <see cref="MyMap"/>;
+        /// Index offset for each codomain variable
         /// </summary>
-        int[] m_MyMap;
+        protected int[] m_MyMap;
 
+        /*
         /// <summary>
         /// internal index mapping;
         /// </summary>
@@ -196,6 +197,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         protected int MyMap(int variableIndex, int CoordInd) {
             return m_MyMap[variableIndex] + CoordInd;
         }
+        */
 
         /// <summary>
         /// DG coordinate mapping for the codomain (output) of this
