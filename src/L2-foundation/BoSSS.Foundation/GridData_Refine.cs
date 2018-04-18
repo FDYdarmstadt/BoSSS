@@ -420,7 +420,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     int jCell2 = Edge2Cell[iEdge, 1];
                     if (jCell2 < 0) {
                         Debug.Assert((CellsToRefineBitmask[jCell1] && CellsToCoarseBitmask[jCell1]) == false);
-                        if ((CellsToRefineBitmask[jCell1] || CellsToCoarseBitmask[jCell1]) == false)
+                        if((CellsToRefineBitmask[jCell1] || CellsToCoarseBitmask[jCell1]) == false)
                             continue;
 
                         Cell[] adaptedBCells1 = adaptedCells[jCell1];
@@ -428,15 +428,15 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                         int iBFace = Edge2Face[iEdge, 0];
 
-                        foreach (Cell cl in adaptedBCells1) {
-                            if (cl.CellFaceTags.Where(cft => cft.FaceIndex == iBFace).Count() == 0) {
+                        foreach(Cell cl in adaptedBCells1) {
+                            if(cl.CellFaceTags.Where(cft => cft.FaceIndex == iBFace).Count() == 0 && this.Edges.EdgeTags[iEdge] > 0) {
                                 ArrayTools.AddToArray(new CellFaceTag() {
                                     EdgeTag = this.Edges.EdgeTags[iEdge],
                                     ConformalNeighborship = false,
                                     NeighCell_GlobalID = long.MinValue,
                                     FaceIndex = iBFace
                                 }, ref cl.CellFaceTags);
-                            }   
+                            }
                         }
 
                         continue;
