@@ -475,8 +475,11 @@ namespace BoSSS.Foundation {
             var ev = d_dx.GetEvaluatorEx(
                 new CoordinateMapping(f), null, this.Mapping,
                 edgeQrCtx: new Quadrature.EdgeQuadratureScheme(true, emEdge),
-                volQrCtx: new Quadrature.CellQuadratureScheme(true, emVol),
-                sgrd: optionalSubGrid, subGridBoundaryTreatment: bndMode);
+                volQrCtx: new Quadrature.CellQuadratureScheme(true, emVol));
+
+            if(optionalSubGrid != null) {
+                ev.ActivateSubgridBoundary(optionalSubGrid.VolumeMask, bndMode);
+            }
 
             ev.Evaluate<CoordinateVector>(alpha, 1.0, this.CoordinateVector);
         }

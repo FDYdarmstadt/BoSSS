@@ -334,11 +334,11 @@ namespace BoSSS.Foundation {
                     qInsEdge,
                     qInsVol);
 
-
-                    sgrd,
-                    bndMode);
+                if(sgrd != null)
+                    ev.ActivateSubgridBoundary(sgrd.VolumeMask, bndMode);
                 CoordinateVector outp = new CoordinateVector(CodomainMapping);
-                ev.Evaluate<CoordinateVector>(alpha, beta, outp, time);
+                ev.time = time;
+                ev.Evaluate<CoordinateVector>(alpha, beta, outp);
             }
         }
 
@@ -451,29 +451,17 @@ namespace BoSSS.Foundation {
             var GridDat = CheckArguments(DomainMap, Parameters, CodomainMap);
 
 
-            int order = GetOrderFromQuadOrderFunction(DomainMap, Parameters, CodomainMap);
+            var ev = this.GetMatrixBuilder(DomainMap, Parameters, CodomainMap,
+                new EdgeQuadratureScheme(true, sgrd == null ? null : sgrd.AllEdgesMask),
+                 new CellQuadratureScheme(true, sgrd == null ? null : sgrd.VolumeMask));
 
+            ev.time = time;
 
-            //if (Parameters == null) {
-            //    order = this.FindQuadRuleOrder(DomainMap.BasisS, CodomainMap.BasisS, 1);
-            //} else {
-            //    ICollection<Basis> ParameterBasisS = new List<Basis>();
-            //    foreach (DGField param in Parameters) {
-            //        if (param != null) {
-            //            ParameterBasisS.Add(param.Basis);
-            //        }
-            //    }
-            //    order = this.FindQuadRuleOrder(DomainMap.BasisS, CodomainMap.BasisS, 1, ParameterBasisS, 2);
-            //}
-
-            Internal_ComputeMatrixEx(GridDat,
-                 DomainMap, Parameters, CodomainMap,
-                 Matrix, AffineOffset,
-                 OnlyAffine, time,
-                 new EdgeQuadratureScheme(true, sgrd == null ? null : sgrd.AllEdgesMask).Compile(GridDat, order),
-                 new CellQuadratureScheme(true, sgrd == null ? null : sgrd.VolumeMask).Compile(GridDat, order),
-                 null, true);
-
+            if(OnlyAffine) {
+                ev.ComputeAffine(AffineOffset);
+            } else {
+                ev.ComputeMatrix(Matrix, AffineOffset);
+            }
         }
 
         public int GetOrderFromQuadOrderFunction(UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap) {
