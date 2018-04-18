@@ -1,0 +1,20 @@
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\begin{document}
+\pagenumbering{gobble}
+\section*{Navier Stokes 3D Sphere}
+\begin{itemize}
+	\large \item  polynomial degree k 1
+	\item Reynoldsnumber 100
+	\item Cells 16384
+	\item Total DoFs 212992
+	\item $\Delta$t steady
+\end{itemize}
+	\begin{figure}
+		\hspace{-2cm}\input{NodePerformance.tex}
+		\rule{0cm}{1.1cm}
+		\caption{Exclusive times of methods for several processors.}
+	\end{figure}
+\end{document}
