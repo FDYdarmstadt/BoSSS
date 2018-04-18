@@ -395,6 +395,13 @@ namespace CNS {
         /// <param name="physTime"></param>
         protected override void GetCellPerformanceClasses(out int NoOfClasses, out int[] cellToPerformanceClassMap, int TimeStepNo, double physTime) {
             using (var ht = new FuncTrace()) {
+                if (Control.DynamicLoadBalancing_CellClassifier is ArtificialViscosityCellClassifier || TimeStepper is AdamsBashforthLTS) {
+                    // Just to be sure...
+                    if (this.Control.ArtificialViscosityLaw != null) {
+                        WorkingSet.UpdateShockCapturingVariables(this, SpeciesMap.SubGrid.VolumeMask);
+                    }
+                }
+
                 // Update clustering before cell redistribution when LTS is being used
                 if (TimeStepper is AdamsBashforthLTS ABLTSTimeStepper) {
                     if (TimeStepNo % Control.DynamicLoadBalancing_Period != 0) {
@@ -402,9 +409,9 @@ namespace CNS {
                     }
 
                     // Just to be sure...
-                    if (this.Control.ArtificialViscosityLaw != null) {
-                        WorkingSet.UpdateShockCapturingVariables(this, SpeciesMap.SubGrid.VolumeMask);
-                    }
+                    //if (this.Control.ArtificialViscosityLaw != null) {
+                    //    WorkingSet.UpdateShockCapturingVariables(this, SpeciesMap.SubGrid.VolumeMask);
+                    //}
 
                     ABLTSTimeStepper.UpdateTimeInfo(new TimeInformation(TimeStepNo, physTime, -1));
                     // LoadBal and noLoadBalRuns did not match, with this fix, it works --> probably some ABevolver were not updated correctly
