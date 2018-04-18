@@ -30,10 +30,13 @@ namespace BoSSS.Application.IBM_Solver {
             // Set nonlinear Solver
             switch (Control.NonlinearSolve) {
                 case NonlinearSolverCodes.NewtonGMRES:
-                    Timestepper.Config_NonlinearSolver = NonlinearSolverMethod.Newton;
+                    Timestepper.Config_NonlinearSolver = NonlinearSolverMethod.NewtonGMRES;
                     break;
                 case NonlinearSolverCodes.Picard:
                     Timestepper.Config_NonlinearSolver = NonlinearSolverMethod.Picard;
+                    break;
+                case NonlinearSolverCodes.Newton:
+                    Timestepper.Config_NonlinearSolver = NonlinearSolverMethod.Newton;
                     break;
                 default:
                     throw new NotImplementedException("Nonlinear solver option not available");
@@ -153,7 +156,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// <summary>
         /// Automatic choice of linear solver depending on problem size, immersed boundary, polynomial degree, etc.
         /// </summary>
-        static void AutomaticChoice(IBM_Control Control, XdgBDFTimestepping Timestepper) {  
+        static void AutomaticChoice(IBM_Control Control, XdgBDFTimestepping Timestepper) {
 
             int pV = Control.FieldOptions["VelocityX"].Degree;
             int pP = Control.FieldOptions["Pressure"].Degree;
@@ -167,7 +170,7 @@ namespace BoSSS.Application.IBM_Solver {
             var size = Timestepper.MultigridSequence[0].CellPartitioning.MpiSize;
 
             // !!!!!!!!!!!UNTERSCHEIDUNG OB PICARD ODER NEWTON!!!!!!!!!!!!
-            if (Timestepper.Config_NonlinearSolver == NonlinearSolverMethod.Newton) {
+            if (Timestepper.Config_NonlinearSolver == NonlinearSolverMethod.NewtonGMRES) {
 
                 // Spatial Dimension
                 switch (D) {
@@ -227,7 +230,7 @@ namespace BoSSS.Application.IBM_Solver {
                             if (Control.NoOfMultigridLevels < 2)
                                 throw new ApplicationException("At least 2 Multigridlevels are required");
 
-                            Timestepper.Config_linearSolver = new SoftGMRES() {                               
+                            Timestepper.Config_linearSolver = new SoftGMRES() {
                                 MaxKrylovDim = Timestepper.Config_MaxKrylovDim,
                                 m_Tolerance = Timestepper.Config_SolverConvergenceCriterion,
                                 Precond = new Schwarz() {
