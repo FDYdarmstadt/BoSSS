@@ -61,7 +61,7 @@ namespace BoSSS.Solution.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 9a59ac5dd3b76175fba6ae3f462c197cfc02c88e
+        ///   Looks up a localized string similar to 5549d583a906e92e6cb183488de4571f836e45da
         ///.
         /// </summary>
         internal static string MasterGitCommit {
