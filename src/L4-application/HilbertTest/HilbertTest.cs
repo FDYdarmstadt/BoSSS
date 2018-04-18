@@ -227,8 +227,8 @@ namespace HilbertTest {
 
         static private bool TestingGridDistributionDynamic() {
             //string dbPath = @"D:\Weber\BoSSS\test_db";
-            //TestCase: 5x4 grid, AV=false, dgdegree=0, Timestepping=LTS
-            CNSControl control = ShockTube_PartTest_Dynamic(null, 5, 4,1,2,true,1);
+            //TestCase: 5x4 grid, Timesteps, LTS-Cluster, PartOn,recInt,AV=false, dgdegree=0, Timestepping=LTS
+            CNSControl control = ShockTube_PartTest_Dynamic(5,4,1,2,true,1);
             var solver = new HilbertTest();
             solver.Init(control);
             solver.RunSolverMode();
@@ -256,7 +256,7 @@ namespace HilbertTest {
             }
             double[] MaxRef = { 0.6, 1 };
             double[] MinRef = { 0, 0 };
-            
+
             if (ItemsAreEqual(BB.Max, MaxRef) && ItemsAreEqual(BB.Min, MinRef)) {
                 //Comparing checkLTS to Distribution along HilbertCurve of Testcase
                 int[] checkLTS = { 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 3, 3, 0, 0, 2, 2, 2, 3, 3, 3 };
@@ -308,11 +308,10 @@ namespace HilbertTest {
         }
 
         static private bool TestingReclusteringIndependency() {
-            //string dbPath = @"D:\Weber\BoSSS\test_db";
-            string dbPath = null;
+            
             //TestCase: 5x4 grid, AV=false, dgdegree=0, Timestepping=LTS&RK
-            CNSControl ctrRepON = ShockTube_PartTest_Dynamic(dbPath, 5, 4, int.MaxValue, 2, true,5);
-            CNSControl ctrRepOFF = ShockTube_PartTest_Dynamic(dbPath, 5, 4, int.MaxValue, 2, false,5);
+            CNSControl ctrRepON = ShockTube_PartTest_Dynamic(5, 4, int.MaxValue, 2, true,5);
+            CNSControl ctrRepOFF = ShockTube_PartTest_Dynamic(5, 4, int.MaxValue, 2, false,5);
             var solverRepON = new HilbertTest();
             var solverRepOFF = new HilbertTest();
             solverRepON.Init(ctrRepON);
@@ -601,7 +600,7 @@ namespace HilbertTest {
 
         }
 
-        private static CNSControl ShockTube_PartTest_Dynamic(string dbPath, int numOfCellsX, int numOfCellsY, int NoOfTimesteps ,int NumberOfSubGrids, bool Repart, int RecInt) {
+        private static CNSControl ShockTube_PartTest_Dynamic(int numOfCellsX, int numOfCellsY, int NoOfTimesteps ,int NumberOfSubGrids, bool Repart, int RecInt) {
             CNSControl c = new CNSControl();
 
             int dgDegree = 0;
@@ -609,6 +608,8 @@ namespace HilbertTest {
             bool true1D = false;
             bool saveToDb = false;
 
+            //string dbPath = @"D:\Weber\BoSSS\test_db";
+            string dbPath = null;
             c.DbPath = dbPath;
             c.savetodb = dbPath != null && saveToDb;
 
@@ -630,10 +631,11 @@ namespace HilbertTest {
 
             if (Repart) {
                 // Add one balance constraint for each subgrid
+                c.DynamicLoadBalancing_On = true;
+                c.DynamicLoadBalancing_CellClassifier = new LTSCellClassifier();
                 c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(LTSCellCostEstimator.Factory(c.NumberOfSubGrids));
                 c.DynamicLoadBalancing_ImbalanceThreshold = 0.0;
                 c.DynamicLoadBalancing_Period = c.ReclusteringInterval;
-                c.DynamicLoadBalancing_CellClassifier = new LTSCellClassifier(); 
             }
             
             c.GridFunc = delegate {
