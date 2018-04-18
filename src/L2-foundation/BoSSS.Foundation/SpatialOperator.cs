@@ -30,6 +30,7 @@ using ilPSP.Tracing;
 using ilPSP.Utils;
 using MPI.Wrappers;
 using BoSSS.Foundation.Grid.Classic;
+using System.Diagnostics;
 
 namespace BoSSS.Foundation {
 
@@ -99,7 +100,7 @@ namespace BoSSS.Foundation {
         /// </param>
         public SpatialOperator(int NoOfDomFields, int NoOfCodomFields, Func<int[], int[], int[], int> QuadOrderFunc, params string[] __varnames)
             : this(GetSubarray(__varnames, 0, NoOfDomFields), GetSubarray(__varnames, NoOfDomFields, NoOfCodomFields), QuadOrderFunc) {
-            if (NoOfCodomFields + NoOfDomFields != __varnames.Length)
+            if(NoOfCodomFields + NoOfDomFields != __varnames.Length)
                 throw new ArgumentException("mismatch between number of provided variable names and given number of domain and codomain fields.");
         }
 
@@ -116,7 +117,7 @@ namespace BoSSS.Foundation {
         /// </param>
         public SpatialOperator(int NoOfDomFields, int NoOfParameters, int NoOfCodomFields, Func<int[], int[], int[], int> QuadOrderFunc, params string[] __varnames)
             : this(GetSubarray(__varnames, 0, NoOfDomFields), GetSubarray(__varnames, NoOfDomFields, NoOfParameters), GetSubarray(__varnames, NoOfDomFields + NoOfParameters, NoOfCodomFields), QuadOrderFunc) {
-            if (NoOfCodomFields + NoOfDomFields + NoOfParameters != __varnames.Length)
+            if(NoOfCodomFields + NoOfDomFields + NoOfParameters != __varnames.Length)
                 throw new ArgumentException("mismatch between number of provided variable names and given number of domain, parameter and codomain fields.");
 
         }
@@ -131,7 +132,7 @@ namespace BoSSS.Foundation {
         /// variable names in the Codomain of the spatial differential operator
         /// </param>
         /// <param name="QuadOrderFunc">E.g., one of the members of <see cref="QuadOrderFunc"/>.</param>
-        public SpatialOperator(IList<string> __DomainVar, IList<string> __CoDomainVar, Func<int[],int[],int[],int> QuadOrderFunc)
+        public SpatialOperator(IList<string> __DomainVar, IList<string> __CoDomainVar, Func<int[], int[], int[], int> QuadOrderFunc)
             : this(__DomainVar, null, __CoDomainVar, QuadOrderFunc) {
         }
 
@@ -151,19 +152,19 @@ namespace BoSSS.Foundation {
         /// <param name="QuadOrderFunc">E.g., one of the members of <see cref="QuadOrderFunc"/>.</param>
         public SpatialOperator(IList<string> __DomainVar, IList<string> __ParameterVar, IList<string> __CoDomainVar, Func<int[], int[], int[], int> QuadOrderFunc) {
             m_DomainVar = new string[__DomainVar.Count];
-            for (int i = 0; i < m_DomainVar.Length; i++) {
-                if (Array.IndexOf<string>(m_DomainVar, __DomainVar[i]) >= 0)
+            for(int i = 0; i < m_DomainVar.Length; i++) {
+                if(Array.IndexOf<string>(m_DomainVar, __DomainVar[i]) >= 0)
                     throw new ArgumentException("error in domain variables list; identifier \"" + __DomainVar[i] + "\" appears twice.", "__DomainVar");
                 m_DomainVar[i] = __DomainVar[i];
             }
 
-            if (__ParameterVar != null) {
+            if(__ParameterVar != null) {
                 m_ParameterVar = new string[__ParameterVar.Count];
-                for (int i = 0; i < m_ParameterVar.Length; i++) {
-                    if (Array.IndexOf<string>(m_DomainVar, __ParameterVar[i]) >= 0)
+                for(int i = 0; i < m_ParameterVar.Length; i++) {
+                    if(Array.IndexOf<string>(m_DomainVar, __ParameterVar[i]) >= 0)
                         throw new ArgumentException("error in parameter variables list; identifier \"" + __ParameterVar[i] + "\" is already contained in the domain variables list.", "__ParameterVar");
 
-                    if (Array.IndexOf<string>(m_ParameterVar, __ParameterVar[i]) >= 0)
+                    if(Array.IndexOf<string>(m_ParameterVar, __ParameterVar[i]) >= 0)
                         throw new ArgumentException("error in parameter variables list; identifier \"" + __ParameterVar[i] + "\" appears twice.", "__ParameterVar");
 
                     m_ParameterVar[i] = __ParameterVar[i];
@@ -180,7 +181,7 @@ namespace BoSSS.Foundation {
             }
 
             m_EquationComonents = new SortedList<string, List<IEquationComponent>>(__CoDomainVar.Count);
-            foreach (var f in __CoDomainVar) {
+            foreach(var f in __CoDomainVar) {
                 m_EquationComonents.Add(f, new List<IEquationComponent>());
             }
             m_EquationComponentsHelper = new _EquationComponents(this);
@@ -197,23 +198,23 @@ namespace BoSSS.Foundation {
         /// exception is thrown;
         /// </remarks>
         private void Verify() {
-            foreach (var comps in m_EquationComonents.Values) {
-                foreach (IEquationComponent c in comps) {
-                    foreach (string varname in c.ArgumentOrdering) {
-                        if (Array.IndexOf<string>(m_DomainVar, varname) < 0)
+            foreach(var comps in m_EquationComonents.Values) {
+                foreach(IEquationComponent c in comps) {
+                    foreach(string varname in c.ArgumentOrdering) {
+                        if(Array.IndexOf<string>(m_DomainVar, varname) < 0)
                             throw new ApplicationException("configuration error in spatial differential operator; some equation component depends on variable \""
                                 + varname
                                 + "\", but this name is not a member of the domain variable list.");
                     }
 
-                    if (c.ParameterOrdering != null) {
-                        foreach (string varname in c.ParameterOrdering) {
-                            if (Array.IndexOf<string>(m_ParameterVar, varname) < 0)
+                    if(c.ParameterOrdering != null) {
+                        foreach(string varname in c.ParameterOrdering) {
+                            if(Array.IndexOf<string>(m_ParameterVar, varname) < 0)
                                 throw new ApplicationException("configuration error in spatial differential operator; some equation component depends on (parameter) variable \""
                                     + varname
                                     + "\", but this name is not a member of the parameter variable list.");
 
-                            if (c.ArgumentOrdering.Contains(varname))
+                            if(c.ArgumentOrdering.Contains(varname))
                                 throw new ApplicationException("configuration error in spatial differential operator; some equation component contains variable \""
                                     + varname
                                     + "\" in parameter and argument list; this is not allowed.");
@@ -328,10 +329,12 @@ namespace BoSSS.Foundation {
                     qInsVol = new CellQuadratureScheme(true, cm);
                 }
 
-                Evaluator ev = GetEvaluatorEx(
+                var ev = GetEvaluatorEx(
                     domainMappingRevisited, Params, CodomainMapping,
                     qInsEdge,
-                    qInsVol,
+                    qInsVol);
+
+
                     sgrd,
                     bndMode);
                 CoordinateVector outp = new CoordinateVector(CodomainMapping);
@@ -369,9 +372,9 @@ namespace BoSSS.Foundation {
         /// be almost comparable to the use of the <see cref="Evaluator"/>-class;
         /// </remarks>
         public void Evaluate(IList<DGField> DomainFields, IList<DGField> CodomainFields, double time = double.NaN) {
-            if (DomainFields.Count != m_DomainVar.Length)
+            if(DomainFields.Count != m_DomainVar.Length)
                 throw new ArgumentException("wrong number of domain fields", "DomainFields");
-            if (CodomainFields.Count != m_CodomainVar.Length)
+            if(CodomainFields.Count != m_CodomainVar.Length)
                 throw new ArgumentException("wrong number of domain fields", "CodomainFields");
 
             CoordinateMapping inp = new CoordinateMapping(DomainFields);
@@ -398,7 +401,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// And another wrapper.
         /// </summary>
-        public void Evaluate(double time, SubGrid subGrid = null, SubGridBoundaryModes subGridBoundaryMode = SubGridBoundaryModes.OpenBoundary,  params DGField[] f) {
+        public void Evaluate(double time, SubGrid subGrid = null, SubGridBoundaryModes subGridBoundaryMode = SubGridBoundaryModes.OpenBoundary, params DGField[] f) {
             if(DomainVar.Count + ParameterVar.Count + CodomainVar.Count != f.Length)
                 throw new ArgumentException("wrong number of domain/parameter/codomain fields", "f");
 
@@ -422,7 +425,7 @@ namespace BoSSS.Foundation {
         /// a list of <paramref name="NoOfDomainVar"/>+<paramref name="NoOfCodomainVar"/> fields;
         /// </param>
         public void Evaluate(uint NoOfDomainVar, uint NoOfCodomainVar, double time, params DGField[] fields) {
-            if (fields.Length != (NoOfDomainVar + NoOfCodomainVar))
+            if(fields.Length != (NoOfDomainVar + NoOfCodomainVar))
                 throw new ArgumentException("wrong number of fields.", "fields");
 
             DGField[] DomF = new DGField[NoOfDomainVar];
@@ -440,7 +443,7 @@ namespace BoSSS.Foundation {
         /// </summary>
         public void ComputeMatrix<M, V>(
             UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap,
-            M Matrix, V AffineOffset,  bool OnlyAffine, double time = 0.0,
+            M Matrix, V AffineOffset, bool OnlyAffine, double time = 0.0,
             SubGrid sgrd = null)
             where M : IMutableMatrix
             where V : IList<double> {
@@ -479,10 +482,9 @@ namespace BoSSS.Foundation {
             int[] DomainDegrees = DomainMap.BasisS.Select(f => f.Degree).ToArray();
             int[] CodomainDegrees = CodomainMap.BasisS.Select(f => f.Degree).ToArray();
             int[] ParameterDegrees;
-            if (Parameters != null && Parameters.Count != 0) {
-                ParameterDegrees = Parameters.Select(f => f == null ? 0: f.Basis.Degree ).ToArray();
-            }
-            else {
+            if(Parameters != null && Parameters.Count != 0) {
+                ParameterDegrees = Parameters.Select(f => f == null ? 0 : f.Basis.Degree).ToArray();
+            } else {
                 ParameterDegrees = new int[] { 0 };
             };
             order = QuadOrderFunction(DomainDegrees, ParameterDegrees, CodomainDegrees);
@@ -491,11 +493,11 @@ namespace BoSSS.Foundation {
 
         private static IGridData CheckArguments(UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap) {
             var GridDat = DomainMap.GridDat;
-            if (!object.ReferenceEquals(GridDat, CodomainMap.GridDat))
+            if(!object.ReferenceEquals(GridDat, CodomainMap.GridDat))
                 throw new ArgumentException("Domain and codomain map must be assigend to the same grid.");
-            if (Parameters != null)
-                foreach (var prm in Parameters)
-                    if (prm != null && (!object.ReferenceEquals(prm.GridDat, GridDat)))
+            if(Parameters != null)
+                foreach(var prm in Parameters)
+                    if(prm != null && (!object.ReferenceEquals(prm.GridDat, GridDat)))
                         throw new ArgumentException(string.Format("parameter field {0} is assigned to a different grid.", prm.Identification));
             return GridDat;
         }
@@ -507,7 +509,7 @@ namespace BoSSS.Foundation {
         public MsrMatrix ComputeMatrix(
             UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap, double time = 0.0, SubGrid SubGrid = null) {
 
-            
+
             int RowBlkSize = (CodomainMap.MaxTotalNoOfCoordinatesPerCell == CodomainMap.MinTotalNoOfCoordinatesPerCell) ? CodomainMap.MaxTotalNoOfCoordinatesPerCell : 1;
             int ColBlkSize = (DomainMap.MaxTotalNoOfCoordinatesPerCell == DomainMap.MinTotalNoOfCoordinatesPerCell) ? DomainMap.MaxTotalNoOfCoordinatesPerCell : 1;
 
@@ -522,6 +524,7 @@ namespace BoSSS.Foundation {
             return Matrix;
         }
 
+        /*
         /// <summary>
         /// Simplified version of <see cref="ComputeAffine{V}"/>.
         /// </summary>
@@ -532,8 +535,9 @@ namespace BoSSS.Foundation {
 
             return affine;
         }
+        */
 
-
+        /*
         /// <summary>
         /// computes the affine offset and/or matrix of the operator, expert
         /// version;
@@ -633,7 +637,9 @@ namespace BoSSS.Foundation {
                 volRule,
                 SubGridBoundaryMask, ParameterMPIExchange);
         }
+        */
 
+        /*
         /// <summary>
         /// An important special case of <see cref="ComputeMatrixEx{M,V}"/>, in order to compute only
         /// the affine offset.
@@ -692,110 +698,9 @@ namespace BoSSS.Foundation {
                 OnlyAffine: true, time:time,
                 volQuadScheme: volQr, edgeQuadScheme: edgeQr);
         }
-        
-        /// <summary>
-        /// matrix evaluation
-        /// </summary>
-        virtual protected void Internal_ComputeMatrixEx<M, V>(IGridData ctx,
-            UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap,
-            M Matrix, V AffineOffset, bool OnlyAffine, double time,
-            ICompositeQuadRule<QuadRule> edgeRule, ICompositeQuadRule<QuadRule> volRule, BitArray SubGridBoundaryMask, bool ParameterMPIExchange)
-            where M : IMutableMatrix
-            where V : IList<double> //
-        {
-            MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
-            using (var tr = new ilPSP.Tracing.FuncTrace()) {
-
-                // check arguments
-                // ===============
-                {
-                    if (!m_IsCommited)
-                        throw new ApplicationException("operator assembly must be finalized before by calling 'Commit' before this method can be called.");
-
-                    if (DomainMap.BasisS.Count != this.m_DomainVar.Length)
-                        throw new ArgumentException("mismatch between specified domain variables and number of DG fields in domain mapping", "DomainMap");
-                    if (CodomainMap.BasisS.Count != this.m_CodomainVar.Length)
-                        throw new ArgumentException("mismatch between specified codomain variables and number of DG fields in codomain mapping", "CodomainMap");
-
-                    if (m_ParameterVar.Length == 0) {
-                        if (Parameters != null && Parameters.Count > 0)
-                            throw new ArgumentException("mismatch between specified parameter variables and number of DG fields in parameter mapping", "Parameters");
-                    } else {
-                        if (Parameters == null)
-                            throw new ArgumentNullException("Parameters", "parameters must be specified");
-                        if (Parameters.Count != m_ParameterVar.Length)
-                            throw new ArgumentException("mismatch between specified parameter variables and number of DG fields in parameter mapping", "Parameters");
-                    }
-
-                    if (AffineOffset != null && AffineOffset.Count < CodomainMap.LocalLength)
-                        throw new ArgumentException("vector to short", "AffineOffset");
-                    if (OnlyAffine == false) {
-                        if (!Matrix.RowPartitioning.EqualsPartition(CodomainMap))
-                            throw new ArgumentException("wrong number of columns in matrix.", "Matrix");
-                        if (!Matrix.ColPartition.EqualsPartition(DomainMap))
-                            throw new ArgumentException("wrong number of rows in matrix.", "Matrix");
-                    }
-                    if (SubGridBoundaryMask != null) {
-                        throw new NotImplementedException("Only Null is valid for SubGridBoundaryMask");
-                    }
+        */
 
 
-                }
-
-                // do work
-                // =======
-
-                // transceiver is only needed for parameters
-                if (ParameterMPIExchange) {
-                    Transceiver m_transciever = null;
-                    if (Parameters != null) {
-                        List<DGField> FieldsForTransciever = new List<DGField>(Parameters.Count); 
-                        foreach (DGField ff in Parameters)
-                            if (ff != null)
-                                FieldsForTransciever.Add(ff);
-
-                        if (FieldsForTransciever.Count > 0) {
-                            m_transciever = new Transceiver(FieldsForTransciever);
-                            m_transciever.TransceiveStartImReturn();
-                            m_transciever.TransceiveFinish();
-                        }
-                    }
-                }
-
-
-                // volume integration
-                // ------------------
-                if (volRule.Any()
-                    && ContainesComponentType(typeof(IVolumeForm), typeof(IVolumeForm_UxV), typeof(IVolumeForm_UxGradV), typeof(IVolumeForm_GradUxV), typeof(IVolumeForm_GradUxGradV))) {
-                    using (new BlockTrace("Volume_Integration_(new)", tr)) {
-                        var mtxBuilder = new LECVolumeQuadrature2<M, V>(this);
-
-
-                        mtxBuilder.Execute(volRule,
-                            CodomainMap, Parameters, DomainMap,
-                            OnlyAffine ? default(M) : Matrix, AffineOffset, time);
-
-                    }
-
-                } else {
-                    tr.Info("volume integration skipped: cell mask is empty");
-                } 
-
-                // edge integration
-                // ----------------
-                if (!(edgeRule.IsNullOrEmpty())
-                     && ContainesComponentType(typeof(IEdgeForm), typeof(IEdgeform_UxV), typeof(IEdgeform_UxGradV), typeof(IEdgeform_UxV), typeof(IEdgeSource_V))) {
-
-                    using (new BlockTrace("Edge_Integration_(new)", tr)) {
-                        var mxtbuilder2 = new LECEdgeQuadrature2<M, V>(this);
-                
-                        mxtbuilder2.Execute(edgeRule, CodomainMap, Parameters, DomainMap, OnlyAffine ? default(M) : Matrix, AffineOffset, time);
-                        tr.Info("done.");
-                        mxtbuilder2 = null;
-                    }
-                } 
-            }
-        }
 
 
         /// <summary>
@@ -813,7 +718,7 @@ namespace BoSSS.Foundation {
         /// the returned list is in the same order as 
         /// </remarks>
         public IList<string> CollectDependentVariables(string CodomVar) {
-            if (Array.IndexOf<string>(m_CodomainVar, CodomVar) < 0)
+            if(Array.IndexOf<string>(m_CodomainVar, CodomVar) < 0)
                 throw new ArgumentException("the provided variable name \""
                     + CodomVar
                     + "\" is not a member of the Codomain variable list of this spatial differential operator");
@@ -821,18 +726,18 @@ namespace BoSSS.Foundation {
 
             var comps = m_EquationComonents[CodomVar];
             List<string> ret = new List<string>();
-            for (int i = 0; i < m_DomainVar.Length; i++) {
+            for(int i = 0; i < m_DomainVar.Length; i++) {
                 string varName = m_DomainVar[i];
 
                 bool isContained = false;
-                foreach (var EqnComponent in comps) {
-                    foreach (string name in EqnComponent.ArgumentOrdering) {
-                        if (name.Equals(varName))
+                foreach(var EqnComponent in comps) {
+                    foreach(string name in EqnComponent.ArgumentOrdering) {
+                        if(name.Equals(varName))
                             isContained = true;
                     }
                 }
 
-                if (isContained)
+                if(isContained)
                     ret.Add(varName);
             }
 
@@ -887,7 +792,7 @@ namespace BoSSS.Foundation {
         public virtual void Commit() {
             Verify();
 
-            if (m_IsCommited)
+            if(m_IsCommited)
                 throw new ApplicationException("'Commit' has already been called - it can be called only once in the lifetime of this object.");
 
             m_IsCommited = true;
@@ -916,7 +821,7 @@ namespace BoSSS.Foundation {
             /// <returns></returns>
             public ICollection<IEquationComponent> this[string EqnName] {
                 get {
-                    if (m_owner.m_IsCommited)
+                    if(m_owner.m_IsCommited)
                         return m_owner.m_EquationComonents[EqnName].AsReadOnly();
                     else
                         return m_owner.m_EquationComonents[EqnName];
@@ -1011,13 +916,13 @@ namespace BoSSS.Foundation {
         /// vectorizer option: translate some equation component to another one
         /// </param>
         public EquationComponentArgMapping<T>[] GetArgMapping<T>(bool CatParams = false, Func<T, bool> F = null, Func<IEquationComponent, IEquationComponent> vectorizer = null) where T : IEquationComponent {
-            if (!IsCommited)
+            if(!IsCommited)
                 throw new ApplicationException("Commit() has to be called prior to this method.");
 
             int Gamma = CodomainVar.Count;
 
             var ret = new EquationComponentArgMapping<T>[Gamma];
-            for (int i = 0; i < Gamma; i++) {
+            for(int i = 0; i < Gamma; i++) {
                 var codName = this.m_CodomainVar[i];
                 ret[i] = new EquationComponentArgMapping<T>(this,
                     codName,
@@ -1029,79 +934,7 @@ namespace BoSSS.Foundation {
             return ret;
         }
 
-        
 
-        /*
-
-        /// <summary>
-        /// constructs quadrature objects for the nonlinear equation components;
-        /// </summary>
-        /// <param name="edgeQuad">
-        /// on exit, the quadrature for cell boundary integrals, if <see cref="RequiresNonlinearEdgeQuadrature"/>
-        /// is true, otherwise null;
-        /// </param>
-        /// <param name="volumeQuad">
-        /// on exit, the quadrature for cell volume integrals, if <see cref="RequiresNonlinearVolumeQuadrature"/>
-        /// is true, otherwise null;
-        /// </param>
-        /// <param name="DomainVarMap">
-        /// The list of the domain variables, which will substitute the placeholders 
-        /// defined in <see cref="DomainVar"/>;
-        /// </param>
-        /// <param name="ParameterVarMap">
-        /// The parameter variables (of this differential operator);
-        /// The number of elements in the list must match the parameter count of the differential operator
-        /// (see <see cref="SpatialOperator.ParameterVar"/>);
-        /// It is allowed to set an entry to 'null', in this case the values of the parameter field
-        /// are assumed to be 0.0;
-        /// If the differential operator contains no parameters, this argument can be null;
-        /// </param>
-        /// <param name="CodomainVarMap">
-        /// similar to <paramref name="DomainVarMap"/>, for the codomain of the differential operator
-        /// </param>
-        /// <remarks>
-        /// The
-        /// operator assembly must be finalized before by calling <see cref="Commit"/> before this method can be called.
-        /// </remarks>
-        /// <param name="edgeQrFact">
-        /// optional quadrature rule factory for edges
-        /// </param>
-        /// <param name="volQrFact">
-        /// optional quadrature rule factory for volumes/cells
-        /// </param>
-        internal void GetNonlinQuadrature(out NECQuadratureEdge edgeQuad, out NECQuadratureVolume volumeQuad,
-                                          IList<Field> DomainVarMap, IList<Field> ParameterVarMap, UnsetteledCoordinateMapping CodomainVarMap,
-                                          Quadrature.IQuadRuleFactory edgeQrFact, Quadrature.IQuadRuleFactory volQrFact) {
-            //if (CodomainVarMap.m_Context != DomainVarMap.m_Context)
-            //    throw new ArgumentException("domain variable map and codomain variable map belong to different context;", "DomainVarMap,CodomainVarMap");
-
-            if (!m_IsCommited)
-                throw new ApplicationException("operator assembly must be finalized before by calling 'Commit' before this method can be called.");
-
-            if (RequiresNonlinearEdgeQuadrature) {
-                edgeQuad = new NECQuadratureEdge(CodomainVarMap.m_Context,
-                                                 this,
-                                                 DomainVarMap,
-                                                 ParameterVarMap,
-                                                 CodomainVarMap,
-                                                 edgeQrFact);
-            } else {
-                edgeQuad = null;
-            }
-
-            if (RequiresNonlinearVolumeQuadrature) {
-                volumeQuad = new NECQuadratureVolume(CodomainVarMap.m_Context,
-                                                     this,
-                                                     DomainVarMap,
-                                                     ParameterVarMap,
-                                                     CodomainVarMap,
-                                                     volQrFact);
-            } else {
-                volumeQuad = null;
-            }
-        }
-
-         */
 
         /// <summary>
         /// returns true, if this spatial differential operator contains any 
@@ -1111,8 +944,8 @@ namespace BoSSS.Foundation {
         /// </summary>
         /// <returns></returns>
         public bool ContainsLinear() {
-            foreach (string var in m_CodomainVar) {
-                if (ContainsLinearPerCodomainVar(var))
+            foreach(string var in m_CodomainVar) {
+                if(ContainsLinearPerCodomainVar(var))
                     return true;
             }
 
@@ -1128,8 +961,8 @@ namespace BoSSS.Foundation {
         /// </summary>
         public bool ContainsNonlinear {
             get {
-                foreach (string var in m_CodomainVar) {
-                    if (ContainsNonlinearPerCodomainVar(var))
+                foreach(string var in m_CodomainVar) {
+                    if(ContainsNonlinearPerCodomainVar(var))
                         return true;
                 }
 
@@ -1138,13 +971,12 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
-        /// true, if <see cref="ReqNonlinEdgeQuad_PerCodomainVar"/>
-        /// is true for any codomain variable;
+        /// True, if this operator contains any edge term.
         /// </summary>
-        public bool RequiresNonlinearEdgeQuadrature {
+        public bool RequiresEdgeQuadrature {
             get {
-                foreach (string var in m_CodomainVar) {
-                    if (ReqNonlinEdgeQuad_PerCodomainVar(var))
+                foreach(string var in m_CodomainVar) {
+                    if(ReqNonlinEdgeQuad_PerCodomainVar(var))
                         return true;
                 }
 
@@ -1153,13 +985,12 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
-        /// true, if <see cref="ReqNonlVolumeQuad_PerCodomainVar"/>
-        /// is true for any codomain variable;
+        /// True, if this operator contains any volume term.
         /// </summary>
-        public bool RequiresNonlinearVolumeQuadrature {
+        public bool RequiresVolumeQuadrature {
             get {
-                foreach (string var in m_CodomainVar) {
-                    if (ReqNonlVolumeQuad_PerCodomainVar(var))
+                foreach(string var in m_CodomainVar) {
+                    if(ReqNonlVolumeQuad_PerCodomainVar(var))
                         return true;
                 }
 
@@ -1182,10 +1013,10 @@ namespace BoSSS.Foundation {
         /// </param>
         /// <returns></returns>
         public bool ContainsLinearPerCodomainVar(string CodomVar) {
-            if (Array.IndexOf<string>(m_CodomainVar, CodomVar) < 0)
+            if(Array.IndexOf<string>(m_CodomainVar, CodomVar) < 0)
                 throw new ArgumentException("given codomain variable name is not known in this spatial differential operator", "CodomVar");
 
-            foreach (object o in EquationComponents[CodomVar]) {
+            foreach(object o in EquationComponents[CodomVar]) {
                 Type[] interfaces = o.GetType().GetInterfaces();
 
                 //if (Array.IndexOf<Type>(interfaces, typeof(ILinear2ndDerivativeFlux)) >= 0)
@@ -1198,19 +1029,19 @@ namespace BoSSS.Foundation {
                 //    return true;
                 //if (Array.IndexOf<Type>(interfaces, typeof(ILinearFlux)) >= 0)
                 //    return true;
-                if (Array.IndexOf<Type>(interfaces, typeof(IVolumeForm_GradUxGradV)) >= 0)
+                if(Array.IndexOf<Type>(interfaces, typeof(IVolumeForm_GradUxGradV)) >= 0)
                     return true;
-                if (Array.IndexOf<Type>(interfaces, typeof(IEdgeform_GradUxV)) >= 0)
+                if(Array.IndexOf<Type>(interfaces, typeof(IEdgeform_GradUxV)) >= 0)
                     return true;
-                if (Array.IndexOf<Type>(interfaces, typeof(IVolumeForm_GradUxGradV)) >= 0)
+                if(Array.IndexOf<Type>(interfaces, typeof(IVolumeForm_GradUxGradV)) >= 0)
                     return true;
-                if (Array.IndexOf<Type>(interfaces, typeof(IEdgeform_UxGradV)) >= 0)
+                if(Array.IndexOf<Type>(interfaces, typeof(IEdgeform_UxGradV)) >= 0)
                     return true;
-                if (Array.IndexOf<Type>(interfaces, typeof(IEdgeSource_V)) >= 0)
+                if(Array.IndexOf<Type>(interfaces, typeof(IEdgeSource_V)) >= 0)
                     return true;
-                if (Array.IndexOf<Type>(interfaces, typeof(IEdgeSource_GradV)) >= 0)
+                if(Array.IndexOf<Type>(interfaces, typeof(IEdgeSource_GradV)) >= 0)
                     return true;
-                if (Array.IndexOf<Type>(interfaces, typeof(IEdgeform_UxV)) >= 0)
+                if(Array.IndexOf<Type>(interfaces, typeof(IEdgeform_UxV)) >= 0)
                     return true;
             }
 
@@ -1242,19 +1073,19 @@ namespace BoSSS.Foundation {
         /// </param>
         /// <returns></returns>
         public bool ReqNonlVolumeQuad_PerCodomainVar(string CodomVar) {
-            if (Array.IndexOf<string>(m_CodomainVar, CodomVar) < 0)
+            if(Array.IndexOf<string>(m_CodomainVar, CodomVar) < 0)
                 throw new ArgumentException("given codomain variable name is not known in this spatial differential operator", "CodomVar");
 
-            foreach (object o in EquationComponents[CodomVar]) {
+            foreach(object o in EquationComponents[CodomVar]) {
                 Type[] interfaces = o.GetType().GetInterfaces();
 
-                if (Array.IndexOf<Type>(interfaces, typeof(IVolumeForm)) >= 0)
+                if(Array.IndexOf<Type>(interfaces, typeof(IVolumeForm)) >= 0)
                     return true;
-                if (Array.IndexOf<Type>(interfaces, typeof(INonlinearFlux)) >= 0)
+                if(Array.IndexOf<Type>(interfaces, typeof(INonlinearFlux)) >= 0)
                     return true;
-                if (Array.IndexOf<Type>(interfaces, typeof(INonlinearFluxEx)) >= 0)
+                if(Array.IndexOf<Type>(interfaces, typeof(INonlinearFluxEx)) >= 0)
                     return true;
-                if (Array.IndexOf<Type>(interfaces, typeof(INonlinearSource)) >= 0)
+                if(Array.IndexOf<Type>(interfaces, typeof(INonlinearSource)) >= 0)
                     return true;
             }
 
@@ -1273,19 +1104,19 @@ namespace BoSSS.Foundation {
         /// </param>
         /// <returns></returns>
         bool ReqNonlinEdgeQuad_PerCodomainVar(string CodomVar) {
-            if (Array.IndexOf<string>(m_CodomainVar, CodomVar) < 0)
+            if(Array.IndexOf<string>(m_CodomainVar, CodomVar) < 0)
                 throw new ArgumentException("given codomain variable name is not known in this spatial differential operator", "CodomVar");
 
-            foreach (object o in EquationComponents[CodomVar]) {
+            foreach(object o in EquationComponents[CodomVar]) {
                 Type[] interfaces = o.GetType().GetInterfaces();
 
-                if (Array.IndexOf<Type>(interfaces, typeof(IEdgeForm)) >= 0)
+                if(Array.IndexOf<Type>(interfaces, typeof(IEdgeForm)) >= 0)
                     return true;
-                if (Array.IndexOf<Type>(interfaces, typeof(INonlinearFlux)) >= 0)
+                if(Array.IndexOf<Type>(interfaces, typeof(INonlinearFlux)) >= 0)
                     return true;
-                if (Array.IndexOf<Type>(interfaces, typeof(INonlinearFluxEx)) >= 0)
+                if(Array.IndexOf<Type>(interfaces, typeof(INonlinearFluxEx)) >= 0)
                     return true;
-                if (Array.IndexOf<Type>(interfaces, typeof(IDualValueFlux)) >= 0)
+                if(Array.IndexOf<Type>(interfaces, typeof(IDualValueFlux)) >= 0)
                     return true;
             }
 
@@ -1298,11 +1129,11 @@ namespace BoSSS.Foundation {
         /// is of some type in <paramref name="t"/>.
         /// </summary>
         public bool ContainesComponentType_PerCodomainVar(string CodomVar, params Type[] t) {
-            foreach (object o in EquationComponents[CodomVar]) {
+            foreach(object o in EquationComponents[CodomVar]) {
                 Type[] interfaces = o.GetType().GetInterfaces();
 
-                for (int i = 0; i < t.Length; i++)
-                    if (Array.IndexOf<Type>(interfaces, t[i]) >= 0)
+                for(int i = 0; i < t.Length; i++)
+                    if(Array.IndexOf<Type>(interfaces, t[i]) >= 0)
                         return true;
             }
 
@@ -1315,15 +1146,15 @@ namespace BoSSS.Foundation {
         /// is of some type in <paramref name="t"/>.
         /// </summary>
         public bool ContainesComponentType(params Type[] t) {
-            foreach (var s in this.CodomainVar) {
-                if (ContainesComponentType_PerCodomainVar(s, t))
+            foreach(var s in this.CodomainVar) {
+                if(ContainesComponentType_PerCodomainVar(s, t))
                     return true;
             }
 
             return false;
         }
 
-        
+
         /// <summary>
         /// constructs a new Instance of <see cref="Evaluator"/>
         /// </summary>
@@ -1356,36 +1187,55 @@ namespace BoSSS.Foundation {
         /// </param>
         /// <param name="sgrd">
         /// </param>
-        public virtual IEvaluator GetEvaluatorEx(
+        public virtual IEvaluatorNonLin GetEvaluatorEx(
             IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
             EdgeQuadratureScheme edgeQrCtx = null,
-            CellQuadratureScheme volQrCtx = null,
-            SubGrid sgrd = null,
-            SubGridBoundaryModes subGridBoundaryTreatment = SubGridBoundaryModes.BoundaryEdge) //
+            CellQuadratureScheme volQrCtx = null) //
         {
 
-            using (new FuncTrace()) {
+            using(new FuncTrace()) {
 
                 /// This is already done in the constructor of Evaluator
-                #if DEBUG
-                if (!m_IsCommited)
+#if DEBUG
+                if(!m_IsCommited)
                     throw new ApplicationException("operator assembly must be finalized before by calling 'Commit' before this method can be called.");
-                #endif
+#endif
 
 
-                Evaluator e = new Evaluator(this, DomainFields, ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx, sgrd, subGridBoundaryTreatment);
+                var e = new EvaluatorNonLin(this, new CoordinateMapping(DomainFields), ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
+
+                return e;
+            }
+        }
+
+        public virtual IEvaluatorLinear GetMatrixBuilder(
+            UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
+            EdgeQuadratureScheme edgeQrCtx = null,
+            CellQuadratureScheme volQrCtx = null) //
+        {
+
+            using(new FuncTrace()) {
+
+                /// This is already done in the constructor of Evaluator
+#if DEBUG
+                if(!m_IsCommited)
+                    throw new ApplicationException("operator assembly must be finalized before by calling 'Commit' before this method can be called.");
+#endif
+
+
+                var e = new EvaluatorLinear(this, DomainVarMap, ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
 
                 return e;
             }
         }
 
 
+
+
         /// <summary>
         /// Container for the evaluation of nonlinear fluxes/sources
         /// </summary>
-        public class Evaluator : IEvaluator {
-
-           
+        abstract protected class EvaluatorBase : IEvaluator {
 
             SpatialOperator m_Owner;
 
@@ -1401,105 +1251,277 @@ namespace BoSSS.Foundation {
             /// <summary>
             /// ctor
             /// </summary>
-            protected internal Evaluator(
+            protected internal EvaluatorBase(
                 SpatialOperator owner,
-                IList<DGField> DomainVarMap,
+                UnsetteledCoordinateMapping DomainVarMap,
                 IList<DGField> ParameterMap,
                 UnsetteledCoordinateMapping CodomainVarMap,
                 EdgeQuadratureScheme edgeQrCtx,
-                CellQuadratureScheme volQrCtx,
-                SubGrid sgrd, 
-                SubGridBoundaryModes subGridBoundaryTreatment) //
+                CellQuadratureScheme volQrCtx) //
             {
-                using (var tr = new FuncTrace()) {
+                using(var tr = new FuncTrace()) {
                     MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
 
-                    if (DomainVarMap.Count != owner.DomainVar.Count) {
+                    if(DomainVarMap.NoOfVariables != owner.DomainVar.Count) {
                         throw new ArgumentException("wrong number of domain variables provided.");
                     }
-                    if (((ParameterMap != null) ? ParameterMap.Count : 0) != owner.ParameterVar.Count) {
-                        throw new ArgumentException("wrong number of parameter variables provided.");
-                    }
-                    if (CodomainVarMap.BasisS.Count != owner.CodomainVar.Count) {
+                    this.m_Parameters = new DGField[owner.ParameterVar.Count];
+                    if(CodomainVarMap.NoOfVariables != owner.CodomainVar.Count) {
                         throw new ArgumentException("wrong number of codomain variables provided.");
                     }
 
-                    IEnumerable<Basis> allBasis = DomainVarMap.Select(f => f.Basis);
-                    if (ParameterMap != null) {
+                    IEnumerable<Basis> allBasis = DomainVarMap.BasisS;
+                    if(ParameterMap != null) {
                         allBasis = allBasis.Union(ParameterMap.Select(f => f.Basis));
                     }
                     allBasis = allBasis.Union(CodomainVarMap.BasisS);
                     IGridData grdDat = allBasis.First().GridDat;
-                    foreach (var b in allBasis) {
-                        if (!object.ReferenceEquals(grdDat, b.GridDat)) {
+                    foreach(var b in allBasis) {
+                        if(!object.ReferenceEquals(grdDat, b.GridDat)) {
                             throw new ArgumentException("all fields (domain, parameter, codomain) must be defined on the same grid.");
                         }
                     }
 
                     m_Owner = owner;
                     m_CodomainMapping = CodomainVarMap;
-                    m_DomainMapping = new CoordinateMapping(DomainVarMap);
-                    m_DomainVector = new CoordinateVector(m_DomainMapping);
-                    m_ParameterMap = ParameterMap;
+                    m_DomainMapping = DomainVarMap;
+                    m_Parameters = ParameterMap.ToArray();
 
-                    // create quadrature for nonlinear components
-                    // ------------------------------------------
-                    
-                    if (!m_Owner.IsCommited)
+                    if(!m_Owner.IsCommited)
                         throw new ApplicationException("operator assembly must be finalized before by calling 'Commit' before this method can be called.");
 
-                    int order = owner.GetOrderFromQuadOrderFunction(m_DomainMapping, ParameterMap, CodomainVarMap);
-                    //int order = FindQuadratureOrder(DomainVarMap, CodomainVarMap);
-                    
-                    
+                    order = owner.GetOrderFromQuadOrderFunction(m_DomainMapping, ParameterMap, CodomainVarMap);
+                }
+            }
 
-                    bool create_transciever = false;
-                    if (m_Owner.RequiresNonlinearEdgeQuadrature) {
-                        
-                        create_transciever = true;
-                        m_NonlinearEdge = new BoSSS.Foundation.Quadrature.NonLin.NECQuadratureEdge(grdDat,
-                                                                m_Owner,
-                                                                DomainVarMap,
-                                                                ParameterMap,
-                                                                CodomainVarMap,
-                                                                edgeQrCtx.SaveCompile(grdDat, order));
-                        m_NonlinearEdge.SubGridBoundaryTreatment = subGridBoundaryTreatment;
-                        {
-                            
-                            if(sgrd != null) {
-                                m_NonlinearEdge.SubGridCellsMarker = sgrd.VolumeMask.GetBitMaskWithExternal();
-                            }
-                        }
-                        
+
+            /// <summary>
+            /// Quadrature order to compile quadrature schemes
+            /// </summary>
+            protected int order;
+
+
+            /*
+            public void SetParameters(IEnumerable<DGField> pFields) {
+                if (pFields.Count() != m_Owner.ParameterVar.Count) {
+                    throw new ArgumentException("wrong number of parameter variables provided.");
+                }
+
+                foreach(var p in pFields) {
+                    if(p!= null) {
+                        if(!object.ReferenceEquals(p.GridDat, this.GridData))
+                            throw new ArgumentException("Mismatch between parameter field grid and grid for the evaluator.");
                     }
+                }
 
-                    if (m_Owner.RequiresNonlinearVolumeQuadrature) {
-                        m_NonlinearVolume = new BoSSS.Foundation.Quadrature.NonLin.NECQuadratureVolume(grdDat,
-                                                                    m_Owner,
-                                                                    DomainVarMap,
-                                                                    ParameterMap,
-                                                                    CodomainVarMap,
-                                                                    volQrCtx.SaveCompile(grdDat, order));
-
-                    }
+                m_Parameters = pFields.ToArray();
+            }
+            */
 
 
-                    // create transceiver
-                    // ------------------
-                    if (create_transciever) {
-                        m_TRX = new Transceiver(
-                            ArrayTools.Cat(m_DomainMapping.Fields, (m_ParameterMap != null) ? m_ParameterMap : new DGField[0]));
+
+            SubGridBoundaryModes m_SubGridBoundaryTreatment = SubGridBoundaryModes.BoundaryEdge;
+
+            public SubGridBoundaryModes SubGridBoundaryTreatment {
+                get {
+                    return m_SubGridBoundaryTreatment;
+                }
+            }
+
+
+            public void ActivateSubgridBoundary(CellMask sgrd, SubGridBoundaryModes subGridBoundaryTreatment = SubGridBoundaryModes.BoundaryEdge) {
+                throw new NotImplementedException();
+            }
+
+
+
+            /// <summary>
+            /// <see cref="CodomainMapping"/>
+            /// </summary>
+            UnsetteledCoordinateMapping m_CodomainMapping;
+
+            /// <summary>
+            /// coordinate mapping for the codomain variables;
+            /// </summary>
+            public UnsetteledCoordinateMapping CodomainMapping {
+                get {
+                    return m_CodomainMapping;
+                }
+            }
+
+            /// <summary>
+            /// <see cref="DomainMapping"/>
+            /// </summary>
+            UnsetteledCoordinateMapping m_DomainMapping;
+
+            /// <summary>
+            /// <see cref="Parameters"/>
+            /// </summary>
+            DGField[] m_Parameters;
+
+            /// <summary>
+            /// parameter mapping
+            /// </summary>
+            public IList<DGField> Parameters {
+                get {
+                    return m_Parameters;
+                }
+            }
+
+            /// <summary>
+            /// coordinate mapping for the domain variables;
+            /// </summary>
+            public UnsetteledCoordinateMapping DomainMapping {
+                get {
+                    return m_DomainMapping;
+                }
+            }
+
+            /// <summary>
+            /// Grid, on which this evaluator operates on.
+            /// </summary>
+            public IGridData GridData {
+                get {
+                    Debug.Assert(object.ReferenceEquals(DomainMapping.GridDat, CodomainMapping.GridDat));
+                    return m_DomainMapping.GridDat;
+                }
+            }
+
+
+
+
+            public double m_time = 0.0;
+
+            /// <summary>
+            /// Time passed e.g. to <see cref="CommonParams.time"/>, <see cref="CommonParamsBnd.time"/> and <see cref="CommonParamsVol.time"/>.
+            /// </summary>
+            public double time {
+                get {
+                    return m_time;
+                }
+                set {
+                    m_time = value;
+                }
+            }
+
+            /// <summary>
+            /// Should return all DG fields which should be exchanged, see <see cref="m_TRX"/>.
+            /// </summary>
+            abstract protected DGField[] GetTrxFields();
+
+            /// <summary>
+            /// Turn MPI sending/receiving of parameters and domain fields on/off.
+            /// </summary>
+            public bool MPITtransceive {
+                get {
+                    return m_TRX != null;
+                }
+                set {
+
+                    if((m_TRX == null) && (value == true)) {
+                        // + + + + + + + + + +
+                        // create transceiver
+                        // + + + + + + + + + +
+
+                        m_TRX = new Transceiver(GetTrxFields());
                     } else {
-                        // no edge quad. required => no communication required.
+                        // + + + + + + + + + + + + +
+                        // no communication required.
+                        // + + + + + + + + + + + + +
                         m_TRX = null;
                     }
-
 
                 }
             }
 
-            
 
+
+            /// <summary>
+            /// Transceiver for the fields within <see cref="DomainMapping"/>
+            /// </summary>
+            protected Transceiver m_TRX;
+
+
+        }
+
+
+
+        /// <summary>
+        /// evaluation of operators
+        /// </summary>
+        protected class EvaluatorNonLin : EvaluatorBase, IEvaluatorNonLin {
+
+            /// <summary>
+            /// Returns domain fields and parameters.
+            /// </summary>
+            protected override DGField[] GetTrxFields() {
+                return ArrayTools.Cat(DomainFields.Fields, (base.Parameters != null) ? base.Parameters : new DGField[0]);
+            }
+
+            /// <summary>
+            /// if the right-hand-side is present and contains nonlinear components, 
+            /// this is the corresponding edge quadrature;
+            /// otherwise, this member is null;
+            /// </summary>
+            BoSSS.Foundation.Quadrature.NonLin.NECQuadratureEdge m_NonlinearEdge;
+
+            /// <summary>
+            /// if the right-hand-side is present and contains nonlinear components, 
+            /// this is the corresponding volume quadrature;
+            /// otherwise, this member is null;
+            /// </summary>
+            BoSSS.Foundation.Quadrature.NonLin.NECQuadratureVolume m_NonlinearVolume;
+
+
+            public EvaluatorNonLin(
+                SpatialOperator owner,
+                CoordinateMapping DomainVarMap,
+                IList<DGField> ParameterMap,
+                UnsetteledCoordinateMapping CodomainVarMap,
+                EdgeQuadratureScheme edgeQrCtx,
+                CellQuadratureScheme volQrCtx) //
+             : base(owner, DomainVarMap, ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx) //
+            {
+
+                var grdDat = base.GridData;
+                DomainFields = DomainVarMap;
+
+                if(Owner.RequiresEdgeQuadrature) {
+
+
+                    m_NonlinearEdge = new BoSSS.Foundation.Quadrature.NonLin.NECQuadratureEdge(grdDat,
+                                                            Owner,
+                                                            DomainVarMap,
+                                                            ParameterMap,
+                                                            CodomainVarMap,
+                                                            edgeQrCtx.SaveCompile(grdDat, order));
+
+
+
+                }
+
+                if(Owner.RequiresVolumeQuadrature) {
+                    m_NonlinearVolume = new BoSSS.Foundation.Quadrature.NonLin.NECQuadratureVolume(grdDat,
+                                                                Owner,
+                                                                DomainVarMap,
+                                                                ParameterMap,
+                                                                CodomainVarMap,
+                                                                volQrCtx.SaveCompile(grdDat, order));
+
+                }
+
+
+                base.MPITtransceive = true;
+            }
+
+            /// <summary>
+            /// DG filed which serve a input for the spatial operator.
+            /// </summary>
+            public CoordinateMapping DomainFields {
+                get;
+                private set;
+            }
+            
             /// <summary>
             /// evaluates the differential operator (<see cref="Owner"/>)
             /// for the domain variables/fields in <see cref="DomainMapping"/>, i.e.
@@ -1528,25 +1550,25 @@ namespace BoSSS.Foundation {
             /// </remarks>
             public void Evaluate<Tout>(double alpha, double beta, Tout output, double time = double.NaN, bool MPIexchange = true, double[] outputBndEdge = null)
                 where Tout : IList<double> {
-                using (var tr = new FuncTrace()) {
+                using(var tr = new FuncTrace()) {
                     if(MPIexchange)
                         MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
 
-                    if (output.Count != m_CodomainMapping.LocalLength)
+                    if(output.Count != base.CodomainMapping.LocalLength)
                         throw new ArgumentOutOfRangeException("mismatch in length of output vector");
 
-                    if (beta != 1.0)
-                        GenericBlas.dscal(m_CodomainMapping.LocalLength, beta, output, 1);
+                    if(beta != 1.0)
+                        GenericBlas.dscal(base.CodomainMapping.LocalLength, beta, output, 1);
 
-                    
-                    if (m_TRX != null && MPIexchange)
+
+                    if(m_TRX != null && MPIexchange)
                         m_TRX.TransceiveStartImReturn();
 #if DEBUG
                     output.CheckForNanOrInfV(true, true, true);
 #endif
 
-                    if (m_NonlinearVolume != null) {
-                        using (new BlockTrace("Volume_Integration_NonLin", tr)) {
+                    if(m_NonlinearVolume != null) {
+                        using(new BlockTrace("Volume_Integration_NonLin", tr)) {
                             // volume integrals can be evaluated without knowing external cells
                             m_NonlinearVolume.m_Output = output;
                             m_NonlinearVolume.m_alpha = alpha;
@@ -1555,25 +1577,28 @@ namespace BoSSS.Foundation {
                             m_NonlinearVolume.m_Output = null;
                             m_NonlinearVolume.m_alpha = 1.0;
                         }
-                        
+
                     }
 
-                    
+
 
 #if DEBUG
                     output.CheckForNanOrInfV(true, true, true);
 #endif
 
-                    if (m_TRX != null && MPIexchange)
+                    if(m_TRX != null && MPIexchange)
                         m_TRX.TransceiveFinish();
 
-                    if (m_NonlinearEdge != null) {
-                        using (new BlockTrace("Edge_Integration_NonLin", tr)) {
+                    if(m_NonlinearEdge != null) {
+                        using(new BlockTrace("Edge_Integration_NonLin", tr)) {
                             m_NonlinearEdge.m_Output = output;
                             m_NonlinearEdge.m_alpha = alpha;
                             m_NonlinearEdge.Time = time;
+                            m_NonlinearEdge.SubGridBoundaryTreatment = this.m_SubGridBoundaryTreatment;
                             m_NonlinearEdge.m_outputBndEdge = outputBndEdge;
+
                             m_NonlinearEdge.Execute();
+
                             m_NonlinearEdge.m_Output = null;
                             m_NonlinearEdge.m_outputBndEdge = null;
                             m_NonlinearEdge.m_alpha = 1.0;
@@ -1586,74 +1611,146 @@ namespace BoSSS.Foundation {
 #endif
 
                 }
-                     
+
+            }
+
+
+        }
+
+
+        /// <summary>
+        /// matrix assembly for linear or linearized operators
+        /// </summary>
+        protected class EvaluatorLinear : EvaluatorBase, IEvaluatorLinear {
+
+            public EvaluatorLinear(
+                SpatialOperator owner,
+                UnsetteledCoordinateMapping DomainVarMap,
+                IList<DGField> ParameterMap,
+                UnsetteledCoordinateMapping CodomainVarMap,
+                EdgeQuadratureScheme edgeQrCtx,
+                CellQuadratureScheme volQrCtx) //
+                 : base(owner, DomainVarMap, ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx) //
+            {
+                this.edgeRule = edgeQrCtx.SaveCompile(base.GridData, order);
+                this.volRule = volQrCtx.SaveCompile(base.GridData, order);
+
             }
 
             /// <summary>
-            /// <see cref="CodomainMapping"/>
+            /// Quadrature rule used for edge integration
             /// </summary>
-            UnsetteledCoordinateMapping m_CodomainMapping;
+            ICompositeQuadRule<QuadRule> edgeRule;
 
             /// <summary>
-            /// coordinate mapping for the codomain variables;
+            /// quadrature rule used for volume integration
             /// </summary>
-            public UnsetteledCoordinateMapping CodomainMapping {
-                get {
-                    return m_CodomainMapping;
+            ICompositeQuadRule<QuadRule> volRule;
+
+
+
+            public void ComputeAffine<V>(V AffineOffset) where V : IList<double> {
+                Internal_ComputeMatrixEx(default(BlockMsrMatrix), AffineOffset, true);
+            }
+
+            public void ComputeMatrix<M, V>(M Matrix, V AffineOffset)
+                where M : IMutableMatrix
+                where V : IList<double> // 
+            {
+                Internal_ComputeMatrixEx(Matrix, AffineOffset, false);
+            }
+
+            /// <summary>
+            /// returns parameter fields
+            /// </summary>
+            protected override DGField[] GetTrxFields() {
+                if(Parameters != null) {
+                    return new DGField[0];
+                } else {
+                    List<DGField> FieldsForTransciever = new List<DGField>(Parameters.Count);
+                    foreach(DGField ff in Parameters)
+                        if(ff != null)
+                            FieldsForTransciever.Add(ff);
+                    return FieldsForTransciever.ToArray();
                 }
             }
 
             /// <summary>
-            /// <see cref="DomainMapping"/>
+            /// matrix evaluation
             /// </summary>
-            CoordinateMapping m_DomainMapping;
+            virtual protected void Internal_ComputeMatrixEx<M, V>(
+                M Matrix, V AffineOffset, bool OnlyAffine)
+                where M : IMutableMatrix
+                where V : IList<double> //
+            {
+                MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
+                using(var tr = new ilPSP.Tracing.FuncTrace()) {
 
-            /// <summary>
-            /// <see cref="ParameterMap"/>
-            /// </summary>
-            IList<DGField> m_ParameterMap;
+                    // check arguments
+                    // ===============
+                    {
 
-            /// <summary>
-            /// parameter mapping
-            /// </summary>
-            IList<DGField> ParameterMap {
-                get {
-                    return m_ParameterMap;
+                        if(AffineOffset != null && AffineOffset.Count < base.CodomainMapping.LocalLength)
+                            throw new ArgumentException("vector to short", "AffineOffset");
+                        if(OnlyAffine == false) {
+                            if(!Matrix.RowPartitioning.EqualsPartition(base.CodomainMapping))
+                                throw new ArgumentException("wrong number of columns in matrix.", "Matrix");
+                            if(!Matrix.ColPartition.EqualsPartition(base.DomainMapping))
+                                throw new ArgumentException("wrong number of rows in matrix.", "Matrix");
+                        }
+
+
+                        if(SubGridBoundaryMask != null) {
+                            throw new NotImplementedException("Only Null is valid for SubGridBoundaryMask");
+                        }
+
+
+                    }
+
+                    // do work
+                    // =======
+
+                    // transceiver is only needed for parameters
+                    if(base.MPITtransceive) {
+                        if(GetTrxFields().Length > 0) {
+                            base.m_TRX.TransceiveStartImReturn();
+                            base.m_TRX.TransceiveFinish();
+                        }
+                    }
+
+
+                    // volume integration
+                    // ------------------
+                    if(volRule.Any()
+                        && Owner.ContainesComponentType(typeof(IVolumeForm), typeof(IVolumeForm_UxV), typeof(IVolumeForm_UxGradV), typeof(IVolumeForm_GradUxV), typeof(IVolumeForm_GradUxGradV))) {
+                        using(new BlockTrace("Volume_Integration_(new)", tr)) {
+                            var mtxBuilder = new LECVolumeQuadrature2<M, V>(this.Owner);
+
+                            mtxBuilder.Execute(volRule,
+                                CodomainMapping, Parameters, DomainMapping,
+                                OnlyAffine ? default(M) : Matrix, AffineOffset, time);
+
+                        }
+
+                    } else {
+                        tr.Info("volume integration skipped: cell mask is empty");
+                    }
+
+                    // edge integration
+                    // ----------------
+                    if(!(edgeRule.IsNullOrEmpty())
+                         && Owner.ContainesComponentType(typeof(IEdgeForm), typeof(IEdgeform_UxV), typeof(IEdgeform_UxGradV), typeof(IEdgeform_UxV), typeof(IEdgeSource_V))) {
+
+                        using(new BlockTrace("Edge_Integration_(new)", tr)) {
+                            var mxtbuilder2 = new LECEdgeQuadrature2<M, V>(this.Owner);
+
+                            mxtbuilder2.Execute(edgeRule, CodomainMapping, Parameters, DomainMapping, OnlyAffine ? default(M) : Matrix, AffineOffset, time);
+                            tr.Info("done.");
+                            mxtbuilder2 = null;
+                        }
+                    }
                 }
             }
-
-            /// <summary>
-            /// coordinate mapping for the domain variables;
-            /// </summary>
-            public CoordinateMapping DomainMapping {
-                get {
-                    return m_DomainMapping;
-                }
-            }
-
-            /// <summary>
-            /// DG coordinates of the Domain variables, in one vector
-            /// </summary>
-            CoordinateVector m_DomainVector;
-
-            /// <summary>
-            /// Transceiver for the fields within <see cref="DomainMapping"/>
-            /// </summary>
-            Transceiver m_TRX;
-
-            /// <summary>
-            /// if the right-hand-side is present and contains nonlinear components, 
-            /// this is the corresponding edge quadrature;
-            /// otherwise, this member is null;
-            /// </summary>
-            BoSSS.Foundation.Quadrature.NonLin.NECQuadratureEdge m_NonlinearEdge;
-
-            /// <summary>
-            /// if the right-hand-side is present and contains nonlinear components, 
-            /// this is the corresponding volume quadrature;
-            /// otherwise, this member is null;
-            /// </summary>
-            BoSSS.Foundation.Quadrature.NonLin.NECQuadratureVolume m_NonlinearVolume;
         }
     }
 }
