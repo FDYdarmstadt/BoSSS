@@ -1,11 +1,10 @@
 restart
 **************
-
   Database Explorer v2
   ____________________
 
 Databases loaded:
-List of 23 instances of IDatabaseInfo {
+List of 24 instances of IDatabaseInfo {
   0: { Session Count = 0; Grid Count = 2; Path = p:\BoSSS_DBs\Kovasznay }
   1: { Session Count = 1; Grid Count = 1; Path = p:\BoSSS_DBs\ChannelFlow }
   2: { Session Count = 0; Grid Count = 0; Path = p:\BoSSS_DBs\RectangularCylinder }
@@ -23,12 +22,13 @@ List of 23 instances of IDatabaseInfo {
   14: { Session Count = 43; Grid Count = 45; Path = P:\BoSSS_DBs\IBMPaper }
   15: { Session Count = 28; Grid Count = 15; Path = P:\BoSSS_DBs\Paper_IBM2D }
   16: { Session Count = 38; Grid Count = 22; Path = P:\BoSSS_DBs\Paper_CellAgglo01_Penalty4 }
-  17: { Session Count = 52; Grid Count = 59; Path = P:\BoSSS_DBs\Sphere3D }
+  17: { Session Count = 52; Grid Count = 65; Path = P:\BoSSS_DBs\Sphere3D }
   18: { Session Count = 22; Grid Count = 10; Path = P:\BoSSS_DBs\Performance }
   19: { Session Count = 24; Grid Count = 14; Path = P:\BoSSS_DBs\PaperRevision }
   20: { Session Count = 0; Grid Count = 0; Path = P:\Lichtenberg_DB }
   21: { Session Count = 2; Grid Count = 354; Path = P:\BoSSS_DBs\Bug }
-  22: { Session Count = 133; Grid Count = 98; Path = L:\BoSSS_DB\Lichtenberg_DB }
+  22: { Session Count = 28; Grid Count = 7; Path = P:\BoSSS_DBs\NodePerformance }
+  23: { Session Count = 136; Grid Count = 98; Path = L:\BoSSS_DB\Lichtenberg_DB }
 }
 
  Console ready for input. Type 'help' for help.
@@ -44,7 +44,7 @@ using BoSSS.Application.IBM_Solver;
 using System.Data;
 **************
 ==============
-string dateString = "2018-3-23";
+string dateString = "2018-4-18";
 string File       = "SolverRuns--" + dateString + ".json";
 string FilePath   = Path.Combine(CurrentDocDir, File);
 var SessTab       = TableExtensions.LoadFromFile(FilePath);
@@ -57,102 +57,137 @@ var SessTab       = TableExtensions.LoadFromFile(FilePath);
 ==============
 SessTab.GetColumnNames();
 **************
-List of 68 instances of String {
+List of 66 instances of String {
   0: SessionName
-  1: DGdegree:VelocityX
-  2: DGdegree:VelocityY
-  3: DGdegree:VelocityZ
-  4: DGdegree:Pressure
-  5: DGdegree:PhiDG
-  6: DGdegree:Phi
-  7: Bndtype:Velocity_inlet
-  8: Bndtype:Wall
-  9: Bndtype:Pressure_Outlet
-  10: GeneratedFromCode
-  11: ControlFileText_Index
-  12: dtFixed
-  13: NoOfMultigridLevels
-  14: AdvancedDiscretizationOptions.ContiSign
-  15: AdvancedDiscretizationOptions.RescaleConti
-  16: AdvancedDiscretizationOptions.LFFA
-  17: AdvancedDiscretizationOptions.LFFB
-  18: AdvancedDiscretizationOptions.PenaltySafety
-  19: AdvancedDiscretizationOptions.CellAgglomerationThreshold
-  20: MaxKrylovDim
-  21: MaxSolverIterations
-  22: MinSolverIterations
-  23: Solver_ConvergenceCriterion
-  24: VelocityBlockPrecondMode
-  25: LevelSetSmoothing
-  26: PhysicalParameters.IncludeConvection
-  27: PhysicalParameters.rho_A
-  28: PhysicalParameters.mu_A
-  29: PhysicalParameters.Material
-  30: particleRadius
-  31: MeshFactor
-  32: Timestepper_Scheme
-  33: FixedStreamwisePeriodicBC
-  34: Timestepper_Init
-  35: NonlinearSolve
-  36: LinearSolve
-  37: GridPartType
-  38: ProjectName
-  39: NoOfTimesteps
-  40: Endtime
-  41: saveperiod
-  42: dtMin
-  43: dtMax
-  44: CompMode
-  45: ImmediatePlotPeriod
-  46: SuperSampling
-  47: savetodb
-  48: logFileDirectory
-  49: Paramstudy_ContinueOnError
-  50: DynamicLoadBalancing_RedistributeAtStartup
-  51: DynamicLoadBalancing_Period
-  52: DynamicLoadBalancing_ImbalanceThreshold
-  53: AdaptiveMeshRefinement
-  54: CutCellQuadratureType
-  55: ContinueOnIoError
-  56: Grid:NoOfCells
-  57: Grid:hMax
-  58: Grid:hMin
-  59: UsedNoOfMultigridLevels
-  60: C_Drag
-  61: C_Lift
-  62: RegularTerminated
-  63: SlvIter_excl
-  64: SlvInit_excl
-  65: PrecSolve
-  66: NewtonDirder
-  67: Processors
+  1: DGdegree:Velocity*
+  2: DGdegree:Pressure
+  3: DGdegree:PhiDG
+  4: DGdegree:Phi
+  5: Bndtype:Velocity_inlet
+  6: Bndtype:Wall
+  7: GeneratedFromCode
+  8: ControlFileText_Index
+  9: dtFixed
+  10: NoOfMultigridLevels
+  11: AdvancedDiscretizationOptions.ContiSign
+  12: AdvancedDiscretizationOptions.RescaleConti
+  13: AdvancedDiscretizationOptions.LFFA
+  14: AdvancedDiscretizationOptions.LFFB
+  15: AdvancedDiscretizationOptions.PenaltySafety
+  16: AdvancedDiscretizationOptions.CellAgglomerationThreshold
+  17: MaxKrylovDim
+  18: MaxSolverIterations
+  19: MinSolverIterations
+  20: Solver_ConvergenceCriterion
+  21: VelocityBlockPrecondMode
+  22: LevelSetSmoothing
+  23: PhysicalParameters.IncludeConvection
+  24: PhysicalParameters.rho_A
+  25: PhysicalParameters.mu_A
+  26: PhysicalParameters.Material
+  27: particleRadius
+  28: MeshFactor
+  29: Timestepper_Scheme
+  30: FixedStreamwisePeriodicBC
+  31: Timestepper_Init
+  32: NonlinearSolve
+  33: LinearSolve
+  34: GridPartType
+  35: ProjectName
+  36: NoOfTimesteps
+  37: Endtime
+  38: saveperiod
+  39: dtMin
+  40: dtMax
+  41: CompMode
+  42: ImmediatePlotPeriod
+  43: SuperSampling
+  44: savetodb
+  45: logFileDirectory
+  46: Paramstudy_ContinueOnError
+  47: DynamicLoadBalancing_RedistributeAtStartup
+  48: DynamicLoadBalancing_Period
+  49: DynamicLoadBalancing_ImbalanceThreshold
+  50: DynamicLoadBalancing_On
+  51: AdaptiveMeshRefinement
+  52: CutCellQuadratureType
+  53: ContinueOnIoError
+  54: Grid:NoOfCells
+  55: Grid:hMax
+  56: Grid:hMin
+  57: UsedNoOfMultigridLevels
+  58: C_Drag
+  59: C_Lift
+  60: RegularTerminated
+  61: SlvIter_excl
+  62: SlvInit_excl
+  63: PrecSolve
+  64: NewtonDirder
+  65: Processors
 }
 ==============
-var SubTab_1 = SessTab.ExtractColumns("Processors","SlvIter_excl","SlvInit_excl","PrecSolve","NewtonDirder","NonlinearSolve","LinearSolve","NoOfMultigridLevels","DGdegree:VelocityX","RegularTerminated");
+var SubTab_1 = SessTab.ExtractColumns("Grid:NoOfCells","SlvIter_excl","SlvInit_excl","PrecSolve","NewtonDirder","NonlinearSolve","LinearSolve","NoOfMultigridLevels","DGdegree:Velocity*","RegularTerminated");
 **************
 ==============
 SubTab_1.Print();
 **************
-    Processors SlvIter_excl  SlvInit_excl PrecSolve     NewtonDirder  NonlinearSolve LinearSolve NoOfMultigridLevels DGdegree:VelocityX RegularTerminated 
-0:  8          52598.6108364 28.7071169   51645.03839   0             1              10          3                   1                  True              
-1:  16         25282.9103817 11.6718351   24911.2242752 0             1              10          3                   1                  True              
-2:  32         17952.3970824 16.8290194   17453.9230057 0             1              10          3                   1                  True              
-3:  64         16971.5946471 14.9670887   16427.605066  0             1              10          3                   1                  True              
-4:  64         19419.4050667 16.1884357   7164.4471993  11979.9091692 0              0           3                   1                  True              
-5:  8          36447.3835162 29.2242825   17138.2598894 19010.4977671 0              0           3                   1                  True              
-6:  32         17033.6127908 16.9923173   4857.8282622  11979.7350123 0              0           3                   1                  True              
-7:  16         15398.9186972 11.853036    7617.2577423  7666.7328863  0              0           3                   1                  True              
-8:  8          36361.289664  28.5814175   17559.1503585 18501.6228656 0              4           3                   1                  True              
-9:  32         17135.674201  16.8219073   5001.9888444  11907.0733727 0              4           3                   1                  True              
-10: 64         17242.8729401 15.3131033   4613.8503501  12379.2049198 0              4           3                   1                  True              
-11: 16         15169.7242624 11.7201694   7677.6241863  7376.7337719  0              4           3                   1                  True              
-12: 32         28494.0504275 16.6483007   11128.330949  16861.1074662 0              3           2                   1                  True              
-13: 64         30854.4396128 14.8030589   14618.6184927 15449.8886054 0              3           2                   1                  True              
-14: 8          59582.6186127 38.4114806   30469.5271651 27866.3211947 0              3           2                   1                  True              
-15: 32         24219.1701465 16.8081343   6069.4109347  17963.4451384 0              6           3                   1                  True              
-16: 64         24128.287329  14.9437531   7184.814568   16756.4244658 0              6           3                   1                  True              
-17: 16         26403.8379533 11.6372309   14640.3035067 11050.6477496 0              3           2                   1                  True              
-18: 16         18389.7675417 11.7221314   6011.3877311  12229.7020066 0              6           3                   1                  True              
+    Grid:NoOfCells SlvIter_excl SlvInit_excl PrecSolve    NewtonDirder NonlinearSolve LinearSolve NoOfMultigridLevels DGdegree:Velocity* RegularTerminated 
+0:  216            520.1138163  3.1646877    482.0188651  0            1              9           2                   2                  True              
+1:  216            219.9727671  3.082        200.1796134  0            1              10          2                   2                  True              
+2:  125            166.428475   2.2567608    150.8801076  0            1              9           2                   2                  True              
+3:  1000           0            0            0            0            1              10          2                   2                  False             
+4:  125            38.5221169   2.1901949    28.8226691   0            1              10          2                   2                  True              
+5:  729            0            0            0            0            1              10          2                   2                  False             
+6:  512            0            0            0            0            1              10          2                   2                  False             
+7:  343            0            0            0            0            1              10          2                   2                  False             
+8:  64             14.0564835   1.6242066    8.3814191    0            1              10          2                   2                  True              
+9:  1000           0            0            0            0            1              9           2                   2                  False             
+10: 729            0            0            0            0            1              9           2                   2                  False             
+11: 64             42.6727517   1.5881938    35.608083    0            1              9           2                   2                  True              
+12: 512            0            0            0            0            1              9           2                   2                  False             
+13: 343            0            0            0            0            1              9           2                   2                  False             
+14: 729            3570.7376593 7.8447576    2493.5703214 1011.3012092 0              4           2                   2                  True              
+15: 512            2597.3784414 5.9013537    383.9002881  2164.4447684 0              6           2                   2                  True              
+16: 343            1808.4591779 4.1886806    275.8036966  1505.8021712 0              6           2                   2                  True              
+17: 512            1304.0878681 6.1492073    745.6419878  509.2611623  0              4           2                   2                  True              
+18: 216            853.4104848  2.9685402    134.0219667  702.4732929  0              6           2                   2                  True              
+19: 343            521.6809592  4.3849727    256.8173921  238.1994157  0              4           2                   2                  True              
+20: 125            322.7261362  2.0577132    50.3638173   262.6757845  0              6           2                   2                  True              
+21: 1000           0            0            0            0            0              6           2                   2                  False             
+22: 216            190.6361505  3.1354078    64.4373488   109.2989952  0              4           2                   2                  True              
+23: 729            0            0            0            0            0              6           2                   2                  False             
+24: 64             66.9455322   1.5908885    10.2234054   51.7496301   0              6           2                   2                  True              
+25: 1000           0            0            0            0            0              4           2                   2                  False             
+26: 125            61.4173363   2.3222632    10.1868982   41.4743646   0              4           2                   2                  True              
+27: 64             21.2277844   1.577938     2.5100449    13.58565     0              4           2                   2                  True              
+28: 216            520.1138163  3.1646877    482.0188651  0            1              9           2                   2                  True              
+29: 216            219.9727671  3.082        200.1796134  0            1              10          2                   2                  True              
+30: 125            166.428475   2.2567608    150.8801076  0            1              9           2                   2                  True              
+31: 1000           0            0            0            0            1              10          2                   2                  False             
+32: 125            38.5221169   2.1901949    28.8226691   0            1              10          2                   2                  True              
+33: 729            0            0            0            0            1              10          2                   2                  False             
+34: 512            0            0            0            0            1              10          2                   2                  False             
+35: 343            0            0            0            0            1              10          2                   2                  False             
+36: 64             14.0564835   1.6242066    8.3814191    0            1              10          2                   2                  True              
+37: 1000           0            0            0            0            1              9           2                   2                  False             
+38: 729            0            0            0            0            1              9           2                   2                  False             
+39: 64             42.6727517   1.5881938    35.608083    0            1              9           2                   2                  True              
+40: 512            0            0            0            0            1              9           2                   2                  False             
+41: 343            0            0            0            0            1              9           2                   2                  False             
+42: 729            3570.7376593 7.8447576    2493.5703214 1011.3012092 0              4           2                   2                  True              
+43: 512            2597.3784414 5.9013537    383.9002881  2164.4447684 0              6           2                   2                  True              
+44: 343            1808.4591779 4.1886806    275.8036966  1505.8021712 0              6           2                   2                  True              
+45: 512            1304.0878681 6.1492073    745.6419878  509.2611623  0              4           2                   2                  True              
+46: 216            853.4104848  2.9685402    134.0219667  702.4732929  0              6           2                   2                  True              
+47: 343            521.6809592  4.3849727    256.8173921  238.1994157  0              4           2                   2                  True              
+48: 125            322.7261362  2.0577132    50.3638173   262.6757845  0              6           2                   2                  True              
+49: 1000           0            0            0            0            0              6           2                   2                  False             
+50: 216            190.6361505  3.1354078    64.4373488   109.2989952  0              4           2                   2                  True              
+51: 729            0            0            0            0            0              6           2                   2                  False             
+52: 64             66.9455322   1.5908885    10.2234054   51.7496301   0              6           2                   2                  True              
+53: 1000           0            0            0            0            0              4           2                   2                  False             
+54: 125            61.4173363   2.3222632    10.1868982   41.4743646   0              4           2                   2                  True              
+55: 64             21.2277844   1.577938     2.5100449    13.58565     0              4           2                   2                  True              
 ==============
 // Calculation of speedup times 
 List<KeyValuePair<string, int>> procs = new List<KeyValuePair<string, int>>{};
@@ -168,7 +203,7 @@ double[] NewtonDirderSpeedup = new double[slviter.Length];
 for(int i = 0; i<slviter.Length; i++){
     long[] solve = ((long[])SubTab_1.GetColumn("LinearSolve"));
     string str = solve.Select(s => Convert.ToString(s)).ToArray()[i];
-    int val    = ((int[])SubTab_1.GetColumn("Processors"))[i];
+    int val    = ((int[])SubTab_1.GetColumn("Grid:NoOfCells"))[i];
 
     procs.Add(new KeyValuePair<string,int>(str,val));
       
@@ -191,6 +226,8 @@ for(int i = 0; i < slviter.Length; i++){
     NewtonDirderSpeedup[i] = (NewtonDirder[idx]*procs.Pick(idx).Value)/NewtonDirder[i];
 }    
 **************
+System.InvalidCastException occurred: Das Objekt des Typs "System.Int64[]" kann nicht in Typ "System.Int32[]" umgewandelt werden.. Type 'LastError' for details.
+
 ==============
 // Add columns to DataTable
 SubTab_1.Columns.Add("SlvIter_speedup",typeof(double));
@@ -283,10 +320,15 @@ static public void getFormat(int iTabRow,IDictionary<string, object> Row,
                Fmt.DashType  = DashTypes.Dashed;
                break;
           case LinearSolverCodes.exp_softgmres_schwarz_directcoarse_overlap: 
-               Nmn           = Nmn+"SoftGMRES Swz w Coarse"; 
+               Nmn           = Nmn+"SoftGMRES Swz w Coarse Overlap"; 
                Fmt.PointType = PointTypes.OpenCircle;
                Fmt.DashType  = DashTypes.Dashed;
                break;
+          case LinearSolverCodes.exp_softgmres_schwarz_Kcycle_directcoarse_overlap: 
+               Nmn           = Nmn+"SoftGMRES Swz Kcycle w Coarse Overlap"; 
+               Fmt.PointType = PointTypes.Times;
+               Fmt.DashType  = DashTypes.DotDashed;
+               break
            default:
                Console.WriteLine("unknown: " + solver_name); 
                Nmn = Nmn+"unknown"; 
@@ -301,29 +343,29 @@ static public void getFormat(int iTabRow,IDictionary<string, object> Row,
 }
 **************
 ==============
-var plotSlvIterTime = SubTab_1.ToPlot("Processors", "SlvIter_excl", // column for x- and y
+var plotSlvIterTime = SubTab_1.ToPlot("Grid:NoOfCells", "SlvIter_excl", // column for x- and y
                                   Formats.getFormat); // column for group
-var plotSlvIterSpeedup = SubTab_1.ToPlot("Processors", "SlvIter_speedup", // column for x- and y
+var plotSlvIterSpeedup = SubTab_1.ToPlot("Grid:NoOfCells", "SlvIter_speedup", // column for x- and y
                                   Formats.getFormat); // column for group
 //var plotSlvInit = SubTab_1.ToPlot("Processors", "SlvInit_excl", // column for x- and y
 //                                  Formats.getFormat); // column for group
 Plot2Ddata[,] multiplots = new Plot2Ddata[2,1];
 //plotSlvIterTime.Title     = "Exclusive times";
 plotSlvIterTime.Ylabel    = "Time [s]";
-plotSlvIterSpeedup.Xlabel = "Processors";
+plotSlvIterSpeedup.Xlabel = "Grid:NoOfCells";
 plotSlvIterSpeedup.Ylabel = "Speedup";
 
 
-plotSlvIterTime.XrangeMin    = 2;
-plotSlvIterTime.XrangeMax    = max;
-plotSlvIterTime.LogX         = true;
+plotSlvIterTime.XrangeMin    = 0;
+plotSlvIterTime.XrangeMax    = 1000;
+plotSlvIterTime.LogX         = false;
 plotSlvIterTime.LogBaseX     = 2;
-plotSlvIterSpeedup.LogX      = true;
-plotSlvIterSpeedup.LogY      = true;
+plotSlvIterSpeedup.LogX      = false;
+plotSlvIterSpeedup.LogY      = false;
 plotSlvIterSpeedup.LogBaseX  = 2;
 plotSlvIterSpeedup.LogBaseY  = 2;
-plotSlvIterSpeedup.XrangeMin = 2;
-plotSlvIterSpeedup.XrangeMax = max;
+plotSlvIterSpeedup.XrangeMin = 0;
+plotSlvIterSpeedup.XrangeMax = 5000;
 
 multiplots[0,0] = plotSlvIterTime;
 multiplots[1,0] = plotSlvIterSpeedup;
@@ -342,133 +384,54 @@ multiplots[1,0].tmargin = 1;
 multiplots[0,0].tmargin = 4;
 multiplots.PlotNow()
 **************
+unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
+unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
+unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
+unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
+unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
+unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
+unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
+unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
+unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
+unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
+unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
+unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
+unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
+unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
+unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
+unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
+unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
+unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
+unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
+unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
+unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
+unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
+unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
+unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
+unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
+unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
+unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
+unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
 Using gnuplot: C:\Users\krause\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 System.Drawing.Bitmap
 ==============
-var plotSlvIter = SubTab_1.ToPlot("Processors", "SlvIter_speedup", // column for x- and y
-                                  Formats.getFormat); // column for group
-var plotSlvInit = SubTab_1.ToPlot("Processors", "SlvInit_speedup", // column for x- and y
-                                  Formats.getFormat); // column for group
-Plot2Ddata[,] speedupsplots = new Plot2Ddata[2,1];
-plotSlvIter.Title   = "Speedup";
-plotSlvIter.Ylabel  = "Speedup";
-plotSlvInit.Xlabel  = "Processors";
-plotSlvInit.Ylabel  = "Speedup";
-plotSlvIter.Y2label = "SlvIter";
-plotSlvInit.Y2label = "SlvInit";
-
-plotSlvIter.XrangeMin = 1;
-plotSlvIter.XrangeMax = max;
-plotSlvInit.XrangeMin = 1;
-plotSlvInit.XrangeMax = max;
-
-speedupsplots[0,0] = plotSlvIter;
-speedupsplots[1,0] = plotSlvInit;
-
-// Add ideal
-double[] dof = new[]{1.0,2.0,4.0,8.0,16.0,32.0,64.0,128.0};
-double[] linT = dof.Select(x => x).ToArray();
-var ideal = new Plot2Ddata.XYvalues("Ideal", dof, linT);
-ideal.Format.FromString("- black");
-ideal.Format.LineWidth = 3;
-ArrayTools.AddToArray(ideal, ref speedupsplots[0,0].dataGroups);
-ArrayTools.AddToArray(ideal, ref speedupsplots[1,0].dataGroups);
-
-speedupsplots[0,0].bmargin = 1;
-speedupsplots[0,0].tmargin = 4;
-speedupsplots[1,0].tmargin = 1;
-speedupsplots.PlotNow()
+LastError
 **************
-Using gnuplot: C:\Users\krause\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
-System.Drawing.Bitmap
 ==============
-var plotPrecSolve = SubTab_1.ToPlot("Processors", "PrecSolve", // column for x- and y
-                                  Formats.getFormat); // column for group
-var plotNewtonDirder = SubTab_1.ToPlot("Processors", "NewtonDirder", // column for x- and y
-                                  Formats.getFormat); // column for group
-Plot2Ddata[,] multiplots2 = new Plot2Ddata[2,1];
-plotPrecSolve.Title      = "Exclusive times";
-plotPrecSolve.Ylabel     = "Time [s]";
-plotNewtonDirder.Xlabel  = "Processors";
-plotNewtonDirder.Ylabel  = "Time [s]";
-plotPrecSolve.Y2label    = "SolvIter: Precondition Solve";
-plotNewtonDirder.Y2label = "SolIter: Newton Dirder";
-
-
-plotPrecSolve.XrangeMin    = 1;
-plotPrecSolve.XrangeMax    = max;
-plotNewtonDirder.XrangeMin = 1;
-plotNewtonDirder.XrangeMax = max;
-
-multiplots2[0,0] = plotPrecSolve;
-multiplots2[1,0] = plotNewtonDirder;
-
-
-multiplots2[0,0].bmargin = 1;
-multiplots2[1,0].tmargin = 1;
-multiplots2.PlotNow()
+var CL = multiplots.ToGnuplot().PlotCairolatex(xSize:17, ySize:17);
 **************
-Using gnuplot: C:\Users\krause\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
-System.Drawing.Bitmap
-==============
-var plotPrecSolve = SubTab_1.ToPlot("Processors", "PrecSolve_speedup", // column for x- and y
-                                  Formats.getFormat); // column for group
-var plotNewtonDirder = SubTab_1.ToPlot("Processors", "NewtonDirder_speedup", // column for x- and y
-                                  Formats.getFormat); // column for group
-Plot2Ddata[,] speedupsplots2 = new Plot2Ddata[2,1];
-plotPrecSolve.Title      = "Speedup";
-plotPrecSolve.Ylabel     = "Speedup";
-plotNewtonDirder.Xlabel  = "Processors";
-plotNewtonDirder.Ylabel  = "Speedup";
-plotPrecSolve.Y2label    = "SolIter: Precondition Solve";
-plotNewtonDirder.Y2label = "SolIter: Newton Dirder";
-
-plotPrecSolve.XrangeMin = 1;
-plotPrecSolve.XrangeMax = max;
-plotNewtonDirder.XrangeMin = 1;
-plotNewtonDirder.XrangeMax = max;
-
-speedupsplots2[0,0] = plotPrecSolve;
-speedupsplots2[1,0] = plotNewtonDirder;
-
-// Add ideal
-double[] dof = new[]{1.0,2.0,4.0,8.0,16.0,32.0,64.0,128.0};
-double[] linT = dof.Select(x => x).ToArray();
-var ideal = new Plot2Ddata.XYvalues("Ideal", dof, linT);
-ideal.Format.FromString("- black");
-ideal.Format.LineWidth = 3;
-ArrayTools.AddToArray(ideal, ref speedupsplots2[0,0].dataGroups);
-ArrayTools.AddToArray(ideal, ref speedupsplots2[1,0].dataGroups);
-
-speedupsplots2[0,0].bmargin = 1;
-speedupsplots2[0,0].tmargin = 4;
-speedupsplots2[1,0].tmargin = 1;
-speedupsplots2.PlotNow()
-**************
-Using gnuplot: C:\Users\krause\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
-System.Drawing.Bitmap
-==============
-var CL  = multiplots.ToGnuplot().PlotCairolatex(xSize:17, ySize:17);
-var CL2 = speedupsplots.ToGnuplot().PlotCairolatex(xSize:17, ySize:17);
-var CL3 = multiplots2.ToGnuplot().PlotCairolatex(xSize:17, ySize:17);
-var CL4 = speedupsplots2.ToGnuplot().PlotCairolatex(xSize:17, ySize:17);
-**************
-Using gnuplot: C:\Users\krause\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
-Using gnuplot: C:\Users\krause\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
-Using gnuplot: C:\Users\krause\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 Using gnuplot: C:\Users\krause\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 
 ==============
-CL.SaveTo(Path.Combine(CurrentDocDir+"/plots/", "MPIScalingTimes.tex"));
-CL2.SaveTo(Path.Combine(CurrentDocDir+"/plots/", "MPISpeedup.tex"));
-CL3.SaveTo(Path.Combine(CurrentDocDir+"/plots/", "Additional_1.tex"));
-CL4.SaveTo(Path.Combine(CurrentDocDir+"/plots/", "Additional_2.tex"));
+CL.SaveTo(Path.Combine(CurrentDocDir+"/plots/", "NodePerformance.tex"));
 **************
+(2,1): error CS0103: The name `CL2' does not exist in the current context
+(3,1): error CS0103: The name `CL3' does not exist in the current context
+(4,1): error CS0103: The name `CL4' does not exist in the current context
+No. of errors|warnings: 3|0.
+
 ==============
 CL.PlotNow();
-CL2.PlotNow();
-CL3.PlotNow();
-CL4.PlotNow();
 **************
 System.ComponentModel.Win32Exception occurred: Das System kann die angegebene Datei nicht finden. Type 'LastError' for details.
 
@@ -481,6 +444,14 @@ System.ComponentModel.Win32Exception (0x80004005): Das System kann die angegeben
    bei <InteractiveExpressionClass>.Host(Object& $retval)
    bei Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
    bei BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in C:\BoSSS-experimental\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:Zeile 311.
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
 ==============
 **************
 ==============
