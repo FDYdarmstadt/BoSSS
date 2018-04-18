@@ -1,5 +1,6 @@
 restart
 **************
+
   Database Explorer v2
   ____________________
 
@@ -27,16 +28,16 @@ List of 24 instances of IDatabaseInfo {
   19: { Session Count = 24; Grid Count = 14; Path = P:\BoSSS_DBs\PaperRevision }
   20: { Session Count = 0; Grid Count = 0; Path = P:\Lichtenberg_DB }
   21: { Session Count = 2; Grid Count = 354; Path = P:\BoSSS_DBs\Bug }
-  22: { Session Count = 28; Grid Count = 7; Path = P:\BoSSS_DBs\NodePerformance }
+  22: { Session Count = 36; Grid Count = 7; Path = P:\BoSSS_DBs\NodePerformance }
   23: { Session Count = 136; Grid Count = 98; Path = L:\BoSSS_DB\Lichtenberg_DB }
 }
 
  Console ready for input. Type 'help' for help.
 
 ==============
-WorkflowMgm.Init("MPISolverPerformance");
+WorkflowMgm.Init("SolverPerformanceDrivenCavity");
 **************
-Project name is set to 'MPISolverPerformance'.
+Project name is set to 'SolverPerformanceDrivenCavity'.
 
 ==============
 using System.IO;
@@ -48,6 +49,14 @@ string dateString = "2018-4-18";
 string File       = "SolverRuns--" + dateString + ".json";
 string FilePath   = Path.Combine(CurrentDocDir, File);
 var SessTab       = TableExtensions.LoadFromFile(FilePath);
+**************
+==============
+static class Utils {
+    // DOF per cell in 3D
+    public static long Np(long p) {
+        return (p*p*p + 6*p*p + 11*p + 6)/6;
+    }
+}
 **************
 ==============
 // ====================
@@ -129,121 +138,59 @@ List of 66 instances of String {
 var SubTab_1 = SessTab.ExtractColumns("Grid:NoOfCells","SlvIter_excl","SlvInit_excl","PrecSolve","NewtonDirder","NonlinearSolve","LinearSolve","NoOfMultigridLevels","DGdegree:Velocity*","RegularTerminated");
 **************
 ==============
-SubTab_1.Print();
-**************
-    Grid:NoOfCells SlvIter_excl SlvInit_excl PrecSolve    NewtonDirder NonlinearSolve LinearSolve NoOfMultigridLevels DGdegree:Velocity* RegularTerminated 
-0:  216            520.1138163  3.1646877    482.0188651  0            1              9           2                   2                  True              
-1:  216            219.9727671  3.082        200.1796134  0            1              10          2                   2                  True              
-2:  125            166.428475   2.2567608    150.8801076  0            1              9           2                   2                  True              
-3:  1000           0            0            0            0            1              10          2                   2                  False             
-4:  125            38.5221169   2.1901949    28.8226691   0            1              10          2                   2                  True              
-5:  729            0            0            0            0            1              10          2                   2                  False             
-6:  512            0            0            0            0            1              10          2                   2                  False             
-7:  343            0            0            0            0            1              10          2                   2                  False             
-8:  64             14.0564835   1.6242066    8.3814191    0            1              10          2                   2                  True              
-9:  1000           0            0            0            0            1              9           2                   2                  False             
-10: 729            0            0            0            0            1              9           2                   2                  False             
-11: 64             42.6727517   1.5881938    35.608083    0            1              9           2                   2                  True              
-12: 512            0            0            0            0            1              9           2                   2                  False             
-13: 343            0            0            0            0            1              9           2                   2                  False             
-14: 729            3570.7376593 7.8447576    2493.5703214 1011.3012092 0              4           2                   2                  True              
-15: 512            2597.3784414 5.9013537    383.9002881  2164.4447684 0              6           2                   2                  True              
-16: 343            1808.4591779 4.1886806    275.8036966  1505.8021712 0              6           2                   2                  True              
-17: 512            1304.0878681 6.1492073    745.6419878  509.2611623  0              4           2                   2                  True              
-18: 216            853.4104848  2.9685402    134.0219667  702.4732929  0              6           2                   2                  True              
-19: 343            521.6809592  4.3849727    256.8173921  238.1994157  0              4           2                   2                  True              
-20: 125            322.7261362  2.0577132    50.3638173   262.6757845  0              6           2                   2                  True              
-21: 1000           0            0            0            0            0              6           2                   2                  False             
-22: 216            190.6361505  3.1354078    64.4373488   109.2989952  0              4           2                   2                  True              
-23: 729            0            0            0            0            0              6           2                   2                  False             
-24: 64             66.9455322   1.5908885    10.2234054   51.7496301   0              6           2                   2                  True              
-25: 1000           0            0            0            0            0              4           2                   2                  False             
-26: 125            61.4173363   2.3222632    10.1868982   41.4743646   0              4           2                   2                  True              
-27: 64             21.2277844   1.577938     2.5100449    13.58565     0              4           2                   2                  True              
-28: 216            520.1138163  3.1646877    482.0188651  0            1              9           2                   2                  True              
-29: 216            219.9727671  3.082        200.1796134  0            1              10          2                   2                  True              
-30: 125            166.428475   2.2567608    150.8801076  0            1              9           2                   2                  True              
-31: 1000           0            0            0            0            1              10          2                   2                  False             
-32: 125            38.5221169   2.1901949    28.8226691   0            1              10          2                   2                  True              
-33: 729            0            0            0            0            1              10          2                   2                  False             
-34: 512            0            0            0            0            1              10          2                   2                  False             
-35: 343            0            0            0            0            1              10          2                   2                  False             
-36: 64             14.0564835   1.6242066    8.3814191    0            1              10          2                   2                  True              
-37: 1000           0            0            0            0            1              9           2                   2                  False             
-38: 729            0            0            0            0            1              9           2                   2                  False             
-39: 64             42.6727517   1.5881938    35.608083    0            1              9           2                   2                  True              
-40: 512            0            0            0            0            1              9           2                   2                  False             
-41: 343            0            0            0            0            1              9           2                   2                  False             
-42: 729            3570.7376593 7.8447576    2493.5703214 1011.3012092 0              4           2                   2                  True              
-43: 512            2597.3784414 5.9013537    383.9002881  2164.4447684 0              6           2                   2                  True              
-44: 343            1808.4591779 4.1886806    275.8036966  1505.8021712 0              6           2                   2                  True              
-45: 512            1304.0878681 6.1492073    745.6419878  509.2611623  0              4           2                   2                  True              
-46: 216            853.4104848  2.9685402    134.0219667  702.4732929  0              6           2                   2                  True              
-47: 343            521.6809592  4.3849727    256.8173921  238.1994157  0              4           2                   2                  True              
-48: 125            322.7261362  2.0577132    50.3638173   262.6757845  0              6           2                   2                  True              
-49: 1000           0            0            0            0            0              6           2                   2                  False             
-50: 216            190.6361505  3.1354078    64.4373488   109.2989952  0              4           2                   2                  True              
-51: 729            0            0            0            0            0              6           2                   2                  False             
-52: 64             66.9455322   1.5908885    10.2234054   51.7496301   0              6           2                   2                  True              
-53: 1000           0            0            0            0            0              4           2                   2                  False             
-54: 125            61.4173363   2.3222632    10.1868982   41.4743646   0              4           2                   2                  True              
-55: 64             21.2277844   1.577938     2.5100449    13.58565     0              4           2                   2                  True              
-==============
-// Calculation of speedup times 
-List<KeyValuePair<string, int>> procs = new List<KeyValuePair<string, int>>{};
-double[] slviter = ((double[])SubTab_1.GetColumn("SlvIter_excl"));
-double[] slvinit = ((double[])SubTab_1.GetColumn("SlvInit_excl"));
-double[] PrecSolve = ((double[])SubTab_1.GetColumn("PrecSolve"));
-double[] NewtonDirder = ((double[])SubTab_1.GetColumn("NewtonDirder"));
-double[] slviterSpeedup = new double[slviter.Length];
-double[] slvinitSpeedup = new double[slviter.Length];
-double[] PrecSolveSpeedup = new double[slviter.Length];
-double[] NewtonDirderSpeedup = new double[slviter.Length];
-
-for(int i = 0; i<slviter.Length; i++){
-    long[] solve = ((long[])SubTab_1.GetColumn("LinearSolve"));
-    string str = solve.Select(s => Convert.ToString(s)).ToArray()[i];
-    int val    = ((int[])SubTab_1.GetColumn("Grid:NoOfCells"))[i];
-
-    procs.Add(new KeyValuePair<string,int>(str,val));
-      
-}
-int min;
-int max = 0;
-for(int i = 0; i < slviter.Length; i++){
-    List<KeyValuePair<string, int>> procsCut = procs.FindAll(s => s.Key == procs[i].Key);
-    
-    int tempMax;
-    min     = procsCut.Select(s => s.Value).Min();
-    tempMax = procsCut.Select(s => s.Value).Max();
-    if(tempMax>max){
-        max = tempMax;
-    }
-    int idx = procs.FindIndex(s => (s.Value == min) && (s.Key == procs[i].Key));
-    slviterSpeedup[i] = (slviter[idx]*procs.Pick(idx).Value)/slviter[i];
-    slvinitSpeedup[i] = (slvinit[idx]*procs.Pick(idx).Value)/slvinit[i];
-    PrecSolveSpeedup[i] = (PrecSolve[idx]*procs.Pick(idx).Value)/PrecSolve[i];
-    NewtonDirderSpeedup[i] = (NewtonDirder[idx]*procs.Pick(idx).Value)/NewtonDirder[i];
-}    
-**************
-System.InvalidCastException occurred: Das Objekt des Typs "System.Int64[]" kann nicht in Typ "System.Int32[]" umgewandelt werden.. Type 'LastError' for details.
-
-==============
 // Add columns to DataTable
-SubTab_1.Columns.Add("SlvIter_speedup",typeof(double));
-SubTab_1.Columns.Add("SlvInit_speedup",typeof(double));
-SubTab_1.Columns.Add("PrecSolve_speedup",typeof(double));
-SubTab_1.Columns.Add("NewtonDirder_speedup",typeof(double));
-int i = 0;
+SubTab_1.Columns.Add("TotalDoFs",typeof(double));
+long[] cells = ((long[]) SubTab_1.GetColumn("Grid:NoOfCells"));
+long[] k = ((long[]) SubTab_1.GetColumn("DGdegree:Velocity*"));
+int i     = 0;
 foreach (DataRow row in SubTab_1.Rows) {
-    row["SlvIter_speedup"] = slviterSpeedup[i];
-    row["SlvInit_speedup"] = slvinitSpeedup[i];
-    row["PrecSolve_speedup"] = PrecSolveSpeedup[i];
-    row["NewtonDirder_speedup"] = NewtonDirderSpeedup[i];
+    row["TotalDoFs"] = (3*Utils.Np(k[i])+Utils.Np(k[i]-1))*cells[i];
     i++;
 }
 **************
-NewtonDirder_speedup
+TotalDoFs
+==============
+SubTab_1.Print();
+**************
+    Grid:NoOfCells SlvIter_excl  SlvInit_excl PrecSolve    NewtonDirder NonlinearSolve LinearSolve NoOfMultigridLevels DGdegree:Velocity* RegularTerminated TotalDoFs 
+0:  729            7519.8560892  8.7957713    7436.2456503 0            1              10          2                   2                  True              24786     
+1:  1000           306.9675112   10.5789393   0            0            1              1           1                   2                  True              34000     
+2:  1000           392.9197575   10.554713    0            0            0              1           1                   2                  True              34000     
+3:  512            98.4380965    5.8350783    0            0            1              1           1                   2                  True              17408     
+4:  512            137.6731662   5.948566     0            0            0              1           1                   2                  True              17408     
+5:  216            25.6626947    3.0825638    0            0            1              1           1                   2                  True              7344      
+6:  64             6.385035      1.6142689    0            0            1              1           1                   2                  True              2176      
+7:  216            40.648019     3.0223213    0            0            0              1           1                   2                  True              7344      
+8:  64             11.2589118    1.6541689    0            0            0              1           1                   2                  True              2176      
+9:  343            6797.957409   4.4372966    6354.1970893 0            1              9           2                   2                  True              11662     
+10: 1000           11711.3627531 10.5509689   1805.8973528 9803.8074105 0              6           2                   2                  True              34000     
+11: 512            2646.0203009  6.0877766    2588.0249003 0            1              10          2                   2                  True              17408     
+12: 512            1371.3885855  5.8468561    1270.6434357 0            1              9           2                   2                  True              17408     
+13: 343            1082.652114   4.2682475    1045.2789917 0            1              10          2                   2                  True              11662     
+14: 729            6954.8206194  8.0104342    1034.1643715 5847.5227339 0              6           2                   2                  True              24786     
+15: 216            521.6938209   3.1422348    483.5014811  0            1              9           2                   2                  True              7344      
+16: 216            221.1086935   3.0652849    201.3694903  0            1              10          2                   2                  True              7344      
+17: 125            166.4616203   2.2302677    150.9027134  0            1              9           2                   2                  True              4250      
+18: 1000           0             0            0            0            1              10          2                   2                  False             34000     
+19: 125            37.9515421    2.1576211    28.3293883   0            1              10          2                   2                  True              4250      
+20: 64             13.9451688    1.5591926    8.3095822    0            1              10          2                   2                  True              2176      
+21: 1000           0             0            0            0            1              9           2                   2                  False             34000     
+22: 729            0             0            0            0            1              9           2                   2                  False             24786     
+23: 64             42.1654498    1.6026108    35.1357047   0            1              9           2                   2                  True              2176      
+24: 1000           6395.0353211  11.0896567   4583.2712855 1715.5338737 0              4           2                   2                  True              34000     
+25: 729            3570.7376593  7.8447576    2493.5703214 1011.3012092 0              4           2                   2                  True              24786     
+26: 512            2597.3784414  5.9013537    383.9002881  2164.4447684 0              6           2                   2                  True              17408     
+27: 343            1808.4591779  4.1886806    275.8036966  1505.8021712 0              6           2                   2                  True              11662     
+28: 512            1304.0878681  6.1492073    745.6419878  509.2611623  0              4           2                   2                  True              17408     
+29: 216            853.4104848   2.9685402    134.0219667  702.4732929  0              6           2                   2                  True              7344      
+30: 343            521.6809592   4.3849727    256.8173921  238.1994157  0              4           2                   2                  True              11662     
+31: 125            322.7261362   2.0577132    50.3638173   262.6757845  0              6           2                   2                  True              4250      
+32: 216            190.6361505   3.1354078    64.4373488   109.2989952  0              4           2                   2                  True              7344      
+33: 64             66.9455322    1.5908885    10.2234054   51.7496301   0              6           2                   2                  True              2176      
+34: 125            61.4173363    2.3222632    10.1868982   41.4743646   0              4           2                   2                  True              4250      
+35: 64             21.2277844    1.577938     2.5100449    13.58565     0              4           2                   2                  True              2176      
+==============
+**************
 ==============
 static public class Formats {
 static public void getFormat(int iTabRow,IDictionary<string, object> Row, 
@@ -328,7 +275,7 @@ static public void getFormat(int iTabRow,IDictionary<string, object> Row,
                Nmn           = Nmn+"SoftGMRES Swz Kcycle w Coarse Overlap"; 
                Fmt.PointType = PointTypes.Times;
                Fmt.DashType  = DashTypes.DotDashed;
-               break
+               break;
            default:
                Console.WriteLine("unknown: " + solver_name); 
                Nmn = Nmn+"unknown"; 
@@ -343,93 +290,46 @@ static public void getFormat(int iTabRow,IDictionary<string, object> Row,
 }
 **************
 ==============
-var plotSlvIterTime = SubTab_1.ToPlot("Grid:NoOfCells", "SlvIter_excl", // column for x- and y
+var plotSlvIterTime = SubTab_1.ToPlot("TotalDoFs", "SlvIter_excl", // column for x- and y
                                   Formats.getFormat); // column for group
-var plotSlvIterSpeedup = SubTab_1.ToPlot("Grid:NoOfCells", "SlvIter_speedup", // column for x- and y
-                                  Formats.getFormat); // column for group
+//var plotSlvIterSpeedup = SubTab_1.ToPlot("Grid:NoOfCells", "SlvIter_speedup", // column for x- and y
+  //                                Formats.getFormat); // column for group
 //var plotSlvInit = SubTab_1.ToPlot("Processors", "SlvInit_excl", // column for x- and y
 //                                  Formats.getFormat); // column for group
-Plot2Ddata[,] multiplots = new Plot2Ddata[2,1];
-//plotSlvIterTime.Title     = "Exclusive times";
-plotSlvIterTime.Ylabel    = "Time [s]";
-plotSlvIterSpeedup.Xlabel = "Grid:NoOfCells";
-plotSlvIterSpeedup.Ylabel = "Speedup";
+Plot2Ddata[,] multiplots = new Plot2Ddata[1,1];
+//plotSlvIterTime.Title     = "Exclusiveb_1.ToPlot("Grid:NoOfCells", "SlvIter_excl", // column for x- and ytimes";
+plotSlvIterTime.Ylabel = "Time [s]";
+plotSlvIterTime.Xlabel = "TotalDoFs";
 
 
-plotSlvIterTime.XrangeMin    = 0;
-plotSlvIterTime.XrangeMax    = 1000;
-plotSlvIterTime.LogX         = false;
-plotSlvIterTime.LogBaseX     = 2;
-plotSlvIterSpeedup.LogX      = false;
-plotSlvIterSpeedup.LogY      = false;
-plotSlvIterSpeedup.LogBaseX  = 2;
-plotSlvIterSpeedup.LogBaseY  = 2;
-plotSlvIterSpeedup.XrangeMin = 0;
-plotSlvIterSpeedup.XrangeMax = 5000;
+plotSlvIterTime.XrangeMin = 1000;
+plotSlvIterTime.XrangeMax = 50000;
+plotSlvIterTime.LogX      = true;
+plotSlvIterTime.LogY      = true;
+plotSlvIterTime.LogBaseX  = 10;
+plotSlvIterTime.LogBaseY  = 10;
 
 multiplots[0,0] = plotSlvIterTime;
-multiplots[1,0] = plotSlvIterSpeedup;
+//multiplots[1,0] = plotSlvIterSpeedup;
 
-// Add ideal
-double[] dof = new[]{1.0,2.0,4.0,8.0,16.0,32.0,64.0,128.0};
-double[] linT = dof.Select(x => x).ToArray();
-var ideal = new Plot2Ddata.XYvalues("Ideal", dof, linT);
-ideal.Format.FromString("- black");
-ideal.Format.LineWidth = 3;
-ArrayTools.AddToArray(ideal, ref multiplots[1,0].dataGroups);
-
-
-multiplots[0,0].bmargin = 1;
-multiplots[1,0].tmargin = 1;
+multiplots[0,0].bmargin = 4;
+//multiplots[1,0].tmargin = 1;
 multiplots[0,0].tmargin = 4;
-multiplots.PlotNow()
+multiplots.PlotNow();
 **************
-unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
-unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
-unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
-unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
-unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
-unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
-unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
-unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
-unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
-unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
-unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
-unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
-unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
-unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
-unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
-unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
-unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
-unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
-unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
-unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
-unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
-unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
-unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
-unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
-unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
-unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
-unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
-unknown: exp_softgmres_schwarz_Kcycle_directcoarse_overlap
 Using gnuplot: C:\Users\krause\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 System.Drawing.Bitmap
 ==============
 LastError
 **************
 ==============
-var CL = multiplots.ToGnuplot().PlotCairolatex(xSize:17, ySize:17);
+var CL = multiplots.ToGnuplot().PlotCairolatex(xSize:22, ySize:10);
 **************
 Using gnuplot: C:\Users\krause\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 
 ==============
 CL.SaveTo(Path.Combine(CurrentDocDir+"/plots/", "NodePerformance.tex"));
 **************
-(2,1): error CS0103: The name `CL2' does not exist in the current context
-(3,1): error CS0103: The name `CL3' does not exist in the current context
-(4,1): error CS0103: The name `CL4' does not exist in the current context
-No. of errors|warnings: 3|0.
-
 ==============
 CL.PlotNow();
 **************
@@ -444,6 +344,16 @@ System.ComponentModel.Win32Exception (0x80004005): Das System kann die angegeben
    bei <InteractiveExpressionClass>.Host(Object& $retval)
    bei Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
    bei BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in C:\BoSSS-experimental\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:Zeile 311.
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
 ==============
 **************
 ==============
