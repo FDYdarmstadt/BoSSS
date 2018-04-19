@@ -80,11 +80,11 @@ namespace BoSSS.Solution.Multigrid {
         public string m_SessionPath;
 
 
-        bool solveVelocity = true;
+        //bool solveVelocity = true;
 
-        double VelocitySolver_ConvergenceCriterion = 1e-5;
+        //double VelocitySolver_ConvergenceCriterion = 1e-5;
 
-        double StressSolver_ConvergenceCriterion = 1e-5;
+        //double StressSolver_ConvergenceCriterion = 1e-5;
 
         public override void SolverDriver<S>(CoordinateVector SolutionVec, S RHS) {
 
@@ -96,7 +96,11 @@ namespace BoSSS.Solution.Multigrid {
                 itc = 0;
                 double[] x, xt, xOld, f0, deltaX, ft;
                 double rat;
-                double alpha = 1E-4, sigma0 = 0.1, sigma1 = 0.5, maxarm = 20, gamma = 0.9;
+                double alpha = 1E-4;
+                //double sigma0 = 0.1;
+                double sigma1 = 0.5;
+                //double maxarm = 20;
+                //double gamma = 0.9;
 
                 // Eval_F0 
                 using (new BlockTrace("Slv Init", tr)) {

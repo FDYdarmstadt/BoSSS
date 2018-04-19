@@ -436,7 +436,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
 
         double[] temp = null;
 
-        void ComputeChangeRate(double[] k, int jCell, BitArray AcceptedMask, SinglePhaseField Phi, VectorField<SinglePhaseField> gradPhi, SpatialOperator.Evaluator Evaluator) {
+        void ComputeChangeRate(double[] k, int jCell, BitArray AcceptedMask, SinglePhaseField Phi, VectorField<SinglePhaseField> gradPhi, IEvaluatorNonLin Evaluator) {
             int N = this.LevelSetBasis.GetLength(jCell);
             int i0L = this.LevelSetMapping.LocalUniqueCoordinateIndex(0, jCell, 0);
             Debug.Assert(k.Length == N);
@@ -452,8 +452,9 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
 #if DEBUG
             double[] oldtemp = temp.CloneAs();
 #endif
-
-            Evaluator.Evaluate<double[]>(1.0, 1.0, temp, 0.0, MPIexchange: false);
+            Evaluator.time = 0.0;
+            Evaluator.MPITtransceive = false;
+            Evaluator.Evaluate<double[]>(1.0, 1.0, temp);
 
 #if DEBUG
             for(int i = 0; i < oldtemp.Length; i++) {
@@ -466,7 +467,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                 k[n] = temp[n + i0L];
         }
 
-        void PerformRKstep(double dt, int jCell, BitArray AcceptedMask, SinglePhaseField Phi, VectorField<SinglePhaseField> gradPhi, SpatialOperator.Evaluator Evaluator) {
+        void PerformRKstep(double dt, int jCell, BitArray AcceptedMask, SinglePhaseField Phi, VectorField<SinglePhaseField> gradPhi, IEvaluatorNonLin Evaluator) {
             int N = this.LevelSetBasis.GetLength(jCell);
             int i0G = this.LevelSetMapping.GlobalUniqueCoordinateIndex(0, jCell, 0);
             int i0L = this.LevelSetMapping.LocalUniqueCoordinateIndex(0, jCell, 0);

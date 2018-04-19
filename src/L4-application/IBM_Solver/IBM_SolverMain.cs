@@ -357,18 +357,29 @@ namespace BoSSS.Application.IBM_Solver {
                         double penalty = penalty_base * penalty_mul;
 
                         //var Visc = new Solution.XNSECommon.Operator.Viscosity.ViscosityInBulk_GradUTerm(penalty, 1.0, BcMap, d, D, this.Control.PhysicalParameters.mu_A, 1, ViscosityImplementation.H);
-                        var Visc = new swipViscosity_Term1(penalty, null, d, D, BcMap, ViscosityImplementation.H, ViscosityOption.ConstantViscosity, this.Control.PhysicalParameters.mu_A / this.Control.PhysicalParameters.rho_A, double.NaN, null,
-                            this.ComputePenalty);
+                        var Visc = new swipViscosity_Term1(penalty, null, d, D, BcMap, 
+                            ViscosityImplementation.H, ViscosityOption.ConstantViscosity, 
+                            this.Control.PhysicalParameters.mu_A / this.Control.PhysicalParameters.rho_A, 
+                            double.NaN, null,
+                            this.ComputePenaltyBulk);
                         //delegate (double p, int i, int j, double[] cell) { return ComputePenalty(p, i, j, cell); });
                         // IBM_Op.OnIntegratingBulk += Visc.SetParameter;
                         comps.Add(Visc); // bulk component GradUTerm 
-                        var ViscLs = new BoSSS.Solution.NSECommon.Operator.Viscosity.ViscosityAtIB(d, D, LsTrk, penalty, this.Control.PhysicalParameters.mu_A / this.Control.PhysicalParameters.rho_A, new Func<double, double>[] { delegate (double time) {
-                        return 0;
-                    }, delegate (double time) {
-                        return 0;
-                    }}, new Func<double, double>[] { delegate (double time) {
-                        return 0;
-                    } }, this.Control.particleRadius);
+                        var ViscLs = new BoSSS.Solution.NSECommon.Operator.Viscosity.ViscosityAtIB(d, D, LsTrk, penalty, this.Control.PhysicalParameters.mu_A / this.Control.PhysicalParameters.rho_A, 
+                            new Func<double, double>[] {
+                                delegate (double time) {
+                                    return 0;
+                                },
+                                delegate (double time) {
+                                    return 0;
+                                }
+                            }, 
+                            new Func<double, double>[] {
+                                delegate (double time) {
+                                    return 0;
+                                }
+                            }, 
+                            this.Control.particleRadius);
                         comps.Add(ViscLs); // immersed boundary component
                     }
                 }
@@ -663,14 +674,14 @@ namespace BoSSS.Application.IBM_Solver {
         MultidimensionalArray m_LenScales;
 
         /// <summary>
-        /// Custom Function to compute penalty factor for viscous terms.
+        /// Custom Function to compute penalty factor for viscous terms, for bulk terms
         /// </summary>
         /// <param name="jCellIn"></param>
         /// <param name="jCellOut"></param>
         /// <param name="cj"></param>
         /// <param name="penalty">base factor</param>
         /// <returns></returns>
-        protected double ComputePenalty(double penalty, int jCellIn, int jCellOut, MultidimensionalArray cj) {
+        protected double ComputePenaltyBulk(double penalty, int jCellIn, int jCellOut, MultidimensionalArray cj) {
             double muFactor; // the WTF factor
             if (jCellOut >= 0)
                 muFactor = 1.0;
@@ -682,6 +693,27 @@ namespace BoSSS.Application.IBM_Solver {
             double penaltySizeFactor = Math.Max(penaltySizeFactor_A, penaltySizeFactor_B);
             return penalty * penaltySizeFactor * muFactor;
         }
+
+        /// <summary>
+        /// Custom Function to compute penalty factor for viscous terms at the immersed boundary
+        /// </summary>
+        /// <param name="jCellIn"></param>
+        /// <param name="jCellOut"></param>
+        /// <param name="cj"></param>
+        /// <param name="penalty">base factor</param>
+        /// <returns></returns>
+        protected double ComputePenaltyIB(double penalty_base, int jCell) {
+            double hCutCellMin = m_LenScales[jCell]; // for IBM, there is no positive species!
+            double hCellMin = this.GridData.Cells.h_min[jCell];
+            if (hCutCellMin <= 1.0e-10 * hCellMin)
+                // very small cell -- clippling
+                hCutCellMin = hCellMin;
+
+            double µ = penalty_base / hCutCellMin;
+            Debug.Assert(!(double.IsNaN(µ) || double.IsInfinity(µ)));
+            return µ;
+        }
+
 
         /// <summary>
         /// Computes average velocity in case of Navier-Stokes Equations

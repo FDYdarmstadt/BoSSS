@@ -264,7 +264,7 @@ namespace BoSSS.Solution.NSECommon {
                     throw new NotImplementedException();
             }
         }
-        
+
         /// <summary>
         /// computation of penalty parameter according to:
         /// An explicit expression for the penalty parameter of the
@@ -273,16 +273,16 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         virtual protected double penalty(int jCellIn, int jCellOut) {
             double mu;
-            if (m_ComputePenalty != null)
+            if(m_ComputePenalty != null) {
                 mu = m_ComputePenalty(m_penalty, jCellIn, jCellOut, cj);
-            else { 
-            double cj_in = cj[jCellIn];
-            mu = m_penalty * cj_in;
-            if (jCellOut >= 0) {
-                double cj_out = cj[jCellOut];
-                mu = Math.Max(mu, m_penalty * cj_out);
+            } else {
+                double cj_in = cj[jCellIn];
+                mu = m_penalty * cj_in;
+                if(jCellOut >= 0) {
+                    double cj_out = cj[jCellOut];
+                    mu = Math.Max(mu, m_penalty * cj_out);
+                }
             }
-        }
             return mu;
         }
 

@@ -177,7 +177,9 @@ namespace BoSSS.Foundation.XDG {
             IDictionary<SpeciesId, QrSchemPair> SpeciesSchemes = null
             ) {
 
-            return new XEvaluatorLinear(this, lsTrk, DomainVarMap, ParameterMap, CodomainVarMap, SpeciesSchemes);
+            return new XEvaluatorLinear(this, lsTrk, DomainVarMap, ParameterMap, CodomainVarMap, 
+                1, // based on actual level-set tracker state
+                SpeciesSchemes);
         }
 
         class XEvaluatorLinear : SpatialOperator.EvaluatorBase, IEvaluatorLinear {
@@ -185,112 +187,198 @@ namespace BoSSS.Foundation.XDG {
             public XEvaluatorLinear(XSpatialOperator ownr,
                 LevelSetTracker lsTrk,
                 UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
+                int TrackerHistory,
                 IDictionary<SpeciesId, QrSchemPair> __SpeciesSchemes) :
                 base(ownr, DomainVarMap, ParameterMap, CodomainVarMap) //
             {
-                if (!object.ReferenceEquals(base.GridData, lsTrk.GridDat))
-                    throw new ArgumentException("grid data mismatch");
-                m_lsTrk = lsTrk;
-                m_Xowner = ownr;
-                SpeciesSchemes = __SpeciesSchemes;
-                ReqSpecies = SpeciesSchemes.Keys.ToArray();
-
-                foreach (var SpeciesId in ReqSpecies) {
-                    int iSpecies = Array.IndexOf(ReqSpecies, SpeciesId);
-
-                    DGField[] Params = (from f in (Parameters ?? new DGField[0])
-                                        select ((f is XDGField) ? ((XDGField)f).GetSpeciesShadowField(SpeciesId) : f)).ToArray<DGField>();
-                    SpeciesParams.Add(SpeciesId, Params);
+                using(var tr = new FuncTrace()) {
+                    if(!object.ReferenceEquals(base.GridData, lsTrk.GridDat))
+                        throw new ArgumentException("grid data mismatch");
+                    m_lsTrk = lsTrk;
+                    m_Xowner = ownr;
+                    SpeciesSchemes = __SpeciesSchemes;
+                    ReqSpecies = SpeciesSchemes.Keys.ToArray();
 
 
-                    if (m_Xowner.TotalNoOfComponents > 0) {
-                        if (trx != null) {
-                            trx.TransceiveFinish();
-                            trx = null;
+                    var SchemeHelper = lsTrk.GetXDGSpaceMetrics(ReqSpecies, order, TrackerHistory).XQuadSchemeHelper;
+                    var TrackerRegions = lsTrk.RegionsHistory[TrackerHistory];
+
+                    ((FixedOrder_SpatialOperator)(m_Xowner.GhostEdgesOperator)).m_Order = base.order;
+                    ((FixedOrder_SpatialOperator)(m_Xowner.SurfaceElementOperator)).m_Order = base.order;
+                    tr.Info("XSpatialOperator.ComputeMatrixEx quad order: " + order);
+
+
+                    // compile quadrature rules & create matrix builders for each species 
+                    // ------------------------------------------------------------------
+                    foreach(var SpeciesId in ReqSpecies) {
+                        int iSpecies = Array.IndexOf(ReqSpecies, SpeciesId);
+
+                        // parameters for species
+                        // ----------------------
+                        DGField[] Params = (from f in (Parameters ?? new DGField[0])
+                                            select ((f is XDGField) ? ((XDGField)f).GetSpeciesShadowField(SpeciesId) : f)).ToArray<DGField>();
+                        SpeciesParams.Add(SpeciesId, Params);
+
+                        // species frames
+                        // --------------
+
+                        var CodomFrame = new FrameBase(TrackerRegions, SpeciesId, base.CodomainMapping, false);
+                        var DomainFrame = new FrameBase(TrackerRegions, SpeciesId, base.DomainMapping, true);
+                        SpeciesCodomFrame.Add(SpeciesId, CodomFrame);
+                        SpeciesCodomFrame.Add(SpeciesId, DomainFrame);
+
+                        // quadrature rules
+                        // ----------------
+                        EdgeQuadratureScheme edgeScheme;
+                        CellQuadratureScheme cellScheme;
+                        using(new BlockTrace("QuadRule-compilation", tr)) {
+
+                            var qrSchemes = SpeciesSchemes[SpeciesId];
+
+                            //bool AssembleOnFullGrid = (SubGrid == null);
+                            if(qrSchemes.EdgeScheme == null) {
+                                edgeScheme = SchemeHelper.GetEdgeQuadScheme(SpeciesId);// AssembleOnFullGrid, SubGridEdgeMask);
+                            } else {
+                                //edgeScheme = qrSchemes.EdgeScheme;
+                                throw new NotSupportedException();
+                            }
+                            if(qrSchemes.CellScheme == null) {
+                                cellScheme = SchemeHelper.GetVolumeQuadScheme(SpeciesId);//, AssembleOnFullGrid, SubGridCellMask);
+                            } else {
+                                //cellScheme = qrSchemes.CellScheme;
+                                throw new NotSupportedException();
+                            }
                         }
 
-                        base.Internal_ComputeMatrixEx<SpeciesFrameMatrix<M>, SpeciesFrameVector<V>>(GridDat,
-                            mtx.ColMapping, Params, mtx.RowMapping,
-                            _mtx, vec, OnlyAffine, time,
-                            edgeRule, volRule, null, false);
+                        if(ruleDiagnosis) {
+                            var edgeRule = edgeScheme.Compile(base.GridData, base.order);
+                            var volRule = cellScheme.Compile(base.GridData, base.order);
+                            edgeRule.SumOfWeightsToTextFileEdge(base.GridData, string.Format("PhysEdge_{0}.csv", lsTrk.GetSpeciesName(SpeciesId)));
+                            volRule.SumOfWeightsToTextFileVolume(base.GridData, string.Format("Volume_{0}.csv", lsTrk.GetSpeciesName(SpeciesId)));
+                        }
 
-#if DEBUG
-                        if (Matrix != null && OnlyAffine == false)
-                            Matrix.CheckForNanOrInfM();
-                        if (AffineOffset != null)
-                            GenericBlas.CheckForNanOrInfV(AffineOffset);
-#endif
+
+                        if(m_Xowner.TotalNoOfComponents > 0) {
+                            var BulkMtxBuilder = Owner.GetMatrixBuilder(DomainFrame.FrameMap, Params, CodomFrame.FrameMap,
+                                edgeScheme, cellScheme);
+                            Debug.Assert(((EvaluatorBase)BulkMtxBuilder).order == base.order);
+                            BulkMtxBuilder.MPITtransceive = false;
+                            SpeciesBulkMtxBuilder.Add(SpeciesId, BulkMtxBuilder);
+                        }
+
+
+                        if(m_Xowner.GhostEdgesOperator.TotalNoOfComponents > 0) {
+                            CellQuadratureScheme nullvolumeScheme = new CellQuadratureScheme(false, CellMask.GetEmptyMask(GridData));
+
+                            EdgeQuadratureScheme ghostEdgeScheme = null;
+                            ghostEdgeScheme = SchemeHelper.GetEdgeGhostScheme(SpeciesId);//, SubGridEdgeMask);
+
+                            var GhostEdgeBuilder = m_Xowner.GhostEdgesOperator.GetMatrixBuilder(DomainFrame.FrameMap, Params, CodomFrame.FrameMap,
+                                ghostEdgeScheme, nullvolumeScheme);
+                            Debug.Assert(((EvaluatorBase)GhostEdgeBuilder).order == base.order);
+                            GhostEdgeBuilder.MPITtransceive = false;
+                            SpeciesGhostEdgeBuilder.Add(SpeciesId, GhostEdgeBuilder);
+                        }
+
+
+
+                        if(m_Xowner.SurfaceElementOperator.TotalNoOfComponents > 0) {
+                            EdgeQuadratureScheme SurfaceElement_Edge;
+                            CellQuadratureScheme SurfaceElement_volume;
+
+                            SurfaceElement_Edge = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(SpeciesId);
+                            SurfaceElement_volume = SchemeHelper.Get_SurfaceElement_VolumeQuadScheme(SpeciesId);
+
+                            var SurfElmBuilder = m_Xowner.SurfaceElementOperator.GetMatrixBuilder(DomainFrame.FrameMap, Params, CodomFrame.FrameMap, SurfaceElement_Edge, SurfaceElement_volume);
+                            Debug.Assert(((EvaluatorBase)SurfElmBuilder).order == base.order);
+                            SurfElmBuilder.MPITtransceive = false;
+                            SpeciesSurfElmBuilder.Add(SpeciesId, SurfElmBuilder);
+                        }
                     }
 
+                    // coupling terms
+                    // --------------
 
-                            if (m_Xowner.GhostEdgesOperator.TotalNoOfComponents > 0) {
-                                CellQuadratureScheme nullvolumeScheme = new CellQuadratureScheme(false, CellMask.GetEmptyMask(GridDat));
-
-                                EdgeQuadratureScheme ghostEdgeScheme = null;
-                                ghostEdgeScheme = SchemeHelper.GetEdgeGhostScheme(SpeciesId, SubGridEdgeMask);
-
-                                if (ruleDiagnosis)
-                                    ghostEdgeScheme.Compile(GridDat, 2).SumOfWeightsToTextFileEdge(GridDat, string.Format("GhostEdge_{0}.csv", lsTrk.GetSpeciesName(SpeciesId)));
+                    using(new BlockTrace("surface_integration", tr)) {
+                        if(m_Xowner.ContainesComponentType(typeof(ILevelSetForm))) {
 
 
-                                if (trx != null) {
-                                    trx.TransceiveFinish();
-                                    trx = null;
+                            var AllSpc = lsTrk.SpeciesIdS;
+
+                            // loop over all possible pairs of species
+                            for(int iSpcA = 0; iSpcA < AllSpc.Count; iSpcA++) {
+                                var SpeciesA = AllSpc[iSpcA];
+                                var SpeciesADom = lsTrk.Regions.GetSpeciesMask(SpeciesA);
+                                if(SpeciesADom.NoOfItemsLocally <= 0)
+                                    continue;
+
+                                int _iSpcA = Array.IndexOf(ReqSpecies, SpeciesA);
+
+                                for(int iSpcB = iSpcA + 1; iSpcB < AllSpc.Count; iSpcB++) {
+                                    var SpeciesB = AllSpc[iSpcB];
+
+                                    int _iSpcB = Array.IndexOf(ReqSpecies, SpeciesB);
+                                    if(_iSpcA < 0 && _iSpcB < 0)
+                                        continue;
+
+                                    var SpeciesBDom = lsTrk.Regions.GetSpeciesMask(SpeciesB);
+                                    var SpeciesCommonDom = SpeciesADom.Intersect(SpeciesBDom);
+
+                                    // Checks removed since they can cause parallel problems
+                                    //if (SpeciesBDom.NoOfItemsLocally <= 0)
+                                    //    continue;
+                                    //if (SpeciesCommonDom.NoOfItemsLocally <= 0)
+                                    //    continue;
+
+
+                                    // loop over level-sets
+                                    int NoOfLs = lsTrk.LevelSets.Count;
+                                    for(int iLevSet = 0; iLevSet < NoOfLs; iLevSet++) {
+
+                                        var LsDom = lsTrk.Regions.GetCutCellMask4LevSet(iLevSet);
+                                        var IntegrationDom = LsDom.Intersect(SpeciesCommonDom);
+
+                                        // Check removed since it can cause parallel problems
+                                        //if (IntegrationDom.NoOfItemsLocally > 0) {
+
+                                        ICompositeQuadRule<QuadRule> rule;
+                                        using(new BlockTrace("QuadRule-compilation", tr)) {
+                                            CellQuadratureScheme SurfIntegration = SchemeHelper.GetLevelSetquadScheme(iLevSet, IntegrationDom);
+                                            rule = SurfIntegration.Compile(GridData, order);
+
+                                            if(ruleDiagnosis) {
+                                                rule.SumOfWeightsToTextFileVolume(GridData, string.Format("Levset_{0}.csv", iLevSet));
+                                            }
+                                        }
+
+                                        CouplingRules.Add(new Tuple<int, SpeciesId, SpeciesId, ICompositeQuadRule<QuadRule>>(
+                                            iLevSet, SpeciesA, SpeciesB, rule));
+
+                                        // lsTrk, iLevSet, new Tuple<SpeciesId, SpeciesId>(SpeciesA, SpeciesB),
+
+                                    }
                                 }
-
-                                m_Xowner.GhostEdgesOperator.ComputeMatrixEx(mtx.ColMapping, Params, mtx.RowMapping,
-                                     _mtx, vec, OnlyAffine, time,
-                                     edgeQuadScheme: ghostEdgeScheme, volQuadScheme: nullvolumeScheme, SubGridBoundaryMask: null, ParameterMPIExchange: false);
-#if DEBUG
-                                if (Matrix != null && OnlyAffine == false)
-                                    Matrix.CheckForNanOrInfM();
-                                if (AffineOffset != null)
-                                    GenericBlas.CheckForNanOrInfV(AffineOffset);
-#endif
                             }
-
-
-
-                            if (m_Xowner.SurfaceElementOperator.TotalNoOfComponents > 0) {
-                                EdgeQuadratureScheme SurfaceElement_Edge;
-                                CellQuadratureScheme SurfaceElement_volume;
-
-                                SurfaceElement_Edge = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(SpeciesId);
-                                SurfaceElement_volume = SchemeHelper.Get_SurfaceElement_VolumeQuadScheme(SpeciesId);
-
-                                if (trx != null) {
-                                    trx.TransceiveFinish();
-                                    trx = null;
-                                }
-
-                                //double[] tmpVec = new double[vec.Count];
-
-
-                                SurfaceElementOperator.ComputeMatrixEx(
-                                    mtx.ColMapping, Params, mtx.RowMapping,
-                                    _mtx, vec, OnlyAffine, time,
-                                    SurfaceElement_Edge, SurfaceElement_volume, null);
-
-
-
-#if DEBUG
-                                if (Matrix != null && OnlyAffine == false)
-                                    Matrix.CheckForNanOrInfM();
-                                if (AffineOffset != null)
-                                    GenericBlas.CheckForNanOrInfV(AffineOffset);
-#endif
-                            }
-
-
+                        }
+                    }
                 }
             }
+
 
             SpeciesId[] ReqSpecies;
             LevelSetTracker m_lsTrk;
             XSpatialOperator m_Xowner;
             IDictionary<SpeciesId, QrSchemPair> SpeciesSchemes;
 
-            Dictionary<SpeciesId, DGField[]> SpeciesParams;
+            Dictionary<SpeciesId, DGField[]> SpeciesParams = new Dictionary<SpeciesId, DGField[]>();
+            Dictionary<SpeciesId, FrameBase> SpeciesCodomFrame = new Dictionary<SpeciesId, FrameBase>();
+            Dictionary<SpeciesId, FrameBase> SpeciesDomainFrame = new Dictionary<SpeciesId, FrameBase>();
+
+            Dictionary<SpeciesId, IEvaluatorLinear> SpeciesBulkMtxBuilder = new Dictionary<SpeciesId, IEvaluatorLinear>();
+            Dictionary<SpeciesId, IEvaluatorLinear> SpeciesGhostEdgeBuilder = new Dictionary<SpeciesId, IEvaluatorLinear>();
+            Dictionary<SpeciesId, IEvaluatorLinear> SpeciesSurfElmBuilder = new Dictionary<SpeciesId, IEvaluatorLinear>();
+
+            List<Tuple<int, SpeciesId, SpeciesId, ICompositeQuadRule<QuadRule>>> CouplingRules = new List<Tuple<int, SpeciesId, SpeciesId, ICompositeQuadRule<QuadRule>>>();
 
 
             public void ComputeAffine<V>(V AffineOffset) where V : IList<double> {
@@ -318,13 +406,15 @@ namespace BoSSS.Foundation.XDG {
                 where V : IList<double> // 
             {
                 MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
-                using (var tr = new FuncTrace()) {
+                using(var tr = new FuncTrace()) {
                     var lsTrk = m_lsTrk;
                     IGridData GridDat = lsTrk.GridDat;
-                    SubGrid SubGrid = base.m_SubGrid_InCells;
 
 
-                    
+                    //SubGrid SubGrid = base.m_SubGrid_InCells;
+
+
+
 
 
                     #region Check Input Arguments
@@ -347,14 +437,14 @@ namespace BoSSS.Foundation.XDG {
                     //        throw new ArgumentException("mismatch between specified parameter variables and number of DG fields in parameter mapping", "Parameters");
                     //}
 
-                    if (OnlyAffine == false) {
-                        if (!Matrix.RowPartitioning.Equals(base.CodomainMapping))
+                    if(OnlyAffine == false) {
+                        if(!Matrix.RowPartitioning.Equals(base.CodomainMapping))
                             throw new ArgumentException("wrong number of columns in matrix.", "Matrix");
-                        if (!Matrix.ColPartition.Equals(base.DomainMapping))
+                        if(!Matrix.ColPartition.Equals(base.DomainMapping))
                             throw new ArgumentException("wrong number of rows in matrix.", "Matrix");
                     }
 
-                    
+
                     //if (!ReqSpecies.IsSubsetOf(agg.SpeciesList))
                     //    throw new ArgumentException("HMF mismatch");
 
@@ -366,7 +456,7 @@ namespace BoSSS.Foundation.XDG {
                     #region MPI exchange of parameter fields
                     // --------------------------------
                     Transceiver trx = base.m_TRX;
-                    if (trx != null) {
+                    if(trx != null) {
                         trx.TransceiveStartImReturn();
                     }
                     #endregion
@@ -374,64 +464,46 @@ namespace BoSSS.Foundation.XDG {
                     #region find quadrature instructions
                     // ----------------------------
 
-                    ((FixedOrder_SpatialOperator)(m_Xowner.GhostEdgesOperator)).m_Order = base.order;
-                    ((FixedOrder_SpatialOperator)(m_Xowner.SurfaceElementOperator)).m_Order = base.order;
-                    tr.Info("XSpatialOperator.ComputeMatrixEx quad order: " + order);
 
-                    //if (order != agg.NonAgglomeratedMetrics.HMForder)
-                    //    throw new ArgumentException("quadrature order mismatch.");
 
-                    //var SchemeHelper = new XQuadSchemeHelper(agg);
-                    var SchemeHelper = lsTrk.GetXDGSpaceMetrics(ReqSpecies, order, 1).XQuadSchemeHelper;// new XQuadSchemeHelper(lsTrk, momentFittingVariant, ReqSpecies);
                     #endregion
 
-                    //#region mass matrix factory
-                    //// -------------------
-                    //var allBases = DomainMap.BasisS.Union(CodomainMap.BasisS);
-                    //Basis maxBasis = allBases.First();
-                    //foreach (var b in allBases) {
-                    //    if (b.Degree > maxBasis.Degree)
-                    //        maxBasis = b;
-                    //}
-
-                    ////mass = new MassMatrixFactory(maxBasis, agg, momentFittingVariant, order, lsTrk);
-                    //#endregion
 
                     // build matrix, bulk
                     // ---------------------
                     //MsrMatrix BulkMatrix = null;
                     //double[] BulkAffineOffset = null;
-                    using (new BlockTrace("bulk_integration", tr)) {
+                    using(new BlockTrace("bulk_integration", tr)) {
 
                         // create the frame matrices & vectors...
                         // this is an MPI-collective operation, so it must be executed before the program may take different branches...
                         SpeciesFrameMatrix<M>[] mtx_spc = new SpeciesFrameMatrix<M>[ReqSpecies.Length];
                         SpeciesFrameVector<V>[] vec_spc = new SpeciesFrameVector<V>[ReqSpecies.Length];
-                        for (int i = 0; i < ReqSpecies.Length; i++) {
+                        for(int i = 0; i < ReqSpecies.Length; i++) {
                             SpeciesId SpId = ReqSpecies[i];
-                            mtx_spc[i] = new SpeciesFrameMatrix<M>(Matrix, lsTrk.Regions, SpId, CodomainMapping, DomainMapping);
+                            mtx_spc[i] = new SpeciesFrameMatrix<M>(Matrix, this.SpeciesCodomFrame[SpId], this.SpeciesDomainFrame[SpId]);
                             vec_spc[i] = (AffineOffset != null) ?
-                                    (new SpeciesFrameVector<V>(lsTrk.Regions, SpId, AffineOffset, CodomainMapping))
+                                    (new SpeciesFrameVector<V>(AffineOffset, this.SpeciesCodomFrame[SpId]))
                                     :
                                     null;
                         }
-                        // Create Masks before the Loops, so it doesn't affect MPI
-                        CellMask SubGridCellMask = null;
-                        EdgeMask SubGridEdgeMask = null;
-                        if (SubGrid != null) {
-                            SubGridCellMask = SubGrid.VolumeMask;
-                            /// I don't know why, but this seems to work:
-                            SubGridEdgeMask = SubGrid.AllEdgesMask;
-                            /// And this does not:
-                            //SubGridEdgeMask = SubGrid.InnerEdgesMask;
-                        }
+                        //// Create Masks before the Loops, so it doesn't affect MPI
+                        //CellMask SubGridCellMask = null;
+                        //EdgeMask SubGridEdgeMask = null;
+                        //if (SubGrid != null) {
+                        //    SubGridCellMask = SubGrid.VolumeMask;
+                        //    /// I don't know why, but this seems to work:
+                        //    SubGridEdgeMask = SubGrid.AllEdgesMask;
+                        //    /// And this does not:
+                        //    //SubGridEdgeMask = SubGrid.InnerEdgesMask;
+                        //}
 
                         // do the Bulk integration...
-                        foreach (var SpeciesId in ReqSpecies) {
+                        foreach(var SpeciesId in ReqSpecies) {
                             int iSpecies = Array.IndexOf(ReqSpecies, SpeciesId);
 
 
-                            if (m_Xowner.OnIntegratingBulk != null)
+                            if(m_Xowner.OnIntegratingBulk != null)
                                 m_Xowner.OnIntegratingBulk(lsTrk.GetSpeciesName(SpeciesId), SpeciesId);
 
                             SpeciesFrameMatrix<M> mtx = mtx_spc[iSpecies];
@@ -440,161 +512,94 @@ namespace BoSSS.Foundation.XDG {
                             SpeciesFrameVector<V> vec = vec_spc[iSpecies];
 
 
-                            DGField[] Params = (from f in (Parameters ?? new DGField[0])
-                                                select ((f is XDGField) ? ((XDGField)f).GetSpeciesShadowField(SpeciesId) : f)).ToArray<DGField>();
+                            //DGField[] Params = 
 
-                            ICompositeQuadRule<QuadRule> edgeRule;
-                            ICompositeQuadRule<QuadRule> volRule;
-                            EdgeQuadratureScheme edgeScheme;
-                            CellQuadratureScheme cellScheme;
-                            using (new BlockTrace("QuadRule-compilation", tr)) {
 
-                                var qrSchemes = SpeciesSchemes[SpeciesId];
+                            //#if DEBUG
+                            //                            // switch the diagnostic output on or off
+                            //                            bool SubGridRuleDiagnosis = false;
+                            //                            if (SubGrid == null && SubGridRuleDiagnosis == true) {
+                            //                                Console.WriteLine("Warning SubGrid Rule Diagnosis is Switched on!");
+                            //                            }
+                            //                            if (SubGridRuleDiagnosis) {
+                            //                                edgeRule.SumOfWeightsToTextFileEdge(GridDat, string.Format("C:\\tmp\\BoSSS_Diagnosis\\PhysEdge_{0}.csv", lsTrk.GetSpeciesName(SpeciesId)));
+                            //                                volRule.SumOfWeightsToTextFileVolume(GridDat, string.Format("C:\\tmp\\BoSSS_Diagnosis\\PhysVol_{0}.csv", lsTrk.GetSpeciesName(SpeciesId)));
+                            //                            }
+                            //#endif
 
-                                bool AssembleOnFullGrid = (SubGrid == null);
-                                if (qrSchemes.EdgeScheme == null) {
-                                    edgeScheme = SchemeHelper.GetEdgeQuadScheme(SpeciesId, AssembleOnFullGrid, SubGridEdgeMask);
-                                } else {
-                                    //edgeScheme = qrSchemes.EdgeScheme;
-                                    throw new NotSupportedException();
-                                }
-                                edgeRule = edgeScheme.Compile(GridDat, order);
-                                if (qrSchemes.CellScheme == null) {
-                                    cellScheme = SchemeHelper.GetVolumeQuadScheme(SpeciesId, AssembleOnFullGrid, SubGridCellMask);
-                                } else {
-                                    //cellScheme = qrSchemes.CellScheme;
-                                    throw new NotSupportedException();
-                                }
-                                volRule = cellScheme.Compile(GridDat, order);
-                            }
+                            foreach(var SpeciesBuilder in new[] { SpeciesBulkMtxBuilder, SpeciesGhostEdgeBuilder, SpeciesSurfElmBuilder }) {
 
-                            if (ruleDiagnosis) {
-                                edgeRule.SumOfWeightsToTextFileEdge(GridDat, string.Format("PhysEdge_{0}.csv", lsTrk.GetSpeciesName(SpeciesId)));
-                                volRule.SumOfWeightsToTextFileVolume(GridDat, string.Format("Volume_{0}.csv", lsTrk.GetSpeciesName(SpeciesId)));
-                            }
-#if DEBUG
-                            // switch the diagnostic output on or off
-                            bool SubGridRuleDiagnosis = false;
-                            if (SubGrid == null && SubGridRuleDiagnosis == true) {
-                                Console.WriteLine("Warning SubGrid Rule Diagnosis is Switched on!");
-                            }
-                            if (SubGridRuleDiagnosis) {
-                                edgeRule.SumOfWeightsToTextFileEdge(GridDat, string.Format("C:\\tmp\\BoSSS_Diagnosis\\PhysEdge_{0}.csv", lsTrk.GetSpeciesName(SpeciesId)));
-                                volRule.SumOfWeightsToTextFileVolume(GridDat, string.Format("C:\\tmp\\BoSSS_Diagnosis\\PhysVol_{0}.csv", lsTrk.GetSpeciesName(SpeciesId)));
-                            }
-#endif
-                            if (m_Xowner.TotalNoOfComponents > 0) {
-                                if (trx != null) {
-                                    trx.TransceiveFinish();
-                                    trx = null;
+
+                                if(SpeciesBuilder.ContainsKey(SpeciesId)) {
+                                    var builder = SpeciesBulkMtxBuilder[SpeciesId];
+                                    if(trx != null) {
+                                        trx.TransceiveFinish();
+                                        trx = null;
+                                    }
+
+                                    builder.time = base.time;
+
+                                    if(OnlyAffine)
+                                        builder.ComputeAffine(vec);
+                                    else
+                                        builder.ComputeMatrix(_mtx, vec);
                                 }
 
-                                base.Internal_ComputeMatrixEx<SpeciesFrameMatrix<M>, SpeciesFrameVector<V>>(GridDat,
-                                    mtx.ColMapping, Params, mtx.RowMapping,
-                                    _mtx, vec, OnlyAffine, time,
-                                    edgeRule, volRule, null, false);
-
-#if DEBUG
-                                if (Matrix != null && OnlyAffine == false)
-                                    Matrix.CheckForNanOrInfM();
-                                if (AffineOffset != null)
-                                    GenericBlas.CheckForNanOrInfV(AffineOffset);
-#endif
                             }
-
-
-                            if (m_Xowner.GhostEdgesOperator.TotalNoOfComponents > 0) {
-                                CellQuadratureScheme nullvolumeScheme = new CellQuadratureScheme(false, CellMask.GetEmptyMask(GridDat));
-
-                                EdgeQuadratureScheme ghostEdgeScheme = null;
-                                ghostEdgeScheme = SchemeHelper.GetEdgeGhostScheme(SpeciesId, SubGridEdgeMask);
-
-                                if (ruleDiagnosis)
-                                    ghostEdgeScheme.Compile(GridDat, 2).SumOfWeightsToTextFileEdge(GridDat, string.Format("GhostEdge_{0}.csv", lsTrk.GetSpeciesName(SpeciesId)));
-
-
-                                if (trx != null) {
-                                    trx.TransceiveFinish();
-                                    trx = null;
-                                }
-
-                                m_Xowner.GhostEdgesOperator.ComputeMatrixEx(mtx.ColMapping, Params, mtx.RowMapping,
-                                     _mtx, vec, OnlyAffine, time,
-                                     edgeQuadScheme: ghostEdgeScheme, volQuadScheme: nullvolumeScheme, SubGridBoundaryMask: null, ParameterMPIExchange: false);
-#if DEBUG
-                                if (Matrix != null && OnlyAffine == false)
-                                    Matrix.CheckForNanOrInfM();
-                                if (AffineOffset != null)
-                                    GenericBlas.CheckForNanOrInfV(AffineOffset);
-#endif
-                            }
-
-
-
-                            if (m_Xowner.SurfaceElementOperator.TotalNoOfComponents > 0) {
-                                EdgeQuadratureScheme SurfaceElement_Edge;
-                                CellQuadratureScheme SurfaceElement_volume;
-
-                                SurfaceElement_Edge = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(SpeciesId);
-                                SurfaceElement_volume = SchemeHelper.Get_SurfaceElement_VolumeQuadScheme(SpeciesId);
-
-                                if (trx != null) {
-                                    trx.TransceiveFinish();
-                                    trx = null;
-                                }
-
-                                //double[] tmpVec = new double[vec.Count];
-
-
-                                SurfaceElementOperator.ComputeMatrixEx(
-                                    mtx.ColMapping, Params, mtx.RowMapping,
-                                    _mtx, vec, OnlyAffine, time,
-                                    SurfaceElement_Edge, SurfaceElement_volume, null);
-
-
-
-#if DEBUG
-                                if (Matrix != null && OnlyAffine == false)
-                                    Matrix.CheckForNanOrInfM();
-                                if (AffineOffset != null)
-                                    GenericBlas.CheckForNanOrInfV(AffineOffset);
-#endif
-                            }
-
-
                         }
 
-                        if (trx != null) {
-                            trx.TransceiveFinish();
-                            trx = null;
-                        }
                     }
 
                     // build matrix, coupling
-                    // ----------------------
                     ///////////////////
 
-                    using (new BlockTrace("surface_integration", tr)) {
-                        if (m_Xowner.ContainesComponentType(typeof(ILevelSetForm))) {
+                    using(new BlockTrace("surface_integration", tr)) {
+                        foreach(var tt in this.CouplingRules) {
+                            int iLevSet = tt.Item1;
+                            var SpeciesA = tt.Item2;
+                            var SpeciesB = tt.Item3;
+                            var rule = tt.Item4;
+
+
+                            var MtxBuilder = new LECQuadratureLevelSet<M, V>(GridDat,
+                                                             m_Xowner,
+                                                             OnlyAffine ? default(M) : Matrix, AffineOffset,
+                                                             CodomainMapping, Parameters, DomainMapping,
+                                                             lsTrk, iLevSet, new Tuple<SpeciesId, SpeciesId>(SpeciesA, SpeciesB),
+                                                             rule);
+                            MtxBuilder.time = time;
+                            MtxBuilder.Execute();
+
+#if DEBUG
+                            if(Matrix != null && OnlyAffine == false)
+                                Matrix.CheckForNanOrInfM();
+                            if(AffineOffset != null)
+                                GenericBlas.CheckForNanOrInfV(AffineOffset);
+#endif
+
+                        }
+
+
+                        /*
+                        if(m_Xowner.ContainesComponentType(typeof(ILevelSetForm))) {
 
 
                             var AllSpc = lsTrk.SpeciesIdS;
 
                             // loop over all possible pairs of species
-                            // (maybe not very efficient, but this code is already aber so was von far from being efficient.)
-                            for (int iSpcA = 0; iSpcA < AllSpc.Count; iSpcA++) {
+                            for(int iSpcA = 0; iSpcA < AllSpc.Count; iSpcA++) {
                                 var SpeciesA = AllSpc[iSpcA];
                                 var SpeciesADom = lsTrk.Regions.GetSpeciesMask(SpeciesA);
-                                if (SpeciesADom.NoOfItemsLocally <= 0)
+                                if(SpeciesADom.NoOfItemsLocally <= 0)
                                     continue;
 
                                 int _iSpcA = Array.IndexOf(ReqSpecies, SpeciesA);
 
-                                for (int iSpcB = iSpcA + 1; iSpcB < AllSpc.Count; iSpcB++) {
+                                for(int iSpcB = iSpcA + 1; iSpcB < AllSpc.Count; iSpcB++) {
                                     var SpeciesB = AllSpc[iSpcB];
 
                                     int _iSpcB = Array.IndexOf(ReqSpecies, SpeciesB);
-                                    if (_iSpcA < 0 && _iSpcB < 0)
+                                    if(_iSpcA < 0 && _iSpcB < 0)
                                         continue;
 
                                     var SpeciesBDom = lsTrk.Regions.GetSpeciesMask(SpeciesB);
@@ -609,7 +614,7 @@ namespace BoSSS.Foundation.XDG {
 
                                     // loop over level-sets
                                     int NoOfLs = lsTrk.LevelSets.Count;
-                                    for (int iLevSet = 0; iLevSet < NoOfLs; iLevSet++) {
+                                    for(int iLevSet = 0; iLevSet < NoOfLs; iLevSet++) {
 
                                         var LsDom = lsTrk.Regions.GetCutCellMask4LevSet(iLevSet);
                                         var IntegrationDom = LsDom.Intersect(SpeciesCommonDom);
@@ -618,41 +623,29 @@ namespace BoSSS.Foundation.XDG {
                                         //if (IntegrationDom.NoOfItemsLocally > 0) {
 
                                         ICompositeQuadRule<QuadRule> rule;
-                                        using (new BlockTrace("QuadRule-compilation", tr)) {
+                                        using(new BlockTrace("QuadRule-compilation", tr)) {
                                             CellQuadratureScheme SurfIntegration = SchemeHelper.GetLevelSetquadScheme(iLevSet, IntegrationDom);
                                             rule = SurfIntegration.Compile(GridDat, order);
 
-                                            if (ruleDiagnosis) {
+                                            if(ruleDiagnosis) {
                                                 rule.SumOfWeightsToTextFileVolume(GridDat, string.Format("Levset_{0}.csv", iLevSet));
                                             }
                                         }
 
-                                        var MtxBuilder = new LECQuadratureLevelSet<M, V>(GridDat,
-                                                m_Xowner,
-                                                OnlyAffine ? default(M) : Matrix, AffineOffset,
-                                                CodomainMapping, Parameters, DomainMapping,
-                                                lsTrk, iLevSet, new Tuple<SpeciesId, SpeciesId>(SpeciesA, SpeciesB),
-                                                rule);
-                                        MtxBuilder.time = time;
-                                        MtxBuilder.Execute();
 
-
-
-#if DEBUG
-                                        if (Matrix != null && OnlyAffine == false)
-                                            Matrix.CheckForNanOrInfM();
-                                        if (AffineOffset != null)
-                                            GenericBlas.CheckForNanOrInfV(AffineOffset);
-#endif
                                         //}
                                     }
                                 }
                             }
-                        }
+                        }*/
                     }
 
                     // allow all processes to catch up
                     // -------------------------------
+                    if(trx != null) {
+                        trx.TransceiveFinish();
+                        trx = null;
+                    }
                     csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
                 }
@@ -838,7 +831,7 @@ namespace BoSSS.Foundation.XDG {
             /// <param name="fullMapRow">row mapping for the operator matrix <paramref name="full"/></param>
             /// <param name="fullMapCol">column mapping for the operator matrix <paramref name="full"/></param>
             public SpeciesFrameMatrix(M full, LevelSetTracker.LevelSetRegions lsTrk_regions, SpeciesId spcId, UnsetteledCoordinateMapping fullMapRow, UnsetteledCoordinateMapping fullMapCol)
-                : this(lsTrk_regions, full, new FrameBase(lsTrk_regions, spcId, fullMapRow, false), new FrameBase(lsTrk_regions, spcId, fullMapCol, true)) {
+                : this(full, new FrameBase(lsTrk_regions, spcId, fullMapRow, false), new FrameBase(lsTrk_regions, spcId, fullMapCol, true)) {
             }
 
             LevelSetTracker.LevelSetRegions m_LsTrk_regions;
@@ -846,11 +839,13 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// ctor.
             /// </summary>
-            public SpeciesFrameMatrix(LevelSetTracker.LevelSetRegions lst, M full, FrameBase __RowFrame, FrameBase __ColFrame) {
+            public SpeciesFrameMatrix(M full, FrameBase __RowFrame, FrameBase __ColFrame) {
                 m_full = full;
+                Debug.Assert(object.ReferenceEquals(__RowFrame.Regions, __ColFrame.Regions));
+                Debug.Assert(__RowFrame.Species == __ColFrame.Species);
                 RowFrame = __RowFrame;
                 ColFrame = __ColFrame;
-                m_LsTrk_regions = lst;
+                m_LsTrk_regions = __RowFrame.Regions;
 
 #if DEBUG
                 var grdDat = RowFrame.FullMap.BasisS.First().GridDat;
