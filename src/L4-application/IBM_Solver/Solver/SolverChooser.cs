@@ -188,6 +188,10 @@ namespace BoSSS.Application.IBM_Solver {
                         var dofsLoc = dofsPerCell3D * cellsLoc;
                         var dofsGlo = dofsPerCell3D * cellsGlo;
 
+                        var PPP = (int)Math.Ceiling(dofsLoc / 6500.0);
+
+                        Console.WriteLine("Analysing the problem yields " + PPP + " parts per process.");
+
                         if (dofsGlo > 10000) {
 
                             if (Control.NoOfMultigridLevels < 2)
@@ -195,7 +199,7 @@ namespace BoSSS.Application.IBM_Solver {
 
                             Timestepper.Config_linearSolver = new Schwarz() {
                                 m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                                    NoOfPartsPerProcess = (int)Math.Ceiling(dofsLoc / 6500.0),
+                                    NoOfPartsPerProcess = PPP,
                                 },
                                 Overlap = 1,
                                 CoarseSolver = DetermineMGSquence(Control.NoOfMultigridLevels - 2)
