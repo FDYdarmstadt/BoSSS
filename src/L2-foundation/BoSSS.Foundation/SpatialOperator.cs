@@ -1284,7 +1284,10 @@ namespace BoSSS.Foundation {
             /// <summary>
             /// Quadrature order to compile quadrature schemes
             /// </summary>
-            protected int order;
+            public int order {
+                get;
+                private set;
+            }
 
 
             /*

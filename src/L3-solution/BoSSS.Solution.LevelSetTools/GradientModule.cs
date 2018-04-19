@@ -263,15 +263,18 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
 
             var gradEvo = op.GetEvaluatorEx(
                 Phi.Mapping, null, gradPhi.Mapping,
-                edgeQrCtx: (new EdgeQuadratureScheme(domain: Sgrd.AllEdgesMask)),
-                volQrCtx: (new CellQuadratureScheme(domain: Sgrd.VolumeMask)),
-                subGridBoundaryTreatment: SpatialOperator.SubGridBoundaryModes.BoundaryEdge, sgrd: Sgrd);
+                (new EdgeQuadratureScheme(domain: Sgrd.AllEdgesMask)),
+                (new CellQuadratureScheme(domain: Sgrd.VolumeMask)));
+
+            gradEvo.ActivateSubgridBoundary(Sgrd.VolumeMask, SpatialOperator.SubGridBoundaryModes.BoundaryEdge);
 
             //Sgrd.VolumeMask.ToTxtFile("nar.csv", false);
 
             
-            gradPhi.Clear(Sgrd.VolumeMask); 
-            gradEvo.Evaluate(1.0, 0.0, gradPhi.CoordinateVector, 0.0, MPIexchange: false);
+            gradPhi.Clear(Sgrd.VolumeMask);
+            gradEvo.time = 0.0;
+            gradEvo.MPITtransceive = false;
+            gradEvo.Evaluate(1.0, 0.0, gradPhi.CoordinateVector);
             //gradPhi.GradientByFlux(1.0, Phi, optionalSubGrid:Sgrd , bndMode: SpatialOperator.SubGridBoundaryModes.BoundaryEdge);
 
             
@@ -282,7 +285,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
 
 
 
-        SpatialOperator.Evaluator m_gradEvo;
+        IEvaluatorNonLin m_gradEvo;
         int m_gradEvo_jCell;
     }
 }

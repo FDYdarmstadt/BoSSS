@@ -1138,7 +1138,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         /// </summary>
         MultidimensionalArray m_LenScales;
 
-        public void SetParameter(string speciesName, SpeciesId SpcId, MultidimensionalArray __LenScales) {
+        public void SetParameter(string speciesName, SpeciesId SpcId) {
             this.m_LenScales = __LenScales;
         }
 

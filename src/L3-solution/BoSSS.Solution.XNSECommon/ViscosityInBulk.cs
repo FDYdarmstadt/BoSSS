@@ -64,7 +64,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         /// </summary>
         MultidimensionalArray m_LenScales;
 
-        public void SetParameter(string speciesName, SpeciesId SpcId, MultidimensionalArray __LenScales) {
+        public void SetParameter(string speciesName, SpeciesId SpcId) {
             this.m_LenScales = __LenScales;
             switch (speciesName) {
                 case "A": currentMu = muA; complementMu = muB; SetBndfunction("A"); m_beta = betaA;  break;
@@ -140,7 +140,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         MultidimensionalArray m_LenScales;
 
 
-        public void SetParameter(string speciesName, SpeciesId SpcId, MultidimensionalArray LenScales) {
+        public void SetParameter(string speciesName, SpeciesId SpcId) {
             this.m_LenScales = LenScales;
             switch(speciesName) {
                 case "A": currentMu = muA; complementMu = muB; SetBndfunction("A"); break;

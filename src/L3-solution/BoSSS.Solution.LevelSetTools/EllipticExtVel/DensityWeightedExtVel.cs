@@ -85,18 +85,16 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
         public double LevelSetForm(ref CommonParamsLs inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
             double hmin;
-            if (inp.NegCellLengthScale.IsNaN()) {
+            if(inp.NegCellLengthScale.IsNaN()) {
                 hmin = inp.PosCellLengthScale;
-            }
-            else if (inp.PosCellLengthScale.IsNaN()) {
+            } else if(inp.PosCellLengthScale.IsNaN()) {
                 hmin = inp.NegCellLengthScale;
-            }
-            else {
+            } else {
                 hmin = Math.Min(inp.NegCellLengthScale, inp.PosCellLengthScale);
             }
 
-        return PenaltyBase * 2 / hmin * (uA[0] - (inp.ParamsNeg[0]*Weights[0]+inp.ParamsPos[0]*Weights[1])) * (vA);
-                
+            return PenaltyBase * 2 / hmin * (uA[0] - (inp.ParamsNeg[0] * Weights[0] + inp.ParamsPos[0] * Weights[1])) * (vA);
+
         }
 
 

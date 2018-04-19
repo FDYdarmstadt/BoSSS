@@ -85,6 +85,15 @@ namespace BoSSS.Foundation.XDG {
         SpeciesId m_spcId;
 
         /// <summary>
+        /// regions halt
+        /// </summary>
+        public LevelSetTracker.LevelSetRegions Regions {
+            get {
+                return m_Regions;
+            }
+        }
+
+        /// <summary>
         /// the 'framed' species.
         /// </summary>
         public SpeciesId Species {
