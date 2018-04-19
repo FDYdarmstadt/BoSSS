@@ -75,7 +75,7 @@ namespace CNS.IBM {
             
             dt = base.Perform(dt);  // eq. (42)
             
-            speciesMap.Agglomerator.Extrapolate(DGCoordinates.Mapping); // eq. (43)
+            speciesMap.Agglomerator.Extrapolate(CurrentState.Mapping); // eq. (43)
 
             return dt;
         }
@@ -93,7 +93,7 @@ namespace CNS.IBM {
         /// <param name="dt"></param>
         protected override void PerformStage(double[] y0, int s, double[][] k, double dt) {
             base.PerformStage(y0, s, k, dt);
-            speciesMap.Agglomerator.Extrapolate(DGCoordinates.Mapping);
+            speciesMap.Agglomerator.Extrapolate(CurrentState.Mapping);
         }
 
         /// <summary>
@@ -106,6 +106,8 @@ namespace CNS.IBM {
         /// <param name="AbsTime"></param>
         /// <param name="RelTime"></param>
         protected override void ComputeChangeRate(double[] k, double AbsTime, double RelTime, double[] edgeFluxes = null) {
+            RaiseOnBeforeComputechangeRate(AbsTime, RelTime);
+
             Evaluator.Evaluate(1.0, 0.0, k, AbsTime + RelTime);
             Debug.Assert(
                 !k.Any(f => double.IsNaN(f)),

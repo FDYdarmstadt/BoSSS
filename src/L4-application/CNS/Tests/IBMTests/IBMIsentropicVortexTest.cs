@@ -14,19 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
-using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
-using BoSSS.Solution;
 using CNS.Convection;
 using CNS.EquationSystem;
 using CNS.IBM;
 using CNS.MaterialProperty;
-using CNS.Solution;
 using CNS.Tests.IsentropicVortex;
-using NUnit.Framework;
 using ilPSP.Utils;
-using BoSSS.Foundation.Grid.Classic;
+using NUnit.Framework;
+using System;
 
 namespace CNS.Tests.IBMTests {
 
@@ -37,6 +34,7 @@ namespace CNS.Tests.IBMTests {
     [TestFixture]
     public class IBMIsentropicVortexTest : TestProgram<IBMControl> {
 
+
         ///// <summary>
         ///// Alternative entry point of this assembly that allows to perform
         ///// isentropic vortex tests conveniently.
@@ -45,9 +43,10 @@ namespace CNS.Tests.IBMTests {
         ///// Command line arguments
         ///// </param>
         //public static void Main(string[] args) {
+        //    SetUp();
         //    //IBMVortexOneStepGaussAndStokesNoAgglomerationTest();
-        //    //IBMVortexClassicAgglomerationTest();
-        //    IBMVortexCutNextToCutAgglomerationTest();
+        //    IBMVortexClassicAgglomerationTest();
+        //    //IBMVortexCutNextToCutAgglomerationTest();
         //    //IBMVortexClassicOptimizedHLLCAgglomerationTest();
         //    //IBMVortexLocalTimeSteppingTest();
         //}
@@ -59,15 +58,9 @@ namespace CNS.Tests.IBMTests {
         /// </summary>
         [Test]
         public static void IBMVortexOneStepGaussAndStokesNoAgglomerationTest() {
-            Program<IBMControl> p = null;
-            Application<IBMControl>._Main(
-                new string[] { @"-c cs:CNS.Tests.IBMTests.IBMIsentropicVortexTest.ControlNoAgglomeration()" },
-                false,
-                "",
-                delegate () {
-                    p = new IBMIsentropicVortexTest();
-                    return p;
-                });
+            Program<IBMControl> p = new IBMIsentropicVortexTest();
+            p.Init(ControlNoAgglomeration());
+            p.RunSolverMode();
 
             CheckErrorThresholds(
                 p.QueryHandler.QueryResults,
@@ -83,7 +76,7 @@ namespace CNS.Tests.IBMTests {
         public static IBMControl ControlNoAgglomeration() {
             IBMControl c = ControlTemplate(dgDegree: 2, divisions: 1, levelSetPosition: -0.25);
 
-            c.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             c.LevelSetQuadratureOrder = 10;
             c.AgglomerationThreshold = 0.0;
 
@@ -97,15 +90,9 @@ namespace CNS.Tests.IBMTests {
         /// </summary>
         [Test]
         public static void IBMVortexClassicAgglomerationTest() {
-            Program<IBMControl> p = null;
-            Application<IBMControl>._Main(
-                new string[] { @"-c cs:CNS.Tests.IBMTests.IBMIsentropicVortexTest.ControlRusanovAgglomeration()" },
-                false,
-                "",
-                delegate () {
-                    p = new IBMIsentropicVortexTest();
-                    return p;
-                });
+            Program<IBMControl> p = new IBMIsentropicVortexTest();
+            p.Init(ControlRusanovAgglomeration());
+            p.RunSolverMode();
 
             CheckErrorThresholds(
                 p.QueryHandler.QueryResults,
@@ -121,7 +108,7 @@ namespace CNS.Tests.IBMTests {
         public static IBMControl ControlRusanovAgglomeration() {
             IBMControl c = ControlTemplate(dgDegree: 2, divisions: 1, levelSetPosition: -0.05);
 
-            c.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
             c.LevelSetQuadratureOrder = 5;
             c.AgglomerationThreshold = 0.1;
 
@@ -135,15 +122,9 @@ namespace CNS.Tests.IBMTests {
         /// </summary>
         [Test]
         public static void IBMVortexClassicHLLCAgglomerationTest() {
-            Program<IBMControl> p = null;
-            Application<IBMControl>._Main(
-                new string[] { @"-c cs:CNS.Tests.IBMTests.IBMIsentropicVortexTest.ControlHLLCAgglomeration()" },
-                false,
-                "",
-                delegate () {
-                    p = new IBMIsentropicVortexTest();
-                    return p;
-                });
+            Program<IBMControl> p = new IBMIsentropicVortexTest();
+            p.Init(ControlHLLCAgglomeration());
+            p.RunSolverMode();
 
             CheckErrorThresholds(
                 p.QueryHandler.QueryResults,
@@ -160,7 +141,7 @@ namespace CNS.Tests.IBMTests {
             IBMControl c = ControlTemplate(dgDegree: 2, divisions: 1, levelSetPosition: -0.05);
 
             c.ConvectiveFluxType = ConvectiveFluxTypes.HLLC;
-            c.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
             c.LevelSetQuadratureOrder = 5;
             c.AgglomerationThreshold = 0.1;
 
@@ -174,15 +155,9 @@ namespace CNS.Tests.IBMTests {
         /// </summary>
         [Test]
         public static void IBMVortexClassicOptimizedHLLCAgglomerationTest() {
-            Program<IBMControl> p = null;
-            Application<IBMControl>._Main(
-                new string[] { @"-c cs:CNS.Tests.IBMTests.IBMIsentropicVortexTest.ControlOptimizedHLLCAgglomeration()" },
-                false,
-                "",
-                delegate () {
-                    p = new IBMIsentropicVortexTest();
-                    return p;
-                });
+            Program<IBMControl> p = new IBMIsentropicVortexTest();
+            p.Init(ControlOptimizedHLLCAgglomeration());
+            p.RunSolverMode();
 
             CheckErrorThresholds(
                 p.QueryHandler.QueryResults,
@@ -199,7 +174,7 @@ namespace CNS.Tests.IBMTests {
             IBMControl c = ControlTemplate(dgDegree: 2, divisions: 1, levelSetPosition: -0.05);
 
             c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
-            c.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
             c.LevelSetQuadratureOrder = 5;
             c.AgglomerationThreshold = 0.1;
 
@@ -213,27 +188,15 @@ namespace CNS.Tests.IBMTests {
         /// </summary>
         [Test]
         public static void IBMVortexLocalTimeSteppingTest() {
-            Program<IBMControl> p = null;
-            Application<IBMControl>._Main(
-                new string[] { @"-c cs:CNS.Tests.IBMTests.IBMIsentropicVortexTest.ControlLocalTimeStepping()" },
-                false,
-                "",
-                delegate () {
-                    p = new IBMIsentropicVortexTest();
-                    return p;
-                });
+            Program<IBMControl> p = new IBMIsentropicVortexTest();
+            p.Init(ControlLocalTimeStepping());
+            p.RunSolverMode();
 
             CheckErrorThresholds(
                 p.QueryHandler.QueryResults,
-            // Old test errors by Stephan
-            //Tuple.Create("L2ErrorDensity", 3.0e-3),
-            //Tuple.Create("L2ErrorPressure", 3.7e-3),
-            //Tuple.Create("L2ErrorEntropy", 3.6e-3));
-
-            // Stricter error bounds
-            Tuple.Create("L2ErrorDensity", 0.00262077353927322 + 1e-14),
-            Tuple.Create("L2ErrorPressure", 0.0033710870856724 + 1e-14),
-            Tuple.Create("L2ErrorEntropy", 0.00255881311446833 + 1e-14));
+                Tuple.Create("L2ErrorDensity", 0.00297096129679995 + 1e-14),
+                Tuple.Create("L2ErrorPressure", 0.00362102145336951 + 1e-14),
+                Tuple.Create("L2ErrorEntropy", 0.00355348316330002 + 1e-14));
         }
 
         /// <summary>
@@ -243,18 +206,8 @@ namespace CNS.Tests.IBMTests {
         public static IBMControl ControlLocalTimeStepping() {
             IBMControl c = ControlTemplate(dgDegree: 2, divisions: 1, levelSetPosition: -0.25);
 
-            // Store results in database
-            //string dbPath = @"c:\bosss_db";
-            ////string dbPath = null;
-            ////dbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db";
-            //c.DbPath = dbPath;
-            //c.savetodb = dbPath != null;
-            //c.saveperiod = 1;
-            //c.PrintInterval = 1;
-            //c.AddVariable(Variables.IBMLTSSubGrids, 0);
-
             c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
-            c.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
             c.LevelSetQuadratureOrder = 5;
             c.AgglomerationThreshold = 0.0;
 
@@ -271,16 +224,10 @@ namespace CNS.Tests.IBMTests {
         /// </summary>
         [Test]
         public static void IBMVortexCutNextToCutNoAgglomerationTest() {
-            Program<IBMControl> p = null;
-            Application<IBMControl>._Main(
-                new string[] { @"-c cs:CNS.Tests.IBMTests.IBMIsentropicVortexTest.ControlCutNextToCutNoAgglomeration()" },
-                false,
-                "",
-                delegate () {
-                    p = new IBMIsentropicVortexTest();
-                    return p;
-                });
-
+            Program<IBMControl> p = new IBMIsentropicVortexTest();
+            p.Init(ControlCutNextToCutNoAgglomeration());
+            p.RunSolverMode();
+            
             CheckErrorThresholds(
                 p.QueryHandler.QueryResults,
                 Tuple.Create("L2ErrorDensity", 2.8e-3),
@@ -302,17 +249,9 @@ namespace CNS.Tests.IBMTests {
         /// </summary>
         [Test]
         public static void IBMVortexCutNextToCutAgglomerationTest() {
-            Program<IBMControl> p = null;
-            Application<IBMControl>._Main(
-                new string[] { "--control", "cs:CNS.Tests.IBMTests.IBMIsentropicVortexTest.ControlCutNextToCutAgglomeration()"
-                    //, "-i1", "-u3", "--delplt" 
-                },
-                false,
-                "",
-                delegate () {
-                    p = new IBMIsentropicVortexTest();
-                    return p;
-                });
+            Program<IBMControl> p = new IBMIsentropicVortexTest();
+            p.Init(ControlCutNextToCutAgglomeration());
+            p.RunSolverMode();
 
             CheckErrorThresholds(
                 p.QueryHandler.QueryResults,
@@ -329,9 +268,6 @@ namespace CNS.Tests.IBMTests {
             return ControlCutNextToCut(agglomeration: true);
         }
 
-
-
-
         private static IBMControl ControlTemplate(int dgDegree, int divisions, double levelSetPosition) {
             IBMControl c = new IBMControl();
             c.savetodb = false;
@@ -341,7 +277,6 @@ namespace CNS.Tests.IBMTests {
             c.DomainType = DomainTypes.StaticImmersedBoundary;
             c.ActiveOperators = Operators.Convection;
             c.ConvectiveFluxType = ConvectiveFluxTypes.Rusanov;
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 1;
             c.EquationOfState = IdealGas.Air;
@@ -393,7 +328,6 @@ namespace CNS.Tests.IBMTests {
             return c;
         }
 
-
         private static IBMControl ControlCutNextToCut(bool agglomeration) {
             IBMControl c = new IBMControl();
             c.savetodb = false;
@@ -402,14 +336,13 @@ namespace CNS.Tests.IBMTests {
             double vortexSpeed = 1.0;
 
             // IBM Settings
-            c.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
             c.LevelSetQuadratureOrder = 5;
             c.AgglomerationThreshold = agglomeration ? 0.3 : 0.0;
 
             c.DomainType = DomainTypes.StaticImmersedBoundary;
             c.ActiveOperators = Operators.Convection;
             c.ConvectiveFluxType = ConvectiveFluxTypes.Rusanov;
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 1;
             c.EquationOfState = IdealGas.Air;
@@ -463,6 +396,5 @@ namespace CNS.Tests.IBMTests {
 
             return c;
         }
-
     }
 }

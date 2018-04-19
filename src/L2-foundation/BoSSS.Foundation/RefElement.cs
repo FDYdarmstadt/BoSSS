@@ -104,12 +104,12 @@ namespace BoSSS.Foundation.Grid.RefElements {
         NodeSet m_Center;
 
         /// <summary>
-        /// Center (ov gravity) of this reference element.
+        /// Center (of gravity) of this reference element.
         /// </summary>
         public NodeSet Center {
             get {
                 if(m_Center == null) {
-                    m_Center = new NodeSet(this, new double[this.SpatialDimension]);
+                    m_Center = new NodeSet(this, new double[Math.Max(1, this.SpatialDimension)]);
                 }
                 return m_Center;
             }
@@ -1037,7 +1037,58 @@ namespace BoSSS.Foundation.Grid.RefElements {
             }
 #endif
             
-            return new PolynomialList(this.OrthonormalPolynomials.TakeWhile(p => p.AbsoluteDegree <= MaxDeg));
+            var R = new PolynomialList(this.OrthonormalPolynomials.TakeWhile(p => p.AbsoluteDegree <= MaxDeg));
+            Debug.Assert(R.Count == GetNoOfOrthonormalPolynomialsUptoDegree(MaxDeg));
+
+            return R;
+        }
+
+        /// <summary>
+        /// Number of polynomials with an absolute degree equal to <paramref name="p"/>.
+        /// </summary>
+        public int GetNoOfOrthonormalPolynomialsForDegree(int p) {
+            if(p < 0)
+                throw new ArgumentOutOfRangeException();
+
+            int n;
+            switch(this.SpatialDimension) {
+                case 0:
+                return 0;
+
+                case 1:
+                n = 1;
+                break;
+
+                case 2:
+                n = p + 1;
+                break;
+
+                case 3:
+                n = (p * p + 3 * p + 2) / 2;
+                break;
+
+                default:
+                throw new NotImplementedException("Unknown spatial dimension");
+            }
+
+            Debug.Assert(this.OrthonormalPolynomials.Where(poly => poly.AbsoluteDegree == p).Count() == n);
+
+            return n;
+        }
+
+
+        /// <summary>
+        /// Number of polynomials with an absolute degree smaller or equal to <paramref name="p"/>.
+        /// </summary>
+        public int GetNoOfOrthonormalPolynomialsUptoDegree(int p) {
+            if(p < 0)
+                throw new ArgumentOutOfRangeException();
+
+            int n = 0;
+            for(int i = 0; i <= p; i++)
+                n += GetNoOfOrthonormalPolynomialsForDegree(i);
+
+            return n;
         }
 
 
@@ -1464,12 +1515,19 @@ namespace BoSSS.Foundation.Grid.RefElements {
                 }
             }
 
+            RefElement m_RefElement;
 
             /// <summary>
-            /// the simplex which created the parent object of this subdivision tree
+            /// The reference element which created the root object of this subdivision tree
             /// during the invocation of <see cref="RefElement.GetSubdivisionTree"/>;
             /// </summary>
-            RefElement m_RefElement;
+            public RefElement RefElement {
+                get {
+                    return m_RefElement;
+                }
+            }
+
+
 
             /// <summary>
             /// <list type="bullet">
@@ -1656,10 +1714,87 @@ namespace BoSSS.Foundation.Grid.RefElements {
             }
 
             /// <summary>
-            /// can be null, is 
+            /// Can be null, is 
             /// initialized by calling <see cref="SubdivideRecursive"/>
             /// </summary>
-            public SubdivisionTreeNode[] Children;
+            public SubdivisionTreeNode[] Children {
+                get;
+                private set;
+            }
+
+            /// <summary>
+            /// Computes a transformation matrix \f$ A \f$, which expresses the orthonormal polynomials in the root of the subdivision tree,
+            /// \f$ \underline{\phi}^{\text{root}} \f$, in terms of the orthonormal polynomials in this leaf, \f$ \underline{\phi}^{\text{leaf}} \f$,
+            /// i.e.
+            /// \f[
+            ///   \underline{\phi}^{\text{root}} = \underline{\phi}^{\text{leaf}} A .
+            /// \f]
+            /// </summary>
+            /// <param name="p">Polynomial degree.</param>
+            /// <returns>
+            /// The transformation matrix, which is upper-triangular.
+            /// </returns>
+            public MultidimensionalArray GetBasisTrafo(int p) {
+
+                PolynomialList Polys = m_RefElement.GetOrthonormalPolynomials(p);
+                var qr = m_RefElement.GetQuadratureRule(p * 2);
+
+                int Np = Polys.Count;
+                int D = m_RefElement.SpatialDimension;
+                int Nk = qr.NoOfNodes;
+
+                MultidimensionalArray PolyAtNodes = MultidimensionalArray.Create(Nk, Np);
+                Polys.Evaluate(qr.Nodes, PolyAtNodes);
+
+                NodeSet NodesAtRoot = new NodeSet(m_RefElement, Nk, qr.Nodes.SpatialDimension);
+                Trafo2Root.Transform(qr.Nodes, NodesAtRoot);
+                NodesAtRoot.LockForever();
+
+                MultidimensionalArray PolyAtRootNodes = MultidimensionalArray.Create(Nk, Np);
+                Polys.Evaluate(NodesAtRoot, PolyAtRootNodes);
+
+                double onbScale = 1.0/Math.Sqrt(TrafoFromRoot.Matrix.Determinant());
+
+                MultidimensionalArray A = MultidimensionalArray.Create(Np, Np);
+                A.Multiply(onbScale, PolyAtNodes, PolyAtRootNodes, qr.Weights, 0.0, "mn", "km", "kn", "k");
+
+#if DEBUG
+                // Check that the matrix is upper triangular
+                double LowerTriNorm = 0.0;
+                double UpperTriNorm = 0.0;
+                for(int iRow = 0; iRow < Np; iRow++) {
+                    for(int j = 0; j < iRow; j++)
+                        LowerTriNorm += Math.Abs(A[iRow, j]);
+                    for(int j = iRow; j < Np; j++)
+                        UpperTriNorm += Math.Abs(A[iRow, j]);
+                }
+                Debug.Assert(LowerTriNorm < UpperTriNorm * 1.0e-10);
+#endif
+                for(int iRow = 0; iRow < Np; iRow++) {
+                    for(int j = 0; j < iRow; j++)
+                        A[iRow, j] = 0.0; // strictly enforce lower tri.
+                }
+
+#if DEBUG
+                for(int k = 0; k < Nk; k++) { // test for each node
+                    for(int n = 0; n < Np; n++) { // test for each polynomial
+                        double RootVal = PolyAtRootNodes[k, n];
+
+                        double LeafVal = 0.0;
+                        for(int m = 0; m < Np; m++) {
+                            LeafVal += PolyAtNodes[k, m] * A[m, n] / onbScale;
+                        }
+                        Debug.Assert(Math.Abs(LeafVal - RootVal) < 1.0e-8);
+                    }
+                }
+
+
+#endif
+
+                return A;
+            }
+
+
         }
 
         /*

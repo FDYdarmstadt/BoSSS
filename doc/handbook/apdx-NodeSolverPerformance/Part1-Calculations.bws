@@ -1,0 +1,477 @@
+restart
+**************
+
+  Database Explorer v2
+  ____________________
+
+Databases loaded:
+List of 0 instances of IDatabaseInfo {
+}
+Setting Matlab Connector to Octave...
+
+ Console ready for input. Type 'help' for help.
+
+==============
+using BoSSS.Application.SipPoisson;
+**************
+==============
+WorkflowMgm.Init("PoissonSolverPerformance");
+**************
+Project name is set to 'PoissonSolverPerformance'.
+
+==============
+var tempDB = OpenOrCreateDatabase("D:\\tmp\\fk_temp_db");
+**************
+Opening existing database 'D:\tmp\fk_temp_db'.
+
+==============
+ var myBatch = new MiniBatchProcessorClient(@"D:\tmp\fk_deploy");
+**************
+==============
+MiniBatchProcessor.Server.StartIfNotRunning();
+**************
+Starting mini batch processor in external process...
+Started mini batch processor on local machine, process id is 12352.
+
+==============
+// ===================
+// Utility definitions
+// ===================
+**************
+==============
+static class Utils {
+    // DOF per cell in 3D
+    public static int Np(int p) {
+        return (p*p*p + 6*p*p + 11*p + 6)/6;
+    }    
+    
+    //Non-equidistant nodes
+    public static double[] SinLinSpacing(double l, double r, double a, int n) {
+        double[] linnodes = GenericBlas.Linspace(-Math.PI * 0.5, Math.PI * 0.5, n);
+        double[] linnodes2 = GenericBlas.Linspace(-1, 1, n);
+        double[] nodes = new double[n];
+
+        for (int i = 0; i < n; i++)
+            //nodes[i] = linnodes2[i] * (1 - a) + (1.0 - Math.Sin(linnodes[i])) * a;
+            nodes[i] = linnodes2[i] * (1 - a) + Math.Sin(linnodes[i])*a;
+
+        for (int i = 0; i < n; i++)
+            nodes[i] = nodes[i] * (r - l)*0.5 + l;
+        return nodes;
+    }
+}
+**************
+==============
+// ===============================
+// Init grids and save to database
+// ===============================
+**************
+==============
+tempDB.Grids;
+**************
+List of 6 instances of IGridInfo {
+  0: { Guid = b185b7b5-caf5-47e0-a19b-e36c3fb19359; Name = PoissonSolverPerformance_J40; Cell Count = 40; Dim = 3 }
+  1: { Guid = a3b8e37f-d0cb-4c2c-b033-c75e962a3a31; Name = PoissonSolverPerformance_J1310720; Cell Count = 1310720; Dim = 3 }
+  2: { Guid = 7f49a48c-a3f4-4874-b7b2-1effa827f74b; Name = PoissonSolverPerformance_J163840; Cell Count = 163840; Dim = 3 }
+  3: { Guid = db9288ba-09ef-45ec-aead-641acc31d741; Name = PoissonSolverPerformance_J20480; Cell Count = 20480; Dim = 3 }
+  4: { Guid = a27dbfca-f6b0-4eee-ad6f-cf0bfdc1610a; Name = PoissonSolverPerformance_J2560; Cell Count = 2560; Dim = 3 }
+  5: { Guid = ff72b866-8921-4289-94a1-69af196e36a2; Name = PoissonSolverPerformance_J320; Cell Count = 320; Dim = 3 }
+}
+==============
+int[] Resolutions_3D = new int[] { 2, 4, 8, 16, 32, 64 };
+IGridInfo[] grids = new IGridInfo[Resolutions_3D.Length];
+for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
+    int Res = Resolutions_3D[cnt];    
+    
+    double[] xNodes = GenericBlas.Linspace(0, 10, Res*5 + 1);
+    double[] yNodes = Utils.SinLinSpacing(-1, +1, 0.6, Res + 1);
+    double[] zNodes = Utils.SinLinSpacing(-1, +1, 0.6, Res + 1);
+    int J = (xNodes.Length - 1)*(yNodes.Length - 1)*(zNodes.Length - 1);
+    
+    string GridName = string.Format(WorkflowMgm.CurrentProject + "_J" + J);
+    
+    grids[cnt] = tempDB.Grids.SingleOrDefault(grd => grd.Name == GridName);
+    
+    if(grids[cnt] == null){
+        Console.WriteLine("Creating grid with " + J + " cells.");
+        
+        GridCommons g;
+        g      = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
+        g.Name = GridName;
+        
+        g.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
+        g.EdgeTagNames.Add(2, BoundaryType.Neumann.ToString());
+    
+        g.DefineEdgeTags(delegate (double[] X) {
+            byte ret;
+            if(Math.Abs(X[0] - 0.0) <= 1.0e-6)
+                ret = 1;
+            else
+                ret = 2;
+            return ret;
+        });
+      
+        tempDB.SaveGrid(ref g);  
+        grids[cnt] = g;
+    } else {
+        Console.WriteLine("Found Grid: " + grids[cnt]);
+        if(grids[cnt].NumberOfCells != J)
+            throw new Exception("J mismatch");
+        
+        if(grids[cnt].SpatialDimension != 3)
+            throw new Exception("D mismatch");
+    }
+    
+}
+**************
+Found Grid: { Guid = b185b7b5-caf5-47e0-a19b-e36c3fb19359; Name = PoissonSolverPerformance_J40; Cell Count = 40; Dim = 3 }
+Found Grid: { Guid = ff72b866-8921-4289-94a1-69af196e36a2; Name = PoissonSolverPerformance_J320; Cell Count = 320; Dim = 3 }
+Found Grid: { Guid = a27dbfca-f6b0-4eee-ad6f-cf0bfdc1610a; Name = PoissonSolverPerformance_J2560; Cell Count = 2560; Dim = 3 }
+Found Grid: { Guid = db9288ba-09ef-45ec-aead-641acc31d741; Name = PoissonSolverPerformance_J20480; Cell Count = 20480; Dim = 3 }
+Found Grid: { Guid = 7f49a48c-a3f4-4874-b7b2-1effa827f74b; Name = PoissonSolverPerformance_J163840; Cell Count = 163840; Dim = 3 }
+Found Grid: { Guid = a3b8e37f-d0cb-4c2c-b033-c75e962a3a31; Name = PoissonSolverPerformance_J1310720; Cell Count = 1310720; Dim = 3 }
+
+==============
+grids;
+**************
+List of 6 instances of IGridInfo {
+  0: { Guid = b185b7b5-caf5-47e0-a19b-e36c3fb19359; Name = PoissonSolverPerformance_J40; Cell Count = 40; Dim = 3 }
+  1: { Guid = ff72b866-8921-4289-94a1-69af196e36a2; Name = PoissonSolverPerformance_J320; Cell Count = 320; Dim = 3 }
+  2: { Guid = a27dbfca-f6b0-4eee-ad6f-cf0bfdc1610a; Name = PoissonSolverPerformance_J2560; Cell Count = 2560; Dim = 3 }
+  3: { Guid = db9288ba-09ef-45ec-aead-641acc31d741; Name = PoissonSolverPerformance_J20480; Cell Count = 20480; Dim = 3 }
+  4: { Guid = 7f49a48c-a3f4-4874-b7b2-1effa827f74b; Name = PoissonSolverPerformance_J163840; Cell Count = 163840; Dim = 3 }
+  5: { Guid = a3b8e37f-d0cb-4c2c-b033-c75e962a3a31; Name = PoissonSolverPerformance_J1310720; Cell Count = 1310720; Dim = 3 }
+}
+==============
+**************
+==============
+// =====================================
+// setup control object for a solver run
+// =====================================
+**************
+==============
+**************
+==============
+// - - - - - - - - - - - - - - - - - - -
+// Initial Values & Boundary conditions
+// - - - - - - - - - - - - - - - - - - -
+**************
+==============
+static class InitialValues {
+    public static double RHS(double[] X) {
+        return -Math.Sin(X[0]);
+    }
+    
+    public static double DirichletBC(double[] X) {
+        return 0.0;
+    }
+    
+    public static double NeumannBC(double[] X) {
+       if(Math.Abs(X[1] - 1.0) < 1.0e-8 || Math.Abs(X[1] + 1.0) < 1.0e-8)
+           return 0;
+       if(X.Length > 2 && (Math.Abs(X[2] - 1.0) < 1.0e-8 || Math.Abs(X[2] + 1.0) < 1.0e-8))
+           return 0;
+
+       return Math.Cos(10.0);
+   }
+}
+**************
+==============
+InitialValues.RHS(new double[]{ 0, 0 });
+**************
+0
+==============
+**************
+==============
+//myCtrl.NoOfMultigridLevels = 3;
+**************
+==============
+//myCtrl.Run();
+**************
+==============
+// - - - - - - - - - - - - -
+// setup of parameter study
+// - - - - - - - - - - - - -
+**************
+==============
+List<SipControl> controls = new List<SipControl>();
+**************
+==============
+// polynomial degrees to test
+//int[] PolyDegS = new int[] {2, 3, 4, 5, 6};
+int[] PolyDegS = new int[] {2}; // reduced options for dev.
+**************
+==============
+// Solvers which we want to instrument:
+SolverCodes[] solver_nameS = new SolverCodes[] {
+//    SolverCodes.classic_pardiso, 
+//    SolverCodes.classic_mumps, 
+//    SolverCodes.classic_cg,
+      SolverCodes.exp_softpcg_schwarz_directcoarse,
+//    SolverCodes.exp_direct,
+//    SolverCodes.exp_softpcg_schwarz
+//    SolverCodes.exp_direct_lapack
+      SolverCodes.exp_softpcg_mg
+}; 
+**************
+==============
+// MaxDof for one claculation (we skip fine grids for higher polynomial orders)
+int MaxDof = 5000000;
+**************
+==============
+controls.Clear();
+foreach(SolverCodes solver_name in solver_nameS) {
+foreach(int k in PolyDegS) {
+int iGrd = 0;    
+foreach(IGridInfo grd in grids) {
+    iGrd ++;
+    //if(k >= 3 && iGrd > 6)
+    //    continue; 
+    //if(k >= 4 && iGrd > 5)
+    //    continue; 
+    //if(k >= 5 && iGrd > 4)
+    //    continue; 
+    
+    int Np = Utils.Np(k);
+    int J  = grd.NumberOfCells;
+    if(J*Np > MaxDof)
+        continue;
+    
+    string caseName = string.Format("J{0}_k{1}_{2}", J, k, solver_name);
+    Console.WriteLine("setting up: " + caseName);
+
+    var ctrl = new SipControl();
+    controls.Add(ctrl);
+    
+    ctrl.SessionName = caseName;
+    ctrl.SetDatabase(tempDB);
+    ctrl.SetGrid(grd);
+    ctrl.SetDGdegree(k);
+    ctrl.solver_name         = solver_name;
+    ctrl.NoOfMultigridLevels = int.MaxValue;
+    
+    ctrl.InitialValues.Add("RHS", GetFormulaObject(InitialValues.RHS));
+    ctrl.AddBoundaryCondition(BoundaryType.Dirichlet.ToString(), "T",
+        GetFormulaObject(InitialValues.DirichletBC));
+    ctrl.AddBoundaryCondition(BoundaryType.Neumann.ToString(), "T",
+        GetFormulaObject(InitialValues.NeumannBC));
+}
+}
+}
+
+**************
+setting up: J40_k2_exp_softpcg_schwarz_directcoarse
+setting up: J320_k2_exp_softpcg_schwarz_directcoarse
+setting up: J2560_k2_exp_softpcg_schwarz_directcoarse
+setting up: J20480_k2_exp_softpcg_schwarz_directcoarse
+setting up: J163840_k2_exp_softpcg_schwarz_directcoarse
+setting up: J40_k2_exp_softpcg_mg
+setting up: J320_k2_exp_softpcg_mg
+setting up: J2560_k2_exp_softpcg_mg
+setting up: J20480_k2_exp_softpcg_mg
+setting up: J163840_k2_exp_softpcg_mg
+
+==============
+// ==========
+// Launch Job
+// ==========
+**************
+==============
+//var job = new Job("zwa", solver);
+**************
+==============
+//myCtrl.GetType();
+**************
+==============
+//job.SetControlObject(myCtrl);
+**************
+==============
+//tempDB.Sessions.Where(s => s.Name.Contains("softpcg") && s.Name.Contains("k2") && s.Name.Contains("mg"));//.ForEach(si => si.Delete(true));
+**************
+==============
+//tempDB.Sessions.Where(s => s.Name.Contains("exp_direct")).ForEach(si => si.Delete());
+**************
+==============
+**************
+==============
+foreach(var ctrl in controls) {
+    Console.WriteLine(" Submitting: " + ctrl.SessionName); 
+    ctrl.RunBatch(myBatch,NumberOfMPIProcs:1,UseComputeNodesExclusive:true); 
+}
+**************
+ Submitting: J40_k2_exp_softpcg_schwarz_directcoarse
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = c6c86ad8-1cbe-4dfb-b3c9-f86c80cfcf43; 03/23/2018 12:56:43 Name = J40_k2_exp_softpcg_schwarz_directcoarse }
+No further action.
+ Submitting: J320_k2_exp_softpcg_schwarz_directcoarse
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = aafc90b9-09bb-44b3-9f12-6da3d63d191a; 03/23/2018 12:57:14 Name = J320_k2_exp_softpcg_schwarz_directcoarse }
+No further action.
+ Submitting: J2560_k2_exp_softpcg_schwarz_directcoarse
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = 626aa661-d412-4554-bfcc-165d118a00e6; 03/23/2018 12:57:45 Name = J2560_k2_exp_softpcg_schwarz_directcoarse }
+No further action.
+ Submitting: J20480_k2_exp_softpcg_schwarz_directcoarse
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = be9af85d-35ee-4bd3-869a-d382eae1120b; 03/23/2018 12:58:24 Name = J20480_k2_exp_softpcg_schwarz_directcoarse }
+No further action.
+ Submitting: J163840_k2_exp_softpcg_schwarz_directcoarse
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = f5b0e8dd-4d8b-40a6-9a6b-5f3152b444b6; 03/23/2018 13:00:04 Name = J163840_k2_exp_softpcg_schwarz_directcoarse }
+No further action.
+ Submitting: J40_k2_exp_softpcg_mg
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = 143ecb65-6399-4a81-b7b4-e250e83d8461; 03/23/2018 12:34:37 Name = J40_k2_exp_softpcg_mg }
+No further action.
+ Submitting: J320_k2_exp_softpcg_mg
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = 36d50272-328b-4475-bc8a-2dfd4880a26a; 03/23/2018 12:35:07 Name = J320_k2_exp_softpcg_mg }
+No further action.
+ Submitting: J2560_k2_exp_softpcg_mg
+
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = 209a5ec1-ee55-4c5f-8723-cd5cdbfbc644; 03/26/2018 08:39:04 Name = J2560_k2_exp_softpcg_mg }
+No further action.
+ Submitting: J20480_k2_exp_softpcg_mg
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = 319b314e-e799-4352-b906-8d9cb039c5cc; 03/26/2018 08:39:44 Name = J20480_k2_exp_softpcg_mg }
+No further action.
+ Submitting: J163840_k2_exp_softpcg_mg
+Job was successful (according to job manager), latest session related to job is:
+{ Guid = da78c65e-3dc7-493b-b427-cdaca6e159c0; 03/23/2018 13:41:37 Name = J163840_k2_exp_softpcg_mg }
+No further action.
+
+==============
+**************
+==============
+WorkflowMgm.AllJobs.Select(kv => kv.Key + ": \t" + kv.Value.Status);
+**************
+List of 10 instances of String {
+  0: J40_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  1: J320_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  2: J2560_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  3: J20480_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  4: J163840_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  5: J40_k2_exp_softpcg_mg: 	FinishedSuccessful
+  6: J320_k2_exp_softpcg_mg: 	FinishedSuccessful
+  7: J2560_k2_exp_softpcg_mg: 	FinishedSuccessful
+  8: J20480_k2_exp_softpcg_mg: 	FinishedSuccessful
+  9: J163840_k2_exp_softpcg_mg: 	FinishedSuccessful
+}
+==============
+//WorkflowMgm.AllJobs.ElementAt(9).Value.Stdout;
+**************
+==============
+//WorkflowMgm.AllJobs.ElementAt(0).Value.Stdout;
+**************
+==============
+WorkflowMgm.SessionTable.Rows.Count;
+**************
+96
+==============
+**************
+==============
+**************
+==============
+// =====================================
+// Session table
+// =====================================
+**************
+==============
+// -------------------------------
+// Additional/user-defined columns
+// -------------------------------
+**************
+==============
+static class AddCols {
+    static public object SipMatrixAssembly_time(ISessionInfo SI) {
+        var mcr = SI.GetProfiling()[0];
+        var ndS = mcr.FindChildren("SipMatrixAssembly");
+        var nd  = ndS.ElementAt(0);
+        return nd.TimeSpentInMethod.TotalSeconds  / nd.CallCount;
+    }
+    static public object Aggregation_basis_init_time(ISessionInfo SI) {
+        var mcr = SI.GetProfiling()[0];
+        var ndS = mcr.FindChildren("Aggregation_basis_init");
+        var nd  = ndS.ElementAt(0);
+        return nd.TimeSpentInMethod.TotalSeconds  / nd.CallCount;
+    }
+    static public object Solver_Init_time(ISessionInfo SI) {
+        var mcr = SI.GetProfiling()[0];
+        var ndS = mcr.FindChildren("Solver_Init");
+        var nd  = ndS.ElementAt(0);
+        //Console.WriteLine("Number of nodes: " + ndS.Count() + " cc " + nd.CallCount );
+        return nd.TimeSpentInMethod.TotalSeconds / nd.CallCount;
+    }
+    static public object Solver_Run_time(ISessionInfo SI) {
+        var mcr = SI.GetProfiling()[0];
+        var ndS = mcr.FindChildren("Solver_Run");
+        var nd  = ndS.ElementAt(0);
+        return nd.TimeSpentInMethod.TotalSeconds  / nd.CallCount;
+    }
+}
+**************
+==============
+WorkflowMgm.AdditionalSessionTableColums.Clear();
+WorkflowMgm.AdditionalSessionTableColums.Add(
+    "SipMatrixAssembly_time", AddCols.SipMatrixAssembly_time);
+WorkflowMgm.AdditionalSessionTableColums.Add(
+    "Aggregation_basis_init_time", AddCols.Aggregation_basis_init_time);
+WorkflowMgm.AdditionalSessionTableColums.Add(
+    "Solver_Init_time", AddCols.Solver_Init_time);
+WorkflowMgm.AdditionalSessionTableColums.Add(
+    "Solver_Run_time", AddCols.Solver_Run_time);
+**************
+==============
+// --------------------------
+// Save Session table in file
+// --------------------------
+**************
+==============
+var SessTab = WorkflowMgm.SessionTable;
+**************
+==============
+// The Session column can't be serialized,
+// we have to remove it
+List<string> AllCols = SessTab.GetColumnNames().ToList();
+AllCols.Remove("Session");
+**************
+True
+==============
+SessTab = SessTab.ExtractColumns(AllCols.ToArray());
+**************
+==============
+using System.IO;
+**************
+==============
+// Filename
+var now           = DateTime.Now;
+SessTab.TableName = "SolverRuns--" + now.Year + "-" + now.Month + "-" + now.Day;
+string docpath    = Path.Combine(CurrentDocDir, SessTab.TableName + ".json");
+**************
+==============
+// save session table as file: this can be stored in our git 
+// repository
+SessTab.SaveToFile(docpath);
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

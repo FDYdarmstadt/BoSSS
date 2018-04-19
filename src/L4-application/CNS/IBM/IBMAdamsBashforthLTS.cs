@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -23,13 +22,8 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
-using BoSSS.Foundation.XDG.Quadrature.HMF;
-using BoSSS.Platform;
 using BoSSS.Solution;
 using BoSSS.Solution.Timestepping;
-using ilPSP.Utils;
-using MPI.Wrappers;
-using ilPSP;
 using BoSSS.Solution.Utils;
 
 namespace CNS.IBM {
@@ -48,16 +42,14 @@ namespace CNS.IBM {
 
         private CellMask cutAndTargetCells;
 
+        private SpatialOperator standardOperator;
 
-        public IBMAdamsBashforthLTS(
-            SpatialOperator standardOperator,
-            SpatialOperator boundaryOperator,
-            CoordinateMapping fieldsMap,
-            CoordinateMapping parametersMap,
-            ISpeciesMap ibmSpeciesMap,
-            IBMControl control,
-            IList<TimeStepConstraint> timeStepConstraints)
-            : base(standardOperator, fieldsMap, null, control.ExplicitOrder, control.NumberOfSubGrids, true, timeStepConstraints) {
+        private CoordinateMapping fieldsMap;
+
+        private IBMControl control;
+
+        public IBMAdamsBashforthLTS(SpatialOperator standardOperator, SpatialOperator boundaryOperator, CoordinateMapping fieldsMap, CoordinateMapping boundaryParameterMap, ISpeciesMap ibmSpeciesMap, IBMControl control, IList<TimeStepConstraint> timeStepConstraints, int reclusteringInterval, bool fluxCorrection, int maxNumOfSubSteps = 0)
+            : base(standardOperator, fieldsMap, boundaryParameterMap, control.ExplicitOrder, control.NumberOfSubGrids, true, timeStepConstraints, reclusteringInterval: reclusteringInterval, fluxCorrection: fluxCorrection, subGrid: ibmSpeciesMap.SubGrid) {
 
             this.speciesMap = ibmSpeciesMap as ImmersedSpeciesMap;
             if (this.speciesMap == null) {
@@ -65,106 +57,40 @@ namespace CNS.IBM {
                     "Only supported for species maps of type 'ImmersedSpeciesMap'",
                     "speciesMap");
             }
-
+            this.standardOperator = standardOperator;
             this.boundaryOperator = boundaryOperator;
-            this.boundaryParameterMap = parametersMap;
+            this.boundaryParameterMap = boundaryParameterMap;
+            this.fieldsMap = fieldsMap;
+            this.control = control;
+
             agglomerationPatternHasChanged = true;
 
-            cutCells = speciesMap.Tracker._Regions.GetCutCellMask();
+            cutCells = speciesMap.Tracker.Regions.GetCutCellMask();
             cutAndTargetCells = cutCells.Union(speciesMap.Agglomerator.AggInfo.TargetCells);
-
+            //#if DEBUG
+            Console.WriteLine("### This is IBM ABLTS ctor ###");
+            //#endif
             // Normal LTS constructor
-            this.NumOfLocalTimeSteps = new List<int>(numOfSubgrids);
+            clusterer = new Clusterer(this.gridData, maxNumOfSubSteps);
+            CurrentClustering = clusterer.CreateClustering(control.NumberOfSubGrids, this.TimeStepConstraints, speciesMap.SubGrid);
+            CurrentClustering = clusterer.TuneClustering(CurrentClustering, Time, this.TimeStepConstraints); // Might remove sub-grids when time step sizes are too similar
 
-            SubGrid fluidSubGrid = this.speciesMap.SubGrid;
+            ABevolver = new IBMABevolve[CurrentClustering.NumberOfClusters];
 
-
-
-            clustering = new Clustering(this.gridData, this.timeStepConstraints, this.numOfSubgrids, fluidSubGrid);
-            UpdateLTSVariables();
-
-            CalculateNumberOfLocalTS(); // Might remove sub-grids when time step sizes are too similar
-            clustering.UpdateClusteringVariables(this.subGridList, this.SubGridField, this.numOfSubgrids);
-
-            // Modify SubgridList, to account smaller time-steps because of cut-cells
-            // Right now, only "hard-coded" with half time-step for all cut-cells
-            //{
-            //    SubGrid cutCellSgrd = new SubGrid(cutAndTargetCells);
-            //    SubGrid finestSgrd = subGridList.Last();
-
-            //    finestSgrd = new SubGrid(finestSgrd.VolumeMask.Except(cutAndTargetCells).Intersect(speciesMap.SubGrid.VolumeMask));
-            //    subGridList.RemoveAt(subGridList.Count - 1);
-
-            //    subGridList.Add(finestSgrd);
-
-            //    subGridList.Add(cutCellSgrd);
-
-            //    // For debugging, change values in SgrdField
-            //    //if (SgrdField != null) {
-            //    //    SgrdField.Clear();
-            //    //    int ii = 0;
-            //    //    foreach (SubGrid sgrd in SgrdList) {
-            //    //        for (int i = 0; i < sgrd.LocalNoOfCells; i++) {
-            //    //            SgrdField.SetMeanValue(sgrd.SubgridIndex2LocalCellIndex[i], ii);
-            //    //        }
-            //    //        ii++;
-            //    //    }
-            //    //}
-
-
-            //    int numTSfinest = NumOfLocalTimeSteps.Last();
-            //    NumOfLocalTimeSteps.Add(2 * numTSfinest);
-
-
-            //    MaxLocalTS = NumOfLocalTimeSteps.Last();
-            //    numOfSubgrids = subGridList.Count;
-            //}
-
-            // ############# HACK for visualising subGrids for IBM-LTS test cases
-            this.SubGridField.Clear();
-            for (int i = 0; i < subGridList.Count; i++) {
-                for (int cell = 0; cell < subGridList[i].LocalNoOfCells; cell++) {
-                    this.SubGridField.SetMeanValue(subGridList[i].SubgridIndex2LocalCellIndex[cell], i);
-                    //this.SubGridField.SetMeanValue(subGridList[i].SubgridIndex2LocalCellIndex[cell], 1000);
-                }
+            for (int i = 0; i < ABevolver.Length; i++) {
+                ABevolver[i] = new IBMABevolve(standardOperator, boundaryOperator, fieldsMap, boundaryParameterMap, speciesMap, control.ExplicitOrder, control.LevelSetQuadratureOrder, control.CutCellQuadratureType, sgrd: CurrentClustering.Clusters[i], adaptive: this.adaptive);
+                ABevolver[i].OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforeComputechangeRate(t1, t2);
             }
-            // ############# HACK for visualising subGrids for IBM-LTS test cases
 
-            //if (this.numOfSubgrids == 1)
-            //    throw new ArgumentException("Clustering yields only to one sub-grid, LTS is not possible! Element sizes of your grid are too similar");
-
-            localABevolve = new ABevolve[subGridList.Count];
-            for (int i = 0; i < subGridList.Count; i++) {
-                localABevolve[i] = new IBMABevolve(
-                    standardOperator,
-                    boundaryOperator,
-                    fieldsMap,
-                    parametersMap,
-                    speciesMap,
-                    control.ExplicitOrder,
-                    control.LevelSetQuadratureOrder,
-                    control.MomentFittingVariant,
-                    subGridList[i]);
-            }
             GetBoundaryTopology();
 
-            for (int i = 0; i < numOfSubgrids; i++) {
-                Console.WriteLine("LTS: id=" + i + " -> sub-steps=" + NumOfLocalTimeSteps[i] + " and elements=" + subGridList[i].GlobalNoOfCells);
-            }
-
-            // StarUp Phase needs an IBM time stepper
-            RungeKuttaScheme = new IBMSplitRungeKutta(
-                standardOperator,
-                boundaryOperator,
-                fieldsMap,
-                parametersMap,
-                speciesMap,
-                timeStepConstraints);
+            // Start-up phase needs an IBM Runge-Kutta time stepper
+            RungeKuttaScheme = new IBMSplitRungeKutta(standardOperator, boundaryOperator, fieldsMap, boundaryParameterMap, speciesMap, timeStepConstraints);
         }
 
         private void BuildEvaluatorsAndMasks() {
             CellMask fluidCells = speciesMap.SubGrid.VolumeMask;
-            cutCells = speciesMap.Tracker._Regions.GetCutCellMask();
+            cutCells = speciesMap.Tracker.Regions.GetCutCellMask();
             cutAndTargetCells = cutCells.Union(speciesMap.Agglomerator.AggInfo.TargetCells);
 
             IBMControl control = speciesMap.Control;
@@ -201,6 +127,8 @@ namespace CNS.IBM {
         }
 
         protected override void ComputeChangeRate(double[] k, double AbsTime, double RelTime, double[] edgeFluxes = null) {
+            RaiseOnBeforeComputechangeRate(AbsTime, RelTime);
+
             Evaluator.Evaluate(1.0, 0.0, k, AbsTime, outputBndEdge: edgeFluxes);
             Debug.Assert(
                 !k.Any(f => double.IsNaN(f)),
@@ -247,7 +175,7 @@ namespace CNS.IBM {
                 agglomerationPatternHasChanged = false;
 
                 //Broadcast to RungeKutta and ABevolve ???
-                foreach (IBMABevolve evolver in localABevolve) {
+                foreach (IBMABevolve evolver in ABevolver) {
                     evolver.BuildEvaluatorsAndMasks();
                     evolver.agglomerationPatternHasChanged = false;
                 }
@@ -255,8 +183,19 @@ namespace CNS.IBM {
 
             dt = base.Perform(dt);
 
-            speciesMap.Agglomerator.Extrapolate(DGCoordinates.Mapping);
+            speciesMap.Agglomerator.Extrapolate(CurrentState.Mapping);
             return dt;
+        }
+
+        protected override void CreateNewABevolver() {
+            // Create array of Abevolve objects based on the new clustering
+            ABevolver = new IBMABevolve[CurrentClustering.NumberOfClusters];
+
+            for (int i = 0; i < ABevolver.Length; i++) {
+                ABevolver[i] = new IBMABevolve(standardOperator, boundaryOperator, fieldsMap, boundaryParameterMap, speciesMap, control.ExplicitOrder, control.LevelSetQuadratureOrder, control.CutCellQuadratureType, sgrd: CurrentClustering.Clusters[i], adaptive: this.adaptive);
+                ABevolver[i].ResetTime(m_Time, TimeInfo.TimeStepNumber);
+                ABevolver[i].OnBeforeComputeChangeRate += (t1, t2) => this.RaiseOnBeforeComputechangeRate(t1, t2);
+            }
         }
     }
 }

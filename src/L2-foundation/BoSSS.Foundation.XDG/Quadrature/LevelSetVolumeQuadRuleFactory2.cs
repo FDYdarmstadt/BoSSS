@@ -47,17 +47,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             private set;
         }
 
-        /// <summary>
-        /// index of the respective level-set
-        /// </summary>
-        protected int iLevsetSet;
-
         private JumpTypes jumpType;
 
-        /// <summary>
-        /// the awesome level set tracker
-        /// </summary>
-        protected LevelSetTracker tracker;
 
         private IQuadRuleFactory<QuadRule> edgeRuleFactory;
 
@@ -91,17 +82,16 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// </param>
         /// <param name="simplex"></param>
         /// <param name="jumpType"></param>
-        /// <param name="tracker"></param>
-        /// <param name="iLevSet">index of discriminating level-set</param>
+        /// <param name="LevSetData"></param>
         /// <param name="cellBoundaryFactory"></param>
-        internal LevelSetVolumeQuadRuleFactory2(RefElement simplex, LevelSetTracker tracker, int iLevSet, IQuadRuleFactory<QuadRule> edgeRuleFactory, IQuadRuleFactory<CellBoundaryQuadRule> cellBoundaryFactory, IQuadRuleFactory<QuadRule> surfaceRuleFactory, JumpTypes jumpType) {
+        internal LevelSetVolumeQuadRuleFactory2(RefElement simplex, LevelSetTracker.LevelSetData LevSetData, IQuadRuleFactory<QuadRule> edgeRuleFactory, IQuadRuleFactory<CellBoundaryQuadRule> cellBoundaryFactory, IQuadRuleFactory<QuadRule> surfaceRuleFactory, JumpTypes jumpType) {
             if (jumpType != JumpTypes.Heaviside) {
                 throw new NotSupportedException();
             }
             if ((cellBoundaryFactory != null) == (edgeRuleFactory != null))
                 throw new ArgumentException("only one of them can be used at once.");
 
-            if (edgeRuleFactory != null && (tracker.GridDat.Edges.EdgeRefElements.Contains(edgeRuleFactory.RefElement, (a, b) => object.ReferenceEquals(a, b))))
+            if (edgeRuleFactory != null && (LevSetData.GridDat.Edges.EdgeRefElements.Contains(edgeRuleFactory.RefElement, (a, b) => object.ReferenceEquals(a, b))))
                 throw new ArgumentException("Illegal edge rule.");
             if (cellBoundaryFactory != null && (!object.ReferenceEquals(simplex, cellBoundaryFactory.RefElement)))
                 throw new ArgumentException("Illegal cell boundary rule.");
@@ -110,12 +100,19 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
 
             this.RefElement = simplex;
-            this.tracker = tracker;
             this.edgeRuleFactory = edgeRuleFactory;
             this.surfaceRuleFactory = surfaceRuleFactory;
             this.jumpType = jumpType;
-            this.iLevsetSet = iLevSet;
             this.cellBoundaryFactory = cellBoundaryFactory;
+            this.LevelSetData = LevSetData;
+        }
+
+        /// <summary>
+        /// Evaluation of level-set fields
+        /// </summary>
+        protected LevelSetTracker.LevelSetData LevelSetData {
+            get;
+            private set;
         }
 
 
@@ -133,7 +130,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             CellMask _mask = mask as CellMask;
 
 #if DEBUG
-            if (mask.Except(tracker._Regions.GetCutCellSubgrid4LevSet(iLevsetSet).VolumeMask).NoOfItemsLocally > 0)
+            if (mask.Except(LevelSetData.Region.GetCutCellSubgrid4LevSet(LevelSetData.LevelSetIndex).VolumeMask).NoOfItemsLocally > 0)
                 throw new NotSupportedException("'mask' must be a subset of the cut cells.");
 #endif
 
@@ -480,25 +477,26 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
     public class LevelSetVolumeQuadRuleFactory2a : LevelSetVolumeQuadRuleFactory2 {
 
 
-        public LevelSetVolumeQuadRuleFactory2a(RefElement simplex, LevelSetTracker tracker, int iLevSet, IQuadRuleFactory<QuadRule> edgeRuleFactory, IQuadRuleFactory<QuadRule> surfaceRuleFactory, JumpTypes jumpType) :
-            base(simplex, tracker, iLevSet, edgeRuleFactory, null, surfaceRuleFactory, jumpType) {
+        public LevelSetVolumeQuadRuleFactory2a(RefElement simplex, LevelSetTracker.LevelSetData lsData, IQuadRuleFactory<QuadRule> edgeRuleFactory, IQuadRuleFactory<QuadRule> surfaceRuleFactory, JumpTypes jumpType) :
+            base(simplex, lsData, edgeRuleFactory, null, surfaceRuleFactory, jumpType) {
         }
 
-        public LevelSetVolumeQuadRuleFactory2a(RefElement simplex, LevelSetTracker tracker, int iLevSet, IQuadRuleFactory<CellBoundaryQuadRule> cellBoundaryFactory, IQuadRuleFactory<QuadRule> surfaceRuleFactory, JumpTypes jumpType) :
-            base(simplex, tracker, iLevSet, null, cellBoundaryFactory, surfaceRuleFactory, jumpType) {
+        public LevelSetVolumeQuadRuleFactory2a(RefElement simplex, LevelSetTracker.LevelSetData lsData, IQuadRuleFactory<CellBoundaryQuadRule> cellBoundaryFactory, IQuadRuleFactory<QuadRule> surfaceRuleFactory, JumpTypes jumpType) :
+            base(simplex, lsData, null, cellBoundaryFactory, surfaceRuleFactory, jumpType) {
         }
 
 
         Basis TestBasis;
 
         protected override void SetUp(int order, out int NoOfEqs) {
-            TestBasis = new Basis(base.tracker.GridDat, order / 2);
-            NoOfEqs = TestBasis.Length * TestBasis.Length * base.tracker.GridDat.Grid.SpatialDimension;
+            var Gdat = base.LevelSetData.GridDat;
+            TestBasis = new Basis(base.LevelSetData.GridDat, order / 2);
+            NoOfEqs = TestBasis.Length * TestBasis.Length * Gdat.SpatialDimension;
         }
 
         protected override MultidimensionalArray GetMatrix(NodeSet Nodes, int dummy) {
             int N = TestBasis.Length;
-            int D = base.tracker.GridDat.Grid.SpatialDimension;
+            int D = base.LevelSetData.GridDat.Grid.SpatialDimension;
             int K = Nodes.GetLength(0);
             Debug.Assert(Nodes.Dimension == 2);
             Debug.Assert(Nodes.GetLength(1) == D);
@@ -519,12 +517,12 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         }
 
         protected override MultidimensionalArray GetRHS(EdgeQuadratureScheme edgeScheme, CellBoundaryQuadratureScheme cellBndScheme, CellQuadratureScheme surfScheme, SubGrid sgrd, int order) {
-            var _Context = base.tracker.GridDat;
+            var _Context = base.LevelSetData.GridDat;
             int N = TestBasis.Length;
-            int D = base.tracker.GridDat.Grid.SpatialDimension;
+            int D = _Context.SpatialDimension;
             var coordSys = CoordinateSystem.Reference;
             var b = this.TestBasis;
-            var LsTrk = base.tracker;
+            var LsData = base.LevelSetData;
             var AllowedCells = sgrd.VolumeMask.GetBitMask();
             int Nrhs = sgrd.LocalNoOfCells;
             int[] j2Sgrd = sgrd.LocalCellIndex2SubgridIndex;
@@ -549,7 +547,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                         int NoOfNodes = QR.NoOfNodes;
                         if (coordSys == CoordinateSystem.Physical) {
                             var BasisValues = b.CellEval(QR.Nodes, i0, Length);
-                            var Normals = LsTrk.GetLevelSetNormals(base.iLevsetSet, QR.Nodes, i0, Length);
+                            var Normals = LsData.GetLevelSetNormals(QR.Nodes, i0, Length);
 
                             // EvalResult[i,k,n,m,d] = BasisValues[i,k,n]*BasisValues[i,k,m]*Normals[i,k,d]
                             EvalResult.Multiply(NormalSign, BasisValues, BasisValues, Normals, 0.0, "iknmd", "ikn", "ikm", "ikd");
@@ -557,13 +555,13 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                         } else if (coordSys == CoordinateSystem.Reference) {
                             //var BasisValues = b.CellEval(0, i0, Length);
                             var BasisValues = b.Evaluate(QR.Nodes);
-                            var Normals = LsTrk.GetLevelSetReferenceNormals(base.iLevsetSet, QR.Nodes, i0, Length).ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { Length - 1, NoOfNodes - 1, D - 1 });
+                            var Normals = LsData.GetLevelSetReferenceNormals(QR.Nodes, i0, Length).ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { Length - 1, NoOfNodes - 1, D - 1 });
 
 
                             // EvalResult[i,k,n,m,d] = BasisValues[i,k,n]*BasisValues[i,k,m]*Normals[i,k,d]
                             EvalResult.Multiply(NormalSign, BasisValues, BasisValues, Normals, 0.0, "iknmd", "kn", "km", "ikd");
 
-                            var metrics = LsTrk.GetLevelSetNormalReferenceToPhysicalMetrics(base.iLevsetSet, QR.Nodes, i0, Length);
+                            var metrics = LsData.GetLevelSetNormalReferenceToPhysicalMetrics(QR.Nodes, i0, Length);
                             for (int i = 0; i < Length; i++) {
                                 for (int k = 0; k < NoOfNodes; k++) {
 
@@ -604,7 +602,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             RefElement splx = this.RefElement;
             int _NoOfFaces = splx.NoOfFaces;
             var FaceNormals = splx.FaceNormals;
-            var EdgeNormals = base.tracker.GridDat.Edges.NormalsForAffine;
+            var EdgeNormals = base.LevelSetData.GridDat.Edges.NormalsForAffine;
             CellBoundaryQuadrature<CellBoundaryQuadRule> qBnd = null;
 
 
@@ -799,25 +797,25 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
     public class LevelSetVolumeQuadRuleFactory2b : LevelSetVolumeQuadRuleFactory2 {
 
-        public LevelSetVolumeQuadRuleFactory2b(RefElement simplex, LevelSetTracker tracker, int iLevSet, IQuadRuleFactory<QuadRule> edgeRuleFactory, IQuadRuleFactory<QuadRule> surfaceRuleFactory, JumpTypes jumpType) :
-            base(simplex, tracker, iLevSet, edgeRuleFactory, null, surfaceRuleFactory, jumpType) {
+        public LevelSetVolumeQuadRuleFactory2b(RefElement simplex, LevelSetTracker.LevelSetData lsData, IQuadRuleFactory<QuadRule> edgeRuleFactory, IQuadRuleFactory<QuadRule> surfaceRuleFactory, JumpTypes jumpType) :
+            base(simplex, lsData, edgeRuleFactory, null, surfaceRuleFactory, jumpType) {
         }
 
-        public LevelSetVolumeQuadRuleFactory2b(RefElement simplex, LevelSetTracker tracker, int iLevSet, IQuadRuleFactory<CellBoundaryQuadRule> cellBoundaryFactory, IQuadRuleFactory<QuadRule> surfaceRuleFactory, JumpTypes jumpType) :
-            base(simplex, tracker, iLevSet, null, cellBoundaryFactory, surfaceRuleFactory, jumpType) {
+        public LevelSetVolumeQuadRuleFactory2b(RefElement simplex, LevelSetTracker.LevelSetData lsData, IQuadRuleFactory<CellBoundaryQuadRule> cellBoundaryFactory, IQuadRuleFactory<QuadRule> surfaceRuleFactory, JumpTypes jumpType) :
+            base(simplex, lsData, null, cellBoundaryFactory, surfaceRuleFactory, jumpType) {
         }
 
 
         Basis TestBasis;
 
         protected override void SetUp(int order, out int NoOfEqs) {
-            TestBasis = new Basis(base.tracker.GridDat, order);
-            NoOfEqs = TestBasis.Length * base.tracker.GridDat.Grid.SpatialDimension;
+            TestBasis = new Basis(base.LevelSetData.GridDat, order);
+            NoOfEqs = TestBasis.Length * base.LevelSetData.GridDat.SpatialDimension;
         }
 
         protected override MultidimensionalArray GetMatrix(NodeSet Nodes, int jCell) {
             int N = TestBasis.Length;
-            int D = base.tracker.GridDat.Grid.SpatialDimension;
+            int D = base.LevelSetData.GridDat.SpatialDimension;
             int K = Nodes.GetLength(0);
             Debug.Assert(Nodes.Dimension == 2);
             Debug.Assert(Nodes.GetLength(1) == D);
@@ -848,12 +846,12 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
  
         protected override MultidimensionalArray GetRHS(EdgeQuadratureScheme edgeScheme, CellBoundaryQuadratureScheme cellBndScheme, CellQuadratureScheme surfScheme, SubGrid sgrd, int order) {
-            var _Context = base.tracker.GridDat;
+            var LsData = base.LevelSetData;
+            var _Context = LsData.GridDat;
             int N = TestBasis.Length;
-            int D = base.tracker.GridDat.Grid.SpatialDimension;
+            int D = LsData.GridDat.SpatialDimension;
             var coordSys = CoordinateSystem.Reference;
             var b = this.TestBasis;
-            var LsTrk = base.tracker;
             var AllowedCells = sgrd.VolumeMask.GetBitMask();
             int Nrhs = sgrd.LocalNoOfCells;
             int[] j2Sgrd = sgrd.LocalCellIndex2SubgridIndex;
@@ -884,7 +882,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                         int NoOfNodes = NS.NoOfNodes;
                         if (coordSys == CoordinateSystem.Physical) {
                             var BasisValues = b.CellEval(NS, i0, Length);
-                            var Normals = LsTrk.GetLevelSetNormals(base.iLevsetSet, NS, i0, Length);
+                            var Normals = LsData.GetLevelSetNormals(NS, i0, Length);
 
                             // EvalResult[i,k,n,d] = BasisValues[i,k,n]*Normals[i,k,d]
                             EvalResult.Multiply(NormalSign, BasisValues, Normals, 0.0, "iknd", "ikn", "ikd");
@@ -892,7 +890,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                         } else if (coordSys == CoordinateSystem.Reference) {
                             //var BasisValues = b.CellEval(0, i0, Length);
                             var BasisValues = b.Evaluate(NS);
-                            var Normals = LsTrk.GetLevelSetReferenceNormals(base.iLevsetSet, NS, i0, Length).ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { Length - 1, NoOfNodes - 1, D - 1 });
+                            var Normals = LsData.GetLevelSetReferenceNormals(NS, i0, Length).ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { Length - 1, NoOfNodes - 1, D - 1 });
 
 
                             // EvalResult[i,k,n,m,d] = BasisValues[i,k,n]*Normals[i,k,d]
@@ -901,7 +899,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
 
 
-                            var metrics = LsTrk.GetLevelSetNormalReferenceToPhysicalMetrics(base.iLevsetSet, NS, i0, Length);
+                            var metrics = LsData.GetLevelSetNormalReferenceToPhysicalMetrics(NS, i0, Length);
                             for (int i = 0; i < Length; i++) {
                                 for (int k = 0; k < NoOfNodes; k++) {
 

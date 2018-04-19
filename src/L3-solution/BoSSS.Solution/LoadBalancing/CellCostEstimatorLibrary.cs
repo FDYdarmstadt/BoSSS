@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Solution.Control;
 using ilPSP.Utils;
 using System;
 
@@ -21,21 +22,21 @@ namespace BoSSS.Solution {
 
     public static class CellCostEstimatorLibrary {
 
-        public static Func<int, ICellCostEstimator> AllCellsAreEqual = delegate (int performanceClassCount) {
+        public static Func<IApplication, int, ICellCostEstimator> AllCellsAreEqual = delegate (IApplication app, int performanceClassCount) {
             int[] performanceClassToCostMap = new int[performanceClassCount];
             performanceClassToCostMap.SetAll(1);
             return new StaticCellCostEstimator(performanceClassToCostMap);
         };
 
-        public static RuntimeCellCostEstimator MeasureCostOfExplicitOperatorEvaluation(int noOfPerformanceClasses) {
-            return new RuntimeCellCostEstimator(noOfPerformanceClasses, new string[][] {
+        public static RuntimeCellCostEstimator MeasureCostOfExplicitOperatorEvaluation(IApplication app, int noOfPerformanceClasses) {
+            return new RuntimeCellCostEstimator(new string[][] {
                 new[] { "*RunSolverOneStep*", "Volume_Integration_NonLin" },
                 new[] { "*RunSolverOneStep*", "Edge_Integration_NonLin" },
             });
         }
 
-        public static RuntimeCellCostEstimator MeasureCostOfWhateverFlorianThinksIsRelevantButIDontUnderstand(int noOfPerformanceClasses) {
-            return new RuntimeCellCostEstimator(noOfPerformanceClasses, new string[][] {
+        public static RuntimeCellCostEstimator OperatorAssemblyAndCutCellQuadrules(IApplication app, int noOfPerformanceClasses) {
+            return new RuntimeCellCostEstimator(new string[][] {
                 new[] { "*RunSolverOneStep*", "*LevelSetComboRuleFactory2.GetQuadRuleSet_Internal*" },
                 new[] { "*RunSolverOneStep*", "*Edge_Integration*" },
                 new[] { "*RunSolverOneStep*", "*Volume_Integration*" },

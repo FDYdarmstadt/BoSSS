@@ -28,6 +28,7 @@ using BoSSS.Solution.Utils;
 using ilPSP;
 using System.Collections.Generic;
 using System.Diagnostics;
+using BoSSS.Solution.Control;
 
 namespace ALTSTests {
     /// <summary>
@@ -39,12 +40,18 @@ namespace ALTSTests {
     /// </summary>
     class Program : Application {
         static void Main(string[] args) {
-            Application._Main(args, true, "", delegate () {
+            Application._Main(args, true, delegate () {
                 Program p = new Program();
-                p.m_GridPartitioningType = BoSSS.Foundation.Grid.GridPartType.none;
+                //p.m_GridPartitioningType = BoSSS.Foundation.Grid.GridPartType.none;
                 return p;
             });
         }
+
+        public override void Init(AppControl control) {
+            control.GridPartType = BoSSS.Foundation.Grid.GridPartType.none;
+            base.Init(control);
+        }
+
 
         // Settings
         int dgDegree = 0;
@@ -98,7 +105,7 @@ namespace ALTSTests {
             m_IOFields.Add(c);
         }
 
-        protected override void CreateEquationsAndSolvers(LoadBalancingData L) {
+        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
             diffOp = new SpatialOperator(
                 new string[] { "c" },
                 new string[] { "viscosity", "VelocityX", "VelocityY" },
@@ -141,16 +148,16 @@ namespace ALTSTests {
                 new CoordinateMapping(c),
                 coordMap,
                 order: ABOrder,
-                numOfSubgrids: this.numOfSubgrids,
+                numOfClusters: this.numOfSubgrids,
                 timeStepConstraints: new List<TimeStepConstraint>() { CustomTimestepConstraint },
                 fluxCorrection: false,
                 reclusteringInterval: 1);
 
             // Sub-grid visualization
-            AdamsBashforthLTS timeStepper2 = timeStepper as AdamsBashforthLTS;
-            timeStepper2.SubGridField.Identification = "clusterLTS";
-            m_IOFields.Add(timeStepper2.SubGridField);
-            timeStepper = timeStepper2;
+            //AdamsBashforthLTS timeStepper2 = timeStepper as AdamsBashforthLTS;
+            //timeStepper2.SubGridField.Identification = "clusterLTS";
+            //m_IOFields.Add(timeStepper2.SubGridField);
+            //timeStepper = timeStepper2;
         }
 
         private SurrogateConstraint CustomTimestepConstraint;
@@ -205,6 +212,8 @@ namespace ALTSTests {
                 if (phystime >= ChangeMetricTime) {
                     CustomTimestepConstraint.FirstMetricActive = false;
                 }
+
+                timeStepper.UpdateTimeInfo(new TimeInformation(TimestepNo, phystime, dt));
 
                 timeStepper.Perform(dt);
 

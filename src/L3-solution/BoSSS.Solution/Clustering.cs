@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
@@ -22,6 +21,7 @@ using MPI.Wrappers;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace BoSSS.Solution.Utils {
@@ -29,43 +29,48 @@ namespace BoSSS.Solution.Utils {
     /// <summary>
     /// Class for a cell clustering that devides the grid into sub-grids
     /// </summary>
-    public class Clustering {
+    public class Clusterer {
+
+        public class Clustering {
+
+            public List<SubGrid> Clusters {
+                get;
+                private set;
+            }
+
+            public int NumberOfClusters {
+                get {
+                    return Clusters.Count();
+                }
+            }
+
+            public SubGrid SubGrid {
+                get;
+                private set;
+            }
+
+            public List<int> SubStepsInitial {
+                get;
+            }
+
+            public Clustering(List<SubGrid> clusters, SubGrid subGrid, List<int> subStepsInitial = null) {
+                this.Clusters = clusters;
+                this.SubGrid = subGrid;
+                this.SubStepsInitial = subStepsInitial;
+            }
+        }
 
         /// <summary>
         /// Information about the grid
         /// </summary>
         private IGridData gridData;
 
-        /// <summary>
-        /// The time step constraints that the Clustering is based on
-        /// </summary>
-        private IList<TimeStepConstraint> timeStepConstraints;
-
-        /// <summary>
-        /// Number of clusters
-        /// </summary>
-        public int NumOfClusters {
+        public int MaxSubSteps {
             get;
             private set;
         }
 
-        /// <summary>
-        /// List of sub-grids
-        /// </summary>
-        public List<SubGrid> SubGridList {
-            get;
-            private set;
-        }
-
-        /// <summary>
-        /// Helper Field needed for the visualization of the sub-grids
-        /// </summary>
-        public DGField SubGridField {
-            get;
-            private set;
-        }
-
-        public SubGrid SubGrid {
+        public bool Restrict {
             get;
             private set;
         }
@@ -74,16 +79,12 @@ namespace BoSSS.Solution.Utils {
         /// Constructor for the grid clustering
         /// </summary>
         /// <param name="gridData">Information about the grid</param>
-        /// <param name="timeStepConstraints">Time step constraings used as cell metric for the clustering</param>
-        /// <param name="numOfClusters">Number of clusters</param>
-        public Clustering(IGridData gridData, IList<TimeStepConstraint> timeStepConstraints, int numOfClusters, SubGrid subGrid = null) {
+        public Clusterer(IGridData gridData, int maxNumOfSubSteps) {
             this.gridData = gridData;
-            this.timeStepConstraints = timeStepConstraints;
-            this.NumOfClusters = numOfClusters;
-            this.SubGrid = subGrid;
-
-            this.SubGridField = new SinglePhaseField(new Basis(gridData, 0));
-            this.SubGridList = CreateSubGrids(this.NumOfClusters);
+            this.MaxSubSteps = maxNumOfSubSteps;
+            if (this.MaxSubSteps != 0) {
+                this.Restrict = true;
+            }
         }
 
         /// <summary>
@@ -91,68 +92,71 @@ namespace BoSSS.Solution.Utils {
         /// </summary>     
         /// <param name="numOfClusters">Number of clusters</param>
         /// <returns>A list of sub-grids</returns>
-        public List<SubGrid> CreateSubGrids(int numOfClusters) {
-            this.NumOfClusters = numOfClusters;
-            int numOfCells = gridData.iLogicalCells.NoOfLocalUpdatedCells;
+        public Clustering CreateClustering(int numOfClusters, IList<TimeStepConstraint> timeStepConstraints, SubGrid subGrid = null) {
+            if (subGrid == null) {
+                subGrid = new SubGrid(CellMask.GetFullMask(gridData));
+            }
 
-            MultidimensionalArray cellMetric = GetCellMetric();
-            MultidimensionalArray means = CreateMeans(cellMetric);
+            // Attention: numOfCells can equal all local cells or only the local cells of a subgrid,
+            // e.g., the fluid cells in an IBM simulation
+            int numOfCells = subGrid.LocalNoOfCells;
 
+            MultidimensionalArray cellMetric = GetStableTimestepSize(subGrid, timeStepConstraints);
+            MultidimensionalArray means = CreateInitialMeans(cellMetric, numOfClusters);
             Kmeans Kmean = new Kmeans(cellMetric.To1DArray(), numOfClusters, means.To1DArray());
 
             // The corresponding sub-grid IDs
-            int[] clustered = Kmean.Cluster();
-            int[] clusterCount = Kmean.ClusterCount;
+            int[] subGridCellToClusterMap = Kmean.Cluster();
+            int[] noOfCellsPerCluster = Kmean.ClusterCount;
 
             unsafe {
                 int[] globalCC = new int[numOfClusters];
                 // send = means[]
                 // receive = globalMeans[]
-                fixed (int* pSend = &clusterCount[0], pRcv = &globalCC[0]) {
+                fixed (int* pSend = &noOfCellsPerCluster[0], pRcv = &globalCC[0]) {
                     csMPI.Raw.Allreduce((IntPtr)(pSend), (IntPtr)(pRcv), numOfClusters, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.SUM, csMPI.Raw._COMM.WORLD);
                 }
-                clusterCount = globalCC;
+                noOfCellsPerCluster = globalCC;
             }
 
             int counter = numOfClusters;
             for (int i = 0; i < numOfClusters; i++) {
-                if (clusterCount[i] == 0) {
-                    System.Console.WriteLine("Sub-grid/Cluster " + (i + 1) + ", with mean value " + Kmean.Means[i] + ", is empty and not used anymore!");
+                if (noOfCellsPerCluster[i] == 0) {
+                    //#if DEBUG
+                    Console.WriteLine("Sub-grid/Cluster " + (i + 1) + ", with mean value " + Kmean.Means[i] + ", is empty and not used anymore!");
+                    //#endif
                     counter--;
                 }
             }
 
-            SubGridList = new List<SubGrid>(counter);
-
             // Generating BitArray for all Subgrids, even for those which are empty, i.e ClusterCount == 0
             BitArray[] baMatrix = new BitArray[numOfClusters];
             for (int i = 0; i < numOfClusters; i++) {
-                baMatrix[i] = new BitArray(numOfCells);
+                //baMatrix[i] = new BitArray(gridData.iLogicalCells.NoOfCells);
+                baMatrix[i] = new BitArray(gridData.iLogicalCells.NoOfLocalUpdatedCells);
             }
 
             // Filling the BitArrays
-            this.SubGridField.Clear();
             for (int i = 0; i < numOfCells; i++) {
-                if (clustered[i] != -1) { // Happens only in the IBM case for void cells
-                    baMatrix[clustered[i]][i] = true;
-                    // For Debugging: Visualizes the clusters in a field
-                    this.SubGridField.SetMeanValue(i, clustered[i] + 0 * gridData.CellPartitioning.MpiRank);
-                }
+                baMatrix[subGridCellToClusterMap[i]][subGrid.SubgridIndex2LocalCellIndex[i]] = true;
             }
 
             // Generating the sub-grids
-            int j = 0;
+            List<SubGrid> clusters = new List<SubGrid>(counter);
             for (int i = 0; i < numOfClusters; i++) {
                 // Generating only the sub-grids which are not empty
-                if (clusterCount[i] != 0) {
+                if (noOfCellsPerCluster[i] != 0) {
                     BitArray ba = baMatrix[i];
-                    this.SubGridList.Add(new SubGrid(new CellMask(gridData, ba)));
-                    j++;
+                    clusters.Add(new SubGrid(new CellMask(gridData, ba)));
                 }
             }
-            this.NumOfClusters = counter;
+            //#if DEBUG
+            for (int i = 0; i < clusters.Count; i++) {
+                Console.WriteLine("CreateClustering:\t id=" + i + " ->\t\telements=" + clusters[i].GlobalNoOfCells);
+            }
+            //#endif
 
-            return SubGridList;
+            return new Clustering(clusters, subGrid);
         }
 
         /// <summary>
@@ -162,13 +166,18 @@ namespace BoSSS.Solution.Utils {
         /// </summary>
         /// <param name="cellMetric">Given cell metric</param>
         /// <returns>Double[] with the length of the number of given sub-grids></returns>
-        private MultidimensionalArray CreateMeans(MultidimensionalArray cellMetric) {
-            //MultidimensionalArray means = MultidimensionalArray.Create(NumOfSgrd);
-            double h_min = int.MaxValue;
-            h_min = cellMetric.Min(d => double.IsNaN(d) ? h_min : d); // .Where(d => !double.IsNaN(d)).ToArray().Min();
-            double h_max = int.MinValue;
-            h_max = cellMetric.Max(d => double.IsNaN(d) ? h_max : d);
-            Console.WriteLine("Clustering: Create tanh spaced means");
+        private MultidimensionalArray CreateInitialMeans(MultidimensionalArray cellMetric, int numOfClusters) {
+            System.Diagnostics.Debug.Assert(
+                cellMetric.Storage.All(d => double.IsNaN(d) == false),
+                "Cell metrics contains fucked up entries");
+
+            double h_min = cellMetric.Min();
+            double h_max = cellMetric.Max();
+            if (h_max == double.MaxValue) {// Occurs for cells that are no REAL fluid cells (void cells, that are considered as fluid cells by the IBM tracker)
+                h_max = FindSecondLargestElement(cellMetric.To1DArray());
+            }
+
+            //Console.WriteLine("Clustering: Create tanh spaced means");
 
             // Getting global h_min and h_max
             ilPSP.MPICollectiveWatchDog.Watch();
@@ -179,27 +188,26 @@ namespace BoSSS.Solution.Utils {
                 h_max += 0.1 * h_max; // Dirty hack for IBM cases with equidistant grids
 
             // Tanh Spacing, which yields to more cell cluster for smaller cells
-            var means = Grid1D.TanhSpacing(h_min, h_max, NumOfClusters, 4.0, true).Reverse().ToArray();
+            var means = Grid1D.TanhSpacing(h_min, h_max, numOfClusters, 4.0, true).Reverse().ToArray();
 
             // Equidistant spacing, in general not the best choice
             //means = GenericBlas.Linspace(h_min, h_max, NumOfSgrd).Reverse().ToArray();
 
-            return MultidimensionalArray.CreateWrapper(means, NumOfClusters);
+            return MultidimensionalArray.CreateWrapper(means, numOfClusters);
         }
 
         /// <summary>
         /// Checks for changes between two clusterings
         /// </summary>
-        /// <param name="oldClustering">A clustering which should be compared to</param>
         /// <returns>True, if clustering has changed. False, if clustering has not changed.</returns>
-        public bool CheckForNewClustering(List<SubGrid> oldClustering) {
+        public bool CheckForNewClustering(Clustering oldClustering, Clustering newClustering) {
             bool localResult = false;   // false = no reclustering needed
 
-            if (SubGridList.Count != oldClustering.Count)
+            if (newClustering.NumberOfClusters != oldClustering.NumberOfClusters) {
                 localResult = true;
-            else {
-                for (int i = 0; i < SubGridList.Count; i++) {
-                    if (!SubGridList[i].VolumeMask.Equals(oldClustering[i].VolumeMask)) {
+            } else {
+                for (int i = 0; i < newClustering.NumberOfClusters; i++) {
+                    if (!newClustering.Clusters[i].VolumeMask.Equals(oldClustering.Clusters[i].VolumeMask)) {
                         localResult = true;
                     }
                 }
@@ -220,37 +228,226 @@ namespace BoSSS.Solution.Utils {
         /// Returns a cell metric value in every cell
         /// </summary>
         /// <returns>Cell metric as <see cref="MultidimensionalArray"/></returns>
-        public MultidimensionalArray GetCellMetric() {
-            MultidimensionalArray cellMetric = MultidimensionalArray.Create(gridData.iLogicalCells.NoOfLocalUpdatedCells);
+        private MultidimensionalArray GetStableTimestepSize(SubGrid subGrid, IList<TimeStepConstraint> timeStepConstraints) {
+            MultidimensionalArray cellMetric = MultidimensionalArray.Create(subGrid.LocalNoOfCells);
 
-            // Only relevant for IBM cases: Set all values in void cells to infinity such that
-            // these cells belong to the cluster with the largest maximum stable time step
-            if (this.SubGrid != null) {
-                for (int cell = 0; cell < cellMetric.Length; cell++)
-                    cellMetric[cell] = double.NaN;
-                for (int subGridCell = 0; subGridCell < this.SubGrid.LocalNoOfCells; subGridCell++) {
-                    int localCellIndex = this.SubGrid.SubgridIndex2LocalCellIndex[subGridCell];
-                    cellMetric[localCellIndex] = this.timeStepConstraints.Min(c => c.GetLocalStepSize(localCellIndex, 1));
+            for (int subGridCell = 0; subGridCell < subGrid.LocalNoOfCells; subGridCell++) {
+                int localCellIndex = subGrid.SubgridIndex2LocalCellIndex[subGridCell];
+                //cellMetric[subGridCell] = timeStepConstraints.Min(c => c.GetLocalStepSize(localCellIndex, 1));    // cell metric based on smallest time step constraint
+                //cellMetric[subGridCell] = 1.0 / timeStepConstraints.Sum(c => 1.0 / c.GetLocalStepSize(localCellIndex, 1));  // cell metric based on harmonic sum of time step constraints
+
+                List<double> result = new List<double>();
+                foreach (TimeStepConstraint constraint in timeStepConstraints) {
+                    result.Add(constraint.GetLocalStepSize(localCellIndex, 1));
                 }
-            } else {
-                // Adapted from Variables.cs --> DerivedVariable CFL
-                for (int i = 0; i < gridData.iLogicalCells.NoOfLocalUpdatedCells; i++)
-                    cellMetric[i] = this.timeStepConstraints.Min(c => c.GetLocalStepSize(i, 1));
+                if (result.All(c => c == double.MaxValue)) {
+                    cellMetric[subGridCell] = double.MaxValue;
+                } else {
+                    cellMetric[subGridCell] = 1.0 / result.Sum(c => 1.0 / c);  // cell metric based on harmonic sum of time step constraints
+                }
             }
 
             return cellMetric;
         }
 
-        /// <summary>
-        /// Updates the clustering variables when they have been changed by another class/method
-        /// </summary>
-        /// <param name="subGridList">List of clusters</param>
-        /// <param name="subGridField">Cluster to be plotted</param>
-        /// <param name="numOfClusters">Number of clusters</param>
-        public void UpdateClusteringVariables(List<SubGrid> subGridList, DGField subGridField, int numOfClusters) {
-            this.SubGridList = subGridList;
-            this.SubGridField = subGridField;
-            this.NumOfClusters = numOfClusters;
+        public Clustering TuneClustering(Clustering clustering, double time, IList<TimeStepConstraint> timeStepConstraints) {
+            // Calculate cluster time step sizes and sub-steps
+            var result = GetPerCluster_dtMin_SubSteps(clustering, timeStepConstraints, 1.0e-2);
+            List<int> subSteps = result.Item2;
+
+            // Combine clusters with same number of sub-steps
+            List<SubGrid> newClusters = new List<SubGrid>();
+            List<int> newSubSteps = new List<int>();
+            newClusters.Add(clustering.Clusters.First());
+            newSubSteps.Add(subSteps.First());
+
+            for (int i = 1; i < clustering.NumberOfClusters; i++) {
+                if (subSteps[i] == newSubSteps.Last()) {
+                    // Combine both clusters and remove the previous one
+                    SubGrid combinedSubGrid = new SubGrid(newClusters.Last().VolumeMask.Union(clustering.Clusters[i].VolumeMask));
+                    newClusters.RemoveAt(newClusters.Count - 1);    // LATER: Implement this without removing old clusters, just adding, when combination is finished
+                    newClusters.Add(combinedSubGrid);
+                    //#if DEBUG
+                    Console.WriteLine("TuneClustering: Clustering leads to clusters which are too similar. They are combined.");
+                    //#endif
+                    //newSubSteps.Add(subSteps[i]);
+                    //i++;
+                } else {
+                    newClusters.Add(clustering.Clusters[i]);
+                    newSubSteps.Add(subSteps[i]);
+                }
+            }
+            //#if DEBUG
+            for (int i = 0; i < newClusters.Count; i++) {
+                Console.WriteLine("TuneClustering:\t\t id=" + i + " -> sub-steps=" + newSubSteps[i] + "\telements=" + newClusters[i].GlobalNoOfCells);
+            }
+            //#endif
+
+            return new Clustering(newClusters, clustering.SubGrid, newSubSteps);
+        }
+
+        public (double[], List<int>) GetPerCluster_dtHarmonicSum_SubSteps(Clustering clustering, double time, IList<TimeStepConstraint> timeStepConstraints, double eps) {
+            double[] clusterDts = new double[clustering.NumberOfClusters];
+
+            for (int i = 0; i < clustering.NumberOfClusters; i++) {
+                // Use "harmonic sum" of step - sizes, see
+                // WatkinsAsthanaJameson2016 for the reasoning
+                double dt = 1.0 / timeStepConstraints.Sum(
+                        c => 1.0 / c.GetGloballyAdmissibleStepSize(clustering.Clusters[i]));
+                if (dt == 0.0) {
+                    throw new ArgumentException(
+                        "Time-step size is exactly zero.");
+                } else if (double.IsNaN(dt)) {
+                    throw new ArgumentException(
+                        "Could not determine stable time-step size in sub-grid " + i + ". This indicates illegal values in some cells.");
+                }
+
+                // Restrict timesteps
+                dt = Math.Min(dt, timeStepConstraints.First().Endtime - time);
+                dt = Math.Min(Math.Max(dt, timeStepConstraints.First().dtMin), timeStepConstraints.First().dtMax);
+
+                clusterDts[i] = dt;
+            }
+
+            List<int> subSteps = CalculateSubSteps(clusterDts, eps);
+
+            for (int i = 0; i < clusterDts.Length; i++) {
+                clusterDts[i] = clusterDts[0] / subSteps[i];
+            }
+
+            if (subSteps.Last() > this.MaxSubSteps && this.Restrict) {
+                //#if DEBUG
+                List<int> oldSubSteps = subSteps;
+                double[] oldClusterDts = clusterDts;
+                //#endif
+                (clusterDts, subSteps) = RestrictDtsAndSubSteps(clusterDts, subSteps);
+                //#if DEBUG
+                Console.WriteLine("### RESTRICTION OF SUB-STEPS ### (dt min)");
+                for (int i = 0; i < subSteps.Count; i++) {
+                    Console.WriteLine("RestrictDtsAndSubSteps:\t id={0} -> sub-steps={1}\tdt={2:0.#######E-00} -> substeps={3}\tdt={4:0.#######E-00}", i, oldSubSteps[i], oldClusterDts[i], subSteps[i], clusterDts[i]);
+                }
+                //#endif
+            }
+
+            return (clusterDts, subSteps);
+        }
+
+        private (double[], List<int>) GetPerCluster_dtMin_SubSteps(Clustering clustering, IList<TimeStepConstraint> timeStepConstraints, double eps) {
+            // Get smallest time step size of every cluster --> loop over all clusters
+            // Currently: CFLFraction is not taken into account
+            double[] sendDtMin = new double[clustering.NumberOfClusters];
+            double[] rcvDtMin = new double[clustering.NumberOfClusters];
+
+            MultidimensionalArray cellMetric = GetStableTimestepSize(clustering.SubGrid, timeStepConstraints);
+            for (int i = 0; i < clustering.NumberOfClusters; i++) {
+                double dtMin = double.MaxValue;
+                CellMask volumeMask = clustering.Clusters[i].VolumeMask;
+                foreach (Chunk c in volumeMask) {
+                    int JE = c.JE;
+                    for (int j = c.i0; j < JE; j++) {
+                        dtMin = Math.Min(cellMetric[clustering.SubGrid.LocalCellIndex2SubgridIndex[j]], dtMin);
+                    }
+                }
+                sendDtMin[i] = dtMin;
+            }
+
+            // MPI Allreduce necessary to exchange the smallest time step size of each cluster on each processor
+            unsafe {
+                fixed (double* pSend = sendDtMin, pRcv = rcvDtMin) {
+                    csMPI.Raw.Allreduce((IntPtr)(pSend), (IntPtr)(pRcv), clustering.NumberOfClusters, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._OP.MIN, csMPI.Raw._COMM.WORLD);
+                }
+            }
+
+            // Take CFLFraction into account for testing
+            //for (int i = 0; i < rcvHmin.Length; i++) {
+            //    rcvHmin[i] *= 0.3;
+            //}
+
+            List<int> subSteps = CalculateSubSteps(rcvDtMin, eps);
+
+            if (subSteps.Last() > this.MaxSubSteps && this.Restrict) {
+                //#if DEBUG
+                List<int> oldSubSteps = subSteps;
+                double[] oldRcvDtMin = rcvDtMin;
+                //#endif
+                (rcvDtMin, subSteps) = RestrictDtsAndSubSteps(rcvDtMin, subSteps);
+                //#if DEBUG
+                Console.WriteLine("### RESTRICTION OF SUB-STEPS ### (dt min)");
+                for (int i = 0; i < subSteps.Count; i++) {
+                    Console.WriteLine("RestrictDtsAndSubSteps:\t id={0} -> sub-steps={1}\tdt={2:0.#######E-00} -> substeps={3}\tdt={4:0.#######E-00}", i, oldSubSteps[i], oldRcvDtMin[i], subSteps[i], rcvDtMin[i]);
+                }
+                //#endif
+            }
+
+            return (rcvDtMin, subSteps);
+        }
+
+        private List<int> CalculateSubSteps(double[] timeStepSizes, double eps = 1.0e-1) {
+            List<int> subSteps = new List<int>();
+
+            for (int i = 0; i < timeStepSizes.Length; i++) {
+                int result = RoundToInt(timeStepSizes[0] / timeStepSizes[i], eps);  // eps was 1.0e-1 
+                Debug.Assert(result > 0 || result < 1e4, String.Format("Number of sub-steps in cluster {0} is {1}. Does this make sense?", i, result));
+                subSteps.Add(result);
+            }
+
+            return subSteps;
+        }
+
+        private (double[], List<int>) RestrictDtsAndSubSteps(double[] clusterDts, List<int> subSteps) {
+            // Restrict sub-steps
+            List<int> restrictedSubSteps = new List<int>(subSteps);
+            restrictedSubSteps[0] = (int)Math.Ceiling((subSteps.Last() / (double)this.MaxSubSteps));
+            restrictedSubSteps[restrictedSubSteps.Count - 1] = subSteps.Last();
+
+            for (int i = 1; i < (restrictedSubSteps.Count - 1); i++) {  // Leave first and last entry untouched
+                if (subSteps[i] < restrictedSubSteps[i - 1]) {
+                    restrictedSubSteps[i] = restrictedSubSteps[i - 1];
+                }
+            }
+
+            // Restrict cluster time step sizes
+            double[] restrictedClusterDts = new double[restrictedSubSteps.Count];
+            for (int i = 0; i < restrictedClusterDts.Length; i++) {
+                restrictedClusterDts[i] = clusterDts[0] / restrictedSubSteps[i];
+            }
+
+            List<int> newSubSteps = new List<int>();
+            for (int i = 0; i < restrictedClusterDts.Length; i++) {
+                newSubSteps.Add((int)Math.Ceiling(restrictedClusterDts[0] / restrictedClusterDts[i]));
+            }
+
+            return (restrictedClusterDts, newSubSteps);
+        }
+
+        public int RoundToInt(double number, double eps) {
+            // Accounting for roundoff errors
+            int result;
+
+            if (number > Math.Floor(number) + eps) {
+                result = (int)Math.Ceiling(number);
+            } else {
+                result = (int)Math.Floor(number);
+            }
+
+            return result;
+        }
+
+        private double FindSecondLargestElement(double[] inputElements) {
+            Array.Sort(inputElements);
+            Array.Reverse(inputElements);
+
+            double largest = double.MinValue;
+            double second = double.MinValue;
+            for (int i = 0; i < inputElements.Length; i++)
+                if (inputElements[i] > largest) {
+                    second = largest;
+                    largest = inputElements[i];
+                } else if (inputElements[i] > second) {
+                    second = inputElements[i];
+                }
+
+            return second;
         }
     }
 }

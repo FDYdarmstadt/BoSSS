@@ -36,7 +36,7 @@ namespace NSE_SIMPLE {
     public partial class NSE_SIMPLEMain : BoSSS.Solution.Application<SIMPLEControl> {
 
         static void Main(string[] args) {
-            _Main(args, false, null, delegate () {
+            _Main(args, false, delegate () {
                 NSE_SIMPLEMain p = new NSE_SIMPLEMain();
                 return p;
             });
@@ -160,7 +160,7 @@ namespace NSE_SIMPLE {
         /// <summary>
         /// ...
         /// </summary>
-        public override void PostRestart(double time) {
+        public override void PostRestart(double time, TimestepNumber timestep) {
 
             //InitLogEnergyOrrSommerfeld();
 
@@ -202,7 +202,7 @@ namespace NSE_SIMPLE {
         /// <summary>
         /// 
         /// </summary>
-        protected override void CreateEquationsAndSolvers(LoadBalancingData L) {
+        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
             using (new FuncTrace()) {
 
                 // Create SIMPLEStatus

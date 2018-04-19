@@ -132,8 +132,9 @@ namespace BoSSS.Foundation.Grid.Classic {
                 CheckEdgeTagNames();
                 Grid.CheckGridForNANorINF();
                 Grid.CheckCellTypes();
-                if(m_Grid.NoOfUpdateCells <= 0)
-                    throw new ApplicationException("grid contains no cells on processor " + MpiRank + ";");
+                int myRank = this.MpiRank;
+                if (m_Grid.NoOfUpdateCells <= 0)
+                    throw new ApplicationException("grid contains no cells on processor " + myRank + ";");
 
                 // start init
                 // ----------
@@ -1797,7 +1798,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
 
         /// <summary>
-        /// the bounding box of this part of the grid, which is stored on the local MPI process
+        /// The bounding box of this part of the grid, which is stored on the local MPI process.
         /// </summary>
         public BoundingBox LocalBoundingBox {
             get {
@@ -1817,5 +1818,34 @@ namespace BoSSS.Foundation.Grid.Classic {
         }
 
         BoundingBox m_LocalBoundingBox;
+
+
+        /// <summary>
+        /// the bounding box of the entire grid.
+        /// </summary>
+        public BoundingBox GlobalBoundingBox {
+            get {
+                if (m_GlobalBoundingBox == null) {
+                    var _LocalBoundingBox = this.LocalBoundingBox;
+                    int D = this.SpatialDimension;
+                    double[] MinMax = new double[2 * D];
+                    for(int d = 0; d < D; d++) {
+                        MinMax[d] = _LocalBoundingBox.Min[d];
+                        MinMax[d + D] = -_LocalBoundingBox.Max[d];
+                    }
+                    MinMax = MinMax.MPIMin(); // save collective MPI calls by min/max trick
+
+                    for (int d = 0; d < D; d++) {
+                        _LocalBoundingBox.Min[d] = MinMax[d];
+                        _LocalBoundingBox.Max[d] = -MinMax[d + D];
+                    }
+                    m_GlobalBoundingBox = _LocalBoundingBox;
+                }
+                return m_GlobalBoundingBox.CloneAs();
+            }
+        }
+
+        BoundingBox m_GlobalBoundingBox;
+
     }
 }

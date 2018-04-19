@@ -583,6 +583,9 @@ namespace ilPSP.LinSolvers {
         /// </summary>
         Dictionary<int, int[,]> SendLists = new Dictionary<int, int[,]>();
 
+        /// <summary>
+        /// Update of <see cref="ReceiveLists"/> and <see cref="SendLists"/>
+        /// </summary>
         void UpdateCommPattern(MPI_Comm comm) {
             MPICollectiveWatchDog.Watch(comm);
 
@@ -1233,7 +1236,6 @@ namespace ilPSP.LinSolvers {
 
         }
 
-
         /// <summary>
         /// Accumulates <paramref name="Block"/>*<paramref name="alpha"/> to this matrix,
         /// at the row/column offset <paramref name="i0"/> resp. <paramref name="j0"/>.
@@ -1243,6 +1245,20 @@ namespace ilPSP.LinSolvers {
         /// <param name="alpha">Scaling factor for the accumulation operation.</param>
         /// <param name="Block">Block to accumulate.</param>
         public void AccBlock(int i0, int j0, double alpha, MultidimensionalArray Block) {
+            this.AccBlock(i0, j0, alpha, Block, 1.0);
+        }
+
+
+        /// <summary>
+        /// Accumulates <paramref name="Block"/>*<paramref name="alpha"/> to this matrix,
+        /// at the row/column offset <paramref name="i0"/> resp. <paramref name="j0"/>.
+        /// </summary>
+        /// <param name="i0">Row offset.</param>
+        /// <param name="j0">Column offset.</param>
+        /// <param name="alpha">Scaling factor for the accumulation operation.</param>
+        /// <param name="Block">Block to accumulate.</param>
+        /// <param name="beta">Scaling applied to this matrix before accumulation</param>
+        public void AccBlock(int i0, int j0, double alpha, MultidimensionalArray Block, double beta) {
             if (Block.Dimension != 2)
                 throw new ArgumentException("Expecting a 2D array.");
             int I = Block.NoOfRows;
@@ -1288,7 +1304,7 @@ namespace ilPSP.LinSolvers {
                                 bTouch[(i + iw) * J + j + jw] = true;
 #endif
                                 int StorageIdx = Offset + (iSblk + iw) * CI + (jSblk + jw) * CJ;
-                                Storage[StorageIdx] += alpha * Block[i + iw, j + jw];
+                                Storage[StorageIdx] = Storage[StorageIdx]*beta + alpha * Block[i + iw, j + jw];
                             }
                         }
                     } else {
@@ -2179,44 +2195,47 @@ namespace ilPSP.LinSolvers {
             ComPatternValid = true;
         }
 
-
+        /// <summary>
+        /// 'Sp'arse 'M'atrix/'V'ector 'M'ultiplication;<br/>
+        /// Performs the calculation
+        /// <paramref name="acc"/> = <paramref name="acc"/>*<paramref name="beta"/> + this*<paramref name="a"/>*<paramref name="alpha"/>;
         public void SpMV<VectorType1, VectorType2>(double alpha, VectorType1 a, double beta, VectorType2 acc)
             where VectorType1 : IList<double>
             where VectorType2 : IList<double> //
         {
-#if DEBUG
-            this.VerifyDataStructure("SpMV");
+//#if DEBUG
+//            this.VerifyDataStructure("SpMV");
             
-            double aNorm = a.L2NormPow2().MPISum(this.MPI_Comm).Sqrt();
-            double accNorm = acc.L2NormPow2().MPISum(this.MPI_Comm).Sqrt();
+//            double aNorm = a.L2NormPow2().MPISum(this.MPI_Comm).Sqrt();
+//            double accNorm = acc.L2NormPow2().MPISum(this.MPI_Comm).Sqrt();
 
-            var T = this.ToMsrMatrix();
-            double[] accB4 = acc.ToArray();
-            double[] aB4 = a.ToArray();
+//            var T = this.ToMsrMatrix();
+//            double[] accB4 = acc.ToArray();
+//            double[] aB4 = a.ToArray();
 
-            double[] accB4B4 = acc.ToArray();
+//            double[] accB4B4 = acc.ToArray();
 
-            T.SpMVpara(alpha, a, beta, acc);
+//            T.SpMVpara(alpha, a, beta, acc);
 
           
-            this.__SpMV(alpha, aB4, beta, accB4);
+//            this.__SpMV(alpha, aB4, beta, accB4);
 
-            double aErr = GenericBlas.L2DistPow2(aB4, a).MPISum(this.MPI_Comm).Sqrt();
-            double accErr = GenericBlas.L2DistPow2(accB4, acc).MPISum(this.MPI_Comm).Sqrt();
+//            double aErr = GenericBlas.L2DistPow2(aB4, a).MPISum(this.MPI_Comm).Sqrt();
+//            double accErr = GenericBlas.L2DistPow2(accB4, acc).MPISum(this.MPI_Comm).Sqrt();
 
-            double compNorm = T.InfNorm() * Math.Max(aNorm, accNorm);
-            compNorm = Math.Max(Math.Sqrt(double.Epsilon), compNorm);
-            double aErr_rel = aErr / compNorm;
-            double accErr_rel = accErr / compNorm;
-            if (aErr_rel > 1.0e-8 || double.IsInfinity(aErr_rel) || double.IsNaN(aErr_rel))
-                throw new ArithmeticException("SpMV error");
-            if (accErr_rel > 1.0e-8 || double.IsInfinity(accErr_rel) || double.IsNaN(accErr_rel)) {
-                throw new ArithmeticException("SpMV error");
-            }
+//            double compNorm = T.InfNorm() * Math.Max(aNorm, accNorm);
+//            compNorm = Math.Max(Math.Sqrt(double.Epsilon), compNorm);
+//            double aErr_rel = aErr / compNorm;
+//            double accErr_rel = accErr / compNorm;
+//            if (aErr_rel > 1.0e-8 || double.IsInfinity(aErr_rel) || double.IsNaN(aErr_rel))
+//                throw new ArithmeticException("SpMV error");
+//            if (accErr_rel > 1.0e-8 || double.IsInfinity(accErr_rel) || double.IsNaN(accErr_rel)) {
+//                throw new ArithmeticException("SpMV error");
+//            }
             
-#else
+//#else
             this.__SpMV(alpha, a, beta, acc);
-#endif
+//#endif
         }
 
         /// <summary>
@@ -2379,10 +2398,9 @@ namespace ilPSP.LinSolvers {
                                         Debug.Assert((MembnkIdx >= 0) == (InMembnk >= 0));
 
                                         if (InMembnk >= 0) {
-                                            double[] RawMem;
                                             int Offset, CI, CJ;
                                             bool isDense;
-                                            m_Membanks[MembnkIdx].GetFastBlockAccessInfo(out RawMem, out Offset, out CI, out CJ, out isDense, InMembnk);
+                                            m_Membanks[MembnkIdx].GetFastBlockAccessInfo(out double[] RawMem, out Offset, out CI, out CJ, out isDense, InMembnk);
                                            
                                             int I = RowLenSblk[iSblkRow];
                                             int J = ColLenSblk[jSblkCol];
@@ -2659,24 +2677,38 @@ namespace ilPSP.LinSolvers {
                 RowIndicesSource,
                 RowIndicesTarget,
                 ColumnIndicesSource,
-                ColumnInidcesTarget);
+                ColumnInidcesTarget,
+                default(int[]), default(int[]));
         }
 
+        /// <summary>
+        /// See <see cref="AccSubMatrixTo{V1, V2, V3, V4, V5, V6}(double, IMutableMatrixEx, V1, V2, V3, V4, V5, V6)"/>, with less paramters.
+        /// </summary>
+        public void AccSubMatrixTo<V1, V2, V3, V4>(
+            double alpha, IMutableMatrixEx Target,
+            V1 RowIndicesSource, V2 RowIndicesTarget,
+            V3 ColumnIndicesSource, V4 ColIndicesTarget)
+            where V1 : IEnumerable<int>
+            where V2 : IEnumerable<int>
+            where V3 : IEnumerable<int>
+            where V4 : IEnumerable<int>//
+        {
+            AccSubMatrixTo<V1, V2, V3, V4, int[], int[]>(alpha, Target, RowIndicesSource, RowIndicesTarget, ColumnIndicesSource, ColIndicesTarget, null, null);
+        }
 
         /// <summary>
-        /// Extracts a submatrix from this matrix and accumulates it to
-        /// another matrix.
+        /// Extracts a submatrix from this matrix and accumulates it to another matrix.
         /// </summary>
         /// <param name="alpha">
         /// scaling factor
         /// </param>
-        /// <param name="RowIndicesSource">row indices into this matrix</param>
+        /// <param name="RowIndicesSource">Row indices into this matrix, in the local range (<see cref="IPartitioning.IsInLocalRange(int)"/>).</param>
         /// <param name="RowIndicesTarget">
         /// if null is specified, this array is assumed to be
         /// {0,1, ... , <paramref name="RowIndicesSource"/>.Length-1]};
         /// </param>
         /// <param name="ColumnIndicesSource">
-        /// column indices into this matrix
+        /// Column indices into this matrix, in the local range (<see cref="IPartitioning.IsInLocalRange(int)"/>).
         /// </param>
         /// <param name="ColIndicesTarget">
         /// if null is specified, this array is assumed to be
@@ -2689,14 +2721,22 @@ namespace ilPSP.LinSolvers {
         /// [<paramref name="RowIndicesSource"/>[i],<paramref name="ColumnIndicesSource"/>[j]]-th
         /// entry of this matrix.
         /// </param>
-        public void AccSubMatrixTo<V1, V2, V3, V4>(
+        /// <param name="ExternalColIndicesTarget"></param>
+        /// <param name="ExternalColumnIndicesSource">
+        /// Additional/optional row indices into this matrix in the external range (<see cref="IPartitioning.IsInLocalRange(int)"/> evaluates to false).
+        /// These are not exchanged over MPI.
+        /// </param>
+        public void AccSubMatrixTo<V1, V2, V3, V4, V5, V6>(
             double alpha, IMutableMatrixEx Target,
             V1 RowIndicesSource, V2 RowIndicesTarget,
-            V3 ColumnIndicesSource, V4 ColIndicesTarget)
+            V3 ColumnIndicesSource, V4 ColIndicesTarget,
+            V5 ExternalColumnIndicesSource, V6 ExternalColIndicesTarget)
             where V1 : IEnumerable<int>
             where V2 : IEnumerable<int>
             where V3 : IEnumerable<int>
-            where V4 : IEnumerable<int> //
+            where V4 : IEnumerable<int> 
+            where V5 : IEnumerable<int>
+            where V6 : IEnumerable<int> //
         {
             using (new FuncTrace()) {
 
@@ -2719,20 +2759,40 @@ namespace ilPSP.LinSolvers {
                 }
 
                 if (RowIndicesTarget != null && RowIndicesTarget.Count() != RowIndicesSource.Count()) {
-                    throw new ArgumentException("Mismatch between number of source and target indices.");
+                    throw new ArgumentException("Mismatch between number of source and target indices (rows).");
                 }
                 if (ColIndicesTarget != null && ColIndicesTarget.Count() != ColumnIndicesSource.Count()) {
-                    throw new ArgumentException("Mismatch between number of source and target indices.");
+                    throw new ArgumentException("Mismatch between number of source and target indices (columns).");
+                }
+
+                if((ExternalColumnIndicesSource == null) != (ExternalColIndicesTarget == null)) {
+                    throw new ArgumentException("Mismatch between external column source and target indices.");
+                }
+
+                if(ExternalColumnIndicesSource != null) {
+                    if(ExternalColumnIndicesSource.Count() != ExternalColIndicesTarget.Count()) {
+                        throw new ArgumentException("Mismatch between number of external source and target indices.");
+                    }
+
+                    foreach(int i in ExternalColumnIndicesSource) {
+                        if(this.m_ColPartitioning.IsInLocalRange(i) == true)
+                            throw new ArgumentException("External column indices are expected to be external.");
+                    }
                 }
 #endif
                 // determine MPI communicator
                 // ==========================
-                if (Target.MPI_Comm != this.MPI_Comm) {
+                if (Target.MPI_Comm != this.MPI_Comm && Target.MPI_Comm != csMPI.Raw._COMM.SELF) {
                     throw new ArgumentException("todo");
                 }
                 MPI_Comm comm = Target.MPI_Comm;
+                MPICollectiveWatchDog.Watch(comm);
 
-                Dictionary<int, int[,]> ExternalColIndices = DetermineExternColumnIndices(Target, ColumnIndicesSource, ColIndicesTarget, comm);
+                Dictionary<int, int[,]> ExternalColIndices;
+                if(comm != csMPI.Raw._COMM.SELF)
+                    ExternalColIndices = DetermineExternColumnIndices(Target, ColumnIndicesSource, ColIndicesTarget, comm);
+                else
+                    ExternalColIndices = new Dictionary<int, int[,]>();
 
                 // define permutation of column indices
                 // ====================================
@@ -2775,6 +2835,24 @@ namespace ilPSP.LinSolvers {
                         for (int l = 0; l < L; l++) {
                             ExternalColIndexPermutation.Add(IdxEs[l, 0], IdxEs[l, 1]);
                         }
+                    }
+
+                    if(ExternalColumnIndicesSource != null) {
+                        IEnumerator<int> enuSrc = ExternalColumnIndicesSource.GetEnumerator();
+                        IEnumerator<int> enuTrg = ExternalColIndicesTarget.GetEnumerator();
+                        while(enuSrc.MoveNext()) {
+                            bool t = enuTrg.MoveNext();
+                            Debug.Assert(t == true);
+
+                            int iSrc = enuSrc.Current;
+                            int iTrg = enuTrg.Current;
+                            if(m_ColPartitioning.IsInLocalRange(iSrc) == true)
+                                throw new ArgumentException("External column indices are expected to be external.");
+
+                            ExternalColIndexPermutation.Add(iSrc, iTrg);
+                        }
+                        Debug.Assert(enuTrg.MoveNext() == false);
+
                     }
                 }
 
@@ -2866,6 +2944,7 @@ namespace ilPSP.LinSolvers {
                                 int jBlk = kv.Key;
                                 BlockEntry Blk = kv.Value;
 
+                                // determine block range
                                 int j0, JE;
                                 if (m_ColPartitioning.FirstBlock <= jBlk && jBlk < m_ColPartitioning.FirstBlock + m_ColPartitioning.LocalNoOfBlocks) {
                                     j0 = m_ColPartitioning.GetBlockI0(jBlk);
@@ -4483,29 +4562,31 @@ namespace ilPSP.LinSolvers {
         /// <param name="B">Right operand.</param>
         public static void Multiply(BlockMsrMatrix C, BlockMsrMatrix A, BlockMsrMatrix B) {
 #if DEBUG
-            A.VerifyDataStructure("Multiply_A");
-            B.VerifyDataStructure("Multiply_B");
-            C.VerifyDataStructure("Multiply_C");
+            // Deactivated by Florian, 10feb2018
+            // testcode was in here for more than a year, no complaints, should be fine
+            //A.VerifyDataStructure("Multiply_A");
+            //B.VerifyDataStructure("Multiply_B");
+            //C.VerifyDataStructure("Multiply_C");
 
-            MsrMatrix _A = A.ToMsrMatrix();
-            MsrMatrix _B = B.ToMsrMatrix();
-            MsrMatrix _C_b4 = C.ToMsrMatrix();
+            //MsrMatrix _A = A.ToMsrMatrix();
+            //MsrMatrix _B = B.ToMsrMatrix();
+            //MsrMatrix _C_b4 = C.ToMsrMatrix();
 
             __Multiply(C, A, B);
 
             C.VerifyDataStructure("Multiply_Cout");
 
-            MsrMatrix _C_af = C.ToMsrMatrix();
-            MsrMatrix AB = MsrMatrix.Multiply(_A, _B);
-            double ABnorm = AB.InfNorm();
-            _C_af.Acc(-1.0, _C_b4);
-            _C_af.Acc(-1.0, AB);
+            //MsrMatrix _C_af = C.ToMsrMatrix();
+            //MsrMatrix AB = MsrMatrix.Multiply(_A, _B);
+            //double ABnorm = AB.InfNorm();
+            //_C_af.Acc(-1.0, _C_b4);
+            //_C_af.Acc(-1.0, AB);
 
-            double ErrAbs = _C_af.InfNorm();
-            double ErrRel = ABnorm > double.Epsilon ? ErrAbs / ABnorm : ErrAbs;
-            //Console.WriteLine("SpMM check: " + ErrRel);
-            if (ErrRel > 1.0e-8 || double.IsNaN(ErrRel) || double.IsInfinity(ErrRel))
-                throw new ArithmeticException("Error in multiply");
+            //double ErrAbs = _C_af.InfNorm();
+            //double ErrRel = ABnorm > double.Epsilon ? ErrAbs / ABnorm : ErrAbs;
+            ////Console.WriteLine("SpMM check: " + ErrRel);
+            //if (ErrRel > 1.0e-8 || double.IsNaN(ErrRel) || double.IsInfinity(ErrRel))
+            //    throw new ArithmeticException("Error in multiply");
 #else
             __Multiply(C, A, B);
 #endif
@@ -4903,7 +4984,7 @@ namespace ilPSP.LinSolvers {
                     if (tempBuf_Length >= 0) {
                         Marshal.FreeHGlobal(tempBuf);
                     }
-                }
+                } // end of local multiplication...
 
 
                 // receive external blocks & perform multiplication

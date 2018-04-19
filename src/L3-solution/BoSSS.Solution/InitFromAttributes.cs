@@ -22,7 +22,9 @@ using BoSSS.Solution.Control;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace BoSSS.Solution {
 
@@ -35,7 +37,7 @@ namespace BoSSS.Solution {
         /// Instantiates those fields that are marked by an <see cref="InstantiateFromControlFileAttribute"/> - attribute;
         /// </summary>
         public static void CreateFieldsAuto(object _this, GridData context,
-            IDictionary<string, FieldOpts> FieldOptions,
+            IDictionary<string, FieldOpts> FieldOptions, XQuadFactoryHelper.MomentFittingVariants cutCellQuadType,
             ICollection<DGField> IOFields, ICollection<DGField> RegisteredFields) {
             FieldInfo[] fields = _this.GetType().GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.FlattenHierarchy | BindingFlags.Static);
 
@@ -168,19 +170,20 @@ namespace BoSSS.Solution {
                     if (LevelSetTracker == null)
                         throw new ApplicationException("missing Level Set Tracker");
                     LevelSetTrackerAttribute att = (LevelSetTrackerAttribute)(LevelSetTracker.GetCustomAttributes(typeof(LevelSetTrackerAttribute), true)[0]);
+                    
 
                     switch (LevelSetsSorted.Length) {
                         case 1:
-                            lsTrk = new LevelSetTracker(context, att.m_NearCellWidth, (string[])(att.GetSpeciesTable(1)), LevelSetsInstances[0]);
+                            lsTrk = new LevelSetTracker(context, cutCellQuadType, att.m_NearCellWidth, (string[])(att.GetSpeciesTable(1)), LevelSetsInstances[0]);
                             break;
                         case 2:
-                            lsTrk = new LevelSetTracker(context, att.m_NearCellWidth, (string[,])(att.GetSpeciesTable(2)), LevelSetsInstances[0], LevelSetsInstances[1]);
+                            lsTrk = new LevelSetTracker(context, cutCellQuadType, att.m_NearCellWidth, (string[,])(att.GetSpeciesTable(2)), LevelSetsInstances[0], LevelSetsInstances[1]);
                             break;
                         case 3:
-                            lsTrk = new LevelSetTracker(context, att.m_NearCellWidth, (string[,,])(att.GetSpeciesTable(3)), LevelSetsInstances[0], LevelSetsInstances[1], LevelSetsInstances[2]);
+                            lsTrk = new LevelSetTracker(context, cutCellQuadType, att.m_NearCellWidth, (string[,,])(att.GetSpeciesTable(3)), LevelSetsInstances[0], LevelSetsInstances[1], LevelSetsInstances[2]);
                             break;
                         case 4:
-                            lsTrk = new LevelSetTracker(context, att.m_NearCellWidth, (string[,,,])(att.GetSpeciesTable(4)), LevelSetsInstances[0], LevelSetsInstances[1], LevelSetsInstances[2], LevelSetsInstances[3]);
+                            lsTrk = new LevelSetTracker(context, cutCellQuadType, att.m_NearCellWidth, (string[,,,])(att.GetSpeciesTable(4)), LevelSetsInstances[0], LevelSetsInstances[1], LevelSetsInstances[2], LevelSetsInstances[3]);
                             break;
 
                     }
@@ -420,6 +423,14 @@ namespace BoSSS.Solution {
 
         }
 
+        private static Regex WildcardToRegex(string pattern) {
+            return new Regex("^" + Regex.Escape(pattern).
+            Replace("\\*", ".*").
+            Replace("\\?", ".") + "$");
+        }
+
+
+
         /// <summary>
         /// used by <see cref="CreateFieldsAuto"/>
         /// </summary>
@@ -427,25 +438,29 @@ namespace BoSSS.Solution {
             //AppControl ctrl
             IDictionary<string, FieldOpts> FieldOptions) //
         {
+            
+           var ops = FieldOptions.Where(kv => WildcardToRegex(kv.Key).IsMatch(cName));
+
             int Deg = -1;
             {
                 if (cName == iName) {
 
-                    if (!FieldOptions.ContainsKey(cName))
+
+                    if (ops.Count() != 1)
                         throw new ApplicationException("missing DG polynomial degree specification for field '" + cName + "' in control file;");
 
-                    Deg = (int)FieldOptions[cName].Degree;
+                    Deg = (int)(ops.First().Value.Degree);
 
                     if (Deg < 0)
                         throw new ApplicationException("missing DG polynomial degree specification for field '" + cName + "' in control file;");
                 } else {
                     // polynomial degree of field 'iName' is implied by polynomial degree of field 'cName' in ctrl file
 
-                    if (!FieldOptions.ContainsKey(cName))
+                    if (ops.Count() != 1)
                         throw new ApplicationException("missing DG polynomial degree specification for field '" + cName +
                             "', which implies DG polynomial degree of field '" + iName + "', in control file;");
 
-                    Deg = (int)FieldOptions[cName].Degree;
+                    Deg = (int)(ops.First().Value.Degree);
 
                     if (Deg < 0)
                         throw new ApplicationException("missing DG polynomial degree specification for field '" + cName +

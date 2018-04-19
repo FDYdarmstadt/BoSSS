@@ -133,11 +133,10 @@ namespace CutCellQuadrature {
         static void Main(string[] args) {
             InitMPI(args);
 
-            CommandLineOptions opt = new CommandLineOptions();
             foreach (var testCase in testCases) {
 
                 Program app = new Program(testCase);
-                app.Init(null, opt, "");
+                app.Init(null);
                 //app.Init(null, opt, "BoSSS.Platform, BoSSS.Foundation, BoSSS.Foundation.Grid, BoSSS.Foundation.XDG, BoSSS.Solution, CutCellQuadrature");
                 app.RunSolverMode();
                 app.ProfilingLog();
@@ -174,7 +173,9 @@ namespace CutCellQuadrature {
 
         protected override void CreateFields() {
             levelSet = testCase.GetLevelSet(GridData);
-            levelSetTracker = new LevelSetTracker(GridData, 1, new string[] { "A", "B" }, levelSet);
+            levelSetTracker = new LevelSetTracker(GridData, 
+                XQuadFactoryHelper.MomentFittingVariants.Classic, // should have no effect, this app creates its own quad-rules independent of the tracker
+                1, new string[] { "A", "B" }, levelSet);
 
             XDGField = new XDGField(
                 new XDGBasis(levelSetTracker, testCase.IntegrandDegree), "XDGField");
@@ -195,7 +196,7 @@ namespace CutCellQuadrature {
         protected override void SetInitial() {
         }
 
-        protected override void CreateEquationsAndSolvers(LoadBalancingData L) {
+        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
         }
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
@@ -286,7 +287,7 @@ namespace CutCellQuadrature {
              */
 
 
-            SubGrid cutCellGrid = levelSetTracker._Regions.GetCutCellSubGrid();
+            SubGrid cutCellGrid = levelSetTracker.Regions.GetCutCellSubGrid();
             CellMask cellMask = CellMask.GetFullMask(GridData);
             SubGrid selectedSubGrid = new SubGrid(cellMask);
 
@@ -330,7 +331,7 @@ namespace CutCellQuadrature {
                 }
 
                 cutCellGrid = new SubGrid(
-                    levelSetTracker._Regions.GetCutCellSubGrid().VolumeMask.Intersect(
+                    levelSetTracker.Regions.GetCutCellSubGrid().VolumeMask.Intersect(
                         selectedSubGrid.VolumeMask));
 
                 double referenceValue = SetUpConfiguration();
@@ -476,7 +477,7 @@ namespace CutCellQuadrature {
                     XDGField,
                     new CellQuadratureScheme(
                         new FixedRuleFactory<QuadRule>(standardRule),
-                        levelSetTracker._Regions.GetCutCellSubGrid().Complement().VolumeMask),
+                        levelSetTracker.Regions.GetCutCellSubGrid().Complement().VolumeMask),
                     standardRule.OrderOfPrecision);
                 uncutQuadrature.Execute();
 
@@ -487,7 +488,7 @@ namespace CutCellQuadrature {
         }
 
         private Tuple<double, int, int> PerformConfiguration(Modes mode, int order, int division = 0, StreamWriter volumeNodesLog = null, StreamWriter surfaceNodesLog = null, int leafDivisions = -1, int vanishingMoment = -1, int continuousDerivative = -1, double width = double.NaN, double hBase = double.NaN, LineSegment.IRootFindingAlgorithm rootFindingAlgorithm = null, int logVolumeNodes_selectedCell = -1) {
-            SubGrid cutCellGrid = levelSetTracker._Regions.GetCutCellSubGrid();
+            SubGrid cutCellGrid = levelSetTracker.Regions.GetCutCellSubGrid();
 
             IQuadRuleFactory<QuadRule> volumeFactory = null;
             IQuadRuleFactory<QuadRule> edgeFactory = null;
@@ -517,11 +518,11 @@ namespace CutCellQuadrature {
                     {
                         volumeFactory = (IQuadRuleFactory<QuadRule>)new CutCellQuadRuleFactory(
                             new AdaptiveSubdivisionStrategy(
-                                Grid.RefElements[0], levelSetTracker, division),
+                                Grid.RefElements[0], levelSetTracker.DataHistories[0].Current, division),
                             leafDivisions);
                         edgeFactory = new CutCellQuadRuleFactory(
                             new AdaptiveSubdivisionStrategy(
-                                Grid.RefElements[0].FaceRefElement, levelSetTracker, division),
+                                Grid.RefElements[0].FaceRefElement, levelSetTracker.DataHistories[0].Current, division),
                             leafDivisions);
                         break;
                     }
@@ -542,9 +543,8 @@ namespace CutCellQuadrature {
                         IQuadRuleFactory<CellBoundaryQuadRule> volumeRuleFactoryEdge;
                         if (Grid.SpatialDimension == 2) {
                             LineAndPointQuadratureFactory bndrule = new LineAndPointQuadratureFactory(
-                                levelSetTracker,
                                 this.Grid.RefElements[0],
-                                0,
+                                levelSetTracker.DataHistories[0].Current,
                                 true,
                                 rootFindingAlgorithm);
 
@@ -556,25 +556,23 @@ namespace CutCellQuadrature {
                             //    rootFindingAlgorithm: rootFindingAlgorithm);
                         } else {
                             volumeRuleFactoryEdge = new LevelSetEdgeVolumeQuadRuleFactory(
-                                levelSetTracker,
-                                0,
+                                levelSetTracker.DataHistories[0].Current,
                                 rootFindingAlgorithm,
                                 JumpTypes.Heaviside);
                         }
 
                         LevelSetSurfaceQuadRuleFactory surfaceFactory =
                             new LevelSetSurfaceQuadRuleFactory(
-                                levelSetTracker, volumeRuleFactoryEdge, 0);
+                                levelSetTracker.DataHistories[0].Current, volumeRuleFactoryEdge);
 
 
                         if (testCase is ISurfaceTestCase) {
                             volumeFactory = surfaceFactory;
                         } else {
                             volumeFactory = new LevelSetVolumeQuadRuleFactory(
-                            levelSetTracker,
+                            levelSetTracker.DataHistories[0].Current,
                             volumeRuleFactoryEdge,
                             surfaceFactory,
-                            0,
                             JumpTypes.Heaviside);
                         }
                         edgeFactory = null;
@@ -587,15 +585,13 @@ namespace CutCellQuadrature {
                             throw new NotImplementedException();
 
                         LineAndPointQuadratureFactory bndrule = new LineAndPointQuadratureFactory(
-                            levelSetTracker,
                             this.Grid.RefElements[0],
-                            0,
+                            levelSetTracker.DataHistories[0].Current,
                             true,
                             rootFindingAlgorithm);
 
                         LevelSetComboRuleFactory2 Factory = new LevelSetComboRuleFactory2(
-                            levelSetTracker,
-                            0,
+                            levelSetTracker.DataHistories[0].Current,
                             bndrule.GetLineFactory(),
                             null,
                             _SurfaceNodesOnZeroLevset: false,
@@ -618,15 +614,13 @@ namespace CutCellQuadrature {
                             throw new NotImplementedException();
 
                         LineAndPointQuadratureFactory bndrule = new LineAndPointQuadratureFactory(
-                            levelSetTracker,
                             this.Grid.RefElements[0],
-                            0,
+                            levelSetTracker.DataHistories[0].Current,
                             true,
                             rootFindingAlgorithm);
 
                         LevelSetComboRuleFactory2 Factory = new LevelSetComboRuleFactory2(
-                            levelSetTracker,
-                            0,
+                            levelSetTracker.DataHistories[0].Current,
                             bndrule.GetLineFactory(), bndrule.GetPointFactory(),
                             _SurfaceNodesOnZeroLevset: false,
                             _UseAlsoStokes: true,
@@ -645,9 +639,8 @@ namespace CutCellQuadrature {
                 case Modes.EquivalentPolynomials: //
                     {
                         var lineAndPointFactory = new LineAndPointQuadratureFactory(
-                                    levelSetTracker,
                                     Grid.RefElements[0],
-                                    0,
+                                    levelSetTracker.DataHistories[0].Current,
                                     true,
                                     rootFindingAlgorithm);
                         if (testCase is ISurfaceTestCase) {
@@ -701,7 +694,7 @@ namespace CutCellQuadrature {
 
         private void WriteSurfaceNodes(StreamWriter log, IQuadRuleFactory<QuadRule> ruleFactory, int order, SubGrid subGrid) {
             var edgeRules = ruleFactory.GetQuadRuleSet(
-                levelSetTracker._Regions.GetCutCellSubGrid().AllEdgesMask, order);
+                levelSetTracker.Regions.GetCutCellSubGrid().AllEdgesMask, order);
 
             foreach (var chunkRulePair in edgeRules) {
                 foreach (int edge in chunkRulePair.Chunk.Elements) {
@@ -750,8 +743,8 @@ namespace CutCellQuadrature {
 
                     MultidimensionalArray globalVertices = MultidimensionalArray.Create(
                         1, rule.NoOfNodes, Grid.SpatialDimension);
-                    MultidimensionalArray metrics = levelSetTracker.GetLevelSetNormalReferenceToPhysicalMetrics(
-                        0, rule.Nodes, cell, 1);
+                    MultidimensionalArray metrics = levelSetTracker.DataHistories[0].Current.GetLevelSetNormalReferenceToPhysicalMetrics(
+                        rule.Nodes, cell, 1);
                     GridData.TransformLocal2Global(rule.Nodes, cell, 1, globalVertices, 0);
 
                     if (selectedCell >= 0 && cell != selectedCell) {

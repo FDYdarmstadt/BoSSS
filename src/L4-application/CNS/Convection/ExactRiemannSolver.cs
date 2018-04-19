@@ -14,10 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
 using BoSSS.Platform.LinAlg;
 using CNS.MaterialProperty;
-using CNS.Exception;
+using System;
 
 namespace CNS.Convection {
 
@@ -234,11 +233,11 @@ namespace CNS.Convection {
             }
 
             if (CHANGE > PRESSURE_TOLERANCE) {
-                throw new NumericalAlgorithmException("No convergence in Newton-Raphson iteration");
+                throw new Exception("No convergence in Newton-Raphson iteration");
             }
 
             if (double.IsNaN(CHANGE) | double.IsNaN(FL) | double.IsNaN(FR) | double.IsNaN(PCOMP)) {
-                throw new NumericalAlgorithmException("Error in Iteration");
+                throw new Exception("Error in Iteration");
             }
 
             // Compute velocity in Star Region

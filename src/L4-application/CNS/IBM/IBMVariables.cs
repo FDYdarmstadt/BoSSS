@@ -17,7 +17,7 @@ limitations under the License.
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Platform;
-using CNS.Exception;
+using System;
 using static CNS.Variable;
 
 namespace CNS.IBM {
@@ -43,7 +43,7 @@ namespace CNS.IBM {
                 delegate (DGField gradientField, CellMask cellMask, IProgram<CNSControl> program) {
                     IBMControl control = program.Control as IBMControl;
                     if (control == null) {
-                        throw new ConfigurationException(
+                        throw new Exception(
                             "Level set gradient can only be computed in immersed boundary runs");
                     }
 
@@ -57,7 +57,7 @@ namespace CNS.IBM {
                     //}
 
                     IBMFieldSet fieldSet = program.WorkingSet as IBMFieldSet;
-                    CellMask cutCells = program.SpeciesMap.As<ImmersedSpeciesMap>().Tracker._Regions.GetCutCellMask();
+                    CellMask cutCells = program.SpeciesMap.As<ImmersedSpeciesMap>().Tracker.Regions.GetCutCellMask();
 
                     gradientField.Clear();
                     gradientField.Derivative(
@@ -67,5 +67,134 @@ namespace CNS.IBM {
                         cutCells);
                 })
             );
+
+        public static readonly DerivedVariable FluidCells = new DerivedVariable(
+            "fluidCells",
+            VariableTypes.Other,
+            delegate (DGField fluidField, CellMask cellMask, IProgram<CNSControl> program) {
+                fluidField.Clear();
+
+                IBMControl control = program.Control as IBMControl;
+                if (control == null) {
+                    throw new Exception(
+                        "Fluid cells can only be computed in immersed boundary runs");
+                }
+
+                foreach (Chunk chunk in cellMask) {
+                    foreach (int cell in chunk.Elements) {
+                        fluidField.SetMeanValue(cell, 1);
+                    }
+                }
+            });
+
+        public static readonly DerivedVariable CutCells = new DerivedVariable(
+            "cutCells",
+            VariableTypes.Other,
+            delegate (DGField cutCellField, CellMask cellMask, IProgram<CNSControl> program) {
+                cutCellField.Clear();
+
+                IBMControl control = program.Control as IBMControl;
+                if (control == null) {
+                    throw new Exception(
+                        "cutCells can only be computed in immersed boundary runs");
+                }
+
+                ImmersedSpeciesMap ibmSpeciesMap = program.SpeciesMap as ImmersedSpeciesMap;
+                CellMask cutCellMask = ibmSpeciesMap.Tracker.Regions.GetCutCellMask();
+
+                foreach (Chunk chunk in cutCellMask) {
+                    foreach (int cell in chunk.Elements) {
+                        cutCellField.SetMeanValue(cell, 1);
+                    }
+                }
+            });
+
+        public static readonly DerivedVariable CutCellsWithoutSourceCells = new DerivedVariable(
+            "cutCellsWithoutSourceCells",
+            VariableTypes.Other,
+            delegate (DGField cutCellWithoutSourceCellField, CellMask cellMask, IProgram<CNSControl> program) {
+                cutCellWithoutSourceCellField.Clear();
+
+                IBMControl control = program.Control as IBMControl;
+                if (control == null) {
+                    throw new Exception(
+                        "cutCellsWithoutSourceCells can only be computed in immersed boundary runs");
+                }
+
+                ImmersedSpeciesMap ibmSpeciesMap = program.SpeciesMap as ImmersedSpeciesMap;
+                CellMask cutCellMask = ibmSpeciesMap.Tracker.Regions.GetCutCellMask().Except(ibmSpeciesMap.Agglomerator.AggInfo.SourceCells);
+
+                foreach (Chunk chunk in cutCellMask) {
+                    foreach (int cell in chunk.Elements) {
+                        cutCellWithoutSourceCellField.SetMeanValue(cell, 1);
+                    }
+                }
+            });
+
+        public static readonly DerivedVariable FluidCellsWithoutSourceCells = new DerivedVariable(
+            "fluidCellsWithoutSourceCells",
+            VariableTypes.Other,
+            delegate (DGField fluidCellWithoutSourceCellField, CellMask cellMask, IProgram<CNSControl> program) {
+                fluidCellWithoutSourceCellField.Clear();
+
+                IBMControl control = program.Control as IBMControl;
+                if (control == null) {
+                    throw new Exception(
+                        "cutCellsWithoutSourceCells can only be computed in immersed boundary runs");
+                }
+
+                ImmersedSpeciesMap ibmSpeciesMap = program.SpeciesMap as ImmersedSpeciesMap;
+                CellMask cutCellMask = cellMask.Except(ibmSpeciesMap.Agglomerator.AggInfo.SourceCells);
+
+                foreach (Chunk chunk in cutCellMask) {
+                    foreach (int cell in chunk.Elements) {
+                        fluidCellWithoutSourceCellField.SetMeanValue(cell, 1);
+                    }
+                }
+    });
+
+        public static readonly DerivedVariable SourceCells = new DerivedVariable(
+            "sourceCells",
+            VariableTypes.Other,
+            delegate (DGField sourceCellField, CellMask cellMask, IProgram<CNSControl> program) {
+                sourceCellField.Clear();
+
+                IBMControl control = program.Control as IBMControl;
+                if (control == null) {
+                    throw new Exception(
+                        "sourceCells can only be computed in immersed boundary runs");
+                }
+
+                ImmersedSpeciesMap ibmSpeciesMap = program.SpeciesMap as ImmersedSpeciesMap;
+                CellMask sourceCellMask = ibmSpeciesMap.Agglomerator.AggInfo.SourceCells;
+
+                foreach (Chunk chunk in sourceCellMask) {
+                    foreach (int cell in chunk.Elements) {
+                        sourceCellField.SetMeanValue(cell, 1);
+                    }
+                }
+            });
+
+        //public static readonly DerivedVariable VoidCells = new DerivedVariable(
+        //    "voidCells",
+        //    VariableTypes.Other,
+        //    delegate (DGField voidCells, CellMask cellMask, IProgram<CNSControl> program) {
+        //        voidCells.Clear();
+
+        //        IBMControl control = program.Control as IBMControl;
+        //        if (control == null) {
+        //            throw new Exception(
+        //                "voidCells can only be computed in immersed boundary runs");
+        //        }
+
+        //        ImmersedSpeciesMap ibmSpeciesMap = program.SpeciesMap as ImmersedSpeciesMap;
+        //        CellMask voidCellMask = .Except(cellMask); // TODO
+
+        //        foreach (Chunk chunk in voidCellMask) {
+        //            foreach (int cell in chunk.Elements) {
+        //                voidCells.SetMeanValue(cell, 1);
+        //            }
+        //        }
+        //    });
     }
 }

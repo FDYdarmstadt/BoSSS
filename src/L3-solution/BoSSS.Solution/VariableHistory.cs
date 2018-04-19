@@ -40,15 +40,7 @@ namespace BoSSS.Solution {
 
             m_Current = curr;
         }
-
-        ///// <summary>
-        ///// if false, the <see cref="Push"/> - function is called by the <see cref="Application"/>-class
-        ///// </summary>
-        //public bool ManualPush {
-        //    get {
-        //        return true;
-        //    }
-        //}
+        
 
         /// <summary>
         /// <see cref="PushCount"/>

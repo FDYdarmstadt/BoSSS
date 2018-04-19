@@ -34,6 +34,15 @@ namespace BoSSS.Application.IBM_Solver {
     /// </summary>
     public class HardcodedControl {
 
+        /// <summary>
+        /// Initializes a channel flow.
+        /// </summary>
+        /// <param name="k">DG polynomial degree</param>
+        /// <param name="periodic"></param>
+        /// <param name="xCells"></param>
+        /// <param name="yCells"></param>
+        /// <param name="dbpath"></param>
+        /// <returns></returns>
         static public IBM_Control ChannelFlow(int k = 2, bool periodic = false, int xCells = 10, int yCells = 10, string dbpath = null) {
             IBM_Control C = new IBM_Control();
 
@@ -65,26 +74,7 @@ namespace BoSSS.Application.IBM_Solver {
 
 
             // Create Fields
-            C.FieldOptions.Add("VelocityX", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("VelocityY", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Pressure", new FieldOpts() {
-                Degree = k - 1,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("PhiDG", new FieldOpts() {
-                Degree = 2,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Phi", new FieldOpts() {
-                Degree = 2,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
+            C.SetDGdegree(k);
 
             // Create Grid
             C.GridFunc = delegate {
@@ -1218,11 +1208,11 @@ namespace BoSSS.Application.IBM_Solver {
 
 
             C.DynamicLoadBalancing_Period = 1;
-            C.DynamicLoadBalancing_CellCostEstimatorFactory = delegate (int noOfPerformanceClasses) {
+            C.DynamicLoadBalancing_CellCostEstimatorFactories.Add(delegate (IApplication app, int noOfPerformanceClasses) {
                 Console.WriteLine("i was called");
                 int[] map = new int[] { 1, 5, 100 };
                 return new StaticCellCostEstimator(map);
-            };
+            });
 
 
             // Solver Options
@@ -1340,16 +1330,16 @@ namespace BoSSS.Application.IBM_Solver {
             return C;
         }
 
-        static public IBM_Control BackwardStep(int k = 2, int cellsX = 20, int cellsY = 10, string dbpath = null) {
+        static public IBM_Control BackwardStep(int k = 2, int cells_x = 20, int cells_y = 10, string dbpath = null) {
             IBM_Control C = new IBM_Control();
 
 
             C.DynamicLoadBalancing_Period = 1;
-            C.DynamicLoadBalancing_CellCostEstimatorFactory = delegate (int noOfPerformanceClasses) {
+            C.DynamicLoadBalancing_CellCostEstimatorFactories.Add(delegate (IApplication app, int noOfPerformanceClasses) {
                 Console.WriteLine("i was called");
                 int[] map = new int[] { 1, 5, 100 };
                 return new StaticCellCostEstimator(map);
-            };
+            });
 
             C.DbPath = @"P:\BoSSS_DBs\Bug";
 
@@ -1359,18 +1349,19 @@ namespace BoSSS.Application.IBM_Solver {
             C.savetodb = false;
             C.ProjectName = "BackwardStep";
             C.SessionName = "BackwardStep";
-            C.NoOfMultigridLevels = 5;
+            C.NoOfMultigridLevels = 1;
+            C.MaxKrylovDim = 1000;
 
             // Calculate Navier-Stokes? 
             C.PhysicalParameters.IncludeConvection = true;
 
             // Timestepper
             C.Timestepper_Scheme = IBM_Control.TimesteppingScheme.ImplicitEuler;
-            double dt = 0.1;
+            double dt = 1;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 60;
-            C.NoOfTimesteps = 5;
+            C.NoOfTimesteps = 1;
 
             // Physical values
             C.PhysicalParameters.rho_A = 1;
@@ -1403,8 +1394,8 @@ namespace BoSSS.Application.IBM_Solver {
 
             // Create Grid
             C.GridFunc = delegate {
-                var _xNodes = GenericBlas.Linspace(-1, 5, cellsX + 1);
-                var _yNodes = GenericBlas.Linspace(-1, 1, cellsY + 1);
+                var _xNodes = GenericBlas.Linspace(-1, 5, cells_x + 1);
+                var _yNodes = GenericBlas.Linspace(-1, 1, cells_y + 1);
 
                 double[] CutOutPoint1 = new double[2] { -1, -1 };
                 double[] CutOutPoint2 = new double[2] { 0, 0 };
@@ -1462,11 +1453,64 @@ namespace BoSSS.Application.IBM_Solver {
             VelocityYex = (X, t) => (0);
             Pressure = (X, t) => (0);
 
+            ISolverSmootherTemplate Prec;
+
+            Prec = new SchurPrecond()
+            {
+                SchurOpt = SchurPrecond.SchurOptions.decoupledApprox,
+                ApproxScaling = true
+            };
+
+
+            //Prec = new DirectSolver()
+            //{
+            //    WhichSolver = DirectSolver._whichSolver.MUMPS
+            //};
+
+            //Prec = new SchurPrecond()
+            //{
+            //    SchurOpt = SchurPrecond.SchurOptions.SIMPLE
+            //};
+
+            //Prec = new Schwarz()
+            //{
+            //    m_BlockingStrategy = new Schwarz.METISBlockingStrategy()
+            //    {
+            //        NoOfParts = 5,
+            //    },
+            //    CoarseSolver = new DirectSolver()
+            //    {
+            //        WhichSolver = DirectSolver._whichSolver.MUMPS
+            //    },
+            // overlap =1
+            //};
+
+
+            //Prec = new Schwarz()
+            //{
+            //    m_BlockingStrategy = new Schwarz.MultigridBlocks()
+            //    {
+            //        Depth = 5,
+            //    },
+            //    CoarseSolver = new DirectSolver()
+            //    {
+            //        WhichSolver = DirectSolver._whichSolver.MUMPS
+            //    },
+            //    overlap = 1
+            //};
+
+
+            //C.LinearSolver = new SoftGMRES()
+            //{
+            //    MaxKrylovDim = C.MaxKrylovDim,
+            //    Precond = Prec,
+            //    m_Tolerance = 1E-6,
+            //    m_MaxIterations = 50
+            //};
 
 
             C.AddBoundaryCondition("Velocity_inlet", "VelocityX", X => -4*X[1]*(X[1]+4));
             C.AddBoundaryCondition("Pressure_Outlet");
-
             C.AddBoundaryCondition("Wall");
 
             // Set Initial Conditions

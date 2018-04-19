@@ -26,6 +26,9 @@ using BoSSS.Foundation.Grid.Classic;
 
 namespace BoSSS.Solution.GridImport {
     
+     /// <summary>
+     /// High-Level wrapper around CGNS data structures, i.e. .NET objects form CGNS entities.
+     /// </summary>
      public class Cgns : IGridImporter {
 
         public CGNSBase_t[] base_t;

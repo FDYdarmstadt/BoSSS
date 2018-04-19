@@ -19,7 +19,7 @@ namespace BoSSS.Foundation.Properties {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Resources {
@@ -62,19 +62,17 @@ namespace BoSSS.Foundation.Properties {
         
         /// <summary>
         ///   Looks up a localized string similar to &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
-        ///&lt;!--DBE control file--&gt;
-        ///&lt;DBEControl&gt;
-        ///  &lt;Databases&gt;
-        ///    &lt;!--&lt;Database&gt;
-        ///      &lt;path value=&quot;c:\bosss_db&quot; /&gt;
-        ///    &lt;/Database&gt;--&gt;
-        ///  &lt;/Databases&gt;
-        ///  &lt;Settings&gt;
-        ///    &lt;Plot&gt;
-        ///      &lt;DefaultExportFormat&gt;TecPlot&lt;/DefaultExportFormat&gt;
-        ///    &lt;/Plot&gt;
-        ///  &lt;/Settings&gt;
-        ///&lt;/DBEControl&gt;.
+        ///&lt;!--
+        ///Copyright 2017 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
+        ///
+        ///Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+        ///you may not use this file except in compliance with the License.
+        ///You may obtain a copy of the License at
+        ///
+        ///    http://www.apache.org/licenses/LICENSE-2.0
+        ///
+        ///Unless required by applicable law or agreed to in writing, software
+        ///distributed under the License is distributed on an &quot;AS IS&quot; B [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string DBE_empty {
             get {

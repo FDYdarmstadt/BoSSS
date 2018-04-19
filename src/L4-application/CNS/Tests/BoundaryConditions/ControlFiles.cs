@@ -14,23 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using BoSSS.Foundation.Grid;
-using BoSSS.Solution.Control;
+using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.Queries;
 using CNS.Convection;
 using CNS.EquationSystem;
 using CNS.MaterialProperty;
-using CNS.Solution;
-using CNS.Source;
 using CNS.Residual;
-using CNS.Boundary;
-using BoSSS.Foundation;
-using BoSSS.Solution.Utils;
-using BoSSS.Foundation.Grid.Classic;
+using CNS.Source;
 using ilPSP.Utils;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace CNS.Tests.BoundaryConditions {
 
@@ -67,8 +61,7 @@ namespace CNS.Tests.BoundaryConditions {
 
                     c.ActiveOperators = Operators.Convection | Operators.CustomSource;
                     c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
-                    c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
-                    c.ExplicitScheme = Solution.ExplicitSchemes.RungeKutta;
+                    c.ExplicitScheme = ExplicitSchemes.RungeKutta;
                     c.ExplicitOrder = 1;
                     c.EquationOfState = IdealGas.Air;
 
@@ -177,7 +170,7 @@ namespace CNS.Tests.BoundaryConditions {
                 c.ProjectName += "_supersonicAll";
             }
 
-            return templates;
+            return templates.ToArray();
         }
 
         /// <summary>

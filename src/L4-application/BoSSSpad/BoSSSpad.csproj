@@ -8,7 +8,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>BoSSS.Application.BoSSSpad</RootNamespace>
     <AssemblyName>BoSSSpad</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>
     <FileAlignment>512</FileAlignment>
@@ -99,6 +99,7 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Numerics" />
+    <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
@@ -107,6 +108,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AppControlExtensions.cs" />
     <Compile Include="autonomuousPlotter.cs" />
     <Compile Include="BoSSSpadMain.cs" />
     <Compile Include="BatchProcessorClient.cs" />
@@ -116,6 +118,7 @@
     <Compile Include="ExportInstruction.cs" />
     <Compile Include="CommandLineReader.cs" />
     <Compile Include="GnuplotExtensions.cs" />
+    <Compile Include="GnuplotPageLayout.cs" />
     <Compile Include="GridExportInstruction.cs" />
     <Compile Include="IEnumerableExtensions.cs" />
     <Compile Include="IDatabaseInfoExtensions.cs" />
@@ -130,6 +133,7 @@
     <Compile Include="MsHPC2012Client.cs" />
     <Compile Include="ObjectExtensions.cs" />
     <Compile Include="InstallationChecker.cs" />
+    <Compile Include="Plot2DdataExtensions.cs" />
     <Compile Include="ReadEvalPrintLoop.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ResidualForm.cs">
@@ -144,9 +148,10 @@
     <Compile Include="InteractiveShell.cs" />
     <Compile Include="SafeEvaluator.cs" />
     <Compile Include="SessionExportInstruction.cs" />
+    <Compile Include="SlurmClient.cs" />
     <Compile Include="TableExtensions.cs" />
     <Compile Include="TypeExtensions.cs" />
-    <Compile Include="DataSet.cs" />
+    <Compile Include="Plot2Ddata.cs" />
     <Compile Include="WorkflowMgm.cs" />
     <Compile Include="Worksheet.cs">
       <SubType>Form</SubType>
@@ -158,6 +163,18 @@
     <None Include="app.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.LevelSetTools\BoSSS.Solution.LevelSetTools.csproj">
+      <Project>{9ee2fcad-e8a4-4f14-b932-d1a4904d715d}</Project>
+      <Name>BoSSS.Solution.LevelSetTools</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XNSECommon\BoSSS.Solution.XNSECommon.csproj">
+      <Project>{0d8f577e-316d-4362-816b-9f610c5eb4a5}</Project>
+      <Name>BoSSS.Solution.XNSECommon</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\XNSE_Solver\XNSE_Solver.csproj">
+      <Project>{3d867374-bf9a-475e-8f5c-e1c067605b9c}</Project>
+      <Name>XNSE_Solver</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\ilPSP\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj">
       <Project>{dd9bf776-38ca-4fc9-8f42-5ed700bde7ad}</Project>
       <Name>MPI.Wrappers</Name>
@@ -181,6 +198,22 @@
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj">
       <Project>{8E6D8F23-623F-4204-B4AB-A088C0CD83AA}</Project>
       <Name>ilPSP</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.Grid\BoSSS.Foundation.Grid.csproj">
+      <Project>{13585226-5046-494d-947c-b97479566081}</Project>
+      <Name>BoSSS.Foundation.Grid</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.XDG\BoSSS.Foundation.XDG.csproj">
+      <Project>{9a8cdc1f-64f7-441e-849d-66f2c56600f2}</Project>
+      <Name>BoSSS.Foundation.XDG</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.ASCIIExport\BoSSS.Solution.ASCIIExport.csproj">
+      <Project>{ed2e6c6e-1517-4aad-b3c6-1b56c5cd9828}</Project>
+      <Name>BoSSS.Solution.ASCIIExport</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XdgTimestepping\BoSSS.Solution.XdgTimestepping.csproj">
+      <Project>{d8a961c8-75a9-4ecd-8627-c598697e7318}</Project>
+      <Name>BoSSS.Solution.XdgTimestepping</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Utils\MiniBatchProcessor\MiniBatchProcessor.csproj">
       <Project>{db8a3a70-dbf2-48e7-824c-0829db2f8e1b}</Project>
@@ -225,6 +258,10 @@
     <ProjectReference Include="..\IBM_Solver\IBM_Solver.csproj">
       <Project>{12970f63-547f-4be6-9af9-2f3eeb00a877}</Project>
       <Name>IBM_Solver</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ipPoisson\ipPoisson.csproj">
+      <Project>{09cce864-9bae-4660-aff9-f3f3414b6173}</Project>
+      <Name>ipPoisson</Name>
     </ProjectReference>
     <ProjectReference Include="..\PlotGenerator\BoSSS.PlotGenerator.csproj">
       <Project>{383DE201-6871-437E-93C6-DDD41694BBAF}</Project>

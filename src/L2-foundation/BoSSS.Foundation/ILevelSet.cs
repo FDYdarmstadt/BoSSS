@@ -16,6 +16,7 @@ limitations under the License.
 
 using BoSSS.Platform;
 using ilPSP;
+using System;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -25,7 +26,7 @@ namespace BoSSS.Foundation.XDG {
     /// by BoSSS or come from some external object which implements this
     /// interface.
     /// </summary>
-    public interface ILevelSet {
+    public interface ILevelSet : ICloneable {
 
         /// <summary>
         /// Evaluates the level set 
@@ -89,6 +90,28 @@ namespace BoSSS.Foundation.XDG {
         /// </remarks>
         void EvaluateHessian(int j0, int Len, NodeSet NS, MultidimensionalArray result);
 
+        /// <summary>
+        /// Evaluates the total curvature of this field, i.e.
+        /// \f$  \mathrm{div} \left( \frac{ \varphi }{ \nabla_h \varphi } \right) \f$.
+        /// </summary>
+        /// <param name="j0"></param>
+        /// <param name="Len"></param>
+        /// <param name="NS"></param>
+        /// <param name="result">
+        /// <list type="bullet">
+        ///   <item>1st index: cell index <em>j</em></item>
+        ///   <item>2nd index: node index <em>m</em> into nodeset #<paramref name="NodeSetIndex"/></item>
+        ///   <item>3rd index: spatial direction of 1st derivation, <em>k</em></item>
+        ///   <item>4th index: spatial direction of 2nd derivation, <em>l</em></item>
+        /// </list>
+        /// So, the entry [j,m,k,l] = \f$ \frac{\partial}{\partial x_k} \frac{\partial}{\partial x_l} \varphi (\vec{\xi}_m)\f$ 
+        /// where \f$ \vec{xi}_m\f$  is the <em>m</em>-th vector in the nodeset #<paramref name="NodeSetIndex"/>,
+        /// in the <em>j</em>-th cell.
+        /// </param>
+        /// <remarks>
+        /// Because of 2 derivatives taken, this field needs to be at least of DG degree 2 to get a non-zero result
+        /// from this method.
+        /// </remarks>
         void EvaluateTotalCurvature(int j0, int Len, NodeSet NodeSet, MultidimensionalArray result);
     }
 }

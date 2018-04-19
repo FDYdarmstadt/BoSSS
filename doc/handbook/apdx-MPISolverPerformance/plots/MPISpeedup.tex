@@ -1,0 +1,255 @@
+% GNUPLOT: LaTeX picture with Postscript
+\begingroup
+  \makeatletter
+  \providecommand\color[2][]{%
+    \GenericError{(gnuplot) \space\space\space\@spaces}{%
+      Package color not loaded in conjunction with
+      terminal option `colourtext'%
+    }{See the gnuplot documentation for explanation.%
+    }{Either use 'blacktext' in gnuplot or load the package
+      color.sty in LaTeX.}%
+    \renewcommand\color[2][]{}%
+  }%
+  \providecommand\includegraphics[2][]{%
+    \GenericError{(gnuplot) \space\space\space\@spaces}{%
+      Package graphicx or graphics not loaded%
+    }{See the gnuplot documentation for explanation.%
+    }{The gnuplot epslatex terminal needs graphicx.sty or graphics.sty.}%
+    \renewcommand\includegraphics[2][]{}%
+  }%
+  \providecommand\rotatebox[2]{#2}%
+  \@ifundefined{ifGPcolor}{%
+    \newif\ifGPcolor
+    \GPcolortrue
+  }{}%
+  \@ifundefined{ifGPblacktext}{%
+    \newif\ifGPblacktext
+    \GPblacktexttrue
+  }{}%
+  % define a \g@addto@macro without @ in the name:
+  \let\gplgaddtomacro\g@addto@macro
+  % define empty templates for all commands taking text:
+  \gdef\gplbacktext{}%
+  \gdef\gplfronttext{}%
+  \makeatother
+  \ifGPblacktext
+    % no textcolor at all
+    \def\colorrgb#1{}%
+    \def\colorgray#1{}%
+  \else
+    % gray or color?
+    \ifGPcolor
+      \def\colorrgb#1{\color[rgb]{#1}}%
+      \def\colorgray#1{\color[gray]{#1}}%
+      \expandafter\def\csname LTw\endcsname{\color{white}}%
+      \expandafter\def\csname LTb\endcsname{\color{black}}%
+      \expandafter\def\csname LTa\endcsname{\color{black}}%
+      \expandafter\def\csname LT0\endcsname{\color[rgb]{1,0,0}}%
+      \expandafter\def\csname LT1\endcsname{\color[rgb]{0,1,0}}%
+      \expandafter\def\csname LT2\endcsname{\color[rgb]{0,0,1}}%
+      \expandafter\def\csname LT3\endcsname{\color[rgb]{1,0,1}}%
+      \expandafter\def\csname LT4\endcsname{\color[rgb]{0,1,1}}%
+      \expandafter\def\csname LT5\endcsname{\color[rgb]{1,1,0}}%
+      \expandafter\def\csname LT6\endcsname{\color[rgb]{0,0,0}}%
+      \expandafter\def\csname LT7\endcsname{\color[rgb]{1,0.3,0}}%
+      \expandafter\def\csname LT8\endcsname{\color[rgb]{0.5,0.5,0.5}}%
+    \else
+      % gray
+      \def\colorrgb#1{\color{black}}%
+      \def\colorgray#1{\color[gray]{#1}}%
+      \expandafter\def\csname LTw\endcsname{\color{white}}%
+      \expandafter\def\csname LTb\endcsname{\color{black}}%
+      \expandafter\def\csname LTa\endcsname{\color{black}}%
+      \expandafter\def\csname LT0\endcsname{\color{black}}%
+      \expandafter\def\csname LT1\endcsname{\color{black}}%
+      \expandafter\def\csname LT2\endcsname{\color{black}}%
+      \expandafter\def\csname LT3\endcsname{\color{black}}%
+      \expandafter\def\csname LT4\endcsname{\color{black}}%
+      \expandafter\def\csname LT5\endcsname{\color{black}}%
+      \expandafter\def\csname LT6\endcsname{\color{black}}%
+      \expandafter\def\csname LT7\endcsname{\color{black}}%
+      \expandafter\def\csname LT8\endcsname{\color{black}}%
+    \fi
+  \fi
+    \setlength{\unitlength}{0.0500bp}%
+    \ifx\gptboxheight\undefined%
+      \newlength{\gptboxheight}%
+      \newlength{\gptboxwidth}%
+      \newsavebox{\gptboxtext}%
+    \fi%
+    \setlength{\fboxrule}{0.5pt}%
+    \setlength{\fboxsep}{1pt}%
+\begin{picture}(9620.00,9620.00)%
+    \gplgaddtomacro\gplbacktext{%
+      \csname LTb\endcsname%
+      \put(603,5057){\makebox(0,0)[r]{\strut{}$0$}}%
+      \csname LTb\endcsname%
+      \put(603,5588){\makebox(0,0)[r]{\strut{}$10$}}%
+      \csname LTb\endcsname%
+      \put(603,6119){\makebox(0,0)[r]{\strut{}$20$}}%
+      \csname LTb\endcsname%
+      \put(603,6650){\makebox(0,0)[r]{\strut{}$30$}}%
+      \csname LTb\endcsname%
+      \put(603,7182){\makebox(0,0)[r]{\strut{}$40$}}%
+      \csname LTb\endcsname%
+      \put(603,7713){\makebox(0,0)[r]{\strut{}$50$}}%
+      \csname LTb\endcsname%
+      \put(603,8244){\makebox(0,0)[r]{\strut{}$60$}}%
+      \csname LTb\endcsname%
+      \put(603,8775){\makebox(0,0)[r]{\strut{}$70$}}%
+      \csname LTb\endcsname%
+      \put(1146,4858){\makebox(0,0){\strut{}$10$}}%
+      \csname LTb\endcsname%
+      \put(1652,4858){\makebox(0,0){\strut{}$20$}}%
+      \csname LTb\endcsname%
+      \put(2157,4858){\makebox(0,0){\strut{}$30$}}%
+      \csname LTb\endcsname%
+      \put(2663,4858){\makebox(0,0){\strut{}$40$}}%
+      \csname LTb\endcsname%
+      \put(3168,4858){\makebox(0,0){\strut{}$50$}}%
+      \csname LTb\endcsname%
+      \put(3674,4858){\makebox(0,0){\strut{}$60$}}%
+      \csname LTb\endcsname%
+      \put(3964,5057){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(3964,5588){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(3964,6119){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(3964,6650){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(3964,7182){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(3964,7713){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(3964,8244){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(3964,8775){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(691,8974){\makebox(0,0){\strut{} }}%
+      \csname LTb\endcsname%
+      \put(1146,8974){\makebox(0,0){\strut{} }}%
+      \csname LTb\endcsname%
+      \put(1601,8974){\makebox(0,0){\strut{} }}%
+      \csname LTb\endcsname%
+      \put(2056,8974){\makebox(0,0){\strut{} }}%
+      \csname LTb\endcsname%
+      \put(2511,8974){\makebox(0,0){\strut{} }}%
+      \csname LTb\endcsname%
+      \put(2966,8974){\makebox(0,0){\strut{} }}%
+      \csname LTb\endcsname%
+      \put(3421,8974){\makebox(0,0){\strut{} }}%
+      \csname LTb\endcsname%
+      \put(3876,8974){\makebox(0,0){\strut{} }}%
+    }%
+    \gplgaddtomacro\gplfronttext{%
+      \csname LTb\endcsname%
+      \put(239,6916){\rotatebox{-270}{\makebox(0,0){\strut{}Speedup}}}%
+      \csname LTb\endcsname%
+      \put(4238,6916){\rotatebox{-270}{\makebox(0,0){\strut{}SlvIter}}}%
+      \csname LTb\endcsname%
+      \put(2283,9472){\makebox(0,0){\strut{}Speedup}}%
+      \csname LTb\endcsname%
+      \put(8827,8675){\makebox(0,0)[r]{\strut{}NewtonGmres Swz w Coarse Overlap MGLevels4}}%
+      \csname LTb\endcsname%
+      \put(8827,8476){\makebox(0,0)[r]{\strut{}NewtonGmres Swz w Coarse Overlap MGLevels3}}%
+      \csname LTb\endcsname%
+      \put(8827,8277){\makebox(0,0)[r]{\strut{}NewtonGmres Swz Kcycle w Coarse Overlap MGLevels3}}%
+      \csname LTb\endcsname%
+      \put(8827,8078){\makebox(0,0)[r]{\strut{}NewtonGmres Swz w Coarse MGLevels2}}%
+      \csname LTb\endcsname%
+      \put(8827,7879){\makebox(0,0)[r]{\strut{}NewtonGmres Swz w Coarse Overlap MGLevels2}}%
+      \csname LTb\endcsname%
+      \put(8827,7680){\makebox(0,0)[r]{\strut{}NewtonGmres Swz Kcycle w Coarse Overlap MGLevels2}}%
+      \csname LTb\endcsname%
+      \put(8827,7481){\makebox(0,0)[r]{\strut{}Ideal}}%
+    }%
+    \gplgaddtomacro\gplbacktext{%
+      \csname LTb\endcsname%
+      \put(603,684){\makebox(0,0)[r]{\strut{}$0$}}%
+      \csname LTb\endcsname%
+      \put(603,1238){\makebox(0,0)[r]{\strut{}$10$}}%
+      \csname LTb\endcsname%
+      \put(603,1792){\makebox(0,0)[r]{\strut{}$20$}}%
+      \csname LTb\endcsname%
+      \put(603,2346){\makebox(0,0)[r]{\strut{}$30$}}%
+      \csname LTb\endcsname%
+      \put(603,2900){\makebox(0,0)[r]{\strut{}$40$}}%
+      \csname LTb\endcsname%
+      \put(603,3454){\makebox(0,0)[r]{\strut{}$50$}}%
+      \csname LTb\endcsname%
+      \put(603,4008){\makebox(0,0)[r]{\strut{}$60$}}%
+      \csname LTb\endcsname%
+      \put(603,4562){\makebox(0,0)[r]{\strut{}$70$}}%
+      \csname LTb\endcsname%
+      \put(1146,485){\makebox(0,0){\strut{}$10$}}%
+      \csname LTb\endcsname%
+      \put(1652,485){\makebox(0,0){\strut{}$20$}}%
+      \csname LTb\endcsname%
+      \put(2157,485){\makebox(0,0){\strut{}$30$}}%
+      \csname LTb\endcsname%
+      \put(2663,485){\makebox(0,0){\strut{}$40$}}%
+      \csname LTb\endcsname%
+      \put(3168,485){\makebox(0,0){\strut{}$50$}}%
+      \csname LTb\endcsname%
+      \put(3674,485){\makebox(0,0){\strut{}$60$}}%
+      \csname LTb\endcsname%
+      \put(3964,684){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(3964,1238){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(3964,1792){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(3964,2346){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(3964,2900){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(3964,3454){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(3964,4008){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(3964,4562){\makebox(0,0)[l]{\strut{} }}%
+      \csname LTb\endcsname%
+      \put(691,4761){\makebox(0,0){\strut{} }}%
+      \csname LTb\endcsname%
+      \put(1146,4761){\makebox(0,0){\strut{} }}%
+      \csname LTb\endcsname%
+      \put(1601,4761){\makebox(0,0){\strut{} }}%
+      \csname LTb\endcsname%
+      \put(2056,4761){\makebox(0,0){\strut{} }}%
+      \csname LTb\endcsname%
+      \put(2511,4761){\makebox(0,0){\strut{} }}%
+      \csname LTb\endcsname%
+      \put(2966,4761){\makebox(0,0){\strut{} }}%
+      \csname LTb\endcsname%
+      \put(3421,4761){\makebox(0,0){\strut{} }}%
+      \csname LTb\endcsname%
+      \put(3876,4761){\makebox(0,0){\strut{} }}%
+    }%
+    \gplgaddtomacro\gplfronttext{%
+      \csname LTb\endcsname%
+      \put(239,2623){\rotatebox{-270}{\makebox(0,0){\strut{}Speedup}}}%
+      \csname LTb\endcsname%
+      \put(4238,2623){\rotatebox{-270}{\makebox(0,0){\strut{}SlvInit}}}%
+      \csname LTb\endcsname%
+      \put(2283,187){\makebox(0,0){\strut{}Processors}}%
+      \csname LTb\endcsname%
+      \put(8827,4462){\makebox(0,0)[r]{\strut{}NewtonGmres Swz w Coarse Overlap MGLevels4}}%
+      \csname LTb\endcsname%
+      \put(8827,4263){\makebox(0,0)[r]{\strut{}NewtonGmres Swz w Coarse Overlap MGLevels3}}%
+      \csname LTb\endcsname%
+      \put(8827,4064){\makebox(0,0)[r]{\strut{}NewtonGmres Swz Kcycle w Coarse Overlap MGLevels3}}%
+      \csname LTb\endcsname%
+      \put(8827,3865){\makebox(0,0)[r]{\strut{}NewtonGmres Swz w Coarse MGLevels2}}%
+      \csname LTb\endcsname%
+      \put(8827,3666){\makebox(0,0)[r]{\strut{}NewtonGmres Swz w Coarse Overlap MGLevels2}}%
+      \csname LTb\endcsname%
+      \put(8827,3467){\makebox(0,0)[r]{\strut{}NewtonGmres Swz Kcycle w Coarse Overlap MGLevels2}}%
+      \csname LTb\endcsname%
+      \put(8827,3268){\makebox(0,0)[r]{\strut{}Ideal}}%
+    }%
+    \gplbacktext
+    \put(0,0){\includegraphics{MPISpeedup}}%
+    \gplfronttext
+  \end{picture}%
+\endgroup

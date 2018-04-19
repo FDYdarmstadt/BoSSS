@@ -27,6 +27,7 @@ using BoSSS.Platform;
 using BoSSS.Platform.Utils;
 using BoSSS.Foundation;
 using System.IO;
+using ilPSP.Tracing;
 
 namespace BoSSS.Solution.Multigrid
 {
@@ -111,238 +112,46 @@ namespace BoSSS.Solution.Multigrid
             where V1 : IList<double>
             where V2 : IList<double>
         {
-            double[] X, B;
-            if (_X is double[])
+
+            using (var tr = new FuncTrace())
             {
-                X = _X as double[];
-            }
-            else
-            {
-                X = _X.ToArray();
-            }
-            if (_B is double[])
-            {
-                B = _B as double[];
-            }
-            else
-            {
-                B = _B.ToArray();
-            }
-
-
-            double bnrm2 = B.L2NormPow2().MPISum().Sqrt();
-            if (bnrm2 == 0.0)
-            {
-                bnrm2 = 1.0;
-            }
-
-            int Nloc = Matrix.RowPartitioning.LocalLength;
-            int Ntot = Matrix.RowPartitioning.TotalLength;
-
-            double[] r = new double[Nloc];
-            double[] z = new double[Nloc];
-
-            //r = M \ ( b-A*x );, where M is the precond
-            z.SetV(B);
-            Matrix.SpMV(-1.0, X, 1.0, z);
-            if (IterationCallback != null)
-            {
-                IterationCallback(0, X.CloneAs(), z.CloneAs(), this.m_mgop);
-            }
-            if (this.Precond != null)
-            {
-                r.Clear();
-                this.Precond.Solve(r, z);
-            }
-            else
-            {
-                r.SetV(z);
-            }
-
-            // Inserted for real residual
-            double error2 = z.L2NormPow2().MPISum().Sqrt();
-
-            double error = (r.L2NormPow2().MPISum().Sqrt()) / bnrm2;
-            if (error < this.m_Tolerance)
-            {
-                if (!object.ReferenceEquals(_X, X))
-                    _X.SetV(X);
-                B.SetV(z);
-                this.m_Converged = true;
-                return;
-            }
-
-            if (MaxKrylovDim <= 0)
-                throw new NotSupportedException("unsupported restart length.");
-
-            int m = MaxKrylovDim;
-            double[][] V = (m + 1).ForLoop(i => new double[Nloc]); //   V(1:n,1:m+1) = zeros(n,m+1);
-            MultidimensionalArray H = MultidimensionalArray.Create(m + 1, m); //   H(1:m+1,1:m) = zeros(m+1,m);
-
-            double[] cs = new double[m];
-            double[] sn = new double[m];
-            //double[] s = new double[m+1];
-            double[] e1 = new double[Nloc];
-            //if(Matrix.RowPartitioning.Rank == 0)
-            e1[0] = 1.0;
-
-            double[] s = new double[Nloc], w = new double[Nloc], y;
-            double temp;
-            int iter;
-            for (iter = 1; iter <= m_MaxIterations; iter++)
-            { // GMRES iterations
-                // r = M \ ( b-A*x );
-                z.SetV(B);
-                Matrix.SpMV(-1.0, X, 1.0, z);
-
-                error2 = z.L2NormPow2().MPISum().Sqrt();
-
-                if (this.Precond != null)
+                double[] X, B;
+                if (_X is double[])
                 {
-                    r.Clear();
-                    this.Precond.Solve(r, z);
+                    X = _X as double[];
                 }
                 else
                 {
-                    r.SetV(z);
+                    X = _X.ToArray();
                 }
-
-                // V(:,1) = r / norm( r );
-                double norm_r = r.L2NormPow2().MPISum().Sqrt();
-                V[0].SetV(r, alpha: (1.0 / norm_r));
-
-                //s = norm( r )*e1;
-                s.SetV(e1, alpha: norm_r);
-
-                int i;
-
-                # region Gram-Schmidt (construct orthonormal  basis using Gram-Schmidt)
-                for (i = 1; i <= m; i++)
+                if (_B is double[])
                 {
-                    this.NoOfIterations++;
-
-                    #region Arnoldi procdure
-
-                    //w = M \ (A*V(:,i));                         
-                    Matrix.SpMV(1.0, V[i - 1], 0.0, z);
-                    if (this.Precond != null)
-                    {
-                        w.Clear();
-                        this.Precond.Solve(w, z);
-                    }
-                    else
-                    {
-                        w.SetV(z);
-                    }
-
-                    for (int k = 1; k <= i; k++)
-                    {
-                        H[k - 1, i - 1] = GenericBlas.InnerProd(w, V[k - 1]).MPISum();
-                        //w = w - H(k,i)*V(:,k);
-                        w.AccV(-H[k - 1, i - 1], V[k - 1]);
-                    }
-
-                    double norm_w = w.L2NormPow2().MPISum().Sqrt();
-                    H[i + 1 - 1, i - 1] = norm_w; // the +1-1 actually makes me sure I haven't forgotten to subtract -1 when porting the code
-                    //V(:,i+1) = w / H(i+1,i);
-                    V[i + 1 - 1].SetV(w, alpha: (1.0 / norm_w));
-
-                    #endregion
-
-                    #region Givens rotation
-
-                    for (int k = 1; k <= i - 1; k++)
-                    {
-                        // apply Givens rotation, H is Hessenbergmatrix
-                        temp = cs[k - 1] * H[k - 1, i - 1] + sn[k - 1] * H[k + 1 - 1, i - 1];
-                        H[k + 1 - 1, i - 1] = -sn[k - 1] * H[k - 1, i - 1] + cs[k - 1] * H[k + 1 - 1, i - 1];
-                        H[k - 1, i - 1] = temp;
-                    }
-                    //	 [cs(i),sn(i)] = rotmat( H(i,i), H(i+1,i) ); % form i-th rotation matrix
-                    rotmat(out cs[i - 1], out sn[i - 1], H[i - 1, i - 1], H[i + 1 - 1, i - 1]);
-                    temp = cs[i - 1] * s[i - 1]; //                       % approximate residual norm
-                    H[i - 1, i - 1] = cs[i - 1] * H[i - 1, i - 1] + sn[i - 1] * H[i + 1 - 1, i - 1];
-                    H[i + 1 - 1, i - 1] = 0.0;
-
-                    #endregion
-
-                    // update the residual vector (s == beta in many pseudocodes)
-                    s[i + 1 - 1] = -sn[i - 1] * s[i - 1];
-                    s[i - 1] = temp;
-                    error = Math.Abs(s[i + 1 - 1]) / bnrm2;
-                    //{
-                    //    int rootRank = Matrix.RowPartitioning.FindProcess(i + 1 - 1);
-                    //    if (Matrix.RowPartitioning.Rank == rootRank) {
-
-
-                    //    } else {
-                    //        error = double.NaN;
-                    //    }
-                    //    unsafe {
-                    //        csMPI.Raw.Bcast((IntPtr)(&error), 1, csMPI.Raw._DATATYPE.DOUBLE, rootRank, Matrix.RowPartitioning.MPI_Comm);
-                    //    }
-                    //}
-
-                    using (StreamWriter writer = new StreamWriter(m_SessionPath + "//GMRES_Stats.txt", true))
-                    {
-                        writer.WriteLine(i + "   " + error);
-                    }
-
-
-
-                    if (error <= m_Tolerance)
-                    {
-                        // update approximation and exit
-                        using (StreamWriter writer = new StreamWriter(m_SessionPath + "//GMRES_Stats.txt", true))
-                        {
-                            writer.WriteLine("");
-                        }
-
-                        //y = H(1:i,1:i) \ s(1:i);    
-                        y = new double[i];
-                        H.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { i - 1, i - 1 })
-                            .Solve(y, s.GetSubVector(0, i));
-
-
-
-                        // x = x + V(:,1:i)*y;
-                        for (int ii = 0; ii < i; ii++)
-                        {
-                            X.AccV(y[ii], V[ii]);
-                        }
-                        this.m_Converged = true;
-                        break;
-                    }
+                    B = _B as double[];
                 }
-                #endregion
-                //Debugger.Launch();
-
-
-                if (error <= this.m_Tolerance)
+                else
                 {
-                    this.m_Converged = true;
-                    break;
+                    B = _B.ToArray();
                 }
 
 
-                // y = H(1:m,1:m) \ s(1:m);
-                y = new double[m];
-                H.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { m - 1, m - 1 })
-                    .Solve(y, s.GetSubVector(0, m));
-                // update approximation: x = x + V(:,1:m)*y;  
-                for (int ii = 0; ii < m; ii++)
+                double bnrm2 = B.L2NormPow2().MPISum().Sqrt();
+                if (bnrm2 == 0.0)
                 {
-                    X.AccV(y[ii], V[ii]);
+                    bnrm2 = 1.0;
                 }
 
-                // compute residual: r = M \ ( b-A*x )     
+                int Nloc = Matrix.RowPartitioning.LocalLength;
+                int Ntot = Matrix.RowPartitioning.TotalLength;
+
+                double[] r = new double[Nloc];
+                double[] z = new double[Nloc];
+
+                //r = M \ ( b-A*x );, where M is the precond
                 z.SetV(B);
                 Matrix.SpMV(-1.0, X, 1.0, z);
                 if (IterationCallback != null)
                 {
-                    error2 = z.L2NormPow2().MPISum().Sqrt();
-                    IterationCallback(iter, X.CloneAs(), z.CloneAs(), this.m_mgop);
-                    //IterationCallback(this.NoOfIterations, X.CloneAs(), z.CloneAs(), this.m_mgop);
+                    IterationCallback(0, X.CloneAs(), z.CloneAs(), this.m_mgop);
                 }
                 if (this.Precond != null)
                 {
@@ -354,25 +163,221 @@ namespace BoSSS.Solution.Multigrid
                     r.SetV(z);
                 }
 
+                // Inserted for real residual
+                double error2 = z.L2NormPow2().MPISum().Sqrt();
 
-                norm_r = r.L2NormPow2().MPISum().Sqrt();
-                s[i + 1 - 1] = norm_r;
-                error = s[i + 1 - 1] / bnrm2;        // % check convergence
-                if (error2 <= m_Tolerance)
-                    break;
+                double error = (r.L2NormPow2().MPISum().Sqrt()) / bnrm2;
+                if (error < this.m_Tolerance)
+                {
+                    if (!object.ReferenceEquals(_X, X))
+                        _X.SetV(X);
+                    B.SetV(z);
+                    this.m_Converged = true;
+                    return;
+                }
+
+                if (MaxKrylovDim <= 0)
+                    throw new NotSupportedException("unsupported restart length.");
+
+                int m = MaxKrylovDim;
+                double[][] V = (m + 1).ForLoop(i => new double[Nloc]); //   V(1:n,1:m+1) = zeros(n,m+1);
+                MultidimensionalArray H = MultidimensionalArray.Create(m + 1, m); //   H(1:m+1,1:m) = zeros(m+1,m);
+
+                double[] cs = new double[m];
+                double[] sn = new double[m];
+                //double[] s = new double[m+1];
+                double[] e1 = new double[Nloc];
+                //if(Matrix.RowPartitioning.Rank == 0)
+                e1[0] = 1.0;
+
+                double[] s = new double[Nloc], w = new double[Nloc], y;
+                double temp;
+                int iter;
+                for (iter = 1; iter <= m_MaxIterations; iter++)
+                { // GMRES iterations
+                  // r = M \ ( b-A*x );
+                    z.SetV(B);
+                    Matrix.SpMV(-1.0, X, 1.0, z);
+
+                    error2 = z.L2NormPow2().MPISum().Sqrt();
+
+                    if (this.Precond != null)
+                    {
+                        r.Clear();
+                        this.Precond.Solve(r, z);
+                    }
+                    else
+                    {
+                        r.SetV(z);
+                    }
+
+                    // V(:,1) = r / norm( r );
+                    double norm_r = r.L2NormPow2().MPISum().Sqrt();
+                    V[0].SetV(r, alpha: (1.0 / norm_r));
+
+                    //s = norm( r )*e1;
+                    s.SetV(e1, alpha: norm_r);
+
+                    int i;
+
+                    #region Gram-Schmidt (construct orthonormal  basis using Gram-Schmidt)
+                    for (i = 1; i <= m; i++)
+                    {
+                        this.NoOfIterations++;
+
+                        #region Arnoldi procdure
+
+                        //w = M \ (A*V(:,i));                         
+                        Matrix.SpMV(1.0, V[i - 1], 0.0, z);
+                        if (this.Precond != null)
+                        {
+                            w.Clear();
+                            this.Precond.Solve(w, z);
+                        }
+                        else
+                        {
+                            w.SetV(z);
+                        }
+
+                        for (int k = 1; k <= i; k++)
+                        {
+                            H[k - 1, i - 1] = GenericBlas.InnerProd(w, V[k - 1]).MPISum();
+                            //w = w - H(k,i)*V(:,k);
+                            w.AccV(-H[k - 1, i - 1], V[k - 1]);
+                        }
+
+                        double norm_w = w.L2NormPow2().MPISum().Sqrt();
+                        H[i + 1 - 1, i - 1] = norm_w; // the +1-1 actually makes me sure I haven't forgotten to subtract -1 when porting the code
+                                                      //V(:,i+1) = w / H(i+1,i);
+                        V[i + 1 - 1].SetV(w, alpha: (1.0 / norm_w));
+
+                        #endregion
+
+                        #region Givens rotation
+
+                        for (int k = 1; k <= i - 1; k++)
+                        {
+                            // apply Givens rotation, H is Hessenbergmatrix
+                            temp = cs[k - 1] * H[k - 1, i - 1] + sn[k - 1] * H[k + 1 - 1, i - 1];
+                            H[k + 1 - 1, i - 1] = -sn[k - 1] * H[k - 1, i - 1] + cs[k - 1] * H[k + 1 - 1, i - 1];
+                            H[k - 1, i - 1] = temp;
+                        }
+                        //	 [cs(i),sn(i)] = rotmat( H(i,i), H(i+1,i) ); % form i-th rotation matrix
+                        rotmat(out cs[i - 1], out sn[i - 1], H[i - 1, i - 1], H[i + 1 - 1, i - 1]);
+                        temp = cs[i - 1] * s[i - 1]; //                       % approximate residual norm
+                        H[i - 1, i - 1] = cs[i - 1] * H[i - 1, i - 1] + sn[i - 1] * H[i + 1 - 1, i - 1];
+                        H[i + 1 - 1, i - 1] = 0.0;
+
+                        #endregion
+
+                        // update the residual vector (s == beta in many pseudocodes)
+                        s[i + 1 - 1] = -sn[i - 1] * s[i - 1];
+                        s[i - 1] = temp;
+                        error = Math.Abs(s[i + 1 - 1]) / bnrm2;
+                        //{
+                        //    int rootRank = Matrix.RowPartitioning.FindProcess(i + 1 - 1);
+                        //    if (Matrix.RowPartitioning.Rank == rootRank) {
+
+
+                        //    } else {
+                        //        error = double.NaN;
+                        //    }
+                        //    unsafe {
+                        //        csMPI.Raw.Bcast((IntPtr)(&error), 1, csMPI.Raw._DATATYPE.DOUBLE, rootRank, Matrix.RowPartitioning.MPI_Comm);
+                        //    }
+                        //}
+
+                        //using (StreamWriter writer = new StreamWriter(m_SessionPath + "//GMRES_Stats.txt", true))
+                        //{
+                        //Console.WriteLine(i + "   " + error);
+                        //}
+
+
+
+                        if (error <= m_Tolerance)
+                        {
+                            // update approximation and exit
+                            //using (StreamWriter writer = new StreamWriter(m_SessionPath + "//GMRES_Stats.txt", true))
+                            //{
+                            //    writer.WriteLine("");
+                            //}
+
+                            //y = H(1:i,1:i) \ s(1:i);    
+                            y = new double[i];
+                            H.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { i - 1, i - 1 })
+                                .Solve(y, s.GetSubVector(0, i));
+
+
+
+                            // x = x + V(:,1:i)*y;
+                            for (int ii = 0; ii < i; ii++)
+                            {
+                                X.AccV(y[ii], V[ii]);
+                            }
+                            this.m_Converged = true;
+                            break;
+                        }
+                    }
+                    #endregion
+                    //Debugger.Launch();
+
+
+                    if (error <= this.m_Tolerance)
+                    {
+                        this.m_Converged = true;
+                        break;
+                    }
+
+
+                    // y = H(1:m,1:m) \ s(1:m);
+                    y = new double[m];
+                    H.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { m - 1, m - 1 })
+                        .Solve(y, s.GetSubVector(0, m));
+                    // update approximation: x = x + V(:,1:m)*y;  
+                    for (int ii = 0; ii < m; ii++)
+                    {
+                        X.AccV(y[ii], V[ii]);
+                    }
+
+                    // compute residual: r = M \ ( b-A*x )     
+                    z.SetV(B);
+                    Matrix.SpMV(-1.0, X, 1.0, z);
+                    if (IterationCallback != null)
+                    {
+                        error2 = z.L2NormPow2().MPISum().Sqrt();
+                        IterationCallback(iter, X.CloneAs(), z.CloneAs(), this.m_mgop);
+                        //IterationCallback(this.NoOfIterations, X.CloneAs(), z.CloneAs(), this.m_mgop);
+                    }
+                    if (this.Precond != null)
+                    {
+                        r.Clear();
+                        this.Precond.Solve(r, z);
+                    }
+                    else
+                    {
+                        r.SetV(z);
+                    }
+
+
+                    norm_r = r.L2NormPow2().MPISum().Sqrt();
+                    s[i + 1 - 1] = norm_r;
+                    error = s[i + 1 - 1] / bnrm2;        // % check convergence
+                  //  if (error2 <= m_Tolerance) Check for error not error2
+                        //break;
+                }
+
+                if (IterationCallback != null)
+                {
+                    z.SetV(B);
+                    Matrix.SpMV(-1.0, X, 1.0, z);
+                    IterationCallback(iter, X.CloneAs(), z.CloneAs(), this.m_mgop);
+                }
+
+
+                if (!object.ReferenceEquals(_X, X))
+                    _X.SetV(X);
+                B.SetV(z);
             }
-
-            if (IterationCallback != null)
-            {
-                z.SetV(B);
-                Matrix.SpMV(-1.0, X, 1.0, z);
-                IterationCallback(iter, X.CloneAs(), z.CloneAs(), this.m_mgop);
-            }
-
-
-            if (!object.ReferenceEquals(_X, X))
-                _X.SetV(X);
-            B.SetV(z);
         }
 
 
