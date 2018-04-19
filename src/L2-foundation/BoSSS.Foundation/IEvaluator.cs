@@ -64,7 +64,7 @@ namespace BoSSS.Foundation {
     /// </summary>
     public interface IEvaluatorLinear : IEvaluator {
 
-        void ComputeMatrix<M, V>(M Matrix, V AffineOffset) where M : IMutableMatrix where V : IList<double>;
+        void ComputeMatrix<M, V>(M Matrix, V AffineOffset) where M : IMutableMatrixEx where V : IList<double>;
 
         void ComputeAffine<V>(V AffineOffset) where V : IList<double>;
     }

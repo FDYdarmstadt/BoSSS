@@ -445,7 +445,7 @@ namespace BoSSS.Foundation {
             UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap,
             M Matrix, V AffineOffset, bool OnlyAffine, double time = 0.0,
             SubGrid sgrd = null)
-            where M : IMutableMatrix
+            where M : IMutableMatrixEx
             where V : IList<double> {
 
             var GridDat = CheckArguments(DomainMap, Parameters, CodomainMap);
@@ -1243,9 +1243,7 @@ namespace BoSSS.Foundation {
                 SpatialOperator owner,
                 UnsetteledCoordinateMapping DomainVarMap,
                 IList<DGField> ParameterMap,
-                UnsetteledCoordinateMapping CodomainVarMap,
-                EdgeQuadratureScheme edgeQrCtx,
-                CellQuadratureScheme volQrCtx) //
+                UnsetteledCoordinateMapping CodomainVarMap) //
             {
                 using(var tr = new FuncTrace()) {
                     MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
@@ -1273,7 +1271,7 @@ namespace BoSSS.Foundation {
                     m_Owner = owner;
                     m_CodomainMapping = CodomainVarMap;
                     m_DomainMapping = DomainVarMap;
-                    m_Parameters = ParameterMap.ToArray();
+                    m_Parameters = (ParameterMap != null) ? ParameterMap.ToArray() : new DGField[0];
 
                     if(!m_Owner.IsCommited)
                         throw new ApplicationException("operator assembly must be finalized before by calling 'Commit' before this method can be called.");
@@ -1310,6 +1308,12 @@ namespace BoSSS.Foundation {
 
             SubGridBoundaryModes m_SubGridBoundaryTreatment = SubGridBoundaryModes.BoundaryEdge;
 
+            /// <summary>
+            /// 
+            /// </summary>
+            protected CellMask m_SubGrid_InCells;
+
+
             public SubGridBoundaryModes SubGridBoundaryTreatment {
                 get {
                     return m_SubGridBoundaryTreatment;
@@ -1318,7 +1322,10 @@ namespace BoSSS.Foundation {
 
 
             public void ActivateSubgridBoundary(CellMask sgrd, SubGridBoundaryModes subGridBoundaryTreatment = SubGridBoundaryModes.BoundaryEdge) {
-                throw new NotImplementedException();
+                if (!object.ReferenceEquals(sgrd.GridData, this.GridData))
+                    throw new ArgumentException("grid mismatch");
+                m_SubGrid_InCells = sgrd;
+                m_SubGridBoundaryTreatment = subGridBoundaryTreatment;
             }
 
 
@@ -1468,7 +1475,7 @@ namespace BoSSS.Foundation {
                 UnsetteledCoordinateMapping CodomainVarMap,
                 EdgeQuadratureScheme edgeQrCtx,
                 CellQuadratureScheme volQrCtx) //
-             : base(owner, DomainVarMap, ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx) //
+             : base(owner, DomainVarMap, ParameterMap, CodomainVarMap) //
             {
 
                 var grdDat = base.GridData;
@@ -1525,21 +1532,23 @@ namespace BoSSS.Foundation {
             /// if necessary;
             /// Indices into this vector are computed according to <see cref="CodomainMapping"/>;
             /// </param>
+            /// <param name="outputBndEdge">
+            /// Some additional output vector for boundary fluxes, used only by the local time stepping
+            /// </param>
             /// <param name="alpha">
             /// scaling of the operator;
             /// </param>
             /// <param name="beta">
             /// scaling applied to the accumulator; 
             /// </param>
-            /// <param name="MPIexchange">Turn MPI exchange on/off.</param>
             /// <remarks>
-            /// This operation invokes MPI communication if <see cref="MPIexchange"/> is set to true: values of external cells are updated before
+            /// This operation invokes MPI communication if <see cref="IEvaluator.MPITtransceive"/> is set to true: values of external cells are updated before
             /// fluxes are evaluated;
             /// </remarks>
-            public void Evaluate<Tout>(double alpha, double beta, Tout output, double time = double.NaN, bool MPIexchange = true, double[] outputBndEdge = null)
+            public void Evaluate<Tout>(double alpha, double beta, Tout output, double[] outputBndEdge = null)
                 where Tout : IList<double> {
                 using(var tr = new FuncTrace()) {
-                    if(MPIexchange)
+                    if(base.MPITtransceive)
                         MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
 
                     if(output.Count != base.CodomainMapping.LocalLength)
@@ -1548,8 +1557,8 @@ namespace BoSSS.Foundation {
                     if(beta != 1.0)
                         GenericBlas.dscal(base.CodomainMapping.LocalLength, beta, output, 1);
 
-
-                    if(m_TRX != null && MPIexchange)
+                    Debug.Assert((base.m_TRX != null) == (base.MPITtransceive == true));
+                    if(base.m_TRX != null)
                         m_TRX.TransceiveStartImReturn();
 #if DEBUG
                     output.CheckForNanOrInfV(true, true, true);
@@ -1574,7 +1583,7 @@ namespace BoSSS.Foundation {
                     output.CheckForNanOrInfV(true, true, true);
 #endif
 
-                    if(m_TRX != null && MPIexchange)
+                    if(base.m_TRX != null)
                         m_TRX.TransceiveFinish();
 
                     if(m_NonlinearEdge != null) {
@@ -1582,7 +1591,9 @@ namespace BoSSS.Foundation {
                             m_NonlinearEdge.m_Output = output;
                             m_NonlinearEdge.m_alpha = alpha;
                             m_NonlinearEdge.Time = time;
-                            m_NonlinearEdge.SubGridBoundaryTreatment = this.m_SubGridBoundaryTreatment;
+                            m_NonlinearEdge.SubGridBoundaryTreatment = base.SubGridBoundaryTreatment;
+                            m_NonlinearEdge.SubGridCellsMarker = (base.m_SubGrid_InCells != null) ? base.m_SubGrid_InCells.GetBitMaskWithExternal() : null;
+
                             m_NonlinearEdge.m_outputBndEdge = outputBndEdge;
 
                             m_NonlinearEdge.Execute();
@@ -1590,6 +1601,7 @@ namespace BoSSS.Foundation {
                             m_NonlinearEdge.m_Output = null;
                             m_NonlinearEdge.m_outputBndEdge = null;
                             m_NonlinearEdge.m_alpha = 1.0;
+                            m_NonlinearEdge.SubGridCellsMarker = null;
                         }
                     }
 
@@ -1618,7 +1630,7 @@ namespace BoSSS.Foundation {
                 UnsetteledCoordinateMapping CodomainVarMap,
                 EdgeQuadratureScheme edgeQrCtx,
                 CellQuadratureScheme volQrCtx) //
-                 : base(owner, DomainVarMap, ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx) //
+                 : base(owner, DomainVarMap, ParameterMap, CodomainVarMap) //
             {
                 this.edgeRule = edgeQrCtx.SaveCompile(base.GridData, order);
                 this.volRule = volQrCtx.SaveCompile(base.GridData, order);
@@ -1642,7 +1654,7 @@ namespace BoSSS.Foundation {
             }
 
             public void ComputeMatrix<M, V>(M Matrix, V AffineOffset)
-                where M : IMutableMatrix
+                where M : IMutableMatrixEx
                 where V : IList<double> // 
             {
                 Internal_ComputeMatrixEx(Matrix, AffineOffset, false);
@@ -1688,8 +1700,8 @@ namespace BoSSS.Foundation {
                         }
 
 
-                        if(SubGridBoundaryMask != null) {
-                            throw new NotImplementedException("Only Null is valid for SubGridBoundaryMask");
+                        if(base.m_SubGrid_InCells != null) {
+                            throw new NotImplementedException("Subgrid feature is not implemented for matrix assembly");
                         }
 
 
