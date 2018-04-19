@@ -8,7 +8,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>IBM_Solver</RootNamespace>
     <AssemblyName>IBM_Solver</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>
     <FileAlignment>512</FileAlignment>
@@ -74,6 +74,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ApproxPredictor.cs" />
+    <Compile Include="Solver\SolverChooser.cs" />
+    <Compile Include="Solver\SolverCodes.cs" />
     <Compile Include="HardcodedPrecTest.cs" />
     <Compile Include="HardcodedPerformance.cs" />
     <Compile Include="HarcodedControl3D.cs" />

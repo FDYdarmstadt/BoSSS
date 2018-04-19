@@ -14,56 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System.Linq;
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
-using BoSSS.Foundation.IO;
 using BoSSS.Foundation.Quadrature;
-using BoSSS.Solution;
 using ilPSP;
+using System.Linq;
 
 namespace CNS.Tests.ViscousShockProfile {
 
     class ViscousShockProfile : Program<CNSControl> {
 
-        static void Main(string[] args) {
-            Application<CNSControl>._Main(args, false, null, () => new ViscousShockProfile());
-        }
-
-        //protected override GridCommons CreateOrLoadGrid() {
-
-        //    bool steady = true;
-        //    int xEnd;
-        //    if (steady) xEnd = 1; else xEnd = 4;
-        //    int h = int.Parse(base.Control.confBase.Grid.ToString().Replace("-", "") + "");
-        //    GridCommons grid = Grid1D.LineGrid(GenericBlas.Linspace(0, xEnd, h + 1));
-        //    grid.Redistribute(this.CurrentSessionInfo.Database.Controller.DBDriver, GridPartType.ParMETIS, "");
-
-
-        //    grid.EdgeTagNames.Add(1, "supersonicinlet");
-        //    grid.EdgeTagNames.Add(2, "subsonicoutlet");
-
-        //    grid.DefineEdgeTags((double[] x) => {
-        //        if (Math.Abs(x[0]) < 1e-5)
-        //            return 1;
-        //        else if (Math.Abs(x[0] - (double)xEnd) < 1e-5)
-        //            return 2;
-        //        else
-        //            return 0;
-        //    });
-
-        //    if (steady) {
-        //        grid.Description = "VSP Steady test: h=1/" + h;
-        //    } else {
-        //        grid.Description = "VSP Unsteady test: h=1/" + h;
-        //    }
-
-        //    return grid;
+        //static void Main(string[] args) {
+        //    Application<CNSControl>._Main(args, false, null, () => new ViscousShockProfile());
         //}
-
-
-
-
+        
         protected override void SetInitial() {
 
             //base.SetInitial();
@@ -79,9 +43,7 @@ namespace CNS.Tests.ViscousShockProfile {
                 }
             }
 
-
             // exakte Lösung für 1D-Testfall
-
             int p = Control.MomentumDegree;
             CellQuadratureScheme scheme = new CellQuadratureScheme(true);
             int order = WorkingSet.Momentum[0].Basis.Degree * 2 + 2;

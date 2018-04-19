@@ -15,19 +15,15 @@ limitations under the License.
 */
 
 using BoSSS.Foundation;
-using BoSSS.Foundation.XDG;
-using BoSSS.Platform;
-using BoSSS.Solution.Utils;
+using BoSSS.Solution;
 using CNS.EquationSystem;
-using CNS.Exception;
+using ilPSP;
 using ilPSP.LinSolvers;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using ilPSP;
-using BoSSS.Solution;
 
 namespace CNS.IBM {
 
@@ -37,7 +33,7 @@ namespace CNS.IBM {
             : base(standardOperator, boundaryOperator, fieldsMap, parametersMap, speciesMap, timeStepConstraints) {
 
             if (speciesMap.Control.DomainType != DomainTypes.MovingImmersedBoundary) {
-                throw new ConfigurationException();
+                throw new Exception();
             }
         }
 
@@ -45,19 +41,19 @@ namespace CNS.IBM {
         private void RKstage(double dt, double[][] k, int s, BlockMsrMatrix MsInv, BlockMsrMatrix M0, double[] u0, double[] coefficients) {
             // Copy coordinates to temp array since SpMV (below) does not
             // support in-place computation
-            double[] tempCoordinates = DGCoordinates.ToArray();
+            double[] tempCoordinates = CurrentState.ToArray();
             M0.SpMV(1.0, u0, 0.0, tempCoordinates); // Non-agglomerated
             for (int l = 0; l < s; l++) {
                 tempCoordinates.AccV(-coefficients[l] * dt, k[l]); // Non-agglomerated
             }
 
             speciesMap.Agglomerator.ManipulateRHS(tempCoordinates, Mapping);
-            MsInv.SpMV(1.0, tempCoordinates, 0.0, DGCoordinates);
-            speciesMap.Agglomerator.Extrapolate(DGCoordinates.Mapping);
+            MsInv.SpMV(1.0, tempCoordinates, 0.0, CurrentState);
+            speciesMap.Agglomerator.Extrapolate(CurrentState.Mapping);
         }
 
         public override double Perform(double dt) {
-            if (timeStepConstraints != null) {
+            if (TimeStepConstraints != null) {
                 dt = CalculateTimeStep();
             }
 
@@ -69,7 +65,7 @@ namespace CNS.IBM {
             AgglomerateAndExtrapolateDGCoordinates();
             
             BlockMsrMatrix M0 = speciesMap.GetMassMatrixFactory(Mapping).NonAgglomeratedMassMatrix;
-            double[] u0 = DGCoordinates.ToArray(); // Lives on non-agglomerated mesh
+            double[] u0 = CurrentState.ToArray(); // Lives on non-agglomerated mesh
 
             // Initialize RK scheme
             k[0] = new double[Mapping.LocalLength];
@@ -100,6 +96,8 @@ namespace CNS.IBM {
         }
 
         protected override void ComputeChangeRate(double[] k, double AbsTime, double RelTime, double[] edgeFluxes = null) {
+            RaiseOnBeforeComputechangeRate(AbsTime, RelTime);
+
             Evaluator.Evaluate(1.0, 0.0, k, AbsTime + RelTime);
             Debug.Assert(
                 !k.Any(f => double.IsNaN(f)),

@@ -29,6 +29,8 @@ namespace ilPSP.Tracing {
 
         //static ILog Logger = LogManager.GetLogger(typeof(Tracer));
 
+
+
         /// <summary>
         /// a list of all namespaces for which <see cref="FuncTrace"/> should perform tracing/logging;
         /// </summary>
@@ -46,6 +48,19 @@ namespace ilPSP.Tracing {
                 if (NameSpaceList == null)
                     throw new ArgumentNullException();
                 m_NamespacesToLog = NameSpaceList;
+            }
+        }
+
+        /// <summary>
+        /// Setting <see cref="NamespacesToLog"/>.
+        /// </summary>
+        public static void SetTracingNamespaces(string TracingNamespaces) {
+            if (TracingNamespaces == null) {
+                Tracer.NamespacesToLog = new string[0];
+            } else {
+                Tracer.NamespacesToLog = TracingNamespaces.Split(
+                    new char[] { ',', ' ', '\n', '\t', '\r' },
+                    StringSplitOptions.RemoveEmptyEntries);
             }
         }
 
@@ -167,6 +182,17 @@ namespace ilPSP.Tracing {
             Watch.Start();
         }
 
+        /// <summary>
+        /// logs an 'inclusive' block;
+        /// </summary>
+        public MethodCallRecord LogDummyblock(long ticks, string name) {
+            if(!Tracer.InstrumentationSwitch)
+                return new MethodCallRecord(null, "dummy");
+            else 
+                return Tracer.LogDummyblock(ticks, name);
+        }
+
+
         #region IDisposable Members
 
         /// <summary>
@@ -224,6 +250,37 @@ namespace ilPSP.Tracing {
                 callingType = m.DeclaringType;
             }
             Tracer.Push_MethodCallRecord(_name);
+
+            for (int i = Tracer.m_NamespacesToLog.Length - 1; i >= 0; i--) {
+                if (_name.StartsWith(Tracer.m_NamespacesToLog[i])) {
+                    m_DoLogging = true;
+                    break;
+                }
+            }
+
+            m_Logger = LogManager.GetLogger(callingType);
+            if (m_DoLogging) {
+                m_Logger.Info("ENTERING '" + _name);
+            }
+        }
+
+        // <summary>
+        /// ctor: logs the 'enter' - message
+        /// </summary>
+        public FuncTrace(string UserName) : base() {
+            if(!Tracer.InstrumentationSwitch)
+                return;
+
+            _name = UserName;
+
+            Type callingType = null;
+            {
+                StackFrame fr = new StackFrame(1, true);
+
+                _MethodBase m = fr.GetMethod();
+                callingType = m.DeclaringType;
+            }
+            Tracer.Push_MethodCallRecord(UserName);
 
             for (int i = Tracer.m_NamespacesToLog.Length - 1; i >= 0; i--) {
                 if (_name.StartsWith(Tracer.m_NamespacesToLog[i])) {
@@ -346,6 +403,7 @@ namespace ilPSP.Tracing {
 
         }
 
+        /*
         /// <summary>
         /// logs an 'inclusive' block (see <see cref="MethodCallRecord.IgnoreForExclusive"/> );
         /// </summary>
@@ -355,6 +413,7 @@ namespace ilPSP.Tracing {
             else 
                 return Tracer.LogDummyblock(ticks, name);
         }
+        */
     }
 
     /// <summary>

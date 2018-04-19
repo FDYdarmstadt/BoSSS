@@ -8,7 +8,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>NSE_SIMPLE</RootNamespace>
     <AssemblyName>NSE_SIMPLE</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <FileUpgradeFlags>
@@ -64,6 +64,7 @@
   <ItemGroup>
     <Compile Include="BaseVariableDensity\VariableDensitySIMPLEControl.cs" />
     <Compile Include="Base\01_VariableSet\BaseVariableSet.cs" />
+    <Compile Include="Base\02_Operators\swipViscosityTerm1_variante.cs" />
     <Compile Include="Incompressible\00_ControlFiles\ControlExamples.cs" />
     <Compile Include="LowMach\00_ControlFiles\ControlExamples.cs" />
     <Compile Include="LowMach\LowMachSIMPLEControl.cs" />

@@ -16,7 +16,9 @@ limitations under the License.
 
 using Mono.CSharp;
 using System;
+using System.Reflection;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -44,6 +46,19 @@ namespace BoSSS.Application.BoSSSpad {
         public SafeEvaluator(Func<Evaluator> evaluatorFactory) {
             this.evaluatorFactory = evaluatorFactory;
             this.evaluator = evaluatorFactory();
+        }
+
+        /// <summary>
+        /// Returns the assembly produced by the latest call to <see cref="Evaluator.Evaluate(string, out object, out bool)"/>.
+        /// </summary>
+        public Assembly LatestAssembly {
+            get {
+                // dirty hack using Reflection in order to access private members of the evaluator
+                var members = evaluator.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.Static | BindingFlags.Instance);
+                FieldInfo module_fi =  members.Single(member => member.Name.Contains("module"));
+                ModuleContainer mc = (ModuleContainer) module_fi.GetValue(evaluator);
+                return mc.Builder.Assembly;
+            }
         }
 
         /// <summary>

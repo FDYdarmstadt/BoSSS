@@ -14,11 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using BoSSS.Foundation;
-using CNS.Exception;
 
 namespace CNS.Residual {
 
@@ -85,7 +83,7 @@ namespace CNS.Residual {
 
             if (loggerType.HasFlag(ResidualLoggerTypes.ChangeRate)
                 && loggerType.HasFlag(ResidualLoggerTypes.Rigorous)) {
-                throw new ConfigurationException(
+                throw new Exception(
                     "Residual types \"changeRate\" and \"rigorous\" are mutually exclusive");
             }
 

@@ -39,11 +39,11 @@ namespace BoSSS.Foundation.XDG {
 
             int j = 0;
             while (j < Len) {
-                int L = Math.Min(trk._Regions.m_LenToNextChange[j0 + j], Len - j);
+                int L = Math.Min(trk.Regions.m_LenToNextChange[j0 + j], Len - j);
 
                 ReducedRegionCode ReducedRegionCode;
                 int NoOfSpecies;
-                NoOfSpecies = trk.GetNoOfSpecies(j0 + j, out ReducedRegionCode);
+                NoOfSpecies = trk.Regions.GetNoOfSpecies(j0 + j, out ReducedRegionCode);
                 if (NoOfSpecies == 1) {
                     // next "L" cells are single-phase -> vectorized evaluation
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -84,7 +84,7 @@ namespace BoSSS.Foundation.XDG {
             {
                 //var resultAcc = result.ExtractSubArrayShallow(new int[] { ResultCellindexOffset + j, 0 }, new int[] { ResultCellindexOffset + j, M - 1 });
 
-                ushort RegionCode = trk._Regions.m_LevSetRegions[jCell];
+                ushort RegionCode = trk.Regions.m_LevSetRegions[jCell];
 
                 bool OnlyOneSpecies = true;
                 for (int i = 0; i < NoOfLevSets; i++) {
@@ -94,7 +94,7 @@ namespace BoSSS.Foundation.XDG {
                         // +++++++++++++++++++++++++++++++++++++
 
                         OnlyOneSpecies = false;
-                        _levSetVals[i] = trk.GetLevSetValues(i, NS, jCell, 1);
+                        _levSetVals[i] = trk.DataHistories[i].Current.GetLevSetValues(NS, jCell, 1);
                     } else {
                         // near-cell with respect or levelset #i
                         // +++++++++++++++++++++++++++++++++++++

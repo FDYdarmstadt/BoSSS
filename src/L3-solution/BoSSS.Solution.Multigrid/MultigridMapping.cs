@@ -30,6 +30,8 @@ using System.Numerics;
 using System.Diagnostics;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.Aggregation;
+using ilPSP.Tracing;
+using BoSSS.Foundation.XDG;
 
 namespace BoSSS.Solution.Multigrid {
 
@@ -74,6 +76,9 @@ namespace BoSSS.Solution.Multigrid {
             }
         }
         
+        /// <summary>
+        /// Number of DOF's stored on this  MPI process
+        /// </summary>
         public int LocalLength {
             get {
                 if (this.m_i0 != null) {
@@ -86,6 +91,9 @@ namespace BoSSS.Solution.Multigrid {
         
         Partitioning m_Partitioning;
 
+        /// <summary>
+        /// Partitioning of the vector among MPI processes.
+        /// </summary>
         public Partitioning Partitioning {
             get {
                 if(m_Partitioning == null) {
@@ -95,6 +103,9 @@ namespace BoSSS.Solution.Multigrid {
             }
         }
 
+        /// <summary>
+        /// Total number of DOF's over all MPI processes.
+        /// </summary>
         public int TotalLength {
             get {
                 return this.Partitioning.TotalLength;
@@ -124,100 +135,100 @@ namespace BoSSS.Solution.Multigrid {
         /// </param>
         /// <param name="DgDegrees"></param>
         public MultigridMapping(UnsetteledCoordinateMapping __ProblemMapping, AggregationGridBasis[] __aggGrdB, int[] DgDegrees) {
+            using (new FuncTrace()) {
+                // check args
+                // ===========
 
-            // check args
-            // ===========
 
+                if (__aggGrdB.Length != __ProblemMapping.BasisS.Count)
+                    throw new ArgumentException("Mismatch between number of multigrid basis objects and number of variables in problem mapping.");
 
-            if(__aggGrdB.Length != __ProblemMapping.BasisS.Count)
-                throw new ArgumentException("Mismatch between number of multigrid basis objects and number of variables in problem mapping.");
+                var mgGrid = __aggGrdB[0].AggGrid;
+                for (int iVar = 0; iVar < __aggGrdB.Length; iVar++) {
+                    if (__ProblemMapping.BasisS[iVar] is BoSSS.Foundation.XDG.XDGBasis) {
+                        if (!(__aggGrdB[iVar] is XdgAggregationBasis))
+                            throw new ArgumentException();
 
-            var mgGrid = __aggGrdB[0].AggGrid;
-            for(int iVar = 0; iVar < __aggGrdB.Length; iVar++) {
-                if(__ProblemMapping.BasisS[iVar] is BoSSS.Foundation.XDG.XDGBasis) {
-                    if(!(__aggGrdB[iVar] is XdgAggregationBasis))
-                        throw new ArgumentException();
-
-                } else if(__ProblemMapping.BasisS[iVar] is BoSSS.Foundation.Basis) {
-                    //if((__aggGrdB[iVar] is XdgAggregationBasis))
-                    //    throw new ArgumentException();
-                }
-
-                if(!object.ReferenceEquals(mgGrid, __aggGrdB[iVar].AggGrid))
-                    throw new ArgumentException("Basis object must all be defined on the same grid.");
-            }
-            
-            // find basis with maximum degree
-            // ==============================
-            this.ProblemMapping = __ProblemMapping;
-            //this.MaxBasis = ProblemMapping.BasisS.ElementAtMax(basis => basis.Degree);
-            this.m_DgDegree = DgDegrees.CloneAs();
-            //if(!this.MaxBasis.IsSubBasis(__aggGrdB.DGBasis)) {
-            //    throw new ArgumentException("Basis on aggregation grid is insufficient;");
-            //}
-
-            if(m_DgDegree.Length != __ProblemMapping.BasisS.Count()) {
-                throw new ArgumentException("Wrong number of DG degrees.");
-            }
-            for(int i = 0; i < m_DgDegree.Length; i++) {
-                if(m_DgDegree[i] < 0)
-                    throw new ArgumentException("DG degree must be greater of equal to 0.");
-                if(m_DgDegree[i] > __ProblemMapping.BasisS[i].Degree)
-                    throw new ArgumentException("DG degree on sub-level can not exceed DG degree of the original problem.");
-            }
-
-            // create basis for this level
-            // ===========================
-            this.AggBasis = __aggGrdB;
-
-            // min/max lenght
-            // ==============
-            {
-                int Smin = 0, Smax = 0;
-                int Nofields = this.m_DgDegree.Length;
-                for(int ifld = 0; ifld < Nofields; ifld++) {
-                    Smin += this.AggBasis[ifld].GetMinimalLength(this.m_DgDegree[ifld]);
-                    Smax += this.AggBasis[ifld].GetMaximalLength(this.m_DgDegree[ifld]);
-                }
-                this.MinimalLength = Smin;
-                this.MaximalLength = Smax;
-            }
-
-            // offsets
-            // =======
-            if(this.MinimalLength != this.MaximalLength) {
-                int JAGG = this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
-                this.m_i0 = new int[JAGG + 1];
-
-                HashSet<int> BlockLen = new HashSet<int>();
-
-                for (int jag = 0; jag < JAGG; jag++) {
-                    int S = 0;
-                    for(int i = 0; i < m_DgDegree.Length; i++) {
-                        S += this.AggBasis[i].GetLength(jag, m_DgDegree[i]);
+                    } else if (__ProblemMapping.BasisS[iVar] is BoSSS.Foundation.Basis) {
+                        //if((__aggGrdB[iVar] is XdgAggregationBasis))
+                        //    throw new ArgumentException();
                     }
 
-                    this.m_i0[jag + 1] = this.m_i0[jag] + S;
-
-                    BlockLen.Add(S);
+                    if (!object.ReferenceEquals(mgGrid, __aggGrdB[iVar].AggGrid))
+                        throw new ArgumentException("Basis object must all be defined on the same grid.");
                 }
 
-                m_Len2SublockType = new Dictionary<int, int>();
-                m_Subblk_i0 = new int[BlockLen.Count][];
-                m_SubblkLen = new int[BlockLen.Count][];
-                int type = 0;
-                foreach (int S in BlockLen) {
-                    m_Subblk_i0[type] = new int[] { 0 };
-                    m_SubblkLen[type] = new int[] { S };
-                    m_Len2SublockType.Add(S, type);
-                    type++;
+                // find basis with maximum degree
+                // ==============================
+                this.ProblemMapping = __ProblemMapping;
+                //this.MaxBasis = ProblemMapping.BasisS.ElementAtMax(basis => basis.Degree);
+                this.m_DgDegree = DgDegrees.CloneAs();
+                //if(!this.MaxBasis.IsSubBasis(__aggGrdB.DGBasis)) {
+                //    throw new ArgumentException("Basis on aggregation grid is insufficient;");
+                //}
+
+                if (m_DgDegree.Length != __ProblemMapping.BasisS.Count()) {
+                    throw new ArgumentException("Wrong number of DG degrees.");
+                }
+                for (int i = 0; i < m_DgDegree.Length; i++) {
+                    if (m_DgDegree[i] < 0)
+                        throw new ArgumentException("DG degree must be greater of equal to 0.");
+                    if (m_DgDegree[i] > __ProblemMapping.BasisS[i].Degree)
+                        throw new ArgumentException("DG degree on sub-level can not exceed DG degree of the original problem.");
                 }
 
-            } else {
-                m_Subblk_i0 = new int[][] { new int[] { 0 } };
-                m_SubblkLen = new int[][] { new int[] { this.MaximalLength } };
+                // create basis for this level
+                // ===========================
+                this.AggBasis = __aggGrdB;
+
+                // min/max length
+                // ==============
+                {
+                    int Smin = 0, Smax = 0;
+                    int Nofields = this.m_DgDegree.Length;
+                    for (int ifld = 0; ifld < Nofields; ifld++) {
+                        Smin += this.AggBasis[ifld].GetMinimalLength(this.m_DgDegree[ifld]);
+                        Smax += this.AggBasis[ifld].GetMaximalLength(this.m_DgDegree[ifld]);
+                    }
+                    this.MinimalLength = Smin;
+                    this.MaximalLength = Smax;
+                }
+
+                // offsets
+                // =======
+                if (this.MinimalLength != this.MaximalLength) {
+                    int JAGG = this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
+                    this.m_i0 = new int[JAGG + 1];
+
+                    HashSet<int> BlockLen = new HashSet<int>();
+
+                    for (int jag = 0; jag < JAGG; jag++) {
+                        int S = 0;
+                        for (int i = 0; i < m_DgDegree.Length; i++) {
+                            S += this.AggBasis[i].GetLength(jag, m_DgDegree[i]);
+                        }
+
+                        this.m_i0[jag + 1] = this.m_i0[jag] + S;
+
+                        BlockLen.Add(S);
+                    }
+
+                    m_Len2SublockType = new Dictionary<int, int>();
+                    m_Subblk_i0 = new int[BlockLen.Count][];
+                    m_SubblkLen = new int[BlockLen.Count][];
+                    int type = 0;
+                    foreach (int S in BlockLen) {
+                        m_Subblk_i0[type] = new int[] { 0 };
+                        m_SubblkLen[type] = new int[] { S };
+                        m_Len2SublockType.Add(S, type);
+                        type++;
+                    }
+
+                } else {
+                    m_Subblk_i0 = new int[][] { new int[] { 0 } };
+                    m_SubblkLen = new int[][] { new int[] { this.MaximalLength } };
+                }
             }
-
         }
 
         Dictionary<int, int> m_Len2SublockType;
@@ -339,26 +350,214 @@ namespace BoSSS.Solution.Multigrid {
             return S;
         }
 
+        public int GlobalUniqueIndex(int ifld, int jCell, int n) {
+            Debug.Assert(ifld >= 0 && ifld < this.m_DgDegree.Length);
+            Debug.Assert(jCell >= 0 && jCell < (this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells + this.AggGrid.iLogicalCells.NoOfExternalCells));
+            Debug.Assert(n >= 0 && n < this.AggBasis[ifld].GetLength(jCell, this.m_DgDegree[ifld]));
+
+            int Jup = this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
+            if(jCell < Jup) {
+                return this.i0 + LocalUniqueIndex(ifld, jCell, n);
+            } else {
+                if(this.m_i0 == null) {
+                    long jGlb = this.AggGrid.iParallel.GlobalIndicesExternalCells[jCell - Jup];
+                    int S = ((int)jGlb) * this.MaximalLength;
+                    for(int iF = 0; iF < ifld; iF++)
+                        S += this.AggBasis[iF].GetLength(jCell, this.m_DgDegree[iF]);
+                    S += n;
+                    return S;
+                } else {
+                    // tipp MPI-Exchange von 'this.i0'
+                    throw new NotImplementedException("todo");
+                }
+
+            }
+
+        }
+
         /// <summary>
-        /// 
+        /// Prolongation/Injection operator to finer grid level.
         /// </summary>
+        public BlockMsrMatrix GetProlongationOperator(MultigridMapping finerLevel) {
+            using (new FuncTrace()) {
+
+                // Argument checking
+                // =================
+
+                if (!object.ReferenceEquals(finerLevel.AggGrid, this.AggGrid.ParentGrid))
+                    throw new ArgumentException("Only prolongation/injection to next level is supported.");
+                if (finerLevel.AggBasis.Length != this.AggBasis.Length) {
+                    throw new ArgumentException("");
+                }
+                int NoOfVar = this.AggBasis.Length;
+
+                MultidimensionalArray[][] InjOp = new MultidimensionalArray[NoOfVar][];
+                AggregationGridBasis[] B = new AggregationGridBasis[NoOfVar];
+                bool[] useX = new bool[NoOfVar];
+                int[] DegreeS = new int[NoOfVar];
+                int[] DegreeSfine = new int[NoOfVar];
+                
+                for (int iVar = 0; iVar < NoOfVar; iVar++) {
+                    InjOp[iVar] = this.AggBasis[iVar].InjectionOperator;
+                    B[iVar] = AggBasis[iVar];
+                    DegreeS[iVar] = this.DgDegree[iVar];
+                    DegreeSfine[iVar] = finerLevel.DgDegree[iVar];
+                    if (DegreeSfine[iVar] < DegreeS[iVar])
+                        throw new ArgumentException("Lower DG degree on finer grid is not supported by this method ");
+                    useX[iVar] = this.AggBasis[iVar] is XdgAggregationBasis;
+                    if (useX[iVar] != (finerLevel.AggBasis[iVar] is XdgAggregationBasis))
+                        throw new ArgumentException("XDG / DG mismatch between this and finer level for " + iVar + "-th variable.");
+                }
+
+                XdgAggregationBasis XB = null;
+                XdgAggregationBasis XBf = null;
+                int[][,] spcIdxMap = null;
+                SpeciesId[][] spc = null;
+                //SpeciesId[][] spcf = null;
+                for(int iVar = 0; iVar < NoOfVar; iVar++) {
+                    if(useX[iVar]) {
+                        XB = (XdgAggregationBasis)(B[iVar]);
+                        XBf = (XdgAggregationBasis)(finerLevel.AggBasis[iVar]);
+                        spcIdxMap = XB.SpeciesIndexMapping;
+                        spc = XB.AggCellsSpecies;
+                        //spcf = XBf.AggCellsSpecies;
+                        break;
+                    }
+                }
+
+                int[] Np = this.AggBasis[0].GetNp();
+                int[] Np_fine = finerLevel.AggBasis[0].GetNp();
+                
+
+
+                // create matrix
+                // =============
+
+                // init retval
+                var PrlgMtx = new BlockMsrMatrix(finerLevel, this);
+
+                int[][] C2F = this.AggGrid.jCellCoarse2jCellFine;
+                int JCoarse = this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
+                //Debug.Assert((JCoarse == C2F.Length) || ());
+                for(int jc = 0; jc < JCoarse; jc++) { // loop over coarse cells...
+                    int[] AggCell = C2F[jc];
+                    int I = AggCell.Length;
+                    
+                    for(int iVar = 0; iVar < NoOfVar; iVar++) {
+                        int DgDeg = DegreeS[iVar];
+                        int DgDegF = DegreeSfine[iVar];
+                        MultidimensionalArray Inj_iVar_jc = InjOp[iVar][jc];
+                        Debug.Assert(Inj_iVar_jc.GetLength(0) == I);
+
+                        bool useX_iVar = false;
+                        if(useX[iVar]) {
+                            if (spcIdxMap[jc] != null)
+                                useX_iVar = true;
+                        }
+
+
+                        if(useX_iVar) {
+                            //throw new NotImplementedException("todo");
+                            
+                            int NoOfSpc = XB.GetNoOfSpecies(jc);
+                            int Np_col = Np[DgDeg];
+                            Debug.Assert(Np_col*NoOfSpc == B[iVar].GetLength(jc, DgDeg));
+
+                            for(int iSpc = 0; iSpc < NoOfSpc; iSpc++) { // loop over species
+                                SpeciesId spc_jc_i = spc[jc][iSpc];
+
+                                int Col0 = this.GlobalUniqueIndex(iVar, jc, Np_col*iSpc);
+
+
+                                for (int i = 0; i < I; i++) { // loop over finer cells
+                                    int jf = AggCell[i];
+
+                                    int iSpc_Row = XBf.GetSpeciesIndex(jf, spc_jc_i);
+                                    if(iSpc_Row < 0) {
+                                        // nothing to do
+                                        continue;
+                                    }
+
+                                    int Np_row = Np_fine[DgDegF];
+                                    Debug.Assert(Np_row*XBf.GetNoOfSpecies(jf)  == finerLevel.AggBasis[iVar].GetLength(jf, DgDegF));
+
+                                    int Row0 = finerLevel.GlobalUniqueIndex(iVar, jf, Np_row*iSpc_Row);
+
+                                    //if(Row0 <= 12 &&  12 < Row0 + Np_row) {
+                                    //    if(Col0 <= 3 && 3 < Col0 + Np_col) {
+                                    //        Debugger.Break();
+                                    //    }
+                                    //}
+                                    PrlgMtx.AccBlock(Row0, Col0, 1.0, Inj_iVar_jc.ExtractSubArrayShallow(new[] { i, 0, 0 }, new[] { i - 1, Np_row - 1, Np_col - 1 }));
+                                }
+                            }
+                            
+                        } else {
+                            // ++++++++++++++++++
+                            // standard DG branch
+                            // ++++++++++++++++++
+
+                            int Np_col = Np[DgDeg];
+                            Debug.Assert(Np_col == B[iVar].GetLength(jc, DgDeg));
+                            int Col0 = this.GlobalUniqueIndex(iVar, jc, 0);
+
+                            for(int i = 0; i < I; i++) { // loop over finer cells
+                                int jf = AggCell[i];
+                                int Np_row = Np_fine[DgDegF];
+                                Debug.Assert(Np_row == finerLevel.AggBasis[iVar].GetLength(jf, DgDegF));
+
+                                int Row0 = finerLevel.GlobalUniqueIndex(iVar, jf, 0);
+
+                                PrlgMtx.AccBlock(Row0, Col0, 1.0, Inj_iVar_jc.ExtractSubArrayShallow(new[] { i, 0, 0 }, new[] { i - 1, Np_row - 1, Np_col - 1 }));
+                                //if(Row0 <= 12 &&  12 < Row0 + Np_row) {
+                                //        if(Col0 <= 3 && 3 < Col0 + Np_col) {
+                                //            Debugger.Break();
+                                //        }
+                                //    }
+                            }
+                        }
+                    }
+                }
+
+
+                // return
+                // ======
+
+                return PrlgMtx;
+            }
+        }
+
+
+        /// <summary>
+        /// Prolongation or Restriction from *any* other level to this level.
+        /// </summary>
+        /// <param name="otherLevel">
+        /// Other level, from which one wants to prolongate/restrict.
+        /// </param>
+        /// <returns>
+        /// A matrix, where 
+        /// - row correspond to this mapping
+        /// - columns correspond to <paramref name="otherLevel"/>
+        /// If the other level is coarser, this is a prolongation; if the other level is finer, it is the restriction in the L2-sense,
+        /// for standard DG; for XDG, in some other norm  determined by the cut-cell shape.
+        /// </returns>
         public BlockMsrMatrix FromOtherLevelMatrix(MultigridMapping otherLevel) {
+            using (new FuncTrace()) {
+                BlockMsrMatrix PrlgMtx;
+                {
+                    PrlgMtx = new BlockMsrMatrix(otherLevel, otherLevel.ProblemMapping);
+                    for (int ifld = 0; ifld < otherLevel.AggBasis.Length; ifld++)
+                        otherLevel.AggBasis[ifld].GetRestrictionMatrix(PrlgMtx, otherLevel, ifld);  // prolongate from the other level to the full grid
+                    PrlgMtx = PrlgMtx.Transpose();
+                }
 
-            BlockMsrMatrix PrlgMtx;
-            {
-                PrlgMtx = new BlockMsrMatrix(otherLevel, otherLevel.ProblemMapping);
-                for(int ifld = 0; ifld < otherLevel.AggBasis.Length; ifld++)
-                    otherLevel.AggBasis[ifld].GetRestrictionMatrix(PrlgMtx, otherLevel, ifld);  // prolongate from the other level to the full grid
-                PrlgMtx = PrlgMtx.Transpose();
-            }
-
-            BlockMsrMatrix RestMtx;
-            {
-                RestMtx = new BlockMsrMatrix(this, this.ProblemMapping);
-                for(int ifld = 0; ifld < this.AggBasis.Length; ifld++)
-                    this.AggBasis[ifld].GetRestrictionMatrix(RestMtx, this, ifld);  //     ... and restrict to this level          
-            }
-            var result = BlockMsrMatrix.Multiply(RestMtx, PrlgMtx);
+                BlockMsrMatrix RestMtx;
+                {
+                    RestMtx = new BlockMsrMatrix(this, this.ProblemMapping);
+                    for (int ifld = 0; ifld < this.AggBasis.Length; ifld++)
+                        this.AggBasis[ifld].GetRestrictionMatrix(RestMtx, this, ifld);  //     ... and restrict to this level          
+                }
+                var result = BlockMsrMatrix.Multiply(RestMtx, PrlgMtx);
 #if DEBUG
             {
                 var resultT = result.Transpose();
@@ -372,24 +571,20 @@ namespace BoSSS.Solution.Multigrid {
 
                 double ShouldBeID_Norm = ShoudBeId.InfNorm();
                 Debug.Assert(ShouldBeID_Norm < 1.0e-8);
-                //Console.WriteLine("Id norm {0} ", ShouldBeID_Norm);
+                //Console.WriteLine("Id norm {0} \t (level {1})", ShouldBeID_Norm, this.AggGrid.MgLevel);
             }
 #endif
-            return result;
+                return result;
+            }
         }
 
         /// <summary>
-        /// returns global unique indices which correlate to a certain sub-set of the mapping <paramref name="map"/>'s basises (<see cref="UnsetteledCoordinateMapping.BasisS"/>).
+        /// Returns global unique indices which correlate to a certain sub-set of this mapping's 
+        /// basises (<see cref="UnsetteledCoordinateMapping.BasisS"/>).
         /// </summary>
         /// <param name="Fields">
-        /// indices into <see cref="BasisS"/>
+        /// Indices into <see cref="BasisS"/>
         /// </param>
-        /// <param name="includeExternal">
-        /// true, if indices which correlate to external cells should be included; false if not.
-        /// </param>
-        /// <param name="map">
-        /// </param>
-        /// <returns>a list of global (over all MPI processes) unique indices.</returns>
         public int[] GetSubvectorIndices(params int[] Fields) {
             ilPSP.MPICollectiveWatchDog.Watch();
             var map = this.ProblemMapping;
@@ -408,11 +603,15 @@ namespace BoSSS.Solution.Multigrid {
             }
             var ag = this.AggGrid;
             int JAGG = ag.iLogicalCells.NoOfLocalUpdatedCells;
-            Partitioning p = new Partitioning(JAGG);
             List<int> R = new List<int>();
+            Partitioning p = new Partitioning(JAGG);
             int j0_aggCell = p.i0;
 
             if(this.MaximalLength == this.MinimalLength) {
+                // ++++++++++++++++++++++++++++++
+                // case: constant length per cell
+                // ++++++++++++++++++++++++++++++
+
 
                 Debug.Assert(this.m_DgDegree.Length == this.AggBasis.Length);
                 int[] DofVar = new int[this.m_DgDegree.Length];
@@ -429,7 +628,7 @@ namespace BoSSS.Solution.Multigrid {
                 }
                 
 
-                for(int jAgg = 0; jAgg < JAGG; jAgg++) {
+                for(int jAgg = 0; jAgg < JAGG; jAgg++) { // loop over aggregate cells
 
                     for(int i = 0; i < Fields.Length; i++) {
                         int iField = Fields[i];
@@ -448,39 +647,49 @@ namespace BoSSS.Solution.Multigrid {
                     }
                 }
             } else {
+                // ++++++++++++++++++++++++++++++
+                // case: variable length per cell
+                // ++++++++++++++++++++++++++++++
+
                 int Nofields = this.m_DgDegree.Length;
 
-                int[] Nfld = new int[Nofields];
-                int[] Ofst = new int[Nofields];
+                //int[] Nfld = new int[Nofields];
+                //int[] Ofst = new int[Nofields];
 
-                int i0 = this.Partitioning.i0;
+                int i0Proc = this.Partitioning.i0;
 
                 for(int jAgg = 0; jAgg < JAGG; jAgg++) {
 
-                    for(int ifld = 0; ifld < Nofields; ifld++) {
-                        int pField = this.m_DgDegree[ifld];
-                        Nfld[ifld] = this.AggBasis[ifld].GetLength(jAgg, pField);
-                        if(ifld > 0)
-                            Ofst[ifld] = Ofst[ifld - 1] + Nfld[ifld - 1];
-                    }
-                    int Ncell = Ofst[Nofields - 1] + Nfld[Nofields - 1];
+                    //for(int ifld = 0; ifld < Nofields; ifld++) {
+                    //    int pField = this.m_DgDegree[ifld];
+                    //    Nfld[ifld] = this.AggBasis[ifld].GetLength(jAgg, pField);
+                    //    if(ifld > 0)
+                    //        Ofst[ifld] = Ofst[ifld - 1] + Nfld[ifld - 1];
+                    //}
+                    //int Ncell = Ofst[Nofields - 1] + Nfld[Nofields - 1];
                         
 
                     for(int i = 0; i < Fields.Length; i++) {
                         int iField = Fields[i];
                         int pField = this.m_DgDegree[iField];
+                        int Nfld = this.AggBasis[iField].GetLength(jAgg, pField);
 
-                        int N_iField = Nfld[iField];
-                        int N0 = Ofst[iField];
 
-                        for(int n = 0; n < N_iField; n++) {
-                            int iX = i0 + n + N0;
+                        
+
+                        //int N_iField = Nfld[iField];
+                        //int N0 = Ofst[iField];
+
+                        int i0Loc = this.LocalUniqueIndex(iField, jAgg, 0);
+
+                        for(int n = 0; n < Nfld; n++) {
+                            int iX = i0Proc + i0Loc + n;
                             R.Add(iX);
                             Debug.Assert(this.Partitioning.IsInLocalRange(iX));
-                            Debug.Assert(iX - j0_aggCell == this.LocalUniqueIndex(iField, jAgg, n));
+                            Debug.Assert(iX - i0Proc == this.LocalUniqueIndex(iField, jAgg, n));
                         }
                     }
-                    i0 += Ncell;
+                    
                 }
             }
             
@@ -489,10 +698,10 @@ namespace BoSSS.Solution.Multigrid {
 
 
         /// <summary>
-        /// returns global unique indices which correlate to a certain sub-set of the mapping <paramref name="map"/>'s basises (<see cref="UnsetteledCoordinateMapping.BasisS"/>).
+        /// Returns global unique indices which correlate to a certain species and basises.
         /// </summary>
         /// <param name="Fields">
-        /// indices into <see cref="BasisS"/>
+        /// Indices into <see cref="BasisS"/>
         /// </param>
         /// <param name="map">
         /// </param>

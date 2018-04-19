@@ -9,7 +9,7 @@
     <RootNamespace>BoSSS.Application.LoadBalancingTest</RootNamespace>
     <AssemblyName>LoadBalancingTest</AssemblyName>
     <FileAlignment>512</FileAlignment>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
     <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
@@ -38,6 +38,10 @@
     <WarningLevel>4</WarningLevel>
     <DocumentationFile>bin\Release\LoadBalancingTest.xml</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>
+    </StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="log4net">

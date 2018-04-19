@@ -93,7 +93,7 @@ namespace BoSSS.Application.ipViscosity {
         /// <param name="args"></param>
         static void Main(string[] args) {
             
-            BoSSS.Solution.Application._Main(args, true, "", delegate() {
+            BoSSS.Solution.Application._Main(args, true, delegate() {
                 ipViscosityMain p = new ipViscosityMain(); 
                 return p;
             });
@@ -185,7 +185,7 @@ namespace BoSSS.Application.ipViscosity {
         SpatialOperator Operator;
         MsrMatrix OperatorMtx;
         
-        protected override void CreateEquationsAndSolvers(LoadBalancingData L) {
+        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
             using(FuncTrace tr = new FuncTrace()) {
 
                 this.BcMap = new IncompressibleBoundaryCondMap(this.GridData, grid.GetBoundaryConfig(), PhysicsMode.Incompressible);

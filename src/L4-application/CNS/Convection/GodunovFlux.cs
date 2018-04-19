@@ -16,8 +16,8 @@ limitations under the License.
 
 using BoSSS.Platform.LinAlg;
 using CNS.Boundary;
-using CNS.Exception;
 using CNS.MaterialProperty;
+using System;
 
 namespace CNS.Convection {
 
@@ -45,7 +45,7 @@ namespace CNS.Convection {
         public GodunovFlux(CNSControl config, IBoundaryConditionMap boundaryMap, IEulerEquationComponent equationComponent, ISpeciesMap speciesMap)
             : base(config, boundaryMap, equationComponent, speciesMap) {
             if (config.EquationOfState is IdealGas == false) {
-                throw new ConfigurationException("Riemann solver currently only supports ideal gases");
+                throw new Exception("Riemann solver currently only supports ideal gases");
             }
         }
 

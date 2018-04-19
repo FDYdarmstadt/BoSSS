@@ -175,6 +175,16 @@ namespace ilPSP.LinSolvers {
         /// <param name="alpha">Scaling factor for the accumulation.</param>
         /// <param name="Block">Block to add.</param>
         void AccBlock(int i0, int j0, double alpha, MultidimensionalArray Block);
+
+        /// <summary>
+        /// Accumulates a block of entries to this matrix.
+        /// </summary>
+        /// <param name="i0">Row index offset.</param>
+        /// <param name="j0">Column index offset.</param>
+        /// <param name="alpha">Scaling factor for the accumulation.</param>
+        /// <param name="Block">Block to add.</param>
+        /// <param name="beta">Scaling applied to this matrix before accumulation</param>
+        void AccBlock(int i0, int j0, double alpha, MultidimensionalArray Block, double beta);
     }
 
     /// <summary>

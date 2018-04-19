@@ -790,6 +790,21 @@ namespace BoSSS.Solution.NSECommon {
         public const string StressYY = "StressYY";
 
         /// <summary>
+        /// XX Tensor component of the extra stress tensor as parameter
+        /// </summary>
+        public const string StressXXP = "StressXXP";
+
+        /// <summary>
+        /// XY Tensor component of the extra stress tensor as parameter
+        /// </summary>
+        public const string StressXYP = "StressXYP";
+
+        /// <summary>
+        /// YY Tensor component of the extra stress tensor as parameter
+        /// </summary>
+        public const string StressYYP = "StressYYP";
+
+        /// <summary>
         /// Extra stress tensor
         /// </summary>
         /// <param name="row">
@@ -819,6 +834,27 @@ namespace BoSSS.Solution.NSECommon {
             }
             throw new NotSupportedException("unsupported spatial dimension");
         }
+
+        /// <summary>
+        /// Velocity gradient tensor XX component
+        /// </summary>
+        public const string VelocityXGradientX = "VelocityXGradientX";
+
+        /// <summary>
+        /// Velocity gradient tensor XY component
+        /// </summary>
+        public const string VelocityXGradientY = "VelocityXGradientY";
+
+        /// <summary>
+        /// Velocity gradient tensor YX component
+        /// </summary>
+        public const string VelocityYGradientX = "VelocityYGradientX";
+
+        /// <summary>
+        /// Velocity gradient tensor YY component
+        /// </summary>
+        public const string VelocityYGradientY = "VelocityYGradientY";
+
 
         /// <summary>
         /// Helical 

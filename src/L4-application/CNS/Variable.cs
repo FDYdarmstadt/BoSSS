@@ -16,7 +16,6 @@ limitations under the License.
 
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
-using CNS.Exception;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -192,7 +191,7 @@ namespace CNS {
                             return zComponent;
 
                         default:
-                            throw new InternalErrorException();
+                            throw new Exception();
                     }
                 }
             }

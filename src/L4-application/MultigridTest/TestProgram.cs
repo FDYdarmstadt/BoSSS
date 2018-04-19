@@ -59,7 +59,12 @@ namespace BoSSS.Application.MultigridTest {
 
             for (int p = 0; p <= 3; p++) { // loop over polynomial degrees...
                 var uMapping = new UnsetteledCoordinateMapping(new Basis(grid, p));
-                var MgMapSeq = MgSeq.Select(aggGrid => new MultigridMapping(uMapping, new AggregationGridBasis[] { new AggregationGridBasis(uMapping.BasisS[0], aggGrid) }, new int[] { p })).ToArray();
+
+                var MgMapSeq = new MultigridMapping[MgSeq.Length];
+                var BasisSeq = AggregationGridBasis.CreateSequence(MgSeq, uMapping.BasisS);
+                for (int iLevel = 0; iLevel < MgSeq.Length; iLevel++) {
+                    MgMapSeq[iLevel] = new MultigridMapping(uMapping, BasisSeq[iLevel], new int[] { p }); 
+                }
                 MultigrigMap.Add(p, MgMapSeq);
             }
 
@@ -122,7 +127,7 @@ namespace BoSSS.Application.MultigridTest {
 
 
         /// <summary>
-        /// tests if the prolongation of an arbitrary resticted vector has jumps (which it should not have).
+        /// Tests if the prolongation of a random vector on a coarse grid has jumps (which it should not have).
         /// </summary>
         [Test]
         public static void ProlongationTest([Values(1, 2, 3)] int p) {
@@ -278,7 +283,9 @@ namespace BoSSS.Application.MultigridTest {
         }
 
         static void RestictionMatrixTestRec(int p, IEnumerable<MultigridMapping> MgMapSeq) {
-            AggregationGridBasis AggBasis = MgMapSeq.First().AggBasis[0];
+            var currentLevelMap = MgMapSeq.First();
+            AggregationGridBasis AggBasis = currentLevelMap.AggBasis[0];
+
             var map = new UnsetteledCoordinateMapping(new Basis(grid, p));
 
             Random rnd = new Random();
@@ -303,9 +310,19 @@ namespace BoSSS.Application.MultigridTest {
             double PrlgErrNorm = GenericBlas.L2Dist(PrlgVec2, PrlgVec);
             double LostInfNorm = GenericBlas.L2Dist(OrigVec, PrlgVec2);
             //Console.WriteLine("Rest. matrix test: {0}, Prolong. matrix test {1}, Lost info {2}", RestErrNorm, PrlgErrNorm, LostInfNorm);
-            Debug.Assert(RestErrNorm < 1.0e-10);
-            Debug.Assert(PrlgErrNorm < 1.0e-10);
+            Assert.IsTrue(RestErrNorm < 1.0e-10);
+            Assert.IsTrue(PrlgErrNorm < 1.0e-10);
+            
+            // restriction onto level itself
+            BlockMsrMatrix RestMtx = currentLevelMap.FromOtherLevelMatrix(currentLevelMap);
+            BlockMsrMatrix ShldBeEye = BlockMsrMatrix.Multiply(RestMtx, RestMtx.Transpose());
+            ShldBeEye.AccEyeSp(-1.0);
+            double errNorm = ShldBeEye.InfNorm();
+            Console.WriteLine("Id norm {0} \t (level {1})", errNorm, currentLevelMap.AggGrid.MgLevel);
+            Assert.IsTrue(errNorm < 1.0e-8);
 
+
+            // recursion
             if (MgMapSeq.Count() > 1)
                 RestictionMatrixTestRec(p, MgMapSeq.Skip(1));
         }
@@ -319,12 +336,10 @@ namespace BoSSS.Application.MultigridTest {
             Basis B1 = new Basis(grid, 0), B2 = new Basis(grid, 2);
             var Map = new UnsetteledCoordinateMapping(B1, B2);
 
-            var Lev0Basis = new AggregationGridBasis(B2, TestProgram.MgSeq[0]);
-            var Lev1Basis = new AggregationGridBasis(B2, TestProgram.MgSeq[1]);
+            AggregationGridBasis[][] aB = AggregationGridBasis.CreateSequence(TestProgram.MgSeq.Take(2), new Basis[] { B1, B2 });
 
-
-            var Lev0 = new MultigridMapping(Map, new AggregationGridBasis[] { Lev0Basis, Lev0Basis }, new int[] { B1.Degree, B2.Degree });
-            var Lev1 = new MultigridMapping(Map, new AggregationGridBasis[] { Lev1Basis, Lev1Basis }, new int[] { B1.Degree, B2.Degree });
+            var Lev0 = new MultigridMapping(Map, aB[0], new int[] { B1.Degree, B2.Degree });
+            var Lev1 = new MultigridMapping(Map, aB[1], new int[] { B1.Degree, B2.Degree });
 
 
             int[] I0col = Lev0.GetSubvectorIndices(new int[] { 0 });
@@ -343,10 +358,10 @@ namespace BoSSS.Application.MultigridTest {
             MsrMatrix Rest11 = new MsrMatrix(I1row.Length, I1col.Length, 1, 1);
             RestMtx.WriteSubMatrixTo(Rest11, I1row, default(int[]), I1col, default(int[]));
 
-            Debug.Assert(Rest10.InfNorm() == 0.0);
-            Debug.Assert(Rest01.InfNorm() == 0.0);
-            Debug.Assert(Rest00.InfNorm() != 0.0);
-            Debug.Assert(Rest11.InfNorm() != 0.0);
+            Assert.IsTrue(Rest10.InfNorm() == 0.0);
+            Assert.IsTrue(Rest01.InfNorm() == 0.0);
+            Assert.IsTrue(Rest00.InfNorm() != 0.0);
+            Assert.IsTrue(Rest11.InfNorm() != 0.0);
 
 
         }
@@ -371,7 +386,7 @@ namespace BoSSS.Application.MultigridTest {
                 LevSet = new LevelSet(new Basis(grid, 2), "LevelSet");
                 LevSet.Clear();
                 LevSet.ProjectField(LevSetFunc);
-                LsTrk = new LevelSetTracker(grid, TrackerWidth, new string[] { "A", "B" }, LevSet);
+                LsTrk = new LevelSetTracker(grid, XQuadFactoryHelper.MomentFittingVariants.Classic, TrackerWidth, new string[] { "A", "B" }, LevSet);
                 LsTrk.UpdateTracker();
 
                 XB = new XDGBasis(LsTrk, p);
@@ -391,9 +406,9 @@ namespace BoSSS.Application.MultigridTest {
                 var map = new UnsetteledCoordinateMapping(opXB);
 
                 int quadOrder = Dummy.QuadOrderFunction(map.BasisS.Select(bs => bs.Degree).ToArray(), new int[0], map.BasisS.Select(bs => bs.Degree).ToArray());
-                agg = new MultiphaseCellAgglomerator(new CutCellMetrics(momentFittingVariant, quadOrder, LsTrk, LsTrk.SpeciesIdS.ToArray()), AggregationThreshold, false);
-
-                
+                //agg = new MultiphaseCellAgglomerator(new CutCellMetrics(momentFittingVariant, quadOrder, LsTrk, LsTrk.SpeciesIdS.ToArray()), AggregationThreshold, false);
+                agg = LsTrk.GetAgglomerator(LsTrk.SpeciesIdS.ToArray(), quadOrder, __AgglomerationTreshold: AggregationThreshold);
+                               
 
                 foreach (var S in LsTrk.SpeciesIdS)
                     Console.WriteLine("Species {0}, no. of agglomerated cells {1} ",
@@ -403,8 +418,9 @@ namespace BoSSS.Application.MultigridTest {
                 // mass matrix factory
                 // ===================
 
-                Basis maxB = map.BasisS.ElementAtMax(b => b.Degree);
-                MassFact = new MassMatrixFactory(maxB, agg);
+                // Basis maxB = map.BasisS.ElementAtMax(b => b.Degree);
+                //MassFact = new MassMatrixFactory(maxB, agg);
+                MassFact = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), quadOrder, 1).MassMatrixFactory;
 
 
                 // Test field
@@ -412,29 +428,31 @@ namespace BoSSS.Application.MultigridTest {
 
                 // set the test field: this is a polynomial function,
                 // but different for each species; On this field, restriction followed by prolongation should be the identity
-                this.uTest = new XDGField(this.XB, "uTest");
+                this.Xdg_uTest = new XDGField(this.XB, "uTest");
                 Dictionary<SpeciesId, double> dumia = new Dictionary<SpeciesId, double>();
                 int i = 2;
                 foreach (var Spc in LsTrk.SpeciesIdS) {
                     dumia.Add(Spc, i);
                     i -= 1;
                 }
-                SetTestValue(uTest, dumia);
+                SetTestValue(Xdg_uTest, dumia);
+                               
 
                 // dummy operator matrix which fits polynomial degree p
                 // ====================================================
 
-                opMtx = new BlockMsrMatrix(uTest.Mapping, uTest.Mapping);
-                opMtx.AccEyeSp(120.0);
+                Xdg_opMtx = new BlockMsrMatrix(Xdg_uTest.Mapping, Xdg_uTest.Mapping);
+                Xdg_opMtx.AccEyeSp(120.0);
 
                 // XDG Aggregation BasiseS
                 // =======================
 
-                XAggB = MgSeq.Select(agGrd => new XdgAggregationBasis[] { new XdgAggregationBasis(uTest.Basis, agGrd) }).ToArray();
+                //XAggB = MgSeq.Select(agGrd => new XdgAggregationBasis[] { new XdgAggregationBasis(uTest.Basis, agGrd) }).ToArray();
+                XAggB = new XdgAggregationBasis[MgSeq.Length][];
+                var _XAggB = AggregationGridBasis.CreateSequence(MgSeq, Xdg_uTest.Mapping.BasisS);
                 for (int iLevel = 0; iLevel < XAggB.Length; iLevel++) {
-                    var xab = XAggB[iLevel];
-                    Debug.Assert(xab.Length == 1);
-                    xab[0].Update(agg);
+                    XAggB[iLevel] = new[] { (XdgAggregationBasis)(_XAggB[iLevel][0]) };
+                    XAggB[iLevel][0].Update(agg);
                 }
 
                 // Multigrid Operator
@@ -442,12 +460,12 @@ namespace BoSSS.Application.MultigridTest {
 
 
 
-                opMtx = new BlockMsrMatrix(uTest.Mapping, uTest.Mapping);
-                opMtx.AccEyeSp(120.0);
+                Xdg_opMtx = new BlockMsrMatrix(Xdg_uTest.Mapping, Xdg_uTest.Mapping);
+                Xdg_opMtx.AccEyeSp(120.0);
 
-                MultigridOp = new MultigridOperator( XAggB, uTest.Mapping,
-                    opMtx,
-                    MassFact.GetMassMatrix(uTest.Mapping, false),
+                XdgMultigridOp = new MultigridOperator( XAggB, Xdg_uTest.Mapping,
+                    Xdg_opMtx,
+                    MassFact.GetMassMatrix(Xdg_uTest.Mapping, false),
                     new MultigridOperator.ChangeOfBasisConfig[][] {
                         new MultigridOperator.ChangeOfBasisConfig[] {
                             new MultigridOperator.ChangeOfBasisConfig() { VarIndex = new int[] { 0 }, mode = mumo, Degree = p }
@@ -459,12 +477,15 @@ namespace BoSSS.Application.MultigridTest {
             public XdgAggregationBasis[][] XAggB;
             public LevelSet LevSet;
             public LevelSetTracker LsTrk;
-            public XDGField uTest;
+            public XDGField Xdg_uTest;
+            //public SinglePhaseField Nonx_uTest;
             public XDGBasis XB;
             public MassMatrixFactory MassFact;
             public MultiphaseCellAgglomerator agg;
-            public BlockMsrMatrix opMtx;
-            public MultigridOperator MultigridOp;
+            public BlockMsrMatrix Xdg_opMtx;
+            //public BlockMsrMatrix Nonx_opMtx;
+            public MultigridOperator XdgMultigridOp;
+            //public MultigridOperator NonxMultigridOp;
         }
 
 
@@ -496,14 +517,14 @@ namespace BoSSS.Application.MultigridTest {
 
                 // do restriction/prolongation
                 double[] RestVec = new double[XAggBasis.LocalDim];
-                XAggBasis.RestictFromFullGrid(xt.uTest.CoordinateVector, RestVec);
-                var Test = xt.uTest.CloneAs();
+                XAggBasis.RestictFromFullGrid(xt.Xdg_uTest.CoordinateVector, RestVec);
+                var Test = xt.Xdg_uTest.CloneAs();
                 Test.Clear();
                 XAggBasis.ProlongateToFullGrid(Test.CoordinateVector, RestVec);
                 xt.agg.Extrapolate(Test.Mapping);
 
                 // compare/test
-                var ERR = xt.uTest.CloneAs();
+                var ERR = xt.Xdg_uTest.CloneAs();
                 ERR.Acc(-1.0, Test);
                 double ERR_NORM = ERR.L2Norm();
 
@@ -534,7 +555,7 @@ namespace BoSSS.Application.MultigridTest {
             // -----------------------------------------------
 
             List<MultigridMapping> MultigridMaps = new List<MultigridMapping>();
-            for (var mgop = xt.MultigridOp; mgop != null; mgop = mgop.CoarserLevel) {
+            for (var mgop = xt.XdgMultigridOp; mgop != null; mgop = mgop.CoarserLevel) {
                 MultigridMaps.Add(mgop.Mapping);
             }
 
@@ -560,10 +581,10 @@ namespace BoSSS.Application.MultigridTest {
                 double[] RestVec = new double[mgMap.LocalLength];
                 RestMtx.SpMV(1.0, Test.CoordinateVector, 0.0, RestVec);
                 
-                double[] X1 = new double[xt.MultigridOp.Mapping.LocalLength];
+                double[] X1 = new double[xt.XdgMultigridOp.Mapping.LocalLength];
                 XDGField X2 = new XDGField(Test.Basis);
-                xt.MultigridOp.TransformSolInto(Test.CoordinateVector, X1);
-                xt.MultigridOp.TransformSolFrom(X2.CoordinateVector, X1);
+                xt.XdgMultigridOp.TransformSolInto(Test.CoordinateVector, X1);
+                xt.XdgMultigridOp.TransformSolFrom(X2.CoordinateVector, X1);
                 //xt.agg.Extrapolate(X2.CoordinatesAsVector, X2.Mapping);
                 var ERR2 = Test.CloneAs();
                 ERR2.Acc(-1.0, X2);
@@ -625,89 +646,59 @@ namespace BoSSS.Application.MultigridTest {
         [Test]
         public static void XDG_MatrixPolynomialRestAndPrlgTest_2(
             [Values(0, 1, 2, 3)] int p,
-            [Values(0.0, 0.3)] double AggregationThreshold,
-            [Values(0, 1)] int TrackerWidth,
-            [Values(MultigridOperator.Mode.Eye, MultigridOperator.Mode.IdMass)] MultigridOperator.Mode mode) {
+            [Values(0.0, 0.3)] double AggregationThreshold) {
+
+            var mode = MultigridOperator.Mode.IdMass; // !!!!! Test work only with orthonormalization at each level. !!!!
 
             if (AggregationThreshold < 0.1 && p >= 3 && mode == MultigridOperator.Mode.IdMass)
                 // this test combination is not supposed to work:
                 // without agglomeration, for high p, the mass matrix may be indefinite in small cut-cells
-                // => Cholesky decomposition on mass matrix fails, i.e. 'mode == IdMass' cannot succseed.
+                // => Cholesky decomposition on mass matrix fails, i.e. 'mode == IdMass' cannot succeed.
                 return;
 
-
             XQuadFactoryHelper.MomentFittingVariants variant = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
-            var xt = new XDGTestSetup(p, AggregationThreshold, TrackerWidth, mode, variant);
+            var xt = new XDGTestSetup(p, AggregationThreshold, 1, mode, variant);
 
 
             // Restriction & prolongation together with orthonormalization
             // -----------------------------------------------------------
 
 
-            for (var mgop = xt.MultigridOp; mgop != null; mgop = mgop.CoarserLevel) {
-                var Itself = mgop.Mapping.FromOtherLevelMatrix(mgop.Mapping);
-                Itself.AccEyeSp(-1.0);
-                double Itslef_Norm = Itself.InfNorm();
-                //Console.WriteLine("Level {0}, Restriction onto itself {1}", mgm.LevelIndex, Itslef_Norm);
-                Assert.LessOrEqual(Itslef_Norm, 1.0e-8);
-            }
+            for (var mgop = xt.XdgMultigridOp.CoarserLevel; mgop != null; mgop = mgop.CoarserLevel) {
+                Assert.GreaterOrEqual(mgop.LevelIndex, 1);
 
-            {
-                // test change of basis on top level
+                //var Itself = mgop.Mapping.FromOtherLevelMatrix(mgop.Mapping);
+                //Itself.AccEyeSp(-1.0);
+                //double Itslef_Norm = Itself.InfNorm();
+                //Console.WriteLine("Level {0}, Restriction onto itself {1}", mgop.Mapping.AggGrid.MgLevel, Itslef_Norm);
+                //Assert.LessOrEqual(Itslef_Norm, 1.0e-8);
 
-                XDGField uTestRnd = new XDGField(xt.XB);
-                Random rnd = new Random();
-                for (int i = 0; i < uTestRnd.CoordinateVector.Count; i++) {
-                    uTestRnd.CoordinateVector[i] = rnd.NextDouble();
+                var map_fine = mgop.FinerLevel.Mapping;
+
+                int L_fine = map_fine.LocalLength;
+                int L_coarse = mgop.Mapping.LocalLength;
+
+                // create random test vector
+                Random rnd = new Random(mgop.LevelIndex);
+                double[] vecCoarse = new double[L_coarse];
+                for(int l = 0; l < L_coarse; l++) {
+                    vecCoarse[l] = rnd.NextDouble();
                 }
-                xt.agg.ClearAgglomerated(uTestRnd.CoordinateVector, uTestRnd.Mapping);
 
-                // perform change of basis on top level ...
-                int Ltop = xt.MultigridOp.Mapping.LocalLength;
-                double[] uTest_Fine = new double[Ltop];
-                xt.MultigridOp.TransformSolInto(uTestRnd.CoordinateVector, uTest_Fine);
+                // prolongate & restrict
+                double[] vecFine = new double[L_fine];
+                mgop.Prolongate(1.0, vecFine, 0.0, vecCoarse); // uses matrix
+                double[] vecCoarse_check = new double[L_coarse];
+                mgop.Restrict(vecFine, vecCoarse_check);
 
-                // .. and back
-                XDGField uError2 = uTestRnd.CloneAs();
-                uError2.Clear();
-                xt.MultigridOp.TransformSolFrom(uError2.CoordinateVector, uTest_Fine);
-
-                // compare: 
-                uError2.Acc(-1.0, uTestRnd);
-                double NORM_uError = uError2.L2Norm();
-
-                // output
-                Console.WriteLine("Top level change of basis error: {0}", NORM_uError);
-                Assert.LessOrEqual(NORM_uError, 1.0e-8);
-
+                // for 'MultigridOperator.Mode.IdMass', prolongation->restriction must be the identity
+                double err = GenericBlas.L2Dist(vecCoarse, vecCoarse_check);
+                double Ref = Math.Max(vecCoarse.L2Norm(), vecCoarse_check.L2Norm());
+                Console.WriteLine("Restriction/prolongation error: " + err/Ref);
+                Assert.LessOrEqual(err / Ref, 1.0e-8);
             }
 
-            {
-
-                // perform change of basis on top level
-                int Ltop = xt.MultigridOp.Mapping.LocalLength;
-                double[] uTest_Fine = new double[Ltop];
-                xt.MultigridOp.TransformSolInto(xt.uTest.CoordinateVector, uTest_Fine);
-
-
-                // check for each level of the multigrid operator...
-                for (int iLevel = 0; iLevel < MgSeq.Count() - 1; iLevel++) {
-                    double[] uTest_Prolonged = new double[Ltop];
-
-                    XDG_Recursive(0, iLevel, xt.MultigridOp, uTest_Fine, uTest_Prolonged);
-
-                    XDGField uError = xt.uTest.CloneAs();
-                    uError.Clear();
-                    xt.MultigridOp.TransformSolFrom(uError.CoordinateVector, uTest_Prolonged);
-                    xt.agg.Extrapolate(uError.Mapping);
-
-                    uError.Acc(-1.0, xt.uTest);
-                    double NORM_uError = uError.L2Norm();
-
-                    Console.WriteLine("Rest/Prlg error, level {0}: {1}", iLevel, NORM_uError);
-                    Assert.LessOrEqual(NORM_uError, 1.0e-8);
-                }
-            }
+            
         }
 
 
@@ -733,8 +724,8 @@ namespace BoSSS.Application.MultigridTest {
             int Lfin = mgMap.LocalLength;
             int Lcrs = mgOp.CoarserLevel.Mapping.LocalLength;
 
-            Debug.Assert(FineIn.Length == Lfin);
-            Debug.Assert(FineOut.Length == Lfin);
+            Assert.IsTrue(FineIn.Length == Lfin);
+            Assert.IsTrue(FineOut.Length == Lfin);
 
             double[] Coarse1 = new double[Lcrs];
             double[] Coarse2 = new double[Lcrs];
@@ -768,14 +759,14 @@ namespace BoSSS.Application.MultigridTest {
 
             
             Random rnd = new Random();
-            int Ltop = xt.MultigridOp.Mapping.LocalLength; // Number of DOF's on top multigrid level.
+            int Ltop = xt.XdgMultigridOp.Mapping.LocalLength; // Number of DOF's on top multigrid level.
 
 
             double[] RndVec = Ltop.ForLoop(i => rnd.NextDouble());
             double[] NoJmpVec = new double[Ltop];
 
             for (int iLevel = 0; iLevel < MgSeq.Length - 1; iLevel++) {
-                XDG_Recursive(0, iLevel, xt.MultigridOp, RndVec, NoJmpVec); // restrict RndVec downt to level 'iLevel', and back up
+                XDG_Recursive(0, iLevel, xt.XdgMultigridOp, RndVec, NoJmpVec); // restrict RndVec downt to level 'iLevel', and back up
 
                 // right now, the XDG field defined by 'NoJmpVec' should be a member 
                 // of the aggregated XDG space on level 'iLevel';
@@ -783,13 +774,13 @@ namespace BoSSS.Application.MultigridTest {
                 // Let's test that!
 
                 XDGField Test = new XDGField(xt.XB, "Test");
-                xt.MultigridOp.TransformSolFrom(Test.CoordinateVector, NoJmpVec);
+                xt.XdgMultigridOp.TransformSolFrom(Test.CoordinateVector, NoJmpVec);
                 //xt.agg.Extrapolate(Test.Mapping);
                 var aggGrd = MgSeq[iLevel];
 
                 foreach (var spc in xt.LsTrk.SpeciesIdS) {
                     var Test_spc = Test.GetSpeciesShadowField(spc);
-                    var SpcMask = xt.LsTrk._Regions.GetSpeciesMask(spc);
+                    var SpcMask = xt.LsTrk.Regions.GetSpeciesMask(spc);
 
                     BitArray AggSourceBitmask = xt.agg.GetAgglomerator(spc).AggInfo.SourceCells.GetBitMask();
 

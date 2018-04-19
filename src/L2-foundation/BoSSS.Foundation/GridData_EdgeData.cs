@@ -789,7 +789,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             var Diff = V1G.CloneAs();
                             Diff.Acc(-1.0, V2G);
                             var err = Diff.L2Norm()/RelScale;
-                            Debug.Assert(err <= 1.0e-10 || Edge.IsPeriodic);
+                            Debug.Assert(err <= 1.0e-8 || Edge.IsPeriodic);
 
 #endif
                         }
@@ -2166,7 +2166,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         this.SqrtGramian.SetAll(1.0);
                     } else {
 
-                        var simplices = this.m_owner.Grid.RefElements;
+                        //var simplices = this.m_owner.Grid.RefElements;
                         
                         MultidimensionalArray Jac = MultidimensionalArray.Create(1, 1, D, D);
                         MultidimensionalArray JacSh = Jac.ExtractSubArrayShallow(0, 0, -1, -1);
@@ -2220,6 +2220,29 @@ namespace BoSSS.Foundation.Grid.Classic {
                     }
                 }
             }
+
+
+            public double GetSqrtGramianForNonConformEdge(int iEdge, int _inOut) {
+
+                double scaling = this.SqrtGramian[iEdge];
+
+                RefElement KrefEdge = this.GetRefElement(iEdge);
+                NodeSet KRefVert = KrefEdge.Vertices.GetVolumeNodeSet(this.m_owner, this.Edge2CellTrafoIndex[iEdge, _inOut]);
+
+                int D = this.m_owner.SpatialDimension;
+                double len = 0.0;
+                for (int d = 0; d < D; d++) {
+                    len += (KRefVert[1, d] - KRefVert[0, d]).Pow2();
+                }
+                len = len.Sqrt();
+                if (len < 0 || len > 2)
+                    throw new ArithmeticException();
+
+                return scaling * (2.0 / len);
+
+            }
+
+
 
             /// <summary>
             /// Edge-to-Cell - transformation index, i.e. index into <see cref="Edge2CellTrafos"/>;

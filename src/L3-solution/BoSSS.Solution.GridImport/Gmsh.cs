@@ -121,81 +121,81 @@ namespace BoSSS.Solution.GridImport {
     public class Gmsh : IGridImporter {
 
         static int[][,] REORDER = {
-            /// <summary>2-node line</summary>
+            // <summary>2-node line</summary>
             new int[,] {{ 0, 1 }},
-            /// <summary>3-node triangle</summary>
+            // <summary>3-node triangle</summary>
             new int[,] {{ 0, 1, 2 },{ 2, 1, 0 }},
-            /// <summary>4-node quadrangle</summary>
+            // <summary>4-node quadrangle</summary>
             new int[,] {{ 0, 1, 3, 2 },{ 0, 3, 1, 2 }},
-            /// <summary>4-node tetrahedron</summary>
+            // <summary>4-node tetrahedron</summary>
             new int[,] {{ 3, 2, 0, 1 },{ 3, 2, 0, 1 }},
-            /// <summary>8-node hexahedron</summary>
+            // <summary>8-node hexahedron</summary>
             new int[,] {{ 2, 3, 1, 0, 6, 7, 5, 4 },{ 0, 1, 3, 2, 4, 5, 7, 6 }},
-            /// <summary>6-node prism</summary> // Not BoSSS element
+            // <summary>6-node prism</summary> // Not BoSSS element
             new int[,] {{}},
-            /// <summary>5-node pyramid</summary> // Not BoSSS element
+            // <summary>5-node pyramid</summary> // Not BoSSS element
             new int[,] {{}},
-            /// <summary>3-node second order line (2 nodes associated with the vertices and 1 with the edge)</summary> // Not BoSSS element
+            // <summary>3-node second order line (2 nodes associated with the vertices and 1 with the edge)</summary> // Not BoSSS element
             new int[,] {{}},
-            /// <summary>6-node second order triangle (3 nodes associated with the vertices and 3 with the edges)</summary>
+            // <summary>6-node second order triangle (3 nodes associated with the vertices and 3 with the edges)</summary>
             new int[,] {{ 3, 4, 5, 0, 1, 2 },{ 5, 4, 3, 0, 2, 1 }},
-            /// <summary>9-node second order quadrangle (4 nodes associated with the vertices, 4 with the edges and 1 with the face)</summary>
+            // <summary>9-node second order quadrangle (4 nodes associated with the vertices, 4 with the edges and 1 with the face)</summary>
             new int[,] {{ 8, 7, 5, 6, 4, 0, 1, 3, 2 },{ 8, 5, 7, 6, 4, 1, 0, 2, 3 }},
-            /// <summary>10-node second order tetrahedron (4 nodes associated with the vertices and 6 with the edges)</summary>
+            // <summary>10-node second order tetrahedron (4 nodes associated with the vertices and 6 with the edges)</summary>
             new int[,] {{ 6, 4, 5, 7, 9, 8, 3, 2, 0, 1 },{ 6, 4, 5, 7, 9, 8, 3, 2, 0, 1 }},
-            /// <summary>27-node second order hexahedron (8 nodes associated with the vertices, 12 with the edges, 6 with the faces and 1 with the volume)</summary> // Not implemented 
+            // <summary>27-node second order hexahedron (8 nodes associated with the vertices, 12 with the edges, 6 with the faces and 1 with the volume)</summary> // Not implemented 
             new int[,] {{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26 },{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26 }}, 
-            /// <summary>18-node second order prism (6 nodes associated with the vertices, 9 with the edges and 3 with the quadrangular faces)</summary> // Not BoSSS element
+            // <summary>18-node second order prism (6 nodes associated with the vertices, 9 with the edges and 3 with the quadrangular faces)</summary> // Not BoSSS element
             new int[,] {{}},
-            /// <summary>14-node second order pyramid (5 nodes associated with the vertices, 8 with the edges and 1 with the quadrangular face)</summary> // Not BoSSS element
+            // <summary>14-node second order pyramid (5 nodes associated with the vertices, 8 with the edges and 1 with the quadrangular face)</summary> // Not BoSSS element
             new int[,] {{}},
-            /// <summary>1-node point</summary> // Not BoSSS element
+            // <summary>1-node point</summary> // Not BoSSS element
             new int[,] {{ 0 }}, 
-            /// <summary>8-node second order quadrangle (4 nodes associated with the vertices and 4 with the edges)</summary>
+            // <summary>8-node second order quadrangle (4 nodes associated with the vertices and 4 with the edges)</summary>
             new int[,] {{ 7, 5, 6, 4, 0, 1, 3, 2 },{ 5, 7, 6, 4, 1, 0, 2, 3 }},
-            /// <summary>20-node second order hexahedron (8 nodes associated with the vertices and 12 with the edges)</summary>  // Not implemented 
+            // <summary>20-node second order hexahedron (8 nodes associated with the vertices and 12 with the edges)</summary>  // Not implemented 
             new int[,] {{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 },{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 }},
-            /// <summary>15-node second order prism (6 nodes associated with the vertices and 9 with the edges)</summary> // Not BoSSS element
+            // <summary>15-node second order prism (6 nodes associated with the vertices and 9 with the edges)</summary> // Not BoSSS element
             new int[,] {{}},
-            /// <summary>13-node second order pyramid (5 nodes associated with the vertices and 8 with the edges)</summary> // Not BoSSS element
+            // <summary>13-node second order pyramid (5 nodes associated with the vertices and 8 with the edges)</summary> // Not BoSSS element
             new int[,] {{}},
-            /// <summary>9-node third order incomplete triangle (3 nodes associated with the vertices, 6 with the edges)</summary> 
+            // <summary>9-node third order incomplete triangle (3 nodes associated with the vertices, 6 with the edges)</summary> 
             new int[,] {{ 4, 3, 5, 6, 7, 8, 0, 1, 2 },{ 7, 8, 6, 5, 4, 3, 0, 2, 1 }},
-            /// <summary>10-node third order triangle (3 nodes associated with the vertices, 6 with the edges, 1 with the face)</summary>
+            // <summary>10-node third order triangle (3 nodes associated with the vertices, 6 with the edges, 1 with the face)</summary>
             new int[,] {{ 9, 4, 3, 5, 6, 7, 8, 0, 1, 2 },{ 9, 7, 8, 6, 5, 4, 3, 0, 2, 1 }},
-            /// <summary>12-node fourth order incomplete triangle (3 nodes associated with the vertices, 9 with the edges) </summary>
+            // <summary>12-node fourth order incomplete triangle (3 nodes associated with the vertices, 9 with the edges) </summary>
             new int[,] {{ 5, 4, 3, 6, 7, 8, 9, 10, 11, 0, 1, 2 },{ 11, 10, 9, 8, 7, 6, 5, 3, 4, 0, 2, 1 }},  
-            /// <summary>15-node fourth order triangle (3 nodes associated with the vertices, 9 with the edges, 3 with the face) </summary>
+            // <summary>15-node fourth order triangle (3 nodes associated with the vertices, 9 with the edges, 3 with the face) </summary>
             new int[,] {{ 13, 14, 12, 5, 4, 3, 6, 7, 8, 9, 10, 11, 0, 1, 2 },{ 14, 13, 12, 9, 10, 11, 8, 7, 6, 5, 4, 3, 0, 2, 1 }}, 
-            /// <summary>15-node fifth order incomplete triangle (3 nodes associated with the vertices, 12 with the edges)</summary>
+            // <summary>15-node fifth order incomplete triangle (3 nodes associated with the vertices, 12 with the edges)</summary>
             new int[,] {{ 6, 5, 4, 3, 7, 8, 9, 10, 11, 12, 13, 14, 0, 1, 2 },{ 11, 12, 13, 14, 10, 9, 8, 7, 6, 5, 4, 3, 0, 2, 1 }}, 
-            /// <summary>21-node fifth order complete triangle (3 nodes associated with the vertices, 12 with the edges, 6 with the face)</summary>
+            // <summary>21-node fifth order complete triangle (3 nodes associated with the vertices, 12 with the edges, 6 with the face)</summary>
             new int[,] {{ 16, 19, 18, 17, 20, 15, 6, 5, 4, 3, 7, 8, 9, 10, 11, 12, 13, 14, 0, 1, 2 },{ 16, 19, 18, 17, 20, 15, 6, 5, 4, 3, 7, 8, 9, 10, 11, 12, 13, 14, 0, 1, 2 }},
-            /// <summary>4-node third order edge (2 nodes associated with the vertices, 2 internal to the edge)</summary> // Not BoSSS element
+            // <summary>4-node third order edge (2 nodes associated with the vertices, 2 internal to the edge)</summary> // Not BoSSS element
             new int[,] {{}},
-            /// <summary>5-node fourth order edge (2 nodes associated with the vertices, 3 internal to the edge)</summary> // Not BoSSS element
+            // <summary>5-node fourth order edge (2 nodes associated with the vertices, 3 internal to the edge)</summary> // Not BoSSS element
             new int[,] {{}},
-            /// <summary>6-node fifth order edge (2 nodes associated with the vertices, 4 internal to the edge)</summary> // Not BoSSS element
+            // <summary>6-node fifth order edge (2 nodes associated with the vertices, 4 internal to the edge)</summary> // Not BoSSS element
             new int[,] {{}},
-            /// <summary>20-node third order tetrahedron (4 nodes associated with the vertices, 12 with the edges, 4 with the faces)</summary>
+            // <summary>20-node third order tetrahedron (4 nodes associated with the vertices, 12 with the edges, 4 with the faces)</summary>
             new int[,] {{ 16, 17, 18, 19, 8, 9, 5, 4, 6, 7, 11, 10, 15, 14, 13, 12, 3, 2, 0, 1 },{ 16, 17, 18, 19, 8, 9, 5, 4, 6, 7, 11, 10, 15, 14, 13, 12, 3, 2, 0, 1 }},
-            /// <summary>35-node fourth order tetrahedron (4 nodes associated with the vertices, 18 with the edges, 12 with the faces, 1 in the volume)</summary> // Not implemented 
+            // <summary>35-node fourth order tetrahedron (4 nodes associated with the vertices, 18 with the edges, 12 with the faces, 1 in the volume)</summary> // Not implemented 
             new int[,] {{ 34, 23, 24, 22, 26, 25, 27, 30, 28, 29, 32, 33, 31, 10, 11, 12, 6, 5, 4, 7, 8, 9, 15, 14, 13, 21, 20, 19, 18, 17, 16, 3, 2, 0, 1 },{ 34, 23, 24, 22, 26, 25, 27, 30, 28, 29, 32, 33, 31, 10, 11, 12, 6, 5, 4, 7, 8, 9, 15, 14, 13, 21, 20, 19, 18, 17, 16, 3, 2, 0, 1 }},
-            /// <summary>56-node fifth order tetrahedron (4 nodes associated with the vertices, 24 with the edges, 24 with the faces, 4 in the volume)</summary> // Not implemented 
+            // <summary>56-node fifth order tetrahedron (4 nodes associated with the vertices, 24 with the edges, 24 with the faces, 4 in the volume)</summary> // Not implemented 
             new int[,] {{}},
-            /// <summary>Unknown</summary> // Not implemented 
+            // <summary>Unknown</summary> // Not implemented 
             new int[,] {{}},
-            /// <summary>Unknown</summary> // Not implemented 
+            // <summary>Unknown</summary> // Not implemented 
             new int[,] {{}},
-            /// <summary>Unknown</summary> // Not implemented 
+            // <summary>Unknown</summary> // Not implemented 
             new int[,] {{}},
-            /// <summary>Unknown</summary> // Not implemented 
+            // <summary>Unknown</summary> // Not implemented 
             new int[,] {{}},
-            /// <summary>16-node third order quadrangle (8 nodes associated with the vertices, 4 with the edges, 4 with the face)</summary>
+            // <summary>16-node third order quadrangle (8 nodes associated with the vertices, 4 with the edges, 4 with the face)</summary>
             new int[,] {{ 14, 13, 15, 12, 10, 11, 7, 6, 8, 9, 5, 4, 0, 1, 3, 2 },{ 15, 12, 14, 13, 7, 6, 10, 11, 9, 8, 4, 5, 1, 0, 2, 3 }},  
-            /// <summary>25-node third order quadrangle (8 nodes associated with the vertices, 4 with the edges, 9 with the face)</summary>
+            // <summary>25-node third order quadrangle (8 nodes associated with the vertices, 4 with the edges, 9 with the face)</summary>
             new int[,] {{ 18, 21, 17, 22, 24, 20, 19, 23, 16, 13, 14, 15, 9, 8, 7, 10, 11, 12, 6, 5, 4, 0, 1, 3, 2 },{ 19, 23, 16, 22, 24, 20, 18, 21, 17, 9, 8, 7, 13, 14, 15, 12, 11, 10, 4, 5, 6, 1, 0, 2, 3 }},  
-            /// <summary>36-node third order quadrangle (12 nodes associated with the vertices, 4 with the edges, 16 with the face)</summary>
+            // <summary>36-node third order quadrangle (12 nodes associated with the vertices, 4 with the edges, 16 with the face)</summary>
             new int[,] {{ 22, 27, 26, 21, 28, 34, 33, 25, 29, 35, 32, 24, 23, 30, 31, 20, 16, 17, 18, 19, 11, 10, 9, 8, 12, 13, 14, 15, 7, 6, 5, 4, 0, 1, 3, 2 },{ 23, 30, 31, 20, 29, 35, 32, 24, 28, 34, 33, 25, 22, 27, 26, 21, 11, 10, 9, 8, 16, 17, 18, 19, 15, 14, 13, 12, 4, 5, 6, 7, 1, 0, 2, 3 }},                                
         };
 

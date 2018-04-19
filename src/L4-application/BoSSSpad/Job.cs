@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Foundation.IO;
+using ilPSP;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
@@ -210,6 +211,7 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
+        /*
         /// <summary>
         /// Specifies command line arguments for application startup; overrides any startup arguments (<see cref="CommandLineArguments"/>)
         /// set so far.
@@ -232,23 +234,35 @@ namespace BoSSS.Application.BoSSSpad {
                 m_EnvironmentVars.Add("BOSSS_ARG_" + i, args[i]);
             }
         }
+        */
+
 
         /// <summary>
         /// Specifies the control object for application startup; overrides any startup arguments (<see cref="CommandLineArguments"/>)
         /// set so far.
         /// </summary>
         public void SetControlObject(BoSSS.Solution.Control.AppControl ctrl) {
-            byte[] buffer;
-            using (var ms = new MemoryStream()) {
-                var bf = new BinaryFormatter();
-                bf.Serialize(ms, ctrl);
-                buffer = ms.GetBuffer();
+            // serialize control object
+            // ========================
+
+            ctrl.VerifyEx();
+            string ControlName, text;
+            int index = -1;
+            if (ctrl.GeneratedFromCode) {
+                text = ctrl.ControlFileText;
+                ControlName = "control.cs";
+                index = ctrl.ControlFileText_Index;
+            } else {
+                text = ctrl.Serialize();
+                ControlName = "control.obj";
             }
+            byte[] buffer = Encoding.UTF8.GetBytes(text);
+            AdditionalDeploymentFiles.Add(new Tuple<byte[], string>(buffer, ControlName));
 
-            AdditionalDeploymentFiles.Add(new Tuple<byte[], string>(buffer, "control.obj"));
-
+            // Project & Session Name
+            // ======================
             string PrjName = InteractiveShell.WorkflowMgm.CurrentProject;
-            if (string.IsNullOrWhiteSpace(PrjName)) {
+            if(string.IsNullOrWhiteSpace(PrjName)) {
                 throw new NotSupportedException("Project management not initialized - set project name (try e.g. 'WorkflowMgm.CurrentProject = \"BlaBla\"').");
             }
 
@@ -257,12 +271,19 @@ namespace BoSSS.Application.BoSSSpad {
                 "--prjnmn", PrjName,
                 "--sesnmn", this.Name
             };
+            if(index >= 0) {
+                ArrayTools.Cat(args, "--pstudy_case", index.ToString());
+            }
 
-            for (int i = 0; i < args.Length; i++) {
+
+            for(int i = 0; i < args.Length; i++) {
                 m_EnvironmentVars.Add("BOSSS_ARG_" + i, args[i]);
             }
+
+            // 
         }
 
+        /*
         /// <summary>
         /// Specifies command line arguments for application startup; overrides any startup arguments (<see cref="CommandLineArguments"/>)
         /// set so far.
@@ -271,6 +292,8 @@ namespace BoSSS.Application.BoSSSpad {
             File.ReadAllText(FileName);
             SetControlCode(File.ReadAllText(FileName));
         }
+        */
+
 
         string[] m_CommandLineArguments = new string[0];
 
@@ -318,6 +341,15 @@ namespace BoSSS.Application.BoSSSpad {
                 m_NumberOfMPIProcs = value;
             }
         }
+
+        /// <summary>
+        /// If true, the batch system should try not to run any other jobs in parallel on the assigned compute nodes.
+        /// </summary>
+        public bool UseComputeNodesExclusive {
+            get;
+            set;
+        }
+
 
         /// <summary>
         /// Returns the session which is the result of this job.
@@ -457,6 +489,9 @@ namespace BoSSS.Application.BoSSSpad {
             if (isSubmitted && !(isFailed || wasSuccessful) && (R == null))
                 return JobStatus.PendingInExecutionQueue;
 
+            if (isSubmitted == false && isRunning == false && wasSuccessful == false && isFailed == false && (RR.Length <= 0))
+                return JobStatus.PreActivation;
+
             if (isFailed || (R == null || R.Tags.Contains(BoSSS.Solution.Application.NOT_TERMINATED_TAG)))
                 return JobStatus.Failed;
 
@@ -483,6 +518,9 @@ namespace BoSSS.Application.BoSSSpad {
             if (this.AssignedBatchProc != null)
                 throw new NotSupportedException("Job can only be activated once.");
             AssignedBatchProc = bpc;
+
+            if (this.Name == "J2560_k2_exp_softpcg_mg")
+                Console.WriteLine();
 
             // ================
             // check job status
@@ -563,15 +601,17 @@ namespace BoSSS.Application.BoSSSpad {
 
             // deploy executables:
             bool RequiresDeploy = false;
-            if (DeployDir != null) {
+            if (DeployDir == null) {
                 if (!Directory.Exists(this.DeploymentDirectory) ||
                         !File.Exists(Path.Combine(DeployDir, Path.GetFileName(this.EntryAssembly.Location)))) {
                     RequiresDeploy = true;
                 }
-            } else {
-                RequiresDeploy = true;
+            }
+            else {
+                RequiresDeploy = false;
             }
 
+           
             if (RequiresDeploy) {
                 this.DeploymentDirectory = bpc.GetNewDeploymentDir(this);
                 bpc.DeployExecuteables(this, AdditionalDeploymentFiles);
@@ -600,6 +640,20 @@ namespace BoSSS.Application.BoSSSpad {
 
 
                 return stw.ToString();
+            }
+        }
+
+        string m_ExecutionTime = "00:05:00";
+
+        /// <summary>
+        /// Estimated execution time limit. Important for slurm queuing
+        /// </summary>
+        public string ExecutionTime {
+            get {
+                return m_ExecutionTime;
+            }
+            set {
+                m_ExecutionTime = value;
             }
         }
 

@@ -52,19 +52,22 @@ namespace BoSSS.Application.MultigridTest {
 
             //BoSSS.Application.MultigridTest.TestProgram.XDG_MatrixPolynomialRestAndPrlgTest(1, 0.0d, 1);
             
-            TestProgram.XDG_ProlongationTest(0, 0.3, 1, MultigridOperator.Mode.IdMass);
+            //TestProgram.XDG_ProlongationTest(0, 0.3, 1, MultigridOperator.Mode.IdMass);
 
-            /*
-            foreach (int w in new int[] { 0, 1 }) {
-                for (int p = 1; p <= 3; p++) {
-                    TestProgram.XDG_PolynomialRestAndPrlgTest(p, 0.3, w);
-                    TestProgram.XDG_MatrixPolynomialRestAndPrlgTest(p, 0.3, w);
-                    TestProgram.XDG_MatrixPolynomialRestAndPrlgTest_2(p, 0.3, w, MultigridOperator.Mode.IdMass);
-                    TestProgram.XDG_ProlongationTest(0, 0.0, w, MultigridOperator.Mode.IdMass);
-                    TestProgram.RestrictionOfSystemOpTest();
+            
+            foreach (int w in new int[] { 0 }) {
+                for (int p = 3; p <= 3; p++) {
+                    TestProgram.ProlongationTest(p);
+                    //TestProgram.PolynomialRestAndPrlgTest(p);
+                    //XDG_MatrixPolynomialRestAndPrlgTest_2
+                    //TestProgram.RestictionMatrixTest(p);
+                    //TestProgram.XDG_PolynomialRestAndPrlgTest(p, 0.3, w);
+                    TestProgram.XDG_MatrixPolynomialRestAndPrlgTest_2(p, 0.3);
+                    //TestProgram.XDG_MatrixPolynomialRestAndPrlgTest_2(p, 0.3, w, MultigridOperator.Mode.IdMass);
+                    //TestProgram.XDG_ProlongationTest(0, 0.0, w, MultigridOperator.Mode.IdMass);
                 }
             }
-            */
+            
 
             TestProgram.Cleanup();
         }

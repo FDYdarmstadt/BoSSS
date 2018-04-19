@@ -41,7 +41,6 @@ namespace CNS.Tests.IsentropicVortex {
             Application<VortexControl>._Main(
                 new string[] { @"-c cs:CNS.Tests.IsentropicVortex.ControlFiles.IsentropicVortexIdealGasRusanov()" },
                 false,
-                "",
                 delegate() {
                     p = new IsentropicVortexTest();
                     return p;
@@ -65,7 +64,6 @@ namespace CNS.Tests.IsentropicVortex {
             Application<VortexControl>._Main(
                 new string[] { @"-c cs:CNS.Tests.IsentropicVortex.ControlFiles.IsentropicVortexIdealGasHLLC()" },
                 false,
-                "",
                 delegate() {
                     p = new IsentropicVortexTest();
                     return p;
@@ -88,7 +86,6 @@ namespace CNS.Tests.IsentropicVortex {
             Application<VortexControl>._Main(
                 new string[] { @"-c cs:CNS.Tests.IsentropicVortex.ControlFiles.IsentropicVortexIdealGasOptimizedHLLC()" },
                 false,
-                "",
                 delegate() {
                     p = new IsentropicVortexTest();
                     return p;
@@ -111,7 +108,6 @@ namespace CNS.Tests.IsentropicVortex {
             Application<VortexControl>._Main(
                 new string[] { @"-c cs:CNS.Tests.IsentropicVortex.ControlFiles.IsentropicVortexStiffenedGasRusanov()" },
                 false,
-                "",
                 delegate() {
                     p = new IsentropicVortexTest();
                     return p;
@@ -134,7 +130,6 @@ namespace CNS.Tests.IsentropicVortex {
             Application<VortexControl>._Main(
                 new string[] { @"-c cs:CNS.Tests.IsentropicVortex.ControlFiles.IsentropicVortexCovolumeGasRusanov()" },
                 false,
-                "",
                 delegate() {
                     p = new IsentropicVortexTest();
                     return p;

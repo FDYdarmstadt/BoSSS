@@ -219,7 +219,7 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
-        /// Non-chached evaluation.
+        /// Non-cached evaluation.
         /// </summary>
         /// <param name="NS">Node set.</param>
         /// <param name="R">
@@ -237,13 +237,13 @@ namespace BoSSS.Foundation.Grid {
             if(R.Dimension != 2)
                 throw new ArgumentException("Wrong dimension of output array.");
             if(R.GetLength(0) != K)
-                throw new ArgumentException("Wrong 1st length of ouput array.");
+                throw new ArgumentException("Wrong 1st length of output array.");
             if(R.GetLength(1) != N)
-                throw new ArgumentException("Wrong 2nd length of ouput array.");
+                throw new ArgumentException("Wrong 2nd length of output array.");
 
             // use at least cached monomials: this ensures that the monomials are 
             // available for the highest degree that will be needed
-            Caching.MonomialCache.Instance.GetMonomials(NS, this.MaxAbsoluteDegree);
+            Caching.MonomialCache.Instance.GetMonomials(NS, this.MaxAbsoluteDegree); 
 
             for(int n = 0; n < N; n++) {
                 this[n].Evaluate(R.ExtractSubArrayShallow(-1, n), NS);

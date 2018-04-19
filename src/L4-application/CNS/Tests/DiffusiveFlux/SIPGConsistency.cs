@@ -14,20 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
-using System.IO;
-using System.Linq;
 using BoSSS.Foundation;
-using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
 using BoSSS.Solution;
 using CNS.Diffusion;
 using CNS.EquationSystem;
 using CNS.MaterialProperty;
-using CNS.Solution;
-using NUnit.Framework;
 using ilPSP.Utils;
-using BoSSS.Foundation.Grid.Classic;
+using NUnit.Framework;
+using System;
+using System.IO;
+using System.Linq;
 
 namespace CNS.Tests.DiffusiveFlux {
 
@@ -47,7 +45,7 @@ namespace CNS.Tests.DiffusiveFlux {
         /// </summary>
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             CoordinateMapping output_map = new CoordinateMapping(WorkingSet.ConservativeVariables);
-            operatorFactory.GetDiffusiveOperator().ToSpatialOperator().Evaluate(
+            operatorFactory.GetDiffusiveOperator().ToSpatialOperator(WorkingSet).Evaluate(
                 1.0, 0.0, new CoordinateMapping(WorkingSet.ConservativeVariables), null, output_map);
             output = new CoordinateVector(output_map);
 
@@ -97,7 +95,6 @@ namespace CNS.Tests.DiffusiveFlux {
             Application<CNSControl>._Main(
                 new string[] { controlFile },
                 false,
-                "",
                 delegate() {
                     prog = new SIPGConsistency();
                     prog.noOfCells = numOfCells;
@@ -132,7 +129,6 @@ namespace CNS.Tests.DiffusiveFlux {
             Application<CNSControl>._Main(
                 new string[] { controlFile },
                 false,
-                "",
                 delegate () {
                     prog = new SIPGConsistency();
                     prog.noOfCells = numOfCells;
@@ -174,7 +170,6 @@ namespace CNS.Tests.DiffusiveFlux {
                     throw new ArgumentException("Wrong diffusive type, only SIPG (0) and OptimizedSIPG (1) exist");
             }
             c.SIPGPenaltyScaling = 1.0;
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 1;
 

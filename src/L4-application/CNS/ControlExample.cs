@@ -19,15 +19,14 @@ double advectionVelocity = 1.0;
 c.savetodb = true;
 c.saveperiod = 1;
 c.ProjectName = "Isentropic vortex";
-c.ProjectDescription = String.Format( \
-    "Isentropic vortex in a periodic domain with {0}x{0} cells using polynomials of order {1}", \
-    noOfCellsPerDirection, \
+c.ProjectDescription = String.Format(
+    "Isentropic vortex in a periodic domain with {0}x{0} cells using polynomials of order {1}",
+    noOfCellsPerDirection,
     dgDegree);
 c.Tags.Add("Isentropic vortex");
 
 c.ActiveOperators = Operators.Convection;
 c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
-c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
 c.ExplicitScheme = ExplicitSchemes.RungeKutta;
 c.ExplicitOrder = 4;
 
@@ -43,10 +42,10 @@ c.AddVariable(Variables.Velocity.yComponent, dgDegree);
 c.AddVariable(Variables.Pressure, dgDegree);
 c.AddVariable(Variables.Entropy, dgDegree);
 
-c.GridFunc = delegate { \
-    double[] nodes = GenericBlas.Linspace(-10.0, 10.0, noOfCellsPerDirection + 1); \
-    var grid = Grid2D.Cartesian2DGrid(nodes, nodes, periodicX: true, periodicY: true); \
-    return grid; \
+c.GridFunc = delegate {
+    double[] nodes = GenericBlas.Linspace(-10.0, 10.0, noOfCellsPerDirection + 1);
+    var grid = Grid2D.Cartesian2DGrid(nodes, nodes, periodicX: true, periodicY: true);
+    return grid;
 };
 
 double gamma = c.EquationOfState.HeatCapacityRatio;

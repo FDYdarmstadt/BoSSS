@@ -19,14 +19,13 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.SpecFEM;
-using BoSSS.Platform;
 using BoSSS.Solution;
 using BoSSS.Solution.Timestepping;
+using CNS.Convection;
 using CNS.IBM;
 using CNS.ShockCapturing;
 using ilPSP;
 using System;
-using System.IO;
 using System.Linq;
 using static CNS.Variable;
 
@@ -177,14 +176,16 @@ namespace CNS {
         public static readonly DerivedVariable CFL = new DerivedVariable(
             "cfl",
             VariableTypes.Other,
-            delegate (DGField cfl, CellMask cellMask, IProgram<CNSControl> P) {
-                if (P.FullOperator == null) {
+            delegate (DGField cfl, CellMask cellMask, IProgram<CNSControl> program) {
+                // CFL sizes cannnot be plotted for the initial step, as the operator does not exist yet
+                if (program.FullOperator == null) {
                     return;
                 }
 
                 // Query each cell individually so we get local results
-                for (int i = 0; i < P.Grid.NoOfUpdateCells; i++) {
-                    double localCFL = P.FullOperator.CFLConstraints.Min(c => c.GetLocalStepSize(i, 1));
+                for (int i = 0; i < program.Grid.NoOfUpdateCells; i++) {
+                    // Use "harmonic sum" of individual step sizes - see ExplicitEuler
+                    double localCFL = 1.0 / program.FullOperator.CFLConstraints.Sum(c => 1.0 / (program.Control.CFLFraction * c.GetLocalStepSize(i, 1)));
                     cfl.SetMeanValue(i, localCFL);
                 }
             });
@@ -195,15 +196,17 @@ namespace CNS {
         public static readonly DerivedVariable CFLConvective = new DerivedVariable(
             "cflConvective",
             VariableTypes.Other,
-            delegate (DGField cfl, CellMask cellMask, IProgram<CNSControl> P) {
-                if (P.FullOperator == null) {
+            delegate (DGField cfl, CellMask cellMask, IProgram<CNSControl> program) {
+                // CFL sizes cannnot be plotted for the initial step, as the operator does not exist yet
+                if (program.FullOperator == null) {
                     return;
                 }
 
+                TimeStepConstraint cflConstraint = program.FullOperator.CFLConstraints.OfType<ConvectiveCFLConstraint>().Single();
+
                 // Query each cell individually so we get local results
-                TimeStepConstraint cflConstraint = P.FullOperator.CFLConstraints.OfType<Convection.ConvectiveCFLConstraint>().Single();
-                for (int i = 0; i < P.Grid.NoOfUpdateCells; i++) {
-                    double localCFL = cflConstraint.GetLocalStepSize(i, 1);
+                for (int i = 0; i < program.Grid.NoOfUpdateCells; i++) {
+                    double localCFL = program.Control.CFLFraction * cflConstraint.GetLocalStepSize(i, 1);
                     cfl.SetMeanValue(i, localCFL);
                 }
             });
@@ -214,15 +217,17 @@ namespace CNS {
         public static readonly DerivedVariable CFLArtificialViscosity = new DerivedVariable(
             "cflArtificialViscosity",
             VariableTypes.Other,
-            delegate (DGField cfl, CellMask cellMask, IProgram<CNSControl> P) {
-                if (P.FullOperator == null) {
+            delegate (DGField cfl, CellMask cellMask, IProgram<CNSControl> program) {
+                // CFL sizes cannnot be plotted for the initial step, as the operator does not exist yet
+                if (program.FullOperator == null) {
                     return;
                 }
 
+                TimeStepConstraint cflConstraint = program.FullOperator.CFLConstraints.OfType<ArtificialViscosityCFLConstraint>().Single();
+
                 // Query each cell individually so we get local results
-                TimeStepConstraint cflConstraint = P.FullOperator.CFLConstraints.OfType<ArtificialViscosityCFLConstraint>().Single();
-                for (int i = 0; i < P.Grid.NoOfUpdateCells; i++) {
-                    double localCFL = cflConstraint.GetLocalStepSize(i, 1);
+                for (int i = 0; i < program.Grid.NoOfUpdateCells; i++) {
+                    double localCFL = program.Control.CFLFraction * cflConstraint.GetLocalStepSize(i, 1);
                     cfl.SetMeanValue(i, localCFL);
                 }
             });
@@ -260,13 +265,13 @@ namespace CNS {
                     // the fact that velocity has already been upated is EVIL
 
                     //if (Velocity == null) {
-                    //    throw new ConfigurationException(
+                    //    throw new Exception(
                     //        "Currently, computing vorticity requires calculating the velocity first");
                     //}
 
                     //switch (CNSEnvironment.NumberOfDimensions) {
                     //    case 1:
-                    //        throw new ConfigurationException(
+                    //        throw new Exception(
                     //            "The concept of vorticity does not make sense for"
                     //            + " one-dimensional flows");
 
@@ -285,7 +290,7 @@ namespace CNS {
                     //        break;
 
                     //    default:
-                    //        throw new InternalErrorException();
+                    //        throw new Exception();
                     //}
                 }));
 
@@ -321,11 +326,9 @@ namespace CNS {
         /// <summary>
         /// The local non-dimensional artifical viscosity
         /// </summary>
-        /// 
-        //######################################################################
-        //IMPORTANT: UPDATE ONLY POSSIBLE AFTER SENSOR FIELD WAS UPDATED/CREATED
-        //depends on the order of the variables in the variable list
-        //######################################################################
+        /// <remarks>
+        /// IMPORTANT: UPDATE ONLY POSSIBLE AFTER SENSOR FIELD WAS UPDATED/CREATED
+        /// </remarks>
         private static SpecFemBasis avSpecFEMBasis;
         public static readonly DerivedVariable ArtificialViscosity = new DerivedVariable(
             "artificialViscosity",
@@ -376,18 +379,8 @@ namespace CNS {
                     specFemField.ProjectDGFieldMaximum(1.0, avField);
                     avField.Clear();
                     specFemField.AccToDGField(1.0, avField);
+                    avField.Clear(CellMask.GetFullMask(program.GridData).Except(program.SpeciesMap.SubGrid.VolumeMask));
                 } else {
-                    //MultidimensionalArray verticeCoordinates = MultidimensionalArray.Create(
-                    //    NoOfCells, verticesPerCell, dimension);
-                    //context.TransformLocal2Global(
-                    //    localVerticeCoordinates,
-                    //    cnk.i0,
-                    //    cnk.Len,
-                    //    verticeCoordinates,
-                    //    cnt);
-                    //PlotDriver.ZoneDriver.InitializeVertice2(
-                    //    ;
-
                     if (program.GridData.MpiSize > 1) {
                         throw new NotImplementedException();
                     }
@@ -444,10 +437,12 @@ namespace CNS {
         /// <summary>
         /// The local sensor value of a shock sensor
         /// </summary>
-        public static readonly DerivedVariable Sensor = new DerivedVariable(
+        public static readonly DerivedVariable ShockSensor = new DerivedVariable(
             "sensor",
             VariableTypes.Other,
             delegate (DGField s, CellMask cellMask, IProgram<CNSControl> program) {
+                s.Clear();  // Just to be sure that we get new values only
+
                 IShockSensor sensor = program.Control.ShockSensor;
                 foreach (Chunk chunk in cellMask) {
                     foreach (int cell in chunk.Elements) {
@@ -457,29 +452,57 @@ namespace CNS {
             });
 
         /// <summary>
-        /// The sub-grid ids of individual local time-stepping sub-grids
+        /// The clusters when using local time stepping
         /// </summary>
-        public static readonly DerivedVariable LTSSubGrids = new DerivedVariable(
+        public static readonly DerivedVariable LTSClusters = new DerivedVariable(
             "clusterLTS",
             VariableTypes.Other,
-            delegate (DGField subGridField, CellMask cellMask, IProgram<CNSControl> program) {
-                Program<CNSControl> p = (Program<CNSControl>)program;
-                AdamsBashforthLTS lts = (AdamsBashforthLTS)p.TimeStepper;
-                if (lts != null)
-                    subGridField.CopyFrom(lts.SubGridField);
+            delegate (DGField ClusterVisualizationField, CellMask cellMask, IProgram<CNSControl> program) {
+                AdamsBashforthLTS LTSTimeStepper = (AdamsBashforthLTS)program.TimeStepper;
+
+                // Don't fail, just ignore
+                if (LTSTimeStepper == null) {
+                    return;
+                }
+
+                for (int i = 0; i < LTSTimeStepper.CurrentClustering.NumberOfClusters; i++) {
+                    SubGrid currentCluster = LTSTimeStepper.CurrentClustering.Clusters[i];
+                    for (int j = 0; j < currentCluster.LocalNoOfCells; j++) {
+                        foreach (Chunk chunk in currentCluster.VolumeMask) {
+                            foreach (int cell in chunk.Elements) {
+                                ClusterVisualizationField.SetMeanValue(cell, i);
+                            }
+                        }
+                    }
+                }
             });
 
         /// <summary>
-        /// The sub-grid ids of individual local time-stepping sub-grids
+        /// The so-called Schlieren variables is based on the magnitude of the density gradient
         /// </summary>
-        public static readonly DerivedVariable IBMLTSSubGrids = new DerivedVariable(
-            "clusterIBMLTS",
+        public static readonly DerivedVariable Schlieren = new DerivedVariable(
+            "schlieren",
             VariableTypes.Other,
-            delegate (DGField subGridField, CellMask cellMask, IProgram<CNSControl> program) {
-                Program<IBMControl> p = (Program<IBMControl>)program;
-                IBMAdamsBashforthLTS lts = (IBMAdamsBashforthLTS)p.TimeStepper;
-                if (lts != null)
-                    subGridField.CopyFrom(lts.SubGridField);
+            delegate (DGField schlierenField, CellMask cellMask, IProgram<CNSControl> program) {
+                schlierenField.Clear();
+
+                // Calculate the magnitude of the density gradient
+                SinglePhaseField derivative = new SinglePhaseField(schlierenField.Basis, "derivative");
+                int D = program.GridData.SpatialDimension;
+
+                for (int d = 0; d < D; d++) {
+                    derivative.Derivative(1.0, program.WorkingSet.Density, d);
+                    foreach (Chunk chunk in cellMask) {
+                        foreach (int cell in chunk.Elements) {
+                            double updateValue = schlierenField.GetMeanValue(cell) + Math.Pow(derivative.GetMeanValue(cell), 2);
+                            if (d == (D - 1)) {
+                                schlierenField.SetMeanValue(cell, Math.Sqrt(updateValue));
+                            } else {
+                                schlierenField.SetMeanValue(cell, updateValue);
+                            }
+                        }
+                    }
+                }
             });
     }
 }

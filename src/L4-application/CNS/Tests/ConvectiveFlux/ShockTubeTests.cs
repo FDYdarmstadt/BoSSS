@@ -14,21 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
-using BoSSS.Platform;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.Queries;
 using CNS.Convection;
 using CNS.EquationSystem;
 using CNS.MaterialProperty;
-using CNS.Solution;
+using ilPSP;
 using ilPSP.Utils;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
-using ilPSP;
-
 
 namespace CNS.Tests.ConvectiveFlux {
 
@@ -50,11 +46,7 @@ namespace CNS.Tests.ConvectiveFlux {
             ConvectiveFluxTypes.Godunov
         };
 
-        private static CommandLineOptions commandLineOptions = null;
-        //private static CommandLineOptions commandLineOptions = new CommandLineOptions() {
-        //    delPlt = true,
-        //    ImmediatePlotPeriod = 1
-        //};
+       
 
         //public static void Main(string[] args) {
         //    SetUp();
@@ -82,7 +74,7 @@ namespace CNS.Tests.ConvectiveFlux {
             c.Endtime = 0.2;
 
             var solver = new Program();
-            solver.Init(c, commandLineOptions);
+            solver.Init(c);
             solver.RunSolverMode();
 
             return solver.QueryHandler.QueryResults;
@@ -133,7 +125,7 @@ namespace CNS.Tests.ConvectiveFlux {
             c.Endtime = 0.15;
 
             var solver = new Program();
-            solver.Init(c, commandLineOptions);
+            solver.Init(c);
             solver.RunSolverMode();
 
             return solver.QueryHandler.QueryResults;
@@ -183,7 +175,7 @@ namespace CNS.Tests.ConvectiveFlux {
             c.Endtime = 0.012;
 
             var solver = new Program();
-            solver.Init(c, commandLineOptions);
+            solver.Init(c);
             solver.RunSolverMode();
 
             return solver.QueryHandler.QueryResults;
@@ -234,7 +226,7 @@ namespace CNS.Tests.ConvectiveFlux {
             c.Endtime = 0.035;
 
             var solver = new Program();
-            solver.Init(c, commandLineOptions);
+            solver.Init(c);
             solver.RunSolverMode();
 
             return solver.QueryHandler.QueryResults;
@@ -285,7 +277,7 @@ namespace CNS.Tests.ConvectiveFlux {
             c.Endtime = 0.012;
 
             var solver = new Program();
-            solver.Init(c, commandLineOptions);
+            solver.Init(c);
             solver.RunSolverMode();
 
             return solver.QueryHandler.QueryResults;
@@ -338,7 +330,6 @@ namespace CNS.Tests.ConvectiveFlux {
             c.EquationOfState = IdealGas.Air;
             c.MachNumber = 1.0 / Math.Sqrt(c.EquationOfState.HeatCapacityRatio);
 
-            c.TimeSteppingScheme = TimeSteppingSchemes.Explicit;
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 1;
 
@@ -395,6 +386,8 @@ namespace CNS.Tests.ConvectiveFlux {
             c.dtMax = 1.0;
             c.CFLFraction = 0.5;
             c.NoOfTimesteps = int.MaxValue;
+
+            c.PrintInterval = 50;
 
             return c;
         }

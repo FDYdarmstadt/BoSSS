@@ -48,6 +48,11 @@ namespace BoSSS.Application.SpecFEM {
         internal bool m_periodicX = true;
         internal bool m_periodicY = false;
 
+        public override void Init(BoSSS.Solution.Control.AppControl control) {
+            control.GridPartType = BoSSS.Foundation.Grid.GridPartType.METIS;
+            base.Init(control);
+        }
+
         protected override GridCommons CreateOrLoadGrid() {
             int MeshPara = 32;
 
@@ -55,7 +60,6 @@ namespace BoSSS.Application.SpecFEM {
             double[] nodesY = GenericBlas.Linspace(-3, 3, MeshPara / 2 + 1); 
             var grid = Grid2D.Cartesian2DGrid(nodesX, nodesY, periodicX: m_periodicX, periodicY: m_periodicY); 
 
-            this.m_GridPartitioningType = GridPartType.METIS;
             return grid; 
 
 
@@ -99,7 +103,7 @@ namespace BoSSS.Application.SpecFEM {
         */
         }
 
-        protected override void CreateEquationsAndSolvers(LoadBalancingData L) {
+        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
         }
 
         internal bool Passed = false;

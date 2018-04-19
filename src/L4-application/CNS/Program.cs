@@ -15,28 +15,25 @@ limitations under the License.
 */
 
 using BoSSS.Foundation;
-using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
-using BoSSS.Foundation.XDG;
 using BoSSS.Solution;
 using BoSSS.Solution.ASCIIExport;
 using BoSSS.Solution.Tecplot;
-using BoSSS.Solution.Utils;
+using BoSSS.Solution.Timestepping;
 using CNS.Boundary;
 using CNS.EquationSystem;
-using CNS.Exception;
 using CNS.IBM;
+using CNS.LoadBalancing;
 using CNS.Residual;
-using CNS.Solution;
 using ilPSP;
 using ilPSP.Tracing;
-using ilPSP.Utils;
 using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 
 namespace CNS {
 
@@ -51,11 +48,10 @@ namespace CNS {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
-            
+
             Application<CNSControl>._Main(
                 args,
                 false,
-                "BoSSS.Foundation,BoSSS.Solution.Application,CNS",
                 () => new Program());
         }
     }
@@ -117,15 +113,17 @@ namespace CNS {
         protected IResidualLogger[] residualLoggers;
 
         /// <summary>
-        /// An optional field for the visualization of the clustering in case
-        /// of local time-stepping.
-        /// </summary>
-        protected DGField SubGridField;
-
-        /// <summary>
         /// Simulation time after restart (needed for time stepping)
         /// </summary>
-        protected double startTime = 0.0;
+        protected double StartTime = 0.0;
+
+        /// <summary>
+        /// Simulation timestep restart (needed for time stepping)
+        /// </summary>
+        public int TimestepNumber {
+            get;
+            protected set;
+        }
 
         /// <summary>
         /// Standard constructor, <see cref="Application"/>
@@ -140,13 +138,12 @@ namespace CNS {
         /// </summary>
         /// <returns></returns>
         protected override GridCommons CreateOrLoadGrid() {
-            GridCommons grid = base.CreateOrLoadGrid();
-            CNSEnvironment.Initialize(grid.SpatialDimension);
-            return grid;
+            using (var ht = new FuncTrace()) {
+                GridCommons grid = base.CreateOrLoadGrid();
+                CNSEnvironment.Initialize(grid.SpatialDimension);
+                return grid;
+            }
         }
-
-        // Hack
-        //public SpecFemField specFemField;
 
         /// <summary>
         /// Initializes the <see cref="WorkingSet"/> and adds all relevant
@@ -157,48 +154,55 @@ namespace CNS {
         /// method be called by <see cref="Application{T}._Main"/>.
         /// </remarks>
         protected override void CreateFields() {
-            WorkingSet = Control.DomainType.CreateWorkingSet(GridData, Control);
-            SpeciesMap = Control.DomainType.CreateSpeciesMap(WorkingSet, Control, GridData);
+            using (var ht = new FuncTrace()) {
+                WorkingSet = Control.DomainType.CreateWorkingSet(GridData, Control);
+                SpeciesMap = Control.DomainType.CreateSpeciesMap(WorkingSet, Control, GridData);
 
-            BoundaryConditionMap map = GetBoundaryConditionMap();
-            operatorFactory = Control.DomainType.GetOperatorFactory(
-                Control, GridData, map, WorkingSet, SpeciesMap);
+                BoundaryConditionMap map = GetBoundaryConditionMap();
+                operatorFactory = Control.DomainType.GetOperatorFactory(
+                    Control, GridData, map, WorkingSet, SpeciesMap);
 
-            m_IOFields.AddRange(WorkingSet.AllFields);
-            m_RegisteredFields.AddRange(WorkingSet.AllFields);
+                m_IOFields.AddRange(WorkingSet.AllFields);
+                m_RegisteredFields.AddRange(WorkingSet.AllFields);
+            }
         }
 
         /// <summary>
         /// Creates the correct equations depending on
         /// <see cref="CNSControl.DomainType"/>. Additionally, it creates
-        /// the associated time stepper using an instance of
-        /// <see cref="TimeStepperFactory"/>.
+        /// the associated time stepper
         /// </summary>
-        protected override void CreateEquationsAndSolvers(LoadBalancingData loadBalancingData) {
-            FullOperator = operatorFactory.GetJoinedOperator();
+        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase gridUpdateData) {
+            using (var ht = new FuncTrace()) {
+                FullOperator = operatorFactory.GetJoinedOperator();
 
-            CoordinateMapping variableMap = new CoordinateMapping(WorkingSet.ConservativeVariables);
+                TimeStepper = Control.ExplicitScheme.Instantiate(
+                    Control,
+                    operatorFactory,
+                    WorkingSet,
+                    ParameterMapping,
+                    SpeciesMap,
+                    this);
 
-            TimeStepperFactory timeStepperFactory = new TimeStepperFactory(
-                Control,
-                GridData,
-                operatorFactory,
-                SpeciesMap);
-            TimeStepper = timeStepperFactory.GetTimeStepper(variableMap, ParameterMapping, this);
+                // Resets simulation time after a restart
+                TimeStepper.ResetTime(StartTime, TimestepNumber);
 
-            // Resets simulation time after a restart
-            TimeStepper.ResetTime(startTime);
+                // Update time information (needed for LTS runs)
+                TimeStepper.UpdateTimeInfo(new TimeInformation(TimestepNumber, StartTime, -1));
 
-            // Configure residual handling
-            if (loadBalancingData == null) {
-                // Do not change these settings upon repartitioning
-                ResLogger.WriteResidualsToTextFile = true;
-                ResLogger.WriteResidualsToConsole = false;
+                // Configure residual handling
+                if (gridUpdateData == null) {
+                    // Do not change these settings upon repartitioning
+                    ResLogger.WriteResidualsToTextFile = true;
+                    ResLogger.WriteResidualsToConsole = false;
+                }
+                residualLoggers = Control.ResidualLoggerType.Instantiate(
+                    this,
+                    Control,
+                    FullOperator.ToSpatialOperator(WorkingSet)).ToArray();
+
+                WorkingSet.UpdateDerivedVariables(this, SpeciesMap.SubGrid.VolumeMask);
             }
-            residualLoggers = Control.ResidualLoggerType.Instantiate(
-                this,
-                Control,
-                FullOperator.ToSpatialOperator()).ToArray();
         }
 
         /// <summary>
@@ -230,21 +234,36 @@ namespace CNS {
             using (var ht = new FuncTrace()) {
                 int printInterval = Control.PrintInterval;
                 if (DatabaseDriver.MyRank == 0 && TimestepNo % printInterval == 0) {
-                    //Console.WriteLine();
+#if DEBUG
+                    Console.WriteLine();
+#endif
                     Console.Write("Starting time step #" + TimestepNo + "...");
                 }
 
-                System.Exception e = null;
+                // Update shock-capturing variables before performing a time step
+                // as the time step constraints (could) depend on artificial viscosity.
+                // If not doing so, the artificial viscosity values from the previous
+                // time step are taken (unless UpdateDerivedVariables has been called by
+                // SavetoDatabase which depends on the saveperiod specified in the control file). 
+                if (this.Control.ArtificialViscosityLaw != null) {
+                    WorkingSet.UpdateShockCapturingVariables(this, SpeciesMap.SubGrid.VolumeMask);
+                }
+
+                // Create TimeInformation object in order to make information available for
+                // the time stepper
+                TimeStepper.UpdateTimeInfo(new TimeInformation(TimestepNo, phystime, dt));
+
+                Exception e = null;
                 try {
-                } catch (System.Exception ee) {
+                    dt = TimeStepper.Perform(dt);
+                } catch (Exception ee) {
                     e = ee;
                 }
                 e.ExceptionBcast();
 
-                dt = TimeStepper.Perform(dt);
-
-                if (DatabaseDriver.MyRank == 0 && TimestepNo % printInterval == 0) {
-                    Console.WriteLine(" done. PhysTime: {0:0.#######E-00}, dt: {1:0.###E-00}", phystime, dt);
+                if (TimestepNo % printInterval == 0) {
+                    Console.WriteLine(" done. PhysTime: {0:0.#######E-00}, dt: {1:0.#######E-00}", phystime, dt);
+                    //Console.WriteLine(" done. PhysTime: {0}, dt: {1}", phystime, dt);
                 }
 
                 IDictionary<string, double> residuals = residualLoggers.LogTimeStep(TimestepNo, dt, phystime);
@@ -257,9 +276,26 @@ namespace CNS {
             }
         }
 
+        /// <summary>
+        /// Makes sure all derived variables are updated before saving
+        /// </summary>
+        /// <param name="timestepno"></param>
+        /// <param name="t"></param>
+        /// <returns></returns>
         protected override ITimestepInfo SaveToDatabase(TimestepNumber timestepno, double t) {
-            WorkingSet.UpdateDerivedVariables(this, SpeciesMap.SubGrid.VolumeMask);
-            return base.SaveToDatabase(timestepno, t);
+            using (var ht = new FuncTrace()) {
+                WorkingSet.UpdateDerivedVariables(this, SpeciesMap.SubGrid.VolumeMask);
+                return base.SaveToDatabase(timestepno, t);
+            }
+        }
+
+        /// <summary>
+        /// See <see cref="SaveToDatabase(TimestepNumber, double)"/>
+        /// </summary>
+        /// <param name="ts"></param>
+        /// <param name="phystime"></param>
+        void IProgram<T>.SaveToDatabase(TimestepNumber ts, double phystime) {
+            this.SaveToDatabase(ts, phystime);
         }
 
         private bool ShouldTerminate(IDictionary<string, double> residuals) {
@@ -268,7 +304,7 @@ namespace CNS {
                 bool terminate = true;
                 foreach (var keyThresholdPair in Control.ResidualBasedTerminationCriteria) {
                     if (!residuals.ContainsKey(keyThresholdPair.Key)) {
-                        throw new Exception.ConfigurationException(String.Format(
+                        throw new Exception(String.Format(
                             "A termination criterion is based on {0} was found"
                                 + " but the corresponding residual value was"
                                 + " not calculated.",
@@ -297,91 +333,76 @@ namespace CNS {
         /// <param name="timestepNo">The time step</param>
         /// <param name="superSampling"></param>
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
-            if (plotDriver == null) {
-                if (CNSEnvironment.NumberOfDimensions == 1) {
-                    plotDriver = new CurveExportDriver(GridData, true, (uint)superSampling);
-                } else {
-                    plotDriver = new Tecplot(GridData, true, false, (uint)superSampling);
+            using (var ht = new FuncTrace()) {
+                if (plotDriver == null) {
+                    if (CNSEnvironment.NumberOfDimensions == 1) {
+                        plotDriver = new CurveExportDriver(GridData, true, (uint)superSampling);
+                    } else {
+                        plotDriver = new Tecplot(GridData, true, false, (uint)superSampling);
+                    }
                 }
-            }
 
-            plotDriver.PlotFields("CNS-" + timestepNo, physTime, m_IOFields);
+                plotDriver.PlotFields("CNS-" + timestepNo, physTime, m_IOFields);
+            }
         }
 
         /// <summary>
         /// Sets the initial conditions
         /// </summary>
         protected override void SetInitial() {
-            WorkingSet.ProjectInitialValues(SpeciesMap, base.Control.InitialValues_Evaluators);
-            if (Control.ShockSensor != null) {
-                Control.ShockSensor.UpdateSensorValues(WorkingSet);
+            using (var ht = new FuncTrace()) {
+                WorkingSet.ProjectInitialValues(SpeciesMap, base.Control.InitialValues_Evaluators);
             }
-            WorkingSet.UpdateDerivedVariables(this, SpeciesMap.SubGrid.VolumeMask);
         }
 
         /// <summary>
         /// Sets the simulation time of the restart (needed for time stepping)
         /// and recomputes all derived variables
         /// </summary>
-        public override void PostRestart(double time) {
-            //FullOperator = operatorFactory.GetJoinedOperator();
-            this.startTime = time;
+        public override void PostRestart(double time, TimestepNumber timestep) {
+            using (var ht = new FuncTrace()) {
+                this.StartTime = time;
+                this.TimestepNumber = timestep.MajorNumber;
 
-            // This will often recompute data already present in the restart,
-            // but some of the configured derived variables might not have been
-            // in the original session, so let's play it safe
-            WorkingSet.UpdateDerivedVariables(this, SpeciesMap.SubGrid.VolumeMask);
-
-            ImmersedSpeciesMap ibmMap = SpeciesMap as ImmersedSpeciesMap;
-            if (ibmMap != null) {
-                LsTrk = ibmMap.Tracker;
+                if (SpeciesMap is ImmersedSpeciesMap ibmMap) {
+                    LsTrk = ibmMap.Tracker;
+                }
             }
         }
 
         /// <summary>
-        /// Disposes the time-stepper if necessary.
+        /// See <see cref="Application{T}.ComputeNewCellDistribution(int, double)"/>
         /// </summary>
-        public override void Dispose() {
-            IDisposable disposable = TimeStepper as IDisposable;
-            if (disposable != null) {
-                disposable.Dispose();
-            }
-
-            base.Dispose();
-        }
-
-
+        /// <param name="TimeStepNo"></param>
+        /// <param name="physTime"></param>
+        /// <returns></returns>
         protected override int[] ComputeNewCellDistribution(int TimeStepNo, double physTime) {
-            ImmersedSpeciesMap ibmMap = SpeciesMap as ImmersedSpeciesMap;
-            if (ibmMap != null) {
-                LsTrk = ibmMap.Tracker;
-            }
+            using (var ht = new FuncTrace()) {
+                if (SpeciesMap is ImmersedSpeciesMap ibmMap) {
+                    LsTrk = ibmMap.Tracker;
+                }
 
-            return base.ComputeNewCellDistribution(TimeStepNo, physTime);
+                return base.ComputeNewCellDistribution(TimeStepNo, physTime);
+            }
         }
 
         /// <summary>
-        /// Standard:
-        /// All cells are class 0
-        /// 
-        /// IBM:
-        /// - void cells are 0
-        /// - non-cut fluid cells are 1
-        /// - cut cells are 2
+        /// See <see cref="ICellClassifier"/>
         /// </summary>
-        protected override void GetCellPerformanceClasses(out int NoOfClasses, out int[] CellPerfomanceClasses) {
-            int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
+        /// <param name="NoOfClasses"></param>
+        /// <param name="cellToPerformanceClassMap"></param>
+        /// <param name="TimeStepNo"></param>
+        /// <param name="physTime"></param>
+        protected override void GetCellPerformanceClasses(out int NoOfClasses, out int[] cellToPerformanceClassMap, int TimeStepNo, double physTime) {
+            using (var ht = new FuncTrace()) {
+                // Update clustering before cell redistribution when LTS is being used
+                if (TimeStepper is AdamsBashforthLTS ABLTSTimeStepper) {
+                    ABLTSTimeStepper.UpdateTimeInfo(new TimeInformation(TimeStepNo, physTime, -1));
+                    bool reclustered = ABLTSTimeStepper.TryNewClustering(dt: -1);
+                    ABLTSTimeStepper.SetReclusteredByGridRedist(reclustered);
+                }
 
-            if (Control.DomainType == DomainTypes.Standard) {
-                NoOfClasses = 1;
-                CellPerfomanceClasses = new int[J];
-            } else {
-                NoOfClasses = 3;
-                CellPerfomanceClasses = new int[J];
-                foreach (int j in LsTrk._Regions.GetSpeciesMask("fluid").ItemEnum)
-                    CellPerfomanceClasses[j] = 1;
-                foreach (int j in LsTrk._Regions.GetCutCellMask().ItemEnum)
-                    CellPerfomanceClasses[j] = 2;
+                (NoOfClasses, cellToPerformanceClassMap) = Control.DynamicLoadBalancing_CellClassifier.ClassifyCells(this);
             }
         }
 
@@ -393,10 +414,6 @@ namespace CNS {
         /// <returns></returns>
         protected virtual BoundaryConditionMap GetBoundaryConditionMap() {
             return new BoundaryConditionMap(GridData, Control);
-        }
-
-        void IProgram<T>.SaveToDatabase(TimestepNumber ts, double phystime) {
-            base.SaveToDatabase(ts, phystime);
         }
     }
 }

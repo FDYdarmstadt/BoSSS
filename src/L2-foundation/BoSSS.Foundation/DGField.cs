@@ -1194,13 +1194,16 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
-        /// guess what?
+        /// Creates a new object that is a copy of the current instance.
+        /// See <see cref="ICloneable.Clone"/>
         /// </summary>
         abstract public object Clone();
 
         /// <summary>
-        /// guess what?
+        /// Creates a new object that is a copy of the current instance.
+        /// See <see cref="ICloneable.Clone"/>
         /// </summary>
+        /// <returns>A new object that is a copy of this instance.</returns>
         public DGField CloneAs() {
             return (DGField)Clone();
         }

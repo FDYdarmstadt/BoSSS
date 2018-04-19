@@ -53,10 +53,10 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// </summary>
         private JumpTypes jumpType;
 
-        /// <summary>
-        /// Tracks the level set
-        /// </summary>
-        private LevelSetTracker tracker;
+        ///// <summary>
+        ///// Tracks the level set
+        ///// </summary>
+        //private LevelSetTracker tracker;
 
         /// <summary>
         /// Factory for one-dimensional integration rules for the edges of the
@@ -140,12 +140,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// <summary>
         /// Constructor
         /// </summary>
-        /// <param name="tracker">
-        /// Tracker for the considered level set
-        /// </param>
-        /// <param name="levelSetIndex">
-        /// Index of the considered level set in <paramref name="tracker"/>
-        /// </param>
+        /// <param name="lsData"></param>
         /// <param name="rootFindingAlgorithm">
         /// One-dimensional root-finding algorithm for determining roots of the
         /// level set function on edges of the edges of the volume simplex.
@@ -156,27 +151,20 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// level set values, positive level set values, or both)
         /// </param>
         public LevelSetEdgeVolumeQuadRuleFactory(
-            LevelSetTracker tracker, int levelSetIndex, LineSegment.IRootFindingAlgorithm rootFindingAlgorithm = null, JumpTypes jumpType = JumpTypes.Heaviside) {
-
-            if (tracker.GridDat.Grid.RefElements.Length > 1) {
+            LevelSetTracker.LevelSetData lsData, LineSegment.IRootFindingAlgorithm rootFindingAlgorithm = null, JumpTypes jumpType = JumpTypes.Heaviside) {
+            if (lsData.GridDat.Cells.RefElements.Length > 1) {
                 throw new NotImplementedException(
                     "Multiple reference elements currently not supported");
             }
-
-            this.tracker = tracker;
+            this.LevelSetData = lsData;
             this.jumpType = jumpType;
-            if (levelSetIndex >= tracker.LevelSets.Count) {
-                throw new ArgumentOutOfRangeException("Please specify a valid index for the level set function");
-            }
-            this.levelSetIndex = levelSetIndex;
-            CoFaceQuadRuleFactory = new CutLineOnEdgeQuadRuleFactory(
-                tracker, levelSetIndex, rootFindingAlgorithm, jumpType);
-            edgeSurfaceRuleFactory = new LevelSetEdgeSurfaceQuadRuleFactory(
-                tracker, levelSetIndex, CoFaceQuadRuleFactory, jumpType);
+            this.levelSetIndex = lsData.LevelSetIndex;
+            CoFaceQuadRuleFactory = new CutLineOnEdgeQuadRuleFactory(lsData, rootFindingAlgorithm, jumpType);
+            edgeSurfaceRuleFactory = new LevelSetEdgeSurfaceQuadRuleFactory(lsData, CoFaceQuadRuleFactory, jumpType);
 
             // Use vertices; Since it is only used on edges that are considered
             // uncut, they _should_ all have the same sign
-            RefElement simplex = tracker.GridDat.Grid.RefElements[0];
+            RefElement simplex = LevelSetData.GridDat.Grid.RefElements[0];
             RefElement edgeSimplex = simplex.FaceRefElement;
             QuadRule signEdgeRule = new QuadRule() {
                 Nodes = edgeSimplex.Vertices,
@@ -184,9 +172,14 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             };
 
             signTestRule = new CellBoundaryFromEdgeRuleFactory<CellBoundaryQuadRule>(
-                tracker.GridDat, simplex, new FixedRuleFactory<QuadRule>(signEdgeRule)).
-                GetQuadRuleSet(new CellMask(tracker.GridDat, Chunk.GetSingleElementChunk(0)), -1).
+                LevelSetData.GridDat, simplex, new FixedRuleFactory<QuadRule>(signEdgeRule)).
+                GetQuadRuleSet(new CellMask(LevelSetData.GridDat, Chunk.GetSingleElementChunk(0)), -1).
                 First().Rule;
+        }
+
+        internal LevelSetTracker.LevelSetData LevelSetData {
+            get;
+            private set;
         }
 
         private int[] localCellIndex2SubgridIndex;
@@ -222,14 +215,14 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     throw new ArgumentException("CellMask required", "mask");
                 }
 #if DEBUG 
-                CellMask differingCells = ((CellMask)mask).Except(this.tracker._Regions.GetCutCellMask4LevSet(this.levelSetIndex));
+                CellMask differingCells = ((CellMask)mask).Except(this.LevelSetData.Region.GetCutCellMask4LevSet(this.levelSetIndex));
                 if (differingCells.NoOfItemsLocally > 0) {
                     throw new ArgumentException("The provided mask has to be a sub-set of the cut cells. Cells " + differingCells.GetSummary() +  " are not in the CutCellMaks of this tracker.");
                 }
 #endif
 
 
-                int noOfEdges = tracker.GridDat.Grid.RefElements[0].NoOfFaces;
+                int noOfEdges = LevelSetData.GridDat.Grid.RefElements[0].NoOfFaces;
                 subGrid = new SubGrid((CellMask)mask);
                 localCellIndex2SubgridIndex = subGrid.LocalCellIndex2SubgridIndex;
 
@@ -267,7 +260,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// </summary>
         public RefElement RefElement {
             get {
-                return tracker.GridDat.Grid.RefElements[0];
+                return LevelSetData.GridDat.Grid.RefElements[0];
             }
         }
 
@@ -293,8 +286,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             using (var tr = new FuncTrace()) {
                 int maxLambdaDegree = order + 1;
                 int noOfLambdas = GetNumberOfLambdas();
-                int noOfFaces = tracker.GridDat.Grid.RefElements[0].NoOfFaces;
-                int D = tracker.GridDat.SpatialDimension;
+                int noOfFaces = LevelSetData.GridDat.Grid.RefElements[0].NoOfFaces;
+                int D = LevelSetData.GridDat.SpatialDimension;
                 int noOfNodesPerEdge = baseRule.NumbersOfNodesPerFace[0];
                 CellBoundaryQuadRule[] optimizedRules = new CellBoundaryQuadRule[mask.NoOfItemsLocally];
 
@@ -316,7 +309,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 int noOfRhs = 0;
                 int[,] rhsIndexMap = new int[mask.NoOfItemsLocally, noOfFaces];
                 foreach (Chunk chunk in mask) {
-                    MultidimensionalArray levelSetValues = tracker.GetLevSetValues(levelSetIndex, signTestRule.Nodes, chunk.i0, chunk.Len);
+                    MultidimensionalArray levelSetValues = LevelSetData.GetLevSetValues(signTestRule.Nodes, chunk.i0, chunk.Len);
                     
                     for (int i = 0; i < chunk.Len; i++) {
                         int cell = i + chunk.i0;
@@ -487,8 +480,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// The new order of the moment-fitting basis
         /// </param>
         private void SwitchOrder(int order) {
-            int iKref = this.tracker.GridDat.Cells.RefElements.IndexOf(this.RefElement, (A, B) => object.ReferenceEquals(A, B));
-            int noOfFaces = tracker.GridDat.Grid.RefElements[iKref].NoOfFaces;
+            int iKref = this.LevelSetData.GridDat.Cells.RefElements.IndexOf(this.RefElement, (A, B) => object.ReferenceEquals(A, B));
+            int noOfFaces = LevelSetData.GridDat.Grid.RefElements[iKref].NoOfFaces;
             int D = RefElement.FaceRefElement.SpatialDimension;
             
             Polynomial[] basePolynomials = RefElement.FaceRefElement.GetOrthonormalPolynomials(order).ToArray();
@@ -519,10 +512,10 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
             QuadRule singleEdgeRule = RefElement.FaceRefElement.GetQuadratureRule(minOrder);
             baseRule = new CellBoundaryFromEdgeRuleFactory<CellBoundaryQuadRule>(
-                tracker.GridDat,
-                tracker.GridDat.Grid.RefElements[0],
+                LevelSetData.GridDat,
+                LevelSetData.GridDat.Grid.RefElements[0],
                 new FixedRuleFactory<QuadRule>(singleEdgeRule)).
-                GetQuadRuleSet(new CellMask(tracker.GridDat, Chunk.GetSingleElementChunk(0)), -1).
+                GetQuadRuleSet(new CellMask(LevelSetData.GridDat, Chunk.GetSingleElementChunk(0)), -1).
                 First().Rule;
 
             //Basis singleEdgeBasis = new Basis(tracker.GridDat, order, RefElement.FaceRefElement);
@@ -611,13 +604,13 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         private MultidimensionalArray EvaluateLambdas(int cell, CellBoundaryQuadRule rule) {
             int noOfLambdas = GetNumberOfLambdas();
             int noOfNodes = rule.NoOfNodes;
-            int D = tracker.GridDat.SpatialDimension;
+            int D = LevelSetData.GridDat.SpatialDimension;
             MultidimensionalArray allNodes = rule.Nodes.CloneAs();
 
             MultidimensionalArray result = MultidimensionalArray.Create(
                 noOfNodes, noOfLambdas, D);
             int noOfProcessedNodes = 0;
-            for (int e = 0; e < tracker.GridDat.Grid.RefElements[0].NoOfFaces; e++) {
+            for (int e = 0; e < LevelSetData.GridDat.Grid.RefElements[0].NoOfFaces; e++) {
                 int noOfNodesOnEdge = rule.NumbersOfNodesPerFace[e];
 
                 if (noOfNodesOnEdge == 0) {
@@ -720,8 +713,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 CellMask mask)
                 : base(
                     new int[] { owner.GetNumberOfLambdas() },
-                    owner.tracker.GridDat,
-                    (new CellEdgeBoundaryQuadratureScheme(false, edgeRuleFactory, mask)).Compile(owner.tracker.GridDat, maxLambdaDegree),
+                    owner.LevelSetData.GridDat,
+                    (new CellEdgeBoundaryQuadratureScheme(false, edgeRuleFactory, mask)).Compile(owner.LevelSetData.GridDat, maxLambdaDegree),
                     CoordinateSystem.Reference) {
                 this.owner = owner;
                 noOfItemsLocally = mask.NoOfItemsLocally;
@@ -796,7 +789,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                 edgeOfEdgeNormals[0, d] = owner.RefElement.FaceRefElement.FaceNormals[ee, d];
                             }
 
-                            owner.tracker.GridDat.Grid.RefElements[0].TransformFaceVectors(
+                            owner.LevelSetData.GridDat.Grid.RefElements[0].TransformFaceVectors(
                                 e, edgeOfEdgeNormals, edgeNormals);
 
                             for (int j = 0; j < CurrentRule.NumbersOfNodesPerFaceOfFace[e, ee]; j++) {
@@ -825,7 +818,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     int cell = i0 + i;
                     int iSubGrid = owner.localCellIndex2SubgridIndex[cell];
 
-                    for (int e = 0; e < owner.tracker.GridDat.Grid.RefElements[0].NoOfFaces; e++) {
+                    for (int e = 0; e < owner.LevelSetData.GridDat.Grid.RefElements[0].NoOfFaces; e++) {
                         for (int k = 0; k < IntegralCompDim[0]; k++) {
                             Results[iSubGrid, e, k] = ResultsOfIntegration[i, e, k];
                         }
@@ -879,13 +872,15 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             /// <param name="mask"></param>
             public LambdaLevelSetSurfaceQuadrature(LevelSetEdgeVolumeQuadRuleFactory owner, IQuadRuleFactory<CellBoundaryQuadRule> surfaceRuleFactory, int maxLambdaDegree, CellMask mask)
                 : base(new int[] { owner.GetNumberOfLambdas() },
-                       owner.tracker.GridDat,
-                       (new CellBoundaryQuadratureScheme(surfaceRuleFactory, mask)).Compile(owner.tracker.GridDat, maxLambdaDegree),
+                       owner.LevelSetData.GridDat,
+                       (new CellBoundaryQuadratureScheme(surfaceRuleFactory, mask)).Compile(owner.LevelSetData.GridDat, maxLambdaDegree),
                        CoordinateSystem.Reference) //
             {
                 this.owner = owner;
                 noOfItemsLocally = mask.NoOfItemsLocally;
             }
+
+
 
             /// <summary>
             /// Computes the integrals while overwriting <see cref="Results"/>
@@ -929,8 +924,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                     for (int e = 0; e < gridData.iGeomCells.RefElements[0].NoOfFaces; e++) {
                         MultidimensionalArray levelSetNormals =
-                            LevelSetEdgeSurfaceQuadRuleFactory.EvaluateRefNormalsOnEdge(
-                                owner.tracker, owner.levelSetIndex, i0 + i, CurrentRule, e);
+                            LevelSetEdgeSurfaceQuadRuleFactory.EvaluateRefNormalsOnEdge(this.owner.LevelSetData, i0 + i, CurrentRule, e);
                         //MultidimensionalArray metrics = LevelSetEdgeSurfaceQuadRuleFactory.GetMetricTermsOnEdge(
                         //    owner.tracker, owner.levSetInd, CurrentRule, i0 + i, e);
 
@@ -960,7 +954,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     int cell = i0 + i;
                     int iSubGrid = owner.localCellIndex2SubgridIndex[cell];
 
-                    for (int e = 0; e < owner.tracker.GridDat.Grid.RefElements[0].NoOfFaces; e++) {
+                    for (int e = 0; e < owner.LevelSetData.GridDat.Grid.RefElements[0].NoOfFaces; e++) {
                         for (int k = 0; k < IntegralCompDim[0]; k++) {
                             Results[iSubGrid, e, k] = ResultsOfIntegration[i, e, k];
                         }
