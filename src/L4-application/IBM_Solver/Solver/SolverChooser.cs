@@ -158,8 +158,9 @@ namespace BoSSS.Application.IBM_Solver {
         /// </summary>
         static void AutomaticChoice(IBM_Control Control, XdgBDFTimestepping Timestepper) {
 
-            int pV = Control.FieldOptions["VelocityX"].Degree;
+            //int pV = Control.FieldOptions["VelocityX"].Degree;
             int pP = Control.FieldOptions["Pressure"].Degree;
+            int pV = pP + 1;
 
             // Detecting variables for solver determination 
             var D = Timestepper.MultigridSequence[0].SpatialDimension;
