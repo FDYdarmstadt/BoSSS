@@ -1215,13 +1215,13 @@ namespace BoSSS.Application.IBM_Solver {
             C.GridFunc = delegate {
 
                 // x-direction
-                var _xNodes = GenericBlas.Linspace(-1, 1, cellsXYZ + 1);
+                var _xNodes = GenericBlas.Linspace(-0.5, 0.5, cellsXYZ + 1);
 
                 // y-direction
-                var _yNodes = GenericBlas.Linspace(-1, 1, cellsXYZ + 1);
+                var _yNodes = GenericBlas.Linspace(-0.5, 0.5, cellsXYZ + 1);
 
                 // z-direction
-                var _zNodes = GenericBlas.Linspace(-1, 1, cellsXYZ + 1);
+                var _zNodes = GenericBlas.Linspace(-0.5, 0.5, cellsXYZ + 1);
 
                 // Cut Out
                 var grd = Grid3D.Cartesian3DGrid(_xNodes, _yNodes, _zNodes, false, true, false, CellType.Cube_Linear);
@@ -1235,27 +1235,27 @@ namespace BoSSS.Application.IBM_Solver {
                     double y = X[1];
                     double z = X[2];
 
-                    if (Math.Abs(x - (-1)) < 1.0e-6)
+                    if (Math.Abs(x - (-0.5)) < 1.0e-6)
                         // inlet
                         return 2;
 
-                    if (Math.Abs(x - (1)) < 1.0e-6)
+                    if (Math.Abs(x - (0.5)) < 1.0e-6)
                         // outlet
                         return 2;
 
-                    if (Math.Abs(y - (-1)) < 1.0e-6)
+                    if (Math.Abs(y - (-0.5)) < 1.0e-6)
                         // left
                         return 2;
 
-                    if (Math.Abs(y - (1)) < 1.0e-6)
+                    if (Math.Abs(y - (0.5)) < 1.0e-6)
                         // right
                         return 2;
 
-                    if (Math.Abs(z - (-1)) < 1.0e-6)
+                    if (Math.Abs(z - (-0.5)) < 1.0e-6)
                         // top left
                         return 2;
 
-                    if (Math.Abs(z - (1)) < 1.0e-6)
+                    if (Math.Abs(z - (0.5)) < 1.0e-6)
                         // top right
                         return 1;
 
@@ -1277,7 +1277,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.particleRadius = 0.5;
             C.PhysicalParameters.rho_A = 1;
             //C.PhysicalParameters.mu_A = (2 * C.particleRadius) / 100;
-            C.PhysicalParameters.mu_A = (1.0 * C.particleRadius * 1.0) / 400;
+            C.PhysicalParameters.mu_A = (1.0 * C.particleRadius * 1.0) / 400.0;
 
             // Boundary conditions
             C.AddBoundaryCondition("Velocity_inlet", "VelocityX", (X, t) => 1);
