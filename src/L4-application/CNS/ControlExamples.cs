@@ -3360,7 +3360,7 @@ namespace CNS {
             }
             return c;
         }
-        public static CNSControl ShockTube_HilbertTest(int GPType, int dgDegree, int ExplOrder, int RecInt, int numOfCellsX, int numOfCellsY, bool LTSON, int AVratio, int Tsteps, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = true, string SessionID = null, string GridID = null) {
+        public static CNSControl ShockTube_HilbertTest(int GPType, int dgDegree, int ExplOrder, int RecInt, int numOfCellsX, int numOfCellsY, bool LTSON, int AVratio, int Tsteps,string prjname=null, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = true, string SessionID = null, string GridID = null) {
 
             CNSControl c = new CNSControl();
             //c.DbPath = @"D:\Weber\BoSSS\test_db";
@@ -3369,7 +3369,8 @@ namespace CNS {
             //c.DbPath = dbPath;
             //c.savetodb = dbPath != null && saveToDb;
 
-            c.DbPath = @"/home/yp19ysog/BoSSS_DB";
+            //c.DbPath = @"/home/yp19ysog/BoSSS_DB";
+            
             c.savetodb = true;
             c.saveperiod = int.MaxValue;
             c.PrintInterval = 1;
@@ -3380,7 +3381,6 @@ namespace CNS {
             if (dgDegree > 0) {
                 AV = true;
             }
-            //bool AV = true;
 
             if (LTSON) {
                 c.DynamicLoadBalancing_On = true;
@@ -3397,6 +3397,7 @@ namespace CNS {
                 c.DynamicLoadBalancing_ImbalanceThreshold = 0.0;
                 c.DynamicLoadBalancing_Period = RecInt;
             } else if (!LTSON && AV && AVratio != 0) {
+                c.DynamicLoadBalancing_On = true;
                 //AV-Loadbalancing
                 c.ExplicitScheme = ExplicitSchemes.RungeKutta;
                 c.ExplicitOrder = ExplOrder;
@@ -3557,16 +3558,23 @@ namespace CNS {
             c.Endtime = 0.25;
             c.NoOfTimesteps = Tsteps;
 
-            //c.ProjectName = "Shock tube";
-            //if (true1D) {
-            //    c.SessionName = String.Format("Shock tube, 1D, dgDegree = {0}, noOfCellsX = {1}, sensorLimit = {2:0.00E-00}", dgDegree, numOfCellsX, sensorLimit);
-            //} else {
-            //    c.SessionName = String.Format("Shock tube, 2D, dgDegree = {0}, noOfCellsX = {1}, noOfCellsX = {2}, sensorLimit = {3:0.00E-00}, CFLFraction = {4:0.00E-00}, ALTS {5}/{6}, GridPartType {7}, NoOfCores {8}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.GridPartType, ilPSP.Environment.MPIEnv.MPI_Size);
-            //}
+            string LoadbalancingType = "None";
+            if (LTSON) {
+                LoadbalancingType = "LTS-Cluster";
+            } else if (AV && AVratio == 1) {
+                LoadbalancingType = "AV-Cluster";
+            } else if (AV && AVratio > 1) {
+                LoadbalancingType = "AV-direct";
+            }
+            if (prjname == null) {
+                c.ProjectName = LoadbalancingType;
+                c.ProjectName = prjname;
+            c.SessionName = String.Format("DMR, dgDegree = {0}, noOfCellsX = {1}, noOfCellsX = {2}, GridPartType {3}, LoadbalancingType {4}", dgDegree, numOfCellsX, numOfCellsY, c.GridPartType, LoadbalancingType);
+
 
             return c;
         }
-        public static CNSControl DoubleMachReflection_HilbertTest(int GPType, int dgDegree, int ExplOrder, int RecInt, int numOfCellsX, int numOfCellsY, bool LTSON, int AVratio, int Tsteps, double sensorLimit = 1e-3, bool restart = false, string sessionID = null, string gridID = null) {
+        public static CNSControl DoubleMachReflection_HilbertTest( int GPType, int dgDegree, int ExplOrder, int RecInt, int numOfCellsX, int numOfCellsY, bool LTSON, int AVratio, int Tsteps, string prjname = null, double sensorLimit = 1e-3, bool restart = false, string sessionID = null, string gridID = null) {
             CNSControl c = new CNSControl();
 
             //c.DbPath = @"D:\Weber\BoSSS\test_db";
@@ -3598,6 +3606,7 @@ namespace CNS {
                 c.DynamicLoadBalancing_Period = RecInt;
 
             } else if (!LTSON && AV && AVratio != 0) {
+                c.DynamicLoadBalancing_On = true;
                 //Load is balanced according to AV
                 c.ExplicitScheme = ExplicitSchemes.RungeKutta;
                 c.ExplicitOrder = ExplOrder;
@@ -3810,8 +3819,20 @@ namespace CNS {
             c.CFLFraction = 0.3;
             c.NoOfTimesteps = Tsteps;
 
-            //c.ProjectName = "Double Mach reflection";
-            //c.SessionName = String.Format("DMR, dgDegree = {0}, numOfCellsX = {1}, numOfCellsY = {2}, sensorLimit = {3:0.00E-00}, CFLFraction = {4:0.00E-00}, ALTS {5}/{6}, lamdaMax = {7}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, lambdaMax);
+            string LoadbalancingType = "None";
+            if (LTSON) {
+                LoadbalancingType = "LTS-Cluster";
+            } else if (AV && AVratio == 1) {
+                LoadbalancingType = "AV-Cluster";
+            } else if (AV && AVratio > 1) {
+                LoadbalancingType = "AV-direct";
+            }
+            if (prjname == null) {
+                c.ProjectName = LoadbalancingType;
+            } else {
+                c.ProjectName = prjname;
+            }
+            c.SessionName = String.Format("DMR, dgDegree = {0}, noOfCellsX = {1}, noOfCellsX = {2}, GridPartType {3}, LoadbalancingType {4}", dgDegree, numOfCellsX, numOfCellsY, c.GridPartType, LoadbalancingType);
 
             return c;
         }
