@@ -21,6 +21,11 @@ namespace BoSSS.Application.IBM_Solver {
         /// </summary>
         Picard = 1,
 
+        /// <summary>
+        /// Newtons method (<see cref="BoSSS.Solution.Multigrid.Newton"/>) with linear solver (<see cref="LinearSolverCodes"/>) used to approximate the inverse of the jacobian with the inverse operator matrix. 
+        /// </summary>
+        Newton = 2,
+
     }
 
     /// <summary>
