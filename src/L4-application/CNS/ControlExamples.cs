@@ -3568,12 +3568,15 @@ namespace CNS {
             }
             if (prjname == null) {
                 c.ProjectName = LoadbalancingType;
+            } else {
                 c.ProjectName = prjname;
-            c.SessionName = String.Format("DMR, dgDegree = {0}, noOfCellsX = {1}, noOfCellsX = {2}, GridPartType {3}, LoadbalancingType {4}", dgDegree, numOfCellsX, numOfCellsY, c.GridPartType, LoadbalancingType);
+            }
 
+            c.SessionName = String.Format("DMR, dgDegree = {0}, noOfCellsX = {1}, noOfCellsX = {2}, GridPartType {3}, LoadbalancingType {4}", dgDegree, numOfCellsX, numOfCellsY, c.GridPartType, LoadbalancingType);
 
             return c;
         }
+
         public static CNSControl DoubleMachReflection_HilbertTest( int GPType, int dgDegree, int ExplOrder, int RecInt, int numOfCellsX, int numOfCellsY, bool LTSON, int AVratio, int Tsteps, string prjname = null, double sensorLimit = 1e-3, bool restart = false, string sessionID = null, string gridID = null) {
             CNSControl c = new CNSControl();
 
