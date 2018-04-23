@@ -111,8 +111,6 @@ namespace BoSSS.Application.ipViscosity {
 
         internal ITestGrid grid = new MixedBcGrid();
 
-        internal ViscosityImplementation viscOption = ViscosityImplementation.H;
-
         internal Terms whichTerms = Terms.T1;
 
         /// <summary>
@@ -215,21 +213,21 @@ namespace BoSSS.Application.ipViscosity {
 
                 for(int d = 0; d < D; d++) {
                     if((this.whichTerms & Terms.T1) != 0) {
-                        var flx1 = new swipViscosity_Term1(penalty_base * penalty_factor, this.GridData.Cells.cj, d, D, BcMap, this.viscOption, ViscosityOption.VariableViscosity);
+                        var flx1 = new swipViscosity_Term1(penalty_base * penalty_factor, this.GridData.Cells.cj, d, D, BcMap,ViscosityOption.VariableViscosity);
 
                         flx1.g_Diri_Override = this.solution.U;
                         flx1.g_Neu_Override = this.solution.dU;
                         Operator.EquationComponents[CodNames[d]].Add(flx1);
                     }
                     if((this.whichTerms & Terms.T2) != 0) {
-                        var flx2 = new swipViscosity_Term2(penalty_base * penalty_factor, this.GridData.Cells.cj, d, D, BcMap, this.viscOption, ViscosityOption.VariableViscosity);
+                        var flx2 = new swipViscosity_Term2(penalty_base * penalty_factor, this.GridData.Cells.cj, d, D, BcMap, ViscosityOption.VariableViscosity);
 
                         flx2.g_Diri_Override = this.solution.U;
                         flx2.g_Neu_Override = this.solution.dU;
                         Operator.EquationComponents[CodNames[d]].Add(flx2);
                     }
                     if((this.whichTerms & Terms.T3) != 0) {
-                        var flx3 = new swipViscosity_Term3(penalty_base * penalty_factor, this.GridData.Cells.cj, d, D, BcMap, this.viscOption, ViscosityOption.VariableViscosity);
+                        var flx3 = new swipViscosity_Term3(penalty_base * penalty_factor, this.GridData.Cells.cj, d, D, BcMap, ViscosityOption.VariableViscosity);
 
                         flx3.g_Diri_Override = this.solution.U;
                         flx3.g_Neu_Override = this.solution.dU;
