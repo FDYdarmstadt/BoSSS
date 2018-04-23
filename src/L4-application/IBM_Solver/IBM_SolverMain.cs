@@ -366,7 +366,7 @@ namespace BoSSS.Application.IBM_Solver {
                         // IBM_Op.OnIntegratingBulk += Visc.SetParameter;
                         comps.Add(Visc); // bulk component GradUTerm 
                         var ViscLs = new BoSSS.Solution.NSECommon.Operator.Viscosity.ViscosityAtIB(d, D, LsTrk, 
-                            penalty, this.ComputePenaltyBulk,
+                            penalty, this.ComputePenaltyIB,
                             this.Control.PhysicalParameters.mu_A / this.Control.PhysicalParameters.rho_A, 
                             new Func<double, double>[] {
                                 delegate (double time) {
