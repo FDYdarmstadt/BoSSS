@@ -29,6 +29,11 @@ using ilPSP.Tracing;
 using System.IO;
 
 namespace BoSSS.Solution.Multigrid {
+    /// <summary>
+    /// Implementation based on presudocode from Kelley, C. 
+    /// Solving Nonlinear Equations with Newton’s Method. Fundamentals of Algorithms. 
+    /// Society for Industrial and Applied Mathematics, 2003. https://doi.org/10.1137/1.9780898718898.
+    /// </summary>
     public class Newton : NonlinearSolver {
         public Newton(AssembleMatrixDel __AssembleMatrix, IEnumerable<AggregationGridBasis[]> __AggBasisSeq, MultigridOperator.ChangeOfBasisConfig[][] __MultigridOperatorConfig) : base(__AssembleMatrix, __AggBasisSeq, __MultigridOperatorConfig) {
         }

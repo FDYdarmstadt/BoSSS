@@ -130,6 +130,15 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
+        /// See <see cref="SessionInfo.MasterGitCommit"/>
+        /// </summary>
+        public string MasterGitCommit {
+            get {
+                return RealSessionInfo.MasterGitCommit;
+            }
+        }
+
+        /// <summary>
         /// See <see cref="SessionInfo.Tags"/>
         /// </summary>
         public IEnumerable<string> Tags {
@@ -301,6 +310,15 @@ namespace BoSSS.Foundation.IO {
             public Guid RestartedFrom {
                 get {
                     return Guid.Empty;
+                }
+            }
+
+            /// <summary>
+            /// An empty string
+            /// </summary>
+            public string MasterGitCommit {
+                get {
+                    return "";
                 }
             }
 

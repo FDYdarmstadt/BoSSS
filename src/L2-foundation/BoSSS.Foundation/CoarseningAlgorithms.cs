@@ -57,16 +57,8 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                     if( aggGrids.Count >= MaxDepth)
                         break;
 
-                    //AggregationGrid[] gridS = new[] { aggGrids.Last() };
-                    //for (int iSkip = 0; iSkip < Math.Max(1, skip); iSkip++) {
-                    //    Debug.Assert(gridS.Length == iSkip + 1);
-                    //    gridS = Coarsen(gridS);
-                    //    Debug.Assert(gridS.Length == iSkip + 2);
-                    //    Debug.Assert(object.ReferenceEquals(gridS[0], aggGrids.Last()));
-                    //}
-                    //AggregationGrid grid = gridS.Last();
-
-                    AggregationGrid grid = Coarsen(aggGrids.Last(), (int)(Math.Pow(2, 1)));
+             
+                    AggregationGrid grid = Coarsen(aggGrids.Last(), (int)(Math.Pow(2, D)));
 
 
                     if ((grid.iLogicalCells.NoOfLocalUpdatedCells.MPISum() >= aggGrids.Last().iLogicalCells.NoOfLocalUpdatedCells.MPISum()))
@@ -200,7 +192,11 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                                     int jCellNeigh = NeighCandidates[iNeig];
 
                                     aggBB[iNeig] = new BoundingBox(D); //ag.CompositeCellBB[jCell].CloneAs();
-                                    ag.iLogicalCells.GetCellBoundingBox(jCell, aggBB[iNeig]);
+                                    foreach (int jTaken in aggCell) {
+                                        BoundingBox TempBB = new BoundingBox(D);
+                                        ag.iLogicalCells.GetCellBoundingBox(jTaken, TempBB);
+                                        aggBB[iNeig].AddBB(TempBB);
+                                    }
 
                                     BoundingBox NeighBB = new BoundingBox(D);
                                     ag.iLogicalCells.GetCellBoundingBox(jCellNeigh, NeighBB);

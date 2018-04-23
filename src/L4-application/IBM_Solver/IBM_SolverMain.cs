@@ -115,12 +115,6 @@ namespace BoSSS.Application.IBM_Solver {
 #pragma warning restore 649
         #endregion
 
-        /// <summary>
-        /// Mpi rank for each computational cell.
-        /// </summary>
-        SinglePhaseField MpiRank;
-
-
         IDictionary<SpeciesId, IEnumerable<double>> Rho {
             get {
                 double rho = this.Control.PhysicalParameters.rho_A;
@@ -234,6 +228,8 @@ namespace BoSSS.Application.IBM_Solver {
 
         protected XdgBDFTimestepping m_BDF_Timestepper;
 
+        SinglePhaseField[] MGColoring;
+
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
 
             //// Write out Multigrid Levels
@@ -243,13 +239,6 @@ namespace BoSSS.Application.IBM_Solver {
             //    base.MultigridSequence[iLevel].ColorDGField(this.MGColoring[iLevel]);
             //}
             //Tecplot.PlotFields(MGColoring, "MultigridLevels", 0, 0);
-
-            // ================================
-            // record MPI rank
-            // ================================
-    
-            this.MpiRank.Clear();
-            this.MpiRank.AccConstant(this.MPIRank);
 
             // =================================
             // create operator
@@ -294,7 +283,7 @@ namespace BoSSS.Application.IBM_Solver {
 
                 IBM_Op = new XSpatialOperator(DomNameSelected, Params, CodNameSelected,
                     (A, B, C) => this.HMForder
-                    );
+                    ,cacheQuadRules:true);
 
                 // Momentum equation
                 // =================
@@ -454,7 +443,7 @@ namespace BoSSS.Application.IBM_Solver {
                         DelComputeOperatorMatrix, DelUpdateLevelset,
                         bdfOrder,
                         lsh,
-                        MassMatrixShapeandDependence.IsNonIdentity,
+                        MassMatrixShapeandDependence.IsTimeDependent,
                         SpatialOp,
                         MassScale,
                         this.MultigridOperatorConfig, base.MultigridSequence,
@@ -744,7 +733,7 @@ namespace BoSSS.Application.IBM_Solver {
                         U0mean_Spc[d].AccLaidBack(1.0, U0_Spc[d], this.LsTrk.Regions.GetSpeciesMask(Spc));
                     }
 
-                    
+
                     // cut cells
                     var scheme = qh.GetVolumeQuadScheme(Spc, IntegrationDomain: this.LsTrk.Regions.GetCutCellMask());
 
@@ -811,7 +800,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// Tecplot output.
         /// </summary>
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling) {
-            Tecplot.PlotFields(ArrayTools.Cat<DGField>(this.Velocity, this.Pressure, this.LevSet, this.DGLevSet.Current, this.ResidualMomentum, this.ResidualContinuity, this.MpiRank), "IBM_Solver" + timestepNo, physTime, superSampling);
+            Tecplot.PlotFields(ArrayTools.Cat<DGField>(this.Velocity, this.Pressure, this.LevSet, this.DGLevSet.Current, this.ResidualMomentum, this.ResidualContinuity), "IBM_Solver" + timestepNo, physTime, superSampling);
         }
 
         /// <summary>
@@ -823,15 +812,9 @@ namespace BoSSS.Application.IBM_Solver {
                 base.LsTrk = this.LevsetTracker;
                 if (Control.CutCellQuadratureType != this.LevsetTracker.CutCellQuadratureType)
                     throw new ApplicationException();
-
                 //if (this.Control.LevelSetSmoothing) {
                 //    SmoothedLevelSet = new SpecFemField(new SpecFemBasis((GridData)LevSet.GridDat, LevSet.Basis.Degree + 1));
                 //}
-
-                this.MpiRank = new SinglePhaseField(new Basis(this.GridData, 0), "MPIrank");
-                base.IOFields.Add(this.MpiRank);
-                m_RegisteredFields.Add(this.MpiRank);
-
             }
         }
 
@@ -847,6 +830,26 @@ namespace BoSSS.Application.IBM_Solver {
                 for (int j = 0; j < GridData.Cells.NoOfLocalUpdatedCells; j++) {
                     mpiRank.SetMeanValue(j, DatabaseDriver.MyRank);
                 }
+            }
+
+            // Using defauls CellCostEstimateFactories          
+            if (this.Control.DynamicLoadBalancing_CellCostEstimatorFactories.Count == 0) {
+                Console.WriteLine("Using standard CellCostEstimatorFactories");
+                Control.DynamicLoadBalancing_CellCostEstimatorFactories.Add(delegate (IApplication app, int noOfPerformanceClasses) {
+                    Console.WriteLine("i was called");
+                    int[] map = new int[] { 1, 1, 10 };
+                    return new StaticCellCostEstimator(map);
+                });
+                Control.DynamicLoadBalancing_CellCostEstimatorFactories.Add(delegate (IApplication app, int noOfPerformanceClasses) {
+                    Console.WriteLine("i was called");
+                    int[] map = new int[] { 1, 10, 1 };
+                    return new StaticCellCostEstimator(map);
+                });
+                Control.DynamicLoadBalancing_CellCostEstimatorFactories.Add(delegate (IApplication app, int noOfPerformanceClasses) {
+                    Console.WriteLine("i was called");
+                    int[] map = new int[] { 10, 1, 1 };
+                    return new StaticCellCostEstimator(map);
+                });
             }
 
             // Set particle radius for exact circle integration
@@ -1098,6 +1101,8 @@ namespace BoSSS.Application.IBM_Solver {
             NoOfClasses = 3;
             int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
             CellPerfomanceClasses = new int[J];
+            foreach (int j in LsTrk.Regions.GetSpeciesMask("B").ItemEnum)
+                CellPerfomanceClasses[j] = 0;
             foreach (int j in LsTrk.Regions.GetSpeciesMask("A").ItemEnum)
                 CellPerfomanceClasses[j] = 1;
             foreach (int j in LsTrk.Regions.GetCutCellMask().ItemEnum)
@@ -1106,22 +1111,22 @@ namespace BoSSS.Application.IBM_Solver {
 
         public override void PostRestart(double time, TimestepNumber timestep) {
             // Find path to PhysicalData.txt
-            var fsDriver = this.DatabaseDriver.FsDriver;
-            string pathToOldSessionDir = System.IO.Path.Combine(
-                fsDriver.BasePath, "sessions", this.CurrentSessionInfo.RestartedFrom.ToString());
-            string pathToPhysicalData = System.IO.Path.Combine(pathToOldSessionDir, "PhysicalData.txt");
-            string[] records = File.ReadAllLines(pathToPhysicalData);
+            //var fsDriver = this.DatabaseDriver.FsDriver;
+            //string pathToOldSessionDir = System.IO.Path.Combine(
+            //    fsDriver.BasePath, "sessions", this.CurrentSessionInfo.RestartedFrom.ToString());
+            //string pathToPhysicalData = System.IO.Path.Combine(pathToOldSessionDir, "PhysicalData.txt");
+            //string[] records = File.ReadAllLines(pathToPhysicalData);
 
-            string line1 = File.ReadLines(pathToPhysicalData).Skip(1).Take(1).First();
-            string line2 = File.ReadLines(pathToPhysicalData).Skip(2).Take(1).First();
-            string[] fields_line1 = line1.Split('\t');
-            string[] fields_line2 = line2.Split('\t');
+            //string line1 = File.ReadLines(pathToPhysicalData).Skip(1).Take(1).First();
+            //string line2 = File.ReadLines(pathToPhysicalData).Skip(2).Take(1).First();
+            //string[] fields_line1 = line1.Split('\t');
+            //string[] fields_line2 = line2.Split('\t');
 
-            double dt = Convert.ToDouble(fields_line2[1]) - Convert.ToDouble(fields_line1[1]);
+            //double dt = Convert.ToDouble(fields_line2[1]) - Convert.ToDouble(fields_line1[1]);
 
-            int idx_restartLine = Convert.ToInt32(time / dt + 1.0);
-            string restartLine = File.ReadLines(pathToPhysicalData).Skip(idx_restartLine - 1).Take(1).First();
-            double[] values = Array.ConvertAll<string, double>(restartLine.Split('\t'), double.Parse);
+            //int idx_restartLine = Convert.ToInt32(time / dt + 1.0);
+            //string restartLine = File.ReadLines(pathToPhysicalData).Skip(idx_restartLine - 1).Take(1).First();
+            //double[] values = Array.ConvertAll<string, double>(restartLine.Split('\t'), double.Parse);
 
             /* string restartLine = "";
              // Calculcation of dt 
@@ -1149,17 +1154,17 @@ namespace BoSSS.Application.IBM_Solver {
              double[] values = Array.ConvertAll<string, double>(restartLine.Split('\t'), double.Parse);*/
 
             // Adding PhysicalData.txt
-            if ((base.MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty)) {
-                Log_DragAndLift = base.DatabaseDriver.FsDriver.GetNewLog("PhysicalData", CurrentSessionInfo.ID);
-                string firstline;
-                if (this.GridData.SpatialDimension == 3) {
-                    firstline = String.Format("{0}\t{1}\t{2}\t{3}\t{4}", "#Timestep", "#Time", "x-Force", "y-Force", "z-Force");
-                } else {
-                    firstline = String.Format("{0}\t{1}\t{2}\t{3}", "#Timestep", "#Time", "x-Force", "y-Force");
-                }
-                Log_DragAndLift.WriteLine(firstline);
-                Log_DragAndLift.WriteLine(restartLine);
-            }
+            //if ((base.MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty)) {
+            //    Log_DragAndLift = base.DatabaseDriver.FsDriver.GetNewLog("PhysicalData", CurrentSessionInfo.ID);
+            //    string firstline;
+            //    if (this.GridData.SpatialDimension == 3) {
+            //        firstline = String.Format("{0}\t{1}\t{2}\t{3}\t{4}", "#Timestep", "#Time", "x-Force", "y-Force", "z-Force");
+            //    } else {
+            //        firstline = String.Format("{0}\t{1}\t{2}\t{3}", "#Timestep", "#Time", "x-Force", "y-Force");
+            //    }
+            //    Log_DragAndLift.WriteLine(firstline);
+            //    Log_DragAndLift.WriteLine(restartLine);
+            //}
 
         }
 

@@ -43,7 +43,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// 
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control Couette_GNBC(int tc = 1, int p = 2, int kelem = 16, string _DbPath = null) {
+        public static XNSE_Control Couette_GNBC(int tc = 2, int p = 2, int kelem = 8, string _DbPath = null) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -59,7 +59,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.ProjectName = "XNSE/Couette";
             C.ProjectDescription = "Couette flow by Gerbeau";
 
+            C.ContinueOnIoError = false;
+
             C.LogValues = XNSE_Control.LoggingValues.MovingContactLine;
+            C.LogPeriod = 10;
 
             #endregion
 
@@ -167,6 +170,27 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 return grd;
             };
 
+            //C.GridFunc = delegate () {
+            //    double[] Xnodes = GenericBlas.Linspace(0, 2, 9 + 1);
+            //    double[] Ynodes = GenericBlas.Linspace(0, 1, 5 + 1);
+            //    var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: true);
+
+            //    grd.EdgeTagNames.Add(1, "navierslip_linear_lower");
+            //    grd.EdgeTagNames.Add(2, "navierslip_linear_upper");
+
+            //    grd.DefineEdgeTags(delegate (double[] X) {
+            //        byte et = 0;
+            //        if (Math.Abs(X[1]) <= 1.0e-8)
+            //            et = 1;
+            //        if (Math.Abs(X[1] - 1) <= 1.0e-8)
+            //            et = 2;
+
+            //        return et;
+            //    });
+
+            //    return grd;
+            //};
+
             #endregion
 
 
@@ -175,6 +199,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region init
 
             Func<double[], double> PhiFunc = (X => Math.Abs(X[0] - 2 * L) - L);
+            //Func<double[], double> PhiFunc = (X => Math.Abs(X[0] - 1) - 0.5);
 
             C.InitialValues_Evaluators.Add("Phi", PhiFunc);
 
@@ -234,8 +259,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
 
-            C.AdaptiveMeshRefinement = true;
-            C.RefinementLevel = 1;
+            //C.AdaptiveMeshRefinement = true;
+            //C.RefinementLevel = 1;
 
             //C.LS_TrackerWidth = 2;
 
@@ -251,11 +276,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 
             C.CompMode = AppControl._CompMode.Transient;
-            double dt = 1e-2;
+            double dt = 2e-2;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000;
-            C.NoOfTimesteps = 16000;
+            C.NoOfTimesteps = 8000;
             C.saveperiod = 10;
 
             #endregion
