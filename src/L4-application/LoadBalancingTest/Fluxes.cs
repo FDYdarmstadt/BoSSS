@@ -42,7 +42,7 @@ namespace BoSSS.Application.LoadBalancingTest {
 
         double alpha;
 
-        public void NowIntegratingBulk(string speciesName, SpeciesId SpcId) {
+        public void SetParameter(string speciesName, SpeciesId SpcId) {
             switch(speciesName) {
                 case "A": alpha = alpha_A; break;
                 case "B": alpha = alpha_B; break;
