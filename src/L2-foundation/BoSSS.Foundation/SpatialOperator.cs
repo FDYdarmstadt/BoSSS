@@ -1245,25 +1245,25 @@ namespace BoSSS.Foundation {
                 IList<DGField> ParameterMap,
                 UnsetteledCoordinateMapping CodomainVarMap) //
             {
-                using(var tr = new FuncTrace()) {
+                using (var tr = new FuncTrace()) {
                     MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
 
-                    if(DomainVarMap.NoOfVariables != owner.DomainVar.Count) {
+                    if (DomainVarMap.NoOfVariables != owner.DomainVar.Count) {
                         throw new ArgumentException("wrong number of domain variables provided.");
                     }
                     this.m_Parameters = new DGField[owner.ParameterVar.Count];
-                    if(CodomainVarMap.NoOfVariables != owner.CodomainVar.Count) {
+                    if (CodomainVarMap.NoOfVariables != owner.CodomainVar.Count) {
                         throw new ArgumentException("wrong number of codomain variables provided.");
                     }
 
                     IEnumerable<Basis> allBasis = DomainVarMap.BasisS;
-                    if(ParameterMap != null) {
+                    if (ParameterMap != null) {
                         allBasis = allBasis.Union(ParameterMap.Select(f => f.Basis));
                     }
                     allBasis = allBasis.Union(CodomainVarMap.BasisS);
                     IGridData grdDat = allBasis.First().GridDat;
-                    foreach(var b in allBasis) {
-                        if(!object.ReferenceEquals(grdDat, b.GridDat)) {
+                    foreach (var b in allBasis) {
+                        if (!object.ReferenceEquals(grdDat, b.GridDat)) {
                             throw new ArgumentException("all fields (domain, parameter, codomain) must be defined on the same grid.");
                         }
                     }
@@ -1273,10 +1273,62 @@ namespace BoSSS.Foundation {
                     m_DomainMapping = DomainVarMap;
                     m_Parameters = (ParameterMap != null) ? ParameterMap.ToArray() : new DGField[0];
 
-                    if(!m_Owner.IsCommited)
+                    if (!m_Owner.IsCommited)
                         throw new ApplicationException("operator assembly must be finalized before by calling 'Commit' before this method can be called.");
 
                     order = owner.GetOrderFromQuadOrderFunction(m_DomainMapping, ParameterMap, CodomainVarMap);
+
+                    m_OperatorCoefficients = new CoefficientSet() {
+                        CellLengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)(this.GridData)).Cells.cj,
+                        EdgeLengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)(this.GridData)).Edges.h_min_Edge,
+                        UserDefinedValues = new Dictionary<string, object>()
+                    };
+                }
+            }
+
+            CoefficientSet m_OperatorCoefficients;
+
+            /// <summary>
+            /// Stuff passed to equation components which implement <see cref="IEquationComponentCoefficient"/>.
+            /// </summary>
+            virtual public CoefficientSet OperatorCoefficients  {
+                get {
+                    return m_OperatorCoefficients;
+                }
+                set {
+                    m_OperatorCoefficients = value;
+                }
+            }
+
+
+            /// <summary>
+            /// Sets the coefficients for all equation components of the operator which implement <see cref="IEquationComponentCoefficient"/>.
+            /// </summary>
+            protected void UpdateCoefficients() {
+                int[] DomDGdeg = this.DomainMapping.BasisS.Select(b => b.Degree).ToArray();
+                int[] CodDGdeg = this.CodomainMapping.BasisS.Select(b => b.Degree).ToArray();
+                string[] DomNames = m_Owner.DomainVar.ToArray();
+                string[] CodNames = m_Owner.DomainVar.ToArray();
+
+
+                Debug.Assert(CodNames.Length == CodDGdeg.Length);
+                for(int iCod = 0; iCod < CodDGdeg.Length; iCod++) {
+                    var comps = m_Owner.m_EquationComonents[CodNames[iCod]];
+                    foreach(var c in comps) {
+                        if(c is IEquationComponentCoefficient) {
+                            var ce = c as IEquationComponentCoefficient;
+
+                            int[] DomDGdeg_cd = new int[ce.ArgumentOrdering.Count];
+                            for(int i = 0; i < DomDGdeg_cd.Length; i++) {
+                                string domName = ce.ArgumentOrdering[i];
+                                int idx = Array.IndexOf(DomDGdeg, domName);
+                                DomDGdeg_cd[i] = DomDGdeg[idx];
+                            }
+
+
+                            ce.CoefficientUpdate(m_OperatorCoefficients, DomDGdeg_cd, CodDGdeg[iCod]);
+                        }
+                    }
                 }
             }
 
@@ -1307,6 +1359,9 @@ namespace BoSSS.Foundation {
             }
             */
 
+
+
+            
 
 
             SubGridBoundaryModes m_SubGridBoundaryTreatment = SubGridBoundaryModes.BoundaryEdge;
@@ -1560,6 +1615,8 @@ namespace BoSSS.Foundation {
                     if(beta != 1.0)
                         GenericBlas.dscal(base.CodomainMapping.LocalLength, beta, output, 1);
 
+                    base.UpdateCoefficients();
+
                     Debug.Assert((base.m_TRX != null) == (base.MPITtransceive == true));
                     if(base.m_TRX != null)
                         m_TRX.TransceiveStartImReturn();
@@ -1707,6 +1764,7 @@ namespace BoSSS.Foundation {
                             throw new NotImplementedException("Subgrid feature is not implemented for matrix assembly");
                         }
 
+                        base.UpdateCoefficients();
 
                     }
 

@@ -25,22 +25,29 @@ namespace BoSSS.Foundation {
         /// </summary>
         UnsetteledCoordinateMapping DomainMapping { get; }
 
+        /// <summary>
+        /// List of parameter fields, correlates with <see cref="SpatialOperator.ParameterVar"/>.
+        /// </summary>
         IList<DGField> Parameters { get; }
-
-
-
+        
+        /// <summary>
+        /// Turns on  the sub-grid thing uses for local-time-stepping.
+        /// </summary>
         void ActivateSubgridBoundary(BoSSS.Foundation.Grid.CellMask sgrd, SubGridBoundaryModes subGridBoundaryTreatment = SubGridBoundaryModes.BoundaryEdge);
 
+        /// <summary>
+        /// Actual value set by <see cref="ActivateSubgridBoundary(CellMask, SubGridBoundaryModes)"/>
+        /// </summary>
         SubGridBoundaryModes SubGridBoundaryTreatment { get; }
-
-
+        
         /// <summary>
         /// Time passed e.g. to <see cref="CommonParams.time"/>, <see cref="CommonParamsBnd.time"/> and <see cref="CommonParamsVol.time"/>.
         /// </summary>
         double time { get; set; }
 
-
-
+        /// <summary>
+        /// The pointer to a owner object, which totally contradicts the original idea of object-orientation. Hehe.
+        /// </summary>
         SpatialOperator Owner { get; }
 
         /// <summary>
@@ -48,6 +55,10 @@ namespace BoSSS.Foundation {
         /// </summary>
         bool MPITtransceive { get; set; }
 
+        /// <summary>
+        /// Stuff passed to equation components which implement <see cref="IEquationComponentCoefficient"/>.
+        /// </summary>
+        CoefficientSet OperatorCoefficients { get; set; }
     }
 
     public interface IEvaluatorNonLin : IEvaluator {

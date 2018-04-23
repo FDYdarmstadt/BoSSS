@@ -34,7 +34,8 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
 
         public ViscosityAtIB(int _d, int _D, LevelSetTracker t, double penalty, Func<double, int, double> _PenaltyFunc, double _muA, 
             Func<double, double>[] _uLevSet, 
-            Func<double, double>[] _wLevSet, double particleRadius) {
+            Func<double, double>[] _wLevSet, 
+            double particleRadius) {
 
             this.m_penalty = penalty;
             this.m_PenaltyFunc = _PenaltyFunc;

@@ -31,8 +31,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
     public class ViscosityInBulk_GradUTerm : BoSSS.Solution.NSECommon.swipViscosity_Term1 {
 
         public ViscosityInBulk_GradUTerm(double penalty, double sw, IncompressibleMultiphaseBoundaryCondMap bcMap, int d, int D, double _muA, double _muB, 
-            ViscosityImplementation _ViscosityImplementation, double _betaA = 0.0, double _betaB = 0.0)
-            : base(penalty, null, d, D, bcMap, _ViscosityImplementation, NSECommon.ViscosityOption.ConstantViscosity, constantViscosityValue: double.NegativeInfinity) {
+            double _betaA = 0.0, double _betaB = 0.0)
+            : base(penalty, null, d, D, bcMap, NSECommon.ViscosityOption.ConstantViscosity, constantViscosityValue: double.NegativeInfinity) {
             muA = _muA;
             muB = _muB;
             betaA = _betaA;
@@ -107,8 +107,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
     public class ViscosityInBulk_GradUtranspTerm : BoSSS.Solution.NSECommon.swipViscosity_Term2 {
 
         public ViscosityInBulk_GradUtranspTerm(double penalty, double sw, IncompressibleMultiphaseBoundaryCondMap bcMap, int d, int D, double _muA, double _muB, 
-            ViscosityImplementation _ViscosityImplementation, double _betaA = 0.0, double _betaB = 0.0)
-            : base(penalty, null, d, D, bcMap, _ViscosityImplementation, NSECommon.ViscosityOption.ConstantViscosity, constantViscosityValue: double.NegativeInfinity) {
+            double _betaA = 0.0, double _betaB = 0.0)
+            : base(penalty, null, d, D, bcMap, NSECommon.ViscosityOption.ConstantViscosity, constantViscosityValue: double.NegativeInfinity) {
             muA = _muA;
             muB = _muB;
             betaA = _betaA;
@@ -182,8 +182,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
     public class ViscosityInBulk_divTerm : BoSSS.Solution.NSECommon.swipViscosity_Term3 {
 
-        public ViscosityInBulk_divTerm(double penalty, double sw, IncompressibleMultiphaseBoundaryCondMap bcMap, int d, int D, double _muA, double _muB, ViscosityImplementation _ViscosityImplementation)
-            : base(penalty, null, d, D, bcMap, _ViscosityImplementation, NSECommon.ViscosityOption.ConstantViscosity, constantViscosityValue: double.NegativeInfinity) {
+        public ViscosityInBulk_divTerm(double penalty, double sw, IncompressibleMultiphaseBoundaryCondMap bcMap, int d, int D, double _muA, double _muB)
+            : base(penalty, null, d, D, bcMap, NSECommon.ViscosityOption.ConstantViscosity, constantViscosityValue: double.NegativeInfinity) {
             muA = _muA;
             muB = _muB;
             base.m_alpha = sw;

@@ -32,14 +32,13 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
         LevelSetTracker m_LsTrk;
 
-        public ViscosityAtLevelSet_FullySymmetric(LevelSetTracker lstrk, double _muA, double _muB, double _penalty, int _component, ViscosityImplementation _ViscosityImplementation) {
+        public ViscosityAtLevelSet_FullySymmetric(LevelSetTracker lstrk, double _muA, double _muB, double _penalty, int _component) {
             this.m_LsTrk = lstrk;
             this.muA = _muA;
             this.muB = _muB;
             this.penalty = _penalty;
             this.component = _component;
             this.m_D = lstrk.GridDat.SpatialDimension;
-            this.m_ViscosityImplementation = _ViscosityImplementation;
         }
 
         double muA;
@@ -47,7 +46,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         double penalty;
         int component;
         int m_D;
-        ViscosityImplementation m_ViscosityImplementation;
 
 
         /// <summary>
@@ -68,48 +66,48 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
             double Grad_uA_xN = 0, Grad_uB_xN = 0, Grad_vA_xN = 0, Grad_vB_xN = 0;
             for (int d = 0; d < D; d++) {
-                Grad_uA_xN += Grad_uA[component, d]*N[d];
-                Grad_uB_xN += Grad_uB[component, d]*N[d];
-                Grad_vA_xN += Grad_vA[d]*N[d];
-                Grad_vB_xN += Grad_vB[d]*N[d];
+                Grad_uA_xN += Grad_uA[component, d] * N[d];
+                Grad_uB_xN += Grad_uB[component, d] * N[d];
+                Grad_vA_xN += Grad_vA[d] * N[d];
+                Grad_vB_xN += Grad_vB[d] * N[d];
             }
             double Ret = 0.0;
 
             double hCutCellMin = Math.Min(inp.NegCellLengthScale, inp.PosCellLengthScale);
-            if(hCutCellMin <= 1.0e-10 * hCellMin)
+            if (hCutCellMin <= 1.0e-10 * hCellMin)
                 // very small cell -- clippling
                 hCutCellMin = hCellMin;
 
             Debug.Assert(uA.Length == this.ArgumentOrdering.Count);
             Debug.Assert(uB.Length == this.ArgumentOrdering.Count);
-            switch (m_ViscosityImplementation) {
-                // old Form (H-Implementation)
-                case ViscosityImplementation.H: {
-                    double muMax = (Math.Abs(muA) > Math.Abs(muB)) ? muA : muB;
-                    Ret -= 0.5*(muA*Grad_uA_xN + muB*Grad_uB_xN)*(vA - vB);                           // consistency term
-                    Ret -= 0.5*(muA*Grad_vA_xN + muB*Grad_vB_xN)*(uA[component] - uB[component]);     // symmetry term
-                    Ret += (penalty / hCutCellMin)*(uA[component] - uB[component])*(vA - vB)*muMax; // penalty term
-                    // Transpose Term
-                    for (int i = 0; i < D; i++) {
-                        Ret -= 0.5 * (muA * Grad_uA[i, component] + muB * Grad_uB[i, component]) * (vA - vB) * N[i];  // consistency term
-                        Ret -= 0.5 * (muA * Grad_vA[i] + muB * Grad_vB[i]) * (uA[i] - uB[i]) * N[component];  // symmetry term
-                    }
-                    break;
-                }
-                // SWIP-form nach DiPietro/Ern:
-                case ViscosityImplementation.SWIP:{
-                    Ret -= ( muB * muA * Grad_uA_xN + muA* muB* Grad_uB_xN) / (muA+muB) * (vA - vB);
-                    Ret -= (muB * muA * Grad_vA_xN + muA* muB* Grad_vB_xN)  / (muA + muB) * (uA[component] - uB[component]);
-                    Ret += (penalty / hCutCellMin) * (uA[component] - uB[component]) * (vA - vB) *(2.0*muA*muB/(muA + muB));
-                    // Transpose-Term
-                    for (int i = 0; i < D; i++) {
-                        Ret -= (muB * muA * Grad_uA[i, component] + muA * muB * Grad_uB[i, component]) / (muA + muB) * (vA - vB) * N[i];  // consistency term
-                        Ret -= (muB * muA * Grad_vA[i] + muA * muB * Grad_vB[i]) / (muA + muB) * (uA[i] - uB[i]) * N[component];  // symmetry term
-                    }
-                    break;
-                }
-                default: { throw new ArgumentException(); }
+            //switch (m_ViscosityImplementation) {
+            //    // old Form (H-Implementation)
+            //    case ViscosityImplementation.H: {
+            double muMax = (Math.Abs(muA) > Math.Abs(muB)) ? muA : muB;
+            Ret -= 0.5 * (muA * Grad_uA_xN + muB * Grad_uB_xN) * (vA - vB);                           // consistency term
+            Ret -= 0.5 * (muA * Grad_vA_xN + muB * Grad_vB_xN) * (uA[component] - uB[component]);     // symmetry term
+            Ret += (penalty / hCutCellMin) * (uA[component] - uB[component]) * (vA - vB) * muMax; // penalty term
+                                                                                                  // Transpose Term
+            for (int i = 0; i < D; i++) {
+                Ret -= 0.5 * (muA * Grad_uA[i, component] + muB * Grad_uB[i, component]) * (vA - vB) * N[i];  // consistency term
+                Ret -= 0.5 * (muA * Grad_vA[i] + muB * Grad_vB[i]) * (uA[i] - uB[i]) * N[component];  // symmetry term
             }
+            break;
+            //    }
+            //    // SWIP-form nach DiPietro/Ern:
+            //    case ViscosityImplementation.SWIP:{
+            //        Ret -= ( muB * muA * Grad_uA_xN + muA* muB* Grad_uB_xN) / (muA+muB) * (vA - vB);
+            //        Ret -= (muB * muA * Grad_vA_xN + muA* muB* Grad_vB_xN)  / (muA + muB) * (uA[component] - uB[component]);
+            //        Ret += (penalty / hCutCellMin) * (uA[component] - uB[component]) * (vA - vB) *(2.0*muA*muB/(muA + muB));
+            //        // Transpose-Term
+            //        for (int i = 0; i < D; i++) {
+            //            Ret -= (muB * muA * Grad_uA[i, component] + muA * muB * Grad_uB[i, component]) / (muA + muB) * (vA - vB) * N[i];  // consistency term
+            //            Ret -= (muB * muA * Grad_vA[i] + muA * muB * Grad_vB[i]) / (muA + muB) * (uA[i] - uB[i]) * N[component];  // symmetry term
+            //        }
+            //        break;
+            //    }
+            //    default: { throw new ArgumentException(); }
+            //}
             /*
             {
                 double Acc = 0.0;
