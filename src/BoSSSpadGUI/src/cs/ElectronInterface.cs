@@ -14,7 +14,7 @@ namespace BoSSS.Application.BoSSSpad{
         static ElectronWorksheet worksheet;
 
         public async Task<object> Invoke(object input){
-            worksheet = new ElectronWorksheet();
+            worksheet = ElectronWorksheet.Instance;
             return new{
                 runCommand = (Func<object, Task<object>>)(async (i) => {
                     return await Task.Run(() => ElectronInterface.RunCommand(i));

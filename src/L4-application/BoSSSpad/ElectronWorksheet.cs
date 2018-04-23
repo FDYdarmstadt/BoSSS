@@ -10,10 +10,12 @@ using BoSSS.Foundation.IO;
 
 namespace BoSSS.Application.BoSSSpad{
 
-    public class ElectronWorksheet{
+    //Singleton class
+    public sealed class ElectronWorksheet {
         Document document;
+        private static readonly ElectronWorksheet instance = new ElectronWorksheet();
 
-        public ElectronWorksheet(){
+        private ElectronWorksheet() {
 
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 
@@ -25,6 +27,12 @@ namespace BoSSS.Application.BoSSSpad{
                 out bool mpiInitialized
             );
             this.document = new Document();
+        }
+
+        public static ElectronWorksheet Instance{
+            get{
+                return instance; 
+            }
         }
 
         public string RunCommand(string command){
