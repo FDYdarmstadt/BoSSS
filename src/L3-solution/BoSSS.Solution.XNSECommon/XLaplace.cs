@@ -47,7 +47,7 @@ namespace BoSSS.Solution.XNSECommon {
     /// <summary>
     /// Laplace operator in the bulk.
     /// </summary>
-    public class XLaplace_Bulk : BoSSS.Solution.NSECommon.ipLaplace {
+    public class XLaplace_Bulk : BoSSS.Solution.NSECommon.ipLaplace, IEquationComponentSpeciesNotification, IEquationComponentCoefficient {
 
         public XLaplace_Bulk(LevelSetTracker __LsTrk, double __penatly_baseFactor, string n, XLaplaceBCs boundaries, double sw, double _muA, double _muB, MultidimensionalArray PenaltyLengthScales, XLaplace_Interface.Mode _m)
             : base(__penatly_baseFactor, PenaltyLengthScales, n) {
@@ -68,8 +68,7 @@ namespace BoSSS.Solution.XNSECommon {
         XLaplace_Interface.Mode m_Mode;
         MultidimensionalArray m_LenScales;
 
-        public void SetParameter(string speciesName, SpeciesId __SpcId, MultidimensionalArray __LenScales) {
-            this.m_LenScales = __LenScales;
+        public void SetParameter(string speciesName, SpeciesId __SpcId) {
             switch(speciesName) {
                 case "A": species_Mu = muA; otherSpecies_Mu = muB; SpcId = __SpcId; break;
                 case "B": species_Mu = muB; otherSpecies_Mu = muA; SpcId = __SpcId; break;
@@ -173,6 +172,10 @@ namespace BoSSS.Solution.XNSECommon {
                 default:
                 throw new NotImplementedException();
             }
+        }
+
+        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            this.m_LenScales = cs.CellLengthScales;
         }
     }
 

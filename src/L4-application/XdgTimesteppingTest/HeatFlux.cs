@@ -178,7 +178,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         }
     }
 
-    public class HeatFlux_Interface : ILevelSetForm {
+    public class HeatFlux_Interface : ILevelSetForm, ILevelSetEquationComponentCoefficient {
 
         LevelSetTracker m_LsTrk;
 
@@ -217,11 +217,13 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 Grad_vB_xN += Grad_vB[d] * N[d];
             }
 
-            double hCutCellMin = Math.Min(inp.NegCellLengthScale, inp.PosCellLengthScale);
+            double NegCellLengthScale = NegCellLengthScaleS[inp.jCell];
+            double PosCellLengthScale = PosCellLengthScaleS[inp.jCell];
+            double hCutCellMin = Math.Min(NegCellLengthScale, PosCellLengthScale);
             Debug.Assert(!(double.IsInfinity(hCutCellMin) || double.IsNaN(hCutCellMin)));
 
             if (hCutCellMin <= 1.0e-10 * hCellMin)
-                // very small cell -- clippling
+                // very small cell -- clipping
                 hCutCellMin = hCellMin;
 
             double Ret = 0.0;
@@ -246,6 +248,13 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             return Ret;
         }
 
+        MultidimensionalArray NegCellLengthScaleS;
+        MultidimensionalArray PosCellLengthScaleS;
+
+        public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+            NegCellLengthScaleS = csA.CellLengthScales;
+            PosCellLengthScaleS = csB.CellLengthScales;
+        }
 
         public int LevelSetIndex {
             get { return 0; }

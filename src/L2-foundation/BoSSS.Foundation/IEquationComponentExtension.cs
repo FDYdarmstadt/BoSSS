@@ -22,6 +22,7 @@ using ilPSP.Utils;
 using BoSSS.Foundation.Quadrature;
 using System.Collections;
 using ilPSP.LinSolvers;
+using BoSSS.Foundation.Grid;
 
 namespace BoSSS.Foundation {
     
@@ -146,6 +147,49 @@ namespace BoSSS.Foundation {
                 ev.ComputeMatrix(Matrix, AffineOffset);
         }
 
+        /// <summary>
+        /// another legacy interface
+        /// </summary>
+        static public void ComputeAffine<V>(
+            this SpatialOperator op,
+            UnsetteledCoordinateMapping DomainMap,
+            IList<DGField> Parameters,
+            UnsetteledCoordinateMapping CodomainMap,
+            V AffineOffset,
+            bool OnlyBoundaryEdges = true, double time = 0.0,
+            EdgeQuadratureScheme edgeQr = null, CellQuadratureScheme volQr = null)
+            where V : IList<double> {
+
+            var GridDat = CodomainMap.GridDat;
+            if (Parameters != null)
+                foreach (var prm in Parameters)
+                    if (!object.ReferenceEquals(prm.GridDat, GridDat))
+                        throw new ArgumentException(string.Format("parameter field {0} is assigned to a different grid.", prm.Identification));
+
+            //Using order zero for DomainMap will lead to inconsistent (and possibly insufficient) quadrature order!!! 
+            //UnsetteledCoordinateMapping DomainMap;
+            //Basis b = new Basis(GridDat, 0);
+            //Basis[] B = new Basis[this.DomainVar.Count];
+            //B.SetAll(b);
+            //DomainMap = new UnsetteledCoordinateMapping(B);
+
+
+            if (OnlyBoundaryEdges) {
+                if (edgeQr != null)
+                    throw new ArgumentException("If 'OnlyBoundaryEdges == true', 'edgeQr' must be null!", "edgeQr");
+                if (volQr != null)
+                    throw new ArgumentException("If 'OnlyBoundaryEdges == true', 'volQr' must be null!", "volQr");
+
+                volQr = new CellQuadratureScheme(true, CellMask.GetEmptyMask(GridDat));
+                edgeQr = new EdgeQuadratureScheme(true, GridDat.GetBoundaryEdgeMask());
+            }
+
+            op.ComputeMatrixEx(
+                DomainMap, Parameters, CodomainMap,
+                default(MsrMatrix), AffineOffset,
+                OnlyAffine: true, time:time,
+                volQuadScheme: volQr, edgeQuadScheme: edgeQr);
+        }
 
 
         ///// <summary>

@@ -10,7 +10,7 @@ namespace BoSSS.Application.LoadBalancingTest {
     /// <summary>
     /// fluss fuer du/dx; (Ableitung nach 1. Raumrichtung), bulk-Phase;
     /// </summary>
-    class DxFlux : LinearFlux {
+    class DxFlux : LinearFlux, IEquationComponentSpeciesNotification {
 
         LevelSetTracker m_LsTrk;
         double alpha_A;
@@ -42,7 +42,7 @@ namespace BoSSS.Application.LoadBalancingTest {
 
         double alpha;
 
-        public void NowIntegratingBulk(string speciesName, SpeciesId SpcId, MultidimensionalArray LengthScales) {
+        public void NowIntegratingBulk(string speciesName, SpeciesId SpcId) {
             switch(speciesName) {
                 case "A": alpha = alpha_A; break;
                 case "B": alpha = alpha_B; break;

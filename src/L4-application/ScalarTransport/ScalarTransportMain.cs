@@ -205,7 +205,7 @@ namespace BoSSS.Application.ScalarTransport {
         public void PerformanceVsCachesize() {
             double[] dummy = new double[this.u.CoordinateVector.Count];
 
-            SpatialOperator.Evaluator eval = diffOp.GetEvaluatorEx(new DGField[] { this.u }, this.Velocity.ToArray(), this.u.Mapping,
+            var eval = diffOp.GetEvaluatorEx(new DGField[] { this.u }, this.Velocity.ToArray(), this.u.Mapping,
                 edgeQrCtx:new EdgeQuadratureScheme(false, EdgeMask.GetEmptyMask(this.GridData)),
                 volQrCtx:new CellQuadratureScheme(true,null));
 
