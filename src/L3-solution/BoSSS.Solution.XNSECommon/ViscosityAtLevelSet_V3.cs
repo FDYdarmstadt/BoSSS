@@ -73,7 +73,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             }
             double Ret = 0.0;
 
-            double hCutCellMin = Math.Min(inp.NegCellLengthScale, inp.PosCellLengthScale);
+            double PosCellLengthScale = PosLengthScaleS[inp.jCell];
+            double NegCellLengthScale = NegLengthScaleS[inp.jCell];
+
+            double hCutCellMin = Math.Min(NegCellLengthScale, PosCellLengthScale);
             if (hCutCellMin <= 1.0e-10 * hCellMin)
                 // very small cell -- clippling
                 hCutCellMin = hCellMin;
@@ -92,7 +95,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
                 Ret -= 0.5 * (muA * Grad_uA[i, component] + muB * Grad_uB[i, component]) * (vA - vB) * N[i];  // consistency term
                 Ret -= 0.5 * (muA * Grad_vA[i] + muB * Grad_vB[i]) * (uA[i] - uB[i]) * N[component];  // symmetry term
             }
-            break;
+            //break;
             //    }
             //    // SWIP-form nach DiPietro/Ern:
             //    case ViscosityImplementation.SWIP:{
@@ -173,6 +176,13 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
 
 
+        MultidimensionalArray PosLengthScaleS;
+        MultidimensionalArray NegLengthScaleS;
+
+        public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+            NegLengthScaleS = csA.CellLengthScales;
+            PosLengthScaleS = csB.CellLengthScales;
+        }
 
         //private static bool rem = true;
 

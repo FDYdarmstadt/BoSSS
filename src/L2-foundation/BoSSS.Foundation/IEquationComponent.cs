@@ -53,8 +53,6 @@ namespace BoSSS.Foundation {
         /// Passes various coefficients to the equation component.
         /// </summary>
         void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg);
-
-        
     }
     
     /// <summary>

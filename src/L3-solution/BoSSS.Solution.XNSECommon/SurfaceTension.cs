@@ -1128,7 +1128,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
     /// <summary>
     /// flux formulation for terms on the interface
     /// </summary>
-    public abstract class SurfaceFluxBase : IVolumeForm, IEdgeForm {
+    public abstract class SurfaceFluxBase : IVolumeForm, IEdgeForm, BoSSS.Foundation.IEquationComponentCoefficient {
 
 
         protected int m_comp;
@@ -1138,10 +1138,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         /// </summary>
         MultidimensionalArray m_LenScales;
 
-        public void SetParameter(string speciesName, SpeciesId SpcId) {
-            this.m_LenScales = __LenScales;
-        }
-
+        
         protected double m_penalty;
 
         protected double penalty(int jCellIn, int jCellOut) {
@@ -1154,7 +1151,9 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             Debug.Assert(!double.IsInfinity(penaltySizeFactor_A));
             Debug.Assert(!double.IsInfinity(penaltySizeFactor_B));
             double penaltySizeFactor = Math.Max(penaltySizeFactor_A, penaltySizeFactor_B);
-            return this.m_penalty * penaltySizeFactor * muFactor;
+
+            throw new NotImplementedException("this penalty might be unsuitable");
+            //return this.m_penalty * penaltySizeFactor * muFactor;
 
         }
 
@@ -1285,6 +1284,9 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
 
 
+        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            m_LenScales = cs.CellLengthScales;
+        }
     }
 
     /// <summary>

@@ -269,7 +269,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
             SubGrid jCellGrid = new SubGrid(new CellMask(this.GridDat, Chunk.GetSingleElementChunk(jCell)));
 
             // create spatial operator
-            SpatialOperator.Evaluator evo;
+            IEvaluatorNonLin evo;
             {
                 SpatialOperator op = new SpatialOperator(1, 2, 1, QuadOrderFunc.NonLinear(2), "Phi", "dPhi_dx0", "dPhi_dx1", "cod1");
                 op.EquationComponents["cod1"].Add(new ReinitOperator());
@@ -277,8 +277,8 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
 
                 evo = op.GetEvaluatorEx(Phi.Mapping.Fields, gradPhi.Mapping.Fields, Phi.Mapping,
                     edgeQrCtx: (new EdgeQuadratureScheme(domain: EdgeMask.GetEmptyMask(this.GridDat))),
-                    volQrCtx: (new CellQuadratureScheme(domain: jCellGrid.VolumeMask)),
-                    subGridBoundaryTreatment: SpatialOperator.SubGridBoundaryModes.InnerEdge);
+                    volQrCtx: (new CellQuadratureScheme(domain: jCellGrid.VolumeMask)));
+                evo.ActivateSubgridBoundary(jCellGrid.VolumeMask, subGridBoundaryTreatment: SpatialOperator.SubGridBoundaryModes.InnerEdge);
             }
 
             // create artificial diffusion operator

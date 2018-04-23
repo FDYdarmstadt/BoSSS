@@ -147,13 +147,19 @@ namespace BoSSS.Foundation.XDG {
         //public double PosCellLengthScale;
     }
 
+    /// <summary>
+    /// this interface should be implemented by bulk equation components which require to switch coefficients based on species.
+    /// </summary>
+    public interface IEquationComponentSpeciesNotification {
+        void SetParameter(string speciesName, SpeciesId SpcId);
+    }
 
     /// <summary>
     /// An integrand on the level set.
     /// </summary>
     public interface ILevelSetForm : IEquationComponent {
-        
-        
+
+
         /// <summary>
         /// index of the species-separating level set.
         /// </summary>
@@ -172,10 +178,35 @@ namespace BoSSS.Foundation.XDG {
 
 
         TermActivationFlags LevelSetTerms { get; }
-        
+
         double LevelSetForm(ref CommonParamsLs inp,
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB);
+    }
+
+    /// <summary>
+    /// Interface for equation components which require e.g. grid and/or problem-dependent coefficients,
+    /// e.g. cell length scales
+    /// </summary>
+    public interface ILevelSetEquationComponentCoefficient : IEquationComponent {
+
+        /// <summary>
+        /// Passes various coefficients to the equation component.
+        /// </summary>
+        /// <param name="csA">
+        /// Coefficient set related to negative species (<see cref="NegativeSpecies"/>)
+        /// </param>
+        /// <param name="csB">
+        /// Coefficient set related to positive species (<see cref="PositiveSpecies"/>)
+        /// </param>
+        /// <param name="DomainDGdeg">
+        /// actual polynomial degree of domain variables
+        /// </param>
+        /// <param name="TestDGdeg">
+        /// actual polynomial degree of codomain variables
+        /// </param>
+        void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg);
+
     }
 
 

@@ -251,7 +251,8 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
 
                 /// Build the Quadrature-Scheme for the interface operator
                 /// Note: The HMF-Quadrature over a surface is formally a volume quadrature, since it uses the volume quadrature nodes.
-                Operator_interface.ComputeMatrixEx(
+                XSpatialOperatorExtensions.ComputeMatrixEx(Operator_interface,
+                //Operator_interface.ComputeMatrixEx(
                     LevelSetTracker,
                     Phi.Mapping,
                     null,

@@ -117,6 +117,7 @@
     <Compile Include="XSpatialOperator.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="XSpatialOperatorExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.monkey\ilPSP.LinSolvers.monkey.csproj">
