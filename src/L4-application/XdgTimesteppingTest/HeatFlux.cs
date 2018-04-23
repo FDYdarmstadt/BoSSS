@@ -26,7 +26,7 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Application.XdgTimesteppingTest {
 
-    class HeatFlux_Bulk : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm {
+    class HeatFlux_Bulk : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, IEquationComponentSpeciesNotification, IEquationComponentCoefficient {
 
         public IList<string> ArgumentOrdering {
             get {
@@ -40,13 +40,13 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             }
         }
 
-        public void SetParameter(string speciesName, SpeciesId SpcId, MultidimensionalArray LengthScales) {
+        public void SetParameter(string speciesName, SpeciesId SpcId) {
             switch (speciesName) {
                 case "A": Viscosity = m_muA; rhs = m_rhsA; complementViscosity = m_muB; break;
                 case "B": Viscosity = m_muB; rhs = m_rhsB; complementViscosity = m_muA; break;
                 default: throw new ArgumentException("Unknown species.");
             }
-            m_LengthScales = LengthScales;
+            
         }
 
         MultidimensionalArray m_LengthScales;
@@ -157,6 +157,10 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
 
             return -Acc;
+        }
+
+        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            m_LengthScales = cs.CellLengthScales;
         }
 
         public TermActivationFlags BoundaryEdgeTerms {
