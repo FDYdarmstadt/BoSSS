@@ -44,6 +44,39 @@ namespace BoSSS.Foundation {
 
 
     /// <summary>
+    /// Interface for equation components which require e.g. grid and/or problem-dependent coefficients,
+    /// e.g. cell length scales
+    /// </summary>
+    public interface IEquationComponentCoefficient : IEquationComponent {
+
+        /// <summary>
+        /// Passes various coefficients to the equation component.
+        /// </summary>
+        void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg);
+
+        
+    }
+    
+    /// <summary>
+    /// Set of various custom resp. predefined coefficients, 
+    /// </summary>
+    /// <remarks>
+    /// By encapsulation of the arguments of <see cref="IEquationComponentCoefficient.CoefficientUpdate(CoefficientSet)"/> in a separate
+    /// class it is easy tho change/add variables without updating each and every interface implementation.
+    /// </remarks>
+    public class CoefficientSet {
+
+        public MultidimensionalArray CellLengthScales;
+
+        public MultidimensionalArray EdgeLengthScales;
+
+        public Dictionary<string, object> UserDefinedValues = new Dictionary<string, object>();
+    }
+
+
+
+
+    /// <summary>
     /// defines a nonlinear source term.
     /// \f[ 
     /// s(\vec{U},v) = \int_{\Omega} f(\vec{U}) v \ \mathrm{dV}

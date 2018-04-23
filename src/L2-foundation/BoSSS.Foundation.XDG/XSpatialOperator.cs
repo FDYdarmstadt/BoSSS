@@ -38,19 +38,19 @@ namespace BoSSS.Foundation.XDG {
     /// </summary>
     public class XSpatialOperator : SpatialOperator {
 
-        /// <summary>
-        /// see <see cref="OnIntegratingBulk"/>;
-        /// </summary>
-        /// <param name="speciesName">name of the species that will be computed.</param>
-        /// <param name="SpcId">id of the species that will be computed.</param>
-        public delegate void NowIntegratingBulk(string speciesName, SpeciesId SpcId);
+        ///// <summary>
+        ///// see <see cref="OnIntegratingBulk"/>;
+        ///// </summary>
+        ///// <param name="speciesName">name of the species that will be computed.</param>
+        ///// <param name="SpcId">id of the species that will be computed.</param>
+        //public delegate void NowIntegratingBulk(string speciesName, SpeciesId SpcId);
 
 
-        /// <summary>
-        /// Informs the listeners which part (or species) of the bulk phase is going to be computed.
-        /// this event is called before computation of each bulk phase is carried out.
-        /// </summary>
-        public event NowIntegratingBulk OnIntegratingBulk;
+        ///// <summary>
+        ///// Informs the listeners which part (or species) of the bulk phase is going to be computed.
+        ///// this event is called before computation of each bulk phase is carried out.
+        ///// </summary>
+        //public event NowIntegratingBulk OnIntegratingBulk;
 
 
         /// <summary>
@@ -651,6 +651,19 @@ namespace BoSSS.Foundation.XDG {
                 }
             }
 
+
+            public override CoefficientSet OperatorCoefficients {
+                get {
+                    throw new NotSupportedException("Use per-species implementation.");
+                }
+                set {
+                    throw new NotSupportedException("Use per-species implementation.");
+                }
+            }
+
+
+            public Dictionary<>
+
         }
 
 
@@ -913,7 +926,7 @@ namespace BoSSS.Foundation.XDG {
             }
 
             /// <summary>
-            /// 
+            /// mpi comm
             /// </summary>
             public MPI_Comm MPI_Comm {
                 get {

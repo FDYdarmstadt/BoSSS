@@ -32,7 +32,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
         LevelSetTracker m_LsTrk;
 
-        public ViscosityAtLevelSet_Standard(LevelSetTracker lstrk, double _muA, double _muB, double _penalty, int _component, bool _includeTransposeTerm, ViscosityImplementation _ViscosityImplementation) {
+        public ViscosityAtLevelSet_Standard(LevelSetTracker lstrk, double _muA, double _muB, double _penalty, int _component, bool _includeTransposeTerm) {
             this.m_LsTrk = lstrk;
             this.muA = _muA;
             this.muB = _muB;
@@ -40,7 +40,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             this.component = _component;
             this.m_D = lstrk.GridDat.SpatialDimension;
             this.includeTransposeTerm = _includeTransposeTerm;
-            this.m_ViscosityImplementation = _ViscosityImplementation;
         }
 
         double muA;
@@ -49,7 +48,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         int component;
         int m_D;
         bool includeTransposeTerm;
-        ViscosityImplementation m_ViscosityImplementation;
 
         /// <summary>
         /// default-implementation

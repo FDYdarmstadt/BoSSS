@@ -24,8 +24,8 @@ using BoSSS.Foundation.XDG;
 namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
     class ViscosityInBulk_GradUTerm_Localized : ViscosityInBulk_GradUTerm {
 
-        public ViscosityInBulk_GradUTerm_Localized(double penalty, double sw, IncompressibleMultiphaseBoundaryCondMap bcMap, int d, int D, double _muA, double _muB, ViscosityImplementation _ViscosityImplementation)
-            : base(penalty, sw, bcMap, d, D, _muA, _muB, _ViscosityImplementation) { }
+        public ViscosityInBulk_GradUTerm_Localized(double penalty, double sw, IncompressibleMultiphaseBoundaryCondMap bcMap, int d, int D, double _muA, double _muB)
+            : base(penalty, sw, bcMap, d, D, _muA, _muB) { }
 
 
 
@@ -66,7 +66,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
     class ViscosityInBulk_GradUtranspTerm_Localized : ViscosityInBulk_GradUtranspTerm {
 
-        public ViscosityInBulk_GradUtranspTerm_Localized(double penalty, double sw, IncompressibleMultiphaseBoundaryCondMap bcMap, int d, int D, double _muA, double _muB, ViscosityImplementation _ViscosityImplementation) : base(penalty, sw, bcMap, d, D, _muA, _muB, _ViscosityImplementation) { }
+        public ViscosityInBulk_GradUtranspTerm_Localized(double penalty, double sw, IncompressibleMultiphaseBoundaryCondMap bcMap, int d, int D, double _muA, double _muB) 
+            : base(penalty, sw, bcMap, d, D, _muA, _muB) { }
 
             public override double InnerEdgeForm(ref Foundation.CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB, double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB) {
                 return 0;
@@ -75,7 +76,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
         class ViscosityInBulk_divTerm_Localized : ViscosityInBulk_divTerm {
 
-            public ViscosityInBulk_divTerm_Localized(double penalty, double sw, IncompressibleMultiphaseBoundaryCondMap bcMap, int d, int D, double _muA, double _muB, ViscosityImplementation _ViscosityImplementation) : base(penalty, sw, bcMap, d, D, _muA, _muB, _ViscosityImplementation) { }
+            public ViscosityInBulk_divTerm_Localized(double penalty, double sw, IncompressibleMultiphaseBoundaryCondMap bcMap, int d, int D, double _muA, double _muB) 
+                : base(penalty, sw, bcMap, d, D, _muA, _muB) { }
 
             public override double InnerEdgeForm(ref Foundation.CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB, double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB) {
                 return 0;
