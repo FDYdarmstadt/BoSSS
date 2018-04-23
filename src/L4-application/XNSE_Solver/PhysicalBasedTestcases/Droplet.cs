@@ -47,7 +47,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             XNSE_Control C = new XNSE_Control();
 
-            AppControl._CompMode compMode = AppControl._CompMode.Transient;
+            AppControl._CompMode compMode = AppControl._CompMode.Steady;
 
             //_DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
             //_DbPath = @"D:\local\local_test_db";
@@ -60,6 +60,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.savetodb = C.DbPath != null;
             C.ProjectName = "XNSE/Droplet";
             C.ProjectDescription = "Static droplet";
+
+            C.ContinueOnIoError = false;
 
             #endregion
 
@@ -176,8 +178,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             double r = 0.25;
 
-            Func<double[], double> PhiFunc = (X => ((X[0] - 0.5).Pow2() + (X[1] - 0.5).Pow2()).Sqrt() - r);         // signed distance
-            ////Func<double[], double> PhiFunc = (X => ((X[0] - 0.5).Pow2() + (X[1] - 0.5).Pow2()) - r.Pow2());         // quadratic
+            //Func<double[], double> PhiFunc = (X => ((X[0] - 0.5).Pow2() + (X[1] - 0.5).Pow2()).Sqrt() - r);         // signed distance
+            Func<double[], double> PhiFunc = (X => ((X[0] - 0.5).Pow2() + (X[1] - 0.5).Pow2()) - r.Pow2());         // quadratic
             C.InitialValues_Evaluators.Add("Phi", PhiFunc);
     
 
@@ -358,6 +360,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.savetodb = C.DbPath != null;
             C.ProjectName = "XNSE/Droplet";
             C.ProjectDescription = "Oscillating droplet";
+
+            C.ContinueOnIoError = false;
 
             #endregion
 
@@ -666,6 +670,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.ProjectName = "XNSE/Droplet";
             C.ProjectDescription = "Static droplet";
 
+            C.ContinueOnIoError = false;
+
             #endregion
 
 
@@ -958,6 +964,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.ProjectName = "XNSE/Droplet";
             //C.ProjectDescription = "Static droplet on plate";
 
+            C.ContinueOnIoError = false;
+
             //C.LogValues = XNSE_Control.LoggingValues.MovingContactLine;
 
             #endregion
@@ -1232,6 +1240,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.savetodb = C.DbPath != null;
             C.ProjectName = "XNSE/Droplet";
             C.ProjectDescription = "Static droplet sliding to Equilibrium";
+
+            C.ContinueOnIoError = false;
 
             C.LogValues = XNSE_Control.LoggingValues.MovingContactLine;
 
@@ -1525,8 +1535,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
             C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
-            //C.LS_TrackerWidth = 2;
-            //C.AdaptiveMeshRefinement = true;
+            C.LS_TrackerWidth = 2;
+            C.AdaptiveMeshRefinement = true;
+            C.RefinementLevel = 1;
 
             #endregion
 

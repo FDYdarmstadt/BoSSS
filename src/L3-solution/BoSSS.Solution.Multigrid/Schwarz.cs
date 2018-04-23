@@ -253,6 +253,84 @@ namespace BoSSS.Solution.Multigrid {
         }
 
 
+        public class SimpleBlocking : BlockingStrategy {
+
+            /// <summary>
+            /// Number of parts/additive Schwarz blocks on current MPI process.
+            /// </summary>
+            public int NoOfPartsPerProcess = 4;
+
+            internal override IEnumerable<List<int>> GetBlocking(MultigridOperator op) {
+                var MgMap = op.Mapping;
+
+                //if(!M.RowPartitioning.Equals(MgMap.Partitioning))
+                //    throw new ArgumentException("Row partitioning mismatch.");
+                //if(!M.ColPartition.Equals(MgMap.Partitioning))
+                //    throw new ArgumentException("Column partitioning mismatch.");
+
+                var ag = MgMap.AggGrid;
+
+                int JComp = ag.iLogicalCells.NoOfLocalUpdatedCells; // number of local cells
+                int[] xadj = new int[JComp + 1];
+                List<int> adjncy = new List<int>();
+                for (int j = 0; j < JComp; j++) {
+                    int[] neigh_j = ag.iLogicalCells.CellNeighbours[j];
+                    foreach (int jNeigh in neigh_j) {
+                        //adjncy.AddRange(neigh_j);
+                        if (jNeigh < JComp)
+                            adjncy.Add(jNeigh);
+                        else
+                            Console.WriteLine("Skipping external cell");
+                    }
+                    xadj[j + 1] = xadj[j] + neigh_j.Length;
+                }
+
+                int MPIrank, MPIsize;
+                MPI.Wrappers.csMPI.Raw.Comm_Rank(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out MPIrank);
+                MPI.Wrappers.csMPI.Raw.Comm_Size(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out MPIsize);
+                //if (MPIrank == 1)
+                //    NoOfParts = 1;
+                //Debugger.Launch();
+
+                int[] part = new int[JComp];
+                {
+                    if (NoOfPartsPerProcess > 1) {
+                        var temp = (int)Math.Ceiling(part.Length / (double)NoOfPartsPerProcess);
+                        int[] localBlocks = new int[NoOfPartsPerProcess];
+                        int sum = 0;
+                        for (int i = 0; i < (NoOfPartsPerProcess-1); i++) {
+                            localBlocks[i] = temp;
+                            sum += temp;
+                        }
+                        localBlocks[NoOfPartsPerProcess-1] = (part.Length - sum);
+
+                        sum = 0;
+                        for (int blkIdx = 0; blkIdx < NoOfPartsPerProcess; blkIdx++) {
+                            for (int i = 0; i < localBlocks[blkIdx]; i++) {
+                                part.SetValue(blkIdx, i + sum);
+                            }
+                            sum = localBlocks[blkIdx];
+                        }
+
+                    } else {
+                        part.SetAll(0);
+                    }
+                }
+
+                var _Blocks = NoOfPartsPerProcess.ForLoop(i => new List<int>((int)Math.Ceiling(1.1 * JComp / NoOfPartsPerProcess)));
+                for (int j = 0; j < JComp; j++) {
+                    _Blocks[part[j]].Add(j);
+
+                }
+
+                return _Blocks;
+            }
+
+            internal override int GetNoOfBlocks(MultigridOperator op) {
+                return NoOfPartsPerProcess;
+            }
+        }
+
         public BlockingStrategy m_BlockingStrategy;
         MultigridOperator m_MgOp;
 
@@ -278,7 +356,7 @@ namespace BoSSS.Solution.Multigrid {
 #if DEBUG
                 m_MatlabParalellizationCheck = value;
 #else
-                if(value == true)
+                if (value == true)
                     throw new NotSupportedException("Only supported in DEBUG mode.");
 #endif
             }
@@ -307,7 +385,7 @@ namespace BoSSS.Solution.Multigrid {
                         }
                     }
 #endif
-                    if(this.m_BlockingStrategy.GetNoOfBlocks(op) != this.blockSolvers.Count()) {
+                    if (this.m_BlockingStrategy.GetNoOfBlocks(op) != this.blockSolvers.Count()) {
                         throw new ArgumentException("Blocking, unable to re-use");
                     }
 
@@ -649,12 +727,12 @@ namespace BoSSS.Solution.Multigrid {
                             Blocks.Add(Block);
                         }
 #endif
-                        blockSolvers[iPart] = new PARDISOSolver() {
-                            CacheFactorization = true,
-                            UseDoublePrecision = false
-                        };
+                        //blockSolvers[iPart] = new PARDISOSolver() {
+                        //    CacheFactorization = true,
+                        //    UseDoublePrecision = false
+                        //};
                         //blockSolvers[iPart] = new FullDirectSolver();
-                        //blockSolvers[iPart] = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
+                        blockSolvers[iPart] = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
                         blockSolvers[iPart].DefineMatrix(Block);
                     }
 

@@ -164,6 +164,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             #endregion
 
+
             // grid generation
             // ===============
             #region grid
@@ -335,7 +336,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// <param name="kelem"></param>
         /// <param name="_DbPath"></param>
         /// <returns></returns>
-        public static XNSE_Control RB_BenchmarkTest(int p = 2, int kelem = 40, string _DbPath = null) {
+        public static XNSE_Control RB_BenchmarkTest(int p = 2, int kelem = 20, string _DbPath = null) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -406,7 +407,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.PhysicalParameters.rho_B = 1000;
             C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.mu_B = 10;
-            C.PhysicalParameters.Sigma = 24.5;
+            double sigma = 24.5;
+            C.PhysicalParameters.Sigma = sigma;
 
             //C.Tags.Add("Testcase 2");
             //C.PhysicalParameters.rho_A = 1;
@@ -420,6 +422,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.PhysicalParameters.Material = true;
 
             #endregion
+
 
             // grid generation
             // ===============
@@ -450,38 +453,38 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                     return et;
                 });
 
-                grd.AddPredefinedPartitioning("ZwoProcSplit", delegate (double[] X) {
-                    int rank;
-                    double x = X[0];
-                    if (x < 0.5)
-                        rank = 0;
-                    else
-                        rank = 1;
+                //grd.AddPredefinedPartitioning("ZwoProcSplit", delegate (double[] X) {
+                //    int rank;
+                //    double x = X[0];
+                //    if (x < 0.5)
+                //        rank = 0;
+                //    else
+                //        rank = 1;
 
-                    return rank;
-                });
+                //    return rank;
+                //});
 
-                grd.AddPredefinedPartitioning("VierProcSplit", delegate (double[] X) {
-                    int rank;
-                    double x = X[0];
-                    if (x < 0.35)
-                        rank = 0;
-                    else if (x < 0.5)
-                        rank = 1;
-                    else if (x < 0.75)
-                        rank = 2;
-                    else
-                        rank = 3;
+                //grd.AddPredefinedPartitioning("VierProcSplit", delegate (double[] X) {
+                //    int rank;
+                //    double x = X[0];
+                //    if (x < 0.35)
+                //        rank = 0;
+                //    else if (x < 0.5)
+                //        rank = 1;
+                //    else if (x < 0.75)
+                //        rank = 2;
+                //    else
+                //        rank = 3;
 
-                    return rank;
-                });
+                //    return rank;
+                //});
 
 
                 return grd;
             };
 
-            C.GridPartType = GridPartType.Predefined;
-            C.GridPartOptions = "VierProcSplit";
+            //C.GridPartType = GridPartType.Predefined;
+            //C.GridPartOptions = "VierProcSplit";
 
             #endregion
 
@@ -561,8 +564,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
 
 
-            C.LSContiProjectionMethod = ContinuityProjectionOption.SpecFEM;
-            C.option_solver = C.PhysicalParameters.IncludeConvection ? "fixpoint+levelset" : "direct";
+            C.LSContiProjectionMethod = ContinuityProjectionOption.ContinuousDG;
+            //C.option_solver = C.PhysicalParameters.IncludeConvection ? "fixpoint+levelset" : "direct";
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.NoOfMultigridLevels = 1;
             C.Solver_MaxIterations = 50;
@@ -573,13 +576,21 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
 
-            //C.Option_LevelSetEvolution = LevelSetEvolution.Fourier;
-            //C.AdvancedDiscretizationOptions.surfTensionMode = SurfaceTensionMode.Curvature_Fourier;
-            //C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
 
-            C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux;
-            C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 1;
+            C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
+            //C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 1;
+
+
+            C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.FullBoussinesqScriven;
+            C.PhysicalParameters.mu_I = 1 * sigma;
+            C.PhysicalParameters.lambda_I = 2 * sigma;
+
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+
+            C.LS_TrackerWidth = 2;
+            C.AdaptiveMeshRefinement = true;
+            C.RefinementLevel = 1;
+
 
             #endregion
 
@@ -590,12 +601,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
-            //C.Timestepper_MassMatrix = MassMatrixShapeandDependence.IsTimeAndSolutionDependent;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 
             C.CompMode = AppControl._CompMode.Transient;
-            //C.TimeStepper = XNSE_Control._Timestepper.BDF2;
-
 
             double dt = 3e-3;
             C.dtMax = dt;
