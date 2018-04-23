@@ -300,7 +300,8 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
 
             OpAffine.Clear();
 
-            Operator_interface.ComputeMatrixEx(
+            XSpatialOperatorExtensions.ComputeMatrixEx(Operator_interface,
+            //Operator_interface.ComputeMatrixEx(
                LevelSetTracker,
                 Extension.Mapping,
                 new List<DGField> { InterfaceValue },

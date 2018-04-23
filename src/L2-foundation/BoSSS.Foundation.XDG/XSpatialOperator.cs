@@ -171,7 +171,7 @@ namespace BoSSS.Foundation.XDG {
         
 
         
-        public IEvaluatorLinear GetMatrixBuilder(
+        public XEvaluatorLinear GetMatrixBuilder(
             LevelSetTracker lsTrk,
             UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, 
             IDictionary<SpeciesId, QrSchemPair> SpeciesSchemes = null
@@ -182,7 +182,8 @@ namespace BoSSS.Foundation.XDG {
                 SpeciesSchemes);
         }
 
-        class XEvaluatorLinear : SpatialOperator.EvaluatorBase, IEvaluatorLinear {
+
+        public class XEvaluatorLinear : SpatialOperator.EvaluatorBase, IEvaluatorLinear {
 
             public XEvaluatorLinear(XSpatialOperator ownr,
                 LevelSetTracker lsTrk,
@@ -398,6 +399,37 @@ namespace BoSSS.Foundation.XDG {
             static bool ruleDiagnosis = false;
 
             /// <summary>
+            /// 
+            /// </summary>
+            void UpdateLevelSetCoefficients(CoefficientSet csA, CoefficientSet csB) {
+                int[] DomDGdeg = this.DomainMapping.BasisS.Select(b => b.Degree).ToArray();
+                int[] CodDGdeg = this.CodomainMapping.BasisS.Select(b => b.Degree).ToArray();
+                string[] DomNames = Owner.DomainVar.ToArray();
+                string[] CodNames = Owner.DomainVar.ToArray();
+
+
+                Debug.Assert(CodNames.Length == CodDGdeg.Length);
+                for(int iCod = 0; iCod < CodDGdeg.Length; iCod++) {
+                    var comps = Owner.EquationComponents[CodNames[iCod]];
+                    foreach(var c in comps) {
+                        if(c is ILevelSetEquationComponentCoefficient) {
+                            var ce = c as ILevelSetEquationComponentCoefficient;
+
+                            int[] DomDGdeg_cd = new int[ce.ArgumentOrdering.Count];
+                            for(int i = 0; i < DomDGdeg_cd.Length; i++) {
+                                string domName = ce.ArgumentOrdering[i];
+                                int idx = Array.IndexOf(DomDGdeg, domName);
+                                DomDGdeg_cd[i] = DomDGdeg[idx];
+                            }
+
+                            ce.CoefficientUpdate(csA, csB, DomDGdeg_cd, CodDGdeg[iCod]);
+                        }
+                    }
+                }
+            }
+
+
+            /// <summary>
             /// computation of operator matrix, currently only two species are supported
             /// </summary>
             void ComputeMatrix_Internal<M, V>(
@@ -409,13 +441,6 @@ namespace BoSSS.Foundation.XDG {
                 using(var tr = new FuncTrace()) {
                     var lsTrk = m_lsTrk;
                     IGridData GridDat = lsTrk.GridDat;
-
-
-                    //SubGrid SubGrid = base.m_SubGrid_InCells;
-
-
-
-
 
                     #region Check Input Arguments
                     // --------------------------------
@@ -503,9 +528,9 @@ namespace BoSSS.Foundation.XDG {
                             int iSpecies = Array.IndexOf(ReqSpecies, SpeciesId);
 
 
-                            if(m_Xowner.OnIntegratingBulk != null)
-                                m_Xowner.OnIntegratingBulk(lsTrk.GetSpeciesName(SpeciesId), SpeciesId);
-
+                            //if(m_Xowner.OnIntegratingBulk != null)
+                            //    m_Xowner.OnIntegratingBulk(lsTrk.GetSpeciesName(SpeciesId), SpeciesId);
+                            
                             SpeciesFrameMatrix<M> mtx = mtx_spc[iSpecies];
                             var _mtx = Matrix != null ? mtx : default(SpeciesFrameMatrix<M>);
 
@@ -528,10 +553,13 @@ namespace BoSSS.Foundation.XDG {
                             //#endif
 
                             foreach(var SpeciesBuilder in new[] { SpeciesBulkMtxBuilder, SpeciesGhostEdgeBuilder, SpeciesSurfElmBuilder }) {
-
-
+                                
                                 if(SpeciesBuilder.ContainsKey(SpeciesId)) {
+                                    
                                     var builder = SpeciesBulkMtxBuilder[SpeciesId];
+                                    builder.OperatorCoefficients = this.SpeciesOperatorCoefficients[SpeciesId];
+                                    
+
                                     if(trx != null) {
                                         trx.TransceiveFinish();
                                         trx = null;
@@ -568,6 +596,7 @@ namespace BoSSS.Foundation.XDG {
                                                              lsTrk, iLevSet, new Tuple<SpeciesId, SpeciesId>(SpeciesA, SpeciesB),
                                                              rule);
                             MtxBuilder.time = time;
+                            UpdateLevelSetCoefficients(this.SpeciesOperatorCoefficients[SpeciesA], this.SpeciesOperatorCoefficients[SpeciesB]);
                             MtxBuilder.Execute();
 
 #if DEBUG
@@ -662,7 +691,9 @@ namespace BoSSS.Foundation.XDG {
             }
 
 
-            public Dictionary<>
+            public Dictionary<SpeciesId, CoefficientSet> SpeciesOperatorCoefficients {
+                get;
+            }
 
         }
 

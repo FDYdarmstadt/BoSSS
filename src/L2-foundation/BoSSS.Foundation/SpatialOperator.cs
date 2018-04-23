@@ -1223,7 +1223,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// Container for the evaluation of nonlinear fluxes/sources
         /// </summary>
-        abstract protected class EvaluatorBase : IEvaluator {
+        abstract public class EvaluatorBase : IEvaluator {
 
             SpatialOperator m_Owner;
 

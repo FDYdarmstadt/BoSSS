@@ -19,6 +19,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using ilPSP.Utils;
+using BoSSS.Foundation.Quadrature;
+using System.Collections;
+using ilPSP.LinSolvers;
 
 namespace BoSSS.Foundation {
     
@@ -52,5 +55,139 @@ namespace BoSSS.Foundation {
             return ret;
         }
 
+       
+
+        /// <summary>
+        /// computes the affine offset and/or matrix of the operator, expert
+        /// version;
+        /// </summary>
+        /// <param name="DomainMap">
+        /// the mapping which is used to compute column indices into
+        /// <paramref name="Matrix"/>;
+        /// </param>
+        /// <param name="Parameters">
+        /// The parameter variables (of this differential operator);
+        /// The number of elements in the list must match the parameter count
+        /// of the differential operator (see
+        /// <see cref="SpatialOperator.ParameterVar"/>);  It is allowed to set
+        /// an entry to 'null', in this case the values of the parameter field
+        /// are assumed to be 0.0; If the differential operator contains no
+        /// parameters, this argument can be null;
+        /// </param>
+        /// <param name="CodomainMap">
+        /// the mapping which is used to compute row indices into
+        /// <paramref name="Matrix"/> and <paramref name="AffineOffset"/>.
+        /// </param>
+        /// <param name="Matrix">
+        /// Acc output: the matrix which represents the linear part of this
+        /// operator, according to the mapping given by
+        /// <paramref name="DomainMap"/> and <paramref name="CodomainMap"/>,
+        /// is <b>ACCUMULATED</b> here; <br/>
+        /// Setting all matrix entries to 0.0 is left to the user;
+        /// </param>
+        /// <param name="AffineOffset">
+        /// Acc output: the vector which represents the affine part of this
+        /// operator, according to the mapping given by
+        /// <paramref name="DomainMap"/> and <paramref name="CodomainMap"/>,
+        /// is <b>ACCUMULATED</b> here; <br/>
+        /// Setting all vector entries to 0.0 is left to the user;
+        /// </param>
+        /// <param name="OnlyAffine">
+        /// If true, only the <paramref name="AffineOffset"/> is computed, and
+        /// the <paramref name="Matrix"/> is not touched (can be null);
+        /// </param>
+        /// <remarks>
+        /// The operator assembly must be finalized before by calling
+        /// <see cref="Commit"/> before this method can be called.
+        /// </remarks>
+        /// <param name="edgeRule">
+        /// Quadrature rule and domain for edge integration; specifying this is exclusive with <paramref name="edgeQuadScheme"/>, i.e. both cannot be unequal null at the same time.
+        /// </param>
+        /// <param name="edgeQuadScheme">
+        /// Quadrature scheme for edge integration; specifying this is exclusive with <paramref name="edgeRule"/>, i.e. both cannot be unequal null at the same time.
+        /// </param>
+        /// <param name="volRule">
+        /// Quadrature rule and domain for volume integration; specifying this is exclusive with <paramref name="volQuadScheme"/>, i.e. both cannot be unequal null at the same time.
+        /// </param>
+        /// <param name="volQuadScheme">
+        /// Quadrature scheme for volume integration; specifying this is exclusive with <paramref name="volRule"/>, i.e. both cannot be unequal null at the same time.
+        /// </param>
+        /// <param name="SubGridBoundaryMask">
+        /// </param>
+        /// <param name="ParameterMPIExchange">
+        /// Determines whether parameter fields have to exchange ghost cell
+        /// data before the assembly of the operator.
+        /// </param>
+        /// <param name="time"></param>
+        /// <param name="op"></param>
+        static public void ComputeMatrixEx<M, V>(this SpatialOperator op,
+            UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap,
+            M Matrix, V AffineOffset,bool OnlyAffine = false,
+            double time = 0.0, 
+            EdgeQuadratureScheme edgeQuadScheme = null, CellQuadratureScheme volQuadScheme = null,
+            //ICompositeQuadRule<QuadRule> edgeRule = null, ICompositeQuadRule<QuadRule> volRule = null,
+            BitArray SubGridBoundaryMask = null,
+            bool ParameterMPIExchange = true)
+            where M : IMutableMatrixEx
+            where V : IList<double> //
+        {
+           
+            var ev = op.GetMatrixBuilder(DomainMap, Parameters, CodomainMap, edgeQuadScheme, volQuadScheme);
+            ev.time = time;
+            ev.MPITtransceive = ParameterMPIExchange;
+            if(SubGridBoundaryMask != null) {
+                throw new NotSupportedException();
+                //ev.ActivateSubgridBoundary(new Grid.CellMask(ev.GridData, SubGridBoundaryMask));
+            }
+
+            if(OnlyAffine)
+                ev.ComputeAffine(AffineOffset);
+            else
+                ev.ComputeMatrix(Matrix, AffineOffset);
+        }
+
+
+
+        ///// <summary>
+        ///// Legacy interface
+        ///// </summary>
+        //static public void ComputeMatrixEx<M, V>(
+        //    this SpatialOperator op,
+        //    UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap,
+        //    M Matrix, V AffineOffset, bool OnlyAffine = false,
+        //    double time = 0.0, 
+        //    EdgeQuadratureScheme edgeQuadScheme = null, CellQuadratureScheme volQuadScheme = null,
+        //    ICompositeQuadRule<QuadRule> edgeRule = null, ICompositeQuadRule<QuadRule> volRule = null,
+        //    BitArray SubGridBoundaryMask = null,
+        //    bool ParameterMPIExchange = true)
+        //    where M : IMutableMatrix
+        //    where V : IList<double> //
+        //{
+        //    //
+
+        //    if(edgeQuadScheme != null && edgeRule != null)
+        //        throw new ArgumentException();
+        //    if(volQuadScheme != null && volRule != null)
+        //        throw new ArgumentException();
+
+        //    //if (edgeQrCtx == null)
+        //    //    edgeQrCtx = new EdgeQuadratureScheme(true);
+
+        //    var GridDat = CheckArguments(DomainMap, Parameters, CodomainMap);
+
+        //    int order = 0;
+        //    if(edgeRule == null || volRule == null) 
+        //        order = this.GetOrderFromQuadOrderFunction(DomainMap, Parameters, CodomainMap);
+            
+        //    if(edgeRule == null)
+        //        edgeRule = edgeQuadScheme.SaveCompile(GridDat, order);
+        //    if(volRule == null)
+        //        volRule = volQuadScheme.SaveCompile(GridDat, order);
+
+        //    Internal_ComputeMatrixEx(GridDat, DomainMap, Parameters, CodomainMap, Matrix, AffineOffset, OnlyAffine, time,
+        //        edgeRule,
+        //        volRule,
+        //        SubGridBoundaryMask, ParameterMPIExchange);
+        //}
     }
 }

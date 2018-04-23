@@ -82,6 +82,9 @@ namespace BoSSS.Foundation.XDG {
                 return m_SpeciesPair.Item2;
             }
         }
+
+        
+
                 
         /// <summary>
         /// ctor.
@@ -90,7 +93,9 @@ namespace BoSSS.Foundation.XDG {
                                      XSpatialOperator DiffOp,
                                      M Matrix, V OffsetVec,
                                      UnsetteledCoordinateMapping RowMap, IList<DGField> ParamsMap, UnsetteledCoordinateMapping ColMap,
-                                     LevelSetTracker lsTrk, int _iLevSet, Tuple<SpeciesId,SpeciesId> SpeciesPair,
+                                     LevelSetTracker lsTrk, int _iLevSet, 
+                                     Tuple<SpeciesId,SpeciesId> SpeciesPair,
+                                     //Tuple<CoefficientSet,CoefficientSet> NegPosCoeff,
                                      ICompositeQuadRule<QuadRule> domAndRule) //
             : base(new int[] { RowMap.MaxTotalNoOfCoordinatesPerCell, 1 + ((Matrix == null) ? 0 : ColMap.MaxTotalNoOfCoordinatesPerCell) },
                  context,

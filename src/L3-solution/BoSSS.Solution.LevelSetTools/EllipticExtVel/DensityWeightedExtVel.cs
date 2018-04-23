@@ -37,7 +37,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
     /// a(u,v) = \alpha \int_{\Gamma} u v   \mathrm{dS}
     /// \f]
     /// </summary>
-    public class DensityWeightedExtVel : ILevelSetForm {
+    public class DensityWeightedExtVel : ILevelSetForm, ILevelSetEquationComponentCoefficient {
 
         double PenaltyBase;
         LevelSetTracker LSTrk;
@@ -54,7 +54,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
 
 
         /// <summary>
-        /// Penalty Term enforcing the duirichlet value at the interface
+        /// Penalty Term enforcing the Dirichlet value at the interface
         /// Note: this Form is written only in terms of uA, since there is no XDG-field involved
         /// </summary>
         /// <param name="inp">inp.ParamsNeg[0] is the Dirichlet value from the parameter-field</param>
@@ -68,21 +68,29 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
         /// <param name="Grad_vB">not needed</param>
         /// <returns>the evaluated penalty flux</returns>
         public double LevelSetForm(ref CommonParamsLs inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+            double NegCellLengthScale = NegCellLengthScaleS[inp.jCell];
+            double PosCellLengthScale = PosCellLengthScaleS[inp.jCell];
 
             double hmin;
-            if(inp.NegCellLengthScale.IsNaN()) {
-                hmin = inp.PosCellLengthScale;
-            } else if(inp.PosCellLengthScale.IsNaN()) {
-                hmin = inp.NegCellLengthScale;
+            if(NegCellLengthScale.IsNaN()) {
+                hmin = PosCellLengthScale;
+            } else if(PosCellLengthScale.IsNaN()) {
+                hmin = NegCellLengthScale;
             } else {
-                hmin = Math.Min(inp.NegCellLengthScale, inp.PosCellLengthScale);
+                hmin = Math.Min(NegCellLengthScale, PosCellLengthScale);
             }
 
             return PenaltyBase * 2 / hmin * (uA[0] - (inp.ParamsNeg[0] * Weights[0] + inp.ParamsPos[0] * Weights[1])) * (vA);
 
         }
 
+        MultidimensionalArray NegCellLengthScaleS;
+        MultidimensionalArray PosCellLengthScaleS;
 
+        public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+            NegCellLengthScaleS = csA.CellLengthScales;
+            PosCellLengthScaleS = csB.CellLengthScales;
+        }
 
         public IList<string> ArgumentOrdering {
             get {

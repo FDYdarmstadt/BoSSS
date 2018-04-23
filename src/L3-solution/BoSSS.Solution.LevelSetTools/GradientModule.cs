@@ -234,8 +234,8 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                 m_gradEvo = op.GetEvaluatorEx(
                     Phi.Mapping, null, gradPhi.Mapping,
                     edgeQrCtx: (new EdgeQuadratureScheme(domain: Sgrd.AllEdgesMask)),
-                    volQrCtx: (new CellQuadratureScheme(domain: Sgrd.VolumeMask)),
-                    subGridBoundaryTreatment: SpatialOperator.SubGridBoundaryModes.BoundaryEdge, sgrd:Sgrd);
+                    volQrCtx: (new CellQuadratureScheme(domain: Sgrd.VolumeMask)));
+                m_gradEvo.ActivateSubgridBoundary(subGridBoundaryTreatment: SpatialOperator.SubGridBoundaryModes.BoundaryEdge, sgrd: Sgrd.VolumeMask);
 
                 m_gradEvo_jCell = jCell;
             }
@@ -243,7 +243,8 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
             foreach(var f in gradPhi) {
                 f.Coordinates.ClearRow(jCell);
             }
-            m_gradEvo.Evaluate(1.0, 1.0, gradPhi.CoordinateVector, 0.0, MPIexchange: false);
+            m_gradEvo.MPITtransceive = false;
+            m_gradEvo.Evaluate(1.0, 1.0, gradPhi.CoordinateVector);
         }
 
 

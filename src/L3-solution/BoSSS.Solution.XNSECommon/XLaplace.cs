@@ -179,7 +179,7 @@ namespace BoSSS.Solution.XNSECommon {
     /// <summary>
     /// Laplace operator at the interface
     /// </summary>
-    public class XLaplace_Interface : ILevelSetForm {
+    public class XLaplace_Interface : ILevelSetForm, ILevelSetEquationComponentCoefficient {
 
         public enum Mode {
             SWIP,
@@ -241,8 +241,12 @@ namespace BoSSS.Solution.XNSECommon {
         protected double GetPenalty(ref CommonParamsLs inp) {
             //double penaltySizeFactor_A = 1.0 / this.ccBB.Get_hminBB(this.NegativeSpecies, inp.jCell);
             //double penaltySizeFactor_B = 1.0 / this.ccBB.Get_hminBB(this.PositiveSpecies, inp.jCell);
-            double penaltySizeFactor_A = 1.0 / inp.NegCellLengthScale;
-            double penaltySizeFactor_B = 1.0 / inp.PosCellLengthScale;
+
+            double PosCellLengthScale = PosLengthScaleS[inp.jCell];
+            double NegCellLengthScale = NegLengthScaleS[inp.jCell];
+
+            double penaltySizeFactor_A = 1.0 / NegCellLengthScale;
+            double penaltySizeFactor_B = 1.0 / PosCellLengthScale;
             Debug.Assert(!double.IsNaN(penaltySizeFactor_A));
             Debug.Assert(!double.IsNaN(penaltySizeFactor_B));
             Debug.Assert(!double.IsInfinity(penaltySizeFactor_A));
@@ -304,7 +308,15 @@ namespace BoSSS.Solution.XNSECommon {
                 throw new NotImplementedException();
             }
         }
-        
+
+        MultidimensionalArray PosLengthScaleS;
+        MultidimensionalArray NegLengthScaleS;
+
+        public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+            NegLengthScaleS = csA.CellLengthScales;
+            PosLengthScaleS = csB.CellLengthScales;
+        }
+
         public int LevelSetIndex {
             get { return 0; }
         }
