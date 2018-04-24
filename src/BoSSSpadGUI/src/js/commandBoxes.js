@@ -146,6 +146,7 @@ class BoxWithMenu{
 export class RunBox extends BoxWithMenu {
     constructor(element, parentBox){
         super(element, parentBox);
+        var hasReadoutContent = false;
     }
 
     runButtonSymbol(){
@@ -162,7 +163,16 @@ export class RunBox extends BoxWithMenu {
         var result = await boSSSRuntime.runCommand(value);
         
         //Write readout into HTML Element
-        readoutNode.innerHTML = result;
+        var text = document.createElement("PRE");
+        text.innerHTML = result;
+        if(this.hasReadoutContent){
+          readoutNode.replaceChild(text, readoutNode.firstChild);
+        }
+        else{
+          this.hasReadoutContent = true;
+          readoutNode.appendChild(text);
+        }
+        
     }
 }
 
