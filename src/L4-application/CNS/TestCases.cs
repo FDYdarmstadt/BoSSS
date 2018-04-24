@@ -43,7 +43,7 @@ namespace CNS {
 
     public static class TestCases {
 
-        public static CNSControl ShockTube(string dbPath, int savePeriod, string projectName, int dgDegree, double sensorLimit, double CFLFraction, int explicitOrder, int numberOfSubGrids, int reclusteringInterval, int maxNumOfSubSteps) {
+        public static CNSControl ShockTube(string dbPath, int savePeriod, int dgDegree, double sensorLimit, double CFLFraction, int explicitScheme, int explicitOrder, int numberOfSubGrids, int reclusteringInterval, int maxNumOfSubSteps) {
             CNSControl c = new CNSControl();
 
             // ### Database ###
@@ -84,17 +84,7 @@ namespace CNS {
             }
 
             // ### Time-Stepping ###
-
-            // Runge-Kutta schemes (Explicit Euler)
-            //c.ExplicitScheme = ExplicitSchemes.RungeKutta;
-            //c.ExplicitOrder = 1;
-
-            // Adams-Bashforth
-            //c.ExplicitScheme = ExplicitSchemes.AdamsBashforth;
-            //c.ExplicitOrder = 1;
-
-            // (Adaptive) local time stepping
-            c.ExplicitScheme = ExplicitSchemes.LTS;
+            c.ExplicitScheme = (ExplicitSchemes)explicitScheme;
             c.ExplicitOrder = explicitOrder;
             c.NumberOfSubGrids = numberOfSubGrids;
             c.ReclusteringInterval = reclusteringInterval;
@@ -209,7 +199,7 @@ namespace CNS {
             c.NoOfTimesteps = int.MaxValue;
 
             // ### Project and sessions name ###
-            c.ProjectName = projectName;
+            c.ProjectName = "Shock tube";
 
             if (c.DynamicLoadBalancing_On) {
                 c.SessionName = String.Format("Shock tube, p={0}, {1}x{2} cells, s0={3:0.0E-00}, CFLFrac={4}, ALTS {5}/{6}/Re{7}/Sub{8}, Part={9}/Re{10}/Thresh{11}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps, c.GridPartType.ToString(), c.DynamicLoadBalancing_Period, c.DynamicLoadBalancing_ImbalanceThreshold);
@@ -220,7 +210,7 @@ namespace CNS {
             return c;
         }
 
-        public static IBMControl IBMShockTube(string dbPath, int savePeriod, string projectName, int dgDegree, double agg, double sensorLimit, double CFLFraction, int explicitOrder, int numberOfSubGrids, int reclusteringInterval, int maxNumOfSubSteps) {
+        public static IBMControl IBMShockTube(string dbPath, int savePeriod, int dgDegree, double sensorLimit, double CFLFraction, int explicitScheme, int explicitOrder, int numberOfSubGrids, int reclusteringInterval, int maxNumOfSubSteps, double agg) {
             IBMControl c = new IBMControl();
 
             // ### Database ###
@@ -249,7 +239,7 @@ namespace CNS {
             c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             c.LevelSetQuadratureOrder = 6;
             c.AgglomerationThreshold = agg;
-            //c.AddVariable(IBMVariables.LevelSet, 1);
+            c.AddVariable(IBMVariables.LevelSet, 1);
             //c.AddVariable(IBMVariables.FluidCells, 1);
             //c.AddVariable(IBMVariables.FluidCellsWithoutSourceCells, 1);
             //c.AddVariable(IBMVariables.CutCells, 1);
@@ -278,17 +268,7 @@ namespace CNS {
             }
 
             // ### Time-Stepping ###
-
-            // Runge-Kutta schemes (Explicit Euler)
-            //c.ExplicitScheme = ExplicitSchemes.RungeKutta;
-            //c.ExplicitOrder = 1;
-
-            // Adams-Bashforth
-            //c.ExplicitScheme = ExplicitSchemes.AdamsBashforth;
-            //c.ExplicitOrder = 1;
-
-            // (Adaptive) local time stepping
-            c.ExplicitScheme = ExplicitSchemes.LTS;
+            c.ExplicitScheme = (ExplicitSchemes)explicitScheme;
             c.ExplicitOrder = explicitOrder;
             c.NumberOfSubGrids = numberOfSubGrids;
             //c.ReclusteringInterval = c.DynamicLoadBalancing_Period;
@@ -404,7 +384,7 @@ namespace CNS {
             c.NoOfTimesteps = int.MaxValue;
 
             // ### Project and sessions name ###
-            c.ProjectName = projectName;
+            c.ProjectName = "IBM shock tube";
 
             if (c.DynamicLoadBalancing_On) {
                 c.SessionName = String.Format("IBM shock tube, p={0}, {1}x{2} cells, agg={3}, s0={4:0.0E-00}, CFLFrac={5}, ALTS {6}/{7}/Re{8}/Sub{9}, Part={10}/Re{11}/Thresh{12}", dgDegree, numOfCellsX, numOfCellsY, c.AgglomerationThreshold, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps, c.GridPartType.ToString(), c.DynamicLoadBalancing_Period, c.DynamicLoadBalancing_ImbalanceThreshold);
@@ -415,7 +395,7 @@ namespace CNS {
             return c;
         }
 
-        public static CNSControl DoubleMachReflection(string dbPath, int savePeriod, string projectName, int dgDegree, bool restart = false, string sessionID = null, string gridID = null) {
+        public static CNSControl DoubleMachReflection(string dbPath, int savePeriod, int dgDegree, double sensorLimit, double CFLFraction, int explicitScheme, int explicitOrder, int numberOfSubGrids, int reclusteringInterval, int maxNumOfSubSteps, bool restart = false, string sessionID = null, string gridID = null) {
             CNSControl c = new CNSControl();
 
             //dbPath = @"/work/scratch/ws35kire/work_db";                       // Lichtenberg
@@ -428,15 +408,11 @@ namespace CNS {
             c.saveperiod = savePeriod;
             c.PrintInterval = 1;
 
-            // Runge-Kutta
-            //c.ExplicitScheme = ExplicitSchemes.RungeKutta;
-            //c.ExplicitOrder = 1;
-
-            // Local time stepping
-            c.ExplicitScheme = ExplicitSchemes.LTS;
-            c.ExplicitOrder = 1;
-            c.NumberOfSubGrids = 3;
-            c.ReclusteringInterval = 1;
+            // Time stepping
+            c.ExplicitScheme = (ExplicitSchemes)explicitScheme;
+            c.ExplicitOrder = explicitOrder;
+            c.NumberOfSubGrids = numberOfSubGrids;
+            c.ReclusteringInterval = reclusteringInterval;
             c.FluxCorrection = false;
 
             // Dynamic load balacing
@@ -471,7 +447,7 @@ namespace CNS {
             c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
 
             // Shock-capturing
-            double sensorLimit = 1e-3;
+            sensorLimit = 1e-3;
             double epsilon0 = 1.0;
             double kappa = 1.0;
             double lambdaMax = 20;
@@ -627,7 +603,7 @@ namespace CNS {
             c.CFLFraction = 0.3;
             c.NoOfTimesteps = int.MaxValue;
 
-            c.ProjectName = projectName;
+            c.ProjectName = "Double Mach reflection";
 
             if (c.DynamicLoadBalancing_On) {
                 c.SessionName = String.Format("DMR, p={0}, {1}x{2} cells, s0={3:0.0E-00}, lamdaMax={4}, CFLFrac={5}, ALTS {6}/{7}/Re{8}/Sub{9}, Part={10}/Re{11}/Thresh{12}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, lambdaMax, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps, c.GridPartType.ToString(), c.DynamicLoadBalancing_Period, c.DynamicLoadBalancing_ImbalanceThreshold);
@@ -638,7 +614,7 @@ namespace CNS {
             return c;
         }
 
-        public static IBMControl IBMDoubleMachReflection(string dbPath, int savePeriod, string projectName, int dgDegree) {
+        public static IBMControl IBMDoubleMachReflection(string dbPath, int savePeriod, int dgDegree, double sensorLimit, double CFLFraction, int explicitScheme, int explicitOrder, int numberOfSubGrids, int reclusteringInterval, int maxNumOfSubSteps, double agg) {
             IBMControl c = new IBMControl();
 
             //dbPath = @"/work/scratch/ws35kire/work_db";                       // Lichtenberg
@@ -714,16 +690,12 @@ namespace CNS {
 
             bool AV = true;
 
-            // Runge-Kutta
-            //c.ExplicitScheme = ExplicitSchemes.RungeKutta;
-            //c.ExplicitOrder = 1;
-
-            // LTS
-            c.ExplicitScheme = ExplicitSchemes.LTS;
-            c.ExplicitOrder = 1;
-            c.NumberOfSubGrids = 3;
-            c.ReclusteringInterval = c.DynamicLoadBalancing_Period;
-            c.maxNumOfSubSteps = 50;
+            // Time stepping
+            c.ExplicitScheme = (ExplicitSchemes)explicitScheme;
+            c.ExplicitOrder = explicitOrder;
+            c.NumberOfSubGrids = numberOfSubGrids;
+            c.ReclusteringInterval = reclusteringInterval;
+            c.maxNumOfSubSteps = maxNumOfSubSteps;
             c.FluxCorrection = false;
 
             // Dynamic load balancing
@@ -745,7 +717,7 @@ namespace CNS {
             c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
 
             // Shock-capturing
-            double sensorLimit = 1e-4;
+            sensorLimit = 1e-4;
             double epsilon0 = 1.0;
             double kappa = 1.0;
             double lambdaMax = 20;
@@ -866,7 +838,7 @@ namespace CNS {
             c.CFLFraction = 0.1;
             c.NoOfTimesteps = int.MaxValue;
 
-            c.ProjectName = projectName;
+            c.ProjectName = "Double Mach Reflection";
 
             if (c.DynamicLoadBalancing_On) {
                 c.SessionName = String.Format("IBM DMR, p={0}, {1}x{2} cells, s0={3:0.0E-00}, lamdaMax={4}, CFLFrac={5}, ALTS {6}/{7}/Re{8}/Sub{9}, Part={10}/Re{11}/Thresh{12}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, lambdaMax, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps, c.GridPartType.ToString(), c.DynamicLoadBalancing_Period, c.DynamicLoadBalancing_ImbalanceThreshold);
