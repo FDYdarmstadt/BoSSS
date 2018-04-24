@@ -150,6 +150,11 @@ namespace BoSSS.Foundation.XDG {
             throw new NotSupportedException("Use specific implementation for XSpatialOperator.");
         }
 
+        IEvaluatorLinear GetMatrixBuilderBase(UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, EdgeQuadratureScheme edgeQrCtx = null, CellQuadratureScheme volQrCtx = null) {
+            return base.GetMatrixBuilder(DomainVarMap, ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
+        }
+
+
         
         /// <summary>
         /// edge and cell scheme for a certain species
@@ -199,7 +204,7 @@ namespace BoSSS.Foundation.XDG {
                     m_Xowner = ownr;
                     SpeciesSchemes = __SpeciesSchemes;
                     ReqSpecies = SpeciesSchemes.Keys.ToArray();
-
+                    base.MPITtransceive = true;
 
                     var SchemeHelper = lsTrk.GetXDGSpaceMetrics(ReqSpecies, order, TrackerHistory).XQuadSchemeHelper;
                     var TrackerRegions = lsTrk.RegionsHistory[TrackerHistory];
@@ -226,7 +231,7 @@ namespace BoSSS.Foundation.XDG {
                         var CodomFrame = new FrameBase(TrackerRegions, SpeciesId, base.CodomainMapping, false);
                         var DomainFrame = new FrameBase(TrackerRegions, SpeciesId, base.DomainMapping, true);
                         SpeciesCodomFrame.Add(SpeciesId, CodomFrame);
-                        SpeciesCodomFrame.Add(SpeciesId, DomainFrame);
+                        SpeciesDomainFrame.Add(SpeciesId, DomainFrame);
 
                         // quadrature rules
                         // ----------------
@@ -260,7 +265,7 @@ namespace BoSSS.Foundation.XDG {
 
 
                         if(m_Xowner.TotalNoOfComponents > 0) {
-                            var BulkMtxBuilder = Owner.GetMatrixBuilder(DomainFrame.FrameMap, Params, CodomFrame.FrameMap,
+                            var BulkMtxBuilder = ownr.GetMatrixBuilderBase(DomainFrame.FrameMap, Params, CodomFrame.FrameMap,
                                 edgeScheme, cellScheme);
                             Debug.Assert(((EvaluatorBase)BulkMtxBuilder).order == base.order);
                             BulkMtxBuilder.MPITtransceive = false;
@@ -362,6 +367,24 @@ namespace BoSSS.Foundation.XDG {
                             }
                         }
                     }
+
+                    // coeff kacke
+                    // -----------
+
+                    this.SpeciesOperatorCoefficients = new Dictionary<SpeciesId, CoefficientSet>();
+                    foreach(var SpeciesId in ReqSpecies) {
+                        this.SpeciesOperatorCoefficients.Add(SpeciesId,
+                            new CoefficientSet() {
+                                CellLengthScales = null, // ((BoSSS.Foundation.Grid.Classic.GridData)(this.GridData)).Cells.cj,
+                                EdgeLengthScales = null, //((BoSSS.Foundation.Grid.Classic.GridData)(this.GridData)).Edges.h_min_Edge,
+                                UserDefinedValues = new Dictionary<string, object>()
+                            });
+                    }
+                    // m_OperatorCoefficients = new CoefficientSet() {
+                    //    CellLengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)(this.GridData)).Cells.cj,
+                    //    EdgeLengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)(this.GridData)).Edges.h_min_Edge,
+                    //    UserDefinedValues = new Dictionary<string, object>()
+                    //};
                 }
             }
 
@@ -405,7 +428,7 @@ namespace BoSSS.Foundation.XDG {
                 int[] DomDGdeg = this.DomainMapping.BasisS.Select(b => b.Degree).ToArray();
                 int[] CodDGdeg = this.CodomainMapping.BasisS.Select(b => b.Degree).ToArray();
                 string[] DomNames = Owner.DomainVar.ToArray();
-                string[] CodNames = Owner.DomainVar.ToArray();
+                string[] CodNames = Owner.CodomainVar.ToArray();
 
 
                 Debug.Assert(CodNames.Length == CodDGdeg.Length);
@@ -418,7 +441,7 @@ namespace BoSSS.Foundation.XDG {
                             int[] DomDGdeg_cd = new int[ce.ArgumentOrdering.Count];
                             for(int i = 0; i < DomDGdeg_cd.Length; i++) {
                                 string domName = ce.ArgumentOrdering[i];
-                                int idx = Array.IndexOf(DomDGdeg, domName);
+                                int idx = Array.IndexOf(DomNames, domName);
                                 DomDGdeg_cd[i] = DomDGdeg[idx];
                             }
 

@@ -282,8 +282,7 @@ namespace BoSSS.Application.IBM_Solver {
                     DomNameSelected = ArrayTools.Cat(DomNameSelected, DomName.GetSubVector(D, 1));
 
                 IBM_Op = new XSpatialOperator(DomNameSelected, Params, CodNameSelected,
-                    (A, B, C) => this.HMForder
-                    ,cacheQuadRules:true);
+                    (A, B, C) => this.HMForder);
 
                 // Momentum equation
                 // =================
