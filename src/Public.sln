@@ -133,6 +133,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Solution.XNSECommon",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Solution.LevelSetTools", "L3-solution\BoSSS.Solution.LevelSetTools\BoSSS.Solution.LevelSetTools.csproj", "{9EE2FCAD-E8A4-4F14-B932-D1A4904D715D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElectronWorksheet", "BoSSSpadGUI\src\cs\ElectronWorksheet.csproj", "{FF12C08F-10A2-4882-8D9D-F559E85E4518}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -339,6 +341,10 @@ Global
 		{9EE2FCAD-E8A4-4F14-B932-D1A4904D715D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9EE2FCAD-E8A4-4F14-B932-D1A4904D715D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9EE2FCAD-E8A4-4F14-B932-D1A4904D715D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FF12C08F-10A2-4882-8D9D-F559E85E4518}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FF12C08F-10A2-4882-8D9D-F559E85E4518}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FF12C08F-10A2-4882-8D9D-F559E85E4518}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FF12C08F-10A2-4882-8D9D-F559E85E4518}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -401,6 +407,7 @@ Global
 		{2F74AA60-6324-4FB4-8960-7DA1BBDB8C15} = {0AF02196-DCBF-4066-AC5A-CC14525B390C}
 		{0D8F577E-316D-4362-816B-9F610C5EB4A5} = {3303F7B6-36AF-43F0-AD12-217ADDE38B43}
 		{9EE2FCAD-E8A4-4F14-B932-D1A4904D715D} = {3303F7B6-36AF-43F0-AD12-217ADDE38B43}
+		{FF12C08F-10A2-4882-8D9D-F559E85E4518} = {D8CE9C4A-43B5-44F0-B6B7-23A4E1EE8AF7}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B302C86E-A207-460C-8E9F-13EA258F7D8B}
