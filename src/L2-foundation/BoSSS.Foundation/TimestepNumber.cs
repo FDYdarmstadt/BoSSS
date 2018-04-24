@@ -44,6 +44,12 @@ namespace BoSSS.Foundation.IO {
         [DataMember]
         private int[] numbers;
 
+        public int[] GetNumbers {
+            get {
+                return numbers;
+            }
+        }
+
         /// <summary>
         /// Constructs an immutable time-step number
         /// </summary>

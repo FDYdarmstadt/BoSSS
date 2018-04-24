@@ -1289,11 +1289,15 @@ namespace CNS {
         }
 
 
-        public static IBMControl IBMShockTube(string dbPath = null, int dgDegree = 2, int numOfCellsX = 50, int numOfCellsY = 10, double sensorLimit = 1e-3, bool true1D = false) {
+        public static IBMControl IBMShockTube(int dgDegree = 2, int numOfCellsX = 50, int numOfCellsY = 10, double sensorLimit = 1e-3, bool true1D = false) {
+
+#if DEBUG
+            System.Threading.Thread.Sleep(10000);
+#endif
 
             IBMControl c = new IBMControl();
 
-            //dbPath = @"c:\bosss_db\";
+            string dbPath = @"c:\bosss_db\";
             c.DbPath = dbPath;
             c.savetodb = dbPath != null;
             c.saveperiod = 1;
@@ -1304,6 +1308,13 @@ namespace CNS {
             double yMin = 0;
             double yMax = 1;
 
+            c.GridPartType = GridPartType.METIS;
+            //c.DynamicLoadBalancing_On = false;
+            //c.DynamicLoadBalancing_Period = 5;
+            //c.DynamicLoadBalancing_ImbalanceThreshold = 0.01;
+            //c.DynamicLoadBalancing_CellClassifier = new RandomCellClassifier(2);
+            //c.DynamicLoadBalancing_CellCostEstimatorFactories.Add((prog, i) => new StaticCellCostEstimator(new[] { 1, 10 }));
+
             bool AV = true;
 
             c.DomainType = DomainTypes.StaticImmersedBoundary;
@@ -1313,8 +1324,8 @@ namespace CNS {
             c.LevelSetBoundaryTag = "AdiabaticSlipWall";
             c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             c.LevelSetQuadratureOrder = 6;
-            //c.AgglomerationThreshold = 0.2;
-            c.AgglomerationThreshold = 0.9;
+            c.AgglomerationThreshold = 0.1;
+            //c.AgglomerationThreshold = 0.9;
             c.AddVariable(IBMVariables.LevelSet, 1);
 
             c.AddVariable(IBMVariables.FluidCells, 1);
@@ -1347,12 +1358,13 @@ namespace CNS {
 
             //Adams-Bashforth
             //c.ExplicitScheme = ExplicitSchemes.AdamsBashforth;
-            //c.ExplicitOrder = 3;
+            //c.ExplicitOrder = 1;
 
             // (A)LTS
             c.ExplicitScheme = ExplicitSchemes.LTS;
             c.ExplicitOrder = 1;
-            c.NumberOfSubGrids = 3;
+            c.NumberOfSubGrids = 2;
+            //c.ReclusteringInterval = c.DynamicLoadBalancing_Period;
             c.ReclusteringInterval = 5;
             c.maxNumOfSubSteps = 10;
             c.FluxCorrection = false;
@@ -1470,14 +1482,22 @@ namespace CNS {
             c.dtMax = 1.0;
             c.CFLFraction = 0.1;
             //c.dtFixed = 1e-4;
-            c.Endtime = 0.25;
+            c.Endtime = 0.002;
             c.NoOfTimesteps = int.MaxValue;
 
             c.ProjectName = "Shock tube";
+
+            string sessionName;
+            if (c.DynamicLoadBalancing_On) {
+                sessionName = String.Format("IBM shock tube, p={0}, {1}x{2} cells, agg={3}, s0={4:0.0E-00}, CFLFrac={5}, ALTS {6}/{7}/{8}({9}), Part={10}/{11}({12})", dgDegree, numOfCellsX, numOfCellsY, c.AgglomerationThreshold, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps, c.GridPartType.ToString(), c.DynamicLoadBalancing_Period, c.DynamicLoadBalancing_ImbalanceThreshold);
+            } else {
+                sessionName = String.Format("IBM shock tube, p={0}, {1}x{2} cells, agg={3}, s0={4:0.0E-00}, CFLFrac={5}, ALTS {6}/{7}/{8}({9}), Part={10}", dgDegree, numOfCellsX, numOfCellsY, c.AgglomerationThreshold, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps, c.GridPartType.ToString());
+            }
+
             if (true1D) {
                 c.SessionName = String.Format("IBM shock tube, 1D, dgDegree = {0}, noOfCellsX = {1}, sensorLimit = {2:0.00E-00}", dgDegree, numOfCellsX, sensorLimit);
             } else {
-                c.SessionName = String.Format("IBM shock tube, p={0}, {1}x{2} cells, aggloThresh={3}, s0={4:0.0E-00}, CFLFrac={5}, ALTS {6}/{7}/{8}({9})", dgDegree, numOfCellsX, numOfCellsY, c.AgglomerationThreshold, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps);
+                c.SessionName = sessionName;
             }
 
             return c;
@@ -3180,7 +3200,7 @@ namespace CNS {
             return c;
         }
 
-        public static CNSControl ShockTube_PredefinedGrid(string dbPath, int numOfCellsX=3, int numOfCellsY=3, int dgDegree = 0, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = true) {
+        public static CNSControl ShockTube_PredefinedGrid(string dbPath, int numOfCellsX = 3, int numOfCellsY = 3, int dgDegree = 0, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = true) {
 
             CNSControl c = new CNSControl();
 
@@ -3382,14 +3402,17 @@ namespace CNS {
             }
             return c;
         }
-        public static CNSControl ShockTube_HilbertTest(string dbPath, int GPType, int dgDegree, int ExplOrder, int RecInt, int numOfCellsX, int numOfCellsY, bool LTSON, int AVratio, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = true, string SessionID = null, string GridID = null) {
+        public static CNSControl ShockTube_HilbertTest(int GPType, int dgDegree, int ExplOrder, int RecInt, int numOfCellsX, int numOfCellsY, bool LTSON, int AVratio, int Tsteps, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = true, string SessionID = null, string GridID = null) {
 
             CNSControl c = new CNSControl();
-            //dbPath = @"D:\Weber\BoSSS\test_db";
+            //c.DbPath = @"D:\Weber\BoSSS\test_db";
             //dbPath = @"e:\bosss_db\GridOfTomorrow\";
-            //dbPath = @"\\fdyprime\userspace\geisenhofer\bosss_db\";
-            c.DbPath = dbPath;
-            c.savetodb = dbPath != null && saveToDb;
+            //c.DbPath = @"\\fdyprime\userspace\weber\db_Speedup_2";
+            //c.DbPath = dbPath;
+            //c.savetodb = dbPath != null && saveToDb;
+
+            c.DbPath = @"/home/yp19ysog/BoSSS_DB";
+            c.savetodb = true;
             c.saveperiod = int.MaxValue;
             c.PrintInterval = 1;
 
@@ -3402,6 +3425,7 @@ namespace CNS {
             //bool AV = true;
 
             if (LTSON) {
+                c.DynamicLoadBalancing_On = true;
                 //LTS-Timestepping
                 c.ExplicitScheme = ExplicitSchemes.LTS;
                 c.ExplicitOrder = ExplOrder;
@@ -3434,7 +3458,7 @@ namespace CNS {
                 c.DynamicLoadBalancing_ImbalanceThreshold = 0.0;
                 c.DynamicLoadBalancing_Period = RecInt;
             } else {
-                //Explicit Timestepping
+                // Explicit Timestepping
                 c.ExplicitScheme = ExplicitSchemes.RungeKutta;
                 c.ExplicitOrder = ExplOrder;
             }
@@ -3573,7 +3597,7 @@ namespace CNS {
             //c.dtFixed = 1.0e-3;
             c.CFLFraction = 0.1;
             c.Endtime = 0.25;
-            c.NoOfTimesteps = 1000;
+            c.NoOfTimesteps = Tsteps;
 
             c.ProjectName = "Shock tube";
             if (true1D) {
@@ -3584,12 +3608,13 @@ namespace CNS {
 
             return c;
         }
-        public static CNSControl DoubleMachReflection_HilbertTest(string dbPath, int GPType, int dgDegree, int ExplOrder, int RecInt, int numOfCellsX, int numOfCellsY, bool LTSON, int AVratio,double sensorLimit = 1e-3, bool restart = false, string sessionID = null, string gridID = null) {
+        public static CNSControl DoubleMachReflection_HilbertTest(int GPType, int dgDegree, int ExplOrder, int RecInt, int numOfCellsX, int numOfCellsY, bool LTSON, int AVratio, int Tsteps, double sensorLimit = 1e-3, bool restart = false, string sessionID = null, string gridID = null) {
             CNSControl c = new CNSControl();
 
-            //dbPath = @"D:\Weber\BoSSS\test_db";
-            c.DbPath = dbPath;
-            c.savetodb = dbPath != null;
+            //c.DbPath = @"D:\Weber\BoSSS\test_db";
+            c.DbPath = @"/home/yp19ysog/BoSSS_DB";
+            //c.DbPath = @"\\fdyprime\userspace\weber\db_Speedup_2";
+            c.savetodb = true;
             c.saveperiod = int.MaxValue;
             c.PrintInterval = 1;
 
@@ -3600,6 +3625,7 @@ namespace CNS {
             //bool AV = true;
 
             if (LTSON) {
+                c.DynamicLoadBalancing_On = true;
                 //Load is balanced according to LTS
                 c.ExplicitScheme = ExplicitSchemes.LTS;
                 c.ExplicitOrder = ExplOrder;
@@ -3613,7 +3639,7 @@ namespace CNS {
                 c.DynamicLoadBalancing_ImbalanceThreshold = 0.0;
                 c.DynamicLoadBalancing_Period = RecInt;
 
-            } else if (!LTSON && AV && AVratio!=0) {
+            } else if (!LTSON && AV && AVratio != 0) {
                 //Load is balanced according to AV
                 c.ExplicitScheme = ExplicitSchemes.RungeKutta;
                 c.ExplicitOrder = ExplOrder;
@@ -3824,7 +3850,7 @@ namespace CNS {
             c.Endtime = 0.25;
             //c.dtFixed = 1.0e-6;
             c.CFLFraction = 0.3;
-            c.NoOfTimesteps = 1000;
+            c.NoOfTimesteps = Tsteps;
 
             c.ProjectName = "Double Mach reflection";
             c.SessionName = String.Format("DMR, dgDegree = {0}, numOfCellsX = {1}, numOfCellsY = {2}, sensorLimit = {3:0.00E-00}, CFLFraction = {4:0.00E-00}, ALTS {5}/{6}, lamdaMax = {7}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, lambdaMax);

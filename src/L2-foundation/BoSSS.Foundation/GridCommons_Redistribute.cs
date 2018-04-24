@@ -86,7 +86,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         }
 
                     case GridPartType.Hilbert: {
-                            part = ComputePartitionHilbert();
+                            part = ComputePartitionHilbert(Functype:0);
 #if DEBUG
                             CheckPartitioning(part);
 #endif
@@ -95,7 +95,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         }
 
                     case GridPartType.directHilbert: {
-                            part = ComputePartitionHilbert();
+                            part = ComputePartitionHilbert(Functype:1);
 #if DEBUG
                             CheckPartitioning(part);
 #endif
@@ -914,7 +914,14 @@ namespace BoSSS.Foundation.Grid.Classic {
                 if (localcellCosts == null) {
                     // Cell weights null causes problems with ParMETIS
                     cellCosts = new List<int[]>() { new int[numberofcells] };
-                    cellCosts.Single().SetAll(10);
+                    switch (Functype) {
+                        case 0:
+                            cellCosts.Single().SetAll(10);
+                            break;
+                        case 1:
+                            cellCosts.Single().SetAll(1);
+                            break;
+                    }
                 } else {
                     foreach (int[] cellCostmap in localcellCosts) {
                         cellCosts.Add(cellCostmap.MPIAllGatherv(CellsPerRank));
@@ -983,11 +990,15 @@ namespace BoSSS.Foundation.Grid.Classic {
                         int MPIrank = 0;
                         int CostCount = 0;
                         for (int cell = 0; cell < numberofcells; cell++) {
-                            RankIndex[cell] = MPIrank;
-                            CostCount += cellCosts[0][cell];
-                            if (CostCount > CostPerRank) {
-                                MPIrank++;
-                                CostCount = 0;
+                            if (MPIrank == numproc - 1) {
+                                RankIndex[cell] = MPIrank;
+                            } else {
+                                RankIndex[cell] = MPIrank;
+                                CostCount += cellCosts[0][cell];
+                                if (CostCount >= CostPerRank) {
+                                    MPIrank++;
+                                    CostCount = 0;
+                                }
                             }
                         }
                         Debug.Assert(MPIrank <= numproc - 1);

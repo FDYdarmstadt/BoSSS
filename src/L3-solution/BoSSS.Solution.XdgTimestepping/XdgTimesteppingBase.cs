@@ -119,9 +119,14 @@ namespace BoSSS.Solution.XdgTimestepping {
         Picard = 0,
 
         /// <summary>
+        /// Newtons method. For approximation of the inverse of the jacobian the inverse of the operator matrix is used.
+        /// </summary>
+        Newton = 1,
+
+        /// <summary>
         /// Newtons method coupled with GMRES as default. Convergeces quadratically but needs a good approximation. Preconditioning of the Newton-GMRES is set to LinearSolver.
         /// </summary>
-        Newton = 1
+        NewtonGMRES = 2
     }
 
     /// <summary>
@@ -351,7 +356,10 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// The sequence of aggregation grids, on which multi grid solvers work.
         /// </summary>
-        protected AggregationGrid[] MultigridSequence;
+        public AggregationGrid[] MultigridSequence {
+            get;
+            protected set;
+        }
 
         /// <summary>
         /// The aggregation grid basis, initialized by <see cref="InitMultigrid(DGField[], bool)"/>
@@ -467,6 +475,23 @@ namespace BoSSS.Solution.XdgTimestepping {
                             this.MultigridBasis,
                             this.Config_MultigridOperator)
                         {
+                            maxKrylovDim = Config_MaxKrylovDim,
+                            MaxIter = Config_MaxIterations,
+                            MinIter = Config_MinIterations,
+                            ApproxJac = Newton.ApproxInvJacobianOptions.DirectSolverOpMatrix,
+                            Precond = Config_linearSolver,
+                            GMRESConvCrit = Config_SolverConvergenceCriterion,
+                            ConvCrit = Config_SolverConvergenceCriterion,
+                            m_SessionPath = SessionPath,
+                        };
+                        break;
+
+                    case NonlinearSolverMethod.NewtonGMRES:
+
+                        nonlinSolver = new Newton(
+                            this.AssembleMatrixCallback,
+                            this.MultigridBasis,
+                            this.Config_MultigridOperator) {
                             maxKrylovDim = Config_MaxKrylovDim,
                             MaxIter = Config_MaxIterations,
                             MinIter = Config_MinIterations,

@@ -418,8 +418,30 @@ namespace BoSSS.Foundation.Grid.Classic {
                 for(int iEdge = 0; iEdge < NoOfEdges; iEdge++) {
                     int jCell1 = Edge2Cell[iEdge, 0];
                     int jCell2 = Edge2Cell[iEdge, 1];
-                    if(jCell2 < 0)
+                    if (jCell2 < 0) {
+                        Debug.Assert((CellsToRefineBitmask[jCell1] && CellsToCoarseBitmask[jCell1]) == false);
+                        if((CellsToRefineBitmask[jCell1] || CellsToCoarseBitmask[jCell1]) == false)
+                            continue;
+
+                        Cell[] adaptedBCells1 = adaptedCells[jCell1];
+                        Debug.Assert(adaptedBCells1 != null);
+
+                        int iBFace = Edge2Face[iEdge, 0];
+
+                        foreach(Cell cl in adaptedBCells1) {
+                            if(cl.CellFaceTags.Where(cft => cft.FaceIndex == iBFace).Count() == 0 && this.Edges.EdgeTags[iEdge] > 0) {
+                                ArrayTools.AddToArray(new CellFaceTag() {
+                                    EdgeTag = this.Edges.EdgeTags[iEdge],
+                                    ConformalNeighborship = false,
+                                    NeighCell_GlobalID = long.MinValue,
+                                    FaceIndex = iBFace
+                                }, ref cl.CellFaceTags);
+                            }
+                        }
+
                         continue;
+                    }
+                        
 
                     Debug.Assert((CellsToRefineBitmask[jCell1] && CellsToCoarseBitmask[jCell1]) == false);
                     Debug.Assert((CellsToRefineBitmask[jCell2] && CellsToCoarseBitmask[jCell2]) == false);
@@ -551,7 +573,20 @@ namespace BoSSS.Foundation.Grid.Classic {
                         }
                     }
                 }
-                
+
+                // add EdgeTagNames and periodic Transformations
+                for (int etCnt = 1; etCnt < this.EdgeTagNames.Count; etCnt++) {
+                    var etPair = this.EdgeTagNames.ElementAt(etCnt);
+                    newGrid.EdgeTagNames.Add(etPair);
+                }
+
+                foreach (AffineTrafo trafo in this.Grid.PeriodicTrafo) {
+                    newGrid.PeriodicTrafo.Add(trafo);
+                }
+                foreach (AffineTrafo itrafo in this.Grid.InversePeriodicTrafo) {
+                    newGrid.InversePeriodicTrafo.Add(itrafo);
+                }
+
 
                 // finalize
                 // ========

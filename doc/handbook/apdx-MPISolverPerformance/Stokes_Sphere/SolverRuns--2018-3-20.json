@@ -1,0 +1,683 @@
+{
+  "$type": "System.Tuple`2[[System.String[], mscorlib],[System.Array[], mscorlib]], mscorlib",
+  "Item1": {
+    "$type": "System.String[], mscorlib",
+    "$values": [
+      "SessionName",
+      "DGdegree:VelocityX",
+      "DGdegree:VelocityY",
+      "DGdegree:VelocityZ",
+      "DGdegree:Pressure",
+      "DGdegree:PhiDG",
+      "DGdegree:Phi",
+      "Bndtype:Velocity_inlet",
+      "Bndtype:Wall",
+      "Bndtype:Pressure_Outlet",
+      "GeneratedFromCode",
+      "ControlFileText_Index",
+      "dtFixed",
+      "NoOfMultigridLevels",
+      "AdvancedDiscretizationOptions.ContiSign",
+      "AdvancedDiscretizationOptions.RescaleConti",
+      "AdvancedDiscretizationOptions.LFFA",
+      "AdvancedDiscretizationOptions.LFFB",
+      "AdvancedDiscretizationOptions.PenaltySafety",
+      "AdvancedDiscretizationOptions.CellAgglomerationThreshold",
+      "MaxKrylovDim",
+      "MaxSolverIterations",
+      "MinSolverIterations",
+      "Solver_ConvergenceCriterion",
+      "VelocityBlockPrecondMode",
+      "LevelSetSmoothing",
+      "PhysicalParameters.IncludeConvection",
+      "PhysicalParameters.rho_A",
+      "PhysicalParameters.mu_A",
+      "PhysicalParameters.Material",
+      "particleRadius",
+      "MeshFactor",
+      "Timestepper_Scheme",
+      "FixedStreamwisePeriodicBC",
+      "Timestepper_Init",
+      "NonlinearSolve",
+      "LinearSolve",
+      "GridPartType",
+      "ProjectName",
+      "NoOfTimesteps",
+      "Endtime",
+      "saveperiod",
+      "dtMin",
+      "dtMax",
+      "CompMode",
+      "ImmediatePlotPeriod",
+      "SuperSampling",
+      "savetodb",
+      "logFileDirectory",
+      "Paramstudy_ContinueOnError",
+      "DynamicLoadBalancing_RedistributeAtStartup",
+      "DynamicLoadBalancing_Period",
+      "DynamicLoadBalancing_ImbalanceThreshold",
+      "AdaptiveMeshRefinement",
+      "CutCellQuadratureType",
+      "ContinueOnIoError",
+      "Grid:NoOfCells",
+      "Grid:hMax",
+      "Grid:hMin",
+      "UsedNoOfMultigridLevels",
+      "C_Drag",
+      "C_Lift",
+      "RegularTerminated",
+      "SlvIter_excl",
+      "SlvInit_excl",
+      "PrecSolve",
+      "Processors"
+    ]
+  },
+  "Item2": {
+    "$type": "System.Array[], mscorlib",
+    "$values": [
+      {
+        "$type": "System.String[], mscorlib",
+        "$values": [
+          "Stokes_Sphere_Flow_k1automatic_MGLevels3_Proc8",
+          "Stokes_Sphere_Flow_k1exp_softgmres_schwarz_directcoarse_overlap_MGLevels3_Proc8",
+          "Stokes_Sphere_Flow_k1automatic_MGLevels3_Proc16",
+          "Stokes_Sphere_Flow_k1exp_softgmres_schwarz_directcoarse_overlap_MGLevels3_Proc16"
+        ]
+      },
+      {
+        "$type": "System.Int64[], mscorlib",
+        "$values": [
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "$type": "System.Int64[], mscorlib",
+        "$values": [
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "$type": "System.Int64[], mscorlib",
+        "$values": [
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "$type": "System.Int64[], mscorlib",
+        "$values": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "$type": "System.Int64[], mscorlib",
+        "$values": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "$type": "System.Int64[], mscorlib",
+        "$values": [
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "$type": "System.String[], mscorlib",
+        "$values": [
+          "auto:Velocity_inlet",
+          "auto:Velocity_inlet",
+          "auto:Velocity_inlet",
+          "auto:Velocity_inlet"
+        ]
+      },
+      {
+        "$type": "System.String[], mscorlib",
+        "$values": [
+          "auto:Wall",
+          "auto:Wall",
+          "auto:Wall",
+          "auto:Wall"
+        ]
+      },
+      {
+        "$type": "System.String[], mscorlib",
+        "$values": [
+          "auto:Pressure_Outlet",
+          "auto:Pressure_Outlet",
+          "auto:Pressure_Outlet",
+          "auto:Pressure_Outlet"
+        ]
+      },
+      {
+        "$type": "System.Boolean[], mscorlib",
+        "$values": [
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Int64[], mscorlib",
+        "$values": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "$type": "System.Double[], mscorlib",
+        "$values": [
+          1E+20,
+          1E+20,
+          1E+20,
+          1E+20
+        ]
+      },
+      {
+        "$type": "System.Int64[], mscorlib",
+        "$values": [
+          3,
+          3,
+          3,
+          3
+        ]
+      },
+      {
+        "$type": "System.Double[], mscorlib",
+        "$values": [
+          -1.0,
+          -1.0,
+          -1.0,
+          -1.0
+        ]
+      },
+      {
+        "$type": "System.Boolean[], mscorlib",
+        "$values": [
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Double[], mscorlib",
+        "$values": [
+          0.8,
+          0.8,
+          0.8,
+          0.8
+        ]
+      },
+      {
+        "$type": "System.Double[], mscorlib",
+        "$values": [
+          0.8,
+          0.8,
+          0.8,
+          0.8
+        ]
+      },
+      {
+        "$type": "System.Double[], mscorlib",
+        "$values": [
+          4.0,
+          4.0,
+          4.0,
+          4.0
+        ]
+      },
+      {
+        "$type": "System.Double[], mscorlib",
+        "$values": [
+          0.2,
+          0.2,
+          0.2,
+          0.2
+        ]
+      },
+      {
+        "$type": "System.Int64[], mscorlib",
+        "$values": [
+          30,
+          30,
+          30,
+          30
+        ]
+      },
+      {
+        "$type": "System.Int64[], mscorlib",
+        "$values": [
+          50,
+          50,
+          50,
+          50
+        ]
+      },
+      {
+        "$type": "System.Int64[], mscorlib",
+        "$values": [
+          50,
+          50,
+          50,
+          50
+        ]
+      },
+      {
+        "$type": "System.Double[], mscorlib",
+        "$values": [
+          1E-05,
+          1E-05,
+          1E-05,
+          1E-05
+        ]
+      },
+      {
+        "$type": "System.Int64[], mscorlib",
+        "$values": [
+          7,
+          7,
+          7,
+          7
+        ]
+      },
+      {
+        "$type": "System.Boolean[], mscorlib",
+        "$values": [
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Boolean[], mscorlib",
+        "$values": [
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Double[], mscorlib",
+        "$values": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "$type": "System.Double[], mscorlib",
+        "$values": [
+          0.2,
+          0.2,
+          0.2,
+          0.2
+        ]
+      },
+      {
+        "$type": "System.Boolean[], mscorlib",
+        "$values": [
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Double[], mscorlib",
+        "$values": [
+          0.1,
+          0.1,
+          0.1,
+          0.1
+        ]
+      },
+      {
+        "$type": "System.Double[], mscorlib",
+        "$values": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "$type": "System.Int64[], mscorlib",
+        "$values": [
+          3,
+          3,
+          3,
+          3
+        ]
+      },
+      {
+        "$type": "System.Boolean[], mscorlib",
+        "$values": [
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Int64[], mscorlib",
+        "$values": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "$type": "System.Int64[], mscorlib",
+        "$values": [
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "$type": "System.Int64[], mscorlib",
+        "$values": [
+          0,
+          10,
+          0,
+          10
+        ]
+      },
+      {
+        "$type": "System.Int64[], mscorlib",
+        "$values": [
+          4,
+          4,
+          4,
+          4
+        ]
+      },
+      {
+        "$type": "System.String[], mscorlib",
+        "$values": [
+          "MPISolverPerformance_StokesSphere",
+          "MPISolverPerformance_StokesSphere",
+          "MPISolverPerformance_StokesSphere",
+          "MPISolverPerformance_StokesSphere"
+        ]
+      },
+      {
+        "$type": "System.Int64[], mscorlib",
+        "$values": [
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "$type": "System.Double[], mscorlib",
+        "$values": [
+          10000000.0,
+          10000000.0,
+          10000000.0,
+          10000000.0
+        ]
+      },
+      {
+        "$type": "System.Int64[], mscorlib",
+        "$values": [
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "$type": "System.Double[], mscorlib",
+        "$values": [
+          1E+20,
+          1E+20,
+          1E+20,
+          1E+20
+        ]
+      },
+      {
+        "$type": "System.Double[], mscorlib",
+        "$values": [
+          1E+20,
+          1E+20,
+          1E+20,
+          1E+20
+        ]
+      },
+      {
+        "$type": "System.Int64[], mscorlib",
+        "$values": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "$type": "System.Int64[], mscorlib",
+        "$values": [
+          -1,
+          -1,
+          -1,
+          -1
+        ]
+      },
+      {
+        "$type": "System.Int64[], mscorlib",
+        "$values": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "$type": "System.Boolean[], mscorlib",
+        "$values": [
+          true,
+          true,
+          true,
+          true
+        ]
+      },
+      {
+        "$type": "System.String[], mscorlib",
+        "$values": [
+          ".",
+          ".",
+          ".",
+          "."
+        ]
+      },
+      {
+        "$type": "System.Boolean[], mscorlib",
+        "$values": [
+          true,
+          true,
+          true,
+          true
+        ]
+      },
+      {
+        "$type": "System.Boolean[], mscorlib",
+        "$values": [
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Int64[], mscorlib",
+        "$values": [
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "$type": "System.Double[], mscorlib",
+        "$values": [
+          0.12,
+          0.12,
+          0.12,
+          0.12
+        ]
+      },
+      {
+        "$type": "System.Boolean[], mscorlib",
+        "$values": [
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Int64[], mscorlib",
+        "$values": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "$type": "System.Boolean[], mscorlib",
+        "$values": [
+          true,
+          true,
+          true,
+          true
+        ]
+      },
+      {
+        "$type": "System.Int64[], mscorlib",
+        "$values": [
+          16384,
+          16384,
+          16384,
+          16384
+        ]
+      },
+      {
+        "$type": "System.Double[], mscorlib",
+        "$values": [
+          0.09375,
+          0.09375,
+          0.09375,
+          0.09375
+        ]
+      },
+      {
+        "$type": "System.Double[], mscorlib",
+        "$values": [
+          0.03125,
+          0.03125,
+          0.03125,
+          0.03125
+        ]
+      },
+      {
+        "$type": "System.Double[], mscorlib",
+        "$values": [
+          3.0,
+          3.0,
+          3.0,
+          3.0
+        ]
+      },
+      {
+        "$type": "System.Double[], mscorlib",
+        "$values": [
+          1.0428234671345051,
+          1.0428243417161287,
+          1.0428246844515638,
+          1.0428235298297464
+        ]
+      },
+      {
+        "$type": "System.Double[], mscorlib",
+        "$values": [
+          0.00031901931014949314,
+          0.00031798955452491673,
+          0.00032040575538594407,
+          0.0003224122127495066
+        ]
+      },
+      {
+        "$type": "System.Boolean[], mscorlib",
+        "$values": [
+          true,
+          true,
+          true,
+          true
+        ]
+      },
+      {
+        "$type": "System.Double[], mscorlib",
+        "$values": [
+          603.11774189999994,
+          570.27849459999993,
+          265.31888119999996,
+          269.65656789999997
+        ]
+      },
+      {
+        "$type": "System.Double[], mscorlib",
+        "$values": [
+          4.4826657999999995,
+          4.3404437,
+          2.3879539999999997,
+          2.3504928
+        ]
+      },
+      {
+        "$type": "System.Double[], mscorlib",
+        "$values": [
+          593.5909968,
+          560.9781822,
+          261.14675139999997,
+          266.14234849999997
+        ]
+      },
+      {
+        "$type": "System.Int32[], mscorlib",
+        "$values": [
+          8,
+          8,
+          16,
+          16
+        ]
+      }
+    ]
+  }
+}

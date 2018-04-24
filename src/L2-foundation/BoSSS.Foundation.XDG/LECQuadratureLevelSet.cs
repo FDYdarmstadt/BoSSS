@@ -137,6 +137,13 @@ namespace BoSSS.Foundation.XDG {
                 eq => ((eq.LevelSetTerms & TermActivationFlags.GradV) != 0) && Compfilter(eq),
                 eq => (eq is ILevelSetComponent) ? new LinearLevelSetComponentVectorizer(lsTrk, (ILevelSetComponent)eq) : null);
 
+            this.m_LsForm_UxV_Watches = this.m_LsForm_UxV.InitStopWatches(0, this);
+            this.m_LsForm_GradUxV_Watches = this.m_LsForm_GradUxV.InitStopWatches(0, this);
+            this.m_LsForm_UxGradV_Watches = this.m_LsForm_UxGradV.InitStopWatches(0, this);
+            this.m_LsForm_GradUxGradV_Watches = this.m_LsForm_GradUxGradV.InitStopWatches(0, this);
+            this.m_LsForm_V_Watches = this.m_LsForm_V.InitStopWatches(0, this);
+            this.m_LsForm_GradV_Watches = this.m_LsForm_GradV.InitStopWatches(0, this);
+
             // -----
             // alloc
             // -----
@@ -150,6 +157,8 @@ namespace BoSSS.Foundation.XDG {
             AllocEmpty(m_LsForm_GradV, out Koeff_NablaV, out Sum_Koeff_NablaV, 4, true);
 
         }
+
+
 
 
         private bool Compfilter(IEquationComponent c) {
@@ -226,6 +235,13 @@ namespace BoSSS.Foundation.XDG {
         EquationComponentArgMapping<ILinearLevelSetComponent_GradUxGradV>[] m_LsForm_GradUxGradV;
         EquationComponentArgMapping<ILinearLevelSetComponent_V>[] m_LsForm_V;
         EquationComponentArgMapping<ILinearLevelSetComponent_GradV>[] m_LsForm_GradV;
+
+        Stopwatch[][] m_LsForm_UxV_Watches;
+        Stopwatch[][] m_LsForm_GradUxV_Watches;
+        Stopwatch[][] m_LsForm_UxGradV_Watches;
+        Stopwatch[][] m_LsForm_GradUxGradV_Watches;
+        Stopwatch[][] m_LsForm_V_Watches;
+        Stopwatch[][] m_LsForm_GradV_Watches;
 
         /// <summary>
         /// values of parameter fields, positive side of level Set
@@ -488,7 +504,7 @@ namespace BoSSS.Foundation.XDG {
                 // Evaluate Bilin. forms
                 // - - - - - - - - - - -
                 {
-                    EvalComponent(_inParams, gamma, this.m_LsForm_UxV[gamma],
+                    EvalComponent(_inParams, gamma, this.m_LsForm_UxV[gamma], this.m_LsForm_UxV_Watches[gamma], 
                         Koeff_UxV, Sum_Koeff_UxV , 2,
                         m_ParamFieldValuesPos, m_ParamFieldValuesNeg,
                         DELTA,
@@ -499,7 +515,7 @@ namespace BoSSS.Foundation.XDG {
                         });
                 }
                 {
-                    EvalComponent(_inParams, gamma, this.m_LsForm_GradUxV[gamma],
+                    EvalComponent(_inParams, gamma, this.m_LsForm_GradUxV[gamma], this.m_LsForm_GradUxV_Watches[gamma],
                         Koeff_NablaUxV, Sum_Koeff_NablaUxV, 2,
                         m_ParamFieldValuesPos, m_ParamFieldValuesNeg,
                         DELTA,
@@ -510,7 +526,7 @@ namespace BoSSS.Foundation.XDG {
                         });
                 }
                 {
-                    EvalComponent(_inParams, gamma, this.m_LsForm_UxGradV[gamma],
+                    EvalComponent(_inParams, gamma, this.m_LsForm_UxGradV[gamma], this.m_LsForm_UxGradV_Watches[gamma],
                         Koeff_UxNablaV, Sum_Koeff_UxNablaV, 2,
                         m_ParamFieldValuesPos, m_ParamFieldValuesNeg,
                         DELTA,
@@ -521,7 +537,7 @@ namespace BoSSS.Foundation.XDG {
                         });
                 }
                 {
-                    EvalComponent(_inParams, gamma, this.m_LsForm_GradUxGradV[gamma],
+                    EvalComponent(_inParams, gamma, this.m_LsForm_GradUxGradV[gamma], this.m_LsForm_GradUxGradV_Watches[gamma],
                         Koeff_NablaUxNablaV, Sum_Koeff_NablaUxNablaV, 2,
                         m_ParamFieldValuesPos, m_ParamFieldValuesNeg,
                         DELTA,
@@ -533,7 +549,7 @@ namespace BoSSS.Foundation.XDG {
                 }
 
                 {
-                    EvalComponent(_inParams, gamma, this.m_LsForm_V[gamma],
+                    EvalComponent(_inParams, gamma, this.m_LsForm_V[gamma], this.m_LsForm_V_Watches[gamma],
                         Koeff_V, Sum_Koeff_V, -1,
                         m_ParamFieldValuesPos, m_ParamFieldValuesNeg,
                         DELTA,
@@ -544,7 +560,7 @@ namespace BoSSS.Foundation.XDG {
                         });
                 }
                 {
-                    EvalComponent(_inParams, gamma, this.m_LsForm_GradV[gamma],
+                    EvalComponent(_inParams, gamma, this.m_LsForm_GradV[gamma], this.m_LsForm_GradV_Watches[gamma],
                         Koeff_NablaV, Sum_Koeff_NablaV, -1,
                         m_ParamFieldValuesPos, m_ParamFieldValuesNeg,
                         DELTA,
@@ -669,7 +685,7 @@ namespace BoSSS.Foundation.XDG {
         delegate void CallComponent<T>(T comp, int gamma, int i, LevSetIntParams _inParams);
 
         static private void EvalComponent<T>(LevSetIntParams _inParams,
-            int gamma, EquationComponentArgMapping<T> bf,
+            int gamma, EquationComponentArgMapping<T> bf, Stopwatch[] timers,
             MultidimensionalArray[][] argsPerComp, MultidimensionalArray[,] argsSum,
             int componentIdx,
             MultidimensionalArray ParamFieldValuesPos, MultidimensionalArray ParamFieldValuesNeg,
@@ -705,7 +721,9 @@ namespace BoSSS.Foundation.XDG {
                 }
 
                 // evaluate equation components
+                timers[i].Start();
                 ComponentFunc(comp, gamma, i, _inParams);
+                timers[i].Stop();
 #if DEBUG
                 argsPerComp[gamma][i].CheckForNanOrInf();
 #endif
