@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      html{
+        width : calc(100% -20px);
+        height : calc(100% - 20px);
+        overflow: hidden;
+        
+      }
+      body{
+        width : 100%;
+        height: 100%;
+      }
+
+      .container{
+        height : 100%;
+        width : 100%;
+      }
+      
+      .editor{
+        float: left;
+        width: 60%;
+        height: 100%;
+      }
+      
+      .interactiveListUL {
+        margin: 0;
+        padding: 0;
+        list-style-type: none;
+        width: calc(40% - 8px);
+      }
+
+      .userInput{
+        margin-left: 60%;
+        width: 30%;
+      }
+
+      .runDecoration {
+        background: rgba(196, 223, 231, 0.3);
+      }
+
+      .commentDecoration{
+        background: rgba(196, 231, 196, 0.3);
+      }
+      
+      .runBox{
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        border-right: 4px solid;
+        border-left:4px solid;
+        border-color: #d9d9d9;;
+        width : 100%;
+        height :100%; 
+        position: relative;
+      }
+      .runUL{
+        margin: 0;
+        padding: 0;
+        position: absolute;
+        bottom: 0px;
+        list-style-type: none;
+        width : 100%;
+        height: 100%;
+      }
+
+      .runButtonLI{
+        background: #d9d9d9;
+        width : 100%;
+        height: 19px;
+        margin: 0;
+        padding: 0;
+      }
+
+      .readoutLI{
+        font-family: sans-serif;
+        font-size: small;
+        padding: 3px;
+        color: #555 ;
+        transition: background 1.0s ease-in-out;
+        height: calc(100% - 25px);
+        overflow:auto;
+      }
+      /* width */
+      .readoutLI::-webkit-scrollbar {
+        width: 11px;
+      }
+
+      /* Track */
+      .readoutLI::-webkit-scrollbar-track {
+        background: #f1f1f1; 
+      }
+      
+      /* Handle */
+      .readoutLI::-webkit-scrollbar-thumb {
+        background: #bbb; 
+      }
+
+      /* Handle on hover */
+      .readoutLI::-webkit-scrollbar-thumb:hover {
+        background: #aaa;; 
+      }
+
+      .blinkingreadoutLI{
+        background : rgba(255, 0, 0, 0.5);
+      }
+
+      .button{ 
+        padding: 0px 10px 0px 10px;
+        margin:0px;
+        height: 19px;
+        line-height: 19px;
+        background: #d9d9d9;
+        color: #555;
+        float: left;
+        text-align: center;
+        cursor: pointer;
+        transition: 0.3s;
+        font-family: sans-serif;
+        font-size: small;
+        
+      }
+
+      .bigButton{
+        width: 50px;
+      }
+
+      .button:hover{
+        background-color: #bbb;
+      }
+
+    </style>
+    <script type="text/javascript" src="../node_modules/mathjax-electron/resources/MathJax/MathJax.js?config=electron"></script>
+  </head>
+  <body >
+    <section id="container" class="container">
+  </body>
+  <script src="app.bundle.js"></script>
+</html>
+
+
+
+
