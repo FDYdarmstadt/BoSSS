@@ -1308,7 +1308,7 @@ namespace BoSSS.Foundation {
                 int[] DomDGdeg = this.DomainMapping.BasisS.Select(b => b.Degree).ToArray();
                 int[] CodDGdeg = this.CodomainMapping.BasisS.Select(b => b.Degree).ToArray();
                 string[] DomNames = m_Owner.DomainVar.ToArray();
-                string[] CodNames = m_Owner.DomainVar.ToArray();
+                string[] CodNames = m_Owner.CodomainVar.ToArray();
 
 
                 Debug.Assert(CodNames.Length == CodDGdeg.Length);
@@ -1321,7 +1321,7 @@ namespace BoSSS.Foundation {
                             int[] DomDGdeg_cd = new int[ce.ArgumentOrdering.Count];
                             for(int i = 0; i < DomDGdeg_cd.Length; i++) {
                                 string domName = ce.ArgumentOrdering[i];
-                                int idx = Array.IndexOf(DomDGdeg, domName);
+                                int idx = Array.IndexOf(DomNames, domName);
                                 DomDGdeg_cd[i] = DomDGdeg[idx];
                             }
 
@@ -1462,16 +1462,27 @@ namespace BoSSS.Foundation {
             /// </summary>
             abstract protected DGField[] GetTrxFields();
 
+            bool m_MPITtransceive = false;
+
             /// <summary>
             /// Turn MPI sending/receiving of parameters and domain fields on/off.
             /// </summary>
             public bool MPITtransceive {
                 get {
-                    return m_TRX != null;
+                    //return m_TRX != null;
+                    Debug.Assert((m_MPITtransceive == (m_TRX != null)) || (this.GetTrxFields().Length <= 0));
+
+                    return m_MPITtransceive;
                 }
                 set {
+                    m_MPITtransceive = value;
 
-                    if((m_TRX == null) && (value == true)) {
+                    //if((m_TRX != null) && (value == true)) {
+                    //    ArrayTools.ListEquals(m_TRX.)
+                    //}
+
+
+                    if((m_TRX == null) && (value == true) && (this.GetTrxFields().Length > 0)) {
                         // + + + + + + + + + +
                         // create transceiver
                         // + + + + + + + + + +
@@ -1694,7 +1705,7 @@ namespace BoSSS.Foundation {
             {
                 this.edgeRule = edgeQrCtx.SaveCompile(base.GridData, order);
                 this.volRule = volQrCtx.SaveCompile(base.GridData, order);
-
+                base.MPITtransceive = true;
             }
 
             /// <summary>
