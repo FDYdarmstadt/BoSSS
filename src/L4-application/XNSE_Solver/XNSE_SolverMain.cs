@@ -73,7 +73,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //Tests.UnitTest.MovingDropletTest(2, 0.01d, true, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, 0.69711d, ViscosityMode.Standard, true, false);
             //Tests.UnitTest.TestFixtureTearDown();
             //return;
-
+         
 
             //Tests.ElementalTestProgramm.Init();
             //Tests.ElementalTestProgramm.CircleMovementTest(LevelSetEvolution.FastMarching, LevelSetHandling.Coupled_Once, XNSE_Control.TimesteppingScheme.ImplicitEuler);
@@ -672,10 +672,16 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 //this.LsTrk.UpdateTracker();
 
+                //FastMarchReinitSolver = new FastMarchReinit(DGLevSet.Current.Basis);
+                //CellMask Accepted = LsTrk.Regions.GetCutCellMask();
+                //CellMask ActiveField = LsTrk.Regions.GetNearFieldMask(1);
+                //CellMask NegativeField = LsTrk.Regions.GetSpeciesMask("A");
+                //FastMarchReinitSolver.FirstOrderReinit(DGLevSet.Current, Accepted, NegativeField, ActiveField);
+
                 ContinuityEnforcer = new ContinuityProjection(DGLevelSet: this.DGLevSet.Current, gridData: GridData, Option: Control.LSContiProjectionMethod);
-                var Near = this.LsTrk.Regions.GetNearMask4LevSet(0, 1);
-                var PosFF = this.LsTrk.Regions.GetLevelSetWing(0, +1).VolumeMask;
-                ContinuityEnforcer.SetFarField(this.DGLevSet.Current, Near, PosFF);
+                //var Near = this.LsTrk.Regions.GetNearMask4LevSet(0, 1);
+                //var PosFF = this.LsTrk.Regions.GetLevelSetWing(0, +1).VolumeMask;
+                //ContinuityEnforcer.SetFarField(this.DGLevSet.Current, Near, PosFF);
 
                 m_BDF_Timestepper.DataRestoreAfterBalancing(L, 
                     ArrayTools.Cat<DGField>(this.XDGvelocity.Velocity.ToArray(), this.Pressure), 
@@ -683,10 +689,8 @@ namespace BoSSS.Application.XNSE_Solver {
                     this.LsTrk, this.MultigridSequence);
 
                 //Console.WriteLine("number of cells {0}", this.Grid.NumberOfCells);
-                //PlotCurrentState(hack_Phystime, new TimestepNumber(hack_TimestepIndex, 2), 2);
+                //PlotCurrentState(hack_Phystime, new TimestepNumber(hack_TimestepIndex, 0), 2);
 
-                //ContinuityEnforcer = new ContinuityProjection(DGLevelSet: this.DGLevSet.Current, gridData: GridData, Option: Control.LSContiProjectionMethod);
-                //FastMarchReinitSolver = new Solution.LevelSetTools.Reinit.FastMarch.FastMarchReinit(DGLevSet.Current.Basis);
 
             }
             #endregion
@@ -851,21 +855,92 @@ namespace BoSSS.Application.XNSE_Solver {
         double hack_Phystime;
 
 
-
-        ///// <summary>
-        ///// Callback function which is used by the time stepper (<see cref="m_BDF_Timestepper"/> or <see cref="m_RK_Timestepper"/>).
-        ///// </summary>
-        //CutCellMetrics DelUpdateCutCellMetrics() {
-        //    return new CutCellMetrics(MomentFittingVariant, this.m_HMForder, this.LsTrk, this.LsTrk.SpeciesIdS.ToArray());
-        //}
-
-
-#if DEBUG
         /// <summary>
-        /// Debug/Test code for XDG database interaction
+        /// 
         /// </summary>
         protected override ITimestepInfo SaveToDatabase(TimestepNumber timestepno, double t) {
             var tsi = base.SaveToDatabase(timestepno, t);
+
+            if(tsi != null && m_BDF_Timestepper != null) {
+                int S = m_BDF_Timestepper.GetNumberOfStages;
+
+                SinglePhaseField LsBkUp = new SinglePhaseField(this.LevSet.Basis);
+                LsBkUp.Acc(1.0, this.LevSet);
+
+                ICollection<DGField>[] restartFields = m_BDF_Timestepper.GetRestartInfos();
+
+                if(S > 1 && this.Control.saveperiod >= S && restartFields != null) {
+
+                    // save additional timesteps/information for restart
+                    // +++++++++++++++++++++++++++++++++++++++++++++++++
+
+                    for(int ti = 1; ti < S; ti++) {
+
+                        //SinglePhaseField LsBkUp = new SinglePhaseField(this.LevSet.Basis);
+                        //LsBkUp.Acc(1.0, this.LevSet);
+
+                        ICollection<DGField> restartIOFields = new List<DGField>();
+                        foreach(DGField f in this.IOFields) {
+
+                            int rfidx = restartFields[ti - 1].IndexWhere(rf => rf.Identification == f.Identification);
+                            if(rfidx > -1) {
+                                DGField rf = restartFields[ti - 1].ElementAt(rfidx);
+                                if(f.Identification == "Phi") {
+                                    this.LevSet.Clear();
+                                    this.LevSet.Acc(1.0, rf);
+                                    restartIOFields.Add(this.LevSet);
+                                } else {
+                                    restartIOFields.Add(rf);
+                                }
+                            } else {
+                                DGField rf = f.CloneAs();
+                                rf.Clear();
+                                restartIOFields.Add(rf);
+                            }
+                        }
+
+                        //this.LevSet.Clear();
+                        //this.LevSet.Acc(1.0, LsBkUp);
+
+                        ITimestepInfo rtsi;
+                        TimestepNumber tsn = new TimestepNumber(timestepno.MajorNumber - ti);
+
+                        //Console.WriteLine("saving to Database ...");
+
+                        //Exception e = null;
+                        try {
+                            rtsi = this.DatabaseDriver.SaveTimestep(
+                                t - ti * this.Control.GetFixedTimestep(),
+                                tsn,
+                                this.CurrentSessionInfo,
+                                this.GridData,
+                                restartIOFields);
+                        } catch(Exception ee) {
+                            Console.Error.WriteLine(ee.GetType().Name + " on rank " + this.MPIRank + " saving time-step " + tsn + ": " + ee.Message);
+                            Console.Error.WriteLine(ee.StackTrace);
+                            //tsi = null;
+                            //e = ee;
+
+                            if(ContinueOnIOError) {
+                                Console.WriteLine("Ignoring IO error: " + DateTime.Now);
+                            } else {
+                                throw ee;
+                            }
+
+                            tsi = null;
+                        }
+                        // e.ExceptionBcast();
+                        csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+                    }
+
+                }
+
+                this.LevSet.Clear();
+                this.LevSet.Acc(1.0, LsBkUp);
+            }
+
+#if DEBUG
+            //Debug/Test code for XDG database interaction
 
             if(tsi != null) {
                 // checking some neccessary reference-equalities BEFORE serialisation
@@ -926,9 +1001,11 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
             }
 
+#endif
+
             return tsi;
         }
-#endif
+
 
 
         /// <summary>
@@ -1089,9 +1166,9 @@ namespace BoSSS.Application.XNSE_Solver {
 
 #if DEBUG
             // in case of Debugging Save first Timesteps
-            if (TimestepNo[1] <= 2) {
-                this.SaveToDatabase(TimestepNo, phystime);
-            }
+            //if(TimestepNo[1] <= 2) {
+            //    this.SaveToDatabase(TimestepNo, phystime);
+            //}
 #endif
 
             Console.WriteLine("done.");
@@ -2002,7 +2079,6 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
 
-
         protected override void SetInitial() {
             base.SetInitial();
 
@@ -2038,19 +2114,6 @@ namespace BoSSS.Application.XNSE_Solver {
                 // ---------
                 this.DGLevSet.Current.ProjectField(X => this.Control.Phi(X, Time));
                 this.LevSet.ProjectField(X => this.Control.Phi(X, Time));
-
-                // HMF hacks
-                //if ((this.Control.CircleRadius != null) != (this.Control.HMF == XQuadFactoryHelper.MomentFittingVariants.ExactCircle))
-                //    throw new ApplicationException("Illegal HMF configuration.");
-                //if (this.Control.CircleRadius != null) {
-                //    ExactCircleLevelSetIntegration.RADIUS = new double[] { this.Control.CircleRadius(Time) };
-                //}
-
-                //if (CallCount == 0) {
-                //    this.LsTrk.UpdateTracker();
-                //} else {
-                //    this.LsTrk.UpdateTracker(incremental: true);
-                //}
 
                 this.LsTrk.UpdateTracker(incremental: true);
 
@@ -2212,9 +2275,9 @@ namespace BoSSS.Application.XNSE_Solver {
                 var PosFF = this.LsTrk.Regions.GetLevelSetWing(0, +1).VolumeMask;
 
                 if (this.Control.Option_LevelSetEvolution != LevelSetEvolution.ExtensionVelocity)
-                    ContinuityEnforcer.SetFarField(this.DGLevSet.Current, Near, PosFF);
+                    ContinuityEnforcer.SetFarField(this.DGLevSet.Current, Near1, PosFF);
 
-                ContinuityEnforcer.MakeContinuous(this.DGLevSet.Current, this.LevSet, Near1, PosFF);
+                ContinuityEnforcer.MakeContinuous(this.DGLevSet.Current, this.LevSet, Near, PosFF);
 
                 //PlotCurrentState(0.0, new TimestepNumber(new int[] { 0, 4 }), 3);
 
@@ -2257,7 +2320,15 @@ namespace BoSSS.Application.XNSE_Solver {
         protected override void LoadRestart(out double Time, out TimestepNumber TimestepNo) {
             base.LoadRestart(out Time, out TimestepNo);
 
-            this.InitLevelSet();
+            //this.InitLevelSet();
+
+            ContinuityEnforcer = new ContinuityProjection(
+                    DGLevelSet: this.DGLevSet.Current,
+                    gridData: GridData,
+                    Option: Control.LSContiProjectionMethod
+                    );
+
+            //this.LsTrk.UpdateTracker();
 
             this.CreateEquationsAndSolvers(null);
 
@@ -2266,9 +2337,9 @@ namespace BoSSS.Application.XNSE_Solver {
             // =========================================
 
             if (m_BDF_Timestepper != null) {
-                m_BDF_Timestepper.DelayedTimestepperInit(0.0, 0, this.Control.GetFixedTimestep(),
+                m_BDF_Timestepper.DelayedTimestepperInit(Time, TimestepNo.MajorNumber, this.Control.GetFixedTimestep(),
                     // delegate for the initialization of previous timesteps from restart session
-                    BDFDelayedInitiLoadRestart );
+                    BDFDelayedInitLoadRestart );
             }
 
             After_SetInitialOrLoadRestart(Time, TimestepNo.MajorNumber);
@@ -2281,30 +2352,29 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <param name="TimestepIndex"></param>
         /// <param name="time"></param>
         /// <param name="St"></param>
-        private void BDFDelayedInitiLoadRestart(int TimestepIndex, double time, DGField[] St) {
+        private void BDFDelayedInitLoadRestart(int TimestepIndex, double time, DGField[] St) {
 
-                Console.WriteLine("Timestep index {0}, time {1} ", TimestepIndex, time);
+            Console.WriteLine("Timestep index {0}, time {1} ", TimestepIndex, time);
 
-                ITimestepInfo tsi_toLoad;
-                if (TimestepIndex < 0) {
-                    throw new ArgumentOutOfRangeException("Not enough Timesteps to restart with desired Timestepper");
-                } else {
-                    ISessionInfo reloadSession = GetDatabase().Controller.GetSessionInfo(this.CurrentSessionInfo.RestartedFrom);
-                    tsi_toLoad = reloadSession.Timesteps.Single(t => t.TimeStepNumber.Equals(new TimestepNumber(TimestepIndex)));
-                }
-                DatabaseDriver.LoadFieldData(tsi_toLoad, this.GridData, this.IOFields);
+            ITimestepInfo tsi_toLoad;
+            if(TimestepIndex < 0) {
+                throw new ArgumentOutOfRangeException("Not enough Timesteps to restart with desired Timestepper");
+            } else {
+                ISessionInfo reloadSession = GetDatabase().Controller.GetSessionInfo(this.CurrentSessionInfo.RestartedFrom);
+                tsi_toLoad = reloadSession.Timesteps.Single(t => t.TimeStepNumber.Equals(new TimestepNumber(TimestepIndex)));
+            }
+            DatabaseDriver.LoadFieldData(tsi_toLoad, this.GridData, this.IOFields);
 
+            // level-set
+            // ---------
+            this.DGLevSet.Current.Clear();
+            this.DGLevSet.Current.AccLaidBack(1.0, this.LevSet);
 
-                //if (CallCount == 0) {
-                //    this.LsTrk.UpdateTracker();
-                //} else {
-                //    this.LsTrk.UpdateTracker(incremental: true);
-                //}
+            //this.LsTrk.UpdateTracker(incremental: true);
 
-
-                // solution
-                // --------
-                int D = this.LsTrk.GridDat.SpatialDimension;
+            // solution
+            // --------
+            int D = this.LsTrk.GridDat.SpatialDimension;
 
                 for (int d = 0; d < D; d++) {
                     St[d] = this.XDGvelocity.Velocity[d].CloneAs();
@@ -2510,7 +2580,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 double Volume2 = (new SubGrid(CellMask.GetFullMask(this.GridData))).Volume;
                 double PressureDiffMean = DiffInt / Volume2;
 
-
+                
                 double L2Error = 0;
                 Dictionary<string, double> L2Error_Species = new Dictionary<string, double>();
 
@@ -2554,13 +2624,22 @@ namespace BoSSS.Application.XNSE_Solver {
             //int maxRefineLevelLS = 1;
 
             CellMask ccm = this.LsTrk.Regions.GetCutCellMask();
+            CellMask near = this.LsTrk.Regions.GetNearFieldMask(1);
 
             //double curv_max = 2.0 / this.GridData.Cells.h_min[j];
 
             int DesiredLevel_j = CurrentLevel;
-            if (ccm.Contains(j)) {
+
+            if (near.Contains(j)) {
 
                 DesiredLevel_j = this.Control.RefinementLevel;
+
+            } else {
+                DesiredLevel_j = 0;
+            }
+
+
+            //if (ccm.Contains(j)) {
 
                 //if (DesiredLevel_j < minRefineLevelLS) {
                 //    // set minimum refinement level for the interface
@@ -2610,15 +2689,16 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 //}
 
-            } else {
-                // non cut cells don't need to be refined
-                DesiredLevel_j = 0;
-            }
+            //} else {
+            //    // non cut cells don't need to be refined
+            //    DesiredLevel_j = 0;
+            //}
 
             return DesiredLevel_j;
 
         }
 
+        CellMask refinedInterfaceCells;
 
         protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid)
         {
@@ -2630,7 +2710,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 // Check grid changes
                 // ==================
 
-                CellMask BlockedCells = LsTrk.Regions.GetCutCellMask();
+                CellMask BlockedCells = LsTrk.Regions.GetNearFieldMask(1);
 
                 // compute curvature for levelindicator 
                 //CurvatureAlgorithms.CurvatureDriver(
@@ -2883,8 +2963,8 @@ namespace BoSSS.Application.XNSE_Solver {
                 ContinuityEnforcer.MakeContinuous(this.DGLevSet.Current, this.LevSet, Near1, PosFF);
 
                 if (this.Control.Option_LevelSetEvolution == LevelSetEvolution.FastMarching) {
-                    this.DGLevSet.Current.Clear();
-                    this.DGLevSet.Current.AccLaidBack(1.0, this.LevSet);
+                    this.DGLevSet.Current.Clear(Near1);
+                    this.DGLevSet.Current.AccLaidBack(1.0, this.LevSet, Near1);
                 }
 
                 //PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 2 }), 2);

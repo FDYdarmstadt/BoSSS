@@ -44,18 +44,23 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// control object for various testing
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control ChannelFlow_WithInterface(int p = 2, int kelem = 16, int wallBC = 2) {
+        public static XNSE_Control ChannelFlow_WithInterface(int p = 2, int kelem = 16, int wallBC = 1) {
 
             XNSE_Control C = new XNSE_Control();
+
+            string _DbPath = @"D:\local\local_test_db";
+
 
             // basic database options
             // ======================
             #region db
 
-            C.DbPath = null; //_DbPath;
+            C.DbPath = _DbPath;
             C.savetodb = C.DbPath != null;
             C.ProjectName = "XNSE/Channel";
             C.ProjectDescription = "Channel flow with vertical interface";
+
+            C.ContinueOnIoError = false;
 
             #endregion
 
@@ -106,13 +111,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.PhysicalParameters.rho_B = 1;
             C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.mu_B = 1;
-            double sigma = 1.0;
+            double sigma = 0.0;
             C.PhysicalParameters.Sigma = sigma;
 
             //C.PhysicalParameters.beta_S = 0.05;
             C.PhysicalParameters.Theta_e = Math.PI / 2.0;
 
-            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.IncludeConvection = false;
             C.PhysicalParameters.Material = true;
 
             #endregion
@@ -195,6 +200,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             double Pjump = sigma / radius;
             C.InitialValues_Evaluators.Add("Pressure#A", X => Pjump);
 
+
+            //var database = new DatabaseInfo(_DbPath);
+            //Guid restartID = new Guid("cf6bd7bf-a19f-409e-b8c2-0b89388daad6");
+            //C.RestartInfo = new Tuple<Guid, Foundation.IO.TimestepNumber>(restartID, 10);
+
             #endregion
 
 
@@ -202,7 +212,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===================
             #region BC
 
-            switch (wallBC) {
+            switch(wallBC) {
                 case 0:
                     goto default;
                 case 1:
@@ -247,7 +257,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux;
 
             //C.LS_TrackerWidth = 2;
-            C.AdaptiveMeshRefinement = true;
+            //C.AdaptiveMeshRefinement = true;
+            //C.RefinementLevel = 1;
 
             #endregion
 
@@ -256,8 +267,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
-            //C.Timestepper_BDFinit = TimestepperInit.SingleInit;
+            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.BDF3;
+            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 
             C.CompMode = AppControl._CompMode.Transient;
@@ -265,8 +276,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000;
-            C.NoOfTimesteps = 1000;
-            C.saveperiod = 1;
+            C.NoOfTimesteps = 20;
+            C.saveperiod = 10;
 
             #endregion
 

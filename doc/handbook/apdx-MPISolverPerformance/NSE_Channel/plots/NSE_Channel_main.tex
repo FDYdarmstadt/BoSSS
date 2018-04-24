@@ -1,0 +1,35 @@
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\begin{document}
+\pagenumbering{gobble}
+\section*{Navier Stokes 3D Channel}
+\begin{itemize}
+	\large \item  polynomial degree k 1
+	\item Reynoldsnumber 100
+	\item Cells 16384
+	\item Total DoFs 212992
+	\item $\Delta$t steady
+\end{itemize}
+	\begin{figure}
+		\hspace{-2cm}\input{MPIScalingTimes.tex}
+		\rule{0cm}{1.1cm}
+		\caption{Exclusive times of methods for several processors.}
+	\end{figure}
+	\begin{figure}
+		\hspace{-2cm}\input{MPISpeedup.tex}
+		\rule{0cm}{1.1cm}
+		\caption{Speedup of specific methods for several processors.}
+	\end{figure}
+		\begin{figure}
+		\hspace{-2cm}\input{Additional_1.tex}
+		\rule{0cm}{1.1cm}
+		\caption{Speedup of specific methods for several processors.}
+		\end{figure}
+		\begin{figure}
+			\hspace{-2cm}\input{Additional_2.tex}
+			\rule{0cm}{1.1cm}
+			\caption{Speedup of specific methods for several processors.}
+		\end{figure}
+\end{document}

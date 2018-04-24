@@ -21,6 +21,11 @@ namespace BoSSS.Application.IBM_Solver {
         /// </summary>
         Picard = 1,
 
+        /// <summary>
+        /// Newtons method (<see cref="BoSSS.Solution.Multigrid.Newton"/>) with linear solver (<see cref="LinearSolverCodes"/>) used to approximate the inverse of the jacobian with the inverse operator matrix. 
+        /// </summary>
+        Newton = 2,
+
     }
 
     /// <summary>
@@ -68,9 +73,20 @@ namespace BoSSS.Application.IBM_Solver {
         /// </summary>
         exp_softgmres = 7,
 
+        /// <summary>
+        /// GMRES with schwarz precoditioning using METIS blocking without overlap
+        /// </summary>
         exp_softgmres_schwarz_directcoarse = 8,
 
+        /// <summary>
+        /// GMRES with schwarz precoditioning using MG blocking with overlap
+        /// </summary>
         exp_softgmres_schwarz_Kcycle_directcoarse_overlap = 9,
+
+        /// <summary>
+        /// GMRES with schwarz precoditioning using METIS blocking with overlap
+        /// </summary>
+        exp_softgmres_schwarz_directcoarse_overlap = 10,
 
 
 

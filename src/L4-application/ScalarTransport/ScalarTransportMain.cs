@@ -287,7 +287,7 @@ namespace BoSSS.Application.ScalarTransport {
                     //base.NoOfTimesteps = -1;
                     //dt = 1;
 
-                    base.NoOfTimesteps = 5000;
+                    base.NoOfTimesteps = 10;
                     base.EndTime = 5.0;
                     dtCFL *= 1.0 / (((double)u.Basis.Degree).Pow2());
 
