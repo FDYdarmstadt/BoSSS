@@ -19,7 +19,12 @@ namespace BoSSS.Application.BoSSSpad{
                 runCommand = (Func<object, Task<object>>)(async (i) => {
                     return await Task.Run(() => ElectronInterface.RunCommand(i));
                 }),
-
+                save = (Func<object, Task<object>>)(async (i) => {
+                    return await Task.Run(() => ElectronInterface.Save(i));
+                }),
+                load = (Func<object, Task<object>>)(async (i) => {
+                    return await Task.Run(() => ElectronInterface.Load(i));
+                })
             };
         }
 
@@ -27,5 +32,27 @@ namespace BoSSS.Application.BoSSSpad{
             string output = worksheet.RunCommand(input.ToString());
             return output;
         }
+
+        static bool Save(dynamic input){
+            string path = (string)input.path;
+            object[] commands = (object[])input.commands;
+            object[] results = (object[])input.results;
+
+            string[] stringCommands = new string[commands.Length];
+            for(int i = 0; i < commands.Length; ++i){
+                stringCommands[i] = commands[i].ToString();
+            }
+            string[] stringResults = new string[results.Length];
+            for (int i = 0; i < results.Length; ++i)
+            {
+                stringResults[i] = results[i].ToString();
+            }
+            worksheet.Save(path, stringCommands, stringResults);
+            return true;
+        }
+
+        static  object Load(object path){
+            return worksheet.Load((string)path);
+        } 
     }
 }
