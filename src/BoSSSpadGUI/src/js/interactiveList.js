@@ -1,4 +1,5 @@
 import {RunBox, CommentBox} from './commandBoxes.js'
+import * as monaco from 'monaco-editor';
 
 export class InteractiveList{
     constructor(element, status){
@@ -200,6 +201,23 @@ export class InteractiveList{
       newBox.id = id;
       return newBox;
     }
+
+    appendBox(BoxType){
+      if(this.boxes.length === 0){
+        var range = new monaco.Range (1,0,1,0);
+        this.editor.setValue(range, "\n\n");
+      }else{
+        var range = new monaco.Range( 
+          this.boxes[this.boxes.length - 1].range.endLineNumber + 2,
+          0,
+          this.boxes[this.boxes.length - 1].range.endLineNumber + 2,
+          0
+        );
+        this.editor.setValue(range, "\n\n");
+      }
+      var newBox = this.insertBox(range, BoxType);
+      return newBox;
+    }
   
     //indice Array must be sorted
     deleteBoxIndiceRange(indiceArray){
@@ -218,6 +236,38 @@ export class InteractiveList{
       //Remove from boxArray
       this.boxes.splice(indice , 1);  
     }
+
+    getCommandBoxValues(){
+      var myCommands = [];
+      var myResults = [];
+      for(var i = 0; i < this.boxes.length; ++i){
+        var box = this.boxes[i];
+        if(box.BoxType  === RunBox ){
+          myCommands.push(this.getSelectionValue(box));
+          myResults.push(box.boxContent.readoutLI.firstChild.innerHTML);
+        }
+      }
+      return{
+        commands : myCommands,
+        results : myResults
+      }
+    }
+
+    setCommandBoxValues(data){
+      var myCommands = data.Item1;
+      var myResults = data.Item2;
+      for(var i = 0; i < myCommands.length; ++i){
+        var commandBox = this.appendBox(RunBox);
+        commandBox.boxContent.setValue(myResults[i]);
+        this.editor.setValue(commandBox.range, myCommands[i]);
+      }
+    }
+
+    reset(){
+      for(var i = this.boxes.length - 1; i >= 0; --i){
+        this.deleteBox(i);
+      }
+    }
 }
   
 class Box{
@@ -235,12 +285,15 @@ class Box{
     getDomNode(){
       return this.LI;
     }
-  
+
     setHeight(height){
       this.LI.style.height = height +"px"; 
     }
+    
     setRange(range){
       this.range = range;
     }
+
+
 }
   
