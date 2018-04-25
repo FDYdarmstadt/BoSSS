@@ -123,6 +123,20 @@ namespace BoSSS.Foundation.XDG {
             private set;
         }
 
+        /// <summary>
+        /// see <see cref="OnIntegratingSurfaceElement"/>;
+        /// </summary>
+        /// <param name="speciesName">name of the species that will be computed.</param>
+        /// <param name="SpcId">id of the species that will be computed.</param>
+        /// <param name="InterfaceLengths">Interface length of cut cells for respective species.</param>
+        public delegate void NowIntegratingSurfaceElement(string speciesName, SpeciesId SpcId, MultidimensionalArray InterfaceLengths);
+
+        /// <summary>
+        /// Informs the listeners which part (or species) of the bulk phase is going to be computed.
+        /// this event is called before computation the <see cref="SurfaceElementOperator"/> is carried out.
+        /// </summary>
+        public event NowIntegratingSurfaceElement OnIntegratingSurfaceElement;
+
 
         ///// <summary>
         ///// I don't know a funky name for it.
@@ -194,6 +208,7 @@ namespace BoSSS.Foundation.XDG {
             UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap,
             M Matrix, V AffineOffset, bool OnlyAffine, double time, bool ParameterMPIExchange,
             IDictionary<SpeciesId, MultidimensionalArray> CellLengthScales,
+            IDictionary<SpeciesId, MultidimensionalArray> InterfaceLengths,
             SubGrid SubGrid, params SpeciesId[] whichSpc)
             where M : IMutableMatrixEx
             where V : IList<double> {
@@ -207,6 +222,7 @@ namespace BoSSS.Foundation.XDG {
                 DomainMap, Parameters, CodomainMap,
                 Matrix, AffineOffset, OnlyAffine, time,
                 ParameterMPIExchange, SpeciesDictionary, CellLengthScales,
+                InterfaceLengths,
                 //agg, out mass,
                 SubGrid);
 
@@ -233,6 +249,7 @@ namespace BoSSS.Foundation.XDG {
             M Matrix, V AffineOffset, bool OnlyAffine,
             double time, bool ParameterMPIExchange,
             IDictionary<SpeciesId, MultidimensionalArray> CellLengthScales,
+            IDictionary<SpeciesId, MultidimensionalArray> InterfaceLengths,
             params SpeciesId[] whichSpc)
             where M : IMutableMatrixEx
             where V : IList<double> //
@@ -243,6 +260,7 @@ namespace BoSSS.Foundation.XDG {
                 Matrix, AffineOffset, OnlyAffine, time,
                 ParameterMPIExchange,
                 CellLengthScales,
+                InterfaceLengths,
                 null, whichSpc);
         }
 
@@ -290,7 +308,7 @@ namespace BoSSS.Foundation.XDG {
                 DomainMap, Parameters, CodomainMap,
                 Matrix, AffineOffset,
                 OnlyAffine, time, MPIParameterExchange, bla,
-                dummy.CellLengthScales, subGrid);
+                dummy.CellLengthScales, null, subGrid);
 
             Debug.Assert(dummy.TotalNumberOfAgglomerations <= 0, "internal error");
 
@@ -311,7 +329,7 @@ namespace BoSSS.Foundation.XDG {
             UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap,
             M Matrix, V AffineOffset, bool OnlyAffine, double time, bool MPIParameterExchange,
             IDictionary<SpeciesId, QrSchemPair> SpeciesSchemes, IDictionary<SpeciesId, MultidimensionalArray> CellLengthScales,
-            SubGrid SubGrid = null)
+            IDictionary<SpeciesId, MultidimensionalArray> InterfaceLengths = null, SubGrid SubGrid = null)
             where M : IMutableMatrixEx
             where V : IList<double> {
             //
@@ -557,6 +575,10 @@ namespace BoSSS.Foundation.XDG {
                             }
 
                             //double[] tmpVec = new double[vec.Count];
+
+
+                            if(OnIntegratingSurfaceElement != null)
+                                OnIntegratingSurfaceElement(lsTrk.GetSpeciesName(SpeciesId), SpeciesId, InterfaceLengths[SpeciesId]);
 
 
                             SurfaceElementOperator.ComputeMatrixEx(
