@@ -26,18 +26,17 @@ namespace BoSSS.Application.BoSSSpad{
                 Utils.GetBoSSSInstallDir(),
                 out bool mpiInitialized
             );
-            this.document = new Document();
         }
 
-        public static ElectronWorksheet Instance{
-            get{
-                return instance; 
+        public static ElectronWorksheet Instance {
+            get {
+                return instance;
             }
         }
 
-        public string RunCommand(string command){
+        public string RunCommand(string command) {
 
-            Document.Tuple singleCommandAndResult = new Document.Tuple{
+            Document.Tuple singleCommandAndResult = new Document.Tuple {
                 Command = command
             };
 
@@ -45,8 +44,33 @@ namespace BoSSS.Application.BoSSSpad{
             return singleCommandAndResult.InterpreterTextOutput;
         }
 
-        //save
+        public void Save(string path, string[] commands, string[] results) {
+            //build document 
+            document = new Document();
+            for (int i = 0; i < commands.Length; ++i) {
+                Document.Tuple commandBox = new Document.Tuple() {
+                    Command = commands[i],
+                    InterpreterTextOutput = results[i]
+                };
+                document.CommandAndResult.Add(commandBox);
+            }
 
-        //load
+            //Save document
+            document.Serialize(path);
+        }
+
+        public Tuple<string[], string[]> Load(string path){
+
+            document = Document.Deserialize(path);
+            int numberOfBoxes = document.CommandAndResult.Count;
+            string[] commands = new string[numberOfBoxes];
+            string[] results = new string[numberOfBoxes];
+            for(int i = 0; i < numberOfBoxes; ++i){
+                commands[i] = document.CommandAndResult[i].Command;
+                results[i] = document.CommandAndResult[i].InterpreterTextOutput;
+            }
+
+            return new Tuple<string[], string[]>(commands, results);
+        }
     }
 }

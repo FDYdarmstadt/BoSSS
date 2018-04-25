@@ -44,7 +44,12 @@ class BoxWithMenu{
   
     async createReadoutContent( readoutNode, value){
       throw "Not Implemented";
-      return 
+      return;
+    }
+
+    setValue(editorValue, ReadOutValue){
+      throw "Not Implemented";
+      return;
     }
     //----------------------------------------------------------------------------------
   
@@ -157,6 +162,19 @@ export class RunBox extends BoxWithMenu {
     runUntilHereButtonSymbol(){
         var runSymbol = document.createTextNode("...Run");
         return runSymbol;
+    }
+
+    setValue( ReadOutValue){
+      //ReadoutContent
+      var text = document.createElement("PRE");
+      text.innerHTML = ReadOutValue;
+      if(this.hasReadoutContent){
+        this.readoutLI.replaceChild(text, readoutNode.firstChild);
+      }
+      else{
+        this.hasReadoutContent = true;
+        this.readoutLI.appendChild(text);
+      }
     }
 
     async createReadoutContent( readoutNode, value){

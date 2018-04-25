@@ -17,12 +17,48 @@ class BoSSS{
         return this.constructor.prototype.instance;
     }
 
-    runCommand( commandString){
+    runCommand(commandString){
         var that = this;
         var runPromise = new Promise(
             function(resolve, reject){
                 that.BoSSSRuntime.runCommand(
                     commandString,
+                    async function(error, result) {
+                        if (error){
+                            reject(error);
+                        }
+                        resolve(result);
+                    }
+                );
+            }
+        );
+        return runPromise;
+    }
+    save(data){
+        //data {path: string, commands: string[], results: string[]}
+        var that = this;
+        var runPromise = new Promise(
+            function(resolve, reject){
+                that.BoSSSRuntime.save(
+                    data,
+                    async function(error, result) {
+                        if (error){
+                            reject(error);
+                        }
+                        resolve(result);
+                    }
+                );
+            }
+        );
+        return runPromise;
+    }
+
+    load(path){
+        var that = this;
+        var runPromise = new Promise(
+            function(resolve, reject){
+                that.BoSSSRuntime.load(
+                    path,
                     async function(error, result) {
                         if (error){
                             reject(error);
