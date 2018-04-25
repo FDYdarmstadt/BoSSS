@@ -341,7 +341,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             XNSE_Control C = new XNSE_Control();
 
 
-            _DbPath = @"D:\local\local_Testcase_databases\Testcase_RisingBubble";
+            //_DbPath = @"D:\local\local_Testcase_databases\Testcase_RisingBubble";
             //_DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
 
 
@@ -581,15 +581,15 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 1;
 
 
-            C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.Isotropic;
+            C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.FullBoussinesqScriven;
             C.PhysicalParameters.mu_I = 1 * sigma;
             C.PhysicalParameters.lambda_I = 2 * sigma;
 
             C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
             //C.LS_TrackerWidth = 2;
-            C.AdaptiveMeshRefinement = true;
-            C.RefinementLevel = 1;
+            //C.AdaptiveMeshRefinement = true;
+            //C.RefinementLevel = 2;
 
 
             #endregion
@@ -609,7 +609,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.dtMax = dt;
             C.dtMin = dt;
             C.NoOfTimesteps = 3000;
-            C.saveperiod = 1;
+            C.saveperiod = 10;
 
 
             #endregion

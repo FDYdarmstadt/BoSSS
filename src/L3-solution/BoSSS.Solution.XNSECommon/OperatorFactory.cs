@@ -435,11 +435,11 @@ namespace BoSSS.Solution.XNSECommon {
                             for (int d = 0; d < D; d++) {
                                 var surfDeformRate = new BoussinesqScriven_SurfaceDeformationRate_GradU(d, muI * 0.5, penalty);
                                 m_OP.SurfaceElementOperator.EquationComponents[CodName[d]].Add(surfDeformRate);
-                                m_OP.OnIntegratingBulk += surfDeformRate.SetParameter;
+                                m_OP.OnIntegratingSurfaceElement += surfDeformRate.SetParameter;
 
                                 var surfDeformRateT = new BoussinesqScriven_ShearViscosity_GradUTranspose(d, muI * 0.5, penalty);
                                 m_OP.SurfaceElementOperator.EquationComponents[CodName[d]].Add(surfDeformRateT);
-                                m_OP.OnIntegratingBulk += surfDeformRateT.SetParameter;
+                                m_OP.OnIntegratingSurfaceElement += surfDeformRateT.SetParameter;
                             }
 
                         }
@@ -450,7 +450,7 @@ namespace BoSSS.Solution.XNSECommon {
                             for (int d = 0; d < D; d++) {
                                 var surfVelocDiv = new BoussinesqScriven_SurfaceVelocityDivergence(d, muI * 0.5, lamI * 0.5, penalty, BcMap.EdgeTag2Type);
                                 m_OP.SurfaceElementOperator.EquationComponents[CodName[d]].Add(surfVelocDiv);
-                                m_OP.OnIntegratingBulk += surfVelocDiv.SetParameter;
+                                m_OP.OnIntegratingSurfaceElement += surfVelocDiv.SetParameter;
                             }
 
                         }
@@ -530,6 +530,7 @@ namespace BoSSS.Solution.XNSECommon {
 
             SpeciesId[] SpcToCompute = AgglomeratedCellLengthScales.Keys.ToArray();
 
+            IDictionary<SpeciesId, MultidimensionalArray> InterfaceLength = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), CutCellQuadOrder).CutCellMetrics.InterfaceArea;
 
             // parameter assembly
             // ==================
@@ -589,6 +590,7 @@ namespace BoSSS.Solution.XNSECommon {
                 ColMapping, Params, RowMapping,
                 OpMatrix, OpAffine, false, time, true,
                 AgglomeratedCellLengthScales,
+                InterfaceLength,
                 SpcToCompute);
 
         }

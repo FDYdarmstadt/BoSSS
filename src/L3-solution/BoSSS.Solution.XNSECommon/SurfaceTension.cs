@@ -1134,12 +1134,12 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         protected int m_comp;
 
         /// <summary>
-        /// length scales for cells in order to determine the penalty parameter.
+        /// interface lengths in order to determine the penalty parameter.
         /// </summary>
-        MultidimensionalArray m_LenScales;
+        MultidimensionalArray m_InterLen;
 
-        public void SetParameter(string speciesName, SpeciesId SpcId, MultidimensionalArray __LenScales) {
-            this.m_LenScales = __LenScales;
+        public void SetParameter(string speciesName, SpeciesId SpcId, MultidimensionalArray __InterLen) {
+            this.m_InterLen = __InterLen;
         }
 
         protected double m_penalty;
@@ -1147,8 +1147,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         protected double penalty(int jCellIn, int jCellOut) {
 
             double muFactor = 1.0;
-            double penaltySizeFactor_A = 1.0 / this.m_LenScales[jCellIn];
-            double penaltySizeFactor_B = jCellOut >= 0 ? 1.0 / this.m_LenScales[jCellOut] : 0;
+            double penaltySizeFactor_A = 1.0 / this.m_InterLen[jCellIn];
+            double penaltySizeFactor_B = jCellOut >= 0 ? 1.0 / this.m_InterLen[jCellOut] : 0;
             Debug.Assert(!double.IsNaN(penaltySizeFactor_A));
             Debug.Assert(!double.IsNaN(penaltySizeFactor_B));
             Debug.Assert(!double.IsInfinity(penaltySizeFactor_A));
