@@ -1181,12 +1181,26 @@ namespace BoSSS.Solution {
                     if (this.Control.GridFunc != null && this.Control.GridGuid != Guid.Empty)
                         throw new ApplicationException("Control object error: 'AppControl.GridFunc' and 'AppControl.GridGuid' are exclusive, cannot be unequal null at the same time.");
 
-                    if (this.Control.GridFunc != null) {
+                    if(this.Control.GridFunc != null) {
                         return this.Control.GridFunc();
-                    } else if (this.Control.GridGuid != null) {
-                        var _Grid = DatabaseDriver.LoadGrid(this.Control.GridGuid, m_Database);
-                        ht.LogMemoryStat();
-                        return _Grid;
+                    } else if(this.Control.GridGuid != null) {
+                        if(this.Control.RestartInfo != null) {
+                            ISessionInfo session = m_Database.Controller.GetSessionInfo(this.Control.RestartInfo.Item1);
+                            TimestepNumber timestep = this.Control.RestartInfo.Item2;
+                            ITimestepInfo tsi_toLoad;
+                            if(timestep == null || timestep.MajorNumber < 0) {
+                                tsi_toLoad = session.Timesteps.OrderBy(tsi => tsi.PhysicalTime).Last();
+                            } else {
+                                tsi_toLoad = session.Timesteps.Single(t => t.TimeStepNumber.Equals(timestep));
+                            }
+                            var _Grid = DatabaseDriver.LoadGrid(tsi_toLoad.GridID, m_Database);
+                            ht.LogMemoryStat();
+                            return _Grid;
+                        } else {
+                            var _Grid = DatabaseDriver.LoadGrid(this.Control.GridGuid, m_Database);
+                            ht.LogMemoryStat();
+                            return _Grid;
+                        }
                     } else {
                         throw new ApplicationException("Unable to create grid from control object. 'AppControl.GridFunc' and 'AppControl.GridGuid' are both null.");
                     }
@@ -1969,6 +1983,7 @@ namespace BoSSS.Solution {
                     //        }
                     //    }
                     //}
+                    PlotCurrentState(physTime, new TimestepNumber(TimeStepNo, 10), 2);
 
                     // set dg coördinates
                     foreach (var f in m_RegisteredFields) {
@@ -1977,8 +1992,13 @@ namespace BoSSS.Solution {
                             if (!object.ReferenceEquals(xb.Tracker, this.LsTrk))
                                 throw new ApplicationException();
                         }
+                        if(f.Identification == "Phi")
+                            continue;
+                            //f.Clear();
+
                         remshDat.RestoreDGField(f);
                     }
+                    PlotCurrentState(physTime, new TimestepNumber(TimeStepNo, 11), 2);
 
                     // re-create solvers, blablabla
                     CreateEquationsAndSolvers(remshDat);
