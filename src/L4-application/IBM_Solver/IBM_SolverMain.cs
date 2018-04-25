@@ -498,7 +498,7 @@ namespace BoSSS.Application.IBM_Solver {
              IBM_Op.ComputeMatrixEx(LsTrk,
                 Mapping, Params, Mapping,
                 OpMatrix, OpAffine, false, phystime, true,
-                AgglomeratedCellLengthScales,
+                AgglomeratedCellLengthScales, null,
                 FluidSpecies);
 
             m_LenScales = null;
