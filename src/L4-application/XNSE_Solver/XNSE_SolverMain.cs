@@ -671,6 +671,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 Debug.Assert(object.ReferenceEquals(this.MultigridSequence[0].ParentGrid, this.GridData));
 
                 //this.LsTrk.UpdateTracker();
+                //PlotCurrentState(hack_Phystime, new TimestepNumber(hack_TimestepIndex, 11), 2);
 
                 //FastMarchReinitSolver = new FastMarchReinit(DGLevSet.Current.Basis);
                 //CellMask Accepted = LsTrk.Regions.GetCutCellMask();
@@ -689,7 +690,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     this.LsTrk, this.MultigridSequence);
 
                 //Console.WriteLine("number of cells {0}", this.Grid.NumberOfCells);
-                //PlotCurrentState(hack_Phystime, new TimestepNumber(hack_TimestepIndex, 0), 2);
+                PlotCurrentState(hack_Phystime, new TimestepNumber(hack_TimestepIndex + 1, 12), 2);
 
 
             }
@@ -2710,7 +2711,16 @@ namespace BoSSS.Application.XNSE_Solver {
                 // Check grid changes
                 // ==================
 
-                CellMask BlockedCells = LsTrk.Regions.GetNearFieldMask(1);
+                CellMask BlockedCells;
+                if(this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Once
+                    || this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
+                    int prevInd = LsTrk.PopulatedHistoryLength;
+                    CellMask prevNear = LsTrk.RegionsHistory[-prevInd + 1].GetNearFieldMask(1);
+                    BlockedCells = (TimestepNo > 1) ? prevNear : null; // CellMask.Union(currNear, prevNear);
+                } else {
+                    CellMask currNear = LsTrk.Regions.GetNearFieldMask(1);
+                    BlockedCells = currNear;
+                }
 
                 // compute curvature for levelindicator 
                 //CurvatureAlgorithms.CurvatureDriver(
@@ -2962,9 +2972,10 @@ namespace BoSSS.Application.XNSE_Solver {
                 CellMask PosFF = LsTrk.Regions.GetLevelSetWing(0, +1).VolumeMask;
                 ContinuityEnforcer.MakeContinuous(this.DGLevSet.Current, this.LevSet, Near1, PosFF);
 
-                if (this.Control.Option_LevelSetEvolution == LevelSetEvolution.FastMarching) {
+                if(this.Control.Option_LevelSetEvolution == LevelSetEvolution.FastMarching) {
                     this.DGLevSet.Current.Clear(Near1);
                     this.DGLevSet.Current.AccLaidBack(1.0, this.LevSet, Near1);
+                    //ContinuityEnforcer.SetFarField(this.DGLevSet.Current, Near1, PosFF);
                 }
 
                 //PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 2 }), 2);
@@ -2982,6 +2993,14 @@ namespace BoSSS.Application.XNSE_Solver {
                 // ===============
 
                 this.LsTrk.UpdateTracker(incremental: true);
+
+                // update near field (in case of adaptive mesh refinement)
+                if(this.Control.AdaptiveMeshRefinement && this.Control.Option_LevelSetEvolution == LevelSetEvolution.FastMarching) {
+                    Near1 = LsTrk.Regions.GetNearMask4LevSet(0, 1);
+                    PosFF = LsTrk.Regions.GetLevelSetWing(0, +1).VolumeMask;
+                    ContinuityEnforcer.SetFarField(this.DGLevSet.Current, Near1, PosFF);
+                    ContinuityEnforcer.SetFarField(this.LevSet, Near1, PosFF);
+                }
 
 
                 // ==================================================================

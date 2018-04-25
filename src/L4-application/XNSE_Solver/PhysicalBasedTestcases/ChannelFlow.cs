@@ -48,7 +48,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             XNSE_Control C = new XNSE_Control();
 
-            string _DbPath = @"D:\local\local_test_db";
+            string _DbPath = null; // @"D:\local\local_test_db";
 
 
             // basic database options
@@ -257,8 +257,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux;
 
             //C.LS_TrackerWidth = 2;
-            //C.AdaptiveMeshRefinement = true;
-            //C.RefinementLevel = 1;
+            C.AdaptiveMeshRefinement = true;
+            C.RefinementLevel = 1;
 
             #endregion
 
@@ -267,16 +267,16 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.BDF3;
+            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.BDF2;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 
             C.CompMode = AppControl._CompMode.Transient;
-            double dt = 2e-4;
+            double dt = 2e-3;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000;
-            C.NoOfTimesteps = 20;
+            C.NoOfTimesteps = 2000;
             C.saveperiod = 10;
 
             #endregion

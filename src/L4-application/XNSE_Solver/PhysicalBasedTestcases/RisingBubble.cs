@@ -341,7 +341,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             XNSE_Control C = new XNSE_Control();
 
 
-            //_DbPath = @"D:\local\local_Testcase_databases\Testcase_RisingBubble";
+            _DbPath = @"D:\local\local_Testcase_databases\Testcase_RisingBubble";
             //_DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
 
 
@@ -442,13 +442,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
                 grd.DefineEdgeTags(delegate (double[] X) {
                     byte et = 0;
-                    if (Math.Abs(X[1]) <= 1.0e-8)
+                    if(Math.Abs(X[1]) <= 1.0e-8)
                         et = 1;
-                    if (Math.Abs(X[1] - 2.0) <= 1.0e-8)
+                    if(Math.Abs(X[1] - 2.0) <= 1.0e-8)
                         et = 2;
-                    if (Math.Abs(X[0]) <= 1.0e-8)
+                    if(Math.Abs(X[0]) <= 1.0e-8)
                         et = 3;
-                    if (Math.Abs(X[0] - 1.0) <= 1.0e-8)
+                    if(Math.Abs(X[0] - 1.0) <= 1.0e-8)
                         et = 4;
                     return et;
                 });
@@ -511,8 +511,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             //var database = new DatabaseInfo(_DbPath);
-            //Guid restartID = new Guid("977338d3-6840-43ab-a4b5-1983aa10b735");
-            //C.RestartInfo = new Tuple<Guid, Foundation.IO.TimestepNumber>(restartID, null);
+            //Guid restartID = new Guid("e356230c-57dd-4228-9986-0ec0d1335818");
+            //C.RestartInfo = new Tuple<Guid, Foundation.IO.TimestepNumber>(restartID, 123);
 
             #endregion
 
@@ -581,13 +581,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 1;
 
 
-            C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.FullBoussinesqScriven;
+            C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.Isotropic;
             C.PhysicalParameters.mu_I = 1 * sigma;
             C.PhysicalParameters.lambda_I = 2 * sigma;
 
             C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
-            C.LS_TrackerWidth = 2;
+            //C.LS_TrackerWidth = 2;
             C.AdaptiveMeshRefinement = true;
             C.RefinementLevel = 1;
 
@@ -599,16 +599,16 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.BDF2;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 
             C.CompMode = AppControl._CompMode.Transient;
 
-            double dt = 3e-3;
+            double dt = 1e-3;
             C.dtMax = dt;
             C.dtMin = dt;
-            C.NoOfTimesteps = 1000;
+            C.NoOfTimesteps = 3000;
             C.saveperiod = 1;
 
 
