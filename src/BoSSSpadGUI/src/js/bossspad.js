@@ -1,6 +1,7 @@
 
 import {InteractiveList} from './interactiveList';
 import {Editor} from './editor';
+import boSSSRuntime from './bosssInterface';
 
 export class BoSSSpad{
   constructor(element){
@@ -86,15 +87,27 @@ export class BoSSSpad{
   }
 
   resetFile(){
-    console.log("new file");
+    this.userGUI.reset();
+    this.boSSS.reset();
   }
 
   openFile(path){
-    console.log(path);
+    var that = this;
+    boSSSRuntime.load(path).then( function(result){
+      that.resetFile();
+      that.userGUI.setCommandBoxValues(result);
+    });
+    
   }
 
-  saveFile(path){
-    console.log(path);
+  saveFile(myPath){
+    var value = this.userGUI.getCommandBoxValues();
+    var data = {
+      path : myPath,
+      commands : value.commands,
+      results : value.results
+    }
+    boSSSRuntime.save(data);
   }
 
 }
