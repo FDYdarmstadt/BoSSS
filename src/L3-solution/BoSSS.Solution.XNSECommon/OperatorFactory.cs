@@ -437,7 +437,7 @@ namespace BoSSS.Solution.XNSECommon {
                                 m_OP.SurfaceElementOperator.EquationComponents[CodName[d]].Add(surfDeformRate);
                                 m_OP.OnIntegratingSurfaceElement += surfDeformRate.SetParameter;
 
-                                var surfDeformRateT = new BoussinesqScriven_ShearViscosity_GradUTranspose(d, muI * 0.5, penalty);
+                                var surfDeformRateT = new BoussinesqScriven_SurfaceDeformationRate_GradUTranspose(d, muI * 0.5, penalty);
                                 m_OP.SurfaceElementOperator.EquationComponents[CodName[d]].Add(surfDeformRateT);
                                 m_OP.OnIntegratingSurfaceElement += surfDeformRateT.SetParameter;
                             }
