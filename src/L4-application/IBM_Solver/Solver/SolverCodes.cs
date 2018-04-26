@@ -88,7 +88,10 @@ namespace BoSSS.Application.IBM_Solver {
         /// </summary>
         exp_softgmres_schwarz_directcoarse_overlap = 10,
 
-
+        /// <summary>
+        /// Classic Multigrid approach, especially useful for predoncitioning
+        /// </summary>
+        exp_multigrid = 11,
 
     }
 

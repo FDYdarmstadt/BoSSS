@@ -148,6 +148,12 @@ namespace BoSSS.Application.IBM_Solver {
                     };
                     break;
 
+                case LinearSolverCodes.exp_multigrid:
+                    if (Control.NoOfMultigridLevels < 2)
+                        throw new ApplicationException("At least 2 Multigridlevels are required");
+                    Timestepper.Config_linearSolver = new ClassicMultigrid() { CoarserLevelSolver = DetermineMGSquence(Control.NoOfMultigridLevels - 2) };
+                    break;
+
                 default:
                     throw new NotImplementedException("Linear solver option not available");
             }
