@@ -1,0 +1,5 @@
+#ignore buildfiles in ./dist
+/dist/*.js
+#ignore node specific build files
+node_modules/
+package-lock.json
