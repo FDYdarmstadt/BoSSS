@@ -224,8 +224,6 @@ namespace BoSSS.Foundation {
             }
         }
 
-
-
         public int GetOrderFromQuadOrderFunction(UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap) {
             /// Compute Quadrature Order
             int order;
@@ -251,187 +249,6 @@ namespace BoSSS.Foundation {
                         throw new ArgumentException(string.Format("parameter field {0} is assigned to a different grid.", prm.Identification));
             return GridDat;
         }
-
-        
-
-        /*
-        /// <summary>
-        /// Simplified version of <see cref="ComputeAffine{V}"/>.
-        /// </summary>
-        virtual public double[] ComputeAffine(UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap, double time = 0.0) {
-            double[] affine = new double[CodomainMap.LocalLength];
-
-            this.ComputeAffine(DomainMap, Parameters, CodomainMap, affine, OnlyBoundaryEdges: false, time: time);
-
-            return affine;
-        }
-        */
-
-        /*
-        /// <summary>
-        /// computes the affine offset and/or matrix of the operator, expert
-        /// version;
-        /// </summary>
-        /// <param name="DomainMap">
-        /// the mapping which is used to compute column indices into
-        /// <paramref name="Matrix"/>;
-        /// </param>
-        /// <param name="Parameters">
-        /// The parameter variables (of this differential operator);
-        /// The number of elements in the list must match the parameter count
-        /// of the differential operator (see
-        /// <see cref="SpatialOperator.ParameterVar"/>);  It is allowed to set
-        /// an entry to 'null', in this case the values of the parameter field
-        /// are assumed to be 0.0; If the differential operator contains no
-        /// parameters, this argument can be null;
-        /// </param>
-        /// <param name="CodomainMap">
-        /// the mapping which is used to compute row indices into
-        /// <paramref name="Matrix"/> and <paramref name="AffineOffset"/>.
-        /// </param>
-        /// <param name="Matrix">
-        /// Acc output: the matrix which represents the linear part of this
-        /// operator, according to the mapping given by
-        /// <paramref name="DomainMap"/> and <paramref name="CodomainMap"/>,
-        /// is <b>ACCUMULATED</b> here; <br/>
-        /// Setting all matrix entries to 0.0 is left to the user;
-        /// </param>
-        /// <param name="AffineOffset">
-        /// Acc output: the vector which represents the affine part of this
-        /// operator, according to the mapping given by
-        /// <paramref name="DomainMap"/> and <paramref name="CodomainMap"/>,
-        /// is <b>ACCUMULATED</b> here; <br/>
-        /// Setting all vector entries to 0.0 is left to the user;
-        /// </param>
-        /// <param name="OnlyAffine">
-        /// If true, only the <paramref name="AffineOffset"/> is computed, and
-        /// the <paramref name="Matrix"/> is not touched (can be null);
-        /// </param>
-        /// <remarks>
-        /// The operator assembly must be finalized before by calling
-        /// <see cref="Commit"/> before this method can be called.
-        /// </remarks>
-        /// <param name="edgeRule">
-        /// Quadrature rule and domain for edge integration; specifying this is exclusive with <paramref name="edgeQuadScheme"/>, i.e. both cannot be unequal null at the same time.
-        /// </param>
-        /// <param name="edgeQuadScheme">
-        /// Quadrature scheme for edge integration; specifying this is exclusive with <paramref name="edgeRule"/>, i.e. both cannot be unequal null at the same time.
-        /// </param>
-        /// <param name="volRule">
-        /// Quadrature rule and domain for volume integration; specifying this is exclusive with <paramref name="volQuadScheme"/>, i.e. both cannot be unequal null at the same time.
-        /// </param>
-        /// <param name="volQuadScheme">
-        /// Quadrature scheme for volume integration; specifying this is exclusive with <paramref name="volRule"/>, i.e. both cannot be unequal null at the same time.
-        /// </param>
-        /// <param name="SubGridBoundaryMask">
-        /// </param>
-        /// <param name="ParameterMPIExchange">
-        /// Determines whether parameter fields have to exchange ghost cell
-        /// data before the assembly of the operator.
-        /// </param>
-        /// <param name="time"></param>
-        virtual public void ComputeMatrixEx<M, V>(
-            UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap,
-            M Matrix, V AffineOffset,bool OnlyAffine = false,
-            double time = 0.0, 
-            EdgeQuadratureScheme edgeQuadScheme = null, CellQuadratureScheme volQuadScheme = null,
-            ICompositeQuadRule<QuadRule> edgeRule = null, ICompositeQuadRule<QuadRule> volRule = null,
-            BitArray SubGridBoundaryMask = null,
-            bool ParameterMPIExchange = true)
-            where M : IMutableMatrix
-            where V : IList<double> //
-        {
-            //
-
-            if(edgeQuadScheme != null && edgeRule != null)
-                throw new ArgumentException();
-            if(volQuadScheme != null && volRule != null)
-                throw new ArgumentException();
-
-            //if (edgeQrCtx == null)
-            //    edgeQrCtx = new EdgeQuadratureScheme(true);
-
-            var GridDat = CheckArguments(DomainMap, Parameters, CodomainMap);
-
-            int order = 0;
-            if(edgeRule == null || volRule == null) 
-                order = this.GetOrderFromQuadOrderFunction(DomainMap, Parameters, CodomainMap);
-            
-            if(edgeRule == null)
-                edgeRule = edgeQuadScheme.SaveCompile(GridDat, order);
-            if(volRule == null)
-                volRule = volQuadScheme.SaveCompile(GridDat, order);
-
-            Internal_ComputeMatrixEx(GridDat, DomainMap, Parameters, CodomainMap, Matrix, AffineOffset, OnlyAffine, time,
-                edgeRule,
-                volRule,
-                SubGridBoundaryMask, ParameterMPIExchange);
-        }
-        */
-
-        /*
-        /// <summary>
-        /// An important special case of <see cref="ComputeMatrixEx{M,V}"/>, in order to compute only
-        /// the affine offset.
-        /// </summary>
-        /// <typeparam name="V"></typeparam>
-        /// <param name="DomainMap">Domain mapping - needs to be given to determine quadrature order.</param>
-        /// <param name="Parameters">Parameter variables</param>        
-        /// <param name="CodomainMap">Codomain Basis</param>
-        /// <param name="AffineOffset">Output</param>
-        /// <param name="OnlyBoundaryEdges">
-        /// If true, integration is only carried out on the boundary edges of the 
-        /// computational domain. regarding the affine offset, this covers most application scenarios
-        /// </param>
-        /// <param name="edgeQr">
-        /// Quadrature instruction for edge integrals: if specified (not null), <paramref name="OnlyBoundaryEdges"/> must be false.
-        /// </param>
-        /// <param name="volQr">
-        /// Quadrature instruction for volume integrals: if specified (not null), <paramref name="OnlyBoundaryEdges"/> must be false.
-        /// </param>
-        /// <param name="time"></param>
-        virtual public void ComputeAffine<V>(UnsetteledCoordinateMapping DomainMap,
-            IList<DGField> Parameters,
-            UnsetteledCoordinateMapping CodomainMap,
-            V AffineOffset,
-            bool OnlyBoundaryEdges = true, double time = 0.0,
-            EdgeQuadratureScheme edgeQr = null, CellQuadratureScheme volQr = null)
-            where V : IList<double> {
-
-            var GridDat = CodomainMap.GridDat;
-            if (Parameters != null)
-                foreach (var prm in Parameters)
-                    if (!object.ReferenceEquals(prm.GridDat, GridDat))
-                        throw new ArgumentException(string.Format("parameter field {0} is assigned to a different grid.", prm.Identification));
-
-            //Using order zero for DomainMap will lead to inconsistent (and possibly insufficient) quadrature order!!! 
-            //UnsetteledCoordinateMapping DomainMap;
-            //Basis b = new Basis(GridDat, 0);
-            //Basis[] B = new Basis[this.DomainVar.Count];
-            //B.SetAll(b);
-            //DomainMap = new UnsetteledCoordinateMapping(B);
-
-
-            if (OnlyBoundaryEdges) {
-                if (edgeQr != null)
-                    throw new ArgumentException("If 'OnlyBoundaryEdges == true', 'edgeQr' must be null!", "edgeQr");
-                if (volQr != null)
-                    throw new ArgumentException("If 'OnlyBoundaryEdges == true', 'volQr' must be null!", "volQr");
-
-                volQr = new CellQuadratureScheme(true, CellMask.GetEmptyMask(GridDat));
-                edgeQr = new EdgeQuadratureScheme(true, GridDat.GetBoundaryEdgeMask());
-            }
-
-            this.ComputeMatrixEx(
-                DomainMap, Parameters, CodomainMap,
-                default(MsrMatrix), AffineOffset,
-                OnlyAffine: true, time:time,
-                volQuadScheme: volQr, edgeQuadScheme: edgeQr);
-        }
-        */
-
-
-
 
         /// <summary>
         /// for some codomain variable <paramref name="CodomVar"/>,
@@ -886,7 +703,7 @@ namespace BoSSS.Foundation {
 
 
         /// <summary>
-        /// constructs a new Instance of <see cref="Evaluator"/>
+        /// constructs a new evaluator object for explicit evaluation this spatial operator
         /// </summary>
         /// <returns></returns>
         /// <remarks>
@@ -909,14 +726,6 @@ namespace BoSSS.Foundation {
         /// </param>
         /// <param name="edgeQrCtx">optional quadrature instruction for edges</param>
         /// <param name="volQrCtx">optional quadrature instruction for volumes/cells</param>
-        /// <param name="subGridBoundaryTreatment">
-        /// Optional definition of the treatment of edges at the boundary of a
-        /// <see cref="SubGrid"/>. By default, they will be treated as boundary
-        /// edges (see
-        /// <see cref="SubGridBoundaryModes.BoundaryEdge"/>)
-        /// </param>
-        /// <param name="sgrd">
-        /// </param>
         public virtual IEvaluatorNonLin GetEvaluatorEx(
             IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
             EdgeQuadratureScheme edgeQrCtx = null,
