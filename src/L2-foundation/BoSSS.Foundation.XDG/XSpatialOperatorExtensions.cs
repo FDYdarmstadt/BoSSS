@@ -151,31 +151,39 @@ namespace BoSSS.Foundation.XDG {
 
             SpeciesId[] ReqSpecies = SpeciesSchemes.Keys.ToArray();
 
-            int order = xOp.GetOrderFromQuadOrderFunction(DomainMap, Parameters, CodomainMap);
-            var SchemeHelper = lsTrk.GetXDGSpaceMetrics(ReqSpecies, order, 1).XQuadSchemeHelper;
+            //int order = xOp.GetOrderFromQuadOrderFunction(DomainMap, Parameters, CodomainMap);
+            //var SchemeHelper = lsTrk.GetXDGSpaceMetrics(ReqSpecies, order, 1).XQuadSchemeHelper;
 
-            foreach(var SpeciesId in SpeciesSchemes.Keys) {
-                EdgeQuadratureScheme edgeScheme;
-                CellQuadratureScheme cellScheme;
+            //var SpeciesSchemes_out = new Dictionary<SpeciesId, XSpatialOperator.QrSchemPair>();
 
-                var qrSchemes = SpeciesSchemes[SpeciesId];
+            //foreach(var SpeciesId in SpeciesSchemes.Keys) {
+            //    EdgeQuadratureScheme edgeScheme;
+            //    CellQuadratureScheme cellScheme;
 
-                bool AssembleOnFullGrid = (SubGrid == null);
-                if(qrSchemes.EdgeScheme == null) {
-                    edgeScheme = SchemeHelper.GetEdgeQuadScheme(SpeciesId, AssembleOnFullGrid, SubGridEdgeMask);
-                } else {
-                    //edgeScheme = qrSchemes.EdgeScheme;
-                    throw new ArgumentException();
-                }
+            //    var qrSchemes = SpeciesSchemes[SpeciesId];
 
-                if(qrSchemes.CellScheme == null) {
-                    cellScheme = SchemeHelper.GetVolumeQuadScheme(SpeciesId, AssembleOnFullGrid, SubGridCellMask);
-                } else {
-                    //cellScheme = qrSchemes.CellScheme;
-                    throw new ArgumentException();
-                }
+            //    bool AssembleOnFullGrid = (SubGrid == null);
+            //    if(qrSchemes.EdgeScheme == null) {
+            //        edgeScheme = SchemeHelper.GetEdgeQuadScheme(SpeciesId, AssembleOnFullGrid, SubGridEdgeMask);
+            //    } else {
+            //        //edgeScheme = qrSchemes.EdgeScheme;
+            //        //throw new ArgumentException();
+            //    }
 
-            }
+            //    if(qrSchemes.CellScheme == null) {
+            //        cellScheme = SchemeHelper.GetVolumeQuadScheme(SpeciesId, AssembleOnFullGrid, SubGridCellMask);
+            //    } else {
+            //        //cellScheme = qrSchemes.CellScheme;
+            //        throw new ArgumentException();
+            //    }
+
+            //    SpeciesSchemes_out.Add(SpeciesId,
+            //        new XSpatialOperator.QrSchemPair() {
+            //            CellScheme = cellScheme,
+            //            EdgeScheme = edgeScheme
+            //        });
+      
+            //}
 
 
             var ev = xOp.GetMatrixBuilder(lsTrk, DomainMap, Parameters, CodomainMap, SpeciesSchemes);
