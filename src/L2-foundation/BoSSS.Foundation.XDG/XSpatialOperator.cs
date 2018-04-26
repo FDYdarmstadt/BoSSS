@@ -245,14 +245,14 @@ namespace BoSSS.Foundation.XDG {
                             if(qrSchemes.EdgeScheme == null) {
                                 edgeScheme = SchemeHelper.GetEdgeQuadScheme(SpeciesId);// AssembleOnFullGrid, SubGridEdgeMask);
                             } else {
-                                //edgeScheme = qrSchemes.EdgeScheme;
-                                throw new NotSupportedException();
+                                edgeScheme = qrSchemes.EdgeScheme;
+                                //throw new NotSupportedException();
                             }
                             if(qrSchemes.CellScheme == null) {
                                 cellScheme = SchemeHelper.GetVolumeQuadScheme(SpeciesId);//, AssembleOnFullGrid, SubGridCellMask);
                             } else {
-                                //cellScheme = qrSchemes.CellScheme;
-                                throw new NotSupportedException();
+                                cellScheme = qrSchemes.CellScheme;
+                                //throw new NotSupportedException();
                             }
                         }
 
@@ -422,7 +422,7 @@ namespace BoSSS.Foundation.XDG {
             static bool ruleDiagnosis = false;
 
             /// <summary>
-            /// 
+            /// calls all <see cref="ILevelSetEquationComponentCoefficient.CoefficientUpdate(CoefficientSet, CoefficientSet, int[], int)"/> methods
             /// </summary>
             void UpdateLevelSetCoefficients(CoefficientSet csA, CoefficientSet csB) {
                 int[] DomDGdeg = this.DomainMapping.BasisS.Select(b => b.Degree).ToArray();
@@ -446,6 +446,24 @@ namespace BoSSS.Foundation.XDG {
                             }
 
                             ce.CoefficientUpdate(csA, csB, DomDGdeg_cd, CodDGdeg[iCod]);
+                        }
+                    }
+                }
+            }
+            
+            /// <summary>
+            /// calls all <see cref="IEquationComponentSpeciesNotification.SetParameter(string, SpeciesId)"/> methods
+            /// </summary>
+            static void NotifySpecies(SpatialOperator Owner, LevelSetTracker lsTrk, SpeciesId id) {
+                string sNmn = lsTrk.GetSpeciesName(id);
+
+                string[] CodNames = Owner.CodomainVar.ToArray();
+                for (int iCod = 0; iCod < CodNames.Length; iCod++) {
+                    var comps = Owner.EquationComponents[CodNames[iCod]];
+                    foreach(var c in comps) {
+                        if(c is IEquationComponentSpeciesNotification) {
+                            var ce = c as IEquationComponentSpeciesNotification;
+                            ce.SetParameter(sNmn, id);
                         }
                     }
                 }
@@ -581,8 +599,8 @@ namespace BoSSS.Foundation.XDG {
                                     
                                     var builder = SpeciesBulkMtxBuilder[SpeciesId];
                                     builder.OperatorCoefficients = this.SpeciesOperatorCoefficients[SpeciesId];
-                                    
-
+                                    NotifySpecies(builder.Owner, this.m_lsTrk, SpeciesId);
+                                        
                                     if(trx != null) {
                                         trx.TransceiveFinish();
                                         trx = null;
@@ -590,10 +608,11 @@ namespace BoSSS.Foundation.XDG {
 
                                     builder.time = base.time;
 
-                                    if(OnlyAffine)
+                                    if (OnlyAffine) {
                                         builder.ComputeAffine(vec);
-                                    else
+                                    } else {
                                         builder.ComputeMatrix(_mtx, vec);
+                                    }
                                 }
 
                             }
