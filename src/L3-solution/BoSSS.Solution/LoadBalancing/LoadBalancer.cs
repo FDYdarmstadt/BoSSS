@@ -155,10 +155,10 @@ namespace BoSSS.Solution {
                     break;
 
                 case GridPartType.Hilbert:
-                    return app.Grid.ComputePartitionHilbert(cellCosts,0);
+                    return app.Grid.ComputePartitionHilbert(localcellCosts:cellCosts, Functype: 0);
 
                 case GridPartType.directHilbert:
-                    return app.Grid.ComputePartitionHilbert(cellCosts,1);
+                    return app.Grid.ComputePartitionHilbert(localcellCosts:cellCosts, Functype:1);
 
                 case GridPartType.none:
                     result = IndexBasedPartition(cellCosts.Single());
