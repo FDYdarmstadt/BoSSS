@@ -1147,8 +1147,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         protected double penalty(int jCellIn, int jCellOut) {
 
             double muFactor = 1.0;
-            double penaltySizeFactor_A = 1.0 / this.m_InterLen[jCellIn];
-            double penaltySizeFactor_B = jCellOut >= 0 ? 1.0 / this.m_InterLen[jCellOut] : 0;
+            double penaltySizeFactor_A = (this.m_InterLen[jCellIn] > 0) ? 1.0 / this.m_InterLen[jCellIn] : 0;
+            double penaltySizeFactor_B = (jCellOut >= 0 && this.m_InterLen[jCellOut] > 0) ? 1.0 / this.m_InterLen[jCellOut] : 0;
             Debug.Assert(!double.IsNaN(penaltySizeFactor_A));
             Debug.Assert(!double.IsNaN(penaltySizeFactor_B));
             Debug.Assert(!double.IsInfinity(penaltySizeFactor_A));
@@ -1382,7 +1382,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
     /// <summary>
     /// additional dynamic part - surface rate of deformation, transposed term (according to the Boussinesq-Scriven model) - for the surface stress tensor
     /// </summary>
-    public class BoussinesqScriven_ShearViscosity_GradUTranspose : SurfaceFluxBase {
+    public class BoussinesqScriven_SurfaceDeformationRate_GradUTranspose : SurfaceFluxBase {
 
 
         /// <summary>
@@ -1391,7 +1391,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         double m_muI;
 
 
-        public BoussinesqScriven_ShearViscosity_GradUTranspose(int d, double mu_I, double penalty) {
+        public BoussinesqScriven_SurfaceDeformationRate_GradUTranspose(int d, double mu_I, double penalty) {
             m_comp = d;
             m_muI = mu_I;
             m_penalty = penalty;

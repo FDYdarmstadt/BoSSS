@@ -341,7 +341,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             XNSE_Control C = new XNSE_Control();
 
 
-            //_DbPath = @"D:\local\local_Testcase_databases\Testcase_RisingBubble";
+            _DbPath = @"D:\local\local_Testcase_databases\Testcase_RisingBubble";
             //_DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
 
 
@@ -551,7 +551,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #endregion
 
 
-            C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
+            C.Option_LevelSetEvolution = LevelSetEvolution.ExtensionVelocity;
 
 
             // misc. solver options
@@ -581,7 +581,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 1;
 
 
-            C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.FullBoussinesqScriven;
+            C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.Isotropic;
             C.PhysicalParameters.mu_I = 1 * sigma;
             C.PhysicalParameters.lambda_I = 2 * sigma;
 
@@ -605,11 +605,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.CompMode = AppControl._CompMode.Transient;
 
-            double dt = 1e-3;
+            double dt = 3e-3;
             C.dtMax = dt;
             C.dtMin = dt;
-            C.NoOfTimesteps = 3000;
-            C.saveperiod = 10;
+            C.NoOfTimesteps = 1000;
+            C.saveperiod = 1;
 
 
             #endregion
