@@ -516,30 +516,32 @@ namespace CNS {
             "riemannDensity",
             VariableTypes.Other,
             delegate (DGField field, CellMask cellMask, IProgram<CNSControl> program) {
-                // ### Initial conditions ###
-                double densityLeft = 1.0;
-                double densityRight = 0.125;
-                double pressureLeft = 1.0;
-                double pressureRight = 0.1;
-                double velocityLeft = 0.0;
-                double velocityRight = 0.0;
-                double discontinuityPosition = 0.5;
+                if (program.TimeStepper != null) {
+                    // ### Initial conditions ###
+                    double densityLeft = 1.0;
+                    double densityRight = 0.125;
+                    double pressureLeft = 1.0;
+                    double pressureRight = 0.1;
+                    double velocityLeft = 0.0;
+                    double velocityRight = 0.0;
+                    double discontinuityPosition = 0.5;
 
-                Material material = new Material(program.Control);
-                StateVector stateLeft = StateVector.FromPrimitiveQuantities(
-                    material, densityLeft, new Vector3D(velocityLeft, 0.0, 0.0), pressureLeft);
-                StateVector stateRight = StateVector.FromPrimitiveQuantities(
-                    material, densityRight, new Vector3D(velocityRight, 0.0, 0.0), pressureRight);
+                    Material material = new Material(program.Control);
+                    StateVector stateLeft = StateVector.FromPrimitiveQuantities(
+                        material, densityLeft, new Vector3D(velocityLeft, 0.0, 0.0), pressureLeft);
+                    StateVector stateRight = StateVector.FromPrimitiveQuantities(
+                        material, densityRight, new Vector3D(velocityRight, 0.0, 0.0), pressureRight);
 
-                var riemannSolver = new ExactRiemannSolver(stateLeft, stateRight, new Vector3D(1.0, 0.0, 0.0));
-                double pStar, uStar;
-                riemannSolver.GetStarRegionValues(out pStar, out uStar);
-                field.Clear();
-                field.ProjectFunction(1.0,
-                    (X, U, j) => riemannSolver.GetState(pStar, uStar, X[0] - discontinuityPosition, 0.25).Density,
-                    new CellQuadratureScheme(true, cellMask),
-                    program.WorkingSet.ConservativeVariables
-                    );
+                    var riemannSolver = new ExactRiemannSolver(stateLeft, stateRight, new Vector3D(1.0, 0.0, 0.0));
+                    double pStar, uStar;
+                    riemannSolver.GetStarRegionValues(out pStar, out uStar);
+                    field.Clear();
+                    field.ProjectFunction(1.0,
+                        (X, U, j) => riemannSolver.GetState(pStar, uStar, X[0] - discontinuityPosition, program.TimeStepper.Time).Density,
+                        new CellQuadratureScheme(true, cellMask),
+                        program.WorkingSet.ConservativeVariables
+                        );
+                }
             });
     }
 }
