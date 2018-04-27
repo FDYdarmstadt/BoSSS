@@ -93,6 +93,11 @@ namespace BoSSS.Application.IBM_Solver {
         /// </summary>
         exp_multigrid = 11,
 
+        /// <summary>
+        /// ILU decomposition with modification for saddle-point (highly experimental)
+        /// </summary>
+        exp_ILU = 12,
+
     }
 
 }
