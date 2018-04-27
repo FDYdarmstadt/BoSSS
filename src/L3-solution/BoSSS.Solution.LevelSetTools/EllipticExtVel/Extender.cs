@@ -256,10 +256,22 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
                 OpMatrix_interface,
                 OpAffine_interface,
                 OnlyAffine: false,
-                time:0,
-                MPIParameterExchange:false,
+                time: 0,
+                MPIParameterExchange: false,
                 whichSpc: LevelSetTracker.GetSpeciesId("A")
                 );
+
+            //var MtxBuilder = Operator_interface.GetMatrixBuilder(
+            //    LevelSetTracker,
+            //    Extension.Mapping,
+            //    InterfaceParams,
+            //    Extension.Mapping,
+            //    LevelSetTracker.GetSpeciesId("A"));
+
+            //foreach(SpeciesId s in LevelSetTracker.SpeciesIdS) {
+            //    MtxBuilder.SpeciesOperatorCoefficients[s].CellLengthScales = LevelSetTracker.GetXDGSpaceMetrics
+            //}
+
 #if DEBUG
             OpMatrix_bulk.CheckForNanOrInfM();
             OpAffine_bulk.CheckForNanOrInfV();

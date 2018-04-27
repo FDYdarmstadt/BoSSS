@@ -171,6 +171,31 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
+        /// create a matrix from this operator
+        /// </summary>
+        public XEvaluatorLinear GetMatrixBuilder(
+            LevelSetTracker lsTrk,
+            UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, 
+            params SpeciesId[] whichSpecies
+            ) {
+
+            Dictionary<SpeciesId, QrSchemPair> SpeciesSchemes = new Dictionary<SpeciesId, QrSchemPair>();
+            if(whichSpecies == null | whichSpecies.Length <= 0) {
+                foreach(var s in lsTrk.SpeciesIdS) {
+                    SpeciesSchemes.Add(s, new QrSchemPair());
+                }
+            } else {
+                foreach(var s in whichSpecies) {
+                    SpeciesSchemes.Add(s, new QrSchemPair());
+                }
+            }
+
+            return new XEvaluatorLinear(this, lsTrk, DomainVarMap, ParameterMap, CodomainVarMap, 
+                1, // based on actual level-set tracker state
+                SpeciesSchemes);
+        }
+
+        /// <summary>
         /// explicit evaluation of the operator
         /// </summary>
         public XEvaluatorNonlin GetEvaluatorEx(
@@ -442,7 +467,9 @@ namespace BoSSS.Foundation.XDG {
                                                              lsTrk, iLevSet, new Tuple<SpeciesId, SpeciesId>(SpeciesA, SpeciesB),
                                                              rule);
                             MtxBuilder.time = time;
-                            UpdateLevelSetCoefficients(this.SpeciesOperatorCoefficients[SpeciesA], this.SpeciesOperatorCoefficients[SpeciesB]);
+                            this.SpeciesOperatorCoefficients.TryGetValue(SpeciesA, out var csA);
+                            this.SpeciesOperatorCoefficients.TryGetValue(SpeciesB, out var csB);
+                            UpdateLevelSetCoefficients(csA, csB);
                             MtxBuilder.Execute();
 
 #if DEBUG
