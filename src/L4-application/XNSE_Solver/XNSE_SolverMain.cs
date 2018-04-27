@@ -65,14 +65,15 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
         static void Main(string[] args) {
-            //Tests.UnitTest.TestFixtureSetUp();
+            Tests.UnitTest.TestFixtureSetUp();
             //Tests.UnitTest.TestRisingBubble();
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.TestRayleighTaylorInstability();
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ChannelTest(3, 0.0d, ViscosityMode.Standard, 0.0d);
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.PolynomialTestForConvectionTest(3, 0, false);
             //Tests.UnitTest.MovingDropletTest(2, 0.01d, true, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, 0.69711d, ViscosityMode.Standard, true, false);
-            //Tests.UnitTest.TestFixtureTearDown();
-            //return;
+            BoSSS.Application.XNSE_Solver.Tests.UnitTest.BcTest_PressureOutletTest(1, 0, true);
+            Tests.UnitTest.TestFixtureTearDown();
+            return;
          
 
             //Tests.ElementalTestProgramm.Init();

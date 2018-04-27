@@ -29,7 +29,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Pressure {
     /// <summary>
     /// pressure gradient, bulk phase, by central differences
     /// </summary>
-    public class PressureInBulk : PressureGradientLin_d {
+    public class PressureInBulk : PressureGradientLin_d, IEquationComponentSpeciesNotification {
 
         public PressureInBulk(int _d, IncompressibleMultiphaseBoundaryCondMap bcMap)
             : base(_d, bcMap) {
@@ -39,21 +39,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Pressure {
 
         IncompressibleMultiphaseBoundaryCondMap m_bcMap;
 
-
-        //public void SetParameter(string speciesName, SpeciesId SpcId) {
-        //    switch (speciesName) {
-        //        case "A": oneOverRho = 1.0 / m_rhoA; SetBndfunction("A"); break;
-        //        case "B": oneOverRho = 1.0 / m_rhoB; SetBndfunction("B"); break;
-        //    default: throw new ArgumentException("Unknown species.");
-        //    }
-        //}
-
-
-        void SetBndfunction(string S) {
-            base.pressureFunction = this.m_bcMap.bndFunction[VariableNames.Pressure + "#" + S];
-        }
-
-
+        
 
 
         protected override double BorderEdgeFlux(ref Foundation.CommonParamsBnd inp, double[] Uin) {
@@ -105,6 +91,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.Pressure {
             //    default:
             //    throw new NotImplementedException();
             //}
+        }
+
+        public void SetParameter(string speciesName, SpeciesId SpcId) {
+            base.pressureFunction = this.m_bcMap.bndFunction[VariableNames.Pressure + "#" + speciesName];
         }
     }
 }
