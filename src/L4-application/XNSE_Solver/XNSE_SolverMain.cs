@@ -2631,71 +2631,72 @@ namespace BoSSS.Application.XNSE_Solver {
 
             int DesiredLevel_j = CurrentLevel;
 
-            if (near.Contains(j)) {
-
-                DesiredLevel_j = this.Control.RefinementLevel;
+            if(near.Contains(j)) {
+                if(CurrentLevel < this.Control.RefinementLevel)
+                    DesiredLevel_j += 1;
 
             } else {
-                DesiredLevel_j = 0;
+                if(CurrentLevel > 0)
+                    DesiredLevel_j -= 1;
+                //DesiredLevel_j = 0;
             }
 
+            return DesiredLevel_j;
 
             //if (ccm.Contains(j)) {
 
-                //if (DesiredLevel_j < minRefineLevelLS) {
-                //    // set minimum refinement level for the interface
-                //    DesiredLevel_j = minRefineLevelLS;
+            //if (DesiredLevel_j < minRefineLevelLS) {
+            //    // set minimum refinement level for the interface
+            //    DesiredLevel_j = minRefineLevelLS;
 
-                //} else {
-                //    // further localized refinement
+            //} else {
+            //    // further localized refinement
 
-                //    // check for high curvature
-                //    int DesiredLevelj_highCurv = DesiredLevel_j;
-                //    this.Curvature.GetExtremalValuesInCell(out double curv_jMin, out double curv_jMax, j);
-                //    if ((curv_jMax >= curv_max || Math.Abs(curv_jMin) >= curv_max) && DesiredLevel_j < maxRefineLevelLS) {
-                //        DesiredLevelj_highCurv++;
-                //    } else if ((curv_jMax < curv_max / 2) || (Math.Abs(curv_jMin) < curv_max / 2)) {
-                //        DesiredLevelj_highCurv--;
-                //    }
+            //    // check for high curvature
+            //    int DesiredLevelj_highCurv = DesiredLevel_j;
+            //    this.Curvature.GetExtremalValuesInCell(out double curv_jMin, out double curv_jMax, j);
+            //    if ((curv_jMax >= curv_max || Math.Abs(curv_jMin) >= curv_max) && DesiredLevel_j < maxRefineLevelLS) {
+            //        DesiredLevelj_highCurv++;
+            //    } else if ((curv_jMax < curv_max / 2) || (Math.Abs(curv_jMin) < curv_max / 2)) {
+            //        DesiredLevelj_highCurv--;
+            //    }
 
-                //    //double mean_curv = Math.Abs(this.Curvature.GetMeanValue(j));
-                //    //if ((mean_curv >= curv_max) && CurrentLevel < maxRefineLevelLS)
-                //    //    DesiredLevel_j = CurrentLevel + 1;
+            //    //double mean_curv = Math.Abs(this.Curvature.GetMeanValue(j));
+            //    //if ((mean_curv >= curv_max) && CurrentLevel < maxRefineLevelLS)
+            //    //    DesiredLevel_j = CurrentLevel + 1;
 
-                //    // check for small cut cells
-                //    int DesiredLevelj_agglom = DesiredLevel_j;
-                //    double cellVol = this.GridData.Cells.GetCellVolume(j);
-                //    var spcIds = this.LsTrk.SpeciesIdS.ToArray();
-                //    double ratioVolSpcMin = 1.0;
-                //    foreach (SpeciesId spc in this.LsTrk.SpeciesIdS) {
-                //        double cellVolSpc = this.LsTrk.GetXDGSpaceMetrics(spcIds, m_HMForder, 1).CutCellMetrics.CutCellVolumes[spc][j];
-                //        double ratioVolSpc = cellVolSpc / cellVol;
-                //        if (ratioVolSpc < ratioVolSpcMin)
-                //            ratioVolSpcMin = ratioVolSpc;
-                //    }
-                //    double thrshld = this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold;
-                //    if (ratioVolSpcMin < thrshld && DesiredLevel_j < maxRefineLevelLS) {
-                //        DesiredLevelj_agglom++;
-                //    } else if (ratioVolSpcMin > 4 * thrshld) {
-                //        DesiredLevelj_agglom--;
-                //    }
+            //    // check for small cut cells
+            //    int DesiredLevelj_agglom = DesiredLevel_j;
+            //    double cellVol = this.GridData.Cells.GetCellVolume(j);
+            //    var spcIds = this.LsTrk.SpeciesIdS.ToArray();
+            //    double ratioVolSpcMin = 1.0;
+            //    foreach (SpeciesId spc in this.LsTrk.SpeciesIdS) {
+            //        double cellVolSpc = this.LsTrk.GetXDGSpaceMetrics(spcIds, m_HMForder, 1).CutCellMetrics.CutCellVolumes[spc][j];
+            //        double ratioVolSpc = cellVolSpc / cellVol;
+            //        if (ratioVolSpc < ratioVolSpcMin)
+            //            ratioVolSpcMin = ratioVolSpc;
+            //    }
+            //    double thrshld = this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold;
+            //    if (ratioVolSpcMin < thrshld && DesiredLevel_j < maxRefineLevelLS) {
+            //        DesiredLevelj_agglom++;
+            //    } else if (ratioVolSpcMin > 4 * thrshld) {
+            //        DesiredLevelj_agglom--;
+            //    }
 
-                //    // check for a change of sign in the curvature
-                //    int DesiredLevelj_inflection = DesiredLevel_j;
-                //    //this.Curvature.GetExtremalValuesInCell(out double curv_jMin, out double curv_jMax, j);
-                //    if (Math.Sign(curv_jMin) != Math.Sign(curv_jMax) && DesiredLevel_j < maxRefineLevelLS) 
-                //        DesiredLevelj_inflection++;
+            //    // check for a change of sign in the curvature
+            //    int DesiredLevelj_inflection = DesiredLevel_j;
+            //    //this.Curvature.GetExtremalValuesInCell(out double curv_jMin, out double curv_jMax, j);
+            //    if (Math.Sign(curv_jMin) != Math.Sign(curv_jMax) && DesiredLevel_j < maxRefineLevelLS) 
+            //        DesiredLevelj_inflection++;
 
-                //    DesiredLevel_j = (new int[] { DesiredLevelj_highCurv, DesiredLevelj_agglom, DesiredLevelj_inflection }).Max();
+            //    DesiredLevel_j = (new int[] { DesiredLevelj_highCurv, DesiredLevelj_agglom, DesiredLevelj_inflection }).Max();
 
-                //}
+            //}
 
             //} else {
             //    // non cut cells don't need to be refined
             //    DesiredLevel_j = 0;
             //}
-
-            return DesiredLevel_j;
 
         }
 
