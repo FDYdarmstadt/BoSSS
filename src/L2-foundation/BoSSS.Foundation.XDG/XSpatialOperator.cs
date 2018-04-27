@@ -107,11 +107,19 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// not supported for <see cref="XSpatialOperator"/>, use 
+        /// not supported for <see cref="XSpatialOperator"/>, use <see cref="GetEvaluatorEx(LevelSetTracker, IList{DGField}, IList{DGField}, UnsetteledCoordinateMapping, IDictionary{SpeciesId, QrSchemPair})"/>
         /// </summary>
         public override IEvaluatorNonLin GetEvaluatorEx(IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, EdgeQuadratureScheme edgeQrCtx = null, CellQuadratureScheme volQrCtx = null) {
             throw new NotSupportedException("Use specific implementation for XSpatialOperator.");
         }
+
+        /// <summary>
+        /// hack
+        /// </summary>
+        IEvaluatorNonLin GetEvaluatorExBase(IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, EdgeQuadratureScheme edgeQrCtx = null, CellQuadratureScheme volQrCtx = null) {
+            return base.GetEvaluatorEx(DomainFields, ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
+        }
+
 
         /// <summary>
         /// not supported for <see cref="XSpatialOperator"/>, use specific implementation
@@ -182,12 +190,15 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public class XEvaluatorLinear : XEvaluatorBase, IEvaluatorLinear {
 
+            /// <summary>
+            /// ctor
+            /// </summary>
             internal XEvaluatorLinear(XSpatialOperator ownr,
                 LevelSetTracker lsTrk,
                 UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
                 int TrackerHistory,
                 IDictionary<SpeciesId, QrSchemPair> __SpeciesSchemes) :
-                base(ownr, lsTrk, DomainVarMap, ParameterMap, CodomainVarMap, TrackerHistory, __SpeciesSchemes) //
+                base(ownr, lsTrk, DomainVarMap, null, ParameterMap, CodomainVarMap, TrackerHistory, __SpeciesSchemes) //
             {
                 using(var tr = new FuncTrace()) {
                     base.MPITtransceive = true;
@@ -200,7 +211,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// creates a matrix builder
             /// </summary>
-            protected override void ctorSpeciesIntegrator(SpeciesId SpeciesId, CellQuadratureScheme cellScheme, EdgeQuadratureScheme edgeScheme, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params) {
+            protected override void ctorSpeciesIntegrator(SpeciesId SpeciesId, CellQuadratureScheme cellScheme, EdgeQuadratureScheme edgeScheme, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params, DGField[] DomFld) {
                 var BulkMtxBuilder = base.m_Xowner.GetMatrixBuilderBase(DomainFrame.FrameMap, Params, CodomFrame.FrameMap,
                                 edgeScheme, cellScheme);
                 Debug.Assert(((EvaluatorBase)BulkMtxBuilder).order == base.order);
@@ -211,7 +222,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// creates a matrix builder
             /// </summary>
-            protected override void ctorGhostSpeciesIntegrator(SpeciesId SpeciesId, CellQuadratureScheme nullvolumeScheme, EdgeQuadratureScheme ghostEdgeScheme, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params) {
+            protected override void ctorGhostSpeciesIntegrator(SpeciesId SpeciesId, CellQuadratureScheme nullvolumeScheme, EdgeQuadratureScheme ghostEdgeScheme, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params, DGField[] DomFld) {
                 Debug.Assert(m_Xowner.GhostEdgesOperator.TotalNoOfComponents > 0);
                 
                 var GhostEdgeBuilder = m_Xowner.GhostEdgesOperator.GetMatrixBuilder(DomainFrame.FrameMap, Params, CodomFrame.FrameMap,
@@ -225,7 +236,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// creates a matrix builder
             /// </summary>
-            protected override void ctorSurfaceElementSpeciesIntegrator(SpeciesId SpeciesId, CellQuadratureScheme SurfaceElement_volume, EdgeQuadratureScheme SurfaceElement_Edge, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params) {
+            protected override void ctorSurfaceElementSpeciesIntegrator(SpeciesId SpeciesId, CellQuadratureScheme SurfaceElement_volume, EdgeQuadratureScheme SurfaceElement_Edge, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params, DGField[] DomFld) {
                 Debug.Assert(m_Xowner.SurfaceElementOperator.TotalNoOfComponents > 0);
 
                 var SurfElmBuilder = m_Xowner.SurfaceElementOperator.GetMatrixBuilder(DomainFrame.FrameMap, Params, CodomFrame.FrameMap, SurfaceElement_Edge, SurfaceElement_volume);
@@ -266,7 +277,8 @@ namespace BoSSS.Foundation.XDG {
                 where M : IMutableMatrixEx
                 where V : IList<double> // 
             {
-                MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
+                if(base.MPITtransceive == true)
+                    MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
                 using(var tr = new FuncTrace()) {
                     var lsTrk = base.m_lsTrk;
                     IGridData GridDat = lsTrk.GridDat;
@@ -385,7 +397,7 @@ namespace BoSSS.Foundation.XDG {
                                 
                                 if(SpeciesBuilder.ContainsKey(SpeciesId)) {
                                     
-                                    var builder = SpeciesBulkMtxBuilder[SpeciesId];
+                                    var builder = SpeciesBuilder[SpeciesId];
                                     builder.OperatorCoefficients = this.SpeciesOperatorCoefficients[SpeciesId];
                                     NotifySpecies(builder.Owner, this.m_lsTrk, SpeciesId);
                                         
@@ -418,6 +430,10 @@ namespace BoSSS.Foundation.XDG {
                             var SpeciesB = tt.Item3;
                             var rule = tt.Item4;
 
+                            if (trx != null) {
+                                trx.TransceiveFinish();
+                                trx = null;
+                            }
 
                             var MtxBuilder = new LECQuadratureLevelSet<M, V>(GridDat,
                                                              m_Xowner,
@@ -439,64 +455,7 @@ namespace BoSSS.Foundation.XDG {
                         }
 
 
-                        /*
-                        if(m_Xowner.ContainesComponentType(typeof(ILevelSetForm))) {
-
-
-                            var AllSpc = lsTrk.SpeciesIdS;
-
-                            // loop over all possible pairs of species
-                            for(int iSpcA = 0; iSpcA < AllSpc.Count; iSpcA++) {
-                                var SpeciesA = AllSpc[iSpcA];
-                                var SpeciesADom = lsTrk.Regions.GetSpeciesMask(SpeciesA);
-                                if(SpeciesADom.NoOfItemsLocally <= 0)
-                                    continue;
-
-                                int _iSpcA = Array.IndexOf(ReqSpecies, SpeciesA);
-
-                                for(int iSpcB = iSpcA + 1; iSpcB < AllSpc.Count; iSpcB++) {
-                                    var SpeciesB = AllSpc[iSpcB];
-
-                                    int _iSpcB = Array.IndexOf(ReqSpecies, SpeciesB);
-                                    if(_iSpcA < 0 && _iSpcB < 0)
-                                        continue;
-
-                                    var SpeciesBDom = lsTrk.Regions.GetSpeciesMask(SpeciesB);
-                                    var SpeciesCommonDom = SpeciesADom.Intersect(SpeciesBDom);
-
-                                    // Checks removed since they can cause parallel problems
-                                    //if (SpeciesBDom.NoOfItemsLocally <= 0)
-                                    //    continue;
-                                    //if (SpeciesCommonDom.NoOfItemsLocally <= 0)
-                                    //    continue;
-
-
-                                    // loop over level-sets
-                                    int NoOfLs = lsTrk.LevelSets.Count;
-                                    for(int iLevSet = 0; iLevSet < NoOfLs; iLevSet++) {
-
-                                        var LsDom = lsTrk.Regions.GetCutCellMask4LevSet(iLevSet);
-                                        var IntegrationDom = LsDom.Intersect(SpeciesCommonDom);
-
-                                        // Check removed since it can cause parallel problems
-                                        //if (IntegrationDom.NoOfItemsLocally > 0) {
-
-                                        ICompositeQuadRule<QuadRule> rule;
-                                        using(new BlockTrace("QuadRule-compilation", tr)) {
-                                            CellQuadratureScheme SurfIntegration = SchemeHelper.GetLevelSetquadScheme(iLevSet, IntegrationDom);
-                                            rule = SurfIntegration.Compile(GridDat, order);
-
-                                            if(ruleDiagnosis) {
-                                                rule.SumOfWeightsToTextFileVolume(GridDat, string.Format("Levset_{0}.csv", iLevSet));
-                                            }
-                                        }
-
-
-                                        //}
-                                    }
-                                }
-                            }
-                        }*/
+                        
                     }
 
                     // allow all processes to catch up
@@ -505,7 +464,7 @@ namespace BoSSS.Foundation.XDG {
                         trx.TransceiveFinish();
                         trx = null;
                     }
-                    csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+                    
 
                 }
             }
@@ -520,14 +479,34 @@ namespace BoSSS.Foundation.XDG {
 
         public class XEvaluatorNonlin : XEvaluatorBase, IEvaluatorNonLin {
 
+            CoordinateMapping m_DomainVarMap;
+
+            private CoordinateMapping sdvm(CoordinateMapping dvm) {
+                m_DomainVarMap = dvm;
+                return dvm;
+            }
+
             internal XEvaluatorNonlin(XSpatialOperator ownr,
                 LevelSetTracker lsTrk,
                 CoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
                 int TrackerHistory,
                 IDictionary<SpeciesId, QrSchemPair> __SpeciesSchemes) :
-                base(ownr, lsTrk, DomainVarMap, ParameterMap, CodomainVarMap, TrackerHistory, __SpeciesSchemes) {
+                base(ownr, lsTrk, DomainVarMap, DomainVarMap.Fields, ParameterMap, CodomainVarMap, TrackerHistory, __SpeciesSchemes) {
                 this.DomainFields = DomainVarMap;
+
+                //foreach(var species in __SpeciesSchemes.Keys) {
+                //    DGField[] DomFields = DomainVarMap.Select(f => ((f is XDGField) ? ((XDGField)f).GetSpeciesShadowField(species) : f)).ToArray();
+                        
+                //}
+
+
             }
+
+            ///// <summary>
+            ///// Domain fields for each species, for <see cref="XDGField"/>s the species shadow, see <see cref="XDGField.GetSpeciesShadowField(SpeciesId)"/>
+            ///// </summary>
+            //protected Dictionary<SpeciesId, DGField[]> SpeciesDomFieleds = new Dictionary<SpeciesId, DGField[]>();
+
 
             /// <summary>
             /// Returns domain fields and parameters.
@@ -543,37 +522,179 @@ namespace BoSSS.Foundation.XDG {
             }
 
             public void Evaluate<Tout>(double alpha, double beta, Tout output, double[] outputBndEdge = null) where Tout : IList<double> {
-                throw new NotImplementedException();
+                if (base.MPITtransceive == true)
+                    MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
+                using (var tr = new FuncTrace()) {
+                    var lsTrk = base.m_lsTrk;
+                    IGridData GridDat = lsTrk.GridDat;
+
+
+                    if (outputBndEdge != null)
+                        throw new NotImplementedException("todo");
+
+                    if (beta != 1.0)
+                        output.ScaleV(beta);
+
+
+                    #region MPI exchange of parameter fields
+                    // --------------------------------
+                    Transceiver trx = base.m_TRX;
+                    if (trx != null) {
+                        trx.TransceiveStartImReturn();
+                    }
+                    #endregion
+
+
+
+
+                    // build matrix, bulk
+                    // ---------------------
+                    //MsrMatrix BulkMatrix = null;
+                    //double[] BulkAffineOffset = null;
+                    using (new BlockTrace("bulk_integration", tr)) {
+
+                        // create the frame matrices & vectors...
+                        // this is an MPI-collective operation, so it must be executed before the program may take different branches...
+                        SpeciesFrameVector<Tout>[] vec_spc = new SpeciesFrameVector<Tout>[ReqSpecies.Length];
+                        for (int i = 0; i < ReqSpecies.Length; i++) {
+                            SpeciesId SpId = ReqSpecies[i];
+                            vec_spc[i] = (new SpeciesFrameVector<Tout>(output, this.SpeciesCodomFrame[SpId]));
+                        }
+
+                        // do the Bulk integration...
+                        foreach (var SpeciesId in ReqSpecies) {
+                            int iSpecies = Array.IndexOf(ReqSpecies, SpeciesId);
+                            var vec = vec_spc[iSpecies];
+
+                            foreach (var SpeciesEval in new[] { SpeciesBulkEval, SpeciesGhostEval, SpeciesSurfElmEval }) {
+
+                                if (SpeciesEval.ContainsKey(SpeciesId)) {
+
+                                    var eval = SpeciesEval[SpeciesId];
+                                    eval.OperatorCoefficients = this.SpeciesOperatorCoefficients[SpeciesId];
+                                    NotifySpecies(eval.Owner, this.m_lsTrk, SpeciesId);
+
+                                    if (trx != null) {
+                                        trx.TransceiveFinish();
+                                        trx = null;
+                                    }
+
+                                    eval.time = base.time;
+
+                                    eval.Evaluate(alpha, 1.0, vec, null);
+                                }
+
+                            }
+                        }
+
+                    }
+
+                    // build matrix, coupling
+                    ///////////////////
+
+                    using (new BlockTrace("surface_integration", tr)) {
+                        foreach (var tt in this.CouplingRules) {
+                            int iLevSet = tt.Item1;
+                            var SpeciesA = tt.Item2;
+                            var SpeciesB = tt.Item3;
+                            var rule = tt.Item4;
+
+                            if (trx != null) {
+                                trx.TransceiveFinish();
+                                trx = null;
+                            }
+
+                            var LsEval = new NECQuadratureLevelSet<Tout>(GridDat,
+                                                             m_Xowner,
+                                                             output,
+                                                             this.DomainFields.Fields, Parameters, base.CodomainMapping,
+                                                             lsTrk, iLevSet, new Tuple<SpeciesId, SpeciesId>(SpeciesA, SpeciesB),
+                                                             rule);
+                            LsEval.time = time;
+                            UpdateLevelSetCoefficients(this.SpeciesOperatorCoefficients[SpeciesA], this.SpeciesOperatorCoefficients[SpeciesB]);
+                            LsEval.Execute();
+
+#if DEBUG
+                            GenericBlas.CheckForNanOrInfV(output);
+#endif
+                        }
+
+
+
+                    }
+
+                    // allow all processes to catch up
+                    // -------------------------------
+                    if (trx != null) {
+                        trx.TransceiveFinish();
+                        trx = null;
+                    }
+                    
+
+                }
             }
 
-            protected override void ctorGhostSpeciesIntegrator(SpeciesId SpeciesId, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params) {
-                throw new NotImplementedException();
-            }
+            
 
             protected override void ctorLevSetFormIntegrator(int iLevSet, SpeciesId SpeciesA, SpeciesId SpeciesB, ICompositeQuadRule<QuadRule> rule) {
                 throw new NotImplementedException();
             }
 
-            protected override void ctorSpeciesIntegrator(SpeciesId SpeciesId, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params) {
-                throw new NotImplementedException();
+            /// <summary>
+            /// creates an evaluator
+            /// </summary>
+            protected override void ctorSpeciesIntegrator(SpeciesId SpeciesId, CellQuadratureScheme cellScheme, EdgeQuadratureScheme edgeScheme, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params, DGField[] DomFld) {
+                var BulkEval = base.m_Xowner.GetEvaluatorExBase(DomFld, base.SpeciesParams[SpeciesId], CodomFrame.FrameMap,
+                                edgeScheme, cellScheme);
+                Debug.Assert(((EvaluatorBase)BulkEval).order == base.order);
+                BulkEval.MPITtransceive = false;
+                SpeciesBulkEval.Add(SpeciesId, BulkEval);
             }
 
-            protected override void ctorSurfaceElementSpeciesIntegrator(SpeciesId SpeciesId, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params) {
-                throw new NotImplementedException();
+            /// <summary>
+            /// creates an evaluator
+            /// </summary>
+            protected override void ctorGhostSpeciesIntegrator(SpeciesId SpeciesId, CellQuadratureScheme nullvolumeScheme, EdgeQuadratureScheme ghostEdgeScheme, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params, DGField[] DomFld) {
+                Debug.Assert(m_Xowner.GhostEdgesOperator.TotalNoOfComponents > 0);
+                
+                var GhostEdgeEval = m_Xowner.GhostEdgesOperator.GetEvaluatorEx(DomFld, Params, CodomFrame.FrameMap,
+                    ghostEdgeScheme, nullvolumeScheme);
+                Debug.Assert(((EvaluatorBase)GhostEdgeEval).order == base.order);
+                GhostEdgeEval.MPITtransceive = false;
+                SpeciesGhostEval.Add(SpeciesId, GhostEdgeEval);
+
             }
+
+            /// <summary>
+            /// creates an evaluator
+            /// </summary>
+            protected override void ctorSurfaceElementSpeciesIntegrator(SpeciesId SpeciesId, CellQuadratureScheme SurfaceElement_volume, EdgeQuadratureScheme SurfaceElement_Edge, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params, DGField[] DomFld) {
+                Debug.Assert(m_Xowner.SurfaceElementOperator.TotalNoOfComponents > 0);
+
+                var SurfElmEval = m_Xowner.SurfaceElementOperator.GetEvaluatorEx(DomFld, Params, CodomFrame.FrameMap, SurfaceElement_Edge, SurfaceElement_volume);
+                Debug.Assert(((EvaluatorBase)SurfElmEval).order == base.order);
+                SurfElmEval.MPITtransceive = false;
+                SpeciesSurfElmEval.Add(SpeciesId, SurfElmEval);
+
+            }
+
+
+            Dictionary<SpeciesId, IEvaluatorNonLin> SpeciesBulkEval = new Dictionary<SpeciesId, IEvaluatorNonLin>();
+            Dictionary<SpeciesId, IEvaluatorNonLin> SpeciesGhostEval = new Dictionary<SpeciesId, IEvaluatorNonLin>();
+            Dictionary<SpeciesId, IEvaluatorNonLin> SpeciesSurfElmEval = new Dictionary<SpeciesId, IEvaluatorNonLin>();
 
             
         }
 
 
         /// <summary>
-        /// Common nase-class for linear/nonlinear evaluation of <see cref="XSpatialOperator"/>
+        /// Common base-class for linear/nonlinear evaluation of <see cref="XSpatialOperator"/>
         /// </summary>
         abstract public class XEvaluatorBase : SpatialOperator.EvaluatorBase {
 
             internal XEvaluatorBase(XSpatialOperator ownr,
                 LevelSetTracker lsTrk,
-                UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
+                UnsetteledCoordinateMapping DomainVarMap, IList<DGField> DomainFields,  IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
                 int TrackerHistory,
                 IDictionary<SpeciesId, QrSchemPair> __SpeciesSchemes) :
                 base(ownr, DomainVarMap, ParameterMap, CodomainVarMap) //
@@ -605,6 +726,13 @@ namespace BoSSS.Foundation.XDG {
                         DGField[] Params = (from f in (Parameters ?? new DGField[0])
                                             select ((f is XDGField) ? ((XDGField)f).GetSpeciesShadowField(SpeciesId) : f)).ToArray<DGField>();
                         SpeciesParams.Add(SpeciesId, Params);
+
+                        DGField[] DomFld;
+                        if (DomainFields != null) {
+                            DomFld = DomainFields.Select(f => (f is XDGField) ? ((XDGField)f).GetSpeciesShadowField(SpeciesId) : f).ToArray();
+                        } else {
+                            DomFld = null;
+                        }
 
                         // species frames
                         // --------------
@@ -646,14 +774,14 @@ namespace BoSSS.Foundation.XDG {
 
 
                         if(m_Xowner.TotalNoOfComponents > 0) {
-                            ctorSpeciesIntegrator(SpeciesId, cellScheme, edgeScheme, DomainFrame, CodomFrame, Params);
+                            ctorSpeciesIntegrator(SpeciesId, cellScheme, edgeScheme, DomainFrame, CodomFrame, Params, DomFld);
                         }
 
                         if(m_Xowner.GhostEdgesOperator.TotalNoOfComponents > 0) {
                             CellQuadratureScheme nullvolumeScheme = new CellQuadratureScheme(false, CellMask.GetEmptyMask(GridData));
                             EdgeQuadratureScheme ghostEdgeScheme = null;
                             ghostEdgeScheme = SchemeHelper.GetEdgeGhostScheme(SpeciesId);//, SubGridEdgeMask);
-                            ctorGhostSpeciesIntegrator(SpeciesId, nullvolumeScheme, ghostEdgeScheme, DomainFrame, CodomFrame, Params);
+                            ctorGhostSpeciesIntegrator(SpeciesId, nullvolumeScheme, ghostEdgeScheme, DomainFrame, CodomFrame, Params, DomFld);
                         }
 
                         if(m_Xowner.SurfaceElementOperator.TotalNoOfComponents > 0) {
@@ -661,7 +789,7 @@ namespace BoSSS.Foundation.XDG {
                             CellQuadratureScheme SurfaceElement_volume;
                             SurfaceElement_Edge = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(SpeciesId);
                             SurfaceElement_volume = SchemeHelper.Get_SurfaceElement_VolumeQuadScheme(SpeciesId);
-                            ctorSurfaceElementSpeciesIntegrator(SpeciesId, SurfaceElement_volume, SurfaceElement_Edge, DomainFrame, CodomFrame, Params);
+                            ctorSurfaceElementSpeciesIntegrator(SpeciesId, SurfaceElement_volume, SurfaceElement_Edge, DomainFrame, CodomFrame, Params, DomFld);
                         }
                     }
 
@@ -752,17 +880,17 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// create integrator for bulk phase
             /// </summary>
-            abstract protected void ctorSpeciesIntegrator(SpeciesId SpeciesId, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params);
+            abstract protected void ctorSpeciesIntegrator(SpeciesId SpeciesId, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params, DGField[] DomFld);
 
             /// <summary>
             /// Create integrator for <see cref="XSpatialOperator.GhostEdgesOperator"/>
             /// </summary>
-            abstract protected void ctorGhostSpeciesIntegrator(SpeciesId SpeciesId, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params);
+            abstract protected void ctorGhostSpeciesIntegrator(SpeciesId SpeciesId, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params, DGField[] DomFld);
  
             /// <summary>
             /// Create integrator for <see cref="XSpatialOperator.SurfaceElementOperator"/>
             /// </summary>
-            abstract protected void ctorSurfaceElementSpeciesIntegrator(SpeciesId SpeciesId, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params);
+            abstract protected void ctorSurfaceElementSpeciesIntegrator(SpeciesId SpeciesId, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params, DGField[] DomFld);
             
             /// <summary>
             /// Create integrator for <see cref="ILevelSetForm"/> components
@@ -793,6 +921,8 @@ namespace BoSSS.Foundation.XDG {
             /// Parameter fields for each species, for <see cref="XDGField"/>s the species shadow, see <see cref="XDGField.GetSpeciesShadowField(SpeciesId)"/>
             /// </summary>
             protected Dictionary<SpeciesId, DGField[]> SpeciesParams = new Dictionary<SpeciesId, DGField[]>();
+ 
+         
 
             /// <summary>
             /// for each species, the frame of the co-domain
