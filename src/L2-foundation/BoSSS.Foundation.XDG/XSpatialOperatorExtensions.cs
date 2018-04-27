@@ -107,7 +107,7 @@ namespace BoSSS.Foundation.XDG {
         {
 
             int order = xOp.GetOrderFromQuadOrderFunction(DomainMap, Parameters, CodomainMap);
-            MultiphaseCellAgglomerator dummy = lsTrk.GetAgglomerator(whichSpc, order, 0.0);
+            MultiphaseCellAgglomerator dummy = lsTrk.GetAgglomerator(lsTrk.SpeciesIdS.ToArray(), order, 0.0);
 
             var bla = new Dictionary<SpeciesId, XSpatialOperator.QrSchemPair>();
             foreach(var sp in whichSpc)
