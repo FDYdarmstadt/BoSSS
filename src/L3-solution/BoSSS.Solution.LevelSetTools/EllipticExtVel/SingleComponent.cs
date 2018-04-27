@@ -58,7 +58,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
 
 
         /// <summary>
-        /// Penalty Term enforcing the duirichlet value at the interface
+        /// Penalty Term enforcing the Dirichlet value at the interface
         /// Note: this Form is written only in terms of uA, since there is no XDG-field involved
         /// </summary>
         /// <param name="inp">inp.ParamsNeg[0] is the Dirichlet value from the parameter-field</param>
