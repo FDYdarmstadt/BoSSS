@@ -88,8 +88,9 @@ LinearSolverCodes[] linSolvers = new LinearSolverCodes[] {
     //LinearSolverCodes.exp_schwarz_Kcycle_directcoarse_overlap,
     //LinearSolverCodes.exp_softgmres_schwarz_Kcycle_directcoarse_overlap,
     //LinearSolverCodes.exp_softgmres_schwarz_directcoarse_overlap,
-    LinearSolverCodes.automatic,
-    //LinearSolverCodes.classic_mumps
+    //LinearSolverCodes.automatic,
+    //LinearSolverCodes.classic_mumps,
+    LinearSolverCodes.exp_multigrid
 };
 int[] ks = new int[] {2,3};
 int re        = 400; 
@@ -280,7 +281,7 @@ C.InitialValues.Add("Phi", GetFormulaObject(InitialValues.Phi));
         C.NoOfMultigridLevels = 2;
         
         // Assign correct names
-        C.SessionName = "DrivenCavity_k2_"+C.NonlinearSolve+"_"+linSolverName+"_J"+grd.NumberOfCells+"_MGLev"+C.NoOfMultigridLevels+"_GMRES_1E-2";
+        C.SessionName = "DrivenCavity_k2_"+C.NonlinearSolve+"_"+linSolverName+"_J"+grd.NumberOfCells+"_MGLev"+C.NoOfMultigridLevels;
         }
 }
 **************
@@ -806,6 +807,8 @@ string docpath    = Path.Combine(CurrentDocDir, SessTab.TableName + ".json");
 // save session table as file: this can be stored in our git 
 // repository
 SessTab.SaveToFile(docpath);
+**************
+==============
 **************
 ==============
 **************
