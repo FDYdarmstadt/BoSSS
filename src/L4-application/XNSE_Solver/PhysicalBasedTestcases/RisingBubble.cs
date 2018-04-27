@@ -336,12 +336,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// <param name="kelem"></param>
         /// <param name="_DbPath"></param>
         /// <returns></returns>
-        public static XNSE_Control RB_BenchmarkTest(int p = 2, int kelem = 20, string _DbPath = null) {
+        public static XNSE_Control RB_BenchmarkTest(int p = 2, int kelem = 10, string _DbPath = null) {
 
             XNSE_Control C = new XNSE_Control();
 
 
-            _DbPath = @"D:\local\local_Testcase_databases\Testcase_RisingBubble";
+            //_DbPath = @"D:\local\local_Testcase_databases\Testcase_RisingBubble";
             //_DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
 
 
@@ -551,7 +551,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #endregion
 
 
-            C.Option_LevelSetEvolution = LevelSetEvolution.ExtensionVelocity;
+            C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
 
 
             // misc. solver options
@@ -588,8 +588,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
             //C.LS_TrackerWidth = 2;
-            //C.AdaptiveMeshRefinement = true;
-            //C.RefinementLevel = 2;
+            C.AdaptiveMeshRefinement = true;
+            C.RefinementLevel = 2;
 
 
             #endregion
