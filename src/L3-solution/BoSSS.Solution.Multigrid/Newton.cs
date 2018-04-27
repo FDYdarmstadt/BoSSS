@@ -67,7 +67,7 @@ namespace BoSSS.Solution.Multigrid {
         /// <summary>
         /// Maximum number of steplength iterations
         /// </summary>
-        public double maxStep = 10;
+        public double maxStep = 30;
 
         /// <summary>
         /// Convergence for Krylov and GMRES iterations
@@ -381,9 +381,7 @@ namespace BoSSS.Solution.Multigrid {
                             ffc = nft * nft;
                             iarm++;
 
-#if DEBUG
                             Console.WriteLine("Step size:  " + lambda + "with Residuum:  " + nft);
-#endif
                         }
                         // transform solution back to 'original domain'
                         // to perform the linearization at the new point...
