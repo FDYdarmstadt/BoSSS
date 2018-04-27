@@ -807,22 +807,34 @@ namespace BoSSS.Foundation {
                         throw new ArgumentException("wrong number of codomain variables provided.");
                     }
 
-                    IEnumerable<Basis> allBasis = DomainVarMap.BasisS;
-                    if (ParameterMap != null) {
-                        allBasis = allBasis.Union(ParameterMap.Select(f => f.Basis));
-                    }
-                    allBasis = allBasis.Union(CodomainVarMap.BasisS);
-                    IGridData grdDat = allBasis.First().GridDat;
-                    foreach (var b in allBasis) {
-                        if (!object.ReferenceEquals(grdDat, b.GridDat)) {
-                            throw new ArgumentException("all fields (domain, parameter, codomain) must be defined on the same grid.");
+                    if (!object.ReferenceEquals(DomainVarMap.GridDat, CodomainVarMap.GridDat))
+                        throw new ArgumentException("Domain and Codomain map must be assigned to the same grid");
+
+                    foreach(var f in Parameters) {
+                        if(f != null) {
+                            if (!object.ReferenceEquals(DomainVarMap.GridDat, f.GridDat))
+                                throw new ArgumentException("Parameter fields, domain and codomain basis must be assigned to the same grid");
                         }
                     }
+
 
                     m_Owner = owner;
                     m_CodomainMapping = CodomainVarMap;
                     m_DomainMapping = DomainVarMap;
                     m_Parameters = (ParameterMap != null) ? ParameterMap.ToArray() : new DGField[0];
+
+
+                    //IEnumerable<Basis> allBasis = DomainVarMap.BasisS;
+                    //if (ParameterMap != null) {
+                    //    allBasis = allBasis.Union(ParameterMap.Select(f => f.Basis));
+                    //}
+                    //allBasis = allBasis.Union(CodomainVarMap.BasisS);
+                    //IGridData grdDat = allBasis.First().GridDat;
+                    //foreach (var b in allBasis) {
+                    //    if (!object.ReferenceEquals(grdDat, b.GridDat)) {
+                    //        throw new ArgumentException("all fields (domain, parameter, codomain) must be defined on the same grid.");
+                    //    }
+                    //}
 
                     if (!m_Owner.IsCommited)
                         throw new ApplicationException("operator assembly must be finalized before by calling 'Commit' before this method can be called.");
@@ -1021,7 +1033,9 @@ namespace BoSSS.Foundation {
             public bool MPITtransceive {
                 get {
                     //return m_TRX != null;
-                    Debug.Assert((m_MPITtransceive == (m_TRX != null)) || (this.GetTrxFields().Length <= 0));
+                    var RealTrxFields = this.GetTrxFields().Where(f => f != null).ToArray();
+
+                    Debug.Assert((m_MPITtransceive == (m_TRX != null)) || (RealTrxFields.Length <= 0));
 
                     return m_MPITtransceive;
                 }
@@ -1031,14 +1045,17 @@ namespace BoSSS.Foundation {
                     //if((m_TRX != null) && (value == true)) {
                     //    ArrayTools.ListEquals(m_TRX.)
                     //}
+                    var RealTrxFields = this.GetTrxFields().Where(f => f != null).ToArray();
 
 
-                    if((m_TRX == null) && (value == true) && (this.GetTrxFields().Length > 0)) {
+
+
+                    if((m_TRX == null) && (value == true) && (RealTrxFields.Length > 0)) {
                         // + + + + + + + + + +
                         // create transceiver
                         // + + + + + + + + + +
 
-                        m_TRX = new Transceiver(GetTrxFields());
+                        m_TRX = new Transceiver(RealTrxFields);
                     } else {
                         // + + + + + + + + + + + + +
                         // no communication required.
