@@ -228,8 +228,8 @@ namespace BoSSS.Solution.TimeStepping {
                     Stack_OpAffine[0] = new double[Stack_u[0].Mapping.LocalLength];
                 }
 
-                Debug.Assert(Stack_OpMatrix[0].InfNorm() == 0);
-                Debug.Assert(Stack_OpAffine[0].L2Norm() == 0);
+                //Debug.Assert(Stack_OpMatrix[0].InfNorm() == 0);
+                //Debug.Assert(Stack_OpAffine[0].L2Norm() == 0);
 
                 Tsc = TSCchain.Last();
 
