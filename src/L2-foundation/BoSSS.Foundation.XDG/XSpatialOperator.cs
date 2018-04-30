@@ -859,6 +859,8 @@ namespace BoSSS.Foundation.XDG {
                                     int NoOfLs = lsTrk.LevelSets.Count;
                                     for(int iLevSet = 0; iLevSet < NoOfLs; iLevSet++) {
 
+                                        
+
                                         var LsDom = lsTrk.Regions.GetCutCellMask4LevSet(iLevSet);
                                         var IntegrationDom = LsDom.Intersect(SpeciesCommonDom);
 
