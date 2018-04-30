@@ -114,11 +114,7 @@ namespace BoSSS.Application.ZwoLsTest {
                 speciesTable[0, 1] = "B"; // Species zwischen den LevelSets
                 speciesTable[1, 0] = "X"; // 'verbotene' Species: sollte in der geg. LevelSet-Konstellation nicht vorkommen!
                 speciesTable[1, 1] = "A"; // linker Rand von A
-                //speciesTable[1, 1] = "A"; // rechter Rand von A
-                //speciesTable[1, 0] = "B"; // Species zwischen den LevelSets
-                //speciesTable[0, 1] = "X"; // 'verbotene' Species: sollte in der geg. LevelSet-Konstellation nicht vorkommen!
-                //speciesTable[0, 0] = "A"; // linker Rand von A
-
+               
                 base.LsTrk = new LevelSetTracker(this.GridData, MomentFittingVariant, 1, speciesTable, Phi0, Phi1);
             }
 
