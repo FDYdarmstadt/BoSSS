@@ -466,6 +466,28 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
+        /// legacy interface
+        /// </summary>
+        static public double[] ComputeAffine(this SpatialOperator op,
+            UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap, double time = 0.0) {
+
+
+            int RowBlkSize = (CodomainMap.MaxTotalNoOfCoordinatesPerCell == CodomainMap.MinTotalNoOfCoordinatesPerCell) ? CodomainMap.MaxTotalNoOfCoordinatesPerCell : 1;
+            int ColBlkSize = (DomainMap.MaxTotalNoOfCoordinatesPerCell == DomainMap.MinTotalNoOfCoordinatesPerCell) ? DomainMap.MaxTotalNoOfCoordinatesPerCell : 1;
+
+            MsrMatrix Matrix = new MsrMatrix(CodomainMap.LocalLength, (int)DomainMap.GlobalCount, RowBlkSize, ColBlkSize);
+
+            double[] RHS = new double[Matrix.RowPartitioning.LocalLength];
+            //ComputeMatrix(op, 
+            //    DomainMap, Parameters, CodomainMap,
+            //    Matrix, dummyRHS,
+            //    false, time, SubGrid);
+            op.ComputeAffine(DomainMap, Parameters, CodomainMap, RHS, false, time);
+
+            return RHS;
+        }
+
+        /// <summary>
         /// Legacy interface
         /// </summary>
         static public IEvaluatorNonLin GetEvaluator(this SpatialOperator op, IList<DGField> DomainVarMap, UnsetteledCoordinateMapping CodomainVarMap) {
