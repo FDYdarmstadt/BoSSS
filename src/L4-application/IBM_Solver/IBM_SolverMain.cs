@@ -507,14 +507,17 @@ namespace BoSSS.Application.IBM_Solver {
             m_LenScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
 
             // create matrix and affine vector:
-             IBM_Op.ComputeMatrixEx(LsTrk,
+            IBM_Op.ComputeMatrixEx(LsTrk,
                 Mapping, Params, Mapping,
                 OpMatrix, OpAffine, false, phystime, true,
                 AgglomeratedCellLengthScales,
                 FluidSpecies);
 
-            m_LenScales = null;
+            
 
+
+            m_LenScales = null;
+            
 #if DEBUG
             if (DelComputeOperatorMatrix_CallCounter == 1) {
                 int[] Uidx = SaddlePointProblemMapping.GetSubvectorIndices(true, D.ForLoop(i => i));
