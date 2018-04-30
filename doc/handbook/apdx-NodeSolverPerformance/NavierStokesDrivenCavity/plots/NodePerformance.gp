@@ -22,7 +22,7 @@ unset x2label
 unset y2label
 unset title 
 unset key
-set key outside right vertical maxrows 8 
+set key outside right vertical maxrows 3 
 set xtics format "$10^{%L}$" 
 set x2tics format " " 
 set ytics format "$10^{%L}$" 
@@ -30,11 +30,7 @@ set y2tics format " "
 set termoption dashed
 set termoption dashed
 set termoption dashed
-set termoption dashed
-set termoption dashed
-set termoption dashed
-set termoption dashed
-plot "NodePerformance_data_0.csv" title "NewtonGmres Automatic MGLevels3" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 6 pointsize 0.5, "NodePerformance_data_1.csv" title "NewtonGmres Swz Kcycle w Coarse Overlap MGLevels3" with linespoints linecolor  "black" dashtype 2 linewidth 3 pointtype 1 pointsize 0.5, "NodePerformance_data_2.csv" title "NewtonGmres unknown MGLevels2" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 6 pointsize 0.5, "NodePerformance_data_3.csv" title "NewtonGmres Swz Kcycle w Coarse Overlap MGLevels2" with linespoints linecolor  "black" dashtype 2 linewidth 3 pointtype 1 pointsize 0.5, "NodePerformance_data_4.csv" title "Picard Mumps MGLevels1" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 10 pointsize 0.5, "NodePerformance_data_5.csv" title "NewtonGmres Automatic MGLevels2" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 6 pointsize 0.5, "NodePerformance_data_6.csv" title "NewtonGmres Mumps MGLevels1" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 10 pointsize 0.5, "NodePerformance_data_7.csv" title "Newton Mumps MGLevels1" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 10 pointsize 0.5
+plot "NodePerformance_data_0.csv" title "NewtonGmres Automatic" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 6 pointsize 0.5, "NodePerformance_data_1.csv" title "NewtonGmres Swz Kcycle w Coarse Overlap" with linespoints linecolor  "black" dashtype 2 linewidth 3 pointtype 1 pointsize 0.5, "NodePerformance_data_2.csv" title "Picard Mumps" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 10 pointsize 0.5
 
 
 exit

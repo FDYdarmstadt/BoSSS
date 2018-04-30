@@ -462,7 +462,7 @@ namespace BoSSS.Solution.Multigrid {
             using (var tr = new FuncTrace()) {
                 int n = f0.Length;
 
-                int reorth = 3; // Orthogonalization method -> 1: Brown/Hindmarsh condition, 3: Always reorthogonalize
+                int reorth = 1; // Orthogonalization method -> 1: Brown/Hindmarsh condition, 3: Always reorthogonalize
 
                 // RHS of the linear equation system 
                 double[] b = new double[n];
@@ -536,7 +536,7 @@ namespace BoSSS.Solution.Multigrid {
 
 
                     // Reorthogonalize ?
-                    if ((reorth == 1 && Math.Round(normav + 0.001 * normav2, 3) == Math.Round(normav, 3) || reorth == 3)) {
+                    if ((reorth == 1 && Math.Round(normav + 0.001 * normav2, 3) == Math.Round(normav, 3)) || reorth == 3) {
                         for (int j = 1; j <= k; j++) {
                             double hr = GenericBlas.InnerProd(V[k], V[j - 1]).MPISum();
                             H[j - 1, k - 1] = H[j - 1, k - 1] + hr;
