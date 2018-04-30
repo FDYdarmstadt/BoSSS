@@ -465,6 +465,13 @@ namespace BoSSS.Foundation {
             return Matrix;
         }
 
+        /// <summary>
+        /// Legacy interface
+        /// </summary>
+        static public IEvaluatorNonLin GetEvaluator(this SpatialOperator op, IList<DGField> DomainVarMap, UnsetteledCoordinateMapping CodomainVarMap) {
+            return op.GetEvaluatorEx(DomainVarMap, null, CodomainVarMap);
+        }
+
 
         ///// <summary>
         ///// Legacy interface
