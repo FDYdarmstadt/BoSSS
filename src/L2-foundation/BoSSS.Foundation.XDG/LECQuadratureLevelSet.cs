@@ -184,7 +184,6 @@ namespace BoSSS.Foundation.XDG {
 
             AllocEmpty(m_LsForm_V, out Koeff_V, out Sum_Koeff_V, 3, true);
             AllocEmpty(m_LsForm_GradV, out Koeff_NablaV, out Sum_Koeff_NablaV, 4, true);
-
         }
 
 
@@ -198,9 +197,13 @@ namespace BoSSS.Foundation.XDG {
                 // component is not relevant for this level-set
                 return false;
 
-            if (!(this.SpeciesA == b.NegativeSpecies && this.SpeciesB == b.PositiveSpecies))
+            if ((this.SpeciesA == b.NegativeSpecies && this.SpeciesB == b.PositiveSpecies)
+                || (this.SpeciesB == b.NegativeSpecies && this.SpeciesA == b.PositiveSpecies)) {
+
+            } else {
                 // component is not relevant for this level-set
                 return false;
+            }
 
             // filter passed
             return true;
@@ -403,8 +406,10 @@ namespace BoSSS.Foundation.XDG {
                         // jump in parameter i at level-set: separate evaluation for both sides
                         var xfi = m_Field as XDGField;
 
-                        xfi.GetSpeciesShadowField(this.SpeciesA).Evaluate(i0, Len, QuadNodes, bufNeg);
-                        xfi.GetSpeciesShadowField(this.SpeciesB).Evaluate(i0, Len, QuadNodes, bufPos);
+                        //xfi.GetSpeciesShadowField(this.SpeciesA).Evaluate(i0, Len, QuadNodes, bufNeg);
+                        //xfi.GetSpeciesShadowField(this.SpeciesB).Evaluate(i0, Len, QuadNodes, bufPos);
+                        xfi.GetSpeciesShadowField(m_lsTrk.GetSpeciesIdFromSign(-1)).Evaluate(i0, Len, QuadNodes, bufNeg);
+                        xfi.GetSpeciesShadowField(m_lsTrk.GetSpeciesIdFromSign(+1)).Evaluate(i0, Len, QuadNodes, bufPos);
 
                     } else {
                         // no jump at level set: positive and negative limit of parameter i are equal
@@ -455,6 +460,7 @@ namespace BoSSS.Foundation.XDG {
                 }
                 if (Sum_Koeff_NablaV[gamma, 0] != null) {
                     ReqGradV[gamma] = true;
+                    //ReqV[gamma] = true;
                 }
             }
             

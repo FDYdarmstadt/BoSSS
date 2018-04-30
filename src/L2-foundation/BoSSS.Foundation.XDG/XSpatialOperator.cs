@@ -449,11 +449,14 @@ namespace BoSSS.Foundation.XDG {
                     ///////////////////
 
                     using(new BlockTrace("surface_integration", tr)) {
+                        int dc = 0;
                         foreach(var tt in this.CouplingRules) {
                             int iLevSet = tt.Item1;
                             var SpeciesA = tt.Item2;
                             var SpeciesB = tt.Item3;
                             var rule = tt.Item4;
+
+                           
 
                             if (trx != null) {
                                 trx.TransceiveFinish();
@@ -480,9 +483,6 @@ namespace BoSSS.Foundation.XDG {
 #endif
 
                         }
-
-
-                        
                     }
 
                     // allow all processes to catch up
