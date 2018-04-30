@@ -105,6 +105,9 @@ namespace BoSSS.Foundation.XDG {
             where M : IMutableMatrixEx
             where V : IList<double>  //
         {
+            Console.WriteLine("Warning: Legacy interface!");
+            Console.WriteLine("         Usage of XDG without an agglomerated penalty!");
+
 
             int order = xOp.GetOrderFromQuadOrderFunction(DomainMap, Parameters, CodomainMap);
             MultiphaseCellAgglomerator dummy = lsTrk.GetAgglomerator(lsTrk.SpeciesIdS.ToArray(), order, 0.0);
@@ -193,7 +196,14 @@ namespace BoSSS.Foundation.XDG {
             ev.MPITtransceive = MPIParameterExchange;
 
             foreach(var s in CellLengthScales.Keys) {
-                ev.SpeciesOperatorCoefficients[s].CellLengthScales = CellLengthScales[s];
+                if (ev.SpeciesOperatorCoefficients.ContainsKey(s)) {
+                    ev.SpeciesOperatorCoefficients[s].CellLengthScales = CellLengthScales[s];
+                } else {
+                    ev.SpeciesOperatorCoefficients.Add(s,
+                        new CoefficientSet() {
+                            CellLengthScales = CellLengthScales[s]
+                        });
+                }
             }
 
             if(OnlyAffine)

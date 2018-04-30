@@ -248,6 +248,8 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
                 volQuadScheme: new CellQuadratureScheme(true, nearfield ? LevelSetTracker.Regions.GetNearFieldSubgrid(1).VolumeMask : null)
                 );
 
+            
+
             Operator_interface.ComputeMatrixEx(
                 LevelSetTracker,
                 Extension.Mapping,
@@ -260,17 +262,6 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
                 MPIParameterExchange: false,
                 whichSpc: LevelSetTracker.GetSpeciesId("A")
                 );
-
-            //var MtxBuilder = Operator_interface.GetMatrixBuilder(
-            //    LevelSetTracker,
-            //    Extension.Mapping,
-            //    InterfaceParams,
-            //    Extension.Mapping,
-            //    LevelSetTracker.GetSpeciesId("A"));
-
-            //foreach(SpeciesId s in LevelSetTracker.SpeciesIdS) {
-            //    MtxBuilder.SpeciesOperatorCoefficients[s].CellLengthScales = LevelSetTracker.GetXDGSpaceMetrics
-            //}
 
 #if DEBUG
             OpMatrix_bulk.CheckForNanOrInfM();
