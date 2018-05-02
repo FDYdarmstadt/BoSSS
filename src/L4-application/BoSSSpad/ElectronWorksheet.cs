@@ -10,7 +10,9 @@ using BoSSS.Foundation.IO;
 
 namespace BoSSS.Application.BoSSSpad{
 
-    //Singleton class
+    /// <summary>
+    /// Singleton class; 
+    /// </summary>
     public sealed class ElectronWorksheet {
         Document document;
         private static readonly ElectronWorksheet instance = new ElectronWorksheet();

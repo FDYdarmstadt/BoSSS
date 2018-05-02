@@ -100,7 +100,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
         
-        [Test]
+        //[Test]
         public static void MovingDropletTest(
 #if DEBUG
             [Values(1)] int deg,
