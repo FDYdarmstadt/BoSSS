@@ -1035,7 +1035,7 @@ namespace BoSSS.Foundation {
                     //return m_TRX != null;
                     var RealTrxFields = this.GetTrxFields().Where(f => f != null).ToArray();
 
-                    Debug.Assert((m_MPITtransceive == (m_TRX != null)) || (RealTrxFields.Length <= 0));
+                    //Debug.Assert((m_MPITtransceive == (m_TRX != null)) || (RealTrxFields.Length <= 0));
 
                     return m_MPITtransceive;
                 }
@@ -1046,16 +1046,14 @@ namespace BoSSS.Foundation {
                     //    ArrayTools.ListEquals(m_TRX.)
                     //}
                     var RealTrxFields = this.GetTrxFields().Where(f => f != null).ToArray();
-
-
-
-
-                    if((m_TRX == null) && (value == true) && (RealTrxFields.Length > 0)) {
+                    
+                    if((value == true) && (RealTrxFields.Length > 0)) {
                         // + + + + + + + + + +
                         // create transceiver
                         // + + + + + + + + + +
 
-                        m_TRX = new Transceiver(RealTrxFields);
+                        if(m_TRX == null)
+                            m_TRX = new Transceiver(RealTrxFields);
                     } else {
                         // + + + + + + + + + + + + +
                         // no communication required.
