@@ -9,6 +9,9 @@ using BoSSS.Foundation.IO;
 
 namespace BoSSS.Application.BoSSSpad{
 
+    /// <summary>
+    /// Driver class for <see cref="ElectronWorksheet"/>, used by the Electron-GUI
+    /// </summary>
     public class ElectronInterface{
 
         static ElectronWorksheet worksheet;
