@@ -787,7 +787,7 @@ On the way...
 % ################################################################################
 This section covers basic performance tests, i.e. how specific algorithms scale in parallel with increasing \emph{number of processors}. So far, all calculations for this research were conducted on the Lichtenberg high performance computer of the TU Darmstadt
 
-\section{Parallel Efficiency - Navier-Stokes problems}
+\section{Strong Scaling - Navier-Stokes problems}
 Different solver strategies are conducted to solve the fully coupled incompressible Navier-Stokes equations. At the moment the following strategies can be examined:
 \begin{itemize}
 	\item Linearizsation of the NSE with: Newton(Gmres) or Picard
@@ -823,11 +823,11 @@ The problem
 is investigated on a 64x16x16 cell Cartesian grid. The physical parameters of the fluid are choosen to be $\rho_f=1$ and $\mu_f=0.002$ which renders down to a Reynoldsnumber of 100. The problem basically describes a sphere flow between two plates.
 
 
-\graphicspath{{./apdx-MPISolverPerformance/NSESphere/plots/}}
+\graphicspath{{./apdx-MPISolverPerformance/strongScaling/NSESphere/plots/}}
 
 \begin{figure}[!h]
 	\begin{center}
-		\input{./apdx-MPISolverPerformance/NSESphere/plots/MPIScalingTimes.tex}
+		\input{./apdx-MPISolverPerformance/strongScaling/NSESphere/plots/MPIScalingTimes.tex}
 	\end{center}
 	\caption{
 		Solver runtime vs. processors, for polynomial degree $k=1/0$ leading to 212992 DoFs,
@@ -836,11 +836,11 @@ is investigated on a 64x16x16 cell Cartesian grid. The physical parameters of th
 	\label{fig:Spherek1Time}
 \end{figure}
 
-\graphicspath{{./apdx-MPISolverPerformance/NSESphereComplex/plots/}}
+\graphicspath{{./apdx-MPISolverPerformance/strongScaling/NSESphereComplex/plots/}}
 
 \begin{figure}[!h]
 	\begin{center}
-		\input{./apdx-MPISolverPerformance/NSESphereComplex/plots/MPIScalingTimes.tex}
+		\input{./apdx-MPISolverPerformance/strongScaling/NSESphereComplex/plots/MPIScalingTimes.tex}
 	\end{center}
 	\caption{
 		Solver runtime vs. processors, for polynomial degree $k=2/1$ leading to 557056 DoFs,
