@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using BoSSS.Platform;
 using BoSSS.Platform.LinAlg;
 using ilPSP.Utils;
+using ilPSP;
 
 namespace BoSSS.Foundation.XDG {
     
@@ -39,6 +40,7 @@ namespace BoSSS.Foundation.XDG {
             m_NMax = _Nmax;
 
             m_BaseStorage = new double[m_NMin * m_NoOfCells];
+            BaseStorageMda = MultidimensionalArray.CreateWrapper(m_BaseStorage, m_NoOfCells, m_NMin);
             m_ExtendedStorage = new double[NoOfCells][];
         }
               
@@ -157,6 +159,15 @@ namespace BoSSS.Foundation.XDG {
         /// 
         /// </summary>
         public int NoOfCells { get { return m_NoOfCells; } }
+
+
+        /// <summary>
+        /// shallow copy of <see cref="m_BaseStorage"/>.
+        /// </summary>
+        public MultidimensionalArray BaseStorageMda {
+            get;
+            private set;
+        }
 
         
         internal double[] m_BaseStorage;
