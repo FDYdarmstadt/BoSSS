@@ -295,6 +295,10 @@ static public void getFormat(int iTabRow,IDictionary<string, object> Row,
        }
 }
 **************
+(93,12): warning CS1717: Assignment made to same variable; did you mean to assign something else?
+(12,16): warning CS0219: The variable `MGLevels' is assigned but its value is never used
+No. of errors|warnings: 0|2.
+
 ==============
 var plotSlvIterTime = SubTab_1.ToPlot("TotalDoFs", "SlvIter_excl", // column for x- and y
                                   Formats.getFormat); // column for group
@@ -329,7 +333,7 @@ System.Drawing.Bitmap
 LastError
 **************
 ==============
-var CL = multiplots.ToGnuplot().PlotCairolatex(xSize:22, ySize:10);
+var CL = multiplots.ToGnuplot().PlotCairolatex(xSize:18, ySize:10);
 **************
 Using gnuplot: C:\Users\krause\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 
@@ -350,6 +354,8 @@ System.ComponentModel.Win32Exception (0x80004005): Das System kann die angegeben
    bei <InteractiveExpressionClass>.Host(Object& $retval)
    bei Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
    bei BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in C:\BoSSS-experimental\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:Zeile 311.
+==============
+**************
 ==============
 **************
 ==============

@@ -1,5 +1,5 @@
 set output 'NodePerformance.tex'
-set terminal cairolatex  pdf   size 22cm,10cm
+set terminal cairolatex  pdf   size 18cm,10cm
 set multiplot
 set size 1,1
 set size 0.98,0.98
