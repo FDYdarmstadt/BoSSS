@@ -635,7 +635,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     m_BDF_Timestepper.incrementTimesteps = this.Control.incrementTimesteps;
                     m_BDF_Timestepper.PushLevelSet = this.PushLevelSetAndRelatedStuff;
                     m_BDF_Timestepper.IterUnderrelax = this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative ? this.Control.LSunderrelax : 1.0;
-                    m_BDF_Timestepper.Config_linearSolver = this.Control.LinearSolver;
+                    m_BDF_Timestepper.Config_linearSolver = new DirectSolver() { WhichSolver = this.Control.LinearSolver, TestSolution = true };
                     //m_BDF_Timestepper.CustomIterationCallback += this.PlotOnIterationCallback;
 
                 }

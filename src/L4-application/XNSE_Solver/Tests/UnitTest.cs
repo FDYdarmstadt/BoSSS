@@ -101,7 +101,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
 
         
-        //[Test]
+        [Test]
         public static void MovingDropletTest(
 #if DEBUG
             [Values(1)] int deg,
@@ -322,6 +322,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
 
             C.Solver_ConvergenceCriterion = 1e-9;
+
+            C.LinearSolver = Solution.Multigrid.DirectSolver._whichSolver.PARDISO;
 
             // return
             // ======
