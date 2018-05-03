@@ -114,7 +114,7 @@ namespace BoSSS.Foundation.XDG {
                                      UnsetteledCoordinateMapping CodomainMap,
                                      LevelSetTracker lsTrk, int _iLevSet, Tuple<SpeciesId, SpeciesId> SpeciesPair,
                                      ICompositeQuadRule<QuadRule> domAndRule) //
-            : base(new int[] { CodomainMap.NoOfCoordinatesPerCell },
+            : base(new int[] { CodomainMap.MaxTotalNoOfCoordinatesPerCell },
                  context,
                  domAndRule) //
         {
@@ -377,7 +377,7 @@ namespace BoSSS.Foundation.XDG {
                             var _xField = _Field as XDGField;
 
                             _xField.GetSpeciesShadowField(this.SpeciesA).EvaluateGradient(i0, Len, QuadNodes, m_FieldGradientValuesNeg[i]);
-                            _xField.GetSpeciesShadowField(this.SpeciesB).EvaluateGradient(i0, Len, QuadNodes, m_FieldValuesPos[i]);
+                            _xField.GetSpeciesShadowField(this.SpeciesB).EvaluateGradient(i0, Len, QuadNodes, m_FieldGradientValuesPos[i]);
 
                     } else {
                         // no jump at level set: positive and negative limit of parameter i are equal

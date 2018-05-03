@@ -187,7 +187,7 @@ namespace BoSSS.Foundation.XDG {
                 EvaluateInternalSignature ev = DGField.EvaluateGradientInternal;
 
                 if (result.Dimension != 3)
-                    throw new ArgumentOutOfRangeException("result", "dimension of result array must be 2");
+                    throw new ArgumentOutOfRangeException("result", "dimension of result array must be 3");
                 if (result.GetLength(1) != M)
                     throw new ArgumentOutOfRangeException();
                 if (result.GetLength(2) != D)
@@ -296,9 +296,12 @@ namespace BoSSS.Foundation.XDG {
                 int[][] cellL2C = this.GridDat.iLogicalCells.AggregateCellToParts; // logical cells to geometrical 
                 if (cellL2C != null)
                     throw new NotImplementedException("todo");
+                int[,] TrfIdx = this.GridDat.iGeomEdges.Edge2CellTrafoIndex;
 
                 LevelSetTracker lsTrk = this.Owner.Basis.Tracker;
                 var regions = lsTrk.Regions;
+                var gdat = this.GridDat;
+                SpeciesId mySp = this.SpeciesId;
 
                 int i = 0; 
                 while(i < Len) {
@@ -306,13 +309,13 @@ namespace BoSSS.Foundation.XDG {
                     int ChunkLen = 1;
                     int iEdge = i + e0;
 
-                    bool CutOrNot = IsCellCut(iEdge, E2C, regions);
+                    bool CutOrNot = IsCellCut(iEdge, E2C, regions, mySp);
                     if(CutOrNot == false) {
                         // both Neighbor cells are *not* cut
                         // standard evaluation
 
                         // try to find vectorization
-                        while((ChunkLen + i < Len) && (IsCellCut(iEdge + ChunkLen, E2C, regions) == false)) {
+                        while((ChunkLen + i < Len) && (IsCellCut(iEdge + ChunkLen, E2C, regions, mySp) == false)) {
                             ChunkLen++;
                         }
 
@@ -347,30 +350,81 @@ namespace BoSSS.Foundation.XDG {
                         chunkMeanValueOT = null;
                     }
 
+                    MultidimensionalArray chunkGradientIN, chunkGradientOT;
                     if(GradientIN != null) {
-                        GradientIN.
+                        chunkGradientIN = GradientIN.ExtractSubArrayShallow(new[] { ResultIndexOffset, 0, 0 }, new[] { ResultIndexOffset + ChunkLen - 1 , K - 1, D - 1 });
+                        chunkGradientOT = GradientOT.ExtractSubArrayShallow(new[] { ResultIndexOffset, 0, 0 }, new[] { ResultIndexOffset + ChunkLen - 1 , K - 1, D - 1 });
+                    } else {
+                        chunkGradientIN = null;
+                        chunkGradientOT = null;
                     }
 
+                    if(CutOrNot) {
+                        Debug.Assert(ChunkLen == 1);
+
+                        int jCell0 = E2C[iEdge, 0];
+                        int jCell1 = E2C[iEdge, 1];
+
+                        NodeSet NSvol0, NSvol1;
+                        NSvol0 = NS.GetVolumeNodeSet(gdat, TrfIdx[iEdge, 0]);
+                        if (jCell1 >= 0)
+                            NSvol1 = NS.GetVolumeNodeSet(gdat, TrfIdx[iEdge, 1]);
+                        else
+                            NSvol1 = null;
 
 
+                        if(ValueIN != null) {
+                            this.Evaluate(jCell0, 1, NSvol0, chunkValueIN, ResultPreScale);
+                        }
+                        if(ValueOT != null && jCell1 >= 0) {
+                            this.Evaluate(jCell1, 1, NSvol1, chunkValueOT, ResultPreScale);
+                        }
 
+                        if(MeanValueIN != null) {
+                            this.EvaluateMean(jCell0, 1, chunkMeanValueIN, 0, ResultPreScale);
+                        }
+                        if(MeanValueOT != null && jCell1 >= 0) {
+                            this.EvaluateMean(jCell1, 1, chunkMeanValueOT, 0, ResultPreScale);
+                        }
+
+                        if(GradientIN != null) {
+                            this.EvaluateGradient(jCell0, 1, NSvol0, chunkGradientIN, 0, ResultPreScale);
+                        }
+                        if(GradientOT != null) {
+                            this.EvaluateGradient(jCell1, 1, NSvol1, chunkGradientOT, 0, ResultPreScale);
+                        }
+
+                    } else {
+                        // for edges 'iEdge' through 'iEdge + ChunkLen - 1', this shadow field is the 0-th species for IN and OT cell
+
+
+                        EvaluateEdgeInternal(iEdge, ChunkLen, NS, m_Owner.Basis.NonX_Basis,
+                            m_Owner.m_Coordinates.BaseStorageMda,
+                            chunkValueIN, chunkValueOT,
+                            chunkMeanValueIN, chunkMeanValueOT,
+                            GradientIN, GradientOT,
+                            ResultPreScale);
+
+                    }
+                    
                     i += Len;
                 }
                 Debug.Assert(i == Len);
 
             }
 
-            static bool IsCellCut(int iEdge, int[,] E2C, LevelSetTracker.LevelSetRegions regions) {
+            static bool IsCellCut(int iEdge, int[,] E2C, LevelSetTracker.LevelSetRegions regions, SpeciesId mySp) {
                 int jCell0 = E2C[iEdge, 0];
 
-                int NoOfSpc0 = regions.GetNoOfSpecies(jCell0);
-                if (NoOfSpc0 != 0)
+                int iSpc_cell0 = regions.GetSpeciesIndex(mySp, jCell0);
+                if (iSpc_cell0 != 0)
                     return true;
 
                 int jCell1 = E2C[iEdge, 1];
                 if(jCell1 >= 0) {
-                    int NoOfSpc1 = regions.GetNoOfSpecies(jCell1);
-                    if (NoOfSpc1 != 0)
+                    int iSpc_cell1 = regions.GetSpeciesIndex(mySp, jCell1);
+                
+                    if (iSpc_cell1 != 0)
                         return true;
                 }
 
