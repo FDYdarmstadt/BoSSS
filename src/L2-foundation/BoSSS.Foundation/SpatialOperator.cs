@@ -905,27 +905,6 @@ namespace BoSSS.Foundation {
             }
 
 
-            /*
-            public void SetParameters(IEnumerable<DGField> pFields) {
-                if (pFields.Count() != m_Owner.ParameterVar.Count) {
-                    throw new ArgumentException("wrong number of parameter variables provided.");
-                }
-
-                foreach(var p in pFields) {
-                    if(p!= null) {
-                        if(!object.ReferenceEquals(p.GridDat, this.GridData))
-                            throw new ArgumentException("Mismatch between parameter field grid and grid for the evaluator.");
-                    }
-                }
-
-                m_Parameters = pFields.ToArray();
-            }
-            */
-
-
-
-            
-
 
             SubGridBoundaryModes m_SubGridBoundaryTreatment = SubGridBoundaryModes.BoundaryEdge;
 
@@ -1126,7 +1105,7 @@ namespace BoSSS.Foundation {
                                                             CodomainVarMap,
                                                             edgeQrCtx.SaveCompile(grdDat, order));
 
-
+                    
 
                 }
 
@@ -1225,20 +1204,22 @@ namespace BoSSS.Foundation {
 
                     if(m_NonlinearEdge != null) {
                         using(new BlockTrace("Edge_Integration_NonLin", tr)) {
-                            m_NonlinearEdge.m_Output = output;
-                            m_NonlinearEdge.m_alpha = alpha;
-                            m_NonlinearEdge.Time = time;
-                            m_NonlinearEdge.SubGridBoundaryTreatment = base.SubGridBoundaryTreatment;
-                            m_NonlinearEdge.SubGridCellsMarker = (base.m_SubGrid_InCells != null) ? base.m_SubGrid_InCells.GetBitMaskWithExternal() : null;
+                            //m_NonlinearEdge.m_Output = output;
+                            //m_NonlinearEdge.m_alpha = alpha;
+                            //m_NonlinearEdge.Time = time;
+                            //m_NonlinearEdge.SubGridBoundaryTreatment = base.SubGridBoundaryTreatment;
+                            //m_NonlinearEdge.SubGridCellsMarker = (base.m_SubGrid_InCells != null) ? base.m_SubGrid_InCells.GetBitMaskWithExternal() : null;
 
-                            m_NonlinearEdge.m_outputBndEdge = outputBndEdge;
+                            //m_NonlinearEdge.m_outputBndEdge = outputBndEdge;
 
-                            m_NonlinearEdge.Execute();
+                            //m_NonlinearEdge.Execute();
 
-                            m_NonlinearEdge.m_Output = null;
-                            m_NonlinearEdge.m_outputBndEdge = null;
-                            m_NonlinearEdge.m_alpha = 1.0;
-                            m_NonlinearEdge.SubGridCellsMarker = null;
+                            //m_NonlinearEdge.m_Output = null;
+                            //m_NonlinearEdge.m_outputBndEdge = null;
+                            //m_NonlinearEdge.m_alpha = 1.0;
+                            //m_NonlinearEdge.SubGridCellsMarker = null;
+
+                            Console.WriteLine("edge deact");
                         }
                     }
 
@@ -1380,11 +1361,10 @@ namespace BoSSS.Foundation {
                          && Owner.ContainesComponentType(typeof(IEdgeForm), typeof(IEdgeform_UxV), typeof(IEdgeform_UxGradV), typeof(IEdgeform_UxV), typeof(IEdgeSource_V))) {
 
                         using(new BlockTrace("Edge_Integration_(new)", tr)) {
-                            var mxtbuilder2 = new LECEdgeQuadrature2<M, V>(this.Owner);
-
-                            mxtbuilder2.Execute(edgeRule, CodomainMapping, Parameters, DomainMapping, OnlyAffine ? default(M) : Matrix, AffineOffset, time);
-                            tr.Info("done.");
-                            mxtbuilder2 = null;
+                            //var mxtbuilder2 = new LECEdgeQuadrature2<M, V>(this.Owner);
+                            //mxtbuilder2.Execute(edgeRule, CodomainMapping, Parameters, DomainMapping, OnlyAffine ? default(M) : Matrix, AffineOffset, time);
+                            //mxtbuilder2 = null;
+                            Console.WriteLine("edge lin deact");
                         }
                     }
                 }
