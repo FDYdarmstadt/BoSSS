@@ -87,11 +87,11 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 m_DualValueFluxes[ti] = new EquationComponentArgMapping<IDualValueFlux>(DiffOp, DiffOp.CodomainVar[ti], DiffOp.DomainVar, DiffOp.ParameterVar, null, null);
             }
 
-            m_EdgeForm_V = DiffOp.GetArgMapping<INonlinEdgeform_V>(true,
+            m_EdgeForm_V = DiffOp.GetArgMapping<INonlinEdgeForm_V>(true,
                 comp => (((comp.BoundaryEdgeTerms | comp.InnerEdgeTerms) & (TermActivationFlags.V | TermActivationFlags.UxV | TermActivationFlags.GradUxV)) != 0),
                 eq => (eq is IEdgeForm ? new NonlinEdgeFormVectorizer((IEdgeForm)eq) : null));
 
-            m_EdgeForm_GradV = DiffOp.GetArgMapping<INonlinEdgeform_GradV>(true,
+            m_EdgeForm_GradV = DiffOp.GetArgMapping<INonlinEdgeForm_GradV>(true,
                 comp => (((comp.BoundaryEdgeTerms | comp.InnerEdgeTerms) & (TermActivationFlags.GradV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxGradV)) != 0),
                 eq => (eq is IEdgeForm ? new NonlinEdgeFormVectorizer((IEdgeForm)eq) : null));
 
@@ -101,18 +101,18 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             bool[] ValueRequired = new bool[base.m_DomainFields.Length]; // note that m_DomainFields may also contain concatenated parameters.
             bool[] MeanValueRequired = new bool[_DomainFields.Count];
 
-            DetermineReqFields(GradientRequired, this.m_EdgeForm_V,
+            this.m_EdgeForm_V.DetermineReqFields(GradientRequired, 
                 comp => (((comp.BoundaryEdgeTerms | comp.InnerEdgeTerms) & (TermActivationFlags.GradUxGradV | TermActivationFlags.GradUxV)) != 0));
-            DetermineReqFields(GradientRequired, this.m_EdgeForm_GradV,
+            this.m_EdgeForm_GradV.DetermineReqFields(GradientRequired,
                 comp => (((comp.BoundaryEdgeTerms | comp.InnerEdgeTerms) & (TermActivationFlags.GradUxGradV | TermActivationFlags.GradUxV)) != 0));
-            DetermineReqFields(ValueRequired, this.m_EdgeForm_V,
+            this.m_EdgeForm_V.DetermineReqFields(ValueRequired, 
                 comp => (((comp.BoundaryEdgeTerms | comp.InnerEdgeTerms) & (TermActivationFlags.UxGradV | TermActivationFlags.UxV)) != 0));
-            DetermineReqFields(ValueRequired, this.m_EdgeForm_GradV,
+            this.m_EdgeForm_GradV.DetermineReqFields(ValueRequired,
                 comp => (((comp.BoundaryEdgeTerms | comp.InnerEdgeTerms) & (TermActivationFlags.UxGradV | TermActivationFlags.UxV)) != 0));
 
-            DetermineReqFields(ValueRequired, base.m_NonlinFluxes, comp => true);
-            DetermineReqFields(ValueRequired, base.m_NonlinFluxesEx, comp => true);
-            DetermineReqFields(MeanValueRequired, base.m_NonlinFluxesEx, comp => true);
+            base.m_NonlinFluxes.DetermineReqFields(ValueRequired, comp => true);
+            base.m_NonlinFluxesEx.DetermineReqFields(ValueRequired, comp => true);
+            base.m_NonlinFluxesEx.DetermineReqFields(MeanValueRequired, comp => true);
 
             Debug.Assert(_DomainFields.Count <= m_DomainFields.Length); // note that 'm_DomainFields' may contain concatenated parameter fields
             for(int i = _DomainFields.Count; i < m_DomainFields.Length; i++) {
@@ -251,12 +251,12 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         /// <summary>
         /// array index: codomain variable
         /// </summary>
-        EquationComponentArgMapping<INonlinEdgeform_GradV>[] m_EdgeForm_GradV;
+        EquationComponentArgMapping<INonlinEdgeForm_GradV>[] m_EdgeForm_GradV;
 
         /// <summary>
         /// array index: codomain variable
         /// </summary>
-        EquationComponentArgMapping<INonlinEdgeform_V>[] m_EdgeForm_V;
+        EquationComponentArgMapping<INonlinEdgeForm_V>[] m_EdgeForm_V;
 
 
         /// <summary>
@@ -306,19 +306,22 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
                 for (int f = 0; f < NoOfFields; f++) {
                     //Field fld = m_CodomainBasisS[f];
-
+                    int f_offset = m_MyMap[f];
                     int mE = m_NoOfTestFunctions[f];
-                    for(int m = 0; m < mE; m++) {
 
-                        if(touchCell1)
-                            m_Output[m_CodomainMapping.LocalUniqueCoordinateIndex(f, jCell1, m)] += ResultsOfIntegration[jEdge, MyMap(f, m), 0] * alpha;
+                    for (int m = 0; m < mE; m++) {
+                        int idx = f_offset + m;
+
+                        if (touchCell1) {
+                            m_Output[m_CodomainMapping.LocalUniqueCoordinateIndex(f, jCell1, m)] += ResultsOfIntegration[jEdge, idx, 0] * alpha;
+                        }
 
                         if (touchCell2) {
-                            m_Output[m_CodomainMapping.LocalUniqueCoordinateIndex(f, jCell2, m)] += ResultsOfIntegration[jEdge, MyMap(f, m), 1] * alpha;
+                            m_Output[m_CodomainMapping.LocalUniqueCoordinateIndex(f, jCell2, m)] += ResultsOfIntegration[jEdge, idx, 1] * alpha;
                         }
 
                         if(srgdBndEdge && m==0) {
-                            m_outputBndEdge[NoOfFields*(jEdge + i0)+f] += ResultsOfIntegration[jEdge, MyMap(f, m), side] * alpha;
+                            m_outputBndEdge[NoOfFields*(jEdge + i0)+f] += ResultsOfIntegration[jEdge, idx, side] * alpha;
                         }
                     }
                 }
@@ -917,7 +920,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
 //bla 1
                 EvalFlux(m_EdgeForm_V[e], i0, Length, grid, NoOfSec, false, true, this.m_EdgeForm_V_Watches[e],
-                    delegate(INonlinEdgeform_V edgeform, int _jEdge, int _IndexOffset, int _L, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] UinMean, MultidimensionalArray[] UoutMean, MultidimensionalArray[] UinGrad, MultidimensionalArray[] UoutGrad) {
+                    delegate(INonlinEdgeForm_V edgeform, int _jEdge, int _IndexOffset, int _L, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] UinMean, MultidimensionalArray[] UoutMean, MultidimensionalArray[] UinGrad, MultidimensionalArray[] UoutGrad) {
                         EdgeFormParams efp;
                         efp.GridDat = this.GridDat;
                         efp.Len = _L;
@@ -950,9 +953,9 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                         efp.ParameterVars_IN = _Uin.GetSubVector(NoArgs, NoParams);
                         efp.ParameterVars_OUT = _Uout.GetSubVector(NoArgs, NoParams);
 
-                        edgeform.InternalEdge(ref efp, _Uin.GetSubVector(0, NoArgs), _Uout.GetSubVector(0, NoArgs), _UinGrad, _UoutGrad, _FluxValuesIN, _FluxValuesOT, false);
+                        edgeform.InternalEdge(ref efp, _Uin.GetSubVector(0, NoArgs), _Uout.GetSubVector(0, NoArgs), _UinGrad, _UoutGrad, _FluxValuesIN, _FluxValuesOT);
                     },
-                    delegate(INonlinEdgeform_V nonlinFlx, int _jEdge, int _IndexOffset, int _L, int _EdgeTagsOffset, bool flipNormal, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] UinMean, MultidimensionalArray[] UinGrad) {
+                    delegate(INonlinEdgeForm_V nonlinFlx, int _jEdge, int _IndexOffset, int _L, int _EdgeTagsOffset, bool flipNormal, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] UinMean, MultidimensionalArray[] UinGrad) {
                         EdgeFormParams efp;
                         efp.GridDat = this.GridDat;
                         efp.Len = _L;
@@ -1006,7 +1009,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
                 
                 EvalFlux(m_EdgeForm_GradV[e], i0, Length, grid, NoOfSec, false, true, this.m_EdgeForm_GradV_Watches[e],
-                    delegate(INonlinEdgeform_GradV edgeform, int _jEdge, int _IndexOffset, int _L, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] UinMean, MultidimensionalArray[] UoutMean, MultidimensionalArray[] UinGrad, MultidimensionalArray[] UoutGrad) {
+                    delegate(INonlinEdgeForm_GradV edgeform, int _jEdge, int _IndexOffset, int _L, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] UinMean, MultidimensionalArray[] UoutMean, MultidimensionalArray[] UinGrad, MultidimensionalArray[] UoutGrad) {
                         EdgeFormParams efp;
                         efp.GridDat = this.GridDat;
                         efp.Len = _L;
@@ -1039,9 +1042,9 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                         efp.ParameterVars_IN = _Uin.GetSubVector(NoArgs, NoParams);
                         efp.ParameterVars_OUT = _Uout.GetSubVector(NoArgs, NoParams);
 
-                        edgeform.InternalEdge(ref efp, _Uin.GetSubVector(0, NoArgs), _Uout.GetSubVector(0, NoArgs), _UinGrad, _UoutGrad, _GradFluxIN, _GradFluxOT, false);
+                        edgeform.InternalEdge(ref efp, _Uin.GetSubVector(0, NoArgs), _Uout.GetSubVector(0, NoArgs), _UinGrad, _UoutGrad, _GradFluxIN, _GradFluxOT);
                     },
-                    delegate(INonlinEdgeform_GradV nonlinFlx, int _jEdge, int _IndexOffset, int _L, int _EdgeTagsOffset, bool flipNormal, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] UinMean, MultidimensionalArray[] UinGrad) {
+                    delegate(INonlinEdgeForm_GradV nonlinFlx, int _jEdge, int _IndexOffset, int _L, int _EdgeTagsOffset, bool flipNormal, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] UinMean, MultidimensionalArray[] UinGrad) {
                         EdgeFormParams efp;
                         efp.GridDat = this.GridDat;
                         efp.Len = _L;

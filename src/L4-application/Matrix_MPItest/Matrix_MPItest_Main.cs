@@ -54,8 +54,6 @@ namespace BoSSS.Application.Matrix_MPItest {
     /// </summary>
     class Matrix_MPItestMain : BoSSS.Solution.Application {
 
-        private static readonly XQuadFactoryHelper.MomentFittingVariants MomentFittingVariant
-            = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
 
         internal XDGusage m_UseXdg;
         internal int m_DGorder = 2;

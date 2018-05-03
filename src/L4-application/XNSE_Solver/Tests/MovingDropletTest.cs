@@ -268,11 +268,11 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
         public double[] AcceptableL2Error {
-            get { return new double[] { 1.0e-8, 1.0e-8, 1.0e-8 }; }
+            get { return new double[] { 1.0e-6, 1.0e-6, 1.0e-6 }; }
         }
 
         public double[] AcceptableResidual {
-            get { return new double[] { 1.0e-7, 1.0e-7, 1.0e-7 }; }
+            get { return new double[] { 1.0e-5, 1.0e-5, 1.0e-5 }; }
         }
 
         public int SpatialDimension {

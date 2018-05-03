@@ -168,7 +168,6 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
 
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
-            C.AdvancedDiscretizationOptions.ViscosityImplementation = ViscosityImplementation.H;
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
             C.AdvancedDiscretizationOptions.UseGhostPenalties = false;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
@@ -573,7 +572,6 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
 
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.0;
-            C.AdvancedDiscretizationOptions.ViscosityImplementation = ViscosityImplementation.H;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
             C.UseXDG4Velocity = true;
 
@@ -731,7 +729,6 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
 
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
-            C.AdvancedDiscretizationOptions.ViscosityImplementation = ViscosityImplementation.H;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
             C.UseXDG4Velocity = false;
 
@@ -982,7 +979,6 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.0;
-            C.AdvancedDiscretizationOptions.ViscosityImplementation = ViscosityImplementation.H;
 
             C.PhysicalParameters.useArtificialSurfaceForce = true;
             C.PhysicalParameters.rho_A = RHO_A;
@@ -1169,7 +1165,6 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
 
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
-            C.AdvancedDiscretizationOptions.ViscosityImplementation = ViscosityImplementation.H;
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
             C.AdvancedDiscretizationOptions.UseGhostPenalties = false;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
@@ -1560,7 +1555,6 @@ namespace BoSSS.Application.XNSE_Solver {
             #region solver
 
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
-            C.AdvancedDiscretizationOptions.ViscosityImplementation = ViscosityImplementation.H;
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
             C.AdvancedDiscretizationOptions.UseGhostPenalties = false;
 
@@ -1992,7 +1986,6 @@ namespace BoSSS.Application.XNSE_Solver {
             #region solver
 
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
-            C.AdvancedDiscretizationOptions.ViscosityImplementation = ViscosityImplementation.H;
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
             C.AdvancedDiscretizationOptions.UseGhostPenalties = false;
             C.option_solver = C.PhysicalParameters.IncludeConvection ? "fixpointiterator" : "direct";
@@ -2195,7 +2188,6 @@ namespace BoSSS.Application.XNSE_Solver {
             #region solver
 
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
-            C.AdvancedDiscretizationOptions.ViscosityImplementation = ViscosityImplementation.H;
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
             C.AdvancedDiscretizationOptions.UseGhostPenalties = false;
             //C.option_solver = "GMRES+schwarz+coarse";
@@ -3299,7 +3291,6 @@ namespace BoSSS.Application.XNSE_Solver {
             #region solver
 
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
-            C.AdvancedDiscretizationOptions.ViscosityImplementation = ViscosityImplementation.H;
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.TransposeTermMissing;
             C.AdvancedDiscretizationOptions.UseGhostPenalties = false;
 
@@ -4484,7 +4475,6 @@ namespace BoSSS.Application.XNSE_Solver {
             #region solver
 
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
-            C.AdvancedDiscretizationOptions.ViscosityImplementation = ViscosityImplementation.H;
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
             C.AdvancedDiscretizationOptions.UseGhostPenalties = false;
             C.option_solver = C.PhysicalParameters.IncludeConvection ? "fixpointiterator" : "direct";
@@ -4691,7 +4681,6 @@ namespace BoSSS.Application.XNSE_Solver {
             #region solver
 
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
-            C.AdvancedDiscretizationOptions.ViscosityImplementation = ViscosityImplementation.H;
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
             C.AdvancedDiscretizationOptions.UseGhostPenalties = false;
             C.option_solver = C.PhysicalParameters.IncludeConvection ? "fixpointiterator" : "direct";
@@ -4874,7 +4863,6 @@ namespace BoSSS.Application.XNSE_Solver {
             #region solver
 
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
-            C.AdvancedDiscretizationOptions.ViscosityImplementation = ViscosityImplementation.H;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
             C.AdvancedDiscretizationOptions.UseGhostPenalties = false;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;

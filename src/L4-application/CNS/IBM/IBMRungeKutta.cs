@@ -43,7 +43,7 @@ namespace CNS.IBM {
 
         protected readonly ImmersedSpeciesMap speciesMap;
 
-        protected Lazy<SpatialOperator.Evaluator> boundaryEvaluator;
+        protected Lazy<IEvaluatorNonLin> boundaryEvaluator;
 
         protected CellMask cutCells;
 
@@ -83,20 +83,22 @@ namespace CNS.IBM {
             EdgeQuadratureScheme edgeScheme = speciesMap.QuadSchemeHelper.GetEdgeQuadScheme(
                 species, true, nonVoidEdges, control.LevelSetQuadratureOrder);
 
-            this.m_Evaluator = new Lazy<SpatialOperator.Evaluator>(() =>
-                this.Operator.GetEvaluatorEx(
+            this.m_Evaluator = new Lazy<IEvaluatorNonLin>(delegate () {
+                var opi = this.Operator.GetEvaluatorEx(
                     Mapping,
                     boundaryParameterMap,
                     Mapping,
                     edgeScheme,
-                    volumeScheme,
-                    subGridBoundaryTreatment: SpatialOperator.SubGridBoundaryModes.InnerEdgeLTS));
+                    volumeScheme);
+                opi.ActivateSubgridBoundary(volumeScheme.Domain, subGridBoundaryTreatment: SpatialOperator.SubGridBoundaryModes.InnerEdgeLTS);
+                return opi;
+            });
 
             // Evaluator for boundary conditions at level set zero contour
             CellQuadratureScheme boundaryVolumeScheme = speciesMap.QuadSchemeHelper.GetLevelSetquadScheme(
                 0, cutCells, control.LevelSetQuadratureOrder);
 
-            this.boundaryEvaluator = new Lazy<SpatialOperator.Evaluator>(() =>
+            this.boundaryEvaluator = new Lazy<IEvaluatorNonLin>(() =>
                 boundaryOperator.GetEvaluatorEx(
                     Mapping,
                     boundaryParameterMap,

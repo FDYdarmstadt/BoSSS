@@ -30,7 +30,7 @@ using BoSSS.Foundation.Grid.Classic;
 
 namespace BoSSS.Solution.XNSECommon.Operator.Convection {
 
-    public class ConvectionInBulk_LLF : LinearizedConvection {
+    public class ConvectionInBulk_LLF : LinearizedConvection, IEquationComponentSpeciesNotification {
 
         public ConvectionInBulk_LLF(int SpatDim, IncompressibleMultiphaseBoundaryCondMap _bcmap, int _component, double _rhoA, double _rhoB, double _LFFA, double _LFFB, LevelSetTracker _lsTrk) :
             base(SpatDim, _bcmap, _component, false) 
@@ -53,7 +53,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
         double LFFB;
 
 
-        public void SetParameter(string speciesName, SpeciesId SpcId, MultidimensionalArray LenScales) {
+        public void SetParameter(string speciesName, SpeciesId SpcId) {
             switch (speciesName) {
                 case "A": this.rho = this.rhoA; base.LaxFriedrichsSchemeSwitch = LFFA; this.SetBndfunc("A"); break;
                 case "B": this.rho = this.rhoB; base.LaxFriedrichsSchemeSwitch = LFFB; this.SetBndfunc("B"); break;

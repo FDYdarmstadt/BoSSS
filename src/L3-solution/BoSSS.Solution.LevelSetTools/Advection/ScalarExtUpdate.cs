@@ -44,7 +44,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             int D = LSTrk.GridDat.SpatialDimension;
             double PenaltyBase = Control.PenaltyMultiplierInterface * ((double)((LevelSet.Basis.Degree + 1) * (LevelSet.Basis.Degree + D))) / ((double)D);
 
-            ILevelSetComponent InterfaceFlux = new ScalarVelocityInterfaceForm(PenaltyBase, LSTrk);
+            ILevelSetForm InterfaceFlux = new ScalarVelocityInterfaceForm(PenaltyBase, LSTrk);
 
             List<DGField> Paramlist = new List<DGField> { };
             Paramlist.AddRange(Velocity);

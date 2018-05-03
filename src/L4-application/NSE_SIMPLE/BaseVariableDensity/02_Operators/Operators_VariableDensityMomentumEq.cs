@@ -90,7 +90,6 @@ namespace NSE_SIMPLE {
                 SpatialComponent,
                 SolverConf.SpatialDimension,
                 SolverConf.BcMap,
-                ViscosityImplementation.H,
                 ViscosityOption.VariableViscosityDimensionless,
                 reynolds: varDensConf.Reynolds,
                 EoS: varDensConf.EoS)).Operator(2);
@@ -123,7 +122,6 @@ namespace NSE_SIMPLE {
                 SpatialDirection,
                 SolverConf.SpatialDimension,
                 SolverConf.BcMap,
-                ViscosityImplementation.H,
                 ViscosityOption.VariableViscosityDimensionless,
                 ViscositySolverMode.Segregated,
                 reynolds: varDensConf.Reynolds,
@@ -156,7 +154,6 @@ namespace NSE_SIMPLE {
                 SpatialDirection,
                 SolverConf.SpatialDimension,
                 SolverConf.BcMap,
-                ViscosityImplementation.H,
                 ViscosityOption.VariableViscosityDimensionless,
                 ViscositySolverMode.Segregated,
                 reynolds: SolverConf.Control.Reynolds,
