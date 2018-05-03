@@ -331,6 +331,18 @@ namespace BoSSS.Foundation.XDG {
                     m_FieldGradientValuesNeg[l].Allocate(Nitm, Nnod, D);
                 }
             }
+
+            int GAMMA = this.m_CodomainMap.NoOfVariables;
+            for(int gamma = 0; gamma < GAMMA; gamma++) {
+                if(Koeff_V[gamma]!=null) {
+                    Koeff_V[gamma].Allocate(Nitm, Nnod, 2);
+                }
+                if(Koeff_GradV[gamma]!=null) {
+                    Koeff_GradV[gamma].Allocate(Nitm, Nnod, 2, D);
+                }
+
+            }
+
         }
 
 
@@ -444,7 +456,8 @@ namespace BoSSS.Foundation.XDG {
                 _inParams.X = NodesGlobal;
                 _inParams.time = this.time;
                 _inParams.LsTrk = this.m_lsTrk;
-                // set length scales
+                _inParams.i0 = i0;
+                Debug.Assert(_inParams.Len == Len);
 
 
                 // clear summation buffers
