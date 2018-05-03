@@ -572,7 +572,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
-            C.LinearSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS };
+            C.LinearSolver = DirectSolver._whichSolver.MUMPS;
 
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
 
@@ -1088,7 +1088,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
-            C.LinearSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS };
+            C.LinearSolver = DirectSolver._whichSolver.MUMPS;
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
