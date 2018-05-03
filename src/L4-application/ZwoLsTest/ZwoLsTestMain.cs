@@ -49,16 +49,17 @@ namespace BoSSS.Application.ZwoLsTest {
         static void Main(string[] args) {
             XQuadFactoryHelper.CheckQuadRules = true;
 
-            AllUpTest.SetUp();
-            AllUpTest.AllUp(0.3d, 1, false);
+            //AllUpTest.SetUp();
+            //BoSSS.Application.ZwoLsTest.AllUpTest.AllUp(0.3d, 0, true);
             //AllUpTest.Teardown();
-            return;
+            //Assert.IsTrue(false, "Remove me");
+            //return;
 
 
             BoSSS.Solution.Application._Main(
                 args,
                 true,
-                () => new ZwoLsTestMain() { DEGREE = 1, THRESHOLD = 0.3d });
+                () => new ZwoLsTestMain() { DEGREE = 1, THRESHOLD = 0.0 });
         }
 
         protected override GridCommons CreateOrLoadGrid() {
@@ -113,11 +114,7 @@ namespace BoSSS.Application.ZwoLsTest {
                 speciesTable[0, 1] = "B"; // Species zwischen den LevelSets
                 speciesTable[1, 0] = "X"; // 'verbotene' Species: sollte in der geg. LevelSet-Konstellation nicht vorkommen!
                 speciesTable[1, 1] = "A"; // linker Rand von A
-                //speciesTable[1, 1] = "A"; // rechter Rand von A
-                //speciesTable[1, 0] = "B"; // Species zwischen den LevelSets
-                //speciesTable[0, 1] = "X"; // 'verbotene' Species: sollte in der geg. LevelSet-Konstellation nicht vorkommen!
-                //speciesTable[0, 0] = "A"; // linker Rand von A
-
+               
                 base.LsTrk = new LevelSetTracker(this.GridData, MomentFittingVariant, 1, speciesTable, Phi0, Phi1);
             }
 
@@ -404,14 +401,17 @@ namespace BoSSS.Application.ZwoLsTest {
             double xL2Err = XERR.L2Norm();
             Console.WriteLine("L2 Error (in XDG space): " + xL2Err);
 
-           
+
 
             // check error
-            if (this.THRESHOLD > 0.01)
-                // without agglomeration, the error in very tiny cut-cells may be large over the whole cell
-                // However, the error in the XDG-space should be small under all circumstances
-                Assert.LessOrEqual(L2Err, 1.0e-6);
-            Assert.LessOrEqual(xL2Err, 1.0e-6);
+            if (TimestepNo > 1) {
+                if (this.THRESHOLD > 0.01) {
+                    // without agglomeration, the error in very tiny cut-cells may be large over the whole cell
+                    // However, the error in the XDG-space should be small under all circumstances
+                    Assert.LessOrEqual(L2Err, 1.0e-6);
+                }
+                Assert.LessOrEqual(xL2Err, 1.0e-6);
+            }
 
             bool IsPassed = ((L2Err <= 1.0e-6 || this.THRESHOLD <= 0.01) && xL2Err <= 1.0e-7);
             if (IsPassed) {

@@ -344,7 +344,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
         /// <param name="PenaltyBase">penalty multiplier based on polynomials</param>
         /// <param name="IsotropicViscosity">Value of the global isotropic viscosity</param>
         /// <param name="LSTrck"><see cref="LevelSetTracker"/></param>
-        public EllipticExtVelFormDirected(double PenaltyBase, double IsotropicViscosity, Foundation.XDG.ILevelSetComponent InterfaceFlux,  LevelSetTracker LSTrck) : base(PenaltyBase,IsotropicViscosity, LSTrck){
+        public EllipticExtVelFormDirected(double PenaltyBase, double IsotropicViscosity, Foundation.XDG.ILevelSetForm InterfaceFlux,  LevelSetTracker LSTrck) : base(PenaltyBase,IsotropicViscosity, LSTrck){
 
             _ParameterOrdering = ArrayTools.Cat(VariableNames.LevelSetGradient(D), VariableNames.LevelSet, VariableNames.MeanLevelSetGradient(D), InterfaceFlux.ParameterOrdering);
             this.InterfaceFlux = InterfaceFlux;
@@ -374,7 +374,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
 
         Func<CommonParamsBnd, double> BoundaryFunc;
 
-        Foundation.XDG.ILevelSetComponent InterfaceFlux;
+        Foundation.XDG.ILevelSetForm InterfaceFlux;
 
         IList<string> _ParameterOrdering;
         /// <summary>
@@ -737,7 +737,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
         /// <summary>
         /// CTOR, <see cref="EllipticExtVelFormDirected"/>, but for a limited cellmask
         /// </summary>
-        public ExtVelForm_bulk(double PenaltyBase, double IsotropicViscosity, Foundation.XDG.ILevelSetComponent InterfaceFlux, LevelSetTracker LSTrck, BitArray mask) :base(PenaltyBase, IsotropicViscosity, InterfaceFlux, LSTrck) {
+        public ExtVelForm_bulk(double PenaltyBase, double IsotropicViscosity, Foundation.XDG.ILevelSetForm InterfaceFlux, LevelSetTracker LSTrck, BitArray mask) :base(PenaltyBase, IsotropicViscosity, InterfaceFlux, LSTrck) {
             this.mask = mask;
         }
         BitArray mask;

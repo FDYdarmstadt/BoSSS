@@ -27,7 +27,7 @@ using BoSSS.Foundation;
 
 namespace BoSSS.Solution.XNSECommon.Operator.Convection {
 
-    class ConvectionAtLevelSet_LLF : ILevelSetComponent {
+    class ConvectionAtLevelSet_LLF : ILevelSetForm {
 
         LevelSetTracker m_LsTrk;
 
@@ -44,9 +44,9 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
             movingmesh = _movingmesh;
 
             NegFlux = new ConvectionInBulk_LLF(_D, _bcmap, _d, _rhoA, _rhoB, _LFFA, double.NaN, LsTrk);
-            NegFlux.SetParameter("A", LsTrk.GetSpeciesId("A"), null);
+            NegFlux.SetParameter("A", LsTrk.GetSpeciesId("A"));
             PosFlux = new ConvectionInBulk_LLF(_D, _bcmap, _d, _rhoA, _rhoB, double.NaN, _LFFB, LsTrk);
-            PosFlux.SetParameter("B", LsTrk.GetSpeciesId("B"), null);
+            PosFlux.SetParameter("B", LsTrk.GetSpeciesId("B"));
 
         }
 

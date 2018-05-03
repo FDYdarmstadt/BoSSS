@@ -78,7 +78,6 @@ namespace NSE_SIMPLE {
                 SpatialComponent,
                 SolverConf.SpatialDimension,
                 SolverConf.BcMap,
-                ViscosityImplementation.H,
                 ViscosityOption.ConstantViscosityDimensionless,
                 reynolds: SolverConf.Control.Reynolds)).Operator();
         }
