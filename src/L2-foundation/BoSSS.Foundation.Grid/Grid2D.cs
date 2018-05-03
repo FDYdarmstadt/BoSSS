@@ -353,7 +353,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 } else {
                     grid.BcCells = null;
                 }
-                 */
+                
 
                 // return
                 // ======

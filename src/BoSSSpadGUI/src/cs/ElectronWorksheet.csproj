@@ -44,7 +44,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\..\public\src\L4-application\BoSSSpad\BoSSSpad.csproj">
+    <ProjectReference Include="..\..\..\L4-application\BoSSSpad\BoSSSpad.csproj">
       <Project>{e1351588-3bc0-418a-bfa2-7ce3391aa167}</Project>
       <Name>BoSSSpad</Name>
     </ProjectReference>
