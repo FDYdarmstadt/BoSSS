@@ -182,13 +182,18 @@ export class RunBox extends BoxWithMenu {
         
         //Write readout into HTML Element
         var text = document.createElement("PRE");
-        text.innerHTML = result;
+        text.innerHTML = result.Item1;
         if(this.hasReadoutContent){
           readoutNode.replaceChild(text, readoutNode.firstChild);
         }
         else{
           this.hasReadoutContent = true;
           readoutNode.appendChild(text);
+        }
+        if (result.Item2 != null){
+          var img = new Image();
+          img.src = 'data:image/gif;base64,'+ result.Item2;
+          readoutNode.appendChild(img);
         }
         
     }
