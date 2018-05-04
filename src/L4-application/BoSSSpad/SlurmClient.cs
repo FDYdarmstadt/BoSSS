@@ -212,6 +212,7 @@ namespace BoSSS.Application.BoSSSpad {
                 sw.WriteLine("#SBATCH -n " + MPIcores);
                 //sw.WriteLine("#SBATCH --mail-user= " + usermail);
                 sw.WriteLine("#SBATCH -C avx");
+                //sw.WriteLine("#SBATCH --ntasks-per-node 1");    // Only start one MPI-process per node
 
                 // Load modules
                 foreach (string arg in moduleLoad) {

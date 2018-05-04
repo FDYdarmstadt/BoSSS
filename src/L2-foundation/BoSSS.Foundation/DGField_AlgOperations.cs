@@ -332,7 +332,7 @@ namespace BoSSS.Foundation {
 
             CoordinateVector coDom = new CoordinateVector(this);
 
-            SpatialOperator.Evaluator ev = powOp.GetEvaluatorEx(
+            var ev = powOp.GetEvaluatorEx(
                 new CoordinateMapping(vec),
                 null,
                 coDom.Mapping,
@@ -436,7 +436,7 @@ namespace BoSSS.Foundation {
 
             CoordinateVector coDom = this.CoordinateVector;
 
-            SpatialOperator.Evaluator ev = powOp.GetEvaluatorEx(
+            var ev = powOp.GetEvaluatorEx(
                 new CoordinateMapping(f), null, coDom.Mapping,
                 edgeQrCtx: new EdgeQuadratureScheme(true, EdgeMask.GetEmptyMask(this.Basis.GridDat)),
                 volQrCtx: new CellQuadratureScheme(true, em));
@@ -616,7 +616,7 @@ namespace BoSSS.Foundation {
             src.EquationComponents[Cod[0]].Add(new ProjectFunctionSource(Dom, f));
             src.Commit();
 
-            SpatialOperator.Evaluator ev = src.GetEvaluatorEx(
+            var ev = src.GetEvaluatorEx(
                 new CoordinateMapping(U), null, this.Mapping,
                 edgeQrCtx: new EdgeQuadratureScheme(false, EdgeMask.GetEmptyMask(this.Basis.GridDat)),
                 volQrCtx: cqs);
@@ -703,7 +703,7 @@ namespace BoSSS.Foundation {
             multOp.EquationComponents["res"].Add(new MultiplySource());
             multOp.Commit();
 
-            SpatialOperator.Evaluator ev = multOp.GetEvaluatorEx(
+            var ev = multOp.GetEvaluatorEx(
                 new CoordinateMapping(a, b), null, this.Mapping,
                 edgeQrCtx: new EdgeQuadratureScheme(true, EdgeMask.GetEmptyMask(this.Basis.GridDat)),
                 volQrCtx: new CellQuadratureScheme(true, em));
@@ -818,7 +818,7 @@ namespace BoSSS.Foundation {
 
             CoordinateVector coDom = this.CoordinateVector;
 
-            SpatialOperator.Evaluator ev = fracOp.GetEvaluatorEx(
+            var ev = fracOp.GetEvaluatorEx(
                 new CoordinateMapping(a, b), null, coDom.Mapping,
                 edgeQrCtx: new EdgeQuadratureScheme(true, EdgeMask.GetEmptyMask(this.Basis.GridDat)),
                 volQrCtx: new CellQuadratureScheme(true, cm));

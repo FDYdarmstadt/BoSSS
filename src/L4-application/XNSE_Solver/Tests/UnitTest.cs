@@ -99,6 +99,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             GenericTest(Tst, C);
         }
 
+
         
         [Test]
         public static void MovingDropletTest(
@@ -232,7 +233,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
         static XNSE_Control TstObj2CtrlObj(ITest tst, int FlowSolverDegree, double AgglomerationTreshold, ViscosityMode vmode, 
-            ViscosityImplementation vimpl = ViscosityImplementation.H,
             SurfaceStressTensor_IsotropicMode SurfTensionMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local) {
             XNSE_Control C = new XNSE_Control();
             int D = tst.SpatialDimension;
@@ -298,7 +298,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             // ========================================
 
             C.AdvancedDiscretizationOptions.ViscosityMode = vmode;
-            C.AdvancedDiscretizationOptions.ViscosityImplementation = vimpl;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = AgglomerationTreshold;
             C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfTensionMode;
 
@@ -323,6 +322,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
 
             C.Solver_ConvergenceCriterion = 1e-9;
+
+            C.LinearSolver = Solution.Multigrid.DirectSolver._whichSolver.PARDISO;
 
             // return
             // ======

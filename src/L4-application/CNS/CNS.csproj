@@ -119,6 +119,7 @@
     <Compile Include="ShockCapturing\ILimiter.cs" />
     <Compile Include="ShockCapturing\ZhangPosivityPreservingLimiter.cs" />
     <Compile Include="Source\SpongeLayerConfig.cs" />
+    <Compile Include="TestCases.cs" />
     <Compile Include="Tests\ArtificialViscosity\ArtificialViscosityShockTubeTests.cs" />
     <Compile Include="Tests\ConvectiveFlux\ShockTubeTests.cs" />
     <Compile Include="Tests\IBMTests\IBMArtificialViscosityTest.cs" />

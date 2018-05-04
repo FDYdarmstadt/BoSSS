@@ -91,7 +91,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
 
 
-    class TransportFlux_Interface : ILevelSetComponent {
+    class TransportFlux_Interface : ILevelSetForm {
 
         LevelSetTracker m_LsTrk;
 
