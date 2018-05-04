@@ -26,6 +26,8 @@ namespace BoSSS.Foundation.XDG {
 
     public partial class XDGField {
 
+        public static bool megatest = false;
+
         /// <summary>
         /// A single phase field that represents just one species (from all
         /// species in the cut-cell field); It is zero within all cells in
@@ -203,6 +205,10 @@ namespace BoSSS.Foundation.XDG {
                 MultidimensionalArray ValueIN, MultidimensionalArray ValueOT,
                 MultidimensionalArray MeanValueIN, MultidimensionalArray MeanValueOT,
                 MultidimensionalArray GradientIN, MultidimensionalArray GradientOT, int ResultIndexOffset, double ResultPreScale) {
+
+
+                if (this.SpeciesName == "B" && megatest == true)
+                    Console.WriteLine("break");
 
                 // check arguments
                 // ===============
@@ -390,7 +396,7 @@ namespace BoSSS.Foundation.XDG {
                         if(GradientIN != null) {
                             this.EvaluateGradient(jCell0, 1, NSvol0, chunkGradientIN, 0, ResultPreScale);
                         }
-                        if(GradientOT != null) {
+                        if(GradientOT != null && jCell1 >= 0) {
                             this.EvaluateGradient(jCell1, 1, NSvol1, chunkGradientOT, 0, ResultPreScale);
                         }
 
@@ -411,7 +417,38 @@ namespace BoSSS.Foundation.XDG {
                 }
                 Debug.Assert(i == Len);
 
+
+                if(megatest) {
+                    var NodesGlobal = this.GridDat.GlobalNodes.GetValue_EdgeSV(NS, e0, Len);
+
+                    for(int e = 0; e < Len; e++) {
+                        for(int k = 0; k < K; k++) {
+                            double x = NodesGlobal[e, k, 0];
+                            double y = NodesGlobal[e, k, 1];
+
+                            double uIn = ValueIN[e + ResultIndexOffset, k];
+                            double dx_uIn = GradientIN[e + ResultIndexOffset, k, 0];
+                            double dy_uIn = GradientIN[e + ResultIndexOffset, k, 1];
+
+                            if (Math.Abs(uIn - x) > 1.0e-5)
+                                throw new ArithmeticException();
+
+                            if (Math.Abs(dx_uIn - 1) > 1.0e-5)
+                                throw new ArithmeticException();
+
+                            if (Math.Abs(dy_uIn - 0) > 1.0e-5)
+                                throw new ArithmeticException();
+
+                        }
+
+                    }
+
+                }
+
             }
+
+
+
 
             static bool IsCellCut(int iEdge, int[,] E2C, LevelSetTracker.LevelSetRegions regions, SpeciesId mySp) {
                 int jCell0 = E2C[iEdge, 0];

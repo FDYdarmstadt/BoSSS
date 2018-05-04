@@ -1183,12 +1183,14 @@ namespace BoSSS.Foundation {
                     if(m_NonlinearVolume != null) {
                         using(new BlockTrace("Volume_Integration_NonLin", tr)) {
                             // volume integrals can be evaluated without knowing external cells
-                            m_NonlinearVolume.m_Output = output;
-                            m_NonlinearVolume.m_alpha = alpha;
-                            m_NonlinearVolume.Time = time;
-                            m_NonlinearVolume.Execute();
-                            m_NonlinearVolume.m_Output = null;
-                            m_NonlinearVolume.m_alpha = 1.0;
+                            //m_NonlinearVolume.m_Output = output;
+                            //m_NonlinearVolume.m_alpha = alpha;
+                            //m_NonlinearVolume.Time = time;
+                            //m_NonlinearVolume.Execute();
+                            //m_NonlinearVolume.m_Output = null;
+                            //m_NonlinearVolume.m_alpha = 1.0;
+
+                            Console.WriteLine("Volume form deact (nonlin).");
                         }
 
                     }
@@ -1204,22 +1206,22 @@ namespace BoSSS.Foundation {
 
                     if(m_NonlinearEdge != null) {
                         using(new BlockTrace("Edge_Integration_NonLin", tr)) {
-                            //m_NonlinearEdge.m_Output = output;
-                            //m_NonlinearEdge.m_alpha = alpha;
-                            //m_NonlinearEdge.Time = time;
-                            //m_NonlinearEdge.SubGridBoundaryTreatment = base.SubGridBoundaryTreatment;
-                            //m_NonlinearEdge.SubGridCellsMarker = (base.m_SubGrid_InCells != null) ? base.m_SubGrid_InCells.GetBitMaskWithExternal() : null;
+                            m_NonlinearEdge.m_Output = output;
+                            m_NonlinearEdge.m_alpha = alpha;
+                            m_NonlinearEdge.Time = time;
+                            m_NonlinearEdge.SubGridBoundaryTreatment = base.SubGridBoundaryTreatment;
+                            m_NonlinearEdge.SubGridCellsMarker = (base.m_SubGrid_InCells != null) ? base.m_SubGrid_InCells.GetBitMaskWithExternal() : null;
 
-                            //m_NonlinearEdge.m_outputBndEdge = outputBndEdge;
+                            m_NonlinearEdge.m_outputBndEdge = outputBndEdge;
 
-                            //m_NonlinearEdge.Execute();
+                           
+                            m_NonlinearEdge.Execute();
 
-                            //m_NonlinearEdge.m_Output = null;
-                            //m_NonlinearEdge.m_outputBndEdge = null;
-                            //m_NonlinearEdge.m_alpha = 1.0;
-                            //m_NonlinearEdge.SubGridCellsMarker = null;
+                            m_NonlinearEdge.m_Output = null;
+                            m_NonlinearEdge.m_outputBndEdge = null;
+                            m_NonlinearEdge.m_alpha = 1.0;
+                            m_NonlinearEdge.SubGridCellsMarker = null;
 
-                            Console.WriteLine("edge deact");
                         }
                     }
 
@@ -1345,9 +1347,11 @@ namespace BoSSS.Foundation {
                         using(new BlockTrace("Volume_Integration_(new)", tr)) {
                             var mtxBuilder = new LECVolumeQuadrature2<M, V>(this.Owner);
 
-                            mtxBuilder.Execute(volRule,
-                                CodomainMapping, Parameters, DomainMapping,
-                                OnlyAffine ? default(M) : Matrix, AffineOffset, time);
+                            //mtxBuilder.Execute(volRule,
+                            //    CodomainMapping, Parameters, DomainMapping,
+                            //    OnlyAffine ? default(M) : Matrix, AffineOffset, time);
+                            Console.WriteLine("Volume form deact (linear).");
+
 
                         }
 
@@ -1361,10 +1365,10 @@ namespace BoSSS.Foundation {
                          && Owner.ContainesComponentType(typeof(IEdgeForm), typeof(IEdgeform_UxV), typeof(IEdgeform_UxGradV), typeof(IEdgeform_UxV), typeof(IEdgeSource_V))) {
 
                         using(new BlockTrace("Edge_Integration_(new)", tr)) {
-                            //var mxtbuilder2 = new LECEdgeQuadrature2<M, V>(this.Owner);
-                            //mxtbuilder2.Execute(edgeRule, CodomainMapping, Parameters, DomainMapping, OnlyAffine ? default(M) : Matrix, AffineOffset, time);
-                            //mxtbuilder2 = null;
-                            Console.WriteLine("edge lin deact");
+                            var mxtbuilder2 = new LECEdgeQuadrature2<M, V>(this.Owner);
+                            mxtbuilder2.Execute(edgeRule, CodomainMapping, Parameters, DomainMapping, OnlyAffine ? default(M) : Matrix, AffineOffset, time);
+                            mxtbuilder2 = null;
+                            //Console.WriteLine("edge lin deact");
                         }
                     }
                 }

@@ -474,8 +474,8 @@ namespace BoSSS.Foundation.XDG {
                     // build matrix, coupling
                     ///////////////////
 
-                   
-
+                    Console.WriteLine("coupling deact.");
+                    /*
                     using(new BlockTrace("surface_integration", tr)) {
                         foreach(var tt in this.CouplingRules) {
                             int iLevSet = tt.Item1;
@@ -511,7 +511,7 @@ namespace BoSSS.Foundation.XDG {
 
                         }
                     }
-                    
+                    */
 
 
                     // allow all processes to catch up
@@ -592,7 +592,7 @@ namespace BoSSS.Foundation.XDG {
                     #endregion
 
 
-                    // build matrix, bulk
+                    // bulk
                     // ---------------------
                     //MsrMatrix BulkMatrix = null;
                     //double[] BulkAffineOffset = null;
@@ -626,7 +626,13 @@ namespace BoSSS.Foundation.XDG {
 
                                     eval.time = base.time;
 
+                                    double[] vecB4 = output.ToArray();
+
                                     eval.Evaluate(alpha, 1.0, vec, null);
+
+                                    double[] vecAft = output.ToArray();
+
+                                    Console.WriteLine("Nonliner bulk result: " + GenericBlas.L2Dist(vecB4, vecAft));
                                 }
 
                             }
@@ -634,10 +640,11 @@ namespace BoSSS.Foundation.XDG {
 
                     }
 
-                    // build matrix, coupling
+                    //  coupling
                     ///////////////////
 
-                    
+                    Console.WriteLine("coupling deact (lin).");
+                    /*
                     using (new BlockTrace("surface_integration", tr)) {
                         foreach (var tt in this.CouplingRules) {
                             int iLevSet = tt.Item1;
@@ -665,9 +672,8 @@ namespace BoSSS.Foundation.XDG {
 #endif
                         }
 
-
-
                     } 
+                    */
 
                     // allow all processes to catch up
                     // -------------------------------
