@@ -26,8 +26,6 @@ namespace BoSSS.Foundation.XDG {
 
     public partial class XDGField {
 
-        public static bool megatest = false;
-
         /// <summary>
         /// A single phase field that represents just one species (from all
         /// species in the cut-cell field); It is zero within all cells in
@@ -207,9 +205,6 @@ namespace BoSSS.Foundation.XDG {
                 MultidimensionalArray GradientIN, MultidimensionalArray GradientOT, int ResultIndexOffset, double ResultPreScale) {
 
 
-                if (this.SpeciesName == "B" && megatest == true)
-                    Console.WriteLine("break");
-
                 // check arguments
                 // ===============
                 int D = GridDat.SpatialDimension; // spatial dimension
@@ -379,10 +374,7 @@ namespace BoSSS.Foundation.XDG {
                             NSvol1 = NS.GetVolumeNodeSet(gdat, TrfIdx[iEdge, 1]);
                         else
                             NSvol1 = null;
-
-                        if(megatest && jCell0 == 4 && this.SpeciesName == "B")
-                            Console.WriteLine("break");
-
+                        
                         if(ValueIN != null) {
                             this.Evaluate(jCell0, 1, NSvol0, chunkValueIN, ResultPreScale);
                         }
@@ -414,45 +406,11 @@ namespace BoSSS.Foundation.XDG {
                             chunkMeanValueIN, chunkMeanValueOT,
                             chunkGradientIN, chunkGradientOT,
                             ResultPreScale);
-
                     }
                     
                     i += ChunkLen;
                 }
                 Debug.Assert(i == Len);
-
-
-                if(megatest) {
-                    var NodesGlobal = this.GridDat.GlobalNodes.GetValue_EdgeSV(NS, e0, Len);
-
-                    for(int e = 0; e < Len; e++) {
-                        int iEdge = e + e0;
-                        int jCell0 = E2C[iEdge, 0];
-                        int jCell1 = E2C[iEdge, 1];
-
-                        for(int k = 0; k < K; k++) {
-                            double x = NodesGlobal[e, k, 0];
-                            double y = NodesGlobal[e, k, 1];
-
-                            double uIn = ValueIN[e + ResultIndexOffset, k];
-                            double dx_uIn = GradientIN[e + ResultIndexOffset, k, 0];
-                            double dy_uIn = GradientIN[e + ResultIndexOffset, k, 1];
-
-                            if (Math.Abs(uIn - x) > 1.0e-5)
-                                throw new ArithmeticException();
-
-                            if(Math.Abs(dx_uIn - 1) > 1.0e-5)
-                                throw new ArithmeticException();
-
-                            if(Math.Abs(dy_uIn - 0) > 1.0e-5)
-                                throw new ArithmeticException();
-
-                        }
-
-                    }
-
-                }
-
             }
 
 
