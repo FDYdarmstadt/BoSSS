@@ -28,7 +28,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         public IEnumerable<IChunkRulePair<QuadRule>> GetQuadRuleSet(ExecutionMask mask, int order)
         {
-            Line.Instance.GetQuadratureRule()
+            Line.Instance.GetQuadratureRule(order);
 
             throw new NotImplementedException();
         }
