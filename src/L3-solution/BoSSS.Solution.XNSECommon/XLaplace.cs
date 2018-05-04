@@ -213,8 +213,7 @@ namespace BoSSS.Solution.XNSECommon {
         protected double penatly_baseFactor;
         protected Mode m_mode;
 
-        public static bool ElChecko = false;
-
+        
         public virtual double LevelSetForm(ref CommonParamsLs inp, 
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
@@ -235,34 +234,12 @@ namespace BoSSS.Solution.XNSECommon {
 
             double omega_A, omega_B;
             ComputeScaling(ref inp, out omega_A, out omega_B);
-
-            if(ElChecko) {
-                double x = inp.x[0];
-                double y = inp.x[1];
-
-                if(Math.Abs(uA[0] - x) > 1.0e-5)
-                    throw new ArithmeticException();
-                if(Math.Abs(uB[0] - x) > 1.0e-5)
-                    throw new ArithmeticException();
-                if(Math.Abs(Grad_uA[0,0] - 1) > 1.0e-5)
-                    throw new ArithmeticException();
-                if(Math.Abs(Grad_uB[0,0] - 1) > 1.0e-5)
-                    throw new ArithmeticException();
-                if(Math.Abs(Grad_uA[0,1] - 0) > 1.0e-5)
-                    throw new ArithmeticException();
-                if(Math.Abs(Grad_uB[0,1] - 0) > 1.0e-5)
-                    throw new ArithmeticException();
-            }
-
-
-
+            
             double Ret = 0.0;
             Ret += (muA * omega_A * Grad_uA_xN + muB * omega_B * Grad_uB_xN) * (vA - vB);
             Ret += (muA * omega_A * Grad_vA_xN + muB * omega_B * Grad_vB_xN) * (uA[0] - uB[0]);
 
             //
-
-
             Ret -= GetPenalty(ref inp) * (uA[0] - uB[0]) * (vA - vB);
 
             return Ret;
