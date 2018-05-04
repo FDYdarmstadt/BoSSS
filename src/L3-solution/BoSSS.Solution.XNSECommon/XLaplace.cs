@@ -68,12 +68,15 @@ namespace BoSSS.Solution.XNSECommon {
         XLaplace_Interface.Mode m_Mode;
         MultidimensionalArray m_LenScales;
 
+        string current_species;
+
         public void SetParameter(string speciesName, SpeciesId __SpcId) {
             switch(speciesName) {
                 case "A": species_Mu = muA; otherSpecies_Mu = muB; SpcId = __SpcId; break;
                 case "B": species_Mu = muB; otherSpecies_Mu = muA; SpcId = __SpcId; break;
                 default: throw new ArgumentException("Unknown species.");
             }
+            current_species = speciesName;
         }
 
         double species_Mu;
@@ -124,6 +127,8 @@ namespace BoSSS.Solution.XNSECommon {
         }
 
 
+        public static bool ActivateTest = false;
+
         override public double InnerEdgeForm(ref CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB, double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB) {
             double Acc = 0.0;
 
@@ -134,8 +139,33 @@ namespace BoSSS.Solution.XNSECommon {
             double scaleIN, scaleOT;
             ComputeScaling(ref inp, out scaleIN, out scaleOT);
 
+            //if(ActivateTest) {
+            //    double x = inp.X[0];
+            //    double uA = _uA[0];
+            //    double uB = _uB[0];
 
-            for(int d = 0; d < inp.D; d++) {
+            //    double dx_uA = _Grad_uA[0, 0];
+            //    double dy_uA = _Grad_uA[0, 1];
+
+            //    double dx_uB = _Grad_uB[0, 0];
+            //    double dy_uB = _Grad_uB[0, 1];
+
+            //    if (Math.Abs(uA - x) > 1.0e-5)
+            //        throw new Exception();
+            //    if (Math.Abs(uB - x) > 1.0e-5)
+            //        throw new Exception();
+
+            //    if (Math.Abs(dx_uA - 1.0) > 1.0e-5)
+            //        throw new Exception();
+            //    if (Math.Abs(dx_uA - 1.0) > 1.0e-5)
+            //        throw new Exception();
+            //    if (Math.Abs(dy_uB - 0.0) > 1.0e-5)
+            //        throw new Exception();
+            //    if (Math.Abs(dy_uB - 0.0) > 1.0e-5)
+            //        throw new Exception();
+            //}
+            
+            for (int d = 0; d < inp.D; d++) {
                 Acc += (scaleIN * muA * _Grad_uA[0, d] + scaleOT * muB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normale[d];  // consistency term
                 Acc += (scaleIN * muA * _Grad_vA[d] + scaleOT * muB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normale[d];  // symmetry term
             }
@@ -145,6 +175,28 @@ namespace BoSSS.Solution.XNSECommon {
             Acc -= (_uA[0] - _uB[0]) * (_vA - _vB) * this.GetPenalty(ref inp); // penalty term
 
             return Acc;
+        }
+
+        public override double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
+            if (ActivateTest) {
+                double x = inp.X[0];
+                double uA = _uA[0];
+                
+                double dx_uA = _Grad_uA[0, 0];
+                double dy_uA = _Grad_uA[0, 1];
+
+                
+                if (Math.Abs(uA - x) > 1.0e-5)
+                    throw new Exception();
+                
+                if (Math.Abs(dx_uA - 1.0) > 1.0e-5)
+                    throw new Exception();
+                if (Math.Abs(dx_uA - 1.0) > 1.0e-5)
+                    throw new Exception();
+            }
+
+
+            return base.BoundaryEdgeForm(ref inp, _uA, _Grad_uA, _vA, _Grad_vA);
         }
 
 
