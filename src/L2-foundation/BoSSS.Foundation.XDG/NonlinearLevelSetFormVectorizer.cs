@@ -151,8 +151,8 @@ namespace BoSSS.Foundation.XDG {
                         }
                     }
 
-                    _vA = 0;
-                    _vB = 1;
+                    _vA = 1;
+                    _vB = 0;
                     Koeff_V[l, k, iSpcNeg] += OrgComponent.LevelSetForm(ref cp, _uA, _uB, _Grad_uA, _Grad_uB, _vA, _vB, _Grad_vA, _Grad_vB);
                     _vA = 0;
                     _vB = 1;
