@@ -337,32 +337,34 @@ namespace BoSSS.Foundation.XDG {
                     }                    
                     Debug.Assert(i + ChunkLen <= Len);
 
+                    int I0 = ResultIndexOffset + i;
+                    int IE = ResultIndexOffset + i + ChunkLen - 1;
 
                     MultidimensionalArray chunkValueIN, chunkValueOT;
                     if(ValueIN != null) {
-                        chunkValueIN = ValueIN.ExtractSubArrayShallow(new[] { ResultIndexOffset, 0 }, new[] { ResultIndexOffset + ChunkLen -1 , K - 1 });
-                        chunkValueOT = ValueOT.ExtractSubArrayShallow(new[] { ResultIndexOffset, 0 }, new[] { ResultIndexOffset + ChunkLen - 1, K - 1 });
+                        chunkValueIN = ValueIN.ExtractSubArrayShallow(new[] { I0, 0 }, new[] { IE, K - 1 });
+                        chunkValueOT = ValueOT.ExtractSubArrayShallow(new[] { I0, 0 }, new[] { IE, K - 1 });
                     } else {
-                        chunkValueIN = null;
-                        chunkValueOT = null;
+                        chunkValueIN = ValueIN;
+                        chunkValueOT = ValueOT;
                     }
 
                     MultidimensionalArray chunkMeanValueIN, chunkMeanValueOT;
                     if(MeanValueIN != null) {
-                        chunkMeanValueIN = MeanValueIN.ExtractSubArrayShallow(new[] { ResultIndexOffset }, new[] { ResultIndexOffset + ChunkLen - 1 });
-                        chunkMeanValueOT = MeanValueOT.ExtractSubArrayShallow(new[] { ResultIndexOffset }, new[] { ResultIndexOffset + ChunkLen - 1 });
+                        chunkMeanValueIN = MeanValueIN.ExtractSubArrayShallow(new[] { I0 }, new[] { IE });
+                        chunkMeanValueOT = MeanValueOT.ExtractSubArrayShallow(new[] { I0 }, new[] { IE });
                     } else {
-                        chunkMeanValueIN = null;
-                        chunkMeanValueOT = null;
+                        chunkMeanValueIN = MeanValueIN;
+                        chunkMeanValueOT = MeanValueOT;
                     }
 
                     MultidimensionalArray chunkGradientIN, chunkGradientOT;
                     if(GradientIN != null) {
-                        chunkGradientIN = GradientIN.ExtractSubArrayShallow(new[] { ResultIndexOffset, 0, 0 }, new[] { ResultIndexOffset + ChunkLen - 1 , K - 1, D - 1 });
-                        chunkGradientOT = GradientOT.ExtractSubArrayShallow(new[] { ResultIndexOffset, 0, 0 }, new[] { ResultIndexOffset + ChunkLen - 1 , K - 1, D - 1 });
+                        chunkGradientIN = GradientIN.ExtractSubArrayShallow(new[] { I0, 0, 0 }, new[] { IE, K - 1, D - 1 });
+                        chunkGradientOT = GradientOT.ExtractSubArrayShallow(new[] { I0, 0, 0 }, new[] { IE, K - 1, D - 1 });
                     } else {
-                        chunkGradientIN = null;
-                        chunkGradientOT = null;
+                        chunkGradientIN = GradientIN;
+                        chunkGradientOT = GradientOT;
                     }
 
                     if(CutOrNot) {
@@ -378,6 +380,8 @@ namespace BoSSS.Foundation.XDG {
                         else
                             NSvol1 = null;
 
+                        if(megatest && jCell0 == 4 && this.SpeciesName == "B")
+                            Console.WriteLine("break");
 
                         if(ValueIN != null) {
                             this.Evaluate(jCell0, 1, NSvol0, chunkValueIN, ResultPreScale);
@@ -408,12 +412,12 @@ namespace BoSSS.Foundation.XDG {
                             m_Owner.m_Coordinates.BaseStorageMda,
                             chunkValueIN, chunkValueOT,
                             chunkMeanValueIN, chunkMeanValueOT,
-                            GradientIN, GradientOT,
+                            chunkGradientIN, chunkGradientOT,
                             ResultPreScale);
 
                     }
                     
-                    i += Len;
+                    i += ChunkLen;
                 }
                 Debug.Assert(i == Len);
 
@@ -422,6 +426,10 @@ namespace BoSSS.Foundation.XDG {
                     var NodesGlobal = this.GridDat.GlobalNodes.GetValue_EdgeSV(NS, e0, Len);
 
                     for(int e = 0; e < Len; e++) {
+                        int iEdge = e + e0;
+                        int jCell0 = E2C[iEdge, 0];
+                        int jCell1 = E2C[iEdge, 1];
+
                         for(int k = 0; k < K; k++) {
                             double x = NodesGlobal[e, k, 0];
                             double y = NodesGlobal[e, k, 1];
@@ -433,10 +441,10 @@ namespace BoSSS.Foundation.XDG {
                             if (Math.Abs(uIn - x) > 1.0e-5)
                                 throw new ArithmeticException();
 
-                            if (Math.Abs(dx_uIn - 1) > 1.0e-5)
+                            if(Math.Abs(dx_uIn - 1) > 1.0e-5)
                                 throw new ArithmeticException();
 
-                            if (Math.Abs(dy_uIn - 0) > 1.0e-5)
+                            if(Math.Abs(dy_uIn - 0) > 1.0e-5)
                                 throw new ArithmeticException();
 
                         }
