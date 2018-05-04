@@ -1183,14 +1183,14 @@ namespace BoSSS.Foundation {
                     if(m_NonlinearVolume != null) {
                         using(new BlockTrace("Volume_Integration_NonLin", tr)) {
                             // volume integrals can be evaluated without knowing external cells
-                            //m_NonlinearVolume.m_Output = output;
-                            //m_NonlinearVolume.m_alpha = alpha;
-                            //m_NonlinearVolume.Time = time;
-                            //m_NonlinearVolume.Execute();
-                            //m_NonlinearVolume.m_Output = null;
-                            //m_NonlinearVolume.m_alpha = 1.0;
+                            m_NonlinearVolume.m_Output = output;
+                            m_NonlinearVolume.m_alpha = alpha;
+                            m_NonlinearVolume.Time = time;
+                            m_NonlinearVolume.Execute();
+                            m_NonlinearVolume.m_Output = null;
+                            m_NonlinearVolume.m_alpha = 1.0;
 
-                            Console.WriteLine("Volume form deact (nonlin).");
+                           
                         }
 
                     }
@@ -1347,12 +1347,10 @@ namespace BoSSS.Foundation {
                         using(new BlockTrace("Volume_Integration_(new)", tr)) {
                             var mtxBuilder = new LECVolumeQuadrature2<M, V>(this.Owner);
 
-                            //mtxBuilder.Execute(volRule,
-                            //    CodomainMapping, Parameters, DomainMapping,
-                            //    OnlyAffine ? default(M) : Matrix, AffineOffset, time);
-                            Console.WriteLine("Volume form deact (linear).");
-
-
+                            mtxBuilder.Execute(volRule,
+                                CodomainMapping, Parameters, DomainMapping,
+                                OnlyAffine ? default(M) : Matrix, AffineOffset, time);
+                            
                         }
 
                     } else {
