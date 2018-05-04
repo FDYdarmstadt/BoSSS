@@ -31,8 +31,8 @@ namespace BoSSS.Application.BoSSSpad{
             };
         }
 
-        static string RunCommand(object input){
-            string output = worksheet.RunCommand(input.ToString());
+        static object RunCommand(object input){
+            Tuple<string, string> output = worksheet.RunCommand(input.ToString());
             return output;
         }
 
