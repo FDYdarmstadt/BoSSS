@@ -612,6 +612,7 @@ namespace CutCellQuadrature.TestCases {
                         CellType.Square_Linear,
                         false,
                         false,
+                        null,
                         new BoundingBox(new double[,] { {-0.2, -0.2}, { 0.2, 0.2 } }));
                     break;
 

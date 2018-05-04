@@ -355,16 +355,11 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         public bool EnforceLevelSetConservation = false;
 
+      
         /// <summary>
-        /// Solver to use;
+        /// Switch for selection of linear Solvers library
         /// </summary>
-        public string option_solver = "direct";
-
-        /// <summary>
-        /// Switch for linear Solvers
-        /// </summary>
-        public ISolverSmootherTemplate LinearSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS };
-
+        public DirectSolver._whichSolver LinearSolver = DirectSolver._whichSolver.MUMPS;
 
         /// <summary>
         /// If true, kinetic and surface energy will be evaluated in every cycle.

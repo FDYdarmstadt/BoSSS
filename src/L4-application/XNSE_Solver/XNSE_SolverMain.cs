@@ -66,20 +66,15 @@ namespace BoSSS.Application.XNSE_Solver {
 
         static void Main(string[] args) {
             //Tests.UnitTest.TestFixtureSetUp();
-            //Tests.UnitTest.TestRisingBubble();
-            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.TestRayleighTaylorInstability();
-            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ChannelTest(3, 0.0d, ViscosityMode.Standard, 0.0d);
-            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.PolynomialTestForConvectionTest(3, 0, false);
-            //Tests.UnitTest.MovingDropletTest(2, 0.01d, true, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, 0.69711d, ViscosityMode.Standard, true, false);
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.MovingDropletTest(3, 0.3d, true,  SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, 0.70811d,  ViscosityMode.FullySymmetric, true, false);
+            //////BoSSS.Application.XNSE_Solver.Tests.UnitTest.TestCapillaryWave();
+            //////BoSSS.Application.XNSE_Solver.Tests.UnitTest.MovingDropletTest(2, 0.01d, true, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, 0.69711d, ViscosityMode.FullySymmetric, true, false);
             //Tests.UnitTest.TestFixtureTearDown();
+            //Console.WriteLine("Press any key----");
+            //Console.ReadKey();
+            //while(true) ;
             //return;
          
-
-            //Tests.ElementalTestProgramm.Init();
-            //Tests.ElementalTestProgramm.CircleMovementTest(LevelSetEvolution.FastMarching, LevelSetHandling.Coupled_Once, XNSE_Control.TimesteppingScheme.ImplicitEuler);
-            //Tests.ElementalTestProgramm.Cleanup();
-            //return;
-
             _Main(args, false, delegate () {
                 var p = new XNSE_SolverMain();
                 return p;
@@ -640,7 +635,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     m_BDF_Timestepper.incrementTimesteps = this.Control.incrementTimesteps;
                     m_BDF_Timestepper.PushLevelSet = this.PushLevelSetAndRelatedStuff;
                     m_BDF_Timestepper.IterUnderrelax = this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative ? this.Control.LSunderrelax : 1.0;
-                    m_BDF_Timestepper.Config_linearSolver = this.Control.LinearSolver;
+                    m_BDF_Timestepper.Config_linearSolver = new DirectSolver() { WhichSolver = this.Control.LinearSolver, TestSolution = true };
                     //m_BDF_Timestepper.CustomIterationCallback += this.PlotOnIterationCallback;
 
                 }

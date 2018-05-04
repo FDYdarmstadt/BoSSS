@@ -574,7 +574,6 @@ namespace BoSSS.Foundation.XDG {
 
                 private LevelSetData m_owner;
 
-                private int levelSetIndex;
 
                 public LevelSetReferenceHessianCache(LevelSetData owner)
                     : base(owner.m_owner.GridDat) //
@@ -623,8 +622,6 @@ namespace BoSSS.Foundation.XDG {
             private class LevelSetReferenceCurvatureCache : Caching.CacheLogic_CNs {
 
                 private LevelSetData m_owner;
-
-                private int levelSetIndex;
 
                 public LevelSetReferenceCurvatureCache(LevelSetData owner)
                     : base(owner.m_owner.GridDat) //

@@ -49,7 +49,7 @@ namespace BoSSS.Application.ZwoLsTest {
     /// <summary>
     /// Fluss fuer du/dx; (Ableitung nach 1. Raumrichtung), common parts for both level-sets;
     /// </summary>
-    abstract class LevSetFlx : ILevelSetComponent {
+    abstract class LevSetFlx : ILevelSetForm {
 
         protected LevelSetTracker m_LsTrk;
 

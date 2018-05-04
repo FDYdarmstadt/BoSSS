@@ -170,14 +170,14 @@ namespace BoSSS.Foundation.Grid.Classic {
             /// edge; (Can be used to compute the CFL number);
             /// 1st index: local edge index;
             /// </summary>
-            public double[] h_min_Edge;
+            public MultidimensionalArray h_min_Edge;
 
             /// <summary>
             /// the maximal Euclidean distance between two vertices for each edge;
             /// (Can be used to compute the CFL number);
             /// 1st index: local edge index;
             /// </summary>
-            public double[] h_max_Edge;
+            public MultidimensionalArray h_max_Edge;
 
             /// <summary>
             /// For each edge that is affine-linear (i.e. <see cref="Info"/>[e]
@@ -2326,8 +2326,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                     int E = Count;
                     double[] vk = new double[D];
                     double[] vi = new double[D];
-                    h_min_Edge = new double[E];
-                    h_max_Edge = new double[E];
+                    h_min_Edge = MultidimensionalArray.Create(E);
+                    h_max_Edge = MultidimensionalArray.Create(E);
 
                     
                     MultidimensionalArray verticesGlob = MultidimensionalArray.Create(1, 1, D);

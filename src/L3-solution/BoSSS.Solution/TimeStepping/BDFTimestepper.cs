@@ -228,8 +228,8 @@ namespace BoSSS.Solution.TimeStepping {
                     Stack_OpAffine[0] = new double[Stack_u[0].Mapping.LocalLength];
                 }
 
-                Debug.Assert(Stack_OpMatrix[0].InfNorm() == 0);
-                Debug.Assert(Stack_OpAffine[0].L2Norm() == 0);
+                //Debug.Assert(Stack_OpMatrix[0].InfNorm() == 0);
+                //Debug.Assert(Stack_OpAffine[0].L2Norm() == 0);
 
                 Tsc = TSCchain.Last();
 
@@ -279,15 +279,12 @@ namespace BoSSS.Solution.TimeStepping {
             Stack_OpAffine[1].Clear();
 
             // Assemble matrix and affine offset
-            Operator.ComputeMatrixEx(
-                Mapping, ParameterMapping, Mapping,
-                Stack_OpMatrix[1], Stack_OpAffine[1],
-                false,
-                 0.0,
+            var b = Operator.GetMatrixBuilder(Mapping, ParameterMapping, Mapping,
                  new EdgeQuadratureScheme(true, subGrid?.AllEdgesMask),
                  new CellQuadratureScheme(true, subGrid?.VolumeMask)
                 );
-
+            b.time = 0.0;
+            b.ComputeMatrix(Stack_OpMatrix[1], Stack_OpAffine[1]);
             //Debug.Assert(Stack_OpMatrix[1].InfNorm() > 0);
         }
 
