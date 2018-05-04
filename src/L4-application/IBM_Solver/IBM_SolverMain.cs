@@ -332,6 +332,7 @@ namespace BoSSS.Application.IBM_Solver {
                             var presSource = new SrcPressureGradientLin_d(this.Control.SrcPressureGrad[d]);
                             comps.Add(presSource);
                         }
+
                     }
                 }
 
@@ -374,6 +375,9 @@ namespace BoSSS.Application.IBM_Solver {
                         //IBM_Op.OnIntegratingBulk += flx.SetParameter;
                         IBM_Op.EquationComponents["div"].Add(src);
                         IBM_Op.EquationComponents["div"].Add(flx);
+
+                        //var presStab = new PressureStabilization(1, this.GridData.Edges.h_max_Edge, 1 / this.Control.PhysicalParameters.mu_A);
+                        //IBM_Op.EquationComponents["div"].Add(presStab);
 
                     }
 
@@ -442,6 +446,7 @@ namespace BoSSS.Application.IBM_Solver {
                     m_BDF_Timestepper.Config_MaxIterations = this.Control.MaxSolverIterations;
                     m_BDF_Timestepper.Config_MinIterations = this.Control.MinSolverIterations;
                     m_BDF_Timestepper.SessionPath = SessionPath;
+                    m_BDF_Timestepper.Timestepper_Init = Solution.Timestepping.TimeStepperInit.MultiInit;
 
                     SolverChooser.ChooseSolver(this.Control, ref m_BDF_Timestepper);
 
@@ -858,6 +863,42 @@ namespace BoSSS.Application.IBM_Solver {
 
         }
 
+        /// <summary>
+        /// delegate for the initialization of previous timesteps from restart session
+        /// </summary>
+        /// <param name="TimestepIndex"></param>
+        /// <param name="time"></param>
+        /// <param name="St"></param>
+        private void BDFDelayedInitLoadRestart(int TimestepIndex, double time, DGField[] St) {
+
+            Console.WriteLine("Timestep index {0}, time {1} ", TimestepIndex, time);
+
+            ITimestepInfo tsi_toLoad;
+            if (TimestepIndex < 0) {
+                throw new ArgumentOutOfRangeException("Not enough Timesteps to restart with desired Timestepper");
+            } else {
+                ISessionInfo reloadSession = GetDatabase().Controller.GetSessionInfo(this.CurrentSessionInfo.RestartedFrom);
+                tsi_toLoad = reloadSession.Timesteps.Single(t => t.TimeStepNumber.Equals(new TimestepNumber(TimestepIndex)));
+            }
+            DatabaseDriver.LoadFieldData(tsi_toLoad, this.GridData, this.IOFields);
+
+            // level-set
+            // ---------
+            this.DGLevSet.Current.Clear();
+            this.DGLevSet.Current.AccLaidBack(1.0, this.LevSet);
+
+            this.LsTrk.UpdateTracker(incremental: true);
+
+            // solution
+            // --------
+            int D = this.LsTrk.GridDat.SpatialDimension;
+
+            for (int d = 0; d < D; d++) {
+                St[d] = this.Velocity[d].CloneAs();
+            }
+            St[D] = this.Pressure.CloneAs();
+        }
+
         private void After_SetInitialOrLoadRestart() {
             using (new FuncTrace()) {
                 int D = this.GridData.SpatialDimension;
@@ -880,55 +921,27 @@ namespace BoSSS.Application.IBM_Solver {
         protected override void LoadRestart(out double Time, out TimestepNumber TimestepNo) {
             base.LoadRestart(out Time, out TimestepNo);
             this.CreateEquationsAndSolvers(null);
-            After_SetInitialOrLoadRestart();
-
+            
             // =========================================
             // XDG Timestepper initialization
             // =========================================
 
-            if (this.Control.Timestepper_Init == IBM_Control.TimestepperInit.MultiInit) {
-                //int CallCount = 0;
+            if (this.Control.TimeStepper_Init == Solution.Timestepping.TimeStepperInit.MultiInit) {
+                // =========================================
+                // XDG BDF Timestepper initialization
+                // =========================================
 
-
-           //     throw new ApplicationException("Does not work at the moment. Contact Martin Smuda for Help");
-
-                m_BDF_Timestepper.MultiInit(Time, TimestepNo.MajorNumber, this.Control.GetFixedTimestep(),
-                    delegate (int TimestepIndex, double time, DGField[] St) {
-
-                        Console.WriteLine("Timestep index {0}, time {1} ", TimestepIndex, time);
-
-                        ITimestepInfo tsi_toLoad;
-                        if (TimestepIndex < 0) {
-                            throw new ArgumentOutOfRangeException("Not enough Timesteps to restart with desired Timestepper");
-                        } else {
-                            ISessionInfo reloadSession = GetDatabase().Controller.GetSessionInfo(this.CurrentSessionInfo.RestartedFrom);
-                            tsi_toLoad = reloadSession.Timesteps.Single(t => t.TimeStepNumber.Equals(new TimestepNumber(TimestepIndex)));
-                        }
-                        DatabaseDriver.LoadFieldData(tsi_toLoad, this.GridData, this.IOFields);
-
-
-                        //if (CallCount == 0) {
-                        //    this.LsTrk.UpdateTracker();
-                        //} else {
-                        //    this.LsTrk.UpdateTracker(incremental: true);
-                        //}
-
-                        //CallCount++;
-
-                        // solution
-                        // --------
-                        int D = this.LsTrk.GridDat.SpatialDimension;
-
-                        for (int d = 0; d < D; d++) {
-                            St[d] = this.Velocity[d].CloneAs();
-                        }
-                        St[D] = this.Pressure.CloneAs();
-
-                    });
+                if (m_BDF_Timestepper != null) {
+                    m_BDF_Timestepper.DelayedTimestepperInit(Time, TimestepNo.MajorNumber, this.Control.GetFixedTimestep(),
+                        // delegate for the initialization of previous timesteps from restart session
+                        BDFDelayedInitLoadRestart);
+                }
             } else {
                 if (m_BDF_Timestepper != null)
                     m_BDF_Timestepper.SingleInit();
             }
+
+            After_SetInitialOrLoadRestart();
         }
 
 
@@ -1077,25 +1090,25 @@ namespace BoSSS.Application.IBM_Solver {
 
         public override void PostRestart(double time, TimestepNumber timestep) {
             // Find path to PhysicalData.txt
-            //var fsDriver = this.DatabaseDriver.FsDriver;
-            //string pathToOldSessionDir = System.IO.Path.Combine(
-            //    fsDriver.BasePath, "sessions", this.CurrentSessionInfo.RestartedFrom.ToString());
-            //string pathToPhysicalData = System.IO.Path.Combine(pathToOldSessionDir, "PhysicalData.txt");
-            //string[] records = File.ReadAllLines(pathToPhysicalData);
+            var fsDriver = this.DatabaseDriver.FsDriver;
+            string pathToOldSessionDir = System.IO.Path.Combine(
+                fsDriver.BasePath, "sessions", this.CurrentSessionInfo.RestartedFrom.ToString());
+            string pathToPhysicalData = System.IO.Path.Combine(pathToOldSessionDir, "PhysicalData.txt");
+            string[] records = File.ReadAllLines(pathToPhysicalData);
 
-            //string line1 = File.ReadLines(pathToPhysicalData).Skip(1).Take(1).First();
-            //string line2 = File.ReadLines(pathToPhysicalData).Skip(2).Take(1).First();
-            //string[] fields_line1 = line1.Split('\t');
-            //string[] fields_line2 = line2.Split('\t');
+            string line1 = File.ReadLines(pathToPhysicalData).Skip(1).Take(1).First();
+            string line2 = File.ReadLines(pathToPhysicalData).Skip(2).Take(1).First();
+            string[] fields_line1 = line1.Split('\t');
+            string[] fields_line2 = line2.Split('\t');
 
-            //double dt = Convert.ToDouble(fields_line2[1]) - Convert.ToDouble(fields_line1[1]);
+            double dt = Convert.ToDouble(fields_line2[1]) - Convert.ToDouble(fields_line1[1]);
 
-            //int idx_restartLine = Convert.ToInt32(time / dt + 1.0);
-            //string restartLine = File.ReadLines(pathToPhysicalData).Skip(idx_restartLine - 1).Take(1).First();
-            //double[] values = Array.ConvertAll<string, double>(restartLine.Split('\t'), double.Parse);
+            int idx_restartLine = Convert.ToInt32(time / dt + 1.0);
+            string restartLine = File.ReadLines(pathToPhysicalData).Skip(idx_restartLine - 1).Take(1).First();
+            double[] values = Array.ConvertAll<string, double>(restartLine.Split('\t'), double.Parse);
 
             /* string restartLine = "";
-             // Calculcation of dt 
+              Calculcation of dt 
              var physicalData = File.ReadLines(pathToPhysicalData);
              int count = 0;
              foreach (string line in physicalData)
@@ -1112,25 +1125,25 @@ namespace BoSSS.Application.IBM_Solver {
              }
 
 
-            // double dt = Convert.ToDouble(fields_line2[1]) - Convert.ToDouble(fields_line1[1]);
+             double dt = Convert.ToDouble(fields_line2[1]) - Convert.ToDouble(fields_line1[1]);
 
-             // Using dt to find line of restart time
-            // int idx_restartLine = Convert.ToInt32(time / dt + 1.0);
-             //string restartLine = File.ReadLines(pathToPhysicalData).Skip(idx_restartLine - 1).Take(1).First();
+              Using dt to find line of restart time
+             int idx_restartLine = Convert.ToInt32(time / dt + 1.0);
+             string restartLine = File.ReadLines(pathToPhysicalData).Skip(idx_restartLine - 1).Take(1).First();
              double[] values = Array.ConvertAll<string, double>(restartLine.Split('\t'), double.Parse);*/
 
-            // Adding PhysicalData.txt
-            //if ((base.MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty)) {
-            //    Log_DragAndLift = base.DatabaseDriver.FsDriver.GetNewLog("PhysicalData", CurrentSessionInfo.ID);
-            //    string firstline;
-            //    if (this.GridData.SpatialDimension == 3) {
-            //        firstline = String.Format("{0}\t{1}\t{2}\t{3}\t{4}", "#Timestep", "#Time", "x-Force", "y-Force", "z-Force");
-            //    } else {
-            //        firstline = String.Format("{0}\t{1}\t{2}\t{3}", "#Timestep", "#Time", "x-Force", "y-Force");
-            //    }
-            //    Log_DragAndLift.WriteLine(firstline);
-            //    Log_DragAndLift.WriteLine(restartLine);
-            //}
+            //Adding PhysicalData.txt
+            if ((base.MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty)) {
+                Log_DragAndLift = base.DatabaseDriver.FsDriver.GetNewLog("PhysicalData", CurrentSessionInfo.ID);
+                string firstline;
+                if (this.GridData.SpatialDimension == 3) {
+                    firstline = String.Format("{0}\t{1}\t{2}\t{3}\t{4}", "#Timestep", "#Time", "x-Force", "y-Force", "z-Force");
+                } else {
+                    firstline = String.Format("{0}\t{1}\t{2}\t{3}", "#Timestep", "#Time", "x-Force", "y-Force");
+                }
+                Log_DragAndLift.WriteLine(firstline);
+                Log_DragAndLift.WriteLine(restartLine);
+            }
 
         }
 
