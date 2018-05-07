@@ -1313,6 +1313,20 @@ namespace BoSSS.Solution.GridImport {
         /// </summary>
         /// <returns>the grid commons object</returns>
         public GridCommons GenerateBoSSSGrid() {
+            GridCommons grd = null;
+
+            if (bosss_element_type.Equals(ElementType_t.QUAD_4)) {
+                grd = new Grid2D(Square.Instance);
+            } else if (bosss_element_type.Equals(ElementType_t.TRI_3)) {
+                grd = new Grid2D(Triangle.Instance);
+            } else if (bosss_element_type.Equals(ElementType_t.HEXA_8)) {
+                grd = new Grid3D(Cube.Instance);
+            } else if (bosss_element_type.Equals(ElementType_t.TETRA_4)) {
+                grd = new Grid3D(Tetra.Instance);
+            } else {
+                throw new NotSupportedException("Unsupported BoSSS element type: " + bosss_element_type);
+            }
+
             int numberOfNodesPerCurvedElement = NumberOfNodesPerElement(curved_element_type);
             int numberOfNodesPerElement = NumberOfNodesPerElement(bosss_element_type);
 
@@ -1333,20 +1347,6 @@ namespace BoSSS.Solution.GridImport {
             }
 
             RefElement refElement = GenerateReferenceElement();
-
-            GridCommons grd = null;
-
-            if (bosss_element_type.Equals(ElementType_t.QUAD_4)) {
-                grd = new Grid2D(Square.Instance);
-            } else if (bosss_element_type.Equals(ElementType_t.TRI_3)) {
-                grd = new Grid2D(Triangle.Instance);
-            } else if (bosss_element_type.Equals(ElementType_t.HEXA_8)) {
-                grd = new Grid3D(Cube.Instance);
-            } else if (bosss_element_type.Equals(ElementType_t.TETRA_4)) {
-                grd = new Grid3D(Tetra.Instance);
-            } else {
-                new NotSupportedException("Unsupported BoSSS element type");
-            }
 
             grd.Cells = new Cell[bosss_elements];
 
