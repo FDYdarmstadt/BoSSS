@@ -97,9 +97,9 @@ namespace BoSSS.Application.Matrix_MPItest {
         /// </summary>
         [Test]
         public static void MultiplyTest(
-            [Values(XDGusage.none, XDGusage.mixed1, XDGusage.mixed2, XDGusage.all)] XDGusage UseXdg,
-            [Values(1, 3)] int DGOrder,
-            [Values(false, true)] bool compressL1,
+            [Values(XDGusage.none, XDGusage.mixed2, XDGusage.all)] XDGusage UseXdg,
+            [Values(2)] int DGOrder,
+            [Values(false)] bool compressL1,
             [Values(false, true)] bool compressL2) { 
 
             unsafe
