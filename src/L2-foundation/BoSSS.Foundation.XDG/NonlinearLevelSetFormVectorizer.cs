@@ -71,7 +71,7 @@ namespace BoSSS.Foundation.XDG {
             int L = inp.Len;
             Debug.Assert(Koeff_V.GetLength(0) == L);
             int K = Koeff_V.GetLength(1); // no of nodes per cell
-            int D = inp.X.Length;
+            int D = inp.X.GetLength(2); // spatial dimension
             int _NOParams = this.ParameterOrdering == null ? 0 : this.ParameterOrdering.Count;
             Debug.Assert(_NOParams == inp.ParamsNeg.Length);
             Debug.Assert(_NOParams == inp.ParamsPos.Length);
@@ -151,8 +151,8 @@ namespace BoSSS.Foundation.XDG {
                         }
                     }
 
-                    _vA = 0;
-                    _vB = 1;
+                    _vA = 1;
+                    _vB = 0;
                     Koeff_V[l, k, iSpcNeg] += OrgComponent.LevelSetForm(ref cp, _uA, _uB, _Grad_uA, _Grad_uB, _vA, _vB, _Grad_vA, _Grad_vB);
                     _vA = 0;
                     _vB = 1;
@@ -167,7 +167,7 @@ namespace BoSSS.Foundation.XDG {
             int L = inp.Len;
             Debug.Assert(Koeff_GradV.GetLength(0) == L);
             int K = Koeff_GradV.GetLength(1); // no of nodes per cell
-            int D = inp.X.Length;
+            int D = inp.X.GetLength(2); // spatial dimension
             int _NOParams = this.ParameterOrdering == null ? 0 : this.ParameterOrdering.Count;
             Debug.Assert(_NOParams == inp.ParamsNeg.Length);
             Debug.Assert(_NOParams == inp.ParamsPos.Length);

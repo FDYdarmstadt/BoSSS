@@ -68,12 +68,15 @@ namespace BoSSS.Solution.XNSECommon {
         XLaplace_Interface.Mode m_Mode;
         MultidimensionalArray m_LenScales;
 
+        string current_species;
+
         public void SetParameter(string speciesName, SpeciesId __SpcId) {
             switch(speciesName) {
                 case "A": species_Mu = muA; otherSpecies_Mu = muB; SpcId = __SpcId; break;
                 case "B": species_Mu = muB; otherSpecies_Mu = muA; SpcId = __SpcId; break;
                 default: throw new ArgumentException("Unknown species.");
             }
+            current_species = speciesName;
         }
 
         double species_Mu;
@@ -122,7 +125,7 @@ namespace BoSSS.Solution.XNSECommon {
 
             return this.penatly_baseFactor * penaltySizeFactor * penalty_muFactor;
         }
-
+        
 
         override public double InnerEdgeForm(ref CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB, double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB) {
             double Acc = 0.0;
@@ -134,8 +137,8 @@ namespace BoSSS.Solution.XNSECommon {
             double scaleIN, scaleOT;
             ComputeScaling(ref inp, out scaleIN, out scaleOT);
 
-
-            for(int d = 0; d < inp.D; d++) {
+            
+            for (int d = 0; d < inp.D; d++) {
                 Acc += (scaleIN * muA * _Grad_uA[0, d] + scaleOT * muB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normale[d];  // consistency term
                 Acc += (scaleIN * muA * _Grad_vA[d] + scaleOT * muB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normale[d];  // symmetry term
             }
@@ -145,6 +148,11 @@ namespace BoSSS.Solution.XNSECommon {
             Acc -= (_uA[0] - _uB[0]) * (_vA - _vB) * this.GetPenalty(ref inp); // penalty term
 
             return Acc;
+        }
+
+        public override double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
+           
+            return base.BoundaryEdgeForm(ref inp, _uA, _Grad_uA, _vA, _Grad_vA);
         }
 
 
@@ -204,9 +212,8 @@ namespace BoSSS.Solution.XNSECommon {
         protected double muB;
         protected double penatly_baseFactor;
         protected Mode m_mode;
+
         
-
-
         public virtual double LevelSetForm(ref CommonParamsLs inp, 
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
@@ -228,14 +235,11 @@ namespace BoSSS.Solution.XNSECommon {
             double omega_A, omega_B;
             ComputeScaling(ref inp, out omega_A, out omega_B);
             
-
             double Ret = 0.0;
             Ret += (muA * omega_A * Grad_uA_xN + muB * omega_B * Grad_uB_xN) * (vA - vB);
             Ret += (muA * omega_A * Grad_vA_xN + muB * omega_B * Grad_vB_xN) * (uA[0] - uB[0]);
 
             //
-
-
             Ret -= GetPenalty(ref inp) * (uA[0] - uB[0]) * (vA - vB);
 
             return Ret;
