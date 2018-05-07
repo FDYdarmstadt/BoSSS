@@ -35,7 +35,9 @@ namespace BoSSS.Solution.Multigrid {
     /// Society for Industrial and Applied Mathematics, 2003. https://doi.org/10.1137/1.9780898718898.
     /// </summary>
     public class Newton : NonlinearSolver {
-        public Newton(AssembleMatrixDel __AssembleMatrix, IEnumerable<AggregationGridBasis[]> __AggBasisSeq, MultigridOperator.ChangeOfBasisConfig[][] __MultigridOperatorConfig) : base(__AssembleMatrix, __AggBasisSeq, __MultigridOperatorConfig) {
+        public Newton(AssembleMatrixDel __AssembleMatrix, IEnumerable<AggregationGridBasis[]> __AggBasisSeq, MultigridOperator.ChangeOfBasisConfig[][] __MultigridOperatorConfig) :
+            base(__AssembleMatrix, __AggBasisSeq, __MultigridOperatorConfig) //
+        {
         }
 
         /// <summary>
@@ -65,7 +67,7 @@ namespace BoSSS.Solution.Multigrid {
         public double ConvCrit = 1e-6;
 
         /// <summary>
-        /// Maximum number of steplength iterations
+        /// Maximum number of step-length iterations
         /// </summary>
         public double maxStep = 10;
 
@@ -768,7 +770,7 @@ namespace BoSSS.Solution.Multigrid {
             }
         }
         /// <summary>
-        /// % Apply three-point safeguarded parabolic model for a line search.
+        /// Apply three-point safeguarded parabolic model for a line search.
         /// C.T.Kelley, April 1, 2003
         /// This code comes with no guarantee or warranty of any kind.
         /// function lambdap = parab3p(lambdac, lambdam, ff0, ffc, ffm)
