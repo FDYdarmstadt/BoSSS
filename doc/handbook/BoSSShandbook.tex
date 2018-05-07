@@ -454,7 +454,12 @@ associated development environments (e.g. Visual Studio or equivalents).
 % ********************************************************************************
 % ********************************************************************************
 
-Within this chapter, we will briefly outline the steps required to get started with using and/or developing \BoSSS{} applications. In any case, the installation of the pre-compiled version of \BoSSS{} (cf. section \ref{sec:gettingStarted_installation}) should be the first step. Upon finishing this step, you will be able to use the pre-compiled \BoSSS{} applications (cf. section \ref{sec:gettingStarted_using}), but also to start  exploring the code using the scripting API. Finally, working with the source code will be discussed in section \ref{sec:gettingStarted_developing}.
+Within this chapter, we will briefly outline the steps required to get started with using and/or 
+developing \BoSSS{} applications. In any case, the installation of the pre-compiled version of \BoSSS{} 
+(cf. section \ref{sec:gettingStarted_installation}) should be the first step. Upon finishing this step, 
+you will be able to use the pre-compiled \BoSSS{} applications (cf. section \ref{sec:gettingStarted_using}), 
+but also to start  exploring the code using the scripting API. Finally, working with the source code will 
+be discussed in section \ref{sec:gettingStarted_developing}.
 
 % --------------------------------------------------------------------------------
 \section{Installation}
@@ -820,14 +825,17 @@ The problem
 \end{array} \right.
 \label{eq:NavierStokesSphereBenchmark}
 \end{equation}
-is investigated on a 64x16x16 cell Cartesian grid. The physical parameters of the fluid are choosen to be $\rho_f=1$ and $\mu_f=0.002$ which renders down to a Reynoldsnumber of 100. The problem basically describes a sphere flow between two plates.
+is investigated on a 64x16x16 cell Cartesian grid. The physical parameters of the fluid are 
+choosen to be $\rho_f=1$ and $\mu_f=0.002$ which renders down to a Reynolds Number of 100. 
+The problem basically describes a sphere flow between two plates.
 
 
 \graphicspath{{./apdx-MPISolverPerformance/NSESphere/plots/}}
 
 \begin{figure}[!h]
 	\begin{center}
-		\input{./apdx-MPISolverPerformance/NSESphere/plots/MPIScalingTimes.tex}
+	%	\input{./apdx-MPISolverPerformance/NSESphere/plots/MPIScalingTimes.tex}
+At Krause: fix this!
 	\end{center}
 	\caption{
 		Solver runtime vs. processors, for polynomial degree $k=1/0$ leading to 212992 DoFs,
@@ -840,7 +848,8 @@ is investigated on a 64x16x16 cell Cartesian grid. The physical parameters of th
 
 \begin{figure}[!h]
 	\begin{center}
-		\input{./apdx-MPISolverPerformance/NSESphereComplex/plots/MPIScalingTimes.tex}
+	%	\input{./apdx-MPISolverPerformance/NSESphereComplex/plots/MPIScalingTimes.tex}
+        At Krause: fix this!
 	\end{center}
 	\caption{
 		Solver runtime vs. processors, for polynomial degree $k=2/1$ leading to 557056 DoFs,
