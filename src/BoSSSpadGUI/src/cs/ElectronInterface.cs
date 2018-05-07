@@ -9,6 +9,9 @@ using BoSSS.Foundation.IO;
 
 namespace BoSSS.Application.BoSSSpad{
 
+    /// <summary>
+    /// Driver class for <see cref="ElectronWorksheet"/>, used by the Electron-GUI
+    /// </summary>
     public class ElectronInterface{
 
         static ElectronWorksheet worksheet;
@@ -28,8 +31,8 @@ namespace BoSSS.Application.BoSSSpad{
             };
         }
 
-        static string RunCommand(object input){
-            string output = worksheet.RunCommand(input.ToString());
+        static object RunCommand(object input){
+            Tuple<string, string> output = worksheet.RunCommand(input.ToString());
             return output;
         }
 

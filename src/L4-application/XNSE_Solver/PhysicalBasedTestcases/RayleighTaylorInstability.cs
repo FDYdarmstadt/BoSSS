@@ -357,7 +357,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
-            C.LinearSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS };
+            C.LinearSolver = DirectSolver._whichSolver.MUMPS;
 
             //C.Option_LevelSetEvolution = LevelSetEvolution.Fourier;
             //C.AdvancedDiscretizationOptions.surfTensionMode = SurfaceTensionMode.Curvature_Fourier;
@@ -693,7 +693,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
-            C.LinearSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS };
+            C.LinearSolver = DirectSolver._whichSolver.MUMPS;
 
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
             C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Projected;

@@ -162,7 +162,7 @@ namespace BoSSS.Foundation.XDG {
         public XEvaluatorLinear GetMatrixBuilder(
             LevelSetTracker lsTrk,
             UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, 
-            IDictionary<SpeciesId, QrSchemPair> SpeciesSchemes = null
+            IDictionary<SpeciesId, QrSchemPair> SpeciesSchemes
             ) {
 
             return new XEvaluatorLinear(this, lsTrk, DomainVarMap, ParameterMap, CodomainVarMap, 
@@ -201,8 +201,34 @@ namespace BoSSS.Foundation.XDG {
         public XEvaluatorNonlin GetEvaluatorEx(
             LevelSetTracker lsTrk,
             IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, 
-             IDictionary<SpeciesId, QrSchemPair> SpeciesSchemes = null
+             IDictionary<SpeciesId, QrSchemPair> SpeciesSchemes
             ) {
+            return new XEvaluatorNonlin(this, lsTrk,
+                new CoordinateMapping(DomainFields), ParameterMap, CodomainVarMap,
+                1,
+                SpeciesSchemes);
+        }
+
+        /// <summary>
+        /// explicit evaluation of the operator
+        /// </summary>
+        public XEvaluatorNonlin GetEvaluatorEx(
+            LevelSetTracker lsTrk,
+            IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, 
+            params SpeciesId[] whichSpecies
+            ) {
+
+            Dictionary<SpeciesId, QrSchemPair> SpeciesSchemes = new Dictionary<SpeciesId, QrSchemPair>();
+            if(whichSpecies == null | whichSpecies.Length <= 0) {
+                foreach(var s in lsTrk.SpeciesIdS) {
+                    SpeciesSchemes.Add(s, new QrSchemPair());
+                }
+            } else {
+                foreach(var s in whichSpecies) {
+                    SpeciesSchemes.Add(s, new QrSchemPair());
+                }
+            }
+
             return new XEvaluatorNonlin(this, lsTrk,
                 new CoordinateMapping(DomainFields), ParameterMap, CodomainVarMap,
                 1,
@@ -449,7 +475,6 @@ namespace BoSSS.Foundation.XDG {
                     ///////////////////
 
                     using(new BlockTrace("surface_integration", tr)) {
-                        int dc = 0;
                         foreach(var tt in this.CouplingRules) {
                             int iLevSet = tt.Item1;
                             var SpeciesA = tt.Item2;
@@ -484,7 +509,7 @@ namespace BoSSS.Foundation.XDG {
 
                         }
                     }
-
+                    
                     // allow all processes to catch up
                     // -------------------------------
                     if(trx != null) {
@@ -506,27 +531,18 @@ namespace BoSSS.Foundation.XDG {
 
         public class XEvaluatorNonlin : XEvaluatorBase, IEvaluatorNonLin {
 
-            CoordinateMapping m_DomainVarMap;
-
-            private CoordinateMapping sdvm(CoordinateMapping dvm) {
-                m_DomainVarMap = dvm;
-                return dvm;
-            }
+            
 
             internal XEvaluatorNonlin(XSpatialOperator ownr,
                 LevelSetTracker lsTrk,
                 CoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
                 int TrackerHistory,
                 IDictionary<SpeciesId, QrSchemPair> __SpeciesSchemes) :
-                base(ownr, lsTrk, DomainVarMap, DomainVarMap.Fields, ParameterMap, CodomainVarMap, TrackerHistory, __SpeciesSchemes) {
+                base(ownr, lsTrk, DomainVarMap, DomainVarMap.Fields, ParameterMap, CodomainVarMap, TrackerHistory, __SpeciesSchemes) //
+            {
                 this.DomainFields = DomainVarMap;
-
-                //foreach(var species in __SpeciesSchemes.Keys) {
-                //    DGField[] DomFields = DomainVarMap.Select(f => ((f is XDGField) ? ((XDGField)f).GetSpeciesShadowField(species) : f)).ToArray();
-                        
-                //}
-
-
+                base.MPITtransceive = true;
+                
             }
 
             ///// <summary>
@@ -572,9 +588,7 @@ namespace BoSSS.Foundation.XDG {
                     #endregion
 
 
-
-
-                    // build matrix, bulk
+                    // bulk
                     // ---------------------
                     //MsrMatrix BulkMatrix = null;
                     //double[] BulkAffineOffset = null;
@@ -607,7 +621,6 @@ namespace BoSSS.Foundation.XDG {
                                     }
 
                                     eval.time = base.time;
-
                                     eval.Evaluate(alpha, 1.0, vec, null);
                                 }
 
@@ -616,9 +629,10 @@ namespace BoSSS.Foundation.XDG {
 
                     }
 
-                    // build matrix, coupling
+                    //  coupling
                     ///////////////////
 
+                    
                     using (new BlockTrace("surface_integration", tr)) {
                         foreach (var tt in this.CouplingRules) {
                             int iLevSet = tt.Item1;
@@ -646,9 +660,8 @@ namespace BoSSS.Foundation.XDG {
 #endif
                         }
 
-
-
-                    }
+                    } 
+                    
 
                     // allow all processes to catch up
                     // -------------------------------
@@ -664,7 +677,7 @@ namespace BoSSS.Foundation.XDG {
             
 
             protected override void ctorLevSetFormIntegrator(int iLevSet, SpeciesId SpeciesA, SpeciesId SpeciesB, ICompositeQuadRule<QuadRule> rule) {
-                throw new NotImplementedException();
+                
             }
 
             /// <summary>
@@ -733,7 +746,7 @@ namespace BoSSS.Foundation.XDG {
                     m_Xowner = ownr;
                     SpeciesSchemes = __SpeciesSchemes;
                     ReqSpecies = SpeciesSchemes.Keys.ToArray();
-                    base.MPITtransceive = true;
+                    
 
                     var SchemeHelper = lsTrk.GetXDGSpaceMetrics(ReqSpecies, order, TrackerHistory).XQuadSchemeHelper;
                     var TrackerRegions = lsTrk.RegionsHistory[TrackerHistory];
@@ -1182,15 +1195,59 @@ namespace BoSSS.Foundation.XDG {
             /// %
             /// </summary>
             public IEnumerator<double> GetEnumerator() {
-                throw new NotImplementedException("leck mi - Wolfgang Amadeus Mozart, Köchelverzeichnis KV233 bzw. 382c und d");
-
+                return new MyEnumerator() {
+                    m_Owner = this
+                };
             }
 
             /// <summary>
             /// %
             /// </summary>
             IEnumerator IEnumerable.GetEnumerator() {
-                throw new NotImplementedException("leck mi.");
+                return new MyEnumerator() {
+                    m_Owner = this
+                };
+            }
+
+
+            class MyEnumerator : IEnumerator<double>, IEnumerator {
+                internal SpeciesFrameVector<V> m_Owner;
+
+
+                public double Current {
+                    get {
+                        int idx = m_Owner.fr.Frame2Full_Loc(cnt);
+                        if(idx < 0)
+                            return 0.0;
+                        else 
+                            return m_Owner.m_Full[idx];
+                    }
+                }
+
+                object IEnumerator.Current {
+                    get {
+                        int idx = m_Owner.fr.Frame2Full_Loc(cnt);
+                        if(idx < 0)
+                            return 0.0;
+                        else 
+                            return m_Owner.m_Full[idx];
+                    }
+                }
+
+                public void Dispose() {
+                    m_Owner = null;
+                }
+
+                int cnt = -1;
+
+                public bool MoveNext() {
+                    cnt++;
+                    return (cnt < m_Owner.Count);
+                }
+
+                public void Reset() {
+                    cnt = -1;
+                }
             }
         }
 

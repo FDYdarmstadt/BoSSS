@@ -1145,6 +1145,13 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
             // transform gradient fluxes -- less costly than transforming basis
             if(maxTestGradientBasis != null) {
+#if DEBUG
+                for(int i = 0; i < NoOfEquations; i++) {
+                    Debug.Assert((m_GradientFluxValuesINtrf[i] != null) == (m_GradientFluxValuesOTtrf[i] != null));
+                    Debug.Assert((m_GradientFluxValuesIN[i] != null) == (m_GradientFluxValuesINtrf[i] != null));
+                    Debug.Assert((m_GradientFluxValuesOT[i] != null) == (m_GradientFluxValuesOTtrf[i] != null));
+                }
+#endif
 
                 if(affine) {
                     MultidimensionalArray invJacobi = grid.iGeomCells.InverseTransformation;
@@ -1153,12 +1160,15 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                     unsafe {
                         fixed(int* pEdge2Cell = Edge2Cell) {
                             for(int i = 0; i < NoOfEquations; i++) {
-                                m_GradientFluxValuesINtrf[i].Multiply(1.0, m_GradientFluxValuesIN[i], invJacobi, 0.0, ref mp_jke_jkd_Tjed,
-                                    pEdge2Cell, Edge2Cell.GetLength(0),
-                                    trfPreOffset_A: 0, trfCycle_A: 0, trfPostOffset_A: 0, trfPreOffset_B: (2 * i0 + 0), trfCycle_B: 2, trfPostOffset_B: 0);
-                                m_GradientFluxValuesOTtrf[i].Multiply(1.0, m_GradientFluxValuesOT[i], invJacobi, 0.0, ref mp_jke_jkd_Tjed,
-                                    pEdge2Cell, Edge2Cell.GetLength(0),
-                                    trfPreOffset_A: 0, trfCycle_A: 0, trfPostOffset_A: 0, trfPreOffset_B: (2 * i0 + 1), trfCycle_B: 2, trfPostOffset_B: 0);
+                                
+                                if(m_GradientFluxValuesINtrf[i] != null) {
+                                    m_GradientFluxValuesINtrf[i].Multiply(1.0, m_GradientFluxValuesIN[i], invJacobi, 0.0, ref mp_jke_jkd_Tjed,
+                                        pEdge2Cell, Edge2Cell.GetLength(0),
+                                        trfPreOffset_A: 0, trfCycle_A: 0, trfPostOffset_A: 0, trfPreOffset_B: (2 * i0 + 0), trfCycle_B: 2, trfPostOffset_B: 0);
+                                    m_GradientFluxValuesOTtrf[i].Multiply(1.0, m_GradientFluxValuesOT[i], invJacobi, 0.0, ref mp_jke_jkd_Tjed,
+                                        pEdge2Cell, Edge2Cell.GetLength(0),
+                                        trfPreOffset_A: 0, trfCycle_A: 0, trfPostOffset_A: 0, trfPreOffset_B: (2 * i0 + 1), trfCycle_B: 2, trfPostOffset_B: 0);
+                                }
                             }
                         }
                     }
@@ -1169,8 +1179,10 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                     invJacobiOT = TiJ.Item2;
 
                     for(int i = 0; i < NoOfEquations; i++) {
-                        m_GradientFluxValuesINtrf[i].Multiply(1.0, m_GradientFluxValuesIN[i], invJacobiIN, 0.0, "jke", "jkd", "jked");
-                        m_GradientFluxValuesOTtrf[i].Multiply(1.0, m_GradientFluxValuesOT[i], invJacobiOT, 0.0, "jke", "jkd", "jked");
+                        if(m_GradientFluxValuesINtrf[i] != null) {
+                            m_GradientFluxValuesINtrf[i].Multiply(1.0, m_GradientFluxValuesIN[i], invJacobiIN, 0.0, "jke", "jkd", "jked");
+                            m_GradientFluxValuesOTtrf[i].Multiply(1.0, m_GradientFluxValuesOT[i], invJacobiOT, 0.0, "jke", "jkd", "jked");
+                        }
                     }
 
                 }
@@ -1253,17 +1265,19 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                             _TstFuncGradXwgt = TstFuncGradXwgt;
                         }
 
-                        int[,] trfIdx = grid.iGeomEdges.Edge2CellTrafoIndex;
-                        unsafe {
-                            fixed(int* pTrfIdx = trfIdx) {
-                                // QuadResultIN[j,n] = sum_{k,d}  _TestFunctionGradient[T(j),k,n,d]*m_GradientFluxValuesINtrf[gamma][j,k,d] 
-                                //   ansonsten wie oben
-                                QuadResultIN.Multiply(1.0, _TstFuncGradXwgt, m_GradientFluxValuesINtrf[gamma], cF, ref mp_jn_Tjknd_jkd,
-                                    pTrfIdx, trfIdx.GetLength(0),
-                                    trfPreOffset_A: (2 * i0 + 0), trfCycle_A: 2, trfPostOffset_A: 0, trfPreOffset_B: 0, trfCycle_B: 0, trfPostOffset_B: 0);
-                                QuadResultOT.Multiply(1.0, _TstFuncGradXwgt, m_GradientFluxValuesOTtrf[gamma], cF, ref mp_jn_Tjknd_jkd,
-                                    pTrfIdx, trfIdx.GetLength(0),
-                                    trfPreOffset_A: (2 * i0 + 1), trfCycle_A: 2, trfPostOffset_A: 0, trfPreOffset_B: 0, trfCycle_B: 0, trfPostOffset_B: 0);
+                        if(m_GradientFluxValuesINtrf[gamma] != null) {
+                            int[,] trfIdx = grid.iGeomEdges.Edge2CellTrafoIndex;
+                            unsafe {
+                                fixed (int* pTrfIdx = trfIdx) {
+                                    // QuadResultIN[j,n] = sum_{k,d}  _TestFunctionGradient[T(j),k,n,d]*m_GradientFluxValuesINtrf[gamma][j,k,d] 
+                                    //   ansonsten wie oben
+                                    QuadResultIN.Multiply(1.0, _TstFuncGradXwgt, m_GradientFluxValuesINtrf[gamma], cF, ref mp_jn_Tjknd_jkd,
+                                        pTrfIdx, trfIdx.GetLength(0),
+                                        trfPreOffset_A: (2 * i0 + 0), trfCycle_A: 2, trfPostOffset_A: 0, trfPreOffset_B: 0, trfCycle_B: 0, trfPostOffset_B: 0);
+                                    QuadResultOT.Multiply(1.0, _TstFuncGradXwgt, m_GradientFluxValuesOTtrf[gamma], cF, ref mp_jn_Tjknd_jkd,
+                                        pTrfIdx, trfIdx.GetLength(0),
+                                        trfPreOffset_A: (2 * i0 + 1), trfCycle_A: 2, trfPostOffset_A: 0, trfPreOffset_B: 0, trfCycle_B: 0, trfPostOffset_B: 0);
+                                }
                             }
                         }
 
