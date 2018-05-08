@@ -409,7 +409,10 @@ namespace BoSSS.Solution.NSECommon {
             double acc = 0;
             for (int d = 0; d < cpv.D; d++)
                 //acc -= GradU[0, d] * GradV[d] * Viscosity(cpv.Parameters) * base.m_alpha;
-                acc -= GradU[m_iComp, d] * GradV[d] * Viscosity(cpv.Parameters) * base.m_alpha;
+                acc -= GradU[m_iComp, d] * GradV[d];
+
+            if(acc != 0.0)
+                acc *= Viscosity(cpv.Parameters) * base.m_alpha;
             return -acc;
         }
 
@@ -417,6 +420,8 @@ namespace BoSSS.Solution.NSECommon {
 
         public override double InnerEdgeForm(ref Foundation.CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB, double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB) {
             double Acc = 0.0;
+
+
 
             double pnlty = this.penalty(inp.jCellIn, inp.jCellOut);//, inp.GridDat.Cells.cj);
             double muA = this.Viscosity(inp.Parameters_IN);

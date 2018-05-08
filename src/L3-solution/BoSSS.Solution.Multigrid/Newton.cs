@@ -35,7 +35,7 @@ namespace BoSSS.Solution.Multigrid {
     /// Society for Industrial and Applied Mathematics, 2003. https://doi.org/10.1137/1.9780898718898.
     /// </summary>
     public class Newton : NonlinearSolver {
-        public Newton(AssembleMatrixDel __AssembleMatrix, IEnumerable<AggregationGridBasis[]> __AggBasisSeq, MultigridOperator.ChangeOfBasisConfig[][] __MultigridOperatorConfig) :
+        public Newton(OperatorEvalOrLin __AssembleMatrix, IEnumerable<AggregationGridBasis[]> __AggBasisSeq, MultigridOperator.ChangeOfBasisConfig[][] __MultigridOperatorConfig) :
             base(__AssembleMatrix, __AggBasisSeq, __MultigridOperatorConfig) //
         {
         }

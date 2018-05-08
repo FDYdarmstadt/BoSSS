@@ -668,7 +668,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         /// <summary>
         /// Callback-routine  to update the linear resp. linearized system, 
-        /// see <see cref="AssembleMatrixDel"/> resp. <see cref="NonlinearSolver.m_AssembleMatrix"/>.
+        /// see <see cref="OperatorEvalOrLin"/> resp. <see cref="NonlinearSolver.m_AssembleMatrix"/>.
         /// </summary>
         /// <param name="argCurSt">Input, current state of solution.</param>
         /// <param name="System">Output.</param>
