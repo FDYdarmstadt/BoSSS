@@ -30,7 +30,43 @@ namespace ilPSP.LinSolvers {
     /// Extension functions for the <see cref="BlockMsrMatrix"/>.
     /// </summary>
     public static class BMext {
-            /// <summary>
+        
+        /// <summary>
+        /// converts an arbitrary mutable matrix to an <see cref="BlockMsrMatrix"/>.
+        /// </summary>
+        /// <param name="M"></param>
+        /// <returns></returns>
+        static public BlockMsrMatrix ToBlockMsrMatrix(this IMutableMatrixEx M, IBlockPartitioning rowmap, IBlockPartitioning colmap) {
+            using (new FuncTrace()) {
+
+                if (!rowmap.EqualsPartition(M.RowPartitioning))
+                    throw new ArgumentException();
+                if (!colmap.EqualsPartition(M.ColPartition))
+                    throw new ArgumentException();
+
+                BlockMsrMatrix R = new BlockMsrMatrix(rowmap, colmap);
+
+                int[] col = null;
+                double[] val = null;
+                int i0 = (int)R.RowPartitioning.i0, L = R.RowPartitioning.LocalLength;
+                for (int i = 0; i < L; i++) {
+                    int iRow = i0 + i;
+
+                    int Lr = M.GetRow(iRow, ref col, ref val);
+                    //R.SetRow(iRow, col, val, Lr); 
+                    for( int l = 0; l < Lr; l++) {
+                        R[iRow, col[l]] = val[l];
+                    }
+                }
+
+                return R;
+            }
+        }
+
+
+        
+
+        /// <summary>
         /// Adds <paramref name="factor"/> to all diagonal entries of <paramref name="M"/>.
         /// </summary>
         static public void AccEyeSp(this BlockMsrMatrix M, double factor = 1.0) {
