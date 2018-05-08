@@ -29,7 +29,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
         Extender VelocityExtender;
         ScalarVelocityAdvection Advection;
-        SinglePhaseField Extension;
+        //SinglePhaseField Extension;
 
         bool nearfield;
 
