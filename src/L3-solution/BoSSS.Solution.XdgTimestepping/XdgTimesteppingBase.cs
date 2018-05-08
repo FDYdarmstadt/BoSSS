@@ -677,7 +677,11 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Mass matrix including agglomeration, without any scaling,
         /// required for block-precond.
         /// </param>
-        abstract protected void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, DGField[] argCurSt);
+        /// <param name="Linearization">
+        /// - true: assemble matrix and affine vector
+        /// - false: evaluate operator (<paramref name="System"/> will be null)
+        /// </param>
+        abstract protected void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, DGField[] argCurSt, bool Linearization);
 
     }
 }

@@ -104,7 +104,7 @@ namespace BoSSS.Solution.Multigrid {
                 this.RHSRaw = null;
             }
 
-            this.Update(X.Mapping.Fields);
+            this.UpdateLinearization(X.Mapping.Fields);
             
             int Ltrf = this.CurrentLin.Mapping.LocalLength;
 
@@ -206,7 +206,7 @@ namespace BoSSS.Solution.Multigrid {
             CurrentLin.TransformSolFrom(u0Raw, U0);
             */
            
-            this.Update(CurrentState);
+            this.UpdateLinearization(CurrentState);
 
             CoordinateVector u0Raw = new CoordinateVector(CurrentState.ToArray());
             int Ltrf = this.CurrentLin.Mapping.LocalLength;
@@ -220,13 +220,13 @@ namespace BoSSS.Solution.Multigrid {
         /// Updating the <see cref="CurrentLin"/> -- operator;
         /// </summary>
         /// <param name="CurrentState">linearization point</param>
-        protected void Update(IEnumerable<DGField> CurrentState) {
+        protected void UpdateLinearization(IEnumerable<DGField> CurrentState) {
             if(!(this.ProblemMapping.BasisS.Count == CurrentState.Count()))
                 throw new ArgumentException("missmatch in number of fields.");
 
             BlockMsrMatrix OpMtxRaw, MassMtxRaw;
             double[] OpAffineRaw;
-            this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, CurrentState.ToArray());
+            this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, CurrentState.ToArray(), true);
 
             CurrentLin = new MultigridOperator(this.m_AggBasisSeq, this.ProblemMapping,
                 OpMtxRaw.CloneAs(), MassMtxRaw,
