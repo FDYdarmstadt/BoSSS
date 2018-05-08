@@ -2,6 +2,8 @@
 import {InteractiveList} from './interactiveList';
 import {Editor} from './editor';
 import boSSSRuntime from './bosssInterface';
+import Split from "split.js";
+require('../css/bossspad.css');
 
 export class BoSSSpad{
   constructor(element){
@@ -19,6 +21,12 @@ export class BoSSSpad{
     .then(
       function() {
         that.userGUI.load(that.boSSS);
+        that.split = Split([that.editor, that.userInput], {
+          sizes: [60, 40],
+          minSize: 180,
+          gutterSize: 4,
+          onDrag: that.update.bind(that)
+        });
       }
     ).then(
       this.register.bind(this)
@@ -49,6 +57,7 @@ export class BoSSSpad{
     this.editor.className="editor";
     element.appendChild(this.editor);
     element.appendChild(this.userInput);
+    
   }
 
   register(){

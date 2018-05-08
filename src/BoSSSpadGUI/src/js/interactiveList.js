@@ -16,12 +16,7 @@ export class InteractiveList{
         that.UL = document.createElement("UL");
         that.UL.className = "interactiveListUL";
         that.UL.style.position = "absolute";
-        that.element.appendChild(that.UL);
-        //add top margin
-        var topMargin = document.createElement("LI");
-        topMargin.style.height ="8px";
-        that.UL.appendChild(topMargin);
-        
+        that.element.appendChild(that.UL);        
         that.editor = editor;
         resolve();
       }); 
