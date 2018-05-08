@@ -454,7 +454,12 @@ associated development environments (e.g. Visual Studio or equivalents).
 % ********************************************************************************
 % ********************************************************************************
 
-Within this chapter, we will briefly outline the steps required to get started with using and/or developing \BoSSS{} applications. In any case, the installation of the pre-compiled version of \BoSSS{} (cf. section \ref{sec:gettingStarted_installation}) should be the first step. Upon finishing this step, you will be able to use the pre-compiled \BoSSS{} applications (cf. section \ref{sec:gettingStarted_using}), but also to start  exploring the code using the scripting API. Finally, working with the source code will be discussed in section \ref{sec:gettingStarted_developing}.
+Within this chapter, we will briefly outline the steps required to get started with using and/or 
+developing \BoSSS{} applications. In any case, the installation of the pre-compiled version of \BoSSS{} 
+(cf. section \ref{sec:gettingStarted_installation}) should be the first step. Upon finishing this step, 
+you will be able to use the pre-compiled \BoSSS{} applications (cf. section \ref{sec:gettingStarted_using}), 
+but also to start  exploring the code using the scripting API. Finally, working with the source code will 
+be discussed in section \ref{sec:gettingStarted_developing}.
 
 % --------------------------------------------------------------------------------
 \section{Installation}
@@ -526,7 +531,14 @@ Support for Mac OS X will follow soon.
 \label{sec:gettingStarted_using}
 % --------------------------------------------------------------------------------
 
-Having familiarized with the core concepts of \BoSSS{} (cf. chapter \ref{sec:coreConcepts}) and verified that the installation was succesfull (cf. section \ref{sec:installation_testing}), the pre-compiled solvers shipped with \BoSSS{} can be used to solve compressible as well as incompressible flow problems. The most simple way to get a feeling for the usage of the different solvers is to follow the corresponding quick start guides given in section \ref{sec:quickStartGuides}. These guides have been structured such that they allow new users to get first results immediately, which is why details about certain concepts are left out. These will then be discussed in depth in the tutorials given in part \ref{sec:Tutorial}.
+Having familiarized with the core concepts of \BoSSS{} (cf. chapter \ref{sec:coreConcepts}) and 
+verified that the installation was successful (cf. section \ref{sec:installation_testing}), 
+the pre-compiled solvers shipped with \BoSSS{} can be used to solve compressible as well as
+ incompressible flow problems. The most simple way to get a feeling for the usage of the 
+different solvers is to follow the corresponding quick start guides given in 
+section \ref{sec:quickStartGuides}. These guides have been structured such that they allow new 
+users to get first results immediately, which is why details about certain concepts are left out. 
+These will then be discussed in depth in the tutorials given in part \ref{sec:Tutorial}.
 
 
 \subsection{\BoSSSpad{}}
@@ -607,6 +619,15 @@ When Mono is used, the equivalent to {\tt msbuild} is {\tt xbuild}. Both tools h
 % ################################################################################
 % ################################################################################
 % ################################################################################
+
+
+% ################################################################################
+\chapter{Creating and importing grids/meshes }
+\label{CNS}
+% ################################################################################
+%\import{./quickStartCNS/}{IsentropicVortex.tex}
+Todo
+
 
 % ################################################################################
 \chapter{Compressible Navier-Stokes (CNS) Solver }
@@ -863,7 +884,9 @@ The problem
 \end{array} \right.
 \label{eq:NavierStokesSphereBenchmark}
 \end{equation}
-is investigated on a 64x16x16 cell Cartesian grid. The physical parameters of the fluid are choosen to be $\rho_f=1$ and $\mu_f=0.002$ which renders down to a Reynoldsnumber of 100. The problem basically describes a sphere flow between two plates.
+is investigated on a 64x16x16 cell Cartesian grid. The physical parameters of the fluid are 
+choosen to be $\rho_f=1$ and $\mu_f=0.002$ which renders down to a Reynolds Number of 100. 
+The problem basically describes a sphere flow between two plates.
 
 \graphicspath{{./apdx-MPISolverPerformance/strongScaling/NSESphere/plots/}}
 
@@ -890,10 +913,6 @@ is investigated on a 64x16x16 cell Cartesian grid. The physical parameters of th
 	}
 	\label{fig:Spherek1Time}
 \end{figure}
-
-\clearpage
-\section{Weak Scaling - Navier-Stokes problems}
-in progress...
 
 % ################################################################################
 \chapter{BoSSSpad command reference}

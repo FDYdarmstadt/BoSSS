@@ -475,7 +475,6 @@ namespace BoSSS.Foundation.XDG {
                     ///////////////////
 
                     using(new BlockTrace("surface_integration", tr)) {
-                        int dc = 0;
                         foreach(var tt in this.CouplingRules) {
                             int iLevSet = tt.Item1;
                             var SpeciesA = tt.Item2;
@@ -510,7 +509,7 @@ namespace BoSSS.Foundation.XDG {
 
                         }
                     }
-
+                    
                     // allow all processes to catch up
                     // -------------------------------
                     if(trx != null) {
@@ -531,8 +530,6 @@ namespace BoSSS.Foundation.XDG {
 
 
         public class XEvaluatorNonlin : XEvaluatorBase, IEvaluatorNonLin {
-
-            CoordinateMapping m_DomainVarMap;
 
             
 
@@ -591,9 +588,7 @@ namespace BoSSS.Foundation.XDG {
                     #endregion
 
 
-
-
-                    // build matrix, bulk
+                    // bulk
                     // ---------------------
                     //MsrMatrix BulkMatrix = null;
                     //double[] BulkAffineOffset = null;
@@ -626,7 +621,6 @@ namespace BoSSS.Foundation.XDG {
                                     }
 
                                     eval.time = base.time;
-
                                     eval.Evaluate(alpha, 1.0, vec, null);
                                 }
 
@@ -635,9 +629,10 @@ namespace BoSSS.Foundation.XDG {
 
                     }
 
-                    // build matrix, coupling
+                    //  coupling
                     ///////////////////
 
+                    
                     using (new BlockTrace("surface_integration", tr)) {
                         foreach (var tt in this.CouplingRules) {
                             int iLevSet = tt.Item1;
@@ -665,9 +660,8 @@ namespace BoSSS.Foundation.XDG {
 #endif
                         }
 
-
-
-                    }
+                    } 
+                    
 
                     // allow all processes to catch up
                     // -------------------------------

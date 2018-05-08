@@ -905,27 +905,6 @@ namespace BoSSS.Foundation {
             }
 
 
-            /*
-            public void SetParameters(IEnumerable<DGField> pFields) {
-                if (pFields.Count() != m_Owner.ParameterVar.Count) {
-                    throw new ArgumentException("wrong number of parameter variables provided.");
-                }
-
-                foreach(var p in pFields) {
-                    if(p!= null) {
-                        if(!object.ReferenceEquals(p.GridDat, this.GridData))
-                            throw new ArgumentException("Mismatch between parameter field grid and grid for the evaluator.");
-                    }
-                }
-
-                m_Parameters = pFields.ToArray();
-            }
-            */
-
-
-
-            
-
 
             SubGridBoundaryModes m_SubGridBoundaryTreatment = SubGridBoundaryModes.BoundaryEdge;
 
@@ -1126,7 +1105,7 @@ namespace BoSSS.Foundation {
                                                             CodomainVarMap,
                                                             edgeQrCtx.SaveCompile(grdDat, order));
 
-
+                    
 
                 }
 
@@ -1210,6 +1189,8 @@ namespace BoSSS.Foundation {
                             m_NonlinearVolume.Execute();
                             m_NonlinearVolume.m_Output = null;
                             m_NonlinearVolume.m_alpha = 1.0;
+
+                           
                         }
 
                     }
@@ -1233,12 +1214,14 @@ namespace BoSSS.Foundation {
 
                             m_NonlinearEdge.m_outputBndEdge = outputBndEdge;
 
+                           
                             m_NonlinearEdge.Execute();
 
                             m_NonlinearEdge.m_Output = null;
                             m_NonlinearEdge.m_outputBndEdge = null;
                             m_NonlinearEdge.m_alpha = 1.0;
                             m_NonlinearEdge.SubGridCellsMarker = null;
+
                         }
                     }
 
@@ -1367,7 +1350,7 @@ namespace BoSSS.Foundation {
                             mtxBuilder.Execute(volRule,
                                 CodomainMapping, Parameters, DomainMapping,
                                 OnlyAffine ? default(M) : Matrix, AffineOffset, time);
-
+                            
                         }
 
                     } else {
@@ -1381,10 +1364,9 @@ namespace BoSSS.Foundation {
 
                         using(new BlockTrace("Edge_Integration_(new)", tr)) {
                             var mxtbuilder2 = new LECEdgeQuadrature2<M, V>(this.Owner);
-
                             mxtbuilder2.Execute(edgeRule, CodomainMapping, Parameters, DomainMapping, OnlyAffine ? default(M) : Matrix, AffineOffset, time);
-                            tr.Info("done.");
                             mxtbuilder2 = null;
+                            //Console.WriteLine("edge lin deact");
                         }
                     }
                 }
