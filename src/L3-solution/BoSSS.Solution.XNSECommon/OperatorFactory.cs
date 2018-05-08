@@ -573,6 +573,51 @@ namespace BoSSS.Solution.XNSECommon {
                 AgglomeratedCellLengthScales,
                 SpcToCompute);
 
+
+            // check
+            // =====
+
+            /*
+            {
+                DGField[] testDomainFieldS = ColMapping.BasisS.Select(bb => new XDGField(bb as XDGBasis)).ToArray();
+                CoordinateVector test = new CoordinateVector(testDomainFieldS);
+
+                DGField[] errFieldS = ColMapping.BasisS.Select(bb => new XDGField(bb as XDGBasis)).ToArray();
+                CoordinateVector Err = new CoordinateVector(errFieldS);
+
+                var eval = Op.GetEvaluatorEx(LsTrk,
+                    testDomainFieldS, Params, RowMapping);
+
+                foreach (var s in this.LsTrk.SpeciesIdS)
+                    eval.SpeciesOperatorCoefficients[s].CellLengthScales = AgglomeratedCellLengthScales[s];
+                
+                eval.time = time;
+                int L = test.Count;
+                Random r = new Random();
+                for(int i = 0; i < L; i++) {
+                    test[i] = r.NextDouble();
+                }
+                
+
+
+                double[] R1 = new double[L];
+                double[] R2 = new double[L];
+                eval.Evaluate(1.0, 1.0, R1);
+
+                R2.AccV(1.0, OpAffine);
+                OpMatrix.SpMV(1.0, test, 1.0, R2);
+
+                Err.AccV(+1.0, R1);
+                Err.AccV(-1.0, R2);
+
+                double ErrDist = GenericBlas.L2DistPow2(R1, R2).MPISum().Sqrt();
+
+                double Ref = test.L2NormPow2().MPISum().Sqrt();
+
+                Debug.Assert(ErrDist <= Ref*1.0e-5, "Mismatch between explicit evaluation of XDG operator and matrix.");
+            }
+            */
+
         }
 
 
