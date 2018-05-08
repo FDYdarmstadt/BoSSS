@@ -708,13 +708,11 @@ namespace BoSSS.Solution.Multigrid {
                 //this.CurrentLin.OperatorMatrix.SpMV(1.0, new CoordinateVector(SolutionVec.Mapping.Fields.ToArray()), 1.0, OpAffineRaw);
                 //CurrentLin.TransformRhsInto(OpAffineRaw, fx);
 
-                //EvaluateOperator(1.0, SolutionVec.Mapping.Fields, fx);
+                EvaluateOperator(1.0, SolutionVec.Mapping.Fields, fx);
 
-                this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, SolutionVec.Mapping.Fields.ToArray());
-
-                OpMtxRaw.SpMV(1.0, new CoordinateVector(SolutionVec.Mapping.Fields.ToArray()), 1.0, OpAffineRaw);
-
-                CurrentLin.TransformRhsInto(OpAffineRaw, fx);
+                //this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, SolutionVec.Mapping.Fields.ToArray());
+                //OpMtxRaw.SpMV(1.0, new CoordinateVector(SolutionVec.Mapping.Fields.ToArray()), 1.0, OpAffineRaw);
+                //CurrentLin.TransformRhsInto(OpAffineRaw, fx);
 
                 SolutionVec.CopyEntries(temp);
 
