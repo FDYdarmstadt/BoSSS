@@ -72,7 +72,7 @@ namespace BoSSS.Foundation {
 
         ISparseSolver m_OpSolver;
 
-        int[] CellMask2Coord;
+        //int[] CellMask2Coord;
 
         int[] GlobalVert2Local;
 
