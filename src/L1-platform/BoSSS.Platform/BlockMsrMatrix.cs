@@ -55,7 +55,7 @@ namespace ilPSP.LinSolvers {
                     int Lr = M.GetRow(iRow, ref col, ref val);
                     //R.SetRow(iRow, col, val, Lr); 
                     for( int l = 0; l < Lr; l++) {
-                        M[iRow, col[l]] = val[l];
+                        R[iRow, col[l]] = val[l];
                     }
                 }
 

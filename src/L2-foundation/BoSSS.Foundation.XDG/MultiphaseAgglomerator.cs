@@ -394,7 +394,7 @@ namespace BoSSS.Foundation.XDG {
                 BlockMsrMatrix RightMulTr = RightMul.Transpose();
 
                 BlockMsrMatrix _Matrix;
-                if (Matrix is MsrMatrix) {
+                if (Matrix is BlockMsrMatrix) {
                     _Matrix = (BlockMsrMatrix)((object)Matrix);
                 } else {
                     _Matrix = Matrix.ToBlockMsrMatrix(RowMap, ColMap);
