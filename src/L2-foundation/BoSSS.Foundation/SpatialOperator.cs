@@ -844,7 +844,8 @@ namespace BoSSS.Foundation {
                     m_OperatorCoefficients = new CoefficientSet() {
                         CellLengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)(this.GridData)).Cells.cj,
                         EdgeLengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)(this.GridData)).Edges.h_min_Edge,
-                        UserDefinedValues = new Dictionary<string, object>()
+                        UserDefinedValues = new Dictionary<string, object>(),
+                        GrdDat = this.GridData
                     };
                 }
             }

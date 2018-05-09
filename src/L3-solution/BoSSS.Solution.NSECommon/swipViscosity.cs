@@ -93,12 +93,12 @@ namespace BoSSS.Solution.NSECommon {
     /// <summary>
     /// base class for viscosity terms
     /// </summary>
-    public abstract class swipViscosityBase : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm {
+    public abstract class swipViscosityBase : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, IEquationComponentCoefficient {
 
         /// <summary>
         /// ctor.
         /// </summary>
-        /// <param name="_penalty"></param>
+        /// <param name="_penaltyBase"></param>
         /// <param name="iComp">
         /// component index
         /// </param>
@@ -123,15 +123,15 @@ namespace BoSSS.Solution.NSECommon {
         /// Only available for <see cref="ViscosityOption.VariableViscosity"/> and <see cref="ViscosityOption.VariableViscosityDimensionless"/>.
         /// </param>
         protected swipViscosityBase(
-            double _penalty, MultidimensionalArray PenaltyLengthScales,
+            double _penaltyBase,
             int iComp, int D, IncompressibleBoundaryCondMap bcmap,
-            ViscosityOption _ViscosityMode, double constantViscosityValue = double.NaN, double reynolds = double.NaN, MaterialLaw EoS = null,
-            Func<double, int, int, MultidimensionalArray, double> ComputePenalty = null) {
-            this.m_penalty = _penalty;
-            this.m_ComputePenalty = ComputePenalty;
+            ViscosityOption _ViscosityMode, double constantViscosityValue = double.NaN, double reynolds = double.NaN, MaterialLaw EoS = null) { 
+            //Func<double, int, int, MultidimensionalArray, double> ComputePenalty = null) {
+            this.m_penalty_base = _penaltyBase;
+            //this.m_ComputePenalty = ComputePenalty;
             this.m_iComp = iComp;
-            this.m_D = D;
-            this.cj = PenaltyLengthScales;
+            //this.m_D = D;
+            //this.cj = PenaltyLengthScales;
             velFunction = D.ForLoop(d => bcmap.bndFunction[VariableNames.Velocity_d(d)]);
             EdgeTag2Type = bcmap.EdgeTag2Type;
             this.m_PhysicsMode = bcmap.PhysMode;
@@ -168,8 +168,6 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         protected double m_alpha = 1.0;
 
-
-
         /// <summary>
         /// see <see cref="BoundaryCondMap{BCType}.EdgeTag2Type"/>;
         /// </summary>
@@ -179,16 +177,6 @@ namespace BoSSS.Solution.NSECommon {
         /// component index
         /// </summary>
         protected int m_iComp;
-
-        /// <summary>
-        /// Cell-wise length scales for the penalty computation.
-        /// </summary>
-        MultidimensionalArray cj;
-
-        /// <summary>
-        /// multiplier for the penalty computation
-        /// </summary>
-        double m_penalty;
 
         /// <summary>
         /// spatial dimension
@@ -208,7 +196,7 @@ namespace BoSSS.Solution.NSECommon {
         protected double m_beta = 0.0;
 
 
-        Func<double, int, int, MultidimensionalArray, double> m_ComputePenalty;
+        //Func<double, int, int, MultidimensionalArray, double> m_ComputePenalty;
 
         /// <summary>
         /// see <see cref="ViscosityOption"/>
@@ -263,25 +251,88 @@ namespace BoSSS.Solution.NSECommon {
         }
 
         /// <summary>
+        /// Cell-wise length scales for the penalty computation.
+        /// </summary>
+        MultidimensionalArray cj;
+
+        /// <summary>
+        /// base multiplier for the penalty computation
+        /// </summary>
+        protected double m_penalty_base;
+
+
+        /// <summary>
+        /// Update of penalty length scales.
+        /// </summary>
+        /// <param name="cs"></param>
+        /// <param name="DomainDGdeg"></param>
+        /// <param name="TestDGdeg"></param>
+        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            m_D = cs.GrdDat.SpatialDimension;
+            double _D = m_D;
+            double _p = DomainDGdeg.Max();
+
+            double penalty_deg_tri = (_p + 1) * (_p + _D) / _D; // formula for triangles/tetras
+            double penalty_deg_sqr = (_p + 1.0) * (_p + 1.0); // formula for squares/cubes
+
+            m_penalty = Math.Max(penalty_deg_tri, penalty_deg_sqr);
+
+            cj = cs.CellLengthScales;
+        }
+
+        /// <summary>
+        /// penalty adapted for spatial dimension and DG-degree
+        /// </summary>
+        double m_penalty;
+
+        /// <summary>
         /// computation of penalty parameter according to:
         /// An explicit expression for the penalty parameter of the
         /// interior penalty method, K. Shahbazi, J. of Comp. Phys. 205 (2004) 401-407,
         /// look at formula (7) in cited paper
         /// </summary>
-        virtual protected double penalty(int jCellIn, int jCellOut) {
-            double mu;
-            if (m_ComputePenalty != null) {
-                mu = m_ComputePenalty(m_penalty, jCellIn, jCellOut, cj);
-            } else {
-                double cj_in = cj[jCellIn];
-                mu = m_penalty * cj_in;
-                if (jCellOut >= 0) {
-                    double cj_out = cj[jCellOut];
-                    mu = Math.Max(mu, m_penalty * cj_out);
-                }
-            }
-            return mu;
+        protected double penalty(int jCellIn, int jCellOut) {
+            //double mu;
+            //if (m_ComputePenalty != null) {
+            //    mu = m_ComputePenalty(m_penalty_base, jCellIn, jCellOut, cj);
+            //} else {
+            //    double cj_in = cj[jCellIn];
+            //    mu = m_penalty_base * cj_in;
+            //    if (jCellOut >= 0) {
+            //        double cj_out = cj[jCellOut];
+            //        mu = Math.Max(mu, m_penalty_base * cj_out);
+            //    }
+            //}
+            //return mu;
+
+            double penaltySizeFactor_A = 1.0 / cj[jCellIn];
+            double penaltySizeFactor_B = jCellOut >= 0 ? 1.0 / cj[jCellOut] : 0;
+            double penaltySizeFactor = Math.Max(penaltySizeFactor_A, penaltySizeFactor_B);
+
+            Debug.Assert(!double.IsNaN(penaltySizeFactor_A));
+            Debug.Assert(!double.IsNaN(penaltySizeFactor_B));
+            Debug.Assert(!double.IsInfinity(penaltySizeFactor_A));
+            Debug.Assert(!double.IsInfinity(penaltySizeFactor_B));
+            Debug.Assert(!double.IsInfinity(m_penalty));
+            Debug.Assert(!double.IsInfinity(m_penalty));
+
+            return penaltySizeFactor * m_penalty * m_penalty_base;
         }
+
+        /*
+        protected double ComputePenaltyBulk(double penalty, int jCellIn, int jCellOut, MultidimensionalArray cj) {
+            double muFactor; // the WTF factor
+            if (jCellOut >= 0)
+                muFactor = 1.0;
+            else
+                //muFactor = Math.Max(1, 0) / this.Control.PhysicalParameters.mu_A; // Hardcoded for single phase flows
+                muFactor = Math.Max(this.Control.PhysicalParameters.mu_A, 0) / this.Control.PhysicalParameters.mu_A; // Hardcoded for single phase flows
+            double penaltySizeFactor_A = 1.0 / this.m_LenScales[jCellIn];
+            double penaltySizeFactor_B = jCellOut >= 0 ? 1.0 / this.m_LenScales[jCellOut] : 0;
+            double penaltySizeFactor = Math.Max(penaltySizeFactor_A, penaltySizeFactor_B);
+            return penalty * penaltySizeFactor * muFactor;
+        }
+        */
 
         /// <summary>
         /// returns the velocity vector;
@@ -378,6 +429,8 @@ namespace BoSSS.Solution.NSECommon {
         abstract public double InnerEdgeForm(ref Foundation.CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB, double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB);
 
         abstract public double BoundaryEdgeForm(ref Foundation.CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA);
+
+        
     }
 
     /// <summary>
@@ -390,10 +443,10 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// ctor; parameter documentation see <see cref="swipViscosityBase.swipViscosityBase"/>.
         /// </summary>
-        public swipViscosity_Term1(double _penalty, MultidimensionalArray PenaltyLengthScales, int iComp, int D, IncompressibleBoundaryCondMap bcmap,
-            ViscosityOption _ViscosityMode, double constantViscosityValue = double.NaN, double reynolds = double.NaN, MaterialLaw EoS = null,
-            Func<double, int, int, MultidimensionalArray, double> ComputePenalty = null)
-            : base(_penalty, PenaltyLengthScales, iComp, D, bcmap, _ViscosityMode, constantViscosityValue, reynolds, EoS, ComputePenalty) {
+        public swipViscosity_Term1(double _penalty, int iComp, int D, IncompressibleBoundaryCondMap bcmap,
+            ViscosityOption _ViscosityMode, double constantViscosityValue = double.NaN, double reynolds = double.NaN, MaterialLaw EoS = null)
+            //Func<double, int, int, MultidimensionalArray, double> ComputePenalty = null)
+            : base(_penalty, iComp, D, bcmap, _ViscosityMode, constantViscosityValue, reynolds, EoS) {
 
         }
 
@@ -593,10 +646,10 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// ctor; parameter documentation see <see cref="swipViscosityBase.swipViscosityBase"/>.
         /// </summary>
-        public swipViscosity_Term2(double _penalty, MultidimensionalArray PenaltyLengthScales, int iComp, int D, IncompressibleBoundaryCondMap bcmap,
+        public swipViscosity_Term2(double _penalty, int iComp, int D, IncompressibleBoundaryCondMap bcmap,
             ViscosityOption _ViscosityMode, ViscositySolverMode ViscSolverMode = ViscositySolverMode.FullyCoupled,
             double constantViscosityValue = double.NaN, double reynolds = double.NaN, MaterialLaw EoS = null)
-            : base(_penalty, PenaltyLengthScales, iComp, D, bcmap, _ViscosityMode, constantViscosityValue, reynolds, EoS) {
+            : base(_penalty, iComp, D, bcmap, _ViscosityMode, constantViscosityValue, reynolds, EoS) {
 
             this.ViscSolverMode = ViscSolverMode;
         }
@@ -769,10 +822,10 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// ctor; parameter documentation see <see cref="swipViscosityBase.swipViscosityBase"/>.
         /// </summary>
-        public swipViscosity_Term3(double _penalty, MultidimensionalArray PenaltyLengthScales, int iComp, int D, IncompressibleBoundaryCondMap bcmap,
+        public swipViscosity_Term3(double _penalty, int iComp, int D, IncompressibleBoundaryCondMap bcmap,
             ViscosityOption _ViscosityMode, ViscositySolverMode ViscSolverMode = ViscositySolverMode.FullyCoupled,
             double constantViscosityValue = double.NaN, double reynolds = double.NaN, MaterialLaw EoS = null)
-            : base(_penalty, PenaltyLengthScales, iComp, D, bcmap, _ViscosityMode, constantViscosityValue, reynolds, EoS) {
+            : base(_penalty, iComp, D, bcmap, _ViscosityMode, constantViscosityValue, reynolds, EoS) {
 
             this.ViscSolverMode = ViscSolverMode;
         }

@@ -339,18 +339,19 @@ namespace BoSSS.Application.IBM_Solver {
                 if (IBM_Op_config.Viscous) {
                     for (int d = 0; d < D; d++) {
                         var comps = IBM_Op.EquationComponents[CodName[d]];
-                        double _D = D;
-                        double penalty_mul = this.Control.AdvancedDiscretizationOptions.PenaltySafety;
-                        double _p = degU;
-                        double penalty_base = (_p + 1) * (_p + _D) / D;
-                        double penalty = penalty_base * penalty_mul;
+                        //double _D = D;
+                        //double penalty_mul = this.Control.AdvancedDiscretizationOptions.PenaltySafety;
+                        //double _p = degU;
+                        //double penalty_base = (_p + 1) * (_p + _D) / D;
+                        //double penalty = penalty_base * penalty_mul;
+                        double penalty = this.Control.AdvancedDiscretizationOptions.PenaltySafety;
+                        
 
                         //var Visc = new Solution.XNSECommon.Operator.Viscosity.ViscosityInBulk_GradUTerm(penalty, 1.0, BcMap, d, D, this.Control.PhysicalParameters.mu_A, 1, ViscosityImplementation.H);
-                        var Visc = new swipViscosity_Term1(penalty, null, d, D, BcMap, 
+                        var Visc = new swipViscosity_Term1(penalty, d, D, BcMap, 
                             ViscosityOption.ConstantViscosity, 
                             this.Control.PhysicalParameters.mu_A / this.Control.PhysicalParameters.rho_A, 
-                            double.NaN, null,
-                            this.ComputePenaltyBulk);
+                            double.NaN, null);
                         //delegate (double p, int i, int j, double[] cell) { return ComputePenalty(p, i, j, cell); });
                         // IBM_Op.OnIntegratingBulk += Visc.SetParameter;
                         comps.Add(Visc); // bulk component GradUTerm 
@@ -715,6 +716,7 @@ namespace BoSSS.Application.IBM_Solver {
 
         MultidimensionalArray m_LenScales;
 
+        /*
         /// <summary>
         /// Custom Function to compute penalty factor for viscous terms, for bulk terms
         /// </summary>
@@ -735,6 +737,7 @@ namespace BoSSS.Application.IBM_Solver {
             double penaltySizeFactor = Math.Max(penaltySizeFactor_A, penaltySizeFactor_B);
             return penalty * penaltySizeFactor * muFactor;
         }
+        */
 
         /// <summary>
         /// Custom Function to compute penalty factor for viscous terms at the immersed boundary
