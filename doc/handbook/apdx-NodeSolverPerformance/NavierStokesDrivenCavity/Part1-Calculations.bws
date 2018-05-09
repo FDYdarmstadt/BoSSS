@@ -1,6 +1,5 @@
 restart
 **************
-
   Database Explorer v2
   ____________________
 
@@ -27,8 +26,8 @@ List of 24 instances of IDatabaseInfo {
   18: { Session Count = 22; Grid Count = 10; Path = P:\BoSSS_DBs\Performance }
   19: { Session Count = 24; Grid Count = 14; Path = P:\BoSSS_DBs\PaperRevision }
   20: { Session Count = 0; Grid Count = 0; Path = P:\Lichtenberg_DB }
-  21: { Session Count = 2; Grid Count = 354; Path = P:\BoSSS_DBs\Bug }
-  22: { Session Count = 29; Grid Count = 8; Path = P:\BoSSS_DBs\NodePerformance }
+  21: { Session Count = 8; Grid Count = 469; Path = P:\BoSSS_DBs\Bug }
+  22: { Session Count = 22; Grid Count = 8; Path = P:\BoSSS_DBs\NodePerformance }
   23: { Session Count = 136; Grid Count = 98; Path = L:\BoSSS_DB\Lichtenberg_DB }
 }
 
@@ -90,7 +89,8 @@ LinearSolverCodes[] linSolvers = new LinearSolverCodes[] {
     //LinearSolverCodes.exp_softgmres_schwarz_Kcycle_directcoarse_overlap,
     //LinearSolverCodes.exp_softgmres_schwarz_directcoarse_overlap,
     //LinearSolverCodes.automatic,
-    LinearSolverCodes.classic_mumps
+    //LinearSolverCodes.classic_mumps,
+    LinearSolverCodes.exp_multigrid
 };
 int[] ks = new int[] {2,3};
 int re        = 400; 
@@ -105,6 +105,7 @@ int[] procs    = new int[] {1};
 **************
 ==============
 int[] Resolutions_3D = new int[] {5,7,10,13};//,17,25};
+//int[] Resolutions_3D = new int[] {17,25};
 IGridInfo[] grids = new IGridInfo[Resolutions_3D.Length];
 
 for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
@@ -170,13 +171,11 @@ if(grids[cnt].NumberOfCells != J)
 }
 }
 **************
-Creating grid with 125 cells.
-An equivalent grid is already present in the database -- the grid will not be saved.
 Creating grid with 4913 cells.
 An equivalent grid is already present in the database -- the grid will not be saved.
+Creating grid with 15625 cells.
+An equivalent grid is already present in the database -- the grid will not be saved.
 
-==============
-**************
 ==============
 // =====================================
 // setup control object for a solver run
@@ -279,7 +278,7 @@ C.InitialValues.Add("Phi", GetFormulaObject(InitialValues.Phi));
         C.dtMin               = 1E20;
         C.Endtime             = 10000000;
         C.NoOfTimesteps       = 1;
-        C.NoOfMultigridLevels = 1;
+        C.NoOfMultigridLevels = 2;
         
         // Assign correct names
         C.SessionName = "DrivenCavity_k2_"+C.NonlinearSolve+"_"+linSolverName+"_J"+grd.NumberOfCells+"_MGLev"+C.NoOfMultigridLevels;
@@ -303,23 +302,18 @@ foreach(int proc in procs){
     ctrl.RunBatch(myBatch,NumberOfMPIProcs:proc,UseComputeNodesExclusive:true,executionTime:"96:00:00");  
 }}
 **************
- Submitting: DrivenCavity_k2_Picard_classic_mumps_J125_MGLev1
-Loading session 28a03143-5f6b-4aef-a8a3-315ef6864317 failed with message 'Die Datei "P:\BoSSS_DBs\Sphere3D\sessions\28a03143-5f6b-4aef-a8a3-315ef6864317\Session.info" konnte nicht gefunden werden.'
-Loading session 74ec7fde-4918-46b3-a338-1be68019539b failed with message 'Die Datei "P:\BoSSS_DBs\Sphere3D\sessions\74ec7fde-4918-46b3-a338-1be68019539b\Session.info" konnte nicht gefunden werden.'
-Loading session acc112ec-3547-4f6d-ae72-4f4ccc8e9744 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\acc112ec-3547-4f6d-ae72-4f4ccc8e9744\Session.info" konnte nicht gefunden werden.'
-Loading session 883fdea1-e03e-401e-b8b7-dc67324257e0 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\883fdea1-e03e-401e-b8b7-dc67324257e0\Session.info" konnte nicht gefunden werden.'
-Loading session ed1fcb1f-d1aa-42f0-b4d1-33299563da65 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\ed1fcb1f-d1aa-42f0-b4d1-33299563da65\Session.info" konnte nicht gefunden werden.'
+ Submitting: DrivenCavity_k2_NewtonGMRES_exp_schwarz_Kcycle_directcoarse_overlap_J4913_MGLev3
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\dc1\userspace\krause\cluster\IBM_Solver2018Apr19_10-31-04
+Deployment directory: \\dc1\userspace\krause\cluster\IBM_Solver2018Apr25_15-36-38
 Source directory: C:\BoSSS-experimental\public\src\L4-application\BoSSSpad\bin\Release
    copied: IBM_Solver.exe BoSSS.Solution.XdgTimestepping.dll BoSSS.Foundation.XDG.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll Renci.SshNet.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll MathNet.Numerics.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.dll CommandLine.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
    copied 'amd64' runtime.
 deployment finished.
- Submitting: DrivenCavity_k2_Picard_classic_mumps_J4913_MGLev1
+ Submitting: DrivenCavity_k2_NewtonGMRES_exp_schwarz_Kcycle_directcoarse_overlap_J15625_MGLev3
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\dc1\userspace\krause\cluster\IBM_Solver2018Apr19_10-31-19
+Deployment directory: \\dc1\userspace\krause\cluster\IBM_Solver2018Apr25_15-37-09
 Source directory: C:\BoSSS-experimental\public\src\L4-application\BoSSSpad\bin\Release
    copied: IBM_Solver.exe BoSSS.Solution.XdgTimestepping.dll BoSSS.Foundation.XDG.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll Renci.SshNet.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll MathNet.Numerics.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.dll CommandLine.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
    copied 'amd64' runtime.
@@ -813,5 +807,11 @@ string docpath    = Path.Combine(CurrentDocDir, SessTab.TableName + ".json");
 // save session table as file: this can be stored in our git 
 // repository
 SessTab.SaveToFile(docpath);
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
