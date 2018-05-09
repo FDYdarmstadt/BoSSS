@@ -24,25 +24,27 @@ export class InteractiveList{
     }
   
     update(){
-      if(this.boxes.length > 0){   
-        this.updateRange();
+      if(this.boxes.length > 0){
+        this.updateRange();   
         this.updateBoxes();
       }
     }
   
     updateBoxes(){
-      //Reread position and height from monaco decorations
-      var heightInLines = this.editor.getDecorationRange(this.boxes[0].id).endLineNumber;
-      this.boxes[0].setHeight(heightInLines * 19 );
-      
-      for(var i = 1; i < this.boxes.length; ++i){
-        heightInLines = this.editor.getDecorationRange(this.boxes[i].id).endLineNumber - this.editor.getDecorationRange(this.boxes[i - 1].id).endLineNumber
-        this.boxes[i].setHeight(heightInLines * 19 );
+      if(this.boxes.length > 0){
+        //Reread position and height from monaco decorations
+        var heightInLines = this.boxes[0].range.endLineNumber;
+        this.boxes[0].setHeight(heightInLines * 19 );
+        
+        for(var i = 1; i < this.boxes.length; ++i){
+          heightInLines = this.boxes[i].range.endLineNumber - this.boxes[i - 1].range.endLineNumber;
+          this.boxes[i].setHeight(heightInLines * 19 );
+        }
+    
+        //Update positions of boxes
+        this.UL.style.top = -this.editor.getOffset() + "px";
+        //console.log(this.boxes);
       }
-  
-      //Update positions of boxes
-      this.UL.style.top = -this.editor.getOffset() + "px";
-      console.log(this.boxes);
     }
   
     updateRange(){
@@ -87,12 +89,34 @@ export class InteractiveList{
     }
   
     removeCommand(range){
+      this.updateRange();
       this.removeBox(range);
-      this.updateBoxes();
+      this.update();
+    }
+
+    deleteCommandSection(oldRange, newRange){
+      var oldBox = this.findBox(newRange.startLineNumber - 1)
+      this.removeCommand(newRange);
+      if(oldBox != null)
+        oldBox.range.endLineNumber = newRange.endLineNumber;
+        this.updateBoxes();
+    }
+
+    findBox(startLineNumber){
+      var range = new monaco.Range(startLineNumber, 1, startLineNumber, 1);
+      for(var i = 0; i < this.boxes.length; ++i){
+        //End if out of Range
+        if(range.endLineNumber < this.boxes[i].startLineNumber)
+          return null;
+  
+        var intersection = this.boxes[i].range.intersectRanges(range);
+        if (intersection != null){
+          return this.boxes[i];  
+        }
+      }
     }
   
     removeBox( range){
-      this.updateRange();
       //find all intersections, then cut intersections into new Boxes
       for(var i = 0; i < this.boxes.length; ++i){
         //End if out of Range
@@ -115,26 +139,32 @@ export class InteractiveList{
           //Range in Box
           if(intersection.equalsRange(range)){
             //Cut into 2 new Boxes
-            if(intersection.startLineNumber - 1 >= this.boxes[i].range.startLineNumber )
-              range1 = new monaco.Range(this.boxes[i].range.startLineNumber,1, intersection.startLineNumber - 1 ,1);
-            if(this.boxes[i].range.endLineNumber >= intersection.endLineNumber + 1)
-              range2 = new monaco.Range(intersection.endLineNumber + 1, 1, this.boxes[i].range.endLineNumber, 1);
+            if(intersection.startLineNumber - 1 >= this.boxes[i].range.startLineNumber ){
+              var endColumn = this.editor.getLineLastNonWhitespaceColumn(intersection.startLineNumber - 1);
+              range1 = new monaco.Range(this.boxes[i].range.startLineNumber,1, intersection.startLineNumber - 1 ,endColumn);
+            }
+            if(this.boxes[i].range.endLineNumber >= intersection.endLineNumber + 1){
+              var endColumn = this.editor.getLineLastNonWhitespaceColumn(this.boxes[i].range.endLineNumber);
+              range2 = new monaco.Range(intersection.endLineNumber + 1, 1, this.boxes[i].range.endLineNumber, endColumn);
+            }
+              
             this.deleteBox(i);
             if(range1 != null )
               this.insertBox(range1, BoxType);
             if(range2 != null)
               this.insertBox(range2, BoxType);
-            return;
           }
   
           //Range part of Box
           else{
             //Resize Box
             if(intersection.startLineNumber != this.boxes[i].range.startLineNumber){
-              range1 = new monaco.Range(this.boxes[i].range.startLineNumber,1, intersection.startLineNumber - 1,1);
+              var endColumn = this.editor.getLineLastNonWhitespaceColumn(intersection.startLineNumber - 1);
+              range1 = new monaco.Range(this.boxes[i].range.startLineNumber,1, intersection.startLineNumber - 1,endColumn);
             } 
             else{
-              range1 = new monaco.Range(intersection.endLineNumber + 1, 1, this.boxes[i].range.endLineNumber, 1);
+              var endColumn = this.editor.getLineLastNonWhitespaceColumn(this.boxes[i].range.endLineNumber);
+              range1 = new monaco.Range(intersection.endLineNumber + 1, 1, this.boxes[i].range.endLineNumber, endColumn);
             }
             this.deleteBox(i);
             this.insertBox(range1, BoxType);
@@ -145,6 +175,9 @@ export class InteractiveList{
     }
   
     insertBox( range, BoxType){
+      //change range, so that it holds full endline
+      range.endColumn = this.editor.getLineLastNonWhitespaceColumn(range.endLineNumber);
+
       var newBox;
       //If first box 
       if(this.boxes.length === 0){
@@ -220,7 +253,7 @@ export class InteractiveList{
         this.deleteBox(indiceArray[i]-i);
       }
     }
-  
+    
     deleteBox(indice){
       //Remove from editor
       this.editor.removeDecoration(this.boxes[indice].id);
