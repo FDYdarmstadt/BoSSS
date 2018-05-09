@@ -1,4 +1,3 @@
-
 import * as monaco from 'monaco-editor';
 
 
@@ -53,7 +52,11 @@ export class Editor{
     onDidScrollChange( func){
       this.monaco.onDidScrollChange(func);
     }
-  
+    
+    getLineLastNonWhitespaceColumn(lineNumber){
+      return this.monaco.getModel().getLineLastNonWhitespaceColumn(lineNumber);
+    }
+
     addDecoration(myRange, decorationClassName, overviewRulerColor){
   
       var newDecorationId = this.monaco.deltaDecorations([], [
@@ -73,6 +76,10 @@ export class Editor{
     
     removeDecoration(id){
       this.monaco.deltaDecorations([id], []);
+    }
+
+    onDidChangeModelContent(func){
+      this.monaco.onDidChangeModelContent(func);
     }
   
     getDecorationRange(id){
@@ -104,6 +111,10 @@ export class Editor{
 
     reset(){
       this.monaco.setValue("");
+    }
+
+    getSelection(){
+      return this.monaco.getSelection();
     }
 }
 
