@@ -38,7 +38,7 @@ namespace BoSSS.Solution.Multigrid {
     public class FixpointIterator : NonlinearSolver {
 
 
-        public FixpointIterator(AssembleMatrixDel __AssembleMatrix, IEnumerable<AggregationGridBasis[]> __AggBasisSeq,
+        public FixpointIterator(OperatorEvalOrLin __AssembleMatrix, IEnumerable<AggregationGridBasis[]> __AggBasisSeq,
             MultigridOperator.ChangeOfBasisConfig[][] __MultigridOperatorConfig)
             : base(__AssembleMatrix, __AggBasisSeq, __MultigridOperatorConfig) //
         {

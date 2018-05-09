@@ -35,7 +35,7 @@ namespace BoSSS.Solution.Multigrid {
     /// Society for Industrial and Applied Mathematics, 2003. https://doi.org/10.1137/1.9780898718898.
     /// </summary>
     public class Newton : NonlinearSolver {
-        public Newton(AssembleMatrixDel __AssembleMatrix, IEnumerable<AggregationGridBasis[]> __AggBasisSeq, MultigridOperator.ChangeOfBasisConfig[][] __MultigridOperatorConfig) :
+        public Newton(OperatorEvalOrLin __AssembleMatrix, IEnumerable<AggregationGridBasis[]> __AggBasisSeq, MultigridOperator.ChangeOfBasisConfig[][] __MultigridOperatorConfig) :
             base(__AssembleMatrix, __AggBasisSeq, __MultigridOperatorConfig) //
         {
         }
@@ -706,13 +706,11 @@ namespace BoSSS.Solution.Multigrid {
                 //this.CurrentLin.OperatorMatrix.SpMV(1.0, new CoordinateVector(SolutionVec.Mapping.Fields.ToArray()), 1.0, OpAffineRaw);
                 //CurrentLin.TransformRhsInto(OpAffineRaw, fx);
 
-                //EvaluateOperator(1.0, SolutionVec.Mapping.Fields, fx);
+                EvaluateOperator(1.0, SolutionVec.Mapping.Fields, fx);
 
-                this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, SolutionVec.Mapping.Fields.ToArray());
-
-                OpMtxRaw.SpMV(1.0, new CoordinateVector(SolutionVec.Mapping.Fields.ToArray()), 1.0, OpAffineRaw);
-
-                CurrentLin.TransformRhsInto(OpAffineRaw, fx);
+                //this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, SolutionVec.Mapping.Fields.ToArray());
+                //OpMtxRaw.SpMV(1.0, new CoordinateVector(SolutionVec.Mapping.Fields.ToArray()), 1.0, OpAffineRaw);
+                //CurrentLin.TransformRhsInto(OpAffineRaw, fx);
 
                 SolutionVec.CopyEntries(temp);
 
