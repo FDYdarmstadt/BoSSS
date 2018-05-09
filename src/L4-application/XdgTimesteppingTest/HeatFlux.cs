@@ -26,7 +26,7 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Application.XdgTimesteppingTest {
 
-    class HeatFlux_Bulk : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm {
+    class HeatFlux_Bulk : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, IEquationComponentSpeciesNotification, IEquationComponentCoefficient {
 
         public IList<string> ArgumentOrdering {
             get {
@@ -40,13 +40,13 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             }
         }
 
-        public void SetParameter(string speciesName, SpeciesId SpcId, MultidimensionalArray LengthScales) {
+        public void SetParameter(string speciesName, SpeciesId SpcId) {
             switch (speciesName) {
                 case "A": Viscosity = m_muA; rhs = m_rhsA; complementViscosity = m_muB; break;
                 case "B": Viscosity = m_muB; rhs = m_rhsB; complementViscosity = m_muA; break;
                 default: throw new ArgumentException("Unknown species.");
             }
-            m_LengthScales = LengthScales;
+            
         }
 
         MultidimensionalArray m_LengthScales;
@@ -159,6 +159,10 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             return -Acc;
         }
 
+        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            m_LengthScales = cs.CellLengthScales;
+        }
+
         public TermActivationFlags BoundaryEdgeTerms {
             get {
                 return (TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV | TermActivationFlags.V | TermActivationFlags.GradV);
@@ -178,7 +182,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         }
     }
 
-    public class HeatFlux_Interface : ILevelSetComponent {
+    public class HeatFlux_Interface : ILevelSetForm, ILevelSetEquationComponentCoefficient {
 
         LevelSetTracker m_LsTrk;
 
@@ -217,11 +221,13 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 Grad_vB_xN += Grad_vB[d] * N[d];
             }
 
-            double hCutCellMin = Math.Min(inp.NegCellLengthScale, inp.PosCellLengthScale);
+            double NegCellLengthScale = NegCellLengthScaleS[inp.jCell];
+            double PosCellLengthScale = PosCellLengthScaleS[inp.jCell];
+            double hCutCellMin = Math.Min(NegCellLengthScale, PosCellLengthScale);
             Debug.Assert(!(double.IsInfinity(hCutCellMin) || double.IsNaN(hCutCellMin)));
 
             if (hCutCellMin <= 1.0e-10 * hCellMin)
-                // very small cell -- clippling
+                // very small cell -- clipping
                 hCutCellMin = hCellMin;
 
             double Ret = 0.0;
@@ -246,6 +252,13 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             return Ret;
         }
 
+        MultidimensionalArray NegCellLengthScaleS;
+        MultidimensionalArray PosCellLengthScaleS;
+
+        public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+            NegCellLengthScaleS = csA.CellLengthScales;
+            PosCellLengthScaleS = csB.CellLengthScales;
+        }
 
         public int LevelSetIndex {
             get { return 0; }

@@ -35,7 +35,9 @@ namespace BoSSS.Solution.Multigrid {
     /// Society for Industrial and Applied Mathematics, 2003. https://doi.org/10.1137/1.9780898718898.
     /// </summary>
     public class Newton : NonlinearSolver {
-        public Newton(AssembleMatrixDel __AssembleMatrix, IEnumerable<AggregationGridBasis[]> __AggBasisSeq, MultigridOperator.ChangeOfBasisConfig[][] __MultigridOperatorConfig) : base(__AssembleMatrix, __AggBasisSeq, __MultigridOperatorConfig) {
+        public Newton(AssembleMatrixDel __AssembleMatrix, IEnumerable<AggregationGridBasis[]> __AggBasisSeq, MultigridOperator.ChangeOfBasisConfig[][] __MultigridOperatorConfig) :
+            base(__AssembleMatrix, __AggBasisSeq, __MultigridOperatorConfig) //
+        {
         }
 
         /// <summary>
@@ -65,9 +67,9 @@ namespace BoSSS.Solution.Multigrid {
         public double ConvCrit = 1e-6;
 
         /// <summary>
-        /// Maximum number of steplength iterations
+        /// Maximum number of step-length iterations
         /// </summary>
-        public double maxStep = 25;
+        public double maxStep = 30;
 
         /// <summary>
         /// Convergence for Krylov and GMRES iterations
@@ -85,11 +87,11 @@ namespace BoSSS.Solution.Multigrid {
         public string m_SessionPath;
 
 
-        bool solveVelocity = true;
+        //bool solveVelocity = true;
 
-        double VelocitySolver_ConvergenceCriterion = 1e-5;
+        //double VelocitySolver_ConvergenceCriterion = 1e-5;
 
-        double StressSolver_ConvergenceCriterion = 1e-5;
+        //double StressSolver_ConvergenceCriterion = 1e-5;
 
         public override void SolverDriver<S>(CoordinateVector SolutionVec, S RHS) {
 
@@ -101,7 +103,11 @@ namespace BoSSS.Solution.Multigrid {
                 itc = 0;
                 double[] x, xt, xOld, f0, deltaX, ft;
                 double rat;
-                double alpha = 1E-4, sigma0 = 0.1, sigma1 = 0.5, maxarm = 20, gamma = 0.9;
+                double alpha = 1E-4;
+                //double sigma0 = 0.1;
+                double sigma1 = 0.5;
+                //double maxarm = 20;
+                //double gamma = 0.9;
 
                 // Eval_F0 
                 using (new BlockTrace("Slv Init", tr)) {
@@ -381,9 +387,7 @@ namespace BoSSS.Solution.Multigrid {
                             ffc = nft * nft;
                             iarm++;
 
-//#if DEBUG
                             Console.WriteLine("Step size:  " + lambda + "with Residuum:  " + nft);
-//#endif
                         }
                         // transform solution back to 'original domain'
                         // to perform the linearization at the new point...
@@ -464,7 +468,7 @@ namespace BoSSS.Solution.Multigrid {
             using (var tr = new FuncTrace()) {
                 int n = f0.Length;
 
-                int reorth = 3; // Orthogonalization method -> 1: Brown/Hindmarsh condition, 3: Always reorthogonalize
+                int reorth = 1; // Orthogonalization method -> 1: Brown/Hindmarsh condition, 3: Always reorthogonalize
 
                 // RHS of the linear equation system 
                 double[] b = new double[n];
@@ -538,7 +542,7 @@ namespace BoSSS.Solution.Multigrid {
 
 
                     // Reorthogonalize ?
-                    if ((reorth == 1 && Math.Round(normav + 0.001 * normav2, 3) == Math.Round(normav, 3) || reorth == 3)) {
+                    if ((reorth == 1 && Math.Round(normav + 0.001 * normav2, 3) == Math.Round(normav, 3)) || reorth == 3) {
                         for (int j = 1; j <= k; j++) {
                             double hr = GenericBlas.InnerProd(V[k], V[j - 1]).MPISum();
                             H[j - 1, k - 1] = H[j - 1, k - 1] + hr;
@@ -764,7 +768,7 @@ namespace BoSSS.Solution.Multigrid {
             }
         }
         /// <summary>
-        /// % Apply three-point safeguarded parabolic model for a line search.
+        /// Apply three-point safeguarded parabolic model for a line search.
         /// C.T.Kelley, April 1, 2003
         /// This code comes with no guarantee or warranty of any kind.
         /// function lambdap = parab3p(lambdac, lambdam, ff0, ffc, ffm)

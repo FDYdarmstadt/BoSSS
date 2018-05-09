@@ -24,15 +24,16 @@ using BoSSS.Platform;
 using System.Collections;
 using ilPSP;
 using System.Diagnostics;
+using BoSSS.Foundation;
 
 namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
     
     
-    public class ViscosityInBulk_GradUTerm : BoSSS.Solution.NSECommon.swipViscosity_Term1 {
+    public class ViscosityInBulk_GradUTerm : BoSSS.Solution.NSECommon.swipViscosity_Term1, BoSSS.Foundation.IEquationComponentCoefficient, IEquationComponentSpeciesNotification {
 
         public ViscosityInBulk_GradUTerm(double penalty, double sw, IncompressibleMultiphaseBoundaryCondMap bcMap, int d, int D, double _muA, double _muB, 
-            ViscosityImplementation _ViscosityImplementation, double _betaA = 0.0, double _betaB = 0.0)
-            : base(penalty, null, d, D, bcMap, _ViscosityImplementation, NSECommon.ViscosityOption.ConstantViscosity, constantViscosityValue: double.NegativeInfinity) {
+            double _betaA = 0.0, double _betaB = 0.0)
+            : base(penalty, null, d, D, bcMap, NSECommon.ViscosityOption.ConstantViscosity, constantViscosityValue: double.NegativeInfinity) {
             muA = _muA;
             muB = _muB;
             betaA = _betaA;
@@ -64,8 +65,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         /// </summary>
         MultidimensionalArray m_LenScales;
 
-        public void SetParameter(string speciesName, SpeciesId SpcId, MultidimensionalArray __LenScales) {
-            this.m_LenScales = __LenScales;
+        public void SetParameter(string speciesName, SpeciesId SpcId) {
             switch (speciesName) {
                 case "A": currentMu = muA; complementMu = muB; SetBndfunction("A"); m_beta = betaA;  break;
                 case "B": currentMu = muB; complementMu = muA; SetBndfunction("B"); m_beta = betaB;  break;
@@ -102,13 +102,17 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         protected override double Viscosity(double[] Parameters) {
             return currentMu;
         }
+
+        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            m_LenScales = cs.CellLengthScales;
+        }
     }
 
-    public class ViscosityInBulk_GradUtranspTerm : BoSSS.Solution.NSECommon.swipViscosity_Term2 {
+    public class ViscosityInBulk_GradUtranspTerm : BoSSS.Solution.NSECommon.swipViscosity_Term2, IEquationComponentCoefficient, IEquationComponentSpeciesNotification {
 
         public ViscosityInBulk_GradUtranspTerm(double penalty, double sw, IncompressibleMultiphaseBoundaryCondMap bcMap, int d, int D, double _muA, double _muB, 
-            ViscosityImplementation _ViscosityImplementation, double _betaA = 0.0, double _betaB = 0.0)
-            : base(penalty, null, d, D, bcMap, _ViscosityImplementation, NSECommon.ViscosityOption.ConstantViscosity, constantViscosityValue: double.NegativeInfinity) {
+            double _betaA = 0.0, double _betaB = 0.0)
+            : base(penalty, null, d, D, bcMap, NSECommon.ViscosityOption.ConstantViscosity, constantViscosityValue: double.NegativeInfinity) {
             muA = _muA;
             muB = _muB;
             betaA = _betaA;
@@ -140,8 +144,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         MultidimensionalArray m_LenScales;
 
 
-        public void SetParameter(string speciesName, SpeciesId SpcId, MultidimensionalArray LenScales) {
-            this.m_LenScales = LenScales;
+        public void SetParameter(string speciesName, SpeciesId SpcId) {
             switch(speciesName) {
                 case "A": currentMu = muA; complementMu = muB; SetBndfunction("A"); break;
                 case "B": currentMu = muB; complementMu = muA; SetBndfunction("B"); break;
@@ -178,12 +181,16 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         protected override double Viscosity(double[] Parameters) {
             return currentMu;
         }
+
+        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            m_LenScales = cs.CellLengthScales;
+        }
     }
 
-    public class ViscosityInBulk_divTerm : BoSSS.Solution.NSECommon.swipViscosity_Term3 {
+    public class ViscosityInBulk_divTerm : BoSSS.Solution.NSECommon.swipViscosity_Term3, BoSSS.Foundation.IEquationComponentCoefficient, IEquationComponentSpeciesNotification {
 
-        public ViscosityInBulk_divTerm(double penalty, double sw, IncompressibleMultiphaseBoundaryCondMap bcMap, int d, int D, double _muA, double _muB, ViscosityImplementation _ViscosityImplementation)
-            : base(penalty, null, d, D, bcMap, _ViscosityImplementation, NSECommon.ViscosityOption.ConstantViscosity, constantViscosityValue: double.NegativeInfinity) {
+        public ViscosityInBulk_divTerm(double penalty, double sw, IncompressibleMultiphaseBoundaryCondMap bcMap, int d, int D, double _muA, double _muB)
+            : base(penalty, null, d, D, bcMap, NSECommon.ViscosityOption.ConstantViscosity, constantViscosityValue: double.NegativeInfinity) {
             muA = _muA;
             muB = _muB;
             base.m_alpha = sw;
@@ -208,8 +215,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         /// </summary>
         MultidimensionalArray m_LenScales;
         
-        public void SetParameter(string speciesName, SpeciesId SpcId, MultidimensionalArray LenScales) {
-            this.m_LenScales = LenScales;
+        public void SetParameter(string speciesName, SpeciesId SpcIds) {
             switch (speciesName) {
                 case "A": currentMu = muA; SetBndfunction("A"); break;
                 case "B": currentMu = muB; SetBndfunction("B"); break;
@@ -238,6 +244,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             return this.m_penalty * penaltySizeFactor; // Bem.: die Viskosität wird in der swipViscosity_Term3.InnerEdgeForm(...) dazumultipliziert.
 
             // return (base.penalty(jCellIn, jCellOut, cj)/currentMu)*Math.Max(currentMu, complementMu);
+        }
+
+        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            m_LenScales = cs.CellLengthScales;
         }
     }
     

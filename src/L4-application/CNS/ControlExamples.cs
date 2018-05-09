@@ -1289,25 +1289,20 @@ namespace CNS {
         }
 
 
-        public static IBMControl IBMShockTube(int dgDegree = 2, int numOfCellsX = 50, int numOfCellsY = 10, double sensorLimit = 1e-3, bool true1D = false) {
-
-#if DEBUG
-            System.Threading.Thread.Sleep(10000);
-#endif
+        public static IBMControl IBMShockTube(int savePeriod, string projectName, int dgDegree, double agg, double sensorLimit, double CFLFraction, int explicitOrder, int numberOfSubGrids, int reclusteringInterval, int maxNumOfSubSteps) {
+            //System.Threading.Thread.Sleep(10000);
 
             IBMControl c = new IBMControl();
 
-            string dbPath = @"c:\bosss_db\";
+            // ### Database ###
+            //string dbPath = @"c:\bosss_db\";
+            string dbPath = @"\\dc1\userspace\geisenhofer\bosss_db_IBMShockTube";
             c.DbPath = dbPath;
             c.savetodb = dbPath != null;
-            c.saveperiod = 1;
+            c.saveperiod = savePeriod;
             c.PrintInterval = 1;
 
-            double xMin = 0;
-            double xMax = 1;
-            double yMin = 0;
-            double yMax = 1;
-
+            // ### Partitioning and load balancing ###
             c.GridPartType = GridPartType.METIS;
             //c.DynamicLoadBalancing_On = false;
             //c.DynamicLoadBalancing_Period = 5;
@@ -1315,36 +1310,30 @@ namespace CNS {
             //c.DynamicLoadBalancing_CellClassifier = new RandomCellClassifier(2);
             //c.DynamicLoadBalancing_CellCostEstimatorFactories.Add((prog, i) => new StaticCellCostEstimator(new[] { 1, 10 }));
 
-            bool AV = true;
-
+            // ### Level-set ###
             c.DomainType = DomainTypes.StaticImmersedBoundary;
-            c.LevelSetFunction = delegate (double[] X, double t) {
-                return X[1] - 0.16;
-            };
+            c.LevelSetFunction = ((X, t) => X[1] - 0.16);
             c.LevelSetBoundaryTag = "AdiabaticSlipWall";
             c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             c.LevelSetQuadratureOrder = 6;
-            c.AgglomerationThreshold = 0.1;
-            //c.AgglomerationThreshold = 0.9;
+            c.AgglomerationThreshold = agg;
             c.AddVariable(IBMVariables.LevelSet, 1);
-
             c.AddVariable(IBMVariables.FluidCells, 1);
             c.AddVariable(IBMVariables.FluidCellsWithoutSourceCells, 1);
             c.AddVariable(IBMVariables.CutCells, 1);
             c.AddVariable(IBMVariables.CutCellsWithoutSourceCells, 1);
             c.AddVariable(IBMVariables.SourceCells, 1);
 
+            // ### Shock-Capturing ###
+            bool AV = true;
             if (AV) {
                 c.ActiveOperators = Operators.Convection | Operators.ArtificialViscosity;
             } else {
                 c.ActiveOperators = Operators.Convection;
             }
             c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
-
-            // Shock-capturing
             double epsilon0 = 1.0;
             double kappa = 0.5;
-
             if (AV) {
                 Variable sensorVariable = Variables.Density;
                 c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
@@ -1352,107 +1341,86 @@ namespace CNS {
                 c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 2);
             }
 
+            // ### Time-Stepping ###
             // Runge-Kutta schemes (Explicit Euler)
             //c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             //c.ExplicitOrder = 1;
-
-            //Adams-Bashforth
+            // Adams-Bashforth
             //c.ExplicitScheme = ExplicitSchemes.AdamsBashforth;
             //c.ExplicitOrder = 1;
-
-            // (A)LTS
+            // (Adaptive) local time stepping
             c.ExplicitScheme = ExplicitSchemes.LTS;
-            c.ExplicitOrder = 1;
-            c.NumberOfSubGrids = 2;
+            c.ExplicitOrder = explicitOrder;
+            c.NumberOfSubGrids = numberOfSubGrids;
             //c.ReclusteringInterval = c.DynamicLoadBalancing_Period;
-            c.ReclusteringInterval = 5;
-            c.maxNumOfSubSteps = 10;
+            c.ReclusteringInterval = reclusteringInterval;
+            c.maxNumOfSubSteps = maxNumOfSubSteps;
             c.FluxCorrection = false;
 
+            // ### Physics ###
             c.EquationOfState = IdealGas.Air;
-
             c.MachNumber = 1.0 / Math.Sqrt(c.EquationOfState.HeatCapacityRatio);
             c.ReynoldsNumber = 1.0;
             c.PrandtlNumber = 0.71;
 
+            // ### Output variables ###
             c.AddVariable(Variables.Density, dgDegree);
             c.AddVariable(Variables.Momentum.xComponent, dgDegree);
+            c.AddVariable(Variables.Momentum.yComponent, dgDegree);
             c.AddVariable(Variables.Energy, dgDegree);
             c.AddVariable(Variables.Velocity.xComponent, dgDegree);
+            c.AddVariable(Variables.Velocity.yComponent, dgDegree);
             c.AddVariable(Variables.Pressure, dgDegree);
             c.AddVariable(Variables.Entropy, dgDegree);
             c.AddVariable(Variables.LocalMachNumber, dgDegree);
-            c.AddVariable(Variables.Rank, 0);
-            if (!true1D) {
-                c.AddVariable(Variables.Momentum.yComponent, dgDegree);
-                c.AddVariable(Variables.Velocity.yComponent, dgDegree);
-                if (AV) {
-                    c.AddVariable(Variables.ArtificialViscosity, 2);
-                }
-            } else {
-                if (AV) {
-                    c.AddVariable(Variables.ArtificialViscosity, 1);
-                }
-            }
             c.AddVariable(Variables.CFL, 0);
             c.AddVariable(Variables.CFLConvective, 0);
             if (AV) {
                 c.AddVariable(Variables.CFLArtificialViscosity, 0);
+                c.AddVariable(Variables.ArtificialViscosity, 2);
             }
             if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS)) {
                 c.AddVariable(Variables.LTSClusters, 0);
             }
+            c.AddVariable(Variables.Rank, 0);
 
+            // ### Grid ###
+            double xMin = 0;
+            double xMax = 1;
+            double yMin = 0;
+            double yMax = 1;
+            int numOfCellsX = 50;
+            int numOfCellsY = 10;
             c.GridFunc = delegate {
                 double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
-
-                if (true1D) {
-                    var grid = Grid1D.LineGrid(xNodes, periodic: false);
-                    // Boundary conditions
-                    grid.EdgeTagNames.Add(1, "AdiabaticSlipWall");
-
-                    grid.DefineEdgeTags(delegate (double[] _X) {
-                        return 1;
-                    });
-                    return grid;
-                } else {
-                    double[] yNodes = GenericBlas.Linspace(yMin, yMax, numOfCellsY + 1);
-                    var grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
-                    // Boundary conditions
-                    grid.EdgeTagNames.Add(1, "AdiabaticSlipWall");
-
-                    grid.DefineEdgeTags(delegate (double[] _X) {
-                        return 1;
-                    });
-                    return grid;
-                }
+                double[] yNodes = GenericBlas.Linspace(yMin, yMax, numOfCellsY + 1);
+                var grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
+                grid.EdgeTagNames.Add(1, "AdiabaticSlipWall");
+                grid.DefineEdgeTags(X => 1);
+                return grid;
             };
 
+            // ### Boundary conditions ###
             c.AddBoundaryCondition("AdiabaticSlipWall");
 
+            // ### Initial smoothing ###
             //double crossProduct2D(double[] a, double[] b) {
             //    return a[0] * b[1] - a[1] * b[0];
             //}
-
             // Normal vector of initial shock
             Vector2D normalVector = new Vector2D(1, 0);
-
             // Direction vector of initial shock
             Vector2D r = new Vector2D(normalVector.y, -normalVector.x);
             r.Normalize();
-
             // Distance from a point X to the initial shock
             double[] p = new double[] { 0.5, 0.0 };
-
             //double DistanceFromPointToLine(double[] X, double[] pointOnLine, double[] directionVector) {
             //    double[] X_minus_pointOnLine = new double[] { X[0] - pointOnLine[0], X[1] - pointOnLine[1] };
             //    double distance = crossProduct2D(directionVector, X_minus_pointOnLine) / Math.Sqrt(Math.Pow(directionVector[0], 2) + Math.Pow(directionVector[1], 2));
 
             //    return distance;
             //}
-
             double cellSize = Math.Min((xMax - xMin) / numOfCellsX, (yMax - yMin) / numOfCellsY);
-
             Func<double, double> SmoothJump = delegate (double distance) {
                 // smoothing should be in the range of h/p
                 double maxDistance = 4.0 * cellSize / Math.Max(dgDegree, 1);
@@ -1460,44 +1428,34 @@ namespace CNS {
                 return (Math.Tanh(distance / maxDistance) + 1.0) * 0.5;
             };
 
-            Func<double, double> Jump = (x => x <= 0.5 ? 0 : 1);
-
-            // Initial conditions
+            // ### Initial conditions ###
             double densityLeft = 1.0;
             double densityRight = 0.125;
             double pressureLeft = 1.0;
             double pressureRight = 0.1;
-
+            Func<double, double> Jump = (x => x <= 0.5 ? 0 : 1);
             //c.InitialValues_Evaluators.Add(Variables.Density, X => densityLeft - SmoothJump(DistanceFromPointToLine(X, p, r)) * (densityLeft - densityRight));
             //c.InitialValues_Evaluators.Add(Variables.Pressure, X => pressureLeft - SmoothJump(DistanceFromPointToLine(X, p, r)) * (pressureLeft - pressureRight));
             c.InitialValues_Evaluators.Add(Variables.Density, X => densityLeft - Jump(X[0]) * (densityLeft - densityRight));
             c.InitialValues_Evaluators.Add(Variables.Pressure, X => pressureLeft - Jump(X[0]) * (pressureLeft - pressureRight));
             c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => 0.0);
-            if (!true1D) {
-                c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => 0.0);
-            }
+            c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => 0.0);
 
-            // Time config
+            // ### Time configuration ###
             c.dtMin = 0.0;
             c.dtMax = 1.0;
-            c.CFLFraction = 0.1;
-            //c.dtFixed = 1e-4;
-            c.Endtime = 0.002;
+            c.CFLFraction = CFLFraction;
+            c.Endtime = 0.25;
             c.NoOfTimesteps = int.MaxValue;
 
-            c.ProjectName = "Shock tube";
+            // ### Project and sessions name ###
+            //c.ProjectName = "IBMShockTube";
+            c.ProjectName = projectName;
 
-            string sessionName;
             if (c.DynamicLoadBalancing_On) {
-                sessionName = String.Format("IBM shock tube, p={0}, {1}x{2} cells, agg={3}, s0={4:0.0E-00}, CFLFrac={5}, ALTS {6}/{7}/{8}({9}), Part={10}/{11}({12})", dgDegree, numOfCellsX, numOfCellsY, c.AgglomerationThreshold, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps, c.GridPartType.ToString(), c.DynamicLoadBalancing_Period, c.DynamicLoadBalancing_ImbalanceThreshold);
+                c.SessionName = String.Format("IBM shock tube, p={0}, {1}x{2} cells, agg={3}, s0={4:0.0E-00}, CFLFrac={5}, ALTS {6}/{7}/{8}({9}), Part={10}/{11}({12})", dgDegree, numOfCellsX, numOfCellsY, c.AgglomerationThreshold, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps, c.GridPartType.ToString(), c.DynamicLoadBalancing_Period, c.DynamicLoadBalancing_ImbalanceThreshold);
             } else {
-                sessionName = String.Format("IBM shock tube, p={0}, {1}x{2} cells, agg={3}, s0={4:0.0E-00}, CFLFrac={5}, ALTS {6}/{7}/{8}({9}), Part={10}", dgDegree, numOfCellsX, numOfCellsY, c.AgglomerationThreshold, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps, c.GridPartType.ToString());
-            }
-
-            if (true1D) {
-                c.SessionName = String.Format("IBM shock tube, 1D, dgDegree = {0}, noOfCellsX = {1}, sensorLimit = {2:0.00E-00}", dgDegree, numOfCellsX, sensorLimit);
-            } else {
-                c.SessionName = sessionName;
+                c.SessionName = String.Format("IBM shock tube, p={0}, {1}x{2} cells, agg={3}, s0={4:0.0E-00}, CFLFrac={5}, ALTS {6}/{7}/{8}({9}), Part={10}", dgDegree, numOfCellsX, numOfCellsY, c.AgglomerationThreshold, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps, c.GridPartType.ToString());
             }
 
             return c;
@@ -3402,7 +3360,7 @@ namespace CNS {
             }
             return c;
         }
-        public static CNSControl ShockTube_HilbertTest(int GPType, int dgDegree, int ExplOrder, int RecInt, int numOfCellsX, int numOfCellsY, bool LTSON, int AVratio, int Tsteps, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = true, string SessionID = null, string GridID = null) {
+        public static CNSControl ShockTube_HilbertTest(int GPType, int dgDegree, int ExplOrder, int RecInt, int numOfCellsX, int numOfCellsY, bool LTSON, int AVratio, int Tsteps,string prjname=null, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = true, string SessionID = null, string GridID = null) {
 
             CNSControl c = new CNSControl();
             //c.DbPath = @"D:\Weber\BoSSS\test_db";
@@ -3411,7 +3369,8 @@ namespace CNS {
             //c.DbPath = dbPath;
             //c.savetodb = dbPath != null && saveToDb;
 
-            c.DbPath = @"/home/yp19ysog/BoSSS_DB";
+            //c.DbPath = @"/home/yp19ysog/BoSSS_DB";
+            
             c.savetodb = true;
             c.saveperiod = int.MaxValue;
             c.PrintInterval = 1;
@@ -3422,7 +3381,6 @@ namespace CNS {
             if (dgDegree > 0) {
                 AV = true;
             }
-            //bool AV = true;
 
             if (LTSON) {
                 c.DynamicLoadBalancing_On = true;
@@ -3439,6 +3397,7 @@ namespace CNS {
                 c.DynamicLoadBalancing_ImbalanceThreshold = 0.0;
                 c.DynamicLoadBalancing_Period = RecInt;
             } else if (!LTSON && AV && AVratio != 0) {
+                c.DynamicLoadBalancing_On = true;
                 //AV-Loadbalancing
                 c.ExplicitScheme = ExplicitSchemes.RungeKutta;
                 c.ExplicitOrder = ExplOrder;
@@ -3599,16 +3558,26 @@ namespace CNS {
             c.Endtime = 0.25;
             c.NoOfTimesteps = Tsteps;
 
-            c.ProjectName = "Shock tube";
-            if (true1D) {
-                c.SessionName = String.Format("Shock tube, 1D, dgDegree = {0}, noOfCellsX = {1}, sensorLimit = {2:0.00E-00}", dgDegree, numOfCellsX, sensorLimit);
-            } else {
-                c.SessionName = String.Format("Shock tube, 2D, dgDegree = {0}, noOfCellsX = {1}, noOfCellsX = {2}, sensorLimit = {3:0.00E-00}, CFLFraction = {4:0.00E-00}, ALTS {5}/{6}, GridPartType {7}, NoOfCores {8}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.GridPartType, ilPSP.Environment.MPIEnv.MPI_Size);
+            string LoadbalancingType = "None";
+            if (LTSON) {
+                LoadbalancingType = "LTS-Cluster";
+            } else if (AV && AVratio == 1) {
+                LoadbalancingType = "AV-Cluster";
+            } else if (AV && AVratio > 1) {
+                LoadbalancingType = "AV-direct";
             }
+            if (prjname == null) {
+                c.ProjectName = LoadbalancingType;
+            } else {
+                c.ProjectName = prjname;
+            }
+
+            c.SessionName = String.Format("DMR, dgDegree = {0}, noOfCellsX = {1}, noOfCellsX = {2}, GridPartType {3}, LoadbalancingType {4}", dgDegree, numOfCellsX, numOfCellsY, c.GridPartType, LoadbalancingType);
 
             return c;
         }
-        public static CNSControl DoubleMachReflection_HilbertTest(int GPType, int dgDegree, int ExplOrder, int RecInt, int numOfCellsX, int numOfCellsY, bool LTSON, int AVratio, int Tsteps, double sensorLimit = 1e-3, bool restart = false, string sessionID = null, string gridID = null) {
+
+        public static CNSControl DoubleMachReflection_HilbertTest( int GPType, int dgDegree, int ExplOrder, int RecInt, int numOfCellsX, int numOfCellsY, bool LTSON, int AVratio, int Tsteps, string prjname = null, double sensorLimit = 1e-3, bool restart = false, string sessionID = null, string gridID = null) {
             CNSControl c = new CNSControl();
 
             //c.DbPath = @"D:\Weber\BoSSS\test_db";
@@ -3640,6 +3609,7 @@ namespace CNS {
                 c.DynamicLoadBalancing_Period = RecInt;
 
             } else if (!LTSON && AV && AVratio != 0) {
+                c.DynamicLoadBalancing_On = true;
                 //Load is balanced according to AV
                 c.ExplicitScheme = ExplicitSchemes.RungeKutta;
                 c.ExplicitOrder = ExplOrder;
@@ -3852,8 +3822,20 @@ namespace CNS {
             c.CFLFraction = 0.3;
             c.NoOfTimesteps = Tsteps;
 
-            c.ProjectName = "Double Mach reflection";
-            c.SessionName = String.Format("DMR, dgDegree = {0}, numOfCellsX = {1}, numOfCellsY = {2}, sensorLimit = {3:0.00E-00}, CFLFraction = {4:0.00E-00}, ALTS {5}/{6}, lamdaMax = {7}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, lambdaMax);
+            string LoadbalancingType = "None";
+            if (LTSON) {
+                LoadbalancingType = "LTS-Cluster";
+            } else if (AV && AVratio == 1) {
+                LoadbalancingType = "AV-Cluster";
+            } else if (AV && AVratio > 1) {
+                LoadbalancingType = "AV-direct";
+            }
+            if (prjname == null) {
+                c.ProjectName = LoadbalancingType;
+            } else {
+                c.ProjectName = prjname;
+            }
+            c.SessionName = String.Format("DMR, dgDegree = {0}, noOfCellsX = {1}, noOfCellsX = {2}, GridPartType {3}, LoadbalancingType {4}", dgDegree, numOfCellsX, numOfCellsY, c.GridPartType, LoadbalancingType);
 
             return c;
         }

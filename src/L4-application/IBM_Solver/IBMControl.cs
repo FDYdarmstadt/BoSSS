@@ -236,7 +236,7 @@ namespace BoSSS.Application.IBM_Solver {
         }
 
         [DataMember]
-        public TimestepperInit Timestepper_Init = TimestepperInit.SingleInit;
+        public BoSSS.Solution.Timestepping.TimeStepperInit TimeStepper_Init = Solution.Timestepping.TimeStepperInit.SingleInit;
 
         [DataMember]
         public NonlinearSolverCodes NonlinearSolve = NonlinearSolverCodes.Picard;

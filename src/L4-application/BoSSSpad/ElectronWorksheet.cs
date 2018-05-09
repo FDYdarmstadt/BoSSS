@@ -10,7 +10,9 @@ using BoSSS.Foundation.IO;
 
 namespace BoSSS.Application.BoSSSpad{
 
-    //Singleton class
+    /// <summary>
+    /// Singleton class; 
+    /// </summary>
     public sealed class ElectronWorksheet {
         Document document;
         private static readonly ElectronWorksheet instance = new ElectronWorksheet();
@@ -26,27 +28,67 @@ namespace BoSSS.Application.BoSSSpad{
                 Utils.GetBoSSSInstallDir(),
                 out bool mpiInitialized
             );
-            this.document = new Document();
         }
 
-        public static ElectronWorksheet Instance{
-            get{
-                return instance; 
+        public static ElectronWorksheet Instance {
+            get {
+                return instance;
             }
         }
 
-        public string RunCommand(string command){
+        public Tuple<string, string> RunCommand(string command) {
 
-            Document.Tuple singleCommandAndResult = new Document.Tuple{
+            Document.Tuple singleCommandAndResult = new Document.Tuple {
                 Command = command
             };
-
             singleCommandAndResult.Evaluate();
-            return singleCommandAndResult.InterpreterTextOutput;
+            String base64Result = null;
+            
+            if (singleCommandAndResult.Result != null 
+                && singleCommandAndResult.Result as System.Drawing.Image != null)
+            {
+                Byte[] result = null;
+                System.Drawing.Image img = (System.Drawing.Image)singleCommandAndResult.Result;
+                using (System.IO.MemoryStream ms = new System.IO.MemoryStream()) {
+                    img.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+                    result = ms.ToArray();
+                    base64Result = Convert.ToBase64String(result);
+                };
+            }
+            
+            return new Tuple<string, string>(
+                singleCommandAndResult.InterpreterTextOutput,
+                base64Result
+                );
         }
 
-        //save
+        public void Save(string path, string[] commands, string[] results) {
+            //build document 
+            document = new Document();
+            for (int i = 0; i < commands.Length; ++i) {
+                Document.Tuple commandBox = new Document.Tuple() {
+                    Command = commands[i],
+                    InterpreterTextOutput = results[i]
+                };
+                document.CommandAndResult.Add(commandBox);
+            }
 
-        //load
+            //Save document
+            document.Serialize(path);
+        }
+
+        public Tuple<string[], string[]> Load(string path){
+
+            document = Document.Deserialize(path);
+            int numberOfBoxes = document.CommandAndResult.Count;
+            string[] commands = new string[numberOfBoxes];
+            string[] results = new string[numberOfBoxes];
+            for(int i = 0; i < numberOfBoxes; ++i){
+                commands[i] = document.CommandAndResult[i].Command;
+                results[i] = document.CommandAndResult[i].InterpreterTextOutput;
+            }
+
+            return new Tuple<string[], string[]>(commands, results);
+        }
     }
 }
