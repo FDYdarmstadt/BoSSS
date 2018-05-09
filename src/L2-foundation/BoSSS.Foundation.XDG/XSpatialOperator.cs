@@ -652,7 +652,9 @@ namespace BoSSS.Foundation.XDG {
                                                              lsTrk, iLevSet, new Tuple<SpeciesId, SpeciesId>(SpeciesA, SpeciesB),
                                                              rule);
                             LsEval.time = time;
-                            UpdateLevelSetCoefficients(this.SpeciesOperatorCoefficients[SpeciesA], this.SpeciesOperatorCoefficients[SpeciesB]);
+                            this.SpeciesOperatorCoefficients.TryGetValue(SpeciesA, out var csA);
+                            this.SpeciesOperatorCoefficients.TryGetValue(SpeciesB, out var csB);
+                            UpdateLevelSetCoefficients(csA, csB);
                             LsEval.Execute();
 
 #if DEBUG
