@@ -159,7 +159,7 @@ namespace NSE_SIMPLE {
                     //    default:
                     //        throw new NotImplementedException();
                     //}
-                    break;
+                    //break;
                 }
                 case IncompressibleBcType.NavierSlip_Linear: {
 
@@ -222,7 +222,7 @@ namespace NSE_SIMPLE {
 
                     //}
 
-                    break;
+                    //break;
                 }
                 case IncompressibleBcType.Pressure_Dirichlet: {
                     // Dirichlet boundary condition for pressure.

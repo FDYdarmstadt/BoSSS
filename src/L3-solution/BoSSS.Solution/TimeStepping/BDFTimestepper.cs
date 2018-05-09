@@ -251,6 +251,7 @@ namespace BoSSS.Solution.TimeStepping {
         public void MultiInit(double physTime, int TimestepNo, double dt, Action<int, double, DGField[]> SetTimestep) {
             //the code below has not been tested or debugged, yet
             throw new NotImplementedException("Not yet tested");
+            /*
             using (new FuncTrace()) {
                 if (dt <= 0)
                     throw new ArgumentOutOfRangeException();
@@ -270,7 +271,7 @@ namespace BoSSS.Solution.TimeStepping {
                         PushStacks();
                 }
             }
-
+            */
         }
 
 
