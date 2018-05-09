@@ -90,7 +90,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             // Initialize Extension Velocity Algorithm
             double PenaltyBase = Control.PenaltyMultiplierInterface * ((double)((LevelSet.Basis.Degree + 1) * (LevelSet.Basis.Degree + D))) / ((double)D);
-            ILevelSetComponent InterfaceFlux;
+            ILevelSetForm InterfaceFlux;
 
             
 

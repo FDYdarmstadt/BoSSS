@@ -62,16 +62,16 @@ namespace BoSSS.Foundation.XDG {
         public MultidimensionalArray[] ParamsNeg;
 
 
-        /// <summary>
-        /// A characteristic length scale for the negative parts of the cut cells, i.e. the respective part of a cut cell where the level-set field is negative.
-        /// </summary>
-        public MultidimensionalArray NegCellLengthScale;
+        ///// <summary>
+        ///// A characteristic length scale for the negative parts of the cut cells, i.e. the respective part of a cut cell where the level-set field is negative.
+        ///// </summary>
+        //public MultidimensionalArray NegCellLengthScale;
 
 
-        /// <summary>
-        /// A characteristic length scale for the positive parts of the cut cells, i.e. the respective part of a cut cell where the level-set field is positive.
-        /// </summary>
-        public MultidimensionalArray PosCellLengthScale;
+        ///// <summary>
+        ///// A characteristic length scale for the positive parts of the cut cells, i.e. the respective part of a cut cell where the level-set field is positive.
+        ///// </summary>
+        //public MultidimensionalArray PosCellLengthScale;
         
 
         /// <summary>
@@ -93,10 +93,15 @@ namespace BoSSS.Foundation.XDG {
         /// Physical time.
         /// </summary>
         public double time;
+
+        /// <summary>
+        /// Access to the level-set tracker.
+        /// </summary>
+        public LevelSetTracker LsTrk;
 	}
 
     /// <summary>
-    /// comon input parameters for the abstract functions
+    /// common input parameters for the abstract functions
     /// </summary>
     public struct CommonParamsLs {
 
@@ -131,24 +136,30 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public double time;
 
-        /// <summary>
-        /// A characteristic length scale for the negative part of the cut cell, i.e. the respective part of the cut cell where the level-set field is negative.
-        /// </summary>
-        public double NegCellLengthScale;
+        ///// <summary>
+        ///// A characteristic length scale for the negative part of the cut cell, i.e. the respective part of the cut cell where the level-set field is negative.
+        ///// </summary>
+        //public double NegCellLengthScale;
 
-        /// <summary>
-        /// A characteristic length scale for the positive part of the cut cell, i.e. the respective part of the cut cell where the level-set field is positive.
-        /// </summary>
-        public double PosCellLengthScale;
+        ///// <summary>
+        ///// A characteristic length scale for the positive part of the cut cell, i.e. the respective part of the cut cell where the level-set field is positive.
+        ///// </summary>
+        //public double PosCellLengthScale;
     }
 
+    /// <summary>
+    /// this interface should be implemented by bulk equation components which require to switch coefficients based on species.
+    /// </summary>
+    public interface IEquationComponentSpeciesNotification {
+        void SetParameter(string speciesName, SpeciesId SpcId);
+    }
 
     /// <summary>
     /// An integrand on the level set.
     /// </summary>
-    public interface ILevelSetComponent : IEquationComponent {
-        
-        
+    public interface ILevelSetForm : IEquationComponent {
+
+
         /// <summary>
         /// index of the species-separating level set.
         /// </summary>
@@ -167,104 +178,94 @@ namespace BoSSS.Foundation.XDG {
 
 
         TermActivationFlags LevelSetTerms { get; }
-        
+
         double LevelSetForm(ref CommonParamsLs inp,
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB);
     }
 
+    /// <summary>
+    /// Interface for equation components which require e.g. grid and/or problem-dependent coefficients,
+    /// e.g. cell length scales
+    /// </summary>
+    public interface ILevelSetEquationComponentCoefficient : IEquationComponent {
 
-    public interface ILinearLevelSetComponent_UxV : ILevelSetComponent {
+        /// <summary>
+        /// Passes various coefficients to the equation component.
+        /// </summary>
+        /// <param name="csA">
+        /// Coefficient set related to negative species (<see cref="NegativeSpecies"/>)
+        /// </param>
+        /// <param name="csB">
+        /// Coefficient set related to positive species (<see cref="PositiveSpecies"/>)
+        /// </param>
+        /// <param name="DomainDGdeg">
+        /// actual polynomial degree of domain variables
+        /// </param>
+        /// <param name="TestDGdeg">
+        /// actual polynomial degree of codomain variables
+        /// </param>
+        void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg);
+
+    }
+
+
+    public interface ILevelSetForm_UxV : ILevelSetForm {
        
         void LevelSetForm_UxV(LevSetIntParams inp, MultidimensionalArray Koeff_UxV);
     }
 
-    public interface ILinearLevelSetComponent_GradUxV : ILevelSetComponent {
+    public interface ILevelSetForm_GradUxV : ILevelSetForm {
         void LevelSetForm_GradUxV(LevSetIntParams inp, MultidimensionalArray Koeff_GradUxV);
 
     }
 
-    public interface ILinearLevelSetComponent_UxGradV : ILevelSetComponent {
+    public interface ILevelSetForm_UxGradV : ILevelSetForm {
         void LevelSetForm_UxGradV(LevSetIntParams inp, MultidimensionalArray Koeff_UxGradV);
 
     }
 
-    public interface ILinearLevelSetComponent_GradUxGradV : ILevelSetComponent {
+    public interface ILevelSetForm_GradUxGradV : ILevelSetForm {
         void LevelSetForm_GradUxGradV(LevSetIntParams inp, MultidimensionalArray Koeff_GradUxGradV);
 
     }
 
-    public interface ILinearLevelSetComponent_V : ILevelSetComponent {
+    public interface ILevelSetForm_V : ILevelSetForm {
 
-        void LevelSetForm_V(LevSetIntParams inp, MultidimensionalArray Koeff_V);
-
-    }
-
-    public interface ILinearLevelSetComponent_GradV : ILevelSetComponent {
-
-        void LevelSetForm_GradV(LevSetIntParams inp, MultidimensionalArray Koeff_GradV);
+        void LevelSetForm_V(LevSetIntParams inp, 
+            MultidimensionalArray Koeff_V);
 
     }
 
+    public interface ILevelSetForm_GradV : ILevelSetForm {
 
-
-
-
-
-
-    /*
-
-    /// <summary>
-    /// a bilinear form on the level set;
-    /// </summary>
-    public interface IBilinearForm : ILevelSetIntegrand {
-
-
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="inp"></param>
-        /// <param name="Koeff_UxV">\f$ M_{u,v}\f$ </param>
-        /// <param name="Koeff_NablaUxV"></param>
-        /// <param name="Koeff_UxNablaV"></param>
-        /// <param name="Koeff_NablaUxNablaV"></param>
-        void EdgeForm(LevSetIntParams inp, MultidimensionalArray Koeff_UxV, MultidimensionalArray Koeff_NablaUxV, MultidimensionalArray Koeff_UxNablaV, MultidimensionalArray Koeff_NablaUxNablaV);
+        void LevelSetForm_GradV(LevSetIntParams inp, 
+            MultidimensionalArray Koeff_GradV);
 
     }
-    */
-
-    /*
-    public interface ILinear2ndDerivativeCouplingFlux : ILevelSetIntegrand {
 
 
-        /// <summary>
-        /// </summary>
-        /// <param name="FunctionMatrix"></param>
-        /// <param name="AffineOffset"></param>
-        /// <param name="inparams">given as reference for performance reasons, 
-        /// DO NOT WRITE to this structure;</param>
-        void PrimalVar_LevelSetFlux(LevSetIntParams inparams,
-                                    MultidimensionalArray FunctionMatrix,
-                                    MultidimensionalArray AffineOffset);
+    public interface INonlinLevelSetForm_V : ILevelSetForm {
 
-
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="PrimalVar_FunctionMatrix"></param>
-        /// <param name="DerivVar_FunctionMatrix">
-        /// 
-        /// </param>
-        /// <param name="AffineOffset"></param>
-        /// <param name="inparams">given as reference for performance reasons, 
-        /// DO NOT WRITE to this structure;</param>
-        void DerivativVar_LevelSetFlux(LevSetIntParams inparams,
-                                       MultidimensionalArray PrimalVar_FunctionMatrix, MultidimensionalArray DerivVar_FunctionMatrix,
-                                       MultidimensionalArray AffineOffset);
-
+        void LevelSetForm_V(LevSetIntParams inp, 
+            MultidimensionalArray[] uA, MultidimensionalArray[] uB, MultidimensionalArray[] Grad_uA, MultidimensionalArray[] Grad_uB,
+            MultidimensionalArray Koeff_V);
 
     }
-    */
+
+    public interface INonlinLevelSetForm_GradV : ILevelSetForm {
+
+        void LevelSetForm_GradV(LevSetIntParams inp, 
+            MultidimensionalArray[] uA, MultidimensionalArray[] uB, MultidimensionalArray[] Grad_uA, MultidimensionalArray[] Grad_uB,
+            MultidimensionalArray Koeff_GradV);
+
+    }
+
+
+
+
+
+
+
+    
 }

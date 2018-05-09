@@ -40,6 +40,8 @@ namespace CNS.Diffusion {
 
         private GridData gridDat;
 
+        public bool AdiabaticWall { get; set; }
+
         double penaltyFactor;
         protected Dictionary<byte, bool> edgeTagBool = new Dictionary<byte, bool>();
 
@@ -138,9 +140,10 @@ namespace CNS.Diffusion {
 
 
         #region INonlineEdgeform_GradV Members
-        void INonlinEdgeform_GradV.InternalEdge(ref EdgeFormParams efp,
+        void INonlinEdgeForm_GradV.InternalEdge(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
-            MultidimensionalArray fin, MultidimensionalArray fot, bool adiaWall) {
+            MultidimensionalArray fin, MultidimensionalArray fot) {
+            bool adiaWall = this.AdiabaticWall;
             int NumOfCells = efp.Len;
             Debug.Assert(fin.GetLength(0) == NumOfCells);
             Debug.Assert(fot.GetLength(0) == NumOfCells);
@@ -222,7 +225,7 @@ namespace CNS.Diffusion {
             }
         }
 
-        void INonlinEdgeform_GradV.BoundaryEdge(ref EdgeFormParams efp,
+        void INonlinEdgeForm_GradV.BoundaryEdge(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin,
             MultidimensionalArray fin) {
             int NumOfCells = efp.Len;
@@ -311,11 +314,10 @@ namespace CNS.Diffusion {
         public static int EVIL_HACK_CELL_INDEX = -1;
 
         #region INonlineEdgeform_V Members
-        void INonlinEdgeform_V.InternalEdge(ref EdgeFormParams efp,
+        void INonlinEdgeForm_V.InternalEdge(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
-            MultidimensionalArray fin, MultidimensionalArray fot,
-            bool adiaWall) {
-
+            MultidimensionalArray fin, MultidimensionalArray fot) {
+            bool adiaWall = this.AdiabaticWall;
             int NumOfCells = efp.Len;
             Debug.Assert(fin.GetLength(0) == NumOfCells);
             Debug.Assert(fot.GetLength(0) == NumOfCells);
@@ -420,7 +422,7 @@ namespace CNS.Diffusion {
             }
         }
 
-        void INonlinEdgeform_V.BoundaryEdge(ref EdgeFormParams efp,
+        void INonlinEdgeForm_V.BoundaryEdge(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin,
             MultidimensionalArray fin) {
             int NumOfCells = efp.Len;

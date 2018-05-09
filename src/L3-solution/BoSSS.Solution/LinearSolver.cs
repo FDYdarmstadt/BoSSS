@@ -110,7 +110,7 @@ namespace BoSSS.Solution.Solvers {
             // construct evaluator
             // -------------------
 
-            m_rhsEvaluator = rhsOperator.GetEvaluator(rhsDomainFields, UnknownsMap);
+            m_rhsEvaluator = rhsOperator.GetEvaluatorEx(rhsDomainFields, null, UnknownsMap);
         }
 
         /// <summary>
@@ -149,7 +149,8 @@ namespace BoSSS.Solution.Solvers {
                 eM = new MsrMatrix(m_Mapping);
                 m_AffineOffset = new double[m_Mapping.LocalLength];
 
-                spatialOp.ComputeMatrixEx(m_Mapping, null, m_Mapping, eM, m_AffineOffset);
+                //spatialOp.ComputeMatrixEx(m_Mapping, null, m_Mapping, eM, m_AffineOffset);
+                spatialOp.GetMatrixBuilder(m_Mapping, null, m_Mapping).ComputeMatrix(eM, m_AffineOffset);
             }
 
             ConstructorCommon(eM);
@@ -169,7 +170,7 @@ namespace BoSSS.Solution.Solvers {
         /// <summary>
         /// <see cref="RhsEvaluator"/>
         /// </summary>
-        SpatialOperator.Evaluator m_rhsEvaluator;
+        IEvaluatorNonLin m_rhsEvaluator;
 
         /// <summary>
         /// optional right-hand side of the equation;
@@ -177,7 +178,7 @@ namespace BoSSS.Solution.Solvers {
         /// <see cref="LinearSolver(ISparseSolver,SpatialOperator,CoordinateMapping, SpatialOperator,CoordinateMapping)"/>-constructor
         /// is used for the construction of this object.
         /// </summary>
-        public SpatialOperator.Evaluator RhsEvaluator {
+        public IEvaluatorNonLin RhsEvaluator {
             get {
                 return m_rhsEvaluator;
             }

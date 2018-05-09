@@ -90,6 +90,21 @@ export class Editor{
     update(){
       this.monaco.layout();
     }
+
+    setValue(myRange, myText){
+      var id = { major: 1, minor: 1 }; 
+      var IIdentifiedSingleEditOperation ={ 
+        identifier: id,
+        forceMoveMakers: true,
+        range: myRange,
+        text: myText
+      };
+      this.monaco.executeEdits("bla", [IIdentifiedSingleEditOperation]);
+    }
+
+    reset(){
+      this.monaco.setValue("");
+    }
 }
 
 self.MonacoEnvironment = {

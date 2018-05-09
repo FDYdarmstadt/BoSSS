@@ -60,7 +60,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             // quadrature object
             // -----------------
 
-            m_Quad = CellQuadrature.GetQuadrature2(new int[] { CodomainMapping.BasisS.Sum(basis => basis.Length) }, context, domNrule,
+            m_Quad = CellQuadrature.GetQuadrature2(new int[] { CodomainMapping.NoOfCoordinatesPerCell }, context, domNrule,
                 this.EvaluateEx,
                 this.SaveIntegrationResults,
                 this.AllocateBuffers);
@@ -88,17 +88,17 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 m_ValueRequired[i] = true;
             }
 
-            DetermineReqFields(m_GradientRequired, this.m_NonlinFormV, 
+            this.m_NonlinFormV.DetermineReqFields(m_GradientRequired, 
                 comp => ((comp.VolTerms & (TermActivationFlags.GradUxGradV | TermActivationFlags.GradUxV)) != 0));
-            DetermineReqFields(m_GradientRequired, this.m_NonlinFormGradV, 
+            this.m_NonlinFormGradV.DetermineReqFields(m_GradientRequired, 
                 comp => ((comp.VolTerms & (TermActivationFlags.GradUxGradV | TermActivationFlags.GradUxV)) != 0));
-            DetermineReqFields(m_ValueRequired, this.m_NonlinFormV, 
+            this.m_NonlinFormV.DetermineReqFields(m_ValueRequired, 
                 comp => ((comp.VolTerms & (TermActivationFlags.UxGradV | TermActivationFlags.UxV)) != 0));
-            DetermineReqFields(m_ValueRequired, this.m_NonlinFormGradV, 
+            this.m_NonlinFormGradV.DetermineReqFields(m_ValueRequired,  
                 comp => ((comp.VolTerms & (TermActivationFlags.UxGradV | TermActivationFlags.UxV)) != 0));
-            DetermineReqFields(m_ValueRequired, this.m_NonlinSources, comp => true);
-            DetermineReqFields(m_ValueRequired, base.m_NonlinFluxes, comp => true);
-            DetermineReqFields(m_ValueRequired, base.m_NonlinFluxesEx, comp => true);
+            this.m_NonlinSources.DetermineReqFields(m_ValueRequired, comp => true);
+            base.m_NonlinFluxes.DetermineReqFields(m_ValueRequired, comp => true);
+            base.m_NonlinFluxesEx.DetermineReqFields(m_ValueRequired, comp => true);
 
             // ---------
             // profiling
@@ -179,13 +179,13 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         Basis m_MaxCodBasis;
 
         /// <summary>
-        /// true, if the evaluation of the a domain variable is required. <br/>
+        /// true, if the evaluation of the a domain variable is required. 
         /// index: correlates with domain variables
         /// </summary>
         bool[] m_ValueRequired;
 
         /// <summary>
-        /// true, if the evaluation of the gradient of a domain variable is required. <br/>
+        /// true, if the evaluation of the gradient of a domain variable is required. 
         /// index: correlates with domain variables
         /// </summary>
         bool[] m_GradientRequired;
@@ -733,8 +733,10 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 int jCell = j + i0;
                 for (int f = 0; f < NoOfFields; f++) {
                     int mE = m_NoOfTestFunctions[f];
+                    int f_offset = m_MyMap[f];
                     for (int m = 0; m < mE; m++) {
-                        m_Output[m_CodomainMapping.LocalUniqueCoordinateIndex(f, jCell, m)] += ResultsOfIntegration[j, MyMap(f, m)] * alpha;
+                        int idx = f_offset + m;
+                        m_Output[m_CodomainMapping.LocalUniqueCoordinateIndex(f, jCell, m)] += ResultsOfIntegration[j, idx] * alpha;
                     }
                 }
             }

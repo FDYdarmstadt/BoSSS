@@ -44,9 +44,13 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\..\public\src\L4-application\BoSSSpad\BoSSSpad.csproj">
+    <ProjectReference Include="..\..\..\L4-application\BoSSSpad\BoSSSpad.csproj">
       <Project>{e1351588-3bc0-418a-bfa2-7ce3391aa167}</Project>
       <Name>BoSSSpad</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj">
+      <Project>{17a60fba-20b4-451d-98e1-8d742f368569}</Project>
+      <Name>BoSSS.Foundation</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

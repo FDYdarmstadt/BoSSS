@@ -29,7 +29,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
         Extender VelocityExtender;
         ScalarVelocityAdvection Advection;
-        SinglePhaseField Extension;
+        //SinglePhaseField Extension;
 
         bool nearfield;
 
@@ -38,7 +38,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             int D = LSTrk.GridDat.SpatialDimension;
             double PenaltyBase = Control.PenaltyMultiplierInterface * ((double)((LevelSet.Basis.Degree + 1) * (LevelSet.Basis.Degree + D))) / ((double)D);
 
-            ILevelSetComponent InterfaceFlux = new ScalarVelocityInterfaceForm(PenaltyBase, LSTrk);
+            ILevelSetForm InterfaceFlux = new ScalarVelocityInterfaceForm(PenaltyBase, LSTrk);
 
             this.nearfield = nearfield;
 

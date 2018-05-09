@@ -278,7 +278,6 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 var bulkFlx = new HeatFlux_Bulk() { m_muA = this.Control.muA, m_muB = this.Control.muB, m_rhsA = this.Control.rhsA, m_rhsB = this.Control.rhsB };
                 var intfFlx = new HeatFlux_Interface(this.LsTrk, S) { m_muA = this.Control.muA, m_muB = this.Control.muB };
 
-                Operator.OnIntegratingBulk += bulkFlx.SetParameter;
                 Operator.EquationComponents["Cod1"].Add(bulkFlx);
                 Operator.EquationComponents["Cod1"].Add(intfFlx);
                 Operator.Commit();

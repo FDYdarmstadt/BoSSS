@@ -1053,7 +1053,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Debug.Assert(object.ReferenceEquals(this.m_CurrentAgglomeration.Tracker, this.m_LsTrk));
                 this.m_CurrentAgglomeration.Extrapolate(CurrentStateMapping);
 
-                // clear operator matrix (clearing and re-alloc are pretty equal, i.e. 'Clear()' just releases all internal memory)
+                // clear operator matrix (clearing and re-alloc are pretty equal, i.e. 'BlockMsrMatrix.Clear()' just releases all internal memory)
                 m_Stack_OpMatrix[0] = new BlockMsrMatrix(CurrentStateMapping);
 
                 // clear affine part

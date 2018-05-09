@@ -294,7 +294,8 @@ var evaluator = spatialTerm.GetEvaluator(mapping.Fields, mapping);
 \BoSSScmd{
 /// In our case this evaluator computes the fluxes of the divergence operator evaluated for the \code{DGField} \emph{ch}
 double[] flux = new double[ch.CoordinateVector.Count]; \newline 
-evaluator.Evaluate(1.0, 0.0, flux, time: 0.0);\newline 
+evaluator.time = 0.0;\newline 
+evaluator.Evaluate(1.0, 0.0, flux);\newline 
 /// After the evaluation the output \code{flux} is $\code{flux} = 0.0 \cdot \code{flux} + 1.0 \cdot \code{spatialTerm(time: 0.0)}$
  }
 \BoSSSexe
@@ -302,7 +303,8 @@ evaluator.Evaluate(1.0, 0.0, flux, time: 0.0);\newline
 /// Finally, we can use this kind of \code{spatial operator} evaluation to implement the explicit Euler scheme manually.   
 double physTime = 0.0;\newline 
 for (int i = 1; i <= numberOfTimesteps; i++) \{ \newline 
-\btab evaluator.Evaluate(1.0, 0.0, flux, time: physTime);\newline 
+\btab evaluator.time = physTime;\newline 
+\btab evaluator.Evaluate(1.0, 0.0, flux);\newline 
 \btab DGCoordinates.axpy<double[]>(flux, -dt);\newline 
 \btab physTime += dt;\newline 
 \btab tecplot.PlotFields(        \newline 
