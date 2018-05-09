@@ -34,7 +34,7 @@ namespace BoSSS.Solution.Multigrid {
    
     public class NonlinGMRES : NonlinearSolver {
 
-        public NonlinGMRES(AssembleMatrixDel __AssembleMatrix, IEnumerable<AggregationGridBasis[]> __AggBasisSeq, MultigridOperator.ChangeOfBasisConfig[][] __MultigridOperatorConfig) 
+        public NonlinGMRES(OperatorEvalOrLin __AssembleMatrix, IEnumerable<AggregationGridBasis[]> __AggBasisSeq, MultigridOperator.ChangeOfBasisConfig[][] __MultigridOperatorConfig) 
             : base(__AssembleMatrix, __AggBasisSeq, __MultigridOperatorConfig) //
         {
         }
