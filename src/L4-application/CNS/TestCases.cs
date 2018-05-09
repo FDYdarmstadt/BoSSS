@@ -877,7 +877,7 @@ namespace CNS {
             return c;
         }
 
-        public static CNSControl ShockVortexInteraction(string dbPath, int savePeriod, int dgDegree, double sensorLimit, double CFLFraction, int explicitScheme, int explicitOrder, int numberOfSubGrids, int reclusteringInterval, int maxNumOfSubSteps) {
+        public static CNSControl ShockVortexInteraction(string dbPath = @"c:\bosss_db", int savePeriod = 100, int dgDegree = 2, double sensorLimit = 1e-3, double CFLFraction = 0.2, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 0, int reclusteringInterval = 0, int maxNumOfSubSteps = 0) {
             CNSControl c = new CNSControl();
 
             // ### Database ###
@@ -943,6 +943,7 @@ namespace CNS {
             c.AddVariable(Variables.Pressure, dgDegree);
 
             c.AddVariable(Variables.Entropy, dgDegree);
+            c.AddVariable(Variables.Temperature, dgDegree);
             c.AddVariable(Variables.LocalMachNumber, dgDegree);
             c.AddVariable(Variables.CFL, 0);
             c.AddVariable(Variables.CFLConvective, 0);
@@ -960,11 +961,11 @@ namespace CNS {
 
             // ### Grid ###
             double xMin = 0;
-            double xMax = 1;
+            double xMax = 2;
             double yMin = 0;
             double yMax = 1;
 
-            int numOfCellsX = 100;
+            int numOfCellsX = 200;
             int numOfCellsY = 100;
 
             c.GridFunc = delegate {
@@ -997,382 +998,29 @@ namespace CNS {
 
             // ### Initial condtions ###
 
-            // Heat capacity ratio
-            double gamma = IdealGas.Air.HeatCapacityRatio;
-
-            // Parameter
-            //double a = -2 / Math.PI;
-            //double b = Math.Exp(-2);
-            //double cConst = 1;
-            //double a = 7.358;
-            //double b = 0.204;
-            //double cConst = 0.05;
-            double a = 0.075;
-            double b = 0.175;
-            double cConst = 0.175;
-
-            // Vortex center
-            //double x0 = 5;
-            //double y0 = 5;
-            double x0 = 0.25;
-            double y0 = 0.5;
-
-            double Mv = 1.7;
-            double Ms = 1.19;
-
-            double velocityPhiMax = Mv * Math.Sqrt(gamma);
-            double densityLeft = 1;
-            double densityRight = ((gamma + 1) * Ms * Ms) / (2 + (gamma - 1) * Ms * Ms) * densityLeft;
-            double pressureLeft = 1;
-            double pressureRight = 1 + (2 * gamma) / (gamma + 1) * (Ms * Ms - 1) * pressureLeft;
-
-            double velocityXLeft = Ms * Math.Sqrt(gamma * pressureLeft / densityLeft);
-
-            double velocityXRight = (2 + (gamma - 1) * Ms * Ms) / ((gamma + 1) * Ms * Ms) * velocityXLeft;    // (1)
-            //double velocityXRight2 = velocityXLeft * densityLeft / densityRight; // equivalent to (1)
-            //double MsPostShock = Math.Sqrt((1 + ((gamma - 1) / 2) * Ms * Ms) / (gamma * Ms * Ms - (gamma - 1) / 2));
-            //double velocityXRight3 = MsPostShock * Math.Sqrt(gamma * pressureRight / densityRight);     // equivalent to (1)
-
-            double velocityYLeft = 0;
-            double velocityYRight = 0;
-
-            Func<double, double> Jump = (x => x < 0 ? 0 : 1);
-
-            double cellSize = Math.Min((xMax - xMin) / numOfCellsX, (yMax - yMin) / numOfCellsY);
-
-            Func<double, double> SmoothJump = delegate (double distance) {
-                // smoothing should be in the range of h/p
-                double maxDistance = 4.0 * cellSize / Math.Max(dgDegree, 1);
-
-                return (Math.Tanh(distance / maxDistance) + 1.0) * 0.5;
-            };
-
-            double velocityPhi(double[] X) {
-                double result = 0;
-                double r = R(X);
-                if (r <= a) {
-                    result = velocityPhiMax * r / a;
-                } else if (r >= a && r <= b) {
-                    result = velocityPhiMax * a / (a * a - b * b) * (r - b * b / r);
-                }
-                return result;
-            }
-
-            bool IsInsideVortex(double[] X) {
-                bool result = false;
-                if ((X[0] - x0) * (X[0] - x0) + (X[1] - y0) * (X[1] - y0) <= (cConst * cConst) + (8.0 * cellSize / Math.Max(dgDegree, 1))) {
-                    result = true;
-                }
-                return result;
-            }
-
-            bool IsNearVortex(double[] X) {
-                bool result = false;
-                if ((X[0] - x0) * (X[0] - x0) + (X[1] - y0) * (X[1] - y0) <= (cConst * cConst) + (4.0 * cellSize / Math.Max(dgDegree, 1))) {
-                    result = true;
-                }
-                return result;
-            }
-
-            double R(double[] X) {
-                return Math.Sqrt((X[0] - x0) * (X[0] - x0) + (X[1] - y0) * (X[1] - y0));
-            }
-
-            #region Vortex by Lv (2016)
-            //double DensityVortex(double[] X) {
-            //    double result = 0;
-            //    if (IsInsideVortex(X)) {
-            //        result = Math.Pow(1 - (a * a * cConst * cConst * (gamma - 1)) / (4 * b * gamma) * Math.Exp(1 - R(X) * R(X) / (cConst * cConst)), 1 / (gamma - 1));
-            //    }
-            //    return result;
-            //}
-
-            //double PressureVortex(double[] X) {
-            //    double result = 0;
-            //    if (IsInsideVortex(X)) {
-            //        result = Math.Pow(DensityVortex(X), gamma);
-            //    }
-            //    return result;
-            //}
-
-            //double VelocityXVortex(double[] X) {
-            //    double result = 0;
-            //    if (IsInsideVortex(X)) {
-            //        result = a * (X[1] - y0) * Math.Exp(1 - R(X) * R(X) / (cConst * cConst));
-
-            //        // add advection velocity
-            //        double advectionVelocity = 1;
-            //        result = result + advectionVelocity;
-            //    }
-            //    return result;
-            //}
-
-            //double VelocityYVortex(double[] X) {
-            //    double result = 0;
-            //    if (IsInsideVortex(X)) {
-            //        result = -a * (X[0] - x0) * Math.Exp(1 - R(X) * R(X) / (cConst * cConst));
-            //    }
-            //    return result;
-            //}
-            #endregion
-
-            #region Vortex by Rault (2003)
-            double DensityVortex(double[] X) {
-                double result = 0;
-                if (IsInsideVortex(X)) {
-                    result = Math.Pow(1 - (a * a * cConst * cConst * (gamma - 1)) / (4 * b * gamma) * Math.Exp(1 - R(X) * R(X) / (cConst * cConst)), 1 / (gamma - 1));
-                } else if (IsNearVortex(X)) {
-                    result = Math.Pow(1 - (a * a * cConst * cConst * (gamma - 1)) / (4 * b * gamma) * Math.Exp(1 - b * b / (cConst * cConst)), 1 / (gamma - 1));
-                    result = result - SmoothJump(Math.Abs(R(X) - b)) * (result - densityLeft);
-                }
-                return result;
-            }
-
-            double PressureVortex(double[] X) {
-                double result = 0;
-                if (IsInsideVortex(X)) {
-                    result = Math.Pow(DensityVortex(X), gamma);
-                } else if (IsNearVortex(X)) {
-                    result = Math.Pow(DensityVortex(X), gamma);
-                    result = result - SmoothJump(Math.Abs(R(X) - b)) * (result - pressureLeft);
-                }
-                return result;
-            }
-
-            double VelocityXVortex(double[] X) {
-                double theta = Math.Atan2(X[1], X[0]);
-                double result = 0;
-                if (IsInsideVortex(X)) {
-                    result = 1 - Math.Sin(theta) * velocityPhi(X);
-                }
-                return result;
-            }
-
-            double VelocityYVortex(double[] X) {
-                double result = 0;
-                if (IsInsideVortex(X)) {
-                    double theta = Math.Atan2(X[1], X[0]);
-                    result = Math.Cos(theta) * velocityPhi(X);
-                }
-                return result;
-            }
-            #endregion
-
-
-
-            double shockPosition = 0.5;
-
-            // Current x-position of the shock
-            Func<double, double> getShockXPosition = delegate (double time) {
-                //return shockPosition + velocityXLeft * time;
-                return shockPosition;
-            };
-
-
-
-            double DensityShock(double[] X, double t) {
-                return densityLeft - SmoothJump(X[0] - getShockXPosition(t)) * (densityLeft - densityRight);
-            }
-
-            double VelocityXShock(double[] X, double t) {
-                return velocityXLeft - SmoothJump(X[0] - getShockXPosition(t)) * (velocityXLeft - velocityXRight);
-            }
-
-            double VelocityYShock(double[] X, double t) {
-                return 0.0;
-            }
-
-            double PressureShock(double[] X, double t) {
-                return pressureLeft - SmoothJump(X[0] - getShockXPosition(t)) * (pressureLeft - pressureRight);
-            }
-
-            // Stationary shock wave
-            //c.InitialValues_Evaluators.Add(Variables.Density, X => densityShock(X, 0));
-            //c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => velocityXShock(X, 0));
-            //c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => velocityYShock(X, 0));
-            //c.InitialValues_Evaluators.Add(Variables.Pressure, X => pressureShock(X, 0));
-
-            // Stationary shock wave and vortex
-            c.InitialValues_Evaluators.Add(Variables.Density, X => DensityShock(X, 0) + DensityVortex(X));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => VelocityXShock(X, 0) + VelocityXVortex(X));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => VelocityYShock(X, 0) + VelocityYVortex(X));
-            c.InitialValues_Evaluators.Add(Variables.Pressure, X => PressureShock(X, 0) + PressureVortex(X));
-
-            // ### Boundary condtions ###
-            c.AddBoundaryCondition("SupersonicInlet", Variables.Density, (X, t) => DensityShock(X, t));
-            c.AddBoundaryCondition("SupersonicInlet", Variables.Velocity.xComponent, (X, t) => VelocityXShock(X, t));
-            c.AddBoundaryCondition("SupersonicInlet", Variables.Velocity.yComponent, (X, t) => VelocityYShock(X, t));
-            c.AddBoundaryCondition("SupersonicInlet", Variables.Pressure, (X, t) => PressureShock(X, t));
-
-            // In theory, no outflow boundary condition has to be specified, as all characteristics move downstream
-            c.AddBoundaryCondition("SupersonicOutlet");
-            c.AddBoundaryCondition("AdiabaticSlipWall");
-
-            // ### Time configuration ###
-            c.dtMin = 0.0;
-            c.dtMax = 1.0;
-            c.CFLFraction = CFLFraction;
-            c.Endtime = 0.25;
-            c.NoOfTimesteps = int.MaxValue;
-
-            // ### Project and sessions name ###
-            c.ProjectName = "Shock tube";
-
-            if (c.DynamicLoadBalancing_On) {
-                c.SessionName = String.Format("Shock tube, p={0}, {1}x{2} cells, s0={3:0.0E-00}, CFLFrac={4}, ALTS {5}/{6}/Re{7}/Sub{8}, Part={9}/Re{10}/Thresh{11}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps, c.GridPartType.ToString(), c.DynamicLoadBalancing_Period, c.DynamicLoadBalancing_ImbalanceThreshold);
-            } else {
-                c.SessionName = String.Format("Shock tube, p={0}, {1}x{2} cells, s0={3:0.0E-00}, CFLFrac={4}, ALTS {5}/{6}/Re{7}/Sub{8}, Part={9}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps, c.GridPartType.ToString());
-            }
-
-            return c;
-        }
-
-        public static CNSControl ShockVortexInteractionDumbser(string dbPath, int savePeriod, int dgDegree, double sensorLimit, double CFLFraction, int explicitScheme, int explicitOrder, int numberOfSubGrids, int reclusteringInterval, int maxNumOfSubSteps) {
-            CNSControl c = new CNSControl();
-
-            // ### Database ###
-            //dbPath = @"/work/scratch/ws35kire/work_db";                       // Lichtenberg
-            //dbPath = @"/home/ws35kire/test_db";                               // Lichtenberg
-            //dbPath = @"c:\bosss_db";                                          // Local
-            //dbPath = @"\\dc1\userspace\geisenhofer\bosss_db_IBMShockTube";    // Network
-
-            c.DbPath = dbPath;
-            c.savetodb = dbPath != null;
-            c.saveperiod = savePeriod;
-            c.PrintInterval = 1;
-
-            // ### Partitioning and load balancing ###
-            c.GridPartType = GridPartType.METIS;
-            c.DynamicLoadBalancing_On = false;
-            //c.DynamicLoadBalancing_Period = 5;
-            //c.DynamicLoadBalancing_ImbalanceThreshold = 0.01;
-            //c.DynamicLoadBalancing_CellClassifier = new RandomCellClassifier(2);
-            //c.DynamicLoadBalancing_CellCostEstimatorFactories.Add((prog, i) => new StaticCellCostEstimator(new[] { 1, 10 }));
-
-            // ### Shock-Capturing ###
-            bool AV = true;
-            if (AV) {
-                c.ActiveOperators = Operators.Convection | Operators.ArtificialViscosity;
-            } else {
-                c.ActiveOperators = Operators.Convection;
-            }
-            c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
-            double epsilon0 = 1.0;
-            double kappa = 0.5;
-            double lambdaMax = 2.0;
-            if (AV) {
-                Variable sensorVariable = Variables.Density;
-                c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
-                c.AddVariable(Variables.ShockSensor, 0);
-                //c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: lambdaMax);    // fix lambdaMax
-                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);    // dynamic lambdaMax
-            }
-
-            // ### Time-Stepping ###
-            c.ExplicitScheme = (ExplicitSchemes)explicitScheme;
-            c.ExplicitOrder = explicitOrder;
-            c.NumberOfSubGrids = numberOfSubGrids;
-            c.ReclusteringInterval = reclusteringInterval;
-            c.maxNumOfSubSteps = maxNumOfSubSteps;
-            c.FluxCorrection = false;
-
-            // ### Physics ###
-            c.EquationOfState = IdealGas.Air;
-            c.MachNumber = 1.0 / Math.Sqrt(c.EquationOfState.HeatCapacityRatio);
-            c.ReynoldsNumber = 1.0;
-            c.PrandtlNumber = 0.71;
-
-            // ### Output variables ###
-            c.AddVariable(Variables.Density, dgDegree);
-            c.AddVariable(Variables.Momentum.xComponent, dgDegree);
-            c.AddVariable(Variables.Momentum.yComponent, dgDegree);
-            c.AddVariable(Variables.Energy, dgDegree);
-
-            c.AddVariable(Variables.Velocity.xComponent, dgDegree);
-            c.AddVariable(Variables.Velocity.yComponent, dgDegree);
-            c.AddVariable(Variables.Pressure, dgDegree);
-
-            c.AddVariable(Variables.Entropy, dgDegree);
-            c.AddVariable(Variables.LocalMachNumber, dgDegree);
-            c.AddVariable(Variables.CFL, 0);
-            c.AddVariable(Variables.CFLConvective, 0);
-
-            if (AV) {
-                c.AddVariable(Variables.CFLArtificialViscosity, 0);
-                c.AddVariable(Variables.ArtificialViscosity, 2);
-            }
-
-            if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS)) {
-                c.AddVariable(Variables.LTSClusters, 0);
-            }
-
-            c.AddVariable(Variables.Rank, 0);
-
-            // ### Grid ###
-            double xMin = 0;
-            double xMax = 1;
-            double yMin = 0;
-            double yMax = 1;
-
-            int numOfCellsX = 100;
-            int numOfCellsY = 100;
-
-            c.GridFunc = delegate {
-                double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
-                double[] yNodes = GenericBlas.Linspace(yMin, yMax, numOfCellsY + 1);
-                var grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
-                //var grid = Grid2D.UnstructuredTriangleGrid(xNodes, yNodes);
-
-                grid.EdgeTagNames.Add(1, "SupersonicInlet");
-                grid.EdgeTagNames.Add(2, "SupersonicOutlet");
-                grid.EdgeTagNames.Add(3, "AdiabaticSlipWall");
-
-                grid.DefineEdgeTags(delegate (double[] X) {
-                    if (Math.Abs(X[1]) < 1e-14) {   // bottom
-                        return 3;
-                    } else if (Math.Abs(X[1] - (yMax - yMin)) < 1e-14) {    // top
-                        return 3;
-                    } else if (Math.Abs(X[0]) < 1e-14) {                    // left
-                        return 1;
-                    } else if (Math.Abs(X[0] - (xMax - xMin)) < 1e-14) {    // right
-                        return 2;
-                    } else {
-                        throw new System.Exception("Boundary condition not specified");
-                    }
-                });
-
-                return grid;
-            };
-
-
-            // ### Initial condtions ###
-
-            // Parameter
+            // Parameters
             double gamma = IdealGas.Air.HeatCapacityRatio;
             double a = 0.075;
             double b = 0.175;
-
             double xc = 0.25;
             double yc = 0.5;
-
             double p0 = 1;
             double rho0 = 1;
             double RGas = 1;
             double T0 = p0 / (RGas * rho0);
-
             double Mv = 0.7;
             double Ms = 1.5;
-
             double c0 = Math.Sqrt(gamma * p0 / rho0);
             double vm = Mv * c0;
 
-            double R(double[] X) {
+            double Radius(double[] X) {
                 return Math.Sqrt((X[0] - xc) * (X[0] - xc) + (X[1] - yc) * (X[1] - yc));
             }
 
+            #region Check if inside vortex
             bool IsInsideVortex(double[] X) {
                 bool result = false;
-                if ((X[0] - xc) * (X[0] - xc) + (X[1] - yc) * (X[1] - yc) <= (b * b)) {
+                if (Radius(X) <= b) {
                     result = true;
                 }
                 return result;
@@ -1387,44 +1035,67 @@ namespace CNS {
                 }
                 return result;
             }
+            #endregion
 
-            double velocityPhi(double[] X) {
+            double vPhi(double[] X, double radius) {
                 double result = 0;
-                double r = R(X);
 
-                if (r <= a) {
-                    result = vm * r / a;
-                } else if (r > a && r <= b) {
-                    result = vm * a / (a * a - b * b) * (r - b * b / r);
+                if (radius <= a) {
+                    result = vm * radius / a;
+                } else if (radius > a && radius <= b) {
+                    result = vm * a / (a * a - b * b) * (radius - b * b / radius);
                 }
 
                 return result;
             }
 
-            double T(double r) {
+            double Temperature(double radius) {
                 double result = 0;
-                double prePreFactor = (gamma - 1) / (RGas * gamma);
+                double preFactorGlobal = (gamma - 1) / (RGas * gamma);
 
-                if (r <= a) {
-                    result = prePreFactor * (vm * vm) / (a * a) * (r * r) / 2;
-                } else if (r > a && r <= b) {
+                if (radius <= a) {
+                    result = preFactorGlobal * (vm * vm) / (a * a) * (radius * radius) / 2;
+                } else if (radius > a && radius <= b) {
                     double innerCircle = (vm * vm) / 2;
-                    double preFactor = (vm * vm) * (a * a) / ((a * a - b * b) * (a * a - b * b));
-                    double partOne = (r * r * r * r / 4) - (2 * b * b * Math.Log(r)) - (b * b * b * b / (4 * r * r * r * r));
-                    double partTwo = (a * a * a * a / 4) - (2 * b * b * Math.Log(a)) - (b * b * b * b / (4 * a * a * a * a));
-                    result = prePreFactor * (innerCircle + preFactor * (partOne - partTwo));
+                    double preFactorOuterVortex = (vm * vm) * (a * a) / ((a * a - b * b) * (a * a - b * b));
+                    double partOne = (radius * radius  / 2) - (2 * b * b * Math.Log(radius)) - (b * b * b * b / (2 * radius * radius));
+                    double partTwo = (a * a / 2) - (2 * b * b * Math.Log(a)) - (b * b * b * b / (2 * a * a));
+                    result = preFactorGlobal * preFactorOuterVortex * (partOne - partTwo);
+                }
+                return result;
+            }
+
+            #region Vortex by Dumbser (2016)
+            double DensityVortex(double[] X, double temp) {
+                return rho0 * Math.Pow(temp / T0, 1 / (gamma - 1));
+            }
+
+            double PressureVortex(double[] X, double temp) {
+                return p0 * Math.Pow(temp / T0, gamma / (gamma - 1));
+            }
+
+            double VelocityXVortex(double[] X, double radius) {
+                double result = 0;
+                double theta = Math.Atan2(X[1], X[0]);
+
+                if (IsInsideVortex(X)) {
+                    result = 1 - Math.Sin(theta) * vPhi(X, radius);
                 }
 
                 return result;
             }
 
-            double p(double[] X, double t) {
-                return p0 * Math.Pow(t / T0, gamma / (gamma - 1));
-            }
+            double VelocityYVortex(double[] X, double radius) {
+                double result = 0;
+                double theta = Math.Atan2(X[1], X[0]);
 
-            double rho(double[] X, double t) {
-                return rho0 + Math.Pow(t / T0, 1 / (gamma - 1));
+                if (IsInsideVortex(X)) {
+                    result = Math.Cos(theta) * vPhi(X, radius);
+                }
+
+                return result;
             }
+            #endregion
 
             // Shock
             double densityLeft = 1;
@@ -1447,34 +1118,6 @@ namespace CNS {
 
                 return (Math.Tanh(distance / maxDistance) + 1.0) * 0.5;
             };
-
-            #region Vortex by Dumbser (2016)
-            double DensityVortex(double[] X) {
-                return rho(X, T(R(X)));
-            }
-
-            double PressureVortex(double[] X) {
-                return p(X, T(R(X)));
-            }
-
-            double VelocityXVortex(double[] X) {
-                double theta = Math.Atan2(X[1], X[0]);
-                double result = 0;
-                if (IsInsideVortex(X)) {
-                    result = 1 - Math.Sin(theta) * velocityPhi(X);
-                }
-                return result;
-            }
-
-            double VelocityYVortex(double[] X) {
-                double result = 0;
-                if (IsInsideVortex(X)) {
-                    double theta = Math.Atan2(X[1], X[0]);
-                    result = Math.Cos(theta) * velocityPhi(X);
-                }
-                return result;
-            }
-            #endregion
 
             double shockPosition = 0.5;
 
@@ -1507,10 +1150,10 @@ namespace CNS {
             //c.InitialValues_Evaluators.Add(Variables.Pressure, X => PressureShock(X, 0));
 
             // Stationary shock wave and vortex
-            c.InitialValues_Evaluators.Add(Variables.Density, X => DensityShock(X, 0) + DensityVortex(X));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => VelocityXShock(X, 0) + VelocityXVortex(X));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => VelocityYShock(X, 0) + VelocityYVortex(X));
-            c.InitialValues_Evaluators.Add(Variables.Pressure, X => PressureShock(X, 0) + PressureVortex(X));
+            c.InitialValues_Evaluators.Add(Variables.Density, X => DensityShock(X, 0) + DensityVortex(X, Temperature(Radius(X))));
+            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => VelocityXShock(X, 0) + VelocityXVortex(X, Radius(X)));
+            c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => VelocityYShock(X, 0) + VelocityYVortex(X, Radius(X)));
+            c.InitialValues_Evaluators.Add(Variables.Pressure, X => PressureShock(X, 0) + PressureVortex(X, Temperature(Radius(X))));
 
             // ### Boundary condtions ###
             c.AddBoundaryCondition("SupersonicInlet", Variables.Density, (X, t) => DensityShock(X, t));
@@ -1526,16 +1169,16 @@ namespace CNS {
             c.dtMin = 0.0;
             c.dtMax = 1.0;
             c.CFLFraction = CFLFraction;
-            c.Endtime = 0.25;
+            c.Endtime = 0.7;
             c.NoOfTimesteps = int.MaxValue;
 
             // ### Project and sessions name ###
-            c.ProjectName = "Shock tube";
+            c.ProjectName = "Shock-vortex interaction";
 
             if (c.DynamicLoadBalancing_On) {
-                c.SessionName = String.Format("Shock tube, p={0}, {1}x{2} cells, s0={3:0.0E-00}, CFLFrac={4}, ALTS {5}/{6}/Re{7}/Sub{8}, Part={9}/Re{10}/Thresh{11}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps, c.GridPartType.ToString(), c.DynamicLoadBalancing_Period, c.DynamicLoadBalancing_ImbalanceThreshold);
+                c.SessionName = String.Format("Shock-vortex interaction, p={0}, {1}x{2} cells, s0={3:0.0E-00}, CFLFrac={4}, ALTS {5}/{6}/Re{7}/Sub{8}, Part={9}/Re{10}/Thresh{11}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps, c.GridPartType.ToString(), c.DynamicLoadBalancing_Period, c.DynamicLoadBalancing_ImbalanceThreshold);
             } else {
-                c.SessionName = String.Format("Shock tube, p={0}, {1}x{2} cells, s0={3:0.0E-00}, CFLFrac={4}, ALTS {5}/{6}/Re{7}/Sub{8}, Part={9}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps, c.GridPartType.ToString());
+                c.SessionName = String.Format("Shock-vortex interaction, p={0}, {1}x{2} cells, s0={3:0.0E-00}, CFLFrac={4}, ALTS {5}/{6}/Re{7}/Sub{8}, Part={9}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps, c.GridPartType.ToString());
             }
 
             return c;
