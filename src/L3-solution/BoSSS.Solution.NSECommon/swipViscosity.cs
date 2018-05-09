@@ -262,6 +262,10 @@ namespace BoSSS.Solution.NSECommon {
             }
         }
 
+        int m_jCellInOld;
+        int m_jCellOutOld;
+        double m_PenaltyVal;
+
         /// <summary>
         /// computation of penalty parameter according to:
         /// An explicit expression for the penalty parameter of the
@@ -270,18 +274,29 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         virtual protected double penalty(int jCellIn, int jCellOut) {
             double mu;
-            if (m_ComputePenalty != null) {
-                mu = m_ComputePenalty(m_penalty, jCellIn, jCellOut, cj);
+            if (m_jCellInOld == jCellIn && m_jCellOutOld == jCellOut) {
+                return m_PenaltyVal;
             } else {
-                double cj_in = cj[jCellIn];
-                mu = m_penalty * cj_in;
-                if (jCellOut >= 0) {
-                    double cj_out = cj[jCellOut];
-                    mu = Math.Max(mu, m_penalty * cj_out);
+
+                if (m_ComputePenalty != null) {
+                    mu = m_ComputePenalty(m_penalty, jCellIn, jCellOut, cj);
+                } else {
+                    double cj_in = cj[jCellIn];
+                    mu = m_penalty * cj_in;
+                    if (jCellOut >= 0) {
+                        double cj_out = cj[jCellOut];
+                        mu = Math.Max(mu, m_penalty * cj_out);
+                    }
                 }
+
+                m_PenaltyVal = mu;
+                m_jCellInOld = jCellIn;
+                m_jCellOutOld = jCellOut;
+
+                return mu;
             }
-            return mu;
         }
+
 
         /// <summary>
         /// returns the velocity vector;
