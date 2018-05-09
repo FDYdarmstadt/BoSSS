@@ -50,7 +50,7 @@ namespace BoSSS.Solution.NSECommon {
                 
                 if (rhs.Count != map.LocalLength)
                     throw new ArgumentException();
-                if (!Mtx.RowPartitioning.Equals(map) || !Mtx.ColPartition.Equals(map))
+                if (!Mtx.RowPartitioning.EqualsPartition(map) || !Mtx.ColPartition.EqualsPartition(map))
                     throw new ArgumentException();
 
                 Basis PressureBasis = (Basis)map.BasisS[iVar];
@@ -115,6 +115,76 @@ namespace BoSSS.Solution.NSECommon {
                 }
             }
         }
+
+
+        /// <summary>
+        /// modifies a residual (i.e. an operator evaluation)
+        /// in order to fix the pressure at some reference point
+        /// </summary>
+        /// <param name="currentState">current state of velocity & pressure</param>
+        /// <param name="iVar">the index of the pressure variable in the mapping <paramref name="map"/>.</param>
+        /// <param name="LsTrk"></param>
+        /// <param name="Residual"></param>
+        static public void SetPressureReferencePointResidual<T>(CoordinateVector currentState, int iVar, LevelSetTracker LsTrk, T Residual)
+            where T : IList<double> {
+            using (new FuncTrace()) {
+                var map = currentState.Mapping;
+                var GridDat = map.GridDat;
+                
+                if (Residual.Count != map.LocalLength)
+                    throw new ArgumentException();
+
+
+                Basis PressureBasis = (Basis)map.BasisS[iVar];
+                int D = GridDat.SpatialDimension;
+
+                long GlobalID, GlobalCellIndex;
+                bool IsInside, onthisProc;
+                GridDat.LocatePoint(new double[D], out GlobalID, out GlobalCellIndex, out IsInside, out onthisProc, LsTrk.Regions.GetCutCellSubGrid().VolumeMask.Complement());
+                
+                int iRowGl = -111;
+                if (onthisProc) {
+                    int jCell = (int)GlobalCellIndex - GridDat.CellPartitioning.i0;
+
+
+                    NodeSet CenterNode = new NodeSet(GridDat.iGeomCells.GetRefElement(jCell), new double[D]);
+                    MultidimensionalArray LevSetValues = LsTrk.DataHistories[0].Current.GetLevSetValues(CenterNode, jCell, 1); ;
+
+
+                    MultidimensionalArray CenterNodeGlobal = MultidimensionalArray.Create(1, D);
+                    GridDat.TransformLocal2Global(CenterNode, CenterNodeGlobal, jCell);
+                    //Console.WriteLine("Pressure Ref Point @( {0:0.###E-00} | {1:0.###E-00} )", CenterNodeGlobal[0,0], CenterNodeGlobal[0,1]);
+
+
+                    LevelSetSignCode scode = LevelSetSignCode.ComputeLevelSetBytecode(LevSetValues[0, 0]);
+                    ReducedRegionCode rrc;
+                    int No = LsTrk.Regions.GetNoOfSpecies(jCell, out rrc);
+                    int iSpc = LsTrk.GetSpeciesIndex(rrc, scode);
+
+                    iRowGl = (int)map.GlobalUniqueCoordinateIndex_FromGlobal(iVar, GlobalCellIndex, 0);
+
+                }
+                iRowGl = iRowGl.MPIMax();
+
+
+                // clear row
+                // ---------
+                if (onthisProc) {
+                    
+                    // set entry in residual vector equal to corresponding value in domain vector
+                    // (as if the corresponding matrix would have a 1 in the diagonal element and 0 everywhere else)
+
+
+                    int iRow = iRowGl - map.i0;
+                    Residual[iRow] = currentState[iRow];
+                }
+
+              
+            }
+        }
+
+
+
 
         /// <summary>
         /// Computes the energy stored in the fluid interface of a two-phase flow.

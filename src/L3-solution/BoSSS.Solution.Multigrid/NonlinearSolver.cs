@@ -25,10 +25,24 @@ using BoSSS.Platform;
 using BoSSS.Platform.Utils;
 using ilPSP;
 using ilPSP.Utils;
+using System.Diagnostics;
 
 namespace BoSSS.Solution.Multigrid {
-    
-    public delegate void AssembleMatrixDel(out BlockMsrMatrix Matrix, out double[] Affine, out BlockMsrMatrix MassMatrix, DGField[] CurrentState);
+
+    /// <summary>
+    /// Evaluation or linearization/matrix assembly of the operator
+    /// </summary>
+    /// <param name="Matrix"><p</param>
+    /// <param name="Affine"></param>
+    /// <param name="Linearization">
+    /// - false: operator evaluation
+    /// - true: linearization
+    /// </param>
+    /// <param name="MassMatrix"></param>
+    /// <param name="CurrentState">
+    /// Current state of the solution
+    /// </param>
+    public delegate void OperatorEvalOrLin(out BlockMsrMatrix Matrix, out double[] Affine, out BlockMsrMatrix MassMatrix, DGField[] CurrentState, bool Linearization);
     
 
     /// <summary>
@@ -36,13 +50,13 @@ namespace BoSSS.Solution.Multigrid {
     /// </summary>
     public abstract class NonlinearSolver {
 
-        public NonlinearSolver(AssembleMatrixDel __AssembleMatrix, IEnumerable<AggregationGridBasis[]> __AggBasisSeq, MultigridOperator.ChangeOfBasisConfig[][] __MultigridOperatorConfig) {
+        public NonlinearSolver(OperatorEvalOrLin __AssembleMatrix, IEnumerable<AggregationGridBasis[]> __AggBasisSeq, MultigridOperator.ChangeOfBasisConfig[][] __MultigridOperatorConfig) {
             m_AssembleMatrix = __AssembleMatrix;
             m_AggBasisSeq = __AggBasisSeq.ToArray();
             m_MultigridOperatorConfig = __MultigridOperatorConfig;
         }
 
-        protected AssembleMatrixDel m_AssembleMatrix;
+        protected OperatorEvalOrLin m_AssembleMatrix;
         protected AggregationGridBasis[][] m_AggBasisSeq;
         protected MultigridOperator.ChangeOfBasisConfig[][] m_MultigridOperatorConfig;
 
@@ -90,7 +104,7 @@ namespace BoSSS.Solution.Multigrid {
                 this.RHSRaw = null;
             }
 
-            this.Update(X.Mapping.Fields);
+            this.UpdateLinearization(X.Mapping.Fields);
             
             int Ltrf = this.CurrentLin.Mapping.LocalLength;
 
@@ -156,9 +170,10 @@ namespace BoSSS.Solution.Multigrid {
         protected void EvaluateOperator(double alpha, IEnumerable<DGField> CurrentState, double[] Output) {
             BlockMsrMatrix OpMtxRaw, MassMtxRaw;
             double[] OpAffineRaw;
-            this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, CurrentState.ToArray());
+            this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, CurrentState.ToArray(), false);
+            Debug.Assert(OpMtxRaw == null);
 
-            OpMtxRaw.SpMV(alpha, new CoordinateVector(CurrentState.ToArray()), 1.0, OpAffineRaw);
+            //OpMtxRaw.SpMV(alpha, new CoordinateVector(CurrentState.ToArray()), 1.0, OpAffineRaw);
 
             CurrentLin.TransformRhsInto(OpAffineRaw, Output);
 
@@ -191,7 +206,7 @@ namespace BoSSS.Solution.Multigrid {
             CurrentLin.TransformSolFrom(u0Raw, U0);
             */
            
-            this.Update(CurrentState);
+            this.UpdateLinearization(CurrentState);
 
             CoordinateVector u0Raw = new CoordinateVector(CurrentState.ToArray());
             int Ltrf = this.CurrentLin.Mapping.LocalLength;
@@ -205,13 +220,13 @@ namespace BoSSS.Solution.Multigrid {
         /// Updating the <see cref="CurrentLin"/> -- operator;
         /// </summary>
         /// <param name="CurrentState">linearization point</param>
-        protected void Update(IEnumerable<DGField> CurrentState) {
+        protected void UpdateLinearization(IEnumerable<DGField> CurrentState) {
             if(!(this.ProblemMapping.BasisS.Count == CurrentState.Count()))
                 throw new ArgumentException("missmatch in number of fields.");
 
             BlockMsrMatrix OpMtxRaw, MassMtxRaw;
             double[] OpAffineRaw;
-            this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, CurrentState.ToArray());
+            this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, CurrentState.ToArray(), true);
 
             CurrentLin = new MultigridOperator(this.m_AggBasisSeq, this.ProblemMapping,
                 OpMtxRaw.CloneAs(), MassMtxRaw,

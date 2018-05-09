@@ -35,7 +35,7 @@ namespace BoSSS.Solution.Multigrid {
     /// Society for Industrial and Applied Mathematics, 2003. https://doi.org/10.1137/1.9780898718898.
     /// </summary>
     public class Newton : NonlinearSolver {
-        public Newton(AssembleMatrixDel __AssembleMatrix, IEnumerable<AggregationGridBasis[]> __AggBasisSeq, MultigridOperator.ChangeOfBasisConfig[][] __MultigridOperatorConfig) :
+        public Newton(OperatorEvalOrLin __AssembleMatrix, IEnumerable<AggregationGridBasis[]> __AggBasisSeq, MultigridOperator.ChangeOfBasisConfig[][] __MultigridOperatorConfig) :
             base(__AssembleMatrix, __AggBasisSeq, __MultigridOperatorConfig) //
         {
         }
@@ -69,7 +69,7 @@ namespace BoSSS.Solution.Multigrid {
         /// <summary>
         /// Maximum number of step-length iterations
         /// </summary>
-        public double maxStep = 10;
+        public double maxStep = 30;
 
         /// <summary>
         /// Convergence for Krylov and GMRES iterations
@@ -80,7 +80,7 @@ namespace BoSSS.Solution.Multigrid {
 
         public enum ApproxInvJacobianOptions { GMRES = 1, DirectSolver = 2, DirectSolverHybrid = 3, DirectSolverOpMatrix =4 }
 
-        public ApproxInvJacobianOptions ApproxJac = ApproxInvJacobianOptions.DirectSolver;
+        public ApproxInvJacobianOptions ApproxJac = ApproxInvJacobianOptions.DirectSolverOpMatrix;
 
         public MsrMatrix currentPrecMatrix = null;
 
@@ -387,9 +387,7 @@ namespace BoSSS.Solution.Multigrid {
                             ffc = nft * nft;
                             iarm++;
 
-#if DEBUG
                             Console.WriteLine("Step size:  " + lambda + "with Residuum:  " + nft);
-#endif
                         }
                         // transform solution back to 'original domain'
                         // to perform the linearization at the new point...
@@ -470,7 +468,7 @@ namespace BoSSS.Solution.Multigrid {
             using (var tr = new FuncTrace()) {
                 int n = f0.Length;
 
-                int reorth = 3; // Orthogonalization method -> 1: Brown/Hindmarsh condition, 3: Always reorthogonalize
+                int reorth = 1; // Orthogonalization method -> 1: Brown/Hindmarsh condition, 3: Always reorthogonalize
 
                 // RHS of the linear equation system 
                 double[] b = new double[n];
@@ -544,7 +542,7 @@ namespace BoSSS.Solution.Multigrid {
 
 
                     // Reorthogonalize ?
-                    if ((reorth == 1 && Math.Round(normav + 0.001 * normav2, 3) == Math.Round(normav, 3) || reorth == 3)) {
+                    if ((reorth == 1 && Math.Round(normav + 0.001 * normav2, 3) == Math.Round(normav, 3)) || reorth == 3) {
                         for (int j = 1; j <= k; j++) {
                             double hr = GenericBlas.InnerProd(V[k], V[j - 1]).MPISum();
                             H[j - 1, k - 1] = H[j - 1, k - 1] + hr;
@@ -708,13 +706,11 @@ namespace BoSSS.Solution.Multigrid {
                 //this.CurrentLin.OperatorMatrix.SpMV(1.0, new CoordinateVector(SolutionVec.Mapping.Fields.ToArray()), 1.0, OpAffineRaw);
                 //CurrentLin.TransformRhsInto(OpAffineRaw, fx);
 
-                //EvaluateOperator(1.0, SolutionVec.Mapping.Fields, fx);
+                EvaluateOperator(1.0, SolutionVec.Mapping.Fields, fx);
 
-                this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, SolutionVec.Mapping.Fields.ToArray());
-
-                OpMtxRaw.SpMV(1.0, new CoordinateVector(SolutionVec.Mapping.Fields.ToArray()), 1.0, OpAffineRaw);
-
-                CurrentLin.TransformRhsInto(OpAffineRaw, fx);
+                //this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, SolutionVec.Mapping.Fields.ToArray());
+                //OpMtxRaw.SpMV(1.0, new CoordinateVector(SolutionVec.Mapping.Fields.ToArray()), 1.0, OpAffineRaw);
+                //CurrentLin.TransformRhsInto(OpAffineRaw, fx);
 
                 SolutionVec.CopyEntries(temp);
 

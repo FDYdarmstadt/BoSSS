@@ -55,7 +55,7 @@ namespace ilPSP.LinSolvers {
                     int Lr = M.GetRow(iRow, ref col, ref val);
                     //R.SetRow(iRow, col, val, Lr); 
                     for( int l = 0; l < Lr; l++) {
-                        M[iRow, col[l]] = val[l];
+                        R[iRow, col[l]] = val[l];
                     }
                 }
 
@@ -3445,6 +3445,8 @@ namespace ilPSP.LinSolvers {
             if (a == 0.0) {
                 this.Clear();
             } else {
+                if(a == 1.0)
+                    return;
                 foreach (var Membnk in this.m_Membanks) {
                     Membnk.Mem.Scale(a);
                 }
