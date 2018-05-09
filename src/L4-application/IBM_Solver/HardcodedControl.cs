@@ -65,6 +65,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.dtMin = dt;
             C.Endtime = 60;
             C.NoOfTimesteps = 1;
+            C.NonlinearSolve = NonlinearSolverCodes.NewtonGMRES;
 
             // Physical values
             C.PhysicalParameters.rho_A = 1;

@@ -39,6 +39,7 @@ using ilPSP;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Foundation.Grid.Classic;
+using NUnit.Framework;
 
 namespace BoSSS.Application.IBM_Solver {
 
@@ -228,7 +229,7 @@ namespace BoSSS.Application.IBM_Solver {
 
         protected XdgBDFTimestepping m_BDF_Timestepper;
 
-        SinglePhaseField[] MGColoring;
+        //SinglePhaseField[] MGColoring;
 
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
 
@@ -512,19 +513,54 @@ namespace BoSSS.Application.IBM_Solver {
             m_LenScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
 
             // create matrix and affine vector:
-            IBM_Op.ComputeMatrixEx(LsTrk,
-                Mapping, Params, Mapping,
-                OpMatrix, OpAffine, false, phystime, true,
-                AgglomeratedCellLengthScales,
-                FluidSpecies);
+            if (OpMatrix != null) {
+                //IBM_Op.ComputeMatrixEx(LsTrk,
+                //    Mapping, Params, Mapping,
+                //    OpMatrix, OpAffine, false, phystime, true,
+                //    AgglomeratedCellLengthScales,
+                //    FluidSpecies);
 
+                var mtxBuilder = IBM_Op.GetMatrixBuilder(LsTrk, Mapping, Params, Mapping, FluidSpecies);
+                mtxBuilder.time = phystime;
+                mtxBuilder.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
+
+                mtxBuilder.ComputeMatrix(OpMatrix, OpAffine);
+
+            } else {
+                var eval = IBM_Op.GetEvaluatorEx(LsTrk, CurrentState, Params, Mapping, FluidSpecies);
+                eval.time = phystime;
+                eval.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
+
+                eval.Evaluate(1.0, 1.0, OpAffine);
+
+#if DEBUG
+                // remark: remove this piece in a few months from now on (09may18) if no problems occur
+                {
+                    var check = IBM_Op.GetMatrixBuilder(LsTrk, Mapping, Params, Mapping, FluidSpecies);
+                    check.time = phystime;
+                    check.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
+
+                    BlockMsrMatrix checkOpMatrix = new BlockMsrMatrix(Mapping, Mapping);
+                    double[] checkAffine = new double[OpAffine.Length];
+                    check.ComputeMatrix(checkOpMatrix, checkAffine);
+
+                    double[] checkResult = checkAffine.CloneAs();
+                    var currentVec = new CoordinateVector(CurrentState);
+                    checkOpMatrix.SpMV(1.0, new CoordinateVector(CurrentState), 1.0, checkResult);
+
+                    double L2_dist = GenericBlas.L2DistPow2(checkResult, OpAffine).MPISum().Sqrt();
+                    double RefNorm = (new double[] { checkResult.L2NormPow2(), OpAffine.L2NormPow2(), currentVec.L2NormPow2() }).MPISum().Max().Sqrt();
+
+                    Assert.LessOrEqual(L2_dist, RefNorm * 1.0e-6);
+                    Debug.Assert(L2_dist < RefNorm * 1.0e-6);
+                }
+#endif
+            }
             
-
-
             m_LenScales = null;
             
 #if DEBUG
-            if (DelComputeOperatorMatrix_CallCounter == 1) {
+            if (DelComputeOperatorMatrix_CallCounter == 1 && OpMatrix != null) {
                 int[] Uidx = SaddlePointProblemMapping.GetSubvectorIndices(true, D.ForLoop(i => i));
                 int[] Pidx = SaddlePointProblemMapping.GetSubvectorIndices(true, D);
                 CoordinateMapping Umap = this.Velocity.Mapping;
@@ -546,17 +582,30 @@ namespace BoSSS.Application.IBM_Solver {
                 //Console.WriteLine("Stokes discretization error: | div - grad ^ t |oo is high; absolute: " + ErrInfAbs + ", relative: " + ErrInfRel + " (denom: " + denom + ")");
             }
 #endif
-
-            OpMatrix.CheckForNanOrInfM();
+            if(OpMatrix != null)
+                OpMatrix.CheckForNanOrInfM();
             OpAffine.CheckForNanOrInfV();
 
             // Set Pressure Reference Point
             if (!this.BcMap.DirichletPressureBoundary) {
-                IBMSolverUtils.SetPressureReferencePoint(
-                    CurrentSolution.Mapping,
-                    this.GridData.SpatialDimension,
-                    this.LsTrk, OpMatrix, OpAffine);
+                if (OpMatrix != null) {
+                    IBMSolverUtils.SetPressureReferencePoint(
+                        CurrentSolution.Mapping,
+                        this.GridData.SpatialDimension,
+                        this.LsTrk, 
+                        OpMatrix, OpAffine);
+                } else {
+                    IBMSolverUtils.SetPressureReferencePointResidual(
+                        new CoordinateVector(CurrentState),
+                        this.GridData.SpatialDimension,
+                        this.LsTrk,
+                        OpAffine);
+                }
             }
+        }
+
+        static void todo() {
+            throw new NotImplementedException();
         }
 
         public virtual double DelUpdateLevelset(DGField[] CurrentState, double phystime, double dt, double UnderRelax, bool incremental) {

@@ -3445,6 +3445,8 @@ namespace ilPSP.LinSolvers {
             if (a == 0.0) {
                 this.Clear();
             } else {
+                if(a == 1.0)
+                    return;
                 foreach (var Membnk in this.m_Membanks) {
                     Membnk.Mem.Scale(a);
                 }
