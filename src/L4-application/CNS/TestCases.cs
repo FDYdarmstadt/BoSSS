@@ -947,6 +947,7 @@ namespace CNS {
             c.AddVariable(Variables.LocalMachNumber, dgDegree);
             c.AddVariable(Variables.CFL, 0);
             c.AddVariable(Variables.CFLConvective, 0);
+            c.AddVariable(Variables.Schlieren, dgDegree);
 
             if (AV) {
                 c.AddVariable(Variables.CFLArtificialViscosity, 0);
@@ -997,7 +998,6 @@ namespace CNS {
 
 
             // ### Initial condtions ###
-
             // Parameters
             double gamma = IdealGas.Air.HeatCapacityRatio;
             double a = 0.075;
@@ -1058,7 +1058,7 @@ namespace CNS {
                 } else if (radius > a && radius <= b) {
                     double innerCircle = (vm * vm) / 2;
                     double preFactorOuterVortex = (vm * vm) * (a * a) / ((a * a - b * b) * (a * a - b * b));
-                    double partOne = (radius * radius  / 2) - (2 * b * b * Math.Log(radius)) - (b * b * b * b / (2 * radius * radius));
+                    double partOne = (radius * radius / 2) - (2 * b * b * Math.Log(radius)) - (b * b * b * b / (2 * radius * radius));
                     double partTwo = (a * a / 2) - (2 * b * b * Math.Log(a)) - (b * b * b * b / (2 * a * a));
                     result = preFactorGlobal * preFactorOuterVortex * (partOne - partTwo);
                 }
@@ -1079,7 +1079,8 @@ namespace CNS {
                 double theta = Math.Atan2(X[1], X[0]);
 
                 if (IsInsideVortex(X)) {
-                    result = 1 - Math.Sin(theta) * vPhi(X, radius);
+                    //result = 1 - Math.Sin(theta) * vPhi(X, radius);
+                    result = -Math.Sin(theta) * vPhi(X, radius);
                 }
 
                 return result;
