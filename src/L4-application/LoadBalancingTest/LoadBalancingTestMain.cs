@@ -235,6 +235,30 @@ namespace BoSSS.Application.LoadBalancingTest {
         const XQuadFactoryHelper.MomentFittingVariants HMF = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
 
         protected virtual void DelComputeOperatorMatrix(BlockMsrMatrix OpMatrix, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime) {
+            
+            OpAffine.ClearEntries();
+
+            bool Eval = false;
+            if(OpMatrix == null) {
+                Eval = true;
+                OpMatrix = new BlockMsrMatrix(uResidual.Mapping, u.Mapping);
+            } else {
+                OpMatrix.Clear();
+            }
+
+            Op.ComputeMatrixEx(base.LsTrk,
+                u.Mapping, null, uResidual.Mapping,
+                OpMatrix, OpAffine, false,
+                phystime,
+                false,
+                base.LsTrk.SpeciesIdS.ToArray());
+
+            if(Eval) {
+                OpMatrix.SpMV(1.0, new CoordinateVector(CurrentState), 1.0, OpAffine);
+            }
+
+
+            /*
             if (!Mapping.EqualsPartition(uResidual.Mapping))
                 throw new ArgumentException();
 
@@ -257,6 +281,7 @@ namespace BoSSS.Application.LoadBalancingTest {
 
                 eval.Evaluate(1.0, 1.0, OpAffine);
             }
+            */
         }
 
         public override void DataBackupBeforeBalancing(GridUpdateDataVaultBase L) {
