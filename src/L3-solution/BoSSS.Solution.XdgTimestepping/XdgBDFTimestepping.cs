@@ -1541,7 +1541,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             // ====================
             int ie = m_Stack_OpMatrix.Length - 1;
             Debug.Assert(m_Stack_OpMatrix.Length == m_Stack_OpAffine.Length);
-            Debug.Assert((m_Stack_OpMatrix[ie] == null) == (m_Stack_OpAffine[ie] == null));
+            //Debug.Assert((m_Stack_OpMatrix[ie] == null) == (m_Stack_OpAffine[ie] == null));
             m_Stack_OpMatrix[ie] = null;
             m_Stack_OpAffine[ie] = null;
             //m_Stack_MassMatrix[m_Stack_MassMatrix.Length - 1] = null;

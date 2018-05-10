@@ -65,15 +65,15 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
         static void Main(string[] args) {
-            Tests.UnitTest.TestFixtureSetUp();
-            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.MovingDropletTest(3, 0.3d, true,  SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, 0.70811d,  ViscosityMode.FullySymmetric, true, false);
-            BoSSS.Application.XNSE_Solver.Tests.UnitTest.TranspiratingChannelTest(2, 0.1, 0.1, ViscosityMode.FullySymmetric, true);
-            //////BoSSS.Application.XNSE_Solver.Tests.UnitTest.MovingDropletTest(2, 0.01d, true, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, 0.69711d, ViscosityMode.FullySymmetric, true, false);
-            Tests.UnitTest.TestFixtureTearDown();
-            //Console.WriteLine("Press any key----");
-            //Console.ReadKey();
-            //while(true) ;
-            return;
+            //Tests.UnitTest.TestFixtureSetUp();
+            ////BoSSS.Application.XNSE_Solver.Tests.UnitTest.MovingDropletTest(3, 0.3d, true,  SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, 0.70811d,  ViscosityMode.FullySymmetric, true, false);
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ViscosityJumpTest(1, 0.0, ViscosityMode.FullySymmetric);
+            ////////BoSSS.Application.XNSE_Solver.Tests.UnitTest.MovingDropletTest(2, 0.01d, true, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, 0.69711d, ViscosityMode.FullySymmetric, true, false);
+            //Tests.UnitTest.TestFixtureTearDown();
+            ////Console.WriteLine("Press any key----");
+            ////Console.ReadKey();
+            ////while(true) ;
+            //return;
          
             _Main(args, false, delegate () {
                 var p = new XNSE_SolverMain();
@@ -753,7 +753,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 this.m_HMForder,
                 OpMtx, OpAffine,
                 AgglomeratedCellLengthScales,
-                CurrentState.GetSubVector(0, D),
+                CurrentState,
                 SurfaceForce,
                 filtLevSetGradient,
                 this.Curvature,
@@ -770,10 +770,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     this.DGLevSetGradient.Acc(1.0, filtLevSetGradient);
                 }
             }
-
-
-
-            
+                       
 
 
             // ============================
@@ -839,11 +836,20 @@ namespace BoSSS.Application.XNSE_Solver {
             // Set Pressure Reference Point
             // ============================
 
-            if (!this.BcMap.DirichletPressureBoundary) {
-                XNSEUtils.SetPressureReferencePoint(
-                    Mapping,
-                    this.GridData.SpatialDimension,
-                    this.LsTrk, OpMtx, OpAffine);
+            if (OpMtx != null) {
+                if (!this.BcMap.DirichletPressureBoundary) {
+                    XNSEUtils.SetPressureReferencePoint(
+                        Mapping,
+                        this.GridData.SpatialDimension,
+                        this.LsTrk, OpMtx, OpAffine);
+                }
+            } else {
+                if (!this.BcMap.DirichletPressureBoundary) {
+                    XNSEUtils.SetPressureReferencePointResidual(
+                        new CoordinateVector(CurrentState),
+                        this.GridData.SpatialDimension,
+                        this.LsTrk, OpAffine);
+                }
             }
 
             // transform from RHS to Affine

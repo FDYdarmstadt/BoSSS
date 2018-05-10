@@ -490,7 +490,7 @@ namespace BoSSS.Solution.XNSECommon {
             int CutCellQuadOrder,
             BlockMsrMatrix OpMatrix, double[] OpAffine, 
             Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales,
-            IEnumerable<T> U0,
+            IEnumerable<T> CurrentState,
             VectorField<SinglePhaseField> SurfaceForce,
             VectorField<SinglePhaseField> LevelSetGradient, SinglePhaseField ExternalyProvidedCurvature,
             UnsetteledCoordinateMapping RowMapping, UnsetteledCoordinateMapping ColMapping,
@@ -504,10 +504,13 @@ namespace BoSSS.Solution.XNSECommon {
             // check:
             var Tracker = this.LsTrk;
             int D = Tracker.GridDat.SpatialDimension;
-            if (U0 != null && U0.Count() != D)
+            if (CurrentState != null && CurrentState.Count() != (D + 1))
                 throw new ArgumentException();
-
-           
+            if (OpMatrix == null && CurrentState == null)
+                throw new ArgumentException();
+            DGField[] U0 = CurrentState.Take(D).ToArray();
+            
+                       
             LevelSet Phi = (LevelSet)(Tracker.LevelSets[0]);
 
             SpeciesId[] SpcToCompute = AgglomeratedCellLengthScales.Keys.ToArray();
@@ -567,11 +570,22 @@ namespace BoSSS.Solution.XNSECommon {
             // ===================================
 
             // compute matrix
-            Op.ComputeMatrixEx(Tracker,
-                ColMapping, Params, RowMapping,
-                OpMatrix, OpAffine, false, time, true,
-                AgglomeratedCellLengthScales,
-                SpcToCompute);
+            if (OpMatrix != null) {
+                Op.ComputeMatrixEx(Tracker,
+                    ColMapping, Params, RowMapping,
+                    OpMatrix, OpAffine, false, time, true,
+                    AgglomeratedCellLengthScales,
+                    SpcToCompute);
+            } else {
+                var eval = Op.GetEvaluatorEx(Tracker,
+                    CurrentState.ToArray(), Params, RowMapping,
+                    SpcToCompute);
+
+                foreach (var kv in AgglomeratedCellLengthScales)
+                    eval.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
+
+                eval.Evaluate(1.0, 1.0, OpAffine);
+            }
 
 
             // check
