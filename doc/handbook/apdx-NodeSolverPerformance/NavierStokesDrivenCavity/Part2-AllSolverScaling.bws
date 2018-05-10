@@ -23,7 +23,7 @@ List of 24 instances of IDatabaseInfo {
   14: { Session Count = 43; Grid Count = 45; Path = P:\BoSSS_DBs\IBMPaper }
   15: { Session Count = 28; Grid Count = 15; Path = P:\BoSSS_DBs\Paper_IBM2D }
   16: { Session Count = 38; Grid Count = 22; Path = P:\BoSSS_DBs\Paper_CellAgglo01_Penalty4 }
-  17: { Session Count = 53; Grid Count = 65; Path = P:\BoSSS_DBs\Sphere3D }
+  17: { Session Count = 54; Grid Count = 65; Path = P:\BoSSS_DBs\Sphere3D }
   18: { Session Count = 22; Grid Count = 10; Path = P:\BoSSS_DBs\Performance }
   19: { Session Count = 24; Grid Count = 14; Path = P:\BoSSS_DBs\PaperRevision }
   20: { Session Count = 0; Grid Count = 0; Path = P:\Lichtenberg_DB }
@@ -319,6 +319,12 @@ plotSlvIterTime.LogY      = true;
 plotSlvIterTime.LogBaseX  = 10;
 plotSlvIterTime.LogBaseY  = 10;
 
+double[] dof = new[]{1e3,1e6};
+double[] linT = dof.Select(x => x*1).ToArray();
+var linP = new Plot2Ddata.XYvalues("linear", dof, linT);
+linP.Format.FromString("- black");
+ArrayTools.AddToArray(linP, ref multiplots[0,0].dataGroups);
+
 multiplots[0,0] = plotSlvIterTime;
 //multiplots[1,0] = plotSlvIterSpeedup;
 
@@ -327,11 +333,15 @@ multiplots[0,0].bmargin = 4;
 multiplots[0,0].tmargin = 4;
 multiplots.PlotNow();
 **************
-Using gnuplot: C:\Users\krause\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
-System.Drawing.Bitmap
+System.NullReferenceException occurred: Der Objektverweis wurde nicht auf eine Objektinstanz festgelegt.. Type 'LastError' for details.
+
 ==============
 LastError
 **************
+System.NullReferenceException: Der Objektverweis wurde nicht auf eine Objektinstanz festgelegt.
+   bei <InteractiveExpressionClass>.Host(Object& $retval)
+   bei Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
+   bei BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in C:\BoSSS-experimental\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:Zeile 311.
 ==============
 var CL = multiplots.ToGnuplot().PlotCairolatex(xSize:18, ySize:10);
 **************
@@ -354,6 +364,8 @@ System.ComponentModel.Win32Exception (0x80004005): Das System kann die angegeben
    bei <InteractiveExpressionClass>.Host(Object& $retval)
    bei Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
    bei BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in C:\BoSSS-experimental\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:Zeile 311.
+==============
+**************
 ==============
 **************
 ==============
