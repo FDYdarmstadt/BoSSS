@@ -2,6 +2,9 @@
 import {InteractiveList} from './interactiveList';
 import {Editor} from './editor';
 import boSSSRuntime from './bosssInterface';
+import Split from "split.js";
+import {Range as monacoRange} from 'monaco-editor';
+require('../css/bossspad.css');
 
 export class BoSSSpad{
   constructor(element){
@@ -19,6 +22,12 @@ export class BoSSSpad{
     .then(
       function() {
         that.userGUI.load(that.boSSS);
+        that.split = Split([that.editor, that.userInput], {
+          sizes: [60, 40],
+          minSize: 180,
+          gutterSize: 4,
+          onDrag: that.update.bind(that)
+        });
       }
     ).then(
       this.register.bind(this)
@@ -49,6 +58,7 @@ export class BoSSSpad{
     this.editor.className="editor";
     element.appendChild(this.editor);
     element.appendChild(this.userInput);
+    
   }
 
   register(){
@@ -56,6 +66,7 @@ export class BoSSSpad{
     this.boSSS.registerContextMenu(this.addNewCommentCommand.bind(this), 'runCommentCommand', 'Insert Comment Box');
     this.boSSS.registerContextMenu(this.removeCommand.bind(this), 'removeCommand', 'Remove');
     this.boSSS.onDidScrollChange(this.userGUI.update.bind(this.userGUI));
+    this.boSSS.onDidChangeModelContent( this.deleteHandler.bind(this));
     window.addEventListener("resize", this.update.bind(this));
   }
 
@@ -73,6 +84,25 @@ export class BoSSSpad{
       range.startColumn = 1;
       var runCommand = this.userGUI.addNewCommentCommand(range);
     }
+  }
+
+  deleteHandler(IModelContentChange){
+    
+    function constructRangeFromText( text, startLineNumber){
+      var formatedText = text.split('\n');
+      var lineNumber = formatedText.length - 1;
+      var endColumn = formatedText[formatedText.length - 1 ].length;
+      return new monacoRange(startLineNumber, 1, startLineNumber + lineNumber, endColumn + 1);
+    };
+    
+    var length = IModelContentChange.changes[0].rangeLength; 
+    //If standard delete or if delete with enter-key
+    if(  length > 0 ){
+      var oldRange = IModelContentChange.changes[0].range;
+      var text = IModelContentChange.changes[0].text;
+      var newRange = constructRangeFromText(text, oldRange.startLineNumber);
+      this.userGUI.deleteCommandSection(oldRange, newRange);
+    };
   }
 
   removeCommand(ed){
