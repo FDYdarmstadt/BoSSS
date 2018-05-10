@@ -210,13 +210,13 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         VelocityRelatedVars<XDGField> XDGvelocity;
 
-        /// <summary>
-        /// Continuous high-order finite element basis for the level-set in toder to ensure continuity,
-        /// see <see cref="XNSE_Control.EnforceLevelSetContinuity"/>.
-        /// </summary>
-        SpecFemBasis ContinuousLevelSetBasis;
+        //// <summary>
+        //// Continuous high-order finite element basis for the level-set in toder to ensure continuity,
+        //// see <see cref="XNSE_Control.EnforceLevelSetContinuity"/>.
+        //// </summary>
+        //SpecFemBasis ContinuousLevelSetBasis;
 
-        Basis ContinuousLevelSetDGBasis;
+        //Basis ContinuousLevelSetDGBasis;
 
         /// <summary>
         /// The velocity for the level-set evolution; 
@@ -465,11 +465,11 @@ namespace BoSSS.Application.XNSE_Solver {
         XdgBDFTimestepping m_BDF_Timestepper;
 
         
-        /// <summary>
-        /// Explicit or implicit timestepping using Runge-Kutta formulas,
-        /// specialized for XDG applications.
-        /// </summary>
-        XdgRKTimestepping m_RK_Timestepper;
+        ///// <summary>
+        ///// Explicit or implicit timestepping using Runge-Kutta formulas,
+        ///// specialized for XDG applications.
+        ///// </summary>
+        //XdgRKTimestepping m_RK_Timestepper;
 
         RungeKuttaScheme rksch = null;
         int bdfOrder = -1000;
@@ -496,7 +496,7 @@ namespace BoSSS.Application.XNSE_Solver {
             }
 
             int degU = this.CurrentVel[0].Basis.Degree;
-                        
+
             if (base.Control.FakePoisson) {
                 Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
                 Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
@@ -533,28 +533,28 @@ namespace BoSSS.Application.XNSE_Solver {
             MassMatrixShapeandDependence mmsd;
             switch (this.Control.Timestepper_LevelSetHandling) {
                 case LevelSetHandling.Coupled_Once:
-                    movingmesh = true;
-                    mmsd = MassMatrixShapeandDependence.IsTimeDependent;
-                    break;
+                movingmesh = true;
+                mmsd = MassMatrixShapeandDependence.IsTimeDependent;
+                break;
 
                 case LevelSetHandling.Coupled_Iterative:
-                    movingmesh = true;
-                    mmsd = MassMatrixShapeandDependence.IsTimeAndSolutionDependent;
-                    break;
+                movingmesh = true;
+                mmsd = MassMatrixShapeandDependence.IsTimeAndSolutionDependent;
+                break;
 
                 case LevelSetHandling.LieSplitting:
                 case LevelSetHandling.StrangSplitting:
-                    movingmesh = false;
-                    mmsd = MassMatrixShapeandDependence.IsTimeDependent;
-                    break;
+                movingmesh = false;
+                mmsd = MassMatrixShapeandDependence.IsTimeDependent;
+                break;
 
                 case LevelSetHandling.None:
-                    movingmesh = false;
-                    mmsd = MassMatrixShapeandDependence.IsNonIdentity;
-                    break;
+                movingmesh = false;
+                mmsd = MassMatrixShapeandDependence.IsNonIdentity;
+                break;
 
                 default:
-                    throw new NotImplementedException();
+                throw new NotImplementedException();
             }
 
 
@@ -576,39 +576,38 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 switch (this.Control.Timestepper_Scheme) {
                     case XNSE_Control.TimesteppingScheme.RK_ImplicitEuler: {
-                            rksch = RungeKuttaScheme.ImplicitEuler;
-                            break;
-                        }
+                        rksch = RungeKuttaScheme.ImplicitEuler;
+                        break;
+                    }
                     case XNSE_Control.TimesteppingScheme.RK_CrankNicolson: {
-                            rksch = RungeKuttaScheme.CrankNicolson;
-                            break;
-                        }
+                        rksch = RungeKuttaScheme.CrankNicolson;
+                        break;
+                    }
                     case XNSE_Control.TimesteppingScheme.CrankNicolson: {
-                            //do not instantiate rksch, use bdf instead
-                            bdfOrder = -1;
-                            break;
-                        }
+                        //do not instantiate rksch, use bdf instead
+                        bdfOrder = -1;
+                        break;
+                    }
                     case XNSE_Control.TimesteppingScheme.ImplicitEuler: {
-                            //do not instantiate rksch, use bdf instead
-                            bdfOrder = 1;
-                            break;
-                        }
+                        //do not instantiate rksch, use bdf instead
+                        bdfOrder = 1;
+                        break;
+                    }
                     default: {
-                            if (this.Control.Timestepper_Scheme.ToString().StartsWith("BDF")) {
-                                //do not instantiate rksch, use bdf instead
-                                bdfOrder = Convert.ToInt32(this.Control.Timestepper_Scheme.ToString().Substring(3));
-                                break;
-                            } else
-                                throw new NotImplementedException();
-                        }
+                        if (this.Control.Timestepper_Scheme.ToString().StartsWith("BDF")) {
+                            //do not instantiate rksch, use bdf instead
+                            bdfOrder = Convert.ToInt32(this.Control.Timestepper_Scheme.ToString().Substring(3));
+                            break;
+                        } else
+                            throw new NotImplementedException();
+                    }
 
                 }
 
 
                 //if no Runge Kutta Timesteper is initialized
                 // we are using bdf or screwed things up
-                if (rksch == null)
-                {
+                if (rksch == null) {
                     m_BDF_Timestepper = new XdgBDFTimestepping(
                         this.CurrentSolution.Mapping.Fields,
                         this.CurrentResidual.Mapping.Fields,
@@ -638,9 +637,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     m_BDF_Timestepper.Config_linearSolver = new DirectSolver() { WhichSolver = this.Control.LinearSolver, TestSolution = true };
                     //m_BDF_Timestepper.CustomIterationCallback += this.PlotOnIterationCallback;
 
-                }
-                else
-                {
+                } else {
 
                     throw new NotSupportedException();
 
@@ -661,7 +658,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     //m_RK_Timestepper.m_ResidualNames = this.CurrentResidual.Mapping.Fields.Select(f => f.Identification).ToArray();
                 }
 
-            } else { 
+            } else {
 
                 Debug.Assert(object.ReferenceEquals(this.MultigridSequence[0].ParentGrid, this.GridData));
 
@@ -678,9 +675,9 @@ namespace BoSSS.Application.XNSE_Solver {
                 //var PosFF = this.LsTrk.Regions.GetLevelSetWing(0, +1).VolumeMask;
                 //ContinuityEnforcer.SetFarField(this.DGLevSet.Current, Near, PosFF);
 
-                m_BDF_Timestepper.DataRestoreAfterBalancing(L, 
-                    ArrayTools.Cat<DGField>(this.XDGvelocity.Velocity.ToArray(), this.Pressure), 
-                    ArrayTools.Cat<DGField>(this.XDGvelocity.ResidualMomentum.ToArray(), this.ResidualContinuity), 
+                m_BDF_Timestepper.DataRestoreAfterBalancing(L,
+                    ArrayTools.Cat<DGField>(this.XDGvelocity.Velocity.ToArray(), this.Pressure),
+                    ArrayTools.Cat<DGField>(this.XDGvelocity.ResidualMomentum.ToArray(), this.ResidualContinuity),
                     this.LsTrk, this.MultigridSequence);
 
                 //Console.WriteLine("number of cells {0}", this.Grid.NumberOfCells);
@@ -2704,10 +2701,9 @@ namespace BoSSS.Application.XNSE_Solver {
 
         }
 
-        CellMask refinedInterfaceCells;
+        //CellMask refinedInterfaceCells;
 
-        protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid)
-        {
+        protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
 
             if (this.Control.AdaptiveMeshRefinement) {
 
@@ -2754,8 +2750,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     //PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 2 }), 2);#
 
-                }
-                else {
+                } else {
 
                     newGrid = null;
                     old2NewGrid = null;

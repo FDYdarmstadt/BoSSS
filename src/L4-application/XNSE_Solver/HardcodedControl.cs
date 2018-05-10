@@ -3683,13 +3683,13 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
             double[] center = new double[] { 0.5, 0.5 };
-            double a = 2.4;
-            double b = 2.4;
+            //double a = 2.4;
+            //double b = 2.4;
             //Func<double, double> radius = phi => a * b / Math.Sqrt(a.Pow2() * Math.Sin(phi).Pow2() + b.Pow2() * Math.Cos(phi).Pow2());
             double radius = 0.25;
             Func<double, double> radiusFunc = phi => radius;
 
-            double delta = 0.0;
+            //double delta = 0.0;
             C.InitialValues_Evaluators.Add("Phi",
                 //(X => (X[0].Pow2() / a.Pow2() + X[1].Pow2() / b.Pow2()) - 1)
                 (X => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - radius)  // signed distance
