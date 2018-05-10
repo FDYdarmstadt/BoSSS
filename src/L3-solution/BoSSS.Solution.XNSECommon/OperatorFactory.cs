@@ -509,7 +509,12 @@ namespace BoSSS.Solution.XNSECommon {
                 throw new ArgumentException();
             if (OpMatrix == null && CurrentState == null)
                 throw new ArgumentException();
-            DGField[] U0 = CurrentState.Take(D).ToArray();
+            DGField[] U0;
+            if (CurrentState != null)
+                U0 = CurrentState.Take(D).ToArray();
+            else
+                U0 = null;
+
             
                        
             LevelSet Phi = (LevelSet)(Tracker.LevelSets[0]);
