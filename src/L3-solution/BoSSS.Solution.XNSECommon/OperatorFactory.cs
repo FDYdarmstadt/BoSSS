@@ -33,6 +33,7 @@ using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
 using ilPSP;
 using BoSSS.Foundation.Grid;
 using BoSSS.Solution.Utils;
+using NUnit.Framework;
 
 namespace BoSSS.Solution.XNSECommon {
 
@@ -584,7 +585,36 @@ namespace BoSSS.Solution.XNSECommon {
                 foreach (var kv in AgglomeratedCellLengthScales)
                     eval.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
 
+                eval.time = time;
+
                 eval.Evaluate(1.0, 1.0, OpAffine);
+
+
+#if DEBUG
+                // remark: remove this piece in a few months from now on (09may18) if no problems occur
+                {
+
+                    BlockMsrMatrix checkOpMatrix = new BlockMsrMatrix(RowMapping, ColMapping);
+                    double[] checkAffine = new double[OpAffine.Length];
+
+                    Op.ComputeMatrixEx(Tracker,
+                    ColMapping, Params, RowMapping,
+                    OpMatrix, OpAffine, false, time, true,
+                    AgglomeratedCellLengthScales,
+                    SpcToCompute);
+
+
+                    double[] checkResult = checkAffine.CloneAs();
+                    var currentVec = new CoordinateVector(CurrentState.ToArray());
+                    checkOpMatrix.SpMV(1.0, new CoordinateVector(CurrentState.ToArray()), 1.0, checkResult);
+
+                    double L2_dist = GenericBlas.L2DistPow2(checkResult, OpAffine).MPISum().Sqrt();
+                    double RefNorm = (new double[] { checkResult.L2NormPow2(), OpAffine.L2NormPow2(), currentVec.L2NormPow2() }).MPISum().Max().Sqrt();
+
+                    Assert.LessOrEqual(L2_dist, RefNorm * 1.0e-6);
+                    Debug.Assert(L2_dist < RefNorm * 1.0e-6);
+                }
+#endif
             }
 
 
