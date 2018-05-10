@@ -80,7 +80,7 @@ namespace BoSSS.Solution.Multigrid {
 
         public enum ApproxInvJacobianOptions { GMRES = 1, DirectSolver = 2, DirectSolverHybrid = 3, DirectSolverOpMatrix =4 }
 
-        public ApproxInvJacobianOptions ApproxJac = ApproxInvJacobianOptions.DirectSolver;
+        public ApproxInvJacobianOptions ApproxJac = ApproxInvJacobianOptions.DirectSolverOpMatrix;
 
         public MsrMatrix currentPrecMatrix = null;
 
