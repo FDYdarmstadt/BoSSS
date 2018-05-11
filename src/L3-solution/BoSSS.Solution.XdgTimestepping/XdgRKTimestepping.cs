@@ -554,7 +554,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 // build the saddle-point matrix
                 BlockMsrMatrix System, MaMa;
                 double[] RHS;
-                this.AssembleMatrixCallback(out System, out RHS, out MaMa, CurrentStateMapping.Fields.ToArray());
+                this.AssembleMatrixCallback(out System, out RHS, out MaMa, CurrentStateMapping.Fields.ToArray(), true);
                 RHS.ScaleV(-1);
 
                 // update the multigrid operator
@@ -601,7 +601,10 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Matrix/Affine assembly in the case of an implicit RK stage.
         /// </summary>
-        protected override void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix PcMassMatrix, DGField[] argCurSt) {
+        protected override void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix PcMassMatrix, DGField[] argCurSt, bool Linearization) {
+
+            if(Linearization == false)
+                throw new NotImplementedException("todo");
 
             int Ndof = m_CurrentState.Count;
 
