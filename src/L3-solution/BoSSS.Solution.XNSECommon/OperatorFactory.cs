@@ -214,12 +214,12 @@ namespace BoSSS.Solution.XNSECommon {
                     for (int d = 0; d < D; d++) {
                         var comps = m_OP.EquationComponents[CodName[d]];
                         // viscous part:
-                        double _D = D;
-                        double penalty_mul = dntParams.PenaltySafety;
-                        double _p = degU;
-                        double penalty_base = (_p + 1) * (_p + _D) / _D;
-
-                        double penalty = penalty_base * penalty_mul;
+                        //double _D = D;
+                        //double penalty_mul = dntParams.PenaltySafety;
+                        //double _p = degU;
+                        //double penalty_base = (_p + 1) * (_p + _D) / _D;
+                        //double penalty = penalty_base * penalty_mul;
+                        double penalty = dntParams.PenaltySafety;
                         switch (dntParams.ViscosityMode) {
                             case ViscosityMode.Standard: {
                                     // Bulk operator:

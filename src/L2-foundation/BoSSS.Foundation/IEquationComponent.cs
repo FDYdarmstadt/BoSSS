@@ -63,6 +63,7 @@ namespace BoSSS.Foundation {
     /// class it is easy tho change/add variables without updating each and every interface implementation.
     /// </remarks>
     public class CoefficientSet {
+        public IGridData GrdDat;
 
         public MultidimensionalArray CellLengthScales;
 

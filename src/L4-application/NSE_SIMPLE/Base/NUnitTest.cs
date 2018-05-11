@@ -157,15 +157,16 @@ namespace NSE_SIMPLE {
             double thres_T = 2.0e-5;
 
             Console.WriteLine("Number of SIMPLE iterations: " + p.SIMPLEStatus.SIMPLEStepNo + ". Expected number of iterations is less than 430.");
+            Console.WriteLine("L2 Error of solution u: " + err_u + " (threshold is " + thres_u + ")");
+            Console.WriteLine("L2 Error of solution v: " + err_v + " (threshold is " + thres_v + ")");
+            Console.WriteLine("L2 Error of solution p: " + err_p + " (threshold is " + thres_p + ")");
+            Console.WriteLine("L2 Error of solution T: " + err_T + " (threshold is " + thres_T + ")");
+
             Assert.IsTrue(p.SIMPLEStatus.SIMPLEStepNo < 430);
 
-            Console.WriteLine("L2 Error of solution u: " + err_u + " (threshold is " + thres_u + ")");
             Assert.IsTrue(err_u < thres_u);
-            Console.WriteLine("L2 Error of solution v: " + err_v + " (threshold is " + thres_v + ")");
             Assert.IsTrue(err_v < thres_v);
-            Console.WriteLine("L2 Error of solution p: " + err_p + " (threshold is " + thres_p + ")");
             Assert.IsTrue(err_p < thres_p);
-            Console.WriteLine("L2 Error of solution T: " + err_T + " (threshold is " + thres_T + ")");
             Assert.IsTrue(err_T < thres_T);
         }
     }
