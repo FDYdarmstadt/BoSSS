@@ -65,16 +65,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
         static void Main(string[] args) {
-            //Tests.UnitTest.TestFixtureSetUp();
-            ////BoSSS.Application.XNSE_Solver.Tests.UnitTest.MovingDropletTest(3, 0.3d, true,  SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, 0.70811d,  ViscosityMode.FullySymmetric, true, false);
-            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ViscosityJumpTest(1, 0.0, ViscosityMode.FullySymmetric);
-            ////////BoSSS.Application.XNSE_Solver.Tests.UnitTest.MovingDropletTest(2, 0.01d, true, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, 0.69711d, ViscosityMode.FullySymmetric, true, false);
-            //Tests.UnitTest.TestFixtureTearDown();
-            ////Console.WriteLine("Press any key----");
-            ////Console.ReadKey();
-            ////while(true) ;
-            //return;
-         
+        
             _Main(args, false, delegate () {
                 var p = new XNSE_SolverMain();
                 return p;

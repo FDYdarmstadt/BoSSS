@@ -27,6 +27,7 @@ using NSE_SIMPLE.LowMach;
 using NSE_SIMPLE.Multiphase;
 using System;
 using BoSSS.Solution.Utils;
+using NUnit.Framework;
 
 namespace NSE_SIMPLE {
 
@@ -36,6 +37,11 @@ namespace NSE_SIMPLE {
     public partial class NSE_SIMPLEMain : BoSSS.Solution.Application<SIMPLEControl> {
 
         static void Main(string[] args) {
+
+            NSE_SIMPLE.NUnitTest.Init();
+            NSE_SIMPLE.NUnitTest.LowMachSteadyCouetteWithTemperatureGradientTest();
+            Assert.AreEqual(true, false, "remove me");
+
             _Main(args, false, delegate () {
                 NSE_SIMPLEMain p = new NSE_SIMPLEMain();
                 return p;

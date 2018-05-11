@@ -29,7 +29,7 @@ using BoSSS.Foundation;
 namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
     
     
-    public class ViscosityInBulk_GradUTerm : BoSSS.Solution.NSECommon.swipViscosity_Term1 {
+    public class ViscosityInBulk_GradUTerm : BoSSS.Solution.NSECommon.swipViscosity_Term1, IEquationComponentSpeciesNotification {
 
         public ViscosityInBulk_GradUTerm(double penalty, double sw, IncompressibleMultiphaseBoundaryCondMap bcMap, int d, int D, double _muA, double _muB, 
             double _betaA = 0.0, double _betaB = 0.0)
