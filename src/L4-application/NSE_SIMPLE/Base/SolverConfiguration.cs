@@ -50,18 +50,18 @@ namespace NSE_SIMPLE {
             }
 
             // SIP penalty for viscous part of momentum equation
-            this.PenaltyViscMomentum = Control.ViscousPenaltyScaling * GetSIPPenaltyBase(workingSet.VelBasis.Degree, GridDat);
+            this.PenaltyViscMomentum = Control.ViscousPenaltyScaling;
 
             // SIP penalty for SIP pressure correction
             if ((Control.PredictorApproximation == PredictorApproximations.Identity_IP1)) {
-                this.PenaltyPressureCorrection = Control.PressureCorrectionPenaltyScaling * GetSIPPenaltyBase(workingSet.Pressure.Basis.Degree, GridDat);
+                this.PenaltyPressureCorrection = Control.PressureCorrectionPenaltyScaling;
             } else if (Control.PressureCorrectionPenaltyScaling != 1.0) {
                 throw new NotSupportedException("Extended property 'penalty_PressureCorrection' is only available for Identity_IP option.");
             }
 
             if (control.PhysicsMode == PhysicsMode.LowMach) {
                 LowMachSIMPLEControl lowMachControl = control as LowMachSIMPLEControl;
-                this.PenaltyHeatConduction = lowMachControl.PenaltyHeatConductionScaling * GetSIPPenaltyBase(workingSet.TemperatureBasis.Degree, GridDat);
+                this.PenaltyHeatConduction = lowMachControl.PenaltyHeatConductionScaling;
             }
 
             this.Velocity = workingSet.Velocity;
@@ -104,6 +104,10 @@ namespace NSE_SIMPLE {
         /// </summary>
         public readonly int PressureReferencePointIndex = -1;
 
+        /*
+        
+        remark by fk, 11may18: the functionality below is now (somewhat) included in the viscosity implementation directly
+         
         /// <summary>
         /// Calculation of SIP penalty base, cf. Chapter 3 in 
         /// K. Hillewaert, “Development of the discontinuous Galerkin method for high-resolution, large scale CFD and acoustics in industrial geometries”,
@@ -132,6 +136,7 @@ namespace NSE_SIMPLE {
 
             return PenaltyBase;
         }
+        */
 
         /// <summary>
         /// Checks correct setup of pressure constraints / boundary conditions.
