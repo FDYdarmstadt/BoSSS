@@ -130,7 +130,7 @@ namespace BoSSS.Solution.NSECommon {
             this.m_penalty_base = _penaltyBase;
             //this.m_ComputePenalty = ComputePenalty;
             this.m_iComp = iComp;
-            //this.m_D = D;
+            this.m_D = D;
             //this.cj = PenaltyLengthScales;
             velFunction = D.ForLoop(d => bcmap.bndFunction[VariableNames.Velocity_d(d)]);
             EdgeTag2Type = bcmap.EdgeTag2Type;
