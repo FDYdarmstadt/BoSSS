@@ -1143,7 +1143,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
         protected double penalty(int jCellIn, int jCellOut) {
 
-            double muFactor = 1.0;
+            //double muFactor = 1.0;
             double penaltySizeFactor_A = 1.0 / this.m_LenScales[jCellIn];
             double penaltySizeFactor_B = jCellOut >= 0 ? 1.0 / this.m_LenScales[jCellOut] : 0;
             Debug.Assert(!double.IsNaN(penaltySizeFactor_A));
