@@ -277,9 +277,9 @@ namespace BoSSS.Solution.NSECommon {
             double _p = DomainDGdeg.Max();
 
             double penalty_deg_tri = (_p + 1) * (_p + _D) / _D; // formula for triangles/tetras
-            double penalty_deg_sqr = (_p + 1.0) * (_p + 1.0); // formula for squares/cubes
+            double penalty_deg_sqr =  (_p + 1.0) * (_p + 1.0); // formula for squares/cubes
 
-            m_penalty = Math.Max(penalty_deg_tri, penalty_deg_sqr);
+            m_penalty = Math.Max(penalty_deg_tri, penalty_deg_sqr); // the conservative choice
 
             cj = cs.CellLengthScales;
         }
