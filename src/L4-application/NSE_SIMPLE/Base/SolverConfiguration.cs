@@ -54,14 +54,14 @@ namespace NSE_SIMPLE {
 
             // SIP penalty for SIP pressure correction
             if ((Control.PredictorApproximation == PredictorApproximations.Identity_IP1)) {
-                this.PenaltyPressureCorrection = Control.PressureCorrectionPenaltyScaling;
+                this.PenaltyPressureCorrection = Control.PressureCorrectionPenaltyScaling * GetSIPPenaltyBase(workingSet.Pressure.Basis.Degree, GridDat);
             } else if (Control.PressureCorrectionPenaltyScaling != 1.0) {
                 throw new NotSupportedException("Extended property 'penalty_PressureCorrection' is only available for Identity_IP option.");
             }
 
             if (control.PhysicsMode == PhysicsMode.LowMach) {
                 LowMachSIMPLEControl lowMachControl = control as LowMachSIMPLEControl;
-                this.PenaltyHeatConduction = lowMachControl.PenaltyHeatConductionScaling;
+                this.PenaltyHeatConduction = lowMachControl.PenaltyHeatConductionScaling * GetSIPPenaltyBase(workingSet.Pressure.Basis.Degree, GridDat);
             }
 
             this.Velocity = workingSet.Velocity;
@@ -104,9 +104,6 @@ namespace NSE_SIMPLE {
         /// </summary>
         public readonly int PressureReferencePointIndex = -1;
 
-        /*
-        
-        remark by fk, 11may18: the functionality below is now (somewhat) included in the viscosity implementation directly
          
         /// <summary>
         /// Calculation of SIP penalty base, cf. Chapter 3 in 
@@ -136,7 +133,7 @@ namespace NSE_SIMPLE {
 
             return PenaltyBase;
         }
-        */
+        
 
         /// <summary>
         /// Checks correct setup of pressure constraints / boundary conditions.
