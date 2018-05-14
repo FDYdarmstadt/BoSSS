@@ -382,7 +382,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // specialized Fourier Level-Set
             // =============================
 
-            int numSp = 640;
+            //int numSp = 640;
             //C.FourierLevSetControl = new FourierLevSetControl(FourierType.Planar, numSp, L, PeriodicFunc, 1.0 / (double)xkelem) {
             //    FourierEvolve = Fourier_Evolution.MaterialPoints,
             //    Timestepper = FourierLevelSet_Timestepper.RungeKutta1901,
@@ -625,7 +625,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ==============
             #region init
 
-            int k = 1;
+            //int k = 1;
             double A0 = 0.05;
             C.InitialValues_Evaluators.Add("Phi", (X => X[1] - (2.0 + A0 * Math.Cos(2.0 * Math.PI * X[0]))));
 

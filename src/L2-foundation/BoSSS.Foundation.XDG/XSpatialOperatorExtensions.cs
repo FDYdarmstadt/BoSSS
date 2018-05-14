@@ -201,7 +201,8 @@ namespace BoSSS.Foundation.XDG {
                 } else {
                     ev.SpeciesOperatorCoefficients.Add(s,
                         new CoefficientSet() {
-                            CellLengthScales = CellLengthScales[s]
+                            CellLengthScales = CellLengthScales[s],
+                            GrdDat = lsTrk.GridDat
                         });
                 }
             }

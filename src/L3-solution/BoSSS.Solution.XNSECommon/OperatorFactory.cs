@@ -33,6 +33,7 @@ using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
 using ilPSP;
 using BoSSS.Foundation.Grid;
 using BoSSS.Solution.Utils;
+using NUnit.Framework;
 
 namespace BoSSS.Solution.XNSECommon {
 
@@ -213,12 +214,12 @@ namespace BoSSS.Solution.XNSECommon {
                     for (int d = 0; d < D; d++) {
                         var comps = m_OP.EquationComponents[CodName[d]];
                         // viscous part:
-                        double _D = D;
-                        double penalty_mul = dntParams.PenaltySafety;
-                        double _p = degU;
-                        double penalty_base = (_p + 1) * (_p + _D) / _D;
-
-                        double penalty = penalty_base * penalty_mul;
+                        //double _D = D;
+                        //double penalty_mul = dntParams.PenaltySafety;
+                        //double _p = degU;
+                        //double penalty_base = (_p + 1) * (_p + _D) / _D;
+                        //double penalty = penalty_base * penalty_mul;
+                        double penalty = dntParams.PenaltySafety;
                         switch (dntParams.ViscosityMode) {
                             case ViscosityMode.Standard: {
                                     // Bulk operator:
@@ -490,7 +491,7 @@ namespace BoSSS.Solution.XNSECommon {
             int CutCellQuadOrder,
             BlockMsrMatrix OpMatrix, double[] OpAffine, 
             Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales,
-            IEnumerable<T> U0,
+            IEnumerable<T> CurrentState,
             VectorField<SinglePhaseField> SurfaceForce,
             VectorField<SinglePhaseField> LevelSetGradient, SinglePhaseField ExternalyProvidedCurvature,
             UnsetteledCoordinateMapping RowMapping, UnsetteledCoordinateMapping ColMapping,
@@ -504,10 +505,18 @@ namespace BoSSS.Solution.XNSECommon {
             // check:
             var Tracker = this.LsTrk;
             int D = Tracker.GridDat.SpatialDimension;
-            if (U0 != null && U0.Count() != D)
+            if (CurrentState != null && CurrentState.Count() != (D + 1))
                 throw new ArgumentException();
+            if (OpMatrix == null && CurrentState == null)
+                throw new ArgumentException();
+            DGField[] U0;
+            if (CurrentState != null)
+                U0 = CurrentState.Take(D).ToArray();
+            else
+                U0 = null;
 
-           
+            
+                       
             LevelSet Phi = (LevelSet)(Tracker.LevelSets[0]);
 
             SpeciesId[] SpcToCompute = AgglomeratedCellLengthScales.Keys.ToArray();
@@ -567,11 +576,51 @@ namespace BoSSS.Solution.XNSECommon {
             // ===================================
 
             // compute matrix
-            Op.ComputeMatrixEx(Tracker,
-                ColMapping, Params, RowMapping,
-                OpMatrix, OpAffine, false, time, true,
-                AgglomeratedCellLengthScales,
-                SpcToCompute);
+            if (OpMatrix != null) {
+                Op.ComputeMatrixEx(Tracker,
+                    ColMapping, Params, RowMapping,
+                    OpMatrix, OpAffine, false, time, true,
+                    AgglomeratedCellLengthScales,
+                    SpcToCompute);
+            } else {
+                var eval = Op.GetEvaluatorEx(Tracker,
+                    CurrentState.ToArray(), Params, RowMapping,
+                    SpcToCompute);
+
+                foreach (var kv in AgglomeratedCellLengthScales)
+                    eval.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
+
+                eval.time = time;
+
+                eval.Evaluate(1.0, 1.0, OpAffine);
+
+
+#if DEBUG
+                // remark: remove this piece in a few months from now on (09may18) if no problems occur
+                {
+
+                    BlockMsrMatrix checkOpMatrix = new BlockMsrMatrix(RowMapping, ColMapping);
+                    double[] checkAffine = new double[OpAffine.Length];
+
+                    Op.ComputeMatrixEx(Tracker,
+                    ColMapping, Params, RowMapping,
+                    OpMatrix, OpAffine, false, time, true,
+                    AgglomeratedCellLengthScales,
+                    SpcToCompute);
+
+
+                    double[] checkResult = checkAffine.CloneAs();
+                    var currentVec = new CoordinateVector(CurrentState.ToArray());
+                    checkOpMatrix.SpMV(1.0, new CoordinateVector(CurrentState.ToArray()), 1.0, checkResult);
+
+                    double L2_dist = GenericBlas.L2DistPow2(checkResult, OpAffine).MPISum().Sqrt();
+                    double RefNorm = (new double[] { checkResult.L2NormPow2(), OpAffine.L2NormPow2(), currentVec.L2NormPow2() }).MPISum().Max().Sqrt();
+
+                    Assert.LessOrEqual(L2_dist, RefNorm * 1.0e-6);
+                    Debug.Assert(L2_dist < RefNorm * 1.0e-6);
+                }
+#endif
+            }
 
 
             // check
