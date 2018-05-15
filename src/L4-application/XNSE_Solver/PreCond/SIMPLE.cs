@@ -408,8 +408,6 @@ namespace BoSSS.Application.XNSE_Solver {
         LevelSetTracker LsTrk;
         
         
-        public SIMPLEOptions m_SIMPLEOptions;
-
         
         /// <summary>
         /// The inverse of <see cref="AapproxInverse"/>.
