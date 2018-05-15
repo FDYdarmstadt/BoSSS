@@ -70,7 +70,8 @@ namespace BoSSS.Solution.Multigrid {
 
         SpatialOperator LocalOp;
 
-        MsrMatrix LocalMatrix, ConvDiff, pGrad, divVel, P;
+        MsrMatrix LocalMatrix;
+        BlockMsrMatrix P;
 
         public void Init(MultigridOperator op) {
             int D = op.GridData.SpatialDimension;
@@ -104,7 +105,7 @@ namespace BoSSS.Solution.Multigrid {
 
             ConstEqIdx = op.Mapping.ProblemMapping.GetSubvectorIndices(true, 3,4,5);
 
-            MsrMatrix P = (MsrMatrix)op.MassMatrix.Clone();
+            P = (BlockMsrMatrix)op.MassMatrix.Clone();
 
             for (int i = ConstEqIdx[0]; i <= ConstEqIdx.Length; i++) {
                 for (int j = ConstEqIdx[0]; j <= ConstEqIdx.Length; j++) {
