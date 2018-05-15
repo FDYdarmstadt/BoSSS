@@ -52,6 +52,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// Application entry point.
         /// </summary>
         static void Main(string[] args) {
+            
             BoSSS.Solution.Application<IBM_Control>._Main(args, false, delegate () {
                 var p = new IBM_SolverMain();
                 return p;
@@ -345,13 +346,14 @@ namespace BoSSS.Application.IBM_Solver {
                         double _p = degU;
                         double penalty_base = (_p + 1) * (_p + _D) / D;
                         double penalty = penalty_base * penalty_mul;
+                        double penalty_bulk = this.Control.AdvancedDiscretizationOptions.PenaltySafety;
+                        
 
                         //var Visc = new Solution.XNSECommon.Operator.Viscosity.ViscosityInBulk_GradUTerm(penalty, 1.0, BcMap, d, D, this.Control.PhysicalParameters.mu_A, 1, ViscosityImplementation.H);
-                        var Visc = new swipViscosity_Term1(penalty, null, d, D, BcMap, 
+                        var Visc = new swipViscosity_Term1(penalty_bulk, d, D, BcMap, 
                             ViscosityOption.ConstantViscosity, 
                             this.Control.PhysicalParameters.mu_A / this.Control.PhysicalParameters.rho_A, 
-                            double.NaN, null,
-                            this.ComputePenaltyBulk);
+                            double.NaN, null);
                         //delegate (double p, int i, int j, double[] cell) { return ComputePenalty(p, i, j, cell); });
                         // IBM_Op.OnIntegratingBulk += Visc.SetParameter;
                         comps.Add(Visc); // bulk component GradUTerm 
@@ -604,9 +606,7 @@ namespace BoSSS.Application.IBM_Solver {
             }
         }
 
-        static void todo() {
-            throw new NotImplementedException();
-        }
+        
 
         public virtual double DelUpdateLevelset(DGField[] CurrentState, double phystime, double dt, double UnderRelax, bool incremental) {
 
@@ -720,6 +720,7 @@ namespace BoSSS.Application.IBM_Solver {
 
         MultidimensionalArray m_LenScales;
 
+        /*
         /// <summary>
         /// Custom Function to compute penalty factor for viscous terms, for bulk terms
         /// </summary>
@@ -740,6 +741,7 @@ namespace BoSSS.Application.IBM_Solver {
             double penaltySizeFactor = Math.Max(penaltySizeFactor_A, penaltySizeFactor_B);
             return penalty * penaltySizeFactor * muFactor;
         }
+        */
 
         /// <summary>
         /// Custom Function to compute penalty factor for viscous terms at the immersed boundary
@@ -1003,6 +1005,9 @@ namespace BoSSS.Application.IBM_Solver {
             }
         }
 
+        /// <summary>
+        /// BDF timestepper init after restart
+        /// </summary>
         protected override void LoadRestart(out double Time, out TimestepNumber TimestepNo) {
             base.LoadRestart(out Time, out TimestepNo);
             this.CreateEquationsAndSolvers(null);

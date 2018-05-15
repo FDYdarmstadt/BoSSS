@@ -31,6 +31,7 @@ using ilPSP;
 using BoSSS.Foundation.Grid.Aggregation;
 using ilPSP.Tracing;
 using MPI.Wrappers;
+using NUnit.Framework;
 
 namespace BoSSS.Solution.XdgTimestepping {
 
@@ -1167,8 +1168,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                         System.Scale(Tsc.theta1);
                 } else {
                     System = null;
-                    if(Tsc.theta1 != 1.0)
-                        Affine.ScaleV(Tsc.theta1);
                 }
                 if (CurrentMassMatrix != null) {
                     if(Linearization) {
@@ -1462,8 +1461,26 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Debug.Assert(System == null);
 
                 base.Residuals.Clear();
-                base.Residuals.SetV(Affine);
-                //System.SpMV(-1.0, m_Stack_u[0], -1.0, base.Residuals);
+                base.Residuals.SetV(Affine, -1.0);
+                //System.SpMV(-1.0, m_Stack_u[0], +1.0, base.Residuals);
+
+#if DEBUG
+                {
+
+                    this.AssembleMatrixCallback(out BlockMsrMatrix checkSystem, out double[] checkAffine, out BlockMsrMatrix MaMa1, CurrentStateMapping.Fields.ToArray(), true);
+
+                    double[] checkResidual = new double[checkAffine.Length];
+                    checkResidual.SetV(checkAffine, -1.0);
+                    checkSystem.SpMV(-1.0, m_Stack_u[0], +1.0, checkResidual);
+
+                    double distL2 = GenericBlas.L2DistPow2(checkResidual, base.Residuals).MPISum().Sqrt();
+                    double refL2 = (new double[] { GenericBlas.L2NormPow2(m_Stack_u[0]), GenericBlas.L2NormPow2(checkResidual), GenericBlas.L2NormPow2(base.Residuals) }).MPISum().Max().Sqrt();
+
+                    Assert.Less(distL2, refL2 * 1.0e-5, "argh");
+
+                }
+#endif
+
 
                 var ResidualFields = base.Residuals.Mapping.Fields.ToArray();
 
@@ -1541,7 +1558,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             // ====================
             int ie = m_Stack_OpMatrix.Length - 1;
             Debug.Assert(m_Stack_OpMatrix.Length == m_Stack_OpAffine.Length);
-            Debug.Assert((m_Stack_OpMatrix[ie] == null) == (m_Stack_OpAffine[ie] == null));
+            //Debug.Assert((m_Stack_OpMatrix[ie] == null) == (m_Stack_OpAffine[ie] == null));
             m_Stack_OpMatrix[ie] = null;
             m_Stack_OpAffine[ie] = null;
             //m_Stack_MassMatrix[m_Stack_MassMatrix.Length - 1] = null;
