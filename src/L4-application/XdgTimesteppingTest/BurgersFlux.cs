@@ -91,7 +91,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
     }
 
 
-    public class BurgersFlux_Interface : ILevelSetComponent {
+    public class BurgersFlux_Interface : ILevelSetForm {
 
         LevelSetTracker m_LsTrk;
 

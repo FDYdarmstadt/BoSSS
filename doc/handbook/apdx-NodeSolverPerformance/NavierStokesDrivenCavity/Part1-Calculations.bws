@@ -22,12 +22,12 @@ List of 24 instances of IDatabaseInfo {
   14: { Session Count = 43; Grid Count = 45; Path = P:\BoSSS_DBs\IBMPaper }
   15: { Session Count = 28; Grid Count = 15; Path = P:\BoSSS_DBs\Paper_IBM2D }
   16: { Session Count = 38; Grid Count = 22; Path = P:\BoSSS_DBs\Paper_CellAgglo01_Penalty4 }
-  17: { Session Count = 52; Grid Count = 64; Path = P:\BoSSS_DBs\Sphere3D }
+  17: { Session Count = 52; Grid Count = 65; Path = P:\BoSSS_DBs\Sphere3D }
   18: { Session Count = 22; Grid Count = 10; Path = P:\BoSSS_DBs\Performance }
   19: { Session Count = 24; Grid Count = 14; Path = P:\BoSSS_DBs\PaperRevision }
   20: { Session Count = 0; Grid Count = 0; Path = P:\Lichtenberg_DB }
-  21: { Session Count = 2; Grid Count = 354; Path = P:\BoSSS_DBs\Bug }
-  22: { Session Count = 2; Grid Count = 4; Path = P:\BoSSS_DBs\NodePerformance }
+  21: { Session Count = 8; Grid Count = 469; Path = P:\BoSSS_DBs\Bug }
+  22: { Session Count = 22; Grid Count = 8; Path = P:\BoSSS_DBs\NodePerformance }
   23: { Session Count = 136; Grid Count = 98; Path = L:\BoSSS_DB\Lichtenberg_DB }
 }
 
@@ -84,11 +84,13 @@ static class Utils {
 LinearSolverCodes[] linSolvers = new LinearSolverCodes[] {
     //LinearSolverCodes.exp_schwarz_directcoarse,
     //LinearSolverCodes.exp_schwarz_Kcycle_directcoarse,
-    LinearSolverCodes.exp_schwarz_directcoarse_overlap,
-    LinearSolverCodes.exp_schwarz_Kcycle_directcoarse_overlap,
-    //LinearSolverCodes.exp_softgmres_schwarz_Kcycle_directcoarse_overlap
+    //LinearSolverCodes.exp_schwarz_directcoarse_overlap,
+    //LinearSolverCodes.exp_schwarz_Kcycle_directcoarse_overlap,
+    //LinearSolverCodes.exp_softgmres_schwarz_Kcycle_directcoarse_overlap,
     //LinearSolverCodes.exp_softgmres_schwarz_directcoarse_overlap,
     //LinearSolverCodes.automatic,
+    //LinearSolverCodes.classic_mumps,
+    LinearSolverCodes.exp_multigrid
 };
 int[] ks = new int[] {2,3};
 int re        = 400; 
@@ -102,7 +104,8 @@ int[] procs    = new int[] {1};
 // ===============================
 **************
 ==============
-int[] Resolutions_3D = new int[] {16};
+int[] Resolutions_3D = new int[] {5,7,10,13};//,17,25};
+//int[] Resolutions_3D = new int[] {17,25};
 IGridInfo[] grids = new IGridInfo[Resolutions_3D.Length];
 
 for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
@@ -168,12 +171,11 @@ if(grids[cnt].NumberOfCells != J)
 }
 }
 **************
-Creating grid with 64 cells.
-Creating grid with 512 cells.
-Creating grid with 4096 cells.
+Creating grid with 4913 cells.
+An equivalent grid is already present in the database -- the grid will not be saved.
+Creating grid with 15625 cells.
+An equivalent grid is already present in the database -- the grid will not be saved.
 
-==============
-**************
 ==============
 // =====================================
 // setup control object for a solver run
@@ -279,7 +281,7 @@ C.InitialValues.Add("Phi", GetFormulaObject(InitialValues.Phi));
         C.NoOfMultigridLevels = 2;
         
         // Assign correct names
-        C.SessionName = "DrivenCavity_k2"+linSolverName+"_J"+grd.NumberOfCells;
+        C.SessionName = "DrivenCavity_k2_"+C.NonlinearSolve+"_"+linSolverName+"_J"+grd.NumberOfCells+"_MGLev"+C.NoOfMultigridLevels;
         }
 }
 **************
@@ -300,19 +302,18 @@ foreach(int proc in procs){
     ctrl.RunBatch(myBatch,NumberOfMPIProcs:proc,UseComputeNodesExclusive:true,executionTime:"96:00:00");  
 }}
 **************
- Submitting: DrivenCavity_k2exp_schwarz_directcoarse_overlap_J64
-Loading session 28a03143-5f6b-4aef-a8a3-315ef6864317 failed with message 'Die Datei "P:\BoSSS_DBs\Sphere3D\sessions\28a03143-5f6b-4aef-a8a3-315ef6864317\Session.info" konnte nicht gefunden werden.'
-Loading session 74ec7fde-4918-46b3-a338-1be68019539b failed with message 'Die Datei "P:\BoSSS_DBs\Sphere3D\sessions\74ec7fde-4918-46b3-a338-1be68019539b\Session.info" konnte nicht gefunden werden.'
-Loading session acc112ec-3547-4f6d-ae72-4f4ccc8e9744 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\acc112ec-3547-4f6d-ae72-4f4ccc8e9744\Session.info" konnte nicht gefunden werden.'
-Loading session 883fdea1-e03e-401e-b8b7-dc67324257e0 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\883fdea1-e03e-401e-b8b7-dc67324257e0\Session.info" konnte nicht gefunden werden.'
-Loading session ed1fcb1f-d1aa-42f0-b4d1-33299563da65 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\ed1fcb1f-d1aa-42f0-b4d1-33299563da65\Session.info" konnte nicht gefunden werden.'
-Job is failed 2 times, maximum number of tries reached, no further action.
- Submitting: DrivenCavity_k2exp_schwarz_directcoarse_overlap_J512
-Job is failed 2 times, maximum number of tries reached, no further action.
- Submitting: DrivenCavity_k2exp_schwarz_directcoarse_overlap_J4096
+ Submitting: DrivenCavity_k2_NewtonGMRES_exp_schwarz_Kcycle_directcoarse_overlap_J4913_MGLev3
 Job not submitted yet, or no result session is known - starting submission.
 Deploying executables and additional files ...
-Deployment directory: \\dc1\userspace\krause\cluster\IBM_Solver2018Apr18_11-07-05
+Deployment directory: \\dc1\userspace\krause\cluster\IBM_Solver2018Apr25_15-36-38
+Source directory: C:\BoSSS-experimental\public\src\L4-application\BoSSSpad\bin\Release
+   copied: IBM_Solver.exe BoSSS.Solution.XdgTimestepping.dll BoSSS.Foundation.XDG.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll Renci.SshNet.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll MathNet.Numerics.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.dll CommandLine.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+ Submitting: DrivenCavity_k2_NewtonGMRES_exp_schwarz_Kcycle_directcoarse_overlap_J15625_MGLev3
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\dc1\userspace\krause\cluster\IBM_Solver2018Apr25_15-37-09
 Source directory: C:\BoSSS-experimental\public\src\L4-application\BoSSSpad\bin\Release
    copied: IBM_Solver.exe BoSSS.Solution.XdgTimestepping.dll BoSSS.Foundation.XDG.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll Renci.SshNet.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll MathNet.Numerics.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.dll CommandLine.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
    copied 'amd64' runtime.
@@ -323,10 +324,268 @@ WorkflowMgm.SessionTable.Rows.Count;
 **************
 Loading session 28a03143-5f6b-4aef-a8a3-315ef6864317 failed with message 'Die Datei "P:\BoSSS_DBs\Sphere3D\sessions\28a03143-5f6b-4aef-a8a3-315ef6864317\Session.info" konnte nicht gefunden werden.'
 Loading session 74ec7fde-4918-46b3-a338-1be68019539b failed with message 'Die Datei "P:\BoSSS_DBs\Sphere3D\sessions\74ec7fde-4918-46b3-a338-1be68019539b\Session.info" konnte nicht gefunden werden.'
+Loading session 9315b925-b74f-456a-9392-047282d1286e failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 9371c5b7-f603-4f6f-aeed-d23c9d33eff2 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session d13ffdc4-dc6b-4b8f-a8bb-fc6ec16ab342 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 34bb25bc-2121-49e9-ad7a-a7f2c1c5c1f2 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 6527a06d-01ae-4fad-9ce8-0aeeac3c0baa failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 1961c5b8-2920-4e94-9e4b-9cbe861d5dba failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session d7fa5f65-3712-41dd-9408-9452bfef7c85 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 2c661867-cd00-4909-b29e-65068b685425 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 1f4aaeae-580d-4594-9477-e9fbb49b396a failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session ac97b01f-35f8-45d5-adaf-3b87b3b0c23f failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 5a4c3916-207a-4b04-9897-09eabc02b523 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session cc821647-d405-4402-a856-04aa5203d788 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session b0b38eb0-df16-4a2d-8d6e-2c5f7f4863d2 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 26b4ed89-baea-4e32-b2d5-92ecd7d6a675 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session cedd444a-8533-4521-a615-988d982ee994 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 53ee706f-03fb-47d8-bbc9-255912c4f18a failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 2994a79d-d26e-40d1-9e17-7c3431883f04 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session e46b7c79-a4fc-4075-9069-dc7366d36768 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 92949e37-69c3-4ed9-bd12-d5abbae784a4 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session c4a99d91-36ab-4811-a6af-c9e2e90bed78 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session a5d1a63d-9e45-4944-861d-39402216da0d failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 9bbac523-5a82-4228-8efc-c5ee2737c225 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 42239373-65ec-4aca-b915-d8ce4f59f7a9 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session dc573d24-6c01-4153-9cd1-04099f5a8668 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session d5064cf7-4373-4b9c-8154-25a30bf3964f failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session b95ecdc2-079d-4d18-b5ee-0d6e709b440d failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 3a112ba2-ebed-4f09-9fc1-5ba99c710ad8 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session fb6731f3-dff6-404c-a0ab-49737836b051 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session c6d99d5c-0a74-4db8-a1d7-311ebfa6a119 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 4284e396-dd72-461e-93cb-69050cb1a43a failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session faf63994-07ed-4748-8e8a-b7c15d6fcc4d failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session d254dca0-04a1-4303-bcbc-339e3e1ba9ce failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 9e669ddf-8dbd-44b6-b05e-131ce7308b5f failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 2711018e-553f-4b5c-8c7e-903eab93ea4d failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session d05c5faf-fe8a-4e0a-a344-f8dafa6aac1d failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 99875030-92a0-48e4-bfef-628a791f6dc3 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session a81958d0-0f4b-4207-a28b-c3bac83df149 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session b3815279-21e5-4ffd-ad8a-0af293683d51 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session b762fe52-af42-4a97-abcc-98d95a4b3b3c failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 954143bd-7ede-4e3a-ba9e-c2122f34d426 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session e81aa705-4722-49bb-98b3-d66392afed16 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 98bd3c66-5c7c-4d5a-8ca7-c00fd37b352a failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 321d41db-0330-4785-ad5f-fc2d1899d084 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 2c8dadf1-b842-4825-8be8-c5ad600decb1 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session a6c77752-c51b-4715-b240-5226e267fd03 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 364e0b84-7cd6-43e8-bb8e-747dbfb8f3bf failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 9f4787c1-e692-4912-9843-c19b403a64a3 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 5ac5d277-6b8f-4cb7-938f-9e224bcc4ae3 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session b6f8022e-d8cc-4816-9557-72c08c56988d failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session c901311f-a64e-4ec0-a4dd-360483b11513 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 3fd22c52-e018-4154-81f7-769297641511 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 52374b52-f897-43a6-a85a-1d56ca0faa68 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 357b94e7-1ec3-4703-955b-3c711b1586f1 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 4a5c5e23-2514-412e-aafc-506f21dcde63 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 4accab13-5945-486a-9a06-8b1601581864 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session cee53072-ca5d-44c4-ad32-450af6dcc3d2 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 28823ba1-b005-4411-89de-035d9858ccd3 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 1ac63b26-26f0-4be3-a927-ce7c2c8a90af failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session ea48175e-bf3f-4ec2-8b24-79e6a61d05f1 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 6ce13e15-d606-463e-9247-b4958aed51fb failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session cc1acfbb-3f62-45e9-aeb7-c34715e06611 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session cd6b6223-f672-4190-871e-c37c93d20a3e failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 69cb1980-e1fd-4da3-a9a3-8b8d4773f018 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 0e9251c2-67a4-4e98-97a8-256df2f12295 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session fcc6a81d-13a4-4cdf-9d9a-871d3b6c8a21 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session e8a5cbe5-8be3-43fd-b840-bb33b6f1bb9c failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session d3bf832f-d6d6-413a-87ee-26e2197786a7 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 1faa05c7-94ed-4587-aa0c-1568b97671a1 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 9b3e22f6-074e-4969-9f0c-2b83387df01b failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 36c1a787-24ec-4d93-9e18-82caabd6c4bd failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session b2bc46d4-0cf7-4861-a2ae-b6d501737d79 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 7c1c763a-f053-4854-8c10-134e17bb0a59 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 94d178bc-b2ea-4b6c-a9b8-53f9f7d6dc91 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session c7a910e5-c643-4ab8-a160-ccfcccd9146e failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session ed1cd918-a3e4-4b58-94ce-de20cb826644 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 3917361d-84fb-424d-99a0-dc3b94f3da67 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 9770c8ce-e22b-46ee-8a6c-7d382d0dad38 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session b20fd273-d624-4e9f-8a81-015c09fc838d failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session b6710c3e-8876-4eb6-916a-8215821fe661 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 30989569-5d5a-43fa-821c-75d2ad3db013 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 80d0b417-387d-459c-b40e-f0c453301fcd failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 326a9263-037b-49a4-aec5-2e6f4d044848 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session bee62892-35f7-4722-82a5-7151851ef324 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 55d6fd4a-7d57-4578-a180-488bdb249f5d failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session f20e5df4-e04c-4a3e-8413-1a4f9c704373 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 9618d74f-30b1-469e-836b-b7b71887218d failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 5c492254-9be9-484e-bacd-529dbeec5d46 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 9bd42d45-71d9-4196-a752-bacdcebad764 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session bf7572c0-32ff-4e51-9001-5b652a2c8aea failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 969bc25d-036c-4943-81d3-1fab87c3808b failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session a01d2105-173d-488f-ab9e-89031d70b53f failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session abc5ae17-5882-43ea-ac67-65796217af59 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 29f9f4d1-6fbd-45b0-9e18-0fc2a7837744 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session fdc43042-af28-478f-9d12-5b8ef0f2f933 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session c4602036-ddbc-44c2-9bea-9067e1f16350 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 551da5f5-2c36-4e6c-bb1c-f3d7552649f2 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session a769be2e-7c61-4390-b062-35fa2f946d13 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 23740972-2d98-4d56-a7bc-184671d51613 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 56d96527-990a-4d75-9924-c8ef75f9c70a failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 99f03bf2-b81f-461b-8e34-97f65476e8ab failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 32ec1c7b-e2b8-4420-851e-f2651be86e07 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session fb142816-ff46-4c57-b790-b391c20ce394 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session b10d36b9-69ea-423c-9afd-894b25e60dfb failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 5a1f9165-f789-49e0-83bb-57b68416ae9a failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 723af319-89ca-49ca-9cba-f003b51e9b3c failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 95d9e1e1-1be6-41c0-802a-a8a6920fbe5b failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 469b0046-1db0-4086-bb7b-7aaca90950ac failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session f00ce1b2-7c64-4792-ac7a-d647526e4944 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 8f981d9b-c305-4b2f-b416-f8e19e4d3a0c failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session c7368e7d-0094-498c-9d73-86b8de7faac1 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 173624bb-8111-489d-9c0f-ede739b0c25d failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 0d815f5b-6245-4084-86d2-d537e9b31798 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 105d71f6-39d6-4eaa-8143-80a90fd63fe0 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session ebd51083-12fe-4b37-94ee-0f762e5f0a50 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session e7f0617f-41ee-4f95-9cdc-762d7ef807d3 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 4da97248-be0f-4314-9d35-12130b77008e failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session a66eaaf1-8940-46d6-b922-8b644af0db70 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session e4ef7444-ad95-4173-86d6-6a95cb4eb056 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 0a3cce09-08aa-491e-8bb6-1ccda274afac failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 371c34f2-77fa-4f45-bb9d-70a9cda556f8 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session f1935c1b-42d9-4f59-a4b0-0e26d49cfe1c failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session ced91e18-c3c0-422d-82a5-ec5a5e40628a failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session c3f220eb-7e9c-41f6-9642-64309a4ad336 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 7a54db4b-9e68-475f-b4d1-16382cd74621 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session c811d971-35a4-4ecf-92fe-7e99d94881a9 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session d2af9eca-f04a-47f1-8725-91986dadda42 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session 8ef7fa27-2aa1-4707-82f0-328cdbd8a84a failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session a2c2e1f4-4242-4cf1-8e9e-f7b9784b7742 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
+Loading session e3682fc2-fb87-435e-97f2-854d4b26e434 failed with message 'Ein an das System angeschlossenes Gerät funktioniert nicht.
+'
 Loading session acc112ec-3547-4f6d-ae72-4f4ccc8e9744 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\acc112ec-3547-4f6d-ae72-4f4ccc8e9744\Session.info" konnte nicht gefunden werden.'
 Loading session 883fdea1-e03e-401e-b8b7-dc67324257e0 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\883fdea1-e03e-401e-b8b7-dc67324257e0\Session.info" konnte nicht gefunden werden.'
 Loading session ed1fcb1f-d1aa-42f0-b4d1-33299563da65 failed with message 'Die Datei "L:\BoSSS_DB\Lichtenberg_DB\sessions\ed1fcb1f-d1aa-42f0-b4d1-33299563da65\Session.info" konnte nicht gefunden werden.'
-7
+29
 ==============
 // =====================================
 // Session table
@@ -379,22 +638,22 @@ static class AddCols {
     }
     
     static public object SlvIterTime(ISessionInfo SI) {
-        Thread.Sleep(2000);
+       // Thread.Sleep(2000);
         return getMaxTime(SI,"Slv Iter",false);
     }
     static public object SlvInitTime(ISessionInfo SI) {
         // sometimes problems such that some method show NULL time. Sleep helped
-        Thread.Sleep(2000);
+        //Thread.Sleep(2000);
         return getMaxTime(SI,"Slv Init",false);
     }
-    static public object SchwarzSolve(ISessionInfo SI) {
-        Thread.Sleep(2000);
-        return getMaxTime(SI,"BoSSS.Solution.Multigrid.Schwarz.Solve",false);
-    }
-    static public object NewtonDirder(ISessionInfo SI) {
-        Thread.Sleep(2000);        
-        return getMaxTime(SI,"BoSSS.Solution.Multigrid.Newton.dirder",false);
-    }
+    //static public object SchwarzSolve(ISessionInfo SI) {
+      //  Thread.Sleep(2000);
+        //return getMaxTime(SI,"BoSSS.Solution.Multigrid.Schwarz.Solve",false);
+    //}
+    //static public object NewtonDirder(ISessionInfo SI) {
+      //  Thread.Sleep(2000);        
+        //return getMaxTime(SI,"BoSSS.Solution.Multigrid.Newton.dirder",false);
+    //}
     static public object MPIs(ISessionInfo SI) {
         return SI.ComputeNodeNames.Count();
     }
@@ -410,12 +669,6 @@ WorkflowMgm.AdditionalSessionTableColums.Clear();
 WorkflowMgm.AdditionalSessionTableColums.Add(
     "SlvIter_excl", AddCols.SlvIterTime);
 WorkflowMgm.AdditionalSessionTableColums.Add(
-    "SlvInit_excl", AddCols.SlvInitTime);
-    WorkflowMgm.AdditionalSessionTableColums.Add(
-    "PrecSolve", AddCols.SchwarzSolve);
-    WorkflowMgm.AdditionalSessionTableColums.Add(
-    "NewtonDirder", AddCols.NewtonDirder);
-WorkflowMgm.AdditionalSessionTableColums.Add(
     "Processors", AddCols.MPIs);
 **************
 ==============
@@ -426,10 +679,6 @@ WorkflowMgm.AdditionalSessionTableColums.Add(
 ==============
 var SessTab = WorkflowMgm.SessionTable;
 **************
-WARNING: mismatch between number of MPI ranks (0) for session and max rank of profiling information (2).
-WARNING: mismatch between number of MPI ranks (0) for session and max rank of profiling information (2).
-WARNING: mismatch between number of MPI ranks (0) for session and max rank of profiling information (2).
-
 ==============
 // The Session column can't be serialized,
 // we have to remove it
@@ -441,20 +690,110 @@ True
 SessTab = SessTab.ExtractColumns(AllCols.ToArray());
 **************
 ==============
+AllCols
+**************
+List of 63 instances of String {
+  0: SessionName
+  1: DGdegree:Velocity*
+  2: DGdegree:Pressure
+  3: DGdegree:PhiDG
+  4: DGdegree:Phi
+  5: Bndtype:Velocity_inlet
+  6: Bndtype:Wall
+  7: GeneratedFromCode
+  8: ControlFileText_Index
+  9: dtFixed
+  10: NoOfMultigridLevels
+  11: AdvancedDiscretizationOptions.ContiSign
+  12: AdvancedDiscretizationOptions.RescaleConti
+  13: AdvancedDiscretizationOptions.LFFA
+  14: AdvancedDiscretizationOptions.LFFB
+  15: AdvancedDiscretizationOptions.PenaltySafety
+  16: AdvancedDiscretizationOptions.CellAgglomerationThreshold
+  17: MaxKrylovDim
+  18: MaxSolverIterations
+  19: MinSolverIterations
+  20: Solver_ConvergenceCriterion
+  21: VelocityBlockPrecondMode
+  22: LevelSetSmoothing
+  23: PhysicalParameters.IncludeConvection
+  24: PhysicalParameters.rho_A
+  25: PhysicalParameters.mu_A
+  26: PhysicalParameters.Material
+  27: particleRadius
+  28: MeshFactor
+  29: Timestepper_Scheme
+  30: FixedStreamwisePeriodicBC
+  31: Timestepper_Init
+  32: NonlinearSolve
+  33: LinearSolve
+  34: GridPartType
+  35: ProjectName
+  36: NoOfTimesteps
+  37: Endtime
+  38: saveperiod
+  39: dtMin
+  40: dtMax
+  41: CompMode
+  42: ImmediatePlotPeriod
+  43: SuperSampling
+  44: savetodb
+  45: logFileDirectory
+  46: Paramstudy_ContinueOnError
+  47: DynamicLoadBalancing_RedistributeAtStartup
+  48: DynamicLoadBalancing_Period
+  49: DynamicLoadBalancing_ImbalanceThreshold
+  50: DynamicLoadBalancing_On
+  51: AdaptiveMeshRefinement
+  52: CutCellQuadratureType
+  53: ContinueOnIoError
+  54: Grid:NoOfCells
+  55: Grid:hMax
+  56: Grid:hMin
+  57: UsedNoOfMultigridLevels
+  58: C_Drag
+  59: C_Lift
+  60: RegularTerminated
+  61: SlvIter_excl
+  62: Processors
+}
+==============
 //Checking if table contains all information
-var SubTab_1 = SessTab.ExtractColumns("Processors","SlvIter_excl","SlvInit_excl","PrecSolve","NewtonDirder","NonlinearSolve","LinearSolve","NoOfMultigridLevels","DGdegree:Velocity*","RegularTerminated");
+var SubTab_1 = SessTab.ExtractColumns("Grid:NoOfCells","SlvIter_excl","NonlinearSolve","LinearSolve","NoOfMultigridLevels","DGdegree:Velocity*","RegularTerminated");
 **************
 ==============
 SubTab_1.Print();
 **************
-   Processors SlvIter_excl  SlvInit_excl PrecSolve     NewtonDirder  NonlinearSolve LinearSolve NoOfMultigridLevels DGdegree:Velocity* RegularTerminated 
-0: 128        5933.4643667  5.7532647    1224.7650453  4460.8535172  0              4           3                   1                  True              
-1: 8          40465.1365731 21.1775859   22740.1150137 17405.3963528 0              4           3                   1                  True              
-2: 16         20226.1225608 10.6168316   10557.0269768 9503.2204594  0              4           3                   1                  True              
-3: 4          47430.9063014 35.4219506   24018.9818645 22967.1407106 0              4           3                   1                  True              
-4: 32         11829.1622006 6.1590681    6263.7032659  5312.9679748  0              4           3                   1                  True              
-5: 64         4892.4675569  3.8764571    1802.8695701  2867.0713132  0              4           3                   1                  True              
-6: 0          NULL          68.3839357   50246.2312153 50823.0421655 0              4           3                   1                  True              
+    Grid:NoOfCells SlvIter_excl  NonlinearSolve LinearSolve NoOfMultigridLevels DGdegree:Velocity* RegularTerminated 
+0:  343            197.0247901   0              1           1                   2                  True              
+1:  2197           NULL          0              1           1                   2                  False             
+2:  1000           NULL          0              1           1                   2                  False             
+3:  125            34.2922755    0              1           1                   2                  True              
+4:  343            984.4614341   0              0           2                   2                  True              
+5:  15625          NULL          0              0           2                   2                  False             
+6:  15625          NULL          1              1           1                   2                  False             
+7:  4913           NULL          0              0           2                   2                  False             
+8:  125            33.9801263    0              0           2                   2                  True              
+9:  2197           NULL          0              0           2                   2                  False             
+10: 1000           NULL          0              0           2                   2                  False             
+11: 1000           13008.3168128 0              0           2                   2                  True              
+12: 4913           6666.4378207  2              1           1                   2                  True              
+13: 4913           6244.6481989  1              1           1                   2                  True              
+14: 343            994.7229636   0              0           2                   2                  True              
+15: 125            34.3138959    0              0           2                   2                  True              
+16: 125            18.0998877    2              1           1                   2                  True              
+17: 125            11.0463558    1              1           1                   2                  True              
+18: 2197           33359.2824963 0              6           2                   2                  True              
+19: 1000           30100.7405066 1              9           2                   2                  True              
+20: 1000           11822.4844524 0              6           2                   2                  True              
+21: 343            6452.9507251  1              9           2                   2                  True              
+22: 343            1821.4391509  0              6           2                   2                  True              
+23: 2197           1420.1873243  2              1           1                   2                  True              
+24: 2197           1247.0726146  1              1           1                   2                  True              
+25: 1000           413.6526049   2              1           1                   2                  True              
+26: 1000           311.1200562   1              1           1                   2                  True              
+27: 343            55.4536228    1              1           1                   2                  True              
+28: 343            85.9412329    2              1           1                   2                  True              
 ==============
 using System.IO;
 **************
@@ -468,50 +807,6 @@ string docpath    = Path.Combine(CurrentDocDir, SessTab.TableName + ".json");
 // save session table as file: this can be stored in our git 
 // repository
 SessTab.SaveToFile(docpath);
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
 **************
 ==============
 **************

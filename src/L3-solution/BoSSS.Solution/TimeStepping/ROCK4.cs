@@ -47,7 +47,7 @@ namespace BoSSS.Solution.Timestepping {
             this.nrejected = 0;
         }
 
-        SpatialOperator.Evaluator OpEv;
+        IEvaluatorNonLin OpEv;
 
 
         /// <summary>

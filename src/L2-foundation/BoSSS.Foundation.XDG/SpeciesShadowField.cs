@@ -20,6 +20,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Platform;
 using ilPSP.Utils;
 using ilPSP;
+using System.Diagnostics;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -186,7 +187,7 @@ namespace BoSSS.Foundation.XDG {
                 EvaluateInternalSignature ev = DGField.EvaluateGradientInternal;
 
                 if (result.Dimension != 3)
-                    throw new ArgumentOutOfRangeException("result", "dimension of result array must be 2");
+                    throw new ArgumentOutOfRangeException("result", "dimension of result array must be 3");
                 if (result.GetLength(1) != M)
                     throw new ArgumentOutOfRangeException();
                 if (result.GetLength(2) != D)
@@ -198,9 +199,242 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// Not implemented yet.
             /// </summary>
-            public override void EvaluateEdge(int e0, int Len, NodeSet NS, MultidimensionalArray ValueIN, MultidimensionalArray ValueOT, MultidimensionalArray MeanValueIN, MultidimensionalArray MeanValueOT, MultidimensionalArray GradientIN, MultidimensionalArray GradientOT, int ResultIndexOffset, double ResultPreScale) {
-                throw new NotImplementedException("todo");
+            public override void EvaluateEdge(int e0, int Len, NodeSet NS,
+                MultidimensionalArray ValueIN, MultidimensionalArray ValueOT,
+                MultidimensionalArray MeanValueIN, MultidimensionalArray MeanValueOT,
+                MultidimensionalArray GradientIN, MultidimensionalArray GradientOT, int ResultIndexOffset, double ResultPreScale) {
+
+
+                // check arguments
+                // ===============
+                int D = GridDat.SpatialDimension; // spatial dimension
+                int N = m_Basis.Length;      // number of coordinates per cell
+                int K = NS.NoOfNodes;        // number of nodes
+
+                {
+                    if ((ValueIN != null) != (ValueOT != null))
+                        throw new ArgumentException();
+                    if ((MeanValueIN != null) != (MeanValueOT != null))
+                        throw new ArgumentException();
+                    if ((GradientIN != null) != (GradientOT != null))
+                        throw new ArgumentException();
+
+                    if (ValueIN != null) {
+                        if (ValueIN.Dimension != 2)
+                            throw new ArgumentException("result", "dimension of result array must be 2");
+                        if (Len > ValueIN.GetLength(0) + ResultIndexOffset)
+                            throw new ArgumentException("mismatch between Len and 0-th length of result");
+                        if (ValueIN.GetLength(1) != K)
+                            throw new ArgumentException();
+                        if (ValueOT.Dimension != 2)
+                            throw new ArgumentException("result", "dimension of result array must be 2");
+                        if (Len > ValueOT.GetLength(0) + ResultIndexOffset)
+                            throw new ArgumentException("mismatch between Len and 0-th length of result");
+                        if (ValueOT.GetLength(1) != K)
+                            throw new ArgumentException();
+
+                        if (!(ResultIndexOffset == 0 && Len == ValueIN.GetLength(0)))
+                            ValueIN = ValueIN.ExtractSubArrayShallow(new int[] { ResultIndexOffset, 0 }, new int[] { ResultIndexOffset + Len - 1, K - 1 });
+
+                        if (!(ResultIndexOffset == 0 && Len == ValueOT.GetLength(0)))
+                            ValueOT = ValueOT.ExtractSubArrayShallow(new int[] { ResultIndexOffset, 0 }, new int[] { ResultIndexOffset + Len - 1, K - 1 });
+                    }
+
+                    if (MeanValueIN != null) {
+                        if (MeanValueIN.Dimension != 1)
+                            throw new ArgumentException("Dimension of mean-value result array must be 1.");
+                        if (Len > MeanValueIN.GetLength(0) + ResultIndexOffset)
+                            throw new ArgumentException("mismatch between Len and 0-th length of result");
+                        if (MeanValueOT.Dimension != 1)
+                            throw new ArgumentException("Dimension of mean-value result array must be 1.");
+                        if (Len > MeanValueOT.GetLength(0) + ResultIndexOffset)
+                            throw new ArgumentException("mismatch between Len and 0-th length of result");
+
+                        if (!(ResultIndexOffset == 0 && Len == MeanValueIN.GetLength(0)))
+                            MeanValueIN = MeanValueIN.ExtractSubArrayShallow(new int[] { ResultIndexOffset }, new int[] { ResultIndexOffset + Len - 1 });
+
+                        if (!(ResultIndexOffset == 0 && Len == MeanValueOT.GetLength(0)))
+                            MeanValueOT = MeanValueOT.ExtractSubArrayShallow(new int[] { ResultIndexOffset }, new int[] { ResultIndexOffset + Len - 1 });
+                    }
+
+                    if (GradientIN != null) {
+                        if (GradientIN.Dimension != 3)
+                            throw new ArgumentException("Dimension of gradient result array must be 3.");
+                        if (Len > GradientIN.GetLength(0) + ResultIndexOffset)
+                            throw new ArgumentException("mismatch between Len and 0-th length of result");
+                        if (GradientIN.GetLength(1) != K)
+                            throw new ArgumentException();
+                        if (GradientIN.GetLength(2) != D)
+                            throw new ArgumentException();
+                        if (GradientOT.Dimension != 3)
+                            throw new ArgumentException("Dimension of gradient result array must be 3.");
+                        if (Len > GradientOT.GetLength(0) + ResultIndexOffset)
+                            throw new ArgumentException("mismatch between Len and 0-th length of result");
+                        if (GradientOT.GetLength(1) != K)
+                            throw new ArgumentException();
+                        if (GradientOT.GetLength(2) != D)
+                            throw new ArgumentException();
+
+                        if (!(ResultIndexOffset == 0 && Len == GradientIN.GetLength(0)))
+                            GradientIN = GradientIN.ExtractSubArrayShallow(new int[] { ResultIndexOffset, 0, 0 }, new int[] { ResultIndexOffset + Len - 1, K - 1, D - 1 });
+
+                        if (!(ResultIndexOffset == 0 && Len == GradientOT.GetLength(0)))
+                            GradientOT = GradientOT.ExtractSubArrayShallow(new int[] { ResultIndexOffset, 0, 0 }, new int[] { ResultIndexOffset + Len - 1, K - 1, D - 1 });
+                    }
+
+
+                    var coöSys = NS.GetNodeCoordinateSystem(this.GridDat);
+
+                    if (coöSys != NodeCoordinateSystem.EdgeCoord)
+                        throw new ArgumentOutOfRangeException();
+                }
+
+
+                // real evaluation
+
+
+                int[,] E2C = this.GridDat.iGeomEdges.CellIndices; // geometric edges to geometric cells
+                int[][] cellL2C = this.GridDat.iLogicalCells.AggregateCellToParts; // logical cells to geometrical 
+                if (cellL2C != null)
+                    throw new NotImplementedException("todo");
+                int[,] TrfIdx = this.GridDat.iGeomEdges.Edge2CellTrafoIndex;
+
+                LevelSetTracker lsTrk = this.Owner.Basis.Tracker;
+                var regions = lsTrk.Regions;
+                var gdat = this.GridDat;
+                SpeciesId mySp = this.SpeciesId;
+
+                int i = 0; 
+                while(i < Len) {
+
+                    int ChunkLen = 1;
+                    int iEdge = i + e0;
+
+                    bool CutOrNot = IsCellCut(iEdge, E2C, regions, mySp);
+                    if(CutOrNot == false) {
+                        // both Neighbor cells are *not* cut
+                        // standard evaluation
+
+                        // try to find vectorization
+                        while((ChunkLen + i < Len) && (IsCellCut(iEdge + ChunkLen, E2C, regions, mySp) == false)) {
+                            ChunkLen++;
+                        }
+
+                        //EvaluateEdgeInternal(iEdge, ChunkLen, NS, m_Owner.Basis.NonX_Basis, 
+                        //    m_Owner.m_Coordinates
+                        //    )
+
+
+                    } else {
+                        // one or both neighbors are cut cells; 
+                        // non-vectorized evaluation
+                        Debug.Assert(ChunkLen == 1);
+                    }                    
+                    Debug.Assert(i + ChunkLen <= Len);
+
+                    int I0 = ResultIndexOffset + i;
+                    int IE = ResultIndexOffset + i + ChunkLen - 1;
+
+                    MultidimensionalArray chunkValueIN, chunkValueOT;
+                    if(ValueIN != null) {
+                        chunkValueIN = ValueIN.ExtractSubArrayShallow(new[] { I0, 0 }, new[] { IE, K - 1 });
+                        chunkValueOT = ValueOT.ExtractSubArrayShallow(new[] { I0, 0 }, new[] { IE, K - 1 });
+                    } else {
+                        chunkValueIN = ValueIN;
+                        chunkValueOT = ValueOT;
+                    }
+
+                    MultidimensionalArray chunkMeanValueIN, chunkMeanValueOT;
+                    if(MeanValueIN != null) {
+                        chunkMeanValueIN = MeanValueIN.ExtractSubArrayShallow(new[] { I0 }, new[] { IE });
+                        chunkMeanValueOT = MeanValueOT.ExtractSubArrayShallow(new[] { I0 }, new[] { IE });
+                    } else {
+                        chunkMeanValueIN = MeanValueIN;
+                        chunkMeanValueOT = MeanValueOT;
+                    }
+
+                    MultidimensionalArray chunkGradientIN, chunkGradientOT;
+                    if(GradientIN != null) {
+                        chunkGradientIN = GradientIN.ExtractSubArrayShallow(new[] { I0, 0, 0 }, new[] { IE, K - 1, D - 1 });
+                        chunkGradientOT = GradientOT.ExtractSubArrayShallow(new[] { I0, 0, 0 }, new[] { IE, K - 1, D - 1 });
+                    } else {
+                        chunkGradientIN = GradientIN;
+                        chunkGradientOT = GradientOT;
+                    }
+
+                    if(CutOrNot) {
+                        Debug.Assert(ChunkLen == 1);
+
+                        int jCell0 = E2C[iEdge, 0];
+                        int jCell1 = E2C[iEdge, 1];
+
+                        NodeSet NSvol0, NSvol1;
+                        NSvol0 = NS.GetVolumeNodeSet(gdat, TrfIdx[iEdge, 0]);
+                        if (jCell1 >= 0)
+                            NSvol1 = NS.GetVolumeNodeSet(gdat, TrfIdx[iEdge, 1]);
+                        else
+                            NSvol1 = null;
+                        
+                        if(ValueIN != null) {
+                            this.Evaluate(jCell0, 1, NSvol0, chunkValueIN, ResultPreScale);
+                        }
+                        if(ValueOT != null && jCell1 >= 0) {
+                            this.Evaluate(jCell1, 1, NSvol1, chunkValueOT, ResultPreScale);
+                        }
+
+                        if(MeanValueIN != null) {
+                            this.EvaluateMean(jCell0, 1, chunkMeanValueIN, 0, ResultPreScale);
+                        }
+                        if(MeanValueOT != null && jCell1 >= 0) {
+                            this.EvaluateMean(jCell1, 1, chunkMeanValueOT, 0, ResultPreScale);
+                        }
+
+                        if(GradientIN != null) {
+                            this.EvaluateGradient(jCell0, 1, NSvol0, chunkGradientIN, 0, ResultPreScale);
+                        }
+                        if(GradientOT != null && jCell1 >= 0) {
+                            this.EvaluateGradient(jCell1, 1, NSvol1, chunkGradientOT, 0, ResultPreScale);
+                        }
+
+                    } else {
+                        // for edges 'iEdge' through 'iEdge + ChunkLen - 1', this shadow field is the 0-th species for IN and OT cell
+
+
+                        EvaluateEdgeInternal(iEdge, ChunkLen, NS, m_Owner.Basis.NonX_Basis,
+                            m_Owner.m_Coordinates.BaseStorageMda,
+                            chunkValueIN, chunkValueOT,
+                            chunkMeanValueIN, chunkMeanValueOT,
+                            chunkGradientIN, chunkGradientOT,
+                            ResultPreScale);
+                    }
+                    
+                    i += ChunkLen;
+                }
+                Debug.Assert(i == Len);
             }
+
+
+
+
+            static bool IsCellCut(int iEdge, int[,] E2C, LevelSetTracker.LevelSetRegions regions, SpeciesId mySp) {
+                int jCell0 = E2C[iEdge, 0];
+
+                int iSpc_cell0 = regions.GetSpeciesIndex(mySp, jCell0);
+                if (iSpc_cell0 != 0)
+                    return true;
+
+                int jCell1 = E2C[iEdge, 1];
+                if(jCell1 >= 0) {
+                    int iSpc_cell1 = regions.GetSpeciesIndex(mySp, jCell1);
+                
+                    if (iSpc_cell1 != 0)
+                        return true;
+                }
+
+                return false;
+            }
+
+            
 
 
             /// <summary>

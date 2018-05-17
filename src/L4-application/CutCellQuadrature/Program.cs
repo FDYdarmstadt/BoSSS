@@ -54,7 +54,9 @@ namespace CutCellQuadrature {
 
         HMFOneStepGaussAndStokes,
 
-        EquivalentPolynomials
+        EquivalentPolynomials,
+
+        SayeGaussRules
     }
 
     public partial class Program : Application {
@@ -636,6 +638,12 @@ namespace CutCellQuadrature {
                         break;
 
                     }
+                case Modes.SayeGaussRules: //
+                    {
+
+                        throw new NotImplementedException("todo");
+                    }
+
                 case Modes.EquivalentPolynomials: //
                     {
                         var lineAndPointFactory = new LineAndPointQuadratureFactory(

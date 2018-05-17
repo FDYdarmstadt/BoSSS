@@ -47,66 +47,7 @@ namespace BoSSS.Application.ScalarTransport {
         /// <param name="args"></param>
         static void Main(string[] args) {
 
-            /*
-            bool dummy;
-            ilPSP.Environment.Bootstrap(
-                new string[0],
-                BoSSS.Solution.Application.GetBoSSSInstallDir(),
-                out dummy);
-
-            int LL1, LL2, o1, o2;
-            int rank, size;
-            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
-            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
-            if (size == 1) {
-                LL1 = 9;
-                LL2 = 9;
-                o1 = 0;
-                o2 = 0;
-
-            } else if (size == 2) {
-                if (rank == 0) {
-                    LL1 = 5;
-                    LL2 = 3;
-                    o1 = 0;
-                    o2 = 0;
-                } else {
-                    LL1 = 4;
-                    LL2 = 6;
-                    o1 = 5;
-                    o2 = 3;
-                }
-            } else {
-                throw new NotSupportedException();
-            }
-
-
-            Permutation ans = new Permutation(LL1, csMPI.Raw._COMM.WORLD);
-            Permutation zwa = new Permutation(LL2, csMPI.Raw._COMM.WORLD);
-
-            for(int i = 0; i < LL1; i++) {
-                ans.Values[i] = i + o1;
-            }for(int i = 0; i < LL2; i++) {
-                zwa.Values[i] = 8 - (i + o2);
-            }
-
-            var p1 = ans * zwa;
-            var p2 = zwa * ans;
-
-
-            string[] oldData = new string[LL1];
-            for(int i = 0; i < LL1; i++) {
-                oldData[i] = (i + o1).ToString();
-            }
-
-            string[] newData = new string[LL2];
-
-            Debugger.Launch();
-            p2.ApplyToVector(oldData, newData, zwa.Partitioning);
-            
-            
-            MPI.Wrappers.csMPI.Raw.mpiFinalize();
-            */
+          
 
             BoSSS.Solution.Application._Main(args, true, delegate() {
                 return new ScalarTransportMain();
@@ -205,7 +146,7 @@ namespace BoSSS.Application.ScalarTransport {
         public void PerformanceVsCachesize() {
             double[] dummy = new double[this.u.CoordinateVector.Count];
 
-            SpatialOperator.Evaluator eval = diffOp.GetEvaluatorEx(new DGField[] { this.u }, this.Velocity.ToArray(), this.u.Mapping,
+            var eval = diffOp.GetEvaluatorEx(new DGField[] { this.u }, this.Velocity.ToArray(), this.u.Mapping,
                 edgeQrCtx:new EdgeQuadratureScheme(false, EdgeMask.GetEmptyMask(this.GridData)),
                 volQrCtx:new CellQuadratureScheme(true,null));
 

@@ -54,8 +54,6 @@ namespace BoSSS.Application.Matrix_MPItest {
     /// </summary>
     class Matrix_MPItestMain : BoSSS.Solution.Application {
 
-        private static readonly XQuadFactoryHelper.MomentFittingVariants MomentFittingVariant
-            = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
 
         internal XDGusage m_UseXdg;
         internal int m_DGorder = 2;
@@ -213,7 +211,7 @@ namespace BoSSS.Application.Matrix_MPItest {
             Console.WriteLine("Number of non-zeros in matrix: " + nnz);
            
             int nnz2 = this.AltOperatorMatrix.GetTotalNoOfNonZeros();
-            Assert.IsTrue(nnz == nnz2);
+            Assert.IsTrue(nnz == nnz2, "Number of non-zeros in matrix different for " + OperatorMatrix.GetType() + " and " + AltOperatorMatrix.GetType());
             Console.WriteLine("Number of non-zeros in matrix (reference): " + nnz2);
            
             MsrMatrix Comp = AltOperatorMatrix.CloneAs();

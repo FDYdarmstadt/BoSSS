@@ -119,9 +119,14 @@ namespace BoSSS.Solution.XdgTimestepping {
         Picard = 0,
 
         /// <summary>
+        /// Newtons method. For approximation of the inverse of the jacobian the inverse of the operator matrix is used.
+        /// </summary>
+        Newton = 1,
+
+        /// <summary>
         /// Newtons method coupled with GMRES as default. Convergeces quadratically but needs a good approximation. Preconditioning of the Newton-GMRES is set to LinearSolver.
         /// </summary>
-        Newton = 1
+        NewtonGMRES = 2
     }
 
     /// <summary>
@@ -473,6 +478,23 @@ namespace BoSSS.Solution.XdgTimestepping {
                             maxKrylovDim = Config_MaxKrylovDim,
                             MaxIter = Config_MaxIterations,
                             MinIter = Config_MinIterations,
+                            ApproxJac = Newton.ApproxInvJacobianOptions.DirectSolverOpMatrix,
+                            Precond = Config_linearSolver,
+                            GMRESConvCrit = Config_SolverConvergenceCriterion,
+                            ConvCrit = Config_SolverConvergenceCriterion,
+                            m_SessionPath = SessionPath,
+                        };
+                        break;
+
+                    case NonlinearSolverMethod.NewtonGMRES:
+
+                        nonlinSolver = new Newton(
+                            this.AssembleMatrixCallback,
+                            this.MultigridBasis,
+                            this.Config_MultigridOperator) {
+                            maxKrylovDim = Config_MaxKrylovDim,
+                            MaxIter = Config_MaxIterations,
+                            MinIter = Config_MinIterations,
                             ApproxJac = Newton.ApproxInvJacobianOptions.GMRES,
                             Precond = Config_linearSolver,
                             GMRESConvCrit = Config_SolverConvergenceCriterion,
@@ -649,7 +671,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         /// <summary>
         /// Callback-routine  to update the linear resp. linearized system, 
-        /// see <see cref="AssembleMatrixDel"/> resp. <see cref="NonlinearSolver.m_AssembleMatrix"/>.
+        /// see <see cref="OperatorEvalOrLin"/> resp. <see cref="NonlinearSolver.m_AssembleMatrix"/>.
         /// </summary>
         /// <param name="argCurSt">Input, current state of solution.</param>
         /// <param name="System">Output.</param>
@@ -658,7 +680,11 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Mass matrix including agglomeration, without any scaling,
         /// required for block-precond.
         /// </param>
-        abstract protected void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, DGField[] argCurSt);
+        /// <param name="Linearization">
+        /// - true: assemble matrix and affine vector
+        /// - false: evaluate operator (<paramref name="System"/> will be null)
+        /// </param>
+        abstract protected void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, DGField[] argCurSt, bool Linearization);
 
     }
 }

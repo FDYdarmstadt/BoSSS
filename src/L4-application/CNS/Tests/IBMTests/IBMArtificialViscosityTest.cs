@@ -255,18 +255,24 @@ namespace CNS.Tests.IBMTests {
         public static void IBMAVTest_NoAgglomeration() {
             CheckErrorThresholds(
                 SetupIBMAVTest_NoAgglomeration(),
-                Tuple.Create("L2NormDensity", 53.8771980076417000 + 1e-10),
-                Tuple.Create("L2NormVelocityX", 1.5491933384829700 + 1e-10),
-                Tuple.Create("L2NormPressure", 0.7745966692416890 + 1e-10));
+                //Tuple.Create("L2NormDensity", 53.8771980076417000 + 1e-10),
+                //Tuple.Create("L2NormVelocityX", 1.5491933384829700 + 1e-10),
+                //Tuple.Create("L2NormPressure", 0.7745966692416890 + 1e-10));
+                Tuple.Create("L2NormDensity", 53.8771971772865 + 1e-10),
+                Tuple.Create("L2NormVelocityX", 1.54919333848297 + 1e-10),
+                Tuple.Create("L2NormPressure", 0.774596669241019 + 1e-10));
         }
 
         [Test]
         public static void IBMAVTest_Agglomeration() {
             CheckErrorThresholds(
                 SetupIBMAVTest_Agglomeration(),
-                Tuple.Create("L2NormDensity", 53.8773088665331 + 1e-10),
+                //Tuple.Create("L2NormDensity", 53.8773088665331 + 1e-10),
+                //Tuple.Create("L2NormVelocityX", 1.54919333848297 + 1e-10),
+                //Tuple.Create("L2NormPressure", 0.774596669241494 + 1e-10));
+                Tuple.Create("L2NormDensity", 53.8781974413102 + 1e-10),
                 Tuple.Create("L2NormVelocityX", 1.54919333848297 + 1e-10),
-                Tuple.Create("L2NormPressure", 0.774596669241494 + 1e-10));
+                Tuple.Create("L2NormPressure", 0.774596669241489 + 1e-10));
         }
     }
 }
