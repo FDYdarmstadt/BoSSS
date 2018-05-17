@@ -95,7 +95,7 @@ namespace BoSSS.Solution.XNSECommon {
         /// static contact angle
         /// </summary>
         [DataMember]
-        public double Theta_e = Math.PI / 2.0;
+        public double theta_e = Math.PI / 2.0;
 
         /// <summary>
         /// is the interface a material one or is it non-material?
@@ -125,7 +125,7 @@ namespace BoSSS.Solution.XNSECommon {
             cl.betaS_A = this.betaS_A;
             cl.betaS_B = this.betaS_B;
             cl.betaL = this.betaL;
-            cl.Theta_e = this.Theta_e;
+            cl.theta_e = this.theta_e;
             cl.Material = this.Material;
             cl.useArtificialSurfaceForce = this.useArtificialSurfaceForce;
             return cl;
