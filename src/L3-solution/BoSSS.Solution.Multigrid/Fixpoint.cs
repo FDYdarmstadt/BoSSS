@@ -70,6 +70,13 @@ namespace BoSSS.Solution.Multigrid {
 
         public CoupledConvergenceReached CoupledIteration_Converged;
 
+        public int MaxCoupledIter = 10;
+
+
+        public delegate int IterationCounter(int NoIter, ref int coupledIter);
+
+        public IterationCounter Iteration_Count;
+
 
         bool solveVelocity = true;
 
@@ -96,9 +103,15 @@ namespace BoSSS.Solution.Multigrid {
 
                 OnIterationCallback(NoOfIterations, Solution.CloneAs(), Residual.CloneAs(), this.CurrentLin);
 
-                if (CoupledIteration_Converged == null)
+                if (CoupledIteration_Converged == null) 
                     CoupledIteration_Converged = delegate () {
                         return true;
+                    };
+
+                int NoOfCoupledIteration = 0;
+                if(Iteration_Count == null)
+                    Iteration_Count = delegate (int NoIter, ref int coupledIter) {
+                        return NoIter + 1;
                     };
 
                 //int[] Velocity_idx = SolutionVec.Mapping.GetSubvectorIndices(false, 0, 1, 2);
@@ -113,8 +126,9 @@ namespace BoSSS.Solution.Multigrid {
                 // ==========
                 //int NoOfMainIterations = 0;
                 using (new BlockTrace("Slv Iter", tr)) {
-                    while ((!(ResidualNorm < ConvCrit && CoupledIteration_Converged()) && NoOfIterations < MaxIter) || (NoOfIterations < MinIter)) {
-                        NoOfIterations++;
+                    while ((!(ResidualNorm < ConvCrit && CoupledIteration_Converged()) && NoOfIterations < MaxIter && NoOfCoupledIteration < MaxCoupledIter) || (NoOfIterations < MinIter)) {
+                        NoOfIterations = Iteration_Count(NoOfIterations, ref NoOfCoupledIteration);
+                        //Console.WriteLine("NoOfIterations = {0}", NoOfIterations);
 
                         //DirectSolver ds = new DirectSolver();
                         //ds.Init(this.CurrentLin);
