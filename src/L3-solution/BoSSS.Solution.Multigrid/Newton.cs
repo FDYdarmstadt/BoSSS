@@ -125,7 +125,6 @@ namespace BoSSS.Solution.Multigrid {
                 this.CurrentLin.TransformSolFrom(SolutionVec, x);
                 base.EvalResidual(x, ref f0);
 
-
                 // fnorm
                 double fnorm = f0.L2NormPow2().MPISum().Sqrt();
                 double fNormo = 1;
@@ -133,8 +132,6 @@ namespace BoSSS.Solution.Multigrid {
                 double[] step = new double[x.Length];
                 double[] stepOld = new double[x.Length];
                 MsrMatrix CurrentJac;
-
-                Console.WriteLine("Start residuum for nonlinear iteration:  " + fnorm);
 
                 OnIterationCallback(itc, x.CloneAs(), f0.CloneAs(), this.CurrentLin);
 
@@ -357,7 +354,9 @@ namespace BoSSS.Solution.Multigrid {
                         xt = x.CloneAs();
                         xt.AccV(lambda, step);
                         this.CurrentLin.TransformSolFrom(SolutionVec, xt);
-                        EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);
+
+                        EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);                        
+
                         var nft = ft.L2NormPow2().MPISum().Sqrt(); var nf0 = f0.L2NormPow2().MPISum().Sqrt(); var ff0 = nf0 * nf0; var ffc = nft * nft; var ffm = nft * nft;
 
                         // Control of the the step size
@@ -390,6 +389,7 @@ namespace BoSSS.Solution.Multigrid {
                         // transform solution back to 'original domain'
                         // to perform the linearization at the new point...
                         // (and for Level-Set-Updates ...)
+
                         this.CurrentLin.TransformSolFrom(SolutionVec, xt);
 
                         // update linearization
@@ -398,9 +398,7 @@ namespace BoSSS.Solution.Multigrid {
                         // residual evaluation & callback
                         base.EvalResidual(xt, ref ft);
 
-                        // EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);
-
-                        //base.Init(SolutionVec, RHS, out x, out f0);
+                        //EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);
 
                         fnorm = ft.L2NormPow2().MPISum().Sqrt();
 
@@ -598,14 +596,6 @@ namespace BoSSS.Solution.Multigrid {
                     rho = Math.Abs(g[k]);
 
                     Console.WriteLine("Error NewtonGMRES:   " + rho);
-
-                    //using (StreamWriter writer = new StreamWriter(m_SessionPath + "//GMRES_Stats.txt", true))
-                    //{
-                    //writer.WriteLine(k + "   " + rho);
-                    //}
-
-
-                    //Console.WriteLine("Error NewtonGMRES:   " + rho );
 
                     k++;
 

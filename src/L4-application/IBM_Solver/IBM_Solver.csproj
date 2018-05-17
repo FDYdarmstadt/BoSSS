@@ -112,6 +112,10 @@
       <Project>{B7D5F7C7-EA9F-4506-AB69-C3CD2AA8C938}</Project>
       <Name>BoSSS.Platform</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj">
+      <Project>{17a60fba-20b4-451d-98e1-8d742f368569}</Project>
+      <Name>BoSSS.Foundation</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Multigrid\BoSSS.Solution.Multigrid.csproj">
       <Project>{EFE8C307-09BC-4F58-B991-6EF8FD6D5EFF}</Project>
       <Name>BoSSS.Solution.Multigrid</Name>
@@ -135,10 +139,6 @@
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj">
       <Project>{8E6D8F23-623F-4204-B4AB-A088C0CD83AA}</Project>
       <Name>ilPSP</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj">
-      <Project>{17A60FBA-20B4-451D-98E1-8D742F368569}</Project>
-      <Name>BoSSS.Foundation</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.Connectors.Matlab\ilPSP.Connectors.Matlab.csproj">
       <Project>{6886ABB3-CE89-4537-9F2A-25F926D1840B}</Project>
