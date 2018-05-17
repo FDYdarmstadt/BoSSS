@@ -471,7 +471,7 @@ namespace CNS {
             string titleForColumns = String.Format("{0}\t{1}\t{2}", "ts", "physTime", "dt");
             AdamsBashforthLTS LTS = TimeStepper as AdamsBashforthLTS;
             for (int i = 0; i < LTS.CurrentClustering.NumberOfClusters; i++) {
-                titleForColumns = titleForColumns + String.Format("\t{0}\t{1}\t{2}", "c" + i + "_dt", "c" + i + "_sub", "c" + i + "_elmts");
+                titleForColumns = titleForColumns + String.Format("\t{0}\t{1}\t{2}", "c" + i + "_dt", "c" + i + "_substeps", "c" + i + "_elements");
             }
             LTSLogWriter.WriteLine(titleForColumns);
             LTSLogWriter.Flush();
