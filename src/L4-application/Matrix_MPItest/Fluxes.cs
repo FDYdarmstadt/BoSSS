@@ -57,7 +57,7 @@ namespace BoSSS.Application.Matrix_MPItest {
     /// <summary>
     /// Fluss fuer du/dx; (Ableitung nach 1. Raumrichtung), common parts for both level-sets;
     /// </summary>
-    class LevSetFlx : ILevelSetComponent {
+    class LevSetFlx : ILevelSetForm {
 
         protected LevelSetTracker m_LsTrk;
 

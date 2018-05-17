@@ -33,7 +33,7 @@ using ilPSP.Utils;
 
 namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
 
-    public class ScalarVelocityInterfaceForm : ILevelSetComponent {
+    public class ScalarVelocityInterfaceForm : ILevelSetForm, ILevelSetEquationComponentCoefficient {
         int D;
         LevelSetTracker LSTrk;
 
@@ -44,23 +44,31 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
         }
         double PenaltyBase;
 
+        MultidimensionalArray NegCellLengthScaleS;
+        MultidimensionalArray PosCellLengthScaleS;
+
+        public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+            NegCellLengthScaleS = csA.CellLengthScales;
+            PosCellLengthScaleS = csB.CellLengthScales;
+        }
 
 
-           public double LevelSetForm(ref CommonParamsLs inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+        public double LevelSetForm(ref CommonParamsLs inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             double S0 = 0; // velocity in normal direction, at the interface
-            for (int d = 0; d < D; d++) {
+            for(int d = 0; d < D; d++) {
                 S0 += inp.n[d] * inp.ParamsNeg[d];
             }
 
+            double NegCellLengthScale = NegCellLengthScaleS[inp.jCell];
+            double PosCellLengthScale = PosCellLengthScaleS[inp.jCell];
+
             double hmin;
-            if (inp.NegCellLengthScale.IsNaN()) {
-                hmin = inp.PosCellLengthScale;
-            }
-            else if (inp.PosCellLengthScale.IsNaN()) {
-                hmin = inp.NegCellLengthScale;
-            }
-            else {
-                hmin = Math.Min(inp.NegCellLengthScale, inp.PosCellLengthScale);
+            if(NegCellLengthScale.IsNaN()) {
+                hmin = PosCellLengthScale;
+            } else if(PosCellLengthScale.IsNaN()) {
+                hmin = NegCellLengthScale;
+            } else {
+                hmin = Math.Min(NegCellLengthScale, PosCellLengthScale);
             }
 
             double penalty = PenaltyBase / hmin;
@@ -68,42 +76,33 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
             return penalty * (uA[0] - S0) * vA;
         }
 
-        public IList<string> ArgumentOrdering
-        {
-            get
-            {
+        public IList<string> ArgumentOrdering {
+            get {
                 return new string[] { "Extension" };
             }
         }
 
-        public IList<string> ParameterOrdering
-        {
-            get
-            {
+        public IList<string> ParameterOrdering {
+            get {
 
                 return ArrayTools.Cat<string>(VariableNames.VelocityVector(D));
             }
         }
 
-        public int LevelSetIndex
-        {
+        public int LevelSetIndex {
             get { return 0; }
         }
 
-        public SpeciesId PositiveSpecies
-        {
+        public SpeciesId PositiveSpecies {
             get { return this.LSTrk.GetSpeciesId("B"); }
         }
 
-        public SpeciesId NegativeSpecies
-        {
+        public SpeciesId NegativeSpecies {
             get { return this.LSTrk.GetSpeciesId("A"); }
         }
 
-        public TermActivationFlags LevelSetTerms
-        {
-            get
-            {
+        public TermActivationFlags LevelSetTerms {
+            get {
                 return (TermActivationFlags.UxV | TermActivationFlags.V);
             }
         }

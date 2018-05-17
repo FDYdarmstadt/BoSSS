@@ -30,8 +30,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
     [TestFixture]
     static public partial class UnitTest {
 
-
 #if !DEBUG
+
         /// <summary>
         /// See <see cref="PhysicalBasedTestcases.CapillaryWave.CW_Test"/>.
         /// </summary>

@@ -30,7 +30,7 @@ using ilPSP;
 namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
 
-    public class CurvatureBasedSurfaceTension : ILevelSetComponent {
+    public class CurvatureBasedSurfaceTension : ILevelSetForm {
 
         public static double hmin = double.NaN;
 
@@ -251,7 +251,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
     /// <summary>
     /// Represents the artificial surface force (usually only used in manufactured solutions).
     /// </summary>
-    public class SurfaceTension_ArfForceSrc  : ILevelSetComponent {
+    public class SurfaceTension_ArfForceSrc  : ILevelSetForm {
 
         public static double hmin = double.NaN;
 
@@ -1140,7 +1140,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
     /// <summary>
     /// flux formulation for terms on the interface
     /// </summary>
-    public abstract class SurfaceFluxBase : IVolumeForm, IEdgeForm {
+    public abstract class SurfaceFluxBase : IVolumeForm, IEdgeForm, BoSSS.Foundation.IEquationComponentCoefficient {
 
 
         protected int m_comp;
@@ -1166,6 +1166,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             Debug.Assert(!double.IsInfinity(penaltySizeFactor_A));
             Debug.Assert(!double.IsInfinity(penaltySizeFactor_B));
             double penaltySizeFactor = Math.Max(penaltySizeFactor_A, penaltySizeFactor_B);
+
+            //throw new NotImplementedException("this penalty might be unsuitable");
             return this.m_penalty * penaltySizeFactor * muFactor;
 
         }
@@ -1295,8 +1297,12 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             return res;
         }
 
+        MultidimensionalArray m_LenScales;
 
-
+        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            throw new NotImplementedException("this penalty might be unsuitable");
+            m_LenScales = cs.CellLengthScales;
+        }
     }
 
     /// <summary>

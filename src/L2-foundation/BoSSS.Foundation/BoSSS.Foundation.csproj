@@ -85,6 +85,7 @@
     <Compile Include="GridCorrelation.cs" />
     <Compile Include="GridData_Refine.cs" />
     <Compile Include="GridProxy.cs" />
+    <Compile Include="IEvaluator.cs" />
     <Compile Include="IGrid.cs" />
     <Compile Include="IGridData.cs" />
     <Compile Include="IGridData_Extensions.cs" />

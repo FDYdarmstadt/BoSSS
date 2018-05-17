@@ -132,8 +132,8 @@ namespace NSE_SIMPLE.LowMach {
             c.PredictorApproximation = PredictorApproximations.BlockDiagonal;
             c.PressureStabilizationScaling = 0.0;
             c.PredictorApproximationUpdateCycle = 1;
-            c.MaxNoSIMPLEsteps = 500;
-            c.SavePeriodSIMPLE = 500;
+            c.MaxNoSIMPLEsteps = 1000;
+            c.SavePeriodSIMPLE = 1000;
             c.RelaxationFactorPressure = 0.5;
             c.RelexationFactorVelocity = 0.8;
             c.RelexationFactorTemperature = 1.0;

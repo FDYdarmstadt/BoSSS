@@ -173,9 +173,9 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
 
             // Local Variables for Iteration
 
-            /// <summary>
-            /// Counter for Iteration Steps
-            /// </summary>
+            // <summary>
+            // Counter for Iteration Steps
+            // </summary>
 
 
             //double OldResidual = double.MaxValue;
@@ -207,7 +207,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
             //}
 
 
-            bool PreviouslyOnSubgrid = false;
+        //bool PreviouslyOnSubgrid = false;
 
         /// <summary>
         /// Updates the Operator Matrix after level-set motion
@@ -251,7 +251,8 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
 
                 /// Build the Quadrature-Scheme for the interface operator
                 /// Note: The HMF-Quadrature over a surface is formally a volume quadrature, since it uses the volume quadrature nodes.
-                Operator_interface.ComputeMatrixEx(
+                XSpatialOperatorExtensions.ComputeMatrixEx(Operator_interface,
+                //Operator_interface.ComputeMatrixEx(
                     LevelSetTracker,
                     Phi.Mapping,
                     null,
@@ -303,7 +304,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
                         parameterFields,
                         Phi.Mapping, OpMatrix_bulk, OpAffine_bulk, false, 0
                         );
-                    PreviouslyOnSubgrid = false;
+                    //PreviouslyOnSubgrid = false;
                 }
 
 

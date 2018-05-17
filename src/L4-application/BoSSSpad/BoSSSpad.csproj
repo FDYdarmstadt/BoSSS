@@ -115,6 +115,7 @@
     <Compile Include="DatabaseUtils.cs" />
     <Compile Include="DGFieldExtensions.cs" />
     <Compile Include="Document.cs" />
+    <Compile Include="ElectronWorksheet.cs" />
     <Compile Include="ExportInstruction.cs" />
     <Compile Include="CommandLineReader.cs" />
     <Compile Include="GnuplotExtensions.cs" />

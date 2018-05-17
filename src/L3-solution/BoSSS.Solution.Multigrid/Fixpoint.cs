@@ -38,7 +38,7 @@ namespace BoSSS.Solution.Multigrid {
     public class FixpointIterator : NonlinearSolver {
 
 
-        public FixpointIterator(AssembleMatrixDel __AssembleMatrix, IEnumerable<AggregationGridBasis[]> __AggBasisSeq,
+        public FixpointIterator(OperatorEvalOrLin __AssembleMatrix, IEnumerable<AggregationGridBasis[]> __AggBasisSeq,
             MultigridOperator.ChangeOfBasisConfig[][] __MultigridOperatorConfig)
             : base(__AssembleMatrix, __AggBasisSeq, __MultigridOperatorConfig) //
         {
@@ -78,11 +78,11 @@ namespace BoSSS.Solution.Multigrid {
         public IterationCounter Iteration_Count;
 
 
-        bool solveVelocity = true;
+        //bool solveVelocity = true;
 
-        double VelocitySolver_ConvergenceCriterion = 1e-5;
+        //double VelocitySolver_ConvergenceCriterion = 1e-5;
 
-        double StressSolver_ConvergenceCriterion = 1e-5;
+        //double StressSolver_ConvergenceCriterion = 1e-5;
 
 
         override public void SolverDriver<S>(CoordinateVector SolutionVec, S RHS) {

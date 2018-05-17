@@ -415,8 +415,8 @@ namespace CNS {
 
                     ABLTSTimeStepper.UpdateTimeInfo(new TimeInformation(TimeStepNo, physTime, -1));
                     // LoadBal and noLoadBalRuns did not match, with this fix, it works --> probably some ABevolver were not updated correctly
-                    bool reclustered = ABLTSTimeStepper.TryNewClustering(dt: -1, calledByMPIRedist: true);
-                    Debug.Assert(reclustered == true);
+                    bool reclustered = ABLTSTimeStepper.TryNewClustering(dt: -1, calledByMPIRedist: true);     
+                    //Debug.Assert(reclustered == true);
                     //ABLTSTimeStepper.SetReclusteredByGridRedist(true);
                 }
 
