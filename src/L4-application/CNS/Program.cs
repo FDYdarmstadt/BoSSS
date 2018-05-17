@@ -32,6 +32,7 @@ using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading;
 
@@ -272,6 +273,8 @@ namespace CNS {
                 this.ResLogger.NextTimestep(
                     residualLoggers.ShouldLog(TimestepNo, Control.ResidualInterval));
 
+                this.WriteLineToLTSLogFile(dt);
+
                 return dt;
             }
         }
@@ -415,7 +418,7 @@ namespace CNS {
 
                     ABLTSTimeStepper.UpdateTimeInfo(new TimeInformation(TimeStepNo, physTime, -1));
                     // LoadBal and noLoadBalRuns did not match, with this fix, it works --> probably some ABevolver were not updated correctly
-                    bool reclustered = ABLTSTimeStepper.TryNewClustering(dt: -1, calledByMPIRedist: true);     
+                    bool reclustered = ABLTSTimeStepper.TryNewClustering(dt: -1, calledByMPIRedist: true);
                     //Debug.Assert(reclustered == true);
                     //ABLTSTimeStepper.SetReclusteredByGridRedist(true);
                 }
@@ -432,6 +435,54 @@ namespace CNS {
         /// <returns></returns>
         protected virtual BoundaryConditionMap GetBoundaryConditionMap() {
             return new BoundaryConditionMap(GridData, Control);
+        }
+
+        /// <summary>
+        /// saves interface points
+        /// </summary>
+        TextWriter LTSLogWriter;
+
+        /// <summary>
+        /// Initializes the format of the log file
+        /// </summary>
+        /// <param name="sessionID"></param>
+        public void InitLTSLogFile(Guid sessionID) {
+            if (TimeStepper is AdamsBashforthLTS LTS) {
+                if (LTS.CurrentClustering.NumberOfClusters == 2) {
+                    // Header
+                    LTSLogWriter = new StreamWriter("LTSLog.txt");
+                    //LTSLogWriter = base.DatabaseDriver.FsDriver.GetNewLog("LTSData", sessionID);
+                    string header = String.Format("{0}\t{1}\t{2}", "ts", "dt", "physTime");
+                    for (int i = 0; i < LTS.CurrentClustering.NumberOfClusters; i++) {
+                        header = header + String.Format("\t{0}\t{1}\t{2}", "c" + i + "_dt", "c" + i + "_sub", "c" + i + "_elmts");
+                    }
+                    LTSLogWriter.WriteLine(header);
+                    LTSLogWriter.Flush();
+                }
+            } else {
+                throw new Exception("Logging only supported for time steppers of type AdamsBashforthLTS with 2 clusters");
+            }
+        }
+
+        /// <summary>
+        /// Writes a line to the log file 
+        /// initialized by <see cref="InitLTSLogFile(Guid)"/>.
+        /// </summary>
+        public void WriteLineToLTSLogFile(double dt) {
+            // Init if necessary
+            if (LTSLogWriter == null) {
+                InitLTSLogFile(this.CurrentSessionInfo.ID);
+            }
+
+            // Line
+            AdamsBashforthLTS LTS = TimeStepper as AdamsBashforthLTS;
+            string line = String.Format("{0}\t{1}\t{2}", LTS.TimeInfo.TimeStepNumber, dt, LTS.TimeInfo.PhysicalTime);
+            for (int i = 0; i < LTS.CurrentClustering.NumberOfClusters; i++) {
+                line = line + String.Format("\t{0}\t{1}\t{2}", LTS.log_clusterDts[i], LTS.log_clusterSubSteps[i], LTS.log_clusterElements[i]);
+            }
+
+            LTSLogWriter.WriteLine(line);
+            LTSLogWriter.Flush();
         }
     }
 }
