@@ -273,7 +273,7 @@ namespace CNS {
                 this.ResLogger.NextTimestep(
                     residualLoggers.ShouldLog(TimestepNo, Control.ResidualInterval));
 
-                this.WriteLineToLTSLogFile(dt);
+                this.WriteLTSLog(dt);
 
                 return dt;
             }
@@ -448,19 +448,33 @@ namespace CNS {
         /// <param name="sessionID"></param>
         public void InitLTSLogFile(Guid sessionID) {
             if (TimeStepper is AdamsBashforthLTS LTS) {
-                if (LTS.CurrentClustering.NumberOfClusters == 2) {
-                    // Header
+                // Init text writer
+                if (sessionID.ToString() == "00000000-0000-0000-0000-000000000000") {
+                    // When not using the BoSSS database, write log to directory where the executable is stores
                     LTSLogWriter = new StreamWriter("LTSLog.txt");
-                    //LTSLogWriter = base.DatabaseDriver.FsDriver.GetNewLog("LTSData", sessionID);
-                    string header = String.Format("{0}\t{1}\t{2}", "ts", "dt", "physTime");
-                    for (int i = 0; i < LTS.CurrentClustering.NumberOfClusters; i++) {
-                        header = header + String.Format("\t{0}\t{1}\t{2}", "c" + i + "_dt", "c" + i + "_sub", "c" + i + "_elmts");
-                    }
-                    LTSLogWriter.WriteLine(header);
-                    LTSLogWriter.Flush();
+                } else {
+                    // When using the BoSSS database, write log to session directory
+                    LTSLogWriter = base.DatabaseDriver.FsDriver.GetNewLog("LTSData", sessionID);
                 }
+
+                // Header
+                LTSLogWriter.Write(
+                    "LOCAL TIME STEPPING LOG FILE" +
+                    "\n------------------------------------------\n" +
+                    "ExplicitScheme = " + Control.ExplicitScheme.ToString() +
+                    "\nExplicitOrder = " + Control.ExplicitOrder +
+                    "\nNumberOfSubGrids = " + Control.NumberOfSubGrids +
+                    "\nReclusteringInterval = " + Control.ReclusteringInterval +
+                    "\nMaxNumberOfSubSteps = " + Control.maxNumOfSubSteps +
+                    "\n------------------------------------------\n");
+                string titleForColumns = String.Format("{0}\t{1}\t{2}", "ts", "dt", "physTime");
+                for (int i = 0; i < LTS.CurrentClustering.NumberOfClusters; i++) {
+                    titleForColumns = titleForColumns + String.Format("\t{0}\t{1}\t{2}", "c" + i + "_dt", "c" + i + "_sub", "c" + i + "_elmts");
+                }
+                LTSLogWriter.WriteLine(titleForColumns);
+                LTSLogWriter.Flush();
             } else {
-                throw new Exception("Logging only supported for time steppers of type AdamsBashforthLTS with 2 clusters");
+                throw new Exception("Logging only supported for time steppers of type AdamsBashforthLTS");
             }
         }
 
@@ -468,19 +482,18 @@ namespace CNS {
         /// Writes a line to the log file 
         /// initialized by <see cref="InitLTSLogFile(Guid)"/>.
         /// </summary>
-        public void WriteLineToLTSLogFile(double dt) {
+        public void WriteLTSLog(double dt) {
             // Init if necessary
             if (LTSLogWriter == null) {
                 InitLTSLogFile(this.CurrentSessionInfo.ID);
             }
 
-            // Line
+            // Write a line
             AdamsBashforthLTS LTS = TimeStepper as AdamsBashforthLTS;
             string line = String.Format("{0}\t{1}\t{2}", LTS.TimeInfo.TimeStepNumber, dt, LTS.TimeInfo.PhysicalTime);
             for (int i = 0; i < LTS.CurrentClustering.NumberOfClusters; i++) {
                 line = line + String.Format("\t{0}\t{1}\t{2}", LTS.log_clusterDts[i], LTS.log_clusterSubSteps[i], LTS.log_clusterElements[i]);
             }
-
             LTSLogWriter.WriteLine(line);
             LTSLogWriter.Flush();
         }
