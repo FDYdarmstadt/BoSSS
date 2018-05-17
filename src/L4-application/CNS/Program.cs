@@ -455,7 +455,7 @@ namespace CNS {
                 LTSLogWriter = new StreamWriter("LTSLog.txt");
             } else {
                 // When using the BoSSS database, write log to session directory
-                LTSLogWriter = base.DatabaseDriver.FsDriver.GetNewLog("LTSData", sessionID);
+                LTSLogWriter = base.DatabaseDriver.FsDriver.GetNewLog("LTSLog", sessionID);
             }
 
             // Header
@@ -468,7 +468,7 @@ namespace CNS {
                 "\nReclusteringInterval = " + Control.ReclusteringInterval +
                 "\nMaxNumberOfSubSteps = " + Control.maxNumOfSubSteps +
                 "\n------------------------------------------\n");
-            string titleForColumns = String.Format("{0}\t{1}\t{2}", "ts", "dt", "physTime");
+            string titleForColumns = String.Format("{0}\t{1}\t{2}", "ts", "physTime", "dt");
             AdamsBashforthLTS LTS = TimeStepper as AdamsBashforthLTS;
             for (int i = 0; i < LTS.CurrentClustering.NumberOfClusters; i++) {
                 titleForColumns = titleForColumns + String.Format("\t{0}\t{1}\t{2}", "c" + i + "_dt", "c" + i + "_sub", "c" + i + "_elmts");
@@ -489,7 +489,7 @@ namespace CNS {
 
             // Write a line
             AdamsBashforthLTS LTS = TimeStepper as AdamsBashforthLTS;
-            string line = String.Format("{0}\t{1}\t{2}", LTS.TimeInfo.TimeStepNumber, dt, LTS.TimeInfo.PhysicalTime);
+            string line = String.Format("{0}\t{1}\t{2}", LTS.TimeInfo.TimeStepNumber, LTS.TimeInfo.PhysicalTime, dt);
             for (int i = 0; i < LTS.CurrentClustering.NumberOfClusters; i++) {
                 line = line + String.Format("\t{0}\t{1}\t{2}", LTS.log_clusterDts[i], LTS.log_clusterSubSteps[i], LTS.log_clusterElements[i]);
             }
