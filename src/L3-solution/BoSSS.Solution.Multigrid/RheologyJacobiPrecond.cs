@@ -146,13 +146,13 @@ namespace BoSSS.Solution.Multigrid {
     public class LocalJacobiFlux : IVolumeForm, IEdgeForm {
         public TermActivationFlags BoundaryEdgeTerms {
             get {
-                return TermActivationFlags.GradUxV;
+                return TermActivationFlags.UxV;
             }
         }
 
         public TermActivationFlags InnerEdgeTerms {
             get {
-                return TermActivationFlags.GradUxV;
+                return TermActivationFlags.UxV;
             }
         }
 
@@ -214,7 +214,7 @@ namespace BoSSS.Solution.Multigrid {
 
             double acc = 0.0;
 
-            acc += -We * cpv.Parameters[0] * V;
+            acc += -We * cpv.Parameters[0] * U[0]* V;
 
 
             return acc;
