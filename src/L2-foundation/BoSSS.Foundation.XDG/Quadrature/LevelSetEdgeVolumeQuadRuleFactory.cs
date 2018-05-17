@@ -926,7 +926,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                         MultidimensionalArray levelSetNormals =
                             LevelSetEdgeSurfaceQuadRuleFactory.EvaluateRefNormalsOnEdge(this.owner.LevelSetData, i0 + i, CurrentRule, e);
                         //MultidimensionalArray metrics = LevelSetEdgeSurfaceQuadRuleFactory.GetMetricTermsOnEdge(
-                        //    owner.tracker, owner.levSetInd, CurrentRule, i0 + i, e);
+                        //    this.owner.LevelSetData, this.owner.levelSetIndex, CurrentRule, i0 + i, e);
 
                         for (int j = 0; j < CurrentRule.NumbersOfNodesPerFace[e]; j++) {
                             nodeIndex++;

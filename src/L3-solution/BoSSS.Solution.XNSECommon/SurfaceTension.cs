@@ -833,6 +833,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
         int m_comp;
 
+        int m_D;
+
         /// <summary>
         /// surface tension coefficient
         /// </summary>
@@ -851,8 +853,9 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         IncompressibleBcType[] m_edgeTag2Type;
 
 
-        public IsotropicSurfaceTension_LaplaceBeltrami(int d, double sigma, IncompressibleBcType[] edgeTag2Type, double theta_e, double beta_L) {
+        public IsotropicSurfaceTension_LaplaceBeltrami(int d, int D, double sigma, IncompressibleBcType[] edgeTag2Type, double theta_e, double beta_L) {
             m_comp = d;
+            m_D = D;
             m_sigma = sigma;
             m_theta = theta_e;
             m_beta = beta_L;
@@ -862,13 +865,22 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
         public virtual IList<string> ParameterOrdering {
             get {
-                return new string[] { "NX", "NY" };
+                switch(m_D) {
+                    case 2:
+                        return new string[] { "NX", "NY" };
+                    case 3:
+                        return new string[] { "NX", "NY", "NZ" };
+                    default:
+                        return new string[] { };
+                }
+                //return new string[] { "NX", "NY" };
             }
         }
 
         public IList<string> ArgumentOrdering {
             get {
-                return new string[] { VariableNames.Velocity_d(0), VariableNames.Velocity_d(1) };
+                return VariableNames.VelocityVector(m_D);
+                //return new string[] { VariableNames.Velocity_d(0), VariableNames.Velocity_d(1) };
             }
         }
 
