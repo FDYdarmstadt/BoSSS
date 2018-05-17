@@ -833,6 +833,109 @@ namespace BoSSS.Solution.Multigrid {
             return jac;
         }
 
+        public MsrMatrix bandeddiffjac(CoordinateVector SolutionVec, double[] currentX, double[] f0)
+        {
+            int dimension = SolutionVec.Mapping.GridDat.SpatialDimension;
+
+            int degree_VelocityX = SolutionVec.Mapping.Fields[0].Basis.Degree;
+            int degree_VelocityY = SolutionVec.Mapping.Fields[1].Basis.Degree;
+            int degree_VelocityZ = new int();
+            int degree_Pressure = new int();
+            int degree_StressXX = new int();
+            int degree_StressXY = new int();
+            int degree_StressYY = new int();
+
+            int NoVariables = SolutionVec.Mapping.NoOfVariables;
+
+
+
+            if (dimension == 2) {
+                degree_Pressure = SolutionVec.Mapping.Fields[2].Basis.Degree;
+
+                if (NoVariables > 4)
+                {
+                    degree_StressXX = SolutionVec.Mapping.Fields[3].Basis.Degree;
+                    degree_StressXY = SolutionVec.Mapping.Fields[4].Basis.Degree;
+                    degree_StressYY = SolutionVec.Mapping.Fields[5].Basis.Degree;
+                }
+            }
+            else if (dimension == 3) {
+                degree_VelocityZ = SolutionVec.Mapping.Fields[2].Basis.Degree;
+                degree_Pressure = SolutionVec.Mapping.Fields[3].Basis.Degree;
+            }
+            else throw new ArgumentException();
+
+
+            int factor = 1;
+            int PI_VelocityX = 1;
+            int PI_VelocityY = 1;
+            int PI_VelocityZ = 1;
+            int PI_Pressure = 1;
+            int PI_StressXX = 1;
+            int PI_StressXY = 1;
+            int PI_StressYY = 1;
+
+            for (int i = 1; i <= dimension; i++) {
+                factor *= factor * i;
+                PI_VelocityX *= degree_VelocityX + i;
+                PI_VelocityY *= degree_VelocityY + i;
+                PI_Pressure *= degree_Pressure + i;
+
+                if (dimension == 3)
+                {
+                    PI_VelocityZ *= degree_VelocityZ + i;
+                }
+
+                if (NoVariables > 4)
+                {
+                    PI_StressXX *= degree_StressXX + i;
+                    PI_StressXY *= degree_StressXY + i;
+                    PI_StressYY *= degree_StressYY + i;
+                }
+            }
+
+            int number_Polynomials = 1 / factor * (PI_VelocityX + PI_VelocityY + PI_Pressure);
+
+            if (dimension == 3)
+            {
+                number_Polynomials += 1 / factor * PI_VelocityZ;
+            }
+
+            if (NoVariables > 4)
+            {
+                number_Polynomials += 1 / factor * (PI_StressXX + PI_StressXY + PI_StressYY);
+            }
+
+            int n = currentX.Length;
+            int number_Cells = n / number_Polynomials;
+
+            MsrMatrix jac = new MsrMatrix(n);
+
+            var temp = new double[n];
+            var zz = new double[n];
+
+            for (int k = 0; k < number_Polynomials; k++)
+            {
+                for (int i = 0; i < number_Cells; i++)
+                {
+                    zz[i * number_Polynomials + k] = 1;
+
+                }
+                temp = dirder(SolutionVec, currentX, zz, f0);
+
+                for (int j = 0; j < n; j++)
+                {
+                    for (int i = 0; i < number_Cells; i++)
+                    {
+                        jac[j, i * number_Polynomials + k] = temp[j];
+                    }
+                }
+            }
+
+
+            return jac;
+        }
+
         /// <summary>
         /// Evaluation of the nonlinear operator.
         /// </summary>
