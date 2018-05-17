@@ -273,7 +273,9 @@ namespace CNS {
                 this.ResLogger.NextTimestep(
                     residualLoggers.ShouldLog(TimestepNo, Control.ResidualInterval));
 
-                this.WriteLTSLog(dt);
+                if (Control.WriteLTSLog && TimeStepper is AdamsBashforthLTS) {
+                    this.WriteLTSLog(dt);
+                }
 
                 return dt;
             }
@@ -447,35 +449,32 @@ namespace CNS {
         /// </summary>
         /// <param name="sessionID"></param>
         public void InitLTSLogFile(Guid sessionID) {
-            if (TimeStepper is AdamsBashforthLTS LTS) {
-                // Init text writer
-                if (sessionID.ToString() == "00000000-0000-0000-0000-000000000000") {
-                    // When not using the BoSSS database, write log to directory where the executable is stores
-                    LTSLogWriter = new StreamWriter("LTSLog.txt");
-                } else {
-                    // When using the BoSSS database, write log to session directory
-                    LTSLogWriter = base.DatabaseDriver.FsDriver.GetNewLog("LTSData", sessionID);
-                }
-
-                // Header
-                LTSLogWriter.Write(
-                    "LOCAL TIME STEPPING LOG FILE" +
-                    "\n------------------------------------------\n" +
-                    "ExplicitScheme = " + Control.ExplicitScheme.ToString() +
-                    "\nExplicitOrder = " + Control.ExplicitOrder +
-                    "\nNumberOfSubGrids = " + Control.NumberOfSubGrids +
-                    "\nReclusteringInterval = " + Control.ReclusteringInterval +
-                    "\nMaxNumberOfSubSteps = " + Control.maxNumOfSubSteps +
-                    "\n------------------------------------------\n");
-                string titleForColumns = String.Format("{0}\t{1}\t{2}", "ts", "dt", "physTime");
-                for (int i = 0; i < LTS.CurrentClustering.NumberOfClusters; i++) {
-                    titleForColumns = titleForColumns + String.Format("\t{0}\t{1}\t{2}", "c" + i + "_dt", "c" + i + "_sub", "c" + i + "_elmts");
-                }
-                LTSLogWriter.WriteLine(titleForColumns);
-                LTSLogWriter.Flush();
+            // Init text writer
+            if (sessionID.ToString() == "00000000-0000-0000-0000-000000000000") {
+                // When not using the BoSSS database, write log to directory where the executable is stores
+                LTSLogWriter = new StreamWriter("LTSLog.txt");
             } else {
-                throw new Exception("Logging only supported for time steppers of type AdamsBashforthLTS");
+                // When using the BoSSS database, write log to session directory
+                LTSLogWriter = base.DatabaseDriver.FsDriver.GetNewLog("LTSData", sessionID);
             }
+
+            // Header
+            LTSLogWriter.Write(
+                "LOCAL TIME STEPPING LOG FILE" +
+                "\n------------------------------------------\n" +
+                "ExplicitScheme = " + Control.ExplicitScheme.ToString() +
+                "\nExplicitOrder = " + Control.ExplicitOrder +
+                "\nNumberOfSubGrids = " + Control.NumberOfSubGrids +
+                "\nReclusteringInterval = " + Control.ReclusteringInterval +
+                "\nMaxNumberOfSubSteps = " + Control.maxNumOfSubSteps +
+                "\n------------------------------------------\n");
+            string titleForColumns = String.Format("{0}\t{1}\t{2}", "ts", "dt", "physTime");
+            AdamsBashforthLTS LTS = TimeStepper as AdamsBashforthLTS;
+            for (int i = 0; i < LTS.CurrentClustering.NumberOfClusters; i++) {
+                titleForColumns = titleForColumns + String.Format("\t{0}\t{1}\t{2}", "c" + i + "_dt", "c" + i + "_sub", "c" + i + "_elmts");
+            }
+            LTSLogWriter.WriteLine(titleForColumns);
+            LTSLogWriter.Flush();
         }
 
         /// <summary>
