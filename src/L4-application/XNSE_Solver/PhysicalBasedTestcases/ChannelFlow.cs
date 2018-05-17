@@ -115,7 +115,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.PhysicalParameters.Sigma = sigma;
 
             //C.PhysicalParameters.beta_S = 0.05;
-            C.PhysicalParameters.Theta_e = Math.PI / 2.0;
+            C.PhysicalParameters.theta_e = Math.PI / 2.0;
 
             C.PhysicalParameters.IncludeConvection = false;
             C.PhysicalParameters.Material = true;

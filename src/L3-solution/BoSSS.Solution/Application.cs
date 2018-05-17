@@ -1983,7 +1983,6 @@ namespace BoSSS.Solution {
                     //        }
                     //    }
                     //}
-                    PlotCurrentState(physTime, new TimestepNumber(TimeStepNo, 10), 2);
 
                     // set dg coördinates
                     foreach (var f in m_RegisteredFields) {
@@ -1998,7 +1997,6 @@ namespace BoSSS.Solution {
 
                         remshDat.RestoreDGField(f);
                     }
-                    PlotCurrentState(physTime, new TimestepNumber(TimeStepNo, 11), 2);
 
                     // re-create solvers, blablabla
                     CreateEquationsAndSolvers(remshDat);

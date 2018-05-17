@@ -173,7 +173,7 @@ namespace BoSSS.Application.XNSE_Solver {
             /// <summary>
             /// no data will be written
             /// </summary>
-            none,
+            None,
 
             /// <summary>
             /// for elemental test programm with line like interfaces
@@ -206,7 +206,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// See <see cref="LoggingValues"/>
         /// </summary>
         [DataMember]
-        public LoggingValues LogValues = LoggingValues.none;
+        public LoggingValues LogValues = LoggingValues.None;
 
         [DataMember]
         public int LogPeriod = 1;
