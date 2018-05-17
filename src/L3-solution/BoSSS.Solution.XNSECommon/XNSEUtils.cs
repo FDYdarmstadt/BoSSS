@@ -59,7 +59,8 @@ namespace BoSSS.Solution.XNSECommon {
 
                 long GlobalID, GlobalIndex;
                 bool IsInside, onthisProc;
-                grd.LocatePoint(new double[] { 5, 0 }, out GlobalID, out GlobalIndex, out IsInside, out onthisProc, LsTrk.Regions.GetCutCellSubGrid().VolumeMask.Complement());
+                double[] pt = (D == 2) ? new double[] { -5, -5 } : new double[] { -5.0, -5.0, -5.0 };
+                grd.LocatePoint(pt, out GlobalID, out GlobalIndex, out IsInside, out onthisProc, LsTrk.Regions.GetCutCellSubGrid().VolumeMask.Complement());
 
 
                 int iRowGl = -111;
