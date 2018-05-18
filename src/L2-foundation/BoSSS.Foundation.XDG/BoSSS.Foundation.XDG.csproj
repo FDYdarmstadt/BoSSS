@@ -80,8 +80,8 @@
     <Compile Include="MassMatrixFactory.cs" />
     <Compile Include="MultiphaseAgglomerator.cs" />
     <Compile Include="Quadrature\NestedVertexSet.cs" />
-    <Compile Include="Quadrature\SayeGaussRule_Helper.cs" />
     <Compile Include="Quadrature\SayeGaussRule_LevelSet2D.cs" />
+    <Compile Include="Quadrature\SayeGaussRule_SupportingStructures.cs" />
     <Compile Include="Quadrature\SayeGaussRule_Volume2D.cs" />
     <Compile Include="Quadrature\SurfaceStokes_2D.cs" />
     <Compile Include="ReducedRegionCode.cs" />
