@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.RefElements;
+using static BoSSS.Foundation.XDG.Quadrature.HMF.LineSegment;
 
 namespace BoSSS.Foundation.XDG.Quadrature
 {
@@ -15,7 +16,19 @@ namespace BoSSS.Foundation.XDG.Quadrature
     /// </summary>
     public class SayeGaussRule_Volume2D : IQuadRuleFactory<QuadRule>
     {
-        public RefElement RefElement => throw new NotImplementedException();
+        SayeGaussRule_Volume2D(LevelSetTracker tracker, IRootFindingAlgorithm rootFinder)
+        {
+            
+
+        }
+
+        #region IQaudRuleFactory<QuadRule>
+
+        public RefElement RefElement {
+            get {
+                return Square.Instance;
+            }
+        }
 
         public int[] GetCachedRuleOrders()
         {
@@ -24,7 +37,20 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         public IEnumerable<IChunkRulePair<QuadRule>> GetQuadRuleSet(ExecutionMask mask, int order)
         {
+            Line.Instance.GetQuadratureRule(order);
+            //Find quadrature nodes and weights in each cell/chunk
+
+                //Find Points and weights with saye
+
+                
             throw new NotImplementedException();
+        }
+
+#endregion
+
+        private object SayeRecursion()
+        {
+            return new object(); 
         }
     }
 }
