@@ -15,6 +15,7 @@ namespace BoSSS.Application.BoSSSpad{
     /// </summary>
     public sealed class ElectronWorksheet {
         Document document;
+
         private static readonly ElectronWorksheet instance = new ElectronWorksheet();
 
         private ElectronWorksheet() {
@@ -89,6 +90,23 @@ namespace BoSSS.Application.BoSSSpad{
             }
 
             return new Tuple<string[], string[]>(commands, results);
+        }
+
+        public string[] GetAutoCompleteSuggestions(string textToBeCompleted){
+            
+            string[] completions;
+            string originalPrefix;
+            int timeout = 1000;
+
+            if (ReadEvalPrintLoop.eval != null){
+                bool completed = ReadEvalPrintLoop.eval.TryGetCompletions(
+                    textToBeCompleted, out completions, out originalPrefix, timeout);
+            }
+            else{
+                completions = new string[] { "" };
+            }
+
+            return completions;
         }
     }
 }
