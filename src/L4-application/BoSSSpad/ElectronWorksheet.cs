@@ -94,16 +94,19 @@ namespace BoSSS.Application.BoSSSpad{
 
         public string[] GetAutoCompleteSuggestions(string textToBeCompleted){
             
-            string[] completions;
-            string originalPrefix;
+            string[] completions = null;
+            string originalPrefix = null;
             int timeout = 1000;
 
             if (ReadEvalPrintLoop.eval != null){
                 bool completed = ReadEvalPrintLoop.eval.TryGetCompletions(
-                    textToBeCompleted, out completions, out originalPrefix, timeout);
+                    textToBeCompleted, out completions, out originalPrefix, timeout);   
             }
-            else{
-                completions = new string[] { "" };
+
+            if (completions != null){
+                for (int i = 0; i < completions.Length; ++i){
+                    completions[i] = originalPrefix + completions[i];
+                }
             }
 
             return completions;
