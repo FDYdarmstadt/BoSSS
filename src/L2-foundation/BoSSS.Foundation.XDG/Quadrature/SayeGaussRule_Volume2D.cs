@@ -16,10 +16,13 @@ namespace BoSSS.Foundation.XDG.Quadrature
     /// </summary>
     public class SayeGaussRule_Volume2D : IQuadRuleFactory<QuadRule>
     {
-        SayeGaussRule_Volume2D(LevelSetTracker tracker, IRootFindingAlgorithm rootFinder)
-        {
-            
+        LevelSetTracker tracker;
+        IRootFindingAlgorithm rootFinder;
 
+        SayeGaussRule_Volume2D(LevelSetTracker Tracker, IRootFindingAlgorithm RootFinder)
+        {
+            tracker = Tracker;
+            rootFinder = RootFinder;
         }
 
         #region IQaudRuleFactory<QuadRule>
@@ -37,20 +40,44 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         public IEnumerable<IChunkRulePair<QuadRule>> GetQuadRuleSet(ExecutionMask mask, int order)
         {
-            Line.Instance.GetQuadratureRule(order);
+            QuadRule gaussRule_1D = Line.Instance.GetQuadratureRule(order);
+            var result = new List<ChunkRulePair<QuadRule>>();
+
             //Find quadrature nodes and weights in each cell/chunk
-
-                //Find Points and weights with saye
-
-                
-            throw new NotImplementedException();
+            foreach (Chunk chunk in mask)
+            {
+                foreach (int cell in chunk.Elements)
+                {
+                    Integrand integrand = CreateSayeIntegrand( gaussRule_1D);
+                    QuadRule sayeRule = integrand.Evaluate();
+                    ChunkRulePair<QuadRule> sayePair = new ChunkRulePair<QuadRule>(chunk, sayeRule);
+                    result.Add(sayePair);
+                }
+            }
+            return result;
         }
 
 #endregion
 
-        private object SayeRecursion()
+        Integrand CreateSayeIntegrand(QuadRule Rule)
         {
-            return new object(); 
+            throw new NotImplementedException();
+        }
+
+        class Integrand
+        {
+            QuadRule rule;
+            TreeNode<Argument> recursionInfo;
+
+            Integrand()
+            {
+
+            }
+
+            public QuadRule Evaluate()
+            {
+                throw new NotImplementedException();
+            }
         }
     }
 }
