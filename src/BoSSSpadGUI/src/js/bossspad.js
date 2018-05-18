@@ -67,11 +67,9 @@ export class BoSSSpad{
     this.boSSS.registerContextMenu(this.removeCommand.bind(this), 'removeCommand', 'Remove');
     this.boSSS.onDidScrollChange(this.userGUI.update.bind(this.userGUI));
     this.boSSS.onDidChangeModelContent( this.deleteHandler.bind(this));
-    this.boSSS.registerBoSSS(boSSSRuntime.provideAutoComplete.bind(boSSSRuntime));
+    this.boSSS.registerLanguage_BoSSS(boSSSRuntime.provideAutoComplete.bind(boSSSRuntime));
     window.addEventListener("resize", this.update.bind(this));
   }
-
-  
 
   addNewRunCommand(ed){
     if(!this.status.isLocked()){

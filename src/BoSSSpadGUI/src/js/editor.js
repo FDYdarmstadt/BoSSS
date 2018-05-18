@@ -23,7 +23,7 @@ export class Editor{
       return loading;
     }
     
-    registerBoSSS(func){
+    registerLanguage_BoSSS(func){
       monaco.languages.registerCompletionItemProvider(
         "csharp",
         this.getBoSSSCompletionProvider(func)
@@ -33,8 +33,8 @@ export class Editor{
     getBoSSSCompletionProvider(func){
       var that = this;
       return {
-        provideCompletionItems: (model, position) => {
-          var completions = func(model.getValue());
+        provideCompletionItems: async (model, position) => {
+          var completions = await func(model.getValue());
           var monacoCompletions = that.translateCompletionsForMonaco(completions);
           return monacoCompletions;
         }
