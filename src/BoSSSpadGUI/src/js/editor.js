@@ -1,6 +1,5 @@
 import * as monaco from 'monaco-editor';
 
-
 export class Editor{
     constructor(element, status){
       this.element = element;
@@ -23,7 +22,42 @@ export class Editor{
       });
       return loading;
     }
-  
+    
+    registerBoSSS(func){
+      monaco.languages.registerCompletionItemProvider(
+        "csharp",
+        this.getBoSSSCompletionProvider(func)
+      );
+    }
+
+    getBoSSSCompletionProvider(func){
+      var that = this;
+      return {
+        provideCompletionItems: (model, position) => {
+          var completions = func(model.getValue());
+          var monacoCompletions = that.translateCompletionsForMonaco(completions);
+          return monacoCompletions;
+        }
+      };
+    }
+
+    translateCompletionsForMonaco(completions){
+      if (completions === null){
+        return [];
+      }
+      if (completions.length === 1 && completions[0] === ""){
+        return [];
+      }
+      var monacoCompletions = []; 
+      for(var i = 0; i < completions.length; ++i){
+        monacoCompletions.push({
+          label : completions[i],
+          kind: monaco.languages.CompletionItemKind.Text
+        });
+      }
+      return monacoCompletions;
+    }
+
     registerContextMenu(func, myId, myName){
       //Add Run Template
       this.monaco.addAction({
