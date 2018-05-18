@@ -34,7 +34,11 @@ export class Editor{
       var that = this;
       return {
         provideCompletionItems: async (model, position) => {
-          var completions = await func(model.getValue());
+          var range = that.monaco.getSelection();
+          range.startColumn = 1;
+          var value = model.getValueInRange(range);
+          var value = value.split(" ");
+          var completions = await func(value[value.length - 1]);
           var monacoCompletions = that.translateCompletionsForMonaco(completions);
           return monacoCompletions;
         }
