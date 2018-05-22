@@ -17,6 +17,24 @@ class BoSSS{
         return this.constructor.prototype.instance;
     }
 
+    provideAutoComplete(valueString){
+        var that = this;
+        var runPromise = new Promise(
+            function(resolve, reject){
+                that.BoSSSRuntime.getAutoCompleteSuggestions(
+                    valueString,
+                    async function(error, result) {
+                        if (error){
+                            reject(error);
+                        }
+                        resolve(result);
+                    }
+                );
+            }
+        );
+        return runPromise;
+    }
+
     runCommand(commandString){
         var that = this;
         var runPromise = new Promise(
