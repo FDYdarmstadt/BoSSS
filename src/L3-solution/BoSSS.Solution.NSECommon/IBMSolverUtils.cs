@@ -615,7 +615,7 @@ namespace BoSSS.Solution.NSECommon {
 
         static public double[] GetParticleForces(VectorField<SinglePhaseField> U, SinglePhaseField P,
             LevelSetTracker LsTrk,
-            double muA,) {
+            double muA) {
             int D = LsTrk.GridDat.SpatialDimension;
             // var UA = U.Select(u => u.GetSpeciesShadowField("A")).ToArray();
             var UA = U.ToArray();

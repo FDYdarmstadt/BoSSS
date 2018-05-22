@@ -74,6 +74,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ApproxPredictor.cs" />
+    <Compile Include="PhysicalParameters.cs" />
     <Compile Include="Solver\SolverChooser.cs" />
     <Compile Include="Solver\SolverCodes.cs" />
     <Compile Include="HardcodedPrecTest.cs" />
@@ -82,7 +83,6 @@
     <Compile Include="DoNotTouchParameters.cs" />
     <Compile Include="IBMControl.cs" />
     <Compile Include="HardcodedControl.cs" />
-    <Compile Include="PhysicalParameters.cs" />
     <Compile Include="PotentialSolverPrecond.cs" />
     <Compile Include="SIMPLE.cs" />
     <Compile Include="SIMPLEOptions.cs" />
