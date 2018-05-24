@@ -54,7 +54,7 @@ namespace BoSSS.Solution.Multigrid {
         /// <summary>
         /// Maximum number of GMRES(m) restarts
         /// </summary>
-        public int restart_limit = 10;
+        public int restart_limit = 1;
 
 
         /// <summary>
@@ -79,7 +79,7 @@ namespace BoSSS.Solution.Multigrid {
 
         public CoordinateVector m_SolutionVec;
 
-        public enum ApproxInvJacobianOptions { GMRES = 1, DirectSolver = 2, DirectSolverHybrid = 3, DirectSolverOpMatrix =4 }
+        public enum ApproxInvJacobianOptions { GMRES = 1, DirectSolver = 2, DirectSolverHybrid = 3, DirectSolverOpMatrix = 4 }
 
         public ApproxInvJacobianOptions ApproxJac = ApproxInvJacobianOptions.GMRES;
 
@@ -126,7 +126,6 @@ namespace BoSSS.Solution.Multigrid {
                 this.CurrentLin.TransformSolFrom(SolutionVec, x);
                 base.EvalResidual(x, ref f0);
 
-
                 // fnorm
                 double fnorm = f0.L2NormPow2().MPISum().Sqrt();
                 double fNormo = 1;
@@ -134,8 +133,6 @@ namespace BoSSS.Solution.Multigrid {
                 double[] step = new double[x.Length];
                 double[] stepOld = new double[x.Length];
                 MsrMatrix CurrentJac;
-
-                Console.WriteLine("Start residuum for nonlinear iteration:  " + fnorm);
 
                 OnIterationCallback(itc, x.CloneAs(), f0.CloneAs(), this.CurrentLin);
 
@@ -173,14 +170,12 @@ namespace BoSSS.Solution.Multigrid {
                             step.ClearEntries();
                             solver.Solve(step, f0);
 
-                        }
-                        else if (ApproxJac == ApproxInvJacobianOptions.DirectSolverHybrid) {
+                        } else if (ApproxJac == ApproxInvJacobianOptions.DirectSolverHybrid) {
                             //EXPERIMENTAL_____________________________________________________________________
                             MultidimensionalArray OpMatrixMatl = MultidimensionalArray.Create(x.Length, x.Length);
                             CurrentJac = diffjac(SolutionVec, x, f0);
                             //Console.WriteLine("Calling MATLAB/Octave...");
-                            using (BatchmodeConnector bmc = new BatchmodeConnector())
-                            {
+                            using (BatchmodeConnector bmc = new BatchmodeConnector()) {
                                 bmc.PutSparseMatrix(CurrentJac, "Jacobi");
                                 bmc.PutSparseMatrix(CurrentLin.OperatorMatrix, "OpMatrix");
                                 bmc.Cmd("Jacobi(abs(Jacobi) < 10^-6)=0; dim = length(OpMatrix);");
@@ -364,7 +359,9 @@ namespace BoSSS.Solution.Multigrid {
                         xt = x.CloneAs();
                         xt.AccV(lambda, step);
                         this.CurrentLin.TransformSolFrom(SolutionVec, xt);
-                        EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);
+
+                        EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);                        
+
                         var nft = ft.L2NormPow2().MPISum().Sqrt(); var nf0 = f0.L2NormPow2().MPISum().Sqrt(); var ff0 = nf0 * nf0; var ffc = nft * nft; var ffm = nft * nft;
 
                         // Control of the the step size
@@ -397,6 +394,7 @@ namespace BoSSS.Solution.Multigrid {
                         // transform solution back to 'original domain'
                         // to perform the linearization at the new point...
                         // (and for Level-Set-Updates ...)
+
                         this.CurrentLin.TransformSolFrom(SolutionVec, xt);
 
                         // update linearization
@@ -405,9 +403,7 @@ namespace BoSSS.Solution.Multigrid {
                         // residual evaluation & callback
                         base.EvalResidual(xt, ref ft);
 
-                        // EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);
-
-                        //base.Init(SolutionVec, RHS, out x, out f0);
+                        //EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);
 
                         fnorm = ft.L2NormPow2().MPISum().Sqrt();
 
@@ -606,14 +602,6 @@ namespace BoSSS.Solution.Multigrid {
 
                     Console.WriteLine("Error NewtonGMRES:   " + rho);
 
-                    //using (StreamWriter writer = new StreamWriter(m_SessionPath + "//GMRES_Stats.txt", true))
-                    //{
-                    //writer.WriteLine(k + "   " + rho);
-                    //}
-
-
-                    //Console.WriteLine("Error NewtonGMRES:   " + rho );
-
                     k++;
 
                 }
@@ -673,8 +661,9 @@ namespace BoSSS.Solution.Multigrid {
         /// <param name="SolutionVec">Solution point</param>
         /// <param name="w">Direction</param>
         /// <param name="f0">f0, usally has been calculated earlier</param>
+        /// <param name="linearization">True if the Operator should be linearized and evaluated afterwards</param>
         /// <returns></returns>
-        public double[] dirder(CoordinateVector SolutionVec, double[] currentX, double[] w, double[] f0) {
+        public double[] dirder(CoordinateVector SolutionVec, double[] currentX, double[] w, double[] f0, bool linearization = true) {
             using (var tr = new FuncTrace()) {
                 double epsnew = 1E-7;
 
@@ -710,12 +699,13 @@ namespace BoSSS.Solution.Multigrid {
                 //var OpAffineRaw = this.LinearizationRHS.CloneAs();
                 //this.CurrentLin.OperatorMatrix.SpMV(1.0, new CoordinateVector(SolutionVec.Mapping.Fields.ToArray()), 1.0, OpAffineRaw);
                 //CurrentLin.TransformRhsInto(OpAffineRaw, fx);
-
-                EvaluateOperator(1.0, SolutionVec.Mapping.Fields, fx);
-
-                //this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, SolutionVec.Mapping.Fields.ToArray());
-                //OpMtxRaw.SpMV(1.0, new CoordinateVector(SolutionVec.Mapping.Fields.ToArray()), 1.0, OpAffineRaw);
-                //CurrentLin.TransformRhsInto(OpAffineRaw, fx);
+                if (linearization == false) {
+                    EvaluateOperator(1.0, SolutionVec.Mapping.Fields, fx);
+                } else {
+                    this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, SolutionVec.Mapping.Fields.ToArray(), true);
+                    OpMtxRaw.SpMV(1.0, new CoordinateVector(SolutionVec.Mapping.Fields.ToArray()), 1.0, OpAffineRaw);
+                    CurrentLin.TransformRhsInto(OpAffineRaw, fx);
+                }
 
                 SolutionVec.CopyEntries(temp);
 

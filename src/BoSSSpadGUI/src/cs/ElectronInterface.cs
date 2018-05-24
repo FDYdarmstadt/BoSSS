@@ -27,6 +27,9 @@ namespace BoSSS.Application.BoSSSpad{
                 }),
                 load = (Func<object, Task<object>>)(async (i) => {
                     return await Task.Run(() => ElectronInterface.Load(i));
+                }),
+                getAutoCompleteSuggestions = (Func<object, Task<object>>)(async (i) => {
+                    return await Task.Run(() => ElectronInterface.GetAutoCompleteSuggestions(i));
                 })
             };
         }
@@ -54,8 +57,12 @@ namespace BoSSS.Application.BoSSSpad{
             return true;
         }
 
-        static  object Load(object path){
+        static object Load(object path){
             return worksheet.Load((string)path);
-        } 
+        }
+
+        static object GetAutoCompleteSuggestions(object input){
+            return worksheet.GetAutoCompleteSuggestions(input.ToString());
+        }
     }
 }

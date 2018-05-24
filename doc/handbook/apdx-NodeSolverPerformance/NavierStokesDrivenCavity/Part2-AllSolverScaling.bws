@@ -23,12 +23,12 @@ List of 24 instances of IDatabaseInfo {
   14: { Session Count = 43; Grid Count = 45; Path = P:\BoSSS_DBs\IBMPaper }
   15: { Session Count = 28; Grid Count = 15; Path = P:\BoSSS_DBs\Paper_IBM2D }
   16: { Session Count = 38; Grid Count = 22; Path = P:\BoSSS_DBs\Paper_CellAgglo01_Penalty4 }
-  17: { Session Count = 54; Grid Count = 65; Path = P:\BoSSS_DBs\Sphere3D }
+  17: { Session Count = 57; Grid Count = 67; Path = P:\BoSSS_DBs\Sphere3D }
   18: { Session Count = 22; Grid Count = 10; Path = P:\BoSSS_DBs\Performance }
   19: { Session Count = 24; Grid Count = 14; Path = P:\BoSSS_DBs\PaperRevision }
   20: { Session Count = 0; Grid Count = 0; Path = P:\Lichtenberg_DB }
-  21: { Session Count = 8; Grid Count = 469; Path = P:\BoSSS_DBs\Bug }
-  22: { Session Count = 21; Grid Count = 8; Path = P:\BoSSS_DBs\NodePerformance }
+  21: { Session Count = 8; Grid Count = 471; Path = P:\BoSSS_DBs\Bug }
+  22: { Session Count = 29; Grid Count = 8; Path = P:\BoSSS_DBs\NodePerformance }
   23: { Session Count = 136; Grid Count = 98; Path = L:\BoSSS_DB\Lichtenberg_DB }
 }
 
@@ -45,7 +45,7 @@ using BoSSS.Application.IBM_Solver;
 using System.Data;
 **************
 ==============
-string dateString = "2018-5-2";
+string dateString = "2018-5-17";
 string File       = "SolverRuns--" + dateString + ".json";
 string FilePath   = Path.Combine(CurrentDocDir, File);
 var SessTab       = TableExtensions.LoadFromFile(FilePath);
@@ -98,7 +98,7 @@ List of 63 instances of String {
   28: MeshFactor
   29: Timestepper_Scheme
   30: FixedStreamwisePeriodicBC
-  31: Timestepper_Init
+  31: TimeStepper_Init
   32: NonlinearSolve
   33: LinearSolve
   34: GridPartType
@@ -149,49 +149,11 @@ TotalDoFs
 ==============
 SubTab_1.Print();
 **************
-    Grid:NoOfCells SlvIter_excl   NonlinearSolve LinearSolve NoOfMultigridLevels DGdegree:Velocity* RegularTerminated TotalDoFs 
-0:  15625          505158.8030476 0              0           3                   2                  True              531250    
-1:  15625          418094.2102072 0              6           3                   2                  True              531250    
-2:  4913           145116.3039116 0              0           3                   2                  True              167042    
-3:  4913           107064.3322649 0              6           3                   2                  True              167042    
-4:  2197           33537.2693643  0              6           2                   2                  True              74698     
-5:  1000           11890.9620651  0              6           2                   2                  True              34000     
-6:  343            1824.6302625   0              6           2                   2                  True              11662     
-7:  125            326.4057208    0              6           2                   2                  True              4250      
-8:  15625          72519.0457507  1              1           1                   2                  True              531250    
-9:  2197           41003.179468   0              0           2                   2                  True              74698     
-10: 1000           13246.2081608  0              0           2                   2                  True              34000     
-11: 343            984.4614341    0              0           2                   2                  True              11662     
-12: 125            33.9801263     0              0           2                   2                  True              4250      
-13: 1000           13008.3168128  0              0           2                   2                  True              34000     
-14: 4913           6244.6481989   1              1           1                   2                  True              167042    
-15: 343            994.7229636    0              0           2                   2                  True              11662     
-16: 125            34.3138959     0              0           2                   2                  True              4250      
-17: 125            11.0463558     1              1           1                   2                  True              4250      
-18: 2197           1247.0726146   1              1           1                   2                  True              74698     
-19: 1000           311.1200562    1              1           1                   2                  True              34000     
-20: 343            55.4536228     1              1           1                   2                  True              11662     
-21: 15625          505158.8030476 0              0           3                   2                  True              531250    
-22: 15625          418094.2102072 0              6           3                   2                  True              531250    
-23: 4913           145116.3039116 0              0           3                   2                  True              167042    
-24: 4913           107064.3322649 0              6           3                   2                  True              167042    
-25: 2197           33537.2693643  0              6           2                   2                  True              74698     
-26: 1000           11890.9620651  0              6           2                   2                  True              34000     
-27: 343            1824.6302625   0              6           2                   2                  True              11662     
-28: 125            326.4057208    0              6           2                   2                  True              4250      
-29: 15625          72519.0457507  1              1           1                   2                  True              531250    
-30: 2197           41003.179468   0              0           2                   2                  True              74698     
-31: 1000           13246.2081608  0              0           2                   2                  True              34000     
-32: 343            984.4614341    0              0           2                   2                  True              11662     
-33: 125            33.9801263     0              0           2                   2                  True              4250      
-34: 1000           13008.3168128  0              0           2                   2                  True              34000     
-35: 4913           6244.6481989   1              1           1                   2                  True              167042    
-36: 343            994.7229636    0              0           2                   2                  True              11662     
-37: 125            34.3138959     0              0           2                   2                  True              4250      
-38: 125            11.0463558     1              1           1                   2                  True              4250      
-39: 2197           1247.0726146   1              1           1                   2                  True              74698     
-40: 1000           311.1200562    1              1           1                   2                  True              34000     
-41: 343            55.4536228     1              1           1                   2                  True              11662     
+   Grid:NoOfCells SlvIter_excl  NonlinearSolve LinearSolve NoOfMultigridLevels DGdegree:Velocity* RegularTerminated TotalDoFs 
+0: 2197           14536.0422946 0              0           2                   2                  True              74698     
+1: 1000           5482.0333473  0              0           2                   2                  True              34000     
+2: 343            728.1434164   0              0           2                   2                  True              11662     
+3: 125            21.561733     0              0           2                   2                  True              4250      
 ==============
 **************
 ==============
@@ -319,14 +281,14 @@ plotSlvIterTime.LogY      = true;
 plotSlvIterTime.LogBaseX  = 10;
 plotSlvIterTime.LogBaseY  = 10;
 
+multiplots[0,0] = plotSlvIterTime;
+//multiplots[1,0] = plotSlvIterSpeedup;
+
 double[] dof = new[]{1e3,1e6};
 double[] linT = dof.Select(x => x*1).ToArray();
 var linP = new Plot2Ddata.XYvalues("linear", dof, linT);
 linP.Format.FromString("- black");
 ArrayTools.AddToArray(linP, ref multiplots[0,0].dataGroups);
-
-multiplots[0,0] = plotSlvIterTime;
-//multiplots[1,0] = plotSlvIterSpeedup;
 
 multiplots[0,0].bmargin = 4;
 //multiplots[1,0].tmargin = 1;
@@ -364,6 +326,8 @@ System.ComponentModel.Win32Exception (0x80004005): Das System kann die angegeben
    bei <InteractiveExpressionClass>.Host(Object& $retval)
    bei Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
    bei BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in C:\BoSSS-experimental\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:Zeile 311.
+==============
+**************
 ==============
 **************
 ==============
