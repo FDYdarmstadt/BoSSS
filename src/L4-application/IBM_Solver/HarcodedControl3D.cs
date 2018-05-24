@@ -26,6 +26,7 @@ using ilPSP.Utils;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid;
 using BoSSS.Platform.Utils.Geom;
+using BoSSS.Foundation.IO;
 
 namespace BoSSS.Application.IBM_Solver {
     public class HardcodedControl3D {
@@ -309,7 +310,7 @@ namespace BoSSS.Application.IBM_Solver {
             // basic database options
             // ======================
             C.DbPath = @"\\dc1\userspace\krause\BoSSS_DBs\Sphere3D";
-            C.savetodb = true;
+            C.savetodb = false;
             C.ProjectName = "Sphere3D";
             C.SessionName = "Sphere3D_" + k + "_Re350";
             C.Tags.Add("with immersed boundary method");
@@ -344,9 +345,14 @@ namespace BoSSS.Application.IBM_Solver {
 
             //C.GridPartType = GridPartType.Hilbert;
 
+
+            C.TimeStepper_Init = Solution.Timestepping.TimeStepperInit.MultiInit;
+
             // Load Grid
             Console.WriteLine("...loading grid");
-            C.GridGuid = new Guid("c04b0a83-9f78-4780-96db-48fd63f3ba50");
+            C.GridGuid = new Guid("1a672505-e301-4271-9c7d-050770f48abc");
+
+            C.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("9bbe7f37-e450-4732-a357-fb875ae72a63"), -1);
 
             //#region Creates grid () and sets BC
             ////// Create Grid
@@ -583,7 +589,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.particleRadius = 0.5;
             C.PhysicalParameters.rho_A = 1;
             //C.PhysicalParameters.mu_A = (2 * C.particleRadius) / 100;
-            C.PhysicalParameters.mu_A = (2.0 * C.particleRadius * 1.0) / 100;
+            C.PhysicalParameters.mu_A = (1.0 * C.particleRadius * 1.0) / 350;
 
             // Boundary conditions
             C.AddBoundaryCondition("Velocity_inlet", "VelocityX", (X, t) => 1);
@@ -593,11 +599,11 @@ namespace BoSSS.Application.IBM_Solver {
             C.AddBoundaryCondition("Pressure_Outlet");
 
             // Set Initial Conditions
-            C.InitialValues_Evaluators.Add("VelocityX", X => 1);
-            //C.InitialValues_Evaluators.Add("VelocityY", X => 5);
-            C.InitialValues_Evaluators.Add("VelocityZ", X => 0);
-            C.InitialValues_Evaluators.Add("Pressure", X => 0);
-            C.InitialValues_Evaluators.Add("Phi", X => -(X[0]).Pow2() + -(X[1]).Pow2() + -(X[2]).Pow2() + C.particleRadius.Pow2());
+            //C.InitialValues_Evaluators.Add("VelocityX", X => 1);
+            ////C.InitialValues_Evaluators.Add("VelocityY", X => 5);
+            //C.InitialValues_Evaluators.Add("VelocityZ", X => 0);
+            //C.InitialValues_Evaluators.Add("Pressure", X => 0);
+            //C.InitialValues_Evaluators.Add("Phi", X => -(X[0]).Pow2() + -(X[1]).Pow2() + -(X[2]).Pow2() + C.particleRadius.Pow2());
 
             //C.InitialValues_Evaluators.Add("VelocityY", delegate (double[] X) {
             //    double x = X[0];
@@ -625,25 +631,25 @@ namespace BoSSS.Application.IBM_Solver {
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
-            C.MaxKrylovDim = 30;
+            C.MaxKrylovDim = 50;
             C.MaxSolverIterations = 50;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
             C.NonlinearSolve = NonlinearSolverCodes.NewtonGMRES;
-            C.LinearSolve = LinearSolverCodes.exp_schwarz_Kcycle_directcoarse_overlap;
+            C.LinearSolve = LinearSolverCodes.exp_schwarz_directcoarse_overlap;
             C.Solver_ConvergenceCriterion = 1E-6;
-            C.NoOfMultigridLevels = 3;
+            C.NoOfMultigridLevels = 2;
 
             // Timestepping
             // ============
 
 
             C.Timestepper_Scheme = IBM_Control.TimesteppingScheme.BDF2;
-            double dt = 1E20;
+            double dt = 0.1;
             C.dtFixed = dt;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 100000;
-            C.NoOfTimesteps = 1;
+            C.NoOfTimesteps = 100000;
 
             return C;
         }
@@ -1111,7 +1117,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.AddBoundaryCondition("Pressure_Outlet");
 
             // Set Initial Conditions
-            C.InitialValues_Evaluators.Add("VelocityX", X => 1);
+            C.InitialValues_Evaluators.Add("VelocityX", X => 0.2);
             //C.InitialValues_Evaluators.Add("VelocityY", X => 5);
             C.InitialValues_Evaluators.Add("VelocityZ", X => 0);
             C.InitialValues_Evaluators.Add("Pressure", X => 0);
@@ -1144,7 +1150,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
-            C.MaxKrylovDim = 1000;
+            C.MaxKrylovDim = 4;
             C.MaxSolverIterations = 50;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
             C.NonlinearSolve = NonlinearSolverCodes.NewtonGMRES;
@@ -1157,12 +1163,12 @@ namespace BoSSS.Application.IBM_Solver {
 
 
             C.Timestepper_Scheme = IBM_Control.TimesteppingScheme.BDF2;
-            double dt = 1E20;
+            double dt = 1;
             C.dtFixed = dt;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 100000;
-            C.NoOfTimesteps = 1;
+            C.NoOfTimesteps = 5;
 
             return C;
         }
@@ -1192,7 +1198,7 @@ namespace BoSSS.Application.IBM_Solver {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             C.FieldOptions.Add("Pressure", new FieldOpts() {
-                Degree = k - 1,
+                Degree = k-1,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             C.FieldOptions.Add("PhiDG", new FieldOpts() {
@@ -1274,7 +1280,7 @@ namespace BoSSS.Application.IBM_Solver {
             // Initial Solution
 
             // Physical values
-            C.particleRadius = 0.5;
+            C.particleRadius = 1;
             C.PhysicalParameters.rho_A = 1;
             //C.PhysicalParameters.mu_A = (2 * C.particleRadius) / 100;
             C.PhysicalParameters.mu_A = (1.0 * C.particleRadius * 1.0) / 400.0;
@@ -1286,7 +1292,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.AddBoundaryCondition("Wall");
 
             // Set Initial Conditions
-            C.InitialValues_Evaluators.Add("VelocityX", X => 1);
+            C.InitialValues_Evaluators.Add("VelocityX", X => 0);
             //C.InitialValues_Evaluators.Add("VelocityY", X => 5);
             C.InitialValues_Evaluators.Add("VelocityZ", X => 0);
             C.InitialValues_Evaluators.Add("Pressure", X => 0);
@@ -1299,20 +1305,18 @@ namespace BoSSS.Application.IBM_Solver {
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
-            C.MaxKrylovDim = 1000;
-            C.MaxSolverIterations = 50;
+            C.MaxKrylovDim = 100;
+            C.MaxSolverIterations = 10;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
             C.NonlinearSolve = NonlinearSolverCodes.NewtonGMRES;
             C.LinearSolve = LinearSolverCodes.automatic;
-            C.Solver_ConvergenceCriterion = 1E-6;
+            C.Solver_ConvergenceCriterion = 1E-5;
             C.NoOfMultigridLevels = 2;
 
             // Timestepping
             // ============
-
-
             C.Timestepper_Scheme = IBM_Control.TimesteppingScheme.BDF2;
-            double dt = 1E20;
+            double dt = 1;
             C.dtFixed = dt;
             C.dtMax = dt;
             C.dtMin = dt;

@@ -344,8 +344,6 @@ namespace BoSSS.Solution.NSECommon {
                 //var SchemeHelper = new XQuadSchemeHelper(LsTrk, momentFittingVariant, );
                 CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
 
-
-
                 CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                     cqs.Compile(LsTrk.GridDat, RequiredOrder), //  agg.HMForder),
                     delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
@@ -613,6 +611,136 @@ namespace BoSSS.Solution.NSECommon {
 
             Console.WriteLine("Circle circumference: " + circumference);
 
+        }
+
+        static public double[] GetParticleForces(VectorField<SinglePhaseField> U, SinglePhaseField P,
+            LevelSetTracker LsTrk,
+            double muA) {
+            int D = LsTrk.GridDat.SpatialDimension;
+            // var UA = U.Select(u => u.GetSpeciesShadowField("A")).ToArray();
+            var UA = U.ToArray();
+
+            int RequiredOrder = U[0].Basis.Degree * 3 + 2;
+            //int RequiredOrder = LsTrk.GetXQuadFactoryHelper(momentFittingVariant).GetCachedSurfaceOrders(0).Max();
+            //Console.WriteLine("Order reduction: {0} -> {1}", _RequiredOrder, RequiredOrder);
+
+            //if (RequiredOrder > agg.HMForder)
+            //    throw new ArgumentException();
+
+            Console.WriteLine("Forces coeff: {0}, order = {1}", LsTrk.CutCellQuadratureType, RequiredOrder);
+
+
+            ConventionalDGField pA = null;
+
+            //pA = P.GetSpeciesShadowField("A");
+            pA = P;
+
+            double[] forces = new double[D];
+            for (int d = 0; d < D; d++) {
+                ScalarFunctionEx ErrFunc = delegate (int j0, int Len, NodeSet Ns, MultidimensionalArray result) {
+                    int K = result.GetLength(1); // No nof Nodes
+                    MultidimensionalArray Grad_UARes = MultidimensionalArray.Create(Len, K, D, D); ;
+                    MultidimensionalArray pARes = MultidimensionalArray.Create(Len, K);
+
+                    // Evaluate tangential velocity to level-set surface
+                    var Normals = LsTrk.DataHistories[0].Current.GetLevelSetNormals(Ns, j0, Len);
+
+
+                    for (int i = 0; i < D; i++) {
+                        UA[i].EvaluateGradient(j0, Len, Ns, Grad_UARes.ExtractSubArrayShallow(-1, -1, i, -1), 0, 1);
+                    }
+
+                    pA.Evaluate(j0, Len, Ns, pARes);
+
+                    if (LsTrk.GridDat.SpatialDimension == 2) {
+
+                        for (int j = 0; j < Len; j++) {
+                            for (int k = 0; k < K; k++) {
+                                double acc = 0.0;
+
+                                // pressure
+                                switch (d) {
+                                    case 0:
+                                        acc += pARes[j, k] * Normals[j, k, 0];
+                                        acc -= (2 * muA) * Grad_UARes[j, k, 0, 0] * Normals[j, k, 0];
+                                        acc -= (muA) * Grad_UARes[j, k, 0, 1] * Normals[j, k, 1];
+                                        acc -= (muA) * Grad_UARes[j, k, 1, 0] * Normals[j, k, 1];
+                                        break;
+                                    case 1:
+                                        acc += pARes[j, k] * Normals[j, k, 1];
+                                        acc -= (2 * muA) * Grad_UARes[j, k, 1, 1] * Normals[j, k, 1];
+                                        acc -= (muA) * Grad_UARes[j, k, 1, 0] * Normals[j, k, 0];
+                                        acc -= (muA) * Grad_UARes[j, k, 0, 1] * Normals[j, k, 0];
+                                        break;
+                                    default:
+                                        throw new NotImplementedException();
+                                }
+
+                                result[j, k] = acc;
+                            }
+                        }
+                    } else {
+                        for (int j = 0; j < Len; j++) {
+                            for (int k = 0; k < K; k++) {
+                                double acc = 0.0;
+
+                                // pressure
+                                switch (d) {
+                                    case 0:
+                                        acc += pARes[j, k] * Normals[j, k, 0];
+                                        acc -= (2 * muA) * Grad_UARes[j, k, 0, 0] * Normals[j, k, 0];
+                                        acc -= (muA) * Grad_UARes[j, k, 0, 2] * Normals[j, k, 2];
+                                        acc -= (muA) * Grad_UARes[j, k, 0, 1] * Normals[j, k, 1];
+                                        acc -= (muA) * Grad_UARes[j, k, 1, 0] * Normals[j, k, 1];
+                                        acc -= (muA) * Grad_UARes[j, k, 2, 0] * Normals[j, k, 2];
+                                        break;
+                                    case 1:
+                                        acc += pARes[j, k] * Normals[j, k, 1];
+                                        acc -= (2 * muA) * Grad_UARes[j, k, 1, 1] * Normals[j, k, 1];
+                                        acc -= (muA) * Grad_UARes[j, k, 1, 2] * Normals[j, k, 2];
+                                        acc -= (muA) * Grad_UARes[j, k, 1, 0] * Normals[j, k, 0];
+                                        acc -= (muA) * Grad_UARes[j, k, 0, 1] * Normals[j, k, 0];
+                                        acc -= (muA) * Grad_UARes[j, k, 2, 1] * Normals[j, k, 2];
+                                        break;
+                                    case 2:
+                                        acc += pARes[j, k] * Normals[j, k, 2];
+                                        acc -= (2 * muA) * Grad_UARes[j, k, 2, 2] * Normals[j, k, 2];
+                                        acc -= (muA) * Grad_UARes[j, k, 2, 0] * Normals[j, k, 0];
+                                        acc -= (muA) * Grad_UARes[j, k, 2, 1] * Normals[j, k, 1];
+                                        acc -= (muA) * Grad_UARes[j, k, 0, 2] * Normals[j, k, 0];
+                                        acc -= (muA) * Grad_UARes[j, k, 1, 2] * Normals[j, k, 1];
+                                        break;
+                                    default:
+                                        throw new NotImplementedException();
+                                }
+
+                                result[j, k] = acc;
+                            }
+                        }
+                    }
+
+                };
+
+                var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, RequiredOrder, 1).XQuadSchemeHelper;
+                //var SchemeHelper = new XQuadSchemeHelper(LsTrk, momentFittingVariant, );
+                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+
+                CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
+                    cqs.Compile(LsTrk.GridDat, RequiredOrder), //  agg.HMForder),
+                    delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
+                        ErrFunc(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
+                    },
+                    delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+                        for (int i = 0; i < Length; i++)
+                            forces[d] += ResultsOfIntegration[i, 0];
+                    }
+                ).Execute();
+            }
+
+            for (int i = 0; i < D; i++)
+                forces[i] = MPI.Wrappers.MPIExtensions.MPISum(forces[i]);
+
+            return forces;
         }
     }
 }

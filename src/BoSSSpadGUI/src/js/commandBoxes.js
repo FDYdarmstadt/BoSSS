@@ -226,6 +226,6 @@ export class CommentBox extends BoxWithMenu{
     pandoc(value, args, callback);
     */
     readoutNode.innerHTML = markdown.toHTML(value);
-    mathjax.typesetMath(readoutNode.innerHTML);
+    mathjax.typesetMath(readoutNode);
   }
 }
