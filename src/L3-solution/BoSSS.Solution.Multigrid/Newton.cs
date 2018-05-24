@@ -27,6 +27,7 @@ using ilPSP.LinSolvers;
 using ilPSP.Connectors.Matlab;
 using ilPSP.Tracing;
 using System.IO;
+using System.Diagnostics;
 
 namespace BoSSS.Solution.Multigrid {
     /// <summary>
@@ -161,7 +162,11 @@ namespace BoSSS.Solution.Multigrid {
                             step = Krylov(SolutionVec, x, f0, out errstep);
                         } else if (ApproxJac == ApproxInvJacobianOptions.DirectSolver) {
                             CurrentJac = diffjac(SolutionVec, x, f0);
+                            //MsrMatrix CurrentJac2 = bandeddiffjac(SolutionVec, x, f0);
+                            //CurrentJac = freebandeddiffjac(SolutionVec, x, f0);
                             CurrentJac.SaveToTextFileSparse("Jacobi");
+                            //CurrentJac2.SaveToTextFileSparse("Jacobi2");
+                            //Debug.Assert(CurrentJac.Equals(CurrentJac2));
                             CurrentLin.OperatorMatrix.SaveToTextFileSparse("OpMatrix");
                             var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
                             solver.DefineMatrix(CurrentJac);
@@ -833,6 +838,68 @@ namespace BoSSS.Solution.Multigrid {
             return jac;
         }
 
+        public int Bandwidth(double [] currentX) {
+            int beta;
+            int dim = currentX.Length;
+            int full_bandwidth_row;
+            BlockMsrMatrix OpMatrix = CurrentLin.OperatorMatrix;
+            double[] b = new double[dim];
+
+            for (int j = 0; j< dim; j++)
+            {
+                for (int i = dim-1; i>=0; i--)
+                {
+                    if (OpMatrix[j,i] != 0) {
+
+                        b[j] = i - j;
+                        break;
+
+                    }
+
+                }
+                
+            }
+
+            beta = (int)b.Max();
+            full_bandwidth_row = b.FirstIndexWhere(c => c == beta);
+
+            return beta;
+
+        }
+
+        public MsrMatrix freebandeddiffjac(CoordinateVector SolutionVec, double[] currentX, double[] f0)
+        {
+            int n = currentX.Length;
+            MsrMatrix jac = new MsrMatrix(n);
+            int beta = Bandwidth(currentX);
+            int number_Cells = n / beta;
+
+            var temp = new double[n];
+
+            for (int k = 0; k < beta; k++)
+            {
+                var zz = new double[n];
+
+                for (int i = 0; i < number_Cells; i++)
+                {
+                    zz[i * beta + k] = 1;
+
+                }
+                temp = dirder(SolutionVec, currentX, zz, f0);
+
+
+                for (int i = 0; i < number_Cells; i++)
+                {
+                    for (int j = i * beta + k; j < (i + 1) * beta; j++)
+                    {
+                        jac[j, i * beta + k] = temp[j];
+                    }
+                }
+            }
+
+            return jac;
+        }
+
         public MsrMatrix bandeddiffjac(CoordinateVector SolutionVec, double[] currentX, double[] f0)
         {
             int dimension = SolutionVec.Mapping.GridDat.SpatialDimension;
@@ -894,16 +961,16 @@ namespace BoSSS.Solution.Multigrid {
                 }
             }
 
-            int number_Polynomials = 1 / factor * (PI_VelocityX + PI_VelocityY + PI_Pressure);
+            int number_Polynomials = (PI_VelocityX + PI_VelocityY + PI_Pressure)/factor;
 
             if (dimension == 3)
             {
-                number_Polynomials += 1 / factor * PI_VelocityZ;
+                number_Polynomials += PI_VelocityZ / factor;
             }
 
             if (NoVariables > 4)
             {
-                number_Polynomials += 1 / factor * (PI_StressXX + PI_StressXY + PI_StressYY);
+                number_Polynomials += (PI_StressXX + PI_StressXY + PI_StressYY) / factor;
             }
 
             int n = currentX.Length;
@@ -911,11 +978,12 @@ namespace BoSSS.Solution.Multigrid {
 
             MsrMatrix jac = new MsrMatrix(n);
 
-            var temp = new double[n];
-            var zz = new double[n];
+            var temp = new double[n];           
 
             for (int k = 0; k < number_Polynomials; k++)
             {
+                var zz = new double[n];
+
                 for (int i = 0; i < number_Cells; i++)
                 {
                     zz[i * number_Polynomials + k] = 1;
@@ -923,9 +991,10 @@ namespace BoSSS.Solution.Multigrid {
                 }
                 temp = dirder(SolutionVec, currentX, zz, f0);
 
-                for (int j = 0; j < n; j++)
+
+                for (int i = 0; i < number_Cells; i++)
                 {
-                    for (int i = 0; i < number_Cells; i++)
+                    for (int j = i * number_Polynomials + k; j < (i + 1) * number_Polynomials; j++)
                     {
                         jac[j, i * number_Polynomials + k] = temp[j];
                     }
