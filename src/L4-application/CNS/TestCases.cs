@@ -44,7 +44,7 @@ namespace CNS {
 
     public static class TestCases {
 
-        public static CNSControl ShockTube(string dbPath, int savePeriod, int dgDegree, double sensorLimit, double CFLFraction, int explicitScheme, int explicitOrder, int numberOfSubGrids, int reclusteringInterval, int maxNumOfSubSteps) {
+        public static CNSControl ShockTube(string dbPath = null, int savePeriod = 100, int dgDegree = 0, double sensorLimit = 1e-3, double CFLFraction = 0.2, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 2, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, int refinementLevel = 9) {
             CNSControl c = new CNSControl();
 
             // ### Database ###
@@ -58,6 +58,8 @@ namespace CNS {
             c.saveperiod = savePeriod;
             c.PrintInterval = 1;
 
+            c.WriteLTSLog = false;
+
             // ### Partitioning and load balancing ###
             c.GridPartType = GridPartType.METIS;
             c.DynamicLoadBalancing_On = false;
@@ -67,7 +69,7 @@ namespace CNS {
             //c.DynamicLoadBalancing_CellCostEstimatorFactories.Add((prog, i) => new StaticCellCostEstimator(new[] { 1, 10 }));
 
             // ### Shock-Capturing ###
-            bool AV = true;
+            bool AV = false;
             if (AV) {
                 c.ActiveOperators = Operators.Convection | Operators.ArtificialViscosity;
             } else {
@@ -131,7 +133,8 @@ namespace CNS {
             double yMin = 0;
             double yMax = 1;
 
-            int numOfCellsX = 200;
+            int numOfCellsX = 16 * (int)Math.Pow(2, refinementLevel);
+            //int numOfCellsY = 4 * (int)Math.Pow(2, refinementLevel);
             int numOfCellsY = 1;
 
             c.GridFunc = delegate {
@@ -222,7 +225,8 @@ namespace CNS {
             // ### Time configuration ###
             c.dtMin = 0.0;
             c.dtMax = 1.0;
-            c.CFLFraction = CFLFraction;
+            //c.CFLFraction = CFLFraction;
+            c.dtFixed = 1e-5;
             c.Endtime = 0.25;
             c.NoOfTimesteps = int.MaxValue;
 
@@ -877,7 +881,7 @@ namespace CNS {
             return c;
         }
 
-        public static CNSControl ShockVortexInteraction(string dbPath = @"c:\bosss_db", int savePeriod = 100, int dgDegree = 2, double sensorLimit = 1e-3, double CFLFraction = 0.2, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 0, int reclusteringInterval = 0, int maxNumOfSubSteps = 0) {
+        public static CNSControl ShockVortexInteraction(string dbPath = null, int savePeriod = 100, int dgDegree = 2, double sensorLimit = 1e-3, double CFLFraction = 0.2, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 0, int reclusteringInterval = 0, int maxNumOfSubSteps = 0, double Mv = 0.7, double Ms = 1.5) {
             CNSControl c = new CNSControl();
 
             // ### Database ###
@@ -1008,8 +1012,8 @@ namespace CNS {
             double rho0 = 1;
             double RGas = 1;
             double T0 = p0 / (RGas * rho0);
-            double Mv = 0.7;
-            double Ms = 1.5;
+            //double Mv = 0.7;
+            //double Ms = 1.5;
             double c0 = Math.Sqrt(gamma * p0 / rho0);
             double vm = Mv * c0;
 
