@@ -1,0 +1,868 @@
+\BoSSSopen{CsharpAndBoSSSpad/CsharpAndBoSSSpad}
+\graphicspath{{CsharpAndBoSSSpad/CsharpAndBoSSSpad.texbatch/}}
+
+\BoSSScmd{
+/// % ============================================
+/// \section*{What's new}
+/// % ============================================
+/// \BoSSSpad is a scripting environment, based on the C\# language.
+/// While ist is not necessary to be a master-class programmer for the tutorials 
+/// which come up, it is required to have some basic knowledge about the C\#
+/// syntax.
+///
+/// Here, the following topics are covered:
+/// \begin{itemize}
+/// \item Declaration of primitive variables
+/// \item Classes
+/// \item Control Flow
+/// \item Functions, Methods and Delegates
+/// \item Inheritance
+/// \item The execution model of \BoSSSpad
+/// \end{itemize}
+///
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// % ============================================
+/// \section{Declaration of primitive variables}
+/// % ============================================
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// Normally, a program/application written in C\# consists of one or more 
+/// text files (source code, ending with \texttt{.cs}) which are read by a 
+/// compiler and converted into an executable (ending with \text{.exe}).
+///
+/// In \BoSSSpad{}, instead, one can enter single statements or snippets of 
+/// C\# code and execute them on the fly. (These snippets are not complete 
+/// programs on their own, and they would not compile in the traditional way.)
+///
+/// Before we can execute any statement, we must restart (aka. reset) 
+/// the C\# interpreter:
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+restart
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// Any data like single numbers, vectors, strings or composite data objects
+/// (like the numerical grid) is stored resp. referenced via a \emph{variable}.
+/// A variable declaration consists of a type and a name, and reads e.g. as:
+ }
+\BoSSSexe
+\BoSSScmd{
+int i;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// The above statement created a variable named `\code{i}' of type 
+/// `\code{int}' (for integer numbers). The most commonly used number types in 
+/// \BoSSS are \code{int} for integers and \code{double} for real numbers.
+/// A full list of C\#-build-in variable types for numbers can be found 
+/// online (see 
+/// \url{https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/integral-types-table}
+/// and
+/// \url{https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/floating-point-types-table}.)
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Next, we assign a value to the new variable:
+ }
+\BoSSSexe
+\BoSSScmd{
+i = 9;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// If we just enter the variable name, \BoSSSpad{} prompts the variable in 
+/// the result window (if the variable can anyhow be presented as text):
+ }
+\BoSSSexe
+\BoSSScmd{
+i;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Declaration and assignment can also be put into a single line:
+ }
+\BoSSSexe
+\BoSSScmd{
+int j    = 9;\newline 
+double x = 4.5;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Next, we test assign a new value to the already-defined variable \code{i}:
+ }
+\BoSSSexe
+\BoSSScmd{
+i = j + (int)x;\newline 
+i;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Note on the snippet above:
+/// \begin{itemize}
+/// \item \code{x} and \code{i}, \code{j} are of different type; therefore, 
+///       \code{x} is \emph{cast} to int, which truncates the decimal digits,
+///       before it can be added and stored as integer.
+/// \item The second line would be an incomplete statement, according to the 
+///       original, non-interpreted C\# language -- this would produce a 
+///       compile error. The C\# interpreter, instead, produces a text from 
+///       the last 
+///       incomplete statement in a snippet .
+/// \end{itemize}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// While assigning \code{double} to \code{int} requires a cast operation, 
+/// the other way works automatically (this is called an \emph{implicit cast}),
+/// since very \emph{int} can be represented as \emph{double} (but not 
+/// vice-versa):
+ }
+\BoSSSexe
+\BoSSScmd{
+double y = j + x;\newline 
+y;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// C\# defines the standard operations on numbers found in most programming
+/// languages:
+ }
+\BoSSSexe
+\BoSSScmd{
+// Increasing a variables value by one:\newline 
+y = y + 1;\newline 
+y;
+ }
+\BoSSSexe
+\BoSSScmd{
+// Or the += notation:\newline 
+y += 1;\newline 
+y;
+ }
+\BoSSSexe
+\BoSSScmd{
+// Even shorter by the ++ operator:\newline 
+y++;\newline 
+y;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Another build-in type is \code{string}, for representing text:
+ }
+\BoSSSexe
+\BoSSScmd{
+string s = "some Text";
+ }
+\BoSSSexe
+\BoSSScmd{
+s;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Which also supports some (but not all) operators:
+ }
+\BoSSSexe
+\BoSSScmd{
+string t = " and more string";
+ }
+\BoSSSexe
+\BoSSScmd{
+s + t;
+ }
+\BoSSSexe
+\BoSSScmd{
+s + t + ": " + j;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % ============================================
+/// \subsection{Arrays}
+/// % ============================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// For every type, one can define arrays; e.g. an array of integers is 
+/// defined and initialized as
+ }
+\BoSSSexe
+\BoSSScmd{
+int[] A = new int[5];
+ }
+\BoSSSexe
+\BoSSScmd{
+/// The line above creates an array with 5 entries. Initially, all
+/// entries are set to the default value 0:
+ }
+\BoSSSexe
+\BoSSScmd{
+A;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// One can access and manipulate individual enties by index-brackes; 
+/// Note that C\# indices (usually) start at zero:
+ }
+\BoSSSexe
+\BoSSScmd{
+A[2] = 7;
+ }
+\BoSSSexe
+\BoSSScmd{
+A;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// It is also possible to initialize an array with non-default values:
+ }
+\BoSSSexe
+\BoSSScmd{
+string[] B = new string[] \{ "Zero", "One", "Two" \};
+ }
+\BoSSSexe
+\BoSSScmd{
+B;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % ============================================
+/// \subsection{Multi-dimensional arrays}
+/// % ============================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// C\# also defines arrays with more than one index, e.g.:
+ }
+\BoSSSexe
+\BoSSScmd{
+int[,] M = new int[3,4];\newline 
+M[2,1] = 3;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// In \BoSSS, there is a separate type for multidimensional arrays of 
+/// real numbers. In contrast to the multidimensional arrays build into C\#,
+/// their \BoSSS counterparts offer more operations, e.g.
+/// reshaping the array or tensor multiplications.
+/// An array with three dimensions can be initialized as:
+ }
+\BoSSSexe
+\BoSSScmd{
+MultidimensionalArray Q = MultidimensionalArray.Create(5,3,4);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// However, a comprehensive introduction of the 
+/// \code{MultidimensionalArray} type is beond the scope of this section.
+/// We may referr the reader to the API reference.
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % ============================================
+/// \section{Classes}
+/// % ============================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// So far, we used only primitive (build-in) datatypes. The core idea of 
+/// object orientation is to define composite data structures (called 
+/// classes) upon the primitive types and other classes.
+/// 
+/// Furthermore, classes provide the concept of encapsulation: any member 
+/// variable that should be manipulated from code outside of the class 
+/// must be decorated with the \code{public} keyword. Otherwise, the member 
+/// is \code{private} and can only be manipulated form inside the class.
+/// (This is demonstrated in below)
+ }
+\BoSSSexe
+\BoSSScmd{
+class MyVector \{\newline 
+\btab // public variables. \newline 
+\btab public double x;\newline 
+\btab public double y;\newline 
+\btab public string Name;\newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// One may think of classes as blueprints, which are used to create 
+/// objects. Whenever the \code{new} operator is applied to a class, a new 
+/// object is created in computer memory. This is called \emph{instantiation}.
+/// Objects are accessed via variables, just in the same way as arrays.
+///
+/// We declare a variable of type \code{MyVector} and intialize it with an 
+/// instance of this class:
+ }
+\BoSSSexe
+\BoSSScmd{
+MyVector vec = new MyVector();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Then, we can manipulate its variables (also called \emph{members}):
+ }
+\BoSSSexe
+\BoSSScmd{
+vec.x    = 1.2;\newline 
+vec.y    = 4.1;\newline 
+vec.Name = "BoSSS";
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Each object owns its own space in memory; so when we instantiate a second 
+/// object of this type, the members of \code{vec} stay the same:
+ }
+\BoSSSexe
+\BoSSScmd{
+MyVector vec2 = new MyVector();
+ }
+\BoSSSexe
+\BoSSScmd{
+vec2.x    = -3.1;\newline 
+vec2.y    = 22.4;\newline 
+vec2.Name = "Another BoSSS";
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We see, both objects have their independent variables:
+ }
+\BoSSSexe
+\BoSSScmd{
+vec.Name;
+ }
+\BoSSSexe
+\BoSSScmd{
+vec2.Name;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % ============================================
+/// \subsection{Member Functions (Methods)}
+/// % ============================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// The next important idea of object orientation is to bundle data structures
+/// with the code which manipulates this data. In imperative
+/// programming languages (e.g. C, FORTRAN, Matlab) these code is organized
+/// in so-called \emph{functions}, aka. \emph{subroutines}. 
+/// In C\# such functions are put into the class and they can access all
+/// variables in the class, including \code{private} ones.
+/// These functions are often called \emph{methods} or \emph{member functions}.
+///
+/// A function consists of the following parts:
+/// \begin{itemize}
+/// \item
+/// An optional access modifier, e.g. \code{public} or \code{private}; if no 
+/// access modifier is given, the method is private.
+///
+/// \item
+/// The type of the value returned by the method; this can be either a 
+/// build-in type like \code{double} or some class. If the method should 
+/// not return a value, its return type is \code{void}.
+///
+/// \item
+/// A function name
+///
+/// \item
+/// A list of function arguments, i.e. variables which are used as inputs
+/// to the function
+///
+/// \item
+/// The function body which contains the actual code
+/// \end{itemize}
+ }
+\BoSSSexe
+\BoSSScmd{
+class MyAdvancedVector \{\newline 
+\btab // two private variables, which cannot be accessed from outside:\newline 
+\btab double x;    \newline 
+\btab double y;\newline 
+ \newline 
+\btab // a function which only manipulates internal data, but has neither \newline 
+\btab // a return value nor an input argument:\newline 
+\btab public void Rotate90Deg() \{\newline 
+\btab \btab double temp = x; // back-up x in a local variable\newline 
+\btab \btab x           = y; // overwrite x\newline 
+\btab \btab y           = -temp; // set y\newline 
+\btab \}\newline 
+ \newline 
+\btab // a function with an input argument:\newline 
+\btab public void Scale(double factor) \{\newline 
+\btab \btab x *= factor; \newline 
+\btab \btab y *= factor;   \newline 
+\btab \}\newline 
+ \newline 
+\btab // a function which only returns a value:\newline 
+\btab public double LengthSquared() \{\newline 
+\btab \btab double sqSum = 0;;\newline 
+\btab \btab sqSum += x*x; \newline 
+\btab \btab sqSum += y*y; \newline 
+\btab \btab return sqSum; // returning the result of the function   \newline 
+\btab \}\newline 
+ \newline 
+\btab // a function with multiple input arguments, and a return value;\newline 
+\btab // to avoid confusion, it is better to chose names for the input arguments\newline 
+\btab // that do not conflict with member variables:\newline 
+\btab public double Set\_xy(double new\_x, double new\_y) \{\newline 
+\btab \btab x = new\_x;\newline 
+\btab \btab y = new\_y;\newline 
+\btab \btab return LengthSquared();\newline 
+\btab \}\newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+MyAdvancedVector vecX = new MyAdvancedVector();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Next, we demonstrate how to execute member functions of our new class:
+ }
+\BoSSSexe
+\BoSSScmd{
+vecX.LengthSquared();
+ }
+\BoSSSexe
+\BoSSScmd{
+vecX.Set\_xy(2,3);
+ }
+\BoSSSexe
+\BoSSScmd{
+vecX.Rotate90Deg();
+ }
+\BoSSSexe
+\BoSSScmd{
+vecX.LengthSquared();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % =======================
+/// \subsection{Properties}
+/// % =======================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Properties are special methods, which look like functions. 
+/// Most of the time, they are used to execute additional code before setting 
+/// a variable. 
+ }
+\BoSSSexe
+\BoSSScmd{
+class PropertiesDemo \{\newline 
+\btab // a private variable:\newline 
+\btab int i1;\newline 
+ \newline 
+\btab // reading/setting the value through methods:\newline 
+\btab // (old-fashioned)\newline 
+\btab public int Get\_i1() \{\newline 
+\btab \btab return i1;    \newline 
+\btab \}\newline 
+\btab public void Set\_i1(int new\_i1) \{\newline 
+\btab \btab // here, one can put code to perform additional operations,\newline 
+\btab \btab // e.g. check that the passed argument is positive, (if this is desired)    \newline 
+\btab \btab i1 = new\_i1;\newline 
+\btab \}\newline 
+ \newline 
+\btab // reading/setting the value i1 through a property\newline 
+\btab public int I1 \{\newline 
+\btab \btab get \{\newline 
+\btab \btab \btab // the get-part: like a function, \newline 
+\btab \btab \btab //    * no arguments\newline 
+\btab \btab \btab //    * returns int\newline 
+\btab \btab \btab return i1;\newline 
+\btab \btab \}    \newline 
+\btab \btab set \{\newline 
+\btab \btab \btab // the set-part: like a function, \newline 
+\btab \btab \btab //    * one argument of type int, vamed value\newline 
+\btab \btab \btab //    * no return value/void return value\newline 
+\btab \btab \btab i1 = value;\newline 
+\btab \btab \}\newline 
+\btab \}\newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Again, we instantiate the class:
+ }
+\BoSSSexe
+\BoSSScmd{
+PropertiesDemo p = new PropertiesDemo();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Access to the member variable through methods would work as 
+ }
+\BoSSSexe
+\BoSSScmd{
+p.Set\_i1(49);
+ }
+\BoSSSexe
+\BoSSScmd{
+p.Get\_i1();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// while the property-notation is more compact, but has the same functionality
+/// (syntactic sugar):
+ }
+\BoSSSexe
+\BoSSScmd{
+p.I1;
+ }
+\BoSSSexe
+\BoSSScmd{
+p.I1 = 33;
+ }
+\BoSSSexe
+\BoSSScmd{
+p.I1;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % ============================================
+/// \subsection{Static functions}
+/// % ============================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// So far, always had to instantiate a class to execute its methods.
+/// Now think e.g. about mathematical functions, like the sinus. In 
+/// languages like C or FORTRAN, one would just evaluate them as 
+/// \code{sin(x)}. The designers of C\# could have allowed functions like in 
+/// C, but decided against it because it would compromise the object-oriented
+/// syntax. On the other hand, creating an object before one is able to 
+/// evaluate a sinus function also seems over-complicated. The compromise 
+/// are \emph{static} functions:
+ }
+\BoSSSexe
+\BoSSScmd{
+class StaticDemo \{\newline 
+\btab // in addition to normal functions, static functions are decorated\newline 
+\btab // with the keyword static:\newline 
+\btab static public int Summation(int a, int b) \{\newline 
+\btab \btab return a + b;\newline 
+\btab \}    \newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Then, static functions can be involved without instantiating an object: 
+ }
+\BoSSSexe
+\BoSSScmd{
+StaticDemo.Summation(1, 2);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % ============================================
+/// \section{Class libraries and Namespaces}
+/// % ============================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Like most programming languages, C\# also ships with an extensive 
+/// programming library (class libraries), 
+/// e.g. to read and save files, mathematical functions,
+/// graphical output; The full list of standard libraries can be found at  
+/// \url{https://msdn.microsoft.com/en-us/library/gg145045(v=vs.110).aspx}.
+///
+/// These libraries are collections of classes; they are organized in 
+/// \emph{namespaces}. In \BoSSSpad, the list of currently loaded 
+/// namespaces can be 
+/// shown with the \code{ShowUsing()} command:
+ }
+\BoSSSexe
+\BoSSScmd{
+ShowUsing();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Any class within a loaded namespace can be accessed directly; e.g. the 
+/// classes \code{Console} and \code{Math}, which are part of the 
+/// \code{System} namespace:
+ }
+\BoSSSexe
+\BoSSScmd{
+Console.WriteLine("Hello World!");
+ }
+\BoSSSexe
+\BoSSScmd{
+Math.Sin(2.0);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// This is the same as calling the methods by their full 
+/// \emph{namespace path}:
+ }
+\BoSSSexe
+\BoSSScmd{
+System.Console.WriteLine("Hello World!");
+ }
+\BoSSSexe
+\BoSSScmd{
+System.Math.Sin(2.0);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// If a namespace is not loaded, its classes must be accessed via their 
+/// full path, e.g. 
+ }
+\BoSSSexe
+\BoSSScmd{
+System.Collections.BitArray ba = new System.Collections.BitArray(3);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// If we load the namespace by the \code{using} keyword, we can 
+/// access the \code{BitArray} class directly:
+ }
+\BoSSSexe
+\BoSSScmd{
+using System.Collections;
+ }
+\BoSSSexe
+\BoSSScmd{
+BitArray ba = new BitArray(3);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Note that, in order to work with a class library, 
+/// it may not be enough to just add a using directive.
+/// All libraries are contained in \texttt{dll} files, e.g. 
+/// \texttt{System.dll} (standard C\# library) or \texttt{BoSSS.foundation.dll}
+/// (part of \BoSSS).
+///
+/// These files must be loaded before any class from the library can be used.
+/// (Namespaces are only for the internal organization of the library.)
+/// Initially, \BoSSSpad{} load a set of libraries which are useful for working
+/// with \BoSSS. For most use-cases, this set may be sufficient; however,
+/// not that by the 
+/// \code{Mono.CSharp.InteractiveBase.LoadAssembly(string)} method, 
+/// it is possible to load further assemblies.
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % ============================================
+/// \section{Control Flow}
+/// % ============================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Regarding the standard syntax of the language for implementing 
+/// a function, C\# designers tried to stay close to popular
+/// existing languages like C, C++ and Java.
+/// In this tutorial, we briefly discuss two control structures, branches
+/// and loops.
+ }
+\BoSSSexe
+\BoSSScmd{
+/// At first, the \code{if}-branch;
+/// We use a random number generator create random input data for our 
+/// example. Therefore, the following snippet runs differently each time
+/// it is executed:
+ }
+\BoSSSexe
+\BoSSScmd{
+Random rnd       = new Random(); // Generate new random number generator object\newline 
+double randomVal = rnd.NextDouble();\newline 
+Console.WriteLine("Random number is " + randomVal);\newline 
+ \newline 
+// here, the if-clause\newline 
+if(randomVal > 0.5) \{ // some condition, which is ether true or false\newline 
+\btab // Code that will be executed when the condition is true\newline 
+\btab Console.WriteLine("greater than 1/2");    \newline 
+\} else \{\newline 
+\btab // Code that will be executed when the condition is false\newline 
+\btab Console.WriteLine("smaller or equal to 1/2");  \newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Next, the \code{for}-loop. It has three `Arguments':
+/// \begin{itemize} 
+/// \item
+/// An initialization code (\code{int j = 0}): executed \emph{before} the 
+/// loop starts.
+///
+/// \item
+/// A runtime condition (\code{j < J}): this is checked \emph{before} each 
+/// iteration of the loop; if it is false, the loop terminates.
+///
+/// \item
+/// An increment statement (\code{j++}): this is executed \emph{after} each
+/// iteration of the loop and usually used to increase or decrease some 
+/// variables value.
+/// \end{itemize}
+ }
+\BoSSSexe
+\BoSSScmd{
+int J = 7;\newline 
+for(int j = 0; j < J; j++) \{\newline 
+\btab // code which is executed repeadedly \newline 
+\btab double s = Math.Sin(j);\newline 
+\btab Console.WriteLine("The sinus of " + j + " is " + s);\newline 
+\}   
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Another kind of loops is the \code{foreach} statement. It executes
+/// the loop body for each element of a list or array:
+ }
+\BoSSSexe
+\BoSSScmd{
+double[] SomeValues = new double[] \{ 1.2, -3.4, 7.3, 3.1, 3.14 \};\newline 
+foreach(double x in SomeValues) \{\newline 
+\btab double s = Math.Sin(x);\newline 
+\btab Console.WriteLine("The sinus of " + x + " is " + s);\newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % ============================================
+/// \section{Functions, Methods and Delegates}
+/// % ============================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// In its heart, C\# is an object-oriented programming language, and 
+/// methods are implemented in a imperative style. However, the designers
+/// also included concepts from the functional programming model.
+/// A key idea of functional programming is that functions/methods can be 
+/// treated as variables; such variables are called \emph{delegates}.
+///
+/// In order to demonstrate the use of delegates, we create a class with 
+/// some static methods:
+ }
+\BoSSSexe
+\BoSSScmd{
+class DelDemo \{\newline 
+\btab public static double Pow2(int x, float z) \{\newline 
+\btab \btab return x*x*z;\newline 
+\btab \}\newline 
+\btab public static void Print(int x, double y) \{\newline 
+\btab \btab Console.Write("Got the numbers " + x + " and " + y + ".");\newline 
+\btab \}    \newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Now, we want to create variables/delegates which \emph{point} to the 
+/// functions/methods defined above. As for any variable declaration, we 
+/// need to specify type and name.
+ }
+\BoSSSexe
+\BoSSScmd{
+/// For functions which have a return type, it works like this:
+ }
+\BoSSSexe
+\BoSSScmd{
+// Note: the last type in the '< >' - List:\newline 
+// * first, all arguments of the function\newline 
+// * finally, the return type \newline 
+Func<int,float,double> delPow2 = DelDemo.Pow2;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Then, the method can be called via the delegate:
+ }
+\BoSSSexe
+\BoSSScmd{
+// Note: the 'f'-suffix is for single precision types; this also shows round-of\newline 
+// errors of floating point arithmetics \newline 
+delPow2(2, 1.1f);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Functions without a return type (void) are also called \emph{actions}:
+ }
+\BoSSSexe
+\BoSSScmd{
+Action<int,double> a = DelDemo.Print;
+ }
+\BoSSSexe
+\BoSSScmd{
+a(1,1.2);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// By the keyword \code{delagate}, C\# designers finally (in the C\# version 
+/// 3.0) reversed their original decision that functions are only allowed 
+/// within classes by the introduction of anonymous functions:
+ }
+\BoSSSexe
+\BoSSScmd{
+delPow2 = delegate(int x, float z) \{\newline 
+\btab double retval;\newline 
+\btab retval = x*x*z*2.0;\newline 
+\btab return retval;\newline 
+\};
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Now, the variable \code{delPow2} does not anymore points to the method 
+/// \code{DelDemo.Pow2}, but to the newly defined, anonymous function:
+ }
+\BoSSSexe
+\BoSSScmd{
+delPow2(2, 1.1f);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// To make notation more compact, a function-like syntax was introduced:
+ }
+\BoSSSexe
+\BoSSScmd{
+delPow2 = (x, z) => x*x*z*4.0;
+ }
+\BoSSSexe
+\BoSSScmd{
+delPow2(2, 1.1f);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Since delegates can be treated as normal variables, the can also be used
+/// as arguments to other functions; here is a more advanced example,
+/// an action (no return value) which takes as inputs 
+/// another action, a function and an integer value:
+ }
+\BoSSSexe
+\BoSSScmd{
+Action<Action<int,double>,Func<int,float,double>,int> apply = \newline 
+\btab delegate(Action<int,double> act, Func<int,float,double> fun, int i) \{\newline 
+\btab \btab float f = 1.0f;\newline 
+ \newline 
+\btab \btab double y = fun(i, f); // apply function 'fun' to argument 'i'\newline 
+\btab \btab act(i, y);            // hand both numbers to action 'act'\newline 
+ \newline 
+\btab \btab return; \newline 
+\btab \};
+ }
+\BoSSSexe
+\BoSSScmd{
+apply(a,delPow2,2);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % ============================================
+/// \section{Inheritance}
+/// % ============================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// As already discussed, classes are blueprints for objects: once a class
+/// is implemented, it can be used to create an infinite number of 
+/// objects. Of course, only until the computers memory is full.
+///
+/// The model of a single blueprint is, however, sometimes a bit inflexible.
+/// engineers know this for a long time: in a group of products, you 
+/// may have two products that have a lot in common, but also significant
+/// differences regarding some functionality.
+///
+/// Object oriented programming languages provide the concept of inheritance:
+/// Common functionality is implemented in a common base class.
+ }
+\BoSSSexe
