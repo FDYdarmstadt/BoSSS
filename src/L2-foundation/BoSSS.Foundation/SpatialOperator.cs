@@ -1082,8 +1082,10 @@ namespace BoSSS.Foundation {
             /// </summary>
             BoSSS.Foundation.Quadrature.NonLin.NECQuadratureVolume m_NonlinearVolume;
 
-
-            public EvaluatorNonLin(
+            /// <summary>
+            /// Not for direct user interaction
+            /// </summary>
+            internal protected EvaluatorNonLin(
                 SpatialOperator owner,
                 CoordinateMapping DomainVarMap,
                 IList<DGField> ParameterMap,
@@ -1205,6 +1207,12 @@ namespace BoSSS.Foundation {
                     if(base.m_TRX != null)
                         m_TRX.TransceiveFinish();
 
+                    //if(!rem) {
+                    //    rem = true;
+                    //    Console.WriteLine("Reminder: edge terms deactivated.");
+                    //}
+
+                    
                     if(m_NonlinearEdge != null) {
                         using(new BlockTrace("Edge_Integration_NonLin", tr)) {
                             m_NonlinearEdge.m_Output = output;
@@ -1225,26 +1233,23 @@ namespace BoSSS.Foundation {
 
                         }
                     }
-
-
 #if DEBUG
                     output.CheckForNanOrInfV(true, true, true);
 #endif
-
                 }
-
             }
-
-
         }
-
+      
 
         /// <summary>
         /// matrix assembly for linear or linearized operators
         /// </summary>
         protected class EvaluatorLinear : EvaluatorBase, IEvaluatorLinear {
 
-            public EvaluatorLinear(
+            /// <summary>
+            /// Not for direct user interaction
+            /// </summary>
+            internal protected EvaluatorLinear(
                 SpatialOperator owner,
                 UnsetteledCoordinateMapping DomainVarMap,
                 IList<DGField> ParameterMap,

@@ -319,7 +319,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 }
             }
 #endif
-
+            
             // this is an EvaluateEx: we are also responsible for multiplying with quadrature weights and summing up!
             Debug.Assert(QuadResult.Dimension == 2);
             Debug.Assert(QuadResult.GetLength(0) == Length);
@@ -328,14 +328,14 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             // ===================
             // Evaluate all fields
             // ===================
-
+            
             this.Field_Eval.Start();
-
+            
             for (int f = 0; f < m_DomainFields.Length; f++) {
                 if( m_ValueRequired[f]) {
                     Debug.Assert(m_FieldValues[f] != null);
                     if ( m_DomainFields[f] != null) {
-                        m_DomainFields[f].Evaluate(i0, Length, NodesUntransformed, m_FieldValues[f]);
+                        //m_DomainFields[f].Evaluate(i0, Length, NodesUntransformed, m_FieldValues[f]);
                     } else {
                         // field is null => set to 0.0
                         m_FieldValues[f].Clear();
@@ -347,15 +347,17 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 if(m_GradientRequired[f]) {
                     Debug.Assert(m_FieldGradients[f] != null);
                     if ( m_DomainFields[f] != null) {
-                        m_DomainFields[f].EvaluateGradient(i0, Length, NodesUntransformed, m_FieldGradients[f]);
+                        //m_DomainFields[f].EvaluateGradient(i0, Length, NodesUntransformed, m_FieldGradients[f]);
                     } else {
                         // field is null => set to 0.0
                         m_FieldValues[f].Clear();
                     }
                 }
             }
-
+            
             this.Field_Eval.Stop();
+
+            
 
             // =====================================
             // Transform Nodes to global coordinates
@@ -363,7 +365,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
             this.ParametersAndNormals.Start();
 
-            var NodesGlobalCoords = grid.GlobalNodes.GetValue_Cell(NodesUntransformed, i0, Length);
+            //var NodesGlobalCoords = grid.GlobalNodes.GetValue_Cell(NodesUntransformed, i0, Length);
+            var NodesGlobalCoords = MultidimensionalArray.Create(Length, NoOfNodes, D);
 
             this.ParametersAndNormals.Stop();
 
@@ -371,7 +374,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             // Evaluate Flux functions
             // =======================
 
-
+            
             bool[] RequireTestFunctionGradient = new bool[NoOfEquations];
             bool[] Cleared_m_FluxValues = new bool[NoOfEquations];
 
@@ -419,6 +422,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 }
             }
 
+            
 
             // =========================
             // Evaluate Source functions
@@ -536,6 +540,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             }
             this.Flux_Eval.Stop();
 
+            
+
             // ================
             // Transform fluxes
             // ================
@@ -556,6 +562,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                             InverseJacobi = grid.iGeomCells.InverseTransformation.ExtractSubArrayShallow(new int[] { i0, 0, 0 }, new int[] { i0 + Length - 1, D - 1, D - 1 });
                         } else {
                             InverseJacobi = grid.InverseJacobian.GetValue_Cell(QR.Nodes, i0, Length);
+                            //InverseJacobi = MultidimensionalArray.Create(Length, NoOfNodes, D, D);
                         }
                     }
 
@@ -572,9 +579,10 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 }
 
                 if(m_SourceValues[e] != null) {
-                    
-                    if(JacobiDet == null && !isAffine)
+
+                    if (JacobiDet == null && !isAffine)
                         JacobiDet = grid.JacobianDeterminat.GetValue_Cell(QR.Nodes, i0, Length);
+                        //JacobiDet = MultidimensionalArray.Create(Length, NoOfNodes);
 
                     // apply scaling with Jacobi determinant, for integral transformation
                     if(isAffine) {
@@ -586,6 +594,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             }
 
             this.Flux_Trafo.Stop();
+
             
 
             // =======================

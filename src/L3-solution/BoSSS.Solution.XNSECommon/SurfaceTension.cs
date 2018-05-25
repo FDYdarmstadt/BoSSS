@@ -935,7 +935,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
                         int D = inp.D;
 
-                        double[] PSnI = new double[D];
+                        double[] PSnI = new double[D]; // projection of surface/level-set normal onto domain boundary tangent
                         for (int d1 = 0; d1 < D; d1++) {
                             for (int d2 = 0; d2 < D; d2++) {
                                 double nn = EdgeNormal[d1] * EdgeNormal[d2];
@@ -947,7 +947,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
                             }
                         }
                         double PSnINorm = PSnI.L2Norm();
-                        double[] PSnINormal_IN = PSnI.Normalize();
+                        double[] PSnINormal_IN = PSnI.Normalize(); // line normal: tangential to domain boundary & normal on contact line
 
 
                         // isotropic surface tension terms

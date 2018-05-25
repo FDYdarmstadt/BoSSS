@@ -109,7 +109,7 @@ namespace BoSSS.Foundation.Caching {
     }
     
     /// <summary>
-    /// Cache-Logic for values which which depend on <see cref="NodeSet"/> and polynomial degree.
+    /// Cache-Logic for values which depend on <see cref="NodeSet"/> and polynomial degree.
     /// </summary>
     public abstract class CacheLogic_NsP {
 
@@ -136,9 +136,7 @@ namespace BoSSS.Foundation.Caching {
             // lookup table garbage collection, if necessary
             // ---------------------------------------------
             if(CacheLookup.Count > Cache.NoOfUsedBanks) {
-                // definetly to many items in the lockup-table
-
-                
+                // definitely to many items in the lockup-table
 
                 List<int> ToRemove = new List<int>();
                 foreach(var kv in this.CacheLookup) {
@@ -158,7 +156,7 @@ namespace BoSSS.Foundation.Caching {
             Stuple CacheRef;
             bool present = false;
             if(this.lastNodesetRef == NS.Reference) {
-                // lucky punch: we dont need to ask the dict
+                // lucky punch: we don't need to ask the dict
                 CacheRef = this.lastCacheRef;
                 present = true;
                 Debug.Assert(CacheLookup.ContainsKey(lastNodesetRef));
@@ -258,7 +256,7 @@ namespace BoSSS.Foundation.Caching {
     }
 
     /// <summary>
-    /// Cache-Logic for values which which depend on <see cref="NodeSet"/>.
+    /// Cache-Logic for values which depend on <see cref="NodeSet"/>.
     /// </summary>
     public abstract class CacheLogic_Ns {
 
@@ -773,6 +771,11 @@ namespace BoSSS.Foundation.Caching {
             return this.m_impl.GetValue_Cell(NS, j0, Len, 0);
         }
 
+
+        /// <summary>
+        /// Single-value evaluation at edges,
+        /// used for properties which are unique at edges (e.g. edge normals or global coordinates).
+        /// </summary>
         public MultidimensionalArray GetValue_EdgeSV(NodeSet NS, int e0, int Len) {
             if(e0 < 0) throw new ArgumentOutOfRangeException("e0", "must be greater or equal than zero.");
             if(Len < 1) throw new ArgumentOutOfRangeException("Len", "must be greater or equal than one.");
@@ -795,7 +798,7 @@ namespace BoSSS.Foundation.Caching {
 
         /// <summary>
         /// Double-value (i.e. values for IN- and OUT-cell) evaluation at edges,
-        /// used for properties which ar discontinuous at edges.
+        /// used for properties which are discontinuous at edges (e.g. DG-fields).
         /// </summary>
         public Tuple<MultidimensionalArray, MultidimensionalArray> GetValue_EdgeDV(NodeSet NS, int e0, int Len) {
             if(e0 < 0) throw new ArgumentOutOfRangeException("e0", "must be greater or equal than zero.");

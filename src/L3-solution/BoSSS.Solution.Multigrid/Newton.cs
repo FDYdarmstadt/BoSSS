@@ -667,7 +667,7 @@ namespace BoSSS.Solution.Multigrid {
         /// </summary>
         /// <param name="SolutionVec">Solution point</param>
         /// <param name="w">Direction</param>
-        /// <param name="f0">f0, usally has been calculated earlier</param>
+        /// <param name="f0">f0, usually has been calculated earlier</param>
         /// <returns></returns>
         public double[] dirder(CoordinateVector SolutionVec, double[] currentX, double[] w, double[] f0) {
             using (var tr = new FuncTrace()) {
