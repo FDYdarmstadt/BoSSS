@@ -27,14 +27,12 @@ using BoSSS.Foundation;
 
 namespace BoSSS.Solution.NSECommon.Operator.Convection {
     public class ConvectionAtIB : ILevelSetForm {
-        public ConvectionAtIB(int _d, int _D, LevelSetTracker LsTrk, double _LFFA, IncompressibleBoundaryCondMap _bcmap, Func<double, double>[] _uLevSet, Func<double, double>[] _wLevSet, double particleRadius, double fluidDensity, bool UseMovingMesh){
+        public ConvectionAtIB(int _d, int _D, LevelSetTracker LsTrk, double _LFFA, IncompressibleBoundaryCondMap _bcmap, Func<double[], double,double[]> getParticleParams, double fluidDensity, bool UseMovingMesh){
             m_LsTrk = LsTrk;
             m_D = _D;
             m_d = _d;
-            this.uLevSet = _uLevSet;
-            this.wLevSet = _wLevSet;
             LFFA = _LFFA;
-            this.pRadius = particleRadius;
+            this.m_getParticleParams = getParticleParams;
             //varMode = _varMode;
             fDensity = fluidDensity;
             m_UseMovingMesh = UseMovingMesh;
@@ -46,7 +44,12 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
         LevelSetTracker m_LsTrk;
         int m_D;
         int m_d;
-        Func<double, double>[] uLevSet, wLevSet;
+
+        /// <summary>
+        /// Describes: 0: velX, 1: velY, 2:rotVel,3:particleradius
+        /// </summary>
+        Func<double[], double,double[]> m_getParticleParams;
+
         double pRadius;
         double fDensity;
         double LFFA;
@@ -132,9 +135,6 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
         */
 
         public double LevelSetForm(ref CommonParamsLs cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
-            double[] _uLevSet = new double[2];
-
-
 
             BoSSS.Foundation.CommonParams inp; // = default(BoSSS.Foundation.InParams);
             inp.Parameters_IN = cp.ParamsNeg;
@@ -145,21 +145,19 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
             inp.time = cp.time;
             inp.Parameters_OUT = new double[inp.Parameters_IN.Length];
 
-
-
-            //for (int d = 0; d < m_D; d++)
-            //{
-            //    _uLevSet[d] = (uLevSet[d])(cp.time);
-            //}
+            var parameters_P = m_getParticleParams(inp.X, inp.time);
+            double[] uLevSet = new double[] { parameters_P[0], parameters_P[1] };
+            double wLevSet = parameters_P[2];
+            pRadius = parameters_P[3];
 
             double[] uLevSet_temp = new double[1];
             if (m_d == 0) {
-                uLevSet_temp[0] = (uLevSet[0])(cp.time) + pRadius * wLevSet[0](cp.time) * -cp.n[1];
-            } else { uLevSet_temp[0] = (uLevSet[1])(cp.time) + pRadius * wLevSet[0](cp.time) * cp.n[0]; }
+                uLevSet_temp[0] = uLevSet[0] + pRadius * wLevSet * -cp.n[1];
+            } else { uLevSet_temp[0] = uLevSet[1] + pRadius * wLevSet * cp.n[0]; }
 
             //Outer values for Velocity and VelocityMean
-            inp.Parameters_OUT[0] = (uLevSet[0])(cp.time) + pRadius * wLevSet[0](cp.time) * -cp.n[1];
-            inp.Parameters_OUT[1] = (uLevSet[1])(cp.time) + pRadius * wLevSet[0](cp.time) * cp.n[0];
+            inp.Parameters_OUT[0] = uLevSet[0] + pRadius * wLevSet * -cp.n[1];
+            inp.Parameters_OUT[1] = uLevSet[1] + pRadius * wLevSet * cp.n[0];
             // Velocity0MeanVectorOut is set to zero, i.e. always LambdaIn is used.
             inp.Parameters_OUT[2] = 0;
             inp.Parameters_OUT[3] = 0;
