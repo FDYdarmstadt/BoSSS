@@ -959,6 +959,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
                         Flx_InCell -= m_sigma * Math.Cos(m_theta) * PSnINormal_IN[m_comp];
 
                         // dissipative contact line force
+                        // beta*(u*nL)
                         for (int d = 0; d < D; d++) {
                             Flx_InCell += m_beta * (_uA[d] * PSnINormal_IN[d]) * PSnINormal_IN[m_comp];
                         }
