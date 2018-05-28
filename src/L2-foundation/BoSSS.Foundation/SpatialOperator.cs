@@ -842,9 +842,10 @@ namespace BoSSS.Foundation {
                     order = owner.GetOrderFromQuadOrderFunction(m_DomainMapping, ParameterMap, CodomainVarMap);
 
                     m_OperatorCoefficients = new CoefficientSet() {
-                        CellLengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)(this.GridData)).Cells.cj,
+                        CellLengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)(this.GridData)).Cells.CellLengthScale,
                         EdgeLengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)(this.GridData)).Edges.h_min_Edge,
-                        UserDefinedValues = new Dictionary<string, object>()
+                        UserDefinedValues = new Dictionary<string, object>(),
+                        GrdDat = this.GridData
                     };
                 }
             }
@@ -1081,8 +1082,10 @@ namespace BoSSS.Foundation {
             /// </summary>
             BoSSS.Foundation.Quadrature.NonLin.NECQuadratureVolume m_NonlinearVolume;
 
-
-            public EvaluatorNonLin(
+            /// <summary>
+            /// Not for direct user interaction
+            /// </summary>
+            internal protected EvaluatorNonLin(
                 SpatialOperator owner,
                 CoordinateMapping DomainVarMap,
                 IList<DGField> ParameterMap,
@@ -1204,6 +1207,12 @@ namespace BoSSS.Foundation {
                     if(base.m_TRX != null)
                         m_TRX.TransceiveFinish();
 
+                    //if(!rem) {
+                    //    rem = true;
+                    //    Console.WriteLine("Reminder: edge terms deactivated.");
+                    //}
+
+                    
                     if(m_NonlinearEdge != null) {
                         using(new BlockTrace("Edge_Integration_NonLin", tr)) {
                             m_NonlinearEdge.m_Output = output;
@@ -1224,26 +1233,23 @@ namespace BoSSS.Foundation {
 
                         }
                     }
-
-
 #if DEBUG
                     output.CheckForNanOrInfV(true, true, true);
 #endif
-
                 }
-
             }
-
-
         }
-
+      
 
         /// <summary>
         /// matrix assembly for linear or linearized operators
         /// </summary>
         protected class EvaluatorLinear : EvaluatorBase, IEvaluatorLinear {
 
-            public EvaluatorLinear(
+            /// <summary>
+            /// Not for direct user interaction
+            /// </summary>
+            internal protected EvaluatorLinear(
                 SpatialOperator owner,
                 UnsetteledCoordinateMapping DomainVarMap,
                 IList<DGField> ParameterMap,

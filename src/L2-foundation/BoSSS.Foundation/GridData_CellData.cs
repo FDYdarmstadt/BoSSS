@@ -521,6 +521,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             public double[] CellSurfaceArea;
 
             /// <summary>
+            /// An inverse length scale (dimension is one-over-length, resp. area over volume)
             /// for each cell <em>j</em> this is
             /// \f[ 
             /// c_j = frac{Area(\partial K_j \\ \partial \Omega) \cdot 0.5 + Area(\partial K_j \cap \partial \Omega)}{Volume(K_j)},
@@ -538,6 +539,12 @@ namespace BoSSS.Foundation.Grid.Classic {
             /// look at formula (7).
             /// </remarks>
             public MultidimensionalArray cj;
+
+            /// <summary>
+            /// the inverse (one-over) of <see cref="cj"/>;
+            /// </summary>
+            public MultidimensionalArray CellLengthScale;
+
 
             /// <summary>
             /// Alias for cj
@@ -676,6 +683,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     int Jtot = this.NoOfCells;
                     int Jloc = this.NoOfLocalUpdatedCells;
                     this.cj = MultidimensionalArray.Create(Jtot);
+                    this.CellLengthScale = MultidimensionalArray.Create(Jtot);
                     double[] bndArea = new double[Jtot];
 
                     int E = edgeDat.Count;
@@ -688,6 +696,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     }
                     for (int j = 0; j < Jloc; j++) {
                         cj[j] = (CellSurfaceArea[j] + bndArea[j]) * 0.5 / GetCellVolume(j);
+                        CellLengthScale[j] = 1.0 / cj[j];
                     }
 
 
@@ -700,7 +709,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         this.cj[j] = double.NaN;
 
                     this.cj.MPIExchange(this.m_owner);
-
+                    this.CellLengthScale.MPIExchange(this.m_owner);
                 }
             }
 
