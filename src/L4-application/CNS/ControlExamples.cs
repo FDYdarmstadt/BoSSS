@@ -3360,22 +3360,19 @@ namespace CNS {
             }
             return c;
         }
-        public static CNSControl ShockTube_HilbertTest(int GPType, int dgDegree, int ExplOrder, int RecInt, int numOfCellsX, int numOfCellsY, bool LTSON, int AVratio, int Tsteps,string prjname=null, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = true, string SessionID = null, string GridID = null) {
+        public static CNSControl ShockTube_HilbertTest(int GPType, int dgDegree, int ExplOrder, int RecInt, int numOfCellsX, int numOfCellsY, bool LTSON, int AVratio, int Tsteps = int.MaxValue, string prjname = null, double sensorLimit = 1e-4, bool true1D = false, bool saveToDb = true, string SessionID = null, string GridID = null) {
 
             CNSControl c = new CNSControl();
             //c.DbPath = @"D:\Weber\BoSSS\test_db";
             //dbPath = @"e:\bosss_db\GridOfTomorrow\";
-            //c.DbPath = @"\\fdyprime\userspace\weber\db_Speedup_2";
+            c.DbPath = @"\\fdyprime\userspace\weber\db_Speedup_2";
             //c.DbPath = dbPath;
             //c.savetodb = dbPath != null && saveToDb;
-
             //c.DbPath = @"/home/yp19ysog/BoSSS_DB";
-            
-            c.savetodb = true;
-            c.saveperiod = int.MaxValue;
-            c.PrintInterval = 1;
 
-            //Debugger.Launch();
+            c.savetodb = true;
+            c.saveperiod = RecInt;
+            c.PrintInterval = 1;
 
             bool AV = false;
             if (dgDegree > 0) {
@@ -3387,7 +3384,7 @@ namespace CNS {
                 //LTS-Timestepping
                 c.ExplicitScheme = ExplicitSchemes.LTS;
                 c.ExplicitOrder = ExplOrder;
-                c.NumberOfSubGrids = 3;
+                c.NumberOfSubGrids = 2;//3
                 c.ReclusteringInterval = RecInt;
                 c.FluxCorrection = false;
 
@@ -3541,8 +3538,6 @@ namespace CNS {
             double pressureLeft = 1.0;
             double pressureRight = 0.1;
 
-            //c.InitialValues_Evaluators.Add(Variables.Density, X => densityLeft - SmoothJump(DistanceFromPointToLine(X, point, r)) * (densityLeft - densityRight));
-            //c.InitialValues_Evaluators.Add(Variables.Pressure, X => pressureLeft - SmoothJump(DistanceFromPointToLine(X, point, r)) * (pressureLeft - pressureRight));
             c.InitialValues_Evaluators.Add(Variables.Density, X => densityLeft - Jump(X[0]) * (densityLeft - densityRight));
             c.InitialValues_Evaluators.Add(Variables.Pressure, X => pressureLeft - Jump(X[0]) * (pressureLeft - pressureRight));
             c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => 0.0);
@@ -3571,27 +3566,25 @@ namespace CNS {
             } else {
                 c.ProjectName = prjname;
             }
-
-            c.SessionName = String.Format("DMR, dgDegree = {0}, noOfCellsX = {1}, noOfCellsX = {2}, GridPartType {3}, LoadbalancingType {4}", dgDegree, numOfCellsX, numOfCellsY, c.GridPartType, LoadbalancingType);
+            c.SessionName = String.Format("ST, dgDegree = {0}, noOfCellsX = {1}, noOfCellsX = {2}, GridPartType {3}, LoadbalancingType {4}", dgDegree, numOfCellsX, numOfCellsY, c.GridPartType, LoadbalancingType);
 
             return c;
         }
 
-        public static CNSControl DoubleMachReflection_HilbertTest( int GPType, int dgDegree, int ExplOrder, int RecInt, int numOfCellsX, int numOfCellsY, bool LTSON, int AVratio, int Tsteps, string prjname = null, double sensorLimit = 1e-3, bool restart = false, string sessionID = null, string gridID = null) {
+        public static CNSControl DoubleMachReflection_HilbertTest(int GPType, int dgDegree, int ExplOrder, int RecInt, int numOfCellsX, int numOfCellsY, bool LTSON, int AVratio, int Tsteps = int.MaxValue, string prjname = null, double sensorLimit = 1e-3, bool restart = false, string sessionID = null, string gridID = null) {
             CNSControl c = new CNSControl();
 
             //c.DbPath = @"D:\Weber\BoSSS\test_db";
-            c.DbPath = @"/home/yp19ysog/BoSSS_DB";
-            //c.DbPath = @"\\fdyprime\userspace\weber\db_Speedup_2";
+            //c.DbPath = @"/home/yp19ysog/BoSSS_DB";
+            c.DbPath = @"\\fdyprime\userspace\weber\db_Speedup_2";
             c.savetodb = true;
-            c.saveperiod = int.MaxValue;
+            c.saveperiod = RecInt;
             c.PrintInterval = 1;
 
             bool AV = false;
             if (dgDegree > 0) {
                 AV = true;
             }
-            //bool AV = true;
 
             if (LTSON) {
                 c.DynamicLoadBalancing_On = true;
@@ -3747,12 +3740,10 @@ namespace CNS {
 
                     return grid;
                 };
-
             } else {
                 c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid(sessionID), -1);
                 c.GridGuid = new Guid(gridID);
             }
-
             Func<double[], double, double> DistanceToLine = delegate (double[] X, double t) {
                 // direction vector
                 Vector2D p1 = new Vector2D(xWall, 0.0);
@@ -3782,31 +3773,18 @@ namespace CNS {
             Func<double, double> SmoothJump = delegate (double distance) {
                 // smoothing should be in the range of h/p
                 double maxDistance = 2.0 * cellSize / Math.Max(dgDegree, 1);
-
                 return (Math.Tanh(distance / maxDistance) + 1.0) * 0.5;
             };
-
             Func<double, double> Jump = (x => x < 0 ? 0 : 1);
-
-            // Boundary conditions
-            //c.AddBoundaryCondition("SupersonicInlet", Variables.Density, (X, t) => 8.0 - Jump(X[0] - (0.1 + (X[1] + 20 * t) / 1.732)) * (8.0 - 1.4));
-            //c.AddBoundaryCondition("SupersonicInlet", Variables.Velocity.xComponent, (X, t) => 7.14471 - Jump(X[0] - (0.1 + (X[1] + 20.0 * t) / 1.732)) * (7.14471 - 0.0));
-            //c.AddBoundaryCondition("SupersonicInlet", Variables.Velocity.yComponent, (X, t) => -4.125 - Jump(X[0] - (0.1 + (X[1] + 20.0 * t) / 1.732)) * (-4.125 - 0.0));
-            //c.AddBoundaryCondition("SupersonicInlet", Variables.Pressure, (X, t) => 116.5 - Jump(X[0] - (0.1 + (X[1] + 20.0 * t) / 1.732)) * (116.5 - 1.0));
 
             c.AddBoundaryCondition("SupersonicInlet", Variables.Density, (X, t) => 8.0 - SmoothJump(DistanceToLine(X, t)) * (8.0 - 1.4));
             c.AddBoundaryCondition("SupersonicInlet", Variables.Velocity.xComponent, (X, t) => 8.25 * Math.Sin(Math.PI / 3) - SmoothJump(DistanceToLine(X, t)) * (8.25 * Math.Sin(Math.PI / 3) - 0.0));
             c.AddBoundaryCondition("SupersonicInlet", Variables.Velocity.yComponent, (X, t) => -8.25 * Math.Cos(Math.PI / 3) - SmoothJump(DistanceToLine(X, t)) * (-8.25 * Math.Cos(Math.PI / 3) - 0.0));
             c.AddBoundaryCondition("SupersonicInlet", Variables.Pressure, (X, t) => 116.5 - SmoothJump(DistanceToLine(X, t)) * (116.5 - 1.0));
-
             c.AddBoundaryCondition("SupersonicOutlet", Variables.Pressure, (X, t) => 1.0);
             c.AddBoundaryCondition("AdiabaticSlipWall");
 
             // Initial conditions
-            //c.InitialValues_Evaluators.Add(Variables.Density, X => 8.0 - Jump(X[0] - (0.1 + (X[1] / 1.732))) * (8.0 - 1.4));
-            //c.InitialValues_Evaluators.Add(Variables.Momentum.xComponent, X => 57.157 - Jump(X[0] - (0.1 + (X[1] / 1.732))) * (57.157 - 0.0));
-            //c.InitialValues_Evaluators.Add(Variables.Momentum.yComponent, X => -33.0 - Jump(X[0] - (0.1 + (X[1] / 1.732))) * (-33 - 0.0));
-            //c.InitialValues_Evaluators.Add(Variables.Energy, X => 563.544 - Jump(X[0] - (0.1 + (X[1] / 1.732))) * (563.544 - 2.5));
             if (!restart) {
                 c.InitialValues_Evaluators.Add(Variables.Density, X => 8.0 - SmoothJump(DistanceToLine(X, 0)) * (8.0 - 1.4));
                 c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => 8.25 * Math.Sin(Math.PI / 3) - SmoothJump(DistanceToLine(X, 0)) * (8.25 * Math.Sin(Math.PI / 3) - 0.0));
