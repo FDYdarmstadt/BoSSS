@@ -27,6 +27,7 @@ using ilPSP.LinSolvers;
 using ilPSP.Connectors.Matlab;
 using ilPSP.Tracing;
 using System.IO;
+using System.Diagnostics;
 
 namespace BoSSS.Solution.Multigrid {
     /// <summary>
@@ -53,7 +54,7 @@ namespace BoSSS.Solution.Multigrid {
         /// <summary>
         /// Maximum number of GMRES(m) restarts
         /// </summary>
-        public int restart_limit = 10;
+        public int restart_limit = 1;
 
 
         /// <summary>
@@ -78,9 +79,9 @@ namespace BoSSS.Solution.Multigrid {
 
         public CoordinateVector m_SolutionVec;
 
-        public enum ApproxInvJacobianOptions { GMRES = 1, DirectSolver = 2, DirectSolverHybrid = 3, DirectSolverOpMatrix =4 }
+        public enum ApproxInvJacobianOptions { GMRES = 1, DirectSolver = 2, DirectSolverHybrid = 3, DirectSolverOpMatrix = 4 }
 
-        public ApproxInvJacobianOptions ApproxJac = ApproxInvJacobianOptions.DirectSolverOpMatrix;
+        public ApproxInvJacobianOptions ApproxJac = ApproxInvJacobianOptions.GMRES;
 
         public MsrMatrix currentPrecMatrix = null;
 
@@ -125,7 +126,6 @@ namespace BoSSS.Solution.Multigrid {
                 this.CurrentLin.TransformSolFrom(SolutionVec, x);
                 base.EvalResidual(x, ref f0);
 
-
                 // fnorm
                 double fnorm = f0.L2NormPow2().MPISum().Sqrt();
                 double fNormo = 1;
@@ -133,8 +133,6 @@ namespace BoSSS.Solution.Multigrid {
                 double[] step = new double[x.Length];
                 double[] stepOld = new double[x.Length];
                 MsrMatrix CurrentJac;
-
-                Console.WriteLine("Start residuum for nonlinear iteration:  " + fnorm);
 
                 OnIterationCallback(itc, x.CloneAs(), f0.CloneAs(), this.CurrentLin);
 
@@ -161,21 +159,23 @@ namespace BoSSS.Solution.Multigrid {
                             step = Krylov(SolutionVec, x, f0, out errstep);
                         } else if (ApproxJac == ApproxInvJacobianOptions.DirectSolver) {
                             CurrentJac = diffjac(SolutionVec, x, f0);
+                            //MsrMatrix CurrentJac2 = bandeddiffjac(SolutionVec, x, f0);
+                            //CurrentJac = freebandeddiffjac(SolutionVec, x, f0);
                             CurrentJac.SaveToTextFileSparse("Jacobi");
+                            //CurrentJac2.SaveToTextFileSparse("Jacobi2");
+                            //Debug.Assert(CurrentJac.Equals(CurrentJac2));
                             CurrentLin.OperatorMatrix.SaveToTextFileSparse("OpMatrix");
                             var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
                             solver.DefineMatrix(CurrentJac);
                             step.ClearEntries();
                             solver.Solve(step, f0);
 
-                        }
-                        else if (ApproxJac == ApproxInvJacobianOptions.DirectSolverHybrid) {
+                        } else if (ApproxJac == ApproxInvJacobianOptions.DirectSolverHybrid) {
                             //EXPERIMENTAL_____________________________________________________________________
                             MultidimensionalArray OpMatrixMatl = MultidimensionalArray.Create(x.Length, x.Length);
                             CurrentJac = diffjac(SolutionVec, x, f0);
                             //Console.WriteLine("Calling MATLAB/Octave...");
-                            using (BatchmodeConnector bmc = new BatchmodeConnector())
-                            {
+                            using (BatchmodeConnector bmc = new BatchmodeConnector()) {
                                 bmc.PutSparseMatrix(CurrentJac, "Jacobi");
                                 bmc.PutSparseMatrix(CurrentLin.OperatorMatrix, "OpMatrix");
                                 bmc.Cmd("Jacobi(abs(Jacobi) < 10^-6)=0; dim = length(OpMatrix);");
@@ -359,7 +359,9 @@ namespace BoSSS.Solution.Multigrid {
                         xt = x.CloneAs();
                         xt.AccV(lambda, step);
                         this.CurrentLin.TransformSolFrom(SolutionVec, xt);
-                        EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);
+
+                        EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);                        
+
                         var nft = ft.L2NormPow2().MPISum().Sqrt(); var nf0 = f0.L2NormPow2().MPISum().Sqrt(); var ff0 = nf0 * nf0; var ffc = nft * nft; var ffm = nft * nft;
 
                         // Control of the the step size
@@ -392,6 +394,7 @@ namespace BoSSS.Solution.Multigrid {
                         // transform solution back to 'original domain'
                         // to perform the linearization at the new point...
                         // (and for Level-Set-Updates ...)
+
                         this.CurrentLin.TransformSolFrom(SolutionVec, xt);
 
                         // update linearization
@@ -400,9 +403,7 @@ namespace BoSSS.Solution.Multigrid {
                         // residual evaluation & callback
                         base.EvalResidual(xt, ref ft);
 
-                        // EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);
-
-                        //base.Init(SolutionVec, RHS, out x, out f0);
+                        //EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);
 
                         fnorm = ft.L2NormPow2().MPISum().Sqrt();
 
@@ -601,14 +602,6 @@ namespace BoSSS.Solution.Multigrid {
 
                     Console.WriteLine("Error NewtonGMRES:   " + rho);
 
-                    //using (StreamWriter writer = new StreamWriter(m_SessionPath + "//GMRES_Stats.txt", true))
-                    //{
-                    //writer.WriteLine(k + "   " + rho);
-                    //}
-
-
-                    //Console.WriteLine("Error NewtonGMRES:   " + rho );
-
                     k++;
 
                 }
@@ -668,8 +661,9 @@ namespace BoSSS.Solution.Multigrid {
         /// <param name="SolutionVec">Solution point</param>
         /// <param name="w">Direction</param>
         /// <param name="f0">f0, usually has been calculated earlier</param>
+        /// <param name="linearization">True if the Operator should be linearized and evaluated afterwards</param>
         /// <returns></returns>
-        public double[] dirder(CoordinateVector SolutionVec, double[] currentX, double[] w, double[] f0) {
+        public double[] dirder(CoordinateVector SolutionVec, double[] currentX, double[] w, double[] f0, bool linearization = true) {
             using (var tr = new FuncTrace()) {
                 double epsnew = 1E-7;
 
@@ -705,12 +699,13 @@ namespace BoSSS.Solution.Multigrid {
                 //var OpAffineRaw = this.LinearizationRHS.CloneAs();
                 //this.CurrentLin.OperatorMatrix.SpMV(1.0, new CoordinateVector(SolutionVec.Mapping.Fields.ToArray()), 1.0, OpAffineRaw);
                 //CurrentLin.TransformRhsInto(OpAffineRaw, fx);
-
-                EvaluateOperator(1.0, SolutionVec.Mapping.Fields, fx);
-
-                //this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, SolutionVec.Mapping.Fields.ToArray());
-                //OpMtxRaw.SpMV(1.0, new CoordinateVector(SolutionVec.Mapping.Fields.ToArray()), 1.0, OpAffineRaw);
-                //CurrentLin.TransformRhsInto(OpAffineRaw, fx);
+                if (linearization == false) {
+                    EvaluateOperator(1.0, SolutionVec.Mapping.Fields, fx);
+                } else {
+                    this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, SolutionVec.Mapping.Fields.ToArray(), true);
+                    OpMtxRaw.SpMV(1.0, new CoordinateVector(SolutionVec.Mapping.Fields.ToArray()), 1.0, OpAffineRaw);
+                    CurrentLin.TransformRhsInto(OpAffineRaw, fx);
+                }
 
                 SolutionVec.CopyEntries(temp);
 
@@ -829,6 +824,173 @@ namespace BoSSS.Solution.Multigrid {
                     jac[j, i] = temp[j];
                 }
             }
+
+            return jac;
+        }
+
+        public int Bandwidth(double [] currentX) {
+            int beta;
+            int dim = currentX.Length;
+            int full_bandwidth_row;
+            BlockMsrMatrix OpMatrix = CurrentLin.OperatorMatrix;
+            double[] b = new double[dim];
+
+            for (int j = 0; j< dim; j++)
+            {
+                for (int i = dim-1; i>=0; i--)
+                {
+                    if (OpMatrix[j,i] != 0) {
+
+                        b[j] = i - j;
+                        break;
+
+                    }
+
+                }
+                
+            }
+
+            beta = (int)b.Max();
+            full_bandwidth_row = b.FirstIndexWhere(c => c == beta);
+
+            return beta;
+
+        }
+
+        public MsrMatrix freebandeddiffjac(CoordinateVector SolutionVec, double[] currentX, double[] f0)
+        {
+            int n = currentX.Length;
+            MsrMatrix jac = new MsrMatrix(n);
+            int beta = Bandwidth(currentX);
+            int number_Cells = n / beta;
+
+            var temp = new double[n];
+
+            for (int k = 0; k < beta; k++)
+            {
+                var zz = new double[n];
+
+                for (int i = 0; i < number_Cells; i++)
+                {
+                    zz[i * beta + k] = 1;
+
+                }
+                temp = dirder(SolutionVec, currentX, zz, f0);
+
+
+                for (int i = 0; i < number_Cells; i++)
+                {
+                    for (int j = i * beta + k; j < (i + 1) * beta; j++)
+                    {
+                        jac[j, i * beta + k] = temp[j];
+                    }
+                }
+            }
+
+            return jac;
+        }
+
+        public MsrMatrix bandeddiffjac(CoordinateVector SolutionVec, double[] currentX, double[] f0)
+        {
+            int dimension = SolutionVec.Mapping.GridDat.SpatialDimension;
+
+            int degree_VelocityX = SolutionVec.Mapping.Fields[0].Basis.Degree;
+            int degree_VelocityY = SolutionVec.Mapping.Fields[1].Basis.Degree;
+            int degree_VelocityZ = new int();
+            int degree_Pressure = new int();
+            int degree_StressXX = new int();
+            int degree_StressXY = new int();
+            int degree_StressYY = new int();
+
+            int NoVariables = SolutionVec.Mapping.NoOfVariables;
+
+
+
+            if (dimension == 2) {
+                degree_Pressure = SolutionVec.Mapping.Fields[2].Basis.Degree;
+
+                if (NoVariables > 4)
+                {
+                    degree_StressXX = SolutionVec.Mapping.Fields[3].Basis.Degree;
+                    degree_StressXY = SolutionVec.Mapping.Fields[4].Basis.Degree;
+                    degree_StressYY = SolutionVec.Mapping.Fields[5].Basis.Degree;
+                }
+            }
+            else if (dimension == 3) {
+                degree_VelocityZ = SolutionVec.Mapping.Fields[2].Basis.Degree;
+                degree_Pressure = SolutionVec.Mapping.Fields[3].Basis.Degree;
+            }
+            else throw new ArgumentException();
+
+
+            int factor = 1;
+            int PI_VelocityX = 1;
+            int PI_VelocityY = 1;
+            int PI_VelocityZ = 1;
+            int PI_Pressure = 1;
+            int PI_StressXX = 1;
+            int PI_StressXY = 1;
+            int PI_StressYY = 1;
+
+            for (int i = 1; i <= dimension; i++) {
+                factor *= factor * i;
+                PI_VelocityX *= degree_VelocityX + i;
+                PI_VelocityY *= degree_VelocityY + i;
+                PI_Pressure *= degree_Pressure + i;
+
+                if (dimension == 3)
+                {
+                    PI_VelocityZ *= degree_VelocityZ + i;
+                }
+
+                if (NoVariables > 4)
+                {
+                    PI_StressXX *= degree_StressXX + i;
+                    PI_StressXY *= degree_StressXY + i;
+                    PI_StressYY *= degree_StressYY + i;
+                }
+            }
+
+            int number_Polynomials = (PI_VelocityX + PI_VelocityY + PI_Pressure)/factor;
+
+            if (dimension == 3)
+            {
+                number_Polynomials += PI_VelocityZ / factor;
+            }
+
+            if (NoVariables > 4)
+            {
+                number_Polynomials += (PI_StressXX + PI_StressXY + PI_StressYY) / factor;
+            }
+
+            int n = currentX.Length;
+            int number_Cells = n / number_Polynomials;
+
+            MsrMatrix jac = new MsrMatrix(n);
+
+            var temp = new double[n];           
+
+            for (int k = 0; k < number_Polynomials; k++)
+            {
+                var zz = new double[n];
+
+                for (int i = 0; i < number_Cells; i++)
+                {
+                    zz[i * number_Polynomials + k] = 1;
+
+                }
+                temp = dirder(SolutionVec, currentX, zz, f0);
+
+
+                for (int i = 0; i < number_Cells; i++)
+                {
+                    for (int j = i * number_Polynomials + k; j < (i + 1) * number_Polynomials; j++)
+                    {
+                        jac[j, i * number_Polynomials + k] = temp[j];
+                    }
+                }
+            }
+
 
             return jac;
         }

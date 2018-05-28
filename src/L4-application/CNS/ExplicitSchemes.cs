@@ -176,7 +176,8 @@ namespace CNS {
                         fluxCorrection: control.FluxCorrection,
                         saveToDBCallback: program.SaveToDatabase,
                         maxNumOfSubSteps: control.maxNumOfSubSteps,
-                        forceReclustering: control.forceReclustering);
+                        forceReclustering: control.forceReclustering,
+                        logging: control.WriteLTSLog);
                     break;
 
                 case ExplicitSchemes.LTS:
@@ -191,7 +192,8 @@ namespace CNS {
                         reclusteringInterval: control.ReclusteringInterval,
                         fluxCorrection: control.FluxCorrection,
                         maxNumOfSubSteps: control.maxNumOfSubSteps,
-                        forceReclustering: control.forceReclustering);
+                        forceReclustering: control.forceReclustering,
+                        logging: control.WriteLTSLog);
                     break;
 
                 case ExplicitSchemes.Rock4 when control.DomainType == DomainTypes.Standard:

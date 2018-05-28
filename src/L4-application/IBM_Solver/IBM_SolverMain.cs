@@ -301,14 +301,7 @@ namespace BoSSS.Application.IBM_Solver {
                         comps.Add(ConvBulk); // bulk component
 
                         var ConvIB = new BoSSS.Solution.NSECommon.Operator.Convection.ConvectionAtIB(d, D,LsTrk  , this.Control.AdvancedDiscretizationOptions.LFFA, BcMap,
-                            new Func<double, double>[] {
-                                delegate (double time) { return 0; },
-                                delegate (double time) { return 0; }
-                            },
-                            new Func<double, double>[] {
-                                delegate (double time) { return 0; }
-                            },
-                            this.Control.particleRadius, this.Control.PhysicalParameters.rho_A, false);
+                            delegate (double[] X, double time) { return new double[] { 0.0, 0.0, 0.0, 0.0 }; }, this.Control.PhysicalParameters.rho_A, false);
 
                         comps.Add(ConvIB); // immersed boundary component
                     }
@@ -360,20 +353,7 @@ namespace BoSSS.Application.IBM_Solver {
                         var ViscLs = new BoSSS.Solution.NSECommon.Operator.Viscosity.ViscosityAtIB(d, D, LsTrk, 
                             penalty, this.ComputePenaltyIB,
                             this.Control.PhysicalParameters.mu_A / this.Control.PhysicalParameters.rho_A, 
-                            new Func<double, double>[] {
-                                delegate (double time) {
-                                    return 0;
-                                },
-                                delegate (double time) {
-                                    return 0;
-                                }
-                            }, 
-                            new Func<double, double>[] {
-                                delegate (double time) {
-                                    return 0;
-                                }
-                            }, 
-                            this.Control.particleRadius);
+                            delegate (double[] X, double time) { return new double[] { 0.0, 0.0, 0.0, 0.0 }; });
                         comps.Add(ViscLs); // immersed boundary component
                     }
                 }
@@ -397,14 +377,7 @@ namespace BoSSS.Application.IBM_Solver {
                     }
 
                     var divPen = new BoSSS.Solution.NSECommon.Operator.Continuity.DivergenceAtIB(D, LsTrk, 1,
-                        new Func<double, double>[] {
-                            delegate (double time) { return 0; },
-                            delegate (double time) { return 0; }
-                        },
-                        new Func<double, double>[] {
-                            delegate (double time) { return 0; }
-                        },
-                        this.Control.particleRadius);
+                        delegate (double[] X, double time) { return new double[] { 0.0, 0.0, 0.0, 0.0 }; });
                     IBM_Op.EquationComponents["div"].Add(divPen); // immersed boundary component 
 
 

@@ -73,6 +73,7 @@
     <Compile Include="NonlinGMRES.cs" />
     <Compile Include="NonlinGMRES2.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RheologyJacobiPrecond.cs" />
     <Compile Include="SchurPrecond.cs" />
     <Compile Include="Schwarz.cs" />
     <Compile Include="SoftGMRES.cs" />
