@@ -97,7 +97,7 @@ double x = 4.5;
  }
 \BoSSSexe
 \BoSSScmd{
-i = j + (int)x;\newline 
+i = j + (int)x; // cast x to int; add to j; store result in i\newline 
 i;
  }
 \BoSSSexe
@@ -111,14 +111,16 @@ i;
 ///       original, non-interpreted C\# language -- this would produce a 
 ///       compile error. The C\# interpreter, instead, produces a text from 
 ///       the last 
-///       incomplete statement in a snippet .
+///       incomplete statement in a snippet.
+/// \item a double-slash `\texttt{//}' starts a comment, i.e. the rest of 
+///       the line is not interpreted and can contain any text.
 /// \end{itemize}
  }
 \BoSSSexe
 \BoSSScmd{
 /// While assigning \code{double} to \code{int} requires a cast operation, 
 /// the other way works automatically (this is called an \emph{implicit cast}),
-/// since very \emph{int} can be represented as \emph{double} (but not 
+/// since very \code{int} can be represented as \code{double} (but not 
 /// vice-versa):
  }
 \BoSSSexe
@@ -448,7 +450,7 @@ vecX.LengthSquared();
 \BoSSScmd{
 /// Properties are special methods, which look like functions. 
 /// Most of the time, they are used to execute additional code before setting 
-/// a variable. 
+/// a variable.
  }
 \BoSSSexe
 \BoSSScmd{
@@ -494,7 +496,7 @@ PropertiesDemo p = new PropertiesDemo();
  }
 \BoSSSexe
 \BoSSScmd{
-/// Access to the member variable through methods would work as 
+/// Access to the member variable through methods would work as
  }
 \BoSSSexe
 \BoSSScmd{
@@ -550,7 +552,7 @@ class StaticDemo \{\newline
  }
 \BoSSSexe
 \BoSSScmd{
-/// Then, static functions can be involved without instantiating an object: 
+/// Then, static functions can be involved without instantiating an object:
  }
 \BoSSSexe
 \BoSSScmd{
@@ -591,6 +593,14 @@ Console.WriteLine("Hello World!");
  }
 \BoSSSexe
 \BoSSScmd{
+/// (By the way: the \code{Console} class, resp. the 
+/// \code{Console.WriteLine} method is the preffered way to write 
+/// text output (for non-windowed apps without graphical user interface).
+/// In \BoSSSpad{}, it is very handy if one wants to write more information
+/// than just the last object in a snippet.)
+ }
+\BoSSSexe
+\BoSSScmd{
 Math.Sin(2.0);
  }
 \BoSSSexe
@@ -609,7 +619,7 @@ System.Math.Sin(2.0);
 \BoSSSexe
 \BoSSScmd{
 /// If a namespace is not loaded, its classes must be accessed via their 
-/// full path, e.g. 
+/// full path, e.g.
  }
 \BoSSSexe
 \BoSSScmd{
@@ -705,7 +715,7 @@ for(int j = 0; j < J; j++) \{\newline
 \btab // code which is executed repeadedly \newline 
 \btab double s = Math.Sin(j);\newline 
 \btab Console.WriteLine("The sinus of " + j + " is " + s);\newline 
-\}   
+\}
  }
 \BoSSSexe
 \BoSSScmd{
@@ -864,5 +874,270 @@ apply(a,delPow2,2);
 ///
 /// Object oriented programming languages provide the concept of inheritance:
 /// Common functionality is implemented in a common base class.
+ }
+\BoSSSexe
+\BoSSScmd{
+/// First we define some class; functions or properties which are decorated
+/// as \code{virtual}, can be
+ }
+\BoSSSexe
+\BoSSScmd{
+class BaseClass \{\newline 
+\btab public int num;     \newline 
+ \newline 
+\btab // this is a normal method, which will be accessible form \newline 
+\btab // any derived class\newline 
+\btab public void Method1() \{\newline 
+\btab \btab Console.WriteLine("BaseClass: Hello from Method1, num is " + num);    \newline 
+\btab \}\newline 
+ \newline 
+\btab // this is a virtual method, its functionality can be overriden in derived\newline 
+\btab // classes\newline 
+\btab public virtual void VirtMeth(int i) \{\newline 
+\btab \btab Console.WriteLine("BaseClass: VirtMethod, i is " + i);\newline 
+\btab \}\newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Now, we derive two classes from \code{BaseClass}:
+ }
+\BoSSSexe
+\BoSSScmd{
+class DerivA : BaseClass \{ // indicates that thes class is derived \newline 
+\btab \btab \btab \btab \btab \btab    // from 'BaseClass'\newline 
+ \newline 
+\btab // We can add new members:\newline 
+\btab public double SomeVal;\newline 
+ \newline 
+\btab // a private member:\newline 
+\btab Random rnd = new Random();\newline 
+ \newline 
+\btab // And override functionality from the base class\newline 
+\btab public override void VirtMeth(int i) \{\newline 
+\btab \btab SomeVal = rnd.NextDouble() + i;\newline 
+\btab \btab Console.WriteLine("DerivA: VirtMethod, random value is " + SomeVal);     \newline 
+\btab \}\newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+class DerivB : BaseClass \{\newline 
+ \newline 
+\btab // Again, some override:\newline 
+\btab public override void VirtMeth(int i) \{\newline 
+\btab \btab num += i; // we can modify members of the base class\newline 
+\btab \btab Console.WriteLine("DerivB: VirtMethod, num is " + num);     \newline 
+\btab \}\newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// As usual, we can instantiate and use \code{BaseClass}:
+ }
+\BoSSSexe
+\BoSSScmd{
+BaseClass b = new BaseClass();\newline 
+b.Method1();\newline 
+b.VirtMeth(1); // calls base implementation
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Of course, we can do the same with \code{DerivA}; since it is derived from
+/// \code{BaseClass}, an object of type \code{DerivA} can be stored in
+/// (resp. referenced from) a variable of type \code{BaseClass}. 
+/// In short, any \code{DerivA}-object is autamtically also 
+/// a \code{BaseClass}-object, due to inhertance (but not the other way).
+ }
+\BoSSSexe
+\BoSSScmd{
+BaseClass b = new DerivA(); // we instantiate an object of type 'DerivA'\newline 
+\btab \btab \btab \btab \btab \btab \btab // but the variable is of type 'BaseClass'.\newline 
+b.Method1();   // non-overridden functionality: from base implementation\newline 
+b.VirtMeth(1); // calls override implementation
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We can also store \code{DerivB}-objects in variable \code{b}:
+ }
+\BoSSSexe
+\BoSSScmd{
+b = new DerivB();\newline 
+b.Method1();\newline 
+b.VirtMeth(1); // 'DerivB.VirtMeth' modifies the internal state of the object,\newline 
+b.VirtMeth(1); // so the result is different for each call
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Note: implicitly, all classes in C\# are derived vom the class 
+/// \code{System.Object}, and has all the methods of this class.
+ }
+\BoSSSexe
+\BoSSScmd{
+object o; // The 'object' keyword is a build-in alias for 'System.Object'\newline 
+o = new BaseClass();\newline 
+o.ToString(); // 'ToString' is a virtual method of 'System.Object', which,\newline 
+\btab \btab \btab   // if not overriden only retunrs the name of the class
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % ============================================
+/// \subsection{Abstract Classes}
+/// % ============================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// In lots of situations, there is no reasonable base-implementation for
+/// a method.
+ }
+\BoSSSexe
+\BoSSScmd{
+abstract class AbstractBase \{ // if the class conatains any abstract member,\newline 
+\btab \btab \btab \btab \btab \btab \btab   // it must be declared as abstract.\newline 
+ \newline 
+\btab public int num;     \newline 
+ \newline 
+\btab // like above, a normal method:\newline 
+\btab public void Method1() \{\newline 
+\btab \btab Console.WriteLine("AbstractBase: Hello from Method1, num is " + num);    \newline 
+\btab \}\newline 
+ \newline 
+\btab // this is an abstract method, for which only the \newline 
+\btab // signature (return value, arguments, etc.) is specified, but no \newline 
+\btab // implementation is given:\newline 
+\btab public abstract void VirtMeth(int i);\newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Note:
+/// \begin{itemize}
+/// \item
+/// Virtual methods can be overridden, i.e. the override is optional
+///
+/// \item
+/// Abstract methods \emph{must} be overridden
+///
+/// \item
+/// Abstract classes cannot be instantiated, since functionality is missing
+///
+/// \item
+/// Abstract classes can be used as a variable type
+/// \end{itemize}
+ }
+\BoSSSexe
+\BoSSScmd{
+class DerivC : AbstractBase \{\newline 
+\btab // we are enforced to override the base method\newline 
+\btab public override void VirtMeth(int i) \{\newline 
+\btab \btab Console.WriteLine("DerivC: VirtMeth, i is " + i);    \newline 
+\btab \}\newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+AbstractBase a;   // use 'AbstractBase' as a variable type\newline 
+a = new DerivC(); // instantiate a 'DerivC' object, store it in 'a'\newline 
+a.VirtMeth(2);    // call the objects methods
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % ============================================
+/// \subsection{Interfaces}
+/// % ============================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// When we finish the concept of abstract classes, we come to classes that 
+/// \emph{only} have abstract members. These are called \emph{interfaces} 
+/// and C\# has a special keyword for them:
+ }
+\BoSSSexe
+\BoSSScmd{
+interface IMethodsInterface \{\newline 
+\btab void MethodA(); // methods in an interface are always public and need   \newline 
+\btab void MethodB(); // no modifier.\newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+interface IPropertyInterface \{\newline 
+\btab int Property \{ get; set; \}    \newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Note: there is a widly used convention to start interface names with 
+/// capital letter `I'. This is only a convention, not a rule.
+ }
+\BoSSSexe
+\BoSSScmd{
+/// An important difference between classes and interfaces is, that
+/// any class can have \emph{only one base-class}, but it can implement
+/// an \emph{unlimited number of interfaces}:
+ }
+\BoSSSexe
+\BoSSScmd{
+class DerivD : AbstractBase, IMethodsInterface, IPropertyInterface \{\newline 
+\btab // form 'AbstractBase'\newline 
+\btab public override void VirtMeth(int i) \{\newline 
+\btab \btab Console.WriteLine("DerivD: VirtMeth, i is " + i);    \newline 
+\btab \}\newline 
+ \newline 
+\btab // from 'IMethodsInterface'\newline 
+\btab public void MethodA() \{\newline 
+\btab \btab Console.WriteLine("DerivD: MethodA");\newline 
+\btab \}\newline 
+\btab public void MethodB() \{\newline 
+\btab \btab Console.WriteLine("DerivD: MethodB");\newline 
+\btab \}\newline 
+ \newline 
+\btab // form 'IPropertyInterface'\newline 
+\btab public int Property \{ \newline 
+\btab \btab get \{ \newline 
+\btab \btab \btab Console.WriteLine("This is the get property.");\newline 
+\btab \btab \btab return num;  \newline 
+\btab \btab \} \newline 
+\btab \btab set \{ num = value; \}\newline 
+\btab \}\newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Of course, we can instantiate \code{DerivD} and call any method or 
+/// property:
+ }
+\BoSSSexe
+\BoSSScmd{
+DerivD d = new DerivD();\newline 
+d.VirtMeth(1);\newline 
+d.MethodB();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// But we can also store the object in references with the interface type:
+ }
+\BoSSSexe
+\BoSSScmd{
+IMethodsInterface imd = new DerivD();\newline 
+imd.MethodA();\newline 
+imd.MethodB();
+ }
+\BoSSSexe
+\BoSSScmd{
+IPropertyInterface ipd = new DerivD();\newline 
+ipd.Property           = 44;\newline 
+ipd.Property;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % ============================================
+/// \section{The exesution model of \BoSSSpad}
+/// % ============================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// The which describes the execution model of \BoSSSpad{} best is 
+/// called \emph{state machine}.
  }
 \BoSSSexe
