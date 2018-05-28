@@ -43,7 +43,7 @@ using System.Threading;
 using ilPSP.Tracing;
 **************
 ==============
-WorkflowMgm.Init("SolverPerformanceDrivenCavity");
+WorkflowMgm.Init("SolverPerformanceDrivenCavity160518");
 **************
 Project name is set to 'SolverPerformanceDrivenCavity'.
 
@@ -88,9 +88,9 @@ LinearSolverCodes[] linSolvers = new LinearSolverCodes[] {
     //LinearSolverCodes.exp_schwarz_Kcycle_directcoarse_overlap,
     //LinearSolverCodes.exp_softgmres_schwarz_Kcycle_directcoarse_overlap,
     //LinearSolverCodes.exp_softgmres_schwarz_directcoarse_overlap,
-    //LinearSolverCodes.automatic,
+    LinearSolverCodes.automatic,
     //LinearSolverCodes.classic_mumps,
-    LinearSolverCodes.exp_multigrid
+    //LinearSolverCodes.exp_multigrid
 };
 int[] ks = new int[] {2,3};
 int re        = 400; 
@@ -104,8 +104,8 @@ int[] procs    = new int[] {1};
 // ===============================
 **************
 ==============
-int[] Resolutions_3D = new int[] {5,7,10,13};//,17,25};
-//int[] Resolutions_3D = new int[] {17,25};
+//int[] Resolutions_3D = new int[] {5,7,10,13};//,17,25};
+int[] Resolutions_3D = new int[] {17,25};
 IGridInfo[] grids = new IGridInfo[Resolutions_3D.Length];
 
 for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
@@ -278,7 +278,7 @@ C.InitialValues.Add("Phi", GetFormulaObject(InitialValues.Phi));
         C.dtMin               = 1E20;
         C.Endtime             = 10000000;
         C.NoOfTimesteps       = 1;
-        C.NoOfMultigridLevels = 2;
+        C.NoOfMultigridLevels = 3;
         
         // Assign correct names
         C.SessionName = "DrivenCavity_k2_"+C.NonlinearSolve+"_"+linSolverName+"_J"+grd.NumberOfCells+"_MGLev"+C.NoOfMultigridLevels;
@@ -807,6 +807,10 @@ string docpath    = Path.Combine(CurrentDocDir, SessTab.TableName + ".json");
 // save session table as file: this can be stored in our git 
 // repository
 SessTab.SaveToFile(docpath);
+**************
+==============
+**************
+==============
 **************
 ==============
 **************
