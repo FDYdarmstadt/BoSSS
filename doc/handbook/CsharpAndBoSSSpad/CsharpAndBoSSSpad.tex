@@ -6,7 +6,7 @@
 /// \section*{What's new}
 /// % ============================================
 /// \BoSSSpad is a scripting environment, based on the C\# language.
-/// While ist is not necessary to be a master-class programmer for the tutorials 
+/// While it is not necessary to be a master-class programmer for the tutorials 
 /// which come up, it is required to have some basic knowledge about the C\#
 /// syntax.
 ///
@@ -58,7 +58,7 @@ int i;
 \BoSSScmd{
 /// The above statement created a variable named `\code{i}' of type 
 /// `\code{int}' (for integer numbers). The most commonly used number types in 
-/// \BoSSS are \code{int} for integers and \code{double} for real numbers.
+/// \BoSSS{} are \code{int} for integers and \code{double} for real numbers.
 /// A full list of C\#-build-in variable types for numbers can be found 
 /// online (see 
 /// \url{https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/integral-types-table}
@@ -205,7 +205,7 @@ A;
  }
 \BoSSSexe
 \BoSSScmd{
-/// One can access and manipulate individual enties by index-brackes; 
+/// One can access and manipulate individual entires by index-brackets; 
 /// Note that C\# indices (usually) start at zero:
  }
 \BoSSSexe
@@ -247,7 +247,7 @@ M[2,1] = 3;
 \BoSSScmd{
 /// In \BoSSS, there is a separate type for multidimensional arrays of 
 /// real numbers. In contrast to the multidimensional arrays build into C\#,
-/// their \BoSSS counterparts offer more operations, e.g.
+/// their \BoSSS{} counterparts offer more operations, e.g.
 /// reshaping the array or tensor multiplications.
 /// An array with three dimensions can be initialized as:
  }
@@ -258,8 +258,8 @@ MultidimensionalArray Q = MultidimensionalArray.Create(5,3,4);
 \BoSSSexe
 \BoSSScmd{
 /// However, a comprehensive introduction of the 
-/// \code{MultidimensionalArray} type is beond the scope of this section.
-/// We may referr the reader to the API reference.
+/// \code{MultidimensionalArray} type is beyond the scope of this section.
+/// We may refer the reader to the API reference.
  }
 \BoSSSexe
 \BoSSScmd{
@@ -651,7 +651,7 @@ BitArray ba = new BitArray(3);
 /// Initially, \BoSSSpad{} load a set of libraries which are useful for working
 /// with \BoSSS. For most use-cases, this set may be sufficient; however,
 /// not that by the 
-/// \code{Mono.CSharp.InteractiveBase.LoadAssembly(string)} method, 
+/// \code{Mono.\allowbreak CSharp.\allowbreak InteractiveBase.\allowbreak LoadAssembly(string)} method, 
 /// it is possible to load further assemblies.
  }
 \BoSSSexe
@@ -1132,12 +1132,103 @@ ipd.Property;
 \BoSSSexe
 \BoSSScmd{
 /// % ============================================
-/// \section{The exesution model of \BoSSSpad}
+/// \section{The execution model of \BoSSSpad}
 /// % ============================================
  }
 \BoSSSexe
 \BoSSScmd{
-/// The which describes the execution model of \BoSSSpad{} best is 
-/// called \emph{state machine}.
+/// The term which describes the execution model of \BoSSSpad{} best is 
+/// called \emph{read-eval-print-loop (REPL)}:
+/// commands are read from the input window, evaluated by the interpreter,
+/// the result is printed to the screen and this is repeated in an infinite 
+/// loop (until the app is terminated).
+///
+/// Each time a command is executed, the internal state of the interpreter
+/// is changed. E.g. new variables or classes are defined. If a variable or  
+/// class name is already used, it will be overwritten. The special command
+/// \code{restart} resets the interpreter to an initial state.
+///
+/// On top of that, \BoSSSpad{} puts a document model:
+/// the user can navigate backward and re-execute any command; this may or 
+/// may not change the behavior of the entire script. A simple example is:
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We are defining an \code{int} variable:
+ }
+\BoSSSexe
+\BoSSScmd{
+int i = 9;           // int-definition
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Next, we overwrite the name \code{i} with an new variable
+ }
+\BoSSSexe
+\BoSSScmd{
+double i = 1.1;      // double-definition
+ }
+\BoSSSexe
+\BoSSScmd{
+/// And execute some code which depends on \code{i}, e.g.:
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Obviously, if we would navigate back to the 
+/// \texttt{int-definition}-statement, re-execute it, but skip the execution
+/// of the \texttt{double-definition} statement, the following statement 
+/// will behave differently:
+ }
+\BoSSSexe
+\BoSSScmd{
+Math.Cos(i);         // depends on last 'i'
+ }
+\BoSSSexe
+\BoSSScmd{
+/// As we see,...
+/// \begin{itemize}
+/// \item
+/// the result of a snippet depends on the sequence of previously 
+/// \emph{executed} snippets
+///
+/// \item
+/// navigation within the worksheet \emph{alters the sequence} in which 
+/// snippets are executed -- this may have side-effects.
+/// \end{itemize}
+/// This behavior might seem confusing (and very often, it is). However, 
+/// it is desired because it speeds up the workflow, because it allows to 
+/// alter or correct a script, without (time-consuming) re-evaluation
+/// of the entire script.
+///
+/// As a rule of thumb, take this:
+/// \begin{itemize}
+/// \item
+/// If we want to alter a snippet above, we only need to re-execute everything
+/// which depends on this snippet. The dependent snippets must be identified 
+/// by the user, which is a good coding exercise.
+///
+/// \item
+/// A simple solution is to re-evaluate everything downward of the altered 
+/// snippet.
+///
+/// \item
+/// As an ultima ratio, one should re-execute the entire worksheet.
+/// \end{itemize}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % ============================================
+/// \section{Further reading}
+/// % ============================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Obviously, this minimal tutorial does not cover the entire C\# language.
+/// It should, however, demonstrate everything which is needed to understand
+/// about 90\% of the tutorials in the \BoSSS{} handbook.
+///
+/// Finally: there are lots of tutorials on C\# online. Some of them are 
+/// excellent, some are not so good. 
+/// And: Google is your friend (at least in this respect)...
  }
 \BoSSSexe
