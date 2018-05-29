@@ -65,7 +65,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
             return false;
         }
-
+        /*
         /*
 
         /// <summary>
@@ -358,6 +358,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                 // return
                 // ======
+                /*
 
                 if (CutOuts != null && CutOuts.Length > 0)
                 {
