@@ -405,7 +405,7 @@ namespace BoSSS.Solution {
             IDictionary<string, FieldOpts> FieldOptions,
             ICollection<DGField> IOFields, InstantiateFromControlFileAttribute at) {
 
-            FieldOpts fopts = FieldOptions.Where(kv => WildcardToRegex(kv.Key).IsMatch(f.Identification)).SingleOrDefault().Value;
+            FieldOpts fopts = FieldOptions.Where(kv => WildcardToRegex(kv.Key).IsMatch(fld.Identification)).SingleOrDefault().Value;
 
             if (fopts != null) {
                 if (at.m_ioListOpt == IOListOption.Always && fopts.SaveToDB == FieldOpts.SaveToDBOpt.FALSE)
