@@ -404,10 +404,10 @@ namespace BoSSS.Solution {
             //AppControl ctrl,
             IDictionary<string, FieldOpts> FieldOptions,
             ICollection<DGField> IOFields, InstantiateFromControlFileAttribute at) {
-            FieldOpts fopts;
-            bool isSpec = FieldOptions.TryGetValue(iName, out fopts);
 
-            if (isSpec) {
+            FieldOpts fopts = FieldOptions.Where(kv => WildcardToRegex(kv.Key).IsMatch(f.Identification)).SingleOrDefault().Value;
+
+            if (fopts != null) {
                 if (at.m_ioListOpt == IOListOption.Always && fopts.SaveToDB == FieldOpts.SaveToDBOpt.FALSE)
                     throw new ApplicationException("IO for field '" + fld.Identification + "' cannot be turned OFF, i.e. 'SaveToDB==false' is illegal.");
                 if (at.m_ioListOpt == IOListOption.Never && fopts.SaveToDB == FieldOpts.SaveToDBOpt.TRUE)
