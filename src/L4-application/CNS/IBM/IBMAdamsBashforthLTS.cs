@@ -36,7 +36,7 @@ namespace CNS.IBM {
 
         private CoordinateMapping boundaryParameterMap;
 
-        private Lazy<SpatialOperator.Evaluator> boundaryEvaluator;
+        private Lazy<IEvaluatorNonLin> boundaryEvaluator;
 
         private CellMask cutCells;
 
@@ -48,8 +48,8 @@ namespace CNS.IBM {
 
         private IBMControl control;
 
-        public IBMAdamsBashforthLTS(SpatialOperator standardOperator, SpatialOperator boundaryOperator, CoordinateMapping fieldsMap, CoordinateMapping boundaryParameterMap, ISpeciesMap ibmSpeciesMap, IBMControl control, IList<TimeStepConstraint> timeStepConstraints, int reclusteringInterval, bool fluxCorrection, int maxNumOfSubSteps = 0)
-            : base(standardOperator, fieldsMap, boundaryParameterMap, control.ExplicitOrder, control.NumberOfSubGrids, true, timeStepConstraints, reclusteringInterval: reclusteringInterval, fluxCorrection: fluxCorrection, subGrid: ibmSpeciesMap.SubGrid) {
+        public IBMAdamsBashforthLTS(SpatialOperator standardOperator, SpatialOperator boundaryOperator, CoordinateMapping fieldsMap, CoordinateMapping boundaryParameterMap, ISpeciesMap ibmSpeciesMap, IBMControl control, IList<TimeStepConstraint> timeStepConstraints, int reclusteringInterval, bool fluxCorrection, bool forceReclustering, int maxNumOfSubSteps = 0, bool logging = false)
+            : base(standardOperator, fieldsMap, boundaryParameterMap, control.ExplicitOrder, control.NumberOfSubGrids, true, timeStepConstraints, reclusteringInterval: reclusteringInterval, fluxCorrection: fluxCorrection, subGrid: ibmSpeciesMap.SubGrid, forceReclustering: forceReclustering, logging: logging) {
 
             this.speciesMap = ibmSpeciesMap as ImmersedSpeciesMap;
             if (this.speciesMap == null) {
@@ -104,20 +104,22 @@ namespace CNS.IBM {
             EdgeQuadratureScheme edgeScheme = speciesMap.QuadSchemeHelper.GetEdgeQuadScheme(
                 species, true, nonVoidEdges, control.LevelSetQuadratureOrder);
 
-            this.m_Evaluator = new Lazy<SpatialOperator.Evaluator>(() =>
-                this.Operator.GetEvaluatorEx(
+            this.m_Evaluator = new Lazy<IEvaluatorNonLin>(delegate () {
+                var opi = this.Operator.GetEvaluatorEx(
                     Mapping,
                     null, // TO DO: I SIMPLY REMOVE PARAMETERMAP HERE; MAKE THIS MORE PRETTY
                     Mapping,
                     edgeScheme,
-                    volumeScheme,
-                    subGridBoundaryTreatment: SpatialOperator.SubGridBoundaryModes.InnerEdgeLTS));
+                    volumeScheme);
+                opi.ActivateSubgridBoundary(volumeScheme.Domain, subGridBoundaryTreatment: SpatialOperator.SubGridBoundaryModes.InnerEdgeLTS);
+                return opi;
+            });
 
             // Evaluator for boundary conditions at level set zero contour
             CellQuadratureScheme boundaryVolumeScheme = speciesMap.QuadSchemeHelper.GetLevelSetquadScheme(
                 0, cutCells, control.LevelSetQuadratureOrder);
 
-            this.boundaryEvaluator = new Lazy<SpatialOperator.Evaluator>(() =>
+            this.boundaryEvaluator = new Lazy<IEvaluatorNonLin>(() =>
                 boundaryOperator.GetEvaluatorEx(
                     Mapping,
                     boundaryParameterMap,
@@ -129,12 +131,14 @@ namespace CNS.IBM {
         protected override void ComputeChangeRate(double[] k, double AbsTime, double RelTime, double[] edgeFluxes = null) {
             RaiseOnBeforeComputechangeRate(AbsTime, RelTime);
 
-            Evaluator.Evaluate(1.0, 0.0, k, AbsTime, outputBndEdge: edgeFluxes);
+            Evaluator.time = AbsTime;
+            Evaluator.Evaluate(1.0, 0.0, k, outputBndEdge: edgeFluxes);
             Debug.Assert(
                 !k.Any(f => double.IsNaN(f)),
                 "Unphysical flux in standard terms");
 
-            boundaryEvaluator.Value.Evaluate(1.0, 1.0, k, AbsTime);
+            boundaryEvaluator.Value.time = AbsTime;
+            boundaryEvaluator.Value.Evaluate(1.0, 1.0, k);
             Debug.Assert(
                 !k.Any(f => double.IsNaN(f)),
                 "Unphysical flux in boundary terms");

@@ -13,21 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-/* =======================================================================
-Copyright 2018 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
 
 using System;
 using System.Collections.Generic;
@@ -52,7 +37,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
     /// a(u,v) = \alpha \int_{\Gamma} u v   \mathrm{dS}
     /// \f]
     /// </summary>
-    public class DensityWeightedExtVel : ILevelSetComponent {
+    public class DensityWeightedExtVel : ILevelSetForm, ILevelSetEquationComponentCoefficient {
 
         double PenaltyBase;
         LevelSetTracker LSTrk;
@@ -69,7 +54,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
 
 
         /// <summary>
-        /// Penalty Term enforcing the duirichlet value at the interface
+        /// Penalty Term enforcing the Dirichlet value at the interface
         /// Note: this Form is written only in terms of uA, since there is no XDG-field involved
         /// </summary>
         /// <param name="inp">inp.ParamsNeg[0] is the Dirichlet value from the parameter-field</param>
@@ -83,23 +68,29 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
         /// <param name="Grad_vB">not needed</param>
         /// <returns>the evaluated penalty flux</returns>
         public double LevelSetForm(ref CommonParamsLs inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+            double NegCellLengthScale = NegCellLengthScaleS[inp.jCell];
+            double PosCellLengthScale = PosCellLengthScaleS[inp.jCell];
 
             double hmin;
-            if (inp.NegCellLengthScale.IsNaN()) {
-                hmin = inp.PosCellLengthScale;
-            }
-            else if (inp.PosCellLengthScale.IsNaN()) {
-                hmin = inp.NegCellLengthScale;
-            }
-            else {
-                hmin = Math.Min(inp.NegCellLengthScale, inp.PosCellLengthScale);
+            if(NegCellLengthScale.IsNaN()) {
+                hmin = PosCellLengthScale;
+            } else if(PosCellLengthScale.IsNaN()) {
+                hmin = NegCellLengthScale;
+            } else {
+                hmin = Math.Min(NegCellLengthScale, PosCellLengthScale);
             }
 
-        return PenaltyBase * 2 / hmin * (uA[0] - (inp.ParamsNeg[0]*Weights[0]+inp.ParamsPos[0]*Weights[1])) * (vA);
-                
+            return PenaltyBase * 2 / hmin * (uA[0] - (inp.ParamsNeg[0] * Weights[0] + inp.ParamsPos[0] * Weights[1])) * (vA);
+
         }
 
+        MultidimensionalArray NegCellLengthScaleS;
+        MultidimensionalArray PosCellLengthScaleS;
 
+        public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+            NegCellLengthScaleS = csA.CellLengthScales;
+            PosCellLengthScaleS = csB.CellLengthScales;
+        }
 
         public IList<string> ArgumentOrdering {
             get {

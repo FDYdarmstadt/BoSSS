@@ -32,6 +32,7 @@ using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading;
 
@@ -263,7 +264,7 @@ namespace CNS {
 
                 if (TimestepNo % printInterval == 0) {
                     Console.WriteLine(" done. PhysTime: {0:0.#######E-00}, dt: {1:0.#######E-00}", phystime, dt);
-                    //Console.WriteLine(" done. PhysTime: {0}, dt: {1}", phystime, dt);
+                    //Console.WriteLine(" done. PhysTime: {0}, dt: {1}, currentTime: {2}", phystime, dt, TimeStepper.Time);
                 }
 
                 IDictionary<string, double> residuals = residualLoggers.LogTimeStep(TimestepNo, dt, phystime);
@@ -271,6 +272,10 @@ namespace CNS {
 
                 this.ResLogger.NextTimestep(
                     residualLoggers.ShouldLog(TimestepNo, Control.ResidualInterval));
+
+                if (Control.WriteLTSLog && TimeStepper is AdamsBashforthLTS) {
+                    this.WriteLTSLog(dt);
+                }
 
                 return dt;
             }
@@ -395,11 +400,29 @@ namespace CNS {
         /// <param name="physTime"></param>
         protected override void GetCellPerformanceClasses(out int NoOfClasses, out int[] cellToPerformanceClassMap, int TimeStepNo, double physTime) {
             using (var ht = new FuncTrace()) {
+                if (Control.DynamicLoadBalancing_CellClassifier is ArtificialViscosityCellClassifier || TimeStepper is AdamsBashforthLTS) {
+                    // Just to be sure...
+                    if (this.Control.ArtificialViscosityLaw != null) {
+                        WorkingSet.UpdateShockCapturingVariables(this, SpeciesMap.SubGrid.VolumeMask);
+                    }
+                }
+
                 // Update clustering before cell redistribution when LTS is being used
                 if (TimeStepper is AdamsBashforthLTS ABLTSTimeStepper) {
+                    if (TimeStepNo % Control.DynamicLoadBalancing_Period != 0) {
+                        throw new Exception("Mismatch between time step number and dynmaic load balacing period!");
+                    }
+
+                    // Just to be sure...
+                    //if (this.Control.ArtificialViscosityLaw != null) {
+                    //    WorkingSet.UpdateShockCapturingVariables(this, SpeciesMap.SubGrid.VolumeMask);
+                    //}
+
                     ABLTSTimeStepper.UpdateTimeInfo(new TimeInformation(TimeStepNo, physTime, -1));
-                    bool reclustered = ABLTSTimeStepper.TryNewClustering(dt: -1);
-                    ABLTSTimeStepper.SetReclusteredByGridRedist(reclustered);
+                    // LoadBal and noLoadBalRuns did not match, with this fix, it works --> probably some ABevolver were not updated correctly
+                    bool reclustered = ABLTSTimeStepper.TryNewClustering(dt: -1, calledByMPIRedist: true);
+                    //Debug.Assert(reclustered == true);
+                    //ABLTSTimeStepper.SetReclusteredByGridRedist(true);
                 }
 
                 (NoOfClasses, cellToPerformanceClassMap) = Control.DynamicLoadBalancing_CellClassifier.ClassifyCells(this);
@@ -414,6 +437,64 @@ namespace CNS {
         /// <returns></returns>
         protected virtual BoundaryConditionMap GetBoundaryConditionMap() {
             return new BoundaryConditionMap(GridData, Control);
+        }
+
+        /// <summary>
+        /// saves interface points
+        /// </summary>
+        TextWriter LTSLogWriter;
+
+        /// <summary>
+        /// Initializes the format of the log file
+        /// </summary>
+        /// <param name="sessionID"></param>
+        public void InitLTSLogFile(Guid sessionID) {
+            // Init text writer
+            if (sessionID.ToString() == "00000000-0000-0000-0000-000000000000") {
+                // When not using the BoSSS database, write log to directory where the executable is stores
+                LTSLogWriter = new StreamWriter("LTSLog.txt");
+            } else {
+                // When using the BoSSS database, write log to session directory
+                LTSLogWriter = base.DatabaseDriver.FsDriver.GetNewLog("LTSLog", sessionID);
+            }
+
+            // Header
+            LTSLogWriter.Write(
+                "LOCAL TIME STEPPING LOG FILE" +
+                "\n------------------------------------------\n" +
+                "ExplicitScheme = " + Control.ExplicitScheme.ToString() +
+                "\nExplicitOrder = " + Control.ExplicitOrder +
+                "\nNumberOfSubGrids = " + Control.NumberOfSubGrids +
+                "\nReclusteringInterval = " + Control.ReclusteringInterval +
+                "\nMaxNumberOfSubSteps = " + Control.maxNumOfSubSteps +
+                "\n------------------------------------------\n");
+            string titleForColumns = String.Format("{0}\t{1}\t{2}", "ts", "physTime", "dt");
+            AdamsBashforthLTS LTS = TimeStepper as AdamsBashforthLTS;
+            for (int i = 0; i < LTS.CurrentClustering.NumberOfClusters; i++) {
+                titleForColumns = titleForColumns + String.Format("\t{0}\t{1}\t{2}", "c" + i + "_dt", "c" + i + "_substeps", "c" + i + "_elements");
+            }
+            LTSLogWriter.WriteLine(titleForColumns);
+            LTSLogWriter.Flush();
+        }
+
+        /// <summary>
+        /// Writes a line to the log file 
+        /// initialized by <see cref="InitLTSLogFile(Guid)"/>.
+        /// </summary>
+        public void WriteLTSLog(double dt) {
+            // Init if necessary
+            if (LTSLogWriter == null) {
+                InitLTSLogFile(this.CurrentSessionInfo.ID);
+            }
+
+            // Write a line
+            AdamsBashforthLTS LTS = TimeStepper as AdamsBashforthLTS;
+            string line = String.Format("{0}\t{1}\t{2}", LTS.TimeInfo.TimeStepNumber, LTS.TimeInfo.PhysicalTime, dt);
+            for (int i = 0; i < LTS.CurrentClustering.NumberOfClusters; i++) {
+                line = line + String.Format("\t{0}\t{1}\t{2}", LTS.log_clusterDts[i], LTS.log_clusterSubSteps[i], LTS.log_clusterElements[i]);
+            }
+            LTSLogWriter.WriteLine(line);
+            LTSLogWriter.Flush();
         }
     }
 }

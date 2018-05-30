@@ -33,6 +33,7 @@ using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
 using ilPSP;
 using BoSSS.Foundation.Grid;
 using BoSSS.Solution.Utils;
+using NUnit.Framework;
 
 namespace BoSSS.Solution.XNSECommon {
 
@@ -169,7 +170,6 @@ namespace BoSSS.Solution.XNSECommon {
 
 
                         var conv = new Operator.Convection.ConvectionInBulk_LLF(D, BcMap, d, rhoA, rhoB, LFFA, LFFB, LsTrk);
-                        m_OP.OnIntegratingBulk += conv.SetParameter;
                         comps.Add(conv); // Bulk component
                         comps.Add(new Operator.Convection.ConvectionAtLevelSet_LLF(d, D, LsTrk, rhoA, rhoB, LFFA, LFFB, config.physParams.Material, BcMap, movingmesh));       // LevelSet component
 
@@ -195,8 +195,7 @@ namespace BoSSS.Solution.XNSECommon {
                         var comps = m_OP.EquationComponents[CodName[d]];
 
 
-                        var pres = new Operator.Pressure.PressureInBulk(d, BcMap, rhoA, rhoB);
-                        m_OP.OnIntegratingBulk += pres.SetParameter;
+                        var pres = new Operator.Pressure.PressureInBulk(d, BcMap);
                         comps.Add(pres);
 
                         if (!MatInt)
@@ -215,29 +214,27 @@ namespace BoSSS.Solution.XNSECommon {
                     for (int d = 0; d < D; d++) {
                         var comps = m_OP.EquationComponents[CodName[d]];
                         // viscous part:
-                        double _D = D;
-                        double penalty_mul = dntParams.PenaltySafety;
-                        double _p = degU;
-                        double penalty_base = (_p + 1) * (_p + _D) / _D;
-
-                        double penalty = penalty_base * penalty_mul;
+                        //double _D = D;
+                        //double penalty_mul = dntParams.PenaltySafety;
+                        //double _p = degU;
+                        //double penalty_base = (_p + 1) * (_p + _D) / _D;
+                        //double penalty = penalty_base * penalty_mul;
+                        double penalty = dntParams.PenaltySafety;
                         switch (dntParams.ViscosityMode) {
                             case ViscosityMode.Standard: {
                                     // Bulk operator:
                                     var Visc = new Operator.Viscosity.ViscosityInBulk_GradUTerm(
                                         dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
-                                        BcMap, d, D, muA, muB, dntParams.ViscosityImplementation, _betaA: this.physParams.betaS_A, _betaB: this.physParams.betaS_B);
+                                        BcMap, d, D, muA, muB, _betaA: this.physParams.betaS_A, _betaB: this.physParams.betaS_B);
 
-                                    m_OP.OnIntegratingBulk += Visc.SetParameter;
                                     comps.Add(Visc);
 
                                     if (dntParams.UseGhostPenalties) {
-                                        var ViscPenalty = new Operator.Viscosity.ViscosityInBulk_GradUTerm(penalty * 1.0, 0.0, BcMap, d, D, muA, muB, dntParams.ViscosityImplementation);
-                                        m_OP.OnIntegratingBulk += ViscPenalty.SetParameter;
+                                        var ViscPenalty = new Operator.Viscosity.ViscosityInBulk_GradUTerm(penalty * 1.0, 0.0, BcMap, d, D, muA, muB);
                                         m_OP.GhostEdgesOperator.EquationComponents[CodName[d]].Add(ViscPenalty);
                                     }
                                     // Level-Set operator:
-                                    comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_Standard(LsTrk, muA, muB, penalty * 1.0, d, true, dntParams.ViscosityImplementation));
+                                    comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_Standard(LsTrk, muA, muB, penalty * 1.0, d, true));
 
                                     break;
                                 }
@@ -245,17 +242,15 @@ namespace BoSSS.Solution.XNSECommon {
                                     // Bulk operator:
                                     var Visc = new Operator.Viscosity.ViscosityInBulk_GradUTerm(
                                         dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
-                                        BcMap, d, D, muA, muB, dntParams.ViscosityImplementation);
-                                    m_OP.OnIntegratingBulk += Visc.SetParameter;
+                                        BcMap, d, D, muA, muB);
                                     comps.Add(Visc);
                                     
                                     if (dntParams.UseGhostPenalties) {
-                                        var ViscPenalty = new Operator.Viscosity.ViscosityInBulk_GradUTerm(penalty * 1.0, 0.0, BcMap, d, D, muA, muB, dntParams.ViscosityImplementation);
-                                        m_OP.OnIntegratingBulk += ViscPenalty.SetParameter;
+                                        var ViscPenalty = new Operator.Viscosity.ViscosityInBulk_GradUTerm(penalty * 1.0, 0.0, BcMap, d, D, muA, muB);
                                         m_OP.GhostEdgesOperator.EquationComponents[CodName[d]].Add(ViscPenalty);
                                     }
                                     // Level-Set operator:
-                                    comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_Standard(LsTrk, muA, muB, penalty * 1.0, d, false, dntParams.ViscosityImplementation));
+                                    comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_Standard(LsTrk, muA, muB, penalty * 1.0, d, false));
 
                                     break;
                                 }
@@ -263,12 +258,10 @@ namespace BoSSS.Solution.XNSECommon {
                                     // Bulk operator
                                     var Visc = new Operator.Viscosity.ViscosityInBulk_GradUTerm(
                                         dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
-                                        BcMap, d, D, muA, muB, dntParams.ViscosityImplementation);
-                                    m_OP.OnIntegratingBulk += Visc.SetParameter;
+                                        BcMap, d, D, muA, muB);
                                     comps.Add(Visc);
                                     if (dntParams.UseGhostPenalties) {
-                                        var ViscPenalty = new Operator.Viscosity.ViscosityInBulk_GradUTerm(penalty * 1.0, 0.0, BcMap, d, D, muA, muB, dntParams.ViscosityImplementation);
-                                        m_OP.OnIntegratingBulk += ViscPenalty.SetParameter;
+                                        var ViscPenalty = new Operator.Viscosity.ViscosityInBulk_GradUTerm(penalty * 1.0, 0.0, BcMap, d, D, muA, muB);
                                         m_OP.GhostEdgesOperator.EquationComponents[CodName[d]].Add(ViscPenalty);
                                     }
 
@@ -283,15 +276,12 @@ namespace BoSSS.Solution.XNSECommon {
                                     // Bulk operator
                                     var Visc1 = new Operator.Viscosity.ViscosityInBulk_GradUTerm(
                                         dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
-                                        BcMap, d, D, muA, muB, dntParams.ViscosityImplementation, _betaA: this.physParams.betaS_A, _betaB: this.physParams.betaS_B);
+                                        BcMap, d, D, muA, muB, _betaA: this.physParams.betaS_A, _betaB: this.physParams.betaS_B);
                                     var Visc2 = new Operator.Viscosity.ViscosityInBulk_GradUtranspTerm(
                                         dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
-                                        BcMap, d, D, muA, muB, dntParams.ViscosityImplementation, _betaA: this.physParams.betaS_A, _betaB: this.physParams.betaS_B);
+                                        BcMap, d, D, muA, muB, _betaA: this.physParams.betaS_A, _betaB: this.physParams.betaS_B);
                                     //var Visc3 = new Operator.Viscosity.ViscosityInBulk_divTerm(dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0, BcMap, d, D, muA, muB);
 
-                                    m_OP.OnIntegratingBulk += Visc1.SetParameter;
-                                    m_OP.OnIntegratingBulk += Visc2.SetParameter;
-                                    //m_OP.OnIntegratingBulk += Visc3.SetParameter;
 
                                     comps.Add(Visc1);
                                     comps.Add(Visc2);
@@ -300,15 +290,13 @@ namespace BoSSS.Solution.XNSECommon {
                                     if (dntParams.UseGhostPenalties) {
                                         var Visc1Penalty = new Operator.Viscosity.ViscosityInBulk_GradUTerm(
                                             penalty, 0.0,
-                                            BcMap, d, D, muA, muB, dntParams.ViscosityImplementation);
+                                            BcMap, d, D, muA, muB);
                                         var Visc2Penalty = new Operator.Viscosity.ViscosityInBulk_GradUtranspTerm(
                                             penalty, 0.0,
-                                            BcMap, d, D, muA, muB, dntParams.ViscosityImplementation);
+                                            BcMap, d, D, muA, muB);
                                         //var Visc3Penalty = new Operator.Viscosity.ViscosityInBulk_divTerm(
                                         //    penalty, 0.0,
                                         //    BcMap, d, D, muA, muB);
-                                        m_OP.OnIntegratingBulk += Visc1Penalty.SetParameter;
-                                        m_OP.OnIntegratingBulk += Visc2Penalty.SetParameter;
                                         //m_OP.OnIntegratingBulk += Visc3Penalty.SetParameter;
                                         m_OP.GhostEdgesOperator.EquationComponents[CodName[d]].Add(Visc1Penalty);
                                         m_OP.GhostEdgesOperator.EquationComponents[CodName[d]].Add(Visc2Penalty);
@@ -316,7 +304,7 @@ namespace BoSSS.Solution.XNSECommon {
                                     }
 
                                     // Level-Set operator
-                                    comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk, muA, muB, penalty, d, dntParams.ViscosityImplementation));
+                                    comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk, muA, muB, penalty, d));
 
                                     break;
                                 }
@@ -336,8 +324,6 @@ namespace BoSSS.Solution.XNSECommon {
                     for (int d = 0; d < D; d++) {
                         var src = new Operator.Continuity.DivergenceInBulk_Volume(d, D, rhoA, rhoB, config.dntParams.ContiSign, config.dntParams.RescaleConti);
                         var flx = new Operator.Continuity.DivergenceInBulk_Edge(d, BcMap, rhoA, rhoB, config.dntParams.ContiSign, config.dntParams.RescaleConti);
-                        m_OP.OnIntegratingBulk += src.SetParameter;
-                        m_OP.OnIntegratingBulk += flx.SetParameter;
                         m_OP.EquationComponents["div"].Add(flx);
                         m_OP.EquationComponents["div"].Add(src);
                     }
@@ -435,11 +421,9 @@ namespace BoSSS.Solution.XNSECommon {
                             for (int d = 0; d < D; d++) {
                                 var surfDeformRate = new BoussinesqScriven_SurfaceDeformationRate_GradU(d, muI * 0.5, penalty);
                                 m_OP.SurfaceElementOperator.EquationComponents[CodName[d]].Add(surfDeformRate);
-                                m_OP.OnIntegratingBulk += surfDeformRate.SetParameter;
 
                                 var surfDeformRateT = new BoussinesqScriven_ShearViscosity_GradUTranspose(d, muI * 0.5, penalty);
                                 m_OP.SurfaceElementOperator.EquationComponents[CodName[d]].Add(surfDeformRateT);
-                                m_OP.OnIntegratingBulk += surfDeformRateT.SetParameter;
                             }
 
                         }
@@ -450,7 +434,6 @@ namespace BoSSS.Solution.XNSECommon {
                             for (int d = 0; d < D; d++) {
                                 var surfVelocDiv = new BoussinesqScriven_SurfaceVelocityDivergence(d, muI * 0.5, lamI * 0.5, penalty, BcMap.EdgeTag2Type);
                                 m_OP.SurfaceElementOperator.EquationComponents[CodName[d]].Add(surfVelocDiv);
-                                m_OP.OnIntegratingBulk += surfVelocDiv.SetParameter;
                             }
 
                         }
@@ -508,7 +491,7 @@ namespace BoSSS.Solution.XNSECommon {
             int CutCellQuadOrder,
             BlockMsrMatrix OpMatrix, double[] OpAffine, 
             Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales,
-            IEnumerable<T> U0,
+            IEnumerable<T> CurrentState,
             VectorField<SinglePhaseField> SurfaceForce,
             VectorField<SinglePhaseField> LevelSetGradient, SinglePhaseField ExternalyProvidedCurvature,
             UnsetteledCoordinateMapping RowMapping, UnsetteledCoordinateMapping ColMapping,
@@ -522,10 +505,18 @@ namespace BoSSS.Solution.XNSECommon {
             // check:
             var Tracker = this.LsTrk;
             int D = Tracker.GridDat.SpatialDimension;
-            if (U0 != null && U0.Count() != D)
+            if (CurrentState != null && CurrentState.Count() != (D + 1))
                 throw new ArgumentException();
+            if (OpMatrix == null && CurrentState == null)
+                throw new ArgumentException();
+            DGField[] U0;
+            if (CurrentState != null)
+                U0 = CurrentState.Take(D).ToArray();
+            else
+                U0 = null;
 
-           
+            
+                       
             LevelSet Phi = (LevelSet)(Tracker.LevelSets[0]);
 
             SpeciesId[] SpcToCompute = AgglomeratedCellLengthScales.Keys.ToArray();
@@ -585,11 +576,96 @@ namespace BoSSS.Solution.XNSECommon {
             // ===================================
 
             // compute matrix
-            Op.ComputeMatrixEx(Tracker,
-                ColMapping, Params, RowMapping,
-                OpMatrix, OpAffine, false, time, true,
-                AgglomeratedCellLengthScales,
-                SpcToCompute);
+            if (OpMatrix != null) {
+                Op.ComputeMatrixEx(Tracker,
+                    ColMapping, Params, RowMapping,
+                    OpMatrix, OpAffine, false, time, true,
+                    AgglomeratedCellLengthScales,
+                    SpcToCompute);
+            } else {
+                var eval = Op.GetEvaluatorEx(Tracker,
+                    CurrentState.ToArray(), Params, RowMapping,
+                    SpcToCompute);
+
+                foreach (var kv in AgglomeratedCellLengthScales)
+                    eval.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
+
+                eval.time = time;
+
+                eval.Evaluate(1.0, 1.0, OpAffine);
+
+
+#if DEBUG
+                // remark: remove this piece in a few months from now on (09may18) if no problems occur
+                {
+
+                    BlockMsrMatrix checkOpMatrix = new BlockMsrMatrix(RowMapping, ColMapping);
+                    double[] checkAffine = new double[OpAffine.Length];
+
+                    Op.ComputeMatrixEx(Tracker,
+                    ColMapping, Params, RowMapping,
+                    OpMatrix, OpAffine, false, time, true,
+                    AgglomeratedCellLengthScales,
+                    SpcToCompute);
+
+
+                    double[] checkResult = checkAffine.CloneAs();
+                    var currentVec = new CoordinateVector(CurrentState.ToArray());
+                    checkOpMatrix.SpMV(1.0, new CoordinateVector(CurrentState.ToArray()), 1.0, checkResult);
+
+                    double L2_dist = GenericBlas.L2DistPow2(checkResult, OpAffine).MPISum().Sqrt();
+                    double RefNorm = (new double[] { checkResult.L2NormPow2(), OpAffine.L2NormPow2(), currentVec.L2NormPow2() }).MPISum().Max().Sqrt();
+
+                    Assert.LessOrEqual(L2_dist, RefNorm * 1.0e-6);
+                    Debug.Assert(L2_dist < RefNorm * 1.0e-6);
+                }
+#endif
+            }
+
+
+            // check
+            // =====
+
+            /*
+            {
+                DGField[] testDomainFieldS = ColMapping.BasisS.Select(bb => new XDGField(bb as XDGBasis)).ToArray();
+                CoordinateVector test = new CoordinateVector(testDomainFieldS);
+
+                DGField[] errFieldS = ColMapping.BasisS.Select(bb => new XDGField(bb as XDGBasis)).ToArray();
+                CoordinateVector Err = new CoordinateVector(errFieldS);
+
+                var eval = Op.GetEvaluatorEx(LsTrk,
+                    testDomainFieldS, Params, RowMapping);
+
+                foreach (var s in this.LsTrk.SpeciesIdS)
+                    eval.SpeciesOperatorCoefficients[s].CellLengthScales = AgglomeratedCellLengthScales[s];
+                
+                eval.time = time;
+                int L = test.Count;
+                Random r = new Random();
+                for(int i = 0; i < L; i++) {
+                    test[i] = r.NextDouble();
+                }
+                
+
+
+                double[] R1 = new double[L];
+                double[] R2 = new double[L];
+                eval.Evaluate(1.0, 1.0, R1);
+
+                R2.AccV(1.0, OpAffine);
+                OpMatrix.SpMV(1.0, test, 1.0, R2);
+
+                Err.AccV(+1.0, R1);
+                Err.AccV(-1.0, R2);
+
+                double ErrDist = GenericBlas.L2DistPow2(R1, R2).MPISum().Sqrt();
+
+                double Ref = test.L2NormPow2().MPISum().Sqrt();
+
+                Debug.Assert(ErrDist <= Ref*1.0e-5, "Mismatch between explicit evaluation of XDG operator and matrix.");
+            }
+            */
 
         }
 

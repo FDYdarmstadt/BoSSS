@@ -65,9 +65,8 @@ namespace BoSSS.Foundation.Grid.Classic {
 
             return false;
         }
-        /*
-        /*
 
+        /*
         /// <summary>
         /// constructs a new 2D Grid
         /// </summary>
@@ -354,7 +353,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 } else {
                     grid.BcCells = null;
                 }
-                 */
+                
 
                 // return
                 // ======

@@ -1059,6 +1059,9 @@ namespace BoSSS.Solution {
                     CurrentSessionInfo.Tags = this.Control.Tags.ToArray();
                 }
 
+                // set master git commit
+                CurrentSessionInfo.MasterGitCommit = Properties.Resources.MasterGitCommit;
+
                 // set computeNode - names:
                 CurrentSessionInfo.ComputeNodeNames.Clear();
                 for (int r = MPISize - 1; r >= 0; r--)
@@ -1193,6 +1196,13 @@ namespace BoSSS.Solution {
             }
         }
 
+        private static System.Text.RegularExpressions.Regex WildcardToRegex(string pattern)
+        {
+            return new System.Text.RegularExpressions.Regex("^" + System.Text.RegularExpressions.Regex.Escape(pattern).
+            Replace("\\*", ".*").
+            Replace("\\?", ".") + "$");
+        }
+
         /// <summary>
         /// Adds some DG field to <see cref="m_RegisteredFields"/> and, optionally, to <see cref="m_IOFields"/>.
         /// </summary>
@@ -1208,10 +1218,11 @@ namespace BoSSS.Solution {
                 FieldOptions = this.Control.FieldOptions;
             }
 
-            FieldOpts fopts;
-            bool isSpec = FieldOptions.TryGetValue(f.Identification, out fopts);
+            //FieldOpts fopts;
+            //bool isSpec = FieldOptions.TryGetValue(f.Identification, out fopts);
+            FieldOpts fopts = FieldOptions.Where(kv => WildcardToRegex(kv.Key).IsMatch(f.Identification)).SingleOrDefault().Value;
 
-            if (isSpec) {
+            if (fopts != null) {
                 if (ioOpt == IOListOption.Always && fopts.SaveToDB == FieldOpts.SaveToDBOpt.FALSE)
                     throw new ApplicationException("IO for field '" + f.Identification + "' cannot be turned OFF, i.e. 'SaveToDB==false' is illegal.");
                 if (ioOpt == IOListOption.Never && fopts.SaveToDB == FieldOpts.SaveToDBOpt.TRUE)
@@ -2091,6 +2102,8 @@ namespace BoSSS.Solution {
         /// </returns>
         protected virtual int[] ComputeNewCellDistribution(int TimeStepNo, double physTime) {
             if (Control == null
+                || !Control.DynamicLoadBalancing_On
+                || (TimeStepNo % Control.DynamicLoadBalancing_Period != 0)
                 || (Control.DynamicLoadBalancing_Period < 0 && !Control.DynamicLoadBalancing_RedistributeAtStartup)
                 || MPISize <= 1) {
                 return null;

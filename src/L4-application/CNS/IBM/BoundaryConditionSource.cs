@@ -369,14 +369,14 @@ namespace CNS.IBM {
         }
 
         /// <summary>
-        /// Passes the given parameters to <see cref="INonlinEdgeform_V.InternalEdge"/>
+        /// Passes the given parameters to <see cref="INonlinEdgeForm_V.InternalEdge"/>
         /// </summary>
         /// <param name="prm"></param>
         /// <param name="U"></param>
         /// <param name="GradU"></param>
         /// <param name="f"></param>
         void INonlinVolumeForm_V.Form(ref VolumFormParams prm, MultidimensionalArray[] U, MultidimensionalArray[] GradU, MultidimensionalArray f) {
-            INonlinEdgeform_V flux = fluxFunction;
+            INonlinEdgeForm_V flux = fluxFunction;
 
             MultidimensionalArray[] UBoundary;
             MultidimensionalArray normals;
@@ -392,21 +392,21 @@ namespace CNS.IBM {
 
             OptimizedSIPGEnergyFlux.EVIL_HACK_CELL_INDEX = prm.j0;
             OptimizedSIPGMomentumFlux.EVIL_HACK_CELL_INDEX = prm.j0;
-            flux.InternalEdge(
-                ref efp, U, UBoundary, GradU, GradUBoundary, f, fBoundary, adiaWall);
+            fluxFunction.AdiabaticWall = this.adiaWall;
+            flux.InternalEdge(ref efp, U, UBoundary, GradU, GradUBoundary, f, fBoundary);
             OptimizedSIPGEnergyFlux.EVIL_HACK_CELL_INDEX = -1;
             OptimizedSIPGMomentumFlux.EVIL_HACK_CELL_INDEX = -1;
         }
 
         /// <summary>
-        /// Passes the given parameters to <see cref="INonlinEdgeform_GradV.InternalEdge"/>
+        /// Passes the given parameters to <see cref="INonlinEdgeForm_GradV.InternalEdge"/>
         /// </summary>
         /// <param name="prm"></param>
         /// <param name="U"></param>
         /// <param name="GradU"></param>
         /// <param name="f"></param>
         void INonlinVolumeForm_GradV.Form(ref VolumFormParams prm, MultidimensionalArray[] U, MultidimensionalArray[] GradU, MultidimensionalArray f) {
-            INonlinEdgeform_GradV flux = fluxFunction;
+            INonlinEdgeForm_GradV flux = fluxFunction;
 
             MultidimensionalArray[] UBoundary;
             MultidimensionalArray normals;
@@ -418,16 +418,16 @@ namespace CNS.IBM {
             // Set fBoundary to zero
             MultidimensionalArray fBoundary = MultidimensionalArray.Create(
                 U[0].GetLength(0), prm.Xglobal.GetLength(1), CNSEnvironment.NumberOfDimensions);
-            flux.InternalEdge(
-                ref efp, U, UBoundary, GradU, GradUBoundary, f, fBoundary, adiaWall);
+            fluxFunction.AdiabaticWall = this.adiaWall;
+            flux.InternalEdge(ref efp, U, UBoundary, GradU, GradUBoundary, f, fBoundary);
         }
 
         /// <summary>
         /// Reformulates the given parameters into <paramref name="efp"/>,
         /// <paramref name="UBoundary"/> and <paramref name="normals"/>, which
         /// are in the form required by
-        /// <see cref="INonlinEdgeform_GradV.InternalEdge"/>
-        /// and <see cref="INonlinEdgeform_V.InternalEdge"/>
+        /// <see cref="INonlinEdgeForm_GradV.InternalEdge"/>
+        /// and <see cref="INonlinEdgeForm_V.InternalEdge"/>
         /// </summary>
         /// <param name="prm"></param>
         /// <param name="U"></param>
@@ -440,7 +440,7 @@ namespace CNS.IBM {
             Debug.Assert(U[0].GetLength(0) == 1, "Number of cells must be 1");
             Debug.Assert(prm.Len == 1, "Number of cells must be 1");
 
-            INonlinEdgeform_GradV flux = fluxFunction;
+            INonlinEdgeForm_GradV flux = fluxFunction;
             int noOfCells = 1;
             int noOfNodesPerCell = prm.Xglobal.GetLength(1);
 

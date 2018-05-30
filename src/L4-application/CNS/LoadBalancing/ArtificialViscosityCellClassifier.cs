@@ -14,10 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
-using BoSSS.Solution.Timestepping;
 using CNS.EquationSystem;
-using CNS.ShockCapturing;
 using System;
 
 namespace CNS.LoadBalancing {
@@ -32,13 +31,24 @@ namespace CNS.LoadBalancing {
                 throw new Exception(
                     "The selected cell classifier is only sensible for runs with artificial viscosity");
             }
-            
+
             int noOfClasses = 2;
             int[] cellToPerformanceClassMap = new int[program.Grid.NoOfUpdateCells];
 
-            foreach (Chunk chunk in program.Control.ArtificialViscosityLaw.GetShockedCellMask(program.GridData)) {
+            // old
+            //foreach (Chunk chunk in program.Control.ArtificialViscosityLaw.GetShockedCellMask(program.GridData)) {
+            //    foreach (int cell in chunk.Elements) {
+            //        cellToPerformanceClassMap[cell] = 1;
+            //    }
+            //}
+
+            // new
+            DGField avField = program.WorkingSet.DerivedFields[Variables.ArtificialViscosity];
+            foreach (Chunk chunk in program.SpeciesMap.SubGrid.VolumeMask) {
                 foreach (int cell in chunk.Elements) {
-                    cellToPerformanceClassMap[cell] = 1;
+                    if (avField.GetMeanValue(cell) > 0) {
+                        cellToPerformanceClassMap[cell] = 1;
+                    }
                 }
             }
 

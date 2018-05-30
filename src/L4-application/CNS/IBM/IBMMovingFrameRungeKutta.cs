@@ -98,12 +98,14 @@ namespace CNS.IBM {
         protected override void ComputeChangeRate(double[] k, double AbsTime, double RelTime, double[] edgeFluxes = null) {
             RaiseOnBeforeComputechangeRate(AbsTime, RelTime);
 
-            Evaluator.Evaluate(1.0, 0.0, k, AbsTime + RelTime);
+            Evaluator.time = AbsTime + RelTime;
+            Evaluator.Evaluate(1.0, 0.0, k);
             Debug.Assert(
                 !k.Any(f => double.IsNaN(f)),
                 "Unphysical flux in standard terms");
 
-            boundaryEvaluator.Value.Evaluate(1.0, 1.0, k, AbsTime + RelTime);
+            boundaryEvaluator.Value.time = AbsTime + RelTime;
+            boundaryEvaluator.Value.Evaluate(1.0, 1.0, k);
             Debug.Assert(
                 !k.Any(f => double.IsNaN(f)),
                 "Unphysical flux in boundary terms");

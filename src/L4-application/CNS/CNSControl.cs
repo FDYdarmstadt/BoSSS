@@ -231,6 +231,12 @@ namespace CNS {
         public int ReclusteringInterval = 0;
 
         /// <summary>
+        /// Forces the local time stepping algorithm to recluster in the
+        /// specified <see cref="ReclusteringInterval"/>
+        /// </summary>
+        public bool forceReclustering = false;
+
+        /// <summary>
         /// Enables/Disables the flux correction to obtain a (non-)conservative
         /// <see cref="ExplicitSchemes.LTS"/> scheme. Not avaiblable for adaptive LTS.
         /// </summary>
@@ -383,6 +389,11 @@ namespace CNS {
         /// </summary>
         [InclusiveLowerBound(0)]
         public int maxNumOfSubSteps = 0;
+
+        /// <summary>
+        /// Writes additional LTS information (number of sub-steps, dt per cluster, etc.) to a text file
+        /// </summary>
+        public bool WriteLTSLog = false;
 
         /// <summary>
         /// Clones this object, but beware: I'm not sure (yet) that I've

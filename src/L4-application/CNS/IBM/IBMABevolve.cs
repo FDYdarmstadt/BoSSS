@@ -38,7 +38,7 @@ namespace CNS.IBM {
 
         private CoordinateMapping boundaryParameterMap;
 
-        private Lazy<SpatialOperator.Evaluator> boundaryEvaluator;
+        private Lazy<IEvaluatorNonLin> boundaryEvaluator;
 
         private CellMask cutCells;
 
@@ -89,21 +89,22 @@ namespace CNS.IBM {
             EdgeQuadratureScheme edgeScheme = speciesMap.QuadSchemeHelper.GetEdgeQuadScheme(
                 species, true, nonVoidEdges, control.LevelSetQuadratureOrder);
 
-            this.m_Evaluator = new Lazy<SpatialOperator.Evaluator>(() =>
-                this.Operator.GetEvaluatorEx(
+            this.m_Evaluator = new Lazy<IEvaluatorNonLin>(delegate () {
+                var opi = this.Operator.GetEvaluatorEx(
                     Mapping,
                     boundaryParameterMap,
                     Mapping,
                     edgeScheme,
-                    volumeScheme,
-                    ABSubGrid,
-                    subGridBoundaryTreatment: SpatialOperator.SubGridBoundaryModes.InnerEdgeLTS));
+                    volumeScheme);
+                opi.ActivateSubgridBoundary(ABSubGrid.VolumeMask, subGridBoundaryTreatment: SpatialOperator.SubGridBoundaryModes.InnerEdgeLTS);
+                return opi;
+            });
 
             // Evaluator for boundary conditions at level set zero contour
             CellQuadratureScheme boundaryVolumeScheme = speciesMap.QuadSchemeHelper.GetLevelSetquadScheme(
                 0, cutCells, control.LevelSetQuadratureOrder);
 
-            this.boundaryEvaluator = new Lazy<SpatialOperator.Evaluator>(() =>
+            this.boundaryEvaluator = new Lazy<IEvaluatorNonLin>(() =>
                 boundaryOperator.GetEvaluatorEx(
                     Mapping,
                     boundaryParameterMap,
@@ -116,12 +117,14 @@ namespace CNS.IBM {
         protected override void ComputeChangeRate(double[] k, double AbsTime, double RelTime, double[] edgeFluxes = null) {
             RaiseOnBeforeComputechangeRate(AbsTime, RelTime);
 
-            Evaluator.Evaluate(1.0, 0.0, k, AbsTime, outputBndEdge: edgeFluxes);
+            Evaluator.time = AbsTime;
+            Evaluator.Evaluate(1.0, 0.0, k, outputBndEdge: edgeFluxes);
             Debug.Assert(
                 !k.Any(f => double.IsNaN(f)),
                 "Unphysical flux in standard terms");
 
-            boundaryEvaluator.Value.Evaluate(1.0, 1.0, k, AbsTime);
+            boundaryEvaluator.Value.time = AbsTime;
+            boundaryEvaluator.Value.Evaluate(1.0, 1.0, k);
             Debug.Assert(
                 !k.Any(f => double.IsNaN(f)),
                 "Unphysical flux in boundary terms");

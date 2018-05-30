@@ -26,6 +26,18 @@ namespace BoSSS.Foundation.XDG {
     public partial class XDGField {
 
         delegate void EvaluateInternalSignature(int j0, int L, NodeSet NS, Basis basis, MultidimensionalArray Coördinates, MultidimensionalArray ResultAcc, double ResultPreScale);
+
+
+        /// <summary>
+        /// picks the result for respective species 
+        /// </summary>
+        /// <param name="R">output</param>
+        /// <param name="offset"></param>
+        /// <param name="m"></param>
+        /// <param name="SpcInd">
+        /// species index
+        /// </param>
+        /// <param name="SR">input</param>
         delegate void Picker(MultidimensionalArray R, int offset, int m, int SpcInd, MultidimensionalArray[] SR);
 
         private void GenericEval(int j0, int Len, NodeSet NodeSet, MultidimensionalArray result, int ResultCellindexOffset, double ResultPreScale,
