@@ -1,0 +1,315 @@
+restart
+**************
+
+  Database Explorer v2
+  ____________________
+
+Databases loaded:
+List of 0 instances of IDatabaseInfo {
+}
+Setting Matlab Connector to Octave...
+
+ Console ready for input. Type 'help' for help.
+
+==============
+WorkflowMgm.Init("PoissonSolverPerformance");
+**************
+Project name is set to 'PoissonSolverPerformance'.
+
+==============
+using System.IO;
+using BoSSS.Application.SipPoisson;
+**************
+==============
+string dateString = "2018-3-26";
+string File       = "SolverRuns--" + dateString + ".json";
+string FilePath   = Path.Combine(CurrentDocDir, File);
+var SessTab       = TableExtensions.LoadFromFile(FilePath);
+**************
+==============
+//SessTab.Print();
+**************
+==============
+((int) SolverCodes.exp_softpcg_schwarz_directcoarse);
+**************
+6
+==============
+((int) SolverCodes.exp_softpcg_mg);
+**************
+4
+==============
+// ====================
+// Evaluation, plotting
+// ====================
+**************
+==============
+SessTab.GetColumnNames();
+**************
+List of 49 instances of String {
+  0: SessionName
+  1: DGdegree:T
+  2: DGdegree:Tex
+  3: Bndtype:Dirichlet
+  4: Bndtype:Neumann
+  5: GeneratedFromCode
+  6: ControlFileText_Index
+  7: dtFixed
+  8: NoOfMultigridLevels
+  9: penalty_poisson
+  10: solver_name
+  11: TargetBlockSize
+  12: NoOfSolverRuns
+  13: ExactSolution_provided
+  14: GridPartType
+  15: ProjectName
+  16: NoOfTimesteps
+  17: Endtime
+  18: saveperiod
+  19: dtMin
+  20: dtMax
+  21: CompMode
+  22: ImmediatePlotPeriod
+  23: SuperSampling
+  24: savetodb
+  25: logFileDirectory
+  26: Paramstudy_ContinueOnError
+  27: DynamicLoadBalancing_RedistributeAtStartup
+  28: DynamicLoadBalancing_Period
+  29: DynamicLoadBalancing_ImbalanceThreshold
+  30: AdaptiveMeshRefinement
+  31: CutCellQuadratureType
+  32: ContinueOnIoError
+  33: Grid:NoOfCells
+  34: Grid:hMax
+  35: Grid:hMin
+  36: UsedNoOfMultigridLevels
+  37: minSolRunT
+  38: maxSolRunT
+  39: Conv
+  40: NoIter
+  41: NoOfCells
+  42: DOFs
+  43: BlockSize
+  44: RegularTerminated
+  45: SipMatrixAssembly_time
+  46: Aggregation_basis_init_time
+  47: Solver_Init_time
+  48: Solver_Run_time
+}
+==============
+//var SubTab_1 = SessTab.ExtractColumns("DGdegree:T", "Grid:NoOfCells", "solver_name", "DOFs", "minSolRunT", "maxSolRunT", "NoIter", "RegularTerminated", "Conv");
+**************
+==============
+var SubTab_1 = SessTab.ExtractRows(delegate(int i, IDictionary<string,object> row) {
+    return (  (Convert.ToInt32(row["solver_name"]) ==  ((int) SolverCodes.exp_softpcg_schwarz_directcoarse))
+          || (Convert.ToInt32(row["solver_name"]) ==  ((int) SolverCodes.exp_softpcg_schwarz))
+          || (Convert.ToInt32(row["solver_name"]) ==  ((int) SolverCodes.exp_softpcg_mg)))
+          && (Convert.ToInt32(row["Conv"]) != 0);
+    });
+**************
+==============
+var SubTab = SubTab_1.ExtractColumns("DGdegree:T", "Grid:NoOfCells", "solver_name", "DOFs", 
+              "minSolRunT", "maxSolRunT", "UsedNoOfMultigridLevels",
+              "SipMatrixAssembly_time", "Aggregation_basis_init_time", "Solver_Init_time", "Solver_Run_time");
+**************
+==============
+SubTab.Print();
+**************
+    DGdegree:T Grid:NoOfCells solver_name DOFs    minSolRunT  maxSolRunT  UsedNoOfMultigridLevels SipMatrixAssembly_time Aggregation_basis_init_time Solver_Init_time Solver_Run_time 
+0:  2          20480          4           204800  38.8239197  38.8239197  17                      6.4596572              6.9449986                   18.2143001       20.5668529      
+1:  2          2560           4           25600   5.7797818   5.7797818   13                      1.3015266              0.4715114                   1.666943         4.0796191       
+2:  2          163840         4           1638400 310.8046237 310.8046237 19                      45.4857921             257.5563455                 163.2613595      147.4251731     
+3:  3          20480          6           409600  139.5348553 139.5348553 17                      16.7081511             14.4612296                  29.5035664       109.9848556     
+4:  3          2560           6           51200   14.3340817  14.3340817  13                      2.650307               1.4250857                   3.9121149        10.3914818      
+5:  3          320            6           6400    6.4271863   6.4271863   10                      0.7432895              0.1999902                   0.6074329        5.791525        
+6:  3          40             6           800     0.6650459   0.6650459   7                       0.5053224              0.076162                    0.2342179        0.4039286       
+7:  2          163840         6           1638400 967.526137  967.526137  19                      45.5037232             255.7187384                 83.7181901       883.6840101     
+8:  2          20480          6           204800  47.4579363  47.4579363  17                      6.0707563              6.7004336                   10.0276219       37.3944455      
+9:  2          2560           6           25600   5.1623265   5.1623265   13                      1.2403959              0.453002                    1.3212015        3.8127094       
+10: 2          320            6           3200    1.5083119   1.5083119   10                      0.6073005              0.0963891                   0.3306114        1.1502791       
+11: 2          40             6           400     0.5427695   0.5427695   7                       0.4774382              0.0484646                   0.2100461        0.3061235       
+12: 3          20480          4           409600  105.9824714 105.9824714 17                      16.7044044             14.6538214                  63.490203        42.4402443      
+13: 3          2560           4           51200   14.9818409  14.9818409  13                      2.5362439              1.3464582                   7.6681464        7.2813662       
+14: 3          320            4           6400    1.7271275   1.7271275   10                      0.7293988              0.200079                    0.4174832        1.2797338       
+15: 3          40             4           800     0.4727006   0.4727006   7                       0.5021611              0.0692231                   0.1619232        0.2815732       
+16: 2          320            4           3200    0.6922625   0.6922625   10                      0.5472974              0.0942285                   0.1913936        0.4712207       
+17: 2          40             4           400     0.401851    0.401851    7                       0.4927452              0.0506556                   0.138031         0.234129        
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+var Solvers = new SolverCodes[] {
+SolverCodes.exp_softpcg_schwarz_directcoarse,
+SolverCodes.exp_softpcg_mg
+};
+**************
+==============
+//cl.WriteMinimalCompileableExample("C:\\tmp\\mini.tex");
+**************
+==============
+**************
+==============
+Plot2Ddata[][,] AllMultiplots = new Plot2Ddata[2][,];
+for(int iPlot = 0; iPlot < AllMultiplots.Length; iPlot++) {
+Plot2Ddata[,] multiplots = new Plot2Ddata[2,1];
+AllMultiplots[iPlot] = multiplots;
+int pDegree = 2;
+for(int iRow = 0; iRow < 2; iRow++) {
+ 
+    multiplots[iRow,0] = SubTab.ToPlot(
+       delegate (int iSweep, int iTabRow, 
+                 IDictionary<string, object> Row, 
+                 out string Nmn, 
+                 out PlotFormat Fmt,
+                 out double xValue, out double yValue) { 
+           // - - - - - - - - - - - - - - - - - - - - - - - - 
+           // PlotRowSelector:
+           // selects, which table row goes to which graph,
+           // and the respective color  
+           // - - - - - - - - - - - - - - - - - - - - - - - - 
+           int k = Convert.ToInt32(Row["DGdegree:T"]);
+           SolverCodes solver_name = (SolverCodes) Convert.ToInt32(Row["solver_name"]);
+           
+           if(    k != pDegree 
+               || solver_name != Solvers[iPlot]) {
+                // degree does not match -> not in this plot
+                Nmn    = null;
+                Fmt    = null;
+                xValue = 0;
+                yValue = 0;
+                return;
+           }
+           
+           double mtxAssi  = Convert.ToDouble(Row["SipMatrixAssembly_time"]);
+           double aggBinit = Convert.ToDouble(Row["Aggregation_basis_init_time"]);
+           double slvInit  = Convert.ToDouble(Row["Solver_Init_time"]);
+           double slvRun   = Convert.ToDouble(Row["Solver_Run_time"]);
+           double dofs     = Convert.ToDouble(Row["DOFs"]);
+           
+           if(aggBinit > 700)
+           Console.Write("aggBinit/slvRun = " + aggBinit + "/" + slvRun);
+           
+           Fmt           = new PlotFormat();
+           Fmt.PointSize = 0.5;
+           Fmt.Style     = Styles.LinesPoints;
+           Fmt.LineColor = LineColors.Black;
+           Fmt.LineWidth = 3;
+           
+           xValue = dofs;
+           
+           switch(iSweep) {
+               case 0:
+               yValue       = slvRun;
+               Nmn          = "Slv Iter";
+               Fmt.DashType = DashTypes.Dotted;
+               Fmt.PointType = PointTypes.OpenCircle;
+               break;
+               
+               case 1:
+               yValue        = slvInit;
+               Nmn           = "Slv Init";
+               Fmt.DashType  = DashTypes.Dashed;
+               Fmt.PointType = PointTypes.OpenBox;
+               break;
+               
+               case 2:
+               yValue        = aggBinit;
+               Nmn           = "Agg Init";
+               Fmt.DashType  = DashTypes.DotDashed;
+               Fmt.PointType = PointTypes.OpenDiamond;
+               break;
+               
+               case 3:
+               yValue        = mtxAssi;
+               Nmn           = "Mtx ass";
+               Fmt.DashType  = DashTypes.DotDotDashed;
+               Fmt.PointType = PointTypes.OpenUpperTriangle;
+               break;
+               
+               default:
+               throw new NotImplementedException();
+           }
+           
+           if(aggBinit > 700)
+           Console.WriteLine("\t + case: {0} + yValue = {1}", iSweep, yValue);
+       },
+       4 // 4 sweeps over table
+       );
+ 
+    string Title = string.Format("$k = {0}$", pDegree);
+    multiplots[iRow,0].Ylabel = Title;
+    multiplots[iRow,0].LogX = true;
+    multiplots[iRow,0].LogY = true;
+ 
+    multiplots[iRow,0].YrangeMin = 0.1;
+    multiplots[iRow,0].YrangeMax = 1e+4;
+    
+    double[] dof = new[]{1e3,1e6};
+    double[] linT = dof.Select(x => x*0.001).ToArray();
+    var linP = new Plot2Ddata.XYvalues("linear", dof, linT);
+    linP.Format.FromString("- black");
+    ArrayTools.AddToArray(linP, ref multiplots[iRow,0].dataGroups);
+    //multiplots[iRow,iCol].XrangeMin = 1e2;
+    //multiplots[iRow,iCol].XrangeMax = 1e7;
+    //multiplots[iRow,iCol].Y2rangeMin = 1e-3;
+    //multiplots[iRow,iCol].Y2rangeMax = 1e+4;
+    //multiplots[iRow,iCol].X2rangeMin = 1e2;
+    //multiplots[iRow,iCol].X2rangeMax = 1e7;
+ 
+    //if(iRow == 2) {
+    //    multiplots[iRow,iCol].ShowLegend = true;
+    //    multiplots[iRow,iCol].LegendPosition = new double[] {1e12,1e4};
+    //} else {
+    //    multiplots[iRow,iCol].ShowLegend = false;
+    //}
+ 
+    //if(iCol == 1) {
+    //    multiplots[iRow,iCol].SwapYaxes();
+    //    multiplots[iRow,iCol].lmargin = 1;
+    //    multiplots[iRow,iCol].rmargin = 10;
+    //} else {
+    //    multiplots[iRow,iCol].lmargin = 10;
+    //    multiplots[iRow,iCol].rmargin = 1;
+    //}
+    //multiplots[iRow,iCol].tmargin = 1;
+    //multiplots[iRow,iCol].bmargin = 1;
+    
+    pDegree++;                       
+}
+}
+**************
+==============
+var CL = AllMultiplots[0].ToGnuplot().PlotCairolatex(xSize:16, ySize:12);
+CL.PlotNow();
+**************
+Using gnuplot: C:\Program Files (x86)\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+System.Drawing.Bitmap
+==============
+CL.WriteMinimalCompileableExample(
+    Path.Combine(CurrentDocDir, "plots", "MainConstCoeffPoisson_Schwarz.tex"),
+    "ConstCoeffPoisson_Schwarz.tex");
+**************
+==============
+//CL.WriteMinimalCompileableExample("C:\\tmp\\Schwarz" + dateString + ".tex");
+**************
+==============
+**************
+==============
+**************
+==============
+var CL = AllMultiplots[1].ToGnuplot().PlotCairolatex(xSize:16, ySize:12);
+CL.PlotNow();
+**************
+Using gnuplot: C:\Program Files (x86)\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+System.Drawing.Bitmap
+==============
+CL.WriteMinimalCompileableExample(
+    Path.Combine(CurrentDocDir, "plots", "MainConstCoeffPoisson_MG.tex"),
+    "ConstCoeffPoisson_MG.tex");
+**************
+==============
+**************
+==============

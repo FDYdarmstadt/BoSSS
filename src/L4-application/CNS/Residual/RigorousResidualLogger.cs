@@ -35,7 +35,7 @@ namespace CNS.Residual {
         /// The spatial differential operator defining (the spatial part of)
         /// the system of equations that are solved.
         /// </summary>
-        private SpatialOperator.Evaluator evaluator;
+        private IEvaluatorNonLin evaluator;
 
         /// <summary>
         /// <see cref="ResidualLogger"/>

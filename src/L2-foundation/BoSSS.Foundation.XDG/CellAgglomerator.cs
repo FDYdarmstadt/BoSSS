@@ -599,7 +599,7 @@ namespace BoSSS.Foundation.XDG {
 
 
 
-        public MsrMatrix GetRowManipulationMatrix(UnsetteledCoordinateMapping map,
+        public BlockMsrMatrix GetRowManipulationMatrix(UnsetteledCoordinateMapping map,
             int MaxDegree, int NoOfVars, Func<int, int, int> i0Func, Func<int, int, int> NjFunc,
             bool MakeInPlace, CellMask cm) {
 
@@ -608,13 +608,13 @@ namespace BoSSS.Foundation.XDG {
 
             this.InitCouplingMatrices(MaxDegree);
 
-            MsrMatrix CompleteMtx = null;
+            BlockMsrMatrix CompleteMtx = null;
             for (int AggLevel = 0; AggLevel <= this.AggInfo.MaxLevel; AggLevel++) { // loop over agglomeration level...
 
                 // alloc matrix for the current agglomeration level
                 // ------------------------------------------------
 
-                MsrMatrix LevelMtx = new MsrMatrix(map, map, MakeInPlace ? 0 : 1);
+                BlockMsrMatrix LevelMtx = new BlockMsrMatrix(map, map);
 
                 if (!MakeInPlace) {
                     // ++++++++++++
@@ -691,11 +691,11 @@ namespace BoSSS.Foundation.XDG {
                     CompleteMtx = LevelMtx;
                 } else {
                     if (MakeInPlace) {
-                        MsrMatrix P = MsrMatrix.Multiply(LevelMtx, CompleteMtx);
+                        BlockMsrMatrix P = BlockMsrMatrix.Multiply(LevelMtx, CompleteMtx);
                         CompleteMtx.Acc(1.0, LevelMtx);
                         CompleteMtx.Acc(1.0, P);
                     } else {
-                        CompleteMtx = MsrMatrix.Multiply(LevelMtx, CompleteMtx);
+                        CompleteMtx = BlockMsrMatrix.Multiply(LevelMtx, CompleteMtx);
                     }
                 }
 
@@ -991,7 +991,7 @@ namespace BoSSS.Foundation.XDG {
 
             Basis[] BasisS = RowMap.BasisS.ToArray();
 
-            MsrMatrix AggMtx = this.GetRowManipulationMatrix(RowMap, BasisS.Max(basis => basis.Degree), BasisS.Length,
+            BlockMsrMatrix AggMtx = this.GetRowManipulationMatrix(RowMap, BasisS.Max(basis => basis.Degree), BasisS.Length,
                  (jCell, iVar) => RowMap.GlobalUniqueCoordinateIndex(iVar, jCell, 0),
                  (jCell, iVar) => BasisS[iVar].GetLength(jCell),
                  true, null);
@@ -1000,7 +1000,7 @@ namespace BoSSS.Foundation.XDG {
             if (object.ReferenceEquals(tmp, V))
                 throw new ApplicationException("shallow copy detected");
 
-            AggMtx.SpMVpara(1.0, tmp, 1.0, V);
+            AggMtx.SpMV(1.0, tmp, 1.0, V);
         }
 
 
@@ -1207,7 +1207,7 @@ namespace BoSSS.Foundation.XDG {
                 }
             }
 
-            MsrMatrix LeftMul, RightMul;
+            BlockMsrMatrix LeftMul, RightMul;
             {
                 MiniMapping rowMini = new MiniMapping(RowMap);
                 LeftMul = this.GetRowManipulationMatrix(RowMap, rowMini.MaxDeg, rowMini.NoOfVars, rowMini.i0Func, rowMini.NFunc, false, null);
@@ -1226,16 +1226,16 @@ namespace BoSSS.Foundation.XDG {
             // =====================================
 
             if (Matrix != null) {
-                MsrMatrix RightMulTr = RightMul.Transpose();
+                BlockMsrMatrix RightMulTr = RightMul.Transpose();
 
-                MsrMatrix _Matrix;
-                if (Matrix is MsrMatrix) {
-                    _Matrix = (MsrMatrix)((object)Matrix);
+                BlockMsrMatrix _Matrix;
+                if (Matrix is BlockMsrMatrix) {
+                    _Matrix = (BlockMsrMatrix)((object)Matrix);
                 } else {
-                    _Matrix = Matrix.ToMsrMatrix();
+                    _Matrix = Matrix.ToBlockMsrMatrix(RowMap, ColMap);
                 }
 
-                var AggMatrix = MsrMatrix.Multiply(LeftMul, MsrMatrix.Multiply(_Matrix, RightMulTr));
+                var AggMatrix = BlockMsrMatrix.Multiply(LeftMul, BlockMsrMatrix.Multiply(_Matrix, RightMulTr));
 
                 if (object.ReferenceEquals(_Matrix, Matrix)) {
                     _Matrix.Clear();
@@ -1255,7 +1255,7 @@ namespace BoSSS.Foundation.XDG {
                 if (object.ReferenceEquals(tmp, Rhs))
                     throw new ApplicationException("Flache kopie sollte eigentlich ausgeschlossen sein!?");
 
-                LeftMul.SpMVpara(1.0, tmp, 0.0, Rhs);
+                LeftMul.SpMV(1.0, tmp, 0.0, Rhs);
             }
         }
 

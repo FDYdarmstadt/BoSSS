@@ -304,11 +304,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             // for temporal convergence study
             double[] dt_study = new double[] { 2e-4, 1e-4, 5e-5, 2.5e-5, 1.25e-5 };
-            int h = 64;
+            //int h = 64;
             double t_end = dt_study[0];
 
             // settings for the paramStudy
-            int p = 2;                                                  // !!!!!!!!!!!!
+            //int p = 2;                                                  // !!!!!!!!!!!!
             //string _DbPath = @"D:\local\CWp2_temporalConv_coupledBDF1";
             //int[] saveTs = new int[] { 1, 2, 4, 8, 16 };
             //string[] restartSess = new string[] { "107a29ae-0b83-4cc0-ac52-8734079d7015",

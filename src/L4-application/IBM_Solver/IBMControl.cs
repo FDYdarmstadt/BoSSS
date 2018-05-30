@@ -63,7 +63,6 @@ namespace BoSSS.Application.IBM_Solver {
         /// Sets the DG polynomial degree 
         /// </summary>
         /// <param name="k">Degree for velocity; pressure  will be one order lower.</param>
-        /// <param name="D">Spatial Dimension of the computational domain </param>
         public override void SetDGdegree(int k) {
             if (k < 1)
                 throw new ArgumentOutOfRangeException("DG polynomial degree must be at least 1.");
@@ -237,7 +236,7 @@ namespace BoSSS.Application.IBM_Solver {
         }
 
         [DataMember]
-        public TimestepperInit Timestepper_Init = TimestepperInit.SingleInit;
+        public BoSSS.Solution.Timestepping.TimeStepperInit TimeStepper_Init = Solution.Timestepping.TimeStepperInit.SingleInit;
 
         [DataMember]
         public NonlinearSolverCodes NonlinearSolve = NonlinearSolverCodes.Picard;

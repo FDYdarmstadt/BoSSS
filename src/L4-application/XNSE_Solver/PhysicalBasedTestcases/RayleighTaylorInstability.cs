@@ -357,7 +357,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
-            C.LinearSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS };
+            C.LinearSolver = DirectSolver._whichSolver.MUMPS;
 
             //C.Option_LevelSetEvolution = LevelSetEvolution.Fourier;
             //C.AdvancedDiscretizationOptions.surfTensionMode = SurfaceTensionMode.Curvature_Fourier;
@@ -382,7 +382,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // specialized Fourier Level-Set
             // =============================
 
-            int numSp = 640;
+            //int numSp = 640;
             //C.FourierLevSetControl = new FourierLevSetControl(FourierType.Planar, numSp, L, PeriodicFunc, 1.0 / (double)xkelem) {
             //    FourierEvolve = Fourier_Evolution.MaterialPoints,
             //    Timestepper = FourierLevelSet_Timestepper.RungeKutta1901,
@@ -625,7 +625,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ==============
             #region init
 
-            int k = 1;
+            //int k = 1;
             double A0 = 0.05;
             C.InitialValues_Evaluators.Add("Phi", (X => X[1] - (2.0 + A0 * Math.Cos(2.0 * Math.PI * X[0]))));
 
@@ -693,7 +693,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
-            C.LinearSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS };
+            C.LinearSolver = DirectSolver._whichSolver.MUMPS;
 
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
             C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Projected;

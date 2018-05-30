@@ -85,7 +85,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Subdivision {
             this.RefElement = refElement;
             this.maxDivisions = maxDivisions;
             this.baseVertexSet = new NestedVertexSet(refElement.SpatialDimension);
-            this.LevelSetData = LevelSetData;
+            this.LevelSetData = levelSetData;
 
             int verticesPerCell = refElement.Vertices.GetLength(0);
             int[] simplexVertices = new int[verticesPerCell];

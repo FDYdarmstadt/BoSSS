@@ -413,9 +413,10 @@ namespace BoSSS.Solution.Utils {
             }
 
             List<int> newSubSteps = new List<int>();
-            for (int i = 0; i < restrictedClusterDts.Length; i++) {
-                newSubSteps.Add((int)Math.Ceiling(restrictedClusterDts[0] / restrictedClusterDts[i]));
-            }
+            //for (int i = 0; i < restrictedClusterDts.Length; i++) {
+            //    newSubSteps.Add((int)Math.Ceiling(restrictedClusterDts[0] / restrictedClusterDts[i]));
+            //}
+            newSubSteps = CalculateSubSteps(restrictedClusterDts, eps: 1.0e-1);
 
             return (restrictedClusterDts, newSubSteps);
         }

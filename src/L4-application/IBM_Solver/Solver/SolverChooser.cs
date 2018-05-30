@@ -23,22 +23,28 @@ namespace BoSSS.Application.IBM_Solver {
             Timestepper.Config_MinIterations = Control.MinSolverIterations;
             Timestepper.Config_MaxKrylovDim = Control.MaxKrylovDim;
 
+            // Set to pseudo Picard if the Stokes equations should be solved
+            if (Control.PhysicalParameters.IncludeConvection == false)
+                Control.NonlinearSolve = NonlinearSolverCodes.Picard;
+
             // Set nonlinear Solver
             switch (Control.NonlinearSolve) {
                 case NonlinearSolverCodes.NewtonGMRES:
-                    Timestepper.Config_NonlinearSolver = NonlinearSolverMethod.Newton;
+                    Timestepper.Config_NonlinearSolver = NonlinearSolverMethod.NewtonGMRES;
                     break;
                 case NonlinearSolverCodes.Picard:
                     Timestepper.Config_NonlinearSolver = NonlinearSolverMethod.Picard;
+                    break;
+                case NonlinearSolverCodes.Newton:
+                    Timestepper.Config_NonlinearSolver = NonlinearSolverMethod.Newton;
                     break;
                 default:
                     throw new NotImplementedException("Nonlinear solver option not available");
             }
 
-
             switch (Control.LinearSolve) {
                 case LinearSolverCodes.automatic:
-                    AutomaticChoice(Control,Timestepper);
+                    AutomaticChoice(Control, Timestepper);
                     break;
 
                 case LinearSolverCodes.classic_mumps:
@@ -108,12 +114,14 @@ namespace BoSSS.Application.IBM_Solver {
                 case LinearSolverCodes.exp_softgmres:
                     Timestepper.Config_linearSolver = new SoftGMRES() {
                         MaxKrylovDim = Timestepper.Config_MaxKrylovDim,
+                        m_Tolerance = Timestepper.Config_SolverConvergenceCriterion,
                     };
                     break;
 
                 case LinearSolverCodes.exp_softgmres_schwarz_Kcycle_directcoarse_overlap:
                     Timestepper.Config_linearSolver = new SoftGMRES() {
-                        MaxKrylovDim = Timestepper.Config_MaxKrylovDim, 
+                        MaxKrylovDim = Timestepper.Config_MaxKrylovDim,
+                        m_Tolerance = Timestepper.Config_SolverConvergenceCriterion,
                         Precond = new Schwarz() {
                             m_BlockingStrategy = new Schwarz.MultigridBlocks() {
                                 Depth = Control.NoOfMultigridLevels - 1
@@ -122,6 +130,32 @@ namespace BoSSS.Application.IBM_Solver {
                             CoarseSolver = DetermineMGSquence(Control.NoOfMultigridLevels - 2)
                         },
                     };
+                    break;
+
+                case LinearSolverCodes.exp_softgmres_schwarz_directcoarse_overlap:
+                    if (Control.NoOfMultigridLevels < 2)
+                        throw new ApplicationException("At least 2 Multigridlevels are required");
+                    Timestepper.Config_linearSolver = new SoftGMRES() {
+                        MaxKrylovDim = Timestepper.Config_MaxKrylovDim,
+                        m_Tolerance = Timestepper.Config_SolverConvergenceCriterion,
+                        Precond = new Schwarz() {
+                            m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
+                                NoOfPartsPerProcess = 1,
+                            },
+                            Overlap = 1,
+                            CoarseSolver = DetermineMGSquence(Control.NoOfMultigridLevels - 2)
+                        },
+                    };
+                    break;
+
+                case LinearSolverCodes.exp_multigrid:
+                    if (Control.NoOfMultigridLevels < 2)
+                        throw new ApplicationException("At least 2 Multigridlevels are required");
+                    Timestepper.Config_linearSolver = new ILU() { };
+                    break;
+
+                case LinearSolverCodes.exp_ILU:
+                    Timestepper.Config_linearSolver = new ILU() { };
                     break;
 
                 default:
@@ -133,13 +167,104 @@ namespace BoSSS.Application.IBM_Solver {
         /// Automatic choice of linear solver depending on problem size, immersed boundary, polynomial degree, etc.
         /// </summary>
         static void AutomaticChoice(IBM_Control Control, XdgBDFTimestepping Timestepper) {
-            throw new NotImplementedException("Option currently not available");
 
-            // Detecting MPI Size
-            MPI.Wrappers.csMPI.Raw.Comm_Size(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out int size);
-            //Timestepper.MultigridSequence[0].
+            //int pV = Control.FieldOptions["VelocityX"].Degree;
+            int pP = Control.FieldOptions["Pressure"].Degree;
+            int pV = pP + 1;
 
-            // Spatial Dimension
+            // Detecting variables for solver determination 
+            var D = Timestepper.MultigridSequence[0].SpatialDimension;
+            var cellsLoc = Timestepper.MultigridSequence[0].CellPartitioning.LocalLength;
+            var cellsGlo = Timestepper.MultigridSequence[0].CellPartitioning.TotalLength;
+
+
+            var size = Timestepper.MultigridSequence[0].CellPartitioning.MpiSize;
+
+            // !!!!!!!!!!!UNTERSCHEIDUNG OB PICARD ODER NEWTON!!!!!!!!!!!!
+            if (Timestepper.Config_NonlinearSolver == NonlinearSolverMethod.NewtonGMRES) {
+
+                // Spatial Dimension
+                switch (D) {
+                    case 1:
+                        break;
+                        throw new NotImplementedException("Currently not implemented for " + D + " Dimensions");
+                        break;
+
+                    case 2:
+                        throw new NotImplementedException("Currently not implemented for " + D + " Dimensions");
+                        break;
+
+                    case 3:
+                        var dofsPerCell3D = (3 * (pV * pV * pV + 6 * pV * pV + 11 * pV + 6) / 6 + 1 * (pP * pP * pP + 6 * pP * pP + 11 * pP + 6) / 6);
+                        var dofsLoc = dofsPerCell3D * cellsLoc;
+                        var dofsGlo = dofsPerCell3D * cellsGlo;
+
+                        var PPP = (int)Math.Ceiling(dofsLoc / 6500.0);
+
+                        Console.WriteLine("Analysing the problem yields " + PPP + " parts per process.");
+
+                        if (dofsGlo > 10000) {
+
+                            if (Control.NoOfMultigridLevels < 2)
+                                throw new ApplicationException("At least 2 Multigridlevels are required");
+
+                            Timestepper.Config_linearSolver = new Schwarz() {
+                                m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
+                                    NoOfPartsPerProcess = PPP,
+                                },
+                                Overlap = 1,
+                                CoarseSolver = DetermineMGSquence(Control.NoOfMultigridLevels - 2)
+                            };
+                        } else {
+                            Timestepper.Config_linearSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS };
+                        }
+                        break;
+
+                    default:
+                        throw new NotImplementedException("Currently not implemented for " + D + " Dimensions");
+                }
+            } else {
+                // Spatial Dimension
+                switch (D) {
+                    case 1:
+                        break;
+                        throw new NotImplementedException("Currently not implemented for " + D + " Dimensions");
+                        break;
+
+                    case 2:
+                        throw new NotImplementedException("Currently not implemented for " + D + " Dimensions");
+                        break;
+
+                    case 3:
+                        var dofsPerCell3D = (3 * (pV * pV * pV + 6 * pV * pV + 11 * pV + 6) / 6 + 1 * (pP * pP * pP + 6 * pP * pP + 11 * pP + 6) / 6);
+                        var dofsLoc = dofsPerCell3D * cellsLoc;
+                        var dofsGlo = dofsPerCell3D * cellsGlo;
+
+                        if (dofsGlo > 10000) {
+
+                            if (Control.NoOfMultigridLevels < 2)
+                                throw new ApplicationException("At least 2 Multigridlevels are required");
+
+                            Timestepper.Config_linearSolver = new SoftGMRES() {
+                                MaxKrylovDim = Timestepper.Config_MaxKrylovDim,
+                                m_Tolerance = Timestepper.Config_SolverConvergenceCriterion,
+                                Precond = new Schwarz() {
+                                    m_BlockingStrategy = new Schwarz.SimpleBlocking() {
+                                        NoOfPartsPerProcess = (int)Math.Ceiling(dofsLoc / 6500.0),
+                                    },
+                                    Overlap = 1,
+                                    CoarseSolver = DetermineMGSquence(Control.NoOfMultigridLevels - 2)
+                                },
+                            };
+                        } else {
+                            Timestepper.Config_linearSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS };
+                        }
+                        break;
+
+                    default:
+                        throw new NotImplementedException("Currently not implemented for " + D + " Dimensions");
+                }
+            }
 
             //Timestepper.
 
