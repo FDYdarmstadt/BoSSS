@@ -20,8 +20,10 @@ using System.Text;
 using System.Xml;
 using System.Globalization;
 using System.Runtime.Serialization;
+using BoSSS.Solution.Control;
+using ilPSP;
 
-namespace BoSSS.Solution.Utils.Spline {
+namespace BoSSS.Solution.Control {
 
     /// <summary>
     /// A cubic B-Spline, which can be used for encoding
@@ -30,12 +32,12 @@ namespace BoSSS.Solution.Utils.Spline {
     /// <remarks>
     /// The B-Spline depends only on one spatial coordinate and is 
     /// constant in the other (two) directions, i.e.
-    /// it is a mapping <br/>
-    /// (x,y,z)  ->  f(x) <br/>
-    /// or <br/>
-    /// (x,y,z)  ->  f(y) <br/>
-    /// or <br/>
-    /// (x,y,z)  ->  f(z). <br/>
+    /// it is a mapping 
+    /// \f[
+    /// (x,y,z)  ->  f(x) \textrm{ or } 
+    /// (x,y,z)  ->  f(y) \textrm{ or } 
+    /// (x,y,z)  ->  f(z). 
+    /// \f]
     /// </remarks>
     [Serializable]
     [DataContract]
@@ -44,15 +46,43 @@ namespace BoSSS.Solution.Utils.Spline {
         /// <summary>
         /// Empty ctor for de-serialization.
         /// </summary>
-        private Formula() {
+        private Spline1D() {
             //Console.WriteLine("ctor private");
-        }{
+        }
 
         double[] M;
-        private double[] c;
-        private double[] d;
+        double[] c;
+        double[] d;
+
+        void RecomputeSplineParams() {
+            //double[] h = new double[nodes.Length - 1];
+            //double[,] A = new double[nodes.Length, 3];         //stores the coefficients of the equation system with unknown M (A*M = b)
+            //M = new double[nodes.Length];
+            //double[] b = new double[nodes.Length];             //stores the solution vector of the equation system
+            //ConstructorCommon(ref h, ref A, ref b);
+
+
+            double[] h = this.calculateDistanceH();
+
+            //initialising the solution vector b. According to the natural border conditions b[n] = b[0] = 0
+            double[] b = this.calculateB(h);
+
+            //initialising the matrix A. 
+            //According to the natural border conditions A[0,2] = A[n,0] = 0 && A[0,1] = A[n,1] = 1
+            double[,] A = this.initA(h);
+            this.M = solveEquation(A, b);            //calculates the moment M using the Gauss-Elimination Method
+            computeCoefficients(h);              //should compute the coefficients in the arrays d and c that are needed for computing the spline
+        }
+
+
+
+        [DataMember]
         private int dim;
+
+        [DataMember]
         private double[] nodes;
+
+        [DataMember]
         private double[] values;
 
         /// <summary>
@@ -72,6 +102,7 @@ namespace BoSSS.Solution.Utils.Spline {
             Clamp
         }
 
+        [DataMember]
         private OutOfBoundsBehave m_oobb;
              
 
@@ -95,17 +126,16 @@ namespace BoSSS.Solution.Utils.Spline {
         /// <param name="oobb">
         /// </param>
         public Spline1D(double[] nodes, double[] values, int d, OutOfBoundsBehave oobb) {
-            M = new double[nodes.Length];
-            this.nodes = nodes;
-            this.values = values;
+            if(nodes.Length != values.Length)
+                throw new ArgumentException("Node and Value array must have the same length.");
+            this.values = values.CloneAs();
+            this.nodes = nodes.CloneAs();
             dim = d;
             m_oobb = oobb;
-            double[] h = new double[nodes.Length - 1];
-            double[,] A = new double[nodes.Length, 3];         //stores the coefficients of the equation system with unknown M (A*M = b)
-            double[] b = new double[nodes.Length];             //stores the solution vector of the equation system
-            ConstructorCommon(ref h, ref A, ref b);
+            
         }
 
+        /*
         /// <summary>
         /// Constructs a B-Spline from an XML element. The XML element is parsed in order to extract the needed information, namely
         /// the interpolation points and their values respectively.
@@ -121,7 +151,9 @@ namespace BoSSS.Solution.Utils.Spline {
             double[] b = new double[this.nodes.Length];             //stores the solution vector of the equation system
             ConstructorCommon(ref h, ref A, ref b);
         }
-
+        */
+        
+        /*
         /// <summary>
         /// This method is used as a private constructor by the other constructors. 
         /// It calculates the needed initial parameters and calls the function that finds the moments M,
@@ -147,6 +179,7 @@ namespace BoSSS.Solution.Utils.Spline {
             M = solveEquation(A, b);            //calculates the moment M using the Gauss-Elimination Method
             computeCoefficients(h);              //should compute the coefficients in the arrays d and c that are needed for computing the spline
         }
+        */
 
         /// <summary>
         /// Evaluates the B-spline at point <paramref name="X"/>
@@ -155,32 +188,30 @@ namespace BoSSS.Solution.Utils.Spline {
         /// The coordinate vector, either (x,y) in 2D, (x,y,z) in 3D or
         /// just (x) in 1D.
         /// </param>
+        /// <param name="t">
+        /// temporal coordinate, ignored;
+        /// </param>
         /// <returns>
         /// the calculated value for the spline at the given point</returns>
         /// <remarks>
         /// The B-Spline depends only on one spatial coordinate and is 
         /// constant in the other (two) directions, i.e.
-        /// it is a mapping <br/>
-        /// (x,y,z)  ->  f(x) <br/>
-        /// or <br/>
-        /// (x,y,z)  ->  f(y) <br/>
-        /// or <br/>
-        /// (x,y,z)  ->  f(z). <br/>
+        /// it is a mapping
+        /// \f[
+        /// (x,y,z)  ->  f(x) \textrm{ or } 
+        /// (x,y,z)  ->  f(y) \textrm{ or } 
+        /// (x,y,z)  ->  f(z). 
+        /// \f]
         /// </remarks>
-        public double Evaluate(params double[] X) {
+        public double Evaluate(double[] X, double t) {
 
             double x = X[dim];              //dim is the global variable that is set to 0 for x, 1 for y, 2 for z 
             
-            if( m_oobb == OutOfBoundsBehave.Clamp) {
-                if(x <= this.nodes[0])
-                    return this.values[0];
-
-                if (x >= this.nodes[this.nodes.Length - 1])
-                    return this.values[this.nodes.Length - 1];
-            }
+           
 
             return Evaluate1D(x);
         }
+        
 
         /// <summary>
         /// Spline evaluation core
@@ -193,6 +224,18 @@ namespace BoSSS.Solution.Utils.Spline {
             if (interval >= this.nodes.Length - 1) {
                 interval = this.nodes.Length - 2;
             }
+
+            if(M == null)
+                this.RecomputeSplineParams();
+            
+             if( m_oobb == OutOfBoundsBehave.Clamp) {
+                if(x <= this.nodes[0])
+                    return this.values[0];
+
+                if (x >= this.nodes[this.nodes.Length - 1])
+                    return this.values[this.nodes.Length - 1];
+            }
+
             double xI = this.nodes[interval];
             double xI1 = this.nodes[interval + 1];
             double MI = M[interval];
@@ -342,6 +385,9 @@ namespace BoSSS.Solution.Utils.Spline {
             }
         }
 
+        
+
+        /*
         /// <summary>
         /// This function parses an XmlElement in order to extract the nodes and values for the spline
         /// </summary>
@@ -437,6 +483,6 @@ namespace BoSSS.Solution.Utils.Spline {
                 }
                 isAscending = 0;
             }
-        }
+        }*/
     }
 }

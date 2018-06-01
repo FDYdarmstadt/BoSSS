@@ -123,7 +123,7 @@
     <Compile Include="TimeStepping\ROCK4_parameters.cs" />
     <Compile Include="TimeStepping\RungeKutta.cs" />
     <Compile Include="TimeStepping\RungeKuttaScheme.cs" />
-    <Compile Include="Spline.cs" />
+    <Compile Include="Spline1D.cs" />
     <Compile Include="SyntaxError.cs" />
     <Compile Include="TimeStepping\TimeInfo.cs" />
     <Compile Include="TimeStepping\TimeStepConstraint.cs" />
