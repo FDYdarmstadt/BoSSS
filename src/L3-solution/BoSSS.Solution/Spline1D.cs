@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Xml;
 using System.Globalization;
+using System.Runtime.Serialization;
 
 namespace BoSSS.Solution.Utils.Spline {
 
@@ -37,7 +38,15 @@ namespace BoSSS.Solution.Utils.Spline {
     /// (x,y,z)  ->  f(z). <br/>
     /// </remarks>
     [Serializable]
-    public class Spline {
+    [DataContract]
+    public class Spline1D : IBoundaryAndInitialData {
+
+        /// <summary>
+        /// Empty ctor for de-serialization.
+        /// </summary>
+        private Formula() {
+            //Console.WriteLine("ctor private");
+        }{
 
         double[] M;
         private double[] c;
@@ -85,7 +94,7 @@ namespace BoSSS.Solution.Utils.Spline {
         /// </param>
         /// <param name="oobb">
         /// </param>
-        public Spline(double[] nodes, double[] values, int d, OutOfBoundsBehave oobb) {
+        public Spline1D(double[] nodes, double[] values, int d, OutOfBoundsBehave oobb) {
             M = new double[nodes.Length];
             this.nodes = nodes;
             this.values = values;
@@ -104,7 +113,7 @@ namespace BoSSS.Solution.Utils.Spline {
         /// <param name="xmlelm">
         /// Input is the given XmlElement, normally representing a spline
         /// </param>
-        public Spline(XmlElement xmlelm) {
+        public Spline1D(XmlElement xmlelm) {
             parse(xmlelm);                                      //parse the given element to extract the information needed
             M = new double[nodes.Length];
             double[] h = new double[this.nodes.Length - 1];
