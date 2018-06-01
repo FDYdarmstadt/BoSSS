@@ -335,7 +335,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 if( m_ValueRequired[f]) {
                     Debug.Assert(m_FieldValues[f] != null);
                     if ( m_DomainFields[f] != null) {
-                        //m_DomainFields[f].Evaluate(i0, Length, NodesUntransformed, m_FieldValues[f]);
+                        m_DomainFields[f].Evaluate(i0, Length, NodesUntransformed, m_FieldValues[f]);
                     } else {
                         // field is null => set to 0.0
                         m_FieldValues[f].Clear();
@@ -347,7 +347,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 if(m_GradientRequired[f]) {
                     Debug.Assert(m_FieldGradients[f] != null);
                     if ( m_DomainFields[f] != null) {
-                        //m_DomainFields[f].EvaluateGradient(i0, Length, NodesUntransformed, m_FieldGradients[f]);
+                        m_DomainFields[f].EvaluateGradient(i0, Length, NodesUntransformed, m_FieldGradients[f]);
                     } else {
                         // field is null => set to 0.0
                         m_FieldValues[f].Clear();
@@ -365,8 +365,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
             this.ParametersAndNormals.Start();
 
-            //var NodesGlobalCoords = grid.GlobalNodes.GetValue_Cell(NodesUntransformed, i0, Length);
-            var NodesGlobalCoords = MultidimensionalArray.Create(Length, NoOfNodes, D);
+            var NodesGlobalCoords = grid.GlobalNodes.GetValue_Cell(NodesUntransformed, i0, Length);
+            //var NodesGlobalCoords = MultidimensionalArray.Create(Length, NoOfNodes, D);
 
             this.ParametersAndNormals.Stop();
 
