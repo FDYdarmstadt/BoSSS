@@ -693,6 +693,7 @@ namespace BoSSS.Application.IBM_Solver {
 
         MultidimensionalArray m_LenScales;
 
+
         /*
         /// <summary>
         /// Custom Function to compute penalty factor for viscous terms, for bulk terms
@@ -712,6 +713,15 @@ namespace BoSSS.Application.IBM_Solver {
             double penaltySizeFactor_A = 1.0 / this.m_LenScales[jCellIn];
             double penaltySizeFactor_B = jCellOut >= 0 ? 1.0 / this.m_LenScales[jCellOut] : 0;
             double penaltySizeFactor = Math.Max(penaltySizeFactor_A, penaltySizeFactor_B);
+
+            //if(once <= 0) {
+            //    once++;
+            //    Console.WriteLine("penalty: " + penalty);
+            //    Console.WriteLine("penaltySizeFactor: " + penaltySizeFactor);
+            //    Console.WriteLine("muFactor: " + muFactor);
+            //    Console.WriteLine("total penalty: " + (penalty * penaltySizeFactor * muFactor));
+            //}
+
             return penalty * penaltySizeFactor * muFactor;
         }
         */
