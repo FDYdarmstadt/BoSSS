@@ -227,7 +227,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
         /// <summary>
         /// Clears all internal references for this object, to make sure that any attempt to use it leads to an exception.
-        /// </summary
+        /// </summary>
         public void Invalidate() {
             this.m_Cells = null;
             this.m_Edges = null;
