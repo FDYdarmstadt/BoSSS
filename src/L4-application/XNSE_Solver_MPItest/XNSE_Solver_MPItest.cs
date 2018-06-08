@@ -386,7 +386,6 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
 
 
-            C.option_solver = C.PhysicalParameters.IncludeConvection ? "fixpoint+levelset" : "direct";
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.NoOfMultigridLevels = 1;
             C.Solver_MaxIterations = 50;

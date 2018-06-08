@@ -28,11 +28,11 @@ using BoSSS.Foundation;
 
 namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
-    public class ViscosityAtLevelSet_Standard : BoSSS.Foundation.XDG.ILevelSetComponent {
+    public class ViscosityAtLevelSet_Standard : BoSSS.Foundation.XDG.ILevelSetForm, ILevelSetEquationComponentCoefficient {
 
         LevelSetTracker m_LsTrk;
 
-        public ViscosityAtLevelSet_Standard(LevelSetTracker lstrk, double _muA, double _muB, double _penalty, int _component, bool _includeTransposeTerm, ViscosityImplementation _ViscosityImplementation) {
+        public ViscosityAtLevelSet_Standard(LevelSetTracker lstrk, double _muA, double _muB, double _penalty, int _component, bool _includeTransposeTerm) {
             this.m_LsTrk = lstrk;
             this.muA = _muA;
             this.muB = _muB;
@@ -40,7 +40,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             this.component = _component;
             this.m_D = lstrk.GridDat.SpatialDimension;
             this.includeTransposeTerm = _includeTransposeTerm;
-            this.m_ViscosityImplementation = _ViscosityImplementation;
         }
 
         double muA;
@@ -49,7 +48,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         int component;
         int m_D;
         bool includeTransposeTerm;
-        ViscosityImplementation m_ViscosityImplementation;
 
         /// <summary>
         /// default-implementation
@@ -69,14 +67,17 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             Debug.Assert(Grad_uB.GetLength(1) == D);
 
             double Grad_uA_xN = 0, Grad_uB_xN = 0, Grad_vA_xN = 0, Grad_vB_xN = 0;
-            for (int d = 0; d < D; d++) {
-                Grad_uA_xN += Grad_uA[component, d]*N[d];
-                Grad_uB_xN += Grad_uB[component, d]*N[d];
-                Grad_vA_xN += Grad_vA[d]*N[d];
-                Grad_vB_xN += Grad_vB[d]*N[d];
+            for(int d = 0; d < D; d++) {
+                Grad_uA_xN += Grad_uA[component, d] * N[d];
+                Grad_uB_xN += Grad_uB[component, d] * N[d];
+                Grad_vA_xN += Grad_vA[d] * N[d];
+                Grad_vB_xN += Grad_vB[d] * N[d];
             }
 
-            double hCutCellMin = Math.Min(inp.NegCellLengthScale, inp.PosCellLengthScale);
+            double PosCellLengthScale = PosLengthScaleS[inp.jCell];
+            double NegCellLengthScale = NegLengthScaleS[inp.jCell];
+
+            double hCutCellMin = Math.Min(NegCellLengthScale, PosCellLengthScale);
             Debug.Assert(!(double.IsInfinity(hCutCellMin) || double.IsNaN(hCutCellMin)));
 
             if(hCutCellMin <= 1.0e-10 * hCellMin)
@@ -84,107 +85,115 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
                 hCutCellMin = hCellMin;
 
             double Ret = 0.0;
-            switch (m_ViscosityImplementation) {
-                case ViscosityImplementation.H: {
-                        Ret -= 0.5 * (muA * Grad_uA_xN + muB * Grad_uB_xN) * (vA - vB);                           // consistency term
-                        Ret -= 0.5 * (muA * Grad_vA_xN + muB * Grad_vB_xN) * (uA[component] - uB[component]);     // symmetry term
-                        Ret += (penalty / hCutCellMin) * (uA[component] - uB[component]) * (vA - vB) * (Math.Abs(muA) > Math.Abs(muB) ? muA : muB); // penalty term
-                        break;
-                    }
-                case ViscosityImplementation.SWIP: {
-                        // SWIP-form nach DiPietro/Ern:
-                        /// After lots of Testing this is still not running.
-                        /// Strangely everything works with the fully symmetric implementation.
-                        /// The reason is, that jump conditions are not fullfilled in the Stokes-Case, since the weighted averaging operator has to be applied to pressure and surface tension as well.
-                        throw new NotImplementedException("SWIP for Standard Viscosity Implementation is not working");
-                        //Ret -= (muB * muA * Grad_uA_xN + muA * muB * Grad_uB_xN) / (muA + muB) * (vA - vB);
-                        //Ret -= (muB * muA * Grad_vA_xN + muA * muB * Grad_vB_xN) / (muA + muB) * (uA[component] - uB[component]);
+            //switch (m_ViscosityImplementation) {
+            //    case ViscosityImplementation.H: {
+            Ret -= 0.5 * (muA * Grad_uA_xN + muB * Grad_uB_xN) * (vA - vB);                           // consistency term
+            Ret -= 0.5 * (muA * Grad_vA_xN + muB * Grad_vB_xN) * (uA[component] - uB[component]);     // symmetry term
+            Ret += (penalty / hCutCellMin) * (uA[component] - uB[component]) * (vA - vB) * (Math.Abs(muA) > Math.Abs(muB) ? muA : muB); // penalty term
+            //break;
+            //        }
+            //    case ViscosityImplementation.SWIP: {
+            //            // SWIP-form nach DiPietro/Ern:
+            //            /// After lots of Testing this is still not running.
+            //            /// Strangely everything works with the fully symmetric implementation.
+            //            /// The reason is, that jump conditions are not fullfilled in the Stokes-Case, since the weighted averaging operator has to be applied to pressure and surface tension as well.
+            //            throw new NotImplementedException("SWIP for Standard Viscosity Implementation is not working");
+            //            //Ret -= (muB * muA * Grad_uA_xN + muA * muB * Grad_uB_xN) / (muA + muB) * (vA - vB);
+            //            //Ret -= (muB * muA * Grad_vA_xN + muA * muB * Grad_vB_xN) / (muA + muB) * (uA[component] - uB[component]);
 
-                        //Ret += (penalty / inp.hCellMin) * (uA[component] - uB[component]) * (vA - vB) * (2.0 * muA * muB / (muA + muB));
+            //            //Ret += (penalty / inp.hCellMin) * (uA[component] - uB[component]) * (vA - vB) * (2.0 * muA * muB / (muA + muB));
 
-                        //break;
-                    }
-                default: { throw new ArgumentException(); }
-            }
-            
-            if (includeTransposeTerm) {
+            //            //break;
+            //        }
+            //    default: { throw new ArgumentException(); }
+            //}
+
+            if(includeTransposeTerm) {
                 ///This is the Jump Condition in the Viscous Stresses.
                 Debug.Assert(uA.Length == this.ArgumentOrdering.Count);
                 Debug.Assert(uB.Length == this.ArgumentOrdering.Count);
 
                 double acc = 0;
-                switch (m_ViscosityImplementation) {
-                    case ViscosityImplementation.H:
-                    {
-                        for (int d = 0; d < D; d++)
-                            acc += (muA * Grad_uA[d, component] - muB * Grad_uB[d, component]) * N[d];
-                        Ret += acc * (vB + vA) * 0.5;
-                        break;
-                    }
-                    case ViscosityImplementation.SWIP: {
-                        throw new NotImplementedException("SWIP for Standard Viscosity Implementation is not working");
-                        // The Jump Condition with weighted averaging
-                        //for (int d = 0; d < D; d++)
-                        //    acc -= (muA * Grad_uA[d, component] - muB * Grad_uB[d, component]) * N[d];
-                        //Ret += acc * (muB * vA + muA* vB) / (muA + muB);
-                        
-                        //The Symmetry-Term of the jump condition
-                        //acc = 0;
-                        //for (int d = 0; d < D; d++)
-                        //    acc -= (muA * Grad_vA[d] - muB * Grad_vB[d]) * N[d];
-                        //Ret += acc * (muB * uA[component] + muA * uB[component]) / (muA + muB);
-                        //break;
-                    }
-                    default: { throw new ArgumentException(); }
-                }
+                //switch (m_ViscosityImplementation) {
+                //    case ViscosityImplementation.H:
+                //    {
+                for(int d = 0; d < D; d++)
+                    acc += (muA * Grad_uA[d, component] - muB * Grad_uB[d, component]) * N[d];
+                Ret += acc * (vB + vA) * 0.5;
+                //       break;
+                //}
+                //case ViscosityImplementation.SWIP: {
+                //    throw new NotImplementedException("SWIP for Standard Viscosity Implementation is not working");
+                //    // The Jump Condition with weighted averaging
+                //    //for (int d = 0; d < D; d++)
+                //    //    acc -= (muA * Grad_uA[d, component] - muB * Grad_uB[d, component]) * N[d];
+                //    //Ret += acc * (muB * vA + muA* vB) / (muA + muB);
+
+                //    //The Symmetry-Term of the jump condition
+                //    //acc = 0;
+                //    //for (int d = 0; d < D; d++)
+                //    //    acc -= (muA * Grad_vA[d] - muB * Grad_vB[d]) * N[d];
+                //    //Ret += acc * (muB * uA[component] + muA * uB[component]) / (muA + muB);
+                //    //break;
+                //}
+                //default: { throw new ArgumentException(); }
+                //}
             }
 
             Debug.Assert(!(double.IsInfinity(Ret) || double.IsNaN(Ret)));
             return Ret;
         }
 
-        
+        MultidimensionalArray PosLengthScaleS;
+        MultidimensionalArray NegLengthScaleS;
+
+        public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+            NegLengthScaleS = csA.CellLengthScales;
+            PosLengthScaleS = csB.CellLengthScales;
+        }
+
+
 
         //public static Stopwatch Optimized = new Stopwatch();
         //public static Stopwatch Classic = new Stopwatch();
 
 
 
-       // public override void EdgeForm(LevSetIntParams inp, MultidimensionalArray Koeff_UxV, MultidimensionalArray Koeff_NablaUxV, MultidimensionalArray Koeff_UxNablaV, MultidimensionalArray Koeff_NablaUxNablaV) {
-            //Optimized.Start();
-            //this.EdgeForm_Perf(inp, Koeff_UxV, Koeff_NablaUxV, Koeff_UxNablaV, Koeff_NablaUxNablaV);
-            //base.EdgeForm(inp, Koeff_UxV, Koeff_NablaUxV, Koeff_UxNablaV, Koeff_NablaUxNablaV);
-            //Optimized.Stop();
-            
-            /*
-            {
-                var chk_Koeff_UxV = Koeff_UxV.CloneAs();
-                var chk_Koeff_NablaUxV = Koeff_NablaUxV.CloneAs();
-                var chk_Koeff_UxNablaV = Koeff_UxNablaV.CloneAs();
-                var chk_Koeff_NablaUxNablaV = Koeff_NablaUxNablaV.CloneAs();
-                chk_Koeff_UxV.Clear();
-                chk_Koeff_UxNablaV.Clear();
-                chk_Koeff_NablaUxV.Clear();
-                chk_Koeff_NablaUxNablaV.Clear();
+        // public override void EdgeForm(LevSetIntParams inp, MultidimensionalArray Koeff_UxV, MultidimensionalArray Koeff_NablaUxV, MultidimensionalArray Koeff_UxNablaV, MultidimensionalArray Koeff_NablaUxNablaV) {
+        //Optimized.Start();
+        //this.EdgeForm_Perf(inp, Koeff_UxV, Koeff_NablaUxV, Koeff_UxNablaV, Koeff_NablaUxNablaV);
+        //base.EdgeForm(inp, Koeff_UxV, Koeff_NablaUxV, Koeff_UxNablaV, Koeff_NablaUxNablaV);
+        //Optimized.Stop();
 
-                Classic.Start();
-                base.EdgeForm(inp, chk_Koeff_UxV, chk_Koeff_NablaUxV, chk_Koeff_UxNablaV, chk_Koeff_NablaUxNablaV);
-                Classic.Stop();
+        /*
+        {
+            var chk_Koeff_UxV = Koeff_UxV.CloneAs();
+            var chk_Koeff_NablaUxV = Koeff_NablaUxV.CloneAs();
+            var chk_Koeff_UxNablaV = Koeff_UxNablaV.CloneAs();
+            var chk_Koeff_NablaUxNablaV = Koeff_NablaUxNablaV.CloneAs();
+            chk_Koeff_UxV.Clear();
+            chk_Koeff_UxNablaV.Clear();
+            chk_Koeff_NablaUxV.Clear();
+            chk_Koeff_NablaUxNablaV.Clear();
 
-                chk_Koeff_NablaUxNablaV.Acc(-1.0, Koeff_NablaUxNablaV);
-                chk_Koeff_UxNablaV.Acc(-1.0, Koeff_UxNablaV);
-                chk_Koeff_NablaUxV.Acc(-1.0, Koeff_NablaUxV);
-                chk_Koeff_UxV.Acc(-1.0, Koeff_UxV);
+            Classic.Start();
+            base.EdgeForm(inp, chk_Koeff_UxV, chk_Koeff_NablaUxV, chk_Koeff_UxNablaV, chk_Koeff_NablaUxNablaV);
+            Classic.Stop();
 
-                if (chk_Koeff_NablaUxNablaV.L2Norm() > 1.0e-10)
-                    throw new ApplicationException();
-                if (chk_Koeff_UxNablaV.L2Norm() > 1.0e-10)
-                    throw new ApplicationException();
-                if (chk_Koeff_NablaUxV.L2Norm() > 1.0e-10)
-                    throw new ApplicationException();
-                if (chk_Koeff_UxV.L2Norm() > 1.0e-10)
-                    throw new ApplicationException();
-            } // */
+            chk_Koeff_NablaUxNablaV.Acc(-1.0, Koeff_NablaUxNablaV);
+            chk_Koeff_UxNablaV.Acc(-1.0, Koeff_UxNablaV);
+            chk_Koeff_NablaUxV.Acc(-1.0, Koeff_NablaUxV);
+            chk_Koeff_UxV.Acc(-1.0, Koeff_UxV);
+
+            if (chk_Koeff_NablaUxNablaV.L2Norm() > 1.0e-10)
+                throw new ApplicationException();
+            if (chk_Koeff_UxNablaV.L2Norm() > 1.0e-10)
+                throw new ApplicationException();
+            if (chk_Koeff_NablaUxV.L2Norm() > 1.0e-10)
+                throw new ApplicationException();
+            if (chk_Koeff_UxV.L2Norm() > 1.0e-10)
+                throw new ApplicationException();
+        } // */
         //}
 
 

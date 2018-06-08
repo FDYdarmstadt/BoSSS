@@ -50,7 +50,7 @@ namespace BoSSS.Solution.NSECommon {
                 
                 if (rhs.Count != map.LocalLength)
                     throw new ArgumentException();
-                if (!Mtx.RowPartitioning.Equals(map) || !Mtx.ColPartition.Equals(map))
+                if (!Mtx.RowPartitioning.EqualsPartition(map) || !Mtx.ColPartition.EqualsPartition(map))
                     throw new ArgumentException();
 
                 Basis PressureBasis = (Basis)map.BasisS[iVar];
@@ -115,6 +115,76 @@ namespace BoSSS.Solution.NSECommon {
                 }
             }
         }
+
+
+        /// <summary>
+        /// modifies a residual (i.e. an operator evaluation)
+        /// in order to fix the pressure at some reference point
+        /// </summary>
+        /// <param name="currentState">current state of velocity & pressure</param>
+        /// <param name="iVar">the index of the pressure variable in the mapping <paramref name="map"/>.</param>
+        /// <param name="LsTrk"></param>
+        /// <param name="Residual"></param>
+        static public void SetPressureReferencePointResidual<T>(CoordinateVector currentState, int iVar, LevelSetTracker LsTrk, T Residual)
+            where T : IList<double> {
+            using (new FuncTrace()) {
+                var map = currentState.Mapping;
+                var GridDat = map.GridDat;
+                
+                if (Residual.Count != map.LocalLength)
+                    throw new ArgumentException();
+
+
+                Basis PressureBasis = (Basis)map.BasisS[iVar];
+                int D = GridDat.SpatialDimension;
+
+                long GlobalID, GlobalCellIndex;
+                bool IsInside, onthisProc;
+                GridDat.LocatePoint(new double[D], out GlobalID, out GlobalCellIndex, out IsInside, out onthisProc, LsTrk.Regions.GetCutCellSubGrid().VolumeMask.Complement());
+                
+                int iRowGl = -111;
+                if (onthisProc) {
+                    int jCell = (int)GlobalCellIndex - GridDat.CellPartitioning.i0;
+
+
+                    NodeSet CenterNode = new NodeSet(GridDat.iGeomCells.GetRefElement(jCell), new double[D]);
+                    MultidimensionalArray LevSetValues = LsTrk.DataHistories[0].Current.GetLevSetValues(CenterNode, jCell, 1); ;
+
+
+                    MultidimensionalArray CenterNodeGlobal = MultidimensionalArray.Create(1, D);
+                    GridDat.TransformLocal2Global(CenterNode, CenterNodeGlobal, jCell);
+                    //Console.WriteLine("Pressure Ref Point @( {0:0.###E-00} | {1:0.###E-00} )", CenterNodeGlobal[0,0], CenterNodeGlobal[0,1]);
+
+
+                    LevelSetSignCode scode = LevelSetSignCode.ComputeLevelSetBytecode(LevSetValues[0, 0]);
+                    ReducedRegionCode rrc;
+                    int No = LsTrk.Regions.GetNoOfSpecies(jCell, out rrc);
+                    int iSpc = LsTrk.GetSpeciesIndex(rrc, scode);
+
+                    iRowGl = (int)map.GlobalUniqueCoordinateIndex_FromGlobal(iVar, GlobalCellIndex, 0);
+
+                }
+                iRowGl = iRowGl.MPIMax();
+
+
+                // clear row
+                // ---------
+                if (onthisProc) {
+                    
+                    // set entry in residual vector equal to corresponding value in domain vector
+                    // (as if the corresponding matrix would have a 1 in the diagonal element and 0 everywhere else)
+
+
+                    int iRow = iRowGl - map.i0;
+                    Residual[iRow] = currentState[iRow];
+                }
+
+              
+            }
+        }
+
+
+
 
         /// <summary>
         /// Computes the energy stored in the fluid interface of a two-phase flow.
@@ -273,8 +343,6 @@ namespace BoSSS.Solution.NSECommon {
                 var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, RequiredOrder, 1).XQuadSchemeHelper;
                 //var SchemeHelper = new XQuadSchemeHelper(LsTrk, momentFittingVariant, );
                 CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
-
-
 
                 CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                     cqs.Compile(LsTrk.GridDat, RequiredOrder), //  agg.HMForder),
@@ -543,6 +611,136 @@ namespace BoSSS.Solution.NSECommon {
 
             Console.WriteLine("Circle circumference: " + circumference);
 
+        }
+
+        static public double[] GetParticleForces(VectorField<SinglePhaseField> U, SinglePhaseField P,
+            LevelSetTracker LsTrk,
+            double muA) {
+            int D = LsTrk.GridDat.SpatialDimension;
+            // var UA = U.Select(u => u.GetSpeciesShadowField("A")).ToArray();
+            var UA = U.ToArray();
+
+            int RequiredOrder = U[0].Basis.Degree * 3 + 2;
+            //int RequiredOrder = LsTrk.GetXQuadFactoryHelper(momentFittingVariant).GetCachedSurfaceOrders(0).Max();
+            //Console.WriteLine("Order reduction: {0} -> {1}", _RequiredOrder, RequiredOrder);
+
+            //if (RequiredOrder > agg.HMForder)
+            //    throw new ArgumentException();
+
+            Console.WriteLine("Forces coeff: {0}, order = {1}", LsTrk.CutCellQuadratureType, RequiredOrder);
+
+
+            ConventionalDGField pA = null;
+
+            //pA = P.GetSpeciesShadowField("A");
+            pA = P;
+
+            double[] forces = new double[D];
+            for (int d = 0; d < D; d++) {
+                ScalarFunctionEx ErrFunc = delegate (int j0, int Len, NodeSet Ns, MultidimensionalArray result) {
+                    int K = result.GetLength(1); // No nof Nodes
+                    MultidimensionalArray Grad_UARes = MultidimensionalArray.Create(Len, K, D, D); ;
+                    MultidimensionalArray pARes = MultidimensionalArray.Create(Len, K);
+
+                    // Evaluate tangential velocity to level-set surface
+                    var Normals = LsTrk.DataHistories[0].Current.GetLevelSetNormals(Ns, j0, Len);
+
+
+                    for (int i = 0; i < D; i++) {
+                        UA[i].EvaluateGradient(j0, Len, Ns, Grad_UARes.ExtractSubArrayShallow(-1, -1, i, -1), 0, 1);
+                    }
+
+                    pA.Evaluate(j0, Len, Ns, pARes);
+
+                    if (LsTrk.GridDat.SpatialDimension == 2) {
+
+                        for (int j = 0; j < Len; j++) {
+                            for (int k = 0; k < K; k++) {
+                                double acc = 0.0;
+
+                                // pressure
+                                switch (d) {
+                                    case 0:
+                                        acc += pARes[j, k] * Normals[j, k, 0];
+                                        acc -= (2 * muA) * Grad_UARes[j, k, 0, 0] * Normals[j, k, 0];
+                                        acc -= (muA) * Grad_UARes[j, k, 0, 1] * Normals[j, k, 1];
+                                        acc -= (muA) * Grad_UARes[j, k, 1, 0] * Normals[j, k, 1];
+                                        break;
+                                    case 1:
+                                        acc += pARes[j, k] * Normals[j, k, 1];
+                                        acc -= (2 * muA) * Grad_UARes[j, k, 1, 1] * Normals[j, k, 1];
+                                        acc -= (muA) * Grad_UARes[j, k, 1, 0] * Normals[j, k, 0];
+                                        acc -= (muA) * Grad_UARes[j, k, 0, 1] * Normals[j, k, 0];
+                                        break;
+                                    default:
+                                        throw new NotImplementedException();
+                                }
+
+                                result[j, k] = acc;
+                            }
+                        }
+                    } else {
+                        for (int j = 0; j < Len; j++) {
+                            for (int k = 0; k < K; k++) {
+                                double acc = 0.0;
+
+                                // pressure
+                                switch (d) {
+                                    case 0:
+                                        acc += pARes[j, k] * Normals[j, k, 0];
+                                        acc -= (2 * muA) * Grad_UARes[j, k, 0, 0] * Normals[j, k, 0];
+                                        acc -= (muA) * Grad_UARes[j, k, 0, 2] * Normals[j, k, 2];
+                                        acc -= (muA) * Grad_UARes[j, k, 0, 1] * Normals[j, k, 1];
+                                        acc -= (muA) * Grad_UARes[j, k, 1, 0] * Normals[j, k, 1];
+                                        acc -= (muA) * Grad_UARes[j, k, 2, 0] * Normals[j, k, 2];
+                                        break;
+                                    case 1:
+                                        acc += pARes[j, k] * Normals[j, k, 1];
+                                        acc -= (2 * muA) * Grad_UARes[j, k, 1, 1] * Normals[j, k, 1];
+                                        acc -= (muA) * Grad_UARes[j, k, 1, 2] * Normals[j, k, 2];
+                                        acc -= (muA) * Grad_UARes[j, k, 1, 0] * Normals[j, k, 0];
+                                        acc -= (muA) * Grad_UARes[j, k, 0, 1] * Normals[j, k, 0];
+                                        acc -= (muA) * Grad_UARes[j, k, 2, 1] * Normals[j, k, 2];
+                                        break;
+                                    case 2:
+                                        acc += pARes[j, k] * Normals[j, k, 2];
+                                        acc -= (2 * muA) * Grad_UARes[j, k, 2, 2] * Normals[j, k, 2];
+                                        acc -= (muA) * Grad_UARes[j, k, 2, 0] * Normals[j, k, 0];
+                                        acc -= (muA) * Grad_UARes[j, k, 2, 1] * Normals[j, k, 1];
+                                        acc -= (muA) * Grad_UARes[j, k, 0, 2] * Normals[j, k, 0];
+                                        acc -= (muA) * Grad_UARes[j, k, 1, 2] * Normals[j, k, 1];
+                                        break;
+                                    default:
+                                        throw new NotImplementedException();
+                                }
+
+                                result[j, k] = acc;
+                            }
+                        }
+                    }
+
+                };
+
+                var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, RequiredOrder, 1).XQuadSchemeHelper;
+                //var SchemeHelper = new XQuadSchemeHelper(LsTrk, momentFittingVariant, );
+                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+
+                CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
+                    cqs.Compile(LsTrk.GridDat, RequiredOrder), //  agg.HMForder),
+                    delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
+                        ErrFunc(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
+                    },
+                    delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+                        for (int i = 0; i < Length; i++)
+                            forces[d] += ResultsOfIntegration[i, 0];
+                    }
+                ).Execute();
+            }
+
+            for (int i = 0; i < D; i++)
+                forces[i] = MPI.Wrappers.MPIExtensions.MPISum(forces[i]);
+
+            return forces;
         }
     }
 }

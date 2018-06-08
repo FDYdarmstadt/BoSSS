@@ -215,6 +215,28 @@ namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
     /// </summary>
     public static class EquationComponentArgMapping_Extensions {
 
+        /// <summary>
+        /// Utility function to determine whether it is required to evaluate some DG field resp its gradient.
+        /// </summary>
+        public static void DetermineReqFields<T>(this EquationComponentArgMapping<T>[] ecm, bool[] ValueRequired,  Func<T, bool> det) where T : IEquationComponent {
+            int Gamma = ecm.Length;
+
+            for (int gamma = 0; gamma < Gamma; gamma++) {
+                for (int iComp = 0; iComp < ecm[gamma].m_AllComponentsOfMyType.Length; iComp++) {
+                    int NoArgs = ecm[gamma].NoOfArguments[iComp];
+
+                    T comp = ecm[gamma].m_AllComponentsOfMyType[iComp];
+
+                    for (int na = 0; na < NoArgs; na++) {
+                        int iDomField = ecm[gamma].AllToSub[iComp, na];
+
+                        if (det(comp))
+                            ValueRequired[iDomField] = true;
+                    }
+                }
+            }
+        }
+
     
         /// <summary>
         /// Creating performance stopwatches and registering them among <see cref="IQuadrature.CustomTimers"/> (and related).

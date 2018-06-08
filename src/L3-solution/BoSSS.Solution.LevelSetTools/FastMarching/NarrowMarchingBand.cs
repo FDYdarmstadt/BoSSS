@@ -959,7 +959,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                 }
 
                 // generate operators
-                ILevelSetComponent InterfaceFlux;
+                ILevelSetForm InterfaceFlux;
                 if (ComponentMode)
                     InterfaceFlux = new EllipticExtension.SingleComponentInterfaceForm(+penaltyBase, Tracker);
                 else

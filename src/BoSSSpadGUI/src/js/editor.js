@@ -1,6 +1,4 @@
-
 import * as monaco from 'monaco-editor';
-
 
 export class Editor{
     constructor(element, status){
@@ -24,7 +22,46 @@ export class Editor{
       });
       return loading;
     }
-  
+    
+    registerLanguage_BoSSS(func){
+      monaco.languages.registerCompletionItemProvider(
+        "csharp",
+        this.getBoSSSCompletionProvider(func)
+      );
+    }
+
+    getBoSSSCompletionProvider(func){
+      var that = this;
+      return {
+        provideCompletionItems: async (model, position) => {
+          var range = that.monaco.getSelection();
+          range.startColumn = 1;
+          var value = model.getValueInRange(range);
+          var value = value.split(" ");
+          var completions = await func(value[value.length - 1]);
+          var monacoCompletions = that.translateCompletionsForMonaco(completions);
+          return monacoCompletions;
+        }
+      };
+    }
+
+    translateCompletionsForMonaco(completions){
+      if (completions === null){
+        return [];
+      }
+      if (completions.length === 1 && completions[0] === ""){
+        return [];
+      }
+      var monacoCompletions = []; 
+      for(var i = 0; i < completions.length; ++i){
+        monacoCompletions.push({
+          label : completions[i],
+          kind: monaco.languages.CompletionItemKind.Text
+        });
+      }
+      return monacoCompletions;
+    }
+
     registerContextMenu(func, myId, myName){
       //Add Run Template
       this.monaco.addAction({
@@ -53,7 +90,11 @@ export class Editor{
     onDidScrollChange( func){
       this.monaco.onDidScrollChange(func);
     }
-  
+    
+    getLineLastNonWhitespaceColumn(lineNumber){
+      return this.monaco.getModel().getLineLastNonWhitespaceColumn(lineNumber);
+    }
+
     addDecoration(myRange, decorationClassName, overviewRulerColor){
   
       var newDecorationId = this.monaco.deltaDecorations([], [
@@ -74,6 +115,10 @@ export class Editor{
     removeDecoration(id){
       this.monaco.deltaDecorations([id], []);
     }
+
+    onDidChangeModelContent(func){
+      this.monaco.onDidChangeModelContent(func);
+    }
   
     getDecorationRange(id){
       return this.monaco.getModel().getDecorationRange(id);
@@ -89,6 +134,25 @@ export class Editor{
   
     update(){
       this.monaco.layout();
+    }
+
+    setValue(myRange, myText){
+      var id = { major: 1, minor: 1 }; 
+      var IIdentifiedSingleEditOperation ={ 
+        identifier: id,
+        forceMoveMakers: true,
+        range: myRange,
+        text: myText
+      };
+      this.monaco.executeEdits("bla", [IIdentifiedSingleEditOperation]);
+    }
+
+    reset(){
+      this.monaco.setValue("");
+    }
+
+    getSelection(){
+      return this.monaco.getSelection();
     }
 }
 

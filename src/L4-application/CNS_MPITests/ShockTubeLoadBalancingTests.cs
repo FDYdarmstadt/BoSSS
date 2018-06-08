@@ -184,7 +184,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             control.ReclusteringInterval = REBALANCING_PERIOD;
 
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-            CheckRunsProduceSameResults(control, hilbert: true);
+            CheckRunsProduceSameResults(control, hilbert: false);
         }
 
         [Test]
@@ -301,7 +301,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             control.forceReclustering = true;
 
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-            CheckRunsProduceSameResults(control, hilbert: true);
+            CheckRunsProduceSameResults(control, hilbert: false);
         }
 
         [Test]
@@ -333,7 +333,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             control.forceReclustering = true;
 
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
-            CheckRunsProduceSameResults(control, hilbert: true);
+            CheckRunsProduceSameResults(control, hilbert: false);
         }
 
         private static CNSControl ShockTubeToro1Template(int dgDegree, ExplicitSchemes explicitScheme, int explicitOrder, int noOfCells = 50, double gridStretching = 0.0, bool twoD = false) {
@@ -614,7 +614,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             return c;
         }
 
-        private static void CheckRunsProduceSameResults(CNSControl refControl, double differenceThreshold = 1e-15, bool hilbert = false) {
+        private static void CheckRunsProduceSameResults(CNSControl refControl, double differenceThreshold = 1e-15, bool hilbert = true) {
             Debug.Assert(refControl.DynamicLoadBalancing_Period <= 0);
             Debug.Assert(refControl.DynamicLoadBalancing_CellCostEstimatorFactories.Count == 0);
 

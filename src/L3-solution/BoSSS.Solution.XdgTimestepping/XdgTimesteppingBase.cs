@@ -495,8 +495,9 @@ namespace BoSSS.Solution.XdgTimestepping {
                             maxKrylovDim = Config_MaxKrylovDim,
                             MaxIter = Config_MaxIterations,
                             MinIter = Config_MinIterations,
-                            ApproxJac = Newton.ApproxInvJacobianOptions.GMRES,
+                            ApproxJac = Newton.ApproxInvJacobianOptions.DirectSolver,
                             Precond = Config_linearSolver,
+                            //Precond = new RheologyJacobiPrecond() { m_We = 0.1},
                             GMRESConvCrit = Config_SolverConvergenceCriterion,
                             ConvCrit = Config_SolverConvergenceCriterion,
                             m_SessionPath = SessionPath,
@@ -668,7 +669,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         /// <summary>
         /// Callback-routine  to update the linear resp. linearized system, 
-        /// see <see cref="AssembleMatrixDel"/> resp. <see cref="NonlinearSolver.m_AssembleMatrix"/>.
+        /// see <see cref="OperatorEvalOrLin"/> resp. <see cref="NonlinearSolver.m_AssembleMatrix"/>.
         /// </summary>
         /// <param name="argCurSt">Input, current state of solution.</param>
         /// <param name="System">Output.</param>
@@ -677,7 +678,11 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Mass matrix including agglomeration, without any scaling,
         /// required for block-precond.
         /// </param>
-        abstract protected void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, DGField[] argCurSt);
+        /// <param name="Linearization">
+        /// - true: assemble matrix and affine vector
+        /// - false: evaluate operator (<paramref name="System"/> will be null)
+        /// </param>
+        abstract protected void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, DGField[] argCurSt, bool Linearization);
 
     }
 }
