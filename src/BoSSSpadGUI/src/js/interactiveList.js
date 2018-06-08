@@ -29,6 +29,12 @@ export class InteractiveList{
         this.updateBoxes();
       }
     }
+
+    updateScroll(){
+      if(this.boxes.length > 0){
+        this.updateBoxes();
+      }
+    }
   
     updateBoxes(){
       if(this.boxes.length > 0){
@@ -95,11 +101,23 @@ export class InteractiveList{
     }
 
     deleteCommandSection(oldRange, newRange){
-      var oldBox = this.findBox(newRange.startLineNumber - 1)
-      this.removeCommand(newRange);
+
+      var oldBox = this.findBox(oldRange.startLineNumber - 1);
+      //Check if Range is contained in oldBox, if so do nothing
+      var rangeContainedInBox = false;
       if(oldBox != null)
-        oldBox.range.endLineNumber = newRange.endLineNumber;
-        this.updateBoxes();
+      {
+        var rangeContainedInBox = monaco.Range.containsRange(oldBox.range, oldRange);
+      }
+      if(rangeContainedInBox === false)
+      {
+        this.removeCommand(newRange);
+        if(oldBox != null)
+        {
+          oldBox.range.endLineNumber = newRange.endLineNumber;
+        }
+      }
+      this.updateBoxes();  
     }
 
     findBox(startLineNumber){
