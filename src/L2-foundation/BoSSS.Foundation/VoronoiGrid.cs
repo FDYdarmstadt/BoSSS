@@ -33,6 +33,23 @@ namespace BoSSS.Foundation.Grid.Voronoi {
 
         public MultidimensionalArray DelaunayVertices;
         
+        /// <summary>
+        /// MPI process rank (within world communicator)
+        /// </summary>
+        public int MpiRank {
+            get {
+                return this.CellPartitioning.MpiRank;
+            }
+        }
+
+        /// <summary>
+        /// MPI world communicator size 
+        /// </summary>
+        public int MpiSize {
+            get {
+                return this.CellPartitioning.MpiSize;
+            }
+        }
 
         public int SpatialDimension {
             get {

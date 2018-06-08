@@ -191,6 +191,17 @@ namespace BoSSS.Application.SipPoisson {
 #endif
                     stw.Stop();
                     Console.WriteLine("done {0} sec.", stw.Elapsed.TotalSeconds);
+
+
+                    var JB = LapaceIp.GetFDJacobianBuilder(T.Mapping.Fields, null, T.Mapping, edgQrSch, volQrSch);
+                    var JacobiMtx = new BlockMsrMatrix(T.Mapping);
+                    var JacobiAffine = new double[T.Mapping.LocalLength];
+                    JB.ComputeMatrix(JacobiMtx, JacobiAffine);
+                    double ErrAffine = GenericBlas.L2Dist(JacobiAffine, LaplaceAffine);
+                    var ErrMtx2 = LaplaceMtx.CloneAs();
+                    ErrMtx2.Acc(-1.0, JacobiMtx);
+                    Console.WriteLine("FD Jacobi Mtx: {0:e14}, Affine: {1:e14}", ErrMtx2.InfNorm(), ErrAffine);
+
                 }
 
 
