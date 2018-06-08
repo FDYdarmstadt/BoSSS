@@ -19,10 +19,9 @@ namespace NSE_SIMPLE {
         /// <summary>
         /// ctor; parameter documentation see <see cref="swipViscosityBase.swipViscosityBase"/>.
         /// </summary>
-        public swipViscosity_Term1_variante(double _penalty, MultidimensionalArray PenaltyLengthScales, int iComp, int D, IncompressibleBoundaryCondMap bcmap,
-            ViscosityOption _ViscosityMode, double constantViscosityValue = double.NaN, double reynolds = double.NaN, MaterialLaw EoS = null,
-            Func<double, int, int, MultidimensionalArray, double> ComputePenalty = null)
-            : base(_penalty, PenaltyLengthScales, iComp, D, bcmap, _ViscosityMode, constantViscosityValue, reynolds, EoS, ComputePenalty) {
+        public swipViscosity_Term1_variante(double _penalty, int iComp, int D, IncompressibleBoundaryCondMap bcmap,
+            ViscosityOption _ViscosityMode, double constantViscosityValue = double.NaN, double reynolds = double.NaN, MaterialLaw EoS = null)
+            : base(_penalty, iComp, D, bcmap, _ViscosityMode, constantViscosityValue, reynolds, EoS) {
 
         }
 
@@ -45,9 +44,9 @@ namespace NSE_SIMPLE {
         public override double InnerEdgeForm(ref BoSSS.Foundation.CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB, double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB) {
             double Acc = 0.0;
 
-            double pnlty = this.penalty(inp.jCellIn, inp.jCellOut);//, inp.GridDat.Cells.cj);
-            double muA = this.Viscosity(inp.Parameters_IN);
-            double muB = this.Viscosity(inp.Parameters_OUT);
+            double pnlty = base.penalty(inp.jCellIn, inp.jCellOut);//, inp.GridDat.Cells.cj);
+            double muA = base.Viscosity(inp.Parameters_IN);
+            double muB = base.Viscosity(inp.Parameters_OUT);
 
 
             //switch (base.m_implMode) {

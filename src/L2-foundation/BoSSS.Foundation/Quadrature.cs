@@ -392,6 +392,7 @@ namespace BoSSS.Foundation.Quadrature {
                         if ((j + ChunkLength) > ChunkEnd) {
                             ChunkLength -= (j + ChunkLength - ChunkEnd);
                         }
+                       
 
                         // DEBUG check
 #if DEBUG

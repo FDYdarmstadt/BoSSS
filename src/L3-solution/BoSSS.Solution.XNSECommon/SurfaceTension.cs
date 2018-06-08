@@ -935,7 +935,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
                         int D = inp.D;
 
-                        double[] PSnI = new double[D];
+                        double[] PSnI = new double[D]; // projection of surface/level-set normal onto domain boundary tangent
                         for (int d1 = 0; d1 < D; d1++) {
                             for (int d2 = 0; d2 < D; d2++) {
                                 double nn = EdgeNormal[d1] * EdgeNormal[d2];
@@ -947,7 +947,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
                             }
                         }
                         double PSnINorm = PSnI.L2Norm();
-                        double[] PSnINormal_IN = PSnI.Normalize();
+                        double[] PSnINormal_IN = PSnI.Normalize(); // line normal: tangential to domain boundary & normal on contact line
 
 
                         // isotropic surface tension terms
@@ -959,6 +959,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
                         Flx_InCell -= m_sigma * Math.Cos(m_theta) * PSnINormal_IN[m_comp];
 
                         // dissipative contact line force
+                        // beta*(u*nL)
                         for (int d = 0; d < D; d++) {
                             Flx_InCell += m_beta * (_uA[d] * PSnINormal_IN[d]) * PSnINormal_IN[m_comp];
                         }
@@ -1143,7 +1144,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
         protected double penalty(int jCellIn, int jCellOut) {
 
-            double muFactor = 1.0;
+            //double muFactor = 1.0;
             double penaltySizeFactor_A = 1.0 / this.m_LenScales[jCellIn];
             double penaltySizeFactor_B = jCellOut >= 0 ? 1.0 / this.m_LenScales[jCellOut] : 0;
             Debug.Assert(!double.IsNaN(penaltySizeFactor_A));

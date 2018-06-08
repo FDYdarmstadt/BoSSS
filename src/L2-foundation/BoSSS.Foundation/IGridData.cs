@@ -450,8 +450,8 @@ namespace BoSSS.Foundation.Grid {
         int GetNoOfSimilarConsecutiveCells(CellInfo mask, int j0, int Lmax);
 
         /// <summary>
-        /// The minimal Euclidean distance between two vertices for each cell;
-        /// (Can be used to compute the CFL number);
+        /// The minimal Euclidean distance between two distinct vertices for each cell;
+        /// (Can be used e.g. to compute the CFL number);
         /// - index: local cell index;
         /// </summary>
         MultidimensionalArray h_min {
@@ -460,7 +460,7 @@ namespace BoSSS.Foundation.Grid {
 
         /// <summary>
         /// The maximal Euclidean distance between two vertices for each cell;
-        /// (Can be used to compute the CFL number);
+        /// (Can be used e.g. to compute the CFL number);
         /// - index: local cell index;
         /// </summary>
         MultidimensionalArray h_max {

@@ -80,6 +80,9 @@ namespace BoSSS.Foundation.Caching {
             ResetCache();
         }
 
+        /// <summary>
+        /// Empties the cache, resets statistics.
+        /// </summary>
         static void ResetCache() {
             Tail = new CacheBank() {
                 iBank = int.MinValue
@@ -96,6 +99,24 @@ namespace BoSSS.Foundation.Caching {
             CurrentSize = 0;
             m_NoOfUsedBanks = 0;
 
+            Hits = 0;
+            Misses = 0;
+        }
+
+
+        /// <summary>
+        /// Empties the cache, resets statistics.
+        /// </summary>
+        public static void ClearCache() {
+            
+            while(RemoveAtTail()) {
+                // nop
+            }
+            
+            Hits = 0;
+            Misses = 0;
+
+            Debug.Assert(CurrentSize == 0);
         }
 
 
