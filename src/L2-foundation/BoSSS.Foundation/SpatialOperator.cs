@@ -1514,11 +1514,15 @@ namespace BoSSS.Foundation {
                             continue;
 
                         int[] Neighs_j = Neighs[j];
+                        bool cont = false;
                         foreach(int jn in Neighs_j) {
-                            if(LocalMarker[j] != int.MaxValue) {
-                                continue;
+                            if(LocalMarker[jn] != int.MaxValue) {
+                                cont = true;
+                                break;
                             }
                         }
+                        if(cont)
+                            continue;
 
                         // if we reached this point, we finally found a cell which we are allowed to add to the current color set.
                         ColoredPass[j] = true;                        
@@ -1527,7 +1531,7 @@ namespace BoSSS.Foundation {
                         LocalColorCause[j] = j;
                         foreach(int jn in Neighs_j) {
                             LocalMarker[jn] = myMarkerToken;
-                            LocalColorCause[j] = j;
+                            LocalColorCause[jn] = j;
                         }
                     }
 
@@ -1591,6 +1595,55 @@ namespace BoSSS.Foundation {
                 // =====
                 this.ColorLists = ColorListsTmp.ToArray();
 
+                // checks
+                // ======
+#if DEBUG
+                {
+                    int[] TouchLoc = new int[JE];
+
+                    foreach(int[] _CellList in this.ColorLists) {
+
+                        int[] NeighTouchLoc = new int[JE];
+
+                        foreach(int j in _CellList) {
+                            Debug.Assert(j < JE);
+                            Debug.Assert(TouchLoc[j] == 0);
+                            TouchLoc[j]++;
+
+                            Debug.Assert(NeighTouchLoc[j] == 0);
+                            NeighTouchLoc[j]++;
+
+                            foreach(int jn in Neighs[j]) {
+                                Debug.Assert(NeighTouchLoc[jn] == 0);
+                                NeighTouchLoc[jn]++;
+                            }
+
+                        }
+
+                        int[] NeighTouchGlob = NeighTouchLoc.CloneAs();
+                        NeighTouchGlob.MPIExchange(gDat);
+                        for(int j = J; j < JE; j++) {
+                            NeighTouchGlob[j] += NeighTouchLoc[j];
+                        }
+
+                        for(int j = 0; j < JE; j++) {
+                            Debug.Assert(NeighTouchGlob[j] <= 1);
+                        }
+                    }
+
+                    int[] TouchGlob = TouchLoc.CloneAs();
+                    TouchGlob.MPIExchange(gDat);
+                    for(int j = J; j < JE; j++) {
+                        TouchGlob[j] += TouchLoc[j];
+                    }
+                    
+                    for(int j = 0; j < JE; j++) {
+                        Debug.Assert(TouchGlob[j] == 1);
+                    }
+
+                }
+#endif
+
             }
 
 
@@ -1630,6 +1683,8 @@ namespace BoSSS.Foundation {
                 var lastCodB = codMap.BasisS.Last();
                 var lastDomB = domMap.BasisS.Last();
 
+                int NoOfEvals = 0;
+
                 // check Args
                 // ==========
 
@@ -1646,6 +1701,7 @@ namespace BoSSS.Foundation {
                 double[] F0 = new double[Lout];
                 Eval.Evaluate(1.0, 0.0, F0);
                 AffineOffset.AccV(1.0, F0);
+                NoOfEvals++;
 
                 // compute epsilon's
                 // =================
@@ -1711,7 +1767,7 @@ namespace BoSSS.Foundation {
                         // -------------------
                         EvalBuf.ClearEntries();
                         Eval.Evaluate(1.0, 0.0, EvalBuf);
-
+                        NoOfEvals++;
 
                         // save results
                         // -------------------------------
@@ -1803,6 +1859,8 @@ namespace BoSSS.Foundation {
                     }
 
                 }
+
+                Console.WriteLine("Total number of evaluations: " + NoOfEvals);
             }
 
 
