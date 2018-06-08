@@ -44,7 +44,12 @@ class BoxWithMenu{
   
     async createReadoutContent( readoutNode, value){
       throw "Not Implemented";
-      return 
+      return;
+    }
+
+    setValue(editorValue, ReadOutValue){
+      throw "Not Implemented";
+      return;
     }
     //----------------------------------------------------------------------------------
   
@@ -146,6 +151,7 @@ class BoxWithMenu{
 export class RunBox extends BoxWithMenu {
     constructor(element, parentBox){
         super(element, parentBox);
+        var hasReadoutContent = false;
     }
 
     runButtonSymbol(){
@@ -158,11 +164,38 @@ export class RunBox extends BoxWithMenu {
         return runSymbol;
     }
 
+    setValue( ReadOutValue){
+      //ReadoutContent
+      var text = document.createElement("PRE");
+      text.innerHTML = ReadOutValue;
+      if(this.hasReadoutContent){
+        this.readoutLI.replaceChild(text, readoutNode.firstChild);
+      }
+      else{
+        this.hasReadoutContent = true;
+        this.readoutLI.appendChild(text);
+      }
+    }
+
     async createReadoutContent( readoutNode, value){
         var result = await boSSSRuntime.runCommand(value);
         
         //Write readout into HTML Element
-        readoutNode.innerHTML = result;
+        var text = document.createElement("PRE");
+        text.innerHTML = result.Item1;
+        if(this.hasReadoutContent){
+          readoutNode.replaceChild(text, readoutNode.firstChild);
+        }
+        else{
+          this.hasReadoutContent = true;
+          readoutNode.appendChild(text);
+        }
+        if (result.Item2 != null){
+          var img = new Image();
+          img.src = 'data:image/gif;base64,'+ result.Item2;
+          readoutNode.appendChild(img);
+        }
+        
     }
 }
 
@@ -193,6 +226,6 @@ export class CommentBox extends BoxWithMenu{
     pandoc(value, args, callback);
     */
     readoutNode.innerHTML = markdown.toHTML(value);
-    mathjax.typesetMath(readoutNode.innerHTML);
+    mathjax.typesetMath(readoutNode);
   }
 }

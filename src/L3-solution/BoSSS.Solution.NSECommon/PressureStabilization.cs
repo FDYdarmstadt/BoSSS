@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using BoSSS.Solution.Utils;
+using ilPSP;
 
 namespace BoSSS.Solution.NSECommon {
 
@@ -35,7 +36,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// Ctor.
         /// </summary>
-        public PressureStabilization(double PressureStabilizationFactor, double[] h_max_Edge, double Reynolds) {
+        public PressureStabilization(double PressureStabilizationFactor, MultidimensionalArray h_max_Edge, double Reynolds) {
             this.PressureStabilizationFactor = PressureStabilizationFactor;
             this.h_max_Edge = h_max_Edge;
             this.Reynolds = Reynolds;
@@ -47,7 +48,7 @@ namespace BoSSS.Solution.NSECommon {
             }
         }
 
-        double[] h_max_Edge;
+        MultidimensionalArray h_max_Edge;
 
         protected override void InnerEdgeFlux(ref BoSSS.Foundation.CommonParams inp, double[] Uin, double[] Uout, out double FluxInCell, out double FluxOutCell) {
             double h_max = this.h_max_Edge[inp.iEdge];

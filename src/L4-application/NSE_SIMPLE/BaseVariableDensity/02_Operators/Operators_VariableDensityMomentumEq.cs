@@ -86,11 +86,9 @@ namespace NSE_SIMPLE {
 
             //return (new Viscosity(SolverConf.PenaltyViscMomentum, SolverConf.reynolds, SolverConf.BcMap, SpatialComponent, SolverConf.ConfigVariableDensity.EoS)).Operator();
             return (new swipViscosity_Term1_variante(SolverConf.PenaltyViscMomentum,
-                base.GridData.Cells.cj,
                 SpatialComponent,
                 SolverConf.SpatialDimension,
                 SolverConf.BcMap,
-                ViscosityImplementation.H,
                 ViscosityOption.VariableViscosityDimensionless,
                 reynolds: varDensConf.Reynolds,
                 EoS: varDensConf.EoS)).Operator(2);
@@ -119,11 +117,10 @@ namespace NSE_SIMPLE {
             VariableDensitySIMPLEControl varDensConf = SolverConf.Control as VariableDensitySIMPLEControl;
 
             return (new swipViscosity_Term2(SolverConf.PenaltyViscMomentum,
-                base.GridData.Cells.cj,
+                //base.GridData.Cells.cj,
                 SpatialDirection,
                 SolverConf.SpatialDimension,
                 SolverConf.BcMap,
-                ViscosityImplementation.H,
                 ViscosityOption.VariableViscosityDimensionless,
                 ViscositySolverMode.Segregated,
                 reynolds: varDensConf.Reynolds,
@@ -152,11 +149,9 @@ namespace NSE_SIMPLE {
             VariableDensitySIMPLEControl varDensConf = SolverConf.Control as VariableDensitySIMPLEControl;
 
             return (new swipViscosity_Term3(SolverConf.PenaltyViscMomentum,
-                base.GridData.Cells.cj,
                 SpatialDirection,
                 SolverConf.SpatialDimension,
                 SolverConf.BcMap,
-                ViscosityImplementation.H,
                 ViscosityOption.VariableViscosityDimensionless,
                 ViscositySolverMode.Segregated,
                 reynolds: SolverConf.Control.Reynolds,

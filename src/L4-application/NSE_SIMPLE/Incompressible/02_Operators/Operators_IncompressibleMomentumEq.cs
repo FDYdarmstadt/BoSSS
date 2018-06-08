@@ -74,11 +74,9 @@ namespace NSE_SIMPLE {
             //return (new Viscosity(SolverConf.PenaltyViscMomentum, SolverConf.reynolds, SolverConf.BcMap, SpatialComponent, false)).Operator();            
             return (new swipViscosity_Term1_variante(
                 SolverConf.PenaltyViscMomentum,
-                this.GridData.Cells.cj,
                 SpatialComponent,
                 SolverConf.SpatialDimension,
                 SolverConf.BcMap,
-                ViscosityImplementation.H,
                 ViscosityOption.ConstantViscosityDimensionless,
                 reynolds: SolverConf.Control.Reynolds)).Operator();
         }

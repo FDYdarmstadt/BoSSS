@@ -155,6 +155,7 @@ namespace BoSSS.Solution.XNSECommon {
         [DataMember]
         public ViscosityMode ViscosityMode = ViscosityMode.FullySymmetric;
 
+        /*
         /// <summary>
         /// viscosity Implementation
         /// H: SIP
@@ -162,7 +163,7 @@ namespace BoSSS.Solution.XNSECommon {
         /// </summary>
         [DataMember]
         public ViscosityImplementation ViscosityImplementation = ViscosityImplementation.H;
-
+        */
         
         /// <summary>
         /// Turn the use of ghost penalties on or off, see <br/>
@@ -253,7 +254,7 @@ namespace BoSSS.Solution.XNSECommon {
                 SurfStressTensor = this.SurfStressTensor,
                 SST_isotropicMode = this.SST_isotropicMode,
                 ViscosityMode = this.ViscosityMode,
-                ViscosityImplementation = this.ViscosityImplementation,
+                //ViscosityImplementation = this.ViscosityImplementation,
                 UseGhostPenalties = this.UseGhostPenalties,
                 FilterConfiguration = this.FilterConfiguration
             };

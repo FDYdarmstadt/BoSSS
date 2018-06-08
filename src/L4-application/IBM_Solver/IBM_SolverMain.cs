@@ -39,6 +39,7 @@ using ilPSP;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Foundation.Grid.Classic;
+using NUnit.Framework;
 
 namespace BoSSS.Application.IBM_Solver {
 
@@ -51,6 +52,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// Application entry point.
         /// </summary>
         static void Main(string[] args) {
+            
             BoSSS.Solution.Application<IBM_Control>._Main(args, false, delegate () {
                 var p = new IBM_SolverMain();
                 return p;
@@ -228,7 +230,7 @@ namespace BoSSS.Application.IBM_Solver {
 
         protected XdgBDFTimestepping m_BDF_Timestepper;
 
-        SinglePhaseField[] MGColoring;
+        //SinglePhaseField[] MGColoring;
 
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
 
@@ -282,8 +284,7 @@ namespace BoSSS.Application.IBM_Solver {
                     DomNameSelected = ArrayTools.Cat(DomNameSelected, DomName.GetSubVector(D, 1));
 
                 IBM_Op = new XSpatialOperator(DomNameSelected, Params, CodNameSelected,
-                    (A, B, C) => this.HMForder
-                    ,cacheQuadRules:true);
+                    (A, B, C) => this.HMForder);
 
                 // Momentum equation
                 // =================
@@ -300,14 +301,7 @@ namespace BoSSS.Application.IBM_Solver {
                         comps.Add(ConvBulk); // bulk component
 
                         var ConvIB = new BoSSS.Solution.NSECommon.Operator.Convection.ConvectionAtIB(d, D,LsTrk  , this.Control.AdvancedDiscretizationOptions.LFFA, BcMap,
-                            new Func<double, double>[] {
-                                delegate (double time) { return 0; },
-                                delegate (double time) { return 0; }
-                            },
-                            new Func<double, double>[] {
-                                delegate (double time) { return 0; }
-                            },
-                            this.Control.particleRadius, this.Control.PhysicalParameters.rho_A, false);
+                            delegate (double[] X, double time) { return new double[] { 0.0, 0.0, 0.0, 0.0 }; }, this.Control.PhysicalParameters.rho_A, false);
 
                         comps.Add(ConvIB); // immersed boundary component
                     }
@@ -332,6 +326,7 @@ namespace BoSSS.Application.IBM_Solver {
                             var presSource = new SrcPressureGradientLin_d(this.Control.SrcPressureGrad[d]);
                             comps.Add(presSource);
                         }
+
                     }
                 }
 
@@ -344,20 +339,21 @@ namespace BoSSS.Application.IBM_Solver {
                         double _p = degU;
                         double penalty_base = (_p + 1) * (_p + _D) / D;
                         double penalty = penalty_base * penalty_mul;
+                        double penalty_bulk = this.Control.AdvancedDiscretizationOptions.PenaltySafety;
+                        
 
                         //var Visc = new Solution.XNSECommon.Operator.Viscosity.ViscosityInBulk_GradUTerm(penalty, 1.0, BcMap, d, D, this.Control.PhysicalParameters.mu_A, 1, ViscosityImplementation.H);
-                        var Visc = new swipViscosity_Term1(penalty, null, d, D, BcMap, ViscosityImplementation.H, ViscosityOption.ConstantViscosity, this.Control.PhysicalParameters.mu_A / this.Control.PhysicalParameters.rho_A, double.NaN, null,
-                            this.ComputePenalty);
+                        var Visc = new swipViscosity_Term1(penalty_bulk, d, D, BcMap, 
+                            ViscosityOption.ConstantViscosity, 
+                            this.Control.PhysicalParameters.mu_A / this.Control.PhysicalParameters.rho_A, 
+                            double.NaN, null);
                         //delegate (double p, int i, int j, double[] cell) { return ComputePenalty(p, i, j, cell); });
                         // IBM_Op.OnIntegratingBulk += Visc.SetParameter;
                         comps.Add(Visc); // bulk component GradUTerm 
-                        var ViscLs = new BoSSS.Solution.NSECommon.Operator.Viscosity.ViscosityAtIB(d, D, LsTrk, penalty, this.Control.PhysicalParameters.mu_A / this.Control.PhysicalParameters.rho_A, new Func<double, double>[] { delegate (double time) {
-                        return 0;
-                    }, delegate (double time) {
-                        return 0;
-                    }}, new Func<double, double>[] { delegate (double time) {
-                        return 0;
-                    } }, this.Control.particleRadius);
+                        var ViscLs = new BoSSS.Solution.NSECommon.Operator.Viscosity.ViscosityAtIB(d, D, LsTrk, 
+                            penalty, this.ComputePenaltyIB,
+                            this.Control.PhysicalParameters.mu_A / this.Control.PhysicalParameters.rho_A, 
+                            delegate (double[] X, double time) { return new double[] { 0.0, 0.0, 0.0, 0.0 }; });
                         comps.Add(ViscLs); // immersed boundary component
                     }
                 }
@@ -375,17 +371,13 @@ namespace BoSSS.Application.IBM_Solver {
                         IBM_Op.EquationComponents["div"].Add(src);
                         IBM_Op.EquationComponents["div"].Add(flx);
 
+                        //var presStab = new PressureStabilization(1, this.GridData.Edges.h_max_Edge, 1 / this.Control.PhysicalParameters.mu_A);
+                        //IBM_Op.EquationComponents["div"].Add(presStab);
+
                     }
 
                     var divPen = new BoSSS.Solution.NSECommon.Operator.Continuity.DivergenceAtIB(D, LsTrk, 1,
-                        new Func<double, double>[] {
-                            delegate (double time) { return 0; },
-                            delegate (double time) { return 0; }
-                        },
-                        new Func<double, double>[] {
-                            delegate (double time) { return 0; }
-                        },
-                        this.Control.particleRadius);
+                        delegate (double[] X, double time) { return new double[] { 0.0, 0.0, 0.0, 0.0 }; });
                     IBM_Op.EquationComponents["div"].Add(divPen); // immersed boundary component 
 
 
@@ -442,6 +434,7 @@ namespace BoSSS.Application.IBM_Solver {
                     m_BDF_Timestepper.Config_MaxIterations = this.Control.MaxSolverIterations;
                     m_BDF_Timestepper.Config_MinIterations = this.Control.MinSolverIterations;
                     m_BDF_Timestepper.SessionPath = SessionPath;
+                    m_BDF_Timestepper.Timestepper_Init = Solution.Timestepping.TimeStepperInit.MultiInit;
 
                     SolverChooser.ChooseSolver(this.Control, ref m_BDF_Timestepper);
 
@@ -495,16 +488,54 @@ namespace BoSSS.Application.IBM_Solver {
             m_LenScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
 
             // create matrix and affine vector:
-             IBM_Op.ComputeMatrixEx(LsTrk,
-                Mapping, Params, Mapping,
-                OpMatrix, OpAffine, false, phystime, true,
-                AgglomeratedCellLengthScales,
-                FluidSpecies);
+            if (OpMatrix != null) {
+                //IBM_Op.ComputeMatrixEx(LsTrk,
+                //    Mapping, Params, Mapping,
+                //    OpMatrix, OpAffine, false, phystime, true,
+                //    AgglomeratedCellLengthScales,
+                //    FluidSpecies);
 
-            m_LenScales = null;
+                var mtxBuilder = IBM_Op.GetMatrixBuilder(LsTrk, Mapping, Params, Mapping, FluidSpecies);
+                mtxBuilder.time = phystime;
+                mtxBuilder.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
+
+                mtxBuilder.ComputeMatrix(OpMatrix, OpAffine);
+
+            } else {
+                var eval = IBM_Op.GetEvaluatorEx(LsTrk, CurrentState, Params, Mapping, FluidSpecies);
+                eval.time = phystime;
+                eval.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
+
+                eval.Evaluate(1.0, 1.0, OpAffine);
 
 #if DEBUG
-            if (DelComputeOperatorMatrix_CallCounter == 1) {
+                // remark: remove this piece in a few months from now on (09may18) if no problems occur
+                {
+                    var check = IBM_Op.GetMatrixBuilder(LsTrk, Mapping, Params, Mapping, FluidSpecies);
+                    check.time = phystime;
+                    check.SpeciesOperatorCoefficients[FluidSpecies[0]].CellLengthScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
+
+                    BlockMsrMatrix checkOpMatrix = new BlockMsrMatrix(Mapping, Mapping);
+                    double[] checkAffine = new double[OpAffine.Length];
+                    check.ComputeMatrix(checkOpMatrix, checkAffine);
+
+                    double[] checkResult = checkAffine.CloneAs();
+                    var currentVec = new CoordinateVector(CurrentState);
+                    checkOpMatrix.SpMV(1.0, new CoordinateVector(CurrentState), 1.0, checkResult);
+
+                    double L2_dist = GenericBlas.L2DistPow2(checkResult, OpAffine).MPISum().Sqrt();
+                    double RefNorm = (new double[] { checkResult.L2NormPow2(), OpAffine.L2NormPow2(), currentVec.L2NormPow2() }).MPISum().Max().Sqrt();
+
+                    Assert.LessOrEqual(L2_dist, RefNorm * 1.0e-6);
+                    Debug.Assert(L2_dist < RefNorm * 1.0e-6);
+                }
+#endif
+            }
+            
+            m_LenScales = null;
+            
+#if DEBUG
+            if (DelComputeOperatorMatrix_CallCounter == 1 && OpMatrix != null) {
                 int[] Uidx = SaddlePointProblemMapping.GetSubvectorIndices(true, D.ForLoop(i => i));
                 int[] Pidx = SaddlePointProblemMapping.GetSubvectorIndices(true, D);
                 CoordinateMapping Umap = this.Velocity.Mapping;
@@ -526,18 +557,29 @@ namespace BoSSS.Application.IBM_Solver {
                 //Console.WriteLine("Stokes discretization error: | div - grad ^ t |oo is high; absolute: " + ErrInfAbs + ", relative: " + ErrInfRel + " (denom: " + denom + ")");
             }
 #endif
-
-            OpMatrix.CheckForNanOrInfM();
+            if(OpMatrix != null)
+                OpMatrix.CheckForNanOrInfM();
             OpAffine.CheckForNanOrInfV();
 
             // Set Pressure Reference Point
             if (!this.BcMap.DirichletPressureBoundary) {
-                IBMSolverUtils.SetPressureReferencePoint(
-                    CurrentSolution.Mapping,
-                    this.GridData.SpatialDimension,
-                    this.LsTrk, OpMatrix, OpAffine);
+                if (OpMatrix != null) {
+                    IBMSolverUtils.SetPressureReferencePoint(
+                        CurrentSolution.Mapping,
+                        this.GridData.SpatialDimension,
+                        this.LsTrk, 
+                        OpMatrix, OpAffine);
+                } else {
+                    IBMSolverUtils.SetPressureReferencePointResidual(
+                        new CoordinateVector(CurrentState),
+                        this.GridData.SpatialDimension,
+                        this.LsTrk,
+                        OpAffine);
+                }
             }
         }
+
+        
 
         public virtual double DelUpdateLevelset(DGField[] CurrentState, double phystime, double dt, double UnderRelax, bool incremental) {
 
@@ -651,15 +693,17 @@ namespace BoSSS.Application.IBM_Solver {
 
         MultidimensionalArray m_LenScales;
 
+
+        /*
         /// <summary>
-        /// Custom Function to compute penalty factor for viscous terms.
+        /// Custom Function to compute penalty factor for viscous terms, for bulk terms
         /// </summary>
         /// <param name="jCellIn"></param>
         /// <param name="jCellOut"></param>
         /// <param name="cj"></param>
         /// <param name="penalty">base factor</param>
         /// <returns></returns>
-        protected double ComputePenalty(double penalty, int jCellIn, int jCellOut, MultidimensionalArray cj) {
+        protected double ComputePenaltyBulk(double penalty, int jCellIn, int jCellOut, MultidimensionalArray cj) {
             double muFactor; // the WTF factor
             if (jCellOut >= 0)
                 muFactor = 1.0;
@@ -669,8 +713,39 @@ namespace BoSSS.Application.IBM_Solver {
             double penaltySizeFactor_A = 1.0 / this.m_LenScales[jCellIn];
             double penaltySizeFactor_B = jCellOut >= 0 ? 1.0 / this.m_LenScales[jCellOut] : 0;
             double penaltySizeFactor = Math.Max(penaltySizeFactor_A, penaltySizeFactor_B);
+
+            //if(once <= 0) {
+            //    once++;
+            //    Console.WriteLine("penalty: " + penalty);
+            //    Console.WriteLine("penaltySizeFactor: " + penaltySizeFactor);
+            //    Console.WriteLine("muFactor: " + muFactor);
+            //    Console.WriteLine("total penalty: " + (penalty * penaltySizeFactor * muFactor));
+            //}
+
             return penalty * penaltySizeFactor * muFactor;
         }
+        */
+
+        /// <summary>
+        /// Custom Function to compute penalty factor for viscous terms at the immersed boundary
+        /// </summary>
+        /// <param name="jCellIn"></param>
+        /// <param name="jCellOut"></param>
+        /// <param name="cj"></param>
+        /// <param name="penalty">base factor</param>
+        /// <returns></returns>
+        protected double ComputePenaltyIB(double penalty_base, int jCell) {
+            double hCutCellMin = m_LenScales[jCell]; // for IBM, there is no positive species!
+            double hCellMin = this.GridData.Cells.h_min[jCell];
+            if (hCutCellMin <= 1.0e-10 * hCellMin)
+                // very small cell -- clippling
+                hCutCellMin = hCellMin;
+
+            double µ = penalty_base / hCutCellMin;
+            Debug.Assert(!(double.IsNaN(µ) || double.IsInfinity(µ)));
+            return µ;
+        }
+
 
         /// <summary>
         /// Computes average velocity in case of Navier-Stokes Equations
@@ -858,6 +933,42 @@ namespace BoSSS.Application.IBM_Solver {
 
         }
 
+        /// <summary>
+        /// delegate for the initialization of previous timesteps from restart session
+        /// </summary>
+        /// <param name="TimestepIndex"></param>
+        /// <param name="time"></param>
+        /// <param name="St"></param>
+        private void BDFDelayedInitLoadRestart(int TimestepIndex, double time, DGField[] St) {
+
+            Console.WriteLine("Timestep index {0}, time {1} ", TimestepIndex, time);
+
+            ITimestepInfo tsi_toLoad;
+            if (TimestepIndex < 0) {
+                throw new ArgumentOutOfRangeException("Not enough Timesteps to restart with desired Timestepper");
+            } else {
+                ISessionInfo reloadSession = GetDatabase().Controller.GetSessionInfo(this.CurrentSessionInfo.RestartedFrom);
+                tsi_toLoad = reloadSession.Timesteps.Single(t => t.TimeStepNumber.Equals(new TimestepNumber(TimestepIndex)));
+            }
+            DatabaseDriver.LoadFieldData(tsi_toLoad, this.GridData, this.IOFields);
+
+            // level-set
+            // ---------
+            this.DGLevSet.Current.Clear();
+            this.DGLevSet.Current.AccLaidBack(1.0, this.LevSet);
+
+            this.LsTrk.UpdateTracker(incremental: true);
+
+            // solution
+            // --------
+            int D = this.LsTrk.GridDat.SpatialDimension;
+
+            for (int d = 0; d < D; d++) {
+                St[d] = this.Velocity[d].CloneAs();
+            }
+            St[D] = this.Pressure.CloneAs();
+        }
+
         private void After_SetInitialOrLoadRestart() {
             using (new FuncTrace()) {
                 int D = this.GridData.SpatialDimension;
@@ -877,58 +988,33 @@ namespace BoSSS.Application.IBM_Solver {
             }
         }
 
+        /// <summary>
+        /// BDF timestepper init after restart
+        /// </summary>
         protected override void LoadRestart(out double Time, out TimestepNumber TimestepNo) {
             base.LoadRestart(out Time, out TimestepNo);
             this.CreateEquationsAndSolvers(null);
-            After_SetInitialOrLoadRestart();
-
+            
             // =========================================
             // XDG Timestepper initialization
             // =========================================
 
-            if (this.Control.Timestepper_Init == IBM_Control.TimestepperInit.MultiInit) {
-                //int CallCount = 0;
+            if (this.Control.TimeStepper_Init == Solution.Timestepping.TimeStepperInit.MultiInit) {
+                // =========================================
+                // XDG BDF Timestepper initialization
+                // =========================================
 
-
-           //     throw new ApplicationException("Does not work at the moment. Contact Martin Smuda for Help");
-
-                m_BDF_Timestepper.MultiInit(Time, TimestepNo.MajorNumber, this.Control.GetFixedTimestep(),
-                    delegate (int TimestepIndex, double time, DGField[] St) {
-
-                        Console.WriteLine("Timestep index {0}, time {1} ", TimestepIndex, time);
-
-                        ITimestepInfo tsi_toLoad;
-                        if (TimestepIndex < 0) {
-                            throw new ArgumentOutOfRangeException("Not enough Timesteps to restart with desired Timestepper");
-                        } else {
-                            ISessionInfo reloadSession = GetDatabase().Controller.GetSessionInfo(this.CurrentSessionInfo.RestartedFrom);
-                            tsi_toLoad = reloadSession.Timesteps.Single(t => t.TimeStepNumber.Equals(new TimestepNumber(TimestepIndex)));
-                        }
-                        DatabaseDriver.LoadFieldData(tsi_toLoad, this.GridData, this.IOFields);
-
-
-                        //if (CallCount == 0) {
-                        //    this.LsTrk.UpdateTracker();
-                        //} else {
-                        //    this.LsTrk.UpdateTracker(incremental: true);
-                        //}
-
-                        //CallCount++;
-
-                        // solution
-                        // --------
-                        int D = this.LsTrk.GridDat.SpatialDimension;
-
-                        for (int d = 0; d < D; d++) {
-                            St[d] = this.Velocity[d].CloneAs();
-                        }
-                        St[D] = this.Pressure.CloneAs();
-
-                    });
+                if (m_BDF_Timestepper != null) {
+                    m_BDF_Timestepper.DelayedTimestepperInit(Time, TimestepNo.MajorNumber, this.Control.GetFixedTimestep(),
+                        // delegate for the initialization of previous timesteps from restart session
+                        BDFDelayedInitLoadRestart);
+                }
             } else {
                 if (m_BDF_Timestepper != null)
                     m_BDF_Timestepper.SingleInit();
             }
+
+            After_SetInitialOrLoadRestart();
         }
 
 
@@ -1077,25 +1163,25 @@ namespace BoSSS.Application.IBM_Solver {
 
         public override void PostRestart(double time, TimestepNumber timestep) {
             // Find path to PhysicalData.txt
-            //var fsDriver = this.DatabaseDriver.FsDriver;
-            //string pathToOldSessionDir = System.IO.Path.Combine(
-            //    fsDriver.BasePath, "sessions", this.CurrentSessionInfo.RestartedFrom.ToString());
-            //string pathToPhysicalData = System.IO.Path.Combine(pathToOldSessionDir, "PhysicalData.txt");
-            //string[] records = File.ReadAllLines(pathToPhysicalData);
+            var fsDriver = this.DatabaseDriver.FsDriver;
+            string pathToOldSessionDir = System.IO.Path.Combine(
+                fsDriver.BasePath, "sessions", this.CurrentSessionInfo.RestartedFrom.ToString());
+            string pathToPhysicalData = System.IO.Path.Combine(pathToOldSessionDir, "PhysicalData.txt");
+            string[] records = File.ReadAllLines(pathToPhysicalData);
 
-            //string line1 = File.ReadLines(pathToPhysicalData).Skip(1).Take(1).First();
-            //string line2 = File.ReadLines(pathToPhysicalData).Skip(2).Take(1).First();
-            //string[] fields_line1 = line1.Split('\t');
-            //string[] fields_line2 = line2.Split('\t');
+            string line1 = File.ReadLines(pathToPhysicalData).Skip(1).Take(1).First();
+            string line2 = File.ReadLines(pathToPhysicalData).Skip(2).Take(1).First();
+            string[] fields_line1 = line1.Split('\t');
+            string[] fields_line2 = line2.Split('\t');
 
-            //double dt = Convert.ToDouble(fields_line2[1]) - Convert.ToDouble(fields_line1[1]);
+            double dt = Convert.ToDouble(fields_line2[1]) - Convert.ToDouble(fields_line1[1]);
 
-            //int idx_restartLine = Convert.ToInt32(time / dt + 1.0);
-            //string restartLine = File.ReadLines(pathToPhysicalData).Skip(idx_restartLine - 1).Take(1).First();
-            //double[] values = Array.ConvertAll<string, double>(restartLine.Split('\t'), double.Parse);
+            int idx_restartLine = Convert.ToInt32(time / dt + 1.0);
+            string restartLine = File.ReadLines(pathToPhysicalData).Skip(idx_restartLine - 1).Take(1).First();
+            double[] values = Array.ConvertAll<string, double>(restartLine.Split('\t'), double.Parse);
 
             /* string restartLine = "";
-             // Calculcation of dt 
+              Calculcation of dt 
              var physicalData = File.ReadLines(pathToPhysicalData);
              int count = 0;
              foreach (string line in physicalData)
@@ -1112,25 +1198,25 @@ namespace BoSSS.Application.IBM_Solver {
              }
 
 
-            // double dt = Convert.ToDouble(fields_line2[1]) - Convert.ToDouble(fields_line1[1]);
+             double dt = Convert.ToDouble(fields_line2[1]) - Convert.ToDouble(fields_line1[1]);
 
-             // Using dt to find line of restart time
-            // int idx_restartLine = Convert.ToInt32(time / dt + 1.0);
-             //string restartLine = File.ReadLines(pathToPhysicalData).Skip(idx_restartLine - 1).Take(1).First();
+              Using dt to find line of restart time
+             int idx_restartLine = Convert.ToInt32(time / dt + 1.0);
+             string restartLine = File.ReadLines(pathToPhysicalData).Skip(idx_restartLine - 1).Take(1).First();
              double[] values = Array.ConvertAll<string, double>(restartLine.Split('\t'), double.Parse);*/
 
-            // Adding PhysicalData.txt
-            //if ((base.MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty)) {
-            //    Log_DragAndLift = base.DatabaseDriver.FsDriver.GetNewLog("PhysicalData", CurrentSessionInfo.ID);
-            //    string firstline;
-            //    if (this.GridData.SpatialDimension == 3) {
-            //        firstline = String.Format("{0}\t{1}\t{2}\t{3}\t{4}", "#Timestep", "#Time", "x-Force", "y-Force", "z-Force");
-            //    } else {
-            //        firstline = String.Format("{0}\t{1}\t{2}\t{3}", "#Timestep", "#Time", "x-Force", "y-Force");
-            //    }
-            //    Log_DragAndLift.WriteLine(firstline);
-            //    Log_DragAndLift.WriteLine(restartLine);
-            //}
+            //Adding PhysicalData.txt
+            if ((base.MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty)) {
+                Log_DragAndLift = base.DatabaseDriver.FsDriver.GetNewLog("PhysicalData", CurrentSessionInfo.ID);
+                string firstline;
+                if (this.GridData.SpatialDimension == 3) {
+                    firstline = String.Format("{0}\t{1}\t{2}\t{3}\t{4}", "#Timestep", "#Time", "x-Force", "y-Force", "z-Force");
+                } else {
+                    firstline = String.Format("{0}\t{1}\t{2}\t{3}", "#Timestep", "#Time", "x-Force", "y-Force");
+                }
+                Log_DragAndLift.WriteLine(firstline);
+                Log_DragAndLift.WriteLine(restartLine);
+            }
 
         }
 

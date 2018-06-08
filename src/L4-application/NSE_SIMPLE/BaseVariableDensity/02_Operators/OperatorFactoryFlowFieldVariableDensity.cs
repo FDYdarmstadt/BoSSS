@@ -88,13 +88,13 @@ namespace NSE_SIMPLE {
 
             VariableDensitySIMPLEControl varDensConf = SolverConf.Control as VariableDensitySIMPLEControl;
             if (varDensConf.Froude.HasValue) {
-                this.BuoyantForce = new SpatialOperator.Evaluator[SolverConf.SpatialDimension];
+                this.BuoyantForce = new IEvaluatorNonLin[SolverConf.SpatialDimension];
                 for (int d = 0; d < SolverConf.SpatialDimension; d++) {
                     SpatialOperator BuoyancyOperator = (new Buoyancy(varDensConf.GravityDirection,
                         d,
                         varDensConf.Froude.Value,
                         varDensConf.EoS)).Operator();
-                    this.BuoyantForce[d] = BuoyancyOperator.GetEvaluator(Phi0.Mapping, VelocityMapping);
+                    this.BuoyantForce[d] = BuoyancyOperator.GetEvaluatorEx(Phi0.Mapping, null, VelocityMapping);
                 }
             }
 
@@ -165,7 +165,7 @@ namespace NSE_SIMPLE {
         /// <summary>
         /// Buoyant force.
         /// </summary>
-        public SpatialOperator.Evaluator[] BuoyantForce {
+        public IEvaluatorNonLin[] BuoyantForce {
             get;
             private set;
         }

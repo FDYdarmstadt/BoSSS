@@ -30,22 +30,24 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
     /// <summary>
     /// velocity jump penalty for the divergence operator, on the level set
     /// </summary>
-    public class DivergenceAtIB : ILevelSetComponent {
+    public class DivergenceAtIB : ILevelSetForm {
 
         LevelSetTracker m_LsTrk;
 
         public DivergenceAtIB(int _D, LevelSetTracker lsTrk,
-            double vorZeichen, Func<double, double>[] _uLevSet, Func<double, double>[] _wLevSet, double particleRadius) {
+            double vorZeichen, Func<double[], double, double[]> getParticleParams) {
             this.D = _D;
-            this.uLevSet = _uLevSet;
-            this.wLevSet = _wLevSet;
             this.m_LsTrk = lsTrk;
-            this.pRadius = particleRadius;
+            this.m_getParticleParams = getParticleParams;
         }
 
         int D;
         Func<double, double>[] uLevSet,wLevSet;
         double pRadius;
+        /// <summary>
+        /// Describes: 0: velX, 1: velY, 2:rotVel,3:particleradius
+        /// </summary>
+        Func<double[], double, double[]> m_getParticleParams;
 
         /// <summary>
         /// the penalty flux
@@ -58,10 +60,15 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
             
             double uAxN = GenericBlas.InnerProd(U_Neg, cp.n);
 
+            var parameters_P = m_getParticleParams(cp.x, cp.time);
+            double[] uLevSet = new double[] { parameters_P[0], parameters_P[1] };
+            double wLevSet = parameters_P[2];
+            pRadius = parameters_P[3];
+
             double[] _uLevSet = new double[D];
 
-            _uLevSet[0] = (uLevSet[0])(cp.time)+pRadius*wLevSet[0](cp.time)*-cp.n[1];
-            _uLevSet[1] = (uLevSet[1])(cp.time) + pRadius * wLevSet[0](cp.time) * cp.n[0];
+            _uLevSet[0] = uLevSet[0]+pRadius*wLevSet*-cp.n[1];
+            _uLevSet[1] = uLevSet[1] + pRadius * wLevSet * cp.n[0];
 
             double uBxN = GenericBlas.InnerProd(_uLevSet, cp.n);
           

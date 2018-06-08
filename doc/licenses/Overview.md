@@ -6,6 +6,12 @@ Those pieces of Free and Open Source have helped to bring BoSSS to where it is t
 
 [CGNS](CGNS.txt)				LibPNG-Licence
 
+[Css-Loader](Css-Loader.txt)                MIT-Licence          
+
+[Electron](Electron.txt)                MIT-Licence
+
+[Electron-Edge-Js](Electron-Edge-Js.txt)              ApacheV2-Licence
+
 [FastColored TextBox](FastColoredTextBox.txt)				LGPLv3
 
 [Gnuplot](GnuPlot.txt)				GnuPlot-Licence
@@ -18,7 +24,13 @@ Those pieces of Free and Open Source have helped to bring BoSSS to where it is t
 
 [Log4Net](log4Net.txt)				ApacheV2-Licence
 
+[Markdown-js](markdown.txt)             MIT-Licence
+
 [Math.Net Numerics](MathNetNumerics.txt)	MIT/X11-Licence
+
+[Mathjax-Electron](Mathjax-Electron.txt)    MIT-Licence
+
+[Monaco-Editor](Monaco-Editor.txt)          MIT-Licence
 
 [MUMPS](http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html) CeCILL-C license
 
@@ -35,6 +47,14 @@ Those pieces of Free and Open Source have helped to bring BoSSS to where it is t
 [SharpSSH](SharpSSH.txt)			BSD-Licence (3-clause)
 
 [SLN-Tools](slnTools.txt)			MIT-licence
+
+[Split.js](Split.txt)               MIT-licence
+
+[Style-Loader](Style-Loader.txt)    MIT-licence
+
+[Webpack-Cli](Webpack-Cli.txt)      MIT-licence
+
+[Webpack](Webpack.txt)              MIT-licence
 
 [Zlib](Zlib.txt)				LibPNG-Licence
 

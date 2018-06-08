@@ -201,8 +201,7 @@ namespace BoSSS.Application.XNSE_Solver {
         
         LevelSetTracker LsTrk;
         
-        public SIMPLEOptions m_SIMPLEOptions;
-        
+         
         MsrMatrix VelocityDiv;
         MsrMatrix PressureGrad;
         MsrMatrix Stab;

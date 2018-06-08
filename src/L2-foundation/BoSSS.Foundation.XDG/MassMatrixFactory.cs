@@ -341,14 +341,10 @@ namespace BoSSS.Foundation.XDG {
 
                             // get Mass-Matrix subblock
                             MultidimensionalArray Mass;
-                            MultidimensionalArray[] Mass_B4Agglom;
                             if (!inverse) {
                                 Mass = this.MassBlocks[species].MassMatrixBlocks;
-                                //Mass_B4Agglom = this.MassBlocks[species].MassMatrixBlocks_B4Agglom;
-
                             } else {
                                 Mass = invBlocks[fld][species].MassMatrixBlocks;
-                                Mass_B4Agglom = null;
                                 Debug.Assert(Mass.GetLength(1) == N);
                                 Debug.Assert(Mass.GetLength(2) == N);
                             }

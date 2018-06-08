@@ -87,10 +87,7 @@
     <Compile Include="Tests\ITest.cs" />
     <Compile Include="Tests\MovingDropletTest.cs" />
     <Compile Include="Tests\PolynomialTestForConvection.cs" />
-    <Compile Include="PreCond\PotentialSolverPrecond.cs" />
-    <Compile Include="PreCond\SIMPLE.cs" />
     <Compile Include="LevelSetMovement.cs" />
-    <Compile Include="PreCond\SIMPLEOptions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Tests\TranspiratingChannelTest.cs" />
     <Compile Include="Tests\UnitTest.cs" />
