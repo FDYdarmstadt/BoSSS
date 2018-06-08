@@ -193,19 +193,19 @@ namespace BoSSS.Application.SipPoisson {
                     Console.WriteLine("done {0} sec.", stw.Elapsed.TotalSeconds);
 
 
-                    var JB = LapaceIp.GetFDJacobianBuilder(T.Mapping.Fields, null, T.Mapping, edgQrSch, volQrSch);
-                    var JacobiMtx = new BlockMsrMatrix(T.Mapping);
-                    var JacobiAffine = new double[T.Mapping.LocalLength];
-                    JB.ComputeMatrix(JacobiMtx, JacobiAffine);
-                    double L2ErrAffine = GenericBlas.L2Dist(JacobiAffine, LaplaceAffine);
-                    var ErrMtx2 = LaplaceMtx.CloneAs();
-                    ErrMtx2.Acc(-1.0, JacobiMtx);
-                    double LinfErrMtx2 = ErrMtx2.InfNorm();
+                    //var JB = LapaceIp.GetFDJacobianBuilder(T.Mapping.Fields, null, T.Mapping, edgQrSch, volQrSch);
+                    //var JacobiMtx = new BlockMsrMatrix(T.Mapping);
+                    //var JacobiAffine = new double[T.Mapping.LocalLength];
+                    //JB.ComputeMatrix(JacobiMtx, JacobiAffine);
+                    //double L2ErrAffine = GenericBlas.L2Dist(JacobiAffine, LaplaceAffine);
+                    //var ErrMtx2 = LaplaceMtx.CloneAs();
+                    //ErrMtx2.Acc(-1.0, JacobiMtx);
+                    //double LinfErrMtx2 = ErrMtx2.InfNorm();
 
                     //JacobiMtx.SaveToTextFileSparse("D:\\tmp\\Jac.txt");
                     //LaplaceMtx.SaveToTextFileSparse("D:\\tmp\\Lap.txt");
 
-                    Console.WriteLine("FD Jacobi Mtx: {0:e14}, Affine: {1:e14}", LinfErrMtx2, L2ErrAffine);
+                    //Console.WriteLine("FD Jacobi Mtx: {0:e14}, Affine: {1:e14}", LinfErrMtx2, L2ErrAffine);
 
                 }
 

@@ -1422,7 +1422,9 @@ namespace BoSSS.Foundation {
 #endif
 
 
-                var e = new FDJacobianBuilder(this, new CoordinateMapping(DomainFields), ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
+                var e = new FDJacobianBuilder(
+                    new EvaluatorNonLin(this, new CoordinateMapping(DomainFields), ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx),
+                    new CoordinateMapping(DomainFields), ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
 
                 return e;
             }
@@ -1432,12 +1434,12 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// Computes the (approximate) Jacobian matrix of the spatial operator by finite differences.
         /// </summary>
-        public class FDJacobianBuilder {
+        protected class FDJacobianBuilder : IEvaluatorLinear {
 
             /// <summary>
             /// Not for direct user interaction
             /// </summary>
-            internal protected FDJacobianBuilder(SpatialOperator owner,
+            internal protected FDJacobianBuilder(EvaluatorNonLin __Eval,
                 CoordinateMapping DomainVarMap,
                 IList<DGField> ParameterMap,
                 UnsetteledCoordinateMapping CodomainVarMap,
@@ -1450,7 +1452,7 @@ namespace BoSSS.Foundation {
                 }
                 eps = Math.Sqrt(eps);
 
-                Eval = new EvaluatorNonLin(owner, DomainVarMap, ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
+                Eval = __Eval;
 
                 BuildGridColoring();
             }
@@ -1473,7 +1475,78 @@ namespace BoSSS.Foundation {
                     eps = value;
                 }
             }
-            
+
+            public IGridData GridData => throw new NotImplementedException();
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public UnsetteledCoordinateMapping CodomainMapping {
+                get {
+                    return Eval.CodomainMapping;
+                }
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public UnsetteledCoordinateMapping DomainMapping {
+                get {
+                    return Eval.DomainMapping;
+                }
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public IList<DGField> Parameters {
+                get {
+                    return Eval.Parameters;
+                }
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public SubGridBoundaryModes SubGridBoundaryTreatment {
+                get {
+                    return Eval.SubGridBoundaryTreatment;
+                }
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public double time {
+                get { return Eval.time; }
+                set { Eval.time = value; }
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public SpatialOperator Owner {
+                get {
+                    return Eval.Owner;
+                }
+            }
+
+            /// <summary>
+            /// can be dangerous to turn off
+            /// </summary>
+            public bool MPITtransceive {
+                get => throw new NotImplementedException();
+                set => throw new NotImplementedException();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public CoefficientSet OperatorCoefficients {
+                get { return Eval.OperatorCoefficients; }
+                set { OperatorCoefficients = value; }
+            }
+
             EvaluatorNonLin Eval;
 
             int[][] ColorLists;
@@ -1860,10 +1933,32 @@ namespace BoSSS.Foundation {
 
                 }
 
-                Console.WriteLine("Total number of evaluations: " + NoOfEvals);
+                //Console.WriteLine("Total number of evaluations: " + NoOfEvals);
             }
 
+            /// <summary>
+            /// Evaluation at the linearization point
+            /// </summary>
+            public void ComputeAffine<V>(V AffineOffset) where V : IList<double> {
+                
 
+                int Lout = Eval.CodomainMapping.LocalLength;
+               
+
+                double[] F0 = new double[Lout];
+                Eval.Evaluate(1.0, 0.0, F0);
+                AffineOffset.AccV(1.0, F0);
+               
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="sgrd"></param>
+            /// <param name="subGridBoundaryTreatment"></param>
+            public void ActivateSubgridBoundary(CellMask sgrd, SubGridBoundaryModes subGridBoundaryTreatment = SubGridBoundaryModes.BoundaryEdge) {
+                Eval.ActivateSubgridBoundary(sgrd, subGridBoundaryTreatment);
+            }
         }
 
 
