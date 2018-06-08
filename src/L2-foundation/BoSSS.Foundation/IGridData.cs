@@ -28,6 +28,20 @@ namespace BoSSS.Foundation.Grid {
     public interface IGridData {
 
         /// <summary>
+        /// MPI process rank (within world communicator)
+        /// </summary>
+        int MpiRank {
+            get;
+        }
+
+        /// <summary>
+        /// MPI world communicator size 
+        /// </summary>
+        int MpiSize {
+            get;
+        }
+
+        /// <summary>
         /// Identification of the grid in the BoSSS database, 
         /// equal to the <see cref="BoSSS.Foundation.IO.IDatabaseEntityInfo{T}.ID"/>.
         /// </summary>

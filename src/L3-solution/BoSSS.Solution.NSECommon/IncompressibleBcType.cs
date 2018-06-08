@@ -45,7 +45,7 @@ namespace BoSSS.Solution.NSECommon {
         Pressure_Outlet = 2,
 
         /// <summary>
-        /// outflow with Neumann pressure boundary condition
+        /// Outflow with Neumann pressure boundary condition
         /// Within the SIMPLE algorithm this boundary condition implements
         /// \f[
         ///     \left( \psi \myMatrix{I} - \frac{1}{\reynolds} \nabla \vec{u} \right) \cdot \vec{n}_{\partial \Omega} = 0
