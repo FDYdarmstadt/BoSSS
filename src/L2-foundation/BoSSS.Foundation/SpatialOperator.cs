@@ -747,6 +747,9 @@ namespace BoSSS.Foundation {
             }
         }
 
+        /// <summary>
+        /// Creator of a <see cref="EvaluatorLinear"/> object.
+        /// </summary>
         public virtual IEvaluatorLinear GetMatrixBuilder(
             UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
             EdgeQuadratureScheme edgeQrCtx = null,
@@ -1399,6 +1402,33 @@ namespace BoSSS.Foundation {
         }
 
 
+
+        /// <summary>
+        /// constructs a <see cref="FDJacobianBuilder"/> object to linearize nonlinear operators
+        /// </summary>
+        /// <returns></returns>       
+        public virtual FDJacobianBuilder GetFDJacobianBuilder(
+            IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
+            EdgeQuadratureScheme edgeQrCtx = null,
+            CellQuadratureScheme volQrCtx = null) //
+        {
+
+            using(new FuncTrace()) {
+
+                /// This is already done in the constructor of Evaluator
+#if DEBUG
+                if(!m_IsCommited)
+                    throw new ApplicationException("operator assembly must be finalized before by calling 'Commit' before this method can be called.");
+#endif
+
+
+                var e = new FDJacobianBuilder(this, new CoordinateMapping(DomainFields), ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
+
+                return e;
+            }
+        }
+
+
         /// <summary>
         /// Computes the (approximate) Jacobian matrix of the spatial operator by finite differences.
         /// </summary>
@@ -1686,12 +1716,12 @@ namespace BoSSS.Foundation {
                         // save results
                         // -------------------------------
                         foreach(int _j in CellList) {
-                            int[] Neighs_j = Neighs[J];
+                            int[] Neighs_j = Neighs[_j];
 
                             int jCol = _j;
 
-                            int iFldCol = FieldCounter[j];
-                            int nFldCol = CoordCounter[j];
+                            int iFldCol = FieldCounter[jCol];
+                            int nFldCol = CoordCounter[jCol];
                             if(iFldCol > NoOfDomFields)
                                 continue; // finished with cell
 
@@ -1709,7 +1739,7 @@ namespace BoSSS.Foundation {
                                                                                               
 
                                 int i0Row = codMap.LocalUniqueCoordinateIndex(0, jRow, 0);
-                                int NoOfRows = codMap.GetBlockLen(j);
+                                int NoOfRows = codMap.GetBlockLen(jRow);
 
                                 for(int iRelRow = 0; iRelRow < NoOfRows; iRelRow++) {
                                     int iRow = i0Row + iRelRow;
@@ -1719,7 +1749,7 @@ namespace BoSSS.Foundation {
                                     double h = Epsilons[iCol];
 
                                     double diff = (u1 - u0) / h;
-                                    Buffer[iRow, iCol] = diff;
+                                    Buffer[iRow, iRelCol] = diff;
                                 }
                             }
                         }
@@ -1749,7 +1779,7 @@ namespace BoSSS.Foundation {
                     // --------------
                     
                     foreach(int _j in CellList) {
-                        int[] Neighs_j = Neighs[J];
+                        int[] Neighs_j = Neighs[_j];
 
                         int jCol = _j;
                         int i0Col = domMap.LocalUniqueCoordinateIndex(0, jCol, 0);
