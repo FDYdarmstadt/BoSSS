@@ -495,7 +495,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                             maxKrylovDim = Config_MaxKrylovDim,
                             MaxIter = Config_MaxIterations,
                             MinIter = Config_MinIterations,
-                            ApproxJac = Newton.ApproxInvJacobianOptions.DirectSolver,
+                            ApproxJac = Newton.ApproxInvJacobianOptions.GMRES,
                             Precond = Config_linearSolver,
                             //Precond = new RheologyJacobiPrecond() { m_We = 0.1},
                             GMRESConvCrit = Config_SolverConvergenceCriterion,
