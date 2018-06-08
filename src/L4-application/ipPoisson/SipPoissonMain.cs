@@ -163,7 +163,7 @@ namespace BoSSS.Application.SipPoisson {
 
                     // quadrature domain
                     var volQrSch = new CellQuadratureScheme(true, CellMask.GetFullMask(this.GridData));
-                    var edgQrSch = new EdgeQuadratureScheme(true, EdgeMask.GetFullMask(this.GridData));
+                    var edgQrSch = new EdgeQuadratureScheme(true, EdgeMask.GetEmptyMask(this.GridData));
 
 #if DEBUG
                     // in DEBUG mode, we compare 'MsrMatrix' (old, reference implementation) and 'BlockMsrMatrix' (new standard)
@@ -197,10 +197,15 @@ namespace BoSSS.Application.SipPoisson {
                     var JacobiMtx = new BlockMsrMatrix(T.Mapping);
                     var JacobiAffine = new double[T.Mapping.LocalLength];
                     JB.ComputeMatrix(JacobiMtx, JacobiAffine);
-                    double ErrAffine = GenericBlas.L2Dist(JacobiAffine, LaplaceAffine);
+                    double L2ErrAffine = GenericBlas.L2Dist(JacobiAffine, LaplaceAffine);
                     var ErrMtx2 = LaplaceMtx.CloneAs();
                     ErrMtx2.Acc(-1.0, JacobiMtx);
-                    Console.WriteLine("FD Jacobi Mtx: {0:e14}, Affine: {1:e14}", ErrMtx2.InfNorm(), ErrAffine);
+                    double LinfErrMtx2 = ErrMtx2.InfNorm();
+
+                    JacobiMtx.SaveToTextFileSparse("D:\\tmp\\Jac.txt");
+                    LaplaceMtx.SaveToTextFileSparse("D:\\tmp\\Lap.txt");
+
+                    Console.WriteLine("FD Jacobi Mtx: {0:e14}, Affine: {1:e14}", LinfErrMtx2, L2ErrAffine);
 
                 }
 

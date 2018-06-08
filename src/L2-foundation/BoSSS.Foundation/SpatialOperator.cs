@@ -1448,7 +1448,7 @@ namespace BoSSS.Foundation {
                 while( 1.0 + eps > 1.0) {
                     eps = eps /2;
                 }
-
+                eps = Math.Sqrt(eps);
 
                 Eval = new EvaluatorNonLin(owner, DomainVarMap, ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
 
@@ -1745,7 +1745,7 @@ namespace BoSSS.Foundation {
                                     int iRow = i0Row + iRelRow;
 
                                     double u1 = EvalBuf[iRow];
-                                    double u0 = U0[iRow];
+                                    double u0 = F0[iRow];
                                     double h = Epsilons[iCol];
 
                                     double diff = (u1 - u0) / h;
@@ -1796,7 +1796,7 @@ namespace BoSSS.Foundation {
                             int i0Row = domMap.LocalUniqueCoordinateIndex(0, jRow, 0);
                             int iERow = domMap.LocalUniqueCoordinateIndex(NoOfCodFields - 1, jRow, lastCodB.GetLength(jRow) - 1);
 
-                            var Block = Buffer.ExtractSubArrayShallow(new int[] { i0Row, 0 }, new int[] { iERow - 1, iECol - i0Col - 1 });
+                            var Block = Buffer.ExtractSubArrayShallow(new int[] { i0Row, 0 }, new int[] { iERow, iECol - i0Col });
 
                             Matrix.AccBlock(i0Row + codMap.i0, i0Col + domMap.i0, 1.0, Block);
                         }
