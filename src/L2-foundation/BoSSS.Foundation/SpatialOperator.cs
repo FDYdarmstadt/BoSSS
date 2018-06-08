@@ -1580,6 +1580,7 @@ namespace BoSSS.Foundation {
                 where M : IMutableMatrixEx
                 where V : IList<double> // 
             {
+                
                 // init locals
                 // ===========
                 var codMap = Eval.CodomainMapping;
@@ -1588,10 +1589,26 @@ namespace BoSSS.Foundation {
                 var U0 = new CoordinateVector(Eval.DomainFields);
 
                 int J = Eval.GridData.iLogicalCells.NoOfLocalUpdatedCells;
-                int NoOfFields = domMap.BasisS.Count;
+                int NoOfDomFields = domMap.BasisS.Count;
+                int NoOfCodFields = codMap.BasisS.Count;
 
                 int Lout = Eval.CodomainMapping.LocalLength;
                 int Lin = domMap.LocalLength;
+
+                int[][] Neighs = Eval.GridData.iLogicalCells.CellNeighbours;
+
+                var lastCodB = codMap.BasisS.Last();
+                var lastDomB = domMap.BasisS.Last();
+
+                // check Args
+                // ==========
+
+                if(!Matrix.RowPartitioning.EqualsPartition(codMap))
+                    throw new ArgumentException("Mismatch in matrix row partition.");
+                if(!Matrix.ColPartition.EqualsPartition(domMap))
+                    throw new ArgumentException("Mismatch in matrix column partition.");
+                if(AffineOffset.Count != codMap.LocalLength)
+                    throw new ArgumentException("Mismatch in length of affine offset.");
 
                 // evaluate at linearization point
                 // ===============================
@@ -1604,11 +1621,12 @@ namespace BoSSS.Foundation {
                 // =================
 
                 double[] Epsilons = new double[Lin];
-                double relEps = this.Eps; 
-                double absEps = 1.0e-15; // should be ok down to 'double.Epsilon/(relEps*relEps);'
+                double relEps = this.Eps;
+                //double absEps = 1.0e-15; 
+                double absEps = 1.0;
                 for(int i = 0; i < Lin; i++) {
                     double EpsBase = Math.Abs(U0[i]);
-                    if(EpsBase == absEps)
+                    if(EpsBase < absEps)
                         EpsBase = absEps;
 
                     Epsilons[i] = EpsBase * relEps;
@@ -1637,7 +1655,7 @@ namespace BoSSS.Foundation {
                     maxNj = maxNj.MPIMax();
 
                     Buffer.Clear();
-
+                    
                     for(int n = 0; n < maxNj; n++) { // loop over DG coordinates in cell
 
                         // backup DG coordinates
@@ -1649,7 +1667,7 @@ namespace BoSSS.Foundation {
                         foreach(int j in CellList) {
                             int iFld = FieldCounter[j];
                             int nFld = CoordCounter[j];
-                            if(iFld > NoOfFields)
+                            if(iFld > NoOfDomFields)
                                 continue; // finished with cell 'j'
 
                             int iLoc = domMap.LocalUniqueCoordinateIndex(iFld, j, nFld);
@@ -1667,37 +1685,50 @@ namespace BoSSS.Foundation {
 
                         // save results
                         // -------------------------------
-                        foreach(int j in CellList) {
+                        foreach(int _j in CellList) {
+                            int[] Neighs_j = Neighs[J];
+
+                            int jCol = _j;
+
                             int iFldCol = FieldCounter[j];
                             int nFldCol = CoordCounter[j];
-                            if(iFldCol > NoOfFields)
-                                continue; // finished with cell 'j'
+                            if(iFldCol > NoOfDomFields)
+                                continue; // finished with cell
 
-                            int iCol = domMap.LocalUniqueCoordinateIndex(iFldCol, j, nFldCol);
-                            int i0Col = domMap.LocalUniqueCoordinateIndex(0, j, 0);
+                            int iCol = domMap.LocalUniqueCoordinateIndex(iFldCol, jCol, nFldCol);
+                            int i0Col = domMap.LocalUniqueCoordinateIndex(0, jCol, 0);
                             int iRelCol = iCol - i0Col;
 
-                            int i0Row = codMap.LocalUniqueCoordinateIndex(0, j, 0);
-                            int NoOfRows = codMap.GetBlockLen(j);
+                            for(int k = 0; k <= Neighs_j.Length; k++) { // loop over neighbors which are influenced by the distortion
+                                int jRow;
+                                if(k == 0) {
+                                    jRow = _j;
+                                } else {
+                                    jRow = Neighs_j[k - 1];
+                                }
+                                                                                              
 
-                            for(int iRelRow = 0; iRelRow < NoOfRows; iRelRow++) {
-                                int iRow = i0Row + iRelRow;
+                                int i0Row = codMap.LocalUniqueCoordinateIndex(0, jRow, 0);
+                                int NoOfRows = codMap.GetBlockLen(j);
 
-                                double u1 = EvalBuf[iRow];
-                                double u0 = U0[iRow];
-                                double h = Epsilons[iCol];
+                                for(int iRelRow = 0; iRelRow < NoOfRows; iRelRow++) {
+                                    int iRow = i0Row + iRelRow;
 
-                                double diff = (u1 - u0) / h;
-                                Buffer[iRow, iCol] = diff;
+                                    double u1 = EvalBuf[iRow];
+                                    double u0 = U0[iRow];
+                                    double h = Epsilons[iCol];
+
+                                    double diff = (u1 - u0) / h;
+                                    Buffer[iRow, iCol] = diff;
+                                }
                             }
                         }
 
                         // increase counters
                         // ------------------
                         foreach(int j in CellList) {
-                            int iFldCol = FieldCounter[j];
-                            int nFldCol = CoordCounter[j];
-                            if(iFldCol > NoOfFields)
+                            int iFld = FieldCounter[j];
+                            if(iFld > NoOfDomFields)
                                 continue; // finished with cell 'j'
 
                             int Nj = domMap.BasisS[iFld].GetLength(j);
@@ -1713,6 +1744,34 @@ namespace BoSSS.Foundation {
                         // -------------------------------
                         U0.SetV(U0backup);
                     }
+
+                    // save to matrix
+                    // --------------
+                    
+                    foreach(int _j in CellList) {
+                        int[] Neighs_j = Neighs[J];
+
+                        int jCol = _j;
+                        int i0Col = domMap.LocalUniqueCoordinateIndex(0, jCol, 0);
+                        int iECol = domMap.LocalUniqueCoordinateIndex(NoOfDomFields - 1, jCol, lastDomB.GetLength(jCol) - 1);
+
+                        for(int k = 0; k <= Neighs_j.Length; k++) { // loop over neighbors which are influenced by the distortion
+                            int jRow;
+                            if(k == 0) {
+                                jRow = _j;
+                            } else {
+                                jRow = Neighs_j[k - 1];
+                            }
+
+                            int i0Row = domMap.LocalUniqueCoordinateIndex(0, jRow, 0);
+                            int iERow = domMap.LocalUniqueCoordinateIndex(NoOfCodFields - 1, jRow, lastCodB.GetLength(jRow) - 1);
+
+                            var Block = Buffer.ExtractSubArrayShallow(new int[] { i0Row, 0 }, new int[] { iERow - 1, iECol - i0Col - 1 });
+
+                            Matrix.AccBlock(i0Row + codMap.i0, i0Col + domMap.i0, 1.0, Block);
+                        }
+                    }
+
                 }
             }
 
