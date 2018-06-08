@@ -1274,11 +1274,30 @@ namespace BoSSS.Foundation {
             ICompositeQuadRule<QuadRule> volRule;
 
 
-
+            /// <summary>
+            /// For the operator linearization 
+            /// \f[
+            ///    \mathcal{M} U + \mathcal{B}
+            /// \f]
+            /// this computes only the vector \f$ \mathcal{B} \f$
+            /// </summary>
+            /// <param name="AffineOffset"></param>
             public void ComputeAffine<V>(V AffineOffset) where V : IList<double> {
                 Internal_ComputeMatrixEx(default(BlockMsrMatrix), AffineOffset, true);
             }
 
+            /// <summary>
+            /// computes a linearization of the operator in the form 
+            /// \f[
+            ///    \mathcal{M} U + \mathcal{B}.
+            /// \f]
+            /// </summary>
+            /// <param name="Matrix">
+            /// Output, the operator matrix is accumulated here
+            /// </param>
+            /// <param name="AffineOffset">
+            /// Output, the affine part of the operator linearization is accumulated here
+            /// </param>
             public void ComputeMatrix<M, V>(M Matrix, V AffineOffset)
                 where M : IMutableMatrixEx
                 where V : IList<double> // 
@@ -1378,5 +1397,111 @@ namespace BoSSS.Foundation {
                 }
             }
         }
+
+
+
+        public class FDJacobianBuilder {
+
+            internal protected FDJacobianBuilder(SpatialOperator owner,
+                CoordinateMapping DomainVarMap,
+                IList<DGField> ParameterMap,
+                UnsetteledCoordinateMapping CodomainVarMap,
+                EdgeQuadratureScheme edgeQrCtx,
+                CellQuadratureScheme volQrCtx) {
+                Eval = new EvaluatorNonLin(owner, DomainVarMap, ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
+            }
+
+            EvaluatorNonLin Eval;
+
+            void BuildGridColoring() {
+                var gDat = Eval.GridData;
+
+                int[][] Neighs = gDat.iLogicalCells.CellNeighbours;
+                int J = gDat.iLogicalCells.NoOfLocalUpdatedCells;
+                int JE = gDat.iLogicalCells.NoOfCells;
+
+                int[] Marker = new int[JE]; //    marker for blocked in the current pass 
+                int[] MarkerAcc = new int[JE]; //  accumulation buffer for MPI excange
+                BitArray Colored = new BitArray(JE); // all cells which are already colored
+
+                List<int> CellList = new List<int>();
+                List<int[]> ColorLists = new List<int[]>();
+
+                int bRun = 0xFFFFFF;
+                int locColoredCells = 0;
+                while(bRun != 0) {
+
+                    // find next color list
+                    // ====================
+
+                    Marker.SetAll(0);
+                    CellList.Clear();
+
+                    for(int j = 0; j < J; j++) {
+                        if (Colored[j] == true)
+                            continue;
+                        if (Marker[j] != 0)
+                            continue;
+
+                        int[] Neighs_j = Neighs[j];
+                        foreach(int jn in Neighs_j) {
+                            if(Marker[j] != 0) {
+                                continue;
+                            }
+                        }
+
+                        // if we reached this point, we finally found a cell which we are allowed to add to the current color set.
+                        CellList.Add(j);
+                        locColoredCells++;
+                        Colored[j] = true;
+                        Marker[j] = 1;
+                        foreach(int jn in Neighs_j)
+                            Marker[jn] = 1;
+                    }
+
+                    // fix parallel conflicts
+                    // ======================
+
+                    Colored.MPIExchange(gDat);
+                    Array.Copy(Marker, MarkerAcc, MarkerAcc.Length);
+                    MarkerAcc.MPIExchange(gDat);
+                    for (int je = 0; je < JE; je++)
+                        MarkerAcc[je] += Marker[je];
+
+                    for(int je = 0; je < JE; je++) {
+                        if(MarkerAcc[je] > 1) {
+                            // some parallel conflict detected
+
+                        }
+                    }
+
+
+
+                    // remember recently found color list
+                    // ==================================
+                    ColorLists.Add(CellList.ToArray());
+
+                    // check for loop termination
+                    // ==========================
+                    Debug.Assert(locColoredCells <= J);
+                    int bRunLoc = 0xFFFFFF;
+                    if(locColoredCells >= J) 
+                        bRunLoc = 0;
+                    bRun = bRunLoc.MPIMax();
+                }
+
+
+
+            }
+
+
+
+
+
+
+        }
+
+
+
     }
 }
