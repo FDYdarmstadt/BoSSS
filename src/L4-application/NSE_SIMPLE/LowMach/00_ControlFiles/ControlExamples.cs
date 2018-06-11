@@ -20,7 +20,6 @@ using BoSSS.Platform;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.Queries;
-using BoSSS.Solution.Utils.Spline;
 using ilPSP.LinSolvers.PARDISO;
 using System;
 using static System.Math;
