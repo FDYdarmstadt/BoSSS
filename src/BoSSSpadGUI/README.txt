@@ -1,7 +1,7 @@
 Install and Run: 
 
 Build C# Solution public/src/Public.sln in Release configuration. Then
-1, Install npm on your machine (https://www.npmjs.com/). 
+1, Install npm on your machine (https://www.npmjs.com/).  (package manager for Node.js)
 2, In this folder, open console and run
 	npm install 
 3, Then run: 
