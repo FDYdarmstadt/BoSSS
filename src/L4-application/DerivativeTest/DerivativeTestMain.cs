@@ -192,7 +192,7 @@ namespace BoSSS.Application.DerivativeTest {
             // ==============
 
 
-            for (int i = 50; i <= 50; i++) {
+            for (int i = 3; i <= 3; i++) {
                 BoSSS.Solution.Application._Main(args, true,  delegate () {
                     var R = new DerivativeTestMain();
                     GRID_CASE = i;
@@ -774,7 +774,6 @@ namespace BoSSS.Application.DerivativeTest {
 
                 Console.WriteLine("--------------------------------------------");
             }
-
 
             // Flux Derivatives
             // =================

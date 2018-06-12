@@ -357,6 +357,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                 // return
                 // ======
+                /*
 
                 if (CutOuts != null && CutOuts.Length > 0)
                 {
