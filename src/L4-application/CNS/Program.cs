@@ -482,6 +482,10 @@ namespace CNS {
         /// initialized by <see cref="InitLTSLogFile(Guid)"/>.
         /// </summary>
         public void WriteLTSLog(double dt) {
+            if (MPIRank != 0) {
+                return;
+            }
+
             // Init if necessary
             if (LTSLogWriter == null) {
                 InitLTSLogFile(this.CurrentSessionInfo.ID);
