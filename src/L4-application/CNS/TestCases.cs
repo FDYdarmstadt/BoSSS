@@ -877,7 +877,7 @@ namespace CNS {
             return c;
         }
 
-        public static CNSControl ShockVortexInteraction(string dbPath = null, int savePeriod = 100, int dgDegree = 2, double sensorLimit = 1e-3, double CFLFraction = 0.2, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 0, int reclusteringInterval = 0, int maxNumOfSubSteps = 0, double Mv = 0.7, double Ms = 1.5) {
+        public static CNSControl ShockVortexInteraction(string dbPath = null, int savePeriod = 1000, int dgDegree = 2, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double Mv = 0.7, double Ms = 1.5) {
             CNSControl c = new CNSControl();
 
             // ### Database ###
@@ -891,6 +891,8 @@ namespace CNS {
             c.saveperiod = savePeriod;
             c.PrintInterval = 1;
 
+            c.WriteLTSLog = true;
+
             // ### Partitioning and load balancing ###
             c.GridPartType = GridPartType.METIS;
             c.DynamicLoadBalancing_On = false;
@@ -900,7 +902,10 @@ namespace CNS {
             //c.DynamicLoadBalancing_CellCostEstimatorFactories.Add((prog, i) => new StaticCellCostEstimator(new[] { 1, 10 }));
 
             // ### Shock-Capturing ###
-            bool AV = true;
+            bool AV = false;
+            if (dgDegree > 0) {
+                AV = true;
+            }
             if (AV) {
                 c.ActiveOperators = Operators.Convection | Operators.ArtificialViscosity;
             } else {
