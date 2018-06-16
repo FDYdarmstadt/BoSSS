@@ -130,7 +130,7 @@ namespace BoSSS.Foundation.XDG {
         }
          
         /// <summary>
-        /// nix für kleine Kinder
+        /// nix für kleine Kinder (wilder hack)
         /// </summary>
         IEvaluatorLinear GetMatrixBuilderBase(UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, EdgeQuadratureScheme edgeQrCtx = null, CellQuadratureScheme volQrCtx = null) {
             return base.GetMatrixBuilder(DomainVarMap, ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
@@ -967,8 +967,6 @@ namespace BoSSS.Foundation.XDG {
             /// </summary>
             protected Dictionary<SpeciesId, DGField[]> SpeciesParams = new Dictionary<SpeciesId, DGField[]>();
  
-         
-
             /// <summary>
             /// for each species, the frame of the co-domain
             /// </summary>
@@ -1061,7 +1059,78 @@ namespace BoSSS.Foundation.XDG {
             }
 
         }
+        
+        /// <summary>
+        /// Not supported; use <see cref="GetFDJacobianBuilder(LevelSetTracker, UnsetteledCoordinateMapping, IList{DGField}, UnsetteledCoordinateMapping, IDictionary{SpeciesId, QrSchemPair})"/> or <see cref="GetFDJacobianBuilder(LevelSetTracker, UnsetteledCoordinateMapping, IList{DGField}, UnsetteledCoordinateMapping, SpeciesId[])"/>
+        /// </summary>
+        public override IEvaluatorLinear GetFDJacobianBuilder(IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, EdgeQuadratureScheme edgeQrCtx = null, CellQuadratureScheme volQrCtx = null) {
+            throw new NotSupportedException("Use specific implementation for XSpatialOperator.");
+        }
 
+        /// <summary>
+        /// Computes the Jacobian matrix of the operator by finite differences.
+        /// </summary>
+        public XFDJacobianBuilder GetFDJacobianBuilder(
+            LevelSetTracker lsTrk,
+            IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, 
+            IDictionary<SpeciesId, QrSchemPair> SpeciesSchemes
+            ) {
+
+            var xeval = this.GetEvaluatorEx(lsTrk, DomainFields, ParameterMap, CodomainVarMap, SpeciesSchemes);
+
+            return new XFDJacobianBuilder(xeval);
+        }
+
+        /// <summary>
+        /// Computes the Jacobian matrix of the operator by finite differences.
+        /// </summary>
+        public XFDJacobianBuilder GetFDJacobianBuilder(
+            LevelSetTracker lsTrk,
+            IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, 
+            params SpeciesId[] whichSpecies
+            ) {
+
+            var xeval = this.GetEvaluatorEx(lsTrk, DomainFields, ParameterMap, CodomainVarMap, whichSpecies);
+
+            return new XFDJacobianBuilder(xeval);
+        }
+
+        /// <summary>
+        /// The 'X' version of the Jacobian builder
+        /// </summary>
+        public class XFDJacobianBuilder : SpatialOperator.FDJacobianBuilder {
+
+            internal XFDJacobianBuilder(XEvaluatorNonlin __XEval) :
+                base(__XEval) //
+            {
+                this.XEval = __XEval;
+            }
+
+
+            XEvaluatorNonlin XEval;
+
+            /// <summary>
+            /// Not supported, use <see cref="SpeciesOperatorCoefficients"/>.
+            /// </summary>
+            public override CoefficientSet OperatorCoefficients {
+                get {
+                    throw new NotSupportedException("Use per-species implementation.");
+                }
+                set {
+                    throw new NotSupportedException("Use per-species implementation.");
+                }
+            }
+
+            /// <summary>
+            /// Operator coefficients for each species
+            /// </summary>
+            public Dictionary<SpeciesId, CoefficientSet> SpeciesOperatorCoefficients {
+                get {
+                    return XEval.SpeciesOperatorCoefficients;
+                }
+            }
+
+        }
 
 
         internal class SpeciesFrameVector<V> : IList<double>

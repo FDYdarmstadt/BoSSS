@@ -1407,7 +1407,7 @@ namespace BoSSS.Foundation {
         /// constructs a <see cref="FDJacobianBuilder"/> object to linearize nonlinear operators
         /// </summary>
         /// <returns></returns>       
-        public virtual FDJacobianBuilder GetFDJacobianBuilder(
+        public virtual IEvaluatorLinear GetFDJacobianBuilder(
             IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
             EdgeQuadratureScheme edgeQrCtx = null,
             CellQuadratureScheme volQrCtx = null) //
@@ -1422,9 +1422,11 @@ namespace BoSSS.Foundation {
 #endif
 
 
-                var e = new FDJacobianBuilder(
-                    new EvaluatorNonLin(this, new CoordinateMapping(DomainFields), ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx),
-                    new CoordinateMapping(DomainFields), ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
+                var e = new FDJacobianBuilder(new EvaluatorNonLin(
+                    this, 
+                    new CoordinateMapping(DomainFields), ParameterMap, CodomainVarMap, 
+                    edgeQrCtx, volQrCtx));
+                    //new CoordinateMapping(DomainFields), ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
 
                 return e;
             }
@@ -1434,17 +1436,12 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// Computes the (approximate) Jacobian matrix of the spatial operator by finite differences.
         /// </summary>
-        protected class FDJacobianBuilder : IEvaluatorLinear {
+        public class FDJacobianBuilder : IEvaluatorLinear {
 
             /// <summary>
             /// Not for direct user interaction
             /// </summary>
-            internal protected FDJacobianBuilder(EvaluatorNonLin __Eval,
-                CoordinateMapping DomainVarMap,
-                IList<DGField> ParameterMap,
-                UnsetteledCoordinateMapping CodomainVarMap,
-                EdgeQuadratureScheme edgeQrCtx,
-                CellQuadratureScheme volQrCtx) {
+            internal protected FDJacobianBuilder(IEvaluatorNonLin __Eval) {
 
                 eps = 1.0;
                 while( 1.0 + eps > 1.0) {
@@ -1476,7 +1473,14 @@ namespace BoSSS.Foundation {
                 }
             }
 
-            public IGridData GridData => throw new NotImplementedException();
+            /// <summary>
+            /// Grid
+            /// </summary>
+            public IGridData GridData {
+                get {
+                    return Eval.GridData;
+                }
+            }
 
             /// <summary>
             /// 
@@ -1542,12 +1546,12 @@ namespace BoSSS.Foundation {
             /// <summary>
             /// 
             /// </summary>
-            public CoefficientSet OperatorCoefficients {
+            virtual public CoefficientSet OperatorCoefficients {
                 get { return Eval.OperatorCoefficients; }
                 set { OperatorCoefficients = value; }
             }
 
-            EvaluatorNonLin Eval;
+            IEvaluatorNonLin Eval;
 
             int[][] ColorLists;
 
