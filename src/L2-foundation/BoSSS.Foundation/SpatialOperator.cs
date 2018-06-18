@@ -35,6 +35,17 @@ using System.Diagnostics;
 namespace BoSSS.Foundation {
 
     /// <summary>
+    /// Delegate to trigger the update of parameter fields (e.g. when computing finite difference Jacobian, see e.g. <see cref="SpatialOperator.GetFDJacobianBuilder(IList{DGField}, IList{DGField}, UnsetteledCoordinateMapping, EdgeQuadratureScheme, CellQuadratureScheme)"/>).
+    /// </summary>
+    /// <param name="DomainVar">
+    /// Input fields, current state of domain variables
+    /// </param>
+    /// <param name="ParameterVar">
+    /// Output fields, updated states of parameter fields
+    /// </param>
+    public delegate void DelParameterUpdate(IEnumerable<DGField> DomainVar, IEnumerable<DGField> ParameterVar);
+
+    /// <summary>
     /// This class represents a spatial operator which maps
     /// from (DG-) variables in the domain, identified and ordered by <see cref="DomainVar"/>
     /// to variables in the co-domain, identified and ordered by <see cref="CodomainVar"/>.
@@ -1406,9 +1417,9 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// constructs a <see cref="FDJacobianBuilder"/> object to linearize nonlinear operators
         /// </summary>
-        /// <returns></returns>       
         public virtual IEvaluatorLinear GetFDJacobianBuilder(
             IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
+            DelParameterUpdate __delParameterUpdate,
             EdgeQuadratureScheme edgeQrCtx = null,
             CellQuadratureScheme volQrCtx = null) //
         {
@@ -1425,7 +1436,8 @@ namespace BoSSS.Foundation {
                 var e = new FDJacobianBuilder(new EvaluatorNonLin(
                     this, 
                     new CoordinateMapping(DomainFields), ParameterMap, CodomainVarMap, 
-                    edgeQrCtx, volQrCtx));
+                    edgeQrCtx, volQrCtx),
+                    __delParameterUpdate);
                     //new CoordinateMapping(DomainFields), ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
 
                 return e;
@@ -1441,7 +1453,7 @@ namespace BoSSS.Foundation {
             /// <summary>
             /// Not for direct user interaction
             /// </summary>
-            internal protected FDJacobianBuilder(IEvaluatorNonLin __Eval) {
+            internal protected FDJacobianBuilder(IEvaluatorNonLin __Eval, DelParameterUpdate __delParameterUpdate) {
 
                 eps = 1.0;
                 while( 1.0 + eps > 1.0) {
@@ -1450,6 +1462,7 @@ namespace BoSSS.Foundation {
                 eps = Math.Sqrt(eps);
 
                 Eval = __Eval;
+                DelParamUpdate = __delParameterUpdate;
 
                 BuildGridColoring();
             }
@@ -1552,6 +1565,8 @@ namespace BoSSS.Foundation {
             }
 
             IEvaluatorNonLin Eval;
+
+            DelParameterUpdate DelParamUpdate;
 
             int[][] ColorLists;
 
@@ -1776,6 +1791,7 @@ namespace BoSSS.Foundation {
                 // ===============================
 
                 double[] F0 = new double[Lout];
+                DelParamUpdate(domFields, Eval.Parameters.ToArray());
                 Eval.Evaluate(1.0, 0.0, F0);
                 AffineOffset.AccV(1.0, F0);
                 NoOfEvals++;
@@ -1843,6 +1859,7 @@ namespace BoSSS.Foundation {
                         // evaluate operator
                         // -------------------
                         EvalBuf.ClearEntries();
+                        DelParamUpdate(domFields, Eval.Parameters.ToArray());
                         Eval.Evaluate(1.0, 0.0, EvalBuf);
                         NoOfEvals++;
 
@@ -1944,12 +1961,10 @@ namespace BoSSS.Foundation {
             /// Evaluation at the linearization point
             /// </summary>
             public void ComputeAffine<V>(V AffineOffset) where V : IList<double> {
-                
-
                 int Lout = Eval.CodomainMapping.LocalLength;
                
-
                 double[] F0 = new double[Lout];
+                DelParamUpdate(Eval.DomainFields.Fields.ToArray(), Eval.Parameters.ToArray());
                 Eval.Evaluate(1.0, 0.0, F0);
                 AffineOffset.AccV(1.0, F0);
                

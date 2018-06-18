@@ -1061,9 +1061,9 @@ namespace BoSSS.Foundation.XDG {
         }
         
         /// <summary>
-        /// Not supported; use <see cref="GetFDJacobianBuilder(LevelSetTracker, UnsetteledCoordinateMapping, IList{DGField}, UnsetteledCoordinateMapping, IDictionary{SpeciesId, QrSchemPair})"/> or <see cref="GetFDJacobianBuilder(LevelSetTracker, UnsetteledCoordinateMapping, IList{DGField}, UnsetteledCoordinateMapping, SpeciesId[])"/>
+        /// Not supported; use <see cref="GetFDJacobianBuilder(LevelSetTracker, UnsetteledCoordinateMapping, IList{DGField}, UnsetteledCoordinateMapping, DelParameterUpdate, IDictionary{SpeciesId, QrSchemPair})"/> or <see cref="GetFDJacobianBuilder(LevelSetTracker, UnsetteledCoordinateMapping, IList{DGField}, UnsetteledCoordinateMapping, SpeciesId[])"/>
         /// </summary>
-        public override IEvaluatorLinear GetFDJacobianBuilder(IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, EdgeQuadratureScheme edgeQrCtx = null, CellQuadratureScheme volQrCtx = null) {
+        public override IEvaluatorLinear GetFDJacobianBuilder(IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, DelParameterUpdate __delParameterUpdate, EdgeQuadratureScheme edgeQrCtx = null, CellQuadratureScheme volQrCtx = null) {
             throw new NotSupportedException("Use specific implementation for XSpatialOperator.");
         }
 
@@ -1073,12 +1073,13 @@ namespace BoSSS.Foundation.XDG {
         public XFDJacobianBuilder GetFDJacobianBuilder(
             LevelSetTracker lsTrk,
             IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, 
+            DelParameterUpdate __delParameterUpdate,
             IDictionary<SpeciesId, QrSchemPair> SpeciesSchemes
             ) {
 
             var xeval = this.GetEvaluatorEx(lsTrk, DomainFields, ParameterMap, CodomainVarMap, SpeciesSchemes);
 
-            return new XFDJacobianBuilder(xeval);
+            return new XFDJacobianBuilder(xeval, __delParameterUpdate);
         }
 
         /// <summary>
@@ -1086,13 +1087,14 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public XFDJacobianBuilder GetFDJacobianBuilder(
             LevelSetTracker lsTrk,
-            IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, 
+            IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
+            DelParameterUpdate __delParameterUpdate,
             params SpeciesId[] whichSpecies
             ) {
 
             var xeval = this.GetEvaluatorEx(lsTrk, DomainFields, ParameterMap, CodomainVarMap, whichSpecies);
 
-            return new XFDJacobianBuilder(xeval);
+            return new XFDJacobianBuilder(xeval, __delParameterUpdate);
         }
 
         /// <summary>
@@ -1100,8 +1102,8 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public class XFDJacobianBuilder : SpatialOperator.FDJacobianBuilder {
 
-            internal XFDJacobianBuilder(XEvaluatorNonlin __XEval) :
-                base(__XEval) //
+            internal XFDJacobianBuilder(XEvaluatorNonlin __XEval, DelParameterUpdate __delParameterUpdate) :
+                base(__XEval, __delParameterUpdate) //
             {
                 this.XEval = __XEval;
             }
