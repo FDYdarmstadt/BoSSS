@@ -102,7 +102,7 @@ export class InteractiveList{
 
     deleteCommandSection(oldRange, newRange){
 
-      var oldBox = this.findBox(oldRange.startLineNumber - 1);
+      var oldBox = this.findBox(oldRange.startLineNumber);
       //Check if Range is contained in oldBox, if so do nothing
       var rangeContainedInBox = false;
       if(oldBox != null)
