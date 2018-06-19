@@ -74,7 +74,10 @@ namespace BoSSS.Solution.Timestepping {
         /// <summary>
         /// Constant number of sub-grids specified by the user
         /// </summary>
-        static int numberOfClustersInitial;
+        public int NumberOfClustersInitial {
+            get;
+            protected set;
+        }
 
         /// <summary>
         /// Interval for reclustering when LTS is used in adpative mode
@@ -150,7 +153,7 @@ namespace BoSSS.Solution.Timestepping {
             this.Logging = logging;
 
             if (reclusteringInterval != 0) {
-                numberOfClustersInitial = numOfClusters;
+                NumberOfClustersInitial = numOfClusters;
                 this.adaptive = true;
             }
 
@@ -194,7 +197,7 @@ namespace BoSSS.Solution.Timestepping {
             this.fluxCorrection = fluxCorrection;
 
             if (reclusteringInterval != 0) {
-                numberOfClustersInitial = numOfClusters;
+                NumberOfClustersInitial = numOfClusters;
                 this.adaptive = true;
             }
             this.reclusteringInterval = reclusteringInterval;
@@ -861,7 +864,7 @@ namespace BoSSS.Solution.Timestepping {
                         //#endif
                         // Necessary in order to use the number of sub-grids specified by the user for the reclustering in each time step
                         // Otherwise the value could be changed by the constructor of the parent class (AdamsBashforthLTS.cs) --> CreateSubGrids()
-                        Clusterer.Clustering newClustering = clusterer.CreateClustering(numberOfClustersInitial, this.TimeStepConstraints, this.SubGrid);
+                        Clusterer.Clustering newClustering = clusterer.CreateClustering(NumberOfClustersInitial, this.TimeStepConstraints, this.SubGrid);
                         newClustering = clusterer.TuneClustering(newClustering, Time, this.TimeStepConstraints); // Might remove sub-grids when their time step sizes are too similar
 
                         if (calledByMPIRedist || forceReclustering) {
