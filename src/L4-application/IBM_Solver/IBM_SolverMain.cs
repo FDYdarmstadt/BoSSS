@@ -1289,11 +1289,12 @@ namespace BoSSS.Application.IBM_Solver {
 
                     newGrid = this.GridData.Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
 
-
-                    Console.WriteLine("Save adaptive Mesh...");
-                    Console.WriteLine("GridGUID:   " + newGrid.GridGuid);
-                    DatabaseDriver.SaveGrid(newGrid);
-                    Console.WriteLine("...done");
+                    if (this.Control.savetodb == true) {
+                        Console.WriteLine("Save adaptive Mesh...");
+                        Console.WriteLine("GridGUID:   " + newGrid.GridGuid);
+                        DatabaseDriver.SaveGrid(newGrid);
+                        Console.WriteLine("...done");
+                    }
                 } else {
 
                     Console.WriteLine("No changes in Grid");
