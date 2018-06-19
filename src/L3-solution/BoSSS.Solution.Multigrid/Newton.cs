@@ -83,7 +83,6 @@ namespace BoSSS.Solution.Multigrid {
 
         public ApproxInvJacobianOptions ApproxJac = ApproxInvJacobianOptions.GMRES;
 
-        public MsrMatrix currentPrecMatrix = null;
 
         public string m_SessionPath;
 
@@ -132,7 +131,7 @@ namespace BoSSS.Solution.Multigrid {
                 double errstep;
                 double[] step = new double[x.Length];
                 double[] stepOld = new double[x.Length];
-                MsrMatrix CurrentJac;
+                //BlockMsrMatrix CurrentJac;
 
                 OnIterationCallback(itc, x.CloneAs(), f0.CloneAs(), this.CurrentLin);
 
@@ -152,13 +151,13 @@ namespace BoSSS.Solution.Multigrid {
 
                         // How should the inverse of the Jacobian be approximated?
                         if (ApproxJac == ApproxInvJacobianOptions.GMRES) {
-                            CurrentJac = new MsrMatrix(x.Length);
+                            var CurrentJac = new MsrMatrix(x.Length);
                             if (Precond != null) {
                                 Precond.Init(CurrentLin);
                             }
                             step = Krylov(SolutionVec, x, f0, out errstep);
                         } else if (ApproxJac == ApproxInvJacobianOptions.DirectSolver) {
-                            CurrentJac = diffjac(SolutionVec, x, f0);
+                            var CurrentJac = diffjac(SolutionVec, x, f0);
                             //MsrMatrix CurrentJac2 = bandeddiffjac(SolutionVec, x, f0);
                             //CurrentJac = freebandeddiffjac(SolutionVec, x, f0);
                             CurrentJac.SaveToTextFileSparse("Jacobi");
@@ -173,7 +172,7 @@ namespace BoSSS.Solution.Multigrid {
                         } else if (ApproxJac == ApproxInvJacobianOptions.DirectSolverHybrid) {
                             //EXPERIMENTAL_____________________________________________________________________
                             MultidimensionalArray OpMatrixMatl = MultidimensionalArray.Create(x.Length, x.Length);
-                            CurrentJac = diffjac(SolutionVec, x, f0);
+                            var CurrentJac = diffjac(SolutionVec, x, f0);
                             //Console.WriteLine("Calling MATLAB/Octave...");
                             using (BatchmodeConnector bmc = new BatchmodeConnector()) {
                                 bmc.PutSparseMatrix(CurrentJac, "Jacobi");
@@ -318,14 +317,12 @@ namespace BoSSS.Solution.Multigrid {
 
 
                         } else if (ApproxJac == ApproxInvJacobianOptions.DirectSolverOpMatrix) {
-                            CurrentJac = new MsrMatrix(x.Length);
-                            CurrentJac = CurrentLin.OperatorMatrix.ToMsrMatrix();
+                            var CurrentJac = CurrentLin.OperatorMatrix;
                             var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
                             solver.DefineMatrix(CurrentJac);
                             step.ClearEntries();
                             solver.Solve(step, f0);
-
-
+                            
                         } else {
                             throw new NotImplementedException("Your approximation option for the jacobian seems not to be existent.");
                         }
@@ -362,13 +359,16 @@ namespace BoSSS.Solution.Multigrid {
 
                         EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);                        
 
-                        var nft = ft.L2NormPow2().MPISum().Sqrt(); var nf0 = f0.L2NormPow2().MPISum().Sqrt(); var ff0 = nf0 * nf0; var ffc = nft * nft; var ffm = nft * nft;
+                        double nft = ft.L2NormPow2().MPISum().Sqrt();
+                        double nf0 = f0.L2NormPow2().MPISum().Sqrt();
+                        double ff0 = nf0 * nf0;
+                        double ffc = nft * nft;
+                        double ffm = nft * nft;
 
                         // Control of the the step size
                         while (nft >= (1 - alpha * lambda) * nf0 && iarm < maxStep) {
 
                             // Line search starts here
-
                             if (iarm == 0)
                                 lambda = sigma1 * lambda;
                             else
@@ -394,7 +394,6 @@ namespace BoSSS.Solution.Multigrid {
                         // transform solution back to 'original domain'
                         // to perform the linearization at the new point...
                         // (and for Level-Set-Updates ...)
-
                         this.CurrentLin.TransformSolFrom(SolutionVec, xt);
 
                         // update linearization
@@ -465,7 +464,7 @@ namespace BoSSS.Solution.Multigrid {
         /// <param name="xinit">initial iterate</param>
         /// <param name="errstep">error of step</param>
         /// <returns></returns>
-        public double[] GMRES(CoordinateVector SolutionVec, double[] currentX, double[] f0, double[] xinit, out double errstep) {
+        double[] GMRES(CoordinateVector SolutionVec, double[] currentX, double[] f0, double[] xinit, out double errstep) {
             using (var tr = new FuncTrace()) {
                 int n = f0.Length;
 
@@ -810,9 +809,9 @@ namespace BoSSS.Solution.Multigrid {
         /// <param name="currentX"></param>
         /// <param name="f0"></param>
         /// <returns></returns>
-        public MsrMatrix diffjac(CoordinateVector SolutionVec, double[] currentX, double[] f0) {
+        public BlockMsrMatrix diffjac(CoordinateVector SolutionVec, double[] currentX, double[] f0) {
             int n = currentX.Length;
-            MsrMatrix jac = new MsrMatrix(n);
+            BlockMsrMatrix jac = new BlockMsrMatrix(SolutionVec.Mapping);
 
             var temp = new double[n];
 
@@ -857,10 +856,10 @@ namespace BoSSS.Solution.Multigrid {
 
         }
 
-        public MsrMatrix freebandeddiffjac(CoordinateVector SolutionVec, double[] currentX, double[] f0)
+        public BlockMsrMatrix freebandeddiffjac(CoordinateVector SolutionVec, double[] currentX, double[] f0)
         {
             int n = currentX.Length;
-            MsrMatrix jac = new MsrMatrix(n);
+            BlockMsrMatrix jac = new BlockMsrMatrix(SolutionVec.Mapping);
             int beta = Bandwidth(currentX);
             int number_Cells = n / beta;
 
@@ -890,7 +889,7 @@ namespace BoSSS.Solution.Multigrid {
             return jac;
         }
 
-        public MsrMatrix bandeddiffjac(CoordinateVector SolutionVec, double[] currentX, double[] f0)
+        public BlockMsrMatrix bandeddiffjac(CoordinateVector SolutionVec, double[] currentX, double[] f0)
         {
             int dimension = SolutionVec.Mapping.GridDat.SpatialDimension;
 
@@ -966,8 +965,8 @@ namespace BoSSS.Solution.Multigrid {
             int n = currentX.Length;
             int number_Cells = n / number_Polynomials;
 
-            MsrMatrix jac = new MsrMatrix(n);
-
+            BlockMsrMatrix jac = new BlockMsrMatrix(SolutionVec.Mapping);
+            
             var temp = new double[n];           
 
             for (int k = 0; k < number_Polynomials; k++)
@@ -995,134 +994,7 @@ namespace BoSSS.Solution.Multigrid {
             return jac;
         }
 
-        /// <summary>
-        /// Evaluation of the nonlinear operator.
-        /// </summary>
-        /// <param name="alpha"></param>
-        /// <param name="CurrentState">
-        /// Current state of DG fields
-        /// </param>
-        /// <param name="beta">
-        /// Pre-scaling of <paramref name="Output"/>.
-        /// </param>
-        /// <param name="Output"></param>
-        //public override void EvaluateOperator(double alpha, IEnumerable<DGField> CurrentState, double[] Output) {
-        //    BlockMsrMatrix OpMtxRaw, MassMtxRaw;
-        //    double[] OpAffineRaw;
-        //    this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, CurrentState.ToArray());
-
-        //    OpMtxRaw.SpMV(alpha, new CoordinateVector(CurrentState.ToArray()), 1.0, OpAffineRaw);
-
-        //    CurrentLin.TransformRhsInto(OpAffineRaw, Output);
-
-        //    // Inverse of current PrexMatrix
-        //    if (currentPrecMatrix != null) {
-        //        var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
-        //        solver.DefineMatrix(currentPrecMatrix);
-        //        var temp = Output.CloneAs();
-        //        Output.ClearEntries();
-        //        solver.Solve(Output, temp);
-        //    }
-
-        //}
-
-        /// <summary>
-        /// Gathers RHS and solution vector on process 0 for more than one MPI process.
-        /// </summary>
-        /// <param name="__b">local part of rhs</param>
-        /// <param name="__x">local part of solution/initial guess</param>
-        /// <param name="_x">gathered rhs</param>
-        /// <param name="_b">gathered solution vectors</param>
-        private void GatherOnProc0(double[] __x, double[] __b, out double[] _x, out double[] _b) {
-            int size, rank;
-            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
-            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
-
-            if (size > 1) {
-                // gather rhs on processor 0
-                // +++++++++++++++++++++++++
-
-                if (rank == 0) {
-                    _x = new double[OpMtxRaw.RowPartitioning.TotalLength];
-                    _b = new double[OpMtxRaw.RowPartitioning.TotalLength];
-
-                    Array.Copy(__b, 0, _b, 0, OpMtxRaw.RowPartitioning.LocalLength);
-
-                    unsafe {
-                        fixed (double* pb = &_b[0]) {
-                            for (int rcv_rank = 1; rcv_rank < size; rcv_rank++) {
-                                MPI_Status stat;
-                                csMPI.Raw.Recv((IntPtr)(pb + OpMtxRaw.RowPartitioning.GetI0Offest(rcv_rank)), OpMtxRaw.RowPartitioning.GetLocalLength(rcv_rank), csMPI.Raw._DATATYPE.DOUBLE, rcv_rank, 342346 + rcv_rank, csMPI.Raw._COMM.WORLD, out stat);
-                            }
-                        }
-                    }
-
-                } else {
-                    // send my part to P0
-                    unsafe {
-                        fixed (double* pb = &__b[0]) {
-                            csMPI.Raw.Send((IntPtr)pb, OpMtxRaw.RowPartitioning.LocalLength, csMPI.Raw._DATATYPE.DOUBLE, 0, 342346 + rank, csMPI.Raw._COMM.WORLD);
-                        }
-                    }
-
-                    _x = null;
-                    _b = null;
-                }
-            } else {
-                _x = __x;
-                _b = __b;
-            }
-
-        }
-
-        /// <summary>
-        /// Scatters solution vector from process 0 to other MPI processors.
-        /// </summary>
-        /// <param name="__x">
-        /// input; long vector on proc 0
-        /// </param>
-        /// <param name="_x">
-        /// output;
-        /// </param>
-        private void ScatterFromProc0(double[] __x, double[] _x) {
-            int size, rank;
-            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
-            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
-
-            if (size > 1) {
-                // distribute solution to other processors
-                // +++++++++++++++++++++++++++++++++++++++
-
-                if (rank == 0) {
-                    Array.Copy(_x, 0, __x, 0, OpMtxRaw.RowPartitioning.LocalLength);
-
-                    unsafe {
-                        fixed (double* px = &_x[0]) {
-                            for (int targ_rank = 1; targ_rank < size; targ_rank++) {
-                                csMPI.Raw.Send((IntPtr)(px + OpMtxRaw.RowPartitioning.GetI0Offest(targ_rank)), OpMtxRaw.RowPartitioning.GetLocalLength(targ_rank), csMPI.Raw._DATATYPE.DOUBLE, targ_rank, 4444 + targ_rank, csMPI.Raw._COMM.WORLD);
-                            }
-                        }
-                    }
-
-                } else {
-                    unsafe {
-                        fixed (double* px = &__x[0]) {
-                            MPI_Status _st;
-                            csMPI.Raw.Recv((IntPtr)px, OpMtxRaw.RowPartitioning.LocalLength, csMPI.Raw._DATATYPE.DOUBLE, 0, 4444 + rank, csMPI.Raw._COMM.WORLD, out _st);
-                        }
-                    }
-                }
-            } else {
-                if (!object.ReferenceEquals(__x, _x)) {
-                    int L = __x.Length;
-                    if (__x.Length != _x.Length)
-                        throw new ApplicationException("internal error.");
-                    Array.Copy(_x, __x, L);
-                }
-
-            }
-        }
-
+       
     }
 
 

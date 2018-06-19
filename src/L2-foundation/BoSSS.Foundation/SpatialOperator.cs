@@ -35,6 +35,17 @@ using System.Diagnostics;
 namespace BoSSS.Foundation {
 
     /// <summary>
+    /// Delegate to trigger the update of parameter fields (e.g. when computing finite difference Jacobian, see e.g. <see cref="SpatialOperator.GetFDJacobianBuilder(IList{DGField}, IList{DGField}, UnsetteledCoordinateMapping, EdgeQuadratureScheme, CellQuadratureScheme)"/>).
+    /// </summary>
+    /// <param name="DomainVar">
+    /// Input fields, current state of domain variables
+    /// </param>
+    /// <param name="ParameterVar">
+    /// Output fields, updated states of parameter fields
+    /// </param>
+    public delegate void DelParameterUpdate(IEnumerable<DGField> DomainVar, IEnumerable<DGField> ParameterVar);
+
+    /// <summary>
     /// This class represents a spatial operator which maps
     /// from (DG-) variables in the domain, identified and ordered by <see cref="DomainVar"/>
     /// to variables in the co-domain, identified and ordered by <see cref="CodomainVar"/>.
@@ -747,6 +758,9 @@ namespace BoSSS.Foundation {
             }
         }
 
+        /// <summary>
+        /// Creator of a <see cref="EvaluatorLinear"/> object.
+        /// </summary>
         public virtual IEvaluatorLinear GetMatrixBuilder(
             UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
             EdgeQuadratureScheme edgeQrCtx = null,
@@ -1274,11 +1288,30 @@ namespace BoSSS.Foundation {
             ICompositeQuadRule<QuadRule> volRule;
 
 
-
+            /// <summary>
+            /// For the operator linearization 
+            /// \f[
+            ///    \mathcal{M} U + \mathcal{B}
+            /// \f]
+            /// this computes only the vector \f$ \mathcal{B} \f$
+            /// </summary>
+            /// <param name="AffineOffset"></param>
             public void ComputeAffine<V>(V AffineOffset) where V : IList<double> {
                 Internal_ComputeMatrixEx(default(BlockMsrMatrix), AffineOffset, true);
             }
 
+            /// <summary>
+            /// computes a linearization of the operator in the form 
+            /// \f[
+            ///    \mathcal{M} U + \mathcal{B}.
+            /// \f]
+            /// </summary>
+            /// <param name="Matrix">
+            /// Output, the operator matrix is accumulated here
+            /// </param>
+            /// <param name="AffineOffset">
+            /// Output, the affine part of the operator linearization is accumulated here
+            /// </param>
             public void ComputeMatrix<M, V>(M Matrix, V AffineOffset)
                 where M : IMutableMatrixEx
                 where V : IList<double> // 
@@ -1378,5 +1411,576 @@ namespace BoSSS.Foundation {
                 }
             }
         }
+
+
+
+        /// <summary>
+        /// constructs a <see cref="FDJacobianBuilder"/> object to linearize nonlinear operators
+        /// </summary>
+        public virtual IEvaluatorLinear GetFDJacobianBuilder(
+            IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
+            DelParameterUpdate __delParameterUpdate,
+            EdgeQuadratureScheme edgeQrCtx = null,
+            CellQuadratureScheme volQrCtx = null) //
+        {
+
+            using(new FuncTrace()) {
+
+                /// This is already done in the constructor of Evaluator
+#if DEBUG
+                if(!m_IsCommited)
+                    throw new ApplicationException("operator assembly must be finalized before by calling 'Commit' before this method can be called.");
+#endif
+
+
+                var e = new FDJacobianBuilder(new EvaluatorNonLin(
+                    this, 
+                    new CoordinateMapping(DomainFields), ParameterMap, CodomainVarMap, 
+                    edgeQrCtx, volQrCtx),
+                    __delParameterUpdate);
+                    //new CoordinateMapping(DomainFields), ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
+
+                return e;
+            }
+        }
+
+
+        /// <summary>
+        /// Computes the (approximate) Jacobian matrix of the spatial operator by finite differences.
+        /// </summary>
+        public class FDJacobianBuilder : IEvaluatorLinear {
+
+            /// <summary>
+            /// Not for direct user interaction
+            /// </summary>
+            internal protected FDJacobianBuilder(IEvaluatorNonLin __Eval, DelParameterUpdate __delParameterUpdate) {
+
+                eps = 1.0;
+                while( 1.0 + eps > 1.0) {
+                    eps = eps /2;
+                }
+                eps = Math.Sqrt(eps);
+
+                Eval = __Eval;
+                DelParamUpdate = __delParameterUpdate;
+
+                BuildGridColoring();
+            }
+
+            /// <summary>
+            /// Approximately the square root of the machine epsilon.
+            /// </summary>
+            double eps;
+
+            /// <summary>
+            /// Epsilon used for the finite difference
+            /// </summary>
+            public double Eps {
+                get {
+                    return eps;
+                }
+                set {
+                    if(value <= 0.0)
+                        throw new ArgumentOutOfRangeException();
+                    eps = value;
+                }
+            }
+
+            /// <summary>
+            /// Grid
+            /// </summary>
+            public IGridData GridData {
+                get {
+                    return Eval.GridData;
+                }
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public UnsetteledCoordinateMapping CodomainMapping {
+                get {
+                    return Eval.CodomainMapping;
+                }
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public UnsetteledCoordinateMapping DomainMapping {
+                get {
+                    return Eval.DomainMapping;
+                }
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public IList<DGField> Parameters {
+                get {
+                    return Eval.Parameters;
+                }
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public SubGridBoundaryModes SubGridBoundaryTreatment {
+                get {
+                    return Eval.SubGridBoundaryTreatment;
+                }
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public double time {
+                get { return Eval.time; }
+                set { Eval.time = value; }
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public SpatialOperator Owner {
+                get {
+                    return Eval.Owner;
+                }
+            }
+
+            /// <summary>
+            /// can be dangerous to turn off
+            /// </summary>
+            public bool MPITtransceive {
+                get => throw new NotImplementedException();
+                set => throw new NotImplementedException();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            virtual public CoefficientSet OperatorCoefficients {
+                get { return Eval.OperatorCoefficients; }
+                set { OperatorCoefficients = value; }
+            }
+
+            IEvaluatorNonLin Eval;
+
+            DelParameterUpdate DelParamUpdate;
+
+            int[][] ColorLists;
+
+
+            void BuildGridColoring() {
+                var gDat = Eval.GridData;
+
+
+                int[][] Neighs = gDat.iLogicalCells.CellNeighbours;
+                int J = gDat.iLogicalCells.NoOfLocalUpdatedCells;
+                int JE = gDat.iLogicalCells.NoOfCells;
+
+                int[] LocalMarker = new int[JE]; //    marker for blocked in the current pass 
+                int[] ExchangedMarker = new int[JE]; //  accumulation buffer for MPI excange
+                BitArray Colored = new BitArray(JE); // all cells which are already colored
+                BitArray ColoredPass = new BitArray(JE); // all cells which are colored in current pass
+                int[] LocalColorCause = new int[JE];
+
+                List<int> CellList = new List<int>();
+                List<int[]> ColorListsTmp = new List<int[]>();
+
+                int myMarkerToken = gDat.MpiRank + 1;
+                int bRun = 0xFFFFFF;
+                int locColoredCells = 0;
+                while(bRun != 0) {
+
+                    // find next color list
+                    // ====================
+
+                    LocalMarker.SetAll(int.MaxValue);
+                    ColoredPass.SetAll(false);
+
+                    for(int j = 0; j < J; j++) {
+                        if (Colored[j] == true)
+                            continue;
+                        if (LocalMarker[j] != int.MaxValue)
+                            continue;
+
+                        int[] Neighs_j = Neighs[j];
+                        bool cont = false;
+                        foreach(int jn in Neighs_j) {
+                            if(LocalMarker[jn] != int.MaxValue) {
+                                cont = true;
+                                break;
+                            }
+                        }
+                        if(cont)
+                            continue;
+
+                        // if we reached this point, we finally found a cell which we are allowed to add to the current color set.
+                        ColoredPass[j] = true;                        
+                        Colored[j] = true;
+                        LocalMarker[j] = myMarkerToken;
+                        LocalColorCause[j] = j;
+                        foreach(int jn in Neighs_j) {
+                            LocalMarker[jn] = myMarkerToken;
+                            LocalColorCause[jn] = j;
+                        }
+                    }
+
+                    // fix parallel conflicts
+                    // ======================
+
+                    Array.Copy(LocalMarker, ExchangedMarker, JE);
+                    ExchangedMarker.MPIExchange(gDat);
+                    for(int je = 0; je < JE; je++) {
+                        ExchangedMarker[je] = Math.Min(LocalMarker[je], ExchangedMarker[je]);
+                    }
+
+                    for(int je = 0; je < JE; je++) {
+                        if(LocalMarker[je] != ExchangedMarker[je]) {
+                            // some parallel conflict detected: this rank has to remove some cell
+
+                            Debug.Assert(LocalMarker[je] > ExchangedMarker[je]);
+
+                            int jToRemove = LocalColorCause[je];
+                            Debug.Assert(ColoredPass[jToRemove] == true);
+                            Debug.Assert(Colored[jToRemove] == true);
+                            ColoredPass[jToRemove] = false;
+                            Colored[jToRemove] = false;
+                            LocalMarker[jToRemove] = int.MaxValue;
+                            int[] Neighs_jToRemove = Neighs[jToRemove];
+                            foreach(int jn in Neighs_jToRemove) {
+                                LocalMarker[jn] = int.MaxValue;
+                            }
+
+                        }
+                    }
+#if DEBUG
+                    Array.Copy(LocalMarker, ExchangedMarker, JE);
+                    ExchangedMarker.MPIExchange(gDat);
+                    for(int je = 0; je < JE; je++) {
+                        Debug.Assert(ExchangedMarker[je] == Math.Min(LocalMarker[je], ExchangedMarker[je]));
+                    }
+#endif
+
+                    // remember recently found color list
+                    // ==================================
+                    CellList.Clear();
+                    for(int j = 0; j < J; j++) {
+                        if(ColoredPass[j]) {
+                            locColoredCells++;
+                            CellList.Add(j);
+                        }
+                    }
+                    ColorListsTmp.Add(CellList.ToArray());
+
+                    // check for loop termination
+                    // ==========================
+                    Debug.Assert(locColoredCells <= J);
+                    int bRunLoc = 0xFFFFFF;
+                    if(locColoredCells >= J) 
+                        bRunLoc = 0;
+                    bRun = bRunLoc.MPIMax();
+                }
+
+                // store
+                // =====
+                this.ColorLists = ColorListsTmp.ToArray();
+
+                // checks
+                // ======
+#if DEBUG
+                {
+                    int[] TouchLoc = new int[JE];
+
+                    foreach(int[] _CellList in this.ColorLists) {
+
+                        int[] NeighTouchLoc = new int[JE];
+
+                        foreach(int j in _CellList) {
+                            Debug.Assert(j < JE);
+                            Debug.Assert(TouchLoc[j] == 0);
+                            TouchLoc[j]++;
+
+                            Debug.Assert(NeighTouchLoc[j] == 0);
+                            NeighTouchLoc[j]++;
+
+                            foreach(int jn in Neighs[j]) {
+                                Debug.Assert(NeighTouchLoc[jn] == 0);
+                                NeighTouchLoc[jn]++;
+                            }
+
+                        }
+
+                        int[] NeighTouchGlob = NeighTouchLoc.CloneAs();
+                        NeighTouchGlob.MPIExchange(gDat);
+                        for(int j = J; j < JE; j++) {
+                            NeighTouchGlob[j] += NeighTouchLoc[j];
+                        }
+
+                        for(int j = 0; j < JE; j++) {
+                            Debug.Assert(NeighTouchGlob[j] <= 1);
+                        }
+                    }
+
+                    int[] TouchGlob = TouchLoc.CloneAs();
+                    TouchGlob.MPIExchange(gDat);
+                    for(int j = J; j < JE; j++) {
+                        TouchGlob[j] += TouchLoc[j];
+                    }
+                    
+                    for(int j = 0; j < JE; j++) {
+                        Debug.Assert(TouchGlob[j] == 1);
+                    }
+
+                }
+#endif
+
+            }
+
+
+            /// <summary>
+            /// computes a approximate linearization of the operator in the form 
+            /// \f[
+            ///    \mathcal{M} U + \mathcal{B}.
+            /// \f]
+            /// </summary>
+            /// <param name="Matrix">
+            /// Output, the approximate Jacobian matrix of the operator is accumulated here
+            /// </param>
+            /// <param name="AffineOffset">
+            /// Output, the operator value in the linearization point
+            /// </param>
+            public void ComputeMatrix<M, V>(M Matrix, V AffineOffset)
+                where M : IMutableMatrixEx
+                where V : IList<double> // 
+            {
+                
+                // init locals
+                // ===========
+                var codMap = Eval.CodomainMapping;
+                var domMap = Eval.DomainMapping;
+                DGField[] domFields = Eval.DomainFields.Fields.ToArray();
+                var U0 = new CoordinateVector(Eval.DomainFields);
+
+                int J = Eval.GridData.iLogicalCells.NoOfLocalUpdatedCells;
+                int NoOfDomFields = domMap.BasisS.Count;
+                int NoOfCodFields = codMap.BasisS.Count;
+
+                int Lout = Eval.CodomainMapping.LocalLength;
+                int Lin = domMap.LocalLength;
+
+                int[][] Neighs = Eval.GridData.iLogicalCells.CellNeighbours;
+
+                var lastCodB = codMap.BasisS.Last();
+                var lastDomB = domMap.BasisS.Last();
+
+                int NoOfEvals = 0;
+
+                // check Args
+                // ==========
+
+                if(!Matrix.RowPartitioning.EqualsPartition(codMap))
+                    throw new ArgumentException("Mismatch in matrix row partition.");
+                if(!Matrix.ColPartition.EqualsPartition(domMap))
+                    throw new ArgumentException("Mismatch in matrix column partition.");
+                if(AffineOffset.Count != codMap.LocalLength)
+                    throw new ArgumentException("Mismatch in length of affine offset.");
+
+                // evaluate at linearization point
+                // ===============================
+
+                double[] F0 = new double[Lout];
+                DelParamUpdate(domFields, Eval.Parameters.ToArray());
+                Eval.Evaluate(1.0, 0.0, F0);
+                AffineOffset.AccV(1.0, F0);
+                NoOfEvals++;
+
+                // compute epsilon's
+                // =================
+
+                double[] Epsilons = new double[Lin];
+                double relEps = this.Eps;
+                //double absEps = 1.0e-15; 
+                double absEps = 1.0;
+                for(int i = 0; i < Lin; i++) {
+                    double EpsBase = Math.Abs(U0[i]);
+                    if(EpsBase < absEps)
+                        EpsBase = absEps;
+
+                    Epsilons[i] = EpsBase * relEps;
+                }
+
+                // compute directional derivatives
+                // ===============================
+
+                double[] U0backup = new double[Lin];
+                double[] EvalBuf = new double[Lout];
+                if(!domMap.AllBlockSizesEqual)
+                    throw new NotSupportedException();
+                MultidimensionalArray Buffer = MultidimensionalArray.Create(Lout, domMap.GetBlockLen(domMap.FirstBlock));
+
+                for(int iCellPass = 0; iCellPass < ColorLists.Length; iCellPass++) { // loop over all cell lists...
+                    int[] CellList = ColorLists[iCellPass];
+
+                    int[] CoordCounter = new int[J];
+                    int[] FieldCounter = new int[J];
+                    
+                    int maxNj = 0;
+                    foreach(int j in CellList) {
+                        int Nj = domMap.GetTotalNoOfCoordinatesPerCell(j);
+                        maxNj = Math.Max(Nj, maxNj);
+                    }
+                    maxNj = maxNj.MPIMax();
+
+                    Buffer.Clear();
+                    
+                    for(int n = 0; n < maxNj; n++) { // loop over DG coordinates in cell
+
+                        // backup DG coordinates
+                        // ---------------------
+                        U0backup.SetV(U0); 
+
+                        // apply distortions
+                        // -----------------
+                        foreach(int j in CellList) {
+                            int iFld = FieldCounter[j];
+                            int nFld = CoordCounter[j];
+                            if(iFld > NoOfDomFields)
+                                continue; // finished with cell 'j'
+
+                            int iLoc = domMap.LocalUniqueCoordinateIndex(iFld, j, nFld);
+
+                            double oldVal = domFields[iFld].Coordinates[j, nFld];
+                            domFields[iFld].Coordinates[j, nFld] = oldVal + Epsilons[iLoc];
+                            Debug.Assert(domFields[iFld].Coordinates[j, nFld] != oldVal);
+                        }
+
+                        // evaluate operator
+                        // -------------------
+                        EvalBuf.ClearEntries();
+                        DelParamUpdate(domFields, Eval.Parameters.ToArray());
+                        Eval.Evaluate(1.0, 0.0, EvalBuf);
+                        NoOfEvals++;
+
+                        // save results
+                        // -------------------------------
+                        foreach(int _j in CellList) {
+                            int[] Neighs_j = Neighs[_j];
+
+                            int jCol = _j;
+
+                            int iFldCol = FieldCounter[jCol];
+                            int nFldCol = CoordCounter[jCol];
+                            if(iFldCol > NoOfDomFields)
+                                continue; // finished with cell
+
+                            int iCol = domMap.LocalUniqueCoordinateIndex(iFldCol, jCol, nFldCol);
+                            int i0Col = domMap.LocalUniqueCoordinateIndex(0, jCol, 0);
+                            int iRelCol = iCol - i0Col;
+
+                            for(int k = 0; k <= Neighs_j.Length; k++) { // loop over neighbors which are influenced by the distortion
+                                int jRow;
+                                if(k == 0) {
+                                    jRow = _j;
+                                } else {
+                                    jRow = Neighs_j[k - 1];
+                                }
+                                                                                              
+
+                                int i0Row = codMap.LocalUniqueCoordinateIndex(0, jRow, 0);
+                                int NoOfRows = codMap.GetBlockLen(jRow);
+
+                                for(int iRelRow = 0; iRelRow < NoOfRows; iRelRow++) {
+                                    int iRow = i0Row + iRelRow;
+
+                                    double u1 = EvalBuf[iRow];
+                                    double u0 = F0[iRow];
+                                    double h = Epsilons[iCol];
+
+                                    double diff = (u1 - u0) / h;
+                                    Buffer[iRow, iRelCol] = diff;
+                                }
+                            }
+                        }
+
+                        // increase counters
+                        // ------------------
+                        foreach(int j in CellList) {
+                            int iFld = FieldCounter[j];
+                            if(iFld > NoOfDomFields)
+                                continue; // finished with cell 'j'
+
+                            int Nj = domMap.BasisS[iFld].GetLength(j);
+                            CoordCounter[j]++;
+                            if(CoordCounter[j] >= Nj) {
+                                CoordCounter[j] = 0;
+                                FieldCounter[j]++;
+                            }
+
+                        }
+
+                        // restore original DG coordinates
+                        // -------------------------------
+                        U0.SetV(U0backup);
+                    }
+
+                    // save to matrix
+                    // --------------
+                    
+                    foreach(int _j in CellList) {
+                        int[] Neighs_j = Neighs[_j];
+
+                        int jCol = _j;
+                        int i0Col = domMap.LocalUniqueCoordinateIndex(0, jCol, 0);
+                        int iECol = domMap.LocalUniqueCoordinateIndex(NoOfDomFields - 1, jCol, lastDomB.GetLength(jCol) - 1);
+
+                        for(int k = 0; k <= Neighs_j.Length; k++) { // loop over neighbors which are influenced by the distortion
+                            int jRow;
+                            if(k == 0) {
+                                jRow = _j;
+                            } else {
+                                jRow = Neighs_j[k - 1];
+                            }
+
+                            int i0Row = domMap.LocalUniqueCoordinateIndex(0, jRow, 0);
+                            int iERow = domMap.LocalUniqueCoordinateIndex(NoOfCodFields - 1, jRow, lastCodB.GetLength(jRow) - 1);
+
+                            var Block = Buffer.ExtractSubArrayShallow(new int[] { i0Row, 0 }, new int[] { iERow, iECol - i0Col });
+
+                            Matrix.AccBlock(i0Row + codMap.i0, i0Col + domMap.i0, 1.0, Block);
+                        }
+                    }
+
+                }
+
+                //Console.WriteLine("Total number of evaluations: " + NoOfEvals);
+            }
+
+            /// <summary>
+            /// Evaluation at the linearization point
+            /// </summary>
+            public void ComputeAffine<V>(V AffineOffset) where V : IList<double> {
+                int Lout = Eval.CodomainMapping.LocalLength;
+               
+                double[] F0 = new double[Lout];
+                DelParamUpdate(Eval.DomainFields.Fields.ToArray(), Eval.Parameters.ToArray());
+                Eval.Evaluate(1.0, 0.0, F0);
+                AffineOffset.AccV(1.0, F0);
+               
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="sgrd"></param>
+            /// <param name="subGridBoundaryTreatment"></param>
+            public void ActivateSubgridBoundary(CellMask sgrd, SubGridBoundaryModes subGridBoundaryTreatment = SubGridBoundaryModes.BoundaryEdge) {
+                Eval.ActivateSubgridBoundary(sgrd, subGridBoundaryTreatment);
+            }
+        }
+
+
+
     }
 }
