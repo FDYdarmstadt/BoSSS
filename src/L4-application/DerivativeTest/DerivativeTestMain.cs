@@ -80,6 +80,7 @@ namespace BoSSS.Application.DerivativeTest {
 #endif
             DerivativeTestMain.GRID_CASE = gridCase;
             DerivativeTestMain p = null;
+            DerivativeTestMain.GRID_FILE = null;
             Quadrature_Bulksize.CHUNK_DATA_LIMIT = bulksize_limit;
             BoSSS.Foundation.Caching.Cache.MaxMem = cache_size;
 
@@ -177,7 +178,7 @@ namespace BoSSS.Application.DerivativeTest {
         /// <summary>
         /// Grid/mesh file to use, see implementation of <see cref="CreateOrLoadGrid"/>.
         /// </summary>
-        public static string GRID_FILE = "..\\..\\TestGrids\\wedding2D_v16.cgns";
+        public static string GRID_FILE = "..\\..\\TestGrids\\box2d.cgns";
 
         /// <summary>
         /// Application entry point.
@@ -192,7 +193,7 @@ namespace BoSSS.Application.DerivativeTest {
             // ==============
 
 
-            for (int i = 3; i <= 3; i++) {
+            for (int i = 50; i <= 50; i++) {
                 BoSSS.Solution.Application._Main(args, true,  delegate () {
                     var R = new DerivativeTestMain();
                     GRID_CASE = i;

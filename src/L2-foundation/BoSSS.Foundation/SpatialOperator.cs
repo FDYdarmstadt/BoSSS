@@ -1606,6 +1606,7 @@ namespace BoSSS.Foundation {
                             continue;
 
                         int[] Neighs_j = Neighs[j];
+                        Debug.Assert(Neighs_j.Contains(j) == false, "Cell seems to be its own neighbor.");
                         bool cont = false;
                         foreach(int jn in Neighs_j) {
                             if(LocalMarker[jn] != int.MaxValue) {

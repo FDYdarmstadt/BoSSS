@@ -524,6 +524,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                         // loop over neighbours of a cell...
                         for (byte e = 0; e < K; e++) {
+                            faul
                             CellNeigh[e] &= invmask;
                         }
                     }

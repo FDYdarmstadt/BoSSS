@@ -1171,6 +1171,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     int Nj = NeighGlobalIdx[j].Count();
                     ClNg[j] = new int[Nj];
 
+                    int cnt = 0;
                     for (int n = 0; n < Nj; n++) {
                         var cn = NeighGlobalIdx[j].ElementAt(n);
                         long idx = cn.Neighbour_GlobalIndex;
@@ -1178,24 +1179,34 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                         if (idx >= 0 && idx < Jglob) {
                             if (!Part.IsInLocalRange(idx)) {
-                                ClNg[j][n] = Global2LocalIdx[idx];
+                                ClNg[j][cnt] = Global2LocalIdx[idx];
                             } else {
-                                ClNg[j][n] = Part.TransformIndexToLocal((int)idx);
+                                ClNg[j][cnt] = Part.TransformIndexToLocal((int)idx);
                             }
-
+                            cnt++;
                         } else {
                             ClNg[j][n] = int.MinValue;
+                            cnt++;
                         }
                     }
+
+                    if(cnt < Nj) {
+                        Array.Resize(ref ClNg[j], cnt);
+                        Nj = cnt;
+                    }
+
+
 #if DEBUG
                     for(int n1 = 0; n1 < Nj; n1++) {
                         for(int n2 = 0; n2 < Nj; n2++) {
                             if(n1 != n2) {
-                                Debug.Assert(ClNg[j][n1] != ClNg[j][n2]);
+                                if(ClNg[j][n1] >= 0)
+                                    Debug.Assert(ClNg[j][n1] != ClNg[j][n2], "Same neighbor cell specified twice");
                             }
                         }
                     }
-                    Debug.Assert(ClNg[j].Where(i => i < 0).Count() == 0);
+                    Debug.Assert(ClNg[j].Contains(j) == false, "cell seems to be its own neighbor.");
+                    //Debug.Assert(ClNg[j].Where(i => i < 0).Count() == 0);
 
 #endif
                 }
