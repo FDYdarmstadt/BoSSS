@@ -62,9 +62,30 @@ export class BoSSSpad{
   }
 
   register(){
-    this.boSSS.registerContextMenu(this.addNewRunCommand.bind(this), 'runCommand', 'Insert Run Box');
-    this.boSSS.registerContextMenu(this.addNewCommentCommand.bind(this), 'runCommentCommand', 'Insert Comment Box');
-    this.boSSS.registerContextMenu(this.removeCommand.bind(this), 'removeCommand', 'Remove');
+    this.boSSS.registerContextMenu(
+      this.addNewRunCommand.bind(this), 
+      'runCommand', 
+      'Insert Run Box',
+      [
+        monaco.KeyMod.CtrlCmd | monaco.KeyCode.KEY_R,
+      ]
+    );
+    this.boSSS.registerContextMenu(
+      this.addNewCommentCommand.bind(this), 
+      'runCommentCommand', 
+      'Insert Comment Box',
+      [
+        monaco.KeyMod.CtrlCmd | monaco.KeyCode.KEY_K,
+      ]
+    );
+    this.boSSS.registerContextMenu(
+      this.removeCommand.bind(this), 
+      'removeCommand', 
+      'Remove Box',
+      [
+        monaco.KeyMod.chord(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KEY_E, monaco.KeyMod.CtrlCmd | monaco.KeyCode.KEY_E)
+      ]
+    );
     this.boSSS.onDidChangeModelContent( this.deleteHandler.bind(this));
     this.boSSS.onDidScrollChange(this.userGUI.updateScroll.bind(this.userGUI));
     this.boSSS.registerLanguage_BoSSS(boSSSRuntime.provideAutoComplete.bind(boSSSRuntime));
