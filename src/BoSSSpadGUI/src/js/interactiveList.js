@@ -195,6 +195,7 @@ export class InteractiveList{
     insertBox( range, BoxType){
       //change range, so that it holds full endline
       range.endColumn = this.editor.getLineLastNonWhitespaceColumn(range.endLineNumber);
+      range.endColumn = range.endColumn + 1;
 
       var newBox;
       //If first box 
