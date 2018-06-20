@@ -640,6 +640,8 @@ namespace CutCellQuadrature {
                     }
                 case Modes.SayeGaussRules: //
                     {
+                    throw new NotImplementedException();
+                    /*
                         volumeFactory = new SayeGaussRule_Volume2D(
                             levelSetTracker.DataHistories[0].Current,
                             rootFindingAlgorithm
@@ -649,6 +651,7 @@ namespace CutCellQuadrature {
                                 Grid.RefElements[0].FaceRefElement, division),
                             order);
                         break;
+                    */
                     }
 
                 case Modes.EquivalentPolynomials: //

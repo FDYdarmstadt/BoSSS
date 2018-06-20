@@ -921,6 +921,7 @@ namespace BoSSS.Application.DerivativeTest {
                 m_passed = m_passed && passed;
                 Console.WriteLine(string.Format("|| /\\f2 Numerical - /\\f2 Analytical ||_2 = {0} (linear evaluation), passed? {1}", err_Lf2, passed));
 
+                /*
                 // comparison of finite difference Jacobian and Operator matrix
                 var FDJbuilder = Laplace.GetFDJacobianBuilder(this.f1.Mapping.Fields, null, this.f1.Mapping,
                     delegate (IEnumerable<DGField> U0, IEnumerable<DGField> Params) {
@@ -941,7 +942,7 @@ namespace BoSSS.Application.DerivativeTest {
                 Console.WriteLine("Finite Difference Jacobian: Matrix/Affine delta norm {0} {1}, passed? {2} {3}", LinfMtx, L2Aff, passed1, passed2);
                 m_passed = m_passed && passed1;
                 m_passed = m_passed && passed2;
-                
+                */
 
                 Console.WriteLine("--------------------------------------------");
             }
