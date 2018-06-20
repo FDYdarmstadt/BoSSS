@@ -1259,14 +1259,14 @@ namespace BoSSS.Application.IBM_Solver {
                 // ==================
 
                 CellMask CutCells = LsTrk.Regions.GetCutCellMask();
-                CellMask CutCellNeighbors = LsTrk.Regions.GetNearFieldMask(1);
-                var CutCellArray = CutCells.ItemEnum.ToArray();
-                var CutCellNeighborsArray = CutCellNeighbors.ItemEnum.ToArray();
-                var AllCells = CutCellArray.Concat(CutCellNeighborsArray).ToArray();
+                //CellMask CutCellNeighbors = LsTrk.Regions.GetNearFieldMask(1);
+                //var CutCellArray = CutCells.ItemEnum.ToArray();
+                //var CutCellNeighborsArray = CutCellNeighbors.ItemEnum.ToArray();
+                //var AllCells = CutCellArray.Concat(CutCellNeighborsArray).ToArray();
+                //var NoCoarseningcells = new CellMask(this.GridData, AllCells);
 
-                var NoCoarseningcells = new CellMask(this.GridData, AllCells);
-
-                bool AnyChange = GridRefinementController.ComputeGridChange(this.GridData, NoCoarseningcells, LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+                // Only CutCells are NoCoarseningCells 
+                bool AnyChange = GridRefinementController.ComputeGridChange(this.GridData, CutCells, LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
                 int NoOfCellsToRefine = 0;
                 int NoOfCellsToCoarsen = 0;
                 if (AnyChange) {
@@ -1302,7 +1302,7 @@ namespace BoSSS.Application.IBM_Solver {
                     old2NewGrid = null;
                 }
 
-                debug = false;
+                //debug = false;
 
             } else {
 
