@@ -310,7 +310,7 @@ namespace BoSSS.Application.IBM_Solver {
             // basic database options
             // ======================
             C.DbPath = @"\\dc1\userspace\krause\BoSSS_DBs\Sphere3D";
-            C.savetodb = false;
+            C.savetodb = true;
             C.ProjectName = "Sphere3D";
             C.SessionName = "Sphere3D_" + k + "_Re350";
             C.Tags.Add("with immersed boundary method");
