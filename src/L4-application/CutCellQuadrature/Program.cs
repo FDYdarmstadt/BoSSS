@@ -640,8 +640,15 @@ namespace CutCellQuadrature {
                     }
                 case Modes.SayeGaussRules: //
                     {
-
-                        throw new NotImplementedException("todo");
+                        volumeFactory = new SayeGaussRule_Volume2D(
+                            levelSetTracker.DataHistories[0].Current,
+                            rootFindingAlgorithm
+                            );
+                        edgeFactory = new CutCellQuadRuleFactory(
+                            new BruteForceSubdivisionStrategy(
+                                Grid.RefElements[0].FaceRefElement, division),
+                            order);
+                        break;
                     }
 
                 case Modes.EquivalentPolynomials: //
