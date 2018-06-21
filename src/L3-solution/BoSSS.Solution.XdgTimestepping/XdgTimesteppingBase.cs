@@ -478,7 +478,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                             maxKrylovDim = Config_MaxKrylovDim,
                             MaxIter = Config_MaxIterations,
                             MinIter = Config_MinIterations,
-                            ApproxJac = Newton.ApproxInvJacobianOptions.DirectSolverOpMatrix,
+                            ApproxJac = Newton.ApproxInvJacobianOptions.DirectSolver,
                             Precond = Config_linearSolver,
                             GMRESConvCrit = Config_SolverConvergenceCriterion,
                             ConvCrit = Config_SolverConvergenceCriterion,
