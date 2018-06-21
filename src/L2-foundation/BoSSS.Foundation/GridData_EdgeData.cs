@@ -417,6 +417,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 continue; // this edge is already in the list
                             // we use the most significant bit to mark processed edges
 
+                            Single(dnsjdkvnskj)
                             GridCommons.Neighbour cn_je = CellNeighbours_Global[j].ElementAt(e);
 
                             // if we reach this point, we've found a new edge

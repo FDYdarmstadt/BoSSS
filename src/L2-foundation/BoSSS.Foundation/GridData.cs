@@ -1185,8 +1185,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                             }
                             cnt++;
                         } else {
-                            ClNg[j][n] = int.MinValue;
-                            cnt++;
+                            //ClNg[j][cnt] = int.MinValue;
+                            //cnt++;
                         }
                     }
 
