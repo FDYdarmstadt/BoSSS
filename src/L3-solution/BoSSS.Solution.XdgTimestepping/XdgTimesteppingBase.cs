@@ -223,7 +223,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         /// <summary>
-        /// in case of coupledIterative the fratro for underrelaxing the level set movement 
+        /// in case of coupledIterative the fratro for under-relaxing the level set movement 
         /// </summary>
         public double IterUnderrelax = 1.0;
 
@@ -495,7 +495,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                             maxKrylovDim = Config_MaxKrylovDim,
                             MaxIter = Config_MaxIterations,
                             MinIter = Config_MinIterations,
-                            ApproxJac = Newton.ApproxInvJacobianOptions.DirectSolver,
+                            ApproxJac = Newton.ApproxInvJacobianOptions.GMRES,
                             Precond = Config_linearSolver,
                             //Precond = new RheologyJacobiPrecond() { m_We = 0.1},
                             GMRESConvCrit = Config_SolverConvergenceCriterion,
