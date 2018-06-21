@@ -1185,7 +1185,11 @@ namespace BoSSS.Foundation.Grid.Classic {
                             }
                             cnt++;
                         } else {
+<<<<<<< HEAD
                             //ClNg[j][n] = int.MinValue;
+=======
+                            //ClNg[j][cnt] = int.MinValue;
+>>>>>>> exchange/master
                             //cnt++;
                         }
                     }
