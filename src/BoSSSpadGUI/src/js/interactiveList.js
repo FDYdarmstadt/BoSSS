@@ -102,7 +102,7 @@ export class InteractiveList{
 
     deleteCommandSection(oldRange, newRange){
 
-      var oldBox = this.findBox(oldRange.startLineNumber - 1);
+      var oldBox = this.findBox(oldRange.startLineNumber);
       //Check if Range is contained in oldBox, if so do nothing
       var rangeContainedInBox = false;
       if(oldBox != null)
@@ -195,6 +195,7 @@ export class InteractiveList{
     insertBox( range, BoxType){
       //change range, so that it holds full endline
       range.endColumn = this.editor.getLineLastNonWhitespaceColumn(range.endLineNumber);
+      range.endColumn = range.endColumn + 1;
 
       var newBox;
       //If first box 
