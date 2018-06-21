@@ -33,7 +33,7 @@ namespace CNS {
 
     public static class TestCases {
 
-        public static CNSControl ShockTube(string dbPath = null, int savePeriod = 100, int dgDegree = 0, double sensorLimit = 1e-3, double CFLFraction = 0.2, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 2, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, int refinementLevel = 9) {
+        public static CNSControl ShockTube(string dbPath = null, int savePeriod = 100, int dgDegree = 3, int numOfCellsX = 50, int numOfCellsY = 50, double sensorLimit = 1e-3, double dtFixed = 0.0, double CFLFraction = 0.1, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, int refinementLevel = 0) {
             CNSControl c = new CNSControl();
 
             // ### Database ###
@@ -47,7 +47,7 @@ namespace CNS {
             c.saveperiod = savePeriod;
             c.PrintInterval = 1;
 
-            c.WriteLTSLog = false;
+            c.WriteLTSLog = true;
 
             // ### Partitioning and load balancing ###
             c.GridPartType = GridPartType.METIS;
@@ -59,6 +59,9 @@ namespace CNS {
 
             // ### Shock-Capturing ###
             bool AV = false;
+            if (dgDegree > 0) {
+                AV = true;
+            }
             if (AV) {
                 c.ActiveOperators = Operators.Convection | Operators.ArtificialViscosity;
             } else {
@@ -72,8 +75,8 @@ namespace CNS {
                 Variable sensorVariable = Variables.Density;
                 c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
                 c.AddVariable(Variables.ShockSensor, 0);
-                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: lambdaMax);    // fix lambdaMax
-                //c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);    // dynamic lambdaMax
+                //c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: lambdaMax);    // fix lambdaMax
+                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);    // dynamic lambdaMax
             }
 
             // ### Time-Stepping ###
@@ -122,9 +125,10 @@ namespace CNS {
             double yMin = 0;
             double yMax = 1;
 
-            int numOfCellsX = 16 * (int)Math.Pow(2, refinementLevel);
+            //int numOfCellsX = 16 * (int)Math.Pow(2, refinementLevel);
+            //int numOfCellsY = 16 * (int)Math.Pow(2, refinementLevel);
             //int numOfCellsY = 4 * (int)Math.Pow(2, refinementLevel);
-            int numOfCellsY = 1;
+            //int numOfCellsY = 1;
 
             c.GridFunc = delegate {
                 double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
@@ -214,8 +218,11 @@ namespace CNS {
             // ### Time configuration ###
             c.dtMin = 0.0;
             c.dtMax = 1.0;
-            //c.CFLFraction = CFLFraction;
-            c.dtFixed = 1e-5;
+            if (dtFixed != 0.0) {
+                c.dtFixed = dtFixed;
+            } else {
+                c.CFLFraction = CFLFraction;
+            }
             c.Endtime = 0.25;
             c.NoOfTimesteps = int.MaxValue;
 
@@ -870,7 +877,7 @@ namespace CNS {
             return c;
         }
 
-        public static CNSControl ShockVortexInteraction(string dbPath = null, int savePeriod = 100, int dgDegree = 2, double sensorLimit = 1e-3, double CFLFraction = 0.2, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 0, int reclusteringInterval = 0, int maxNumOfSubSteps = 0, double Mv = 0.7, double Ms = 1.5) {
+        public static CNSControl ShockVortexInteraction(string dbPath = null, int savePeriod = 1000, int dgDegree = 2, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double Mv = 0.7, double Ms = 1.5) {
             CNSControl c = new CNSControl();
 
             // ### Database ###
@@ -884,6 +891,8 @@ namespace CNS {
             c.saveperiod = savePeriod;
             c.PrintInterval = 1;
 
+            c.WriteLTSLog = true;
+
             // ### Partitioning and load balancing ###
             c.GridPartType = GridPartType.METIS;
             c.DynamicLoadBalancing_On = false;
@@ -893,7 +902,10 @@ namespace CNS {
             //c.DynamicLoadBalancing_CellCostEstimatorFactories.Add((prog, i) => new StaticCellCostEstimator(new[] { 1, 10 }));
 
             // ### Shock-Capturing ###
-            bool AV = true;
+            bool AV = false;
+            if (dgDegree > 0) {
+                AV = true;
+            }
             if (AV) {
                 c.ActiveOperators = Operators.Convection | Operators.ArtificialViscosity;
             } else {

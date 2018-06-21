@@ -173,8 +173,6 @@ namespace BoSSS.Solution.Multigrid {
             this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, CurrentState.ToArray(), false);
             Debug.Assert(OpMtxRaw == null);
 
-            //OpMtxRaw.SpMV(alpha, new CoordinateVector(CurrentState.ToArray()), 1.0, OpAffineRaw);
-
             CurrentLin.TransformRhsInto(OpAffineRaw, Output);
 
         }

@@ -223,7 +223,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         /// <summary>
-        /// in case of coupledIterative the fratro for underrelaxing the level set movement 
+        /// in case of coupledIterative the fratro for under-relaxing the level set movement 
         /// </summary>
         public double IterUnderrelax = 1.0;
 
