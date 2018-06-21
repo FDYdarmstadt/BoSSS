@@ -152,6 +152,7 @@ export class RunBox extends BoxWithMenu {
     constructor(element, parentBox){
         super(element, parentBox);
         var hasReadoutContent = false;
+        this.img = null;
     }
 
     runButtonSymbol(){
@@ -190,10 +191,15 @@ export class RunBox extends BoxWithMenu {
           this.hasReadoutContent = true;
           readoutNode.appendChild(text);
         }
+        if(this.img != null){
+          readoutNode.removeChild(this.img);
+          this.img = null;
+        }
         if (result.Item2 != null){
-          var img = new Image();
-          img.src = 'data:image/gif;base64,'+ result.Item2;
-          readoutNode.appendChild(img);
+           
+          this.img = new Image();
+          this.img.src = 'data:image/gif;base64,'+ result.Item2;
+          readoutNode.appendChild(this.img);
         }
         
     }

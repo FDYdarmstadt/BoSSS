@@ -62,7 +62,7 @@ export class Editor{
       return monacoCompletions;
     }
 
-    registerContextMenu(func, myId, myName){
+    registerContextMenu(func, myId, myName, keyBindingArray){
       //Add Run Template
       this.monaco.addAction({
         // An unique identifier of the contributed action.
@@ -76,6 +76,8 @@ export class Editor{
   
         // A rule to evaluate on top of the precondition in order to dispatch the keybindings.
         keybindingContext: null,
+
+        keybindings: keyBindingArray,
   
         contextMenuGroupId: 'navigation',
   
