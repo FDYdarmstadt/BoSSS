@@ -1176,9 +1176,9 @@ namespace BoSSS.Application.IBM_Solver {
 
             double dt = Convert.ToDouble(fields_line2[1]) - Convert.ToDouble(fields_line1[1]);
 
-            int idx_restartLine = Convert.ToInt32(time / dt + 1.0);
-            string restartLine = File.ReadLines(pathToPhysicalData).Skip(idx_restartLine - 1).Take(1).First();
-            double[] values = Array.ConvertAll<string, double>(restartLine.Split('\t'), double.Parse);
+            //int idx_restartLine = Convert.ToInt32(time / dt + 1.0);
+            //string restartLine = File.ReadLines(pathToPhysicalData).Skip(idx_restartLine - 1).Take(1).First();
+            //double[] values = Array.ConvertAll<string, double>(restartLine.Split('\t'), double.Parse);
 
             /* string restartLine = "";
               Calculcation of dt 
@@ -1215,7 +1215,7 @@ namespace BoSSS.Application.IBM_Solver {
                     firstline = String.Format("{0}\t{1}\t{2}\t{3}", "#Timestep", "#Time", "x-Force", "y-Force");
                 }
                 Log_DragAndLift.WriteLine(firstline);
-                Log_DragAndLift.WriteLine(restartLine);
+                //Log_DragAndLift.WriteLine(restartLine);
             }
 
         }
