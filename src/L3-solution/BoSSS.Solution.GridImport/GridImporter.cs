@@ -83,11 +83,15 @@ namespace BoSSS.Solution.GridImport {
                 csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out myrank);
                 csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
 
+                ImporterTypes importerType = default(ImporterTypes);
+                if (myrank == 0) {
+                    importerType = GetImporterType(fileName);
+                }
+                importerType = importerType.MPIBroadcast(0);
+                
+
 
                 if (myrank == 0) {
-
-                    ImporterTypes importerType = GetImporterType(fileName);
-
                     tr.Info(string.Format("Loading {0} file '{1}'...", importerType.ToString(), fileName));
                     IGridImporter importer;
                     using (new BlockTrace("Import", tr)) {
