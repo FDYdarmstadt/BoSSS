@@ -80,6 +80,7 @@ namespace BoSSS.Application.DerivativeTest {
 #endif
             DerivativeTestMain.GRID_CASE = gridCase;
             DerivativeTestMain p = null;
+            DerivativeTestMain.GRID_FILE = null;
             Quadrature_Bulksize.CHUNK_DATA_LIMIT = bulksize_limit;
             BoSSS.Foundation.Caching.Cache.MaxMem = cache_size;
 
@@ -177,7 +178,7 @@ namespace BoSSS.Application.DerivativeTest {
         /// <summary>
         /// Grid/mesh file to use, see implementation of <see cref="CreateOrLoadGrid"/>.
         /// </summary>
-        public static string GRID_FILE = "..\\..\\TestGrids\\wedding2D_v16.cgns";
+        public static string GRID_FILE = "..\\..\\TestGrids\\box2d.cgns";
 
         /// <summary>
         /// Application entry point.
@@ -192,7 +193,7 @@ namespace BoSSS.Application.DerivativeTest {
             // ==============
 
 
-            for (int i = 3; i <= 3; i++) {
+            for (int i = 50; i <= 50; i++) {
                 BoSSS.Solution.Application._Main(args, true,  delegate () {
                     var R = new DerivativeTestMain();
                     GRID_CASE = i;
@@ -920,6 +921,7 @@ namespace BoSSS.Application.DerivativeTest {
                 m_passed = m_passed && passed;
                 Console.WriteLine(string.Format("|| /\\f2 Numerical - /\\f2 Analytical ||_2 = {0} (linear evaluation), passed? {1}", err_Lf2, passed));
 
+                /*
                 // comparison of finite difference Jacobian and Operator matrix
                 var FDJbuilder = Laplace.GetFDJacobianBuilder(this.f1.Mapping.Fields, null, this.f1.Mapping,
                     delegate (IEnumerable<DGField> U0, IEnumerable<DGField> Params) {
@@ -940,7 +942,7 @@ namespace BoSSS.Application.DerivativeTest {
                 Console.WriteLine("Finite Difference Jacobian: Matrix/Affine delta norm {0} {1}, passed? {2} {3}", LinfMtx, L2Aff, passed1, passed2);
                 m_passed = m_passed && passed1;
                 m_passed = m_passed && passed2;
-                
+                */
 
                 Console.WriteLine("--------------------------------------------");
             }
