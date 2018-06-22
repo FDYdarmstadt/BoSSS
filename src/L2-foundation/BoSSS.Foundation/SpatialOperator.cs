@@ -1579,8 +1579,18 @@ namespace BoSSS.Foundation {
                 int J = gDat.iLogicalCells.NoOfLocalUpdatedCells;
                 int JE = gDat.iLogicalCells.NoOfCells;
 
+#if DEBUG
+                    for (int j = 0; j < J; j++) {
+                        int[] CN = Neighs[j];
+                        foreach(int jN in CN) {
+                            Debug.Assert(jN >= 0);
+                            Debug.Assert(jN != j);
+                        }
+                    }
+#endif
+
                 int[] LocalMarker = new int[JE]; //    marker for blocked in the current pass 
-                int[] ExchangedMarker = new int[JE]; //  accumulation buffer for MPI excange
+                int[] ExchangedMarker = new int[JE]; //  accumulation buffer for MPI exchange
                 BitArray Colored = new BitArray(JE); // all cells which are already colored
                 BitArray ColoredPass = new BitArray(JE); // all cells which are colored in current pass
                 int[] LocalColorCause = new int[JE];
@@ -1638,12 +1648,13 @@ namespace BoSSS.Foundation {
                     }
 
                     for(int je = 0; je < JE; je++) {
-                        if(LocalMarker[je] != ExchangedMarker[je]) {
+                        if(LocalMarker[je] < int.MaxValue && LocalMarker[je] != ExchangedMarker[je]) {
                             // some parallel conflict detected: this rank has to remove some cell
 
                             Debug.Assert(LocalMarker[je] > ExchangedMarker[je]);
 
                             int jToRemove = LocalColorCause[je];
+                            Debug.Assert(jToRemove < J);
                             Debug.Assert(ColoredPass[jToRemove] == true);
                             Debug.Assert(Colored[jToRemove] == true);
                             ColoredPass[jToRemove] = false;
@@ -1656,6 +1667,7 @@ namespace BoSSS.Foundation {
 
                         }
                     }
+
 #if DEBUG
                     Array.Copy(LocalMarker, ExchangedMarker, JE);
                     ExchangedMarker.MPIExchange(gDat);
@@ -1955,6 +1967,10 @@ namespace BoSSS.Foundation {
 
                 }
 
+                // restore original state before return
+                // ====================================
+                U0.SetV(U0backup);
+                DelParamUpdate(domFields, Eval.Parameters.ToArray());
                 //Console.WriteLine("Total number of evaluations: " + NoOfEvals);
             }
 
