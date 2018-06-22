@@ -1591,7 +1591,7 @@ namespace BoSSS.Foundation {
 
                 int[] LocalMarker = new int[JE]; //    marker for blocked in the current pass 
                 int[] ExchangedMarker = new int[JE]; //  accumulation buffer for MPI exchange
-                BitArray Colored = new BitArray(JE); // all cells which are already colored
+                BitArray Colored = new BitArray(JE); // all cells which are already colored (in previous passes)
                 BitArray ColoredPass = new BitArray(JE); // all cells which are colored in current pass
                 int[] LocalColorCause = new int[JE];
 
@@ -1606,20 +1606,20 @@ namespace BoSSS.Foundation {
                     // find next color list
                     // ====================
 
-                    LocalMarker.SetAll(int.MaxValue);
+                    Array.Clear(LocalMarker, 0, LocalMarker.Length);// LocalMarker.SetAll(int.MaxValue);
                     ColoredPass.SetAll(false);
 
                     for(int j = 0; j < J; j++) {
                         if (Colored[j] == true)
                             continue;
-                        if (LocalMarker[j] != int.MaxValue)
+                        if (LocalMarker[j] != 0)
                             continue;
 
                         int[] Neighs_j = Neighs[j];
                         Debug.Assert(Neighs_j.Contains(j) == false, "Cell seems to be its own neighbor.");
                         bool cont = false;
                         foreach(int jn in Neighs_j) {
-                            if(LocalMarker[jn] != int.MaxValue) {
+                            if(LocalMarker[jn] != 0) {
                                 cont = true;
                                 break;
                             }
@@ -1629,11 +1629,10 @@ namespace BoSSS.Foundation {
 
                         // if we reached this point, we finally found a cell which we are allowed to add to the current color set.
                         ColoredPass[j] = true;                        
-                        Colored[j] = true;
                         LocalMarker[j] = myMarkerToken;
                         LocalColorCause[j] = j;
                         foreach(int jn in Neighs_j) {
-                            LocalMarker[jn] = myMarkerToken;
+                            LocalMarker[jn] = -myMarkerToken; // mark neighbor cells with negative token!
                             LocalColorCause[jn] = j;
                         }
                     }
@@ -1641,41 +1640,47 @@ namespace BoSSS.Foundation {
                     // fix parallel conflicts
                     // ======================
 
-                    Array.Copy(LocalMarker, ExchangedMarker, JE);
-                    ExchangedMarker.MPIExchange(gDat);
-                    for(int je = 0; je < JE; je++) {
-                        ExchangedMarker[je] = Math.Min(LocalMarker[je], ExchangedMarker[je]);
-                    }
+                    if(gDat.MpiSize > 1) {
+                        Array.Copy(LocalMarker, ExchangedMarker, JE);
+                        ExchangedMarker.MPIExchange(gDat);
+                        //for(int je = 0; je < JE; je++) {
+                        //    ExchangedMarker[je] = Math.Min(LocalMarker[je], ExchangedMarker[je]);
+                        //}
 
-                    for(int je = 0; je < JE; je++) {
-                        if(LocalMarker[je] < int.MaxValue && LocalMarker[je] != ExchangedMarker[je]) {
-                            // some parallel conflict detected: this rank has to remove some cell
+                        for(int je = 0; je < JE; je++) {
+                            if(LocalMarker[je] != 0 && ExchangedMarker[je] != 0) {
 
-                            Debug.Assert(LocalMarker[je] > ExchangedMarker[je]);
+                                // some parallel conflict detected: one of the two ranks has to yield
 
-                            int jToRemove = LocalColorCause[je];
-                            Debug.Assert(jToRemove < J);
-                            Debug.Assert(ColoredPass[jToRemove] == true);
-                            Debug.Assert(Colored[jToRemove] == true);
-                            ColoredPass[jToRemove] = false;
-                            Colored[jToRemove] = false;
-                            LocalMarker[jToRemove] = int.MaxValue;
-                            int[] Neighs_jToRemove = Neighs[jToRemove];
-                            foreach(int jn in Neighs_jToRemove) {
-                                LocalMarker[jn] = int.MaxValue;
+                                if(Math.Abs(ExchangedMarker[je]) > 0 && ExchangedMarker[je] > myMarkerToken) {
+                                    // the other rank should yield
+                                } else {
+                                    // this rank has to yield
+
+                                    int jToRemove = LocalColorCause[je];
+                                    Debug.Assert(jToRemove < J);
+                                    Debug.Assert(ColoredPass[jToRemove] == true);
+
+                                    ColoredPass[jToRemove] = false;
+                                    LocalMarker[jToRemove] = 0;
+                                    int[] Neighs_jToRemove = Neighs[jToRemove];
+                                    foreach(int jn in Neighs_jToRemove) {
+                                        LocalMarker[jn] = 0;
+                                    }
+
+                                }
                             }
 
                         }
-                    }
 
 #if DEBUG
-                    Array.Copy(LocalMarker, ExchangedMarker, JE);
-                    ExchangedMarker.MPIExchange(gDat);
-                    for(int je = 0; je < JE; je++) {
-                        Debug.Assert(ExchangedMarker[je] == Math.Min(LocalMarker[je], ExchangedMarker[je]));
-                    }
+                        Array.Copy(LocalMarker, ExchangedMarker, JE);
+                        ExchangedMarker.MPIExchange(gDat);
+                        for(int je = 0; je < JE; je++) {
+                            Debug.Assert(ExchangedMarker[je] == 0 || LocalMarker[je] == 0, "Error in conflict resolution.");
+                        }
 #endif
-
+                    }
                     // remember recently found color list
                     // ==================================
                     CellList.Clear();
@@ -1683,9 +1688,16 @@ namespace BoSSS.Foundation {
                         if(ColoredPass[j]) {
                             locColoredCells++;
                             CellList.Add(j);
+                            Debug.Assert(Colored[j] == false);
+                            Colored[j] = true;
                         }
                     }
+                    int LocColoredPass = CellList.Count;
                     ColorListsTmp.Add(CellList.ToArray());
+
+
+                    int GlobColoredPass = LocColoredPass.MPISum();
+                    Console.WriteLine("Colored in pass {0}: {1}", ColorListsTmp.Count, GlobColoredPass);
 
                     // check for loop termination
                     // ==========================
