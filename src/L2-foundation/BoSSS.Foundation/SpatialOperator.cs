@@ -1795,6 +1795,7 @@ namespace BoSSS.Foundation {
                 DGField[] domFields = Eval.DomainFields.Fields.ToArray();
                 var U0 = new CoordinateVector(Eval.DomainFields);
 
+                int j0 = Eval.GridData.CellPartitioning.i0;
                 int J = Eval.GridData.iLogicalCells.NoOfLocalUpdatedCells;
                 int NoOfDomFields = domMap.BasisS.Count;
                 int NoOfCodFields = codMap.BasisS.Count;
@@ -1845,8 +1846,6 @@ namespace BoSSS.Foundation {
 
                 // compute directional derivatives
                 // ===============================
-
-                Debugger.Launch();
 
                 double[] U0backup = new double[Lin];
                 double[] EvalBuf = new double[Lout];
@@ -1920,7 +1919,9 @@ namespace BoSSS.Foundation {
                                 } else {
                                     jRow = Neighs_j[k - 1];
                                 }
-                                                                                              
+
+                                if(jRow >= J)
+                                    continue; // external cell; should be treated on other proc.
 
                                 int i0Row = codMap.LocalUniqueCoordinateIndex(0, jRow, 0);
                                 int NoOfRows = codMap.GetBlockLen(jRow);
@@ -1977,12 +1978,19 @@ namespace BoSSS.Foundation {
                                 jRow = Neighs_j[k - 1];
                             }
 
+                            if(jRow >= J)
+                                continue; // external cell; should be treated on other proc.
+
+
                             int i0Row = domMap.LocalUniqueCoordinateIndex(0, jRow, 0);
                             int iERow = domMap.LocalUniqueCoordinateIndex(NoOfCodFields - 1, jRow, lastCodB.GetLength(jRow) - 1);
 
                             var Block = Buffer.ExtractSubArrayShallow(new int[] { i0Row, 0 }, new int[] { iERow, iECol - i0Col });
 
-                            Matrix.AccBlock(i0Row + codMap.i0, i0Col + domMap.i0, 1.0, Block);
+                            Matrix.AccBlock(i0Row + codMap.i0, 
+                                //i0Col + domMap.i0, 
+                                domMap.GlobalUniqueCoordinateIndex(0, jCol, 0),
+                                1.0, Block);
                         }
                     }
 
