@@ -310,7 +310,7 @@ namespace BoSSS.Application.IBM_Solver {
             // basic database options
             // ======================
             C.DbPath = @"\\dc1\userspace\krause\BoSSS_DBs\Sphere3D";
-            C.savetodb = false;
+            C.savetodb = true;
             C.ProjectName = "Sphere3D";
             C.SessionName = "Sphere3D_" + k + "_Re350";
             C.Tags.Add("with immersed boundary method");
@@ -352,7 +352,7 @@ namespace BoSSS.Application.IBM_Solver {
             Console.WriteLine("...loading grid");
             C.GridGuid = new Guid("1a672505-e301-4271-9c7d-050770f48abc");
 
-            C.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("9bbe7f37-e450-4732-a357-fb875ae72a63"), -1);
+            C.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("d1e5a259-d969-4832-a22e-f8a48b2b7a36"), -1);
 
             //#region Creates grid () and sets BC
             ////// Create Grid
