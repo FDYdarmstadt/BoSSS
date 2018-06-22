@@ -113,8 +113,8 @@ namespace BoSSS.Solution.Multigrid {
                 using (new BlockTrace("Slv Init", tr)) {
                     base.Init(SolutionVec, RHS, out x, out f0);
                 };
-
-                Console.WriteLine("Residual base.init:   " + f0.L2NormPow2().MPISum().Sqrt());
+               
+                //Console.WriteLine("Residual base.init:   " + f0.L2NormPow2().MPISum().Sqrt());
 
 
                 deltaX = new double[x.Length];
@@ -123,7 +123,10 @@ namespace BoSSS.Solution.Multigrid {
 
 
                 this.CurrentLin.TransformSolFrom(SolutionVec, x);
-                base.EvalResidual(x, ref f0);
+                EvaluateOperator(1, SolutionVec.Mapping.ToArray(), f0);
+
+                Console.WriteLine("Residual base.init:   " + f0.L2NormPow2().MPISum().Sqrt());
+                //base.EvalResidual(x, ref f0);
 
                 // fnorm
                 double fnorm = f0.L2NormPow2().MPISum().Sqrt();
@@ -151,22 +154,18 @@ namespace BoSSS.Solution.Multigrid {
 
                         // How should the inverse of the Jacobian be approximated?
                         if (ApproxJac == ApproxInvJacobianOptions.GMRES) {
-                            var CurrentJac = new MsrMatrix(x.Length);
                             if (Precond != null) {
                                 Precond.Init(CurrentLin);
                             }
+                            //base.EvalResidual(x, ref f0);
+                            f0.ScaleV(-1.0);
                             step = Krylov(SolutionVec, x, f0, out errstep);
                         } else if (ApproxJac == ApproxInvJacobianOptions.DirectSolver) {
-                            var CurrentJac = diffjac(SolutionVec, x, f0);
-                            //MsrMatrix CurrentJac2 = bandeddiffjac(SolutionVec, x, f0);
-                            //CurrentJac = freebandeddiffjac(SolutionVec, x, f0);
-                            CurrentJac.SaveToTextFileSparse("Jacobi");
-                            //CurrentJac2.SaveToTextFileSparse("Jacobi2");
-                            //Debug.Assert(CurrentJac.Equals(CurrentJac2));
-                            CurrentLin.OperatorMatrix.SaveToTextFileSparse("OpMatrix");
+                            var CurrentJac = CurrentLin.OperatorMatrix;
                             var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
                             solver.DefineMatrix(CurrentJac);
                             step.ClearEntries();
+                            f0.ScaleV(-1.0);
                             solver.Solve(step, f0);
 
                         } else if (ApproxJac == ApproxInvJacobianOptions.DirectSolverHybrid) {
@@ -322,7 +321,7 @@ namespace BoSSS.Solution.Multigrid {
                             solver.DefineMatrix(CurrentJac);
                             step.ClearEntries();
                             solver.Solve(step, f0);
-                            
+
                         } else {
                             throw new NotImplementedException("Your approximation option for the jacobian seems not to be existent.");
                         }
@@ -357,7 +356,7 @@ namespace BoSSS.Solution.Multigrid {
                         xt.AccV(lambda, step);
                         this.CurrentLin.TransformSolFrom(SolutionVec, xt);
 
-                        EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);                        
+                        EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);
 
                         double nft = ft.L2NormPow2().MPISum().Sqrt();
                         double nf0 = f0.L2NormPow2().MPISum().Sqrt();
@@ -388,8 +387,9 @@ namespace BoSSS.Solution.Multigrid {
                             ffm = ffc;
                             ffc = nft * nft;
                             iarm++;
-
+#if DEBUG
                             Console.WriteLine("Step size:  " + lambda + "with Residuum:  " + nft);
+#endif 
                         }
                         // transform solution back to 'original domain'
                         // to perform the linearization at the new point...
@@ -400,9 +400,9 @@ namespace BoSSS.Solution.Multigrid {
                         base.Update(SolutionVec.Mapping.Fields, ref xt);
 
                         // residual evaluation & callback
-                        base.EvalResidual(xt, ref ft);
+                        //base.EvalResidual(xt, ref ft);
 
-                        //EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);
+                        EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);
 
                         fnorm = ft.L2NormPow2().MPISum().Sqrt();
 
@@ -517,13 +517,12 @@ namespace BoSSS.Solution.Multigrid {
                 int k = 1;
 
                 while ((rho > GMRESConvCrit) && k <= m) {
-
                     V[k].SetV(dirder(SolutionVec, currentX, V[k - 1], f0));
                     //CurrentLin.OperatorMatrix.SpMV(1.0, V[k-1], 0.0, temp3);
                     // Call directional derivative
                     //V[k].SetV(f0);
 
-                    if (Precond != null) {
+                    if (Precond != null) {                   
                         var temp3 = V[k].CloneAs();
                         V[k].ClearEntries();
                         //this.OpMtxRaw.InvertBlocks(false,false).SpMV(1, temp3, 0, V[k]);
@@ -662,7 +661,7 @@ namespace BoSSS.Solution.Multigrid {
         /// <param name="f0">f0, usually has been calculated earlier</param>
         /// <param name="linearization">True if the Operator should be linearized and evaluated afterwards</param>
         /// <returns></returns>
-        public double[] dirder(CoordinateVector SolutionVec, double[] currentX, double[] w, double[] f0, bool linearization = true) {
+        public double[] dirder(CoordinateVector SolutionVec, double[] currentX, double[] w, double[] f0, bool linearization = false) {
             using (var tr = new FuncTrace()) {
                 double epsnew = 1E-7;
 
@@ -700,11 +699,12 @@ namespace BoSSS.Solution.Multigrid {
                 //CurrentLin.TransformRhsInto(OpAffineRaw, fx);
                 if (linearization == false) {
                     EvaluateOperator(1.0, SolutionVec.Mapping.Fields, fx);
-                } else {
-                    this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, SolutionVec.Mapping.Fields.ToArray(), true);
-                    OpMtxRaw.SpMV(1.0, new CoordinateVector(SolutionVec.Mapping.Fields.ToArray()), 1.0, OpAffineRaw);
-                    CurrentLin.TransformRhsInto(OpAffineRaw, fx);
-                }
+                } 
+                //else {
+                //    this.m_AssembleMatrix(out OpMtxRaw, out OpAffineRaw, out MassMtxRaw, SolutionVec.Mapping.Fields.ToArray(), true);
+                //    OpMtxRaw.SpMV(1.0, new CoordinateVector(SolutionVec.Mapping.Fields.ToArray()), 1.0, OpAffineRaw);
+                //    CurrentLin.TransformRhsInto(OpAffineRaw, fx);
+                //}
 
                 SolutionVec.CopyEntries(temp);
 
@@ -827,18 +827,16 @@ namespace BoSSS.Solution.Multigrid {
             return jac;
         }
 
-        public int Bandwidth(double [] currentX) {
+        public int Bandwidth(double[] currentX) {
             int beta;
             int dim = currentX.Length;
             int full_bandwidth_row;
             BlockMsrMatrix OpMatrix = CurrentLin.OperatorMatrix;
             double[] b = new double[dim];
 
-            for (int j = 0; j< dim; j++)
-            {
-                for (int i = dim-1; i>=0; i--)
-                {
-                    if (OpMatrix[j,i] != 0) {
+            for (int j = 0; j < dim; j++) {
+                for (int i = dim - 1; i >= 0; i--) {
+                    if (OpMatrix[j, i] != 0) {
 
                         b[j] = i - j;
                         break;
@@ -846,7 +844,7 @@ namespace BoSSS.Solution.Multigrid {
                     }
 
                 }
-                
+
             }
 
             beta = (int)b.Max();
@@ -856,8 +854,7 @@ namespace BoSSS.Solution.Multigrid {
 
         }
 
-        public BlockMsrMatrix freebandeddiffjac(CoordinateVector SolutionVec, double[] currentX, double[] f0)
-        {
+        public BlockMsrMatrix freebandeddiffjac(CoordinateVector SolutionVec, double[] currentX, double[] f0) {
             int n = currentX.Length;
             BlockMsrMatrix jac = new BlockMsrMatrix(SolutionVec.Mapping);
             int beta = Bandwidth(currentX);
@@ -865,22 +862,18 @@ namespace BoSSS.Solution.Multigrid {
 
             var temp = new double[n];
 
-            for (int k = 0; k < beta; k++)
-            {
+            for (int k = 0; k < beta; k++) {
                 var zz = new double[n];
 
-                for (int i = 0; i < number_Cells; i++)
-                {
+                for (int i = 0; i < number_Cells; i++) {
                     zz[i * beta + k] = 1;
 
                 }
                 temp = dirder(SolutionVec, currentX, zz, f0);
 
 
-                for (int i = 0; i < number_Cells; i++)
-                {
-                    for (int j = i * beta + k; j < (i + 1) * beta; j++)
-                    {
+                for (int i = 0; i < number_Cells; i++) {
+                    for (int j = i * beta + k; j < (i + 1) * beta; j++) {
                         jac[j, i * beta + k] = temp[j];
                     }
                 }
@@ -889,8 +882,7 @@ namespace BoSSS.Solution.Multigrid {
             return jac;
         }
 
-        public BlockMsrMatrix bandeddiffjac(CoordinateVector SolutionVec, double[] currentX, double[] f0)
-        {
+        public BlockMsrMatrix bandeddiffjac(CoordinateVector SolutionVec, double[] currentX, double[] f0) {
             int dimension = SolutionVec.Mapping.GridDat.SpatialDimension;
 
             int degree_VelocityX = SolutionVec.Mapping.Fields[0].Basis.Degree;
@@ -908,18 +900,15 @@ namespace BoSSS.Solution.Multigrid {
             if (dimension == 2) {
                 degree_Pressure = SolutionVec.Mapping.Fields[2].Basis.Degree;
 
-                if (NoVariables > 4)
-                {
+                if (NoVariables > 4) {
                     degree_StressXX = SolutionVec.Mapping.Fields[3].Basis.Degree;
                     degree_StressXY = SolutionVec.Mapping.Fields[4].Basis.Degree;
                     degree_StressYY = SolutionVec.Mapping.Fields[5].Basis.Degree;
                 }
-            }
-            else if (dimension == 3) {
+            } else if (dimension == 3) {
                 degree_VelocityZ = SolutionVec.Mapping.Fields[2].Basis.Degree;
                 degree_Pressure = SolutionVec.Mapping.Fields[3].Basis.Degree;
-            }
-            else throw new ArgumentException();
+            } else throw new ArgumentException();
 
 
             int factor = 1;
@@ -937,28 +926,24 @@ namespace BoSSS.Solution.Multigrid {
                 PI_VelocityY *= degree_VelocityY + i;
                 PI_Pressure *= degree_Pressure + i;
 
-                if (dimension == 3)
-                {
+                if (dimension == 3) {
                     PI_VelocityZ *= degree_VelocityZ + i;
                 }
 
-                if (NoVariables > 4)
-                {
+                if (NoVariables > 4) {
                     PI_StressXX *= degree_StressXX + i;
                     PI_StressXY *= degree_StressXY + i;
                     PI_StressYY *= degree_StressYY + i;
                 }
             }
 
-            int number_Polynomials = (PI_VelocityX + PI_VelocityY + PI_Pressure)/factor;
+            int number_Polynomials = (PI_VelocityX + PI_VelocityY + PI_Pressure) / factor;
 
-            if (dimension == 3)
-            {
+            if (dimension == 3) {
                 number_Polynomials += PI_VelocityZ / factor;
             }
 
-            if (NoVariables > 4)
-            {
+            if (NoVariables > 4) {
                 number_Polynomials += (PI_StressXX + PI_StressXY + PI_StressYY) / factor;
             }
 
@@ -966,25 +951,21 @@ namespace BoSSS.Solution.Multigrid {
             int number_Cells = n / number_Polynomials;
 
             BlockMsrMatrix jac = new BlockMsrMatrix(SolutionVec.Mapping);
-            
-            var temp = new double[n];           
 
-            for (int k = 0; k < number_Polynomials; k++)
-            {
+            var temp = new double[n];
+
+            for (int k = 0; k < number_Polynomials; k++) {
                 var zz = new double[n];
 
-                for (int i = 0; i < number_Cells; i++)
-                {
+                for (int i = 0; i < number_Cells; i++) {
                     zz[i * number_Polynomials + k] = 1;
 
                 }
                 temp = dirder(SolutionVec, currentX, zz, f0);
 
 
-                for (int i = 0; i < number_Cells; i++)
-                {
-                    for (int j = i * number_Polynomials + k; j < (i + 1) * number_Polynomials; j++)
-                    {
+                for (int i = 0; i < number_Cells; i++) {
+                    for (int j = i * number_Polynomials + k; j < (i + 1) * number_Polynomials; j++) {
                         jac[j, i * number_Polynomials + k] = temp[j];
                     }
                 }
@@ -994,7 +975,7 @@ namespace BoSSS.Solution.Multigrid {
             return jac;
         }
 
-       
+
     }
 
 
