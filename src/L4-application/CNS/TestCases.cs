@@ -982,11 +982,16 @@ namespace CNS {
             return c;
         }
 
-        public static IBMControl IBMDoubleMachReflection(string dbPath = null, int savePeriod = 100, int dgDegree = 2, int numOfCellsX = 200, int numOfCellsY = 400, double sensorLimit = 1e-4, double dtFixed = 0.0, double CFLFraction = 0.1, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double agg = 0.3) {
+        // HPC cluster
+        public static IBMControl IBMDoubleMachReflection(string dbPath = null, int savePeriod = 10, int dgDegree = 2, int numOfCellsX = 100, int numOfCellsY = 70, double sensorLimit = 1e-3, double dtFixed = 0.0, double CFLFraction = 0.1, int explicitScheme = 3, int explicitOrder = 1, int numberOfSubGrids = 2, int reclusteringInterval = 1, int maxNumOfSubSteps = 100, double agg = 0.3, double fugdeFactor = 1.0, double endTime = 0.2) {
+
+            // HHLR
+            //public static IBMControl IBMDoubleMachReflection(int savePeriod = 10, int dgDegree = 2, int numOfCellsX = 100, int numOfCellsY = 70, double sensorLimit = 1e-4, double dtFixed = 0.0, double CFLFraction = 0.1, int explicitScheme = 3, int explicitOrder = 1, int numberOfSubGrids = 2, int reclusteringInterval = 1, int maxNumOfSubSteps = 100, double agg = 0.3, double fugdeFactor = 0.5, double endTime = 0.01) {
+
             IBMControl c = new IBMControl();
 
             //dbPath = @"/work/scratch/ws35kire/work_db";                       // Lichtenberg
-            //dbPath = @"/home/ws35kire/test_db";                               // Lichtenberg
+            //string dbPath = @"/home/yp19ysog/bosss_db_paper_ibmdmr";          // Lichtenberg
             //dbPath = @"c:\bosss_db";                                          // Local
             //dbPath = @"\\dc1\userspace\geisenhofer\bosss_db_IBMShockTube";    // Network
 
@@ -998,9 +1003,9 @@ namespace CNS {
             c.WriteLTSLog = true;
 
             double xMin = 0.0;
-            double xMax = 2.0;
+            double xMax = 1.0;
             double yMin = 0.0;
-            double yMax = 1.4;
+            double yMax = 0.7;
 
             //int numOfCellsX = 200;
             //int numOfCellsY = 140;
@@ -1048,15 +1053,15 @@ namespace CNS {
             c.LevelSetBoundaryTag = "AdiabaticSlipWall";
             c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             c.LevelSetQuadratureOrder = 6;
-            c.AgglomerationThreshold = 0.3;
+            c.AgglomerationThreshold = agg;
             c.SaveAgglomerationPairs = false;
             c.AddVariable(IBMVariables.LevelSet, 2);
 
-            //c.AddVariable(IBMVariables.FluidCells, 1);
-            //c.AddVariable(IBMVariables.FluidCellsWithoutSourceCells, 1);
-            //c.AddVariable(IBMVariables.CutCells, 1);
-            //c.AddVariable(IBMVariables.CutCellsWithoutSourceCells, 1);
-            //c.AddVariable(IBMVariables.SourceCells, 1);
+            c.AddVariable(IBMVariables.FluidCells, 1);
+            c.AddVariable(IBMVariables.FluidCellsWithoutSourceCells, 1);
+            c.AddVariable(IBMVariables.CutCells, 1);
+            c.AddVariable(IBMVariables.CutCellsWithoutSourceCells, 1);
+            c.AddVariable(IBMVariables.SourceCells, 1);
 
             bool AV = true;
 
@@ -1087,18 +1092,17 @@ namespace CNS {
             c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
 
             // Shock-capturing
-            sensorLimit = 1e-4;
             double epsilon0 = 1.0;
-            double kappa = 1.0;
+            //double kappa = 1.0;   // Only set for DMR
+            double kappa = 0.5;     // Set for all other runs
             double lambdaMax = 20;
 
-            if (dgDegree > 0) {
+            if (AV) {
                 Variable sensorVariable = Variables.Density;
                 c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
-            }
-
-            if (AV) {
-                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax);
+                c.AddVariable(Variables.ShockSensor, 0);
+                //c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: lambdaMax);    // fix lambdaMax
+                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, fudgeFactor: fugdeFactor);    // dynamic lambdaMax
             }
 
             c.EquationOfState = IdealGas.Air;
@@ -1123,7 +1127,6 @@ namespace CNS {
                 c.AddVariable(Variables.Schlieren, dgDegree - 1);
             }
             if (AV) {
-                c.AddVariable(Variables.ShockSensor, 0);
                 c.AddVariable(Variables.ArtificialViscosity, 2);
             }
 
@@ -1204,16 +1207,24 @@ namespace CNS {
             // Time config
             c.dtMin = 0.0;
             c.dtMax = 1.0;
-            c.Endtime = 0.2;
-            c.CFLFraction = 0.1;
+            c.Endtime = endTime;
+            c.CFLFraction = CFLFraction;
             c.NoOfTimesteps = int.MaxValue;
 
-            c.ProjectName = "Double Mach Reflection";
+            c.ProjectName = "paper_ibmdmr_hhlr_v0_run0";
 
+            // Session name
             if (c.DynamicLoadBalancing_On) {
                 c.SessionName = String.Format("IBM DMR, p={0}, {1}x{2} cells, s0={3:0.0E-00}, lamdaMax={4}, CFLFrac={5}, ALTS {6}/{7}/Re{8}/Sub{9}, Part={10}/Re{11}/Thresh{12}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, lambdaMax, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps, c.GridPartType.ToString(), c.DynamicLoadBalancing_Period, c.DynamicLoadBalancing_ImbalanceThreshold);
+            } else if (c.ExplicitScheme == ExplicitSchemes.RungeKutta) {
+                c.SessionName = string.Format("IBMDMR_p{0}_xCells{1}_yCells{2}_agg{3}_s0={4:0.0E-00}_ff{5}_dtFixed{6}_CFLFrac{7}_RK{8}",
+                    dgDegree, numOfCellsX, numOfCellsY, agg, sensorLimit, fugdeFactor, dtFixed, CFLFraction, explicitOrder);
+            } else if (c.ExplicitScheme == ExplicitSchemes.AdamsBashforth) {
+                c.SessionName = string.Format("IBMDMR_p{0}_xCells{1}_yCells{2}_agg{3}_s0={4:0.0E-00}_ff{5}_dtFixed{6}_CFLFrac{7}_AB{8}",
+                    dgDegree, numOfCellsX, numOfCellsY, agg, sensorLimit, fugdeFactor, dtFixed, CFLFraction, explicitOrder);
             } else {
-                c.SessionName = String.Format("IBM DMR, p={0}, {1}x{2} cells, s0={3:0.0E-00}, lamdaMax={4}, CFLFrac={5}, ALTS {6}/{7}/Re{8}/Sub{9}, Part={10}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, lambdaMax, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps, c.GridPartType.ToString());
+                c.SessionName = string.Format("IBMDMR_p{0}_xCells{1}_yCells{2}_agg{3}_s0={4:0.0E-00}_ff{5}_dtFixed{6}_CFLFrac{7}_ALTS{8}_{9}_re{10}_subs{11}",
+                    dgDegree, numOfCellsX, numOfCellsY, agg, sensorLimit, fugdeFactor, dtFixed, CFLFraction, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps);
             }
 
             return c;
@@ -1386,5 +1397,6 @@ namespace CNS {
 
             return c;
         }
+
     }
 }
