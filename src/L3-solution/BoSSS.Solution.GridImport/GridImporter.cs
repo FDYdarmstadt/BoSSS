@@ -23,6 +23,7 @@ using BoSSS.Solution.GridImport.Gambit;
 using ilPSP.Tracing;
 using BoSSS.Foundation.Grid.Classic;
 using MPI.Wrappers;
+using BoSSS.Foundation.Grid.RefElements;
 
 namespace BoSSS.Solution.GridImport {
 
@@ -123,7 +124,11 @@ namespace BoSSS.Solution.GridImport {
 
                     return grid;
                 } else {
-                    throw new NotImplementedException();
+                    throw new NotSupportedException("Not supported in parallel mode");
+
+                    //var g = new GridCommons(new RefElement[] { Triangle.Instance }, new RefElement[] { Line.Instance });
+                    //g.Cells = new Cell[0];
+                    //return g;
                 }
             }
         }
