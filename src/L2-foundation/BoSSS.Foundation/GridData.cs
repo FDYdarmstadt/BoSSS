@@ -163,6 +163,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 // collect edges
                 // -------------
 
+                
                 m_Edges.CollectEdges();
                 m_Edges.DetermineEdgeTrafo();
                 m_Edges.CollectBoundaryEdges();

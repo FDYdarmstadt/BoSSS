@@ -95,6 +95,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// </returns>
         public IEnumerable<Neighbour>[] GetCellNeighbourship(bool IncludeBcCells) {
             ilPSP.MPICollectiveWatchDog.Watch();
+            Debugger.Launch();
             using (new FuncTrace()) {
 
                 var ftNeigh = GetFaceTagsNeigbourIndices(IncludeBcCells);

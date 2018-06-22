@@ -22,6 +22,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Solution.GridImport.Gambit;
 using ilPSP.Tracing;
 using BoSSS.Foundation.Grid.Classic;
+using MPI.Wrappers;
 
 namespace BoSSS.Solution.GridImport {
 
@@ -30,12 +31,24 @@ namespace BoSSS.Solution.GridImport {
     /// </summary>
     public static class GridImporter {
 
+        /// <summary>
+        /// Enum to link file type and importer class
+        /// </summary>
         public enum ImporterTypes {
 
+            /// <summary>
+            /// <see cref="BoSSS.Solution.GridImport.Cgns"/>
+            /// </summary>
             CGNS,
 
+            /// <summary>
+            /// <see cref="BoSSS.Solution.GridImport.Gambit.GambitNeutral"/>
+            /// </summary>
             Gambit,
 
+            /// <summary>
+            /// <see cref="BoSSS.Solution.GridImport.Gmsh"/>
+            /// </summary>
             Gmsh
         }
 
@@ -65,42 +78,53 @@ namespace BoSSS.Solution.GridImport {
         /// </summary>
         public static GridCommons Import(string fileName) {
             using(var tr = new FuncTrace()) {
-                ImporterTypes importerType = GetImporterType(fileName);
+                int myrank;
+                int size;
+                csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out myrank);
+                csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
 
-                tr.Info(string.Format("Loading {0} file '{1}'...", importerType.ToString(), fileName));
-                IGridImporter importer;
-                using(new BlockTrace("Import", tr)) {
-                                        
-                    switch(importerType) {
-                        case ImporterTypes.Gambit:
-                        GambitNeutral gn = new GambitNeutral(fileName);
-                        if(gn.BoSSSConversionNeccessary()) {
-                            gn = gn.ToLinearElements();
+
+                if (myrank == 0) {
+
+                    ImporterTypes importerType = GetImporterType(fileName);
+
+                    tr.Info(string.Format("Loading {0} file '{1}'...", importerType.ToString(), fileName));
+                    IGridImporter importer;
+                    using (new BlockTrace("Import", tr)) {
+
+                        switch (importerType) {
+                            case ImporterTypes.Gambit:
+                            GambitNeutral gn = new GambitNeutral(fileName);
+                            if (gn.BoSSSConversionNeccessary()) {
+                                gn = gn.ToLinearElements();
+                            }
+
+                            importer = gn;
+                            break;
+
+                            case ImporterTypes.CGNS:
+                            importer = new Cgns(fileName);
+                            break;
+
+                            case ImporterTypes.Gmsh:
+                            importer = new Gmsh(fileName);
+                            break;
+
+                            default:
+                            throw new NotImplementedException();
                         }
-
-                        importer = gn;
-                        break;
-
-                        case ImporterTypes.CGNS:
-                        importer = new Cgns(fileName);
-                        break;
-
-                        case ImporterTypes.Gmsh:
-                        importer = new Gmsh(fileName);
-                        break;
-
-                        default:
-                        throw new NotImplementedException();
                     }
-                }
 
-                tr.Info("Converting to BoSSS grid ...");
-                GridCommons grid;
-                using(new BlockTrace("Conversion", tr)) {
-                    grid = importer.GenerateBoSSSGrid();
-                }
+                    tr.Info("Converting to BoSSS grid ...");
+                    GridCommons grid;
+                    using (new BlockTrace("Conversion", tr)) {
+                        grid = importer.GenerateBoSSSGrid();
+                    }
 
-                return grid;
+                    return grid;
+                } else {
+                    throw new NotImplementedException();
+                }
             }
         }
     }
