@@ -1176,9 +1176,9 @@ namespace BoSSS.Application.IBM_Solver {
 
             double dt = Convert.ToDouble(fields_line2[1]) - Convert.ToDouble(fields_line1[1]);
 
-            int idx_restartLine = Convert.ToInt32(time / dt + 1.0);
-            string restartLine = File.ReadLines(pathToPhysicalData).Skip(idx_restartLine - 1).Take(1).First();
-            double[] values = Array.ConvertAll<string, double>(restartLine.Split('\t'), double.Parse);
+            //int idx_restartLine = Convert.ToInt32(time / dt + 1.0);
+            //string restartLine = File.ReadLines(pathToPhysicalData).Skip(idx_restartLine - 1).Take(1).First();
+            //double[] values = Array.ConvertAll<string, double>(restartLine.Split('\t'), double.Parse);
 
             /* string restartLine = "";
               Calculcation of dt 
@@ -1215,7 +1215,7 @@ namespace BoSSS.Application.IBM_Solver {
                     firstline = String.Format("{0}\t{1}\t{2}\t{3}", "#Timestep", "#Time", "x-Force", "y-Force");
                 }
                 Log_DragAndLift.WriteLine(firstline);
-                Log_DragAndLift.WriteLine(restartLine);
+                //Log_DragAndLift.WriteLine(restartLine);
             }
 
         }
@@ -1259,14 +1259,14 @@ namespace BoSSS.Application.IBM_Solver {
                 // ==================
 
                 CellMask CutCells = LsTrk.Regions.GetCutCellMask();
-                CellMask CutCellNeighbors = LsTrk.Regions.GetNearFieldMask(1);
-                var CutCellArray = CutCells.ItemEnum.ToArray();
-                var CutCellNeighborsArray = CutCellNeighbors.ItemEnum.ToArray();
-                var AllCells = CutCellArray.Concat(CutCellNeighborsArray).ToArray();
+                //CellMask CutCellNeighbors = LsTrk.Regions.GetNearFieldMask(1);
+                //var CutCellArray = CutCells.ItemEnum.ToArray();
+                //var CutCellNeighborsArray = CutCellNeighbors.ItemEnum.ToArray();
+                //var AllCells = CutCellArray.Concat(CutCellNeighborsArray).ToArray();
+                //var NoCoarseningcells = new CellMask(this.GridData, AllCells);
 
-                var NoCoarseningcells = new CellMask(this.GridData, AllCells);
-
-                bool AnyChange = GridRefinementController.ComputeGridChange(this.GridData, NoCoarseningcells, LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+                // Only CutCells are NoCoarseningCells 
+                bool AnyChange = GridRefinementController.ComputeGridChange(this.GridData, CutCells, LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
                 int NoOfCellsToRefine = 0;
                 int NoOfCellsToCoarsen = 0;
                 if (AnyChange) {
@@ -1289,11 +1289,12 @@ namespace BoSSS.Application.IBM_Solver {
 
                     newGrid = this.GridData.Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
 
-
-                    Console.WriteLine("Save adaptive Mesh...");
-                    Console.WriteLine("GridGUID:   " + newGrid.GridGuid);
-                    DatabaseDriver.SaveGrid(newGrid);
-                    Console.WriteLine("...done");
+                    if (this.Control.savetodb == true) {
+                        Console.WriteLine("Save adaptive Mesh...");
+                        Console.WriteLine("GridGUID:   " + newGrid.GridGuid);
+                        DatabaseDriver.SaveGrid(newGrid);
+                        Console.WriteLine("...done");
+                    }
                 } else {
 
                     Console.WriteLine("No changes in Grid");
@@ -1301,7 +1302,7 @@ namespace BoSSS.Application.IBM_Solver {
                     old2NewGrid = null;
                 }
 
-                debug = false;
+                //debug = false;
 
             } else {
 
