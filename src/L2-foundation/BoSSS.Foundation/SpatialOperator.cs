@@ -1640,15 +1640,18 @@ namespace BoSSS.Foundation {
                     // fix parallel conflicts
                     // ======================
 
+                    
                     if(gDat.MpiSize > 1) {
                         Array.Copy(LocalMarker, ExchangedMarker, JE);
                         ExchangedMarker.MPIExchange(gDat);
                         //for(int je = 0; je < JE; je++) {
                         //    ExchangedMarker[je] = Math.Min(LocalMarker[je], ExchangedMarker[je]);
                         //}
-
-                        for(int je = 0; je < JE; je++) {
+                        
+                        for(int je = J; je < JE; je++) {
                             if(LocalMarker[je] != 0 && ExchangedMarker[je] != 0) {
+
+                                Debug.Assert(LocalMarker[je] != ExchangedMarker[je]);
 
                                 // some parallel conflict detected: one of the two ranks has to yield
 
@@ -1661,6 +1664,7 @@ namespace BoSSS.Foundation {
                                     Debug.Assert(jToRemove < J);
                                     Debug.Assert(ColoredPass[jToRemove] == true);
 
+                                   
                                     ColoredPass[jToRemove] = false;
                                     LocalMarker[jToRemove] = 0;
                                     int[] Neighs_jToRemove = Neighs[jToRemove];
@@ -1676,7 +1680,7 @@ namespace BoSSS.Foundation {
 #if DEBUG
                         Array.Copy(LocalMarker, ExchangedMarker, JE);
                         ExchangedMarker.MPIExchange(gDat);
-                        for(int je = 0; je < JE; je++) {
+                        for(int je = J; je < JE; je++) {
                             Debug.Assert(ExchangedMarker[je] == 0 || LocalMarker[je] == 0, "Error in conflict resolution.");
                         }
 #endif
@@ -1697,7 +1701,10 @@ namespace BoSSS.Foundation {
 
 
                     int GlobColoredPass = LocColoredPass.MPISum();
-                    Console.WriteLine("Colored in pass {0}: {1}", ColorListsTmp.Count, GlobColoredPass);
+                    //Console.WriteLine("Colored in pass {0}: {1}", ColorListsTmp.Count, GlobColoredPass);
+                    if(GlobColoredPass <= 0)
+                        //Debugger.Launch();
+                        throw new ApplicationException("Deadlock in parallel coloring.");
 
                     // check for loop termination
                     // ==========================
@@ -1838,6 +1845,8 @@ namespace BoSSS.Foundation {
 
                 // compute directional derivatives
                 // ===============================
+
+                Debugger.Launch();
 
                 double[] U0backup = new double[Lin];
                 double[] EvalBuf = new double[Lout];
