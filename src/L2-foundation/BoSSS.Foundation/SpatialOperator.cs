@@ -1566,9 +1566,31 @@ namespace BoSSS.Foundation {
 
             IEvaluatorNonLin Eval;
 
+
             DelParameterUpdate DelParamUpdate;
 
+            /// <summary>
+            /// - 1st index: enumeration of color lists
+            /// - 2nd index: enumeration of cells in color list
+            /// - content: local cell index in which an Epsilon-distortion is applied
+            /// </summary>
             int[][] ColorLists;
+
+            /// <summary>
+            /// Cells which are distorted on an other processor, but influence the result on this processor
+            /// - 1st index: correlates to 1st index of <see cref="ColorLists"/>
+            /// - 2nd index: enumeration of cells
+            /// - content: some external cell index; this determines the column index of the finite difference result into the Jacobian matrix
+            /// </summary>
+            int[][] ExternalColorLists;
+            
+            /// <summary>
+            /// - 1st index: correlates to 1st index of <see cref="ColorLists"/>
+            /// - 2nd index: correlates with 2nd index of <see cref="ExternalColorLists"/>
+            /// - 3rd index: enumeration
+            /// - content: a local cell index of some cell which is affected by an epsilon-distortion on some other processor; this determines the row index of the finite difference result into the Jacobian matrix
+            /// </summary>
+            int[][][] ExternalColorListsNeighbors;
 
 
             void BuildGridColoring() {
@@ -1578,15 +1600,18 @@ namespace BoSSS.Foundation {
                 int[][] Neighs = gDat.iLogicalCells.CellNeighbours;
                 int J = gDat.iLogicalCells.NoOfLocalUpdatedCells;
                 int JE = gDat.iLogicalCells.NoOfCells;
+                long[] GlidxExt = gDat.iParallel.GlobalIndicesExternalCells;
+                var Gl2LocExt = gDat.iParallel.Global2LocalIdx;
+                var CellPart = gDat.CellPartitioning;
 
 #if DEBUG
-                    for (int j = 0; j < J; j++) {
-                        int[] CN = Neighs[j];
-                        foreach(int jN in CN) {
-                            Debug.Assert(jN >= 0);
-                            Debug.Assert(jN != j);
-                        }
+                for (int j = 0; j < J; j++) {
+                    int[] CN = Neighs[j];
+                    foreach(int jN in CN) {
+                        Debug.Assert(jN >= 0);
+                        Debug.Assert(jN != j);
                     }
+                }
 #endif
 
                 int[] LocalMarker = new int[JE]; //    marker for blocked in the current pass 
@@ -1597,6 +1622,8 @@ namespace BoSSS.Foundation {
 
                 List<int> CellList = new List<int>();
                 List<int[]> ColorListsTmp = new List<int[]>();
+                List<int[]> ExternalColorListsTmp = new List<int[]>();
+                List<int[][]> ExternalColorListsNeighborsTmp = new List<int[][]>();
 
                 int myMarkerToken = gDat.MpiRank + 1;
                 int bRun = 0xFFFFFF;
@@ -1685,6 +1712,9 @@ namespace BoSSS.Foundation {
                         }
 #endif
                     }
+
+
+
                     // remember recently found color list
                     // ==================================
                     CellList.Clear();
@@ -1699,12 +1729,87 @@ namespace BoSSS.Foundation {
                     int LocColoredPass = CellList.Count;
                     ColorListsTmp.Add(CellList.ToArray());
 
-
                     int GlobColoredPass = LocColoredPass.MPISum();
                     //Console.WriteLine("Colored in pass {0}: {1}", ColorListsTmp.Count, GlobColoredPass);
                     if(GlobColoredPass <= 0)
                         //Debugger.Launch();
                         throw new ApplicationException("Deadlock in parallel coloring.");
+
+
+                    // communicate external lists
+                    // ==========================
+
+                    if (gDat.MpiSize > 1) {
+                        
+                        var ExchData = new Dictionary<int, List<Tuple<int, int>>>();
+
+                        foreach(int j in CellList) {
+                            int[] Neighs_j = Neighs[j];
+                            foreach (int jN in Neighs_j) {
+                                if(jN >= J) {
+                                    Console.WriteLine("Found external -- remove, please");
+
+
+                                    int Gl_jN = (int) GlidxExt[jN - J];
+                                    int iProc = CellPart.FindProcess(Gl_jN);
+                                    int Gl_j = j + CellPart.i0;
+
+                                    if(!ExchData.TryGetValue(iProc, out var ExchData_iProc)) {
+                                        ExchData_iProc = new List<Tuple<int, int>>();
+                                        ExchData.Add(iProc, ExchData_iProc);
+                                    }
+
+                                    ExchData_iProc.Add(new Tuple<int, int>(Gl_j, Gl_jN));
+                                }
+                            }
+                        }
+
+                        var RcvData = SerialisationMessenger.ExchangeData(ExchData);
+
+                        var ExtColor = new Dictionary<int, List<int>>();
+
+                        foreach (var kv in RcvData) {
+                            int iProc = kv.Key;
+                            var list = kv.Value;
+
+                            foreach(var t in list) {
+                                int Gl_j = t.Item1;
+                                int Gl_jN = t.Item2;
+                                Debug.Assert(CellPart.FindProcess(Gl_j) == iProc);
+                                Debug.Assert(CellPart.IsInLocalRange(Gl_jN));
+
+                                int Loc_jN = Gl_j - CellPart.i0;
+                                Debug.Assert(Loc_jN >= 0 && Loc_jN < J);
+                                int Loc_j = Gl2LocExt[Gl_j];
+                                Debug.Assert(Loc_j >= J && Loc_j < JE);
+
+                                List<int> Neighs_Loc_jN;
+                                if(!ExtColor.TryGetValue(Loc_j, out Neighs_Loc_jN)) {
+                                    Neighs_Loc_jN = new List<int>();
+                                    ExtColor.Add(Loc_j, Neighs_Loc_jN);
+                                }
+
+                                Neighs_Loc_jN.Add(Loc_jN);
+                            }
+                        }
+
+
+                        int[] T2 = new int[ExtColor.Count];
+                        int[][] T3 = new int[ExtColor.Count][];
+                        int cnt = 0;
+                        foreach(var kv in ExtColor) {
+                            T2[cnt] = kv.Key;
+                            T3[cnt] = kv.Value.ToArray();
+                        }
+
+                        ExternalColorListsTmp.Add(T2);
+                        ExternalColorListsNeighborsTmp.Add(T3);
+
+                    } else {
+                        ExternalColorListsTmp.Add(new int[0]);
+                        ExternalColorListsNeighborsTmp.Add(new int[0][]);
+                    }
+
 
                     // check for loop termination
                     // ==========================
@@ -1718,6 +1823,8 @@ namespace BoSSS.Foundation {
                 // store
                 // =====
                 this.ColorLists = ColorListsTmp.ToArray();
+                this.ExternalColorLists = ExternalColorListsTmp.ToArray();
+                this.ExternalColorListsNeighbors = ExternalColorListsNeighborsTmp.ToArray();
 
                 // checks
                 // ======
@@ -1872,22 +1979,30 @@ namespace BoSSS.Foundation {
 
                         // backup DG coordinates
                         // ---------------------
-                        U0backup.SetV(U0); 
+                        U0backup.SetV(U0);
 
                         // apply distortions
                         // -----------------
+                        int AnyLoc = 0;
                         foreach(int j in CellList) {
                             int iFld = FieldCounter[j];
                             int nFld = CoordCounter[j];
                             if(iFld > NoOfDomFields)
                                 continue; // finished with cell 'j'
 
+                            AnyLoc = -1;
+
+                            Debug.Assert(j >= 0 && j < J);
                             int iLoc = domMap.LocalUniqueCoordinateIndex(iFld, j, nFld);
+                            Debug.Assert(iLoc >= 0 && iLoc < domMap.LocalLength);
 
                             double oldVal = domFields[iFld].Coordinates[j, nFld];
                             domFields[iFld].Coordinates[j, nFld] = oldVal + Epsilons[iLoc];
                             Debug.Assert(domFields[iFld].Coordinates[j, nFld] != oldVal);
                         }
+                        int AnyGlob = AnyLoc.MPIMin();
+                        if (AnyGlob >= 0)
+                            break; // finished with entire cell list on all processors
 
                         // evaluate operator
                         // -------------------

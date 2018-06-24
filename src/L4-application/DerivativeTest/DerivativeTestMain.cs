@@ -326,8 +326,8 @@ namespace BoSSS.Application.DerivativeTest {
                 }
 
                 case 5: {
-                    double[] xnodes = GenericBlas.Linspace(-1, 1, 8);
-                    double[] ynodes = GenericBlas.Linspace(-1, 1, 13);
+                    double[] xnodes = GenericBlas.Linspace(-1, 1, 4); // 8
+                    double[] ynodes = GenericBlas.Linspace(-1, 1, 5); // 13
                     grd = Grid2D.UnstructuredTriangleGrid(xnodes, ynodes, JitterScale: 0.5);
                     break;
                 }
@@ -942,7 +942,10 @@ namespace BoSSS.Application.DerivativeTest {
                 Console.WriteLine("Finite Difference Jacobian: Matrix/Affine delta norm {0} {1}, passed? {2} {3}", LinfMtx, L2Aff, passed1, passed2);
                 m_passed = m_passed && passed1;
                 m_passed = m_passed && passed2;
-                
+
+                //CheckMatrix.SaveToTextFileSparse("c:\\tmp\\Check.txt");
+                //LaplaceMtx.SaveToTextFileSparse("c:\\tmp\\Laplace.txt");
+                //ErrMatrix.SaveToTextFileSparse("c:\\tmp\\Error.txt");
 
                 Console.WriteLine("--------------------------------------------");
             }
