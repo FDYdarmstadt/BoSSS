@@ -1740,7 +1740,9 @@ namespace BoSSS.Foundation {
                     // ==========================
 
                     if (gDat.MpiSize > 1) {
-                        
+
+                        //Debugger.Launch();
+
                         var ExchData = new Dictionary<int, List<Tuple<int, int>>>();
 
                         foreach(int j in CellList) {
@@ -1778,7 +1780,7 @@ namespace BoSSS.Foundation {
                                 Debug.Assert(CellPart.FindProcess(Gl_j) == iProc);
                                 Debug.Assert(CellPart.IsInLocalRange(Gl_jN));
 
-                                int Loc_jN = Gl_j - CellPart.i0;
+                                int Loc_jN = Gl_jN - CellPart.i0;
                                 Debug.Assert(Loc_jN >= 0 && Loc_jN < J);
                                 int Loc_j = Gl2LocExt[Gl_j];
                                 Debug.Assert(Loc_j >= J && Loc_j < JE);
@@ -1800,6 +1802,7 @@ namespace BoSSS.Foundation {
                         foreach(var kv in ExtColor) {
                             T2[cnt] = kv.Key;
                             T3[cnt] = kv.Value.ToArray();
+                            cnt++;
                         }
 
                         ExternalColorListsTmp.Add(T2);
@@ -1904,6 +1907,7 @@ namespace BoSSS.Foundation {
 
                 int j0 = Eval.GridData.CellPartitioning.i0;
                 int J = Eval.GridData.iLogicalCells.NoOfLocalUpdatedCells;
+                int JE = Eval.GridData.iLogicalCells.NoOfCells;
                 int NoOfDomFields = domMap.BasisS.Count;
                 int NoOfCodFields = codMap.BasisS.Count;
 
@@ -1939,7 +1943,7 @@ namespace BoSSS.Foundation {
                 // compute epsilon's
                 // =================
 
-                double[] Epsilons = new double[Lin];
+                double[] Epsilons = new double[domMap.Ntotal];
                 double relEps = this.Eps;
                 //double absEps = 1.0e-15; 
                 double absEps = 1.0;
@@ -1950,6 +1954,8 @@ namespace BoSSS.Foundation {
 
                     Epsilons[i] = EpsBase * relEps;
                 }
+                Epsilons.MPIExchange(Eval.GridData);
+
 
                 // compute directional derivatives
                 // ===============================
@@ -1960,22 +1966,23 @@ namespace BoSSS.Foundation {
                     throw new NotSupportedException();
                 MultidimensionalArray Buffer = MultidimensionalArray.Create(Lout, domMap.GetBlockLen(domMap.FirstBlock));
 
-                for(int iCellPass = 0; iCellPass < ColorLists.Length; iCellPass++) { // loop over all cell lists...
-                    int[] CellList = ColorLists[iCellPass];
+                for (int iCellPass = 0; iCellPass < ColorLists.Length; iCellPass++) { // loop over all cell lists...
+                    int[] CellList = this.ColorLists[iCellPass];
+                    int[] ExtCellList = this.ExternalColorLists[iCellPass];
 
-                    int[] CoordCounter = new int[J];
-                    int[] FieldCounter = new int[J];
-                    
+                    int[] CoordCounter = new int[JE];
+                    int[] FieldCounter = new int[JE];
+
                     int maxNj = 0;
-                    foreach(int j in CellList) {
+                    foreach (int j in CellList) {
                         int Nj = domMap.GetTotalNoOfCoordinatesPerCell(j);
                         maxNj = Math.Max(Nj, maxNj);
                     }
                     maxNj = maxNj.MPIMax();
 
                     Buffer.Clear();
-                    
-                    for(int n = 0; n < maxNj; n++) { // loop over DG coordinates in cell
+
+                    for (int n = 0; n < maxNj; n++) { // loop over DG coordinates in cell
 
                         // backup DG coordinates
                         // ---------------------
@@ -1984,10 +1991,10 @@ namespace BoSSS.Foundation {
                         // apply distortions
                         // -----------------
                         int AnyLoc = 0;
-                        foreach(int j in CellList) {
+                        foreach (int j in CellList) {
                             int iFld = FieldCounter[j];
                             int nFld = CoordCounter[j];
-                            if(iFld > NoOfDomFields)
+                            if (iFld > NoOfDomFields)
                                 continue; // finished with cell 'j'
 
                             AnyLoc = -1;
@@ -2011,63 +2018,82 @@ namespace BoSSS.Foundation {
                         Eval.Evaluate(1.0, 0.0, EvalBuf);
                         NoOfEvals++;
 
-                        // save results
-                        // -------------------------------
-                        foreach(int _j in CellList) {
-                            int[] Neighs_j = Neighs[_j];
+                        // ------------------------------
 
-                            int jCol = _j;
-
-                            int iFldCol = FieldCounter[jCol];
-                            int nFldCol = CoordCounter[jCol];
-                            if(iFldCol > NoOfDomFields)
-                                continue; // finished with cell
-
-                            int iCol = domMap.LocalUniqueCoordinateIndex(iFldCol, jCol, nFldCol);
-                            int i0Col = domMap.LocalUniqueCoordinateIndex(0, jCol, 0);
-                            int iRelCol = iCol - i0Col;
-
-                            for(int k = 0; k <= Neighs_j.Length; k++) { // loop over neighbors which are influenced by the distortion
-                                int jRow;
-                                if(k == 0) {
-                                    jRow = _j;
-                                } else {
-                                    jRow = Neighs_j[k - 1];
-                                }
-
-                                if(jRow >= J)
-                                    continue; // external cell; should be treated on other proc.
-
-                                int i0Row = codMap.LocalUniqueCoordinateIndex(0, jRow, 0);
-                                int NoOfRows = codMap.GetBlockLen(jRow);
-
-                                for(int iRelRow = 0; iRelRow < NoOfRows; iRelRow++) {
-                                    int iRow = i0Row + iRelRow;
-
-                                    double u1 = EvalBuf[iRow];
-                                    double u0 = F0[iRow];
-                                    double h = Epsilons[iCol];
-
-                                    double diff = (u1 - u0) / h;
-                                    Buffer[iRow, iRelCol] = diff;
-                                }
-                            }
-                        }
-
-                        // increase counters
-                        // ------------------
-                        foreach(int j in CellList) {
-                            int iFld = FieldCounter[j];
-                            if(iFld > NoOfDomFields)
-                                continue; // finished with cell 'j'
-
-                            int Nj = domMap.BasisS[iFld].GetLength(j);
-                            CoordCounter[j]++;
-                            if(CoordCounter[j] >= Nj) {
-                                CoordCounter[j] = 0;
-                                FieldCounter[j]++;
+                        for (int IntExt = 0; IntExt < 2; IntExt++) {
+                            int[] __CellList;
+                            switch (IntExt) {
+                                case 0: __CellList = CellList; break;
+                                case 1: __CellList = ExtCellList; break;
+                                default: throw new ApplicationException();
                             }
 
+
+                            // save results
+                            // -------------------------------
+                            int cnt = 0;
+                            foreach (int _j in __CellList) {
+                                int[] Neighs_j; // = Neighs[_j];
+                                switch (IntExt) {
+                                    case 0: Neighs_j = Neighs[_j]; break;
+                                    case 1: Neighs_j = this.ExternalColorListsNeighbors[iCellPass][cnt]; break;
+                                    default: throw new ApplicationException();
+                                }
+                                cnt++;
+
+                                int jCol = _j;
+
+                                int iFldCol = FieldCounter[jCol];
+                                int nFldCol = CoordCounter[jCol];
+                                if (iFldCol > NoOfDomFields)
+                                    continue; // finished with cell
+
+                                int iCol = domMap.LocalUniqueCoordinateIndex(iFldCol, jCol, nFldCol);
+                                int i0Col = domMap.LocalUniqueCoordinateIndex(0, jCol, 0);
+                                int iRelCol = iCol - i0Col;
+
+                                for (int k = 0; k <= Neighs_j.Length; k++) { // loop over neighbors which are influenced by the distortion
+                                    int jRow;
+                                    if (k == 0) {
+                                        jRow = _j;
+                                    } else {
+                                        jRow = Neighs_j[k - 1];
+                                    }
+
+                                    if (jRow >= J)
+                                        continue; // external cell; should be treated on other proc.
+
+                                    int i0Row = codMap.LocalUniqueCoordinateIndex(0, jRow, 0);
+                                    int NoOfRows = codMap.GetBlockLen(jRow);
+
+                                    for (int iRelRow = 0; iRelRow < NoOfRows; iRelRow++) {
+                                        int iRow = i0Row + iRelRow;
+
+                                        double u1 = EvalBuf[iRow];
+                                        double u0 = F0[iRow];
+                                        double h = Epsilons[iCol];
+
+                                        double diff = (u1 - u0) / h;
+                                        Buffer[iRow, iRelCol] = diff;
+                                    }
+                                }
+                            }
+
+                            // increase counters
+                            // ------------------
+                            foreach (int j in __CellList) {
+                                int iFld = FieldCounter[j];
+                                if (iFld > NoOfDomFields)
+                                    continue; // finished with cell 'j'
+
+                                int Nj = domMap.BasisS[iFld].GetLength(j);
+                                CoordCounter[j]++;
+                                if (CoordCounter[j] >= Nj) {
+                                    CoordCounter[j] = 0;
+                                    FieldCounter[j]++;
+                                }
+
+                            }
                         }
 
                         // restore original DG coordinates
@@ -2077,40 +2103,55 @@ namespace BoSSS.Foundation {
 
                     // save to matrix
                     // --------------
-                    
-                    foreach(int _j in CellList) {
-                        int[] Neighs_j = Neighs[_j];
 
-                        int jCol = _j;
-                        int i0Col = domMap.LocalUniqueCoordinateIndex(0, jCol, 0);
-                        int iECol = domMap.LocalUniqueCoordinateIndex(NoOfDomFields - 1, jCol, lastDomB.GetLength(jCol) - 1);
-
-                        for(int k = 0; k <= Neighs_j.Length; k++) { // loop over neighbors which are influenced by the distortion
-                            int jRow;
-                            if(k == 0) {
-                                jRow = _j;
-                            } else {
-                                jRow = Neighs_j[k - 1];
-                            }
-
-                            if(jRow >= J)
-                                continue; // external cell; should be treated on other proc.
-
-
-                            int i0Row = domMap.LocalUniqueCoordinateIndex(0, jRow, 0);
-                            int iERow = domMap.LocalUniqueCoordinateIndex(NoOfCodFields - 1, jRow, lastCodB.GetLength(jRow) - 1);
-
-                            var Block = Buffer.ExtractSubArrayShallow(new int[] { i0Row, 0 }, new int[] { iERow, iECol - i0Col });
-
-                            Matrix.AccBlock(i0Row + codMap.i0, 
-                                //i0Col + domMap.i0, 
-                                domMap.GlobalUniqueCoordinateIndex(0, jCol, 0),
-                                1.0, Block);
+                    for (int IntExt = 0; IntExt < 2; IntExt++) {
+                        int[] __CellList;
+                        switch (IntExt) {
+                            case 0: __CellList = CellList; break;
+                            case 1: __CellList = ExtCellList; break;
+                            default: throw new ApplicationException();
                         }
+
+                        int cnt = 0;
+                        foreach (int _j in __CellList) {
+                            int[] Neighs_j; // = Neighs[_j];
+                            switch (IntExt) {
+                                case 0: Neighs_j = Neighs[_j]; break;
+                                case 1: Neighs_j = this.ExternalColorListsNeighbors[iCellPass][cnt]; break;
+                                default: throw new ApplicationException();
+                            }
+                            cnt++;
+
+                            int jCol = _j;
+                            int i0Col = domMap.LocalUniqueCoordinateIndex(0, jCol, 0);
+                            int iECol = domMap.LocalUniqueCoordinateIndex(NoOfDomFields - 1, jCol, lastDomB.GetLength(jCol) - 1);
+
+                            for (int k = 0; k <= Neighs_j.Length; k++) { // loop over neighbors which are influenced by the distortion
+                                int jRow;
+                                if (k == 0) {
+                                    jRow = _j;
+                                } else {
+                                    jRow = Neighs_j[k - 1];
+                                }
+
+                                if (jRow >= J)
+                                    continue; // external cell; should be treated on other proc.
+
+
+                                int i0Row = domMap.LocalUniqueCoordinateIndex(0, jRow, 0);
+                                int iERow = domMap.LocalUniqueCoordinateIndex(NoOfCodFields - 1, jRow, lastCodB.GetLength(jRow) - 1);
+
+                                var Block = Buffer.ExtractSubArrayShallow(new int[] { i0Row, 0 }, new int[] { iERow, iECol - i0Col });
+
+                                Matrix.AccBlock(i0Row + codMap.i0,
+                                    //i0Col + domMap.i0, 
+                                    domMap.GlobalUniqueCoordinateIndex(0, jCol, 0),
+                                    1.0, Block);
+                            }
+                        }
+
                     }
-
                 }
-
                 // restore original state before return
                 // ====================================
                 U0.SetV(U0backup);
