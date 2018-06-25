@@ -223,7 +223,8 @@ namespace BoSSS.Application.DerivativeTest {
             Console.WriteLine("Number of cache hits:   " + BoSSS.Foundation.Caching.Cache.Hits);
             Console.WriteLine("Number of cache misses: " + BoSSS.Foundation.Caching.Cache.Misses);
 
-            BoSSS.Solution.Application.FinalizeMPI();
+            //BoSSS.Solution.Application.FinalizeMPI();
+            MPI.Wrappers.csMPI.Raw.mpiFinalize();
         }
 
         /// <summary>
