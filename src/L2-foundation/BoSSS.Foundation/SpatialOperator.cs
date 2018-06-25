@@ -1604,6 +1604,8 @@ namespace BoSSS.Foundation {
                 var Gl2LocExt = gDat.iParallel.Global2LocalIdx;
                 var CellPart = gDat.CellPartitioning;
 
+                Random rnd = new Random(gDat.MpiRank + 1);
+
 #if DEBUG
                 for (int j = 0; j < J; j++) {
                     int[] CN = Neighs[j];
@@ -1628,6 +1630,7 @@ namespace BoSSS.Foundation {
                 int myMarkerToken = gDat.MpiRank + 1;
                 int bRun = 0xFFFFFF;
                 int locColoredCells = 0;
+                int DeadlockWatch = 0;
                 while(bRun != 0) {
 
                     // find next color list
@@ -1667,42 +1670,55 @@ namespace BoSSS.Foundation {
                     // fix parallel conflicts
                     // ======================
 
-                    
+                    var LocalMarker_Bkup = LocalMarker.CloneAs();
+                    var Removed = new List<int>();
+                    int[] ExchangedMarker_Bkup = null;
+
                     if(gDat.MpiSize > 1) {
-                        Array.Copy(LocalMarker, ExchangedMarker, JE);
-                        ExchangedMarker.MPIExchange(gDat);
-                        //for(int je = 0; je < JE; je++) {
-                        //    ExchangedMarker[je] = Math.Min(LocalMarker[je], ExchangedMarker[je]);
-                        //}
-                        
-                        for(int je = J; je < JE; je++) {
-                            if(LocalMarker[je] != 0 && ExchangedMarker[je] != 0) {
+                        ExchangedMarker_Bkup = ExchangedMarker.CloneAs();
 
-                                Debug.Assert(LocalMarker[je] != ExchangedMarker[je]);
+                        int GlobalConflicts = 999;
+                        do {
+                            Array.Copy(LocalMarker, ExchangedMarker, JE);
+                            ExchangedMarker.MPIExchange(gDat);
 
-                                // some parallel conflict detected: one of the two ranks has to yield
+                            int LocalConflicts = 0;
 
-                                if(Math.Abs(ExchangedMarker[je]) > 0 && ExchangedMarker[je] > myMarkerToken) {
-                                    // the other rank should yield
-                                } else {
-                                    // this rank has to yield
+                            for (int je = J; je < JE; je++) {
+                                if (LocalMarker[je] != 0 && ExchangedMarker[je] != 0) {
+                                    Debug.Assert(LocalMarker[je] != ExchangedMarker[je]);
+                                    LocalConflicts++;
 
-                                    int jToRemove = LocalColorCause[je];
-                                    Debug.Assert(jToRemove < J);
-                                    Debug.Assert(ColoredPass[jToRemove] == true);
+                                    double rndVal = rnd.NextDouble();
 
-                                   
-                                    ColoredPass[jToRemove] = false;
-                                    LocalMarker[jToRemove] = 0;
-                                    int[] Neighs_jToRemove = Neighs[jToRemove];
-                                    foreach(int jn in Neighs_jToRemove) {
-                                        LocalMarker[jn] = 0;
+                                    //// some parallel conflict detected: one of the two ranks has to yield
+
+                                    //if (ExchangedMarker[je] > 0 && Math.Abs(ExchangedMarker[je]) > myMarkerToken) {
+                                    //    // the other rank should yield
+                                    //} else {
+                                    //    // this rank has to yield
+                                    if (rndVal >= 0.5) {
+                                        int jToRemove = LocalColorCause[je];
+                                        Debug.Assert(jToRemove < J);
+                                        Debug.Assert(ColoredPass[jToRemove] == true);
+
+                                        Removed.Add(jToRemove);
+
+                                        ColoredPass[jToRemove] = false;
+                                        LocalMarker[jToRemove] = 0;
+                                        int[] Neighs_jToRemove = Neighs[jToRemove];
+                                        foreach (int jn in Neighs_jToRemove) {
+                                            LocalMarker[jn] = 0;
+                                        }
+
+                                        //}
                                     }
-
                                 }
                             }
 
-                        }
+                            GlobalConflicts = LocalConflicts.MPISum();
+
+                        } while (GlobalConflicts > 0);
 
 #if DEBUG
                         Array.Copy(LocalMarker, ExchangedMarker, JE);
@@ -1727,14 +1743,19 @@ namespace BoSSS.Foundation {
                         }
                     }
                     int LocColoredPass = CellList.Count;
-                    ColorListsTmp.Add(CellList.ToArray());
 
                     int GlobColoredPass = LocColoredPass.MPISum();
                     //Console.WriteLine("Colored in pass {0}: {1}", ColorListsTmp.Count, GlobColoredPass);
-                    if(GlobColoredPass <= 0)
+                    if (GlobColoredPass <= 0) {
+                        DeadlockWatch++;
+                        if(DeadlockWatch >= 1000)
+                            throw new ApplicationException("Deadlock in parallel coloring.");
+                        continue;
                         //Debugger.Launch();
-                        throw new ApplicationException("Deadlock in parallel coloring.");
+                    }
 
+
+                    ColorListsTmp.Add(CellList.ToArray());
 
                     // communicate external lists
                     // ==========================
@@ -1749,9 +1770,7 @@ namespace BoSSS.Foundation {
                             int[] Neighs_j = Neighs[j];
                             foreach (int jN in Neighs_j) {
                                 if(jN >= J) {
-                                    Console.WriteLine("Found external -- remove, please");
-
-
+                                    
                                     int Gl_jN = (int) GlidxExt[jN - J];
                                     int iProc = CellPart.FindProcess(Gl_jN);
                                     int Gl_j = j + CellPart.i0;
