@@ -470,7 +470,7 @@ namespace CNS {
                 "\n------------------------------------------\n");
             string titleForColumns = String.Format("{0}\t{1}\t{2}", "ts", "physTime", "dt");
             AdamsBashforthLTS LTS = TimeStepper as AdamsBashforthLTS;
-            for (int i = 0; i < LTS.CurrentClustering.NumberOfClusters; i++) {
+            for (int i = 0; i < LTS.NumberOfClustersInitial; i++) {
                 titleForColumns = titleForColumns + String.Format("\t{0}\t{1}\t{2}", "c" + i + "_dt", "c" + i + "_substeps", "c" + i + "_elements");
             }
             LTSLogWriter.WriteLine(titleForColumns);
@@ -482,6 +482,10 @@ namespace CNS {
         /// initialized by <see cref="InitLTSLogFile(Guid)"/>.
         /// </summary>
         public void WriteLTSLog(double dt) {
+            if (MPIRank != 0) {
+                return;
+            }
+
             // Init if necessary
             if (LTSLogWriter == null) {
                 InitLTSLogFile(this.CurrentSessionInfo.ID);
@@ -491,8 +495,12 @@ namespace CNS {
             if (TimeStepper.TimeInfo.TimeStepNumber > Control.ExplicitOrder - 1) {
                 AdamsBashforthLTS LTS = TimeStepper as AdamsBashforthLTS;
                 string line = String.Format("{0}\t{1}\t{2}", LTS.TimeInfo.TimeStepNumber, LTS.TimeInfo.PhysicalTime, dt);
-                for (int i = 0; i < LTS.CurrentClustering.NumberOfClusters; i++) {
-                    line = line + String.Format("\t{0}\t{1}\t{2}", LTS.log_clusterDts[i], LTS.log_clusterSubSteps[i], LTS.log_clusterElements[i]);
+                for (int i = 0; i < LTS.NumberOfClustersInitial; i++) {
+                    if (i >= LTS.CurrentClustering.NumberOfClusters) {
+                        line = line + String.Format("\t0\t0\t0");   // Add zeroes if current clustering has less clusters than specified at the beginning
+                    } else {
+                        line = line + String.Format("\t{0}\t{1}\t{2}", LTS.log_clusterDts[i], LTS.log_clusterSubSteps[i], LTS.log_clusterElements[i]);
+                    }
                 }
                 LTSLogWriter.WriteLine(line);
                 LTSLogWriter.Flush();
