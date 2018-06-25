@@ -37,6 +37,8 @@ namespace CNS.ShockCapturing {
 
         private double? lambdaMax;
 
+        private double? fudgeFactor;
+
         /// <summary>
         /// Constructor
         /// </summary>
@@ -66,13 +68,14 @@ namespace CNS.ShockCapturing {
         /// Optional: Additional scaling coefficient for the AV. If none is
         /// given, an estimate will be used according the local flow state
         /// </param>
-        public SmoothedHeavisideArtificialViscosityLaw(IShockSensor sensor, int dgDegree, double refSensorLimit, double refMaxViscosity, double kappa, double? lambdaMax = null) {
+        public SmoothedHeavisideArtificialViscosityLaw(IShockSensor sensor, int dgDegree, double refSensorLimit, double refMaxViscosity, double kappa, double? lambdaMax = null, double? fudgeFactor = null) {
             this.sensor = sensor;
             this.dgDegree = dgDegree;
             this.sensorLimit = Math.Log10(refSensorLimit / (double)Math.Pow(dgDegree, 4));
             this.refMaxViscosity = refMaxViscosity;
             this.kappa = kappa;
             this.lambdaMax = lambdaMax;
+            this.fudgeFactor = fudgeFactor;
         }
 
         /// <summary>
@@ -115,7 +118,7 @@ namespace CNS.ShockCapturing {
             //lambdaMax = 20; //DMR
             //lambdaMax = 2; //Shock Tube
 
-            double fudgeFactor = 0.5;   // Kloeckner (2011)
+            double fudgeFactor = this.fudgeFactor ?? 0.5;   // Kloeckner (2011)
 
             epsilonE = fudgeFactor * epsilonE * lambdaMax * cellSize / dgDegree;
 
