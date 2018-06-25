@@ -193,7 +193,7 @@ namespace BoSSS.Application.DerivativeTest {
             // ==============
 
 
-            for (int i = 5; i <= 5; i++) {
+            for (int i = 3; i <= 3; i++) {
                 BoSSS.Solution.Application._Main(args, true,  delegate () {
                     var R = new DerivativeTestMain();
                     GRID_CASE = i;
@@ -327,8 +327,8 @@ namespace BoSSS.Application.DerivativeTest {
                 }
 
                 case 5: {
-                    double[] xnodes = GenericBlas.Linspace(-1, 1, 4); // 8
-                    double[] ynodes = GenericBlas.Linspace(-1, 1, 5); // 13
+                    double[] xnodes = GenericBlas.Linspace(-1, 1, 8);
+                    double[] ynodes = GenericBlas.Linspace(-1, 1, 13); 
                     grd = Grid2D.UnstructuredTriangleGrid(xnodes, ynodes, JitterScale: 0.5);
                     break;
                 }
