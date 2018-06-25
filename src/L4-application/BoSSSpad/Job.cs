@@ -40,10 +40,10 @@ namespace BoSSS.Application.BoSSSpad {
         /// </param>
         /// <param name="solver"></param>
         /// <param name="controlObj"></param>
-        public Job(string name, Type solver) { 
+        public Job(string name, Type solver) {
             this.Solver = solver;
             this.Name = name;
-            if(InteractiveShell.WorkflowMgm.AllJobs.ContainsKey(name)) {
+            if (InteractiveShell.WorkflowMgm.AllJobs.ContainsKey(name)) {
                 throw new ArgumentException("Job with name '" + name + "' is already defined in the workflow management.");
             }
             InteractiveShell.WorkflowMgm.AllJobs.Add(name, this);
@@ -57,6 +57,14 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public string Name {
             private set;
+            get;
+        }
+
+        /// <summary>
+        /// The number of the project where the job shall be executed (see HHLR-Antrag or csum, csreport)
+        /// </summary>
+        public string HHLR_project {
+            set;
             get;
         }
 
@@ -179,7 +187,7 @@ namespace BoSSS.Application.BoSSSpad {
             };
 
             for (int i = 0; i < args.Length; i++) {
-                m_EnvironmentVars.Add( "BOSSS_ARG_" + i, args[i]);
+                m_EnvironmentVars.Add("BOSSS_ARG_" + i, args[i]);
             }
         }
 
@@ -262,7 +270,7 @@ namespace BoSSS.Application.BoSSSpad {
             // Project & Session Name
             // ======================
             string PrjName = InteractiveShell.WorkflowMgm.CurrentProject;
-            if(string.IsNullOrWhiteSpace(PrjName)) {
+            if (string.IsNullOrWhiteSpace(PrjName)) {
                 throw new NotSupportedException("Project management not initialized - set project name (try e.g. 'WorkflowMgm.CurrentProject = \"BlaBla\"').");
             }
 
@@ -271,12 +279,12 @@ namespace BoSSS.Application.BoSSSpad {
                 "--prjnmn", PrjName,
                 "--sesnmn", this.Name
             };
-            if(index >= 0) {
+            if (index >= 0) {
                 ArrayTools.Cat(args, "--pstudy_case", index.ToString());
             }
 
 
-            for(int i = 0; i < args.Length; i++) {
+            for (int i = 0; i < args.Length; i++) {
                 m_EnvironmentVars.Add("BOSSS_ARG_" + i, args[i]);
             }
 
@@ -357,9 +365,9 @@ namespace BoSSS.Application.BoSSSpad {
         public ISessionInfo[] AllSessions {
             get {
                 //string ProjectName = InteractiveShell.WorkflowMgm.CurrentProject;
-                
+
                 var AllCandidates = InteractiveShell.WorkflowMgm.Sessions.Where(
-                    sinf => sinf.KeysAndQueries.ContainsKey(BoSSS.Solution.Application.SESSIONNAME_KEY) 
+                    sinf => sinf.KeysAndQueries.ContainsKey(BoSSS.Solution.Application.SESSIONNAME_KEY)
                          && Convert.ToString(sinf.KeysAndQueries[BoSSS.Solution.Application.SESSIONNAME_KEY]).Equals(this.Name)
                     );
 
@@ -368,7 +376,7 @@ namespace BoSSS.Application.BoSSSpad {
                 if (cnt <= 0)
                     return new ISessionInfo[0];
 
-                
+
                 return AllCandidates.ToArray();
             }
         }
@@ -446,7 +454,7 @@ namespace BoSSS.Application.BoSSSpad {
                 return GetStatus(out SubmitCount, out DD);
             }
         }
-        
+
         /// <summary>
         /// How often has this job been submitted to the batch system?
         /// </summary>
@@ -540,58 +548,58 @@ namespace BoSSS.Application.BoSSSpad {
             // =================
             switch (status) {
                 case JobStatus.PreActivation:
-                DeployDir = null;
-                this.DeploymentDirectory = null;
-                Console.WriteLine("Job not submitted yet, or no result session is known - starting submission.");
-                break;
+                    DeployDir = null;
+                    this.DeploymentDirectory = null;
+                    Console.WriteLine("Job not submitted yet, or no result session is known - starting submission.");
+                    break;
 
                 case JobStatus.Failed:
-                if(RR.Length <= 0) {
-                    DeployDir = null;
-                    this.DeploymentDirectory = null;
-                    Console.WriteLine("Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.");
-                    break;
-                }
-                if (RetryCount <= SubmitCount) {
-                    Console.WriteLine("Job is failed {0} times, maximum number of tries reached, no further action.", SubmitCount);
-                    return;
-                } else {
-                    DeployDir = null;
-                    this.DeploymentDirectory = null;
-                    Console.WriteLine("Job is failed, retrying (Submitted {0} times so far); performing new deployment and submission.", SubmitCount);
-                    break;
-                }
+                    if (RR.Length <= 0) {
+                        DeployDir = null;
+                        this.DeploymentDirectory = null;
+                        Console.WriteLine("Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.");
+                        break;
+                    }
+                    if (RetryCount <= SubmitCount) {
+                        Console.WriteLine("Job is failed {0} times, maximum number of tries reached, no further action.", SubmitCount);
+                        return;
+                    } else {
+                        DeployDir = null;
+                        this.DeploymentDirectory = null;
+                        Console.WriteLine("Job is failed, retrying (Submitted {0} times so far); performing new deployment and submission.", SubmitCount);
+                        break;
+                    }
                 case JobStatus.PendingInExecutionQueue:
-                Console.WriteLine("Job submitted, waiting for launch - no further action.");
-                return;
+                    Console.WriteLine("Job submitted, waiting for launch - no further action.");
+                    return;
 
                 case JobStatus.FinishedSuccessful:
-                if (RR.Length <= 0) {
-                    DeployDir = null;
-                    this.DeploymentDirectory = null;
-                    Console.WriteLine("Job is marked as success by job manager, but no session info in database is found; performing new deployment and submission.");
-                    break;
-                }
-                ISessionInfo LatestSession = RR.OrderBy(sinf => sinf.CreationTime).Last();
-                Console.WriteLine("Job was successful (according to job manager), latest session related to job is:");
-                Console.WriteLine(LatestSession.ToString());
-                Console.WriteLine("No further action.");
-                return;
+                    if (RR.Length <= 0) {
+                        DeployDir = null;
+                        this.DeploymentDirectory = null;
+                        Console.WriteLine("Job is marked as success by job manager, but no session info in database is found; performing new deployment and submission.");
+                        break;
+                    }
+                    ISessionInfo LatestSession = RR.OrderBy(sinf => sinf.CreationTime).Last();
+                    Console.WriteLine("Job was successful (according to job manager), latest session related to job is:");
+                    Console.WriteLine(LatestSession.ToString());
+                    Console.WriteLine("No further action.");
+                    return;
 
                 case JobStatus.InProgress:
-                Console.Write("Job has been started (according to job manager), ");
-                if (RR.Length > 0) {
-                    Console.WriteLine("latest known session is:");
-                    ISessionInfo LatestSession2 = RR.OrderBy(sinf => sinf.CreationTime).Last();
-                    Console.WriteLine(LatestSession2.ToString());
-                } else {
-                    Console.WriteLine("no session information available at this point.");
-                }
-                Console.WriteLine("No further action.");
-                return;
+                    Console.Write("Job has been started (according to job manager), ");
+                    if (RR.Length > 0) {
+                        Console.WriteLine("latest known session is:");
+                        ISessionInfo LatestSession2 = RR.OrderBy(sinf => sinf.CreationTime).Last();
+                        Console.WriteLine(LatestSession2.ToString());
+                    } else {
+                        Console.WriteLine("no session information available at this point.");
+                    }
+                    Console.WriteLine("No further action.");
+                    return;
 
                 default:
-                throw new NotImplementedException();
+                    throw new NotImplementedException();
             }
 
 
@@ -606,12 +614,11 @@ namespace BoSSS.Application.BoSSSpad {
                         !File.Exists(Path.Combine(DeployDir, Path.GetFileName(this.EntryAssembly.Location)))) {
                     RequiresDeploy = true;
                 }
-            }
-            else {
+            } else {
                 RequiresDeploy = false;
             }
 
-           
+
             if (RequiresDeploy) {
                 this.DeploymentDirectory = bpc.GetNewDeploymentDir(this);
                 bpc.DeployExecuteables(this, AdditionalDeploymentFiles);
