@@ -109,27 +109,32 @@ namespace BoSSS.Application.XNSE_Solver {
         public enum RefinementStrategy {
 
             /// <summary>
-            /// same refinement level on a cut-cells
+            /// same refinement level on near band
             /// </summary>
-            Interface,
+            constantInterface,
 
             /// <summary>
             /// additional refinement on cells with high curvature
             /// </summary>
-            CurvatureBased,
+            CurvatureRefined,
+
+            /// <summary>
+            /// additional refinement at contact line
+            /// </summary>
+            ContactLineRefined
         }
 
         /// <summary>
         /// See <see cref="LoggingValues"/>
         /// </summary>
         [DataMember]
-        public RefinementStrategy RefineStrategy = RefinementStrategy.Interface;
+        public RefinementStrategy RefineStrategy = RefinementStrategy.constantInterface;
 
         /// <summary>
-        /// desired maximal refinement level
+        /// desired minimum refinement level
         /// </summary>
         [DataMember]
-        public int RefinementLevel = 0; 
+        public int RefinementLevel = 1; 
 
         /// <summary>
         /// Expert options regarding the spatial discretization.
@@ -199,7 +204,12 @@ namespace BoSSS.Application.XNSE_Solver {
             /// <summary>
             /// contact points and corresponding contact angle
             /// </summary>
-            MovingContactLine
+            MovingContactLine,
+
+            /// <summary>
+            /// height of a rising capillary in a tube
+            /// </summary>
+            CapillaryHeight
         }
 
         /// <summary>
