@@ -396,6 +396,11 @@ namespace CNS {
         public bool WriteLTSLog = false;
 
         /// <summary>
+        /// Enable console output for LTS time stepper
+        /// </summary>
+        public bool WriteLTSConsoleOutput = false;
+
+        /// <summary>
         /// Clones this object, but beware: I'm not sure (yet) that I've
         /// covered all cases
         /// </summary>
