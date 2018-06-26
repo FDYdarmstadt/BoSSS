@@ -26,6 +26,7 @@ namespace BoSSS.Foundation.XDG {
             UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap,
             M Matrix, V AffineOffset, bool OnlyAffine, double time, bool ParameterMPIExchange,
             IDictionary<SpeciesId, MultidimensionalArray> CellLengthScales,
+            IDictionary<SpeciesId, MultidimensionalArray> InterfaceLengthScales,
             SubGrid SubGrid, params SpeciesId[] whichSpc)
             where M : IMutableMatrixEx
             where V : IList<double> //
@@ -40,6 +41,7 @@ namespace BoSSS.Foundation.XDG {
                 DomainMap, Parameters, CodomainMap,
                 Matrix, AffineOffset, OnlyAffine, time,
                 ParameterMPIExchange, SpeciesDictionary, CellLengthScales,
+                InterfaceLengthScales,
                 //agg, out mass,
                 SubGrid);
 
@@ -55,6 +57,7 @@ namespace BoSSS.Foundation.XDG {
             M Matrix, V AffineOffset, bool OnlyAffine,
             double time, bool ParameterMPIExchange,
             IDictionary<SpeciesId, MultidimensionalArray> CellLengthScales,
+            IDictionary<SpeciesId, MultidimensionalArray> InterfaceLengthScales,
             params SpeciesId[] whichSpc)
             where M : IMutableMatrixEx
             where V : IList<double> //
@@ -66,6 +69,7 @@ namespace BoSSS.Foundation.XDG {
                 Matrix, AffineOffset, OnlyAffine, time,
                 ParameterMPIExchange,
                 CellLengthScales,
+                InterfaceLengthScales,
                 null, whichSpc);
         }
 
@@ -111,6 +115,8 @@ namespace BoSSS.Foundation.XDG {
 
             int order = xOp.GetOrderFromQuadOrderFunction(DomainMap, Parameters, CodomainMap);
             MultiphaseCellAgglomerator dummy = lsTrk.GetAgglomerator(lsTrk.SpeciesIdS.ToArray(), order, 0.0);
+            Dictionary<SpeciesId, MultidimensionalArray> Idummy = dummy.XDGSpaceMetrics.CutCellMetrics.InterfaceArea;
+
 
             var bla = new Dictionary<SpeciesId, XSpatialOperator.QrSchemPair>();
             foreach(var sp in whichSpc)
@@ -122,7 +128,7 @@ namespace BoSSS.Foundation.XDG {
                 DomainMap, Parameters, CodomainMap,
                 Matrix, AffineOffset,
                 OnlyAffine, time, MPIParameterExchange, bla,
-                dummy.CellLengthScales, subGrid);
+                dummy.CellLengthScales, Idummy, subGrid);
 
             Debug.Assert(dummy.TotalNumberOfAgglomerations <= 0, "internal error");
 
@@ -138,6 +144,7 @@ namespace BoSSS.Foundation.XDG {
             UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap,
             M Matrix, V AffineOffset, bool OnlyAffine, double time, bool MPIParameterExchange,
             IDictionary<SpeciesId, XSpatialOperator.QrSchemPair> SpeciesSchemes, IDictionary<SpeciesId, MultidimensionalArray> CellLengthScales,
+            IDictionary<SpeciesId, MultidimensionalArray> InterfaceLengthScales,
             SubGrid SubGrid = null)
             where M : IMutableMatrixEx
             where V : IList<double> //
@@ -205,7 +212,9 @@ namespace BoSSS.Foundation.XDG {
                             GrdDat = lsTrk.GridDat
                         });
                 }
+                ev.SpeciesOperatorCoefficients[s].UserDefinedValues["InterfaceLengths"] = InterfaceLengthScales[s];
             }
+
 
             if(OnlyAffine)
                 ev.ComputeAffine(AffineOffset);

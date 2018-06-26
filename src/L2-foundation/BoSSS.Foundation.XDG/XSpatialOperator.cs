@@ -107,21 +107,6 @@ namespace BoSSS.Foundation.XDG {
         }
 
 
-        /// <summary>
-        /// see <see cref="OnIntegratingSurfaceElement"/>;
-        /// </summary>
-        /// <param name="speciesName">name of the species that will be computed.</param>
-        /// <param name="SpcId">id of the species that will be computed.</param>
-        /// <param name="InterfaceLengths">Interface length of cut cells for respective species.</param>
-        public delegate void NowIntegratingSurfaceElement(string speciesName, SpeciesId SpcId, MultidimensionalArray InterfaceLengths);
-
-        /// <summary>
-        /// Informs the listeners which part (or species) of the bulk phase is going to be computed.
-        /// this event is called before computation the <see cref="SurfaceElementOperator"/> is carried out.
-        /// </summary>
-        public event NowIntegratingSurfaceElement OnIntegratingSurfaceElement;
-
-
         ///// <summary>
         ///// I don't know a funky name for it.
         ///// </summary>
