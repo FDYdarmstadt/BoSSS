@@ -38,6 +38,24 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         }
 
         /// <summary>
+        /// MPI process rank (within world communicator)
+        /// </summary>
+        public int MpiRank {
+            get {
+                return this.CellPartitioning.MpiRank;
+            }
+        }
+
+        /// <summary>
+        /// MPI world communicator size 
+        /// </summary>
+        public int MpiSize {
+            get {
+                return this.CellPartitioning.MpiSize;
+            }
+        }
+
+        /// <summary>
         /// The ancestor grid, from which the aggregation sequence was derived.
         /// </summary>
         public IGridData AncestorGrid {

@@ -80,7 +80,9 @@ namespace BoSSS.Application.DerivativeTest {
 #endif
             DerivativeTestMain.GRID_CASE = gridCase;
             DerivativeTestMain p = null;
+            DerivativeTestMain.GRID_FILE = null;
             Quadrature_Bulksize.CHUNK_DATA_LIMIT = bulksize_limit;
+            DerivativeTestMain.TestFDJacobian = cache_size >= 1024 * 1024;
             BoSSS.Foundation.Caching.Cache.MaxMem = cache_size;
 
             BoSSS.Solution.Application._Main(new string[0], true, delegate () {
@@ -150,6 +152,7 @@ namespace BoSSS.Application.DerivativeTest {
             DerivativeTestMain.GRID_FILE = Path.Combine("../../TestGrids/", File);
             DerivativeTestMain p = null;
             Quadrature_Bulksize.CHUNK_DATA_LIMIT = CHUNK_DATA_LIMIT_bkup; // might have been changed by other test, needs re-set
+            DerivativeTestMain.TestFDJacobian = false;
             if (CHUNK_DATA_LIMIT_bkup < 1)
                 throw new ApplicationException();
 
@@ -175,9 +178,15 @@ namespace BoSSS.Application.DerivativeTest {
         public static int GRID_CASE = 50;
 
         /// <summary>
+        /// Testing <see cref="SpatialOperator.GetFDJacobianBuilder(IList{DGField}, IList{DGField}, UnsetteledCoordinateMapping, DelParameterUpdate, EdgeQuadratureScheme, CellQuadratureScheme)"/>;
+        /// can be expensive (if caching turned off), thus this can be de-activated
+        /// </summary>
+        public static bool TestFDJacobian = true;
+
+        /// <summary>
         /// Grid/mesh file to use, see implementation of <see cref="CreateOrLoadGrid"/>.
         /// </summary>
-        public static string GRID_FILE = "..\\..\\TestGrids\\wedding2D_v16.cgns";
+        public static string GRID_FILE = "..\\..\\TestGrids\\box2d.cgns";
 
         /// <summary>
         /// Application entry point.
@@ -191,8 +200,9 @@ namespace BoSSS.Application.DerivativeTest {
             // Build-In Grids
             // ==============
 
-
-            for (int i = 50; i <= 50; i++) {
+            Quadrature_Bulksize.CHUNK_DATA_LIMIT = 1;
+            //BoSSS.Foundation.Caching.Cache.MaxMem = 1024;
+            for (int i = 15; i <= 15; i++) {
                 BoSSS.Solution.Application._Main(args, true,  delegate () {
                     var R = new DerivativeTestMain();
                     GRID_CASE = i;
@@ -222,7 +232,8 @@ namespace BoSSS.Application.DerivativeTest {
             Console.WriteLine("Number of cache hits:   " + BoSSS.Foundation.Caching.Cache.Hits);
             Console.WriteLine("Number of cache misses: " + BoSSS.Foundation.Caching.Cache.Misses);
 
-            BoSSS.Solution.Application.FinalizeMPI();
+            //BoSSS.Solution.Application.FinalizeMPI();
+            MPI.Wrappers.csMPI.Raw.mpiFinalize();
         }
 
         /// <summary>
@@ -326,7 +337,7 @@ namespace BoSSS.Application.DerivativeTest {
 
                 case 5: {
                     double[] xnodes = GenericBlas.Linspace(-1, 1, 8);
-                    double[] ynodes = GenericBlas.Linspace(-1, 1, 13);
+                    double[] ynodes = GenericBlas.Linspace(-1, 1, 13); 
                     grd = Grid2D.UnstructuredTriangleGrid(xnodes, ynodes, JitterScale: 0.5);
                     break;
                 }
@@ -619,14 +630,14 @@ namespace BoSSS.Application.DerivativeTest {
         void DerivativeByFluxLinear(SinglePhaseField fin, SinglePhaseField fres, int d, SinglePhaseField fBnd) {
             var Op = (new LinearDerivFlx(d)).Operator();
 
-            MsrMatrix OpMtx = new MsrMatrix(fres.Mapping, fin.Mapping);
+            BlockMsrMatrix OpMtx = new BlockMsrMatrix(fres.Mapping, fin.Mapping);
             double[] OpAff = new double[fres.Mapping.LocalLength];
             Op.ComputeMatrixEx(fin.Mapping, new DGField[] { fBnd }, fres.Mapping,
                 OpMtx, OpAff, OnlyAffine: false);
 
             fres.Clear();
             fres.CoordinateVector.Acc(1.0, OpAff);
-            OpMtx.SpMVpara(1.0, fin.CoordinateVector, 1.0, fres.CoordinateVector);
+            OpMtx.SpMV(1.0, fin.CoordinateVector, 1.0, fres.CoordinateVector);
         }
 
         /// <summary>
@@ -775,7 +786,6 @@ namespace BoSSS.Application.DerivativeTest {
                 Console.WriteLine("--------------------------------------------");
             }
 
-
             // Flux Derivatives
             // =================
             for (int d = 0; d < D; d++) {
@@ -889,17 +899,17 @@ namespace BoSSS.Application.DerivativeTest {
             if (!AltRefSol) {
                 var Laplace = (new ipLaplace()).Operator(1);
 
-                var LaplaceMtx = new MsrMatrix(this.f1.Mapping, this.Laplace_f1_Numerical.Mapping);
+                var LaplaceMtx = new BlockMsrMatrix(this.f1.Mapping, this.Laplace_f1_Numerical.Mapping);
                 var LaplaceAffine = new double[LaplaceMtx.RowPartitioning.LocalLength];
 
                 Laplace.ComputeMatrix(this.f1.Mapping, null, this.Laplace_f1_Numerical.Mapping,
                     LaplaceMtx, LaplaceAffine, false);
 
                 this.Laplace_f1_Numerical.CoordinateVector.SetV(LaplaceAffine);
-                LaplaceMtx.SpMVpara(1.0, this.f1.CoordinateVector, 1.0, this.Laplace_f1_Numerical.CoordinateVector);
+                LaplaceMtx.SpMV(1.0, this.f1.CoordinateVector, 1.0, this.Laplace_f1_Numerical.CoordinateVector);
 
                 this.Laplace_f2_Numerical.CoordinateVector.SetV(LaplaceAffine);
-                LaplaceMtx.SpMVpara(1.0, this.f2.CoordinateVector, 1.0, this.Laplace_f2_Numerical.CoordinateVector);
+                LaplaceMtx.SpMV(1.0, this.f2.CoordinateVector, 1.0, this.Laplace_f2_Numerical.CoordinateVector);
 
                 // subtract analytical
                 var Errfield1 = Laplace_f1_Numerical.CloneAs();
@@ -922,8 +932,37 @@ namespace BoSSS.Application.DerivativeTest {
                 Console.WriteLine(string.Format("|| /\\f2 Numerical - /\\f2 Analytical ||_2 = {0} (linear evaluation), passed? {1}", err_Lf2, passed));
 
 
+                // comparison of finite difference Jacobian and Operator matrix
+                if (TestFDJacobian) {
+                    var FDJbuilder = Laplace.GetFDJacobianBuilder(this.f1.Mapping.Fields, null, this.f1.Mapping,
+                        delegate (IEnumerable<DGField> U0, IEnumerable<DGField> Params) {
+                            return;
+                        });
+                    var CheckMatrix = new BlockMsrMatrix(FDJbuilder.CodomainMapping, FDJbuilder.DomainMapping);
+                    var CheckAffine = new double[FDJbuilder.CodomainMapping.LocalLength];
+                    FDJbuilder.ComputeMatrix(CheckMatrix, CheckAffine);
+
+                    var ErrMatrix = LaplaceMtx.CloneAs();
+                    var ErrAffine = LaplaceAffine.CloneAs();
+                    ErrMatrix.Acc(-1.0, CheckMatrix);
+                    ErrAffine.AccV(-1.0, CheckAffine);
+                    double LinfMtx = ErrMatrix.InfNorm();
+                    double L2Aff = ErrAffine.L2NormPow2().MPISum().Sqrt();
+                    bool passed1 = (LinfMtx < 1.0e-3);
+                    bool passed2 = (L2Aff < Treshold);
+                    Console.WriteLine("Finite Difference Jacobian: Matrix/Affine delta norm {0} {1}, passed? {2} {3}", LinfMtx, L2Aff, passed1, passed2);
+                    m_passed = m_passed && passed1;
+                    m_passed = m_passed && passed2;
+
+                    //CheckMatrix.SaveToTextFileSparse("c:\\tmp\\Check.txt");
+                    //LaplaceMtx.SaveToTextFileSparse("c:\\tmp\\Laplace.txt");
+                    //ErrMatrix.SaveToTextFileSparse("c:\\tmp\\Error.txt");
+                }
                 Console.WriteLine("--------------------------------------------");
             }
+
+            
+
 
             // finally...
             // =================

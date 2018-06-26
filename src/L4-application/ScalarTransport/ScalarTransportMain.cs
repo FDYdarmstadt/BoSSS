@@ -33,6 +33,7 @@ using BoSSS.Foundation.Grid.Classic;
 using ilPSP.Utils;
 using BoSSS.Foundation.Grid.RefElements;
 using ilPSP;
+using BoSSS.Foundation.Caching;
 
 namespace BoSSS.Application.ScalarTransport {
 
@@ -151,9 +152,11 @@ namespace BoSSS.Application.ScalarTransport {
                 volQrCtx:new CellQuadratureScheme(true,null));
 
             Stopwatch stw = new Stopwatch();
-            int NoOfRuns = 10;
+            int NoOfRuns = 1;
             Console.WriteLine("BlkSz\tNoChks\tRunTime");
-            foreach(int bulkSize in new int[] { 1, 2, 4, 8, 16, 32, 64, 256, 512, 1024, 2048, 8192, 16384, 16384 * 2, 16384*4}) {
+            //var testsizes = new int[] { 1, 2, 4, 8, 16, 32, 64, 256, 512, 1024, 2048, 8192, 16384, 16384 * 2, 16384 * 4, 100000000 };
+            var testsizes = new int[] { 1, 2, 4, 1024, 16384 * 2, 16384 * 4, 100000000 };
+            foreach(int bulkSize in testsizes) {
                 Quadrature_Bulksize.CHUNK_DATA_LIMIT = bulkSize;
 
                 stw.Reset();
@@ -168,8 +171,51 @@ namespace BoSSS.Application.ScalarTransport {
                 double runTime = stw.Elapsed.TotalSeconds;
                 Console.WriteLine("{0}\t{2}\t{1}", bulkSize, runTime.ToStringDot("0.####E-00"),this.GridData.Cells.NoOfLocalUpdatedCells/bulkSize);
             }
+        }
+
+
+        public void SimplifiedPerformance() {
+            int J = this.GridData.Cells.NoOfCells;
+            var NodeSet = this.GridData.Cells.RefElements[0].GetQuadratureRule(12).Nodes;
+
+            int[] ChunkSize = new[] { J / 2, J };
+            if (J % 2 != 0)
+                throw new Exception();
+
+            var stw = new Stopwatch();
+
+
+            foreach(int sz in ChunkSize) {
+                Console.WriteLine("No Of chunks: " + (J/sz));
+
+                for (int sweep = 0; sweep < 2; sweep++) {
+                    double dummyRes = 0;
+                    Console.WriteLine("  Sweep # {0}...", sweep);
+                   
+                //Cache.ClearCache();
+
+                    stw.Reset();
+                    stw.Start();
+                    for (int j = 0; j < J; j += sz) {
+                        //var invJac = this.GridData.InverseJacobian.GetValue_Cell(NodeSet, j, sz);
+                        var detJac = this.GridData.JacobianDeterminat.GetValue_Cell(NodeSet, j, sz);
+
+                        //dummyRes += invJac.Storage.L2NormPow2();
+                        dummyRes += detJac.Storage.L2NormPow2();
+                    }
+                    stw.Stop();
+
+                    Console.WriteLine("   done. Runtime {0} msec.", stw.ElapsedMilliseconds);
+                    Console.WriteLine("   Cache hits/misses: {0}/{1}", Cache.Hits, Cache.Misses);
+
+                    Console.WriteLine("                dummy result (" + dummyRes + ")");
+                }
+
+            }
+
 
         }
+
 
         protected override int[] ComputeNewCellDistribution(int TimeStepNo, double physTime) {
             if(this.MPISize == 2) {
@@ -208,8 +254,9 @@ namespace BoSSS.Application.ScalarTransport {
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             using (var ft = new FuncTrace()) {
                 //PerformanceVsCachesize();
-                //base.TerminationKey = true;
-                //return 0.0;
+                SimplifiedPerformance();
+                base.TerminationKey = true;
+                return 0.0;
 
 
                 //u.ProjectField((_2D)((x, y) => x+y));

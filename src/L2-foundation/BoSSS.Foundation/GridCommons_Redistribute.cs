@@ -912,7 +912,9 @@ namespace BoSSS.Foundation.Grid.Classic {
                     foreach (int[] cellCostmap in localcellCosts) {
                         cellCosts.Add(cellCostmap.MPIGatherv(CellsPerRank));
                     }
+                    cellCosts.RemoveAt(0);
                 }
+
                 int[] RankIndex = new int[numberofcells];
 
                 //Sequential Part
