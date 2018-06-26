@@ -965,7 +965,9 @@ namespace BoSSS.Solution {
                         DBpath = "EMPTY";
                     if (DBpath == null)
                         DBpath = "NULL";
-                    Console.WriteLine("Session ID: {0}, DB path: '{1}'.", this.CurrentSessionInfo.ID.ToString(), DBpath);
+                    if (DatabaseDriver.MyRank == 0) {
+                        Console.WriteLine("Session ID: {0}, DB path: '{1}'.", this.CurrentSessionInfo.ID.ToString(), DBpath);
+                    }
                 } else {
                     Console.WriteLine("IO deactivated.");
                 }
@@ -1196,8 +1198,7 @@ namespace BoSSS.Solution {
             }
         }
 
-        private static System.Text.RegularExpressions.Regex WildcardToRegex(string pattern)
-        {
+        private static System.Text.RegularExpressions.Regex WildcardToRegex(string pattern) {
             return new System.Text.RegularExpressions.Regex("^" + System.Text.RegularExpressions.Regex.Escape(pattern).
             Replace("\\*", ".*").
             Replace("\\?", ".") + "$");
