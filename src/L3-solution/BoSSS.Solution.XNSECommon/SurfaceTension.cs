@@ -1150,15 +1150,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         /// </summary>
         MultidimensionalArray m_InterLen;
 
-        public void SetParameter(string speciesName, SpeciesId SpcId, MultidimensionalArray __InterLen) {
-            this.m_InterLen = __InterLen;
-        }
-
         protected double m_penalty;
 
         protected double penalty(int jCellIn, int jCellOut) {
 
-            double muFactor = 1.0;
             double penaltySizeFactor_A = (this.m_InterLen[jCellIn] > 0) ? 1.0 / this.m_InterLen[jCellIn] : 0;
             double penaltySizeFactor_B = (jCellOut >= 0 && this.m_InterLen[jCellOut] > 0) ? 1.0 / this.m_InterLen[jCellOut] : 0;
             Debug.Assert(!double.IsNaN(penaltySizeFactor_A));
@@ -1168,7 +1163,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             double penaltySizeFactor = Math.Max(penaltySizeFactor_A, penaltySizeFactor_B);
 
             //throw new NotImplementedException("this penalty might be unsuitable");
-            return this.m_penalty * penaltySizeFactor * muFactor;
+            return this.m_penalty * penaltySizeFactor;
 
         }
 
@@ -1297,11 +1292,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             return res;
         }
 
-        MultidimensionalArray m_LenScales;
 
         public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
-            throw new NotImplementedException("this penalty might be unsuitable");
-            m_LenScales = cs.CellLengthScales;
+
+            m_InterLen = (MultidimensionalArray)cs.UserDefinedValues["InterfaceLengths"]; 
         }
     }
 

@@ -523,7 +523,7 @@ namespace BoSSS.Solution.XNSECommon {
 
             SpeciesId[] SpcToCompute = AgglomeratedCellLengthScales.Keys.ToArray();
 
-            IDictionary<SpeciesId, MultidimensionalArray> InterfaceLength = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), CutCellQuadOrder).CutCellMetrics.InterfaceArea;
+            IDictionary<SpeciesId, MultidimensionalArray> InterfaceLengths = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), CutCellQuadOrder).CutCellMetrics.InterfaceArea;
 
             // parameter assembly
             // ==================
@@ -584,19 +584,25 @@ namespace BoSSS.Solution.XNSECommon {
                     ColMapping, Params, RowMapping,
                     OpMatrix, OpAffine, false, time, true,
                     AgglomeratedCellLengthScales,
+                    InterfaceLengths,
                     SpcToCompute);
             } else {
-                var eval = Op.GetEvaluatorEx(Tracker,
+                XSpatialOperator.XEvaluatorNonlin eval = Op.GetEvaluatorEx(Tracker,
                     CurrentState.ToArray(), Params, RowMapping,
                     SpcToCompute);
 
                 foreach (var kv in AgglomeratedCellLengthScales)
                     eval.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
 
+                if(Op.SurfaceElementOperator.TotalNoOfComponents > 0) {
+                    foreach(var kv in InterfaceLengths)
+                        eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("InterfaceLengths", kv.Value);
+                }
+
+
                 eval.time = time;
 
                 eval.Evaluate(1.0, 1.0, OpAffine);
-
 
 #if DEBUG
                 // remark: remove this piece in a few months from now on (09may18) if no problems occur
@@ -609,6 +615,7 @@ namespace BoSSS.Solution.XNSECommon {
                     ColMapping, Params, RowMapping,
                     OpMatrix, OpAffine, false, time, true,
                     AgglomeratedCellLengthScales,
+                    InterfaceLengths,
                     SpcToCompute);
 
 
