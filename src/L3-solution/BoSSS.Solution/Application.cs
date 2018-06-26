@@ -1210,6 +1210,13 @@ namespace BoSSS.Solution {
             }
         }
 
+        private static System.Text.RegularExpressions.Regex WildcardToRegex(string pattern)
+        {
+            return new System.Text.RegularExpressions.Regex("^" + System.Text.RegularExpressions.Regex.Escape(pattern).
+            Replace("\\*", ".*").
+            Replace("\\?", ".") + "$");
+        }
+
         /// <summary>
         /// Adds some DG field to <see cref="m_RegisteredFields"/> and, optionally, to <see cref="m_IOFields"/>.
         /// </summary>
@@ -1225,10 +1232,11 @@ namespace BoSSS.Solution {
                 FieldOptions = this.Control.FieldOptions;
             }
 
-            FieldOpts fopts;
-            bool isSpec = FieldOptions.TryGetValue(f.Identification, out fopts);
+            //FieldOpts fopts;
+            //bool isSpec = FieldOptions.TryGetValue(f.Identification, out fopts);
+            FieldOpts fopts = FieldOptions.Where(kv => WildcardToRegex(kv.Key).IsMatch(f.Identification)).SingleOrDefault().Value;
 
-            if (isSpec) {
+            if (fopts != null) {
                 if (ioOpt == IOListOption.Always && fopts.SaveToDB == FieldOpts.SaveToDBOpt.FALSE)
                     throw new ApplicationException("IO for field '" + f.Identification + "' cannot be turned OFF, i.e. 'SaveToDB==false' is illegal.");
                 if (ioOpt == IOListOption.Never && fopts.SaveToDB == FieldOpts.SaveToDBOpt.TRUE)

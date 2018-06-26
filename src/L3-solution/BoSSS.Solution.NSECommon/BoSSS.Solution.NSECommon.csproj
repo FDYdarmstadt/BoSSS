@@ -102,10 +102,6 @@
       <Project>{B7D5F7C7-EA9F-4506-AB69-C3CD2AA8C938}</Project>
       <Name>BoSSS.Platform</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.Grid\BoSSS.Foundation.Grid.csproj">
-      <Project>{13585226-5046-494D-947C-B97479566081}</Project>
-      <Name>BoSSS.Foundation.Grid</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.XDG\BoSSS.Foundation.XDG.csproj">
       <Project>{9a8cdc1f-64f7-441e-849d-66f2c56600f2}</Project>
       <Name>BoSSS.Foundation.XDG</Name>

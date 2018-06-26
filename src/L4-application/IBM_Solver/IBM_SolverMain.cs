@@ -301,14 +301,7 @@ namespace BoSSS.Application.IBM_Solver {
                         comps.Add(ConvBulk); // bulk component
 
                         var ConvIB = new BoSSS.Solution.NSECommon.Operator.Convection.ConvectionAtIB(d, D,LsTrk  , this.Control.AdvancedDiscretizationOptions.LFFA, BcMap,
-                            new Func<double, double>[] {
-                                delegate (double time) { return 0; },
-                                delegate (double time) { return 0; }
-                            },
-                            new Func<double, double>[] {
-                                delegate (double time) { return 0; }
-                            },
-                            this.Control.particleRadius, this.Control.PhysicalParameters.rho_A, false);
+                            delegate (double[] X, double time) { return new double[] { 0.0, 0.0, 0.0, 0.0 }; }, this.Control.PhysicalParameters.rho_A, false);
 
                         comps.Add(ConvIB); // immersed boundary component
                     }
@@ -360,20 +353,7 @@ namespace BoSSS.Application.IBM_Solver {
                         var ViscLs = new BoSSS.Solution.NSECommon.Operator.Viscosity.ViscosityAtIB(d, D, LsTrk, 
                             penalty, this.ComputePenaltyIB,
                             this.Control.PhysicalParameters.mu_A / this.Control.PhysicalParameters.rho_A, 
-                            new Func<double, double>[] {
-                                delegate (double time) {
-                                    return 0;
-                                },
-                                delegate (double time) {
-                                    return 0;
-                                }
-                            }, 
-                            new Func<double, double>[] {
-                                delegate (double time) {
-                                    return 0;
-                                }
-                            }, 
-                            this.Control.particleRadius);
+                            delegate (double[] X, double time) { return new double[] { 0.0, 0.0, 0.0, 0.0 }; });
                         comps.Add(ViscLs); // immersed boundary component
                     }
                 }
@@ -397,14 +377,7 @@ namespace BoSSS.Application.IBM_Solver {
                     }
 
                     var divPen = new BoSSS.Solution.NSECommon.Operator.Continuity.DivergenceAtIB(D, LsTrk, 1,
-                        new Func<double, double>[] {
-                            delegate (double time) { return 0; },
-                            delegate (double time) { return 0; }
-                        },
-                        new Func<double, double>[] {
-                            delegate (double time) { return 0; }
-                        },
-                        this.Control.particleRadius);
+                        delegate (double[] X, double time) { return new double[] { 0.0, 0.0, 0.0, 0.0 }; });
                     IBM_Op.EquationComponents["div"].Add(divPen); // immersed boundary component 
 
 
@@ -720,6 +693,7 @@ namespace BoSSS.Application.IBM_Solver {
 
         MultidimensionalArray m_LenScales;
 
+
         /*
         /// <summary>
         /// Custom Function to compute penalty factor for viscous terms, for bulk terms
@@ -739,6 +713,15 @@ namespace BoSSS.Application.IBM_Solver {
             double penaltySizeFactor_A = 1.0 / this.m_LenScales[jCellIn];
             double penaltySizeFactor_B = jCellOut >= 0 ? 1.0 / this.m_LenScales[jCellOut] : 0;
             double penaltySizeFactor = Math.Max(penaltySizeFactor_A, penaltySizeFactor_B);
+
+            //if(once <= 0) {
+            //    once++;
+            //    Console.WriteLine("penalty: " + penalty);
+            //    Console.WriteLine("penaltySizeFactor: " + penaltySizeFactor);
+            //    Console.WriteLine("muFactor: " + muFactor);
+            //    Console.WriteLine("total penalty: " + (penalty * penaltySizeFactor * muFactor));
+            //}
+
             return penalty * penaltySizeFactor * muFactor;
         }
         */
@@ -1193,9 +1176,9 @@ namespace BoSSS.Application.IBM_Solver {
 
             double dt = Convert.ToDouble(fields_line2[1]) - Convert.ToDouble(fields_line1[1]);
 
-            int idx_restartLine = Convert.ToInt32(time / dt + 1.0);
-            string restartLine = File.ReadLines(pathToPhysicalData).Skip(idx_restartLine - 1).Take(1).First();
-            double[] values = Array.ConvertAll<string, double>(restartLine.Split('\t'), double.Parse);
+            //int idx_restartLine = Convert.ToInt32(time / dt + 1.0);
+            //string restartLine = File.ReadLines(pathToPhysicalData).Skip(idx_restartLine - 1).Take(1).First();
+            //double[] values = Array.ConvertAll<string, double>(restartLine.Split('\t'), double.Parse);
 
             /* string restartLine = "";
               Calculcation of dt 
@@ -1232,7 +1215,7 @@ namespace BoSSS.Application.IBM_Solver {
                     firstline = String.Format("{0}\t{1}\t{2}\t{3}", "#Timestep", "#Time", "x-Force", "y-Force");
                 }
                 Log_DragAndLift.WriteLine(firstline);
-                Log_DragAndLift.WriteLine(restartLine);
+                //Log_DragAndLift.WriteLine(restartLine);
             }
 
         }
@@ -1276,14 +1259,14 @@ namespace BoSSS.Application.IBM_Solver {
                 // ==================
 
                 CellMask CutCells = LsTrk.Regions.GetCutCellMask();
-                CellMask CutCellNeighbors = LsTrk.Regions.GetNearFieldMask(1);
-                var CutCellArray = CutCells.ItemEnum.ToArray();
-                var CutCellNeighborsArray = CutCellNeighbors.ItemEnum.ToArray();
-                var AllCells = CutCellArray.Concat(CutCellNeighborsArray).ToArray();
+                //CellMask CutCellNeighbors = LsTrk.Regions.GetNearFieldMask(1);
+                //var CutCellArray = CutCells.ItemEnum.ToArray();
+                //var CutCellNeighborsArray = CutCellNeighbors.ItemEnum.ToArray();
+                //var AllCells = CutCellArray.Concat(CutCellNeighborsArray).ToArray();
+                //var NoCoarseningcells = new CellMask(this.GridData, AllCells);
 
-                var NoCoarseningcells = new CellMask(this.GridData, AllCells);
-
-                bool AnyChange = GridRefinementController.ComputeGridChange(this.GridData, NoCoarseningcells, LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+                // Only CutCells are NoCoarseningCells 
+                bool AnyChange = GridRefinementController.ComputeGridChange(this.GridData, CutCells, LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
                 int NoOfCellsToRefine = 0;
                 int NoOfCellsToCoarsen = 0;
                 if (AnyChange) {
@@ -1306,11 +1289,12 @@ namespace BoSSS.Application.IBM_Solver {
 
                     newGrid = this.GridData.Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
 
-
-                    Console.WriteLine("Save adaptive Mesh...");
-                    Console.WriteLine("GridGUID:   " + newGrid.GridGuid);
-                    DatabaseDriver.SaveGrid(newGrid);
-                    Console.WriteLine("...done");
+                    if (this.Control.savetodb == true) {
+                        Console.WriteLine("Save adaptive Mesh...");
+                        Console.WriteLine("GridGUID:   " + newGrid.GridGuid);
+                        DatabaseDriver.SaveGrid(newGrid);
+                        Console.WriteLine("...done");
+                    }
                 } else {
 
                     Console.WriteLine("No changes in Grid");
@@ -1318,7 +1302,7 @@ namespace BoSSS.Application.IBM_Solver {
                     old2NewGrid = null;
                 }
 
-                debug = false;
+                //debug = false;
 
             } else {
 

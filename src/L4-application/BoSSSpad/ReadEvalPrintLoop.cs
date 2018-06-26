@@ -151,8 +151,8 @@ namespace BoSSS.Application.BoSSSpad {
                 ilPSP.Environment.StdErr.WriterS.Add(stw);
                 eval.Run(@"
                     Console.WriteLine("""");
-                    Console.WriteLine(""  Database Explorer v2"");
-                    Console.WriteLine(""  ____________________\n"");
+                    Console.WriteLine(""  BoSSSpad C# interpreter"");
+                    Console.WriteLine(""  _______________________\n"");
 
                 
                     try {

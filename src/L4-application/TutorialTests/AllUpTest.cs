@@ -62,7 +62,8 @@ namespace BoSSS.Application.TutorialTests {
             "tutorial6/tutorial6.tex",
             "tutorial9-SIP/sip.tex",
             "tutorial10-PoissonSystem/Poisson.tex",
-            "tutorial11-Stokes/StokesEq.tex"         //   */
+            "tutorial11-Stokes/StokesEq.tex",
+            "CsharpAndBoSSSpad/CsharpAndBoSSSpad.tex"//   */
             )] string TexFileName) {
 
             string FullTexName = Path.Combine(DirectoryOffset, TexFileName);

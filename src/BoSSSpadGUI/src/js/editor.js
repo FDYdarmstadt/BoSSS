@@ -1,6 +1,5 @@
 import * as monaco from 'monaco-editor';
 
-
 export class Editor{
     constructor(element, status){
       this.element = element;
@@ -23,8 +22,47 @@ export class Editor{
       });
       return loading;
     }
-  
-    registerContextMenu(func, myId, myName){
+    
+    registerLanguage_BoSSS(func){
+      monaco.languages.registerCompletionItemProvider(
+        "csharp",
+        this.getBoSSSCompletionProvider(func)
+      );
+    }
+
+    getBoSSSCompletionProvider(func){
+      var that = this;
+      return {
+        provideCompletionItems: async (model, position) => {
+          var range = that.monaco.getSelection();
+          range.startColumn = 1;
+          var value = model.getValueInRange(range);
+          var value = value.split(" ");
+          var completions = await func(value[value.length - 1]);
+          var monacoCompletions = that.translateCompletionsForMonaco(completions);
+          return monacoCompletions;
+        }
+      };
+    }
+
+    translateCompletionsForMonaco(completions){
+      if (completions === null){
+        return [];
+      }
+      if (completions.length === 1 && completions[0] === ""){
+        return [];
+      }
+      var monacoCompletions = []; 
+      for(var i = 0; i < completions.length; ++i){
+        monacoCompletions.push({
+          label : completions[i],
+          kind: monaco.languages.CompletionItemKind.Text
+        });
+      }
+      return monacoCompletions;
+    }
+
+    registerContextMenu(func, myId, myName, keyBindingArray){
       //Add Run Template
       this.monaco.addAction({
         // An unique identifier of the contributed action.
@@ -38,6 +76,8 @@ export class Editor{
   
         // A rule to evaluate on top of the precondition in order to dispatch the keybindings.
         keybindingContext: null,
+
+        keybindings: keyBindingArray,
   
         contextMenuGroupId: 'navigation',
   
