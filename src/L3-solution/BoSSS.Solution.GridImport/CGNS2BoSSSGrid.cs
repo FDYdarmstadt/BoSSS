@@ -35,6 +35,9 @@ namespace BoSSS.Solution.GridImport {
             var b = cgns.base_t.ElementAt(BaseNodeIndex);
             int D = b.CellDimension;
 
+            
+
+
             var grid = CreateBoSSSGrid(b);
 
             long GlobalID_cnt = 0;

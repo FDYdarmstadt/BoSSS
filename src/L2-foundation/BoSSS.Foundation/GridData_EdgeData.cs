@@ -390,12 +390,23 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                     int Je = m_owner.Cells.NoOfCells;
                     int J = m_owner.Cells.NoOfLocalUpdatedCells;
-                    int i0 = m_owner.CellPartitioning.i0;
+                    int j0 = m_owner.CellPartitioning.i0;
+                    long[] GlidxExternal = m_owner.Parallel.GlobalIndicesExternalCells;
 
                     if (m_EdgesTmp != null)
                         throw new ApplicationException("internal error.");
                     m_EdgesTmp = new List<ComputeEdgesHelper>(J * 2);
-                    
+                   
+#if DEBUG
+                    for (int j = 0; j < J; j++) {
+                        int[] CellNeigh = CellNeighbours[j];
+                        foreach(int jN in CellNeigh) {
+                            Debug.Assert(jN >= 0);
+                            Debug.Assert(jN != j);
+                        }
+                    }
+#endif
+
                     int mask;
                     unchecked {
                         mask = (int)0x80000000;
@@ -417,7 +428,20 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 continue; // this edge is already in the list
                             // we use the most significant bit to mark processed edges
 
-                            GridCommons.Neighbour cn_je = CellNeighbours_Global[j].ElementAt(e);
+                            int jNeig = CellNeigh[e];
+                            int jNeigGlob;
+                            if(jNeig < J) {
+                                Debug.Assert(jNeig >= 0);
+                                jNeigGlob = jNeig + j0;
+                            } else {
+                                Debug.Assert(jNeig >= J);
+                                Debug.Assert(jNeig < Je);
+                                jNeigGlob = (int)(GlidxExternal[jNeig - J]);
+                            }
+
+                            //Single(dnsjdkvnskj)
+                            //GridCommons.Neighbour cn_je = CellNeighbours_Global[j].ElementAt(e);
+                            GridCommons.Neighbour cn_je = CellNeighbours_Global[j].Single(Neigh => Neigh.Neighbour_GlobalIndex == jNeigGlob);
 
                             // if we reach this point, we've found a new edge
                             ComputeEdgesHelper ceh = default(ComputeEdgesHelper);
@@ -465,7 +489,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             }
 
                             {
-                                GridCommons.Neighbour cn_je2 = CellNeighbours_Global[ceh.Cell2].Single(x => x.Neighbour_GlobalIndex == (j + i0));
+                                GridCommons.Neighbour cn_je2 = CellNeighbours_Global[ceh.Cell2].Single(x => x.Neighbour_GlobalIndex == (j + j0));
                                 ceh.FaceIndex2 = (byte)cn_je2.CellFaceTag.FaceIndex;
                                 if (!cn_je2.CellFaceTag.ConformalNeighborship)
                                     ceh.info |= EdgeInfo.Cell2_Nonconformal;
