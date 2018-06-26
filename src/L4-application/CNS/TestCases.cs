@@ -997,6 +997,7 @@ namespace CNS {
             c.PrintInterval = 1;
 
             c.WriteLTSLog = false;
+            c.WriteLTSConsoleOutput = false;
 
             double xMin = 0.0;
             double xMax = 1.0;
@@ -1247,7 +1248,8 @@ namespace CNS {
             c.saveperiod = savePeriod;
             c.PrintInterval = 1;
 
-            c.WriteLTSLog = true;
+            c.WriteLTSLog = false;
+            c.WriteLTSConsoleOutput = false;
 
             double xMin = 0.0;
             double xMax = 1.0;
