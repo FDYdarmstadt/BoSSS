@@ -1749,9 +1749,9 @@ namespace BoSSS.Solution {
                     if (NoOfRedistCells <= 0) {
                         return;
                     } else {
-                        //Debugger.Launch();
-
+#if DEBUG
                         Console.WriteLine("Re-distribution of " + NoOfRedistCells + " cells.");
+#endif
                     }
 
                     // backup old data
