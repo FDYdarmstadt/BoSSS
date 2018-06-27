@@ -67,13 +67,16 @@ namespace CutCellQuadrature {
             //new SingleSquareParabolaLengthTestCase(GridSizes.Tiny, GridTypes.Structured),
             //new SingleSquareParabolaVolumeTestCase(GridSizes.Tiny, GridTypes.Structured),
 
-            
+            new QuarterCircleSignedDistance(GridSizes.Tiny, GridTypes.Structured)
+
+            /*
             new SingleSquareParabolaLengthTestCase(GridSizes.Tiny, GridTypes.Structured),
             new SingleSquareParabolaLengthTestCase(GridSizes.Small, GridTypes.Structured),
             new SingleSquareParabolaLengthTestCase(GridSizes.Normal, GridTypes.Structured),
             new SingleSquareParabolaLengthTestCase(GridSizes.Large, GridTypes.Structured),
             new SingleSquareParabolaLengthTestCase(GridSizes.Huge, GridTypes.Structured),
-            
+            */
+
             //new Smereka2EllipseArcLength(GridSizes.Tiny, GridTypes.Structured),
             //new Smereka2EllipseArcLength(GridSizes.Small, GridTypes.Structured),
             //new Smereka2EllipseArcLength(GridSizes.Normal, GridTypes.Structured),
@@ -115,12 +118,13 @@ namespace CutCellQuadrature {
             //new NACA0012ArcLength(GridSizes.Large),
             //new NACA0012ArcLength(GridSizes.Huge),
 
+            
             //new CircleVolume2DTestCase(GridSizes.Tiny, GridTypes.Structured),
             //new CircleVolume2DTestCase(GridSizes.Small, GridTypes.Structured),
             //new CircleVolume2DTestCase(GridSizes.Normal, GridTypes.Structured),
             //new CircleVolume2DTestCase(GridSizes.Large, GridTypes.Structured),
             //new CircleVolume2DTestCase(GridSizes.Huge, GridTypes.Structured),
-
+            
 
             //new CircleArcLength(GridSizes.Small, GridTypes.Structured)
             //new Olshanskii(GridSizes.Tiny, GridTypes.PseudoStructured),
@@ -223,13 +227,12 @@ namespace CutCellQuadrature {
             LineSegment.IRootFindingAlgorithm rootFindingAlgorithm;
 
 
-
             /*
              * ENTER CONFIGURATION HERE
              */
 
             // Export options
-            int plotSuperSampling = -1;
+            int plotSuperSampling = 3;
             bool logVolumeNodes = false;
             int logVolumeNodes_selectedCell = -1;
             bool logSurfaceNodes = false;
@@ -238,8 +241,8 @@ namespace CutCellQuadrature {
 
             // Quadrature variant
 
-            Modes mode = Modes.EquivalentPolynomials;
-            int[] orders = new int[] { 1, 2 };
+            Modes mode = Modes.SayeGaussRules;
+            int[] orders = new int[] { 3, 1, 2 };
 
             //Modes mode = Modes.HMFClassic;
             //int[] orders = new int[] { 3, 4, 5, 6, 7, 8 };
@@ -640,18 +643,17 @@ namespace CutCellQuadrature {
                     }
                 case Modes.SayeGaussRules: //
                     {
-                    throw new NotImplementedException();
-                    /*
-                        volumeFactory = new SayeGaussRule_Volume2D(
-                            levelSetTracker.DataHistories[0].Current,
-                            rootFindingAlgorithm
-                            );
-                        edgeFactory = new CutCellQuadRuleFactory(
-                            new BruteForceSubdivisionStrategy(
-                                Grid.RefElements[0].FaceRefElement, division),
-                            order);
-                        break;
-                    */
+                    
+                    volumeFactory = new SayeGaussRule_Volume2D(
+                        levelSetTracker.DataHistories[0].Current,
+                        rootFindingAlgorithm
+                        );
+                    edgeFactory = new CutCellQuadRuleFactory(
+                        new BruteForceSubdivisionStrategy(
+                            Grid.RefElements[0].FaceRefElement, division),
+                        order);
+                    break;
+                    
                     }
 
                 case Modes.EquivalentPolynomials: //
