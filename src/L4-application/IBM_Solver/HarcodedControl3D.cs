@@ -352,7 +352,7 @@ namespace BoSSS.Application.IBM_Solver {
             Console.WriteLine("...loading grid");
             C.GridGuid = new Guid("1a672505-e301-4271-9c7d-050770f48abc");
 
-            C.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("d1e5a259-d969-4832-a22e-f8a48b2b7a36"), -1);
+            C.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("f7bfee50-ebbf-4013-bccd-202ae0de7287"), -1);
 
             //#region Creates grid () and sets BC
             ////// Create Grid
