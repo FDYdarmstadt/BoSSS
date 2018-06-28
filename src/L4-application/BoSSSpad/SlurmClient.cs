@@ -33,7 +33,7 @@ namespace BoSSS.Application.BoSSSpad {
         string m_Username;
         string m_Password;
         string m_ServerName;
-        SshClient SSHConnection;     
+        SshClient SSHConnection;
 
         /// <summary>
         /// Client for submitting jobs directly from the BoSSSpad to slurm systems
@@ -52,7 +52,7 @@ namespace BoSSS.Application.BoSSSpad {
             Console.WriteLine();
             Console.WriteLine("Please enter your password...");
             m_Password = ReadPassword();
-            Console.WriteLine("Connecting to "+ServerName+"...");
+            Console.WriteLine("Connecting to " + ServerName + "...");
             Console.WriteLine();
 
             SSHConnection = new SshClient(m_ServerName, m_Username, m_Password);
@@ -72,13 +72,12 @@ namespace BoSSS.Application.BoSSSpad {
 
             if (myJob.EnvironmentVars.ContainsKey("JobID")) {
                 output = SSHConnection.RunCommand("squeue -j " + myJob.EnvironmentVars["JobID"] + " -o %T");
-                int startindex = output.Result.IndexOf("\n") ;
-                int endindex = output.Result.IndexOf("\n",startindex+1);
+                int startindex = output.Result.IndexOf("\n");
+                int endindex = output.Result.IndexOf("\n", startindex + 1);
                 string jobstatus;
-                if (startindex ==-1 || endindex==-1) {
+                if (startindex == -1 || endindex == -1) {
                     jobstatus = "";
-                }
-                else {
+                } else {
                     jobstatus = output.Result.Substring(startindex + 1, (endindex - startindex) - 1);
                 }
 
@@ -101,7 +100,7 @@ namespace BoSSS.Application.BoSSSpad {
                         throw new NotImplementedException("Unknown job state: " + jobstatus);
                 }
             }
-            
+
 
             SubmitCount = 0;
         }
@@ -110,8 +109,7 @@ namespace BoSSS.Application.BoSSSpad {
             string fp = Path.Combine(myJob.DeploymentDirectory, "stderr.txt");
             if (File.Exists(fp)) {
                 return fp;
-            }
-            else {
+            } else {
                 return null;
             }
 
@@ -121,8 +119,7 @@ namespace BoSSS.Application.BoSSSpad {
             string fp = Path.Combine(myJob.DeploymentDirectory, "stdout.txt");
             if (File.Exists(fp)) {
                 return fp;
-            }
-            else {
+            } else {
                 return null;
             }
         }
@@ -130,7 +127,7 @@ namespace BoSSS.Application.BoSSSpad {
         public override object Submit(Job myJob) {
 
             // load users .bashrc with all dependencies
-            buildSlurmScript(myJob, new string[] { "source " + "/home/" + m_Username + "/.bashrc"});
+            buildSlurmScript(myJob, new string[] { "source " + "/home/" + m_Username + "/.bashrc" });
 
             string path = "\\home\\" + m_Username + myJob.DeploymentDirectory.Substring(2);
             // Converting script to unix format
@@ -182,10 +179,11 @@ namespace BoSSS.Application.BoSSSpad {
             string usermail = m_Username;
             string startupstring;
             string quote = "\"";
+            string HHLR_project = myJob.HHLR_project;
 
             using (var str = new StringWriter()) {
                 str.Write("mpiexec mono ");
-                str.Write(jobpath_unix+"/"+Path.GetFileName(myJob.EntryAssembly.Location));              
+                str.Write(jobpath_unix + "/" + Path.GetFileName(myJob.EntryAssembly.Location));
                 str.Write(" ");
                 str.Write(myJob.EnvironmentVars["BOSSS_ARG_" + 0]);
                 str.Write(" ");
@@ -205,7 +203,10 @@ namespace BoSSS.Application.BoSSSpad {
             using (StreamWriter sw = File.CreateText(path)) {
                 sw.WriteLine("#!/bin/sh");
                 sw.WriteLine("#SBATCH -J " + jobname);
-                sw.WriteLine("#SBATCH -o "+jobpath_unix + "/stdout.txt"); 
+                if (HHLR_project != null) {
+                    sw.WriteLine("#SBATCH -A " + HHLR_project);
+                }
+                sw.WriteLine("#SBATCH -o " + jobpath_unix + "/stdout.txt");
                 sw.WriteLine("#SBATCH -e " + jobpath_unix + "/stderr.txt");
                 sw.WriteLine("#SBATCH -t " + executiontime);
                 sw.WriteLine("#SBATCH --mem-per-cpu=5000");
@@ -236,8 +237,7 @@ namespace BoSSS.Application.BoSSSpad {
                 if (info.Key != ConsoleKey.Backspace) {
                     Console.Write("*");
                     password += info.KeyChar;
-                }
-                else if (info.Key == ConsoleKey.Backspace) {
+                } else if (info.Key == ConsoleKey.Backspace) {
                     if (!string.IsNullOrEmpty(password)) {
                         // remove one character from the list of password characters
                         password = password.Substring(0, password.Length - 1);
