@@ -993,7 +993,7 @@ namespace CNS {
             IBMControl c = new IBMControl();
 
             //dbPath = @"/work/scratch/ws35kire/work_db";                       // Lichtenberg
-            dbPath = @"/work/scratch/yp19ysog/bosss_db_paper_ibmdmr";          // Lichtenberg
+            //dbPath = @"/work/scratch/yp19ysog/bosss_db_paper_ibmdmr";          // Lichtenberg
             //dbPath = @"c:\bosss_db";                                          // Local
             //dbPath = @"\\dc1\userspace\geisenhofer\bosss_db_IBMShockTube";    // Network
 
@@ -1245,7 +1245,7 @@ namespace CNS {
 
             IBMControl c = IBMDoubleMachReflection(dbPath, savePeriod, dgDegree, numOfCellsX, numOfCellsY, sensorLimit, dtFixed, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, agg, fugdeFactor, endTime);
 
-            c.ProjectName = "paper_ibmdmr_hhlr_v1_run1";
+            c.ProjectName = "paper_ibmdmr_hhlr_v1_run0";
 
             return c;
         }
