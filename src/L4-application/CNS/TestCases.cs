@@ -1245,7 +1245,7 @@ namespace CNS {
 
             IBMControl c = IBMDoubleMachReflection(dbPath, savePeriod, dgDegree, numOfCellsX, numOfCellsY, sensorLimit, dtFixed, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, agg, fugdeFactor, endTime);
 
-            c.ProjectName = "paper_ibmdmr_hhlr_v1_run0";
+            c.ProjectName = "paper_ibmdmr_hhlr_v0_run0";
 
             return c;
         }
