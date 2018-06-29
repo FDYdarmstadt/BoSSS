@@ -216,6 +216,9 @@ namespace BoSSS.Application.BoSSSpad {
                 sw.WriteLine("#SBATCH -e " + jobpath_unix + "/stderr.txt");
                 sw.WriteLine("#SBATCH -t " + executiontime);
                 sw.WriteLine("#SBATCH --mem-per-cpu=" + memPerCPU);
+                if (myJob.UseComputeNodesExclusive) {
+                    sw.WriteLine("#SBATCH --exclusive");
+                }
 
                 sw.WriteLine("#SBATCH -n " + MPIcores);
                 //sw.WriteLine("#SBATCH --mail-user= " + usermail);
