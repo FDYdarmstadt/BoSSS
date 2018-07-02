@@ -69,6 +69,14 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
+        /// The memory (in MB) that is resevered for every core
+        /// </summary>
+        public string MemPerCPU {
+            set;
+            get;
+        }
+
+        /// <summary>
         /// (Optional) object used by some batch processor (after calling <see cref="BatchProcessorClient.Submit(Job)"/>)
         /// in order to identify the job.
         /// </summary>
