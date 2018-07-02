@@ -91,7 +91,8 @@
     <Compile Include="Convection\RusanovFlux.cs" />
     <Compile Include="CNSEnvironment.cs" />
     <Compile Include="LoadBalancing\ArtificialViscosityCellClassifier.cs" />
-    <Compile Include="LoadBalancing\IBMCellCostEstimatorFluidVoid.cs" />
+    <Compile Include="LoadBalancing\IBMCellClassifierTwo.cs" />
+    <Compile Include="LoadBalancing\IBMCellCostEstimatorTwo.cs" />
     <Compile Include="LoadBalancing\IBMCellClassifier.cs" />
     <Compile Include="LoadBalancing\IBMCellCostEstimator.cs" />
     <Compile Include="LoadBalancing\ICellClassifier.cs" />
