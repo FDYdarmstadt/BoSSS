@@ -111,6 +111,10 @@ using BoSSS.Application.IBM\_Solver;
  }
 \BoSSSexe
 \BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
 /// We create a grid with boundary conditions:
  }
 \BoSSSexe
@@ -122,15 +126,17 @@ grid.EdgeTagNames.Add(1, "wall");  \newline
 grid.EdgeTagNames.Add(2, "Velocity\_Inlet");  \newline 
 grid.EdgeTagNames.Add(3, "Pressure\_Outlet");\newline 
 grid.DefineEdgeTags(delegate (double[] X) \{ \newline 
-\btab byte et = 0; \newline 
-\btab if (Math.Abs(X[1] - (-2)) <= 1.0e-8) \newline 
-\btab \btab et = 1; \newline 
-\btab if (Math.Abs(X[1] - (+2.1 )) <= 1.0e-8) \newline 
-\btab \btab et = 1; \newline 
-\btab if (Math.Abs(X[0] - (-2)) <= 1.0e-8) \newline 
-\btab \btab et = 2; \newline 
-\btab if (Math.Abs(X[0] - (+20.0)) <= 1.0e-8) \newline 
-\btab \btab et = 3; \newline 
+\btab double x = X[0];\newline 
+\btab double y = X[1];\newline 
+\btab byte et  = 0; \newline 
+\btab if (Math.Abs(y - (-1)) <= 1.0e-8) \newline 
+\btab \btab et = 1; // lower wall\newline 
+\btab if (Math.Abs(y - (+1)) <= 1.0e-8) \newline 
+\btab \btab et = 1; // upper wall\newline 
+\btab if (Math.Abs(x - (0.0)) <= 1.0e-8) \newline 
+\btab \btab et = 2; // inlet\newline 
+\btab if (Math.Abs(x - (+10.0)) <= 1.0e-8) \newline 
+\btab \btab et = 3; // outlet\newline 
 \btab return et; \newline 
 \});
  }
@@ -141,6 +147,10 @@ grid.DefineEdgeTags(delegate (double[] X) \{ \newline
 \BoSSSexe
 \BoSSScmd{
 myLocalDb.SaveGrid(ref grid);
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
  }
 \BoSSSexe
 \BoSSScmd{
@@ -159,6 +169,8 @@ c.ProjectDescription = desc;\newline
 c.Tags.Add("k"+k);\newline 
 // setting the grid:\newline 
 c.SetGrid(grid);\newline 
+// DG polynomial degree\newline 
+c.SetDGdegree(k);\newline 
 // Physical parameters:\newline 
 double reynolds            = 20; \newline 
 c.PhysicalParameters.rho\_A = 1; \newline 
@@ -226,14 +238,10 @@ var InletVelocityY = GetFormulaObject(StaticFormulas.VelY\_Inlet);
 /// values are irrelevan anyway:
 /// Initial Values are set to 0
 c.BoundaryValues.Clear(); \newline 
-c.AddBoundaryCondition("wall", "VelocityX", WallVelocity); \newline 
-c.AddBoundaryCondition("Velocity\_Inlet", "VelocityX", InletVelocityX);  \newline 
-c.AddBoundaryCondition("Velocity\_Inlet", "VelocityY", InletVelocityY); \newline 
-c.AddBoundaryCondition("Pressure\_Outlet");
- }
-\BoSSSexe
-\BoSSScmd{
- % 
+c.AddBoundaryValue("wall", "VelocityX", WallVelocity); \newline 
+c.AddBoundaryValue("Velocity\_Inlet", "VelocityX", InletVelocityX);  \newline 
+c.AddBoundaryValue("Velocity\_Inlet", "VelocityY", InletVelocityY); \newline 
+c.AddBoundaryValue("Pressure\_Outlet");
  }
 \BoSSSexe
 \BoSSScmd{
@@ -243,8 +251,7 @@ c.AddBoundaryCondition("Pressure\_Outlet");
  }
 \BoSSSexe
 \BoSSScmd{
-/// Finally, we define two jobs: one for the local machine, one for the 
-/// HPC cluster.
+/// Finally, we are ready to deploy the job at the batch processor;
 /// In a usual work flow scenario, we \emph{do not} want to (re-) submit the 
 /// job every time we run the worksheet -- usually, one wants to run a job once.
 /// 
@@ -256,19 +263,7 @@ c.AddBoundaryCondition("Pressure\_Outlet");
  }
 \BoSSSexe
 \BoSSScmd{
-var oneJob\_Local = new Job("byCmdLine\_Local", solver1);
- }
-\BoSSSexe
-\BoSSScmd{
-oneJob\_Local.SetCommandLineArguments(StartupString\_Local);
- }
-\BoSSSexe
-\BoSSScmd{
-oneJob\_Local.Activate(myBatch);
- }
-\BoSSSexe
-\BoSSScmd{
-oneJob\_Local.BatchProcessorIdentifierToken;
+var oneJob\_Local = c.RunBatch(myBatch,NumberOfMPIProcs:1);
  }
 \BoSSSexe
 \BoSSScmd{

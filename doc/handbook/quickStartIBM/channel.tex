@@ -173,9 +173,9 @@ c.SetGrid(grid);
 \BoSSScmd{
 /// Specification of boundary conditions with a parabolic velocity profile for the inlet
 c.BoundaryValues.Clear();\newline 
-c.AddBoundaryCondition("wall");\newline 
-c.AddBoundaryCondition("Velocity\_Inlet", "VelocityX", X => (4.1 * 1.5 * (X[1] + 2) * (4.1 - (X[1] + 2)) / (4.1 * 4.1))); \newline 
-c.AddBoundaryCondition("Pressure\_Outlet");
+c.AddBoundaryValue("wall");\newline 
+c.AddBoundaryValue("Velocity\_Inlet", "VelocityX", X => (4.1 * 1.5 * (X[1] + 2) * (4.1 - (X[1] + 2)) / (4.1 * 4.1))); \newline 
+c.AddBoundaryValue("Pressure\_Outlet");
  }
 \BoSSSexe
 \BoSSScmd{
