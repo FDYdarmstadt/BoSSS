@@ -100,15 +100,15 @@ namespace BoSSS.Application.XNSE_Solver {
                 return grd;
             };
 
-            C.AddBoundaryCondition("wall_lower", "VelocityX#A", (x, t) => 0.0);
-            C.AddBoundaryCondition("wall_upper", "VelocityX#A", (x, t) => 0.0);
-            C.AddBoundaryCondition("wall_left", "VelocityX#A", (x, t) => 0.0);
-            C.AddBoundaryCondition("wall_right", "VelocityX#A", (x, t) => 0.0);
+            C.AddBoundaryValue("wall_lower", "VelocityX#A", (x, t) => 0.0);
+            C.AddBoundaryValue("wall_upper", "VelocityX#A", (x, t) => 0.0);
+            C.AddBoundaryValue("wall_left", "VelocityX#A", (x, t) => 0.0);
+            C.AddBoundaryValue("wall_right", "VelocityX#A", (x, t) => 0.0);
 
-            C.AddBoundaryCondition("wall_lower", "VelocityX#B", (x, t) => 0.0);
-            C.AddBoundaryCondition("wall_upper", "VelocityX#B", (x, t) => 0.0);
-            C.AddBoundaryCondition("wall_left", "VelocityX#B", (x, t) => 0.0);
-            C.AddBoundaryCondition("wall_right", "VelocityX#B", (x, t) => 0.0);
+            C.AddBoundaryValue("wall_lower", "VelocityX#B", (x, t) => 0.0);
+            C.AddBoundaryValue("wall_upper", "VelocityX#B", (x, t) => 0.0);
+            C.AddBoundaryValue("wall_left", "VelocityX#B", (x, t) => 0.0);
+            C.AddBoundaryValue("wall_right", "VelocityX#B", (x, t) => 0.0);
 
 
 
@@ -272,15 +272,15 @@ namespace BoSSS.Application.XNSE_Solver {
                 return grd;
             };
 
-            C.AddBoundaryCondition("wall_lower", "VelocityX#A", (x, t) => VelXBase);
-            C.AddBoundaryCondition("wall_upper", "VelocityX#A", (x, t) => VelXBase);
-            C.AddBoundaryCondition("wall_lower", "VelocityX#B", (x, t) => VelXBase);
-            C.AddBoundaryCondition("wall_upper", "VelocityX#B", (x, t) => VelXBase);
+            C.AddBoundaryValue("wall_lower", "VelocityX#A", (x, t) => VelXBase);
+            C.AddBoundaryValue("wall_upper", "VelocityX#A", (x, t) => VelXBase);
+            C.AddBoundaryValue("wall_lower", "VelocityX#B", (x, t) => VelXBase);
+            C.AddBoundaryValue("wall_upper", "VelocityX#B", (x, t) => VelXBase);
             if (!xPeriodic) {
-                C.AddBoundaryCondition("wall_left", "VelocityX#A", (x, t) => VelXBase);
-                C.AddBoundaryCondition("wall_right", "VelocityX#A", (x, t) => VelXBase);
-                C.AddBoundaryCondition("wall_left", "VelocityX#B", (x, t) => VelXBase);
-                C.AddBoundaryCondition("wall_right", "VelocityX#B", (x, t) => VelXBase);
+                C.AddBoundaryValue("wall_left", "VelocityX#A", (x, t) => VelXBase);
+                C.AddBoundaryValue("wall_right", "VelocityX#A", (x, t) => VelXBase);
+                C.AddBoundaryValue("wall_left", "VelocityX#B", (x, t) => VelXBase);
+                C.AddBoundaryValue("wall_right", "VelocityX#B", (x, t) => VelXBase);
 
             }
 
@@ -486,15 +486,15 @@ namespace BoSSS.Application.XNSE_Solver {
                 return grd;
             };
 
-            C.AddBoundaryCondition("wall_lower", "VelocityX#A", (X, t) => VelXBase);
-            C.AddBoundaryCondition("wall_upper", "VelocityX#A", (X, t) => VelXBase);
-            C.AddBoundaryCondition("wall_lower", "VelocityX#B", (X, t) => VelXBase);
-            C.AddBoundaryCondition("wall_upper", "VelocityX#B", (X, t) => VelXBase);
+            C.AddBoundaryValue("wall_lower", "VelocityX#A", (X, t) => VelXBase);
+            C.AddBoundaryValue("wall_upper", "VelocityX#A", (X, t) => VelXBase);
+            C.AddBoundaryValue("wall_lower", "VelocityX#B", (X, t) => VelXBase);
+            C.AddBoundaryValue("wall_upper", "VelocityX#B", (X, t) => VelXBase);
             if (!xPeriodic) {
-                C.AddBoundaryCondition("wall_left", "VelocityX#A", (X, t) => VelXBase);
-                C.AddBoundaryCondition("wall_right", "VelocityX#A", (X, t) => VelXBase);
-                C.AddBoundaryCondition("wall_left", "VelocityX#B", (X, t) => VelXBase);
-                C.AddBoundaryCondition("wall_right", "VelocityX#B", (X, t) => VelXBase);
+                C.AddBoundaryValue("wall_left", "VelocityX#A", (X, t) => VelXBase);
+                C.AddBoundaryValue("wall_right", "VelocityX#A", (X, t) => VelXBase);
+                C.AddBoundaryValue("wall_left", "VelocityX#B", (X, t) => VelXBase);
+                C.AddBoundaryValue("wall_right", "VelocityX#B", (X, t) => VelXBase);
 
 #pragma warning disable 162
                 if (VelXBase != 0.0) {
@@ -662,14 +662,14 @@ namespace BoSSS.Application.XNSE_Solver {
                 return grd;
             };
 
-            C.AddBoundaryCondition("wall_lower", "VelocityX#A", (X, t) => VelXBase);
-            C.AddBoundaryCondition("wall_upper", "VelocityX#A", (X, t) => VelXBase);
-            C.AddBoundaryCondition("wall_lower", "VelocityX#B", (X, t) => VelXBase);
-            C.AddBoundaryCondition("wall_upper", "VelocityX#B", (X, t) => VelXBase);
-            C.AddBoundaryCondition("wall_left", "VelocityX#A", (X, t) => VelXBase);
-            C.AddBoundaryCondition("wall_right", "VelocityX#A", (X, t) => VelXBase);
-            C.AddBoundaryCondition("wall_left", "VelocityX#B", (X, t) => VelXBase);
-            C.AddBoundaryCondition("wall_right", "VelocityX#B", (X, t) => VelXBase);
+            C.AddBoundaryValue("wall_lower", "VelocityX#A", (X, t) => VelXBase);
+            C.AddBoundaryValue("wall_upper", "VelocityX#A", (X, t) => VelXBase);
+            C.AddBoundaryValue("wall_lower", "VelocityX#B", (X, t) => VelXBase);
+            C.AddBoundaryValue("wall_upper", "VelocityX#B", (X, t) => VelXBase);
+            C.AddBoundaryValue("wall_left", "VelocityX#A", (X, t) => VelXBase);
+            C.AddBoundaryValue("wall_right", "VelocityX#A", (X, t) => VelXBase);
+            C.AddBoundaryValue("wall_left", "VelocityX#B", (X, t) => VelXBase);
+            C.AddBoundaryValue("wall_right", "VelocityX#B", (X, t) => VelXBase);
 
 #pragma warning disable 162
             if (VelXBase != 0.0) {
@@ -930,10 +930,10 @@ namespace BoSSS.Application.XNSE_Solver {
             C.InitialValues_Evaluators.Add("SurfaceForceX", X => -((CC_A - CC_B) * (1 + X[0].Pow2()) + 2.0 * (MU_A - MU_B)));
             C.InitialValues_Evaluators.Add("SurfaceForceY", X => -((CC_A - CC_B) * (1 + X[0].Pow2()) - 2.0 * (MU_A - MU_B)));
 
-            C.AddBoundaryCondition("velocity_inlet", "VelocityX#A", (X, t) => -X[0]);
-            C.AddBoundaryCondition("velocity_inlet", "VelocityY#A", (X, t) => X[1]);
-            C.AddBoundaryCondition("velocity_inlet", "VelocityX#B", (X, t) => -X[0]);
-            C.AddBoundaryCondition("velocity_inlet", "VelocityY#B", (X, t) => X[1]);
+            C.AddBoundaryValue("velocity_inlet", "VelocityX#A", (X, t) => -X[0]);
+            C.AddBoundaryValue("velocity_inlet", "VelocityY#A", (X, t) => X[1]);
+            C.AddBoundaryValue("velocity_inlet", "VelocityX#B", (X, t) => -X[0]);
+            C.AddBoundaryValue("velocity_inlet", "VelocityY#B", (X, t) => X[1]);
 
 
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.0;
@@ -1090,15 +1090,15 @@ namespace BoSSS.Application.XNSE_Solver {
             // Boundary condition
             // ==================
 
-            C.AddBoundaryCondition(innerWallTag, "VelocityX#A", UA1);
-            C.AddBoundaryCondition(innerWallTag, "VelocityY#A", UA2);
-            C.AddBoundaryCondition(innerWallTag, "VelocityX#B", (X, t) => double.NaN);
-            C.AddBoundaryCondition(innerWallTag, "VelocityY#B", (X, t) => double.NaN);
+            C.AddBoundaryValue(innerWallTag, "VelocityX#A", UA1);
+            C.AddBoundaryValue(innerWallTag, "VelocityY#A", UA2);
+            C.AddBoundaryValue(innerWallTag, "VelocityX#B", (X, t) => double.NaN);
+            C.AddBoundaryValue(innerWallTag, "VelocityY#B", (X, t) => double.NaN);
 
-            C.AddBoundaryCondition(outerWallTag, "VelocityX#A", (X, t) => double.NaN);
-            C.AddBoundaryCondition(outerWallTag, "VelocityY#A", (X, t) => double.NaN);
-            C.AddBoundaryCondition(outerWallTag, "VelocityX#B", UB1);
-            C.AddBoundaryCondition(outerWallTag, "VelocityY#B", UB2);
+            C.AddBoundaryValue(outerWallTag, "VelocityX#A", (X, t) => double.NaN);
+            C.AddBoundaryValue(outerWallTag, "VelocityY#A", (X, t) => double.NaN);
+            C.AddBoundaryValue(outerWallTag, "VelocityX#B", UB1);
+            C.AddBoundaryValue(outerWallTag, "VelocityY#B", UB2);
 
 
             // Initial Values
@@ -1251,10 +1251,10 @@ namespace BoSSS.Application.XNSE_Solver {
 
             const double u_w = 0.5;
 
-            C.AddBoundaryCondition("Velocity_inlet_lower", "VelocityX#A", (X, t) => 0.0);
-            C.AddBoundaryCondition("Velocity_inlet_lower", "VelocityX#B", (X, t) => 0.0);
-            C.AddBoundaryCondition("Velocity_inlet_upper", "VelocityX#A", (X, t) => u_w);
-            C.AddBoundaryCondition("Velocity_inlet_upper", "VelocityX#B", (X, t) => u_w);
+            C.AddBoundaryValue("Velocity_inlet_lower", "VelocityX#A", (X, t) => 0.0);
+            C.AddBoundaryValue("Velocity_inlet_lower", "VelocityX#B", (X, t) => 0.0);
+            C.AddBoundaryValue("Velocity_inlet_upper", "VelocityX#A", (X, t) => u_w);
+            C.AddBoundaryValue("Velocity_inlet_upper", "VelocityX#B", (X, t) => u_w);
 
             #endregion
 
@@ -1465,23 +1465,23 @@ namespace BoSSS.Application.XNSE_Solver {
             // ===================
             #region BC
 
-            C.AddBoundaryCondition("Velocity_inlet_lower", "VelocityX#A", u_A);
-            C.AddBoundaryCondition("Velocity_inlet_lower", "VelocityX#B", (X, t) => double.NaN);
-            C.AddBoundaryCondition("Velocity_inlet_lower", "VelocityY#A", v_0);
-            C.AddBoundaryCondition("Velocity_inlet_lower", "VelocityY#B", (X, t) => double.NaN);
+            C.AddBoundaryValue("Velocity_inlet_lower", "VelocityX#A", u_A);
+            C.AddBoundaryValue("Velocity_inlet_lower", "VelocityX#B", (X, t) => double.NaN);
+            C.AddBoundaryValue("Velocity_inlet_lower", "VelocityY#A", v_0);
+            C.AddBoundaryValue("Velocity_inlet_lower", "VelocityY#B", (X, t) => double.NaN);
 
 
-            C.AddBoundaryCondition("Velocity_inlet_upper", "VelocityX#A", (X, t) => double.NaN);
-            C.AddBoundaryCondition("Velocity_inlet_upper", "VelocityX#B", u_B);
-            C.AddBoundaryCondition("Velocity_inlet_upper", "VelocityY#A", (X, t) => double.NaN);
-            C.AddBoundaryCondition("Velocity_inlet_upper", "VelocityY#B", v_0);
+            C.AddBoundaryValue("Velocity_inlet_upper", "VelocityX#A", (X, t) => double.NaN);
+            C.AddBoundaryValue("Velocity_inlet_upper", "VelocityX#B", u_B);
+            C.AddBoundaryValue("Velocity_inlet_upper", "VelocityY#A", (X, t) => double.NaN);
+            C.AddBoundaryValue("Velocity_inlet_upper", "VelocityY#B", v_0);
 
 
             if (!xPeriodic) {
-                C.AddBoundaryCondition("Pressure_Dirichlet_left", "Pressure#A", psi_0);
-                C.AddBoundaryCondition("Pressure_Dirichlet_left", "Pressure#B", psi_0);
-                C.AddBoundaryCondition("Pressure_Dirichlet_right", "Pressure#A", psi_0);
-                C.AddBoundaryCondition("Pressure_Dirichlet_right", "Pressure#B", psi_0);
+                C.AddBoundaryValue("Pressure_Dirichlet_left", "Pressure#A", psi_0);
+                C.AddBoundaryValue("Pressure_Dirichlet_left", "Pressure#B", psi_0);
+                C.AddBoundaryValue("Pressure_Dirichlet_right", "Pressure#A", psi_0);
+                C.AddBoundaryValue("Pressure_Dirichlet_right", "Pressure#B", psi_0);
             }
 
 
@@ -1863,11 +1863,11 @@ namespace BoSSS.Application.XNSE_Solver {
             // ===================
             #region BC
 
-            C.AddBoundaryCondition("wall_lower");
-            C.AddBoundaryCondition("wall_upper");
+            C.AddBoundaryValue("wall_lower");
+            C.AddBoundaryValue("wall_upper");
             if (!xPeriodic) {
-                C.AddBoundaryCondition("freeslip_left");
-                C.AddBoundaryCondition("freeslip_right");
+                C.AddBoundaryValue("freeslip_left");
+                C.AddBoundaryValue("freeslip_right");
                 //C.AddBoundaryCondition("wall_left");
                 //C.AddBoundaryCondition("wall_right");
             }
@@ -2088,15 +2088,15 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
             // oscillation induced by body force
-            C.AddBoundaryCondition("wall_lower", "VelocityX#A", (X, t) => 0.0);
-            C.AddBoundaryCondition("wall_upper", "VelocityX#A", (X, t) => 0.0);
-            C.AddBoundaryCondition("wall_lower", "VelocityX#B", (X, t) => 0.0);
-            C.AddBoundaryCondition("wall_upper", "VelocityX#B", (X, t) => 0.0);
+            C.AddBoundaryValue("wall_lower", "VelocityX#A", (X, t) => 0.0);
+            C.AddBoundaryValue("wall_upper", "VelocityX#A", (X, t) => 0.0);
+            C.AddBoundaryValue("wall_lower", "VelocityX#B", (X, t) => 0.0);
+            C.AddBoundaryValue("wall_upper", "VelocityX#B", (X, t) => 0.0);
 
-            C.AddBoundaryCondition("wall_left", "VelocityX#A", (X, t) => 0.0);
-            C.AddBoundaryCondition("wall_right", "VelocityX#A", (X, t) => 0.0);
-            C.AddBoundaryCondition("wall_left", "VelocityX#B", (X, t) => 0.0);
-            C.AddBoundaryCondition("wall_right", "VelocityX#B", (X, t) => 0.0);
+            C.AddBoundaryValue("wall_left", "VelocityX#A", (X, t) => 0.0);
+            C.AddBoundaryValue("wall_right", "VelocityX#A", (X, t) => 0.0);
+            C.AddBoundaryValue("wall_left", "VelocityX#B", (X, t) => 0.0);
+            C.AddBoundaryValue("wall_right", "VelocityX#B", (X, t) => 0.0);
 
 
             #endregion
@@ -2309,15 +2309,15 @@ namespace BoSSS.Application.XNSE_Solver {
 
             double Yvel = 1.0;
 
-            C.AddBoundaryCondition("velocity_inlet_lower", "VelocityY#A", X => Yvel);
-            C.AddBoundaryCondition("velocity_inlet_lower", "VelocityY#B", X => Yvel);
-            C.AddBoundaryCondition("velocity_inlet_upper", "VelocityY#A", X => Yvel);
-            C.AddBoundaryCondition("velocity_inlet_upper", "VelocityY#B", X => Yvel);
+            C.AddBoundaryValue("velocity_inlet_lower", "VelocityY#A", X => Yvel);
+            C.AddBoundaryValue("velocity_inlet_lower", "VelocityY#B", X => Yvel);
+            C.AddBoundaryValue("velocity_inlet_upper", "VelocityY#A", X => Yvel);
+            C.AddBoundaryValue("velocity_inlet_upper", "VelocityY#B", X => Yvel);
 
-            C.AddBoundaryCondition("velocity_inlet_left", "VelocityY#A", X => Yvel);
-            C.AddBoundaryCondition("velocity_inlet_left", "VelocityY#B", X => Yvel);
-            C.AddBoundaryCondition("velocity_inlet_right", "VelocityY#A", X => Yvel);
-            C.AddBoundaryCondition("velocity_inlet_right", "VelocityY#B", X => Yvel);
+            C.AddBoundaryValue("velocity_inlet_left", "VelocityY#A", X => Yvel);
+            C.AddBoundaryValue("velocity_inlet_left", "VelocityY#B", X => Yvel);
+            C.AddBoundaryValue("velocity_inlet_right", "VelocityY#A", X => Yvel);
+            C.AddBoundaryValue("velocity_inlet_right", "VelocityY#B", X => Yvel);
 
             //double yVel_max = 1.0;
             //Func<double[], double, double> yVel_seesaw = (X, t) => yVel_max * Math.Sin(2*Math.PI*t);
@@ -2567,16 +2567,16 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.AddBoundaryCondition("velocity_inlet_upper", "VelocityX#A", X => Xvel);
             //C.AddBoundaryCondition("velocity_inlet_upper", "VelocityX#B", X => Xvel);
 
-            C.AddBoundaryCondition("freeslip_lower");
-            C.AddBoundaryCondition("freeslip_upper");
+            C.AddBoundaryValue("freeslip_lower");
+            C.AddBoundaryValue("freeslip_upper");
 
             //C.AddBoundaryCondition("velocity_inlet_left", "VelocityX#A", X => Xvel);
             //C.AddBoundaryCondition("velocity_inlet_left", "VelocityX#B", X => Xvel);
             //C.AddBoundaryCondition("velocity_inlet_right", "VelocityX#A", X => Xvel);
             //C.AddBoundaryCondition("velocity_inlet_right", "VelocityX#B", X => Xvel);
 
-            C.AddBoundaryCondition("pressure_outlet_right");
-            C.AddBoundaryCondition("velocity_inlet_left", "VelocityX#A", X => Xvel);
+            C.AddBoundaryValue("pressure_outlet_right");
+            C.AddBoundaryValue("velocity_inlet_left", "VelocityX#A", X => Xvel);
 
 
             #endregion
@@ -2842,22 +2842,22 @@ namespace BoSSS.Application.XNSE_Solver {
             switch (wall_bc) {
                 case 1:
                     {
-                        C.AddBoundaryCondition("wall_lower");
-                        C.AddBoundaryCondition("wall_upper");
+                        C.AddBoundaryValue("wall_lower");
+                        C.AddBoundaryValue("wall_upper");
                         break;
                     }
                 case 2:
                     {
-                        C.AddBoundaryCondition("freeslip_lower");
-                        C.AddBoundaryCondition("freeslip_upper");
+                        C.AddBoundaryValue("freeslip_lower");
+                        C.AddBoundaryValue("freeslip_upper");
                         break;
                     }
                 case 3:
                     {
-                        C.AddBoundaryCondition("Velocity_inlet_lower", "VelocityX#A", (X, t) => velX);
-                        C.AddBoundaryCondition("Velocity_inlet_lower", "VelocityX#B", (X, t) => velX);
-                        C.AddBoundaryCondition("Velocity_inlet_upper", "VelocityX#A", (X, t) => velX);
-                        C.AddBoundaryCondition("Velocity_inlet_upper", "VelocityX#B", (X, t) => velX);
+                        C.AddBoundaryValue("Velocity_inlet_lower", "VelocityX#A", (X, t) => velX);
+                        C.AddBoundaryValue("Velocity_inlet_lower", "VelocityX#B", (X, t) => velX);
+                        C.AddBoundaryValue("Velocity_inlet_upper", "VelocityX#A", (X, t) => velX);
+                        C.AddBoundaryValue("Velocity_inlet_upper", "VelocityX#B", (X, t) => velX);
                         //C.AddBoundaryCondition("Velocity_inlet_lower", "VelocityX#A", (X, t) => 0.0);
                         //C.AddBoundaryCondition("Velocity_inlet_lower", "VelocityX#B", (X, t) => 0.0);
                         //C.AddBoundaryCondition("Velocity_inlet_upper", "VelocityX#A", (X, t) => 0.0);
@@ -2866,9 +2866,9 @@ namespace BoSSS.Application.XNSE_Solver {
                     }
                 case 4:
                     {
-                        C.AddBoundaryCondition("freeslip_lower");
-                        C.AddBoundaryCondition("Velocity_inlet_upper", "VelocityX#A", (X, t) => velX);
-                        C.AddBoundaryCondition("Velocity_inlet_upper", "VelocityX#B", (X, t) => velX);
+                        C.AddBoundaryValue("freeslip_lower");
+                        C.AddBoundaryValue("Velocity_inlet_upper", "VelocityX#A", (X, t) => velX);
+                        C.AddBoundaryValue("Velocity_inlet_upper", "VelocityX#B", (X, t) => velX);
                         //C.AddBoundaryCondition("Velocity_inlet_lower", "VelocityX#A", (X, t) => velX);
                         //C.AddBoundaryCondition("Velocity_inlet_lower", "VelocityX#B", (X, t) => velX);
                         //C.AddBoundaryCondition("freeslip_upper");
@@ -2877,9 +2877,9 @@ namespace BoSSS.Application.XNSE_Solver {
             }
 
             if (!xPeriodic) {
-                C.AddBoundaryCondition("Velocity_inlet_left", "VelocityX#A", (X, t) => velX);
-                C.AddBoundaryCondition("Velocity_inlet_left", "VelocityX#B", (X, t) => velX);
-                C.AddBoundaryCondition("Pressure_outlet_right");
+                C.AddBoundaryValue("Velocity_inlet_left", "VelocityX#A", (X, t) => velX);
+                C.AddBoundaryValue("Velocity_inlet_left", "VelocityX#B", (X, t) => velX);
+                C.AddBoundaryValue("Pressure_outlet_right");
             }
 
 
@@ -3052,13 +3052,13 @@ namespace BoSSS.Application.XNSE_Solver {
 
             double a = 1.0;
 
-            C.AddBoundaryCondition("freeslip_lower");
+            C.AddBoundaryValue("freeslip_lower");
 
-            C.AddBoundaryCondition("Velocity_inlet_upper", "VelocityX#A", (X, t) => a * X[0]);
-            C.AddBoundaryCondition("Velocity_inlet_upper", "VelocityY#A", (X, t) => - a * X[1]);
+            C.AddBoundaryValue("Velocity_inlet_upper", "VelocityX#A", (X, t) => a * X[0]);
+            C.AddBoundaryValue("Velocity_inlet_upper", "VelocityY#A", (X, t) => - a * X[1]);
 
-            C.AddBoundaryCondition("pressure_outlet_left");
-            C.AddBoundaryCondition("Pressure_outlet_right");
+            C.AddBoundaryValue("pressure_outlet_left");
+            C.AddBoundaryValue("Pressure_outlet_right");
 
             #endregion
 
@@ -3212,14 +3212,14 @@ namespace BoSSS.Application.XNSE_Solver {
             // ===================
             #region BC
 
-            C.AddBoundaryCondition(IncompressibleBcType.Velocity_Inlet.ToString(), "VelocityX#A", (X, t) => (1.0 - X[1] * X[1]));
-            C.AddBoundaryCondition(IncompressibleBcType.Velocity_Inlet.ToString(), "VelocityX#B", (X, t) => (1.0 - X[1] * X[1]));
+            C.AddBoundaryValue(IncompressibleBcType.Velocity_Inlet.ToString(), "VelocityX#A", (X, t) => (1.0 - X[1] * X[1]));
+            C.AddBoundaryValue(IncompressibleBcType.Velocity_Inlet.ToString(), "VelocityX#B", (X, t) => (1.0 - X[1] * X[1]));
 
-            C.AddBoundaryCondition(outBc.ToString());
+            C.AddBoundaryValue(outBc.ToString());
 
-            C.AddBoundaryCondition(IncompressibleBcType.Wall.ToString() + "_upper");
+            C.AddBoundaryValue(IncompressibleBcType.Wall.ToString() + "_upper");
 
-            C.AddBoundaryCondition(IncompressibleBcType.Wall.ToString() + "_lower");
+            C.AddBoundaryValue(IncompressibleBcType.Wall.ToString() + "_lower");
 
             #endregion
 
@@ -3456,10 +3456,10 @@ namespace BoSSS.Application.XNSE_Solver {
             // ===================
             #region BC
 
-            C.AddBoundaryCondition("wall_lower");
-            C.AddBoundaryCondition("wall_upper");
-            C.AddBoundaryCondition("freeslip_left");
-            C.AddBoundaryCondition("freeslip_right");
+            C.AddBoundaryValue("wall_lower");
+            C.AddBoundaryValue("wall_upper");
+            C.AddBoundaryValue("freeslip_left");
+            C.AddBoundaryValue("freeslip_right");
 
             #endregion
 
@@ -3716,10 +3716,10 @@ namespace BoSSS.Application.XNSE_Solver {
             // ===================
             #region BC
 
-            C.AddBoundaryCondition("wall_lower");
-            C.AddBoundaryCondition("wall_upper");
-            C.AddBoundaryCondition("wall_left");
-            C.AddBoundaryCondition("wall_right");
+            C.AddBoundaryValue("wall_lower");
+            C.AddBoundaryValue("wall_upper");
+            C.AddBoundaryValue("wall_left");
+            C.AddBoundaryValue("wall_right");
 
             #endregion
 
@@ -3929,10 +3929,10 @@ namespace BoSSS.Application.XNSE_Solver {
             // ===================
             #region BC
 
-            C.AddBoundaryCondition("pressure_outlet_lower");
-            C.AddBoundaryCondition("pressure_outlet_upper");
-            C.AddBoundaryCondition("freeslip_left");
-            C.AddBoundaryCondition("freeslip_right");
+            C.AddBoundaryValue("pressure_outlet_lower");
+            C.AddBoundaryValue("pressure_outlet_upper");
+            C.AddBoundaryValue("freeslip_left");
+            C.AddBoundaryValue("freeslip_right");
 
 
             #endregion
@@ -4150,8 +4150,8 @@ namespace BoSSS.Application.XNSE_Solver {
             // ===================
             #region BC
 
-            C.AddBoundaryCondition("freeslip_lower");
-            C.AddBoundaryCondition("freeslip_upper");
+            C.AddBoundaryValue("freeslip_lower");
+            C.AddBoundaryValue("freeslip_upper");
             //C.AddBoundaryCondition("velocity_inlet_left", "VelocityX#A", X => 1.0);
             //C.AddBoundaryCondition("velocity_inlet_left", "VelocityX#B", X => 1.0);
             //C.AddBoundaryCondition("velocity_inlet_right", "VelocityX#A", X => 1.0);
@@ -4350,15 +4350,15 @@ namespace BoSSS.Application.XNSE_Solver {
             // ===================
             #region BC
 
-            C.AddBoundaryCondition("velocity_inlet_lower", "VelocityX#A", u_l);
-            C.AddBoundaryCondition("velocity_inlet_lower", "VelocityX#B", u_a);
-            C.AddBoundaryCondition("velocity_inlet_upper", "VelocityX#A", u_l);
-            C.AddBoundaryCondition("velocity_inlet_upper", "VelocityX#B", u_a);
+            C.AddBoundaryValue("velocity_inlet_lower", "VelocityX#A", u_l);
+            C.AddBoundaryValue("velocity_inlet_lower", "VelocityX#B", u_a);
+            C.AddBoundaryValue("velocity_inlet_upper", "VelocityX#A", u_l);
+            C.AddBoundaryValue("velocity_inlet_upper", "VelocityX#B", u_a);
             if (!xPeriodic) {
-                C.AddBoundaryCondition("velocity_inlet_left", "VelocityX#A", u_l);
-                C.AddBoundaryCondition("velocity_inlet_left", "VelocityX#B", u_a);
-                C.AddBoundaryCondition("velocity_inlet_right", "VelocityX#A", u_l);
-                C.AddBoundaryCondition("velocity_inlet_right", "VelocityX#B", u_a);
+                C.AddBoundaryValue("velocity_inlet_left", "VelocityX#A", u_l);
+                C.AddBoundaryValue("velocity_inlet_left", "VelocityX#B", u_a);
+                C.AddBoundaryValue("velocity_inlet_right", "VelocityX#A", u_l);
+                C.AddBoundaryValue("velocity_inlet_right", "VelocityX#B", u_a);
 
                 //C.AddBoundaryCondition("velocity_inlet_left", "Phi", X => (X[1] - h(X, 0)));
                 //C.AddBoundaryCondition("velocity_inlet_right", "Phi", X => (X[1] - h(X, 0)));
@@ -4585,8 +4585,8 @@ namespace BoSSS.Application.XNSE_Solver {
             double U_l = 0.0;
             double U_a = 0.0;
 
-            C.AddBoundaryCondition("wall_lower", "VelocityX#A", X => U_l);
-            C.AddBoundaryCondition("velocity_inlet_upper", "VelocityX#B", X => U_a);
+            C.AddBoundaryValue("wall_lower", "VelocityX#A", X => U_l);
+            C.AddBoundaryValue("velocity_inlet_upper", "VelocityX#B", X => U_a);
 
             //C.AddBoundaryCondition("wall_lower", "VelocityX#A", X => 0.0);
             //C.AddBoundaryCondition("wall_upper", "VelocityX#B", X => 0.0);
@@ -4754,16 +4754,16 @@ namespace BoSSS.Application.XNSE_Solver {
             // ===================
             #region BC
 
-            C.AddBoundaryCondition("wall_lower", "VelocityX#A", (X, t) => 0.0);
-            C.AddBoundaryCondition("wall_upper", "VelocityX#A", (X, t) => 0.0);
-            C.AddBoundaryCondition("wall_lower", "VelocityX#B", (X, t) => 0.0);
-            C.AddBoundaryCondition("wall_upper", "VelocityX#B", (X, t) => 0.0);
+            C.AddBoundaryValue("wall_lower", "VelocityX#A", (X, t) => 0.0);
+            C.AddBoundaryValue("wall_upper", "VelocityX#A", (X, t) => 0.0);
+            C.AddBoundaryValue("wall_lower", "VelocityX#B", (X, t) => 0.0);
+            C.AddBoundaryValue("wall_upper", "VelocityX#B", (X, t) => 0.0);
             if (!xPeriodic)
             {
-                C.AddBoundaryCondition("wall_left", "VelocityX#A", (X, t) => 0.0);
-                C.AddBoundaryCondition("wall_right", "VelocityX#A", (X, t) => 0.0);
-                C.AddBoundaryCondition("wall_left", "VelocityX#B", (X, t) => 0.0);
-                C.AddBoundaryCondition("wall_right", "VelocityX#B", (X, t) => 0.0);
+                C.AddBoundaryValue("wall_left", "VelocityX#A", (X, t) => 0.0);
+                C.AddBoundaryValue("wall_right", "VelocityX#A", (X, t) => 0.0);
+                C.AddBoundaryValue("wall_left", "VelocityX#B", (X, t) => 0.0);
+                C.AddBoundaryValue("wall_right", "VelocityX#B", (X, t) => 0.0);
             }
 
             #endregion
@@ -4911,10 +4911,10 @@ namespace BoSSS.Application.XNSE_Solver {
             };
 
 
-            C.AddBoundaryCondition("wall_lower");
-            C.AddBoundaryCondition("wall_upper");
-            C.AddBoundaryCondition("wall_left");
-            C.AddBoundaryCondition("wall_right");
+            C.AddBoundaryValue("wall_lower");
+            C.AddBoundaryValue("wall_upper");
+            C.AddBoundaryValue("wall_left");
+            C.AddBoundaryValue("wall_right");
 
             C.InitialValues_Evaluators.Add("Phi", (X => X[1] - X[0] + 0.2));
 

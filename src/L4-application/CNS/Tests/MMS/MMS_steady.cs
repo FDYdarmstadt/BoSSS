@@ -115,9 +115,9 @@ namespace CNS.Tests.MMS {
             c.InitialValues_Evaluators.Add(Variables.Momentum.xComponent, X => m0(X, 0.0));
             c.InitialValues_Evaluators.Add(Variables.Energy, X => rhoE(X, 0.0));
 
-            c.AddBoundaryCondition("supersonicInlet", Variables.Density, rho);
-            c.AddBoundaryCondition("supersonicInlet", Variables.Velocity.xComponent, u0);
-            c.AddBoundaryCondition("supersonicInlet", Variables.Pressure, p);
+            c.AddBoundaryValue("supersonicInlet", Variables.Density, rho);
+            c.AddBoundaryValue("supersonicInlet", Variables.Velocity.xComponent, u0);
+            c.AddBoundaryValue("supersonicInlet", Variables.Pressure, p);
 
             // MMS Sources
             c.CustomContinuitySources.Add(map => new AdHocSourceTerm(map,
@@ -235,10 +235,10 @@ namespace CNS.Tests.MMS {
             c.InitialValues_Evaluators.Add(Variables.Momentum.yComponent, X => m1(X, 0.0));
             c.InitialValues_Evaluators.Add(Variables.Energy, X => rhoE(X, 0.0));
 
-            c.AddBoundaryCondition("supersonicInlet", Variables.Density, rho);
-            c.AddBoundaryCondition("supersonicInlet", Variables.Velocity.xComponent, u0);
-            c.AddBoundaryCondition("supersonicInlet", Variables.Velocity.yComponent, u1);
-            c.AddBoundaryCondition("supersonicInlet", Variables.Pressure, p);
+            c.AddBoundaryValue("supersonicInlet", Variables.Density, rho);
+            c.AddBoundaryValue("supersonicInlet", Variables.Velocity.xComponent, u0);
+            c.AddBoundaryValue("supersonicInlet", Variables.Velocity.yComponent, u1);
+            c.AddBoundaryValue("supersonicInlet", Variables.Pressure, p);
 
             // MMS Sources
             c.CustomContinuitySources.Add(map => new AdHocSourceTerm(map,

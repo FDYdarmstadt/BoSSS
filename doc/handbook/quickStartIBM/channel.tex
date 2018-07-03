@@ -115,7 +115,6 @@ c.saveperiod = 1;
 /// Setting some variables for database saving. Here it is also possible to define tags which can be helpful for finding a particular simulation in the \BoSSS{} database
 string sessionName   = "dt = 1E20\_" + numberOfCellsX + "x" + numberOfCellsY + "\_k" + k;\newline 
 c.SessionName        = sessionName;\newline 
-c.ProjectName        = sessionName;\newline 
 c.ProjectDescription = sessionName;\newline 
 c.Tags.Add("numberOfCellsX\_" + numberOfCellsX);\newline 
 c.Tags.Add("numberOfCellsY\_" + numberOfCellsY);\newline 
@@ -148,7 +147,8 @@ grid.EdgeTagNames.Add(3, "Pressure\_Outlet");
  }
 \BoSSSexe
 \BoSSScmd{
-/// Assign boundary to each cell face. Faces that get assigned "0" are "inner edges".
+/// Set the geometric location of boundary conditions by edge tags;
+/// Edges that get assigned "0" are "inner edges".
 grid.DefineEdgeTags(delegate (double[] X) \{\newline 
 byte et = 0;\newline 
 if (Math.Abs(X[1] - (-2)) <= 1.0e-8)\newline 
