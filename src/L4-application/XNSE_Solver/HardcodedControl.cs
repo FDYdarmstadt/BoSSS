@@ -1644,14 +1644,14 @@ namespace BoSSS.Application.XNSE_Solver {
             // ===================
             #region BC
 
-            C.AddBoundaryCondition("wall_lower", "VelocityX#A", (X, t) => 0.0);
-            C.AddBoundaryCondition("wall_lower", "VelocityX#B", (X, t) => 0.0);
-            C.AddBoundaryCondition("wall_upper", "VelocityX#A", (X, t) => 0.0);
-            C.AddBoundaryCondition("wall_upper", "VelocityX#B", (X, t) => 0.0);
-            C.AddBoundaryCondition("wall_left", "VelocityX#A", (X, t) => 0.0);
-            C.AddBoundaryCondition("wall_left", "VelocityX#B", (X, t) => 0.0);
-            C.AddBoundaryCondition("wall_right", "VelocityX#A", (X, t) => 0.0);
-            C.AddBoundaryCondition("wall_right", "VelocityX#B", (X, t) => 0.0);
+            C.AddBoundaryValue("wall_lower", "VelocityX#A", (X, t) => 0.0);
+            C.AddBoundaryValue("wall_lower", "VelocityX#B", (X, t) => 0.0);
+            C.AddBoundaryValue("wall_upper", "VelocityX#A", (X, t) => 0.0);
+            C.AddBoundaryValue("wall_upper", "VelocityX#B", (X, t) => 0.0);
+            C.AddBoundaryValue("wall_left", "VelocityX#A", (X, t) => 0.0);
+            C.AddBoundaryValue("wall_left", "VelocityX#B", (X, t) => 0.0);
+            C.AddBoundaryValue("wall_right", "VelocityX#A", (X, t) => 0.0);
+            C.AddBoundaryValue("wall_right", "VelocityX#B", (X, t) => 0.0);
  
             #endregion
 

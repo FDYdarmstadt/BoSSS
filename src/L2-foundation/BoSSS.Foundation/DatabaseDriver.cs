@@ -990,7 +990,7 @@ namespace BoSSS.Foundation.IO {
                 //Console.WriteLine("Grid is unique - saving...");
 
                 EquivalentGridFound = false;
-                var g = SaveGrid(grd);
+                var g = SaveGrid(grd, database);
                 //Console.WriteLine("done: " + g.ToString());
                 return g;
             }
@@ -1008,7 +1008,10 @@ namespace BoSSS.Foundation.IO {
         /// <param name="grd">
         /// The grid to save.
         /// </param>
-        public Guid SaveGrid(Grid.Classic.GridCommons grd) {
+        /// <param name="database">
+        /// chaos
+        /// </param>
+        public Guid SaveGrid(Grid.Classic.GridCommons grd, IDatabaseInfo database) {
             using (new FuncTrace()) {
                 if (grd.GridGuid.Equals(Guid.Empty)) {
                     throw new ApplicationException("cannot save grid with empty Guid (Grid Guid is " + Guid.Empty.ToString() + ");");
@@ -1051,6 +1054,11 @@ namespace BoSSS.Foundation.IO {
                         s.Close();
                     }
                 }
+
+                // return
+                // ======
+
+                grd.Database = database;
 
                 return grd.GridGuid;
             }

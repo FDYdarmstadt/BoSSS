@@ -451,7 +451,19 @@ namespace BoSSS.Solution.Control {
         /// <param name="grd"></param>
         public void SetGrid(IGridInfo grd) {
             this.GridGuid = grd.ID;
-            //this.DbPath = grd.Database.Path;
+
+            if(grd.Database == null || grd.Database.Path == null) {
+                Console.WriteLine("Warning: grid seems not to be saved in a database");
+            } else {
+                if(this.DbPath == null) {
+                    this.DbPath = grd.Database.Path;
+                    Console.WriteLine("Info: setting database path to: " + this.DbPath);
+                } else {
+                    if(!this.DbPath.Equals(grd.Database.Path)) {
+                        Console.WriteLine("Warning: database mismatch! (Grid is saved at {0}, while DbPath of control object is {2})", grd.Database.Path, this.DbPath);
+                    }
+                }
+            }
         }
 
 
