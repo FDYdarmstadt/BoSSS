@@ -104,32 +104,136 @@ MiniBatchProcessor.Server.StartIfNotRunning(false);
 \BoSSSexe
 \BoSSScmd{
 /// In this tutorial, we use the workflow management tools to simulate 
-/// compressible flows, thus we first have to load the namespaces of 
-/// the CNS solver.
-using CNS;
+/// incompressible channel flow, therefore we have to import the namespace,
+/// and repeat the steps from chapter \ref{IBM} in order to setup the
+/// control object:
+using BoSSS.Application.IBM\_Solver;
  }
 \BoSSSexe
 \BoSSScmd{
-/// and obtain its type and location
-Type solver1 = typeof(CNS.Program);\newline 
-solver1.Assembly.Location;\newline 
-/// For other solvers, we might have to load the assemblies too, e.g. by 
-// LoadAssembly("CNS.exe");
+/// We create a grid with boundary conditions:
  }
 \BoSSSexe
 \BoSSScmd{
-/// In this example, we start the computation from a hard-coded
-/// control object that is already compiled into the code. If we started the 
-/// {\tt CNS.exe} directly from the command line, the command line 
-/// call would be
-/// {\tt ./CNS.exe -control cs:CNS.ControlExamples.IsentropicVortex(...) }.
-/// On the command line, the arguments could be problematic, e.g. quotation 
-/// marks would need some kind of escape string, spaces are problematic, etc.
-/// The meta job manager passes the arguments via environment variables, so
-/// the before-mentioned issues do not occur. 
-string StartupString\_Local = \newline 
-  string.Format("cs:CNS.ControlExamples.IsentropicVortex(@\textbackslash "\{0\}\textbackslash ", 20, 2, 1.0)", \newline 
-\btab \btab \btab \btab myLocalDb.Path);
+var xNodes       = GenericBlas.Linspace(0, 10 , 41); \newline 
+var yNodes       = GenericBlas.Linspace(-1, 1, 9); \newline 
+GridCommons grid = Grid2D.Cartesian2DGrid(xNodes, yNodes);\newline 
+grid.EdgeTagNames.Add(1, "wall");  \newline 
+grid.EdgeTagNames.Add(2, "Velocity\_Inlet");  \newline 
+grid.EdgeTagNames.Add(3, "Pressure\_Outlet");\newline 
+grid.DefineEdgeTags(delegate (double[] X) \{ \newline 
+\btab byte et = 0; \newline 
+\btab if (Math.Abs(X[1] - (-2)) <= 1.0e-8) \newline 
+\btab \btab et = 1; \newline 
+\btab if (Math.Abs(X[1] - (+2.1 )) <= 1.0e-8) \newline 
+\btab \btab et = 1; \newline 
+\btab if (Math.Abs(X[0] - (-2)) <= 1.0e-8) \newline 
+\btab \btab et = 2; \newline 
+\btab if (Math.Abs(X[0] - (+20.0)) <= 1.0e-8) \newline 
+\btab \btab et = 3; \newline 
+\btab return et; \newline 
+\});
+ }
+\BoSSSexe
+\BoSSScmd{
+/// And save it to the database:
+ }
+\BoSSSexe
+\BoSSScmd{
+myLocalDb.SaveGrid(ref grid);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Next, we create the control object for the incompressible simulation,
+/// as in chapter \ref{IBM}:
+ }
+\BoSSSexe
+\BoSSScmd{
+// control object instantiation:\newline 
+var c = new IBM\_Control();\newline 
+// general description:\newline 
+int k                = 1;\newline 
+string desc          = "Steady state, channel, k" + k; \newline 
+c.SessionName        = "SteadyStateChannel"; \newline 
+c.ProjectDescription = desc;\newline 
+c.Tags.Add("k"+k);\newline 
+// setting the grid:\newline 
+c.SetGrid(grid);\newline 
+// Physical parameters:\newline 
+double reynolds            = 20; \newline 
+c.PhysicalParameters.rho\_A = 1; \newline 
+c.PhysicalParameters.mu\_A  = 1.0/reynolds;\newline 
+// Timestepping properties:\newline 
+c.Timestepper\_Scheme = IBM\_Control.TimesteppingScheme.ImplicitEuler; \newline 
+c.dtFixed            = 1E20;  \newline 
+c.NoOfTimesteps      = 1;\newline 
+// Properties for the Picard Iterations:\newline 
+c.MaxSolverIterations = 50; \newline 
+c.MinSolverIterations = 1;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// The specification of boundary conditions and initial values
+/// is a bit more complicated if the job manager is used:
+/// Since the solver is executed in an external program, the control object 
+/// has to be saved in a file. For lots of complicated objects,
+/// especially for delegates, C\# does not support serialization 
+/// (converting the object into a form that can be saved on disk, or 
+/// transmitted over a network), so a workaround is needed.
+/// This is achieved e.g. by the \code{Formula} object, where a C\#-formula
+/// is saved as a string.
+ }
+\BoSSSexe
+\BoSSScmd{
+var WallVelocity = new Formula("X => 0.0", false); // a time-indep. formula
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Testing the formula:
+WallVelocity.Evaluate(new[]\{0.0, 0.0\}, 0.0); // evaluationg at (0,0), at time 0
+ }
+\BoSSSexe
+\BoSSScmd{
+/// A disadvantage of string-formulas is that they look a bit ``alien''
+/// within the worksheet; therefore, there is also a little hack which allows 
+/// the conversion of a static memeber function of a static class into a 
+/// \code{Formula} object:
+ }
+\BoSSSexe
+\BoSSScmd{
+static class StaticFormulas \{\newline 
+\btab public static double VelX\_Inlet(double[] X) \{\newline 
+\btab \btab //double x  = X[0];\newline 
+\btab \btab double y  = X[0];\newline 
+\btab \btab double UX = 1.0 - y*y;\newline 
+\btab \btab return UX;\newline 
+\btab \}  \newline 
+ \newline 
+\btab public static double VelY\_Inlet(double[] X) \{\newline 
+\btab \btab return 0.0;\newline 
+\btab \}      \newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+var InletVelocityX = GetFormulaObject(StaticFormulas.VelX\_Inlet);\newline 
+var InletVelocityY = GetFormulaObject(StaticFormulas.VelY\_Inlet);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Finally, we set boundary values for our simulation. The initial values
+/// are set to zero per default; for the steady-state simulation initial
+/// values are irrelevan anyway:
+/// Initial Values are set to 0
+c.BoundaryValues.Clear(); \newline 
+c.AddBoundaryCondition("wall", "VelocityX", WallVelocity); \newline 
+c.AddBoundaryCondition("Velocity\_Inlet", "VelocityX", InletVelocityX);  \newline 
+c.AddBoundaryCondition("Velocity\_Inlet", "VelocityY", InletVelocityY); \newline 
+c.AddBoundaryCondition("Pressure\_Outlet");
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
  }
 \BoSSSexe
 \BoSSScmd{
@@ -216,4 +320,3 @@ Sloc;
 oneJob\_Local.Status;
  }
 \BoSSSexe
-

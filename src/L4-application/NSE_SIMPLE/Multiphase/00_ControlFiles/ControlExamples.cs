@@ -96,10 +96,10 @@ namespace NSE_SIMPLE.Multiphase {
             c.CorrectorSolverFactory = () => new PARDISOSolver();
             c.LevelSetSolverFactory = () => new PARDISOSolver();
 
-            c.AddBoundaryCondition("velocity_inlet", VariableNames.VelocityX, X => 1.0);
-            c.AddBoundaryCondition("velocity_inlet", VariableNames.VelocityY, X => 0.0);
-            c.AddBoundaryCondition("velocity_inlet", "LevelSet", X => 1.0);
-            c.AddBoundaryCondition("pressure_outlet");
+            c.AddBoundaryValue("velocity_inlet", VariableNames.VelocityX, X => 1.0);
+            c.AddBoundaryValue("velocity_inlet", VariableNames.VelocityY, X => 0.0);
+            c.AddBoundaryValue("velocity_inlet", "LevelSet", X => 1.0);
+            c.AddBoundaryValue("pressure_outlet");
 
             c.PhysicsMode = PhysicsMode.Multiphase;
             c.Reynolds = 1.0;

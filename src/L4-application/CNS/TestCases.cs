@@ -140,7 +140,7 @@ namespace CNS {
             };
 
             // ### Boundary conditions ###
-            c.AddBoundaryCondition("AdiabaticSlipWall");
+            c.AddBoundaryValue("AdiabaticSlipWall");
 
             // ### Initial smoothing ###
             //double crossProduct2D(double[] a, double[] b) {
@@ -523,14 +523,14 @@ namespace CNS {
             c.InitialValues_Evaluators.Add(Variables.Pressure, X => PressureShock(X, 0) + PressureVortex(X, Temperature(Radius(X))));
 
             // ### Boundary condtions ###
-            c.AddBoundaryCondition("SupersonicInlet", Variables.Density, (X, t) => DensityShock(X, t));
-            c.AddBoundaryCondition("SupersonicInlet", Variables.Velocity.xComponent, (X, t) => VelocityXShock(X, t));
-            c.AddBoundaryCondition("SupersonicInlet", Variables.Velocity.yComponent, (X, t) => VelocityYShock(X, t));
-            c.AddBoundaryCondition("SupersonicInlet", Variables.Pressure, (X, t) => PressureShock(X, t));
+            c.AddBoundaryValue("SupersonicInlet", Variables.Density, (X, t) => DensityShock(X, t));
+            c.AddBoundaryValue("SupersonicInlet", Variables.Velocity.xComponent, (X, t) => VelocityXShock(X, t));
+            c.AddBoundaryValue("SupersonicInlet", Variables.Velocity.yComponent, (X, t) => VelocityYShock(X, t));
+            c.AddBoundaryValue("SupersonicInlet", Variables.Pressure, (X, t) => PressureShock(X, t));
 
             // In theory, no outflow boundary condition has to be specified, as all characteristics move downstream
-            c.AddBoundaryCondition("SupersonicOutlet");
-            c.AddBoundaryCondition("AdiabaticSlipWall");
+            c.AddBoundaryValue("SupersonicOutlet");
+            c.AddBoundaryValue("AdiabaticSlipWall");
 
             // ### Time configuration ###
             c.dtMin = 0.0;
@@ -730,14 +730,14 @@ namespace CNS {
             //c.AddBoundaryCondition("SupersonicInlet", Variables.Velocity.yComponent, (X, t) => -4.125 - Jump(X[0] - (0.1 + (X[1] + 20.0 * t) / 1.732)) * (-4.125 - 0.0));
             //c.AddBoundaryCondition("SupersonicInlet", Variables.Pressure, (X, t) => 116.5 - Jump(X[0] - (0.1 + (X[1] + 20.0 * t) / 1.732)) * (116.5 - 1.0));
 
-            c.AddBoundaryCondition("SupersonicInlet", Variables.Density, (X, t) => 8.0 - SmoothJump(DistanceToInitialShock(X, t)) * (8.0 - 1.4));
-            c.AddBoundaryCondition("SupersonicInlet", Variables.Velocity.xComponent, (X, t) => 8.25 * Math.Sin(Math.PI / 3) - SmoothJump(DistanceToInitialShock(X, t)) * (8.25 * Math.Sin(Math.PI / 3) - 0.0));
-            c.AddBoundaryCondition("SupersonicInlet", Variables.Velocity.yComponent, (X, t) => -8.25 * Math.Cos(Math.PI / 3) - SmoothJump(DistanceToInitialShock(X, t)) * (-8.25 * Math.Cos(Math.PI / 3) - 0.0));
-            c.AddBoundaryCondition("SupersonicInlet", Variables.Pressure, (X, t) => 116.5 - SmoothJump(DistanceToInitialShock(X, t)) * (116.5 - 1.0));
+            c.AddBoundaryValue("SupersonicInlet", Variables.Density, (X, t) => 8.0 - SmoothJump(DistanceToInitialShock(X, t)) * (8.0 - 1.4));
+            c.AddBoundaryValue("SupersonicInlet", Variables.Velocity.xComponent, (X, t) => 8.25 * Math.Sin(Math.PI / 3) - SmoothJump(DistanceToInitialShock(X, t)) * (8.25 * Math.Sin(Math.PI / 3) - 0.0));
+            c.AddBoundaryValue("SupersonicInlet", Variables.Velocity.yComponent, (X, t) => -8.25 * Math.Cos(Math.PI / 3) - SmoothJump(DistanceToInitialShock(X, t)) * (-8.25 * Math.Cos(Math.PI / 3) - 0.0));
+            c.AddBoundaryValue("SupersonicInlet", Variables.Pressure, (X, t) => 116.5 - SmoothJump(DistanceToInitialShock(X, t)) * (116.5 - 1.0));
 
             // In theory, no outflow boundary condition has to be specified, as all characteristics move downstream
-            c.AddBoundaryCondition("SupersonicOutlet", Variables.Pressure, (X, t) => 1.0);
-            c.AddBoundaryCondition("AdiabaticSlipWall");
+            c.AddBoundaryValue("SupersonicOutlet", Variables.Pressure, (X, t) => 1.0);
+            c.AddBoundaryValue("AdiabaticSlipWall");
 
             // Initial conditions
             //c.InitialValues_Evaluators.Add(Variables.Density, X => 8.0 - Jump(X[0] - (0.1 + (X[1] / 1.732))) * (8.0 - 1.4));
@@ -884,7 +884,7 @@ namespace CNS {
             };
 
             // ### Boundary conditions ###
-            c.AddBoundaryCondition("AdiabaticSlipWall");
+            c.AddBoundaryValue("AdiabaticSlipWall");
 
             // ### Initial smoothing ###
             //double crossProduct2D(double[] a, double[] b) {
@@ -1189,14 +1189,14 @@ namespace CNS {
             };
 
             // Boundary conditions
-            c.AddBoundaryCondition("SupersonicInlet", Variables.Density, (X, t) => 8.0 - SmoothJump(X[0] - getShockXPosition(t)) * (8.0 - 1.4));
-            c.AddBoundaryCondition("SupersonicInlet", Variables.Velocity.xComponent, (X, t) => 8.25 - SmoothJump(X[0] - getShockXPosition(t)) * (8.25 - 0.0));
-            c.AddBoundaryCondition("SupersonicInlet", Variables.Velocity.yComponent, (X, t) => 0.0);
-            c.AddBoundaryCondition("SupersonicInlet", Variables.Pressure, (X, t) => 116.5 - SmoothJump(X[0] - getShockXPosition(t)) * (116.5 - 1.0));
+            c.AddBoundaryValue("SupersonicInlet", Variables.Density, (X, t) => 8.0 - SmoothJump(X[0] - getShockXPosition(t)) * (8.0 - 1.4));
+            c.AddBoundaryValue("SupersonicInlet", Variables.Velocity.xComponent, (X, t) => 8.25 - SmoothJump(X[0] - getShockXPosition(t)) * (8.25 - 0.0));
+            c.AddBoundaryValue("SupersonicInlet", Variables.Velocity.yComponent, (X, t) => 0.0);
+            c.AddBoundaryValue("SupersonicInlet", Variables.Pressure, (X, t) => 116.5 - SmoothJump(X[0] - getShockXPosition(t)) * (116.5 - 1.0));
 
             // In theory, no outflow boundary condition has to be specified, as all characteristics move downstream
-            c.AddBoundaryCondition("SupersonicOutlet");
-            c.AddBoundaryCondition("AdiabaticSlipWall");
+            c.AddBoundaryValue("SupersonicOutlet");
+            c.AddBoundaryValue("AdiabaticSlipWall");
 
             // Initial conditions
             c.InitialValues_Evaluators.Add(Variables.Density, X => 8.0 - SmoothJump(X[0] - getShockXPosition(0)) * (8.0 - 1.4));
@@ -1380,17 +1380,17 @@ namespace CNS {
             c.LevelSetFunction = (X, t) => X[1] - epsilonY - 0.01 - 0.3939 * Math.Exp(-0.5 * (X[0] - epsilonX) * (X[0] - epsilonX));
 
             // Supersonic boundary conditions
-            c.AddBoundaryCondition("adiabaticSlipWall");
-            c.AddBoundaryCondition("supersonicInlet", Variables.Density, rho);
-            c.AddBoundaryCondition("supersonicInlet", Variables.Velocity.xComponent, u0);
-            c.AddBoundaryCondition("supersonicInlet", Variables.Velocity.yComponent, u1);
-            c.AddBoundaryCondition("supersonicInlet", Variables.Pressure, pressure);
+            c.AddBoundaryValue("adiabaticSlipWall");
+            c.AddBoundaryValue("supersonicInlet", Variables.Density, rho);
+            c.AddBoundaryValue("supersonicInlet", Variables.Velocity.xComponent, u0);
+            c.AddBoundaryValue("supersonicInlet", Variables.Velocity.yComponent, u1);
+            c.AddBoundaryValue("supersonicInlet", Variables.Pressure, pressure);
 
             // Subsonic boundary conditions
-            c.AddBoundaryCondition("subsonicInlet", Variables.Density, rho);
-            c.AddBoundaryCondition("subsonicInlet", Variables.Velocity.xComponent, u0);
-            c.AddBoundaryCondition("subsonicInlet", Variables.Velocity.yComponent, u1);
-            c.AddBoundaryCondition("subsonicOutlet", Variables.Pressure, pressure);
+            c.AddBoundaryValue("subsonicInlet", Variables.Density, rho);
+            c.AddBoundaryValue("subsonicInlet", Variables.Velocity.xComponent, u0);
+            c.AddBoundaryValue("subsonicInlet", Variables.Velocity.yComponent, u1);
+            c.AddBoundaryValue("subsonicOutlet", Variables.Pressure, pressure);
 
             // Queries
             c.Queries.Add("L2ErrorEntropy", IBMQueries.L2Error(state => state.Entropy, (X, t) => 2.8571428571428));

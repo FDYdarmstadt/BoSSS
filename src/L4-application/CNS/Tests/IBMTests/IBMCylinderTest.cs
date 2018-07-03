@@ -188,12 +188,12 @@ namespace CNS.Tests.IBMTests {
             c.GridPartOptions = "5";
 
             double gamma = c.EquationOfState.HeatCapacityRatio;
-            c.AddBoundaryCondition("supersonicInlet", Variables.Density, (X, t) => 1.0);
-            c.AddBoundaryCondition("supersonicInlet", Variables.Velocity[0], (X, t) => Mach * Math.Sqrt(gamma));
-            c.AddBoundaryCondition("supersonicInlet", Variables.Velocity[1], (X, t) => 0.0);
-            c.AddBoundaryCondition("supersonicInlet", Variables.Pressure, (X, t) => 1.0);
+            c.AddBoundaryValue("supersonicInlet", Variables.Density, (X, t) => 1.0);
+            c.AddBoundaryValue("supersonicInlet", Variables.Velocity[0], (X, t) => Mach * Math.Sqrt(gamma));
+            c.AddBoundaryValue("supersonicInlet", Variables.Velocity[1], (X, t) => 0.0);
+            c.AddBoundaryValue("supersonicInlet", Variables.Pressure, (X, t) => 1.0);
 
-            c.AddBoundaryCondition("adiabaticSlipWall");
+            c.AddBoundaryValue("adiabaticSlipWall");
             c.LevelSetBoundaryTag = "adiabaticSlipWall";
 
             c.Queries.Add("L2ErrorEntropy", IBMQueries.L2Error(state => state.Entropy, (X, t) => 1.0));
