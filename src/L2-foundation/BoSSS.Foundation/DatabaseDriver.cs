@@ -369,6 +369,8 @@ namespace BoSSS.Foundation.IO {
                                 tuple = new Tuple<DistributedVectorHeader, IList<T>>(header, vector);
                             }
 
+                            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+
                             m_Formatter.Serialize(s2, tuple);
 
                             s2.Close();
