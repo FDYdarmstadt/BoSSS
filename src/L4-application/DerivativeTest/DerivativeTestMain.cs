@@ -152,6 +152,7 @@ namespace BoSSS.Application.DerivativeTest {
             DerivativeTestMain.GRID_FILE = Path.Combine("../../TestGrids/", File);
             DerivativeTestMain p = null;
             Quadrature_Bulksize.CHUNK_DATA_LIMIT = CHUNK_DATA_LIMIT_bkup; // might have been changed by other test, needs re-set
+            DerivativeTestMain.TestFDJacobian = false;
             if (CHUNK_DATA_LIMIT_bkup < 1)
                 throw new ApplicationException();
 
