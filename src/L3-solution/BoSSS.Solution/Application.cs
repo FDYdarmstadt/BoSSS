@@ -981,7 +981,7 @@ namespace BoSSS.Solution {
 
                     //DatabaseDriver.SaveGrid(Grid);
                     GridCommons _grid = this.Grid;
-                    DatabaseDriver.SaveGrid(_grid);
+                    DatabaseDriver.SaveGrid(_grid, this.m_Database);
                     //DatabaseDriver.SaveGridIfUnique(ref _grid, out GridReplaced, this.m_Database);
                     this.Grid = _grid;
 
@@ -1886,7 +1886,7 @@ namespace BoSSS.Solution {
                         if (DatabaseDriver.GridExists(newGrid.GridGuid))
                             throw new ApplicationException();
 
-                        DatabaseDriver.SaveGrid(newGrid);
+                        DatabaseDriver.SaveGrid(newGrid, this.m_Database);
                     }
 
                     // check for grid redistribution

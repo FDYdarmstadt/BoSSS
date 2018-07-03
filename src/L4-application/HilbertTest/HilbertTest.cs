@@ -485,7 +485,7 @@ namespace HilbertTest {
                 c.AddVariable(Variables.LTSClusters, 0);
             }
 
-            c.AddBoundaryCondition("AdiabaticSlipWall");
+            c.AddBoundaryValue("AdiabaticSlipWall");
 
             // Time config
             c.dtMin = 0.0;
@@ -578,7 +578,7 @@ namespace HilbertTest {
                 c.AddVariable(Variables.LTSClusters, 0);
             }
 
-            c.AddBoundaryCondition("AdiabaticSlipWall");
+            c.AddBoundaryValue("AdiabaticSlipWall");
 
             // Time config
             c.dtMin = 0.0;
@@ -664,7 +664,7 @@ namespace HilbertTest {
                 }
             };
 
-            c.AddBoundaryCondition("AdiabaticSlipWall");
+            c.AddBoundaryValue("AdiabaticSlipWall");
 
             // Initial conditions
             c.InitialValues_Evaluators.Add(Variables.Density, delegate (double[] X) {

@@ -464,7 +464,7 @@ namespace BoSSS.Foundation {
         /// <typeparam name="T"></typeparam>
         /// <param name="CatParams">
         /// if true, parameter variables (see <see cref="IEquationComponent.ParameterOrdering"/>)
-        /// are concatenated with domain variable names (see <see cref="IEquationComponent."ArgumentOrdering/>).
+        /// are concatenated with domain variable names (see <see cref="IEquationComponent.ArgumentOrdering"/>).
         /// </param>
         /// <param name="F">
         /// optional filter;

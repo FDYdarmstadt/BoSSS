@@ -173,11 +173,11 @@ namespace CNS.Tests.IBMTests {
             double velocityXLeft = 2.0;
             double velocityY = 0.0;
 
-            c.AddBoundaryCondition("SubsonicInlet", Variables.Density, (X, t) => densityLeft);
-            c.AddBoundaryCondition("SubsonicInlet", Variables.Velocity.xComponent, (X, t) => velocityXLeft);
-            c.AddBoundaryCondition("SubsonicInlet", Variables.Velocity.yComponent, (X, t) => velocityY);
-            c.AddBoundaryCondition("SubsonicOutlet", Variables.Pressure, (X, t) => pressure);
-            c.AddBoundaryCondition("AdiabaticSlipWall");
+            c.AddBoundaryValue("SubsonicInlet", Variables.Density, (X, t) => densityLeft);
+            c.AddBoundaryValue("SubsonicInlet", Variables.Velocity.xComponent, (X, t) => velocityXLeft);
+            c.AddBoundaryValue("SubsonicInlet", Variables.Velocity.yComponent, (X, t) => velocityY);
+            c.AddBoundaryValue("SubsonicOutlet", Variables.Pressure, (X, t) => pressure);
+            c.AddBoundaryValue("AdiabaticSlipWall");
 
             // Initial conditions
             c.InitialValues_Evaluators.Add(Variables.Density, X => densityLeft - SmoothJump(DistanceToLine(X, 0)) * (densityLeft - densityRight));
