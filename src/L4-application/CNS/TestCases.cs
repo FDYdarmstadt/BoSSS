@@ -19,6 +19,7 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
 using BoSSS.Platform.LinAlg;
+using BoSSS.Solution;
 using BoSSS.Solution.Queries;
 using CNS.Convection;
 using CNS.EquationSystem;
@@ -986,7 +987,7 @@ namespace CNS {
         /// <summary>
         /// Version to be submitted on the FDY HPC cluster
         /// </summary>
-        public static IBMControl IBMDoubleMachReflection(string dbPath = null, int savePeriod = 10, int dgDegree = 3, int numOfCellsX = 250, int numOfCellsY = 200, double sensorLimit = 1e-3, double dtFixed = 0.0, double CFLFraction = 0.3, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 2, int reclusteringInterval = 10, int maxNumOfSubSteps = 10, double agg = 0.3, double fugdeFactor = 1.0, double endTime = 0.2, string restart = "False") {
+        public static IBMControl IBMDoubleMachReflection(string dbPath = null, int savePeriod = 1, int dgDegree = 3, int numOfCellsX = 250, int numOfCellsY = 200, double sensorLimit = 1e-4, double dtFixed = 0.0, double CFLFraction = 0.3, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 2, int reclusteringInterval = 10, int maxNumOfSubSteps = 10, double agg = 0.3, double fugdeFactor = 0.5, double endTime = 0.2, string restart = "False") {
             //System.Threading.Thread.Sleep(10000);
             //ilPSP.Environment.StdoutOnlyOnRank0 = true;
 
@@ -1055,7 +1056,12 @@ namespace CNS {
             //c.AddVariable(IBMVariables.CutCellsWithoutSourceCells, 1);
             //c.AddVariable(IBMVariables.SourceCells, 1);
 
-            bool AV = true;
+            bool AV;
+            if (dgDegree > 0) {
+                AV = true;
+            } else {
+                AV = false;
+            }
 
             // Time stepping
             c.ExplicitScheme = (ExplicitSchemes)explicitScheme;
@@ -1066,10 +1072,11 @@ namespace CNS {
             c.FluxCorrection = false;
 
             // Dynamic load balancing
-            c.GridPartType = GridPartType.ParMETIS;
+            c.GridPartType = GridPartType.directHilbert;
             c.DynamicLoadBalancing_On = true;
             c.DynamicLoadBalancing_CellClassifier = new IBMCellClassifier();
-            c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(IBMCellCostEstimator.GetMultiBalanceConstraintsBasedEstimators());
+            //c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(IBMCellCostEstimator.GetMultiBalanceConstraintsBasedEstimators());
+            c.DynamicLoadBalancing_CellCostEstimatorFactories.Add((p, i) => new StaticCellCostEstimator(new[] { 10, 10, 1 }));
             c.DynamicLoadBalancing_ImbalanceThreshold = 0.1;
             c.DynamicLoadBalancing_Period = int.MaxValue;
             c.DynamicLoadBalancing_RedistributeAtStartup = true;
@@ -1237,7 +1244,7 @@ namespace CNS {
         /// <summary>
         /// Version to be submitted on the TU Darmstadt HHLR Lichtenberg cluster
         /// </summary>
-        public static IBMControl IBMDoubleMachReflectionHHLR(int savePeriod = 10, int dgDegree = 3, int numOfCellsX = 250, int numOfCellsY = 200, double sensorLimit = 1e-3, double dtFixed = 0.0, double CFLFraction = 0.3, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 2, int reclusteringInterval = 10, int maxNumOfSubSteps = 10, double agg = 0.3, double fugdeFactor = 1.0, double endTime = 0.2) {
+        public static IBMControl IBMDoubleMachReflectionHHLR(int savePeriod = 1, int dgDegree = 3, int numOfCellsX = 250, int numOfCellsY = 200, double sensorLimit = 1e-4, double dtFixed = 0.0, double CFLFraction = 0.3, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 2, int reclusteringInterval = 10, int maxNumOfSubSteps = 10, double agg = 0.3, double fugdeFactor = 0.5, double endTime = 0.2) {
 
             // Lichtenberg
             //string dbPath = @"/home/yp19ysog/bosss_db_paper_ibmdmr2";
@@ -1245,7 +1252,7 @@ namespace CNS {
 
             IBMControl c = IBMDoubleMachReflection(dbPath, savePeriod, dgDegree, numOfCellsX, numOfCellsY, sensorLimit, dtFixed, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, agg, fugdeFactor, endTime);
 
-            c.ProjectName = "paper_ibmdmr_hhlr_v0_run0";
+            c.ProjectName = "paper_ibmdmr_hhlr_v1_run1";
 
             return c;
         }
