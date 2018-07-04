@@ -21,6 +21,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
 using BoSSS.Platform;
+using ilPSP;
 
 namespace BoSSS.Foundation.IO {
 
@@ -297,7 +298,11 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         /// <returns>A string representing the object.</returns>
         public override string ToString() {
-            return "{ Guid = " + ID + "; " + CreationTime.ToString() + " Name = " + Name + " }";
+            return string.Format("{0}  {1}  {2}...",
+                this.Name.IsEmptyOrWhite() ? "NO-NAME-SET" : this.Name,
+                CreationTime.ToString(),
+                this.ID.ToString().Substring(0, 8));
+            //return "{ Guid = " + ID + "; " + CreationTime.ToString() + " Name = " + Name + " }";
         }
 
         #endregion
