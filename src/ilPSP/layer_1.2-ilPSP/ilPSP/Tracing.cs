@@ -32,12 +32,12 @@ namespace ilPSP.Tracing {
 
 
         /// <summary>
-        /// a list of all namespaces for which <see cref="FuncTrace"/> should perform tracing/logging;
+        /// a list of all name-spaces for which <see cref="FuncTrace"/> should perform tracing/logging;
         /// </summary>
         internal static string[] m_NamespacesToLog = new string[0];
 
         /// <summary>
-        /// a list of all namespaces for which <see cref="FuncTrace"/> should perform tracing/logging;
+        /// a list of all name-spaces for which <see cref="FuncTrace"/> should perform tracing/logging;
         /// </summary>
         public static string[] NamespacesToLog {
             get {
@@ -52,7 +52,7 @@ namespace ilPSP.Tracing {
         }
 
         /// <summary>
-        /// Setting <see cref="NamespacesToLog"/>.
+        /// Setting <see cref="NamespacesToLog"/>;
         /// </summary>
         public static void SetTracingNamespaces(string TracingNamespaces) {
             if (TracingNamespaces == null) {
