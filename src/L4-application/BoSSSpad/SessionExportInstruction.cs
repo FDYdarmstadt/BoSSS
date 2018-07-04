@@ -129,10 +129,22 @@ namespace BoSSS.Application.BoSSSpad {
         private string PlotDirPath {
             get {
                 if (AlternativeDirectoryName == null) {
+                    string dirname =
+                        (Session.ProjectName.IsEmptyOrWhite() ? "NO-PROJ" : Session.ProjectName)
+                        + "__" +
+                        (Session.Name.IsEmptyOrWhite() ? "NO-NAME" : Session.Name)
+                        + "__" +
+                        Session.ID.ToString();
+
+                    foreach (char c in System.IO.Path.GetInvalidFileNameChars()) {
+                        if (dirname.Contains(c))
+                            dirname = dirname.Replace(c, '_');
+                    }
+                                        
                     return Path.Combine(
                         Utils.GetExportOutputPath(),
                         "sessions",
-                        Session.ID.ToString());
+                           Session.ID.ToString());
                 } else {
                     return AlternativeDirectoryName;
                 }
