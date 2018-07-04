@@ -317,7 +317,7 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         /// <returns>A string representing the object.</returns>
         public override string ToString() {
-            return string.Format("{0}{1}  {2}  {3}...",
+            return string.Format("{0}{1}\t{2}\t{3}...",
                 this.Name.IsEmptyOrWhite() ? "NO-NAME-SET" : this.Name,
                 SuccessfulTermination ? "" : "*",
                 CreationTime.ToString(),
