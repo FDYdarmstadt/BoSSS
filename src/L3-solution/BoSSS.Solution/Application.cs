@@ -883,7 +883,7 @@ namespace BoSSS.Solution {
             InitCurrentSessionInfo();
             {
                 var tags = CurrentSessionInfo.Tags.ToList();
-                tags.Add(NOT_TERMINATED_TAG);
+                tags.Add(SessionInfo.NOT_TERMINATED_TAG);
                 CurrentSessionInfo.Tags = tags;
             }
 
@@ -965,7 +965,9 @@ namespace BoSSS.Solution {
                         DBpath = "EMPTY";
                     if (DBpath == null)
                         DBpath = "NULL";
-                    Console.WriteLine("Session ID: {0}, DB path: '{1}'.", this.CurrentSessionInfo.ID.ToString(), DBpath);
+                    if (DatabaseDriver.MyRank == 0) {
+                        Console.WriteLine("Session ID: {0}, DB path: '{1}'.", this.CurrentSessionInfo.ID.ToString(), DBpath);
+                    }
                 } else {
                     Console.WriteLine("IO deactivated.");
                 }
@@ -979,7 +981,7 @@ namespace BoSSS.Solution {
 
                     //DatabaseDriver.SaveGrid(Grid);
                     GridCommons _grid = this.Grid;
-                    DatabaseDriver.SaveGrid(_grid);
+                    DatabaseDriver.SaveGrid(_grid, this.m_Database);
                     //DatabaseDriver.SaveGridIfUnique(ref _grid, out GridReplaced, this.m_Database);
                     this.Grid = _grid;
 
@@ -1196,8 +1198,7 @@ namespace BoSSS.Solution {
             }
         }
 
-        private static System.Text.RegularExpressions.Regex WildcardToRegex(string pattern)
-        {
+        private static System.Text.RegularExpressions.Regex WildcardToRegex(string pattern) {
             return new System.Text.RegularExpressions.Regex("^" + System.Text.RegularExpressions.Regex.Escape(pattern).
             Replace("\\*", ".*").
             Replace("\\?", ".") + "$");
@@ -1748,9 +1749,9 @@ namespace BoSSS.Solution {
                     if (NoOfRedistCells <= 0) {
                         return;
                     } else {
-                        //Debugger.Launch();
-
+#if DEBUG
                         Console.WriteLine("Re-distribution of " + NoOfRedistCells + " cells.");
+#endif
                     }
 
                     // backup old data
@@ -1885,7 +1886,7 @@ namespace BoSSS.Solution {
                         if (DatabaseDriver.GridExists(newGrid.GridGuid))
                             throw new ApplicationException();
 
-                        DatabaseDriver.SaveGrid(newGrid);
+                        DatabaseDriver.SaveGrid(newGrid, this.m_Database);
                     }
 
                     // check for grid redistribution
@@ -2153,14 +2154,7 @@ namespace BoSSS.Solution {
         }
 
 
-        /// <summary>
-        /// Tag to mark crashed 
-        /// and
-        /// currently running sessions in the database.
-        /// It is automatically added to each session at startup
-        /// and removed if the application terminates correctly, i.e. without exceptions or such stuff, you know.
-        /// </summary>
-        public const string NOT_TERMINATED_TAG = "NotTerminated";
+        
 
         /// <summary>
         /// The name of a specific simulation should be logged in the <see cref="ISessionInfo.KeysAndQueries"/>
@@ -2174,11 +2168,11 @@ namespace BoSSS.Solution {
         void ByeInt(bool CorrectlyTerminated) {
             // remove the 'NotTerminated' tag from the session info
             // =====================================================
-            if (CorrectlyTerminated && this.CurrentSessionInfo.Tags.Contains(NOT_TERMINATED_TAG)) {
+            if (CorrectlyTerminated && this.CurrentSessionInfo.Tags.Contains(SessionInfo.NOT_TERMINATED_TAG)) {
 
-                Console.WriteLine("Removing tag: " + NOT_TERMINATED_TAG);
+                Console.WriteLine("Removing tag: " + SessionInfo.NOT_TERMINATED_TAG);
                 IList<string> sessTags = this.CurrentSessionInfo.Tags.ToList();
-                sessTags.Remove(NOT_TERMINATED_TAG);
+                sessTags.Remove(SessionInfo.NOT_TERMINATED_TAG);
                 this.CurrentSessionInfo.Tags = sessTags;
             }
         }

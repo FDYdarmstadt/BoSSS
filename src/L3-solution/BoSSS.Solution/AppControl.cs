@@ -287,7 +287,7 @@ namespace BoSSS.Solution.Control {
         /// Creates an empty boundary condition
         /// </summary>
         /// <param name="EdgeTagName">Name of the boundary condition</param>
-        public void AddBoundaryCondition(string EdgeTagName) {
+        public void AddBoundaryValue(string EdgeTagName) {
             if(!this.BoundaryValues.ContainsKey(EdgeTagName))
                 this.BoundaryValues.Add(EdgeTagName, new BoundaryValueCollection());
 
@@ -299,7 +299,7 @@ namespace BoSSS.Solution.Control {
         /// <param name="EdgeTagName">Name of the boundary condition</param>
         /// <param name="fieldname">Name of the field for which the boundary condition is valid</param>
         /// <param name="value">Function of the boundary condition</param>
-        public void AddBoundaryCondition(string EdgeTagName, string fieldname, Func<double[], double, double> value) {
+        public void AddBoundaryValue(string EdgeTagName, string fieldname, Func<double[], double, double> value) {
             if(!this.BoundaryValues.ContainsKey(EdgeTagName))
                 this.BoundaryValues.Add(EdgeTagName, new BoundaryValueCollection());
 
@@ -317,8 +317,8 @@ namespace BoSSS.Solution.Control {
         /// <param name="EdgeTagName">Name of the boundary condition</param>
         /// <param name="fieldname">Name of the field for which the boundary condition is valid</param>
         /// <param name="value">Function of the boundary condition</param>
-        public void AddBoundaryCondition(string EdgeTagName, string fieldname, Func<double[], double> value) {
-            AddBoundaryCondition(EdgeTagName, fieldname, (X, t) => value(X));
+        public void AddBoundaryValue(string EdgeTagName, string fieldname, Func<double[], double> value) {
+            AddBoundaryValue(EdgeTagName, fieldname, (X, t) => value(X));
         }
 
         /// <summary>
@@ -332,7 +332,7 @@ namespace BoSSS.Solution.Control {
         /// <param name="TimeDependent">
         /// Whether the formula in <paramref name="FormulaText"/> is time-dependent or not, see <see cref="Formula"/>.
         /// </param>
-        public void AddBoundaryCondition(string EdgeTagName, string fieldname, string FormulaText, bool TimeDependent) {
+        public void AddBoundaryValue(string EdgeTagName, string fieldname, string FormulaText, bool TimeDependent) {
             if(!this.BoundaryValues.ContainsKey(EdgeTagName))
                 this.BoundaryValues.Add(EdgeTagName, new BoundaryValueCollection());
 
@@ -351,7 +351,7 @@ namespace BoSSS.Solution.Control {
         /// General provider of initial/boundary data; In order to support full functionality (job management, etc.),
         /// the object must be serializeable.
         /// </param>
-        public void AddBoundaryCondition(string EdgeTagName, string fieldname, IBoundaryAndInitialData data) {
+        public void AddBoundaryValue(string EdgeTagName, string fieldname, IBoundaryAndInitialData data) {
             if(!this.BoundaryValues.ContainsKey(EdgeTagName))
                 this.BoundaryValues.Add(EdgeTagName, new BoundaryValueCollection());
 
@@ -451,7 +451,19 @@ namespace BoSSS.Solution.Control {
         /// <param name="grd"></param>
         public void SetGrid(IGridInfo grd) {
             this.GridGuid = grd.ID;
-            //this.DbPath = grd.Database.Path;
+
+            if(grd.Database == null || grd.Database.Path == null) {
+                Console.WriteLine("Warning: grid seems not to be saved in a database");
+            } else {
+                if(this.DbPath == null) {
+                    this.DbPath = grd.Database.Path;
+                    Console.WriteLine("Info: setting database path to: " + this.DbPath);
+                } else {
+                    if(!this.DbPath.Equals(grd.Database.Path)) {
+                        Console.WriteLine("Warning: database mismatch! (Grid is saved at {0}, while DbPath of control object is {2})", grd.Database.Path, this.DbPath);
+                    }
+                }
+            }
         }
 
 
