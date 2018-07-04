@@ -144,7 +144,7 @@ namespace BoSSS.Application.BoSSSpad {
                     return Path.Combine(
                         Utils.GetExportOutputPath(),
                         "sessions",
-                           Session.ID.ToString());
+                           dirname);
                 } else {
                     return AlternativeDirectoryName;
                 }
