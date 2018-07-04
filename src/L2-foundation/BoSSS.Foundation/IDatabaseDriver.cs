@@ -172,13 +172,13 @@ namespace BoSSS.Foundation.IO {
         /// saves the grid object to the database;
         /// </summary>
         /// <returns>
-        /// the Guid of the <see cref="GridCommons"/>-object that was saved
-        /// (equal to the <see cref="GridCommons.GridGuid"/>-property).
+        /// the Guid of the grid
         /// </returns>
         /// <param name="grd">
         /// the grid to save
         /// </param>
-        Guid SaveGrid(Grid.Classic.GridCommons grd);
+        /// <param name="database"></param>
+        Guid SaveGrid(Grid.Classic.GridCommons grd, IDatabaseInfo database);
 
         /// <summary>
         /// Saves a time-step to the database's persistent memory.

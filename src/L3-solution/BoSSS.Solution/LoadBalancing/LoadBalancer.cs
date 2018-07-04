@@ -116,10 +116,12 @@ namespace BoSSS.Solution {
                 return null;
             }
 
+#if DEBUG
             Console.WriteLine(
                 "At least one runtime imbalance estimate ({0}) was above configured threshold ({1:P1}); attempting repartitioning",
                 String.Join(", ", imbalanceEstimates.Select(e => String.Format("{0:P1}", e))),
                 imbalanceThreshold);
+#endif
 
             IList<int[]> cellCosts = CurrentCellCostEstimators.Select(estimator => estimator.GetEstimatedCellCosts()).ToList();
             if (cellCosts == null || cellCosts.All(c => c == null)) {
@@ -155,10 +157,10 @@ namespace BoSSS.Solution {
                     break;
 
                 case GridPartType.Hilbert:
-                    return app.Grid.ComputePartitionHilbert(localcellCosts:cellCosts, Functype: 0);
+                    return app.Grid.ComputePartitionHilbert(localcellCosts: cellCosts, Functype: 0);
 
                 case GridPartType.directHilbert:
-                    return app.Grid.ComputePartitionHilbert(localcellCosts:cellCosts, Functype:1);
+                    return app.Grid.ComputePartitionHilbert(localcellCosts: cellCosts, Functype: 1);
 
                 case GridPartType.none:
                     result = IndexBasedPartition(cellCosts.Single());

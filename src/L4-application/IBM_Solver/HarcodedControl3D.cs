@@ -207,13 +207,13 @@ namespace BoSSS.Application.IBM_Solver {
                 //    return grd;
                 //};
 
-                C.AddBoundaryCondition("Velocity_Inlet_upper", "VelocityX", X => 0);
-                C.AddBoundaryCondition("Velocity_Inlet_lower", "VelocityX", X => 0); //-(4 * 1.5 * X[1] * (4.1 - X[1]) / (4.1 * 4.1))
+                C.AddBoundaryValue("Velocity_Inlet_upper", "VelocityX", X => 0);
+                C.AddBoundaryValue("Velocity_Inlet_lower", "VelocityX", X => 0); //-(4 * 1.5 * X[1] * (4.1 - X[1]) / (4.1 * 4.1))
                 if (!xPeriodic) {
-                    C.AddBoundaryCondition("Velocity_Inlet_left", "VelocityX", X => (4 * 1.5 * (X[1] + 2) * (4.1 - (X[1] + 2)) / (4.1 * 4.1)));
-                    //C.AddBoundaryCondition("Velocity_Inlet_left", "VelocityX#A", X => 1);   
+                    C.AddBoundaryValue("Velocity_Inlet_left", "VelocityX", X => (4 * 1.5 * (X[1] + 2) * (4.1 - (X[1] + 2)) / (4.1 * 4.1)));
+                    //C.AddBoundaryValue("Velocity_Inlet_left", "VelocityX#A", X => 1);   
                 }
-                C.AddBoundaryCondition("Pressure_Outlet_right");
+                C.AddBoundaryValue("Pressure_Outlet_right");
 
 
                 // Initial Values
@@ -352,7 +352,7 @@ namespace BoSSS.Application.IBM_Solver {
             Console.WriteLine("...loading grid");
             C.GridGuid = new Guid("1a672505-e301-4271-9c7d-050770f48abc");
 
-            C.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("d1e5a259-d969-4832-a22e-f8a48b2b7a36"), -1);
+            C.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("f7bfee50-ebbf-4013-bccd-202ae0de7287"), -1);
 
             //#region Creates grid () and sets BC
             ////// Create Grid
@@ -592,11 +592,11 @@ namespace BoSSS.Application.IBM_Solver {
             C.PhysicalParameters.mu_A = (1.0 * C.particleRadius * 1.0) / 350;
 
             // Boundary conditions
-            C.AddBoundaryCondition("Velocity_inlet", "VelocityX", (X, t) => 1);
-            C.AddBoundaryCondition("Velocity_inlet", "VelocityY", (X, t) => 0);
-            C.AddBoundaryCondition("Velocity_inlet", "VelocityZ", (X, t) => 0);
-            // C.AddBoundaryCondition("Wall");
-            C.AddBoundaryCondition("Pressure_Outlet");
+            C.AddBoundaryValue("Velocity_inlet", "VelocityX", (X, t) => 1);
+            C.AddBoundaryValue("Velocity_inlet", "VelocityY", (X, t) => 0);
+            C.AddBoundaryValue("Velocity_inlet", "VelocityZ", (X, t) => 0);
+            // C.AddBoundaryValue("Wall");
+            C.AddBoundaryValue("Pressure_Outlet");
 
             // Set Initial Conditions
             //C.InitialValues_Evaluators.Add("VelocityX", X => 1);
@@ -935,11 +935,11 @@ namespace BoSSS.Application.IBM_Solver {
             C.PhysicalParameters.mu_A = (2.0 * C.particleRadius*1.0) / 100;
 
             // Boundary conditions
-            C.AddBoundaryCondition("Velocity_inlet", "VelocityX", (X, t) => 1);
-            C.AddBoundaryCondition("Velocity_inlet", "VelocityY", (X, t) => 0);
-            C.AddBoundaryCondition("Velocity_inlet", "VelocityZ", (X, t) => 0);
+            C.AddBoundaryValue("Velocity_inlet", "VelocityX", (X, t) => 1);
+            C.AddBoundaryValue("Velocity_inlet", "VelocityY", (X, t) => 0);
+            C.AddBoundaryValue("Velocity_inlet", "VelocityZ", (X, t) => 0);
             // C.AddBoundaryCondition("Wall");
-            C.AddBoundaryCondition("Pressure_Outlet");
+            C.AddBoundaryValue("Pressure_Outlet");
 
             // Set Initial Conditions
             C.InitialValues_Evaluators.Add("VelocityX", X => 1);
@@ -1110,11 +1110,11 @@ namespace BoSSS.Application.IBM_Solver {
             C.PhysicalParameters.mu_A = (2.0 * C.particleRadius * 1.0) / 100;
 
             // Boundary conditions
-            C.AddBoundaryCondition("Velocity_inlet", "VelocityX", (X, t) => 1);
-            C.AddBoundaryCondition("Velocity_inlet", "VelocityY", (X, t) => 0);
-            C.AddBoundaryCondition("Velocity_inlet", "VelocityZ", (X, t) => 0);
+            C.AddBoundaryValue("Velocity_inlet", "VelocityX", (X, t) => 1);
+            C.AddBoundaryValue("Velocity_inlet", "VelocityY", (X, t) => 0);
+            C.AddBoundaryValue("Velocity_inlet", "VelocityZ", (X, t) => 0);
             // C.AddBoundaryCondition("Wall");
-            C.AddBoundaryCondition("Pressure_Outlet");
+            C.AddBoundaryValue("Pressure_Outlet");
 
             // Set Initial Conditions
             C.InitialValues_Evaluators.Add("VelocityX", X => 0.2);
@@ -1286,10 +1286,10 @@ namespace BoSSS.Application.IBM_Solver {
             C.PhysicalParameters.mu_A = (1.0 * C.particleRadius * 1.0) / 400.0;
 
             // Boundary conditions
-            C.AddBoundaryCondition("Velocity_inlet", "VelocityX", (X, t) => 1);
-            C.AddBoundaryCondition("Velocity_inlet", "VelocityY", (X, t) => 0);
-            C.AddBoundaryCondition("Velocity_inlet", "VelocityZ", (X, t) => 0);
-            C.AddBoundaryCondition("Wall");
+            C.AddBoundaryValue("Velocity_inlet", "VelocityX", (X, t) => 1);
+            C.AddBoundaryValue("Velocity_inlet", "VelocityY", (X, t) => 0);
+            C.AddBoundaryValue("Velocity_inlet", "VelocityZ", (X, t) => 0);
+            C.AddBoundaryValue("Wall");
 
             // Set Initial Conditions
             C.InitialValues_Evaluators.Add("VelocityX", X => 0);

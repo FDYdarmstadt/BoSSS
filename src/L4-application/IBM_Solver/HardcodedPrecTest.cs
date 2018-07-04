@@ -169,10 +169,10 @@ namespace BoSSS.Application.IBM_Solver {
             C.PhysicalParameters.mu_A = 1.0 / 10.0;
 
             // Boundary conditions
-            C.AddBoundaryCondition("Velocity_inlet", "VelocityX", (X, t) => 1 - 4 * (X[2] * X[2]));
-            C.AddBoundaryCondition("Velocity_inlet", "VelocityY", (X, t) => 0);
-            C.AddBoundaryCondition("Wall");
-            C.AddBoundaryCondition("Pressure_Outlet");
+            C.AddBoundaryValue("Velocity_inlet", "VelocityX", (X, t) => 1 - 4 * (X[2] * X[2]));
+            C.AddBoundaryValue("Velocity_inlet", "VelocityY", (X, t) => 0);
+            C.AddBoundaryValue("Wall");
+            C.AddBoundaryValue("Pressure_Outlet");
 
 
             // misc. solver options

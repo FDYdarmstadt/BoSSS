@@ -1292,7 +1292,7 @@ namespace BoSSS.Application.IBM_Solver {
                     if (this.Control.savetodb == true) {
                         Console.WriteLine("Save adaptive Mesh...");
                         Console.WriteLine("GridGUID:   " + newGrid.GridGuid);
-                        DatabaseDriver.SaveGrid(newGrid);
+                        DatabaseDriver.SaveGrid(newGrid, base.GetDatabase());
                         Console.WriteLine("...done");
                     }
                 } else {

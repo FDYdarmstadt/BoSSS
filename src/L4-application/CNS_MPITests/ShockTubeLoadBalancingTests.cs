@@ -398,7 +398,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
                 });
                 return grid;
             };
-            c.AddBoundaryCondition("AdiabaticSlipWall");
+            c.AddBoundaryValue("AdiabaticSlipWall");
 
             Material material = new Material(c);
             StateVector stateLeft = StateVector.FromPrimitiveQuantities(
@@ -565,7 +565,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
                 return grid;
             };
 
-            c.AddBoundaryCondition("AdiabaticSlipWall");
+            c.AddBoundaryValue("AdiabaticSlipWall");
 
             // Normal vector of initial shock
             Vector2D normalVector = new Vector2D(1, 0);
