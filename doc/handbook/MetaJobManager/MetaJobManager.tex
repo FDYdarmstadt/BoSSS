@@ -263,7 +263,33 @@ c.AddBoundaryValue("Pressure\_Outlet");
  }
 \BoSSSexe
 \BoSSScmd{
-var oneJob\_Local = c.RunBatch(myBatch,NumberOfMPIProcs:1);
+/// 
+/// First, a \code{Job}-object is created from the control object:
+var JobLocal = c.CreateJob();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// This job is not activated yet, it can still be configured:
+ }
+\BoSSSexe
+\BoSSScmd{
+JobLocal.Status;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// One can change e.g. the number of MPI processes:
+ }
+\BoSSSexe
+\BoSSScmd{
+JobLocal.NumberOfMPIProcs = 1;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Then, the job is activated, resp. submitted to one batch system:
+ }
+\BoSSSexe
+\BoSSScmd{
+JobLocal.Activate(myBatch); // execute thwe job in 'myBatch'
  }
 \BoSSSexe
 \BoSSScmd{
@@ -276,7 +302,7 @@ WorkflowMgm.AllJobs
 \BoSSSexe
 \BoSSScmd{
 /// Check the present job status:
-oneJob\_Local.Status;
+JobLocal.Status;
  }
 \BoSSSexe
 \BoSSScmd{
@@ -289,12 +315,12 @@ WorkflowMgm.BlockUntilAllJobsTerminate(360);
 /// This directly accesses the {\tt stdout}-redirection of the respective job
 /// manager, which may contain a bit more information than the 
 /// {\tt stdout}-copy in the session directory.
-oneJob\_Local.Stdout;
+JobLocal.Stdout;
  }
 \BoSSSexe
 \BoSSScmd{
 /// Additionally we display the error stream and hope that it is empty:
-oneJob\_Local.Stderr;
+JobLocal.Stderr;
  }
 \BoSSSexe
 \BoSSScmd{
@@ -303,7 +329,7 @@ oneJob\_Local.Stderr;
  }
 \BoSSSexe
 \BoSSScmd{
-var Sloc = oneJob\_Local.LatestSession;\newline 
+var Sloc = JobLocal.LatestSession;\newline 
 Sloc;
  }
 \BoSSSexe
@@ -312,6 +338,6 @@ Sloc;
  }
 \BoSSSexe
 \BoSSScmd{
-oneJob\_Local.Status;
+JobLocal.Status;
  }
 \BoSSSexe

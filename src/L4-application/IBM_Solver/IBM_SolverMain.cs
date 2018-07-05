@@ -1009,12 +1009,15 @@ namespace BoSSS.Application.IBM_Solver {
                         // delegate for the initialization of previous timesteps from restart session
                         BDFDelayedInitLoadRestart);
                 }
+
+                After_SetInitialOrLoadRestart();
             } else {
-                if (m_BDF_Timestepper != null)
+                if(m_BDF_Timestepper != null) {
+                    After_SetInitialOrLoadRestart();
                     m_BDF_Timestepper.SingleInit();
+                }
             }
 
-            After_SetInitialOrLoadRestart();
         }
 
 
