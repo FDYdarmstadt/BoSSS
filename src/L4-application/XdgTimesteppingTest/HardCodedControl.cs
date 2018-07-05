@@ -104,7 +104,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             // Boundary values
             // ===============
 
-            R.AddBoundaryCondition("Inflow", "u", (X, t) => 0.8);
+            R.AddBoundaryValue("Inflow", "u", (X, t) => 0.8);
 
             // Timestepping config
             // ===================
@@ -304,7 +304,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             // Boundary values
             // ===============
 
-            R.AddBoundaryCondition("Inflow", "u", (X, t) => 0.8);
+            R.AddBoundaryValue("Inflow", "u", (X, t) => 0.8);
 
             // Timestepping config
             // ===================
@@ -585,8 +585,8 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             // boundary condition
             // ==================
 
-            R.AddBoundaryCondition("Inflow", "u", R.uA_Ex);
-            R.AddBoundaryCondition("Outflow");
+            R.AddBoundaryValue("Inflow", "u", R.uA_Ex);
+            R.AddBoundaryValue("Outflow");
 
             // Initial values
             // ==============

@@ -499,7 +499,7 @@ namespace BoSSS.Application.BoSSSpad {
             //    // maybe finished, but no result is known.
             //    return JobStatus.PreActivation;
 
-            if (wasSuccessful || RR.Any(si => !si.Tags.Contains(BoSSS.Solution.Application.NOT_TERMINATED_TAG)))
+            if (wasSuccessful || RR.Any(si => !si.Tags.Contains(SessionInfo.NOT_TERMINATED_TAG)))
                 return JobStatus.FinishedSuccessful;
 
             if (isSubmitted && !(isFailed || wasSuccessful) && (R == null))
@@ -508,7 +508,7 @@ namespace BoSSS.Application.BoSSSpad {
             if (isSubmitted == false && isRunning == false && wasSuccessful == false && isFailed == false && (RR.Length <= 0))
                 return JobStatus.PreActivation;
 
-            if (isFailed || (R == null || R.Tags.Contains(BoSSS.Solution.Application.NOT_TERMINATED_TAG)))
+            if (isFailed || (R == null || R.Tags.Contains(SessionInfo.NOT_TERMINATED_TAG)))
                 return JobStatus.Failed;
 
 
@@ -650,9 +650,17 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// Human-readable summary about this job.
         /// </summary>
-        public string WriteInformation() {
+        public override string ToString() {
             using (var stw = new StringWriter()) {
+                stw.Write(this.Name);
+                stw.Write(": ");
+                stw.Write(this.Status);
 
+                if (AssignedBatchProc != null) {
+                    stw.Write(" (");
+                    stw.Write(this.AssignedBatchProc.ToString());
+                    stw.Write(")");
+                }
 
                 return stw.ToString();
             }
