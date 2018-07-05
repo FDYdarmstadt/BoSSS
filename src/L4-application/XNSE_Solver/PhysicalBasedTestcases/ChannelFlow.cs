@@ -216,24 +216,24 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 case 0:
                     goto default;
                 case 1:
-                    C.AddBoundaryCondition("velocity_inlet_lower", "VelocityX#A", X => U);
-                    C.AddBoundaryCondition("velocity_inlet_lower", "VelocityX#B", X => U);
-                    C.AddBoundaryCondition("velocity_inlet_upper", "VelocityX#A", X => U);
-                    C.AddBoundaryCondition("velocity_inlet_upper", "VelocityX#B", X => U);
+                    C.AddBoundaryValue("velocity_inlet_lower", "VelocityX#A", X => U);
+                    C.AddBoundaryValue("velocity_inlet_lower", "VelocityX#B", X => U);
+                    C.AddBoundaryValue("velocity_inlet_upper", "VelocityX#A", X => U);
+                    C.AddBoundaryValue("velocity_inlet_upper", "VelocityX#B", X => U);
                     break;
                 case 2:
-                    C.AddBoundaryCondition("navierslip_linear_lower");
-                    C.AddBoundaryCondition("navierslip_linear_upper");
+                    C.AddBoundaryValue("navierslip_linear_lower");
+                    C.AddBoundaryValue("navierslip_linear_upper");
                     break;
                 default:
-                    C.AddBoundaryCondition("wall_lower");
-                    C.AddBoundaryCondition("wall_upper");
+                    C.AddBoundaryValue("wall_lower");
+                    C.AddBoundaryValue("wall_upper");
                     break;
 
             }
-            C.AddBoundaryCondition("velocity_inlet_left", "VelocityX#A", X => U);
-            C.AddBoundaryCondition("velocity_inlet_left", "VelocityX#B", X => U);
-            C.AddBoundaryCondition("pressure_outlet_right");
+            C.AddBoundaryValue("velocity_inlet_left", "VelocityX#A", X => U);
+            C.AddBoundaryValue("velocity_inlet_left", "VelocityX#B", X => U);
+            C.AddBoundaryValue("pressure_outlet_right");
 
             #endregion
 
@@ -453,15 +453,15 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             switch (bc) {
                 case 1: {
-                        C.AddBoundaryCondition("freeslip_lower");
+                        C.AddBoundaryValue("freeslip_lower");
                         if (slip)
-                            C.AddBoundaryCondition("freeslip_upper", "VelocityX#A", X => -U);
+                            C.AddBoundaryValue("freeslip_upper", "VelocityX#A", X => -U);
                         else
-                            C.AddBoundaryCondition("freeslip_upper");
+                            C.AddBoundaryValue("freeslip_upper");
 
                         if (!Xperiodic) {
-                            C.AddBoundaryCondition("velocity_inlet_left", "VelocityX#A", X => U);
-                            C.AddBoundaryCondition("pressure_outlet_right");
+                            C.AddBoundaryValue("velocity_inlet_left", "VelocityX#A", X => U);
+                            C.AddBoundaryValue("pressure_outlet_right");
                         }
                         break;
                     }
@@ -472,30 +472,30 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                         //else
                         //    C.AddBoundaryCondition("navierslip_linear_upper");
 
-                        C.AddBoundaryCondition("navierslip_linear_lower", "VelocityX#A", X => -U);
-                        C.AddBoundaryCondition("navierslip_linear_upper", "VelocityX#A", X => U);
+                        C.AddBoundaryValue("navierslip_linear_lower", "VelocityX#A", X => -U);
+                        C.AddBoundaryValue("navierslip_linear_upper", "VelocityX#A", X => U);
 
                         if (!Xperiodic) {
-                            C.AddBoundaryCondition("velocity_inlet_left", "VelocityX#A", X => U);
-                            C.AddBoundaryCondition("pressure_outlet_right");
+                            C.AddBoundaryValue("velocity_inlet_left", "VelocityX#A", X => U);
+                            C.AddBoundaryValue("pressure_outlet_right");
                         }
                         break;
                     }
                 case 3: {
-                        C.AddBoundaryCondition("velocity_inlet_lower", "VelocityX#A", X => U);
-                        C.AddBoundaryCondition("freeslip_upper");
+                        C.AddBoundaryValue("velocity_inlet_lower", "VelocityX#A", X => U);
+                        C.AddBoundaryValue("freeslip_upper");
                         if (!Xperiodic) {
-                            C.AddBoundaryCondition("velocity_inlet_left", "VelocityX#A", X => U);
-                            C.AddBoundaryCondition("pressure_outlet_right");
+                            C.AddBoundaryValue("velocity_inlet_left", "VelocityX#A", X => U);
+                            C.AddBoundaryValue("pressure_outlet_right");
                         }
                         break;
                     }
                 case 4: {
-                        C.AddBoundaryCondition("velocity_inlet_lower", "VelocityX#A", X => U);
-                        C.AddBoundaryCondition("navierslip_linear_upper");
+                        C.AddBoundaryValue("velocity_inlet_lower", "VelocityX#A", X => U);
+                        C.AddBoundaryValue("navierslip_linear_upper");
                         if (!Xperiodic) {
-                            C.AddBoundaryCondition("velocity_inlet_left", "VelocityX#A", X => U);
-                            C.AddBoundaryCondition("pressure_outlet_right");
+                            C.AddBoundaryValue("velocity_inlet_left", "VelocityX#A", X => U);
+                            C.AddBoundaryValue("pressure_outlet_right");
                         }
                         break;
                     }
@@ -725,19 +725,19 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             switch (boundarySetup) {
                 case 1:
-                    C.AddBoundaryCondition("velocity_inlet_lower", "VelocityY#A", X => U);
-                    C.AddBoundaryCondition("velocity_inlet_lower", "VelocityY#B", X => U);
-                    C.AddBoundaryCondition("velocity_inlet_upper", "VelocityY#A", X => U);
-                    C.AddBoundaryCondition("velocity_inlet_upper", "VelocityY#B", X => U);
+                    C.AddBoundaryValue("velocity_inlet_lower", "VelocityY#A", X => U);
+                    C.AddBoundaryValue("velocity_inlet_lower", "VelocityY#B", X => U);
+                    C.AddBoundaryValue("velocity_inlet_upper", "VelocityY#A", X => U);
+                    C.AddBoundaryValue("velocity_inlet_upper", "VelocityY#B", X => U);
                     break;
                 case 2:
-                    C.AddBoundaryCondition("velocity_inlet_lower", "VelocityX#A", X => U);
-                    C.AddBoundaryCondition("velocity_inlet_lower", "VelocityX#B", X => U);
-                    C.AddBoundaryCondition("velocity_inlet_upper", "VelocityX#A", X => U);
-                    C.AddBoundaryCondition("velocity_inlet_upper", "VelocityX#B", X => U);
-                    C.AddBoundaryCondition("velocity_inlet_left", "VelocityX#A", X => U);
-                    C.AddBoundaryCondition("velocity_inlet_left", "VelocityX#B", X => U);
-                    C.AddBoundaryCondition("pressure_outlet_right");
+                    C.AddBoundaryValue("velocity_inlet_lower", "VelocityX#A", X => U);
+                    C.AddBoundaryValue("velocity_inlet_lower", "VelocityX#B", X => U);
+                    C.AddBoundaryValue("velocity_inlet_upper", "VelocityX#A", X => U);
+                    C.AddBoundaryValue("velocity_inlet_upper", "VelocityX#B", X => U);
+                    C.AddBoundaryValue("velocity_inlet_left", "VelocityX#A", X => U);
+                    C.AddBoundaryValue("velocity_inlet_left", "VelocityX#B", X => U);
+                    C.AddBoundaryValue("pressure_outlet_right");
                     break;
                 default:
                     break;

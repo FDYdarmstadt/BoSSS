@@ -228,11 +228,11 @@ namespace CNS.Tests.IBMTests {
             c.InitialValues_Evaluators.Add(Variables.Pressure, X => pressure(X, 0.0));
 
             //BoundaryConditions
-            c.AddBoundaryCondition("adiabaticSlipWall");
-            c.AddBoundaryCondition("supersonicInlet", Variables.Density, rho);
-            c.AddBoundaryCondition("supersonicInlet", Variables.Velocity.xComponent, u0);
-            c.AddBoundaryCondition("supersonicInlet", Variables.Velocity.yComponent, u1);
-            c.AddBoundaryCondition("supersonicInlet", Variables.Pressure, pressure);
+            c.AddBoundaryValue("adiabaticSlipWall");
+            c.AddBoundaryValue("supersonicInlet", Variables.Density, rho);
+            c.AddBoundaryValue("supersonicInlet", Variables.Velocity.xComponent, u0);
+            c.AddBoundaryValue("supersonicInlet", Variables.Velocity.yComponent, u1);
+            c.AddBoundaryValue("supersonicInlet", Variables.Pressure, pressure);
 
 
             // Queries

@@ -163,6 +163,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 // collect edges
                 // -------------
 
+                
                 m_Edges.CollectEdges();
                 m_Edges.DetermineEdgeTrafo();
                 m_Edges.CollectBoundaryEdges();
@@ -1185,8 +1186,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                             }
                             cnt++;
                         } else {
-                            ClNg[j][n] = int.MinValue;
-                            cnt++;
+                            //ClNg[j][cnt] = int.MinValue;
+                            //cnt++;
                         }
                     }
 

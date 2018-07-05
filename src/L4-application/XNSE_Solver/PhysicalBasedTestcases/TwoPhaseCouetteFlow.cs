@@ -226,10 +226,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                     }
             }
 
-            C.AddBoundaryCondition("navierslip_linear_lower", "VelocityX#A", X => -U_wall);
-            C.AddBoundaryCondition("navierslip_linear_lower", "VelocityX#B", X => -U_wall);
-            C.AddBoundaryCondition("navierslip_linear_upper", "VelocityX#A", X => U_wall);
-            C.AddBoundaryCondition("navierslip_linear_upper", "VelocityX#B", X => U_wall);
+            C.AddBoundaryValue("navierslip_linear_lower", "VelocityX#A", X => -U_wall);
+            C.AddBoundaryValue("navierslip_linear_lower", "VelocityX#B", X => -U_wall);
+            C.AddBoundaryValue("navierslip_linear_upper", "VelocityX#A", X => U_wall);
+            C.AddBoundaryValue("navierslip_linear_upper", "VelocityX#B", X => U_wall);
 
 
             #endregion

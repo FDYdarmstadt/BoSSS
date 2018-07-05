@@ -25,7 +25,7 @@ using System.Threading.Tasks;
 
 namespace CNS.LoadBalancing {
 
-    public class IBMCellCostEstimator : ICellCostEstimator {
+    public class IBMCellCostEstimatorTwo : ICellCostEstimator {
 
         private int[] cellToCostMap;
 
@@ -37,10 +37,9 @@ namespace CNS.LoadBalancing {
         /// <param name="selectedCellType">
         /// See <see cref="IBMCellClassifier"/>:
         /// 0: Fluid
-        /// 1: Cut
-        /// 2: Void
+        /// 1: Void
         /// </param>
-        public IBMCellCostEstimator(int selectedCellType) {
+        public IBMCellCostEstimatorTwo(int selectedCellType) {
             this.selectedCellType = selectedCellType;
         }
 
@@ -73,17 +72,11 @@ namespace CNS.LoadBalancing {
             EstimatedLocalCost = cellToCostMap.Sum();
         }
 
-        public static Func<IApplication, int, ICellCostEstimator> GetStaticCostBasedEstimator() {
-            return (p, i) => new StaticCellCostEstimator(
-                new int[] { 10, 100, 1 });
-        }
-
         public static IEnumerable<Func<IApplication, int, ICellCostEstimator>> GetMultiBalanceConstraintsBasedEstimators() {
-            int noOfCellTypes = 3; // Fluid + Cut + Void
-            for (int i = 0; i < noOfCellTypes; i++) {
-                int temp = i; // Avoid delegate creation from capturing variable $i
-                yield return (app, classCount) => new IBMCellCostEstimator(temp);
-            }
+            // Fluid
+            yield return (app, classCount) => new IBMCellCostEstimatorTwo(0);
+            // Void
+            yield return (app, classCount) => new IBMCellCostEstimatorTwo(1);
         }
     }
 }
