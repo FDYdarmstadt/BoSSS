@@ -987,7 +987,7 @@ namespace CNS {
         /// <summary>
         /// Version to be submitted on the FDY HPC cluster
         /// </summary>
-        public static IBMControl IBMDoubleMachReflection(string dbPath = null, int savePeriod = 1, int dgDegree = 3, int numOfCellsX = 250, int numOfCellsY = 200, double sensorLimit = 1e-4, double dtFixed = 0.0, double CFLFraction = 0.3, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 2, int reclusteringInterval = 10, int maxNumOfSubSteps = 10, double agg = 0.3, double fugdeFactor = 0.5, double endTime = 0.2, string restart = "False") {
+        public static IBMControl IBMDoubleMachReflection(string dbPath = null, int savePeriod = 1, int dgDegree = 3, int numOfCellsX = 250, int numOfCellsY = 200, double sensorLimit = 1e-4, double dtFixed = 0.0, double CFLFraction = 0.3, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 2, int reclusteringInterval = 10, int maxNumOfSubSteps = 10, double agg = 0.3, double fugdeFactor = 0.5, double endTime = 0.2, double kappa = 0.5, string restart = "False") {
             //System.Threading.Thread.Sleep(10000);
             //ilPSP.Environment.StdoutOnlyOnRank0 = true;
 
@@ -1008,9 +1008,11 @@ namespace CNS {
             c.WriteLTSConsoleOutput = false;
 
             double xMin = 0.0;
-            double xMax = 2.5;
+            //double xMax = 2.5;
+            double xMax = 0.3;
             double yMin = 0.0;
-            double yMax = 2.0;
+            //double yMax = 2.0;
+            double yMax = 0.3;
 
             // Force cell height to be such that level set only goes through the corner of cells
             //double cellWidth = (xMax - xMin) / numOfCellsX;
@@ -1072,14 +1074,14 @@ namespace CNS {
             c.FluxCorrection = false;
 
             // Dynamic load balancing
-            c.GridPartType = GridPartType.directHilbert;
-            c.DynamicLoadBalancing_On = true;
-            c.DynamicLoadBalancing_CellClassifier = new IBMCellClassifier();
-            //c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(IBMCellCostEstimator.GetMultiBalanceConstraintsBasedEstimators());
-            c.DynamicLoadBalancing_CellCostEstimatorFactories.Add((p, i) => new StaticCellCostEstimator(new[] { 10, 10, 1 }));
-            c.DynamicLoadBalancing_ImbalanceThreshold = 0.1;
-            c.DynamicLoadBalancing_Period = int.MaxValue;
-            c.DynamicLoadBalancing_RedistributeAtStartup = true;
+            c.GridPartType = GridPartType.ParMETIS;
+            //c.DynamicLoadBalancing_On = true;
+            //c.DynamicLoadBalancing_CellClassifier = new IBMCellClassifier();
+            ////c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(IBMCellCostEstimator.GetMultiBalanceConstraintsBasedEstimators());
+            //c.DynamicLoadBalancing_CellCostEstimatorFactories.Add((p, i) => new StaticCellCostEstimator(new[] { 10, 10, 1 }));
+            //c.DynamicLoadBalancing_ImbalanceThreshold = 0.1;
+            //c.DynamicLoadBalancing_Period = int.MaxValue;
+            //c.DynamicLoadBalancing_RedistributeAtStartup = true;
 
             double cellSize = Math.Min((xMax - xMin) / numOfCellsX, (yMax - yMin) / numOfCellsY);
 
@@ -1093,7 +1095,7 @@ namespace CNS {
             // Shock-capturing
             double epsilon0 = 1.0;
             //double kappa = 1.0;   // Only set for DMR
-            double kappa = 0.5;     // Set for all other runs
+            //double kappa = 0.5;     // Set for all other runs
             //double lambdaMax = 20;
 
             if (AV) {
@@ -1222,14 +1224,14 @@ namespace CNS {
             // Session name
             string tempSessionName;
             if (c.ExplicitScheme == ExplicitSchemes.RungeKutta) {
-                tempSessionName = string.Format("IBMDMR_p{0}_xCells{1}_yCells{2}_agg{3}_s0={4:0.0E-00}_ff{5}_dtFixed{6}_CFLFrac{7}_RK{8}",
-                    dgDegree, numOfCellsX, numOfCellsY, agg, sensorLimit, fugdeFactor, dtFixed, CFLFraction, explicitOrder);
+                tempSessionName = string.Format("IBMDMR_p{0}_xCells{1}_yCells{2}_agg{3}_s0={4:0.0E-00}_ff{5}_ka{6}_dtFixed{7}_CFLFrac{8}_RK{9}",
+                    dgDegree, numOfCellsX, numOfCellsY, agg, sensorLimit, fugdeFactor, kappa, dtFixed, CFLFraction, explicitOrder);
             } else if (c.ExplicitScheme == ExplicitSchemes.AdamsBashforth) {
-                tempSessionName = string.Format("IBMDMR_p{0}_xCells{1}_yCells{2}_agg{3}_s0={4:0.0E-00}_ff{5}_dtFixed{6}_CFLFrac{7}_AB{8}",
-                    dgDegree, numOfCellsX, numOfCellsY, agg, sensorLimit, fugdeFactor, dtFixed, CFLFraction, explicitOrder);
+                tempSessionName = string.Format("IBMDMR_p{0}_xCells{1}_yCells{2}_agg{3}_s0={4:0.0E-00}_ff{5}_ka{6}_dtFixed{7}_CFLFrac{8}_AB{9}",
+                    dgDegree, numOfCellsX, numOfCellsY, agg, sensorLimit, fugdeFactor, kappa, dtFixed, CFLFraction, explicitOrder);
             } else {
-                tempSessionName = string.Format("IBMDMR_p{0}_xCells{1}_yCells{2}_agg{3}_s0={4:0.0E-00}_ff{5}_dtFixed{6}_CFLFrac{7}_ALTS{8}_{9}_re{10}_subs{11}",
-                    dgDegree, numOfCellsX, numOfCellsY, agg, sensorLimit, fugdeFactor, dtFixed, CFLFraction, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps);
+                tempSessionName = string.Format("IBMDMR_p{0}_xCells{1}_yCells{2}_agg{3}_s0={4:0.0E-00}_ff{5}_ka{6}_dtFixed{7}_CFLFrac{8}_ALTS{9}_{10}_re{11}_subs{12}",
+                    dgDegree, numOfCellsX, numOfCellsY, agg, sensorLimit, fugdeFactor, kappa, dtFixed, CFLFraction, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps);
             }
             if (c.DynamicLoadBalancing_On) {
                 string loadBal = String.Format("_Part={0}_Repart{1}_Thresh{2}", c.GridPartType.ToString(), c.DynamicLoadBalancing_Period, c.DynamicLoadBalancing_ImbalanceThreshold);
@@ -1244,13 +1246,13 @@ namespace CNS {
         /// <summary>
         /// Version to be submitted on the TU Darmstadt HHLR Lichtenberg cluster
         /// </summary>
-        public static IBMControl IBMDoubleMachReflectionHHLR(int savePeriod = 1, int dgDegree = 3, int numOfCellsX = 250, int numOfCellsY = 200, double sensorLimit = 1e-4, double dtFixed = 0.0, double CFLFraction = 0.3, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 2, int reclusteringInterval = 10, int maxNumOfSubSteps = 10, double agg = 0.3, double fugdeFactor = 0.5, double endTime = 0.2) {
+        public static IBMControl IBMDoubleMachReflectionHHLR(int savePeriod = 1, int dgDegree = 3, int numOfCellsX = 250, int numOfCellsY = 200, double sensorLimit = 1e-4, double dtFixed = 0.0, double CFLFraction = 0.3, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 2, int reclusteringInterval = 10, int maxNumOfSubSteps = 10, double agg = 0.3, double fugdeFactor = 0.5, double endTime = 0.2, double kappa = 0.5) {
 
             // Lichtenberg
             //string dbPath = @"/home/yp19ysog/bosss_db_paper_ibmdmr2";
             string dbPath = @"/work/scratch/yp19ysog/bosss_db_paper_ibmdmr";
 
-            IBMControl c = IBMDoubleMachReflection(dbPath, savePeriod, dgDegree, numOfCellsX, numOfCellsY, sensorLimit, dtFixed, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, agg, fugdeFactor, endTime);
+            IBMControl c = IBMDoubleMachReflection(dbPath, savePeriod, dgDegree, numOfCellsX, numOfCellsY, sensorLimit, dtFixed, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, agg, fugdeFactor, endTime, kappa);
 
             c.ProjectName = "paper_ibmdmr_hhlr_v1_run1";
 
