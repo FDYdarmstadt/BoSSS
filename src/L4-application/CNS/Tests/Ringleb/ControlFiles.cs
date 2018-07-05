@@ -65,7 +65,7 @@ namespace CNS.Tests.Ringleb {
             c.InitialValues_Evaluators.Add(Variables.Momentum.yComponent, X => solution(X).Momentum[1]);
             c.InitialValues_Evaluators.Add(Variables.Energy, X => solution(X).Energy);
 
-            c.AddBoundaryCondition("ringleb");
+            c.AddBoundaryValue("ringleb");
 
             c.Queries.Add("L2ErrorDensity", QueryLibrary.L2Error(Variables.Density, (X, t) => solution(X).Density));
             c.Queries.Add("L2ErrorPressure", QueryLibrary.L2Error(Variables.Pressure, (X, t) => solution(X).Pressure));

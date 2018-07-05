@@ -223,10 +223,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===================
             #region BC
 
-            C.AddBoundaryCondition("wall_lower");
-            C.AddBoundaryCondition("wall_upper");
-            C.AddBoundaryCondition("wall_left");
-            C.AddBoundaryCondition("wall_right");
+            C.AddBoundaryValue("wall_lower");
+            C.AddBoundaryValue("wall_upper");
+            C.AddBoundaryValue("wall_left");
+            C.AddBoundaryValue("wall_right");
 
             #endregion
 
@@ -529,10 +529,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===================
             #region BC
 
-            C.AddBoundaryCondition("wall_lower");
-            C.AddBoundaryCondition("wall_upper");
-            C.AddBoundaryCondition("wall_left");
-            C.AddBoundaryCondition("wall_right");
+            C.AddBoundaryValue("wall_lower");
+            C.AddBoundaryValue("wall_upper");
+            C.AddBoundaryValue("wall_left");
+            C.AddBoundaryValue("wall_right");
 
             //C.AddBoundaryCondition("freeslip_lower");
             //C.AddBoundaryCondition("freeslip_upper");
@@ -826,10 +826,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===================
             #region BC
 
-            C.AddBoundaryCondition("wall_lower");
-            C.AddBoundaryCondition("wall_upper");
-            C.AddBoundaryCondition("wall_left");
-            C.AddBoundaryCondition("wall_right");
+            C.AddBoundaryValue("wall_lower");
+            C.AddBoundaryValue("wall_upper");
+            C.AddBoundaryValue("wall_left");
+            C.AddBoundaryValue("wall_right");
 
             #endregion
 
@@ -1144,13 +1144,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===================
             #region BC
 
-            C.AddBoundaryCondition("navierslip_linear_lower");
-            C.AddBoundaryCondition("navierslip_linear_upper");
-            C.AddBoundaryCondition("navierslip_linear_left");
-            C.AddBoundaryCondition("navierslip_linear_right");
+            C.AddBoundaryValue("navierslip_linear_lower");
+            C.AddBoundaryValue("navierslip_linear_upper");
+            C.AddBoundaryValue("navierslip_linear_left");
+            C.AddBoundaryValue("navierslip_linear_right");
             if (D == 3) {
-                C.AddBoundaryCondition("navierslip_linear_front");
-                C.AddBoundaryCondition("navierslip_linear_back");
+                C.AddBoundaryValue("navierslip_linear_front");
+                C.AddBoundaryValue("navierslip_linear_back");
             }
 
             #endregion
@@ -1496,16 +1496,16 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===================
             #region BC
 
-            C.AddBoundaryCondition("navierslip_linear_lower");
-            C.AddBoundaryCondition("navierslip_linear_upper");
-            C.AddBoundaryCondition("navierslip_linear_left");
-            C.AddBoundaryCondition("navierslip_linear_right");
+            C.AddBoundaryValue("navierslip_linear_lower");
+            C.AddBoundaryValue("navierslip_linear_upper");
+            C.AddBoundaryValue("navierslip_linear_left");
+            C.AddBoundaryValue("navierslip_linear_right");
             //C.AddBoundaryCondition("wall_upper");
             //C.AddBoundaryCondition("wall_left");
             //C.AddBoundaryCondition("wall_right");
             if (D == 3) {
-                C.AddBoundaryCondition("navierslip_linear_front");
-                C.AddBoundaryCondition("navierslip_linear_back");
+                C.AddBoundaryValue("navierslip_linear_front");
+                C.AddBoundaryValue("navierslip_linear_back");
             }
 
             #endregion
@@ -1733,10 +1733,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===================
             #region BC
 
-            C.AddBoundaryCondition("pressure_outlet_lower");
-            C.AddBoundaryCondition("pressure_outlet_upper");
-            C.AddBoundaryCondition("freeslip_left");
-            C.AddBoundaryCondition("freeslip_right");
+            C.AddBoundaryValue("pressure_outlet_lower");
+            C.AddBoundaryValue("pressure_outlet_upper");
+            C.AddBoundaryValue("freeslip_left");
+            C.AddBoundaryValue("freeslip_right");
 
 
             #endregion
@@ -2047,10 +2047,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===================
             #region BC
 
-            C.AddBoundaryCondition("wall_lower");
-            C.AddBoundaryCondition("wall_upper");
-            C.AddBoundaryCondition("wall_left");
-            C.AddBoundaryCondition("wall_right");
+            C.AddBoundaryValue("wall_lower");
+            C.AddBoundaryValue("wall_upper");
+            C.AddBoundaryValue("wall_left");
+            C.AddBoundaryValue("wall_right");
 
             #endregion
 

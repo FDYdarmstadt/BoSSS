@@ -21,6 +21,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
 using BoSSS.Platform;
+using ilPSP;
 
 namespace BoSSS.Foundation.IO {
 
@@ -290,6 +291,25 @@ namespace BoSSS.Foundation.IO {
 
         #endregion
 
+
+        /// <summary>
+        /// Tag to mark crashed 
+        /// and
+        /// currently running sessions in the database.
+        /// It (should be) automatically added to each session at startup
+        /// and removed if the application terminates correctly, i.e. without exceptions or such stuff, you know.
+        /// </summary>
+        public const string NOT_TERMINATED_TAG = "NotTerminated";
+
+        /// <summary>
+        /// If true, the session was successful terminated; if not it is either running, or the simulation may has crashed.
+        /// </summary>
+        public bool SuccessfulTermination {
+            get {
+                return !(this.Tags.Contains(NOT_TERMINATED_TAG));
+            }
+        }
+
         #region Object Members
 
         /// <summary>
@@ -297,7 +317,13 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         /// <returns>A string representing the object.</returns>
         public override string ToString() {
-            return "{ Guid = " + ID + "; " + CreationTime.ToString() + " Name = " + Name + " }";
+            return string.Format("{0}{1}\t{2}\t{3}...",
+                this.Name.IsEmptyOrWhite() ? "NO-NAME-SET" : this.Name,
+                SuccessfulTermination ? "" : "*",
+                CreationTime.ToString(),
+                this.ID.ToString().Substring(0, 8));
+            
+            //return "{ Guid = " + ID + "; " + CreationTime.ToString() + " Name = " + Name + " }";
         }
 
         #endregion

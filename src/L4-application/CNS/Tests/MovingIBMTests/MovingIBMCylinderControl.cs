@@ -74,15 +74,15 @@ c.LevelSetFunction = delegate (double[] X, double t) { \
 	return x * x + y * y - 1.0; \
 };
 
-c.AddBoundaryCondition("supersonicInlet", Variables.Density, (X, t) => 1.0);
-c.AddBoundaryCondition("supersonicInlet", Variables.Velocity[0], (X, t) => 0.0);
-c.AddBoundaryCondition("supersonicInlet", Variables.Velocity[1], (X, t) => 0.0);
-c.AddBoundaryCondition("supersonicInlet", Variables.Pressure, (X, t) => 1.0);
+c.AddBoundaryValue("supersonicInlet", Variables.Density, (X, t) => 1.0);
+c.AddBoundaryValue("supersonicInlet", Variables.Velocity[0], (X, t) => 0.0);
+c.AddBoundaryValue("supersonicInlet", Variables.Velocity[1], (X, t) => 0.0);
+c.AddBoundaryValue("supersonicInlet", Variables.Pressure, (X, t) => 1.0);
 
-c.AddBoundaryCondition("symmetryPlane");
+c.AddBoundaryValue("symmetryPlane");
 
-c.AddBoundaryCondition("adiabaticSlipWall", Variables.Velocity[0], (X, t) => cylinderVelocity);
-c.AddBoundaryCondition("adiabaticSlipWall", Variables.Velocity[1], (X, t) => 0.0);
+c.AddBoundaryValue("adiabaticSlipWall", Variables.Velocity[0], (X, t) => cylinderVelocity);
+c.AddBoundaryValue("adiabaticSlipWall", Variables.Velocity[1], (X, t) => 0.0);
 c.LevelSetBoundaryTag = "adiabaticSlipWall";
 
 c.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Classic;
