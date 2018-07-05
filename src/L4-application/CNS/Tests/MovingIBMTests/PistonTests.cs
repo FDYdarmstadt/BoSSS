@@ -297,12 +297,12 @@ namespace CNS.Tests.MovingIBMTests {
             };
             c.LevelSetVelocity = (X, t) => new Vector3D(pistonVelocity, 0.0, 0.0);
 
-            c.AddBoundaryCondition("adiabaticSlipWall", Variables.Velocity.xComponent, X => pistonVelocity);
-            c.AddBoundaryCondition("adiabaticSlipWall", Variables.Velocity.yComponent, X => 0.0);
-            c.AddBoundaryCondition("supersonicInlet", Variables.Density, X => 1.0);
-            c.AddBoundaryCondition("supersonicInlet", Variables.Velocity[0], X => pistonVelocity);
-            c.AddBoundaryCondition("supersonicInlet", Variables.Velocity[1], X => 0.0);
-            c.AddBoundaryCondition("supersonicInlet", Variables.Pressure, X => 1.0);
+            c.AddBoundaryValue("adiabaticSlipWall", Variables.Velocity.xComponent, X => pistonVelocity);
+            c.AddBoundaryValue("adiabaticSlipWall", Variables.Velocity.yComponent, X => 0.0);
+            c.AddBoundaryValue("supersonicInlet", Variables.Density, X => 1.0);
+            c.AddBoundaryValue("supersonicInlet", Variables.Velocity[0], X => pistonVelocity);
+            c.AddBoundaryValue("supersonicInlet", Variables.Velocity[1], X => 0.0);
+            c.AddBoundaryValue("supersonicInlet", Variables.Pressure, X => 1.0);
 
             c.Queries.Add("L2ErrorDensity", IBMQueries.L2Error(Variables.Density, (X, t) => 1.0));
             c.Queries.Add("L2ErrorXMomentum", IBMQueries.L2Error(Variables.Momentum.xComponent, (X, t) => 1.0));

@@ -46,6 +46,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="BatchSys"></param>
         /// <param name="NumberOfMPIProcs"></param>
         /// <param name="UseComputeNodesExclusive"></param>
+        /// <param name="executionTime">maximum execution time</param>
         /// <returns></returns>
         public static Job RunBatch(this AppControl ctrl, BatchProcessorClient BatchSys, int NumberOfMPIProcs = 1, bool UseComputeNodesExclusive = false, string executionTime="24:00:00") {
             ctrl.ProjectName = InteractiveShell.WorkflowMgm.CurrentProject;
