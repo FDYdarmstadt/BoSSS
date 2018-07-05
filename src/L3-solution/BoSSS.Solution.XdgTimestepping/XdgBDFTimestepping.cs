@@ -1092,7 +1092,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 int Smax = m_TSCchain[0].S;
                 Debug.Assert(Smax == m_TSCchain.Length);
                 Tsc = m_TSCchain[Smax - m_PopulatedStackDepth];
-                Console.WriteLine("Running BDF with {0} stages.", Tsc.S);
 
                 // right-hand-side, resp. affine vector
                 double[] RHS = new double[CurrentAffine.Length];
