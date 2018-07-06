@@ -44,23 +44,40 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         /// <param name="ctrl"></param>
         /// <param name="BatchSys"></param>
-        /// <param name="NumberOfMPIProcs"></param>
-        /// <param name="UseComputeNodesExclusive"></param>
-        /// <param name="executionTime">maximum execution time</param>
         /// <returns></returns>
-        public static Job RunBatch(this AppControl ctrl, BatchProcessorClient BatchSys, int NumberOfMPIProcs = 1, bool UseComputeNodesExclusive = false, string executionTime="24:00:00") {
+        public static Job RunBatch(this AppControl ctrl, BatchProcessorClient BatchSys) {
             ctrl.ProjectName = InteractiveShell.WorkflowMgm.CurrentProject;
 
             Type solverClass = ctrl.GetSolverType();
             Job job = new Job(ctrl.SessionName , solverClass);
-            job.ExecutionTime = executionTime;
-            job.NumberOfMPIProcs = NumberOfMPIProcs;
-            job.UseComputeNodesExclusive = UseComputeNodesExclusive;
+            //job.ExecutionTime = executionTime;
+            //job.NumberOfMPIProcs = NumberOfMPIProcs;
+            //job.UseComputeNodesExclusive = UseComputeNodesExclusive;
             job.SetControlObject(ctrl);
             job.Activate(BatchSys);
             
             return job;
         }
+
+        /// <summary>
+        /// Creates a job for the control object <paramref name="ctrl"/>.
+        /// The method returns immediately.
+        /// This job can still be configured (e.g. setting number of MPI processors) and must be activated (<see cref="Job.Activate(BatchProcessorClient)"/>)
+        /// to run on a batch system.
+        /// </summary>
+        /// <param name="ctrl"></param>
+        /// <returns></returns>
+        public static Job CreateJob(this AppControl ctrl) {
+            ctrl.ProjectName = InteractiveShell.WorkflowMgm.CurrentProject;
+
+            Type solverClass = ctrl.GetSolverType();
+            Job job = new Job(ctrl.SessionName , solverClass);
+            job.SetControlObject(ctrl);
+
+            
+            return job;
+        }
+
 
         /// <summary>
         /// Verifies a control object, especially if it is suitable for serialization.

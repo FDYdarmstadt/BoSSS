@@ -39,7 +39,6 @@ namespace BoSSS.Application.BoSSSpad {
         /// See <see cref="Name"/>.
         /// </param>
         /// <param name="solver"></param>
-        /// <param name="controlObj"></param>
         public Job(string name, Type solver) {
             this.Solver = solver;
             this.Name = name;
@@ -165,6 +164,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="Content">Content of the text file.</param>
         /// <param name="FileName">Designated name of the file in the deployment directory.</param>
         public void AddTextFile(string Content, string FileName) {
+            TestActivation();
+
             byte[] Bytes = Encoding.UTF8.GetBytes(Content);
             AdditionalDeploymentFiles.Add(new Tuple<byte[], string>(Bytes, FileName));
         }
@@ -180,6 +181,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// command line arguments.
         /// </remarks>
         public void SetCommandLineArguments(string Args) {
+            TestActivation();
+
             string PrjName = InteractiveShell.WorkflowMgm.CurrentProject;
             if (string.IsNullOrWhiteSpace(PrjName)) {
                 throw new NotSupportedException("Project management not initialized - set project name (try e.g. 'WorkflowMgm.CurrentProject = \"BlaBla\"').");
@@ -210,6 +213,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// command line arguments.
         /// </remarks>
         public void MySetCommandLineArguments(string Args) {
+            TestActivation();
+
             string PrjName = InteractiveShell.WorkflowMgm.CurrentProject;
             if (string.IsNullOrWhiteSpace(PrjName)) {
                 throw new NotSupportedException("Project management not initialized - set project name (try e.g. 'WorkflowMgm.CurrentProject = \"BlaBla\"').");
@@ -258,6 +263,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// set so far.
         /// </summary>
         public void SetControlObject(BoSSS.Solution.Control.AppControl ctrl) {
+            TestActivation();
+            
             // serialize control object
             // ========================
 
@@ -352,18 +359,24 @@ namespace BoSSS.Application.BoSSSpad {
                 return m_NumberOfMPIProcs;
             }
             set {
-                if (AssignedBatchProc != null)
-                    throw new NotSupportedException("Job is activated - no further change of parameters is possible.");
+                TestActivation();
                 m_NumberOfMPIProcs = value;
             }
         }
+
+        bool m_UseComputeNodesExclusive = false;
 
         /// <summary>
         /// If true, the batch system should try not to run any other jobs in parallel on the assigned compute nodes.
         /// </summary>
         public bool UseComputeNodesExclusive {
-            get;
-            set;
+            get {
+                return m_UseComputeNodesExclusive;
+            }
+            set {
+                TestActivation();
+                m_UseComputeNodesExclusive = value;
+            }
         }
 
 
@@ -645,6 +658,18 @@ namespace BoSSS.Application.BoSSSpad {
             get {
                 return m_RetryCount;
             }
+            set {
+                if(RetryCount < 0)
+                    throw new ArgumentOutOfRangeException("RetryCount must be positive");
+                TestActivation();
+
+                m_RetryCount = value;
+            }
+        }
+
+        private void TestActivation() {
+            if(this.Status != JobStatus.PreActivation)
+                throw new NotSupportedException("Unable to change properties after job is activated.");
         }
 
         /// <summary>
@@ -676,6 +701,7 @@ namespace BoSSS.Application.BoSSSpad {
                 return m_ExecutionTime;
             }
             set {
+                TestActivation();
                 m_ExecutionTime = value;
             }
         }
