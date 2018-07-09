@@ -1009,12 +1009,15 @@ namespace BoSSS.Application.IBM_Solver {
                         // delegate for the initialization of previous timesteps from restart session
                         BDFDelayedInitLoadRestart);
                 }
+
+                After_SetInitialOrLoadRestart();
             } else {
-                if (m_BDF_Timestepper != null)
+                if(m_BDF_Timestepper != null) {
+                    After_SetInitialOrLoadRestart();
                     m_BDF_Timestepper.SingleInit();
+                }
             }
 
-            After_SetInitialOrLoadRestart();
         }
 
 
@@ -1292,7 +1295,7 @@ namespace BoSSS.Application.IBM_Solver {
                     if (this.Control.savetodb == true) {
                         Console.WriteLine("Save adaptive Mesh...");
                         Console.WriteLine("GridGUID:   " + newGrid.GridGuid);
-                        DatabaseDriver.SaveGrid(newGrid);
+                        DatabaseDriver.SaveGrid(newGrid, base.GetDatabase());
                         Console.WriteLine("...done");
                     }
                 } else {

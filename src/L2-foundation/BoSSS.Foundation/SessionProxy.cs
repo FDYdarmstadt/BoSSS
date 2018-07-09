@@ -64,11 +64,11 @@ namespace BoSSS.Foundation.IO {
             this.ID = sessionID;
             this.Database = database;
             realSessionInfo = new ExpirableLazy<SessionInfo>(
-                delegate() {
+                delegate () {
                     // Allow graceful handling when loading faulty sessions
                     try {
                         return database.Controller.DBDriver.LoadSession(sessionID, database);
-                    } catch (Exception e) {
+                    } catch(Exception e) {
                         Console.WriteLine(
                             "Loading session {0} failed with message '{1}'", ID, e.Message);
                         return null;
@@ -86,6 +86,15 @@ namespace BoSSS.Foundation.IO {
         }
 
         #region ISessionInfo Members
+
+        /// <summary>
+        /// see <see cref="ISessionInfo.SuccessfulTermination"/>
+        /// </summary>
+        public bool SuccessfulTermination {
+            get {
+                return RealSessionInfo.SuccessfulTermination;
+            }
+        }
 
         /// <summary>
         /// See <see cref="SessionInfo.Description"/>
@@ -411,7 +420,16 @@ namespace BoSSS.Foundation.IO {
             /// </summary>
             public IDictionary<string, object> KeysAndQueries {
                 get {
-                    return new SortedDictionary<string, object>(); 
+                    return new SortedDictionary<string, object>();
+                }
+            }
+
+            /// <summary>
+            /// always false
+            /// </summary>
+            public bool SuccessfulTermination {
+                get {
+                    return false;
                 }
             }
 

@@ -207,10 +207,10 @@ namespace CNS.Tests.DiffusiveFlux {
             c.InitialValues_Evaluators.Add(Variables.Velocity[1], u1);
             c.InitialValues_Evaluators.Add(Variables.Pressure, p);
 
-            c.AddBoundaryCondition("supersonicinlet", Variables.Density, rho);
-            c.AddBoundaryCondition("supersonicinlet", Variables.Velocity[0], u0);
-            c.AddBoundaryCondition("supersonicinlet", Variables.Velocity[1], u1);
-            c.AddBoundaryCondition("supersonicinlet", Variables.Pressure, p);
+            c.AddBoundaryValue("supersonicinlet", Variables.Density, rho);
+            c.AddBoundaryValue("supersonicinlet", Variables.Velocity[0], u0);
+            c.AddBoundaryValue("supersonicinlet", Variables.Velocity[1], u1);
+            c.AddBoundaryValue("supersonicinlet", Variables.Pressure, p);
 
             return c;
         }

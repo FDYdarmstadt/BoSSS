@@ -379,11 +379,11 @@ namespace BoSSS.Application.IBM_Solver {
             C.PhysicalParameters.mu_A = 2.5*2 / 100;
 
             // Boundary conditions
-            C.AddBoundaryCondition("Velocity_inlet", "VelocityX", (X, t) => 1);
-            C.AddBoundaryCondition("Velocity_inlet", "VelocityY", (X, t) => 0);
+            C.AddBoundaryValue("Velocity_inlet", "VelocityX", (X, t) => 1);
+            C.AddBoundaryValue("Velocity_inlet", "VelocityY", (X, t) => 0);
             //C.AddBoundaryCondition("Velocity_inlet", "VelocityZ", (X, t) => 0);
            // C.AddBoundaryCondition("Wall");
-            C.AddBoundaryCondition("Pressure_Outlet");
+            C.AddBoundaryValue("Pressure_Outlet");
 
             
             // misc. solver options
@@ -671,14 +671,14 @@ namespace BoSSS.Application.IBM_Solver {
             //    return grd;
             //};
 
-            C.AddBoundaryCondition("Velocity_Inlet_upper", "VelocityX", X => 0.0);
-            C.AddBoundaryCondition("Velocity_Inlet_lower", "VelocityX", X => 0.0); //-(4 * 1.5 * X[1] * (4.1 - X[1]) / (4.1 * 4.1))
+            C.AddBoundaryValue("Velocity_Inlet_upper", "VelocityX", X => 0.0);
+            C.AddBoundaryValue("Velocity_Inlet_lower", "VelocityX", X => 0.0); //-(4 * 1.5 * X[1] * (4.1 - X[1]) / (4.1 * 4.1))
             if (!xPeriodic)
             {
-                C.AddBoundaryCondition("Velocity_Inlet_left", "VelocityX", X => (4.0 * 1.5 * (X[1] + 2.0) * (4.1 - (X[1] + 2.0)) / (4.1 * 4.1)));
+                C.AddBoundaryValue("Velocity_Inlet_left", "VelocityX", X => (4.0 * 1.5 * (X[1] + 2.0) * (4.1 - (X[1] + 2.0)) / (4.1 * 4.1)));
                 //C.AddBoundaryCondition("Velocity_Inlet_left", "VelocityX#A", X => 1);   
             }
-            C.AddBoundaryCondition("Pressure_Outlet_right");
+            C.AddBoundaryValue("Pressure_Outlet_right");
 
 
             
