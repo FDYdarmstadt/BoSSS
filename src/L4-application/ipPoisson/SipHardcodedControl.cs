@@ -53,7 +53,7 @@ namespace BoSSS.Application.SipPoisson {
                 return grd;
             };
 
-            R.AddBoundaryCondition(BoundaryType.Dirichlet.ToString(), "T",
+            R.AddBoundaryValue(BoundaryType.Dirichlet.ToString(), "T",
                  delegate (double[] X) {
                      double x = X[0], y = X[1];
                      return Math.Sqrt(x * x + y * y);
@@ -116,8 +116,8 @@ namespace BoSSS.Application.SipPoisson {
             };
 
 
-            RR.AddBoundaryCondition(BoundaryType.Dirichlet.ToString());
-            RR.AddBoundaryCondition(BoundaryType.Neumann.ToString());
+            RR.AddBoundaryValue(BoundaryType.Dirichlet.ToString());
+            RR.AddBoundaryValue(BoundaryType.Neumann.ToString());
 
 
             RR.GridPartType = BoSSS.Foundation.Grid.GridPartType.none;
@@ -160,8 +160,8 @@ namespace BoSSS.Application.SipPoisson {
                 return grd;
             };
             
-            R.AddBoundaryCondition(BoundaryType.Dirichlet.ToString());
-            R.AddBoundaryCondition(BoundaryType.Neumann.ToString());
+            R.AddBoundaryValue(BoundaryType.Dirichlet.ToString());
+            R.AddBoundaryValue(BoundaryType.Neumann.ToString());
 
 
             return R;
@@ -203,6 +203,8 @@ namespace BoSSS.Application.SipPoisson {
             R.solver_name = solver_name;
             //R.TargetBlockSize = 100;
 
+            R.TracingNamespaces = "BoSSS,ilPSP";
+
             R.GridFunc = delegate() {
                 GridCommons grd = null;
                 if(Dim == 2) {
@@ -233,7 +235,7 @@ namespace BoSSS.Application.SipPoisson {
                 return grd;
             };
 
-            R.AddBoundaryCondition(BoundaryType.Dirichlet.ToString(), "T",
+            R.AddBoundaryValue(BoundaryType.Dirichlet.ToString(), "T",
                  delegate (double[] X) {
                      double x = X[0], y = X[1];
 
@@ -243,7 +245,7 @@ namespace BoSSS.Application.SipPoisson {
                      throw new ArgumentOutOfRangeException();
                  });
 
-            R.AddBoundaryCondition(BoundaryType.Neumann.ToString(), "T",
+            R.AddBoundaryValue(BoundaryType.Neumann.ToString(), "T",
                  delegate (double[] X) {
                      if(Math.Abs(X[1] - 1.0) < 1.0e-8 || Math.Abs(X[1] + 1.0) < 1.0e-8) // y = -1, y = +1
                          return 0;
@@ -305,7 +307,7 @@ namespace BoSSS.Application.SipPoisson {
                 return grd;
             };
 
-            R.AddBoundaryCondition(BoundaryType.Dirichlet.ToString(), "T", exSol);
+            R.AddBoundaryValue(BoundaryType.Dirichlet.ToString(), "T", exSol);
 
             R.NoOfSolverRuns = 1;
 

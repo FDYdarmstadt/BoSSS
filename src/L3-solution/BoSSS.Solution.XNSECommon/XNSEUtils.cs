@@ -122,7 +122,7 @@ namespace BoSSS.Solution.XNSECommon {
         }
 
 
-        
+
         /// <summary>
         /// modifies a matrix <paramref name="Mtx"/> and a right-hand-side <paramref name="rhs"/>
         /// in order to fix the pressure at some reference point
@@ -138,11 +138,11 @@ namespace BoSSS.Solution.XNSECommon {
             using (new FuncTrace()) {
                 var map = currentState.Mapping;
                 var GridDat = map.GridDat;
-                
+
 
                 if (Residual.Count != map.LocalLength)
                     throw new ArgumentException();
-               
+
 
                 XDGBasis PressureBasis = (XDGBasis)map.BasisS[iVar];
                 var grd = GridDat;
@@ -190,7 +190,7 @@ namespace BoSSS.Solution.XNSECommon {
                     Residual[iRow] = currentState[iRow];
                 }
 
-               
+
             }
         }
 
@@ -1041,7 +1041,7 @@ namespace BoSSS.Solution.XNSECommon {
             double spcArea = 0.0;
 
             int order = 0;
-            if(LsTrk.GetCachedOrders().Count > 0) {
+            if (LsTrk.GetCachedOrders().Count > 0) {
                 order = LsTrk.GetCachedOrders().Max();
             } else {
                 order = 1;
@@ -1070,7 +1070,7 @@ namespace BoSSS.Solution.XNSECommon {
             double interLength = 0.0;
 
             int order = 0;
-            if(LsTrk.GetCachedOrders().Count > 0) {
+            if (LsTrk.GetCachedOrders().Count > 0) {
                 order = LsTrk.GetCachedOrders().Max();
             } else {
                 order = 1;
@@ -1094,11 +1094,13 @@ namespace BoSSS.Solution.XNSECommon {
         }
 
 
-        public static MultidimensionalArray GetInterfacePoints(LevelSetTracker LsTrk, LevelSet LevSet) {
+        public static MultidimensionalArray GetInterfacePoints(LevelSetTracker LsTrk, LevelSet LevSet, SubGrid sgrd = null) {
 
             int D = LsTrk.GridDat.SpatialDimension;
             int p = LevSet.Basis.Degree;
-            SubGrid sgrd = LsTrk.Regions.GetCutCellSubgrid4LevSet(0);
+            if (sgrd == null)
+                sgrd = LsTrk.Regions.GetCutCellSubgrid4LevSet(0);
+
             NodeSet[] Nodes = LsTrk.GridDat.Grid.RefElements.Select(Kref => Kref.GetQuadratureRule(p * 2).Nodes).ToArray();
             int Jsub = sgrd.LocalNoOfCells;
             int K = Nodes.Max(nds => nds.NoOfNodes);
@@ -1303,7 +1305,7 @@ namespace BoSSS.Solution.XNSECommon {
                             // curvature energy
                             acc += sigma * Curv_res[j, k] * U_res[j, k, d] * Normals[j, k, d];
                         }
-                        
+
                         if (squared) {
                             result[j, k] = acc.Pow2();
                         } else {
@@ -1516,7 +1518,7 @@ namespace BoSSS.Solution.XNSECommon {
 
         }
 
-        public static double EnergyJumpAtInterface(LevelSetTracker LsTrk, VectorField<XDGField> Velocity, XDGField Pressure, double muA, double muB, bool Norm, int momentFittingorder) { 
+        public static double EnergyJumpAtInterface(LevelSetTracker LsTrk, VectorField<XDGField> Velocity, XDGField Pressure, double muA, double muB, bool Norm, int momentFittingorder) {
 
             double EnergyJump = 0.0;
 
@@ -1545,7 +1547,7 @@ namespace BoSSS.Solution.XNSECommon {
         }
 
 
-        public static double SurfaceEnergyChangerate(LevelSetTracker LsTrk, ConventionalDGField[] uI, double sigma, bool Norm, int momentFittingorder) { 
+        public static double SurfaceEnergyChangerate(LevelSetTracker LsTrk, ConventionalDGField[] uI, double sigma, bool Norm, int momentFittingorder) {
 
             double Changerate_Surface = 0.0;
 

@@ -268,10 +268,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===================
             #region BC
 
-            C.AddBoundaryCondition("wall_lower");
-            C.AddBoundaryCondition("wall_upper");
-            C.AddBoundaryCondition("freeslip_left");
-            C.AddBoundaryCondition("freeslip_right");
+            C.AddBoundaryValue("wall_lower");
+            C.AddBoundaryValue("wall_upper");
+            C.AddBoundaryValue("freeslip_left");
+            C.AddBoundaryValue("freeslip_right");
 
             //C.AddBoundaryCondition("wall_lower", VariableNames.LevelSet, PhiFunc);
 
@@ -520,10 +520,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===================
             #region BC
 
-            C.AddBoundaryCondition("wall_lower");
-            C.AddBoundaryCondition("wall_upper");
-            C.AddBoundaryCondition("freeslip_left");
-            C.AddBoundaryCondition("freeslip_right");
+            C.AddBoundaryValue("wall_lower");
+            C.AddBoundaryValue("wall_upper");
+            C.AddBoundaryValue("freeslip_left");
+            C.AddBoundaryValue("freeslip_right");
 
             #endregion
 
@@ -842,10 +842,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===================
             #region BC
 
-            C.AddBoundaryCondition("wall_lower");
-            C.AddBoundaryCondition("wall_upper");
-            C.AddBoundaryCondition("freeslip_left");
-            C.AddBoundaryCondition("freeslip_right");
+            C.AddBoundaryValue("wall_lower");
+            C.AddBoundaryValue("wall_upper");
+            C.AddBoundaryValue("freeslip_left");
+            C.AddBoundaryValue("freeslip_right");
 
             //C.AddBoundaryCondition("wall_lower", VariableNames.LevelSet, PhiFunc);
 
@@ -1077,10 +1077,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===================
             #region BC
 
-            C.AddBoundaryCondition("wall_lower");
-            C.AddBoundaryCondition("wall_upper");
-            C.AddBoundaryCondition("freeslip_left");
-            C.AddBoundaryCondition("freeslip_right");
+            C.AddBoundaryValue("wall_lower");
+            C.AddBoundaryValue("wall_upper");
+            C.AddBoundaryValue("freeslip_left");
+            C.AddBoundaryValue("freeslip_right");
 
             #endregion
 
