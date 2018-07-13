@@ -223,7 +223,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                 sw.WriteLine("#SBATCH -n " + MPIcores);
                 if (email != null) {
-                    sw.WriteLine("#SBATCH --mail-user= " + email);
+                    sw.WriteLine("#SBATCH --mail-user=" + email);
                     sw.WriteLine("#SBATCH --mail-type=ALL");
                 }
                 sw.WriteLine("#SBATCH -C avx");
