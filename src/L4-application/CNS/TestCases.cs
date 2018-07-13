@@ -1259,7 +1259,7 @@ namespace CNS {
             IBMControl c = IBMDoubleMachReflection(dbPath, savePeriod, dgDegree, numOfCellsX, numOfCellsY, sensorLimit, dtFixed, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, agg, fugdeFactor, endTime, kappa, restart);
 
             c.ProjectName = "paper_ibmdmr";
-            c.NoOfTimesteps = 10;
+            //c.NoOfTimesteps = 10;
 
             return c;
         }
