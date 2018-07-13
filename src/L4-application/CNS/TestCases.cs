@@ -1008,9 +1008,9 @@ namespace CNS {
             c.WriteLTSConsoleOutput = false;
 
             double xMin = 0.0;
-            double xMax = 0.75;
+            double xMax = 3.0;
             double yMin = 0.0;
-            double yMax = 0.5;
+            double yMax = 2.0;
 
             // Force cell height to be such that level set only goes through the corner of cells
             //double cellWidth = (xMax - xMin) / numOfCellsX;
@@ -1076,7 +1076,8 @@ namespace CNS {
             c.DynamicLoadBalancing_On = true;
             c.DynamicLoadBalancing_CellClassifier = new IBMCellClassifier();
             //c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(IBMCellCostEstimator.GetMultiBalanceConstraintsBasedEstimators());
-            c.DynamicLoadBalancing_CellCostEstimatorFactories.Add((p, i) => new StaticCellCostEstimator(new[] { 10, 10, 1 }));
+            //c.DynamicLoadBalancing_CellCostEstimatorFactories.Add((p, i) => new StaticCellCostEstimator(new[] { 7, 7, 1})); // HPC Cluster, 28 cores
+            c.DynamicLoadBalancing_CellCostEstimatorFactories.Add((p, i) => new StaticCellCostEstimator(new[] { 10, 10, 1 })); // Lichtenberg, 64 cores
             c.DynamicLoadBalancing_ImbalanceThreshold = 0.1;
             c.DynamicLoadBalancing_Period = int.MaxValue;
             c.DynamicLoadBalancing_RedistributeAtStartup = true;
@@ -1256,7 +1257,8 @@ namespace CNS {
 
             IBMControl c = IBMDoubleMachReflection(dbPath, savePeriod, dgDegree, numOfCellsX, numOfCellsY, sensorLimit, dtFixed, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, agg, fugdeFactor, endTime, kappa);
 
-            c.ProjectName = "paper_ibmdmr_hhlr_v1_run1";
+            c.ProjectName = "paper_ibmdmr";
+            //c.NoOfTimesteps = 10;
 
             return c;
         }
