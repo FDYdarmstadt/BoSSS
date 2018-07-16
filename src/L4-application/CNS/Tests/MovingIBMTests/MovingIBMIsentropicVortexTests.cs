@@ -105,11 +105,11 @@ namespace CNS.Tests.MovingIBMTests {
                 10.0 * amplitude * Math.Cos(10.0 * t),
                 0.0);
 
-            c.AddBoundaryCondition("adiabaticSlipWall");
-            c.AddBoundaryCondition("supersonicInlet", Variables.Density, rho);
-            c.AddBoundaryCondition("supersonicInlet", Variables.Velocity[0], u);
-            c.AddBoundaryCondition("supersonicInlet", Variables.Velocity[1], v);
-            c.AddBoundaryCondition("supersonicInlet", Variables.Pressure, p);
+            c.AddBoundaryValue("adiabaticSlipWall");
+            c.AddBoundaryValue("supersonicInlet", Variables.Density, rho);
+            c.AddBoundaryValue("supersonicInlet", Variables.Velocity[0], u);
+            c.AddBoundaryValue("supersonicInlet", Variables.Velocity[1], v);
+            c.AddBoundaryValue("supersonicInlet", Variables.Pressure, p);
 
             c.dtMin = 0.0;
             c.dtMax = 1.0;
