@@ -104,16 +104,16 @@ namespace NSE_SIMPLE.LowMach {
             c.AnalyticPressure = X => -1.4882576522041879973 * (1.9716158024185796207 * X[1] + 0.21715340932759252572).Pow(2.0 / 5.0) + 1.5508248735452649660;
             c.AnalyticTemperature = X => (1.9716158024185796207 * X[1] + 0.21715340932759252572).Pow(3.0 / 5.0);
 
-            c.AddBoundaryCondition("velocity_inlet_top", VariableNames.VelocityX, X => 1.0);
-            c.AddBoundaryCondition("velocity_inlet_top", VariableNames.VelocityY, X => 0.0);
-            c.AddBoundaryCondition("velocity_inlet_top", VariableNames.Temperature, X => 1.6);
-            c.AddBoundaryCondition("velocity_inlet_left", VariableNames.VelocityX, c.AnalyticVelocityX);
-            c.AddBoundaryCondition("velocity_inlet_left", VariableNames.VelocityY, c.AnalyticVelocityY);
-            c.AddBoundaryCondition("velocity_inlet_left", VariableNames.Temperature, c.AnalyticTemperature);
-            c.AddBoundaryCondition("velocity_inlet_right", VariableNames.VelocityX, c.AnalyticVelocityX);
-            c.AddBoundaryCondition("velocity_inlet_right", VariableNames.VelocityY, c.AnalyticVelocityY);
-            c.AddBoundaryCondition("velocity_inlet_right", VariableNames.Temperature, c.AnalyticTemperature);
-            c.AddBoundaryCondition("wall_bottom", VariableNames.Temperature, X => 0.4);
+            c.AddBoundaryValue("velocity_inlet_top", VariableNames.VelocityX, X => 1.0);
+            c.AddBoundaryValue("velocity_inlet_top", VariableNames.VelocityY, X => 0.0);
+            c.AddBoundaryValue("velocity_inlet_top", VariableNames.Temperature, X => 1.6);
+            c.AddBoundaryValue("velocity_inlet_left", VariableNames.VelocityX, c.AnalyticVelocityX);
+            c.AddBoundaryValue("velocity_inlet_left", VariableNames.VelocityY, c.AnalyticVelocityY);
+            c.AddBoundaryValue("velocity_inlet_left", VariableNames.Temperature, c.AnalyticTemperature);
+            c.AddBoundaryValue("velocity_inlet_right", VariableNames.VelocityX, c.AnalyticVelocityX);
+            c.AddBoundaryValue("velocity_inlet_right", VariableNames.VelocityY, c.AnalyticVelocityY);
+            c.AddBoundaryValue("velocity_inlet_right", VariableNames.Temperature, c.AnalyticTemperature);
+            c.AddBoundaryValue("wall_bottom", VariableNames.Temperature, X => 0.4);
 
             c.PhysicsMode = PhysicsMode.LowMach;
             c.ThermodynamicPressureMode = ThermodynamicPressureMode.Constant;

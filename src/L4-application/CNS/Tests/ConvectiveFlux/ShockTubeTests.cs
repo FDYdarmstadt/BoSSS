@@ -350,7 +350,7 @@ namespace CNS.Tests.ConvectiveFlux {
             };
 
             // Take inner values everywhere
-            c.AddBoundaryCondition("supersonicOutlet");
+            c.AddBoundaryValue("supersonicOutlet");
 
             Material material = new Material(c);
             StateVector stateLeft = StateVector.FromPrimitiveQuantities(

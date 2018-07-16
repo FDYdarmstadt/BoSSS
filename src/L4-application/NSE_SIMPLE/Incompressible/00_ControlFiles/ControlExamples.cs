@@ -90,11 +90,11 @@ namespace NSE_SIMPLE.Incompressible {
             c.PredictorSolverFactory = () => new PARDISOSolver();
             c.CorrectorSolverFactory = () => new PARDISOSolver();
 
-            c.AddBoundaryCondition("velocity_inlet", VariableNames.VelocityX, X => 1.0 - X[1] * X[1]);
-            c.AddBoundaryCondition("velocity_inlet", VariableNames.VelocityY, X => 0.0);
-            c.AddBoundaryCondition("pressure_outlet");
-            c.AddBoundaryCondition("wall_lower");
-            c.AddBoundaryCondition("wall_upper");
+            c.AddBoundaryValue("velocity_inlet", VariableNames.VelocityX, X => 1.0 - X[1] * X[1]);
+            c.AddBoundaryValue("velocity_inlet", VariableNames.VelocityY, X => 0.0);
+            c.AddBoundaryValue("pressure_outlet");
+            c.AddBoundaryValue("wall_lower");
+            c.AddBoundaryValue("wall_upper");
 
             c.PhysicsMode = PhysicsMode.Incompressible;
             c.Reynolds = 100.0;
