@@ -76,6 +76,14 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
+        /// Bool for dis-/enabling email notifications for the current job
+        /// </summary>
+        public string EmailAddress {
+            set;
+            get;
+        }
+
+        /// <summary>
         /// (Optional) object used by some batch processor (after calling <see cref="BatchProcessorClient.Submit(Job)"/>)
         /// in order to identify the job.
         /// </summary>
