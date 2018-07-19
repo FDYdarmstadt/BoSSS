@@ -150,6 +150,7 @@
     <Compile Include="SafeEvaluator.cs" />
     <Compile Include="SessionExportInstruction.cs" />
     <Compile Include="SlurmClient.cs" />
+    <Compile Include="SpatialConvergence.cs" />
     <Compile Include="TableExtensions.cs" />
     <Compile Include="TypeExtensions.cs" />
     <Compile Include="Plot2Ddata.cs" />
