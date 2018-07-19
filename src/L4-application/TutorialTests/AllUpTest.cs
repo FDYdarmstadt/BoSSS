@@ -45,7 +45,8 @@ namespace BoSSS.Application.TutorialTests {
             BoSSS.Solution.Application.InitMPI(new string[0]);
 
              if (System.Environment.MachineName.ToLowerInvariant().EndsWith("rennmaschin")
-                || System.Environment.MachineName.ToLowerInvariant().Contains("jenkins")) {
+                //|| System.Environment.MachineName.ToLowerInvariant().Contains("jenkins")
+                ) {
                 // This is Florians Laptop;
                 // he is to poor to afford MATLAB, so he uses OCTAVE
                 BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
