@@ -674,11 +674,14 @@ namespace BoSSS.Application.BoSSSpad {
             foreach (var group in timesteps.GroupBy(t => t.Fields.Find(fieldName).Basis.Degree)) {
                 double[] resolution;
                 Dictionary<string, double[]> errors;
+                Guid[] tsiIds;
+
                 DGFieldComparison.ComputeErrors(
                     new string[] { fieldName },
                     group.ToArray(),
                     out resolution,
-                    out errors);
+                    out errors,
+                    out tsiIds);
 
                 Debug.Assert(errors.ContainsKey(fieldName));
                 Debug.Assert(errors[fieldName].Length == resolution.Length);
