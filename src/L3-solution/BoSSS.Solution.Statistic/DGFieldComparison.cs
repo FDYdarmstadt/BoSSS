@@ -52,24 +52,44 @@ namespace BoSSS.Solution.Statistic {
         /// (for each field specified in <paramref name="FieldsToCompare"/>)
         /// in comparison to the solution on the finest grid.
         /// </param>
-        public static void ComputeErrors(string[] FieldsToCompare, ITimestepInfo[] timestepS,
-          out double[] GridRes, out Dictionary<string, double[]> L2Errors) {
+        /// <param name="timestepIds">
+        /// on exit, the timestep id which correlate with the resolutions <paramref name="GridRes"/>
+        /// (remarks: <paramref name="timestepIds"/> may be re-sorted internally according to grid resolution).
+        /// </param>
+        public static void ComputeErrors( IEnumerable<string> FieldsToCompare, IEnumerable<ITimestepInfo> timestepS,
+          out double[] GridRes, out Dictionary<string, double[]> L2Errors, out Guid[] timestepIds) {
 
             // load the DG-Fields
             List<IEnumerable<DGField>> fields = new List<IEnumerable<DGField>>();
             int i = 1;
             foreach(var timestep in timestepS) {
-                Console.WriteLine("Loading timestep {0} of {1}, ({2})...", i, timestepS.Length, timestep.ID);
+                Console.WriteLine("Loading timestep {0} of {1}, ({2})...", i, timestepS.Count(), timestep.ID);
                 fields.Add(timestep.Fields);
                 i++;
                 Console.WriteLine("done (Grid has {0} cells).", fields.Last().First().GridDat.CellPartitioning.TotalLength);
             }
 
+
+            // sort according to grid resolution
             {
                 var s = fields.OrderBy(f => f.First().GridDat.CellPartitioning.TotalLength).ToArray();
+                timestepIds = new Guid[s.Length];
+                for(int z = 0; z < timestepIds.Length; z++) {
+                    int idx = fields.IndexOf(s[z], (f1, f2) => object.ReferenceEquals(f1, f2));
+                    timestepIds[z] = timestepS.ElementAt(idx).ID;
+                }
+                
                 fields.Clear();
                 fields.AddRange(s);
+
+#if DEBUG
+                
+
+#endif
             }
+
+
+
 
             // Grids and coarse-to-fine -- mappings.
             GridData[] gDataS = fields.Select(fc => (GridData)(fc.First().GridDat)).ToArray();
@@ -145,7 +165,7 @@ namespace BoSSS.Solution.Statistic {
             }
 
             GridRes = gDataS.Take(gDataS.Length - 1).Select(gd => gd.Cells.h_minGlobal).ToArray();
-
+           
             // convert to table
             /*
             MultidimensionalArray RES = MultidimensionalArray.Create(GridRes.Length, FieldsToCompare.Length + 1);
