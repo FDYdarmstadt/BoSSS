@@ -255,7 +255,6 @@ namespace BoSSS.Foundation {
             return diff;
         }
 
-
         /// <summary>
         /// multiplies a dg field with a constant
         /// </summary>
