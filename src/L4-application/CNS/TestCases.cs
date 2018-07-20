@@ -35,7 +35,7 @@ namespace CNS {
 
     public static class TestCases {
 
-        public static CNSControl ShockTube(string dbPath = null, int savePeriod = 100, int dgDegree = 3, int numOfCellsX = 50, int numOfCellsY = 50, double sensorLimit = 1e-3, double dtFixed = 0.0, double CFLFraction = 0.1, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, int refinementLevel = 0) {
+        public static CNSControl ShockTube(string dbPath = null, int savePeriod = 5, int dgDegree = 3, int numOfCellsX = 50, int numOfCellsY = 50, double sensorLimit = 1e-3, double dtFixed = 0.0, double CFLFraction = 0.1, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, int refinementLevel = 0) {
             CNSControl c = new CNSControl();
 
             // ### Database ###
@@ -49,10 +49,10 @@ namespace CNS {
             c.saveperiod = savePeriod;
             c.PrintInterval = 1;
 
-            c.WriteLTSLog = true;
+            c.WriteLTSLog = false;
 
             // ### Partitioning and load balancing ###
-            c.GridPartType = GridPartType.METIS;
+            c.GridPartType = GridPartType.ParMETIS;
             c.DynamicLoadBalancing_On = false;
             //c.DynamicLoadBalancing_Period = 5;
             //c.DynamicLoadBalancing_ImbalanceThreshold = 0.01;
@@ -72,12 +72,11 @@ namespace CNS {
             c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
             double epsilon0 = 1.0;
             double kappa = 0.5;
-            double lambdaMax = 2.0;
             if (AV) {
                 Variable sensorVariable = Variables.Density;
                 c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
                 c.AddVariable(Variables.ShockSensor, 0);
-                //c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: lambdaMax);    // fix lambdaMax
+                //c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 2);    // fix lambdaMax
                 c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);    // dynamic lambdaMax
             }
 
@@ -987,7 +986,7 @@ namespace CNS {
         /// <summary>
         /// Version to be submitted on the FDY HPC cluster
         /// </summary>
-        public static IBMControl IBMDoubleMachReflection(string dbPath = null, int savePeriod = 1, int dgDegree = 3, int numOfCellsX = 250, int numOfCellsY = 200, double sensorLimit = 1e-4, double dtFixed = 0.0, double CFLFraction = 0.3, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 2, int reclusteringInterval = 10, int maxNumOfSubSteps = 10, double agg = 0.3, double fugdeFactor = 0.5, double endTime = 0.2, double kappa = 0.5, string restart = "False") {
+        public static IBMControl IBMDoubleMachReflection(string dbPath = null, int savePeriod = 1, int dgDegree = 3, int numOfCellsX = 75, int numOfCellsY = 50, double sensorLimit = 1e-3, double dtFixed = 0.0, double CFLFraction = 0.3, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 3, int reclusteringInterval = 10, int maxNumOfSubSteps = 10, double agg = 0.3, double fugdeFactor = 0.5, double endTime = 0.05, double kappa = 0.5, string restart = "False") {
             //System.Threading.Thread.Sleep(10000);
             //ilPSP.Environment.StdoutOnlyOnRank0 = true;
 
@@ -996,6 +995,7 @@ namespace CNS {
             //dbPath = @"/work/scratch/ws35kire/work_db";                       // Lichtenberg
             //dbPath = @"/work/scratch/yp19ysog/bosss_db_paper_ibmdmr";          // Lichtenberg
             //dbPath = @"c:\bosss_db";                                          // Local
+            //dbPath = @"E:\geisenhofer\bosss_db_paper_ibmdmr";                   // HPC cluster
             //dbPath = @"\\dc1\userspace\geisenhofer\bosss_db_IBMShockTube";    // Network
 
             c.DbPath = dbPath;
@@ -1008,11 +1008,9 @@ namespace CNS {
             c.WriteLTSConsoleOutput = false;
 
             double xMin = 0.0;
-            //double xMax = 2.5;
-            double xMax = 0.3;
+            double xMax = 3.0;
             double yMin = 0.0;
-            //double yMax = 2.0;
-            double yMax = 0.3;
+            double yMax = 2.0;
 
             // Force cell height to be such that level set only goes through the corner of cells
             //double cellWidth = (xMax - xMin) / numOfCellsX;
@@ -1075,13 +1073,14 @@ namespace CNS {
 
             // Dynamic load balancing
             c.GridPartType = GridPartType.ParMETIS;
-            //c.DynamicLoadBalancing_On = true;
-            //c.DynamicLoadBalancing_CellClassifier = new IBMCellClassifier();
-            ////c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(IBMCellCostEstimator.GetMultiBalanceConstraintsBasedEstimators());
-            //c.DynamicLoadBalancing_CellCostEstimatorFactories.Add((p, i) => new StaticCellCostEstimator(new[] { 10, 10, 1 }));
-            //c.DynamicLoadBalancing_ImbalanceThreshold = 0.1;
-            //c.DynamicLoadBalancing_Period = int.MaxValue;
-            //c.DynamicLoadBalancing_RedistributeAtStartup = true;
+            c.DynamicLoadBalancing_On = true;
+            c.DynamicLoadBalancing_CellClassifier = new IBMCellClassifier();
+            //c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(IBMCellCostEstimator.GetMultiBalanceConstraintsBasedEstimators());
+            //c.DynamicLoadBalancing_CellCostEstimatorFactories.Add((p, i) => new StaticCellCostEstimator(new[] { 7, 7, 1})); // HPC Cluster, 28 cores
+            c.DynamicLoadBalancing_CellCostEstimatorFactories.Add((p, i) => new StaticCellCostEstimator(new[] { 10, 10, 1 })); // Lichtenberg, 64 cores
+            c.DynamicLoadBalancing_ImbalanceThreshold = 0.1;
+            c.DynamicLoadBalancing_Period = int.MaxValue;
+            c.DynamicLoadBalancing_RedistributeAtStartup = true;
 
             double cellSize = Math.Min((xMax - xMin) / numOfCellsX, (yMax - yMin) / numOfCellsY);
 
@@ -1096,14 +1095,13 @@ namespace CNS {
             double epsilon0 = 1.0;
             //double kappa = 1.0;   // Only set for DMR
             //double kappa = 0.5;     // Set for all other runs
-            //double lambdaMax = 20;
 
             if (AV) {
                 Variable sensorVariable = Variables.Density;
                 c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
                 c.AddVariable(Variables.ShockSensor, 0);
-                //c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: lambdaMax);    // fix lambdaMax
-                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, fudgeFactor: fugdeFactor);    // dynamic lambdaMax
+                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 20);    // fix lambdaMax
+                //c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, fudgeFactor: fugdeFactor);    // dynamic lambdaMax
             }
 
             c.EquationOfState = IdealGas.Air;
@@ -1142,8 +1140,13 @@ namespace CNS {
             }
 
             if (restart == "True") {
-                c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("0d208882-62d1-4b11-a0f6-2533ee9acd12"), -1);
-                c.GridGuid = new Guid("a1399bf7-73b9-4553-9161-d67503a3bcd5");
+                // Crashed IBMDMR 0.0171896434319903s
+                //c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("10ac8f1b-140a-439d-9860-a4001b064880"), 6900);
+                //c.GridGuid = new Guid("2ba2334e-29f1-4441-931d-976068308ded");
+
+                // Restarted crashed run with savePeriod=1
+                c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("e9f31d9c-441b-493f-99f3-cda4c3c5424c"), 20078);
+                c.GridGuid = new Guid("2ba2334e-29f1-4441-931d-976068308ded");
             } else {
                 c.GridFunc = delegate {
                     double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
@@ -1246,15 +1249,17 @@ namespace CNS {
         /// <summary>
         /// Version to be submitted on the TU Darmstadt HHLR Lichtenberg cluster
         /// </summary>
-        public static IBMControl IBMDoubleMachReflectionHHLR(int savePeriod = 1, int dgDegree = 3, int numOfCellsX = 250, int numOfCellsY = 200, double sensorLimit = 1e-4, double dtFixed = 0.0, double CFLFraction = 0.3, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 2, int reclusteringInterval = 10, int maxNumOfSubSteps = 10, double agg = 0.3, double fugdeFactor = 0.5, double endTime = 0.2, double kappa = 0.5) {
+        public static IBMControl IBMDoubleMachReflectionHHLR(int savePeriod = 1, int dgDegree = 3, int numOfCellsX = 300, int numOfCellsY = 200, double sensorLimit = 1e-4, double dtFixed = 0.0, double CFLFraction = 0.3, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 3, int reclusteringInterval = 10, int maxNumOfSubSteps = 10, double agg = 0.3, double fugdeFactor = 0.5, double endTime = 0.2, double kappa = 0.5) {
 
             // Lichtenberg
             //string dbPath = @"/home/yp19ysog/bosss_db_paper_ibmdmr2";
             string dbPath = @"/work/scratch/yp19ysog/bosss_db_paper_ibmdmr";
+            string restart = "False";
 
-            IBMControl c = IBMDoubleMachReflection(dbPath, savePeriod, dgDegree, numOfCellsX, numOfCellsY, sensorLimit, dtFixed, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, agg, fugdeFactor, endTime, kappa);
+            IBMControl c = IBMDoubleMachReflection(dbPath, savePeriod, dgDegree, numOfCellsX, numOfCellsY, sensorLimit, dtFixed, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, agg, fugdeFactor, endTime, kappa, restart);
 
-            c.ProjectName = "paper_ibmdmr_hhlr_v1_run1";
+            c.ProjectName = "paper_ibmdmr";
+            //c.NoOfTimesteps = 10;
 
             return c;
         }

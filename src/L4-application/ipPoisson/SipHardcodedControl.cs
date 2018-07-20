@@ -203,6 +203,8 @@ namespace BoSSS.Application.SipPoisson {
             R.solver_name = solver_name;
             //R.TargetBlockSize = 100;
 
+            R.TracingNamespaces = "BoSSS,ilPSP";
+
             R.GridFunc = delegate() {
                 GridCommons grd = null;
                 if(Dim == 2) {
