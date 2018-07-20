@@ -750,13 +750,20 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="P"></param>
         /// <param name="muA"></param>
         /// <returns></returns>
-        static public double[] GetForces_BoundaryFitted(VectorField<SinglePhaseField> GradU, VectorField<SinglePhaseField> GradV, SinglePhaseField P, LevelSetTracker LsTrk, double muA) {
+        static public double[] GetForces_BoundaryFitted(VectorField<SinglePhaseField> GradU, VectorField<SinglePhaseField> GradV, SinglePhaseField StressXX, 
+            SinglePhaseField StressXY, SinglePhaseField StressYY, SinglePhaseField P, LevelSetTracker LsTrk, double muA, double beta) {
             int D = LsTrk.GridDat.SpatialDimension;
+
+            if (D > 2)
+            {
+                throw new ArgumentException("Method GetForces_BoundaryFitted only implemented for 2D (viscoelastic)!");
+            }
             // var UA = U.Select(u => u.GetSpeciesShadowField("A")).ToArray();
             //var UA = U.ToArray();
             MultidimensionalArray Grad_U = new MultidimensionalArray(D);
             var _GradU = GradU.ToArray();
             var _GradV = GradV.ToArray();
+
 
             int RequiredOrder = _GradU[0].Basis.Degree * 3 + 2;
             //int RequiredOrder = U[0].Basis.Degree * 3 + 2;
@@ -768,8 +775,11 @@ namespace BoSSS.Solution.NSECommon {
 
             Console.WriteLine("Forces coeff: {0}, order = {1}", LsTrk.CutCellQuadratureType, RequiredOrder);
 
+            SinglePhaseField _StressXX = StressXX;
+            SinglePhaseField _StressXY = StressXY;
+            SinglePhaseField _StressYY = StressYY;
 
-            ConventionalDGField pA = null;
+            SinglePhaseField pA = null;
 
             //pA = P.GetSpeciesShadowField("A");
             pA = P;
@@ -785,13 +795,13 @@ namespace BoSSS.Solution.NSECommon {
                     MultidimensionalArray Grad_URes = MultidimensionalArray.Create(Len, K, D);
                     MultidimensionalArray Grad_VRes = MultidimensionalArray.Create(Len, K, D);
                     MultidimensionalArray pARes = MultidimensionalArray.Create(Len, K);
+                    MultidimensionalArray StressXXRes = MultidimensionalArray.Create(Len, K);
+                    MultidimensionalArray StressXYRes = MultidimensionalArray.Create(Len, K);
+                    MultidimensionalArray StressYYRes = MultidimensionalArray.Create(Len, K);
 
-                    //var EdgeNormals = LsTrk.GridDat.Edges.NormalsCache.GetNormals_Edge(Ns, j0, Len);
+                    var Normals = LsTrk.GridDat.Edges.NormalsCache.GetNormals_Edge(Ns, j0, Len);
                     //var Normals = MultidimensionalArray.Create(1, Ns.Length, 1);
-                    //LsTrk.GridDat.Edges.GetNormalsForCell(Ns, j0, 0, Normals);
-                    // Evaluate tangential velocity to level-set surface
-                    //var Normals = LsTrk.DataHistories[0].Current.GetLevelSetNormals(Ns, j0, Len);
-                    var Normals = LsTrk.GridDat.Edges.NormalsForAffine;
+                    //var Normals = LsTrk.GridDat.Edges.NormalsForAffine;
 
 
                     for (int i = 0; i < D; i++)
@@ -805,40 +815,50 @@ namespace BoSSS.Solution.NSECommon {
                         //UA[i].EvaluateGradient(j0, Len, Ns, Grad_UARes.ExtractSubArrayShallow(-1, -1, i, -1), 0, 1);
                     }
 
-                    pA.Evaluate(j0, Len, Ns, pARes);
-                    //pA.EvaluateEdge(j0, Len, Ns, pARes, pARes, null, null, ResultIndexOffset: 0, ResultPreScale: 1);
+                    //pA.Evaluate(j0, Len, Ns, pARes);
+                    pA.EvaluateEdge(j0, Len, Ns, pARes, pARes, ResultIndexOffset: 0, ResultPreScale: 1);
+                    _StressXX.EvaluateEdge(j0, Len, Ns, StressXXRes, StressXXRes, ResultIndexOffset: 0, ResultPreScale: 1);
+                    _StressXY.EvaluateEdge(j0, Len, Ns, StressXYRes, StressXYRes, ResultIndexOffset: 0, ResultPreScale: 1);
+                    _StressYY.EvaluateEdge(j0, Len, Ns, StressYYRes, StressYYRes, ResultIndexOffset: 0, ResultPreScale: 1);
+
 
                     //if (LsTrk.GridDat.SpatialDimension == 2)
                     //{
 
-                        for (int j = 0; j < Len; j++)
+                    for (int j = 0; j < Len; j++)
+                    {
+                        for (int k = 0; k < K; k++)
                         {
-                            for (int k = 0; k < K; k++)
+                            double acc = 0.0;
+
+                            // pressure
+                            switch (d)
                             {
-                                double acc = 0.0;
+                                case 0:
+                                    acc += pARes[j, k] * Normals[j, k, 0];
+                                    acc -= (2 * muA * beta) * Grad_URes[j, k, 0] * Normals[j, k, 0];
+                                    acc -= (muA * beta) * Grad_URes[j, k, 1] * Normals[j, k, 1];
+                                    acc -= (muA * beta) * Grad_VRes[j, k, 0] * Normals[j, k, 1];
+                                    acc -= (muA * (1 - beta)) * StressXXRes[j, k] * Normals[j, k, 0];
+                                    acc -= (muA * (1 - beta)) * StressXYRes[j, k] * Normals[j, k, 1];
+                                    break;
 
-                                // pressure
-                                switch (d)
-                                {
-                                    case 0:
-                                        acc += pARes[j, k] * Normals[j0 +j, 0];
-                                        acc -= (2 * muA) * Grad_URes[j, k, 0] * Normals[j0 + j, 0];
-                                        acc -= (muA) * Grad_URes[j, k, 1] * Normals[j0 + j, 1];
-                                        acc -= (muA) * Grad_VRes[j, k, 0] * Normals[j0 + j, 1];
-                                        break;
-                                    case 1:
-                                        acc += pARes[j, k] * Normals[j, k, 1];
-                                        acc -= (2 * muA) * Grad_VRes[j, k, 1] * Normals[j0 + j, 1];
-                                        acc -= (muA) * Grad_VRes[j, k, 0] * Normals[j0 + j, 0];
-                                        acc -= (muA) * Grad_URes[j, k, 1] * Normals[j0 + j, 0];
-                                        break;
-                                    default:
-                                        throw new NotImplementedException();
-                                }
-
-                                result[j, k] = acc;
+                                case 1:
+                                    acc += pARes[j, k] * Normals[j, k, 1];
+                                    acc -= (2 * muA * beta) * Grad_VRes[j, k, 1] * Normals[j, k, 1];
+                                    acc -= (muA * beta) * Grad_VRes[j, k, 0] * Normals[j, k, 0];
+                                    acc -= (muA * beta) * Grad_URes[j, k, 1] * Normals[j, k, 0];
+                                    acc -= (muA * (1 - beta)) * StressXYRes[j, k] * Normals[j, k, 0];
+                                    acc -= (muA * (1 - beta)) * StressYYRes[j, k] * Normals[j, k, 1];
+                                    break;
+                                default:
+                                    throw new NotImplementedException();
                             }
+
+                            result[j, k] = acc;
                         }
+                    }
+
                     //}
                     //else
                     //{
@@ -886,6 +906,7 @@ namespace BoSSS.Solution.NSECommon {
 
                 };
 
+
                 var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, RequiredOrder, 1).XQuadSchemeHelper;
 
                 EdgeMask Mask = new EdgeMask(LsTrk.GridDat, "Wall_cylinder");
@@ -905,8 +926,8 @@ namespace BoSSS.Solution.NSECommon {
 
             }
 
-            for (int i = 0; i < D; i++)
-                forces[i] = MPI.Wrappers.MPIExtensions.MPISum(forces[i]);
+            //for (int i = 0; i < D; i++)
+            //    forces[i] = MPI.Wrappers.MPIExtensions.MPISum(forces[i]);
 
             return forces;
         }
