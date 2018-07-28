@@ -23,6 +23,7 @@ using System;
 using System.IO;
 using System.Linq;
 using ilPSP;
+using System.Collections.Generic;
 
 namespace CNS.IBM {
 
@@ -215,6 +216,13 @@ namespace CNS.IBM {
             tracker.Subscribe(this);
         }
 
+
+        Dictionary<int[], IBMMassMatrixFactory> MaMaFactCache = new Dictionary<int[], IBMMassMatrixFactory>(
+            new FuncEqualityComparer<int[]>(((int[] a, int[] b) => ilPSP.Utils.ArrayTools.AreEqual(a, b))));
+
+        int MaMaFactCache_TrackerVersion = -1;
+
+
         /// <summary>
         /// Creates an instance of <see cref="IBMMassMatrixFactory"/> that is
         /// appropriate for the given <paramref name="mapping"/>
@@ -222,13 +230,21 @@ namespace CNS.IBM {
         /// <param name="mapping"></param>
         /// <returns></returns>
         public IBMMassMatrixFactory GetMassMatrixFactory(CoordinateMapping mapping) {
-            if (MassMatrixFactory == null || !mapping.Equals(MassMatrixFactory.Mapping)) {
-                MassMatrixFactory = new IBMMassMatrixFactory(this, mapping, Control.FluidSpeciesName, Control.LevelSetQuadratureOrder);
+            if(MaMaFactCache_TrackerVersion != Tracker.VersionCnt) {
+                MaMaFactCache.Clear();
+                MaMaFactCache_TrackerVersion = Tracker.VersionCnt;
             }
-            return MassMatrixFactory;
+
+            int[] degCodes = mapping.BasisS.Select(bs => bs.Degree).ToArray();
+            if(!MaMaFactCache.ContainsKey(degCodes)) {
+                var mmf = new IBMMassMatrixFactory(this, mapping, Control.FluidSpeciesName, Control.LevelSetQuadratureOrder);
+                MaMaFactCache.Add(degCodes, mmf);
+            } 
+
+            return MaMaFactCache[degCodes];
         }
 
-        private IBMMassMatrixFactory MassMatrixFactory;
+        
 
         #region ISpeciesMap Members
 
@@ -271,7 +287,7 @@ namespace CNS.IBM {
         /// </summary>
         /// <param name="value"></param>
         public void OnNext(LevelSetTracker.LevelSetRegions value) {
-            this.MassMatrixFactory = null;
+            this.MaMaFactCache.Clear();
             this.cellAgglomeration = null;
         }
 
