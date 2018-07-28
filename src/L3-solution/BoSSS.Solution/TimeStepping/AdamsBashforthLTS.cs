@@ -225,7 +225,7 @@ namespace BoSSS.Solution.Timestepping {
                     // +++++++++++++++++++++++++++++++++++++++++++
                     // Standard case -- sufficiently large history
                     // +++++++++++++++++++++++++++++++++++++++++++
-                    using (new BlockTrace("AB_LTS_standard", tr)) {
+                    using (var bt = new BlockTrace("AB_LTS_standard", tr)) {
 
                         if (!reclusteredByGridRedist) {
                             TryNewClustering(dt);
