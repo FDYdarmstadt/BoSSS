@@ -77,6 +77,28 @@ namespace CNS.IBM {
             }
         }
 
+
+        System.Collections.BitArray m_cutCellsThatAreNotSourceCells;
+        int m_cutCellsThatAreNotSourceCells_TrackerVersion;
+
+        /// <summary>
+        /// Cached for performance reasons; required for the CFL computation.
+        /// </summary>
+        public System.Collections.BitArray cutCellsThatAreNotSourceCells {
+            get {
+                if (m_cutCellsThatAreNotSourceCells_TrackerVersion != Tracker.VersionCnt)
+                    m_cutCellsThatAreNotSourceCells = null;
+
+                if(m_cutCellsThatAreNotSourceCells == null) {
+                    m_cutCellsThatAreNotSourceCells = Tracker.Regions.GetCutCellMask().Except(Agglomerator.AggInfo.SourceCells).GetBitMask();
+                    m_cutCellsThatAreNotSourceCells_TrackerVersion = Tracker.VersionCnt;
+                }
+
+                return m_cutCellsThatAreNotSourceCells;
+            }
+        }
+
+
         /// <summary>
         /// Backing fields for <see cref="CellAgglomeration"/>
         /// </summary>

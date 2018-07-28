@@ -986,11 +986,13 @@ namespace CNS {
         /// <summary>
         /// Version to be submitted on the FDY HPC cluster
         /// </summary>
-        public static IBMControl IBMDoubleMachReflection(string dbPath = null, int savePeriod = 1, int dgDegree = 3, int numOfCellsX = 300, int numOfCellsY = 200, double sensorLimit = 1e-4, double dtFixed = 0.0, double CFLFraction = 0.3, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 3, int reclusteringInterval = 10, int maxNumOfSubSteps = 10, double agg = 0.3, double fugdeFactor = 0.5, double endTime = 0.2, double kappa = 0.5, string restart = "False") {
+        public static IBMControl IBMDoubleMachReflection(string dbPath = null, int savePeriod = 1, int dgDegree = 2, int numOfCellsX = 300, int numOfCellsY = 200, double sensorLimit = 1e-4, double dtFixed = 0.0, double CFLFraction = 0.3, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 3, int reclusteringInterval = 10, int maxNumOfSubSteps = 10, double agg = 0.3, double fugdeFactor = 0.5, double endTime = 0.2, double kappa = 0.5, string restart = "False") {
             //System.Threading.Thread.Sleep(10000);
             //ilPSP.Environment.StdoutOnlyOnRank0 = true;
 
             IBMControl c = new IBMControl();
+
+            c.TracingNamespaces = "BoSSS";
 
             //dbPath = @"/work/scratch/ws35kire/work_db";                       // Lichtenberg
             //dbPath = @"/work/scratch/yp19ysog/bosss_db_paper_ibmdmr";          // Lichtenberg
@@ -1216,7 +1218,7 @@ namespace CNS {
             c.dtMax = 1.0;
             c.Endtime = endTime;
             c.CFLFraction = CFLFraction;
-            c.NoOfTimesteps = int.MaxValue;
+            c.NoOfTimesteps = 2;
 
             c.ProjectName = "ibmdmr";
 
