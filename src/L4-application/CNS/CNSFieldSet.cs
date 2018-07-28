@@ -242,12 +242,6 @@ namespace CNS {
         /// </summary>
         public void UpdateDerivedVariables(IProgram<CNSControl> program, CellMask cellMask) {
             using (var tr = new FuncTrace()) {
-                var s = new System.Diagnostics.Stopwatch();
-                s.Reset();
-                s.Start();
-
-                Console.WriteLine("Entering UpdateDerivedVariables(..)");
-
 
                 program.Control.ShockSensor?.UpdateSensorValues(program.WorkingSet, program.SpeciesMap, cellMask);
                 foreach (var pair in DerivedFields) {
@@ -262,9 +256,6 @@ namespace CNS {
                 //Console.WriteLine("\r\nThis is UpdateDerivedVariables");
                 //Console.WriteLine("SensorNeu: {0}", sensorNorm);
                 //Console.WriteLine("AVNeu: {0}", AVNorm);
-
-                s.Stop();
-                Console.WriteLine("Leaving: " + s.Elapsed.ToString());
             }
         }
 
