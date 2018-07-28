@@ -131,25 +131,27 @@ namespace BoSSS.Solution.Timestepping {
                     HistoryBoundaryFluxes.Dequeue();
                 }
 
-                // Compute AB Coefficents                
-                if (adaptive) {
-                    if (historyTimePerCell.Count > order - 1)
-                        historyTimePerCell.Dequeue();
+                // Compute AB Coefficients 
+                using (new ilPSP.Tracing.BlockTrace("ComputeABcoefficients", tr)) {
+                    if (adaptive) {
+                        if (historyTimePerCell.Count > order - 1)
+                            historyTimePerCell.Dequeue();
 
-                    ABCoefficientsPerCell = new double[ABSubGrid.LocalNoOfCells][];
-                    for (int cell = 0; cell < ABSubGrid.LocalNoOfCells; cell++) {
-                        double[] historyTimeArray = new double[order];
-                        int i = 0;
-                        foreach (double[] historyPerCell in historyTimePerCell) {
-                            historyTimeArray[i] = historyPerCell[cell];
-                            i++;
+                        ABCoefficientsPerCell = new double[ABSubGrid.LocalNoOfCells][];
+                        for (int cell = 0; cell < ABSubGrid.LocalNoOfCells; cell++) {
+                            double[] historyTimeArray = new double[order];
+                            int i = 0;
+                            foreach (double[] historyPerCell in historyTimePerCell) {
+                                historyTimeArray[i] = historyPerCell[cell];
+                                i++;
+                            }
+                            historyTimeArray[i] = m_Time;
+                            ABCoefficientsPerCell[cell] = ComputeCoefficients(dt, historyTimeArray);
                         }
-                        historyTimeArray[i] = m_Time;
-                        ABCoefficientsPerCell[cell] = ComputeCoefficients(dt, historyTimeArray);
+                    } else {
+                        double[] historyTimeArray = HistoryTime.ToArray();
+                        ABCoefficients = ComputeCoefficients(dt, historyTimeArray);
                     }
-                } else {
-                    double[] historyTimeArray = HistoryTime.ToArray();
-                    ABCoefficients = ComputeCoefficients(dt, historyTimeArray);
                 }
 
                 double[] upDGC;
@@ -253,12 +255,14 @@ namespace BoSSS.Solution.Timestepping {
         /// <param name="completeChangeRate">Complete ChangeRate of a cluster for one sub-step</param>
         /// <returns>intermediate DGCoordinates as array</returns>
         protected virtual double[] ComputesUpdatedDGCoordinates(double[] completeChangeRate) {
-            // Standard case: Just add completeChangeRate to DGCoordinates as array
-            double[] upDGC = new double[Mapping.LocalLength];
-            CurrentState.CopyTo(upDGC, 0);
-            upDGC = OrderValuesBySgrd(upDGC);
-            BLAS.daxpy(upDGC.Length, -1, OrderValuesBySgrd(completeChangeRate), 1, upDGC, 1);
-            return upDGC;
+            using (new ilPSP.Tracing.FuncTrace()) {
+                // Standard case: Just add completeChangeRate to DGCoordinates as array
+                double[] upDGC = new double[Mapping.LocalLength];
+                CurrentState.CopyTo(upDGC, 0);
+                upDGC = OrderValuesBySgrd(upDGC);
+                BLAS.daxpy(upDGC.Length, -1, OrderValuesBySgrd(completeChangeRate), 1, upDGC, 1);
+                return upDGC;
+            }
         }
 
         /// <summary>
