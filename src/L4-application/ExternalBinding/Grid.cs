@@ -33,8 +33,9 @@ namespace BoSSS.Application.ExternalBinding {
             out int ierr) {
 
 
-           
 
+            _ref = -1;
+            ierr = -1;
 
         }
     }
