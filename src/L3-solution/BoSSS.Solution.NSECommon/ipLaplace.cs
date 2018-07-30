@@ -64,7 +64,6 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         virtual protected double g_Neum(ref Foundation.CommonParamsBnd inp) { return 0; }
 
-
         string[] m_ArgumentOrdering;
 
         /// <summary>
@@ -121,7 +120,6 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         protected double m_alpha = 1.0;
 
-
         public TermActivationFlags BoundaryEdgeTerms {
             get {
                 return (TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV | TermActivationFlags.V | TermActivationFlags.GradV);
@@ -171,7 +169,6 @@ namespace BoSSS.Solution.NSECommon {
 
         }
 
-
         virtual public double BoundaryEdgeForm(ref Foundation.CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
             double Acc = 0.0;
 
@@ -201,7 +198,6 @@ namespace BoSSS.Solution.NSECommon {
             }
             return Acc;
         }
-
     }
 
 }

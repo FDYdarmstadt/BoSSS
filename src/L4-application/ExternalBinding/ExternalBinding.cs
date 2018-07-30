@@ -5,8 +5,11 @@ using System.Runtime.InteropServices;
 using System.Xml;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
+using BoSSS.Foundation.Grid;
+using BoSSS.Foundation;
+using ilPSP;
 
-namespace ilPSP.ExternalBinding {
+namespace BoSSS.Application.ExternalBinding {
 	public static class Common_ {
 				
 		/// <summary>
@@ -49,7 +52,7 @@ namespace ilPSP.ExternalBinding {
 			//Console.WriteLine("elo from " +  Enviroment.MPIEnv.MPI_Rank + " of " + Enviroment.MPIEnv.MPI_Size);
 		}
 		
-		public static void ilPSPFinalize() {
+		public static void BoSSSFinalize() {
 			if(mustFinalizeMPI)
 				MPI.Wrappers.csMPI.Raw.mpiFinalize();
 		}
@@ -147,7 +150,7 @@ namespace ilPSP.ExternalBinding {
 			MPIsize = -1;
 			try {
 				IPartitioning p = (IPartitioning) Infrastructure.GetObject(_ref);
-				MPIsize = (int) p.Size;
+				MPIsize = (int) p.MpiSize;
 			} catch (Exception e) {
 				ierr = Infrastructure.ErrorHandler(e);
 			}
@@ -199,6 +202,13 @@ namespace ilPSP.ExternalBinding {
 		}
 	}
 	
+
+
+    
+
+
+
+    /*
 	public static class ISparseSolver_ {
 		
 		static void FromXMLInternal(out int ref_, string xmlString) {
@@ -325,7 +335,7 @@ namespace ilPSP.ExternalBinding {
 				ierr = Infrastructure.ErrorHandler(e);
 			}
 		}
-	
 	}
+    */
 }
 
