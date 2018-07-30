@@ -6,7 +6,7 @@
     <ProductVersion>10.0.0</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{25390D9E-5BDF-4FCC-9A70-AF49F36831A4}</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <OutputType>Exe</OutputType>
     <RootNamespace>BoSSS.Application.ExternalBinding</RootNamespace>
     <AssemblyName>BoSSS.Application.ExternalBinding</AssemblyName>
     <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
@@ -34,6 +34,9 @@
     <ConsolePause>false</ConsolePause>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -42,6 +45,9 @@
   <ItemGroup>
     <Compile Include="ExternalBinding.cs" />
     <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="FixedOperators.cs" />
+    <Compile Include="Grid.cs" />
+    <Compile Include="GridImportTest.cs" />
     <Compile Include="Infrastructure.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -52,6 +58,10 @@
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj">
       <Project>{8e6d8f23-623f-4204-b4ab-a088c0cd83aa}</Project>
       <Name>ilPSP</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L1-platform\BoSSS.Platform\BoSSS.Platform.csproj">
+      <Project>{B7D5F7C7-EA9F-4506-AB69-C3CD2AA8C938}</Project>
+      <Name>BoSSS.Platform</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.Grid\BoSSS.Foundation.Grid.csproj">
       <Project>{13585226-5046-494d-947c-b97479566081}</Project>
