@@ -1136,6 +1136,7 @@ namespace BoSSS.Foundation.XDG {
 
             }
         }
+    
 
         class MiniMapping {
 
@@ -1175,90 +1176,90 @@ namespace BoSSS.Foundation.XDG {
             where M : IMutableMatrixEx //
             where T : IList<double> //
         {
-            MPICollectiveWatchDog.Watch();
-            //var mtxS = GetFrameMatrices(Matrix, RowMap, ColMap);
+            using (new FuncTrace()) {
+                MPICollectiveWatchDog.Watch();
+                //var mtxS = GetFrameMatrices(Matrix, RowMap, ColMap);
 
-            if (Matrix == null && Rhs == null)
-                // nothing to do
-                return;
+                if (Matrix == null && Rhs == null)
+                    // nothing to do
+                    return;
 
-            if (TotalNumberOfAgglomerations <= 0)
-                // nothing to do
-                return;
+                if (TotalNumberOfAgglomerations <= 0)
+                    // nothing to do
+                    return;
 
-            if (RowMapAggSw != null)
-                throw new NotImplementedException();
+                if (RowMapAggSw != null)
+                    throw new NotImplementedException();
 
-            // grenerate agglomeration sparse matrices
-            // =======================================
+                // generate agglomeration sparse matrices
+                // ======================================
 
-            int RequireRight;
-            if (Matrix == null) {
-                // we don't need multiplication-from-the-right at all
-                RequireRight = 0;
-            } else {
-                if (RowMap.EqualsUnsetteled(ColMap) && ArrayTools.ListEquals(ColMapAggSw, RowMapAggSw)) {
-                    // we can use the same matrix for right and left multiplication
-                    RequireRight = 1;
-
+                int RequireRight;
+                if (Matrix == null) {
+                    // we don't need multiplication-from-the-right at all
+                    RequireRight = 0;
                 } else {
-                    // separate matrix for the multiplication-from-the-right is required
-                    RequireRight = 2;
-                }
-            }
+                    if (RowMap.EqualsUnsetteled(ColMap) && ArrayTools.ListEquals(ColMapAggSw, RowMapAggSw)) {
+                        // we can use the same matrix for right and left multiplication
+                        RequireRight = 1;
 
-            BlockMsrMatrix LeftMul, RightMul;
-            {
-                MiniMapping rowMini = new MiniMapping(RowMap);
-                LeftMul = this.GetRowManipulationMatrix(RowMap, rowMini.MaxDeg, rowMini.NoOfVars, rowMini.i0Func, rowMini.NFunc, false, null);
-
-                if (RequireRight == 2) {
-                    MiniMapping colMini = new MiniMapping(ColMap);
-                    RightMul = this.GetRowManipulationMatrix(ColMap, colMini.MaxDeg, colMini.NoOfVars, colMini.i0Func, colMini.NFunc, false, null);
-                } else if (RequireRight == 1) {
-                    RightMul = LeftMul;
-                } else {
-                    RightMul = null;
-                }
-            }
-
-            // apply the agglomeration to the matrix
-            // =====================================
-
-            if (Matrix != null) {
-                BlockMsrMatrix RightMulTr = RightMul.Transpose();
-
-                BlockMsrMatrix _Matrix;
-                if (Matrix is BlockMsrMatrix) {
-                    _Matrix = (BlockMsrMatrix)((object)Matrix);
-                } else {
-                    _Matrix = Matrix.ToBlockMsrMatrix(RowMap, ColMap);
+                    } else {
+                        // separate matrix for the multiplication-from-the-right is required
+                        RequireRight = 2;
+                    }
                 }
 
-                var AggMatrix = BlockMsrMatrix.Multiply(LeftMul, BlockMsrMatrix.Multiply(_Matrix, RightMulTr));
+                BlockMsrMatrix LeftMul, RightMul;
+                {
+                    MiniMapping rowMini = new MiniMapping(RowMap);
+                    LeftMul = this.GetRowManipulationMatrix(RowMap, rowMini.MaxDeg, rowMini.NoOfVars, rowMini.i0Func, rowMini.NFunc, false, null);
 
-                if (object.ReferenceEquals(_Matrix, Matrix)) {
-                    _Matrix.Clear();
-                    _Matrix.Acc(1.0, AggMatrix);
-                } else {
-                    Matrix.Acc(-1.0, _Matrix); //   das ist so
-                    Matrix.Acc(1.0, AggMatrix); //  meagaschlecht !!!!!!
+                    if (RequireRight == 2) {
+                        MiniMapping colMini = new MiniMapping(ColMap);
+                        RightMul = this.GetRowManipulationMatrix(ColMap, colMini.MaxDeg, colMini.NoOfVars, colMini.i0Func, colMini.NFunc, false, null);
+                    } else if (RequireRight == 1) {
+                        RightMul = LeftMul;
+                    } else {
+                        RightMul = null;
+                    }
                 }
-            }
 
-            // apply the agglomeration to the Rhs
-            // ==================================
+                // apply the agglomeration to the matrix
+                // =====================================
 
-            if (Rhs != null) {
+                if (Matrix != null) {
+                    BlockMsrMatrix RightMulTr = RightMul.Transpose();
 
-                double[] tmp = Rhs.ToArray();
-                if (object.ReferenceEquals(tmp, Rhs))
-                    throw new ApplicationException("Flache kopie sollte eigentlich ausgeschlossen sein!?");
+                    BlockMsrMatrix _Matrix;
+                    if (Matrix is BlockMsrMatrix) {
+                        _Matrix = (BlockMsrMatrix)((object)Matrix);
+                    } else {
+                        _Matrix = Matrix.ToBlockMsrMatrix(RowMap, ColMap);
+                    }
 
-                LeftMul.SpMV(1.0, tmp, 0.0, Rhs);
+                    var AggMatrix = BlockMsrMatrix.Multiply(LeftMul, BlockMsrMatrix.Multiply(_Matrix, RightMulTr));
+
+                    if (object.ReferenceEquals(_Matrix, Matrix)) {
+                        _Matrix.Clear();
+                        _Matrix.Acc(1.0, AggMatrix);
+                    } else {
+                        Matrix.Acc(-1.0, _Matrix); //   das ist so
+                        Matrix.Acc(1.0, AggMatrix); //  meagaschlecht !!!!!!
+                    }
+                }
+
+                // apply the agglomeration to the Rhs
+                // ==================================
+
+                if (Rhs != null) {
+
+                    double[] tmp = Rhs.ToArray();
+                    if (object.ReferenceEquals(tmp, Rhs))
+                        throw new ApplicationException("Flache kopie sollte eigentlich ausgeschlossen sein!?");
+
+                    LeftMul.SpMV(1.0, tmp, 0.0, Rhs);
+                }
             }
         }
-
-
     }
 }

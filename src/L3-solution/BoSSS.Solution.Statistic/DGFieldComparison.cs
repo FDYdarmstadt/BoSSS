@@ -52,24 +52,37 @@ namespace BoSSS.Solution.Statistic {
         /// (for each field specified in <paramref name="FieldsToCompare"/>)
         /// in comparison to the solution on the finest grid.
         /// </param>
-        public static void ComputeErrors(string[] FieldsToCompare, ITimestepInfo[] timestepS,
-          out double[] GridRes, out Dictionary<string, double[]> L2Errors) {
+        /// <param name="timestepIds">
+        /// on exit, the timestep id which correlate with the resolutions <paramref name="GridRes"/>
+        /// (remarks: <paramref name="timestepIds"/> may be re-sorted internally according to grid resolution).
+        /// </param>
+        public static void ComputeErrors( IEnumerable<string> FieldsToCompare, IEnumerable<ITimestepInfo> timestepS,
+          out double[] GridRes, out Dictionary<string, double[]> L2Errors, out Guid[] timestepIds) {
 
             // load the DG-Fields
             List<IEnumerable<DGField>> fields = new List<IEnumerable<DGField>>();
             int i = 1;
             foreach(var timestep in timestepS) {
-                Console.WriteLine("Loading timestep {0} of {1}, ({2})...", i, timestepS.Length, timestep.ID);
+                Console.WriteLine("Loading timestep {0} of {1}, ({2})...", i, timestepS.Count(), timestep.ID);
                 fields.Add(timestep.Fields);
                 i++;
                 Console.WriteLine("done (Grid has {0} cells).", fields.Last().First().GridDat.CellPartitioning.TotalLength);
             }
 
+
+            // sort according to grid resolution
             {
                 var s = fields.OrderBy(f => f.First().GridDat.CellPartitioning.TotalLength).ToArray();
+                timestepIds = new Guid[s.Length];
+                for(int z = 0; z < timestepIds.Length; z++) {
+                    int idx = fields.IndexOf(s[z], (f1, f2) => object.ReferenceEquals(f1, f2));
+                    timestepIds[z] = timestepS.ElementAt(idx).ID;
+                }
+                
                 fields.Clear();
                 fields.AddRange(s);
             }
+
 
             // Grids and coarse-to-fine -- mappings.
             GridData[] gDataS = fields.Select(fc => (GridData)(fc.First().GridDat)).ToArray();
@@ -145,32 +158,6 @@ namespace BoSSS.Solution.Statistic {
             }
 
             GridRes = gDataS.Take(gDataS.Length - 1).Select(gd => gd.Cells.h_minGlobal).ToArray();
-
-            // convert to table
-            /*
-            MultidimensionalArray RES = MultidimensionalArray.Create(GridRes.Length, FieldsToCompare.Length + 1);
-            RES.SetColumn(0, GridRes);
-            for(int ii = 0; ii < FieldsToCompare.Length; ii++) {
-                RES.SetColumn(ii + 1, L2Errors[FieldsToCompare[ii]]);
-            }
-
-
-            using(var fs = new FileStream("res.csv", FileMode.Append)) {
-                var stw = new StreamWriter(fs);
-                stw.Write("GridRes ");
-                for(int ii = 0; ii < FieldsToCompare.Length; ii++) {
-                    stw.Write(FieldsToCompare[ii]);
-                    if(ii + 1 < FieldsToCompare.Length)
-                        stw.Write(" ");
-                }
-
-                stw.Flush();
-
-                RES.WriteToStream(fs);
-
-            }
-            */
-
         }
 
         /// <summary>
@@ -223,7 +210,7 @@ namespace BoSSS.Solution.Statistic {
 
 
         /// <summary>
-        /// Injects a DG field from a coarsr grid to a fine grid.
+        /// Injects a DG field from a coarser grid to a fine grid.
         /// </summary>
         public static void InjectDGField(int[] CellIdxFine2Coarse, ConventionalDGField onFineGrid, ConventionalDGField onCoarseGrid, CellMask subGrd = null) {
             if(subGrd == null)
