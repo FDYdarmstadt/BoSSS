@@ -789,23 +789,120 @@ namespace BoSSS.Foundation.XDG {
         /// polynomial extrapolation from agglomeration target cells to agglomeration source cells.
         /// </summary>
         public void Extrapolate(CoordinateMapping DgFields) {
+            using (new FuncTrace()) {
+                int GAMMA = DgFields.Fields.Count;
+                var Brow = DgFields.BasisS.ToArray();
+                this.InitCouplingMatrices(Brow.Max(basis => basis.Degree));
 
-            int GAMMA = DgFields.Fields.Count;
-            var Brow = DgFields.BasisS.ToArray();
-            this.InitCouplingMatrices(Brow.Max(basis => basis.Degree));
+                DGField[] DgFlds = DgFields.Fields.ToArray();
 
-            DGField[] DgFlds = DgFields.Fields.ToArray();
+                Transceiver trx = null;
+                int mpiRank = this.GridDat.CellPartitioning.MpiRank;
+                if (this.AggInfo.InterProcessAgglomeration) {
+                    trx = new Transceiver(DgFlds);
+                }
 
-            Transceiver trx = null;
-            int mpiRank = this.GridDat.CellPartitioning.MpiRank;
-            if (this.AggInfo.InterProcessAgglomeration) {
-                trx = new Transceiver(DgFlds);
-            }
+                CellAgglomerator.AgglomerationPair[] AggPairs = this.AggInfo.AgglomerationPairs;
 
-            CellAgglomerator.AgglomerationPair[] AggPairs = this.AggInfo.AgglomerationPairs;
+                // loop over agglomeration levels: 
+                for (int AggLevel = this.AggInfo.MaxLevel; AggLevel >= 0; AggLevel--) {
 
-            // loop over agglomeration levels: 
-            for (int AggLevel = this.AggInfo.MaxLevel; AggLevel >= 0; AggLevel--) {
+                    // MPI exchange
+                    if (this.AggInfo.InterProcessAgglomeration) {
+                        trx.TransceiveStartImReturn();
+                        trx.TransceiveFinish();
+                    }
+
+
+                    for (int iPair = 0; iPair < AggPairs.Length; iPair++) {
+                        if (AggLevel != AggPairs[iPair].AgglomerationLevel)
+                            continue;
+
+                        // for agglomeration, the source is joined to target, i.e. source-DOFs are removed
+                        // for the extrapolation, its target to source
+                        int jCellTarget = AggPairs[iPair].jCellTarget; // target
+                        int jCellSource = AggPairs[iPair].jCellSource; // source (will be overwritten)
+
+                        if (AggPairs[iPair].OwnerRank4Source != mpiRank)
+                            continue;
+
+                        //int offset = int.MinValue, DestProc = 0;
+                        //long jCell1Glob = 0;
+                        //double[] Vtmp = null;
+                        //if (iPair < EsubLoc) {
+                        //    Debug.Assert(jCellSource < Jup);
+                        //} else {
+                        //    Debug.Assert(jCellSource >= Jup);
+                        //    offset = RowMap.LocalUniqueCoordinateIndex(0, jCellSource, 0);
+                        //    Vtmp = new double[Bsum];
+                        //    jCell1Glob = GidxExtCells[jCellSource - Jup];
+                        //    DestProc = CellPart.FindProcess(jCell1Glob);
+                        //}
+
+                        Debug.Assert(jCellSource < this.GridDat.Cells.NoOfLocalUpdatedCells);
+
+
+                        for (int ii = 0; ii < DgFlds.Length; ii++) { // loop over DG fields 
+                            Basis B = Brow[ii];
+                            int N = B.Length;
+
+                            IMatrix DgCoord = DgFlds[ii].Coordinates;
+
+                            var M_tmp = CouplingMtx.ExtractSubArrayShallow(new int[] { iPair, 0, 0 }, new int[] { iPair - 1, N - 1, N - 1 });
+
+                            //int i0_j0 = RowMap.LocalUniqueCoordinateIndex(ii, jCellTarget, 0);
+                            //int i0_j1 = RowMap.LocalUniqueCoordinateIndex(ii, jCellSource, 0);
+
+                            for (int n = 0; n < N; n++) {
+                                double acc0 = 0;
+                                for (int m = 0; m < N; m++) {
+                                    //acc0 += V[i0_j0 + m] * M_tmp[n, m];
+                                    acc0 += DgCoord[jCellTarget, m] * M_tmp[n, m];
+                                }
+
+                                DgCoord[jCellSource, n] = acc0;
+
+                                //if (iPair < EsubLoc) {
+                                //    V[i0_j1 + n] = acc0;
+                                //} else {
+                                //    Vtmp[i0_j1 + n - offset] = acc0;
+                                //}
+                            }
+                        }
+
+                        //if (iPair >= EsubLoc) {
+                        //    List<Tuple<long, double[]>> destList;
+                        //    if (!SendData.TryGetValue(DestProc, out destList)) {
+                        //        destList = new List<Tuple<long, double[]>>();
+                        //        SendData.Add(DestProc, destList);
+                        //    }
+                        //    destList.Add(new Tuple<long, double[]>(jCell1Glob, Vtmp));
+                        //}
+                    }
+
+                    //// MPI communication
+                    //// =================
+
+                    //if (this.AggInfo.InterProcessAgglomeration) {
+                    //    var RcvData = SerialisationMessenger.ExchangeData(SendData);
+
+                    //    foreach (var rcvPacket in RcvData.Values) {
+                    //        foreach (var t in rcvPacket) {
+                    //            long jGlobCell1 = t.Item1;
+                    //            Debug.Assert(CellPart.IsInLocalRange(jGlobCell1));
+                    //            int jCell1 = (int)(jGlobCell1 - CellPart.i0);
+
+                    //            double[] data_jCell1 = t.Item2;
+                    //            int iIns = RowMap.LocalUniqueCoordinateIndex(0, jCell1, 0);
+                    //            for (int i = 0; i < data_jCell1.Length; i++) {
+                    //                V[iIns + i] = data_jCell1[i];
+                    //            }
+                    //        }
+                    //    }
+                    //} else {
+                    //    Debug.Assert(EsubLoc == EsubTot);
+                    //}
+                }
 
                 // MPI exchange
                 if (this.AggInfo.InterProcessAgglomeration) {
@@ -813,103 +910,7 @@ namespace BoSSS.Foundation.XDG {
                     trx.TransceiveFinish();
                 }
 
-
-                for (int iPair = 0; iPair < AggPairs.Length; iPair++) {
-                    if (AggLevel != AggPairs[iPair].AgglomerationLevel)
-                        continue;
-
-                    // for agglomeration, the source is joined to target, i.e. source-DOFs are removed
-                    // for the extrapolation, its target to source
-                    int jCellTarget = AggPairs[iPair].jCellTarget; // target
-                    int jCellSource = AggPairs[iPair].jCellSource; // source (will be overwritten)
-
-                    if (AggPairs[iPair].OwnerRank4Source != mpiRank)
-                        continue;
-
-                    //int offset = int.MinValue, DestProc = 0;
-                    //long jCell1Glob = 0;
-                    //double[] Vtmp = null;
-                    //if (iPair < EsubLoc) {
-                    //    Debug.Assert(jCellSource < Jup);
-                    //} else {
-                    //    Debug.Assert(jCellSource >= Jup);
-                    //    offset = RowMap.LocalUniqueCoordinateIndex(0, jCellSource, 0);
-                    //    Vtmp = new double[Bsum];
-                    //    jCell1Glob = GidxExtCells[jCellSource - Jup];
-                    //    DestProc = CellPart.FindProcess(jCell1Glob);
-                    //}
-
-                    Debug.Assert(jCellSource < this.GridDat.Cells.NoOfLocalUpdatedCells);
-
-
-                    for (int ii = 0; ii < DgFlds.Length; ii++) { // loop over DG fields 
-                        Basis B = Brow[ii];
-                        int N = B.Length;
-
-                        IMatrix DgCoord = DgFlds[ii].Coordinates;
-
-                        var M_tmp = CouplingMtx.ExtractSubArrayShallow(new int[] { iPair, 0, 0 }, new int[] { iPair - 1, N - 1, N - 1 });
-
-                        //int i0_j0 = RowMap.LocalUniqueCoordinateIndex(ii, jCellTarget, 0);
-                        //int i0_j1 = RowMap.LocalUniqueCoordinateIndex(ii, jCellSource, 0);
-
-                        for (int n = 0; n < N; n++) {
-                            double acc0 = 0;
-                            for (int m = 0; m < N; m++) {
-                                //acc0 += V[i0_j0 + m] * M_tmp[n, m];
-                                acc0 += DgCoord[jCellTarget, m] * M_tmp[n, m];
-                            }
-
-                            DgCoord[jCellSource, n] = acc0;
-
-                            //if (iPair < EsubLoc) {
-                            //    V[i0_j1 + n] = acc0;
-                            //} else {
-                            //    Vtmp[i0_j1 + n - offset] = acc0;
-                            //}
-                        }
-                    }
-
-                    //if (iPair >= EsubLoc) {
-                    //    List<Tuple<long, double[]>> destList;
-                    //    if (!SendData.TryGetValue(DestProc, out destList)) {
-                    //        destList = new List<Tuple<long, double[]>>();
-                    //        SendData.Add(DestProc, destList);
-                    //    }
-                    //    destList.Add(new Tuple<long, double[]>(jCell1Glob, Vtmp));
-                    //}
-                }
-
-                //// MPI communication
-                //// =================
-
-                //if (this.AggInfo.InterProcessAgglomeration) {
-                //    var RcvData = SerialisationMessenger.ExchangeData(SendData);
-
-                //    foreach (var rcvPacket in RcvData.Values) {
-                //        foreach (var t in rcvPacket) {
-                //            long jGlobCell1 = t.Item1;
-                //            Debug.Assert(CellPart.IsInLocalRange(jGlobCell1));
-                //            int jCell1 = (int)(jGlobCell1 - CellPart.i0);
-
-                //            double[] data_jCell1 = t.Item2;
-                //            int iIns = RowMap.LocalUniqueCoordinateIndex(0, jCell1, 0);
-                //            for (int i = 0; i < data_jCell1.Length; i++) {
-                //                V[iIns + i] = data_jCell1[i];
-                //            }
-                //        }
-                //    }
-                //} else {
-                //    Debug.Assert(EsubLoc == EsubTot);
-                //}
             }
-
-            // MPI exchange
-            if (this.AggInfo.InterProcessAgglomeration) {
-                trx.TransceiveStartImReturn();
-                trx.TransceiveFinish();
-            }
-
         }
 
         /// <summary>

@@ -5344,7 +5344,7 @@ namespace ilPSP.LinSolvers {
             return C;
         }
 
-#endregion
+        #endregion
 
         /// <summary>
         /// Returns a matrix with inverted blocks.
@@ -5363,123 +5363,124 @@ namespace ilPSP.LinSolvers {
         /// If true, symmetrical blocks are assumed, which are inverted by <see cref="IMatrixExtensions.InvertSymmetrical{T}(T)"/>.
         /// </param>
         /// <returns></returns>
-        public BlockMsrMatrix InvertBlocks(bool OnlyDiagonal = true, bool Subblocks = false, bool ignoreEmptyBlocks = false, bool SymmetricalInversion=false) { 
-            // Matrix for the result
-            BlockMsrMatrix res = new BlockMsrMatrix(this._RowPartitioning, this._ColPartitioning);
+        public BlockMsrMatrix InvertBlocks(bool OnlyDiagonal = true, bool Subblocks = false, bool ignoreEmptyBlocks = false, bool SymmetricalInversion = false) {
+            using (new FuncTrace()) {
+                // Matrix for the result
+                BlockMsrMatrix res = new BlockMsrMatrix(this._RowPartitioning, this._ColPartitioning);
 
-            // FullMatrix to calculate inverse
-            MultidimensionalArray tmp = null; 
-            //for (int BlockNo = 0; BlockNo < NoOfBlocks; BlockNo++) {
+                // FullMatrix to calculate inverse
+                MultidimensionalArray tmp = null;
+                //for (int BlockNo = 0; BlockNo < NoOfBlocks; BlockNo++) {
 
-            Debug.Assert(m_BlockRows.Length == _RowPartitioning.LocalNoOfBlocks);
-            for (int iBlockLoc = 0; iBlockLoc < m_BlockRows.Length; iBlockLoc++) {
-                var BlockRow = this.m_BlockRows[iBlockLoc];
-                if (BlockRow != null) {
-                    int iBlockGlb = iBlockLoc + this._RowPartitioning.FirstBlock;
-                    int i0 = this._RowPartitioning.GetBlockI0(iBlockGlb);
+                Debug.Assert(m_BlockRows.Length == _RowPartitioning.LocalNoOfBlocks);
+                for (int iBlockLoc = 0; iBlockLoc < m_BlockRows.Length; iBlockLoc++) {
+                    var BlockRow = this.m_BlockRows[iBlockLoc];
+                    if (BlockRow != null) {
+                        int iBlockGlb = iBlockLoc + this._RowPartitioning.FirstBlock;
+                        int i0 = this._RowPartitioning.GetBlockI0(iBlockGlb);
 
-                    foreach (var KV in BlockRow) {
-                        int jBlockGlb = KV.Key;
-                        BlockEntry Block = KV.Value;
-                        Debug.Assert(jBlockGlb == Block.jBlkCol);
+                        foreach (var KV in BlockRow) {
+                            int jBlockGlb = KV.Key;
+                            BlockEntry Block = KV.Value;
+                            Debug.Assert(jBlockGlb == Block.jBlkCol);
 
-                        if (OnlyDiagonal && (iBlockGlb != jBlockGlb)) {
-                            // skip of-diagonal entries
-                            continue;
-                        }
-
-                        int j0 = this._ColPartitioning.GetBlockI0(jBlockGlb);
-
-                        if (Subblocks) {
-                            // ++++++++++++++++++
-                            // work on sub-blocks
-                            // ++++++++++++++++++
-
-                            int NoOfSblk_rows = Block.InMembnk.GetLength(0);
-                            int NoOfSblk_cols = Block.InMembnk.GetLength(1);
-                            int RowBlockType = _RowPartitioning.GetBlockType(jBlockGlb);
-                            int ColBlockType = _ColPartitioning.GetBlockType(iBlockGlb);
-                            int[] RowSblk_i0 = _RowPartitioning.GetSubblk_i0(RowBlockType);
-                            int[] RowSblkLen = _RowPartitioning.GetSubblkLen(RowBlockType);
-                            Debug.Assert(RowSblk_i0.Length == NoOfSblk_rows);
-                            Debug.Assert(RowSblkLen.Length == NoOfSblk_rows);
-
-                            int[] ColSblk_i0 = _ColPartitioning.GetSubblk_i0(ColBlockType);
-                            int[] ColSblkLen = _ColPartitioning.GetSubblkLen(ColBlockType);
-                            Debug.Assert(ColSblk_i0.Length == NoOfSblk_cols);
-                            Debug.Assert(ColSblkLen.Length == NoOfSblk_cols);
-
-                            for (int sblkRow = 0; sblkRow < NoOfSblk_rows; sblkRow++) {
-                                for (int sblkCol = 0; sblkCol < NoOfSblk_cols; sblkCol++) {
-                                    if (OnlyDiagonal && (sblkCol != sblkRow)) {
-                                        // skip of-diagonal entries
-                                        continue;
-                                    }
-                                    if (Block.InMembnk[sblkCol, sblkRow] < 0 || Block.MembnkIdx[sblkCol, sblkRow] < 0)
-                                        continue;
-
-                                    int M = RowSblkLen[sblkRow];
-                                    int N = ColSblkLen[sblkCol];
-
-                                    if (tmp == null || tmp.GetLength(0) != M || tmp.GetLength(1) != N)
-                                        tmp = MultidimensionalArray.Create(M, N);
-
-                                    // Copy values from current block to FullMatrix
-                                    this.ReadBlock(i0 + RowSblk_i0[sblkRow], j0 + ColSblk_i0[sblkCol], tmp);
-
-                                    if (ignoreEmptyBlocks && tmp.AbsSum() < double.Epsilon) {
-                                        // No inversion of empty blocks requested
-                                        continue;
-                                    }
-
-                                    // Calculate inverse of FullMatrix
-                                    if (SymmetricalInversion)
-                                        tmp.InvertSymmetrical();
-                                    else
-                                        tmp.Invert();
-
-                                    // Write inverse of FullMatrix to current block
-                                    res.AccBlock(i0 + RowSblk_i0[sblkRow], j0 + ColSblk_i0[sblkCol], 1.0, tmp);
-                                }
-                            }
-
-
-                        } else {
-                            // ++++++++++++++
-                            // work on blocks
-                            // ++++++++++++++
-
-                            int M = this._RowPartitioning.GetBlockLen(iBlockGlb);
-                            int N = this._ColPartitioning.GetBlockLen(jBlockGlb);
-
-
-                            if (tmp == null || tmp.GetLength(0) != M || tmp.GetLength(1) != N)
-                                tmp = MultidimensionalArray.Create(M, N);
-
-                            // Copy values from current block to FullMatrix
-                            this.ReadBlock(i0, j0, tmp);
-
-                            if (ignoreEmptyBlocks && tmp.AbsSum() < 1e-15) {
-                                // No inversion of empty blocks requested
+                            if (OnlyDiagonal && (iBlockGlb != jBlockGlb)) {
+                                // skip of-diagonal entries
                                 continue;
                             }
 
-                            // Calculate inverse of FullMatrix
-                            if (SymmetricalInversion)
-                                tmp.InvertSymmetrical();
-                            else
-                                tmp.Invert();
+                            int j0 = this._ColPartitioning.GetBlockI0(jBlockGlb);
 
-                            // Write inverse of FullMatrix to current block
-                            res.AccBlock(i0, j0, 1.0, tmp);
+                            if (Subblocks) {
+                                // ++++++++++++++++++
+                                // work on sub-blocks
+                                // ++++++++++++++++++
+
+                                int NoOfSblk_rows = Block.InMembnk.GetLength(0);
+                                int NoOfSblk_cols = Block.InMembnk.GetLength(1);
+                                int RowBlockType = _RowPartitioning.GetBlockType(jBlockGlb);
+                                int ColBlockType = _ColPartitioning.GetBlockType(iBlockGlb);
+                                int[] RowSblk_i0 = _RowPartitioning.GetSubblk_i0(RowBlockType);
+                                int[] RowSblkLen = _RowPartitioning.GetSubblkLen(RowBlockType);
+                                Debug.Assert(RowSblk_i0.Length == NoOfSblk_rows);
+                                Debug.Assert(RowSblkLen.Length == NoOfSblk_rows);
+
+                                int[] ColSblk_i0 = _ColPartitioning.GetSubblk_i0(ColBlockType);
+                                int[] ColSblkLen = _ColPartitioning.GetSubblkLen(ColBlockType);
+                                Debug.Assert(ColSblk_i0.Length == NoOfSblk_cols);
+                                Debug.Assert(ColSblkLen.Length == NoOfSblk_cols);
+
+                                for (int sblkRow = 0; sblkRow < NoOfSblk_rows; sblkRow++) {
+                                    for (int sblkCol = 0; sblkCol < NoOfSblk_cols; sblkCol++) {
+                                        if (OnlyDiagonal && (sblkCol != sblkRow)) {
+                                            // skip of-diagonal entries
+                                            continue;
+                                        }
+                                        if (Block.InMembnk[sblkCol, sblkRow] < 0 || Block.MembnkIdx[sblkCol, sblkRow] < 0)
+                                            continue;
+
+                                        int M = RowSblkLen[sblkRow];
+                                        int N = ColSblkLen[sblkCol];
+
+                                        if (tmp == null || tmp.GetLength(0) != M || tmp.GetLength(1) != N)
+                                            tmp = MultidimensionalArray.Create(M, N);
+
+                                        // Copy values from current block to FullMatrix
+                                        this.ReadBlock(i0 + RowSblk_i0[sblkRow], j0 + ColSblk_i0[sblkCol], tmp);
+
+                                        if (ignoreEmptyBlocks && tmp.AbsSum() < double.Epsilon) {
+                                            // No inversion of empty blocks requested
+                                            continue;
+                                        }
+
+                                        // Calculate inverse of FullMatrix
+                                        if (SymmetricalInversion)
+                                            tmp.InvertSymmetrical();
+                                        else
+                                            tmp.Invert();
+
+                                        // Write inverse of FullMatrix to current block
+                                        res.AccBlock(i0 + RowSblk_i0[sblkRow], j0 + ColSblk_i0[sblkCol], 1.0, tmp);
+                                    }
+                                }
+
+
+                            } else {
+                                // ++++++++++++++
+                                // work on blocks
+                                // ++++++++++++++
+
+                                int M = this._RowPartitioning.GetBlockLen(iBlockGlb);
+                                int N = this._ColPartitioning.GetBlockLen(jBlockGlb);
+
+
+                                if (tmp == null || tmp.GetLength(0) != M || tmp.GetLength(1) != N)
+                                    tmp = MultidimensionalArray.Create(M, N);
+
+                                // Copy values from current block to FullMatrix
+                                this.ReadBlock(i0, j0, tmp);
+
+                                if (ignoreEmptyBlocks && tmp.AbsSum() < 1e-15) {
+                                    // No inversion of empty blocks requested
+                                    continue;
+                                }
+
+                                // Calculate inverse of FullMatrix
+                                if (SymmetricalInversion)
+                                    tmp.InvertSymmetrical();
+                                else
+                                    tmp.Invert();
+
+                                // Write inverse of FullMatrix to current block
+                                res.AccBlock(i0, j0, 1.0, tmp);
+                            }
                         }
                     }
                 }
+
+                return res;
             }
-
-            return res;
         }
-
         /*
         public IDictionary<int,MultidimensionalArray> GetBlockRow(int iBlockRow) {
             var R = new SortedDictionary<int, MultidimensionalArray>();

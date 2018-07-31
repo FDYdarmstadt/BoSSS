@@ -1218,7 +1218,7 @@ namespace CNS {
             c.dtMax = 1.0;
             c.Endtime = endTime;
             c.CFLFraction = CFLFraction;
-            c.NoOfTimesteps = 6;
+            c.NoOfTimesteps = 15;
 
             c.ProjectName = "ibmdmr";
 
