@@ -108,7 +108,6 @@ namespace BoSSS.Foundation.XDG.Quadrature
             recursionTree.UnrollFunc(IntegrandEvaluation);
             //ConvertToQuadRule
             QuadRule toRuleThemAll = fullSpace.Value.NodesAndWeights.GetQuadRule();
-            double integral = toRuleThemAll.Weights.AbsSum();
             return toRuleThemAll;
         }
 
@@ -226,8 +225,6 @@ namespace BoSSS.Foundation.XDG.Quadrature
             }
         }
 
-        
-
         //Algorithm 2
         //page: A1005
         private void SurfaceIntegrand(MultidimensionalArray X, double X_weight, T arg, bool isNew)
@@ -272,7 +269,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         protected abstract SayeQuadRule BuildQuadRule( MultidimensionalArray X, double X_weight, int heightDirection, double length);
 
-        protected abstract SayeQuadRule BuildSurfaceQuadRule(MultidimensionalArray X, double X_weight,int heightDirection, int cell);
+        protected abstract SayeQuadRule BuildSurfaceQuadRule(MultidimensionalArray X, double X_weight, int heightDirection, int cell);
 
         public abstract double[] GetBoundaries(T arg, int heightDirection);
 
@@ -354,7 +351,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 int s_i = psiAndS.Item2;
                 //Evaluate g := gradient(Psi_i(x_c)) (line 16)
                 MultidimensionalArray g = Gradient(psi_i, x_center);
-                //Detimern bounds and check bounds (line 17,18)
+                //Determine bounds and check bounds (line 17,18)
                 if (HeightDirectionIsSuitable(arg, psi_i, x_center, k, g))
                 {
                     //Define Psi_i^L and Psi_i^U (line 19)

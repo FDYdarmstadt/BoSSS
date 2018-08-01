@@ -125,7 +125,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         }
     }
 
-    public class LinearCellArgument<T> :
+    public class LinearSayeSpace<T> :
         SayeArgument<LinearPSI<T>>
         where T : RefElement
     {
@@ -136,13 +136,13 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         public List<Tuple<LinearPSI<T>, int>> psiAndS = new List<Tuple<LinearPSI<T>, int>>();
 
-        public LinearCellArgument()
+        public LinearSayeSpace()
         {
             dim = refElement.SpatialDimension;
             StandardSetup();
         }
 
-        public LinearCellArgument(T RefElement, Tuple<LinearPSI<T>, int> PsiAndS, bool _Surface)
+        public LinearSayeSpace(T RefElement, Tuple<LinearPSI<T>, int> PsiAndS, bool _Surface)
         {
             refElement = RefElement;
             dim = refElement.SpatialDimension;
@@ -151,7 +151,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             psiAndS.Add(PsiAndS);
         }
 
-        private LinearCellArgument(double[][] _Boundaries, int Dim, BitArray newRemovedDims)
+        private LinearSayeSpace(double[][] _Boundaries, int Dim, BitArray newRemovedDims)
         {
             dim = Dim;
             removedDims = newRemovedDims;
@@ -172,17 +172,17 @@ namespace BoSSS.Foundation.XDG.Quadrature
             }        
         }
 
-        public LinearCellArgument<T> DeriveNew()
+        public LinearSayeSpace<T> DeriveNew()
         {
             double[][] newBoundary = boundaries.Copy();
             BitArray newRemovedDims = removedDims.CloneAs();
-            LinearCellArgument<T> arg = new LinearCellArgument<T>(newBoundary, dim, newRemovedDims);
+            LinearSayeSpace<T> arg = new LinearSayeSpace<T>(newBoundary, dim, newRemovedDims);
             arg.subdivided = this.subdivided;
             arg.Surface = this.surface;
             return arg;
         }
 
-        public LinearCellArgument<T> Subdivide()
+        public LinearSayeSpace<T> Subdivide()
         {
             subdivided = true;
             double[][] newBoundary = boundaries.Copy();
@@ -207,7 +207,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
             newBoundary[k_MaxDiameter][0] = newBound;
 
-            LinearCellArgument<T> sibling = new LinearCellArgument<T>(newBoundary, dim, this.removedDims.CloneAs());
+            LinearSayeSpace<T> sibling = new LinearSayeSpace<T>(newBoundary, dim, this.removedDims.CloneAs());
             sibling.psiAndS = new List<Tuple<LinearPSI<T>, int>>(this.psiAndS);
             sibling.subdivided = true;
             sibling.Surface = this.surface;
@@ -292,6 +292,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         public override void RemoveDimension(int k)
         {
             --dim;
+            Debug.Assert(removedDims[k] == false);
             removedDims[k] = true;
             if (Dimension == 1)
             {
@@ -531,7 +532,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         public void RemoveActiveNode()
         {
-            Debug.Assert(length > 0);
+            //Debug.Assert(length > 0);
             LinkedListNode<Tuple<MultidimensionalArray, double>> removeMe = activeNode;
             activeNode = activeNode.Previous;
             data.Remove(removeMe);
@@ -560,52 +561,91 @@ namespace BoSSS.Foundation.XDG.Quadrature
         }
     }
 
-    class SayeSortedList
-            : ISortedBoundedList<double>
+    public class NodesAndWeightsHashMap :ISayeQuadRule
     {
+        public NodesAndWeightsHashMap()
+        {
+        }
 
-        SortedList<double, double> list;
+        public IEnumerable<Tuple<MultidimensionalArray, double>> IntegrationNodes => throw new NotImplementedException();
+
+        public void AddRule(SayeQuadRule rule, bool deriveFromExistingNode)
+        {
+            throw new NotImplementedException();
+        }
+
+        public QuadRule GetQuadRule()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void RemoveActiveNode()
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    class SayeSortedList
+        : ISortedBoundedList<double>
+    {
+        List<double> list;
         double min;
-        double max; 
+        double max;
+        double tolerance = 1.0e-13;
 
         public SayeSortedList(int initialSize)
         {
-            list = new SortedList<double, double>(initialSize);
+            list = new List<double>( initialSize);
         }
 
         public void SetBounds(double Min, double Max)
         {
             min = Min;
             max = Max;
-            list.Add(min, min);
-            list.Add(max, max);
+            list.Add(min);
+            list.Add(max);
         }
 
         public void Add(params double[] arr)
         {
-            for(int i = 0; i < arr.Length; ++i)
+           foreach (double entry in arr)
             {
-                if(arr[i] > min && arr[i] < max)
+                if(Math.Abs(entry - min) < tolerance || Math.Abs(entry - max) < tolerance)
                 {
-                    list.Add(arr[i], arr[i]);
+                    continue;
+                } 
+                else if (entry > min && entry < max )
+                {
+                    for (int i = 1; i < list.Count ; ++i)
+                    {
+                        if (Math.Abs(entry - list[i]) < tolerance)
+                        {
+                            break;
+                        }
+                        else if (entry < list[i]) 
+                        {
+                            list.Insert(i, entry);
+                            break;
+                        }
+                    }
                 }
             }
         }
 
         public double this[int index] {
             get {
-                return list.ElementAt(index).Value;
+                return list.ElementAt(index);
             } 
         }
 
         public IEnumerator<double> GetEnumerator()
         {
-            return list.Values.GetEnumerator();
+            return list.GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return list.Values.GetEnumerator();
+            return list.GetEnumerator();
         }
     }
 
