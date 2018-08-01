@@ -176,7 +176,7 @@ namespace BoSSS.Application.BoSSSpad {
             string jobname = myJob.Name;
             string executiontime = myJob.ExecutionTime;
             int MPIcores = myJob.NumberOfMPIProcs;
-            string usermail = m_Username;
+            string userName = m_Username;
             string startupstring;
             string quote = "\"";
             string HHLR_project = myJob.HHLR_project;
@@ -186,6 +186,7 @@ namespace BoSSS.Application.BoSSSpad {
             } else {
                 memPerCPU = "5000";
             }
+            string email = myJob.EmailAddress;
 
             using (var str = new StringWriter()) {
                 str.Write("mpiexec mono ");
@@ -221,7 +222,10 @@ namespace BoSSS.Application.BoSSSpad {
                 }
 
                 sw.WriteLine("#SBATCH -n " + MPIcores);
-                //sw.WriteLine("#SBATCH --mail-user= " + usermail);
+                if (email != null) {
+                    sw.WriteLine("#SBATCH --mail-user=" + email);
+                    sw.WriteLine("#SBATCH --mail-type=ALL");
+                }
                 sw.WriteLine("#SBATCH -C avx");
                 //sw.WriteLine("#SBATCH --ntasks-per-node 1");    // Only start one MPI-process per node
 
