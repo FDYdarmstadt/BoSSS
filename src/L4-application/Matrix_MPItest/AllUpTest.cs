@@ -41,7 +41,9 @@ namespace BoSSS.Application.Matrix_MPItest {
                 BoSSS.Solution.Application.GetBoSSSInstallDir(),
                 out MpiInit);
 
-            if (System.Environment.MachineName.ToLowerInvariant().EndsWith("rennmaschin")) {
+            if (System.Environment.MachineName.ToLowerInvariant().EndsWith("rennmaschin")
+                //|| System.Environment.MachineName.ToLowerInvariant().Contains("jenkins")
+                ) {
                 // This is Florians Laptop;
                 // he is to poor to afford MATLAB, so he uses OCTAVE
                 BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
