@@ -976,24 +976,30 @@ namespace BoSSS.Solution {
                 //====================
                 //RedistributeGrid();
 
-                Grid.Redistribute(DatabaseDriver, Control.GridPartType, Control.GridPartOptions);
-                if (!passiveIo && !DatabaseDriver.GridExists(Grid.GridGuid)) {
+                if (Grid != null) {
+                    Grid.Redistribute(DatabaseDriver, Control.GridPartType, Control.GridPartOptions);
+                    if (!passiveIo && !DatabaseDriver.GridExists(Grid.GridGuid)) {
 
-                    //DatabaseDriver.SaveGrid(Grid);
-                    GridCommons _grid = this.Grid;
-                    DatabaseDriver.SaveGrid(_grid, this.m_Database);
-                    //DatabaseDriver.SaveGridIfUnique(ref _grid, out GridReplaced, this.m_Database);
-                    this.Grid = _grid;
+                        //DatabaseDriver.SaveGrid(Grid);
+                        GridCommons _grid = this.Grid;
+                        DatabaseDriver.SaveGrid(_grid, this.m_Database);
+                        //DatabaseDriver.SaveGridIfUnique(ref _grid, out GridReplaced, this.m_Database);
+                        this.Grid = _grid;
 
-                }
+                    }
 
-                GridData = new GridData(Grid);
 
-                if (this.Control == null || this.Control.NoOfMultigridLevels > 0) {
-                    this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
+                    GridData = new GridData(Grid);
+
+                    if (this.Control == null || this.Control.NoOfMultigridLevels > 0) {
+                        this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
+                    } else {
+                        this.MultigridSequence = new AggregationGrid[0];
+                    }
                 } else {
-                    this.MultigridSequence = new AggregationGrid[0];
+                    GridData = this.AggGrid;
                 }
+
 
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
@@ -1002,16 +1008,16 @@ namespace BoSSS.Solution {
                     if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:NoOfCells"))
                         this.CurrentSessionInfo.KeysAndQueries.Add("Grid:NoOfCells", Grid.CellPartitioning.TotalLength);
                     if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMax"))
-                        this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMax", GridData.Cells.h_maxGlobal);
+                        this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMax", ((GridData)GridData).Cells.h_maxGlobal);
                     if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMin"))
-                        this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMin", GridData.Cells.h_minGlobal);
+                        this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMin", ((GridData)GridData).Cells.h_minGlobal);
 
                 }
 
 
                 // Make sure everything that is loaded from disk uses this grid
                 // data object (if it corresponds to the same grid)
-                m_Database.Controller.AddGridInitializationContext(GridData);
+                m_Database.Controller.AddGridInitializationContext(((GridData)GridData));
 
                 // create fields
                 //=============
@@ -1132,7 +1138,7 @@ namespace BoSSS.Solution {
         /// <summary>
         /// Extended grid information.
         /// </summary>
-        public GridData GridData {
+        public IGridData GridData {
             get;
             private set;
         }
@@ -1153,6 +1159,12 @@ namespace BoSSS.Solution {
             get;
             private set;
         }
+
+        /// <summary>
+        /// Provisional alternative grid;
+        /// </summary>
+        protected AggregationGrid AggGrid;
+
 
         /// <summary>
         /// <see cref="DatabaseDriver"/>

@@ -38,6 +38,7 @@ using BoSSS.Platform.LinAlg;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Solution;
+using BoSSS.Foundation.Grid.Aggregation;
 
 namespace BoSSS.Application.DerivativeTest {
 
@@ -76,7 +77,7 @@ namespace BoSSS.Application.DerivativeTest {
 #if DEBUG
         public static void DerivativeTest_BuildInGrid([Range(1, 13)] int gridCase, [Values(2, 10000000)] int bulksize_limit, [Values(1024)] int cache_size) {
 #else
-        public static void DerivativeTest_BuildInGrid([Range(1, 16)] int gridCase, [Values(1, 500, 10000000)] int bulksize_limit, [Values(1024, 1024 * 1024 * 128)] int cache_size) {
+        public static void DerivativeTest_BuildInGrid([Range(1, 17)] int gridCase, [Values(1, 500, 10000000)] int bulksize_limit, [Values(1024, 1024 * 1024 * 128)] int cache_size) {
 #endif
             DerivativeTestMain.GRID_CASE = gridCase;
             DerivativeTestMain p = null;
@@ -202,7 +203,7 @@ namespace BoSSS.Application.DerivativeTest {
 
             Quadrature_Bulksize.CHUNK_DATA_LIMIT = 1;
             //BoSSS.Foundation.Caching.Cache.MaxMem = 1024;
-            for (int i = 15; i <= 15; i++) {
+            for (int i = 18; i <= 18; i++) {
                 BoSSS.Solution.Application._Main(args, true,  delegate () {
                     var R = new DerivativeTestMain();
                     GRID_CASE = i;
@@ -299,7 +300,7 @@ namespace BoSSS.Application.DerivativeTest {
         /// </summary>
         protected override GridCommons CreateOrLoadGrid() {
 
-            GridCommons grd;
+            GridCommons grd = null;
             switch (GRID_CASE) {
                 case 1:
                 grd = Grid1D.LineGrid(GenericBlas.Linspace(-4, 4, 5));
@@ -337,7 +338,7 @@ namespace BoSSS.Application.DerivativeTest {
 
                 case 5: {
                     double[] xnodes = GenericBlas.Linspace(-1, 1, 8);
-                    double[] ynodes = GenericBlas.Linspace(-1, 1, 13); 
+                    double[] ynodes = GenericBlas.Linspace(-1, 1, 13);
                     grd = Grid2D.UnstructuredTriangleGrid(xnodes, ynodes, JitterScale: 0.5);
                     break;
                 }
@@ -399,7 +400,7 @@ namespace BoSSS.Application.DerivativeTest {
                     break;
 
                 }
-                
+
                 case 11: {
                     grd = Grid2D.Trapezoidal2dGrid(4, 2, 2, GenericBlas.Linspace(0, 1, 2));
                     break;
@@ -427,12 +428,12 @@ namespace BoSSS.Application.DerivativeTest {
                     var grid5 = gdat4.Adapt(new[] { 4, 21, 22, 10 }, new[] { new[] { 13, 14, 15, 16 } }, out GridCorrelation o2c_4);
 
                     //grid5.Plot2DGrid();
-                                        
+
                     grd = grid5;
 
                     break;
                 }
-                
+
                 case 13: {
                     double[] rNodes = GenericBlas.Linspace(1, 4, 8);
                     double[] sNodes = GenericBlas.Linspace(0, 0.5, 15);
@@ -457,10 +458,26 @@ namespace BoSSS.Application.DerivativeTest {
 
                 case 16: {
                     grd = Grid2D.Ogrid(0.5, 1, 5, 3, CellType.Square_4);
-                    //grd = Grid3D.Ogrid(0.5, 1, 5, 3, GenericBlas.Linspace(0,4,5));
                     break;
                 }
 
+                case 17: {
+                    grd = Grid3D.Ogrid(0.5, 1, 3, 3, GenericBlas.Linspace(0, 4, 3));
+                    break;
+                }
+
+                case 18: {
+                    // aggregation grid
+                    double[] xNodes = GenericBlas.Linspace(-1, 1, 4);
+                    double[] yNodes = GenericBlas.Linspace(1, 1, 5);
+
+                    var baseGrid = Grid2D.UnstructuredTriangleGrid(xNodes, yNodes);
+                    var baseGdat = new GridData(baseGrid);
+                    var aggGrid = CoarseningAlgorithms.Coarsen(baseGdat, 2);
+
+
+                    break;
+                }
 
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // more expensive grids (not tested in DEBUG MODE)
