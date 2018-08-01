@@ -174,16 +174,16 @@ namespace BoSSS.Solution {
 
                     switch (LevelSetsSorted.Length) {
                         case 1:
-                            lsTrk = new LevelSetTracker(context, cutCellQuadType, att.m_NearCellWidth, (string[])(att.GetSpeciesTable(1)), LevelSetsInstances[0]);
+                            lsTrk = new LevelSetTracker((GridData)context, cutCellQuadType, att.m_NearCellWidth, (string[])(att.GetSpeciesTable(1)), LevelSetsInstances[0]);
                             break;
                         case 2:
-                            lsTrk = new LevelSetTracker(context, cutCellQuadType, att.m_NearCellWidth, (string[,])(att.GetSpeciesTable(2)), LevelSetsInstances[0], LevelSetsInstances[1]);
+                            lsTrk = new LevelSetTracker((GridData)context, cutCellQuadType, att.m_NearCellWidth, (string[,])(att.GetSpeciesTable(2)), LevelSetsInstances[0], LevelSetsInstances[1]);
                             break;
                         case 3:
-                            lsTrk = new LevelSetTracker(context, cutCellQuadType, att.m_NearCellWidth, (string[,,])(att.GetSpeciesTable(3)), LevelSetsInstances[0], LevelSetsInstances[1], LevelSetsInstances[2]);
+                            lsTrk = new LevelSetTracker((GridData)context, cutCellQuadType, att.m_NearCellWidth, (string[,,])(att.GetSpeciesTable(3)), LevelSetsInstances[0], LevelSetsInstances[1], LevelSetsInstances[2]);
                             break;
                         case 4:
-                            lsTrk = new LevelSetTracker(context, cutCellQuadType, att.m_NearCellWidth, (string[,,,])(att.GetSpeciesTable(4)), LevelSetsInstances[0], LevelSetsInstances[1], LevelSetsInstances[2], LevelSetsInstances[3]);
+                            lsTrk = new LevelSetTracker((GridData)context, cutCellQuadType, att.m_NearCellWidth, (string[,,,])(att.GetSpeciesTable(4)), LevelSetsInstances[0], LevelSetsInstances[1], LevelSetsInstances[2], LevelSetsInstances[3]);
                             break;
 
                     }
