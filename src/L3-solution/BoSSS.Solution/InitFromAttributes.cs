@@ -36,7 +36,7 @@ namespace BoSSS.Solution {
         /// <summary>
         /// Instantiates those fields that are marked by an <see cref="InstantiateFromControlFileAttribute"/> - attribute;
         /// </summary>
-        public static void CreateFieldsAuto(object _this, GridData context,
+        public static void CreateFieldsAuto(object _this, IGridData context,
             IDictionary<string, FieldOpts> FieldOptions, XQuadFactoryHelper.MomentFittingVariants cutCellQuadType,
             ICollection<DGField> IOFields, ICollection<DGField> RegisteredFields) {
             FieldInfo[] fields = _this.GetType().GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.FlattenHierarchy | BindingFlags.Static);

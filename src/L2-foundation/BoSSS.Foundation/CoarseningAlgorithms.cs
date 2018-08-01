@@ -41,7 +41,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// <param name="GridDat">original grid</param>
         /// <param name="MaxDepth">maximum number of refinements</param>
         /// <returns></returns>
-        public static AggregationGrid[] CreateSequence(GridData GridDat, int MaxDepth = -1) {
+        public static AggregationGrid[] CreateSequence(IGridData GridDat, int MaxDepth = -1) {
             using(new FuncTrace()) {
                 int D = GridDat.SpatialDimension;
                 MaxDepth = MaxDepth >= 0 ? MaxDepth : int.MaxValue;
@@ -113,9 +113,9 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// <summary>
         /// creates an initial aggregated grid which is in fact equivalent to <paramref name="g"/>
         /// </summary>
-        public static AggregationGrid ZeroAggregation(GridData g) {
-            var Cls = g.Cells;
-            int J = Cls.NoOfLocalUpdatedCells;
+        public static AggregationGrid ZeroAggregation(IGridData g) {
+            //var Cls = g.Cells;
+            int J = g.iLogicalCells.NoOfLocalUpdatedCells;
             int D = g.SpatialDimension;
 
             int[][] AggregateCells = new int[J][];
