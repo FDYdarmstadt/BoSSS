@@ -73,7 +73,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             bool IsSurfaceIntegral = (mode == QuadratureMode.Surface);
 
             LinearPSI<Square> psi = new LinearPSI<Square>(Square.Instance);
-            Tuple<LinearPSI<Square>, int> psi_i_s_i = new Tuple<LinearPSI<Square>, int>(psi, -1);
+            Tuple<LinearPSI<Square>, int> psi_i_s_i = new Tuple<LinearPSI<Square>, int>(psi, 1);
             SayeSquare arg = new SayeSquare(psi_i_s_i, IsSurfaceIntegral);
             arg.Reset();
             return arg;
@@ -250,7 +250,6 @@ namespace BoSSS.Foundation.XDG.Quadrature
         {
             SayeSquare newArg = Arg.Subdivide();
             return newArg;
-
         }
 
         protected override bool SubdivideSuitable(SayeSquare arg)
