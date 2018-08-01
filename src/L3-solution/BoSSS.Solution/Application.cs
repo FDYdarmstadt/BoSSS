@@ -1307,7 +1307,7 @@ namespace BoSSS.Solution {
                         t,
                         timestepno,
                         this.CurrentSessionInfo,
-                        this.GridData,
+                        ((GridData)(this.GridData)),
                         this.IOFields);
                 } catch (Exception ee) {
                     Console.Error.WriteLine(ee.GetType().Name + " on rank " + this.MPIRank + " saving time-step " + timestepno + ": " + ee.Message);
@@ -1380,7 +1380,7 @@ namespace BoSSS.Solution {
                 }
                 time = tsi_toLoad.PhysicalTime;
 
-                DatabaseDriver.LoadFieldData(tsi_toLoad, this.GridData, this.IOFields);
+                DatabaseDriver.LoadFieldData(tsi_toLoad, ((GridData)(this.GridData)), this.IOFields);
                 return tsi_toLoad.TimeStepNumber;
             }
         }
@@ -1768,7 +1768,7 @@ namespace BoSSS.Solution {
 
                     // backup old data
                     // ===============
-                    GridData oldGridData = this.GridData;
+                    GridData oldGridData = ((GridData)(this.GridData));
                     Permutation tau;
                     GridUpdateDataVault_LoadBal loadbal = new GridUpdateDataVault_LoadBal(oldGridData, this.LsTrk);
                     BackupData(oldGridData, this.LsTrk, loadbal, out tau);
