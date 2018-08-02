@@ -57,7 +57,7 @@ namespace BoSSS.Foundation.Grid.Voronoi {
             }
         }
 
-        public GridData.BasisData ChefBasis {
+        public BasisData ChefBasis {
             get {
                 throw new NotImplementedException();
             }

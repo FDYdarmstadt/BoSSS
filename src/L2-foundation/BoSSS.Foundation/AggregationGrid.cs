@@ -597,7 +597,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             ParentGrid.TransformGlobal2Local(GlobalVerticesIn, LocalVerticesOut, jCell, NewtonConvergence);
         }
 
-        public GridData.BasisData ChefBasis {
+        public BasisData ChefBasis {
             get {
                 throw new NotImplementedException();
             }

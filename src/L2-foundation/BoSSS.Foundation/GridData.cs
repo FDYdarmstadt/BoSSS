@@ -214,7 +214,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 // bla bla
                 // =======
 
-                this.ChefBasis = new GridData.BasisData(this);
+                this.ChefBasis = new GridData._BasisData(this);
 
                 // a good point for garbage collection
                 // -----------------------------------

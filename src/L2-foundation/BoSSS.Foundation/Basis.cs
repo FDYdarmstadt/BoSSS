@@ -50,7 +50,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// common basis
         /// </summary>
-        public GridData.BasisData Data {
+        public BasisData Data {
             get {
                 return m_GridDat.ChefBasis;
             }

@@ -99,8 +99,10 @@ namespace BoSSS.Foundation.Grid {
         /// </summary>
         int SpatialDimension { get; }
 
-
-        Grid.Classic.GridData.BasisData ChefBasis {
+        /// <summary>
+        /// Evaluation of the DG basis on the grid
+        /// </summary>
+        Grid.BasisData ChefBasis {
             get;
         }
 
