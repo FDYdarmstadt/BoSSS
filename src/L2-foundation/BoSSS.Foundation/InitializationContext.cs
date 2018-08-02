@@ -177,7 +177,7 @@ namespace BoSSS.Foundation.IO {
         /// <summary>
         /// Information about the grid.
         /// </summary>
-        public Grid.Classic.GridData GridData {
+        public IGridData GridData {
             get {
                 return parentContext.GridData;
             }

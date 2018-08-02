@@ -215,7 +215,7 @@ namespace BoSSS.Foundation.IO {
         /// <summary>
         /// Loads a time-step from the database into previously allocated DG-fields (<paramref name="PreAllocatedFields"/>).
         /// </summary>
-        void LoadFieldData(ITimestepInfo info, Grid.Classic.GridData grdDat, IEnumerable<DGField> PreAllocatedFields);
+        void LoadFieldData(ITimestepInfo info, IGridData grdDat, IEnumerable<DGField> PreAllocatedFields);
 
         /// <summary>
         /// Loads a time-step from the database.
@@ -223,7 +223,7 @@ namespace BoSSS.Foundation.IO {
         /// <remarks>
         /// By using this method, it is ensured that the loaded/returned fields have the same DG polynomial degree as in the database.
         /// </remarks>
-        IEnumerable<DGField> LoadFields(ITimestepInfo info, Grid.Classic.GridData grdDat, IEnumerable<string> NameFilter = null);
+        IEnumerable<DGField> LoadFields(ITimestepInfo info, IGridData grdDat, IEnumerable<string> NameFilter = null);
 
 
     }

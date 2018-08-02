@@ -111,9 +111,12 @@ namespace BoSSS.Foundation.Grid {
             get;
         }
 
-        
-            
-        
+        /// <summary>
+        /// The global ID for each cell
+        /// </summary>
+        Comm.Permutation CurrentGlobalIdPermutation {
+            get;
+        }
 
         /// <summary>
         /// transforms vertices from the local coordinate system of cells <paramref name="jCell"/>
