@@ -300,7 +300,7 @@ namespace BoSSS.Application.BoSSSpad {
                 return;
             }
 
-            int susamp = Math.Max(flds.Max(f => f.Basis.Degree) + 1, 5);
+            int susamp = Math.Max(flds.Max(f => f.Basis.Degree) + 1, 3);
 
 
             Tecplot(filename, 0.0, susamp, flds);
@@ -316,10 +316,10 @@ namespace BoSSS.Application.BoSSSpad {
                 return;
             }
 
-            if (supersampling > 5) {
-                Console.WriteLine("Plotting with a supersampling greater than 5 is deactivated because it would very likely exceed this machines memory.");
+            if (supersampling > 3) {
+                Console.WriteLine("Plotting with a supersampling greater than 3 is deactivated because it would very likely exceed this machines memory.");
                 Console.WriteLine("Higher supersampling values are supported by external plot application.");
-                supersampling = 5;
+                supersampling = 3;
             }
 
             string directory = Path.GetDirectoryName(filename);
