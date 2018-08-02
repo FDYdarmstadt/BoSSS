@@ -300,7 +300,7 @@ namespace BoSSS.Application.DerivativeTest {
         /// </summary>
         protected override GridCommons CreateOrLoadGrid() {
 
-            GridCommons grd = null;
+            GridCommons grd;
             switch (GRID_CASE) {
                 case 1:
                 grd = Grid1D.LineGrid(GenericBlas.Linspace(-4, 4, 5));
@@ -475,7 +475,7 @@ namespace BoSSS.Application.DerivativeTest {
                     var baseGdat = new GridData(baseGrid);
                     var aggGrid = CoarseningAlgorithms.Coarsen(baseGdat, 2);
 
-
+                    throw new NotImplementedException("todo");
                     break;
                 }
 

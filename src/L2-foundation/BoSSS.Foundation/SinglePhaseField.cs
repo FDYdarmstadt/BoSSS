@@ -452,7 +452,7 @@ namespace BoSSS.Foundation {
 
             // allocate mem
             // ------------
-            m_Mda_Coordinates = MultidimensionalArray.Create(__Basis.GridDat.iLogicalCells.NoOfCells, __Basis.MaximalLength);
+            m_Mda_Coordinates = MultidimensionalArray.Create(__Basis.GridDat.iLogicalCells.Count, __Basis.MaximalLength);
         }
 
         /// <summary>

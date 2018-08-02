@@ -1599,7 +1599,7 @@ namespace BoSSS.Foundation {
 
                 int[][] Neighs = gDat.iLogicalCells.CellNeighbours;
                 int J = gDat.iLogicalCells.NoOfLocalUpdatedCells;
-                int JE = gDat.iLogicalCells.NoOfCells;
+                int JE = gDat.iLogicalCells.Count;
                 long[] GlidxExt = gDat.iParallel.GlobalIndicesExternalCells;
                 var Gl2LocExt = gDat.iParallel.Global2LocalIdx;
                 var CellPart = gDat.CellPartitioning;
@@ -1926,7 +1926,7 @@ namespace BoSSS.Foundation {
 
                 int j0 = Eval.GridData.CellPartitioning.i0;
                 int J = Eval.GridData.iLogicalCells.NoOfLocalUpdatedCells;
-                int JE = Eval.GridData.iLogicalCells.NoOfCells;
+                int JE = Eval.GridData.iLogicalCells.Count;
                 int NoOfDomFields = domMap.BasisS.Count;
                 int NoOfCodFields = codMap.BasisS.Count;
 

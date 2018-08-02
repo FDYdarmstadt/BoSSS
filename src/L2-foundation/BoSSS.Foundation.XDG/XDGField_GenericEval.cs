@@ -213,7 +213,7 @@ namespace BoSSS.Foundation.XDG {
             Debug.Assert(result.GetLength(1) == K, "rank 1 is assumed to correlate with node set");
 
             double[] CoördBase = m_Coordinates.m_BaseStorage;
-            var Coörd = MultidimensionalArray.CreateWrapper(CoördBase, this.GridDat.iLogicalCells.NoOfCells, M);
+            var Coörd = MultidimensionalArray.CreateWrapper(CoördBase, this.GridDat.iLogicalCells.Count, M);
 
             var C = Coörd.ExtractSubArrayShallow(new int[] { j0, 0 }, new int[] { j0 + Len - 1, M - 1 });
 

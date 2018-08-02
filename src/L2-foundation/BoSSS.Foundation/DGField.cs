@@ -528,7 +528,7 @@ namespace BoSSS.Foundation {
         /// <param name="j">a local cell index</param>
         /// <returns>%</returns>
         virtual public double GetMeanValue(int j) {
-            if (j < 0 || j > Basis.GridDat.iLogicalCells.NoOfCells)
+            if (j < 0 || j > Basis.GridDat.iLogicalCells.Count)
                 throw new ArgumentException("cell index out of range.", "j");
 
             int iKref = this.Basis.GridDat.iGeomCells.GetRefElementIndex(j);
@@ -955,7 +955,7 @@ namespace BoSSS.Foundation {
             if (OnlyLocalUpdated)
                 J = Basis.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
             else
-                J = Basis.GridDat.iLogicalCells.NoOfCells;
+                J = Basis.GridDat.iLogicalCells.Count;
             IMatrix Coords = Coordinates;
 
             if (m_Basis.MaximalLength == m_Basis.MinimalLength) {

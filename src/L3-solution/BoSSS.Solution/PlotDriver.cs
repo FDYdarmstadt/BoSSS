@@ -420,7 +420,7 @@ namespace BoSSS.Solution {
                         totalCells = NewNoOfLocalCells;
                         NoOfCells = NoOfLocalCells;
                         NewNoOfCells = NewNoOfLocalCells;
-                        verticeCoordinates = MultidimensionalArray.Create(context.Cells.NoOfCells, verticesPerCell, dimension);
+                        verticeCoordinates = MultidimensionalArray.Create(context.Cells.Count, verticesPerCell, dimension);
                         //context.GridDat.TransformLocal2Global(localVerticeCoordinates, verticeCoordinates, 0, NoOfLocalCells, 0);
                     }
 

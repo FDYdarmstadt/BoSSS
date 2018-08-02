@@ -87,7 +87,7 @@ namespace BoSSS.Foundation.Grid {
         /// <returns></returns>
         private int[] ComputeLocalCellIndex2SubgridIndex() {
             int[] inverse = SubgridIndex2LocalCellIndex;
-            int JE = m_GridData.iLogicalCells.NoOfCells;
+            int JE = m_GridData.iLogicalCells.Count;
             int[] localCellIndex2SubgridIndex = new int[JE];
             ArrayTools.SetAll(localCellIndex2SubgridIndex, int.MinValue);
 

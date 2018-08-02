@@ -61,7 +61,7 @@ namespace BoSSS.Foundation {
             var m_Context = this.GridDat;
             int N = this.Length;
             int Esub = CellPairs.GetLength(0);
-            int JE = this.GridDat.iLogicalCells.NoOfCells;
+            int JE = this.GridDat.iLogicalCells.Count;
             int J = this.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
 
             if (CellPairs.GetLength(1) != 2)

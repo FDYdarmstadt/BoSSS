@@ -54,7 +54,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                 MultidimensionalArray JacDet = m_Owner.iGeomCells.JacobiDet;
 
-                int J = m_Owner.iGeomCells.NoOfCells;
+                int J = m_Owner.iGeomCells.Count;
                 var sc = MultidimensionalArray.Create(J);
                 Scaling = sc;
                 for (int j = 0; j < J; j++) {

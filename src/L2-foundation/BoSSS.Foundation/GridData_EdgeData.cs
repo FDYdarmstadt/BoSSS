@@ -388,7 +388,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     int[][] CellNeighbours = m_owner.m_Cells.CellNeighbours;
                     var CellNeighbours_Global = m_owner.m_Cells.CellNeighbours_global_tmp;
 
-                    int Je = m_owner.Cells.NoOfCells;
+                    int Je = m_owner.Cells.Count;
                     int J = m_owner.Cells.NoOfLocalUpdatedCells;
                     int j0 = m_owner.CellPartitioning.i0;
                     long[] GlidxExternal = m_owner.Parallel.GlobalIndicesExternalCells;
@@ -569,7 +569,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             internal void DetermineEdgeTrafo() {
                 using (new FuncTrace()) {
 
-                    m_CellsToEdgesTmp = new List<int>[m_owner.Cells.NoOfCells];
+                    m_CellsToEdgesTmp = new List<int>[m_owner.Cells.Count];
 
 
                     // preparation: helper vars

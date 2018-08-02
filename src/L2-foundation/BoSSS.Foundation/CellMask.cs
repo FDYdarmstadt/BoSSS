@@ -168,7 +168,7 @@ namespace BoSSS.Foundation.Grid {
         /// </summary>
         public BitArray GetBitMaskWithExternal() {
             MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
-            int JE = this.GridData.iLogicalCells.NoOfCells;
+            int JE = this.GridData.iLogicalCells.Count;
             int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
             int MpiSize = this.GridData.CellPartitioning.MpiSize;
 
@@ -212,7 +212,7 @@ namespace BoSSS.Foundation.Grid {
                     } else {
                         this.m_NoOfItemsLocally_WithExternal = base.NoOfItemsLocally;
                         int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
-                        int JE = this.GridData.iLogicalCells.NoOfCells;
+                        int JE = this.GridData.iLogicalCells.Count;
                         var mask = this.GetBitMaskWithExternal();
 
                         for (int j = J; j < JE; j++) {
@@ -234,7 +234,7 @@ namespace BoSSS.Foundation.Grid {
                
                 var R = new List<Chunk>(this);
                 int J_update = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
-                int JE = this.GridData.iLogicalCells.NoOfCells;
+                int JE = this.GridData.iLogicalCells.Count;
                 Debug.Assert(mskExt.Count == JE);
                 
                 
@@ -344,7 +344,7 @@ namespace BoSSS.Foundation.Grid {
         /// All cells that share at least an edge with a cell in this mask.
         /// </summary>
         public CellMask AllNeighbourCells() {
-            int J = this.GridData.iLogicalCells.NoOfCells;
+            int J = this.GridData.iLogicalCells.Count;
             BitArray retMask = new BitArray(J);
 
             var C2E = this.GridData.iLogicalCells.Cells2Edges;

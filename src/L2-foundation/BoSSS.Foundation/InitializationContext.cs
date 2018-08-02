@@ -29,7 +29,7 @@ namespace BoSSS.Foundation.IO {
         /// <summary>
         /// Information about the grid.
         /// </summary>
-        Grid.Classic.GridData GridData {
+        IGridData GridData {
             get;
         }
 
@@ -99,7 +99,7 @@ namespace BoSSS.Foundation.IO {
         /// <summary>
         /// Constructs a new context.
         /// </summary>
-        public GridInitializationContext(Grid.Classic.GridData gridData) {
+        public GridInitializationContext(IGridData gridData) {
             this.GridData = gridData;
         }
 
@@ -108,7 +108,7 @@ namespace BoSSS.Foundation.IO {
         /// <summary>
         /// Information about the grid.
         /// </summary>
-        public Grid.Classic.GridData GridData {
+        public IGridData GridData {
             get;
             private set;
         }
