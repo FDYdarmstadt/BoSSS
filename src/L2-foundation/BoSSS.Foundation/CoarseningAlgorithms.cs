@@ -281,40 +281,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             }
         }
         
-
-/*    
-        /// <summary>
-        /// Number of composite/aggregated cell in the aggregated grid.
-        /// </summary>
-        public int NoOfAggregateCells {
-            get {
-                int Jcomp = AggregateCells.Length;
-                Debug.Assert(Jcomp == Neighbourship.Length);
-                Debug.Assert(Jcomp == CompositeVolume.Length);
-                Debug.Assert(Jcomp == CompositeCellBB.Length);
-                return Jcomp;
-            }
-        }
-
-        public int NoOfGhostCells {
-            private set;
-            get;
-        }
-
-        /// <summary>
-        /// Neighborhood relations in the aggregation grid;<br/>
-        /// - 1st index: MPI-local cell index of composite cell <em>j</em><br/>
-        /// - 2nd index: enumeration; local composite cell indices of all neighbor cells of composite cell <em>j</em>
-        /// </summary>
-        public int[][] Neighbourship;
-        */
-
-            /*
-        /// <summary>
-        /// Cell volume of each composite cell.
-        /// </summary>
-        public double[] CompositeVolume;
-        */
+        
 
             /*
 
