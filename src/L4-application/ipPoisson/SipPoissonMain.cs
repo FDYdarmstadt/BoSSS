@@ -807,26 +807,7 @@ namespace BoSSS.Application.SipPoisson {
                     MultigridChain[iLevel] = MgLevel;
 
 
-
-
-                    //Schwarz swz2 = new Schwarz() {
-                    //    m_MaxIterations = 1,
-                    //    CoarseSolver = null,
-                    //    m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                    //        NoOfParts = NoOfBlocks
-                    //    },
-                    //    Overlap = 0
-                    //};
-
-
-
-                    //*/
-
-
-
-
-
-
+                    
                     ISolverSmootherTemplate pre, pst;
                     if (iLevel > 0) {
 
