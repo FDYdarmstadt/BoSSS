@@ -498,7 +498,7 @@ namespace BoSSS.Foundation {
 
                 if (c.GridData == null)
                     throw new ArgumentException();
-                if (!c.GridData.Grid.GridGuid.Equals(this.GridGuid))
+                if (!c.GridData.GridID.Equals(this.GridGuid))
                     throw new ArgumentException("Wrong grid.");
 
                 Basis bb = new Basis(c.GridData, this.Degree);

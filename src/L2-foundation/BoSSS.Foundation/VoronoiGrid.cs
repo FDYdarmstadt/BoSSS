@@ -75,6 +75,15 @@ namespace BoSSS.Foundation.Grid.Voronoi {
             }
         }
 
+        /// <summary>
+        /// The global ID for each cell
+        /// </summary>
+        public Comm.Permutation CurrentGlobalIdPermutation {
+            get {
+                throw new NotImplementedException();
+            }
+        }
+
         public CacheLogicImplBy_CNs InverseJacobian {
             get {
                 throw new NotImplementedException();

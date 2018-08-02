@@ -101,6 +101,15 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             private set;
         }
 
+        /// <summary>
+        /// The global ID for each cell
+        /// </summary>
+        public Permutation CurrentGlobalIdPermutation {
+            get {
+                throw new NotImplementedException();
+            }
+        }
+
 
         /// <summary>
         /// Constructor.
