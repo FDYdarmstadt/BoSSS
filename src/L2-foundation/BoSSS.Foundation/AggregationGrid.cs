@@ -62,7 +62,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             get {
                 if(ParentGrid is AggregationGrid) {
                     IGridData Ancestor = ((AggregationGrid)ParentGrid).AncestorGrid;
-                    Debug.Assert(this.iGeomCells.NoOfCells == Ancestor.iGeomCells.NoOfCells);
+                    Debug.Assert(this.iGeomCells.Count == Ancestor.iGeomCells.Count);
                     return Ancestor;
                 } else {
                     return ParentGrid;
@@ -118,7 +118,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             ParentGrid = pGrid;
 
             int JlocFine = pGrid.iLogicalCells.NoOfLocalUpdatedCells;
-            int JElocFine = pGrid.iLogicalCells.NoOfCells;
+            int JElocFine = pGrid.iLogicalCells.Count;
 
             m_GeomCellData = new GeomCellData() { m_Owner = this };
             m_LogicalCellData = new LogicalCellData() { m_Owner = this };
@@ -142,7 +142,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             int[] F2C = this.jCellFine2jCellCoarse;
             
             int JlocCoarse = iLogicalCells.NoOfLocalUpdatedCells;
-            int JElocCoarse = iLogicalCells.NoOfCells;
+            int JElocCoarse = iLogicalCells.Count;
 
             // collect edges
             // =========================
@@ -303,7 +303,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         private void DefineCellParts() {
             IGridData pGrid = ParentGrid;
             int J = this.iLogicalCells.NoOfLocalUpdatedCells;
-            int JE = this.iLogicalCells.NoOfCells;
+            int JE = this.iLogicalCells.Count;
 
             m_LogicalCellData.AggregateCellToParts = new int[JE][];
             var AggPartC = m_LogicalCellData.AggregateCellToParts;
@@ -333,7 +333,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             IGridData pGrid = ParentGrid;
             int j0Coarse = CellPartitioning.i0;
             int JlocCoarse = CellPartitioning.LocalLength;
-            int JElocFine = pGrid.iLogicalCells.NoOfCells;
+            int JElocFine = pGrid.iLogicalCells.Count;
             int JlocFine = pGrid.iLogicalCells.NoOfLocalUpdatedCells;
 
             // compute fine-to-coarse mapping

@@ -60,7 +60,7 @@ namespace BoSSS.Foundation.Grid.Voronoi {
                 internal set;
             }
 
-            public int NoOfCells {
+            public int Count {
                 get {
                     return NoOfExternalCells + NoOfLocalUpdatedCells;
                 }

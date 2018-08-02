@@ -207,7 +207,7 @@ namespace BoSSS.Solution {
         static void InstantiateField(FieldInfo f, object o, ICollection<DGField> IOFields, ICollection<DGField> RegisteredFields,
             //AppControl ctrl, 
             IDictionary<string, FieldOpts> FieldOptions,
-            GridData ctx, LevelSetTracker lstrk) {
+            IGridData ctx, LevelSetTracker lstrk) {
             // get attribute
             // =============
             InstantiateFromControlFileAttribute at;
@@ -233,7 +233,7 @@ namespace BoSSS.Solution {
             ICollection<DGField> IOFields, ICollection<DGField> RegisteredFields,
             //AppControl ctrl,
             IDictionary<string, FieldOpts> FieldOptions,
-            GridData ctx, LevelSetTracker lstrk) {
+            IGridData ctx, LevelSetTracker lstrk) {
 
             // create instance
             // ===============

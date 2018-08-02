@@ -1181,10 +1181,10 @@ namespace BoSSS.Solution.Multigrid {
         /// in the full and the aggregated grid. This method performs the transformation.
         /// </summary>
         virtual internal int N_Murks(int j, int n, int N) {
-            Debug.Assert(j >= 0 && j < this.DGBasis.GridDat.iLogicalCells.NoOfCells);
+            Debug.Assert(j >= 0 && j < this.DGBasis.GridDat.iLogicalCells.Count);
             Debug.Assert(n >= 0 && n < this.DGBasis.GetLength(j));
             Debug.Assert(n < N);
-            Debug.Assert(this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells == this.DGBasis.GridDat.iLogicalCells.NoOfCells);
+            Debug.Assert(this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells == this.DGBasis.GridDat.iLogicalCells.Count);
             return n;
         }
 

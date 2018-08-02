@@ -894,7 +894,7 @@ namespace BoSSS.Solution {
                 //====================
 
                 Grid = CreateOrLoadGrid();
-                if (Grid == null) {
+                if (Grid == null && AggGrid == null) {
                     throw new ApplicationException("No grid loaded through CreateOrLoadGrid");
                 }
 
@@ -1017,7 +1017,7 @@ namespace BoSSS.Solution {
 
                 // Make sure everything that is loaded from disk uses this grid
                 // data object (if it corresponds to the same grid)
-                m_Database.Controller.AddGridInitializationContext(((GridData)GridData));
+                m_Database.Controller.AddGridInitializationContext(GridData);
 
                 // create fields
                 //=============
@@ -1879,7 +1879,7 @@ namespace BoSSS.Solution {
                     // backup old data
                     // ===============
 
-                    GridData oldGridData = this.GridData;
+                    GridData oldGridData = (GridData) this.GridData;
                     GridCommons oldGrid = oldGridData.Grid;
                     Guid oldGridId = oldGrid.ID;
                     Permutation tau;
@@ -2296,8 +2296,8 @@ namespace BoSSS.Solution {
                         CorrectlyTerminated = true;
                         nlog.LogValue("pstudy_case_successful", true);
                         nlog.LogValue("GrdRes:NumberOfCells", app.Grid.CellPartitioning.TotalLength);
-                        nlog.LogValue("GrdRes:h_min", app.GridData.Cells.h_minGlobal);
-                        nlog.LogValue("GrdRes:h_max", app.GridData.Cells.h_maxGlobal);
+                        nlog.LogValue("GrdRes:h_min", ((GridData)(app.GridData)).Cells.h_minGlobal);
+                        nlog.LogValue("GrdRes:h_max", ((GridData)(app.GridData)).Cells.h_maxGlobal);
 #if DEBUG
                     }
 #else
@@ -2516,7 +2516,7 @@ namespace BoSSS.Solution {
         /// </summary>
         protected virtual void LoadField(ITimestepInfo tsi, string fieldName, string newFieldName = null) {
             using (new ilPSP.Tracing.FuncTrace()) {
-                DGField field = DatabaseDriver.LoadFields(tsi, GridData, new[] { fieldName }).Single();
+                DGField field = DatabaseDriver.LoadFields(tsi, (GridData)GridData, new[] { fieldName }).Single();
                 field.Identification = newFieldName ?? fieldName;
                 m_IOFields.Add(field);
             }

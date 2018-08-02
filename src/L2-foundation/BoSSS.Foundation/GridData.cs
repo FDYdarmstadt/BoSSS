@@ -242,7 +242,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
 
         private void InitNoOfCellsPerRefElement() {
-            int JE = Cells.NoOfCells;
+            int JE = Cells.Count;
             int J = Cells.NoOfLocalUpdatedCells;
 
             var KrefS = Grid.RefElements;

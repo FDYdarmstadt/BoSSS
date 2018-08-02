@@ -78,9 +78,9 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 }
             }
 
-            public int NoOfCells {
+            public int Count {
                 get {
-                    return m_Owner.ParentGrid.iGeomCells.NoOfCells;
+                    return m_Owner.ParentGrid.iGeomCells.Count;
                 }
             }
 
@@ -151,7 +151,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 internal set;
             }
 
-            public int NoOfCells {
+            public int Count {
                 get {
                     return NoOfLocalUpdatedCells + NoOfExternalCells;
                 }

@@ -34,6 +34,7 @@ using ilPSP.Utils;
 using BoSSS.Foundation.Grid.RefElements;
 using ilPSP;
 using BoSSS.Foundation.Caching;
+using BoSSS.Foundation.Grid.Aggregation;
 
 namespace BoSSS.Application.ScalarTransport {
 
@@ -60,16 +61,25 @@ namespace BoSSS.Application.ScalarTransport {
         /// </summary>
         protected override GridCommons CreateOrLoadGrid() {
             //m_GridPartitioningType = GridPartType.none;
-            double[] xnodes = GenericBlas.Linspace(-7, 7, 101);
-            double[] ynodes = GenericBlas.Linspace(-7, 7, 101);
-            GridCommons grd = Grid2D.Cartesian2DGrid(xnodes, ynodes, type: CellType.Square_Linear);
+            //double[] xnodes = GenericBlas.Linspace(-7, 7, 101);
+            //double[] ynodes = GenericBlas.Linspace(-7, 7, 101);
+            //GridCommons grd = Grid2D.Cartesian2DGrid(xnodes, ynodes, type: CellType.Square_Linear);
 
             //double[] xnodes = GenericBlas.Linspace(-7, 7, 25);
             //double[] ynodes = GenericBlas.Linspace(-7, 7, 25);
             //double[] znodes = GenericBlas.Linspace(-7, 7, 25);
             //var grd = Grid3D.Cartesian3DGrid(xnodes, ynodes, znodes);
 
-            return grd;
+            double[] xNodes = GenericBlas.Linspace(-7, 7, 4);
+            double[] yNodes = GenericBlas.Linspace(-7, 7, 5);
+
+            var baseGrid = Grid2D.UnstructuredTriangleGrid(xNodes, yNodes);
+            var baseGdat = new GridData(baseGrid);
+            var aggGrid = CoarseningAlgorithms.Coarsen(baseGdat, 2);
+            base.AggGrid = aggGrid;
+                    
+
+            return null;
         }
 
 
@@ -169,14 +179,14 @@ namespace BoSSS.Application.ScalarTransport {
                  stw.Stop();
                  
                 double runTime = stw.Elapsed.TotalSeconds;
-                Console.WriteLine("{0}\t{2}\t{1}", bulkSize, runTime.ToStringDot("0.####E-00"),this.GridData.Cells.NoOfLocalUpdatedCells/bulkSize);
+                Console.WriteLine("{0}\t{2}\t{1}", bulkSize, runTime.ToStringDot("0.####E-00"),this.GridData.iGeomCells.Count/bulkSize);
             }
         }
 
 
         public void SimplifiedPerformance() {
-            int J = this.GridData.Cells.NoOfCells;
-            var NodeSet = this.GridData.Cells.RefElements[0].GetQuadratureRule(12).Nodes;
+            int J = this.GridData.iGeomCells.Count;
+            var NodeSet = this.GridData.iGeomCells.RefElements[0].GetQuadratureRule(12).Nodes;
 
             int[] ChunkSize = new[] { J / 2, J };
             if (J % 2 != 0)
@@ -269,7 +279,13 @@ namespace BoSSS.Application.ScalarTransport {
                 //base.TerminationKey = true;
 
 
-                double dtCFL = this.GridData.ComputeCFLTime(this.Velocity, 1.0e10);
+                double dtCFL;
+                if(this.GridData is GridData) {
+                    dtCFL = ((GridData)(this.GridData)).ComputeCFLTime(this.Velocity, 1.0e10);
+                } else {
+                    Console.WriteLine("Nix CFL");
+                    dtCFL = 1e-3;
+                }
                 if (dt <= 0) {
                     // if dt <= 0, we're free to set the timestep on our own
                     //base.NoOfTimesteps = -1;
@@ -288,7 +304,7 @@ namespace BoSSS.Application.ScalarTransport {
 
                 // set mpi_rank
                 double rank = GridData.MpiRank;
-                int J = GridData.Cells.NoOfLocalUpdatedCells;
+                int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
                 for (int j = 0; j < J; j++) {
                     mpi_rank.SetMeanValue(j, rank);
                 }
@@ -307,7 +323,7 @@ namespace BoSSS.Application.ScalarTransport {
         /// performs Tecplot output of field <see cref="u"/>
         /// </summary>
         protected override void PlotCurrentState(double phystime, TimestepNumber timestepNo, int superSampling) {
-            Tecplot plt1 = new Tecplot(GridData, true, false, (uint) superSampling);
+            Tecplot plt1 = new Tecplot((GridData)GridData, true, false, (uint) superSampling);
             plt1.PlotFields("transport." + timestepNo, phystime, u, mpi_rank);
         }
 
@@ -352,7 +368,7 @@ namespace BoSSS.Application.ScalarTransport {
 
 
             double rank = GridData.MpiRank;
-            int J = GridData.Cells.NoOfLocalUpdatedCells;
+            int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             for (int j = 0; j < J; j++) {
                 mpi_rank.SetMeanValue(j, rank);
             }

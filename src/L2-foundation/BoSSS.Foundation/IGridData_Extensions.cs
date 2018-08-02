@@ -148,7 +148,7 @@ namespace BoSSS.Foundation.Grid {
         public static IEnumerable<int> GetGeometricCellIndices(this IGridData g, Chunk C) {
             if (C.i0 < 0)
                 throw new ArgumentException();
-            if (C.JE > g.iLogicalCells.NoOfCells)
+            if (C.JE > g.iLogicalCells.Count)
                 throw new ArgumentException();
             return new Logical2Geom_Enumable() { j0 = C.i0, Len = C.Len, Log2Geom = g.iLogicalCells.AggregateCellToParts };
         }
@@ -170,7 +170,7 @@ namespace BoSSS.Foundation.Grid {
         public static IEnumerable<int> GetGeometricCellIndices(this IGridData g, int j) {
             if (j < 0)
                 throw new ArgumentException();
-            if (j >= g.iLogicalCells.NoOfCells)
+            if (j >= g.iLogicalCells.Count)
                 throw new ArgumentException();
             return new Logical2Geom_Enumable() { j0 = j, Len = 1, Log2Geom = g.iLogicalCells.AggregateCellToParts };
         }
@@ -260,7 +260,7 @@ namespace BoSSS.Foundation.Grid {
                 }
 
                 int MaxLen;
-                if (i0 < grd.iGeomCells.NoOfCells)
+                if (i0 < grd.iGeomCells.Count)
                     MaxLen = grd.iGeomCells.GetNoOfSimilarConsecutiveCells(this.ConsecutiveMask, i0, this.MaxVecLen);
                 else
                     MaxLen = 1;
@@ -354,7 +354,7 @@ namespace BoSSS.Foundation.Grid {
         public static IEnumerable<Tuple<int, int>> GetGeometricCellChunks(this CellMask CM, int MaxVecLen, CellInfo ConsecutiveMask = CellInfo.Undefined) {
             var ret = new Mask2GeomChunks_Enumable() { CM = CM, MaxVecLen = MaxVecLen, ConsecutiveMask = ConsecutiveMask };
 #if DEBUG
-            int JG = CM.GridData.iGeomCells.NoOfCells;
+            int JG = CM.GridData.iGeomCells.Count;
             BitArray test = new BitArray(JG);
             foreach(var t_i0_len in ret) {
                 int j0 = t_i0_len.Item1;

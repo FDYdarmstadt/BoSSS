@@ -325,7 +325,7 @@ namespace BoSSS.Foundation.Grid {
         /// <summary>
         /// Number of geometrical cells.
         /// </summary>
-        int NoOfCells {
+        int Count {
             get;
         }
 
@@ -520,7 +520,7 @@ namespace BoSSS.Foundation.Grid {
         /// <summary>
         /// <see cref="NoOfExternalCells"/> plus <see cref="NoOfLocalUpdatedCells"/>;
         /// </summary>
-        int NoOfCells {
+        int Count {
             get;
         }
 

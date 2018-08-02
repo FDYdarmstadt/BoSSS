@@ -125,7 +125,7 @@ namespace BoSSS.Foundation.Grid {
 
 
         static int[][] FindCoarseningClusters(BitArray Ok2Coarsen, GridData CurrentGrid) {
-            int JE = CurrentGrid.Cells.NoOfCells;
+            int JE = CurrentGrid.Cells.Count;
             int J = CurrentGrid.Cells.NoOfLocalUpdatedCells;
 
             if (Ok2Coarsen.Length != JE)

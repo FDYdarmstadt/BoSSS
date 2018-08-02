@@ -512,7 +512,7 @@ namespace BoSSS.Foundation {
         /// </summary>
         public int Ntotal {
             get {
-                return (this.m_MaxTotalNoOfCoordinatesPerCell * m_Context.iLogicalCells.NoOfCells);
+                return (this.m_MaxTotalNoOfCoordinatesPerCell * m_Context.iLogicalCells.Count);
                 //return m_Count;
             }
         }
@@ -691,7 +691,7 @@ namespace BoSSS.Foundation {
         public int LocalUniqueCoordinateIndex(int find, int j, int n) {
             Debug.Assert(!(find < 0 || find > this.m_BasisS.Length),
                 "Field is not in this mapping");
-            Debug.Assert(!(j < 0 || j >= m_Context.iLogicalCells.NoOfCells),
+            Debug.Assert(!(j < 0 || j >= m_Context.iLogicalCells.Count),
                 "j must be greater or equal 0 and less than number of locally updated cells");
             //Debug.Assert(!(n < 0 || n >= m_BasisS[find].GetLength(j)),
             Debug.Assert(!(n < 0 || n >= m_BasisS[find].MaximalLength),
@@ -863,7 +863,7 @@ namespace BoSSS.Foundation {
             
             int J;
             if (includeExternal)
-                J = this.m_Context.iLogicalCells.NoOfCells;
+                J = this.m_Context.iLogicalCells.Count;
             else
                 J = this.m_Context.iLogicalCells.NoOfLocalUpdatedCells;
             List<int> R = new List<int>(L*J);
