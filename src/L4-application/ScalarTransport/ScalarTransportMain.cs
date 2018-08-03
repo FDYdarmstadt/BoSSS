@@ -48,28 +48,29 @@ namespace BoSSS.Application.ScalarTransport {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
-
-          
-
             BoSSS.Solution.Application._Main(args, true, delegate() {
                 return new ScalarTransportMain();
             });
         }
 
         /// <summary>
-        /// creates a simple 2d/3d Cartesian grid within the domain (-7,7)x(-7,7);
+        /// creates a simple 2d/3d Cartesian grid within the domain \f$ (-7,7)^D \f$
         /// </summary>
         protected override GridCommons CreateOrLoadGrid() {
-            //m_GridPartitioningType = GridPartType.none;
-            //double[] xnodes = GenericBlas.Linspace(-7, 7, 101);
-            //double[] ynodes = GenericBlas.Linspace(-7, 7, 101);
-            //GridCommons grd = Grid2D.Cartesian2DGrid(xnodes, ynodes, type: CellType.Square_Linear);
+
+            double[] xnodes = GenericBlas.Linspace(-7, 7, 11);
+            double[] ynodes = GenericBlas.Linspace(-7, 7, 11);
+            GridCommons grd = Grid2D.Cartesian2DGrid(xnodes, ynodes, type: CellType.Square_Linear);
+            this.Control.NoOfMultigridLevels = 3;
+
+            return grd;
 
             //double[] xnodes = GenericBlas.Linspace(-7, 7, 25);
             //double[] ynodes = GenericBlas.Linspace(-7, 7, 25);
             //double[] znodes = GenericBlas.Linspace(-7, 7, 25);
             //var grd = Grid3D.Cartesian3DGrid(xnodes, ynodes, znodes);
 
+            /*
             double[] xNodes = GenericBlas.Linspace(-7, 7, 4);
             double[] yNodes = GenericBlas.Linspace(-7, 7, 5);
 
@@ -77,9 +78,10 @@ namespace BoSSS.Application.ScalarTransport {
             var baseGdat = new GridData(baseGrid);
             var aggGrid = CoarseningAlgorithms.Coarsen(baseGdat, 2);
             base.AggGrid = aggGrid;
-                    
+                  
 
             return null;
+            */
         }
 
 
@@ -146,7 +148,10 @@ namespace BoSSS.Application.ScalarTransport {
 
             Timestepper = new RungeKutta(RungeKuttaScheme.TVD3,
                                    diffOp,
-                                   new CoordinateMapping(u), Velocity.Mapping);
+                                   u.Mapping, Velocity.Mapping);
+
+            Solution.Multigrid.AggregationGridBasis.CreateSequence(this.MultigridSequence, u.Mapping.BasisS);
+
 
             //Timestepper = new ROCK4(diffOp, u.CoordinateVector, Velocity.Mapping);
         }

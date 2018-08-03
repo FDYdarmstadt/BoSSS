@@ -58,6 +58,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="AggregationGrid.cs" />
+    <Compile Include="AggregationGrid_BasisData.cs" />
     <Compile Include="AggregationGrid_CellData.cs" />
     <Compile Include="AggregationGrid_EdgeData.cs" />
     <Compile Include="AggregationGrid_Parallelization.cs" />
