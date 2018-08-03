@@ -42,8 +42,9 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
         }
 
         int D;
-        Func<double, double>[] uLevSet,wLevSet;
+        
         double pRadius;
+        
         /// <summary>
         /// Describes: 0: velX, 1: velY, 2:rotVel,3:particleradius
         /// </summary>

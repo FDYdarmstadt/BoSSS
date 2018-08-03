@@ -58,14 +58,14 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// <summary>
         /// The ancestor grid, from which the aggregation sequence was derived.
         /// </summary>
-        public IGridData AncestorGrid {
+        public GridData AncestorGrid {
             get {
                 if(ParentGrid is AggregationGrid) {
-                    IGridData Ancestor = ((AggregationGrid)ParentGrid).AncestorGrid;
+                    GridData Ancestor = ((AggregationGrid)ParentGrid).AncestorGrid;
                     Debug.Assert(this.iGeomCells.Count == Ancestor.iGeomCells.Count);
                     return Ancestor;
                 } else {
-                    return ParentGrid;
+                    return (GridData) ParentGrid;
                 }
             }
         }
@@ -143,6 +143,8 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             BuildNeighborship(AggregationCells);
             DefineCellParts();
             CollectEdges();
+
+            m_ChefBasis = new _BasisData(this);
         }
 
 
@@ -597,12 +599,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             ParentGrid.TransformGlobal2Local(GlobalVerticesIn, LocalVerticesOut, jCell, NewtonConvergence);
         }
 
-        public BasisData ChefBasis {
-            get {
-                throw new NotImplementedException();
-            }
-        }
-
+        
         public CacheLogicImplBy_CNs InverseJacobian {
             get {
                 return ParentGrid.InverseJacobian;
