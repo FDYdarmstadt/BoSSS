@@ -27,8 +27,58 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 m_owner = o;
             }
 
+            int PolyDim(int Degree) {
+                var Krefs = m_owner.m_GeomCellData.RefElements;
+                var Polys = Krefs[0].GetOrthonormalPolynomials(Degree);
+                return Polys.Count;
+            }
+
+
+            MultidimensionalArray m_OrthonormalizationTrafo;
+            int m_OrthonormalizationTrafo_Degree = -1;
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="j0"></param>
+            /// <param name="Len"></param>
+            /// <param name="Degree"></param>
+            /// <returns></returns>
             protected override MultidimensionalArray Compute_OrthonormalizationTrafo(int j0, int Len, int Degree) {
-                throw new NotImplementedException();
+                this.Init(Degree);
+
+                int Np = PolyDim(Degree);
+
+                if(m_OrthonormalizationTrafo == null || m_OrthonormalizationTrafo_Degree < Degree) {
+                    // ++++++++++++++++++++++++++
+                    // require re-evaluation
+                    // ++++++++++++++++++++++++++
+
+                    int Jgeom = m_owner.m_GeomCellData.Count;
+                    m_OrthonormalizationTrafo = MultidimensionalArray.Create(Jgeom, Np, Np);
+
+                    int Jlog = m_owner.m_LogicalCellData.Count;
+
+                    // logical to geometrical transformation
+                    int[][] jL2jG = m_owner.iLogicalCells.AggregateCellToParts;
+                    
+                    for(int jlog = 0; jlog < Jlog; jlog++) {
+                        var Trafo = this.CA(jlog, Np);
+
+                        int[] jGS = jL2jG[jlog];
+                        Debug.Assert(jGS.Length == Trafo.GetLength(0));
+
+                        for(int i = 0; i < jGS.Length; i++) {
+                            int jG = jGS[i];
+
+                            m_OrthonormalizationTrafo.ExtractSubArrayShallow(jG, -1, -1)
+                                .Acc(1.0, Trafo.ExtractSubArrayShallow(i, -1, -1));
+                        }
+                    }
+
+                }
+
+                return m_OrthonormalizationTrafo.ExtractSubArrayShallow(new int[] { j0, 0, 0 }, new int[] { j0 + Len - 1, Np - 1, Np - 1 });
             }
 
             MultidimensionalArray InjectorsBase;
@@ -331,6 +381,109 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 }
             }
 
+
+
+             
+        MultidimensionalArray CA(int _jAgg, int Np) {
+            AggregationGrid ag = this.m_owner;
+            var compCell = ag.iLogicalCells.AggregateCellToParts[_jAgg];
+            int thisMgLevel = ag.MgLevel;
+            
+
+            var R = MultidimensionalArray.Create(compCell.Length, Np, Np);
+            for(int i = 0; i < compCell.Length; i++) {
+                for(int n = 0; n < Np; n++) {
+                    R[i, n, n] = 1.0;
+                }
+            }
+
+#if DEBUG
+            bool[] btouch = new bool[compCell.Length];
+#endif
+
+            int[] AggIndex = new int[] { _jAgg };
+            _BasisData basisLevel = this;
+            for (int mgLevelIdx = thisMgLevel; mgLevelIdx > 0; mgLevelIdx--) {
+                AggregationGrid mgLevel = basisLevel.m_owner;
+#if DEBUG
+                btouch.Clear();
+#endif
+
+                foreach (int jAgg in AggIndex) {
+                    //MultidimensionalArray Inj_j;
+                    //if (mgLevelIdx > 0) {
+                    var Inj_j = basisLevel.Injectors[jAgg];
+                    //} else {
+                    //    Inj_j = MultidimensionalArray.Create(1, Np, Np);
+                    //    for (int n = 0; n < Np; n++) {
+                    //        m_CompositeBasis[jAgg][0, n, n] = 1.0;
+                    //    }
+                    //}
+
+
+                    int[] FineAgg = mgLevel.jCellCoarse2jCellFine[jAgg];
+                    Debug.Assert(FineAgg.Length == Inj_j.GetLength(0));
+
+                    for(int iSrc = 0; iSrc < FineAgg.Length; iSrc++) { // loop over finer level cells
+                        int jAgg_fine = FineAgg[iSrc];
+                        // Inj_j[iSrc,-,-] is injector 
+                        //   from cell 'jAgg' on level 'mgLevelIdx'      (coarse level)
+                        //   to cell 'jAgg_fine' on level 'mgLevelIdx - 1' (fine level)
+
+                        var Inj_j_iSrc = Inj_j.ExtractSubArrayShallow(iSrc, -1, -1);
+
+                        int[] TargCells = mgLevel.ParentGrid.iLogicalCells.AggregateCellToParts[jAgg_fine];
+                        
+                        foreach (int j in TargCells) {
+                            int iTarg = Array.IndexOf(compCell, j);
+                            if (iTarg < 0)
+                                throw new ApplicationException("error in alg");
+#if DEBUG
+                            if(btouch[iTarg] == true)
+                                throw new ApplicationException();
+                            btouch[iTarg] = true;
+#endif
+                            var R_iTarg = R.ExtractSubArrayShallow(iTarg, -1, -1);
+
+                            R_iTarg.Multiply(1.0, Inj_j_iSrc, R_iTarg.CloneAs(), 0.0, "nm", "nk", "km");
+
+                            //if (thisMgLevel == 1 && Np == 10) {
+                            //    var check = MultidimensionalArray.Create(Np, Np);
+                            //    check.GEMM(1.0, R_iTarg, R_iTarg.Transpose(), 0.0);
+                            //    check.AccEye(-1.0);
+                            //    var bla = check.InfNorm();
+                            //    Console.WriteLine("Check norm: " + bla);
+                            //}
+                        }
+                    }
+                }
+
+
+                // Rekursions-Scheisse:
+                // - - - - - - - - - - -
+                //if (mgLevelIdx > 0) {
+                { 
+                    List<int> nextAggIndex = new List<int>();
+                    foreach(int jAgg in AggIndex) {
+                        int[] NextLevel = mgLevel.jCellCoarse2jCellFine[jAgg];
+#if DEBUG
+                        foreach(int i in NextLevel) {
+                            Debug.Assert(nextAggIndex.Contains(i) == false);
+                        }
+#endif
+                        nextAggIndex.AddRange(NextLevel);
+                    }
+                    AggIndex = nextAggIndex.ToArray();
+                    basisLevel = ((AggregationGrid)(m_owner.ParentGrid)).m_ChefBasis;
+                } 
+                //else {
+                //    AggIndex = null;
+                //    mgLevel = null;
+                //}
+            }
+
+            return R;
+        }
 
 
 
