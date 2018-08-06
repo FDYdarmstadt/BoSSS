@@ -57,20 +57,20 @@ namespace BoSSS.Application.ScalarTransport {
         /// creates a simple 2d/3d Cartesian grid within the domain \f$ (-7,7)^D \f$
         /// </summary>
         protected override GridCommons CreateOrLoadGrid() {
-
+            /*
             double[] xnodes = GenericBlas.Linspace(-7, 7, 11);
             double[] ynodes = GenericBlas.Linspace(-7, 7, 11);
             GridCommons grd = Grid2D.Cartesian2DGrid(xnodes, ynodes, type: CellType.Square_Linear);
             this.Control.NoOfMultigridLevels = 3;
 
             return grd;
-
+            */
             //double[] xnodes = GenericBlas.Linspace(-7, 7, 25);
             //double[] ynodes = GenericBlas.Linspace(-7, 7, 25);
             //double[] znodes = GenericBlas.Linspace(-7, 7, 25);
             //var grd = Grid3D.Cartesian3DGrid(xnodes, ynodes, znodes);
 
-            /*
+            
             double[] xNodes = GenericBlas.Linspace(-7, 7, 4);
             double[] yNodes = GenericBlas.Linspace(-7, 7, 5);
 
@@ -81,7 +81,7 @@ namespace BoSSS.Application.ScalarTransport {
                   
 
             return null;
-            */
+            
         }
 
 
@@ -269,7 +269,10 @@ namespace BoSSS.Application.ScalarTransport {
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             using (var ft = new FuncTrace()) {
                 //PerformanceVsCachesize();
-                SimplifiedPerformance();
+                //SimplifiedPerformance();
+
+                this.u.ProjectField((x, y) => x * y);
+                
                 base.TerminationKey = true;
                 return 0.0;
 

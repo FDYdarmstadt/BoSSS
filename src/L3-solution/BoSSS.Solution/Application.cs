@@ -998,6 +998,7 @@ namespace BoSSS.Solution {
                     }
                 } else {
                     GridData = this.AggGrid;
+                    this.MultigridSequence = new AggregationGrid[0];
                 }
 
 
