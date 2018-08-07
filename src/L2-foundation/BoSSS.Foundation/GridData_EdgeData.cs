@@ -82,7 +82,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             /// See <see cref="GetEdges4RefElement(RefElement)"/>
             /// </summary>
             private EdgeMask[] m_Edges4RefElement;
-
+            
             /// <summary>
             /// For each (edge) reference element, this method provides a
             /// mask containing all cells which are mapped from the specific

@@ -487,6 +487,13 @@ namespace BoSSS.Foundation.Grid {
         }
 
     
+        
+        /// <summary>
+        /// Cell-Mask of all cells which share the same reference element.
+        /// </summary>
+        CellMask GetCells4Refelement(RefElement Kref);
+        
+
     }
 
     public interface ILogicalCellData {
@@ -586,11 +593,7 @@ namespace BoSSS.Foundation.Grid {
         /// </param>
         void GetCellBoundingBox(int j, BoundingBox bb);
 
-        /// <summary>
-        /// Cell-Mask of all cells which share the same reference element.
-        /// </summary>
-        CellMask GetCells4Refelement(RefElement Kref);
-
+        
 
     }
 
@@ -831,6 +834,17 @@ namespace BoSSS.Foundation.Grid {
         /// </param>
         void GetNormalsForCell(NodeSet Nodes, int jCell, int iFace, MultidimensionalArray NormalsOut);
 
+
+        /// <summary>
+        /// For each (edge) reference element, this method provides a
+        /// mask containing all cells which are mapped from the specific
+        /// reference element.
+        /// </summary>
+        /// <param name="Kref">
+        /// Reference element for edges.
+        /// </param>
+        EdgeMask GetEdges4RefElement(RefElement Kref);
+        
     }
 
 
@@ -874,16 +888,7 @@ namespace BoSSS.Foundation.Grid {
             get;
         }
 
-
-        /// <summary>
-        /// For each (edge) reference element, this method provides a
-        /// mask containing all cells which are mapped from the specific
-        /// reference element.
-        /// </summary>
-        /// <param name="Kref">
-        /// Reference element for edges.
-        /// </param>
-        EdgeMask GetEdges4RefElement(RefElement Kref);
+        
     }
 
 

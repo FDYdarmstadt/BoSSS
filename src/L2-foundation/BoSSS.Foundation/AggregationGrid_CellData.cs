@@ -100,6 +100,10 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 m_Owner.ParentGrid.iGeomCells.GetCellBoundingBox(j, bb);
             }
 
+            public CellMask GetCells4Refelement(RefElement Kref) {
+                throw new NotImplementedException();
+            }
+
             public CellType GetCellType(int jCell) {
                 return m_Owner.ParentGrid.iGeomCells.GetCellType(jCell);
             }

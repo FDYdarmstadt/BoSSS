@@ -43,8 +43,11 @@ namespace BoSSS.Foundation.Grid {
         /// should be in the mask; The length of this array must not exceed
         /// <see cref="GridData.CellData.NoOfLocalUpdatedCells"/>
         /// </param>
-        public CellMask(IGridData grddat, BitArray mask) :
-            base(grddat, mask) {
+        /// <param name="mt">
+        /// <see cref="ExecutionMask.MaskType"/>
+        /// </param>
+        public CellMask(IGridData grddat, BitArray mask, MaskType mt = MaskType.Logical) :
+            base(grddat, mask, mt) {
             if (mask.Length != grddat.iLogicalCells.NoOfLocalUpdatedCells)
                 throw new ArgumentException();
         }
@@ -52,8 +55,8 @@ namespace BoSSS.Foundation.Grid {
         /// <summary>
         /// ctor
         /// </summary>
-        public CellMask(IGridData grddat, int[] Sequence) :
-            base(grddat, Sequence) 
+        public CellMask(IGridData grddat, int[] Sequence, MaskType mt = MaskType.Logical) :
+            base(grddat, Sequence, mt) 
         { }
 
         /// <summary>
@@ -73,7 +76,7 @@ namespace BoSSS.Foundation.Grid {
         /// the grid that this mask will be associated with;
         /// </param>
         public CellMask(IGridData grddat, params Chunk[] parts)
-            : this(grddat, (IEnumerable<Chunk>)parts) {
+            : this(grddat, (IEnumerable<Chunk>)parts, MaskType.Logical) {
         }
 
         /// <summary>
@@ -85,8 +88,11 @@ namespace BoSSS.Foundation.Grid {
         /// <param name="grddat">
         /// the grid that this mask will be associated with;
         /// </param>
-        protected CellMask(IGridData grddat, IEnumerable<Chunk> Parts)
-            : this(grddat, FromChunkEnum(Parts))
+        /// <param name="mt">
+        /// <see cref="ExecutionMask.MaskType"/>
+        /// </param>
+        protected CellMask(IGridData grddat, IEnumerable<Chunk> Parts, MaskType mt = MaskType.Logical)
+            : this(grddat, FromChunkEnum(Parts), mt)
         { }
 
         /// <summary>
@@ -95,9 +101,11 @@ namespace BoSSS.Foundation.Grid {
         /// <param name="grdDat">
         /// grid that the returned mask will be assigned to
         /// </param>
-        static public CellMask GetEmptyMask(IGridData grdDat) {
-            BitArray ba = new BitArray(grdDat.iLogicalCells.NoOfLocalUpdatedCells, false);
-            return new CellMask(grdDat, ba);
+        /// <param name="mt">
+        /// <see cref="ExecutionMask.MaskType"/>
+        /// </param>
+        static public CellMask GetEmptyMask(IGridData grdDat, MaskType mt = MaskType.Logical) {
+            return new CellMask(grdDat, new int[0], mt);
         }
 
         /// <summary>
@@ -144,21 +152,26 @@ namespace BoSSS.Foundation.Grid {
                 }
                 
             }
-            return new CellMask(gridDat, CellArray);
+            return new CellMask(gridDat, CellArray, MaskType.Logical);
         }
 
         /// <summary>
         /// like the ctor.
         /// </summary>
-        protected override ExecutionMask CreateInstance(IGridData grdDat, BitArray mask) {
-            return new CellMask(grdDat, mask);
+        protected override ExecutionMask CreateInstance(BitArray mask, MaskType mt) {
+            return new CellMask(base.GridData, mask, mt);
         }
 
         /// <summary>
         /// see <see cref="ExecutionMask.GetTotalNumberOfElements"/>
         /// </summary>
         protected override int GetTotalNumberOfElements(IGridData gridData) {
-            return gridData.iLogicalCells.NoOfLocalUpdatedCells;
+            if(base.MaskType == MaskType.Logical)
+                return gridData.iLogicalCells.NoOfLocalUpdatedCells;
+            else if(base.MaskType == MaskType.Geometrical)
+                return gridData.iGeomCells.Count;
+            else
+                throw new NotImplementedException();
         }
 
         BitArray m_BitMaskWithExternal;
@@ -167,6 +180,9 @@ namespace BoSSS.Foundation.Grid {
         /// returns a bitmask that contains also information about external/ghost cells.
         /// </summary>
         public BitArray GetBitMaskWithExternal() {
+            if(base.MaskType != MaskType.Logical)
+                throw new NotSupportedException();
+
             MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
             int JE = this.GridData.iLogicalCells.Count;
             int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
@@ -206,6 +222,9 @@ namespace BoSSS.Foundation.Grid {
         /// </summary>
         public int NoOfItemsLocally_WithExternal {
             get {
+                if(base.MaskType != MaskType.Logical)
+                    throw new NotSupportedException();
+
                 if (m_NoOfItemsLocally_WithExternal < 0) {
                     if (GridData.CellPartitioning.MpiSize <= 1) {
                         m_NoOfItemsLocally_WithExternal = this.NoOfItemsLocally;
@@ -229,6 +248,9 @@ namespace BoSSS.Foundation.Grid {
         /// returns an enumerable structure that also contains external/ghost cells.
         /// </summary>
         public IEnumerable<Chunk> GetEnumerableWithExternal() {
+            if(base.MaskType == MaskType.Geometrical)
+                throw new NotSupportedException();
+
             if (this.GridData.CellPartitioning.MpiSize > 1) {
                 var mskExt = GetBitMaskWithExternal();
                
@@ -344,6 +366,9 @@ namespace BoSSS.Foundation.Grid {
         /// All cells that share at least an edge with a cell in this mask.
         /// </summary>
         public CellMask AllNeighbourCells() {
+            if(base.MaskType != MaskType.Logical)
+                throw new NotSupportedException();
+
             int J = this.GridData.iLogicalCells.Count;
             BitArray retMask = new BitArray(J);
 
@@ -374,7 +399,35 @@ namespace BoSSS.Foundation.Grid {
                 }
             }
 
-            return new CellMask(this.GridData, retMask);
+            return new CellMask(this.GridData, retMask, MaskType.Logical);
+        }
+
+        /// <summary>
+        /// Converts this  
+        /// from a logical (<see cref="IGridData.iLogicalCells"/>) mask
+        /// to a geometrical (<see cref="IGridData.iGeomCells"/>) mask.
+        /// </summary>
+        /// <returns></returns>
+        public CellMask ToGeometicalMask() {
+            if(base.MaskType != MaskType.Logical)
+                throw new NotSupportedException();
+
+            if(base.GridData is Grid.Classic.GridData) 
+                // logical and geometrical cells are identical - return a clone of this mask
+                return new CellMask(base.GridData, base.Sequence, MaskType.Geometrical);
+
+            int Jg = GridData.iGeomCells.Count;
+            int[][] jl2jg = GridData.iLogicalCells.AggregateCellToParts;
+            BitArray ba = new BitArray(Jg);
+            foreach(Chunk c in this) { // loop over chunks of logical cells...
+                for(int jl = 0; jl < c.JE; jl++) { // loop over cells in chunk...
+                    foreach(int jg in jl2jg[jl]) { // loop over geometrical cells in logical cell 'jl'...
+                        ba[jg] = true;
+                    }
+                }
+            }
+
+            return new CellMask(base.GridData, ba, MaskType.Geometrical);
         }
 
     }
