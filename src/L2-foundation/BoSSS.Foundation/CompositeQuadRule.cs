@@ -369,8 +369,8 @@ namespace BoSSS.Foundation.Quadrature {
                     output.Add(cB);
 
                     if (cB._Chunk.JE < cA._Chunk.JE) {
-                        // ein stückl von cA bleibt übrig.
-                        // -> aufkalten fir negscht'n loop
+                        // ein stückl von cA bleibt ibrig.
+                        // -> aufkalten firn negscht'n loop
                         cA._Chunk.Len = cA._Chunk.JE - cB._Chunk.JE;
                         cA._Chunk.i0 = cB._Chunk.JE;
                         Debug.Assert(cA.Chunk.Len > 0);
@@ -416,7 +416,7 @@ namespace BoSSS.Foundation.Quadrature {
                 }
 
 
-                Debug.Assert(false); // wenn mir do her kemmen, nor isch eppes gonz komisch.
+                Debug.Assert(false); // wenn mir do her kemmen, nor isch eppes gonz tschelawenget.
             }
 
             // izant isch nur mehr in A oder in B wos drinnen,

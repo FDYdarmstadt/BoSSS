@@ -127,7 +127,8 @@ namespace BoSSS.Foundation.Quadrature {
     /// <seealso cref="IQuadratureScheme{S, T}"/>
     public abstract class QuadratureScheme<TQuadRule, TDomain> : IQuadratureScheme<TQuadRule, TDomain>
         where TQuadRule : QuadRule
-        where TDomain : ExecutionMask {
+        where TDomain : ExecutionMask //
+    {
 
         /// <summary>
         /// <see cref="IQuadratureScheme{S, T}.FactoryChain"/>
@@ -211,16 +212,19 @@ namespace BoSSS.Foundation.Quadrature {
         /// <param name="E"></param>
         /// <param name="g"></param>
         /// <returns></returns>
-        TDomain GetDomainForRefElement(Grid.RefElements.RefElement E, IGridData g) {
+        TDomain GetDomainForRefElement(RefElement E, IGridData g) {
             ExecutionMask em = null;
 
-            if (typeof(TDomain) == typeof(EdgeMask) || typeof(TDomain).IsSubclassOf(typeof(EdgeMask)))
-                em = g.iLogicalEdges.GetEdges4RefElement(E);
-            else if (typeof(TDomain) == typeof(CellMask) || typeof(TDomain).IsSubclassOf(typeof(CellMask)))
-                em = g.iLogicalCells.GetCells4Refelement(E);
-            else
+            if(typeof(TDomain) == typeof(EdgeMask) || typeof(TDomain).IsSubclassOf(typeof(EdgeMask))) {
+                em = g.iGeomEdges.GetEdges4RefElement(E);
+            } else if(typeof(TDomain) == typeof(CellMask) || typeof(TDomain).IsSubclassOf(typeof(CellMask))) {
+                em = g.iGeomCells.GetCells4Refelement(E);
+            } else {
                 throw new NotImplementedException();
+            }
 
+            if(em.MaskType != MaskType.Geometrical)
+                throw new ApplicationException();
 
             return ((TDomain)(em));
         }
@@ -317,7 +321,6 @@ namespace BoSSS.Foundation.Quadrature {
                      currentRule.Where(w => (w.Rule.Nodes.IsLocked == false)).Count() <= 0,
                      "error in quadrature rule creation: factory delivered some rule non-locked node set.");
 
-
                 Debug.Assert(
                     currentRule.Where(w => (w.Rule.NoOfNodes <= 0)).Count() <= 0,
                     "error in quadrature rule creation: factory delivered some rule with zero nodes.");
@@ -348,8 +351,6 @@ namespace BoSSS.Foundation.Quadrature {
                         }
                     }
                 }
-
-               
             }
 
             //// Check removed since there are situations where it is valid _not_
@@ -838,50 +839,4 @@ namespace BoSSS.Foundation.Quadrature {
         }
     }
 
-
-    /// <summary>
-    /// quadrature scheme for the <see cref="DoubleEdgeQuadrature"/>-class.
-    /// </summary>
-    public sealed class DoubleEdgeQuadratureScheme : QuadratureScheme<DoubleEdgeQuadRule, EdgeMask> {
-
-
-        /// <summary>
-        /// Constructs an empty quadrature scheme.
-        /// </summary>
-        /// <param name="domain">
-        /// Background domain.
-        /// </param>
-        /// <param name="UseDefaultFactories">
-        /// if true, quadrature rule factories for default (Gaussian) rules will be added for the domain <paramref name="domain"/>;
-        /// if false, the user must add factories for all items in the domain.
-        /// </param>
-        public DoubleEdgeQuadratureScheme(bool UseDefaultFactories, EdgeMask domain = null)
-            : base(UseDefaultFactories, domain) {
-        }
-
-        /// <summary>
-        /// Convenience constructor that allows for the construction of a
-        /// scheme with a predefined factory. Equivalent to creating an empty
-        /// scheme and calling
-        /// <see cref="QuadratureScheme{S, T}.AddFactoryDomainPair"/>(<paramref name="factory"/>, <paramref name="domain"/>).
-        /// </summary>
-        public DoubleEdgeQuadratureScheme(IQuadRuleFactory<DoubleEdgeQuadRule> factory, EdgeMask domain = null)
-            : base(false, domain) {
-            AddFactoryDomainPair(factory, domain);
-        }
-
-        /// <summary>
-        /// all edges of the grid.
-        /// </summary>
-        protected override EdgeMask GetDefaultDomain(IGridData gridData) {
-            return EdgeMask.GetFullMask(gridData);
-        }
-
-        /// <summary>
-        /// returns a <see cref="StandardDoubleEdgeRuleFactory"/>-object.
-        /// </summary>
-        protected override IQuadRuleFactory<DoubleEdgeQuadRule> GetDefaultRuleFactory(IGridData gridData, RefElement elem) {
-            return new StandardDoubleEdgeRuleFactory(gridData, elem);
-        }
-    }
 }

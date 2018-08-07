@@ -40,8 +40,11 @@ namespace BoSSS.Foundation.Grid {
         /// a "true" entry for all edges in grid <paramref name="grddat"/> that should be in the mask;
         /// The length of this array must not exceed <see cref="GridData.EdgeData.Count"/>
         /// </param>
-        public EdgeMask(IGridData grddat, BitArray mask) :
-            base(grddat, mask) {
+        /// <param name="mt">
+        /// <see cref="ExecutionMask.MaskType"/>
+        /// </param>
+        public EdgeMask(IGridData grddat, BitArray mask, MaskType mt = MaskType.Logical) :
+            base(grddat, mask, mt) {
             if (mask.Length != grddat.iLogicalEdges.Count)
                 throw new ArgumentException();
         }
@@ -79,22 +82,22 @@ namespace BoSSS.Foundation.Grid {
         /// </summary>
         /// <param name="grddat"></param>
         /// <param name="GeomSelector">
-        /// Retuns true, if the edge with given center coordinate should be in the mask, otherwise false.
+        /// Returns true, if the edge with given center coordinate should be in the mask, otherwise false.
         /// </param>
-        public EdgeMask(IGridData grddat, Func<double[], bool> GeomSelector) :
-            base(grddat, MaskFromSelector(grddat, GeomSelector)) {
+        /// <param name="mt">
+        /// <see cref="ExecutionMask.MaskType"/>
+        /// </param>
+        public EdgeMask(IGridData grddat, Func<double[], bool> GeomSelector, MaskType mt = MaskType.Logical) :
+            base(grddat, MaskFromSelector(grddat, GeomSelector), mt) {
         }
 
 
         /// <summary>
         /// ctor
         /// </summary>
-        public EdgeMask(IGridData grddat, int[] Sequence) :
-            base(grddat, Sequence) {
+        public EdgeMask(IGridData grddat, int[] Sequence, MaskType mt = MaskType.Logical) :
+            base(grddat, Sequence, mt) {
         }
-
-        
-
 
         /// <summary>
         /// compiles an edge mask from a set of chunks
@@ -106,7 +109,7 @@ namespace BoSSS.Foundation.Grid {
         /// the grid that this mask will be associated with;
         /// </param>
         public EdgeMask(IGridData grddat, params Chunk[] parts)
-            : this(grddat, (IEnumerable<Chunk>)parts) {
+            : this(grddat, (IEnumerable<Chunk>)parts, MaskType.Logical) {
         }
 
         /// <summary>
@@ -116,7 +119,7 @@ namespace BoSSS.Foundation.Grid {
         /// <param name="gridData"></param>
         /// <param name="edgeTagName"></param>
         public EdgeMask(IGridData gridData, string edgeTagName)
-            : this(gridData, GetBitMaskForEdgeTag(gridData, edgeTagName)) {
+            : this(gridData, GetBitMaskForEdgeTag(gridData, edgeTagName), MaskType.Logical) {
         }
 
         /// <summary>
@@ -128,8 +131,11 @@ namespace BoSSS.Foundation.Grid {
         /// <param name="grddat">
         /// the grid that this mask will be associated with;
         /// </param>
-        protected EdgeMask(IGridData grddat, IEnumerable<Chunk> Parts)
-            : this(grddat, FromChunkEnum(Parts)) {
+        /// <param name="mt">
+        /// <see cref="ExecutionMask.MaskType"/>
+        /// </param>
+        protected EdgeMask(IGridData grddat, IEnumerable<Chunk> Parts, MaskType mt = MaskType.Logical)
+            : this(grddat, FromChunkEnum(Parts), mt) {
         }
 
         /// <summary>
@@ -138,9 +144,12 @@ namespace BoSSS.Foundation.Grid {
         /// <param name="grdDat">
         /// grid that the returned mask will be assigned to
         /// </param>
-        static public EdgeMask GetEmptyMask(IGridData grdDat) {
+        /// <param name="mt">
+        /// <see cref="ExecutionMask.MaskType"/>
+        /// </param>
+        static public EdgeMask GetEmptyMask(IGridData grdDat, MaskType mt = MaskType.Logical) {
             BitArray ba = new BitArray(grdDat.iLogicalEdges.Count, false);
-            return new EdgeMask(grdDat, ba);
+            return new EdgeMask(grdDat, ba, mt);
         }
 
         /// <summary>
@@ -168,14 +177,15 @@ namespace BoSSS.Foundation.Grid {
         /// <summary>
         /// like ctor;
         /// </summary>
-        protected override ExecutionMask CreateInstance(IGridData grdDat, BitArray mask) {
-            return new EdgeMask(grdDat, mask);
+        protected override ExecutionMask CreateInstance(BitArray mask, MaskType mt) {
+            return new EdgeMask(base.GridData, mask, mt);
         }
 
         /// <summary>
         /// see <see cref="ExecutionMask.GetTotalNumberOfElements"/>
         /// </summary>
         protected override int GetTotalNumberOfElements(IGridData gridData) {
+
             return gridData.iLogicalEdges.Count;
         }
 
@@ -183,7 +193,9 @@ namespace BoSSS.Foundation.Grid {
         /// <summary>
         /// computes a cell mask that contains all cells with an edge in this edge mask
         /// </summary>
-        public CellMask GetAdjacentCells(Grid.Classic.GridData gridData) {
+        public CellMask GetAdjacentCells() {
+            var gridData = (Grid.Classic.GridData)(base.GridData);
+
             int J = gridData.Cells.NoOfLocalUpdatedCells;
             int[,] AllEdges = gridData.Edges.CellIndices;
             BitArray mask = new BitArray(J);
@@ -202,14 +214,16 @@ namespace BoSSS.Foundation.Grid {
                 }
             }
 
-            return new CellMask(gridData, mask);
+            return new CellMask(gridData, mask, MaskType.Logical);
         }
 
         /// <summary>
         /// a cell is in the returned cell mask if
         /// it is a neighbor cell of this edge mask and if it is also neighbor of <paramref name="X"/>
         /// </summary>
-        public CellMask GetAdjacentCellsCond(Grid.Classic.GridData gridData, CellMask X) {
+        public CellMask GetAdjacentCellsCond(CellMask X) {
+            var gridData = (Grid.Classic.GridData)(base.GridData);
+
             int J = gridData.Cells.NoOfLocalUpdatedCells;
             int[,] AllEdges = gridData.Edges.CellIndices;
             BitArray mask = new BitArray(J);
@@ -235,7 +249,7 @@ namespace BoSSS.Foundation.Grid {
                 }
             }
 
-            return new CellMask(gridData, mask);
+            return new CellMask(gridData, mask, MaskType.Logical);
 
         }
 
@@ -338,5 +352,35 @@ namespace BoSSS.Foundation.Grid {
 
             return maskArray;
         }
+
+
+        /// <summary>
+        /// Converts this  
+        /// from a logical (<see cref="IGridData.iLogicalEdges"/>) mask
+        /// to a geometrical (<see cref="IGridData.iGeomEdges"/>) mask.
+        /// </summary>
+        /// <returns></returns>
+        public EdgeMask ToGeometicalMask() {
+            if(base.MaskType != MaskType.Logical)
+                throw new NotSupportedException();
+
+            if(base.GridData is Grid.Classic.GridData) 
+                // logical and geometrical cells are identical - return a clone of this mask
+                return new EdgeMask(base.GridData, base.Sequence, MaskType.Geometrical);
+
+            int Jg = GridData.iGeomEdges.Count;
+            int[][] jl2jg = GridData.iLogicalEdges.EdgeToParts;
+            BitArray ba = new BitArray(Jg);
+            foreach(Chunk c in this) { // loop over chunks of logical edges...
+                for(int jl = 0; jl < c.JE; jl++) { // loop over edges in chunk...
+                    foreach(int jg in jl2jg[jl]) { // loop over geometrical edges in logical cell 'jl'...
+                        ba[jg] = true;
+                    }
+                }
+            }
+
+            return new EdgeMask(base.GridData, ba, MaskType.Geometrical);
+        }
+
     }
 }

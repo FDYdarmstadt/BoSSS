@@ -102,6 +102,10 @@ namespace BoSSS.Foundation.Grid.Voronoi {
                 throw new NotImplementedException();
             }
 
+            public EdgeMask GetEdges4RefElement(RefElement Kref) {
+                throw new NotImplementedException();
+            }
+
             public int[][] VertexIndices {
                 get;
                 internal set;

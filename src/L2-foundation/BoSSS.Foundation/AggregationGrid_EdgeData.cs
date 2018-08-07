@@ -128,6 +128,10 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 }
             }
 
+            public EdgeMask GetEdges4RefElement(RefElement Kref) {
+                throw new NotImplementedException();
+            }
+
             public void GetNormalsForCell(NodeSet Nodes, int jCell, int iFace, MultidimensionalArray NormalsOut) {
                 m_Owner.ParentGrid.iGeomEdges.GetNormalsForCell(Nodes, jCell, iFace, NormalsOut);
             }
@@ -143,6 +147,8 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             public bool IsEdgeAffineLinear(int e) {
                 return m_Owner.ParentGrid.iGeomEdges.IsEdgeAffineLinear(e);
             }
+
+
         }
 
         class LogEdgeData : ILogicalEdgeData {
