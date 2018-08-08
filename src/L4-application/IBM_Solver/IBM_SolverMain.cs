@@ -80,7 +80,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// <summary>
         /// Level-Set tracker
         /// </summary>
-        [LevelSetTracker("-:A +:B", 1)]
+        [LevelSetTracker("-:A +:B", 2)]
         public LevelSetTracker LevsetTracker;
 
         /// <summary>
@@ -1238,8 +1238,8 @@ namespace BoSSS.Application.IBM_Solver {
                 if (LevSetCells.Contains(j))
                     DesiredLevel_j = 1;
             } else {
-                if (LevSetCells.Contains(j) || LevSetNeighbours.Contains(j))
-                    DesiredLevel_j = 1;
+                if (LevSetCells.Contains(j)) {  
+                    DesiredLevel_j = 2; }else if (LevSetNeighbours.Contains(j)) { DesiredLevel_j = 1; }
             }
 
             return DesiredLevel_j;
@@ -1258,15 +1258,15 @@ namespace BoSSS.Application.IBM_Solver {
                 // Check grid changes
                 // ==================
 
-                CellMask CutCells = LsTrk.Regions.GetCutCellMask();
-                //CellMask CutCellNeighbors = LsTrk.Regions.GetNearFieldMask(1);
+                //CellMask CutCells = LsTrk.Regions.GetCutCellMask();
+                CellMask CutCellNeighbors = LsTrk.Regions.GetNearFieldMask(1);
                 //var CutCellArray = CutCells.ItemEnum.ToArray();
                 //var CutCellNeighborsArray = CutCellNeighbors.ItemEnum.ToArray();
                 //var AllCells = CutCellArray.Concat(CutCellNeighborsArray).ToArray();
                 //var NoCoarseningcells = new CellMask(this.GridData, AllCells);
 
                 // Only CutCells are NoCoarseningCells 
-                bool AnyChange = GridRefinementController.ComputeGridChange(this.GridData, CutCells, LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+                bool AnyChange = GridRefinementController.ComputeGridChange(this.GridData, CutCellNeighbors, LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
                 int NoOfCellsToRefine = 0;
                 int NoOfCellsToCoarsen = 0;
                 if (AnyChange) {
