@@ -100,8 +100,24 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 m_Owner.ParentGrid.iGeomCells.GetCellBoundingBox(j, bb);
             }
 
+
+            CellMask[] m_Cells4Refelement;
+
             public CellMask GetCells4Refelement(RefElement Kref) {
-                throw new NotImplementedException();
+                int iKref = Array.IndexOf(this.RefElements, Kref);
+
+                if (m_Cells4Refelement == null) {
+                    m_Cells4Refelement = new CellMask[this.RefElements.Length];
+                }
+
+                if(m_Cells4Refelement[iKref] == null) { 
+                    var OrgMsk = m_Owner.ParentGrid.iGeomCells.GetCells4Refelement(Kref);
+                    Debug.Assert(OrgMsk.MaskType == MaskType.Geometrical);
+                    Debug.Assert(object.ReferenceEquals(OrgMsk.GridData, m_Owner.ParentGrid));
+
+                    m_Cells4Refelement[iKref] = new CellMask(m_Owner, OrgMsk, MaskType.Geometrical);
+                }
+                return m_Cells4Refelement[iKref];
             }
 
             public CellType GetCellType(int jCell) {

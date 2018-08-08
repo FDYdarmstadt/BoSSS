@@ -48,7 +48,7 @@ namespace BoSSS.Foundation.Grid {
         /// </param>
         public CellMask(IGridData grddat, BitArray mask, MaskType mt = MaskType.Logical) :
             base(grddat, mask, mt) {
-            if (mask.Length != grddat.iLogicalCells.NoOfLocalUpdatedCells)
+            if (mask.Length != this.GetTotalNumberOfElements(grddat))
                 throw new ArgumentException();
         }
         
@@ -91,7 +91,7 @@ namespace BoSSS.Foundation.Grid {
         /// <param name="mt">
         /// <see cref="ExecutionMask.MaskType"/>
         /// </param>
-        protected CellMask(IGridData grddat, IEnumerable<Chunk> Parts, MaskType mt = MaskType.Logical)
+        public CellMask(IGridData grddat, IEnumerable<Chunk> Parts, MaskType mt = MaskType.Logical)
             : this(grddat, FromChunkEnum(Parts), mt)
         { }
 
@@ -116,12 +116,16 @@ namespace BoSSS.Foundation.Grid {
         /// Grid data that the returned mask will be assigned with
         /// </param>
         /// <returns>A full mask</returns>
-        public static CellMask GetFullMask(IGridData gridDat) {
-            return new CellMask(gridDat, new Chunk
-            {
-                i0 = 0,
-                Len = gridDat.iLogicalCells.NoOfLocalUpdatedCells
-            });
+        /// <param name="mt">
+        /// <see cref="ExecutionMask.MaskType"/>
+        /// </param>
+        public static CellMask GetFullMask(IGridData gridDat, MaskType mt = MaskType.Logical) {
+            return new CellMask(gridDat, 
+                new[] { new Chunk {
+                    i0 = 0,
+                    Len = gridDat.iLogicalCells.NoOfLocalUpdatedCells
+                } },
+                mt);
         }
 
         /// <summary>

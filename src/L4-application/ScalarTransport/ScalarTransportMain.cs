@@ -150,7 +150,7 @@ namespace BoSSS.Application.ScalarTransport {
                                    diffOp,
                                    u.Mapping, Velocity.Mapping);
 
-            Solution.Multigrid.AggregationGridBasis.CreateSequence(this.MultigridSequence, u.Mapping.BasisS);
+            //Solution.Multigrid.AggregationGridBasis.CreateSequence(this.MultigridSequence, u.Mapping.BasisS);
 
 
             //Timestepper = new ROCK4(diffOp, u.CoordinateVector, Velocity.Mapping);

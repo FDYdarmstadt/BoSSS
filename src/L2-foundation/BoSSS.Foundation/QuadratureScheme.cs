@@ -236,6 +236,7 @@ namespace BoSSS.Foundation.Quadrature {
 
             // set domain
             TDomain baseDomain = Domain ?? GetDefaultDomain(gridData);
+            Debug.Assert(baseDomain.MaskType == MaskType.Geometrical);
 
             // identify the reference elements
             // ===============================
@@ -673,7 +674,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// A mask containing all cells of the grid.
         /// </returns>
         protected override CellMask GetDefaultDomain(IGridData gridData) {
-            var ret = CellMask.GetFullMask(gridData);
+            var ret = CellMask.GetFullMask(gridData, MaskType.Geometrical);
             return ret;
         }
 
