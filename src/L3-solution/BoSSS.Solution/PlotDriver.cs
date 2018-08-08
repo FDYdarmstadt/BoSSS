@@ -57,9 +57,9 @@ namespace BoSSS.Solution {
         /// </param>
         /// <param name="__sgrd">
         /// </param>
-        protected PlotDriver(GridData context, bool showJumps, bool showGhostCells, uint superSampling, SubGrid __sgrd) {
+        protected PlotDriver(IGridData context, bool showJumps, bool showGhostCells, uint superSampling, SubGrid __sgrd) {
 
-            var RefElms = context.Grid.RefElements;
+            var RefElms = context.iGeomCells.RefElements;
             ZoneDrivers = new ZoneDriver[RefElms.Length];
             for (int iKref = 0; iKref < RefElms.Length; iKref++) {
                 SubGrid ZoneSgrd;
@@ -83,12 +83,12 @@ namespace BoSSS.Solution {
         /// <summary>
         /// %
         /// </summary>
-        protected GridData gridData;
+        protected IGridData gridData;
 
         /// <summary>
         /// %
         /// </summary>
-        abstract protected ZoneDriver CreateZoneDriver(GridData context, int iKref, bool showJumps, bool showGhostCells, uint superSampling, SubGrid __sgrd);
+        abstract protected ZoneDriver CreateZoneDriver(IGridData context, int iKref, bool showJumps, bool showGhostCells, uint superSampling, SubGrid __sgrd);
 
         /// <summary>
         /// index: correlates with reference element index

@@ -34,21 +34,21 @@ namespace BoSSS.Solution.Tecplot {
         /// <summary>
         /// see <see cref="PlotDriver.PlotDriver"/>.
         /// </summary>
-        public Tecplot(GridData context, uint superSampling)
+        public Tecplot(IGridData context, uint superSampling)
             : base(context, true, false, superSampling, null) {
         }
 
         /// <summary>
         /// see <see cref="PlotDriver.PlotDriver"/>.
         /// </summary>
-        public Tecplot(GridData context, bool showJumps, bool ghostZone, uint superSampling, SubGrid sgrd = null)
+        public Tecplot(IGridData context, bool showJumps, bool ghostZone, uint superSampling, SubGrid sgrd = null)
             : base(context, showJumps, ghostZone, superSampling, sgrd) {
         }
 
         /// <summary>
         /// creates a zone driver for Tecplot;
         /// </summary>
-        protected override PlotDriver.ZoneDriver CreateZoneDriver(GridData context, int iKref, bool showJumps, bool showGhostCells, uint superSampling, SubGrid __sgrd) {
+        protected override PlotDriver.ZoneDriver CreateZoneDriver(IGridData context, int iKref, bool showJumps, bool showGhostCells, uint superSampling, SubGrid __sgrd) {
             return new TecplotZone(context, iKref, showJumps, showGhostCells, superSampling, __sgrd);
         }
 
