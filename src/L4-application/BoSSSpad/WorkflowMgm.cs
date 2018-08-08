@@ -35,7 +35,7 @@ namespace BoSSS.Application.BoSSSpad {
     /// <summary>
     /// Workflow management.
     /// </summary>
-    public class WorkflowMgm {
+    public partial class WorkflowMgm {
 
         /// <summary>
         /// Not intended for user interaction.
@@ -193,6 +193,8 @@ namespace BoSSS.Application.BoSSSpad {
                 return m_AdditionalSessionTableColums;
             }
         }
+
+        
 
 
 

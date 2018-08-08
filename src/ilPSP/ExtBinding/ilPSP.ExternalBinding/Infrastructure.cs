@@ -43,7 +43,7 @@ namespace ilPSP.ExternalBinding
 		*/
 		
 		/// <summary>
-		/// all objects; in future, maybe a smarter thing than an infinitly growing list should be used
+		/// all objects; in future, maybe a smarter thing than an infinity growing list should be used
 		/// </summary>
 		private static List<object> objects = new List<object>();
 		

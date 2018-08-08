@@ -1177,7 +1177,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
         }
 
         /// <summary>
-        /// One node of a subdivision tree, as provided b< <see cref="GetSubdivisionTree(int)"/>
+        /// One node of a subdivision tree, as provided by <see cref="GetSubdivisionTree(int)"/>
         /// </summary>
         public class SubdivisionTreeNode {
 

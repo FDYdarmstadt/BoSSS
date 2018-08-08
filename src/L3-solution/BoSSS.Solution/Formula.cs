@@ -63,7 +63,7 @@ namespace BoSSS.Solution.Control {
         /// <param name="TimeDep">
         /// Whether the function is time dependent or no, see <paramref name="TimeDep"/>.
         /// </param>
-        public Formula(string code, bool TimeDep, string AdditionalPrefixCode = "") {
+        public Formula(string code, bool TimeDep = false, string AdditionalPrefixCode = "") {
             m_Code = code;
             m_TimeDep = TimeDep;
             m_AdditionalPrefixCode = AdditionalPrefixCode;

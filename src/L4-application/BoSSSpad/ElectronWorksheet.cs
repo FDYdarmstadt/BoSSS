@@ -14,7 +14,6 @@ namespace BoSSS.Application.BoSSSpad{
     /// Singleton class; 
     /// </summary>
     public sealed class ElectronWorksheet {
-        Document document;
 
         private static readonly ElectronWorksheet instance = new ElectronWorksheet();
 
@@ -29,6 +28,7 @@ namespace BoSSS.Application.BoSSSpad{
                 Utils.GetBoSSSInstallDir(),
                 out bool mpiInitialized
             );
+
         }
 
         public static ElectronWorksheet Instance {
@@ -39,6 +39,7 @@ namespace BoSSS.Application.BoSSSpad{
 
         public Tuple<string, string> RunCommand(string command) {
 
+            
             Document.Tuple singleCommandAndResult = new Document.Tuple {
                 Command = command
             };
@@ -50,7 +51,8 @@ namespace BoSSS.Application.BoSSSpad{
             {
                 Byte[] result = null;
                 System.Drawing.Image img = (System.Drawing.Image)singleCommandAndResult.Result;
-                using (System.IO.MemoryStream ms = new System.IO.MemoryStream()) {
+                using (System.IO.MemoryStream ms = new System.IO.MemoryStream())
+                {
                     img.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
                     result = ms.ToArray();
                     base64Result = Convert.ToBase64String(result);
@@ -59,15 +61,16 @@ namespace BoSSS.Application.BoSSSpad{
             
             return new Tuple<string, string>(
                 singleCommandAndResult.InterpreterTextOutput,
-                base64Result
-                );
+                base64Result);
         }
 
         public void Save(string path, string[] commands, string[] results) {
             //build document 
-            document = new Document();
-            for (int i = 0; i < commands.Length; ++i) {
-                Document.Tuple commandBox = new Document.Tuple() {
+            Document document = new Document();
+            for (int i = 0; i < commands.Length; ++i)
+            {
+                Document.Tuple commandBox = new Document.Tuple()
+                {
                     Command = commands[i],
                     InterpreterTextOutput = results[i]
                 };
@@ -80,7 +83,7 @@ namespace BoSSS.Application.BoSSSpad{
 
         public Tuple<string[], string[]> Load(string path){
 
-            document = Document.Deserialize(path);
+            Document document = Document.Deserialize(path);
             int numberOfBoxes = document.CommandAndResult.Count;
             string[] commands = new string[numberOfBoxes];
             string[] results = new string[numberOfBoxes];

@@ -32,7 +32,7 @@ namespace ilPSP.ExternalBinding {
 		static bool mustFinalizeMPI;
 		
 		public static void ilPSPInitialize() {
-            Enviroment.Bootstrap(new string[0], out mustFinalizeMPI);
+            ilPSP.Environment.Bootstrap(new string[0], out mustFinalizeMPI);
 			//Console.WriteLine("elo from " +  Enviroment.MPIEnv.MPI_Rank + " of " + Enviroment.MPIEnv.MPI_Size);
 		}
 		
@@ -66,7 +66,7 @@ namespace ilPSP.ExternalBinding {
 			i0 = -1;
 			try {
 				ISparseMatrix M = (ISparseMatrix) Infrastructure.GetObject(_ref);
-				i0 = (int) M.RowPartition.i0;
+				i0 = (int) M.RowPartitioning.i0;
 			} catch (Exception e) {
 				ierr = Infrastructure.ErrorHandler(e);
 			}
@@ -77,7 +77,7 @@ namespace ilPSP.ExternalBinding {
 			LocLen = -1;
 			try {
 				ISparseMatrix M = (ISparseMatrix) Infrastructure.GetObject(_ref);
-				LocLen = M.RowPartition.LocalLength;
+				LocLen = M.RowPartitioning.LocalLength;
 			} catch (Exception e) {
 				ierr = Infrastructure.ErrorHandler(e);
 			}
@@ -88,7 +88,7 @@ namespace ilPSP.ExternalBinding {
 			PartRef = -1;
 			try {
 				ISparseMatrix M = (ISparseMatrix) Infrastructure.GetObject(MtxRef);
-				PartRef = Infrastructure.RegisterObject(M.RowPartition);
+				PartRef = Infrastructure.RegisterObject(M.RowPartitioning);
 			} catch (Exception e) {
 				ierr = Infrastructure.ErrorHandler(e);
 			}
@@ -100,7 +100,7 @@ namespace ilPSP.ExternalBinding {
 			ierr = 0;
 			i0 = -1;
 			try {
-				Partition p = (Partition) Infrastructure.GetObject(_ref);
+				IPartitioning p = (IPartitioning) Infrastructure.GetObject(_ref);
 				i0 = (int) p.i0;
 			} catch (Exception e) {
 				ierr = Infrastructure.ErrorHandler(e);
@@ -111,7 +111,7 @@ namespace ilPSP.ExternalBinding {
 			ierr = 0;
 			LocLen = -1;
 			try {
-				Partition p = (Partition) Infrastructure.GetObject(_ref);
+				IPartitioning p = (IPartitioning) Infrastructure.GetObject(_ref);
 				LocLen = (int) p.LocalLength;
 			} catch (Exception e) {
 				ierr = Infrastructure.ErrorHandler(e);
@@ -122,8 +122,8 @@ namespace ilPSP.ExternalBinding {
 			ierr = 0;
 			MPIrank = -1;
 			try {
-				Partition p = (Partition) Infrastructure.GetObject(_ref);
-				MPIrank = (int) p.Rank;
+				IPartitioning p = (IPartitioning) Infrastructure.GetObject(_ref);
+				MPIrank = (int) p.MpiRank;
 			} catch (Exception e) {
 				ierr = Infrastructure.ErrorHandler(e);
 			}
@@ -133,7 +133,7 @@ namespace ilPSP.ExternalBinding {
 			ierr = 0;
 			MPIsize = -1;
 			try {
-				Partition p = (Partition) Infrastructure.GetObject(_ref);
+				IPartitioning p = (IPartitioning) Infrastructure.GetObject(_ref);
 				MPIsize = (int) p.Size;
 			} catch (Exception e) {
 				ierr = Infrastructure.ErrorHandler(e);

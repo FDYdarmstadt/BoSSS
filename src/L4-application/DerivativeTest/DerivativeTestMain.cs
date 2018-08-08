@@ -160,7 +160,7 @@ namespace BoSSS.Application.DerivativeTest {
                 p = new DerivativeTestMain();
                 return p;
             });
-
+            
             Assert.IsTrue(p.m_passed);
         }
 

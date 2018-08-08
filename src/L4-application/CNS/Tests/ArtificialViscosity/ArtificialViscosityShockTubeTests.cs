@@ -236,7 +236,7 @@ namespace CNS.Tests.ArtificialViscosity {
                 return grid;
             };
 
-            c.AddBoundaryCondition("AdiabaticSlipWall");
+            c.AddBoundaryValue("AdiabaticSlipWall");
 
             Material material = new Material(c);
             StateVector stateLeft = StateVector.FromPrimitiveQuantities(

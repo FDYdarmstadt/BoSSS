@@ -244,7 +244,7 @@ namespace BoSSS.Solution.Utils {
                 foreach (TimeStepConstraint constraint in timeStepConstraints) {
                     result.Add(constraint.GetLocalStepSize(localCellIndex, 1));
                 }
-                if (result.All(c => c == double.MaxValue)) {
+                if (result.All(c => c == double.MaxValue)) {                    // For IBM source cells: All timeStepConstraints return double.MaxValue --> No influence on clustering
                     cellMetric[subGridCell] = double.MaxValue;
                 } else {
                     cellMetric[subGridCell] = 1.0 / result.Sum(c => 1.0 / c);  // cell metric based on harmonic sum of time step constraints

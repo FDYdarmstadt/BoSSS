@@ -243,7 +243,7 @@ namespace ilPSP.LinSolvers.MUMPS {
 
                 // corresponds to the maximum size of the working memory in MegaBytes that MUMPS can allocate per working processor
                 if (rank == 0) {
-                   // mumps_par.icntl[22] = 10000;
+                    //mumps_par.icntl[22] = 10000;
                     //Console.WriteLine("Estimated memory needed for factorization over all processes: " + mumps_par.infog[16]);
                 }
 
