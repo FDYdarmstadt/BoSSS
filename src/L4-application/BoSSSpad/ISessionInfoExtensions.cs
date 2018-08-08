@@ -1362,10 +1362,10 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
-        /// Filters all sessions which carry the <see cref="BoSSS.Solution.Application{T}.NOT_TERMINATED_TAG"/>-tag.
+        /// Filters all sessions which carry the <see cref="SessionInfo.NOT_TERMINATED_TAG"/>-tag.
         /// </summary>
         public static IEnumerable<ISessionInfo> RunningOrCrashed(this IEnumerable<ISessionInfo> sessions) {
-            return sessions.Where(S => S.Tags.Contains(BoSSS.Solution.Application.NOT_TERMINATED_TAG)).ToArray();
+            return sessions.Where(S => S.Tags.Contains(SessionInfo.NOT_TERMINATED_TAG)).ToArray();
         }
 
         /// <summary>

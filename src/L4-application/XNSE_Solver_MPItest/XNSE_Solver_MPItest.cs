@@ -339,11 +339,11 @@ namespace BoSSS.Application.XNSE_Solver {
             // ===================
             #region BC
 
-            C.AddBoundaryCondition("wall_lower");
-            C.AddBoundaryCondition("wall_upper");
+            C.AddBoundaryValue("wall_lower");
+            C.AddBoundaryValue("wall_upper");
 
 
-            C.AddBoundaryCondition("wall_lower", VariableNames.LevelSet, PhiFunc);
+            C.AddBoundaryValue("wall_lower", VariableNames.LevelSet, PhiFunc);
 
             #endregion
 

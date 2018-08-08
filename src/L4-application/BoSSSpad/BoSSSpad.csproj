@@ -114,6 +114,7 @@
     <Compile Include="BatchProcessorClient.cs" />
     <Compile Include="DatabaseUtils.cs" />
     <Compile Include="DGFieldExtensions.cs" />
+    <Compile Include="DGField_Arithmetic.cs" />
     <Compile Include="Document.cs" />
     <Compile Include="ElectronWorksheet.cs" />
     <Compile Include="ExportInstruction.cs" />
@@ -150,6 +151,7 @@
     <Compile Include="SafeEvaluator.cs" />
     <Compile Include="SessionExportInstruction.cs" />
     <Compile Include="SlurmClient.cs" />
+    <Compile Include="SpatialConvergence.cs" />
     <Compile Include="TableExtensions.cs" />
     <Compile Include="TypeExtensions.cs" />
     <Compile Include="Plot2Ddata.cs" />

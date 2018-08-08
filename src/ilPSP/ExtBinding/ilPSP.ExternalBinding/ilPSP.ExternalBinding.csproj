@@ -1,5 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -9,7 +9,8 @@
     <OutputType>Library</OutputType>
     <RootNamespace>ilPSP.ExternalBinding</RootNamespace>
     <AssemblyName>ilPSP.ExternalBinding</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -21,6 +22,7 @@
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>none</DebugType>
@@ -30,6 +32,7 @@
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <ConsolePause>false</ConsolePause>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -50,7 +53,7 @@
       <Project>{DD9BF776-38CA-4FC9-8F42-5ED700BDE7AD}</Project>
       <Name>MPI.Wrappers</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\layer_1.2-ilPSP\ilPSP.LinSolvers.SolverFactory\ilPSP.LinSolvers.SolverFactory.csproj">
+    <ProjectReference Include="..\..\layer_1.2-ilPSP\ilPSP.LinSolvers\ilPSP.LinSolvers.csproj">
       <Project>{45EFF2BD-0BCC-4AEA-9E87-7D86D6423B0C}</Project>
       <Name>ilPSP.LinSolvers.SolverFactory</Name>
     </ProjectReference>

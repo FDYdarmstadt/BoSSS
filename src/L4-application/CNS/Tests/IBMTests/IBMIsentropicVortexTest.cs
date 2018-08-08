@@ -310,10 +310,10 @@ namespace CNS.Tests.IBMTests {
 
             c.LevelSetFunction = (X, t) => X[1] - levelSetPosition;
 
-            c.AddBoundaryCondition("supersonicInlet", Variables.Density, solution.rho());
-            c.AddBoundaryCondition("supersonicInlet", Variables.Velocity[0], solution.u());
-            c.AddBoundaryCondition("supersonicInlet", Variables.Velocity[1], solution.v());
-            c.AddBoundaryCondition("supersonicInlet", Variables.Pressure, solution.p());
+            c.AddBoundaryValue("supersonicInlet", Variables.Density, solution.rho());
+            c.AddBoundaryValue("supersonicInlet", Variables.Velocity[0], solution.u());
+            c.AddBoundaryValue("supersonicInlet", Variables.Velocity[1], solution.v());
+            c.AddBoundaryValue("supersonicInlet", Variables.Pressure, solution.p());
 
             c.Queries.Add("L2ErrorDensity", IBMQueries.L2Error(Variables.Density, solution.rho()));
             c.Queries.Add("L2ErrorPressure", IBMQueries.L2Error(state => state.Pressure, solution.p()));
@@ -379,10 +379,10 @@ namespace CNS.Tests.IBMTests {
             }
 
 
-            c.AddBoundaryCondition("supersonicInlet", Variables.Density, solution.rho());
-            c.AddBoundaryCondition("supersonicInlet", Variables.Velocity[0], solution.u());
-            c.AddBoundaryCondition("supersonicInlet", Variables.Velocity[1], solution.v());
-            c.AddBoundaryCondition("supersonicInlet", Variables.Pressure, solution.p());
+            c.AddBoundaryValue("supersonicInlet", Variables.Density, solution.rho());
+            c.AddBoundaryValue("supersonicInlet", Variables.Velocity[0], solution.u());
+            c.AddBoundaryValue("supersonicInlet", Variables.Velocity[1], solution.v());
+            c.AddBoundaryValue("supersonicInlet", Variables.Pressure, solution.p());
 
             c.Queries.Add("L2ErrorDensity", IBMQueries.L2Error(Variables.Density, solution.rho()));
             c.Queries.Add("L2ErrorPressure", IBMQueries.L2Error(state => state.Pressure, solution.p()));

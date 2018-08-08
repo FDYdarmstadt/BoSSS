@@ -91,13 +91,16 @@ namespace CNS.ShockCapturing {
                         SpeciesId species = ibmMap.Tracker.GetSpeciesId(ibmMap.Control.FluidSpeciesName);
                         MultidimensionalArray hminCut = ibmMap.CellAgglomeration.CellLengthScales[species];
 
-                        CellMask cutCellsThatAreNotSourceCells = ibmMap.Tracker.Regions.GetCutCellMask().Except(ibmMap.Agglomerator.AggInfo.SourceCells);
+                        //ibmMap.Agglomerator.AggInfo.SourceCells
 
-                        for (int i = 0; i < Length; i++) {
+                        // cutCellsThatAreNotSourceCells = 
+                        //    ibmMap.Tracker.Regions.GetCutCellMask().Except(ibmMap.Agglomerator.AggInfo.SourceCells);
+
+                        for (int i = 0; i < Length; i++) { // loop over cells...
                             int cell = i0 + i;
 
                             double hminLocal = double.NaN;
-                            if (cutCellsThatAreNotSourceCells.ItemEnum.Contains(cell)) {
+                            if (ibmMap.cutCellsThatAreNotSourceCells[cell]) {
                                 hminLocal = hminCut[cell];
                             } else {
                                 hminLocal = hmin[cell];
