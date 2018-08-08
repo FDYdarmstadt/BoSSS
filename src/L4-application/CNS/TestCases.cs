@@ -986,13 +986,13 @@ namespace CNS {
         /// <summary>
         /// Version to be submitted on the FDY HPC cluster
         /// </summary>
-        public static IBMControl IBMDoubleMachReflection(string dbPath = null, int savePeriod = 1, int dgDegree = 2, int numOfCellsX = 300, int numOfCellsY = 200, double sensorLimit = 1e-4, double dtFixed = 0.0, double CFLFraction = 0.3, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 3, int reclusteringInterval = 10, int maxNumOfSubSteps = 10, double agg = 0.3, double fugdeFactor = 0.5, double endTime = 0.2, double kappa = 0.5, string restart = "False") {
+        public static IBMControl IBMDoubleMachReflection(string dbPath = null, int savePeriod = 1, int dgDegree = 3, int numOfCellsX = 300, int numOfCellsY = 200, double sensorLimit = 1e-4, double dtFixed = 0.0, double CFLFraction = 0.3, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 3, int reclusteringInterval = 10, int maxNumOfSubSteps = 10, double agg = 0.3, double fugdeFactor = 0.5, double endTime = 0.2, double kappa = 0.5, string restart = "False") {
             //System.Threading.Thread.Sleep(10000);
             //ilPSP.Environment.StdoutOnlyOnRank0 = true;
 
             IBMControl c = new IBMControl();
 
-            c.TracingNamespaces = "BoSSS";
+            //c.TracingNamespaces = "BoSSS";
 
             //dbPath = @"/work/scratch/ws35kire/work_db";                       // Lichtenberg
             //dbPath = @"/work/scratch/yp19ysog/bosss_db_paper_ibmdmr";          // Lichtenberg
@@ -1078,7 +1078,7 @@ namespace CNS {
             //c.DynamicLoadBalancing_On = true;
             //c.DynamicLoadBalancing_CellClassifier = new IBMCellClassifier();
             ////c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(IBMCellCostEstimator.GetMultiBalanceConstraintsBasedEstimators());
-            ////c.DynamicLoadBalancing_CellCostEstimatorFactories.Add((p, i) => new StaticCellCostEstimator(new[] { 7, 7, 1})); // HPC Cluster, 28 cores
+            ////c.DynamicLoadBalancing_CellCostEstimatorFactories.Add((p, i) => new StaticCellCostEstimator(new[] { 7, 7, 1 })); // HPC Cluster, 28 cores
             //c.DynamicLoadBalancing_CellCostEstimatorFactories.Add((p, i) => new StaticCellCostEstimator(new[] { 10, 10, 1 })); // Lichtenberg, 64 cores
             //c.DynamicLoadBalancing_ImbalanceThreshold = 0.1;
             //c.DynamicLoadBalancing_Period = int.MaxValue;
@@ -1218,7 +1218,7 @@ namespace CNS {
             c.dtMax = 1.0;
             c.Endtime = endTime;
             c.CFLFraction = CFLFraction;
-            c.NoOfTimesteps = 15;
+            c.NoOfTimesteps = int.MaxValue;
 
             c.ProjectName = "ibmdmr";
 
@@ -1252,11 +1252,11 @@ namespace CNS {
             // Lichtenberg
             //string dbPath = @"/home/yp19ysog/bosss_db_paper_ibmdmr2";
             string dbPath = @"/work/scratch/yp19ysog/bosss_db_paper_ibmdmr";
-            string restart = "True";
+            string restart = "False";
 
             IBMControl c = IBMDoubleMachReflection(dbPath, savePeriod, dgDegree, numOfCellsX, numOfCellsY, sensorLimit, dtFixed, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, agg, fugdeFactor, endTime, kappa, restart);
 
-            c.ProjectName = "paper_ibmdmr_restart1";
+            c.ProjectName = "paper_ibmdmr";
             //c.NoOfTimesteps = 10;
 
             return c;
