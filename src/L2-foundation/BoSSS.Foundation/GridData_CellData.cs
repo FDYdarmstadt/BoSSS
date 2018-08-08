@@ -128,7 +128,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         ba[j] = (this.GetRefElementIndex(j) == iKref);
                     }
 
-                    m_RefElementMask[iKref] = new CellMask(this.m_owner, ba);
+                    m_RefElementMask[iKref] = new CellMask(this.m_owner, ba, MaskType.Geometrical);
                 }
 
                 return m_RefElementMask[iKref];

@@ -272,6 +272,9 @@ namespace BoSSS.Solution.Multigrid {
         /// </returns>
         public static AggregationGridBasis[][] CreateSequence(IEnumerable<AggregationGrid> _agSeq, IEnumerable<Basis> dgBasisS) {
 
+            if (_agSeq.Count() <= 0)
+                return new AggregationGridBasis[0][];
+                    
             // check input
             // -----------
 

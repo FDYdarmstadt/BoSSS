@@ -446,7 +446,7 @@ namespace BoSSS.Foundation.XDG {
                     for (int iLevSet = 0; iLevSet < XDGSpaceMetrics.NoOfLevelSets; iLevSet++) { // loop over level sets...
                         EdgeMask cutEdges = this.GetCutEdges(Kref, iLevSet).Intersect(allRelevantEdges);
 #if DEBUG
-                        CellMask difference = cutEdges.GetAdjacentCells(XDGSpaceMetrics.GridDat).Except(XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet));
+                        CellMask difference = cutEdges.GetAdjacentCells().Except(XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet));
                         if (difference.Count() > 0)
                             throw new ArithmeticException("Edges of the Cells" + difference.GetSummary() + " are detected as cut, but these cells are not contained in the cut Cell-Mask of the Level-Set-Tracker");
 #endif
