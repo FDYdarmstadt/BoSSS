@@ -49,6 +49,8 @@ namespace BoSSS.Foundation.Grid {
         /// </param>
         public SubGrid(CellMask volMask) {
             MPICollectiveWatchDog.Watch();
+            if(volMask.MaskType != MaskType.Logical)
+                throw new ArgumentException();
             this.m_VolumeMask = volMask;
             m_GridData = volMask.GridData;
         }

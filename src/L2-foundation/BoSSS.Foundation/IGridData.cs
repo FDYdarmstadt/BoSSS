@@ -485,15 +485,18 @@ namespace BoSSS.Foundation.Grid {
         MultidimensionalArray h_max {
             get;
         }
-
-    
         
         /// <summary>
-        /// Cell-Mask of all cells which share the same reference element.
+        /// Cell-Mask of all geometric cells which share the same reference element.
         /// </summary>
         CellMask GetCells4Refelement(RefElement Kref);
-        
 
+        /// <summary>
+        /// Mapping form geometrical to logical cells
+        /// </summary>
+        int[] GeomCell2LogicalCell {
+            get;
+        }
     }
 
     public interface ILogicalCellData {
