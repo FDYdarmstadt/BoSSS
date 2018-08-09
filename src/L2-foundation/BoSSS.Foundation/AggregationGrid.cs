@@ -317,8 +317,15 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             int JE = this.iLogicalCells.Count;
 
             m_LogicalCellData.AggregateCellToParts = new int[JE][];
-            var AggPartC = m_LogicalCellData.AggregateCellToParts;
-            var AggPartF = pGrid.iLogicalCells.AggregateCellToParts;
+            m_GeomCellData.GeomCell2LogicalCell = new int[pGrid.iGeomCells.Count];
+
+            int[][] AggPartC = m_LogicalCellData.AggregateCellToParts;
+            int[][] AggPartF = pGrid.iLogicalCells.AggregateCellToParts; // aggregate-to-geometric on parent grid
+            int[] Geom2Agg = m_GeomCellData.GeomCell2LogicalCell;
+#if DEBUG
+            ArrayTools.SetAll(Geom2Agg, -1);
+#endif
+
             List<int> tmp = new List<int>();
             for (int j = 0; j < JE; j++) { // loop over coarse/this cells
                 tmp.Clear();
@@ -337,7 +344,17 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 }
 
                 AggPartC[j] = tmp.ToArray();
+                foreach(int jGeom in AggPartC[j]) {
+#if DEBUG
+                    Debug.Assert(Geom2Agg[jGeom] < 0);
+#endif
+                    Geom2Agg[jGeom] = j;
+                }
             }
+
+#if DEBUG
+            Debug.Assert(Geom2Agg.Where(i => i < 0).Count() == 0);
+#endif
         }
 
         private void BuildNeighborship(int[][] AggregationCells) {

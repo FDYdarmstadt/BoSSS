@@ -96,6 +96,11 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 }
             }
 
+            public int[] GeomCell2LogicalCell {
+                get;
+                internal set;
+            }
+
             public void GetCellBoundingBox(int j, BoundingBox bb) {
                 m_Owner.ParentGrid.iGeomCells.GetCellBoundingBox(j, bb);
             }

@@ -97,7 +97,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         ba[j] = (this.GetRefElementIndex(j) == iKref);
                     }
 
-                    m_RefElementMask[iKref] = new CellMask(this.m_owner, ba);
+                    m_RefElementMask[iKref] = new CellMask(this.m_owner, ba, MaskType.Geometrical);
                 }
 
                 return m_RefElementMask[iKref];
@@ -112,26 +112,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 if (iKref < 0 || iKref >= KRefs.Length)
                     throw new ArgumentException();
 
-                if (m_RefElementMask == null) {
-                    m_RefElementMask = new CellMask[KRefs.Length];
-                }
-
-                if (iKref < 0 || iKref >= KRefs.Length) {
-                    throw new ArgumentOutOfRangeException();
-                }
-
-                if (m_RefElementMask[iKref] == null) {
-                    int J = this.NoOfLocalUpdatedCells;
-                    BitArray ba = new BitArray(J);
-
-                    for (int j = 0; j < J; j++) {
-                        ba[j] = (this.GetRefElementIndex(j) == iKref);
-                    }
-
-                    m_RefElementMask[iKref] = new CellMask(this.m_owner, ba, MaskType.Geometrical);
-                }
-
-                return m_RefElementMask[iKref];
+                return GetCells4Refelement(iKref);
             }
 
             /// <summary>
@@ -908,6 +889,15 @@ namespace BoSSS.Foundation.Grid.Classic {
             /// this is not required and therefore, equal to null.
             /// </summary>
             public int[][] AggregateCellToParts {
+                get {
+                    return null;
+                }
+            }
+
+            /// <summary>
+            /// null for the classical grid
+            /// </summary>
+            public int[] GeomCell2LogicalCell {
                 get {
                     return null;
                 }

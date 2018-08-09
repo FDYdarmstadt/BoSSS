@@ -168,6 +168,8 @@ namespace BoSSS.Foundation.Grid.Voronoi {
                 }
             }
 
+            public int[] GeomCell2LogicalCell => throw new NotImplementedException();
+
 
             /// <summary>
             /// Computes the bounding box of cell <paramref name="j"/>

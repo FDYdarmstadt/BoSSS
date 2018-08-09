@@ -331,7 +331,7 @@ namespace BoSSS.Application.ScalarTransport {
         /// performs Tecplot output of field <see cref="u"/>
         /// </summary>
         protected override void PlotCurrentState(double phystime, TimestepNumber timestepNo, int superSampling) {
-            Tecplot plt1 = new Tecplot((GridData)GridData, true, false, (uint) superSampling);
+            Tecplot plt1 = new Tecplot(GridData, true, false, (uint) superSampling);
             plt1.PlotFields("transport." + timestepNo, phystime, u, mpi_rank);
         }
 

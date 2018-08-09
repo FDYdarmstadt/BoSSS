@@ -55,26 +55,29 @@ namespace BoSSS.Solution {
         /// how often one computational cell should be subdivided;
         /// <see cref="ZoneDriver.superSampling"/>
         /// </param>
-        /// <param name="__sgrd">
+        /// <param name="__mask">
         /// </param>
-        protected PlotDriver(IGridData context, bool showJumps, bool showGhostCells, uint superSampling, SubGrid __sgrd) {
+        protected PlotDriver(IGridData context, bool showJumps, bool showGhostCells, uint superSampling, CellMask __mask) {
+
+            if(__mask != null && __mask.MaskType == MaskType.Logical)
+                __mask = __mask.ToGeometicalMask();
 
             var RefElms = context.iGeomCells.RefElements;
             ZoneDrivers = new ZoneDriver[RefElms.Length];
             for (int iKref = 0; iKref < RefElms.Length; iKref++) {
-                SubGrid ZoneSgrd;
-                if (__sgrd == null) {
-                    ZoneSgrd = context.GetRefElementSubGrid(iKref);
+                CellMask ZoneMask;
+                if (__mask == null) {
+                    ZoneMask = context.iGeomCells.GetCells4Refelement(RefElms[iKref]);
                 } else {
-                    var B = context.GetRefElementSubGrid(iKref);
-                    ZoneSgrd = new SubGrid(B.VolumeMask.Intersect(__sgrd.VolumeMask));
+                    var B = context.iGeomCells.GetCells4Refelement(RefElms[iKref]);
+                    ZoneMask = B.Intersect(__mask);
                 }
 
-                if (ZoneSgrd.GlobalNoOfCells <= 0)
+                if (ZoneMask.NoOfItemsLocally.MPISum() <= 0)
                     continue;
 
                 //Debug.Assert(false, "break: " + context.MyRank); 
-                ZoneDrivers[iKref] = CreateZoneDriver(context, iKref, showJumps, showGhostCells, superSampling, ZoneSgrd);
+                ZoneDrivers[iKref] = CreateZoneDriver(context, iKref, showJumps, showGhostCells, superSampling, ZoneMask);
             }
 
             this.gridData = context;
@@ -88,7 +91,7 @@ namespace BoSSS.Solution {
         /// <summary>
         /// %
         /// </summary>
-        abstract protected ZoneDriver CreateZoneDriver(IGridData context, int iKref, bool showJumps, bool showGhostCells, uint superSampling, SubGrid __sgrd);
+        abstract protected ZoneDriver CreateZoneDriver(IGridData context, int iKref, bool showJumps, bool showGhostCells, uint superSampling, CellMask ZoneMask);
 
         /// <summary>
         /// index: correlates with reference element index
@@ -224,7 +227,7 @@ namespace BoSSS.Solution {
             /// <summary>
             /// The omnipresent context
             /// </summary>
-            protected GridData context;
+            protected IGridData context;
 
             /// <summary>
             /// If true, the real DG data (including discontinuities) should be
@@ -344,12 +347,12 @@ namespace BoSSS.Solution {
             /// <summary>
             /// the part of the computational grid that is plotted
             /// </summary>
-            protected SubGrid sgrd;
+            protected CellMask mask;
 
             /// <summary>
             /// the reference element (element type) for the zone
             /// </summary>
-            protected RefElement Zone_Element;
+            internal protected RefElement Zone_Element;
 
             /// <summary>
             /// Constructs a new PlotDriver
@@ -369,12 +372,12 @@ namespace BoSSS.Solution {
             /// how often one computational cell should be subdivided;
             /// <see cref="superSampling"/>
             /// </param>
-            /// <param name="__sgrd">
+            /// <param name="__mask">
             /// </param>
             /// <param name="iKref">
             /// reference element index, <see cref="GridCommons.GetRefElement"/>;
             /// </param>
-            protected ZoneDriver(GridData context, int iKref, bool showJumps, bool showGhostCells, uint superSampling, SubGrid __sgrd) {
+            protected ZoneDriver(IGridData context, int iKref, bool showJumps, bool showGhostCells, uint superSampling, CellMask __mask) {
                 using (new FuncTrace()) {
 
                     // record args
@@ -383,11 +386,11 @@ namespace BoSSS.Solution {
                     this.showJumps = showJumps;
                     this.ghostZone = showGhostCells;
                     this.superSampling = superSampling;
-                    if (__sgrd == null)
+                    if (__mask == null)
                         // safe some if's in subsequence
                         throw new ArgumentNullException();
-                    this.sgrd = __sgrd;
-                    this.Zone_Element = context.Grid.GetRefElement(iKref);
+                    this.mask = __mask;
+                    this.Zone_Element = context.iGeomCells.RefElements[iKref];
 
                     // default values
                     // ==============
@@ -396,13 +399,14 @@ namespace BoSSS.Solution {
                     subdivisionTreeLeaves = subdiv.GetLeaves();
                     verticesPerCell = subdiv.GlobalVertice.GetLength(0);
 
-                    int NoOfLocalCells = sgrd.LocalNoOfCells;
-                    NoOfCells = NoOfLocalCells + sgrd.NoOfGhostCells;
+                    int NoOfLocalCells = mask.NoOfItemsLocally;
+                    //NoOfCells = NoOfLocalCells + mask.NoOfGhostCells;
+                    NoOfCells = NoOfLocalCells + 0;
 
                     subdivisionsPerCell = subdivisionTreeLeaves.Length;
                     NewNoOfLocalCells = NoOfLocalCells * subdivisionsPerCell;
                     NewNoOfCells = NoOfCells * subdivisionsPerCell;
-                    dimension = context.Grid.SpatialDimension;
+                    dimension = context.SpatialDimension;
 
                     // vertices per cell, local coordinates (from the leaves of the subdivision)
                     localVerticeCoordinates = new NodeSet(this.Zone_Element, subdiv.GlobalVertice);
@@ -420,18 +424,19 @@ namespace BoSSS.Solution {
                         totalCells = NewNoOfLocalCells;
                         NoOfCells = NoOfLocalCells;
                         NewNoOfCells = NewNoOfLocalCells;
-                        verticeCoordinates = MultidimensionalArray.Create(context.Cells.Count, verticesPerCell, dimension);
+                        verticeCoordinates = MultidimensionalArray.Create(context.iGeomCells.Count, verticesPerCell, dimension);
                         //context.GridDat.TransformLocal2Global(localVerticeCoordinates, verticeCoordinates, 0, NoOfLocalCells, 0);
                     }
 
                     double[] hmin = new double[verticeCoordinates.GetLength(0)];
                     int cnt = 0;
-                    foreach (var cnk in this.sgrd.VolumeMask.GetEnumerableWithExternal()) {
+                    //foreach (var cnk in this.mask.GetEnumerableWithExternal()) {
+                    foreach (var cnk in this.mask) {
                         context.TransformLocal2Global(localVerticeCoordinates, cnk.i0, cnk.Len,
                             verticeCoordinates, cnt);
 
                         for (int j = cnk.i0; j < cnk.JE; j++) {
-                            hmin[cnt] = context.Cells.h_min[j];
+                            hmin[cnt] = context.iGeomCells.h_min[j];
                             cnt++;
                         }
                     }
@@ -547,7 +552,7 @@ namespace BoSSS.Solution {
                             }
                         }
 
-                        long[] globalIndicesExternals = context.Parallel.GlobalIndicesExternalCells;
+                        long[] globalIndicesExternals = context.iParallel.GlobalIndicesExternalCells;
                         long[] indices = new long[maxLocalNoOfExternalCells * context.MpiSize];
 
                         for (int i = 0; i < indices.Length; i++) {
@@ -587,7 +592,7 @@ namespace BoSSS.Solution {
                             }
 
                             for (int i = start; i < end; i++) {
-                                long localCell = sharedCellIndices[i] - context.Grid.CellPartitioning.i0;
+                                long localCell = sharedCellIndices[i] - context.CellPartitioning.i0;
 
                                 if (localCell < 0 || localCell > NoOfLocalCells) {
                                     continue;
@@ -768,14 +773,14 @@ namespace BoSSS.Solution {
                 MultidimensionalArray result = MultidimensionalArray.Create(NoOfCells, verticesPerCell);
 
                 IEnumerable<Chunk> enumerable;
-                if (NoOfCells == sgrd.VolumeMask.NoOfItemsLocally) {
-                    enumerable = sgrd.VolumeMask;
+                if (NoOfCells == mask.NoOfItemsLocally) {
+                    enumerable = mask;
                 } else {
-                    enumerable = sgrd.VolumeMask.GetEnumerableWithExternal();
+                    enumerable = mask.GetEnumerableWithExternal();
                 }
 
 
-                int iKref = Array.IndexOf(context.Grid.RefElements, this.Zone_Element);
+                int iKref = Array.IndexOf(context.iGeomCells.RefElements, this.Zone_Element);
 
                 foreach (var cnk in enumerable) {
                     Evaluator(cnk.i0, cnk.Len, localVerticeCoordinates,
@@ -815,7 +820,7 @@ namespace BoSSS.Solution {
                     return;
                 }
 
-                int NoOfLocalCells = sgrd.LocalNoOfCells;
+                int NoOfLocalCells = mask.NoOfItemsLocally;
                 double[,] mySharedVerticesSmoothedResult = new double[maxLocalNoOfExternalCells, verticesPerCell];
                 for (int i = NoOfLocalCells; i < NoOfCells; i++) {
                     int cellIndex = i - NoOfLocalCells;
@@ -1121,7 +1126,7 @@ namespace BoSSS.Solution {
             for (int i = 0; i < this.ZoneDrivers.Length; i++) {
                 if (ZoneDrivers[i] != null) {
                     ZoneDrivers[i].PlotZone(
-                        "Zone_" + gridData.Grid.GetRefElement(i).GetType().Name,
+                        "Zone_" + ZoneDrivers[i].Zone_Element.GetType().Name,
                         time,
                         fieldsToPlot);
                 }
