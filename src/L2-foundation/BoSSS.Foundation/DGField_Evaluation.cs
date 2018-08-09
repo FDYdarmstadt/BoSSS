@@ -35,7 +35,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// evaluation of DG field; may be used in derived classes to implement <see cref="DGField.Evaluate(int,int,NodeSet,MultidimensionalArray,int,double)"/>.
         /// </summary>
-        protected static void EvaluateInternal(int j0, int L, NodeSet NS, Basis basis, MultidimensionalArray Coördinates, MultidimensionalArray ResultAcc, double ResultPreScale) {
+        protected static void EvaluateInternal(int j0, int L, NodeSet NS, Basis basis, MultidimensionalArray Coördinates, int coördOffset, MultidimensionalArray ResultAcc, double ResultPreScale) {
 
             int D, N, NumNodes;
             bool AffineLinear;
@@ -43,7 +43,7 @@ namespace BoSSS.Foundation {
             Debug.Assert(ResultAcc.Dimension == 2);
             Debug.Assert(L == ResultAcc.GetLength(0));
             Debug.Assert(NumNodes == ResultAcc.GetLength(1));
-            
+
             /*
             MultidimensionalArray BasisValues;
             BasisValues = basis.CellEval(NS, j0, L);
@@ -53,6 +53,9 @@ namespace BoSSS.Foundation {
 
             ResultAcc.Multiply(1.0, Coördinates, BasisValues, ResultPreScale, "jm", "jn", "jmn");
             */
+
+            int[] geom2log = basis.GridDat.iGeomCells.GeomCell2LogicalCell;
+
 
             
             MultidimensionalArray BasisValues = basis.Evaluate(NS);
@@ -65,7 +68,7 @@ namespace BoSSS.Foundation {
             } else {
                 int iBuf;
                 MultidimensionalArray trfCoördinates = TempBuffer.GetTempMultidimensionalarray(out iBuf, L, N);
-                TransformCoördinates(j0, L, basis, Coördinates, N, AffineLinear, trfCoördinates);
+                TransformCoördinates(j0, L, basis, Coördinates, coördOffset, N, AffineLinear, trfCoördinates);
 
                 if(ResultAcc.IsContinious && trfCoördinates.IsContinious && BasisValues.IsContinious) {
                     unsafe {
@@ -123,41 +126,108 @@ namespace BoSSS.Foundation {
 
         static MultidimensionalArray.MultiplyProgram mp_jk_jm_km = MultidimensionalArray.MultiplyProgram.Compile("jk", "jm", "km");
 
-        private static void TransformCoördinates(int j0, int L, Basis basis, MultidimensionalArray Coördinates, int N, bool AffineLinear, MultidimensionalArray trfCoördinates) {
-            if(AffineLinear) {
-                MultidimensionalArray scale = basis.GridDat.ChefBasis.Scaling.ExtractSubArrayShallow(new int[] { j0 }, new int[] { j0 + L - 1 });
-                trfCoördinates.Multiply(1.0, scale, Coördinates, 0.0, ref mp_jn_j_jn);
-             
-            } else {
+        private static void TransformCoördinates(int j0, int L, 
+            Basis basis, 
+            MultidimensionalArray Coördinates, int coördOffset, 
+            int N, bool AffineLinear, 
+            MultidimensionalArray trfCoördinates) {
+            int[] geom2log = basis.GridDat.iGeomCells.GeomCell2LogicalCell;
+
+            if (geom2log != null) {
+                // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                // aggregation grid branch -- apply index trafo to coordinates
+                // (j0..j0+L) are geometical grid indices
+                // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                // extract trafo
                 MultidimensionalArray trafo = basis.GridDat.ChefBasis.OrthonormalizationTrafo.GetValue_Cell(j0, L, basis.Degree);
                 Debug.Assert(trafo.GetLength(0) == L);
-                if(trafo.GetLength(1) > N)
+                if (trafo.GetLength(1) > N)
                     trafo = trafo.ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { L - 1, N - 1, N - 1 });
 
-                trfCoördinates.Multiply(1.0, trafo, Coördinates, 0.0, ref mp_jm_jmn_jn);
+                // apply trafo
+                unsafe {
+                    fixed (int* p_geom2log = geom2log) {
+                        trfCoördinates.Multiply(1.0, trafo, Coördinates, 0.0, ref mp_jm_jmn_Tjn,
+                            p_geom2log, geom2log.Length,
+                            trfPreOffset_A: 0, trfCycle_A: 0, trfPostOffset_A: 0,
+                            trfPreOffset_B: coördOffset, trfCycle_B: 1, trfPostOffset_B: 0); // geom cell to logical cell trafo for coördinates
+
+                    }
+                }
+            } else if (AffineLinear) {
+                // +++++++++++++++++++++++++
+                // affine-linear grid branch
+                // +++++++++++++++++++++++++
+
+                // extract coördinates
+                MultidimensionalArray _Coördinates;
+                if(coördOffset > 0 || coördOffset + L < Coördinates.GetLength(0)) {
+                    _Coördinates = Coördinates.ExtractSubArrayShallow(new[] { j0, 0 }, new[] { j0 + L - 1, N - 1 });
+                } else {
+                    _Coördinates = Coördinates;
+                }
+                
+                // extract trafo
+                MultidimensionalArray scale = basis.GridDat.ChefBasis.Scaling.ExtractSubArrayShallow(new int[] { j0 }, new int[] { j0 + L - 1 });
+
+                // apply trafo
+                trfCoördinates.Multiply(1.0, scale, _Coördinates, 0.0, ref mp_jn_j_jn);
+
+            } else {
+                // ++++++++++++++++++
+                // curved cell branch
+                // ++++++++++++++++++
+
+                // extract coördinates
+                MultidimensionalArray _Coördinates;
+                if(coördOffset > 0 || coördOffset + L < Coördinates.GetLength(0)) {
+                    _Coördinates = Coördinates.ExtractSubArrayShallow(new[] { j0, 0 }, new[] { j0 + L - 1, N - 1 });
+                } else {
+                    _Coördinates = Coördinates;
+                }
+
+                // extract trafo
+                MultidimensionalArray trafo = basis.GridDat.ChefBasis.OrthonormalizationTrafo.GetValue_Cell(j0, L, basis.Degree);
+                Debug.Assert(trafo.GetLength(0) == L);
+                if (trafo.GetLength(1) > N)
+                    trafo = trafo.ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { L - 1, N - 1, N - 1 });
+
+                // apply trafo
+                trfCoördinates.Multiply(1.0, trafo, _Coördinates, 0.0, ref mp_jm_jmn_jn);
             }
         }
 
         static MultidimensionalArray.MultiplyProgram mp_jn_j_jn = MultidimensionalArray.MultiplyProgram.Compile("jn", "j", "jn");
         static MultidimensionalArray.MultiplyProgram mp_jm_jmn_jn = MultidimensionalArray.MultiplyProgram.Compile("jm", "jmn", "jn");
+        static MultidimensionalArray.MultiplyProgram mp_jm_jmn_Tjn = MultidimensionalArray.MultiplyProgram.Compile("jm", "jmn", "T(j)n", true);
 
         private static void CheckArgs(int j0, int L, NodeSet NS, Basis basis, MultidimensionalArray Coördinates, MultidimensionalArray ResultAcc, out int D, out int N, out int M, out bool AffineLinear) {
+            int[] g2l = basis.GridDat.iGeomCells.GeomCell2LogicalCell;
+
             D = basis.GridDat.SpatialDimension; // spatial dimension
-            N = basis.GetLength(j0);      // number of coordinates per cell
+            if(g2l == null)
+                N = basis.GetLength(j0);      // number of coordinates per cell -- standard grid
+            else 
+                N = basis.GetLength(g2l[j0]); // number of coordinates per cell -- aggregation grid
             M = NS.NoOfNodes;            // number of nodes
             AffineLinear = basis.GridDat.iGeomCells.IsCellAffineLinear(j0);
 
             Debug.Assert(basis.GetType() == typeof(Basis));
 
             Debug.Assert(Coördinates.Dimension == 2);
-            Debug.Assert(Coördinates.GetLength(0) == L);
+            Debug.Assert(Coördinates.GetLength(0) >= j0 + L || basis.GridDat.iGeomCells.GeomCell2LogicalCell != null);
             Debug.Assert(Coördinates.GetLength(1) == N);
 
 #if DEBUG
             for(int i = 1; i < L; i++) {
                 int jCell = j0 + i;
                 Debug.Assert(basis.GridDat.iGeomCells.IsCellAffineLinear(jCell) == AffineLinear);
-                Debug.Assert(basis.GetLength(jCell) == N);
+
+                if(g2l == null)
+                    Debug.Assert(basis.GetLength(jCell) == N);
+                else 
+                    Debug.Assert(basis.GetLength(g2l[jCell]) == N);
             }
 #endif
         }
@@ -165,7 +235,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// evaluation of DG field gradient; may be used in derived classes to implement <see cref="EvaluateGradient"/>.
         /// </summary>
-        protected static void EvaluateGradientInternal(int j0, int L, NodeSet NS, Basis basis, MultidimensionalArray Coördinates, MultidimensionalArray ResultAcc, double ResultPreScale) {
+        protected static void EvaluateGradientInternal(int j0, int L, NodeSet NS, Basis basis, MultidimensionalArray Coördinates, int coördOffset, MultidimensionalArray ResultAcc, double ResultPreScale) {
 
 
             int D, N, K;
@@ -207,7 +277,7 @@ namespace BoSSS.Foundation {
                     MultidimensionalArray GradientRef = TempBuffer.GetTempMultidimensionalarray(out iBuf2, L, K, D);
                     MultidimensionalArray InvJacobi = basis.GridDat.iGeomCells.InverseTransformation.ExtractSubArrayShallow(new int[] { j0, 0, 0 }, new int[] { j0 + L - 1, D - 1, D - 1 });
 
-                    TransformCoördinates(j0, L, basis, Coördinates, N, AffineLinear, trfCoördinates);
+                    TransformCoördinates(j0, L, basis, Coördinates, coördOffset, N, AffineLinear, trfCoördinates);
                     GradientRef.Multiply(1.0, trfCoördinates, BasisGradValues, 0.0, ref mp_jke_jm_kme);  // gradient in reference coördinates
                     ResultAcc.Multiply(1.0, InvJacobi, GradientRef, ResultPreScale, ref mp_jkd_jed_jke);
                     
@@ -224,7 +294,7 @@ namespace BoSSS.Foundation {
                 MultidimensionalArray GradientRef = TempBuffer.GetTempMultidimensionalarray(out iBuf2, L, K, D);
                 MultidimensionalArray InvJacobi = basis.GridDat.InverseJacobian.GetValue_Cell(NS, j0, L);
                 
-                TransformCoördinates(j0, L, basis, Coördinates, N, AffineLinear, trfCoördinates);
+                TransformCoördinates(j0, L, basis, Coördinates, coördOffset, N, AffineLinear, trfCoördinates);
                 GradientRef.Multiply(1.0, trfCoördinates, BasisGradValues, 0.0, ref mp_jke_jm_kme);  // gradient in reference coördinates
                 ResultAcc.Multiply(1.0, InvJacobi, GradientRef, ResultPreScale, ref mp_jkd_jked_jke);
 
