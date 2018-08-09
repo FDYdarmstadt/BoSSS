@@ -88,7 +88,12 @@ namespace BoSSS.Application.ScalarTransport {
         /// <summary>
         /// the scalar property that is convected
         /// </summary>
-        DGField u;
+        SinglePhaseField u;
+
+        /// <summary>
+        /// the result of operator evaluation
+        /// </summary>
+        SinglePhaseField OpValue;
 
         /// <summary>
         /// transport velocity
@@ -105,6 +110,7 @@ namespace BoSSS.Application.ScalarTransport {
         /// </summary>
         protected override void CreateFields() {
             u = new SinglePhaseField(new Basis(this.GridData, 2), "u");
+            OpValue = new SinglePhaseField(new Basis(this.GridData, 2), "operator");
             mpi_rank = new SinglePhaseField(new Basis(this.GridData, 0), "MPI_rank");
             Velocity = new VectorField<SinglePhaseField>(this.GridData.SpatialDimension, new Basis(this.GridData, 2), "Velocity", SinglePhaseField.Factory);
 
@@ -271,11 +277,9 @@ namespace BoSSS.Application.ScalarTransport {
                 //PerformanceVsCachesize();
                 //SimplifiedPerformance();
 
-                this.u.Clear();
-                this.u.ProjectField((x, y) => x * y);
 
-                var OT = this.GridData.ChefBasis.OrthonormalizationTrafo.GetValue_Cell(0, 24, 0);
 
+                
 
                 int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
                 //for(int j = 0; j < J; j++) {
@@ -285,6 +289,9 @@ namespace BoSSS.Application.ScalarTransport {
                 //    this.u.Coordinates[j, 4] = 0.11;
                 //}
 
+                var ev = this.diffOp.GetEvaluatorEx(u.Mapping.Fields, this.Velocity.Mapping.Fields, u.Mapping);
+                ev.Evaluate(1.0, 0.0, OpValue.CoordinateVector);
+                
                 base.TerminationKey = true;
                 return 0.0;
 
@@ -343,32 +350,28 @@ namespace BoSSS.Application.ScalarTransport {
         /// </summary>
         protected override void PlotCurrentState(double phystime, TimestepNumber timestepNo, int superSampling) {
             Tecplot plt1 = new Tecplot(GridData, true, false, (uint) superSampling);
-            plt1.PlotFields("transport." + timestepNo, phystime, u, mpi_rank);
+            plt1.PlotFields("transport." + timestepNo, phystime, u, mpi_rank, OpValue);
         }
 
         /// <summary>
         /// sets some initial value for field <see cref="u"/>;
         /// </summary>
         protected override void SetInitial() {
-            Console.WriteLine("REM: remove me!");
-            return;
-
-            switch (GridData.SpatialDimension) {
+           switch (GridData.SpatialDimension) {
                 case 2:
 
                 
                 
                 u.ProjectField((_2D)(delegate(double x, double y) {
-                    
-                    double r = Math.Sqrt(x*x + y*y);
 
-
-                    return Math.Exp(-r * r);
+                    //double r = Math.Sqrt(x*x + y*y);
+                    //return Math.Exp(-r * r);
+                    return x;
                 }));
                                
 
                 Velocity[0].ProjectField((_2D)((x, y) => 1.0));
-                Velocity[1].ProjectField((_2D)((x, y) => 0.1));
+                Velocity[1].ProjectField((_2D)((x, y) => 0.0));
 
                 break;
 
