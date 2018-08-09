@@ -104,7 +104,7 @@ namespace BoSSS.Application.ScalarTransport {
         /// creates the field <see cref="u"/>;
         /// </summary>
         protected override void CreateFields() {
-            u = new SinglePhaseField(new Basis(this.GridData, 5), "u");
+            u = new SinglePhaseField(new Basis(this.GridData, 2), "u");
             mpi_rank = new SinglePhaseField(new Basis(this.GridData, 0), "MPI_rank");
             Velocity = new VectorField<SinglePhaseField>(this.GridData.SpatialDimension, new Basis(this.GridData, 2), "Velocity", SinglePhaseField.Factory);
 
@@ -272,14 +272,18 @@ namespace BoSSS.Application.ScalarTransport {
                 //SimplifiedPerformance();
 
                 this.u.Clear();
-                //this.u.ProjectField((x, y) => x * y);
+                this.u.ProjectField((x, y) => x * y);
+
+                var OT = this.GridData.ChefBasis.OrthonormalizationTrafo.GetValue_Cell(0, 24, 0);
+
 
                 int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
-                for(int j = 0; j < J; j++) {
-                    this.u.Coordinates[j, 0] = j;
-                    this.u.Coordinates[j, 1] = 1;
-                    this.u.Coordinates[j, 2] = 0.5;
-                }
+                //for(int j = 0; j < J; j++) {
+                //    this.u.Coordinates[j, 0] = j;
+                //    this.u.Coordinates[j, 1] = 1;
+                //    this.u.Coordinates[j, 2] = 0.5;
+                //    this.u.Coordinates[j, 4] = 0.11;
+                //}
 
                 base.TerminationKey = true;
                 return 0.0;
