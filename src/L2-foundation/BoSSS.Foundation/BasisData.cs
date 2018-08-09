@@ -399,8 +399,10 @@ namespace BoSSS.Foundation.Grid {
             }
 #endif
 
+            bool NonAgg = this.m_Owner.iGeomCells.GeomCell2LogicalCell == null;
 
-            if(AffineLinear) {
+
+            if(AffineLinear && NonAgg) {
 
                 for(int i = 0; i < Len; i++) {
                     int jCell = i + j0;
