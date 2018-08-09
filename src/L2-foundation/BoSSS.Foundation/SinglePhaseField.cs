@@ -89,8 +89,9 @@ namespace BoSSS.Foundation {
             if(coöSys != NodeCoordinateSystem.CellCoord)
                 throw new ArgumentOutOfRangeException();
 
-            var coord = m_Mda_Coordinates.ExtractSubArrayShallow(new int[] { j0, 0 }, new int[] { j0 + Len - 1, N - 1 });
-            DGField.EvaluateInternal(j0, Len, NS, this.m_Basis, coord, resultAcc, ResultPreScale);
+            //var coord = m_Mda_Coordinates.ExtractSubArrayShallow(new int[] { j0, 0 }, new int[] { j0 + Len - 1, N - 1 });
+            //DGField.EvaluateInternal(j0, Len, NS, this.m_Basis, coord, 0, resultAcc, ResultPreScale);
+            DGField.EvaluateInternal(j0, Len, NS, this.m_Basis, m_Mda_Coordinates, j0, resultAcc, ResultPreScale);
 
 
         }
@@ -297,7 +298,7 @@ namespace BoSSS.Foundation {
             var resultAcc = result.ExtractSubArrayShallow(new int[] { ResultCellindexOffset, 0, 0 }, new int[] { ResultCellindexOffset + Len - 1, M - 1, D - 1 });
             var coord = m_Mda_Coordinates.ExtractSubArrayShallow(new int[] { j0, 0 }, new int[] { j0 + Len - 1, N - 1 });
 
-            DGField.EvaluateGradientInternal(j0, Len, NS, this.m_Basis, coord, resultAcc, ResultPreScale);
+            DGField.EvaluateGradientInternal(j0, Len, NS, this.m_Basis, coord, 0, resultAcc, ResultPreScale);
         }
 
         /// <summary>

@@ -59,7 +59,7 @@ namespace BoSSS.Solution.Multigrid {
             }
         }
 
-        int D;
+
         string[] DomName;
         string[] CodName;
         string[] Params;
@@ -137,7 +137,7 @@ namespace BoSSS.Solution.Multigrid {
                 solver.DefineMatrix(P);
                 solver.Solve(X, B);
             }
-
+            m_ThisLevelIterations++;
         }
 
     }
