@@ -6,7 +6,8 @@
   "scripts": {
     "buildAndStart": "webpack && electron .",
     "build": "webpack",
-    "start": "./node_modules/.bin/electron ."
+    "start": "./node_modules/.bin/electron .",
+    "debug": "./node_modules/.bin/electron . "
   },
   "devDependencies": {
     "electron": "^1.7.11",
