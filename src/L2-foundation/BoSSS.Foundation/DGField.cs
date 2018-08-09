@@ -213,9 +213,19 @@ namespace BoSSS.Foundation {
                 if (N != ResultsOfIntegration.GetLength(1))
                     throw new ApplicationException("internal error.");
 
-                for (int j = 0; j < Length; j++) {
-                    for (int n = 0; n < N; n++) {
-                        m_Owner.Coordinates[j + i0, n] = m_Owner.Coordinates[j + i0, n] + m_alpha * ResultsOfIntegration[j, n];
+                int[] g2l = GridDat.iGeomCells.GeomCell2LogicalCell;
+
+                if (g2l == null) {
+                    for (int j = 0; j < Length; j++) {
+                        for (int n = 0; n < N; n++) {
+                            m_Owner.Coordinates[j + i0, n] += m_alpha * ResultsOfIntegration[j, n];
+                        }
+                    }
+                } else {
+                    for (int j = 0; j < Length; j++) {
+                        for (int n = 0; n < N; n++) {
+                            m_Owner.Coordinates[g2l[j + i0], n] += m_alpha * ResultsOfIntegration[j, n];
+                        }
                     }
                 }
             }
