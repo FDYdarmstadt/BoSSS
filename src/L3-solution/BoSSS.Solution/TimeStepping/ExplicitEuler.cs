@@ -219,7 +219,7 @@ namespace BoSSS.Solution.Timestepping {
         /// Override this method e.g. for the implementation of (some types of) limiters.
         /// </remarks>
         virtual internal protected void ComputeChangeRate(double[] k, double AbsTime, double RelTime, double[] edgeFluxes = null) {
-            using (var tr = new ilPSP.Tracing.FuncTrace()) {
+            using (var tr = new ilPSP.Tracing.FuncTrace("ComputeChangeRate")) {
                 RaiseOnBeforeComputechangeRate(AbsTime, RelTime);
 
                 // k += F(u0)

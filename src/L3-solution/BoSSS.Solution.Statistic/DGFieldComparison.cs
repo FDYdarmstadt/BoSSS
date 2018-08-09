@@ -81,14 +81,7 @@ namespace BoSSS.Solution.Statistic {
                 
                 fields.Clear();
                 fields.AddRange(s);
-
-#if DEBUG
-                
-
-#endif
             }
-
-
 
 
             // Grids and coarse-to-fine -- mappings.
@@ -165,32 +158,6 @@ namespace BoSSS.Solution.Statistic {
             }
 
             GridRes = gDataS.Take(gDataS.Length - 1).Select(gd => gd.Cells.h_minGlobal).ToArray();
-           
-            // convert to table
-            /*
-            MultidimensionalArray RES = MultidimensionalArray.Create(GridRes.Length, FieldsToCompare.Length + 1);
-            RES.SetColumn(0, GridRes);
-            for(int ii = 0; ii < FieldsToCompare.Length; ii++) {
-                RES.SetColumn(ii + 1, L2Errors[FieldsToCompare[ii]]);
-            }
-
-
-            using(var fs = new FileStream("res.csv", FileMode.Append)) {
-                var stw = new StreamWriter(fs);
-                stw.Write("GridRes ");
-                for(int ii = 0; ii < FieldsToCompare.Length; ii++) {
-                    stw.Write(FieldsToCompare[ii]);
-                    if(ii + 1 < FieldsToCompare.Length)
-                        stw.Write(" ");
-                }
-
-                stw.Flush();
-
-                RES.WriteToStream(fs);
-
-            }
-            */
-
         }
 
         /// <summary>
@@ -243,7 +210,7 @@ namespace BoSSS.Solution.Statistic {
 
 
         /// <summary>
-        /// Injects a DG field from a coarsr grid to a fine grid.
+        /// Injects a DG field from a coarser grid to a fine grid.
         /// </summary>
         public static void InjectDGField(int[] CellIdxFine2Coarse, ConventionalDGField onFineGrid, ConventionalDGField onCoarseGrid, CellMask subGrd = null) {
             if(subGrd == null)
