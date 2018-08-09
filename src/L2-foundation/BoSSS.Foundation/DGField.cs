@@ -243,21 +243,7 @@ namespace BoSSS.Foundation {
             ProjectField(1.0, func, default(CellQuadratureScheme));
         }
 
-        /// <summary>
-        /// creates a <see cref="ProjectionQuadrature"/> which is used by
-        /// <see cref="ProjectField(double,ScalarFunction,CellQuadratureScheme)"/>;
-        /// </summary>
-        virtual protected ProjectionQuadrature GetProjectionQuadrature(double alpha, ScalarFunction func, ICompositeQuadRule<QuadRule> qr) {
-            return new ProjectionQuadrature(this, alpha, func, qr);
-        }
-
-        /// <summary>
-        /// creates a <see cref="ProjectionQuadrature"/> which is used by 
-        /// <see cref="ProjectField(double,ScalarFunction,CellQuadratureScheme)"/>;
-        /// </summary>
-        virtual protected ProjectionQuadrature GetProjectionQuadrature(double alpha, ScalarFunctionEx func, ICompositeQuadRule<QuadRule> qr) {
-            return new ProjectionQuadrature(this, alpha, func, qr);
-        }
+        
 
         /// <summary>
         /// Accumulates the DG projection (with respect to <see cref="Basis"/>)
@@ -270,7 +256,8 @@ namespace BoSSS.Foundation {
         virtual public void ProjectField(double alpha, ScalarFunction func, CellQuadratureScheme scheme = null) {
             using (new FuncTrace()) {
                 int order = this.Basis.Degree * 2 + 2;
-                ProjectionQuadrature pq = GetProjectionQuadrature(alpha, func, scheme.SaveCompile(this.Basis.GridDat, order));
+                var rule = scheme.SaveCompile(this.Basis.GridDat, order);
+                var pq = new ProjectionQuadrature(this, alpha, func, rule);
                 pq.Execute();
             }
         }
@@ -287,7 +274,7 @@ namespace BoSSS.Foundation {
         /// </param>
         virtual public void ProjectField(double alpha, ScalarFunction func, ICompositeQuadRule<QuadRule> rule) {
             using (new FuncTrace()) {
-                ProjectionQuadrature pq = GetProjectionQuadrature(alpha, func, rule);
+                var pq = new ProjectionQuadrature(this, alpha, func, rule);
                 pq.Execute();
             }
         }
@@ -304,7 +291,7 @@ namespace BoSSS.Foundation {
         /// </param>
         public void ProjectField(double alpha, ScalarFunctionEx func, ICompositeQuadRule<QuadRule> rule) {
             using (new FuncTrace()) {
-                ProjectionQuadrature pq = GetProjectionQuadrature(alpha, func, rule);
+                var pq = new ProjectionQuadrature(this, alpha, func, rule);
                 pq.Execute();
             }
         }
@@ -320,7 +307,7 @@ namespace BoSSS.Foundation {
         public void ProjectField(double alpha, ScalarFunctionEx func, CellQuadratureScheme scheme = null) {
             using (new FuncTrace()) {
                 int order = this.Basis.Degree * 2 + 2;
-                ProjectionQuadrature pq = GetProjectionQuadrature(alpha, func, scheme.SaveCompile(this.Basis.GridDat, order));
+                var pq = new ProjectionQuadrature(this, alpha, func, scheme.SaveCompile(this.Basis.GridDat, order));
                 pq.Execute();
             }
         }

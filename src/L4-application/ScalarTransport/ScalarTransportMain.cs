@@ -271,8 +271,16 @@ namespace BoSSS.Application.ScalarTransport {
                 //PerformanceVsCachesize();
                 //SimplifiedPerformance();
 
-                this.u.ProjectField((x, y) => x * y);
-                
+                this.u.Clear();
+                //this.u.ProjectField((x, y) => x * y);
+
+                int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
+                for(int j = 0; j < J; j++) {
+                    this.u.Coordinates[j, 0] = j;
+                    this.u.Coordinates[j, 1] = 1;
+                    this.u.Coordinates[j, 2] = 0.5;
+                }
+
                 base.TerminationKey = true;
                 return 0.0;
 
@@ -312,7 +320,6 @@ namespace BoSSS.Application.ScalarTransport {
 
                 // set mpi_rank
                 double rank = GridData.MpiRank;
-                int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
                 for (int j = 0; j < J; j++) {
                     mpi_rank.SetMeanValue(j, rank);
                 }
@@ -339,6 +346,8 @@ namespace BoSSS.Application.ScalarTransport {
         /// sets some initial value for field <see cref="u"/>;
         /// </summary>
         protected override void SetInitial() {
+            Console.WriteLine("REM: remove me!");
+            return;
 
             switch (GridData.SpatialDimension) {
                 case 2:

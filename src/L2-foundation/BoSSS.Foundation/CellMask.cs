@@ -120,10 +120,17 @@ namespace BoSSS.Foundation.Grid {
         /// <see cref="ExecutionMask.MaskType"/>
         /// </param>
         public static CellMask GetFullMask(IGridData gridDat, MaskType mt = MaskType.Logical) {
+            int L;
+            switch(mt) {
+                case MaskType.Logical: L = gridDat.iLogicalCells.NoOfLocalUpdatedCells; break;
+                case MaskType.Geometrical: L = gridDat.iGeomCells.Count; break;
+                default: throw new NotImplementedException();
+            }
+
             return new CellMask(gridDat, 
                 new[] { new Chunk {
                     i0 = 0,
-                    Len = gridDat.iLogicalCells.NoOfLocalUpdatedCells
+                    Len = L
                 } },
                 mt);
         }
