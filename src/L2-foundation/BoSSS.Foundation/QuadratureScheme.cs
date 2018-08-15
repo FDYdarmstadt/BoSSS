@@ -749,7 +749,9 @@ namespace BoSSS.Foundation.Quadrature {
         /// A mask containing all edges of the grid.
         /// </returns>
         protected override EdgeMask GetDefaultDomain(IGridData gridData) {
-            return EdgeMask.GetFullMask(gridData);
+            var edg = EdgeMask.GetFullMask(gridData, MaskType.Geometrical);
+            Debug.Assert(edg.MaskType == MaskType.Geometrical);
+            return edg;
         }
 
         /// <summary>

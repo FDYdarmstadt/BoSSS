@@ -856,11 +856,17 @@ namespace BoSSS.Foundation {
                     order = owner.GetOrderFromQuadOrderFunction(m_DomainMapping, ParameterMap, CodomainVarMap);
 
                     m_OperatorCoefficients = new CoefficientSet() {
-                        CellLengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)(this.GridData)).Cells.CellLengthScale,
-                        EdgeLengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)(this.GridData)).Edges.h_min_Edge,
                         UserDefinedValues = new Dictionary<string, object>(),
                         GrdDat = this.GridData
                     };
+
+                    if(this.GridData is Grid.Classic.GridData) {
+                        m_OperatorCoefficients.CellLengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)(this.GridData)).Cells.CellLengthScale;
+                        m_OperatorCoefficients.EdgeLengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)(this.GridData)).Edges.h_min_Edge;
+                       
+                    } else {
+                        Console.WriteLine("Rem: still missing cell length scales");
+                    }
                 }
             }
 
