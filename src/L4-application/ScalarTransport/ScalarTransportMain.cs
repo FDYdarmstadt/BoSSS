@@ -71,8 +71,8 @@ namespace BoSSS.Application.ScalarTransport {
             //var grd = Grid3D.Cartesian3DGrid(xnodes, ynodes, znodes);
 
             
-            double[] xNodes = GenericBlas.Linspace(-7, 7, 4);
-            double[] yNodes = GenericBlas.Linspace(-7, 7, 5);
+            double[] xNodes = GenericBlas.Linspace(-7, 7, 2);
+            double[] yNodes = GenericBlas.Linspace(-7, 7, 2);
 
             var baseGrid = Grid2D.UnstructuredTriangleGrid(xNodes, yNodes);
             var baseGdat = new GridData(baseGrid);

@@ -148,8 +148,8 @@ namespace BoSSS.Foundation.Grid {
         /// <see cref="ExecutionMask.MaskType"/>
         /// </param>
         static public EdgeMask GetEmptyMask(IGridData grdDat, MaskType mt = MaskType.Logical) {
-            BitArray ba = new BitArray(grdDat.iLogicalEdges.Count, false);
-            return new EdgeMask(grdDat, ba, mt);
+            //BitArray ba = new BitArray(grdDat.iLogicalEdges.Count, false);
+            return new EdgeMask(grdDat, new int[0], mt);
         }
 
         /// <summary>
@@ -167,11 +167,24 @@ namespace BoSSS.Foundation.Grid {
         /// Grid data that the returned mask will be assigned with
         /// </param>
         /// <returns>A full mask</returns>
-        public static EdgeMask GetFullMask(IGridData gridDat) {
-            return new EdgeMask(gridDat, new Chunk {
-                i0 = 0,
-                Len = gridDat.iLogicalEdges.Count
-            });
+        /// <param name="mt">
+        /// <see cref="ExecutionMask.MaskType"/>
+        /// </param>
+        public static EdgeMask GetFullMask(IGridData gridDat, MaskType mt) {
+
+            switch (mt) {
+                case MaskType.Logical: {
+                    int L = gridDat.iLogicalEdges.Count;
+                    return new EdgeMask(gridDat, new[]{ new Chunk {
+                            i0 = 0,
+                            Len = L
+                        } }, mt);
+                }
+                case MaskType.Geometrical: {
+                    return GetFullMask(gridDat, MaskType.Logical).ToGeometicalMask();
+                }
+                default: throw new NotImplementedException();
+            }
         }
 
         /// <summary>
@@ -185,8 +198,11 @@ namespace BoSSS.Foundation.Grid {
         /// see <see cref="ExecutionMask.GetTotalNumberOfElements"/>
         /// </summary>
         protected override int GetTotalNumberOfElements(IGridData gridData) {
-
-            return gridData.iLogicalEdges.Count;
+            switch (base.MaskType) {
+                case MaskType.Logical: return gridData.iLogicalEdges.Count;
+                case MaskType.Geometrical: return gridData.iLogicalEdges.Count;
+                default: throw new NotImplementedException();
+            }
         }
 
 
