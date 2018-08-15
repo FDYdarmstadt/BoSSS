@@ -1678,7 +1678,7 @@ namespace CNS {
             return c;
         }
 
-        public static IBMControl IBMForwardFacingStep(string dbPath = null, int savePeriod = 100, int dgDegree = 2, int numOfCellsX = 300, int numOfCellsY = 100, double sensorLimit = 1e-4, double dtFixed = 0.0, double CFLFraction = 0.1, int explicitScheme = 3, int explicitOrder = 1, int numberOfSubGrids = 3, int reclusteringInterval = 10, int maxNumOfSubSteps = 10, double agg = 0.3, double fugdeFactor = 0.5, double endTime = 4.0, double kappa = 0.5, string restart = "False") {
+        public static IBMControl IBMForwardFacingStep(string dbPath = null, int savePeriod = 100, int dgDegree = 2, int numOfCellsX = 100, int numOfCellsY = 100, double sensorLimit = 1e-4, double dtFixed = 0.0, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 2, int reclusteringInterval = 10, int maxNumOfSubSteps = 10, double agg = 0.3, double fugdeFactor = 0.5, double endTime = 0.5, double kappa = 0.5, string restart = "False") {
             //System.Threading.Thread.Sleep(10000);
             //ilPSP.Environment.StdoutOnlyOnRank0 = true;
 
@@ -1702,7 +1702,7 @@ namespace CNS {
             c.WriteLTSConsoleOutput = false;
 
             double xMin = 0.0;
-            double xMax = 3.0;
+            double xMax = 3.0 / 3;
             double yMin = 0.0;
             double yMax = 1.0;
 
@@ -1779,8 +1779,8 @@ namespace CNS {
                 Variable sensorVariable = Variables.Density;
                 c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
                 c.AddVariable(Variables.ShockSensor, 0);
-                //c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 25);    // fix lambdaMax
-                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, fudgeFactor: fugdeFactor);    // dynamic lambdaMax
+                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 25);    // fix lambdaMax
+                //c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, fudgeFactor: fugdeFactor);    // dynamic lambdaMax
             }
 
             c.EquationOfState = IdealGas.Air;
@@ -1862,6 +1862,25 @@ namespace CNS {
             double pressure = 1;
             double velocityX = Math.Sqrt(gamma * pressure / density) * Ms;
             double velocityY = 0;
+
+            // Conditions 2
+            //double SmoothJump(double distance) {
+            //    // smoothing should be in the range of h/p
+            //    double maxDistance = 2.0 * cellSize / Math.Max(dgDegree, 1);
+
+            //    return (Math.Tanh(distance / maxDistance) + 1.0) * 0.5;
+            //}
+
+            //double densityRight = ((gamma + 1) * Ms * Ms) / (2 + (gamma - 1) * Ms * Ms) * density;
+            //double pressureRight = 1 + (2 * gamma) / (gamma + 1) * (Ms * Ms - 1) * pressure;
+            //double velocityXRight = (2 + (gamma - 1) * Ms * Ms) / ((gamma + 1) * Ms * Ms) * velocityX;
+
+            //if (restart == "False") {
+            //    c.InitialValues_Evaluators.Add(Variables.Density, X => density - SmoothJump(X[0] - wallCorner0[0]) * (density - densityRight));
+            //    c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => velocityX - SmoothJump(X[0] - wallCorner0[0]) * (velocityX - velocityXRight));
+            //    c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => 0.0);
+            //    c.InitialValues_Evaluators.Add(Variables.Pressure, X => pressure - SmoothJump(X[0] - wallCorner0[0]) * (pressure - pressureRight));
+            //}
 
             // Boundary conditions
             c.AddBoundaryValue("SupersonicInlet", Variables.Density, (X, t) => density);
