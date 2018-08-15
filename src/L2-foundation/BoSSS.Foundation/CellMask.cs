@@ -47,9 +47,10 @@ namespace BoSSS.Foundation.Grid {
         /// <see cref="ExecutionMask.MaskType"/>
         /// </param>
         public CellMask(IGridData grddat, BitArray mask, MaskType mt = MaskType.Logical) :
-            base(grddat, mask, mt) {
-            if (mask.Length != this.GetTotalNumberOfElements(grddat))
-                throw new ArgumentException();
+            base(grddat, mask, mt) //
+        {
+            if (mask.Length != this.GetUpperIndexBound(grddat))
+                throw new ArgumentException("Mismatch in number of cells/length of input bitmask.");
         }
         
         /// <summary>
@@ -174,9 +175,9 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
-        /// see <see cref="ExecutionMask.GetTotalNumberOfElements"/>
+        /// see <see cref="ExecutionMask.GetUpperIndexBound"/>
         /// </summary>
-        protected override int GetTotalNumberOfElements(IGridData gridData) {
+        protected override int GetUpperIndexBound(IGridData gridData) {
             if(base.MaskType == MaskType.Logical)
                 return gridData.iLogicalCells.NoOfLocalUpdatedCells;
             else if(base.MaskType == MaskType.Geometrical)

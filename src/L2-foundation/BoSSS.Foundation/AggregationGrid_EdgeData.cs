@@ -15,7 +15,9 @@ limitations under the License.
 */
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -128,8 +130,34 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 }
             }
 
+
+            EdgeMask[] m_Edges4RefElement;
+
             public EdgeMask GetEdges4RefElement(RefElement Kref) {
-                throw new NotImplementedException();
+                if (m_Edges4RefElement == null)
+                    m_Edges4RefElement = new EdgeMask[this.EdgeRefElements.Length];
+
+                int iKref = this.EdgeRefElements.IndexOf(Kref, (a, b) => object.ReferenceEquals(a, b));
+
+                if (m_Edges4RefElement[iKref] == null) {
+                    EdgeMask parrEdg = m_Owner.ParentGrid.iGeomEdges.GetEdges4RefElement(Kref);
+                    EdgeMask thisAll = EdgeMask.GetFullMask(this.m_Owner, MaskType.Geometrical);
+                    if (parrEdg.MaskType != MaskType.Geometrical)
+                        throw new ApplicationException("expecting a geometrical mask");
+                    if (thisAll.MaskType != MaskType.Geometrical)
+                        throw new ApplicationException("expecting a geometrical mask");
+
+                    BitArray parrBitmask = parrEdg.GetBitMask().CloneAs();
+                    BitArray thisBitMask = thisAll.GetBitMask();
+                    Debug.Assert(parrBitmask.Length == thisBitMask.Length);
+
+                    BitArray intersect = parrBitmask.And(thisBitMask);
+                    Debug.Assert(object.ReferenceEquals(intersect, parrBitmask));
+
+                    m_Edges4RefElement[iKref] = new EdgeMask(m_Owner, intersect, MaskType.Geometrical);
+                }
+
+                return m_Edges4RefElement[iKref];
             }
 
             public void GetNormalsForCell(NodeSet Nodes, int jCell, int iFace, MultidimensionalArray NormalsOut) {

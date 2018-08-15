@@ -222,7 +222,7 @@ namespace BoSSS.Foundation.Grid {
             m_GridData = grddat;
             this.MaskType = __MaskType;
 
-            int Lmax = GetTotalNumberOfElements(this.m_GridData);
+            int Lmax = GetUpperIndexBound(this.m_GridData);
             if (Mask.Count > Lmax)
                 throw new ArgumentException("length of mask must be smaller or equal to number of cells/edges;", "Mask");
 
@@ -318,7 +318,7 @@ namespace BoSSS.Foundation.Grid {
         /// </remarks>
         public BitArray GetBitMask() {
             if (m_BitMask == null) {
-                int I = GetTotalNumberOfElements(m_GridData);
+                int I = GetUpperIndexBound(m_GridData);
                 m_BitMask = new BitArray(I, false);
                 foreach (Chunk c in this) {
                     for (int i = 0; i < c.Len; i++) {
@@ -326,9 +326,9 @@ namespace BoSSS.Foundation.Grid {
                     }
                 }
             } else {
-                Debug.Assert(m_BitMask.Length == GetTotalNumberOfElements(m_GridData));
+                Debug.Assert(m_BitMask.Length == GetUpperIndexBound(m_GridData));
             }
-            Debug.Assert(m_BitMask.Length == GetTotalNumberOfElements(m_GridData));
+            Debug.Assert(m_BitMask.Length == GetUpperIndexBound(m_GridData));
             return m_BitMask;
         }
 
@@ -545,7 +545,7 @@ namespace BoSSS.Foundation.Grid {
             }
             m_IMax--;
 
-            if (m_IMax >= this.GetTotalNumberOfElements(this.m_GridData))
+            if (m_IMax >= this.GetUpperIndexBound(this.m_GridData))
                 throw new ArgumentException("Provided data exceeds range of local number of elements.");
         }
 
@@ -647,7 +647,7 @@ namespace BoSSS.Foundation.Grid {
         /// Complement of this execution mask (all elements that are not in this mask);
         /// </summary>
         public T Complement<T>() where T : ExecutionMask {
-            int I = GetTotalNumberOfElements(this.m_GridData);
+            int I = GetUpperIndexBound(this.m_GridData);
 
             BitArray ba = ((BitArray)this.GetBitMask().Clone()).Not();
             return (T)CreateInstance(ba, this.MaskType);
@@ -699,10 +699,11 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
-        /// Retrieves the total number of elements in
-        /// <paramref name="gridData"/> which is either
-        /// <see cref="BoSSS.Foundation.Grid.GridData.EdgeData.Count"/> or
-        /// <see cref="BoSSS.Foundation.Grid.GridData.CellData.NoOfLocalUpdatedCells"/>.
+        /// Retrieves the upper limit of the index range, depending on the type of mask:
+        /// - <see cref="ILogicalCellData.NoOfLocalUpdatedCells"/>, for logical cell mask (<see cref="CellMask"/>, <see cref="MaskType.Logical"/>)
+        /// - <see cref="IGeometricalCellsData.Count"/>, for geometrical cell mask (<see cref="CellMask"/>, <see cref="MaskType.Geometrical"/>)
+        /// - <see cref="ILogicalEdgeData.Count"/>, for logical edge mask (<see cref="EdgeMask"/>, <see cref="MaskType.Logical"/>)
+        /// - <see cref="IGeometricalEdgeData.Count"/>, for geometrical edge mask (<see cref="EdgeMask"/>, <see cref="MaskType.Geometrical"/>)
         /// </summary>
         /// <param name="gridData">
         /// The grid data object referring to the grid elements that should be
@@ -710,7 +711,7 @@ namespace BoSSS.Foundation.Grid {
         /// </param>
         /// <returns>
         /// </returns>
-        protected abstract int GetTotalNumberOfElements(IGridData gridData);
+        protected abstract int GetUpperIndexBound(IGridData gridData);
 
         /// <summary>
         /// used by <see cref="ToTxtFile"/>

@@ -44,9 +44,10 @@ namespace BoSSS.Foundation.Grid {
         /// <see cref="ExecutionMask.MaskType"/>
         /// </param>
         public EdgeMask(IGridData grddat, BitArray mask, MaskType mt = MaskType.Logical) :
-            base(grddat, mask, mt) {
-            if (mask.Length != grddat.iLogicalEdges.Count)
-                throw new ArgumentException();
+            base(grddat, mask, mt) //
+        {
+            if (mask.Length != this.GetUpperIndexBound(grddat))
+                throw new ArgumentException("Mismatch in number of edges/length of input bitmask.");
         }
 
         static BitArray MaskFromSelector(IGridData grddat, Func<double[], bool> GeomSelector) {
@@ -195,12 +196,12 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
-        /// see <see cref="ExecutionMask.GetTotalNumberOfElements"/>
+        /// see <see cref="ExecutionMask.GetUpperIndexBound"/>
         /// </summary>
-        protected override int GetTotalNumberOfElements(IGridData gridData) {
+        protected override int GetUpperIndexBound(IGridData gridData) {
             switch (base.MaskType) {
                 case MaskType.Logical: return gridData.iLogicalEdges.Count;
-                case MaskType.Geometrical: return gridData.iLogicalEdges.Count;
+                case MaskType.Geometrical: return gridData.iGeomEdges.Count;
                 default: throw new NotImplementedException();
             }
         }

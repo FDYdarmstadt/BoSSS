@@ -83,17 +83,17 @@ namespace BoSSS.Foundation.Grid.Classic {
             /// </summary>
             private EdgeMask[] m_Edges4RefElement;
             
-            /// <summary>
-            /// For each (edge) reference element, this method provides a
-            /// mask containing all cells which are mapped from the specific
-            /// reference element.
-            /// </summary>
-            /// <param name="iKrefIndex">
-            /// reference element index: <see cref="EdgeRefElements"/>;
-            /// </param>
-            public EdgeMask GetEdges4RefElement(int iKrefIndex) {
-                return this.GetEdges4RefElement(this.EdgeRefElements[iKrefIndex]);
-            }
+            ///// <summary>
+            ///// For each (edge) reference element, this method provides a
+            ///// mask containing all cells which are mapped from the specific
+            ///// reference element.
+            ///// </summary>
+            ///// <param name="iKrefIndex">
+            ///// reference element index: <see cref="EdgeRefElements"/>;
+            ///// </param>
+            //public EdgeMask GetEdges4RefElement(int iKrefIndex) {
+            //    return this.GetEdges4RefElement(this.EdgeRefElements[iKrefIndex]);
+            //}
 
             /// <summary>
             /// For each (edge) reference element, this method provides a
@@ -123,7 +123,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             _mask[e] = true;
                     }
 
-                    m_Edges4RefElement[iKrefIndex] = new EdgeMask(m_owner, _mask);
+                    m_Edges4RefElement[iKrefIndex] = new EdgeMask(m_owner, _mask, MaskType.Geometrical);
                 }
 
                 return m_Edges4RefElement[iKrefIndex];
