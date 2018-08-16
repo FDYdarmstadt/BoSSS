@@ -771,7 +771,7 @@ namespace CNS {
             return c;
         }
 
-        public static IBMControl IBMShockTube(string dbPath = null, int savePeriod = 100, int dgDegree = 2, int numOfCellsX = 50, int numOfCellsY = 50, double sensorLimit = 1e-3, double dtFixed = 0.0, double CFLFraction = 0.1, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 1, int reclusteringInterval = 0, int maxNumOfSubSteps = 0, double agg = 0.3) {
+        public static IBMControl IBMShockTube(string dbPath = null, int savePeriod = 100, int dgDegree = 2, int numOfCellsX = 50, int numOfCellsY = 50, double sensorLimit = 1e-3, double dtFixed = 0.0, double CFLFraction = 0.1, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 1, int reclusteringInterval = 0, int maxNumOfSubSteps = 0, double agg = 0.3, string restart = "False") {
             IBMControl c = new IBMControl();
 
             // ### Database ###
@@ -785,7 +785,7 @@ namespace CNS {
             c.saveperiod = savePeriod;
             c.PrintInterval = 1;
 
-            c.WriteLTSLog = true;
+            c.WriteLTSLog = false;
 
             // ### Partitioning and load balancing ###
             c.GridPartType = GridPartType.METIS;
@@ -875,14 +875,19 @@ namespace CNS {
             double yMin = 0;
             double yMax = 1;
 
-            c.GridFunc = delegate {
-                double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
-                double[] yNodes = GenericBlas.Linspace(yMin, yMax, numOfCellsY + 1);
-                var grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
-                grid.EdgeTagNames.Add(1, "AdiabaticSlipWall");
-                grid.DefineEdgeTags(X => 1);
-                return grid;
-            };
+            if (restart == "True") {
+                c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("96aa97cf-d719-443c-9eba-67d889d344fa"), -1);
+                c.GridGuid = new Guid("d3c971ab-c4e4-4ae3-9f70-25ad1caff551");
+            } else {
+                c.GridFunc = delegate {
+                    double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
+                    double[] yNodes = GenericBlas.Linspace(yMin, yMax, numOfCellsY + 1);
+                    var grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
+                    grid.EdgeTagNames.Add(1, "AdiabaticSlipWall");
+                    grid.DefineEdgeTags(X => 1);
+                    return grid;
+                };
+            }
 
             // ### Boundary conditions ###
             c.AddBoundaryValue("AdiabaticSlipWall");
@@ -932,10 +937,12 @@ namespace CNS {
             //c.InitialValues_Evaluators.Add(Variables.Density, X => densityLeft - SmoothJump(DistanceFromPointToLine(X, p, r)) * (densityLeft - densityRight));
             //c.InitialValues_Evaluators.Add(Variables.Pressure, X => pressureLeft - SmoothJump(DistanceFromPointToLine(X, p, r)) * (pressureLeft - pressureRight));
 
-            c.InitialValues_Evaluators.Add(Variables.Density, X => densityLeft - Jump(X[0]) * (densityLeft - densityRight));
-            c.InitialValues_Evaluators.Add(Variables.Pressure, X => pressureLeft - Jump(X[0]) * (pressureLeft - pressureRight));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => 0.0);
-            c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => 0.0);
+            if (restart == "False") {
+                c.InitialValues_Evaluators.Add(Variables.Density, X => densityLeft - Jump(X[0]) * (densityLeft - densityRight));
+                c.InitialValues_Evaluators.Add(Variables.Pressure, X => pressureLeft - Jump(X[0]) * (pressureLeft - pressureRight));
+                c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => 0.0);
+                c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => 0.0);
+            }
 
             // ### Evaluation ###
             Material material = new Material(c);
@@ -1678,7 +1685,7 @@ namespace CNS {
             return c;
         }
 
-        public static IBMControl IBMForwardFacingStep(string dbPath = null, int savePeriod = 100, int dgDegree = 2, int numOfCellsX = 100, int numOfCellsY = 100, double sensorLimit = 1e-4, double dtFixed = 0.0, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 2, int reclusteringInterval = 10, int maxNumOfSubSteps = 10, double agg = 0.3, double fugdeFactor = 0.5, double endTime = 0.5, double kappa = 0.5, string restart = "False") {
+        public static IBMControl IBMForwardFacingStep(string dbPath = null, int savePeriod = 100, int dgDegree = 2, int numOfCellsX = 100, int numOfCellsY = 100, double sensorLimit = 1e-3, double dtFixed = 0.0, double CFLFraction = 0.1, int explicitScheme = 3, int explicitOrder = 1, int numberOfSubGrids = 2, int reclusteringInterval = 10, int maxNumOfSubSteps = 10, double agg = 0.3, double fugdeFactor = 0.5, double endTime = 0.5, double kappa = 0.5, string restart = "False") {
             //System.Threading.Thread.Sleep(10000);
             //ilPSP.Environment.StdoutOnlyOnRank0 = true;
 
@@ -1708,7 +1715,8 @@ namespace CNS {
 
             // Wall (corners)
             double h = (xMax - xMin) / numOfCellsX;
-            double shift = 0.8 * h;
+            //double shift = 0.8 * h;
+            double shift = 0.0;
             double[] wallCorner0 = { 0.6, 0.0 };
             double[] wallCorner1 = { 0.6, 0.2 + shift };
 
@@ -1779,7 +1787,7 @@ namespace CNS {
                 Variable sensorVariable = Variables.Density;
                 c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
                 c.AddVariable(Variables.ShockSensor, 0);
-                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 25);    // fix lambdaMax
+                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 5);    // fix lambdaMax
                 //c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, fudgeFactor: fugdeFactor);    // dynamic lambdaMax
             }
 
