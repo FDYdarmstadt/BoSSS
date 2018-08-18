@@ -172,7 +172,30 @@ namespace BoSSS.Foundation.Grid {
                 throw new ArgumentException();
             if (j >= g.iLogicalCells.Count)
                 throw new ArgumentException();
-            return new Logical2Geom_Enumable() { j0 = j, Len = 1, Log2Geom = g.iLogicalCells.AggregateCellToParts };
+
+
+            var enu = new Logical2Geom_Enumable() { j0 = j, Len = 1, Log2Geom = g.iLogicalCells.AggregateCellToParts };
+#if DEBUG
+            int[] geom2log = g.iGeomCells.GeomCell2LogicalCell;
+            if(geom2log == null) {
+                int cnt = 0;
+                foreach (int jG in enu) {
+                    Debug.Assert(jG == j);
+                    cnt++;
+                }
+                Debug.Assert(cnt == 1);
+            } else {
+                int cnt = 0;
+                foreach (int jG in enu) {
+                    Debug.Assert(geom2log[jG] == j);
+                    cnt++;
+                }
+                Debug.Assert(g.iLogicalCells.AggregateCellToParts != null && g.iLogicalCells.AggregateCellToParts[j] != null);
+                Debug.Assert(g.iLogicalCells.AggregateCellToParts[j].Length == cnt);
+            }
+            
+#endif
+            return enu;
         }
 
 

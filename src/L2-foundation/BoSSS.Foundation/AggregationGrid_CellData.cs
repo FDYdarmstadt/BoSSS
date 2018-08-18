@@ -145,8 +145,21 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 return m_Owner.ParentGrid.iGeomCells.GetRefElementIndex(jCell);
             }
 
+            /// <summary>
+            /// Always false for aggregation grids, since they require the orthonormalization (<see cref="BasisData.OrthonormalizationTrafo"/>) in each geometrical cell.
+            /// </summary>
+            /// <param name="j">
+            /// Geometric cell index
+            /// </param>
+            /// <returns>
+            /// always false
+            /// </returns>
             public bool IsCellAffineLinear(int j) {
-                return m_Owner.ParentGrid.iGeomCells.IsCellAffineLinear(j);
+                if (j < 0)
+                    throw new IndexOutOfRangeException();
+                if( j >= Count)
+                    throw new IndexOutOfRangeException();
+                return false; 
             }
         }
 

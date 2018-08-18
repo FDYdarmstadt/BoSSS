@@ -710,7 +710,7 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
-        /// Local geometric cell indices of cells that belong to an edge.
+        /// Local *geometric* cell indices of cells that belong to an edge.
         /// - 1st index: local edge index
         /// - 2nd index: 0,1 first and second neighbor;
         /// </summary>
@@ -723,6 +723,15 @@ namespace BoSSS.Foundation.Grid {
         /// index is always stored at the 2nd entry.
         /// </remarks>
         int[,] CellIndices {
+            get;
+        }
+
+        /// <summary>
+        /// Local *logical* cell indices of cells that belong to an edge.
+        /// - 1st index: local edge index
+        /// - 2nd index: 0,1 first and second neighbor;
+        /// </summary>
+        int[,] LogicalCellIndices {
             get;
         }
 
