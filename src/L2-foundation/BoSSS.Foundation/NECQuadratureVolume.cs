@@ -310,12 +310,19 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             int NoOfEquations = m_CodomainBasisS.Length;
             int NoOfNodes = NodesUntransformed.NoOfNodes;
             bool isAffine = grid.iGeomCells.IsCellAffineLinear(i0);
+            int[] geom2log = grid.iGeomCells.GeomCell2LogicalCell;
 #if DEBUG
             for(int i = 1; i < Length; i++) {
                 Debug.Assert(grid.iGeomCells.IsCellAffineLinear(i + i0) == isAffine);
 
-                for(int e = 0; e < base.m_CodomainBasisS.Length; e++) {
-                    Debug.Assert(base.m_CodomainBasisS[e].GetLength(i + i0) == base.m_CodomainBasisS[e].GetLength(i0));
+                if (geom2log == null) {
+                    for (int e = 0; e < base.m_CodomainBasisS.Length; e++) {
+                        Debug.Assert(base.m_CodomainBasisS[e].GetLength(i + i0) == base.m_CodomainBasisS[e].GetLength(i0));
+                    }
+                } else {
+                    for (int e = 0; e < base.m_CodomainBasisS.Length; e++) {
+                        Debug.Assert(base.m_CodomainBasisS[e].GetLength(geom2log[i + i0]) == base.m_CodomainBasisS[e].GetLength(geom2log[i0]));
+                    }
                 }
             }
 #endif
@@ -724,7 +731,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         /// Buffer to store values of test function gradients multiplied by quadrature weights.
         /// </summary>
         MultidimensionalArray m_TestFuncGradWeighted;
-            
+
 
 
         /// <summary>
@@ -733,25 +740,35 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         protected void SaveIntegrationResults(int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
             int NoOfFields = m_CodomainBasisS.Length;
             IGridData grid = this.GridDat;
+            int[] geom2log = grid.iGeomCells.GeomCell2LogicalCell;
 
-            //qpf.Start();
 
             double alpha = m_alpha;
-
+            
             for (int j = 0; j < Length; j++) {
-                int jCell = j + i0;
+                int jCell;
+                if (geom2log == null) {
+                    // standard grid - geometrical and logical cells are 1-to-1
+                    jCell = j + i0;
+                } else {
+                    // aggregate cell grid - multiple geometrical cells map to a logical cell
+                    jCell = geom2log[j + i0];
+                }
+
+
                 for (int f = 0; f < NoOfFields; f++) {
                     int mE = m_NoOfTestFunctions[f];
                     int f_offset = m_MyMap[f];
+                    int idx0 = m_CodomainMapping.LocalUniqueCoordinateIndex(f, jCell, 0);
+
                     for (int m = 0; m < mE; m++) {
                         int idx = f_offset + m;
-                        m_Output[m_CodomainMapping.LocalUniqueCoordinateIndex(f, jCell, m)] += ResultsOfIntegration[j, idx] * alpha;
+                        Debug.Assert(idx0 + m == m_CodomainMapping.LocalUniqueCoordinateIndex(f, jCell, m));
+                        m_Output[idx0 + m] += ResultsOfIntegration[j, idx] * alpha;
                     }
                 }
             }
 
-            //qpf.Stop();
-            //timeStor += qpf.Duration(1); // profiling end
 
         }
     }

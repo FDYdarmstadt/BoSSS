@@ -134,6 +134,12 @@ namespace BoSSS.Foundation.Grid.Voronoi {
                     throw new NotImplementedException();
                 }
             }
+
+            public int[,] LogicalCellIndices {
+                get {
+                    throw new NotImplementedException();
+                }
+            }
         }
 
         public ILogicalEdgeData iLogicalEdges {

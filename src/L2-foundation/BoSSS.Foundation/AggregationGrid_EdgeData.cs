@@ -58,6 +58,37 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 }
             }
 
+            internal void CollectGeomEdges2logCells() {
+                int[,] gEdg2gCell = this.CellIndices;
+                int[] gCell2lCell = this.m_Owner.iGeomCells.GeomCell2LogicalCell;
+
+                int Cnt = gEdg2gCell.GetLength(0);
+                int[,] gEdg2lCell = new int[Cnt, 2];
+
+                for (int iEdg = 0; iEdg < Cnt; iEdg++) {
+                    int jg1 = gEdg2gCell[iEdg, 0];
+                    int jg2 = gEdg2gCell[iEdg, 1];
+
+                    int jl1 = gCell2lCell[jg1];
+                    int jl2;
+                    if (jg2 >= 0)
+                        jl2 = gCell2lCell[jg2];
+                    else
+                        jl2 = -32829;
+
+                    gEdg2lCell[iEdg, 0] = jl1;
+                    gEdg2lCell[iEdg, 1] = jl2;
+                }
+
+                LogicalCellIndices = gEdg2lCell;
+            }
+
+            
+            public int[,] LogicalCellIndices {
+                get;
+                private set;
+            }
+
             public int Count {
                 get {
                     return m_Owner.ParentGrid.iGeomEdges.Count;
@@ -172,8 +203,21 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 return m_Owner.ParentGrid.iGeomEdges.GetRefElementIndex(e);
             }
 
+            /// <summary>
+            /// Always false for aggregation grids, since they require the orthonormalization (<see cref="BasisData.OrthonormalizationTrafo"/>) in each geometrical cell.
+            /// </summary>
+            /// <param name="e">
+            /// Geometric edge index
+            /// </param>
+            /// <returns>
+            /// always false
+            /// </returns>
             public bool IsEdgeAffineLinear(int e) {
-                return m_Owner.ParentGrid.iGeomEdges.IsEdgeAffineLinear(e);
+                if (e < 0)
+                    throw new IndexOutOfRangeException();
+                if (e >= Count)
+                    throw new IndexOutOfRangeException();
+                return false; 
             }
 
 

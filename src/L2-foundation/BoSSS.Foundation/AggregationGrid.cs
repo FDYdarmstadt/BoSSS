@@ -144,6 +144,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             BuildNeighborship(AggregationCells);
             DefineCellParts();
             CollectEdges();
+            m_GeomEdgeData.CollectGeomEdges2logCells();
 
             m_ChefBasis = new _BasisData(this);
         }
@@ -305,6 +306,10 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             }
 #endif
         }
+
+
+        
+
 
         /// <summary>
         /// helper data structure

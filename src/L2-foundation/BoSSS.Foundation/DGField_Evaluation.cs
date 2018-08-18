@@ -54,10 +54,8 @@ namespace BoSSS.Foundation {
             ResultAcc.Multiply(1.0, Coördinates, BasisValues, ResultPreScale, "jm", "jn", "jmn");
             */
 
-            int[] geom2log = basis.GridDat.iGeomCells.GeomCell2LogicalCell;
+            //int[] geom2log = basis.GridDat.iGeomCells.GeomCell2LogicalCell;
 
-
-            
             MultidimensionalArray BasisValues = basis.Evaluate(NS);
             
             if(L == 1 && AffineLinear) {
@@ -149,7 +147,7 @@ namespace BoSSS.Foundation {
                 unsafe {
                     fixed (int* p_geom2log = geom2log) {
                         trfCoördinates.Multiply(1.0, trafo, Coördinates, 0.0, ref mp_jm_jmn_Tjn,
-                            p_geom2log, geom2log.Length,
+                            p_geom2log, p_geom2log, p_geom2log,
                             trfPreOffset_A: 0, trfCycle_A: 0, trfPostOffset_A: 0,
                             trfPreOffset_B: coördOffset, trfCycle_B: 1, trfPostOffset_B: 0); // geom cell to logical cell trafo for coördinates
 
@@ -330,9 +328,10 @@ namespace BoSSS.Foundation {
             Debug.Assert(valOT == null || valOT.GetLength(1) == NoOfNodes);
 
             int[,] trfIdx = grd.iGeomEdges.Edge2CellTrafoIndex;
-            int[,] E2C = grd.iGeomEdges.CellIndices;
+            int[,] E2Cl = grd.iGeomEdges.LogicalCellIndices;
+            int[,] E2Cg = grd.iGeomEdges.CellIndices;
 
-            int Nin = _Basis.GetLength(E2C[e0, 0]);
+            int Nin = _Basis.GetLength(E2Cl[e0, 0]);
             int Not = -1;
 
             int jCellMin = int.MaxValue, jCellMax = int.MinValue;
@@ -398,12 +397,12 @@ namespace BoSSS.Foundation {
 
                         {
                             valIN.Multiply(1.0, trfCoördinatesIN, BasisValuesIN, ResultPreScale, ref mp_ik_im_Tikm,
-                                pTrfIndex, trfIdx.GetLength(0),
+                                pTrfIndex, pTrfIndex, pTrfIndex,
                                 trfPreOffset_A: 0, trfCycle_A: 0, trfPostOffset_A: 0, trfPreOffset_B: (2 * e0), trfCycle_B: 2, trfPostOffset_B: 0);
                         }
                         if(Not > 0) {
                             valOT.Multiply(1.0, trfCoördinatesOT, BasisValuesOT, ResultPreScale, ref mp_ik_im_Tikm,
-                                pTrfIndex, trfIdx.GetLength(0),
+                                pTrfIndex, pTrfIndex, pTrfIndex,
                                 trfPreOffset_A: 0, trfCycle_A: 0, trfPostOffset_A: 0, trfPreOffset_B: (2 * e0 + 1), trfCycle_B: 2, trfPostOffset_B: 0);
                         }
                     }
@@ -425,12 +424,12 @@ namespace BoSSS.Foundation {
 
                         {
                             meanValIN.Multiply(1.0, _trfCoördinatesIN, _Basis0Values, ResultPreScale, ref mp_i_i_Ti,
-                                pTrfIndex, trfIdx.GetLength(0),
+                                pTrfIndex, pTrfIndex, pTrfIndex,
                                 trfPreOffset_A: 0, trfCycle_A: 0, trfPostOffset_A: 0, trfPreOffset_B: (2 * e0), trfCycle_B: 2, trfPostOffset_B: 0);
                         }
                         if(Not > 0) {
                             meanValOT.Multiply(1.0, _trfCoördinatesOT, _Basis0Values, ResultPreScale, ref mp_i_i_Ti,
-                                pTrfIndex, trfIdx.GetLength(0),
+                                pTrfIndex, pTrfIndex, pTrfIndex,
                                 trfPreOffset_A: 0, trfCycle_A: 0, trfPostOffset_A: 0, trfPreOffset_B: (2 * e0 + 1), trfCycle_B: 2, trfPostOffset_B: 0);
                         }
                     }
@@ -474,21 +473,21 @@ namespace BoSSS.Foundation {
 
                                 {
                                     GradientRef.Multiply(1.0, trfCoördinatesIN, BasisGradValuesIN, 0.0, ref mp_ike_im_Tikme,
-                                        pTrfIndex, trfIdx.GetLength(0),
+                                        pTrfIndex, pTrfIndex, pTrfIndex,
                                         trfPreOffset_A: 0, trfCycle_A: 0, trfPostOffset_A: 0, trfPreOffset_B: (2 * e0), trfCycle_B: 2, trfPostOffset_B: 0);  // gradient in reference coördinates
 
                                     gradIN.Multiply(1.0, InvJacobi, GradientRef, ResultPreScale, ref mp_ikd_Tied_ike,
-                                        pE2C, E2C.GetLength(0),
+                                        pE2C, pE2C, pE2C, 
                                         trfPreOffset_A: (2 * e0), trfCycle_A: 2, trfPostOffset_A: 0, trfPreOffset_B: 0, trfCycle_B: 0, trfPostOffset_B: 0);
                                 }
 
                                 if(Not > 0) {
                                     GradientRef.Multiply(1.0, trfCoördinatesOT, BasisGradValuesOT, 0.0, ref mp_ike_im_Tikme,
-                                        pTrfIndex, trfIdx.GetLength(0),
+                                        pTrfIndex, pTrfIndex, pTrfIndex,
                                         trfPreOffset_A: 0, trfCycle_A: 0, trfPostOffset_A: 0, trfPreOffset_B: (2 * e0 + 1), trfCycle_B: 2, trfPostOffset_B: 0);  // gradient in reference coördinates
 
                                     gradOT.Multiply(1.0, InvJacobi, GradientRef, ResultPreScale, ref mp_ikd_Tied_ike,
-                                        pE2C, E2C.GetLength(0),
+                                        pE2C, pE2C, pE2C,
                                         trfPreOffset_A: (2 * e0 + 1), trfCycle_A: 2, trfPostOffset_A: 0, trfPreOffset_B: 0, trfCycle_B: 0, trfPostOffset_B: 0);
                                 }
                             }
@@ -508,7 +507,7 @@ namespace BoSSS.Foundation {
 
                             {
                                 GradientRef.Multiply(1.0, trfCoördinatesIN, BasisGradValuesIN, 0.0, ref mp_ike_im_Tikme,
-                                    pTrfIndex, trfIdx.GetLength(0),
+                                    pTrfIndex, pTrfIndex, pTrfIndex,
                                     trfPreOffset_A: 0, trfCycle_A: 0, trfPostOffset_A: 0, trfPreOffset_B: (2 * e0), trfCycle_B: 2, trfPostOffset_B: 0);  // gradient in reference coördinates, i.e. \f$ \nabla_{\vec{xi}} \f$
 
                                 gradIN.Multiply(1.0, invJacobiIN, GradientRef, ResultPreScale, ref mp_ikd_iked_ike);   // gradient in physical coördinates, i.e. \f$ \nabla_{\vec{x}}n \f$
@@ -516,7 +515,7 @@ namespace BoSSS.Foundation {
 
                             if(Not > 0) {
                                 GradientRef.Multiply(1.0, trfCoördinatesOT, BasisGradValuesOT, 0.0, ref mp_ike_im_Tikme,
-                                    pTrfIndex, trfIdx.GetLength(0),
+                                    pTrfIndex, pTrfIndex, pTrfIndex,
                                     trfPreOffset_A: 0, trfCycle_A: 0, trfPostOffset_A: 0, trfPreOffset_B: (2 * e0 + 1), trfCycle_B: 2, trfPostOffset_B: 0);  // gradient in reference coördinates, i.e. \f$ \nabla_{\vec{xi}} \f$
 
                                 gradOT.Multiply(1.0, invJacobiOT, GradientRef, ResultPreScale, ref mp_ikd_iked_ike);   // gradient in physical coördinates, i.e. \f$ \nabla_{\vec{x}} \f$
@@ -604,6 +603,7 @@ namespace BoSSS.Foundation {
         {
 
             int[,] Edge2Cell = grd.iGeomEdges.CellIndices;
+
             unsafe {
                 fixed(int* pEdge2Cell = Edge2Cell) {
 
@@ -613,14 +613,14 @@ namespace BoSSS.Foundation {
                         // trfCoördinatesIN[i,n] = scale[T(i)]*Coördinates[T(i),n], where T(i) = Edge2Cell[i + e0,0]
                         {
                             trfCoördinatesIN.Multiply(1.0, scale, Coördinates, 0.0, ref mp_in_Ti_Tin,
-                                pEdge2Cell, Edge2Cell.GetLength(0),
+                                pEdge2Cell, pEdge2Cell, pEdge2Cell,
                                 trfPreOffset_A: (2 * e0), trfCycle_A: 2, trfPostOffset_A: 0, trfPreOffset_B: (2 * e0), trfCycle_B: 2, trfPostOffset_B: 0);
                         }
 
                         // trfCoördinatesOT[i,n] = scale[T(i)]*Coördinates[T(i),n], where T(i) = Edge2Cell[i + e0,1]
                         if(N_OT > 0) {
                             trfCoördinatesOT.Multiply(1.0, scale, Coördinates, 0.0, ref mp_in_Ti_Tin,
-                                pEdge2Cell, Edge2Cell.GetLength(0),
+                                pEdge2Cell, pEdge2Cell, pEdge2Cell,
                                 trfPreOffset_A: (2 * e0 + 1), trfCycle_A: 2, trfPostOffset_A: 0, trfPreOffset_B: (2 * e0 + 1), trfCycle_B: 2, trfPostOffset_B: 0);
                         }
 
@@ -645,16 +645,18 @@ namespace BoSSS.Foundation {
 
                             // trfCoördinatesIN[i,m] = sum_{n} trafo[T(i),m,n]*Coördinates[T(i),m,n], where T(i) = Edge2Cell[i,0]
                             trfCoördinatesIN.Multiply(1.0, trafoIN, Coördinates, 0.0, ref mp_im_Timn_Tin,
-                                pEdge2Cell, Edge2Cell.GetLength(0),
-                                trfPreOffset_A: (2 * e0), trfCycle_A: 2, trfPostOffset_A: -jCellMin, trfPreOffset_B: (2 * e0), trfCycle_B: 2, trfPostOffset_B: 0);
+                                pEdge2Cell, pEdge2Cell, pEdge2Cell,
+                                trfPreOffset_A: (2 * e0), trfCycle_A: 2, trfPostOffset_A: -jCellMin, 
+                                trfPreOffset_B: (2 * e0), trfCycle_B: 2, trfPostOffset_B: 0);
                         }
                         if(N_OT > 0) {
                             Debug.Assert(trfCoördinatesOT.GetLength(1) == N_OT);
                             Debug.Assert(Coördinates.GetLength(1) == N_OT);
 
                             trfCoördinatesOT.Multiply(1.0, trafoOT, Coördinates, 0.0, ref mp_im_Timn_Tin,
-                                pEdge2Cell, Edge2Cell.GetLength(0),
-                                trfPreOffset_A: (2 * e0 + 1), trfCycle_A: 2, trfPostOffset_A: -jCellMin, trfPreOffset_B: (2 * e0 + 1), trfCycle_B: 2, trfPostOffset_B: 0);
+                                pEdge2Cell, pEdge2Cell, pEdge2Cell,
+                                trfPreOffset_A: (2 * e0 + 1), trfCycle_A: 2, trfPostOffset_A: -jCellMin, 
+                                trfPreOffset_B: (2 * e0 + 1), trfCycle_B: 2, trfPostOffset_B: 0);
                         }
                     }
                 }

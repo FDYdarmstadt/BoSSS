@@ -2298,6 +2298,15 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
 
             /// <summary>
+            /// Equal to <see cref="CellIndices"/>.
+            /// </summary>
+            public int[,] LogicalCellIndices {
+                get {
+                    return CellIndices;
+                }
+            }
+
+            /// <summary>
             /// Face index, where the numbering of faces is defined by the reference element, see e.g. <see cref="RefElement.FaceToVertexIndices"/>.
             /// - 1st index: local edge index; 
             /// - 2nd index: 0 and 1 for first and second neighbor;
