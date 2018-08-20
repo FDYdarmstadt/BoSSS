@@ -415,6 +415,7 @@ namespace BoSSS.Solution.XNSECommon {
 
                         // surface shear viscosity 
                         if (config.dntParams.SurfStressTensor == SurfaceSressTensor.SurfaceRateOfDeformation ||
+                            config.dntParams.SurfStressTensor == SurfaceSressTensor.SemiImplicit ||
                             config.dntParams.SurfStressTensor == SurfaceSressTensor.FullBoussinesqScriven) {
 
                             for (int d = 0; d < D; d++) {
@@ -422,9 +423,11 @@ namespace BoSSS.Solution.XNSECommon {
                                 m_OP.SurfaceElementOperator.EquationComponents[CodName[d]].Add(surfDeformRate);
                                 //m_OP.OnIntegratingSurfaceElement += surfDeformRate.SetParameter;
 
-                                var surfDeformRateT = new BoussinesqScriven_SurfaceDeformationRate_GradUTranspose(d, muI * 0.5, penalty);
-                                m_OP.SurfaceElementOperator.EquationComponents[CodName[d]].Add(surfDeformRateT);
-                                //m_OP.OnIntegratingSurfaceElement += surfDeformRateT.SetParameter;
+                                if(config.dntParams.SurfStressTensor != SurfaceSressTensor.SemiImplicit) {
+                                    var surfDeformRateT = new BoussinesqScriven_SurfaceDeformationRate_GradUTranspose(d, muI * 0.5, penalty);
+                                    m_OP.SurfaceElementOperator.EquationComponents[CodName[d]].Add(surfDeformRateT);
+                                    //m_OP.OnIntegratingSurfaceElement += surfDeformRateT.SetParameter;
+                                }
                             }
 
                         }

@@ -886,7 +886,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
         public TermActivationFlags VolTerms {
             get {
-                return TermActivationFlags.GradV;
+                return TermActivationFlags.GradV | TermActivationFlags.GradUxGradV;
             }
         }
 
@@ -912,6 +912,13 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
             for (int d = 0; d < cpv.D; d++)
                 acc += - m_sigma * Psurf[m_comp, d] * GradV[d];
+
+            // stabilization
+            for(int d = 0; d < cpv.D; d++) {
+                for(int dd = 0; dd < cpv.D; dd++) {
+                    acc += -0.1 * GradU[m_comp, d] * Nsurf[d] * GradV[dd] * Nsurf[dd];
+                }
+            }
 
             return -acc;
         }
@@ -939,6 +946,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             IncompressibleBcType edgType = m_edgeTag2Type[inp.EdgeTag];
 
             switch (edgType) {
+                case IncompressibleBcType.SlipSymmetry:
                 case IncompressibleBcType.NavierSlip_Linear: {
 
                         double[] EdgeNormal = inp.Normale;
@@ -967,13 +975,16 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
                             Flx_InCell -= m_sigma * (EdgeNormal[d] * Tangente_IN[d]) * EdgeNormal[m_comp];
                         }
 
-                        // Young's relation (static contact angle)
-                        Flx_InCell -= m_sigma * Math.Cos(m_theta) * PSnINormal_IN[m_comp];
+                        if(edgType == IncompressibleBcType.NavierSlip_Linear) {
 
-                        // dissipative contact line force
-                        // beta*(u*nL)
-                        for (int d = 0; d < D; d++) {
-                            Flx_InCell += m_beta * (_uA[d] * PSnINormal_IN[d]) * PSnINormal_IN[m_comp];
+                            // Young's relation (static contact angle)
+                            Flx_InCell -= m_sigma * Math.Cos(m_theta) * PSnINormal_IN[m_comp];
+
+                            // dissipative contact line force
+                            // beta*(u*nL)
+                            for(int d = 0; d < D; d++) {
+                                Flx_InCell += m_beta * (_uA[d] * PSnINormal_IN[d]) * PSnINormal_IN[m_comp];
+                            }
                         }
 
                         //double[] PInS = new double[D];
@@ -1321,19 +1332,49 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
         protected override void Flux(ref CommonParamsVol inp, double[,] GradU, double[] flux) {
 
-            int D = inp.D;
+            //int D = inp.D;
 
-            double[] Nsurf = SurfaceNormal(inp.Parameters);
+            //double[] Nsurf = SurfaceNormal(inp.Parameters);
+            //double[,] Psurf = SurfaceProjection(Nsurf);
+
+            //double[,] GradUsurf = Multiply(Psurf, GradU);
+
+            //for (int d = 0; d < D; d++) {
+            //    for (int dd = 0; dd < D; dd++) {
+            //        flux[d] += -m_muI * GradUsurf[m_comp, dd] * Psurf[dd, d];
+            //    }
+            //}
+
+        }
+
+
+        public override double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
+
+            int D = cpv.D;
+
+            double[] Nsurf = SurfaceNormal(cpv.Parameters);
             double[,] Psurf = SurfaceProjection(Nsurf);
 
             double[,] GradUsurf = Multiply(Psurf, GradU);
-
+            double[,] GradUsurfPsurf = new double[D, D];
             for (int d = 0; d < D; d++) {
                 for (int dd = 0; dd < D; dd++) {
-                    flux[d] += -m_muI * GradUsurf[m_comp, dd] * Psurf[dd, d];
+                    GradUsurfPsurf[d,dd] += GradUsurf[d, dd] * Psurf[dd, d];
                 }
             }
 
+            double acc = 0;
+            for(int d = 0; d < D; d++)
+                acc += -m_muI * GradUsurfPsurf[m_comp, d] * GradV[d];
+
+            // stabilization
+            for(int d = 0; d < D; d++) {
+                for(int dd = 0; dd < D; dd++) {
+                    acc += -0.1 * GradU[m_comp, d] * Nsurf[d] * GradV[dd] * Nsurf[dd];
+                }
+            }
+
+            return -acc;
         }
 
 
