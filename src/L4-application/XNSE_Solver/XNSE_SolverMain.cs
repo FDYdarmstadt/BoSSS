@@ -496,6 +496,10 @@ namespace BoSSS.Application.XNSE_Solver {
                 Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
                 Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
             }
+
+            if(this.Control.AdvancedDiscretizationOptions.SurfStressTensor == SurfaceSressTensor.SemiImplicit)
+                this.Control.PhysicalParameters.mu_I = this.Control.dtFixed * this.Control.PhysicalParameters.Sigma;
+
             #endregion
 
             #region Config and Generate XOperator
@@ -1010,7 +1014,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 hack_TimestepIndex = TimestepInt;
                 hack_Phystime = phystime;
 
-
+  
                 //Preprocessing(TimestepInt, phystime, dt, TimestepNo);
 
 

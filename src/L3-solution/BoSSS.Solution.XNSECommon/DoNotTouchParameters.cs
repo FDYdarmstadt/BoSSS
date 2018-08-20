@@ -47,7 +47,12 @@ namespace BoSSS.Solution.XNSECommon {
         /// <summary>
         /// the Boussinesq-Scriven model, describing a newtonian-like surface with surface shear and dilatational viscosity
         /// </summary>
-        FullBoussinesqScriven
+        FullBoussinesqScriven,
+
+        /// <summary>
+        /// resembles <see cref="SurfaceRateOfDeformation"/> with $\mu_I = dt$
+        /// </summary>
+        SemiImplicit
 
     }
 

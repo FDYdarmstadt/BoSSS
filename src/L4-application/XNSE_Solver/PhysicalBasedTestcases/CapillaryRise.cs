@@ -249,6 +249,369 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             return C;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public static XNSE_Control CapillaryRise_Tube_SFB1194(int p = 2, int kelemR = 8, int omegaTc = 1, bool startUp = true, bool symmetry = true, string _DbPath = null) {
 
+            XNSE_Control C = new XNSE_Control();
+
+            _DbPath = @"\\fdyprime\userspace\smuda\cluster\CapillaryRise\CapillaryRise_db";
+
+            // basic database options
+            // ======================
+            #region db
+
+            C.DbPath = _DbPath;
+            C.savetodb = C.DbPath != null;
+            C.ProjectName = "XNSE/CapillaryRise";
+            C.ProjectDescription = "A comparative study for SFB 1194";
+
+            C.ContinueOnIoError = false;
+
+            C.LogValues = XNSE_Control.LoggingValues.MovingContactLine;
+            C.LogPeriod = 10;
+
+            #endregion
+
+
+            // DG degrees
+            // ==========
+            #region degrees
+
+            C.FieldOptions.Add("VelocityX", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("VelocityY", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("GravityY", new FieldOpts() {
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Pressure", new FieldOpts() {
+                Degree = p - 1,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("PhiDG", new FieldOpts() {
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Phi", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Curvature", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+
+            #endregion
+
+
+            // Physical Parameters
+            // ===================
+            #region physics
+
+            // the gaseous phase should be close to air
+            C.PhysicalParameters.rho_B = 1.204e-6;  // kg / cm^3
+            C.PhysicalParameters.mu_B = 17.1e-8;    // kg / cm s
+
+            double g = 0;
+            double R = 0;
+            double H = 0;
+            double t_end = 0;
+            double dt = 0;
+            double t_startUp = 0;
+            double dt_startUp = 0;
+            Guid restartID = new Guid();
+            switch(omegaTc) {
+                case 1: {
+                        C.Tags.Add("omega = 0.1");
+                        R = 1e-1;           // cm
+                        H = 5e-1;
+
+                        C.PhysicalParameters.rho_A = 1e-3;
+                        C.PhysicalParameters.mu_A = 3.8e-5;
+                        C.PhysicalParameters.Sigma = 0.4;       // kg / s^2
+
+                        C.PhysicalParameters.betaS_A = 1e-3 / Math.Min(R / kelemR, H / (5 * kelemR));
+                        C.PhysicalParameters.betaS_B = 1e-5 / Math.Min(R / kelemR, H / (5 * kelemR));
+
+                        C.PhysicalParameters.betaL = 0;
+                        C.PhysicalParameters.theta_e = 7.0 * Math.PI / 18.0;
+
+                        g = 41.8e2;         // cm / s^2
+
+                        t_end = 1.25;
+                        dt = 4e-6;
+                        dt_startUp = 4e-6;
+                        break;
+                    }
+                case 2: {
+                        C.Tags.Add("omega = 0.5");
+                        R = 2e-1;           // cm
+                        H = 10e-1;
+
+                        C.PhysicalParameters.rho_A = 1e-3;
+                        C.PhysicalParameters.mu_A = 3.77e-4;
+                        C.PhysicalParameters.Sigma = 0.6;  // kg / s^2
+
+                        C.PhysicalParameters.betaS_A = 1e-4 / Math.Min(R / kelemR, H / (5 * kelemR));
+                        C.PhysicalParameters.betaS_B = 1e-5 / Math.Min(R / kelemR, H / (5 * kelemR));
+
+                        C.PhysicalParameters.betaL = 0;
+                        C.PhysicalParameters.theta_e = 7.0 * Math.PI / 18.0;
+
+                        g = 18.1e2;        // cm / s^2
+
+                        t_end = 0.3537;
+                        dt = 1e-5;
+                        t_startUp = 0.022295;
+
+                        //restartID = new Guid("824a1b40-3a4e-4568-9407-6a5c52345b4c");   //restart
+                        restartID = new Guid("177b33a3-9a5f-4b05-a8bd-a772b05355bb");   //restart2
+
+                        dt_startUp = 5e-6;
+                        break;
+                    }
+                case 3: {
+                        C.Tags.Add("omega = 1");
+                        R = 1e-1;           // cm
+                        H = 7e-1;
+
+                        C.PhysicalParameters.rho_A = 1e-3;
+                        C.PhysicalParameters.mu_A = 1e-4;
+                        C.PhysicalParameters.Sigma = 0.15;  // kg / s^2
+
+                        C.PhysicalParameters.betaS_A = 1e-4 / Math.Min(R / kelemR, H / (5 * kelemR));
+                        C.PhysicalParameters.betaS_B = 1e-5 / Math.Min(R / kelemR, H / (5 * kelemR));
+
+                        C.PhysicalParameters.betaL = 0;
+                        C.PhysicalParameters.theta_e = Math.PI / 6.0;
+
+                        g = 40.8e2;         // cm / s^2
+                        R = 1e-1;           // cm
+                        H = 7e-1;
+                        t_end = 1.25;
+                        dt = 3e-6;
+                        dt_startUp = 1e-6;
+                        break;
+                    }
+                case 4: {
+                        C.Tags.Add("omega = 10");
+                        R = 1e-1;           // cm
+                        H = 8e-1;
+
+                        C.PhysicalParameters.rho_A = 1e-4;
+                        C.PhysicalParameters.mu_A = 1e-4;
+                        C.PhysicalParameters.Sigma = 0.05;  // kg / s^2
+
+                        C.PhysicalParameters.betaS_A = 1e-4 / Math.Min(R / kelemR, H / (5 * kelemR));
+                        C.PhysicalParameters.betaS_B = 1e-5 / Math.Min(R / kelemR, H / (5 * kelemR));
+
+                        C.PhysicalParameters.betaL = 0;
+                        C.PhysicalParameters.theta_e = 7.0 * Math.PI / 18.0;
+
+                        g = 46.8e2;         // cm / s^2
+                        R = 1e-1;           // cm
+                        H = 8e-1;
+                        t_end = 1.25;
+                        dt = 1e-6;
+                        dt_startUp = 1e-6;
+
+                        restartID = new Guid("9f373525-03f8-40c7-a652-c039b6564515");
+                        break;
+                    }
+                case 5: {
+                        C.Tags.Add("omega = 100");
+                        R = 1e-1;           // cm
+                        H = 9e-1;
+
+                        C.PhysicalParameters.rho_A = 1e-4;
+                        C.PhysicalParameters.mu_A = 4e-4;
+                        C.PhysicalParameters.Sigma = 0.01;  // kg / s^2
+
+                        C.PhysicalParameters.betaS_A = 1e-4 / Math.Min(R / kelemR, H / (5 * kelemR));
+                        C.PhysicalParameters.betaS_B = 1e-5 / Math.Min(R / kelemR, H / (5 * kelemR)); 
+
+                        C.PhysicalParameters.betaL = 0;
+                        C.PhysicalParameters.theta_e = 7.0 * Math.PI / 18.0;
+
+                        g = 8.4e2;          // cm / s^2
+                        R = 1e-1;           // cm
+                        H = 9e-1;
+                        t_end = 31.25;
+                        dt = 1e-5;
+                        break;
+                    }
+            } 
+
+            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.Material = true;
+
+            #endregion
+
+
+            // grid generation
+            // ===============
+            #region grid
+
+            if(startUp) {
+
+                C.GridFunc = delegate () {
+                    double[] Xnodes;
+                    if(symmetry)
+                        Xnodes = GenericBlas.Linspace(0, R, kelemR + 1);
+                    else
+                        Xnodes = GenericBlas.Linspace(-R, R, 2 * kelemR + 1);
+                    double[] Ynodes = GenericBlas.Linspace(0, H, 5 * kelemR + 1);
+                    var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
+
+                    grd.EdgeTagNames.Add(1, "wall_lower");
+                    grd.EdgeTagNames.Add(2, "pressure_outlet_upper");
+
+                    if(symmetry)
+                        grd.EdgeTagNames.Add(3, "slipsymmetry_left");
+                    else
+                        grd.EdgeTagNames.Add(3, "navierslip_linear_left");
+
+                    grd.EdgeTagNames.Add(4, "navierslip_linear_right");
+
+                    grd.DefineEdgeTags(delegate (double[] X) {
+                        byte et = 0;
+                        if(Math.Abs(X[1]) <= 1.0e-8)
+                            et = 1;
+                        if(Math.Abs(X[1] - H) <= 1.0e-8)
+                            et = 2;
+                        if(symmetry) {
+                            if(Math.Abs(X[0]) <= 1.0e-8)
+                                et = 3;
+                        } else {
+                            if(Math.Abs(X[0] + R) <= 1.0e-8)
+                                et = 3;
+                        }
+                        if(Math.Abs(X[0] - R) <= 1.0e-8)
+                            et = 4;
+
+                        return et;
+                    });
+
+                    return grd;
+                };
+            }
+
+            #endregion
+
+
+            // Initial Values
+            // ==============
+            #region init
+
+            double h0 = 1.666e-1;
+
+            Func<double[], double> PhiFunc = (X => X[1] - h0);
+
+            if(startUp) {
+                C.InitialValues_Evaluators.Add("Phi", PhiFunc);
+
+                C.InitialValues_Evaluators.Add("GravityY#A", X => -g);
+                C.InitialValues_Evaluators.Add("GravityY#B", X => -g);
+
+            } else {
+
+                C.RestartInfo = new Tuple<Guid, TimestepNumber>(restartID, null);
+
+            }
+
+            #endregion
+
+
+            // boundary conditions
+            // ===================
+            #region BC
+
+            if(startUp) {
+                C.AddBoundaryCondition("wall_lower");
+            } else {
+                C.ChangeBoundaryCondition("wall_lower", "pressure_outlet_lower");
+                C.AddBoundaryCondition("pressure_outlet_lower");
+            }
+            C.AddBoundaryCondition("pressure_outlet_upper");
+
+            if(symmetry)
+                C.AddBoundaryCondition("slipsymmetry_left");
+            else
+                C.AddBoundaryCondition("navierslip_linear_left");
+
+            C.AddBoundaryCondition("navierslip_linear_right");
+
+
+            #endregion
+
+
+            // misc. solver options
+            // ====================
+            #region solver
+
+            C.ComputeEnergy = false;
+
+            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ContinuousDG;
+
+            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
+            C.NoOfMultigridLevels = 1;
+            C.Solver_MaxIterations = 50;
+            C.Solver_ConvergenceCriterion = 1e-8;
+            C.LevelSet_ConvergenceCriterion = 1e-6;
+
+
+            C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
+
+            C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.Isotropic;
+
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+
+
+            C.AdaptiveMeshRefinement = false;
+            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            C.RefinementLevel = 1;
+
+            #endregion
+
+
+            // level-set
+            // =========
+            #region levelset
+
+            C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
+
+            //int Nsp = 256;
+            //C.FourierLevSetControl = new FourierLevSetControl(FourierType.Planar, Nsp, R, X => h0, R/(double)Nsp);
+            //C.FourierLevSetControl.Timestepper = FourierLevelSet_Timestepper.RungeKutta1901;
+
+            #endregion
+
+
+            // Timestepping
+            // ============
+            #region time
+
+            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.BDF2;
+            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
+
+            C.CompMode = AppControl._CompMode.Transient;
+            C.dtMax = (startUp) ? dt_startUp : dt;
+            C.dtMin = (startUp) ? dt_startUp : dt;
+            C.Endtime = (startUp) ? Math.Sqrt(2 * R / g) * 1.1 : (t_startUp + t_end);
+            C.NoOfTimesteps = (int)(C.Endtime / C.dtMin);
+            C.saveperiod = 10;
+
+            #endregion
+
+
+            return C;
+        }
     }
 }
