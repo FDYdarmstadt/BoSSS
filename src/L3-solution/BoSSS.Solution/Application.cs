@@ -1194,6 +1194,16 @@ namespace BoSSS.Solution {
                                 tsi_toLoad = session.Timesteps.Single(t => t.TimeStepNumber.Equals(timestep));
                             }
                             var _Grid = DatabaseDriver.LoadGrid(tsi_toLoad.GridID, m_Database);
+
+                            foreach(string oldBndy in this.Control.BoundaryValuesChanges.Keys) {
+                                int bndyInd = _Grid.EdgeTagNames.Values.FirstIndexWhere(bndyVal => bndyVal.Equals(oldBndy, StringComparison.InvariantCultureIgnoreCase));
+                                if( bndyInd > -1) {
+                                    _Grid.EdgeTagNames[_Grid.EdgeTagNames.Keys.ElementAt(bndyInd)] = this.Control.BoundaryValuesChanges[oldBndy];
+                                } else {
+                                    throw new ArgumentException("Boundary " + oldBndy + " is not found in EdgeTagNames of the loaded Grid");
+                                }
+                            }
+
                             ht.LogMemoryStat();
                             return _Grid;
                         } else {
