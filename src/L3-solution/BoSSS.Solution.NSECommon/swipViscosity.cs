@@ -571,6 +571,7 @@ namespace BoSSS.Solution.NSECommon {
                     break;
                 }
                 case IncompressibleBcType.FreeSlip:
+                case IncompressibleBcType.SlipSymmetry:
                 case IncompressibleBcType.NavierSlip_Linear: {
 
                     int D = inp.D;
@@ -786,6 +787,7 @@ namespace BoSSS.Solution.NSECommon {
                     break;
                 }
                 case IncompressibleBcType.FreeSlip:
+                case IncompressibleBcType.SlipSymmetry:
                 case IncompressibleBcType.NavierSlip_Linear: {
 
                     int D = inp.D;
