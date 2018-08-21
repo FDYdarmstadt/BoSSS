@@ -75,6 +75,11 @@ namespace BoSSS.Solution.NSECommon {
         FreeSlip = 6,
 
         /// <summary>
+        /// symmetry boundary condition with contact angle (90° contact angle) and free slip
+        /// </summary>
+        SlipSymmetry = 7,
+
+        /// <summary>
         /// Generalized Navier Boundary condition with linear effective forces at wall and contact line
         /// \f[
         /// \vec{u} \cdot \vec{n}_S = 0 \text{ and } 
@@ -82,12 +87,10 @@ namespace BoSSS.Solution.NSECommon {
         /// \sigma \boldsymbol{P}_S \tau_L = -\beta_L (\vec{u} \cdot \vec{n}_L) + \sigma \cos(\Theta_e) \vec{n}_L \text{ on } L
         /// \f]
         /// </summary>
-        NavierSlip_Linear = 7,
+        NavierSlip_Linear = 8,
 
-        /// <summary>
-        /// symmetry boundary condition with contact angle (90° contact angle) and free slip
-        /// </summary>
-        SlipSymmetry = 8
+
+        NavierSlip_localized = 9
 
 
     }

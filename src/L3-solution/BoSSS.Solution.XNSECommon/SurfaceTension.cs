@@ -914,11 +914,11 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
                 acc += - m_sigma * Psurf[m_comp, d] * GradV[d];
 
             // stabilization
-            for(int d = 0; d < cpv.D; d++) {
-                for(int dd = 0; dd < cpv.D; dd++) {
-                    acc += -0.1 * GradU[m_comp, d] * Nsurf[d] * GradV[dd] * Nsurf[dd];
-                }
-            }
+            //for(int d = 0; d < cpv.D; d++) {
+            //    for(int dd = 0; dd < cpv.D; dd++) {
+            //        acc += -0.1 * GradU[m_comp, d] * Nsurf[d] * GradV[dd] * Nsurf[dd];
+            //    }
+            //}
 
             return -acc;
         }
@@ -947,7 +947,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
             switch (edgType) {
                 case IncompressibleBcType.SlipSymmetry:
-                case IncompressibleBcType.NavierSlip_Linear: {
+                case IncompressibleBcType.NavierSlip_Linear:
+                case IncompressibleBcType.NavierSlip_localized: {
 
                         double[] EdgeNormal = inp.Normale;
                         double[] SurfaceNormal_IN = SurfaceNormal(inp.Parameters_IN);
@@ -975,7 +976,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
                             Flx_InCell -= m_sigma * (EdgeNormal[d] * Tangente_IN[d]) * EdgeNormal[m_comp];
                         }
 
-                        if(edgType == IncompressibleBcType.NavierSlip_Linear) {
+                        if(edgType == IncompressibleBcType.NavierSlip_Linear ||
+                            edgType == IncompressibleBcType.NavierSlip_localized) {
 
                             // Young's relation (static contact angle)
                             Flx_InCell -= m_sigma * Math.Cos(m_theta) * PSnINormal_IN[m_comp];
@@ -1311,6 +1313,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         }
     }
 
+
     /// <summary>
     /// additional dynamic part - surface rate of deformation (according to the Boussinesq-Scriven model) - for the surface stress tensor
     /// </summary>
@@ -1332,50 +1335,50 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
         protected override void Flux(ref CommonParamsVol inp, double[,] GradU, double[] flux) {
 
-            //int D = inp.D;
+            int D = inp.D;
 
-            //double[] Nsurf = SurfaceNormal(inp.Parameters);
-            //double[,] Psurf = SurfaceProjection(Nsurf);
-
-            //double[,] GradUsurf = Multiply(Psurf, GradU);
-
-            //for (int d = 0; d < D; d++) {
-            //    for (int dd = 0; dd < D; dd++) {
-            //        flux[d] += -m_muI * GradUsurf[m_comp, dd] * Psurf[dd, d];
-            //    }
-            //}
-
-        }
-
-
-        public override double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
-
-            int D = cpv.D;
-
-            double[] Nsurf = SurfaceNormal(cpv.Parameters);
+            double[] Nsurf = SurfaceNormal(inp.Parameters);
             double[,] Psurf = SurfaceProjection(Nsurf);
 
             double[,] GradUsurf = Multiply(Psurf, GradU);
-            double[,] GradUsurfPsurf = new double[D, D];
-            for (int d = 0; d < D; d++) {
-                for (int dd = 0; dd < D; dd++) {
-                    GradUsurfPsurf[d,dd] += GradUsurf[d, dd] * Psurf[dd, d];
-                }
-            }
 
-            double acc = 0;
-            for(int d = 0; d < D; d++)
-                acc += -m_muI * GradUsurfPsurf[m_comp, d] * GradV[d];
-
-            // stabilization
             for(int d = 0; d < D; d++) {
                 for(int dd = 0; dd < D; dd++) {
-                    acc += -0.1 * GradU[m_comp, d] * Nsurf[d] * GradV[dd] * Nsurf[dd];
+                    flux[d] += -m_muI * GradUsurf[m_comp, dd] * Psurf[dd, d];
                 }
             }
 
-            return -acc;
         }
+
+
+        //public override double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
+
+        //    int D = cpv.D;
+
+        //    double[] Nsurf = SurfaceNormal(cpv.Parameters);
+        //    double[,] Psurf = SurfaceProjection(Nsurf);
+
+        //    double[,] GradUsurf = Multiply(Psurf, GradU);
+        //    double[,] GradUsurfPsurf = new double[D, D];
+        //    for (int d = 0; d < D; d++) {
+        //        for (int dd = 0; dd < D; dd++) {
+        //            GradUsurfPsurf[d,dd] += GradUsurf[d, dd] * Psurf[dd, d];
+        //        }
+        //    }
+
+        //    double acc = 0;
+        //    for(int d = 0; d < D; d++)
+        //        acc += -m_muI * GradUsurfPsurf[m_comp, d] * GradV[d];
+
+        //    // stabilization
+        //    //for(int d = 0; d < D; d++) {
+        //    //    for(int dd = 0; dd < D; dd++) {
+        //    //        acc += -0.1 * GradU[m_comp, d] * Nsurf[d] * GradV[dd] * Nsurf[dd];
+        //    //    }
+        //    //}
+
+        //    return -acc;
+        //}
 
 
         public override double InnerEdgeForm(ref CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB, 
@@ -1528,7 +1531,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
     }
 
 
-
     /// <summary>
     /// additional dynamic part - surface velocity divergence (according to the Boussinesq-Scriven model) - for the surface stress tensor
     /// </summary>
@@ -1635,7 +1637,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             IncompressibleBcType edgType = m_edgeTag2Type[inp.EdgeTag];
 
             switch (edgType) {
-                case IncompressibleBcType.NavierSlip_Linear: {
+                case IncompressibleBcType.NavierSlip_Linear:
+                case IncompressibleBcType.NavierSlip_localized: {
 
                         double acc = 0.0;
 
@@ -1688,4 +1691,73 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
     }
 
+
+    public class LevelSetStabilization : ILevelSetForm {
+
+        int m_D;
+        int m_d;
+
+        LevelSetTracker m_LsTrk;
+
+        double sigma;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="_d">spatial direction</param>
+        /// <param name="_D">spatial dimension</param>
+        /// <param name="LsTrk"></param>
+        /// <param name="_sigma">surface-tension constant</param>
+        public LevelSetStabilization(int _d, int _D, LevelSetTracker LsTrk) {
+            m_LsTrk = LsTrk;
+            if(_d >= _D)
+                throw new ArgumentOutOfRangeException();
+            this.m_D = _D;
+            this.m_d = _d;
+        }
+
+
+        public double LevelSetForm(ref CommonParamsLs cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+
+            double[] Normal = cp.n;
+
+            double acc = 0.0;
+
+            for(int d = 0; d < m_D; d++) {
+                for(int dd = 0; dd < m_D; dd++) {
+                    acc += -(Grad_uA[m_d, d] - Grad_uB[m_d, d]) * Normal[d] * (Grad_vA[dd] - Grad_vB[dd]) * Normal[dd];
+                }
+            }
+
+            double pnlty = 0.1;
+
+            return - pnlty * acc;
+        }
+
+
+        public IList<string> ArgumentOrdering {
+            get { return new string[] { }; }
+        }
+
+
+        public virtual IList<string> ParameterOrdering {
+            get { return new string[] { }; }
+        }
+
+        public int LevelSetIndex {
+            get { return 0; }
+        }
+
+        public SpeciesId PositiveSpecies {
+            get { return this.m_LsTrk.GetSpeciesId("B"); }
+        }
+
+        public SpeciesId NegativeSpecies {
+            get { return this.m_LsTrk.GetSpeciesId("A"); }
+        }
+
+        public TermActivationFlags LevelSetTerms {
+            get { return TermActivationFlags.GradUxGradV; }
+        }
+    }
 }

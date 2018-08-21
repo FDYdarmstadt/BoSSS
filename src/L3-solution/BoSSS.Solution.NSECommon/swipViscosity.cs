@@ -195,6 +195,11 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         protected double m_beta = 0.0;
 
+        /// <summary>
+        /// slip-length for the navier-slip BC
+        /// </summary>
+        protected MultidimensionalArray Lslip;
+
 
         //Func<double, int, int, MultidimensionalArray, double> m_ComputePenalty;
 
@@ -254,6 +259,7 @@ namespace BoSSS.Solution.NSECommon {
         int m_jCellOutOld;
         double m_PenaltyVal;
 
+
         /// <summary>
         /// Cell-wise length scales for the penalty computation.
         /// </summary>
@@ -282,6 +288,8 @@ namespace BoSSS.Solution.NSECommon {
             m_penalty = Math.Max(penalty_deg_tri, penalty_deg_sqr); // the conservative choice
 
             cj = cs.CellLengthScales;
+
+            Lslip = (MultidimensionalArray)cs.UserDefinedValues["SlipLengths"];
         }
 
         /// <summary>
@@ -617,6 +625,16 @@ namespace BoSSS.Solution.NSECommon {
 
                     break;
                 }
+                case IncompressibleBcType.NavierSlip_localized: {
+
+                        double ls = Lslip[inp.jCellIn];
+                        if(ls > 0.0) {
+                            m_beta = muA / ls;
+                            goto case IncompressibleBcType.NavierSlip_Linear;
+                        } else {
+                            goto case IncompressibleBcType.Velocity_Inlet;
+                        }
+                    }
                 case IncompressibleBcType.Outflow:
                 case IncompressibleBcType.Pressure_Outlet: {
                     // Atmospheric outlet/pressure outflow: hom. Neumann
@@ -815,6 +833,16 @@ namespace BoSSS.Solution.NSECommon {
 
                     break;
                 }
+                case IncompressibleBcType.NavierSlip_localized: {
+
+                        double ls = Lslip[inp.jCellIn];
+                        if(ls > 0.0) {
+                            m_beta = muA / ls;
+                            goto case IncompressibleBcType.NavierSlip_Linear;
+                        } else {
+                            goto case IncompressibleBcType.Velocity_Inlet;
+                        }
+                    }
                 case IncompressibleBcType.Pressure_Dirichlet:
                 case IncompressibleBcType.Outflow:
                 case IncompressibleBcType.Pressure_Outlet: {

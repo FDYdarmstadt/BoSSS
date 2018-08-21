@@ -152,7 +152,8 @@ namespace BoSSS.Solution.NSECommon {
                     break;
                 }
                 case IncompressibleBcType.Velocity_Inlet:
-                case IncompressibleBcType.NavierSlip_Linear: {
+                case IncompressibleBcType.NavierSlip_Linear:
+                case IncompressibleBcType.NavierSlip_localized: {
                     double u_j_In = Uin[0];
                     double u_j_Out = this.bndFunction[inp.EdgeTag](inp.X, inp.time);
 

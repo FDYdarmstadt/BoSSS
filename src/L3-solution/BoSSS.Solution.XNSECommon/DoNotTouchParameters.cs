@@ -232,6 +232,12 @@ namespace BoSSS.Solution.XNSECommon {
         /// </summary>
         [DataMember]
         public SurfaceSressTensor SurfStressTensor = SurfaceSressTensor.Isotropic;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        [DataMember]
+        public bool UseLevelSetStabilization = false;
             
         /// <summary>
         /// implementation variant of the isotropic surface stress
@@ -258,6 +264,7 @@ namespace BoSSS.Solution.XNSECommon {
                 PenaltySafety = this.PenaltySafety,
                 SurfStressTensor = this.SurfStressTensor,
                 SST_isotropicMode = this.SST_isotropicMode,
+                UseLevelSetStabilization = this.UseLevelSetStabilization,
                 ViscosityMode = this.ViscosityMode,
                 //ViscosityImplementation = this.ViscosityImplementation,
                 UseGhostPenalties = this.UseGhostPenalties,
