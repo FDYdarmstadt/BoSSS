@@ -257,7 +257,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             XNSE_Control C = new XNSE_Control();
 
-            _DbPath = @"\\fdyprime\userspace\smuda\cluster\CapillaryRise\CapillaryRise_db";
+            //_DbPath = @"\\fdyprime\userspace\smuda\cluster\CapillaryRise\CapillaryRise_db";
 
             // basic database options
             // ======================
@@ -477,7 +477,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                     else
                         grd.EdgeTagNames.Add(3, "navierslip_linear_left");
 
-                    grd.EdgeTagNames.Add(4, "navierslip_linear_right");
+                    //grd.EdgeTagNames.Add(4, "navierslip_linear_right");
+                    grd.EdgeTagNames.Add(4, "navierslip_localized_right");
 
                     grd.DefineEdgeTags(delegate (double[] X) {
                         byte et = 0;
@@ -545,7 +546,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             else
                 C.AddBoundaryCondition("navierslip_linear_left");
 
-            C.AddBoundaryCondition("navierslip_linear_right");
+            //C.AddBoundaryCondition("navierslip_linear_right");
+            C.AddBoundaryCondition("navierslip_localized_right");
 
 
             #endregion
@@ -568,7 +570,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
 
-            C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.Isotropic;
+            C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.SemiImplicit;
+            C.AdvancedDiscretizationOptions.UseLevelSetStabilization = true;
 
             C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 

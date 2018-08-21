@@ -176,6 +176,7 @@ namespace BoSSS.Solution.NSECommon {
                 case IncompressibleBcType.FreeSlip:
                 case IncompressibleBcType.SlipSymmetry:
                 case IncompressibleBcType.NavierSlip_Linear:
+                case IncompressibleBcType.NavierSlip_localized:
                 case IncompressibleBcType.Velocity_Inlet: {
 
                         // Fluss am Rand: f(u[d]) = n∙v∙u[d]

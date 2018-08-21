@@ -4,6 +4,7 @@ using ilPSP;
 using ilPSP.LinSolvers;
 using ilPSP.Tracing;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -213,6 +214,18 @@ namespace BoSSS.Foundation.XDG {
                         });
                 }
                 ev.SpeciesOperatorCoefficients[s].UserDefinedValues["InterfaceLengths"] = InterfaceLengthScales[s];
+
+                MultidimensionalArray slipLengths = lsTrk.GridDat.Cells.h_min.CloneAs();
+                slipLengths.Clear();
+                double hmin = lsTrk.GridDat.Cells.h_min.To1DArray().Min();
+                int degU = DomainMap.BasisS.ToArray()[0].Degree;
+                CellMask ContactArea = lsTrk.Regions.GetNearFieldMask(1).Intersect(lsTrk.GridDat.BoundaryCells.VolumeMask);
+                foreach(Chunk cnk in ContactArea) {
+                    for(int i = cnk.i0; i < cnk.JE; i++) {
+                        slipLengths[i] = hmin / (degU + 1);
+                    }
+                }
+                ev.SpeciesOperatorCoefficients[s].UserDefinedValues["SlipLengths"] = slipLengths;
             }
 
 
