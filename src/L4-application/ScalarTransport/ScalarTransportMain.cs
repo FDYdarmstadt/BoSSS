@@ -282,20 +282,20 @@ namespace BoSSS.Application.ScalarTransport {
                 trf.SaveToStream(Console.Out);
 
 
-                this.u.Clear();
+                //this.u.Clear();
                 int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
-                for(int j = 0; j < J; j++) {
-                    this.u.Coordinates[j, 0] = 1;
+                //for(int j = 0; j < J; j++) {
+                //    this.u.Coordinates[j, 0] = 1;
                 //    this.u.Coordinates[j, 1] = 1;
                 //    this.u.Coordinates[j, 2] = 0.5;
                 //    this.u.Coordinates[j, 4] = 0.11;
-                }
+                //}
 
-                this.u.GetExtremalValues(out var mini, out var maxi);
-                Console.WriteLine("mini = {0}, maxi = {1}", mini, maxi);
+                //this.u.GetExtremalValues(out var mini, out var maxi);
+                //Console.WriteLine("mini = {0}, maxi = {1}", mini, maxi);
 
-                //var ev = this.diffOp.GetEvaluatorEx(u.Mapping.Fields, this.Velocity.Mapping.Fields, u.Mapping);
-                //ev.Evaluate(1.0, 0.0, OpValue.CoordinateVector);
+                var ev = this.diffOp.GetEvaluatorEx(u.Mapping.Fields, this.Velocity.Mapping.Fields, u.Mapping);
+                ev.Evaluate(1.0, 0.0, OpValue.CoordinateVector);
 
 
 
