@@ -64,15 +64,16 @@ namespace BoSSS.Application.ScalarTransport {
             this.Control.NoOfMultigridLevels = 3;
 
             return grd;
-            */
+            //*/
             //double[] xnodes = GenericBlas.Linspace(-7, 7, 25);
             //double[] ynodes = GenericBlas.Linspace(-7, 7, 25);
             //double[] znodes = GenericBlas.Linspace(-7, 7, 25);
             //var grd = Grid3D.Cartesian3DGrid(xnodes, ynodes, znodes);
 
             
-            double[] xNodes = GenericBlas.Linspace(-7, 7, 2);
-            double[] yNodes = GenericBlas.Linspace(-7, 7, 2);
+            
+            double[] xNodes = GenericBlas.Linspace(-7, 7, 3);
+            double[] yNodes = GenericBlas.Linspace(-7, 7, 3);
 
             var baseGrid = Grid2D.UnstructuredTriangleGrid(xNodes, yNodes);
             var baseGdat = new GridData(baseGrid);
@@ -81,7 +82,7 @@ namespace BoSSS.Application.ScalarTransport {
                   
 
             return null;
-            
+            //*/
         }
 
 
@@ -277,20 +278,27 @@ namespace BoSSS.Application.ScalarTransport {
                 //PerformanceVsCachesize();
                 //SimplifiedPerformance();
 
+                var trf = this.GridData.ChefBasis.OrthonormalizationTrafo.GetValue_Cell(0, 1, 1).ExtractSubArrayShallow(new[] { 0, 0, 0 }, new[] { -1, 2, 2 }).CloneAs();
+                trf.SaveToStream(Console.Out);
 
 
-                
-
+                this.u.Clear();
                 int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
-                //for(int j = 0; j < J; j++) {
-                //    this.u.Coordinates[j, 0] = j;
+                for(int j = 0; j < J; j++) {
+                    this.u.Coordinates[j, 0] = 1;
                 //    this.u.Coordinates[j, 1] = 1;
                 //    this.u.Coordinates[j, 2] = 0.5;
                 //    this.u.Coordinates[j, 4] = 0.11;
-                //}
+                }
 
-                var ev = this.diffOp.GetEvaluatorEx(u.Mapping.Fields, this.Velocity.Mapping.Fields, u.Mapping);
-                ev.Evaluate(1.0, 0.0, OpValue.CoordinateVector);
+                this.u.GetExtremalValues(out var mini, out var maxi);
+                Console.WriteLine("mini = {0}, maxi = {1}", mini, maxi);
+
+                //var ev = this.diffOp.GetEvaluatorEx(u.Mapping.Fields, this.Velocity.Mapping.Fields, u.Mapping);
+                //ev.Evaluate(1.0, 0.0, OpValue.CoordinateVector);
+
+
+
                 
                 base.TerminationKey = true;
                 return 0.0;
