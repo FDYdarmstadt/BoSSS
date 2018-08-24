@@ -924,7 +924,7 @@ namespace ilPSP {
 
             unsafe {
                 fixed(int* pIndexTrafo = IndexTrafo) {
-                    Multiply(scale, A, B, thisscale, ref mp, pIndexTrafo, pIndexTrafo, pIndexTrafo);
+                    Multiply(scale, A, B, thisscale, ref mp, pIndexTrafo, pIndexTrafo);
 
                 }
             }
@@ -936,7 +936,7 @@ namespace ilPSP {
         /// </summary>
         unsafe public void Multiply(double scale, MultidimensionalArray A, MultidimensionalArray B, double thisscale, 
             ref MultiplyProgram mp, 
-            int* IndexTrafo_T, int* IndexTrafo_A, int* IndexTrafo_B,
+            int* IndexTrafo_A, int* IndexTrafo_B,
             int trfPreOffset_A = 0, int trfCycle_A = 1, int trfPostOffset_A = 0, int trfPreOffset_B = 0, int trfCycle_B = 1, int trfPostOffset_B = 0) {
             if(mp.DT != this.Dimension)
                 throw new ArgumentException();
@@ -1006,14 +1006,14 @@ namespace ilPSP {
                             SwapInt(cycRunB + 0, cycRunB + kk);
                         }
 
-                        
-                        if(IndexTrafo_T == null)
-                            throw new ArgumentException("Index transformation required.");
                         if(IndexTrafo_A == null)
                             throw new ArgumentException("Index transformation required.");
                         if(IndexTrafo_B == null)
                             throw new ArgumentException("Index transformation required.");
 
+                        int* IndexTrafo_T = IndexTrafo_A; // presently (20aug18) unused
+                        if(IndexTrafo_T == null)
+                            throw new ArgumentException("Index transformation required.");
                         {
                             //Debug.Assert(mp.NoOfSumCycles == 1); Debug.Assert(DT == 2); __MultiplyWTrafo_Sum1_FOR2( 
                             MultiplyWTrafo_Dispatch(
