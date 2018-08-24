@@ -390,10 +390,14 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 int thisMgLevel = ag.MgLevel;
 
 
+                var scl = m_owner.AncestorGrid.ChefBasis.Scaling;
+
+
                 var R = MultidimensionalArray.Create(compCell.Length, Np, Np);
                 for (int i = 0; i < compCell.Length; i++) {
+                    int jG = compCell[i];
                     for (int n = 0; n < Np; n++) {
-                        R[i, n, n] = 1.0;
+                        R[i, n, n] = scl[jG];
                     }
                 }
 
