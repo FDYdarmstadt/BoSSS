@@ -44,7 +44,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// <param name="domNrule">quadrature rule and domain</param>
         /// <param name="cs">Physical or reference coordinate system?</param>
         public CellBoundaryQuadrature(
-            int[] noOfIntegralsPerCell, Grid.Classic.GridData context, ICompositeQuadRule<TQuadRule> domNrule, CoordinateSystem cs = Quadrature.CoordinateSystem.Physical)
+            int[] noOfIntegralsPerCell, IGridData context, ICompositeQuadRule<TQuadRule> domNrule, CoordinateSystem cs = Quadrature.CoordinateSystem.Physical)
             : base(noOfIntegralsPerCell, context, domNrule, cs) //
         {
             foreach(IChunkRulePair<QuadRule> crp in domNrule) {
@@ -449,7 +449,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// </summary>
         static public CellBoundaryQuadrature<TQuadRule> GetQuadrature(
             int[] noOfIntegralsPerCell,
-            Grid.Classic.GridData context,
+            IGridData context,
             ICompositeQuadRule<TQuadRule> domNrule,
             Del_Evaluate _Evaluate,
             Del_SaveIntegrationResults _SaveIntegrationResults,
@@ -471,7 +471,7 @@ namespace BoSSS.Foundation.Quadrature {
         private class CellBoundaryQuadratureImpl : CellBoundaryQuadrature<TQuadRule> {
 
             public CellBoundaryQuadratureImpl(
-                int[] noOfIntegralsPerCell, Grid.Classic.GridData context, ICompositeQuadRule<TQuadRule> domNrule, CoordinateSystem cs)
+                int[] noOfIntegralsPerCell, IGridData context, ICompositeQuadRule<TQuadRule> domNrule, CoordinateSystem cs)
                 : base(noOfIntegralsPerCell, context, domNrule, cs) {
             }
 

@@ -163,8 +163,8 @@ namespace BoSSS.Application.SipPoisson {
                     Console.WriteLine("creating sparse system for {0} DOF's ...", T.Mapping.Ntotal);
 
                     // quadrature domain
-                    var volQrSch = new CellQuadratureScheme(true, CellMask.GetFullMask(this.GridData));
-                    var edgQrSch = new EdgeQuadratureScheme(true, EdgeMask.GetFullMask(this.GridData));
+                    var volQrSch = new CellQuadratureScheme(true, CellMask.GetFullMask(this.GridData, MaskType.Geometrical));
+                    var edgQrSch = new EdgeQuadratureScheme(true, EdgeMask.GetFullMask(this.GridData, MaskType.Geometrical));
 
 #if DEBUG
                     // in DEBUG mode, we compare 'MsrMatrix' (old, reference implementation) and 'BlockMsrMatrix' (new standard)

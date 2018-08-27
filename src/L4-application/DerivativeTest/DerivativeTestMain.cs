@@ -666,7 +666,7 @@ namespace BoSSS.Application.DerivativeTest {
             base.NoOfTimesteps = 0;
 
             int D = this.GridData.SpatialDimension;
-            int J = this.GridData.Cells.NoOfLocalUpdatedCells;
+            int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
 
             Console.WriteLine("DerivativeTest.exe, test case #" + GRID_CASE + " ******************************");
 
@@ -692,7 +692,7 @@ namespace BoSSS.Application.DerivativeTest {
 
 
                 for (int j = 0; j < J; j++) {
-                    err += Math.Abs(this.GridData.Cells.GetCellVolume(j) - this.CellVolume);
+                    err += Math.Abs(this.GridData.iLogicalCells.GetCellVolume(j) - this.CellVolume);
                 }
 
                 bool passed = (err < Treshold);
@@ -706,10 +706,10 @@ namespace BoSSS.Application.DerivativeTest {
                 double err = 0;
                 double Treshold = 1.0e-10;
 
-                int E = this.GridData.Edges.Count;
+                int E = this.GridData.iLogicalEdges.Count;
 
                 for (int e = 0; e < E; e++) {
-                    err += Math.Abs(this.GridData.Edges.GetEdgeArea(e) - this.EdgeArea);
+                    err += Math.Abs(this.GridData.iLogicalEdges.GetEdgeArea(e) - this.EdgeArea);
                 }
 
                 bool passed = (err < Treshold);
@@ -725,7 +725,7 @@ namespace BoSSS.Application.DerivativeTest {
             {
                 Basis Bs = this.f1.Basis;
                 int N = Bs.Length;
-                int degQuad = this.GridData.Cells.GetInterpolationDegree(0) * D + Bs.Degree + 3;
+                int degQuad = this.GridData.iGeomCells.GetInterpolationDegree(0) * D + Bs.Degree + 3;
 
                 // mass matrix: should be identity!
                 MultidimensionalArray MassMatrix = MultidimensionalArray.Create(J, N, N);
@@ -1091,9 +1091,9 @@ namespace BoSSS.Application.DerivativeTest {
         /// <summary>
         /// Compares the cell surface and the boundary integral.
         /// </summary>
-        public static void TestSealing(GridData gdat) {
-            int J = gdat.Cells.NoOfLocalUpdatedCells;
-            int[,] E2C = gdat.Edges.CellIndices;
+        public static void TestSealing(IGridData gdat) {
+            int J = gdat.iLogicalCells.NoOfLocalUpdatedCells;
+            int[,] E2C = gdat.iGeomEdges.LogicalCellIndices;
 
             //
             // compute cell surface via edge integrals
@@ -1120,7 +1120,7 @@ namespace BoSSS.Application.DerivativeTest {
             // compute cell surface via cell boundary integrals
             //
             var cbqs = new CellBoundaryQuadratureScheme(false, null);
-            foreach (var Kref in gdat.Cells.RefElements)
+            foreach (var Kref in gdat.iGeomCells.RefElements)
                 cbqs.AddFactory(new StandardCellBoundaryQuadRuleFactory(Kref));
 
             MultidimensionalArray CellSurf2 = MultidimensionalArray.Create(J);
