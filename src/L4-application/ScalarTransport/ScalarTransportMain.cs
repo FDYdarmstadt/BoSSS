@@ -278,32 +278,7 @@ namespace BoSSS.Application.ScalarTransport {
                 //PerformanceVsCachesize();
                 //SimplifiedPerformance();
 
-                var trf = this.GridData.ChefBasis.OrthonormalizationTrafo.GetValue_Cell(0, 1, 1).ExtractSubArrayShallow(new[] { 0, 0, 0 }, new[] { -1, 2, 2 }).CloneAs();
-                trf.SaveToStream(Console.Out);
-
-
-                //this.u.Clear();
-                int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
-                //for(int j = 0; j < J; j++) {
-                //    this.u.Coordinates[j, 0] = 1;
-                //    this.u.Coordinates[j, 1] = 1;
-                //    this.u.Coordinates[j, 2] = 0.5;
-                //    this.u.Coordinates[j, 4] = 0.11;
-                //}
-
-                //this.u.GetExtremalValues(out var mini, out var maxi);
-                //Console.WriteLine("mini = {0}, maxi = {1}", mini, maxi);
-
-                var ev = this.diffOp.GetEvaluatorEx(u.Mapping.Fields, this.Velocity.Mapping.Fields, u.Mapping);
-                ev.Evaluate(1.0, 0.0, OpValue.CoordinateVector);
-
-
-
                 
-                base.TerminationKey = true;
-                return 0.0;
-
-
                 //u.ProjectField((_2D)((x, y) => x+y));
                 //var f = new SinglePhaseField(u.Basis, "f");
                 //var sgrd = new SubGrid(new CellMask(this.GridDat, Chunk.GetSingleElementChunk(200)));
@@ -338,6 +313,7 @@ namespace BoSSS.Application.ScalarTransport {
                 Timestepper.Perform(dt);
 
                 // set mpi_rank
+                int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
                 double rank = GridData.MpiRank;
                 for (int j = 0; j < J; j++) {
                     mpi_rank.SetMeanValue(j, rank);

@@ -396,6 +396,8 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 var R = MultidimensionalArray.Create(compCell.Length, Np, Np);
                 for (int i = 0; i < compCell.Length; i++) {
                     int jG = compCell[i];
+                    if (!m_owner.AncestorGrid.Cells.IsCellAffineLinear(jG))
+                        throw new NotImplementedException("nonlin cell -- todo");
                     for (int n = 0; n < Np; n++) {
                         R[i, n, n] = scl[jG];
                     }
