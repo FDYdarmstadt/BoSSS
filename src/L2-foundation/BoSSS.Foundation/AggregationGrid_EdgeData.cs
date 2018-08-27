@@ -229,6 +229,8 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 internal set;
             }
 
+            AggregationGrid m_Owner;
+
             public int Count {
                 get {
                     return CellIndices.GetLength(0);
@@ -238,6 +240,14 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             public int[][] EdgeToParts {
                 get;
                 internal set;
+            }
+
+            public double GetEdgeArea(int e) {
+                double sum = 0.0;
+                foreach(int iGeomEdge in EdgeToParts[e]) {
+                    sum += m_Owner.m_GeomEdgeData.GetE
+                }
+                return sum;
             }
 
             public EdgeMask GetEdges4RefElement(RefElement Kref) {

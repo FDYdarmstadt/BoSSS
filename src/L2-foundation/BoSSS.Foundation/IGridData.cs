@@ -900,7 +900,15 @@ namespace BoSSS.Foundation.Grid {
             get;
         }
 
-        
+
+        /// <summary>
+        /// returns the area (to be more exact: the (D-1) - dimensional measure) of the logical edge <paramref name="e"/>,
+        /// which is the sum of all geometrical parts
+        /// </summary>
+        /// <param name="e">logical edge index</param>
+        /// <returns></returns>
+        double GetEdgeArea(int e);
+
     }
 
 
