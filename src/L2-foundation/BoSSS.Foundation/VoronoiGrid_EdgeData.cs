@@ -168,6 +168,10 @@ namespace BoSSS.Foundation.Grid.Voronoi {
                 }
             }
 
+            public double GetEdgeArea(int e) {
+                throw new NotImplementedException();
+            }
+
             public EdgeMask GetEdges4RefElement(RefElement Kref) {
                 throw new NotImplementedException();
             }
