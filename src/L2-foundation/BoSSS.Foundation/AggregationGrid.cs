@@ -133,7 +133,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             m_GeomCellData = new GeomCellData() { m_Owner = this };
             m_LogicalCellData = new LogicalCellData() { m_Owner = this };
             m_GeomEdgeData = new GeomEdgeData() { m_Owner = this };
-            m_LogEdgeData = new LogEdgeData();
+            m_LogEdgeData = new LogEdgeData(this);
             m_VertexData = new VertexData();
             m_Parallel = new Parallelization() { m_owner = this };
             

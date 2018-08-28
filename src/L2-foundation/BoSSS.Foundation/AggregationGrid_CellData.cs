@@ -161,6 +161,10 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                     throw new IndexOutOfRangeException();
                 return false; 
             }
+
+            public int GetInterpolationDegree(int jCell) {
+                return m_Owner.ParentGrid.iGeomCells.GetInterpolationDegree(jCell);
+            }
         }
 
         LogicalCellData m_LogicalCellData;
@@ -231,6 +235,14 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 
             public long GetGlobalID(int j) {
                 throw new NotImplementedException();
+            }
+
+            public int GetInterpolationDegree(int j) {
+                int r = int.MinValue;
+                foreach(int jPart in AggregateCellToParts[j]) {
+                    r = Math.Max(r, m_Owner.m_GeomCellData.GetInterpolationDegree(j));
+                }
+                return r;
             }
 
             public bool IsCellAffineLinear(int j) {

@@ -36,6 +36,9 @@ namespace BoSSS.Foundation.Grid.Voronoi {
         GeomEdgeData m_GeomEdges;
 
         class GeomEdgeData : IGeometricalEdgeData {
+
+            
+
             public int Count {
                 get {
                     throw new NotImplementedException();
@@ -103,6 +106,10 @@ namespace BoSSS.Foundation.Grid.Voronoi {
             }
 
             public EdgeMask GetEdges4RefElement(RefElement Kref) {
+                throw new NotImplementedException();
+            }
+
+            public double GetEdgeArea(int e) {
                 throw new NotImplementedException();
             }
 

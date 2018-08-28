@@ -224,6 +224,10 @@ namespace BoSSS.Foundation.Grid.Voronoi {
             public CellMask GetCells4Refelement(RefElement Kref) {
                 throw new NotImplementedException();
             }
+
+            public int GetInterpolationDegree(int jCell) {
+                throw new NotImplementedException();
+            }
         }
     }
 }

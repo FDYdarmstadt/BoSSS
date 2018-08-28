@@ -820,7 +820,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// A mask containing all cells of the grid.
         /// </returns>
         protected override CellMask GetDefaultDomain(IGridData gridData) {
-            return CellMask.GetFullMask(gridData);
+            return CellMask.GetFullMask(gridData, MaskType.Geometrical);
         }
 
         /// <summary>

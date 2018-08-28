@@ -296,9 +296,13 @@ namespace BoSSS.Foundation {
             int M = NS.NoOfNodes;        // number of nodes
 
             var resultAcc = result.ExtractSubArrayShallow(new int[] { ResultCellindexOffset, 0, 0 }, new int[] { ResultCellindexOffset + Len - 1, M - 1, D - 1 });
-            var coord = m_Mda_Coordinates.ExtractSubArrayShallow(new int[] { j0, 0 }, new int[] { j0 + Len - 1, N - 1 });
+            
+            var coöSys = NS.GetNodeCoordinateSystem(this.GridDat);
+            if(coöSys != NodeCoordinateSystem.CellCoord)
+                throw new ArgumentOutOfRangeException();
 
-            DGField.EvaluateGradientInternal(j0, Len, NS, this.m_Basis, coord, 0, resultAcc, ResultPreScale);
+
+            DGField.EvaluateGradientInternal(j0, Len, NS, this.m_Basis, m_Mda_Coordinates, 0, resultAcc, ResultPreScale);
         }
 
         /// <summary>
