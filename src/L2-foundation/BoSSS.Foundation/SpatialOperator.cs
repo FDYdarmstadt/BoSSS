@@ -1235,6 +1235,7 @@ namespace BoSSS.Foundation {
                     
                     if(m_NonlinearEdge != null) {
                         using(new BlockTrace("Edge_Integration_NonLin", tr)) {
+                            /*
                             m_NonlinearEdge.m_Output = output;
                             m_NonlinearEdge.m_alpha = alpha;
                             m_NonlinearEdge.Time = time;
@@ -1250,6 +1251,8 @@ namespace BoSSS.Foundation {
                             m_NonlinearEdge.m_outputBndEdge = null;
                             m_NonlinearEdge.m_alpha = 1.0;
                             m_NonlinearEdge.SubGridCellsMarker = null;
+                            */
+                            Console.WriteLine("edge nonl deact");
 
                         }
                     }
@@ -1408,10 +1411,10 @@ namespace BoSSS.Foundation {
                          && Owner.ContainesComponentType(typeof(IEdgeForm), typeof(IEdgeform_UxV), typeof(IEdgeform_UxGradV), typeof(IEdgeform_UxV), typeof(IEdgeSource_V))) {
 
                         using(new BlockTrace("Edge_Integration_(new)", tr)) {
-                            var mxtbuilder2 = new LECEdgeQuadrature2<M, V>(this.Owner);
-                            mxtbuilder2.Execute(edgeRule, CodomainMapping, Parameters, DomainMapping, OnlyAffine ? default(M) : Matrix, AffineOffset, time);
-                            mxtbuilder2 = null;
-                            //Console.WriteLine("edge lin deact");
+                            //var mxtbuilder2 = new LECEdgeQuadrature2<M, V>(this.Owner);
+                            //mxtbuilder2.Execute(edgeRule, CodomainMapping, Parameters, DomainMapping, OnlyAffine ? default(M) : Matrix, AffineOffset, time);
+                            //mxtbuilder2 = null;
+                            Console.WriteLine("edge lin deact");
                         }
                     }
                 }
@@ -1621,6 +1624,19 @@ namespace BoSSS.Foundation {
                     }
                 }
 #endif
+                /*
+                this.ColorLists = new int[J][];
+                this.ExternalColorLists = new int[J][];
+                this.ExternalColorListsNeighbors = new int[J][][];
+                for(int j = 0; j < J; j++) {
+                    this.ColorLists[j] = new int[] { j };
+                    this.ExternalColorLists[j] = new int[0];
+                    this.ExternalColorListsNeighbors[j] = new int[0][];
+                }
+
+                return;
+                */
+
 
                 int[] LocalMarker = new int[JE]; //    marker for blocked in the current pass 
                 int[] ExchangedMarker = new int[JE]; //  accumulation buffer for MPI exchange
@@ -2085,9 +2101,9 @@ namespace BoSSS.Foundation {
                                         jRow = Neighs_j[k - 1];
                                     }
 
-                                    if (jRow >= J)
+                                    if (jRow >= J) { 
                                         continue; // external cell; should be treated on other proc.
-
+                                    }
                                     int i0Row = codMap.LocalUniqueCoordinateIndex(0, jRow, 0);
                                     int NoOfRows = codMap.GetBlockLen(jRow);
 

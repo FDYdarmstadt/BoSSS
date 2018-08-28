@@ -652,7 +652,10 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             N0 = 0;
             for (int e = 0; e < NoOfEquations; e++) { // loop over equations...
 
-                N = m_CodomainBasisS[e].GetLength(geom2log[i0]);
+                if(geom2log != null)
+                    N = m_CodomainBasisS[e].GetLength(geom2log[i0]);
+                else
+                    N = m_CodomainBasisS[e].GetLength(i0);
 
                 int iBuf;
                 MultidimensionalArray QuadResult_e = TempBuffer.GetTempMultidimensionalarray(out iBuf, Length, N);

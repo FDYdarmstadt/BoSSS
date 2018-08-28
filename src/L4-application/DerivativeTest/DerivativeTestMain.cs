@@ -757,10 +757,14 @@ namespace BoSSS.Application.DerivativeTest {
                         EvalResult.Multiply(1.0, BasisVals, BasisVals, 0.0, "jknm", "jkn", "jkm");
                     },
                     delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                        for (int i = 0; i < Length; i++) {
-                            int jG = i + i0;
-                            MassMatrix.ExtractSubArrayShallow(jG2jL[jG], -1, -1)
-                                .Acc(1.0, ResultsOfIntegration.ExtractSubArrayShallow(i, -1, -1));
+                        if(jG2jL != null) {
+                            for(int i = 0; i < Length; i++) {
+                                int jG = i + i0;
+                                MassMatrix.ExtractSubArrayShallow(jG2jL[jG], -1, -1)
+                                    .Acc(1.0, ResultsOfIntegration.ExtractSubArrayShallow(i, -1, -1));
+                            }
+                        } else {
+                            MassMatrix.SetSubArray(ResultsOfIntegration, new int[] { i0, 0, 0 }, new int[] { i0 + Length - 1, N - 1, N - 1 });
                         }
                     },
                     cs: CoordinateSystem.Physical);
@@ -973,6 +977,7 @@ namespace BoSSS.Application.DerivativeTest {
 
                 // comparison of finite difference Jacobian and Operator matrix
                 if (TestFDJacobian) {
+                    this.f1.Clear();
                     var FDJbuilder = Laplace.GetFDJacobianBuilder(this.f1.Mapping.Fields, null, this.f1.Mapping,
                         delegate (IEnumerable<DGField> U0, IEnumerable<DGField> Params) {
                             return;
@@ -993,9 +998,9 @@ namespace BoSSS.Application.DerivativeTest {
                     m_passed = m_passed && passed1;
                     m_passed = m_passed && passed2;
 
-                    //CheckMatrix.SaveToTextFileSparse("c:\\tmp\\Check.txt");
-                    //LaplaceMtx.SaveToTextFileSparse("c:\\tmp\\Laplace.txt");
-                    //ErrMatrix.SaveToTextFileSparse("c:\\tmp\\Error.txt");
+                    CheckMatrix.SaveToTextFileSparse("c:\\tmp\\Check.txt");
+                    LaplaceMtx.SaveToTextFileSparse("c:\\tmp\\Laplace.txt");
+                    ErrMatrix.SaveToTextFileSparse("c:\\tmp\\Error.txt");
                 }
                 Console.WriteLine("--------------------------------------------");
             }
