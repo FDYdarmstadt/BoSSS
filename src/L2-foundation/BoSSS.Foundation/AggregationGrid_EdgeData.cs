@@ -220,10 +220,17 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 return false; 
             }
 
-
+            public double GetEdgeArea(int e) {
+                return m_Owner.ParentGrid.iGeomEdges.GetEdgeArea(e);
+            }
         }
 
         class LogEdgeData : ILogicalEdgeData {
+            internal LogEdgeData(AggregationGrid __owner) {
+                m_Owner = __owner;
+            }
+
+
             public int[,] CellIndices {
                 get;
                 internal set;
@@ -245,7 +252,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             public double GetEdgeArea(int e) {
                 double sum = 0.0;
                 foreach(int iGeomEdge in EdgeToParts[e]) {
-                    sum += m_Owner.m_GeomEdgeData.GetE
+                    sum += m_Owner.m_GeomEdgeData.GetEdgeArea(iGeomEdge);
                 }
                 return sum;
             }

@@ -258,12 +258,20 @@ namespace BoSSS.Application.DerivativeTest {
         /// Creation of DG fields.
         /// </summary>
         protected override void CreateFields() {
-            int GridDeg = this.Grid.Cells.Select(cl => this.Grid.GetRefElement(cl.Type).GetInterpolationDegree(cl.Type)).Max();
+            int GridDeg;
             int D = this.GridData.SpatialDimension;
-            if (this.Grid.GetRefElement(this.Grid.Cells[0].Type) == Square.Instance
-                || this.Grid.GetRefElement(this.Grid.Cells[0].Type) == Cube.Instance) {
-                // hack: otherwise DG deg gets to high
-                GridDeg = (int)Math.Round(Math.Pow(GridDeg, 1.0 / D));
+
+            if (this.Grid != null) {
+                GridDeg = this.Grid.Cells.Select(cl => this.Grid.GetRefElement(cl.Type).GetInterpolationDegree(cl.Type)).Max();
+
+
+                if (this.Grid.GetRefElement(this.Grid.Cells[0].Type) == Square.Instance
+                    || this.Grid.GetRefElement(this.Grid.Cells[0].Type) == Cube.Instance) {
+                    // hack: otherwise DG deg gets to large
+                    GridDeg = (int)Math.Round(Math.Pow(GridDeg, 1.0 / D));
+                }
+            } else {
+                GridDeg = 1; // aggregation grid
             }
 
             Basis b = new Basis(this.GridData, 2 + GridDeg);
@@ -468,14 +476,22 @@ namespace BoSSS.Application.DerivativeTest {
 
                 case 18: {
                     // aggregation grid
-                    double[] xNodes = GenericBlas.Linspace(-1, 1, 4);
-                    double[] yNodes = GenericBlas.Linspace(1, 1, 5);
+                    double[] xNodes = GenericBlas.Linspace(-1, 1, 5);
+                    double[] yNodes = GenericBlas.Linspace(-1, 1, 5);
 
                     var baseGrid = Grid2D.UnstructuredTriangleGrid(xNodes, yNodes);
                     var baseGdat = new GridData(baseGrid);
                     var aggGrid = CoarseningAlgorithms.Coarsen(baseGdat, 2);
+                    base.AggGrid = aggGrid;
+                    grd = null;
 
-                    throw new NotImplementedException("todo");
+                    double dx = xNodes[1] - xNodes[0];
+                    double dy = yNodes[1] - yNodes[0];
+                    this.CellVolume = dx * dy;
+                    if (Math.Abs(dx - dy) <= 1.0e-12)
+                        EdgeArea = dx;
+
+
                     break;
                 }
 
@@ -679,8 +695,8 @@ namespace BoSSS.Application.DerivativeTest {
             // sealing test
             // =================
 
-            TestSealing(this.GridData);
-
+            if(this.GridData is Foundation.Grid.Classic.GridData)
+                TestSealing(this.GridData); 
 
             // cell volume and edge area check, if possible
             // ===============================================
@@ -725,7 +741,9 @@ namespace BoSSS.Application.DerivativeTest {
             {
                 Basis Bs = this.f1.Basis;
                 int N = Bs.Length;
-                int degQuad = this.GridData.iGeomCells.GetInterpolationDegree(0) * D + Bs.Degree + 3;
+                int degQuad = this.GridData.iLogicalCells.GetInterpolationDegree(0) * D + Bs.Degree + 3;
+                int[] jG2jL = this.GridData.iGeomCells.GeomCell2LogicalCell;
+
 
                 // mass matrix: should be identity!
                 MultidimensionalArray MassMatrix = MultidimensionalArray.Create(J, N, N);
@@ -739,7 +757,11 @@ namespace BoSSS.Application.DerivativeTest {
                         EvalResult.Multiply(1.0, BasisVals, BasisVals, 0.0, "jknm", "jkn", "jkm");
                     },
                     delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                        MassMatrix.SetSubArray(ResultsOfIntegration, new int[] { i0, 0, 0 }, new int[] { i0 + Length - 1, N - 1, N - 1 });
+                        for (int i = 0; i < Length; i++) {
+                            int jG = i + i0;
+                            MassMatrix.ExtractSubArrayShallow(jG2jL[jG], -1, -1)
+                                .Acc(1.0, ResultsOfIntegration.ExtractSubArrayShallow(i, -1, -1));
+                        }
                     },
                     cs: CoordinateSystem.Physical);
                 quad.Execute();
@@ -1093,7 +1115,7 @@ namespace BoSSS.Application.DerivativeTest {
         /// </summary>
         public static void TestSealing(IGridData gdat) {
             int J = gdat.iLogicalCells.NoOfLocalUpdatedCells;
-            int[,] E2C = gdat.iGeomEdges.LogicalCellIndices;
+            int[,] E2Clog = gdat.iGeomEdges.LogicalCellIndices;
 
             //
             // compute cell surface via edge integrals
@@ -1107,8 +1129,8 @@ namespace BoSSS.Application.DerivativeTest {
                 delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) { // save results
                     for (int i = 0; i < Length; i++) {
                         int iEdge = i + i0;
-                        int jCellIn = E2C[iEdge, 0];
-                        int jCellOt = E2C[iEdge, 1];
+                        int jCellIn = E2Clog[iEdge, 0];
+                        int jCellOt = E2Clog[iEdge, 1];
 
                         CellSurf1[jCellIn] += ResultsOfIntegration[i, 0];
                         if (jCellOt >= 0 && jCellOt < J)

@@ -497,6 +497,13 @@ namespace BoSSS.Foundation.Grid {
         int[] GeomCell2LogicalCell {
             get;
         }
+
+        /// <summary>
+        /// polynomial interpolation degree of the Reference-to-Global coordinate transformation.
+        /// </summary>
+        /// <param name="jCell"></param>
+        /// <returns></returns>
+        int GetInterpolationDegree(int jCell);
     }
 
     public interface ILogicalCellData {
@@ -597,6 +604,12 @@ namespace BoSSS.Foundation.Grid {
         void GetCellBoundingBox(int j, BoundingBox bb);
 
         
+        /// <summary>
+        /// polynomial interpolation degree of the Reference-to-Global coordinate transformation (maximum over all geometrical parts).
+        /// </summary>
+        /// <param name="jCell"></param>
+        /// <returns></returns>
+        int GetInterpolationDegree(int jCell);
 
     }
 
@@ -856,7 +869,14 @@ namespace BoSSS.Foundation.Grid {
         /// Reference element for edges.
         /// </param>
         EdgeMask GetEdges4RefElement(RefElement Kref);
+     
         
+        /// <summary>
+        /// returns the area (to be more exact: the (D-1) - dimensional measure) of the geometrical edge <paramref name="e"/>
+        /// </summary>
+        /// <param name="e">logical edge index</param>
+        /// <returns></returns>
+        double GetEdgeArea(int e);
     }
 
 
