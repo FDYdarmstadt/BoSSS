@@ -1365,7 +1365,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         }
 
         protected void SaveIntegrationResults(int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-            var Edge2Cell = this.m_GridDat.iGeomEdges.CellIndices;
+            var Edge2Cell = this.m_GridDat.iGeomEdges.LogicalCellIndices;
             int M = m_RowMap.NoOfCoordinatesPerCell;
             int N = m_ColMap.NoOfCoordinatesPerCell;
             int Jup = this.m_GridDat.iLogicalCells.NoOfLocalUpdatedCells;
