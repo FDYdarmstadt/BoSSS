@@ -239,7 +239,7 @@ namespace CNS {
             return c;
         }
 
-        public static CNSControl ShockVortexInteraction(string dbPath = null, int savePeriod = 1000, int dgDegree = 2, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double Mv = 0.7, double Ms = 1.5) {
+        public static CNSControl ShockVortexInteraction(string dbPath = null, int savePeriod = 10, int dgDegree = 4, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double Mv = 0.7, double Ms = 1.5, int numOfCellsX = 400, int numOfCellsY = 100) {
             CNSControl c = new CNSControl();
 
             // ### Database ###
@@ -253,7 +253,7 @@ namespace CNS {
             c.saveperiod = savePeriod;
             c.PrintInterval = 1;
 
-            c.WriteLTSLog = true;
+            c.WriteLTSLog = false;
 
             // ### Partitioning and load balancing ###
             c.GridPartType = GridPartType.METIS;
@@ -276,7 +276,7 @@ namespace CNS {
             c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
             double epsilon0 = 1.0;
             double kappa = 0.5;
-            double lambdaMax = 2.0;
+            //double lambdaMax = 2.0;
             if (AV) {
                 Variable sensorVariable = Variables.Density;
                 c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
@@ -332,9 +332,6 @@ namespace CNS {
             double xMax = 2;
             double yMin = 0;
             double yMax = 1;
-
-            int numOfCellsX = 200;
-            int numOfCellsY = 100;
 
             c.GridFunc = delegate {
                 double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
@@ -541,12 +538,12 @@ namespace CNS {
             c.NoOfTimesteps = int.MaxValue;
 
             // ### Project and sessions name ###
-            c.ProjectName = "Shock-vortex interaction";
+            c.ProjectName = "shock_vortex_interaction";
 
             if (c.DynamicLoadBalancing_On) {
-                c.SessionName = String.Format("Shock-vortex interaction, p={0}, {1}x{2} cells, s0={3:0.0E-00}, CFLFrac={4}, ALTS {5}/{6}/Re{7}/Sub{8}, Part={9}/Re{10}/Thresh{11}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps, c.GridPartType.ToString(), c.DynamicLoadBalancing_Period, c.DynamicLoadBalancing_ImbalanceThreshold);
+                c.SessionName = String.Format("SVI_p{0}_{1}x{2}cells_s0={3:0.0E-00}_CFLFrac{4}_ALTS{5}_{6}_Re{7}_Sub{8}_Part={9}_Re{10}_Thresh{11}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps, c.GridPartType.ToString(), c.DynamicLoadBalancing_Period, c.DynamicLoadBalancing_ImbalanceThreshold);
             } else {
-                c.SessionName = String.Format("Shock-vortex interaction, p={0}, {1}x{2} cells, s0={3:0.0E-00}, CFLFrac={4}, ALTS {5}/{6}/Re{7}/Sub{8}, Part={9}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps, c.GridPartType.ToString());
+                c.SessionName = String.Format("SVI_p{0}_{1}x{2}cells_s0={3:0.0E-00}_CFLFrac{4}_ALTS{5}_{6}_Re{7}_Sub{8}_Part={9}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps, c.GridPartType.ToString());
             }
 
             return c;
