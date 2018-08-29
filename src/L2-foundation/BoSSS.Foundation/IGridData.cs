@@ -504,6 +504,11 @@ namespace BoSSS.Foundation.Grid {
         /// <param name="jCell"></param>
         /// <returns></returns>
         int GetInterpolationDegree(int jCell);
+
+        /// <summary>
+        /// Center-of-gravity for the cell
+        /// </summary>
+        double[] GetCenter(int jCell);
     }
 
     public interface ILogicalCellData {
@@ -611,6 +616,11 @@ namespace BoSSS.Foundation.Grid {
         /// <returns></returns>
         int GetInterpolationDegree(int jCell);
 
+
+        /// <summary>
+        /// Center-of-gravity for the cell
+        /// </summary>
+        double[] GetCenter(int jCell);
     }
 
     public interface IVertexData {

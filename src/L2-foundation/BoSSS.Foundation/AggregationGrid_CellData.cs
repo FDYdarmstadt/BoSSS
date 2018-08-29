@@ -23,6 +23,7 @@ using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Platform.Utils.Geom;
 using ilPSP;
 using System.Diagnostics;
+using ilPSP.Utils;
 
 namespace BoSSS.Foundation.Grid.Aggregation {
     partial class AggregationGrid {
@@ -108,6 +109,9 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 
             CellMask[] m_Cells4Refelement;
 
+            public GeomCellData() {
+            }
+
             public CellMask GetCells4Refelement(RefElement Kref) {
                 int iKref = Array.IndexOf(this.RefElements, Kref);
 
@@ -164,6 +168,13 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 
             public int GetInterpolationDegree(int jCell) {
                 return m_Owner.ParentGrid.iGeomCells.GetInterpolationDegree(jCell);
+            }
+
+            /// <summary>
+            /// Center-of-gravity
+            /// </summary>
+            public double[] GetCenter(int jCell) {
+                return m_Owner.ParentGrid.iGeomCells.GetCenter(jCell);
             }
         }
 
@@ -251,6 +262,26 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                     ret &= m_Owner.m_GeomCellData.IsCellAffineLinear(j);
                 }
                 return ret;
+            }
+
+            /// <summary>
+            /// Center-of-gravity
+            /// </summary>
+            public double[] GetCenter(int jCell) {
+                int D = m_Owner.SpatialDimension;
+                double VolAcc = 0.0;
+                double[] CenAcc = new double[D];
+
+                foreach (int jG in this.AggregateCellToParts[jCell]) {
+                    double Vol = m_Owner.m_GeomCellData.GetCellVolume(jG);
+                    var g_cent = m_Owner.m_GeomCellData.GetCenter(jG);
+
+                    VolAcc += Vol;
+                    CenAcc.AccV(Vol, g_cent);
+                }
+
+                CenAcc.ScaleV(1 / VolAcc);
+                return CenAcc;
             }
         }
 

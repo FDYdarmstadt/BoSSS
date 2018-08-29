@@ -228,6 +228,10 @@ namespace BoSSS.Foundation.Grid.Voronoi {
             public int GetInterpolationDegree(int jCell) {
                 throw new NotImplementedException();
             }
+
+            public double[] GetCenter(int jCell) {
+                throw new NotImplementedException();
+            }
         }
     }
 }
