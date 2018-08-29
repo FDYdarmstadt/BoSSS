@@ -1090,7 +1090,7 @@ namespace CNS {
             c.DynamicLoadBalancing_ImbalanceThreshold = 0.1;
             c.DynamicLoadBalancing_Period = int.MaxValue;
             c.DynamicLoadBalancing_RedistributeAtStartup = true;
-
+        
             double cellSize = Math.Min((xMax - xMin) / numOfCellsX, (yMax - yMin) / numOfCellsY);
 
             if (AV) {
@@ -1150,8 +1150,8 @@ namespace CNS {
 
             if (restart == "True") {
                 // Restart Lichtenberg "paper_ibmdmr"
-                c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("204ae73a-35b1-4689-8ee3-7c76353240f0"), -1);
-                c.GridGuid = new Guid("7c1cfcbf-d0e3-4f29-a1f0-60ec8664ce17");
+                c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("b2613f67-c82d-4d7a-8532-7b3d9fd841a0"), -1);
+                c.GridGuid = new Guid("0f4e4dad-7930-428f-80b1-a3ae28dc251c");
             } else {
                 c.GridFunc = delegate {
                     double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
@@ -1259,12 +1259,13 @@ namespace CNS {
 
             // Lichtenberg
             //string dbPath = @"/home/yp19ysog/bosss_db_paper_ibmdmr2";
-            string dbPath = @"/work/scratch/yp19ysog/bosss_db_paper_ibmdmr";
-            string restart = "False";
+            string dbPath = @"/work/scratch/yp19ysog/bosss_db_paper_ibmdmr_run3";
+            //string dbPath = @"C:\bosss_db_paper_ibmdmr_scratch_run3_test";
+            string restart = "True";
 
             IBMControl c = IBMDoubleMachReflection(dbPath, savePeriod, dgDegree, numOfCellsX, numOfCellsY, sensorLimit, dtFixed, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, agg, fugdeFactor, endTime, kappa, restart);
 
-            c.ProjectName = "paper_ibmdmr_run2";
+            c.ProjectName = "paper_ibmdmr_run3_restart1";
             //c.NoOfTimesteps = 10;
 
             return c;
