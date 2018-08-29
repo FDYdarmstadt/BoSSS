@@ -78,10 +78,12 @@ namespace CNS.ShockCapturing {
         /// <param name="Length"></param>
         /// <returns></returns>
         protected override double GetCFLStepSize(int i0, int Length) {
-            int iKref = gridData.Cells.GetRefElementIndex(i0);
+            BoSSS.Foundation.Grid.Classic.GridData __gridData = (BoSSS.Foundation.Grid.Classic.GridData)(this.gridData);
+
+            int iKref = __gridData.Cells.GetRefElementIndex(i0);
             int noOfNodesPerCell = base.EvaluationPoints[iKref].NoOfNodes;
             double scaling = Math.Max(4.0 / 3.0, config.EquationOfState.HeatCapacityRatio / config.PrandtlNumber);
-            MultidimensionalArray hmin = this.gridData.Cells.h_min;
+            MultidimensionalArray hmin = __gridData.Cells.h_min;
             DGField artificialViscosity = workingSet.ParameterFields.Where(c => c.Identification.Equals(Variables.ArtificialViscosity)).Single();
             double cfl = double.MaxValue;
 

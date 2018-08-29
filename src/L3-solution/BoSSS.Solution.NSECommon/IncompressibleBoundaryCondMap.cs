@@ -70,7 +70,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// ctor
         /// </summary>
-        protected IncompressibleBoundaryCondMap(GridData f, IDictionary<string, AppControl.BoundaryValueCollection> b, PhysicsMode _PhysicsMode, string[] BndFuncName)
+        protected IncompressibleBoundaryCondMap(IGridData f, IDictionary<string, AppControl.BoundaryValueCollection> b, PhysicsMode _PhysicsMode, string[] BndFuncName)
             : base(f, b, BndFuncName) {
             this.PhysMode = _PhysicsMode;
         }

@@ -142,7 +142,7 @@ namespace BoSSS.PlotGenerator {
         /// <summary>
         /// the grid
         /// </summary>
-        public GridData GridDat {
+        public IGridData GridDat {
             get;
             private set;
         }
