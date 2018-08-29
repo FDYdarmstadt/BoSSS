@@ -41,7 +41,7 @@ namespace NSE_SIMPLE {
         private VariableSetLowMach WorkingSetLowMach = null;
         private VariableSetMultiphase WorkingSetMultiphase = null;
 
-        private GridData GridDat;
+        private IGridData GridDat;
         private SIMPLEControl Control;
         private ICollection<DGField> IOFields;
         private ICollection<DGField> RegisteredFields;
@@ -53,7 +53,7 @@ namespace NSE_SIMPLE {
         /// <param name="Control"></param>
         /// <param name="IOFields"></param>
         /// <param name="RegisteredFields"></param>        
-        public VariableSet(GridData GridDat, SIMPLEControl Control, ICollection<DGField> IOFields, ICollection<DGField> RegisteredFields) {
+        public VariableSet(IGridData GridDat, SIMPLEControl Control, ICollection<DGField> IOFields, ICollection<DGField> RegisteredFields) {
 
             this.GridDat = GridDat;
             this.Control = Control;
@@ -317,7 +317,7 @@ namespace NSE_SIMPLE {
             /// <param name="IOFields"></param>
             /// <param name="RegisteredFields"></param>
             /// <param name="SolverConf"></param>
-            public VariableSetFlowField(GridData GridDat, SIMPLEControl Control, ICollection<DGField> IOFields, ICollection<DGField> RegisteredFields)
+            public VariableSetFlowField(IGridData GridDat, SIMPLEControl Control, ICollection<DGField> IOFields, ICollection<DGField> RegisteredFields)
                 : base(GridDat, Control, IOFields, RegisteredFields) {
 
                 // Auxiliary field to calculate Lambda in Convective : LinearFlux
@@ -421,7 +421,7 @@ namespace NSE_SIMPLE {
             /// <param name="Control"></param>
             /// <param name="IOFields"></param>
             /// <param name="RegisteredFields"></param>
-            public VariableSetVariableDensity(GridData GridDat, SIMPLEControl Control, ICollection<DGField> IOFields, ICollection<DGField> RegisteredFields)
+            public VariableSetVariableDensity(IGridData GridDat, SIMPLEControl Control, ICollection<DGField> IOFields, ICollection<DGField> RegisteredFields)
                 : base(GridDat, Control, IOFields, RegisteredFields) { }
 
 #pragma warning disable 649
@@ -473,7 +473,7 @@ namespace NSE_SIMPLE {
             /// <param name="Control"></param>
             /// <param name="IOFields"></param>
             /// <param name="RegisteredFields"></param>
-            public VariableSetLowMach(GridData GridDat, SIMPLEControl Control, ICollection<DGField> IOFields, ICollection<DGField> RegisteredFields)
+            public VariableSetLowMach(IGridData GridDat, SIMPLEControl Control, ICollection<DGField> IOFields, ICollection<DGField> RegisteredFields)
                 : base(GridDat, Control, IOFields, RegisteredFields) {
 
                 // Auxiliary field to calculate Lambda in Convective : LinearFlux
@@ -526,7 +526,7 @@ namespace NSE_SIMPLE {
             /// <param name="Control"></param>
             /// <param name="IOFields"></param>
             /// <param name="RegisteredFields"></param>
-            public VariableSetMultiphase(GridData GridDat, SIMPLEControl Control, ICollection<DGField> IOFields, ICollection<DGField> RegisteredFields)
+            public VariableSetMultiphase(IGridData GridDat, SIMPLEControl Control, ICollection<DGField> IOFields, ICollection<DGField> RegisteredFields)
                 : base(GridDat, Control, IOFields, RegisteredFields) {
 
                 // Auxiliary field to calculate Lambda in Convective : LinearFlux

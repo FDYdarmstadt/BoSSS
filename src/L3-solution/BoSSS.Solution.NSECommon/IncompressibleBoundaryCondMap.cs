@@ -29,7 +29,7 @@ namespace BoSSS.Solution.NSECommon {
     /// </summary>
     public class IncompressibleBoundaryCondMap : BoundaryCondMap<IncompressibleBcType> {
 
-        static string[] BndFunctions(GridData g, PhysicsMode _PhysicsMode) {
+        static string[] BndFunctions(IGridData g, PhysicsMode _PhysicsMode) {
             int D = g.SpatialDimension;
             string[] ScalarFields;
 
@@ -78,7 +78,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// ctor
         /// </summary>
-        public IncompressibleBoundaryCondMap(GridData f, IDictionary<string, AppControl.BoundaryValueCollection> b, PhysicsMode _PhysicsMode)
+        public IncompressibleBoundaryCondMap(IGridData f, IDictionary<string, AppControl.BoundaryValueCollection> b, PhysicsMode _PhysicsMode)
             : base(f, b, BndFunctions(f, _PhysicsMode)) {
             this.PhysMode = _PhysicsMode;
         }
