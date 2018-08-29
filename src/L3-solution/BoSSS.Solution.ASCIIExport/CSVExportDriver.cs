@@ -60,14 +60,14 @@ namespace BoSSS.Solution.ASCIIExport {
         /// <summary>
         /// see <see cref="PlotDriver.PlotDriver"/>.
         /// </summary>
-        public CSVExportDriver(GridData context, bool showJumps, uint superSampling)
+        public CSVExportDriver(IGridData context, bool showJumps, uint superSampling)
             : base(context, showJumps, false, superSampling, null) {
         }
 
         /// <summary>
         /// see <see cref="PlotDriver.PlotDriver"/>.
         /// </summary>
-        public CSVExportDriver(GridData context, bool showJumps, bool ghostZone, uint superSampling, CellMask sgrd = null)
+        public CSVExportDriver(IGridData context, bool showJumps, bool ghostZone, uint superSampling, CellMask sgrd = null)
             : base(context, showJumps, ghostZone, superSampling, sgrd) {
         }
 

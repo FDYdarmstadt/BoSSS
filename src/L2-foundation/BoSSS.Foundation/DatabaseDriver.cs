@@ -1107,7 +1107,7 @@ namespace BoSSS.Foundation.IO {
         /// <returns>
         /// An object containing information about the time-step.
         /// </returns>
-        public TimestepInfo SaveTimestep(double physTime, TimestepNumber TimestepNo, SessionInfo currentSession, Grid.Classic.GridData GridDat, IEnumerable<DGField> fields) {
+        public TimestepInfo SaveTimestep(double physTime, TimestepNumber TimestepNo, SessionInfo currentSession, IGridData GridDat, IEnumerable<DGField> fields) {
             using (var tr = new FuncTrace()) {
 
                 {
@@ -1133,7 +1133,7 @@ namespace BoSSS.Foundation.IO {
 
                 // build vector
                 // ============
-                int J = GridDat.Cells.NoOfLocalUpdatedCells;
+                int J = GridDat.iLogicalCells.NoOfLocalUpdatedCells;
                 var vec = new CellFieldDataSet[J];
                 var _fields = fields.ToArray();
                 int NF = _fields.Length;

@@ -190,7 +190,7 @@ namespace BoSSS.Foundation.IO {
         /// <param name="g">grid data object (required if <paramref name="fields"/> is empty)</param>
         /// <returns>An object containing information about the time-step.</returns>
         TimestepInfo SaveTimestep(double physTime, TimestepNumber TimestepNo,
-            SessionInfo currentSession, Grid.Classic.GridData g, IEnumerable<DGField> fields);
+            SessionInfo currentSession, IGridData g, IEnumerable<DGField> fields);
 
         /// <summary>
         /// loads a single <see cref="TimestepInfo"/>-object from the database.
