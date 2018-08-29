@@ -31,7 +31,7 @@ namespace CutCellQuadrature {
 
         private DGField field;
 
-        public ScalarFieldQuadrature(GridData gridData, DGField field, CellQuadratureScheme quadInstr, int quadOrder)
+        public ScalarFieldQuadrature(IGridData gridData, DGField field, CellQuadratureScheme quadInstr, int quadOrder)
             : base(new int[] { 1 }, gridData, quadInstr.Compile(gridData, quadOrder)) {
             this.field = field;
         }
