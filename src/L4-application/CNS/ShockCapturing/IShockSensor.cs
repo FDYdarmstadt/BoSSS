@@ -53,9 +53,9 @@ namespace CNS.ShockCapturing {
         /// <param name="gridData"></param>
         /// <param name="sensorLimit"></param>
         /// <returns></returns>
-        public static CellMask GetShockedCellMask(this IShockSensor sensor, GridData gridData, double sensorLimit, double cellSize, int dgDegree) {
-            BitArray shockedCellArray = new BitArray(gridData.Cells.NoOfLocalUpdatedCells);
-            for (int i = 0; i < gridData.Cells.NoOfLocalUpdatedCells; i++) {
+        public static CellMask GetShockedCellMask(this IShockSensor sensor, IGridData gridData, double sensorLimit, double cellSize, int dgDegree) {
+            BitArray shockedCellArray = new BitArray(gridData.iLogicalCells.NoOfLocalUpdatedCells);
+            for (int i = 0; i < gridData.iLogicalCells.NoOfLocalUpdatedCells; i++) {
                 double sensorValue = sensor.GetSensorValue(i);
                 shockedCellArray[i] = sensorValue >  (sensorLimit * cellSize / dgDegree);
             }

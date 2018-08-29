@@ -59,9 +59,9 @@ namespace BoSSS.Solution.ASCIIExport {
         /// <summary>
         /// see <see cref="PlotDriver.PlotDriver"/>.
         /// </summary>
-        public CurveExportDriver(GridData context, bool showJumps, uint superSampling)
+        public CurveExportDriver(IGridData context, bool showJumps, uint superSampling)
             : base(context, showJumps, false, superSampling, null) {
-            if (context.Grid.SpatialDimension != 1) {
+            if (context.SpatialDimension != 1) {
                 throw new ArgumentException("Only supported in one dimension", "context");
             }
         }

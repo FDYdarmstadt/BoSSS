@@ -49,7 +49,7 @@ namespace BoSSS.Solution.XNSECommon {
         }
 
 
-         public IncompressibleMultiphaseBoundaryCondMap(GridData f, IDictionary<string, BoSSS.Solution.Control.AppControl.BoundaryValueCollection> b, string[] SpeciesNames)
+         public IncompressibleMultiphaseBoundaryCondMap(IGridData f, IDictionary<string, BoSSS.Solution.Control.AppControl.BoundaryValueCollection> b, string[] SpeciesNames)
             : base(f, b, PhysicsMode.Incompressible, BndFunctions(f, SpeciesNames)) //
          {
              string S0 = "#" + SpeciesNames[0];

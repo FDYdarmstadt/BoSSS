@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.Control;
 using System;
@@ -28,7 +29,7 @@ namespace CNS.Boundary {
     /// </summary>
     public class BoundaryConditionMap : IBoundaryConditionMap {
 
-        private GridData gridData;
+        private IGridData gridData;
 
         /// <summary>
         /// Cache for <see cref="ConditionMap"/>
@@ -70,7 +71,7 @@ namespace CNS.Boundary {
         /// </summary>
         /// <param name="gridData">The omnipresent grid data</param>
         /// <param name="control">Configuration options</param>
-        public BoundaryConditionMap(GridData gridData, CNSControl control) {
+        public BoundaryConditionMap(IGridData gridData, CNSControl control) {
             this.gridData = gridData;
             this.control = control;
         }
