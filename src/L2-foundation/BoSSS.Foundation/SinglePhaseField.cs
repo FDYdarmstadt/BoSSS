@@ -302,7 +302,7 @@ namespace BoSSS.Foundation {
                 throw new ArgumentOutOfRangeException();
 
 
-            DGField.EvaluateGradientInternal(j0, Len, NS, this.m_Basis, m_Mda_Coordinates, 0, resultAcc, ResultPreScale);
+            DGField.EvaluateGradientInternal(j0, Len, NS, this.m_Basis, m_Mda_Coordinates, j0, resultAcc, ResultPreScale);
         }
 
         /// <summary>

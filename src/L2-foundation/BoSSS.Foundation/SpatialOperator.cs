@@ -2056,6 +2056,13 @@ namespace BoSSS.Foundation {
                         // -------------------
                         EvalBuf.ClearEntries();
                         DelParamUpdate(domFields, Eval.Parameters.ToArray());
+
+                        double[] inpCopy = null;
+                        if (NoOfEvals == 31) {
+                            Debug_Fire = true;
+                            inpCopy = (new CoordinateVector(Eval.DomainFields)).ToArray();
+                        }
+
                         Eval.Evaluate(1.0, 0.0, EvalBuf);
                         NoOfEvals++;
 
@@ -2116,6 +2123,10 @@ namespace BoSSS.Foundation {
 
                                         double diff = (u1 - u0) / h;
                                         Buffer[iRow, iRelCol] = diff;
+
+                                        if (diff != 0.0)
+                                            Debug.Assert(jRow == jCol);
+
                                     }
                                 }
                             }
@@ -2224,6 +2235,6 @@ namespace BoSSS.Foundation {
         }
 
 
-
+        static public bool Debug_Fire = false;
     }
 }

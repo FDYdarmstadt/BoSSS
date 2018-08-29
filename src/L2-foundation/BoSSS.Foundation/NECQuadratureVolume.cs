@@ -364,6 +364,17 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             
             this.Field_Eval.Stop();
 
+            if(SpatialOperator.Debug_Fire) {
+                if (m_FieldGradients[0].L2Norm() != 0.0) {
+                    if(m_DomainFields[0].Coordinates.GetRow(geom2log[i0]).L2Norm() == 0.0) {
+                        m_DomainFields[0].EvaluateGradient(i0, Length, NodesUntransformed, m_FieldGradients[0]);
+
+                    }
+
+                    Debug.Assert(m_DomainFields[0].Coordinates.GetRow(geom2log[i0]).L2Norm() != 0.0);
+                }
+            }
+
             
 
             // =====================================
@@ -735,7 +746,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         /// </summary>
         MultidimensionalArray m_TestFuncGradWeighted;
 
-
+        
 
         /// <summary>
         /// 
@@ -768,9 +779,16 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                         int idx = f_offset + m;
                         Debug.Assert(idx0 + m == m_CodomainMapping.LocalUniqueCoordinateIndex(f, jCell, m));
                         m_Output[idx0 + m] += ResultsOfIntegration[j, idx] * alpha;
+
+                        if (SpatialOperator.Debug_Fire) {
+                            if(m_Output[idx0 + m] != 0.0) {
+                                Debug.Assert(m_DomainFields[0].Coordinates.GetRow(jCell).L2Norm() != 0.0);
+                            }
+                        }
                     }
                 }
             }
+
 
 
         }
