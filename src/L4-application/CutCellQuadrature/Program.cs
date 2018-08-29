@@ -174,8 +174,8 @@ namespace CutCellQuadrature {
         }
 
         protected override void CreateFields() {
-            levelSet = testCase.GetLevelSet(GridData);
-            levelSetTracker = new LevelSetTracker(GridData, 
+            levelSet = testCase.GetLevelSet((BoSSS.Foundation.Grid.Classic.GridData)GridData);
+            levelSetTracker = new LevelSetTracker((BoSSS.Foundation.Grid.Classic.GridData)GridData, 
                 XQuadFactoryHelper.MomentFittingVariants.Classic, // should have no effect, this app creates its own quad-rules independent of the tracker
                 1, new string[] { "A", "B" }, levelSet);
 
@@ -188,7 +188,7 @@ namespace CutCellQuadrature {
                 m_IOFields.Add((LevelSet)levelSet);
             } else {
                 LevelSet projectedLevelSet = new LevelSet(new Basis(GridData, 4), "projectedAnalyticLevelSet");
-                projectedLevelSet.ProjectField(testCase.GetLevelSet(GridData).Evaluate);
+                projectedLevelSet.ProjectField(testCase.GetLevelSet((BoSSS.Foundation.Grid.Classic.GridData)GridData).Evaluate);
                 m_IOFields.Add(projectedLevelSet);
             }
             m_IOFields.Add(XDGField);
@@ -294,7 +294,7 @@ namespace CutCellQuadrature {
             SubGrid selectedSubGrid = new SubGrid(cellMask);
 
             testCase.ScaleShifts(0.5 * testCase.GridSpacing);
-            double hBase = GridData.Cells.h_maxGlobal;
+            double hBase = ((BoSSS.Foundation.Grid.Classic.GridData)GridData).Cells.h_maxGlobal;
 
             string logName = ""
                 + testCase.GetType().Name
@@ -718,13 +718,13 @@ namespace CutCellQuadrature {
                 foreach (int edge in chunkRulePair.Chunk.Elements) {
                     QuadRule rule = chunkRulePair.Rule;
 
-                    int cell = GridData.Edges.CellIndices[edge, 0];
+                    int cell = GridData.iGeomEdges.CellIndices[edge, 0];
 
                     NodeSet volumeVertices = new NodeSet(
-                        GridData.Cells.GetRefElement(cell),
+                        GridData.iGeomCells.GetRefElement(cell),
                         rule.NoOfNodes, Grid.SpatialDimension);
                     Grid.RefElements[0].TransformFaceCoordinates(
-                        GridData.Edges.FaceIndices[edge, 0], rule.Nodes, volumeVertices);
+                        GridData.iGeomEdges.FaceIndices[edge, 0], rule.Nodes, volumeVertices);
                     volumeVertices.LockForever();
 
                     MultidimensionalArray globalVertices = MultidimensionalArray.Create(
@@ -852,7 +852,7 @@ namespace CutCellQuadrature {
         }
 
         private void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling, SubGrid subGrid) {
-            Tecplot tecplot = new Tecplot(GridData, true, false, (uint)superSampling, subGrid);
+            Tecplot tecplot = new Tecplot(GridData, true, false, (uint)superSampling, subGrid.VolumeMask);
             //Tecplot tecplot = new Tecplot(m_Context, true, false, (uint)superSampling, null);
             string path = Path.Combine(Path.GetFullPath("."), "plot_" + testCase.GetType().Name);
             tecplot.PlotFields(path, physTime, m_IOFields);
