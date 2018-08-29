@@ -1227,15 +1227,12 @@ namespace BoSSS.Foundation {
                     if(base.m_TRX != null)
                         m_TRX.TransceiveFinish();
 
-                    //if(!rem) {
-                    //    rem = true;
-                    //    Console.WriteLine("Reminder: edge terms deactivated.");
-                    //}
 
-                    
-                    if(m_NonlinearEdge != null) {
+
+
+                    if (m_NonlinearEdge != null) {
                         using(new BlockTrace("Edge_Integration_NonLin", tr)) {
-                            /*
+
                             m_NonlinearEdge.m_Output = output;
                             m_NonlinearEdge.m_alpha = alpha;
                             m_NonlinearEdge.Time = time;
@@ -1251,8 +1248,7 @@ namespace BoSSS.Foundation {
                             m_NonlinearEdge.m_outputBndEdge = null;
                             m_NonlinearEdge.m_alpha = 1.0;
                             m_NonlinearEdge.SubGridCellsMarker = null;
-                            */
-                            Console.WriteLine("edge nonl deact");
+                          
 
                         }
                     }
@@ -1411,10 +1407,10 @@ namespace BoSSS.Foundation {
                          && Owner.ContainesComponentType(typeof(IEdgeForm), typeof(IEdgeform_UxV), typeof(IEdgeform_UxGradV), typeof(IEdgeform_UxV), typeof(IEdgeSource_V))) {
 
                         using(new BlockTrace("Edge_Integration_(new)", tr)) {
-                            //var mxtbuilder2 = new LECEdgeQuadrature2<M, V>(this.Owner);
-                            //mxtbuilder2.Execute(edgeRule, CodomainMapping, Parameters, DomainMapping, OnlyAffine ? default(M) : Matrix, AffineOffset, time);
-                            //mxtbuilder2 = null;
-                            Console.WriteLine("edge lin deact");
+                            var mxtbuilder2 = new LECEdgeQuadrature2<M, V>(this.Owner);
+                            mxtbuilder2.Execute(edgeRule, CodomainMapping, Parameters, DomainMapping, OnlyAffine ? default(M) : Matrix, AffineOffset, time);
+                            mxtbuilder2 = null;
+                            
                         }
                     }
                 }
@@ -2059,8 +2055,8 @@ namespace BoSSS.Foundation {
 
                         double[] inpCopy = null;
                         if (NoOfEvals == 31) {
-                            Debug_Fire = true;
-                            inpCopy = (new CoordinateVector(Eval.DomainFields)).ToArray();
+                            //Debug_Fire = true;
+                            //inpCopy = (new CoordinateVector(Eval.DomainFields)).ToArray();
                         }
 
                         Eval.Evaluate(1.0, 0.0, EvalBuf);
@@ -2123,9 +2119,6 @@ namespace BoSSS.Foundation {
 
                                         double diff = (u1 - u0) / h;
                                         Buffer[iRow, iRelCol] = diff;
-
-                                        if (diff != 0.0)
-                                            Debug.Assert(jRow == jCol);
 
                                     }
                                 }
