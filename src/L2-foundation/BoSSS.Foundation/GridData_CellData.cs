@@ -862,6 +862,13 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
 
             /// <summary>
+            /// Center-of-gravity
+            /// </summary>
+            public double[] GetCenter(int jCell) {
+                return this.CellCenter.GetRow(jCell);
+            }
+
+            /// <summary>
             /// Which edges (see <see cref="EdgeData.CellIndices"/>) bound to
             /// which cells? <br/>
             /// - 1st index: local cell index <em>j</em>, only local updated<br/>
