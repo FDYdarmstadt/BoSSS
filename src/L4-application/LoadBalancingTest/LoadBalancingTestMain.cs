@@ -368,7 +368,8 @@ namespace BoSSS.Application.LoadBalancingTest {
                 "",
                 imbalanceThreshold: 0.0,
                 Period: 3,
-                redistributeAtStartup: false);
+                redistributeAtStartup: false,
+                TimestepNoRestart: null);
 
             
 
