@@ -388,7 +388,7 @@ namespace CNS {
 
                     // Version that should finally also work in 3D
                     RefElement refElement = program.Grid.RefElements[0];
-                    int N = program.GridData.Cells.NoOfLocalUpdatedCells;
+                    int N = program.GridData.iLogicalCells.NoOfLocalUpdatedCells;
                     int V = refElement.NoOfVertices;
 
                     // Sample maximum at vertices
