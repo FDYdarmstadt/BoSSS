@@ -2052,13 +2052,6 @@ namespace BoSSS.Foundation {
                         // -------------------
                         EvalBuf.ClearEntries();
                         DelParamUpdate(domFields, Eval.Parameters.ToArray());
-
-                        double[] inpCopy = null;
-                        if (NoOfEvals == 31) {
-                            //Debug_Fire = true;
-                            //inpCopy = (new CoordinateVector(Eval.DomainFields)).ToArray();
-                        }
-
                         Eval.Evaluate(1.0, 0.0, EvalBuf);
                         NoOfEvals++;
 
@@ -2226,8 +2219,5 @@ namespace BoSSS.Foundation {
                 Eval.ActivateSubgridBoundary(sgrd, subGridBoundaryTreatment);
             }
         }
-
-
-        static public bool Debug_Fire = false;
     }
 }
