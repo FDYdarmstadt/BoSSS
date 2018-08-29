@@ -32,7 +32,7 @@ namespace BoSSS.Solution.XNSECommon {
     public class IncompressibleMultiphaseBoundaryCondMap : BoSSS.Solution.NSECommon.IncompressibleBoundaryCondMap {
 
 
-         static string[] BndFunctions(GridData g, string[] SpeciesNames) {
+         static string[] BndFunctions(IGridData g, string[] SpeciesNames) {
             int D = g.SpatialDimension;
             List<string> scalarFields = new List<string>();
 

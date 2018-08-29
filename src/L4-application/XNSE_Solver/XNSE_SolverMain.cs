@@ -1906,7 +1906,7 @@ namespace BoSSS.Application.XNSE_Solver {
                         TestVec.Clear();
                         Random rnd = new Random(rnd_seed);
                         XDGField Pressack = TestVec.Mapping.Fields[D] as XDGField;
-                        int J = this.GridData.Cells.NoOfLocalUpdatedCells;
+                        int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
                         for (int j = 0; j < J; j++) {
                             int N = Pressack.Basis.GetLength(j);
 

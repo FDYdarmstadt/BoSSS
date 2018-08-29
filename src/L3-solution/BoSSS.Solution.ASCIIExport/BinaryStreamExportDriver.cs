@@ -47,7 +47,7 @@ namespace BoSSS.Solution.ASCIIExport {
         /// <param name="showGhostCells"></param>
         /// <param name="superSampling"></param>
         /// <param name="sgrd"></param>
-        public BinaryStreamExportDriver(GridData context, bool showJumps, bool showGhostCells, uint superSampling, CellMask sgrd = null)
+        public BinaryStreamExportDriver(IGridData context, bool showJumps, bool showGhostCells, uint superSampling, CellMask sgrd = null)
             : base(context, showJumps, showGhostCells, superSampling, sgrd) {
         }
 
