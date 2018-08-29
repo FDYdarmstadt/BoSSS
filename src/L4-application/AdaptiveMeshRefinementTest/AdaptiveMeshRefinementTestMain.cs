@@ -238,7 +238,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             // Check grid changes
             // ==================
 
-            bool AnyChange = GridRefinementController.ComputeGridChange(this.GridData, LsTrk.Regions.GetCutCellMask(), LevelInicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+            bool AnyChange = GridRefinementController.ComputeGridChange((GridData) this.GridData, LsTrk.Regions.GetCutCellMask(), LevelInicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
             int NoOfCellsToRefine = 0;
             int NoOfCellsToCoarsen = 0;
             if(AnyChange) {
@@ -262,7 +262,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
                 Console.WriteLine("       Coarsening " + NoOfCellsToCoarsen + " of " + oldJ + " cells");
 
 
-                newGrid = this.GridData.Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
+                newGrid = ((GridData)this.GridData).Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
                 
             } else {
                 newGrid = null;

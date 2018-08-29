@@ -37,13 +37,13 @@ namespace CNS.ShockCapturing {
     public class ArtificialViscosityCFLConstraint : CFLConstraint {
 
         public ArtificialViscosityCFLConstraint(
-            CNSControl config, GridData gridData, CNSFieldSet workingSet, ISpeciesMap speciesMap)
+            CNSControl config, IGridData gridData, CNSFieldSet workingSet, ISpeciesMap speciesMap)
             : base(gridData, workingSet) {
 
             this.config = config;
             this.speciesMap = speciesMap;
 
-            if (gridData.Grid.RefElements.Length > 1) {
+            if (gridData.iGeomCells.RefElements.Length > 1) {
                 throw new NotImplementedException();
             }
         }

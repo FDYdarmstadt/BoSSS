@@ -43,7 +43,7 @@ namespace CNS.Boundary {
             get {
                 if (conditionMap == null) {
                     conditionMap = new Dictionary<string, BoundaryCondition>();
-                    foreach (byte edgeTag in gridData.Edges.EdgeTags) {
+                    foreach (byte edgeTag in gridData.iGeomEdges.EdgeTags) {
                         // Only process non-periodic boundary edges
                         if (edgeTag == 0 || edgeTag >= GridCommons.FIRST_PERIODIC_BC_TAG) {
                             continue;
@@ -212,7 +212,7 @@ namespace CNS.Boundary {
         /// </summary>
         public IDictionary<byte, string> EdgeTagNames {
             get {
-                return gridData.Grid.EdgeTagNames;
+                return gridData.EdgeTagNames;
             }
         }
 
