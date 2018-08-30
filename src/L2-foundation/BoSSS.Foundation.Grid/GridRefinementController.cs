@@ -29,6 +29,7 @@ namespace BoSSS.Foundation.Grid {
     /// Basic algorithms for refinement and coarsening.
     /// </summary>
     public class GridRefinementController {
+        
         /// <summary>
         /// Computes refinement and coarsening lists 
         /// (inputs for <see cref="GridData.Adapt(IEnumerable{int}, IEnumerable{int[]}, out GridCorrelation)"/>),
