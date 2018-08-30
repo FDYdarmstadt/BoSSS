@@ -166,9 +166,9 @@
     <None Include="app.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\internal\src\private-die\L4-application\KontiHelical\KontiHelical.csproj">
+    <ProjectReference Include="..\..\..\..\internal\src\private-die\L4-application\KontiHelical\StokesHelical.csproj">
       <Project>{af092a39-7916-4a59-a2b4-5820fbd33b63}</Project>
-      <Name>KontiHelical</Name>
+      <Name>StokesHelical</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\..\..\internal\src\private-die\L4-application\PoissonScalar2CylinderCoords\PoissonScalar2CylinderCoords\PoissonScalar2CylinderCoords.csproj">
       <Project>{2bc5598f-fbdb-4064-a26d-30acfd982a09}</Project>
