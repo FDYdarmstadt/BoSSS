@@ -301,6 +301,65 @@ namespace CutCellQuadrature.TestCases {
         }
     }
 
+    class QuarterCircleSignedDistance :
+        Generic2DTestCase,
+        IVolumeTestCase
+    {
+
+        public QuarterCircleSignedDistance(GridSizes gridSize, GridTypes gridType) :
+                base(gridSize, gridType)
+        {
+            
+        }
+
+        public override double Solution {
+            get {
+                return Math.PI / 4.0;
+            }
+        }
+
+        protected override IEnumerable<Shift2D> AllShifts {
+            get {
+                yield return new Shift2D();
+            }
+        }
+
+        public override int LevelSetDegree {
+            get {
+                return 10;
+            }
+        }
+
+        public override void LevelSetInitialValue(MultidimensionalArray input, MultidimensionalArray output)
+        {
+            for (int i = 0; i < output.GetLength(0); i++)
+            {
+                double x = input[i, 0] + 1;
+                double y = input[i, 1] - 1;
+                output[i] = 1.0 - Math.Sqrt(x * x + y * y);
+            }
+        }
+
+        public override GridCommons GetGrid(IDatabaseInfo db)
+        {
+            switch (GridType)
+            {
+                case GridTypes.Structured:
+                    int noOfCells = (int)this.GridSize + 1;
+                    return Grid2D.Cartesian2DGrid(
+                        GenericBlas.Linspace(-1.0, 1.0, noOfCells + 1),
+                        GenericBlas.Linspace(-1.0, 1.0, noOfCells + 1));
+
+                case GridTypes.Unstructured:
+                    throw new NotImplementedException();
+
+                default:
+                    throw new Exception();
+            }
+        }
+    }
+
+
     class CircleVolume2DTestCase : Circle2DTestCase, IVolumeTestCase {
 
         public CircleVolume2DTestCase(GridSizes gridSize, GridTypes gridType)
