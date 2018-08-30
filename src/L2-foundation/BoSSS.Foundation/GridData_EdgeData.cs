@@ -232,14 +232,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 return (Info[e] & EdgeInfo.EdgeIsAffineLinear) != 0;
             }
 
-            /// <summary>
-            /// true, if edge <paramref name="e"/> is a boundary-edge.
-            /// </summary>
-            public bool IsEdgeBoundaryEdge(int e) {
-                bool R = (Info[e] & EdgeInfo.Boundary) != 0;
-                Debug.Assert(R == false ^ this.CellIndices[e, 1] < 0);
-                return R;
-            }
+           
 
             /// <summary>
             /// returns the area (to be more exact: the (D-1) - dimensional

@@ -702,6 +702,9 @@ namespace BoSSS.Foundation.Grid {
             get;
         }
 
+
+
+
         /// <summary>
         /// Face index, where the numbering of faces is defined by the reference element, see e.g. <see cref="RefElement.FaceToVertexIndices"/>.
         /// - 1st index: local edge index; resp. part index (for aggregate grids).

@@ -177,7 +177,7 @@ namespace BoSSS.Foundation.Grid {
             var enu = new Logical2Geom_Enumable() { j0 = j, Len = 1, Log2Geom = g.iLogicalCells.AggregateCellToParts };
 #if DEBUG
             int[] geom2log = g.iGeomCells.GeomCell2LogicalCell;
-            if(geom2log == null) {
+            if (geom2log == null) {
                 int cnt = 0;
                 foreach (int jG in enu) {
                     Debug.Assert(jG == j);
@@ -193,7 +193,7 @@ namespace BoSSS.Foundation.Grid {
                 Debug.Assert(g.iLogicalCells.AggregateCellToParts != null && g.iLogicalCells.AggregateCellToParts[j] != null);
                 Debug.Assert(g.iLogicalCells.AggregateCellToParts[j].Length == cnt);
             }
-            
+
 #endif
             return enu;
         }
@@ -379,11 +379,11 @@ namespace BoSSS.Foundation.Grid {
 #if DEBUG
             int JG = CM.GridData.iGeomCells.Count;
             BitArray test = new BitArray(JG);
-            foreach(var t_i0_len in ret) {
+            foreach (var t_i0_len in ret) {
                 int j0 = t_i0_len.Item1;
                 int Len = t_i0_len.Item2;
                 var Flag_j0 = CM.GridData.iGeomCells.InfoFlags[j0] & ConsecutiveMask;
-                for(int j = j0; j < j0 + Len; j++) {
+                for (int j = j0; j < j0 + Len; j++) {
                     Debug.Assert(test[j] == false); // each geometric cell is touched only once.
                     test[j] = true;
                     var Flag_j = CM.GridData.iGeomCells.InfoFlags[j0] & ConsecutiveMask;
@@ -393,16 +393,16 @@ namespace BoSSS.Foundation.Grid {
 
             BitArray CMmask = CM.GetBitMask();
             int[][] L2G = CM.GridData.iLogicalCells.AggregateCellToParts;
-            for(int jL = 0; jL < CMmask.Count; jL++) {
-                if(L2G == null || L2G[jL] == null) {
+            for (int jL = 0; jL < CMmask.Count; jL++) {
+                if (L2G == null || L2G[jL] == null) {
                     int jG = jL;
-                    if(CMmask[jL] != test[jG]) {
+                    if (CMmask[jL] != test[jG]) {
                         var r = new Mask2GeomChunks_Enumable() { CM = CM, MaxVecLen = MaxVecLen, ConsecutiveMask = ConsecutiveMask };
 
-                        foreach(var _t_i0_len in r) {
+                        foreach (var _t_i0_len in r) {
                             int j0 = _t_i0_len.Item1;
                             int Len = _t_i0_len.Item2;
-                            for(int j = j0; j < j0 + Len; j++) {
+                            for (int j = j0; j < j0 + Len; j++) {
                                 Console.WriteLine(j);
                             }
                         }
@@ -411,7 +411,7 @@ namespace BoSSS.Foundation.Grid {
                     }
                     Debug.Assert(CMmask[jL] == test[jG]);
                 } else {
-                    foreach(int jG in L2G[jL])
+                    foreach (int jG in L2G[jL])
                         Debug.Assert(CMmask[jL] == test[jG]);
                 }
             }
@@ -440,7 +440,6 @@ namespace BoSSS.Foundation.Grid {
                 throw new ArgumentException();
             return new Logical2Geom_Enumable() { j0 = C.i0, Len = C.Len, Log2Geom = g.iLogicalEdges.EdgeToParts };
         }
-
 
         /// <summary>
         /// Returns an enumeration of geometrical edge indices (<see cref="IGeometricalCellsData"/>)
@@ -621,8 +620,7 @@ namespace BoSSS.Foundation.Grid {
                 GlobalId = long.MinValue;
             }
 
-            unsafe
-            {
+            unsafe {
                 long* buf = stackalloc long[2];
                 buf[0] = GlobalId;
                 buf[1] = GlobalIndex;
@@ -662,9 +660,6 @@ namespace BoSSS.Foundation.Grid {
 
             return new EdgeMask(gdat, boundaryEdges);
         }
-
-
-
 
         /// <summary>
         /// Finds all neighbor cells for a given cell; 
@@ -818,6 +813,89 @@ namespace BoSSS.Foundation.Grid {
             }
 
         }
+
+        /// <summary>
+        /// true, if edge <paramref name="e"/> is a boundary-edge.
+        /// </summary>
+        static public bool IsEdgeBoundaryEdge(this IGeometricalEdgeData ge, int e) {
+            bool R = (ge.Info[e] & EdgeInfo.Boundary) != 0;
+            return R;
+        }
+
+
+        ///// <summary>
+        ///// true, if edge <paramref name="e"/> is affine-linear, false if not
+        ///// </summary>
+        //static public bool IsEdgeAffineLinear(this IGeometricalEdgeData ge, int e) {
+        //    return (ge.Info[e] & EdgeInfo.EdgeIsAffineLinear) != 0;
+        //}
+
+
+        /// <summary>
+        /// Returns a mask containing all cells which lie at the domain boundary
+        /// </summary>
+        static public CellMask GetBoundaryCells(this IGridData gdat) {
+            int J = gdat.iLogicalCells.NoOfLocalUpdatedCells;
+            BitArray boundaryCells = new BitArray(J);
+
+            int E = gdat.iLogicalEdges.Count;
+            
+            
+            int[,] CellIndices = gdat.iLogicalEdges.CellIndices;
+
+            // loop over all Edges
+            for (int e = 0; e < E; e++) {
+                int Cel1 = CellIndices[e, 0];
+                int Cel2 = CellIndices[e, 1];
+
+                if (Cel2 < 0) {
+                    // edge is located on the computational domain boundary
+                  
+
+                    boundaryCells[Cel1] = true;
+                }
+
+
+                
+            }
+
+            return new CellMask(gdat, boundaryCells, MaskType.Logical);
+
+            
+        }
+
+        /// <summary>
+        /// Returns a mask which contains all boundary edges
+        /// </summary>
+        static public EdgeMask GetBoundaryEdges(this IGridData gdat) {
+            
+            int E = gdat.iLogicalEdges.Count;
+            BitArray boundaryEdges = new BitArray(E);
+            
+
+            int[,] CellIndices = gdat.iLogicalEdges.CellIndices;
+
+            // loop over all Edges
+            for (int e = 0; e < E; e++) {
+                int Cel1 = CellIndices[e, 0];
+                int Cel2 = CellIndices[e, 1];
+
+                if (Cel2 < 0) {
+                    // edge is located on the computational domain boundary
+                    boundaryEdges[e] = true;
+
+                }
+
+
+
+            }
+
+            
+
+            return new EdgeMask(gdat, boundaryEdges, MaskType.Logical);
+            
+        }
+
     }
 
     /// <summary>

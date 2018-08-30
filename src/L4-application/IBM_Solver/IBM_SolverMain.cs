@@ -735,8 +735,10 @@ namespace BoSSS.Application.IBM_Solver {
         /// <param name="penalty">base factor</param>
         /// <returns></returns>
         protected double ComputePenaltyIB(double penalty_base, int jCell) {
+            var __gridData = (GridData)GridData;
+
             double hCutCellMin = m_LenScales[jCell]; // for IBM, there is no positive species!
-            double hCellMin = this.GridData.Cells.h_min[jCell];
+            double hCellMin = __gridData.Cells.h_min[jCell];
             if (hCutCellMin <= 1.0e-10 * hCellMin)
                 // very small cell -- clippling
                 hCutCellMin = hCellMin;
@@ -868,7 +870,7 @@ namespace BoSSS.Application.IBM_Solver {
                 DGField mpiRank = new SinglePhaseField(new Basis(GridData, 0), "rank");
                 m_IOFields.Add(mpiRank);
 
-                for (int j = 0; j < GridData.Cells.NoOfLocalUpdatedCells; j++) {
+                for (int j = 0; j < GridData.iLogicalCells.NoOfLocalUpdatedCells; j++) {
                     mpiRank.SetMeanValue(j, DatabaseDriver.MyRank);
                 }
             }
@@ -1269,7 +1271,7 @@ namespace BoSSS.Application.IBM_Solver {
                 //var NoCoarseningcells = new CellMask(this.GridData, AllCells);
 
                 // Only CutCells are NoCoarseningCells 
-                bool AnyChange = GridRefinementController.ComputeGridChange(this.GridData, CutCells, LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+                bool AnyChange = GridRefinementController.ComputeGridChange((GridData)(this.GridData), CutCells, LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
                 int NoOfCellsToRefine = 0;
                 int NoOfCellsToCoarsen = 0;
                 if (AnyChange) {
@@ -1290,7 +1292,7 @@ namespace BoSSS.Application.IBM_Solver {
                     Console.WriteLine("       Refining " + NoOfCellsToRefine + " of " + oldJ + " cells");
                     Console.WriteLine("       Coarsening " + NoOfCellsToCoarsen + " of " + oldJ + " cells");
 
-                    newGrid = this.GridData.Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
+                    newGrid = ((GridData)(this.GridData)).Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
 
                     if (this.Control.savetodb == true) {
                         Console.WriteLine("Save adaptive Mesh...");
