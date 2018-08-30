@@ -247,11 +247,11 @@ namespace BoSSS.Application.XNSE_Solver {
                 // ==============================
                 this.LevSet = ContinuityProjection.CreateField(
                     DGLevelSet: this.DGLevSet.Current,
-                    gridData: GridData,
+                    gridData: (GridData)GridData,
                     Option: Control.LSContiProjectionMethod
                     );
 
-                this.LsTrk = new LevelSetTracker(this.GridData, base.Control.CutCellQuadratureType, base.Control.LS_TrackerWidth, new string[] { "A", "B" }, this.LevSet);
+                this.LsTrk = new LevelSetTracker((GridData) this.GridData, base.Control.CutCellQuadratureType, base.Control.LS_TrackerWidth, new string[] { "A", "B" }, this.LevSet);
                 base.RegisterField(this.LevSet);
                 this.LevSetGradient = new VectorField<SinglePhaseField>(D.ForLoop(d => new SinglePhaseField(this.LevSet.Basis, "dPhi_dx[" + d + "]")));
                 base.RegisterField(this.LevSetGradient);
@@ -1096,7 +1096,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 // Capillary Timestep restriction
                 if (this.Control.PhysicalParameters.Sigma != 0.0) {
-                    MultidimensionalArray h_mins = this.GridData.Cells.h_min;
+                    MultidimensionalArray h_mins = ((GridData)this.GridData).Cells.h_min;
                     double h = h_mins.Min();
                     double LevSet_Deg = this.LevSet.Basis.Degree + 1;
                     h /= LevSet_Deg; 
@@ -2714,7 +2714,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 //PlotCurrentState(hack_Phystime, new TimestepNumber(TimestepNo, 1), 2);
 
-                bool AnyChange = GridRefinementController.ComputeGridChange(this.GridData, BlockedCells, LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+                bool AnyChange = GridRefinementController.ComputeGridChange((BoSSS.Foundation.Grid.Classic.GridData) this.GridData, BlockedCells, LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
                 int NoOfCellsToRefine = 0;
                 int NoOfCellsToCoarsen = 0;
                 if (AnyChange) {
@@ -2737,7 +2737,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     Console.WriteLine("       Refining " + NoOfCellsToRefine + " of " + oldJ + " cells");
                     Console.WriteLine("       Coarsening " + NoOfCellsToCoarsen + " of " + oldJ + " cells");
 
-                    newGrid = this.GridData.Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
+                    newGrid = ((GridData)this.GridData).Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
 
                     //PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 2 }), 2);#
 

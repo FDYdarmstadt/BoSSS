@@ -291,7 +291,7 @@ namespace BoSSS.Application.ScalarTransport {
 
                 double dtCFL;
                 if(this.GridData is GridData) {
-                    dtCFL = ((GridData)(this.GridData)).ComputeCFLTime(this.Velocity, 1.0e10);
+                    dtCFL = this.GridData.ComputeCFLTime(this.Velocity, 1.0e10);
                 } else {
                     Console.WriteLine("Nix CFL");
                     dtCFL = 1e-3;

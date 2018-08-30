@@ -839,8 +839,8 @@ namespace BoSSS.Foundation.Grid {
             BitArray boundaryCells = new BitArray(J);
 
             int E = gdat.iLogicalEdges.Count;
-            
-            
+
+
             int[,] CellIndices = gdat.iLogicalEdges.CellIndices;
 
             // loop over all Edges
@@ -850,28 +850,28 @@ namespace BoSSS.Foundation.Grid {
 
                 if (Cel2 < 0) {
                     // edge is located on the computational domain boundary
-                  
+
 
                     boundaryCells[Cel1] = true;
                 }
 
 
-                
+
             }
 
             return new CellMask(gdat, boundaryCells, MaskType.Logical);
 
-            
+
         }
 
         /// <summary>
         /// Returns a mask which contains all boundary edges
         /// </summary>
         static public EdgeMask GetBoundaryEdges(this IGridData gdat) {
-            
+
             int E = gdat.iLogicalEdges.Count;
             BitArray boundaryEdges = new BitArray(E);
-            
+
 
             int[,] CellIndices = gdat.iLogicalEdges.CellIndices;
 
@@ -890,12 +890,136 @@ namespace BoSSS.Foundation.Grid {
 
             }
 
-            
+
 
             return new EdgeMask(gdat, boundaryEdges, MaskType.Logical);
-            
+
         }
 
+
+        /// <summary>
+        /// computes a global time-step length ("delta t") according to the 
+        /// Courant-Friedrichs-Lax - criterion, based on a velocity
+        /// vector (<paramref name="velvect"/>) and the cell size
+        /// this.<see cref="Cells"/>.<see cref="CellData.h_min"/>;
+        /// </summary>
+        /// <param name="velvect">
+        /// components of a velocity vector
+        /// </param>
+        /// <param name="max">
+        /// an upper maximum for the return value; This is useful if the velocity
+        /// defined by <paramref name="velvect"/> is 0 or very small everywhere;
+        /// </param>
+        /// <param name="cm">
+        /// optional restriction of domain.
+        /// </param>
+        /// <returns>
+        /// the minimum (over all cells j in all processes) of <see cref="CellData.h_min"/>[j]
+        /// over v, where v is the Euclidean norm of a vector build from 
+        /// <paramref name="velvect"/>;
+        /// This vector is evaluated at cell center and all cell vertices.
+        /// The return value is the same on all processes;
+        /// </returns>
+        static public double ComputeCFLTime<T>(this IGridData __gdat, IEnumerable<T> velvect, double max, CellMask cm = null)
+            where T : DGField //
+        {
+            using (var tr = new FuncTrace()) {
+                GridData gdat = (GridData)__gdat;
+
+                ilPSP.MPICollectiveWatchDog.Watch(MPI.Wrappers.csMPI.Raw._COMM.WORLD);
+
+                T[] _velvect = velvect.ToArray();
+
+                if (cm == null)
+                    cm = CellMask.GetFullMask(gdat);
+
+                int D = gdat.SpatialDimension;
+                var KrefS = gdat.Grid.RefElements;
+
+                // find cfl number on this processor
+                // ---------------------------------
+
+                var m_CFL_EvalPoints = new NodeSet[KrefS.Length];
+                for (int i = 0; i < KrefS.Length; i++) {
+                    var Kref = KrefS[i];
+                    int N = Kref.NoOfVertices + 1;
+
+                    MultidimensionalArray vert = MultidimensionalArray.Create(N, D);
+                    vert.SetSubArray(Kref.Vertices, new int[] { 0, 0 }, new int[] { N - 2, D - 1 });
+
+                    m_CFL_EvalPoints[i] = new NodeSet(Kref, vert);
+                }
+                
+
+
+                // evaluators an memory for result
+                int VecMax = 1000;
+                DGField[] evalers = new DGField[_velvect.Length];
+                MultidimensionalArray[] fieldValues = new MultidimensionalArray[_velvect.Length];
+                for (int i = 0; i < _velvect.Length; i++) {
+                    evalers[i] = _velvect[i];
+                    fieldValues[i] = MultidimensionalArray.Create(VecMax, m_CFL_EvalPoints[0].NoOfNodes);
+                }
+
+                var h_min = gdat.Cells.h_min;
+                int K = _velvect.Length;
+                double cflhere = max;
+
+                //for (int j = 0; j < J; j += VectorSize) {
+                foreach (Chunk chk in cm) {
+                    int VectorSize = VecMax;
+                    for (int j = chk.i0; j < chk.JE; j += VectorSize) {
+                        if (j + VectorSize > chk.JE + 1)
+                            VectorSize = chk.JE - j;
+                        VectorSize = gdat.Cells.GetNoOfSimilarConsecutiveCells(CellInfo.RefElementIndex_Mask, j, VectorSize);
+
+
+                        int iKref = gdat.Cells.GetRefElementIndex(j);
+                        int N = m_CFL_EvalPoints[iKref].GetLength(0);
+
+                        if (fieldValues[0].GetLength(0) != VectorSize) {
+                            for (int i = 0; i < _velvect.Length; i++) {
+                                fieldValues[i].Allocate(VectorSize, N);
+                            }
+                        }
+
+                        for (int k = 0; k < K; k++)
+                            evalers[k].Evaluate(j, VectorSize, m_CFL_EvalPoints[iKref], fieldValues[k], 0, 0.0);
+
+                        // loop over cells ...
+                        for (int jj = j; jj < j + VectorSize; jj++) {
+
+                            // loop over nodes ...
+                            for (int n = 0; n < N; n++) {
+                                double velabs = 0;
+
+                                // loop over velocity components ...
+                                for (int k = 0; k < K; k++) {
+                                    double v = fieldValues[k][jj - j, n];
+                                    velabs += v * v;
+                                }
+
+                                velabs = Math.Sqrt(velabs);
+
+                                double cfl = h_min[jj] / velabs;
+                                cflhere = Math.Min(cfl, cflhere);
+                            }
+                        }
+                    }
+
+                }
+
+                // find the minimum over all processes via MPI and return
+                // ------------------------------------------------------
+                double cfltotal;
+                unsafe {
+                    csMPI.Raw.Allreduce((IntPtr)(&cflhere), (IntPtr)(&cfltotal), 1, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._OP.MIN, csMPI.Raw._COMM.WORLD);
+                }
+                tr.Info("computed CFL timestep: " + cfltotal);
+                return cfltotal;
+
+            }
+        }
     }
 
     /// <summary>
@@ -913,4 +1037,7 @@ namespace BoSSS.Foundation.Grid {
         /// </summary>
         ViaVertices
     }
+
+    
+
 }
