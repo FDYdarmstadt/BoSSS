@@ -35,6 +35,7 @@ namespace BoSSS.Application.BoSSSpad{
         }
 
         static object RunCommand(object input){
+            System.Diagnostics.Debugger.Break();
             Tuple<string, string> output = worksheet.RunCommand(input.ToString());
             return output;
         }
