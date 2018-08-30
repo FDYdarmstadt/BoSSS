@@ -33,7 +33,10 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
         /// not the smartest way to define such a test...
         /// </summary>
         [Test]
-        public void AllUp() {
+        public void AllUp(
+            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGauss, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes)]
+            XQuadFactoryHelper.MomentFittingVariants variant
+            ) {
             //static void Main(string[] args) {
 
             bool MpiInit;
@@ -47,22 +50,22 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
                 XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes };
 
 
-            foreach (var tst in Tests) {
-                foreach (var variant in Variants) {
+            foreach(var tst in Tests) {
 
-                    XdgNastyLevsetLocationTest p = null;
 
-                    tst.ResetTest();
+                XdgNastyLevsetLocationTest p = null;
 
-                    BoSSS.Solution.Application._Main(new string[0], true, delegate() {
-                        p = new XdgNastyLevsetLocationTest();
-                        p.test = tst;
-                        p.momentFittingVariant = variant;
-                        return p;
-                    });
+                tst.ResetTest();
 
-                    Assert.IsTrue(p.IsPassed);
-                }
+                BoSSS.Solution.Application._Main(new string[0], true, delegate () {
+                    p = new XdgNastyLevsetLocationTest();
+                    p.test = tst;
+                    p.momentFittingVariant = variant;
+                    return p;
+                });
+
+                Assert.IsTrue(p.IsPassed);
+
             }
 
             MPI.Wrappers.csMPI.Raw.mpiFinalize();
