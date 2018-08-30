@@ -239,7 +239,7 @@ namespace CNS {
             return c;
         }
 
-        public static CNSControl ShockVortexInteraction(string dbPath = null, int savePeriod = 10, int dgDegree = 4, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double Mv = 0.7, double Ms = 1.5, int numOfCellsX = 400, int numOfCellsY = 100) {
+        public static CNSControl ShockVortexInteraction(string dbPath = null, int savePeriod = 10, int dgDegree = 4, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double Mv = 0.7, double Ms = 1.5, int numOfCellsX = 200, int numOfCellsY = 100) {
             CNSControl c = new CNSControl();
 
             // ### Database ###
@@ -1147,7 +1147,7 @@ namespace CNS {
 
             if (restart == "True") {
                 // Restart Lichtenberg "paper_ibmdmr"
-                c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("b2613f67-c82d-4d7a-8532-7b3d9fd841a0"), -1);
+                c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("114a089b-5e28-4b53-bcfe-d1e1e57fe7d0"), -1);
                 c.GridGuid = new Guid("0f4e4dad-7930-428f-80b1-a3ae28dc251c");
             } else {
                 c.GridFunc = delegate {
@@ -1257,12 +1257,13 @@ namespace CNS {
             // Lichtenberg
             //string dbPath = @"/home/yp19ysog/bosss_db_paper_ibmdmr2";
             string dbPath = @"/work/scratch/yp19ysog/bosss_db_paper_ibmdmr_run3";
+            //string dbPath = @"/work/scratch/yp19ysog/bosss_db_paper_ibmdmr_run3_test";
             //string dbPath = @"C:\bosss_db_paper_ibmdmr_scratch_run3_test";
             string restart = "True";
 
             IBMControl c = IBMDoubleMachReflection(dbPath, savePeriod, dgDegree, numOfCellsX, numOfCellsY, sensorLimit, dtFixed, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, agg, fugdeFactor, endTime, kappa, restart);
 
-            c.ProjectName = "paper_ibmdmr_run3_restart1";
+            c.ProjectName = "paper_ibmdmr_run3_restart2";
             //c.NoOfTimesteps = 10;
 
             return c;
