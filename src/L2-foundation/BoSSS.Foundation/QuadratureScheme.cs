@@ -636,6 +636,12 @@ namespace BoSSS.Foundation.Quadrature {
     /// </summary>
     public sealed class CellQuadratureScheme : QuadratureScheme<QuadRule, CellMask> {
 
+        static CellMask ConvDomain(CellMask em) {
+            if (em != null && em.MaskType == MaskType.Logical)
+                em = em.ToGeometicalMask();
+            return em;
+        }
+
         /// <summary>
         /// Constructs an empty quadrature scheme.
         /// </summary>
@@ -647,7 +653,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// if false, the user must add factories for all items in the domain.
         /// </param>
         public CellQuadratureScheme(bool UseDefaultFactories = true, CellMask domain = null)
-            : base(UseDefaultFactories, domain) {
+            : base(UseDefaultFactories, ConvDomain(domain)) {
         }
 
         /// <summary>
@@ -663,8 +669,8 @@ namespace BoSSS.Foundation.Quadrature {
         /// <see cref="QuadratureScheme{S, T}.AddFactoryDomainPair"/>
         /// </param>
         public CellQuadratureScheme(IQuadRuleFactory<QuadRule> factory, CellMask domain = null)
-            : base(false, domain) {
-            AddFactoryDomainPair(factory, domain);
+            : base(false, ConvDomain(domain)) {
+            AddFactoryDomainPair(factory, ConvDomain(domain));
         }
 
         /// <summary>
@@ -711,6 +717,12 @@ namespace BoSSS.Foundation.Quadrature {
     /// </summary>
     public sealed class EdgeQuadratureScheme : QuadratureScheme<QuadRule, EdgeMask> {
 
+        static EdgeMask ConvDomain(EdgeMask em) {
+            if (em != null && em.MaskType == MaskType.Logical)
+                em = em.ToGeometicalMask();
+            return em;
+        }
+
         /// <summary>
         /// Constructs an empty quadrature scheme.
         /// </summary>
@@ -722,7 +734,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// if false, the user must add factories for all items in the domain.
         /// </param>
         public EdgeQuadratureScheme(bool UseDefaultFactories = true, EdgeMask domain = null)
-            : base(UseDefaultFactories, domain) {
+            : base(UseDefaultFactories, ConvDomain(domain)) {
         }
 
         /// <summary>
@@ -738,8 +750,8 @@ namespace BoSSS.Foundation.Quadrature {
         /// <see cref="QuadratureScheme{S, T}.AddFactoryDomainPair"/>
         /// </param>
         public EdgeQuadratureScheme(IQuadRuleFactory<QuadRule> factory, EdgeMask domain = null)
-            : base(false, domain) {
-            AddFactoryDomainPair(factory, domain);
+            : base(false, ConvDomain(domain)) {
+            AddFactoryDomainPair(factory, ConvDomain(domain));
         }
 
         /// <summary>
@@ -781,6 +793,7 @@ namespace BoSSS.Foundation.Quadrature {
     /// all edges adjacent to this cell.
     /// </summary>
     public sealed class CellBoundaryQuadratureScheme : QuadratureScheme<CellBoundaryQuadRule, CellMask> {
+
 
         /// <summary>
         /// Constructs an empty quadrature scheme.
