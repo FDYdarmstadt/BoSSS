@@ -190,8 +190,12 @@ namespace BoSSS.Foundation.XDG {
                     EdgeMask cutEdges = this.XDGSpaceMetrics.LevelSetRegions.GetCutCellSubgrid4LevSet(iLevSet).InnerEdgesMask.Union(
                             this.XDGSpaceMetrics.LevelSetRegions.GetCutCellSubgrid4LevSet(iLevSet).AllEdgesMask.Intersect(this.XDGSpaceMetrics.GridDat.BoundaryEdges));
 
-                    cutEdges = cutEdges.Intersect(this.XDGSpaceMetrics.GridDat.GetRefElementSubGrid(iKref).AllEdgesMask);
 
+
+                    cutEdges = cutEdges.Intersect(this.XDGSpaceMetrics.GridDat.GetRefElementSubGrid(iKref).AllEdgesMask);
+                    cutEdges = cutEdges.ToGeometicalMask();
+
+                    Debug.Assert(cutEdges.MaskType == MaskType.Geometrical);
                     this.m_CutEdges[iKref, iLevSet] = cutEdges;
 
                     // (all edges of 'Kref'-elements) \cap (all edges of cells cut by 'iLevSet')  
@@ -625,7 +629,7 @@ namespace BoSSS.Foundation.XDG {
             //EdgeMask AggEdges = (this.CellAgglomeration != null) ? (this.CellAgglomeration.GetAgglomerator(sp).AggInfo.AgglomerationEdges) : (default(EdgeMask));
             //if (AggEdges != null && AggEdges.NoOfItemsLocally > 0)
             //    allRelevantEdges = allRelevantEdges.Except(AggEdges);
-            return allRelevantEdges;
+            return allRelevantEdges.ToGeometicalMask();
         }
 
 
@@ -635,6 +639,10 @@ namespace BoSSS.Foundation.XDG {
         public CellQuadratureScheme GetVolumeQuadScheme(SpeciesId sp, bool UseDefaultFactories = true, CellMask IntegrationDomain = null, int? fixedOrder = null) {
             if (!this.SpeciesList.Contains(sp))
                 throw new ArgumentException("Given species (id = " + sp.cntnt + ") is not supported.");
+
+            if (IntegrationDomain != null)
+                if (IntegrationDomain.MaskType != MaskType.Logical)
+                    throw new ArgumentException();
 
             CellMask CellMask = GetCellMask(sp, IntegrationDomain);
 
@@ -648,7 +656,7 @@ namespace BoSSS.Foundation.XDG {
 
             // now: rules for the cut-cells:
             for (int iLevSet = 0; iLevSet < XDGSpaceMetrics.NoOfLevelSets; iLevSet++) { // loop over level sets
-                var cutDom = XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet);
+                var cutDom = XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet).ToGeometicalMask();
                 var cutCells = cutDom.Intersect(CellMask);
 
                 var jmp = IdentifyWing(iLevSet, sp);
@@ -667,15 +675,19 @@ namespace BoSSS.Foundation.XDG {
         private CellMask GetCellMask(SpeciesId sp, CellMask IntegrationDomain) {
             if (!this.SpeciesList.Contains(sp))
                 throw new ArgumentException("Given species (sp = " + sp.cntnt + ") is not supported.");
-
+            Debug.Assert(IntegrationDomain == null || IntegrationDomain.MaskType == MaskType.Logical);
 
             CellMask OutCellMask;
 
             if (IntegrationDomain == null) {
                 OutCellMask = XDGSpaceMetrics.LevelSetRegions.GetSpeciesMask(sp);
+                Debug.Assert(OutCellMask.MaskType == MaskType.Logical);
             } else {
                 OutCellMask = XDGSpaceMetrics.LevelSetRegions.GetSpeciesMask(sp).Intersect(IntegrationDomain);
             }
+            
+            OutCellMask = OutCellMask.ToGeometicalMask();
+
             return OutCellMask;
         }
 
@@ -690,6 +702,9 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="fixedOrder"></param>
         /// <returns></returns>
         public CellQuadratureScheme GetLevelSetquadScheme(int iLevSet, CellMask IntegrationDom, int? fixedOrder = null) {
+
+            if (IntegrationDom.MaskType == MaskType.Logical)
+                IntegrationDom = IntegrationDom.ToGeometicalMask();
 
             CellQuadratureScheme LevSetQrIns = new CellQuadratureScheme(false, IntegrationDom);
 

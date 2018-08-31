@@ -150,6 +150,9 @@ namespace BoSSS.Foundation.Quadrature {
         /// if false, the user must add factories for all items in the domain.
         /// </param>
         public QuadratureScheme(bool UseDefaultFactories, TDomain domain = null) {
+            if (domain != null)
+                if (domain.MaskType != MaskType.Geometrical)
+                    throw new ArgumentException();
             this.Domain = domain;
             this.m_UseDefaultFactories = UseDefaultFactories;
         }

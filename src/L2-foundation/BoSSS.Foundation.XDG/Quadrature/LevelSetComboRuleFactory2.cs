@@ -213,7 +213,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
             int iKref = lsData.GridDat.Grid.RefElements.IndexOf(RefElement);
             this.MaxGrid = lsData.GridDat.Cells.GetCells4Refelement(iKref).Intersect(
-                this.LevelSetData.Region.GetCutCellMask4LevSet(this.LevelSetIndex));
+                this.LevelSetData.Region.GetCutCellMask4LevSet(this.LevelSetIndex).ToGeometicalMask());
         }
 
         LevelSetTracker.LevelSetData LevelSetData;
