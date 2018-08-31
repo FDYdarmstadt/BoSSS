@@ -203,7 +203,7 @@ namespace BoSSS.Application.DerivativeTest {
 
             Quadrature_Bulksize.CHUNK_DATA_LIMIT = 1;
             //BoSSS.Foundation.Caching.Cache.MaxMem = 1024;
-            for (int i = 18; i <= 18; i++) {
+            for (int i = 1; i <= 1; i++) {
                 BoSSS.Solution.Application._Main(args, true,  delegate () {
                     var R = new DerivativeTestMain();
                     GRID_CASE = i;
