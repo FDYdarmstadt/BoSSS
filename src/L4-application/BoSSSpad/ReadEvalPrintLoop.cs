@@ -120,7 +120,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             // Helical shit
             eval.ReferenceAssembly(typeof(KontiHelical.HelicalMain).Assembly);
-            eval.ReferenceAssembly(typeof(PosissonScalar3CylinderCoords.PoissonScalar3CCMain).Assembly);
+           // eval.ReferenceAssembly(typeof(PosissonScalar3CylinderCoords.PoissonScalar3CCMain).Assembly);
             eval.ReferenceAssembly(typeof(PoissonScalar2CylinderCoords.PoissonScalar2CCMain).Assembly);
 
 
