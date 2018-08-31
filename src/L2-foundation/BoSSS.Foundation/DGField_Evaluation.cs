@@ -62,7 +62,9 @@ namespace BoSSS.Foundation {
                 // Special optimization for single-cell evaluation:
                 // this happens very often for edge quadrature, so it is quite relevant.
                 double scale0 = basis.GridDat.ChefBasis.Scaling[j0];
-                ResultAcc.Multiply(scale0, Coördinates, BasisValues, ResultPreScale, ref mp_jk_jm_km); //"jk", "jm", "km");
+                Debug.Assert(basis.GridDat.iGeomCells.GeomCell2LogicalCell == null || basis.GridDat.iGeomCells.GeomCell2LogicalCell[j0] == j0);
+                var Coördinates_j = Coördinates.ExtractSubArrayShallow(new int[] { j0, 0 }, new int[] { j0, N - 1 });
+                ResultAcc.Multiply(scale0, Coördinates_j, BasisValues, ResultPreScale, ref mp_jk_jm_km); //"jk", "jm", "km");
             } else {
                 int iBuf;
                 MultidimensionalArray trfCoördinates = TempBuffer.GetTempMultidimensionalarray(out iBuf, L, N);
@@ -266,7 +268,10 @@ namespace BoSSS.Foundation {
                     MultidimensionalArray GradientRef = TempBuffer.GetTempMultidimensionalarray(out iBuf2, L, K, D);
                     MultidimensionalArray InvJacobi = basis.GridDat.iGeomCells.InverseTransformation.ExtractSubArrayShallow(j0, -1, -1);
 
-                    GradientRef.Multiply(scale0, Coördinates, BasisGradValues, 0.0, ref mp_jke_jm_kme);  // gradient in reference coördinates
+                    Debug.Assert(basis.GridDat.iGeomCells.GeomCell2LogicalCell == null || basis.GridDat.iGeomCells.GeomCell2LogicalCell[j0] == j0);
+                    var Coördinates_j = Coördinates.ExtractSubArrayShallow(new int[] { j0, 0 }, new int[] { j0, N - 1 });
+
+                    GradientRef.Multiply(scale0, Coördinates_j, BasisGradValues, 0.0, ref mp_jke_jm_kme);  // gradient in reference coördinates
                     ResultAcc.Multiply(1.0, InvJacobi, GradientRef, ResultPreScale, ref mp_jkd_ed_jke);
                     
                     TempBuffer.FreeTempBuffer(iBuf2);

@@ -1390,7 +1390,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
 
             if (m_RefElementSgrd[iKref] == null) {
-                m_RefElementSgrd[iKref] = new SubGrid(this.Cells.GetCells4Refelement(iKref));
+                m_RefElementSgrd[iKref] = new SubGrid(this.Cells.GetCells4Refelement(iKref).ToLogicalMask());
             }
 
             return m_RefElementSgrd[iKref];

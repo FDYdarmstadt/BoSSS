@@ -424,22 +424,68 @@ namespace BoSSS.Foundation.Grid {
             if(base.MaskType != MaskType.Logical)
                 throw new NotSupportedException();
 
-            if(base.GridData is Grid.Classic.GridData) 
+            if (base.GridData is Grid.Classic.GridData) {
                 // logical and geometrical cells are identical - return a clone of this mask
                 return new CellMask(base.GridData, base.Sequence, MaskType.Geometrical);
+            } else {
 
-            int Jg = GridData.iGeomCells.Count;
-            int[][] jl2jg = GridData.iLogicalCells.AggregateCellToParts;
-            BitArray ba = new BitArray(Jg);
-            foreach(Chunk c in this) { // loop over chunks of logical cells...
-                for(int jl = 0; jl < c.JE; jl++) { // loop over cells in chunk...
-                    foreach(int jg in jl2jg[jl]) { // loop over geometrical cells in logical cell 'jl'...
-                        ba[jg] = true;
+                int Jg = GridData.iGeomCells.Count;
+                int[][] jl2jg = GridData.iLogicalCells.AggregateCellToParts;
+                BitArray ba = new BitArray(Jg);
+                foreach (Chunk c in this) { // loop over chunks of logical cells...
+                    for (int jl = 0; jl < c.JE; jl++) { // loop over cells in chunk...
+                        foreach (int jg in jl2jg[jl]) { // loop over geometrical cells in logical cell 'jl'...
+                            ba[jg] = true;
+                        }
                     }
                 }
-            }
 
-            return new CellMask(base.GridData, ba, MaskType.Geometrical);
+                return new CellMask(base.GridData, ba, MaskType.Geometrical);
+            }
+        }
+
+        /// <summary>
+        /// Converts this  
+        /// from a geometrical (<see cref="IGridData.iGeomCells"/>) mask
+        /// to a  logical (<see cref="IGridData.iLogicalCells"/>) mask.
+        /// </summary>
+        /// <returns></returns>
+        public CellMask ToLogicalMask() {
+            if(base.MaskType != MaskType.Geometrical)
+                throw new NotSupportedException();
+
+            if (base.GridData is Grid.Classic.GridData || GridData.iGeomCells.GeomCell2LogicalCell == null) {
+                // logical and geometrical cells are identical - return a clone of this mask
+                return new CellMask(base.GridData, base.Sequence, MaskType.Logical);
+            } else {
+                int[] jG2jL = GridData.iGeomCells.GeomCell2LogicalCell;
+
+                int Jl = GridData.iLogicalCells.NoOfLocalUpdatedCells;
+                BitArray ba = new BitArray(Jl);
+
+
+                foreach (Chunk c in this) { // loop over chunks of logical cells...
+                    for (int jG = 0; jG < c.JE; jG++) { // loop over cells in chunk...
+                        int jL = jG2jL[jG];
+
+                        ba[jL] = true;
+
+                    }
+                }
+
+                var cmL = new CellMask(base.GridData, ba, MaskType.Logical);
+#if DEBUG
+                // convert new logical mask back to geometrical and see if both masks are equal
+                BitArray shouldBeEqual = (cmL.ToGeometicalMask()).GetBitMask();
+                BitArray thisMask = this.GetBitMask();
+                Debug.Assert(shouldBeEqual.Length == thisMask.Length);
+                for (int j = 0; j < shouldBeEqual.Length; j++) {
+                    Debug.Assert(shouldBeEqual[j] == thisMask[j]);
+                }
+
+#endif
+                return cmL;
+            }
         }
 
     }
