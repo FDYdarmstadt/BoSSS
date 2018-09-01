@@ -56,7 +56,7 @@ namespace BoSSS.Application.MultigridTest {
 
             
             foreach (int w in new int[] { 0 }) {
-                for (int p = 3; p <= 3; p++) {
+                for (int p = 1; p <= 1; p++) {
                     TestProgram.ProlongationTest(p);
                     //TestProgram.PolynomialRestAndPrlgTest(p);
                     //XDG_MatrixPolynomialRestAndPrlgTest_2

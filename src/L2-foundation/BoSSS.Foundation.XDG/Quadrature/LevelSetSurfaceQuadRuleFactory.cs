@@ -190,9 +190,11 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 if (mask == null) {
                     throw new ArgumentException("Cell mask required", "mask");
                 }
+                if (mask.MaskType != MaskType.Geometrical)
+                    throw new ArgumentException("Expecting a geometrical mask.");
 
-                // Note: This is a parallel call, so do this early to avoid parallel confusion
-                localCellIndex2SubgridIndex = new SubGrid(cellMask).LocalCellIndex2SubgridIndex;
+
+                localCellIndex2SubgridIndex = cellMask.GetIndex2MaskItemMap();
 
                 phiBasis = new DivergenceFreeBasis(LevelSetData.GridDat, this.RefElement, order);
                 int noOfPhis = this.NumberOfMoments;

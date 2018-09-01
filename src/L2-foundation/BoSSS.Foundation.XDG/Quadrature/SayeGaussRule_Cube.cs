@@ -78,6 +78,9 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         public IEnumerable<IChunkRulePair<QuadRule>> GetQuadRuleSet(ExecutionMask mask, int Order)
         {
+            if (mask.MaskType != MaskType.Geometrical)
+                throw new ArgumentException("Expecting a geometrical mask.");
+
             order = Order;
             QuadRule gaussRule_1D = Line.Instance.GetQuadratureRule(Order);
             var result = new List<ChunkRulePair<QuadRule>>();
