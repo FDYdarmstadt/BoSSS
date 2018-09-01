@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using ilPSP.Utils;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -994,6 +995,22 @@ namespace BoSSS.Foundation.Grid {
             IEnumerator IEnumerable.GetEnumerator() {
                 return this.GetEnumerator();
             }
+        }
+
+        /// <summary>
+        /// Returns an array which maps indices of cells or edges to indices into this masks items.
+        /// </summary>
+        /// <returns></returns>
+        public int[] GetIndex2MaskItemMap() {
+            int J = this.GetUpperIndexBound(this.GridData);
+            var localCellIndex2SubgridIndex = new int[J];
+                ArrayTools.SetAll(localCellIndex2SubgridIndex, int.MinValue);
+                int cnt = 0;
+                foreach(int jCell in this.ItemEnum) {
+                    localCellIndex2SubgridIndex[jCell] = cnt;
+                    cnt++;
+                }
+            return localCellIndex2SubgridIndex;
         }
 
     }
