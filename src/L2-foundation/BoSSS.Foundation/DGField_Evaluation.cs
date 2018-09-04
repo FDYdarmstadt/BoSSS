@@ -272,7 +272,11 @@ namespace BoSSS.Foundation {
                     MultidimensionalArray InvJacobi = basis.GridDat.iGeomCells.InverseTransformation.ExtractSubArrayShallow(j0, -1, -1);
 
                     Debug.Assert(basis.GridDat.iGeomCells.GeomCell2LogicalCell == null || basis.GridDat.iGeomCells.GeomCell2LogicalCell[j0] == j0);
-                    var Coördinates_j = Coördinates.ExtractSubArrayShallow(new int[] { j0, 0 }, new int[] { j0, N - 1 });
+                    MultidimensionalArray Coördinates_j;
+                    if (coördOffset == 0 && Coördinates.GetLength(0) == 1)
+                        Coördinates_j = Coördinates;
+                    else
+                        Coördinates_j = Coördinates.ExtractSubArrayShallow(new int[] { coördOffset, 0 }, new int[] { coördOffset, N - 1 });
 
                     GradientRef.Multiply(scale0, Coördinates_j, BasisGradValues, 0.0, ref mp_jke_jm_kme);  // gradient in reference coördinates
                     ResultAcc.Multiply(1.0, InvJacobi, GradientRef, ResultPreScale, ref mp_jkd_ed_jke);
