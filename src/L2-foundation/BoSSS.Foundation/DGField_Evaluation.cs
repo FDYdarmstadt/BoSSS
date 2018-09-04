@@ -63,7 +63,11 @@ namespace BoSSS.Foundation {
                 // this happens very often for edge quadrature, so it is quite relevant.
                 double scale0 = basis.GridDat.ChefBasis.Scaling[j0];
                 Debug.Assert(basis.GridDat.iGeomCells.GeomCell2LogicalCell == null || basis.GridDat.iGeomCells.GeomCell2LogicalCell[j0] == j0);
-                var Coördinates_j = Coördinates.ExtractSubArrayShallow(new int[] { j0, 0 }, new int[] { j0, N - 1 });
+                MultidimensionalArray Coördinates_j;
+                if (coördOffset == 0 && Coördinates.GetLength(0) == 1)
+                    Coördinates_j = Coördinates;
+                else
+                    Coördinates_j = Coördinates.ExtractSubArrayShallow(new int[] { coördOffset, 0 }, new int[] { coördOffset, N - 1 });
                 ResultAcc.Multiply(scale0, Coördinates_j, BasisValues, ResultPreScale, ref mp_jk_jm_km); //"jk", "jm", "km");
             } else {
                 int iBuf;
@@ -163,7 +167,7 @@ namespace BoSSS.Foundation {
                 // extract coördinates
                 MultidimensionalArray _Coördinates;
                 if(coördOffset > 0 || coördOffset + L < Coördinates.GetLength(0)) {
-                    _Coördinates = Coördinates.ExtractSubArrayShallow(new[] { j0, 0 }, new[] { j0 + L - 1, N - 1 });
+                    _Coördinates = Coördinates.ExtractSubArrayShallow(new[] { coördOffset, 0 }, new[] { coördOffset + L - 1, N - 1 });
                 } else {
                     _Coördinates = Coördinates;
                 }
@@ -182,7 +186,7 @@ namespace BoSSS.Foundation {
                 // extract coördinates
                 MultidimensionalArray _Coördinates;
                 if(coördOffset > 0 || coördOffset + L < Coördinates.GetLength(0)) {
-                    _Coördinates = Coördinates.ExtractSubArrayShallow(new[] { j0, 0 }, new[] { j0 + L - 1, N - 1 });
+                    _Coördinates = Coördinates.ExtractSubArrayShallow(new[] { coördOffset, 0 }, new[] { coördOffset + L - 1, N - 1 });
                 } else {
                     _Coördinates = Coördinates;
                 }
@@ -216,7 +220,6 @@ namespace BoSSS.Foundation {
             Debug.Assert(basis.GetType() == typeof(Basis));
 
             Debug.Assert(Coördinates.Dimension == 2);
-            Debug.Assert(Coördinates.GetLength(0) >= j0 + L || basis.GridDat.iGeomCells.GeomCell2LogicalCell != null);
             Debug.Assert(Coördinates.GetLength(1) == N);
 
 #if DEBUG
