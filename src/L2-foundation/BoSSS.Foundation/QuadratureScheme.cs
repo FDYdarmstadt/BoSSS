@@ -204,6 +204,10 @@ namespace BoSSS.Foundation.Quadrature {
             //
             if (factory == null)
                 throw new ArgumentNullException();
+            if(domain != null)
+                if (domain.MaskType != MaskType.Geometrical)
+                    throw new ArgumentException("expecting geometrical mask");
+
             factoryChain.Add(new FactoryDomainPair(factory, domain, order));
             return this;
         }
