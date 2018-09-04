@@ -23,12 +23,12 @@ List of 24 instances of IDatabaseInfo {
   14: { Session Count = 43; Grid Count = 45; Path = P:\BoSSS_DBs\IBMPaper }
   15: { Session Count = 28; Grid Count = 15; Path = P:\BoSSS_DBs\Paper_IBM2D }
   16: { Session Count = 38; Grid Count = 22; Path = P:\BoSSS_DBs\Paper_CellAgglo01_Penalty4 }
-  17: { Session Count = 52; Grid Count = 65; Path = P:\BoSSS_DBs\Sphere3D }
+  17: { Session Count = 57; Grid Count = 67; Path = P:\BoSSS_DBs\Sphere3D }
   18: { Session Count = 22; Grid Count = 10; Path = P:\BoSSS_DBs\Performance }
   19: { Session Count = 24; Grid Count = 14; Path = P:\BoSSS_DBs\PaperRevision }
   20: { Session Count = 0; Grid Count = 0; Path = P:\Lichtenberg_DB }
-  21: { Session Count = 2; Grid Count = 354; Path = P:\BoSSS_DBs\Bug }
-  22: { Session Count = 27; Grid Count = 8; Path = P:\BoSSS_DBs\NodePerformance }
+  21: { Session Count = 8; Grid Count = 471; Path = P:\BoSSS_DBs\Bug }
+  22: { Session Count = 29; Grid Count = 8; Path = P:\BoSSS_DBs\NodePerformance }
   23: { Session Count = 136; Grid Count = 98; Path = L:\BoSSS_DB\Lichtenberg_DB }
 }
 
@@ -45,7 +45,7 @@ using BoSSS.Application.IBM_Solver;
 using System.Data;
 **************
 ==============
-string dateString = "2018-4-23";
+string dateString = "2018-5-17";
 string File       = "SolverRuns--" + dateString + ".json";
 string FilePath   = Path.Combine(CurrentDocDir, File);
 var SessTab       = TableExtensions.LoadFromFile(FilePath);
@@ -98,7 +98,7 @@ List of 63 instances of String {
   28: MeshFactor
   29: Timestepper_Scheme
   30: FixedStreamwisePeriodicBC
-  31: Timestepper_Init
+  31: TimeStepper_Init
   32: NonlinearSolve
   33: LinearSolve
   34: GridPartType
@@ -149,23 +149,11 @@ TotalDoFs
 ==============
 SubTab_1.Print();
 **************
-    Grid:NoOfCells SlvIter_excl  NonlinearSolve LinearSolve NoOfMultigridLevels DGdegree:Velocity* RegularTerminated TotalDoFs 
-0:  125            18.0998877    2              1           1                   2                  True              4250      
-1:  4913           0             2              1           1                   2                  False             167042    
-2:  125            11.0463558    1              1           1                   2                  True              4250      
-3:  4913           0             1              1           1                   2                  False             167042    
-4:  2197           33359.2824963 0              6           2                   2                  True              74698     
-5:  1000           30100.7405066 1              9           2                   2                  True              34000     
-6:  1000           11822.4844524 0              6           2                   2                  True              34000     
-7:  343            6452.9507251  1              9           2                   2                  True              11662     
-8:  343            1821.4391509  0              6           2                   2                  True              11662     
-9:  2197           0             1              9           2                   2                  False             74698     
-10: 2197           1420.1873243  2              1           1                   2                  True              74698     
-11: 2197           1247.0726146  1              1           1                   2                  True              74698     
-12: 1000           413.6526049   2              1           1                   2                  True              34000     
-13: 1000           311.1200562   1              1           1                   2                  True              34000     
-14: 343            55.4536228    1              1           1                   2                  True              11662     
-15: 343            85.9412329    2              1           1                   2                  True              11662     
+   Grid:NoOfCells SlvIter_excl  NonlinearSolve LinearSolve NoOfMultigridLevels DGdegree:Velocity* RegularTerminated TotalDoFs 
+0: 2197           14536.0422946 0              0           2                   2                  True              74698     
+1: 1000           5482.0333473  0              0           2                   2                  True              34000     
+2: 343            728.1434164   0              0           2                   2                  True              11662     
+3: 125            21.561733     0              0           2                   2                  True              4250      
 ==============
 **************
 ==============
@@ -261,7 +249,7 @@ static public void getFormat(int iTabRow,IDictionary<string, object> Row,
                Nmn = Nmn+"unknown"; 
                break;
            } 
-           Nmn           = Nmn+" MGLevels"+MGLevels;
+           Nmn           = Nmn;//+" MGLevels"+MGLevels;
            Fmt.PointSize = 0.5;
            Fmt.Style     = Styles.LinesPoints;
            Fmt.LineColor = LineColors.Black;
@@ -269,6 +257,10 @@ static public void getFormat(int iTabRow,IDictionary<string, object> Row,
        }
 }
 **************
+(93,12): warning CS1717: Assignment made to same variable; did you mean to assign something else?
+(12,16): warning CS0219: The variable `MGLevels' is assigned but its value is never used
+No. of errors|warnings: 0|2.
+
 ==============
 var plotSlvIterTime = SubTab_1.ToPlot("TotalDoFs", "SlvIter_excl", // column for x- and y
                                   Formats.getFormat); // column for group
@@ -292,18 +284,28 @@ plotSlvIterTime.LogBaseY  = 10;
 multiplots[0,0] = plotSlvIterTime;
 //multiplots[1,0] = plotSlvIterSpeedup;
 
+double[] dof = new[]{1e3,1e6};
+double[] linT = dof.Select(x => x*1).ToArray();
+var linP = new Plot2Ddata.XYvalues("linear", dof, linT);
+linP.Format.FromString("- black");
+ArrayTools.AddToArray(linP, ref multiplots[0,0].dataGroups);
+
 multiplots[0,0].bmargin = 4;
 //multiplots[1,0].tmargin = 1;
 multiplots[0,0].tmargin = 4;
 multiplots.PlotNow();
 **************
-Using gnuplot: C:\Users\krause\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
-System.Drawing.Bitmap
+System.NullReferenceException occurred: Der Objektverweis wurde nicht auf eine Objektinstanz festgelegt.. Type 'LastError' for details.
+
 ==============
 LastError
 **************
+System.NullReferenceException: Der Objektverweis wurde nicht auf eine Objektinstanz festgelegt.
+   bei <InteractiveExpressionClass>.Host(Object& $retval)
+   bei Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
+   bei BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in C:\BoSSS-experimental\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:Zeile 311.
 ==============
-var CL = multiplots.ToGnuplot().PlotCairolatex(xSize:22, ySize:10);
+var CL = multiplots.ToGnuplot().PlotCairolatex(xSize:18, ySize:10);
 **************
 Using gnuplot: C:\Users\krause\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 
@@ -324,6 +326,16 @@ System.ComponentModel.Win32Exception (0x80004005): Das System kann die angegeben
    bei <InteractiveExpressionClass>.Host(Object& $retval)
    bei Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
    bei BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in C:\BoSSS-experimental\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:Zeile 311.
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
 ==============
 **************
 ==============

@@ -78,6 +78,13 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
+        /// If true, the session was successful terminated; if not it is either running, or the simulation may has crashed.
+        /// </summary>
+        bool SuccessfulTermination {
+            get;
+        }
+
+        /// <summary>
         /// Returns all the grids used in this session
         /// </summary>
         IEnumerable<IGridInfo> GetGrids();

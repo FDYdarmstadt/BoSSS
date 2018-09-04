@@ -28,6 +28,20 @@ namespace BoSSS.Foundation.Grid {
     public interface IGridData {
 
         /// <summary>
+        /// MPI process rank (within world communicator)
+        /// </summary>
+        int MpiRank {
+            get;
+        }
+
+        /// <summary>
+        /// MPI world communicator size 
+        /// </summary>
+        int MpiSize {
+            get;
+        }
+
+        /// <summary>
         /// Identification of the grid in the BoSSS database, 
         /// equal to the <see cref="BoSSS.Foundation.IO.IDatabaseEntityInfo{T}.ID"/>.
         /// </summary>
@@ -450,8 +464,8 @@ namespace BoSSS.Foundation.Grid {
         int GetNoOfSimilarConsecutiveCells(CellInfo mask, int j0, int Lmax);
 
         /// <summary>
-        /// The minimal Euclidean distance between two vertices for each cell;
-        /// (Can be used to compute the CFL number);
+        /// The minimal Euclidean distance between two distinct vertices for each cell;
+        /// (Can be used e.g. to compute the CFL number);
         /// - index: local cell index;
         /// </summary>
         MultidimensionalArray h_min {
@@ -460,7 +474,7 @@ namespace BoSSS.Foundation.Grid {
 
         /// <summary>
         /// The maximal Euclidean distance between two vertices for each cell;
-        /// (Can be used to compute the CFL number);
+        /// (Can be used e.g. to compute the CFL number);
         /// - index: local cell index;
         /// </summary>
         MultidimensionalArray h_max {

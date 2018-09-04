@@ -9,6 +9,9 @@ using BoSSS.Foundation.IO;
 
 namespace BoSSS.Application.BoSSSpad{
 
+    /// <summary>
+    /// Driver class for <see cref="ElectronWorksheet"/>, used by the Electron-GUI
+    /// </summary>
     public class ElectronInterface{
 
         static ElectronWorksheet worksheet;
@@ -19,13 +22,48 @@ namespace BoSSS.Application.BoSSSpad{
                 runCommand = (Func<object, Task<object>>)(async (i) => {
                     return await Task.Run(() => ElectronInterface.RunCommand(i));
                 }),
-
+                save = (Func<object, Task<object>>)(async (i) => {
+                    return await Task.Run(() => ElectronInterface.Save(i));
+                }),
+                load = (Func<object, Task<object>>)(async (i) => {
+                    return await Task.Run(() => ElectronInterface.Load(i));
+                }),
+                getAutoCompleteSuggestions = (Func<object, Task<object>>)(async (i) => {
+                    return await Task.Run(() => ElectronInterface.GetAutoCompleteSuggestions(i));
+                })
             };
         }
 
-        static string RunCommand(object input){
-            string output = worksheet.RunCommand(input.ToString());
+        static object RunCommand(object input){
+            System.Diagnostics.Debugger.Break();
+            Tuple<string, string> output = worksheet.RunCommand(input.ToString());
             return output;
+        }
+
+        static bool Save(dynamic input){
+            string path = (string)input.path;
+            object[] commands = (object[])input.commands;
+            object[] results = (object[])input.results;
+
+            string[] stringCommands = new string[commands.Length];
+            for(int i = 0; i < commands.Length; ++i){
+                stringCommands[i] = commands[i].ToString();
+            }
+            string[] stringResults = new string[results.Length];
+            for (int i = 0; i < results.Length; ++i)
+            {
+                stringResults[i] = results[i].ToString();
+            }
+            worksheet.Save(path, stringCommands, stringResults);
+            return true;
+        }
+
+        static object Load(object path){
+            return worksheet.Load((string)path);
+        }
+
+        static object GetAutoCompleteSuggestions(object input){
+            return worksheet.GetAutoCompleteSuggestions(input.ToString());
         }
     }
 }

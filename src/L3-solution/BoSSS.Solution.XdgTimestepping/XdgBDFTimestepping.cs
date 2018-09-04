@@ -31,6 +31,7 @@ using ilPSP;
 using BoSSS.Foundation.Grid.Aggregation;
 using ilPSP.Tracing;
 using MPI.Wrappers;
+using NUnit.Framework;
 
 namespace BoSSS.Solution.XdgTimestepping {
 
@@ -895,7 +896,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         /// <summary>
         /// Callback-routine  to update the linear resp. linearized system, 
-        /// see <see cref="AssembleMatrixDel"/> resp. <see cref="NonlinearSolver.m_AssembleMatrix"/>.
+        /// see <see cref="OperatorEvalOrLin"/> resp. <see cref="NonlinearSolver.m_AssembleMatrix"/>.
         /// </summary>
         /// <param name="argCurSt">Input, current state of solution.</param>
         /// <param name="System">Output.</param>
@@ -904,7 +905,11 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Mass matrix including agglomeration, without any scaling,
         /// required for block-precond.
         /// </param>
-        protected override void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix PrecondMassMatrix, DGField[] argCurSt) {
+        /// <param name="Linearization">
+        /// - true: assemble matrix and affine vector
+        /// - false: evaluate operator (<paramref name="System"/> will be null)
+        /// </param>
+        protected override void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix PrecondMassMatrix, DGField[] argCurSt, bool Linearization) {
             using (new FuncTrace()) {
 
                 // copy data from 'argCurSt' to 'CurrentStateMapping', if necessary 
@@ -1053,8 +1058,11 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Debug.Assert(object.ReferenceEquals(this.m_CurrentAgglomeration.Tracker, this.m_LsTrk));
                 this.m_CurrentAgglomeration.Extrapolate(CurrentStateMapping);
 
-                // clear operator matrix (clearing and re-alloc are pretty equal, i.e. 'Clear()' just releases all internal memory)
-                m_Stack_OpMatrix[0] = new BlockMsrMatrix(CurrentStateMapping);
+                // clear operator matrix (clearing and re-alloc are pretty equal, i.e. 'BlockMsrMatrix.Clear()' just releases all internal memory)
+                if(Linearization)
+                    m_Stack_OpMatrix[0] = new BlockMsrMatrix(CurrentStateMapping);
+                else
+                    m_Stack_OpMatrix[0] = null;
 
                 // clear affine part
                 if (m_Stack_OpAffine[0] == null) {
@@ -1064,7 +1072,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 }
 
                 // assemble matrix & affine part
-                Debug.Assert(m_Stack_OpMatrix[0].InfNorm() == 0);
+                Debug.Assert(m_Stack_OpMatrix[0] == null || m_Stack_OpMatrix[0].InfNorm() == 0);
                 Debug.Assert(m_Stack_OpAffine[0].L2Norm() == 0);
                 Debug.Assert(object.ReferenceEquals(this.m_CurrentAgglomeration.Tracker, this.m_LsTrk));
                 this.ComputeOperatorMatrix(m_Stack_OpMatrix[0], m_Stack_OpAffine[0], CurrentStateMapping, locCurSt, base.GetAgglomeratedLengthScales(), m_CurrentPhystime + m_CurrentDt);
@@ -1107,6 +1115,8 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                     RHS.AccV(-Tsc.theta1, CurrentAffine); //                                     -theta1*b1
                     if (Tsc.theta0 != 0.0) {
+                        if(Linearization == false)
+                            throw new NotImplementedException();
                         m_Stack_OpMatrix[1].SpMV(-Tsc.theta0, m_Stack_u[1], 1.0, RHS); // -theta0*Op0*u0
                         RHS.AccV(-Tsc.theta0, m_Stack_OpAffine[1]); //                    -theta0*b0 
                     }
@@ -1122,7 +1132,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
                     for (int s = 1; s <= Tsc.S; s++) { // loop over BDF stages
-                        if (CurrentOpMatrix != null) {
+                        if (CurrentAffine != null) {
                             if (CurrentMassMatrix != null) {
                                 CurrentMassMatrix.SpMV(Tsc.beta[s - 1] / dt, this.m_Stack_u[s], 1.0, RHS); //   (1/dt)*M0*u0 
                             } else {
@@ -1139,7 +1149,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                     if (Tsc.theta0 != 0.0) {
                         // For XDG & splitting, we have to use the _actual_ operator matrix for the old timestep,
                         // since the old one was created for a different interface. (Maybe)?
-
+                        if(Linearization == false)
+                            throw new NotImplementedException();
                         m_Stack_OpMatrix[0].SpMV(-Tsc.theta0, m_Stack_u[1], 1.0, RHS); //  -theta0*Op1*u0
                         RHS.AccV(-Tsc.theta0, m_Stack_OpAffine[0]); //                     -theta0*b1
                     }
@@ -1151,13 +1162,26 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Affine.ScaleV(-1.0);
 
                 // left-hand-side
-                System = CurrentOpMatrix.CloneAs();
-                System.Scale(Tsc.theta1);
+                if(Linearization) {
+                    System = CurrentOpMatrix.CloneAs();
+                    if(Tsc.theta1 != 1.0)
+                        System.Scale(Tsc.theta1);
+                } else {
+                    System = null;
+                }
                 if (CurrentMassMatrix != null) {
-                    System.Acc(1.0 / dt, CurrentMassMatrix);
+                    if(Linearization) {
+                        System.Acc(1.0 / dt, CurrentMassMatrix);
+                    } else {
+                        CurrentMassMatrix.SpMV(1.0 / dt, new CoordinateVector(CurrentStateMapping), 1.0, Affine);
+                    }
                 } else {
                     Debug.Assert(Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsIdentity);
-                    System.AccEyeSp(1.0 / dt);
+                    if(Linearization) {
+                        System.AccEyeSp(1.0 / dt);
+                    } else {
+                        Affine.AccV(1.0 / dt, new CoordinateVector(CurrentStateMapping));
+                    }
                 }
 #if DEBUG
                 if (Config_MassMatrixShapeandDependence != MassMatrixShapeandDependence.IsIdentity) {
@@ -1401,7 +1425,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     //AssembleMatrix(this.CurrentVel, dt, phystime + dt);
                     BlockMsrMatrix System, MaMa;
                     double[] RHS;
-                    this.AssembleMatrixCallback(out System, out RHS, out MaMa, CurrentStateMapping.Fields.ToArray());
+                    this.AssembleMatrixCallback(out System, out RHS, out MaMa, CurrentStateMapping.Fields.ToArray(), true);
                     RHS.ScaleV(-1);
 
                     // update the multigrid operator
@@ -1431,13 +1455,32 @@ namespace BoSSS.Solution.XdgTimestepping {
                 // compute residual of actual solution 
                 // ++++++++++++++++++++++++++++++++++++
 
-                BlockMsrMatrix System, MaMa;
+                
                 double[] Affine;
-                this.AssembleMatrixCallback(out System, out Affine, out MaMa, CurrentStateMapping.Fields.ToArray());
+                this.AssembleMatrixCallback(out BlockMsrMatrix System, out Affine, out BlockMsrMatrix MaMa, CurrentStateMapping.Fields.ToArray(), false);
+                Debug.Assert(System == null);
 
                 base.Residuals.Clear();
-                base.Residuals.SetV(Affine);
-                System.SpMV(-1.0, m_Stack_u[0], -1.0, base.Residuals);
+                base.Residuals.SetV(Affine, -1.0);
+                //System.SpMV(-1.0, m_Stack_u[0], +1.0, base.Residuals);
+
+#if DEBUG
+                {
+
+                    this.AssembleMatrixCallback(out BlockMsrMatrix checkSystem, out double[] checkAffine, out BlockMsrMatrix MaMa1, CurrentStateMapping.Fields.ToArray(), true);
+
+                    double[] checkResidual = new double[checkAffine.Length];
+                    checkResidual.SetV(checkAffine, -1.0);
+                    checkSystem.SpMV(-1.0, m_Stack_u[0], +1.0, checkResidual);
+
+                    double distL2 = GenericBlas.L2DistPow2(checkResidual, base.Residuals).MPISum().Sqrt();
+                    double refL2 = (new double[] { GenericBlas.L2NormPow2(m_Stack_u[0]), GenericBlas.L2NormPow2(checkResidual), GenericBlas.L2NormPow2(base.Residuals) }).MPISum().Max().Sqrt();
+
+                    Assert.Less(distL2, refL2 * 1.0e-5, "argh");
+
+                }
+#endif
+
 
                 var ResidualFields = base.Residuals.Mapping.Fields.ToArray();
 
@@ -1515,7 +1558,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             // ====================
             int ie = m_Stack_OpMatrix.Length - 1;
             Debug.Assert(m_Stack_OpMatrix.Length == m_Stack_OpAffine.Length);
-            Debug.Assert((m_Stack_OpMatrix[ie] == null) == (m_Stack_OpAffine[ie] == null));
+            //Debug.Assert((m_Stack_OpMatrix[ie] == null) == (m_Stack_OpAffine[ie] == null));
             m_Stack_OpMatrix[ie] = null;
             m_Stack_OpAffine[ie] = null;
             //m_Stack_MassMatrix[m_Stack_MassMatrix.Length - 1] = null;
@@ -1531,7 +1574,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             //AssembleMatrix(this.CurrentVel, dt, phystime + dt);
             BlockMsrMatrix System, MaMa;
             double[] RHS;
-            this.AssembleMatrixCallback(out System, out RHS, out MaMa, CurrentStateMapping.Fields.ToArray());
+            this.AssembleMatrixCallback(out System, out RHS, out MaMa, CurrentStateMapping.Fields.ToArray(), true);
             RHS.ScaleV(-1);
 
             // update the multigrid operator

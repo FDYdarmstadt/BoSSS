@@ -655,28 +655,28 @@ namespace MPI.Wrappers {
             return result;
         }
         /// <summary>
-        /// MPI-process with rank 0 gathers this long[] of all MPI-processes in the
+        /// MPI-process with rank 0 gathers this ulong[] of all MPI-processes in the
         /// <paramref name="comm"/>-communicator with variable length. The length of the gathered long[] is specified by <paramref name="recvcount"/>
         /// </summary>
         /// <param name="recvcount">
         /// Length of the receive buffer
         /// </param>
-        static public long[] MPIGatherv(this long[] send, int[] recvcount) {
+        static public ulong[] MPIGatherv(this ulong[] send, int[] recvcount) {
             return send.MPIGatherv(
                 recvcount,
                 root: 0,
                 comm: csMPI.Raw._COMM.WORLD);
         }
         /// <summary>
-        /// MPI-process with rank <paramref name="root"/> gathers this long[] of all MPI-processes in the
+        /// MPI-process with rank <paramref name="root"/> gathers this ulong[] of all MPI-processes in the
         /// <paramref name="comm"/>-communicator with variable length. The length of the gathered long[] is specified by <paramref name="recvcount"/>
         /// </summary>
         /// <param name="recvcount">
         /// Length of the receive buffer
         /// </param>
-        static public long[] MPIGatherv(this long[] send, int[] recvcount, int root, MPI_Comm comm) {
+        static public ulong[] MPIGatherv(this ulong[] send, int[] recvcount, int root, MPI_Comm comm) {
             csMPI.Raw.Comm_Size(comm, out int size);
-            long[] result = new long[recvcount.Sum()];
+            ulong[] result = new ulong[recvcount.Sum()];
 
             unsafe {
                 int* displs = stackalloc int[size];
@@ -684,7 +684,7 @@ namespace MPI.Wrappers {
                     displs[i] = displs[i - 1] + recvcount[i - 1];
                 }
                 //LONG_LONG for long of 64 bits in size
-                fixed (long* pSend = &send[0], pResult = &result[0]) {
+                fixed (ulong* pSend = &send[0], pResult = &result[0]) {
                     fixed (int* pRcvcounts = &recvcount[0]) {
                         csMPI.Raw.Gatherv(
                             (IntPtr)pSend,

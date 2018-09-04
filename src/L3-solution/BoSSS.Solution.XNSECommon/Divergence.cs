@@ -32,7 +32,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
     /// <summary>
     /// velocity jump penalty for the divergence operator, on edges
     /// </summary>
-    public class DivergenceInBulk_Edge : Divergence_DerivativeSource_Flux {
+    public class DivergenceInBulk_Edge : Divergence_DerivativeSource_Flux, IEquationComponentSpeciesNotification {
 
         /// <summary>
         /// ctor
@@ -68,7 +68,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
 
         double rho;
 
-        public void SetParameter(string speciesName, SpeciesId SpcId, MultidimensionalArray LenScales) {
+        public void SetParameter(string speciesName, SpeciesId SpcId) {
             switch (speciesName) {
                 case "A": rho = rhoA; scale = vorZeichen / ((RescaleConti) ? rhoA : 1.0); SetBndfunction("A"); break;
                 case "B": rho = rhoB; scale = vorZeichen / ((RescaleConti) ? rhoB : 1.0); SetBndfunction("B"); break;
@@ -111,7 +111,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
     /// <summary>
     /// volume term for the Divergence / Continuity equation
     /// </summary>
-    public class DivergenceInBulk_Volume : Divergence_DerivativeSource {
+    public class DivergenceInBulk_Volume : Divergence_DerivativeSource, IEquationComponentSpeciesNotification {
 
         public DivergenceInBulk_Volume(int _component, int _D, double _rhoA, double _rhoB, double _vorZeichen, bool _RescaleConti)
             : base(_component, _D) {
@@ -129,7 +129,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
         bool RescaleConti;
         double vorZeichen;
 
-        public void SetParameter(string speciesName, SpeciesId SpcId, MultidimensionalArray LenScales) {
+        public void SetParameter(string speciesName, SpeciesId SpcId) {
             switch (speciesName) {
                 case "A": scale = vorZeichen / ((RescaleConti) ? rhoA : 1.0); break;
                 case "B": scale = vorZeichen / ((RescaleConti) ? rhoB : 1.0); break;
@@ -149,7 +149,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
     /// <summary>
     /// velocity jump penalty for the divergence operator, on the level set
     /// </summary>
-    public class DivergenceAtLevelSet : ILevelSetComponent {
+    public class DivergenceAtLevelSet : ILevelSetForm {
 
         LevelSetTracker m_lsTrk;
 

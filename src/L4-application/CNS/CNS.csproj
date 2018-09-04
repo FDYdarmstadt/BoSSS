@@ -91,6 +91,8 @@
     <Compile Include="Convection\RusanovFlux.cs" />
     <Compile Include="CNSEnvironment.cs" />
     <Compile Include="LoadBalancing\ArtificialViscosityCellClassifier.cs" />
+    <Compile Include="LoadBalancing\IBMCellClassifierTwo.cs" />
+    <Compile Include="LoadBalancing\IBMCellCostEstimatorTwo.cs" />
     <Compile Include="LoadBalancing\IBMCellClassifier.cs" />
     <Compile Include="LoadBalancing\IBMCellCostEstimator.cs" />
     <Compile Include="LoadBalancing\ICellClassifier.cs" />
@@ -119,6 +121,7 @@
     <Compile Include="ShockCapturing\ILimiter.cs" />
     <Compile Include="ShockCapturing\ZhangPosivityPreservingLimiter.cs" />
     <Compile Include="Source\SpongeLayerConfig.cs" />
+    <Compile Include="TestCases.cs" />
     <Compile Include="Tests\ArtificialViscosity\ArtificialViscosityShockTubeTests.cs" />
     <Compile Include="Tests\ConvectiveFlux\ShockTubeTests.cs" />
     <Compile Include="Tests\IBMTests\IBMArtificialViscosityTest.cs" />

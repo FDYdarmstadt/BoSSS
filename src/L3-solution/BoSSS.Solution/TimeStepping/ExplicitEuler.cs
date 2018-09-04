@@ -165,24 +165,26 @@ namespace BoSSS.Solution.Timestepping {
                 EdgeMask em = SubGrid.AllEdgesMask;
 
                 Operator = spatialOp;
-                m_Evaluator = new Lazy<SpatialOperator.Evaluator>(() => spatialOp.GetEvaluatorEx(
-                    Fieldsmap, ParameterFields, Fieldsmap,
-                    new EdgeQuadratureScheme(true, em),
-                    new CellQuadratureScheme(true, cm),
-                    SubGrid,
-                    sgrdBnd));
+                m_Evaluator = new Lazy<IEvaluatorNonLin>(delegate() {
+                    var op = spatialOp.GetEvaluatorEx(
+                        Fieldsmap, ParameterFields, Fieldsmap,
+                        new EdgeQuadratureScheme(true, em),
+                        new CellQuadratureScheme(true, cm));
+                    op.ActivateSubgridBoundary(SubGrid.VolumeMask, sgrdBnd);
+                    return op;
+                    });
             }
         }
 
         /// <summary>
         /// see <see cref="Evaluator"/>;
         /// </summary>
-        protected Lazy<SpatialOperator.Evaluator> m_Evaluator;
+        protected Lazy<IEvaluatorNonLin> m_Evaluator;
 
         /// <summary>
         /// Evaluator for the spatial operator;
         /// </summary>
-        public SpatialOperator.Evaluator Evaluator {
+        public IEvaluatorNonLin Evaluator {
             get {
                 return m_Evaluator.Value;
             }
@@ -217,11 +219,12 @@ namespace BoSSS.Solution.Timestepping {
         /// Override this method e.g. for the implementation of (some types of) limiters.
         /// </remarks>
         virtual internal protected void ComputeChangeRate(double[] k, double AbsTime, double RelTime, double[] edgeFluxes = null) {
-            using (var tr = new ilPSP.Tracing.FuncTrace()) {
+            using (var tr = new ilPSP.Tracing.FuncTrace("ComputeChangeRate")) {
                 RaiseOnBeforeComputechangeRate(AbsTime, RelTime);
 
                 // k += F(u0)
-                Evaluator.Evaluate<double[]>(1.0, 1.0, k, AbsTime, outputBndEdge: edgeFluxes);
+                Evaluator.time = AbsTime;
+                Evaluator.Evaluate<double[]>(1.0, 1.0, k, outputBndEdge: edgeFluxes);
             }
         }
 

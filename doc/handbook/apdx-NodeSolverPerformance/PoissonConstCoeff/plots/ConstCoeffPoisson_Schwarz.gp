@@ -8,8 +8,8 @@ unset lmargin
 unset rmargin 
 unset tmargin 
 unset bmargin 
-set logscale x
-set logscale y
+set logscale x 10
+set logscale y 10
 unset logscale x2
 unset logscale y2
 set autoscale x
@@ -23,9 +23,9 @@ unset y2label
 unset title 
 unset key
 set key outside right vertical maxrows 5 
-set xtics format "$10^{%T}$" 
+set xtics format "$10^{%L}$" 
 set x2tics format " " 
-set ytics format "$10^{%T}$" 
+set ytics format "$10^{%L}$" 
 set y2tics format " " 
 set termoption dashed
 set termoption dashed
@@ -38,8 +38,8 @@ unset lmargin
 unset rmargin 
 unset tmargin 
 unset bmargin 
-set logscale x
-set logscale y
+set logscale x 10
+set logscale y 10
 unset logscale x2
 unset logscale y2
 set autoscale x
@@ -53,9 +53,9 @@ unset y2label
 unset title 
 unset key
 set key outside right vertical maxrows 5 
-set xtics format "$10^{%T}$" 
+set xtics format "$10^{%L}$" 
 set x2tics format " " 
-set ytics format "$10^{%T}$" 
+set ytics format "$10^{%L}$" 
 set y2tics format " " 
 set termoption dashed
 set termoption dashed

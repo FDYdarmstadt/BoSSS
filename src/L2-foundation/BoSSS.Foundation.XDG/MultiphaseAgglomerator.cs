@@ -348,7 +348,7 @@ namespace BoSSS.Foundation.XDG {
                 }
             }
 
-            MsrMatrix LeftMul = null, RightMul = null;
+            BlockMsrMatrix LeftMul = null, RightMul = null;
             {
 
                 foreach (var kv in DictAgglomeration) {
@@ -360,7 +360,7 @@ namespace BoSSS.Foundation.XDG {
                         CellMask spcMask = this.Tracker.Regions.GetSpeciesMask(Species);
 
                         MiniMapping rowMini = new MiniMapping(RowMap, Species, this.Tracker.Regions);
-                        MsrMatrix LeftMul_Species = m_Agglomerator.GetRowManipulationMatrix(RowMap, rowMini.MaxDeg, rowMini.NoOfVars, rowMini.i0Func, rowMini.NFunc, false, spcMask);
+                        BlockMsrMatrix LeftMul_Species = m_Agglomerator.GetRowManipulationMatrix(RowMap, rowMini.MaxDeg, rowMini.NoOfVars, rowMini.i0Func, rowMini.NFunc, false, spcMask);
                         if (LeftMul == null) {
                             LeftMul = LeftMul_Species;
                         } else {
@@ -370,7 +370,7 @@ namespace BoSSS.Foundation.XDG {
 
                         if (!object.ReferenceEquals(LeftMul, RightMul) && RightMul != null) {
                             MiniMapping colMini = new MiniMapping(ColMap, Species, this.Tracker.Regions);
-                            MsrMatrix RightMul_Species = m_Agglomerator.GetRowManipulationMatrix(ColMap, colMini.MaxDeg, colMini.NoOfVars, colMini.i0Func, colMini.NFunc, false, spcMask);
+                            BlockMsrMatrix RightMul_Species = m_Agglomerator.GetRowManipulationMatrix(ColMap, colMini.MaxDeg, colMini.NoOfVars, colMini.i0Func, colMini.NFunc, false, spcMask);
 
                             if (RightMul == null) {
                                 RightMul = RightMul_Species;
@@ -391,16 +391,16 @@ namespace BoSSS.Foundation.XDG {
             // =====================================
 
             if (Matrix != null) {
-                MsrMatrix RightMulTr = RightMul.Transpose();
+                BlockMsrMatrix RightMulTr = RightMul.Transpose();
 
-                MsrMatrix _Matrix;
-                if (Matrix is MsrMatrix) {
-                    _Matrix = (MsrMatrix)((object)Matrix);
+                BlockMsrMatrix _Matrix;
+                if (Matrix is BlockMsrMatrix) {
+                    _Matrix = (BlockMsrMatrix)((object)Matrix);
                 } else {
-                    _Matrix = Matrix.ToMsrMatrix();
+                    _Matrix = Matrix.ToBlockMsrMatrix(RowMap, ColMap);
                 }
 
-                var AggMatrix = MsrMatrix.Multiply(LeftMul, MsrMatrix.Multiply(_Matrix, RightMulTr));
+                var AggMatrix = BlockMsrMatrix.Multiply(LeftMul, BlockMsrMatrix.Multiply(_Matrix, RightMulTr));
 
                 if (object.ReferenceEquals(_Matrix, Matrix)) {
                     _Matrix.Clear();
@@ -420,7 +420,7 @@ namespace BoSSS.Foundation.XDG {
                 if (object.ReferenceEquals(tmp, Rhs))
                     throw new ApplicationException("Flache kopie sollte eigentlich ausgeschlossen sein!?");
 
-                LeftMul.SpMVpara(1.0, tmp, 0.0, Rhs);
+                LeftMul.SpMV(1.0, tmp, 0.0, Rhs);
             }
         }
 

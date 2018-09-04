@@ -47,7 +47,7 @@ namespace BoSSS.Solution.XNSECommon {
     /// <summary>
     /// Laplace operator in the bulk.
     /// </summary>
-    public class XLaplace_Bulk : BoSSS.Solution.NSECommon.ipLaplace {
+    public class XLaplace_Bulk : BoSSS.Solution.NSECommon.ipLaplace, IEquationComponentSpeciesNotification, IEquationComponentCoefficient {
 
         public XLaplace_Bulk(LevelSetTracker __LsTrk, double __penatly_baseFactor, string n, XLaplaceBCs boundaries, double sw, double _muA, double _muB, MultidimensionalArray PenaltyLengthScales, XLaplace_Interface.Mode _m)
             : base(__penatly_baseFactor, PenaltyLengthScales, n) {
@@ -68,13 +68,15 @@ namespace BoSSS.Solution.XNSECommon {
         XLaplace_Interface.Mode m_Mode;
         MultidimensionalArray m_LenScales;
 
-        public void SetParameter(string speciesName, SpeciesId __SpcId, MultidimensionalArray __LenScales) {
-            this.m_LenScales = __LenScales;
+        string current_species;
+
+        public void SetParameter(string speciesName, SpeciesId __SpcId) {
             switch(speciesName) {
                 case "A": species_Mu = muA; otherSpecies_Mu = muB; SpcId = __SpcId; break;
                 case "B": species_Mu = muB; otherSpecies_Mu = muA; SpcId = __SpcId; break;
                 default: throw new ArgumentException("Unknown species.");
             }
+            current_species = speciesName;
         }
 
         double species_Mu;
@@ -123,7 +125,7 @@ namespace BoSSS.Solution.XNSECommon {
 
             return this.penatly_baseFactor * penaltySizeFactor * penalty_muFactor;
         }
-
+        
 
         override public double InnerEdgeForm(ref CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB, double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB) {
             double Acc = 0.0;
@@ -135,8 +137,8 @@ namespace BoSSS.Solution.XNSECommon {
             double scaleIN, scaleOT;
             ComputeScaling(ref inp, out scaleIN, out scaleOT);
 
-
-            for(int d = 0; d < inp.D; d++) {
+            
+            for (int d = 0; d < inp.D; d++) {
                 Acc += (scaleIN * muA * _Grad_uA[0, d] + scaleOT * muB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normale[d];  // consistency term
                 Acc += (scaleIN * muA * _Grad_vA[d] + scaleOT * muB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normale[d];  // symmetry term
             }
@@ -146,6 +148,11 @@ namespace BoSSS.Solution.XNSECommon {
             Acc -= (_uA[0] - _uB[0]) * (_vA - _vB) * this.GetPenalty(ref inp); // penalty term
 
             return Acc;
+        }
+
+        public override double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
+           
+            return base.BoundaryEdgeForm(ref inp, _uA, _Grad_uA, _vA, _Grad_vA);
         }
 
 
@@ -174,12 +181,16 @@ namespace BoSSS.Solution.XNSECommon {
                 throw new NotImplementedException();
             }
         }
+
+        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            this.m_LenScales = cs.CellLengthScales;
+        }
     }
 
     /// <summary>
     /// Laplace operator at the interface
     /// </summary>
-    public class XLaplace_Interface : ILevelSetComponent {
+    public class XLaplace_Interface : ILevelSetForm, ILevelSetEquationComponentCoefficient {
 
         public enum Mode {
             SWIP,
@@ -201,9 +212,8 @@ namespace BoSSS.Solution.XNSECommon {
         protected double muB;
         protected double penatly_baseFactor;
         protected Mode m_mode;
+
         
-
-
         public virtual double LevelSetForm(ref CommonParamsLs inp, 
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
@@ -225,14 +235,11 @@ namespace BoSSS.Solution.XNSECommon {
             double omega_A, omega_B;
             ComputeScaling(ref inp, out omega_A, out omega_B);
             
-
             double Ret = 0.0;
             Ret += (muA * omega_A * Grad_uA_xN + muB * omega_B * Grad_uB_xN) * (vA - vB);
             Ret += (muA * omega_A * Grad_vA_xN + muB * omega_B * Grad_vB_xN) * (uA[0] - uB[0]);
 
             //
-
-
             Ret -= GetPenalty(ref inp) * (uA[0] - uB[0]) * (vA - vB);
 
             return Ret;
@@ -241,8 +248,12 @@ namespace BoSSS.Solution.XNSECommon {
         protected double GetPenalty(ref CommonParamsLs inp) {
             //double penaltySizeFactor_A = 1.0 / this.ccBB.Get_hminBB(this.NegativeSpecies, inp.jCell);
             //double penaltySizeFactor_B = 1.0 / this.ccBB.Get_hminBB(this.PositiveSpecies, inp.jCell);
-            double penaltySizeFactor_A = 1.0 / inp.NegCellLengthScale;
-            double penaltySizeFactor_B = 1.0 / inp.PosCellLengthScale;
+
+            double PosCellLengthScale = PosLengthScaleS[inp.jCell];
+            double NegCellLengthScale = NegLengthScaleS[inp.jCell];
+
+            double penaltySizeFactor_A = 1.0 / NegCellLengthScale;
+            double penaltySizeFactor_B = 1.0 / PosCellLengthScale;
             Debug.Assert(!double.IsNaN(penaltySizeFactor_A));
             Debug.Assert(!double.IsNaN(penaltySizeFactor_B));
             Debug.Assert(!double.IsInfinity(penaltySizeFactor_A));
@@ -304,7 +315,15 @@ namespace BoSSS.Solution.XNSECommon {
                 throw new NotImplementedException();
             }
         }
-        
+
+        MultidimensionalArray PosLengthScaleS;
+        MultidimensionalArray NegLengthScaleS;
+
+        public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+            NegLengthScaleS = csA.CellLengthScales;
+            PosLengthScaleS = csB.CellLengthScales;
+        }
+
         public int LevelSetIndex {
             get { return 0; }
         }

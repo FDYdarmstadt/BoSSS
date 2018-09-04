@@ -91,9 +91,9 @@ c.GridFunc = delegate {
 }
 
 // Specification of boundary conditions with a parabolic velocity profile for the inlet
-c.AddBoundaryCondition("wall");
-c.AddBoundaryCondition("Velocity_Inlet", "VelocityX", X => (4.1 * 1.5 * (X[1] + 2) * (4.1 - (X[1] + 2)) / (4.1 * 4.1))); 
-c.AddBoundaryCondition("Pressure_Outlet");
+c.AddBoundaryValue("wall");
+c.AddBoundaryValue("Velocity_Inlet", "VelocityX", X => (4.1 * 1.5 * (X[1] + 2) * (4.1 - (X[1] + 2)) / (4.1 * 4.1))); 
+c.AddBoundaryValue("Pressure_Outlet");
 
 // Fluid Properties
 // Note: As characteristic length and fluid density are choosen to one. The viscosity can be defined by $1/reynolds$.

@@ -172,10 +172,13 @@ namespace BoSSS.Solution.Timestepping {
             else
                 matrix = null;
             affineOffset = new double[fields.LocalLength];
-            spatialOp.ComputeMatrixEx( 
-                                      fields, null, fields,
-                                      matrix, affineOffset,
-                                      OnlyAffine);
+
+            var b = spatialOp.GetMatrixBuilder(fields, null, fields);
+
+            if(OnlyAffine)
+                b.ComputeAffine(affineOffset);
+            else
+                b.ComputeMatrix(matrix, affineOffset);
         }
 
         /// <summary>

@@ -66,8 +66,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             return false;
         }
 
-
-        
+        /*
         /// <summary>
         /// constructs a new 2D Grid
         /// </summary>
@@ -77,7 +76,317 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// <param name="periodicY">turn on periodic boundary conditions in y direction</param>
         /// <param name="CutOuts">Optional regions that are not meshed</param>
         /// <param name="type">The type of the cells to be used</param>
-        public static Grid2D Cartesian2DGrid(double[] xNodes, double[] yNodes, CellType type = CellType.Square_Linear, bool periodicX = false, bool periodicY = false, params BoundingBox[] CutOuts) {
+        public static Grid2D Tutorium2DGrid(double[] xNodes, double[] yNodes, CellType type = CellType.Square_Linear, bool periodicX = true, bool periodicY = true, params BoundingBox[] CutOuts)
+        {
+            using (var tr = new FuncTrace())
+            {
+                MPICollectiveWatchDog.Watch();
+                CheckMonotonicity(xNodes);
+                CheckMonotonicity(yNodes);
+                Grid2D grid;
+                using (new BlockTrace("grid_object_instantiation", tr))
+                {
+                    grid = new Grid2D(Square.Instance);
+                }
+
+                // split along x-Axis (cells can be redistributed by ParMETIS anyway)
+                // ==================================================================
+                int nX = xNodes.Length - 1;
+                int nY = yNodes.Length - 1;
+
+                int myrank;
+                int size;
+                csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out myrank);
+                csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
+
+                int i0 = nX * myrank / size;        // 1st x-Index on this proc.
+                int iE = nX * (myrank + 1) / size;  // 1st x-Index on next proc. rank
+
+                if (Math.Abs(i0 - iE) <= 0)
+                {
+                    //throw new ApplicationException("unable to do partitioning; X-Slice on processor " + myrank + " is empty; Try to load grid from database;");
+                    grid.Cells = new Cell[0];
+                }
+                else
+                {
+
+                    int D = grid.SpatialDimension;
+                    var Kref = grid.RefElements.Single(re => re.GetType() == typeof(Square));
+                    if (!Kref.SupportedCellTypes.Contains(type))
+                        throw new ArgumentException("unsupported cell type");
+
+                    // define periodic transformations, if necessary
+                    // =============================================
+                    byte perxTag = 0;
+                    byte peryTag = 0;
+
+                    if (periodicX)
+                    {
+                        double[][] x = { new double[] { xNodes[0], yNodes[0] }, new double[] { xNodes[0], yNodes[nY] } };
+                        double[][] y = { new double[] { xNodes[nX], yNodes[0] - 1 }, new double[] { xNodes[nX], yNodes[nY] } };
+                        grid.ConstructPeriodicEdgeTrafo(y, new double[] { 1.0, 0 }, x, new double[] { 1.0, 0 }, out perxTag);
+                        grid.EdgeTagNames.Add(perxTag, "Periodic-X");
+                    }
+
+                    if (periodicY)
+                    {
+                        double[][] x = { new double[] { xNodes[0], yNodes[0] }, new double[] { xNodes[nX], yNodes[0] - 1 } };
+                        double[][] y = { new double[] { xNodes[0], yNodes[nY] }, new double[] { xNodes[nX], yNodes[nY] } };
+                        grid.ConstructPeriodicEdgeTrafo(y, new double[] { 0, 1.0 }, x, new double[] { 0, 1.0 }, out peryTag);
+                        grid.EdgeTagNames.Add(peryTag, "Periodic-Y");
+                    }
+
+                    // set cells
+                    // =========
+                    int LocalNoOfCells = (iE - i0) * (yNodes.Length - 1);
+                    var RefNodes = Kref.GetInterpolationNodes(type);
+                    int NoOfNodes = Kref.GetInterpolationNodes(type).GetLength(0);
+
+                    List<Cell> Cells = new List<Cell>(LocalNoOfCells);
+
+                    int cnt = -1;
+                    //int Cellcounter = 0;
+                    for (int i = i0; i < iE; i++)
+                    {
+                        for (int j = 0; j < nY; j++)
+                        {
+                            cnt++;
+
+                            // cut-out regions test
+                            // ====================
+
+                            if (CutOuts != null)
+                            {
+                                double xC = 0.5 * (xNodes[i] + xNodes[i + 1]);
+                                double yC = 0.5 * (yNodes[j] + yNodes[j + 1]);
+
+                                if (CutOuts.Any(BB => BB.Contains(xC, yC)))
+                                    continue;
+                            }
+
+                            Cell C_cnt = new Cell();
+                            Cells.Add(C_cnt);
+
+                            // define cell
+                            // ===========
+                            C_cnt.GlobalID = i * (yNodes.Length - 1) + j;
+                            C_cnt.Type = type;
+
+                            // transformation
+                            // ==============
+                            C_cnt.TransformationParams = MultidimensionalArray.Create(NoOfNodes, D);
+                            {
+                                NoOfNodes = RefNodes.GetLength(0);
+                                Debug.Assert(RefNodes.GetLength(1) == D);
+
+                                //C_cnt.TransformationParams = MultidimensionalArray.Create(NoOfNodes, D);
+
+                                double xL = xNodes[i];
+                                double xR = xNodes[i + 1];
+                                double yL = yNodes[j];
+                                double yR = yNodes[j + 1];
+
+                                for (int iNode = 0; iNode < NoOfNodes; iNode++)
+                                {
+                                    double xi = 0.5 * (RefNodes[iNode, 0] + 1.0);
+                                    double eta = 0.5 * (RefNodes[iNode, 1] + 1.0);
+
+                                    C_cnt.TransformationParams[iNode, 0] = xL * (1.0 - xi) + xR * xi;
+                                    C_cnt.TransformationParams[iNode, 1] = yL * (1.0 - eta) + yR * eta;
+                                }
+                            }
+
+                            // cell neighbourship
+                            // ==================
+                            C_cnt.NodeIndices = new int[4];
+                            C_cnt.NodeIndices[0] = i + j * xNodes.Length;
+                            C_cnt.NodeIndices[1] = (i + 1) + j * xNodes.Length;
+                            C_cnt.NodeIndices[2] = i + (j + 1) * xNodes.Length;
+                            C_cnt.NodeIndices[3] = (i + 1) + (j + 1) * xNodes.Length;
+
+                            // Edge tags (only periodic)
+                            // =========================
+                            if (periodicY || periodicX)
+                            {
+
+                                int iNeigh = i;
+                                int jNeigh = j + 1;
+                                if (periodicY && jNeigh >= nY)
+                                {
+                                    (new CellFaceTag()
+                                    {
+                                        EdgeTag = peryTag,
+                                        PeriodicInverse = false,
+                                        ConformalNeighborship = true,
+                                        FaceIndex = (int)Square.Edge.Top,
+
+                                        NeighCell_GlobalID = iNeigh * (yNodes.Length - 1) + (0)
+                                    }).AddToArray(ref C_cnt.CellFaceTags);
+                                }
+
+                                iNeigh = i + 1;
+                                jNeigh = j;
+                                if (periodicX && iNeigh >= nX)
+                                {
+                                    (new CellFaceTag()
+                                    {
+                                        EdgeTag = perxTag,
+                                        PeriodicInverse = false,
+                                        ConformalNeighborship = true,
+                                        FaceIndex = (int)Square.Edge.Right,
+                                        NeighCell_GlobalID = 0 * (yNodes.Length - 1) + (jNeigh)
+                                    }).AddToArray(ref C_cnt.CellFaceTags);
+                                }
+
+                                iNeigh = i - 1;
+                                jNeigh = j;
+                                if (periodicX && iNeigh < 0)
+                                {
+                                    (new CellFaceTag()
+                                    {
+                                        EdgeTag = perxTag,
+                                        PeriodicInverse = true,
+                                        ConformalNeighborship = true,
+                                        FaceIndex = (int)Square.Edge.Left,
+                                        NeighCell_GlobalID = (nX - 1) * (yNodes.Length - 1) + (jNeigh)
+                                    }).AddToArray(ref C_cnt.CellFaceTags);
+                                }
+
+                                iNeigh = i;
+                                jNeigh = j - 1;
+                                if (periodicY && jNeigh < 0)
+                                {
+                                    (new CellFaceTag()
+                                    {
+                                        EdgeTag = peryTag,
+                                        PeriodicInverse = true,
+                                        ConformalNeighborship = true,
+                                        FaceIndex = (int)Square.Edge.Bottom,
+                                        NeighCell_GlobalID = iNeigh * (yNodes.Length - 1) + (nY - 1)
+                                    }).AddToArray(ref C_cnt.CellFaceTags);
+                                }
+                            }
+                        }
+                    }
+
+                    grid.Cells = Cells.ToArray();
+                }
+
+                /*
+                // boundary cells
+                // ==============
+
+                if (myrank == 0) {
+                    List<BcCell> BoundaryCells = new List<BcCell>(2*iE + 2*nY);
+
+                    cnt = nX*nY - 1;
+
+                    grid.EdgeTagsNames.Add(1, "Bottom");
+                    for (int i = 0; i < nX; i++) {
+                        cnt++;
+                        BcCell B_cnt = new BcCell();
+
+                        int j = 0;
+                        B_cnt.NodeIndices = new int[2];
+                        B_cnt.NodeIndices[0] = i + j * xNodes.Length;
+                        B_cnt.NodeIndices[1] = (i + 1) + j * xNodes.Length;
+                        B_cnt.Type = CellType.Line_2;
+                        B_cnt.GlobalID = cnt;
+
+                        B_cnt.EdgeTag = 1;
+
+                        BoundaryCells.Add(B_cnt);
+                    }
+
+                    grid.EdgeTagsNames.Add(2, "Top");
+                    for (int i = 0; i < nX; i++) {
+                        cnt++;
+                        BcCell B_cnt = new BcCell();
+
+                        int j = nY;
+                        B_cnt.NodeIndices = new int[2];
+                        B_cnt.NodeIndices[0] = i + j * xNodes.Length;
+                        B_cnt.NodeIndices[1] = (i + 1) + j * xNodes.Length;
+                        B_cnt.Type = CellType.Line_2;
+                        B_cnt.GlobalID = cnt;
+
+                        B_cnt.EdgeTag = 2;
+
+                        BoundaryCells.Add(B_cnt);
+                    }
+
+                    grid.EdgeTagsNames.Add(3, "Left");
+                    for (int j = 0; j < nY; j++) {
+                        cnt++;
+                        BcCell B_cnt = new BcCell();
+
+                        int i = 0;
+                        B_cnt.NodeIndices = new int[2];
+                        B_cnt.NodeIndices[0] = i + j * xNodes.Length;
+                        B_cnt.NodeIndices[1] = i + (j + 1) * xNodes.Length;
+                        B_cnt.Type = CellType.Line_2;
+                        B_cnt.GlobalID = cnt;
+
+                        B_cnt.EdgeTag = 3;
+
+                        BoundaryCells.Add(B_cnt);
+                    }
+
+                    grid.EdgeTagsNames.Add(4, "Right");
+                    for (int j = 0; j < nY; j++) {
+                        cnt++;
+                        BcCell B_cnt = new BcCell();
+
+                        int i = nX;
+                        B_cnt.NodeIndices = new int[2];
+                        B_cnt.NodeIndices[0] = i + j * xNodes.Length;
+                        B_cnt.NodeIndices[1] = i + (j + 1) * xNodes.Length;
+                        B_cnt.Type = CellType.Line_2;
+                        B_cnt.GlobalID = cnt;
+
+                        B_cnt.EdgeTag = 4;
+
+                        BoundaryCells.Add(B_cnt);
+                    }
+
+                    grid.BcCells = BoundaryCells.ToArray();
+                } else {
+                    grid.BcCells = null;
+                }
+                
+
+                // return
+                // ======
+                /*
+
+                if (CutOuts != null && CutOuts.Length > 0)
+                {
+                    grid.CompressGlobalID();
+                    grid.CompressNodeIndices();
+                }
+
+                return grid;
+            }
+        }
+
+        */
+
+        /// <summary>
+        /// constructs a new 2D Grid
+        /// </summary>
+        /// <param name="xNodes"></param>
+        /// <param name="yNodes"></param>
+        /// <param name="periodicX">turn on periodic boundary conditions in x direction</param>
+        /// <param name="periodicY">turn on periodic boundary conditions in y direction</param>
+        /// <param name="CutOuts">Optional regions that are not meshed</param>
+        /// <param name="type">The type of the cells to be used</param>
+        /// <param name="NonlinearGridTrafo">
+        /// Arbitrary transformation (i.e. a diffeomorphism, i.e. bijective and differnetiable) applied to <paramref name="xNodes"/> and <paramref name="yNodes"/>, optioanl
+        /// </param>
+        public static Grid2D Cartesian2DGrid(double[] xNodes, double[] yNodes, CellType type = CellType.Square_Linear, 
+            bool periodicX = false, bool periodicY = false, 
+            Func<Vector2D,Vector2D> NonlinearGridTrafo = null,
+            params BoundingBox[] CutOuts) {
             using (var tr = new FuncTrace()) {
                 MPICollectiveWatchDog.Watch();
                 CheckMonotonicity(xNodes);
@@ -116,6 +425,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                     byte peryTag = 0;
 
                     if (periodicX) {
+                        if (NonlinearGridTrafo != null)
+                            throw new NotSupportedException("grid transformation is not supported for periodic domains");
                         double[][] x = { new double[] { xNodes[0], yNodes[0] }, new double[] { xNodes[0], yNodes[nY] } };
                         double[][] y = { new double[] { xNodes[nX], yNodes[0] }, new double[] { xNodes[nX], yNodes[nY] } };
                         grid.ConstructPeriodicEdgeTrafo(y, new double[] { 1.0, 0 }, x, new double[] { 1.0, 0 }, out perxTag);
@@ -123,6 +434,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                     }
 
                     if (periodicY) {
+                        if (NonlinearGridTrafo != null)
+                            throw new NotSupportedException("grid transformation is not supported for periodic domains");
                         double[][] x = { new double[] { xNodes[0], yNodes[0] }, new double[] { xNodes[nX], yNodes[0] } };
                         double[][] y = { new double[] { xNodes[0], yNodes[nY] }, new double[] { xNodes[nX], yNodes[nY] } };
                         grid.ConstructPeriodicEdgeTrafo(y, new double[] { 0, 1.0 }, x, new double[] { 0, 1.0 }, out peryTag);
@@ -180,8 +493,22 @@ namespace BoSSS.Foundation.Grid.Classic {
                                     double xi = 0.5 * (RefNodes[iNode, 0] + 1.0);
                                     double eta = 0.5 * (RefNodes[iNode, 1] + 1.0);
 
-                                    C_cnt.TransformationParams[iNode, 0] = xL * (1.0 - xi) + xR * xi;
-                                    C_cnt.TransformationParams[iNode, 1] = yL * (1.0 - eta) + yR * eta;
+                                    Vector2D A = new Vector2D();
+                                    A.x = xL * (1.0 - xi) + xR * xi;
+                                    A.y = yL * (1.0 - eta) + yR * eta;
+
+                                    Vector2D B;
+                                    if(NonlinearGridTrafo != null)
+                                    {
+                                        B = NonlinearGridTrafo(A);
+                                    }
+                                    else
+                                    {
+                                        B = A;
+                                    }
+
+                                    C_cnt.TransformationParams[iNode, 0] = B.x;
+                                    C_cnt.TransformationParams[iNode, 1] = B.y;
                                 }
                             }
 

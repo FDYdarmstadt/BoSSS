@@ -32,6 +32,7 @@ using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading;
 
@@ -253,24 +254,32 @@ namespace CNS {
                 // the time stepper
                 TimeStepper.UpdateTimeInfo(new TimeInformation(TimestepNo, phystime, dt));
 
-                Exception e = null;
-                try {
-                    dt = TimeStepper.Perform(dt);
-                } catch (Exception ee) {
-                    e = ee;
+                using (new BlockTrace("TimeStepper.Perform", ht)) {
+                    Exception e = null;
+                    try {
+                        dt = TimeStepper.Perform(dt);
+                    } catch (Exception ee) {
+                        e = ee;
+                    }
+                    e.ExceptionBcast();
+
+                    if (DatabaseDriver.MyRank == 0 && TimestepNo % printInterval == 0) {
+                        if (TimestepNo % printInterval == 0) {
+                            Console.WriteLine(" done. PhysTime: {0:0.#######E-00}, dt: {1:0.#######E-00}", phystime, dt);
+                            //Console.WriteLine(" done. PhysTime: {0}, dt: {1}, currentTime: {2}", phystime, dt, TimeStepper.Time);
+                        }
+                    }
+
+                    IDictionary<string, double> residuals = residualLoggers.LogTimeStep(TimestepNo, dt, phystime);
+                    base.TerminationKey = ShouldTerminate(residuals);
+
+                    this.ResLogger.NextTimestep(
+                        residualLoggers.ShouldLog(TimestepNo, Control.ResidualInterval));
                 }
-                e.ExceptionBcast();
 
-                if (TimestepNo % printInterval == 0) {
-                    Console.WriteLine(" done. PhysTime: {0:0.#######E-00}, dt: {1:0.#######E-00}", phystime, dt);
-                    //Console.WriteLine(" done. PhysTime: {0}, dt: {1}, currentTime: {2}", phystime, dt, TimeStepper.Time);
+                if (Control.WriteLTSLog && TimeStepper is AdamsBashforthLTS) {
+                    this.WriteLTSLog(dt);
                 }
-
-                IDictionary<string, double> residuals = residualLoggers.LogTimeStep(TimestepNo, dt, phystime);
-                base.TerminationKey = ShouldTerminate(residuals);
-
-                this.ResLogger.NextTimestep(
-                    residualLoggers.ShouldLog(TimestepNo, Control.ResidualInterval));
 
                 return dt;
             }
@@ -416,7 +425,7 @@ namespace CNS {
                     ABLTSTimeStepper.UpdateTimeInfo(new TimeInformation(TimeStepNo, physTime, -1));
                     // LoadBal and noLoadBalRuns did not match, with this fix, it works --> probably some ABevolver were not updated correctly
                     bool reclustered = ABLTSTimeStepper.TryNewClustering(dt: -1, calledByMPIRedist: true);
-                    Debug.Assert(reclustered == true);
+                    //Debug.Assert(reclustered == true);
                     //ABLTSTimeStepper.SetReclusteredByGridRedist(true);
                 }
 
@@ -432,6 +441,76 @@ namespace CNS {
         /// <returns></returns>
         protected virtual BoundaryConditionMap GetBoundaryConditionMap() {
             return new BoundaryConditionMap(GridData, Control);
+        }
+
+        /// <summary>
+        /// saves interface points
+        /// </summary>
+        TextWriter LTSLogWriter;
+
+        /// <summary>
+        /// Initializes the format of the log file
+        /// </summary>
+        /// <param name="sessionID"></param>
+        public void InitLTSLogFile(Guid sessionID) {
+            // Init text writer
+            if (sessionID.ToString() == "00000000-0000-0000-0000-000000000000") {
+                // When not using the BoSSS database, write log to directory where the executable is stores
+                LTSLogWriter = new StreamWriter("LTSLog.txt");
+            } else {
+                // When using the BoSSS database, write log to session directory
+                LTSLogWriter = base.DatabaseDriver.FsDriver.GetNewLog("LTSLog", sessionID);
+            }
+
+            // Header
+            LTSLogWriter.Write(
+                "LOCAL TIME STEPPING LOG FILE" +
+                "\n------------------------------------------\n" +
+                "ExplicitScheme = " + Control.ExplicitScheme.ToString() +
+                "\nExplicitOrder = " + Control.ExplicitOrder +
+                "\nNumberOfSubGrids = " + Control.NumberOfSubGrids +
+                "\nReclusteringInterval = " + Control.ReclusteringInterval +
+                "\nMaxNumberOfSubSteps = " + Control.maxNumOfSubSteps +
+                "\n------------------------------------------\n");
+            string titleForColumns = String.Format("{0}\t{1}\t{2}", "ts", "physTime", "dt");
+            AdamsBashforthLTS LTS = TimeStepper as AdamsBashforthLTS;
+            for (int i = 0; i < LTS.NumberOfClustersInitial; i++) {
+                titleForColumns = titleForColumns + String.Format("\t{0}\t{1}\t{2}", "c" + i + "_dt", "c" + i + "_substeps", "c" + i + "_elements");
+            }
+            LTSLogWriter.WriteLine(titleForColumns);
+            LTSLogWriter.Flush();
+        }
+
+        /// <summary>
+        /// Writes a line to the log file 
+        /// initialized by <see cref="InitLTSLogFile(Guid)"/>.
+        /// </summary>
+        public void WriteLTSLog(double dt) {
+            using (new FuncTrace()) {
+                if (MPIRank != 0) {
+                    return;
+                }
+
+                // Init if necessary
+                if (LTSLogWriter == null) {
+                    InitLTSLogFile(this.CurrentSessionInfo.ID);
+                }
+
+                // Write a line
+                if (TimeStepper.TimeInfo.TimeStepNumber > Control.ExplicitOrder - 1) {
+                    AdamsBashforthLTS LTS = TimeStepper as AdamsBashforthLTS;
+                    string line = String.Format("{0}\t{1}\t{2}", LTS.TimeInfo.TimeStepNumber, LTS.TimeInfo.PhysicalTime, dt);
+                    for (int i = 0; i < LTS.NumberOfClustersInitial; i++) {
+                        if (i >= LTS.CurrentClustering.NumberOfClusters) {
+                            line = line + String.Format("\t0\t0\t0");   // Add zeroes if current clustering has less clusters than specified at the beginning
+                        } else {
+                            line = line + String.Format("\t{0}\t{1}\t{2}", LTS.log_clusterDts[i], LTS.log_clusterSubSteps[i], LTS.log_clusterElements[i]);
+                        }
+                    }
+                    LTSLogWriter.WriteLine(line);
+                    LTSLogWriter.Flush();
+                }
+            }
         }
     }
 }

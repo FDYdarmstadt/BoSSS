@@ -49,7 +49,6 @@ namespace BoSSS.Application.ipViscosity {
         [Test]
         public static void ConsistencyTest(
             [Values(Terms.T1, Terms.T2, Terms.T3)] Terms t,
-            [Values(ViscosityImplementation.H, ViscosityImplementation.SWIP)] ViscosityImplementation v,
             [Values(0, 1)] int iSol
             ) {
             ipViscosityMain p = null;
@@ -59,7 +58,6 @@ namespace BoSSS.Application.ipViscosity {
                 p.solution = solutions[iSol];
                 p.PolynomialDegree = 4;
                 p.grid  = new MixedBcGrid();
-                p.viscOption = v;
                 p.whichTerms = t;
                 return p;
             });
@@ -71,7 +69,6 @@ namespace BoSSS.Application.ipViscosity {
         [Test]
         public static void solverTest(
             [Values(Terms.T1, Terms.T1 | Terms.T2, Terms.T1 | Terms.T2 | Terms.T3)] Terms t,
-            [Values(ViscosityImplementation.H, ViscosityImplementation.SWIP)] ViscosityImplementation v,
             [Values(0, 1, 2)] int iSol,
             [Values(2,3,4)] int deg
             ) {
@@ -82,7 +79,6 @@ namespace BoSSS.Application.ipViscosity {
                 p.solution = solutions[iSol];
                 p.PolynomialDegree = deg;
                 p.grid  = new MixedBcGrid();
-                p.viscOption = v;
                 p.whichTerms = t;
                 return p;
             });

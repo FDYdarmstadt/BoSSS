@@ -148,6 +148,16 @@ namespace BoSSS.Application.IBM_Solver {
                     };
                     break;
 
+                case LinearSolverCodes.exp_multigrid:
+                    if (Control.NoOfMultigridLevels < 2)
+                        throw new ApplicationException("At least 2 Multigridlevels are required");
+                    Timestepper.Config_linearSolver = new ILU() { };
+                    break;
+
+                case LinearSolverCodes.exp_ILU:
+                    Timestepper.Config_linearSolver = new ILU() { };
+                    break;
+
                 default:
                     throw new NotImplementedException("Linear solver option not available");
             }

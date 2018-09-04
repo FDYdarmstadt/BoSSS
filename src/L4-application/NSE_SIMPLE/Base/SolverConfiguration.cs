@@ -50,7 +50,7 @@ namespace NSE_SIMPLE {
             }
 
             // SIP penalty for viscous part of momentum equation
-            this.PenaltyViscMomentum = Control.ViscousPenaltyScaling * GetSIPPenaltyBase(workingSet.VelBasis.Degree, GridDat);
+            this.PenaltyViscMomentum = Control.ViscousPenaltyScaling;
 
             // SIP penalty for SIP pressure correction
             if ((Control.PredictorApproximation == PredictorApproximations.Identity_IP1)) {
@@ -61,7 +61,7 @@ namespace NSE_SIMPLE {
 
             if (control.PhysicsMode == PhysicsMode.LowMach) {
                 LowMachSIMPLEControl lowMachControl = control as LowMachSIMPLEControl;
-                this.PenaltyHeatConduction = lowMachControl.PenaltyHeatConductionScaling * GetSIPPenaltyBase(workingSet.TemperatureBasis.Degree, GridDat);
+                this.PenaltyHeatConduction = lowMachControl.PenaltyHeatConductionScaling * GetSIPPenaltyBase(workingSet.Pressure.Basis.Degree, GridDat);
             }
 
             this.Velocity = workingSet.Velocity;
@@ -104,6 +104,7 @@ namespace NSE_SIMPLE {
         /// </summary>
         public readonly int PressureReferencePointIndex = -1;
 
+         
         /// <summary>
         /// Calculation of SIP penalty base, cf. Chapter 3 in 
         /// K. Hillewaert, “Development of the discontinuous Galerkin method for high-resolution, large scale CFD and acoustics in industrial geometries”,
@@ -132,6 +133,7 @@ namespace NSE_SIMPLE {
 
             return PenaltyBase;
         }
+        
 
         /// <summary>
         /// Checks correct setup of pressure constraints / boundary conditions.

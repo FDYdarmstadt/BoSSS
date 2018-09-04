@@ -22,6 +22,7 @@ using Mono.CSharp;
 using System.Collections.Generic;
 using System.Reflection;
 using BoSSS.Solution.Gnuplot;
+using System.Linq;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -82,7 +83,7 @@ namespace BoSSS.Application.BoSSSpad {
             get;
             internal set;
         }
-        
+
         /// <summary>
         /// Opens the folder containing config files like the DBE.xml
         /// </summary>
@@ -150,7 +151,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="dbDir"></param>
         /// <returns></returns>
         static public IDatabaseInfo OpenOrCreateDatabase(string dbDir) {
-            if(Directory.Exists(dbDir)) {
+            if (Directory.Exists(dbDir)) {
                 if (!DatabaseUtils.IsValidBoSSSDatabase(dbDir)) {
                     throw new ArgumentException("Directory '" + dbDir + "' exists, but is not a valid BoSSS database.");
                 }
@@ -163,7 +164,7 @@ namespace BoSSS.Application.BoSSSpad {
             var dbi = new DatabaseInfo(dbDir);
 
             List<IDatabaseInfo> mod_databases = new List<IDatabaseInfo>();
-            if(databases != null) {
+            if (databases != null) {
                 mod_databases.AddRange(databases);
             }
             mod_databases.Add(dbi);
@@ -230,12 +231,12 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         static public string CurrentDocFile {
             get {
-                if(_CurrentDocFile == null) {
+                if (_CurrentDocFile == null) {
                     Console.WriteLine("No current document/not saved yet.");
                     return null;
                 }
 
-                if(!File.Exists(_CurrentDocFile)) {
+                if (!File.Exists(_CurrentDocFile)) {
                     Console.WriteLine("Document path '{0}' seems non-existent.", _CurrentDocFile);
                 }
 
@@ -254,6 +255,7 @@ namespace BoSSS.Application.BoSSSpad {
                 return Path.GetDirectoryName(f);
             }
         }
+
         /// <summary>
         /// Simple plotting interface
         /// </summary>
@@ -267,20 +269,20 @@ namespace BoSSS.Application.BoSSSpad {
             IEnumerable<double> X7 = null, IEnumerable<double> Y7 = null, string Name7 = null, string Format7 = null,
             bool logX = false, bool logY = false) {
 
-            using(var gp = new Gnuplot()) {
-                               
+            using (var gp = new Gnuplot()) {
+
 
                 IEnumerable<double>[] Xs = new[] { X1, X2, X3, X4, X5, X6, X7 };
                 IEnumerable<double>[] Ys = new[] { Y1, Y2, Y3, Y4, Y5, Y6, Y7 };
                 string[] Ns = new string[] { Name1, Name2, Name3, Name4, Name5, Name6, Name7 };
                 string[] Fs = new string[] { Format1, Format2, Format3, Format4, Format5, Format6, Format7 };
 
-                for(int i = 0; i < 7; i++) {
-                    if(Ys[i] != null) {
+                for (int i = 0; i < 7; i++) {
+                    if (Ys[i] != null) {
                         var f1 = new PlotFormat();
                         if (Fs[i] != null)
                             f1.FromString(Fs[i]);
-                        gp.PlotXY(Xs[i], Ys[i], title: Ns[i], format: f1, logX:logX, logY:logY);
+                        gp.PlotXY(Xs[i], Ys[i], title: Ns[i], format: f1, logX: logX, logY: logY);
                     }
                 }
 
@@ -288,5 +290,54 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
+
+        /// <summary>
+        /// Driver interface for the <see cref="BoSSS.Solution.Tecplot.Tecplot"/> functionality.
+        /// </summary>
+        static public void Tecplot(string filename, params BoSSS.Foundation.DGField[] flds) {
+            if (flds == null || flds.Length <= 0) {
+                Console.WriteLine("No DG fields specified - not writing any output files.");
+                return;
+            }
+
+            int susamp = Math.Max(flds.Max(f => f.Basis.Degree) + 1, 3);
+
+
+            Tecplot(filename, 0.0, susamp, flds);
+        }
+
+
+        /// <summary>
+        /// Driver interface for the <see cref="BoSSS.Solution.Tecplot.Tecplot"/> functionality.
+        /// </summary>
+        static public void Tecplot(string filename, double time, int supersampling, params BoSSS.Foundation.DGField[] flds) {
+            if (flds == null || flds.Length <= 0) {
+                Console.WriteLine("No DG fields specified - not writing any output files.");
+                return;
+            }
+
+            if (supersampling > 3) {
+                Console.WriteLine("Plotting with a supersampling greater than 3 is deactivated because it would very likely exceed this machines memory.");
+                Console.WriteLine("Higher supersampling values are supported by external plot application.");
+                supersampling = 3;
+            }
+
+            string directory = Path.GetDirectoryName(filename);
+            string FullPath;
+            if (directory == null || directory.Length <= 0) {
+                directory = CurrentDocDir ?? "";
+                FullPath = Path.Combine(directory, filename);
+            } else {
+                FullPath = filename;
+            }
+
+            Console.WriteLine("Writing output file {0}...", FullPath);
+
+
+            BoSSS.Solution.Tecplot.Tecplot.PlotFields(flds, FullPath, time, supersampling);
+
+        }
+
     }
 }
+

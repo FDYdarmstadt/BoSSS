@@ -32,6 +32,8 @@ namespace CNS.ShockCapturing {
 
         private string ArgumentName;
 
+        public bool AdiabaticWall { get; set; }
+
         private MultidimensionalArray cellLengthScale;
 
         private double penaltyFactor;
@@ -81,9 +83,9 @@ namespace CNS.ShockCapturing {
         #endregion
 
         #region INonlineEdgeform_GradV Members
-        void INonlinEdgeform_GradV.InternalEdge(ref EdgeFormParams efp,
+        void INonlinEdgeForm_GradV.InternalEdge(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
-            MultidimensionalArray fin, MultidimensionalArray fot, bool adiaWall) {
+            MultidimensionalArray fin, MultidimensionalArray fot) {
             int NumOfCells = efp.Len;
             Debug.Assert(fin.GetLength(0) == NumOfCells);
             Debug.Assert(fot.GetLength(0) == NumOfCells);
@@ -106,7 +108,7 @@ namespace CNS.ShockCapturing {
             }
         }
 
-        void INonlinEdgeform_GradV.BoundaryEdge(ref EdgeFormParams efp,
+        void INonlinEdgeForm_GradV.BoundaryEdge(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin,
             MultidimensionalArray fin) {
 
@@ -147,11 +149,9 @@ namespace CNS.ShockCapturing {
         #endregion
 
         #region INonlineEdgeform_V Members
-        void INonlinEdgeform_V.InternalEdge(ref EdgeFormParams efp,
+        void INonlinEdgeForm_V.InternalEdge(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout,
-            MultidimensionalArray fin, MultidimensionalArray fot,
-            bool adiaWall) {
-
+            MultidimensionalArray fin, MultidimensionalArray fot) {
             int NumOfCells = efp.Len;
             Debug.Assert(fin.GetLength(0) == NumOfCells);
             Debug.Assert(fot.GetLength(0) == NumOfCells);
@@ -183,7 +183,7 @@ namespace CNS.ShockCapturing {
             }
         }
 
-        void INonlinEdgeform_V.BoundaryEdge(ref EdgeFormParams efp,
+        void INonlinEdgeForm_V.BoundaryEdge(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin,
             MultidimensionalArray fin) {
             //int NumOfCells = efp.Len;
