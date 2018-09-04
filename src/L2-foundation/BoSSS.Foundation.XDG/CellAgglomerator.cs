@@ -599,7 +599,7 @@ namespace BoSSS.Foundation.XDG {
 
 
 
-        public MsrMatrix GetRowManipulationMatrix(UnsetteledCoordinateMapping map,
+        public BlockMsrMatrix GetRowManipulationMatrix(UnsetteledCoordinateMapping map,
             int MaxDegree, int NoOfVars, Func<int, int, int> i0Func, Func<int, int, int> NjFunc,
             bool MakeInPlace, CellMask cm) {
 
@@ -608,13 +608,13 @@ namespace BoSSS.Foundation.XDG {
 
             this.InitCouplingMatrices(MaxDegree);
 
-            MsrMatrix CompleteMtx = null;
+            BlockMsrMatrix CompleteMtx = null;
             for (int AggLevel = 0; AggLevel <= this.AggInfo.MaxLevel; AggLevel++) { // loop over agglomeration level...
 
                 // alloc matrix for the current agglomeration level
                 // ------------------------------------------------
 
-                MsrMatrix LevelMtx = new MsrMatrix(map, map, MakeInPlace ? 0 : 1);
+                BlockMsrMatrix LevelMtx = new BlockMsrMatrix(map, map);
 
                 if (!MakeInPlace) {
                     // ++++++++++++
@@ -691,11 +691,11 @@ namespace BoSSS.Foundation.XDG {
                     CompleteMtx = LevelMtx;
                 } else {
                     if (MakeInPlace) {
-                        MsrMatrix P = MsrMatrix.Multiply(LevelMtx, CompleteMtx);
+                        BlockMsrMatrix P = BlockMsrMatrix.Multiply(LevelMtx, CompleteMtx);
                         CompleteMtx.Acc(1.0, LevelMtx);
                         CompleteMtx.Acc(1.0, P);
                     } else {
-                        CompleteMtx = MsrMatrix.Multiply(LevelMtx, CompleteMtx);
+                        CompleteMtx = BlockMsrMatrix.Multiply(LevelMtx, CompleteMtx);
                     }
                 }
 
@@ -789,23 +789,120 @@ namespace BoSSS.Foundation.XDG {
         /// polynomial extrapolation from agglomeration target cells to agglomeration source cells.
         /// </summary>
         public void Extrapolate(CoordinateMapping DgFields) {
+            using (new FuncTrace()) {
+                int GAMMA = DgFields.Fields.Count;
+                var Brow = DgFields.BasisS.ToArray();
+                this.InitCouplingMatrices(Brow.Max(basis => basis.Degree));
 
-            int GAMMA = DgFields.Fields.Count;
-            var Brow = DgFields.BasisS.ToArray();
-            this.InitCouplingMatrices(Brow.Max(basis => basis.Degree));
+                DGField[] DgFlds = DgFields.Fields.ToArray();
 
-            DGField[] DgFlds = DgFields.Fields.ToArray();
+                Transceiver trx = null;
+                int mpiRank = this.GridDat.CellPartitioning.MpiRank;
+                if (this.AggInfo.InterProcessAgglomeration) {
+                    trx = new Transceiver(DgFlds);
+                }
 
-            Transceiver trx = null;
-            int mpiRank = this.GridDat.CellPartitioning.MpiRank;
-            if (this.AggInfo.InterProcessAgglomeration) {
-                trx = new Transceiver(DgFlds);
-            }
+                CellAgglomerator.AgglomerationPair[] AggPairs = this.AggInfo.AgglomerationPairs;
 
-            CellAgglomerator.AgglomerationPair[] AggPairs = this.AggInfo.AgglomerationPairs;
+                // loop over agglomeration levels: 
+                for (int AggLevel = this.AggInfo.MaxLevel; AggLevel >= 0; AggLevel--) {
 
-            // loop over agglomeration levels: 
-            for (int AggLevel = this.AggInfo.MaxLevel; AggLevel >= 0; AggLevel--) {
+                    // MPI exchange
+                    if (this.AggInfo.InterProcessAgglomeration) {
+                        trx.TransceiveStartImReturn();
+                        trx.TransceiveFinish();
+                    }
+
+
+                    for (int iPair = 0; iPair < AggPairs.Length; iPair++) {
+                        if (AggLevel != AggPairs[iPair].AgglomerationLevel)
+                            continue;
+
+                        // for agglomeration, the source is joined to target, i.e. source-DOFs are removed
+                        // for the extrapolation, its target to source
+                        int jCellTarget = AggPairs[iPair].jCellTarget; // target
+                        int jCellSource = AggPairs[iPair].jCellSource; // source (will be overwritten)
+
+                        if (AggPairs[iPair].OwnerRank4Source != mpiRank)
+                            continue;
+
+                        //int offset = int.MinValue, DestProc = 0;
+                        //long jCell1Glob = 0;
+                        //double[] Vtmp = null;
+                        //if (iPair < EsubLoc) {
+                        //    Debug.Assert(jCellSource < Jup);
+                        //} else {
+                        //    Debug.Assert(jCellSource >= Jup);
+                        //    offset = RowMap.LocalUniqueCoordinateIndex(0, jCellSource, 0);
+                        //    Vtmp = new double[Bsum];
+                        //    jCell1Glob = GidxExtCells[jCellSource - Jup];
+                        //    DestProc = CellPart.FindProcess(jCell1Glob);
+                        //}
+
+                        Debug.Assert(jCellSource < this.GridDat.Cells.NoOfLocalUpdatedCells);
+
+
+                        for (int ii = 0; ii < DgFlds.Length; ii++) { // loop over DG fields 
+                            Basis B = Brow[ii];
+                            int N = B.Length;
+
+                            IMatrix DgCoord = DgFlds[ii].Coordinates;
+
+                            var M_tmp = CouplingMtx.ExtractSubArrayShallow(new int[] { iPair, 0, 0 }, new int[] { iPair - 1, N - 1, N - 1 });
+
+                            //int i0_j0 = RowMap.LocalUniqueCoordinateIndex(ii, jCellTarget, 0);
+                            //int i0_j1 = RowMap.LocalUniqueCoordinateIndex(ii, jCellSource, 0);
+
+                            for (int n = 0; n < N; n++) {
+                                double acc0 = 0;
+                                for (int m = 0; m < N; m++) {
+                                    //acc0 += V[i0_j0 + m] * M_tmp[n, m];
+                                    acc0 += DgCoord[jCellTarget, m] * M_tmp[n, m];
+                                }
+
+                                DgCoord[jCellSource, n] = acc0;
+
+                                //if (iPair < EsubLoc) {
+                                //    V[i0_j1 + n] = acc0;
+                                //} else {
+                                //    Vtmp[i0_j1 + n - offset] = acc0;
+                                //}
+                            }
+                        }
+
+                        //if (iPair >= EsubLoc) {
+                        //    List<Tuple<long, double[]>> destList;
+                        //    if (!SendData.TryGetValue(DestProc, out destList)) {
+                        //        destList = new List<Tuple<long, double[]>>();
+                        //        SendData.Add(DestProc, destList);
+                        //    }
+                        //    destList.Add(new Tuple<long, double[]>(jCell1Glob, Vtmp));
+                        //}
+                    }
+
+                    //// MPI communication
+                    //// =================
+
+                    //if (this.AggInfo.InterProcessAgglomeration) {
+                    //    var RcvData = SerialisationMessenger.ExchangeData(SendData);
+
+                    //    foreach (var rcvPacket in RcvData.Values) {
+                    //        foreach (var t in rcvPacket) {
+                    //            long jGlobCell1 = t.Item1;
+                    //            Debug.Assert(CellPart.IsInLocalRange(jGlobCell1));
+                    //            int jCell1 = (int)(jGlobCell1 - CellPart.i0);
+
+                    //            double[] data_jCell1 = t.Item2;
+                    //            int iIns = RowMap.LocalUniqueCoordinateIndex(0, jCell1, 0);
+                    //            for (int i = 0; i < data_jCell1.Length; i++) {
+                    //                V[iIns + i] = data_jCell1[i];
+                    //            }
+                    //        }
+                    //    }
+                    //} else {
+                    //    Debug.Assert(EsubLoc == EsubTot);
+                    //}
+                }
 
                 // MPI exchange
                 if (this.AggInfo.InterProcessAgglomeration) {
@@ -813,103 +910,7 @@ namespace BoSSS.Foundation.XDG {
                     trx.TransceiveFinish();
                 }
 
-
-                for (int iPair = 0; iPair < AggPairs.Length; iPair++) {
-                    if (AggLevel != AggPairs[iPair].AgglomerationLevel)
-                        continue;
-
-                    // for agglomeration, the source is joined to target, i.e. source-DOFs are removed
-                    // for the extrapolation, its target to source
-                    int jCellTarget = AggPairs[iPair].jCellTarget; // target
-                    int jCellSource = AggPairs[iPair].jCellSource; // source (will be overwritten)
-
-                    if (AggPairs[iPair].OwnerRank4Source != mpiRank)
-                        continue;
-
-                    //int offset = int.MinValue, DestProc = 0;
-                    //long jCell1Glob = 0;
-                    //double[] Vtmp = null;
-                    //if (iPair < EsubLoc) {
-                    //    Debug.Assert(jCellSource < Jup);
-                    //} else {
-                    //    Debug.Assert(jCellSource >= Jup);
-                    //    offset = RowMap.LocalUniqueCoordinateIndex(0, jCellSource, 0);
-                    //    Vtmp = new double[Bsum];
-                    //    jCell1Glob = GidxExtCells[jCellSource - Jup];
-                    //    DestProc = CellPart.FindProcess(jCell1Glob);
-                    //}
-
-                    Debug.Assert(jCellSource < this.GridDat.Cells.NoOfLocalUpdatedCells);
-
-
-                    for (int ii = 0; ii < DgFlds.Length; ii++) { // loop over DG fields 
-                        Basis B = Brow[ii];
-                        int N = B.Length;
-
-                        IMatrix DgCoord = DgFlds[ii].Coordinates;
-
-                        var M_tmp = CouplingMtx.ExtractSubArrayShallow(new int[] { iPair, 0, 0 }, new int[] { iPair - 1, N - 1, N - 1 });
-
-                        //int i0_j0 = RowMap.LocalUniqueCoordinateIndex(ii, jCellTarget, 0);
-                        //int i0_j1 = RowMap.LocalUniqueCoordinateIndex(ii, jCellSource, 0);
-
-                        for (int n = 0; n < N; n++) {
-                            double acc0 = 0;
-                            for (int m = 0; m < N; m++) {
-                                //acc0 += V[i0_j0 + m] * M_tmp[n, m];
-                                acc0 += DgCoord[jCellTarget, m] * M_tmp[n, m];
-                            }
-
-                            DgCoord[jCellSource, n] = acc0;
-
-                            //if (iPair < EsubLoc) {
-                            //    V[i0_j1 + n] = acc0;
-                            //} else {
-                            //    Vtmp[i0_j1 + n - offset] = acc0;
-                            //}
-                        }
-                    }
-
-                    //if (iPair >= EsubLoc) {
-                    //    List<Tuple<long, double[]>> destList;
-                    //    if (!SendData.TryGetValue(DestProc, out destList)) {
-                    //        destList = new List<Tuple<long, double[]>>();
-                    //        SendData.Add(DestProc, destList);
-                    //    }
-                    //    destList.Add(new Tuple<long, double[]>(jCell1Glob, Vtmp));
-                    //}
-                }
-
-                //// MPI communication
-                //// =================
-
-                //if (this.AggInfo.InterProcessAgglomeration) {
-                //    var RcvData = SerialisationMessenger.ExchangeData(SendData);
-
-                //    foreach (var rcvPacket in RcvData.Values) {
-                //        foreach (var t in rcvPacket) {
-                //            long jGlobCell1 = t.Item1;
-                //            Debug.Assert(CellPart.IsInLocalRange(jGlobCell1));
-                //            int jCell1 = (int)(jGlobCell1 - CellPart.i0);
-
-                //            double[] data_jCell1 = t.Item2;
-                //            int iIns = RowMap.LocalUniqueCoordinateIndex(0, jCell1, 0);
-                //            for (int i = 0; i < data_jCell1.Length; i++) {
-                //                V[iIns + i] = data_jCell1[i];
-                //            }
-                //        }
-                //    }
-                //} else {
-                //    Debug.Assert(EsubLoc == EsubTot);
-                //}
             }
-
-            // MPI exchange
-            if (this.AggInfo.InterProcessAgglomeration) {
-                trx.TransceiveStartImReturn();
-                trx.TransceiveFinish();
-            }
-
         }
 
         /// <summary>
@@ -991,7 +992,7 @@ namespace BoSSS.Foundation.XDG {
 
             Basis[] BasisS = RowMap.BasisS.ToArray();
 
-            MsrMatrix AggMtx = this.GetRowManipulationMatrix(RowMap, BasisS.Max(basis => basis.Degree), BasisS.Length,
+            BlockMsrMatrix AggMtx = this.GetRowManipulationMatrix(RowMap, BasisS.Max(basis => basis.Degree), BasisS.Length,
                  (jCell, iVar) => RowMap.GlobalUniqueCoordinateIndex(iVar, jCell, 0),
                  (jCell, iVar) => BasisS[iVar].GetLength(jCell),
                  true, null);
@@ -1000,7 +1001,7 @@ namespace BoSSS.Foundation.XDG {
             if (object.ReferenceEquals(tmp, V))
                 throw new ApplicationException("shallow copy detected");
 
-            AggMtx.SpMVpara(1.0, tmp, 1.0, V);
+            AggMtx.SpMV(1.0, tmp, 1.0, V);
         }
 
 
@@ -1136,6 +1137,7 @@ namespace BoSSS.Foundation.XDG {
 
             }
         }
+    
 
         class MiniMapping {
 
@@ -1175,90 +1177,90 @@ namespace BoSSS.Foundation.XDG {
             where M : IMutableMatrixEx //
             where T : IList<double> //
         {
-            MPICollectiveWatchDog.Watch();
-            //var mtxS = GetFrameMatrices(Matrix, RowMap, ColMap);
+            using (new FuncTrace()) {
+                MPICollectiveWatchDog.Watch();
+                //var mtxS = GetFrameMatrices(Matrix, RowMap, ColMap);
 
-            if (Matrix == null && Rhs == null)
-                // nothing to do
-                return;
+                if (Matrix == null && Rhs == null)
+                    // nothing to do
+                    return;
 
-            if (TotalNumberOfAgglomerations <= 0)
-                // nothing to do
-                return;
+                if (TotalNumberOfAgglomerations <= 0)
+                    // nothing to do
+                    return;
 
-            if (RowMapAggSw != null)
-                throw new NotImplementedException();
+                if (RowMapAggSw != null)
+                    throw new NotImplementedException();
 
-            // grenerate agglomeration sparse matrices
-            // =======================================
+                // generate agglomeration sparse matrices
+                // ======================================
 
-            int RequireRight;
-            if (Matrix == null) {
-                // we don't need multiplication-from-the-right at all
-                RequireRight = 0;
-            } else {
-                if (RowMap.EqualsUnsetteled(ColMap) && ArrayTools.ListEquals(ColMapAggSw, RowMapAggSw)) {
-                    // we can use the same matrix for right and left multiplication
-                    RequireRight = 1;
-
+                int RequireRight;
+                if (Matrix == null) {
+                    // we don't need multiplication-from-the-right at all
+                    RequireRight = 0;
                 } else {
-                    // separate matrix for the multiplication-from-the-right is required
-                    RequireRight = 2;
-                }
-            }
+                    if (RowMap.EqualsUnsetteled(ColMap) && ArrayTools.ListEquals(ColMapAggSw, RowMapAggSw)) {
+                        // we can use the same matrix for right and left multiplication
+                        RequireRight = 1;
 
-            MsrMatrix LeftMul, RightMul;
-            {
-                MiniMapping rowMini = new MiniMapping(RowMap);
-                LeftMul = this.GetRowManipulationMatrix(RowMap, rowMini.MaxDeg, rowMini.NoOfVars, rowMini.i0Func, rowMini.NFunc, false, null);
-
-                if (RequireRight == 2) {
-                    MiniMapping colMini = new MiniMapping(ColMap);
-                    RightMul = this.GetRowManipulationMatrix(ColMap, colMini.MaxDeg, colMini.NoOfVars, colMini.i0Func, colMini.NFunc, false, null);
-                } else if (RequireRight == 1) {
-                    RightMul = LeftMul;
-                } else {
-                    RightMul = null;
-                }
-            }
-
-            // apply the agglomeration to the matrix
-            // =====================================
-
-            if (Matrix != null) {
-                MsrMatrix RightMulTr = RightMul.Transpose();
-
-                MsrMatrix _Matrix;
-                if (Matrix is MsrMatrix) {
-                    _Matrix = (MsrMatrix)((object)Matrix);
-                } else {
-                    _Matrix = Matrix.ToMsrMatrix();
+                    } else {
+                        // separate matrix for the multiplication-from-the-right is required
+                        RequireRight = 2;
+                    }
                 }
 
-                var AggMatrix = MsrMatrix.Multiply(LeftMul, MsrMatrix.Multiply(_Matrix, RightMulTr));
+                BlockMsrMatrix LeftMul, RightMul;
+                {
+                    MiniMapping rowMini = new MiniMapping(RowMap);
+                    LeftMul = this.GetRowManipulationMatrix(RowMap, rowMini.MaxDeg, rowMini.NoOfVars, rowMini.i0Func, rowMini.NFunc, false, null);
 
-                if (object.ReferenceEquals(_Matrix, Matrix)) {
-                    _Matrix.Clear();
-                    _Matrix.Acc(1.0, AggMatrix);
-                } else {
-                    Matrix.Acc(-1.0, _Matrix); //   das ist so
-                    Matrix.Acc(1.0, AggMatrix); //  meagaschlecht !!!!!!
+                    if (RequireRight == 2) {
+                        MiniMapping colMini = new MiniMapping(ColMap);
+                        RightMul = this.GetRowManipulationMatrix(ColMap, colMini.MaxDeg, colMini.NoOfVars, colMini.i0Func, colMini.NFunc, false, null);
+                    } else if (RequireRight == 1) {
+                        RightMul = LeftMul;
+                    } else {
+                        RightMul = null;
+                    }
                 }
-            }
 
-            // apply the agglomeration to the Rhs
-            // ==================================
+                // apply the agglomeration to the matrix
+                // =====================================
 
-            if (Rhs != null) {
+                if (Matrix != null) {
+                    BlockMsrMatrix RightMulTr = RightMul.Transpose();
 
-                double[] tmp = Rhs.ToArray();
-                if (object.ReferenceEquals(tmp, Rhs))
-                    throw new ApplicationException("Flache kopie sollte eigentlich ausgeschlossen sein!?");
+                    BlockMsrMatrix _Matrix;
+                    if (Matrix is BlockMsrMatrix) {
+                        _Matrix = (BlockMsrMatrix)((object)Matrix);
+                    } else {
+                        _Matrix = Matrix.ToBlockMsrMatrix(RowMap, ColMap);
+                    }
 
-                LeftMul.SpMVpara(1.0, tmp, 0.0, Rhs);
+                    var AggMatrix = BlockMsrMatrix.Multiply(LeftMul, BlockMsrMatrix.Multiply(_Matrix, RightMulTr));
+
+                    if (object.ReferenceEquals(_Matrix, Matrix)) {
+                        _Matrix.Clear();
+                        _Matrix.Acc(1.0, AggMatrix);
+                    } else {
+                        Matrix.Acc(-1.0, _Matrix); //   das ist so
+                        Matrix.Acc(1.0, AggMatrix); //  meagaschlecht !!!!!!
+                    }
+                }
+
+                // apply the agglomeration to the Rhs
+                // ==================================
+
+                if (Rhs != null) {
+
+                    double[] tmp = Rhs.ToArray();
+                    if (object.ReferenceEquals(tmp, Rhs))
+                        throw new ApplicationException("Flache kopie sollte eigentlich ausgeschlossen sein!?");
+
+                    LeftMul.SpMV(1.0, tmp, 0.0, Rhs);
+                }
             }
         }
-
-
     }
 }

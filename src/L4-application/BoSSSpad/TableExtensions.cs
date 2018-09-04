@@ -46,7 +46,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                 // add additional columns
                 kq.Add(new KeyValuePair<string, object>("Session", SS));
-                kq.Add(new KeyValuePair<string, object>("RegularTerminated", !SS.Tags.Contains(BoSSS.Solution.Application.NOT_TERMINATED_TAG)));
+                kq.Add(new KeyValuePair<string, object>("RegularTerminated", !SS.Tags.Contains(SessionInfo.NOT_TERMINATED_TAG)));
 
                 if(AdditionalColums != null) {
                     foreach(var t in AdditionalColums) {

@@ -28,27 +28,30 @@ using BoSSS.Foundation;
 
 namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
 
-    public class ViscosityAtIB : BoSSS.Foundation.XDG.ILevelSetComponent {
+    public class ViscosityAtIB : BoSSS.Foundation.XDG.ILevelSetForm {
 
         LevelSetTracker m_LsTrk;
 
-        public ViscosityAtIB(int _d, int _D, LevelSetTracker t, double penalty, double _muA, Func<double, double>[] _uLevSet, Func<double, double>[] _wLevSet, double particleRadius) {
+        public ViscosityAtIB(int _d, int _D, LevelSetTracker t, double penalty, Func<double, int, double> _PenaltyFunc, double _muA,
+            Func<double[], double, double[]> getParticleParams) {
 
-            m_penalty = penalty;
+            this.m_penalty = penalty;
+            this.m_PenaltyFunc = _PenaltyFunc;
             this.m_LsTrk = t;
             this.muA = _muA;
             this.component = _d;
-            this.uLevSet = _uLevSet;
-            this.wLevSet = _wLevSet;
+            this.m_getParticleParams = getParticleParams;
             this.m_D = _D;
-            this.pRadius = particleRadius;
         }
 
         int component;
         int m_D;
         double pRadius;
 
-        Func<double, double>[] uLevSet, wLevSet;
+        /// <summary>
+        /// Describes: 0: velX, 1: velY, 2:rotVel,3:particleradius
+        /// </summary>
+        Func<double[], double, double[]> m_getParticleParams;
 
         /// <summary>
         /// Viskosity in species A
@@ -57,14 +60,9 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
 
         double m_penalty;
 
-        /// <summary>
-        /// penalty param
-        /// </summary>
-        double penalty(double hmin) {
-            double µ = m_penalty / hmin;
-            Debug.Assert(!(double.IsNaN(µ) || double.IsInfinity(µ)));
-            return µ;
-        }
+        
+
+        Func<double, int, double> m_PenaltyFunc;
 
         /// <summary>
         /// default-implementation
@@ -74,18 +72,25 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             double[] N = inp.n;
-            double hCellMin = this.m_LsTrk.GridDat.Cells.h_min[inp.jCell];
+
 
             //Debug.Assert(!double.IsNaN(inp.PosCellLengthScale));
             //double hCutCellMin = Math.Min(inp.PosCellLengthScale, inp.NegCellLengthScale);
-            double hCutCellMin = inp.NegCellLengthScale; // for IBM, there is no positve species!
-            if (hCutCellMin <= 1.0e-10 * hCellMin)
-                // very small cell -- clippling
-                hCutCellMin = hCellMin;
-            double _penalty = penalty(hCutCellMin);
-
+            //double hCutCellMin = inp.NegCellLengthScale; // for IBM, there is no positive species!
+            //if (hCutCellMin <= 1.0e-10 * hCellMin)
+            //    // very small cell -- clippling
+            //    hCutCellMin = hCellMin;
+            //double _penalty = penalty(hCutCellMin);
+            double _penalty = m_PenaltyFunc(m_penalty, inp.jCell);
 
             int D = N.Length;
+
+            var parameters_P = m_getParticleParams(inp.x, inp.time);
+            double[] uLevSet = new double[] { parameters_P[0], parameters_P[1] };
+            double wLevSet = parameters_P[2];
+            pRadius = parameters_P[3];
+
+
             Debug.Assert(this.ArgumentOrdering.Count == D);
             Debug.Assert(Grad_uA.GetLength(0) == this.ArgumentOrdering.Count);
             Debug.Assert(Grad_uB.GetLength(0) == this.ArgumentOrdering.Count);
@@ -116,10 +121,11 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             }
 
 
+
             if (component == 0) {
-                uAFict = (uLevSet[component])(inp.time) + pRadius * wLevSet[0](inp.time) * -inp.n[1];
+                uAFict = uLevSet[component] + pRadius * wLevSet * -inp.n[1];
             } else {
-                uAFict = (uLevSet[component])(inp.time) + pRadius * wLevSet[0](inp.time) * inp.n[0];
+                uAFict = uLevSet[component] + pRadius * wLevSet * inp.n[0];
             }
 
 

@@ -407,10 +407,6 @@ namespace ilPSP.Utils {
             }
         }
 
-        public static object Cartesian2DGrid(double[] v1, double[] v2) {
-            throw new NotImplementedException();
-        }
-
 
         /// <summary>
         /// L2-Norm

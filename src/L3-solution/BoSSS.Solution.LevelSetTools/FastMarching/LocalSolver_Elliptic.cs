@@ -328,8 +328,8 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
             SubGrid jCellGrid = new SubGrid(new CellMask(this.GridDat, Chunk.GetSingleElementChunk(jCell)));
             var VolScheme = new CellQuadratureScheme(domain: jCellGrid.VolumeMask);
             var EdgScheme = new EdgeQuadratureScheme(domain: jCellGrid.AllEdgesMask);
-            var VolRule = VolScheme.SaveCompile(GridDat, 3 * p);
-            var EdgRule = EdgScheme.SaveCompile(GridDat, 3 * p);
+            //var VolRule = VolScheme.SaveCompile(GridDat, 3 * p);
+            //var EdgRule = EdgScheme.SaveCompile(GridDat, 3 * p);
 
             // parameter list for operator
             DGField[] Params = new DGField[] { Phi };
@@ -339,8 +339,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
             var comp = new EllipticReinitForm(AcceptedMask, jCell, penaltyBase, this.GridDat.Cells.cj);
             comp.LhsSwitch = 1.0;  // matrix is constant -- Lhs Matrix only needs to be computed once
             comp.RhsSwitch = -1.0; //                   Rhs must be updated in every iteration
-            var op = comp.Operator();
-
+            var op = comp.Operator((DomDeg, ParamDeg, CodDeg) => 3 * p);
 
             // iteration loop:
             MultidimensionalArray Mtx = MultidimensionalArray.Create(N, N);
@@ -369,8 +368,8 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                     op.ComputeMatrixEx(this.LevelSetMapping, Params, this.LevelSetMapping,
                         iIter == 0 ? this.m_LaplaceMatrix : null, this.m_LaplaceAffine,
                             OnlyAffine: iIter > 0,
-                            //volQrCtx: VolScheme, edgeQrCtx: EdgScheme,
-                            volRule: VolRule, edgeRule: EdgRule,
+                            volQuadScheme: VolScheme, edgeQuadScheme: EdgScheme,
+                            //volRule: VolRule, edgeRule: EdgRule,
                             ParameterMPIExchange:false);
                     //op.Internal_ComputeMatrixEx(this.GridDat,
                     //    this.LevelSetMapping, Params, this.LevelSetMapping,

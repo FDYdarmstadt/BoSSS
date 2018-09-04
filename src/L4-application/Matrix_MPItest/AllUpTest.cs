@@ -41,7 +41,9 @@ namespace BoSSS.Application.Matrix_MPItest {
                 BoSSS.Solution.Application.GetBoSSSInstallDir(),
                 out MpiInit);
 
-            if (System.Environment.MachineName.ToLowerInvariant().EndsWith("rennmaschin")) {
+            if (System.Environment.MachineName.ToLowerInvariant().EndsWith("rennmaschin")
+                //|| System.Environment.MachineName.ToLowerInvariant().Contains("jenkins")
+                ) {
                 // This is Florians Laptop;
                 // he is to poor to afford MATLAB, so he uses OCTAVE
                 BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
@@ -78,7 +80,9 @@ namespace BoSSS.Application.Matrix_MPItest {
             }
             //*/
 
-            MultiplyTest(XDGusage.none, 1, false, false);
+
+            BoSSS.Application.Matrix_MPItest.AllUpTest.MultiplyTest(XDGusage.none, 3, true, false);
+            //MultiplyTest(XDGusage.none, 1, false, false);
             //SubMatrixTest(XDGusage.none, 2, false, false);
             //MultiplyTest(XDGusage.none, 2, false, false);
             //SpMVTest(XDGusage.none, 2, false, false);
@@ -95,9 +99,9 @@ namespace BoSSS.Application.Matrix_MPItest {
         /// </summary>
         [Test]
         public static void MultiplyTest(
-            [Values(XDGusage.none, XDGusage.mixed1, XDGusage.mixed2, XDGusage.all)] XDGusage UseXdg,
-            [Values(1, 3)] int DGOrder,
-            [Values(false, true)] bool compressL1,
+            [Values(XDGusage.none, XDGusage.mixed2, XDGusage.all)] XDGusage UseXdg,
+            [Values(2)] int DGOrder,
+            [Values(false)] bool compressL1,
             [Values(false, true)] bool compressL2) { 
 
             unsafe

@@ -122,6 +122,80 @@ namespace BoSSS.Solution.XNSECommon {
         }
 
 
+
+        /// <summary>
+        /// modifies a matrix <paramref name="Mtx"/> and a right-hand-side <paramref name="rhs"/>
+        /// in order to fix the pressure at some reference point
+        /// </summary>
+        /// <param name="map">row mapping for <paramref name="Mtx"/> as well as <paramref name="rhs"/></param>
+        /// <param name="iVar">the index of the pressure variable in the mapping <paramref name="map"/>.</param>
+        /// <param name="LsTrk"></param>
+        /// <param name="Mtx"></param>
+        /// <param name="rhs"></param>
+        static public void SetPressureReferencePointResidual<T>(CoordinateVector currentState, int iVar, LevelSetTracker LsTrk, T Residual)
+            where T : IList<double> //
+        {
+            using (new FuncTrace()) {
+                var map = currentState.Mapping;
+                var GridDat = map.GridDat;
+
+
+                if (Residual.Count != map.LocalLength)
+                    throw new ArgumentException();
+
+
+                XDGBasis PressureBasis = (XDGBasis)map.BasisS[iVar];
+                var grd = GridDat;
+                int D = GridDat.SpatialDimension;
+
+                long GlobalID, GlobalIndex;
+                bool IsInside, onthisProc;
+                grd.LocatePoint(new double[] { 5, 0 }, out GlobalID, out GlobalIndex, out IsInside, out onthisProc, LsTrk.Regions.GetCutCellSubGrid().VolumeMask.Complement());
+
+
+                int iRowGl = -111;
+
+                if (onthisProc) {
+                    int jCell = (int)GlobalIndex - GridDat.CellPartitioning.i0;
+                    NodeSet CenterNode = new NodeSet(GridDat.iGeomCells.GetRefElement(jCell), new double[D]);
+
+                    MultidimensionalArray LevSetValues = LsTrk.DataHistories[0].Current.GetLevSetValues(CenterNode, jCell, 1); ;
+
+                    MultidimensionalArray CenterNodeGlobal = MultidimensionalArray.Create(1, D);
+                    GridDat.TransformLocal2Global(CenterNode, CenterNodeGlobal, jCell);
+                    //Console.WriteLine("Pressure Ref Point @( {0:0.###E-00} | {1:0.###E-00} )", CenterNodeGlobal[0,0], CenterNodeGlobal[0,1]);
+
+                    LevelSetSignCode scode = LevelSetSignCode.ComputeLevelSetBytecode(LevSetValues[0, 0]);
+                    ReducedRegionCode rrc;
+                    int No = LsTrk.Regions.GetNoOfSpecies(jCell, out rrc);
+                    int iSpc = LsTrk.GetSpeciesIndex(rrc, scode);
+
+                    iRowGl = (int)map.GlobalUniqueCoordinateIndex_FromGlobal(iVar, GlobalIndex, PressureBasis.DOFperSpeciesPerCell * iSpc);
+                }
+
+                unsafe {
+                    int SndBuf = iRowGl, RcvBuf = -1231;
+                    MPI.Wrappers.csMPI.Raw.Allreduce((IntPtr)(&SndBuf), (IntPtr)(&RcvBuf), 1, MPI.Wrappers.csMPI.Raw._DATATYPE.INT, MPI.Wrappers.csMPI.Raw._OP.MAX, MPI.Wrappers.csMPI.Raw._COMM.WORLD);
+                    iRowGl = RcvBuf;
+                }
+
+                // clear row
+                // ---------
+                if (onthisProc) {
+                    // set entry in residual vector equal to corresponding value in domain vector
+                    // (as if the corresponding matrix would have a 1 in the diagonal element and 0 everywhere else)
+
+
+                    int iRow = iRowGl - map.i0;
+                    Residual[iRow] = currentState[iRow];
+                }
+
+
+            }
+        }
+
+
+
         #region velocity jump (mass balance at interface)
 
         static ScalarFunctionEx GetVelocityJumpErrFunc(VectorField<XDGField> U, bool OnlyNormalComponent, bool squared) {
@@ -967,7 +1041,7 @@ namespace BoSSS.Solution.XNSECommon {
             double spcArea = 0.0;
 
             int order = 0;
-            if(LsTrk.GetCachedOrders().Count > 0) {
+            if (LsTrk.GetCachedOrders().Count > 0) {
                 order = LsTrk.GetCachedOrders().Max();
             } else {
                 order = 1;
@@ -996,7 +1070,7 @@ namespace BoSSS.Solution.XNSECommon {
             double interLength = 0.0;
 
             int order = 0;
-            if(LsTrk.GetCachedOrders().Count > 0) {
+            if (LsTrk.GetCachedOrders().Count > 0) {
                 order = LsTrk.GetCachedOrders().Max();
             } else {
                 order = 1;
@@ -1020,11 +1094,13 @@ namespace BoSSS.Solution.XNSECommon {
         }
 
 
-        public static MultidimensionalArray GetInterfacePoints(LevelSetTracker LsTrk, LevelSet LevSet) {
+        public static MultidimensionalArray GetInterfacePoints(LevelSetTracker LsTrk, LevelSet LevSet, SubGrid sgrd = null) {
 
             int D = LsTrk.GridDat.SpatialDimension;
             int p = LevSet.Basis.Degree;
-            SubGrid sgrd = LsTrk.Regions.GetCutCellSubgrid4LevSet(0);
+            if (sgrd == null)
+                sgrd = LsTrk.Regions.GetCutCellSubgrid4LevSet(0);
+
             NodeSet[] Nodes = LsTrk.GridDat.Grid.RefElements.Select(Kref => Kref.GetQuadratureRule(p * 2).Nodes).ToArray();
             int Jsub = sgrd.LocalNoOfCells;
             int K = Nodes.Max(nds => nds.NoOfNodes);
@@ -1229,7 +1305,7 @@ namespace BoSSS.Solution.XNSECommon {
                             // curvature energy
                             acc += sigma * Curv_res[j, k] * U_res[j, k, d] * Normals[j, k, d];
                         }
-                        
+
                         if (squared) {
                             result[j, k] = acc.Pow2();
                         } else {
@@ -1442,7 +1518,7 @@ namespace BoSSS.Solution.XNSECommon {
 
         }
 
-        public static double EnergyJumpAtInterface(LevelSetTracker LsTrk, VectorField<XDGField> Velocity, XDGField Pressure, double muA, double muB, bool Norm, int momentFittingorder) { 
+        public static double EnergyJumpAtInterface(LevelSetTracker LsTrk, VectorField<XDGField> Velocity, XDGField Pressure, double muA, double muB, bool Norm, int momentFittingorder) {
 
             double EnergyJump = 0.0;
 
@@ -1471,7 +1547,7 @@ namespace BoSSS.Solution.XNSECommon {
         }
 
 
-        public static double SurfaceEnergyChangerate(LevelSetTracker LsTrk, ConventionalDGField[] uI, double sigma, bool Norm, int momentFittingorder) { 
+        public static double SurfaceEnergyChangerate(LevelSetTracker LsTrk, ConventionalDGField[] uI, double sigma, bool Norm, int momentFittingorder) {
 
             double Changerate_Surface = 0.0;
 

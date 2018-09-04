@@ -39,7 +39,7 @@ namespace NSE_SIMPLE {
         SIMPLEOperator[] m_PressureGradient;
         SinglePhaseField m_Pressure;
         SIMPLEMatrixAssembly[,] m_MatAsmblyViscSplit;
-        SpatialOperator.Evaluator[] m_BuoyantForceEvaluator;
+        IEvaluatorNonLin[] m_BuoyantForceEvaluator;
         VectorFieldHistory<SinglePhaseField> m_Velocity;
         ScalarFieldHistory<SinglePhaseField> m_Scalar;
         MaterialLaw m_EoS;
@@ -68,7 +68,7 @@ namespace NSE_SIMPLE {
         public VariableDensitySolverPredictor(SolverConfiguration solverConf, ISparseSolver sparseSolver,
             BlockDiagonalMatrix DensityMatrix, SIMPLEMatrixAssembly MatAsmblyPredictor, SIMPLEMatrixAssembly MatAsmblyPredictorApprox,
             SIMPLEOperator[] PressureGradient, SinglePhaseField Pressure,
-            SIMPLEMatrixAssembly[,] MatAsmblyViscSplit, SpatialOperator.Evaluator[] BuoyantForce,
+            SIMPLEMatrixAssembly[,] MatAsmblyViscSplit, IEvaluatorNonLin[] BuoyantForce,
             VectorFieldHistory<SinglePhaseField> Velocity, ScalarFieldHistory<SinglePhaseField> Scalar, MaterialLaw EoS, BDFScheme BDF)
             : base(solverConf, sparseSolver) {
 

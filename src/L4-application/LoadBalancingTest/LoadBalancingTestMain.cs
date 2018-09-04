@@ -166,8 +166,7 @@ namespace BoSSS.Application.LoadBalancingTest {
             var blkFlux = new DxFlux(this.LsTrk, alpha_A, alpha_B);
             Op.EquationComponents["c1"].Add(blkFlux); // Flux in Bulk Phase;
             Op.EquationComponents["c1"].Add(new LevSetFlx(this.LsTrk, alpha_A, alpha_B)); // flux am lev-set 0
-            Op.OnIntegratingBulk += blkFlux.NowIntegratingBulk;
-
+            
             Op.Commit();
 
             if (L == null) {
@@ -236,8 +235,16 @@ namespace BoSSS.Application.LoadBalancingTest {
         const XQuadFactoryHelper.MomentFittingVariants HMF = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
 
         protected virtual void DelComputeOperatorMatrix(BlockMsrMatrix OpMatrix, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime) {
-            OpMatrix.Clear();
+            
             OpAffine.ClearEntries();
+
+            bool Eval = false;
+            if(OpMatrix == null) {
+                Eval = true;
+                OpMatrix = new BlockMsrMatrix(uResidual.Mapping, u.Mapping);
+            } else {
+                OpMatrix.Clear();
+            }
 
             Op.ComputeMatrixEx(base.LsTrk,
                 u.Mapping, null, uResidual.Mapping,
@@ -245,6 +252,36 @@ namespace BoSSS.Application.LoadBalancingTest {
                 phystime,
                 false,
                 base.LsTrk.SpeciesIdS.ToArray());
+
+            if(Eval) {
+                OpMatrix.SpMV(1.0, new CoordinateVector(CurrentState), 1.0, OpAffine);
+            }
+
+
+            /*
+            if (!Mapping.EqualsPartition(uResidual.Mapping))
+                throw new ArgumentException();
+
+            if (OpMatrix != null) {
+                OpMatrix.Clear();
+                OpAffine.ClearEntries();
+
+                Op.ComputeMatrixEx(base.LsTrk,
+                    u.Mapping, null, Mapping,
+                    OpMatrix, OpAffine, false,
+                    phystime,
+                    false,
+                    base.LsTrk.SpeciesIdS.ToArray());
+            } else {
+                var eval = Op.GetEvaluatorEx(base.LsTrk,
+                    CurrentState, null, Mapping,
+                    base.LsTrk.SpeciesIdS.ToArray());
+
+                eval.time = phystime;
+
+                eval.Evaluate(1.0, 1.0, OpAffine);
+            }
+            */
         }
 
         public override void DataBackupBeforeBalancing(GridUpdateDataVaultBase L) {

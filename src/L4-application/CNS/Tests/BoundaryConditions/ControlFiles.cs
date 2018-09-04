@@ -95,22 +95,22 @@ namespace CNS.Tests.BoundaryConditions {
                     c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, exactVelocity);
                     c.InitialValues_Evaluators.Add(Variables.Pressure, exactPressure);
 
-                    c.AddBoundaryCondition("supersonicInlet", Variables.Density, exactDensity);
-                    c.AddBoundaryCondition("supersonicInlet", Variables.Velocity[0], exactVelocity);
-                    c.AddBoundaryCondition("supersonicInlet", Variables.Pressure, exactPressure);
+                    c.AddBoundaryValue("supersonicInlet", Variables.Density, exactDensity);
+                    c.AddBoundaryValue("supersonicInlet", Variables.Velocity[0], exactVelocity);
+                    c.AddBoundaryValue("supersonicInlet", Variables.Pressure, exactPressure);
 
-                    c.AddBoundaryCondition("subsonicInlet", Variables.Density, exactDensity);
-                    c.AddBoundaryCondition("subsonicInlet", Variables.Velocity[0], exactVelocity);
+                    c.AddBoundaryValue("subsonicInlet", Variables.Density, exactDensity);
+                    c.AddBoundaryValue("subsonicInlet", Variables.Velocity[0], exactVelocity);
 
-                    c.AddBoundaryCondition("subsonicOutlet", Variables.Pressure, exactPressure);
+                    c.AddBoundaryValue("subsonicOutlet", Variables.Pressure, exactPressure);
 
                     Func<double[], double> localMach = X => c.MachNumber * exactVelocity(X) / (Math.Sqrt(exactPressure(X) / exactDensity(X)));
                     // Spurk: p305, eq(9.100)
                     Func<double[], double> totalPressure = X => exactPressure(X) * Math.Pow((gamma - 1.0) / 2 * localMach(X) * localMach(X) + 1.0, gamma / (gamma - 1.0));
                     // Spurk: p305, eq(9.101)
                     Func<double[], double> totalTemperature = X => exactPressure(X) / exactDensity(X) * ((gamma - 1.0) / 2 * localMach(X) * localMach(X) + 1.0);
-                    c.AddBoundaryCondition("subsonicPressureInlet", "p0", totalPressure);
-                    c.AddBoundaryCondition("subsonicPressureInlet", "T0", totalTemperature);
+                    c.AddBoundaryValue("subsonicPressureInlet", "p0", totalPressure);
+                    c.AddBoundaryValue("subsonicPressureInlet", "T0", totalTemperature);
 
                     c.CustomContinuitySources.Add(map => new AdHocSourceTerm(map,
                         (x, t, state) => -Math.Sin(4.0 * x[0]) / 4.0));

@@ -339,11 +339,11 @@ namespace BoSSS.Application.XNSE_Solver {
             // ===================
             #region BC
 
-            C.AddBoundaryCondition("wall_lower");
-            C.AddBoundaryCondition("wall_upper");
+            C.AddBoundaryValue("wall_lower");
+            C.AddBoundaryValue("wall_upper");
 
 
-            C.AddBoundaryCondition("wall_lower", VariableNames.LevelSet, PhiFunc);
+            C.AddBoundaryValue("wall_lower", VariableNames.LevelSet, PhiFunc);
 
             #endregion
 
@@ -386,7 +386,6 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
 
 
-            C.option_solver = C.PhysicalParameters.IncludeConvection ? "fixpoint+levelset" : "direct";
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.NoOfMultigridLevels = 1;
             C.Solver_MaxIterations = 50;

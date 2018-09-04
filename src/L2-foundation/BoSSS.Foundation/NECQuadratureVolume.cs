@@ -60,7 +60,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             // quadrature object
             // -----------------
 
-            m_Quad = CellQuadrature.GetQuadrature2(new int[] { CodomainMapping.BasisS.Sum(basis => basis.Length) }, context, domNrule,
+            m_Quad = CellQuadrature.GetQuadrature2(new int[] { CodomainMapping.NoOfCoordinatesPerCell }, context, domNrule,
                 this.EvaluateEx,
                 this.SaveIntegrationResults,
                 this.AllocateBuffers);
@@ -88,17 +88,17 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 m_ValueRequired[i] = true;
             }
 
-            DetermineReqFields(m_GradientRequired, this.m_NonlinFormV, 
+            this.m_NonlinFormV.DetermineReqFields(m_GradientRequired, 
                 comp => ((comp.VolTerms & (TermActivationFlags.GradUxGradV | TermActivationFlags.GradUxV)) != 0));
-            DetermineReqFields(m_GradientRequired, this.m_NonlinFormGradV, 
+            this.m_NonlinFormGradV.DetermineReqFields(m_GradientRequired, 
                 comp => ((comp.VolTerms & (TermActivationFlags.GradUxGradV | TermActivationFlags.GradUxV)) != 0));
-            DetermineReqFields(m_ValueRequired, this.m_NonlinFormV, 
+            this.m_NonlinFormV.DetermineReqFields(m_ValueRequired, 
                 comp => ((comp.VolTerms & (TermActivationFlags.UxGradV | TermActivationFlags.UxV)) != 0));
-            DetermineReqFields(m_ValueRequired, this.m_NonlinFormGradV, 
+            this.m_NonlinFormGradV.DetermineReqFields(m_ValueRequired,  
                 comp => ((comp.VolTerms & (TermActivationFlags.UxGradV | TermActivationFlags.UxV)) != 0));
-            DetermineReqFields(m_ValueRequired, this.m_NonlinSources, comp => true);
-            DetermineReqFields(m_ValueRequired, base.m_NonlinFluxes, comp => true);
-            DetermineReqFields(m_ValueRequired, base.m_NonlinFluxesEx, comp => true);
+            this.m_NonlinSources.DetermineReqFields(m_ValueRequired, comp => true);
+            base.m_NonlinFluxes.DetermineReqFields(m_ValueRequired, comp => true);
+            base.m_NonlinFluxesEx.DetermineReqFields(m_ValueRequired, comp => true);
 
             // ---------
             // profiling
@@ -179,13 +179,13 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         Basis m_MaxCodBasis;
 
         /// <summary>
-        /// true, if the evaluation of the a domain variable is required. <br/>
+        /// true, if the evaluation of the a domain variable is required. 
         /// index: correlates with domain variables
         /// </summary>
         bool[] m_ValueRequired;
 
         /// <summary>
-        /// true, if the evaluation of the gradient of a domain variable is required. <br/>
+        /// true, if the evaluation of the gradient of a domain variable is required. 
         /// index: correlates with domain variables
         /// </summary>
         bool[] m_GradientRequired;
@@ -319,7 +319,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 }
             }
 #endif
-
+            
             // this is an EvaluateEx: we are also responsible for multiplying with quadrature weights and summing up!
             Debug.Assert(QuadResult.Dimension == 2);
             Debug.Assert(QuadResult.GetLength(0) == Length);
@@ -328,9 +328,9 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             // ===================
             // Evaluate all fields
             // ===================
-
+            
             this.Field_Eval.Start();
-
+            
             for (int f = 0; f < m_DomainFields.Length; f++) {
                 if( m_ValueRequired[f]) {
                     Debug.Assert(m_FieldValues[f] != null);
@@ -354,8 +354,10 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                     }
                 }
             }
-
+            
             this.Field_Eval.Stop();
+
+            
 
             // =====================================
             // Transform Nodes to global coordinates
@@ -364,6 +366,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             this.ParametersAndNormals.Start();
 
             var NodesGlobalCoords = grid.GlobalNodes.GetValue_Cell(NodesUntransformed, i0, Length);
+            //var NodesGlobalCoords = MultidimensionalArray.Create(Length, NoOfNodes, D);
 
             this.ParametersAndNormals.Stop();
 
@@ -371,7 +374,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             // Evaluate Flux functions
             // =======================
 
-
+            
             bool[] RequireTestFunctionGradient = new bool[NoOfEquations];
             bool[] Cleared_m_FluxValues = new bool[NoOfEquations];
 
@@ -419,6 +422,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 }
             }
 
+            
 
             // =========================
             // Evaluate Source functions
@@ -536,6 +540,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             }
             this.Flux_Eval.Stop();
 
+            
+
             // ================
             // Transform fluxes
             // ================
@@ -556,6 +562,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                             InverseJacobi = grid.iGeomCells.InverseTransformation.ExtractSubArrayShallow(new int[] { i0, 0, 0 }, new int[] { i0 + Length - 1, D - 1, D - 1 });
                         } else {
                             InverseJacobi = grid.InverseJacobian.GetValue_Cell(QR.Nodes, i0, Length);
+                            //InverseJacobi = MultidimensionalArray.Create(Length, NoOfNodes, D, D);
                         }
                     }
 
@@ -572,9 +579,10 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 }
 
                 if(m_SourceValues[e] != null) {
-                    
-                    if(JacobiDet == null && !isAffine)
+
+                    if (JacobiDet == null && !isAffine)
                         JacobiDet = grid.JacobianDeterminat.GetValue_Cell(QR.Nodes, i0, Length);
+                        //JacobiDet = MultidimensionalArray.Create(Length, NoOfNodes);
 
                     // apply scaling with Jacobi determinant, for integral transformation
                     if(isAffine) {
@@ -586,6 +594,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             }
 
             this.Flux_Trafo.Stop();
+
             
 
             // =======================
@@ -733,8 +742,10 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 int jCell = j + i0;
                 for (int f = 0; f < NoOfFields; f++) {
                     int mE = m_NoOfTestFunctions[f];
+                    int f_offset = m_MyMap[f];
                     for (int m = 0; m < mE; m++) {
-                        m_Output[m_CodomainMapping.LocalUniqueCoordinateIndex(f, jCell, m)] += ResultsOfIntegration[j, MyMap(f, m)] * alpha;
+                        int idx = f_offset + m;
+                        m_Output[m_CodomainMapping.LocalUniqueCoordinateIndex(f, jCell, m)] += ResultsOfIntegration[j, idx] * alpha;
                     }
                 }
             }

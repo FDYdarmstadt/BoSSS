@@ -19,10 +19,11 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.SpecFEM;
+using BoSSS.Platform.LinAlg;
 using BoSSS.Solution;
 using BoSSS.Solution.Timestepping;
 using CNS.Convection;
-using CNS.IBM;
+using CNS.MaterialProperty;
 using CNS.ShockCapturing;
 using ilPSP;
 using System;
@@ -459,7 +460,6 @@ namespace CNS {
             VariableTypes.Other,
             delegate (DGField ClusterVisualizationField, CellMask cellMask, IProgram<CNSControl> program) {
                 AdamsBashforthLTS LTSTimeStepper = (AdamsBashforthLTS)program.TimeStepper;
-
                 // Don't fail, just ignore
                 if (LTSTimeStepper == null) {
                     return;
@@ -467,13 +467,14 @@ namespace CNS {
 
                 for (int i = 0; i < LTSTimeStepper.CurrentClustering.NumberOfClusters; i++) {
                     SubGrid currentCluster = LTSTimeStepper.CurrentClustering.Clusters[i];
-                    for (int j = 0; j < currentCluster.LocalNoOfCells; j++) {
-                        foreach (Chunk chunk in currentCluster.VolumeMask) {
-                            foreach (int cell in chunk.Elements) {
-                                ClusterVisualizationField.SetMeanValue(cell, i);
-                            }
-                        }
+                    //for (int j = 0; j < currentCluster.LocalNoOfCells; j++) {
+                    foreach (int cell in currentCluster.VolumeMask.ItemEnum) {
+                        //foreach (Chunk chunk in currentCluster.VolumeMask) {
+                        //    foreach (int cell in chunk.Elements) {
+                        ClusterVisualizationField.SetMeanValue(cell, i);
+                        //    }
                     }
+                    //}
                 }
             });
 
@@ -502,6 +503,44 @@ namespace CNS {
                             }
                         }
                     }
+                }
+            });
+
+        public static readonly DerivedVariable EmptyField = new DerivedVariable(
+            "emptyField",
+            VariableTypes.Other,
+            delegate (DGField field, CellMask cellMask, IProgram<CNSControl> program) {
+            });
+
+        public static readonly DerivedVariable RiemannDensity = new DerivedVariable(
+            "riemannDensity",
+            VariableTypes.Other,
+            delegate (DGField field, CellMask cellMask, IProgram<CNSControl> program) {
+                if (program.TimeStepper != null) {
+                    // ### Initial conditions ###
+                    double densityLeft = 1.0;
+                    double densityRight = 0.125;
+                    double pressureLeft = 1.0;
+                    double pressureRight = 0.1;
+                    double velocityLeft = 0.0;
+                    double velocityRight = 0.0;
+                    double discontinuityPosition = 0.5;
+
+                    Material material = new Material(program.Control);
+                    StateVector stateLeft = StateVector.FromPrimitiveQuantities(
+                        material, densityLeft, new Vector3D(velocityLeft, 0.0, 0.0), pressureLeft);
+                    StateVector stateRight = StateVector.FromPrimitiveQuantities(
+                        material, densityRight, new Vector3D(velocityRight, 0.0, 0.0), pressureRight);
+
+                    var riemannSolver = new ExactRiemannSolver(stateLeft, stateRight, new Vector3D(1.0, 0.0, 0.0));
+                    double pStar, uStar;
+                    riemannSolver.GetStarRegionValues(out pStar, out uStar);
+                    field.Clear();
+                    field.ProjectFunction(1.0,
+                        (X, U, j) => riemannSolver.GetState(pStar, uStar, X[0] - discontinuityPosition, program.TimeStepper.Time).Density,
+                        new CellQuadratureScheme(true, cellMask),
+                        program.WorkingSet.ConservativeVariables
+                        );
                 }
             });
     }

@@ -214,11 +214,11 @@ namespace CNS.Tests.IBMTests {
             c.LevelSetFunction = (X, t) => X[1] - epsilonY - 0.01 - 0.3939 * Math.Exp(-0.5 * (X[0] - epsilonX) * (X[0] - epsilonX));
 
             //BoundaryConditions
-            c.AddBoundaryCondition("adiabaticSlipWall");
-            c.AddBoundaryCondition("supersonicInlet", Variables.Density, rho);
-            c.AddBoundaryCondition("supersonicInlet", Variables.Velocity.xComponent, u0);
-            c.AddBoundaryCondition("supersonicInlet", Variables.Velocity.yComponent, u1);
-            c.AddBoundaryCondition("supersonicInlet", Variables.Pressure, pressure);
+            c.AddBoundaryValue("adiabaticSlipWall");
+            c.AddBoundaryValue("supersonicInlet", Variables.Density, rho);
+            c.AddBoundaryValue("supersonicInlet", Variables.Velocity.xComponent, u0);
+            c.AddBoundaryValue("supersonicInlet", Variables.Velocity.yComponent, u1);
+            c.AddBoundaryValue("supersonicInlet", Variables.Pressure, pressure);
 
 
             // Queries
@@ -339,11 +339,11 @@ namespace CNS.Tests.IBMTests {
             c.InitialValues_Evaluators.Add(Variables.Pressure, X => pressure(X, 0.0));
 
             //BoundaryConditions
-            c.AddBoundaryCondition("adiabaticSlipWall");
-            c.AddBoundaryCondition("supersonicInlet", Variables.Density, rho);
-            c.AddBoundaryCondition("supersonicInlet", Variables.Velocity.xComponent, u0);
-            c.AddBoundaryCondition("supersonicInlet", Variables.Velocity.yComponent, u1);
-            c.AddBoundaryCondition("supersonicInlet", Variables.Pressure, pressure);
+            c.AddBoundaryValue("adiabaticSlipWall");
+            c.AddBoundaryValue("supersonicInlet", Variables.Density, rho);
+            c.AddBoundaryValue("supersonicInlet", Variables.Velocity.xComponent, u0);
+            c.AddBoundaryValue("supersonicInlet", Variables.Velocity.yComponent, u1);
+            c.AddBoundaryValue("supersonicInlet", Variables.Pressure, pressure);
 
 
             // Queries
@@ -456,11 +456,11 @@ namespace CNS.Tests.IBMTests {
             c.LevelSetFunction = (X, t) => X[1] - 0.3939 * Math.Exp(-0.5 * X[0] * X[0]);
 
             //BoundaryConditions
-            c.AddBoundaryCondition("adiabaticSlipWall");
-            c.AddBoundaryCondition("supersonicInlet", Variables.Density, rho);
-            c.AddBoundaryCondition("supersonicInlet", Variables.Velocity.xComponent, u0);
-            c.AddBoundaryCondition("supersonicInlet", Variables.Velocity.yComponent, u1);
-            c.AddBoundaryCondition("supersonicInlet", Variables.Pressure, pressure);
+            c.AddBoundaryValue("adiabaticSlipWall");
+            c.AddBoundaryValue("supersonicInlet", Variables.Density, rho);
+            c.AddBoundaryValue("supersonicInlet", Variables.Velocity.xComponent, u0);
+            c.AddBoundaryValue("supersonicInlet", Variables.Velocity.yComponent, u1);
+            c.AddBoundaryValue("supersonicInlet", Variables.Pressure, pressure);
 
 
             // Queries

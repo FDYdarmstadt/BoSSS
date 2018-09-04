@@ -48,8 +48,10 @@
     <Compile Include="CutCellMetrics.cs" />
     <Compile Include="IEquationComponentExtensionXDG.cs" />
     <Compile Include="LevelSetTracker_Caches.cs" />
+    <Compile Include="NECQuadratureLevelSet.cs" />
+    <Compile Include="NonlinearLevelSetFormVectorizer.cs" />
     <Compile Include="Quadrature\AdaptiveSubdivisionStrategy.cs" />
-    <Compile Include="BilinearForm.cs" />
+    <Compile Include="LinearLevelSetFormVectorizer.cs" />
     <Compile Include="Quadrature\BruteForceSubdivisionStrategy.cs" />
     <Compile Include="Quadrature\CellEdgeBoundaryQuadratureScheme.cs" />
     <Compile Include="Quadrature\CutCellQuadRuleFactory.cs" />
@@ -78,6 +80,10 @@
     <Compile Include="MassMatrixFactory.cs" />
     <Compile Include="MultiphaseAgglomerator.cs" />
     <Compile Include="Quadrature\NestedVertexSet.cs" />
+    <Compile Include="Quadrature\SayeGaussRule_Algorithm.cs" />
+    <Compile Include="Quadrature\SayeGaussRule_Cube.cs" />
+    <Compile Include="Quadrature\SayeGaussRule_Helper.cs" />
+    <Compile Include="Quadrature\SayeGaussRule_Square.cs" />
     <Compile Include="Quadrature\SurfaceStokes_2D.cs" />
     <Compile Include="ReducedRegionCode.cs" />
     <Compile Include="Quadrature\ScalarFieldLevelSetIntegrator.cs" />
@@ -115,6 +121,7 @@
     <Compile Include="XSpatialOperator.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="XSpatialOperatorExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.monkey\ilPSP.LinSolvers.monkey.csproj">
