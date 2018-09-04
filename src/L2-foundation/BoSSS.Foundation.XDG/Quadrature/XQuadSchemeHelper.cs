@@ -417,7 +417,7 @@ namespace BoSSS.Foundation.XDG {
             foreach (var Kref in XDGSpaceMetrics.GridDat.Grid.RefElements) {
                 for (int iLevSet = 0; iLevSet < XDGSpaceMetrics.NoOfLevelSets; iLevSet++) { // loop over level sets...
                     var surfaceFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceFactory(iLevSet, Kref);
-                    LevSetQrIns = LevSetQrIns.AddFactory(surfaceFactory, XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet));
+                    LevSetQrIns = LevSetQrIns.AddFactory(surfaceFactory, XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet).ToGeometicalMask());
                 }
             }
 
