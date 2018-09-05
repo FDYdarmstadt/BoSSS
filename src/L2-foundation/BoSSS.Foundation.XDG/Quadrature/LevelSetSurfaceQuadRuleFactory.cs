@@ -897,7 +897,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             foreach (Chunk chunk in mask) {
                 foreach (var cell in chunk.Elements.AsSmartEnumerable()) {
                     CellMask singleElementMask = new CellMask(
-                        LevelSetData.GridDat, Chunk.GetSingleElementChunk(cell.Value));
+                        LevelSetData.GridDat, new[] { Chunk.GetSingleElementChunk(cell.Value) }, MaskType.Geometrical);
 
                     LineAndPointQuadratureFactory.LineQRF lineFactory = this.edgeRuleFactory as LineAndPointQuadratureFactory.LineQRF;
                     if (lineFactory == null) {

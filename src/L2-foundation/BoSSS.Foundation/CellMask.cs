@@ -81,6 +81,20 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
+        /// compiles a cell mask from a set of chunks
+        /// </summary>
+        /// <param name="parts">
+        /// a list of chunks, which may overlap
+        /// </param>
+        /// <param name="grddat">
+        /// the grid that this mask will be associated with;
+        /// </param>
+        /// <param name="mt"></param>
+        public CellMask(IGridData grddat, Chunk[] parts, MaskType mt)
+            : this(grddat, (IEnumerable<Chunk>)parts, mt) {
+        }
+
+        /// <summary>
         /// compiles an quadrature execution mask from a set of chunks
         /// </summary>
         /// <param name="Parts">

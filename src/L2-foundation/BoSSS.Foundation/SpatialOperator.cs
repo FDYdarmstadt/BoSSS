@@ -945,6 +945,8 @@ namespace BoSSS.Foundation {
             public void ActivateSubgridBoundary(CellMask sgrd, SubGridBoundaryModes subGridBoundaryTreatment = SubGridBoundaryModes.BoundaryEdge) {
                 if (!object.ReferenceEquals(sgrd.GridData, this.GridData))
                     throw new ArgumentException("grid mismatch");
+                if (sgrd != null && sgrd.MaskType != MaskType.Logical)
+                    throw new ArgumentException("expecting logical mask");
                 m_SubGrid_InCells = sgrd;
                 m_SubGridBoundaryTreatment = subGridBoundaryTreatment;
             }
@@ -2216,6 +2218,8 @@ namespace BoSSS.Foundation {
             /// <param name="sgrd"></param>
             /// <param name="subGridBoundaryTreatment"></param>
             public void ActivateSubgridBoundary(CellMask sgrd, SubGridBoundaryModes subGridBoundaryTreatment = SubGridBoundaryModes.BoundaryEdge) {
+                if (sgrd != null && sgrd.MaskType != MaskType.Logical)
+                    throw new ArgumentException("expecting logical mask");
                 Eval.ActivateSubgridBoundary(sgrd, subGridBoundaryTreatment);
             }
         }
