@@ -619,17 +619,21 @@ namespace BoSSS.Foundation.XDG {
 
             EdgeMask allRelevantEdges;
             if (IntegrationDomainRestriction == null) {
-                allRelevantEdges = this.m_SpeciesSubgrid_InnerAndDomainEdges[sp];
+                allRelevantEdges = this.m_SpeciesSubgrid_InnerAndDomainEdges[sp].ToGeometicalMask();
             } else {
                 // user provides integration domain, intersect with that
-                allRelevantEdges = this.m_SpeciesSubgrid_InnerAndDomainEdges[sp].Intersect(IntegrationDomainRestriction);
+
+                if(IntegrationDomainRestriction.MaskType == MaskType.Geometrical)
+                    allRelevantEdges = this.m_SpeciesSubgrid_InnerAndDomainEdges[sp].ToGeometicalMask().Intersect(IntegrationDomainRestriction);
+                else
+                    allRelevantEdges = this.m_SpeciesSubgrid_InnerAndDomainEdges[sp].Intersect(IntegrationDomainRestriction).ToGeometicalMask();
             }
 
             //// optionally, exclude edges between agglomerated cells
             //EdgeMask AggEdges = (this.CellAgglomeration != null) ? (this.CellAgglomeration.GetAgglomerator(sp).AggInfo.AgglomerationEdges) : (default(EdgeMask));
             //if (AggEdges != null && AggEdges.NoOfItemsLocally > 0)
             //    allRelevantEdges = allRelevantEdges.Except(AggEdges);
-            return allRelevantEdges.ToGeometicalMask();
+            return allRelevantEdges;
         }
 
 
