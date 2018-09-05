@@ -21,27 +21,50 @@ using System.Text;
 using ilPSP;
 using NUnit.Framework;
 using BoSSS.Foundation.XDG;
+using MPI.Wrappers;
 
 namespace BoSSS.Application.XdgNastyLevsetLocationTest {
 
-
+    /// <summary>
+    /// Nunit entry point
+    /// </summary>
     [TestFixture]
-    public class AllUpTest {
+    public static class AllUpTest {
+
+        /// <summary>
+        /// MPI init
+        /// </summary>
+        [TestFixtureSetUp]
+        public static void SetUp() {
+            bool MpiInit;
+            ilPSP.Environment.Bootstrap(
+                new string[0],
+                BoSSS.Solution.Application.GetBoSSSInstallDir(),
+                out MpiInit);
+
+           
+        }
+
+        /// <summary>
+        /// MPI shutdown.
+        /// </summary>
+        [TestFixtureTearDown]
+        public static void TestFixtureTearDown() {
+            csMPI.Raw.mpiFinalize();
+        }
 
 
         /// <summary>
         /// not the smartest way to define such a test...
         /// </summary>
         [Test]
-        public void AllUp(
+        public static void AllUp(
             [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGauss, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes)]
             XQuadFactoryHelper.MomentFittingVariants variant
             ) {
             //static void Main(string[] args) {
 
-            bool MpiInit;
-            ilPSP.Environment.Bootstrap(new string[0], BoSSS.Solution.Application.GetBoSSSInstallDir(), out MpiInit);
-
+           
             var Tests = new ITest[] { new Schraeg(XdgNastyLevsetLocationTest.GetTestRange(), XdgNastyLevsetLocationTest.GetTestRange()),
                 new Parallel(XdgNastyLevsetLocationTest.GetTestRange(), XdgNastyLevsetLocationTest.GetTestRange()) };
 
@@ -68,7 +91,6 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
 
             }
 
-            MPI.Wrappers.csMPI.Raw.mpiFinalize();
         }
 
     }
