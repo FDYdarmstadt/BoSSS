@@ -131,25 +131,27 @@ namespace BoSSS.Solution.Timestepping {
                     HistoryBoundaryFluxes.Dequeue();
                 }
 
-                // Compute AB Coefficents                
-                if (adaptive) {
-                    if (historyTimePerCell.Count > order - 1)
-                        historyTimePerCell.Dequeue();
+                // Compute AB Coefficients 
+                using (new ilPSP.Tracing.BlockTrace("ComputeABcoefficients", tr)) {
+                    if (adaptive) {
+                        if (historyTimePerCell.Count > order - 1)
+                            historyTimePerCell.Dequeue();
 
-                    ABCoefficientsPerCell = new double[ABSubGrid.LocalNoOfCells][];
-                    for (int cell = 0; cell < ABSubGrid.LocalNoOfCells; cell++) {
-                        double[] historyTimeArray = new double[order];
-                        int i = 0;
-                        foreach (double[] historyPerCell in historyTimePerCell) {
-                            historyTimeArray[i] = historyPerCell[cell];
-                            i++;
+                        ABCoefficientsPerCell = new double[ABSubGrid.LocalNoOfCells][];
+                        for (int cell = 0; cell < ABSubGrid.LocalNoOfCells; cell++) {
+                            double[] historyTimeArray = new double[order];
+                            int i = 0;
+                            foreach (double[] historyPerCell in historyTimePerCell) {
+                                historyTimeArray[i] = historyPerCell[cell];
+                                i++;
+                            }
+                            historyTimeArray[i] = m_Time;
+                            ABCoefficientsPerCell[cell] = ComputeCoefficients(dt, historyTimeArray);
                         }
-                        historyTimeArray[i] = m_Time;
-                        ABCoefficientsPerCell[cell] = ComputeCoefficients(dt, historyTimeArray);
+                    } else {
+                        double[] historyTimeArray = HistoryTime.ToArray();
+                        ABCoefficients = ComputeCoefficients(dt, historyTimeArray);
                     }
-                } else {
-                    double[] historyTimeArray = HistoryTime.ToArray();
-                    ABCoefficients = ComputeCoefficients(dt, historyTimeArray);
                 }
 
                 double[] upDGC;
@@ -165,10 +167,12 @@ namespace BoSSS.Solution.Timestepping {
                 upDGC = ComputesUpdatedDGCoordinates(CompleteChangeRate);
 
                 // Keeps track of histories
-                HistoryDGCoordinate.Enqueue(upDGC);
-                HistoryChangeRate.Enqueue(CurrentChangeRate);
-                HistoryBoundaryFluxes.Enqueue(currentBndFluxes);
-                UpdateTimeHistory(dt);
+                using (new ilPSP.Tracing.BlockTrace("HistoryQueuing", tr)) {
+                    HistoryDGCoordinate.Enqueue(upDGC);
+                    HistoryChangeRate.Enqueue(CurrentChangeRate);
+                    HistoryBoundaryFluxes.Enqueue(currentBndFluxes);
+                    UpdateTimeHistory(dt);
+                }
 
                 // Update local sub-grid time
                 m_Time = m_Time + dt;
@@ -180,44 +184,46 @@ namespace BoSSS.Solution.Timestepping {
         /// Perfoms the actual Adams-Bashforth time integration sub-step in a cluster
         /// </summary>
         protected virtual void MakeABStep() {
-            CompleteChangeRate = new double[Mapping.LocalLength];
-
-            if (adaptive) {
+            using (new ilPSP.Tracing.FuncTrace("MakeABStep")) {
                 CompleteChangeRate = new double[Mapping.LocalLength];
-                for (int j = 0; j < ABSubGrid.LocalNoOfCells; j++) {
-                    int cell = jSub2jCell[j];
-                    // cell = global cell index
-                    // f = each field
-                    // n = basis polynomial
-                    foreach (DGField f in Mapping.Fields) {
-                        for (int n = 0; n < f.Basis.GetLength(cell); n++) {
-                            int index = Mapping.LocalUniqueCoordinateIndex(f, cell, n);
-                            CompleteChangeRate[index] = CompleteChangeRate[index] + ABCoefficientsPerCell[j][0] * CurrentChangeRate[index];
-                            int i = 1;
-                            foreach (double[] oldRate in HistoryChangeRate) {
-                                CompleteChangeRate[index] = CompleteChangeRate[index] + ABCoefficientsPerCell[j][i] * oldRate[index];
-                                i++;
+
+                if (adaptive) {
+                    CompleteChangeRate = new double[Mapping.LocalLength];
+                    for (int j = 0; j < ABSubGrid.LocalNoOfCells; j++) {
+                        int cell = jSub2jCell[j];
+                        // cell = global cell index
+                        // f = each field
+                        // n = basis polynomial
+                        foreach (DGField f in Mapping.Fields) {
+                            for (int n = 0; n < f.Basis.GetLength(cell); n++) {
+                                int index = Mapping.LocalUniqueCoordinateIndex(f, cell, n);
+                                CompleteChangeRate[index] = CompleteChangeRate[index] + ABCoefficientsPerCell[j][0] * CurrentChangeRate[index];
+                                int i = 1;
+                                foreach (double[] oldRate in HistoryChangeRate) {
+                                    CompleteChangeRate[index] = CompleteChangeRate[index] + ABCoefficientsPerCell[j][i] * oldRate[index];
+                                    i++;
+                                }
                             }
                         }
                     }
-                }
-            } else {
-                //y  <--  alpha*x + y
-                BLAS.daxpy(CompleteChangeRate.Length, ABCoefficients[0], CurrentChangeRate, 1, CompleteChangeRate, 1);
+                } else {
+                    //y  <--  alpha*x + y
+                    BLAS.daxpy(CompleteChangeRate.Length, ABCoefficients[0], CurrentChangeRate, 1, CompleteChangeRate, 1);
 
-                BLAS.daxpy(CompleteBoundaryFluxes.Length, ABCoefficients[0], currentBndFluxes, 1, CompleteBoundaryFluxes, 1);
+                    BLAS.daxpy(CompleteBoundaryFluxes.Length, ABCoefficients[0], currentBndFluxes, 1, CompleteBoundaryFluxes, 1);
 
-                // calculate completeChangeRate
-                int i = 1;
-                foreach (double[] oldRate in HistoryChangeRate) {
-                    BLAS.daxpy(CompleteChangeRate.Length, ABCoefficients[i], oldRate, 1, CompleteChangeRate, 1);
-                    i++;
-                }
+                    // calculate completeChangeRate
+                    int i = 1;
+                    foreach (double[] oldRate in HistoryChangeRate) {
+                        BLAS.daxpy(CompleteChangeRate.Length, ABCoefficients[i], oldRate, 1, CompleteChangeRate, 1);
+                        i++;
+                    }
 
-                i = 1;
-                foreach (double[] oldRate in HistoryBoundaryFluxes) {
-                    BLAS.daxpy(CompleteBoundaryFluxes.Length, ABCoefficients[i], oldRate, 1, CompleteBoundaryFluxes, 1);
-                    i++;
+                    i = 1;
+                    foreach (double[] oldRate in HistoryBoundaryFluxes) {
+                        BLAS.daxpy(CompleteBoundaryFluxes.Length, ABCoefficients[i], oldRate, 1, CompleteBoundaryFluxes, 1);
+                        i++;
+                    }
                 }
             }
         }
@@ -228,19 +234,21 @@ namespace BoSSS.Solution.Timestepping {
         /// </summary>
         /// <param name="dt"></param>
         protected virtual void UpdateTimeHistory(double dt) {
-            if (adaptive) {
-                double[] currentTime = new double[ABSubGrid.LocalNoOfCells];
-                for (int i = 0; i < currentTime.Length; i++) {
-                    currentTime[i] = m_Time;
+            using (new ilPSP.Tracing.FuncTrace("UpdateTimeHistory")) {
+                if (adaptive) {
+                    double[] currentTime = new double[ABSubGrid.LocalNoOfCells];
+                    for (int i = 0; i < currentTime.Length; i++) {
+                        currentTime[i] = m_Time;
+                    }
+                    historyTimePerCell.Enqueue(currentTime);
+                    if (historyTimePerCell.Count > order - 1) { //eventuell nicht nötig, später mal überprüfen
+                        historyTimePerCell.Dequeue();
+                    }
+                } else {
+                    HistoryTime.Enqueue(m_Time + dt); // --> später noch schön machen und ähnlich wie timeHistoryPerCell, einen eintrag weglassen, weil das eh m_time ist!
+                    if (HistoryTime.Count >= order) //eventuell nicht nötig, später mal überprüfen
+                        HistoryTime.Dequeue();
                 }
-                historyTimePerCell.Enqueue(currentTime);
-                if (historyTimePerCell.Count > order - 1) { //eventuell nicht nötig, später mal überprüfen
-                    historyTimePerCell.Dequeue();
-                }
-            } else {
-                HistoryTime.Enqueue(m_Time + dt); // --> später noch schön machen und ähnlich wie timeHistoryPerCell, einen eintrag weglassen, weil das eh m_time ist!
-                if (HistoryTime.Count >= order) //eventuell nicht nötig, später mal überprüfen
-                    HistoryTime.Dequeue();
             }
         }
 
@@ -251,12 +259,14 @@ namespace BoSSS.Solution.Timestepping {
         /// <param name="completeChangeRate">Complete ChangeRate of a cluster for one sub-step</param>
         /// <returns>intermediate DGCoordinates as array</returns>
         protected virtual double[] ComputesUpdatedDGCoordinates(double[] completeChangeRate) {
-            // Standard case: Just add completeChangeRate to DGCoordinates as array
-            double[] upDGC = new double[Mapping.LocalLength];
-            CurrentState.CopyTo(upDGC, 0);
-            upDGC = OrderValuesBySgrd(upDGC);
-            BLAS.daxpy(upDGC.Length, -1, OrderValuesBySgrd(completeChangeRate), 1, upDGC, 1);
-            return upDGC;
+            using (new ilPSP.Tracing.FuncTrace("ComputesUpdatedDGCoordinates")) {
+                // Standard case: Just add completeChangeRate to DGCoordinates as array
+                double[] upDGC = new double[Mapping.LocalLength];
+                CurrentState.CopyTo(upDGC, 0);
+                upDGC = OrderValuesBySgrd(upDGC);
+                BLAS.daxpy(upDGC.Length, -1, OrderValuesBySgrd(completeChangeRate), 1, upDGC, 1);
+                return upDGC;
+            }
         }
 
         /// <summary>
@@ -266,21 +276,23 @@ namespace BoSSS.Solution.Timestepping {
         /// <param name="results">Result for the complete grid</param>
         /// <returns>Array with entries only for the sub-grid cells</returns>
         private double[] OrderValuesBySgrd(double[] results) {
-            double[] ordered = new double[Mapping.LocalLength];
+            using (new ilPSP.Tracing.FuncTrace("OrderValuesBySgrd")) {
+                double[] ordered = new double[Mapping.LocalLength];
 
-            for (int j = 0; j < ABSubGrid.LocalNoOfCells; j++) {
-                int cell = jSub2jCell[j];
-                // cell in the sub-grid
-                // f = each field
-                // n = basis polynomial
-                foreach (DGField f in Mapping.Fields) {
-                    for (int n = 0; n < f.Basis.GetLength(cell); n++) {
-                        int index = Mapping.LocalUniqueCoordinateIndex(f, cell, n);
-                        ordered[index] = results[index];
+                for (int j = 0; j < ABSubGrid.LocalNoOfCells; j++) {
+                    int cell = jSub2jCell[j];
+                    // cell in the sub-grid
+                    // f = each field
+                    // n = basis polynomial
+                    foreach (DGField f in Mapping.Fields) {
+                        for (int n = 0; n < f.Basis.GetLength(cell); n++) {
+                            int index = Mapping.LocalUniqueCoordinateIndex(f, cell, n);
+                            ordered[index] = results[index];
+                        }
                     }
                 }
+                return ordered;
             }
-            return ordered;
         }
     }
 }

@@ -5,8 +5,11 @@ using System.Runtime.InteropServices;
 using System.Xml;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
+using BoSSS.Foundation.Grid;
+using BoSSS.Foundation;
+using ilPSP;
 
-namespace ilPSP.ExternalBinding {
+namespace BoSSS.Application.ExternalBinding {
 	public static class Common_ {
 				
 		/// <summary>
@@ -23,20 +26,33 @@ namespace ilPSP.ExternalBinding {
 				ierr = Infrastructure.ErrorHandler(e);
 			}
 		}
-		
-		public static void Test(ref int  dummy, out int ierr)  {
-			ierr = 0;
-			Console.WriteLine("Hello from Test: " + (dummy));	
-		}	
+
+        /// <summary>
+        /// A test function to verify that the interface is working; withes a hello message.
+        /// </summary>
+        /// <param name="dummy">
+        /// Test for input parameter: a dummy number, which is printed to the stdout.
+        /// </param>
+        /// <param name="ierr">
+        /// Test for return parameter: on exit, always the number of the beast (666).
+        /// </param>
+        public static void Test(ref int dummy, out int ierr) {
+            ierr = 666;
+            Console.WriteLine("Hello from Test: " + (dummy));
+        }
 		
 		static bool mustFinalizeMPI;
 		
-		public static void ilPSPInitialize() {
-            ilPSP.Environment.Bootstrap(new string[0], out mustFinalizeMPI);
+
+        /// <summary>
+        /// 
+        /// </summary>
+		public static void BoSSSInitialize() {
+            ilPSP.Environment.Bootstrap(new string[0], BoSSS.Solution.Application.GetBoSSSInstallDir(), out mustFinalizeMPI);
 			//Console.WriteLine("elo from " +  Enviroment.MPIEnv.MPI_Rank + " of " + Enviroment.MPIEnv.MPI_Size);
 		}
 		
-		public static void ilPSPFinalize() {
+		public static void BoSSSFinalize() {
 			if(mustFinalizeMPI)
 				MPI.Wrappers.csMPI.Raw.mpiFinalize();
 		}
@@ -134,7 +150,7 @@ namespace ilPSP.ExternalBinding {
 			MPIsize = -1;
 			try {
 				IPartitioning p = (IPartitioning) Infrastructure.GetObject(_ref);
-				MPIsize = (int) p.Size;
+				MPIsize = (int) p.MpiSize;
 			} catch (Exception e) {
 				ierr = Infrastructure.ErrorHandler(e);
 			}
@@ -186,6 +202,13 @@ namespace ilPSP.ExternalBinding {
 		}
 	}
 	
+
+
+    
+
+
+
+    /*
 	public static class ISparseSolver_ {
 		
 		static void FromXMLInternal(out int ref_, string xmlString) {
@@ -271,45 +294,7 @@ namespace ilPSP.ExternalBinding {
 			}
 		}
 		
-		static int FromXMLFileInternal(string file, string name) {
-			XmlDocument docu = new XmlDocument();
-			docu.Load(file);
-				
-			XmlNode node = docu.SelectSingleNode("/SolverConfig/sparsesolver[@name='" + name + "']");
-				             
-			var config = ilPSP.LinSolvers.SolverConfigurationParser.parseXMLConfigurationElements(node);
-			var solver = SolverFactory.CreateSolver<ISparseSolver>(config);
-			return Infrastructure.RegisterObject(solver);
-		}
 		
-		public unsafe static void FromXMLFileF(out int SolverRef, byte* termChar, byte* File, byte* solvername, out int ierr) {
-			ierr = 0;
-			SolverRef = -1;
-			try {
-				string _File = Infrastructure.FortranToDotNET(File,*termChar);
-				string _Name = Infrastructure.FortranToDotNET(solvername,*termChar);
-				
-				SolverRef = FromXMLFileInternal(_File,_Name);
-				
-			} catch (Exception e) {
-				ierr = Infrastructure.ErrorHandler(e);	
-			} 
-		
-		}
-		
-		public unsafe  static void FromXMLFile(out int SolverRef, byte* File, byte* solvername, out int ierr) {
-			ierr = 0;
-			SolverRef = -1;
-			try {
-				string _File = Marshal.PtrToStringAnsi((IntPtr)File);
-				string _Name = Marshal.PtrToStringAnsi((IntPtr)solvername);
-				
-				SolverRef = FromXMLFileInternal(_File,_Name);
-				
-			} catch (Exception e) {
-				ierr = Infrastructure.ErrorHandler(e);	
-			} 
-		}
 				
 		
 		unsafe public static void DefineMatrix(ref int SolverRef, ref int MatrixRef, out int ierr) {
@@ -350,7 +335,7 @@ namespace ilPSP.ExternalBinding {
 				ierr = Infrastructure.ErrorHandler(e);
 			}
 		}
-	
 	}
+    */
 }
 

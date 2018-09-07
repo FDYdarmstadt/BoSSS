@@ -60,6 +60,8 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// Element/Cell type;
         /// </summary>
         public CellType Type;
+
+        
     }
 
     /// <summary>
