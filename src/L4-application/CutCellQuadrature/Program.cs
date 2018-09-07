@@ -667,15 +667,16 @@ namespace CutCellQuadrature {
                     {
                         if (testCase is ISurfaceTestCase)
                         {
-                            volumeFactory = new SayeGaussRule_LevelSet2D(
+                            volumeFactory = SayeFactories.SayeGaussRule_LevelSet2D(
                                 levelSetTracker.DataHistories[0].Current,
                                 rootFindingAlgorithm);
                         }
                         else
                         {
-                            volumeFactory = new SayeGaussRule_Volume2D(
+                            volumeFactory = SayeFactories.SayeGaussRule_Volume2D(
                                 levelSetTracker.DataHistories[0].Current,
-                                rootFindingAlgorithm);
+                                rootFindingAlgorithm,
+                                SayeFactory_Square.QuadratureMode.PositiveVolume);
                         }
 
                         edgeFactory = null;
