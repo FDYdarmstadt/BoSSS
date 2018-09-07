@@ -6,9 +6,11 @@ using System.Runtime.InteropServices;
 using System.Linq.Expressions;
 using MPI.Wrappers;
 
-namespace ilPSP.ExternalBinding
+namespace BoSSS.Application.ExternalBinding
 {
 	public static  class Infrastructure {
+
+
 		/*
 		static SortedDictionary<string,Delegate> delegates = new SortedDictionary<string, Delegate>();
 		
@@ -75,20 +77,20 @@ namespace ilPSP.ExternalBinding
 			Console.Error.WriteLine("=========================================================");
 			return -1;	
 		}
-		
-		unsafe internal static string FortranToDotNET(byte* line, byte termChar) {
-			byte[] mini = new byte[2];
-			string mLine = "";
-			fixed( byte* pMini = mini) {
-			while(*line != termChar) {
-				*pMini = *line;
-				string s = Marshal.PtrToStringAnsi((IntPtr)pMini);
-				mLine += s;
-				line++;
-				}
-			}
-			return mLine;	
-		}
+
+        unsafe internal static string FortranToDotNET(byte* line, byte termChar) {
+            byte[] mini = new byte[2];
+            string mLine = "";
+            fixed (byte* pMini = mini) {
+                while (*line != termChar) {
+                    *pMini = *line;
+                    string s = Marshal.PtrToStringAnsi((IntPtr)pMini);
+                    mLine += s;
+                    line++;
+                }
+            }
+            return mLine;
+        }
 
 	}
 }

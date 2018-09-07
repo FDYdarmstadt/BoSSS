@@ -292,9 +292,10 @@ namespace BoSSS.Foundation.XDG {
                     throw new IndexOutOfRangeException();
 
 
-                if(m_NearMask4LevelSet == null || m_NearMask4LevelSet.GetLength(1) != m_owner.m_NearRegionWidth) {
+                if(m_NearMask4LevelSet == null || m_NearMask4LevelSet.GetLength(1) != (m_owner.m_NearRegionWidth + 1)) {
                     m_NearMask4LevelSet = new CellMask[m_owner.NoOfLevelSets, m_owner.m_NearRegionWidth + 1];
                 }
+                
 
                 if(m_NearMask4LevelSet[levSetIdx, FieldWidth] == null) {
                     // create subgrid

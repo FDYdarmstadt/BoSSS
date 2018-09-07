@@ -65,7 +65,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
         static void Main(string[] args) {
-        
+
             _Main(args, false, delegate () {
                 var p = new XNSE_SolverMain();
                 return p;

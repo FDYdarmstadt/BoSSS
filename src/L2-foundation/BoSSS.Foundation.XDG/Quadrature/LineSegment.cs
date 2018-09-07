@@ -132,7 +132,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         }
 
         /// <summary>
-        /// Start coordinates
+        /// Start coordinates, usually in the reference coordinate system of the cell
         /// </summary>
         public double[] Start {
             get;
@@ -150,7 +150,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         }
 
         /// <summary>
-        /// End coordinates
+        /// End coordinates, usually in the reference coordinate system of the cell
         /// </summary>
         public double[] End {
             get;

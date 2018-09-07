@@ -460,7 +460,6 @@ namespace CNS {
             VariableTypes.Other,
             delegate (DGField ClusterVisualizationField, CellMask cellMask, IProgram<CNSControl> program) {
                 AdamsBashforthLTS LTSTimeStepper = (AdamsBashforthLTS)program.TimeStepper;
-
                 // Don't fail, just ignore
                 if (LTSTimeStepper == null) {
                     return;
@@ -468,13 +467,14 @@ namespace CNS {
 
                 for (int i = 0; i < LTSTimeStepper.CurrentClustering.NumberOfClusters; i++) {
                     SubGrid currentCluster = LTSTimeStepper.CurrentClustering.Clusters[i];
-                    for (int j = 0; j < currentCluster.LocalNoOfCells; j++) {
-                        foreach (Chunk chunk in currentCluster.VolumeMask) {
-                            foreach (int cell in chunk.Elements) {
-                                ClusterVisualizationField.SetMeanValue(cell, i);
-                            }
-                        }
+                    //for (int j = 0; j < currentCluster.LocalNoOfCells; j++) {
+                    foreach (int cell in currentCluster.VolumeMask.ItemEnum) {
+                        //foreach (Chunk chunk in currentCluster.VolumeMask) {
+                        //    foreach (int cell in chunk.Elements) {
+                        ClusterVisualizationField.SetMeanValue(cell, i);
+                        //    }
                     }
+                    //}
                 }
             });
 

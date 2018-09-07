@@ -131,26 +131,28 @@ namespace CNS.IBM {
         }
 
         protected override void ComputeChangeRate(double[] k, double AbsTime, double RelTime, double[] edgeFluxes = null) {
-            RaiseOnBeforeComputechangeRate(AbsTime, RelTime);
+            using (new ilPSP.Tracing.FuncTrace()) {
+                RaiseOnBeforeComputechangeRate(AbsTime, RelTime);
 
-            Evaluator.time = AbsTime;
-            Evaluator.Evaluate(1.0, 0.0, k, outputBndEdge: edgeFluxes);
-            Debug.Assert(
-                !k.Any(f => double.IsNaN(f)),
-                "Unphysical flux in standard terms");
+                Evaluator.time = AbsTime;
+                Evaluator.Evaluate(1.0, 0.0, k, outputBndEdge: edgeFluxes);
+                Debug.Assert(
+                    !k.Any(f => double.IsNaN(f)),
+                    "Unphysical flux in standard terms");
 
-            boundaryEvaluator.Value.time = AbsTime;
-            boundaryEvaluator.Value.Evaluate(1.0, 1.0, k);
-            Debug.Assert(
-                !k.Any(f => double.IsNaN(f)),
-                "Unphysical flux in boundary terms");
+                boundaryEvaluator.Value.time = AbsTime;
+                boundaryEvaluator.Value.Evaluate(1.0, 1.0, k);
+                Debug.Assert(
+                    !k.Any(f => double.IsNaN(f)),
+                    "Unphysical flux in boundary terms");
 
-            // Agglomerate fluxes
-            speciesMap.Agglomerator.ManipulateRHS(k, Mapping);
+                // Agglomerate fluxes
+                speciesMap.Agglomerator.ManipulateRHS(k, Mapping);
 
-            // Apply inverse to all cells with non-identity mass matrix
-            IBMMassMatrixFactory massMatrixFactory = speciesMap.GetMassMatrixFactory(Mapping);
-            IBMUtility.SubMatrixSpMV(massMatrixFactory.InverseMassMatrix, 1.0, k, 0.0, k, cutAndTargetCells);
+                // Apply inverse to all cells with non-identity mass matrix
+                IBMMassMatrixFactory massMatrixFactory = speciesMap.GetMassMatrixFactory(Mapping);
+                IBMUtility.SubMatrixSpMV(massMatrixFactory.InverseMassMatrix, 1.0, k, 0.0, k, cutAndTargetCells);
+            }
         }
 
         /// <summary>
