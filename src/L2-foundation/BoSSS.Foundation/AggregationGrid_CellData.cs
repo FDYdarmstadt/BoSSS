@@ -102,6 +102,12 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 internal set;
             }
 
+            public int NoOfLocalUpdatedCells {
+                get {
+                    return m_Owner.ParentGrid.iGeomCells.NoOfLocalUpdatedCells;
+                }
+            }
+
             public void GetCellBoundingBox(int j, BoundingBox bb) {
                 m_Owner.ParentGrid.iGeomCells.GetCellBoundingBox(j, bb);
             }

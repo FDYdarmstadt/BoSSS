@@ -328,11 +328,19 @@ namespace BoSSS.Foundation.Grid {
     public interface IGeometricalCellsData {
 
         /// <summary>
-        /// Number of geometrical cells.
+        /// Number of geometrical cells (including external)
         /// </summary>
         int Count {
             get;
         }
+
+        /// <summary>
+        /// Number of locally updated cells - the cells which are computed on this processor (in contrast, external/ghost cells from other MPI processors).
+        /// </summary>
+        int NoOfLocalUpdatedCells {
+            get;
+        }
+
 
         /// <summary>
         /// Cell type for cell <paramref name="jCell"/>.

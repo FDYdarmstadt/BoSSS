@@ -49,8 +49,9 @@ namespace BoSSS.Foundation.Grid {
         public CellMask(IGridData grddat, BitArray mask, MaskType mt = MaskType.Logical) :
             base(grddat, mask, mt) //
         {
-            if (mask.Length != this.GetUpperIndexBound(grddat))
+            if (mask.Length != this.GetUpperIndexBound(grddat)) {
                 throw new ArgumentException("Mismatch in number of cells/length of input bitmask.");
+            }
         }
         
         /// <summary>
@@ -138,7 +139,7 @@ namespace BoSSS.Foundation.Grid {
             int L;
             switch(mt) {
                 case MaskType.Logical: L = gridDat.iLogicalCells.NoOfLocalUpdatedCells; break;
-                case MaskType.Geometrical: L = gridDat.iGeomCells.Count; break;
+                case MaskType.Geometrical: L = gridDat.iGeomCells.NoOfLocalUpdatedCells; break;
                 default: throw new NotImplementedException();
             }
 
@@ -195,7 +196,7 @@ namespace BoSSS.Foundation.Grid {
             if(base.MaskType == MaskType.Logical)
                 return gridData.iLogicalCells.NoOfLocalUpdatedCells;
             else if(base.MaskType == MaskType.Geometrical)
-                return gridData.iGeomCells.Count;
+                return gridData.iGeomCells.NoOfLocalUpdatedCells;
             else
                 throw new NotImplementedException();
         }
