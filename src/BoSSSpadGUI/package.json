@@ -11,12 +11,12 @@
     "package" : "node buildPackage.js"
   },
   "devDependencies": {
+    "electron": "^1.7.11",
     "webpack-cli": "^2.0.12",
     "electron-packager": "^12.1.1",
     "webpack": "^4.2.0"
   },
   "dependencies": {
-    "electron": "^1.7.11",
     "electron-edge-js": "^8.3.2",
     "css-loader": "^0.28.11",
     "markdown": "^0.5.0",
