@@ -8,7 +8,7 @@
     "build": "webpack",
     "start": "./node_modules/.bin/electron .",
     "debug": "./node_modules/.bin/electron . ",
-    "package": "electron-packager ./ --platform=win32 --arch=x64 --out=./InnoSetup/bin/"
+    "package": "./node_modules/.bin/electron-packager ./ --platform=win32 --arch=x64 --out=./InnoSetup/bin/"
   },
   "devDependencies": {
     "electron": "^1.7.11",
