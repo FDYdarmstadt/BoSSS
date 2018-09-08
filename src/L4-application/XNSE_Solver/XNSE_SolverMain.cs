@@ -69,6 +69,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.TestFixtureSetUp();
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.MovingDropletTest(2, 0.01d, true, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, 0.69711d, ViscosityMode.Standard, true, false);
             //Debug.Assert(false);
+            
 
 
             _Main(args, false, delegate () {
