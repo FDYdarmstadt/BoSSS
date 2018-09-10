@@ -1,15 +1,200 @@
+\BoSSSopen{ParameterStudy/ParameterStudy}
+\graphicspath{{ParameterStudy/ParameterStudy.texbatch}}
+
 \BoSSScmd{
-restart
+ /// This guide will give you an example of how to conduct a parameter study with all the necessary steps.  
+/// \section{Initialization of solver, processor and workflow}
+/// We start with initializing of the workflow
  }
 \BoSSSexeSilent
 \BoSSScmd{
-/// This is \LaTeX code!
-/// \[
-///   \int_\Omega x 
-/// \]
+WorkflowMgm.Init("Name of Workflow");
  }
-\BoSSSexe
+\BoSSSexeSilent
 \BoSSScmd{
-Console.WriteLine("C# & BoSSSpad code");
+/// This line helps us manage the sessions later on while evaluating the results.
  }
-\BoSSSexe
+\BoSSSexeSilent
+\BoSSScmd{
+/// Next, we determine the directory of the database.
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+var myDb = OpenOrCreateDatabase(@"Directory of database");
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// To check all the sessions in the current workflow, use the line:
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+WorkflowMgm.Sessions;
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// Now, all the necessary libraries need to be loaded
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+using System.Diagnostics;\newline 
+using BoSSS.Foundation.Grid.RefElements;\newline 
+using BoSSS.Application.IBM\_Solver;\newline 
+using BoSSS.Platform.LinAlg;
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// The last part of the initialization is to set up processors. Here, we have two choices - either we do the calculations locally (myBatch) or on the network cluster (myHPC). 
+/// In order to use the network cluster, create a folder "cluster" in "P" and then set the HPC-Directory to this path.
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+var myBatch = new MiniBatchProcessorClient(@"C\textbackslash tmp");\newline 
+var myHPC   = new MsHPC2012Client(@"Cluster Directory");
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// \section{Grid Generation}
+///Firstly, we need to determine the boundaries of our grid/control volume. Is it important to know that the number of nodes needed are equal to the number of cells $+1$. For instance, for $10$ cells we need $11$ nodes. In this example we will use the Carthesian2D grid from the database which requires x- and y-Nodes. The J term in the code is for doing a check if the desired resolution of the volume is correctly typed.
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+double[] xNodes = GenericBlas.Linspace(0, 1, Res + 1);\newline 
+double[] yNodes = GenericBlas.Linspace(0, 1, Res + 1);\newline 
+int J           = (xNodes.Length - 1)*(yNodes.Length - 1);\newline 
+string GridName = string.Format(WorkflowMgm.CurrentProject + "\_J" +J);\newline 
+ \newline 
+\btab Console.WriteLine("Creating grid with " + J + " cells. ");\newline 
+ \newline 
+\btab GridCommons g;\newline 
+\btab g      = Grid2D.Cartesian2DGrid(xNodes, yNodes);\newline 
+\btab g.Name = GridName;
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// \section{Define Edges}
+/// After loading the grid and giving the dimensions, we need to adjust the edges and their names. With the following code we assign every edge with number and name. Keep in mind that the name corresponds to the boundary condition (in this case "Pressure Dirichlet").
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+g.EdgeTagNames.Add(1, "wall");\newline 
+g.EdgeTagNames.Add(2, "Velocity\_Inlet");\newline 
+g.EdgeTagNames.Add(3, "Pressure\_Dirichlet\_back");\newline 
+g.EdgeTagNames.Add(4, "Pressure\_Dirichlet\_top");\newline 
+ \newline 
+g.DefineEdgeTags(delegate (double[] X) \{\newline 
+\btab byte ret = 0;\newline 
+\btab if (Math.Abs(X[1]-(0.0))<= 1.0e-8)\newline 
+\btab \btab ret = 1;\newline 
+\btab if (Math.Abs(X[0]-(0.0))<= 1.0e-8)\newline 
+\btab \btab ret = 2;\newline 
+\btab if (Math.Abs(X[1]-(1.0))<= 1.0e-8)\newline 
+\btab \btab ret = 3;\newline 
+\btab if (Math.Abs(X[0]-(1.0))<= 1.0e-8)\newline 
+\btab \btab ret = 4;\newline 
+\btab return ret;\newline 
+ \newline 
+ \});
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// \section{Angle/Velocity Profile}
+/// In this particular case we will use inflow profile represented via tan-function and the angle of inflow will be $30$ degrees.
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+string caseName = string.Format("k\{0\}\_\{1\}", k, grd);\newline 
+Console.WriteLine("setting up: " + caseName);\newline 
+ \newline 
+double beta    = 30;\newline 
+string CosBeta = Math.Cos(beta*Math.PI/180.0).ToString();\newline 
+string SinBeta = Math.Sin(beta*Math.PI/180.0).ToString();
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+///These code lines set up the case name and introduce the sine and cosine functions to our simulation. Next, we define the velocities in x- and y-direction via a tan-function. These velocities and angles are only for this particular example and would not be suited for your simulation.
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+var UX = new Formula (string.Format("X=> \{0\}*Math.Atan(X[1]*5)*2.0/Math.PI",CosBeta),false);\newline 
+var UY = new Formula (string.Format("X=> \{0\}*Math.Atan(X[1]*5)*2.0/Math.PI",SinBeta),false);
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+///After the velocities and boundary conditions are set. We need to determine all other simulation parameters needed to proceed. The variable "ctrl" helps to skip the whole name "IBM_Control()". All other parameters are selfexplanatory.
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+var ctrl = new IBM\_Control();\newline 
+controls.Add(ctrl);\newline 
+ \newline 
+ctrl.SessionName = caseName;\newline 
+ctrl.SetDatabase(myDb);\newline 
+ctrl.SetGrid(grd);\newline 
+ctrl.SetDGdegree(k);\newline 
+ctrl.NoOfMultigridLevels = int.MaxValue;
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// \section{Boundary conditions/Initial values}
+/// We move on to the part where we define the boundary conditions and initial values.
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+ctrl.AddBoundaryValue("wall");\newline 
+ctrl.AddBoundaryValue("Velocity\_Inlet");\newline 
+ctrl.AddBoundaryValue("Pressure\_Dirichlet\_back");\newline 
+ctrl.AddBoundaryValue("Pressure\_Dirichlet\_top");\newline 
+ctrl.BoundaryValues("Velocity\_Inlet"].Value.Add("VelocityX",UX);\newline 
+ctrl.BoundaryValues("Velocity\_Inlet"].Value.Add("VelocityY",UY);
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// and for the initial values
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+ctrl.InitialValues.Add("VelocityX", new Formula ("X=> 0.0" false));\newline 
+ctrl.InitialValues.Add("VelocityY", new Formula ("X=> 0.0" false));\newline 
+ctrl.InitialValues.Add("Pressure", new Formula ("X=> 0.0" false));\newline 
+ctrl.InitialValues.Add("Phi", new Formula ("X=> -1.0" false));
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// \section{Fluid properties}
+/// Here we set up the density and the Reynolds number, keep in mind that the calculations are dimensionles, so leave the values as seen above (100 is an example value)
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+double reynolds               = 100;\newline 
+ctrl.PhysicalParameters.rho\_A = 1;\newline 
+ctrl.PhysicalParameters.mu\_A  = 1.0/reynolds;
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// \section{Simulation options}
+/// We set the simulation parameters, such as time-step size, end time and number of time-steps.
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+ctrl.Timestepper\_Scheme = IBM\_Control.TimesteppingScheme.BDF2;\newline 
+double dt               = 7e-2;\newline 
+ctrl.dtMax              = dt;\newline 
+ctrl.dtMin              = dt;\newline 
+ctrl.Endtime            = 1e16;\newline 
+ctrl.NoOfTimesteps      = 100;
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// for the time-stepping scheme, you can choose either BDF2 or ImplicitEuler.
+/// \section{Starting of simulation}
+/// You have two possible ways to start a simulation - locally on the PC via myBatch or on the network cluster myHPC.
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+Console.WriteLine(" Submitting to Cluster: " + ctrl.SessionName);\newline 
+ctrl.RunBatch(myHPC,NumberOfMPIProcs:1);\newline 
+ \newline 
+Console.WriteLine(" Submitting " + ctrl.SessionName);\newline 
+ctrl.RunBatch(myBatch,NumberOfMPIProcs:1, UseComputerNodesExclusive:true);
+ }
+\BoSSSexeSilent
