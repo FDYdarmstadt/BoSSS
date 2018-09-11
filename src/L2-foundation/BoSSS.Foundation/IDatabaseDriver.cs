@@ -190,7 +190,7 @@ namespace BoSSS.Foundation.IO {
         /// <param name="g">grid data object (required if <paramref name="fields"/> is empty)</param>
         /// <returns>An object containing information about the time-step.</returns>
         TimestepInfo SaveTimestep(double physTime, TimestepNumber TimestepNo,
-            SessionInfo currentSession, Grid.Classic.GridData g, IEnumerable<DGField> fields);
+            SessionInfo currentSession, IGridData g, IEnumerable<DGField> fields);
 
         /// <summary>
         /// loads a single <see cref="TimestepInfo"/>-object from the database.
@@ -215,7 +215,7 @@ namespace BoSSS.Foundation.IO {
         /// <summary>
         /// Loads a time-step from the database into previously allocated DG-fields (<paramref name="PreAllocatedFields"/>).
         /// </summary>
-        void LoadFieldData(ITimestepInfo info, Grid.Classic.GridData grdDat, IEnumerable<DGField> PreAllocatedFields);
+        void LoadFieldData(ITimestepInfo info, IGridData grdDat, IEnumerable<DGField> PreAllocatedFields);
 
         /// <summary>
         /// Loads a time-step from the database.
@@ -223,7 +223,7 @@ namespace BoSSS.Foundation.IO {
         /// <remarks>
         /// By using this method, it is ensured that the loaded/returned fields have the same DG polynomial degree as in the database.
         /// </remarks>
-        IEnumerable<DGField> LoadFields(ITimestepInfo info, Grid.Classic.GridData grdDat, IEnumerable<string> NameFilter = null);
+        IEnumerable<DGField> LoadFields(ITimestepInfo info, IGridData grdDat, IEnumerable<string> NameFilter = null);
 
 
     }

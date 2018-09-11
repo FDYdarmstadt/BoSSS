@@ -101,8 +101,9 @@ namespace HilbertTest {
 
             int Jloc = solver.GridData.CellPartitioning.LocalLength;
             for (int j = 0; j < Jloc; j++) {
-                double xC = solver.GridData.Cells.CellCenter[j, 0];
-                double yC = solver.GridData.Cells.CellCenter[j, 1];
+                double[] XC = solver.GridData.iLogicalCells.GetCenter(j);
+                double xC = XC[0];
+                double yC = XC[1];
                 switch (solver.MPIRank) {
                     case 0:
                         result &= (xC > 0) && (xC < 0.5) && (yC > 0) && (yC < 0.5);
@@ -136,8 +137,9 @@ namespace HilbertTest {
 
             int Jloc = solver.GridData.CellPartitioning.LocalLength;
             for (int j = 0; j < Jloc; j++) {
-                double xC = solver.GridData.Cells.CellCenter[j, 0];
-                double yC = solver.GridData.Cells.CellCenter[j, 1];
+                double[] XC = solver.GridData.iLogicalCells.GetCenter(j);
+                double xC = XC[0];
+                double yC = XC[1];
                 switch (solver.MPIRank) {
                     case 0:
                         result &= (xC > 0) && (xC < 0.5) && (yC > 0) && (yC < 0.5);
@@ -169,8 +171,9 @@ namespace HilbertTest {
 
             int Jloc = solver.GridData.CellPartitioning.LocalLength;
             for (int j = 0; j < Jloc; j++) {
-                double xC = solver.GridData.Cells.CellCenter[j, 0];
-                double yC = solver.GridData.Cells.CellCenter[j, 1];
+                double[] XC = solver.GridData.iLogicalCells.GetCenter(j);
+                double xC = XC[0];
+                double yC = XC[1];
                 switch (solver.MPIRank) {
                     case 0:
                         result &= ((xC > 0) && (xC < 0.33) && (yC > 0) && (yC < 0.33)) ||
@@ -203,8 +206,9 @@ namespace HilbertTest {
 
             int Jloc = solver.GridData.CellPartitioning.LocalLength;
             for (int j = 0; j < Jloc; j++) {
-                double xC = solver.GridData.Cells.CellCenter[j, 0];
-                double yC = solver.GridData.Cells.CellCenter[j, 1];
+                double[] XC = solver.GridData.iLogicalCells.GetCenter(j);
+                double xC = XC[0];
+                double yC = XC[1];
                 switch (solver.MPIRank) {
                     case 0:
                         result &= (xC > 0) && (xC < 0.33) && (yC > 0) && (yC < 0.67);
@@ -237,15 +241,18 @@ namespace HilbertTest {
             List<DGField> listOfDGFields = (List<DGField>)solver.IOFields;
             DGField field = listOfDGFields[12];
             int D = field.GridDat.SpatialDimension;
+            int J = field.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
 
             //intention:Checking if BoundaryBox of LTSCluster==1 is as expected
             //Therefore Computing BoundaryBox of LTSCluster==1
             var BB = new BoSSS.Platform.Utils.Geom.BoundingBox(D);
-            for (int i = 0; i < field.GridDat.iLogicalCells.NoOfLocalUpdatedCells; i++) {
+            var CellBB = new BoSSS.Platform.Utils.Geom.BoundingBox(D);
+            for (int i = 0; i < J; i++) {
 
                 if (field.GetMeanValue(i) == 1) {
-                    Cell cj=solver.GridData.Cells.GetCell(i);
-                    BB.AddPoints(cj.TransformationParams);
+                    //Cell cj=solver.GridData.Cells.GetCell(i);
+                    solver.GridData.iLogicalCells.GetCellBoundingBox(i, CellBB);
+                    BB.AddBB(CellBB);
                 }
             }
             BB.Max = BB.Max.MPIMax();

@@ -312,7 +312,7 @@ namespace BoSSS.Foundation.SpecFEM {
                 throw new NotImplementedException();
             
             
-            int J = this.GridDat.Cells.NoOfCells;
+            int J = this.GridDat.Cells.Count;
             int N = this.NodesPerCell[0];
             int M = ModalBasis.Length;
 
@@ -348,7 +348,7 @@ namespace BoSSS.Foundation.SpecFEM {
             if(this.GridDat.Grid.RefElements.Length != 1)
                 throw new NotImplementedException();
             
-            int J = this.GridDat.Cells.NoOfCells;
+            int J = this.GridDat.Cells.Count;
             int N = this.NodesPerCell[0];
             int M = ModalBasis.Length;
 
@@ -382,7 +382,7 @@ namespace BoSSS.Foundation.SpecFEM {
             if(this.GridDat.Grid.RefElements.Length != 1)
                 throw new NotImplementedException();
 
-            int J = this.GridDat.Cells.NoOfCells;
+            int J = this.GridDat.Cells.Count;
             int N = this.NodesPerCell[0];
             int[] _K = this.NodesPerCell;
             var C2N = this.CellNode_To_Node;
@@ -426,7 +426,7 @@ namespace BoSSS.Foundation.SpecFEM {
         public MsrMatrix GetNullSpaceMatrix(out int[][] Cells2Rows) {
             int[,] C2N = this.CellNode_To_Node;
             int K = this.NodePartition.LocalLength;
-            int J = this.GridDat.Cells.NoOfCells;
+            int J = this.GridDat.Cells.Count;
             int N = this.NodesPerCell[0];
             Cells2Rows = J.ForLoop(j => new int[0]);
 
@@ -1527,7 +1527,7 @@ namespace BoSSS.Foundation.SpecFEM {
         public void ComputeMassMatrixChk() {
             var _polys = this.m_NodalBasis;
             int K = _polys.Length;
-            int J = GridDat.Cells.NoOfCells;
+            int J = GridDat.Cells.Count;
 
             MultidimensionalArray[] CellMass = new MultidimensionalArray[J];
             MsrMatrix MassChk = new MsrMatrix(NoOfLocalNodes, 1);

@@ -16,7 +16,7 @@ using BoSSS.Solution.Utils;
 namespace BoSSS.Application.CDG_ProjectionTest {
 
 
-    class CDGprojectionMain : BoSSS.Solution.Application{
+    class CDGprojectionMain : BoSSS.Solution.Application {
 
         static void Main(string[] args) {
             var AUT = new BoSSS.Application.CDG_ProjectionTest.AllUpTest();
@@ -123,12 +123,12 @@ namespace BoSSS.Application.CDG_ProjectionTest {
             cdgField = new ContinuousDGField(cdgBasis);
             result = new SinglePhaseField(cdgBasis, "result");
 
-           
+
 
         }
 
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
-           
+
         }
 
         public bool passed = false;
@@ -143,7 +143,7 @@ namespace BoSSS.Application.CDG_ProjectionTest {
             //origin.ProjectField((x, y) => Math.Sin(2 * Math.PI * (x / 3.0)));
 
 
-            CellMask msk2D = CellMask.GetCellMask(this.GridData, X => (X[0] > 0.0 && X[0] < 4.0 && X[1] > 0.0 && X[1] < 1.0));
+            CellMask msk2D = CellMask.GetCellMask((BoSSS.Foundation.Grid.Classic.GridData)(this.GridData), X => (X[0] > 0.0 && X[0] < 4.0 && X[1] > 0.0 && X[1] < 1.0));
             //|| (X[0] > 1.0 && X[0] < 3.0 && X[1] > 1.0 && X[1] < 2.0)
             //|| (X[0] > 2.0 && X[0] < 4.0 && X[1] > 2.0 && X[1] < 3.0)
             //|| (X[0] > 3.0 && X[0] < 4.0 && X[1] > 3.0 && X[1] < 4.0));
@@ -193,7 +193,7 @@ namespace BoSSS.Application.CDG_ProjectionTest {
             double L2err = 0.0; //err.L2Norm();
             double L2jump = JumpNorm(result, test);
 
-            Console.WriteLine("");          
+            Console.WriteLine("");
             //double L2jump_specFEM = JumpNorm(specFieldDG, test);             
             //Console.WriteLine("L2 error =  " + L2err);
             Console.WriteLine("L2 Norm of [[u]] = " + L2jump);
@@ -216,8 +216,7 @@ namespace BoSSS.Application.CDG_ProjectionTest {
         }
 
 
-        static double JumpNorm(DGField f, CellMask mask = null)
-        {
+        static double JumpNorm(DGField f, CellMask mask = null) {
             GridData grd = (GridData)f.GridDat;
             int D = grd.SpatialDimension;
             var e2cTrafo = grd.Edges.Edge2CellTrafos;
@@ -239,15 +238,13 @@ namespace BoSSS.Application.CDG_ProjectionTest {
                     NodeSet NS = QR.Nodes;
                     EvalResult.Clear();
                     int NoOfNodes = NS.NoOfNodes;
-                    for (int j = 0; j < Length; j++)
-                    {
+                    for (int j = 0; j < Length; j++) {
                         int iEdge = j + i0;
                         int jCell_IN = grd.Edges.CellIndices[iEdge, 0];
                         int jCell_OT = grd.Edges.CellIndices[iEdge, 1];
                         var uDiff = EvalResult.ExtractSubArrayShallow(new int[] { j, 0, 0 }, new int[] { j, NoOfNodes - 1, -1 });
 
-                        if (jCell_OT >= 0)
-                        {
+                        if (jCell_OT >= 0) {
 
                             int iTrafo_IN = grd.Edges.Edge2CellTrafoIndex[iEdge, 0];
                             int iTrafo_OT = grd.Edges.Edge2CellTrafoIndex[iEdge, 1];
@@ -265,9 +262,7 @@ namespace BoSSS.Application.CDG_ProjectionTest {
                             uDiff.Acc(-1.0, uOT);
 
                             //Console.WriteLine("Diff at edge {0} between cell {1} and cell {2}: {3}", iEdge, jCell_IN, jCell_OT, uDiff.L2Norm());
-                        }
-                        else
-                        {
+                        } else {
                             uDiff.Clear();
                         }
                     }

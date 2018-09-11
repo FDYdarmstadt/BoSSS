@@ -82,7 +82,7 @@ namespace BoSSS.Foundation.XDG {
             /// Update of <see cref="m_LenToNextChange"/>.
             /// </summary>
             public void Recalc_LenToNextchange() {
-                int JA = m_owner.GridDat.iLogicalCells.NoOfCells;
+                int JA = m_owner.GridDat.iLogicalCells.Count;
                 m_LenToNextChange = new int[JA];
                 m_LenToNextChange[JA - 1] = 1;
                 ushort regionCd = m_LevSetRegions[JA - 1];

@@ -82,18 +82,18 @@ namespace BoSSS.Foundation.Grid.Classic {
             /// See <see cref="GetEdges4RefElement(RefElement)"/>
             /// </summary>
             private EdgeMask[] m_Edges4RefElement;
-
-            /// <summary>
-            /// For each (edge) reference element, this method provides a
-            /// mask containing all cells which are mapped from the specific
-            /// reference element.
-            /// </summary>
-            /// <param name="iKrefIndex">
-            /// reference element index: <see cref="EdgeRefElements"/>;
-            /// </param>
-            public EdgeMask GetEdges4RefElement(int iKrefIndex) {
-                return this.GetEdges4RefElement(this.EdgeRefElements[iKrefIndex]);
-            }
+            
+            ///// <summary>
+            ///// For each (edge) reference element, this method provides a
+            ///// mask containing all cells which are mapped from the specific
+            ///// reference element.
+            ///// </summary>
+            ///// <param name="iKrefIndex">
+            ///// reference element index: <see cref="EdgeRefElements"/>;
+            ///// </param>
+            //public EdgeMask GetEdges4RefElement(int iKrefIndex) {
+            //    return this.GetEdges4RefElement(this.EdgeRefElements[iKrefIndex]);
+            //}
 
             /// <summary>
             /// For each (edge) reference element, this method provides a
@@ -123,7 +123,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             _mask[e] = true;
                     }
 
-                    m_Edges4RefElement[iKrefIndex] = new EdgeMask(m_owner, _mask);
+                    m_Edges4RefElement[iKrefIndex] = new EdgeMask(m_owner, _mask, MaskType.Geometrical);
                 }
 
                 return m_Edges4RefElement[iKrefIndex];
@@ -232,14 +232,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 return (Info[e] & EdgeInfo.EdgeIsAffineLinear) != 0;
             }
 
-            /// <summary>
-            /// true, if edge <paramref name="e"/> is a boundary-edge.
-            /// </summary>
-            public bool IsEdgeBoundaryEdge(int e) {
-                bool R = (Info[e] & EdgeInfo.Boundary) != 0;
-                Debug.Assert(R == false ^ this.CellIndices[e, 1] < 0);
-                return R;
-            }
+           
 
             /// <summary>
             /// returns the area (to be more exact: the (D-1) - dimensional
@@ -388,7 +381,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     int[][] CellNeighbours = m_owner.m_Cells.CellNeighbours;
                     var CellNeighbours_Global = m_owner.m_Cells.CellNeighbours_global_tmp;
 
-                    int Je = m_owner.Cells.NoOfCells;
+                    int Je = m_owner.Cells.Count;
                     int J = m_owner.Cells.NoOfLocalUpdatedCells;
                     int j0 = m_owner.CellPartitioning.i0;
                     long[] GlidxExternal = m_owner.Parallel.GlobalIndicesExternalCells;
@@ -569,7 +562,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             internal void DetermineEdgeTrafo() {
                 using (new FuncTrace()) {
 
-                    m_CellsToEdgesTmp = new List<int>[m_owner.Cells.NoOfCells];
+                    m_CellsToEdgesTmp = new List<int>[m_owner.Cells.Count];
 
 
                     // preparation: helper vars
@@ -2295,6 +2288,15 @@ namespace BoSSS.Foundation.Grid.Classic {
             public int[,] CellIndices {
                 get;
                 private set;
+            }
+
+            /// <summary>
+            /// Equal to <see cref="CellIndices"/>.
+            /// </summary>
+            public int[,] LogicalCellIndices {
+                get {
+                    return CellIndices;
+                }
             }
 
             /// <summary>

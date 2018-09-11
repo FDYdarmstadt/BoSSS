@@ -79,6 +79,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         static void Main(string[] args) {
             SetUp();
+            //Debugger.Launch();
             ParallelRisingDroplet();
             /*
             int MPIrank, MPIsize;
