@@ -8,7 +8,7 @@
     "build": "webpack",
     "start": "./node_modules/.bin/electron .",
     "debug": "./node_modules/.bin/electron . ",
-    "package" : "node buildPackage.js"
+    "package": "node buildPackage.js"
   },
   "devDependencies": {
     "electron": "^1.7.11",
