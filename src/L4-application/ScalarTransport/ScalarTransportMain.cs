@@ -34,6 +34,7 @@ using ilPSP.Utils;
 using BoSSS.Foundation.Grid.RefElements;
 using ilPSP;
 using BoSSS.Foundation.Caching;
+using BoSSS.Foundation.Grid.Aggregation;
 
 namespace BoSSS.Application.ScalarTransport {
 
@@ -47,36 +48,53 @@ namespace BoSSS.Application.ScalarTransport {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
-
-          
-
             BoSSS.Solution.Application._Main(args, true, delegate() {
                 return new ScalarTransportMain();
             });
         }
 
         /// <summary>
-        /// creates a simple 2d/3d Cartesian grid within the domain (-7,7)x(-7,7);
+        /// creates a simple 2d/3d Cartesian grid within the domain \f$ (-7,7)^D \f$
         /// </summary>
         protected override GridCommons CreateOrLoadGrid() {
-            //m_GridPartitioningType = GridPartType.none;
-            double[] xnodes = GenericBlas.Linspace(-7, 7, 101);
-            double[] ynodes = GenericBlas.Linspace(-7, 7, 101);
+            /*
+            double[] xnodes = GenericBlas.Linspace(-7, 7, 11);
+            double[] ynodes = GenericBlas.Linspace(-7, 7, 11);
             GridCommons grd = Grid2D.Cartesian2DGrid(xnodes, ynodes, type: CellType.Square_Linear);
+            this.Control.NoOfMultigridLevels = 3;
 
+            return grd;
+            //*/
             //double[] xnodes = GenericBlas.Linspace(-7, 7, 25);
             //double[] ynodes = GenericBlas.Linspace(-7, 7, 25);
             //double[] znodes = GenericBlas.Linspace(-7, 7, 25);
             //var grd = Grid3D.Cartesian3DGrid(xnodes, ynodes, znodes);
 
-            return grd;
+            
+            
+            double[] xNodes = GenericBlas.Linspace(-7, 7, 3);
+            double[] yNodes = GenericBlas.Linspace(-7, 7, 3);
+
+            var baseGrid = Grid2D.UnstructuredTriangleGrid(xNodes, yNodes);
+            var baseGdat = new GridData(baseGrid);
+            var aggGrid = CoarseningAlgorithms.Coarsen(baseGdat, 2);
+            base.AggGrid = aggGrid;
+                  
+
+            return null;
+            //*/
         }
 
 
         /// <summary>
         /// the scalar property that is convected
         /// </summary>
-        DGField u;
+        SinglePhaseField u;
+
+        /// <summary>
+        /// the result of operator evaluation
+        /// </summary>
+        SinglePhaseField OpValue;
 
         /// <summary>
         /// transport velocity
@@ -92,7 +110,8 @@ namespace BoSSS.Application.ScalarTransport {
         /// creates the field <see cref="u"/>;
         /// </summary>
         protected override void CreateFields() {
-            u = new SinglePhaseField(new Basis(this.GridData, 5), "u");
+            u = new SinglePhaseField(new Basis(this.GridData, 2), "u");
+            OpValue = new SinglePhaseField(new Basis(this.GridData, 2), "operator");
             mpi_rank = new SinglePhaseField(new Basis(this.GridData, 0), "MPI_rank");
             Velocity = new VectorField<SinglePhaseField>(this.GridData.SpatialDimension, new Basis(this.GridData, 2), "Velocity", SinglePhaseField.Factory);
 
@@ -136,7 +155,10 @@ namespace BoSSS.Application.ScalarTransport {
 
             Timestepper = new RungeKutta(RungeKuttaScheme.TVD3,
                                    diffOp,
-                                   new CoordinateMapping(u), Velocity.Mapping);
+                                   u.Mapping, Velocity.Mapping);
+
+            //Solution.Multigrid.AggregationGridBasis.CreateSequence(this.MultigridSequence, u.Mapping.BasisS);
+
 
             //Timestepper = new ROCK4(diffOp, u.CoordinateVector, Velocity.Mapping);
         }
@@ -169,14 +191,14 @@ namespace BoSSS.Application.ScalarTransport {
                  stw.Stop();
                  
                 double runTime = stw.Elapsed.TotalSeconds;
-                Console.WriteLine("{0}\t{2}\t{1}", bulkSize, runTime.ToStringDot("0.####E-00"),this.GridData.Cells.NoOfLocalUpdatedCells/bulkSize);
+                Console.WriteLine("{0}\t{2}\t{1}", bulkSize, runTime.ToStringDot("0.####E-00"),this.GridData.iGeomCells.Count/bulkSize);
             }
         }
 
 
         public void SimplifiedPerformance() {
-            int J = this.GridData.Cells.NoOfCells;
-            var NodeSet = this.GridData.Cells.RefElements[0].GetQuadratureRule(12).Nodes;
+            int J = this.GridData.iGeomCells.Count;
+            var NodeSet = this.GridData.iGeomCells.RefElements[0].GetQuadratureRule(12).Nodes;
 
             int[] ChunkSize = new[] { J / 2, J };
             if (J % 2 != 0)
@@ -254,11 +276,9 @@ namespace BoSSS.Application.ScalarTransport {
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             using (var ft = new FuncTrace()) {
                 //PerformanceVsCachesize();
-                SimplifiedPerformance();
-                base.TerminationKey = true;
-                return 0.0;
+                //SimplifiedPerformance();
 
-
+                
                 //u.ProjectField((_2D)((x, y) => x+y));
                 //var f = new SinglePhaseField(u.Basis, "f");
                 //var sgrd = new SubGrid(new CellMask(this.GridDat, Chunk.GetSingleElementChunk(200)));
@@ -269,7 +289,13 @@ namespace BoSSS.Application.ScalarTransport {
                 //base.TerminationKey = true;
 
 
-                double dtCFL = this.GridData.ComputeCFLTime(this.Velocity, 1.0e10);
+                double dtCFL;
+                if(this.GridData is GridData) {
+                    dtCFL = this.GridData.ComputeCFLTime(this.Velocity, 1.0e10);
+                } else {
+                    Console.WriteLine("Nix CFL");
+                    dtCFL = 1e-3;
+                }
                 if (dt <= 0) {
                     // if dt <= 0, we're free to set the timestep on our own
                     //base.NoOfTimesteps = -1;
@@ -287,8 +313,8 @@ namespace BoSSS.Application.ScalarTransport {
                 Timestepper.Perform(dt);
 
                 // set mpi_rank
+                int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
                 double rank = GridData.MpiRank;
-                int J = GridData.Cells.NoOfLocalUpdatedCells;
                 for (int j = 0; j < J; j++) {
                     mpi_rank.SetMeanValue(j, rank);
                 }
@@ -308,30 +334,28 @@ namespace BoSSS.Application.ScalarTransport {
         /// </summary>
         protected override void PlotCurrentState(double phystime, TimestepNumber timestepNo, int superSampling) {
             Tecplot plt1 = new Tecplot(GridData, true, false, (uint) superSampling);
-            plt1.PlotFields("transport." + timestepNo, phystime, u, mpi_rank);
+            plt1.PlotFields("transport." + timestepNo, phystime, u, mpi_rank, OpValue);
         }
 
         /// <summary>
         /// sets some initial value for field <see cref="u"/>;
         /// </summary>
         protected override void SetInitial() {
-
-            switch (GridData.SpatialDimension) {
+           switch (GridData.SpatialDimension) {
                 case 2:
 
                 
                 
                 u.ProjectField((_2D)(delegate(double x, double y) {
-                    
-                    double r = Math.Sqrt(x*x + y*y);
 
-
-                    return Math.Exp(-r * r);
+                    //double r = Math.Sqrt(x*x + y*y);
+                    //return Math.Exp(-r * r);
+                    return x;
                 }));
                                
 
                 Velocity[0].ProjectField((_2D)((x, y) => 1.0));
-                Velocity[1].ProjectField((_2D)((x, y) => 0.1));
+                Velocity[1].ProjectField((_2D)((x, y) => 0.0));
 
                 break;
 
@@ -352,7 +376,7 @@ namespace BoSSS.Application.ScalarTransport {
 
 
             double rank = GridData.MpiRank;
-            int J = GridData.Cells.NoOfLocalUpdatedCells;
+            int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             for (int j = 0; j < J; j++) {
                 mpi_rank.SetMeanValue(j, rank);
             }

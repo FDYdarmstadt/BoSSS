@@ -129,7 +129,7 @@ namespace BoSSS.Foundation.XDG {
             Frame2Full_Lookup = new int[L];
             Frame2Full_Lookup.SetAll(int.MinValue);
             int Jup = FrameMap.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
-            int Jtot = FrameMap.GridDat.iLogicalCells.NoOfCells;
+            int Jtot = FrameMap.GridDat.iLogicalCells.Count;
             int G = BasisS.Length;
             for (int j = 0; j < Jup; j++) { // loop over all cells ...
                 int NoOfSpc = m_Regions.GetNoOfSpecies(j);

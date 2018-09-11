@@ -64,9 +64,9 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.GlobalMarcher {
             fMSolver = FMSolver;
             phi = Phi;
             gridDat = GridDat;
-            inUseMask = new BitArray(GridDat.Cells.NoOfCells);
+            inUseMask = new BitArray(GridDat.Cells.Count);
             reinitField = ReinitField.GetBitMask();
-            queueIDList = new int[GridDat.Cells.NoOfCells];
+            queueIDList = new int[GridDat.Cells.Count];
         }
 
         //Create an array of Cells from the Accepted CellMask. 

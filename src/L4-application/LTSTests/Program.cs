@@ -27,6 +27,7 @@ using ilPSP.Utils;
 using BoSSS.Foundation.Grid.RefElements;
 using System.Diagnostics;
 using System.Collections.Generic;
+using BoSSS.Foundation.Grid;
 
 namespace LTSTests {
     /// <summary>
@@ -90,7 +91,7 @@ namespace LTSTests {
 
         private class SurrogateConstraint : TimeStepConstraint {
 
-            public SurrogateConstraint(GridData gridData, double dtMin, double dtMax, double dtFraction, double EndTime) :
+            public SurrogateConstraint(IGridData gridData, double dtMin, double dtMax, double dtFraction, double EndTime) :
                 base(gridData, dtMin, dtMax, dtFraction, EndTime) {
             }
 

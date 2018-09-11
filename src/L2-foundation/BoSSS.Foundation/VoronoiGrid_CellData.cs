@@ -60,7 +60,7 @@ namespace BoSSS.Foundation.Grid.Voronoi {
                 internal set;
             }
 
-            public int NoOfCells {
+            public int Count {
                 get {
                     return NoOfExternalCells + NoOfLocalUpdatedCells;
                 }
@@ -168,6 +168,8 @@ namespace BoSSS.Foundation.Grid.Voronoi {
                 }
             }
 
+            public int[] GeomCell2LogicalCell => throw new NotImplementedException();
+
 
             /// <summary>
             /// Computes the bounding box of cell <paramref name="j"/>
@@ -220,6 +222,14 @@ namespace BoSSS.Foundation.Grid.Voronoi {
             }
 
             public CellMask GetCells4Refelement(RefElement Kref) {
+                throw new NotImplementedException();
+            }
+
+            public int GetInterpolationDegree(int jCell) {
+                throw new NotImplementedException();
+            }
+
+            public double[] GetCenter(int jCell) {
                 throw new NotImplementedException();
             }
         }

@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using CNS.Boundary;
 using CNS.Convection;
@@ -61,7 +62,7 @@ namespace CNS.EquationSystem {
         /// <param name="gridData"></param>
         /// <param name="control"></param>
         /// <returns></returns>
-        public static CNSFieldSet CreateWorkingSet(this DomainTypes domainType, GridData gridData, CNSControl control) {
+        public static CNSFieldSet CreateWorkingSet(this DomainTypes domainType, IGridData gridData, CNSControl control) {
             switch (domainType) {
                 case DomainTypes.Standard:
                     return new CNSFieldSet(gridData, control);
@@ -95,7 +96,7 @@ namespace CNS.EquationSystem {
         /// <returns>
         /// A species map that is suitable for the current application.
         /// </returns>
-        public static ISpeciesMap CreateSpeciesMap(this DomainTypes domainType, CNSFieldSet workingSet, CNSControl control, GridData gridData) {
+        public static ISpeciesMap CreateSpeciesMap(this DomainTypes domainType, CNSFieldSet workingSet, CNSControl control, IGridData gridData) {
             Material material = new Material(control);
 
             switch (domainType) {
@@ -134,7 +135,7 @@ namespace CNS.EquationSystem {
         /// <see cref="CNSControl.DiffusiveFluxType"/>.
         /// </returns>
         public static OperatorFactory GetOperatorFactory(
-            this DomainTypes formulation, CNSControl control, GridData gridData, IBoundaryConditionMap boundaryMap, CNSFieldSet workingSet, ISpeciesMap speciesMap) {
+            this DomainTypes formulation, CNSControl control, IGridData gridData, IBoundaryConditionMap boundaryMap, CNSFieldSet workingSet, ISpeciesMap speciesMap) {
             switch (formulation) {
                 case DomainTypes.Standard:
                     return new OperatorFactory(

@@ -66,6 +66,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             public IEnumerable<IChunkRulePair<QuadRule>> GetQuadRuleSet(ExecutionMask mask, int RequestedOrder) {
                 if (!(mask is CellMask))
                     throw new ArgumentException("Expecting a cell mask.");
+                if (mask.MaskType != MaskType.Geometrical)
+                    throw new ArgumentException("Expecting a geometrical mask.");
 
 
                 int InternalSurfaceOrder = m_Owner.OrderToInternalOrder(RequestedOrder);
@@ -213,7 +215,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
             int iKref = lsData.GridDat.Grid.RefElements.IndexOf(RefElement);
             this.MaxGrid = lsData.GridDat.Cells.GetCells4Refelement(iKref).Intersect(
-                this.LevelSetData.Region.GetCutCellMask4LevSet(this.LevelSetIndex));
+                this.LevelSetData.Region.GetCutCellMask4LevSet(this.LevelSetIndex).ToGeometicalMask());
         }
 
         LevelSetTracker.LevelSetData LevelSetData;

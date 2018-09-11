@@ -1374,7 +1374,7 @@ namespace BoSSS.Foundation.XDG {
 #if DEBUG
                 var grdDat = RowFrame.FullMap.BasisS.First().GridDat;
                 int J = grdDat.iLogicalCells.NoOfLocalUpdatedCells;
-                int JE = grdDat.iLogicalCells.NoOfCells;
+                int JE = grdDat.iLogicalCells.Count;
                 var spc = RowFrame.Species;
                 Debug.Assert(RowFrame.Species.Equals(ColFrame.Species));
                 var lsTrk = m_LsTrk_regions;

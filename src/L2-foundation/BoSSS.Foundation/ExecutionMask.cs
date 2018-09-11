@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using ilPSP.Utils;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -117,6 +118,27 @@ namespace BoSSS.Foundation.Grid {
     }
 
     /// <summary>
+    /// For an execution mask (<see cref="ExecutionMask"/>, <see cref="CellMask"/>, <see cref="EdgeMask"/>),
+    /// whether it refers to logical entities (e.g. aggregation cells) or 
+    /// geometrical entities (i.e. the parts of an aggregate cell).
+    /// </summary>
+    public enum MaskType {
+
+        /// <summary>
+        /// Execution mask is defined on logical cells resp. edges
+        /// (<see cref="Grid.IGridData.iLogicalCells"/> resp. <see cref="Grid.IGridData.iLogicalEdges"/>).
+        /// </summary>
+        Logical = 0,
+
+        /// <summary>
+        /// Execution mask is defined on geometrical cells resp. edges
+        /// (<see cref="Grid.IGridData.iGeomCells"/> resp. <see cref="Grid.IGridData.iGeomEdges"/>).
+        /// </summary>
+        Geometrical = -1
+    }
+
+
+    /// <summary>
     /// The grid mask is one core part of the subgrid framework;
     /// The <see cref="SubGrid"/>-object uses
     /// cell masks (see <see cref="CellMask"/>)
@@ -126,6 +148,15 @@ namespace BoSSS.Foundation.Grid {
     /// </summary>
     [DebuggerDisplay("{GetSummary()}")]
     public abstract class ExecutionMask : IEnumerable<Chunk> {
+
+        /// <summary>
+        /// Whether this mask refers to logical entities (e.g. aggregation cells) or 
+        /// geometrical entities (i.e. the parts of an aggregate cell).
+        /// </summary>
+        public MaskType MaskType {
+            get;
+            private set;
+        }
 
         /// <summary>
         /// Main storage entity of this class. Encoding: 
@@ -142,7 +173,7 @@ namespace BoSSS.Foundation.Grid {
         ///  </item>
         /// </list>
         /// </summary>
-        private int[] Sequence;
+        protected int[] Sequence;
 
         /// <summary>
         /// Cache for the bit mask corresponding to the mask defined by the
@@ -180,15 +211,19 @@ namespace BoSSS.Foundation.Grid {
         /// <param name="grddat">
         /// the grid that this mask will be associated with;
         /// </param>
-        protected ExecutionMask(IGridData grddat, BitArray Mask) {
+        /// <param name="__MaskType">
+        /// <see cref="ExecutionMask.MaskType"/>
+        /// </param>
+        protected ExecutionMask(IGridData grddat, BitArray Mask, MaskType __MaskType) {
             if (grddat == null)
                 throw new ArgumentNullException();
 
             List<int> _Sequence = new List<int>();
             //            m_qtype = type;
             m_GridData = grddat;
+            this.MaskType = __MaskType;
 
-            int Lmax = GetTotalNumberOfElements(this.m_GridData);
+            int Lmax = GetUpperIndexBound(this.m_GridData);
             if (Mask.Count > Lmax)
                 throw new ArgumentException("length of mask must be smaller or equal to number of cells/edges;", "Mask");
 
@@ -248,10 +283,14 @@ namespace BoSSS.Foundation.Grid {
         /// <param name="grddat">
         /// the grid that this mask will be associated with;
         /// </param>
-        protected ExecutionMask(IGridData grddat, int[] _Sequence) {
+        /// <param name="__MaskType">
+        /// <see cref="ExecutionMask.MaskType"/>
+        /// </param>
+        protected ExecutionMask(IGridData grddat, int[] _Sequence, MaskType __MaskType) {
             if (grddat == null)
                 throw new ArgumentNullException();
             this.m_GridData = grddat;
+            this.MaskType = __MaskType;
             Sequence = _Sequence;
             CompIMax();
         }
@@ -265,8 +304,11 @@ namespace BoSSS.Foundation.Grid {
         /// <param name="grddat">
         /// the grid that this mask will be associated with;
         /// </param>
-        protected ExecutionMask(IGridData grddat, IEnumerable<int> Indices)
-            : this(grddat, FromIndEnum(Indices)) {
+        /// <param name="__MaskType">
+        /// <see cref="ExecutionMask.MaskType"/>
+        /// </param>
+        protected ExecutionMask(IGridData grddat, IEnumerable<int> Indices, MaskType __MaskType)
+            : this(grddat, FromIndEnum(Indices), __MaskType) {
         }
 
         /// <summary>
@@ -277,7 +319,7 @@ namespace BoSSS.Foundation.Grid {
         /// </remarks>
         public BitArray GetBitMask() {
             if (m_BitMask == null) {
-                int I = GetTotalNumberOfElements(m_GridData);
+                int I = GetUpperIndexBound(m_GridData);
                 m_BitMask = new BitArray(I, false);
                 foreach (Chunk c in this) {
                     for (int i = 0; i < c.Len; i++) {
@@ -285,9 +327,9 @@ namespace BoSSS.Foundation.Grid {
                     }
                 }
             } else {
-                Debug.Assert(m_BitMask.Length == GetTotalNumberOfElements(m_GridData));
+                Debug.Assert(m_BitMask.Length == GetUpperIndexBound(m_GridData));
             }
-            Debug.Assert(m_BitMask.Length == GetTotalNumberOfElements(m_GridData));
+            Debug.Assert(m_BitMask.Length == GetUpperIndexBound(m_GridData));
             return m_BitMask;
         }
 
@@ -304,21 +346,22 @@ namespace BoSSS.Foundation.Grid {
         /// \f$ \mathrm{this} \cap \mathrm{otherMask}\f$ 
         /// </returns>
         public T Intersect<T>(T otherMask) where T : ExecutionMask {
-            if (this.GetType() != otherMask.GetType()) {
+            if (this.GetType() != otherMask.GetType())
                 throw new ArgumentException("Illegal mix of quadrature types: " + this.GetType().Name + " and " + otherMask.GetType().Name, "otherMask");
-            }
             if (!Object.ReferenceEquals(this.m_GridData, otherMask.m_GridData))
                 throw new ArgumentException("execution mask are associated with different grids.", "otherMask");
+            if(this.MaskType != otherMask.MaskType)
+                throw new ArgumentException("cannot mix geometrical and logical masks");
 
             BitArray array = GetBitMask();
             BitArray otherArray = otherMask.GetBitMask();
-            return (T)CreateInstance(m_GridData, ((BitArray)array.Clone()).And(otherArray));
+            return (T)CreateInstance(((BitArray)array.Clone()).And(otherArray), this.MaskType);
         }
 
         /// <summary>
         /// similar to constructor
         /// </summary>
-        abstract protected ExecutionMask CreateInstance(IGridData grdDat, BitArray mask);
+        abstract protected ExecutionMask CreateInstance(BitArray mask, MaskType __MaskType);
 
 
         /// <summary>
@@ -333,15 +376,16 @@ namespace BoSSS.Foundation.Grid {
         /// \f$ \mathrm{this} \setminus \mathrm{otherMask}\f$ 
         /// </returns>
         public T Except<T>(T otherMask) where T : ExecutionMask {
-            if (this.GetType() != otherMask.GetType()) {
+            if (this.GetType() != otherMask.GetType()) 
                 throw new ArgumentException("Illegal mix of quadrature types: " + this.GetType().Name + " and " + otherMask.GetType().Name, "otherMask");
-            }
             if (!object.ReferenceEquals(otherMask.m_GridData, this.m_GridData))
                 throw new ArgumentException("masks cannot be assigned to different grids.");
+            if(this.MaskType != otherMask.MaskType)
+                throw new ArgumentException("cannot mix geometrical and logical masks");
 
             BitArray array = GetBitMask();
             BitArray otherArray = otherMask.GetBitMask();
-            return (T)CreateInstance(m_GridData, ((BitArray)array.Clone()).And(((BitArray)otherArray.Clone()).Not()));
+            return (T)CreateInstance(((BitArray)array.Clone()).And(((BitArray)otherArray.Clone()).Not()), this.MaskType);
         }
 
         /// <summary>
@@ -358,12 +402,14 @@ namespace BoSSS.Foundation.Grid {
                 throw new ArgumentException("Unable to operate on different types of Illegal mix of quadrature types: " + maskA.GetType().Name + " and " + maskB.GetType().Name);
             if (!object.ReferenceEquals(maskA.m_GridData, maskB.m_GridData))
                 throw new ArgumentException("masks cannot be assigned to different grids.");
+            if(maskA.MaskType != maskB.MaskType)
+                throw new ArgumentException("cannot mix geometrical and logical masks");
 
             BitArray a = maskA.GetBitMask();
             BitArray b = maskB.GetBitMask();
 
 
-            return (T)maskA.CreateInstance(maskA.m_GridData, ((BitArray)a.Clone()).Or(b));
+            return (T)maskA.CreateInstance(((BitArray)a.Clone()).Or(b), maskA.MaskType);
         }
 
         /// <summary>
@@ -380,11 +426,13 @@ namespace BoSSS.Foundation.Grid {
                 throw new ArgumentException("Unable to operate on different types of Illegal mix of quadrature types: " + maskA.GetType().Name + " and " + maskB.GetType().Name);
             if (!object.ReferenceEquals(maskA.m_GridData, maskB.m_GridData))
                 throw new ArgumentException("masks cannot be assigned to different grids.");
+            if(maskA.MaskType != maskB.MaskType)
+                throw new ArgumentException("cannot mix geometrical and logical masks");
 
             BitArray a = maskA.GetBitMask();
             BitArray b = maskB.GetBitMask();
 
-            return (T)maskA.CreateInstance(maskA.m_GridData, ((BitArray)a.Clone()).And(b));
+            return (T)maskA.CreateInstance(((BitArray)a.Clone()).And(b), maskA.MaskType);
         }
 
         /// <summary>
@@ -400,15 +448,17 @@ namespace BoSSS.Foundation.Grid {
         /// \f$ \mathrm{this} \cup \mathrm{otherMask}\f$ 
         /// </returns>
         public T Union<T>(T otherMask) where T : ExecutionMask {
-            if (this.GetType() != otherMask.GetType()) {
+            if (this.GetType() != otherMask.GetType()) 
                 throw new ArgumentException("Illegal mix of quadrature types: " + this.GetType().Name + " and " + otherMask.GetType().Name, "otherMask");
-            }
             if (!Object.ReferenceEquals(this.m_GridData, otherMask.m_GridData))
                 throw new ArgumentException("execution mask are associated with different grids.", "otherMask");
+            if(this.MaskType != otherMask.MaskType)
+                throw new ArgumentException("cannot mix geometrical and logical masks");
+
 
             BitArray array = GetBitMask();
             BitArray otherArray = otherMask.GetBitMask();
-            return (T)CreateInstance(m_GridData, ((BitArray)array.Clone()).Or(otherArray));
+            return (T)CreateInstance(((BitArray)array.Clone()).Or(otherArray), this.MaskType);
         }
 
         /// <summary>
@@ -420,7 +470,6 @@ namespace BoSSS.Foundation.Grid {
                 return m_IMax;
             }
         }
-
 
         int m_NoOfItems = -1;
 
@@ -438,23 +487,6 @@ namespace BoSSS.Foundation.Grid {
                 return m_NoOfItems;
             }
         }
-
-        ///// <summary>
-        ///// number of mask items (cells or edges), over all MPI processes
-        ///// </summary>
-        //public int NoOfItemsGlobally {
-        //    get {
-        //        int loc = NoOfItemsLocally;
-        //        ilPSP.MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
-        //        unsafe {
-        //            int glob = int.MinValue;
-        //            csMPI.Raw.Allreduce(((IntPtr)(&loc)), ((IntPtr)(&glob)), 1, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.SUM, csMPI.Raw._COMM.WORLD);
-        //            return glob;
-        //        }
-        //    }
-        //}
-
-
 
         /// <summary>
         /// Compares two masks according to the masked
@@ -514,7 +546,7 @@ namespace BoSSS.Foundation.Grid {
             }
             m_IMax--;
 
-            if (m_IMax >= this.GetTotalNumberOfElements(this.m_GridData))
+            if (m_IMax >= this.GetUpperIndexBound(this.m_GridData))
                 throw new ArgumentException("Provided data exceeds range of local number of elements.");
         }
 
@@ -616,10 +648,10 @@ namespace BoSSS.Foundation.Grid {
         /// Complement of this execution mask (all elements that are not in this mask);
         /// </summary>
         public T Complement<T>() where T : ExecutionMask {
-            int I = GetTotalNumberOfElements(this.m_GridData);
+            int I = GetUpperIndexBound(this.m_GridData);
 
             BitArray ba = ((BitArray)this.GetBitMask().Clone()).Not();
-            return (T)CreateInstance(m_GridData, ba);
+            return (T)CreateInstance(ba, this.MaskType);
         }
 
         /// <summary>
@@ -668,10 +700,11 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
-        /// Retrieves the total number of elements in
-        /// <paramref name="gridData"/> which is either
-        /// <see cref="BoSSS.Foundation.Grid.GridData.EdgeData.Count"/> or
-        /// <see cref="BoSSS.Foundation.Grid.GridData.CellData.NoOfLocalUpdatedCells"/>.
+        /// Retrieves the upper limit of the index range, depending on the type of mask:
+        /// - <see cref="ILogicalCellData.NoOfLocalUpdatedCells"/>, for logical cell mask (<see cref="CellMask"/>, <see cref="MaskType.Logical"/>)
+        /// - <see cref="IGeometricalCellsData.Count"/>, for geometrical cell mask (<see cref="CellMask"/>, <see cref="MaskType.Geometrical"/>)
+        /// - <see cref="ILogicalEdgeData.Count"/>, for logical edge mask (<see cref="EdgeMask"/>, <see cref="MaskType.Logical"/>)
+        /// - <see cref="IGeometricalEdgeData.Count"/>, for geometrical edge mask (<see cref="EdgeMask"/>, <see cref="MaskType.Geometrical"/>)
         /// </summary>
         /// <param name="gridData">
         /// The grid data object referring to the grid elements that should be
@@ -679,7 +712,7 @@ namespace BoSSS.Foundation.Grid {
         /// </param>
         /// <returns>
         /// </returns>
-        protected abstract int GetTotalNumberOfElements(IGridData gridData);
+        protected abstract int GetUpperIndexBound(IGridData gridData);
 
         /// <summary>
         /// used by <see cref="ToTxtFile"/>
@@ -962,6 +995,22 @@ namespace BoSSS.Foundation.Grid {
             IEnumerator IEnumerable.GetEnumerator() {
                 return this.GetEnumerator();
             }
+        }
+
+        /// <summary>
+        /// Returns an array which maps indices of cells or edges to indices into this masks items.
+        /// </summary>
+        /// <returns></returns>
+        public int[] GetIndex2MaskItemMap() {
+            int J = this.GetUpperIndexBound(this.GridData);
+            var localCellIndex2SubgridIndex = new int[J];
+                ArrayTools.SetAll(localCellIndex2SubgridIndex, int.MinValue);
+                int cnt = 0;
+                foreach(int jCell in this.ItemEnum) {
+                    localCellIndex2SubgridIndex[jCell] = cnt;
+                    cnt++;
+                }
+            return localCellIndex2SubgridIndex;
         }
 
     }

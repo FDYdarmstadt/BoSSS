@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Foundation;
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using CNS.Boundary;
 using CNS.Convection;
@@ -46,7 +47,7 @@ namespace CNS.EquationSystem {
         /// <summary>
         /// Information about the grid
         /// </summary>
-        protected readonly GridData gridData;
+        protected readonly IGridData gridData;
 
         /// <summary>
         /// The DG fields
@@ -90,7 +91,7 @@ namespace CNS.EquationSystem {
         /// </remarks>
         public OperatorFactory(
             CNSControl control,
-            GridData gridData,
+            IGridData gridData,
             CNSFieldSet workingSet,
             ISpeciesMap speciesMap,
             IBoundaryConditionMap boundaryMap) {
