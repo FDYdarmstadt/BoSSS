@@ -339,23 +339,27 @@ namespace BoSSS.Foundation.XDG.Quadrature
         LinkedList<TreeNode<T>> children = new LinkedList<TreeNode<T>>();
         TreeNode<T> parent;
         T value;
+        public int level { get; }
 
         public TreeNode()
         {
             value = default(T);
             parent = null;
+            level = 0;
         }
 
         public TreeNode(T Value)
         {
             value = Value;
             parent = null;
+            level = 0;
         }
 
         public TreeNode(T Value, TreeNode<T> Parent)
         {
             value = Value;
             parent = Parent;
+            level = parent.level + 1;
         }
 
         public TreeNode<T> AddSibling(T Sibling)

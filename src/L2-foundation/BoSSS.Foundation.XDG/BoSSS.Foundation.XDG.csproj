@@ -81,7 +81,9 @@
     <Compile Include="MultiphaseAgglomerator.cs" />
     <Compile Include="Quadrature\NestedVertexSet.cs" />
     <Compile Include="Quadrature\SayeGaussRule_Algorithm.cs" />
+    <Compile Include="Quadrature\SayeGaussRule_ComboAlgorithm.cs" />
     <Compile Include="Quadrature\SayeGaussRule_Cube.cs" />
+    <Compile Include="Quadrature\SayeGaussRule_Factories.cs" />
     <Compile Include="Quadrature\SayeGaussRule_Helper.cs" />
     <Compile Include="Quadrature\SayeGaussRule_Square.cs" />
     <Compile Include="Quadrature\SurfaceStokes_2D.cs" />
