@@ -33,5 +33,5 @@ xcopy ..\doc\handbook\ControlExamples\CNS\* .\doc\ControlExamples\CNS /Y
 xcopy ..\doc\notes\0030-BoSSSPad_Command_Overview\BoSSSPad_Command_Overview.pdf .\doc\ /Y
 xcopy ..\doc\handbook\BoSSShandbook.pdf .\doc\ /Y
 xcopy ..\doc\doxygen\html\* .\doc\APIreference /E /Q
-xcopy ..\src\BoSSSpadGUI\InnoSetup\bin\* .\bin /e
+xcopy ..\src\BoSSSpadGUI\InnoSetup\bin\* .\bin /e /Q
 ISCC.exe BoSSS-setup.iss
