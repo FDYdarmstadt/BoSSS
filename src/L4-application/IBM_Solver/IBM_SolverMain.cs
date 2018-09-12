@@ -1272,7 +1272,7 @@ namespace BoSSS.Application.IBM_Solver {
                 // Check grid changes
                 // ==================
 
-                //CellMask CutCells = LsTrk.Regions.GetCutCellMask();
+                CellMask CutCells = LsTrk.Regions.GetCutCellMask();
                 //CellMask CutCellNeighbors = LsTrk.Regions.GetNearFieldMask(1);
                 //var CutCellArray = CutCells.ItemEnum.ToArray();
                 //var CutCellNeighborsArray = CutCellNeighbors.ItemEnum.ToArray();
