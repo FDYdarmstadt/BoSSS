@@ -85,7 +85,7 @@ namespace CNS.IBM {
 
             // Does _not_ include agglomerated edges
             EdgeMask nonVoidEdges = speciesMap.QuadSchemeHelper.GetEdgeMask(species);
-            nonVoidEdges = nonVoidEdges.Intersect(ABSubGrid.AllEdgesMask);
+            nonVoidEdges = nonVoidEdges.Intersect(ABSubGrid.AllEdgesMask.ToGeometicalMask());
             EdgeQuadratureScheme edgeScheme = speciesMap.QuadSchemeHelper.GetEdgeQuadScheme(
                 species, true, nonVoidEdges, control.LevelSetQuadratureOrder);
 

@@ -58,6 +58,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="AggregationGrid.cs" />
+    <Compile Include="AggregationGrid_BasisData.cs" />
     <Compile Include="AggregationGrid_CellData.cs" />
     <Compile Include="AggregationGrid_EdgeData.cs" />
     <Compile Include="AggregationGrid_Parallelization.cs" />
@@ -83,6 +84,7 @@
     <Compile Include="FileManager.cs" />
     <Compile Include="GridCommons_Merge.cs" />
     <Compile Include="GridCorrelation.cs" />
+    <Compile Include="GridData_BasisData.cs" />
     <Compile Include="GridData_Refine.cs" />
     <Compile Include="GridProxy.cs" />
     <Compile Include="IEvaluator.cs" />
@@ -140,7 +142,7 @@
     <Compile Include="GridCommons.cs" />
     <Compile Include="GridCommons_IO.cs" />
     <Compile Include="GridData_CellData.cs" />
-    <Compile Include="GridData_BasisData.cs" />
+    <Compile Include="BasisData.cs" />
     <Compile Include="GridData_EdgeData.cs" />
     <Compile Include="GridData_Parallelization.cs" />
     <Compile Include="GridData_Vertice.cs" />

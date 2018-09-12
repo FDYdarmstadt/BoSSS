@@ -99,8 +99,10 @@ namespace BoSSS.Foundation.Grid {
         /// </summary>
         int SpatialDimension { get; }
 
-
-        Grid.Classic.GridData.BasisData ChefBasis {
+        /// <summary>
+        /// Evaluation of the DG basis on the grid
+        /// </summary>
+        Grid.BasisData ChefBasis {
             get;
         }
 
@@ -111,9 +113,12 @@ namespace BoSSS.Foundation.Grid {
             get;
         }
 
-        
-            
-        
+        /// <summary>
+        /// The global ID for each cell
+        /// </summary>
+        Comm.Permutation CurrentGlobalIdPermutation {
+            get;
+        }
 
         /// <summary>
         /// transforms vertices from the local coordinate system of cells <paramref name="jCell"/>
@@ -323,11 +328,19 @@ namespace BoSSS.Foundation.Grid {
     public interface IGeometricalCellsData {
 
         /// <summary>
-        /// Number of geometrical cells.
+        /// Number of geometrical cells (including external)
         /// </summary>
-        int NoOfCells {
+        int Count {
             get;
         }
+
+        /// <summary>
+        /// Number of locally updated cells - the cells which are computed on this processor (in contrast, external/ghost cells from other MPI processors).
+        /// </summary>
+        int NoOfLocalUpdatedCells {
+            get;
+        }
+
 
         /// <summary>
         /// Cell type for cell <paramref name="jCell"/>.
@@ -480,8 +493,30 @@ namespace BoSSS.Foundation.Grid {
         MultidimensionalArray h_max {
             get;
         }
+        
+        /// <summary>
+        /// Cell-Mask of all geometric cells which share the same reference element.
+        /// </summary>
+        CellMask GetCells4Refelement(RefElement Kref);
 
-    
+        /// <summary>
+        /// Mapping form geometrical to logical cells
+        /// </summary>
+        int[] GeomCell2LogicalCell {
+            get;
+        }
+
+        /// <summary>
+        /// polynomial interpolation degree of the Reference-to-Global coordinate transformation.
+        /// </summary>
+        /// <param name="jCell"></param>
+        /// <returns></returns>
+        int GetInterpolationDegree(int jCell);
+
+        /// <summary>
+        /// Center-of-gravity for the cell
+        /// </summary>
+        double[] GetCenter(int jCell);
     }
 
     public interface ILogicalCellData {
@@ -520,7 +555,7 @@ namespace BoSSS.Foundation.Grid {
         /// <summary>
         /// <see cref="NoOfExternalCells"/> plus <see cref="NoOfLocalUpdatedCells"/>;
         /// </summary>
-        int NoOfCells {
+        int Count {
             get;
         }
 
@@ -581,12 +616,19 @@ namespace BoSSS.Foundation.Grid {
         /// </param>
         void GetCellBoundingBox(int j, BoundingBox bb);
 
+        
         /// <summary>
-        /// Cell-Mask of all cells which share the same reference element.
+        /// polynomial interpolation degree of the Reference-to-Global coordinate transformation (maximum over all geometrical parts).
         /// </summary>
-        CellMask GetCells4Refelement(RefElement Kref);
+        /// <param name="jCell"></param>
+        /// <returns></returns>
+        int GetInterpolationDegree(int jCell);
 
 
+        /// <summary>
+        /// Center-of-gravity for the cell
+        /// </summary>
+        double[] GetCenter(int jCell);
     }
 
     public interface IVertexData {
@@ -668,6 +710,9 @@ namespace BoSSS.Foundation.Grid {
             get;
         }
 
+
+
+
         /// <summary>
         /// Face index, where the numbering of faces is defined by the reference element, see e.g. <see cref="RefElement.FaceToVertexIndices"/>.
         /// - 1st index: local edge index; resp. part index (for aggregate grids).
@@ -699,7 +744,7 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
-        /// Local geometric cell indices of cells that belong to an edge.
+        /// Local *geometric* cell indices of cells that belong to an edge.
         /// - 1st index: local edge index
         /// - 2nd index: 0,1 first and second neighbor;
         /// </summary>
@@ -712,6 +757,15 @@ namespace BoSSS.Foundation.Grid {
         /// index is always stored at the 2nd entry.
         /// </remarks>
         int[,] CellIndices {
+            get;
+        }
+
+        /// <summary>
+        /// Local *logical* cell indices of cells that belong to an edge.
+        /// - 1st index: local edge index
+        /// - 2nd index: 0,1 first and second neighbor;
+        /// </summary>
+        int[,] LogicalCellIndices {
             get;
         }
 
@@ -826,6 +880,24 @@ namespace BoSSS.Foundation.Grid {
         /// </param>
         void GetNormalsForCell(NodeSet Nodes, int jCell, int iFace, MultidimensionalArray NormalsOut);
 
+
+        /// <summary>
+        /// For each (edge) reference element, this method provides a
+        /// mask containing all cells which are mapped from the specific
+        /// reference element.
+        /// </summary>
+        /// <param name="Kref">
+        /// Reference element for edges.
+        /// </param>
+        EdgeMask GetEdges4RefElement(RefElement Kref);
+     
+        
+        /// <summary>
+        /// returns the area (to be more exact: the (D-1) - dimensional measure) of the geometrical edge <paramref name="e"/>
+        /// </summary>
+        /// <param name="e">logical edge index</param>
+        /// <returns></returns>
+        double GetEdgeArea(int e);
     }
 
 
@@ -871,14 +943,13 @@ namespace BoSSS.Foundation.Grid {
 
 
         /// <summary>
-        /// For each (edge) reference element, this method provides a
-        /// mask containing all cells which are mapped from the specific
-        /// reference element.
+        /// returns the area (to be more exact: the (D-1) - dimensional measure) of the logical edge <paramref name="e"/>,
+        /// which is the sum of all geometrical parts
         /// </summary>
-        /// <param name="Kref">
-        /// Reference element for edges.
-        /// </param>
-        EdgeMask GetEdges4RefElement(RefElement Kref);
+        /// <param name="e">logical edge index</param>
+        /// <returns></returns>
+        double GetEdgeArea(int e);
+
     }
 
 

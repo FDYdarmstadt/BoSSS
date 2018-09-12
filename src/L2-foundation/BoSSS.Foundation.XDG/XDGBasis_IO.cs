@@ -48,7 +48,7 @@ namespace BoSSS.Foundation.XDG {
 
                 if (c.GridData == null)
                     throw new ArgumentException();
-                if (!c.GridData.Grid.GridGuid.Equals(base.GridGuid))
+                if (!c.GridData.GridID.Equals(base.GridGuid))
                     throw new ArgumentException("Wrong grid.");
 
                 var lsTrk = TrackerInitializer.Initialize(c);

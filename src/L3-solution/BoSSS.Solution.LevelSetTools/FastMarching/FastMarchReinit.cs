@@ -131,7 +131,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
         }
 
         public void AvgInit(SinglePhaseField Phi, CellMask _Accepted) {
-            int J = this.GridDat.Cells.NoOfCells;
+            int J = this.GridDat.Cells.Count;
             double[] PhiAvg;
             if (m_PhiAvg == null) {
                 PhiAvg = new double[J];
@@ -187,7 +187,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                 BitArray Recalc_Mutuable = Trial_Mutuable.CloneAs();
                 BitArray PosSpecies_Bitmask = ReInitSpecies.GetBitMask();
 
-                int J = this.GridDat.Cells.NoOfCells;
+                int J = this.GridDat.Cells.Count;
                 int D = this.GridDat.SpatialDimension;
                 int N = this.LevelSetBasis.Length;
 
@@ -411,7 +411,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
 
                 BitArray Accepted_Mutuable = cut.GetBitMask().CloneAs();
 
-                int J = this.GridDat.Cells.NoOfCells;
+                int J = this.GridDat.Cells.Count;
                 int D = this.GridDat.SpatialDimension;
                 int N = this.LevelSetBasis.Length;
 

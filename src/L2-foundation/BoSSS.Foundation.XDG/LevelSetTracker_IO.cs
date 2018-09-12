@@ -79,7 +79,7 @@ namespace BoSSS.Foundation.XDG {
                     LS[i] = (LevelSet)this.LevelSets[i].Initialize(c);
                 }
 
-                var lsTrk = new LevelSetTracker(c.GridData, this.CutCellQuadratureType, this.NearRegionWidth, this.SpeciesTable, LS);
+                var lsTrk = new LevelSetTracker((Grid.Classic.GridData)(c.GridData), this.CutCellQuadratureType, this.NearRegionWidth, this.SpeciesTable, LS);
                 instance = lsTrk;
                 c.Add(this, lsTrk);
                 return lsTrk;

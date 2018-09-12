@@ -30,13 +30,13 @@ namespace BoSSS.Solution.Utils {
         /// <summary>
         /// Creates fields that mark the boundary conditions.
         /// </summary>
-        public static DGField[] BoundaryMark(this GridData m_gridData) {
+        public static DGField[] BoundaryMark(this IGridData m_gridData) {
             List<DGField> demo_fields = new List<DGField>();
 
             // mark boundary cells
             {
                 SinglePhaseField boundary = new SinglePhaseField(new Basis(m_gridData, 0), "AllBndCells");
-                int[,] Edges = m_gridData.Edges.CellIndices;
+                int[,] Edges = m_gridData.iLogicalEdges.CellIndices;
                 int E = Edges.GetLength(0);
                 for (int ee = 0; ee < E; ee++) {
                     int j = Edges[ee, 0];
@@ -47,10 +47,10 @@ namespace BoSSS.Solution.Utils {
             }
 
             {
-                DGField[] boundaries = new DGField[m_gridData.Grid.EdgeTagNames.Keys.Max() + 1];
-                foreach (byte edgeTag in m_gridData.Grid.EdgeTagNames.Keys) {
+                DGField[] boundaries = new DGField[m_gridData.EdgeTagNames.Keys.Max() + 1];
+                foreach (byte edgeTag in m_gridData.EdgeTagNames.Keys) {
                     if (edgeTag != 0)
-                        boundaries[edgeTag] = new SinglePhaseField(new Basis(m_gridData, 0), "Boundary_" + m_gridData.Grid.EdgeTagNames[edgeTag]);
+                        boundaries[edgeTag] = new SinglePhaseField(new Basis(m_gridData, 0), "Boundary_" + m_gridData.EdgeTagNames[edgeTag]);
                 }
                 boundaries[0] = new SinglePhaseField(new Basis(m_gridData, 0), "UnspecifiedBoundary");
 
@@ -60,8 +60,8 @@ namespace BoSSS.Solution.Utils {
                     }
 
 
-                int[,] Edges = m_gridData.Edges.CellIndices;
-                byte[] EdgeTags = m_gridData.Edges.EdgeTags;
+                int[,] Edges = m_gridData.iGeomEdges.CellIndices;
+                byte[] EdgeTags = m_gridData.iGeomEdges.EdgeTags;
 
                 int E = Edges.GetLength(0);
                 for (int ee = 0; ee < E; ee++) {

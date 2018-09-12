@@ -213,9 +213,19 @@ namespace BoSSS.Foundation {
                 if (N != ResultsOfIntegration.GetLength(1))
                     throw new ApplicationException("internal error.");
 
-                for (int j = 0; j < Length; j++) {
-                    for (int n = 0; n < N; n++) {
-                        m_Owner.Coordinates[j + i0, n] = m_Owner.Coordinates[j + i0, n] + m_alpha * ResultsOfIntegration[j, n];
+                int[] g2l = GridDat.iGeomCells.GeomCell2LogicalCell;
+
+                if (g2l == null) {
+                    for (int j = 0; j < Length; j++) {
+                        for (int n = 0; n < N; n++) {
+                            m_Owner.Coordinates[j + i0, n] += m_alpha * ResultsOfIntegration[j, n];
+                        }
+                    }
+                } else {
+                    for (int j = 0; j < Length; j++) {
+                        for (int n = 0; n < N; n++) {
+                            m_Owner.Coordinates[g2l[j + i0], n] += m_alpha * ResultsOfIntegration[j, n];
+                        }
                     }
                 }
             }
@@ -243,21 +253,7 @@ namespace BoSSS.Foundation {
             ProjectField(1.0, func, default(CellQuadratureScheme));
         }
 
-        /// <summary>
-        /// creates a <see cref="ProjectionQuadrature"/> which is used by
-        /// <see cref="ProjectField(double,ScalarFunction,CellQuadratureScheme)"/>;
-        /// </summary>
-        virtual protected ProjectionQuadrature GetProjectionQuadrature(double alpha, ScalarFunction func, ICompositeQuadRule<QuadRule> qr) {
-            return new ProjectionQuadrature(this, alpha, func, qr);
-        }
-
-        /// <summary>
-        /// creates a <see cref="ProjectionQuadrature"/> which is used by 
-        /// <see cref="ProjectField(double,ScalarFunction,CellQuadratureScheme)"/>;
-        /// </summary>
-        virtual protected ProjectionQuadrature GetProjectionQuadrature(double alpha, ScalarFunctionEx func, ICompositeQuadRule<QuadRule> qr) {
-            return new ProjectionQuadrature(this, alpha, func, qr);
-        }
+        
 
         /// <summary>
         /// Accumulates the DG projection (with respect to <see cref="Basis"/>)
@@ -270,7 +266,8 @@ namespace BoSSS.Foundation {
         virtual public void ProjectField(double alpha, ScalarFunction func, CellQuadratureScheme scheme = null) {
             using (new FuncTrace()) {
                 int order = this.Basis.Degree * 2 + 2;
-                ProjectionQuadrature pq = GetProjectionQuadrature(alpha, func, scheme.SaveCompile(this.Basis.GridDat, order));
+                var rule = scheme.SaveCompile(this.Basis.GridDat, order);
+                var pq = new ProjectionQuadrature(this, alpha, func, rule);
                 pq.Execute();
             }
         }
@@ -287,7 +284,7 @@ namespace BoSSS.Foundation {
         /// </param>
         virtual public void ProjectField(double alpha, ScalarFunction func, ICompositeQuadRule<QuadRule> rule) {
             using (new FuncTrace()) {
-                ProjectionQuadrature pq = GetProjectionQuadrature(alpha, func, rule);
+                var pq = new ProjectionQuadrature(this, alpha, func, rule);
                 pq.Execute();
             }
         }
@@ -304,7 +301,7 @@ namespace BoSSS.Foundation {
         /// </param>
         public void ProjectField(double alpha, ScalarFunctionEx func, ICompositeQuadRule<QuadRule> rule) {
             using (new FuncTrace()) {
-                ProjectionQuadrature pq = GetProjectionQuadrature(alpha, func, rule);
+                var pq = new ProjectionQuadrature(this, alpha, func, rule);
                 pq.Execute();
             }
         }
@@ -320,7 +317,7 @@ namespace BoSSS.Foundation {
         public void ProjectField(double alpha, ScalarFunctionEx func, CellQuadratureScheme scheme = null) {
             using (new FuncTrace()) {
                 int order = this.Basis.Degree * 2 + 2;
-                ProjectionQuadrature pq = GetProjectionQuadrature(alpha, func, scheme.SaveCompile(this.Basis.GridDat, order));
+                var pq = new ProjectionQuadrature(this, alpha, func, scheme.SaveCompile(this.Basis.GridDat, order));
                 pq.Execute();
             }
         }
@@ -528,7 +525,7 @@ namespace BoSSS.Foundation {
         /// <param name="j">a local cell index</param>
         /// <returns>%</returns>
         virtual public double GetMeanValue(int j) {
-            if (j < 0 || j > Basis.GridDat.iLogicalCells.NoOfCells)
+            if (j < 0 || j > Basis.GridDat.iLogicalCells.Count)
                 throw new ArgumentException("cell index out of range.", "j");
 
             int iKref = this.Basis.GridDat.iGeomCells.GetRefElementIndex(j);
@@ -955,7 +952,7 @@ namespace BoSSS.Foundation {
             if (OnlyLocalUpdated)
                 J = Basis.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
             else
-                J = Basis.GridDat.iLogicalCells.NoOfCells;
+                J = Basis.GridDat.iLogicalCells.Count;
             IMatrix Coords = Coordinates;
 
             if (m_Basis.MaximalLength == m_Basis.MinimalLength) {

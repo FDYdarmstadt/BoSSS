@@ -21,6 +21,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.RefElements;
+using System;
 
 namespace BoSSS.Foundation.Quadrature {
 
@@ -64,6 +65,9 @@ namespace BoSSS.Foundation.Quadrature {
         /// <see cref="Grid.RefElement.GetQuadratureRule"/>
         /// </returns>
         public IEnumerable<IChunkRulePair<QuadRule>> GetQuadRuleSet(ExecutionMask mask, int order) {
+            if (mask.MaskType != MaskType.Geometrical)
+                throw new ArgumentException("Expecting a geometrical mask.");
+
             QuadRule rule = RefElement.GetQuadratureRule(order);
             Debug.Assert(rule.Nodes.IsLocked, "Error: non-locked quad rule from reference element.");
             Debug.Assert(object.ReferenceEquals(rule.Nodes.RefElement, RefElement), "Error: quad rule from reference element has not the right reference elment assigned.");
@@ -125,7 +129,10 @@ namespace BoSSS.Foundation.Quadrature {
         public IEnumerable<IChunkRulePair<CellBoundaryQuadRule>> GetQuadRuleSet(ExecutionMask mask, int order) {
             CellBoundaryQuadRule rule = RefElement.GetBoundaryQuadRule(order);
             Debug.Assert(rule.Nodes.IsLocked, "Error: non-locked quad rule from reference element.");
-            Debug.Assert(object.ReferenceEquals(rule.Nodes.RefElement, RefElement), "Error: quad rule from reference element has not the right reference elment assigned.");
+            Debug.Assert(object.ReferenceEquals(rule.Nodes.RefElement, RefElement), "Error: quad rule from reference element has not the right reference element assigned.");
+            if (mask.MaskType != MaskType.Geometrical)
+                throw new ArgumentException("Expecting a geometrical mask.");
+
 
             return mask.Select(chunk => new ChunkRulePair<CellBoundaryQuadRule>(chunk, rule));
         }

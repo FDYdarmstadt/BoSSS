@@ -67,6 +67,9 @@ namespace BoSSS.Foundation.Quadrature {
 
             if (!(mask is EdgeMask))
                 throw new ArgumentException("Expecting an edge mask.");
+            if (mask.MaskType != MaskType.Geometrical)
+                throw new ArgumentException("Expecting a geometrical mask.");
+
 #if DEBUG
             var maskBitMask = mask.GetBitMask();
 
@@ -174,7 +177,7 @@ namespace BoSSS.Foundation.Quadrature {
 
             // get cell boundary rule
             // ======================
-            var CellMask = new CellMask(this.grd, CellBitMask);
+            var CellMask = new CellMask(this.grd, CellBitMask, MaskType.Geometrical);
 
 
             IChunkRulePair<CellBoundaryQuadRule>[] cellBndRule = this.m_cellBndQF.GetQuadRuleSet(CellMask, order).ToArray();

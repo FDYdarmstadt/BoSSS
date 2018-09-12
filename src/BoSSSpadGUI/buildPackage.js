@@ -4,6 +4,7 @@ packager(
     "dir" : "./",
     "arch" : "x64",
     "platform" : "win32",
-    "out" : "./InnoSetup/bin/"
+    "out" : "./InnoSetup/bin/",
+    "overwrite" : "true"
 }
 )

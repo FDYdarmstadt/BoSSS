@@ -29,6 +29,7 @@ using ilPSP;
 using System.Collections.Generic;
 using System.Diagnostics;
 using BoSSS.Solution.Control;
+using BoSSS.Foundation.Grid;
 
 namespace ALTSTests {
     /// <summary>
@@ -170,7 +171,7 @@ namespace ALTSTests {
 
             internal bool FirstMetricActive = true;
 
-            public SurrogateConstraint(GridData gridData, double dtMin, double dtMax, double dtFraction, double EndTime, MultidimensionalArray MetricOne, MultidimensionalArray MetricTwo) :
+            public SurrogateConstraint(IGridData gridData, double dtMin, double dtMax, double dtFraction, double EndTime, MultidimensionalArray MetricOne, MultidimensionalArray MetricTwo) :
                 base(gridData, dtMin, dtMax, dtFraction, EndTime) {
 
                 this.MetricOne = MetricOne;
