@@ -56,6 +56,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         }
 
         IEnumerable<IChunkRulePair<QuadRule>> IQuadRuleFactory<QuadRule>.GetQuadRuleSet(ExecutionMask mask, int order) {
+            if (mask.MaskType != MaskType.Geometrical)
+                throw new ArgumentException("Expecting a geometrical mask.");
+
             var ret = new List<IChunkRulePair<QuadRule>>();
             double R = RADIUS[iLevSet];
             

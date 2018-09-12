@@ -924,7 +924,7 @@ namespace ilPSP {
 
             unsafe {
                 fixed(int* pIndexTrafo = IndexTrafo) {
-                    Multiply(scale, A, B, thisscale, ref mp, pIndexTrafo, IndexTrafo != null ? IndexTrafo.Length : 0);
+                    Multiply(scale, A, B, thisscale, ref mp, pIndexTrafo, pIndexTrafo);
 
                 }
             }
@@ -935,7 +935,8 @@ namespace ilPSP {
         /// Generalized tensor multiplication with index-transformation. 
         /// </summary>
         unsafe public void Multiply(double scale, MultidimensionalArray A, MultidimensionalArray B, double thisscale, 
-            ref MultiplyProgram mp, int* IndexTrafo, int IndexTrafo_Length,
+            ref MultiplyProgram mp, 
+            int* IndexTrafo_A, int* IndexTrafo_B,
             int trfPreOffset_A = 0, int trfCycle_A = 1, int trfPostOffset_A = 0, int trfPreOffset_B = 0, int trfCycle_B = 1, int trfPostOffset_B = 0) {
             if(mp.DT != this.Dimension)
                 throw new ArgumentException();
@@ -990,6 +991,9 @@ namespace ilPSP {
                     double* pB = pBstor + B.m_Offset;
 
                     if(mp.iTrafoIdx >= 0) {
+                        // ++++++++++++++++++++++++++++++++++++++++
+                        // Multiplication with index-transformation
+                        // ++++++++++++++++++++++++++++++++++++++++
                         
                         if(mp.iTrafoIdx > 0) {
                             // transformed cycle MUST be the outer-most, i.e. the first one.
@@ -1002,25 +1006,27 @@ namespace ilPSP {
                             SwapInt(cycRunB + 0, cycRunB + kk);
                         }
 
-                        
-                        if(IndexTrafo == null)
+                        if(IndexTrafo_A == null)
+                            throw new ArgumentException("Index transformation required.");
+                        if(IndexTrafo_B == null)
                             throw new ArgumentException("Index transformation required.");
 
-                        int* pIndexTrafo = IndexTrafo;
+                        int* IndexTrafo_T = IndexTrafo_A; // presently (20aug18) unused
+                        if(IndexTrafo_T == null)
+                            throw new ArgumentException("Index transformation required.");
                         {
                             //Debug.Assert(mp.NoOfSumCycles == 1); Debug.Assert(DT == 2); __MultiplyWTrafo_Sum1_FOR2( 
                             MultiplyWTrafo_Dispatch(
                                 DT, mp.NoOfSumCycles, pT, pA, pB, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scale, thisscale,
-                                pIndexTrafo, IndexTrafo_Length, mp.TrfT0Sw, mp.TrfA0Sw, mp.TrfB0Sw,
+                                IndexTrafo_T, IndexTrafo_A, IndexTrafo_B,
+                                mp.TrfT0Sw, mp.TrfA0Sw, mp.TrfB0Sw,
                                 0, 1, 0, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B);
                         }
 
-
-
                     } else {
-
-
-                        
+                        // ++++++++++++++++++++++++++++++++++++++++++
+                        // Multiplication WITOUT index-transformation
+                        // ++++++++++++++++++++++++++++++++++++++++++
 
                         Multiply_Dispatch(DT, mp.NoOfSumCycles, pT, pA, pB, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scale, thisscale);
                     }

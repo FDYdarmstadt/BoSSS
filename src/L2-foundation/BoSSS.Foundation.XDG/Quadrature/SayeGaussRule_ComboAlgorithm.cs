@@ -60,7 +60,6 @@ namespace BoSSS.Foundation.XDG.Quadrature
             {
                 //Calculate Surface and Volume Rule
                 T nodeArg = node.Value;
-                SayeQuadRule newRule;
                 switch (nodeArg.Status)
                 {
                     case SayeArgument<S>.Mode.Standart:
@@ -69,10 +68,10 @@ namespace BoSSS.Foundation.XDG.Quadrature
                     case SayeArgument<S>.Mode.GaussQuadrature:
                         //Surface must be 0;
                         throw new NotImplementedException();
-                        break;
+
                     case SayeArgument<S>.Mode.LowOrderQuadrature:
                         throw new NotImplementedException();
-                        break;
+                        
                     case SayeArgument<S>.Mode.DomainIsEmpty:
                         break;
                     default:

@@ -59,6 +59,10 @@ namespace BoSSS.Foundation.Quadrature {
         /// construction of the quadrature rule.
         /// </summary>
         public IEnumerable<IChunkRulePair<DoubleEdgeQuadRule>> GetQuadRuleSet(ExecutionMask mask, int order) {
+            if (mask.MaskType != MaskType.Geometrical)
+                throw new ArgumentException("Expecting a geometrical mask.");
+
+
             var orgQr = this.RefElement.GetQuadratureRule(order);
             var dblQr = new DoubleEdgeQuadRule();
             dblQr.OrderOfPrecision = orgQr.OrderOfPrecision;

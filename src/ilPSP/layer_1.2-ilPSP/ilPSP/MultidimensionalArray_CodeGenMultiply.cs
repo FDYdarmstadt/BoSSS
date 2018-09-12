@@ -1,19 +1,3 @@
-/* =======================================================================
-Copyright 2017 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -31,7 +15,7 @@ namespace ilPSP {
             double** pT_Old = stackalloc double*[MAX_REC];
             double** pA_Old = stackalloc double*[MAX_REC];
             double** pB_Old = stackalloc double*[MAX_REC];
-        Beginning_Multiply_SumGOTO_GOTO:
+            Beginning_Multiply_SumGOTO_GOTO:
             int Li = lenRun[rec];
             for (; iS[rec] < Li; iS[rec]++) {
                 if (rec >= (RunDim - 1)) {
@@ -68,7 +52,7 @@ namespace ilPSP {
             double** pA_Old = stackalloc double*[MAX_REC];
             double** pB_Old = stackalloc double*[MAX_REC];
             double acc = 0.0;
-        Beginning_Multiply_InnerSum:
+            Beginning_Multiply_InnerSum:
             int Li = lenSum[rec];
             for (; iS[rec] < Li; iS[rec]++) {
                 if (rec >= (SumDim - 1)) {
@@ -102,7 +86,7 @@ namespace ilPSP {
             double** pT_Old = stackalloc double*[MAX_REC];
             double** pA_Old = stackalloc double*[MAX_REC];
             double** pB_Old = stackalloc double*[MAX_REC];
-        Beginning_Multiply_Sum0_GOTO:
+            Beginning_Multiply_Sum0_GOTO:
             int Li = lenRun[rec];
             for (; iS[rec] < Li; iS[rec]++) {
                 if (rec >= (RunDim - 1)) {
@@ -140,7 +124,7 @@ namespace ilPSP {
             double** pT_Old = stackalloc double*[MAX_REC];
             double** pA_Old = stackalloc double*[MAX_REC];
             double** pB_Old = stackalloc double*[MAX_REC];
-        Beginning_Multiply_Sum1_GOTO:
+            Beginning_Multiply_Sum1_GOTO:
             Debug.Assert(SumDim == 1);
             int K0 = lenSum[0];
             int cAk0 = cycSumA[0];
@@ -192,7 +176,7 @@ namespace ilPSP {
             double** pT_Old = stackalloc double*[MAX_REC];
             double** pA_Old = stackalloc double*[MAX_REC];
             double** pB_Old = stackalloc double*[MAX_REC];
-        Beginning_Multiply_Sum2_GOTO:
+            Beginning_Multiply_Sum2_GOTO:
             Debug.Assert(SumDim == 2);
             int K0 = lenSum[0];
             int K1 = lenSum[1];
@@ -674,7 +658,7 @@ namespace ilPSP {
                 pB += cBi0;
             }
         }
-        unsafe static private void MultiplyWTrafo_Sum0_FOR1(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf, int TrfEnd, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
+        unsafe static private void MultiplyWTrafo_Sum0_FOR1(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf_T, int* Trf_A, int* Trf_B, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
             double* pT, pA, pB;
             Debug.Assert(RunDim == 1);
             int I0 = lenRun[0];
@@ -682,10 +666,9 @@ namespace ilPSP {
             int cAi0 = cycRunA[0];
             int cBi0 = cycRunB[0];
             for (int i0 = 0; i0 < I0; i0++) {
-                Debug.Assert(i0 < TrfEnd);
-                int Trf_i0_T = (Trf[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
-                int Trf_i0_A = (Trf[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
-                int Trf_i0_B = (Trf[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
+                int Trf_i0_T = (Trf_T[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
+                int Trf_i0_A = (Trf_A[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
+                int Trf_i0_B = (Trf_B[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
                 if (Trf_i0_T < 0) continue;
                 if (Trf_i0_A < 0) continue;
                 if (Trf_i0_B < 0) continue;
@@ -697,7 +680,7 @@ namespace ilPSP {
                 }
             }
         }
-        unsafe static private void MultiplyWTrafo_Sum1_FOR1(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf, int TrfEnd, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
+        unsafe static private void MultiplyWTrafo_Sum1_FOR1(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf_T, int* Trf_A, int* Trf_B, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
             double* pT, pA, pB;
             Debug.Assert(RunDim == 1);
             int I0 = lenRun[0];
@@ -709,10 +692,9 @@ namespace ilPSP {
             int cAk0 = cycSumA[0];
             int cBk0 = cycSumB[0];
             for (int i0 = 0; i0 < I0; i0++) {
-                Debug.Assert(i0 < TrfEnd);
-                int Trf_i0_T = (Trf[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
-                int Trf_i0_A = (Trf[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
-                int Trf_i0_B = (Trf[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
+                int Trf_i0_T = (Trf_T[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
+                int Trf_i0_A = (Trf_A[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
+                int Trf_i0_B = (Trf_B[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
                 if (Trf_i0_T < 0) continue;
                 if (Trf_i0_A < 0) continue;
                 if (Trf_i0_B < 0) continue;
@@ -734,7 +716,7 @@ namespace ilPSP {
                 }
             }
         }
-        unsafe static private void MultiplyWTrafo_Sum1Unroll1_FOR1(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf, int TrfEnd, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
+        unsafe static private void MultiplyWTrafo_Sum1Unroll1_FOR1(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf_T, int* Trf_A, int* Trf_B, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
             double* pT, pA, pB;
             Debug.Assert(RunDim == 1);
             int I0 = lenRun[0];
@@ -746,10 +728,9 @@ namespace ilPSP {
             int cAk0 = cycSumA[0];
             int cBk0 = cycSumB[0];
             for (int i0 = 0; i0 < I0; i0++) {
-                Debug.Assert(i0 < TrfEnd);
-                int Trf_i0_T = (Trf[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
-                int Trf_i0_A = (Trf[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
-                int Trf_i0_B = (Trf[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
+                int Trf_i0_T = (Trf_T[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
+                int Trf_i0_A = (Trf_A[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
+                int Trf_i0_B = (Trf_B[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
                 if (Trf_i0_T < 0) continue;
                 if (Trf_i0_A < 0) continue;
                 if (Trf_i0_B < 0) continue;
@@ -763,7 +744,7 @@ namespace ilPSP {
                 }
             }
         }
-        unsafe static private void MultiplyWTrafo_Sum1Unroll2_FOR1(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf, int TrfEnd, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
+        unsafe static private void MultiplyWTrafo_Sum1Unroll2_FOR1(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf_T, int* Trf_A, int* Trf_B, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
             double* pT, pA, pB;
             Debug.Assert(RunDim == 1);
             int I0 = lenRun[0];
@@ -775,10 +756,9 @@ namespace ilPSP {
             int cAk0 = cycSumA[0];
             int cBk0 = cycSumB[0];
             for (int i0 = 0; i0 < I0; i0++) {
-                Debug.Assert(i0 < TrfEnd);
-                int Trf_i0_T = (Trf[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
-                int Trf_i0_A = (Trf[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
-                int Trf_i0_B = (Trf[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
+                int Trf_i0_T = (Trf_T[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
+                int Trf_i0_A = (Trf_A[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
+                int Trf_i0_B = (Trf_B[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
                 if (Trf_i0_T < 0) continue;
                 if (Trf_i0_A < 0) continue;
                 if (Trf_i0_B < 0) continue;
@@ -793,7 +773,7 @@ namespace ilPSP {
                 }
             }
         }
-        unsafe static private void MultiplyWTrafo_Sum1Unroll3_FOR1(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf, int TrfEnd, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
+        unsafe static private void MultiplyWTrafo_Sum1Unroll3_FOR1(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf_T, int* Trf_A, int* Trf_B, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
             double* pT, pA, pB;
             Debug.Assert(RunDim == 1);
             int I0 = lenRun[0];
@@ -805,10 +785,9 @@ namespace ilPSP {
             int cAk0 = cycSumA[0];
             int cBk0 = cycSumB[0];
             for (int i0 = 0; i0 < I0; i0++) {
-                Debug.Assert(i0 < TrfEnd);
-                int Trf_i0_T = (Trf[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
-                int Trf_i0_A = (Trf[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
-                int Trf_i0_B = (Trf[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
+                int Trf_i0_T = (Trf_T[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
+                int Trf_i0_A = (Trf_A[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
+                int Trf_i0_B = (Trf_B[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
                 if (Trf_i0_T < 0) continue;
                 if (Trf_i0_A < 0) continue;
                 if (Trf_i0_B < 0) continue;
@@ -824,7 +803,7 @@ namespace ilPSP {
                 }
             }
         }
-        unsafe static private void MultiplyWTrafo_Sum2_FOR1(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf, int TrfEnd, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
+        unsafe static private void MultiplyWTrafo_Sum2_FOR1(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf_T, int* Trf_A, int* Trf_B, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
             double* pT, pA, pB;
             Debug.Assert(RunDim == 1);
             int I0 = lenRun[0];
@@ -839,10 +818,9 @@ namespace ilPSP {
             int cAk1 = cycSumA[1];
             int cBk1 = cycSumB[1];
             for (int i0 = 0; i0 < I0; i0++) {
-                Debug.Assert(i0 < TrfEnd);
-                int Trf_i0_T = (Trf[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
-                int Trf_i0_A = (Trf[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
-                int Trf_i0_B = (Trf[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
+                int Trf_i0_T = (Trf_T[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
+                int Trf_i0_A = (Trf_A[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
+                int Trf_i0_B = (Trf_B[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
                 if (Trf_i0_T < 0) continue;
                 if (Trf_i0_A < 0) continue;
                 if (Trf_i0_B < 0) continue;
@@ -870,7 +848,7 @@ namespace ilPSP {
                 }
             }
         }
-        unsafe static private void MultiplyWTrafo_Sum2Unroll1_FOR1(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf, int TrfEnd, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
+        unsafe static private void MultiplyWTrafo_Sum2Unroll1_FOR1(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf_T, int* Trf_A, int* Trf_B, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
             double* pT, pA, pB;
             Debug.Assert(RunDim == 1);
             int I0 = lenRun[0];
@@ -885,10 +863,9 @@ namespace ilPSP {
             int cAk1 = cycSumA[1];
             int cBk1 = cycSumB[1];
             for (int i0 = 0; i0 < I0; i0++) {
-                Debug.Assert(i0 < TrfEnd);
-                int Trf_i0_T = (Trf[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
-                int Trf_i0_A = (Trf[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
-                int Trf_i0_B = (Trf[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
+                int Trf_i0_T = (Trf_T[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
+                int Trf_i0_A = (Trf_A[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
+                int Trf_i0_B = (Trf_B[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
                 if (Trf_i0_T < 0) continue;
                 if (Trf_i0_A < 0) continue;
                 if (Trf_i0_B < 0) continue;
@@ -910,7 +887,7 @@ namespace ilPSP {
                 }
             }
         }
-        unsafe static private void MultiplyWTrafo_Sum2Unroll2_FOR1(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf, int TrfEnd, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
+        unsafe static private void MultiplyWTrafo_Sum2Unroll2_FOR1(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf_T, int* Trf_A, int* Trf_B, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
             double* pT, pA, pB;
             Debug.Assert(RunDim == 1);
             int I0 = lenRun[0];
@@ -925,10 +902,9 @@ namespace ilPSP {
             int cAk1 = cycSumA[1];
             int cBk1 = cycSumB[1];
             for (int i0 = 0; i0 < I0; i0++) {
-                Debug.Assert(i0 < TrfEnd);
-                int Trf_i0_T = (Trf[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
-                int Trf_i0_A = (Trf[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
-                int Trf_i0_B = (Trf[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
+                int Trf_i0_T = (Trf_T[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
+                int Trf_i0_A = (Trf_A[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
+                int Trf_i0_B = (Trf_B[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
                 if (Trf_i0_T < 0) continue;
                 if (Trf_i0_A < 0) continue;
                 if (Trf_i0_B < 0) continue;
@@ -951,7 +927,7 @@ namespace ilPSP {
                 }
             }
         }
-        unsafe static private void MultiplyWTrafo_Sum2Unroll3_FOR1(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf, int TrfEnd, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
+        unsafe static private void MultiplyWTrafo_Sum2Unroll3_FOR1(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf_T, int* Trf_A, int* Trf_B, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
             double* pT, pA, pB;
             Debug.Assert(RunDim == 1);
             int I0 = lenRun[0];
@@ -966,10 +942,9 @@ namespace ilPSP {
             int cAk1 = cycSumA[1];
             int cBk1 = cycSumB[1];
             for (int i0 = 0; i0 < I0; i0++) {
-                Debug.Assert(i0 < TrfEnd);
-                int Trf_i0_T = (Trf[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
-                int Trf_i0_A = (Trf[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
-                int Trf_i0_B = (Trf[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
+                int Trf_i0_T = (Trf_T[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
+                int Trf_i0_A = (Trf_A[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
+                int Trf_i0_B = (Trf_B[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
                 if (Trf_i0_T < 0) continue;
                 if (Trf_i0_A < 0) continue;
                 if (Trf_i0_B < 0) continue;
@@ -1357,7 +1332,7 @@ namespace ilPSP {
                 pB = pB_Old_i0 + cBi0;
             }
         }
-        unsafe static private void MultiplyWTrafo_Sum0_FOR2(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf, int TrfEnd, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
+        unsafe static private void MultiplyWTrafo_Sum0_FOR2(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf_T, int* Trf_A, int* Trf_B, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
             double* pT, pA, pB;
             Debug.Assert(RunDim == 2);
             int I0 = lenRun[0];
@@ -1369,10 +1344,9 @@ namespace ilPSP {
             int cAi1 = cycRunA[1];
             int cBi1 = cycRunB[1];
             for (int i0 = 0; i0 < I0; i0++) {
-                Debug.Assert(i0 < TrfEnd);
-                int Trf_i0_T = (Trf[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
-                int Trf_i0_A = (Trf[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
-                int Trf_i0_B = (Trf[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
+                int Trf_i0_T = (Trf_T[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
+                int Trf_i0_A = (Trf_A[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
+                int Trf_i0_B = (Trf_B[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
                 if (Trf_i0_T < 0) continue;
                 if (Trf_i0_A < 0) continue;
                 if (Trf_i0_B < 0) continue;
@@ -1389,7 +1363,7 @@ namespace ilPSP {
                 }
             }
         }
-        unsafe static private void MultiplyWTrafo_Sum1_FOR2(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf, int TrfEnd, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
+        unsafe static private void MultiplyWTrafo_Sum1_FOR2(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf_T, int* Trf_A, int* Trf_B, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
             double* pT, pA, pB;
             Debug.Assert(RunDim == 2);
             int I0 = lenRun[0];
@@ -1405,10 +1379,9 @@ namespace ilPSP {
             int cAk0 = cycSumA[0];
             int cBk0 = cycSumB[0];
             for (int i0 = 0; i0 < I0; i0++) {
-                Debug.Assert(i0 < TrfEnd);
-                int Trf_i0_T = (Trf[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
-                int Trf_i0_A = (Trf[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
-                int Trf_i0_B = (Trf[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
+                int Trf_i0_T = (Trf_T[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
+                int Trf_i0_A = (Trf_A[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
+                int Trf_i0_B = (Trf_B[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
                 if (Trf_i0_T < 0) continue;
                 if (Trf_i0_A < 0) continue;
                 if (Trf_i0_B < 0) continue;
@@ -1435,7 +1408,7 @@ namespace ilPSP {
                 }
             }
         }
-        unsafe static private void MultiplyWTrafo_Sum1Unroll1_FOR2(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf, int TrfEnd, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
+        unsafe static private void MultiplyWTrafo_Sum1Unroll1_FOR2(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf_T, int* Trf_A, int* Trf_B, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
             double* pT, pA, pB;
             Debug.Assert(RunDim == 2);
             int I0 = lenRun[0];
@@ -1451,10 +1424,9 @@ namespace ilPSP {
             int cAk0 = cycSumA[0];
             int cBk0 = cycSumB[0];
             for (int i0 = 0; i0 < I0; i0++) {
-                Debug.Assert(i0 < TrfEnd);
-                int Trf_i0_T = (Trf[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
-                int Trf_i0_A = (Trf[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
-                int Trf_i0_B = (Trf[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
+                int Trf_i0_T = (Trf_T[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
+                int Trf_i0_A = (Trf_A[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
+                int Trf_i0_B = (Trf_B[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
                 if (Trf_i0_T < 0) continue;
                 if (Trf_i0_A < 0) continue;
                 if (Trf_i0_B < 0) continue;
@@ -1473,7 +1445,7 @@ namespace ilPSP {
                 }
             }
         }
-        unsafe static private void MultiplyWTrafo_Sum1Unroll2_FOR2(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf, int TrfEnd, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
+        unsafe static private void MultiplyWTrafo_Sum1Unroll2_FOR2(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf_T, int* Trf_A, int* Trf_B, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
             double* pT, pA, pB;
             Debug.Assert(RunDim == 2);
             int I0 = lenRun[0];
@@ -1489,10 +1461,9 @@ namespace ilPSP {
             int cAk0 = cycSumA[0];
             int cBk0 = cycSumB[0];
             for (int i0 = 0; i0 < I0; i0++) {
-                Debug.Assert(i0 < TrfEnd);
-                int Trf_i0_T = (Trf[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
-                int Trf_i0_A = (Trf[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
-                int Trf_i0_B = (Trf[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
+                int Trf_i0_T = (Trf_T[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
+                int Trf_i0_A = (Trf_A[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
+                int Trf_i0_B = (Trf_B[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
                 if (Trf_i0_T < 0) continue;
                 if (Trf_i0_A < 0) continue;
                 if (Trf_i0_B < 0) continue;
@@ -1512,7 +1483,7 @@ namespace ilPSP {
                 }
             }
         }
-        unsafe static private void MultiplyWTrafo_Sum1Unroll3_FOR2(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf, int TrfEnd, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
+        unsafe static private void MultiplyWTrafo_Sum1Unroll3_FOR2(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf_T, int* Trf_A, int* Trf_B, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
             double* pT, pA, pB;
             Debug.Assert(RunDim == 2);
             int I0 = lenRun[0];
@@ -1528,10 +1499,9 @@ namespace ilPSP {
             int cAk0 = cycSumA[0];
             int cBk0 = cycSumB[0];
             for (int i0 = 0; i0 < I0; i0++) {
-                Debug.Assert(i0 < TrfEnd);
-                int Trf_i0_T = (Trf[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
-                int Trf_i0_A = (Trf[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
-                int Trf_i0_B = (Trf[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
+                int Trf_i0_T = (Trf_T[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
+                int Trf_i0_A = (Trf_A[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
+                int Trf_i0_B = (Trf_B[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
                 if (Trf_i0_T < 0) continue;
                 if (Trf_i0_A < 0) continue;
                 if (Trf_i0_B < 0) continue;
@@ -1552,7 +1522,7 @@ namespace ilPSP {
                 }
             }
         }
-        unsafe static private void MultiplyWTrafo_Sum2_FOR2(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf, int TrfEnd, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
+        unsafe static private void MultiplyWTrafo_Sum2_FOR2(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf_T, int* Trf_A, int* Trf_B, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
             double* pT, pA, pB;
             Debug.Assert(RunDim == 2);
             int I0 = lenRun[0];
@@ -1571,10 +1541,9 @@ namespace ilPSP {
             int cAk1 = cycSumA[1];
             int cBk1 = cycSumB[1];
             for (int i0 = 0; i0 < I0; i0++) {
-                Debug.Assert(i0 < TrfEnd);
-                int Trf_i0_T = (Trf[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
-                int Trf_i0_A = (Trf[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
-                int Trf_i0_B = (Trf[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
+                int Trf_i0_T = (Trf_T[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
+                int Trf_i0_A = (Trf_A[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
+                int Trf_i0_B = (Trf_B[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
                 if (Trf_i0_T < 0) continue;
                 if (Trf_i0_A < 0) continue;
                 if (Trf_i0_B < 0) continue;
@@ -1607,7 +1576,7 @@ namespace ilPSP {
                 }
             }
         }
-        unsafe static private void MultiplyWTrafo_Sum2Unroll1_FOR2(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf, int TrfEnd, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
+        unsafe static private void MultiplyWTrafo_Sum2Unroll1_FOR2(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf_T, int* Trf_A, int* Trf_B, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
             double* pT, pA, pB;
             Debug.Assert(RunDim == 2);
             int I0 = lenRun[0];
@@ -1626,10 +1595,9 @@ namespace ilPSP {
             int cAk1 = cycSumA[1];
             int cBk1 = cycSumB[1];
             for (int i0 = 0; i0 < I0; i0++) {
-                Debug.Assert(i0 < TrfEnd);
-                int Trf_i0_T = (Trf[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
-                int Trf_i0_A = (Trf[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
-                int Trf_i0_B = (Trf[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
+                int Trf_i0_T = (Trf_T[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
+                int Trf_i0_A = (Trf_A[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
+                int Trf_i0_B = (Trf_B[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
                 if (Trf_i0_T < 0) continue;
                 if (Trf_i0_A < 0) continue;
                 if (Trf_i0_B < 0) continue;
@@ -1656,7 +1624,7 @@ namespace ilPSP {
                 }
             }
         }
-        unsafe static private void MultiplyWTrafo_Sum2Unroll2_FOR2(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf, int TrfEnd, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
+        unsafe static private void MultiplyWTrafo_Sum2Unroll2_FOR2(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf_T, int* Trf_A, int* Trf_B, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
             double* pT, pA, pB;
             Debug.Assert(RunDim == 2);
             int I0 = lenRun[0];
@@ -1675,10 +1643,9 @@ namespace ilPSP {
             int cAk1 = cycSumA[1];
             int cBk1 = cycSumB[1];
             for (int i0 = 0; i0 < I0; i0++) {
-                Debug.Assert(i0 < TrfEnd);
-                int Trf_i0_T = (Trf[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
-                int Trf_i0_A = (Trf[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
-                int Trf_i0_B = (Trf[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
+                int Trf_i0_T = (Trf_T[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
+                int Trf_i0_A = (Trf_A[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
+                int Trf_i0_B = (Trf_B[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
                 if (Trf_i0_T < 0) continue;
                 if (Trf_i0_A < 0) continue;
                 if (Trf_i0_B < 0) continue;
@@ -1706,7 +1673,7 @@ namespace ilPSP {
                 }
             }
         }
-        unsafe static private void MultiplyWTrafo_Sum2Unroll3_FOR2(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf, int TrfEnd, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
+        unsafe static private void MultiplyWTrafo_Sum2Unroll3_FOR2(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf_T, int* Trf_A, int* Trf_B, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
             double* pT, pA, pB;
             Debug.Assert(RunDim == 2);
             int I0 = lenRun[0];
@@ -1725,10 +1692,9 @@ namespace ilPSP {
             int cAk1 = cycSumA[1];
             int cBk1 = cycSumB[1];
             for (int i0 = 0; i0 < I0; i0++) {
-                Debug.Assert(i0 < TrfEnd);
-                int Trf_i0_T = (Trf[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
-                int Trf_i0_A = (Trf[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
-                int Trf_i0_B = (Trf[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
+                int Trf_i0_T = (Trf_T[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
+                int Trf_i0_A = (Trf_A[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
+                int Trf_i0_B = (Trf_B[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
                 if (Trf_i0_T < 0) continue;
                 if (Trf_i0_A < 0) continue;
                 if (Trf_i0_B < 0) continue;
@@ -2229,7 +2195,7 @@ namespace ilPSP {
                 pB = pB_Old_i0 + cBi0;
             }
         }
-        unsafe static private void MultiplyWTrafo_Sum0_FOR3(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf, int TrfEnd, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
+        unsafe static private void MultiplyWTrafo_Sum0_FOR3(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf_T, int* Trf_A, int* Trf_B, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
             double* pT, pA, pB;
             Debug.Assert(RunDim == 3);
             int I0 = lenRun[0];
@@ -2245,10 +2211,9 @@ namespace ilPSP {
             int cAi2 = cycRunA[2];
             int cBi2 = cycRunB[2];
             for (int i0 = 0; i0 < I0; i0++) {
-                Debug.Assert(i0 < TrfEnd);
-                int Trf_i0_T = (Trf[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
-                int Trf_i0_A = (Trf[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
-                int Trf_i0_B = (Trf[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
+                int Trf_i0_T = (Trf_T[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
+                int Trf_i0_A = (Trf_A[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
+                int Trf_i0_B = (Trf_B[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
                 if (Trf_i0_T < 0) continue;
                 if (Trf_i0_A < 0) continue;
                 if (Trf_i0_B < 0) continue;
@@ -2273,7 +2238,7 @@ namespace ilPSP {
                 }
             }
         }
-        unsafe static private void MultiplyWTrafo_Sum1_FOR3(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf, int TrfEnd, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
+        unsafe static private void MultiplyWTrafo_Sum1_FOR3(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf_T, int* Trf_A, int* Trf_B, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
             double* pT, pA, pB;
             Debug.Assert(RunDim == 3);
             int I0 = lenRun[0];
@@ -2293,10 +2258,9 @@ namespace ilPSP {
             int cAk0 = cycSumA[0];
             int cBk0 = cycSumB[0];
             for (int i0 = 0; i0 < I0; i0++) {
-                Debug.Assert(i0 < TrfEnd);
-                int Trf_i0_T = (Trf[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
-                int Trf_i0_A = (Trf[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
-                int Trf_i0_B = (Trf[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
+                int Trf_i0_T = (Trf_T[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
+                int Trf_i0_A = (Trf_A[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
+                int Trf_i0_B = (Trf_B[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
                 if (Trf_i0_T < 0) continue;
                 if (Trf_i0_A < 0) continue;
                 if (Trf_i0_B < 0) continue;
@@ -2331,7 +2295,7 @@ namespace ilPSP {
                 }
             }
         }
-        unsafe static private void MultiplyWTrafo_Sum1Unroll1_FOR3(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf, int TrfEnd, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
+        unsafe static private void MultiplyWTrafo_Sum1Unroll1_FOR3(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf_T, int* Trf_A, int* Trf_B, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
             double* pT, pA, pB;
             Debug.Assert(RunDim == 3);
             int I0 = lenRun[0];
@@ -2351,10 +2315,9 @@ namespace ilPSP {
             int cAk0 = cycSumA[0];
             int cBk0 = cycSumB[0];
             for (int i0 = 0; i0 < I0; i0++) {
-                Debug.Assert(i0 < TrfEnd);
-                int Trf_i0_T = (Trf[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
-                int Trf_i0_A = (Trf[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
-                int Trf_i0_B = (Trf[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
+                int Trf_i0_T = (Trf_T[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
+                int Trf_i0_A = (Trf_A[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
+                int Trf_i0_B = (Trf_B[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
                 if (Trf_i0_T < 0) continue;
                 if (Trf_i0_A < 0) continue;
                 if (Trf_i0_B < 0) continue;
@@ -2381,7 +2344,7 @@ namespace ilPSP {
                 }
             }
         }
-        unsafe static private void MultiplyWTrafo_Sum1Unroll2_FOR3(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf, int TrfEnd, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
+        unsafe static private void MultiplyWTrafo_Sum1Unroll2_FOR3(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf_T, int* Trf_A, int* Trf_B, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
             double* pT, pA, pB;
             Debug.Assert(RunDim == 3);
             int I0 = lenRun[0];
@@ -2401,10 +2364,9 @@ namespace ilPSP {
             int cAk0 = cycSumA[0];
             int cBk0 = cycSumB[0];
             for (int i0 = 0; i0 < I0; i0++) {
-                Debug.Assert(i0 < TrfEnd);
-                int Trf_i0_T = (Trf[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
-                int Trf_i0_A = (Trf[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
-                int Trf_i0_B = (Trf[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
+                int Trf_i0_T = (Trf_T[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
+                int Trf_i0_A = (Trf_A[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
+                int Trf_i0_B = (Trf_B[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
                 if (Trf_i0_T < 0) continue;
                 if (Trf_i0_A < 0) continue;
                 if (Trf_i0_B < 0) continue;
@@ -2432,7 +2394,7 @@ namespace ilPSP {
                 }
             }
         }
-        unsafe static private void MultiplyWTrafo_Sum1Unroll3_FOR3(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf, int TrfEnd, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
+        unsafe static private void MultiplyWTrafo_Sum1Unroll3_FOR3(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf_T, int* Trf_A, int* Trf_B, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
             double* pT, pA, pB;
             Debug.Assert(RunDim == 3);
             int I0 = lenRun[0];
@@ -2452,10 +2414,9 @@ namespace ilPSP {
             int cAk0 = cycSumA[0];
             int cBk0 = cycSumB[0];
             for (int i0 = 0; i0 < I0; i0++) {
-                Debug.Assert(i0 < TrfEnd);
-                int Trf_i0_T = (Trf[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
-                int Trf_i0_A = (Trf[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
-                int Trf_i0_B = (Trf[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
+                int Trf_i0_T = (Trf_T[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
+                int Trf_i0_A = (Trf_A[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
+                int Trf_i0_B = (Trf_B[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
                 if (Trf_i0_T < 0) continue;
                 if (Trf_i0_A < 0) continue;
                 if (Trf_i0_B < 0) continue;
@@ -2484,7 +2445,7 @@ namespace ilPSP {
                 }
             }
         }
-        unsafe static private void MultiplyWTrafo_Sum2_FOR3(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf, int TrfEnd, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
+        unsafe static private void MultiplyWTrafo_Sum2_FOR3(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf_T, int* Trf_A, int* Trf_B, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
             double* pT, pA, pB;
             Debug.Assert(RunDim == 3);
             int I0 = lenRun[0];
@@ -2507,10 +2468,9 @@ namespace ilPSP {
             int cAk1 = cycSumA[1];
             int cBk1 = cycSumB[1];
             for (int i0 = 0; i0 < I0; i0++) {
-                Debug.Assert(i0 < TrfEnd);
-                int Trf_i0_T = (Trf[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
-                int Trf_i0_A = (Trf[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
-                int Trf_i0_B = (Trf[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
+                int Trf_i0_T = (Trf_T[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
+                int Trf_i0_A = (Trf_A[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
+                int Trf_i0_B = (Trf_B[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
                 if (Trf_i0_T < 0) continue;
                 if (Trf_i0_A < 0) continue;
                 if (Trf_i0_B < 0) continue;
@@ -2551,7 +2511,7 @@ namespace ilPSP {
                 }
             }
         }
-        unsafe static private void MultiplyWTrafo_Sum2Unroll1_FOR3(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf, int TrfEnd, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
+        unsafe static private void MultiplyWTrafo_Sum2Unroll1_FOR3(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf_T, int* Trf_A, int* Trf_B, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
             double* pT, pA, pB;
             Debug.Assert(RunDim == 3);
             int I0 = lenRun[0];
@@ -2574,10 +2534,9 @@ namespace ilPSP {
             int cAk1 = cycSumA[1];
             int cBk1 = cycSumB[1];
             for (int i0 = 0; i0 < I0; i0++) {
-                Debug.Assert(i0 < TrfEnd);
-                int Trf_i0_T = (Trf[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
-                int Trf_i0_A = (Trf[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
-                int Trf_i0_B = (Trf[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
+                int Trf_i0_T = (Trf_T[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
+                int Trf_i0_A = (Trf_A[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
+                int Trf_i0_B = (Trf_B[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
                 if (Trf_i0_T < 0) continue;
                 if (Trf_i0_A < 0) continue;
                 if (Trf_i0_B < 0) continue;
@@ -2612,7 +2571,7 @@ namespace ilPSP {
                 }
             }
         }
-        unsafe static private void MultiplyWTrafo_Sum2Unroll2_FOR3(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf, int TrfEnd, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
+        unsafe static private void MultiplyWTrafo_Sum2Unroll2_FOR3(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf_T, int* Trf_A, int* Trf_B, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
             double* pT, pA, pB;
             Debug.Assert(RunDim == 3);
             int I0 = lenRun[0];
@@ -2635,10 +2594,9 @@ namespace ilPSP {
             int cAk1 = cycSumA[1];
             int cBk1 = cycSumB[1];
             for (int i0 = 0; i0 < I0; i0++) {
-                Debug.Assert(i0 < TrfEnd);
-                int Trf_i0_T = (Trf[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
-                int Trf_i0_A = (Trf[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
-                int Trf_i0_B = (Trf[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
+                int Trf_i0_T = (Trf_T[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
+                int Trf_i0_A = (Trf_A[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
+                int Trf_i0_B = (Trf_B[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
                 if (Trf_i0_T < 0) continue;
                 if (Trf_i0_A < 0) continue;
                 if (Trf_i0_B < 0) continue;
@@ -2674,7 +2632,7 @@ namespace ilPSP {
                 }
             }
         }
-        unsafe static private void MultiplyWTrafo_Sum2Unroll3_FOR3(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf, int TrfEnd, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
+        unsafe static private void MultiplyWTrafo_Sum2Unroll3_FOR3(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf_T, int* Trf_A, int* Trf_B, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
             double* pT, pA, pB;
             Debug.Assert(RunDim == 3);
             int I0 = lenRun[0];
@@ -2697,10 +2655,9 @@ namespace ilPSP {
             int cAk1 = cycSumA[1];
             int cBk1 = cycSumB[1];
             for (int i0 = 0; i0 < I0; i0++) {
-                Debug.Assert(i0 < TrfEnd);
-                int Trf_i0_T = (Trf[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
-                int Trf_i0_A = (Trf[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
-                int Trf_i0_B = (Trf[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
+                int Trf_i0_T = (Trf_T[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
+                int Trf_i0_A = (Trf_A[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
+                int Trf_i0_B = (Trf_B[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
                 if (Trf_i0_T < 0) continue;
                 if (Trf_i0_A < 0) continue;
                 if (Trf_i0_B < 0) continue;
@@ -3317,7 +3274,7 @@ namespace ilPSP {
                 pB = pB_Old_i0 + cBi0;
             }
         }
-        unsafe static private void MultiplyWTrafo_Sum0_FOR4(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf, int TrfEnd, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
+        unsafe static private void MultiplyWTrafo_Sum0_FOR4(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf_T, int* Trf_A, int* Trf_B, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
             double* pT, pA, pB;
             Debug.Assert(RunDim == 4);
             int I0 = lenRun[0];
@@ -3337,10 +3294,9 @@ namespace ilPSP {
             int cAi3 = cycRunA[3];
             int cBi3 = cycRunB[3];
             for (int i0 = 0; i0 < I0; i0++) {
-                Debug.Assert(i0 < TrfEnd);
-                int Trf_i0_T = (Trf[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
-                int Trf_i0_A = (Trf[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
-                int Trf_i0_B = (Trf[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
+                int Trf_i0_T = (Trf_T[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
+                int Trf_i0_A = (Trf_A[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
+                int Trf_i0_B = (Trf_B[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
                 if (Trf_i0_T < 0) continue;
                 if (Trf_i0_A < 0) continue;
                 if (Trf_i0_B < 0) continue;
@@ -3373,7 +3329,7 @@ namespace ilPSP {
                 }
             }
         }
-        unsafe static private void MultiplyWTrafo_Sum1_FOR4(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf, int TrfEnd, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
+        unsafe static private void MultiplyWTrafo_Sum1_FOR4(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf_T, int* Trf_A, int* Trf_B, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
             double* pT, pA, pB;
             Debug.Assert(RunDim == 4);
             int I0 = lenRun[0];
@@ -3397,10 +3353,9 @@ namespace ilPSP {
             int cAk0 = cycSumA[0];
             int cBk0 = cycSumB[0];
             for (int i0 = 0; i0 < I0; i0++) {
-                Debug.Assert(i0 < TrfEnd);
-                int Trf_i0_T = (Trf[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
-                int Trf_i0_A = (Trf[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
-                int Trf_i0_B = (Trf[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
+                int Trf_i0_T = (Trf_T[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
+                int Trf_i0_A = (Trf_A[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
+                int Trf_i0_B = (Trf_B[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
                 if (Trf_i0_T < 0) continue;
                 if (Trf_i0_A < 0) continue;
                 if (Trf_i0_B < 0) continue;
@@ -3443,7 +3398,7 @@ namespace ilPSP {
                 }
             }
         }
-        unsafe static private void MultiplyWTrafo_Sum1Unroll1_FOR4(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf, int TrfEnd, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
+        unsafe static private void MultiplyWTrafo_Sum1Unroll1_FOR4(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf_T, int* Trf_A, int* Trf_B, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
             double* pT, pA, pB;
             Debug.Assert(RunDim == 4);
             int I0 = lenRun[0];
@@ -3467,10 +3422,9 @@ namespace ilPSP {
             int cAk0 = cycSumA[0];
             int cBk0 = cycSumB[0];
             for (int i0 = 0; i0 < I0; i0++) {
-                Debug.Assert(i0 < TrfEnd);
-                int Trf_i0_T = (Trf[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
-                int Trf_i0_A = (Trf[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
-                int Trf_i0_B = (Trf[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
+                int Trf_i0_T = (Trf_T[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
+                int Trf_i0_A = (Trf_A[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
+                int Trf_i0_B = (Trf_B[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
                 if (Trf_i0_T < 0) continue;
                 if (Trf_i0_A < 0) continue;
                 if (Trf_i0_B < 0) continue;
@@ -3505,7 +3459,7 @@ namespace ilPSP {
                 }
             }
         }
-        unsafe static private void MultiplyWTrafo_Sum1Unroll2_FOR4(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf, int TrfEnd, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
+        unsafe static private void MultiplyWTrafo_Sum1Unroll2_FOR4(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf_T, int* Trf_A, int* Trf_B, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
             double* pT, pA, pB;
             Debug.Assert(RunDim == 4);
             int I0 = lenRun[0];
@@ -3529,10 +3483,9 @@ namespace ilPSP {
             int cAk0 = cycSumA[0];
             int cBk0 = cycSumB[0];
             for (int i0 = 0; i0 < I0; i0++) {
-                Debug.Assert(i0 < TrfEnd);
-                int Trf_i0_T = (Trf[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
-                int Trf_i0_A = (Trf[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
-                int Trf_i0_B = (Trf[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
+                int Trf_i0_T = (Trf_T[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
+                int Trf_i0_A = (Trf_A[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
+                int Trf_i0_B = (Trf_B[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
                 if (Trf_i0_T < 0) continue;
                 if (Trf_i0_A < 0) continue;
                 if (Trf_i0_B < 0) continue;
@@ -3568,7 +3521,7 @@ namespace ilPSP {
                 }
             }
         }
-        unsafe static private void MultiplyWTrafo_Sum1Unroll3_FOR4(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf, int TrfEnd, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
+        unsafe static private void MultiplyWTrafo_Sum1Unroll3_FOR4(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf_T, int* Trf_A, int* Trf_B, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
             double* pT, pA, pB;
             Debug.Assert(RunDim == 4);
             int I0 = lenRun[0];
@@ -3592,10 +3545,9 @@ namespace ilPSP {
             int cAk0 = cycSumA[0];
             int cBk0 = cycSumB[0];
             for (int i0 = 0; i0 < I0; i0++) {
-                Debug.Assert(i0 < TrfEnd);
-                int Trf_i0_T = (Trf[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
-                int Trf_i0_A = (Trf[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
-                int Trf_i0_B = (Trf[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
+                int Trf_i0_T = (Trf_T[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
+                int Trf_i0_A = (Trf_A[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
+                int Trf_i0_B = (Trf_B[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
                 if (Trf_i0_T < 0) continue;
                 if (Trf_i0_A < 0) continue;
                 if (Trf_i0_B < 0) continue;
@@ -3632,7 +3584,7 @@ namespace ilPSP {
                 }
             }
         }
-        unsafe static private void MultiplyWTrafo_Sum2_FOR4(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf, int TrfEnd, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
+        unsafe static private void MultiplyWTrafo_Sum2_FOR4(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf_T, int* Trf_A, int* Trf_B, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
             double* pT, pA, pB;
             Debug.Assert(RunDim == 4);
             int I0 = lenRun[0];
@@ -3659,10 +3611,9 @@ namespace ilPSP {
             int cAk1 = cycSumA[1];
             int cBk1 = cycSumB[1];
             for (int i0 = 0; i0 < I0; i0++) {
-                Debug.Assert(i0 < TrfEnd);
-                int Trf_i0_T = (Trf[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
-                int Trf_i0_A = (Trf[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
-                int Trf_i0_B = (Trf[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
+                int Trf_i0_T = (Trf_T[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
+                int Trf_i0_A = (Trf_A[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
+                int Trf_i0_B = (Trf_B[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
                 if (Trf_i0_T < 0) continue;
                 if (Trf_i0_A < 0) continue;
                 if (Trf_i0_B < 0) continue;
@@ -3711,7 +3662,7 @@ namespace ilPSP {
                 }
             }
         }
-        unsafe static private void MultiplyWTrafo_Sum2Unroll1_FOR4(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf, int TrfEnd, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
+        unsafe static private void MultiplyWTrafo_Sum2Unroll1_FOR4(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf_T, int* Trf_A, int* Trf_B, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
             double* pT, pA, pB;
             Debug.Assert(RunDim == 4);
             int I0 = lenRun[0];
@@ -3738,10 +3689,9 @@ namespace ilPSP {
             int cAk1 = cycSumA[1];
             int cBk1 = cycSumB[1];
             for (int i0 = 0; i0 < I0; i0++) {
-                Debug.Assert(i0 < TrfEnd);
-                int Trf_i0_T = (Trf[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
-                int Trf_i0_A = (Trf[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
-                int Trf_i0_B = (Trf[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
+                int Trf_i0_T = (Trf_T[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
+                int Trf_i0_A = (Trf_A[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
+                int Trf_i0_B = (Trf_B[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
                 if (Trf_i0_T < 0) continue;
                 if (Trf_i0_A < 0) continue;
                 if (Trf_i0_B < 0) continue;
@@ -3784,7 +3734,7 @@ namespace ilPSP {
                 }
             }
         }
-        unsafe static private void MultiplyWTrafo_Sum2Unroll2_FOR4(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf, int TrfEnd, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
+        unsafe static private void MultiplyWTrafo_Sum2Unroll2_FOR4(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf_T, int* Trf_A, int* Trf_B, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
             double* pT, pA, pB;
             Debug.Assert(RunDim == 4);
             int I0 = lenRun[0];
@@ -3811,10 +3761,9 @@ namespace ilPSP {
             int cAk1 = cycSumA[1];
             int cBk1 = cycSumB[1];
             for (int i0 = 0; i0 < I0; i0++) {
-                Debug.Assert(i0 < TrfEnd);
-                int Trf_i0_T = (Trf[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
-                int Trf_i0_A = (Trf[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
-                int Trf_i0_B = (Trf[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
+                int Trf_i0_T = (Trf_T[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
+                int Trf_i0_A = (Trf_A[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
+                int Trf_i0_B = (Trf_B[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
                 if (Trf_i0_T < 0) continue;
                 if (Trf_i0_A < 0) continue;
                 if (Trf_i0_B < 0) continue;
@@ -3858,7 +3807,7 @@ namespace ilPSP {
                 }
             }
         }
-        unsafe static private void MultiplyWTrafo_Sum2Unroll3_FOR4(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf, int TrfEnd, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
+        unsafe static private void MultiplyWTrafo_Sum2Unroll3_FOR4(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf_T, int* Trf_A, int* Trf_B, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
             double* pT, pA, pB;
             Debug.Assert(RunDim == 4);
             int I0 = lenRun[0];
@@ -3885,10 +3834,9 @@ namespace ilPSP {
             int cAk1 = cycSumA[1];
             int cBk1 = cycSumB[1];
             for (int i0 = 0; i0 < I0; i0++) {
-                Debug.Assert(i0 < TrfEnd);
-                int Trf_i0_T = (Trf[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
-                int Trf_i0_A = (Trf[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
-                int Trf_i0_B = (Trf[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
+                int Trf_i0_T = (Trf_T[i0 * trfCycle_T + trfPreOffset_T] + trfPostOffset_T) * trfT0sw;
+                int Trf_i0_A = (Trf_A[i0 * trfCycle_A + trfPreOffset_A] + trfPostOffset_A) * trfA0sw;
+                int Trf_i0_B = (Trf_B[i0 * trfCycle_B + trfPreOffset_B] + trfPostOffset_B) * trfB0sw;
                 if (Trf_i0_T < 0) continue;
                 if (Trf_i0_A < 0) continue;
                 if (Trf_i0_B < 0) continue;
@@ -3950,82 +3898,90 @@ namespace ilPSP {
                 switch (RunDim) {
                     case 0: throw new NotSupportedException();
                     case 1: {
-                            switch (lenSum[0]) {
-                                case 0: return;
-                                case 1: Multiply_Sum1Unroll1_FOR1(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
-                                case 2: Multiply_Sum1Unroll2_FOR1(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
-                                case 3: Multiply_Sum1Unroll3_FOR1(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
-                                default: Multiply_Sum1_FOR1(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
-                            }
-                        } break;
+                        switch (lenSum[0]) {
+                            case 0: return;
+                            case 1: Multiply_Sum1Unroll1_FOR1(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
+                            case 2: Multiply_Sum1Unroll2_FOR1(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
+                            case 3: Multiply_Sum1Unroll3_FOR1(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
+                            default: Multiply_Sum1_FOR1(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
+                        }
+                    }
+                    break;
                     case 2: {
-                            switch (lenSum[0]) {
-                                case 0: return;
-                                case 1: Multiply_Sum1Unroll1_FOR2(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
-                                case 2: Multiply_Sum1Unroll2_FOR2(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
-                                case 3: Multiply_Sum1Unroll3_FOR2(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
-                                default: Multiply_Sum1_FOR2(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
-                            }
-                        } break;
+                        switch (lenSum[0]) {
+                            case 0: return;
+                            case 1: Multiply_Sum1Unroll1_FOR2(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
+                            case 2: Multiply_Sum1Unroll2_FOR2(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
+                            case 3: Multiply_Sum1Unroll3_FOR2(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
+                            default: Multiply_Sum1_FOR2(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
+                        }
+                    }
+                    break;
                     case 3: {
-                            switch (lenSum[0]) {
-                                case 0: return;
-                                case 1: Multiply_Sum1Unroll1_FOR3(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
-                                case 2: Multiply_Sum1Unroll2_FOR3(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
-                                case 3: Multiply_Sum1Unroll3_FOR3(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
-                                default: Multiply_Sum1_FOR3(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
-                            }
-                        } break;
+                        switch (lenSum[0]) {
+                            case 0: return;
+                            case 1: Multiply_Sum1Unroll1_FOR3(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
+                            case 2: Multiply_Sum1Unroll2_FOR3(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
+                            case 3: Multiply_Sum1Unroll3_FOR3(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
+                            default: Multiply_Sum1_FOR3(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
+                        }
+                    }
+                    break;
                     case 4: {
-                            switch (lenSum[0]) {
-                                case 0: return;
-                                case 1: Multiply_Sum1Unroll1_FOR4(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
-                                case 2: Multiply_Sum1Unroll2_FOR4(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
-                                case 3: Multiply_Sum1Unroll3_FOR4(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
-                                default: Multiply_Sum1_FOR4(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
-                            }
-                        } break;
+                        switch (lenSum[0]) {
+                            case 0: return;
+                            case 1: Multiply_Sum1Unroll1_FOR4(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
+                            case 2: Multiply_Sum1Unroll2_FOR4(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
+                            case 3: Multiply_Sum1Unroll3_FOR4(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
+                            default: Multiply_Sum1_FOR4(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
+                        }
+                    }
+                    break;
                     default: Multiply_Sum1_GOTO(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
                 }
             } else if (SumDim == 2) {
                 switch (RunDim) {
                     case 0: throw new NotSupportedException();
                     case 1: {
-                            switch (lenSum[1]) {
-                                case 0: return;
-                                case 1: Multiply_Sum2Unroll1_FOR1(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
-                                case 2: Multiply_Sum2Unroll2_FOR1(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
-                                case 3: Multiply_Sum2Unroll3_FOR1(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
-                                default: Multiply_Sum2_FOR1(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
-                            }
-                        } break;
+                        switch (lenSum[1]) {
+                            case 0: return;
+                            case 1: Multiply_Sum2Unroll1_FOR1(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
+                            case 2: Multiply_Sum2Unroll2_FOR1(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
+                            case 3: Multiply_Sum2Unroll3_FOR1(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
+                            default: Multiply_Sum2_FOR1(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
+                        }
+                    }
+                    break;
                     case 2: {
-                            switch (lenSum[1]) {
-                                case 0: return;
-                                case 1: Multiply_Sum2Unroll1_FOR2(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
-                                case 2: Multiply_Sum2Unroll2_FOR2(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
-                                case 3: Multiply_Sum2Unroll3_FOR2(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
-                                default: Multiply_Sum2_FOR2(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
-                            }
-                        } break;
+                        switch (lenSum[1]) {
+                            case 0: return;
+                            case 1: Multiply_Sum2Unroll1_FOR2(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
+                            case 2: Multiply_Sum2Unroll2_FOR2(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
+                            case 3: Multiply_Sum2Unroll3_FOR2(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
+                            default: Multiply_Sum2_FOR2(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
+                        }
+                    }
+                    break;
                     case 3: {
-                            switch (lenSum[1]) {
-                                case 0: return;
-                                case 1: Multiply_Sum2Unroll1_FOR3(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
-                                case 2: Multiply_Sum2Unroll2_FOR3(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
-                                case 3: Multiply_Sum2Unroll3_FOR3(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
-                                default: Multiply_Sum2_FOR3(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
-                            }
-                        } break;
+                        switch (lenSum[1]) {
+                            case 0: return;
+                            case 1: Multiply_Sum2Unroll1_FOR3(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
+                            case 2: Multiply_Sum2Unroll2_FOR3(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
+                            case 3: Multiply_Sum2Unroll3_FOR3(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
+                            default: Multiply_Sum2_FOR3(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
+                        }
+                    }
+                    break;
                     case 4: {
-                            switch (lenSum[1]) {
-                                case 0: return;
-                                case 1: Multiply_Sum2Unroll1_FOR4(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
-                                case 2: Multiply_Sum2Unroll2_FOR4(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
-                                case 3: Multiply_Sum2Unroll3_FOR4(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
-                                default: Multiply_Sum2_FOR4(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
-                            }
-                        } break;
+                        switch (lenSum[1]) {
+                            case 0: return;
+                            case 1: Multiply_Sum2Unroll1_FOR4(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
+                            case 2: Multiply_Sum2Unroll2_FOR4(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
+                            case 3: Multiply_Sum2Unroll3_FOR4(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
+                            default: Multiply_Sum2_FOR4(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
+                        }
+                    }
+                    break;
                     default: Multiply_Sum2_GOTO(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl); break;
                 }
             } else {
@@ -4035,97 +3991,106 @@ namespace ilPSP {
         /// <summary>
         /// Selects an optimized implementation for this particular case
         /// </summary>
-        unsafe static private void MultiplyWTrafo_Dispatch(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf, int TrfEnd, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
+        unsafe static private void MultiplyWTrafo_Dispatch(int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf_T, int* Trf_A, int* Trf_B, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B) {
             if (SumDim == 0) {
                 switch (RunDim) {
                     case 0: throw new NotSupportedException();
-                    case 1: MultiplyWTrafo_Sum0_FOR1(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf, TrfEnd, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
-                    case 2: MultiplyWTrafo_Sum0_FOR2(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf, TrfEnd, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
-                    case 3: MultiplyWTrafo_Sum0_FOR3(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf, TrfEnd, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
-                    case 4: MultiplyWTrafo_Sum0_FOR4(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf, TrfEnd, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
-                        throw new NotImplementedException();
+                    case 1: MultiplyWTrafo_Sum0_FOR1(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf_T, Trf_A, Trf_B, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
+                    case 2: MultiplyWTrafo_Sum0_FOR2(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf_T, Trf_A, Trf_B, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
+                    case 3: MultiplyWTrafo_Sum0_FOR3(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf_T, Trf_A, Trf_B, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
+                    case 4:
+                    MultiplyWTrafo_Sum0_FOR4(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf_T, Trf_A, Trf_B, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
+                    throw new NotImplementedException();
                 }
             } else if (SumDim == 1) {
                 switch (RunDim) {
                     case 0: throw new NotSupportedException();
                     case 1: {
-                            switch (lenSum[0]) {
-                                case 0: return;
-                                case 1: MultiplyWTrafo_Sum1Unroll1_FOR1(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf, TrfEnd, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
-                                case 2: MultiplyWTrafo_Sum1Unroll2_FOR1(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf, TrfEnd, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
-                                case 3: MultiplyWTrafo_Sum1Unroll3_FOR1(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf, TrfEnd, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
-                                default: MultiplyWTrafo_Sum1_FOR1(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf, TrfEnd, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
-                            }
-                        } break;
+                        switch (lenSum[0]) {
+                            case 0: return;
+                            case 1: MultiplyWTrafo_Sum1Unroll1_FOR1(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf_T, Trf_A, Trf_B, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
+                            case 2: MultiplyWTrafo_Sum1Unroll2_FOR1(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf_T, Trf_A, Trf_B, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
+                            case 3: MultiplyWTrafo_Sum1Unroll3_FOR1(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf_T, Trf_A, Trf_B, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
+                            default: MultiplyWTrafo_Sum1_FOR1(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf_T, Trf_A, Trf_B, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
+                        }
+                    }
+                    break;
                     case 2: {
-                            switch (lenSum[0]) {
-                                case 0: return;
-                                case 1: MultiplyWTrafo_Sum1Unroll1_FOR2(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf, TrfEnd, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
-                                case 2: MultiplyWTrafo_Sum1Unroll2_FOR2(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf, TrfEnd, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
-                                case 3: MultiplyWTrafo_Sum1Unroll3_FOR2(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf, TrfEnd, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
-                                default: MultiplyWTrafo_Sum1_FOR2(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf, TrfEnd, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
-                            }
-                        } break;
+                        switch (lenSum[0]) {
+                            case 0: return;
+                            case 1: MultiplyWTrafo_Sum1Unroll1_FOR2(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf_T, Trf_A, Trf_B, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
+                            case 2: MultiplyWTrafo_Sum1Unroll2_FOR2(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf_T, Trf_A, Trf_B, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
+                            case 3: MultiplyWTrafo_Sum1Unroll3_FOR2(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf_T, Trf_A, Trf_B, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
+                            default: MultiplyWTrafo_Sum1_FOR2(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf_T, Trf_A, Trf_B, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
+                        }
+                    }
+                    break;
                     case 3: {
-                            switch (lenSum[0]) {
-                                case 0: return;
-                                case 1: MultiplyWTrafo_Sum1Unroll1_FOR3(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf, TrfEnd, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
-                                case 2: MultiplyWTrafo_Sum1Unroll2_FOR3(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf, TrfEnd, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
-                                case 3: MultiplyWTrafo_Sum1Unroll3_FOR3(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf, TrfEnd, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
-                                default: MultiplyWTrafo_Sum1_FOR3(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf, TrfEnd, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
-                            }
-                        } break;
+                        switch (lenSum[0]) {
+                            case 0: return;
+                            case 1: MultiplyWTrafo_Sum1Unroll1_FOR3(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf_T, Trf_A, Trf_B, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
+                            case 2: MultiplyWTrafo_Sum1Unroll2_FOR3(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf_T, Trf_A, Trf_B, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
+                            case 3: MultiplyWTrafo_Sum1Unroll3_FOR3(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf_T, Trf_A, Trf_B, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
+                            default: MultiplyWTrafo_Sum1_FOR3(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf_T, Trf_A, Trf_B, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
+                        }
+                    }
+                    break;
                     case 4: {
-                            switch (lenSum[0]) {
-                                case 0: return;
-                                case 1: MultiplyWTrafo_Sum1Unroll1_FOR4(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf, TrfEnd, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
-                                case 2: MultiplyWTrafo_Sum1Unroll2_FOR4(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf, TrfEnd, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
-                                case 3: MultiplyWTrafo_Sum1Unroll3_FOR4(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf, TrfEnd, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
-                                default: MultiplyWTrafo_Sum1_FOR4(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf, TrfEnd, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
-                            }
-                        } break;
-                        throw new NotImplementedException();
+                        switch (lenSum[0]) {
+                            case 0: return;
+                            case 1: MultiplyWTrafo_Sum1Unroll1_FOR4(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf_T, Trf_A, Trf_B, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
+                            case 2: MultiplyWTrafo_Sum1Unroll2_FOR4(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf_T, Trf_A, Trf_B, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
+                            case 3: MultiplyWTrafo_Sum1Unroll3_FOR4(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf_T, Trf_A, Trf_B, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
+                            default: MultiplyWTrafo_Sum1_FOR4(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf_T, Trf_A, Trf_B, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
+                        }
+                    }
+                    break;
+                    throw new NotImplementedException();
                 }
             } else if (SumDim == 2) {
                 switch (RunDim) {
                     case 0: throw new NotSupportedException();
                     case 1: {
-                            switch (lenSum[1]) {
-                                case 0: return;
-                                case 1: MultiplyWTrafo_Sum2Unroll1_FOR1(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf, TrfEnd, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
-                                case 2: MultiplyWTrafo_Sum2Unroll2_FOR1(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf, TrfEnd, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
-                                case 3: MultiplyWTrafo_Sum2Unroll3_FOR1(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf, TrfEnd, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
-                                default: MultiplyWTrafo_Sum2_FOR1(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf, TrfEnd, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
-                            }
-                        } break;
+                        switch (lenSum[1]) {
+                            case 0: return;
+                            case 1: MultiplyWTrafo_Sum2Unroll1_FOR1(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf_T, Trf_A, Trf_B, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
+                            case 2: MultiplyWTrafo_Sum2Unroll2_FOR1(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf_T, Trf_A, Trf_B, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
+                            case 3: MultiplyWTrafo_Sum2Unroll3_FOR1(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf_T, Trf_A, Trf_B, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
+                            default: MultiplyWTrafo_Sum2_FOR1(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf_T, Trf_A, Trf_B, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
+                        }
+                    }
+                    break;
                     case 2: {
-                            switch (lenSum[1]) {
-                                case 0: return;
-                                case 1: MultiplyWTrafo_Sum2Unroll1_FOR2(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf, TrfEnd, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
-                                case 2: MultiplyWTrafo_Sum2Unroll2_FOR2(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf, TrfEnd, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
-                                case 3: MultiplyWTrafo_Sum2Unroll3_FOR2(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf, TrfEnd, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
-                                default: MultiplyWTrafo_Sum2_FOR2(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf, TrfEnd, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
-                            }
-                        } break;
+                        switch (lenSum[1]) {
+                            case 0: return;
+                            case 1: MultiplyWTrafo_Sum2Unroll1_FOR2(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf_T, Trf_A, Trf_B, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
+                            case 2: MultiplyWTrafo_Sum2Unroll2_FOR2(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf_T, Trf_A, Trf_B, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
+                            case 3: MultiplyWTrafo_Sum2Unroll3_FOR2(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf_T, Trf_A, Trf_B, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
+                            default: MultiplyWTrafo_Sum2_FOR2(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf_T, Trf_A, Trf_B, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
+                        }
+                    }
+                    break;
                     case 3: {
-                            switch (lenSum[1]) {
-                                case 0: return;
-                                case 1: MultiplyWTrafo_Sum2Unroll1_FOR3(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf, TrfEnd, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
-                                case 2: MultiplyWTrafo_Sum2Unroll2_FOR3(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf, TrfEnd, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
-                                case 3: MultiplyWTrafo_Sum2Unroll3_FOR3(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf, TrfEnd, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
-                                default: MultiplyWTrafo_Sum2_FOR3(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf, TrfEnd, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
-                            }
-                        } break;
+                        switch (lenSum[1]) {
+                            case 0: return;
+                            case 1: MultiplyWTrafo_Sum2Unroll1_FOR3(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf_T, Trf_A, Trf_B, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
+                            case 2: MultiplyWTrafo_Sum2Unroll2_FOR3(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf_T, Trf_A, Trf_B, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
+                            case 3: MultiplyWTrafo_Sum2Unroll3_FOR3(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf_T, Trf_A, Trf_B, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
+                            default: MultiplyWTrafo_Sum2_FOR3(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf_T, Trf_A, Trf_B, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
+                        }
+                    }
+                    break;
                     case 4: {
-                            switch (lenSum[1]) {
-                                case 0: return;
-                                case 1: MultiplyWTrafo_Sum2Unroll1_FOR4(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf, TrfEnd, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
-                                case 2: MultiplyWTrafo_Sum2Unroll2_FOR4(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf, TrfEnd, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
-                                case 3: MultiplyWTrafo_Sum2Unroll3_FOR4(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf, TrfEnd, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
-                                default: MultiplyWTrafo_Sum2_FOR4(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf, TrfEnd, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
-                            }
-                        } break;
-                        throw new NotImplementedException();
+                        switch (lenSum[1]) {
+                            case 0: return;
+                            case 1: MultiplyWTrafo_Sum2Unroll1_FOR4(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf_T, Trf_A, Trf_B, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
+                            case 2: MultiplyWTrafo_Sum2Unroll2_FOR4(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf_T, Trf_A, Trf_B, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
+                            case 3: MultiplyWTrafo_Sum2Unroll3_FOR4(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf_T, Trf_A, Trf_B, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
+                            default: MultiplyWTrafo_Sum2_FOR4(RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf_T, Trf_A, Trf_B, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B); break;
+                        }
+                    }
+                    break;
+                    throw new NotImplementedException();
                 }
             } else {
                 throw new NotImplementedException();
@@ -4133,4 +4098,3 @@ namespace ilPSP {
         }
     }
 }
-

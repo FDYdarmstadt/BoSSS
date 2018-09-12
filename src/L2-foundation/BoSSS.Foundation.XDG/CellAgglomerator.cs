@@ -249,7 +249,7 @@ namespace BoSSS.Foundation.XDG {
 
                 this.GridDat = g;
                 int J = g.Cells.NoOfLocalUpdatedCells;
-                int JE = g.Cells.NoOfCells;
+                int JE = g.Cells.Count;
 
                 // check cell index validity
                 foreach (var AggPair in AgglomerationPairs) {

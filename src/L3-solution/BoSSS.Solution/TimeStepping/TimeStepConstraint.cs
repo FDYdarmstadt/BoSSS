@@ -33,7 +33,7 @@ namespace BoSSS.Solution {
         /// <summary>
         /// Information about the grid
         /// </summary>
-        protected readonly GridData gridData;
+        protected readonly IGridData gridData;
 
         /// <summary>
         /// Nodes for the evaluation of the time step constraint per reference element
@@ -46,7 +46,7 @@ namespace BoSSS.Solution {
         /// ctor
         /// </summary>
         /// <param name="gridData"></param>
-        public TimeStepConstraint(GridData gridData, double dtMin, double dtMax, double dtFraction, double Endtime) {
+        public TimeStepConstraint(IGridData gridData, double dtMin, double dtMax, double dtFraction, double Endtime) {
             this.gridData = gridData;
             this.dtMin = dtMin;
             this.dtMax = dtMax;
@@ -61,7 +61,7 @@ namespace BoSSS.Solution {
         public NodeSet[] EvaluationPoints {
             get {
                 if (evaluationPoints == null) {
-                    var KrefS = gridData.Grid.RefElements;
+                    var KrefS = gridData.iGeomCells.RefElements;
                     int D = gridData.SpatialDimension;
 
                     evaluationPoints = new NodeSet[KrefS.Length];

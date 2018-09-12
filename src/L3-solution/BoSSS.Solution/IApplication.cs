@@ -53,7 +53,7 @@ namespace BoSSS.Solution {
         /// <summary>
         /// extended grid information
         /// </summary>
-        GridData GridData {
+        IGridData GridData {
             get;
         }
 
