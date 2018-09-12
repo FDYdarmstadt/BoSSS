@@ -112,7 +112,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         void ComputeNonAgglomeratedMetrics() {
             var gd = XDGSpaceMetrics.GridDat;
-            int JE = gd.Cells.NoOfCells;
+            int JE = gd.Cells.Count;
             int J = gd.Cells.NoOfLocalUpdatedCells;
             int D = gd.SpatialDimension;
             int EE = gd.Edges.Count;

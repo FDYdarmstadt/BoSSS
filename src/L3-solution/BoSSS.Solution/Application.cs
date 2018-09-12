@@ -894,7 +894,7 @@ namespace BoSSS.Solution {
                 //====================
 
                 Grid = CreateOrLoadGrid();
-                if (Grid == null) {
+                if (Grid == null && AggGrid == null) {
                     throw new ApplicationException("No grid loaded through CreateOrLoadGrid");
                 }
 
@@ -976,24 +976,31 @@ namespace BoSSS.Solution {
                 //====================
                 //RedistributeGrid();
 
-                Grid.Redistribute(DatabaseDriver, Control.GridPartType, Control.GridPartOptions);
-                if (!passiveIo && !DatabaseDriver.GridExists(Grid.GridGuid)) {
+                if (Grid != null) {
+                    Grid.Redistribute(DatabaseDriver, Control.GridPartType, Control.GridPartOptions);
+                    if (!passiveIo && !DatabaseDriver.GridExists(Grid.GridGuid)) {
 
-                    //DatabaseDriver.SaveGrid(Grid);
-                    GridCommons _grid = this.Grid;
-                    DatabaseDriver.SaveGrid(_grid, this.m_Database);
-                    //DatabaseDriver.SaveGridIfUnique(ref _grid, out GridReplaced, this.m_Database);
-                    this.Grid = _grid;
+                        //DatabaseDriver.SaveGrid(Grid);
+                        GridCommons _grid = this.Grid;
+                        DatabaseDriver.SaveGrid(_grid, this.m_Database);
+                        //DatabaseDriver.SaveGridIfUnique(ref _grid, out GridReplaced, this.m_Database);
+                        this.Grid = _grid;
 
-                }
+                    }
 
-                GridData = new GridData(Grid);
 
-                if (this.Control == null || this.Control.NoOfMultigridLevels > 0) {
-                    this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
+                    GridData = new GridData(Grid);
+
+                    if (this.Control == null || this.Control.NoOfMultigridLevels > 0) {
+                        this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
+                    } else {
+                        this.MultigridSequence = new AggregationGrid[0];
+                    }
                 } else {
+                    GridData = this.AggGrid;
                     this.MultigridSequence = new AggregationGrid[0];
                 }
+
 
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
@@ -1002,9 +1009,9 @@ namespace BoSSS.Solution {
                     if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:NoOfCells"))
                         this.CurrentSessionInfo.KeysAndQueries.Add("Grid:NoOfCells", Grid.CellPartitioning.TotalLength);
                     if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMax"))
-                        this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMax", GridData.Cells.h_maxGlobal);
+                        this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMax", ((GridData)GridData).Cells.h_maxGlobal);
                     if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMin"))
-                        this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMin", GridData.Cells.h_minGlobal);
+                        this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMin", ((GridData)GridData).Cells.h_minGlobal);
 
                 }
 
@@ -1132,7 +1139,7 @@ namespace BoSSS.Solution {
         /// <summary>
         /// Extended grid information.
         /// </summary>
-        public GridData GridData {
+        public IGridData GridData {
             get;
             private set;
         }
@@ -1153,6 +1160,12 @@ namespace BoSSS.Solution {
             get;
             private set;
         }
+
+        /// <summary>
+        /// Provisional alternative grid;
+        /// </summary>
+        protected AggregationGrid AggGrid;
+
 
         /// <summary>
         /// <see cref="DatabaseDriver"/>
@@ -1295,7 +1308,7 @@ namespace BoSSS.Solution {
                         t,
                         timestepno,
                         this.CurrentSessionInfo,
-                        this.GridData,
+                        ((GridData)(this.GridData)),
                         this.IOFields);
                 } catch (Exception ee) {
                     Console.Error.WriteLine(ee.GetType().Name + " on rank " + this.MPIRank + " saving time-step " + timestepno + ": " + ee.Message);
@@ -1368,7 +1381,7 @@ namespace BoSSS.Solution {
                 }
                 time = tsi_toLoad.PhysicalTime;
 
-                DatabaseDriver.LoadFieldData(tsi_toLoad, this.GridData, this.IOFields);
+                DatabaseDriver.LoadFieldData(tsi_toLoad, ((GridData)(this.GridData)), this.IOFields);
                 return tsi_toLoad.TimeStepNumber;
             }
         }
@@ -1756,7 +1769,7 @@ namespace BoSSS.Solution {
 
                     // backup old data
                     // ===============
-                    GridData oldGridData = this.GridData;
+                    GridData oldGridData = ((GridData)(this.GridData));
                     Permutation tau;
                     GridUpdateDataVault_LoadBal loadbal = new GridUpdateDataVault_LoadBal(oldGridData, this.LsTrk);
                     BackupData(oldGridData, this.LsTrk, loadbal, out tau);
@@ -1867,7 +1880,7 @@ namespace BoSSS.Solution {
                     // backup old data
                     // ===============
 
-                    GridData oldGridData = this.GridData;
+                    GridData oldGridData = (GridData) this.GridData;
                     GridCommons oldGrid = oldGridData.Grid;
                     Guid oldGridId = oldGrid.ID;
                     Permutation tau;
@@ -2284,8 +2297,8 @@ namespace BoSSS.Solution {
                         CorrectlyTerminated = true;
                         nlog.LogValue("pstudy_case_successful", true);
                         nlog.LogValue("GrdRes:NumberOfCells", app.Grid.CellPartitioning.TotalLength);
-                        nlog.LogValue("GrdRes:h_min", app.GridData.Cells.h_minGlobal);
-                        nlog.LogValue("GrdRes:h_max", app.GridData.Cells.h_maxGlobal);
+                        nlog.LogValue("GrdRes:h_min", ((GridData)(app.GridData)).Cells.h_minGlobal);
+                        nlog.LogValue("GrdRes:h_max", ((GridData)(app.GridData)).Cells.h_maxGlobal);
 #if DEBUG
                     }
 #else
@@ -2504,7 +2517,7 @@ namespace BoSSS.Solution {
         /// </summary>
         protected virtual void LoadField(ITimestepInfo tsi, string fieldName, string newFieldName = null) {
             using (new ilPSP.Tracing.FuncTrace()) {
-                DGField field = DatabaseDriver.LoadFields(tsi, GridData, new[] { fieldName }).Single();
+                DGField field = DatabaseDriver.LoadFields(tsi, (GridData)GridData, new[] { fieldName }).Single();
                 field.Identification = newFieldName ?? fieldName;
                 m_IOFields.Add(field);
             }

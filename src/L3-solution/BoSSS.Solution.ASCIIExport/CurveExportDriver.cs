@@ -48,9 +48,10 @@ namespace BoSSS.Solution.ASCIIExport {
         /// <summary>
         /// see <see cref="PlotDriver.PlotDriver"/>.
         /// </summary>
-        public CurveExportDriver(GridData context, bool showJumps, bool ghostZone, uint superSampling, SubGrid sgrd = null)
-            : base(context, showJumps, ghostZone, superSampling, sgrd) {
-                        if (context.Grid.SpatialDimension != 1) {
+        public CurveExportDriver(IGridData context, bool showJumps, bool ghostZone, uint superSampling, CellMask sgrd = null)
+            : base(context, showJumps, ghostZone, superSampling, sgrd) //
+        {
+            if (context.SpatialDimension != 1) {
                 throw new ArgumentException("Only supported in one dimension", "context");
             }
         }
@@ -58,9 +59,9 @@ namespace BoSSS.Solution.ASCIIExport {
         /// <summary>
         /// see <see cref="PlotDriver.PlotDriver"/>.
         /// </summary>
-        public CurveExportDriver(GridData context, bool showJumps, uint superSampling)
+        public CurveExportDriver(IGridData context, bool showJumps, uint superSampling)
             : base(context, showJumps, false, superSampling, null) {
-            if (context.Grid.SpatialDimension != 1) {
+            if (context.SpatialDimension != 1) {
                 throw new ArgumentException("Only supported in one dimension", "context");
             }
         }
@@ -87,7 +88,7 @@ namespace BoSSS.Solution.ASCIIExport {
         /// <summary>
         /// creates new CurveExportZone
         /// </summary>
-        protected override PlotDriver.ZoneDriver CreateZoneDriver(GridData context, int iKref, bool showJumps, bool showGhostCells, uint superSampling, SubGrid __sgrd) {
+        protected override PlotDriver.ZoneDriver CreateZoneDriver(IGridData context, int iKref, bool showJumps, bool showGhostCells, uint superSampling, CellMask __sgrd) {
             return new CurveExportZone(context, this, iKref, showJumps, showGhostCells, superSampling, __sgrd);
         }
 
@@ -117,7 +118,7 @@ namespace BoSSS.Solution.ASCIIExport {
             /// <summary>
             /// ctor.
             /// </summary>
-            public CurveExportZone(GridData context, CurveExportDriver owner, int iKref, bool showJumps, bool ghostZone, uint superSampling, SubGrid sgrd = null)
+            public CurveExportZone(IGridData context, CurveExportDriver owner, int iKref, bool showJumps, bool ghostZone, uint superSampling, CellMask sgrd = null)
                 : base(context, iKref, showJumps, ghostZone, superSampling, sgrd) {
                 this.owner = owner;
             }

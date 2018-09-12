@@ -247,7 +247,7 @@ namespace NSE_SIMPLE {
         /// <param name="GridDat"></param>
         /// <param name="Temperature"></param>
         /// <param name="SolverConf"></param>
-        void CalculateNusselt(TimestepNumber Timestep, GridData GridDat, SinglePhaseField Temperature, SIMPLEControl SolverConf) {
+        void CalculateNusselt(TimestepNumber Timestep, IGridData GridDat, SinglePhaseField Temperature, SIMPLEControl SolverConf) {
 
             // Initialize calculation of Nusselt number.
             if (NusseltNum == null) {

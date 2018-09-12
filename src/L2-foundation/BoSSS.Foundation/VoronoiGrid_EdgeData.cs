@@ -36,6 +36,9 @@ namespace BoSSS.Foundation.Grid.Voronoi {
         GeomEdgeData m_GeomEdges;
 
         class GeomEdgeData : IGeometricalEdgeData {
+
+            
+
             public int Count {
                 get {
                     throw new NotImplementedException();
@@ -102,6 +105,14 @@ namespace BoSSS.Foundation.Grid.Voronoi {
                 throw new NotImplementedException();
             }
 
+            public EdgeMask GetEdges4RefElement(RefElement Kref) {
+                throw new NotImplementedException();
+            }
+
+            public double GetEdgeArea(int e) {
+                throw new NotImplementedException();
+            }
+
             public int[][] VertexIndices {
                 get;
                 internal set;
@@ -126,6 +137,12 @@ namespace BoSSS.Foundation.Grid.Voronoi {
             }
 
             public MultidimensionalArray Edge2CellTrafos_SqrtGramian {
+                get {
+                    throw new NotImplementedException();
+                }
+            }
+
+            public int[,] LogicalCellIndices {
                 get {
                     throw new NotImplementedException();
                 }
@@ -156,6 +173,10 @@ namespace BoSSS.Foundation.Grid.Voronoi {
                 get {
                     throw new NotImplementedException();
                 }
+            }
+
+            public double GetEdgeArea(int e) {
+                throw new NotImplementedException();
             }
 
             public EdgeMask GetEdges4RefElement(RefElement Kref) {

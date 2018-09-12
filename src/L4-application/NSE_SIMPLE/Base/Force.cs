@@ -86,19 +86,19 @@ namespace NSE_SIMPLE {
                 for (int edge = 0; edge < NoOfEdges; edge++) {
                     CoordinateMapping m_CoordinateMapping = new CoordinateMapping(m_app.WorkingSet.Pressure, DuDx, DuDy, DvDx, DvDy);
                     var QuadratureOrder = m_CoordinateMapping.BasisS.Max(basis => basis.Degree) * 2 + 1;
-                    XForceIntegral[edge] = new EdgeIntegral(m_app.GridData,
+                    XForceIntegral[edge] = new EdgeIntegral( (BoSSS.Foundation.Grid.Classic.GridData)( m_app.GridData),
                         edgeTagNames[edge],
                         new ForceFlux2D(0, m_app),
                         m_CoordinateMapping,
                         QuadratureOrder);
 
-                    YForceIntegral[edge] = new EdgeIntegral(m_app.GridData,
+                    YForceIntegral[edge] = new EdgeIntegral((BoSSS.Foundation.Grid.Classic.GridData)( m_app.GridData),
                         edgeTagNames[edge],
                         new ForceFlux2D(1, m_app),
                         m_CoordinateMapping,
                         QuadratureOrder);
 
-                    ZMomentIntegral[edge] = new EdgeIntegral(m_app.GridData,
+                    ZMomentIntegral[edge] = new EdgeIntegral((BoSSS.Foundation.Grid.Classic.GridData)( m_app.GridData),
                         edgeTagNames[edge],
                         new MomentFlux2D(m_app),
                         m_CoordinateMapping,
@@ -108,37 +108,37 @@ namespace NSE_SIMPLE {
                 for (int edge = 0; edge < NoOfEdges; edge++) {
                     var m_CoordMap = new CoordinateMapping(m_app.WorkingSet.Pressure, DuDx, DuDy, DuDz, DvDx, DvDy, DvDz, DwDx, DwDy, DwDz);
                     var QuadOrder = m_CoordMap.BasisS.Max(basis => basis.Degree) * 2 + 1;
-                    XForceIntegral[edge] = new EdgeIntegral(m_app.GridData,
+                    XForceIntegral[edge] = new EdgeIntegral((BoSSS.Foundation.Grid.Classic.GridData)( m_app.GridData),
                         edgeTagNames[edge],
                         new ForceFlux3D(0, m_app),
                         m_CoordMap,
                         QuadOrder);
 
-                    YForceIntegral[edge] = new EdgeIntegral(m_app.GridData,
+                    YForceIntegral[edge] = new EdgeIntegral((BoSSS.Foundation.Grid.Classic.GridData)( m_app.GridData),
                         edgeTagNames[edge],
                         new ForceFlux3D(1, m_app),
                         m_CoordMap,
                         QuadOrder);
 
-                    ZForceIntegral[edge] = new EdgeIntegral(m_app.GridData,
+                    ZForceIntegral[edge] = new EdgeIntegral((BoSSS.Foundation.Grid.Classic.GridData)( m_app.GridData),
                         edgeTagNames[edge],
                         new ForceFlux3D(2, m_app),
                         m_CoordMap,
                         QuadOrder);
 
-                    XMomentIntegral[edge] = new EdgeIntegral(m_app.GridData,
+                    XMomentIntegral[edge] = new EdgeIntegral((BoSSS.Foundation.Grid.Classic.GridData)( m_app.GridData),
                         edgeTagNames[edge],
                         new MomentFlux3D(0, m_app),
                         m_CoordMap,
                         QuadOrder);
 
-                    YMomentIntegral[edge] = new EdgeIntegral(m_app.GridData,
+                    YMomentIntegral[edge] = new EdgeIntegral((BoSSS.Foundation.Grid.Classic.GridData)( m_app.GridData),
                         edgeTagNames[edge],
                         new MomentFlux3D(1, m_app),
                         m_CoordMap,
                         QuadOrder);
 
-                    ZMomentIntegral[edge] = new EdgeIntegral(m_app.GridData,
+                    ZMomentIntegral[edge] = new EdgeIntegral((BoSSS.Foundation.Grid.Classic.GridData)( m_app.GridData),
                         edgeTagNames[edge],
                         new MomentFlux3D(2, m_app),
                         m_CoordMap,

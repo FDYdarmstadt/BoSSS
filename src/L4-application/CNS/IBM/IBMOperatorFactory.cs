@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using CNS.Boundary;
 using CNS.EquationSystem;
@@ -43,7 +44,7 @@ namespace CNS.IBM {
         /// <param name="boundaryMap"></param>
         public IBMOperatorFactory(
             IBMControl control,
-            GridData gridData,
+            IGridData gridData,
             CNSFieldSet workingSet,
             ISpeciesMap speciesMap,
             IBoundaryConditionMap boundaryMap)

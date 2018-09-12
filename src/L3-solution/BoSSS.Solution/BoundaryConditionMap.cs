@@ -102,8 +102,7 @@ namespace BoSSS.Solution.Utils {
         /// </remarks>
         public Dictionary<string, Func<double[], double, double>[]> bndFunction = new Dictionary<string, Func<double[], double, double>[]>();
 
-        GridCommons m_grid;
-        GridData m_grdDat;
+        IGridData m_grdDat;
 
         /// <summary>
         /// ctor
@@ -113,13 +112,13 @@ namespace BoSSS.Solution.Utils {
         /// <param name="bndFunctionNames">
         /// all names of boundary functions that should be parsed for;
         /// </param>
-        public BoundaryCondMap(GridData grdDat, IDictionary<string, AppControl.BoundaryValueCollection> _bndy, params string[] bndFunctionNames) {
+        public BoundaryCondMap(IGridData grdDat, IDictionary<string, AppControl.BoundaryValueCollection> _bndy, params string[] bndFunctionNames) {
 
             var bndy = new Dictionary<string, AppControl.BoundaryValueCollection>(_bndy, new StringIgnoreCaseEq());
 
             m_grdDat = grdDat;
-            m_grid = grdDat.Grid;
-            var grid = m_grid;
+            //m_grid = grdDat.Grid;
+            //var grid = m_grid;
 
             // verify Boundary Condition Type Enum
             // ====================================
@@ -168,8 +167,8 @@ namespace BoSSS.Solution.Utils {
 
 
                 // 1st: look if all EdgeTagsNames in the Grid have a corresponding entry in the control file
-                foreach (byte EdgeTag in grid.EdgeTagNames.Keys) {  // loop over all edge tag names in grid ...
-                    string EdgeTagName = grid.EdgeTagNames[EdgeTag];
+                foreach (byte EdgeTag in grdDat.EdgeTagNames.Keys) {  // loop over all edge tag names in grid ...
+                    string EdgeTagName = grdDat.EdgeTagNames[EdgeTag];
                     if (EdgeTagName.Length <= 0)
                         Problems.Add("Found an empty EdgeTagName in the grid. (EdgeTag = " + EdgeTag + ").");
 
@@ -208,7 +207,7 @@ namespace BoSSS.Solution.Utils {
                     if (edgetagname == null || edgetagname.Length <= 0)
                         Problems.Add("found some boundary condition with zero-length name");
 
-                    if (!grid.EdgeTagNames.Values.Contains(edgetagname, new StringIgnoreCaseEq())) {
+                    if (!grdDat.EdgeTagNames.Values.Contains(edgetagname, new StringIgnoreCaseEq())) {
                         Problems.Add("some boundary condition for '" + edgetagname + "' is specified in control file, but there is no corresponding EdgeTagName in the grid.");
                     }
                 }
@@ -253,10 +252,10 @@ namespace BoSSS.Solution.Utils {
 
                     stw.Write("(EdgeTagNames in the grid are: ");
                     int cnt = 0;
-                    foreach (string s in grid.EdgeTagNames.Values) {
+                    foreach (string s in grdDat.EdgeTagNames.Values) {
                         cnt++;
                         stw.Write("'" + s + "'");
-                        if (cnt < grid.EdgeTagNames.Count)
+                        if (cnt < grdDat.EdgeTagNames.Count)
                             stw.Write(", ");
                     }
                     stw.Write(")");
@@ -271,13 +270,13 @@ namespace BoSSS.Solution.Utils {
             // ==========
 
             // loop over all edges ...
-            int E = grdDat.Edges.Count;
+            int E = grdDat.iGeomEdges.Count;
             for (int e = 0; e < E; e++) {
                 //foreach (byte EdgeTag in grdDat.EdgeTags) {
-                byte EdgeTag = grdDat.Edges.EdgeTags[e];
+                byte EdgeTag = grdDat.iGeomEdges.EdgeTags[e];
 
                 if (EdgeTag == 0) {
-                    if (grdDat.Edges.CellIndices[e, 1] < 0)
+                    if (grdDat.iGeomEdges.CellIndices[e, 1] < 0)
                         // unspec. EdgeTag on boundary -> error
                         throw new ApplicationException("Error in Grid: found at least one edge without EdgeTag;");
                     else
@@ -294,10 +293,10 @@ namespace BoSSS.Solution.Utils {
             // build the EdgeTag -> BoundaryCondType -- Mapping
             // ================================================
 
-            foreach (byte EdgeTag in grid.EdgeTagNames.Keys) {
+            foreach (byte EdgeTag in grdDat.EdgeTagNames.Keys) {
 
 
-                string EdgeTagName = grid.EdgeTagNames[EdgeTag];
+                string EdgeTagName = grdDat.EdgeTagNames[EdgeTag];
                 if (EdgeTag == 0 || EdgeTag >= GridCommons.FIRST_PERIODIC_BC_TAG)
                     continue;
 
@@ -370,10 +369,10 @@ namespace BoSSS.Solution.Utils {
                 int cnt = 0;
 
                 // loop over all edges ...
-                E = grdDat.Edges.Count;
+                E = grdDat.iGeomEdges.Count;
                 for (int e = 0; e < E; e++) {
                     //foreach (byte EdgeTag in grdDat.EdgeTags) {
-                    byte EdgeTag = grdDat.Edges.EdgeTags[e];
+                    byte EdgeTag = grdDat.iGeomEdges.EdgeTags[e];
 
                     if (EdgeTag == 0)
                         continue;
@@ -430,10 +429,10 @@ namespace BoSSS.Solution.Utils {
             get {
                 using (new FuncTrace()) {
                     ilPSP.MPICollectiveWatchDog.Watch(MPI.Wrappers.csMPI.Raw._COMM.WORLD);
-                    int Cnt = 0, J = this.m_grdDat.Edges.Count;
+                    int Cnt = 0, J = this.m_grdDat.iGeomEdges.Count;
 
                     for (int j = 0; j < J; j++) {
-                        if (m_grdDat.Edges.EdgeTags[j] >= GridCommons.FIRST_PERIODIC_BC_TAG)
+                        if (m_grdDat.iGeomEdges.EdgeTags[j] >= GridCommons.FIRST_PERIODIC_BC_TAG)
                             Cnt++;
                     }
 

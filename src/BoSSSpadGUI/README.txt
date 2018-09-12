@@ -19,7 +19,7 @@ Optional:
 	npm run build
 
 ############################################################################################
-Build Installer with InnoSetup and install as Standalone, windows, 64bit: 
+Package and create Installer with InnoSetup for Windows, 64bit: 
 ############################################################################################
 1, Install npm on your machine (https://www.npmjs.com/).  (package manager for Node.js)
 2, Install InnoSetup on your machine (http://www.jrsoftware.org/isinfo.php)

@@ -214,6 +214,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 if (!(mask is CellMask)) {
                     throw new ArgumentException("CellMask required", "mask");
                 }
+                if (mask.MaskType != MaskType.Geometrical)
+                    throw new ArgumentException("Expecting a geometrical mask.");
+
 #if DEBUG 
                 CellMask differingCells = ((CellMask)mask).Except(this.LevelSetData.Region.GetCutCellMask4LevSet(this.levelSetIndex));
                 if (differingCells.NoOfItemsLocally > 0) {

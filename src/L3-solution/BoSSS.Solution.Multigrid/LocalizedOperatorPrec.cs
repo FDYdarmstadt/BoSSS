@@ -58,7 +58,6 @@ namespace BoSSS.Solution.Multigrid {
             }
         }
 
-        int D;
         string[] DomName;
         string[] CodName;
         string[] Params;
@@ -214,6 +213,7 @@ namespace BoSSS.Solution.Multigrid {
             }
 
             X.SetV(temp);
+            m_ThisLevelIterations++;
 
         }
 
