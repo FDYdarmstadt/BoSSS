@@ -1173,7 +1173,7 @@ namespace BoSSS.Application.IBM_Solver {
             return C;
         }
 
-        static public IBM_Control DrivenCavity3D(int k = 2, int cellsXYZ = 1) {
+        static public IBM_Control DrivenCavity3D(int k = 1, int cellsXYZ = 5) {
             IBM_Control C = new IBM_Control();
 
             // basic database options
