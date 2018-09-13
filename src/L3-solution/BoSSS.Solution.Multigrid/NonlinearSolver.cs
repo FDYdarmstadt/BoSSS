@@ -32,7 +32,7 @@ namespace BoSSS.Solution.Multigrid {
     /// <summary>
     /// Evaluation or linearization/matrix assembly of the operator
     /// </summary>
-    /// <param name="Matrix"><p</param>
+    /// <param name="Matrix"></param>
     /// <param name="Affine"></param>
     /// <param name="Linearization">
     /// - false: operator evaluation
