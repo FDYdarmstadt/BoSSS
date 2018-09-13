@@ -103,7 +103,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             /// <param name="jCellLocal">
             /// A local cell index; the valid range includes external/ghost
             /// cells, i.e. the highest admissible number is
-            /// <see cref="CellData.NoOfCells"/>-1.
+            /// <see cref="CellData.Count"/>-1.
             /// </param>
             /// <returns></returns>
             public long GetGlobalCellIndex(int jCellLocal) {
@@ -122,7 +122,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             /// <summary>
             /// Global indices of external cells (local indices j in the range
             /// <see cref="CellData.NoOfLocalUpdatedCells"/> &lt;= j &lt;
-            /// <see cref="CellData.NoOfCells"/>); Note that there is an index
+            /// <see cref="CellData.Count"/>); Note that there is an index
             /// offset, so the entry at index 0 is the global index of cell at
             /// local index <see cref="CellData.NoOfLocalUpdatedCells"/>;
             /// See also <see cref="GlobalIndicesExternalCells"/>;

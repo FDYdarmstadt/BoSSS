@@ -85,7 +85,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         where S : IPsi
         where T : SayeArgument<S>
     {
-        int cell;
+        protected int cell;
         public SayeIntegrand()
         {
         }
@@ -113,7 +113,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         #region Evaluate Integrand
 
-        private void IntegrandEvaluation(TreeNode<T> node)
+        protected void IntegrandEvaluation(TreeNode<T> node)
         {
             T nodeArg = node.Value;
 
@@ -281,7 +281,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         //Algorithm 3
         //page: A1006
-        private void SayeRecursion(TreeNode<T> treeNode)
+        protected void SayeRecursion(TreeNode<T> treeNode)
         {
             T arg = treeNode.Value;
 

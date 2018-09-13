@@ -124,9 +124,11 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             // check arguments, init
             // =====================
 
-            if (!(mask is CellMask)) {
+            if (!(mask is CellMask)) 
                 throw new ArgumentException("Must be a cell mask.", "mask");
-            }
+            if (mask.MaskType != MaskType.Geometrical)
+                throw new ArgumentException("Expecting a geometrical mask.");
+
             CellMask _mask = mask as CellMask;
 
 #if DEBUG

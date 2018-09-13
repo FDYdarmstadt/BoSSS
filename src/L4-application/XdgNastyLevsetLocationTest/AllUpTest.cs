@@ -21,24 +21,50 @@ using System.Text;
 using ilPSP;
 using NUnit.Framework;
 using BoSSS.Foundation.XDG;
+using MPI.Wrappers;
 
 namespace BoSSS.Application.XdgNastyLevsetLocationTest {
 
-
+    /// <summary>
+    /// Nunit entry point
+    /// </summary>
     [TestFixture]
-    public class AllUpTest {
+    public static class AllUpTest {
+
+        /// <summary>
+        /// MPI init
+        /// </summary>
+        [TestFixtureSetUp]
+        public static void SetUp() {
+            bool MpiInit;
+            ilPSP.Environment.Bootstrap(
+                new string[0],
+                BoSSS.Solution.Application.GetBoSSSInstallDir(),
+                out MpiInit);
+
+           
+        }
+
+        /// <summary>
+        /// MPI shutdown.
+        /// </summary>
+        [TestFixtureTearDown]
+        public static void TestFixtureTearDown() {
+            csMPI.Raw.mpiFinalize();
+        }
 
 
         /// <summary>
         /// not the smartest way to define such a test...
         /// </summary>
         [Test]
-        public void AllUp() {
+        public static void AllUp(
+            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGauss, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes)]
+            XQuadFactoryHelper.MomentFittingVariants variant
+            ) {
             //static void Main(string[] args) {
 
-            bool MpiInit;
-            ilPSP.Environment.Bootstrap(new string[0], BoSSS.Solution.Application.GetBoSSSInstallDir(), out MpiInit);
-
+           
             var Tests = new ITest[] { new Schraeg(XdgNastyLevsetLocationTest.GetTestRange(), XdgNastyLevsetLocationTest.GetTestRange()),
                 new Parallel(XdgNastyLevsetLocationTest.GetTestRange(), XdgNastyLevsetLocationTest.GetTestRange()) };
 
@@ -47,25 +73,24 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
                 XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes };
 
 
-            foreach (var tst in Tests) {
-                foreach (var variant in Variants) {
+            foreach(var tst in Tests) {
 
-                    XdgNastyLevsetLocationTest p = null;
 
-                    tst.ResetTest();
+                XdgNastyLevsetLocationTest p = null;
 
-                    BoSSS.Solution.Application._Main(new string[0], true, delegate() {
-                        p = new XdgNastyLevsetLocationTest();
-                        p.test = tst;
-                        p.momentFittingVariant = variant;
-                        return p;
-                    });
+                tst.ResetTest();
 
-                    Assert.IsTrue(p.IsPassed);
-                }
+                BoSSS.Solution.Application._Main(new string[0], true, delegate () {
+                    p = new XdgNastyLevsetLocationTest();
+                    p.test = tst;
+                    p.momentFittingVariant = variant;
+                    return p;
+                });
+
+                Assert.IsTrue(p.IsPassed);
+
             }
 
-            MPI.Wrappers.csMPI.Raw.mpiFinalize();
         }
 
     }

@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Foundation;
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using CNS.Boundary;
 using CNS.MaterialProperty;
@@ -48,7 +49,7 @@ namespace CNS.Diffusion {
         /// <summary>
         /// Common GridData
         /// </summary>
-        protected GridData gridData;
+        protected IGridData gridData;
 
         /// <summary>
         /// penalty factor used in the SIPG discretization
@@ -121,7 +122,7 @@ namespace CNS.Diffusion {
         /// <param name="speciesMap">Mapping that determines the active species in some point</param>
         /// <param name="gridData"></param>
         /// <param name="cellMetric"></param>
-        public SIPGFlux(CNSControl config, IBoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, GridData gridData, Func<MultidimensionalArray> cellMetric) {
+        public SIPGFlux(CNSControl config, IBoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, IGridData gridData, Func<MultidimensionalArray> cellMetric) {
             this.config = config;
             this.boundaryMap = boundaryMap;
             this.speciesMap = speciesMap;
@@ -130,7 +131,7 @@ namespace CNS.Diffusion {
             this.cellMetricFunc = cellMetric;
 
             //Fills the dictionary, to avoid later string comparison
-            foreach (byte edgeTag in gridData.Edges.EdgeTags) {
+            foreach (byte edgeTag in gridData.iGeomEdges.EdgeTags) {
                 if (boundaryMap.EdgeTagNames[edgeTag].StartsWith("adiabaticWall", StringComparison.InvariantCultureIgnoreCase)) {
                     edgeTagBool[edgeTag] = true;
                 } else {

@@ -39,7 +39,7 @@ namespace NSE_SIMPLE {
         /// <param name="GridDat"></param>
         /// <param name="EoS"></param>
         /// <param name="Scalar"></param>
-        public QuadratureMatrix_Rho(Basis Basis, GridData GridDat, MaterialLaw EoS, params SinglePhaseField[] Scalar)
+        public QuadratureMatrix_Rho(Basis Basis, IGridData GridDat, MaterialLaw EoS, params SinglePhaseField[] Scalar)
             : base(Basis, GridDat, Scalar) {
                 this.EoS = EoS;
         }

@@ -33,7 +33,7 @@ namespace CNS.Diffusion {
         /// <summary>
         /// Information about the grid.
         /// </summary>
-        private GridData gridData;
+        private IGridData gridData;
 
         private Func<MultidimensionalArray> cellMetricFunc;
 
@@ -44,7 +44,7 @@ namespace CNS.Diffusion {
         /// <param name="boundaryMap"></param>
         /// <param name="speciesMap"></param>
         /// <param name="gridData"></param>
-        public OptimizedSIPGFluxBuilder(CNSControl control, IBoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, GridData gridData)
+        public OptimizedSIPGFluxBuilder(CNSControl control, IBoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, IGridData gridData)
             : base(control, boundaryMap, speciesMap) {
             this.gridData = gridData;
 
@@ -69,7 +69,8 @@ namespace CNS.Diffusion {
                 };
             } else {
                 // Non-IBM
-                cellMetricFunc = () => gridData.Cells.cj;
+                var cj = ((GridData)gridData).Cells.cj;
+                cellMetricFunc = () => cj;
             }
         }
 

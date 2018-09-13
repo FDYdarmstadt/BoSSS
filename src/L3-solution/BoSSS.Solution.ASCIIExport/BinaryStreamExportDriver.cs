@@ -47,7 +47,7 @@ namespace BoSSS.Solution.ASCIIExport {
         /// <param name="showGhostCells"></param>
         /// <param name="superSampling"></param>
         /// <param name="sgrd"></param>
-        public BinaryStreamExportDriver(GridData context, bool showJumps, bool showGhostCells, uint superSampling, SubGrid sgrd = null)
+        public BinaryStreamExportDriver(IGridData context, bool showJumps, bool showGhostCells, uint superSampling, CellMask sgrd = null)
             : base(context, showJumps, showGhostCells, superSampling, sgrd) {
         }
 
@@ -61,7 +61,7 @@ namespace BoSSS.Solution.ASCIIExport {
         /// <param name="superSampling"></param>
         /// <param name="sgrd"></param>
         /// <returns></returns>
-        protected override PlotDriver.ZoneDriver CreateZoneDriver(GridData gridData, int iKref, bool showJumps, bool showGhostCells, uint superSampling, SubGrid sgrd) {
+        protected override PlotDriver.ZoneDriver CreateZoneDriver(IGridData gridData, int iKref, bool showJumps, bool showGhostCells, uint superSampling, CellMask sgrd) {
             return new BinaryZoneDriver(gridData, this, iKref, showJumps, showGhostCells, superSampling, sgrd);
         }
 
@@ -165,7 +165,7 @@ namespace BoSSS.Solution.ASCIIExport {
             /// <param name="ghostZone"></param>
             /// <param name="superSampling"></param>
             /// <param name="sgrd"></param>
-            public BinaryZoneDriver(GridData context, BinaryStreamExportDriver owner, int iKref, bool showJumps, bool ghostZone, uint superSampling, SubGrid sgrd = null)
+            public BinaryZoneDriver(IGridData context, BinaryStreamExportDriver owner, int iKref, bool showJumps, bool ghostZone, uint superSampling, CellMask sgrd = null)
                 : base(context, iKref, showJumps, ghostZone, superSampling, sgrd) {
                 this.owner = owner;
             }

@@ -61,7 +61,7 @@ namespace BoSSS.Foundation {
             var m_Context = this.GridDat;
             int N = this.Length;
             int Esub = CellPairs.GetLength(0);
-            int JE = this.GridDat.iLogicalCells.NoOfCells;
+            int JE = this.GridDat.iLogicalCells.Count;
             int J = this.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
 
             if (CellPairs.GetLength(1) != 2)
@@ -112,10 +112,7 @@ namespace BoSSS.Foundation {
 
                 Debug.Assert(jCell0 < J);
 
-                var cellMask = new CellMask(m_Context, new Chunk() {
-                    i0 = jCell0,
-                    Len = 1
-                });
+                var cellMask = new CellMask(m_Context, new[] { new Chunk() { i0 = jCell0, Len = 1 } }, MaskType.Geometrical);
                 
                 // we project the basis function from 'jCell1' onto 'jCell0'
 
