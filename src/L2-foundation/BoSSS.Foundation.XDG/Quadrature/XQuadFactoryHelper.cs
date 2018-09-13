@@ -462,6 +462,8 @@ namespace BoSSS.Foundation.XDG {
             }
 
             public IEnumerable<IChunkRulePair<QuadRule>> GetQuadRuleSet(ExecutionMask mask, int order) {
+                if (mask.MaskType != MaskType.Geometrical)
+                    throw new ArgumentException("Expecting a geometrical mask.");
 
                 QuadRule fullRule = RefElement.GetQuadratureRule(order);
                 int L1 = fullRule.NoOfNodes;

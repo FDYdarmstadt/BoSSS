@@ -62,7 +62,7 @@ namespace BoSSS.Application.LoadBalancingTest {
 
         protected override void CreateFields() {
             LevSet = new LevelSet(new Basis(this.GridData, 2), "LevelSet");
-            base.LsTrk = new LevelSetTracker(this.GridData, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, 1, new string[] { "A", "B" }, LevSet);
+            base.LsTrk = new LevelSetTracker((GridData)this.GridData, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, 1, new string[] { "A", "B" }, LevSet);
 
             var xBasis = new XDGBasis(base.LsTrk, DEGREE);
             u = new XDGField(xBasis, "u");

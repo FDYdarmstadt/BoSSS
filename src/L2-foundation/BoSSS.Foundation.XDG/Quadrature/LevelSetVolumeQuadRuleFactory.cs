@@ -194,9 +194,10 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 if (cellMask == null) {
                     throw new ArgumentException("Mask must be a volume mask", "mask");
                 }
+                if (mask.MaskType != MaskType.Geometrical)
+                    throw new ArgumentException("Expecting a geometrical mask.");
 
-                // Note: This is a parallel call, so do this early to avoid parallel confusion
-                localCellIndex2SubgridIndex = new SubGrid(cellMask).LocalCellIndex2SubgridIndex;
+                localCellIndex2SubgridIndex = mask.GetIndex2MaskItemMap();
 
                 int maxLambdaDegree = order + 1;
                 int noOfLambdas = GetNumberOfLambdas(maxLambdaDegree);
@@ -230,7 +231,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     foreach (Chunk chunk in mask) {
                         foreach (var cell in chunk.Elements.AsSmartEnumerable()) {
                             CellMask singleElementMask = new CellMask(
-                                LevelSetData.GridDat, Chunk.GetSingleElementChunk(cell.Value));
+                                LevelSetData.GridDat, new[] { Chunk.GetSingleElementChunk(cell.Value) }, MaskType.Geometrical);
 
                             LineAndPointQuadratureFactory.LineQRF lineFactory = this.edgeRuleFactory as LineAndPointQuadratureFactory.LineQRF;
                             if (lineFactory == null) {
@@ -360,116 +361,110 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     }
                 }
 
-                BitArray voidCellsArray = new BitArray(LevelSetData.GridDat.Cells.NoOfLocalUpdatedCells);
-                BitArray fullCellsArray = new BitArray(LevelSetData.GridDat.Cells.NoOfLocalUpdatedCells);
-                foreach (Chunk chunk in cellMask) {
-                    foreach (var cell in chunk.Elements) {
-                        double rhsL2Norm = 0.0;
-                        for (int k = 0; k < noOfLambdas; k++) {
-                            double entry = quadResults[localCellIndex2SubgridIndex[cell], k];
-                            rhsL2Norm += entry * entry;
-                        }
+                BitArray voidCellsArray = new BitArray(LevelSetData.GridDat.iGeomCells.Count);
+                BitArray fullCellsArray = new BitArray(LevelSetData.GridDat.iGeomCells.Count);
+                Debug.Assert(cellMask.MaskType == MaskType.Geometrical);
+                foreach (int cell in cellMask.ItemEnum) {
+                    double rhsL2Norm = 0.0;
+                    for (int k = 0; k < noOfLambdas; k++) {
+                        double entry = quadResults[localCellIndex2SubgridIndex[cell], k];
+                        rhsL2Norm += entry * entry;
+                    }
 
-                        if (rhsL2Norm < 1e-14) {
-                            // All integrals are zero => cell not really cut
-                            // (level set is tangent) and fully in void region
-                            voidCellsArray[cell] = true;
-                            continue;
-                        }
+                    if (rhsL2Norm < 1e-14) {
+                        // All integrals are zero => cell not really cut
+                        // (level set is tangent) and fully in void region
+                        voidCellsArray[cell] = true;
+                        continue;
+                    }
 
-                        double l2NormFirstIntegral = quadResults[localCellIndex2SubgridIndex[cell], 0];
-                        l2NormFirstIntegral *= l2NormFirstIntegral;
-                        double rhsL2NormWithoutFirst = rhsL2Norm - l2NormFirstIntegral;
-                        
-                        // Beware: This check is only sensible if basis is orthonormal on RefElement!
-                        if (rhsL2NormWithoutFirst < 1e-14 && 
-                            Math.Abs(l2NormFirstIntegral - RefElement.Volume) < 1e-14) {
-                            // All integrals are zero except integral over first integrand
-                            // If basis is orthonormal, this implies that cell is uncut and
-                            // fully in non-void region since then
-                            // \int_K \Phi_i dV = \int_A \Phi_i dV = \delta_{0,i}
-                            // However, we have to compare RefElement.Volume since
-                            // integration is performed in reference coordinates!
-                            fullCellsArray[cell] = true;
-                        }
+                    double l2NormFirstIntegral = quadResults[localCellIndex2SubgridIndex[cell], 0];
+                    l2NormFirstIntegral *= l2NormFirstIntegral;
+                    double rhsL2NormWithoutFirst = rhsL2Norm - l2NormFirstIntegral;
+
+                    // Beware: This check is only sensible if basis is orthonormal on RefElement!
+                    if (rhsL2NormWithoutFirst < 1e-14 &&
+                        Math.Abs(l2NormFirstIntegral - RefElement.Volume) < 1e-14) {
+                        // All integrals are zero except integral over first integrand
+                        // If basis is orthonormal, this implies that cell is uncut and
+                        // fully in non-void region since then
+                        // \int_K \Phi_i dV = \int_A \Phi_i dV = \delta_{0,i}
+                        // However, we have to compare RefElement.Volume since
+                        // integration is performed in reference coordinates!
+                        fullCellsArray[cell] = true;
                     }
                 }
+                
 
                 var result = new List<ChunkRulePair<QuadRule>>(cellMask.NoOfItemsLocally);
 
-                CellMask emptyCells = new CellMask(LevelSetData.GridDat, voidCellsArray);
-                foreach (Chunk chunk in emptyCells) {
-                    foreach (int cell in chunk.Elements) {
-                        QuadRule emptyRule = QuadRule.CreateEmpty(RefElement, 1, RefElement.SpatialDimension);
-                        emptyRule.Nodes.LockForever();
-                        result.Add(new ChunkRulePair<QuadRule>(
-                            Chunk.GetSingleElementChunk(cell), emptyRule));
-                    }
+                CellMask emptyCells = new CellMask(LevelSetData.GridDat, voidCellsArray, MaskType.Geometrical);
+                foreach (int cell in emptyCells.ItemEnum) {
+                    QuadRule emptyRule = QuadRule.CreateEmpty(RefElement, 1, RefElement.SpatialDimension);
+                    emptyRule.Nodes.LockForever();
+                    result.Add(new ChunkRulePair<QuadRule>(
+                        Chunk.GetSingleElementChunk(cell), emptyRule));
                 }
 
-                CellMask fullCells = new CellMask(LevelSetData.GridDat, fullCellsArray);
-                foreach (Chunk chunk in fullCells) {
-                    foreach (int cell in chunk.Elements) {
-                        QuadRule fullRule = RefElement.GetQuadratureRule(order);
-                        result.Add(new ChunkRulePair<QuadRule>(
-                            Chunk.GetSingleElementChunk(cell), fullRule));
-                    }
+                CellMask fullCells = new CellMask(LevelSetData.GridDat, fullCellsArray, MaskType.Geometrical);
+                foreach (int cell in fullCells.ItemEnum) {
+                    QuadRule fullRule = RefElement.GetQuadratureRule(order);
+                    result.Add(new ChunkRulePair<QuadRule>(
+                        Chunk.GetSingleElementChunk(cell), fullRule));
                 }
 
                 CellMask realCutCells = cellMask.Except(emptyCells).Except(fullCells);
                 if (RestrictNodes) {
-                    foreach (Chunk chunk in realCutCells) {
-                        foreach (int cell in chunk.Elements) {
-                            CellMask singleElementMask = new CellMask(
-                                LevelSetData.GridDat, Chunk.GetSingleElementChunk(cell));
+                    foreach (int cell in realCutCells.ItemEnum) {
 
-                            AffineTrafo trafo = trafos[localCellIndex2SubgridIndex[cell]];
-                            Debug.Assert(Math.Abs(trafo.Matrix.Determinant()) > 1e-10);
+                        CellMask singleElementMask = new CellMask(
+                            LevelSetData.GridDat, Chunk.GetSingleElementChunk(cell));
 
-                            NodeSet nodes = GetNodes(noOfLambdas).CloneAs();
-                            NodeSet mappedNodes = new NodeSet(RefElement, trafo.Transform(nodes));
-                            mappedNodes.LockForever();
+                        AffineTrafo trafo = trafos[localCellIndex2SubgridIndex[cell]];
+                        Debug.Assert(Math.Abs(trafo.Matrix.Determinant()) > 1e-10);
 
-                            // Remove nodes in negative part
-                            MultidimensionalArray levelSetValues = LevelSetData.GetLevSetValues(mappedNodes, cell, 1);
-                            List<int> nodesToBeCopied = new List<int>(mappedNodes.GetLength(0));
-                            for (int n = 0; n < nodes.GetLength(0); n++) {
-                                if (levelSetValues[0, n] >= 0.0) {
-                                    nodesToBeCopied.Add(n);
-                                }
+                        NodeSet nodes = GetNodes(noOfLambdas).CloneAs();
+                        NodeSet mappedNodes = new NodeSet(RefElement, trafo.Transform(nodes));
+                        mappedNodes.LockForever();
+
+                        // Remove nodes in negative part
+                        MultidimensionalArray levelSetValues = LevelSetData.GetLevSetValues(mappedNodes, cell, 1);
+                        List<int> nodesToBeCopied = new List<int>(mappedNodes.GetLength(0));
+                        for (int n = 0; n < nodes.GetLength(0); n++) {
+                            if (levelSetValues[0, n] >= 0.0) {
+                                nodesToBeCopied.Add(n);
                             }
-
-                            NodeSet reducedNodes = new NodeSet(
-                                this.RefElement, nodesToBeCopied.Count, D);
-                            for (int n = 0; n < nodesToBeCopied.Count; n++) {
-                                for (int d = 0; d < D; d++) {
-                                    reducedNodes[n, d] = mappedNodes[nodesToBeCopied[n], d];
-                                }
-                            }
-                            reducedNodes.LockForever();
-
-                            QuadRule optimizedRule = GetOptimizedRule(
-                                cell,
-                                trafo,
-                                reducedNodes,
-                                quadResults,
-                                order);
-
-                            result.Add(new ChunkRulePair<QuadRule>(
-                                singleElementMask.Single(), optimizedRule));
                         }
+
+                        NodeSet reducedNodes = new NodeSet(
+                            this.RefElement, nodesToBeCopied.Count, D);
+                        for (int n = 0; n < nodesToBeCopied.Count; n++) {
+                            for (int d = 0; d < D; d++) {
+                                reducedNodes[n, d] = mappedNodes[nodesToBeCopied[n], d];
+                            }
+                        }
+                        reducedNodes.LockForever();
+
+                        QuadRule optimizedRule = GetOptimizedRule(
+                            cell,
+                            trafo,
+                            reducedNodes,
+                            quadResults,
+                            order);
+
+                        result.Add(new ChunkRulePair<QuadRule>(
+                            singleElementMask.Single(), optimizedRule));
+
                     }
                 } else {
                     // Use same nodes in all cells
                         QuadRule[] optimizedRules = GetOptimizedRules(
                             realCutCells, GetNodes(noOfLambdas), quadResults, order);                 
                     int ruleIndex = 0;
-                    foreach (Chunk chunk in realCutCells) {
-                        foreach (var cell in chunk.Elements) {
-                            result.Add(new ChunkRulePair<QuadRule>(
-                                Chunk.GetSingleElementChunk(cell), optimizedRules[ruleIndex]));
-                            ruleIndex++;
-                        }
+                    foreach (int cell in realCutCells.ItemEnum) {
+                        result.Add(new ChunkRulePair<QuadRule>(
+                            Chunk.GetSingleElementChunk(cell), optimizedRules[ruleIndex]));
+                        ruleIndex++;
                     }
                 }
 

@@ -57,7 +57,7 @@ namespace BoSSS.Foundation.Grid.Voronoi {
             }
         }
 
-        public GridData.BasisData ChefBasis {
+        public BasisData ChefBasis {
             get {
                 throw new NotImplementedException();
             }
@@ -70,6 +70,15 @@ namespace BoSSS.Foundation.Grid.Voronoi {
         }
 
         public Partitioning CellPartitioning {
+            get {
+                throw new NotImplementedException();
+            }
+        }
+
+        /// <summary>
+        /// The global ID for each cell
+        /// </summary>
+        public Comm.Permutation CurrentGlobalIdPermutation {
             get {
                 throw new NotImplementedException();
             }

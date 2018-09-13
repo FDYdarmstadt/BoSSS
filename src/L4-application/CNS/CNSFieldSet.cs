@@ -38,7 +38,7 @@ namespace CNS {
         /// <summary>
         /// The omnipresent context;
         /// </summary>
-        protected GridData gridData;
+        protected IGridData gridData;
 
         /// <summary>
         /// <see cref="CNSControl"/>
@@ -69,7 +69,7 @@ namespace CNS {
         /// <param name="gridData">The omnipresent grid data</param>
         /// <param name="config">Configurations options</param>
         /// <param name="template">The object to be cloned</param>
-        protected CNSFieldSet(GridData gridData, CNSControl config, CNSFieldSet template) {
+        protected CNSFieldSet(IGridData gridData, CNSControl config, CNSFieldSet template) {
             this.gridData = gridData;
             this.config = config;
 
@@ -94,7 +94,7 @@ namespace CNS {
         /// </summary>
         /// <param name="gridData">The omnipresent grid data</param>
         /// <param name="config">CNS specific control options</param>
-        public CNSFieldSet(GridData gridData, CNSControl config) {
+        public CNSFieldSet(IGridData gridData, CNSControl config) {
             this.gridData = gridData;
             this.config = config;
 

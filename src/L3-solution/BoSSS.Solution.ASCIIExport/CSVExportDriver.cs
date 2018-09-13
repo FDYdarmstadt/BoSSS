@@ -60,14 +60,14 @@ namespace BoSSS.Solution.ASCIIExport {
         /// <summary>
         /// see <see cref="PlotDriver.PlotDriver"/>.
         /// </summary>
-        public CSVExportDriver(GridData context, bool showJumps, uint superSampling)
+        public CSVExportDriver(IGridData context, bool showJumps, uint superSampling)
             : base(context, showJumps, false, superSampling, null) {
         }
 
         /// <summary>
         /// see <see cref="PlotDriver.PlotDriver"/>.
         /// </summary>
-        public CSVExportDriver(GridData context, bool showJumps, bool ghostZone, uint superSampling, SubGrid sgrd = null)
+        public CSVExportDriver(IGridData context, bool showJumps, bool ghostZone, uint superSampling, CellMask sgrd = null)
             : base(context, showJumps, ghostZone, superSampling, sgrd) {
         }
 
@@ -111,7 +111,7 @@ namespace BoSSS.Solution.ASCIIExport {
         /// <summary>
         /// creates new CSVExportZone
         /// </summary>
-        protected override PlotDriver.ZoneDriver CreateZoneDriver(GridData context, int iKref, bool showJumps, bool showGhostCells, uint superSampling, SubGrid __sgrd) {
+        protected override PlotDriver.ZoneDriver CreateZoneDriver(IGridData context, int iKref, bool showJumps, bool showGhostCells, uint superSampling, CellMask __sgrd) {
             return new CSVExportZone(context, this, iKref, showJumps, showGhostCells, superSampling, __sgrd);
         }
 
@@ -142,7 +142,7 @@ namespace BoSSS.Solution.ASCIIExport {
             /// <summary>
             /// ctor.
             /// </summary>
-            public CSVExportZone(GridData context, CSVExportDriver owner, int iKref, bool showJumps, bool ghostZone, uint superSampling, SubGrid sgrd = null)
+            public CSVExportZone(IGridData context, CSVExportDriver owner, int iKref, bool showJumps, bool ghostZone, uint superSampling, CellMask sgrd = null)
                 : base(context, iKref, showJumps, ghostZone, superSampling, sgrd) {
                 this.owner = owner;
             }

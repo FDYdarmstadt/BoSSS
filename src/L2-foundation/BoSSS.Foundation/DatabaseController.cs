@@ -23,6 +23,7 @@ using ilPSP;
 using BoSSS.Platform;
 using Renci.SshNet;
 using Renci.SshNet.Common;
+using BoSSS.Foundation.Grid;
 
 namespace BoSSS.Foundation.IO {
 
@@ -602,13 +603,13 @@ namespace BoSSS.Foundation.IO {
         /// don't have to be created over and over again.
         /// </summary>
         /// <param name="gridData"></param>
-        public void AddGridInitializationContext(Grid.Classic.GridData gridData) {
-            if (m_gridInitializationContexts.ContainsKey(gridData.Grid.ID)) {
+        public void AddGridInitializationContext(IGridData gridData) {
+            if (m_gridInitializationContexts.ContainsKey(gridData.GridID)) {
                 throw new ArgumentException(
                     "An initialization context for the given grid already exists");
             }
 
-            m_gridInitializationContexts[gridData.Grid.ID] = new GridInitializationContext(gridData);
+            m_gridInitializationContexts[gridData.GridID] = new GridInitializationContext(gridData);
         }
 
         /// <summary>

@@ -41,7 +41,7 @@ namespace CNS.Diffusion {
         /// <param name="gridData"><see cref="SIPGFlux"/></param>
         /// <param name="component"><see cref="SIPGFlux"/></param>
         /// <param name="cellMetricFunc"><see cref="SIPGFlux"/></param>
-        public SIPGEnergyFlux(CNSControl config, IBoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, GridData gridData, int component, Func<MultidimensionalArray> cellMetricFunc)
+        public SIPGEnergyFlux(CNSControl config, IBoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, IGridData gridData, int component, Func<MultidimensionalArray> cellMetricFunc)
             : base(config, boundaryMap, speciesMap, gridData, cellMetricFunc) {
                 this.component = component;
         }

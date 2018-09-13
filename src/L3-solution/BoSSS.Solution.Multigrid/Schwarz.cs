@@ -599,7 +599,7 @@ namespace BoSSS.Solution.Multigrid {
 
 
                     int LL = m_MgOp.Mapping.LocalLength;
-                    int jMax = m_MgOp.Mapping.AggGrid.iLogicalCells.NoOfCells - 1;
+                    int jMax = m_MgOp.Mapping.AggGrid.iLogicalCells.Count - 1;
                     int LE = m_MgOp.Mapping.LocalUniqueIndex(0, jMax, 0) + m_MgOp.Mapping.GetLength(jMax);
 
 

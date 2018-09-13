@@ -93,7 +93,7 @@ namespace BoSSS.Application.Matrix_MPItest {
         protected override void CreateFields() {
             Phi = new LevelSet(new Basis(this.GridData, 2), "Phi");
    
-            LsTrk = new LevelSetTracker(this.GridData, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, 1, new string[] { "A", "B" }, Phi);
+            LsTrk = new LevelSetTracker((BoSSS.Foundation.Grid.Classic.GridData)this.GridData, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, 1, new string[] { "A", "B" }, Phi);
 
             if (m_DGorder < 1)
                 throw new ArgumentException();

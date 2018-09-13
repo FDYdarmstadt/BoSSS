@@ -89,7 +89,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// can be passed as delegates. Use this, if you do not want to derive from <see cref="EdgeQuadrature"/>.
         /// </summary>
         static public EdgeQuadrature GetQuadrature(int[] noOfIntegralsPerCell,
-                              Grid.Classic.GridData context,
+                              IGridData context,
                               ICompositeQuadRule<QuadRule> domNrule,
                               Del_Evaluate _Evaluate,
                               Del_SaveIntegrationResults _SaveIntegrationResults,
